@@ -3,6 +3,9 @@ import numpy
 class Atom:
     """Represent an atom, with position, velocity, mass and related properties"""
     
+#qpslice holds position and momentum data. 
+#qslice holds a reference to the position data, pslice to the momentum data.
+
     def __init__(self, qpslice, name="X", mass=1.0):
         self.q = qpslice[0:3,0]
         self.p = qpslice[0:3,1]
@@ -12,16 +15,26 @@ class Atom:
         
 class Cell:
    """Represents the simulation cell in a periodic system"""
+
+#h is the lattice basis matrix, which will hold the basis vectors in cartesian form (I think...)
+#p will hold the box momenta, in the same form as for h
+#w is the box mass. 
+
    def __init__(self):
-      h = numpy.zeros((3,3) ,float)
-      p = numpy.zeros((3,3) ,float)
-      w = 1.0
+      self.h = numpy.zeros((3,3) ,float)
+      self.p = numpy.zeros((3,3) ,float)
+      self.w = 1.0
       
         
 class System:
     """
     Represents a simulation cell. 
     Includes the cell parameters, the atoms and the like. """
+
+#__qp holds all the positions and momenta for all the atoms in the simulation
+#q and p hold the positions and momenta, respectively.
+#we will probably have to redo the initialisation step, so that it makes sense physically.
+#step will eventually call the forces from the external program and then do the propagation step. At the moment we simply take free particle trajectories, to test the theory.
     
     def __init__(self, natoms=1):
         self.natoms=natoms
