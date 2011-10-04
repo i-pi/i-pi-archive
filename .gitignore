@@ -1,0 +1,4 @@
+#ignored patterns
+
+bin/*
+*.pyc
