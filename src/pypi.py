@@ -13,6 +13,10 @@ print syst
 syst.step(1.0)
 print syst
 
+print syst.kinetic()
+
+#################################
+
 x=allthing[0,0:3]
 p=allthing[0,3:6]
 
