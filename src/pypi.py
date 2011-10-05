@@ -1,5 +1,7 @@
 from numpy import *
 from engine import *
+import sys
+
 
 
 print "hello world"
@@ -34,7 +36,25 @@ x11=allthing[1:2,1]
 x11[0]=4
 print allthing
 
+atoms.print_pdb(syst.atoms,syst.cell)
 
+myih=syst.cell.ih
+myih=syst.cell.ih
+myih=syst.cell.ih
+
+print "Trying to call the setter"
+hh = 2*identity(3, float)
+syst.cell.h = hh
+print "Setter called?"
+myih=syst.cell.ih
+
+print syst.cell.h
+
+print  "before", syst.atoms[0]
+syst.cell.apply_pbc(syst.atoms[0])
+print "after", syst.atoms[0]
+
+alist,cell = atoms.read_pdb(sys.stdin)
 print "goodbye world"
 #print sys.atoms[3].pos.x, sys2.atoms[3].pos.x
 
