@@ -27,7 +27,13 @@ class Atom:
 	return ke
    
 def compute_ih(h) :
-   print "Dummy routine"
+   #print "Dummy routine"
+   ih = numpy.zeros((3,3), float)
+   for i in range(3):
+      ih[i,i] = 1.0/h[i,i]
+   ih[0,1] = -h[0,1]/(h[0,0] * h[1,1])
+   ih[1,2] = -h[1,2]/(h[1,1] * h[2,2])
+   ih[0,2] = (h[0,1]*h[1,0] - h[0,2]*h[1,1]) / (h[0,0]*h[1,1]*h[2,2])
    return h
         
 class Cell(object):
@@ -156,10 +162,21 @@ def print_pdb(atoms, cell):
       print "ATOM  % 5i%4s%c% 3s%c% 4i%c%8.3f%8.3f%8.3f%6.2f%6.2f%2s% 2i" % (i+1, atoms[i].name,'X','  1',' ',1,' ',atoms[i].q[0],atoms[i].q[1],atoms[i].q[2],0.0,0.0,'  ',0)
 
 def read_pdb(filedesc):
+
+#We need a way of using these values to initialise the system
+
    header = filedesc.readline()
    a = float(header[6:15]);      b = float(header[15:24]);     c = float(header[24:33]);
    alpha = float(header[33:40]); beta = float(header[40:47]);  gamma = float(header[47:54]);
 
-   atoms=""
-   cell=""
+   body = filedesc.readline()
+   while body != '':
+      name = body[12:16]
+      x = float(body[30:38])
+      y = float(body[38:46])
+      z = float(body[46:54])
+      pos = numpy.array([x, y, z])
+      body = filedesc.readline()
+   atoms = ''
+   cell = ''
    return atoms, cell
