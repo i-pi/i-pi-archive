@@ -87,6 +87,8 @@ class Cell(object):
       return a, b, c, alpha, beta, gamma
 
    def abc2h(self, a, b, c, alpha, beta, gamma):
+      """Returns a description of the cell in terms of the lattice vectors """
+
       self.__h[0,0] = a
       self.__h[0,1] = b * math.cos(gamma)
       self.__h[0,2] = c * math.cos(beta)
