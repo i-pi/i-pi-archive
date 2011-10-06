@@ -8,8 +8,8 @@ class Atom:
 #qslice holds a reference to the position data, pslice to the momentum data.
 
     def __init__(self, qpslice, name="X", mass=1.0):
-        self.q = qpslice[0:3,0]
-        self.p = qpslice[0:3,1]
+        self.q = qpslice[:,0]
+        self.p = qpslice[:,1]
         self.mass = mass
 	self.name = name
 

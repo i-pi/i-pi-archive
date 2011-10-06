@@ -9,7 +9,8 @@ print "hello world"
 nat = 3
 allthing = zeros((nat,6), float)
 
-syst=engine.System(4)
+f = open("./testfile.txt","r")
+syst=engine.System(f)
 print syst
 
 syst.step(1.0)
@@ -36,9 +37,26 @@ x11=allthing[1:2,1]
 x11[0]=4
 print allthing
 
+print
+print "first cell = ", syst.cell
+a, b, c, alpha, beta, gamma = syst.cell.h2abc()
+
+print "cell in new coordinates: ", a, b, c, alpha, beta, gamma
+syst.cell.abc2h(a, b, c, alpha, beta, gamma)
+
+print "back to the start?", syst.cell
+print
+
 io_system.print_pdb(syst.atoms,syst.cell)
 
-alist,cell = io_system.read_pdb(sys.stdin)
+f.close()
+f = open("./testfile.txt", "r")
+
+alist,cell, natoms = io_system.read_pdb(f)
+
+print alist
+print cell
+print "natoms = ", natoms
 
 myih=syst.cell.ih
 myih=syst.cell.ih

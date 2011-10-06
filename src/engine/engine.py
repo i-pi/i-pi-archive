@@ -12,19 +12,21 @@ class System:
 #__qp holds all the positions and momenta for all the atoms in the simulation
 #q and p hold the positions and momenta, respectively.
 #P_ext will be the external load.
-#we will probably have to redo the initialisation step, so that it makes sense physically.
+#The initialisation step now takes a pdc-formatted file for the unit cell and atom positions
 #step will eventually call the forces from the external program and then do the propagation step. At the moment we simply take free particle trajectories, to test the theory.
     
-    def __init__(self, natoms = 1, temp = 5.0):
-        self.natoms=natoms
+    def __init__(self, filedesc, temp = 5.0):
+        atoms, cell, natoms = read_pdb(filedesc)
+        self.natoms = natoms
 	self.temp = temp
         self.__qp=numpy.zeros((3*natoms,2),float) 
-        self.__qp[:,0]=numpy.arange(0,3*natoms)
+        for i in range(natoms):
+           self.__qp[3*i:3*(i+1),0]=atoms[i][1]
         self.q=self.__qp[:,0]
         self.__qp[:,1]=numpy.arange(0,3*natoms)*0.01
         self.p=self.__qp[:,1]
-        self.atoms = [ Atom(self.__qp[3*i:3*(i+1),0:2]) for i in range(natoms) ] #Creates a list of atoms from the __qp array
-	self.cell = Cell()
+        self.atoms = [ Atom(self.__qp[3*i:3*(i+1),:], name = atoms[i][0]) for i in range(natoms) ] #Creates a list of atoms from the __qp array
+	self.cell = Cell(cell)
 	self.P_ext = numpy.zeros(3,float)
 
     def __str__(self):
