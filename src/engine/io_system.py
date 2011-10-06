@@ -7,10 +7,10 @@ def print_pdb(atoms, cell):
    beta  *= 180.0/math.pi
    gamma *= 180.0/math.pi
    
-   z = 0 #we need to find out what Z actually is
-   print "CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f%s% 4i" % (a, b, c, alpha, beta, gamma, " P 1       ", z)
+   z = 1 #we need to find out what Z actually is
+   print "CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f%s%4i" % (a, b, c, alpha, beta, gamma, " P 1       ", z)
    for i in range(0,len(atoms)): 
-      print "ATOM  % 5i%4s%1s% 3s%1s% 4i%1s%8.3f%8.3f%8.3f%6.2f%6.2f%2s% 2i" % (i+1, atoms[i].name,'X','  1',' ',1,' ',atoms[i].q[0],atoms[i].q[1],atoms[i].q[2],0.0,0.0,'  ',0)
+      print "ATOM  %5i %4s%1s%3s %1s%4i%1s%8.3f%8.3f%8.3f%6.2f%6.2f          %2s%2i" % (i+1, atoms[i].name,'X','  1',' ',1,' ',atoms[i].q[0],atoms[i].q[1],atoms[i].q[2],0.0,0.0,'  ',0)
 
 def read_pdb(filedesc):
 

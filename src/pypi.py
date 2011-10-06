@@ -9,7 +9,7 @@ print "hello world"
 nat = 3
 allthing = zeros((nat,6), float)
 
-syst=atoms.System(4)
+syst=engine.System(4)
 print syst
 
 syst.step(1.0)
@@ -36,7 +36,9 @@ x11=allthing[1:2,1]
 x11[0]=4
 print allthing
 
-atoms.print_pdb(syst.atoms,syst.cell)
+io_system.print_pdb(syst.atoms,syst.cell)
+
+alist,cell = io_system.read_pdb(sys.stdin)
 
 myih=syst.cell.ih
 myih=syst.cell.ih
@@ -54,7 +56,6 @@ print  "before", syst.atoms[0]
 syst.cell.apply_pbc(syst.atoms[0])
 print "after", syst.atoms[0]
 
-alist,cell = atoms.read_pdb(sys.stdin)
 print "goodbye world"
 #print sys.atoms[3].pos.x, sys2.atoms[3].pos.x
 
