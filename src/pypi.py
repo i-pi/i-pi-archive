@@ -74,6 +74,8 @@ print  "before", syst.atoms[0]
 syst.cell.apply_pbc(syst.atoms[0])
 print "after", syst.atoms[0]
 
+lang=langevin.Thermo_Langevin()
+lang.dt=4
 print "goodbye world"
 #print sys.atoms[3].pos.x, sys2.atoms[3].pos.x
 
