@@ -2,13 +2,14 @@ import numpy
 import math
 
 def compute_ih(h) :
+   """Inverts a (upper-triangular) cell matrix"""
    ih = numpy.zeros((3,3), float)
    for i in range(3):
       ih[i,i] = 1.0/h[i,i]
-   ih[0,1] = -h[0,1]/(h[0,0] * h[1,1])
-   ih[1,2] = -h[1,2]/(h[1,1] * h[2,2])
-   ih[0,2] = (h[0,1]*h[1,0] - h[0,2]*h[1,1]) / (h[0,0]*h[1,1]*h[2,2])
-   return h
+   ih[0,1] = -ih[0,0]*h[0,1]/h[1,1]
+   ih[1,2] = -ih[1,1]*h[1,2]/h[2,2]
+   ih[0,2] = -ih[1,2]*h[0,1]*ih[1,1]-ih[0,0]*h[0,2]*ih[2,2]
+   return ih
 
 
 class Cell(object):
@@ -44,10 +45,10 @@ class Cell(object):
          self.__taint_ih = False
       return self.__ih
    
-   def __init__(self, cell):
-      self.__h = numpy.zeros((3,3), float)
+   def __init__(self, cell = [ 1, 1, 1, math.pi/2, math.pi/2, math.pi/2] ):
+      
       a, b, c, alpha, beta, gamma = cell[0], cell[1], cell[2], cell[3], cell[4], cell[5]
-      self.abc2h(a, b, c, alpha, beta, gamma)
+      self.__h = abc2h(a, b, c, alpha, beta, gamma)
       self.__p = numpy.zeros((3,3) ,float)
       self.__taint_ih = True
       self.w = 1.0
@@ -75,21 +76,37 @@ class Cell(object):
       atom = numpy.dot(self.h,s)
       print atom
       
-   def h2abc(self):
-      """
-      Returns a description of the cell in terms of the length of the 
-      lattice vectors and the angles between them."""
-      
-      a=self.__h[0,0]; b=math.sqrt(self.__h[0,1]**2+self.__h[1,1]**2);  c=math.sqrt(self.__h[0,2]**2+self.__h[1,2]**2+self.__h[2,2]**2);
-      gamma=math.acos(self.__h[0,1]/b); beta=math.acos(self.__h[0,2]/c); 
-      alpha = math.acos(numpy.dot(self.__h[:,1], self.__h[:,2])/(b*c))
+def h2abc(h):
+   """
+   Returns a description of the cell in terms of the length of the 
+   lattice vectors and the angles between them."""
+   
+   a=h[0,0]; b=math.sqrt(h[0,1]**2+h[1,1]**2);  c=math.sqrt(h[0,2]**2+h[1,2]**2+h[2,2]**2);
+   gamma=math.acos(h[0,1]/b); beta=math.acos(h[0,2]/c); 
+   alpha = math.acos(numpy.dot(h[:,1], h[:,2])/(b*c))
 
-      return a, b, c, alpha, beta, gamma
+   return a, b, c, alpha, beta, gamma
 
-   def abc2h(self, a, b, c, alpha, beta, gamma):
-      self.__h[0,0] = a
-      self.__h[0,1] = b * math.cos(gamma)
-      self.__h[0,2] = c * math.cos(beta)
-      self.__h[1,1] = b * math.sin(gamma)
-      self.__h[1,2] = (b*c*math.cos(alpha) - self.__h[0,1]*self.__h[0,2]) / self.__h[1,1]
-      self.__h[2,2] = math.sqrt(c**2 - self.__h[0,2]**2 - self.__h[1,2]**2)
+def abc2h(a, b, c, alpha, beta, gamma):
+   """
+   Returns a cell matrix given a description in terms of the vector lengths and the angles in between
+   """
+   h = numpy.zeros((3,3) ,float)
+   h[0,0] = a
+   h[0,1] = b * math.cos(gamma)
+   h[0,2] = c * math.cos(beta)
+   h[1,1] = b * math.sin(gamma)
+   h[1,2] = (b*c*math.cos(alpha) - h[0,1]*h[0,2]) / h[1,1]
+   h[2,2] = math.sqrt(c**2 - h[0,2]**2 - h[1,2]**2)
+   return h
+   
+#def abc2h(a, b, c, alpha, beta, gamma):  # alternative implementation
+#   """
+#   Returns a cell matrix given a description in terms of the vector lengths and the angles in between
+#   """
+#   h = numpy.zeros((3,3) ,float)
+#   cc=math.cos(gamma); cb=math.cos(beta); ca=math.cos(alpha); sc=sqrt(1-cc*cc);  
+#   h[0,0] = a; h[0,1] = b *cc; h[0,2] = c*cb;
+#   h[1,1]= b*sc
+#   h[2,2]= c*(cb*cc-ca)/sc
+#   h[1,2]= c/sc*sqrt(ca**2+cb**2+cc**2-2*ca*cb*cc-1)
