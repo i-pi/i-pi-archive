@@ -39,10 +39,10 @@ print allthing
 
 print
 print "first cell = ", syst.cell
-a, b, c, alpha, beta, gamma = syst.cell.h2abc()
+a, b, c, alpha, beta, gamma = cell.h2abc(syst.cell.h)
 
 print "cell in new coordinates: ", a, b, c, alpha, beta, gamma
-syst.cell.abc2h(a, b, c, alpha, beta, gamma)
+syst.cell.h=cell.abc2h(a, b, c, alpha, beta, gamma)
 
 print "back to the start?", syst.cell
 print

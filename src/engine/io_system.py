@@ -1,8 +1,9 @@
 import numpy
 import math
+import cell 
 
-def print_pdb(atoms, cell):
-   a, b, c, alpha, beta, gamma = cell.h2abc()
+def print_pdb(atoms, ncell):
+   a, b, c, alpha, beta, gamma = cell.h2abc(ncell.h)
    alpha *= 180.0/math.pi
    beta  *= 180.0/math.pi
    gamma *= 180.0/math.pi
