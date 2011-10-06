@@ -100,13 +100,3 @@ def abc2h(a, b, c, alpha, beta, gamma):
    h[2,2] = math.sqrt(c**2 - h[0,2]**2 - h[1,2]**2)
    return h
    
-#def abc2h(a, b, c, alpha, beta, gamma):  # alternative implementation
-#   """
-#   Returns a cell matrix given a description in terms of the vector lengths and the angles in between
-#   """
-#   h = numpy.zeros((3,3) ,float)
-#   cc=math.cos(gamma); cb=math.cos(beta); ca=math.cos(alpha); sc=sqrt(1-cc*cc);  
-#   h[0,0] = a; h[0,1] = b *cc; h[0,2] = c*cb;
-#   h[1,1]= b*sc
-#   h[2,2]= c*(cb*cc-ca)/sc
-#   h[1,2]= c/sc*sqrt(ca**2+cb**2+cc**2-2*ca*cb*cc-1)
