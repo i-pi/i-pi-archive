@@ -12,7 +12,9 @@ def print_pdb(atoms, ncell):
    gamma *= 180.0/math.pi
    
    z = 1 #number of polymeric chains in a unit cell. I can't decide if 1 or 0 is more sensible for this...
+
    print "CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f%s%4i" % (a, b, c, alpha, beta, gamma, " P 1        ", z)
+
    for i in range(0,len(atoms)): 
       print "ATOM  %5i %4s%1s%3s %1s%4i%1s   %8.3f%8.3f%8.3f%6.2f%6.2f          %2s%2i" % (i+1, atoms[i].name,' ','  1',' ',1,' ',atoms[i].q[0],atoms[i].q[1],atoms[i].q[2],0.0,0.0,'  ',0)
 

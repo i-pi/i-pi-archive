@@ -79,8 +79,8 @@ class Cell(object):
       s=numpy.dot(self.ih,atom.q)
       for i in range(3):
          s[i] = s[i] - math.floor(s[i])
-      atom = numpy.dot(self.h,s)
-      return atom
+      new_pos = numpy.dot(self.h,s)
+      return new_pos
 
    def minimum_distance(self, atom1, atom2):
       """Takes two atoms and tries to find the smallest distance between two 
@@ -101,8 +101,11 @@ def h2abc(h):
    Returns a description of the cell in terms of the length of the 
    lattice vectors and the angles between them."""
    
-   a=h[0,0]; b=math.sqrt(h[0,1]**2+h[1,1]**2);  c=math.sqrt(h[0,2]**2+h[1,2]**2+h[2,2]**2);
-   gamma=math.acos(h[0,1]/b); beta=math.acos(h[0,2]/c); 
+   a=h[0,0]
+   b=math.sqrt(h[0,1]**2+h[1,1]**2)
+   c=math.sqrt(h[0,2]**2+h[1,2]**2+h[2,2]**2)
+   gamma=math.acos(h[0,1]/b)
+   beta=math.acos(h[0,2]/c)
    alpha = math.acos(numpy.dot(h[:,1], h[:,2])/(b*c))
 
    return a, b, c, alpha, beta, gamma
