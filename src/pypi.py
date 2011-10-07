@@ -2,6 +2,7 @@ from numpy import *
 from engine import *
 import sys
 from engine import test_Thermo
+from engine import io_system
 
 print "hello world"
 
@@ -14,6 +15,9 @@ print syst
 
 syst.step(1.0)
 print syst
+syst.apply_pbc()
+print syst
+io_system.print_pdb(syst.atoms, syst.cell)
 
 print syst.kinetic()
 

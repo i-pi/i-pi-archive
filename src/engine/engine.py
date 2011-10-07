@@ -50,11 +50,23 @@ class System:
       return rstr
        
    def step(self,dt):
+      """Takes the atom positions, velocities and forces and integrates the 
+         equations of motion forward by a step dt"""
       self.q+=self.p*dt
 
    def kinetic(self):
+      """Calculates the total kinetic energy of the system, including cell 
+         kinetic energy"""
+
       ke = 0.0
       for i in range(self.natoms):
          ke += self.atoms[i].kinetic()
       ke += self.cell.kinetic()
       return ke
+
+   def apply_pbc(self):
+      """Takes the system and applies periodic boundary conditions to fold the
+         particle positions back into the unit cell"""
+
+      for i in range(self.natoms):
+         self.atoms[i].q = self.cell.apply_pbc(self.atoms[i])

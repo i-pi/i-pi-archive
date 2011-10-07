@@ -21,6 +21,9 @@ class Atom:
       return pot
 
    def kinetic(self):
+      """Calculates the kinetic energy of the particle from the particle 
+         momentum"""
+
       ke = 0.0
       for i in range(3):
          ke += self.p[i]**2 / (2.0*self.mass)

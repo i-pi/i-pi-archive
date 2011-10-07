@@ -57,10 +57,14 @@ class Cell(object):
       return "    h1 = %s, h2 = %s, h3 = %s \n    p1 = %s, p2 = %s, p3 = %s \n    w = %s, volume = %s" % (self.h[:,0], self.h[:,1], self.h[:,2], self.p[:,0], self.p[:,1], self.p[:,2], self.w, self.volume())
       
    def volume(self):
+      """Calculates the volume of the unit cell, assuming an upper-triangular
+         unit vector matrix"""
       #return numpy.inner(self.h[0:3,0], numpy.cross(self.h[0:3,1], self.h[0:3,2])) # general matrix
       return self.__h[0,0]*self.__h[1,1]*self.__h[2,2]   # upper-triangular matrix
 
    def kinetic(self):
+      """Calculates the kinetic energy of the cell from the cell parameters"""
+
       ke = 0.0
       for i in range(3):
          for j in range(3):
@@ -69,6 +73,9 @@ class Cell(object):
       return ke
       
    def apply_pbc(self, atom):
+      """Uses the minimum image convention to return a particle to the
+         unit cell"""
+
       s=numpy.dot(self.ih,atom.q)
       for i in range(3):
          s[i] = s[i] - math.floor(s[i])
@@ -76,6 +83,11 @@ class Cell(object):
       return atom
 
    def minimum_distance(self, atom1, atom2):
+      """Takes two atoms and tries to find the smallest distance between two 
+         images. This is only rigorously accurate in the case of a cubic cell,
+         but gives the correct results as long as the cut-off radius is defined
+         as smaller than the smallest width between parallel faces."""
+
       s1 = numpy.dot(self.ih, atom1.q)
       s2 = numpy.dot(self.ih, atom2.q)
       s = numpy.empty(3)
@@ -97,8 +109,9 @@ def h2abc(h):
 
 def abc2h(a, b, c, alpha, beta, gamma):
    """
-   Returns a cell matrix given a description in terms of the vector lengths and the angles in between
-   """
+   Returns a cell matrix given a description in terms of the vector lengths and
+   the angles in between"""
+
    h = numpy.zeros((3,3) ,float)
    h[0,0] = a
    h[0,1] = b * math.cos(gamma)

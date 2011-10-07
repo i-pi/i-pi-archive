@@ -3,8 +3,11 @@ import math
 import cell 
 
 def print_pdb(atoms, ncell):
+   """Takes the system and gives pdb formatted output for the unit cell and the
+      atomic positions """
+
    a, b, c, alpha, beta, gamma = cell.h2abc(ncell.h)
-   alpha *= 180.0/math.pi
+   alpha *= 180.0/math.pi #radian to degree conversion
    beta  *= 180.0/math.pi
    gamma *= 180.0/math.pi
    
@@ -13,9 +16,13 @@ def print_pdb(atoms, ncell):
    for i in range(0,len(atoms)): 
       print "ATOM  %5i %4s%1s%3s %1s%4i%1s   %8.3f%8.3f%8.3f%6.2f%6.2f          %2s%2i" % (i+1, atoms[i].name,' ','  1',' ',1,' ',atoms[i].q[0],atoms[i].q[1],atoms[i].q[2],0.0,0.0,'  ',0)
 
-def read_pdb(filedesc):
 
-#We need a way of using these values to initialise the system
+
+
+
+def read_pdb(filedesc):
+   """Takes a pdb-style file and creates a system with the appropriate unit
+      cell and atom positions"""
 
    header = filedesc.readline()
    a = float(header[6:15]);      b = float(header[15:24]);    c = float(header[24:33]);
