@@ -72,6 +72,11 @@ myih=syst.cell.ih
 
 print syst.cell.h
 
+print syst.atoms[0]
+print syst.atoms[1]
+print syst.cell.minimum_distance(syst.atoms[0], syst.atoms[1])
+
+
 print  "before", syst.atoms[0]
 print syst.cell
 syst.atoms[0] = syst.cell.apply_pbc(syst.atoms[0])

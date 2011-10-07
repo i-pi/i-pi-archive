@@ -54,7 +54,7 @@ class Cell(object):
       self.w = 1.0
 
    def __str__(self):
-      return "    q = %s %s %s \n    p = %s %s %s \n    w = %s, volume = %s" % (self.h[:,0], self.h[:,1], self.h[:,2], self.p[:,0], self.p[:,1], self.p[:,2], self.w, self.volume())
+      return "    h1 = %s, h2 = %s, h3 = %s \n    p1 = %s, p2 = %s, p3 = %s \n    w = %s, volume = %s" % (self.h[:,0], self.h[:,1], self.h[:,2], self.p[:,0], self.p[:,1], self.p[:,2], self.w, self.volume())
       
    def volume(self):
       #return numpy.inner(self.h[0:3,0], numpy.cross(self.h[0:3,1], self.h[0:3,2])) # general matrix
@@ -70,10 +70,19 @@ class Cell(object):
       
    def apply_pbc(self, atom):
       s=numpy.dot(self.ih,atom.q)
-      for i in range(0,3):
+      for i in range(3):
          s[i] = s[i] - math.floor(s[i])
       atom = numpy.dot(self.h,s)
       return atom
+
+   def minimum_distance(self, atom1, atom2):
+      s1 = numpy.dot(self.ih, atom1.q)
+      s2 = numpy.dot(self.ih, atom2.q)
+      s = numpy.empty(3)
+      for i in range(3):
+         s[i] = s1[i] - s2[i] - round(s1[i] - s2[i])
+      r = numpy.dot(self.h, s)
+      return r
       
 def h2abc(h):
    """
