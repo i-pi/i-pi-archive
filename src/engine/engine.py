@@ -16,7 +16,7 @@ class System:
 #The initialisation step now takes a pdc-formatted file for the unit cell and atom positions
 #step will eventually call the forces from the external program and then do the propagation step. At the moment we simply take free particle trajectories, to test the theory.
     
-   def __init__(self, filedesc, temp = 5.0, dt = 0.1):
+   def __init__(self, filedesc, temp = 1.0, dt = 0.1):
       atoms, cell, natoms = read_pdb(filedesc)
       self.natoms = natoms
       self.dt = dt

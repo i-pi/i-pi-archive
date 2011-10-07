@@ -1,8 +1,7 @@
 from numpy import *
 from engine import *
 import sys
-
-
+from engine import test_Thermo
 
 print "hello world"
 
@@ -76,6 +75,10 @@ print "after", syst.atoms[0]
 
 lang=langevin.Thermo_Langevin()
 lang.dt=4
+
+test = test_Thermo.Thermo_test()
+test.dt = 4
+
 print "goodbye world"
 #print sys.atoms[3].pos.x, sys2.atoms[3].pos.x
 

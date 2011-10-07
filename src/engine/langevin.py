@@ -6,18 +6,24 @@ class Thermo_Langevin(thermostat.Thermostat):
    
    def compute_TS(self):
       print "Re-computing propagator"
-      self.T=math.exp(-self._dt/self._tau)
-      self.S=math.sqrt(self._temp*(1-self._T**2))
-         
-   @thermostat.Thermostat.dt.setter
+      self.__T=math.exp(-self.__dt/self.__tau)
+      self.__S=math.sqrt(self.__temp*(1-self.__T**2))
+    
+   @property
+   def dt(self):
+      return self.__dt
+     
+   @dt.setter
    def dt(self,new):
-      self._dt = new
+      print "Thermo_Langevin setter called"
+      self.__dt = new
       self.compute_TS()
    
    def __init__(self):
       thermostat.Thermostat.__init__(self)
-      print self._temp
-      self._tau=1.0
-      self._T=1.0
-      self._S=1.0
+      self.__temp=self.temp
+      self.__tau=1.0
+      self.__T=1.0
+      self.__S=1.0
+      self.__dt = self.dt_Base
 
