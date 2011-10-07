@@ -6,6 +6,7 @@ class Thermo_test(thermostat.Thermostat):
    
    @property
    def dt(self):
+      print "Thermo_test getter called"
       return self.dt_Base
      
    @dt.setter
@@ -15,9 +16,7 @@ class Thermo_test(thermostat.Thermostat):
    
    def __init__(self):
       thermostat.Thermostat.__init__(self)
-      self.__temp=self.temp
       self.__tau=1.0
       self.__T=1.0
       self.__S=1.0
-      self.__dt = self.dt_Base
 

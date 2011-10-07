@@ -11,6 +11,7 @@ class Thermo_Langevin(thermostat.Thermostat):
     
    @property
    def dt(self):
+      print "langevin getter called"
       return self.__dt
      
    @dt.setter

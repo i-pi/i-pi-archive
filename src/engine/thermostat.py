@@ -8,6 +8,7 @@ class Thermostat(object):
 
    @property
    def dt_Base(self):
+      print "base getter called"
       return self.__dt
 
    @dt_Base.setter
