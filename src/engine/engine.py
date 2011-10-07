@@ -1,5 +1,6 @@
 import numpy
 import math
+import random
 from io_system import *
 from atoms import *
 from cell import *
@@ -20,15 +21,26 @@ class System:
       self.natoms = natoms
       self.dt = dt
       self.temp = temp
+      self.k_Boltz = 1.0
+
       self.__qp=numpy.zeros((3*natoms,2),float) 
       for i in range(natoms):
          self.__qp[3*i:3*(i+1),0]=atoms[i][1]
       self.q=self.__qp[:,0]
-      self.__qp[:,1]=numpy.arange(0,3*natoms)*0.01
-      self.p=self.__qp[:,1]
+
       self.atoms = [ Atom(self.__qp[3*i:3*(i+1),:], name = atoms[i][0]) for i in range(natoms) ] #Creates a list of atoms from the __qp array
       self.cell = Cell(cell)
       self.P_ext = numpy.zeros(3,float)
+
+      random.seed(12)
+      #self.__qp[:,1]=numpy.arange(0,3*natoms)*0.01
+      for i in range(natoms):
+         sigma = math.sqrt(self.atoms[i].mass * self.k_Boltz * self.temp)
+         self.__qp[3*i,1] = random.gauss(0.0, sigma)
+         self.__qp[3*i+1,1] = random.gauss(0.0, sigma)
+         self.__qp[3*i+2,1] = random.gauss(0.0, sigma)
+      self.p=self.__qp[:,1]
+
 
    def __str__(self):
       rstr="ATOMS ("+str(self.natoms)+"):\n"

@@ -54,7 +54,7 @@ class Cell(object):
       self.w = 1.0
 
    def __str__(self):
-      return "    Unit vectors: %s %s %s \n    Momenta: %s %s %s \n    w = %s, volume = %s" % (self.h[:,0], self.h[:,1], self.h[:,2], self.p[:,0], self.p[:,1], self.p[:,2], self.w, self.volume())
+      return "    q = %s %s %s \n    p = %s %s %s \n    w = %s, volume = %s" % (self.h[:,0], self.h[:,1], self.h[:,2], self.p[:,0], self.p[:,1], self.p[:,2], self.w, self.volume())
       
    def volume(self):
       #return numpy.inner(self.h[0:3,0], numpy.cross(self.h[0:3,1], self.h[0:3,2])) # general matrix
