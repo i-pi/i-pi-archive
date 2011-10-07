@@ -71,10 +71,9 @@ class Cell(object):
    def apply_pbc(self, atom):
       s=numpy.dot(self.ih,atom.q)
       for i in range(0,3):
-         s[i] = s[i] - round(s[i])
-      print s
+         s[i] = s[i] - math.floor(s[i])
       atom = numpy.dot(self.h,s)
-      print atom
+      return atom
       
 def h2abc(h):
    """

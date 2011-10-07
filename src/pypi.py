@@ -63,6 +63,9 @@ myih=syst.cell.ih
 
 print "Trying to call the setter"
 hh = 2*identity(3, float)
+hh[0,1] = -0.2
+hh[0,2] = 0.7
+hh[1,2] = 1.5
 syst.cell.h = hh
 print "Setter called?"
 myih=syst.cell.ih
@@ -70,7 +73,8 @@ myih=syst.cell.ih
 print syst.cell.h
 
 print  "before", syst.atoms[0]
-syst.cell.apply_pbc(syst.atoms[0])
+print syst.cell
+syst.atoms[0] = syst.cell.apply_pbc(syst.atoms[0])
 print "after", syst.atoms[0]
 
 lang=langevin.Thermo_Langevin()
