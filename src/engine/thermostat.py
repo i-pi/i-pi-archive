@@ -7,12 +7,12 @@ class Thermostat(object):
       return self.__temp
 
    @property
-   def dt_Base(self):
+   def dt(self):
       print "base getter called"
       return self.__dt
 
-   @dt_Base.setter
-   def dt_Base(self,new):
+   @dt.setter
+   def dt(self,new):
       print "Thermo dt setter called"
       self.__dt = new
      
