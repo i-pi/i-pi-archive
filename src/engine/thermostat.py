@@ -4,7 +4,13 @@ import math
 class Thermostat(object): 
    @property
    def temp(self):
+      print "base temp getter called"
       return self.__temp
+
+   @temp.setter
+   def temp(self, new):
+      print "base temp setter called"
+      self.__temp = new
 
    @property
    def dt(self):

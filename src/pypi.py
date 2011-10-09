@@ -90,9 +90,13 @@ lang=langevin.Thermo_Langevin()
 lang.dt=4
 print lang.dt
 
+print lang.temp
+
 test = test_Thermo.Thermo_test()
 test.dt = 4
 print test.dt
+
+print test.temp
 
 print "goodbye world"
 #print sys.atoms[3].pos.x, sys2.atoms[3].pos.x
