@@ -29,8 +29,9 @@ class System:
       self.q=self.__qp[:,0]
 
       self.atoms = [ Atom(self.__qp[3*i:3*(i+1),:], name = atoms[i][0]) for i in range(natoms) ] #Creates a list of atoms from the __qp array
-      self.cell = Cell(cell)
-      self.P_ext = numpy.zeros(3,float)
+
+      self.__P_ext = numpy.zeros((3,3),float)
+      self.cell = Cell(cell, self.__P_ext)
 
       random.seed(12)
       #self.__qp[:,1]=numpy.arange(0,3*natoms)*0.01
@@ -49,6 +50,16 @@ class System:
       rstr = rstr + "Cell:\n" + str(self.cell)
       return rstr
        
+   def pot(self):
+      """Calculates the total potential energy of the system, including
+         cell strain"""
+
+      pe = 0.0
+      for i in range(self.natoms):
+         pe += self.atoms[i].pot()
+      pe += self.cell.pot()
+      return pe
+
    def kinetic(self):
       """Calculates the total kinetic energy of the system, including cell 
          kinetic energy"""

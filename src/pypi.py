@@ -66,13 +66,18 @@ myih=syst.cell.ih
 myih=syst.cell.ih
 
 print "Trying to call the setter"
+print syst.cell.pot()
+print syst.cell.pot()
+
 hh = 2*identity(3, float)
 hh[0,1] = -0.2
 hh[0,2] = 0.7
 hh[1,2] = 1.5
 syst.cell.h = hh
+print syst.cell.pot()
 print "Setter called?"
 myih=syst.cell.ih
+
 
 print syst.cell.h
 

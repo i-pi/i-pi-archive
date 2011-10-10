@@ -11,6 +11,18 @@ def compute_ih(h) :
    ih[0,2] = -ih[1,2]*h[0,1]*ih[1,1]-ih[0,0]*h[0,2]*ih[2,2]
    return ih
 
+def compute_strain(h, ih_0):
+   """Computes the strain tensor from the unit cell and reference cell"""
+   root = numpy.dot(h, ih_0)
+   eps = numpy.dot(numpy.transpose(root), root) - numpy.identity(3, float)
+   eps /= 2
+   return eps   
+
+def volume(h):
+   """Calculates the volume of the unit cell, assuming an upper-triangular
+      unit vector matrix"""
+   #return numpy.inner(self.h[0:3,0], numpy.cross(self.h[0:3,1], self.h[0:3,2])) # general matrix
+   return h[0,0]*h[1,1]*h[2,2]   # upper-triangular matrix
 
 class Cell(object):
    """Represents the simulation cell in a periodic system"""
@@ -29,6 +41,7 @@ class Cell(object):
       self.__h = newh
       self.__ih = numpy.zeros((3,3),float)
       self.__taint_ih = True
+      self.__taint_eps = True
 
    @property
    def p(self): 
@@ -44,23 +57,35 @@ class Cell(object):
          self.__ih=compute_ih(self.__h)
          self.__taint_ih = False
       return self.__ih
+
+   @property
+   def strain(self):
+      if (self.__taint_eps):
+         print "New eps formed"
+         self.__eps = compute_strain(self.__h, self.__ih_0)
+         self.__taint_eps = False
+      return self.__eps
+      
    
-   def __init__(self, cell = [ 1, 1, 1, math.pi/2, math.pi/2, math.pi/2] ):
+   def __init__(self, cell = [ 1, 1, 1, math.pi/2, math.pi/2, math.pi/2], P_ext = numpy.zeros(3, float) ):
       
       a, b, c, alpha, beta, gamma = cell[0], cell[1], cell[2], cell[3], cell[4], cell[5]
       self.__h = abc2h(a, b, c, alpha, beta, gamma)
       self.__p = numpy.zeros((3,3) ,float)
       self.__taint_ih = True
       self.w = 1.0
+      self.__P_ext = P_ext
+      self.__h_0 = numpy.identity(3, float) #needs to be the unstrained cell
+      self.__ih_0 = compute_ih(self.__h_0)
+      self.__V_0 = volume(self.__h_0)
 
    def __str__(self):
-      return "    h1 = %s, h2 = %s, h3 = %s \n    p1 = %s, p2 = %s, p3 = %s \n    w = %s, volume = %s" % (self.h[:,0], self.h[:,1], self.h[:,2], self.p[:,0], self.p[:,1], self.p[:,2], self.w, self.volume())
+      return "    h1 = %s, h2 = %s, h3 = %s \n    p1 = %s, p2 = %s, p3 = %s \n    w = %s, volume = %s" % (self.h[:,0], self.h[:,1], self.h[:,2], self.p[:,0], self.p[:,1], self.p[:,2], self.w, volume(self.__h))
       
-   def volume(self):
-      """Calculates the volume of the unit cell, assuming an upper-triangular
-         unit vector matrix"""
-      #return numpy.inner(self.h[0:3,0], numpy.cross(self.h[0:3,1], self.h[0:3,2])) # general matrix
-      return self.__h[0,0]*self.__h[1,1]*self.__h[2,2]   # upper-triangular matrix
+   def pot(self):
+      """Calculates the elastic strain energy of the cell"""
+      pe = self.__V_0*numpy.trace(numpy.dot(self.__P_ext, self.strain))
+      return pe
 
    def kinetic(self):
       """Calculates the kinetic energy of the cell from the cell parameters"""
