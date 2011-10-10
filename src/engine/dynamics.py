@@ -3,10 +3,11 @@ import engine, io_system
 
 class NST_ens:
 
-   def __init__(self, filedesc, thermo, temp = 1.0):
-      self.dt = thermo.dt*2.0
+   def __init__(self, filedesc, thermo, temp = 1.0, dt = 0.1):
+      self.dt = dt
       self.syst = engine.System(filedesc, temp)
-      self.thermo = thermo
+      self.thermo = thermo(temp, dt/2.0)
+      #self.thermo = thermo
 
    def thermo_step(self):
       for i in range(self.syst.natoms):

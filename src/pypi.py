@@ -15,10 +15,10 @@ syst=engine.System(f)
 print syst
 
 #syst.step(1.0)
-print syst
-syst.apply_pbc()
-print syst
-io_system.print_pdb(syst.atoms, syst.cell)
+#print syst
+#syst.apply_pbc()
+#print syst
+#io_system.print_pdb(syst.atoms, syst.cell)
 
 print syst.kinetic()
 
@@ -111,7 +111,8 @@ print
 f.close()
 f = open("./testfile.txt", "r")
 
-thermo = langevin.Thermo_Langevin(dt = 0.1)
+#thermo = langevin.Thermo_Langevin(dt = 0.1)
+thermo = langevin.Thermo_Langevin
 syst2 = dynamics.NST_ens(f, thermo)
 
 print syst2.syst
