@@ -70,9 +70,9 @@ class Cell(object):
    def __init__(self, cell = [ 1, 1, 1, math.pi/2, math.pi/2, math.pi/2], P_ext = numpy.zeros(3, float) ):
       
       a, b, c, alpha, beta, gamma = cell[0], cell[1], cell[2], cell[3], cell[4], cell[5]
-      self.__h = abc2h(a, b, c, alpha, beta, gamma)
-      self.__p = numpy.zeros((3,3) ,float)
-      self.__taint_ih = True
+      self.h = abc2h(a, b, c, alpha, beta, gamma)
+      self.p = numpy.zeros((3,3) ,float)
+      #self.__taint_ih = True
       self.w = 1.0
       self.__P_ext = P_ext
       self.__h_0 = numpy.identity(3, float) #needs to be the unstrained cell
@@ -84,6 +84,7 @@ class Cell(object):
       
    def pot(self):
       """Calculates the elastic strain energy of the cell"""
+
       pe = self.__V_0*numpy.trace(numpy.dot(self.__P_ext, self.strain))
       return pe
 

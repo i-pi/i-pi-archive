@@ -48,6 +48,7 @@ class System:
       for i in range(0,self.natoms): 
          rstr=rstr+str(self.atoms[i])+"\n"
       rstr = rstr + "Cell:\n" + str(self.cell)
+      rstr = rstr + "\nTotal energy = " + str(self.tot_E()) + ", potential energy = " + str(self.pot()) + ", kinetic energy = " + str(self.kinetic())
       return rstr
        
    def pot(self):
@@ -69,6 +70,11 @@ class System:
          ke += self.atoms[i].kinetic()
       ke += self.cell.kinetic()
       return ke
+
+   def tot_E(self):
+      """Calculates the total energy of the system"""
+
+      return self.kinetic() + self.pot()
 
    def step(self,dt):
       """Takes the atom positions, velocities and forces and integrates the 
