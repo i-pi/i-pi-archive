@@ -16,10 +16,9 @@ class System:
 #The initialisation step now takes a pdc-formatted file for the unit cell and atom positions
 #step will eventually call the forces from the external program and then do the propagation step. At the moment we simply take free particle trajectories, to test the theory.
     
-   def __init__(self, filedesc, temp = 1.0, dt = 0.1):
+   def __init__(self, filedesc, temp = 1.0):
       atoms, cell, natoms = read_pdb(filedesc)
       self.natoms = natoms
-      self.dt = dt
       self.temp = temp
       self.k_Boltz = 1.0
 
@@ -41,7 +40,6 @@ class System:
          self.__qp[3*i+1,1] = random.gauss(0.0, sigma)
          self.__qp[3*i+2,1] = random.gauss(0.0, sigma)
       self.p=self.__qp[:,1]
-
 
    def __str__(self):
       rstr="ATOMS ("+str(self.natoms)+"):\n"
@@ -76,14 +74,14 @@ class System:
 
       return self.kinetic() + self.pot()
 
-   def step(self,dt):
-      """Takes the atom positions, velocities and forces and integrates the 
-         equations of motion forward by a step dt"""
-      self.q+=self.p*dt
+#   def step(self,dt):
+#      """Takes the atom positions, velocities and forces and integrates the 
+#         equations of motion forward by a step dt"""
+#      self.q+=self.p*dt
 
-   def apply_pbc(self):
-      """Takes the system and applies periodic boundary conditions to fold the
-         particle positions back into the unit cell"""
-
-      for i in range(self.natoms):
-         self.atoms[i].q = self.cell.apply_pbc(self.atoms[i])
+#   def apply_pbc(self):
+#      """Takes the system and applies periodic boundary conditions to fold the
+#         particle positions back into the unit cell"""
+#
+#      for i in range(self.natoms):
+#         self.atoms[i].q = self.cell.apply_pbc(self.atoms[i])

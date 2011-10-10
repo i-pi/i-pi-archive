@@ -1,6 +1,7 @@
 import numpy
 import math
 import thermostat
+import random
 
 class Thermo_Langevin(thermostat.Thermostat):     
    
@@ -27,8 +28,6 @@ class Thermo_Langevin(thermostat.Thermostat):
    
    def __init__(self, temp = 1.0, dt = 1.0):
       self.__tau=1.0
-      self.__T=1.0
-      self.__S=1.0
       self.k_Boltz = 1.0
       self.__temp = temp
       self.dt = dt

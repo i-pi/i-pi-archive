@@ -3,6 +3,7 @@ from engine import *
 import sys
 from engine import test_Thermo
 from engine import io_system
+from engine import dynamics
 
 print "hello world"
 
@@ -13,7 +14,7 @@ f = open("./testfile.txt","r")
 syst=engine.System(f)
 print syst
 
-syst.step(1.0)
+#syst.step(1.0)
 print syst
 syst.apply_pbc()
 print syst
@@ -105,6 +106,19 @@ test.dt = 4
 print test.dt
 
 print test.temp
+print
+
+f.close()
+f = open("./testfile.txt", "r")
+
+thermo = langevin.Thermo_Langevin(dt = 0.1)
+syst2 = dynamics.NST_ens(f, thermo)
+
+print syst2.syst
+print syst2.thermo.dt
+print syst2.thermo.temp
+
+syst2.simulation()
 
 print "goodbye world"
 #print sys.atoms[3].pos.x, sys2.atoms[3].pos.x
