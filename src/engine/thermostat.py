@@ -18,5 +18,5 @@ class Thermostat(object):
       self.__dt = new
      
    def __init__(self, temp = 1.0, dt = 1.0):
-      self.temp=temp
+      self.__temp=temp
       self.dt=dt

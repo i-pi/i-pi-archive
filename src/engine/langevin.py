@@ -26,8 +26,15 @@ class Thermo_Langevin(thermostat.Thermostat):
       self.compute_TS()
    
    def __init__(self, temp = 1.0, dt = 1.0):
-      self.dt = dt
       self.__tau=1.0
       self.__T=1.0
       self.__S=1.0
-      self.temp = temp
+      self.k_Boltz = 1.0
+      self.__temp = temp
+      self.dt = dt
+
+   def step(self, atom):
+      sigma = 1.0/(4*math.pi*self.__tau*self.k_Boltz*self.temp*atom.mass)
+      for i in range(3):
+         atom.p[i] = self.__T*atom.p[i] + self.__S*random.gauss(0.0, sigma)
+
