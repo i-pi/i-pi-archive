@@ -1,5 +1,4 @@
-import numpy
-import math
+import numpy, math
 
 class Thermostat(object): 
    @property

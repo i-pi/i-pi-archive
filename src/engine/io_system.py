@@ -1,5 +1,4 @@
-import numpy
-import math
+import numpy, math
 import cell 
 
 def print_pdb(atoms, ncell):

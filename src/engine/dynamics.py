@@ -1,13 +1,21 @@
 import numpy, math
 import engine, io_system
 
-class NST_ens:
+class NST_ens(object):
 
-   def __init__(self, filedesc, thermo, temp = 1.0, dt = 0.1):
-      self.dt = dt
-      self.syst = engine.System.from_pdbfile(filedesc, temp)
-      self.thermo = thermo(temp, dt/2.0)
-      #self.thermo = thermo
+   @classmethod
+   def from_pdbfile(cls, filedesc, thermo, temp = 1.0, dt = 0.1):
+      cls.dt = dt
+      cls.syst = engine.System.from_pdbfile(filedesc, temp)
+      cls.thermo = thermo(temp, dt/2.0)
+      return cls()
+
+   @classmethod
+   def from_system(cls, system, thermo, temp = 1.0, dt = 0.1):
+      cls.dt = dt
+      cls.syst = engine.System.from_system(system)
+      cls.thermo = thermo(temp, dt/2.0)
+      return cls()
 
    def thermo_step(self):
       for i in range(self.syst.natoms):

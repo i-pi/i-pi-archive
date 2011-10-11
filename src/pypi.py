@@ -113,7 +113,7 @@ f = open("./testfile.txt", "r")
 
 #thermo = langevin.Thermo_Langevin(dt = 0.1)
 thermo = langevin.Thermo_Langevin
-syst2 = dynamics.NST_ens(f, thermo)
+syst2 = dynamics.NST_ens.from_pdbfile(f, thermo)
 
 print syst2.syst
 print syst2.thermo.dt

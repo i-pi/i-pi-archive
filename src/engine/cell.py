@@ -1,5 +1,4 @@
-import numpy
-import math
+import numpy, math
 
 def compute_ih(h) :
    """Inverts a (upper-triangular) cell matrix"""

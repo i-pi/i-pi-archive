@@ -1,5 +1,4 @@
-import numpy
-import math 
+import numpy, math
 
 class Atom:
    """Represent an atom, with position, velocity, mass and related properties"""

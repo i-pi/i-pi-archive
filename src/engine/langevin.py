@@ -1,7 +1,5 @@
-import numpy
-import math
+import numpy, math, random
 import thermostat
-import random
 
 class Thermo_Langevin(thermostat.Thermostat):     
    
