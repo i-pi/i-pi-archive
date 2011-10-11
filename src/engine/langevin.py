@@ -15,6 +15,12 @@ class Thermo_Langevin(thermostat.Thermostat):
       print "langevin temp getter called"
       return self.__temp
 
+   @temp.setter
+   def temp(self, new):
+      print "langevin temp setter called"
+      self.__temp=new
+      self.compute_TS()
+   
    @property
    def dt(self):
       print "langevin getter called"
