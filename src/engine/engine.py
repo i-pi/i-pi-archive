@@ -23,12 +23,14 @@ class System(object):
       cls.temp = temp
       cls.k_Boltz = 1.0
 
-      cls.__qp=numpy.zeros((3*natoms,2),float) 
+      cls.__qpf=numpy.zeros((3*natoms,3),float) 
       for i in range(natoms):
-         cls.__qp[3*i:3*(i+1),0]=atoms[i][1]
-      cls.q=cls.__qp[:,0]
+         cls.__qpf[3*i:3*(i+1),0]=atoms[i][1]
 
-      cls.atoms = [ Atom(cls.__qp[3*i:3*(i+1),:], name = atoms[i][0]) for i in range(natoms) ] #Creates a list of atoms from the __qp array
+      cls.q=cls.__qpf[:,0]
+      cls.f = cls.__qpf[:,2]
+
+      cls.atoms = [ Atom(cls.__qpf[3*i:3*(i+1),:], name = atoms[i][0]) for i in range(natoms) ] #Creates a list of atoms from the __qp array
 
       cls.P_ext = numpy.zeros((3,3),float)
       cls.cell = Cell(cell, cls.P_ext)
@@ -37,10 +39,10 @@ class System(object):
       #cls.__qp[:,1]=numpy.arange(0,3*natoms)*0.01
       for i in range(natoms):
          sigma = math.sqrt(cls.atoms[i].mass * cls.k_Boltz * cls.temp)
-         cls.__qp[3*i,1] = random.gauss(0.0, sigma)
-         cls.__qp[3*i+1,1] = random.gauss(0.0, sigma)
-         cls.__qp[3*i+2,1] = random.gauss(0.0, sigma)
-      cls.p=cls.__qp[:,1]
+         cls.__qpf[3*i,1] = random.gauss(0.0, sigma)
+         cls.__qpf[3*i+1,1] = random.gauss(0.0, sigma)
+         cls.__qpf[3*i+2,1] = random.gauss(0.0, sigma)
+      cls.p=cls.__qpf[:,1]
       return cls()
 
    @classmethod
@@ -51,9 +53,11 @@ class System(object):
 
       cls.q = syst.q
       cls.p = syst.p
-      cls.__qp = numpy.zeros((3*cls.natoms,2),float) 
-      cls.__qp[:,0]=cls.q
-      cls.__qp[:,1]=cls.p
+      cls.f = syst.f
+      cls.__qpf = numpy.zeros((3*cls.natoms,3),float) 
+      cls.__qpf[:,0]=cls.q
+      cls.__qpf[:,1]=cls.p
+      cls.__qpf[:,2]=cls.f
 
       cls.atoms = syst.atoms
 

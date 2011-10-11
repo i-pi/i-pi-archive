@@ -17,6 +17,15 @@ def compute_strain(h, ih_0):
    eps /= 2
    return eps   
 
+def compute_PI_ext(P_ext, h, ih_0):
+   root = numpy.dot(h, ih_0)
+   PI = numpy.dot(root, P_ext)
+   PI = numpy.dot(PI, numpy.transpose(root))
+   PI *= self.__V_0/self.V
+#   return (numpy.dot(root, numpy.dot(P_ext, numpy.transpose(root))))*self.__V_0/self.V
+   return PI
+
+
 def volume(h):
    """Calculates the volume of the unit cell, assuming an upper-triangular
       unit vector matrix"""
@@ -41,6 +50,8 @@ class Cell(object):
       self.__ih = numpy.zeros((3,3),float)
       self.__taint_ih = True
       self.__taint_eps = True
+      self.__taint_PI = True
+      self.__taint_V = True
 
    @property
    def p(self): 
@@ -51,9 +62,16 @@ class Cell(object):
       self.__p=newp
 
    @property
+   def V(self):
+      if (self.__taint_V):
+         self.__V = volume(self.h)
+         self.__taint_V = False
+      return self.__V
+
+   @property
    def ih(self):       
       if (self.__taint_ih) :
-         self.__ih=compute_ih(self.__h)
+         self.__ih=compute_ih(self.h)
          self.__taint_ih = False
       return self.__ih
 
@@ -61,18 +79,35 @@ class Cell(object):
    def strain(self):
       if (self.__taint_eps):
 #         print "New eps formed"
-         self.__eps = compute_strain(self.__h, self.__ih_0)
+         self.__eps = compute_strain(self.h, self.__ih_0)
          self.__taint_eps = False
       return self.__eps
-      
-   
+
+   @property
+   def P_ext(self):
+      return self.__P_ext
+
+   @P_ext.setter
+   def P_ext(self, new):
+      self.__P_ext = new
+      self.__taint_PI = True
+
+   @property
+   def PI_ext(self, new):
+      if (self.__taint_PI):
+         self.__PI_ext = compute_PI_ext(self.P_ext, self.h, self.ih_0)
+         self.__taint_PI = False
+      return self.__PI_ext   
+
    def __init__(self, cell = [ 1, 1, 1, math.pi/2, math.pi/2, math.pi/2], P_ext = numpy.zeros(3, float) ):
       
       a, b, c, alpha, beta, gamma = cell[0], cell[1], cell[2], cell[3], cell[4], cell[5]
       self.h = abc2h(a, b, c, alpha, beta, gamma)
-      self.p = numpy.zeros((3,3) ,float)
+      self.p = numpy.zeros((3,3), float)
+      self.f = numpy.zeros((3,3), float)
       self.w = 1.0
-      self.__P_ext = P_ext
+      self.P_ext = P_ext
+      self.__V = volume(self.h)
       self.__h_0 = numpy.identity(3, float) #needs to be the unstrained cell
       self.__ih_0 = compute_ih(self.__h_0)
       self.__V_0 = volume(self.__h_0)
@@ -119,6 +154,9 @@ class Cell(object):
          s[i] = s1[i] - s2[i] - round(s1[i] - s2[i])
       r = numpy.dot(self.h, s)
       return r
+
+   def cut_off(self, cut):
+      pass
       
 def h2abc(h):
    """

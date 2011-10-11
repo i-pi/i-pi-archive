@@ -6,14 +6,15 @@ class Atom:
 #qpslice holds position and momentum data. 
 #qslice holds a reference to the position data, pslice to the momentum data.
 
-   def __init__(self, qpslice, name="X", mass=1.0):
-      self.q = qpslice[:,0]
-      self.p = qpslice[:,1]
+   def __init__(self, qpfslice, name="X", mass=1.0):
+      self.q = qpfslice[:,0]
+      self.p = qpfslice[:,1]
+      self.f = qpfslice[:,2]
       self.mass = mass
       self.name = name
 
    def __str__(self):
-      return "    Name = %s, q = %s, p = %s " % (self.name, self.q, self.p)
+      return "    Name = %s, q = %s, p = %s, f = %s " % (self.name, self.q, self.p, self.f)
 
    def pot(self):
       pot = 0.0
