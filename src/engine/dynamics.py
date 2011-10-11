@@ -11,10 +11,10 @@ class NST_ens(object):
       return cls()
 
    @classmethod
-   def from_system(cls, system, thermo, temp = 1.0, dt = 0.1):
+   def from_system(cls, system, thermo, dt = 0.1):
       cls.dt = dt
       cls.syst = engine.System.from_system(system)
-      cls.thermo = thermo(temp, dt/2.0)
+      cls.thermo = thermo(system.temp, dt/2.0)
       return cls()
 
    def thermo_step(self):
@@ -49,7 +49,7 @@ class NST_ens(object):
          self.pos_step()
          self.vel_step()
          self.thermo_step()
-         print self.syst
+      #   print self.syst
       for i in range(self.syst.natoms):
          self.apply_pbc()
       print self.syst

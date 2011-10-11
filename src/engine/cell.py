@@ -60,7 +60,7 @@ class Cell(object):
    @property
    def strain(self):
       if (self.__taint_eps):
-         print "New eps formed"
+#         print "New eps formed"
          self.__eps = compute_strain(self.__h, self.__ih_0)
          self.__taint_eps = False
       return self.__eps
