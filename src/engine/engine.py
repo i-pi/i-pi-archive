@@ -5,7 +5,7 @@ from io_system import *
 from atoms import *
 from cell import *
 
-class System:
+class System(object):
    """
    Represents a simulation cell. 
    Includes the cell parameters, the atoms and the like. """
@@ -16,30 +16,50 @@ class System:
 #The initialisation step now takes a pdc-formatted file for the unit cell and atom positions
 #step will eventually call the forces from the external program and then do the propagation step. At the moment we simply take free particle trajectories, to test the theory.
     
-   def __init__(self, filedesc, temp = 1.0):
+   @classmethod
+   def from_pdbfile(cls, filedesc, temp = 1.0):
       atoms, cell, natoms = read_pdb(filedesc)
-      self.natoms = natoms
-      self.temp = temp
-      self.k_Boltz = 1.0
+      cls.natoms = natoms
+      cls.temp = temp
+      cls.k_Boltz = 1.0
 
-      self.__qp=numpy.zeros((3*natoms,2),float) 
+      cls.__qp=numpy.zeros((3*natoms,2),float) 
       for i in range(natoms):
-         self.__qp[3*i:3*(i+1),0]=atoms[i][1]
-      self.q=self.__qp[:,0]
+         cls.__qp[3*i:3*(i+1),0]=atoms[i][1]
+      cls.q=cls.__qp[:,0]
 
-      self.atoms = [ Atom(self.__qp[3*i:3*(i+1),:], name = atoms[i][0]) for i in range(natoms) ] #Creates a list of atoms from the __qp array
+      cls.atoms = [ Atom(cls.__qp[3*i:3*(i+1),:], name = atoms[i][0]) for i in range(natoms) ] #Creates a list of atoms from the __qp array
 
-      self.__P_ext = numpy.zeros((3,3),float)
-      self.cell = Cell(cell, self.__P_ext)
+      cls.P_ext = numpy.zeros((3,3),float)
+      cls.cell = Cell(cell, cls.P_ext)
 
       random.seed(12)
-      #self.__qp[:,1]=numpy.arange(0,3*natoms)*0.01
+      #cls.__qp[:,1]=numpy.arange(0,3*natoms)*0.01
       for i in range(natoms):
-         sigma = math.sqrt(self.atoms[i].mass * self.k_Boltz * self.temp)
-         self.__qp[3*i,1] = random.gauss(0.0, sigma)
-         self.__qp[3*i+1,1] = random.gauss(0.0, sigma)
-         self.__qp[3*i+2,1] = random.gauss(0.0, sigma)
-      self.p=self.__qp[:,1]
+         sigma = math.sqrt(cls.atoms[i].mass * cls.k_Boltz * cls.temp)
+         cls.__qp[3*i,1] = random.gauss(0.0, sigma)
+         cls.__qp[3*i+1,1] = random.gauss(0.0, sigma)
+         cls.__qp[3*i+2,1] = random.gauss(0.0, sigma)
+      cls.p=cls.__qp[:,1]
+      return cls()
+
+   @classmethod
+   def from_system(cls, syst):
+      cls.natoms = syst.natoms
+      cls.temp = syst.temp
+      cls.k_Boltz = syst.k_Boltz
+
+      cls.q = syst.q
+      cls.p = syst.p
+      cls.__qp = numpy.zeros((3*cls.natoms,2),float) 
+      cls.__qp[:,0]=cls.q
+      cls.__qp[:,1]=cls.p
+
+      cls.atoms = syst.atoms
+
+      cls.P_ext = syst.P_ext
+      cls.cell = syst.cell
+      return cls()
 
    def __str__(self):
       rstr="ATOMS ("+str(self.natoms)+"):\n"

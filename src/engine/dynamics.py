@@ -5,7 +5,7 @@ class NST_ens:
 
    def __init__(self, filedesc, thermo, temp = 1.0, dt = 0.1):
       self.dt = dt
-      self.syst = engine.System(filedesc, temp)
+      self.syst = engine.System.from_pdbfile(filedesc, temp)
       self.thermo = thermo(temp, dt/2.0)
       #self.thermo = thermo
 

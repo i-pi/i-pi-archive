@@ -11,7 +11,7 @@ nat = 3
 allthing = zeros((nat,6), float)
 
 f = open("./testfile.txt","r")
-syst=engine.System(f)
+syst=engine.System.from_pdbfile(f)
 print syst
 
 #syst.step(1.0)
@@ -120,6 +120,11 @@ print syst2.thermo.dt
 print syst2.thermo.temp
 
 syst2.simulation()
+
+syst3 = engine.System.from_system(syst2.syst)
+print
+print "syst2: ", syst2.syst
+print "syst3: ", syst3
 
 print "goodbye world"
 #print sys.atoms[3].pos.x, sys2.atoms[3].pos.x
