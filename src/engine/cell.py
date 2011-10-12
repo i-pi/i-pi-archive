@@ -178,7 +178,7 @@ class Cell(object):
       return new_pos
 
    def minimum_distance(self, atom1, atom2):
-      """Takes two atoms and tries to find the smallest distance between two 
+      """Takes two atoms and tries to find the smallest vector between two 
          images. This is only rigorously accurate in the case of a cubic cell,
          but gives the correct results as long as the cut-off radius is defined
          as smaller than the smallest width between parallel faces."""
