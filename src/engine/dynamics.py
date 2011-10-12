@@ -47,8 +47,15 @@ class NST_ens(object):
 
       #equivalent to R-step in paper
 
-      self.syst.q+=self.syst.p*self.dt
-      #do something to the cell parameters
+      exp_mat, neg_exp_mat = self.exp_p()
+      sinh_mat = 0.5*(exp_mat - neg_exp_mat)
+      ip_mat = cell.compute_ih(self.syst.cell.p/self.syst.cell.w)
+
+      for i in range(self.syst.natoms):
+         self.syst.atoms[i].q = numpy.dot(exp_mat, self.syst.atoms[i].q) + numpy.dot(ip_mat, numpy.dot(sinh_mat, self.syst.atoms[i].p/self.syst.atoms[i].mass))
+         self.syst.atoms[i].p = numpy.dot(neg_exp_mat, self.syst.atoms[i].p)
+      
+      self.syst.cell.h = numpy.dot(exp_mat, self.syst.cell.h)
 
    def vel_step(self):
       #equivalent to P-step in paper
