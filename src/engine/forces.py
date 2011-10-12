@@ -27,7 +27,7 @@ class LJ:
       for i in range(3):
          fij[i] = f_tot*rij[i]/r
       fji = -fij
-      return fij, fji, r
+      return fij, fji, r, rij
 
    def LJ_pot(self, r):
       if (r > self.rc):
@@ -53,9 +53,9 @@ class LJ:
          for j in range(i+1, natoms):
             atom_j = self.syst.atoms[j]
 
-            fij, fji, r = self.LJ_fij(atom_i, atom_j)
+            fij, fji, r, rij = self.LJ_fij(atom_i, atom_j)
             atom_i.f += fij
             atom_j.f += fji
-            self.syst.pot += self.LJ_pot(rij)
+            self.syst.pot += self.LJ_pot(r)
 
             self.syst.strain += numpy.outer(fij, rij)/V
