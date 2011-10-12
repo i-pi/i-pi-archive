@@ -11,10 +11,10 @@ class NST_ens(object):
       return cls()
 
    @classmethod
-   def from_system(cls, system, thermo, dt = 0.1):
-      cls.dt = dt
-      cls.syst = engine.System.from_system(system)
-      cls.thermo = thermo(system.temp, dt/2.0)
+   def from_ensemble(cls, ens):
+      cls.dt = ens.dt
+      cls.syst = engine.System.from_system(ens.syst)
+      cls.thermo = ens.thermo
       return cls()
 
    def exp_p(self):

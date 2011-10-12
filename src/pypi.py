@@ -121,10 +121,11 @@ print syst2.thermo.temp
 
 syst2.simulation()
 
-syst3 = engine.System.from_system(syst2.syst)
+syst3 = dynamics.NST_ens.from_ensemble(syst2)
+#syst3 = engine.System.from_system(syst2.syst)
 print
 print "syst2: ", syst2.syst
-print "syst3: ", syst3
+print "syst3: ", syst3.syst
 
 print
 print syst2.syst.cell.p*syst2.dt/syst2.syst.cell.w
