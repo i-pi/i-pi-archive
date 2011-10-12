@@ -126,6 +126,11 @@ print
 print "syst2: ", syst2.syst
 print "syst3: ", syst3
 
+print
+print syst2.syst.cell.p*syst2.dt/syst2.syst.cell.w
+print syst2.syst.cell.exp_p(syst2.dt)
+print
+
 print "goodbye world"
 #print sys.atoms[3].pos.x, sys2.atoms[3].pos.x
 

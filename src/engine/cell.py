@@ -20,6 +20,7 @@ def compute_eigp(p):
    eigp[0,2] = -(p[0,1]*p[1,2] - p[0,2]*p[1,1] + p[0,2]*p[2,2])/((p[0,0] - p[2,2])*(p[2,2] - p[1,1]))
    return eigp
 
+
 def compute_strain(h, ih_0):
    """Computes the strain tensor from the unit cell and reference cell"""
    root = numpy.dot(h, ih_0)
@@ -103,12 +104,6 @@ class Cell(object):
          self.__taint_PI = False
       return self.__PI_ext   
 
-   @property
-   def exp_p(self):
-      if (self.__taint_exp):
-         pass
-
-
    def __init__(self, cell = [ 1, 1, 1, math.pi/2, math.pi/2, math.pi/2], P_ext = numpy.zeros(3, float), temp = 1.0 ):
       
       a, b, c, alpha, beta, gamma = cell[0], cell[1], cell[2], cell[3], cell[4], cell[5]
@@ -131,12 +126,31 @@ class Cell(object):
       random.seed(12)
       sigma = math.sqrt(self.w * self.k_Boltz * self.temp)
       for i in range(3):
-         for j in range(3):
+         for j in range(i, 3):
             self.p[i, j] = random.gauss(0.0, sigma)
 
    def __str__(self):
       return "    h1 = %s, h2 = %s, h3 = %s \n    p1 = %s, p2 = %s, p3 = %s \n    w = %s, volume = %s, temp = %s" % (self.h[:,0], self.h[:,1], self.h[:,2], self.p[:,0], self.p[:,1], self.p[:,2], self.w, self.V, self.temp)
       
+   def exp_p(self, dt):
+      dist_mat = self.p*dt/self.w
+      eig = compute_eigp(dist_mat)
+      i_eig = compute_ih(eig)
+   
+      diag_mat = numpy.zeros((3,3), float)
+      neg_diag_mat = numpy.zeros((3,3), float)
+      for i in range(3):
+         diag_mat[i,i] = math.exp(self.p[i,i]*dt/self.w)
+         neg_diag_mat[i,i] = math.exp(-self.p[i,i]*dt/self.w)
+      
+      exp_mat = numpy.dot(eig, diag_mat)
+      exp_mat = numpy.dot(exp_mat, i_eig)
+      
+      neg_exp_mat = numpy.dot(eig, neg_diag_mat)
+      neg_exp_mat = numpy.dot(neg_exp_mat, i_eig)
+
+      return exp_mat, neg_exp_mat
+
    def pot(self):
       """Calculates the elastic strain energy of the cell"""
 
