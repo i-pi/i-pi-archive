@@ -128,7 +128,7 @@ print "syst3: ", syst3
 
 print
 print syst2.syst.cell.p*syst2.dt/syst2.syst.cell.w
-print syst2.syst.cell.exp_p(syst2.dt)
+print syst2.exp_p()
 print
 
 print "goodbye world"

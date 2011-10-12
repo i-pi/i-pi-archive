@@ -132,24 +132,24 @@ class Cell(object):
    def __str__(self):
       return "    h1 = %s, h2 = %s, h3 = %s \n    p1 = %s, p2 = %s, p3 = %s \n    w = %s, volume = %s, temp = %s" % (self.h[:,0], self.h[:,1], self.h[:,2], self.p[:,0], self.p[:,1], self.p[:,2], self.w, self.V, self.temp)
       
-   def exp_p(self, dt):
-      dist_mat = self.p*dt/self.w
-      eig = compute_eigp(dist_mat)
-      i_eig = compute_ih(eig)
-   
-      diag_mat = numpy.zeros((3,3), float)
-      neg_diag_mat = numpy.zeros((3,3), float)
-      for i in range(3):
-         diag_mat[i,i] = math.exp(self.p[i,i]*dt/self.w)
-         neg_diag_mat[i,i] = math.exp(-self.p[i,i]*dt/self.w)
-      
-      exp_mat = numpy.dot(eig, diag_mat)
-      exp_mat = numpy.dot(exp_mat, i_eig)
-      
-      neg_exp_mat = numpy.dot(eig, neg_diag_mat)
-      neg_exp_mat = numpy.dot(neg_exp_mat, i_eig)
-
-      return exp_mat, neg_exp_mat
+#   def exp_p(self, dt):
+#      dist_mat = self.p*dt/self.w
+#      eig = compute_eigp(dist_mat)
+#      i_eig = compute_ih(eig)
+#   
+#      diag_mat = numpy.zeros((3,3), float)
+#      neg_diag_mat = numpy.zeros((3,3), float)
+#      for i in range(3):
+#         diag_mat[i,i] = math.exp(self.p[i,i]*dt/self.w)
+#         neg_diag_mat[i,i] = math.exp(-self.p[i,i]*dt/self.w)
+#      
+#      exp_mat = numpy.dot(eig, diag_mat)
+#      exp_mat = numpy.dot(exp_mat, i_eig)
+#      
+#      neg_exp_mat = numpy.dot(eig, neg_diag_mat)
+#      neg_exp_mat = numpy.dot(neg_exp_mat, i_eig)
+#
+#      return exp_mat, neg_exp_mat
 
    def pot(self):
       """Calculates the elastic strain energy of the cell"""

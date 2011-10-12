@@ -1,5 +1,5 @@
 import numpy, math
-import engine, io_system
+import engine, io_system, cell
 
 class NST_ens(object):
 
@@ -16,6 +16,25 @@ class NST_ens(object):
       cls.syst = engine.System.from_system(system)
       cls.thermo = thermo(system.temp, dt/2.0)
       return cls()
+
+   def exp_p(self):
+      dist_mat = self.syst.cell.p*self.dt/self.syst.cell.w
+      eig = cell.compute_eigp(dist_mat)
+      i_eig = cell.compute_ih(eig)
+   
+      exp_mat = numpy.zeros((3,3), float)
+      neg_exp_mat = numpy.zeros((3,3), float)
+      for i in range(3):
+         exp_mat[i,i] = math.exp(self.syst.cell.p[i,i]*self.dt/self.syst.cell.w)
+         neg_exp_mat[i,i] = math.exp(-self.syst.cell.p[i,i]*self.dt/self.syst.cell.w)
+      
+      exp_mat = numpy.dot(eig, exp_mat)
+      exp_mat = numpy.dot(exp_mat, i_eig)
+      
+      neg_exp_mat = numpy.dot(eig, neg_exp_mat)
+      neg_exp_mat = numpy.dot(neg_exp_mat, i_eig)
+
+      return exp_mat, neg_exp_mat
 
    def thermo_step(self):
       for i in range(self.syst.natoms):
