@@ -1,7 +1,7 @@
-import numpy, math
+import numpy, math, random
 
-def compute_ih(h) :
-   """Inverts a (upper-triangular) cell matrix"""
+def compute_ih(h):
+   """Inverts a 3*3 (upper-triangular) cell matrix"""
    ih = numpy.zeros((3,3), float)
    for i in range(3):
       ih[i,i] = 1.0/h[i,i]
@@ -9,6 +9,16 @@ def compute_ih(h) :
    ih[1,2] = -ih[1,1]*h[1,2]/h[2,2]
    ih[0,2] = -ih[1,2]*h[0,1]*ih[1,1]-ih[0,0]*h[0,2]*ih[2,2]
    return ih
+
+def compute_eigp(p):
+   """Finds the eigenvector matrix of a 3*3 upper-triangular matrix"""
+   eigp = numpy.zeros((3,3), float)
+   for i in range(3):
+      eigp[i,i] = 1
+   eigp[0,1] = -p[0,1]/(p[0,0] - p[1,1])
+   eigp[1,2] = -p[1,2]/(p[1,1] - p[2,2])
+   eigp[0,2] = -(p[0,1]*p[1,2] - p[0,2]*p[1,1] + p[0,2]*p[2,2])/((p[0,0] - p[2,2])*(p[2,2] - p[1,1]))
+   return eigp
 
 def compute_strain(h, ih_0):
    """Computes the strain tensor from the unit cell and reference cell"""
@@ -24,7 +34,6 @@ def compute_PI_ext(P_ext, h, ih_0):
    PI *= self.__V_0/self.V
 #   return (numpy.dot(root, numpy.dot(P_ext, numpy.transpose(root))))*self.__V_0/self.V
    return PI
-
 
 def volume(h):
    """Calculates the volume of the unit cell, assuming an upper-triangular
@@ -47,7 +56,7 @@ class Cell(object):
    @h.setter
    def h(self, newh): 
       self.__h = newh
-      self.__ih = numpy.zeros((3,3),float)
+      #self.__ih = numpy.zeros((3,3),float)
       self.__taint_ih = True
       self.__taint_eps = True
       self.__taint_PI = True
@@ -87,33 +96,46 @@ class Cell(object):
    def P_ext(self):
       return self.__P_ext
 
-   @P_ext.setter
-   def P_ext(self, new):
-      self.__P_ext = new
-      self.__taint_PI = True
-
    @property
    def PI_ext(self, new):
       if (self.__taint_PI):
-         self.__PI_ext = compute_PI_ext(self.P_ext, self.h, self.ih_0)
+         self.__PI_ext = compute_PI_ext(self.P_ext, self.h, self.__ih_0)
          self.__taint_PI = False
       return self.__PI_ext   
 
-   def __init__(self, cell = [ 1, 1, 1, math.pi/2, math.pi/2, math.pi/2], P_ext = numpy.zeros(3, float) ):
+   @property
+   def exp_p(self):
+      if (self.__taint_exp):
+         pass
+
+
+   def __init__(self, cell = [ 1, 1, 1, math.pi/2, math.pi/2, math.pi/2], P_ext = numpy.zeros(3, float), temp = 1.0 ):
       
       a, b, c, alpha, beta, gamma = cell[0], cell[1], cell[2], cell[3], cell[4], cell[5]
       self.h = abc2h(a, b, c, alpha, beta, gamma)
+
+      self.temp = temp
+      self.k_Boltz = 1.0
+
       self.p = numpy.zeros((3,3), float)
       self.f = numpy.zeros((3,3), float)
+
       self.w = 1.0
-      self.P_ext = P_ext
+      self.__P_ext = P_ext
       self.__V = volume(self.h)
+
       self.__h_0 = numpy.identity(3, float) #needs to be the unstrained cell
       self.__ih_0 = compute_ih(self.__h_0)
       self.__V_0 = volume(self.__h_0)
 
+      random.seed(12)
+      sigma = math.sqrt(self.w * self.k_Boltz * self.temp)
+      for i in range(3):
+         for j in range(3):
+            self.p[i, j] = random.gauss(0.0, sigma)
+
    def __str__(self):
-      return "    h1 = %s, h2 = %s, h3 = %s \n    p1 = %s, p2 = %s, p3 = %s \n    w = %s, volume = %s" % (self.h[:,0], self.h[:,1], self.h[:,2], self.p[:,0], self.p[:,1], self.p[:,2], self.w, volume(self.__h))
+      return "    h1 = %s, h2 = %s, h3 = %s \n    p1 = %s, p2 = %s, p3 = %s \n    w = %s, volume = %s, temp = %s" % (self.h[:,0], self.h[:,1], self.h[:,2], self.p[:,0], self.p[:,1], self.p[:,2], self.w, self.V, self.temp)
       
    def pot(self):
       """Calculates the elastic strain energy of the cell"""

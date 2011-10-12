@@ -33,7 +33,7 @@ class System(object):
       cls.atoms = [ Atom(cls.__qpf[3*i:3*(i+1),:], name = atoms[i][0]) for i in range(natoms) ] #Creates a list of atoms from the __qp array
 
       cls.P_ext = numpy.zeros((3,3),float)
-      cls.cell = Cell(cell, cls.P_ext)
+      cls.cell = Cell(cell, cls.P_ext, temp)
 
       random.seed(12)
       #cls.__qp[:,1]=numpy.arange(0,3*natoms)*0.01
@@ -97,6 +97,9 @@ class System(object):
       """Calculates the total energy of the system"""
 
       return self.kinetic() + self.pot()
+
+   def P_int(self):
+      pass
 
 #   def step(self,dt):
 #      """Takes the atom positions, velocities and forces and integrates the 
