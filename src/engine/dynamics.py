@@ -55,9 +55,12 @@ class NST_ens(object):
 
       for i in range(self.syst.natoms):
          atom_i = self.syst.atoms[i]
-         atom_i.q = numpy.dot(exp_mat, atom_i.q) + numpy.dot(ip_mat, numpy.dot(sinh_mat, atom_i.p/atom_i.mass))
-         atom_i.p = numpy.dot(neg_exp_mat, atom_i.p)
-      
+         q = numpy.dot(exp_mat, atom_i.q) + numpy.dot(ip_mat, numpy.dot(sinh_mat, atom_i.p/atom_i.mass))
+         p = numpy.dot(neg_exp_mat, atom_i.p)
+         for j in range(3):
+            atom_i.q[j] = q[j]
+            atom_i.p[j] = p[j]
+
       self.syst.cell.h = numpy.dot(exp_mat, self.syst.cell.h)
 
    def vel_step(self):
@@ -95,6 +98,12 @@ class NST_ens(object):
          self.thermo_step()
          self.syst_update()
       #   print self.syst
+      print
+      print self.syst
+      print self.syst.f
+      print self.syst.q
+      print self.syst.p
+      print
       for i in range(self.syst.natoms):
          self.apply_pbc()
       print
