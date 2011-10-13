@@ -2,7 +2,7 @@ import math, numpy
 
 class LJ:
 
-   def __init__(self, syst, eps = 1.0, sigma = 1.0, rc = 2.5)
+   def __init__(self, syst, eps = 1.0, sigma = 1.0, rc = 2.5):
       self.syst = syst
       self.eps = eps 
       self.sigma = sigma
@@ -41,6 +41,7 @@ class LJ:
 
       self.syst.strain = numpy.zeros((3,3),float)
       self.syst.pot = 0.0
+      self.syst.kinetic = 0.0
       self.syst.f = numpy.zeros(3*natoms, float)
    
       for i in range(natoms):
@@ -49,6 +50,7 @@ class LJ:
          mass_i = atom_i.mass
 
          self.syst.strain += numpy.outer(p_i, p_i)/(mass_i*V)
+         self.syst.kinetic += 0.5*numpy.inner(p_i, p_i)/mass_i 
 
          for j in range(i+1, natoms):
             atom_j = self.syst.atoms[j]
@@ -59,3 +61,12 @@ class LJ:
             self.syst.pot += self.LJ_pot(r)
 
             self.syst.strain += numpy.outer(fij, rij)/V
+
+   def kinetic_only(self):
+      self.syst.kinetic = 0.0
+      for i in range(natoms):
+         p_i = self.syst.atoms[i].p
+         mass_i = self.syst.atoms[i].mass
+         self.syst.kinetic += 0.5*numpy.inner(p_i, p_i)/mass_i
+
+      self.syst.tot_E = self.syst.kinetic + self.syst.pot

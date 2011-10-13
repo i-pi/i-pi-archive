@@ -154,7 +154,7 @@ class Cell(object):
    def pot(self):
       """Calculates the elastic strain energy of the cell"""
 
-      pe = self.__V_0*numpy.trace(numpy.dot(self.__P_ext, self.strain))
+      pe = self.__V_0*numpy.trace(numpy.dot(self.P_ext, self.strain))
       return pe
 
    def kinetic(self):
@@ -163,7 +163,7 @@ class Cell(object):
       ke = 0.0
       for i in range(3):
          for j in range(3):
-            ke += self.__p[i, j]**2
+            ke += self.p[i, j]**2
       ke /= 2*self.w
       return ke
       

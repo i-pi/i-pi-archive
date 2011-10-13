@@ -4,6 +4,7 @@ import sys
 from engine import test_Thermo
 from engine import io_system
 from engine import dynamics
+from engine import forces
 
 print "hello world"
 
@@ -20,7 +21,7 @@ print syst
 #print syst
 #io_system.print_pdb(syst.atoms, syst.cell)
 
-print syst.kinetic()
+#print syst.kinetic()
 
 #################################
 
@@ -113,7 +114,9 @@ f = open("./testfile.txt", "r")
 
 #thermo = langevin.Thermo_Langevin(dt = 0.1)
 thermo = langevin.Thermo_Langevin
-syst2 = dynamics.NST_ens.from_pdbfile(f, thermo)
+pot_func = forces.LJ
+kwargs = {"eps": 2.0, "sigma": 0.09, "rc": 0.9*2.5}
+syst2 = dynamics.NST_ens.from_pdbfile(f, thermo, pot_func, **kwargs)
 
 print syst2.syst
 print syst2.thermo.dt

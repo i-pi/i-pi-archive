@@ -4,9 +4,10 @@ import engine, io_system, cell
 class NST_ens(object):
 
    @classmethod
-   def from_pdbfile(cls, filedesc, thermo, temp = 1.0, dt = 0.1):
+   def from_pdbfile(cls, filedesc, thermo, pot_func, temp = 1.0, dt = 0.1, **kwargs):
       cls.dt = dt
       cls.syst = engine.System.from_pdbfile(filedesc, temp)
+      cls.pot_func = pot_func(cls.syst, **kwargs)
       cls.thermo = thermo(temp, dt/2.0)
       return cls()
 
@@ -14,6 +15,7 @@ class NST_ens(object):
    def from_ensemble(cls, ens):
       cls.dt = ens.dt
       cls.syst = engine.System.from_system(ens.syst)
+      cls.pot_func = ens.pot_func
       cls.thermo = ens.thermo
       return cls()
 
@@ -68,13 +70,23 @@ class NST_ens(object):
       for i in range(self.syst.natoms):
          self.syst.atoms[i].q = self.syst.cell.apply_pbc(self.syst.atoms[i])
 
+   def syst_update(self):
+      self.pot_func.syst_update()
+      self.syst.cell_pot = self.syst.cell.pot()
+      self.syst.cell_kinetic = self.syst.cell.kinetic()
+      self.syst.tot_E = self.syst.pot + self.syst.kinetic + self.syst.cell_pot + self.syst.cell_kinetic
+
    def simulation(self, maxcount = 5):
+      self.syst_update()
       for i in range(maxcount):
          self.thermo_step()
          self.vel_step()
          self.pos_step()
+         self.syst_update()
          self.vel_step()
+         self.syst_update()
          self.thermo_step()
+         self.syst_update()
       #   print self.syst
       for i in range(self.syst.natoms):
          self.apply_pbc()
