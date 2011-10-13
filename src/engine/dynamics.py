@@ -81,6 +81,8 @@ class NST_ens(object):
          p += (self.dt/2.0)**2/(2.0*atom_i.mass)*(numpy.outer(atom_i.f, atom_i.p) + numpy.outer(atom_i.p, atom_i.f))
          p += (self.dt/2.0)**3/(3.0*atom_i.mass)*numpy.outer(atom_i.f, atom_i.f)
 
+      p[1,0]=p[2,0]=p[2,1]=0.0
+
       self.syst.cell.p = p
 
    def apply_pbc(self):
@@ -94,6 +96,8 @@ class NST_ens(object):
 
    def syst_update(self):
       self.pot_func.syst_update()
+      self.syst.stress[1,0]=self.syst.stress[2,0]=self.syst.stress[2,1] = 0.0
+
       self.syst.cell_pot = self.syst.cell.pot()
       self.syst.cell_kinetic = self.syst.cell.kinetic()
       self.syst.tot_E = self.syst.pot + self.syst.kinetic + self.syst.cell_pot + self.syst.cell_kinetic
@@ -109,18 +113,12 @@ class NST_ens(object):
       for i in range(maxcount):
          self.thermo_step()
          self.syst_update()
-         #self.vel_step()
+         self.vel_step()
          self.pos_step()
          self.syst_update()
-         #self.vel_step()
+         self.vel_step()
          self.thermo_step()
       #   print self.syst
-      print
-      print self.syst
-      print self.syst.f
-      print self.syst.q
-      print self.syst.p
-      print
       for i in range(self.syst.natoms):
          self.apply_pbc()
       print

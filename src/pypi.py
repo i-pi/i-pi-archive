@@ -115,14 +115,14 @@ f = open("./testfile.txt", "r")
 #thermo = langevin.Thermo_Langevin(dt = 0.1)
 thermo = langevin.Thermo_Langevin
 pot_func = forces.LJ
-kwargs = {"eps": 2.0, "sigma": 0.09, "rc": 0.9*2.5}
+kwargs = {"eps": 2.0, "sigma": 0.15, "rc": 0.15*2.5}
 syst2 = dynamics.NST_ens.from_pdbfile(f, thermo, pot_func, **kwargs)
 
 print syst2.syst
 print syst2.thermo.dt
 print syst2.thermo.temp
 
-syst2.simulation()
+syst2.simulation(1)
 
 #syst3 = dynamics.NST_ens.from_ensemble(syst2)
 #syst3 = engine.System.from_system(syst2.syst)

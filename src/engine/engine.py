@@ -81,7 +81,8 @@ class System(object):
 
    def __str__(self):
       rstr="ATOMS ("+str(self.natoms)+"):\n\n"
-      for i in range(0,self.natoms): 
+      for i in range(self.natoms): 
+         rstr=rstr+"Atom %i:" % (i+1) + "\n"
          rstr=rstr+str(self.atoms[i])+"\n"
       rstr = rstr + "Cell:\n" + str(self.cell)
       rstr = rstr + "\n\nTotal energy = " + str(self.tot_E) + ", potential energy = " + str(self.pot) + ", kinetic energy = " + str(self.kinetic)+ ", cell elastic energy = " + str(self.cell_pot) + ", cell kinetic energy = " + str(self.cell_kinetic)
