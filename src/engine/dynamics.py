@@ -54,8 +54,9 @@ class NST_ens(object):
       ip_mat = cell.compute_ih(self.syst.cell.p/self.syst.cell.w)
 
       for i in range(self.syst.natoms):
-         self.syst.atoms[i].q = numpy.dot(exp_mat, self.syst.atoms[i].q) + numpy.dot(ip_mat, numpy.dot(sinh_mat, self.syst.atoms[i].p/self.syst.atoms[i].mass))
-         self.syst.atoms[i].p = numpy.dot(neg_exp_mat, self.syst.atoms[i].p)
+         atom_i = self.syst.atoms[i]
+         atom_i.q = numpy.dot(exp_mat, atom_i.q) + numpy.dot(ip_mat, numpy.dot(sinh_mat, atom_i.p/atom_i.mass))
+         atom_i.p = numpy.dot(neg_exp_mat, atom_i.p)
       
       self.syst.cell.h = numpy.dot(exp_mat, self.syst.cell.h)
 
@@ -78,17 +79,28 @@ class NST_ens(object):
 
    def simulation(self, maxcount = 5):
       self.syst_update()
+      print
+      print self.syst
+      print self.syst.f
+      print self.syst.q
+      print self.syst.p
+      print
       for i in range(maxcount):
          self.thermo_step()
          self.vel_step()
+         self.syst_update()
          self.pos_step()
          self.syst_update()
          self.vel_step()
-         self.syst_update()
          self.thermo_step()
          self.syst_update()
       #   print self.syst
       for i in range(self.syst.natoms):
          self.apply_pbc()
+      print
       print self.syst
+      print self.syst.f
+      print self.syst.q
+      print self.syst.p
+      print
       io_system.print_pdb(self.syst.atoms, self.syst.cell)

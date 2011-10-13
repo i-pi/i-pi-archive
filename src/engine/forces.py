@@ -42,7 +42,8 @@ class LJ:
       self.syst.strain = numpy.zeros((3,3),float)
       self.syst.pot = 0.0
       self.syst.kinetic = 0.0
-      self.syst.f = numpy.zeros(3*natoms, float)
+      for i in range(3*self.syst.natoms):
+         self.syst.f[i] = 0.0
    
       for i in range(natoms):
          atom_i = self.syst.atoms[i]
@@ -62,11 +63,11 @@ class LJ:
 
             self.syst.strain += numpy.outer(fij, rij)/V
 
-   def kinetic_only(self):
-      self.syst.kinetic = 0.0
-      for i in range(natoms):
-         p_i = self.syst.atoms[i].p
-         mass_i = self.syst.atoms[i].mass
-         self.syst.kinetic += 0.5*numpy.inner(p_i, p_i)/mass_i
-
-      self.syst.tot_E = self.syst.kinetic + self.syst.pot
+#   def kinetic_only(self):
+#      self.syst.kinetic = 0.0
+#      for i in range(natoms):
+#         p_i = self.syst.atoms[i].p
+#         mass_i = self.syst.atoms[i].mass
+#         self.syst.kinetic += 0.5*numpy.inner(p_i, p_i)/mass_i
+#
+#      self.syst.tot_E = self.syst.kinetic + self.syst.pot

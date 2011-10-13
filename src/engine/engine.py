@@ -112,9 +112,6 @@ class System(object):
 #
 #      return self.kinetic() + self.pot()
 
-   def P_int(self):
-      pass
-
 #   def step(self,dt):
 #      """Takes the atom positions, velocities and forces and integrates the 
 #         equations of motion forward by a step dt"""
