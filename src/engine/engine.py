@@ -49,7 +49,7 @@ class System(object):
       cls.tot_E = 0.0
       cls.cell_pot = cls.cell.pot() 
       cls.cell_kinetic = cls.cell.kinetic()
-      cls.strain = numpy.zeros((3,3),float)
+      cls.stress = numpy.zeros((3,3),float)
       return cls()
 
    @classmethod
@@ -74,17 +74,17 @@ class System(object):
       cls.cell_kinetic = syst.cell_kinetic
       cls.tot_E = syst.tot_E
       
-      cls.strain = syst.strain
+      cls.stress = syst.stress
       cls.P_ext = syst.P_ext
       cls.cell = syst.cell
       return cls()
 
    def __str__(self):
-      rstr="ATOMS ("+str(self.natoms)+"):\n"
+      rstr="ATOMS ("+str(self.natoms)+"):\n\n"
       for i in range(0,self.natoms): 
          rstr=rstr+str(self.atoms[i])+"\n"
       rstr = rstr + "Cell:\n" + str(self.cell)
-      rstr = rstr + "\nTotal energy = " + str(self.tot_E) + ", potential energy = " + str(self.pot) + ", kinetic energy = " + str(self.kinetic)+ ", cell elastic energy = " + str(self.cell_pot) + ", cell kinetic energy = " + str(self.cell_kinetic)
+      rstr = rstr + "\n\nTotal energy = " + str(self.tot_E) + ", potential energy = " + str(self.pot) + ", kinetic energy = " + str(self.kinetic)+ ", cell elastic energy = " + str(self.cell_pot) + ", cell kinetic energy = " + str(self.cell_kinetic)
       return rstr
        
 #   def pot(self):

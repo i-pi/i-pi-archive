@@ -50,7 +50,7 @@ class LJ:
          p_i = atom_i.p
          mass_i = atom_i.mass
 
-         self.syst.strain += numpy.outer(p_i, p_i)/(mass_i*V)
+         self.syst.stress += numpy.outer(p_i, p_i)/(mass_i*V)
          self.syst.kinetic += 0.5*numpy.inner(p_i, p_i)/mass_i 
 
          for j in range(i+1, natoms):
@@ -61,7 +61,7 @@ class LJ:
             atom_j.f += fji
             self.syst.pot += self.LJ_pot(r)
 
-            self.syst.strain += numpy.outer(fij, rij)/V
+            self.syst.stress += numpy.outer(fij, rij)/V
 
 #   def kinetic_only(self):
 #      self.syst.kinetic = 0.0

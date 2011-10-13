@@ -21,20 +21,6 @@ def compute_eigp(p):
    return eigp
 
 
-def compute_strain(h, ih_0):
-   """Computes the strain tensor from the unit cell and reference cell"""
-   root = numpy.dot(h, ih_0)
-   eps = numpy.dot(numpy.transpose(root), root) - numpy.identity(3, float)
-   eps /= 2
-   return eps   
-
-def compute_PI_ext(P_ext, h, ih_0):
-   root = numpy.dot(h, ih_0)
-   PI = numpy.dot(root, P_ext)
-   PI = numpy.dot(PI, numpy.transpose(root))
-   PI *= self.__V_0/self.V
-#   return (numpy.dot(root, numpy.dot(P_ext, numpy.transpose(root))))*self.__V_0/self.V
-   return PI
 
 def volume(h):
    """Calculates the volume of the unit cell, assuming an upper-triangular
@@ -89,7 +75,7 @@ class Cell(object):
    def strain(self):
       if (self.__taint_eps):
 #         print "New eps formed"
-         self.__eps = compute_strain(self.h, self.__ih_0)
+         self.__eps = self.compute_strain()
          self.__taint_eps = False
       return self.__eps
 
@@ -98,9 +84,9 @@ class Cell(object):
       return self.__P_ext
 
    @property
-   def PI_ext(self, new):
+   def PI_ext(self):
       if (self.__taint_PI):
-         self.__PI_ext = compute_PI_ext(self.P_ext, self.h, self.__ih_0)
+         self.__PI_ext = self.compute_PI_ext()
          self.__taint_PI = False
       return self.__PI_ext   
 
@@ -130,7 +116,7 @@ class Cell(object):
             self.p[i, j] = random.gauss(0.0, sigma)
 
    def __str__(self):
-      return "    h1 = %s, h2 = %s, h3 = %s \n    p1 = %s, p2 = %s, p3 = %s \n    w = %s, volume = %s, temp = %s" % (self.h[:,0], self.h[:,1], self.h[:,2], self.p[:,0], self.p[:,1], self.p[:,2], self.w, self.V, self.temp)
+      return "    h1 = %s\n    h2 = %s\n    h3 = %s\n\n    p1 = %s\n    p2 = %s\n    p3 = %s\n\n    w = %s, volume = %s, temp = %s" % (self.h[:,0], self.h[:,1], self.h[:,2], self.p[:,0], self.p[:,1], self.p[:,2], self.w, self.V, self.temp)
       
 #   def exp_p(self, dt):
 #      dist_mat = self.p*dt/self.w
@@ -150,6 +136,21 @@ class Cell(object):
 #      neg_exp_mat = numpy.dot(neg_exp_mat, i_eig)
 #
 #      return exp_mat, neg_exp_mat
+
+   def compute_strain(self):
+      """Computes the strain tensor from the unit cell and reference cell"""
+      root = numpy.dot(self.h, self.__ih_0)
+      eps = numpy.dot(numpy.transpose(root), root) - numpy.identity(3, float)
+      eps /= 2
+      return eps   
+
+   def compute_PI_ext(self):
+      root = numpy.dot(self.h, self.__ih_0)
+      PI = numpy.dot(root, self.P_ext)
+      PI = numpy.dot(PI, numpy.transpose(root))
+      PI *= self.__V_0/self.V
+#   return (numpy.dot(root, numpy.dot(P_ext, numpy.transpose(root))))*self.__V_0/self.V
+      return PI
 
    def pot(self):
       """Calculates the elastic strain energy of the cell"""

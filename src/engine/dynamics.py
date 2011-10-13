@@ -6,6 +6,7 @@ class NST_ens(object):
    @classmethod
    def from_pdbfile(cls, filedesc, thermo, pot_func, temp = 1.0, dt = 0.1, **kwargs):
       cls.dt = dt
+      cls.temp = temp
       cls.syst = engine.System.from_pdbfile(filedesc, temp)
       cls.pot_func = pot_func(cls.syst, **kwargs)
       cls.thermo = thermo(temp, dt/2.0)
@@ -14,6 +15,7 @@ class NST_ens(object):
    @classmethod
    def from_ensemble(cls, ens):
       cls.dt = ens.dt
+      cls.temp = ens.temp
       cls.syst = engine.System.from_system(ens.syst)
       cls.pot_func = ens.pot_func
       cls.thermo = ens.thermo
@@ -65,14 +67,30 @@ class NST_ens(object):
 
    def vel_step(self):
       #equivalent to P-step in paper
-      pass
+
+      for i in range(self.syst.natoms*3):
+         self.syst.p[i] = self.syst.p[i] + self.syst.f[i]*self.dt/2.0
+
+      L = numpy.zeros((3,3), float)
+      for i in range(3):
+         L[i,i] = 3.0-i
+
+      p = self.syst.cell.p + self.dt/2.0*(self.syst.cell.V*(self.syst.stress-self.syst.cell.PI_ext) + 2.0*self.thermo.k_Boltz*self.temp*L)
+      for i in range(self.syst.natoms):
+         atom_i = self.syst.atoms[i]
+         p += (self.dt/2.0)**2/(2.0*atom_i.mass)*(numpy.outer(atom_i.f, atom_i.p) + numpy.outer(atom_i.p, atom_i.f))
+         p += (self.dt/2.0)**3/(3.0*atom_i.mass)*numpy.outer(atom_i.f, atom_i.f)
+
+      self.syst.cell.p = p
 
    def apply_pbc(self):
       """Takes the system and applies periodic boundary conditions to fold the
          particle positions back into the unit cell"""
 
       for i in range(self.syst.natoms):
-         self.syst.atoms[i].q = self.syst.cell.apply_pbc(self.syst.atoms[i])
+         q = self.syst.cell.apply_pbc(self.syst.atoms[i])
+         for j in range(3):
+            self.syst.atoms[i].q[j] = q[j]
 
    def syst_update(self):
       self.pot_func.syst_update()
@@ -90,13 +108,12 @@ class NST_ens(object):
       print
       for i in range(maxcount):
          self.thermo_step()
-         self.vel_step()
          self.syst_update()
+         #self.vel_step()
          self.pos_step()
          self.syst_update()
-         self.vel_step()
+         #self.vel_step()
          self.thermo_step()
-         self.syst_update()
       #   print self.syst
       print
       print self.syst
