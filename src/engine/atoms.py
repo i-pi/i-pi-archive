@@ -14,7 +14,7 @@ class Atom:
       self.name = name
 
    def __str__(self):
-      return "    Name = %s, q = %s, p = %s, f = %s " % (self.name, self.q, self.p, self.f)
+      return "    Name = %s\n    q = %s\n    p = %s\n    f = %s " % (self.name, self.q, self.p, self.f)
 
    def pot(self):
       pot = 0.0

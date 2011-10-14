@@ -15,7 +15,7 @@ class System(object):
 #P_ext will be the external load.
 #The initialisation step now takes a pdc-formatted file for the unit cell and atom positions
 #step will eventually call the forces from the external program and then do the propagation step. At the moment we simply take free particle trajectories, to test the theory.
-    
+
    @classmethod
    def from_pdbfile(cls, filedesc, temp = 1.0):
       atoms, cell, natoms = read_pdb(filedesc)
@@ -43,6 +43,15 @@ class System(object):
          cls.__qpf[3*i+1,1] = random.gauss(0.0, sigma)
          cls.__qpf[3*i+2,1] = random.gauss(0.0, sigma)
       cls.p=cls.__qpf[:,1]
+
+      cls.pot = 0.0
+      cls.kinetic = 0.0
+      cls.cell_pot = cls.cell.pot() 
+      cls.cell_kinetic = cls.cell.kinetic()
+      cls.tot_E = 0.0
+      cls.virial = numpy.zeros((3,3),float)
+      cls.v_stress = numpy.zeros((3,3),float)
+      cls.stress = numpy.zeros((3,3),float)
       return cls()
 
    @classmethod
@@ -61,45 +70,65 @@ class System(object):
 
       cls.atoms = syst.atoms
 
+      cls.pot = syst.pot
+      cls.kinetic = syst.kinetic
+      cls.cell_pot = syst.cell_pot
+      cls.cell_kinetic = syst.cell_kinetic
+      cls.tot_E = syst.tot_E
+      
+      cls.virial = syst.virial
+      cls.stress = syst.stress
       cls.P_ext = syst.P_ext
       cls.cell = syst.cell
       return cls()
 
    def __str__(self):
-      rstr="ATOMS ("+str(self.natoms)+"):\n"
-      for i in range(0,self.natoms): 
+      rstr="ATOMS ("+str(self.natoms)+"):\n\n"
+      for i in range(self.natoms): 
+         rstr=rstr+"Atom %i:" % (i+1) + "\n"
          rstr=rstr+str(self.atoms[i])+"\n"
       rstr = rstr + "Cell:\n" + str(self.cell)
-      rstr = rstr + "\nTotal energy = " + str(self.tot_E()) + ", potential energy = " + str(self.pot()) + ", kinetic energy = " + str(self.kinetic())
+      rstr = rstr + "\n\nTotal energy = " + str(self.tot_E) + ", potential energy = " + str(self.pot) + ", kinetic energy = " + str(self.kinetic)+ ", cell elastic energy = " + str(self.cell_pot) + ", cell kinetic energy = " + str(self.cell_kinetic)
       return rstr
        
-   def pot(self):
-      """Calculates the total potential energy of the system, including
-         cell strain"""
+#   def pot(self):
+#      """Calculates the total potential energy of the system, including
+#         cell strain"""
+#
+#      pe = 0.0
+#      for i in range(self.natoms):
+#         pe += self.atoms[i].pot()
+#      pe += self.cell.pot()
+#      return pe
 
-      pe = 0.0
+   def kinetic_update(self):
+      """Calculates the total kinetic energy of the system, and the kinetic
+         contribution to the stress tensor"""
+
+      self.kinetic = 0.0
+      self.v_stress = numpy.zeros((3,3),float)
       for i in range(self.natoms):
-         pe += self.atoms[i].pot()
-      pe += self.cell.pot()
-      return pe
+         p = self.atoms[i].p
+         mass = self.atoms[i].mass
+         self.kinetic += numpy.inner(p, p)/(2*mass)
+         self.v_stress += numpy.outer(p, p)/(mass*self.cell.V)
 
-   def kinetic(self):
-      """Calculates the total kinetic energy of the system, including cell 
-         kinetic energy"""
 
-      ke = 0.0
-      for i in range(self.natoms):
-         ke += self.atoms[i].kinetic()
-      ke += self.cell.kinetic()
-      return ke
+   def cell_update(self):
+      self.cell_kinetic = self.cell.kinetic()
+      self.cell_pot = self.cell.pot()
 
-   def tot_E(self):
-      """Calculates the total energy of the system"""
+   def stress_update(self):
+      self.stress = self.v_stress + self.virial
+      self.stress[2,0] = self.stress[1,0] = self.stress[2,1]
 
-      return self.kinetic() + self.pot()
+   def tot_E_update(self):
+      self.tot_E = self.kinetic + self.pot + self.cell_kinetic + self.cell_pot
 
-   def P_int(self):
-      pass
+#   def tot_E(self):
+#      """Calculates the total energy of the system"""
+#
+#      return self.kinetic() + self.pot()
 
 #   def step(self,dt):
 #      """Takes the atom positions, velocities and forces and integrates the 
