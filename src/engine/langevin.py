@@ -41,3 +41,9 @@ class Thermo_Langevin(thermostat.Thermostat):
       for i in range(3):
          atom.p[i] = self.__T*atom.p[i] + self.__S*random.gauss(0.0, sigma)
 
+   def cell_step(self, cell):
+      sigma = 1.0/(4*math.pi*self.__tau*self.k_Boltz*self.temp*cell.w)
+      for i in range(3):
+         for j in range(i,3):
+            cell.p[i,j] = self.__T*cell.p[i,j] + self.__S*random.gauss(0.0, sigma)
+

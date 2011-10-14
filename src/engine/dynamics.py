@@ -43,7 +43,7 @@ class NST_ens(object):
    def thermo_step(self):
       for i in range(self.syst.natoms):
          self.thermo.step(self.syst.atoms[i])
-     # self.thermo.step(syst.cell)
+      self.thermo.cell_step(self.syst.cell)
 
    def pos_step(self):
       """Takes the atom positions, velocities and forces and integrates the 
@@ -95,7 +95,11 @@ class NST_ens(object):
             self.syst.atoms[i].q[j] = q[j]
 
    def R_update(self):
+      print "pre-force update"
+      print self.syst.f
       self.pot_func.force_update()
+      print "post-force update"
+      print self.syst.f
       self.syst.kinetic_update()
       self.syst.stress_update()
       self.syst.cell_update()
@@ -121,7 +125,11 @@ class NST_ens(object):
          self.vel_step()
          self.TP_update()
          self.pos_step()
+         print "pre r step:"
+         print self.syst
          self.R_update()
+         print "post r step:"
+         print self.syst
          self.vel_step()
          self.TP_update()
          self.thermo_step()

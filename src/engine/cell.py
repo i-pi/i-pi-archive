@@ -5,9 +5,9 @@ def compute_ih(h):
    ih = numpy.zeros((3,3), float)
    for i in range(3):
       ih[i,i] = 1.0/h[i,i]
-   ih[0,1] = -ih[0,0]*h[0,1]/h[1,1]
-   ih[1,2] = -ih[1,1]*h[1,2]/h[2,2]
-   ih[0,2] = -ih[1,2]*h[0,1]*ih[1,1]-ih[0,0]*h[0,2]*ih[2,2]
+   ih[0,1] = -ih[0,0]*h[0,1]*ih[1,1]
+   ih[1,2] = -ih[1,1]*h[1,2]*ih[2,2]
+   ih[0,2] = -ih[1,2]*h[0,1]*ih[0,0]-ih[0,0]*h[0,2]*ih[2,2]
    return ih
 
 def compute_eigp(p):
