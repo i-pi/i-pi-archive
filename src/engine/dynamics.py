@@ -23,14 +23,14 @@ class NST_ens(object):
 
    def exp_p(self):
       dist_mat = self.syst.cell.p*self.dt/self.syst.cell.w
-      eig = cell.compute_eigp(dist_mat)
+      eig, eigvals = cell.compute_eigp(dist_mat)
       i_eig = cell.compute_ih(eig)
    
       exp_mat = numpy.zeros((3,3), float)
       neg_exp_mat = numpy.zeros((3,3), float)
       for i in range(3):
-         exp_mat[i,i] = math.exp(self.syst.cell.p[i,i]*self.dt/self.syst.cell.w)
-         neg_exp_mat[i,i] = math.exp(-self.syst.cell.p[i,i]*self.dt/self.syst.cell.w)
+         exp_mat[i,i] = math.exp(eigvals[i])
+         neg_exp_mat[i,i] = math.exp(-eigvals[i])
       
       exp_mat = numpy.dot(eig, exp_mat)
       exp_mat = numpy.dot(exp_mat, i_eig)
@@ -95,11 +95,7 @@ class NST_ens(object):
             self.syst.atoms[i].q[j] = q[j]
 
    def R_update(self):
-      print "pre-force update"
-      print self.syst.f
       self.pot_func.force_update()
-      print "post-force update"
-      print self.syst.f
       self.syst.kinetic_update()
       self.syst.stress_update()
       self.syst.cell_update()
@@ -113,33 +109,19 @@ class NST_ens(object):
 
    def simulation(self, maxcount = 5):
       self.R_update()
-      print
       print self.syst
-      print self.syst.f
-      print self.syst.q
-      print self.syst.p
-      print
       for i in range(maxcount):
          self.thermo_step()
          self.TP_update()
          self.vel_step()
          self.TP_update()
          self.pos_step()
-         print "pre r step:"
-         print self.syst
          self.R_update()
-         print "post r step:"
-         print self.syst
          self.vel_step()
          self.TP_update()
          self.thermo_step()
          self.TP_update()
-      #   print self.syst
+         print self.syst
       self.apply_pbc()
-      print
-      print self.syst
-      print self.syst.f
-      print self.syst.q
-      print self.syst.p
-      print
+      #print self.syst
       io_system.print_pdb(self.syst.atoms, self.syst.cell)

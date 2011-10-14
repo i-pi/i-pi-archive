@@ -13,12 +13,17 @@ def compute_ih(h):
 def compute_eigp(p):
    """Finds the eigenvector matrix of a 3*3 upper-triangular matrix"""
    eigp = numpy.zeros((3,3), float)
+   eigvals = numpy.zeros(3, float)
+
    for i in range(3):
       eigp[i,i] = 1
    eigp[0,1] = -p[0,1]/(p[0,0] - p[1,1])
    eigp[1,2] = -p[1,2]/(p[1,1] - p[2,2])
    eigp[0,2] = -(p[0,1]*p[1,2] - p[0,2]*p[1,1] + p[0,2]*p[2,2])/((p[0,0] - p[2,2])*(p[2,2] - p[1,1]))
-   return eigp
+
+   for i in range(3):
+      eigvals[i] = p[i,i]
+   return eigp, eigvals
 
 
 

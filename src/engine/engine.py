@@ -33,6 +33,9 @@ class System(object):
       cls.atoms = [ Atom(cls.__qpf[3*i:3*(i+1),:], name = atoms[i][0]) for i in range(natoms) ] #Creates a list of atoms from the __qp array
 
       cls.P_ext = numpy.zeros((3,3),float)
+
+      cls.P_ext = numpy.array([[1,2,3],[2,0.5,2.5],[3,2.5,0.7]])
+
       cls.cell = Cell(cell, cls.P_ext, temp)
 
       random.seed(12)
@@ -113,14 +116,13 @@ class System(object):
          self.kinetic += numpy.inner(p, p)/(2*mass)
          self.v_stress += numpy.outer(p, p)/(mass*self.cell.V)
 
-
    def cell_update(self):
       self.cell_kinetic = self.cell.kinetic()
       self.cell_pot = self.cell.pot()
 
    def stress_update(self):
       self.stress = self.v_stress + self.virial
-      self.stress[2,0] = self.stress[1,0] = self.stress[2,1]
+      self.stress[2,0] = self.stress[1,0] = self.stress[2,1] = 0.0
 
    def tot_E_update(self):
       self.tot_E = self.kinetic + self.pot + self.cell_kinetic + self.cell_pot
