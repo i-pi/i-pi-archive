@@ -46,9 +46,9 @@ class System(object):
 
       cls.pot = 0.0
       cls.kinetic = 0.0
-      cls.tot_E = 0.0
       cls.cell_pot = cls.cell.pot() 
       cls.cell_kinetic = cls.cell.kinetic()
+      cls.tot_E = 0.0
       cls.virial = numpy.zeros((3,3),float)
       cls.v_stress = numpy.zeros((3,3),float)
       cls.stress = numpy.zeros((3,3),float)
@@ -105,12 +105,12 @@ class System(object):
       """Calculates the total kinetic energy of the system, and the kinetic
          contribution to the stress tensor"""
 
-      self.ke = 0.0
+      self.kinetic = 0.0
       self.v_stress = numpy.zeros((3,3),float)
       for i in range(self.natoms):
          p = self.atoms[i].p
          mass = self.atoms[i].mass
-         self.ke += numpy.inner(p, p)/(2*mass)
+         self.kinetic += numpy.inner(p, p)/(2*mass)
          self.v_stress += numpy.outer(p, p)/(mass*self.cell.V)
 
 
