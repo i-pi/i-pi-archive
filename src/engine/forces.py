@@ -35,11 +35,11 @@ class LJ:
       else:
          return 4*self.eps*((self.sigma/r)**12 - (self.sigma/r)**6 - (self.sigma/self.rc)**12 + (self.sigma/self.rc)**6)
 
-   def syst_update(self):
+   def force_update(self):
       V = self.syst.cell.V
       natoms = self.syst.natoms
 
-      self.syst.strain = numpy.zeros((3,3),float)
+      self.syst.virial = numpy.zeros((3,3),float)
       self.syst.pot = 0.0
       self.syst.kinetic = 0.0
       for i in range(3*self.syst.natoms):
@@ -47,11 +47,6 @@ class LJ:
    
       for i in range(natoms):
          atom_i = self.syst.atoms[i]
-         p_i = atom_i.p
-         mass_i = atom_i.mass
-
-         self.syst.stress += numpy.outer(p_i, p_i)/(mass_i*V)
-         self.syst.kinetic += 0.5*numpy.inner(p_i, p_i)/mass_i 
 
          for j in range(i+1, natoms):
             atom_j = self.syst.atoms[j]
@@ -61,7 +56,7 @@ class LJ:
             atom_j.f += fji
             self.syst.pot += self.LJ_pot(r)
 
-            self.syst.stress += numpy.outer(fij, rij)/V
+            self.syst.virial += numpy.outer(fij, rij)/V
 
 #   def kinetic_only(self):
 #      self.syst.kinetic = 0.0

@@ -49,6 +49,8 @@ class System(object):
       cls.tot_E = 0.0
       cls.cell_pot = cls.cell.pot() 
       cls.cell_kinetic = cls.cell.kinetic()
+      cls.virial = numpy.zeros((3,3),float)
+      cls.v_stress = numpy.zeros((3,3),float)
       cls.stress = numpy.zeros((3,3),float)
       return cls()
 
@@ -74,6 +76,7 @@ class System(object):
       cls.cell_kinetic = syst.cell_kinetic
       cls.tot_E = syst.tot_E
       
+      cls.virial = syst.virial
       cls.stress = syst.stress
       cls.P_ext = syst.P_ext
       cls.cell = syst.cell
@@ -97,17 +100,31 @@ class System(object):
 #         pe += self.atoms[i].pot()
 #      pe += self.cell.pot()
 #      return pe
-#
-#   def kinetic(self):
-#      """Calculates the total kinetic energy of the system, including cell 
-#         kinetic energy"""
-#
-#      ke = 0.0
-#      for i in range(self.natoms):
-#         ke += self.atoms[i].kinetic()
-#      ke += self.cell.kinetic()
-#      return ke
-#
+
+   def kinetic_update(self):
+      """Calculates the total kinetic energy of the system, and the kinetic
+         contribution to the stress tensor"""
+
+      self.ke = 0.0
+      self.v_stress = numpy.zeros((3,3),float)
+      for i in range(self.natoms):
+         p = self.atoms[i].p
+         mass = self.atoms[i].mass
+         self.ke += numpy.inner(p, p)/(2*mass)
+         self.v_stress += numpy.outer(p, p)/(mass*self.cell.V)
+
+
+   def cell_update(self):
+      self.cell_kinetic = self.cell.kinetic()
+      self.cell_pot = self.cell.pot()
+
+   def stress_update(self):
+      self.stress = self.v_stress + self.virial
+      self.stress[2,0] = self.stress[1,0] = self.stress[2,1]
+
+   def tot_E_update(self):
+      self.tot_E = self.kinetic + self.pot + self.cell_kinetic + self.cell_pot
+
 #   def tot_E(self):
 #      """Calculates the total energy of the system"""
 #

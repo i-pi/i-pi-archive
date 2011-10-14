@@ -94,16 +94,21 @@ class NST_ens(object):
          for j in range(3):
             self.syst.atoms[i].q[j] = q[j]
 
-   def syst_update(self):
-      self.pot_func.syst_update()
-      self.syst.stress[1,0]=self.syst.stress[2,0]=self.syst.stress[2,1] = 0.0
+   def R_update(self):
+      self.pot_func.force_update()
+      self.syst.kinetic_update()
+      self.syst.stress_update()
+      self.syst.cell_update()
+      self.syst.tot_E_update()
 
-      self.syst.cell_pot = self.syst.cell.pot()
-      self.syst.cell_kinetic = self.syst.cell.kinetic()
-      self.syst.tot_E = self.syst.pot + self.syst.kinetic + self.syst.cell_pot + self.syst.cell_kinetic
+   def TP_update(self):
+      self.syst.kinetic_update()
+      self.syst.stress_update()
+      self.syst.cell_update()
+      self.syst.tot_E_update()
 
    def simulation(self, maxcount = 5):
-      self.syst_update()
+      self.R_update()
       print
       print self.syst
       print self.syst.f
@@ -112,15 +117,17 @@ class NST_ens(object):
       print
       for i in range(maxcount):
          self.thermo_step()
-         self.syst_update()
+         self.TP_update()
          self.vel_step()
+         self.TP_update()
          self.pos_step()
-         self.syst_update()
+         self.R_update()
          self.vel_step()
+         self.TP_update()
          self.thermo_step()
+         self.TP_update()
       #   print self.syst
-      for i in range(self.syst.natoms):
-         self.apply_pbc()
+      self.apply_pbc()
       print
       print self.syst
       print self.syst.f
