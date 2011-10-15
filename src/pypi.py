@@ -18,16 +18,30 @@ nat = 3
 allthing = zeros((nat,6), float)
 f = open("./testfile.txt","r")
 syst=engine.System.from_pdbfile(f)
-syst.q[0]=-1.11
-syst.atoms[1].q[1]=-111
-print "kin", syst.kinetic
 
 
-print "deps", getattr(syst.atoms[0],'q')._depend__deps
+print "Get atomic ke"
+for i in range(0,syst.natoms):
+   print "KE(",i,"): ",syst.atoms[i].kin
+print "Global KE:", syst.kin
 
-#add_depend(type(syst).__dict__['kinetic'])
-syst.atoms[0].q[1]=-11
-print "kin test", syst.kinetic
+print "Now we modify the momentum of atom 0, and get again ke's"
+syst.atoms[0].p[0]=10
+for i in range(0,syst.natoms):
+   print "KE(",i,"): ",syst.atoms[i].kin
+print "Global KE:", syst.kin
+
+print "Now we modify the global momentum, and get again ke's"
+syst.p[2]=1
+for i in range(0,syst.natoms):
+   print "KE(",i,"): ",syst.atoms[i].kin
+print "Global KE:", syst.kin
+
+print "Now we modify the momentum of atom 0, and 3 and get just the global ke"
+syst.atoms[0].p[1]=10
+syst.atoms[3].p[2]=10
+print "Global KE:", syst.kin
+
 exit()
 #syst.step(1.0)
 #print syst

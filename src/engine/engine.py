@@ -1,12 +1,12 @@
 import numpy
 import math
 import random
-from utils import depend
+from utils.depend import *
 from io_system import *
 from atoms import *
 from cell import *
 
-class System(object):
+class System(dobject):
    """
    Represents a simulation cell. 
    Includes the cell parameters, the atoms and the like. """
@@ -19,44 +19,60 @@ class System(object):
 
    @classmethod
    def from_pdbfile(cls, filedesc, temp = 1.0):
+   
+      self=cls()
       atoms, cell, natoms = read_pdb(filedesc)
-      cls.natoms = natoms
-      cls.temp = temp
-      cls.k_Boltz = 1.0
+      self.natoms = natoms
+      self.temp = temp
+      self.k_Boltz = 1.0
 
-      cls.__qpf=numpy.zeros((3*natoms,3),float) 
+      self.__qpf=numpy.zeros((3*natoms,3),float) 
       for i in range(natoms):
-         cls.__qpf[3*i:3*(i+1),0]=atoms[i][1]
+         self.__qpf[3*i:3*(i+1),0]=atoms[i][1]
 
-      cls.q=cls.__qpf[:,0]
-      cls.p=cls.__qpf[:,1]      
-      cls.f=cls.__qpf[:,2]
+      
+      self.q = depend(value=self.__qpf[:,0],name='q')
+      self.p = depend(value=self.__qpf[:,1],name='p')
+      self.f = depend(value=self.__qpf[:,2],name='f')
+      self.atoms = [ Atom(self.__qpf[3*i:3*(i+1),:], name = atoms[i][0]) for i in range(natoms) ] #Creates a list of atoms from the __qp array
+      self.kin = depend(func=self.get_kin, name = 'kin')
+      
+      depgrps=dict(); depgrps['q']=[];      depgrps['p']=[];      depgrps['f']=[];
+      for atom in self.atoms:
+         atom.getdesc('kin').add_dependant(self.getdesc('kin'))
+         # the global q,p,f and the atomic q,p,f must be synchronized.
+         # note that modifying the global vectors in any position will taint ALL the atomic vectors
+         for what in [ 'q', 'p', 'f' ]: 
+            depgrps[what].append(atom.getdesc(what))
+            atom.getdesc(what).add_dependant(self.getdesc(what))
+      self.getdesc('p').add_depgrp(depgrps['p'])
+      
+      
+      
+      self.P_ext = numpy.zeros((3,3),float)
 
-      cls.atoms = [ Atom(cls.__qpf[3*i:3*(i+1),:], name = atoms[i][0]) for i in range(natoms) ] #Creates a list of atoms from the __qp array
-      cls.P_ext = numpy.zeros((3,3),float)
+      self.P_ext = numpy.array([[1,2,3],[2,0.5,2.5],[3,2.5,0.7]])
 
-      cls.P_ext = numpy.array([[1,2,3],[2,0.5,2.5],[3,2.5,0.7]])
-
-      cls.cell = Cell(cell, cls.P_ext, temp)
+      self.cell = Cell(cell, self.P_ext, temp)
 
       random.seed(12)
-      #cls.__qp[:,1]=numpy.arange(0,3*natoms)*0.01
+      #self.__qp[:,1]=numpy.arange(0,3*natoms)*0.01
       for i in range(natoms):
-         sigma = math.sqrt(cls.atoms[i].mass * cls.k_Boltz * cls.temp)
-         cls.__qpf[3*i,1] = random.gauss(0.0, sigma)
-         cls.__qpf[3*i+1,1] = random.gauss(0.0, sigma)
-         cls.__qpf[3*i+2,1] = random.gauss(0.0, sigma)
-      cls.p=cls.__qpf[:,1]
+         sigma = math.sqrt(self.atoms[i].mass * self.k_Boltz * self.temp)
+         self.__qpf[3*i,1] = random.gauss(0.0, sigma)
+         self.__qpf[3*i+1,1] = random.gauss(0.0, sigma)
+         self.__qpf[3*i+2,1] = random.gauss(0.0, sigma)
+      self.p=self.__qpf[:,1]
 
-      cls.pot = 0.0
-      cls.kinetic = 0.0
-      cls.cell_pot = cls.cell.pot() 
-      cls.cell_kinetic = cls.cell.kinetic()
-      cls.tot_E = 0.0
-      cls.virial = numpy.zeros((3,3),float)
-      cls.v_stress = numpy.zeros((3,3),float)
-      cls.stress = numpy.zeros((3,3),float)
-      return cls()
+      self.pot = 0.0
+      self.kinetic = 0.0
+      self.cell_pot = self.cell.pot() 
+      self.cell_kinetic = self.cell.kinetic()
+      self.tot_E = 0.0
+      self.virial = numpy.zeros((3,3),float)
+      self.v_stress = numpy.zeros((3,3),float)
+      self.stress = numpy.zeros((3,3),float)
+      return self
 
    @classmethod
    def from_system(cls, syst):
@@ -105,7 +121,17 @@ class System(object):
 #      pe += self.cell.pot()
 #      return pe
 
-   def kinetic_update(self):
+   def get_kin(self):
+      """Calculates the total kinetic energy of the system,
+      by summing the atomic contributions"""
+      print " [ upd. kin ]",
+      ke = 0.0
+      for at in self.atoms:
+         ke += at.kin
+      return ke
+      
+      
+   def get_kinetic(self):
       """Calculates the total kinetic energy of the system, and the kinetic
          contribution to the stress tensor"""
 

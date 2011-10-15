@@ -16,8 +16,8 @@ class myobj(dobject):
       self.mass=depend(name='mass')
       self.mass=1.0
       self.kin=depend(name='kin',func=self.getkin)
-      self.getdescriptor('mass').add_dependant(self.getdescriptor('kin'))
-      self.getdescriptor('v').add_dependant(self.getdescriptor('kin'))
+      self.getdesc('mass').add_dependant(self.getdesc('kin'))
+      self.getdesc('v').add_dependant(self.getdesc('kin'))
 
 print "qui"
 vall=numpy.array(range(1,10))   
