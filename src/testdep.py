@@ -1,6 +1,41 @@
 #from utils.depend import *
 import numpy
+import inspect
+from utils.depend import *
+            
+class myobj(dobject):
+   def getkin(self):
+      print " [re-computing kin] ",
+      k=0.0; 
+      for vi in self.v: k+=vi**2
+      return k/(2.0*self.mass)
 
+   def __init__(self, varr):
+      self.v=depend(name='v')
+      self.v=varr
+      self.mass=depend(name='mass')
+      self.mass=1.0
+      self.kin=depend(name='kin',func=self.getkin)
+      self.getdescriptor('mass').add_dependant(self.getdescriptor('kin'))
+      self.getdescriptor('v').add_dependant(self.getdescriptor('kin'))
+
+print "qui"
+vall=numpy.array(range(1,10))   
+o1=myobj(vall[0:5])
+o2=myobj(vall[5:10])
+
+print "O1 v is ",   o1.v
+print "O1 kin is ", o1.kin
+
+o1.v[4]=12
+print "O1 v is ",   o1.v
+print "O1 kin is ", o1.kin
+
+print "O1 kin is ", o1.kin
+
+
+
+exit()
 class dep_inst_proxy(numpy.ndarray): 
    def __new__(cls, input_array, dep):
       # print "__new__ called!", input_array[0]

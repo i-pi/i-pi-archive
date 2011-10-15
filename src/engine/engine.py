@@ -1,6 +1,7 @@
 import numpy
 import math
 import random
+from utils import depend
 from io_system import *
 from atoms import *
 from cell import *
@@ -28,10 +29,10 @@ class System(object):
          cls.__qpf[3*i:3*(i+1),0]=atoms[i][1]
 
       cls.q=cls.__qpf[:,0]
-      cls.f = cls.__qpf[:,2]
+      cls.p=cls.__qpf[:,1]      
+      cls.f=cls.__qpf[:,2]
 
       cls.atoms = [ Atom(cls.__qpf[3*i:3*(i+1),:], name = atoms[i][0]) for i in range(natoms) ] #Creates a list of atoms from the __qp array
-
       cls.P_ext = numpy.zeros((3,3),float)
       cls.cell = Cell(cell, cls.P_ext, temp)
 

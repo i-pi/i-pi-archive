@@ -8,13 +8,27 @@ from engine import forces
 
 print "hello world"
 
+#ll=zeros((12,22),float)
+#aa=engine.Atom(ll)
+#aa.q[0]=2
+#print aa.q[0], aa.q._dep_proxy__dep._depend__tainted
+#exit()
+
 nat = 3
 allthing = zeros((nat,6), float)
-
 f = open("./testfile.txt","r")
 syst=engine.System.from_pdbfile(f)
-print syst
+syst.q[0]=-1.11
+syst.atoms[1].q[1]=-111
+print "kin", syst.kinetic
 
+
+print "deps", getattr(syst.atoms[0],'q')._depend__deps
+
+#add_depend(type(syst).__dict__['kinetic'])
+syst.atoms[0].q[1]=-11
+print "kin test", syst.kinetic
+exit()
 #syst.step(1.0)
 #print syst
 #syst.apply_pbc()
