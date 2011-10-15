@@ -23,14 +23,14 @@ class NST_ens(object):
 
    def exp_p(self):
       dist_mat = self.syst.cell.p*self.dt/self.syst.cell.w
-      eig = cell.compute_eigp(dist_mat)
+      eig, eigvals = cell.compute_eigp(dist_mat)
       i_eig = cell.compute_ih(eig)
    
       exp_mat = numpy.zeros((3,3), float)
       neg_exp_mat = numpy.zeros((3,3), float)
       for i in range(3):
-         exp_mat[i,i] = math.exp(self.syst.cell.p[i,i]*self.dt/self.syst.cell.w)
-         neg_exp_mat[i,i] = math.exp(-self.syst.cell.p[i,i]*self.dt/self.syst.cell.w)
+         exp_mat[i,i] = math.exp(eigvals[i])
+         neg_exp_mat[i,i] = math.exp(-eigvals[i])
       
       exp_mat = numpy.dot(eig, exp_mat)
       exp_mat = numpy.dot(exp_mat, i_eig)
@@ -43,7 +43,7 @@ class NST_ens(object):
    def thermo_step(self):
       for i in range(self.syst.natoms):
          self.thermo.step(self.syst.atoms[i])
-     # self.thermo.step(syst.cell)
+      self.thermo.cell_step(self.syst.cell)
 
    def pos_step(self):
       """Takes the atom positions, velocities and forces and integrates the 
@@ -109,12 +109,7 @@ class NST_ens(object):
 
    def simulation(self, maxcount = 5):
       self.R_update()
-      print
       print self.syst
-      print self.syst.f
-      print self.syst.q
-      print self.syst.p
-      print
       for i in range(maxcount):
          self.thermo_step()
          self.TP_update()
@@ -126,12 +121,7 @@ class NST_ens(object):
          self.TP_update()
          self.thermo_step()
          self.TP_update()
-      #   print self.syst
+         print self.syst
       self.apply_pbc()
-      print
-      print self.syst
-      print self.syst.f
-      print self.syst.q
-      print self.syst.p
-      print
+      #print self.syst
       io_system.print_pdb(self.syst.atoms, self.syst.cell)

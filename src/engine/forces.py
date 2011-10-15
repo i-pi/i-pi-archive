@@ -41,7 +41,7 @@ class LJ:
 
       self.syst.virial = numpy.zeros((3,3),float)
       self.syst.pot = 0.0
-      for i in range(3*self.syst.natoms):
+      for i in range(3*natoms):
          self.syst.f[i] = 0.0
    
       for i in range(natoms):
