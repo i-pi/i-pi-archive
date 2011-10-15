@@ -37,7 +37,9 @@ class System(dobject):
       self.atoms = [ Atom(self.__qpf[3*i:3*(i+1),:], name = atoms[i][0]) for i in range(natoms) ] #Creates a list of atoms from the __qp array
       self.kin = depend(func=self.get_kin, name = 'kin')
       
-      depgrps=dict(); depgrps['q']=[];      depgrps['p']=[];      depgrps['f']=[];
+      depgrps=dict();  
+      for what in [ 'q', 'p', 'f' ]: depgrps[what]=[];
+      
       for atom in self.atoms:
          atom.getdesc('kin').add_dependant(self.getdesc('kin'))
          # the global q,p,f and the atomic q,p,f must be synchronized.
@@ -45,7 +47,8 @@ class System(dobject):
          for what in [ 'q', 'p', 'f' ]: 
             depgrps[what].append(atom.getdesc(what))
             atom.getdesc(what).add_dependant(self.getdesc(what))
-      self.getdesc('p').add_depgrp(depgrps['p'])
+      
+      for what in [ 'q', 'p', 'f' ]:  self.getdesc(what).add_depgrp(depgrps[what])
       
       
       

@@ -79,15 +79,15 @@ class depend(object):
    
    def add_dependant(self,newdep):
       self.__deps.append(newdep)
-      
+
+   # dependency groups represent kind of one<--> many dependencies, i.e.
+   # A depends from [B1,B2,...] in such a way that tainting any Bi taints A, but 
+   # it is known that won't taints the other B's. On the other hand, if A is tainted
+   # elsehow, all the B's may be tainted and should be marked as such.
+   # An example is A = global momentum vector, Bi = slice corresponding to atom i
    def add_depgrp(self,newgrp):
       self.__depgrp.append(newgrp)
-      
-#   def add_synchro(self,newdep):
-#      self.__sync.append(newdep)
-#      # makes sure that syncing is symmetric
-#      if (not(self in newdep._depend__sync)): newdep.add_synchro(self) 
-      
+
    #recursive tainting
    def taint(self,taintme=True, tainter=None):
       """Recursively sets tainted flag on dependent objects."""
