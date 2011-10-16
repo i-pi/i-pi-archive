@@ -96,13 +96,13 @@ class NST_ens(object):
 
    def R_update(self):
       self.pot_func.force_update()
-      self.syst.kinetic_update()
+      self.syst.get_kinetic()
       self.syst.stress_update()
       self.syst.cell_update()
       self.syst.tot_E_update()
 
    def TP_update(self):
-      self.syst.kinetic_update()
+      self.syst.get_kinetic()
       self.syst.stress_update()
       self.syst.cell_update()
       self.syst.tot_E_update()

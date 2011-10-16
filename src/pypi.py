@@ -42,7 +42,7 @@ syst.atoms[0].p[1]=10
 syst.atoms[3].p[2]=10
 print "Global KE:", syst.kin
 
-exit()
+#exit()
 #syst.step(1.0)
 #print syst
 #syst.apply_pbc()
