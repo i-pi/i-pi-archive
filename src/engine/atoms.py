@@ -28,5 +28,5 @@ class Atom(dobject):
       ke = 0.0
       for i in range(3):
          ke += self.p[i]**2 
-      return ke/ (2.0*self.mass)
+      return ke/(2.0*self.mass)
    

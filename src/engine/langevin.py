@@ -1,49 +1,37 @@
 import numpy, math, random
 import thermostat
+from utils.depend import *
 
 class Thermo_Langevin(thermostat.Thermostat):     
    
-   def compute_TS(self):
-#      print "Re-computing propagator"
-      self.__T=math.exp(-self.__dt/self.__tau)
-      self.__S=math.sqrt(self.temp*(1-self.__T**2))
+   def compute_T(self):
+      return math.exp(-self.dt/self.tau)
+      
+   def compute_S(self):      
+      return math.sqrt(self.k_Boltz*self.temp*(1-self.T**2))
    
-   @property
-   def temp(self):
- #     print "langevin temp getter called"
-      return self.__temp
-
-   @temp.setter
-   def temp(self, new):
-  #    print "langevin temp setter called"
-      self.__temp=new
-      self.compute_TS()
-   
-   @property
-   def dt(self):
-   #   print "langevin getter called"
-      return self.__dt
-     
-   @dt.setter
-   def dt(self,new):
-    #  print "Thermo_Langevin setter called"
-      self.__dt = new
-      self.compute_TS()
-   
-   def __init__(self, temp = 1.0, dt = 1.0):
-      self.__tau=1.0
+   def __init__(self, temp = 1.0, dt = 1.0, tau = 1.0, econs=0.0):
+      super(Thermo_Langevin,self).__init__(temp,dt,econs)
+      self.tau=depend(value=tau,name='tau')
+      self.T=depend(name='T',func=self.compute_T)
+      self.S=depend(name='S',func=self.compute_S)      
+      
+      self.getdesc('tau').add_dependant(self.getdesc('T'))
+      self.getdesc('dt').add_dependant(self.getdesc('T'))
+      self.getdesc('T').add_dependant(self.getdesc('S'))
+      self.getdesc('temp').add_dependant(self.getdesc('S'))
+                  
       self.k_Boltz = 1.0
-      self.__temp = temp
-      self.dt = dt
 
    def step(self, atom):
-      sigma = 1.0/(4*math.pi*self.__tau*self.k_Boltz*self.temp*atom.mass)
+      sm=math.sqrt(atom.mass)
+      self.econs+=atom.kin
       for i in range(3):
-         atom.p[i] = self.__T*atom.p[i] + self.__S*random.gauss(0.0, sigma)
+         atom.p[i] = self.T*atom.p[i] + sm*self.S*random.gauss(0.0, 1.0)
+      self.econs-=atom.kin      
 
    def cell_step(self, cell):
-      sigma = 1.0/(4*math.pi*self.__tau*self.k_Boltz*self.temp*cell.w)
       for i in range(3):
          for j in range(i,3):
-            cell.p[i,j] = self.__T*cell.p[i,j] + self.__S*random.gauss(0.0, sigma)
+            cell.p[i,j] = self.T*cell.p[i,j] + self.S*math.sqrt(cell.w)*random.gauss(0.0, 1.0)
 

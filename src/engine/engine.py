@@ -26,8 +26,8 @@ class System(dobject):
       self.temp = temp
       self.k_Boltz = 1.0
 
-      atoms[0][1] = numpy.array([0.5, 0.5, 0.5])
-      atoms[1][1] = numpy.array([0.5, 0.5, 0.5+0.15*2**(1.0/6.0) + 0.1])
+#      atoms[0][1] = numpy.array([0.5, 0.5, 0.5])
+#      atoms[1][1] = numpy.array([0.5, 0.5, 0.5+0.15*2**(1.0/6.0) + 0.1])
 
       self.__qpf=numpy.zeros((3*natoms,3),float) 
       for i in range(natoms):
@@ -114,7 +114,7 @@ class System(dobject):
          rstr=rstr+"Atom %i:" % (i+1) + "\n"
          rstr=rstr+str(self.atoms[i])+"\n"
       rstr = rstr + "Cell:\n" + str(self.cell)
-      rstr = rstr + "\n\nTotal energy = " + str(self.tot_E) + ", potential energy = " + str(self.pot) + ", kinetic energy = " + str(self.kinetic)+ ", cell elastic energy = " + str(self.cell_pot) + ", cell kinetic energy = " + str(self.cell_kinetic)
+      rstr = rstr + "\n\nTotal energy = " + str(self.pot+self.kinetic+self.thermo.econs) + ", potential energy = " + str(self.pot) + ", kinetic energy = " + str(self.kinetic)+ ", cell elastic energy = " + str(self.cell_pot) + ", cell kinetic energy = " + str(self.cell_kinetic)
       return rstr
        
 #   def pot(self):

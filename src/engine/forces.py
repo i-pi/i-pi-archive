@@ -23,6 +23,7 @@ class LJ:
       fij = numpy.zeros(3, float)
       fji = numpy.zeros(3, float)
       r, rij = self.separation(atom_i, atom_j)
+      print "atom distance ", atom_i, atom_j, r
       f_tot = self.LJ_force(r)
       for i in range(3):
          fij[i] = f_tot*rij[i]/r
@@ -50,6 +51,7 @@ class LJ:
          for j in range(i+1, natoms):
             atom_j = self.syst.atoms[j]
 
+#            print "Computing pair", i, atom_i, " with ", atom_j
             fij, fji, r, rij = self.LJ_fij(atom_i, atom_j)
             atom_i.f += fij
             atom_j.f += fji

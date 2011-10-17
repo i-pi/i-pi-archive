@@ -4,12 +4,12 @@ import engine, io_system, cell
 class NST_ens(object):
 
    @classmethod
-   def from_pdbfile(cls, filedesc, thermo, pot_func, temp = 1.0, dt = 0.1, **kwargs):
+   def from_pdbfile(cls, filedesc, thermo, pot_func, temp = 1.0, dt = 0.1, tau=1.0, **kwargs):
       cls.dt = dt
       cls.temp = temp
       cls.syst = engine.System.from_pdbfile(filedesc, temp)
       cls.pot_func = pot_func(cls.syst, **kwargs)
-      cls.thermo = thermo(temp, dt/2.0)
+      cls.thermo = thermo(temp=temp, dt=dt/2.0, tau=tau)
       return cls()
 
    @classmethod
@@ -21,6 +21,10 @@ class NST_ens(object):
       cls.thermo = ens.thermo
       return cls()
 
+
+   def __init__(self):
+      self.syst.thermo=self.thermo
+      
    def exp_p(self):
       dist_mat = self.syst.cell.p*self.dt/self.syst.cell.w
       eig, eigvals = cell.compute_eigp(dist_mat)
@@ -112,7 +116,7 @@ class NST_ens(object):
       print self.syst
       f = open("./pdboutput.pdb","a")
       for i in range(maxcount):
-#         self.thermo_step()
+         self.thermo_step()
          self.TP_update()
          self.vel_step()
          self.TP_update()
@@ -124,7 +128,7 @@ class NST_ens(object):
 
          self.vel_step()
          self.TP_update()
- #        self.thermo_step()
+         self.thermo_step()
          self.TP_update()
          print self.syst
       self.apply_pbc()

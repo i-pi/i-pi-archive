@@ -179,7 +179,7 @@ class Cell(object):
 
       s=numpy.dot(self.ih,atom.q)
       for i in range(3):
-         s[i] = s[i] - math.floor(s[i])
+         s[i] = s[i] - math.round(s[i])
       new_pos = numpy.dot(self.h,s)
       return new_pos
 
@@ -189,13 +189,10 @@ class Cell(object):
          but gives the correct results as long as the cut-off radius is defined
          as smaller than the smallest width between parallel faces."""
 
-      s1 = numpy.dot(self.ih, atom1.q)
-      s2 = numpy.dot(self.ih, atom2.q)
-      s = numpy.empty(3)
+      s = numpy.dot(self.ih,atom1.q - atom2.q)
       for i in range(3):
-         s[i] = s1[i] - s2[i] - round(s1[i] - s2[i])
-      r = numpy.dot(self.h, s)
-      return r
+         s[i] -= round(s[i])
+      return numpy.dot(self.h, s)
 
    def cut_off(self, cut):
       pass
