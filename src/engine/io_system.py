@@ -17,6 +17,8 @@ def print_pdb(atoms, ncell, filedesc = sys.stdout):
    for i in range(0,len(atoms)): 
       filedesc.write("ATOM  %5i %4s%1s%3s %1s%4i%1s   %8.3f%8.3f%8.3f%6.2f%6.2f          %2s%2i\n" % (i+1, atoms[i].name,' ','  1',' ',1,' ',atoms[i].q[0],atoms[i].q[1],atoms[i].q[2],0.0,0.0,'  ',0))
 
+   filedesc.write("END\n")
+
 
 
 

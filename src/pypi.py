@@ -153,7 +153,7 @@ print syst2.thermo.temp
 print 
 print "SIMULATION STARTS HERE!"
 
-syst2.simulation(1000)
+syst2.simulation(3000)
 #syst2.simulation(1)
 
 #syst3 = dynamics.NST_ens.from_ensemble(syst2)

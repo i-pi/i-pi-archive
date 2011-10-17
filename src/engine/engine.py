@@ -27,7 +27,7 @@ class System(dobject):
       self.k_Boltz = 1.0
 
       atoms[0][1] = numpy.array([0.5, 0.5, 0.5])
-      atoms[1][1] = numpy.array([0.5, 0.5, 0.5+0.15*2**(1.0/6.0) + 0.01])
+      atoms[1][1] = numpy.array([0.5, 0.5, 0.5+0.15*2**(1.0/6.0) + 0.1])
 
       self.__qpf=numpy.zeros((3*natoms,3),float) 
       for i in range(natoms):
