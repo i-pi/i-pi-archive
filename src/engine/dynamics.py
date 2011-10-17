@@ -110,16 +110,21 @@ class NST_ens(object):
    def simulation(self, maxcount = 5):
       self.R_update()
       print self.syst
+      f = open("./pdboutput.pdb","a")
       for i in range(maxcount):
-         self.thermo_step()
+#         self.thermo_step()
          self.TP_update()
          self.vel_step()
          self.TP_update()
          self.pos_step()
          self.R_update()
+
+         if (i%10 == 0):
+            io_system.print_pdb(self.syst.atoms, self.syst.cell, f)
+
          self.vel_step()
          self.TP_update()
-         self.thermo_step()
+ #        self.thermo_step()
          self.TP_update()
          print self.syst
       self.apply_pbc()

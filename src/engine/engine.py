@@ -26,6 +26,9 @@ class System(dobject):
       self.temp = temp
       self.k_Boltz = 1.0
 
+      atoms[0][1] = numpy.array([0.5, 0.5, 0.5])
+      atoms[1][1] = numpy.array([0.5, 0.5, 0.5+0.15*2**(1.0/6.0) + 0.01])
+
       self.__qpf=numpy.zeros((3*natoms,3),float) 
       for i in range(natoms):
          self.__qpf[3*i:3*(i+1),0]=atoms[i][1]
@@ -54,18 +57,18 @@ class System(dobject):
       
       self.P_ext = numpy.zeros((3,3),float)
 
-      self.P_ext = numpy.array([[1,2,3],[2,0.5,2.5],[3,2.5,0.7]])
+#      self.P_ext = numpy.array([[1,2,3],[2,0.5,2.5],[3,2.5,0.7]])
 
       self.cell = Cell(cell, self.P_ext, temp)
 
-      random.seed(12)
-      #self.__qp[:,1]=numpy.arange(0,3*natoms)*0.01
-      for i in range(natoms):
-         sigma = math.sqrt(self.atoms[i].mass * self.k_Boltz * self.temp)
-         self.__qpf[3*i,1] = random.gauss(0.0, sigma)
-         self.__qpf[3*i+1,1] = random.gauss(0.0, sigma)
-         self.__qpf[3*i+2,1] = random.gauss(0.0, sigma)
-      self.p=self.__qpf[:,1]
+#      random.seed(12)
+#      #self.__qp[:,1]=numpy.arange(0,3*natoms)*0.01
+#      for i in range(natoms):
+#         sigma = math.sqrt(self.atoms[i].mass * self.k_Boltz * self.temp)
+#         self.__qpf[3*i,1] = random.gauss(0.0, sigma)
+#         self.__qpf[3*i+1,1] = random.gauss(0.0, sigma)
+#         self.__qpf[3*i+2,1] = random.gauss(0.0, sigma)
+#      self.p=self.__qpf[:,1]
 
       self.pot = 0.0
       self.kinetic = 0.0

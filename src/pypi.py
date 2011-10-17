@@ -20,27 +20,27 @@ f = open("./testfile.txt","r")
 syst=engine.System.from_pdbfile(f)
 
 
-print "Get atomic ke"
-for i in range(0,syst.natoms):
-   print "KE(",i,"): ",syst.atoms[i].kin
-print "Global KE:", syst.kin
-
-print "Now we modify the momentum of atom 0, and get again ke's"
-syst.atoms[0].p[0]=10
-for i in range(0,syst.natoms):
-   print "KE(",i,"): ",syst.atoms[i].kin
-print "Global KE:", syst.kin
-
-print "Now we modify the global momentum, and get again ke's"
-syst.p[2]=1
-for i in range(0,syst.natoms):
-   print "KE(",i,"): ",syst.atoms[i].kin
-print "Global KE:", syst.kin
-
-print "Now we modify the momentum of atom 0, and 3 and get just the global ke"
-syst.atoms[0].p[1]=10
-syst.atoms[3].p[2]=10
-print "Global KE:", syst.kin
+#print "Get atomic ke"
+#for i in range(0,syst.natoms):
+#   print "KE(",i,"): ",syst.atoms[i].kin
+#print "Global KE:", syst.kin
+#
+#print "Now we modify the momentum of atom 0, and get again ke's"
+#syst.atoms[0].p[0]=10
+#for i in range(0,syst.natoms):
+#   print "KE(",i,"): ",syst.atoms[i].kin
+#print "Global KE:", syst.kin
+#
+#print "Now we modify the global momentum, and get again ke's"
+#syst.p[2]=1
+#for i in range(0,syst.natoms):
+#   print "KE(",i,"): ",syst.atoms[i].kin
+#print "Global KE:", syst.kin
+#
+#print "Now we modify the momentum of atom 0, and 3 and get just the global ke"
+#syst.atoms[0].p[1]=10
+#syst.atoms[3].p[2]=10
+#print "Global KE:", syst.kin
 
 #exit()
 #syst.step(1.0)
@@ -144,7 +144,7 @@ f = open("./testfile.txt", "r")
 thermo = langevin.Thermo_Langevin
 pot_func = forces.LJ
 kwargs = {"eps": 0.1, "sigma": 0.15, "rc": 0.15*2.5}
-syst2 = dynamics.NST_ens.from_pdbfile(f, thermo, pot_func, dt = 0.0001, **kwargs)
+syst2 = dynamics.NST_ens.from_pdbfile(f, thermo, pot_func, dt = 0.001, **kwargs)
 
 print syst2.syst
 print syst2.thermo.dt
@@ -153,7 +153,8 @@ print syst2.thermo.temp
 print 
 print "SIMULATION STARTS HERE!"
 
-syst2.simulation(10000)
+syst2.simulation(1000)
+#syst2.simulation(1)
 
 #syst3 = dynamics.NST_ens.from_ensemble(syst2)
 #syst3 = engine.System.from_system(syst2.syst)
