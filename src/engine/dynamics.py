@@ -1,5 +1,5 @@
 import numpy, math
-import engine, io_system, cell
+import engine, io_system, cell, upper_T
 
 class NST_ens(object):
 
@@ -27,8 +27,8 @@ class NST_ens(object):
       
    def exp_p(self):
       dist_mat = self.syst.cell.p*self.dt/self.syst.cell.w
-      eig, eigvals = cell.compute_eigp(dist_mat)
-      i_eig = cell.compute_ih(eig)
+      eig, eigvals = upper_T.compute_eigp(dist_mat)
+      i_eig = upper_T.compute_ih(eig)
    
       exp_mat = numpy.zeros((3,3), float)
       neg_exp_mat = numpy.zeros((3,3), float)
@@ -57,7 +57,7 @@ class NST_ens(object):
 
       exp_mat, neg_exp_mat = self.exp_p()
       sinh_mat = 0.5*(exp_mat - neg_exp_mat)
-      ip_mat = cell.compute_ih(self.syst.cell.p/self.syst.cell.w)
+      ip_mat = upper_T.compute_ih(self.syst.cell.p/self.syst.cell.w)
 
       for i in range(self.syst.natoms):
          atom_i = self.syst.atoms[i]
@@ -114,7 +114,7 @@ class NST_ens(object):
    def simulation(self, maxcount = 5):
       self.R_update()
       print self.syst
-      f = open("./pdboutput.pdb","a")
+#      f = open("./pdboutput.pdb","a")
       for i in range(maxcount):
          self.thermo_step()
          self.TP_update()
@@ -123,8 +123,8 @@ class NST_ens(object):
          self.pos_step()
          self.R_update()
 
-         if (i%10 == 0):
-            io_system.print_pdb(self.syst.atoms, self.syst.cell, f)
+#         if (i%10 == 0):
+#            io_system.print_pdb(self.syst.atoms, self.syst.cell, f)
 
          self.vel_step()
          self.TP_update()

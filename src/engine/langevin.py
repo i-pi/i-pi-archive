@@ -31,7 +31,8 @@ class Thermo_Langevin(thermostat.Thermostat):
       self.econs-=atom.kin      
 
    def cell_step(self, cell):
+      sw = math.sqrt(cell.w)
       for i in range(3):
          for j in range(i,3):
-            cell.p[i,j] = self.T*cell.p[i,j] + self.S*math.sqrt(cell.w)*random.gauss(0.0, 1.0)
+            cell.p[i,j] = self.T*cell.p[i,j] + self.S*sw*random.gauss(0.0, 1.0)
 

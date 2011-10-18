@@ -6,3 +6,9 @@ class Thermostat(dobject):
       self.dt=depend(name='dt', value=dt)
       
       self.econs = econs
+
+   def step(self):
+      pass
+
+   def cell_step(self):
+      pass

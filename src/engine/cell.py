@@ -1,37 +1,5 @@
 import numpy, math, random
-
-def compute_ih(h):
-   """Inverts a 3*3 (upper-triangular) cell matrix"""
-   ih = numpy.zeros((3,3), float)
-   for i in range(3):
-      ih[i,i] = 1.0/h[i,i]
-   ih[0,1] = -ih[0,0]*h[0,1]*ih[1,1]
-   ih[1,2] = -ih[1,1]*h[1,2]*ih[2,2]
-   ih[0,2] = -ih[1,2]*h[0,1]*ih[0,0]-ih[0,0]*h[0,2]*ih[2,2]
-   return ih
-
-def compute_eigp(p):
-   """Finds the eigenvector matrix of a 3*3 upper-triangular matrix"""
-   eigp = numpy.zeros((3,3), float)
-   eigvals = numpy.zeros(3, float)
-
-   for i in range(3):
-      eigp[i,i] = 1
-   eigp[0,1] = -p[0,1]/(p[0,0] - p[1,1])
-   eigp[1,2] = -p[1,2]/(p[1,1] - p[2,2])
-   eigp[0,2] = -(p[0,1]*p[1,2] - p[0,2]*p[1,1] + p[0,2]*p[2,2])/((p[0,0] - p[2,2])*(p[2,2] - p[1,1]))
-
-   for i in range(3):
-      eigvals[i] = p[i,i]
-   return eigp, eigvals
-
-
-
-def volume(h):
-   """Calculates the volume of the unit cell, assuming an upper-triangular
-      unit vector matrix"""
-   #return numpy.inner(self.h[0:3,0], numpy.cross(self.h[0:3,1], self.h[0:3,2])) # general matrix
-   return h[0,0]*h[1,1]*h[2,2]   # upper-triangular matrix
+import upper_T
 
 class Cell(object):
    """Represents the simulation cell in a periodic system"""
@@ -65,14 +33,14 @@ class Cell(object):
    @property
    def V(self):
       if (self.__taint_V):
-         self.__V = volume(self.h)
+         self.__V = upper_T.volume(self.h)
          self.__taint_V = False
       return self.__V
 
    @property
    def ih(self):       
       if (self.__taint_ih) :
-         self.__ih=compute_ih(self.h)
+         self.__ih=upper_T.compute_ih(self.h)
          self.__taint_ih = False
       return self.__ih
 
@@ -108,11 +76,11 @@ class Cell(object):
 
       self.w = 1e8
       self.__P_ext = P_ext
-      self.__V = volume(self.h)
+      self.__V = upper_T.volume(self.h)
 
       self.__h_0 = numpy.identity(3, float) #needs to be the unstrained cell
-      self.__ih_0 = compute_ih(self.__h_0)
-      self.__V_0 = volume(self.__h_0)
+      self.__ih_0 = upper_T.compute_ih(self.__h_0)
+      self.__V_0 = upper_T.volume(self.__h_0)
 
 #      random.seed(12)
 #      sigma = math.sqrt(self.w * self.k_Boltz * self.temp)
@@ -179,7 +147,7 @@ class Cell(object):
 
       s=numpy.dot(self.ih,atom.q)
       for i in range(3):
-         s[i] = s[i] - math.round(s[i])
+         s[i] = s[i] - round(s[i])
       new_pos = numpy.dot(self.h,s)
       return new_pos
 
