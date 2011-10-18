@@ -131,10 +131,10 @@ class depend(object):
          self.taint(taintme=False, tainter=self); #self.__tainted=False; self.__unsync=False; 
       self.__tainted=False
       #return self.__value or a proxy object if it is a ndarray instance
-      if (hasattr(self.__value,'__iter__')): 
-         return dep_proxy(self.__value,dep=self)
-      else: 
-         return self.__value
+      #if (hasattr(self.__value,'__iter__')): 
+      #   return dep_proxy(self.__value,dep=self)
+      #else: 
+      return self.__value
       
    def __set__(self,obj,value): 
       #print "  inside decorator setter for", self.__name
