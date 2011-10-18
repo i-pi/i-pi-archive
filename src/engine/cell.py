@@ -82,6 +82,8 @@ class Cell(object):
       self.__ih_0 = upper_T.compute_ih(self.__h_0)
       self.__V_0 = upper_T.volume(self.__h_0)
 
+      self.cutoff = 0.5
+
 #      random.seed(12)
       sigma = math.sqrt(self.w * self.k_Boltz * self.temp)
       for i in range(3):
@@ -162,8 +164,6 @@ class Cell(object):
          s[i] -= round(s[i])
       return numpy.dot(self.h, s)
 
-   def cut_off(self, cut):
-      pass
       
 def h2abc(h):
    """

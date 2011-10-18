@@ -138,6 +138,13 @@ print "hello world"
 #print
 
 #f.close()
+
+f = open("./testfile3.txt", "r")
+syst = engine.System.from_pdbfile(f)
+
+io_system.xml(syst, sys.stdout)
+exit()
+
 f = open("./testfile2.txt", "r")
 
 #thermo = langevin.Thermo_Langevin(dt = 0.1)
