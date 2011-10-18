@@ -18,7 +18,7 @@ class System(dobject):
 #step will eventually call the forces from the external program and then do the propagation step. At the moment we simply take free particle trajectories, to test the theory.
 
    @classmethod
-   def from_pdbfile(cls, filedesc, temp = 1.0):
+   def from_pdbfile(cls, filedesc, temp = 1.0, P_ext = numpy.zeros((3,3),float)):
    
       self=cls()
       atoms, cell, natoms = read_pdb(filedesc)
@@ -55,20 +55,20 @@ class System(dobject):
       
       
       
-      self.P_ext = numpy.zeros((3,3),float)
+      self.P_ext = P_ext
 
 #      self.P_ext = numpy.array([[1,2,3],[2,0.5,2.5],[3,2.5,0.7]])
 
       self.cell = Cell(cell, self.P_ext, temp)
 
-#      random.seed(12)
-#      #self.__qp[:,1]=numpy.arange(0,3*natoms)*0.01
-#      for i in range(natoms):
-#         sigma = math.sqrt(self.atoms[i].mass * self.k_Boltz * self.temp)
-#         self.__qpf[3*i,1] = random.gauss(0.0, sigma)
-#         self.__qpf[3*i+1,1] = random.gauss(0.0, sigma)
-#         self.__qpf[3*i+2,1] = random.gauss(0.0, sigma)
-#      self.p=self.__qpf[:,1]
+      #random.seed(12)
+      #self.__qp[:,1]=numpy.arange(0,3*natoms)*0.01
+      for i in range(natoms):
+         sigma = math.sqrt(self.atoms[i].mass * self.k_Boltz * self.temp)
+         self.__qpf[3*i,1] = random.gauss(0.0, sigma)
+         self.__qpf[3*i+1,1] = random.gauss(0.0, sigma)
+         self.__qpf[3*i+2,1] = random.gauss(0.0, sigma)
+      self.p=self.__qpf[:,1]
 
       self.pot = 0.0
       self.kinetic = 0.0

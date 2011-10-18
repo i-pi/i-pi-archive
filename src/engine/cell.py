@@ -83,10 +83,10 @@ class Cell(object):
       self.__V_0 = upper_T.volume(self.__h_0)
 
 #      random.seed(12)
-#      sigma = math.sqrt(self.w * self.k_Boltz * self.temp)
-#      for i in range(3):
-#         for j in range(i, 3):
-#            self.p[i, j] = random.gauss(0.0, sigma)
+      sigma = math.sqrt(self.w * self.k_Boltz * self.temp)
+      for i in range(3):
+         for j in range(i, 3):
+            self.p[i, j] = random.gauss(0.0, sigma)
 
    def __str__(self):
       return "    h1 = %s\n    h2 = %s\n    h3 = %s\n\n    p1 = %s\n    p2 = %s\n    p3 = %s\n\n    w = %s, volume = %s, temp = %s" % (self.h[:,0], self.h[:,1], self.h[:,2], self.p[:,0], self.p[:,1], self.p[:,2], self.w, self.V, self.temp)

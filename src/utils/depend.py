@@ -5,9 +5,9 @@ class dobject(object):
    def depbind(self, what, to):
       self.getdesc(to).add_dependant(self.getdesc(what))
       
-   def syncbind(self, o1, o2):
-      self.getdesc(o1).add_dependant(self.getdesc(o2))
-      self.getdesc(o2).add_dependant(self.getdesc(o1))
+#   def syncbind(self, o1, o2):
+ #     self.getdesc(o1).add_dependant(self.getdesc(o2))
+  #    self.getdesc(o2).add_dependant(self.getdesc(o1))
    
    def getdesc(self, name):
       if name in self.__class__.__dict__ : return self.__class__.__dict__[name]
@@ -132,10 +132,11 @@ class depend(object):
       self.__tainted=False
       #return self.__value or a proxy object if it is a ndarray instance
       if (hasattr(self.__value,'__iter__')): 
+         #return dep_proxy(self.__value,dep=self)
          return dep_proxy(self.__value,dep=self)
       else: 
          return self.__value
-      
+
    def __set__(self,obj,value): 
       #print "  inside decorator setter for", self.__name
       self.taint(taintme=False, tainter=self);  #taints dependencies but not self

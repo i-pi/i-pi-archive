@@ -27,6 +27,7 @@ class Atom(dobject):
       print " [ upd. atom.kin ]", 
       ke = 0.0
       for i in range(3):
-         ke += self.p[i]**2 
+        # ke += self.getdesc('p').getter([i])**2 
+         ke += self.p[i]**2
       return ke/(2.0*self.mass)
    
