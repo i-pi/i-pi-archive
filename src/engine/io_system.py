@@ -63,6 +63,7 @@ def xml(system, namedpipe):
       namedpipe.write(tab + tab + tab + "<x>" + str(atom_q[0]) + "</x>\n")
       namedpipe.write(tab + tab + tab + "<y>" + str(atom_q[1]) + "</y>\n")
       namedpipe.write(tab + tab + tab + "<z>" + str(atom_q[2]) + "</z>\n")
+      namedpipe.write(tab + tab + tab + "<mass>" + str(system.atoms[i].mass) + "</mass>\n")
       namedpipe.write(tab + tab + "</atom>\n")
    namedpipe.write(tab + "</atoms>\n")
 
