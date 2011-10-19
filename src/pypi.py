@@ -148,7 +148,6 @@ print "hello world"
 #print test.temp
 #print
 
-#f.close()
 f = open("./testfile2.txt", "r")
 
 #thermo = langevin.Thermo_Langevin(dt = 0.1)

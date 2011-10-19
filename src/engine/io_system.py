@@ -46,3 +46,48 @@ def read_pdb(filedesc):
       atoms.append([name, pos]) 
       body = filedesc.readline()
    return atoms, cell, natoms
+
+def xml(system, namedpipe):
+   tab = "   "
+   namedpipe.write("<?xml version=\"1.0\"?>\n")
+   namedpipe.write("<system>\n")
+   namedpipe.write(tab + "<natoms>" + str(system.natoms) + "</natoms>\n")
+   namedpipe.write(tab + "<temp>" + str(system.temp) + "</temp>\n")
+   namedpipe.write(tab + "<cutoff>" + str(system.cell.cutoff) + "</cutoff>\n")
+   namedpipe.write(tab + "<atoms>\n")
+
+   for i in range(system.natoms):
+      atom_q = system.atoms[i].q
+      namedpipe.write(tab + tab + "<atom>\n")
+      namedpipe.write(tab + tab + tab + "<index>" + str(i) + "</index>\n")
+      namedpipe.write(tab + tab + tab + "<x>" + str(atom_q[0]) + "</x>\n")
+      namedpipe.write(tab + tab + tab + "<y>" + str(atom_q[1]) + "</y>\n")
+      namedpipe.write(tab + tab + tab + "<z>" + str(atom_q[2]) + "</z>\n")
+      namedpipe.write(tab + tab + tab + "<mass>" + str(system.atoms[i].mass) + "</mass>\n")
+      namedpipe.write(tab + tab + "</atom>\n")
+   namedpipe.write(tab + "</atoms>\n")
+
+   h = system.cell.h
+   namedpipe.write(tab + "<cell>\n")
+
+   namedpipe.write(tab + tab + "<h1>\n")
+   namedpipe.write(tab + tab + tab + "<x>" + str(h[0,0]) + "</x>\n")
+   namedpipe.write(tab + tab + tab + "<y>" + str(0.0) + "</y>\n")
+   namedpipe.write(tab + tab + tab + "<z>" + str(0.0) + "</z>\n")
+   namedpipe.write(tab + tab + "</h1>\n")
+
+   namedpipe.write(tab + tab + "<h2>\n")
+   namedpipe.write(tab + tab + tab + "<x>" + str(h[0,1]) + "</x>\n")
+   namedpipe.write(tab + tab + tab + "<y>" + str(h[1,1]) + "</y>\n")
+   namedpipe.write(tab + tab + tab + "<z>" + str(0.0) + "</z>\n")
+   namedpipe.write(tab + tab + "</h2>\n")
+   
+   namedpipe.write(tab + tab + "<h3>\n")
+   namedpipe.write(tab + tab + tab + "<x>" + str(h[0,2]) + "</x>\n")
+   namedpipe.write(tab + tab + tab + "<y>" + str(h[1,2]) + "</y>\n")
+   namedpipe.write(tab + tab + tab + "<z>" + str(h[2,2]) + "</z>\n")
+   namedpipe.write(tab + tab + "</h3>\n")
+
+   namedpipe.write(tab + "</cell>\n")
+
+   namedpipe.write("</system>\n") 

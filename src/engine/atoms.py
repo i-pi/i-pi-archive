@@ -25,7 +25,6 @@ class Atom(object):
    def get_kin(self):
       """Calculates the kinetic energy of the particle from the particle 
          momentum"""
-      #print " [ upd. atom.kin ]", 
       ke = 0.0
       p=self.p.get()
       for i in range(3):
@@ -33,8 +32,7 @@ class Atom(object):
       return ke/(2.0*self.mass.get())
 
    def get_kstress(self):
-      """Calculates the kinetic energy of the particle from the particle 
-         momentum"""
-      #print " [ upd. atom.kin ]", 
+      """Calculates the contribution of the atom to the kinetic stress tensor"""
       p=self.p.get()
       return numpy.outer(p,p)/self.mass.get()
+

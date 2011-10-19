@@ -184,3 +184,4 @@ class nst_ensemble(nvt_ensemble):
       self.apply_pbc()
       #print self.syst
       io_system.print_pdb(self.syst.atoms, self.syst.cell)
+

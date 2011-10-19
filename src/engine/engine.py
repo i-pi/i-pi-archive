@@ -54,9 +54,6 @@ class System(object):
    def from_pdbfile(cls, filedesc, ffield=forcefield()):   
       atoms, cell, natoms = read_pdb(filedesc)
 
-#      atoms[0][1] = numpy.array([0.5, 0.5, 0.5])
-#      atoms[1][1] = numpy.array([0.5, 0.5, 0.5+0.15*2**(1.0/6.0) + 0.1])
-
       cls.__qpf=numpy.zeros((3*natoms,3),float) 
       for i in range(natoms):
          cls.__qpf[3*i:3*(i+1),0]=atoms[i][1]
@@ -89,10 +86,10 @@ class System(object):
       self.pot = depend(value=0.0,name='pot')
       self.vir = depend(value=numpy.zeros((3,3),float),name='vir')
 
+
       self.ffield=ffield
       self.ffield.bind(cell=self.cell, atoms=self.atoms, pot=self.pot, f=self.f, vir=self.vir)      
 
-      # to be defined somewhere      
       self.stress = depend(name='stress',func=self.get_stress,deplist=[self.vir, self.kstress])
       
 

@@ -39,7 +39,10 @@ class Cell(object):
       
       self.strain = depend(name = 'strain', func=self.get_strain)
       self.h.add_dependant(self.strain); self.ih0.add_dependant(self.strain);
-
+#      sigma = math.sqrt(self.w * self.k_Boltz * self.temp)
+#      for i in range(3):
+#         for j in range(i, 3):
+#            self.p[i, j] = random.gauss(0.0, sigma)
       self.pext = depend(name = 'pext', value = pext)
       self.pot = depend(name = 'pot', func = self.get_pot)
       self.pext.add_dependant(self.pot); self.V0.add_dependant(self.pot); self.strain.add_dependant(self.pot);
@@ -120,8 +123,6 @@ class Cell(object):
          s[i] -= round(s[i])
       return numpy.dot(self.h.get(), s)
 
-   def cut_off(self, cut):
-      pass
       
 def h2abc(h):
    """
