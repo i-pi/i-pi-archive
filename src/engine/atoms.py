@@ -1,7 +1,7 @@
 import numpy, math
 from utils.depend import *
 
-class Atom(dobject):
+class Atom(object):
    """Represent an atom, with position, velocity, mass and related properties"""
     
 #qpslice holds position and momentum data. 
@@ -16,17 +16,25 @@ class Atom(dobject):
       self.name = depend(value=name,name='name')
       
       # dependant properties (w/computation function)
-      self.kin = depend(name='kin', func=self.get_kin, deplist=[self.getdesc('p'),self.getdesc('mass')])
+      self.kin = depend(name='kin', func=self.get_kin, deplist=[self.p,self.mass])
+      self.kstress = depend(name='kstress', func=self.get_kstress, deplist=[self.p,self.mass])      
 
    def __str__(self):
-      return "    Name = %s\n    q = %s\n    p = %s\n    f = %s " % (self.name, self.q, self.p, self.f)
+      return "    Name = %s\n    q = %s\n    p = %s\n    f = %s " % (self.name.get(), self.q.get(), self.p.get(), self.f.get())
 
    def get_kin(self):
       """Calculates the kinetic energy of the particle from the particle 
          momentum"""
-      print " [ upd. atom.kin ]", 
+      #print " [ upd. atom.kin ]", 
       ke = 0.0
+      p=self.p.get()
       for i in range(3):
-         ke += self.p[i]**2 
-      return ke/(2.0*self.mass)
-   
+         ke += p[i]**2 
+      return ke/(2.0*self.mass.get())
+
+   def get_kstress(self):
+      """Calculates the kinetic energy of the particle from the particle 
+         momentum"""
+      #print " [ upd. atom.kin ]", 
+      p=self.p.get()
+      return numpy.outer(p,p)/self.mass.get()
