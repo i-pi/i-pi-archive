@@ -1,12 +1,23 @@
 from numpy import *
 from engine import *
 import sys
-from engine import test_Thermo
 from engine import io_system
 from engine import dynamics
 from engine import forces
+import numpy
 
 print "hello world"
+
+#a = numpy.zeros((3,3),float)
+#b = numpy.array(range(9)); b.shape=(3,3)
+
+#c=a[:]
+#c[:]=b
+#a[1,1]=-1
+#print "a", a
+#print "b", b
+
+#exit()
 
 #ll=zeros((12,22),float)
 #aa=engine.Atom(ll)
@@ -137,30 +148,41 @@ print "hello world"
 #print test.temp
 #print
 
-#f.close()
-
-f = open("./testfile3.txt", "r")
-syst = engine.System.from_pdbfile(f)
-g = open("./forces/system.xml", "w")
-io_system.xml(syst, g)
-exit()
-
 f = open("./testfile2.txt", "r")
 
+<<<<<<< HEAD
+=======
 #thermo = langevin.Thermo_Langevin(dt = 0.1)
-thermo = langevin.Thermo_Langevin
+
+syst=engine.System.from_pdbfile(f, forces.LJ( {"eps": 0.1, "sigma": 0.3, "rc": 0.3*2.5} ) )
+thermo = langevin.langevin(tau=1e-1)
+thermo_cell = langevin.langevin(tau=1e-2)
+nvt=dynamics.nst_ensemble(syst=syst, thermo=thermo, cell_thermo=thermo_cell, dt=1e-2, temp=1e-2)
+>>>>>>> origin
+
+print "# Initial pot is ", syst.pot.get()
+print "# Thermo T is ", nvt.thermo.T.get()
+print "# V K ECNS"
+for istep in range(100):
+   nvt.step()
+   print syst.pot.get(), syst.kin.get(), nvt.econs.get(), syst.cell.V.get()
+
 pot_func = forces.LJ
 kwargs = {"eps": 0.1, "sigma": 0.3, "rc": 0.3*2.5}
-syst2 = dynamics.NST_ens.from_pdbfile(f, thermo, pot_func, temp=1e-2, tau=1e-1,  dt = 0.005, **kwargs)
 
-print syst2.syst
-print syst2.thermo.dt
-print syst2.thermo.temp
 
-print 
-print "SIMULATION STARTS HERE!"
+#syst2 = dynamics.NST_ens.from_pdbfile(f, thermo, pot_func, temp=1e-2, tau=1e-1,  dt = 0.005, **kwargs)
 
-syst2.simulation(100)
+#print syst2.syst
+#print syst2.thermo.dt
+#print syst2.thermo.temp
+
+#print 
+#print "SIMULATION STARTS HERE!"
+
+#syst2.simulation(100)
+
+
 #syst2.simulation(1)
 
 #syst3 = dynamics.NST_ens.from_ensemble(syst2)

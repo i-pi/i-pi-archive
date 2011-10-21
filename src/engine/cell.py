@@ -1,5 +1,6 @@
 import numpy, math, random
 import upper_T
+from utils.depend import *
 
 class Cell(object):
    """Represents the simulation cell in a periodic system"""
@@ -8,146 +9,104 @@ class Cell(object):
 #h is going to be upper triangular, i.e. a_1=(a1x,0,0); a_2=(a2x,a2y,0); a_3=(a3x,a3y,a3z)
 #p will hold the box momenta, in the same form as for h
 #w is probably the barostat mass, or something similar. 
-  
-   @property
-   def h(self): 
-      return self.__h
+
+   h = numpy.zeros((3,3),float)
+   p = numpy.zeros((3,3),float)
+   w = 1.0
    
-   @h.setter
-   def h(self, newh): 
-      self.__h = newh
-      #self.__ih = numpy.zeros((3,3),float)
-      self.__taint_ih = True
-      self.__taint_eps = True
-      self.__taint_PI = True
-      self.__taint_V = True
+   @classmethod 
+   def fromSidesAngles(cls, mycell=[1,1,1,math.pi,math.pi,math.pi], w=1.0, h0=None, pext = numpy.zeros((3,3),float)):
+      a, b, c, alpha, beta, gamma = mycell
+      return cls(h=abc2h(a,b,c,alpha,beta,gamma), w = w, h0 = h0)
 
-   @property
-   def p(self): 
-      return self.__p
-   
-   @p.setter
-   def p(self, newp): 
-      self.__p=newp
 
-   @property
-   def V(self):
-      if (self.__taint_V):
-         self.__V = upper_T.volume(self.h)
-         self.__taint_V = False
-      return self.__V
-
-   @property
-   def ih(self):       
-      if (self.__taint_ih) :
-         self.__ih=upper_T.compute_ih(self.h)
-         self.__taint_ih = False
-      return self.__ih
-
-   @property
-   def strain(self):
-      if (self.__taint_eps):
-#         print "New eps formed"
-         self.__eps = self.compute_strain()
-         self.__taint_eps = False
-      return self.__eps
-
-   @property
-   def P_ext(self):
-      return self.__P_ext
-
-   @property
-   def PI_ext(self):
-      if (self.__taint_PI):
-         self.__PI_ext = self.compute_PI_ext()
-         self.__taint_PI = False
-      return self.__PI_ext   
-
-   def __init__(self, cell = [ 1, 1, 1, math.pi/2, math.pi/2, math.pi/2], P_ext = numpy.zeros(3, float), temp = 1.0 ):
+   def __init__(self, h = numpy.identity(3, float), w = 1.0, h0=None, pext = numpy.zeros((3,3),float) ):      
+      self.h = depend(value = h, name = 'h')
+      self.p = depend(value = numpy.zeros((3,3), float), name = 'p')
+      self.w = depend(value = w, name='w')
       
-      a, b, c, alpha, beta, gamma = cell[0], cell[1], cell[2], cell[3], cell[4], cell[5]
-      self.h = abc2h(a, b, c, alpha, beta, gamma)
+      self.V = depend(name='V', func=self.get_volume)
+      self.ih = depend(name='ih', func=self.get_ih)
+      self.h.add_dependant(self.V);  self.h.add_dependant(self.ih)
 
-      self.temp = temp
-      self.k_Boltz = 1.0
-
-      self.p = numpy.zeros((3,3), float)
-      self.f = numpy.zeros((3,3), float)
-
-      self.w = 1e8
-      self.__P_ext = P_ext
-      self.__V = upper_T.volume(self.h)
-
-      self.__h_0 = numpy.identity(3, float) #needs to be the unstrained cell
-      self.__ih_0 = upper_T.compute_ih(self.__h_0)
-      self.__V_0 = upper_T.volume(self.__h_0)
-
-      self.cutoff = 0.5
-
-#      random.seed(12)
-      sigma = math.sqrt(self.w * self.k_Boltz * self.temp)
-      for i in range(3):
-         for j in range(i, 3):
-            self.p[i, j] = random.gauss(0.0, sigma)
-
-   def __str__(self):
-      return "    h1 = %s\n    h2 = %s\n    h3 = %s\n\n    p1 = %s\n    p2 = %s\n    p3 = %s\n\n    w = %s, volume = %s, temp = %s" % (self.h[:,0], self.h[:,1], self.h[:,2], self.p[:,0], self.p[:,1], self.p[:,2], self.w, self.V, self.temp)
+      self.kin = depend(name='kin', func=self.get_kin) 
+      self.p.add_dependant(self.kin);  self.w.add_dependant(self.kin);
       
-#   def exp_p(self, dt):
-#      dist_mat = self.p*dt/self.w
-#      eig = compute_eigp(dist_mat)
-#      i_eig = compute_ih(eig)
-#   
-#      diag_mat = numpy.zeros((3,3), float)
-#      neg_diag_mat = numpy.zeros((3,3), float)
+      if (h0 is None): h0=numpy.copy(h)
+      self.h0 = depend(name='h0', value = h0)
+      self.V0 = depend(name='V0', func=self.get_vol0)
+      self.ih0 = depend(name='ih', func=self.get_ih0, deplist=[self.h0, self.V0])
+      
+      self.strain = depend(name = 'strain', func=self.get_strain)
+      self.h.add_dependant(self.strain); self.ih0.add_dependant(self.strain);
+#      sigma = math.sqrt(self.w * self.k_Boltz * self.temp)
 #      for i in range(3):
-#         diag_mat[i,i] = math.exp(self.p[i,i]*dt/self.w)
-#         neg_diag_mat[i,i] = math.exp(-self.p[i,i]*dt/self.w)
-#      
-#      exp_mat = numpy.dot(eig, diag_mat)
-#      exp_mat = numpy.dot(exp_mat, i_eig)
-#      
-#      neg_exp_mat = numpy.dot(eig, neg_diag_mat)
-#      neg_exp_mat = numpy.dot(neg_exp_mat, i_eig)
-#
-#      return exp_mat, neg_exp_mat
+#         for j in range(i, 3):
+#            self.p[i, j] = random.gauss(0.0, sigma)
+      self.pext = depend(name = 'pext', value = pext)
+      self.pot = depend(name = 'pot', func = self.get_pot)
+      self.pext.add_dependant(self.pot); self.V0.add_dependant(self.pot); self.strain.add_dependant(self.pot);
+      
+      self.piext = depend(name='piext', func=self.get_piext, deplist=[self.pext, self.V, self.V0, self.ih0, self.h])
+   
+   def get_volume(self):
+      """Calculates the volume of the unit cell, assuming an upper-triangular
+      unit vector matrix"""
+      h = self.h.get()
+      return ut_det(h)  
+   def get_vol0(self):
+      h0 = self.h0.get()
+      return ut_det(h0)      
 
-   def compute_strain(self):
-      """Computes the strain tensor from the unit cell and reference cell"""
-      root = numpy.dot(self.h, self.__ih_0)
-      eps = numpy.dot(numpy.transpose(root), root) - numpy.identity(3, float)
-      eps /= 2
-      return eps   
+   def get_ih(self):
+      """Inverts a 3*3 (upper-triangular) cell matrix"""
+      h = self.h.get()      
+      return ut_inverse(h)
 
-   def compute_PI_ext(self):
-      root = numpy.dot(self.h, self.__ih_0)
-      PI = numpy.dot(root, self.P_ext)
-      PI = numpy.dot(PI, numpy.transpose(root))
-      PI *= self.__V_0/self.V
-#   return (numpy.dot(root, numpy.dot(P_ext, numpy.transpose(root))))*self.__V_0/self.V
-      return PI
+   def get_ih0(self):
+      """Inverts a 3*3 (upper-triangular) cell matrix"""
+      h0 = self.h0.get()      
+      return ut_inverse(h0)
 
-   def pot(self):
-      """Calculates the elastic strain energy of the cell"""
-
-      pe = self.__V_0*numpy.trace(numpy.dot(self.P_ext, self.strain))
-      return pe
-
-   def kinetic(self):
+   def get_kin(self):
       """Calculates the kinetic energy of the cell from the cell parameters"""
-
+      p=self.p.get()
       ke = 0.0
       for i in range(3):
-         for j in range(3):
-            ke += self.p[i, j]**2
-      ke /= 2*self.w
+         for j in range(i,3):
+            ke += p[i, j]**2
+      ke /= 2*self.w.get()
       return ke
+
+   def get_strain(self):
+      """Computes the strain tensor from the unit cell and reference cell"""
+      root = numpy.dot(self.h.get(), self.ih0.get())
+      eps = numpy.dot(numpy.transpose(root), root) - numpy.identity(3, float)
+      eps *= 0.5
+      return eps
+
+   def get_pot(self):
+      """Calculates the elastic strain energy of the cell"""
+      return self.V0.get()*numpy.trace(numpy.dot(self.pext.get(), self.strain.get()))
+
+   def get_piext(self):
+      root = numpy.dot(self.h.get(), self.ih0.get())
+      pi = numpy.dot(root, self.pext.get())
+      pi = numpy.dot(pi, numpy.transpose(root))
+      pi *= self.V0.get()/self.V.get()
+      return pi
+
+   def __str__(self):
+      h=self.h.get(); p = self.p.get()
+      print h
+      return "    h1 = %s\n    h2 = %s\n    h3 = %s\n\n    p1 = %s\n    p2 = %s\n    p3 = %s\n\n    w = %s, volume = %s\n" % (
+         h[:,0], h[:,1], h[:,2], p[:,0], p[:,1], p[:,2], self.w.get(), self.V.get() )
       
    def apply_pbc(self, atom):
       """Uses the minimum image convention to return a particle to the
          unit cell"""
 
-      s=numpy.dot(self.ih,atom.q)
+      s=numpy.dot(self.ih,atom.q.get())
       for i in range(3):
          s[i] = s[i] - round(s[i])
       new_pos = numpy.dot(self.h,s)
@@ -159,10 +118,10 @@ class Cell(object):
          but gives the correct results as long as the cut-off radius is defined
          as smaller than the smallest width between parallel faces."""
 
-      s = numpy.dot(self.ih,atom1.q - atom2.q)
+      s = numpy.dot(self.ih.get(),atom1.q.get() - atom2.q.get())
       for i in range(3):
          s[i] -= round(s[i])
-      return numpy.dot(self.h, s)
+      return numpy.dot(self.h.get(), s)
 
       
 def h2abc(h):
@@ -193,3 +152,15 @@ def abc2h(a, b, c, alpha, beta, gamma):
    h[2,2] = math.sqrt(c**2 - h[0,2]**2 - h[1,2]**2)
    return h
    
+   
+def ut_inverse(h):
+   ih = numpy.zeros((3,3), float)
+   for i in range(3):
+      ih[i,i] = 1.0/h[i,i]
+   ih[0,1] = -ih[0,0]*h[0,1]*ih[1,1]
+   ih[1,2] = -ih[1,1]*h[1,2]*ih[2,2]
+   ih[0,2] = -ih[1,2]*h[0,1]*ih[0,0]-ih[0,0]*h[0,2]*ih[2,2]
+   return ih
+   
+def ut_det(h):
+   return h[0,0]*h[1,1]*h[2,2]

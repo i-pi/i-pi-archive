@@ -5,8 +5,9 @@ from utils.depend import *
 from io_system import *
 from atoms import *
 from cell import *
+from forces import *
 
-class System(dobject):
+class System(object):
    """
    Represents a simulation cell. 
    Includes the cell parameters, the atoms and the like. """
@@ -17,137 +18,123 @@ class System(dobject):
 #The initialisation step now takes a pdc-formatted file for the unit cell and atom positions
 #step will eventually call the forces from the external program and then do the propagation step. At the moment we simply take free particle trajectories, to test the theory.
 
-   @classmethod
-   def from_pdbfile(cls, filedesc, temp = 1.0, P_ext = numpy.zeros((3,3),float)):
+   #class properties -- initialized here, then possibly re-defined in the init
+   __qpf=numpy.zeros(0)
+   q=__qpf;  p=__qpf;  f=__qpf;
+   atoms=[]; temp=0.0; dt=1.0; 
+   cell=Cell()
    
-      self=cls()
-      atoms, cell, natoms = read_pdb(filedesc)
-      self.natoms = natoms
-      self.temp = temp
-      self.k_Boltz = 1.0
+#   @classmethod
+#   def from_system(cls, syst):
+#      cls.temp = syst.temp.get()
+#      cls.dt = sys.dt.get()
 
-#      atoms[0][1] = numpy.array([0.5, 0.5, 0.5])
-#      atoms[1][1] = numpy.array([0.5, 0.5, 0.5+0.15*2**(1.0/6.0) + 0.1])
+#      cls.__qpf = numpy.copy(syst._system__qpf)
 
-      self.__qpf=numpy.zeros((3*natoms,3),float) 
-      for i in range(natoms):
-         self.__qpf[3*i:3*(i+1),0]=atoms[i][1]
+#      natoms = len(syst.atoms)
+#      for i in range(natoms):
+#         cls.__qpf[3*i:3*(i+1),0]=atoms[i][1]
+#      cls.atoms = [ Atom(cls.__qpf[3*i:3*(i+1),:], name = syst.atoms[i].name.get()) for i in range(natoms) ]
+#      cls.cell = Cell(h=numpy.copy(syst.cell.h.get()))
 
+#      # must decide what to do with these
+##      cls.pot = syst.pot
+##      cls.kinetic = syst.kinetic
+##      cls.cell_pot = syst.cell_pot
+##      cls.cell_kinetic = syst.cell_kinetic
+##      cls.tot_E = syst.tot_E
+##      
+##      cls.virial = syst.virial
+##      cls.stress = syst.stress
+##      cls.P_ext = syst.P_ext
+##      cls.cell = syst.cell
+#      return cls()
       
+   @classmethod
+   def from_pdbfile(cls, filedesc, ffield=forcefield()):   
+      atoms, cell, natoms = read_pdb(filedesc)
+
+      cls.__qpf=numpy.zeros((3*natoms,3),float) 
+      for i in range(natoms):
+         cls.__qpf[3*i:3*(i+1),0]=atoms[i][1]
+      cls.atoms = [ Atom(cls.__qpf[3*i:3*(i+1),:], name = atoms[i][0]) for i in range(natoms) ] #Creates a list of atoms from the __qp array
+      cls.cell = Cell.fromSidesAngles(cell)
+
+      return cls(ffield=ffield);
+   
+   def __init__(self, ffield=forcefield):
       self.q = depend(value=self.__qpf[:,0],name='q')
       self.p = depend(value=self.__qpf[:,1],name='p')
       self.f = depend(value=self.__qpf[:,2],name='f')
-      self.atoms = [ Atom(self.__qpf[3*i:3*(i+1),:], name = atoms[i][0]) for i in range(natoms) ] #Creates a list of atoms from the __qp array
       self.kin = depend(func=self.get_kin, name = 'kin')
-      
-      depgrps=dict();  
+      self.kstress = depend(name='kstress',func=self.get_kstress,deplist=[self.cell.V])
+                  
+      depgrps=dict();
       for what in [ 'q', 'p', 'f' ]: depgrps[what]=[];
       
       for atom in self.atoms:
-         atom.getdesc('kin').add_dependant(self.getdesc('kin'))
+         atom.kin.add_dependant(self.kin)
+         atom.kstress.add_dependant(self.kstress)         
          # the global q,p,f and the atomic q,p,f must be synchronized.
          # note that modifying the global vectors in any position will taint ALL the atomic vectors
          for what in [ 'q', 'p', 'f' ]: 
-            depgrps[what].append(atom.getdesc(what))
-            atom.getdesc(what).add_dependant(self.getdesc(what))
+            depgrps[what].append(getattr(atom,what))
+            getattr(atom,what).add_dependant(getattr(self,what))
       
-      for what in [ 'q', 'p', 'f' ]:  self.getdesc(what).add_depgrp(depgrps[what])
+      for what in [ 'q', 'p', 'f' ]:  getattr(self,what).add_depgrp(depgrps[what])
       
+      self.pot = depend(value=0.0,name='pot')
+      self.vir = depend(value=numpy.zeros((3,3),float),name='vir')
+
+
+      self.ffield=ffield
+      self.ffield.bind(cell=self.cell, atoms=self.atoms, pot=self.pot, f=self.f, vir=self.vir)      
+
+      self.stress = depend(name='stress',func=self.get_stress,deplist=[self.vir, self.kstress])
       
-      
-      self.P_ext = P_ext
-
-#      self.P_ext = numpy.array([[1,2,3],[2,0.5,2.5],[3,2.5,0.7]])
-
-      self.cell = Cell(cell, self.P_ext, temp)
-
-      #random.seed(12)
-      #self.__qp[:,1]=numpy.arange(0,3*natoms)*0.01
-      for i in range(natoms):
-         sigma = math.sqrt(self.atoms[i].mass * self.k_Boltz * self.temp)
-         self.__qpf[3*i,1] = random.gauss(0.0, sigma)
-         self.__qpf[3*i+1,1] = random.gauss(0.0, sigma)
-         self.__qpf[3*i+2,1] = random.gauss(0.0, sigma)
-      self.p=self.__qpf[:,1]
-
-      self.pot = 0.0
-      self.kinetic = 0.0
-      self.cell_pot = self.cell.pot() 
-      self.cell_kinetic = self.cell.kinetic()
-      self.tot_E = 0.0
-      self.virial = numpy.zeros((3,3),float)
-      self.v_stress = numpy.zeros((3,3),float)
-      self.stress = numpy.zeros((3,3),float)
-      return self
-
-   @classmethod
-   def from_system(cls, syst):
-      cls.natoms = syst.natoms
-      cls.temp = syst.temp
-      cls.k_Boltz = syst.k_Boltz
-
-      cls.q = syst.q
-      cls.p = syst.p
-      cls.f = syst.f
-      cls.__qpf = numpy.zeros((3*cls.natoms,3),float) 
-      cls.__qpf[:,0]=cls.q
-      cls.__qpf[:,1]=cls.p
-      cls.__qpf[:,2]=cls.f
-
-      cls.atoms = syst.atoms
-
-      cls.pot = syst.pot
-      cls.kinetic = syst.kinetic
-      cls.cell_pot = syst.cell_pot
-      cls.cell_kinetic = syst.cell_kinetic
-      cls.tot_E = syst.tot_E
-      
-      cls.virial = syst.virial
-      cls.stress = syst.stress
-      cls.P_ext = syst.P_ext
-      cls.cell = syst.cell
-      return cls()
 
    def __str__(self):
-      rstr="ATOMS ("+str(self.natoms)+"):\n\n"
-      for i in range(self.natoms): 
+      rstr="ATOMS ("+str(len(self.atoms))+"):\n\n"
+      for i in range(len(self.atoms)): 
          rstr=rstr+"Atom %i:" % (i+1) + "\n"
          rstr=rstr+str(self.atoms[i])+"\n"
       rstr = rstr + "Cell:\n" + str(self.cell)
-      rstr = rstr + "\n\nTotal energy = " + str(self.pot+self.kinetic+self.thermo.econs) + ", potential energy = " + str(self.pot) + ", kinetic energy = " + str(self.kinetic)+ ", cell elastic energy = " + str(self.cell_pot) + ", cell kinetic energy = " + str(self.cell_kinetic)
+      #rstr = rstr + "\n\nTotal energy = " + str(self.pot+self.kinetic+self.thermo.econs) + ", potential energy = " + str(self.pot) + ", kinetic energy = " + str(self.kinetic)+ ", cell elastic energy = " + str(self.cell_pot) + ", cell kinetic energy = " + str(self.cell_kinetic)
       return rstr
-       
-#   def pot(self):
-#      """Calculates the total potential energy of the system, including
-#         cell strain"""
-#
-#      pe = 0.0
-#      for i in range(self.natoms):
-#         pe += self.atoms[i].pot()
-#      pe += self.cell.pot()
-#      return pe
+
 
    def get_kin(self):
       """Calculates the total kinetic energy of the system,
       by summing the atomic contributions"""
-      print " [ upd. kin ]",
+      #print " [ upd. kin ]",
       ke = 0.0
       for at in self.atoms:
-         ke += at.kin
+         ke += at.kin.get()
       return ke
-      
-      
-   def get_kinetic(self):
-      """Calculates the total kinetic energy of the system, and the kinetic
-         contribution to the stress tensor"""
 
-      self.kinetic = 0.0
-      self.v_stress = numpy.zeros((3,3),float)
-      for i in range(self.natoms):
-         p = self.atoms[i].p
-         mass = self.atoms[i].mass
-         self.kinetic += numpy.inner(p, p)/(2*mass)
-         self.v_stress += numpy.outer(p, p)/(mass*self.cell.V)
+   def get_stress(self):
+      return self.kstress.get()+self.vir.get()
+   
+   def get_kstress(self):
+      ks=numpy.zeros((3,3),float)
+      for at in self.atoms:
+         ks += at.kstress.get()
+      ks/=self.cell.V.get()
+      return ks
+        
+      
+      
+#   def get_kinetic(self):
+#      """Calculates the total kinetic energy of the system, and the kinetic
+#         contribution to the stress tensor"""
+
+#      self.kinetic = 0.0
+#      self.v_stress = numpy.zeros((3,3),float)
+#      for i in range(self.natoms):
+#         p = self.atoms[i].p.get()
+#         mass = self.atoms[i].mass.get()
+#         self.kinetic += numpy.inner(p, p)/(2*mass)
+#         self.v_stress += numpy.outer(p, p)/(mass*self.cell.V)
 
    def cell_update(self):
       self.cell_kinetic = self.cell.kinetic()
