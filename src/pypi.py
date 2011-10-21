@@ -150,15 +150,17 @@ print "hello world"
 
 f = open("./testfile2.txt", "r")
 
-<<<<<<< HEAD
-=======
+f = open("./testfile3.txt", "r")
+syst = engine.System.from_pdbfile(f)
+g = open("./forces/system.xml", "w")
+io_system.xml(syst, g)
+exit()
 #thermo = langevin.Thermo_Langevin(dt = 0.1)
 
 syst=engine.System.from_pdbfile(f, forces.LJ( {"eps": 0.1, "sigma": 0.3, "rc": 0.3*2.5} ) )
 thermo = langevin.langevin(tau=1e-1)
 thermo_cell = langevin.langevin(tau=1e-2)
 nvt=dynamics.nst_ensemble(syst=syst, thermo=thermo, cell_thermo=thermo_cell, dt=1e-2, temp=1e-2)
->>>>>>> origin
 
 print "# Initial pot is ", syst.pot.get()
 print "# Thermo T is ", nvt.thermo.T.get()
