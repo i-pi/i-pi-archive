@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<System>
+   <natoms>4</natoms>
+   <Atom_vec>
+      <q>[0.1,0.1,0.1]</q>
+   </Atom_vec>
+   <Atom_vec>
+      <q>[0.1,0.1,0.9]</q>
+   </Atom_vec>
+   <Atom_vec>
+      <q>[0.9,0.9,0.1]</q>
+   </Atom_vec>
+   <Atom_vec>
+      <q>[0.9,0.9,0.9]</q>
+   </Atom_vec>
+   <Cell_vec>
+      <h>[1.0,0.0,0.0]</h>
+   </Cell_vec>
+   <Cell_vec>
+      <h>[6.12323399574e-17,1.0,0.0]</h>
+   </Cell_vec>
+   <Cell_vec>
+      <h>[6.12323399574e-17,6.12323399574e-17,1.0]</h>
+   </Cell_vec>
+   <Cell_vec>
+      <ih>[1.0,0.0,0.0]</ih>
+   </Cell_vec>
+   <Cell_vec>
+      <ih>[-6.12323399574e-17,1.0,0.0]</ih>
+   </Cell_vec>
+   <Cell_vec>
+      <ih>[-6.12323399574e-17,-6.12323399574e-17,1.0]</ih>
+   </Cell_vec>
+</System>

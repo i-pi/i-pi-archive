@@ -141,8 +141,8 @@ print "hello world"
 
 f = open("./testfile3.txt", "r")
 syst = engine.System.from_pdbfile(f)
-
-io_system.xml(syst, sys.stdout)
+g = open("./forces/system.xml", "w")
+io_system.xml(syst, g)
 exit()
 
 f = open("./testfile2.txt", "r")
