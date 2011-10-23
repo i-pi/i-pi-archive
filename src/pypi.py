@@ -161,6 +161,11 @@ exit(1)
 
 f = open("./testfile2.txt", "r")
 
+f = open("./testfile3.txt", "r")
+syst = engine.System.from_pdbfile(f)
+g = open("./forces/system.xml", "w")
+io_system.xml(syst, g)
+exit()
 #thermo = langevin.Thermo_Langevin(dt = 0.1)
 
 syst=engine.System.from_pdbfile(f, forces.LJ( {"eps": 0.1, "sigma": 0.3, "rc": 0.3*2.5} ) )
