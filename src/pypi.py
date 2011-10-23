@@ -4,10 +4,20 @@ import sys
 from engine import io_system
 from engine import dynamics
 from engine import forces
-import numpy
+import numpy, random
+from utils.mathtools import *
 
 print "hello world"
 
+a=numpy.identity(3, float)
+for i in range(3):
+   for j in range(3): a[i,j]=random.gauss(0,1)
+a=numpy.dot(a,numpy.transpose(a))
+print matrix_exp(a)
+
+print numpy.dot(transpose(stab_cholesky(a)) , stab_cholesky(a) )-a
+print numpy.dot(stab_cholesky(a), transpose(stab_cholesky(a))  )-a
+exit(1)
 #a = numpy.zeros((3,3),float)
 #b = numpy.array(range(9)); b.shape=(3,3)
 
@@ -147,6 +157,7 @@ print "hello world"
 
 #print test.temp
 #print
+
 
 f = open("./testfile2.txt", "r")
 
