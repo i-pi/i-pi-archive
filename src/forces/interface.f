@@ -19,7 +19,7 @@
       call get_all(atoms, cell, pot, f, vir)
       write(*,'(A, D25.15)') "pot = ", pot 
       write(*,*) "virial:"
-      write(*,'(3D25.15)') ((vir(i,j), i = 1, 3), j = 1, 3)
+      write(*,'(3D25.15)') ((vir(i,j), j = 1, 3), i = 1, 3)
       write(*,*) "forces:"
       write(*,'(3D25.15)') ((f(i,j), i = 1, 3), j = 1, size(atoms))
 
