@@ -23,4 +23,6 @@
       write(*,*) "forces:"
       write(*,'(3D25.15)') ((f(i,j), i = 1, 3), j = 1, size(atoms))
 
+      deallocate(f)
+
       end program
