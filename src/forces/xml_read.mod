@@ -1,5 +1,5 @@
-GFORTRAN module version '0' created from xml_read.f on Mon Oct 24 17:13:10 2011
-MD5:6ba9f6de4f87480b743bfbc9754416e0 -- If you edit this, you'll get what you deserve.
+GFORTRAN module version '0' created from xml_read.f on Mon Oct 24 17:53:27 2011
+MD5:ad7537d2a000e3d47b0886ef6a6e2ae6 -- If you edit this, you'll get what you deserve.
 
 (() () () () () () () () () () () () () () () () () () () () () () () ()
 () () ())
@@ -62,24 +62,6 @@ CHARACTER 1 0 0 CHARACTER (())) 0 0 () () 0 () () () 0 0)
 DIMENSION DUMMY) (REAL 8 0 0 REAL ()) 0 0 () (1 EXPLICIT (CONSTANT (
 INTEGER 4 0 0 INTEGER ()) 0 '1') (CONSTANT (INTEGER 4 0 0 INTEGER ()) 0
 '3')) 0 () () () 0 0)
-42 'success' '' 'success' 38 ((VARIABLE OUT UNKNOWN-PROC UNKNOWN UNKNOWN
-DUMMY) (LOGICAL 4 0 0 LOGICAL ()) 0 0 () () 0 () () () 0 0)
-47 'success' '' 'success' 43 ((VARIABLE OUT UNKNOWN-PROC UNKNOWN UNKNOWN
-DUMMY) (LOGICAL 4 0 0 LOGICAL ()) 0 0 () () 0 () () () 0 0)
-46 'value' '' 'value' 43 ((VARIABLE OUT UNKNOWN-PROC UNKNOWN UNKNOWN
-DUMMY) (REAL 8 0 0 REAL ()) 0 0 () () 0 () () () 0 0)
-45 'tag' '' 'tag' 43 ((VARIABLE IN UNKNOWN-PROC UNKNOWN UNKNOWN DUMMY) (
-CHARACTER 1 0 0 CHARACTER (())) 0 0 () () 0 () () () 0 0)
-44 'file_line' '' 'file_line' 43 ((VARIABLE IN UNKNOWN-PROC UNKNOWN
-UNKNOWN DUMMY) (CHARACTER 1 0 0 CHARACTER (())) 0 0 () () 0 () () () 0 0)
-49 'file_line' '' 'file_line' 48 ((VARIABLE IN UNKNOWN-PROC UNKNOWN
-UNKNOWN DUMMY) (CHARACTER 1 0 0 CHARACTER (())) 0 0 () () 0 () () () 0 0)
-50 'tag' '' 'tag' 48 ((VARIABLE IN UNKNOWN-PROC UNKNOWN UNKNOWN DUMMY) (
-CHARACTER 1 0 0 CHARACTER (())) 0 0 () () 0 () () () 0 0)
-51 'value' '' 'value' 48 ((VARIABLE OUT UNKNOWN-PROC UNKNOWN UNKNOWN
-DUMMY) (INTEGER 4 0 0 INTEGER ()) 0 0 () () 0 () () () 0 0)
-52 'success' '' 'success' 48 ((VARIABLE OUT UNKNOWN-PROC UNKNOWN UNKNOWN
-DUMMY) (LOGICAL 4 0 0 LOGICAL ()) 0 0 () () 0 () () () 0 0)
 20 'tag' '' 'tag' 19 ((VARIABLE IN UNKNOWN-PROC UNKNOWN UNKNOWN DUMMY) (
 CHARACTER 1 0 0 CHARACTER (())) 0 0 () () 0 () () () 0 0)
 21 'file_line' '' 'file_line' 19 ((VARIABLE OUT UNKNOWN-PROC UNKNOWN
@@ -99,11 +81,11 @@ INTEGER ()) 0 '200'))) 0 0 () () 0 () () () 0 0)
 DUMMY) (REAL 8 0 0 REAL ()) 0 0 () () 0 () () () 0 0)
 35 'tag' '' 'tag' 34 ((VARIABLE IN UNKNOWN-PROC UNKNOWN UNKNOWN DUMMY) (
 CHARACTER 1 0 0 CHARACTER (())) 0 0 () () 0 () () () 0 0)
-37 'value' '' 'value' 34 ((VARIABLE IN UNKNOWN-PROC UNKNOWN UNKNOWN
-DUMMY) (INTEGER 4 0 0 INTEGER ()) 0 0 () () 0 () () () 0 0)
 36 'file_line' '' 'file_line' 34 ((VARIABLE OUT UNKNOWN-PROC UNKNOWN
 UNKNOWN DUMMY) (CHARACTER 1 0 0 CHARACTER ((CONSTANT (INTEGER 4 0 0
 INTEGER ()) 0 '200'))) 0 0 () () 0 () () () 0 0)
+37 'value' '' 'value' 34 ((VARIABLE IN UNKNOWN-PROC UNKNOWN UNKNOWN
+DUMMY) (INTEGER 4 0 0 INTEGER ()) 0 0 () () 0 () () () 0 0)
 27 'tag' '' 'tag' 26 ((VARIABLE IN UNKNOWN-PROC UNKNOWN UNKNOWN DUMMY) (
 CHARACTER 1 0 0 CHARACTER (())) 0 0 () () 0 () () () 0 0)
 28 'file_line' '' 'file_line' 26 ((VARIABLE OUT UNKNOWN-PROC UNKNOWN
@@ -113,6 +95,24 @@ INTEGER ()) 0 '200'))) 0 0 () () 0 () () () 0 0)
 DIMENSION DUMMY) (REAL 8 0 0 REAL ()) 0 0 () (1 EXPLICIT (CONSTANT (
 INTEGER 4 0 0 INTEGER ()) 0 '1') (CONSTANT (INTEGER 4 0 0 INTEGER ()) 0
 '3')) 0 () () () 0 0)
+42 'success' '' 'success' 38 ((VARIABLE OUT UNKNOWN-PROC UNKNOWN UNKNOWN
+DUMMY) (LOGICAL 4 0 0 LOGICAL ()) 0 0 () () 0 () () () 0 0)
+47 'success' '' 'success' 43 ((VARIABLE OUT UNKNOWN-PROC UNKNOWN UNKNOWN
+DUMMY) (LOGICAL 4 0 0 LOGICAL ()) 0 0 () () 0 () () () 0 0)
+46 'value' '' 'value' 43 ((VARIABLE OUT UNKNOWN-PROC UNKNOWN UNKNOWN
+DUMMY) (REAL 8 0 0 REAL ()) 0 0 () () 0 () () () 0 0)
+45 'tag' '' 'tag' 43 ((VARIABLE IN UNKNOWN-PROC UNKNOWN UNKNOWN DUMMY) (
+CHARACTER 1 0 0 CHARACTER (())) 0 0 () () 0 () () () 0 0)
+44 'file_line' '' 'file_line' 43 ((VARIABLE IN UNKNOWN-PROC UNKNOWN
+UNKNOWN DUMMY) (CHARACTER 1 0 0 CHARACTER (())) 0 0 () () 0 () () () 0 0)
+49 'file_line' '' 'file_line' 48 ((VARIABLE IN UNKNOWN-PROC UNKNOWN
+UNKNOWN DUMMY) (CHARACTER 1 0 0 CHARACTER (())) 0 0 () () 0 () () () 0 0)
+50 'tag' '' 'tag' 48 ((VARIABLE IN UNKNOWN-PROC UNKNOWN UNKNOWN DUMMY) (
+CHARACTER 1 0 0 CHARACTER (())) 0 0 () () 0 () () () 0 0)
+51 'value' '' 'value' 48 ((VARIABLE OUT UNKNOWN-PROC UNKNOWN UNKNOWN
+DUMMY) (INTEGER 4 0 0 INTEGER ()) 0 0 () () 0 () () () 0 0)
+52 'success' '' 'success' 48 ((VARIABLE OUT UNKNOWN-PROC UNKNOWN UNKNOWN
+DUMMY) (LOGICAL 4 0 0 LOGICAL ()) 0 0 () () 0 () () () 0 0)
 )
 
 ('search_begin' 0 8 'search_end' 0 13 'write_begin' 0 18 'write_end' 0

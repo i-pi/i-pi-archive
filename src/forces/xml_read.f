@@ -250,7 +250,14 @@
             character(len=*), intent(in) :: tag
             character(len=200), intent(out) :: file_line
 
-            write(file_line,*) "<", tag, ">"
+            integer ios
+
+            write(file_line,'(3A)', iostat=ios) "<", tag, ">"
+
+            if (ios /= 0) then
+               write(*,*) "Error in writing to header string"
+               stop
+            end if
 
          end subroutine
 
@@ -258,7 +265,14 @@
             character(len=*), intent(in) :: tag
             character(len=200) :: file_line
 
-            write(file_line,*) "</", tag, ">"
+            integer ios
+
+            write(file_line,'(3A)', iostat=ios) "</", tag, ">"
+
+            if (ios /= 0) then
+               write(*,*) "Error in writing to end string"
+               stop
+            end if
 
          end subroutine
 
@@ -267,8 +281,15 @@
             character(len=200), intent(out) :: file_line
             double precision, intent(in) :: value
 
-            write(file_line,'(3A, D25.15, 3A)') 
+            integer ios
+
+            write(file_line,'(3A, D25.15, 3A)', iostat=ios) 
      1"<", tag, ">", value, "</", tag, ">"
+
+            if (ios /= 0) then
+               write(*,*) "Error in writing real to string"
+               stop
+            end if
    
          end subroutine
 
@@ -277,8 +298,15 @@
             character(len=200), intent(out) :: file_line
             integer, intent(in) :: value
 
-            write(file_line,'(3A, I10, 3A)') 
+            integer ios
+
+            write(file_line,'(3A, I10, 3A)', iostat=ios) 
      1"<", tag, ">", value, "</", tag, ">"
+
+            if (ios /= 0) then
+               write(*,*) "Error in writing integer to string"
+               stop
+            end if
    
          end subroutine
 
@@ -287,9 +315,17 @@
             character(len=200), intent(out) :: file_line
             double precision, dimension(3), intent(in) :: value
 
-            write(file_line, '(3A, D25.15, A1, D25.15, A1, D25.15, 3A)')
-     1"<", tag, ">[", value(1), ",", value(2), ",", value(3),"]</",
-     2tag, ">"
+            integer ios
+
+            write(file_line, '(3A, D25.15, A1, D25.15, A1, D25.15, 3A)'
+     1, iostat = ios)
+     2"<", tag, ">[", value(1), ",", value(2), ",", value(3),"]</",
+     3tag, ">"
+
+            if (ios /= 0) then
+               write(*,*) "Error in writing array to string"
+               stop
+            end if
 
          end subroutine
 

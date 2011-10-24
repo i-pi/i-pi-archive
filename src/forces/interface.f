@@ -5,6 +5,7 @@
       implicit none
 
       character(len=*), parameter :: filedesc = "./system.xml"
+      character(len=*), parameter :: filedesc2 = "./system_out.xml"
       type(Atom), dimension(:), allocatable :: atoms
       type(Cell_vec) :: cell
       double precision pot
@@ -23,6 +24,9 @@
       write(*,*) "forces:"
       write(*,'(3D25.15)') ((f(i,j), i = 1, 3), j = 1, size(atoms))
 
+      call sys_file_write(filedesc2, size(atoms), pot, f, vir)
+
       deallocate(f)
+      deallocate(atoms)
 
       end program
