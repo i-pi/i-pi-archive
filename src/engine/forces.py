@@ -26,6 +26,7 @@ class forcefield(object):
       self.pot._depend__func=self.get_pot; 
       self.f._depend__func=self.get_f; 
       self.vir._depend__func=self.get_vir;
+      self.cell.V.add_dependant(self.vir)
       
    def get_all(self):
       return ( 0.0, numpy.zeros(len(self.atoms)*3), numpy.zeros((3,3),float) )
@@ -40,7 +41,7 @@ class forcefield(object):
    
    def get_vir(self):
       (self._pot, self._f, self._vir) = self.ufv.get()
-      return self._vir
+      return self._vir/self.cell.V.get()
       
       
 
@@ -101,7 +102,6 @@ class LJ(forcefield):
       
    def get_all(self):
 #      print "computing all forces"
-      V = self.cell.V.get()
       natoms = len(self.atoms)
 
       _vir = numpy.zeros((3,3),float)
@@ -122,7 +122,7 @@ class LJ(forcefield):
             _f[3*i:3*(i+1)]+=fij
             _f[3*j:3*(j+1)]-=fij
             _pot += v
-            _vir += numpy.outer(fij, rij)/V
+            _vir += numpy.outer(fij, rij)
             
       return (_pot, _f, _vir)
             

@@ -86,11 +86,11 @@ class System(object):
       self.pot = depend(value=0.0,name='pot')
       self.vir = depend(value=numpy.zeros((3,3),float),name='vir')
 
-
       self.ffield=ffield
       self.ffield.bind(cell=self.cell, atoms=self.atoms, pot=self.pot, f=self.f, vir=self.vir)      
 
       self.stress = depend(name='stress',func=self.get_stress,deplist=[self.vir, self.kstress])
+      self.press = depend(name='press',func=self.get_press,deplist=[self.stress])
 
    def __str__(self):
       rstr="ATOMS ("+str(len(self.atoms))+"):\n\n"
@@ -114,51 +114,13 @@ class System(object):
    def get_stress(self):
       return self.kstress.get()+self.vir.get()
    
+   def get_press(self):
+      return numpy.trace(self.stress.get())/3.0
+      
    def get_kstress(self):
       ks=numpy.zeros((3,3),float)
       for at in self.atoms:
          ks += at.kstress.get()
       ks/=self.cell.V.get()
       return ks
-        
       
-      
-#   def get_kinetic(self):
-#      """Calculates the total kinetic energy of the system, and the kinetic
-#         contribution to the stress tensor"""
-
-#      self.kinetic = 0.0
-#      self.v_stress = numpy.zeros((3,3),float)
-#      for i in range(self.natoms):
-#         p = self.atoms[i].p.get()
-#         mass = self.atoms[i].mass.get()
-#         self.kinetic += numpy.inner(p, p)/(2*mass)
-#         self.v_stress += numpy.outer(p, p)/(mass*self.cell.V)
-
-   def cell_update(self):
-      self.cell_kinetic = self.cell.kinetic()
-      self.cell_pot = self.cell.pot()
-
-   def stress_update(self):
-      self.stress = self.v_stress + self.virial
-      self.stress[2,0] = self.stress[1,0] = self.stress[2,1] = 0.0
-
-   def tot_E_update(self):
-      self.tot_E = self.kinetic + self.pot + self.cell_kinetic + self.cell_pot
-
-#   def tot_E(self):
-#      """Calculates the total energy of the system"""
-#
-#      return self.kinetic() + self.pot()
-
-#   def step(self,dt):
-#      """Takes the atom positions, velocities and forces and integrates the 
-#         equations of motion forward by a step dt"""
-#      self.q+=self.p*dt
-
-#   def apply_pbc(self):
-#      """Takes the system and applies periodic boundary conditions to fold the
-#         particle positions back into the unit cell"""
-#
-#      for i in range(self.natoms):
-#         self.atoms[i].q = self.cell.apply_pbc(self.atoms[i])
