@@ -64,6 +64,7 @@ class langevin(thermostat):
       for i in range(3):
          for j in range(i,3): 
             p[i,j] = T*p[i,j] + S*sw*random.gauss(0.0, 1.0)
+      self.cell.pc.set(self.cell.pc.get()*T+S*sw*random.gauss(0.0, 1.0))
       self.cell.p.taint(taintme=False)           
       self.econs.set(self.econs.get()-self.cell.kin.get())      
 

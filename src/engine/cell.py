@@ -22,7 +22,8 @@ class Cell(object):
 
    def __init__(self, h = numpy.identity(3, float), w = 1.0, h0=None, pext = numpy.zeros((3,3),float) ):      
       self.h = depend(value = h, name = 'h')
-      self.p = depend(value = numpy.zeros((3,3), float), name = 'p')
+      self.p = depend(value = numpy.zeros((3,3), float), name = 'p')   # matrix cell velocities (for NST)
+      self.pc = depend(value = 0.0, name = 'pc')                       # scalar cell velocity (for NPT)
       self.w = depend(value = w, name='w')
       
       self.V = depend(name='V', func=self.get_volume)
@@ -30,7 +31,7 @@ class Cell(object):
       self.h.add_dependant(self.V);  self.h.add_dependant(self.ih)
 
       self.kin = depend(name='kin', func=self.get_kin) 
-      self.p.add_dependant(self.kin);  self.w.add_dependant(self.kin);
+      self.p.add_dependant(self.kin);  self.w.add_dependant(self.kin);  self.pc.add_dependant(self.kin);
       
       if (h0 is None): h0=numpy.copy(h)
       self.h0 = depend(name='h0', value = h0)
@@ -53,7 +54,8 @@ class Cell(object):
       """Calculates the volume of the unit cell, assuming an upper-triangular
       unit vector matrix"""
       h = self.h.get()
-      return ut_det(h)  
+      return ut_det(h)
+        
    def get_vol0(self):
       h0 = self.h0.get()
       return ut_det(h0)      
@@ -75,6 +77,8 @@ class Cell(object):
       for i in range(3):
          for j in range(i,3):
             ke += p[i, j]**2
+      ke += self.pc.get()**2            
+            
       ke /= 2*self.w.get()
       return ke
 

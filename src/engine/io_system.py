@@ -5,7 +5,7 @@ def print_pdb(atoms, ncell, filedesc = sys.stdout):
    """Takes the system and gives pdb formatted output for the unit cell and the
       atomic positions """
 
-   a, b, c, alpha, beta, gamma = cell.h2abc(ncell.h)
+   a, b, c, alpha, beta, gamma = cell.h2abc(ncell.h.get())
    alpha *= 180.0/math.pi #radian to degree conversion
    beta  *= 180.0/math.pi
    gamma *= 180.0/math.pi
