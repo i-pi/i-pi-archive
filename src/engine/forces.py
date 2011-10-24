@@ -49,7 +49,7 @@ class LJ(forcefield):
    def __init__(self, pars=dict(eps = 1.0, sigma = 1.0, rc = 2.5) ):
       super(LJ,self).__init__() 
       self.eps = pars['eps']; self.sigma = pars['sigma'];  self.rc = pars['rc']
-      self.vrc=4*self.eps*((self.sigma/self.rc)**12 + (self.sigma/self.rc)**6)
+      self.vrc=4*self.eps*((self.sigma/self.rc)**12 - (self.sigma/self.rc)**6)
       
    def bind(self, cell, atoms, pot, f, vir):
       super(LJ,self).bind(cell=cell, atoms=atoms, pot=pot, f=f, vir=vir)

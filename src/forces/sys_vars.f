@@ -1,7 +1,7 @@
       module sys_vars
 
       type Atom
-         real, dimension(3) :: pos
+         double precision, dimension(3) :: pos
       end type
 
       type Atom_vec
@@ -9,8 +9,8 @@
       end type
 
       type Cell_vec
-         real, dimension(3,3) :: h
-         real, dimension(3,3) :: ih
+         double precision, dimension(3,3) :: h
+         double precision, dimension(3,3) :: ih
       end type
 
       end module

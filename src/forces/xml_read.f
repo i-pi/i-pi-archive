@@ -4,9 +4,13 @@
       interface read_value
          module procedure read_array, read_real, read_integer
       end interface
+      interface write_value
+         module procedure write_array, write_real, write_integer
+      end interface
 
       private
       public :: read_value, search_begin, search_end
+      public :: write_begin, write_end, write_value
 
       contains
 
@@ -241,4 +245,52 @@
             end if
 
          end subroutine
+
+         subroutine write_begin(tag, file_line)
+            character(len=*), intent(in) :: tag
+            character(len=200), intent(out) :: file_line
+
+            write(file_line,*) "<", tag, ">"
+
+         end subroutine
+
+         subroutine write_end(tag, file_line)
+            character(len=*), intent(in) :: tag
+            character(len=200) :: file_line
+
+            write(file_line,*) "</", tag, ">"
+
+         end subroutine
+
+         subroutine write_real(tag, file_line, value)
+            character(len=*), intent(in) :: tag
+            character(len=200), intent(out) :: file_line
+            double precision, intent(in) :: value
+
+            write(file_line,'(3A, D25.15, 3A)') 
+     1"<", tag, ">", value, "</", tag, ">"
+   
+         end subroutine
+
+         subroutine write_integer(tag, file_line, value)
+            character(len=*), intent(in) :: tag
+            character(len=200), intent(out) :: file_line
+            integer, intent(in) :: value
+
+            write(file_line,'(3A, I10, 3A)') 
+     1"<", tag, ">", value, "</", tag, ">"
+   
+         end subroutine
+
+         subroutine write_array(tag, file_line, value)
+            character(len=*), intent(in) :: tag
+            character(len=200), intent(out) :: file_line
+            double precision, dimension(3), intent(in) :: value
+
+            write(file_line, '(3A, D25.15, A1, D25.15, A1, D25.15, 3A)')
+     1"<", tag, ">[", value(1), ",", value(2), ",", value(3),"]</",
+     2tag, ">"
+
+         end subroutine
+
       end module

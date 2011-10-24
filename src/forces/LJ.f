@@ -5,11 +5,11 @@
       private
       public :: get_all
 
-      double precision, parameter :: sigma = 0.30d0
+      double precision, parameter :: sigma = 0.19d0
       double precision, parameter :: rc = 2.5*sigma
       double precision, parameter :: eps = 0.1d0
       double precision, parameter :: correction = 
-     1(sigma/rc)**12 - (sigma/rc)**6
+     14*eps*((sigma/rc)**12 - (sigma/rc)**6)
 
       contains
 
@@ -18,20 +18,20 @@
             double precision, intent(out) :: pot
             double precision, intent(out) :: force
 
-            double precision sigma_by_r
+            double precision sigma_by_r6
 
             if (r > rc) then
                pot = 0.0d0
                force = 0.0d0
                return
             end if
+      
+            sigma_by_r6 = (sigma/r)**6
 
-            sigma_by_r = sigma/r
+            pot = 4*eps*(sigma_by_r6*(sigma_by_r6 - 1)) - correction
 
-            pot = 4*eps*((sigma_by_r)**12 - (sigma_by_r)**6 -correction)
-
-            force = 4*eps*(12/r*(sigma_by_r)**12 - 6/r*(sigma_by_r)**6)
-
+            force = 4*eps*(6/r*sigma_by_r6*(2*sigma_by_r6 - 1))
+      
          end subroutine
 
          subroutine separation(atoms, i, j, cell, rij, r)

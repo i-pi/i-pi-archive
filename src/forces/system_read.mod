@@ -1,110 +1,158 @@
-GFORTRAN module version '0' created from system_read.f on Mon Oct 24 11:42:32 2011
-MD5:5a03c2ca990564f6b204bcaeead5ccd9 -- If you edit this, you'll get what you deserve.
+GFORTRAN module version '0' created from system_read.f on Mon Oct 24 17:10:31 2011
+MD5:f2f7759ed8b6d419cd3381f0b642f758 -- If you edit this, you'll get what you deserve.
 
-(() () () ()
-() () () () () () () () () () () () () () () () () () () () () () ())
-
-()
-
-(('read_value' 'xml_read' 2 3 4))
+(() () () () () () () () () () () () () () () () () () () () ()
+() () () () () ())
 
 ()
 
+(('read_value' 'xml_read' 2 3 4) ('write_value' 'xml_read' 5 6 7))
+
 ()
 
-(2 'read_integer' 'xml_read' 'read_integer' 1 ((PROCEDURE UNKNOWN-INTENT
-MODULE-PROC DECL UNKNOWN SUBROUTINE) (UNKNOWN 0 0 0 UNKNOWN ()) 5 0 (6 7
-8 9) () 0 () () () 0 0)
+()
+
+(3 'read_real' 'xml_read' 'read_real' 1 ((PROCEDURE UNKNOWN-INTENT
+MODULE-PROC DECL UNKNOWN SUBROUTINE) (UNKNOWN 0 0 0 UNKNOWN ()) 8 0 (9
+10 11 12) () 0 () () () 0 0)
+5 'write_integer' 'xml_read' 'write_integer' 1 ((PROCEDURE
+UNKNOWN-INTENT MODULE-PROC DECL UNKNOWN SUBROUTINE) (UNKNOWN 0 0 0
+UNKNOWN ()) 13 0 (14 15 16) () 0 () () () 0 0)
 4 'read_array' 'xml_read' 'read_array' 1 ((PROCEDURE UNKNOWN-INTENT
-MODULE-PROC DECL UNKNOWN SUBROUTINE) (UNKNOWN 0 0 0 UNKNOWN ()) 10 0 (
-11 12 13 14) () 0 () () () 0 0)
-3 'read_real' 'xml_read' 'read_real' 1 ((PROCEDURE UNKNOWN-INTENT
-MODULE-PROC DECL UNKNOWN SUBROUTINE) (UNKNOWN 0 0 0 UNKNOWN ()) 15 0 (
-16 17 18 19) () 0 () () () 0 0)
-20 'atom' 'sys_vars' 'atom' 1 ((DERIVED UNKNOWN-INTENT UNKNOWN-PROC
-UNKNOWN UNKNOWN) (UNKNOWN 0 0 0 UNKNOWN ()) 0 0 () () 0 ((21 'pos' (
-REAL 4 0 0 REAL ()) (1 EXPLICIT (CONSTANT (INTEGER 4 0 0 INTEGER ()) 0 '1')
+MODULE-PROC DECL UNKNOWN SUBROUTINE) (UNKNOWN 0 0 0 UNKNOWN ()) 17 0 (
+18 19 20 21) () 0 () () () 0 0)
+7 'write_array' 'xml_read' 'write_array' 1 ((PROCEDURE UNKNOWN-INTENT
+MODULE-PROC DECL UNKNOWN SUBROUTINE) (UNKNOWN 0 0 0 UNKNOWN ()) 22 0 (
+23 24 25) () 0 () () () 0 0)
+6 'write_real' 'xml_read' 'write_real' 1 ((PROCEDURE UNKNOWN-INTENT
+MODULE-PROC DECL UNKNOWN SUBROUTINE) (UNKNOWN 0 0 0 UNKNOWN ()) 26 0 (
+27 28 29) () 0 () () () 0 0)
+2 'read_integer' 'xml_read' 'read_integer' 1 ((PROCEDURE UNKNOWN-INTENT
+MODULE-PROC DECL UNKNOWN SUBROUTINE) (UNKNOWN 0 0 0 UNKNOWN ()) 30 0 (
+31 32 33 34) () 0 () () () 0 0)
+35 'atom' 'sys_vars' 'atom' 1 ((DERIVED UNKNOWN-INTENT UNKNOWN-PROC
+UNKNOWN UNKNOWN) (UNKNOWN 0 0 0 UNKNOWN ()) 0 0 () () 0 ((36 'pos' (
+REAL 8 0 0 REAL ()) (1 EXPLICIT (CONSTANT (INTEGER 4 0 0 INTEGER ()) 0 '1')
 (CONSTANT (INTEGER 4 0 0 INTEGER ()) 0 '3')) (UNKNOWN-FL UNKNOWN-INTENT
 UNKNOWN-PROC UNKNOWN UNKNOWN DIMENSION) UNKNOWN-ACCESS ())) PUBLIC (() ())
 () 0 0)
-22 'atom_vec' 'sys_vars' 'atom_vec' 1 ((DERIVED UNKNOWN-INTENT
+37 'atom_vec' 'sys_vars' 'atom_vec' 1 ((DERIVED UNKNOWN-INTENT
 UNKNOWN-PROC UNKNOWN UNKNOWN POINTER_COMP) (UNKNOWN 0 0 0 UNKNOWN ()) 0
-0 () () 0 ((23 'pos' (DERIVED 20 0 0 DERIVED ()) (1 DEFERRED () ()) (
+0 () () 0 ((38 'pos' (DERIVED 35 0 0 DERIVED ()) (1 DEFERRED () ()) (
 UNKNOWN-FL UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN UNKNOWN DIMENSION POINTER)
 UNKNOWN-ACCESS ())) PUBLIC (() ()) () 0 0)
-24 'cell_vec' 'sys_vars' 'cell_vec' 1 ((DERIVED UNKNOWN-INTENT
+39 'cell_vec' 'sys_vars' 'cell_vec' 1 ((DERIVED UNKNOWN-INTENT
 UNKNOWN-PROC UNKNOWN UNKNOWN) (UNKNOWN 0 0 0 UNKNOWN ()) 0 0 () () 0 ((
-25 'h' (REAL 4 0 0 REAL ()) (2 EXPLICIT (CONSTANT (INTEGER 4 0 0 INTEGER
+40 'h' (REAL 8 0 0 REAL ()) (2 EXPLICIT (CONSTANT (INTEGER 4 0 0 INTEGER
 ()) 0 '1') (CONSTANT (INTEGER 4 0 0 INTEGER ()) 0 '3') (CONSTANT (
 INTEGER 4 0 0 INTEGER ()) 0 '1') (CONSTANT (INTEGER 4 0 0 INTEGER ()) 0
 '3')) (UNKNOWN-FL UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN UNKNOWN DIMENSION)
-UNKNOWN-ACCESS ()) (26 'ih' (REAL 4 0 0 REAL ()) (2 EXPLICIT (CONSTANT (
+UNKNOWN-ACCESS ()) (41 'ih' (REAL 8 0 0 REAL ()) (2 EXPLICIT (CONSTANT (
 INTEGER 4 0 0 INTEGER ()) 0 '1') (CONSTANT (INTEGER 4 0 0 INTEGER ()) 0
 '3') (CONSTANT (INTEGER 4 0 0 INTEGER ()) 0 '1') (CONSTANT (INTEGER 4 0
 0 INTEGER ()) 0 '3')) (UNKNOWN-FL UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
 UNKNOWN DIMENSION) UNKNOWN-ACCESS ())) PUBLIC (() ()) () 0 0)
-27 'search_begin' 'xml_read' 'search_begin' 1 ((PROCEDURE UNKNOWN-INTENT
-MODULE-PROC DECL UNKNOWN SUBROUTINE) (UNKNOWN 0 0 0 UNKNOWN ()) 28 0 (
-29 30 31) () 0 () () () 0 0)
-32 'search_end' 'xml_read' 'search_end' 1 ((PROCEDURE UNKNOWN-INTENT
-MODULE-PROC DECL UNKNOWN SUBROUTINE) (UNKNOWN 0 0 0 UNKNOWN ()) 33 0 (
-34 35 36) () 0 () () () 0 0)
-37 'sys_file_read' 'system_read' 'sys_file_read' 1 ((PROCEDURE
+42 'search_begin' 'xml_read' 'search_begin' 1 ((PROCEDURE UNKNOWN-INTENT
+MODULE-PROC DECL UNKNOWN SUBROUTINE) (UNKNOWN 0 0 0 UNKNOWN ()) 43 0 (
+44 45 46) () 0 () () () 0 0)
+47 'search_end' 'xml_read' 'search_end' 1 ((PROCEDURE UNKNOWN-INTENT
+MODULE-PROC DECL UNKNOWN SUBROUTINE) (UNKNOWN 0 0 0 UNKNOWN ()) 48 0 (
+49 50 51) () 0 () () () 0 0)
+52 'sys_file_read' 'system_read' 'sys_file_read' 1 ((PROCEDURE
 UNKNOWN-INTENT MODULE-PROC DECL UNKNOWN SUBROUTINE ALWAYS_EXPLICIT) (
-UNKNOWN 0 0 0 UNKNOWN ()) 38 0 (39 40 41) () 0 () () () 0 0)
-42 'sys_vars' 'sys_vars' 'sys_vars' 1 ((MODULE UNKNOWN-INTENT
+UNKNOWN 0 0 0 UNKNOWN ()) 53 0 (54 55 56) () 0 () () () 0 0)
+57 'sys_vars' 'sys_vars' 'sys_vars' 1 ((MODULE UNKNOWN-INTENT
 UNKNOWN-PROC UNKNOWN UNKNOWN) (UNKNOWN 0 0 0 UNKNOWN ()) 0 0 () () 0 ()
 () () 0 0)
-43 'system_read' 'system_read' 'system_read' 1 ((MODULE UNKNOWN-INTENT
+58 'system_read' 'system_read' 'system_read' 1 ((MODULE UNKNOWN-INTENT
 UNKNOWN-PROC UNKNOWN UNKNOWN) (UNKNOWN 0 0 0 UNKNOWN ()) 0 0 () () 0 ()
 () () 0 0)
-29 'file_line' '' 'file_line' 28 ((VARIABLE IN UNKNOWN-PROC UNKNOWN
+59 'write_begin' 'xml_read' 'write_begin' 1 ((PROCEDURE UNKNOWN-INTENT
+MODULE-PROC DECL UNKNOWN SUBROUTINE) (UNKNOWN 0 0 0 UNKNOWN ()) 60 0 (
+61 62) () 0 () () () 0 0)
+63 'write_end' 'xml_read' 'write_end' 1 ((PROCEDURE UNKNOWN-INTENT
+MODULE-PROC DECL UNKNOWN SUBROUTINE) (UNKNOWN 0 0 0 UNKNOWN ()) 64 0 (
+65 66) () 0 () () () 0 0)
+54 'filedesc' '' 'filedesc' 53 ((VARIABLE IN UNKNOWN-PROC UNKNOWN
 UNKNOWN DUMMY) (CHARACTER 1 0 0 CHARACTER (())) 0 0 () () 0 () () () 0 0)
-34 'file_line' '' 'file_line' 33 ((VARIABLE IN UNKNOWN-PROC UNKNOWN
+56 'cell' '' 'cell' 53 ((VARIABLE OUT UNKNOWN-PROC UNKNOWN UNKNOWN DUMMY)
+(DERIVED 39 0 0 DERIVED ()) 0 0 () () 0 () () () 0 0)
+55 'atoms' '' 'atoms' 53 ((VARIABLE OUT UNKNOWN-PROC UNKNOWN UNKNOWN
+ALLOCATABLE DIMENSION DUMMY) (DERIVED 35 0 0 DERIVED ()) 0 0 () (1
+DEFERRED () ()) 0 () () () 0 0)
+46 'correct' '' 'correct' 43 ((VARIABLE OUT UNKNOWN-PROC UNKNOWN UNKNOWN
+DUMMY) (LOGICAL 4 0 0 LOGICAL ()) 0 0 () () 0 () () () 0 0)
+45 'tag' '' 'tag' 43 ((VARIABLE IN UNKNOWN-PROC UNKNOWN UNKNOWN DUMMY) (
+CHARACTER 1 0 0 CHARACTER (())) 0 0 () () 0 () () () 0 0)
+50 'tag' '' 'tag' 48 ((VARIABLE IN UNKNOWN-PROC UNKNOWN UNKNOWN DUMMY) (
+CHARACTER 1 0 0 CHARACTER (())) 0 0 () () 0 () () () 0 0)
+51 'correct' '' 'correct' 48 ((VARIABLE OUT UNKNOWN-PROC UNKNOWN UNKNOWN
+DUMMY) (LOGICAL 4 0 0 LOGICAL ()) 0 0 () () 0 () () () 0 0)
+49 'file_line' '' 'file_line' 48 ((VARIABLE IN UNKNOWN-PROC UNKNOWN
 UNKNOWN DUMMY) (CHARACTER 1 0 0 CHARACTER (())) 0 0 () () 0 () () () 0 0)
-31 'correct' '' 'correct' 28 ((VARIABLE OUT UNKNOWN-PROC UNKNOWN UNKNOWN
-DUMMY) (LOGICAL 4 0 0 LOGICAL ()) 0 0 () () 0 () () () 0 0)
-36 'correct' '' 'correct' 33 ((VARIABLE OUT UNKNOWN-PROC UNKNOWN UNKNOWN
-DUMMY) (LOGICAL 4 0 0 LOGICAL ()) 0 0 () () 0 () () () 0 0)
-35 'tag' '' 'tag' 33 ((VARIABLE IN UNKNOWN-PROC UNKNOWN UNKNOWN DUMMY) (
+23 'tag' '' 'tag' 22 ((VARIABLE IN UNKNOWN-PROC UNKNOWN UNKNOWN DUMMY) (
 CHARACTER 1 0 0 CHARACTER (())) 0 0 () () 0 () () () 0 0)
-30 'tag' '' 'tag' 28 ((VARIABLE IN UNKNOWN-PROC UNKNOWN UNKNOWN DUMMY) (
-CHARACTER 1 0 0 CHARACTER (())) 0 0 () () 0 () () () 0 0)
-14 'success' '' 'success' 10 ((VARIABLE OUT UNKNOWN-PROC UNKNOWN UNKNOWN
-DUMMY) (LOGICAL 4 0 0 LOGICAL ()) 0 0 () () 0 () () () 0 0)
-13 'array' '' 'array' 10 ((VARIABLE OUT UNKNOWN-PROC UNKNOWN UNKNOWN
+62 'file_line' '' 'file_line' 60 ((VARIABLE OUT UNKNOWN-PROC UNKNOWN
+UNKNOWN DUMMY) (CHARACTER 1 0 0 CHARACTER ((CONSTANT (INTEGER 4 0 0
+INTEGER ()) 0 '200'))) 0 0 () () 0 () () () 0 0)
+25 'value' '' 'value' 22 ((VARIABLE IN UNKNOWN-PROC UNKNOWN UNKNOWN
 DIMENSION DUMMY) (REAL 8 0 0 REAL ()) 0 0 () (1 EXPLICIT (CONSTANT (
 INTEGER 4 0 0 INTEGER ()) 0 '1') (CONSTANT (INTEGER 4 0 0 INTEGER ()) 0
 '3')) 0 () () () 0 0)
-8 'value' '' 'value' 5 ((VARIABLE OUT UNKNOWN-PROC UNKNOWN UNKNOWN DUMMY)
-(INTEGER 4 0 0 INTEGER ()) 0 0 () () 0 () () () 0 0)
-9 'success' '' 'success' 5 ((VARIABLE OUT UNKNOWN-PROC UNKNOWN UNKNOWN
-DUMMY) (LOGICAL 4 0 0 LOGICAL ()) 0 0 () () 0 () () () 0 0)
-7 'tag' '' 'tag' 5 ((VARIABLE IN UNKNOWN-PROC UNKNOWN UNKNOWN DUMMY) (
+27 'tag' '' 'tag' 26 ((VARIABLE IN UNKNOWN-PROC UNKNOWN UNKNOWN DUMMY) (
 CHARACTER 1 0 0 CHARACTER (())) 0 0 () () 0 () () () 0 0)
-6 'file_line' '' 'file_line' 5 ((VARIABLE IN UNKNOWN-PROC UNKNOWN
-UNKNOWN DUMMY) (CHARACTER 1 0 0 CHARACTER (())) 0 0 () () 0 () () () 0 0)
-12 'tag' '' 'tag' 10 ((VARIABLE IN UNKNOWN-PROC UNKNOWN UNKNOWN DUMMY) (
+24 'file_line' '' 'file_line' 22 ((VARIABLE OUT UNKNOWN-PROC UNKNOWN
+UNKNOWN DUMMY) (CHARACTER 1 0 0 CHARACTER ((CONSTANT (INTEGER 4 0 0
+INTEGER ()) 0 '200'))) 0 0 () () 0 () () () 0 0)
+14 'tag' '' 'tag' 13 ((VARIABLE IN UNKNOWN-PROC UNKNOWN UNKNOWN DUMMY) (
 CHARACTER 1 0 0 CHARACTER (())) 0 0 () () 0 () () () 0 0)
-11 'file_line' '' 'file_line' 10 ((VARIABLE IN UNKNOWN-PROC UNKNOWN
+16 'value' '' 'value' 13 ((VARIABLE IN UNKNOWN-PROC UNKNOWN UNKNOWN
+DUMMY) (INTEGER 4 0 0 INTEGER ()) 0 0 () () 0 () () () 0 0)
+18 'file_line' '' 'file_line' 17 ((VARIABLE IN UNKNOWN-PROC UNKNOWN
 UNKNOWN DUMMY) (CHARACTER 1 0 0 CHARACTER (())) 0 0 () () 0 () () () 0 0)
-18 'value' '' 'value' 15 ((VARIABLE OUT UNKNOWN-PROC UNKNOWN UNKNOWN
+15 'file_line' '' 'file_line' 13 ((VARIABLE OUT UNKNOWN-PROC UNKNOWN
+UNKNOWN DUMMY) (CHARACTER 1 0 0 CHARACTER ((CONSTANT (INTEGER 4 0 0
+INTEGER ()) 0 '200'))) 0 0 () () 0 () () () 0 0)
+19 'tag' '' 'tag' 17 ((VARIABLE IN UNKNOWN-PROC UNKNOWN UNKNOWN DUMMY) (
+CHARACTER 1 0 0 CHARACTER (())) 0 0 () () 0 () () () 0 0)
+20 'array' '' 'array' 17 ((VARIABLE OUT UNKNOWN-PROC UNKNOWN UNKNOWN
+DIMENSION DUMMY) (REAL 8 0 0 REAL ()) 0 0 () (1 EXPLICIT (CONSTANT (
+INTEGER 4 0 0 INTEGER ()) 0 '1') (CONSTANT (INTEGER 4 0 0 INTEGER ()) 0
+'3')) 0 () () () 0 0)
+29 'value' '' 'value' 26 ((VARIABLE IN UNKNOWN-PROC UNKNOWN UNKNOWN
 DUMMY) (REAL 8 0 0 REAL ()) 0 0 () () 0 () () () 0 0)
-19 'success' '' 'success' 15 ((VARIABLE OUT UNKNOWN-PROC UNKNOWN UNKNOWN
-DUMMY) (LOGICAL 4 0 0 LOGICAL ()) 0 0 () () 0 () () () 0 0)
-17 'tag' '' 'tag' 15 ((VARIABLE IN UNKNOWN-PROC UNKNOWN UNKNOWN DUMMY) (
+9 'file_line' '' 'file_line' 8 ((VARIABLE IN UNKNOWN-PROC UNKNOWN
+UNKNOWN DUMMY) (CHARACTER 1 0 0 CHARACTER (())) 0 0 () () 0 () () () 0 0)
+11 'value' '' 'value' 8 ((VARIABLE OUT UNKNOWN-PROC UNKNOWN UNKNOWN
+DUMMY) (REAL 8 0 0 REAL ()) 0 0 () () 0 () () () 0 0)
+10 'tag' '' 'tag' 8 ((VARIABLE IN UNKNOWN-PROC UNKNOWN UNKNOWN DUMMY) (
 CHARACTER 1 0 0 CHARACTER (())) 0 0 () () 0 () () () 0 0)
-16 'file_line' '' 'file_line' 15 ((VARIABLE IN UNKNOWN-PROC UNKNOWN
+32 'tag' '' 'tag' 30 ((VARIABLE IN UNKNOWN-PROC UNKNOWN UNKNOWN DUMMY) (
+CHARACTER 1 0 0 CHARACTER (())) 0 0 () () 0 () () () 0 0)
+33 'value' '' 'value' 30 ((VARIABLE OUT UNKNOWN-PROC UNKNOWN UNKNOWN
+DUMMY) (INTEGER 4 0 0 INTEGER ()) 0 0 () () 0 () () () 0 0)
+31 'file_line' '' 'file_line' 30 ((VARIABLE IN UNKNOWN-PROC UNKNOWN
 UNKNOWN DUMMY) (CHARACTER 1 0 0 CHARACTER (())) 0 0 () () 0 () () () 0 0)
-39 'filedesc' '' 'filedesc' 38 ((VARIABLE IN UNKNOWN-PROC UNKNOWN
+12 'success' '' 'success' 8 ((VARIABLE OUT UNKNOWN-PROC UNKNOWN UNKNOWN
+DUMMY) (LOGICAL 4 0 0 LOGICAL ()) 0 0 () () 0 () () () 0 0)
+21 'success' '' 'success' 17 ((VARIABLE OUT UNKNOWN-PROC UNKNOWN UNKNOWN
+DUMMY) (LOGICAL 4 0 0 LOGICAL ()) 0 0 () () 0 () () () 0 0)
+34 'success' '' 'success' 30 ((VARIABLE OUT UNKNOWN-PROC UNKNOWN UNKNOWN
+DUMMY) (LOGICAL 4 0 0 LOGICAL ()) 0 0 () () 0 () () () 0 0)
+28 'file_line' '' 'file_line' 26 ((VARIABLE OUT UNKNOWN-PROC UNKNOWN
+UNKNOWN DUMMY) (CHARACTER 1 0 0 CHARACTER ((CONSTANT (INTEGER 4 0 0
+INTEGER ()) 0 '200'))) 0 0 () () 0 () () () 0 0)
+44 'file_line' '' 'file_line' 43 ((VARIABLE IN UNKNOWN-PROC UNKNOWN
 UNKNOWN DUMMY) (CHARACTER 1 0 0 CHARACTER (())) 0 0 () () 0 () () () 0 0)
-40 'atoms' '' 'atoms' 38 ((VARIABLE OUT UNKNOWN-PROC UNKNOWN UNKNOWN
-ALLOCATABLE DIMENSION DUMMY) (DERIVED 20 0 0 DERIVED ()) 0 0 () (1
-DEFERRED () ()) 0 () () () 0 0)
-41 'cell' '' 'cell' 38 ((VARIABLE OUT UNKNOWN-PROC UNKNOWN UNKNOWN DUMMY)
-(DERIVED 24 0 0 DERIVED ()) 0 0 () () 0 () () () 0 0)
+61 'tag' '' 'tag' 60 ((VARIABLE IN UNKNOWN-PROC UNKNOWN UNKNOWN DUMMY) (
+CHARACTER 1 0 0 CHARACTER (())) 0 0 () () 0 () () () 0 0)
+65 'tag' '' 'tag' 64 ((VARIABLE IN UNKNOWN-PROC UNKNOWN UNKNOWN DUMMY) (
+CHARACTER 1 0 0 CHARACTER (())) 0 0 () () 0 () () () 0 0)
+66 'file_line' '' 'file_line' 64 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC
+UNKNOWN UNKNOWN DUMMY) (CHARACTER 1 0 0 CHARACTER ((CONSTANT (INTEGER 4
+0 0 INTEGER ()) 0 '200'))) 0 0 () () 0 () () () 0 0)
 )
 
-('atom' 0 20 'atom_vec' 0 22 'cell_vec' 0 24 'search_begin' 0 27
-'search_end' 0 32 'sys_file_read' 0 37 'sys_vars' 0 42 'system_read' 0
-43)
+('atom' 0 35 'atom_vec' 0 37 'cell_vec' 0 39 'search_begin' 0 42
+'search_end' 0 47 'sys_file_read' 0 52 'sys_vars' 0 57 'system_read' 0
+58 'write_begin' 0 59 'write_end' 0 63)
