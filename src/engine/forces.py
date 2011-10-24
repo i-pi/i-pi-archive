@@ -28,7 +28,7 @@ class forcefield(object):
       self.vir._depend__func=self.get_vir;
       
    def get_all(self):
-      return ( 0.0, numpy.zeros(len(atoms)*3,0.0), numpy.zeros((3,3),float) )
+      return ( 0.0, numpy.zeros(len(self.atoms)*3), numpy.zeros((3,3),float) )
    
    def get_pot(self):
       (self._pot, self._f, self._vir) = self.ufv.get()

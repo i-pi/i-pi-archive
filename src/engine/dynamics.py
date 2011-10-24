@@ -7,6 +7,7 @@ class ensemble(object):
    def __init__(self,syst):
       self.syst=syst
       self.econs=depend(name='econs',func=self.get_econs, deplist=[ self.syst.pot, self.syst.kin])
+      self.econs.taint()
       
    def step(self): pass
 
@@ -38,6 +39,7 @@ class nvt_ensemble(nve_ensemble):
       self.thermo.dt.set(self.dt.get()*0.5)   # maybe make thermo.dt a dependant of dt?
       self.thermo.temp.set(self.temp)
       self.econs=depend(name='econs',func=self.get_econs, deplist=[ self.syst.pot, self.syst.kin, self.thermo.econs])
+      self.econs.taint()
       
    def step(self):
       self.thermo.step()
@@ -58,6 +60,7 @@ class nst_ensemble(nvt_ensemble):
       self.cell_thermo.temp.set(self.temp)
       self.syst.cell.pext.set(pext) 
       self.econs=depend(name='econs',func=self.get_econs, deplist=[ self.syst.pot, self.syst.kin, self.thermo.econs, self.cell_thermo.econs, self.syst.cell.kin, self.syst.cell.pot])
+      self.econs.taint()
       
    def exp_p(self):
       p=self.syst.cell.p.get()

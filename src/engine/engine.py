@@ -82,7 +82,7 @@ class System(object):
             getattr(atom,what).add_dependant(getattr(self,what))
       
       for what in [ 'q', 'p', 'f' ]:  getattr(self,what).add_depgrp(depgrps[what])
-      
+
       self.pot = depend(value=0.0,name='pot')
       self.vir = depend(value=numpy.zeros((3,3),float),name='vir')
 
@@ -91,7 +91,6 @@ class System(object):
       self.ffield.bind(cell=self.cell, atoms=self.atoms, pot=self.pot, f=self.f, vir=self.vir)      
 
       self.stress = depend(name='stress',func=self.get_stress,deplist=[self.vir, self.kstress])
-      
 
    def __str__(self):
       rstr="ATOMS ("+str(len(self.atoms))+"):\n\n"

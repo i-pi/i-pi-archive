@@ -53,8 +53,8 @@ def xml(system, namedpipe):
    namedpipe.write("<System>\n")
    namedpipe.write(tab + "<natoms>" + str(len(system.atoms)) + "</natoms>\n")
 
-   for i in range(system.natoms):
-      atom_q = system.atoms[i].q
+   for i in range(len(system.atoms)):
+      atom_q = system.atoms[i].q.get()
       namedpipe.write(tab + "<Atom_vec>\n")
 #      namedpipe.write(tab + tab + "<x>" + str(atom_q[0]) + "</x>\n")
 #      namedpipe.write(tab + tab + "<y>" + str(atom_q[0]) + "</y>\n")
@@ -63,8 +63,8 @@ def xml(system, namedpipe):
       #namedpipe.write(tab + tab + "<mass>" + str(system.atoms[i].mass) + "</mass>\n")
       namedpipe.write(tab + "</Atom_vec>\n")
 
-   h = system.cell.h
-   ih = system.cell.ih
+   h = system.cell.h.get()
+   ih = system.cell.ih.get()
    namedpipe.write(tab + "<Cell_vec>\n")
 
    #namedpipe.write(tab + tab + "<w>" + str(system.cell.w) + "</w>\n")
