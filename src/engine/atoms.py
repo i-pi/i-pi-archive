@@ -38,6 +38,6 @@ class Atom(object):
       kstress = numpy.zeros((3,3),float)
       for i in range(3):
          for j in range(i,3):
-            kstress(i,j) = p(i)*p(j)
+            kstress[i,j] = p[i]*p[j]
       return kstress/self.mass.get()
 

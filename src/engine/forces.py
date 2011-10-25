@@ -108,7 +108,7 @@ class LJ(forcefield):
       _pot = 0.0
       _f = numpy.zeros(3*natoms,float)
    
-      for i in range(natoms):
+      for i in range(natoms-1):
          atom_i = self.atoms[i]
 
          for j in range(i+1, natoms):
@@ -122,7 +122,9 @@ class LJ(forcefield):
             _f[3*i:3*(i+1)]+=fij
             _f[3*j:3*(j+1)]-=fij
             _pot += v
-            _vir += numpy.outer(fij, rij)
+            for k in range(3):
+               for l in range(k, 3):
+                  _vir[k,l] += fij[k]*rij[l]
             
       return (_pot, _f, _vir)
             
