@@ -33,6 +33,11 @@ class Atom(object):
 
    def get_kstress(self):
       """Calculates the contribution of the atom to the kinetic stress tensor"""
+
       p=self.p.get()
-      return numpy.outer(p,p)/self.mass.get()
+      kstress = numpy.zeros((3,3),float)
+      for i in range(3):
+         for j in range(i,3):
+            kstress(i,j) = p(i)*p(j)
+      return kstress/self.mass.get()
 

@@ -149,30 +149,30 @@ print "hello world"
 #print test.temp
 #print
 
-f = "engine/system_out.xml"
-ffield = forces.forcefield()
-g = open("./testfile2.txt", "r")
-syst = engine.System.from_pdbfile(g)
-ffield.bind(syst.cell, syst.atoms, syst.pot, syst.f, syst.vir)
+#f = "engine/system_out.xml"
+#ffield = forces.forcefield()
+#g = open("./testfile2.txt", "r")
+#syst = engine.System.from_pdbfile(g)
+#ffield.bind(syst.cell, syst.atoms, syst.pot, syst.f, syst.vir)
+#
+#io_system.xml_read(f, ffield)
+#
+#print syst.f.get()
+#print
+#print ffield.f.get()
+#print
+#print syst.vir.get()
+#print
+#print ffield.vir.get()
+#print
+#print syst.pot.get()
+#print
+#print ffield.pot.get()
+#print
+#
+#g.close()
 
-io_system.xml_read(f, ffield)
-
-print syst.f.get()
-print
-print ffield.f.get()
-print
-print syst.vir.get()
-print
-print ffield.vir.get()
-print
-print syst.pot.get()
-print
-print ffield.pot.get()
-print
-
-g.close()
-
-f = open("./testfile2.txt", "r")
+f = open("./testfile4.txt", "r")
 #syst = engine.System.from_pdbfile(f)
 #g = open("./forces/system.xml", "w")
 #io_system.xml(syst, g)
@@ -180,7 +180,7 @@ f = open("./testfile2.txt", "r")
 #exit()
 #thermo = langevin.Thermo_Langevin(dt = 0.1)
 
-syst=engine.System.from_pdbfile(f, forces.LJ( {"eps": 0.1, "sigma": 0.19, "rc": 0.19*2.5} ) )
+syst=engine.System.from_pdbfile(f, forces.LJ( {"eps": 0.1, "sigma": 0.866, "rc": 0.866*2.5} ) )
 thermo = langevin.langevin(tau=1e-1)
 thermo_cell = langevin.langevin(tau=1e-1)
 syst.cell.w.set(1e1)
