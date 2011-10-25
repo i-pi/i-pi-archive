@@ -1,5 +1,6 @@
 import numpy, math, sys
 import cell 
+import xml.sax.handler, xml.sax, pprint
 
 def print_pdb(atoms, ncell, filedesc = sys.stdout):
    """Takes the system and gives pdb formatted output for the unit cell and the
@@ -47,7 +48,7 @@ def read_pdb(filedesc):
       body = filedesc.readline()
    return atoms, cell, natoms
 
-def xml(system, namedpipe):
+def xml_write(system, namedpipe):
    tab = "   "
    namedpipe.write("<?xml version=\"1.0\"?>\n")
    namedpipe.write("<System>\n")
@@ -56,35 +57,19 @@ def xml(system, namedpipe):
    for i in range(len(system.atoms)):
       atom_q = system.atoms[i].q.get()
       namedpipe.write(tab + "<Atom_vec>\n")
-#      namedpipe.write(tab + tab + "<x>" + str(atom_q[0]) + "</x>\n")
-#      namedpipe.write(tab + tab + "<y>" + str(atom_q[0]) + "</y>\n")
-#      namedpipe.write(tab + tab + "<z>" + str(atom_q[0]) + "</z>\n")
       namedpipe.write(tab + tab + "<q>[" + str(atom_q[0]) + "," + str(atom_q[1]) + "," + str(atom_q[2]) + "]</q>\n")
-      #namedpipe.write(tab + tab + "<mass>" + str(system.atoms[i].mass) + "</mass>\n")
       namedpipe.write(tab + "</Atom_vec>\n")
 
    h = system.cell.h.get()
    ih = system.cell.ih.get()
    namedpipe.write(tab + "<Cell_vec>\n")
 
-   #namedpipe.write(tab + tab + "<w>" + str(system.cell.w) + "</w>\n")
-
-   #namedpipe.write(tab + tab + tab + "<y>" + str(0.0) + "</y>\n")
-  # namedpipe.write(tab + tab + "<x>" + str(h[0,0]) + "</x>\n")
-  # namedpipe.write(tab + tab + "<y>" + str(h[1,0]) + "</y>\n")
-  # namedpipe.write(tab + tab + "<z>" + str(h[2,0]) + "</z>\n")
    namedpipe.write(tab + tab + "<h>[" + str(h[0,0]) + "," + str(h[1,0]) + "," + str(h[2,0]) + "]</h>\n")
    namedpipe.write(tab + "</Cell_vec>\n")
    namedpipe.write(tab + "<Cell_vec>\n" )
-  # namedpipe.write(tab + tab + "<x>" + str(h[0,1]) + "</x>\n")
-  # namedpipe.write(tab + tab + "<y>" + str(h[1,1]) + "</y>\n")
-  # namedpipe.write(tab + tab + "<z>" + str(h[2,1]) + "</z>\n")
    namedpipe.write(tab + tab + "<h>[" + str(h[0,1]) + "," + str(h[1,1]) + "," + str(h[2,1]) + "]</h>\n")
    namedpipe.write(tab + "</Cell_vec>\n")
    namedpipe.write(tab + "<Cell_vec>\n")
-  # namedpipe.write(tab + tab + "<x>" + str(h[0,2]) + "</x>\n")
-  # namedpipe.write(tab + tab + "<y>" + str(h[1,2]) + "</y>\n")
-  # namedpipe.write(tab + tab + "<z>" + str(h[2,2]) + "</z>\n")
    namedpipe.write(tab + tab + "<h>[" + str(h[0,2]) + "," + str(h[1,2]) + "," + str(h[2,2]) + "]</h>\n")
    namedpipe.write(tab + "</Cell_vec>\n")
 
@@ -92,25 +77,102 @@ def xml(system, namedpipe):
 
    namedpipe.write(tab + "<Cell_vec>\n")
 
-   #namedpipe.write(tab + tab + "<w>" + str(system.cell.w) + "</w>\n")
-
-   #namedpipe.write(tab + tab + tab + "<y>" + str(0.0) + "</y>\n")
-  # namedpipe.write(tab + tab + "<x>" + str(h[0,0]) + "</x>\n")
-  # namedpipe.write(tab + tab + "<y>" + str(h[1,0]) + "</y>\n")
-  # namedpipe.write(tab + tab + "<z>" + str(h[2,0]) + "</z>\n")
    namedpipe.write(tab + tab + "<ih>[" + str(ih[0,0]) + "," + str(ih[1,0]) + "," + str(ih[2,0]) + "]</ih>\n")
    namedpipe.write(tab + "</Cell_vec>\n")
    namedpipe.write(tab + "<Cell_vec>\n" )
-  # namedpipe.write(tab + tab + "<x>" + str(h[0,1]) + "</x>\n")
-  # namedpipe.write(tab + tab + "<y>" + str(h[1,1]) + "</y>\n")
-  # namedpipe.write(tab + tab + "<z>" + str(h[2,1]) + "</z>\n")
    namedpipe.write(tab + tab + "<ih>[" + str(ih[0,1]) + "," + str(ih[1,1]) + "," + str(ih[2,1]) + "]</ih>\n")
    namedpipe.write(tab + "</Cell_vec>\n")
    namedpipe.write(tab + "<Cell_vec>\n")
-  # namedpipe.write(tab + tab + "<x>" + str(h[0,2]) + "</x>\n")
-  # namedpipe.write(tab + tab + "<y>" + str(h[1,2]) + "</y>\n")
-  # namedpipe.write(tab + tab + "<z>" + str(h[2,2]) + "</z>\n")
    namedpipe.write(tab + tab + "<ih>[" + str(ih[0,2]) + "," + str(ih[1,2]) + "," + str(ih[2,2]) + "]</ih>\n")
    namedpipe.write(tab + "</Cell_vec>\n")
 
    namedpipe.write("</System>\n") 
+
+class System_read(xml.sax.handler.ContentHandler):
+   def __init__(self):
+      self.in_pot = False
+      self.in_f = False
+      self.in_vir = False
+      self.pot = ""
+      self.f = []
+      self.vir = []
+      self.buffer = ""
+
+   def startElement(self, name, attributes):
+      if name == "pot":
+         self.in_pot = True
+      elif name == "atom_f":
+         self.in_f = True
+      elif name == "vir_column":
+         self.in_vir = True
+      elif name == "f":
+         self.buffer = ""
+      elif name == "x":
+         self.buffer = ""
+
+   def characters(self, data):
+      if self.in_pot:
+         self.in_pot = False
+         self.pot += data
+      elif self.in_f:
+         self.buffer += data
+      elif self.in_vir:
+         self.buffer += data
+
+   def endElement(self, name):
+      if name == "atom_f":
+         self.in_f = False
+         self.f.append(self.buffer)
+      elif name == "vir_column":
+         self.in_vir = False
+         self.vir.append(self.buffer)
+
+def read_array(data):
+   if (data[0] != "[" or data[26] != "," or data[52] != "," or data[78] != "]"):
+      print "Error in the array syntax"
+   else:
+      output = numpy.empty(3)
+      length = len(data)
+      for i in range(length):
+         if data[i] == "D":
+            data = data[0:i] + "E" + data[i+1:length]
+      try:
+         output[0] = float(data[1:26])
+         output[1] = float(data[27:52])
+         output[2] = float(data[53:78])
+         return output
+      except ValueError:
+         print "Tried to write NaN to array"
+         return numpy.zeros(3, float)
+
+def read_float(data):
+   output = 0.0
+   length = len(data)
+   for i in range(length):
+      if data[i] == "D":
+         data = data[0:i] + "E" + data[i+1:length]
+   try:
+      output = float(data)
+      return output
+   except ValueError:
+      print "Tried to write NaN to float"
+      return 0.0
+
+def xml_read(namedpipe, ffield):
+   parser = xml.sax.make_parser()
+   handler = System_read()
+   parser.setContentHandler(handler)
+   parser.parse(namedpipe)
+   
+
+#WHY ON EARTH DO I NEED THIS LINE?! I get pot = 0.0 otherwise...
+
+   dummy_arg = ffield.pot.get()
+
+################################################################
+
+   ffield.pot.set(read_float(handler.pot))
+   for i in range(len(handler.f)):
+      ffield.f.get()[3*i:3*(i+1)] = read_array(handler.f[i])
+   for i in range(3):
+      ffield.vir.get()[:,i] = read_array(handler.vir[i])

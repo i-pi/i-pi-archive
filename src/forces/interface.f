@@ -5,7 +5,8 @@
       implicit none
 
       character(len=*), parameter :: filedesc = "./system.xml"
-      character(len=*), parameter :: filedesc2 = "./system_out.xml"
+      character(len=*), parameter :: filedesc2 = 
+     1"../engine/system_out.xml"
       type(Atom), dimension(:), allocatable :: atoms
       type(Cell_vec) :: cell
       double precision pot

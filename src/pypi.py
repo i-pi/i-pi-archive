@@ -149,6 +149,29 @@ print "hello world"
 #print test.temp
 #print
 
+f = "engine/system_out.xml"
+ffield = forces.forcefield()
+g = open("./testfile2.txt", "r")
+syst = engine.System.from_pdbfile(g)
+ffield.bind(syst.cell, syst.atoms, syst.pot, syst.f, syst.vir)
+
+io_system.xml_read(f, ffield)
+
+print syst.f.get()
+print
+print ffield.f.get()
+print
+print syst.vir.get()
+print
+print ffield.vir.get()
+print
+print syst.pot.get()
+print
+print ffield.pot.get()
+print
+
+g.close()
+
 f = open("./testfile2.txt", "r")
 #syst = engine.System.from_pdbfile(f)
 #g = open("./forces/system.xml", "w")
