@@ -87,6 +87,10 @@ def xml_write(system, namedpipe):
    namedpipe.write(tab + "</Cell_vec>\n")
 
    namedpipe.write("</System>\n") 
+   namedpipe.flush()
+   namedpipe.write("\n")  # TODO CHECK WHY WE NEED THIS 
+   namedpipe.flush()
+   
 
 class System_read(xml.sax.handler.ContentHandler):
    def __init__(self):
@@ -158,21 +162,21 @@ def read_float(data):
       print "Tried to write NaN to float"
       return 0.0
 
-def xml_read(namedpipe, ffield):
+def xml_read(namedpipe):
+   print "initializing"
    parser = xml.sax.make_parser()
    handler = System_read()
    parser.setContentHandler(handler)
+   print "calling the parser"
    parser.parse(namedpipe)
-   
+   print "back from parser"
 
-#WHY ON EARTH DO I NEED THIS LINE?! I get pot = 0.0 otherwise...
-
-   dummy_arg = ffield.pot.get()
-
-################################################################
-
-   ffield.pot.set(read_float(handler.pot))
+   pot=read_float(handler.pot)
+   f=numpy.zeros(len(handler.f)*3,float)
+   vir=numpy.zeros((3,3),float)
    for i in range(len(handler.f)):
-      ffield.f.get()[3*i:3*(i+1)] = read_array(handler.f[i])
+      f[3*i:3*(i+1)] = read_array(handler.f[i])
    for i in range(3):
-      ffield.vir.get()[:,i] = read_array(handler.vir[i])
+      vir[:,i] = read_array(handler.vir[i])
+   return ( pot, f, vir )
+      

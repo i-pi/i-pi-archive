@@ -1,4 +1,5 @@
 import math, numpy
+import io_system
 from utils.depend import *
 
 class forcefield(object):
@@ -43,7 +44,24 @@ class forcefield(object):
       (self._pot, self._f, self._vir) = self.ufv.get()
       return self._vir/self.cell.V.get()
       
+
+class pipeforce(forcefield):
+   def __init__(self, pars=dict(pipein = "pipeforce", pipeout = "pipepos") ):
+      super(pipeforce,self).__init__()
+      self.fin=open(pars["pipein"],"r")
+      print " opened ", pars["pipein"] 
+      self.fout=open(pars["pipeout"],"w")
+      print " opened ", pars["pipeout"]
+
       
+   def bind(self, cell, atoms, pot, f, vir):
+      super(pipeforce,self).bind(cell=cell, atoms=atoms, pot=pot, f=f, vir=vir)
+      self.ufv.func=self.get_all
+
+   def get_all(self):
+      io_system.xml_write(self, self.fout)
+      return io_system.xml_read(self.fin)
+            
 
 class LJ(forcefield):
    def __init__(self, pars=dict(eps = 1.0, sigma = 1.0, rc = 2.5) ):
@@ -53,7 +71,6 @@ class LJ(forcefield):
       
    def bind(self, cell, atoms, pot, f, vir):
       super(LJ,self).bind(cell=cell, atoms=atoms, pot=pot, f=f, vir=vir)
-      self.cell.V.add_dependant(self.ufv)
       self.ufv.func=self.get_all
       
 

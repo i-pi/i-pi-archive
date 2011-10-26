@@ -5,7 +5,7 @@
       private
       public :: get_all
 
-      double precision, parameter :: sigma = 0.19d0
+      double precision, parameter :: sigma = 0.87d0
       double precision, parameter :: rc = 2.5*sigma
       double precision, parameter :: eps = 0.1d0
       double precision, parameter :: correction = 

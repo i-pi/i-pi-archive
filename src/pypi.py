@@ -180,7 +180,7 @@ f = open("./testfile4.txt", "r")
 #exit()
 #thermo = langevin.Thermo_Langevin(dt = 0.1)
 
-syst=engine.System.from_pdbfile(f, forces.LJ( {"eps": 0.1, "sigma": 0.866, "rc": 0.866*2.5} ) )
+syst=engine.System.from_pdbfile(f, forces.pipeforce( {"pipein": "forces/pipeforce", "pipeout": "forces/pipepos"} ) )
 thermo = langevin.langevin(tau=1e-1)
 thermo_cell = langevin.langevin(tau=1e-1)
 syst.cell.w.set(1e1)
