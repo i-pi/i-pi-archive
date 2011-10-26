@@ -181,12 +181,13 @@ f = open("./testfile4.txt", "r")
 #thermo = langevin.Thermo_Langevin(dt = 0.1)
 
 syst=engine.System.from_pdbfile(f, forces.LJ( {"eps": 0.1, "sigma": 0.866, "rc": 0.866*2.5} ) )
+#syst=engine.System.from_pdbfile(f, forces.LJ( {"eps": 0.1, "sigma": 0.3, "rc": 0.3*2.5} ) )
 thermo = langevin.langevin(tau=1e-1)
 thermo_cell = langevin.langevin(tau=1e-1)
 syst.cell.w.set(1e1)
 #nvt=dynamics.npt_ensemble(syst=syst, thermo=thermo, cell_thermo=thermo_cell, dt=1e-2, temp=1e-2, pext=10.0)
 pext=10.0*numpy.identity(3); pext[0,2]=pext[2,0]=10
-nvt=dynamics.nst_ensemble(syst=syst, thermo=thermo, cell_thermo=thermo_cell, dt=1e-2, temp=1e-2, pext=pext)
+nvt=dynamics.nst_ensemble(syst=syst, thermo=thermo, cell_thermo=thermo_cell, dt=4e-3, temp=1e-2, pext=pext)
 
 print "#Initial vir is ", syst.vir.get()
 print "#Initial f is ", syst.f.get()
@@ -194,7 +195,7 @@ print "# Initial pot is ", syst.pot.get()
 print "# Thermo T is ", nvt.thermo.T.get()
 print "# V K ECNS V"
 f = open("./traj.pdb", "w")
-for istep in range(500):
+for istep in range(100):
    nvt.step()
    io_system.print_pdb(syst.atoms, syst.cell, f)
 
