@@ -183,7 +183,7 @@ f = open("./testfile4.txt", "r")
 
 
 syst=engine.System.from_pdbfile(f, forces.pipeforce( {"pipein": "forces/pipeforce", "pipeout": "forces/pipepos"} ) )
-#syst=engine.System.from_pdbfile(f, forces.LJ( {"eps": 0.1, "sigma": 0.3, "rc": 0.3*2.5} ) )
+#syst=engine.System.from_pdbfile(f, forces.LJ( {"eps": 0.1, "sigma": 0.87, "rc": 0.87*2.5} ) )
 thermo = langevin.langevin(tau=1e-1)
 thermo_cell = langevin.langevin(tau=1e-1)
 syst.cell.w.set(1e1)
@@ -192,7 +192,7 @@ pext=10.0*numpy.identity(3); pext[0,2]=pext[2,0]=10
 nvt=dynamics.nst_ensemble(syst=syst, thermo=thermo, cell_thermo=thermo_cell, dt=4e-3, temp=1e-2, pext=pext)
 
 print "#Initial vir is ", syst.vir.get()
-print "#Initial f is ", syst.f.get()
+#print "#Initial f is ", syst.f.get()
 print "# Initial pot is ", syst.pot.get()
 print "# Thermo T is ", nvt.thermo.T.get()
 print "# V K ECNS V"

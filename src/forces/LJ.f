@@ -105,7 +105,7 @@
                         vir(k,l) = vir(k,l) + fij(k)*rij(l)
                      end do
                   end do
-                  vir = vir/volume
+                  !vir = vir/volume
 
                end do
             end do

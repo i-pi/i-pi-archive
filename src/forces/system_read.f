@@ -21,13 +21,13 @@
             read(filedesc,'(A200)')
             read(filedesc,'(A200)') file_line
             counter = 2
-            write(*,*) "here we are 1"
+
             call search_begin(file_line, "System", correct)
             if (.not. correct) then
                write(*,*) "Error in line 2, rootname not System"
                stop
             end if
-            write(*,*) "here we are 2"
+
             read(filedesc,'(A200)') file_line
             counter = counter + 1
             call read_value(file_line, "natoms", natoms, correct)
@@ -37,9 +37,8 @@
             else
                allocate(atoms(natoms))
             end if
-            write(*,*) "here we are 3"
+
             do i = 1, natoms
-               write(*,*) "Reading atom", i
                read(filedesc,'(A200)') file_line
                counter = counter + 1
                call search_begin(file_line, "Atom_vec", correct)
@@ -69,7 +68,7 @@
                   stop
                end if
             end do
-            write(*,*) "here we are 4 -- good to go"
+            
             do i = 1, 3
                read(filedesc,'(A200)') file_line
                counter = counter + 1
@@ -100,9 +99,8 @@
                   stop
                end if
             end do
-            write(*,*) "here we are 5 -- good to go"
+           
             do i = 1, 3
-               write(*,*) "reading line ", i
                read(filedesc,'(A200)') file_line
                counter = counter + 1
                call search_begin(file_line, "Cell_vec", correct)
@@ -112,7 +110,6 @@
                   stop
                end if
                
-               write(*,*) "reading HERE ", i
                read(filedesc,'(A200)') file_line               
                counter = counter + 1
                call read_value(file_line, "ih", temp_array, correct)
@@ -124,10 +121,7 @@
                   cell%ih(:,i) = temp_array
                end if
 
-              write(*,*) "reading HERE2 ", file_line
- 
                read(filedesc,'(A200)') file_line
-              write(*,*) "read HERE2 ", file_line
 
                counter = counter + 1
                call search_end(file_line, "Cell_vec", correct)
@@ -137,7 +131,6 @@
                   stop
                end if
             end do
-            write(*,*) "here we are 6 -- good to go"
 
             read(filedesc,'(A200)') file_line
             counter = counter + 1
@@ -147,7 +140,6 @@
                deallocate(atoms)
                stop
             end if
-            write(*,*) "here we are -- really done"
          end subroutine
 
          subroutine sys_file_write(filedesc, natoms, pot, f, vir)
