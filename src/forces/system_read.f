@@ -126,7 +126,7 @@
 
               write(*,*) "reading HERE2 ", file_line
  
-               read(filedesc,'(A)') file_line
+               read(filedesc,'(A200)') file_line
               write(*,*) "read HERE2 ", file_line
 
                counter = counter + 1
@@ -157,12 +157,10 @@
             double precision, dimension(3,natoms), intent(in) :: f
             double precision, dimension(3,3), intent(in) :: vir
 
-            integer ios
             character(len=200) :: file_line
             character(len=3), parameter :: tab = "    "
 
             integer i
-
 
             write(filedesc,'(A)') "<?xml version='1.0'?>"
 
@@ -196,6 +194,7 @@
 
             call write_end("System", file_line)    
             write(filedesc,'(A)') trim(file_line)
+            call flush(filedesc)
 
          end subroutine
       

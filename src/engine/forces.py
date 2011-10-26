@@ -48,10 +48,11 @@ class forcefield(object):
 class pipeforce(forcefield):
    def __init__(self, pars=dict(pipein = "pipeforce", pipeout = "pipepos") ):
       super(pipeforce,self).__init__()
-      self.fin=open(pars["pipein"],"r")
-      print " opened ", pars["pipein"] 
-      self.fout=open(pars["pipeout"],"w")
-      print " opened ", pars["pipeout"]
+      #self.fin=open(pars["pipein"],"r")
+      #print " opened ", pars["pipein"] 
+      #self.fout=open(pars["pipeout"],"w")
+      #print " opened ", pars["pipeout"]
+      self.pars = pars
 
       
    def bind(self, cell, atoms, pot, f, vir):
@@ -59,8 +60,14 @@ class pipeforce(forcefield):
       self.ufv.func=self.get_all
 
    def get_all(self):
+      self.fout=open(self.pars["pipeout"],"w")
       io_system.xml_write(self, self.fout)
-      return io_system.xml_read(self.fin)
+      self.fout.close()
+      self.fin=open(self.pars["pipein"],"r")
+      force_vars = io_system.xml_read(self.fin)
+      self.fin.close()
+      return force_vars
+#      return io_system.xml_read(self.fin)
             
 
 class LJ(forcefield):

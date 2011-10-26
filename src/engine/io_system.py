@@ -86,11 +86,11 @@ def xml_write(system, namedpipe):
    namedpipe.write(tab + tab + "<ih>[" + str(ih[0,2]) + "," + str(ih[1,2]) + "," + str(ih[2,2]) + "]</ih>\n")
    namedpipe.write(tab + "</Cell_vec>\n")
 
-   namedpipe.write("</System>\n") 
+   namedpipe.write("</System>\n")
+
    namedpipe.flush()
-   namedpipe.write("\n")  # TODO CHECK WHY WE NEED THIS 
-   namedpipe.flush()
-   
+   #namedpipe.write("\n")
+   #namedpipe.flush()
 
 class System_read(xml.sax.handler.ContentHandler):
    def __init__(self):
