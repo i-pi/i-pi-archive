@@ -24,8 +24,14 @@
 
             call search_begin(file_line, "System", correct)
             if (.not. correct) then
-               write(*,*) "Error in line 2, rootname not System"
-               stop
+               call search_begin(file_line, "terminate", correct)
+               if (.not. correct) then
+                  write(*,*) "Error in line 2, rootname not System"
+                  stop
+               else
+                  write(*,*) "Terminate tag found, program terminating"
+                  stop
+               end if
             end if
 
             read(filedesc,'(A200)') file_line

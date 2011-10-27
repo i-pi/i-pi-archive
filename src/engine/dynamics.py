@@ -25,7 +25,7 @@ class nve_ensemble(ensemble):
       q[:] += p[:] * dt;                      self.syst.q.taint(taintme=False)            
       p[:] += self.syst.f.get() * (dt*0.5);   self.syst.p.taint(taintme=False) 
       
-      self.syst.p.taint(taintme=False)
+      #self.syst.p.taint(taintme=False)
       
 class nvt_ensemble(nve_ensemble):
    def __init__(self, syst, thermo, temp=1.0, dt=1.0):
@@ -72,6 +72,7 @@ class npt_ensemble(nvt_ensemble):
          pc += dthalf**3/(3.0*atom_i.mass.get())*numpy.inner(atom_i.f.get(), atom_i.f.get())
 
       self.syst.cell.pc.set(pc)
+      self.syst.cell.pc.taint(taintme=False)
       p[:] += f[:] * dthalf;   
       self.syst.p.taint(taintme=False)
 

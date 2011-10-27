@@ -88,9 +88,9 @@ def xml_write(system, namedpipe):
 
    namedpipe.write("</System>\n")
 
-   namedpipe.flush()
-   #namedpipe.write("\n")
-   #namedpipe.flush()
+def xml_terminate(namedpipe):
+   namedpipe.write("<?xml version=\"1.0\"?>\n")
+   namedpipe.write("<terminate></terminate>\n")
 
 class System_read(xml.sax.handler.ContentHandler):
    def __init__(self):
@@ -163,13 +163,10 @@ def read_float(data):
       return 0.0
 
 def xml_read(namedpipe):
-   print "initializing"
    parser = xml.sax.make_parser()
    handler = System_read()
    parser.setContentHandler(handler)
-   print "calling the parser"
    parser.parse(namedpipe)
-   print "back from parser"
 
    pot=read_float(handler.pot)
    f=numpy.zeros(len(handler.f)*3,float)

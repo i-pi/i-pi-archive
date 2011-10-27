@@ -55,6 +55,7 @@ class langevin(thermostat):
          econs-=p[i]*p[i]*0.5
          p[i]*=sm[i]
       self.econs.set(econs)
+      self.econs.taint(taintme=False)
       self.p.taint(taintme=False)
 
    def cell_step(self):
@@ -64,7 +65,9 @@ class langevin(thermostat):
       for i in range(3):
          for j in range(i,3): 
             p[i,j] = T*p[i,j] + S*sw*random.gauss(0.0, 1.0)
-      self.cell.pc.set(self.cell.pc.get()*T+S*sw*random.gauss(0.0, 1.0))
       self.cell.p.taint(taintme=False)           
+      self.cell.pc.set(self.cell.pc.get()*T+S*sw*random.gauss(0.0, 1.0))
+      self.cell.pc.taint(taintme=False)           
       self.econs.set(self.econs.get()-self.cell.kin.get())      
+      self.econs.taint(taintme=False)
 

@@ -8,7 +8,7 @@ class Cell(object):
 #h is the lattice basis matrix, which will hold the basis vectors in column form
 #h is going to be upper triangular, i.e. a_1=(a1x,0,0); a_2=(a2x,a2y,0); a_3=(a3x,a3y,a3z)
 #p will hold the box momenta, in the same form as for h
-#w is probably the barostat mass, or something similar. 
+#w is the barostat mass
 
    h = numpy.zeros((3,3),float)
    p = numpy.zeros((3,3),float)

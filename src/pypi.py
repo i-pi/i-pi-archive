@@ -172,7 +172,7 @@ print "hello world"
 #
 #g.close()
 
-f = open("./testfile4.txt", "r")
+f = open("./testfile5.txt", "r")
 #syst = engine.System.from_pdbfile(f)
 #g = open("./forces/system.xml", "w")
 #io_system.xml(syst, g)
@@ -188,22 +188,28 @@ thermo = langevin.langevin(tau=1e-1)
 thermo_cell = langevin.langevin(tau=1e-1)
 syst.cell.w.set(1e1)
 #nvt=dynamics.npt_ensemble(syst=syst, thermo=thermo, cell_thermo=thermo_cell, dt=1e-2, temp=1e-2, pext=10.0)
-pext=10.0*numpy.identity(3); pext[0,2]=pext[2,0]=10
-nvt=dynamics.nst_ensemble(syst=syst, thermo=thermo, cell_thermo=thermo_cell, dt=4e-3, temp=1e-2, pext=pext)
+pext=10.0*numpy.identity(3); pext[0,2]=pext[2,0]=0
+#pext = numpy.zeros((3,3),float)
+nvt=dynamics.nst_ensemble(syst=syst, thermo=thermo, cell_thermo=thermo_cell, dt=5e-4, temp=1e-2, pext=pext)
 
 print "#Initial vir is ", syst.vir.get()
 #print "#Initial f is ", syst.f.get()
 print "# Initial pot is ", syst.pot.get()
 print "# Thermo T is ", nvt.thermo.T.get()
 print "# V K ECNS V"
-f = open("./traj.pdb", "w")
-for istep in range(100):
+#f = open("./traj3.pdb", "w")
+#for istep in range(4000):
+for istep in range(40):
    nvt.step()
-   io_system.print_pdb(syst.atoms, syst.cell, f)
+#   io_system.print_pdb(syst.atoms, syst.cell, f)
 
    nvt.econs.get()
 
    print syst.pot.get(), syst.kin.get(), nvt.econs.get(), syst.cell.V.get()
+
+h = open("./forces/pipepos","w")
+io_system.xml_terminate(h)
+h.close()
 
 pot_func = forces.LJ
 kwargs = {"eps": 0.1, "sigma": 0.3, "rc": 0.3*2.5}
