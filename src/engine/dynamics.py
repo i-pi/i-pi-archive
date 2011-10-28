@@ -4,30 +4,59 @@ from utils.depend import *
 from utils import units
 
 class ensemble(object): 
+   """General ensemble object, with no particle motion
+      Contains: syst = System object, containing the atom and cell coordinates, 
+      econs = conserved energy quantity.
+      Initialised by: ens = ensemble(system)
+      system is a System object, containing the atom and cell coordinates"""
+
    def __init__(self,syst):
       self.syst=syst
       self.econs=depend(name='econs',func=self.get_econs, deplist=[ self.syst.pot, self.syst.kin])
       
-   def step(self): pass
+   def step(self): 
+      """Dummy routine which does nothing"""
+
+      pass
 
    def get_econs(self):
+      """Calculates the conserved energy quantity for constant E ensembles"""
+
       return self.syst.pot.get()+self.syst.kin.get()
 
 class nve_ensemble(ensemble):
+   """NVE ensemble object, with velocity Verlet time integrator
+      Contains: syst = System object, containing the atom and cell coordinates, 
+      econs = conserved energy quantity, dt = time step
+      Initialised by: ens = ensemble(system, dt)
+      system is a System object, containing the atom and cell coordinates
+      dt = time step, default = 1.0"""
+
    def __init__(self, syst, dt=1.0):
       super(nve_ensemble,self).__init__(syst = syst)
       self.dt = depend(name='dt',value=dt)
    
    def step(self):
+      """Velocity Verlet time step"""
+
       p=self.syst.p.get();  q=self.syst.q.get();  dt=self.dt.get()
       
-      p[:] += self.syst.f.get() * (dt*0.5);  # self.syst.p.taint(taintme=False) this taint step is likely to be unnecessary
+      p[:] += self.syst.f.get() * (dt*0.5);  
+
       q[:] += p[:] * dt;                      self.syst.q.taint(taintme=False)            
       p[:] += self.syst.f.get() * (dt*0.5);   self.syst.p.taint(taintme=False) 
       
-      #self.syst.p.taint(taintme=False)
-      
 class nvt_ensemble(nve_ensemble):
+   """NVT ensemble object, with velocity Verlet time integrator and thermostat
+      Contains: syst = System object, containing the atom and cell coordinates 
+      econs = conserved energy quantity, dt = time step, temp = temperature,
+      thermo = thermostat object for the atoms.
+      Initialised by: ens = ensemble(system, thermo, temp, dt)
+      system is a System object, containing the atom and cell coordinates
+      thermo is a thermostat object, which maintains constant temperature
+      temp = temperature, default = 1.0
+      dt = time step, default = 1.0"""
+
    def __init__(self, syst, thermo, temp=1.0, dt=1.0):
       super(nvt_ensemble,self).__init__(syst=syst, dt=dt)
       self.temp=temp
@@ -40,14 +69,34 @@ class nvt_ensemble(nve_ensemble):
       self.econs=depend(name='econs',func=self.get_econs, deplist=[ self.syst.pot, self.syst.kin, self.thermo.econs])
       
    def step(self):
+      """NVT time step, with an appropriate thermostatting step"""
+
       self.thermo.step()
       nve_ensemble.step(self)
       self.thermo.step()
       
    def get_econs(self):
+      """Calculates the conserved energy quantity for the NVT ensemble"""
+
       return nve_ensemble.get_econs(self)+self.thermo.econs.get()
 
 class npt_ensemble(nvt_ensemble):
+   """NPT ensemble object, with Bussi time integrator and cell dynamics, 
+      with independent thermostating for the cell and atoms.
+      Contains: syst = System object, containing the atom and cell coordinates 
+      econs = conserved energy quantity, dt = time step, temp = temperature,
+      thermo = thermostat object for the atoms, cell_thermo = thermostat
+      object for the cell.
+      Initialised by: 
+      ens = ensemble(system, thermo, cell_thermo, temp, dt, pext)
+      system is a System object, containing the atom and cell coordinates
+      thermo is a thermostat object, which maintains constant temperature for 
+      the atoms
+      cell_thermo maintains constant temperature for the cell
+      temp = temperature, default = 1.0
+      dt = time step, default = 1.0
+      pext = external pressure, default = 0"""
+
    def __init__(self, syst, thermo, cell_thermo, temp=1.0, dt=1.0, pext=0.0):
       super(npt_ensemble,self).__init__(syst=syst, thermo=thermo, temp=temp, dt=dt)
       self.cell_thermo=cell_thermo
@@ -58,6 +107,7 @@ class npt_ensemble(nvt_ensemble):
       self.econs=depend(name='econs',func=self.get_econs, deplist=[ self.syst.pot, self.syst.kin, self.thermo.econs, self.cell_thermo.econs, self.syst.cell.kin, self.syst.cell.pot])
 
    def pstep(self):
+      """Evolves the atom and cell momenta forward in time by a step dt/2"""
       #equivalent to P-step in paper
 
       p = self.syst.p.get(); f = self.syst.f.get(); pc=(self.syst.cell.pc.get())
@@ -72,14 +122,12 @@ class npt_ensemble(nvt_ensemble):
          pc += dthalf**3/(3.0*atom_i.mass.get())*numpy.inner(atom_i.f.get(), atom_i.f.get())
 
       self.syst.cell.pc.set(pc)
-      self.syst.cell.pc.taint(taintme=False)
       p[:] += f[:] * dthalf;   
       self.syst.p.taint(taintme=False)
 
    def rstep(self):
       """Takes the atom positions, velocities and forces and integrates the 
          equations of motion forward by a step dt"""
-
       #equivalent to R-step in paper
 
       expeta = math.exp(self.syst.cell.pc.get()*self.dt.get()/self.syst.cell.w.get())
@@ -96,21 +144,38 @@ class npt_ensemble(nvt_ensemble):
       
       
    def step(self):
+      """NPT time step, with appropriate thermostatting steps"""
+
       self.cell_thermo.cell_step()
       self.thermo.step()
       self.pstep()
-      
       self.rstep()
-      
       self.pstep()
       self.thermo.step()
       self.cell_thermo.cell_step()
    
    def get_econs(self): 
+      """Calculates the conserved energy quantity for the NPT ensemble"""
+
       return nvt_ensemble.get_econs(self)-2.0*units.kb*self.temp*math.log(self.syst.cell.V.get())+self.syst.cell.pext.get()[0,0]*self.syst.cell.V.get()+self.cell_thermo.econs.get()+self.syst.cell.kin.get()
 
-#TODO rework to be a derived class of nvt_ensemble, trying to keep the integrator as transparent as possible
 class nst_ensemble(nvt_ensemble):
+   """NST ensemble object, with Bussi time integrator and cell dynamics, 
+      with independent thermostating for the cell and atoms.
+      Contains: syst = System object, containing the atom and cell coordinates 
+      econs = conserved energy quantity, dt = time step, temp = temperature,
+      thermo = thermostat object for the atoms, cell_thermo = thermostat
+      object for the cell.
+      Initialised by: 
+      ens = ensemble(system, thermo, cell_thermo, temp, dt, pext)
+      system is a System object, containing the atom and cell coordinates
+      thermo is a thermostat object, which maintains constant temperature for 
+      the atoms
+      cell_thermo maintains constant temperature for the cell
+      temp = temperature, default = 1.0
+      dt = time step, default = 1.0
+      pext = external pressure tensor"""
+
    def __init__(self, syst, thermo, cell_thermo, temp=1.0, dt=1.0, pext=numpy.zeros((3,3),float)):
       super(nst_ensemble,self).__init__(syst=syst, thermo=thermo, temp=temp, dt=dt)
       self.cell_thermo=cell_thermo
@@ -121,6 +186,8 @@ class nst_ensemble(nvt_ensemble):
       self.econs=depend(name='econs',func=self.get_econs, deplist=[ self.syst.pot, self.syst.kin, self.thermo.econs, self.cell_thermo.econs, self.syst.cell.kin, self.syst.cell.pot])
       
    def exp_p(self):
+      """Exponentiates the displacement matrix p*dt/w, as required for rstep"""
+
       p=self.syst.cell.p.get()
       dist_mat = p*self.dt.get()/self.syst.cell.w.get()
       eig, eigvals = upper_T.compute_eigp(dist_mat)
@@ -141,6 +208,7 @@ class nst_ensemble(nvt_ensemble):
       return exp_mat, neg_exp_mat
 
    def pstep(self):
+      """Evolves the atom and cell momenta forward in time by a step dt/2"""
       #equivalent to P-step in paper
 
       p = self.syst.p.get(); f = self.syst.f.get(); pc=self.syst.cell.p.get()
@@ -155,9 +223,10 @@ class nst_ensemble(nvt_ensemble):
          atom_i = self.syst.atoms[i]
          pc[:] += dthalf**2/(2.0*atom_i.mass.get())*(numpy.outer(atom_i.f.get(), atom_i.p.get()) + numpy.outer(atom_i.p.get(), atom_i.f.get()))
          pc[:] += dthalf**3/(3.0*atom_i.mass.get())*numpy.outer(atom_i.f.get(), atom_i.f.get())
-
       self.syst.cell.p.taint(taintme=False)      
-      p[:] += f[:] * dthalf;    self.syst.p.taint(taintme=False) 
+
+      p[:] += f[:] * dthalf
+      self.syst.p.taint(taintme=False) 
 
    def rstep(self):
       """Takes the atom positions, velocities and forces and integrates the 
@@ -180,17 +249,19 @@ class nst_ensemble(nvt_ensemble):
       
       
    def step(self):
+      """NST time step, with appropriate thermostatting steps"""
+
       self.cell_thermo.cell_step()
       self.thermo.step()
       self.pstep()
-      
       self.rstep()
-      
       self.pstep()
       self.thermo.step()
       self.cell_thermo.cell_step()
    
    def get_econs(self):
+      """Calculates the conserved energy quantity for the NST ensemble"""
+
       xv=0.0 # extra term stemming from the Jacobian
       for i in range(3): xv+=math.log(self.syst.cell.h.get()[i,i])*(3-i) 
       

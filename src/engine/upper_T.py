@@ -28,5 +28,4 @@ def compute_eigp(p):
 def volume(h):
    """Calculates the volume of the unit cell, assuming an upper-triangular
       unit vector matrix"""
-   #return numpy.inner(self.h[0:3,0], numpy.cross(self.h[0:3,1], self.h[0:3,2])) # general matrix
-   return h[0,0]*h[1,1]*h[2,2]   # upper-triangular matrix
+   return h[0,0]*h[1,1]*h[2,2]

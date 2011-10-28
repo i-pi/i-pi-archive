@@ -1,6 +1,14 @@
 import numpy, math
 from utils.depend import *
 class thermostat(object): 
+   """Represent a thermostat for constant T simulations.
+      Contains: temp = temperature, dt = time step, econs =
+      change in the kinetic energy due to the thermostat
+      Initialised by: thermo = thermostat(temp, dt, econs)
+      temp = temperature, default = 1.0
+      dt = time step, default = 1.0
+      econs = conserved energy quantity, default = 0.0"""
+
    p=None; atoms=None; cell=None; 
    
    def __init__(self, temp = 1.0, dt = 1.0, econs=0.0):
@@ -8,8 +16,17 @@ class thermostat(object):
       self.dt=depend(name='dt', value=dt)
       self.econs = depend(name='econs',value=econs)
 
-   def bind(self, atoms, p, cell): pass
-      
-   def step(self):                 pass
+   def bind(self, atoms, p, cell):
+      """Dummy binding function"""
 
-   def cell_step(self):            pass
+      pass
+      
+   def step(self):                
+      """Dummy atoms thermostat step""" 
+      
+      pass
+
+   def cell_step(self):
+      """Dummy cell thermostat step"""   
+      
+      pass

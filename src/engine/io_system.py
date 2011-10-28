@@ -20,10 +20,6 @@ def print_pdb(atoms, ncell, filedesc = sys.stdout):
 
    filedesc.write("END\n")
 
-
-
-
-
 def read_pdb(filedesc):
    """Takes a pdb-style file and creates a system with the appropriate unit
       cell and atom positions"""
@@ -49,6 +45,9 @@ def read_pdb(filedesc):
    return atoms, cell, natoms
 
 def xml_write(system, namedpipe):
+   """Writes an xml-compliant file to file with the atoms positions and cell
+      variables"""
+
    tab = "   "
    namedpipe.write("<?xml version=\"1.0\"?>\n")
    namedpipe.write("<System>\n")
@@ -63,7 +62,6 @@ def xml_write(system, namedpipe):
    h = system.cell.h.get()
    ih = system.cell.ih.get()
    namedpipe.write(tab + "<Cell_vec>\n")
-
    namedpipe.write(tab + tab + "<h>[" + str(h[0,0]) + "," + str(h[1,0]) + "," + str(h[2,0]) + "]</h>\n")
    namedpipe.write(tab + "</Cell_vec>\n")
    namedpipe.write(tab + "<Cell_vec>\n" )
@@ -73,10 +71,7 @@ def xml_write(system, namedpipe):
    namedpipe.write(tab + tab + "<h>[" + str(h[0,2]) + "," + str(h[1,2]) + "," + str(h[2,2]) + "]</h>\n")
    namedpipe.write(tab + "</Cell_vec>\n")
 
-
-
    namedpipe.write(tab + "<Cell_vec>\n")
-
    namedpipe.write(tab + tab + "<ih>[" + str(ih[0,0]) + "," + str(ih[1,0]) + "," + str(ih[2,0]) + "]</ih>\n")
    namedpipe.write(tab + "</Cell_vec>\n")
    namedpipe.write(tab + "<Cell_vec>\n" )
@@ -89,10 +84,15 @@ def xml_write(system, namedpipe):
    namedpipe.write("</System>\n")
 
 def xml_terminate(namedpipe):
+   """Writes a minimal xml-compliant file, which is used to terminate the 
+      external program"""
+
    namedpipe.write("<?xml version=\"1.0\"?>\n")
    namedpipe.write("<terminate></terminate>\n")
 
 class System_read(xml.sax.handler.ContentHandler):
+   """Handles reading the xml file containing the force calculations"""
+
    def __init__(self):
       self.in_pot = False
       self.in_f = False
@@ -132,6 +132,9 @@ class System_read(xml.sax.handler.ContentHandler):
          self.vir.append(self.buffer)
 
 def read_array(data):
+   """Takes a formatted line with an arra of the form: 
+      [array[0], array[1], array[2]], and interprets it"""
+
    if (data[0] != "[" or data[26] != "," or data[52] != "," or data[78] != "]"):
       print "Error in the array syntax"
    else:
@@ -150,6 +153,8 @@ def read_array(data):
          return numpy.zeros(3, float)
 
 def read_float(data):
+   """Takes a formatted line with a double and interprets it"""
+
    output = 0.0
    length = len(data)
    for i in range(length):
@@ -163,6 +168,8 @@ def read_float(data):
       return 0.0
 
 def xml_read(namedpipe):
+   """Reads an xml-compliant file and gets the potential, forces and virial"""
+
    parser = xml.sax.make_parser()
    handler = System_read()
    parser.setContentHandler(handler)

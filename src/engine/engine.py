@@ -8,15 +8,15 @@ from cell import *
 from forces import *
 
 class System(object):
-   """
-   Represents a simulation cell. 
-   Includes the cell parameters, the atoms and the like. """
-
-#__qp holds all the positions and momenta for all the atoms in the simulation
-#q and p hold the positions and momenta, respectively.
-#P_ext will be the external load.
-#The initialisation step now takes a pdc-formatted file for the unit cell and atom positions
-#step will eventually call the forces from the external program and then do the propagation step. At the moment we simply take free particle trajectories, to test the theory.
+   """Represents a simulation cell. Includes the cell parameters, 
+      the atoms and the like. 
+      Contains: q = atom positions, p = atom momenta, f = atom forces
+      __qpf = (q,p,f), atoms = Atom object list, cell = Cell object,
+      temp = temperature, ffield = forcefield object, kin = kinetic energy
+      kstress = kinetic stress tensor, pot = potential, vir = virial tensor,
+      stress = internal stress tensor, press = internal pressure scalar
+      Initialised by: syst = System(ffield)
+      ffield = forcefield object, default = forcefield()"""
 
    #class properties -- initialized here, then possibly re-defined in the init
    __qpf=numpy.zeros(0)
@@ -24,34 +24,14 @@ class System(object):
    atoms=[]; temp=0.0; dt=1.0; 
    cell=Cell()
    
-#   @classmethod
-#   def from_system(cls, syst):
-#      cls.temp = syst.temp.get()
-#      cls.dt = sys.dt.get()
-
-#      cls.__qpf = numpy.copy(syst._system__qpf)
-
-#      natoms = len(syst.atoms)
-#      for i in range(natoms):
-#         cls.__qpf[3*i:3*(i+1),0]=atoms[i][1]
-#      cls.atoms = [ Atom(cls.__qpf[3*i:3*(i+1),:], name = syst.atoms[i].name.get()) for i in range(natoms) ]
-#      cls.cell = Cell(h=numpy.copy(syst.cell.h.get()))
-
-#      # must decide what to do with these
-##      cls.pot = syst.pot
-##      cls.kinetic = syst.kinetic
-##      cls.cell_pot = syst.cell_pot
-##      cls.cell_kinetic = syst.cell_kinetic
-##      cls.tot_E = syst.tot_E
-##      
-##      cls.virial = syst.virial
-##      cls.stress = syst.stress
-##      cls.P_ext = syst.P_ext
-##      cls.cell = syst.cell
-#      return cls()
-      
    @classmethod
    def from_pdbfile(cls, filedesc, ffield=forcefield()):   
+      """A different initialiser, which takes a pdb format file of a system
+         and forms the appropriate atom and cell objects.
+         Initialised by: syst = System.from_pdbfile(filedesc, ffield)
+         ffield = forcefield object, default = forcefield()
+         filedesc = file method, eg. filedesc = open(\"./file.pdb\",\"r\")"""
+
       atoms, cell, natoms = read_pdb(filedesc)
 
       cls.__qpf=numpy.zeros((3*natoms,3),float) 
@@ -98,26 +78,31 @@ class System(object):
          rstr=rstr+"Atom %i:" % (i+1) + "\n"
          rstr=rstr+str(self.atoms[i])+"\n"
       rstr = rstr + "Cell:\n" + str(self.cell)
-      #rstr = rstr + "\n\nTotal energy = " + str(self.pot+self.kinetic+self.thermo.econs) + ", potential energy = " + str(self.pot) + ", kinetic energy = " + str(self.kinetic)+ ", cell elastic energy = " + str(self.cell_pot) + ", cell kinetic energy = " + str(self.cell_kinetic)
       return rstr
 
 
    def get_kin(self):
       """Calculates the total kinetic energy of the system,
       by summing the atomic contributions"""
-      #print " [ upd. kin ]",
+
       ke = 0.0
       for at in self.atoms:
          ke += at.kin.get()
       return ke
 
    def get_stress(self):
+      """Calculates the internal stress tensor"""
+   
       return self.kstress.get()+self.vir.get()
    
    def get_press(self):
+      """Calculates the internal pressure scalar"""
+
       return numpy.trace(self.stress.get())/3.0
       
    def get_kstress(self):
+      """Calculates the kinetic stress tensor"""
+
       ks=numpy.zeros((3,3),float)
       for at in self.atoms:
          ks += at.kstress.get()

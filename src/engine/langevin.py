@@ -4,19 +4,37 @@ from utils.depend import *
 from utils import units
 
 class langevin(thermostat):     
+   """Represent a langevin thermostat for constant T simulations.
+      Contains: temp = temperature, dt = time step, econs =
+      change in the kinetic energy due to the thermostat,
+      tau = thermostat mass, sm = sqrt(mass), (T,S) = thermostat parameters
+      Initialised by: thermo = langevin(temp, dt, tau, econs)
+      temp = temperature, default = 1.0
+      dt = time step, default = 1.0
+      tau = thermostat mass, default = 1.0
+      econs = conserved energy quantity, default = 0.0"""
+
    def compute_T(self):
+      """Calculates T in p(0) = T*p(dt) + S*random.gauss()"""
+
       return math.exp(-self.dt.get()/self.tau.get())
       
    def compute_S(self):      
+      """Calculates S in p(0) = T*p(dt) + S*random.gauss()"""
+
       return math.sqrt(units.kb*self.temp.get()*(1-self.T.get()**2))
    
    def compute_smass(self):
+      """Calculates sqrt(mass)"""
+
       sm=numpy.zeros(3*len(self.atoms))
       for i in range(len(self.atoms)):
          sm[3*i]=sm[3*i+1]=sm[3*i+2]=math.sqrt(self.atoms[i].mass.get())
       return sm
 
    def compute_sw(self):
+      """Calculates sqrt(cell mass)"""
+
       return math.sqrt(self.cell.w.get())
      
   
@@ -33,8 +51,12 @@ class langevin(thermostat):
       self.temp.add_dependant(self.S)      
 
    def bind(self, atoms, p, cell):
+      """Binds the appropriate system objects to the thermostat, such that
+         the thermostat step automatically updates the same velocities of the 
+         atoms and the cell"""
       # stores links to the momentum array, and constructs a sqrt(mass) dependency array
       #TODO makes sure that the shapes of p and atoms are compatible
+
       self.p=p
       self.atoms=atoms
       self.cell=cell
@@ -46,6 +68,8 @@ class langevin(thermostat):
       
 
    def step(self):
+      """Updates the atom velocities with a langevin thermostat"""
+
       sm=self.smass.get();  p=self.p.get();  T=self.T.get(); S=self.S.get();
       econs=self.econs.get()
       for i in range(len(p)):
@@ -55,10 +79,11 @@ class langevin(thermostat):
          econs-=p[i]*p[i]*0.5
          p[i]*=sm[i]
       self.econs.set(econs)
-      self.econs.taint(taintme=False)
       self.p.taint(taintme=False)
 
    def cell_step(self):
+      """Updates the cell velocities with a langevin thermostat"""
+
       #TODO define properly within the new framework
       sw = self.sw.get(); T=self.T.get(); S=self.S.get();   p=self.cell.p.get()
       self.econs.set(self.econs.get()+self.cell.kin.get())
@@ -67,7 +92,5 @@ class langevin(thermostat):
             p[i,j] = T*p[i,j] + S*sw*random.gauss(0.0, 1.0)
       self.cell.p.taint(taintme=False)           
       self.cell.pc.set(self.cell.pc.get()*T+S*sw*random.gauss(0.0, 1.0))
-      self.cell.pc.taint(taintme=False)           
       self.econs.set(self.econs.get()-self.cell.kin.get())      
-      self.econs.taint(taintme=False)
 

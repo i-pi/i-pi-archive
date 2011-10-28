@@ -183,7 +183,7 @@ f = open("./testfile5.txt", "r")
 
 
 syst=engine.System.from_pdbfile(f, forces.pipeforce( {"pipein": "forces/pipeforce", "pipeout": "forces/pipepos"} ) )
-#syst=engine.System.from_pdbfile(f, forces.LJ( {"eps": 0.1, "sigma": 0.87, "rc": 0.87*2.5} ) )
+#syst=engine.System.from_pdbfile(f, forces.LJ( {"eps": 0.1, "sigma": 0.38, "rc": 0.38*2.5} ) )
 thermo = langevin.langevin(tau=1e-1)
 thermo_cell = langevin.langevin(tau=1e-1)
 syst.cell.w.set(1e1)
