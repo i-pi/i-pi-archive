@@ -60,6 +60,7 @@ class nvt_ensemble(nve_ensemble):
    def __init__(self, syst, thermo, temp=1.0, dt=1.0):
       super(nvt_ensemble,self).__init__(syst=syst, dt=dt)
       self.temp=temp
+      self.syst.init_atom_velocities(temp = temp)
       
       #hooks to system, thermostat, etc
       self.thermo = thermo
@@ -81,6 +82,7 @@ class nvt_ensemble(nve_ensemble):
       return nve_ensemble.get_econs(self)+self.thermo.econs.get()
 
 class npt_ensemble(nvt_ensemble):
+#TODO rework this entirely, so that we separate the NPT and NST implementations
    """NPT ensemble object, with Bussi time integrator and cell dynamics, 
       with independent thermostating for the cell and atoms.
       Contains: syst = System object, containing the atom and cell coordinates 
@@ -99,6 +101,8 @@ class npt_ensemble(nvt_ensemble):
 
    def __init__(self, syst, thermo, cell_thermo, temp=1.0, dt=1.0, pext=0.0):
       super(npt_ensemble,self).__init__(syst=syst, thermo=thermo, temp=temp, dt=dt)
+      self.syst.init_cell_velocities(temp = temp)
+
       self.cell_thermo=cell_thermo
       self.cell_thermo.bind(self.syst.atoms, self.syst.p, self.syst.cell)
       self.cell_thermo.dt.set(self.dt.get()*0.5)   # maybe make thermo.dt a dependant of dt?
@@ -108,7 +112,6 @@ class npt_ensemble(nvt_ensemble):
 
    def pstep(self):
       """Evolves the atom and cell momenta forward in time by a step dt/2"""
-      #equivalent to P-step in paper
 
       p = self.syst.p.get(); f = self.syst.f.get(); pc=(self.syst.cell.pc.get())
       V=self.syst.cell.V.get(); dthalf=self.dt.get()*0.5
@@ -128,7 +131,6 @@ class npt_ensemble(nvt_ensemble):
    def rstep(self):
       """Takes the atom positions, velocities and forces and integrates the 
          equations of motion forward by a step dt"""
-      #equivalent to R-step in paper
 
       expeta = math.exp(self.syst.cell.pc.get()*self.dt.get()/self.syst.cell.w.get())
       sinheta=0.5*(expeta-1.0/expeta)
@@ -178,6 +180,8 @@ class nst_ensemble(nvt_ensemble):
 
    def __init__(self, syst, thermo, cell_thermo, temp=1.0, dt=1.0, pext=numpy.zeros((3,3),float)):
       super(nst_ensemble,self).__init__(syst=syst, thermo=thermo, temp=temp, dt=dt)
+      self.syst.init_cell_velocities(temp = temp)
+
       self.cell_thermo=cell_thermo
       self.cell_thermo.bind(self.syst.atoms, self.syst.p, self.syst.cell)
       self.cell_thermo.dt.set(self.dt.get()*0.5)   # maybe make thermo.dt a dependant of dt?
@@ -209,7 +213,6 @@ class nst_ensemble(nvt_ensemble):
 
    def pstep(self):
       """Evolves the atom and cell momenta forward in time by a step dt/2"""
-      #equivalent to P-step in paper
 
       p = self.syst.p.get(); f = self.syst.f.get(); pc=self.syst.cell.p.get()
       V=self.syst.cell.V.get(); dthalf=self.dt.get()*0.5
@@ -231,8 +234,6 @@ class nst_ensemble(nvt_ensemble):
    def rstep(self):
       """Takes the atom positions, velocities and forces and integrates the 
          equations of motion forward by a step dt"""
-
-      #equivalent to R-step in paper
 
       exp_mat, neg_exp_mat = self.exp_p()
       sinh_mat = 0.5*(exp_mat - neg_exp_mat)

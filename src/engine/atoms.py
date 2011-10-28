@@ -1,5 +1,6 @@
-import numpy, math
+import numpy, math, random
 from utils.depend import *
+from utils import units
 
 class Atom(object):
    """Represent an atom, with position, velocity, mass and related properties.
@@ -27,6 +28,15 @@ class Atom(object):
 
    def __str__(self):
       return "    Name = %s\n    q = %s\n    p = %s\n    f = %s " % (self.name.get(), self.q.get(), self.p.get(), self.f.get())
+
+   def init_velocity(self, temp= 1.0):
+      """Initialises the atom velocity according to the Maxwell-Boltzmann 
+         distribution"""
+
+      sigma = math.sqrt(self.mass.get()*units.kb*temp)
+      for i in range(3):
+         self.p.get()[i] = random.gauss(0.0, sigma)
+      self.p.taint(taintme=False)
 
    def get_kin(self):
       """Calculates the kinetic energy of the particle from the particle 

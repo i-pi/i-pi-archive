@@ -1,6 +1,7 @@
 import numpy, math, random
 import upper_T
 from utils.depend import *
+from utils import units
 
 class Cell(object):
    """Represents the simulation cell in a periodic system
@@ -26,7 +27,6 @@ class Cell(object):
 
       a, b, c, alpha, beta, gamma = mycell
       return cls(h=abc2h(a,b,c,alpha,beta,gamma), w = w, h0 = h0)
-
 
    def __init__(self, h = numpy.identity(3, float), w = 1.0, h0=None, pext = numpy.zeros((3,3),float) ):      
       #un-dependent properties
@@ -60,6 +60,16 @@ class Cell(object):
       
       self.piext = depend(name='piext', func=self.get_piext, deplist=[self.pext, self.V, self.V0, self.ih0, self.h])
    
+   def init_velocity(self, temp):
+      """Initialises the cell velocity matrix according to the 
+         Maxwell-Boltzmann distribution"""
+
+      sigma = math.sqrt(self.w.get()*units.kb*temp)
+      for i in range(3):
+         for j in range(i,3):
+            self.p.get()[i,j] = random.gauss(0.0, sigma)
+      self.p.taint(taintme=False)
+
    def get_volume(self):
       """Calculates the volume of the unit cell, assuming an upper-triangular
          lattice vector matrix"""

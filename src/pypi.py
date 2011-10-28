@@ -193,7 +193,8 @@ pext=10.0*numpy.identity(3); pext[0,2]=pext[2,0]=0
 nvt=dynamics.nst_ensemble(syst=syst, thermo=thermo, cell_thermo=thermo_cell, dt=5e-4, temp=1e-2, pext=pext)
 
 print "#Initial vir is ", syst.vir.get()
-#print "#Initial f is ", syst.f.get()
+print "#Initial p is ", syst.p.get()
+print "#Initial cell p is ", syst.cell.p.get()
 print "# Initial pot is ", syst.pot.get()
 print "# Thermo T is ", nvt.thermo.T.get()
 print "# V K ECNS V"

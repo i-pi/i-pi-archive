@@ -81,7 +81,43 @@ class depend(object):
       """Changes value, and taints dependents"""
 
       self.taint(taintme=False, tainter=self)
-      if hasattr(self.__value, '__iter__'):
-         self.__value[:] = value
-      else:
-         self.__value=value     
+      self.__value=value     
+
+class dep_array(depend):
+   """A sub-class of depend for array types, so that the default get and set
+      functions will only change the value of the object, not the reference"""
+
+   def __init__(self,func=None,deplist=[],value=None,name=None,):
+      super(dep_array, self).__init__(func=func, deplist=deplist, value=value, name=name)
+      
+   def get(self, value):
+      """Returns a shallow copy of the array's value after recalculating it
+         if the object has been tainted"""
+ 
+      if (self.__tainted and not self.__func is None):  
+         self.__value=self.__func()
+         self.taint(taintme=False, tainter=self)
+      self.__tainted=False
+      return self.__value[:]
+
+   def set(self, value):
+      """Changes value, and taints dependents"""
+
+      self.taint(taintme=False, tainter = self)
+      self.__value[:] = value
+
+   def deep_get(self, value):
+      """Returns a shallow copy of the array's value after recalculating it
+         if the object has been tainted"""
+ 
+      if (self.__tainted and not self.__func is None):  
+         self.__value=self.__func()
+         self.taint(taintme=False, tainter=self)
+      self.__tainted=False
+      return self.__value
+
+   def deep_set(self, value):
+      """Changes value, and taints dependents"""
+
+      self.taint(taintme=False, tainter = self)
+      self.__value = value

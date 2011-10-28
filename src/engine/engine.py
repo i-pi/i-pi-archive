@@ -21,8 +21,7 @@ class System(object):
    #class properties -- initialized here, then possibly re-defined in the init
    __qpf=numpy.zeros(0)
    q=__qpf;  p=__qpf;  f=__qpf;
-   atoms=[]; temp=0.0; dt=1.0; 
-   cell=Cell()
+   atoms=[]; cell=Cell()
    
    @classmethod
    def from_pdbfile(cls, filedesc, ffield=forcefield()):   
@@ -81,6 +80,18 @@ class System(object):
       rstr = rstr + "Cell:\n" + str(self.cell)
       return rstr
 
+   def init_atom_velocities(self, temp = 1.0):
+      """Initialises the atom velocities according to the 
+         Maxwell-Boltzmann distribution"""
+
+      for atom in self.atoms:
+         atom.init_velocity(temp=temp)
+
+   def init_cell_velocities(self, temp = 1.0):
+      """Initialises the cell velocity according to the 
+         Maxwell-Boltzmann distribution"""
+
+      self.cell.init_velocity(temp = temp)
 
    def get_kin(self):
       """Calculates the total kinetic energy of the system,
