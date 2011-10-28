@@ -61,7 +61,8 @@ class System(object):
             depgrps[what].append(getattr(atom,what))
             getattr(atom,what).add_dependant(getattr(self,what))
       
-      for what in [ 'q', 'p', 'f' ]:  getattr(self,what).add_depgrp(depgrps[what])
+      for what in [ 'q', 'p', 'f' ]:
+         getattr(self,what).add_depgrp(depgrps[what])
 
       self.pot = depend(value=0.0,name='pot')
       self.vir = depend(value=numpy.zeros((3,3),float),name='vir')

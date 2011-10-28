@@ -26,7 +26,12 @@ class thermostat(object):
       
       pass
 
-   def cell_step(self):
-      """Dummy cell thermostat step"""   
+   def NST_cell_step(self):
+      """Dummy NST cell thermostat step"""   
+      
+      pass
+
+   def NPT_cell_step(self):
+      """Dummy NPT cell thermostat step"""   
       
       pass

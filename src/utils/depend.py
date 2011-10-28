@@ -38,7 +38,8 @@ class depend(object):
       """Recursively sets tainted flag on dependent objects."""
       self.__tainted = True     #this is to prevent circular dependencies
       for item in self.__deps: 
-         if (not item._depend__tainted): item.taint(tainter=self)
+         if (not item._depend__tainted):
+            item.taint(tainter=self)
       for grp in self.__depgrp: 
          if (not tainter in grp):
             for item in grp:
@@ -80,4 +81,7 @@ class depend(object):
       """Changes value, and taints dependents"""
 
       self.taint(taintme=False, tainter=self)
-      self.__value=value     
+      if hasattr(self.__value, '__iter__'):
+         self.__value[:] = value
+      else:
+         self.__value=value     

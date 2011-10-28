@@ -70,7 +70,7 @@ class langevin(thermostat):
    def step(self):
       """Updates the atom velocities with a langevin thermostat"""
 
-      sm=self.smass.get();  p=self.p.get();  T=self.T.get(); S=self.S.get();
+      sm=self.smass.get(); p=self.p.get(); T=self.T.get(); S=self.S.get();
       econs=self.econs.get()
       for i in range(len(p)):
          p[i]/=sm[i]
@@ -81,16 +81,23 @@ class langevin(thermostat):
       self.econs.set(econs)
       self.p.taint(taintme=False)
 
-   def cell_step(self):
-      """Updates the cell velocities with a langevin thermostat"""
+   def NST_cell_step(self):
+      """Updates the cell velocities with a langevin thermostat in the
+         NST ensemble"""
 
-      #TODO define properly within the new framework
-      sw = self.sw.get(); T=self.T.get(); S=self.S.get();   p=self.cell.p.get()
+      sw = self.sw.get(); T=self.T.get(); S=self.S.get(); p=self.cell.p.get()
       self.econs.set(self.econs.get()+self.cell.kin.get())
       for i in range(3):
          for j in range(i,3): 
             p[i,j] = T*p[i,j] + S*sw*random.gauss(0.0, 1.0)
       self.cell.p.taint(taintme=False)           
-      self.cell.pc.set(self.cell.pc.get()*T+S*sw*random.gauss(0.0, 1.0))
       self.econs.set(self.econs.get()-self.cell.kin.get())      
 
+   def NPT_cell_step(self):
+      """Updates the cell velocities with a langevin thermostat in the 
+         NPT ensemble"""
+
+      sw = self.sw.get(); T=self.T.get(); S=self.S.get()
+      self.econs.set(self.econs.get()+self.cell.kin.get())
+      self.cell.pc.set(self.cell.pc.get()*T+S*sw*random.gauss(0.0, 1.0))
+      self.econs.set(self.econs.get()-self.cell.kin.get())      

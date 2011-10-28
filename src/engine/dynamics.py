@@ -146,13 +146,13 @@ class npt_ensemble(nvt_ensemble):
    def step(self):
       """NPT time step, with appropriate thermostatting steps"""
 
-      self.cell_thermo.cell_step()
+      self.cell_thermo.NPT_cell_step()
       self.thermo.step()
       self.pstep()
       self.rstep()
       self.pstep()
       self.thermo.step()
-      self.cell_thermo.cell_step()
+      self.cell_thermo.NPT_cell_step()
    
    def get_econs(self): 
       """Calculates the conserved energy quantity for the NPT ensemble"""
@@ -251,13 +251,13 @@ class nst_ensemble(nvt_ensemble):
    def step(self):
       """NST time step, with appropriate thermostatting steps"""
 
-      self.cell_thermo.cell_step()
+      self.cell_thermo.NST_cell_step()
       self.thermo.step()
       self.pstep()
       self.rstep()
       self.pstep()
       self.thermo.step()
-      self.cell_thermo.cell_step()
+      self.cell_thermo.NST_cell_step()
    
    def get_econs(self):
       """Calculates the conserved energy quantity for the NST ensemble"""
