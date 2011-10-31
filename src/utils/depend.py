@@ -43,7 +43,8 @@ class depend(object):
       for grp in self.__depgrp: 
          if (not tainter in grp):
             for item in grp:
-               if (not item._depend__tainted): item.taint(tainter=self)
+               if (not item._depend__tainted):
+                  item.taint(tainter=self)
          
       self.__tainted = taintme
       
@@ -83,41 +84,3 @@ class depend(object):
       self.taint(taintme=False, tainter=self)
       self.__value=value     
 
-class dep_array(depend):
-   """A sub-class of depend for array types, so that the default get and set
-      functions will only change the value of the object, not the reference"""
-
-   def __init__(self,func=None,deplist=[],value=None,name=None,):
-      super(dep_array, self).__init__(func=func, deplist=deplist, value=value, name=name)
-      
-   def get(self, value):
-      """Returns a shallow copy of the array's value after recalculating it
-         if the object has been tainted"""
- 
-      if (self.__tainted and not self.__func is None):  
-         self.__value=self.__func()
-         self.taint(taintme=False, tainter=self)
-      self.__tainted=False
-      return self.__value[:]
-
-   def set(self, value):
-      """Changes value, and taints dependents"""
-
-      self.taint(taintme=False, tainter = self)
-      self.__value[:] = value
-
-   def deep_get(self, value):
-      """Returns a shallow copy of the array's value after recalculating it
-         if the object has been tainted"""
- 
-      if (self.__tainted and not self.__func is None):  
-         self.__value=self.__func()
-         self.taint(taintme=False, tainter=self)
-      self.__tainted=False
-      return self.__value
-
-   def deep_set(self, value):
-      """Changes value, and taints dependents"""
-
-      self.taint(taintme=False, tainter = self)
-      self.__value = value

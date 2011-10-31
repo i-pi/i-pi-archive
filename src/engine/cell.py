@@ -132,7 +132,6 @@ class Cell(object):
 
    def __str__(self):
       h=self.h.get(); p = self.p.get()
-      #print h
       return "    h1 = %s\n    h2 = %s\n    h3 = %s\n\n    p1 = %s\n    p2 = %s\n    p3 = %s\n\n    w = %s, volume = %s\n" % (
          h[:,0], h[:,1], h[:,2], p[:,0], p[:,1], p[:,2], self.w.get(), self.V.get() )
       

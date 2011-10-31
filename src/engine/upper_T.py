@@ -29,3 +29,16 @@ def volume(h):
    """Calculates the volume of the unit cell, assuming an upper-triangular
       unit vector matrix"""
    return h[0,0]*h[1,1]*h[2,2]
+
+def Crank_Nicolson(h):
+   """Calculates the matrix exponential of a matrix and its negative 
+      using a Crank Nicolson expansion"""
+
+   plus_mat = numpy.identity(3) + 0.5*h
+   neg_mat = numpy.identity(3) - 0.5*h
+
+   exp_mat = numpy.dot(compute_ih(neg_mat), plus_mat)
+   neg_exp_mat = numpy.dot(compute_ih(plus_mat), neg_mat)
+
+   return exp_mat, neg_exp_mat
+ 
