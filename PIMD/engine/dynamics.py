@@ -113,7 +113,7 @@ class npt_ensemble(nvt_ensemble):
    def pstep(self):
       """Evolves the atom and cell momenta forward in time by a step dt/2"""
 
-      p = self.syst.p.get(); f = self.syst.f.get_array(); pc=(self.syst.cell.pc.get())
+      p = self.syst.p.get(); f = self.syst.f.get(); pc=(self.syst.cell.pc.get())
       V=self.syst.cell.V.get(); dthalf=self.dt.get()*0.5
       press=self.syst.press.get();  pext=numpy.trace(self.syst.cell.pext.get())/3.0
 
@@ -121,8 +121,8 @@ class npt_ensemble(nvt_ensemble):
             
       for i in range(len(self.syst.atoms)):
          atom_i = self.syst.atoms[i]
-         pc += dthalf**2/atom_i.mass.get()*numpy.inner(atom_i.f.get_array(), atom_i.p.get())
-         pc += dthalf**3/(3.0*atom_i.mass.get())*numpy.inner(atom_i.f.get_array(), atom_i.f.get_array())
+         pc += dthalf**2/atom_i.mass.get()*numpy.inner(atom_i.f.get(), atom_i.p.get())
+         pc += dthalf**3/(3.0*atom_i.mass.get())*numpy.inner(atom_i.f.get(), atom_i.f.get())
 
       self.syst.cell.pc.set(pc)
       p[:] += f[:] * dthalf;   
@@ -214,7 +214,7 @@ class nst_ensemble(nvt_ensemble):
    def pstep(self):
       """Evolves the atom and cell momenta forward in time by a step dt/2"""
 
-      p = self.syst.p.get(); f = self.syst.f.get_array(); pc=self.syst.cell.p.get()
+      p = self.syst.p.get(); f = self.syst.f.get(); pc=self.syst.cell.p.get()
       V=self.syst.cell.V.get(); dthalf=self.dt.get()*0.5
       L = numpy.zeros((3,3), float)
       for i in range(3):
@@ -224,8 +224,8 @@ class nst_ensemble(nvt_ensemble):
             
       for i in range(len(self.syst.atoms)):
          atom_i = self.syst.atoms[i]
-         pc[:] += dthalf**2/(2.0*atom_i.mass.get())*(numpy.outer(atom_i.f.get_array(), atom_i.p.get()) + numpy.outer(atom_i.p.get(), atom_i.f.get_array()))
-         pc[:] += dthalf**3/(3.0*atom_i.mass.get())*numpy.outer(atom_i.f.get_array(), atom_i.f.get_array())
+         pc[:] += dthalf**2/(2.0*atom_i.mass.get())*(numpy.outer(atom_i.f.get(), atom_i.p.get()) + numpy.outer(atom_i.p.get(), atom_i.f.get()))
+         pc[:] += dthalf**3/(3.0*atom_i.mass.get())*numpy.outer(atom_i.f.get(), atom_i.f.get())
       self.syst.cell.p.taint(taintme=False)      
 
       p[:] += f[:] * dthalf
@@ -253,11 +253,6 @@ class nst_ensemble(nvt_ensemble):
    def step(self):
       """NST time step, with appropriate thermostatting steps"""
 
-      print
-      print self.syst._System__qpf[3:6,2]
-      print self.syst.f.get_array()[3:6]
-      print self.syst.atoms[1].f.get_array()
-      print
       self.cell_thermo.NST_cell_step()
       self.thermo.step()
       self.pstep()

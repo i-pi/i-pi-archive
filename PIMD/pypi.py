@@ -4,6 +4,8 @@ import sys
 from engine import io_system
 from engine import dynamics
 from engine import forces
+from engine import rp_engine
+from engine import rp_dynamics
 import numpy, random
 from utils.mathtools import *
 
@@ -181,39 +183,38 @@ f = open("./testfile5.txt", "r")
 #exit()
 #thermo = langevin.Thermo_Langevin(dt = 0.1)
 
-#syst=engine.System.from_pdbfile(f, forces.pipeforce( {"pipein": "forces/pipeforce", "pipeout": "forces/pipepos"} ))
-##syst=engine.System.from_pdbfile(f, forces.LJ( {"eps": 0.1, "sigma": 0.38, "rc": 0.38*2.5} ) )
-#thermo = langevin.langevin(tau=1e-1)
-#thermo_cell = langevin.langevin(tau=1e-1)
-#syst.cell.w.set(1e1)
-##nvt=dynamics.npt_ensemble(syst=syst, thermo=thermo, cell_thermo=thermo_cell, dt=1e-2, temp=1e-2, pext=10.0)
-##pext=10.0*numpy.identity(3); pext[0,2]=pext[2,0]=0
-#pext = numpy.zeros((3,3),float)
-##nvt=dynamics.nst_ensemble(syst=syst, thermo=thermo, cell_thermo=thermo_cell, dt=5e-4, temp=1e-2, pext=pext)
-#nvt=dynamics.nvt_ensemble(syst=syst, thermo=thermo, dt=5e-4, temp=1e-2)
-##nvt=dynamics.nvt_ensemble(syst=syst, thermo=thermo, dt=5e-4, temp=1e-2)
-#
-#print "#Initial vir is ", syst.vir.get()
-##print "#Initial f is ", syst.f.get()
-##print "#Initial cell p is ", syst.cell.p.get()
-#print "# Initial pot is ", syst.pot.get()
+syst=rp_engine.RP_sys.from_pdbfile(f, forces.rp_pipeforce( {"pipein": "forces/pipeforce", "pipeout": "forces/pipepos"}), nbeads = 10, temp = 1e-2 )
+thermo = langevin.langevin(tau=1e-1)
+for system in syst.systems:
+   system.cell.w.set(1e1)
+
+syst.cell.w.set(1e1)
+
+nvt = rp_dynamics.rp_nvt_ensemble(syst=syst, thermo=thermo, dt = 2.5e-4, temp=1e-2)
+#nvt = dynamics.nve_ensemble(syst=syst, dt = 2.5e-4)
+print "#Initial vir is ", syst.vir.get()
+#print "#Initial f is ", syst.f.get()
+#print "#Initial cell p is ", syst.cell.p.get()
+print "# Initial pot is ", syst.pot.get()
+print "# Initial ke is ", syst.kin.get()
+print "# Initial econs is ", nvt.econs.get()
 #print "# Thermo T is ", nvt.thermo.T.get()
-#print "# V K ECNS V"
-##f = open("./traj4.pdb", "w")
-##for istep in range(4000):
-#for istep in range(400):
-#   nvt.step()
-# #  io_system.print_pdb(syst.atoms, syst.cell, f)
-#
-#   nvt.econs.get()
-#
-#   print syst.pot.get(), syst.kin.get(), nvt.econs.get(), syst.cell.V.get()
-#
-#h = open("./forces/pipepos","w")
-#io_system.xml_terminate(h)
-#h.close()
-#
-#exit()
+print "# V K ECNS V"
+#f = open("./traj5.pdb", "w")
+#for istep in range(4000):
+for istep in range(800):
+   nvt.step()
+   
+   #io_system.print_pdb_RP(syst.systems, f)
+
+   print syst.pot.get(), syst.kin.get(), nvt.econs.get(), syst.systems[0].cell.V.get()
+   print syst.spring_pot()
+
+h = open("./forces/pipepos","w")
+io_system.xml_terminate(h)
+h.close()
+
+exit()
 
 syst=engine.System.from_pdbfile(f, forces.pipeforce( {"pipein": "forces/pipeforce", "pipeout": "forces/pipepos"} ) )
 #syst=engine.System.from_pdbfile(f, forces.LJ( {"eps": 0.1, "sigma": 0.38, "rc": 0.38*2.5} ) )
@@ -222,10 +223,9 @@ thermo_cell = langevin.langevin(tau=1e-1)
 syst.cell.w.set(1e1)
 #nvt=dynamics.npt_ensemble(syst=syst, thermo=thermo, cell_thermo=thermo_cell, dt=1e-2, temp=1e-2, pext=10.0)
 #pext=10.0*numpy.identity(3); pext[0,2]=pext[2,0]=0
-#pext = numpy.zeros((3,3),float)
-pext = numpy.identity(3)
-nvt=dynamics.nst_ensemble(syst=syst, thermo=thermo, cell_thermo=thermo_cell, dt=5e-4, temp=1e-2, pext=pext)
-#nvt=dynamics.nvt_ensemble(syst=syst, thermo=thermo, dt=5e-4, temp=1e-2)
+pext = numpy.zeros((3,3),float)
+#nvt=dynamics.nst_ensemble(syst=syst, thermo=thermo, cell_thermo=thermo_cell, dt=5e-4, temp=1e-2, pext=pext)
+nvt=dynamics.nvt_ensemble(syst=syst, thermo=thermo, dt=5e-4, temp=1e-2)
 
 print "#Initial vir is ", syst.vir.get()
 #print "#Initial f is ", syst.f.get()
@@ -233,9 +233,9 @@ print "#Initial vir is ", syst.vir.get()
 print "# Initial pot is ", syst.pot.get()
 print "# Thermo T is ", nvt.thermo.T.get()
 print "# V K ECNS V"
-#f = open("./traj.pdb", "w")
+#f = open("./traj4.pdb", "w")
 #for istep in range(4000):
-for istep in range(4000):
+for istep in range(400):
    nvt.step()
  #  io_system.print_pdb(syst.atoms, syst.cell, f)
 
