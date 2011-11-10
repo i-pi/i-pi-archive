@@ -39,12 +39,20 @@ class nve_ensemble(ensemble):
    def step(self):
       """Velocity Verlet time step"""
 
-      p=self.syst.p.get();  q=self.syst.q.get();  dt=self.dt.get()
+      q=self.syst.q.get();  dt=self.dt.get()
       
-      p[:] += self.syst.f.get_array() * (dt*0.5);  
+      self.syst.p.get()[:] += self.syst.f.get_array() * (dt*0.5)  
+      p = numpy.array(self.syst.p.get(),ndmin=2)
+      d = numpy.array(self.syst.p.get(),ndmin=2)
+      
+      for i in range(len(self.syst.atoms)):
+         d[:,3*i] = dt/self.syst.atoms[i].mass.get()*d[:,3*i]
+         d[:,3*i+1] = dt/self.syst.atoms[i].mass.get()*d[:,3*i+1]
+         d[:,3*i+2] = dt/self.syst.atoms[i].mass.get()*d[:,3*i+2]
+      d.shape = self.syst.q.get().shape
+      q[:] += d[:];   self.syst.q.taint(taintme=False)
 
-      q[:] += p[:] * dt;                      self.syst.q.taint(taintme=False)            
-      p[:] += self.syst.f.get_array() * (dt*0.5);   self.syst.p.taint(taintme=False) 
+      self.syst.p.get()[:] += self.syst.f.get_array() * (dt*0.5);   self.syst.p.taint(taintme=False) 
       
 class nvt_ensemble(nve_ensemble):
    """NVT ensemble object, with velocity Verlet time integrator and thermostat
@@ -189,27 +197,27 @@ class nst_ensemble(nvt_ensemble):
       self.syst.cell.pext.set(pext) 
       self.econs=depend(name='econs',func=self.get_econs, deplist=[ self.syst.pot, self.syst.kin, self.thermo.econs, self.cell_thermo.econs, self.syst.cell.kin, self.syst.cell.pot])
       
-#   def exp_p(self):
-#      """Exponentiates the displacement matrix p*dt/w, as required for rstep"""
-#
-#      p=self.syst.cell.p.get()
-#      dist_mat = p*self.dt.get()/self.syst.cell.w.get()
-#      eig, eigvals = upper_T.compute_eigp(dist_mat)
-#      i_eig = upper_T.compute_ih(eig)
-#   
-#      exp_mat = numpy.zeros((3,3), float)
-#      neg_exp_mat = numpy.zeros((3,3), float)
-#      for i in range(3):
-#         exp_mat[i,i] = math.exp(eigvals[i])
-#         neg_exp_mat[i,i] = math.exp(-eigvals[i])
-#      
-#      exp_mat = numpy.dot(eig, exp_mat)
-#      exp_mat = numpy.dot(exp_mat, i_eig)
-#      
-#      neg_exp_mat = numpy.dot(eig, neg_exp_mat)
-#      neg_exp_mat = numpy.dot(neg_exp_mat, i_eig)
-#
-#      return exp_mat, neg_exp_mat
+   def exp_p(self):
+      """Exponentiates the displacement matrix p*dt/w, as required for rstep"""
+
+      p=self.syst.cell.p.get()
+      dist_mat = p*self.dt.get()/self.syst.cell.w.get()
+      eig, eigvals = upper_T.compute_eigp(dist_mat)
+      i_eig = upper_T.compute_ih(eig)
+   
+      exp_mat = numpy.zeros((3,3), float)
+      neg_exp_mat = numpy.zeros((3,3), float)
+      for i in range(3):
+         exp_mat[i,i] = math.exp(eigvals[i])
+         neg_exp_mat[i,i] = math.exp(-eigvals[i])
+      
+      exp_mat = numpy.dot(eig, exp_mat)
+      exp_mat = numpy.dot(exp_mat, i_eig)
+      
+      neg_exp_mat = numpy.dot(eig, neg_exp_mat)
+      neg_exp_mat = numpy.dot(neg_exp_mat, i_eig)
+
+      return exp_mat, neg_exp_mat
 
    def pstep(self):
       """Evolves the atom and cell momenta forward in time by a step dt/2"""
@@ -236,7 +244,8 @@ class nst_ensemble(nvt_ensemble):
          equations of motion forward by a step dt"""
 
       vel_mat = self.syst.cell.p.get()/self.syst.cell.w.get()
-      exp_mat, neg_exp_mat = upper_T.Crank_Nicolson(vel_mat*self.dt.get())
+#      exp_mat, neg_exp_mat = upper_T.Crank_Nicolson(vel_mat*self.dt.get())
+      exp_mat, neg_exp_mat = self.exp_p()
       sinh_mat = 0.5*(exp_mat - neg_exp_mat)
       ip_mat = cell.ut_inverse(vel_mat)
 

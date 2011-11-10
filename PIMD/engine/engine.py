@@ -1,6 +1,5 @@
-import numpy
-import math
-import random
+import numpy, math, random
+from utils.mass_list import *
 from utils.depend import *
 from io_system import *
 from atoms import *
@@ -38,7 +37,7 @@ class System(object):
       self=cls(ffield=ffield, qpf_slice=qpf_slice, deps_initialise=False)
       for i in range(natoms):
          self.__qpf[3*i:3*(i+1),0]=atoms[i][1]
-      self.atoms = [ Atom(self.__qpf[3*i:3*(i+1),:], name = atoms[i][0]) for i in range(natoms) ] #Creates a list of atoms from the __qpf array
+      self.atoms = [ Atom(self.__qpf[3*i:3*(i+1),:], name = atoms[i][0], mass=mlist.masses[atoms[i][0]]) for i in range(natoms) ] #Creates a list of atoms from the __qpf array
       self.cell = Cell.fromSidesAngles(cell)
       self.deps_init(ffield)
 

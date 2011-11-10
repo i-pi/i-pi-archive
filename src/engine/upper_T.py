@@ -36,6 +36,7 @@ def Crank_Nicolson(h):
 
    plus_mat = numpy.identity(3) + 0.5*h
    neg_mat = numpy.identity(3) - 0.5*h
+   print plus_mat, neg_mat
 
    exp_mat = numpy.dot(compute_ih(neg_mat), plus_mat)
    neg_exp_mat = numpy.dot(compute_ih(plus_mat), neg_mat)

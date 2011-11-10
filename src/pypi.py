@@ -235,7 +235,7 @@ print "# Thermo T is ", nvt.thermo.T.get()
 print "# V K ECNS V"
 #f = open("./traj.pdb", "w")
 #for istep in range(4000):
-for istep in range(4000):
+for istep in range(8000):
    nvt.step()
  #  io_system.print_pdb(syst.atoms, syst.cell, f)
 

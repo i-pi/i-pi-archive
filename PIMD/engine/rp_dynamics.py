@@ -18,6 +18,7 @@ class rp_nvt_ensemble(dynamics.nvt_ensemble):
       super(rp_nvt_ensemble,self).__init__(syst, thermo, temp=temp, dt=dt)
 
       self.thermo.temp.set(self.temp*len(syst.systems))
+      self.syst.init_cell_velocities(self.temp*len(syst.systems))
 
 #class npt_ensemble(nvt_ensemble):
 ##TODO rework this entirely, so that we separate the NPT and NST implementations

@@ -2,6 +2,7 @@ import numpy, math
 import engine, forces, cell, io_system, atoms, cell
 from utils import units
 from utils.depend import *
+from utils.mass_list import *
 
 class RP_sys(engine.System):
    """A class of multiple copies of a system for use in PIMD"""
@@ -30,8 +31,9 @@ class RP_sys(engine.System):
          cls.systems.append(engine.System.from_pdbfile(filedesc, ffield=forces.forcefield(), qpf_slice = cls.__qpf[i,:,:]))
          filedesc.seek(0)
 
-      cls.atoms = [ atoms.Atom(numpy.zeros((3,3)), name = atom_list[i][0]) for i in range(natoms) ]
-      cls.cell = cell.Cell.fromSidesAngles(cell_list)
+      cls.atoms = [ Necklace(cls.__qpf[:,3*i:3*(i+1),:], name = atom_list[i][0], mass = mlist.masses[atom_list[i][0]]) for i in range(natoms) ]
+    
+      cls.cell = Cell_necklace(cls.systems)
 
       return cls(ffield = ffield, temp = temp)
 
@@ -77,6 +79,9 @@ class RP_sys(engine.System):
       for what in ['q', 'p', 'f']:
          getattr(self,what).add_depgrp(depgrps[what])
 
+      self.pot_estimator = depend(func=self.get_pot_estimator, name='pot_estimator', deplist=[self.pot])
+      self.kin_estimator = depend(func=self.get_kin_estimator, name='kin_estimator', deplist=[self.kin])
+
    def init_atom_velocities(self, temp=None):
       for syst in self.systems:
          syst.init_atom_velocities(temp=self.temp.get()*len(self.systems))
@@ -92,8 +97,13 @@ class RP_sys(engine.System):
       ke = 0.0
       for syst in self.systems:
          ke += syst.kin.get()
-#      return ke/float(len(self.systems))
       return ke
+
+   def get_pot_estimator(self):
+      return self.pot.get()/float(len(self.systems))
+
+   def get_kin_estimator(self):
+      pass
 
    def spring_pot(self):
       pot = 0.0
@@ -130,3 +140,37 @@ class RP_sys(engine.System):
 
       return f
 
+class Necklace:
+   def __init__(self, qpf_slice, name="X", mass=1.0):
+      self.q = depend(value=qpf_slice[:,:,0], name='q')
+      #self.p = self.depend(value=qpf_slice[:,:,1], name='p')
+      #self.f = self.depend(value=qpf_slice[:,:,2], name='f')
+      self.centroid = depend(name='centroid', func=self.get_centroid)
+      self.mass = depend(value=mass, name='mass')
+      self.name = depend(value=name, name='name')
+
+   def get_centroid(self):
+      nbeads = len(self.q.get_array()[:,0])
+      q_bar = numpy.zeros(3)
+
+      for i in range(nbeads):
+         q_bar += self.q.get_array()[i,:]
+      q_bar /= nbeads
+
+      return q_bar
+
+class Cell_necklace:
+   def __init__(self, systems):
+      self.w = systems[0].cell.w
+#TODO make all the barostat masses somehow connected to this one, so they stay the same for all the systems no matter what
+      nbeads = len(systems)
+      p = numpy.zeros((nbeads, 3,3))
+      for i in range(nbeads):
+         systems[i].cell.p._depend__value = p[i,:,:]
+      depgrp_p = []
+      self.p = depend(value=p, name='p')
+      for i in range(nbeads):
+         self.p.add_dependant(systems[i].cell.p)
+         depgrp_p.append(systems[i].cell.p)
+      self.p.add_depgrp(depgrp_p)
+      #Note that this re-initialises the cell momenta to zero, if they have already been initialised

@@ -201,8 +201,8 @@ print "# Initial econs is ", nvt.econs.get()
 #print "# Thermo T is ", nvt.thermo.T.get()
 print "# V K ECNS V"
 #f = open("./traj5.pdb", "w")
-#for istep in range(4000):
-for istep in range(800):
+for istep in range(90):
+#for istep in range(800):
    nvt.step()
    
    #io_system.print_pdb_RP(syst.systems, f)
