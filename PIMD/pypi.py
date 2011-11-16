@@ -175,7 +175,8 @@ print "hello world"
 #
 #g.close()
 
-f = open("./testfile5.txt", "r")
+f = open("./fcp4cell.pdb", "r")
+#f = open("./testfile.txt", "r")
 #syst = engine.System.from_pdbfile(f)
 #g = open("./forces/system.xml", "w")
 #io_system.xml(syst, g)
@@ -183,32 +184,43 @@ f = open("./testfile5.txt", "r")
 #exit()
 #thermo = langevin.Thermo_Langevin(dt = 0.1)
 
-syst=rp_engine.RP_sys.from_pdbfile(f, forces.rp_pipeforce( {"pipein": "forces/pipeforce", "pipeout": "forces/pipepos"}), nbeads = 10, temp = 1e-2 )
+syst=rp_engine.RP_sys.from_pdbfile(f, forces.rp_pipeforce( {"pipein": "forces/pipeforce", "pipeout": "forces/pipepos"}), nbeads = 24, temp = 25/3.1577464/10**5 )
 thermo = langevin.langevin(tau=1e-1)
 for system in syst.systems:
    system.cell.w.set(1e1)
 
 syst.cell.w.set(1e1)
 
-nvt = rp_dynamics.rp_nvt_ensemble(syst=syst, thermo=thermo, dt = 2.5e-4, temp=1e-2)
+#nvt = rp_dynamics.rp_nvt_ensemble(syst=syst, thermo=thermo, dt = 206.706895, temp=25/3.1577464/10**5)
+nvt = rp_dynamics.rp_nvt_ensemble(syst=syst, thermo=thermo, dt = 0.100*206.706895, temp=25/3.1577464/10**5)
 #nvt = dynamics.nve_ensemble(syst=syst, dt = 2.5e-4)
 print "#Initial vir is ", syst.vir.get()
 #print "#Initial f is ", syst.f.get()
 #print "#Initial cell p is ", syst.cell.p.get()
 print "# Initial pot is ", syst.pot.get()
-print "# Initial ke is ", syst.kin.get()
+print "# Initial ke is ", syst.kin.get(), syst.kin_estimator.get(), 1.5*len(syst.atoms)/(syst.betan.get()*len(syst.systems))
 print "# Initial econs is ", nvt.econs.get()
 #print "# Thermo T is ", nvt.thermo.T.get()
 print "# V K ECNS V"
-#f = open("./traj5.pdb", "w")
-for istep in range(90):
-#for istep in range(800):
+f = open("./traj6.pdb", "w")
+#for istep in range(90):
+for istep in range(1800*10):
+   nvt.step()
+   io_system.print_pdb_RP(syst.systems, f)
+   print syst.pot_estimator.get(), syst.kin_estimator.get(), nvt.econs.get()
+   
+print "Equilibration done: starting actual run..."
+kin = 0.0
+for istep in range(2000):
    nvt.step()
    
-   #io_system.print_pdb_RP(syst.systems, f)
+   io_system.print_pdb_RP(syst.systems, f)
 
-   print syst.pot.get(), syst.kin.get(), nvt.econs.get(), syst.systems[0].cell.V.get()
-   print syst.spring_pot()
+#   print syst.pot.get(), syst.kin.get(), nvt.econs.get(), syst.systems[0].cell.V.get()
+   print syst.pot_estimator.get(), syst.kin_estimator.get(), nvt.econs.get(), syst.systems[0].cell.V.get()
+   kin += syst.kin_estimator.get()
+kin /= 2000
+print kin
 
 h = open("./forces/pipepos","w")
 io_system.xml_terminate(h)

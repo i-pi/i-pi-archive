@@ -46,9 +46,10 @@ class nve_ensemble(ensemble):
       d = numpy.array(self.syst.p.get(),ndmin=2)
       
       for i in range(len(self.syst.atoms)):
-         d[:,3*i] = dt/self.syst.atoms[i].mass.get()*d[:,3*i]
-         d[:,3*i+1] = dt/self.syst.atoms[i].mass.get()*d[:,3*i+1]
-         d[:,3*i+2] = dt/self.syst.atoms[i].mass.get()*d[:,3*i+2]
+         mass = self.syst.atoms[i].mass.get()
+         d[:,3*i] = dt/mass*d[:,3*i]
+         d[:,3*i+1] = dt/mass*d[:,3*i+1]
+         d[:,3*i+2] = dt/mass*d[:,3*i+2]
       d.shape = self.syst.q.get().shape
       q[:] += d[:];   self.syst.q.taint(taintme=False)
 

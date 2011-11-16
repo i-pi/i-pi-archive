@@ -81,8 +81,6 @@ class rp_pipeforce(forcefield):
       for system in rp_syst.systems:
          for atom in system.atoms:
             atom.q.add_dependant(self.spring_f)
-         system.cell.ih.add_dependant(self.spring_f)
-         system.cell.h.add_dependant(self.spring_f)
       self.spring_f.add_dependant(self.ufv)
    
       self.ffield_list = []
@@ -99,12 +97,15 @@ class rp_pipeforce(forcefield):
 
       self.spring_f.add_depgrp(depgrp_spring)
       self.spring_f._depend__func=self.get_spring_f
-      self.spring_f.taint()
+      self.spring_f.taint(taintme=True)
 
    def get_all(self):
       pot = 0.0
       f = numpy.zeros((len(self.syst.systems),3*len(self.syst.systems[0].atoms)))
       vir = numpy.zeros((3,3))
+#TODO This is only necessary as calling the System spring_f terms does not automatically update the RP_sys spring_f, fix this!
+      self.spring_f.get_array()
+
       for i in range(len(self.ffield_list)):
          [sys_pot, sys_f, sys_vir]=self.ffield_list[i].ufv.get()
          pot+=sys_pot;  f[i,:]+=sys_f;  vir+=sys_vir

@@ -11,4 +11,4 @@ ljengine.x: $(OBJECTS)
 	gfortran -O2 -c $<
 	
 system_read.o: xml_read.o sys_vars.o
-interface.o: system_read.o LJ.o
+interface.o: system_read.o LJ.o SG.o

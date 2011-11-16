@@ -51,6 +51,9 @@ class RP_sys(engine.System):
       self.ffield = ffield
       self.ffield.bind(self)
 
+      for atom in self.atoms:
+         self.q.add_dependant(atom.q)
+
       depgrps = dict();
       for what in ['q', 'p', 'f']:
          depgrps[what]=[]
@@ -80,7 +83,13 @@ class RP_sys(engine.System):
          getattr(self,what).add_depgrp(depgrps[what])
 
       self.pot_estimator = depend(func=self.get_pot_estimator, name='pot_estimator', deplist=[self.pot])
-      self.kin_estimator = depend(func=self.get_kin_estimator, name='kin_estimator', deplist=[self.kin])
+      self.kin_estimator = depend(func=self.get_kin_estimator, name='kin_estimator', deplist=[self.betan])
+      for syst in self.systems:
+         for atom in syst.atoms:
+            atom.q.add_dependant(self.kin_estimator)
+            atom.f.add_dependant(self.kin_estimator)
+      for atom in self.atoms:
+         atom.centroid.add_dependant(self.kin_estimator)
 
    def init_atom_velocities(self, temp=None):
       for syst in self.systems:
@@ -100,10 +109,23 @@ class RP_sys(engine.System):
       return ke
 
    def get_pot_estimator(self):
-      return self.pot.get()/float(len(self.systems))
+      return (self.pot.get()-self.spring_pot())/float(len(self.systems))
 
    def get_kin_estimator(self):
-      pass
+      f = self.spring_force()
+#TODO This is only necessary as calling atoms.f does not update the global f, fix this!
+      self.f.get_array()
+
+      kin = 0.0
+      for j in range(len(self.systems)):
+         for i in range(len(self.atoms)):
+            dr = self.systems[j].atoms[i].q.get_array()-self.atoms[i].centroid.get_array()
+            df = self.systems[j].atoms[i].f.get_array()-f[j,3*i:3*(i+1)]
+            kin -= 0.5*numpy.dot(dr,df)
+
+      kin += 3.0*len(self.atoms)/(2.0*self.betan.get())
+      kin /= len(self.systems)
+      return kin
 
    def spring_pot(self):
       pot = 0.0
@@ -112,9 +134,8 @@ class RP_sys(engine.System):
 
       for i in range(natoms):
          spring_const = self.atoms[i].mass.get()/(self.betan.get()*units.hbar)**2
-
          for j in range(nbeads):
-            rij = self.systems[j].cell.minimum_distance(self.systems[j].atoms[i], self.systems[(j+1)%nbeads].atoms[i])
+            rij = self.systems[j].atoms[i].q.get_array() - self.systems[(j+1)%nbeads].atoms[i].q.get_array()
             r_2 = numpy.dot(rij, rij)
             pot += 0.5*spring_const*r_2
 
@@ -123,20 +144,20 @@ class RP_sys(engine.System):
    def spring_force(self):
       natoms = len(self.atoms)
       nbeads = len(self.systems)
-      f = numpy.zeros(nbeads, natoms*3)
+      f = numpy.zeros((nbeads, natoms*3))
 
       for i in range(natoms):
          spring_const = self.atoms[i].mass.get()/(self.betan.get()*units.hbar)**2
-         rij_minus = self.systems[0].cell.minimum_distance(self.systems[0].atoms[i], self.systems[natoms].atoms[i])
+         rij_minus = self.systems[0].atoms[i].q.get_array() - self.systems[nbeads-1].atoms[i].q.get_array()
 
          for j in range(nbeads):
             up_index = (j+1)%nbeads
 
-            rij_plus = self.systems[j].cell.minimum_distance(self.systems[j].atoms[i], self.systems[up_index].atoms[i])
+            rij_plus = self.systems[j].atoms[i].q.get_array() - self.systems[up_index].atoms[i].q.get_array()
 
-            f[j,3*i:3(i+1)] -= spring_const*(rij_plus+rij_minus)
+            f[j,3*i:3*(i+1)] -= spring_const*(rij_plus+rij_minus)
 
-            rij_minus = self.systems[up_index].cell.minimum_distance(self.systems[up_index].atoms[i], self.systems[j].atoms[i])
+            rij_minus = -rij_plus
 
       return f
 
@@ -145,7 +166,9 @@ class Necklace:
       self.q = depend(value=qpf_slice[:,:,0], name='q')
       #self.p = self.depend(value=qpf_slice[:,:,1], name='p')
       #self.f = self.depend(value=qpf_slice[:,:,2], name='f')
-      self.centroid = depend(name='centroid', func=self.get_centroid)
+      self.centroid = depend(value=numpy.zeros(3), name='centroid', func=self.get_centroid)
+      self.q.add_dependant(self.centroid)
+      self.centroid.taint(taintme=True)
       self.mass = depend(value=mass, name='mass')
       self.name = depend(value=name, name='name')
 
