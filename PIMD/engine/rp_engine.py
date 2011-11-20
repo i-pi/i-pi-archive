@@ -40,6 +40,7 @@ class RP_sys(engine.System):
    def __init__(self, ffield = forces.forcefield(), temp = 1.0):
       self.temp = depend(name='temp', value=temp)
       self.betan = depend(name='betan', func=self.get_betan, deplist=[self.temp])
+      self.omegan = depend(name='omegan', func=self.get_omegan, deplist=[self.betan])
 
       self.q = depend(value=self.__qpf[:,:,0], name='q')
       self.p = depend(value=self.__qpf[:,:,1], name='p')
@@ -91,6 +92,11 @@ class RP_sys(engine.System):
       for atom in self.atoms:
          atom.centroid.add_dependant(self.kin_estimator)
 
+      self.trans_mat = depend(value=numpy.zeros((len(self.systems),len(self.systems))), name='trans_mat', func=self.get_trans_mat)
+      self.trans_mat.taint(taintme=True)
+      self.n_frequencies = depend(value=numpy.zeros(len(self.systems)), name='n_frequencies', func=self.get_n_frequencies, deplist=[self.omegan])
+      self.n_frequencies.taint(taintme=True)
+
    def init_atom_velocities(self, temp=None):
       for syst in self.systems:
          syst.init_atom_velocities(temp=self.temp.get()*len(self.systems))
@@ -98,6 +104,38 @@ class RP_sys(engine.System):
    def init_cell_velocities(self, temp=None):
       for syst in self.systems:
          syst.init_cell_velocities(temp=self.temp.get()*len(self.systems))
+
+   def get_trans_mat(self):
+      nbeads = len(self.systems)
+      s_nbeads = math.sqrt(nbeads)
+      C = numpy.zeros((nbeads, nbeads))
+
+      C[0,:]=1.0/s_nbeads
+      for i in range((nbeads-1)/2):
+         for j in range(nbeads):
+            C[2*i+1,j] = math.sqrt(2)/s_nbeads*math.sin(2*math.pi*(i+1)*(j+1)/nbeads)
+            C[2*i+2,j] = math.sqrt(2)/s_nbeads*math.cos(2*math.pi*(i+1)*(j+1)/nbeads)
+         
+      if nbeads%2 == 0:
+         for j in range(nbeads):
+            C[nbeads-1,j] = 1.0/s_nbeads*(-1)**(j+1)
+
+      return C
+
+   def get_n_frequencies(self):
+      nbeads = len(self.systems)
+      omega = numpy.zeros(nbeads)
+      
+      omega[0] = 0.0
+      for i in range((nbeads-1)/2):
+         omega[2*i+1] = omega[2*i+2] = 2*self.omegan*math.sin(i*math.pi/nbeads)
+      if nbeads%2 == 0:
+         omega[nbeads-1] = 2*self.omegan
+
+      return omega
+
+   def get_omegan(self):
+      return 1.0/(units.hbar*self.betan.get())
 
    def get_betan(self):
       return 1.0/(self.temp.get()*units.kb*len(self.systems))
@@ -169,6 +207,7 @@ class Necklace:
       self.centroid = depend(value=numpy.zeros(3), name='centroid', func=self.get_centroid)
       self.q.add_dependant(self.centroid)
       self.centroid.taint(taintme=True)
+
       self.mass = depend(value=mass, name='mass')
       self.name = depend(value=name, name='name')
 

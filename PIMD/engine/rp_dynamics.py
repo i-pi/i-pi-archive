@@ -19,6 +19,50 @@ class rp_nvt_ensemble(dynamics.nvt_ensemble):
 
       self.thermo.temp.set(self.temp*len(syst.systems))
 
+#   def step(self):
+#      self.thermo.step()
+#
+#      dt = self.dt.get()
+#
+#      self.syst.p.get_array()[:] += self.syst.f.get_array()*dt/2.0
+#
+#      q_tilde = numpy.dot(self.syst.trans_mat.get_array(), self.syst.q.get_array())
+#      p_tilde = numpy.dot(self.syst.trans_mat.get_array(), self.syst.p.get_array())
+#
+#      nbeads = len(self.syst.systems)
+#      natoms = len(self.syst.atoms)
+#      for i in range(natoms):
+#         cos_mat = numpy.zeros(nbeads)
+#         sin_mat = numpy.zeros(nbeads)
+#         neg_sin_mat = numpy.zeros(nbeads)
+#         mass = self.syst.atoms[i].mass.get()
+#
+#         for j in range(nbeads):
+#            omega_j = self.syst.n_frequencies.get_array()[j]
+#            cos_mat[j] = math.cos(dt*omega_j)
+#            sin_mat[j] = math.sin(dt*omega_j)/(mass*omega_j)
+#            neg_sin_mat[j] = -mass*omega_j*math.sin(dt*omega_j)
+#
+#         p_tilde_i = numpy.array(p_tilde[:,3*i:3*(i+1)])
+#         q_tilde_i = numpy.array(q_tilde[:,3*i:3*(i+1)])
+#
+#         p_tilde[:,3*i:3*(i+1)] = numpy.dot(cos_mat, p_tilde_i) + numpy.dot(neg_sin_mat, q_tilde_i)
+#         q_tilde[:,3*i:3*(i+1)] = numpy.dot(cos_mat, q_tilde_i) + numpy.dot(sin_mat, p_tilde_i)
+#
+#      self.syst.p.get_array()[:] = numpy.dot(p_tilde, self.syst.trans_mat.get_array())
+#      self.syst.q.get_array()[:] = numpy.dot(q_tilde, self.syst.trans_mat.get_array())
+#
+#      self.syst.p.get_array()[:] += self.syst.f.get_array()*dt/2.0
+#      self.syst.p.taint(taintme=False)
+#      self.syst.q.taint(taintme=False)
+#
+#      self.thermo.step()
+
+
+
+
+
+
 #class npt_ensemble(nvt_ensemble):
 ##TODO rework this entirely, so that we separate the NPT and NST implementations
 #   """NPT ensemble object, with Bussi time integrator and cell dynamics, 

@@ -202,13 +202,13 @@ print "# Initial ke is ", syst.kin.get(), syst.kin_estimator.get(), 1.5*len(syst
 print "# Initial econs is ", nvt.econs.get()
 #print "# Thermo T is ", nvt.thermo.T.get()
 print "# V K ECNS V"
-f = open("./traj6.pdb", "w")
-#for istep in range(90):
-for istep in range(1800*10):
+#f = open("./traj6.pdb", "w")
+for istep in range(90):
+#for istep in range(1800*10):
    nvt.step()
-   io_system.print_pdb_RP(syst.systems, f)
+   #io_system.print_pdb_RP(syst.systems, f)
    print syst.pot_estimator.get(), syst.kin_estimator.get(), nvt.econs.get()
-   
+exit()
 print "Equilibration done: starting actual run..."
 kin = 0.0
 for istep in range(2000):
