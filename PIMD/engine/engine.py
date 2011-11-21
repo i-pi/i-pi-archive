@@ -67,7 +67,7 @@ class System(object):
          # note that modifying the global vectors in any position will taint ALL the atomic vectors
          for what in ['q', 'p', 'f' ]: 
             depgrps[what].append(getattr(atom,what))
-            getattr(atom,what).add_dependant(getattr(self,what))
+            getattr(atom,what).add_depgrp([getattr(self,what)])
       
       for what in [ 'q', 'p', 'f' ]:
          getattr(self,what).add_depgrp(depgrps[what])

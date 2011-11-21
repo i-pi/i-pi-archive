@@ -66,7 +66,7 @@ class RP_sys(engine.System):
 
          for what in ['q', 'p', 'f']:
             depgrps[what].append(getattr(syst,what))
-            getattr(syst,what).add_dependant(getattr(self,what))
+            getattr(syst,what).add_depgrp([getattr(self,what)])
 
          depgrps_atom = dict();
          for what in ['q', 'p', 'f']:
@@ -75,7 +75,7 @@ class RP_sys(engine.System):
          for atom in syst.atoms:
             for what in ['q', 'p', 'f']:
                depgrps_atom[what].append(getattr(atom,what))
-               getattr(atom,what).add_dependant(getattr(self,what))
+               getattr(atom,what).add_depgrp([getattr(self,what)])
 
          for what in ['q', 'p', 'f']:
             getattr(self,what).add_depgrp(depgrps_atom[what])
@@ -152,7 +152,7 @@ class RP_sys(engine.System):
    def get_kin_estimator(self):
       f = self.spring_force()
 #TODO This is only necessary as calling atoms.f does not update the global f, fix this!
-      self.f.get_array()
+#      self.f.get_array()
 
       kin = 0.0
       for j in range(len(self.systems)):

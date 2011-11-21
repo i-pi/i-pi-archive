@@ -90,7 +90,7 @@ class rp_pipeforce(forcefield):
          rp_syst.systems[i].ffield = ffield
          ffield.bind(rp_syst.systems[i])
          ffield.spring_f._depend__value=self.spring_f.get_array()[i,:]
-         self.spring_f.add_dependant(ffield.spring_f)
+         ffield.spring_f.add_depgrp([self.spring_f])
          self.ufv.add_dependant(ffield.ufv)
          depgrp_spring.append(ffield.spring_f)
          self.ffield_list.append(ffield)
@@ -104,7 +104,7 @@ class rp_pipeforce(forcefield):
       f = numpy.zeros((len(self.syst.systems),3*len(self.syst.systems[0].atoms)))
       vir = numpy.zeros((3,3))
 #TODO This is only necessary as calling the System spring_f terms does not automatically update the RP_sys spring_f, fix this!
-      self.spring_f.get_array()
+#      self.spring_f.get_array()
 
       for i in range(len(self.ffield_list)):
          [sys_pot, sys_f, sys_vir]=self.ffield_list[i].ufv.get()

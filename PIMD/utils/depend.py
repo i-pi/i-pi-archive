@@ -78,10 +78,16 @@ class depend(object):
       self.__tainted=False
       return self.__value
 
-   def get_array(self):
+   def get_array(self, getter=None):
       if (self.__tainted and not self.__func is None):
          self.__value[:]=self.__func()
          self.taint(taintme=False, tainter=self)
+      elif (self.__tainted and not self.__depgrp == []):
+         for grp in self.__depgrp:
+            if (not getter in grp):
+               for item in grp:
+                  item.get_array(getter=self)
+            
       self.__tainted=False
       return self.__value
       
@@ -91,6 +97,3 @@ class depend(object):
       self.taint(taintme=False, tainter=self)
       self.__value=value     
 
-   def set_array(self, value):
-      self.taint(taintme=False, tainter=self)
-      self.__value[:]=value
