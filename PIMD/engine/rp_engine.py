@@ -128,9 +128,9 @@ class RP_sys(engine.System):
       
       omega[0] = 0.0
       for i in range((nbeads-1)/2):
-         omega[2*i+1] = omega[2*i+2] = 2*self.omegan*math.sin(i*math.pi/nbeads)
+         omega[2*i+1] = omega[2*i+2] = 2*self.omegan.get()*math.sin((i+1)*math.pi/nbeads)
       if nbeads%2 == 0:
-         omega[nbeads-1] = 2*self.omegan
+         omega[nbeads-1] = 2*self.omegan.get()
 
       return omega
 

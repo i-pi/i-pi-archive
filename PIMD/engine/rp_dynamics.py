@@ -3,7 +3,52 @@ import engine, io_system, cell, upper_T, dynamics
 from utils.depend import *
 from utils import units
       
-class rp_nvt_ensemble(dynamics.nvt_ensemble):
+class rp_nve_ensemble(dynamics.nve_ensemble):
+   def __init__(self, syst, dt=1.0):
+      super(rp_nve_ensemble,self).__init__(syst=syst, dt=dt)
+
+   def step(self):
+
+      dt = self.dt.get()
+
+      self.syst.p.get_array()[:] += self.syst.f.get_array()*dt/2.0
+
+      q_tilde = numpy.dot(self.syst.trans_mat.get_array(), self.syst.q.get_array())
+      p_tilde = numpy.dot(self.syst.trans_mat.get_array(), self.syst.p.get_array())
+
+      nbeads = len(self.syst.systems)
+      natoms = len(self.syst.atoms)
+      for i in range(natoms):
+         cos_mat = numpy.zeros(nbeads)
+         sin_mat = numpy.zeros(nbeads)
+         neg_sin_mat = numpy.zeros(nbeads)
+         mass = self.syst.atoms[i].mass.get()
+
+         for j in range(nbeads):
+            omega_j = self.syst.n_frequencies.get_array()[j]
+            cos_mat[j] = math.cos(dt*omega_j)
+            sin_mat[j] = math.sin(dt*omega_j)/(mass*omega_j)
+            neg_sin_mat[j] = -mass*omega_j*math.sin(dt*omega_j)
+         sin_mat[0] = 1.0/mass
+
+         p_tilde_i = numpy.array(p_tilde[:,3*i:3*(i+1)])
+         q_tilde_i = numpy.array(q_tilde[:,3*i:3*(i+1)])
+
+         for j in range(nbeads):
+            p_tilde_i[j,:] = cos_mat[j]*p_tilde_i[j,:] + neg_sin_mat[j]*q_tilde_i[j,:]
+            q_tilde_i[j,:] = cos_mat[j]*q_tilde_i[j,:] + sin_mat[j]*p_tilde_i[j,:]
+
+         p_tilde[:,3*i:3*(i+1)] = p_tilde_i
+         q_tilde[:,3*i:3*(i+1)] = q_tilde_i
+
+      self.syst.p.get_array()[:] = numpy.dot(numpy.transpose(self.syst.trans_mat.get_array()), p_tilde)
+      self.syst.q.get_array()[:] = numpy.dot(numpy.transpose(self.syst.trans_mat.get_array()), q_tilde)
+
+      self.syst.q.taint(taintme=False)
+      self.syst.p.get_array()[:] += self.syst.f.get_array()*dt/2.0
+      self.syst.p.taint(taintme=False)
+
+class rp_nvt_ensemble(dynamics.nvt_ensemble,rp_nve_ensemble):
    """NVT ensemble object, with velocity Verlet time integrator and thermostat
       Contains: syst = System object, containing the atom and cell coordinates 
       econs = conserved energy quantity, dt = time step, temp = temperature,
@@ -19,49 +64,13 @@ class rp_nvt_ensemble(dynamics.nvt_ensemble):
 
       self.thermo.temp.set(self.temp*len(syst.systems))
 
-#   def step(self):
-#      self.thermo.step()
-#
-#      dt = self.dt.get()
-#
-#      self.syst.p.get_array()[:] += self.syst.f.get_array()*dt/2.0
-#
-#      q_tilde = numpy.dot(self.syst.trans_mat.get_array(), self.syst.q.get_array())
-#      p_tilde = numpy.dot(self.syst.trans_mat.get_array(), self.syst.p.get_array())
-#
-#      nbeads = len(self.syst.systems)
-#      natoms = len(self.syst.atoms)
-#      for i in range(natoms):
-#         cos_mat = numpy.zeros(nbeads)
-#         sin_mat = numpy.zeros(nbeads)
-#         neg_sin_mat = numpy.zeros(nbeads)
-#         mass = self.syst.atoms[i].mass.get()
-#
-#         for j in range(nbeads):
-#            omega_j = self.syst.n_frequencies.get_array()[j]
-#            cos_mat[j] = math.cos(dt*omega_j)
-#            sin_mat[j] = math.sin(dt*omega_j)/(mass*omega_j)
-#            neg_sin_mat[j] = -mass*omega_j*math.sin(dt*omega_j)
-#
-#         p_tilde_i = numpy.array(p_tilde[:,3*i:3*(i+1)])
-#         q_tilde_i = numpy.array(q_tilde[:,3*i:3*(i+1)])
-#
-#         p_tilde[:,3*i:3*(i+1)] = numpy.dot(cos_mat, p_tilde_i) + numpy.dot(neg_sin_mat, q_tilde_i)
-#         q_tilde[:,3*i:3*(i+1)] = numpy.dot(cos_mat, q_tilde_i) + numpy.dot(sin_mat, p_tilde_i)
-#
-#      self.syst.p.get_array()[:] = numpy.dot(p_tilde, self.syst.trans_mat.get_array())
-#      self.syst.q.get_array()[:] = numpy.dot(q_tilde, self.syst.trans_mat.get_array())
-#
-#      self.syst.p.get_array()[:] += self.syst.f.get_array()*dt/2.0
-#      self.syst.p.taint(taintme=False)
-#      self.syst.q.taint(taintme=False)
-#
-#      self.thermo.step()
+   def step(self):
+      self.thermo.step()
 
+      #rp_nve_ensemble.step(self)
+      dynamics.nve_ensemble.step(self)
 
-
-
-
+      self.thermo.step()
 
 #class npt_ensemble(nvt_ensemble):
 ##TODO rework this entirely, so that we separate the NPT and NST implementations

@@ -30,7 +30,7 @@ class PILE(thermostat):
       T = self.T.get_array()
       S = numpy.zeros(len(T))
       for i in range(len(T)):
-         S[i] = math.sqrt(units.kb*self.temp.get()*(1-T**2))
+         S[i] = math.sqrt(units.kb*self.temp.get()*(1-T[i]**2))
 
       return S
    
@@ -104,7 +104,7 @@ class PILE(thermostat):
          p_tilde_i*=sm[i]
          p_tilde[:,3*i,3*(i+1)] = p_tilde_i
 
-      self.syst.p.get_array()[:] = numpy.dot(p_tilde, self.syst.trans_mat.get_array())
+      self.syst.p.get_array()[:] = numpy.dot(numpy.transpose(self.syst.trans_mat.get_array()), p_tilde)
       self.econs.set(econs)
       self.syst.p.taint(taintme=False)
 
