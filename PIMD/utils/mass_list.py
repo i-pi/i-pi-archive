@@ -7,6 +7,7 @@ class Mass_list:
       self.masses["  Si"] = 28.086*units.amu
       self.masses["   H"] = 1.008*units.amu
       self.masses["  H2"] = 2*1.008*units.amu
+      self.masses["  Ar"] = 39.948*units.amu
 
 mlist = Mass_list()
 

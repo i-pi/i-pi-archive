@@ -6,8 +6,10 @@ from engine import dynamics
 from engine import forces
 from engine import rp_engine
 from engine import rp_dynamics
+from engine import PILE
 import numpy, random
 from utils.mathtools import *
+from utils.mass_list import *
 
 print "hello world"
 
@@ -184,78 +186,112 @@ f = open("./fcp4cell.pdb", "r")
 #exit()
 #thermo = langevin.Thermo_Langevin(dt = 0.1)
 
-syst=rp_engine.RP_sys.from_pdbfile(f, forces.rp_pipeforce( {"pipein": "forces/pipeforce", "pipeout": "forces/pipepos"}), nbeads = 12, temp = 25/3.1577464/10**5 )
-thermo = langevin.langevin(tau=1e-1)
-for system in syst.systems:
-   system.cell.w.set(1e1)
-
-syst.cell.w.set(1e1)
-
-#nvt = rp_dynamics.rp_nvt_ensemble(syst=syst, thermo=thermo, dt = 206.706895, temp=25/3.1577464/10**5)
-nvt = rp_dynamics.rp_nvt_ensemble(syst=syst, thermo=thermo, dt = 0.100*206.706895, temp=25/3.1577464/10**5)
-#nvt = dynamics.nve_ensemble(syst=syst, dt = 2.5e-4)
-print "#Initial vir is ", syst.vir.get()
-#print "#Initial f.at is ", syst.systems[0].atoms[0].f.get_array()
-#print "#Initial f is ", syst.f.get_array()[0,0:3]
-#print "#Final f.at is ", syst.systems[0].atoms[0].f.get_array()
-#print "#Initial cell p is ", syst.cell.p.get()
-print "# Initial pot is ", syst.pot.get()
-print "# Initial ke is ", syst.kin.get(), syst.kin_estimator.get(), 1.5*len(syst.atoms)/(syst.betan.get()*len(syst.systems))
-print "# Initial econs is ", nvt.econs.get()
-#print "# Thermo T is ", nvt.thermo.T.get()
-print "# V K ECNS V"
-#f = open("./traj6.pdb", "w")
-for istep in range(90):
-#for istep in range(1800*10):
-   nvt.step()
-   #io_system.print_pdb_RP(syst.systems, f)
-   print syst.pot_estimator.get(), syst.kin_estimator.get(), nvt.econs.get()
-exit()
-print "Equilibration done: starting actual run..."
-kin = 0.0
-for istep in range(2000):
-   nvt.step()
-   
-   io_system.print_pdb_RP(syst.systems, f)
-
-#   print syst.pot.get(), syst.kin.get(), nvt.econs.get(), syst.systems[0].cell.V.get()
-   print syst.pot_estimator.get(), syst.kin_estimator.get(), nvt.econs.get(), syst.systems[0].cell.V.get()
-   kin += syst.kin_estimator.get()
-kin /= 2000
-print kin
-
-h = open("./forces/pipepos","w")
-io_system.xml_terminate(h)
-h.close()
-
-exit()
+#syst=rp_engine.RP_sys.from_pdbfile(f, forces.rp_pipeforce( {"pipein": "forces/pipeforce", "pipeout": "forces/pipepos"}), nbeads = 12, temp = 25/3.1577464/10**5 )
+#thermo = langevin.langevin(tau=1e-1)
+#thermo = PILE.PILE(tau_0 = 1e3)
+#for system in syst.systems:
+#   system.cell.w.set(1e1)
+#
+#syst.cell.w.set(1e1)
+#
+##nvt = rp_dynamics.rp_nvt_ensemble(syst=syst, thermo=thermo, dt = 206.706895, temp=25/3.1577464/10**5)
+#nvt = rp_dynamics.rp_nvt_ensemble(syst=syst, thermo=thermo, dt = 0.100*206.706895, temp=25/3.1577464/10**5)
+##nvt = dynamics.nve_ensemble(syst=syst, dt = 2.5e-4)
+#print "#Initial vir is ", syst.vir.get()
+##print "#Initial f.at is ", syst.systems[0].atoms[0].f.get_array()
+##print "#Initial f is ", syst.f.get_array()[0,0:3]
+##print "#Final f.at is ", syst.systems[0].atoms[0].f.get_array()
+##print "#Initial cell p is ", syst.cell.p.get()
+#print "# Initial pot is ", syst.pot.get()
+#print "# Initial ke is ", syst.kin.get(), syst.kin_estimator.get(), 1.5*len(syst.atoms)/(syst.betan.get()*len(syst.systems))
+#print "# Initial econs is ", nvt.econs.get()
+##print "# Thermo T is ", nvt.thermo.T.get()
+#print "# V K ECNS V"
+##f = open("./traj6.pdb", "w")
+#for istep in range(90):
+##for istep in range(1800*10):
+#   nvt.step()
+#   #io_system.print_pdb_RP(syst.systems, f)
+#   print syst.pot_estimator.get(), syst.kin_estimator.get(), nvt.econs.get()
+#   q_tilde = numpy.dot(syst.trans_mat.get_array(), syst.q.get_array())
+#   
+#
+#exit()
+#print "Equilibration done: starting actual run..."
+#kin = 0.0
+#for istep in range(2000):
+#   nvt.step()
+#   
+#   io_system.print_pdb_RP(syst.systems, f)
+#
+##   print syst.pot.get(), syst.kin.get(), nvt.econs.get(), syst.systems[0].cell.V.get()
+#   print syst.pot_estimator.get(), syst.kin_estimator.get(), nvt.econs.get(), syst.systems[0].cell.V.get()
+#   kin += syst.kin_estimator.get()
+#kin /= 2000
+#print kin
+#
+#h = open("./forces/pipepos","w")
+#io_system.xml_terminate(h)
+#h.close()
+#
+#exit()
 
 syst=engine.System.from_pdbfile(f, forces.pipeforce( {"pipein": "forces/pipeforce", "pipeout": "forces/pipepos"} ) )
 #syst=engine.System.from_pdbfile(f, forces.LJ( {"eps": 0.1, "sigma": 0.38, "rc": 0.38*2.5} ) )
-thermo = langevin.langevin(tau=1e-1)
-thermo_cell = langevin.langevin(tau=1e-1)
-syst.cell.w.set(1e1)
+thermo = langevin.langevin(tau=1e3)
+thermo_cell = langevin.langevin(tau=1e3)
+#syst.cell.w.set(1e1)
+syst.cell.w.set(mlist.masses["  Ar"])
 #nvt=dynamics.npt_ensemble(syst=syst, thermo=thermo, cell_thermo=thermo_cell, dt=1e-2, temp=1e-2, pext=10.0)
 #pext=10.0*numpy.identity(3); pext[0,2]=pext[2,0]=0
 pext = numpy.zeros((3,3),float)
-#nvt=dynamics.nst_ensemble(syst=syst, thermo=thermo, cell_thermo=thermo_cell, dt=5e-4, temp=1e-2, pext=pext)
-nvt=dynamics.nvt_ensemble(syst=syst, thermo=thermo, dt=5e-4, temp=1e-2)
+nvt=dynamics.nst_ensemble(syst=syst, thermo=thermo, cell_thermo=thermo_cell, dt=5, temp=1.1761e-4, pext=pext)
+#nvt=dynamics.nvt_ensemble(syst=syst, thermo=thermo, dt=5e-4, temp=1e-2)
 
 print "#Initial vir is ", syst.vir.get()
 #print "#Initial f is ", syst.f.get()
 #print "#Initial cell p is ", syst.cell.p.get()
 print "# Initial pot is ", syst.pot.get()
+print "# Initial econs is ", nvt.econs.get()
 print "# Thermo T is ", nvt.thermo.T.get()
 print "# V K ECNS V"
-#f = open("./traj4.pdb", "w")
-#for istep in range(4000):
-for istep in range(400):
-   nvt.step()
- #  io_system.print_pdb(syst.atoms, syst.cell, f)
 
-   nvt.econs.get()
+c = numpy.zeros((3,3,3,3))
+vol = 0.0
+steps = 4000
+
+f = open("./traj7.pdb", "w")
+for istep in range(3000):
+   nvt.step()
+   io_system.print_pdb(syst.atoms, syst.cell, f)
+   print syst.pot.get(), syst.kin.get(), nvt.econs.get(), syst.cell.V.get()
+
+syst.cell.h0.set(syst.cell.h.get_array())
+
+for istep in range(steps):
+#for istep in range(400):
+   nvt.step()
+   io_system.print_pdb(syst.atoms, syst.cell, f)
+
+#   nvt.econs.get()
 
    print syst.pot.get(), syst.kin.get(), nvt.econs.get(), syst.cell.V.get()
+   vol += syst.cell.V.get()
+   for i in range(3):
+      for j in range(3):
+         for k in range(3):
+            for l in range(3):
+               c[i,j,k,l] += syst.cell.strain.get()[i,j]*syst.cell.strain.get()[k,l]
+
+c /= steps
+c = 1.0/c
+vol /= steps
+c = nvt.thermo.temp.get()*units.kb/vol*c
+unit = 4.0*units.kb*nvt.thermo.temp.get()/vol
+print (c[0,0,0,0] + c[1,1,1,1] + c[2,2,2,2])/(2.0*unit)
+print (c[0,0,1,1] + c[0,0,2,2] + c[1,1,2,2])/(2.0*unit)
+print (c[1,2,1,2] + c[2,0,2,0] + c[0,1,0,1])/(2.0*unit)
+print 4.0*units.kb*nvt.thermo.temp.get()/vol
 
 h = open("./forces/pipepos","w")
 io_system.xml_terminate(h)

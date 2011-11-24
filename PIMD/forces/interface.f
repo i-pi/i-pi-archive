@@ -1,8 +1,8 @@
       program main
          use system_read
          use sys_vars
-      !   use LJ
-         use SG
+         use LJ
+      !   use SG
       implicit none
 
       character(len=*), parameter :: filedesc = "./pipepos"

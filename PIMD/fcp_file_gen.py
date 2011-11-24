@@ -9,11 +9,11 @@ from engine import rp_dynamics
 import numpy, random
 from utils.mathtools import *
 
-f = open("./testfile5.txt","r")
+f = open("./testfile6.txt","r")
 #must have 4*cell_no**3 atoms in it, with the appropriate names and cell
 
 cell_no = 4
-cell_len = 11.2423
+cell_len = 10.4675
 syst = engine.System.from_pdbfile(f)
 count = 0
 for i in range(cell_no):
