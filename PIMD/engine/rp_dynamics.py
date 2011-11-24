@@ -11,12 +11,7 @@ class rp_nve_ensemble(dynamics.nve_ensemble):
 
       dt = self.dt.get()
 
-      print "pre step", self.econs.get()
-
       self.syst.p.get_array()[:] += self.syst.f.get_array()*dt/2.0
-
-      print "post VV step", self.econs.get()
-
 
       q_tilde = numpy.dot(self.syst.trans_mat.get_array(), self.syst.q.get_array())
       p_tilde = numpy.dot(self.syst.trans_mat.get_array(), self.syst.p.get_array())
@@ -44,21 +39,14 @@ class rp_nve_ensemble(dynamics.nve_ensemble):
             p_tilde[j,3*i:3*(i+1)] = cos_mat[j]*p_tilde_i[j,:] + neg_sin_mat[j]*q_tilde_i[j,:]
             q_tilde[j,3*i:3*(i+1)] = cos_mat[j]*q_tilde_i[j,:] + sin_mat[j]*p_tilde_i[j,:]
 
-
-      print "pre NM step", self.econs.get()
-
       self.syst.p.get_array()[:] = numpy.dot(numpy.transpose(self.syst.trans_mat.get_array()), p_tilde)
       self.syst.q.get_array()[:] = numpy.dot(numpy.transpose(self.syst.trans_mat.get_array()), q_tilde)
 
 
 
       self.syst.q.taint(taintme=False)
-      print "post NM step", self.econs.get()
       self.syst.p.get_array()[:] += self.syst.f.get_array()*dt/2.0
       self.syst.p.taint(taintme=False)
-
-
-      print "post VV step", self.econs.get()
 
 class rp_nvt_ensemble(dynamics.nvt_ensemble,rp_nve_ensemble):
    """NVT ensemble object, with velocity Verlet time integrator and thermostat
@@ -77,17 +65,12 @@ class rp_nvt_ensemble(dynamics.nvt_ensemble,rp_nve_ensemble):
       self.thermo.temp.set(self.temp*len(syst.systems))
 
    def step(self):
-      print "pre thermo", self.econs.get()
       self.thermo.step()
-      print "post thermo", self.econs.get()
 
       rp_nve_ensemble.step(self)
       #dynamics.nve_ensemble.step(self)
-      print "post step", self.econs.get()
 
       self.thermo.step()
-      print "post thermo", self.econs.get()
-      exit()
 
 #class npt_ensemble(nvt_ensemble):
 ##TODO rework this entirely, so that we separate the NPT and NST implementations
