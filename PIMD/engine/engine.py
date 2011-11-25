@@ -90,12 +90,22 @@ class System(object):
       rstr = rstr + "Cell:\n" + str(self.cell)
       return rstr
 
+   def total_momentum(self):
+      p = numpy.zeros(3)
+      for atom in self.atoms:
+         p += atom.p.get_array()
+      return p
+
    def init_atom_velocities(self, temp = 1.0):
       """Initialises the atom velocities according to the 
          Maxwell-Boltzmann distribution"""
 
       for atom in self.atoms:
          atom.init_velocity(temp=temp)
+      p = self.total_momentum()
+      for atom in self.atoms:
+         atom.p.get_array()[:] -= p/len(self.atoms)
+         atom.p.taint(taintme=False)
 
    def init_cell_velocities(self, temp = 1.0):
       """Initialises the cell velocity according to the 

@@ -258,24 +258,29 @@ print "# V K ECNS V"
 
 c = numpy.zeros((3,3,3,3))
 vol = 0.0
-steps = 4000
+steps = 20000
+steps2 = 4000
 
-f = open("./traj7.pdb", "w")
-for istep in range(3000):
+h0_bar = numpy.array(syst.cell.h.get_array())
+f = open("./traj8.pdb", "w")
+for istep in range(steps2):
    nvt.step()
    io_system.print_pdb(syst.atoms, syst.cell, f)
+   print "step ", istep + 1, " of: ", steps + steps2
    print syst.pot.get(), syst.kin.get(), nvt.econs.get(), syst.cell.V.get()
-
-syst.cell.h0.set(syst.cell.h.get_array())
-
+   h0_bar += syst.cell.h.get_array()
+   syst.cell.h0.set(h0_bar/(istep+2.0))
+   
 for istep in range(steps):
-#for istep in range(400):
    nvt.step()
    io_system.print_pdb(syst.atoms, syst.cell, f)
 
-#   nvt.econs.get()
+   nvt.econs.get()
 
+   print "step ", steps2 + istep + 1, " of: ", steps + steps2
    print syst.pot.get(), syst.kin.get(), nvt.econs.get(), syst.cell.V.get()
+   h0_bar += syst.cell.h.get_array()
+   syst.cell.h0.set(h0_bar/(steps2 + istep + 2.0))
    vol += syst.cell.V.get()
    for i in range(3):
       for j in range(3):
@@ -287,11 +292,11 @@ c /= steps
 c = 1.0/c
 vol /= steps
 c = nvt.thermo.temp.get()*units.kb/vol*c
-unit = 4.0*units.kb*nvt.thermo.temp.get()/vol
+unit = len(syst.atoms)*units.kb*nvt.thermo.temp.get()/vol
 print (c[0,0,0,0] + c[1,1,1,1] + c[2,2,2,2])/(2.0*unit)
 print (c[0,0,1,1] + c[0,0,2,2] + c[1,1,2,2])/(2.0*unit)
 print (c[1,2,1,2] + c[2,0,2,0] + c[0,1,0,1])/(2.0*unit)
-print 4.0*units.kb*nvt.thermo.temp.get()/vol
+print len(syst.atoms)*units.kb*nvt.thermo.temp.get()/vol
 
 h = open("./forces/pipepos","w")
 io_system.xml_terminate(h)
