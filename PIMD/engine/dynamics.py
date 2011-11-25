@@ -96,8 +96,6 @@ class nsh_ensemble(nve_ensemble):
 #TODO give some sensible value of self.temp for nsh and nve ensembles
    def __init__(self, syst, dt=1.0, pext=numpy.zeros((3,3))):
       super(nsh_ensemble,self).__init__(syst=syst, dt=dt)
-      self.temp = 2.0*syst.pot.get()/units.kb
-      self.syst.init_cell_velocities(temp = self.temp)
 
       self.syst.cell.pext.set(pext) 
       self.econs=depend(name='econs',func=self.get_econs, deplist=[ self.syst.pot, self.syst.kin, self.syst.cell.kin, self.syst.cell.pot])
