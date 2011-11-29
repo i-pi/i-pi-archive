@@ -1,47 +1,49 @@
 <?xml version="1.0"?>
 <simulation>
    <ensemble>
-      <ensemble_type></ensemble_type>
-      <sys_file></sys_file>
+      <ensemble_type>str</ensemble_type>
+      <quantum>bool</quantum>
+      <sys_file>str</sys_file>
       <ffield>
-         <type></type>
-         <parameters></parameters>
+         <type>str</type>
+         <parameters>dict</parameters>
       </ffield>
       <thermo>
-         <type></type>
-         <parameters></parameters>
+         <type>str</type>
+         <parameters>dict</parameters>
       </thermo>
       <cell_thermo>
-         <type></type>
-         <parameters></parameters>
+         <type>str</type>
+         <parameters>dict</parameters>
       </cell_thermo>
       <barostat>
-         <type></type>
-         <parameters></parameters>
+         <type>str</type>
+         <parameters>dict</parameters>
       <barostat>
    </ensemble>
    <sys_vars>
       <ref_cell>
-         <h></h>
-         <h></h>
-         <h></h>
+         <x>array</x>
+         <x>array</x>
+         <x>array</x>
       </ref_cell>
-      <temp></temp>
-      <Pext></Pext>
-      <nbeads></nbeads>
+      <temp>float</temp>
+      <Pext>
+         <x>array</x>
+         <x>array</x>
+         <x>array</x>
+      </Pext>
+      <nbeads>int</nbeads>
    </sys_vars>
    <simulation_vars>
-      <time_step></time_step>
-      <thermostating_steps></thermostating_steps>
-      <step_number></step_number>
+      <time_step>float</time_step>
+      <thermostating_steps>int</thermostating_steps>
+      <step_number>int</step_number>
    </simulation_vars>
    <output_vars>
       <output_file>
-         <file_name></file_name>
-         <quantity>
-            <name></name>
-            <step></step>
-         </quantity>
+         <file_name>str</file_name>
+         <quantity>dict</quantity>
       </output_file>
    </output_vars>
 </simulation>

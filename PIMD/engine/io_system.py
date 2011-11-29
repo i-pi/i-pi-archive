@@ -1,4 +1,4 @@
-import numpy, math, sys
+import numpy, math, sys, string
 import cell 
 import xml.sax.handler, xml.sax, pprint
 
@@ -163,6 +163,55 @@ class System_read(xml.sax.handler.ContentHandler):
          self.in_vir = False
          self.vir.append(self.buffer)
 
+#class init_read(xml.sax.handler.ContentHandler):
+#   """Handles reading the xml file containing the initialisation input"""
+#
+#   def __init__(self):
+#      self.in_ensemble = False
+#      self.in_ensemble_type = False
+
+def read_dict(data):
+   """Takes a line with an map of the form:
+      {kw[0]: value[0], kw[1]: value[1], ...}, and interprets it"""
+
+   try:
+      begin = data.index("{")
+      end = data.index("}")
+   except:
+      print "Error in map syntax"
+      exit()
+   
+   elements = data.count(",") + 1
+   if data.count(":") != elements:
+      print "Error in map syntax"
+      exit()
+
+   length = len(data)
+   comma_list = [i for i in range(length) if data[i] == ","]
+   colon_list = [i for i in range(length) if data[i] == ":"]
+
+   try:
+      output = {}
+      kw = data[begin+1:colon_list[0]]
+      kw = string.strip(kw)
+      value = float(data[colon_list[0]+1:comma_list[0]])
+      output[kw] = value
+
+      kw = data[comma_list[elements-2]+1:colon_list[elements-1]]
+      kw = string.strip(kw)
+      value = float(data[colon_list[elements-1]+1:end])
+      output[kw] = value
+
+      for i in range(1, elements-1):
+         kw = data[comma_list[i-1]+1:colon_list[i]]
+         kw = string.strip(kw)
+         value = float(data[colon_list[i]+1:comma_list[i]])
+         output[kw] = value
+      return output
+   except ValueError:
+      print "Tried to read NaN to float in map"
+      exit()
+
 def read_array(data):
    """Takes a line with an array of the form: 
       [array[0], array[1], array[2],...], and interprets it"""
@@ -191,7 +240,6 @@ def read_array(data):
    except ValueError:
       print "Tried to write NaN to array"
       exit()
-      
 
 def read_float(data):
    """Takes a formatted line with a double and interprets it"""
@@ -211,12 +259,23 @@ def read_float(data):
 def read_int(data):
    """Takes a formatted line with a double and interprets it"""
 
-   output = 0.0
+   output = 0
    try:
       output = int(data)
       return output
    except ValueError:
       print "Tried to write NaN to int"
+      exit()
+
+def read_bool(data):
+   """Takes a formatted line with a double and interprets it"""
+
+   output = False
+   try:
+      output = bool(int(data))
+      return output
+   except ValueError:
+      print "Tried to write NaN to int in bool"
       exit()
 
 def xml_read(namedpipe):
