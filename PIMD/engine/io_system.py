@@ -1,5 +1,5 @@
 import numpy, math, sys, string
-import cell 
+import cell, dynamics, rp_dynamics, engine, rp_engine, thermostat, langevin, forces
 import xml.sax.handler, xml.sax, pprint
 
 def output(ensemble, step_count, output_dict = {}):
@@ -163,12 +163,222 @@ class System_read(xml.sax.handler.ContentHandler):
          self.in_vir = False
          self.vir.append(self.buffer)
 
-#class init_read(xml.sax.handler.ContentHandler):
-#   """Handles reading the xml file containing the initialisation input"""
-#
-#   def __init__(self):
-#      self.in_ensemble = False
-#      self.in_ensemble_type = False
+class Init_object:
+   def __init__(self):
+      self.kind = ""
+      self.parameters = {}
+
+class Init_read(xml.sax.handler.ContentHandler):
+   """Handles reading the xml file containing the initialisation input"""
+
+   def __init__(self):
+      self.in_ensemble_kind = False
+      self.ensemble_kind = ""
+      self.in_path_integral = False
+      self.path_integral = False
+      self.in_sys_file = False
+      self.sys_file = ""
+
+      self.in_ffield = False
+      self.ffield = Init_object()
+      self.in_thermo = False
+      self.thermo = Init_object()
+      self.in_cell_thermo = False
+      self.cell_thermo = Init_object()
+      self.in_barostat = False
+      self.barostat = Init_object()
+
+      self.in_kind = False
+      self.in_parameters = False
+
+      self.in_temp = False
+      self.temp = 1.0
+      self.in_nbeads = False
+      self.nbeads = 8
+
+      self.in_Pext = False
+      self.Pext = []
+      
+      self.in_ref_cell = False
+      self.ref_cell = []
+      
+      self.in_x = False
+
+      self.in_time_step = False
+      self.time_step = 1.0
+      self.in_thermostating_steps = False
+      self.thermostating_steps = 100
+      self.in_step_number = False
+      self.step_number = 100
+
+      self.in_output_vars = False
+      self.output_vars = []
+      self.in_output_file = False
+      self.output_file = Init_object()
+
+      self.in_file_name = False
+      self.in_quantity = False
+
+   def startElement(self, name, attributes):
+      if name == "ensemble_kind":
+         self.ensemble_kind = ""
+         self.in_ensemble_kind = True
+      elif name == "path_integral":
+         self.path_integral = False
+         self.in_path_integral = True
+      elif name == "sys_file":
+         self.sys_file = ""
+         self.in_sys_file = True
+      elif name == "ffield":
+         self.in_ffield = True
+      elif name == "thermo":
+         self.in_thermo = True
+      elif name == "cell_thermo":
+         self.in_cell_thermo = True
+      elif name == "barostat":
+         self.in_barostat = True
+      elif name == "kind":
+         self.in_kind = True
+      elif name == "parameters":
+         self.in_parameters = True
+      elif name == "temp":
+         self.temp = 1.0
+         self.in_temp = True
+      elif name == "nbeads":
+         self.nbeads = 8
+         self.in_nbeads = True
+      elif name == "ref_cell": 
+         self.in_ref_cell = True
+      elif name == "Pext": 
+         self.in_Pext = True
+      elif name == "x":
+         self.in_x = True
+      elif name == "time_step":
+         self.time_step = 1.0
+         self.in_time_step = True
+      elif name == "thermostating_steps":
+         self.thermostating_steps = 100
+         self.in_thermostating_steps = True
+      elif name == "step_number":
+         self.step_number = 100
+         self.in_step_number = True
+
+      elif name == "output_vars":
+         self.output_vars = []
+         self.in_output_vars = True
+      elif name == "output_file":
+         self.output_file = Init_object()
+         self.in_output_file = True
+      elif name == "file_name":
+         self.in_file_name = True 
+      elif name == "quantity":
+         self.in_quantity = True
+
+   def characters(self, data):
+      if self.in_ensemble_kind:
+         self.in_ensemble_kind = False
+         self.ensemble_kind += data
+      elif self.in_path_integral:
+         self.in_path_integral = False
+         self.path_integral = read_bool(data)
+      elif self.in_sys_file:
+         self.in_sys_file = False
+         self.sys_file += data
+      elif self.in_kind:
+         self.in_kind = False
+         if self.in_ffield:
+            self.ffield.kind += data
+         elif self.in_thermo:
+            self.thermo.kind += data
+         elif self.in_cell_thermo:
+            self.cell_thermo.kind += data
+         elif self.in_barostat:
+            self.barostat.kind += data
+      elif self.in_parameters:
+         self.in_parameters = False
+         if self.in_ffield:
+            self.ffield.parameters = read_dict(data)
+         elif self.in_thermo:
+            self.thermo.parameters = read_dict(data)
+         elif self.in_cell_thermo:
+            self.cell_thermo.parameters = read_dict(data)
+         elif self.in_barostat:
+            self.barostat.parameters = read_dict(data)
+      elif self.in_temp:
+         self.in_temp = False
+         self.temp = read_float(data)
+      elif self.in_nbeads:
+         self.in_nbeads = False
+         self.nbeads = read_int(data)
+      elif self.in_x:
+         self.in_x = False
+         if self.in_ref_cell:
+            self.ref_cell.append(read_array(data))
+         elif self.in_Pext:
+            self.Pext.append(read_array(data))
+      elif self.in_time_step:
+         self.in_time_step = False
+         self.time_step = read_float(data)
+      elif self.in_thermostating_steps:
+         self.in_thermostating_steps = False
+         self.thermostating_steps = read_int(data)
+      elif self.in_step_number:
+         self.in_step_number = False
+         self.step_number = read_int(data)
+      elif self.in_output_vars and self.in_output_file:
+         if self.in_file_name:
+            self.in_file_name = False
+            self.output_file.kind += data
+         elif self.in_quantity:
+            self.in_quantity = False
+            self.output_file.parameters = read_dict(data)
+
+   def endElement(self, name):
+      if name == "ensemble_kind":
+         self.in_ensemble_kind = False
+      elif name == "path_integral":
+         self.in_path_integral = False
+      elif name == "sys_file":
+         self.in_sys_file = False
+      elif name == "ffield":
+         self.in_ffield = False
+      elif name == "thermo":
+         self.in_thermo = False
+      elif name == "cell_thermo":
+         self.in_cell_thermo = False
+      elif name == "barostat":
+         self.in_barostat = False
+      elif name == "kind":
+         self.in_kind = False
+      elif name == "parameters":
+         self.in_parameters = False
+      elif name == "temp":
+         self.in_temp = False
+      elif name == "nbeads":
+         self.in_nbeads = False
+      elif name == "ref_cell": 
+         self.in_ref_cell = False
+      elif name == "Pext": 
+         self.in_Pext = False
+      elif name == "x":
+         self.in_x = False
+      elif name == "time_step":
+         self.in_time_step = False
+      elif name == "thermostating_steps":
+         self.in_thermostating_steps = False
+      elif name == "step_number":
+         self.in_step_number = False
+
+      elif name == "output_vars":
+         self.in_output_vars = False
+      elif name == "output_file":
+         if self.in_output_vars:
+            self.output_vars.append(self.output_file)
+         self.in_output_file = False
+      elif name == "file_name":
+         self.in_file_name = False 
+      elif name == "quantity":
+         self.in_quantity = False
 
 def read_dict(data):
    """Takes a line with an map of the form:
@@ -191,22 +401,29 @@ def read_dict(data):
    colon_list = [i for i in range(length) if data[i] == ":"]
 
    try:
-      output = {}
-      kw = data[begin+1:colon_list[0]]
-      kw = string.strip(kw)
-      value = float(data[colon_list[0]+1:comma_list[0]])
-      output[kw] = value
-
-      kw = data[comma_list[elements-2]+1:colon_list[elements-1]]
-      kw = string.strip(kw)
-      value = float(data[colon_list[elements-1]+1:end])
-      output[kw] = value
-
-      for i in range(1, elements-1):
-         kw = data[comma_list[i-1]+1:colon_list[i]]
+      if elements == 1:
+         output = {}
+         kw = data[begin+1:colon_list[0]]
          kw = string.strip(kw)
-         value = float(data[colon_list[i]+1:comma_list[i]])
+         value = data[colon_list[0]+1:end]
          output[kw] = value
+      else:
+         output = {}
+         kw = data[begin+1:colon_list[0]]
+         kw = string.strip(kw)
+         value = data[colon_list[0]+1:comma_list[0]]
+         output[kw] = value
+
+         kw = data[comma_list[elements-2]+1:colon_list[elements-1]]
+         kw = string.strip(kw)
+         value = data[colon_list[elements-1]+1:end]
+         output[kw] = value
+
+         for i in range(1, elements-1):
+            kw = data[comma_list[i-1]+1:colon_list[i]]
+            kw = string.strip(kw)
+            value = data[colon_list[i]+1:comma_list[i]]
+            output[kw] = value
       return output
    except ValueError:
       print "Tried to read NaN to float in map"
@@ -231,11 +448,15 @@ def read_array(data):
          data = data[0:i] + "E" + data[i+1:length]
   
    try:
-      output = numpy.zeros(elements)
-      output[0] = float(data[begin+1:comma_list[0]])
-      output[elements-1] = float(data[comma_list[elements-2]+1:end])
-      for i in range(1,elements-1):
-         output[i] = float(data[comma_list[i-1]+1:comma_list[i]])
+      if elements == 1:
+         output = numpy.zeros(elements)
+         output[0] = float(data[begin+1:end])
+      else:
+         output = numpy.zeros(elements)
+         output[0] = float(data[begin+1:comma_list[0]])
+         output[elements-1] = float(data[comma_list[elements-2]+1:end])
+         for i in range(1,elements-1):
+            output[i] = float(data[comma_list[i-1]+1:comma_list[i]])
       return output
    except ValueError:
       print "Tried to write NaN to array"
@@ -295,3 +516,9 @@ def xml_read(namedpipe):
       vir[:,i] = read_array(handler.vir[i])
    return [ pot, f, vir ]
       
+def initialise(input_file):
+   parser = xml.sax.make_parser()
+   handler = Init_read()
+   parser.setContentHandler(handler)
+   parser.parse(str(input_file))
+
