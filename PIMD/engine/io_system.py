@@ -2,6 +2,21 @@ import numpy, math, sys
 import cell 
 import xml.sax.handler, xml.sax, pprint
 
+def output(ensemble, step_count, output_dict = {}):
+
+   print "Step: ", step_count
+
+   for filedesc in output_dict:
+      filedesc.write("Step: " + str(step_count))
+      for what in output_dict[filedesc]:
+         if step_count%output_dict[filedesc][what] == 0:
+            if what == "system.pdb":
+               print_pdb(ensemble.syst.atoms, ensemble.syst.cell, filedesc = filedesc)
+            elif what == "RP_system.pdb":
+               print_pdb_RP(ensemble.syst.systems, filedesc = filedesc)
+            else:
+               filedesc.write(what.name + ": " + str(what.get()))
+
 def print_pdb(atoms, ncell, filedesc = sys.stdout):
    """Takes the system and gives pdb formatted output for the unit cell and the
       atomic positions """
@@ -149,25 +164,34 @@ class System_read(xml.sax.handler.ContentHandler):
          self.vir.append(self.buffer)
 
 def read_array(data):
-   """Takes a formatted line with an arra of the form: 
-      [array[0], array[1], array[2]], and interprets it"""
+   """Takes a line with an array of the form: 
+      [array[0], array[1], array[2],...], and interprets it"""
 
-   if (data[0] != "[" or data[26] != "," or data[52] != "," or data[78] != "]"):
-      print "Error in the array syntax"
-   else:
-      output = numpy.empty(3)
-      length = len(data)
-      for i in range(length):
-         if data[i] == "D":
-            data = data[0:i] + "E" + data[i+1:length]
-      try:
-         output[0] = float(data[1:26])
-         output[1] = float(data[27:52])
-         output[2] = float(data[53:78])
-         return output
-      except ValueError:
-         print "Tried to write NaN to array"
-         return numpy.zeros(3, float)
+   try:
+      begin = data.index("[")
+      end = data.index("]")
+   except ValueError:
+      print "Error in array syntax"
+      exit()
+
+   elements = data.count(",") + 1
+   length = len(data)
+   comma_list = [i for i in range(length) if data[i] == ","]
+   for i in range(length):
+      if data[i] == "D":
+         data = data[0:i] + "E" + data[i+1:length]
+  
+   try:
+      output = numpy.zeros(elements)
+      output[0] = float(data[begin+1:comma_list[0]])
+      output[elements-1] = float(data[comma_list[elements-2]+1:end])
+      for i in range(1,elements-1):
+         output[i] = float(data[comma_list[i-1]+1:comma_list[i]])
+      return output
+   except ValueError:
+      print "Tried to write NaN to array"
+      exit()
+      
 
 def read_float(data):
    """Takes a formatted line with a double and interprets it"""
@@ -182,7 +206,18 @@ def read_float(data):
       return output
    except ValueError:
       print "Tried to write NaN to float"
-      return 0.0
+      exit()
+
+def read_int(data):
+   """Takes a formatted line with a double and interprets it"""
+
+   output = 0.0
+   try:
+      output = int(data)
+      return output
+   except ValueError:
+      print "Tried to write NaN to int"
+      exit()
 
 def xml_read(namedpipe):
    """Reads an xml-compliant file and gets the potential, forces and virial"""

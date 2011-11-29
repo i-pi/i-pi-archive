@@ -241,12 +241,12 @@ syst=engine.System.from_pdbfile(f, forces.pipeforce( {"pipein": "forces/pipeforc
 thermo = langevin.langevin(tau=1e3)
 thermo_cell = langevin.langevin(tau=1e3)
 #syst.cell.w.set(1e1)
-syst.cell.w.set(mlist.masses["  Ar"])
+syst.cell.w.set(mlist.masses["  Ar"]*256)
 #nvt=dynamics.npt_ensemble(syst=syst, thermo=thermo, cell_thermo=thermo_cell, dt=1e-2, temp=1e-2, pext=10.0)
 #pext=10.0*numpy.identity(3); pext[0,2]=pext[2,0]=0
 pext = numpy.zeros((3,3),float)
-nvt=dynamics.nst_ensemble(syst=syst, thermo=thermo, cell_thermo=thermo_cell, dt=5, temp=1.1761e-4, pext=pext)
-#nvt=dynamics.nvt_ensemble(syst=syst, thermo=thermo, dt=5e-4, temp=1e-2)
+nvt=dynamics.nst_ensemble(syst=syst, thermo=thermo, cell_thermo=thermo_cell, dt=445, temp=1.1761e-4, pext=pext)
+#nvt=dynamics.nvt_ensemble(syst=syst, thermo=thermo, dt=100, temp=1.1761e-4)
 
 print "#Initial vir is ", syst.vir.get()
 #print "#Initial f is ", syst.f.get()
@@ -257,25 +257,27 @@ print "# Thermo T is ", nvt.thermo.T.get()
 print "# V K ECNS V"
 
 c = numpy.zeros((3,3,3,3))
+C = numpy.zeros((6,6))
 vol = 0.0
-steps = 20000
+steps = 80000
 steps2 = 4000
 
 h0_bar = numpy.array(syst.cell.h.get_array())
-f = open("./traj8.pdb", "w")
+#f = open("./traj9.pdb", "w")
 for istep in range(steps2):
    nvt.step()
-   io_system.print_pdb(syst.atoms, syst.cell, f)
+ #  if istep%20 == 0:
+  #    io_system.print_pdb(syst.atoms, syst.cell, f)
    print "step ", istep + 1, " of: ", steps + steps2
    print syst.pot.get(), syst.kin.get(), nvt.econs.get(), syst.cell.V.get()
    h0_bar += syst.cell.h.get_array()
    syst.cell.h0.set(h0_bar/(istep+2.0))
+exit()
    
 for istep in range(steps):
    nvt.step()
-   io_system.print_pdb(syst.atoms, syst.cell, f)
-
-   nvt.econs.get()
+   if istep%20 == 0:
+      io_system.print_pdb(syst.atoms, syst.cell, f)
 
    print "step ", steps2 + istep + 1, " of: ", steps + steps2
    print syst.pot.get(), syst.kin.get(), nvt.econs.get(), syst.cell.V.get()
@@ -288,15 +290,43 @@ for istep in range(steps):
             for l in range(3):
                c[i,j,k,l] += syst.cell.strain.get()[i,j]*syst.cell.strain.get()[k,l]
 
-c /= steps
-c = 1.0/c
+C[0,0] = c[0,0,0,0]
+C[1,1] = c[1,1,1,1]
+C[2,2] = c[2,2,2,2]
+C[0,1] = C[1,0] = 1.0/2.0*(c[0,0,1,1] + c[1,1,0,0])
+C[0,2] = C[2,0] = 1.0/2.0*(c[0,0,2,2] + c[2,2,0,0])
+C[2,1] = C[1,2] = 1.0/2.0*(c[2,2,1,1] + c[1,1,2,2])
+C[0,3] = C[3,0] = 1.0/4.0*(c[0,0,1,2] + c[0,0,2,1] + c[1,2,0,0] + c[2,1,0,0])
+C[0,4] = C[4,0] = 1.0/4.0*(c[0,0,2,0] + c[0,0,0,2] + c[2,0,0,0] + c[0,2,0,0])
+C[0,5] = C[5,0] = 1.0/4.0*(c[0,0,0,1] + c[0,0,1,0] + c[0,1,0,0] + c[1,0,0,0])
+C[1,3] = C[3,1] = 1.0/4.0*(c[1,1,1,2] + c[1,1,2,1] + c[1,2,1,1] + c[2,1,1,1])
+C[1,4] = C[4,1] = 1.0/4.0*(c[1,1,2,0] + c[1,1,0,2] + c[2,0,1,1] + c[0,2,1,1])
+C[1,5] = C[5,1] = 1.0/4.0*(c[1,1,1,0] + c[1,1,0,1] + c[1,0,1,1] + c[0,1,1,1])
+C[2,3] = C[3,2] = 1.0/4.0*(c[2,2,1,2] + c[2,2,2,1] + c[1,2,2,2] + c[2,1,2,2])
+C[2,4] = C[4,2] = 1.0/4.0*(c[0,2,2,2] + c[2,0,2,2] + c[2,2,0,2] + c[2,2,2,0])
+C[2,5] = C[5,2] = 1.0/4.0*(c[2,2,0,1] + c[2,2,1,0] + c[0,1,2,2] + c[1,0,2,2])
+C[3,3] = 1.0/4.0*(c[1,2,1,2] + c[2,1,1,2] + c[2,1,2,1] + c[1,2,2,1])
+C[4,4] = 1.0/4.0*(c[0,2,0,2] + c[2,0,0,2] + c[2,0,2,0] + c[0,2,2,0])
+C[5,5] = 1.0/4.0*(c[1,0,1,0] + c[0,1,1,0] + c[0,1,0,1] + c[1,0,0,1])
+C[3,4] = C[4,3] = 1.0/8.0*(c[1,2,2,0] + c[2,1,2,0] + c[2,1,0,2] + c[1,2,0,2] + c[2,0,1,2] + c[2,0,2,1] + c[0,2,2,1] + c[0,2,1,2])
+C[3,5] = C[5,3] = 1.0/8.0*(c[1,2,1,0] + c[2,1,1,0] + c[2,1,0,1] + c[1,2,0,1] + c[1,0,1,2] + c[1,0,2,1] + c[0,1,2,1] + c[0,1,1,2])
+C[5,4] = C[4,5] = 1.0/8.0*(c[1,0,2,0] + c[0,1,2,0] + c[0,1,0,2] + c[1,0,0,2] + c[2,0,1,0] + c[2,0,0,1] + c[0,2,0,1] + c[0,2,1,0])
+
+C /= steps
+C_inv = numpy.linalg.inv(C)
+
+#c /= steps
+#c = 1.0/c
 vol /= steps
-c = nvt.thermo.temp.get()*units.kb/vol*c
+C_inv = nvt.thermo.temp.get()*units.kb/vol*C_inv
 unit = len(syst.atoms)*units.kb*nvt.thermo.temp.get()/vol
-print (c[0,0,0,0] + c[1,1,1,1] + c[2,2,2,2])/(2.0*unit)
-print (c[0,0,1,1] + c[0,0,2,2] + c[1,1,2,2])/(2.0*unit)
-print (c[1,2,1,2] + c[2,0,2,0] + c[0,1,0,1])/(2.0*unit)
-print len(syst.atoms)*units.kb*nvt.thermo.temp.get()/vol
+#print (c[0,0,0,0] + c[1,1,1,1] + c[2,2,2,2])/(2.0*unit)
+#print (c[0,0,1,1] + c[0,0,2,2] + c[1,1,2,2])/(2.0*unit)
+#print (c[1,2,1,2] + c[2,0,2,0] + c[0,1,0,1])/(2.0*unit)
+print (C_inv[0,0] + C_inv[1,1] + C_inv[2,2])/(3.0*unit)
+print (C_inv[0,1] + C_inv[0,2] + C_inv[1,2])/(3.0*unit)
+print (C_inv[4,4] + C_inv[5,5] + C_inv[3,3])/(3.0*unit)/4.0
+print unit
 
 h = open("./forces/pipepos","w")
 io_system.xml_terminate(h)
