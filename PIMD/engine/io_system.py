@@ -676,6 +676,9 @@ def initialise(input_file):
                   file_dict[what] = int(output_file.parameters[what])
                   output_dict[output_file.kind] = file_dict
 
+#TODO have exception clauses to catch ValueErrors for conversions of the kind string to int or string to float
+
+#TODO split up this file into separate files for the pdb reading, xml reading, initialisation and put the bit below into a separate function so that the initialisation and the running of the program are in different functions.
    for istep in range(handler.thermostating_steps):
       ensemble.step()
       print "Thermostating step ", istep + 1, " of ", handler.thermostating_steps
@@ -683,3 +686,4 @@ def initialise(input_file):
       ensemble.step()
       print "Step ", istep + 1, " of ", handler.step_number
       output(ensemble, istep + 1, output_dict)
+

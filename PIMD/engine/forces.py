@@ -15,6 +15,7 @@ class forcefield(object):
    def bind(self, syst):
       self.syst = syst
 
+#TODO make spring_f an object in syst or RP_syst instead of here.
       self.spring_f = depend(name='spring_f', value=numpy.zeros(3*len(self.syst.atoms)))
       self.ufv.add_dependant(syst.vir)
       self.ufv.add_dependant(syst.f)

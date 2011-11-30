@@ -4,9 +4,9 @@ from utils.depend import *
 from utils import units
 import upper_T
 
-class Const_S(barostat):
+class Bussi_S(barostat):
    def __init__(self, pext=numpy.zeros((3,3)), dt = 1.0, w = 1.0, temp = 1.0):
-      super(Const_S, self).__init__(pext, dt)
+      super(Bussi_S, self).__init__(pext, dt)
       
       self.w = depend(value=w, name='w')
       self.temp = depend(value=temp, name='temp')

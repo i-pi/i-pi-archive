@@ -38,6 +38,8 @@ class System(object):
       for i in range(natoms):
          self.__qpf[3*i:3*(i+1),0]=atoms[i][1]
       self.atoms = [ Atom(self.__qpf[3*i:3*(i+1),:], name = atoms[i][0], mass=mlist.masses[atoms[i][0]]) for i in range(natoms) ] #Creates a list of atoms from the __qpf array
+
+#TODO Initialise cell.w, cell.h0 and cell.pext in io_system.initialise here
       self.cell = Cell.fromSidesAngles(cell)
       self.deps_init(ffield)
 
