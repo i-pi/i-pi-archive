@@ -30,7 +30,7 @@ class System(object):
          ffield = forcefield object, default = forcefield()
          filedesc = file method, eg. filedesc = open(\"./file.pdb\",\"r\")"""
 
-      atoms, cell, natoms = read_pdb(filedesc)
+      atoms, cell, natoms = io_system.read_pdb(filedesc)
 
       if qpf_slice is None:
          qpf_slice=numpy.zeros((3*natoms,3),float) 

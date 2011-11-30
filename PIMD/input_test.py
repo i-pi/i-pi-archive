@@ -27,3 +27,5 @@ print handler.output_vars[0].kind
 print handler.output_vars[0].parameters
 print handler.output_vars[1].kind
 print handler.output_vars[1].parameters
+
+io_system.initialise("./input_file.xml")
