@@ -655,21 +655,22 @@ def initialise(input_file):
 
    elif handler.ensemble_kind == "NSH":
       if handler.path_integral:
-         ensemble = rp_dynamics.rp_nsh_ensemble(syst, baro, dt = handler.time_step, pext = Pext)
+         ensemble = rp_dynamics.rp_nsh_ensemble(syst, baro, dt = handler.time_step)
       else:
-         ensemble = dynamics.nsh_ensemble(syst, baro, dt = handler.time_step, pext = Pext)
+         ensemble = dynamics.nsh_ensemble(syst, baro, dt = handler.time_step)
    elif handler.ensemble_kind == "NST":
       if handler.path_integral:
-         ensemble = rp_dynamics.rp_nst_ensemble(syst, baro, thermo, cell_thermo, temp = handler.temp, dt = handler.time_step, pext = Pext)
+         ensemble = rp_dynamics.rp_nst_ensemble(syst, baro, thermo, cell_thermo, temp = handler.temp, dt = handler.time_step)
       else:
-         #ensemble = dynamics.nst_ensemble(syst, baro, thermo, cell_thermo, temp = handler.temp, dt = handler.time_step, pext = Pext)
-         ensemble = dynamics.nst_ensemble(syst, thermo, cell_thermo, temp = handler.temp, dt = handler.time_step, pext = Pext)
-         ensemble.syst.cell.w.set(256*40*1820)
+#         ensemble = dynamics.nst_ensemble(syst, baro, thermo, cell_thermo, temp = handler.temp, dt = handler.time_step)
+         ensemble = dynamics.test_NST(syst, baro, thermo, cell_thermo, temp = handler.temp, dt = handler.time_step)
+#         ensemble = dynamics.nst_ensemble(syst, thermo, cell_thermo, temp = handler.temp, dt = handler.time_step, pext = Pext)
+#         ensemble.syst.cell.w.set(256*40*1820)
    elif handler.ensemble_kind == "NPT":
       if handler.path_integral:
-         ensemble = rp_dynamics.rp_npt_ensemble(syst, baro, thermo, cell_thermo, temp = handler.temp, dt = handler.time_step, pext = Pext)
+         ensemble = rp_dynamics.rp_npt_ensemble(syst, baro, thermo, cell_thermo, temp = handler.temp, dt = handler.time_step)
       else:
-         ensemble = dynamics.npt_ensemble(syst, baro, thermo, cell_thermo, temp = handler.temp, dt = handler.time_step, pext = Pext)
+         ensemble = dynamics.npt_ensemble(syst, baro, thermo, cell_thermo, temp = handler.temp, dt = handler.time_step)
 
 #TODO add more functionality to this, so that it can output things like averages and maybe even things like correlation functions.
 

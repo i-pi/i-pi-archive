@@ -1,25 +1,23 @@
 import numpy, math
+import cell, upper_T
 from barostat import *
 from utils.depend import *
 from utils import units
-import upper_T
 
 class Bussi_S(barostat):
    def __init__(self, pext=numpy.zeros((3,3)), dt = 1.0, w = 1.0, temp = 1.0):
-      super(Bussi_S, self).__init__(pext = pext, dt = dt)
+      barostat.__init__(self, pext = pext, dt = dt)
       
       self.w = depend(value=w, name='w')
       self.temp = depend(value=temp, name='temp')
 
    def bind(self, syst):
       self.syst = syst
+      self.vir = syst.vir
       self.cell = syst.cell
-      syst.cell.w.set(self.w.get())
-      syst.cell.pext.set(self.pext.get_array())
 
       self.kstress = depend(value=numpy.zeros((3,3)), name='kstress', func=self.get_kstress)
       self.piext = depend(value=numpy.zeros((3,3)), name='piext', func=self.get_piext, deplist=[self.pext, self.cell.V, self.cell.V0, self.cell.ih0, self.cell.h])
-      self.vir = depend(value=numpy.zeros((3,3)), name='piext', func=self.get_vir, deplist=[self.syst.vir])
       self.stress = depend(value=numpy.zeros((3,3)), name='stress', func=self.get_stress, deplist=[self.vir, self.kstress])
 
       for atom in self.syst.atoms:
@@ -37,12 +35,9 @@ class Bussi_S(barostat):
       ks /= self.cell.V.get()
       return ks
 
-   def get_vir(self):
-      return self.syst.vir.get()
-
    def get_piext(self):
-      root = numpy.dot(self.cell.h.get_array(), self.cell.ih0.get_array())
-      pi = numpy.dot(root, self.pext.get_array())
+      root = numpy.dot(self.cell.h.get(), self.cell.ih0.get())
+      pi = numpy.dot(root, self.pext.get())
       pi = numpy.dot(pi, numpy.transpose(root))
       pi *= self.cell.V0.get()/self.cell.V.get()
       return pi

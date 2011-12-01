@@ -12,11 +12,7 @@ class barostat:
 
       pass
       
-   def pstep(self):                
+   def step(self):
       """Dummy atoms thermostat step""" 
-      
-      pass
 
-   def rstep(self):
       pass
-

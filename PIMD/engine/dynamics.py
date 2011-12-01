@@ -168,6 +168,8 @@ class nsh_ensemble(nve_ensemble):
       self.rstep()
       self.pstep()
    
+#TODO this is almost certainly not correct.
+
    def get_econs(self):
       """Calculates the conserved energy quantity for the NST ensemble"""
 
@@ -370,3 +372,32 @@ class nst_ensemble(nvt_ensemble, nsh_ensemble):
       
       return nvt_ensemble.get_econs(self)+self.cell_thermo.econs.get()+self.syst.cell.pot.get()+self.syst.cell.kin.get()-2.0*units.kb*self.temp*xv
      
+
+class test_NST(nvt_ensemble):
+   def __init__(self, syst, barostat, thermo, cell_thermo, temp = 1.0, dt = 1.0):
+      nvt_ensemble.__init__(self, syst = syst, thermo = thermo, temp = temp, dt = dt)
+      self.syst.init_cell_velocities(temp = temp)
+
+      self.barostat = barostat
+      self.barostat.bind(self.syst)
+      self.cell_thermo = cell_thermo
+      self.cell_thermo.bind(self.syst.atoms, self.syst.p, self.syst.cell)
+      self.econs=depend(name='econs',func=self.get_econs, deplist=[ self.syst.pot, self.syst.kin, self.thermo.econs, self.cell_thermo.econs, self.syst.cell.kin, self.syst.cell.pot])
+
+   def step(self):
+      """NST time step, with appropriate thermostatting steps"""
+
+      self.cell_thermo.NST_cell_step()
+      self.thermo.step()
+      self.barostat.step()
+      self.thermo.step()
+      self.cell_thermo.NST_cell_step()
+   
+   def get_econs(self):
+      """Calculates the conserved energy quantity for the NST ensemble"""
+
+      xv=0.0 # extra term stemming from the Jacobian
+      for i in range(3): 
+         xv+=math.log(self.syst.cell.h.get_array()[i,i])*(3-i) 
+      
+      return nvt_ensemble.get_econs(self)+self.cell_thermo.econs.get()+self.syst.cell.pot.get()+self.syst.cell.kin.get()-2.0*units.kb*self.temp*xv

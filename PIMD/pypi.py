@@ -7,6 +7,7 @@ from engine import forces
 from engine import rp_engine
 from engine import rp_dynamics
 from engine import PILE
+from engine import Bussi
 import numpy, random
 from utils.mathtools import *
 from utils.mass_list import *
@@ -238,20 +239,20 @@ f = open("./fcp4cell.pdb", "r")
 
 pext = numpy.zeros((3,3))
 w = mlist.masses["  Ar"] * 256
+temp = 1.1761e-4
+dt = 445.0
 syst=engine.System.from_pdbfile(f, forces.pipeforce( {"pipein": "forces/pipeforce", "pipeout": "forces/pipepos"} ), w = w, pext = pext )
 #syst=engine.System.from_pdbfile(f, forces.LJ( {"eps": 0.1, "sigma": 0.38, "rc": 0.38*2.5} ) )
-thermo = langevin.langevin(tau=1e3)
-thermo_cell = langevin.langevin(tau=1e3)
+thermo = langevin.langevin(temp = temp, dt = dt/2, tau=1e3)
+thermo_cell = langevin.langevin(temp = temp, dt = dt/2, tau=1e3)
 #syst.cell.w.set(1e1)
 #syst.cell.w.set(mlist.masses["  Ar"]*256)
 #nvt=dynamics.npt_ensemble(syst=syst, thermo=thermo, cell_thermo=thermo_cell, dt=1e-2, temp=1e-2, pext=10.0)
 #pext=10.0*numpy.identity(3); pext[0,2]=pext[2,0]=0
 #pext = numpy.zeros((3,3),float)
-nvt=dynamics.nst_ensemble(syst=syst, thermo=thermo, cell_thermo=thermo_cell, dt=445, temp=1.1761e-4)
+#nvt=dynamics.nst_ensemble(syst=syst, thermo=thermo, cell_thermo=thermo_cell, dt=445, temp=1.1761e-4)
+nvt = dynamics.test_NST(syst = syst, barostat = Bussi.Bussi_S(pext = pext, dt = dt/2.0, w = w, temp = temp), thermo = thermo, cell_thermo = thermo_cell, temp = temp, dt = dt)
 #nvt=dynamics.nvt_ensemble(syst=syst, thermo=thermo, dt=100, temp=1.1761e-4)
-print syst.cell.pext.get_array()
-print syst.cell.h0.get_array()
-exit()
 
 print "#Initial vir is ", syst.vir.get()
 #print "#Initial f is ", syst.f.get()
@@ -267,10 +268,12 @@ C = numpy.zeros((6,6))
 vol = 0.0
 steps = 30000
 steps2 = 4000
+steps = 400
+steps2 = 40
 
 h0_bar = numpy.array(syst.cell.h.get_array())
 #f = open("./traj9.pdb", "w")
-g = open("./corr_file2.txt", "w")
+#g = open("./corr_file2.txt", "w")
 for istep in range(steps2):
    nvt.step()
  #  if istep%20 == 0:
@@ -321,7 +324,7 @@ for istep in range(steps):
    C[3,5] = C[5,3] = c[1,2,1,0]*4.0
    C[5,4] = C[4,5] = c[1,0,2,0]*4.0
 
-   g.write(str((C[0,0] + C[1,1] + C[2,2])/(3.0)) + "  "), g.write(str((C[0,1] + C[0,2] + C[1,2])/(3.0)) + "  "), g.write(str((C[4,4] + C[5,5] + C[3,3])/(3.0)) + "\n")
+   #g.write(str((C[0,0] + C[1,1] + C[2,2])/(3.0)) + "  "), g.write(str((C[0,1] + C[0,2] + C[1,2])/(3.0)) + "  "), g.write(str((C[4,4] + C[5,5] + C[3,3])/(3.0)) + "\n")
 
 C[0,0] = c_bar[0,0,0,0]
 C[1,1] = c_bar[1,1,1,1]
