@@ -11,7 +11,7 @@ class RP_sys(engine.System):
    __qpf = numpy.zeros(0)
 
    @classmethod
-   def from_pdbfile(cls, filedesc, ffield = forces.forcefield(), nbeads = 8, temp = 1.0):
+   def from_pdbfile(cls, filedesc, ffield = forces.forcefield(), nbeads = 8, temp = 1.0, w = 1.0, h0 = None, pext = numpy.zeros((3,3))):
       """A different initialiser, which takes a pdb formatted file of a system
          and forms the appropriate atom and cell objects.
          Initialised by: 
@@ -28,7 +28,7 @@ class RP_sys(engine.System):
       cls.__qpf = numpy.zeros((nbeads, 3*natoms, 3))
 
       for i in range(nbeads):
-         cls.systems.append(engine.System.from_pdbfile(filedesc, ffield=forces.forcefield(), qpf_slice = cls.__qpf[i,:,:]))
+         cls.systems.append(engine.System.from_pdbfile(filedesc, ffield=forces.forcefield(), qpf_slice = cls.__qpf[i,:,:]), w = w, h0 = h0, pext = pext)
          filedesc.seek(0)
 
       cls.atoms = [ Necklace(cls.__qpf[:,3*i:3*(i+1),:], name = atom_list[i][0], mass = mlist.masses[atom_list[i][0]]) for i in range(natoms) ]

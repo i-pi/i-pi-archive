@@ -68,7 +68,7 @@ class nvt_ensemble(nve_ensemble):
 
    def __init__(self, syst, thermo, temp=1.0, dt=1.0):
       #super(nvt_ensemble,self).__init__(syst=syst, dt=dt)
-      nve_ensemble.__init__(self,syst=syst, dt=dt)
+      nve_ensemble.__init__(self, syst=syst, dt=dt)
       self.temp=temp
       self.syst.init_atom_velocities(temp = temp)
       
@@ -76,8 +76,8 @@ class nvt_ensemble(nve_ensemble):
       self.thermo = thermo
       self.thermo.bind(self.syst.atoms, self.syst.p, self.syst.cell)
 #      self.thermo.bind(self.syst)
-      self.thermo.dt.set(self.dt.get()*0.5)   # maybe make thermo.dt a dependant of dt?
-      self.thermo.temp.set(self.temp)
+#      self.thermo.dt.set(self.dt.get()*0.5)   # maybe make thermo.dt a dependant of dt?
+#      self.thermo.temp.set(self.temp)
       self.econs=depend(name='econs',func=self.get_econs, deplist=[ self.syst.pot, self.syst.kin, self.thermo.econs])
       
    def step(self):
@@ -94,10 +94,10 @@ class nvt_ensemble(nve_ensemble):
 
 class nsh_ensemble(nve_ensemble):
 #TODO give some sensible value of self.temp for nsh and nve ensembles
-   def __init__(self, syst, dt=1.0, pext=numpy.zeros((3,3))):
+   def __init__(self, syst, dt=1.0):
       super(nsh_ensemble,self).__init__(syst=syst, dt=dt)
 
-      self.syst.cell.pext.set(pext) 
+#      self.syst.cell.pext.set(pext) 
       self.econs=depend(name='econs',func=self.get_econs, deplist=[ self.syst.pot, self.syst.kin, self.syst.cell.kin, self.syst.cell.pot])
 
    def exp_p(self):
@@ -125,7 +125,7 @@ class nsh_ensemble(nve_ensemble):
    def pstep(self):
       """Evolves the atom and cell momenta forward in time by a step dt/2"""
 
-      p = self.syst.p.get_array(); f = self.syst.f.get_array(); pc=self.syst.cell.p.get_array()
+      p = self.syst.p.get_array(); pc=self.syst.cell.p.get_array()
       V=self.syst.cell.V.get(); dthalf=self.dt.get()*0.5
       L = numpy.zeros((3,3), float)
       for i in range(3):
@@ -195,15 +195,16 @@ class npt_ensemble(nvt_ensemble):
       dt = time step, default = 1.0
       pext = external pressure, default = 0"""
 
-   def __init__(self, syst, thermo, cell_thermo, temp=1.0, dt=1.0, pext=0.0):
+   def __init__(self, syst, thermo, cell_thermo, temp=1.0, dt=1.0):
       super(npt_ensemble,self).__init__(syst=syst, thermo=thermo, temp=temp, dt=dt)
       self.syst.init_cell_velocities(temp = temp)
 
       self.cell_thermo=cell_thermo
       self.cell_thermo.bind(self.syst.atoms, self.syst.p, self.syst.cell)
-      self.cell_thermo.dt.set(self.dt.get()*0.5)   # maybe make thermo.dt a dependant of dt?
-      self.cell_thermo.temp.set(self.temp)
-      self.syst.cell.pext.set(pext*numpy.identity(3,float)) 
+#      self.cell_thermo.dt.set(self.dt.get()*0.5)   # maybe make thermo.dt a dependant of dt?
+#      self.cell_thermo.temp.set(self.temp)
+
+#      self.syst.cell.pext.set(pext*numpy.identity(3,float)) 
       self.econs=depend(name='econs',func=self.get_econs, deplist=[ self.syst.pot, self.syst.kin, self.thermo.econs, self.cell_thermo.econs, self.syst.cell.kin, self.syst.cell.pot])
 
    def pstep(self):
@@ -274,15 +275,16 @@ class nst_ensemble(nvt_ensemble, nsh_ensemble):
       dt = time step, default = 1.0
       pext = external pressure tensor"""
 
-   def __init__(self, syst, thermo, cell_thermo, temp=1.0, dt=1.0, pext=numpy.zeros((3,3),float)):
+   def __init__(self, syst, thermo, cell_thermo, temp=1.0, dt=1.0):
       super(nst_ensemble,self).__init__(syst=syst, thermo=thermo, temp=temp, dt=dt)
       self.syst.init_cell_velocities(temp = temp)
 
       self.cell_thermo=cell_thermo
       self.cell_thermo.bind(self.syst.atoms, self.syst.p, self.syst.cell)
-      self.cell_thermo.dt.set(self.dt.get()*0.5)   # maybe make thermo.dt a dependant of dt?
-      self.cell_thermo.temp.set(self.temp)
-      self.syst.cell.pext.set(pext) 
+#      self.cell_thermo.dt.set(self.dt.get()*0.5)   # maybe make thermo.dt a dependant of dt?
+#      self.cell_thermo.temp.set(self.temp)
+
+#      self.syst.cell.pext.set(pext) 
       self.econs=depend(name='econs',func=self.get_econs, deplist=[ self.syst.pot, self.syst.kin, self.thermo.econs, self.cell_thermo.econs, self.syst.cell.kin, self.syst.cell.pot])
       
 #   def exp_p(self):

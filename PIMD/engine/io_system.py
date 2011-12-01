@@ -1,5 +1,5 @@
 import numpy, math, sys, string
-import cell, dynamics, rp_dynamics, engine, rp_engine, thermostat, langevin, forces, PILE
+import cell, dynamics, rp_dynamics, engine, rp_engine, thermostat, langevin, forces, PILE, barostat, Bussi
 import xml.sax.handler, xml.sax, pprint
 
 def output(ensemble, step_count, output_dict = {}):
@@ -534,6 +534,9 @@ def initialise(input_file):
    need_thermo = False
    need_cell_thermo = False
    need_barostat = False
+   w = 1.0
+   Pext = numpy.zeros((3,3))
+   h0 = None
 
    if handler.ensemble_kind == "NVE":
       need_ffield = True
@@ -604,20 +607,38 @@ def initialise(input_file):
          print "No cell thermostat specified, using default"
          cell_thermo = thermostat.thermostat(temp = effective_temp, dt = handler.time_step/2.0)
 
-#TODO barostat equivalent
+#TODO barostat temp = effective temp or actual temp?
    if need_barostat:
-      Pext = numpy.zeros((3,3))
-      for i in range(3):
-         Pext[:,i] = handler.Pext[i]
+      if handler.Pext != []:
+         for i in range(3):
+            Pext[:,i] = handler.Pext[i]
+      if handler.ref_cell != []:
+         h0 = numpy.zeros((3,3))
+         for i in range(3):
+            h0[:,i] = handler.ref_cell[i]
 
-#TODO make it possible to initialise without a file
+      if handler.barostat.kind:
+         w = float(handler.barostat.parameters["w"])
+         if handler.barostat.kind == "Bussi_S":
+            baro = Bussi.Bussi_S(pext = Pext, dt = handler.time_step/2.0, w = w, temp = effective_temp)
+         elif handler.barostat.kind == "barostat":
+            baro = barostat.barostat(pext = Pext, dt = handler.time_step/2.0)
+         else:
+            print "Unrecognized barostat"
+            exit()
+      else:
+         print "No barostat specified, using default"
+         baro = barostat.barostat(pext = Pext, dt = handler.time_step/2.0)
+         
+
+#TODO make it possible to initialise without a file, or at least with different file kinds...
 
    if handler.path_integral:
       f = open(handler.sys_file, "r")
-      syst = rp_engine.RP_sys.from_pdbfile(f, ffield = ffield, nbeads = handler.nbeads, temp = handler.temp)
+      syst = rp_engine.RP_sys.from_pdbfile(f, ffield = ffield, nbeads = handler.nbeads, temp = handler.temp, w = w, h0 = h0, pext = Pext)
    else:
       f = open(handler.sys_file, "r")
-      syst = engine.System.from_pdbfile(f, ffield = ffield)
+      syst = engine.System.from_pdbfile(f, ffield = ffield, w = w, h0 = h0, pext = Pext)
 
    if handler.ensemble_kind == "NVE":
       if handler.path_integral:
@@ -634,21 +655,23 @@ def initialise(input_file):
 
    elif handler.ensemble_kind == "NSH":
       if handler.path_integral:
-         ensemble = rp_dynamics.rp_nsh_ensemble(syst, barostat, dt = handler.time_step, pext = Pext)
+         ensemble = rp_dynamics.rp_nsh_ensemble(syst, baro, dt = handler.time_step, pext = Pext)
       else:
-         ensemble = dynamics.nsh_ensemble(syst, barostat, dt = handler.time_step, pext = Pext)
+         ensemble = dynamics.nsh_ensemble(syst, baro, dt = handler.time_step, pext = Pext)
    elif handler.ensemble_kind == "NST":
       if handler.path_integral:
-         ensemble = rp_dynamics.rp_nst_ensemble(syst, barostat, thermo, cell_thermo, temp = handler.temp, dt = handler.time_step, pext = Pext)
+         ensemble = rp_dynamics.rp_nst_ensemble(syst, baro, thermo, cell_thermo, temp = handler.temp, dt = handler.time_step, pext = Pext)
       else:
-         #ensemble = dynamics.nst_ensemble(syst, barostat, thermo, cell_thermo, temp = handler.temp, dt = handler.time_step, pext = Pext)
+         #ensemble = dynamics.nst_ensemble(syst, baro, thermo, cell_thermo, temp = handler.temp, dt = handler.time_step, pext = Pext)
          ensemble = dynamics.nst_ensemble(syst, thermo, cell_thermo, temp = handler.temp, dt = handler.time_step, pext = Pext)
          ensemble.syst.cell.w.set(256*40*1820)
    elif handler.ensemble_kind == "NPT":
       if handler.path_integral:
-         ensemble = rp_dynamics.rp_npt_ensemble(syst, barostat, thermo, cell_thermo, temp = handler.temp, dt = handler.time_step, pext = Pext)
+         ensemble = rp_dynamics.rp_npt_ensemble(syst, baro, thermo, cell_thermo, temp = handler.temp, dt = handler.time_step, pext = Pext)
       else:
-         ensemble = dynamics.npt_ensemble(syst, barostat, thermo, cell_thermo, temp = handler.temp, dt = handler.time_step, pext = Pext)
+         ensemble = dynamics.npt_ensemble(syst, baro, thermo, cell_thermo, temp = handler.temp, dt = handler.time_step, pext = Pext)
+
+#TODO add more functionality to this, so that it can output things like averages and maybe even things like correlation functions.
 
    output_dict = {}
    for output_file in handler.output_vars:

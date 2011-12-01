@@ -23,7 +23,7 @@ class System(object):
    atoms=[]; cell=Cell()
    
    @classmethod
-   def from_pdbfile(cls, filedesc, ffield=forcefield(), qpf_slice = None):   
+   def from_pdbfile(cls, filedesc, ffield=forcefield(), qpf_slice = None, w = 1.0, h0 = None, pext = numpy.zeros((3,3))):   
       """A different initialiser, which takes a pdb formatted file of a system
          and forms the appropriate atom and cell objects.
          Initialised by: syst = System.from_pdbfile(filedesc, ffield)
@@ -39,8 +39,7 @@ class System(object):
          self.__qpf[3*i:3*(i+1),0]=atoms[i][1]
       self.atoms = [ Atom(self.__qpf[3*i:3*(i+1),:], name = atoms[i][0], mass=mlist.masses[atoms[i][0]]) for i in range(natoms) ] #Creates a list of atoms from the __qpf array
 
-#TODO Initialise cell.w, cell.h0 and cell.pext in io_system.initialise here
-      self.cell = Cell.fromSidesAngles(cell)
+      self.cell = Cell.fromSidesAngles(cell, w = w, h0 = h0, pext = pext)
       self.deps_init(ffield)
 
       return self

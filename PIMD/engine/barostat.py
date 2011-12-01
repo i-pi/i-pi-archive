@@ -1,7 +1,7 @@
 import numpy, math
 from utils.depend import *
 
-class barostat(): 
+class barostat: 
 
    def __init__(self, pext = numpy.zeros((3,3)), dt = 1.0):
       self.pext=depend(name='pext', value=pext)
