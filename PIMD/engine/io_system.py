@@ -2,19 +2,6 @@ import numpy, math, sys, string
 import cell, dynamics, rp_dynamics, engine, rp_engine, thermostat, langevin, forces, PILE, barostat, Bussi
 import xml.sax.handler, xml.sax, pprint
 
-def output(ensemble, step_count, output_dict = {}):
-
-   for filedesc in output_dict:
-      for what in output_dict[filedesc]:
-         if step_count%output_dict[filedesc][what] == 0:
-            if what == "system.pdb":
-               print_pdb(ensemble.syst.atoms, ensemble.syst.cell, filedesc = filedesc)
-            elif what == "RP_system.pdb":
-               print_pdb_RP(ensemble.syst.systems, filedesc = filedesc)
-            else:
-               filedesc.write(what.name + ": " + str(what.get()) + " ")
-      filedesc.write("\n")
-
 def print_pdb(atoms, ncell, filedesc = sys.stdout):
    """Takes the system and gives pdb formatted output for the unit cell and the
       atomic positions """
@@ -166,12 +153,25 @@ class Init_object:
       self.kind = ""
       self.parameters = {}
 
+class File_object:
+   def __init__(self):
+      self.kind = ""
+      self.quantity_list = []
+
+class Ensemble_object:
+   def __init__(self):
+      self.ffield = Init_object()
+      self.thermo = Init_object()
+      self.cell_thermo = Init_object()
+      self.barostat = Init_object()
+
 class Init_read(xml.sax.handler.ContentHandler):
    """Handles reading the xml file containing the initialisation input"""
 
    def __init__(self):
       self.in_ensemble_kind = False
       self.ensemble_kind = ""
+      self.ensemble_object = Ensemble_object()
       self.in_path_integral = False
       self.path_integral = False
       self.in_sys_file = False
@@ -204,15 +204,13 @@ class Init_read(xml.sax.handler.ContentHandler):
 
       self.in_time_step = False
       self.time_step = 1.0
-      self.in_thermostating_steps = False
-      self.thermostating_steps = 100
       self.in_step_number = False
       self.step_number = 100
 
       self.in_output_vars = False
       self.output_vars = []
       self.in_output_file = False
-      self.output_file = Init_object()
+      self.output_file = File_object()
 
       self.in_file_name = False
       self.in_quantity = False
@@ -228,12 +226,16 @@ class Init_read(xml.sax.handler.ContentHandler):
          self.sys_file = ""
          self.in_sys_file = True
       elif name == "ffield":
+         self.ffield = Init_object()
          self.in_ffield = True
       elif name == "thermo":
+         self.thermo = Init_object()
          self.in_thermo = True
       elif name == "cell_thermo":
+         self.cell_thermo = Init_object()
          self.in_cell_thermo = True
       elif name == "barostat":
+         self.barostat = Init_object()
          self.in_barostat = True
       elif name == "kind":
          self.in_kind = True
@@ -254,18 +256,14 @@ class Init_read(xml.sax.handler.ContentHandler):
       elif name == "time_step":
          self.time_step = 1.0
          self.in_time_step = True
-      elif name == "thermostating_steps":
-         self.thermostating_steps = 100
-         self.in_thermostating_steps = True
       elif name == "step_number":
          self.step_number = 100
          self.in_step_number = True
-
       elif name == "output_vars":
          self.output_vars = []
          self.in_output_vars = True
       elif name == "output_file":
-         self.output_file = Init_object()
+         self.output_file = File_object()
          self.in_output_file = True
       elif name == "file_name":
          self.in_file_name = True 
@@ -279,16 +277,12 @@ class Init_read(xml.sax.handler.ContentHandler):
 
    def characters(self, data):
       if self.in_ensemble_kind:
-         self.in_ensemble_kind = False
          self.ensemble_kind += string.strip(data)
       elif self.in_path_integral:
-         self.in_path_integral = False
          self.path_integral = read_bool(data)
       elif self.in_sys_file:
-         self.in_sys_file = False
          self.sys_file += string.strip(data)
       elif self.in_kind:
-         self.in_kind = False
          if self.in_ffield:
             self.ffield.kind += string.strip(data)
          elif self.in_thermo:
@@ -297,8 +291,10 @@ class Init_read(xml.sax.handler.ContentHandler):
             self.cell_thermo.kind += string.strip(data)
          elif self.in_barostat:
             self.barostat.kind += string.strip(data)
+         else:
+            print "kind tag in the wrong place"
+            exit()
       elif self.in_parameters:
-         self.in_parameters = False
          if self.in_ffield:
             self.ffield.parameters = read_dict(data)
          elif self.in_thermo:
@@ -307,34 +303,37 @@ class Init_read(xml.sax.handler.ContentHandler):
             self.cell_thermo.parameters = read_dict(data)
          elif self.in_barostat:
             self.barostat.parameters = read_dict(data)
+         else:
+            print "parameter tag in the wrong place"
+            exit()
       elif self.in_temp:
-         self.in_temp = False
          self.temp = read_float(data)
       elif self.in_nbeads:
-         self.in_nbeads = False
          self.nbeads = read_int(data)
       elif self.in_x:
-         self.in_x = False
          if self.in_ref_cell:
             self.ref_cell.append(read_array(data))
          elif self.in_Pext:
             self.Pext.append(read_array(data))
+         else:
+            print "x tag in the wrong place"
+            exit()
       elif self.in_time_step:
-         self.in_time_step = False
          self.time_step = read_float(data)
-      elif self.in_thermostating_steps:
-         self.in_thermostating_steps = False
-         self.thermostating_steps = read_int(data)
       elif self.in_step_number:
-         self.in_step_number = False
          self.step_number = read_int(data)
-      elif self.in_output_vars and self.in_output_file:
-         if self.in_file_name:
-            self.in_file_name = False
+      elif self.in_file_name:
+         if self.in_output_vars and self.in_output_file:
             self.output_file.kind += string.strip(data)
-         elif self.in_quantity:
-            self.in_quantity = False
-            self.output_file.parameters = read_dict(data)
+         else:
+            print "file_name tag in the wrong place"
+            exit()
+      elif self.in_quantity:
+         if self.in_output_vars and self.in_output_file:
+            self.output_file.quantity_list.append(read_dict(data))
+         else:
+            print "quantity tag in the wrong place"
+            exit()
 
    def endElement(self, name):
       if name == "ensemble_kind":
@@ -344,12 +343,16 @@ class Init_read(xml.sax.handler.ContentHandler):
       elif name == "sys_file":
          self.in_sys_file = False
       elif name == "ffield":
+         self.ensemble_object.ffield = self.ffield
          self.in_ffield = False
       elif name == "thermo":
+         self.ensemble_object.thermo = self.thermo
          self.in_thermo = False
       elif name == "cell_thermo":
+         self.ensemble_object.cell_thermo = self.cell_thermo
          self.in_cell_thermo = False
       elif name == "barostat":
+         self.ensemble_object.barostat = self.barostat
          self.in_barostat = False
       elif name == "kind":
          self.in_kind = False
@@ -367,11 +370,8 @@ class Init_read(xml.sax.handler.ContentHandler):
          self.in_x = False
       elif name == "time_step":
          self.in_time_step = False
-      elif name == "thermostating_steps":
-         self.in_thermostating_steps = False
       elif name == "step_number":
          self.in_step_number = False
-
       elif name == "output_vars":
          self.in_output_vars = False
       elif name == "output_file":
@@ -524,7 +524,7 @@ def xml_read(namedpipe):
       vir[:,i] = read_array(handler.vir[i])
    return [ pot, f, vir ]
       
-def initialise(input_file):
+def run_from_xml(input_file):
    parser = xml.sax.make_parser()
    handler = Init_read()
    parser.setContentHandler(handler)
@@ -543,7 +543,7 @@ def initialise(input_file):
    elif handler.ensemble_kind == "NVT":
       need_ffield = True
       need_thermo = True
-   elif handler.ensemble_kind == "NSH":
+   elif handler.ensemble_kind == "NSH" or handler.ensemble_kind == "NPH":
       need_ffield = True
       need_barostat = True
    elif handler.ensemble_kind == "NST" or handler.ensemble_kind == "NPT":
@@ -568,8 +568,12 @@ def initialise(input_file):
             pars = handler.ffield.parameters
             ffield = forces.pipeforce(pars)
          elif handler.ffield.kind == "rp_pipeforce":
-            pars = handler.ffield.parameters
-            ffield = forces.rp_pipeforce(pars)
+            if handler.path_integral:
+               pars = handler.ffield.parameters
+               ffield = forces.rp_pipeforce(pars)
+            else:
+               print "rp_pipeforce used for classical run"
+               exit()
          else:
             print "Unrecognized forcefield"
             exit()
@@ -582,9 +586,13 @@ def initialise(input_file):
          if handler.thermo.kind == "thermostat":
             thermo = thermostat.thermostat(temp = effective_temp, dt = handler.time_step/2.0)
          elif handler.thermo.kind == "langevin":
-            thermo = langevin.langevin(temp = effective_temp, dt = handler.time_step/2.0, tau = float(handler.thermo.parameters["tau"]))
+            thermo = langevin.langevin(temp = effective_temp, dt = handler.time_step/2.0, tau = read_float(handler.thermo.parameters["tau"]))
          elif handler.thermo.kind == "PILE":
-            thermo = PILE.PILE(temp = effective_temp, dt = handler.time_step/2.0, tau_0 = float(handler.thermo.parameters["tau_0"]))
+            if path_integral:
+               thermo = PILE.PILE(temp = effective_temp, dt = handler.time_step/2.0, tau_0 = read_float(handler.thermo.parameters["tau_0"]))
+            else:
+               print "PILE thermostat used for classical run"
+               exit()
          else:
             "Unrecognized thermostat"
             exit()
@@ -597,9 +605,13 @@ def initialise(input_file):
          if handler.cell_thermo.kind == "thermostat":
             cell_thermo = thermostat.thermostat(temp = effective_temp, dt = handler.time_step/2.0)
          elif handler.cell_thermo.kind == "langevin":
-            cell_thermo = langevin.langevin(temp = effective_temp, dt = handler.time_step/2.0, tau = float(handler.cell_thermo.parameters["tau"]))
+            cell_thermo = langevin.langevin(temp = effective_temp, dt = handler.time_step/2.0, tau = read_float(handler.cell_thermo.parameters["tau"]))
          elif handler.cell_thermo.kind == "PILE":
-            cell_thermo = PILE.PILE(temp = effective_temp, dt = handler.time_step/2.0, tau_0 = float(handler.cell_thermo.parameters["tau_0"]))
+            if handler.path_integral:
+               cell_thermo = PILE.PILE(temp = effective_temp, dt = handler.time_step/2.0, tau_0 = read_float(handler.cell_thermo.parameters["tau_0"]))
+            else:
+               print "PILE thermostat used for classical run"
+               exit()
          else:
             "Unrecognized cell thermostat"
             exit()
@@ -608,6 +620,7 @@ def initialise(input_file):
          cell_thermo = thermostat.thermostat(temp = effective_temp, dt = handler.time_step/2.0)
 
 #TODO barostat temp = effective temp or actual temp?
+#TODO make it check at this stage whether ref_cell and Pext are upper triangular
    if need_barostat:
       if handler.Pext != []:
          for i in range(3):
@@ -618,7 +631,7 @@ def initialise(input_file):
             h0[:,i] = handler.ref_cell[i]
 
       if handler.barostat.kind:
-         w = float(handler.barostat.parameters["w"])
+         w = read_float(handler.barostat.parameters["w"])
          if handler.barostat.kind == "Bussi_S":
             baro = Bussi.Bussi_S(pext = Pext, dt = handler.time_step/2.0, w = w, temp = effective_temp)
          elif handler.barostat.kind == "barostat":
@@ -635,79 +648,105 @@ def initialise(input_file):
 
    if handler.path_integral:
       f = open(handler.sys_file, "r")
-      syst = rp_engine.RP_sys.from_pdbfile(f, ffield = ffield, nbeads = handler.nbeads, temp = handler.temp, w = w, h0 = h0, pext = Pext)
+      syst = rp_engine.RP_sys.from_pdbfile(f, nbeads = handler.nbeads, temp = handler.temp, w = w, h0 = h0, pext = Pext)
    else:
       f = open(handler.sys_file, "r")
-      syst = engine.System.from_pdbfile(f, ffield = ffield, w = w, h0 = h0, pext = Pext)
+      syst = engine.System.from_pdbfile(f, w = w, h0 = h0, pext = Pext)
 
    if handler.ensemble_kind == "NVE":
       if handler.path_integral:
-         ensemble = rp_dynamics.rp_nve_ensemble(syst, dt = handler.time_step)
+         ensemble = rp_dynamics.rp_nve_ensemble(syst, ffield, dt = handler.time_step)
       else:
-         ensemble = dynamics.nve_ensemble(syst, dt = handler.time_step)
+         ensemble = dynamics.nve_ensemble(syst, ffield, dt = handler.time_step)
    elif handler.ensemble_kind == "NVT":
       if handler.path_integral:
-         ensemble = rp_dynamics.rp_nvt_ensemble(syst, thermo, temp = handler.temp, dt = handler.time_step)
+         ensemble = rp_dynamics.rp_nvt_ensemble(syst, ffield, thermo, temp = handler.temp, dt = handler.time_step)
       else:
-         ensemble = dynamics.nvt_ensemble(syst, thermo, temp = handler.temp, dt = handler.time_step)
+         ensemble = dynamics.nvt_ensemble(syst, ffield, thermo, temp = handler.temp, dt = handler.time_step)
 
-#TODO implement the barostat class so that passing barostat actually works.
+#TODO implement the const_P barostat class so that passing barostat actually works.
+#TODO implement the rp ensembles
 
    elif handler.ensemble_kind == "NSH":
       if handler.path_integral:
-         ensemble = rp_dynamics.rp_nsh_ensemble(syst, baro, dt = handler.time_step)
+         ensemble = rp_dynamics.rp_nsh_ensemble(syst, ffield, baro, dt = handler.time_step)
       else:
-         ensemble = dynamics.nsh_ensemble(syst, baro, dt = handler.time_step)
+         ensemble = dynamics.nsh_ensemble(syst, ffield, baro, dt = handler.time_step)
    elif handler.ensemble_kind == "NST":
       if handler.path_integral:
-         ensemble = rp_dynamics.rp_nst_ensemble(syst, baro, thermo, cell_thermo, temp = handler.temp, dt = handler.time_step)
+         ensemble = rp_dynamics.rp_nst_ensemble(syst, ffield, baro, thermo, cell_thermo, temp = handler.temp, dt = handler.time_step)
       else:
-#         ensemble = dynamics.nst_ensemble(syst, baro, thermo, cell_thermo, temp = handler.temp, dt = handler.time_step)
-         ensemble = dynamics.test_NST(syst, baro, thermo, cell_thermo, temp = handler.temp, dt = handler.time_step)
-#         ensemble = dynamics.nst_ensemble(syst, thermo, cell_thermo, temp = handler.temp, dt = handler.time_step, pext = Pext)
-#         ensemble.syst.cell.w.set(256*40*1820)
+         ensemble = dynamics.nst_ensemble(syst, ffield, baro, thermo, cell_thermo, temp = handler.temp, dt = handler.time_step)
    elif handler.ensemble_kind == "NPT":
       if handler.path_integral:
-         ensemble = rp_dynamics.rp_npt_ensemble(syst, baro, thermo, cell_thermo, temp = handler.temp, dt = handler.time_step)
+         ensemble = rp_dynamics.rp_npt_ensemble(syst, ffield, baro, thermo, cell_thermo, temp = handler.temp, dt = handler.time_step)
       else:
-         ensemble = dynamics.npt_ensemble(syst, baro, thermo, cell_thermo, temp = handler.temp, dt = handler.time_step)
+         ensemble = dynamics.npt_ensemble(syst, ffield, baro, thermo, cell_thermo, temp = handler.temp, dt = handler.time_step)
 
-#TODO add more functionality to this, so that it can output things like averages and maybe even things like correlation functions.
 
-   output_dict = {}
+
+
    for output_file in handler.output_vars:
       if output_file.kind == "sys.stdout":
          output_file.kind = sys.stdout
       else:
          output_file.kind = open(output_file.kind, "w")
-      file_dict = {}
-      for what in output_file.parameters:
-         try:
-            quantity = getattr(ensemble, what)
-            file_dict[quantity] = int(output_file.parameters[what])
-            output_dict[output_file.kind] = file_dict
-         except AttributeError:
-            try:
-               quantity = getattr(ensemble.syst, what)
-               file_dict[quantity] = int(output_file.parameters[what])
-               output_dict[output_file.kind] = file_dict
-            except AttributeError:
-               try:
-                  quantity = getattr(ensemble.syst.cell, what)
-                  file_dict[quantity] = int(output_file.parameters[what])
-                  output_dict[output_file.kind] = file_dict
-               except AttributeError:
-                  file_dict[what] = int(output_file.parameters[what])
-                  output_dict[output_file.kind] = file_dict
 
-#TODO have exception clauses to catch ValueErrors for conversions of the kind string to int or string to float
+      for i in range(len(output_file.quantity_list)):
+         file_dict = output_file.quantity_list[i]
+         for what in file_dict:
+            if what == "name":
+               name = output_file.quantity_list[i]["name"]
+               try:
+                  quantity = getattr(ensemble, name)
+                  file_dict["name"] = quantity
+               except AttributeError:
+                  try:
+                     quantity = getattr(ensemble.syst, name)
+                     file_dict["name"] = quantity
+                  except AttributeError:
+                     try:
+                        quantity = getattr(ensemble.syst.cell, name)
+                        file_dict["name"] = quantity
+                     except AttributeError:
+                        pass
+            elif what == "start" or what == "step":
+               output_file.quantity_list[i][what] = read_int(output_file.quantity_list[i][what])
+            elif what == "average":
+               output_file.quantity_list[i][what] = read_bool(output_file.quantity_list[i][what])
+            else:
+               print "Unknown key word in quantity ", name
+               exit()
+         try:
+            if output_file.quantity_list[i]["average"]:
+               output_file.quantity_list[i]["running_total"] = 0.0
+         except KeyError:
+            pass
 
 #TODO split up this file into separate files for the pdb reading, xml reading, initialisation and put the bit below into a separate function so that the initialisation and the running of the program are in different functions.
-   for istep in range(handler.thermostating_steps):
-      ensemble.step()
-      print "Thermostating step ", istep + 1, " of ", handler.thermostating_steps
    for istep in range(handler.step_number):
       ensemble.step()
       print "Step ", istep + 1, " of ", handler.step_number
-      output(ensemble, istep + 1, output_dict)
+      output(ensemble, istep + 1, handler.output_vars)
 
+def output(ensemble, step_count, output_vars):
+
+   for output_file in output_vars:
+      filedesc = output_file.kind
+      for quantity in output_file.quantity_list:
+         if (step_count-quantity["start"])%quantity["step"] == 0 and step_count >= quantity["start"]:
+            if quantity["name"] == "system.pdb":
+               print_pdb(ensemble.syst.atoms, ensemble.syst.cell, filedesc = filedesc)
+            elif quantity["name"] == "RP_system.pdb":
+               print_pdb_RP(ensemble.syst.systems, filedesc = filedesc)
+            else:
+               try:
+                  if quantity["average"]:
+                     quantity["running_total"] += quantity["name"].get()
+                     filedesc.write(quantity["name"].name + ": " + str(quantity["running_total"]/((step_count-quantity["start"])/quantity["step"]+1)) + " ")
+                  else:
+                     filedesc.write(quantity["name"].name + ": " + str(quantity["name"].get()) + " ")
+               except KeyError:
+                  filedesc.write(quantity["name"].name + ": " + str(quantity["name"].get()) + " ")
+
+      filedesc.write("\n")

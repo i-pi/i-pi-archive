@@ -11,7 +11,7 @@ class RP_sys(engine.System):
    __qpf = numpy.zeros(0)
 
    @classmethod
-   def from_pdbfile(cls, filedesc, ffield = forces.forcefield(), nbeads = 8, temp = 1.0, w = 1.0, h0 = None, pext = numpy.zeros((3,3))):
+   def from_pdbfile(cls, filedesc, nbeads = 8, temp = 1.0, w = 1.0, h0 = None, pext = numpy.zeros((3,3))):
       """A different initialiser, which takes a pdb formatted file of a system
          and forms the appropriate atom and cell objects.
          Initialised by: 
@@ -28,16 +28,16 @@ class RP_sys(engine.System):
       cls.__qpf = numpy.zeros((nbeads, 3*natoms, 3))
 
       for i in range(nbeads):
-         cls.systems.append(engine.System.from_pdbfile(filedesc, ffield=forces.forcefield(), qpf_slice = cls.__qpf[i,:,:]), w = w, h0 = h0, pext = pext)
+         cls.systems.append(engine.System.from_pdbfile(filedesc, qpf_slice = cls.__qpf[i,:,:]), w = w, h0 = h0, pext = pext)
          filedesc.seek(0)
 
       cls.atoms = [ Necklace(cls.__qpf[:,3*i:3*(i+1),:], name = atom_list[i][0], mass = mlist.masses[atom_list[i][0]]) for i in range(natoms) ]
     
       cls.cell = Cell_necklace(cls.systems)
 
-      return cls(ffield = ffield, temp = temp)
+      return cls(temp = temp)
 
-   def __init__(self, ffield = forces.forcefield(), temp = 1.0):
+   def __init__(self, temp = 1.0):
       self.temp = depend(name='temp', value=temp)
       self.betan = depend(name='betan', func=self.get_betan, deplist=[self.temp])
       self.omegan = depend(name='omegan', func=self.get_omegan, deplist=[self.betan])
@@ -48,9 +48,6 @@ class RP_sys(engine.System):
       self.kin = depend(func=self.get_kin, name = 'kin')
       self.pot = depend(name='pot')
       self.vir = depend(name='vir')
-
-      self.ffield = ffield
-      self.ffield.bind(self)
 
       depgrp_q = []
       for atom in self.atoms:

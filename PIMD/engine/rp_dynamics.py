@@ -4,8 +4,10 @@ from utils.depend import *
 from utils import units
       
 class rp_nve_ensemble(dynamics.nve_ensemble):
-   def __init__(self, syst, dt=1.0):
-      super(rp_nve_ensemble,self).__init__(syst=syst, dt=dt)
+   def __init__(self, syst, ffield, dt=1.0):
+      dynamics.nve_ensemble.__init__(self, ffield=ffield, syst=syst, dt=dt)
+
+#TODO actually make step() work!!!
 
    def step(self):
 
@@ -60,7 +62,7 @@ class rp_nvt_ensemble(dynamics.nvt_ensemble,rp_nve_ensemble):
       dt = time step, default = 1.0"""
 
    def __init__(self, syst, thermo, temp=1.0, dt=1.0):
-      super(rp_nvt_ensemble,self).__init__(syst, thermo, temp=temp, dt=dt)
+      dynamics.nvt_ensemble.__init__(self, syst, ffield, thermo, temp=temp, dt=dt)
 
       self.thermo.temp.set(self.temp*len(syst.systems))
 

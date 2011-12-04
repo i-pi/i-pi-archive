@@ -30,6 +30,8 @@ def volume(h):
       unit vector matrix"""
    return h[0,0]*h[1,1]*h[2,2]
 
+#TODO This currently shows instability in the matrix inversion. Fix it.
+
 def Crank_Nicolson(h):
    """Calculates the matrix exponential of a matrix and its negative 
       using a Crank Nicolson expansion"""

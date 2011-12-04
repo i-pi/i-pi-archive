@@ -239,9 +239,12 @@ f = open("./fcp4cell.pdb", "r")
 
 pext = numpy.zeros((3,3))
 w = mlist.masses["  Ar"] * 256
-temp = 1.1761e-4
+#temp = 1.1761e-4
+temp = 5.058487e-5
 dt = 445.0
-syst=engine.System.from_pdbfile(f, forces.pipeforce( {"pipein": "forces/pipeforce", "pipeout": "forces/pipepos"} ), w = w, pext = pext )
+#syst=engine.System.from_pdbfile(f, forces.pipeforce( {"pipein": "forces/pipeforce", "pipeout": "forces/pipepos"} ), w = w, pext = pext )
+ffield = forces.pipeforce({"pipein": "forces/pipeforce", "pipeout": "forces/pipepos"})
+syst = engine.System.from_pdbfile(f, w=w, pext=pext)
 #syst=engine.System.from_pdbfile(f, forces.LJ( {"eps": 0.1, "sigma": 0.38, "rc": 0.38*2.5} ) )
 thermo = langevin.langevin(temp = temp, dt = dt/2, tau=1e3)
 thermo_cell = langevin.langevin(temp = temp, dt = dt/2, tau=1e3)
@@ -251,7 +254,7 @@ thermo_cell = langevin.langevin(temp = temp, dt = dt/2, tau=1e3)
 #pext=10.0*numpy.identity(3); pext[0,2]=pext[2,0]=0
 #pext = numpy.zeros((3,3),float)
 #nvt=dynamics.nst_ensemble(syst=syst, thermo=thermo, cell_thermo=thermo_cell, dt=445, temp=1.1761e-4)
-nvt = dynamics.test_NST(syst = syst, barostat = Bussi.Bussi_S(pext = pext, dt = dt/2.0, w = w, temp = temp), thermo = thermo, cell_thermo = thermo_cell, temp = temp, dt = dt)
+nvt = dynamics.nst_ensemble(syst = syst, ffield = ffield, barostat = Bussi.Bussi_S(pext = pext, dt = dt/2.0, w = w, temp = temp), thermo = thermo, cell_thermo = thermo_cell, temp = temp, dt = dt)
 #nvt=dynamics.nvt_ensemble(syst=syst, thermo=thermo, dt=100, temp=1.1761e-4)
 
 print "#Initial vir is ", syst.vir.get()
@@ -266,28 +269,25 @@ c = numpy.zeros((3,3,3,3))
 c_bar = numpy.zeros((3,3,3,3))
 C = numpy.zeros((6,6))
 vol = 0.0
-steps = 30000
-steps2 = 4000
-steps = 400
-steps2 = 40
+steps = 50000
+steps2 = 3000
 
 h0_bar = numpy.array(syst.cell.h.get_array())
-#f = open("./traj9.pdb", "w")
-#g = open("./corr_file2.txt", "w")
+f = open("./traj9.pdb", "w")
+g = open("./corr_file2.txt", "w")
 for istep in range(steps2):
    nvt.step()
- #  if istep%20 == 0:
-  #    io_system.print_pdb(syst.atoms, syst.cell, f)
+   if istep%20 == 0:
+      io_system.print_pdb(syst.atoms, syst.cell, f)
    print "step ", istep + 1, " of: ", steps + steps2
    print syst.pot.get(), syst.kin.get(), nvt.econs.get(), syst.cell.V.get()
    h0_bar += syst.cell.h.get_array()
    syst.cell.h0.set(h0_bar/(istep+2.0))
-#exit()
    
 for istep in range(steps):
    nvt.step()
-#   if istep%20 == 0:
-#      io_system.print_pdb(syst.atoms, syst.cell, f)
+   if istep%20 == 0:
+      io_system.print_pdb(syst.atoms, syst.cell, f)
 
    print "step ", steps2 + istep + 1, " of: ", steps + steps2
    print syst.pot.get(), syst.kin.get(), nvt.econs.get(), syst.cell.V.get()
@@ -324,7 +324,7 @@ for istep in range(steps):
    C[3,5] = C[5,3] = c[1,2,1,0]*4.0
    C[5,4] = C[4,5] = c[1,0,2,0]*4.0
 
-   #g.write(str((C[0,0] + C[1,1] + C[2,2])/(3.0)) + "  "), g.write(str((C[0,1] + C[0,2] + C[1,2])/(3.0)) + "  "), g.write(str((C[4,4] + C[5,5] + C[3,3])/(3.0)) + "\n")
+   g.write(str((C[0,0] + C[1,1] + C[2,2])/(3.0)) + "  "), g.write(str((C[0,1] + C[0,2] + C[1,2])/(3.0)) + "  "), g.write(str((C[4,4] + C[5,5] + C[3,3])/(3.0)) + "\n")
 
 C[0,0] = c_bar[0,0,0,0]
 C[1,1] = c_bar[1,1,1,1]
@@ -355,13 +355,18 @@ C_inv = numpy.linalg.inv(C)
 #c = 1.0/c
 vol /= steps
 C_inv = nvt.thermo.temp.get()*units.kb/vol*C_inv
-unit = len(syst.atoms)*units.kb*nvt.thermo.temp.get()/vol
+#unit = len(syst.atoms)*units.kb*nvt.thermo.temp.get()/vol
+unit = 0.0003793865/(6.43452**3)
 #print (c[0,0,0,0] + c[1,1,1,1] + c[2,2,2,2])/(2.0*unit)
 #print (c[0,0,1,1] + c[0,0,2,2] + c[1,1,2,2])/(2.0*unit)
 #print (c[1,2,1,2] + c[2,0,2,0] + c[0,1,0,1])/(2.0*unit)
 print (C_inv[0,0] + C_inv[1,1] + C_inv[2,2])/(3.0*unit)
 print (C_inv[0,1] + C_inv[0,2] + C_inv[1,2])/(3.0*unit)
 print (C_inv[4,4] + C_inv[5,5] + C_inv[3,3])/(3.0*unit)
+print (C_inv[3,4] + C_inv[3,5] + C_inv[4,5])/(3.0*unit)
+print C_inv[0,0]/unit
+print C_inv[0,1]/unit
+print C_inv[3,3]/unit
 print unit
 
 h = open("./forces/pipepos","w")

@@ -32,7 +32,6 @@
       <x>array</x>
    </Pext>
    <time_step>float</time_step>
-   <thermostating_steps>int</thermostating_steps>
    <step_number>int</step_number>
    <output_vars>
       <output_file>
