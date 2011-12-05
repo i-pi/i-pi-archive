@@ -272,6 +272,7 @@ vol = 0.0
 steps = 20000
 steps2 = 3000
 
+exit()
 h0_bar = numpy.array(syst.cell.h.get_array())
 f = open("./traj9.pdb", "w")
 g = open("./corr_file2.txt", "w")
