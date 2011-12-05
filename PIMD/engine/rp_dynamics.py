@@ -4,8 +4,10 @@ from utils.depend import *
 from utils import units
       
 class rp_nve_ensemble(dynamics.nve_ensemble):
-   def __init__(self, syst, dt=1.0):
-      super(rp_nve_ensemble,self).__init__(syst=syst, dt=dt)
+   def __init__(self, syst, ffield, dt=1.0):
+      dynamics.nve_ensemble.__init__(self, ffield=ffield, syst=syst, dt=dt)
+
+#TODO actually make step() work!!!
 
    def step(self):
 
@@ -29,20 +31,20 @@ class rp_nve_ensemble(dynamics.nve_ensemble):
             cos_mat[j] = math.cos(dt*omega_j)
             sin_mat[j] = math.sin(dt*omega_j)/(mass*omega_j)
             neg_sin_mat[j] = -mass*omega_j*math.sin(dt*omega_j)
-         sin_mat[0] = 1.0/mass
+         sin_mat[0] = dt/mass
 
          p_tilde_i = numpy.array(p_tilde[:,3*i:3*(i+1)])
          q_tilde_i = numpy.array(q_tilde[:,3*i:3*(i+1)])
 
-         for j in range(nbeads):
-            p_tilde_i[j,:] = cos_mat[j]*p_tilde_i[j,:] + neg_sin_mat[j]*q_tilde_i[j,:]
-            q_tilde_i[j,:] = cos_mat[j]*q_tilde_i[j,:] + sin_mat[j]*p_tilde_i[j,:]
 
-         p_tilde[:,3*i:3*(i+1)] = p_tilde_i
-         q_tilde[:,3*i:3*(i+1)] = q_tilde_i
+         for j in range(nbeads):
+            p_tilde[j,3*i:3*(i+1)] = cos_mat[j]*p_tilde_i[j,:] + neg_sin_mat[j]*q_tilde_i[j,:]
+            q_tilde[j,3*i:3*(i+1)] = cos_mat[j]*q_tilde_i[j,:] + sin_mat[j]*p_tilde_i[j,:]
 
       self.syst.p.get_array()[:] = numpy.dot(numpy.transpose(self.syst.trans_mat.get_array()), p_tilde)
       self.syst.q.get_array()[:] = numpy.dot(numpy.transpose(self.syst.trans_mat.get_array()), q_tilde)
+
+
 
       self.syst.q.taint(taintme=False)
       self.syst.p.get_array()[:] += self.syst.f.get_array()*dt/2.0
@@ -60,15 +62,15 @@ class rp_nvt_ensemble(dynamics.nvt_ensemble,rp_nve_ensemble):
       dt = time step, default = 1.0"""
 
    def __init__(self, syst, thermo, temp=1.0, dt=1.0):
-      super(rp_nvt_ensemble,self).__init__(syst, thermo, temp=temp, dt=dt)
+      dynamics.nvt_ensemble.__init__(self, syst, ffield, thermo, temp=temp, dt=dt)
 
       self.thermo.temp.set(self.temp*len(syst.systems))
 
    def step(self):
       self.thermo.step()
 
-      #rp_nve_ensemble.step(self)
-      dynamics.nve_ensemble.step(self)
+      rp_nve_ensemble.step(self)
+      #dynamics.nve_ensemble.step(self)
 
       self.thermo.step()
 

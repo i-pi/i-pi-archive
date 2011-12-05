@@ -15,6 +15,7 @@ class forcefield(object):
    def bind(self, syst):
       self.syst = syst
 
+#TODO make spring_f an object in syst or RP_syst instead of here.
       self.spring_f = depend(name='spring_f', value=numpy.zeros(3*len(self.syst.atoms)))
       self.ufv.add_dependant(syst.vir)
       self.ufv.add_dependant(syst.f)
@@ -100,16 +101,16 @@ class rp_pipeforce(forcefield):
       self.spring_f.taint(taintme=True)
 
    def get_all(self):
+      print "getting..."
       pot = 0.0
       f = numpy.zeros((len(self.syst.systems),3*len(self.syst.systems[0].atoms)))
       vir = numpy.zeros((3,3))
-#TODO This is only necessary as calling the System spring_f terms does not automatically update the RP_sys spring_f, fix this!
-#      self.spring_f.get_array()
-
       for i in range(len(self.ffield_list)):
          [sys_pot, sys_f, sys_vir]=self.ffield_list[i].ufv.get()
          pot+=sys_pot;  f[i,:]+=sys_f;  vir+=sys_vir
+#Note that spring_f is automatically calculated in sys_f, so we do not need the line f += self.syst.spring_f()
       pot+=self.syst.spring_pot()
+      print "got"
       return [pot, f, vir]
 
    def get_spring_f(self):

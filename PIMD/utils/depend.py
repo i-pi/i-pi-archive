@@ -5,7 +5,7 @@ class depend(object):
    from other quantities or be dependencies for other quantities.
    Contains: __deps = all objects dependent on self, __depgrps = 
    many to one type dependent groups of self, __tainted = tainted flag,
-   __func = function to recalculate object if tainted, __name = object name,
+   __func = function to recalculate object if tainted, name = object name,
    __value = object value
 
    Initialised by: obj = depend(func, deplist, value, name)
@@ -57,9 +57,9 @@ class depend(object):
       self.__deps=[]
       self.__depgrp=[]
       self.__func=func
-      self.__name=name
+      self.name=name
       if (name is None and not func is None):
-         self.__name=self.__func.func_name
+         self.name=self.__func.func_name
       self.__value=value
       if (value is None): 
          self.__tainted=True

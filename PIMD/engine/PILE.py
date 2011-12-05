@@ -56,7 +56,7 @@ class PILE(thermostat):
       return gamma_vec
      
    def __init__(self, temp = 1.0, dt = 1.0, tau_0 = 1.0, econs=0.0):
-      super(langevin,self).__init__(temp,dt,econs)
+      super(PILE,self).__init__(temp,dt,econs)
 
       self.tau_0 = depend(value=tau_0, name='tau_0')
       
@@ -69,15 +69,15 @@ class PILE(thermostat):
 
       self.syst = system
       
-      self.smass=depend(name='smass',func=self.compute_smass)
+      self.smass=depend(value=numpy.zeros(len(system.atoms)), name='smass',func=self.compute_smass)
       for at in self.syst.atoms:
          at.mass.add_dependant(self.smass)
       
       self.sw=depend(name='sw',func=self.compute_sw, deplist=[self.syst.cell.w])
       
-      self.gamma=depend(func=compute_gamma, name='gamma', deplist=[self.tau_0, self.syst.n_frequencies])
-      self.T=depend(name='T',func=self.compute_T)
-      self.S=depend(name='S',func=self.compute_S)      
+      self.gamma=depend(value=numpy.zeros(len(system.systems)), func=self.compute_gamma, name='gamma', deplist=[self.tau_0, self.syst.n_frequencies])
+      self.T=depend(value=numpy.zeros(len(system.systems)), name='T',func=self.compute_T)
+      self.S=depend(value=numpy.zeros(len(system.systems)), name='S',func=self.compute_S)      
       
       self.gamma.add_dependant(self.T)
       self.dt.add_dependant(self.T)
@@ -90,19 +90,20 @@ class PILE(thermostat):
       sm=self.smass.get_array(); T=self.T.get_array(); S=self.S.get_array();
       econs=self.econs.get()
       p_tilde = numpy.dot(self.syst.trans_mat.get_array(), self.syst.p.get_array())
+
       for i in range(len(sm)):
          p_tilde_i = numpy.array(p_tilde[:,3*i:3*(i+1)])
          p_tilde_i/=sm[i]
-         for j in range(self.syst.systems):
+         for j in range(len(self.syst.systems)):
             for k in range(3):
                econs += 0.5*p_tilde_i[j,k]**2
          for j in range(len(self.syst.systems)):
             p_tilde_i[j,:] = T[j]*p_tilde_i[j,:] + S[j]*random.gauss(0.0,1.0);
-         for j in range(self.syst.systems):
+         for j in range(len(self.syst.systems)):
             for k in range(3):
                econs -= 0.5*p_tilde_i[j,k]**2
          p_tilde_i*=sm[i]
-         p_tilde[:,3*i,3*(i+1)] = p_tilde_i
+         p_tilde[:,3*i:3*(i+1)] = p_tilde_i
 
       self.syst.p.get_array()[:] = numpy.dot(numpy.transpose(self.syst.trans_mat.get_array()), p_tilde)
       self.econs.set(econs)

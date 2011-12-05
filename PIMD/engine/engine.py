@@ -23,38 +23,40 @@ class System(object):
    atoms=[]; cell=Cell()
    
    @classmethod
-   def from_pdbfile(cls, filedesc, ffield=forcefield(), qpf_slice = None):   
+   def from_pdbfile(cls, filedesc, qpf_slice = None, w = 1.0, h0 = None, pext = numpy.zeros((3,3))):   
       """A different initialiser, which takes a pdb formatted file of a system
          and forms the appropriate atom and cell objects.
          Initialised by: syst = System.from_pdbfile(filedesc, ffield)
          ffield = forcefield object, default = forcefield()
          filedesc = file method, eg. filedesc = open(\"./file.pdb\",\"r\")"""
 
-      atoms, cell, natoms = read_pdb(filedesc)
+      atoms, cell, natoms = io_system.read_pdb(filedesc)
 
       if qpf_slice is None:
          qpf_slice=numpy.zeros((3*natoms,3),float) 
-      self=cls(ffield=ffield, qpf_slice=qpf_slice, deps_initialise=False)
+      self=cls(qpf_slice=qpf_slice, deps_initialise=False)
       for i in range(natoms):
          self.__qpf[3*i:3*(i+1),0]=atoms[i][1]
       self.atoms = [ Atom(self.__qpf[3*i:3*(i+1),:], name = atoms[i][0], mass=mlist.masses[atoms[i][0]]) for i in range(natoms) ] #Creates a list of atoms from the __qpf array
-      self.cell = Cell.fromSidesAngles(cell)
-      self.deps_init(ffield)
+
+      self.cell = Cell.fromSidesAngles(cell, w = w, h0 = h0, pext = pext)
+      self.deps_init()
 
       return self
    
-   def __init__(self, ffield=forcefield(), qpf_slice=None, deps_initialise=True):
+   def __init__(self, qpf_slice=None, deps_initialise=True):
       if qpf_slice is not None:
          self.__qpf = qpf_slice
       if deps_initialise:
-         self.deps_init(ffield)
+         self.deps_init()
 
-   def deps_init(self, ffield=forcefield()):
+   def deps_init(self):
       self.q = depend(value=self.__qpf[:,0],name='q')
       self.p = depend(value=self.__qpf[:,1],name='p')
       self.f = depend(value=self.__qpf[:,2],name='f')
       self.kin = depend(func=self.get_kin, name = 'kin')
-      self.kstress = depend(name='kstress',func=self.get_kstress,deplist=[self.cell.V])
+      self.kstress = depend(name='kstress', func=self.get_kstress, deplist=[self.cell.V])
+      self.kinetic_temp = depend(func=self.get_kinetic_temp, name='kinetic_temp', deplist=[self.kin])
                   
       depgrps=dict();
       for what in ['q', 'p', 'f' ]:
@@ -75,12 +77,8 @@ class System(object):
       self.pot = depend(value=0.0,name='pot')
       self.vir = depend(value=numpy.zeros((3,3),float),name='vir', deplist = [self.cell.V])
 
-      self.ffield=ffield
-      self.ffield.bind(self)      
-
       self.stress = depend(name='stress',func=self.get_stress,deplist=[self.vir, self.kstress])
       self.press = depend(name='press',func=self.get_press,deplist=[self.stress])
-
 
    def __str__(self):
       rstr="ATOMS ("+str(len(self.atoms))+"):\n\n"
@@ -90,12 +88,22 @@ class System(object):
       rstr = rstr + "Cell:\n" + str(self.cell)
       return rstr
 
+   def total_momentum(self):
+      p = numpy.zeros(3)
+      for atom in self.atoms:
+         p += atom.p.get_array()
+      return p
+
    def init_atom_velocities(self, temp = 1.0):
       """Initialises the atom velocities according to the 
          Maxwell-Boltzmann distribution"""
 
       for atom in self.atoms:
          atom.init_velocity(temp=temp)
+      p = self.total_momentum()
+      for atom in self.atoms:
+         atom.p.get_array()[:] -= p/len(self.atoms)
+         atom.p.taint(taintme=False)
 
    def init_cell_velocities(self, temp = 1.0):
       """Initialises the cell velocity according to the 
@@ -111,6 +119,11 @@ class System(object):
       for at in self.atoms:
          ke += at.kin.get()
       return ke
+
+   def get_kinetic_temp(self):
+      """Calculates an estimate of the temperature from the kinetic energy"""
+
+      return 2.0*self.kin.get()/(3.0*units.kb*len(self.atoms))
 
    def get_stress(self):
       """Calculates the internal stress tensor"""

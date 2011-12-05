@@ -11,7 +11,7 @@ class RP_sys(engine.System):
    __qpf = numpy.zeros(0)
 
    @classmethod
-   def from_pdbfile(cls, filedesc, ffield = forces.forcefield(), nbeads = 8, temp = 1.0):
+   def from_pdbfile(cls, filedesc, nbeads = 8, temp = 1.0, w = 1.0, h0 = None, pext = numpy.zeros((3,3))):
       """A different initialiser, which takes a pdb formatted file of a system
          and forms the appropriate atom and cell objects.
          Initialised by: 
@@ -28,16 +28,16 @@ class RP_sys(engine.System):
       cls.__qpf = numpy.zeros((nbeads, 3*natoms, 3))
 
       for i in range(nbeads):
-         cls.systems.append(engine.System.from_pdbfile(filedesc, ffield=forces.forcefield(), qpf_slice = cls.__qpf[i,:,:]))
+         cls.systems.append(engine.System.from_pdbfile(filedesc, qpf_slice = cls.__qpf[i,:,:]), w = w, h0 = h0, pext = pext)
          filedesc.seek(0)
 
       cls.atoms = [ Necklace(cls.__qpf[:,3*i:3*(i+1),:], name = atom_list[i][0], mass = mlist.masses[atom_list[i][0]]) for i in range(natoms) ]
     
       cls.cell = Cell_necklace(cls.systems)
 
-      return cls(ffield = ffield, temp = temp)
+      return cls(temp = temp)
 
-   def __init__(self, ffield = forces.forcefield(), temp = 1.0):
+   def __init__(self, temp = 1.0):
       self.temp = depend(name='temp', value=temp)
       self.betan = depend(name='betan', func=self.get_betan, deplist=[self.temp])
       self.omegan = depend(name='omegan', func=self.get_omegan, deplist=[self.betan])
@@ -49,11 +49,11 @@ class RP_sys(engine.System):
       self.pot = depend(name='pot')
       self.vir = depend(name='vir')
 
-      self.ffield = ffield
-      self.ffield.bind(self)
-
+      depgrp_q = []
       for atom in self.atoms:
-         self.q.add_dependant(atom.q)
+         atom.q.add_depgrp([self.q])
+         depgrp_q.append(atom.q)
+      self.q.add_depgrp(depgrp_q)
 
       depgrps = dict();
       for what in ['q', 'p', 'f']:
@@ -130,7 +130,7 @@ class RP_sys(engine.System):
       for i in range((nbeads-1)/2):
          omega[2*i+1] = omega[2*i+2] = 2*self.omegan.get()*math.sin((i+1)*math.pi/nbeads)
       if nbeads%2 == 0:
-         omega[nbeads-1] = 2*self.omegan.get()
+         omega[nbeads-1] = 2.0*self.omegan.get()
 
       return omega
 
@@ -151,9 +151,6 @@ class RP_sys(engine.System):
 
    def get_kin_estimator(self):
       f = self.spring_force()
-#TODO This is only necessary as calling atoms.f does not update the global f, fix this!
-#      self.f.get_array()
-
       kin = 0.0
       for j in range(len(self.systems)):
          for i in range(len(self.atoms)):
@@ -224,15 +221,16 @@ class Necklace:
 class Cell_necklace:
    def __init__(self, systems):
       self.w = systems[0].cell.w
-#TODO make all the barostat masses somehow connected to this one, so they stay the same for all the systems no matter what
       nbeads = len(systems)
+
       p = numpy.zeros((nbeads, 3,3))
       for i in range(nbeads):
          systems[i].cell.p._depend__value = p[i,:,:]
+
       depgrp_p = []
       self.p = depend(value=p, name='p')
       for i in range(nbeads):
-         self.p.add_dependant(systems[i].cell.p)
+         systems[i].cell.p.add_depgrp([self.p])
          depgrp_p.append(systems[i].cell.p)
       self.p.add_depgrp(depgrp_p)
       #Note that this re-initialises the cell momenta to zero, if they have already been initialised
