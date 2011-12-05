@@ -1,98 +1,293 @@
 import numpy
+#class dobject(object): 
+#    def __getattribute__(self, name):
+#        value = object.__getattribute__(self, name)
+#        if hasattr(value, '__get__'):
+#            value = value.__get__(self, self.__class__)
+#        return value
 
-class depend(object):
-   """ A descriptor class for quantities that may depend
-   from other quantities or be dependencies for other quantities.
-   Contains: __deps = all objects dependent on self, __depgrps = 
-   many to one type dependent groups of self, __tainted = tainted flag,
-   __func = function to recalculate object if tainted, __name = object name,
-   __value = object value
+#    def __setattr__(self, name, value):
+#        try:
+#            obj = object.__getattribute__(self, name)
+#        except AttributeError:
+#            pass
+#        else:
+#            if hasattr(obj, '__set__'):
+#                return obj.__set__(self, value)
+#        return object.__setattr__(self, name, value)
 
-   Initialised by: obj = depend(func, deplist, value, name)
-   func = function to recalculate object if tainted, default = None
-   deplist = list of objects dependent on obj, default = []
-   value = initial value of obj, default = None
-   name = object name, default = None
+## if A depends upon B, then A.dep_up-->B and B.dep_dw-->A
+#class depend_proto(object):
+#   def __init__(self,name=None,deplist=[]):
+#      print "init proto"
+#      self._dep_up=[]
+#      self._dep_dw=[]
+#      self._name=name
+#      self._tainted=True
+#      for item in deplist:
+#         item.add_dependant(self)
+#   
+#   def add_dependant(self,newdep):
+#      """Makes newdep dependent on self"""
+#      self._dep_dw.append(newdep)
+#      newdep._dep_up.append(self)      
+#      newdep.taint(taintme=True)      
 
-   Get and set must be called explicitly, and it is possible to 
-   directly taint the object.
-   Whenever obj get tainted, then __func will be called upon calling obj.get(), 
-   and a new value generated. Otherwise, the cached value is returned."""
+#   def add_dependency(self,newdep):
+#      """Makes self dependent on newdep"""
+#      self._dep_up.append(newdep)
+#      newdep._dep_dw.append(self)      
+#      newdep.taint(taintme=True)
+
+#   def taint(self,taintme=True):
+#      """Recursively sets tainted flag on dependent objects."""
+#      self._tainted = True     #this is to prevent circular dependencies to hang forever
+#      for item in self._dep_dw: 
+#         if (not item._tainted):
+#            item.taint()
+#      self._tainted = taintme
+#      
+#   def tainted(self):
+#      """Returns tainted flag"""
+#      return self._tainted
+
+#class depend_value(depend_proto):
+#   def __init__(self,value=None,name=None,deplist=[]):
+#      super(depend_value,self).__init__(name=name,deplist=deplist)
+#      self._value=value
+#      self.taint(taintme=False)
+#      
+#   def __get__(self, instance, owner):
+#      return self.get() 
+
+#   def __set__(self, instance, value): 
+#      self.set(value)
+#   def get(self):
+#      return self._value
+#      
+#   def set(self, value):
+#      self._value=value 
+#      self.taint(taintme=False)
+#      
+#class depend_calc(depend_proto):
+#   def __init__(self,func,name=None,deplist=[]):
+#      super(depend_calc,self).__init__(name=name,deplist=deplist)
+#      self._func=func
+#      self._value=None
+#      self.taint(taintme=True)
+#      
+#   def __get__(self, instance, owner):
+#      return self.get()
+#      
+#   def get(self):
+#      if (self._tainted):
+#         self._value=self._func()
+#         self.taint(taintme=False)
+#      return self._value
+
+#class depend_sync(depend_proto):       
+#   def __init__(self,synclist=[],name=None,deplist=[]):
+#      super(depend_sync,self).__init__(name=name,deplist=deplist)
+#      super(depend_sync,self).__setattr__("_syncs",  dict())
+#      print self._syncs
+#      for s in synclist: 
+#         self._syncs[s]=depend_value(name=s)
+#      self.taint(taintme=False)
+
+#   def __getattribute__(self, name):
+#      if not "_syncs" in super(depend_sync,self).__getattribute__("__dict__"): 
+#         return super(depend_sync,self).__getattribute__(name)
+#      
+#      gsync=depend_proto.__getattribute__(self,"_syncs")
+#      if name in gsync:
+#         print "getting ",name
+#         if gsync[name].tainted(): 
+#            print "must compute ",name
+#            pass
+#            # do something to get from the manually set item
+#         return gsync[name].get()
+#      else:
+#         return super(depend_sync,self).__getattribute__(name)
+
+#   def __setattr__(self, name, value):
+#      if not "_syncs" in super(depend_sync,self).__getattribute__("__dict__"): 
+#         return super(depend_sync,self).__setattr__(name, value)
+#         
+#      print "setting ", name
+#      if name in self._syncs:
+#         self._manual=name
+#         for s in self._syncs.values(): 
+#            s.taint(taintme=True)
+#         print "setting ",name
+#         self._syncs[name].set(value)
+#         self.taint(taintme=False);
+#         return self._syncs[name]
+#      else:
+#         return super(depend_sync,self).__setattr__(name, value)
+
+
+
+# if A depends upon B, then A.dep_up-->B and B.dep_dw-->A
+class depend_proxy(object):
+   def __init__(self, value=None, name=None, dependants=[], dependencies=[]):
+      print "init proxy"
+      self._value=value
+      self._dep_up=[]
+      self._dep_dw=[]
+      self._name=name
+      self._tainted=False
+      for item in dependencies:
+         item.add_dependant(self)
+      for item in dependants:
+         self.add_dependant(item)
    
    def add_dependant(self,newdep):
       """Makes newdep dependent on self"""
-
-      self.__deps.append(newdep)
+      self._dep_dw.append(newdep)
+      newdep._dep_up.append(self)      
       newdep.taint(taintme=True)      
 
-   def add_depgrp(self,newgrp):
-      """Makes a group of objects dependent on self. These are used for 
-         one<-->many dependencies, for example the system position vector is
-         dependent on all the atom position vectors. Tainting one of the 
-         group will only taint self, whereas tainting self will taint all of
-         the group, as any or all of these objects may have been changed"""
+   def add_dependency(self,newdep):
+      """Makes self dependent on newdep"""
+      self._dep_up.append(newdep)
+      newdep._dep_dw.append(self)      
+      self.taint(taintme=True)
 
-      self.__depgrp.append(newgrp)
-
-   def taint(self,taintme=True, tainter=None):
+   def taint(self,taintme=True):
       """Recursively sets tainted flag on dependent objects."""
-      self.__tainted = True     #this is to prevent circular dependencies
-      for item in self.__deps: 
-         if (not item._depend__tainted):
-            item.taint(tainter=self)
-      for grp in self.__depgrp: 
-         if (not tainter in grp):
-            for item in grp:
-               if (not item._depend__tainted):
-                  item.taint(tainter=self)
-         
-      self.__tainted = taintme
+      self._tainted = True     #this is to prevent circular dependencies to hang forever
+      for item in self._dep_dw: 
+         if (not item._tainted):
+            item.taint()
+      self._tainted = taintme
       
    def tainted(self):
       """Returns tainted flag"""
+      return self._tainted
+      
+   def val_update(self): pass
+      
 
-      return self.__tainted
+class depend_func(depend_proxy):
+   def __init__(self, func, value=None, name=None, dependants=[], dependencies=[]):
+      self._func=func
+      super(depend_func, self).__init__(value=value,name=name, dependants=dependants, dependencies=dependencies)
+         
+   def val_update(self):
+      self._value.set(self._func())
 
-   def __init__(self,func=None,deplist=[],value=None,name=None,):
-      self.__deps=[]
-      self.__depgrp=[]
-      self.__func=func
-      self.__name=name
-      if (name is None and not func is None):
-         self.__name=self.__func.func_name
-      self.__value=value
-      if (value is None): 
-         self.__tainted=True
+#class depend_sync(depend_proxy):
+#   def __init__(self, funcs, values, name=None, dependants=[], dependencies=[]):
+#      self._func=funcs
+#      super(depend_func, self).__init__(value=values,name=name, dependants=dependants, dependencies=dependencies)
+#         
+#   def val_update(self):
+#      self._value.set(self._func())
+
+
+class depend_base(object):
+   def __init__(self, deps=None, name=None):
+      self.name=name
+      if deps==None:
+         self.deps=depend_proxy()
       else:
-         self.__tainted=False
-      for item in deplist:
-         item.add_dependant(self)
-      
+         self.deps=deps
+
+class depend_value(depend_base):
+   def __init__(self, value, deps=None, name=None):
+      print "init value"
+      super(depend_value,self).__init__(deps, name)
+      self.deps._value=self
+      self._value=value
+      self.deps.taint(taintme=False)
+
    def get(self):
-      """Returns a reference to the object's value after recalculating it
-         if the object has been tainted"""
- 
-      if (self.__tainted and not self.__func is None):  
-         self.__value=self.__func()
-         self.taint(taintme=False, tainter=self)
-      self.__tainted=False
-      return self.__value
-
-   def get_array(self):
+      print "getting value"
+      if self.deps.tainted():  
+         self.deps.val_update()
+         self.deps.taint(taintme=False)         
       
-      if (self.__tainted and not self.__func is None):
-         self.__value[:]=self.__func()
-         self.taint(taintme=False, tainter=self)
-      self.__tainted=False
-      return self.__value
+      return self._value
       
-   def set(self,value): 
-      """Changes value, and taints dependents"""
+   def __get__(self, instance, owner):
+      return self.get() 
 
-      self.taint(taintme=False, tainter=self)
-      self.__value=value 
+   def set(self, value):
+      self._value=value
+      self.deps.taint(taintme=False)
+      
+   def __set__(self, instance, value): 
+      self.set(value)   
 
-   def set_array(self,value):
-      self.taint(taintme=False, tainter=self)
-      self.__value[:]=value    
+   
+class depend_array(numpy.ndarray, depend_base):
+   def __new__(cls, input_array, deps=None, name=None):
+      print "new array"
+      # Input array is an already formed ndarray instance
+      # We first cast to be our class type
+      obj = numpy.asarray(input_array).view(cls)
+      # add the new attribute to the created instance
+      return obj
+      
+   def __init__(self, input_array, deps=None, name=None):
+      print "init array"
+      super(depend_array,self).__init__(deps, name)
+      self.deps._value=self
+   
+   def __array_finalize__(self, obj): pass
 
+   def __getitem__(self,index):
+      print "getting ", index
+      if self.deps.tainted():  
+         self.deps.val_update()
+         
+      if (not numpy.isscalar(index)):      
+         return depend_array(super(depend_array,self).__getitem__(index), deps=self.deps   )
+      else:
+         return super(depend_array,self).__getitem__(index)   
+
+   def __getslice__(self,i,j):
+      return self.__getitem__(slice(i,j))
+
+   def get(self):
+      return self[:]
+      
+   def __get__(self, instance, owner):
+      return self.get() 
+
+   def __setitem__(self,index,value):
+      self.deps.taint(taintme=False)
+      super(depend_array,self).__setitem__(index,value)   
+
+   def __setslice__(self,i,j,value):
+      return self.__setitem__(slice(i,j),value)
+
+   def set(self, value):
+      self[:]=value
+      
+   def __set__(self, instance, value): 
+      self.set(value)
+
+def dget(obj,member):
+   return obj.__dict__[member]
+
+def depget(obj,member):
+   return obj.__dict__[member].deps
+
+
+class dobject(object): 
+   def __getattribute__(self, name):
+     value = object.__getattribute__(self, name)
+     if hasattr(value, '__get__'):
+         value = value.__get__(self, self.__class__)
+     return value
+
+   def __setattr__(self, name, value):
+     try:
+         obj = object.__getattribute__(self, name)
+     except AttributeError:
+         pass
+     else:
+         if hasattr(obj, '__set__'):
+             return obj.__set__(self, value)
+     return object.__setattr__(self, name, value)
