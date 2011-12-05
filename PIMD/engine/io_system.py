@@ -561,15 +561,15 @@ def run_from_xml(input_file):
       effective_temp = handler.temp
 
    if need_ffield:
-      if handler.ffield.kind:
-         if handler.ffield.kind == "forcefield":
+      if handler.ensemble_object.ffield.kind:
+         if handler.ensemble_object.ffield.kind == "forcefield":
             ffield = forces.forcefield()
-         elif handler.ffield.kind == "pipeforce":
-            pars = handler.ffield.parameters
+         elif handler.ensemble_object.ffield.kind == "pipeforce":
+            pars = handler.ensemble_object.ffield.parameters
             ffield = forces.pipeforce(pars)
-         elif handler.ffield.kind == "rp_pipeforce":
+         elif handler.ensemble_object.ffield.kind == "rp_pipeforce":
             if handler.path_integral:
-               pars = handler.ffield.parameters
+               pars = handler.ensemble_object.ffield.parameters
                ffield = forces.rp_pipeforce(pars)
             else:
                print "rp_pipeforce used for classical run"
@@ -582,14 +582,14 @@ def run_from_xml(input_file):
          ffield = forces.forcefield()
    
    if need_thermo:
-      if handler.thermo.kind:
-         if handler.thermo.kind == "thermostat":
+      if handler.ensemble_object.thermo.kind:
+         if handler.ensemble_object.thermo.kind == "thermostat":
             thermo = thermostat.thermostat(temp = effective_temp, dt = handler.time_step/2.0)
-         elif handler.thermo.kind == "langevin":
-            thermo = langevin.langevin(temp = effective_temp, dt = handler.time_step/2.0, tau = read_float(handler.thermo.parameters["tau"]))
-         elif handler.thermo.kind == "PILE":
+         elif handler.ensemble_object.thermo.kind == "langevin":
+            thermo = langevin.langevin(temp = effective_temp, dt = handler.time_step/2.0, tau = read_float(handler.ensemble_object.thermo.parameters["tau"]))
+         elif handler.ensemble_object.thermo.kind == "PILE":
             if path_integral:
-               thermo = PILE.PILE(temp = effective_temp, dt = handler.time_step/2.0, tau_0 = read_float(handler.thermo.parameters["tau_0"]))
+               thermo = PILE.PILE(temp = effective_temp, dt = handler.time_step/2.0, tau_0 = read_float(handler.ensemble_object.thermo.parameters["tau_0"]))
             else:
                print "PILE thermostat used for classical run"
                exit()
@@ -601,14 +601,14 @@ def run_from_xml(input_file):
          thermo = thermostat.thermostat(temp = effective_temp, dt = handler.time_step/2.0)
       
    if need_cell_thermo:
-      if handler.cell_thermo.kind:
-         if handler.cell_thermo.kind == "thermostat":
+      if handler.ensemble_object.cell_thermo.kind:
+         if handler.ensemble_object.cell_thermo.kind == "thermostat":
             cell_thermo = thermostat.thermostat(temp = effective_temp, dt = handler.time_step/2.0)
-         elif handler.cell_thermo.kind == "langevin":
-            cell_thermo = langevin.langevin(temp = effective_temp, dt = handler.time_step/2.0, tau = read_float(handler.cell_thermo.parameters["tau"]))
-         elif handler.cell_thermo.kind == "PILE":
+         elif handler.ensemble_object.cell_thermo.kind == "langevin":
+            cell_thermo = langevin.langevin(temp = effective_temp, dt = handler.time_step/2.0, tau = read_float(handler.ensemble_object.cell_thermo.parameters["tau"]))
+         elif handler.ensemble_object.cell_thermo.kind == "PILE":
             if handler.path_integral:
-               cell_thermo = PILE.PILE(temp = effective_temp, dt = handler.time_step/2.0, tau_0 = read_float(handler.cell_thermo.parameters["tau_0"]))
+               cell_thermo = PILE.PILE(temp = effective_temp, dt = handler.time_step/2.0, tau_0 = read_float(handler.ensemble_object.cell_thermo.parameters["tau_0"]))
             else:
                print "PILE thermostat used for classical run"
                exit()
@@ -630,11 +630,11 @@ def run_from_xml(input_file):
          for i in range(3):
             h0[:,i] = handler.ref_cell[i]
 
-      if handler.barostat.kind:
-         w = read_float(handler.barostat.parameters["w"])
-         if handler.barostat.kind == "Bussi_S":
+      if handler.ensemble_object.barostat.kind:
+         w = read_float(handler.ensemble_object.barostat.parameters["w"])
+         if handler.ensemble_object.barostat.kind == "Bussi_S":
             baro = Bussi.Bussi_S(pext = Pext, dt = handler.time_step/2.0, w = w, temp = effective_temp)
-         elif handler.barostat.kind == "barostat":
+         elif handler.ensemble_object.barostat.kind == "barostat":
             baro = barostat.barostat(pext = Pext, dt = handler.time_step/2.0)
          else:
             print "Unrecognized barostat"

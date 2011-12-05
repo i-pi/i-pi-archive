@@ -269,7 +269,7 @@ c = numpy.zeros((3,3,3,3))
 c_bar = numpy.zeros((3,3,3,3))
 C = numpy.zeros((6,6))
 vol = 0.0
-steps = 50000
+steps = 20000
 steps2 = 3000
 
 h0_bar = numpy.array(syst.cell.h.get_array())

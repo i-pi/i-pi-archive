@@ -8,8 +8,8 @@
       double precision, parameter :: sigma = 6.43452d0
       double precision, parameter :: rc = 3.0*sigma
       double precision, parameter :: eps = 0.0003793865d0
-      double precision, parameter :: correction = 
-     14*eps*((sigma/rc)**12 - (sigma/rc)**6)
+      double precision, parameter :: correction = 0.0d0
+!     14*eps*((sigma/rc)**12 - (sigma/rc)**6)
 
       contains
 
