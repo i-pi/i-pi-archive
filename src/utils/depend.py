@@ -91,7 +91,6 @@ class depend_sync(depend_proxy):
       
 class depend_base(object):
    def __init__(self, deps=None, name=None):
-      self.name=name
       if deps==None:
          self.deps=depend_proxy()
       else:
@@ -124,25 +123,38 @@ class depend_value(depend_base):
 
    
 class depend_array(numpy.ndarray, depend_base):
-   def __new__(cls, input_array, deps=None, name=None):
+   def __new__(cls, input_array, deps=None, name=None, parent=None):
       # Input array is an already formed ndarray instance
       # We first cast to be our class type
       obj = numpy.asarray(input_array).view(cls)
       # add the new attribute to the created instance
       return obj
       
-   def __init__(self, input_array, deps=None, name=None):
+   def __init__(self, input_array, deps=None, name=None, parent=None):
       super(depend_array,self).__init__(deps, name)
-      self.deps._value=self
+      self.parent = parent
+      if parent is not None:
+         self.deps = parent.deps
+      else:
+         self.deps._value=self
    
    def __array_finalize__(self, obj): pass
 
    def __getitem__(self,index):
+#      if self.parent is not None:
+#         if self.parent.deps.tainted():
+#            self.deps.val_update(manual=False)
+#      else:
       if self.deps.tainted():  
          self.deps.val_update(manual=False)
          
       if (not numpy.isscalar(index)):      
-         return depend_array(super(depend_array,self).__getitem__(index), deps=self.deps   )
+         #if self.parent is not None:
+         #   parent = self.parent
+         #else:
+         #   parent = self
+         a = depend_array(super(depend_array,self).__getitem__(index), parent=self)#parent)#, deps=self.deps   )
+         return a
       else:
          return super(depend_array,self).__getitem__(index)   
 
@@ -156,6 +168,10 @@ class depend_array(numpy.ndarray, depend_base):
       return self.get() 
 
    def __setitem__(self,index,value,manual=True):
+#      if self.parent is not None:
+#         self.parent.deps.taint(taintme=False)
+#         self.parent.deps.val_set(manual=manual)
+#      else:
       self.deps.taint(taintme=False)
       self.deps.val_set(manual=manual)
       super(depend_array,self).__setitem__(index,value)   
@@ -177,17 +193,17 @@ def depget(obj,member):
 
 class dobject(object): 
    def __getattribute__(self, name):
-     value = object.__getattribute__(self, name)
-     if hasattr(value, '__get__'):
+      value = object.__getattribute__(self, name)
+      if hasattr(value, '__get__'):
          value = value.__get__(self, self.__class__)
-     return value
+      return value
 
    def __setattr__(self, name, value):
-     try:
+      try:
          obj = object.__getattribute__(self, name)
-     except AttributeError:
+      except AttributeError:
          pass
-     else:
+      else:
          if hasattr(obj, '__set__'):
-             return obj.__set__(self, value)
-     return object.__setattr__(self, name, value)
+            return obj.__set__(self, value)
+      return object.__setattr__(self, name, value)

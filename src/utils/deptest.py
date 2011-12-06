@@ -98,7 +98,8 @@ def type_1():
    
    ee.multi.set(5)
    ss=ee.base[4:8]
-   ss[0]=12
+   tt=ss[0:2]
+   tt[0]=12
    print "getting once", ee.mult[:]
    print "getting twice", ee.mult[:]
  
@@ -131,7 +132,8 @@ def type_2():
    
    dee.multi = 5
    dss = dee.base[4:8]
-   dss[0]=12.0
+   dtt = dss[0:2]
+   dtt[0]=12.0
    print "getting once", dee.mult
    print "getting twice", dee.mult
 
@@ -164,6 +166,7 @@ def type_3():
    ee = arr()
    print
    print ee.d
+   del ee.d.deps
    
 
 import timeit
@@ -175,18 +178,17 @@ import timeit
 #exit()
 
 a = timeit.Timer("type_3()", "gc.enable(); from __main__ import type_3")
-zeroth = a.timeit(number = 580000)
-exit()
+zeroth = a.timeit(number = 1)
+#zeroth = a.timeit(number = 580000)
+#exit()
+type_4()
 
 a = timeit.Timer("type_1()", "gc.enable(); from __main__ import type_1")
-#print a.timeit(number = 8000)
-#exit()
-first = a.timeit(number = 6000)
+first = a.timeit(number = 1)
 a = timeit.Timer("type_2()", "gc.enable(); from __main__ import type_2")
-#print a.timeit(number = 8000)
-#exit()
-second = a.timeit(number = 6000)
+second = a.timeit(number = 1)
 print first, second
+exit()
 
 #no = get_refcounts()
 #print no
