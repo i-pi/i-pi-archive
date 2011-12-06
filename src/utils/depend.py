@@ -72,6 +72,7 @@ class depend_sync(depend_proxy):
    def taint(self,taintme=True):
       """Recursively sets tainted flag on dependent objects."""
       super(depend_sync,self).taint(taintme)
+      # Also taints object within the sync group, making sure that the one which is manually set is not tainted
       self._tainted=True
       for v in self.synchro._synced.values():
          if (not v.tainted()) and (not v is self) and (not v._value.name == self.synchro._manual): v.taint(taintme=True)
