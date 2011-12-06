@@ -59,7 +59,7 @@ class multi(object):
       return self.base.get()*self.multi.get()
    
    def __init__(self, multi, array):
-      self.multi=depend_value(name="multi",value=multi)
+      self.multi=depend_value(name="multi",value=multi)      
       self.base=depend_array(array)
       self.mult=depend_array(numpy.zeros(array.size), deps=depend_func(func=self.multiply))      
       self.multi.deps.add_dependant(self.mult.deps)
@@ -135,10 +135,6 @@ def type_2():
    print "getting once", dee.mult
    print "getting twice", dee.mult
 
-#   del ee.multi
-#   del ee.mult
-#   del ee.base
-
 class scalar(object):
    def multiply(self):
       return self.a.get()*self.b.get()
@@ -194,6 +190,47 @@ print first, second
 
 #no = get_refcounts()
 #print no
+
+
+class multisync(object):
+   def multiply(self):
+      print "@@ MULTIPLYING"
+      return self.frac.get()*self.multi.get()
+   def divide(self):
+      print "@@ DIVIDING"
+      return self.mult.get()/self.multi.get()
+        
+   def __init__(self, factor, size):
+      self.multi=depend_value(name="multi",value=factor)
+      sync=synchronizer()
+      self.mult=depend_value(name="mult",value=0, deps=depend_sync(func={  "frac" : self.multiply },name="mult",synchro=sync))
+      self.frac=depend_value(name="frac",value=0, deps=depend_sync(func={  "mult" : self.divide },name="frac",synchro=sync))
+      
+      self.multi.deps.add_dependant(self.mult.deps)
+      self.multi.deps.add_dependant(self.frac.deps)
+      
+      
+see=multisync(2.0, 10)
+
+print "@@@ SYNCOBJECT"
+see.frac.set(1.0)
+
+print "multi ", see.mult.get()
+print "multi ", see.mult.get()
+print "fract ", see.frac.get()
+
+see.mult.set(10.0)
+print "multi ", see.mult.get()
+print "fract ", see.frac.get()
+
+
+see.multi.set(5.0)
+print "multi ", see.mult.get()
+print "fract ", see.frac.get()
+      
+exit(1)
+ee=multi(4)
+ee.multi.set(2)
 
 exit()
 
