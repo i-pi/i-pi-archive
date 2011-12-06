@@ -58,8 +58,9 @@ class synchronizer(object):
       self._synced=deps
       self._manual=None
 
-
 class depend_sync(depend_proxy):
+   """Proxy which allows to keep different representations of the same 
+      quantity synchronized. Only one can be set manually."""
    def __init__(self, func, synchro, value=None, name=None, dependants=[], dependencies=[]):
       self._func=func
       self.synchro=synchro
@@ -70,7 +71,6 @@ class depend_sync(depend_proxy):
 
    def taint(self,taintme=True):
       """Recursively sets tainted flag on dependent objects."""
-      print "tainting sync object ", self._value.name, taintme
       super(depend_sync,self).taint(taintme)
       self._tainted=True
       for v in self.synchro._synced.values():
@@ -78,7 +78,6 @@ class depend_sync(depend_proxy):
       self._tainted=taintme
                
    def val_update(self, manual=True):
-      print "updating ",self._value.name, "when manully set argument is ", self.synchro._manual
       self._tainted=False
       if (not self._value.name == self.synchro._manual):
          self._value.set(self._func[self.synchro._manual](), manual=manual)
@@ -90,7 +89,6 @@ class depend_sync(depend_proxy):
          self.synchro._manual=self._value.name
          self._tainted=False
       
-
 class depend_base(object):
    def __init__(self, deps=None, name=None):
       self.name=name
@@ -101,19 +99,16 @@ class depend_base(object):
 
 class depend_value(depend_base):
    def __init__(self, value, deps=None, name=None):
-      print "init value"
       super(depend_value,self).__init__(deps, name)
       self.deps._value=self
       self._value=value
       self.deps.taint(taintme=False)
 
    def get(self):
-      print "getting value", self.name, 
       if self.deps.tainted():  
          self.deps.val_update(manual=False)
          self.deps.taint(taintme=False)         
 
-      print " - value(",self._value,")",      
       return self._value
       
    def __get__(self, instance, owner):
@@ -130,7 +125,6 @@ class depend_value(depend_base):
    
 class depend_array(numpy.ndarray, depend_base):
    def __new__(cls, input_array, deps=None, name=None):
-      print "new array"
       # Input array is an already formed ndarray instance
       # We first cast to be our class type
       obj = numpy.asarray(input_array).view(cls)
@@ -138,14 +132,12 @@ class depend_array(numpy.ndarray, depend_base):
       return obj
       
    def __init__(self, input_array, deps=None, name=None):
-      print "init array"
       super(depend_array,self).__init__(deps, name)
       self.deps._value=self
    
    def __array_finalize__(self, obj): pass
 
    def __getitem__(self,index):
-      print "getting ", index
       if self.deps.tainted():  
          self.deps.val_update(manual=False)
          
@@ -182,7 +174,6 @@ def dget(obj,member):
 
 def depget(obj,member):
    return obj.__dict__[member].deps
-
 
 class dobject(object): 
    def __getattribute__(self, name):
