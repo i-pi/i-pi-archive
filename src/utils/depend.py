@@ -129,7 +129,7 @@ import numpy
 
 # if A depends upon B, then A.dep_up-->B and B.dep_dw-->A
 class depend_proxy(object):
-   def __init__(self, value=None, name=None, dependants=[], dependencies=[]):
+   def __init__(self, value=None, name=None, dependencies=[]):# dependants=[], dependencies=[]):
       print "init proxy"
       self._value=value
       self._dep_up=[]

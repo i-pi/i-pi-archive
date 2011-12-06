@@ -66,26 +66,41 @@ class multi(object):
       self.base.deps.add_dependant(self.mult.deps)
       
    
-import numpy
+def get_refcounts():
+   d = {}
+   sys.modules
+   for m in sys.modules.values():   
+      for sym in dir(m):
+         o = getattr(m, sym)
+         if type(o) is types.ClassType:
+            d[o] = sys.getrefcount(o)
 
-ee=multi(4, numpy.zeros(10))
+   pairs = map (lambda x: (x[1], x[0]), d.items())
+   pairs.sort()
+   pairs.reverse()
+   return pairs
 
-ee.base[:]=1.0
+import numpy, gc, sys, types
 
-
-
-print "getting once", ee.mult[:]
-print "getting twice", ee.mult[:]
-
-ee.base[1]=0.0
-print "getting once", ee.mult[:]
-print "getting twice", ee.mult[:]
-
-ee.multi.set(5)
-ss=ee.base[4:8]
-ss[0]=12
-print "getting once", ee.mult[:]
-print "getting twice", ee.mult[:]
+def type_1():
+   ee=multi(4, numpy.zeros(10))
+   
+   ee.base[:]=1.0
+   
+   
+   
+   print "getting once", ee.mult[:]
+   print "getting twice", ee.mult[:]
+   
+   ee.base[1]=0.0
+   print "getting once", ee.mult[:]
+   print "getting twice", ee.mult[:]
+   
+   ee.multi.set(5)
+   ss=ee.base[4:8]
+   ss[0]=12
+   print "getting once", ee.mult[:]
+   print "getting twice", ee.mult[:]
  
 class dmulti(dobject):
 
@@ -100,24 +115,96 @@ class dmulti(dobject):
       depget(self,"multi").add_dependant(depget(self,"mult"))
       depget(self,"base").add_dependant(depget(self,"mult"))
 
-dee=dmulti(4.0,numpy.zeros(5))
-print "getting once", dee.mult
+def type_2():
+   dee=dmulti(4, numpy.zeros(10))
+   
+   dee.base=1.0
+   
+   
+   
+   print "getting once", dee.mult
+   print "getting twice", dee.mult
+   
+   dee.base[1] =0.0
+   print "getting once", dee.mult
+   print "getting twice", dee.mult
+   
+   dee.multi = 5
+   dss = dee.base[4:8]
+   dss[0]=12.0
+   print "getting once", dee.mult
+   print "getting twice", dee.mult
 
-dee.base=10.0
-print "getting twice", dee.mult
+#   del ee.multi
+#   del ee.mult
+#   del ee.base
 
-lonesome=depend_array(numpy.zeros(3))
+class scalar(object):
+   def multiply(self):
+      return self.a.get()*self.b.get()
 
-exit(1)
-ee=multi(4)
-ee.multi.set(2)
+   def add(self):
+      return (self.a.get() + self.b.get())*numpy.ones(12)
 
-print ee.synctest.mul
-ee.synctest.mul=6
-print "mul", ee.synctest.mul
-print "div", ee.synctest.div
+   def __init__(self):
+      self.a = depend_value(name="a", value = 12)
+      self.b = depend_value(name="b", value = 13)
+      self.c = depend_value(name="c", value = 0, deps = depend_func(func = self.multiply))
+      self.a.deps.add_dependant(self.c.deps)
+      self.b.deps.add_dependant(self.c.deps)
 
+def type_4():
+   ee = scalar()
+   print ee.a.get(), ee.b.get(), ee.c.get()
 
+   ee.a.set(10)
+   print ee.a.get(), ee.b.get(), ee.c.get()
+
+class arr(dobject):
+   def __init__(self):
+      self.d = depend_array(numpy.ones(12))
+
+def type_3():
+   ee = arr()
+   print
+   print ee.d
+   
+
+import timeit
+
+#print type_1()
+#print
+#print type_2()
+
+#exit()
+
+a = timeit.Timer("type_3()", "gc.enable(); from __main__ import type_3")
+zeroth = a.timeit(number = 580000)
+exit()
+
+a = timeit.Timer("type_1()", "gc.enable(); from __main__ import type_1")
+#print a.timeit(number = 8000)
+#exit()
+first = a.timeit(number = 6000)
+a = timeit.Timer("type_2()", "gc.enable(); from __main__ import type_2")
+#print a.timeit(number = 8000)
+#exit()
+second = a.timeit(number = 6000)
+print first, second
+
+#no = get_refcounts()
+#print no
+
+exit()
+
+for i in range(10000):
+   type_1()
+import gc
+print gc.garbage
+exit()
+
+for i in range(10000):
+   type_2()
 
 exit(1)
 print t1.d1.get()
