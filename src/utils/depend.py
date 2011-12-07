@@ -2,15 +2,17 @@ import numpy
 # if A depends upon B, then A.dep_up-->B and B.dep_dw-->A
 class depend_proxy(object):
    """Prototype class for dependency handling"""
-   def __init__(self, value=None, name=None, dependants=[], dependencies=[]):
-      self._value=value
+   def __init__(self, dependants=[], dependencies=[]):
       self._dependants=[]
-      self._name=name
       self._tainted=False
+      self._value=None
       for item in dependencies:
          item.add_dependant(self)
       for item in dependants:
          self.add_dependant(item)
+   
+   def link_value(self, value):
+      self._value=value
    
    def add_dependant(self,newdep):
       """Makes newdep dependent on self"""
@@ -41,17 +43,17 @@ class depend_proxy(object):
 class depend_func(depend_proxy):
    """Proxy which defines a function to compute the value of the property. 
       Setting the property manually is forbidden."""
-   def __init__(self, func, value=None, name=None, dependants=[], dependencies=[]):
+   def __init__(self, func, dependants=[], dependencies=[]):
       self._func=func
-      super(depend_func, self).__init__(value=value,name=name, dependants=dependants, dependencies=dependencies)
+      super(depend_func, self).__init__(dependants=dependants, dependencies=dependencies)
          
    def val_update(self, manual=True):
       self._value.set(self._func(), manual=manual)
 
    def val_set(self, manual=True):
       if (manual):
-         print "Cannot set manually the value of the automatically-computed property <",self.name,">"
-         raise NameError(self.name)
+         print "Cannot set manually the value of the automatically-computed property <",self._value.name,">"
+         raise NameError(self._value.name)
 
 class synchronizer(object):
    def __init__(self, deps=dict()):
@@ -61,14 +63,17 @@ class synchronizer(object):
 class depend_sync(depend_proxy):
    """Proxy which allows to keep different representations of the same 
       quantity synchronized. Only one can be set manually."""
-   def __init__(self, func, synchro, value=None, name=None, dependants=[], dependencies=[]):
+   def __init__(self, func, synchro, dependants=[], dependencies=[]):
       self._func=func
       self.synchro=synchro
-      self.synchro._synced[name]=self
-      self.synchro._manual=name
       self._tainted=False
-      super(depend_sync, self).__init__(value=value,name=name, dependants=dependants, dependencies=dependencies)
+      super(depend_sync, self).__init__(dependants=dependants, dependencies=dependencies)
 
+   def link_value(self, value):
+      self._value=value
+      self.synchro._synced[value.name]=self
+      self.synchro._manual=value.name
+      
    def taint(self,taintme=True):
       """Recursively sets tainted flag on dependent objects."""
       super(depend_sync,self).taint(taintme)
@@ -92,13 +97,15 @@ class depend_sync(depend_proxy):
       
 class depend_base(object):
    def __init__(self, deps=None, name=None):
+      self.name=name
       if deps==None:
          self.deps=depend_proxy()
       else:
          self.deps=deps
+      if (self.deps._value is None): self.deps.link_value(self)
 
 class depend_value(depend_base):
-   def __init__(self, value, deps=None, name=None):
+   def __init__(self, value=None, deps=None, name=None):
       super(depend_value,self).__init__(deps, name)
       self.deps._value=self
       self._value=value
@@ -131,13 +138,10 @@ class depend_array(numpy.ndarray, depend_base):
       # add the new attribute to the created instance
       return obj
       
-   def __init__(self, input_array, deps=None, name=None, parent=None):
+   def __init__(self, input_array, deps=None, name=None):
       super(depend_array,self).__init__(deps, name)
-      self.parent = parent
-      if parent is not None:
-         self.deps = parent.deps
-      else:
-         self.deps._value=self
+      if self.deps._value is None: 
+         self.deps._value = self
    
    def __array_finalize__(self, obj): pass
 
@@ -154,8 +158,7 @@ class depend_array(numpy.ndarray, depend_base):
          #   parent = self.parent
          #else:
          #   parent = self
-         a = depend_array(super(depend_array,self).__getitem__(index), parent=self)#parent)#, deps=self.deps   )
-         return a
+         return depend_array(super(depend_array,self).__getitem__(index), deps=self.deps)
       else:
          return super(depend_array,self).__getitem__(index)   
 
@@ -169,10 +172,6 @@ class depend_array(numpy.ndarray, depend_base):
       return self.get() 
 
    def __setitem__(self,index,value,manual=True):
-#      if self.parent is not None:
-#         self.parent.deps.taint(taintme=False)
-#         self.parent.deps.val_set(manual=manual)
-#      else:
       self.deps.taint(taintme=False)
       self.deps.val_set(manual=manual)
       super(depend_array,self).__setitem__(index,value)   

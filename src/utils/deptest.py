@@ -1,71 +1,130 @@
 from depend import *
+import timeit
 
-# creates a chain of dependencies 
-#     A1 <--- B1  <--- C1
-#      ^-----\    <--- C2  <----\
-#     A2 <--- B2  <--- C3  <--- D1
+class testdep(object):
 
-#class test1(object):  
-#   def get_b1(self):  
-#      print "Getting a1", self.a1.get(),             
-#      print "Updating b1",
-#      return "B1"
-#   def get_b2(self):  
-#      print "Getting a1", self.a1.get(),
-#      print "Getting a2", self.a2.get(),                          
-#      print "Updating b2",
-#      return "B2"
-#   def get_c1(self):  
-#      print "Getting b1", self.b1.get(),          
-#      print "Updating c1",
-#      return "C1"
-#   def get_c2(self):  
-#      print "Getting b1", self.b1.get(),          
-#      print "Updating c2",
-#      return "C2"
-#   def get_c3(self):  
-#      print "Getting b2", self.b2.get(),    
-#      print "Updating c3",
-#      return "C3"
-#   def get_d1(self):  
-#      print "Getting c3", self.c3.get(),
-#      print "Getting c2", self.c2.get(),      
-#      print "Updating d1",
-#      return "D1"
-#      
-#   def __init__(self): 
-#      self.a1=depend_value(value="A1",name="A1")
-#      self.a2=depend_value(value="A2",name="A2")      
-#      self.b1=depend_calc(func=self.get_b1,name="B1")
-#      self.b2=depend_calc(func=self.get_b2,name="B2")
-#      self.c1=depend_calc(func=self.get_c1,name="C1")                  
-#      self.c2=depend_calc(func=self.get_c2,name="C2")
-#      self.c3=depend_calc(func=self.get_c3,name="C3")
-#      self.d1=depend_calc(func=self.get_d1,name="D1")
-#      self.a1.add_dependant(self.b1)   
-#      self.a1.add_dependant(self.b2)
-#      self.a2.add_dependant(self.b2)        
-#      self.c3.add_dependant(self.d1)      
-#      self.c2.add_dependant(self.d1)
-#      self.b1.add_dependant(self.c1)      
-#      self.b1.add_dependant(self.c2)      
-#      self.b2.add_dependant(self.c3)   
+   def do_sumval(self):
+      tmp=0.0
+      for i in self.val.get():
+         tmp+=i
+      return tmp
 
-   
-class multi(object):
+   def do_sumrep(self):
+      tmp=0.0
+      for i in self.rep.get():
+         tmp+=i
+      return tmp
 
-   def multiply(self):
-      print "@@ MULTIPLYING"
-      return self.base.get()*self.multi.get()
-   
-   def __init__(self, multi, array):
-      self.multi=depend_value(name="multi",value=multi)      
-      self.base=depend_array(array)
-      self.mult=depend_array(numpy.zeros(array.size), deps=depend_func(func=self.multiply))      
-      self.multi.deps.add_dependant(self.mult.deps)
-      self.base.deps.add_dependant(self.mult.deps)
       
+   def v2r(self):
+      tmp=numpy.array(self.val.get(),copy=True) # creates a temporary
+      for ind,val in enumerate(tmp): 
+         tmp[ind]=self.factor.get()/val
+      
+      return tmp[:]
    
+   def r2v(self):
+      tmp=numpy.array(self.rep.get(),copy=True) # creates a temporary
+      for ind,val in enumerate(tmp): 
+         tmp[ind]=self.factor.get()/val
+      return tmp[:]
+
+   def __init__(self, factor, array):
+      self.factor=depend_value(name="factor",value=factor)   
+
+      self.sumval=depend_value(name="sumval",deps=depend_func(func=self.do_sumval))
+      self.sumrep=depend_value(name="sumrep",deps=depend_func(func=self.do_sumrep))
+      
+      sync=synchronizer()
+      self.rep=depend_array(name="rep",input_array=numpy.zeros(10,float), deps=depend_sync(func={  "val" : self.v2r },synchro=sync))
+      self.val=depend_array(name="val",input_array=numpy.zeros(10,float), deps=depend_sync(func={  "rep" : self.r2v },synchro=sync))
+            
+      self.factor.deps.add_dependant(self.rep.deps)
+      self.factor.deps.add_dependant(self.val.deps)
+      
+      self.val.deps.add_dependant(self.sumval.deps)
+      self.rep.deps.add_dependant(self.sumrep.deps)      
+   
+class dtestdep(dobject):
+
+   def do_sumval(self):
+      tmp=0.0
+      for i in self.val:
+         tmp+=i
+      return tmp
+
+   def do_sumrep(self):
+      tmp=0.0
+      for i in self.rep:
+         tmp+=i
+      return tmp
+
+      
+   def v2r(self):
+      tmp=numpy.array(self.val,copy=True) # creates a temporary
+      for ind,val in enumerate(tmp): 
+         tmp[ind]=self.factor/val
+      
+      return tmp[:]
+   
+   def r2v(self):
+      tmp=numpy.array(self.rep,copy=True) # creates a temporary
+      for ind,val in enumerate(tmp): 
+         tmp[ind]=self.factor/val
+      return tmp[:]
+
+   def __init__(self, factor, array):
+      self.factor=depend_value(name="factor",value=factor)   
+
+      self.sumval=depend_value(name="sumval",deps=depend_func(func=self.do_sumval))
+      self.sumrep=depend_value(name="sumrep",deps=depend_func(func=self.do_sumrep))
+      
+      sync=synchronizer()
+      self.rep=depend_array(name="rep",input_array=numpy.zeros(10,float), deps=depend_sync(func={  "val" : self.v2r },synchro=sync))
+      self.val=depend_array(name="val",input_array=numpy.zeros(10,float), deps=depend_sync(func={  "rep" : self.r2v },synchro=sync))
+            
+      depget(self,"factor").add_dependant(depget(self,"rep"))
+      depget(self,"factor").add_dependant(depget(self,"val"))
+      
+      depget(self,"val").add_dependant(depget(self,"sumval"))
+      depget(self,"rep").add_dependant(depget(self,"sumrep"))
+
+def test_1():
+   td1=testdep(2.0,numpy.zeros(10))      
+
+   erep=td1.rep[0:5]
+   td1.val[:]=numpy.array(range(10),float)
+   td1.val[:]+=1.0
+   for i in range(1000):
+      grep=td1.val[3:6]
+      grep[1:2]-=td1.sumval.get()/10
+      erep[:]+=(td1.sumval.get()-td1.sumrep.get()*2)/100
+
+def test_2():
+   td1=dtestdep(2.0,numpy.zeros(10))      
+
+   erep=td1.rep[0:5]
+   td1.val=numpy.array(range(10),float)
+   td1.val+=1.0
+   for i in range(1000):
+      grep=td1.val[3:6]
+      grep[1:2]-=td1.sumval/10
+      erep[:]+=(td1.sumval-td1.sumrep*2)/100
+
+a = timeit.Timer("test_1()", "gc.enable(); from __main__ import test_1")
+      
+zeroth = a.timeit(number = 100)
+
+print "Timing for test1: ", zeroth
+
+a = timeit.Timer("test_2()", "gc.enable(); from __main__ import test_2")
+      
+zeroth = a.timeit(number = 100)
+
+print "Timing for test2: ", zeroth
+exit()
+      
+import numpy, gc, sys, types
 def get_refcounts():
    d = {}
    sys.modules
@@ -80,7 +139,13 @@ def get_refcounts():
    pairs.reverse()
    return pairs
 
-import numpy, gc, sys, types
+print gc.garbage
+no = get_refcounts()
+print "REFCOUNTS ", no
+
+
+exit();
+
 
 def type_1():
    ee=multi(4, numpy.zeros(10))
@@ -188,11 +253,19 @@ first = a.timeit(number = 1)
 a = timeit.Timer("type_2()", "gc.enable(); from __main__ import type_2")
 second = a.timeit(number = 1)
 print first, second
-exit()
 
-#no = get_refcounts()
-#print no
 
+
+for i in range(100):
+   type_2()
+import gc
+
+print gc.garbage
+no = get_refcounts()
+print "REFCOUNTS ", no
+
+
+exit(1)
 
 class multisync(object):
    def multiply(self):
