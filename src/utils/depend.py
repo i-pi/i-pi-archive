@@ -143,8 +143,13 @@ class depend_array(numpy.ndarray, depend_base):
       if self.deps._value is None: 
          self.deps._value = self
    
-   def __array_finalize__(self, obj): pass
-
+   def __array_finalize__(self, obj):  pass
+   
+   def __array_wrap__(self, out_arr, context=None):
+      #print 'In __array_wrap__:', type(self)
+      # then just call the parent      
+      return super(depend_array,self).__array_wrap__(self, out_arr, context).view(numpy.ndarray)
+        
    def __getitem__(self,index):
       if self.deps.tainted():  
          self.deps.val_update(manual=False)         
@@ -178,7 +183,9 @@ class depend_array(numpy.ndarray, depend_base):
 
 def dget(obj,member):
    return obj.__dict__[member]
-
+def dset(obj,member,value):
+   obj.__dict__[member]=value
+   
 def depget(obj,member):
    return obj.__dict__[member].deps
 
