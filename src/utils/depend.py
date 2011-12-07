@@ -96,20 +96,20 @@ class depend_sync(depend_proxy):
          self._tainted=False
       
 class depend_base(object):
-   def __init__(self, deps=None, name=None):
+   def __init__(self, deps=None, name=None, tainted=True):
       self.name=name
       if deps==None:
          self.deps=depend_proxy()
       else:
          self.deps=deps
       if (self.deps._value is None): self.deps.link_value(self)
+      self.deps.taint(taintme=tainted)  # ALWAYS taint on init      
 
 class depend_value(depend_base):
-   def __init__(self, value=None, deps=None, name=None):
-      super(depend_value,self).__init__(deps, name)
+   def __init__(self, value=None, deps=None, name=None, tainted=True):
+      super(depend_value,self).__init__(deps, name, tainted)
       self.deps._value=self
       self._value=value
-      self.deps.taint(taintme=False)
 
    def get(self):
       if self.deps.tainted():  
@@ -131,34 +131,25 @@ class depend_value(depend_base):
 
    
 class depend_array(numpy.ndarray, depend_base):
-   def __new__(cls, input_array, deps=None, name=None, parent=None):
+   def __new__(cls, value, deps=None, name=None, tainted=True):
       # Input array is an already formed ndarray instance
       # We first cast to be our class type
-      obj = numpy.asarray(input_array).view(cls)
+      obj = numpy.asarray(value).view(cls)
       # add the new attribute to the created instance
       return obj
       
-   def __init__(self, input_array, deps=None, name=None):
-      super(depend_array,self).__init__(deps, name)
+   def __init__(self, value, deps=None, name=None, tainted=True):
+      super(depend_array,self).__init__(deps, name, tainted)
       if self.deps._value is None: 
          self.deps._value = self
    
    def __array_finalize__(self, obj): pass
 
    def __getitem__(self,index):
-#      if self.parent is not None:
-#         if self.parent.deps.tainted():
-#            self.deps.val_update(manual=False)
-#      else:
       if self.deps.tainted():  
-         self.deps.val_update(manual=False)
-         
-      if (not numpy.isscalar(index)):      
-         #if self.parent is not None:
-         #   parent = self.parent
-         #else:
-         #   parent = self
-         return depend_array(super(depend_array,self).__getitem__(index), deps=self.deps)
+         self.deps.val_update(manual=False)         
+      if (not numpy.isscalar(index) or self.ndim > 1 ):
+         return depend_array(super(depend_array,self).__getitem__(index), deps=self.deps, name=self.name, tainted=self.deps._tainted)
       else:
          return super(depend_array,self).__getitem__(index)   
 
