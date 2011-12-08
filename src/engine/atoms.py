@@ -41,7 +41,9 @@ class Atoms(dobject):
       
       self._alist=[ Atom(self, i) for i in range(natoms) ]
       dset(self,"kin",depend_value(name="kin",deps=depend_func(func=self.get_kin,dependencies=[depget(self,"p"),depget(self,"m3")])) )
-      
+   
+   def __len__(self): return self.natoms
+   
    def __getitem__(self,index):
       return self._alist[index]
 

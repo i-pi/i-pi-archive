@@ -1,4 +1,5 @@
 import numpy
+import pdb
 # if A depends upon B, then A.dep_up-->B and B.dep_dw-->A
 class depend_proxy(object):
    """Prototype class for dependency handling"""
@@ -36,9 +37,10 @@ class depend_proxy(object):
       """Returns tainted flag"""
       return self._tainted
       
-   def val_update(self, manual=True): pass
-   def val_set(self, manual=True): pass
-         
+   def update_auto(self): pass
+
+   def update_man(self): self.taint(taintme=False)
+   
 
 class depend_func(depend_proxy):
    """Proxy which defines a function to compute the value of the property. 
@@ -47,13 +49,12 @@ class depend_func(depend_proxy):
       self._func=func
       super(depend_func, self).__init__(dependants=dependants, dependencies=dependencies)
          
-   def val_update(self, manual=True):
-      self._value.set(self._func(), manual=manual)
+   def update_auto(self):
+      self._value.set(self._func(), manual=False)
 
-   def val_set(self, manual=True):
-      if (manual):
-         print "Cannot set manually the value of the automatically-computed property <",self._value.name,">"
-         raise NameError(self._value.name)
+   def update_man(self):
+      print "Cannot set manually the value of the automatically-computed property <",self._value.name,">"
+      raise NameError(self._value.name)
 
 class synchronizer(object):
    def __init__(self, deps=dict()):
@@ -66,7 +67,6 @@ class depend_sync(depend_proxy):
    def __init__(self, func, synchro, dependants=[], dependencies=[]):
       self._func=func
       self.synchro=synchro
-      self._tainted=False
       super(depend_sync, self).__init__(dependants=dependants, dependencies=dependencies)
 
    def link_value(self, value):
@@ -80,20 +80,18 @@ class depend_sync(depend_proxy):
       # Also taints object within the sync group, making sure that the one which is manually set is not tainted
       self._tainted=True
       for v in self.synchro._synced.values():
-         if (not v.tainted()) and (not v is self) and (not v._value.name == self.synchro._manual): v.taint(taintme=True)
-      self._tainted=taintme
+         if (not v.tainted()) and (not v is self): v.taint(taintme=True)
+      self._tainted=(taintme and (not self._value.name == self.synchro._manual))
                
-   def val_update(self, manual=True):
-      self._tainted=False
+   def update_auto(self):
       if (not self._value.name == self.synchro._manual):
-         self._value.set(self._func[self.synchro._manual](), manual=manual)
+         self._value.set(self._func[self.synchro._manual](), manual=False)
 
-   def val_set(self, manual=True):         
-      if (manual):
-         for v in self.synchro._synced.values():
-            v.taint(taintme=True)
-         self.synchro._manual=self._value.name
-         self._tainted=False
+   def update_man(self):         
+      for v in self.synchro._synced.values():
+         v.taint(taintme=True)
+      self.synchro._manual=self._value.name
+      self._tainted=False
       
 class depend_base(object):
    def __init__(self, deps=None, name=None, tainted=True):
@@ -103,7 +101,7 @@ class depend_base(object):
       else:
          self.deps=deps
       if (self.deps._value is None): self.deps.link_value(self)
-      self.deps.taint(taintme=tainted)  # ALWAYS taint on init      
+      if (tainted) : self.deps.taint(taintme=tainted)  # ALWAYS taint on init      
 
 class depend_value(depend_base):
    def __init__(self, value=None, deps=None, name=None, tainted=True):
@@ -113,9 +111,9 @@ class depend_value(depend_base):
 
    def get(self):
       if self.deps.tainted():  
-         self.deps.val_update(manual=False)
-         self.deps.taint(taintme=False)         
-
+         self.deps.update_auto()
+         self.deps.taint(taintme=False)
+         
       return self._value
       
    def __get__(self, instance, owner):
@@ -124,19 +122,17 @@ class depend_value(depend_base):
    def set(self, value, manual=True):
       self._value=value
       self.deps.taint(taintme=False)
-      self.deps.val_set(manual=manual)
+      if (manual) : self.deps.update_man()
       
    def __set__(self, instance, value): 
       self.set(value)   
-
    
 class depend_array(numpy.ndarray, depend_base):
    def __new__(cls, value, deps=None, name=None, tainted=True):
-#      print "new", name
+#      print "new", name, cls
       # Input array is an already formed ndarray instance
       # We first cast to be our class type
       obj = numpy.asarray(value).view(cls)
-      # add the new attribute to the created instance
       return obj
       
    def __init__(self, value, deps=None, name=None, tainted=True):
@@ -146,49 +142,58 @@ class depend_array(numpy.ndarray, depend_base):
          self.deps._value = self
    
    def __array_finalize__(self, obj):  
-#      print "finalize", type(self), type(obj), numpy.array(self)
+#      print "finalize", type(self), type(obj),  hasattr(self,"name"),  hasattr(obj,"name")
       # makes sure that --if we really mean to return a deparray-- some basic dep things are provided
-      if (not hasattr(self,"name")): self.name=None
-      if (not hasattr(self,"deps")): self.deps=depend_proxy()
+      self.name=None
+      self.deps=depend_proxy()
       pass
    
    # whenever possible in compound operations just return a regular ndarray
    __array_priority__=-100  
-   def __array_wrap__(self, out_arr, context=None):
-#      print 'In __array_wrap__:', type(self), self.base
-      # then just call the parent      
-      return super(depend_array,self).__array_wrap__(self, out_arr, context).view(numpy.ndarray)
-        
+#   def __array_wrap__(self, out_arr, context=None):
+#      print "array_wrap"
+#      return super(depend_array,self).__array_wrap__(self, out_arr, context).view(numpy.ndarray)
+
+#   def __array_prepare__(self, out_arr, context=None):        
+#      print "array_prepare"
+#      return super(depend_array,self).__array_prepare__(self, out_arr, context).view(numpy.ndarray)
+      
    def __getitem__(self,index):
+#      print "getitem", self.name, self.deps.tainted(), index
+      
       if self.deps.tainted():  
-         self.deps.val_update(manual=False)         
+         self.deps.update_auto()
+         self.deps.taint(taintme=False)
+              
       if (not numpy.isscalar(index) or self.ndim > 1 ):
-         return depend_array(super(depend_array,self).__getitem__(index), deps=self.deps, name=self.name, tainted=self.deps._tainted)
+         return depend_array(super(depend_array,self).__getitem__(index), deps=self.deps, name=self.name, tainted=self.deps._tainted)  
       else:
-         return super(depend_array,self).__getitem__(index)   
+         return super(depend_array,self).__getitem__(index)
 
    def __getslice__(self,i,j):
-      return self.__getitem__(slice(i,j))
+      return self.__getitem__(slice(i,j,None))
 
    def get(self):
-      return self[:]
-      
+      return self.__getitem__(slice(None,None,None))
+            
    def __get__(self, instance, owner):
-      return self.get() 
+      return self.__getitem__(slice(None,None,None))
 
-   def __setitem__(self,index,value,manual=True):
-      self.deps.taint(taintme=False)
-      self.deps.val_set(manual=manual)
-      super(depend_array,self).__setitem__(index,value)   
+   def __setitem__(self,index,value,manual=True):      
+      #print "setitem", manual, self.name, self.deps._tainted    
+      
+      if (manual) : self.deps.update_man()
+      self.deps.taint(taintme=False)      
+      super(depend_array,self).__setitem__(index,value)   # directly write to the base array
 
    def __setslice__(self,i,j,value):
       return self.__setitem__(slice(i,j),value)
 
    def set(self, value, manual=True):
-      self.__setitem__(slice(None,None),value=value,manual=manual)
-      
+      self.__setitem__(slice(None,None),value=value,manual=manual)    
+
    def __set__(self, instance, value): 
-      self.set(value)
+      self.__setitem__(slice(None,None),value=value)
 
 def dget(obj,member):
    return obj.__dict__[member]

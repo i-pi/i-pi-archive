@@ -1,12 +1,15 @@
 import numpy as np
 import math, sys
-import cell_convert
+import utils.cell_convert
+from engine.cell import *
+from engine.atoms import *
+from utils.units import *
 
 def print_pdb(atoms, ncell, filedesc = sys.stdout):
    """Takes the system and gives pdb formatted output for the unit cell and the
       atomic positions """
 
-   a, b, c, alpha, beta, gamma = cell_convert.h2abc(ncell.h)
+   a, b, c, alpha, beta, gamma = utils.cell_convert.h2abc(ncell.h)
    alpha *= 180.0/math.pi #radian to degree conversion
    beta  *= 180.0/math.pi
    gamma *= 180.0/math.pi
@@ -20,7 +23,7 @@ def print_pdb(atoms, ncell, filedesc = sys.stdout):
 
    filedesc.write("END\n")
 
-def read_pdb(atoms, cell, filedesc, init_vels = False):
+def read_pdb(filedesc):
    """Takes a pdb-style file and creates a system with the appropriate unit
       cell and atom positions"""
 
@@ -28,20 +31,28 @@ def read_pdb(atoms, cell, filedesc, init_vels = False):
    a = float(header[6:15]);      b = float(header[15:24]);    c = float(header[24:33]);
    alpha = float(header[33:40]); beta = float(header[40:47]); gamma = float(header[47:54]);
    alpha *= math.pi/180.0;       beta *= math.pi/180.0;       gamma *= math.pi/180.0
-   h = cell_convert.abc2h(a, b, c, alpha, beta, gamma)
-   cell.h = h
-
+   h = utils.cell_convert.abc2h(a, b, c, alpha, beta, gamma)
+   cell=Cell(h)
+   
    natoms = 0
    body = filedesc.readline()
+   qatoms=[]; names=[]
    while (body != "" and body != "END"):
       natoms += 1
-      name = body[12:16]
+      names.append(body[12:16].strip())
       x = float(body[31:39])
       y = float(body[39:47])
       z = float(body[47:55])
       pos = numpy.array([x,y,z])
-      atoms[i].q = pos
+      qatoms.append(pos)
+      
       body = filedesc.readline()
-   atoms.natoms = natoms
    
-   return init_vels
+   atoms=Atoms(natoms)
+   for i in range(natoms):
+      atoms[i].q=qatoms[i]
+      atoms[i].name=names[i]
+      atoms[i].m=Elements.mass(names[i])
+
+   print atoms.q
+   return atoms, cell

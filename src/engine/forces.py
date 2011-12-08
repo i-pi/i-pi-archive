@@ -16,9 +16,9 @@ class ForceField(dobject):
       self.atoms = atoms
       self.cell = cell
       depget(self,"ufv").add_dependency(depget(self.atoms,"q"))
-      dset( self,"pot",depend_value(name="pot", deps=depend_func(func=self.get_pot)) )
-      dset(self,"f", depend_array(name="f",   value=np.zeros(atoms.natoms*3, float),  deps=depend_func(func=self.get_f)) )
-      dset(self,"vir", depend_array(name="vir", value=np.zeros((3,3),float),            deps=depend_func(func=self.get_vir)) )
+      dset(self,"pot",depend_value(name="pot", deps=depend_func(func=self.get_pot, dependencies=[depget(self,"ufv")] )  )  )
+      dset(self,"f", depend_array(name="f",   value=np.zeros(atoms.natoms*3, float),  deps=depend_func(func=self.get_f, dependencies=[depget(self,"ufv")] )) )
+      dset(self,"vir", depend_array(name="vir", value=np.zeros((3,3),float),            deps=depend_func(func=self.get_vir, dependencies=[depget(self,"ufv")] )) )
 
 
    def get_all(self):
@@ -44,6 +44,19 @@ class ForceField(dobject):
       [pot, f, vir] = self.ufv
       return vir
 
+class FFPipe(ForceField):
+   def __init__(self, pars=dict(pipein="pipeforce", pipeout="pipepos")):
+      super(FFPipe,self).__init__() 
+
+   def get_all(self):
+      self.fout=open(self.pars["pipeout"],"w")
+#      io_system.xml_write(self.syst, self.fout)
+      self.fout.close()
+
+      self.fin=open(self.pars["pipein"],"r")
+#      [pot, f, vir]=io_system.xml_read(self.fin)
+      self.fin.close()
+      return [pot, f, vir]
 
 class FFLennardJones(ForceField):
    """Creates an interface between the force, potential and virial calculation
@@ -65,6 +78,7 @@ class FFLennardJones(ForceField):
    def separation(self, atom_i, atom_j):
       """Calculates the vector and scalar separation between two atoms"""
       rij = self.cell.minimum_distance(atom_i, atom_j)
+
       r = math.sqrt(numpy.dot(rij, rij))
       return r, rij
 
@@ -89,6 +103,7 @@ class FFLennardJones(ForceField):
    def get_all(self):
       """Updates _ufv using an internal LJ potential and force calculator"""
 
+      print "Computing forces"
       natoms = self.atoms.natoms
 
       vir = numpy.zeros((3,3),float)
@@ -100,7 +115,7 @@ class FFLennardJones(ForceField):
 
          for j in range(i+1, natoms):
             atom_j = self.atoms[j]
-
+            
             fij, rij, v = self.LJ_fv(atom_i, atom_j)
             f[3*i:3*(i+1)]+=fij
             f[3*j:3*(j+1)]-=fij

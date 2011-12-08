@@ -11,6 +11,7 @@ class Elements(dict):
      "Ar"   :  39.9480
    }   
    
-   def mass(self, label):
-      return mass_list[label]*Constants.amu
+   @classmethod
+   def mass(cls, label):
+      return cls.mass_list[label]*Constants.amu
 

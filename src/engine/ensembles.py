@@ -26,3 +26,24 @@ class Ensemble(dobject):
    def get_econs(self):
       """Calculates the conserved energy quantity for constant E ensembles"""
       return self.atoms.kin+self.force.pot
+      
+      
+class NVEEnsemble(Ensemble):
+   def __init__(self, dt=1.0):
+      super(NVEEnsemble,self).__init__()
+      dset(self,"dt",depend_value(name='dt',value=dt))
+   
+   def step(self):
+      """Velocity Verlet time step"""
+
+      print depget(self.atoms,"q")._dependants[0]._value.name
+      
+      
+      self.atoms.p += self.force.f * (self.dt*0.5)
+      
+      print "vv1 ", depget(self.atoms,"q")._tainted, depget(self.force,"ufv")._tainted, depget(self.force,"f")._tainted
+      self.atoms.q += self.atoms.p/self.atoms.m3 *self.dt
+      print "vv2 ", depget(self.atoms,"q")._tainted, depget(self.force,"ufv")._tainted, depget(self.force,"f")._tainted
+
+      self.atoms.p += self.force.f * (self.dt*0.5)
+

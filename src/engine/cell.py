@@ -3,7 +3,7 @@ import math
 from utils.depend import *
 from utils.mathtools import det_ut3x3, invert_ut3x3
 from utils import units
-
+import pdb
 class Cell(dobject):
    """Represents the simulation cell in a periodic system
       Contains: h = lattice vector matrix, p = lattice momentum matrix (NST),
@@ -45,6 +45,7 @@ class Cell(dobject):
       return ke
       
    def get_ih(self):
+      print "get_ih called", depget(self,"ih")._tainted, depget(self,"h")._tainted, invert_ut3x3(self.h)      
       """Inverts a 3*3 (upper-triangular) cell matrix"""
       return invert_ut3x3(self.h)      
 
@@ -62,8 +63,11 @@ class Cell(dobject):
          images. This is only rigorously accurate in the case of a cubic cell,
          but gives the correct results as long as the cut-off radius is defined
          as smaller than the smallest width between parallel faces."""
-      s=numpy.dot(self.ih,atom1.q- atom2.q)
 
+      s=numpy.dot(self.ih,atom1.q-atom2.q)
+      
       for i in range(3):
          s[i] -= round(s[i])
+         
       return numpy.dot(self.h, s)
+
