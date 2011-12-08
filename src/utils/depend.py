@@ -132,6 +132,7 @@ class depend_value(depend_base):
    
 class depend_array(numpy.ndarray, depend_base):
    def __new__(cls, value, deps=None, name=None, tainted=True):
+#      print "new", name
       # Input array is an already formed ndarray instance
       # We first cast to be our class type
       obj = numpy.asarray(value).view(cls)
@@ -139,14 +140,22 @@ class depend_array(numpy.ndarray, depend_base):
       return obj
       
    def __init__(self, value, deps=None, name=None, tainted=True):
-      super(depend_array,self).__init__(deps, name, tainted)
+#      print "init", name
+      super(depend_array,self).__init__(deps=deps, name=name, tainted=tainted)
       if self.deps._value is None: 
          self.deps._value = self
    
-   def __array_finalize__(self, obj):  pass
+   def __array_finalize__(self, obj):  
+#      print "finalize", type(self), type(obj), numpy.array(self)
+      # makes sure that --if we really mean to return a deparray-- some basic dep things are provided
+      if (not hasattr(self,"name")): self.name=None
+      if (not hasattr(self,"deps")): self.deps=depend_proxy()
+      pass
    
+   # whenever possible in compound operations just return a regular ndarray
+   __array_priority__=-100  
    def __array_wrap__(self, out_arr, context=None):
-      #print 'In __array_wrap__:', type(self)
+#      print 'In __array_wrap__:', type(self), self.base
       # then just call the parent      
       return super(depend_array,self).__array_wrap__(self, out_arr, context).view(numpy.ndarray)
         
