@@ -3,13 +3,14 @@
       implicit none
 
       private
-      public :: get_all
+      public :: get_all, nearest_neighbours
 
-      double precision, parameter :: sigma = 6.43452d0
-      double precision, parameter :: rc = 3.0*sigma
-      double precision, parameter :: eps = 0.0003793865d0
-      double precision, parameter :: correction = 0.0d0
-!     14*eps*((sigma/rc)**12 - (sigma/rc)**6)
+      double precision, parameter :: sigma = 0.8d0
+      double precision, parameter :: rc = 2.5*sigma
+      double precision, parameter :: rn = 1.2*rc
+      double precision, parameter :: eps = 0.1d0
+      double precision, parameter :: correction = 
+     14*eps*((sigma/rc)**12 - (sigma/rc)**6)
 
       contains
 
@@ -75,9 +76,34 @@
 
          end subroutine
 
-         subroutine get_all(atoms, cell, pot, f, vir)
+         subroutine nearest_neighbours(atoms, cell, n_list)
             type(Atom), dimension(:), intent(in) :: atoms
             type(Cell_vec), intent(in) :: cell
+            logical, dimension(size(atoms),size(atoms)), intent(out)
+     1:: n_list
+
+            double precision, dimension(3) :: rij
+            double precision r
+            integer i, j
+
+            n_list = .false.
+            do i = 1, size(atoms)-1
+               do j = i+1, size(atoms)
+                  call separation(atoms, i, j, cell, rij, r)
+                  if (r < rn) then
+                     n_list(i,j) = .true.
+                     n_list(j,i) = .true.
+                  end if
+               end do
+            end do
+
+         end subroutine 
+
+         subroutine get_all(atoms, cell, n_list, pot, f, vir)
+            type(Atom), dimension(:), intent(in) :: atoms
+            type(Cell_vec), intent(in) :: cell
+            logical, dimension(size(atoms),size(atoms)), intent(in) ::
+     1n_list
             double precision, intent(out) :: pot
             double precision, dimension(3,size(atoms)), 
      1intent(out) :: f
@@ -95,16 +121,20 @@
 
             do i = 1, size(atoms)-1
                do j = i+1, size(atoms)
-                  call LJ_fij(atoms, i, j, cell, fij, rij, pot_ij)
-                  f(:,i) = f(:,i) + fij
-                  f(:,j) = f(:,j) - fij
-                  pot = pot + pot_ij
+                  if (n_list(i,j)) then
+                     call LJ_fij(atoms, i, j, cell, fij, rij, pot_ij)
+
+                     f(:,i) = f(:,i) + fij
+                     f(:,j) = f(:,j) - fij
+                     pot = pot + pot_ij
                   
-                  do k = 1, 3
-                     do l = k, 3
-                        vir(k,l) = vir(k,l) + fij(k)*rij(l)
+                     do k = 1, 3
+                        do l = k, 3
+                           vir(k,l) = vir(k,l) + fij(k)*rij(l)
+                        end do
                      end do
-                  end do
+                  end if
+
                end do
             end do
             vir = vir/volume

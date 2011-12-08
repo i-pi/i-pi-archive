@@ -1,24 +1,24 @@
 import numpy, math, sys, string
-import cell, dynamics, rp_dynamics, engine, rp_engine, thermostat, langevin, forces, PILE, barostat, Bussi
+#import cell, dynamics, rp_dynamics, engine, rp_engine, thermostat, langevin, forces, PILE, barostat, Bussi
 import xml.sax.handler, xml.sax, pprint
 
-def xml_write(system, namedpipe):
+def xml_write(atoms, cell, namedpipe):
    """Writes an xml-compliant file to file with the atoms positions and cell
       variables"""
 
    tab = "   "
    namedpipe.write("<?xml version=\"1.0\"?>\n")
    namedpipe.write("<System>\n")
-   namedpipe.write(tab + "<natoms>" + str(len(system.atoms)) + "</natoms>\n")
+   namedpipe.write(tab + "<natoms>" + str(len(atoms)) + "</natoms>\n")
 
-   for i in range(len(system.atoms)):
-      atom_q = system.atoms[i].q.get()
+   for i in range(len(atoms)):
+      atom_q = atoms[i].q
       namedpipe.write(tab + "<Atom_vec>\n")
       namedpipe.write(tab + tab + "<q>[" + str(atom_q[0]) + "," + str(atom_q[1]) + "," + str(atom_q[2]) + "]</q>\n")
       namedpipe.write(tab + "</Atom_vec>\n")
 
-   h = system.cell.h.get()
-   ih = system.cell.ih.get()
+   h = cell.h
+   ih = cell.ih
    namedpipe.write(tab + "<Cell_vec>\n")
    namedpipe.write(tab + tab + "<h>[" + str(h[0,0]) + "," + str(h[1,0]) + "," + str(h[2,0]) + "]</h>\n")
    namedpipe.write(tab + "</Cell_vec>\n")

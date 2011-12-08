@@ -35,8 +35,8 @@ class NVEEnsemble(Ensemble):
    
    def step(self):
       """Velocity Verlet time step"""
-      
-      self.atoms.p += self.force.f               * (self.dt*0.5)
-      self.atoms.q += self.atoms.p/self.atoms.m3 * self.dt
-      self.atoms.p += self.force.f               * (self.dt*0.5)
+
+      self.atoms.p += self.force.f * (self.dt*0.5)
+      self.atoms.q += self.atoms.p/self.atoms.m3 *self.dt
+      self.atoms.p += self.force.f * (self.dt*0.5)
 

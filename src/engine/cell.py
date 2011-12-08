@@ -45,7 +45,6 @@ class Cell(dobject):
       return ke
       
    def get_ih(self):
-      print "get_ih called", depget(self,"ih")._tainted, depget(self,"h")._tainted, invert_ut3x3(self.h)      
       """Inverts a 3*3 (upper-triangular) cell matrix"""
       return invert_ut3x3(self.h)      
 
