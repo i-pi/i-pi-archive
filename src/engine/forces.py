@@ -1,6 +1,7 @@
 import numpy as np
 import math
 from utils.depend import *
+from utils.io import io_system
 
 class ForceField(dobject):
    """Creates an interface between the force, potential and virial calculation
@@ -24,7 +25,6 @@ class ForceField(dobject):
    def get_all(self):
       """Dummy routine where no calculation is done"""
       return [0.0, numpy.zeros(3*self.atoms.natoms), numpy.zeros((3,3),float)]
-#      return [1.0, np.array(self.atoms.p*self.atoms.q), np.dot(self.cell.ih, self.cell.h)]
 
    def get_pot(self):
       """Calls get_all routine of forcefield to update potential"""
@@ -47,14 +47,15 @@ class ForceField(dobject):
 class FFPipe(ForceField):
    def __init__(self, pars=dict(pipein="pipeforce", pipeout="pipepos")):
       super(FFPipe,self).__init__() 
+      self.pars = pars
 
    def get_all(self):
       self.fout=open(self.pars["pipeout"],"w")
-#      io_system.xml_write(self.syst, self.fout)
+      io_system.xml_write(self.atoms, self.cell, self.fout)
       self.fout.close()
 
       self.fin=open(self.pars["pipein"],"r")
-#      [pot, f, vir]=io_system.xml_read(self.fin)
+      [pot, f, vir]=io_system.xml_read(self.fin)
       self.fin.close()
       return [pot, f, vir]
 

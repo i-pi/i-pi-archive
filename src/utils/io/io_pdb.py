@@ -54,5 +54,4 @@ def read_pdb(filedesc):
       atoms[i].name=names[i]
       atoms[i].m=Elements.mass(names[i])
 
-   print atoms.q
    return atoms, cell
