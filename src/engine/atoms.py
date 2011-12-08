@@ -13,7 +13,7 @@ class Atom(dobject):
       self.p=system.p[3*index:3*index+3]
       self.q=system.q[3*index:3*index+3]
       self.__dict__["m"]=system.m3[3*index:3*index+3]            
-      self.kin=depend_value(name="kin", deps=depend_func(func=self.get_kin, dependants=[depget(self,"p"),depget(system,"m3")]) )
+      self.kin=depend_value(name="kin", deps=depend_func(func=self.get_kin, dependencies=[depget(self,"p"),depget(system,"m3")]) )
 
    def __getattribute__(self, name):
       if (name == "m"):

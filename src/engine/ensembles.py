@@ -35,15 +35,8 @@ class NVEEnsemble(Ensemble):
    
    def step(self):
       """Velocity Verlet time step"""
-
-      print depget(self.atoms,"q")._dependants[0]._value.name
       
-      
-      self.atoms.p += self.force.f * (self.dt*0.5)
-      
-      print "vv1 ", depget(self.atoms,"q")._tainted, depget(self.force,"ufv")._tainted, depget(self.force,"f")._tainted
-      self.atoms.q += self.atoms.p/self.atoms.m3 *self.dt
-      print "vv2 ", depget(self.atoms,"q")._tainted, depget(self.force,"ufv")._tainted, depget(self.force,"f")._tainted
-
-      self.atoms.p += self.force.f * (self.dt*0.5)
+      self.atoms.p += self.force.f               * (self.dt*0.5)
+      self.atoms.q += self.atoms.p/self.atoms.m3 * self.dt
+      self.atoms.p += self.force.f               * (self.dt*0.5)
 

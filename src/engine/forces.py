@@ -16,6 +16,7 @@ class ForceField(dobject):
       self.atoms = atoms
       self.cell = cell
       depget(self,"ufv").add_dependency(depget(self.atoms,"q"))
+      depget(self,"ufv").add_dependency(depget(self.cell,"h"))      
       dset(self,"pot",depend_value(name="pot", deps=depend_func(func=self.get_pot, dependencies=[depget(self,"ufv")] )  )  )
       dset(self,"f", depend_array(name="f",   value=np.zeros(atoms.natoms*3, float),  deps=depend_func(func=self.get_f, dependencies=[depget(self,"ufv")] )) )
       dset(self,"vir", depend_array(name="vir", value=np.zeros((3,3),float),            deps=depend_func(func=self.get_vir, dependencies=[depget(self,"ufv")] )) )

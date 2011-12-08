@@ -149,9 +149,10 @@ class depend_array(numpy.ndarray, depend_base):
       pass
    
    # whenever possible in compound operations just return a regular ndarray
-   __array_priority__=-100  
+   __array_priority__=-1.0  
 #   def __array_wrap__(self, out_arr, context=None):
-#      print "array_wrap"
+#      print "array_wrap", self.name, out_arr.name #, context
+#      return super(depend_array,self).__array_wrap__(self, out_arr, context)      
 #      return super(depend_array,self).__array_wrap__(self, out_arr, context).view(numpy.ndarray)
 
 #   def __array_prepare__(self, out_arr, context=None):        
@@ -166,9 +167,10 @@ class depend_array(numpy.ndarray, depend_base):
          self.deps.taint(taintme=False)
               
       if (not numpy.isscalar(index) or self.ndim > 1 ):
-         return depend_array(super(depend_array,self).__getitem__(index), deps=self.deps, name=self.name, tainted=self.deps._tainted)  
+#         return depend_array(super(depend_array,self).__getitem__(index), deps=self.deps, name=self.name, tainted=self.deps._tainted)  
+         return depend_array(self.view(numpy.ndarray)[index], deps=self.deps, name=self.name, tainted=self.deps._tainted)  
       else:
-         return super(depend_array,self).__getitem__(index)
+         return self.view(numpy.ndarray)[index]
 
    def __getslice__(self,i,j):
       return self.__getitem__(slice(i,j,None))
@@ -184,7 +186,8 @@ class depend_array(numpy.ndarray, depend_base):
       
       if (manual) : self.deps.update_man()
       self.deps.taint(taintme=False)      
-      super(depend_array,self).__setitem__(index,value)   # directly write to the base array
+      #super(depend_array,self).__setitem__(index,value)   # directly write to the base array
+      self.view(numpy.ndarray)[index]=value
 
    def __setslice__(self,i,j,value):
       return self.__setitem__(slice(i,j),value)
