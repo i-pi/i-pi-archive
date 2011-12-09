@@ -1,6 +1,7 @@
 import numpy as np
 from utils.depend import *
 from utils import units
+from thermostats import *
 
 class Ensemble(dobject): 
    """General ensemble object, with no particle motion
@@ -37,6 +38,31 @@ class NVEEnsemble(Ensemble):
       """Velocity Verlet time step"""
 
       self.atoms.p += self.force.f * (self.dt*0.5)
-      self.atoms.q += self.atoms.p/self.atoms.m3 *self.dt
+      self.atoms.q += self.atoms.p/self.atoms.m3*self.dt
       self.atoms.p += self.force.f * (self.dt*0.5)
 
+
+class NVTEnsemble(NVEEnsemble):
+   def __init__(self, dt=1.0, thermostat=ThermoLangevin()):
+      super(NVTEnsemble,self).__init__(dt=dt)
+      self.thermostat=thermostat
+      dset(self.thermostat,"dt",
+           depend_value(name="dt",deps=depend_func(func=self.half_dt,dependencies=[depget(self,"dt")] ) ) )
+      
+   def half_dt(self):
+      return self.dt*0.5
+   
+   def bind(self, atoms, cell, force):
+      super(NVTEnsemble,self).bind(atoms,cell,force)
+      self.thermostat.bind(atoms)
+
+   def get_econs(self):
+      """Calculates the conserved energy quantity for constant T ensembles"""
+      return NVEEnsemble.get_econs(self)+self.thermostat.ethermo  
+      
+   def step(self):
+      """Velocity Verlet time step"""
+
+      self.thermostat.step()
+      super(NVTEnsemble,self).step()
+      self.thermostat.step()
