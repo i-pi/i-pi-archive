@@ -31,22 +31,26 @@
          close(555)
 
          allocate(f(3,size(atoms)))
+!         if ((allocated(n_list)) .neqv. .true.) then
+!            allocate(n_list(size(atoms), size(atoms)))
+!            call nearest_neighbours(atoms, cell, n_list)
+!            allocate(ref_atoms(size(atoms)))
+!            ref_atoms = atoms
+!         end if
          if ((allocated(n_list)) .neqv. .true.) then
             allocate(n_list(size(atoms), size(atoms)))
-            call nearest_neighbours(atoms, cell, n_list)
-            allocate(ref_atoms(size(atoms)))
-            ref_atoms = atoms
          end if
+         n_list = .true.
 
-         do i = 1, size(atoms)
-            q_diff = atoms(i)%pos - ref_atoms(i)%pos
-            if (2.0*abs(dot_product(q_diff, q_diff)) >= skin) then
-               write(*,*) "Calling nearest_neighbours..."
-               call nearest_neighbours(atoms, cell, n_list)
-               ref_atoms = atoms
-               exit
-            end if
-         end do
+!         do i = 1, size(atoms)
+!            q_diff = atoms(i)%pos - ref_atoms(i)%pos
+!            if (2.0*abs(dot_product(q_diff, q_diff)) >= skin) then
+!               write(*,*) "Calling nearest_neighbours..."
+!               call nearest_neighbours(atoms, cell, n_list)
+!               ref_atoms = atoms
+!               exit
+!            end if
+!         end do
          call get_all(atoms, cell, n_list, pot, f, vir)
 
          open(666, file=filedesc2, iostat=ios, action="write")

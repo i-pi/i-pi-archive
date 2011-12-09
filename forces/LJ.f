@@ -117,11 +117,11 @@
             vir = 0.0d0
             pot = 0.0d0
             f = 0.0d0
-            volume = cell%h(1,1)*cell%h(2,2)*cell%h(3,3)
+      !      volume = cell%h(1,1)*cell%h(2,2)*cell%h(3,3)
 
             do i = 1, size(atoms)-1
                do j = i+1, size(atoms)
-                  if (n_list(i,j)) then
+      !            if (n_list(i,j)) then
                      call LJ_fij(atoms, i, j, cell, fij, rij, pot_ij)
 
                      f(:,i) = f(:,i) + fij
@@ -133,11 +133,11 @@
                            vir(k,l) = vir(k,l) + fij(k)*rij(l)
                         end do
                      end do
-                  end if
+      !            end if
 
                end do
             end do
-            vir = vir/volume
+       !     vir = vir/volume
 
          end subroutine
 
