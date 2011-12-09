@@ -5,6 +5,7 @@ from utils.units  import *
 from utils.io     import *
 from atoms import *
 from cell import *
+from properties import *
 #from forces import *
 
 class Simulation(dobject):
@@ -21,6 +22,7 @@ class Simulation(dobject):
    def bind(self):
       self.force.bind(self.atoms, self.cell)
       self.ensemble.bind(self.atoms, self.cell, self.force)
+      #self.properties=Properties()
    
    
 #      self.properties

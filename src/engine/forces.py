@@ -45,12 +45,15 @@ class ForceField(dobject):
       [pot, f, vir] = self.ufv
       return vir
 
+import time
 class FFPipe(ForceField):
    def __init__(self, pars=dict(pipein="pipeforce", pipeout="pipepos")):
       super(FFPipe,self).__init__() 
       self.pars = pars
+      self.timer=0.0
 
    def get_all(self):
+      start = time.clock()
       self.fout=open(self.pars["pipeout"],"w")
       io_system.xml_write(self.atoms, self.cell, self.fout)
       self.fout.close()
@@ -58,6 +61,7 @@ class FFPipe(ForceField):
       self.fin=open(self.pars["pipein"],"r")
       [pot, f, vir]=io_system.xml_read(self.fin)
       self.fin.close()
+      self.timer+=time.clock()-start
       return [pot, f, vir]
 
 class FFLennardJones(ForceField):
