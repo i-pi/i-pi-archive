@@ -4,11 +4,17 @@
 
       private
       public :: get_all, nearest_neighbours
-
+/*
       double precision, parameter :: sigma = 0.8d0
       double precision, parameter :: rc = 2.0*sigma
       double precision, parameter :: rn = 300*rc
       double precision, parameter :: eps = 1.0d0
+*/
+      double precision, parameter :: sigma = 6.43452d0
+      double precision, parameter :: rc = 46.651d0!2.5*sigma
+      double precision, parameter :: rn = 1.2*rc
+      double precision, parameter :: eps = 0.0003793865d0
+
       double precision, parameter :: correction = 
      14*eps*((sigma/rc)**12 - (sigma/rc)**6)
 
@@ -117,11 +123,11 @@
             vir = 0.0d0
             pot = 0.0d0
             f = 0.0d0
-            volume = cell%h(1,1)*cell%h(2,2)*cell%h(3,3)
+      !      volume = cell%h(1,1)*cell%h(2,2)*cell%h(3,3)
 
             do i = 1, size(atoms)-1
                do j = i+1, size(atoms)
-                  if (n_list(i,j)) then
+      !            if (n_list(i,j)) then
                      call LJ_fij(atoms, i, j, cell, fij, rij, pot_ij)
 
                      f(:,i) = f(:,i) + fij
@@ -133,11 +139,15 @@
                            vir(k,l) = vir(k,l) + fij(k)*rij(l)
                         end do
                      end do
-                  end if
+      !            end if
 
                end do
             end do
+<<<<<<< HEAD
 !            vir = vir/volume  !! this is now done in the python code!
+=======
+       !     vir = vir/volume
+>>>>>>> d9ad0e1dc3a393cd98e5a19dad362a4c10c0f31a
 
          end subroutine
 

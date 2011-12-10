@@ -55,7 +55,7 @@ class Barostat(dobject):
    def qstep(self): pass   
       
    def step(self):
-      """Dummy atoms thermostat step""" 
+      """Dummy atoms barostat step""" 
       self.thermostat.step()
       self.pstep()
       self.qstep()
@@ -107,12 +107,15 @@ class BaroRGB(Barostat):
       dthalf = self.dt*0.5
       dthalf2=dthalf**2/2.0
       dthalf3=dthalf**3/3.0     
+
       L = numpy.zeros((3,3))
-      for i in range(3):
-         L[i,i] = 3.0 - i
+      for i in range(3): L[i,i] = 3.0 - i
       
+      #step on the cell velocities - first term, which only depends on "cell" quantities
       self.cell.p += dthalf*(self.cell.V*(self.stress - self.piext) + 2.0*Constants.kb*self.thermostat.temp*L)
 
+
+      #now must compute the terms depending on outer products of f and p
       f = self.force.f.view(np.ndarray)
       m = self.atoms.m.view(np.ndarray)
       p = self.atoms.p.view(np.ndarray)  # this strips the dependency checks from p, making it inexpensive to scan through ...
@@ -126,6 +129,7 @@ class BaroRGB(Barostat):
 #               cpi[j,k] += (dthalf2*(fi[j]*pi[k] + fi[k]*pi[j])+ dthalf3*fi[k]*fi[j])
 #         cp+=cpi/m[i]
 #         cp+=(dthalf2*(np.outer(fi,pi) + np.outer(pi,fi))+ dthalf3*np.outer(fi,fi))/m[i]
+
       # for mysterious reasons, the expression below is orders of magnitude faster than the above.
       fx=f[0:3*nat:3];       fy=f[1:3*nat:3];       fz=f[2:3*nat:3];
       fxm=fx/m;              fym=fy/m;              fzm=fz/m;             
@@ -139,9 +143,8 @@ class BaroRGB(Barostat):
       cp[0,2]=dthalf2*(np.dot(fxm,pz)+np.dot(px,fzm)) + dthalf3*np.dot(fx,fzm)
       cp[1,2]=dthalf2*(np.dot(fym,pz)+np.dot(py,fzm)) + dthalf3*np.dot(fy,fzm)            
       
-      p += f*dthalf      
-      self.cell.p+=cp
-      depget(self.atoms,"p").taint(taintme=False)  # .. but one must remember to taint it manually!
+      self.cell.p+=cp      
+      self.atoms.p += f*dthalf      
       
    def qstep(self):
       """Takes the atom positions, velocities and forces and integrates the 
