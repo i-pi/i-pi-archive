@@ -25,7 +25,7 @@ class Atom(dobject):
       ks = numpy.zeros((3,3),float)
       for i in range(3):
          for j in range(i,3):
-            ks[j,i] = ks[i,j] = p[i]*p[j]            
+            ks[i,j] = p[i]*p[j]            
       return ks/self.m
 
 class Atoms(dobject):
@@ -65,10 +65,10 @@ class Atoms(dobject):
       
    def get_kstress(self):
       """Calculates the contribution of the atom to the kinetic stress tensor"""
-      p=self.p.view(ndarray)
+      p=self.p.view(np.ndarray)
       ks = numpy.zeros((3,3),float)
       for i in range(3):
          for j in range(i,3):
-            ks[j,i] = ks[i,j] = np.dot(p[i:self.natoms:3], p[j:self.natoms:3]/self.m)
+            ks[j,i] = ks[i,j] = np.dot(p[i:self.natoms*3:3], p[j:self.natoms*3:3]/self.m)
       return ks
       

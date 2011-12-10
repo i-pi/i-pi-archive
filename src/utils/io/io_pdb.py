@@ -34,6 +34,7 @@ def read_pdb(filedesc):
    h = utils.cell_convert.abc2h(a, b, c, alpha, beta, gamma)
    cell=Cell(h)
    
+   
    natoms = 0
    body = filedesc.readline()
    qatoms=[]; names=[]
@@ -49,9 +50,12 @@ def read_pdb(filedesc):
       body = filedesc.readline()
    
    atoms=Atoms(natoms)
+   totmass=0.0
    for i in range(natoms):
       atoms[i].q=qatoms[i]
       atoms[i].name=names[i]
       atoms[i].m=Elements.mass(names[i])
+      totmass+=Elements.mass(names[i])
 
+   cell.m=totmass   
    return atoms, cell

@@ -6,9 +6,9 @@
       public :: get_all, nearest_neighbours
 
       double precision, parameter :: sigma = 0.8d0
-      double precision, parameter :: rc = 2.5*sigma
-      double precision, parameter :: rn = 1.2*rc
-      double precision, parameter :: eps = 0.1d0
+      double precision, parameter :: rc = 2.0*sigma
+      double precision, parameter :: rn = 300*rc
+      double precision, parameter :: eps = 1.0d0
       double precision, parameter :: correction = 
      14*eps*((sigma/rc)**12 - (sigma/rc)**6)
 
@@ -137,7 +137,7 @@
 
                end do
             end do
-            vir = vir/volume
+!            vir = vir/volume  !! this is now done in the python code!
 
          end subroutine
 

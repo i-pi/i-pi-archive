@@ -43,6 +43,7 @@ class ForceField(dobject):
       """Calls get_all routine of forcefield to update virial"""
 
       [pot, f, vir] = self.ufv
+      vir[1,0]=0.0; vir[2,0:2]=0.0;
       return vir
 
 import time
@@ -51,8 +52,11 @@ class FFPipe(ForceField):
       super(FFPipe,self).__init__() 
       self.pars = pars
       self.timer=0.0
+      self.ncall=0
 
    def get_all(self):
+      print "computing forces"
+   
       start = time.clock()
       self.fout=open(self.pars["pipeout"],"w")
       io_system.xml_write(self.atoms, self.cell, self.fout)
@@ -62,6 +66,7 @@ class FFPipe(ForceField):
       [pot, f, vir]=io_system.xml_read(self.fin)
       self.fin.close()
       self.timer+=time.clock()-start
+      self.ncall+=1      
       return [pot, f, vir]
 
 class FFLennardJones(ForceField):
