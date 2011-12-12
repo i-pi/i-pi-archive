@@ -77,7 +77,35 @@ class NVTEnsemble(NVEEnsemble):
       super(NVTEnsemble,self).step()
       self.thermostat.step()
       
+class NPTEnsemble(NVTEnsemble):
+   def __init__(self, dt=None, temp=None, pext=None, thermostat=Thermostat(), barostat=Barostat() ):
+      super(NPTEnsemble,self).__init__(dt=dt, temp=temp, thermostat=thermostat)
+      self.barostat=barostat
+            
+      # "binds" the dt, temp and p properties of the barostat to those of the ensemble. 
+      # the thermostat has been already bound in NVTEnsemble init so we must make sure to copy all dependencies as well
+      depcopy(self,"temp", self.barostat,"temp")
+      depcopy(self,"temp", self.barostat.thermostat,"temp")
+      depcopy(self, "dt", self.barostat, "dt")
+            
+      #dulicate pext & sext from the barostat 
+      dset(self, "pext", dget(self.barostat,"pext"))
+      if not pext is None: self.pext=pext
       
+   def bind(self, atoms, cell, force):
+      super(NPTEnsemble,self).bind(atoms, cell, force)
+      self.barostat.bind(atoms, cell, force)
+
+   def get_econs(self):
+      """Calculates the conserved energy quantity for constant T ensembles"""
+      return NVTEnsemble.get_econs(self)+self.barostat.thermostat.ethermo+self.barostat.pot+ self.cell.kin - 2.0*Constants.kb*self.thermostat.temp*math.log(self.cell.V)
+      
+   def step(self):
+      """Velocity Verlet time step"""
+      self.thermostat.step()
+      self.barostat.step()
+      self.thermostat.step()      
+                  
 class NSTEnsemble(NVTEnsemble):
    def __init__(self, dt=None, temp=None, pext=None, sext=None, thermostat=Thermostat(), barostat=Barostat() ):
       super(NSTEnsemble,self).__init__(dt=dt, temp=temp, thermostat=thermostat)

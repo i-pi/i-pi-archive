@@ -4,19 +4,16 @@
 
       private
       public :: get_all, nearest_neighbours
-/*
       double precision, parameter :: sigma = 0.8d0
-      double precision, parameter :: rc = 2.0*sigma
+      double precision, parameter :: rc = 2.5*sigma
       double precision, parameter :: rn = 300*rc
       double precision, parameter :: eps = 1.0d0
-*/
-      double precision, parameter :: sigma = 6.43452d0
-      double precision, parameter :: rc = 46.651d0!2.5*sigma
-      double precision, parameter :: rn = 1.2*rc
-      double precision, parameter :: eps = 0.0003793865d0
+!      double precision, parameter :: sigma = 6.43452d0
+!      double precision, parameter :: rc = 46.651d0!2.5*sigma
+!      double precision, parameter :: rn = 1.2*rc
+!      double precision, parameter :: eps = 0.0003793865d0
 
-      double precision, parameter :: correction = 
-     14*eps*((sigma/rc)**12 - (sigma/rc)**6)
+      double precision, parameter :: correction = 14*eps*((sigma/rc)**12 - (sigma/rc)**6)
 
       contains
 
@@ -143,11 +140,7 @@
 
                end do
             end do
-<<<<<<< HEAD
 !            vir = vir/volume  !! this is now done in the python code!
-=======
-       !     vir = vir/volume
->>>>>>> d9ad0e1dc3a393cd98e5a19dad362a4c10c0f31a
 
          end subroutine
 

@@ -17,7 +17,7 @@ class Thermostat(dobject):
       dset(self,"dt",     depend_value(name='dt', value=dt))      
       dset(self,"ethermo",depend_value(name='ethermo',value=ethermo))
 
-   def bind(self, atoms=None, cell=None):
+   def bind(self, atoms=None, cell=None, pm=None):
       """Dummy binding function"""     
       
       if not atoms is None:
@@ -26,8 +26,11 @@ class Thermostat(dobject):
       elif not cell is None:   
          dset(self,"p",dget(cell, "p6"))
          dset(self,"m",dget(cell, "m6"))      
+      elif not pm is None:   
+         dset(self,"p",pm[0])
+         dset(self,"m",pm[1])               
       else: 
-         raise TypeError("Thermostat.bind expects either an Atoms or a Cell to bind to")
+         raise TypeError("Thermostat.bind expects either an Atoms, a Cell, or a (p,m) tuple to bind to")
       
       dset(self,"sqrtm",depend_array(name="sqrtm", 
                                      value=np.zeros(len(dget(self,"m"))), 

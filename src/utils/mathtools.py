@@ -72,3 +72,14 @@ def det_ut3x3(h):
    """Calculates the volume of the unit cell, assuming an upper-triangular
       unit vector matrix"""
    return h[0,0]*h[1,1]*h[2,2]
+   
+def exp_ut3x3(h):
+   eh=numpy.zeros((3,3), float)
+   e00=math.exp(h[0,0]);    e11=math.exp(h[1,1]);    e22=math.exp(h[2,2])
+   eh[0,0]=e00;    eh[1,1]=e11;    eh[2,2]=e22; 
+   eh[0,1]=(e00-e11)*h[0,1]/(h[0,0]-h[1,1])
+   eh[1,2]=(e11-e22)*h[1,2]/(h[1,1]-h[2,2])   
+   eh[0,2]= e00*((h[0,0]-h[1,1])*h[0,2]+h[0,1]*h[1,2])/((h[0,0]-h[1,1])*(h[0,0]-h[2,2]))
+   eh[0,2]+=e11*h[0,1]*h[1,2]/((h[1,1]-h[0,0])*(h[1,1]-h[2,2]))   
+   eh[0,2]+=e22*((h[2,2]-h[1,1])*h[0,2]+h[0,1]*h[1,2])/((h[2,2]-h[1,1])*(h[2,2]-h[0,0]))   
+   return eh

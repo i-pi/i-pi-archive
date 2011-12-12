@@ -135,4 +135,4 @@ class FFLennardJones(ForceField):
                for l in range(k, 3):
                   vir[k,l] += fij[k]*rij[l]
             
-      return [pot, f, vir/self.cell.V]
+      return [pot, f, vir]

@@ -2,7 +2,7 @@ import math, time
 import numpy as np
 from utils.depend import *
 from utils.units import *
-from utils.mathtools import eigensystem_ut3x3, invert_ut3x3
+from utils.mathtools import eigensystem_ut3x3, invert_ut3x3, exp_ut3x3, det_ut3x3
 from engine.thermostats import Thermostat
 
 class Barostat(dobject): 
@@ -39,7 +39,6 @@ class Barostat(dobject):
       self.atoms=atoms
       self.cell=cell
       self.force=force
-      if not self.thermostat is None: self.thermostat.bind(cell=self.cell)
 
       dset(self,"pot",depend_value(name='pot', deps=depend_func(func=self.get_pot, 
           dependencies=[ depget(cell,"V0"), depget(cell,"strain"), depget(self,"sext")  ]  ) ) )            
@@ -47,7 +46,9 @@ class Barostat(dobject):
           dependencies=[ depget(cell,"V0"), depget(cell,"V"), depget(cell,"h"), depget(cell,"ih0"), depget(cell,"strain"), depget(self,"sext")  ]  ) ) )     
       dset(self,"stress",depend_value(name='stress', deps=depend_func(func=self.get_stress, 
           dependencies=[ depget(atoms,"kstress"), depget(cell,"V"), depget(force,"vir")  ]  ) ) )     
-      
+      dset(self,"press",depend_value(name='press', deps=depend_func(func=self.get_press, 
+          dependencies=[ depget(self,"stress") ]  ) ) )
+                
    def s2p(self): return np.trace(self.sext)/3.0
    def p2s(self): return self.pext*np.identity(3)
       
@@ -78,13 +79,22 @@ class Barostat(dobject):
    def get_stress(self):
       """Calculates the elastic strain energy of the cell"""
       
-      return (self.atoms.kstress+self.force.vir)/self.cell.V
+      return (self.atoms.kstress+self.force.vir)/self.cell.V    
 #TODO  also include a possible explicit dependence of U on h
 
-class BaroRGB(Barostat):
+   def get_press(self):
+      return np.trace(self.stress)/3.0
+
+class BaroFlexi(Barostat):
+
+
+   def bind(self, atoms, cell, force):
+      super(BaroFlexi,self).bind(atoms,cell,force)
+      self.thermostat.bind(cell=self.cell)
 
    def exp_p(self):
       dist_mat = (self.cell.p*self.dt/self.cell.m).view(np.ndarray)
+#      exp_mat=matrix_exp(dist_mat);  neg_exp_mat=matrix_exp(-1.0*dist_mat);       
       eig, eigvals = eigensystem_ut3x3(dist_mat)
       i_eig = invert_ut3x3(eig)
 
@@ -100,6 +110,8 @@ class BaroRGB(Barostat):
       neg_exp_mat = numpy.dot(eig, neg_exp_mat)
       neg_exp_mat = numpy.dot(neg_exp_mat, i_eig)
 
+      em2=exp_ut3x3(dist_mat)
+      iem=exp_ut3x3(-dist_mat)      
       return exp_mat, neg_exp_mat
 
    def pstep(self):
@@ -149,12 +161,14 @@ class BaroRGB(Barostat):
    def qstep(self):
       """Takes the atom positions, velocities and forces and integrates the 
          equations of motion forward by a step dt"""
-
-      vel_mat = self.cell.p/self.cell.m
-#      exp_mat, neg_exp_mat = upper_T.Crank_Nicolson(vel_mat*self.dt.get())
-      exp_mat, neg_exp_mat = self.exp_p()
+      #(self.cell.p*self.dt/self.cell.m).view(np.ndarray)
+      vel_mat = (self.cell.p/self.cell.m).view(np.ndarray)
+      ip_mat = invert_ut3x3(vel_mat)      
+      vel_mat*=self.dt
+      exp_mat=exp_ut3x3(vel_mat)
+      neg_exp_mat = invert_ut3x3(exp_mat)
       sinh_mat = 0.5*(exp_mat - neg_exp_mat)
-      ip_mat = invert_ut3x3(vel_mat)
+      
 
       p = self.atoms.p.view(np.ndarray) 
       q = self.atoms.q.view(np.ndarray)   # this strips the dependency checks off p and q, making it inexpensive to scan through ...
@@ -168,3 +182,57 @@ class BaroRGB(Barostat):
       
       self.cell.h=numpy.dot(exp_mat, self.cell.h)
       
+class BaroRigid(Barostat):
+
+   def get_pot(self):
+      """Calculates the elastic strain energy of the cell"""
+      return self.cell.V*self.pext
+      
+   def bind(self, atoms, cell, force):
+      super(BaroRigid,self).bind(atoms, cell, force)
+      self.thermostat.bind(pm=(self.cell.P, self.cell.M))
+      dset(self,"pot",depend_value(name='pot', deps=depend_func(func=self.get_pot, 
+          dependencies=[ depget(self.cell,"V"), depget(self,"pext")  ]  ) ) )            
+      
+   def pstep(self):
+      
+      dthalf = self.dt*0.5
+      dthalf2=dthalf**2/2.0
+      dthalf3=dthalf**3/3.0     
+      
+      #step on the cell velocities - first term, which only depends on "cell" quantities      
+      #pV=np.trace(numpy.dot(self.cell.ih,self.cell.p))*self.cell.V
+      #print "check start ",self.pV, np.trace(numpy.dot(self.cell.ih,self.cell.p))*self.cell.V
+      self.cell.P += dthalf*3.0*(self.cell.V*(self.press - self.pext) + 2.0*Constants.kb*self.temp)
+
+
+      #now must compute the terms depending on outer products of f and p
+      f = self.force.f.view(np.ndarray)
+      m = self.atoms.m3.view(np.ndarray)
+      p = self.atoms.p.view(np.ndarray)  # this strips the dependency checks from p, making it inexpensive to scan through ...
+            
+      self.cell.P+=dthalf2*np.dot(p,f/m)+dthalf3*np.dot(f,f/m)
+   
+      self.atoms.p += f*dthalf      
+      
+           
+   def qstep(self):
+      """Takes the atom positions, velocities and forces and integrates the 
+         equations of motion forward by a step dt"""
+      eta = self.cell.P[0]/self.cell.m
+      exp, neg_exp = ( math.exp(eta*self.dt), math.exp(-eta*self.dt))
+      sinh = 0.5*(exp - neg_exp)
+
+      
+      p = self.atoms.p.view(np.ndarray) 
+      q = self.atoms.q.view(np.ndarray)   # this strips the dependency checks off p and q, making it inexpensive to scan through ...
+      m = self.atoms.m3.view(np.ndarray)      
+      q*=exp
+      q+=(sinh/eta)* p/m
+      p *= neg_exp
+
+      depget(self.atoms,"p").taint(taintme=False)  # .. but one must remember to taint it manually!
+      depget(self.atoms,"q").taint(taintme=False)  # .. but one must remember to taint it manually!
+
+      self.cell.V*=exp**3
+              
