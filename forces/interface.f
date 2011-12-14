@@ -13,10 +13,12 @@
       double precision, dimension(3,3) :: vir
       
       double precision, parameter :: skin = 9.33d0
+      !currently hardcoded, should be 0.2*rc
       double precision, dimension(3) :: q_diff
 
       integer i, j, ios, counter
-      logical, dimension(:,:), allocatable :: n_list
+      integer, dimension(:), allocatable :: n_list
+      integer, dimension(:), allocatable :: index_list
       double precision :: time = 0.0, timeall=0.0, timewait=0.0
       integer countnum, countrate
       
@@ -52,39 +54,41 @@
 !            print "cell.h", cell%h
             call readbuffer(socket, nat, 4)
             if ( .not. allocated(buffer) ) then
+               write(*,*) "allocating buffer"
                allocate(buffer(3*nat))
             endif
             call readbuffer(socket, buffer, nat*3*8)
             
-            if ( .not. allocated(atoms) ) then
-               allocate(atoms(nat))
-               allocate(f(3,nat))
-            endif
-!            if ((allocated(n_list)) .neqv. .true.) then
-!               allocate(n_list(size(atoms), size(atoms)))
-!               call nearest_neighbours(atoms, cell, n_list)
-!               allocate(ref_atoms(size(atoms)))
-!               ref_atoms = atoms
-!            end if
-            if ((allocated(n_list)) .neqv. .true.) then
-               allocate(n_list(size(atoms), size(atoms)))
+            if ((allocated(atoms)) .neqv. .true.) then
+               write(*,*) "allocating nlist"      
+               allocate(atoms(nat))      
             end if
-            n_list = .true.
-
-!         do i = 1, size(atoms)
-!            q_diff = atoms(i)%pos - ref_atoms(i)%pos
-!            if (2.0*abs(dot_product(q_diff, q_diff)) >= skin) then
-!               write(*,*) "Calling nearest_neighbours..."
-!               call nearest_neighbours(atoms, cell, n_list)
-!               ref_atoms = atoms
-!               exit
-!            end if
-!         end do
-
             do i = 1, nat
                atoms(i)%pos=buffer(3*(i-1)+1:3*i)
             enddo
-            call get_all(atoms, cell, n_list, pot, f, vir)
+
+            if ((allocated(n_list)) .neqv. .true.) then
+               allocate(f(3,size(atoms)))
+               allocate(n_list(size(atoms)-1))
+               allocate(index_list(size(atoms)*(size(atoms)-1)/2))
+               call nearest_neighbours2(atoms, cell, n_list, index_list)
+               allocate(ref_atoms(size(atoms)))
+               ref_atoms = atoms
+            end if
+            
+            do i = 1, size(atoms)
+               q_diff = atoms(i)%pos - ref_atoms(i)%pos
+               if (2.0*abs(dot_product(q_diff, q_diff)) >= skin) then
+                  call nearest_neighbours2(atoms, cell, 
+     c                     n_list, index_list)
+                  ref_atoms = atoms
+                  exit
+               end if
+            end do
+
+
+
+            call get_all2(atoms, cell, n_list, index_list, pot, f, vir)
             vir = transpose(vir)
             write(*,*) "computed energy is ",pot
             hasdata=.true.            
