@@ -11,8 +11,7 @@
       double precision, dimension(:), allocatable :: buffer
       double precision, dimension(:,:), allocatable :: f
       double precision, dimension(3,3) :: vir
-      
-      double precision, parameter :: skin = 9.33d0
+           
       !currently hardcoded, should be 0.2*rc
       double precision, dimension(3) :: q_diff
 
@@ -25,12 +24,12 @@
       integer, parameter :: MSGLEN=12
       logical :: isinit=.false., hasdata=.false.
       character*12 :: header
+      character*1024 :: parbuffer
       integer socket, nat
       
       counter = 0
       
       call open_socket(socket)
-      isinit=.true. !we hardcode parameters because I cannot be bothered to parse strings
       do while (.true.)
          
          call readbuffer(socket, header, MSGLEN)
@@ -44,7 +43,13 @@
                call writebuffer(socket,"READY       ",MSGLEN)
             endif
          else if (trim(header) == "INIT") then     
-            write(*,*) "Yes, we should do something here"
+            call readbuffer(socket, nat, 4)
+            call readbuffer(socket, parbuffer, nat)
+            
+            read(parbuffer,*) eps, sigma, rc, rn            
+            correction = 4*eps*((sigma/rc)**12 - (sigma/rc)**6)
+            isinit=.true.
+            write(*,*) "Yes, we should do something here", eps, sigma
          else if (trim(header) == "POSDATA") then              
             call readbuffer(socket, cell%h, 9*8)
             call readbuffer(socket, cell%ih, 9*8)
@@ -71,24 +76,22 @@
                allocate(f(3,size(atoms)))
                allocate(n_list(size(atoms)-1))
                allocate(index_list(size(atoms)*(size(atoms)-1)/2))
-               call nearest_neighbours2(atoms, cell, n_list, index_list)
+               call nearest_neighbours(atoms, cell, n_list, index_list)
                allocate(ref_atoms(size(atoms)))
                ref_atoms = atoms
             end if
             
             do i = 1, size(atoms)
                q_diff = atoms(i)%pos - ref_atoms(i)%pos
-               if (2.0*abs(dot_product(q_diff, q_diff)) >= skin) then
-                  call nearest_neighbours2(atoms, cell, 
+               if (2.0*abs(dot_product(q_diff, q_diff)) >= rn-rc) then
+                  call nearest_neighbours(atoms, cell, 
      c                     n_list, index_list)
                   ref_atoms = atoms
                   exit
                end if
             end do
 
-
-
-            call get_all2(atoms, cell, n_list, index_list, pot, f, vir)
+            call get_all(atoms, cell, n_list, index_list, pot, f, vir)
             vir = transpose(vir)
             write(*,*) "computed energy is ",pot
             hasdata=.true.            

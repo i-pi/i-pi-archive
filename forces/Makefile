@@ -5,10 +5,10 @@ OBJECTS=$(SOURCES:.f=.o)
 all: ljengine.x
 
 ljengine.x: $(OBJECTS)
-	gfortran -O2 -o ljengine.x ../src/driver/sockets.o $(OBJECTS)
+	gfortran -O3 -o ljengine.x ../src/driver/sockets.o $(OBJECTS)
 	
 %.o: %.f
-	gfortran -O2 -c $<
+	gfortran -O3 -mtune=native -c $<
 	
 system_read.o: xml_read.o sys_vars.o
 interface.o: system_read.o LJ.o SG.o

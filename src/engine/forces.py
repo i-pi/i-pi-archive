@@ -49,9 +49,10 @@ class ForceField(dobject):
 
 import time
 class FFSocket(ForceField):
-   def __init__(self):
+   def __init__(self, pars=""):
       super(FFSocket,self).__init__() 
       self.socket=Interface(slots=4)
+      self.pars=pars
       self.timer=0.0
       self.twall=0.0
       self.ncall=0
@@ -61,14 +62,12 @@ class FFSocket(ForceField):
       self.timer-= time.clock()
       self.twall-=time.time()
       
-      myreq=self.socket.queue(self.atoms, self.cell)
+      myreq=self.socket.queue(self.atoms, self.cell, self.pars)
       while myreq["status"] != "Done":
-#         time.sleep(0.01)
          self.socket.pool_update()
          self.socket.pool_distribute()
       self.socket.release(myreq)
-#      print myreq["result"]
-#      time.sleep(5)
+
       self.ncall+=1
       self.timer+=time.clock()
       self.twall+=time.time()      

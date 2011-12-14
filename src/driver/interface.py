@@ -1,4 +1,4 @@
-import ctypes
+#import ctypes
 import socket, select, string
 import numpy as np
 import time, pdb
@@ -17,7 +17,8 @@ class Status:
 class Driver(socket.socket):
    def __init__(self, socket):
       super(Driver,self).__init__(_sock=socket)
-   
+      self._buf=np.zeros(0,np.byte)
+      
    def status(self):
       try:
          self.sendall(Message("status"))      
@@ -30,7 +31,9 @@ class Driver(socket.socket):
          return Status.Up | Status.Busy
       except:
          return Status.Disconnected
+         
       #print "status:", reply
+
       if not len(reply) == HDRLEN:
          return Status.Disconnected
       elif reply==Message("ready"):
@@ -42,20 +45,36 @@ class Driver(socket.socket):
       else:
          print "Unrecognized reply", reply         
          return Status.Up
+   
+   def recvall(self, dest):      
+      blen=dest.itemsize*dest.size
+      if (blen>len(self._buf)) : self._buf.resize(blen)  # keeps a permanent buffer, which is expanded if necessary
+      bpos=0
+      while bpos<blen:
+         try:
+            bpart=self.recv_into(self._buf[bpos:], blen-bpos )
+         except socket.timeout:
+            print "timeout, v2 trying again"; pass
+         if (bpart == 0 ): raise Disconnected()
+         bpos+=bpart
+
+      if np.isscalar(dest):       
+         return np.fromstring(self._buf[0:blen], dest.dtype)[0]
+      else:
+         return np.fromstring(self._buf[0:blen], dest.dtype).reshape(dest.shape)
       
+       
    def initialize(self, pars):
-      if (self.status() & Status.NeedsInit):
-         self.sendall(Message("init"));
-         self.sendall(ctypes.c_int32(len(pars)),4)
-         self.sendall(pars)         
-      else: raise InvalidStatus()
+      self.sendall(Message("init"));
+      self.sendall(np.int32(len(pars)))
+      self.sendall(pars)                        
                
    def sendpos(self, atoms, cell):
       if (self.status() & Status.Ready):
          self.sendall(Message("posdata"));
          self.sendall(cell.h, 9*8)
          self.sendall(cell.ih,9*8)      
-         self.sendall(ctypes.c_int32(len(atoms)),4)
+         self.sendall(np.int32(len(atoms)))
          self.sendall(atoms.q,len(atoms)*3*8)
       else: print "status was",self.status(); raise InvalidStatus()
 
@@ -67,59 +86,30 @@ class Driver(socket.socket):
                reply=self.recv(HDRLEN)
             except socket.timeout: pass
             if reply==Message("forceready"): break
-         
-         mu=ctypes.c_double()         
-         while True:
-            try:               
-               rbyte=self.recv_into(mu, 8)
-            except socket.timeout:
-               print "timeout u, trying again"; pass
-            if (rbyte!=8):  raise Disconnected()         
-            else: break
-         mlen=ctypes.c_int32()
-         while True:
-            try:
-               rbyte=self.recv_into(mlen, 4)
-            except socket.timeout:
-               print "timeout v1, trying again"; pass
-            if (rbyte!=4):  raise Disconnected()
-            else: break         
-         pos=0;
-         buf=np.zeros(3*mlen.value*8, str)
-         while pos< len(buf):
-            try:
-               rbyte=self.recv_into(buf[pos:], len(buf)-pos )
-            except socket.timeout:
-               print "timeout, v2 trying again"; pass
-            #print "read rbyte", rbyte
-            pos+=rbyte
-            if (rbyte==0):  raise Disconnected()
-         mf=np.fromstring(buf,dtype=float)
+            if reply=="": raise Disconnected()
+            
+         mu=np.float64(); mu=self.recvall(mu)         
+         mlen=np.int32(); mlen=self.recvall(mlen)
 
-#         if (rbyte!=8*len(mf)):  raise Disconnected()            
-         mvir=np.zeros((3,3),float)
-         while True:
-            try:
-               rbyte=self.recv_into(mvir, 8*9 )
-            except socket.timeout:
-               print "timeout,vir trying again"; pass
-            if (rbyte!=8*9):  raise Disconnected()
-            else: break
-         return  [ mu.value, mf, mvir ]
+         mf=np.zeros(3*mlen,np.float64)
+         mf=self.recvall(mf)
+
+         mvir=np.zeros((3,3),np.float64)
+         mvir=self.recvall(mvir)
+         return  [ mu, mf, mvir ]
          
       else: raise InvalidStatus()
          
 
 class Interface(object):
-   def __init__(self, address="localhost", port=1415, slots=1):
+   def __init__(self, address="spartaco.dyndns.org", port=1415, slots=1):
       self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
       self.server.bind((address,port))
       self.server.listen(slots)
       self.server.settimeout(SERVERTIMEOUT)
       self.clients=[]
       self.requests=[]
-      self.jobs=[]
-      
+      self.jobs=[]      
       
    def __del__(self):
       print "shutting down interface"

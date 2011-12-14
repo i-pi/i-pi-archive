@@ -12,5 +12,4 @@
          double precision, dimension(3,3) :: h
          double precision, dimension(3,3) :: ih
       end type
-
       end module
