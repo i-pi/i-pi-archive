@@ -92,27 +92,27 @@ class BaroFlexi(Barostat):
       super(BaroFlexi,self).bind(atoms,cell,force)
       self.thermostat.bind(cell=self.cell)
 
-   def exp_p(self):
-      dist_mat = (self.cell.p*self.dt/self.cell.m).view(np.ndarray)
-#      exp_mat=matrix_exp(dist_mat);  neg_exp_mat=matrix_exp(-1.0*dist_mat);       
-      eig, eigvals = eigensystem_ut3x3(dist_mat)
-      i_eig = invert_ut3x3(eig)
+#   def exp_p(self):
+#      dist_mat = (self.cell.p*self.dt/self.cell.m).view(np.ndarray)
+##      exp_mat=matrix_exp(dist_mat);  neg_exp_mat=matrix_exp(-1.0*dist_mat);       
+#      eig, eigvals = eigensystem_ut3x3(dist_mat)
+#      i_eig = invert_ut3x3(eig)
 
-      exp_mat = numpy.zeros((3,3))
-      neg_exp_mat = numpy.zeros((3,3))
-      for i in range(3):
-         exp_mat[i,i] = math.exp(eigvals[i])
-         neg_exp_mat[i,i] = math.exp(-eigvals[i])
+#      exp_mat = numpy.zeros((3,3))
+#      neg_exp_mat = numpy.zeros((3,3))
+#      for i in range(3):
+#         exp_mat[i,i] = math.exp(eigvals[i])
+#         neg_exp_mat[i,i] = math.exp(-eigvals[i])
 
-      exp_mat = numpy.dot(eig, exp_mat)
-      exp_mat = numpy.dot(exp_mat, i_eig)
-         
-      neg_exp_mat = numpy.dot(eig, neg_exp_mat)
-      neg_exp_mat = numpy.dot(neg_exp_mat, i_eig)
+#      exp_mat = numpy.dot(eig, exp_mat)
+#      exp_mat = numpy.dot(exp_mat, i_eig)
+#         
+#      neg_exp_mat = numpy.dot(eig, neg_exp_mat)
+#      neg_exp_mat = numpy.dot(neg_exp_mat, i_eig)
 
-      em2=exp_ut3x3(dist_mat)
-      iem=exp_ut3x3(-dist_mat)      
-      return exp_mat, neg_exp_mat
+#      em2=exp_ut3x3(dist_mat)
+#      iem=exp_ut3x3(-dist_mat)      
+#      return exp_mat, neg_exp_mat
 
    def pstep(self):
       
@@ -124,8 +124,8 @@ class BaroFlexi(Barostat):
       for i in range(3): L[i,i] = 3.0 - i
       
       #step on the cell velocities - first term, which only depends on "cell" quantities
-      self.cell.p += dthalf*(self.cell.V*(self.stress - self.piext) + 2.0*Constants.kb*self.thermostat.temp*L)
-
+      self.cell.p += dthalf*(self.cell.V*(self.stress - self.piext) + 2.0*Constants.kb*self.thermostat.temp*L)       
+     # pdb.set_trace()
 
       #now must compute the terms depending on outer products of f and p
       f = self.force.f.view(np.ndarray)
@@ -162,25 +162,42 @@ class BaroFlexi(Barostat):
       """Takes the atom positions, velocities and forces and integrates the 
          equations of motion forward by a step dt"""
       #(self.cell.p*self.dt/self.cell.m).view(np.ndarray)
+      self.timer-=time.clock()
+      
       vel_mat = (self.cell.p/self.cell.m).view(np.ndarray)
-      ip_mat = invert_ut3x3(vel_mat)      
+
       vel_mat*=self.dt
       exp_mat=exp_ut3x3(vel_mat)
       neg_exp_mat = invert_ut3x3(exp_mat)
       sinh_mat = 0.5*(exp_mat - neg_exp_mat)
-      
+      ips_mat = numpy.dot( sinh_mat, invert_ut3x3(vel_mat) )
 
-      p = self.atoms.p.view(np.ndarray) 
-      q = self.atoms.q.view(np.ndarray)   # this strips the dependency checks off p and q, making it inexpensive to scan through ...
-      m = self.atoms.m.view(np.ndarray)      
-      for i in range(len(self.atoms)):
-         q[3*i:3*(i+1)] = numpy.dot(exp_mat, q[3*i:3*(i+1)]) + numpy.dot(ip_mat, numpy.dot(sinh_mat, p[3*i:3*(i+1)]/m[i])) 
-         p[3*i:3*(i+1)] = numpy.dot(neg_exp_mat, p[3*i:3*(i+1)])
+      nat=len(self.atoms)
+      p = self.atoms.p.view(np.ndarray).copy().reshape((nat,3)) 
+      q = self.atoms.q.view(np.ndarray).copy().reshape((nat,3))   # this strips the dependency checks off p and q, making it inexpensive to scan through ...
+      m3 = self.atoms.m3.view(np.ndarray).copy().reshape((nat,3))       
 
-      depget(self.atoms,"p").taint(taintme=False)  # .. but one must remember to taint it manually!
-      depget(self.atoms,"q").taint(taintme=False)  # .. but one must remember to taint it manually!
+#      k=0
+#      for i in range(nat):
+#         kn=k+3  
+#         q[k:kn] = numpy.dot(exp_mat, q[k:kn]) + numpy.dot(ips_mat, p[k:kn]/m[i])
+#         p[k:kn] = numpy.dot(neg_exp_mat, p[k:kn])
+#         k=kn
+#      depget(self.atoms,"p").taint(taintme=False)  # .. but one must remember to taint it manually!
+#      depget(self.atoms,"q").taint(taintme=False)  # .. but one must remember to taint it manually!
       
+      #pdb.set_trace()
+      
+      # quick multiplication  by making it in matrix form
+      q=numpy.dot(q,exp_mat.T)+numpy.dot(p/m3,ips_mat.T)
+      p=numpy.dot(p,neg_exp_mat.T)
+
+      # assigns back to actual storage
+      self.atoms.q=q.reshape(3*nat)
+      self.atoms.p=p.reshape(3*nat)
+                    
       self.cell.h=numpy.dot(exp_mat, self.cell.h)
+      self.timer+=time.clock()
       
 class BaroRigid(Barostat):
 

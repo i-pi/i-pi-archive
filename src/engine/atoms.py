@@ -36,6 +36,9 @@ class Atoms(dobject):
       self.natoms=natoms
       dset(self,"q",depend_array(name="q",value=np.zeros(3*natoms, float)) ) 
       dset(self,"p",depend_array(name="p",value=np.zeros(3*natoms, float)) )
+      dset(self,"px",self.p[0:3*natoms:3]);       dset(self,"py",self.p[1:3*natoms:3]);      dset(self,"pz",self.p[2:3*natoms:3])
+      dset(self,"qx",self.q[0:3*natoms:3]);       dset(self,"qy",self.q[1:3*natoms:3]);      dset(self,"qz",self.q[2:3*natoms:3])      
+      
       dset(self,"m",depend_array(name="m",value=np.zeros(natoms, float)) )
 
       #interface to get a 3*n-sized array with masses      
@@ -43,10 +46,13 @@ class Atoms(dobject):
       
       self._alist=[ Atom(self, i) for i in range(natoms) ]
 
+      dset(self,"M",depend_value(name="M",deps=depend_func(func=self.get_msum,dependencies=[depget(self,"m")])) )      
       dset(self,"kin",depend_value(name="kin",deps=depend_func(func=self.get_kin,dependencies=[depget(self,"p"),depget(self,"m3")])) )
       dset(self,"kstress",depend_value(name="kstress",deps=depend_func(func=self.get_kstress,dependencies=[depget(self,"p"),depget(self,"m")])) )
    
    def __len__(self): return self.natoms
+
+   def get_msum(self): return self.m.sum()
    
    def mtom3(self): m3=np.zeros(3*self.natoms,float); m3[0:3*self.natoms:3]=self.m; m3[1:3*self.natoms:3]=m3[0:3*self.natoms:3]; m3[2:3*self.natoms:3]=m3[0:3*self.natoms:3]; return m3
    
@@ -67,8 +73,14 @@ class Atoms(dobject):
       """Calculates the contribution of the atom to the kinetic stress tensor"""
       p=self.p.view(np.ndarray)
       ks = numpy.zeros((3,3),float)
-      for i in range(3):
-         for j in range(i,3):
-            ks[j,i] = ks[i,j] = np.dot(p[i:self.natoms*3:3], p[j:self.natoms*3:3]/self.m)
+      ks[0,0]=np.dot(self.px,self.px/self.m)
+      ks[1,1]=np.dot(self.py,self.py/self.m)
+      ks[2,2]=np.dot(self.pz,self.pz/self.m)
+      ks[0,1]=np.dot(self.px,self.py/self.m)
+      ks[0,2]=np.dot(self.px,self.pz/self.m)
+      ks[1,2]=np.dot(self.py,self.pz/self.m)                        
+#      for i in range(3):
+#         for j in range(i,3):
+#            ks[i,j] = np.dot(p[i:self.natoms*3:3], p[j:self.natoms*3:3]/self.m)
       return ks
       

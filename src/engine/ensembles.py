@@ -3,6 +3,7 @@ from utils.depend import *
 from utils import units
 from thermostats import *
 from barostats import *
+import time
 
 class Ensemble(dobject): 
    """General ensemble object, with no particle motion
@@ -13,6 +14,7 @@ class Ensemble(dobject):
 
    def __init__(self):
       dset(self,"econs",depend_value(name='econs',deps=depend_func(func=self.get_econs)) )
+      self.timer=0.0
       
    def bind(self, atoms, cell, force):
       self.atoms=atoms
@@ -44,9 +46,9 @@ class NVEEnsemble(Ensemble):
 
 
 class NVTEnsemble(NVEEnsemble):
-   def __init__(self, dt=None, temp=None, thermostat=Thermostat()):
+   def __init__(self, dt=None, temp=None, thermostat=Thermostat(), fixcom=False):
       super(NVTEnsemble,self).__init__(dt=dt)
-
+      self.fixcom=fixcom
       self.thermostat=thermostat
       
       # binds options for dt and temperature of the thermostat to those in the ensemble
@@ -70,16 +72,31 @@ class NVTEnsemble(NVEEnsemble):
       """Calculates the conserved energy quantity for constant T ensembles"""
       return NVEEnsemble.get_econs(self)+self.thermostat.ethermo  
       
+   def rm_com(self):
+      if (self.fixcom):
+         pcom=np.zeros(3,float);
+         pcom[0]=self.atoms.px.sum();          pcom[1]=self.atoms.py.sum();         pcom[2]=self.atoms.pz.sum()
+         self.thermostat.ethermo+=np.dot(pcom,pcom)/(2.0*self.atoms.M)
+
+         pcom*=1.0/self.atoms.M
+         self.atoms.px-=self.atoms.m*pcom[0];          self.atoms.py-=self.atoms.m*pcom[1];          self.atoms.pz-=self.atoms.m*pcom[2]; 
+   
    def step(self):
       """Velocity Verlet time step"""
 
-      self.thermostat.step()
+      self.timer-=time.clock()    
+      self.thermostat.step()      
+      self.timer+=time.clock()    
+      self.rm_com()
       super(NVTEnsemble,self).step()
+      self.timer-=time.clock()          
       self.thermostat.step()
-      
+      self.timer+=time.clock()          
+      self.rm_com()
+            
 class NPTEnsemble(NVTEnsemble):
-   def __init__(self, dt=None, temp=None, pext=None, thermostat=Thermostat(), barostat=Barostat() ):
-      super(NPTEnsemble,self).__init__(dt=dt, temp=temp, thermostat=thermostat)
+   def __init__(self, dt=None, temp=None, pext=None, thermostat=Thermostat(), barostat=Barostat(), fixcom=False ):
+      super(NPTEnsemble,self).__init__(dt=dt, temp=temp, thermostat=thermostat, fixcom=fixcom)
       self.barostat=barostat
             
       # "binds" the dt, temp and p properties of the barostat to those of the ensemble. 
@@ -103,12 +120,14 @@ class NPTEnsemble(NVTEnsemble):
    def step(self):
       """Velocity Verlet time step"""
       self.thermostat.step()
+      self.rm_com()            
       self.barostat.step()
       self.thermostat.step()      
-                  
+      self.rm_com()
+                        
 class NSTEnsemble(NVTEnsemble):
-   def __init__(self, dt=None, temp=None, pext=None, sext=None, thermostat=Thermostat(), barostat=Barostat() ):
-      super(NSTEnsemble,self).__init__(dt=dt, temp=temp, thermostat=thermostat)
+   def __init__(self, dt=None, temp=None, pext=None, sext=None, thermostat=Thermostat(), barostat=Barostat(), fixcom=False ):
+      super(NSTEnsemble,self).__init__(dt=dt, temp=temp, thermostat=thermostat,fixcom=fixcom)
       self.barostat=barostat
             
       # "binds" the dt, temp and p properties of the barostat to those of the ensemble. 
@@ -130,12 +149,15 @@ class NSTEnsemble(NVTEnsemble):
    def get_econs(self):
       """Calculates the conserved energy quantity for constant T ensembles"""
       xv=0.0 # extra term stemming from the Jacobian
-      for i in range(3):
-         xv+=math.log(self.cell.h[i,i])*(3-i)
+      for i in range(3):  xv+=math.log(self.cell.h[i,i])*(3-i)
       return NVTEnsemble.get_econs(self)++self.barostat.thermostat.ethermo+self.barostat.pot+self.cell.kin-2.0*Constants.kb*self.thermostat.temp*xv
       
    def step(self):
       """Velocity Verlet time step"""
-      self.thermostat.step()
+      self.thermostat.step()         
+      self.timer-=time.clock()       
+      self.rm_com()            
+      self.timer+=time.clock()        
       self.barostat.step()
       self.thermostat.step()      
+      self.rm_com()      

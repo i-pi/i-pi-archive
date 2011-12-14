@@ -1,6 +1,8 @@
-import numpy, math, sys, string
+import numpy as np
+import math, sys, string
 #import cell, dynamics, rp_dynamics, engine, rp_engine, thermostat, langevin, forces, PILE, barostat, Bussi
 import xml.sax.handler, xml.sax, pprint
+import time
 
 def xml_write(atoms, cell, namedpipe):
    """Writes an xml-compliant file to file with the atoms positions and cell
@@ -11,14 +13,18 @@ def xml_write(atoms, cell, namedpipe):
    namedpipe.write("<System>\n")
    namedpipe.write(tab + "<natoms>" + str(len(atoms)) + "</natoms>\n")
 
-   for i in range(len(atoms)):
-      atom_q = atoms[i].q
+   nat=len(atoms)
+   qx=atoms.q[0:3*nat:3].view(np.ndarray)
+   qy=atoms.q[1:3*nat:3].view(np.ndarray)
+   qz=atoms.q[2:3*nat:3].view(np.ndarray)   
+
+   for i in range(nat):
       namedpipe.write(tab + "<Atom_vec>\n")
-      namedpipe.write(tab + tab + "<q>[" + str(atom_q[0]) + "," + str(atom_q[1]) + "," + str(atom_q[2]) + "]</q>\n")
+      namedpipe.write(tab + tab + "<q>[" + str(qx[i]) + "," + str(qy[i]) + "," + str(qz[i]) + "]</q>\n")
       namedpipe.write(tab + "</Atom_vec>\n")
 
-   h = cell.h
-   ih = cell.ih
+   h = cell.h.view(np.ndarray)
+   ih = cell.ih.view(np.ndarray)
    namedpipe.write(tab + "<Cell_vec>\n")
    namedpipe.write(tab + tab + "<h>[" + str(h[0,0]) + "," + str(h[1,0]) + "," + str(h[2,0]) + "]</h>\n")
    namedpipe.write(tab + "</Cell_vec>\n")
@@ -88,6 +94,25 @@ class System_read(xml.sax.handler.ContentHandler):
       elif name == "vir_column":
          self.in_vir = False
          self.vir.append(self.buffer)
+
+readtime=0.0
+def xml_read(namedpipe):
+   """Reads an xml-compliant file and gets the potential, forces and virial"""
+
+   parser = xml.sax.make_parser()
+   handler = System_read()
+   parser.setContentHandler(handler)
+   parser.parse(namedpipe)
+
+   pot=read_float(handler.pot)
+   f=np.zeros(len(handler.f)*3,float)
+   vir=np.zeros((3,3),float)
+   for i in range(len(handler.f)):
+      f[3*i:3*(i+1)] = read_array(handler.f[i])
+   for i in range(3):
+      vir[:,i] = read_array(handler.vir[i])
+   return [ pot, f, vir ]
+      
 
 class Init_object:
    def __init__(self):
@@ -398,10 +423,10 @@ def read_array(data):
   
    try:
       if elements == 1:
-         output = numpy.zeros(elements)
+         output = np.zeros(elements)
          output[0] = float(data[begin+1:end])
       else:
-         output = numpy.zeros(elements)
+         output = np.zeros(elements)
          output[0] = float(data[begin+1:comma_list[0]])
          output[elements-1] = float(data[comma_list[elements-2]+1:end])
          for i in range(1,elements-1):
@@ -448,23 +473,7 @@ def read_bool(data):
       print "Tried to write NaN to int in bool"
       exit()
 
-def xml_read(namedpipe):
-   """Reads an xml-compliant file and gets the potential, forces and virial"""
 
-   parser = xml.sax.make_parser()
-   handler = System_read()
-   parser.setContentHandler(handler)
-   parser.parse(namedpipe)
-
-   pot=read_float(handler.pot)
-   f=numpy.zeros(len(handler.f)*3,float)
-   vir=numpy.zeros((3,3),float)
-   for i in range(len(handler.f)):
-      f[3*i:3*(i+1)] = read_array(handler.f[i])
-   for i in range(3):
-      vir[:,i] = read_array(handler.vir[i])
-   return [ pot, f, vir ]
-      
 def run_from_xml(input_file):
    parser = xml.sax.make_parser()
    handler = Init_read()
@@ -476,7 +485,7 @@ def run_from_xml(input_file):
    need_cell_thermo = False
    need_barostat = False
    w = 1.0
-   Pext = numpy.zeros((3,3))
+   Pext = np.zeros((3,3))
    h0 = None
 
    if handler.ensemble_kind == "NVE":
@@ -567,7 +576,7 @@ def run_from_xml(input_file):
          for i in range(3):
             Pext[:,i] = handler.Pext[i]
       if handler.ref_cell != []:
-         h0 = numpy.zeros((3,3))
+         h0 = np.zeros((3,3))
          for i in range(3):
             h0[:,i] = handler.ref_cell[i]
 

@@ -5,7 +5,7 @@ OBJECTS=$(SOURCES:.f=.o)
 all: ljengine.x
 
 ljengine.x: $(OBJECTS)
-	gfortran -O2 -o ljengine.x $(OBJECTS)
+	gfortran -O2 -o ljengine.x ../src/driver/sockets.o $(OBJECTS)
 	
 %.o: %.f
 	gfortran -O2 -c $<

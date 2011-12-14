@@ -31,8 +31,7 @@ class depend_proxy(object):
       #if not self._linkto is None and self._linkto.name == "vir": pdb.set_trace()      
       self._tainted = True     #this is to prevent circular dependencies to hang forever
       for item in self._dependants: 
-         if (not item.tainted()):
-            item.taint()
+         if (not item.tainted()):  item.taint()
       self._tainted = taintme
       
    def tainted(self):

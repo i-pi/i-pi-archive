@@ -72,14 +72,16 @@ class ThermoLangevin(Thermostat):
    def step(self):
       """Updates the atom velocities with a langevin thermostat"""
       
-      p=numpy.array(self.p,copy=True)
+      p=self.p.view(np.ndarray).copy()
       
       p/=self.sqrtm
+
       self.ethermo+=numpy.dot(p,p)*0.5
       p*=self.T
       p+=self.S*np.random.standard_normal(len(p))
       self.ethermo-=numpy.dot(p,p)*0.5      
-      p*=self.sqrtm
-      
+
+      p*=self.sqrtm      
+            
       self.p=p
 

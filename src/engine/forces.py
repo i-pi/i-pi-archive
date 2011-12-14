@@ -2,6 +2,7 @@ import numpy as np
 import math
 from utils.depend import *
 from utils.io import io_system
+from driver.interface import Interface
 
 class ForceField(dobject):
    """Creates an interface between the force, potential and virial calculation
@@ -47,27 +48,56 @@ class ForceField(dobject):
       return vir
 
 import time
-class FFPipe(ForceField):
-   def __init__(self, pars=dict(pipein="pipeforce", pipeout="pipepos")):
-      super(FFPipe,self).__init__() 
-      self.pars = pars
+class FFSocket(ForceField):
+   def __init__(self):
+      super(FFSocket,self).__init__() 
+      self.socket=Interface(slots=4)
       self.timer=0.0
+      self.twall=0.0
       self.ncall=0
 
    def get_all(self):
-      print "computing forces"
-   
-      start = time.clock()
-      self.fout=open(self.pars["pipeout"],"w")
-      io_system.xml_write(self.atoms, self.cell, self.fout)
-      self.fout.close()
+      #print "computing forces"
+      self.timer-= time.clock()
+      self.twall-=time.time()
+      
+      myreq=self.socket.queue(self.atoms, self.cell)
+      while myreq["status"] != "Done":
+#         time.sleep(0.01)
+         self.socket.pool_update()
+         self.socket.pool_distribute()
+      self.socket.release(myreq)
+#      print myreq["result"]
+#      time.sleep(5)
+      self.ncall+=1
+      self.timer+=time.clock()
+      self.twall+=time.time()      
+      return myreq["result"]
+      
+      
+      
+      
+#      self.timer-= time.clock()
+#      self.timewait-= time.clock()
+#      self.fout=open(self.pars["pipeout"],"w")      
+#      self.timewait+=time.clock()
+#      self.timewrite-=time.clock()
+#      io_system.xml_write(self.atoms, self.cell, self.fout)      
+#      self.timewrite+=time.clock()
 
-      self.fin=open(self.pars["pipein"],"r")
-      [pot, f, vir]=io_system.xml_read(self.fin)
-      self.fin.close()
-      self.timer+=time.clock()-start
-      self.ncall+=1      
-      return [pot, f, vir]
+#      self.fout.close()
+
+#      self.timewait-= time.clock()
+#      self.fin=open(self.pars["pipein"],"r")
+#      self.timewait+= time.clock()
+#      self.timeread-=time.clock()      
+#      [pot, f, vir]=io_system.xml_read(self.fin)
+#      self.timeread+=time.clock()
+#      
+#      self.fin.close()
+#      self.timer+=time.clock()
+#      self.ncall+=1      
+#      return [pot, f, vir]
 
 class FFLennardJones(ForceField):
    """Creates an interface between the force, potential and virial calculation
