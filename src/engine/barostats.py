@@ -128,24 +128,15 @@ class BaroFlexi(Barostat):
      # pdb.set_trace()
 
       #now must compute the terms depending on outer products of f and p
-      f = self.force.f.view(np.ndarray)
-      m = self.atoms.m.view(np.ndarray)
-      p = self.atoms.p.view(np.ndarray)  # this strips the dependency checks from p, making it inexpensive to scan through ...
-      nat=self.atoms.natoms
-            
-      #time.doprint=True
-#      for i in range(nat):
-#         fi=f[3*i:3*(i+1)]; pi=p[3*i:3*(i+1)]; cpi=0.0
-#         for j in range(3): 
-#            for k in range(j,3):
-#               cpi[j,k] += (dthalf2*(fi[j]*pi[k] + fi[k]*pi[j])+ dthalf3*fi[k]*fi[j])
-#         cp+=cpi/m[i]
-#         cp+=(dthalf2*(np.outer(fi,pi) + np.outer(pi,fi))+ dthalf3*np.outer(fi,fi))/m[i]
+      m = depstrip(self.force.m)
+#      m = self.atoms.m.view(np.ndarray)
+#      p = self.atoms.p.view(np.ndarray)  # this strips the dependency checks from p, making it inexpensive to scan through ...
+#      nat=self.atoms.natoms
 
-      # for mysterious reasons, the expression below is orders of magnitude faster than the above.
-      fx=f[0:3*nat:3];       fy=f[1:3*nat:3];       fz=f[2:3*nat:3];
-      fxm=fx/m;              fym=fy/m;              fzm=fz/m;             
-      px=p[0:3*nat:3];       py=p[1:3*nat:3];       pz=p[2:3*nat:3];        
+      # faster way is to compute the products from the slices
+      fx=depstrip(self.force.fx);       fy=depstrip(self.force.fy);       fz=depstrip(self.force.fz);
+      fxm=fx/m;                         fym=fy/m;                         fzm=fz/m;             
+      px=depstrip(self.force.px);       py=depstrip(self.force.py);       pz=depstrip(self.force.pz);        
       
       cp=numpy.zeros((3,3),float)
       cp[0,0]=dthalf2*2.0*np.dot(fxm,px) + dthalf3*np.dot(fx,fxm)
@@ -155,8 +146,8 @@ class BaroFlexi(Barostat):
       cp[0,2]=dthalf2*(np.dot(fxm,pz)+np.dot(px,fzm)) + dthalf3*np.dot(fx,fzm)
       cp[1,2]=dthalf2*(np.dot(fym,pz)+np.dot(py,fzm)) + dthalf3*np.dot(fy,fzm)            
       
-      self.cell.p+=cp      
-      self.atoms.p += f*dthalf      
+      self.cell.p+=cp
+      self.atoms.p += self.force.f*dthalf      
       
    def qstep(self):
       """Takes the atom positions, velocities and forces and integrates the 

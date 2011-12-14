@@ -102,7 +102,7 @@ class Driver(socket.socket):
          
 
 class Interface(object):
-   def __init__(self, address="spartaco.dyndns.org", port=1415, slots=1):
+   def __init__(self, address="localhost", port=3141, slots=1):
       self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
       self.server.bind((address,port))
       self.server.listen(slots)

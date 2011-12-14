@@ -22,7 +22,7 @@ class ForceField(dobject):
       dset(self,"pot",depend_value(name="pot", deps=depend_func(func=self.get_pot, dependencies=[depget(self,"ufv")] )  )  )
       dset(self,"f", depend_array(name="f",   value=np.zeros(atoms.natoms*3, float),  deps=depend_func(func=self.get_f, dependencies=[depget(self,"ufv")] )) )
       dset(self,"vir", depend_array(name="vir", value=np.zeros((3,3),float),            deps=depend_func(func=self.get_vir, dependencies=[depget(self,"ufv")] )) )
-
+      dset(self,"fx",self.f[0:3*atoms.natoms:3]);       dset(self,"fy",self.f[1:3*atoms.natoms:3]);      dset(self,"fz",self.f[2:3*atoms.natoms:3])
 
    def get_all(self):
       """Dummy routine where no calculation is done"""
@@ -49,9 +49,9 @@ class ForceField(dobject):
 
 import time
 class FFSocket(ForceField):
-   def __init__(self, pars=""):
+   def __init__(self, pars="", address="localhost", port=3141):
       super(FFSocket,self).__init__() 
-      self.socket=Interface(slots=4)
+      self.socket=Interface(address=address, port=port, slots=2)
       self.pars=pars
       self.timer=0.0
       self.twall=0.0
