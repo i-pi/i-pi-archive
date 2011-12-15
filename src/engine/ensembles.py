@@ -75,11 +75,12 @@ class NVTEnsemble(NVEEnsemble):
    def rm_com(self):
       if (self.fixcom):
          pcom=np.zeros(3,float);
-         pcom[0]=self.atoms.px.sum();          pcom[1]=self.atoms.py.sum();         pcom[2]=self.atoms.pz.sum()
+         
+         pcom[0]=self.atoms.px.sum();          pcom[1]=self.atoms.py.sum();          pcom[2]=self.atoms.pz.sum()
          self.thermostat.ethermo+=np.dot(pcom,pcom)/(2.0*self.atoms.M)
-
+         
          pcom*=1.0/self.atoms.M
-         self.atoms.px-=self.atoms.m*pcom[0];          self.atoms.py-=self.atoms.m*pcom[1];          self.atoms.pz-=self.atoms.m*pcom[2]; 
+         self.atoms.px-=self.atoms.m*pcom[0];  self.atoms.py-=self.atoms.m*pcom[1];  self.atoms.pz-=self.atoms.m*pcom[2]; 
    
    def step(self):
       """Velocity Verlet time step"""

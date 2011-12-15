@@ -205,12 +205,15 @@ def dget(obj,member):
    return obj.__dict__[member]
 def dset(obj,member,value):
    obj.__dict__[member]=value
-   
+
+
+def depstrip(array):
+   return array.view(np.ndarray)
 def depget(obj,member):
    return obj.__dict__[member].deps
 def depset(obj, member, dep):
    obj.__dict__[member].deps=dep   
-   
+
 def depcopy(objfrom,memberfrom,objto,memberto):
    dfrom=dget(objfrom,memberfrom); dto=dget(objto,memberto);
    if not type(dfrom) is type(dto) : raise TypeError("Cannot copy between depend storage of different type")
