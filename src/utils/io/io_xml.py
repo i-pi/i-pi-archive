@@ -1,6 +1,7 @@
 import numpy as np
 import sys, string
-import restart
+sys.path.append('./')
+import utils.restart
 import xml.sax.handler, xml.sax, pprint
 
 def read_dict(data):
@@ -52,7 +53,7 @@ def read_dict(data):
       print "Error in writing to string in map"
       exit()
 
-def read_array(data):
+def read_array(data, dtype):
    """Takes a line with an array of the form: 
       [array[0], array[1], array[2],...], and interprets it"""
 
@@ -61,6 +62,39 @@ def read_array(data):
       end = data.index("]")
    except ValueError:
       print "Error in array syntax"
+      exit()
+
+   elements = data.count(",") + 1
+   length = len(data)
+   comma_list = [i for i in range(length) if data[i] == ","]
+   for i in range(length):
+      if data[i] == "D":
+         data = data[0:i] + "E" + data[i+1:length]
+  
+   try:
+      if elements == 1:
+         output = np.zeros(elements, dtype)
+         output[0] = dtype(data[begin+1:end])
+      else:
+         output = np.zeros(elements, dtype)
+         output[0] = dtype(data[begin+1:comma_list[0]])
+         output[elements-1] = dtype(data[comma_list[elements-2]+1:end])
+         for i in range(1,elements-1):
+            output[i] = dtype(data[comma_list[i-1]+1:comma_list[i]])
+      return output
+   except ValueError:
+      print "Tried to write a value to array not of form ", dtype
+      exit()
+
+def read_tuple(data):
+   """Takes a line with a tuple of the form: 
+      (tuple[0], tuple[1], tuple[2],...), and interprets it"""
+
+   try:
+      begin = data.index("(")
+      end = data.index(")")
+   except ValueError:
+      print "Error in tuple syntax"
       exit()
 
    elements = data.count(",") + 1
@@ -82,7 +116,7 @@ def read_array(data):
             output[i] = float(data[comma_list[i-1]+1:comma_list[i]])
       return output
    except ValueError:
-      print "Tried to write NaN to array"
+      print "Tried to write NaN to tuple"
       exit()
 
 def read_float(data):
@@ -123,7 +157,7 @@ def read_bool(data):
       exit()
 
 class xml_object:
-   def __init__(self, name, default = None, container = None, parent = None, child_list = [], func = None):
+   def __init__(self, name, default = None, container = None, parent = None, child_list = [], func = None, args = None):
       self.inside = False
       self.name = name
       self.value = None
@@ -133,6 +167,7 @@ class xml_object:
       self.parent = parent
       self.child_list = child_list
       self.func = func
+      self.args = args
       if self.container is None and self.func is None:
          print "Error in xml_object ", self.name, " initialisation, no way of computing value"
       if self.container is not None and self.func is not None:
@@ -140,25 +175,28 @@ class xml_object:
 
    def start_tag(self, attributes):
       if self.parent:
-         if not parent.inside:
-            print "Tag ", self.name, " is not within ", parent.name
+         if not self.parent.inside:
+            print "Tag ", self.name, " is not within ", selfparent.name
             exit()
       self.attributes = attributes
       self.inside = True
 
    def fill(self, data):
       if self.container is None:
-         value = self.func(data)
+         if self.args:
+            self.value = self.func(data, self.args)
+         else:
+            self.value = self.func(data)
 
    def end_tag(self):
       if self.container is not None:
          for child in self.child_list:
             if child.value is None:
-               if default is not None:
+               if child.default is not None:
                   self.container.__dict__[child.name] = child.default
                   print "Using default value for ", child.name
                else:
-                  print "Required value ", child.name, " not specified"
+                  print "Value for required field ", child.name, " not specified"
                   exit()
             else:
                self.container.__dict__[child.name] = child.value
@@ -172,28 +210,33 @@ class empty_container:
 class Init_read(xml.sax.handler.ContentHandler):
    
    def __init__(self, simulation_template):
-      self.func_dict = {np.ndarray: get_array, dict: get_dict, float: get_float, int: get_int, bool: get_bool, str: string.strip}
+      self.func_dict = {np.ndarray: read_array, dict: read_dict, float: read_float, int: read_int, bool: read_bool, str: string.strip, tuple: read_tuple}
 
       self.object_dict = {}
-      self.object_dict["simulation"] = xml_object(name = "simulation", container = empty_container())
+      #self.object_dict["simulation"] = xml_object(name = "simulation", container = empty_container())
+      self.object_dict["force"] = xml_object(name = "force", container = empty_container())
 
-      self.init_template(self, simulation_template, parent = self.simulation)
+      self.init_template(simulation_template, self.object_dict["force"])
 
    def init_template(self, fields, parent):
+      parent.child_list = []
       for name in fields:
          field = fields[name]
-         if type(field) == restart.RestartArray or type(field) == restart.RestartValue:
-            func = self.func_dict[field.type]
-            self.object_dict[name] = xml_object(name = name, default = field.default, parent = parent)
+         if field[0] is utils.restart.RestartValue:
+            for val_type in self.func_dict:
+               if field[1][0] is val_type:
+                  self.object_dict[name] = xml_object(name = name, default = field[1][1], func = self.func_dict[val_type], parent = parent)
+                  parent.child_list.append(self.object_dict[name])
+         elif field[0] == utils.restart.RestartArray:
+            self.object_dict[name] = xml_object(name = name, default = field[1][1], func = read_array, args = field[1][0], parent = parent)
             parent.child_list.append(self.object_dict[name])
          else:
             try:
-               self.object_dict[name] = xml_object(name = name, container = empty_container(), default = field.default, parent = parent)
+               self.object_dict[name] = xml_object(name = name, container = empty_container(), default = field[1][1], parent = parent)
                parent.child_list.append(self.object_dict[name]) 
-               self.init_template(field.fields, parent = self.object_dict[name])
+               self.init_template(field[1][0].fields, parent = self.object_dict[name])
             except AttributeError:
-               print "Template has unrecognized type ", type(field)
-               print "\nCheck to see if template has been implemented"
+               print "Template has unrecognized type ", field[1][0]
                exit()
 
    def startElement(self, name, attributes):
@@ -217,7 +260,7 @@ class Init_read(xml.sax.handler.ContentHandler):
 def init_from_xml(input_file, template):
    parser = xml.sax.make_parser()
    handler = Init_read(template)
-   parser.setContentHanlder(handler)
+   parser.setContentHandler(handler)
    parser.parse(input_file)
 
    return handler
