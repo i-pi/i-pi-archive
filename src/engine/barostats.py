@@ -10,7 +10,7 @@ class Barostat(dobject):
 
       # This kind of stretches the concept of synced dependencies: sext holds more information than pext but....
       sync_ext=synchronizer()
-      dset(self,"sext",depend_array(name='sext', value=numpy.zeros((3,3)), deps=depend_sync(synchro=sync_ext, func={"pext" : self.p2s} )) )
+      dset(self,"sext",depend_array(name='sext', value=np.zeros((3,3)), deps=depend_sync(synchro=sync_ext, func={"pext" : self.p2s} )) )
       dset(self,"pext",depend_value(name='pext', value=0.0, deps=depend_sync(synchro=sync_ext, func={"sext" : self.s2p} )) )            
       if sext is None:
          self.pext=pext
@@ -65,14 +65,14 @@ class Barostat(dobject):
       
    def get_pot(self):
       """Calculates the elastic strain energy of the cell"""
-      return self.cell.V0*numpy.trace(numpy.dot(self.sext, self.cell.strain))
+      return self.cell.V0*np.trace(np.dot(self.sext, self.cell.strain))
 
    def get_piext(self):
       """Calculates the external stress tensor"""
-      root = numpy.dot(self.cell.h, self.cell.ih0).view(np.ndarray)
-      pi = numpy.dot(root, self.sext)
+      root = np.dot(self.cell.h, self.cell.ih0).view(np.ndarray)
+      pi = np.dot(root, self.sext)
       
-      pi = numpy.dot(pi, numpy.transpose(root))
+      pi = np.dot(pi, np.transpose(root))
       pi *= self.cell.V0/self.cell.V
       return pi
       
@@ -98,17 +98,17 @@ class BaroFlexi(Barostat):
 #      eig, eigvals = eigensystem_ut3x3(dist_mat)
 #      i_eig = invert_ut3x3(eig)
 
-#      exp_mat = numpy.zeros((3,3))
-#      neg_exp_mat = numpy.zeros((3,3))
+#      exp_mat = np.zeros((3,3))
+#      neg_exp_mat = np.zeros((3,3))
 #      for i in range(3):
 #         exp_mat[i,i] = math.exp(eigvals[i])
 #         neg_exp_mat[i,i] = math.exp(-eigvals[i])
 
-#      exp_mat = numpy.dot(eig, exp_mat)
-#      exp_mat = numpy.dot(exp_mat, i_eig)
+#      exp_mat = np.dot(eig, exp_mat)
+#      exp_mat = np.dot(exp_mat, i_eig)
 #         
-#      neg_exp_mat = numpy.dot(eig, neg_exp_mat)
-#      neg_exp_mat = numpy.dot(neg_exp_mat, i_eig)
+#      neg_exp_mat = np.dot(eig, neg_exp_mat)
+#      neg_exp_mat = np.dot(neg_exp_mat, i_eig)
 
 #      em2=exp_ut3x3(dist_mat)
 #      iem=exp_ut3x3(-dist_mat)      
@@ -120,7 +120,7 @@ class BaroFlexi(Barostat):
       dthalf2=dthalf**2/2.0
       dthalf3=dthalf**3/3.0     
 
-      L = numpy.zeros((3,3))
+      L = np.zeros((3,3))
       for i in range(3): L[i,i] = 3.0 - i
       
       #step on the cell velocities - first term, which only depends on "cell" quantities
@@ -138,7 +138,7 @@ class BaroFlexi(Barostat):
       fxm=fx/m;                         fym=fy/m;                         fzm=fz/m;             
       px=depstrip(self.force.px);       py=depstrip(self.force.py);       pz=depstrip(self.force.pz);        
       
-      cp=numpy.zeros((3,3),float)
+      cp=np.zeros((3,3),float)
       cp[0,0]=dthalf2*2.0*np.dot(fxm,px) + dthalf3*np.dot(fx,fxm)
       cp[1,1]=dthalf2*2.0*np.dot(fym,py) + dthalf3*np.dot(fy,fym)
       cp[2,2]=dthalf2*2.0*np.dot(fzm,pz) + dthalf3*np.dot(fz,fzm)
@@ -161,7 +161,7 @@ class BaroFlexi(Barostat):
       exp_mat=exp_ut3x3(vel_mat)
       neg_exp_mat = invert_ut3x3(exp_mat)
       sinh_mat = 0.5*(exp_mat - neg_exp_mat)
-      ips_mat = numpy.dot( sinh_mat, invert_ut3x3(vel_mat) )
+      ips_mat = np.dot( sinh_mat, invert_ut3x3(vel_mat) )
 
       nat=len(self.atoms)
       p = self.atoms.p.view(np.ndarray).copy().reshape((nat,3)) 
@@ -171,8 +171,8 @@ class BaroFlexi(Barostat):
 #      k=0
 #      for i in range(nat):
 #         kn=k+3  
-#         q[k:kn] = numpy.dot(exp_mat, q[k:kn]) + numpy.dot(ips_mat, p[k:kn]/m[i])
-#         p[k:kn] = numpy.dot(neg_exp_mat, p[k:kn])
+#         q[k:kn] = np.dot(exp_mat, q[k:kn]) + np.dot(ips_mat, p[k:kn]/m[i])
+#         p[k:kn] = np.dot(neg_exp_mat, p[k:kn])
 #         k=kn
 #      depget(self.atoms,"p").taint(taintme=False)  # .. but one must remember to taint it manually!
 #      depget(self.atoms,"q").taint(taintme=False)  # .. but one must remember to taint it manually!
@@ -180,14 +180,14 @@ class BaroFlexi(Barostat):
       #pdb.set_trace()
       
       # quick multiplication  by making it in matrix form
-      q=numpy.dot(q,exp_mat.T)+numpy.dot(p/m3,ips_mat.T)
-      p=numpy.dot(p,neg_exp_mat.T)
+      q=np.dot(q,exp_mat.T)+np.dot(p/m3,ips_mat.T)
+      p=np.dot(p,neg_exp_mat.T)
 
       # assigns back to actual storage
       self.atoms.q=q.reshape(3*nat)
       self.atoms.p=p.reshape(3*nat)
                     
-      self.cell.h=numpy.dot(exp_mat, self.cell.h)
+      self.cell.h=np.dot(exp_mat, self.cell.h)
       self.timer+=time.clock()
       
 class BaroRigid(Barostat):
@@ -209,8 +209,8 @@ class BaroRigid(Barostat):
       dthalf3=dthalf**3/3.0     
       
       #step on the cell velocities - first term, which only depends on "cell" quantities      
-      #pV=np.trace(numpy.dot(self.cell.ih,self.cell.p))*self.cell.V
-      #print "check start ",self.pV, np.trace(numpy.dot(self.cell.ih,self.cell.p))*self.cell.V
+      #pV=np.trace(np.dot(self.cell.ih,self.cell.p))*self.cell.V
+      #print "check start ",self.pV, np.trace(np.dot(self.cell.ih,self.cell.p))*self.cell.V
       self.cell.P += dthalf*3.0*(self.cell.V*(self.press - self.pext) + 2.0*Constants.kb*self.temp)
 
 

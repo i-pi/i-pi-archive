@@ -3,7 +3,19 @@ import math
 from utils.depend import *
 from utils.io import io_system
 from driver.interface import Interface
+from utils.restart import *
+from engine.atoms import *
 
+class RestartForce(Restart):
+   attribs = { "type" : (RestartValue,(str,"socket")) }
+   fields =  { "atoms" : (RestartAtoms,()), "params" : (RestartValue,(str,"")) }
+   
+   def store(self, force):
+      self.atoms.store(force.atoms)
+      if (type(force) is FFSocket):   self.type.store("socket")
+      else: self.type.store("unknown")
+         
+   
 class ForceField(dobject):
    """Creates an interface between the force, potential and virial calculation
       and the wrapper.
@@ -20,9 +32,14 @@ class ForceField(dobject):
       depget(self,"ufv").add_dependency(depget(self.atoms,"q"))
       depget(self,"ufv").add_dependency(depget(self.cell,"h"))      
       dset(self,"pot",depend_value(name="pot", deps=depend_func(func=self.get_pot, dependencies=[depget(self,"ufv")] )  )  )
-      dset(self,"f", depend_array(name="f",   value=np.zeros(atoms.natoms*3, float),  deps=depend_func(func=self.get_f, dependencies=[depget(self,"ufv")] )) )
+      
+      fbase=np.zeros(atoms.natoms*3, float)
+      dset(self,"f", depend_array(name="f",   value=fbase,  deps=depend_func(func=self.get_f, dependencies=[depget(self,"ufv")])) )
+      # a bit messy, but we don't want to trigger here the force calculation routine 
+      dset(self,"fx", depend_array(name="fx", value=fbase[0:3*atoms.natoms:3], deps=depget(self,"f") ) );       
+      dset(self,"fy", depend_array(name="fy", value=fbase[1:3*atoms.natoms:3], deps=depget(self,"f") ) );       
+      dset(self,"fz", depend_array(name="fz", value=fbase[2:3*atoms.natoms:3], deps=depget(self,"f") ) );            
       dset(self,"vir", depend_array(name="vir", value=np.zeros((3,3),float),            deps=depend_func(func=self.get_vir, dependencies=[depget(self,"ufv")] )) )
-      dset(self,"fx",self.f[0:3*atoms.natoms:3]);       dset(self,"fy",self.f[1:3*atoms.natoms:3]);      dset(self,"fz",self.f[2:3*atoms.natoms:3])
 
    def get_all(self):
       """Dummy routine where no calculation is done"""

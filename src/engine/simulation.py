@@ -8,6 +8,22 @@ from cell import *
 from properties import *
 #from forces import *
 
+#class SimulationRestart(object):
+#   def __init__(self): pass
+#   
+#   def write(self, simul):
+#      self.atoms=AtomsRestart(); 
+#      self.atoms.write(simul.atoms)
+#      
+#      self.ensemble=EnsembleRestart();
+#      self.ensemble.write(simul.ensemble)
+#      
+#   def read(self):
+#      atoms=self.atoms.read()
+#      sim=Simulation(atoms,cell=None,None,None)
+#      return sim
+#      
+   
 class Simulation(dobject):
    """Represents a simulation cell. Includes the cell parameters, 
       the atoms and the like."""   

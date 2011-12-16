@@ -1,4 +1,4 @@
-import numpy
+import numpy as np
 import pdb, time
 
 # if A depends upon B, then A.dep_up-->B and B.dep_dw-->A
@@ -131,12 +131,12 @@ class depend_value(depend_base):
    def __set__(self, instance, value): 
       self.set(value)   
    
-class depend_array(numpy.ndarray, depend_base):
+class depend_array(np.ndarray, depend_base):
    def __new__(cls, value, deps=None, name=None, tainted=True):
 #      print "new", name, cls
       # Input array is an already formed ndarray instance
       # We first cast to be our class type
-      obj = numpy.asarray(value).view(cls)
+      obj = np.asarray(value).view(cls)
       return obj
       
    def __init__(self, value, deps=None, name=None, tainted=True):
@@ -156,11 +156,11 @@ class depend_array(numpy.ndarray, depend_base):
 #   def __array_wrap__(self, out_arr, context=None):
 #      print "array_wrap", self.name, out_arr.name #, context
 #      return super(depend_array,self).__array_wrap__(self, out_arr, context)      
-#      return super(depend_array,self).__array_wrap__(self, out_arr, context).view(numpy.ndarray)
+#      return super(depend_array,self).__array_wrap__(self, out_arr, context).view(np.ndarray)
 
 #   def __array_prepare__(self, out_arr, context=None):        
 #      print "array_prepare"
-#      return super(depend_array,self).__array_prepare__(self, out_arr, context).view(numpy.ndarray)
+#      return super(depend_array,self).__array_prepare__(self, out_arr, context).view(np.ndarray)
       
    def __getitem__(self,index):
 #      print "getitem", self.name, self.deps.tainted(), index
@@ -169,11 +169,11 @@ class depend_array(numpy.ndarray, depend_base):
          self.deps.update_auto()
          self.deps.taint(taintme=False)
               
-      if (not numpy.isscalar(index) or self.ndim > 1 ):
+      if (not np.isscalar(index) or self.ndim > 1 ):
 #         return depend_array(super(depend_array,self).__getitem__(index), deps=self.deps, name=self.name, tainted=self.deps._tainted)  
-         return depend_array(self.view(numpy.ndarray)[index], deps=self.deps, name=self.name, tainted=self.deps._tainted)  
+         return depend_array(self.view(np.ndarray)[index], deps=self.deps, name=self.name, tainted=self.deps._tainted)  
       else:
-         return self.view(numpy.ndarray)[index]
+         return self.view(np.ndarray)[index]
 
    def __getslice__(self,i,j):
       return self.__getitem__(slice(i,j,None))
@@ -190,7 +190,7 @@ class depend_array(numpy.ndarray, depend_base):
       if (manual) : self.deps.update_man()
       self.deps.taint(taintme=False)      
       #super(depend_array,self).__setitem__(index,value)   # directly write to the base array
-      self.view(numpy.ndarray)[index]=value
+      self.view(np.ndarray)[index]=value
 
    def __setslice__(self,i,j,value):
       return self.__setitem__(slice(i,j),value)

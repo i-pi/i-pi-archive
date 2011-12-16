@@ -44,7 +44,7 @@ def read_pdb(filedesc):
       x = float(body[31:39])
       y = float(body[39:47])
       z = float(body[47:55])
-      pos = numpy.array([x,y,z])
+      pos = np.array([x,y,z])
       qatoms.append(pos)
       
       body = filedesc.readline()

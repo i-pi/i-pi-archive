@@ -5,6 +5,27 @@ from thermostats import *
 from barostats import *
 import time
 
+#class EnsembleRestart(object):  
+#   def __init__(self, ensemble=None): 
+#      if not ensemble is
+#   
+#   def write(self, ensemble):
+#      if   type(ensemble) is Ensemble:    self.kind="none"
+#      elif type(ensemble) is NVEEnsemble: self.kind="nve"
+#      else: raise TypeError("Unknown ensemble type")
+#      
+#      self.atoms=AtomsRestart(); 
+#      self.atoms.write(simul.atoms)
+#      
+#      self.ensemble=EnsembleRestart();
+#      self.ensemble.write(simul.ensemble)
+#      
+#   def read(self):
+#      atoms=self.atoms.read()
+#      sim=Simulation(atoms,cell=None,None,None)
+#      return sim
+#      
+
 class Ensemble(dobject): 
    """General ensemble object, with no particle motion
       Contains: syst = System object, containing the atom and cell coordinates, 

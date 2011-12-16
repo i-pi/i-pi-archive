@@ -6,11 +6,22 @@ import pdb
 
 
 #atoms, cell = read_pdb(open("testfile4.pdb","r"))
-atoms, cell = read_pdb(open("sysfile2.pdb","r"))
-#atoms.p = np.random.randn(atoms.natoms*3)*0.5
+#atoms, cell = read_pdb(open("sysfile2.pdb","r"))
+##atoms.p = np.random.randn(atoms.natoms*3)*0.5
 
-      
+myatoms, cell = read_pdb(open("sysfile2.pdb","r"))
+
+ratoms=atoms.RestartAtoms()
+ratoms.store(myatoms)
+
 force=forces.FFSocket(" 0.0003793865e0  6.43452e0   46.651d0   50.00  ")
+force.bind(myatoms, cell)
+rforce=forces.RestartForce()
+rforce.store(force)
+
+print rforce.write("force")
+exit(1);
+      
 #force=forces.FFLennardJones({"sigma":0.8, "eps":1.0, "rc":2.5*0.8})
 
 #cell.h0=[[0.5,0.25,1],[0,0.1,1],[0,0,1]]

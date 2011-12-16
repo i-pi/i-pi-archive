@@ -73,13 +73,35 @@ def det_ut3x3(h):
       unit vector matrix"""
    return h[0,0]*h[1,1]*h[2,2]
    
+MINSERIES=1e-10
 def exp_ut3x3(h):
+   """Computes the matrix exponential for a 3x3 upper-triangular matrix"""
    eh=numpy.zeros((3,3), float)
    e00=math.exp(h[0,0]);    e11=math.exp(h[1,1]);    e22=math.exp(h[2,2])
    eh[0,0]=e00;    eh[1,1]=e11;    eh[2,2]=e22; 
-   eh[0,1]=h[0,1]*(e00-e11)/(h[0,0]-h[1,1])
-   eh[1,2]=h[1,2]*(e11-e22)/(h[1,1]-h[2,2])   
-   eh[0,2]= e00*((h[0,0]-h[1,1])*h[0,2]+h[0,1]*h[1,2])/((h[0,0]-h[1,1])*(h[0,0]-h[2,2]))
-   eh[0,2]+=e11*h[0,1]*h[1,2]/((h[1,1]-h[0,0])*(h[1,1]-h[2,2]))   
-   eh[0,2]+=e22*((h[2,2]-h[1,1])*h[0,2]+h[0,1]*h[1,2])/((h[2,2]-h[1,1])*(h[2,2]-h[0,0]))   
+   
+   
+   if (math.abs(h[0,0]-h[1,1])>MINSERIES): 
+      r01=(e00-e11)/(h[0,0]-h[1,1])
+   else:
+      r01=e00*(1+(h[0,0]-h[1,1])*(0.5+(h[0,0]-h[1,1])/6.0))
+   if (math.abs(h[1,1]-h[2,2])>MINSERIES): 
+      r12=(e11-e22)/(h[1,1]-h[2,2])   
+   else:
+      r12=e11*(1+(h[1,1]-h[2,2])*(0.5+(h[1,1]-h[2,2])/6.0))
+   if (math.abs(h[2,2]-h[0,0])>MINSERIES): 
+      r20=(e22-e00)/(h[2,2]-h[0,0])   
+   else:
+      r20=e22*(1+(h[2,2]-h[0,0])*(0.5+(h[2,2]-h[0,0])/6.0))
+      
+   eh[0,1]=h[0,1]*r01
+   eh[1,2]=h[1,2]*r12
+
+   eh[0,2]=h[0,2]*r20
+   if (math.abs(h[2,2]-h[0,0])>MINSERIES):    
+      eh[0,2]+=h[0,1]*h[0,2]*(r01*r12)/(h[0,0]-h[2,2])
+   elif (math.abs(h[1,1]-h[0,0])>MINSERIES):    
+#      eh[0,2]+=h[0,1]*h[0,2]*(
+      eh[0,2]+=h[0,1]*h[0,2]*e00/2.0*(1.+(h[1,1]-h[0,0])/3*(1+(h[1,1]-h[0,0])/4))
+      
    return eh  
