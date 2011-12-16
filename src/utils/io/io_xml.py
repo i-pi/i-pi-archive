@@ -172,7 +172,7 @@ class empty_container:
 class Init_read(xml.sax.handler.ContentHandler):
    
    def __init__(self, simulation_template):
-      self.func_dict = {np.ndarray: get_array, dict: get_dict, float: get_float, int: get_int, bool: get_bool}
+      self.func_dict = {np.ndarray: get_array, dict: get_dict, float: get_float, int: get_int, bool: get_bool, str: string.strip}
 
       self.object_dict = {}
       self.object_dict["simulation"] = xml_object(name = "simulation", container = empty_container())
@@ -184,11 +184,11 @@ class Init_read(xml.sax.handler.ContentHandler):
          field = fields[name]
          if type(field) == restart.RestartArray or type(field) == restart.RestartValue:
             func = self.func_dict[field.type]
-            self.object_dict[name] = xml_object(name = name, default = field.default, container = None, parent = parent)
-            self.parent.child_list.append(self.object_dict[name])
+            self.object_dict[name] = xml_object(name = name, default = field.default, parent = parent)
+            parent.child_list.append(self.object_dict[name])
          else:
             try:
-               self.object_dict[name] = xml_object(name = name, container = empty_container(), parent = parent)
+               self.object_dict[name] = xml_object(name = name, container = empty_container(), default = field.default, parent = parent)
                parent.child_list.append(self.object_dict[name]) 
                self.init_template(field.fields, parent = self.object_dict[name])
             except AttributeError:
@@ -197,15 +197,27 @@ class Init_read(xml.sax.handler.ContentHandler):
                exit()
 
    def startElement(self, name, attributes):
-      self.object_dict[name].start_tag(attributes) 
+      try:
+         self.object_dict[name].start_tag(attributes) 
+      except KeyError:
+         print "Unrecognized starting tag ", name
+         exit()
       
    def characters(self, data):
       for name in self.object_dict:
          if self.object_dict[name].inside is True:
             self.object_dict[name].fill(data)
 
-   def endElement(self):
-      self.object_dict[name].end_tag()
+   def endElement(self, name):
+      try:
+         self.object_dict[name].end_tag()
+      except KeyError:
+         print "Unrecognized ending tag ", name
 
+def init_from_xml(input_file, template):
+   parser = xml.sax.make_parser()
+   handler = Init_read(template)
+   parser.setContentHanlder(handler)
+   parser.parse(input_file)
 
-
+   return handler
