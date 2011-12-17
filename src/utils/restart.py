@@ -10,7 +10,6 @@ class Restart(object):
    fields={}
    attribs={}
    def __init__(self):
-      print "generating from", self.fields
       for f, v in self.fields.iteritems():    self.__dict__[f]=v[0](*v[1])
       for a, v in self.attribs.iteritems():   self.__dict__[a]=v[0](*v[1])     
       
@@ -69,7 +68,7 @@ class RestartValue(Restart):
          
 ELPERLINE=5
 class RestartArray(Restart):
-   attribs={ "size" : (RestartValue,(int,0)),  "shape" : (RestartValue,(tuple, ())) }
+   attribs={ "shape" : (RestartValue,(tuple, ())) }
    def __init__(self, dtype=None, value=None, default=None):
       super(RestartArray,self).__init__()
       
@@ -82,7 +81,6 @@ class RestartArray(Restart):
       elif not default is None: self.store(default)
    
    def store(self, value):
-      self.size.store(value.size)
       self.shape.store(value.shape)
       self.value=np.array(value, dtype=self.type).flatten().copy()
       
@@ -90,7 +88,7 @@ class RestartArray(Restart):
       return self.value.reshape(self.shape.fetch()).copy()
 
    def write(self, name="", indent=""): 
-      rstr=indent+"<"+name+" size="+str(self.size.fetch()) +" shape="+write_tuple(self.shape.fetch())+"> ";
+      rstr=indent+"<"+name+" shape='"+write_tuple(self.shape.fetch())+"'> ";
       if (len(self.value)>ELPERLINE): rstr+="\n"+indent+" [ "
       else: rstr+=" [ "
       for i,v in enumerate(self.value):          
@@ -105,7 +103,6 @@ class RestartArray(Restart):
    def parse(self, xml=None, text=""):
       if xml is None: pass #should print an error!
       else:   
-         self.size.store(int(xml.attribs["size"]))
          self.shape.store(read_type(tuple,xml.attribs["shape"]))
          self.value=read_array(self.type,xml.fields["_text"]) 
       

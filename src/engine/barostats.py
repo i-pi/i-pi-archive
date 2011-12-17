@@ -1,9 +1,10 @@
 import math, time
 import numpy as np
 from utils.depend import *
+from utils.restart import *
 from utils.units import *
 from utils.mathtools import eigensystem_ut3x3, invert_ut3x3, exp_ut3x3, det_ut3x3
-from engine.thermostats import Thermostat
+from engine.thermostats import Thermostat, RestartThermo
 
 class Barostat(dobject): 
    def __init__(self, pext=0.0, sext = None, dt = None, temp = None, thermostat=Thermostat()):
@@ -244,3 +245,21 @@ class BaroRigid(Barostat):
 
       self.cell.V*=exp**3
               
+              
+      
+class RestartBaro(Restart):
+   attribs={ "kind": (RestartValue, (str, "rigid")) }
+   fields={ "thermostat" : (RestartThermo, ()) }
+   
+   def store(self, baro):
+      if type(baro) is BaroRigid: self.kind.store("rigid")
+      if type(baro) is BaroFlexi: self.kind.store("flexible")
+      else: self.kind.store("unknown")      
+      self.thermostat.store(baro.thermostat)
+      
+   def fetch(self):
+      if self.type.fetch().uppercase == "RIGID" :      baro=BaroRigid(thermostat=self.thermostat.fetch())
+      elif self.type.fetch().uppercase == "FLEXIBLE" : baro=BaroFlexi(thermostat=self.thermostat.fetch())
+      else: baro=Barostat(thermostat=self.thermostat.fetch())
+
+      return baro

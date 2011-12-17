@@ -104,6 +104,7 @@ class Driver(socket.socket):
 class Interface(object):
    def __init__(self, address="localhost", port=3141, slots=1):
       self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+      self.address = address; self.port = port; self.slots = slots
       self.server.bind((address,port))
       self.server.listen(slots)
       self.server.settimeout(SERVERTIMEOUT)

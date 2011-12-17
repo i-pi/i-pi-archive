@@ -3,8 +3,6 @@ from utils.depend import *
 from utils.restart import *
 from utils import units
 
-
-
 class Atom(dobject):
    """Represent an atom, with position, velocity, mass and related properties."""
             
@@ -30,37 +28,6 @@ class Atom(dobject):
          for j in range(i,3):
             ks[i,j] = p[i]*p[j]            
       return ks/self.m
-
-class RestartAtoms(Restart):
-   fields={ "natoms" : (RestartValue, (int,0)), "q" : (RestartArray,(float,np.zeros(0))),  "p" : (RestartArray,(float,np.zeros(0))),
-            "m" : (RestartArray,(float, np.zeros(0))),  "names" : (RestartArray,(str,np.zeros(0, str))),
-            "filename" : (RestartValue,(str, "")) }
-       
-   def __init__(self, atoms=None, filename=""):
-      super(RestartAtoms,self).__init__()
-      if not atoms is None: self.store(atoms, filename="")
-                       
-   def store(self, atoms, filename=""):
-      self.natoms.store(atoms.natoms)
-      self.q.store(depstrip(atoms.q))
-      self.p.store(depstrip(atoms.p))
-      self.m.store(depstrip(atoms.m))
-      self.names.store(np.array([a.name for a in atoms]))
-      self.filename.store(filename)
-      
-   def fetch(self):
-      atoms=Atoms(self.natoms.fetch())
-      atoms.q=self.q.fetch()
-      atoms.p=self.p.fetch()      
-      atoms.m=self.m.fetch()   
-      i=0
-      for n in self.names.fetch(): 
-         atoms[i].name=n; i+=1
-      return atoms
-   
-   def check(self): 
-      # if required get data from file and/or initialize
-      pass
          
 class Atoms(dobject):
    """Represents a simulation cell. Includes the cell parameters, 
@@ -118,3 +85,37 @@ class Atoms(dobject):
 #            ks[i,j] = np.dot(p[i:self.natoms*3:3], p[j:self.natoms*3:3]/self.m)
       return ks
       
+from utils.io.io_pdb import read_pdb      
+class RestartAtoms(Restart):
+   fields={ "natoms" : (RestartValue, (int,0)), "q" : (RestartArray,(float,np.zeros(0))),  "p" : (RestartArray,(float,np.zeros(0))),
+            "m" : (RestartArray,(float, np.zeros(0))),  "names" : (RestartArray,(str,np.zeros(0, str))),
+            "from_file" : (RestartValue,(str, "")), "init_temp": (RestartValue, (float, -1.0))  }
+       
+   def __init__(self, atoms=None, filename=""):
+      super(RestartAtoms,self).__init__()
+      if not atoms is None: self.store(atoms, filename="")
+                       
+   def store(self, atoms, filename=""):
+      self.natoms.store(atoms.natoms)
+      self.q.store(depstrip(atoms.q))
+      self.p.store(depstrip(atoms.p))
+      self.m.store(depstrip(atoms.m))
+      self.names.store(np.array([a.name for a in atoms]))
+      self.from_file.store(filename)
+      
+   def fetch(self):
+      self.check()
+      atoms=Atoms(self.natoms.fetch())
+      atoms.q=self.q.fetch()
+      atoms.p=self.p.fetch()      
+      atoms.m=self.m.fetch()   
+      i=0
+      for n in self.names.fetch(): 
+         atoms[i].name=n; i+=1
+      return atoms
+   
+   def check(self): 
+      # if required get data from file and/or initialize
+      if self.from_file.fetch() != "":
+         myatoms, mycell = read_pdb(open(self.from_file.fetch(),"r"))
+         self.store(myatoms, self.from_file.fetch())      

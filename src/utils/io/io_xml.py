@@ -55,8 +55,8 @@ def read_int(data):
 def read_bool(data):
    """Takes a formatted line with an integer and outputs a boolean"""
    
-   if   data.uppercase() == "TRUE":  return True
-   elif data.uppercase() == "FALSE": return False
+   if   data.upper() == "TRUE":  return True
+   elif data.upper() == "FALSE": return False
    else: raise ValueError(data+" does not represent a bool value")
 
 def read_list(data, delims="[]", split=",", strip=" \n\t'"):

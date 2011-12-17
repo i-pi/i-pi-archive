@@ -45,8 +45,7 @@
          else if (trim(header) == "INIT") then     
             call readbuffer(socket, nat, 4)
             call readbuffer(socket, parbuffer, nat)
-            
-            read(parbuffer,*) eps, sigma, rc, rn            
+            read(parbuffer(1:nat),*) eps, sigma, rc, rn
             correction = 4*eps*((sigma/rc)**12 - (sigma/rc)**6)
             isinit=.true.
             write(*,*) "Yes, we should do something here", eps, sigma

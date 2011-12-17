@@ -1,7 +1,9 @@
 import numpy as np
 import math
-from utils.depend import *
-from utils.units  import *
+from utils.depend   import *
+from utils.units    import *
+from utils.restart  import *
+
 
 class Thermostat(dobject): 
    """Represent a thermostat for constant T simulations.
@@ -76,12 +78,29 @@ class ThermoLangevin(Thermostat):
       
       p/=self.sqrtm
 
-      self.ethermo+=numpy.dot(p,p)*0.5
+      self.ethermo+=np.dot(p,p)*0.5
       p*=self.T
       p+=self.S*np.random.standard_normal(len(p))
-      self.ethermo-=numpy.dot(p,p)*0.5      
+      self.ethermo-=np.dot(p,p)*0.5      
 
       p*=self.sqrtm      
             
       self.p=p
-
+      
+      
+class RestartThermo(Restart):
+   attribs={ "kind": (RestartValue, (str, "langevin")) }
+   fields={ "ethermo" : (RestartValue, (float, 0.0)) }
+   
+   def store(self, thermo):
+      if type(thermo) is ThermoLangevin: self.kind.store("langevin")
+      else: self.kind.store("unknown")      
+      self.ethermo.store(thermo.ethermo)
+      
+   def fetch(self):
+      if self.kind.fetch() == "langevin" : thermo=ThermoLangevin()
+      else: thermo=Thermostat()
+      thermo.ethermo=self.ethermo.fetch()
+      return thermo      
+     
+      
