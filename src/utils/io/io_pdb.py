@@ -1,8 +1,8 @@
 import numpy as np
 import math, sys
 import utils.cell_convert
-from engine.cell import *
-from engine.atoms import *
+from engine.cell import Cell
+from engine.atoms import Atoms
 from utils.units import *
 
 def print_pdb(atoms, ncell, filedesc = sys.stdout):

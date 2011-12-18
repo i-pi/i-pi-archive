@@ -3,11 +3,13 @@ import types
 
 import pdb
 
+
+from  io.io_xml import *
+
 class Restart(object):   
    fields={}
    attribs={}
    def __init__(self):
-      print "generating from", self.fields
       for f, v in self.fields.iteritems():    self.__dict__[f]=v[0](*v[1])
       for a, v in self.attribs.iteritems():   self.__dict__[a]=v[0](*v[1])     
       
@@ -18,23 +20,25 @@ class Restart(object):
    def check(self): return True
    
    def write(self, name="", indent=""): 
-      rstr=indent+"<"+name+" ATTRIBS GO HERE>\n"
+      rstr=indent+"<"+name;
+      for a in self.attribs:      
+         rstr+=" "+a+"='"+str(self.__dict__[a].fetch())+"'"
+      rstr+=">\n"
       for f in self.fields:
          rstr+=self.__dict__[f].write(f,"   "+indent)
-      rstr+="</"+name+">\n"
+      rstr+=indent+"</"+name+">\n"
       return rstr
    
-   def parse(self, text): pass
-   # <name attr1=val1 attr2=val2>ENCLOSED TEXT</name>
-#      parsed=xml_parse(text) ==> { "name" : ( {"attr1":"val1", "attr2"="val2"} , "ENCLOSED TEXT" ) }
-#      for p, vp in parsed.iteritems():
-#         for a, va in vp[0]:
-#            if not a in self.__dict__[p].
-#            self.__dict__[p].__dict__[a].parse(va)
-#         self.__dict__[p].parse(vp[1])
-         
-      
-      
+   def parse(self, xml=None, text=""): 
+      if not xml is None:
+         for a, v in xml.attribs.iteritems() :
+            if a in self.attribs: 
+               self.__dict__[a].parse(text=v)
+            else : pass #raise an exception
+         for f, v in xml.fields.iteritems() :
+            if f in self.fields:
+               self.__dict__[f].parse(xml=v)
+            else : pass #raise an exception            
    
 class RestartValue(Restart):
    def __init__(self, dtype=None, value=None, default=None):      
@@ -52,13 +56,19 @@ class RestartValue(Restart):
       
    def fetch(self): 
       return self.value
-
+      
    def write(self, name="", indent=""): 
       return indent+"<"+name+">"+str(self.value)+"</"+name+">\n"
    
+   def parse(self, xml=None, text=""):
+      if xml is None:
+         self.value = read_type(self.type, text)
+      else:   
+         self.value = read_type(self.type, xml.fields["_text"])
          
+ELPERLINE=5
 class RestartArray(Restart):
-   attribs={ "size" : (RestartValue,(int,0)),  "shape" : (RestartValue,(tuple, ())) }
+   attribs={ "shape" : (RestartValue,(tuple, ())) }
    def __init__(self, dtype=None, value=None, default=None):
       super(RestartArray,self).__init__()
       
@@ -71,7 +81,6 @@ class RestartArray(Restart):
       elif not default is None: self.store(default)
    
    def store(self, value):
-      self.size.store(value.size)
       self.shape.store(value.shape)
       self.value=np.array(value, dtype=self.type).flatten().copy()
       
@@ -79,5 +88,23 @@ class RestartArray(Restart):
       return self.value.reshape(self.shape.fetch()).copy()
 
    def write(self, name="", indent=""): 
-      rstr=indent+"<"+name+" size="+str(self.size.fetch()) +" shape="+str(self.shape.fetch())+">"+str(self.value)+"</"+name+">\n "
+      rstr=indent+"<"+name+" shape='"+write_tuple(self.shape.fetch())+"'> ";
+      if (len(self.value)>ELPERLINE): rstr+="\n"+indent+" [ "
+      else: rstr+=" [ "
+      for i,v in enumerate(self.value):          
+         if (len(self.value)>ELPERLINE and i>0 and i%ELPERLINE==0): rstr+="\n"+indent
+         rstr+=str(v)+", "         
+      rstr=rstr.rstrip(", ")
+      if (len(self.value)>ELPERLINE): rstr+=" ]\n"+indent
+      else: rstr+=" ] "
+      rstr+="</"+name+">\n"
       return rstr
+      
+   def parse(self, xml=None, text=""):
+      if xml is None: pass #should print an error!
+      else:   
+         self.shape.store(read_type(tuple,xml.attribs["shape"]))
+         self.value=read_array(self.type,xml.fields["_text"]) 
+      
+
+      

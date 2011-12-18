@@ -1,9 +1,30 @@
 from engine import *
 from utils.depend import *
 from utils.io.io_pdb import *
-import numpy, time
+from utils.io.io_xml import *
+
+import numpy, time, sys
 import pdb
 
+
+ifile=open(sys.argv[1],"r")
+buf=""
+for a in ifile: buf+=a
+xmlrestart=parse_xml(buf)
+simrestart=simulation.RestartSimulation();
+simrestart.parse(xmlrestart.fields["simulation"])
+
+simul=simrestart.fetch()
+simul.run()
+
+fcheck=open("checkpoint.xml","w")
+simrestart.store(simul)
+del simul.force.socket
+
+fcheck.write(simrestart.write("simulation"))
+
+exit(1)
+pdb.set_trace()
 
 #atoms, cell = read_pdb(open("testfile4.pdb","r"))
 #atoms, cell = read_pdb(open("sysfile2.pdb","r"))
@@ -11,16 +32,10 @@ import pdb
 
 myatoms, cell = read_pdb(open("sysfile2.pdb","r"))
 
-ratoms=atoms.RestartAtoms()
-ratoms.store(myatoms)
 
 force=forces.FFSocket(" 0.0003793865e0  6.43452e0   46.651d0   50.00  ")
 force.bind(myatoms, cell)
-rforce=forces.RestartForce()
-rforce.store(force)
 
-print rforce.write("force")
-exit(1);
       
 #force=forces.FFLennardJones({"sigma":0.8, "eps":1.0, "rc":2.5*0.8})
 
@@ -41,8 +56,15 @@ cell=CellRigid(h=cell.h, m=cell.m) #need a flexible cell, actually
 #cell.h0=[[0.5,0.25,1],[0,0.1,1],[0,0,1]]
 
 print "USING ", cell.h0
-test=simulation.Simulation(atoms, cell, force, ens)
+pdb.set_trace()
+test=simulation.Simulation(myatoms, cell, force, ens)
 
+rsimu=simulation.RestartSimulation();
+rsimu.store(test)
+fcheck=open("checkpoint","w")
+fcheck.write(rsimu.write("simulation"))
+
+exit(1)
 ftraj=open("trajfile.pdb","w")
 fout=open("output.dat","w")
 #pdb.set_trace()

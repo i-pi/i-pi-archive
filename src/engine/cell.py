@@ -1,10 +1,11 @@
 import numpy as np
 import math
 from utils.depend import *
+from utils.restart import *
 from utils.mathtools import det_ut3x3, invert_ut3x3
 from utils import units
 import pdb
-
+         
 class Cell(dobject):
    """Represents the simulation cell in a periodic system
       Contains: h = lattice vector matrix, p = lattice momentum matrix (NST),
@@ -148,5 +149,36 @@ class CellRigid(Cell):
    def get_volume0(self): return det_ut3x3(self.h0)
             
    def get_kin(self):   return self.P[0]**2/(2.0*self.m)
-   
+      
+class RestartCell(Restart):
+   fields={ "m" : (RestartValue, (float, 0.0)), "h" : (RestartArray,(float,np.identity(3))), 
+            "h0" : (RestartArray,(float,np.zeros((3,3)))), "p" : (RestartArray,(float,np.zeros((3,3),float))),
+            "P" : (RestartValue,(float,0.0)), "init_temp": (RestartValue, (float, -1.0)) }
+   attribs={ "flexible" : (RestartValue, (bool, False)) }
+    
+   def __init__(self, cell=None):
+      super(RestartCell,self).__init__()
+      if not cell is None: self.store(cell)
+      
+   def store(self,cell):
+      self.flexible.store(type(cell) is CellFlexi)
+      self.m.store(cell.m)
+      self.h.store(cell.h)
+      self.h0.store(cell.h0)
+      if type(cell) is CellFlexi:  self.p.store(cell.p)
+      else: self.P.store(cell.P[0])
+      
+   def fetch(self):
+      self.check()
+      if (self.flexible.fetch()): 
+         cell=CellFlexi(h=self.h.fetch(), m=self.m.fetch())
+         if det_ut3x3(self.h0.fetch())==0.0: cell.h0=cell.h
+         cell.p=self.p.fetch()
+      else:
+         cell=CellRigid(h=self.h.fetch(), m=self.m.fetch())
+         cell.P=self.P.fetch()         
+      return cell
+      
+   def check(self):
+       if (self.init_temp.fetch()>=0) : pass
    

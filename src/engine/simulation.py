@@ -1,86 +1,52 @@
 import numpy as np
 import math, random
 from utils.depend import *
+from utils.restart import *
 from utils.units  import *
 from utils.io     import *
 from atoms import *
 from cell import *
+from ensembles import RestartEnsemble
+from forces import RestartForce
 from properties import *
 #from forces import *
 
-#class SimulationRestart(object):
-#   def __init__(self): pass
-#   
-#   def write(self, simul):
-#      self.atoms=AtomsRestart(); 
-#      self.atoms.write(simul.atoms)
-#      
-#      self.ensemble=EnsembleRestart();
-#      self.ensemble.write(simul.ensemble)
-#      
-#   def read(self):
-#      atoms=self.atoms.read()
-#      sim=Simulation(atoms,cell=None,None,None)
-#      return sim
-#      
+class RestartSimulation(Restart):
+   fields= { "force" : (RestartForce, ()), "atoms" : (RestartAtoms, ()), "cell" : (RestartCell, ()),
+             "ensemble": (RestartEnsemble, ()), "step" : ( RestartValue, (int, 0)), 
+             "total_steps": (RestartValue, (int, 1000) ) }
+
+   def store(self, simul):
+      self.force.store(simul.force)
+      self.atoms.store(simul.atoms)
+      self.cell.store(simul.cell)
+      self.ensemble.store(simul.ensemble)
+      self.step.store(simul.step)
+      self.total_steps.store(simul.tsteps)
+            
+   def fetch(self):
+      simu=Simulation(self.atoms.fetch(), self.cell.fetch(), self.force.fetch(), self.ensemble.fetch(), 
+                     self.step.fetch(), tsteps=self.total_steps.fetch() )
+      return simu
    
 class Simulation(dobject):
    """Represents a simulation cell. Includes the cell parameters, 
       the atoms and the like."""   
 
-   def __init__(self, atoms, cell, force, ensemble):
+   def __init__(self, atoms, cell, force, ensemble, step=0, tsteps=1000):
       self.atoms=atoms
       self.cell=cell
       self.force=force
       self.ensemble=ensemble
+      self.step=step
+      self.tsteps=tsteps
       self.bind()
       
    def bind(self):
       self.force.bind(self.atoms, self.cell)
       self.ensemble.bind(self.atoms, self.cell, self.force)
-      #self.properties=Properties()
-   
-   
-#      self.properties
-      
-#      
-#      self.pcom=depend_array(name="pcom",value=np.zeros(3,float),
-#         deps=depend_func(func=self.get_pcom,dependencies=[depget(self.atoms,"p"),depget(self.atoms,"m3")]) )
-#          
-#      
-#      self.pot = depend_value(value=0.0,name="pot",deps=depend_func(func=(lambda : 0.0)))
-#      self.vir = depend_array(value=numpy.zeros((3,3),float),name='vir', deps=depend_func(func=(lambda : 0.0), dependencies = [depget(self.cell,"V")]))
 
-#      self.stress = depend(name='stress',deps=depend_func(func=self.get_stress,dependencies=[depget(self,"vir"), depget(self,"kstress")]))
-#      self.press = depend(name='press',deps=depend_func(func=self.get_press,dependencies=[depget(self,stress)]))
-
-
-
-#   def get_pcom(self):
-#      p = numpy.zeros(3)      
-#      for i in range(3):
-#         p[i]=self.atoms.p[i:3*self.atoms.natoms:3].sum()
-#      return p/self.atoms.m.sum()
-
-#   def get_tempk(self):  TODO put this somewhere more appropriate (COM removal, etc)
-#      """Calculates an estimate of the temperature from the kinetic energy"""
-#      return 2.0*self.kin/(*units.Constants.kb*len(self.atoms))
-
-#   def get_stress(self):
-#      """Calculates the internal stress tensor"""
-#   
-#      return self.kstress.get()+self.vir.get()
-#   
-#   def get_press(self):
-#      """Calculates the internal pressure scalar"""
-
-#      return numpy.trace(self.stress.get())/3.0
-#      
-#   def get_kstress(self):
-#      """Calculates the kinetic stress tensor"""
-
-#      ks=numpy.zeros((3,3),float)
-#      for at in self.atoms:
-#         ks += at.kstress.get()
-#      ks/=self.cell.V.get()
-#      return ks      
+   def run(self):
+      for self.step in range(self.step,self.tsteps):
+         self.ensemble.step()
+         print str(self.step)+" "+str(self.ensemble.econs)+" "+str(self.atoms.kin)+" "+str(self.force.pot)+" "+str(self.ensemble.thermostat.ethermo)+" "+"\n"

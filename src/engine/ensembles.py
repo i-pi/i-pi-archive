@@ -1,31 +1,54 @@
 import numpy as np
 from utils.depend import *
+from utils.restart import *
 from utils import units
 from thermostats import *
 from barostats import *
 import time
 
-#class EnsembleRestart(object):  
-#   def __init__(self, ensemble=None): 
-#      if not ensemble is
-#   
-#   def write(self, ensemble):
-#      if   type(ensemble) is Ensemble:    self.kind="none"
-#      elif type(ensemble) is NVEEnsemble: self.kind="nve"
-#      else: raise TypeError("Unknown ensemble type")
-#      
-#      self.atoms=AtomsRestart(); 
-#      self.atoms.write(simul.atoms)
-#      
-#      self.ensemble=EnsembleRestart();
-#      self.ensemble.write(simul.ensemble)
-#      
-#   def read(self):
-#      atoms=self.atoms.read()
-#      sim=Simulation(atoms,cell=None,None,None)
-#      return sim
-#      
+class RestartEnsemble(Restart):
+   attribs={"type"  : (RestartValue, (str, "unknown")) }
+   fields={"thermostat" : (RestartThermo, () ), "barostat" : (RestartThermo, () ), 
+           "timestep": (RestartValue, (float,"1.0")) ,
+           "temperature" : (RestartValue, (float, 1.0)), "pressure" : (RestartValue, (float,"1.0")) ,
+           "stress" : (RestartArray, (float, np.identity(3))), "fixcom": (RestartValue, (bool, False)) }
+   
+   def store(self, ens):
+      if type(ens) is NVEEnsemble:    
+         self.type.store("nve"); tens=0
+      elif type(ens) is NVTEnsemble:  
+         self.type.store("nvt"); tens=1
+      elif type(ens) is NPTEnsemble:  
+         self.type.store("npt"); tens=2
+      elif type(ens) is NSTEnsemble:  
+         self.type.store("nst"); tens=3
+      
+      self.timestep.store(ens.dt)
+      if tens>0: 
+         self.thermostat.store(ens.thermostat)
+         self.temperature.store(ens.temp)
+         self.fixcom.store(ens.fixcom)
+      if tens>1:
+         self.barostat.store(ens.barostat)
+      if tens == 2:
+         self.pressure.store(ens.pext)
+      if tens == 3:
+         self.stress.store(ens.pext)
 
+   def fetch(self):
+      if   self.type.fetch().upper() == "NVE" :
+         ens=NVEEnsemble(dt=self.timestep.fetch())
+      elif self.type.fetch().upper() == "NVT" : 
+         ens=NVTEnsemble(dt=self.timestep.fetch(), temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), 
+                        fixcom=self.fixcom.fetch() )
+      elif self.type.fetch().upper() == "NPT" : 
+         ens=NPTEnsemble(dt=self.timestep.fetch(), temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), 
+                        fixcom=self.fixcom.fetch(), pext=self.pressure.fetch(), barostat=self.barostat.fetch() )
+      elif self.type.fetch().upper() == "NST" : 
+         ens=NSTEnsemble(dt=self.timestep.fetch(), temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), 
+                        fixcom=self.fixcom.fetch(), sext=self.stress.fetch(), barostat=self.barostat.fetch() )
+      return ens
+      
 class Ensemble(dobject): 
    """General ensemble object, with no particle motion
       Contains: syst = System object, containing the atom and cell coordinates, 

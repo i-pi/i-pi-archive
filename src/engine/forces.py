@@ -8,14 +8,24 @@ from engine.atoms import *
 
 class RestartForce(Restart):
    attribs = { "type" : (RestartValue,(str,"socket")) }
-   fields =  {"atoms" : (RestartAtoms,(RestartAtoms,None)), "params" : (RestartValue,(str,"")) }
+   fields =  { "address" : (RestartValue,(str,"localhost")), "port" : (RestartValue, (int,31415)),
+               "parameters" : (RestartValue,(str,"")) }
    
    def store(self, force):
-      self.atoms.store(force.atoms)
-      if (type(force) is FFSocket):   self.type.store("socket")
+      if (type(force) is FFSocket):  
+         self.type.store("socket")
+         self.address.store(force.socket.address)
+         self.parameters.store(force.pars)         
+         self.port.store(force.socket.port)
       else: self.type.store("unknown")
          
-   
+
+   def fetch(self):
+      if self.type.fetch().upper() == "SOCKET": 
+         force=FFSocket(pars=self.parameters.fetch(), address=self.address.fetch(), port=self.port.fetch() )
+      else : force=ForceField()
+      return force
+      
 class ForceField(dobject):
    """Creates an interface between the force, potential and virial calculation
       and the wrapper.
@@ -78,7 +88,6 @@ class FFSocket(ForceField):
       #print "computing forces"
       self.timer-= time.clock()
       self.twall-=time.time()
-      
       myreq=self.socket.queue(self.atoms, self.cell, self.pars)
       while myreq["status"] != "Done":
          self.socket.pool_update()
