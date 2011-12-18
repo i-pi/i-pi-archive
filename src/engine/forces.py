@@ -8,7 +8,7 @@ from engine.atoms import *
 
 class RestartForce(Restart):
    attribs = { "type" : (RestartValue,(str,"socket")) }
-   fields =  { "atoms" : (RestartAtoms,()), "params" : (RestartValue,(str,"")) }
+   fields =  {"atoms" : (RestartAtoms,(RestartAtoms,None)), "params" : (RestartValue,(str,"")) }
    
    def store(self, force):
       self.atoms.store(force.atoms)

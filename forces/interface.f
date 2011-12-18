@@ -49,14 +49,13 @@
             read(parbuffer,*) eps, sigma, rc, rn            
             correction = 4*eps*((sigma/rc)**12 - (sigma/rc)**6)
             isinit=.true.
-            write(*,*) "Yes, we should do something here", eps, sigma
+            write(*,*) "LJ potential initialised with values eps=", 
+     c          eps, ", sigma=",sigma, ", rc=", rc, ", rn=", rn
          else if (trim(header) == "POSDATA") then              
             call readbuffer(socket, cell%h, 9*8)
             call readbuffer(socket, cell%ih, 9*8)
-            ! goes fortran!
             cell%h=transpose(cell%h)
             cell%ih=transpose(cell%ih)
-!            print "cell.h", cell%h
             call readbuffer(socket, nat, 4)
             if ( .not. allocated(buffer) ) then
                write(*,*) "allocating buffer"

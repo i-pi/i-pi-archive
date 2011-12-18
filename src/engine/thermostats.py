@@ -76,10 +76,10 @@ class ThermoLangevin(Thermostat):
       
       p/=self.sqrtm
 
-      self.ethermo+=numpy.dot(p,p)*0.5
+      self.ethermo+=np.dot(p,p)*0.5
       p*=self.T
       p+=self.S*np.random.standard_normal(len(p))
-      self.ethermo-=numpy.dot(p,p)*0.5      
+      self.ethermo-=np.dot(p,p)*0.5      
 
       p*=self.sqrtm      
             

@@ -32,7 +32,7 @@ class Atom(dobject):
       return ks/self.m
 
 class RestartAtoms(Restart):
-   fields={ "natoms" : (RestartValue, (int,0)), "q" : (RestartArray,(float,np.zeros(0))),  "p" : (RestartArray,(float,np.zeros(0))),
+   fields={ "natoms" : (RestartValue, (int,None)), "q" : (RestartArray,(float,np.zeros(0))),  "p" : (RestartArray,(float,np.zeros(0))),
             "m" : (RestartArray,(float, np.zeros(0))),  "names" : (RestartArray,(str,np.zeros(0, str))),
             "filename" : (RestartValue,(str, "")) }
        
