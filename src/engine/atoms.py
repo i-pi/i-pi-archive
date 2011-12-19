@@ -32,8 +32,7 @@ class Atom(dobject):
          for j in range(i,3):
             ks[i,j] = p[i]*p[j]            
       return ks/self.m
-         
-         
+
 class Atoms(dobject):
    """Storage for the atoms positions and velocities. Everything is stored as 3*n-sized contiguous arrays,
    and a convenience-access is provided through a list of Atom objects"""   
