@@ -13,7 +13,7 @@ from properties import *
 
 class RestartSimulation(Restart):
    fields= { "force" : (RestartForce, ()), "atoms" : (RestartAtoms, ()), "cell" : (RestartCell, ()),
-             "ensemble": (RestartEnsemble, ()), "step" : ( RestartValue, (int, 0)), 
+             "ensemble": (RestartEnsemble, ()), "steps_done" : ( RestartValue, (int, 0)), 
              "total_steps": (RestartValue, (int, 1000) ) }
 
    def store(self, simul):
@@ -21,12 +21,12 @@ class RestartSimulation(Restart):
       self.atoms.store(simul.atoms)
       self.cell.store(simul.cell)
       self.ensemble.store(simul.ensemble)
-      self.step.store(simul.step)
+      self.steps_done.store(simul.step)
       self.total_steps.store(simul.tsteps)
             
    def fetch(self):
       return Simulation(self.atoms.fetch(), self.cell.fetch(), self.force.fetch(), self.ensemble.fetch(), 
-                     self.step.fetch(), tsteps=self.total_steps.fetch() )
+                     self.steps_done.fetch(), tsteps=self.total_steps.fetch() )
    
 class Simulation(dobject):
    """Represents a simulation cell. Includes the cell parameters, 
@@ -45,7 +45,9 @@ class Simulation(dobject):
       self.force.bind(self.atoms, self.cell)
       self.ensemble.bind(self.atoms, self.cell, self.force)
 
-   def run(self):
+   def run(self):      
       for self.step in range(self.step,self.tsteps):
          self.ensemble.step()
-         print str(self.step)+" "+str(self.ensemble.econs)+" "+str(self.atoms.kin)+" "+str(self.force.pot)+" "+str(self.ensemble.thermostat.ethermo)+" "+"\n",
+         print str(self.step+1)+" "+str(self.ensemble.econs)+" "+str(self.atoms.kin)+" "+str(self.force.pot)+" "+str(self.ensemble.thermostat.ethermo)+" "+"\n",
+      self.step+=1
+         
