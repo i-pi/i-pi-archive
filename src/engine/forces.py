@@ -49,7 +49,8 @@ class ForceField(dobject):
       dset(self,"fx", depend_array(name="fx", value=fbase[0:3*atoms.natoms:3], deps=depget(self,"f") ) );       
       dset(self,"fy", depend_array(name="fy", value=fbase[1:3*atoms.natoms:3], deps=depget(self,"f") ) );       
       dset(self,"fz", depend_array(name="fz", value=fbase[2:3*atoms.natoms:3], deps=depget(self,"f") ) );            
-      dset(self,"vir", depend_array(name="vir", value=np.zeros((3,3),float),            deps=depend_func(func=self.get_vir, dependencies=[depget(self,"ufv")] )) )
+      dset(self,"vir", depend_array(name="vir", value=np.zeros((3,3),float),            
+      deps=depend_func(func=self.get_vir, dependencies=[depget(self,"ufv")] )) )
 
    def get_all(self):
       """Dummy routine where no calculation is done"""
@@ -76,10 +77,18 @@ class ForceField(dobject):
 
 import time
 class FFSocket(ForceField):
-   def __init__(self, pars="", address="localhost", port=3141):
+   def __init__(self, pars="", interface=None, _force=None):
       super(FFSocket,self).__init__() 
-      self.socket=Interface(address=address, port=port, slots=2)
-      self.pars=pars
+      if _force is None:
+         if interface is None:
+            self.socket=Interface()
+         else:
+            self.socket=interface
+         self.pars=pars
+      else:
+         self.socket=_force.socket
+         self.pars=_force.pars
+         
       self.timer=0.0
       self.twall=0.0
       self.ncall=0

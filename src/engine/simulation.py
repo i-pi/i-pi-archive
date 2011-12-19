@@ -1,7 +1,7 @@
 import numpy as np
 import math, random
 from utils.depend import *
-from utils.restart import *
+from utils.restart import Restart
 from utils.units  import *
 from utils.io     import *
 from atoms import *
@@ -25,9 +25,8 @@ class RestartSimulation(Restart):
       self.total_steps.store(simul.tsteps)
             
    def fetch(self):
-      simu=Simulation(self.atoms.fetch(), self.cell.fetch(), self.force.fetch(), self.ensemble.fetch(), 
+      return Simulation(self.atoms.fetch(), self.cell.fetch(), self.force.fetch(), self.ensemble.fetch(), 
                      self.step.fetch(), tsteps=self.total_steps.fetch() )
-      return simu
    
 class Simulation(dobject):
    """Represents a simulation cell. Includes the cell parameters, 
@@ -49,4 +48,4 @@ class Simulation(dobject):
    def run(self):
       for self.step in range(self.step,self.tsteps):
          self.ensemble.step()
-         print str(self.step)+" "+str(self.ensemble.econs)+" "+str(self.atoms.kin)+" "+str(self.force.pot)+" "+str(self.ensemble.thermostat.ethermo)+" "+"\n"
+         print str(self.step)+" "+str(self.ensemble.econs)+" "+str(self.atoms.kin)+" "+str(self.force.pot)+" "+str(self.ensemble.thermostat.ethermo)+" "+"\n",

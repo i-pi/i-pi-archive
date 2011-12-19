@@ -42,6 +42,32 @@ def stab_cholesky(M):
       for j in range(i+1):
          S[i,j]+=L[i,j]*D[j]
    return S
+
+def h2abc(h):
+   """Returns a description of the cell in terms of the length of the 
+      lattice vectors and the angles between them."""
+   
+   a=h[0,0]
+   b=math.sqrt(h[0,1]**2+h[1,1]**2)
+   c=math.sqrt(h[0,2]**2+h[1,2]**2+h[2,2]**2)
+   gamma=math.acos(h[0,1]/b)
+   beta=math.acos(h[0,2]/c)
+   alpha = math.acos(np.dot(h[:,1], h[:,2])/(b*c))
+
+   return a, b, c, alpha, beta, gamma
+
+def abc2h(a, b, c, alpha, beta, gamma):
+   """Returns a cell matrix given a description in terms of the vector lengths
+      and the angles in between"""
+
+   h = np.zeros((3,3) ,float)
+   h[0,0] = a
+   h[0,1] = b * math.cos(gamma)
+   h[0,2] = c * math.cos(beta)
+   h[1,1] = b * math.sin(gamma)
+   h[1,2] = (b*c*math.cos(alpha) - h[0,1]*h[0,2]) / h[1,1]
+   h[2,2] = math.sqrt(c**2 - h[0,2]**2 - h[1,2]**2)
+   return h
    
 def invert_ut3x3(h):
    """Inverts a 3*3 (upper-triangular) cell matrix"""
@@ -73,35 +99,38 @@ def det_ut3x3(h):
       unit vector matrix"""
    return h[0,0]*h[1,1]*h[2,2]
    
-MINSERIES=1e-10
+MINSERIES=1e-8
 def exp_ut3x3(h):
    """Computes the matrix exponential for a 3x3 upper-triangular matrix"""
    eh=numpy.zeros((3,3), float)
    e00=math.exp(h[0,0]);    e11=math.exp(h[1,1]);    e22=math.exp(h[2,2])
    eh[0,0]=e00;    eh[1,1]=e11;    eh[2,2]=e22; 
    
-   
-   if (math.abs(h[0,0]-h[1,1])>MINSERIES): 
+   print "minseries is ", MINSERIES
+   if (abs((h[0,0]-h[1,1])/h[0,0])>MINSERIES): 
       r01=(e00-e11)/(h[0,0]-h[1,1])
    else:
       r01=e00*(1+(h[0,0]-h[1,1])*(0.5+(h[0,0]-h[1,1])/6.0))
-   if (math.abs(h[1,1]-h[2,2])>MINSERIES): 
+   if (abs((h[1,1]-h[2,2])/h[1,1])>MINSERIES): 
       r12=(e11-e22)/(h[1,1]-h[2,2])   
    else:
       r12=e11*(1+(h[1,1]-h[2,2])*(0.5+(h[1,1]-h[2,2])/6.0))
-   if (math.abs(h[2,2]-h[0,0])>MINSERIES): 
-      r20=(e22-e00)/(h[2,2]-h[0,0])   
+   if (abs((h[2,2]-h[0,0])/h[2,2])>MINSERIES): 
+      r02=(e22-e00)/(h[2,2]-h[0,0])   
    else:
-      r20=e22*(1+(h[2,2]-h[0,0])*(0.5+(h[2,2]-h[0,0])/6.0))
+      r02=e22*(1+(h[2,2]-h[0,0])*(0.5+(h[2,2]-h[0,0])/6.0))
       
    eh[0,1]=h[0,1]*r01
    eh[1,2]=h[1,2]*r12
 
-   eh[0,2]=h[0,2]*r20
-   if (math.abs(h[2,2]-h[0,0])>MINSERIES):    
-      eh[0,2]+=h[0,1]*h[0,2]*(r01*r12)/(h[0,0]-h[2,2])
-   elif (math.abs(h[1,1]-h[0,0])>MINSERIES):    
-#      eh[0,2]+=h[0,1]*h[0,2]*(
-      eh[0,2]+=h[0,1]*h[0,2]*e00/2.0*(1.+(h[1,1]-h[0,0])/3*(1+(h[1,1]-h[0,0])/4))
+   eh[0,2]=h[0,2]*r02
+   if (abs((h[2,2]-h[0,0])/h[2,2])>MINSERIES):    
+      eh[0,2]+=h[0,1]*h[0,2]*(r01-r12)/(h[0,0]-h[2,2])
+   elif (abs((h[1,1]-h[0,0])/h[1,1])>MINSERIES):    
+      eh[0,2]+=h[0,1]*h[0,2]*(r12-r02)/(h[1,1]-h[0,0])
+   elif (abs((h[1,1]-h[2,2])/h[1,1])>MINSERIES):    
+      eh[0,2]+=h[0,1]*h[0,2]*(r02-r01)/(h[2,2]-h[1,1])
+   else:
+      eh[0,2]+=h[0,1]*h[0,2]*e00/24.0*(12.0+4*(h[1,1]+h[2,2]-2*h[0,0])+(h[1,1]-h[0,0])*(h[2,2]-h[0,0]))
       
    return eh  

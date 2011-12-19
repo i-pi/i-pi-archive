@@ -1,5 +1,6 @@
 #import ctypes
 import socket, select, string
+from utils.restart import Restart
 import numpy as np
 import time, pdb
 
@@ -12,7 +13,7 @@ def Message(mystr): return string.ljust(string.upper(mystr),HDRLEN)
 class Disconnected(Exception): pass
 class InvalidStatus(Exception): pass
 class Status: 
-   Disconnected=0; Up = 1;  Ready=2;   NeedsInit=4;  HasData=8;  Busy=16;
+   Disconnected=0;   Up = 1;  Ready=2;   NeedsInit=4;  HasData=8;  Busy=16;
    
 class Driver(socket.socket):
    def __init__(self, socket):
@@ -100,7 +101,18 @@ class Driver(socket.socket):
          
       else: raise InvalidStatus()
          
-
+         
+class RestartInterface(Restart):         
+   fields={ "address" : (RestartValue, (str, "localhost")), "port" : (RestartValue, (int,31415)),
+            "slots" : (RestartValue, (int, 2) ) }
+   def store(self, iface):
+      self.address.store(iface.address)
+      self.port.store(iface.port)
+      self.slots.store(iface.slots)
+      
+   def fetch(self):
+      return Interface(address=self.address.fetch(), port=self.port.fetch(), slots=self.slots.fetch())
+            
 class Interface(object):
    def __init__(self, address="localhost", port=3141, slots=1):
       self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

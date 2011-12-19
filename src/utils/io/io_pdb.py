@@ -1,6 +1,6 @@
 import numpy as np
 import math, sys
-import utils.cell_convert
+import utils.mathtools as mt
 from engine.cell import Cell
 from engine.atoms import Atoms
 from utils.units import *
@@ -9,7 +9,7 @@ def print_pdb(atoms, ncell, filedesc = sys.stdout):
    """Takes the system and gives pdb formatted output for the unit cell and the
       atomic positions """
 
-   a, b, c, alpha, beta, gamma = utils.cell_convert.h2abc(ncell.h)
+   a, b, c, alpha, beta, gamma = mt.h2abc(ncell.h)
    alpha *= 180.0/math.pi #radian to degree conversion
    beta  *= 180.0/math.pi
    gamma *= 180.0/math.pi
@@ -31,7 +31,7 @@ def read_pdb(filedesc):
    a = float(header[6:15]);      b = float(header[15:24]);    c = float(header[24:33]);
    alpha = float(header[33:40]); beta = float(header[40:47]); gamma = float(header[47:54]);
    alpha *= math.pi/180.0;       beta *= math.pi/180.0;       gamma *= math.pi/180.0
-   h = utils.cell_convert.abc2h(a, b, c, alpha, beta, gamma)
+   h = mt.abc2h(a, b, c, alpha, beta, gamma)
    cell=Cell(h)
    
    

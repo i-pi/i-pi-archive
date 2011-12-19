@@ -4,7 +4,10 @@ from utils.restart import *
 from utils import units
 
 class Atom(dobject):
-   """Represent an atom, with position, velocity, mass and related properties."""
+   """Represent an atom, with position, velocity, mass and related properties.
+      This is actually only an interface to the Atoms class, i.e. only stores
+      views of the large arrays which contain all the coordinates.      
+      """
             
    def __init__(self, system, index, label="X"):
       self.name=label
@@ -18,45 +21,52 @@ class Atom(dobject):
                          deps=depend_func(func=self.get_kstress, dependencies=[depget(self,"p"),depget(self,"m")]) ))
 
    def get_kin(self):
+      """Calculates the contribution of the atom to the kinetic energy"""
       return np.dot(self.p,self.p)/(2.0*self.m)
 
    def get_kstress(self):
       """Calculates the contribution of the atom to the kinetic stress tensor"""
-      p=self.p.view(ndarray)
+      p=depstrip(self.p)
       ks = numpy.zeros((3,3),float)
       for i in range(3):
          for j in range(i,3):
             ks[i,j] = p[i]*p[j]            
       return ks/self.m
          
+         
 class Atoms(dobject):
-   """Represents a simulation cell. Includes the cell parameters, 
-      the atoms and the like."""   
+   """Storage for the atoms positions and velocities. Everything is stored as 3*n-sized contiguous arrays,
+   and a convenience-access is provided through a list of Atom objects"""   
 
-   def __init__(self, natoms):
+   def __init__(self, natoms, _prebind=None):
       self.natoms=natoms
-      dset(self,"q",depend_array(name="q",value=np.zeros(3*natoms, float)) ) 
-      dset(self,"p",depend_array(name="p",value=np.zeros(3*natoms, float)) )
+      
+      if _prebind is None:
+         dset(self,"q",depend_array(name="q",value=np.zeros(3*natoms, float)) ) 
+         dset(self,"p",depend_array(name="p",value=np.zeros(3*natoms, float)) )
+         dset(self,"m",depend_array(name="m",value=np.zeros(natoms, float)) )
+      else:   # it is possible to bind the storage of data elsewhere and just plug it in here
+         dset(self,"q",_prebind[0]) 
+         dset(self,"p",_prebind[0]) 
+         dset(self,"m",_prebind[0])          
+         
       dset(self,"px",self.p[0:3*natoms:3]);       dset(self,"py",self.p[1:3*natoms:3]);      dset(self,"pz",self.p[2:3*natoms:3])
       dset(self,"qx",self.q[0:3*natoms:3]);       dset(self,"qy",self.q[1:3*natoms:3]);      dset(self,"qz",self.q[2:3*natoms:3])      
       
-      dset(self,"m",depend_array(name="m",value=np.zeros(natoms, float)) )
 
-      #interface to get a 3*n-sized array with masses      
+      # Interface to get a 3*n-sized array with masses      
       dset(self,"m3",depend_array(name="m3",value=np.zeros(3*natoms, float),deps=depend_func(func=self.mtom3, dependencies=[depget(self,"m")])))
-      
+
+      #  Access to individual atoms' properties via Atom objects     
       self._alist=[ Atom(self, i) for i in range(natoms) ]
 
+      # Derived properties: total mass, kinetic energy, kinetic stress contribution
       dset(self,"M",depend_value(name="M",deps=depend_func(func=self.get_msum,dependencies=[depget(self,"m")])) )      
       dset(self,"kin",depend_value(name="kin",deps=depend_func(func=self.get_kin,dependencies=[depget(self,"p"),depget(self,"m3")])) )
       dset(self,"kstress",depend_value(name="kstress",deps=depend_func(func=self.get_kstress,dependencies=[depget(self,"p"),depget(self,"m")])) )
    
    def __len__(self): return self.natoms
 
-   def get_msum(self): return self.m.sum()
-   
-   def mtom3(self): m3=np.zeros(3*self.natoms,float); m3[0:3*self.natoms:3]=self.m; m3[1:3*self.natoms:3]=m3[0:3*self.natoms:3]; m3[2:3*self.natoms:3]=m3[0:3*self.natoms:3]; return m3
-   
    def __getitem__(self,index):
       return self._alist[index]
 
@@ -64,6 +74,11 @@ class Atoms(dobject):
       self._alist[index].p=value.p
       self._alist[index].q=value.q 
       self._alist[index].m=value.m
+
+   def get_msum(self): return self.m.sum()
+   
+   def mtom3(self): m3=np.zeros(3*self.natoms,float); m3[0:3*self.natoms:3]=self.m; m3[1:3*self.natoms:3]=m3[0:3*self.natoms:3]; m3[2:3*self.natoms:3]=m3[0:3*self.natoms:3]; return m3
+   
                   
    def get_kin(self):
       """Calculates the total kinetic energy of the system,
@@ -80,9 +95,6 @@ class Atoms(dobject):
       ks[0,1]=np.dot(self.px,self.py/self.m)
       ks[0,2]=np.dot(self.px,self.pz/self.m)
       ks[1,2]=np.dot(self.py,self.pz/self.m)                        
-#      for i in range(3):
-#         for j in range(i,3):
-#            ks[i,j] = np.dot(p[i:self.natoms*3:3], p[j:self.natoms*3:3]/self.m)
       return ks
       
 from utils.io.io_pdb import read_pdb      

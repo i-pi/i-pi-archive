@@ -3,8 +3,6 @@ from xml.sax.handler import ContentHandler
 import numpy as np
 import string
 
-import pdb
-
 class xml_node(object):
    def __init__(self, attribs={}, name="", fields={}):
       self.attribs=attribs
