@@ -1,30 +1,30 @@
-import numpy
+import numpy as np
 import math
 
 def matrix_exp(M, ntaylor=8, nsquare=8):
    n=M.shape[1]
    # computes the coefficients of a Taylor expansion of the exponential
-   tc=numpy.zeros(ntaylor+1)
+   tc=np.zeros(ntaylor+1)
    tc[0]=1.0
    for i in range(ntaylor): tc[i+1]=tc[i]/(i+1)
    
    # scale
-   SM=numpy.copy(M)/2.0**nsquare
+   SM=np.copy(M)/2.0**nsquare
    
    # truncated Taylor exp.
-   EM=numpy.identity(n,float)*tc[ntaylor]
+   EM=np.identity(n,float)*tc[ntaylor]
    for i in range(ntaylor-1,-1,-1):
-      EM=numpy.dot(SM,EM)
-      EM+=numpy.identity(n)*tc[i]
+      EM=np.dot(SM,EM)
+      EM+=np.identity(n)*tc[i]
    
    # squaring
-   for i in range(nsquare): EM=numpy.dot(EM,EM)
+   for i in range(nsquare): EM=np.dot(EM,EM)
    return EM
 
 def stab_cholesky(M):
    n=M.shape[1]
-   D=numpy.zeros(n,float)
-   L=numpy.zeros(M.shape,float)
+   D=np.zeros(n,float)
+   L=np.zeros(M.shape,float)
    for i in range(n):
       L[i,i]=1.
       D[i]=M[i,i]
@@ -35,7 +35,7 @@ def stab_cholesky(M):
 
       for k in range(i): D[i]-=L[i,k]*L[i,k]*D[k]
 
-   S=numpy.zeros(M.shape,float)
+   S=np.zeros(M.shape,float)
    for i in range(n): 
       if (D[i]>0): D[i]=math.sqrt(D[i])
       else: D[i]=0.0
@@ -71,7 +71,7 @@ def abc2h(a, b, c, alpha, beta, gamma):
    
 def invert_ut3x3(h):
    """Inverts a 3*3 (upper-triangular) cell matrix"""
-   ih = numpy.zeros((3,3), float)
+   ih = np.zeros((3,3), float)
    for i in range(3):
       ih[i,i] = 1.0/h[i,i]
    ih[0,1] = -ih[0,0]*h[0,1]*ih[1,1]
@@ -81,8 +81,8 @@ def invert_ut3x3(h):
 
 def eigensystem_ut3x3(p):
    """Finds the eigenvector matrix of a 3*3 upper-triangular matrix"""
-   eigp = numpy.zeros((3,3), float)
-   eigvals = numpy.zeros(3, float)
+   eigp = np.zeros((3,3), float)
+   eigvals = np.zeros(3, float)
 
    for i in range(3):
       eigp[i,i] = 1
@@ -102,7 +102,7 @@ def det_ut3x3(h):
 MINSERIES=1e-8
 def exp_ut3x3(h):
    """Computes the matrix exponential for a 3x3 upper-triangular matrix"""
-   eh=numpy.zeros((3,3), float)
+   eh=np.zeros((3,3), float)
    e00=math.exp(h[0,0]);    e11=math.exp(h[1,1]);    e22=math.exp(h[2,2])
    eh[0,0]=e00;    eh[1,1]=e11;    eh[2,2]=e22; 
    

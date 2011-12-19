@@ -2,27 +2,24 @@ import numpy as np
 import math
 from utils.depend import *
 from utils.io import io_system
-from driver.interface import Interface
+from driver.interface import Interface, RestartInterface
 from utils.restart import *
 from engine.atoms import *
 
 class RestartForce(Restart):
    attribs = { "type" : (RestartValue,(str,"socket")) }
-   fields =  { "address" : (RestartValue,(str,"localhost")), "port" : (RestartValue, (int,31415)),
-               "parameters" : (RestartValue,(str,"")) }
+   fields =  { "interface" : (RestartInterface,()), "parameters" : (RestartValue, (str,"")) }
    
    def store(self, force):
       if (type(force) is FFSocket):  
          self.type.store("socket")
-         self.address.store(force.socket.address)
-         self.parameters.store(force.pars)         
-         self.port.store(force.socket.port)
+         self.interface.store(force.socket)
       else: self.type.store("unknown")
          
 
    def fetch(self):
       if self.type.fetch().upper() == "SOCKET": 
-         force=FFSocket(pars=self.parameters.fetch(), address=self.address.fetch(), port=self.port.fetch() )
+         force=FFSocket(pars=self.parameters.fetch(), interface=self.interface.fetch())
       else : force=ForceField()
       return force
       

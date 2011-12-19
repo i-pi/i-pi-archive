@@ -34,7 +34,7 @@ void open_socket_(int *psockfd)
    bcopy((char *)server->h_addr, 
       (char *)&serv_addr.sin_addr.s_addr,
       server->h_length);
-   serv_addr.sin_port = htons(3141);
+   serv_addr.sin_port = htons(31415);
    if (connect(sockfd,(struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) 
       error("ERROR connecting");
 
