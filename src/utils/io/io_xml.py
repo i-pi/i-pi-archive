@@ -104,7 +104,7 @@ readtype_funcs = {np.ndarray: read_array, dict: read_dict, float: read_float, in
 
 def write_type(type, data):
    if not type in writetype_funcs: raise TypeError("Conversion not available for given type")
-   return type(writetype_funcs[type](data))
+   return writetype_funcs[type](data)
 
 def write_list(data, delims="[]"):
    """Takes a line with an array of the form: 

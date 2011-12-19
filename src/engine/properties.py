@@ -5,21 +5,26 @@ from atoms import *
 from cell import *
 from ensembles import *
 from forces import *
-#from forces import *
 
 class Properties(dobject):
    """Represents a simulation cell. Includes the cell parameters, 
       the atoms and the like."""   
 
-   def __init__(self, atoms, cell, force, ensemble):
-      self.atoms=atoms
-      self.cell=cell
-      self.force=force
-      self.ensemble=ensemble
-      self.bind()
-      
-   def bind(self):
+#   def __init__(self, atoms, cell, force, ensemble):
+#      self.atoms=atoms
+#      self.cell=cell
+#      self.force=force
+#      self.ensemble=ensemble
+#      self.bind()
+
+   def __init__(self):
       pass
+      
+   def bind(self, ensemble, atoms, cell, force):
+      self.ensemble = ensemble
+      self.atoms = atoms
+      self.cell = cell
+      self.force = force
    
    
 #      self.properties

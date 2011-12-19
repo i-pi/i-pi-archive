@@ -66,7 +66,7 @@ class RestartValue(Restart):
       else:   
          self.value = read_type(self.type, xml.fields["_text"])
          
-ELPERLINE=5
+ELPERLINE=6
 class RestartArray(Restart):
    attribs={ "shape" : (RestartValue,(tuple, ())) }
    def __init__(self, dtype=None, value=None, default=None):
@@ -92,8 +92,8 @@ class RestartArray(Restart):
       if (len(self.value)>ELPERLINE): rstr+="\n"+indent+" [ "
       else: rstr+=" [ "
       for i,v in enumerate(self.value):          
-         if (len(self.value)>ELPERLINE and i>0 and i%ELPERLINE==0): rstr+="\n"+indent
-         rstr+=str(v)+", "         
+         if (len(self.value)>ELPERLINE and i>0 and i%ELPERLINE==0): rstr+="\n"+indent + "   "
+         rstr+="%10.10s" % (str(v)) + ", "         
       rstr=rstr.rstrip(", ")
       if (len(self.value)>ELPERLINE): rstr+=" ]\n"+indent
       else: rstr+=" ] "
@@ -105,6 +105,4 @@ class RestartArray(Restart):
       else:   
          self.shape.store(read_type(tuple,xml.attribs["shape"]))
          self.value=read_array(self.type,xml.fields["_text"]) 
-      
-
       

@@ -12,7 +12,6 @@
       double precision, dimension(:,:), allocatable :: f
       double precision, dimension(3,3) :: vir
            
-      !currently hardcoded, should be 0.2*rc
       double precision, dimension(3) :: q_diff
 
       integer i, j, ios, counter

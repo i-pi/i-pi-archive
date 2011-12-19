@@ -14,6 +14,7 @@ class RestartForce(Restart):
       if (type(force) is FFSocket):  
          self.type.store("socket")
          self.interface.store(force.socket)
+         self.parameters.store(force.pars)
       else: self.type.store("unknown")
          
 

@@ -1,4 +1,3 @@
-#import ctypes
 import socket, select, string
 from utils.restart import Restart, RestartValue
 import numpy as np

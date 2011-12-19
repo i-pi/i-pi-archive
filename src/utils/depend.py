@@ -130,7 +130,10 @@ class depend_value(depend_base):
       
    def __set__(self, instance, value): 
       self.set(value)   
-   
+
+   def __str__(self):
+      return str(self.get())
+
 class depend_array(np.ndarray, depend_base):
    def __new__(cls, value, deps=None, name=None, tainted=True):
 #      print "new", name, cls
@@ -201,11 +204,13 @@ class depend_array(np.ndarray, depend_base):
    def __set__(self, instance, value): 
       self.__setitem__(slice(None,None),value=value)
 
+   def __str__(self):
+      return str(self.get())
+
 def dget(obj,member):
    return obj.__dict__[member]
 def dset(obj,member,value):
    obj.__dict__[member]=value
-
 
 def depstrip(array):
    return array.view(np.ndarray)
