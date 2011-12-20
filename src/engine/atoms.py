@@ -73,6 +73,7 @@ class Atoms(dobject):
       self._alist[index].p=value.p
       self._alist[index].q=value.q 
       self._alist[index].m=value.m
+      self._alist[index].name=value.name
 
    def get_msum(self): return self.m.sum()
    

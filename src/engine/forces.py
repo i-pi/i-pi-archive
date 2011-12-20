@@ -34,6 +34,9 @@ class ForceField(dobject):
    def __init__(self):
       dset(self,"ufv", depend_value(name="ufv", deps=depend_func(func=self.get_all)) )
       
+   def copy(self):    # creates a deep copy with everything but the bound bits 
+      return type(self)()
+      
    def bind(self, atoms, cell):
       self.atoms = atoms
       self.cell = cell
@@ -75,6 +78,7 @@ class ForceField(dobject):
 
 import time
 class FFSocket(ForceField):
+
    def __init__(self, pars={}, interface=None, _force=None):
       super(FFSocket,self).__init__() 
       if _force is None:
@@ -90,6 +94,9 @@ class FFSocket(ForceField):
       self.timer=0.0
       self.twall=0.0
       self.ncall=0
+
+   def copy(self):    # creates a deep copy with everything but the bound bits 
+      return type(self)()
 
    def get_all(self):
       #print "computing forces"
