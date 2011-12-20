@@ -17,6 +17,10 @@ simrestart=simulation.RestartSimulation();
 simrestart.parse(xmlrestart.fields["simulation"])
 simul=simrestart.fetch()
 
+simul.run()
+
+exit()
+
 pibeads=pi_beads.Beads(simul.atoms.natoms, 8);
 for b in range(8):   pibeads[b]=simul.atoms
 

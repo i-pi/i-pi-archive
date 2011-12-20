@@ -85,7 +85,7 @@ class Output(dobject):
 
       if step_no%self.energy == 0:
          for i in range(len(self.write_list)):
-            self.energy_file.write(self.write_list[i].get() + " ") #return of the .get() notation, this appears to be the only way for this to work
+            self.energy_file.write(str(self.write_list[i].get()) + " ") #return of the .get() notation, this appears to be the only way for this to work
          self.energy_file.write("\n")
 
       if step_no%self.traj == 0:
