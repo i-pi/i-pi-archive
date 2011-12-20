@@ -127,8 +127,9 @@ class Interface(object):
       print "shutting down interface"
       self.server.shutdown(socket.SHUT_RDWR); self.server.close()
       
-   def queue(self, atoms,cell, pars=""):
-      newreq={"atoms":atoms,"cell":cell, "pars":pars, "result":None, "status":"Queued"}
+   def queue(self, atoms,cell, pars={}):
+      par_str = str(pars["eps"]) + " " + str(pars["sigma"]) + " " + str(pars["cutoff"]) + " " + str(pars["nearest_neighbour"])
+      newreq={"atoms":atoms,"cell":cell, "pars":par_str, "result":None, "status":"Queued"}
       self.requests.append(newreq);
       return newreq
       

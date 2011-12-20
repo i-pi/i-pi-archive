@@ -8,7 +8,7 @@ from engine.atoms import *
 
 class RestartForce(Restart):
    attribs = { "type" : (RestartValue,(str,"socket")) }
-   fields =  { "interface" : (RestartInterface,()), "parameters" : (RestartValue, (str,"")) }
+   fields =  { "interface" : (RestartInterface,()), "parameters" : (RestartValue, (dict,None)) }
    
    def store(self, force):
       if (type(force) is FFSocket):  
@@ -75,7 +75,7 @@ class ForceField(dobject):
 
 import time
 class FFSocket(ForceField):
-   def __init__(self, pars="", interface=None, _force=None):
+   def __init__(self, pars={}, interface=None, _force=None):
       super(FFSocket,self).__init__() 
       if _force is None:
          if interface is None:

@@ -120,6 +120,17 @@ def write_list(data, delims="[]"):
 
 def write_tuple(data): return write_list(data, delims="()")
 
-writetype_funcs = {float: str, int: str, bool: str, str: string.strip, tuple: write_tuple}
+def write_float(data): return "%12f" % (data)
 
+def write_bool(data):  return "%5.5s" % (str(data))
 
+def write_dict(data, delims="{}"):
+   
+   rstr=delims[0]
+   for v in data:
+      rstr += str(v)+": "+str(data[v])+", "
+   rstr = rstr.strip(", ")
+   rstr+=delims[1]
+   return rstr
+
+writetype_funcs = {float: write_float, dict: write_dict, int: str, bool: write_bool, str: string.strip, tuple: write_tuple}

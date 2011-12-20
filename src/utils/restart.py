@@ -58,7 +58,8 @@ class RestartValue(Restart):
       return self.value
       
    def write(self, name="", indent=""): 
-      return indent+"<"+name+">"+str(self.value)+"</"+name+">\n"
+      #return indent+"<"+name+">"+str(self.value)+"</"+name+">\n"
+      return indent + "<" + name + ">" + write_type(self.type, self.value) + "</" + name + ">\n"
    
    def parse(self, xml=None, text=""):
       if xml is None:
@@ -66,7 +67,7 @@ class RestartValue(Restart):
       else:   
          self.value = read_type(self.type, xml.fields["_text"])
          
-ELPERLINE=6
+ELPERLINE=5
 class RestartArray(Restart):
    attribs={ "shape" : (RestartValue,(tuple, ())) }
    def __init__(self, dtype=None, value=None, default=None):
@@ -93,7 +94,12 @@ class RestartArray(Restart):
       else: rstr+=" [ "
       for i,v in enumerate(self.value):          
          if (len(self.value)>ELPERLINE and i>0 and i%ELPERLINE==0): rstr+="\n"+indent + "   "
-         rstr+="%10.10s" % (str(v)) + ", "         
+         if self.type == str:
+            rstr+="%4.4s"%(v) + ", "
+         elif self.type == float:
+            rstr+="%12f"%(v) + ", "
+         else:
+            rstr+=str(v) + ", "
       rstr=rstr.rstrip(", ")
       if (len(self.value)>ELPERLINE): rstr+=" ]\n"+indent
       else: rstr+=" ] "
