@@ -104,7 +104,7 @@ readtype_funcs = {np.ndarray: read_array, dict: read_dict, float: read_float, in
 
 def write_type(type, data):
    if not type in writetype_funcs: raise TypeError("Conversion not available for given type")
-   return type(writetype_funcs[type](data))
+   return writetype_funcs[type](data)
 
 def write_list(data, delims="[]"):
    """Takes a line with an array of the form: 
@@ -120,6 +120,17 @@ def write_list(data, delims="[]"):
 
 def write_tuple(data): return write_list(data, delims="()")
 
-writetype_funcs = {float: str, int: str, bool: str, str: string.strip, tuple: write_tuple}
+def write_float(data): return "%16.8e" % (data)
 
+def write_bool(data):  return "%5.5s" % (str(data))
 
+def write_dict(data, delims="{}"):
+   
+   rstr=delims[0]
+   for v in data:
+      rstr += str(v)+": "+str(data[v])+", "
+   rstr = rstr.strip(", ")
+   rstr+=delims[1]
+   return rstr
+
+writetype_funcs = {float: write_float, dict: write_dict, int: str, bool: write_bool, str: string.strip, tuple: write_tuple}

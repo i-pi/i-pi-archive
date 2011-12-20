@@ -25,6 +25,7 @@ exit(1)
 
 simul.run()
 
+exit()
 fcheck=open("checkpoint.xml","w")
 simrestart.store(simul)
 del simul.force.socket

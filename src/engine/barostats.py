@@ -129,7 +129,7 @@ class BaroFlexi(Barostat):
      # pdb.set_trace()
 
       #now must compute the terms depending on outer products of f and p
-      m = depstrip(self.force.m)
+      m = depstrip(self.atoms.m)
 #      m = self.atoms.m.view(np.ndarray)
 #      p = self.atoms.p.view(np.ndarray)  # this strips the dependency checks from p, making it inexpensive to scan through ...
 #      nat=self.atoms.natoms
