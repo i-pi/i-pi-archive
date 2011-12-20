@@ -30,7 +30,6 @@ class Output(dobject):
       self.check = checkpoint
       self.prefix = prefix
 
-#TODO read this quantity_list using the read_list function in io_xml
       self.quantity_list = quantity_list
       self.quantities = self.quantity_list.split(" ")
 
@@ -80,7 +79,7 @@ class Output(dobject):
                         self.write_list.append(self.properties.property_dict[prop])
                      break
             quant_str += "\n"
-            self.energy_file.write("#" + quant_str)
+            self.energy_file.write("# " + quant_str)
          except KeyError:
             print "Quantity ", quantity, " is not available for calculation"
             print "\nAvailable quantities: \n"
@@ -90,6 +89,7 @@ class Output(dobject):
             exit()
 
       if step_no%self.energy == 0:
+         self.energy_file.write("  ")
          for i in range(len(self.write_list)):
             quantity = self.write_list[i].get()
             try:
@@ -101,8 +101,7 @@ class Output(dobject):
             except TypeError:
                quantity = float(quantity)
                quantity = write_type(float, quantity)
-               self.energy_file.write(str(quantity) + " ")
-            #self.energy_file.write(str(self.write_list[i].get()) + " ") #return of the .get() notation, this appears to be the only way for this to work
+               self.energy_file.write(quantity + " ")
          self.energy_file.write("\n")
 
       if step_no%self.traj == 0:
