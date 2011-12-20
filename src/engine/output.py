@@ -50,7 +50,7 @@ class Output(dobject):
             self.check_file.close()
             self.number += 1
          except IOError:
-            self.check_file = open(self.prefix + ".restart" + str(self.number), "a")
+            self.check_file = open(self.prefix + ".restart" + str(self.number), "w")
             new = True
 
    def bind(self, properties, simul):
@@ -64,17 +64,23 @@ class Output(dobject):
             quant_str=""
             for quantity in self.quantities:
                if quantity != "":
-                  quant_str += quantity + " "
+                  if quantity == "cell_parameters":
+                     quant_str += "%16s"%("a") + " " + "%16s"%("b") + " " + "%16s"%("c") + " " + "%16s"%("alpha") + " " + "%16s"%("beta") + " " + "%16s"%("gamma") + " "
+                  else:
+                     quant_str += "%16s"%(quantity) + " "
                   if quantity != "all":
                      self.write_list.append(self.properties.property_dict[quantity])
                   else:
                      quant_str = ""
                      for prop in self.properties.property_dict:
-                        quant_str += prop + " "
+                        if prop == "cell_parameters":
+                           quant_str += "%16s"%("a") + " " + "%16s"%("b") + " " + "%16s"%("c") + " " + "%16s"%("alpha") + " " + "%16s"%("beta") + " " + "%16s"%("gamma") + " "
+                        else:
+                           quant_str += "%16s"%(prop) + " "
                         self.write_list.append(self.properties.property_dict[prop])
                      break
             quant_str += "\n"
-            self.energy_file.write("# " + quant_str)
+            self.energy_file.write("#" + quant_str)
          except KeyError:
             print "Quantity ", quantity, " is not available for calculation"
             print "\nAvailable quantities: \n"
@@ -85,7 +91,18 @@ class Output(dobject):
 
       if step_no%self.energy == 0:
          for i in range(len(self.write_list)):
-            self.energy_file.write(str(self.write_list[i].get()) + " ") #return of the .get() notation, this appears to be the only way for this to work
+            quantity = self.write_list[i].get()
+            try:
+               for i in range(len(quantity)):
+                  pass
+               quantity = list(quantity)
+               for i in range(len(quantity)):
+                  self.energy_file.write(write_type(float, quantity[i]) + " ")
+            except TypeError:
+               quantity = float(quantity)
+               quantity = write_type(float, quantity)
+               self.energy_file.write(str(quantity) + " ")
+            #self.energy_file.write(str(self.write_list[i].get()) + " ") #return of the .get() notation, this appears to be the only way for this to work
          self.energy_file.write("\n")
 
       if step_no%self.traj == 0:
