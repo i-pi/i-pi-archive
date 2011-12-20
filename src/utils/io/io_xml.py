@@ -120,7 +120,7 @@ def write_list(data, delims="[]"):
 
 def write_tuple(data): return write_list(data, delims="()")
 
-def write_float(data): return "%12f" % (data)
+def write_float(data): return "%16.8e" % (data)
 
 def write_bool(data):  return "%5.5s" % (str(data))
 

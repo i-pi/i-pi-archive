@@ -42,13 +42,14 @@ class Simulation(dobject):
       self.output=output
       self.step=step
       self.tsteps=tsteps
+      self.properties = Properties()
       self.bind()
       
    def bind(self):
       self.force.bind(self.atoms, self.cell)
       self.ensemble.bind(self.atoms, self.cell, self.force)
-#TODO make a properties object, to replace self.ensemble in output.bind()
-      self.output.bind(self.ensemble, self)
+      self.properties.bind(self.ensemble, self.atoms, self.cell, self.force)
+      self.output.bind(self.properties, self)
 
    def run(self):      
       for self.step in range(self.step,self.tsteps):

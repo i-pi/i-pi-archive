@@ -94,12 +94,7 @@ class RestartArray(Restart):
       else: rstr+=" [ "
       for i,v in enumerate(self.value):          
          if (len(self.value)>ELPERLINE and i>0 and i%ELPERLINE==0): rstr+="\n"+indent + "   "
-         if self.type == str:
-            rstr+="%4.4s"%(v) + ", "
-         elif self.type == float:
-            rstr+="%12f"%(v) + ", "
-         else:
-            rstr+=str(v) + ", "
+         rstr += write_type(self.type, v) + ", "
       rstr=rstr.rstrip(", ")
       if (len(self.value)>ELPERLINE): rstr+=" ]\n"+indent
       else: rstr+=" ] "
