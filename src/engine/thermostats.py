@@ -90,17 +90,26 @@ class ThermoLangevin(Thermostat):
       
 class RestartThermo(Restart):
    attribs={ "kind": (RestartValue, (str, "langevin")) }
-   fields={ "ethermo" : (RestartValue, (float, 0.0)) }
+   fields={ "ethermo" : (RestartValue, (float, 0.0)), "parameters" : (RestartValue, (dict,{}))}
    
    def store(self, thermo):
-      if type(thermo) is ThermoLangevin: self.kind.store("langevin")
-      else: self.kind.store("unknown")      
+      if type(thermo) is ThermoLangevin: 
+         self.kind.store("langevin")
+         self.parameters.store({"tau": "%16.8e"%(thermo.tau)})
+      else: 
+         self.kind.store("unknown")      
+         self.parameters.store({})
       self.ethermo.store(thermo.ethermo)
       
    def fetch(self):
-      if self.kind.fetch() == "langevin" : thermo=ThermoLangevin()
+      self.check()
+      if self.kind.fetch() == "langevin" : thermo=ThermoLangevin(tau = self.parameters.fetch()["tau"])
       else: thermo=Thermostat()
       thermo.ethermo=self.ethermo.fetch()
       return thermo      
      
-      
+   def check(self):
+      if self.kind.fetch() == "langevin":
+         params = self.parameters.fetch()
+         params["tau"] = float(params["tau"])
+         self.parameters.store(params)
