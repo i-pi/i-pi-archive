@@ -2,7 +2,8 @@ import numpy as np
 import math
 from utils.depend import *
 from utils.restart import *
-from utils.mathtools import det_ut3x3, invert_ut3x3
+import utils.io.io_pdb
+from utils.mathtools import *
 from utils import units
 import pdb
          
@@ -153,20 +154,23 @@ class CellRigid(Cell):
 class RestartCell(Restart):
    fields={ "m" : (RestartValue, (float, 0.0)), "h" : (RestartArray,(float,np.identity(3))), 
             "h0" : (RestartArray,(float,np.zeros((3,3)))), "p" : (RestartArray,(float,np.zeros((3,3),float))),
-            "P" : (RestartValue,(float,0.0)), "init_temp": (RestartValue, (float, -1.0)) }
+            "P" : (RestartValue,(float,0.0)), "init_temp": (RestartValue, (float, -1.0)),
+            "from_file": (RestartValue,(str,"")) }
    attribs={ "flexible" : (RestartValue, (bool, False)) }
     
    def __init__(self, cell=None):
       super(RestartCell,self).__init__()
       if not cell is None: self.store(cell)
       
-   def store(self,cell):
+   def store(self, cell, filename=""):
+      self.from_file.store(filename)
       self.flexible.store(type(cell) is CellFlexi)
       self.m.store(cell.m)
       self.h.store(cell.h)
       self.h0.store(cell.h0)
       if type(cell) is CellFlexi:  self.p.store(cell.p)
       else: self.P.store(cell.P[0])
+      self.from_file.store(cell.from_file)
       
    def fetch(self):
       self.check()
@@ -176,9 +180,15 @@ class RestartCell(Restart):
          cell.p=self.p.fetch()
       else:
          cell=CellRigid(h=self.h.fetch(), m=self.m.fetch())
-         cell.P=self.P.fetch()         
+         cell.P=self.P.fetch()
+      cell.from_file = self.from_file.fetch()
       return cell
       
    def check(self):
-       if (self.init_temp.fetch()>=0) : pass
+      if (self.init_temp.fetch()>=0) : pass
+      if self.from_file.fetch() != "":
+         myatoms, mycell = utils.io.io_pdb.read_pdb(open(self.from_file.fetch(),"r")) 
+         self.h.store(mycell.h)
+         self.h0.store(mycell.h0)
+         self.m.store(mycell.m)
    

@@ -53,8 +53,9 @@ class Simulation(dobject):
 
    def run(self):      
       for self.step in range(self.step,self.tsteps):
+         self.output.step(self.step, self.step*self.ensemble.dt)
          self.ensemble.step()
         # print str(self.step+1)+" "+str(self.ensemble.econs)+" "+str(self.atoms.kin)+" "+str(self.force.pot)+" "+str(self.ensemble.thermostat.ethermo)+" "+"\n",
-         self.output.step(self.step)
+      self.output.step(self.tsteps, self.tsteps*self.ensemble.dt)
       self.step+=1
          

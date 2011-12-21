@@ -97,7 +97,8 @@ class Atoms(dobject):
       ks[1,2]=np.dot(self.py,self.pz/self.m)                        
       return ks
       
-from utils.io.io_pdb import read_pdb      
+#from utils.io.io_pdb import read_pdb      
+from utils.io.io_pdb import *
 class RestartAtoms(Restart):
    fields={ "natoms" : (RestartValue, (int,0)), "q" : (RestartArray,(float,np.zeros(0))),  "p" : (RestartArray,(float,np.zeros(0))),
             "m" : (RestartArray,(float, np.zeros(0))),  "names" : (RestartArray,(str,np.zeros(0, str))),
