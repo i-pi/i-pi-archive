@@ -4,6 +4,7 @@ import utils.mathtools as mt
 from engine.cell import Cell
 from engine.atoms import Atoms
 from utils.units import *
+import pdb, gc
 
 def print_pdb(atoms, ncell, filedesc = sys.stdout):
    """Takes the system and gives pdb formatted output for the unit cell and the
@@ -52,10 +53,12 @@ def read_pdb(filedesc):
    atoms=Atoms(natoms)
    totmass=0.0
    for i in range(natoms):
-      atoms[i].q=qatoms[i]
-      atoms[i].name=names[i]
-      atoms[i].m=Elements.mass(names[i])
+      nat=atoms[i]
+      nat.q=qatoms[i]
+      nat.name=names[i]
+      nat.m=Elements.mass(names[i])
       totmass+=Elements.mass(names[i])
 
-   cell.m=totmass   
+   print "garbage colllecting: ", gc.collect()
+   cell.m=totmass
    return atoms, cell

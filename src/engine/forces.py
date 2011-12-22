@@ -32,7 +32,7 @@ class ForceField(dobject):
       Initialised by ffield = forcefield()"""
 
    def __init__(self):
-      dset(self,"ufv", depend_value(name="ufv", deps=depend_func(func=self.get_all)) )
+      dset(self,"ufv", depend_value(name="ufv", func=self.get_all))
       
    def copy(self):    # creates a deep copy with everything but the bound bits 
       return type(self)()
@@ -40,18 +40,18 @@ class ForceField(dobject):
    def bind(self, atoms, cell):
       self.atoms = atoms
       self.cell = cell
-      depget(self,"ufv").add_dependency(depget(self.atoms,"q"))
-      depget(self,"ufv").add_dependency(depget(self.cell,"h"))      
-      dset(self,"pot",depend_value(name="pot", deps=depend_func(func=self.get_pot, dependencies=[depget(self,"ufv")] )  )  )
+      dget(self,"ufv").add_dependency(dget(self.atoms,"q"))
+      dget(self,"ufv").add_dependency(dget(self.cell,"h"))      
+      dset(self,"pot",depend_value(name="pot", func=self.get_pot, dependencies=[dget(self,"ufv")] )  )
       
       fbase=np.zeros(atoms.natoms*3, float)
-      dset(self,"f", depend_array(name="f",   value=fbase,  deps=depend_func(func=self.get_f, dependencies=[depget(self,"ufv")])) )
-      # a bit messy, but we don't want to trigger here the force calculation routine 
-      dset(self,"fx", depend_array(name="fx", value=fbase[0:3*atoms.natoms:3], deps=depget(self,"f") ) );       
-      dset(self,"fy", depend_array(name="fy", value=fbase[1:3*atoms.natoms:3], deps=depget(self,"f") ) );       
-      dset(self,"fz", depend_array(name="fz", value=fbase[2:3*atoms.natoms:3], deps=depget(self,"f") ) );            
-      dset(self,"vir", depend_array(name="vir", value=np.zeros((3,3),float),            
-      deps=depend_func(func=self.get_vir, dependencies=[depget(self,"ufv")] )) )
+      dset(self,"f", depend_array(name="f", value=fbase, func=self.get_f, dependencies=[dget(self,"ufv")]) )
+      # a bit messy, but we don't want to trigger quite yet the force calculation routine 
+      dset(self,"fx", depend_array(name="fx", value=fbase[0:3*atoms.natoms:3]));
+      dset(self,"fy", depend_array(name="fy", value=fbase[1:3*atoms.natoms:3]));
+      dset(self,"fz", depend_array(name="fz", value=fbase[2:3*atoms.natoms:3]));
+      depcopy(self,"f", self,"fx");      depcopy(self,"f", self,"fy");      depcopy(self,"f", self,"fz");
+      dset(self,"vir", depend_array(name="vir", value=np.zeros((3,3),float),func=self.get_vir, dependencies=[dget(self,"ufv")] ) )
 
    def get_all(self):
       """Dummy routine where no calculation is done"""
@@ -75,45 +75,106 @@ class ForceField(dobject):
       [pot, f, vir] = self.ufv
       vir[1,0]=0.0; vir[2,0:2]=0.0;
       return vir
+      
 
+import threading
+class ForceBeads(dobject):
+   def __init__(self, beads=None, cell=None, force=None):
+      if not (beads is None or cell is None or force is None): self.bind(beads, cell, force)
+   
+   def bind(self, beads, cell, force):
+      self.natoms=beads.natoms
+      self.nbeads=beads.nbeads
+
+      self._forces=[];
+      for b in range(self.nbeads):
+         newf=force.copy()
+         newf.bind(beads[b], cell)
+         newf.blocking=False
+         self._forces.append(newf)
+         
+      
+      u=dget(self._forces[0],"f")
+      dset(self,"f",depend_array(name="f",value=np.zeros((self.nbeads,3*self.natoms), float), func=self.f_gather,
+          dependencies=[dget(self._forces[b],"f")  for b in range(self.nbeads)] ) )
+      dset(self,"fnm",depend_array(name="fnm",value=np.zeros((self.nbeads,3*self.natoms), float), func=self.b2nm_f, dependencies=[dget(self,"f")] ) )
+      self.Cb2nm=beads.Cb2nm
+      
+   def b2nm_f(self): return np.dot(self.Cb2nm,depstrip(self.f))
+
+   def _getbead(self, b, newf):
+      newf[b]=self._forces[b].f
+      return
+
+   def queue(self):   
+      for b in range(self.nbeads): self._forces[b].queue()
+      
+   def f_gather(self): 
+      start=time.time()
+      newf=np.zeros((self.nbeads,3*self.natoms),float)
+      
+      self.queue()
+      print "time queueing", time.time()-start
+      print "update", self._forces[0].socket.time_update, 
+      print "distribute", self._forces[0].socket.time_distribute
+      self._forces[0].socket.time_update=0
+      self._forces[0].socket.time_distribute=0
+
+
+      #serial
+#      for b in range(self.nbeads): newf[b]=self._forces[b].f
+      # threaded      
+      bthreads=[]
+      print "starting threads"
+      for b in range(self.nbeads): 
+         thread=threading.Thread(target=self._getbead, args=(b,newf,))
+         thread.start()
+         bthreads.append(thread)
+
+      print "waiting threads"      
+      for b in range(self.nbeads): bthreads[b].join()
+      print "threads joined in"
+
+      return newf
+      
 import time
+LATENCY=5e-3
 class FFSocket(ForceField):
 
-   def __init__(self, pars={}, interface=None, _force=None):
+   def __init__(self, pars={}, interface=None):
       super(FFSocket,self).__init__() 
-      if _force is None:
-         if interface is None:
-            self.socket=Interface()
-         else:
-            self.socket=interface
-         self.pars=pars
+      if interface is None:
+         self.socket=Interface()
       else:
-         self.socket=_force.socket
-         self.pars=_force.pars
-         
+         self.socket=interface
+      self.pars=pars
+      
       self.timer=0.0
       self.twall=0.0
       self.ncall=0
-
+      self.request=None
    def copy(self):    # creates a deep copy with everything but the bound bits 
-      return type(self)()
+      return type(self)(self.pars, self.socket)
 
    def get_all(self):
       #print "computing forces"
       self.timer-= time.clock()
       self.twall-=time.time()
-      myreq=self.socket.queue(self.atoms, self.cell, self.pars)
-      while myreq["status"] != "Done":
-         self.socket.pool_update()
-         self.socket.pool_distribute()
-      self.socket.release(myreq)
-
+      
+      if self.request is None: self.request=self.socket.queue(self.atoms, self.cell, self.pars)
+      while self.request["status"] != "Done": time.sleep(LATENCY)
+      self.socket.release(self.request)
+      result=self.request["result"]
+      self.request=None
+      
       self.ncall+=1
       self.timer+=time.clock()
       self.twall+=time.time()      
-      return myreq["result"]
+      return result
       
-      
+   def queue(self):   
+      if self.request is None:
+         self.request=self.socket.queue(self.atoms, self.cell, self.pars)
       
       
 #      self.timer-= time.clock()

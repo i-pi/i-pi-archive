@@ -17,6 +17,7 @@ simrestart=simulation.RestartSimulation();
 simrestart.parse(xmlrestart.fields["simulation"])
 simul=simrestart.fetch()
 
+pdb.set_trace(); 
 simul.run()
 
 exit()

@@ -31,9 +31,9 @@ class Cell(dobject):
       h0=np.array(h,copy=True)
       dset(self,"h0",depend_array(name = 'h0', value = h0 ) )
             
-      dset(self,"ih" ,  depend_array(name = "ih", value = np.zeros((3,3),float), deps=depend_func(func=self.get_ih, dependencies=[depget(self,"h")])))
-      dset(self,"ih0" , depend_array(name = "ih0", value = np.zeros((3,3),float), deps=depend_func(func=self.get_ih0, dependencies=[depget(self,"h0")])) )
-      dset(self,"strain", depend_value(name = "strain", deps=depend_func(func=self.get_strain, dependencies=[depget(self,"h"),depget(self,"h0")])) )
+      dset(self, "ih" , depend_array(name = "ih", value = np.zeros((3,3),float), func=self.get_ih, dependencies=[dget(self,"h")]) )
+      dset(self, "ih0" , depend_array(name = "ih0", value = np.zeros((3,3),float), func=self.get_ih0, dependencies=[dget(self,"h0")]) )
+      dset(self, "strain", depend_value(name = "strain", func=self.get_strain, dependencies=[dget(self,"h"),dget(self,"h0")]) )
             
    def get_ih(self):
       """Inverts a 3*3 (upper-triangular) cell matrix"""
@@ -76,25 +76,25 @@ class CellFlexi(Cell):
       # must redefine most values to set up sync
       # interface for accessing the cell degrees of freedom as flat size-6 arrays
       sync_h=synchronizer();    sync_p=synchronizer();
-      dset(self,"h6",depend_array(name="h6", value=np.zeros(6,float), deps=depend_sync(func={"h":self.htoh6}, synchro=sync_h) ) )      
-      dset(self,"p6",depend_array(name="p6", value=np.zeros(6,float), deps=depend_sync(func={"p":self.ptop6}, synchro=sync_p) ) )  
+      dset(self, "h6", depend_array(name="h6", value=np.zeros(6,float), func={"h":self.htoh6}, synchro=sync_h) )      
+      dset(self, "p6", depend_array(name="p6", value=np.zeros(6,float), func={"p":self.ptop6}, synchro=sync_p) )
                 
       #un-dependent properties
-      dset(self,"h",depend_array(name = 'h', value = h, deps=depend_sync(func={"h6":self.h6toh}, synchro=sync_h) ) )
-      dset(self,"p",depend_array(name = 'p', value = np.zeros((3,3),float), deps=depend_sync(func={"p6":self.p6top}, synchro=sync_p) ) )
-      dset(self,"m6",depend_array(name= "m6", value=np.zeros(6,float), deps=depend_func(func=self.mtom6, dependencies=[depget(self,"m")]) ) )      
+      dset(self, "h", depend_array(name = 'h', value = h, func={"h6":self.h6toh}, synchro=sync_h) )
+      dset(self, "p", depend_array(name = 'p', value = np.zeros((3,3),float), func={"p6":self.p6top}, synchro=sync_p) )
+      dset(self, "m6", depend_array(name= "m6", value=np.zeros(6,float), func=self.mtom6, dependencies=[dget(self,"m")]) )
 
       #since we redefined h, we must update definitions of ih and strain
-      dset(self,"ih" ,  depend_array(name = "ih", value = np.zeros((3,3),float), deps=depend_func(func=self.get_ih, dependencies=[depget(self,"h")])) )
-      dset(self,"strain", depend_value(name = "strain", deps=depend_func(func=self.get_strain, dependencies=[depget(self,"h"),depget(self,"h0")])) )
+      dset(self, "ih", depend_array(name = "ih", value = np.zeros((3,3),float), func=self.get_ih, dependencies=[dget(self,"h")]) )
+      dset(self, "strain", depend_value(name = "strain", func=self.get_strain, dependencies=[dget(self,"h"),dget(self,"h0")]) )
       
       #reference cell
       if not h0 is None:  self.h0=h0
       
-      dset(self,"V",depend_value(name = 'V', deps=depend_func(func=self.get_volume, dependencies=[depget(self,"h")])) )
-      dset(self,"V0",depend_value(name = 'V0', deps=depend_func(func=self.get_volume0, dependencies=[depget(self,"h0")])) )
+      dset(self, "V", depend_value(name = 'V', func=self.get_volume, dependencies=[dget(self,"h")]) )
+      dset(self, "V0", depend_value(name = 'V0', func=self.get_volume0, dependencies=[dget(self,"h0")]) )
       
-      dset(self,"kin",    depend_value(name = "kin", deps=depend_func(func=self.get_kin, dependencies=[depget(self,"p"),depget(self,"m")])) )
+      dset(self, "kin", depend_value(name = "kin", func=self.get_kin, dependencies=[dget(self,"p"),dget(self,"m")]) )
       
 
    # conversion between the different representations of p and h
@@ -124,23 +124,23 @@ class CellRigid(Cell):
       super(CellRigid,self).__init__(h, m)
 
       #reference cell volume
-      dset(self,"V0",depend_value(name = 'V0', deps=depend_func(func=self.get_volume0, dependencies=[depget(self,"h0")])) )
-      dset(self,"V",depend_value(name = 'V', value=self.get_volume0()) )
+      dset(self, "V0", depend_value(name = 'V0', func=self.get_volume0, dependencies=[dget(self,"h0")]) )
+      dset(self, "V", depend_value(name = 'V', value=self.get_volume0()) )
 
       # here h0 is taken as the reference cell, and the real dynamical variable is the volume. Hence, h is a derived quantity            
-      dset(self,"h",depend_array(name = 'h', value = h, deps=depend_func(func=self.Vtoh, dependencies=[depget(self,"V"),depget(self,"h0")]) ) )
-      dset(self,"ih" ,  depend_array(name = "ih", value = np.zeros((3,3),float), deps=depend_func(func=self.get_ih, dependencies=[depget(self,"h")])) )      
+      dset(self, "h", depend_array(name = 'h', value = h, func=self.Vtoh, dependencies=[dget(self,"V"),dget(self,"h0")]) )
+      dset(self, "ih" , depend_array(name = "ih", value = np.zeros((3,3),float), func=self.get_ih, dependencies=[dget(self,"h")]) )
 
 
       # rate of volume change times m ("volume momentum")      
-      dset(self,"P",depend_array(name = 'P', value=np.zeros(1,float)) )
+      dset(self, "P", depend_array(name = 'P', value=np.zeros(1,float)) )
       # array-like access to the mass (useful for thermostatting)
-      dset(self,"M",depend_array(name="M", value=np.zeros(1,float), deps=depend_func(func=self.mtoM, dependencies=[depget(self,"m")]) ) )                  
+      dset(self, "M", depend_array(name="M", value=np.zeros(1,float), func=self.mtoM, dependencies=[dget(self,"m")]) )
       
       # this must be well-thought
-      dset(self,"p",depend_array(name = 'p', value = np.zeros((3,3),float), deps=depend_func(func=self.Ptop, dependencies=[depget(self,"P"),depget(self,"h0")]) ) )
+      dset(self, "p", depend_array(name = 'p', value = np.zeros((3,3),float), func=self.Ptop, dependencies=[dget(self,"P"),dget(self,"h0")]) )
 
-      dset(self,"kin",    depend_value(name = "kin", deps=depend_func(func=self.get_kin, dependencies=[depget(self,"P"),depget(self,"m")])) )
+      dset(self, "kin", depend_value(name = "kin", func=self.get_kin, dependencies=[dget(self,"P"),dget(self,"m")]) )
       
    def mtoM(self): return np.identity(1)*self.m
    def Vtoh(self): return self.h0.view(np.ndarray).copy()*(self.V/self.V0)**(1.0/3.0)

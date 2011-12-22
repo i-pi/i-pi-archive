@@ -90,6 +90,8 @@
 
             call get_all(atoms, cell, n_list, index_list, pot, f, vir)
             vir = transpose(vir)
+            ! artificially slow donw evaluation
+            !call sleep(2)
             write(*,*) "computed energy is ",pot
             hasdata=.true.            
          else if (trim(header)=="GETFORCE") then

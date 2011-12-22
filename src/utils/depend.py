@@ -13,9 +13,12 @@ class synchronizer(object):
 # if A depends upon B, then A.dep_up-->B and B.dep_dw-->A
 class depend_base(object):
    """Prototype class for dependency handling"""
-   def __init__(self, name="", synchro=None, func=None, dependants=[], dependencies=[], tainted=True):
+   def __init__(self, name="", synchro=None, func=None, dependants=None, dependencies=[], tainted=None):
       self._dependants=[]
-      self._tainted=False
+      # initializes defaults
+      if tainted is None:     tainted=np.array([True],bool)
+      if dependants is None:  dependants=[]
+      self._tainted=tainted
       self._func=func
       self._name=name
       self._synchro=synchro
@@ -23,53 +26,56 @@ class depend_base(object):
          self._synchro.synced[self._name]=self
          self._synchro.manual=self._name
          
-      for item in dependencies:
-         item.add_dependant(self)
-      for item in dependants:
-         self.add_dependant(item)   
+      # don't want to 
+      for item in dependencies:  item.add_dependant(self, tainted)
+      
+      self._dependants=dependants
       if (tainted): self.taint(taintme=tainted)
    
-   def add_dependant(self,newdep):
+   def add_dependant(self,newdep, tainted=True):
       """Makes newdep dependent on self"""
       self._dependants.append(newdep)
-      newdep.taint(taintme=True)      
+      if tainted: newdep.taint(taintme=True)      
 
-   def add_dependency(self,newdep):
+   def add_dependency(self,newdep, tainted=True):
       """Makes self dependent on newdep"""
       newdep._dependants.append(self)      
-      self.taint(taintme=True)
+      if tainted: self.taint(taintme=True)
 
    def taint(self,taintme=True):
       """Recursively sets tainted flag on dependent objects."""
       #if not self._linkto is None and self._linkto.name == "vir": pdb.set_trace()      
-      self._tainted = True     #this is to prevent circular dependencies to hang forever
+      self._tainted[:] = True     #this is to prevent circular dependencies to hang forever
       for item in self._dependants: 
          if (not item.tainted()):  item.taint()
       if not self._synchro is None:
          for v in self._synchro.synced.values():
             if (not v.tainted()) and (not v is self): v.taint(taintme=True)
-         self._tainted=(taintme and (not self._name == self._synchro.manual))         
-      else: self._tainted = taintme
+         self._tainted[:]=(taintme and (not self._name == self._synchro.manual))         
+      else: self._tainted[:] = taintme
       
    def tainted(self):
       """Returns tainted flag"""
-      return self._tainted
+      return self._tainted[0]
       
    #TODO put some error checks in the init to make sure that the object is initialized from consistent synchro and func states
    def update_auto(self):
       if not self._synchro is None:
          if (not self._name == self._synchro.manual):
             self.set(self._func[self._synchro.manual](), manual=False)
+         else: print "####"+self._name+" shouldn't probably be tainted (synchro)!"
       elif not self._func is None: 
          self.set(self._func(), manual=False)
-      else: pass
+      else: 
+         print "####"+self._name+" shouldn't probably be tainted (value)!"
+         pass
 
    def update_man(self): 
-      if not self._synchro is None:      
+      if not self._synchro is None:     
          self._synchro.manual=self._name
          for v in self._synchro.synced.values():
             v.taint(taintme=True)
-         self._tainted=False      
+         self._tainted[:]=False      
       elif not self._func is None:
          raise NameError("Cannot set manually the value of the automatically-computed property <"+self._name+">")
       else: self.taint(taintme=False)     
@@ -78,7 +84,7 @@ class depend_base(object):
    def get(self): pass      
 
 class depend_value(depend_base):
-   def __init__(self, value=None, name="", synchro=None, func=None, dependants=[], dependencies=[], tainted=True):
+   def __init__(self, value=None, name="", synchro=None, func=None, dependants=None, dependencies=[], tainted=None):
       self._value=value
       super(depend_value,self).__init__(name, synchro, func, dependants, dependencies, tainted)
 
@@ -101,16 +107,19 @@ class depend_value(depend_base):
       self.set(value)   
 
 class depend_array(np.ndarray, depend_base):
-   def __new__(cls, value, name="", synchro=None, func=None, dependants=[], dependencies=[], tainted=True):
+   def __new__(cls, value, name="", synchro=None, func=None, dependants=None, dependencies=[], tainted=None, storage=None):
 #      print "__new__"
       # Input array is an already formed ndarray instance
       # We first cast to be our class type
       obj = np.asarray(value).view(cls)
       return obj
 
-   def __init__(self, value, name="", synchro=None, func=None, dependants=[], dependencies=[], tainted=True):
+   def __init__(self, value, name="", synchro=None, func=None, dependants=None, dependencies=[], tainted=None, storage=None):
 #      print "__init__"
       super(depend_array,self).__init__(name, synchro, func, dependants, dependencies, tainted)
+      self._storage=storage
+      if storage is None: self._storage=value  #keeps track of where the original data is pointing, as automatic updates should access there
+      else: self._storage=storage
             
 #      print "init", name
 #      super(depend_array,self).__init__(deps=deps, name=name, tainted=tainted)
@@ -121,6 +130,7 @@ class depend_array(np.ndarray, depend_base):
 #      print "finalize", type(self), type(obj),  hasattr(self,"name"),  hasattr(obj,"name")
       # makes sure that --if we really mean to return a deparray-- some basic dep things are provided
       depend_base.__init__(self)  #explicitly initialize in case we got here
+      self._storage=self
 #      self.deps=depend_proxy()
    
    # whenever possible in compound operations just return a regular ndarray
@@ -144,7 +154,7 @@ class depend_array(np.ndarray, depend_base):
       if (not np.isscalar(index) or self.ndim > 1 ):
 #         return depend_array(super(depend_array,self).__getitem__(index), deps=self.deps, name=self.name, tainted=self.deps._tainted)  
 #         return depend_array(self.view(np.ndarray)[index], name=self._name, synchro=self._synchro, func=self._func, dependants=self._dependants, dependencies=[], tainted=self._tainted)  
-         return depend_array(self.base[index], name=self._name, synchro=self._synchro, func=self._func, dependants=self._dependants, dependencies=[], tainted=self._tainted)  
+         return depend_array(self.base[index], name=self._name, synchro=self._synchro, func=self._func, dependants=self._dependants, dependencies=[], tainted=self._tainted, storage=self._storage)  
       else:
          return self.view(np.ndarray)[index]
 
@@ -161,7 +171,11 @@ class depend_array(np.ndarray, depend_base):
       #print "setitem", manual, self.name, self.deps._tainted    
       self.taint(taintme=False)      
       #super(depend_array,self).__setitem__(index,value)   # directly write to the base array
-      self.view(np.ndarray)[index]=value      
+      if manual:
+         #self.view(np.ndarray)[index]=value
+         self.base[index]=value
+      else:
+         self._storage[index]=value
       if (manual) : self.update_man()
       
    def __setslice__(self,i,j,value):
@@ -184,6 +198,14 @@ def dset(obj,member,value):
 def depstrip(deparray):
    return deparray.view(np.ndarray)
 
+def depcopy(objfrom,memberfrom,objto,memberto):
+   dfrom=dget(objfrom,memberfrom); dto=dget(objto,memberto);
+   dto._dependants=dfrom._dependants
+   dto._synchro=dfrom._synchro   
+   dto._tainted=dfrom._tainted
+   dto._func=dfrom._func
+   if hasattr(dfrom,"_storage"): dto._storage=dfrom._storage
+   
 #def depcopy(objfrom,memberfrom,objto,memberto):
 #   dfrom=dget(objfrom,memberfrom); dto=dget(objto,memberto);
 #   if not type(dfrom) is type(dto) : raise TypeError("Cannot copy between depend storage of different type")
