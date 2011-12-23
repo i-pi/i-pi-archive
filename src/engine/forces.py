@@ -53,6 +53,8 @@ class ForceField(dobject):
       depcopy(self,"f", self,"fx");      depcopy(self,"f", self,"fy");      depcopy(self,"f", self,"fz");
       dset(self,"vir", depend_array(name="vir", value=np.zeros((3,3),float),func=self.get_vir, dependencies=[dget(self,"ufv")] ) )
 
+   def queue(self): pass
+   
    def get_all(self):
       """Dummy routine where no calculation is done"""
       return [0.0, numpy.zeros(3*self.atoms.natoms), numpy.zeros((3,3),float)]
@@ -79,6 +81,7 @@ class ForceField(dobject):
 
 import threading
 class ForceBeads(dobject):
+   """A class to collect many FF instances and parallelise getting the forces in a PIMD environment"""
    def __init__(self, beads=None, cell=None, force=None):
       if not (beads is None or cell is None or force is None): self.bind(beads, cell, force)
    
@@ -92,8 +95,7 @@ class ForceBeads(dobject):
          newf.bind(beads[b], cell)
          newf.blocking=False
          self._forces.append(newf)
-         
-      
+               
       u=dget(self._forces[0],"f")
       dset(self,"f",depend_array(name="f",value=np.zeros((self.nbeads,3*self.natoms), float), func=self.f_gather,
           dependencies=[dget(self._forces[b],"f")  for b in range(self.nbeads)] ) )
