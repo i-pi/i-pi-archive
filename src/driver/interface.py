@@ -1,9 +1,10 @@
-import socket, select, string
+import socket, select, threading, signal, string, os
 from utils.restart import Restart, RestartValue
 import numpy as np
 import time, pdb
 
 HDRLEN=12
+UPDATEFREQ=100
 TIMEOUT=1.0
 SERVERTIMEOUT=2.0*TIMEOUT
 
@@ -135,21 +136,23 @@ class Driver(socket.socket):
                   
 class RestartInterface(Restart):         
    fields={ "address" : (RestartValue, (str, "localhost")), "port" : (RestartValue, (int,31415)),
-            "slots" : (RestartValue, (int, 4) ) }
+            "slots" : (RestartValue, (int, 4) ), "latency" : (RestartValue, (float, 1e-3))  }
    attribs={ "mode": (RestartValue, (str, "unix") ) }
 
    def store(self, iface):
-      self.attribs.store(iface.mode)
+      self.latency.store(iface.latency)
+      self.mode.store(iface.mode)
       self.address.store(iface.address)
       self.port.store(iface.port)
       self.slots.store(iface.slots)
       
    def fetch(self):
-      return Interface(address=self.address.fetch(), port=self.port.fetch(), slots=self.slots.fetch(), mode=self.mode.fetch())
+      return Interface(address=self.address.fetch(), port=self.port.fetch(), slots=self.slots.fetch(), mode=self.mode.fetch(), latency=self.latency.fetch())
+
             
 class Interface(object):
-   def __init__(self, address="localhost", port=31415, slots=4, mode="unix"):
-      self.address = address; self.port = port; self.slots = slots; self.mode=mode;
+   def __init__(self, address="localhost", port=31415, slots=4, mode="unix", latency=1e-3):
+      self.address = address; self.port = port; self.slots = slots; self.mode=mode; self.latency=latency
       
       if self.mode == "unix":
          self.server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -165,12 +168,11 @@ class Interface(object):
       self.clients=[]
       self.requests=[]
       self.jobs=[]      
+      self._poll_thread=None
+      self._prev_kill={}
+      self._poll_true=False
       self.time_update=0.0
-      self.time_distribute=0.0
-      
-   def __del__(self):
-      print "shutting down interface"
-      self.server.shutdown(socket.SHUT_RDWR); self.server.close()
+      self.time_distribute=0.0      
       
    def queue(self, atoms,cell, pars={}):
       par_str = str(pars["eps"]) + " " + str(pars["sigma"]) + " " + str(pars["cutoff"]) + " " + str(pars["nearest_neighbour"])
@@ -266,4 +268,41 @@ class Interface(object):
                   break # we are done for this request
                else: print "something very weird is going on with a client: status is:",fc.status," - trying again later"
       self.time_distribute+=time.time()-start
-                  
+
+   # threading and signaling machinery
+   # handles sigint gracefully (terminates interface, etc)
+   def _kill_handler(self, signal, frame):
+      print "kill called"
+      self.end_thread()
+      try:    self.__del__()
+      except: pass      
+      if signal in self._prev_kill: self._prev_kill[signal](signal, frame)
+      
+   def _poll_loop(self):   
+      poll_iter=0
+      while self._poll_true:
+         time.sleep(self.latency)
+         if poll_iter>UPDATEFREQ:
+            self.pool_update(); poll_iter=0
+         poll_iter+=1
+         self.pool_distribute()
+      self._poll_thread=None   
+   
+   def start_thread(self):
+      if not self._poll_thread is None: raise NameError("Polling thread already started")      
+      self._poll_thread=threading.Thread(target=self._poll_loop, name="poll_"+self.address)
+      self._poll_thread.daemon=True
+      self._poll_true=True
+      self._prev_kill[signal.SIGINT]=signal.signal(signal.SIGINT, self._kill_handler)
+      self._prev_kill[signal.SIGTERM]=signal.signal(signal.SIGTERM, self._kill_handler)    
+      self._poll_thread.start()
+   
+   def end_thread(self):
+      self._poll_true=False
+      if not self._poll_thread is None: self._poll_thread.join()
+      self._poll_thread=None
+   
+   def __del__(self):
+      print "shutting down interface"
+      self.server.shutdown(socket.SHUT_RDWR); self.server.close()
+      if self.mode=="unix": os.unlink("/tmp/wrappi_"+self.address)                 

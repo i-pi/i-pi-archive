@@ -122,23 +122,22 @@ class ForceBeads(dobject):
 
 
       #serial
-#      for b in range(self.nbeads): newf[b]=self._forces[b].f
+      for b in range(self.nbeads): newf[b]=self._forces[b].f
       # threaded      
-      bthreads=[]
-      print "starting threads"
-      for b in range(self.nbeads): 
-         thread=threading.Thread(target=self._getbead, args=(b,newf,))
-         thread.start()
-         bthreads.append(thread)
+#      bthreads=[]
+#      print "starting threads"
+#      for b in range(self.nbeads): 
+#         thread=threading.Thread(target=self._getbead, args=(b,newf,))
+#         thread.start()
+#         bthreads.append(thread)
 
-      print "waiting threads"      
-      for b in range(self.nbeads): bthreads[b].join()
-      print "threads joined in"
+#      print "waiting threads"      
+#      for b in range(self.nbeads): bthreads[b].join()
+#      print "threads joined in"
 
       return newf
       
 import time
-LATENCY=5e-3
 class FFSocket(ForceField):
 
    def __init__(self, pars={}, interface=None):
@@ -162,7 +161,7 @@ class FFSocket(ForceField):
       self.twall-=time.time()
       
       if self.request is None: self.request=self.socket.queue(self.atoms, self.cell, self.pars)
-      while self.request["status"] != "Done": time.sleep(LATENCY)
+      while self.request["status"] != "Done": time.sleep(self.socket.latency)
       self.socket.release(self.request)
       result=self.request["result"]
       self.request=None
