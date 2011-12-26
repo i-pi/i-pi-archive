@@ -4,7 +4,6 @@ from utils.depend import *
 from utils.io import io_system
 from driver.interface import Interface, RestartInterface
 from utils.restart import *
-from engine.atoms import *
 
 class RestartForce(Restart):
    attribs = { "type" : (RestartValue,(str,"socket")) }
@@ -97,8 +96,12 @@ class ForceBeads(dobject):
          self._forces.append(newf)
                
       u=dget(self._forces[0],"f")
-      dset(self,"f",depend_array(name="f",value=np.zeros((self.nbeads,3*self.natoms), float), func=self.f_gather,
+      dset(self,"f",depend_array(name="f",value=np.zeros((self.nbeads,3*self.natoms), float), func=self.f_gather,     
           dependencies=[dget(self._forces[b],"f")  for b in range(self.nbeads)] ) )
+      dset(self,"pots",depend_array(name="pots", value=np.zeros(self.nbeads,float), func=self.pot_gather,     
+          dependencies=[dget(self._forces[b],"pot")  for b in range(self.nbeads)] ) )
+      dset(self,"pot",depend_value(name="pot", func=self.pot,     
+          dependencies=[dget(self,"pots")] ) )
       dset(self,"fnm",depend_array(name="fnm",value=np.zeros((self.nbeads,3*self.natoms), float), func=self.b2nm_f, dependencies=[dget(self,"f")] ) )
       self.Cb2nm=beads.Cb2nm
       
@@ -110,17 +113,22 @@ class ForceBeads(dobject):
 
    def queue(self):   
       for b in range(self.nbeads): self._forces[b].queue()
+
+   def pot_gather(self): 
+      self.queue()
+      return np.array([b.pot for b in self._forces], float)
+   def pot(self): return self.pots.sum()
       
    def f_gather(self): 
       start=time.time()
       newf=np.zeros((self.nbeads,3*self.natoms),float)
       
       self.queue()
-      print "time queueing", time.time()-start
-      print "update", self._forces[0].socket.time_update, 
-      print "distribute", self._forces[0].socket.time_distribute
-      self._forces[0].socket.time_update=0
-      self._forces[0].socket.time_distribute=0
+#      print "time queueing", time.time()-start
+#      print "update", self._forces[0].socket.time_update, 
+#      print "distribute", self._forces[0].socket.time_distribute
+#      self._forces[0].socket.time_update=0
+#      self._forces[0].socket.time_distribute=0
 
 
       #serial
@@ -174,7 +182,7 @@ class FFSocket(ForceField):
       return result
       
    def queue(self):   
-      if self.request is None:
+      if self.request is None and dget(self,"ufv").tainted():
          self.request=self.socket.queue(self.atoms, self.cell, self.pars)
       
       

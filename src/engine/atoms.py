@@ -22,7 +22,7 @@ class Atom(dobject):
       """Calculates the contribution of the atom to the kinetic energy"""
       return np.dot(self.p,self.p)/(2.0*self.m)
 
-   @property:
+   @property
    def kstress(self):
       """Calculates the contribution of the atom to the kinetic stress tensor"""
       p=depstrip(self.p)

@@ -144,6 +144,12 @@ class depend_array(np.ndarray, depend_base):
 #      print "array_prepare"
 #      return super(depend_array,self).__array_prepare__(self, out_arr, context).view(np.ndarray)
       
+   def reshape(self, newshape):
+      return depend_array(self.base.reshape(newshape), name=self._name, synchro=self._synchro, func=self._func, dependants=self._dependants, dependencies=[], tainted=self._tainted, storage=self._storage)  
+
+   def flatten(self):
+      return self.reshape(self.size)
+
    def __getitem__(self,index):
 #      print "getitem", self.name, self.deps.tainted(), index
       

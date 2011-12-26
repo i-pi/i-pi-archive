@@ -133,4 +133,4 @@ def write_dict(data, delims="{}"):
    rstr+=delims[1]
    return rstr
 
-writetype_funcs = {float: write_float, dict: write_dict, int: str, bool: write_bool, str: string.strip, tuple: write_tuple}
+writetype_funcs = {float: write_float, dict: write_dict, int: str, bool: write_bool, str: string.strip, tuple: write_tuple, np.uint : str}

@@ -6,7 +6,7 @@ from engine.atoms import Atoms
 from utils.units import *
 import pdb, gc
 
-def print_pdb(atoms, ncell, filedesc = sys.stdout):
+def print_pdb(beads, ncell, filedesc = sys.stdout):
    """Takes the system and gives pdb formatted output for the unit cell and the
       atomic positions """
 
@@ -19,9 +19,21 @@ def print_pdb(atoms, ncell, filedesc = sys.stdout):
 
    filedesc.write("CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f%s%4i\n" % (a, b, c, alpha, beta, gamma, " P 1        ", z))
 
-   for i in range(0,len(atoms)): 
-      filedesc.write("ATOM  %5i %4s%1s%3s %1s%4i%1s   %8.3f%8.3f%8.3f%6.2f%6.2f          %2s%2i\n" % (i+1, atoms[i].name,' ','  1',' ',1,' ',atoms[i].q[0],atoms[i].q[1],atoms[i].q[2],0.0,0.0,'  ',0))
+   natoms=beads.natoms
+   nbeads=beads.nbeads
+   for j in range(nbeads):
+      for i in range(natoms):
+         atom=beads[j][i]
+         filedesc.write("ATOM  %5i %4s%1s%3s %1s%4i%1s   %8.3f%8.3f%8.3f%6.2f%6.2f          %2s%2i\n" % (j*natoms+i+1, atom.name[0],' ','  1',' ',1,' ',atom.q[0],atom.q[1],atom.q[2],0.0,0.0,'  ',0))
 
+   if nbeads > 1:
+      # records must appear in order
+      for i in range(natoms):
+         filedesc.write("CONECT%5i%5i\n" % (i+1, (nbeads-1)*natoms+i+1) )            
+      for j in range(nbeads-1):      
+         for i in range(natoms):
+            filedesc.write("CONECT%5i%5i\n" % (j*natoms+i+1,(j+1)*natoms+i+1))
+               
    filedesc.write("END\n")
 
 def read_pdb(filedesc):

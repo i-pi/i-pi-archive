@@ -3,6 +3,7 @@ import math
 from utils.depend   import *
 from utils.units    import *
 from utils.restart  import *
+from utils.prng import Random
 
 
 class Thermostat(dobject): 
@@ -19,8 +20,8 @@ class Thermostat(dobject):
       dset(self,"dt",     depend_value(name='dt', value=dt))      
       dset(self,"ethermo",depend_value(name='ethermo',value=ethermo))
 
-   def bind(self, atoms=None, cell=None, pm=None):
-      """Dummy binding function"""     
+   def bind(self, atoms=None, cell=None, pm=None, prng=Random()):
+      self.prng=prng  
       
       if not atoms is None:
          dset(self,"p",dget(atoms, "p"))
@@ -34,12 +35,10 @@ class Thermostat(dobject):
       else: 
          raise TypeError("Thermostat.bind expects either an Atoms, a Cell, or a (p,m) tuple to bind to")
       
-      dset(self,"sqrtm",depend_array(name="sqrtm", 
-                                     value=np.zeros(len(dget(self,"m"))), 
-                                     deps=depend_func(func=self.get_sqrtm, dependencies=[depget(self,"m")] ) ) )      
+      dset(self,"sm",depend_array(name="sm", value=np.zeros(len(dget(self,"m"))), 
+                                     func=self.get_sm, dependencies=[dget(self,"m")] ) )
       
-   def get_sqrtm(self):
-      return np.sqrt(self.m)
+   def get_sm(self):  return np.sqrt(self.m)
    
    def step(self):                
       """Dummy atoms thermostat step"""       
@@ -58,7 +57,7 @@ class ThermoLangevin(Thermostat):
 
    def get_T(self):
       """Calculates T in p(0) = T*p(dt) + S*random.gauss()"""
-      return math.exp(-self.dt/self.tau)
+      return math.exp(-0.5*self.dt/self.tau)
       
    def get_S(self):      
       """Calculates S in p(0) = T*p(dt) + S*random.gauss()"""
@@ -68,37 +67,40 @@ class ThermoLangevin(Thermostat):
       super(ThermoLangevin,self).__init__(temp,dt,ethermo)
       
       dset(self,"tau",depend_value(value=tau,name='tau'))
-      dset(self,"T",depend_value(name="T",deps=depend_func(func=self.get_T, dependencies=[depget(self,"tau"), depget(self,"dt")])))
-      dset(self,"S",depend_value(name="S",deps=depend_func(func=self.get_S, dependencies=[depget(self,"temp"), depget(self,"T")])))
+      dset(self,"T",depend_value(name="T",func=self.get_T, dependencies=[dget(self,"tau"), dget(self,"dt")]))
+      dset(self,"S",depend_value(name="S",func=self.get_S, dependencies=[dget(self,"temp"), dget(self,"T")]))
       
    def step(self):
       """Updates the atom velocities with a langevin thermostat"""
       
       p=self.p.view(np.ndarray).copy()
       
-      p/=self.sqrtm
+      p/=self.sm
 
       self.ethermo+=np.dot(p,p)*0.5
       p*=self.T
-      p+=self.S*np.random.standard_normal(len(p))
+      p+=self.S*self.prng.gvec(len(p))
       self.ethermo-=np.dot(p,p)*0.5      
 
-      p*=self.sqrtm      
+      p*=self.sm      
             
       self.p=p
       
       
 class RestartThermo(Restart):
    attribs={ "kind": (RestartValue, (str, "langevin")) }
-   fields={ "ethermo" : (RestartValue, (float, 0.0)) }
+   fields={ "ethermo" : (RestartValue, (float, 0.0)), 
+            "tau" : (RestartValue, (float, 1.0))  }
    
    def store(self, thermo):
-      if type(thermo) is ThermoLangevin: self.kind.store("langevin")
+      if type(thermo) is ThermoLangevin: 
+         self.kind.store("langevin")
+         self.tau.store(thermo.tau)
       else: self.kind.store("unknown")      
       self.ethermo.store(thermo.ethermo)
       
    def fetch(self):
-      if self.kind.fetch() == "langevin" : thermo=ThermoLangevin()
+      if self.kind.fetch() == "langevin" : thermo=ThermoLangevin(tau=self.tau.fetch())
       else: thermo=Thermostat()
       thermo.ethermo=self.ethermo.fetch()
       return thermo      
