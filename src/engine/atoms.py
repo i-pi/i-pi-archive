@@ -16,14 +16,14 @@ class Atom(dobject):
       dset(self,"name",system.names[index:index+1])
       dset(self,"m3",system.m3[3*index:3*index+3])
       
-      dset(self,"kin",depend_value(name="kin", func=self.get_kin, dependencies=[dget(self,"p"),dget(self,"m3")]) )
-      dset(self,"kstress",depend_value(name="kstress", func=self.get_kstress, dependencies=[dget(self,"p"),dget(self,"m")]) )
 
-   def get_kin(self):
+   @property
+   def kin(self):
       """Calculates the contribution of the atom to the kinetic energy"""
       return np.dot(self.p,self.p)/(2.0*self.m)
 
-   def get_kstress(self):
+   @property:
+   def kstress(self):
       """Calculates the contribution of the atom to the kinetic stress tensor"""
       p=depstrip(self.p)
       ks = numpy.zeros((3,3),float)
