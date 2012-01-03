@@ -77,8 +77,6 @@ class Simulation(dobject):
       self.ensemble.bind(self.beads, self.cell, self.forces, self.prng)
 
    def run(self):
-      
-
 
       fout = open("output","w")
       tout = open("pitraj.pdb","w")      
