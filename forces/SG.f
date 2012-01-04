@@ -36,7 +36,7 @@
             else
                dist_frac = rc_exp*on_r-1.0d0
                long_range = dexp(-(dist_frac)**2)
-           long_range_diff = 2.0d0*(dist_frac)*rc_exp*on_r**2*long_range
+         long_range_diff = 2.0d0*(dist_frac)*rc_exp*on_r**2*long_range
             end if
 
          end subroutine
