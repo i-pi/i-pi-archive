@@ -15,7 +15,7 @@ from beads import Beads, RestartBeads
 from properties import Properties
 #from forces import *
 
-_DEFAULT_STRIDES={"checkpoint": 1000, "properties": 10, "progress": 100, "trajectory": 100}
+_DEFAULT_STRIDES={"checkpoint": 1000, "properties": 10, "progress": 100, "trajectory": 20,  "trajectory_full": 100}
 _DEFAULT_OUTPUT=[ "time", "conserved", "kinetic", "potential" ]
 class RestartSimulation(Restart):
    fields= { "force" : (RestartForce, ()),  "ensemble": (RestartEnsemble, ()), 
@@ -123,12 +123,14 @@ class Simulation(dobject):
       self._forcemodel.socket.start_thread()
    
       if (self.step == 0):
-         self.write_output();  self.write_traj()
+         self.write_output();  io_pdb.print_pdb_path(self.beads, self.cell, self.tout);  io_pdb.print_pdb(self.beads.centroid, self.cell, self.tcout)
       for self.step in range(self.step,self.tsteps):               
          self.ensemble.step()
          if ((self.step+1) % self.dstride["checkpoint"] ==0) : self.write_chk()      
          if ((self.step+1) % self.dstride["properties"] ==0) : self.write_output()
-         if ((self.step+1) % self.dstride["trajectory"] ==0) : self.write_traj()
+         if ((self.step+1) % self.dstride["trajectory_full"] ==0) : io_pdb.print_pdb_path(self.beads, self.cell, self.tout)
+         if ((self.step+1) % self.dstride["trajectory"] ==0) : io_pdb.print_pdb(self.beads.centroid, self.cell, self.tcout)         
+
          print "times:  #p", self.ensemble.ptime/(self.step+1), "  #q",  self.ensemble.qtime/(self.step+1), "  #t",  self.ensemble.ttime/(self.step+1)
          print  "objvalue count: ", objgraph.count('depend_value'), objgraph.count('depend_array'), objgraph.count('Atom'),
 
@@ -143,11 +145,12 @@ class Simulation(dobject):
       ohead="# "
       for l in self.outlist: ohead+="%16s"%(l)
       self.fout.write(ohead+"\n")      
-      self.tout=open(self.prefix+".pdb", "a")
+      self.tcout=open(self.prefix+".pdb", "a")
+      self.tout=open(self.prefix+".full.pdb", "a")      
       self.ichk=0
       
       # initialize velocities
-      if "velocities" in self.initlist:  self.beads.p=math.sqrt(self.ensemble.temp*Constants.kb)* self.beads.sm3*self.prng.gvec((self.beads.nbeads, 3*self.beads.natoms))
+      if "velocities" in self.initlist:  self.beads.p=math.sqrt(self.ensemble.ntemp*Constants.kb)* self.beads.sm3*self.prng.gvec((self.beads.nbeads, 3*self.beads.natoms))
       
       self.initlist=np.zeros(0, np.dtype('|S12'))   # sets this to nothing so in the checkpoint initialization won't be required
    
@@ -160,10 +163,7 @@ class Simulation(dobject):
          
       self.fout.write("\n")   
       self.fout.flush()   
-
-   def write_traj(self):   
-      io_pdb.print_pdb(self.beads, self.cell, self.tout)
-
+      
    def write_chk(self):
       # tries to open a new restart file
       new = False;  self.ichk += 1

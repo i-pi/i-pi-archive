@@ -6,7 +6,7 @@ from engine.atoms import Atoms
 from utils.units import *
 import pdb, gc
 
-def print_pdb(beads, ncell, filedesc = sys.stdout):
+def print_pdb_path(beads, ncell, filedesc = sys.stdout):
    """Takes the system and gives pdb formatted output for the unit cell and the
       atomic positions """
 
@@ -34,6 +34,26 @@ def print_pdb(beads, ncell, filedesc = sys.stdout):
          for i in range(natoms):
             filedesc.write("CONECT%5i%5i\n" % (j*natoms+i+1,(j+1)*natoms+i+1))
                
+   filedesc.write("END\n")
+
+def print_pdb(atoms, ncell, filedesc = sys.stdout):
+   """Takes the system and gives pdb formatted output for the unit cell and the
+      atomic positions """
+
+   a, b, c, alpha, beta, gamma = mt.h2abc(ncell.h)
+   alpha *= 180.0/math.pi #radian to degree conversion
+   beta  *= 180.0/math.pi
+   gamma *= 180.0/math.pi
+   
+   z = 1 #number of polymeric chains in a unit cell. I can't decide if 1 or 0 is more sensible for this...
+
+   filedesc.write("CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f%s%4i\n" % (a, b, c, alpha, beta, gamma, " P 1        ", z))
+
+   natoms=atoms.natoms
+   for i in range(natoms):
+      atom=atoms[i]
+      filedesc.write("ATOM  %5i %4s%1s%3s %1s%4i%1s   %8.3f%8.3f%8.3f%6.2f%6.2f          %2s%2i\n" % (i+1, atom.name[0],' ','  1',' ',1,' ',atom.q[0],atom.q[1],atom.q[2],0.0,0.0,'  ',0))
+
    filedesc.write("END\n")
 
 def read_pdb(filedesc):

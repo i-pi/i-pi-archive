@@ -10,7 +10,7 @@
       double precision, parameter :: beta = 1.5671d0
       double precision, parameter :: delta = 0.00993d0
       double precision, parameter :: delta_diff = delta*2.0d0
-      !double precision, parameter :: rc = 8.32d0
+      double precision, parameter :: rc_exp = 8.32d0
       double precision, parameter :: C_6 = 12.14d0
       double precision, parameter :: C_8 = 215.2d0
       double precision, parameter :: C_9 = 143.1d0
@@ -30,13 +30,13 @@
 
             double precision dist_frac
 
-            if (r > rc) then
+            if (r > rc_exp) then
                long_range = 1.0d0
                long_range_diff = 0.0d0
             else
-               dist_frac = rc*on_r-1.0d0
+               dist_frac = rc_exp*on_r-1.0d0
                long_range = dexp(-(dist_frac)**2)
-               long_range_diff = 2.0d0*(dist_frac)*rc*on_r**2*long_range
+               long_range_diff = 2.0d0*(dist_frac)*rc_exp*on_r**2*long_range
             end if
 
          end subroutine

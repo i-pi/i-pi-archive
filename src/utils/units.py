@@ -1,5 +1,5 @@
 class Constants:
-   kb = 1.0
+   kb = 3.1668152e-06
    hbar = 1.0
    amu = 1822.8885
 
@@ -8,6 +8,7 @@ class Elements(dict):
      "X"   :    1.0000/Constants.amu, 
      "Si"  :   28.0860,
      "H"   :    1.0080,
+     "H2"  :    2.0160,
      "Ar"   :  39.9480
    }   
    

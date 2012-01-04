@@ -1,6 +1,7 @@
 import numpy as np
 import math, random
 from utils.depend import *
+from utils.units import Constants
 from utils.mathtools import h2abc
 from atoms import *
 from cell import *
@@ -24,12 +25,17 @@ class Properties(dobject):
       dset(self, "time", depend_value(name="time",  func=self.get_time, dependencies=[dget(self.simul,"step"), dget(self.ensemble,"dt")]))
       self.property_dict["time"] = dget(self,"time")
       
-      self.property_dict["conserved"] = dget(self.ensemble,"econs")
+      dset(self, "econs", depend_value(name="econs", func=self.get_econs, dependencies=[dget(self.ensemble,"econs")]))
+      self.property_dict["conserved"] = dget(self,"econs")
       
       dset(self, "kin", depend_value(name="kin", func=self.get_kin, dependencies=[dget(self.beads,"kin"),dget(self.cell,"kin")]))
       self.property_dict["kinetic"] = dget(self,"kin")
       
-      self.property_dict["potential"] = dget(self.forces,"pot")
+      dset(self, "pot", depend_value(name="pot", func=self.get_pot, dependencies=[dget(self.forces,"pot")]))      
+      self.property_dict["potential"] = dget(self,"pot")
+
+      dset(self, "temp", depend_value(name="temp", func=self.get_temp, dependencies=[dget(self.beads,"kin")]))      
+      self.property_dict["temperature"] = dget(self,"temp")     
      
       self.property_dict["V"] = dget(self.cell,"V")
       dset(self, "cell_params", depend_value(name="cell_params", func=self.get_cell_params, dependencies=[dget(self.cell, "h")]))
@@ -38,10 +44,26 @@ class Properties(dobject):
       dset(self, "press", depend_value(name="press", func=self.get_press, dependencies=[dget(self.beads, "p"), dget(self.beads, "m3"), dget(self.forces, "vir"), dget(self.cell, "V")]))
       self.property_dict["pressure"] = dget(self,"press")
 
+      dset(self, "kin_cv", depend_value(name="kin_cv", func=self.get_kincv, dependencies=[dget(self.beads,"q"),dget(self.forces,"f"),dget(self.ensemble,"temp")]))
+      self.property_dict["kinetic_cvirial"] = dget(self,"kin_cv")
+
       
    def get_kin(self):          return self.beads.kin + self.cell.kin
    def get_time(self):         return self.simul.step * self.ensemble.dt
    def __getitem__(self,key):  return self.property_dict[key].get()
+
+   def get_pot(self):          return self.forces.pot/self.beads.nbeads
+   def get_temp(self):         return self.beads.kin/(0.5*Constants.kb*3*self.beads.natoms*self.beads.nbeads**2)
+   def get_econs(self):        return self.ensemble.econs/self.beads.nbeads
+
+   def get_kincv(self):        
+      kcv=0.0
+      for b in range(self.beads.nbeads):
+         kcv+=np.dot(depstrip(self.beads.q[b])-depstrip(self.beads.qc),depstrip(self.forces.f[b]))
+      kcv*=-0.5/self.beads.nbeads
+      kcv+=0.5*Constants.kb*self.ensemble.temp*(3*self.beads.natoms) 
+      return kcv
+
       
    def get_press(self):
       p = depstrip(self.atoms.p)
