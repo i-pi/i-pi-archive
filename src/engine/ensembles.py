@@ -72,21 +72,21 @@ class Ensemble(dobject):
       self.forces=bforce
       self.prng=prng
 
-      self.temp*=self.beads.nbeads
+      dset(self, "ntemp", depend_value(name='ntemp',func=self.get_ntemp))           
       dget(self,"econs").add_dependency(dget(self.beads, "kin"))
       dget(self,"econs").add_dependency(dget(self.forces, "pot"))
       dget(self,"econs").add_dependency(dget(self.beads, "vpath"))
       
       #also computes frequencies and matrices needed for the propagator
-      dset(self,"omegan",depend_value(name='omegan',func=self.get_omegan, dependencies=[dget(self,"temp")]) )
+      dset(self,"omegan",depend_value(name='omegan',func=self.get_omegan, dependencies=[dget(self,"ntemp")]) )
       dset(self,"omegan2",depend_value(name='omegan2',func=self.get_omegan2, dependencies=[dget(self,"omegan")]) )
       dset(self,"omegak",depend_array(name='omegak',value=np.zeros(self.beads.nbeads,float),func=self.get_omegak, dependencies=[dget(self,"omegan")]) )
       dset(self,"prop_pq",depend_array(name='prop_pq',value=np.zeros((self.beads.nbeads,2,2),float),func=self.get_prop_pq, 
                                       dependencies=[dget(self,"omegak"), dget(self,"dt")]) )
-      
-   def get_omegan(self): return self.temp*self.beads.nbeads*units.Constants.kb/units.Constants.hbar
+   def get_ntemp(self):   return self.temp*self.beads.nbeads
+   def get_omegan(self):  return self.ntemp*units.Constants.kb/units.Constants.hbar
    def get_omegan2(self): return self.omegan**2
-   def get_omegak(self): return 2*self.omegan*np.array([math.sin(k*math.pi/self.beads.nbeads) for k in range(self.beads.nbeads) ])
+   def get_omegak(self):  return 2*self.omegan*np.array([math.sin(k*math.pi/self.beads.nbeads) for k in range(self.beads.nbeads) ])
    def get_prop_pq(self): 
       pqk=np.zeros((self.beads.nbeads,2,2), float)
       pqk[0]=np.array([[1,0],[self.dt,1]])
@@ -116,8 +116,9 @@ class Ensemble(dobject):
       
       
 class NVEEnsemble(Ensemble):
-   def __init__(self, dt=1.0, temp=1.0, nmstep=True):  # PIMD requires a temperature even for NVE (to define the spring constant)
+   def __init__(self, dt=1.0, temp=1.0, nmstep=True, fixcom=False):  # PIMD requires a temperature even for NVE (to define the spring constant)
       super(NVEEnsemble,self).__init__(dt=dt,temp=temp, nmstep=nmstep)
+      self.fixcom=fixcom
 
    def pstep(self): 
       self.beads.p += self.forces.f * (self.dt*0.5)
@@ -154,12 +155,9 @@ class NVTEnsemble(NVEEnsemble):
    def __init__(self, dt=None, temp=None, nmstep=True, thermostat=Thermostat(), fixcom=False):
       super(NVTEnsemble,self).__init__(dt=dt,temp=temp, nmstep=nmstep)
       self.thermostat=thermostat
-      #merges the definitions of dt and temp
-      for d in dget(self.thermostat,"temp")._dependants:  dget(self, "temp").add_dependant(d)
-      self.temp=self.thermostat.temp;  dset(self.thermostat, "temp", dget(self,"temp"))
-      for d in dget(self.thermostat,"dt")._dependants:    dget(self, "dt").add_dependant(d)
-      self.dt=self.thermostat.dt;  dset(self.thermostat, "dt", dget(self,"dt"))
       
+      self.temp=self.thermostat.temp;       
+      self.dt=self.thermostat.dt;
       if not dt is None:   self.dt=dt
       if not temp is None: self.temp=temp
       self.ptime=0
@@ -170,6 +168,12 @@ class NVTEnsemble(NVEEnsemble):
    def bind(self,beads, cell, bforce,prng):
       super(NVTEnsemble,self).bind(beads, cell, bforce, prng)
       self.thermostat.bind(pm=(self.beads.p.flatten(),self.beads.m3.flatten()),prng=prng)
+      #merges the definitions of dt and temp
+      for d in dget(self.thermostat,"temp")._dependants:  dget(self, "ntemp").add_dependant(d)
+      dset(self.thermostat, "temp", dget(self,"ntemp"))
+      for d in dget(self.thermostat,"dt")._dependants:    dget(self, "dt").add_dependant(d)
+      dset(self.thermostat, "dt", dget(self,"dt"))
+
       
    def step(self): 
       self.ttime-=time.time()

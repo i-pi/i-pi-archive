@@ -111,7 +111,8 @@ class Atoms(dobject):
       ks[1,2]=np.dot(self.py,self.pz/self.m)                        
       return ks
       
-from utils.io.io_pdb import read_pdb      
+#from utils.io.io_pdb import read_pdb      
+from utils.io.io_pdb import *
 class RestartAtoms(Restart):
    fields={ "natoms" : (RestartValue, (int,0)), "q" : (RestartArray,(float,np.zeros(0))),  "p" : (RestartArray,(float,np.zeros(0))),
             "m" : (RestartArray,(float, np.zeros(0))),  "names" : (RestartArray,(str,np.zeros(0, np.dtype('|S6')))),
@@ -137,6 +138,11 @@ class RestartAtoms(Restart):
       atoms.m=self.m.fetch()   
       atoms.names=self.names.fetch()
       return atoms
+   
+   def write(self,  name="", indent=""):
+      if self.natoms.fetch()>0: return super(RestartAtoms,self).write(name=name,indent=indent)
+      else: return ""
+      
    
    def check(self): 
       # if required get data from file and/or initialize

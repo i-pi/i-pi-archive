@@ -86,7 +86,8 @@ class RestartArray(Restart):
       self.value=np.array(value, dtype=self.type).flatten().copy()
       
    def fetch(self): 
-      return self.value.reshape(self.shape.fetch()).copy()
+      if self.shape.fetch() == (0,): return np.resize(self.value,0).copy()
+      else: return self.value.reshape(self.shape.fetch()).copy()
 
    def write(self, name="", indent=""): 
       rstr=indent+"<"+name+" shape='"+write_tuple(self.shape.fetch())+"'> ";

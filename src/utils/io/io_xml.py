@@ -53,8 +53,8 @@ def read_int(data):
 def read_bool(data):
    """Takes a formatted line with an integer and outputs a boolean"""
    
-   if   data.upper() == "TRUE":  return True
-   elif data.upper() == "FALSE": return False
+   if   data.strip().upper() == "TRUE":  return True
+   elif data.strip().upper() == "FALSE": return False
    else: raise ValueError(data+" does not represent a bool value")
 
 def read_list(data, delims="[]", split=",", strip=" \n\t'"):
@@ -65,7 +65,7 @@ def read_list(data, delims="[]", split=",", strip=" \n\t'"):
       begin = data.index(delims[0])
       end = data.index(delims[1])
    except ValueError: raise ValueError("Error in list syntax: could not locate delimiters")
-
+   
    rlist= data[begin+1:end].split(split)
    for i in range(len(rlist)):
       rlist[i]=rlist[i].strip(strip)
@@ -100,7 +100,7 @@ def read_dict(data):
       
    return rdict   
       
-readtype_funcs = {np.ndarray: read_array, dict: read_dict, float: read_float, int: read_int, bool: read_bool, str: string.strip, tuple: read_tuple}
+readtype_funcs = {np.ndarray: read_array, dict: read_dict, float: read_float, int: read_int, bool: read_bool, str: string.strip, tuple: read_tuple, np.uint : read_int}
 
 def write_type(type, data):
    if not type in writetype_funcs: raise TypeError("Conversion not available for given type")

@@ -1,6 +1,6 @@
 class Constants:
    kb = 1.0
-   hbar = 2.0e01
+   hbar = 1.0
    amu = 1822.8885
 
 class Elements(dict):

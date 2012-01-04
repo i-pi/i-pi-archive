@@ -16,23 +16,7 @@ xmlrestart=parse_xml(buf)
 simrestart=simulation.RestartSimulation();
 simrestart.parse(xmlrestart.fields["simulation"])
 simul=simrestart.fetch()
-
-pdb.set_trace(); 
-simul.run()
-
-exit()
-
-pibeads=pi_beads.Beads(simul.atoms.natoms, 8);
-for b in range(8):   pibeads[b]=simul.atoms
-
 pdb.set_trace()
-exit(1)
-
 simul.run()
 
-exit()
-fcheck=open("checkpoint.xml","w")
-simrestart.store(simul)
-del simul.force.socket
-
-fcheck.write(simrestart.write("simulation"))
+del simul

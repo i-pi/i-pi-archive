@@ -51,7 +51,7 @@ def read_pdb(filedesc):
    natoms = 0
    body = filedesc.readline()
    qatoms=[]; names=[]
-   while (body != "" and body != "END"):
+   while (body.strip() != "" and body.strip() != "END"):
       natoms += 1
       names.append(body[12:16].strip())
       x = float(body[31:39])

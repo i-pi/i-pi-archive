@@ -95,13 +95,17 @@ class ForceBeads(dobject):
          newf.blocking=False
          self._forces.append(newf)
                
-      u=dget(self._forces[0],"f")
       dset(self,"f",depend_array(name="f",value=np.zeros((self.nbeads,3*self.natoms), float), func=self.f_gather,     
           dependencies=[dget(self._forces[b],"f")  for b in range(self.nbeads)] ) )
       dset(self,"pots",depend_array(name="pots", value=np.zeros(self.nbeads,float), func=self.pot_gather,     
           dependencies=[dget(self._forces[b],"pot")  for b in range(self.nbeads)] ) )
+      dset(self,"virs",depend_array(name="virs", value=np.zeros((self.nbeads,3,3),float), func=self.vir_gather,     
+          dependencies=[dget(self._forces[b],"vir")  for b in range(self.nbeads)] ) )          
       dset(self,"pot",depend_value(name="pot", func=self.pot,     
           dependencies=[dget(self,"pots")] ) )
+      dset(self,"vir",depend_value(name="vir", func=self.vir,
+          dependencies=[dget(self,"virs")] ) )
+
       dset(self,"fnm",depend_array(name="fnm",value=np.zeros((self.nbeads,3*self.natoms), float), func=self.b2nm_f, dependencies=[dget(self,"f")] ) )
       self.Cb2nm=beads.Cb2nm
       
@@ -117,8 +121,16 @@ class ForceBeads(dobject):
    def pot_gather(self): 
       self.queue()
       return np.array([b.pot for b in self._forces], float)
-   def pot(self): return self.pots.sum()
+
+   def vir_gather(self): 
+      self.queue()
+      return np.array([b.vir for b in self._forces], float)
+
       
+   def pot(self): return self.pots.sum()
+
+   def vir(self): return self.virs.sum()
+         
    def f_gather(self): 
       start=time.time()
       newf=np.zeros((self.nbeads,3*self.natoms),float)
@@ -156,12 +168,14 @@ class FFSocket(ForceField):
          self.socket=Interface()
       else:
          self.socket=interface
-      self.pars=pars
+      self.pars=pars     
+      self.request=None
+      
       
       self.timer=0.0
       self.twall=0.0
       self.ncall=0
-      self.request=None
+      
    def copy(self):    # creates a deep copy with everything but the bound bits 
       return type(self)(self.pars, self.socket)
 

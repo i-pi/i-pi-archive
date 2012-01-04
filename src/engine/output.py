@@ -56,11 +56,11 @@ class Output(dobject):
       self.properties = properties
       self.simul = simul
             
-   def step(self, step_no):
+   def step(self, step_no, time):
       if not hasattr(self, "write_list"):
          self.write_list = []
          try:
-            quant_str=""
+            quant_str="%16s"%("time")
             for quantity in self.quantities:
                if quantity != "":
                   if quantity == "cell_parameters":
@@ -70,7 +70,7 @@ class Output(dobject):
                   if quantity != "all":
                      self.write_list.append(self.properties.property_dict[quantity])
                   else:
-                     quant_str = ""
+                     quant_str = "%16s"%("time")
                      for prop in self.properties.property_dict:
                         if prop == "cell_parameters":
                            quant_str += "%16s"%("a") + " " + "%16s"%("b") + " " + "%16s"%("c") + " " + "%16s"%("alpha") + " " + "%16s"%("beta") + " " + "%16s"%("gamma") + " "
@@ -90,6 +90,7 @@ class Output(dobject):
 
       if step_no%self.energy == 0:
          self.energy_file.write("  ")
+         self.energy_file.write(write_type(float,time))
          for i in range(len(self.write_list)):
             quantity = self.write_list[i].get()
             try:
@@ -115,4 +116,4 @@ class Output(dobject):
 
       if step_no%self.stdout == 0:
 #TODO put some more relevant stuff here
-         sys.stdout.write("step = " + str(step_no + 1) + ", econs = " + str(self.properties.property_dict["econs"].get()) + "\n")
+         sys.stdout.write("step = " + str(step_no) + ", econs = " + str(self.properties.property_dict["econs"].get()) + "\n")

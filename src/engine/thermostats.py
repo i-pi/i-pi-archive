@@ -67,8 +67,8 @@ class ThermoLangevin(Thermostat):
       super(ThermoLangevin,self).__init__(temp,dt,ethermo)
       
       dset(self,"tau",depend_value(value=tau,name='tau'))
-      dset(self,"T",depend_value(name="T",func=self.get_T, dependencies=[dget(self,"tau"), dget(self,"dt")]))
-      dset(self,"S",depend_value(name="S",func=self.get_S, dependencies=[dget(self,"temp"), dget(self,"T")]))
+      dset(self,"T",  depend_value(name="T",func=self.get_T, dependencies=[dget(self,"tau"), dget(self,"dt")]))
+      dset(self,"S",  depend_value(name="S",func=self.get_S, dependencies=[dget(self,"temp"), dget(self,"T")]))
       
    def step(self):
       """Updates the atom velocities with a langevin thermostat"""
@@ -105,4 +105,8 @@ class RestartThermo(Restart):
       thermo.ethermo=self.ethermo.fetch()
       return thermo      
      
-      
+   def check(self):
+      if self.kind.fetch() == "langevin":
+         params = self.parameters.fetch()
+         params["tau"] = float(params["tau"])
+         self.parameters.store(params)
