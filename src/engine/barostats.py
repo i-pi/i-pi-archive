@@ -160,8 +160,9 @@ class BaroFlexi(Barostat):
       
       vel_mat = (self.cell.p/self.cell.m).view(np.ndarray)
 
-      vel_mat*=self.dt
-      exp_mat=exp_ut3x3(vel_mat)
+      dist_mat = vel_mat*self.dt
+      #vel_mat*=self.dt
+      exp_mat=exp_ut3x3(dist_mat)
       neg_exp_mat = invert_ut3x3(exp_mat)
       sinh_mat = 0.5*(exp_mat - neg_exp_mat)
       ips_mat = np.dot( sinh_mat, invert_ut3x3(vel_mat) )

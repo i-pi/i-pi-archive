@@ -87,7 +87,6 @@ class ThermoLangevin(Thermostat):
             
       self.p=p
       
-      
 class RestartThermo(Restart):
    attribs={ "kind": (RestartValue, (str, "langevin")) }
    fields={ "ethermo" : (RestartValue, (float, 0.0)), "parameters" : (RestartValue, (dict,{}))}

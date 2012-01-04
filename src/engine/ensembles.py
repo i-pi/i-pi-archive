@@ -201,8 +201,8 @@ class NSTEnsemble(NVTEnsemble):
       """Velocity Verlet time step"""
       self.thermostat.step()         
       self.timer-=time.clock()       
-      self.rm_com()            
+      #self.rm_com()            
       self.timer+=time.clock()        
       self.barostat.step()
       self.thermostat.step()      
-      self.rm_com()      
+      #self.rm_com()      
