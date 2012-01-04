@@ -4,10 +4,7 @@ import numpy as np
 import time, pdb
 
 HDRLEN=12
-<<<<<<< Updated upstream
 UPDATEFREQ=100
-=======
->>>>>>> Stashed changes
 TIMEOUT=1.0
 SERVERTIMEOUT=2.0*TIMEOUT
 
@@ -67,10 +64,10 @@ class Driver(socket.socket):
       blen=dest.itemsize*dest.size
       if (blen>len(self._buf)) : self._buf.resize(blen)  # keeps a permanent buffer, which is expanded if necessary
       bpos=0
+
       while bpos<blen:
          try:
-            bpart=self.recv( blen-bpos )
-            self._buf[bpos:bpos+len(bpart)]=np.fromstring(bpart, np.byte)
+            bpart=self.recv_into(self._buf[bpos:], blen-bpos )
          except socket.timeout:
             print "timeout in recvall, trying again"; pass
          if (bpart == 0 ): raise Disconnected()
@@ -83,7 +80,6 @@ class Driver(socket.socket):
 #            print "timeout in recvall, trying again"; pass
 #         if (len(bpart) == 0 ): raise Disconnected()
 #         bpos+=len(bpart)
-
 
       if np.isscalar(dest):       
          return np.fromstring(self._buf[0:blen], dest.dtype)[0]
@@ -140,13 +136,9 @@ class Driver(socket.socket):
                   
 class RestartInterface(Restart):         
    fields={ "address" : (RestartValue, (str, "localhost")), "port" : (RestartValue, (int,31415)),
-<<<<<<< Updated upstream
             "slots" : (RestartValue, (int, 4) ), "latency" : (RestartValue, (float, 1e-3))  }
    attribs={ "mode": (RestartValue, (str, "unix") ) }
 
-=======
-            "slots" : (RestartValue, (int, 4) ) }
->>>>>>> Stashed changes
    def store(self, iface):
       self.latency.store(iface.latency)
       self.mode.store(iface.mode)
@@ -159,7 +151,7 @@ class RestartInterface(Restart):
 
             
 class Interface(object):
-<<<<<<< Updated upstream
+
    def __init__(self, address="localhost", port=31415, slots=4, mode="unix", latency=1e-3):
       self.address = address; self.port = port; self.slots = slots; self.mode=mode; self.latency=latency
       
@@ -172,33 +164,17 @@ class Interface(object):
       else:
          raise NameError("Interface mode "+self.mode+" is not implemented (shall be unix/inet)")
 
-=======
-   def __init__(self, address="localhost", port=31415, slots=4):
-      self.address = address; self.port = port; self.slots = slots
-      #self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-      #self.server.bind((address,port))
-      self.server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-      self.server.bind("/tmp/wrappi_server")
->>>>>>> Stashed changes
       self.server.listen(slots)
       self.server.settimeout(SERVERTIMEOUT)
       self.clients=[]
       self.requests=[]
       self.jobs=[]      
-<<<<<<< Updated upstream
+
       self._poll_thread=None
       self._prev_kill={}
       self._poll_true=False
       self.time_update=0.0
       self.time_distribute=0.0      
-=======
-      self.time_update=0.0
-      self.time_distribute=0.0
-      
-   def __del__(self):
-      print "shutting down interface"
-      self.server.shutdown(socket.SHUT_RDWR); self.server.close()
->>>>>>> Stashed changes
       
    def queue(self, atoms,cell, pars={}):
       par_str = str(pars["eps"]) + " " + str(pars["sigma"]) + " " + str(pars["cutoff"]) + " " + str(pars["nearest_neighbour"])
@@ -294,7 +270,6 @@ class Interface(object):
                   break # we are done for this request
                else: print "something very weird is going on with a client: status is:",fc.status," - trying again later"
       self.time_distribute+=time.time()-start
-<<<<<<< Updated upstream
 
    # threading and signaling machinery
    # handles sigint gracefully (terminates interface, etc)
@@ -333,6 +308,3 @@ class Interface(object):
       print "shutting down interface"
       self.server.shutdown(socket.SHUT_RDWR); self.server.close()
       if self.mode=="unix": os.unlink("/tmp/wrappi_"+self.address)                 
-=======
-                  
->>>>>>> Stashed changes
