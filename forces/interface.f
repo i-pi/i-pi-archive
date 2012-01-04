@@ -1,7 +1,7 @@
       program main
          use sys_vars
-         use LJ
-         !use SG
+         !use LJ
+         use SG
       implicit none
 
       type(Atom), dimension(:), allocatable :: atoms
@@ -45,12 +45,12 @@
             call readbuffer(socket, nat, 4)
             call readbuffer(socket, parbuffer, nat)
             read(parbuffer(1:nat),*) eps, sigma, rc, rn
-            correction = 4*eps*((sigma/rc)**12 - (sigma/rc)**6)
-            !correction = exp(1.713d0-1.5671d0*rc-0.00993d0*rc**2) -
-     !1 (12.14d0/rc**6 + 215.2d0/rc**8 - 143.1d0/rc**9 + 4813.9d0/rc**10)
+            !correction = 4*eps*((sigma/rc)**12 - (sigma/rc)**6)
+            correction = exp(1.713d0-1.5671d0*rc-0.00993d0*rc**2) -
+     1 (12.14d0/rc**6 + 215.2d0/rc**8 - 143.1d0/rc**9 + 4813.9d0/rc**10)
             isinit=.true.
-            write(*,*) "LJ potential initialised with values eps=", 
-     c          eps, ", sigma=",sigma, ", rc=", rc, ", rn=", rn
+!            write(*,*) "LJ potential initialised with values eps=", 
+!     c          eps, ", sigma=",sigma, ", rc=", rc, ", rn=", rn
          else if (trim(header) == "POSDATA") then              
             call readbuffer(socket, cell%h, 9*8)
             call readbuffer(socket, cell%ih, 9*8)
