@@ -106,7 +106,7 @@ def exp_ut3x3(h):
    e00=math.exp(h[0,0]);    e11=math.exp(h[1,1]);    e22=math.exp(h[2,2])
    eh[0,0]=e00;    eh[1,1]=e11;    eh[2,2]=e22; 
    
-   print "minseries is ", MINSERIES
+   #print "minseries is ", MINSERIES
    if (abs((h[0,0]-h[1,1])/h[0,0])>MINSERIES): 
       r01=(e00-e11)/(h[0,0]-h[1,1])
    else:

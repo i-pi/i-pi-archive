@@ -8,7 +8,7 @@ import time
 
 class RestartEnsemble(Restart):
    attribs={"type"  : (RestartValue, (str, "unknown")) }
-   fields={"thermostat" : (RestartThermo, () ), "barostat" : (RestartThermo, () ), 
+   fields={"thermostat" : (RestartThermo, () ), "barostat" : (RestartBaro, () ), 
            "timestep": (RestartValue, (float,"1.0")) ,
            "temperature" : (RestartValue, (float, 1.0)), "pressure" : (RestartValue, (float,"1.0")) ,
            "stress" : (RestartArray, (float, np.identity(3))), "fixcom": (RestartValue, (bool, False)) }
@@ -195,7 +195,7 @@ class NSTEnsemble(NVTEnsemble):
       """Calculates the conserved energy quantity for constant T ensembles"""
       xv=0.0 # extra term stemming from the Jacobian
       for i in range(3):  xv+=math.log(self.cell.h[i,i])*(3-i)
-      return NVTEnsemble.get_econs(self)++self.barostat.thermostat.ethermo+self.barostat.pot+self.cell.kin-2.0*Constants.kb*self.thermostat.temp*xv
+      return NVTEnsemble.get_econs(self)+self.barostat.thermostat.ethermo+self.barostat.pot+self.cell.kin-2.0*Constants.kb*self.thermostat.temp*xv
       
    def step(self):
       """Velocity Verlet time step"""
