@@ -137,7 +137,9 @@ class BaroFlexi(Barostat):
       # faster way is to compute the products from the slices
       fx=depstrip(self.force.fx);       fy=depstrip(self.force.fy);       fz=depstrip(self.force.fz);
       fxm=fx/m;                         fym=fy/m;                         fzm=fz/m;             
-      px=depstrip(self.force.px);       py=depstrip(self.force.py);       pz=depstrip(self.force.pz);        
+      #px=depstrip(self.force.px);       py=depstrip(self.force.py);       pz=depstrip(self.force.pz);        
+      p = depstrip(self.atoms.p)
+      px = p[0:3*self.atoms.natoms:3];  py = p[1:3*self.atoms.natoms:3];  pz = p[2:3*self.atoms.natoms:3]
       
       cp=np.zeros((3,3),float)
       cp[0,0]=dthalf2*2.0*np.dot(fxm,px) + dthalf3*np.dot(fx,fxm)
@@ -258,8 +260,8 @@ class RestartBaro(Restart):
       self.thermostat.store(baro.thermostat)
       
    def fetch(self):
-      if self.type.fetch().uppercase == "RIGID" :      baro=BaroRigid(thermostat=self.thermostat.fetch())
-      elif self.type.fetch().uppercase == "FLEXIBLE" : baro=BaroFlexi(thermostat=self.thermostat.fetch())
+      if self.kind.fetch().upper() == "RIGID" :      baro=BaroRigid(thermostat=self.thermostat.fetch())
+      elif self.kind.fetch().upper() == "FLEXIBLE" : baro=BaroFlexi(thermostat=self.thermostat.fetch())
       else: baro=Barostat(thermostat=self.thermostat.fetch())
 
       return baro
