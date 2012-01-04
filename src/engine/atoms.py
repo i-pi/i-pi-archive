@@ -16,7 +16,6 @@ class Atom(dobject):
       dset(self,"name",system.names[index:index+1])
       dset(self,"m3",system.m3[3*index:3*index+3])
       
-
    @property
    def kin(self):
       """Calculates the contribution of the atom to the kinetic energy"""

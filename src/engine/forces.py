@@ -148,6 +148,7 @@ class ForceBeads(dobject):
       return newf
       
 import time
+LATENCY=5e-3
 class FFSocket(ForceField):
 
    def __init__(self, pars={}, interface=None):
