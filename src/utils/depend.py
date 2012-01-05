@@ -32,6 +32,13 @@ class depend_base(object):
       self._dependants=dependants
       if (tainted): self.taint(taintme=tainted)
    
+   def remove_dependant(self, rmdep):
+      irm=-1
+      for idep in range(len(self._dependants)): 
+         if self._dependants[idep] is rmdep: irm=idep
+      if irm >=0: self._dependants.pop(irm)
+         
+   
    def add_dependant(self,newdep, tainted=True):
       """Makes newdep dependent on self"""
       self._dependants.append(newdep)

@@ -97,13 +97,15 @@ class ThermoPILE_L(Thermostat):
       
       dset(self,"tau",depend_value(value=tau,name='tau'))
 
-   def bind(self, beads=None, prng=None):         
+   # optionally does not bind the centroid, so we can re-use all of this in the PILE_G case
+   def bind(self, beads=None, prng=None, bindcentroid=True):  
       if beads is None or not type(beads) is Beads: raise TypeError("ThermoPILE_L.bind expects a Beads argument to bind to")
       if prng is None:  self.prng=Random()
       else: self.prng=prng  
       
       # creates a set of thermostats to be applied to individual normal modes
       self._thermos=[ ThermoLangevin(temp=1, dt=1, tau=1) for b in range(beads.nbeads) ]
+      if not bindcentroid: self._thermos[0]=None
       
       dset(self,"tauk",depend_array(name="tauk", value=np.zeros(beads.nbeads-1,float), func=self.get_tauk, dependencies=[dget(self,"temp")]) )
       
@@ -112,6 +114,8 @@ class ThermoPILE_L(Thermostat):
       it=0
       def make_taugetter(k): return lambda: self.tauk[k-1]
       for t in self._thermos:
+         if t is None: 
+            it+=1; continue
          t.bind(atoms=beads[it],prng=self.prng) # bind thermostat t to the it-th bead
          # pipes temp and dt
          deppipe(self,"temp", t, "temp")
@@ -168,7 +172,7 @@ class ThermoSVR(Thermostat):
       """Updates the atom velocities with a langevin thermostat"""
       
       K=np.dot(depstrip(self.p),depstrip(self.p)/depstrip(self.m))*0.5
-      nf=len(p)
+      nf=len(self.p)
       
       r1=self.prng.g
       if (nf-1)%2==0: rg=2.0*self.prng.gamma((nf-1)/2)
@@ -180,6 +184,23 @@ class ThermoSVR(Thermostat):
 
       self.ethermo+=K*(1-alpha2)
       self.p*=alpha
+
+class ThermoPILE_G(ThermoPILE_L):    
+   def __init__(self, temp = 1.0, dt = 1.0, tau = 1.0, ethermo=0.0):
+      super(ThermoPILE_G,self).__init__(temp,dt,tau,ethermo)
+      
+   def bind(self, beads=None, prng=None):   
+      # first binds as a local PILE, then substitutes the thermostat on the centroid
+      super(ThermoPILE_G,self).bind(beads=beads,prng=prng,bindcentroid=False) 
+            
+      self._thermos[0]=ThermoSVR(temp=1, dt=1, tau=1) 
+      
+      t=self._thermos[0]      
+      t.bind(atoms=beads[0],prng=self.prng)      
+      deppipe(self,"temp", t, "temp")
+      deppipe(self,"dt", t, "dt")
+      deppipe(self,"tau", t, "tau")
+      dget(self,"ethermo").add_dependency(dget(t,"ethermo"))
             
 class RestartThermo(Restart):
    attribs={ "kind": (RestartValue, (str, "langevin")) }
@@ -195,14 +216,18 @@ class RestartThermo(Restart):
          self.tau.store(thermo.tau)         
       elif type(thermo) is ThermoPILE_L: 
          self.kind.store("pile_l")
-         self.tau.store(thermo.tau)         
+         self.tau.store(thermo.tau)
+      elif type(thermo) is ThermoPILE_G: 
+         self.kind.store("pile_g")
+         self.tau.store(thermo.tau)                  
       else: self.kind.store("unknown")      
       self.ethermo.store(thermo.ethermo)
       
    def fetch(self):
       if self.kind.fetch() == "langevin" : thermo=ThermoLangevin(tau=self.tau.fetch())
       elif self.kind.fetch() == "svr" : thermo=ThermoSVR(tau=self.tau.fetch())
-      elif self.kind.fetch() == "pile_l" : thermo=ThermoPILE_L(tau=self.tau.fetch())      
+      elif self.kind.fetch() == "pile_l" : thermo=ThermoPILE_L(tau=self.tau.fetch())
+      elif self.kind.fetch() == "pile_g" : thermo=ThermoPILE_G(tau=self.tau.fetch())            
       else: thermo=Thermostat()
       thermo.ethermo=self.ethermo.fetch()
       return thermo
