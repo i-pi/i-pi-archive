@@ -25,10 +25,37 @@
       character*12 :: header
       character*1024 :: parbuffer
       integer socket, nat
+      integer inet, port, ccmd
+      character*1024 :: host
+      
+      ccmd=0
+      inet=1
+      do i=1, IARGC()
+         call GETARG(i, parbuffer)
+         if (parbuffer == "-u") then 
+            inet=0
+            ccmd=0
+         elseif (parbuffer == "-h") then 
+            ccmd=1
+         elseif (parbuffer == "-p") then 
+            ccmd=2
+         else
+            if (ccmd==0) then 
+               write(*,*) "Unrecognized command line argument", ccmd
+               call exit(-1)
+            endif
+            if (ccmd==1) then
+               host=trim(parbuffer)//achar(0)
+            elseif (ccmd==2) then
+               read(parbuffer,*) port
+            endif
+            ccmd=0            
+         endif
+      enddo
       
       counter = 0
       
-      call open_socket(socket)
+      call open_socket(socket, host, port, inet)
       do while (.true.)
          
          call readbuffer(socket, header, MSGLEN)
