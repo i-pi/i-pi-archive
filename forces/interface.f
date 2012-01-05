@@ -30,6 +30,8 @@
       
       ccmd=0
       inet=1
+      host="localhost"//achar(0)
+      port=31415
       do i=1, IARGC()
          call GETARG(i, parbuffer)
          if (parbuffer == "-u") then 
