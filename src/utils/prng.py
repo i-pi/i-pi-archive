@@ -57,6 +57,9 @@ class Random(object):
 
    @property
    def g(self):   return self.rng.standard_normal()
+   
+   def gamma(self, k, theta=1.0): return self.rng.gamma(k,theta)
+      
 #      # generates a Gaussian variate with zero mean and unit varianceq
 #      # uses a ratio-of-uniforms rather than the usual box-mueller method
 #      # as this is (often) faster, and avoids the hassle of storing one of the samples

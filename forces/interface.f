@@ -25,7 +25,7 @@
       character*12 :: header
       character*1024 :: parbuffer
       integer socket, nat
-      integer inet, port, ccmd
+      integer*4 inet, port, ccmd
       character*1024 :: host
       
       ccmd=0
@@ -54,10 +54,10 @@
             ccmd=0            
          endif
       enddo
-      
+      write(*,*) "Connecting with options  ", trim(host), port, inet
       counter = 0
       
-      call open_socket(socket, host, port, inet)
+      call open_socket(socket, inet, port, host)
       do while (.true.)
          
          call readbuffer(socket, header, MSGLEN)

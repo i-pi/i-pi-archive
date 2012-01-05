@@ -11,13 +11,14 @@
 void error(const char *msg)
 {   perror(msg);  exit(0);   }
 
-void open_socket_(int *psockfd, char* host, int port, int inet)
+void open_socket_(int *psockfd, int* inet, int* port, char* host)  // the darn fortran passes an extra argument for the string length. here I just ignore it
 {
    int sockfd, portno, n;
    struct hostent *server;
 
+   fprintf(stderr, "Connection requested %s, %d, %d\n", host, *port, *inet);
    struct sockaddr * psock; int ssock;
-   if (inet>0)
+   if (*inet>0)
    {  
       struct sockaddr_in serv_addr;      psock=(struct sockaddr *)&serv_addr;     ssock=sizeof(serv_addr);
       sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -33,7 +34,7 @@ void open_socket_(int *psockfd, char* host, int port, int inet)
       bzero((char *) &serv_addr, sizeof(serv_addr));
       serv_addr.sin_family = AF_INET;
       bcopy((char *)server->h_addr, (char *)&serv_addr.sin_addr.s_addr, server->h_length);
-      serv_addr.sin_port = htons(port);
+      serv_addr.sin_port = htons(*port);
    }
    else
    {

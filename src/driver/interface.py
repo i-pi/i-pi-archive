@@ -112,6 +112,7 @@ class Driver(socket.socket):
    def getforce(self):
       if (self.status & Status.HasData):
          self.sendall(Message("getforce"));
+         reply=""
          while True:
             try:
                reply=self.recv(HDRLEN)
@@ -120,8 +121,7 @@ class Driver(socket.socket):
                pass
             if reply==Message("forceready"): break
             else: print "oh-oh. got ", reply, "in getforce"
-            if reply=="": 
-               self.poll(); return
+            if reply=="": self.poll(); return
                #raise Disconnected()
       else: raise InvalidStatus("Status in getforce was "+self.status)      
       mu=np.float64(); mu=self.recvall(mu)         

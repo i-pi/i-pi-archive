@@ -86,7 +86,49 @@ class ThermoLangevin(Thermostat):
             
       self.p=p
       
+class ThermoSVR(Thermostat):     
+   """Represent a stochastic velocity rescaling thermostat for constant T simulations.
+      Contains: temp = temperature, dt = time step, econs =
+      change in the kinetic energy due to the thermostat,
+      tau = thermostat mass, sm = sqrt(mass), (T,S) = thermostat parameters
+      Initialised by: thermo = langevin(temp, dt, tau, econs)
+      temp = temperature, default = 1.0
+      dt = time step, default = 1.0
+      tau = thermostat mass, default = 1.0
+      econs = conserved energy quantity, default = 0.0"""
+
+   def get_et(self):
+      return math.exp(-0.5*self.dt/self.tau)
+
+   def get_K(self):
+      """Calculates T in p(0) = T*p(dt) + S*random.gauss()"""
+      return Constants.kb*self.temp
       
+   def __init__(self, temp = 1.0, dt = 1.0, tau = 1.0, ethermo=0.0):
+      super(ThermoSVR,self).__init__(temp,dt,ethermo)
+      
+      dset(self,"tau",depend_value(value=tau,name='tau'))
+      dset(self,"et",  depend_value(name="et",func=self.get_et, dependencies=[dget(self,"tau"), dget(self,"dt")]))
+      dset(self,"K",  depend_value(name="K",func=self.get_K, dependencies=[dget(self,"temp")]))
+      
+   def step(self):
+      """Updates the atom velocities with a langevin thermostat"""
+      
+      p=self.p.view(np.ndarray).copy()
+      
+      p/=self.sm
+      K=np.dot(p,p)*0.5
+      nf=len(p)
+      r1=self.prng.g
+      if (nf-1)%2==0: rg=self.prng.gamma((nf-1)/2)
+      else: rg=self.prng.gamma((nf-2)/2)+self.prng.g**2
+      
+      alpha2=self.et+self.K/K*(1-self.et)*(r1**2+rg)+2*math.sqrt(self.et*self.K/K*(1-self.et))*r1
+
+      print "thermostat", alpha2, self.K, K, r1**2, rg 
+      self.ethermo+=K*(1-alpha2)
+      self.p*=math.sqrt(alpha2)
+            
 class RestartThermo(Restart):
    attribs={ "kind": (RestartValue, (str, "langevin")) }
    fields={ "ethermo" : (RestartValue, (float, 0.0)), 
@@ -96,17 +138,16 @@ class RestartThermo(Restart):
       if type(thermo) is ThermoLangevin: 
          self.kind.store("langevin")
          self.tau.store(thermo.tau)
+      if type(thermo) is ThermoSVR: 
+         self.kind.store("svr")
+         self.tau.store(thermo.tau)         
       else: self.kind.store("unknown")      
       self.ethermo.store(thermo.ethermo)
       
    def fetch(self):
       if self.kind.fetch() == "langevin" : thermo=ThermoLangevin(tau=self.tau.fetch())
+      if self.kind.fetch() == "svr" : thermo=ThermoSVR(tau=self.tau.fetch())
       else: thermo=Thermostat()
       thermo.ethermo=self.ethermo.fetch()
-      return thermo      
-     
-   def check(self):
-      if self.kind.fetch() == "langevin":
-         params = self.parameters.fetch()
-         params["tau"] = float(params["tau"])
-         self.parameters.store(params)
+      return thermo
+           
