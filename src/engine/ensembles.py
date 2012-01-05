@@ -1,4 +1,3 @@
-import numpy as np
 from utils.depend import *
 from utils.restart import *
 from utils import units
@@ -72,7 +71,7 @@ class Ensemble(dobject):
       self.forces=bforce
       self.prng=prng
 
-      dset(self, "ntemp", depend_value(name='ntemp',func=self.get_ntemp))           
+      dset(self,"ntemp", depend_value(name='ntemp',func=self.get_ntemp,dependencies=[dget(self,"temp")]))
       dget(self,"econs").add_dependency(dget(self.beads, "kin"))
       dget(self,"econs").add_dependency(dget(self.forces, "pot"))
       dget(self,"econs").add_dependency(dget(self.beads, "vpath"))
@@ -167,13 +166,10 @@ class NVTEnsemble(NVEEnsemble):
 
    def bind(self,beads, cell, bforce,prng):
       super(NVTEnsemble,self).bind(beads, cell, bforce, prng)
-      self.thermostat.bind(pm=(self.beads.p.flatten(),self.beads.m3.flatten()),prng=prng)
+      self.thermostat.bind(beads=self.beads,prng=prng)
       #merges the definitions of dt and temp
-      for d in dget(self.thermostat,"temp")._dependants:  dget(self, "ntemp").add_dependant(d)
-      dset(self.thermostat, "temp", dget(self,"ntemp"))
-      for d in dget(self.thermostat,"dt")._dependants:    dget(self, "dt").add_dependant(d)
-      dset(self.thermostat, "dt", dget(self,"dt"))
-
+      deppipe(self,"ntemp", self.thermostat,"temp")
+      deppipe(self,"dt", self.thermostat, "dt")
       
    def step(self): 
       self.ttime-=time.time()

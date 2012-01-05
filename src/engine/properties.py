@@ -49,7 +49,7 @@ class Properties(dobject):
 
       
    def get_kin(self):          return self.beads.kin + self.cell.kin
-   def get_time(self):         return self.simul.step * self.ensemble.dt
+   def get_time(self):         return (1+self.simul.step) * self.ensemble.dt
    def __getitem__(self,key):  return self.property_dict[key].get()
 
    def get_pot(self):          return self.forces.pot/self.beads.nbeads

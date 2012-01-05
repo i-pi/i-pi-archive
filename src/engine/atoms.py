@@ -90,13 +90,11 @@ class Atoms(dobject):
    def get_msum(self): return self.m.sum()
    
    def mtom3(self): m3=np.zeros(3*self.natoms,float); m3[0:3*self.natoms:3]=self.m; m3[1:3*self.natoms:3]=m3[0:3*self.natoms:3]; m3[2:3*self.natoms:3]=m3[0:3*self.natoms:3]; return m3
-   
-                  
+                     
    def get_kin(self):
       """Calculates the total kinetic energy of the system,
       by summing the atomic contributions"""
-      p=self.p
-      return 0.5*np.dot(self.p,self.p/self.m3)
+      p=depstrip(self.p);  return 0.5*np.dot(p,p/depstrip(self.m3))
       
    def get_kstress(self):
       """Calculates the contribution of the atom to the kinetic stress tensor"""

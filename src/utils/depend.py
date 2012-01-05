@@ -204,6 +204,13 @@ def dset(obj,member,value):
 def depstrip(deparray):
    return deparray.view(np.ndarray)
 
+# makes objto.memberto such that it will be automatically copied from objfrom.memberfrom,
+# while remaining a separate entity from which other quantities may depend
+def deppipe(objfrom,memberfrom,objto,memberto):
+   dfrom=dget(objfrom,memberfrom); dto=dget(objto,memberto);   
+   dto._func=lambda : dfrom.get()
+   dto.add_dependency(dfrom)
+   
 def depcopy(objfrom,memberfrom,objto,memberto):
    dfrom=dget(objfrom,memberfrom); dto=dget(objto,memberto);
    dto._dependants=dfrom._dependants

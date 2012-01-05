@@ -4,7 +4,7 @@ from utils.depend   import *
 from utils.units    import *
 from utils.restart  import *
 from utils.prng import Random
-
+from beads import Beads
 
 class Thermostat(dobject): 
    """Represent a thermostat for constant T simulations.
@@ -20,12 +20,17 @@ class Thermostat(dobject):
       dset(self,"dt",     depend_value(name='dt', value=dt))      
       dset(self,"ethermo",depend_value(name='ethermo',value=ethermo))
 
-   def bind(self, atoms=None, cell=None, pm=None, prng=Random()):
-      self.prng=prng  
+   def bind(self, beads=None, atoms=None, cell=None, pm=None, prng=None):
+
+      if prng is None:  self.prng=Random()
+      else: self.prng=prng  
       
-      if not atoms is None:
+      if not beads is None:
+         dset(self,"p",beads.p.flatten())
+         dset(self,"m",beads.m3.flatten())     
+      elif not atoms is None:
          dset(self,"p",dget(atoms, "p"))
-         dset(self,"m",dget(atoms, "m3"))      
+         dset(self,"m",dget(atoms, "m3"))               
       elif not cell is None:   
          dset(self,"p",dget(cell, "p6"))
          dset(self,"m",dget(cell, "m6"))      
@@ -33,7 +38,7 @@ class Thermostat(dobject):
          dset(self,"p",pm[0])
          dset(self,"m",pm[1])               
       else: 
-         raise TypeError("Thermostat.bind expects either an Atoms, a Cell, or a (p,m) tuple to bind to")
+         raise TypeError("Thermostat.bind expects either Beads, Atoms, a Cell, or a (p,m) tuple to bind to")
       
       dset(self,"sm",depend_array(name="sm", value=np.zeros(len(dget(self,"m"))), 
                                      func=self.get_sm, dependencies=[dget(self,"m")] ) )
@@ -85,7 +90,56 @@ class ThermoLangevin(Thermostat):
       p*=self.sm      
             
       self.p=p
+
+class ThermoPILE_L(Thermostat):    
+   def __init__(self, temp = 1.0, dt = 1.0, tau = 1.0, ethermo=0.0):
+      super(ThermoPILE_L,self).__init__(temp,dt,ethermo)
       
+      dset(self,"tau",depend_value(value=tau,name='tau'))
+
+   def bind(self, beads=None, prng=None):         
+      if beads is None or not type(beads) is Beads: raise TypeError("ThermoPILE_L.bind expects a Beads argument to bind to")
+      if prng is None:  self.prng=Random()
+      else: self.prng=prng  
+      
+      # creates a set of thermostats to be applied to individual normal modes
+      self._thermos=[ ThermoLangevin(temp=1, dt=1, tau=1) for b in range(beads.nbeads) ]
+      
+      dset(self,"tauk",depend_array(name="tauk", value=np.zeros(beads.nbeads-1,float), func=self.get_tauk, dependencies=[dget(self,"temp")]) )
+      
+      # must pipe all the dependencies in such a way that values for the nm thermostats
+      # are automatically updated based on the "master" thermostat
+      it=0
+      def make_taugetter(k): return lambda: self.tauk[k-1]
+      for t in self._thermos:
+         t.bind(atoms=beads[it],prng=self.prng) # bind thermostat t to the it-th bead
+         # pipes temp and dt
+         deppipe(self,"temp", t, "temp")
+         deppipe(self,"dt", t, "dt")
+
+         # for tau it is slightly more complex
+         if it==0:
+            deppipe(self,"tau", t, "tau")
+         else:
+            dget(t,"tau").add_dependency(dget(self,"tauk"))
+            dget(t,"tau")._func=make_taugetter(it)
+         dget(self,"ethermo").add_dependency(dget(t,"ethermo"))
+         it+=1     
+         
+      dget(self,"ethermo")._func=self.get_ethermo;
+         
+   def get_tauk(self):  
+      return np.array([1.0/(4*self.temp*Constants.kb/Constants.hbar*math.sin(k*math.pi/len(self._thermos))) for k in range(1,len(self._thermos)) ])
+
+   def get_ethermo(self):
+      et=0.0;
+      for t in self._thermos: et+=t.ethermo
+      return et
+            
+   def step(self):
+      # super-cool! just loop over the thermostats! it's as easy as that! 
+      for t in self._thermos: t.step()        
+
 class ThermoSVR(Thermostat):     
    """Represent a stochastic velocity rescaling thermostat for constant T simulations.
       Contains: temp = temperature, dt = time step, econs =
@@ -101,8 +155,7 @@ class ThermoSVR(Thermostat):
       return math.exp(-0.5*self.dt/self.tau)
 
    def get_K(self):
-      """Calculates T in p(0) = T*p(dt) + S*random.gauss()"""
-      return Constants.kb*self.temp
+      return Constants.kb*self.temp*0.5
       
    def __init__(self, temp = 1.0, dt = 1.0, tau = 1.0, ethermo=0.0):
       super(ThermoSVR,self).__init__(temp,dt,ethermo)
@@ -114,20 +167,19 @@ class ThermoSVR(Thermostat):
    def step(self):
       """Updates the atom velocities with a langevin thermostat"""
       
-      p=self.p.view(np.ndarray).copy()
-      
-      p/=self.sm
-      K=np.dot(p,p)*0.5
+      K=np.dot(depstrip(self.p),depstrip(self.p)/depstrip(self.m))*0.5
       nf=len(p)
-      r1=self.prng.g
-      if (nf-1)%2==0: rg=self.prng.gamma((nf-1)/2)
-      else: rg=self.prng.gamma((nf-2)/2)+self.prng.g**2
       
-      alpha2=self.et+self.K/K*(1-self.et)*(r1**2+rg)+2*math.sqrt(self.et*self.K/K*(1-self.et))*r1
+      r1=self.prng.g
+      if (nf-1)%2==0: rg=2.0*self.prng.gamma((nf-1)/2)
+      else: rg=2.0*self.prng.gamma((nf-2)/2)+self.prng.g**2
+            
+      alpha2=self.et+self.K/K*(1-self.et)*(r1**2+rg)+2.0*r1*math.sqrt(self.K/K*self.et*(1-self.et))
+      alpha=math.sqrt(alpha2)
+      if (r1+math.sqrt(2*K/self.K*self.et/(1-self.et))) <0: alpha*=-1
 
-      print "thermostat", alpha2, self.K, K, r1**2, rg 
       self.ethermo+=K*(1-alpha2)
-      self.p*=math.sqrt(alpha2)
+      self.p*=alpha
             
 class RestartThermo(Restart):
    attribs={ "kind": (RestartValue, (str, "langevin")) }
@@ -138,15 +190,19 @@ class RestartThermo(Restart):
       if type(thermo) is ThermoLangevin: 
          self.kind.store("langevin")
          self.tau.store(thermo.tau)
-      if type(thermo) is ThermoSVR: 
+      elif type(thermo) is ThermoSVR: 
          self.kind.store("svr")
+         self.tau.store(thermo.tau)         
+      elif type(thermo) is ThermoPILE_L: 
+         self.kind.store("pile_l")
          self.tau.store(thermo.tau)         
       else: self.kind.store("unknown")      
       self.ethermo.store(thermo.ethermo)
       
    def fetch(self):
       if self.kind.fetch() == "langevin" : thermo=ThermoLangevin(tau=self.tau.fetch())
-      if self.kind.fetch() == "svr" : thermo=ThermoSVR(tau=self.tau.fetch())
+      elif self.kind.fetch() == "svr" : thermo=ThermoSVR(tau=self.tau.fetch())
+      elif self.kind.fetch() == "pile_l" : thermo=ThermoPILE_L(tau=self.tau.fetch())      
       else: thermo=Thermostat()
       thermo.ethermo=self.ethermo.fetch()
       return thermo
