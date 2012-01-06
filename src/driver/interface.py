@@ -58,7 +58,8 @@ class Driver(socket.socket):
          return Status.Up | Status.HasData
       else:
          print "Unrecognized reply", reply         
-         return Status.Up
+         #return Status.Up
+         return Status.Disconnected
    
    def recvall(self, dest):      
       blen=dest.itemsize*dest.size
@@ -68,13 +69,18 @@ class Driver(socket.socket):
       while bpos<blen:
          timeout=False
          try:
+            bpart = 1
             bpart=self.recv_into(self._buf[bpos:], blen-bpos )
          except socket.timeout:
             print "timeout in recvall, trying again"; timeout=True; pass
          if (not timeout and bpart == 0 ): raise Disconnected()
          bpos+=bpart
+#TODO this Disconnected() exception currently just causes the program to hang.
+#This should do something more graceful
+
 #   pre-2.5 version. needed to run on the good ole' neptune
 #         try:
+#            bpart = 0
 #            bpart=self.recv( blen-bpos )
 #            self._buf[bpos:bpos+len(bpart)]=np.fromstring(bpart, np.byte)
 #         except socket.timeout:
@@ -122,7 +128,7 @@ class Driver(socket.socket):
                continue
             if reply==Message("forceready"): break          
             else: print "oh-oh. got ", reply, "in getforce"
-            pdb.set_trace()
+            #pdb.set_trace()
             if reply=="": raise Disconnected()
       else: raise InvalidStatus("Status in getforce was "+self.status)      
       mu=np.float64(); mu=self.recvall(mu)         
@@ -230,7 +236,11 @@ class Interface(object):
       # then checks for finished jobs      
       for [r,c] in self.jobs[:]:
          if c.status & Status.HasData:
-            r["result"]=c.getforce()
+            try:
+               r["result"]=c.getforce()
+            except Disconnected:
+               c.status=0
+               continue
             c.poll(); 
             while c.status & Status.Busy: c.poll()
             if not (c.status & Status.Up): 
