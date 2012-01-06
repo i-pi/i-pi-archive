@@ -39,7 +39,7 @@ class RestartEnsemble(Restart):
 
    def fetch(self):
       if   self.type.fetch().upper() == "NVE" :
-         ens=NVEEnsemble(dt=self.timestep.fetch(), temp=self.temperature.fetch(), nmstep=self.nm_propagator.fetch())
+         ens=NVEEnsemble(dt=self.timestep.fetch(), temp=self.temperature.fetch(), nmstep=self.nm_propagator.fetch(), fixcom=self.fixcom.fetch())
       elif self.type.fetch().upper() == "NVT" : 
          ens=NVTEnsemble(dt=self.timestep.fetch(), temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(),  nmstep=self.nm_propagator.fetch(),
                         fixcom=self.fixcom.fetch() )
@@ -58,7 +58,7 @@ class Ensemble(dobject):
       Initialised by: ens = ensemble(system)
       system is a System object, containing the atom and cell coordinates"""
 
-   def __init__(self, dt=1.0, temp=1.0, nmstep=True ):
+   def __init__(self, dt=1.0, temp=1.0, nmstep=True):
       dset(self,"econs",depend_value(name='econs',func=self.get_econs) )
       dset(self, "temp", depend_value(name='temp',value=temp))       
       dset(self, "dt",   depend_value(name='dt',value=dt))
@@ -119,6 +119,29 @@ class NVEEnsemble(Ensemble):
       super(NVEEnsemble,self).__init__(dt=dt,temp=temp, nmstep=nmstep)
       self.fixcom=fixcom
 
+   def rmcom(self):
+      if (self.fixcom):
+         pcom=np.zeros(3,float);
+         
+         p=depstrip(self.beads.p);
+         na3=self.beads.natoms*3; nb=self.beads.nbeads;         
+         m=depstrip(self.beads.m3)[:,0:na3:3];                  
+         # computes center of mass
+         for i in range(3): pcom[i]=p[:,i:na3:3].sum();
+
+         if hasattr(self,"thermostat"):
+            if hasattr(self.thermostat, "_thermos") : # in case of multiple thermostats, mangle with the centroid thermostat only
+               self.thermostat._thermos[0].ethermo+=np.dot(pcom,pcom)/(2.0*self.beads[0].M*nb)
+            else:
+               self.thermostat.ethermo+=np.dot(pcom,pcom)/(2.0*self.beads[0].M*nb)
+
+         # subtracts COM _velocity_
+         pcom*=1.0/(nb*self.beads[0].M)
+         print "COM VELOCITY: ", pcom
+         for i in range(3): self.beads.p[:,i:na3:3]-=m*pcom[i]
+         
+   
+
    def pstep(self): 
       self.beads.p += self.forces.f * (self.dt*0.5)
       pass
@@ -149,10 +172,11 @@ class NVEEnsemble(Ensemble):
       self.pstep()
       self.qstep()
       self.pstep()
+      self.rmcom()
       
 class NVTEnsemble(NVEEnsemble):
    def __init__(self, dt=None, temp=None, nmstep=True, thermostat=Thermostat(), fixcom=False):
-      super(NVTEnsemble,self).__init__(dt=dt,temp=temp, nmstep=nmstep)
+      super(NVTEnsemble,self).__init__(dt=dt,temp=temp, nmstep=nmstep, fixcom=fixcom)
       self.thermostat=thermostat
       
       self.temp=self.thermostat.temp;       
@@ -166,7 +190,7 @@ class NVTEnsemble(NVEEnsemble):
 
    def bind(self,beads, cell, bforce,prng):
       super(NVTEnsemble,self).bind(beads, cell, bforce, prng)
-      self.thermostat.bind(beads=self.beads,prng=prng)
+      self.thermostat.bind(beads=self.beads,prng=prng,ndof=(3*(self.beads.natoms-1) if self.fixcom else None) )
       #merges the definitions of dt and temp
       deppipe(self,"ntemp", self.thermostat,"temp")
       deppipe(self,"dt", self.thermostat, "dt")
@@ -174,6 +198,7 @@ class NVTEnsemble(NVEEnsemble):
    def step(self): 
       self.ttime-=time.time()
       self.thermostat.step()
+      self.rmcom()
       self.ttime+=time.time()
       self.ptime-=time.time()
       self.pstep()
@@ -188,6 +213,7 @@ class NVTEnsemble(NVEEnsemble):
       self.ptime+=time.time()
       self.ttime-=time.time()
       self.thermostat.step()
+      self.rmcom()      
       self.ttime+=time.time()
 
 

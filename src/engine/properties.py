@@ -48,12 +48,12 @@ class Properties(dobject):
       self.property_dict["kinetic_cvirial"] = dget(self,"kin_cv")
 
       
-   def get_kin(self):          return self.beads.kin + self.cell.kin
-   def get_time(self):         return (1+self.simul.step) * self.ensemble.dt
+   def get_kin(self):          return self.beads.kin/self.beads.nbeads
+   def get_time(self):         return (1+self.simul.step)*self.ensemble.dt
    def __getitem__(self,key):  return self.property_dict[key].get()
 
    def get_pot(self):          return self.forces.pot/self.beads.nbeads
-   def get_temp(self):         return self.beads.kin/(0.5*Constants.kb*3*self.beads.natoms*self.beads.nbeads**2)
+   def get_temp(self):         return self.beads.kin/(0.5*Constants.kb*(3*self.beads.natoms*self.beads.nbeads-(3 if self.ensemble.fixcom else 0))*self.beads.nbeads)
    def get_econs(self):        return self.ensemble.econs/self.beads.nbeads
 
    def get_kincv(self):        

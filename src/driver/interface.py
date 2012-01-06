@@ -5,7 +5,7 @@ import time, pdb
 
 HDRLEN=12
 UPDATEFREQ=100
-TIMEOUT=1.0
+TIMEOUT=0.05
 SERVERTIMEOUT=2.0*TIMEOUT
 
 def Message(mystr): return string.ljust(string.upper(mystr),HDRLEN)
@@ -117,12 +117,12 @@ class Driver(socket.socket):
             try:
                reply=self.recv(HDRLEN)
             except socket.timeout: 
-               print "timeout in recvforce"
-               pass
-            if reply==Message("forceready"): break
+               print "timeout in recvforce, try again!!"
+               continue
+            if reply==Message("forceready"): break          
             else: print "oh-oh. got ", reply, "in getforce"
-            if reply=="": self.poll(); return
-               #raise Disconnected()
+            pdb.set_trace()
+            if reply=="": raise Disconnected()
       else: raise InvalidStatus("Status in getforce was "+self.status)      
       mu=np.float64(); mu=self.recvall(mu)         
       mlen=np.int32(); mlen=self.recvall(mlen)
