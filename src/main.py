@@ -16,7 +16,7 @@ xmlrestart=parse_xml(buf)
 simrestart=simulation.RestartSimulation();
 simrestart.parse(xmlrestart.fields["simulation"])
 simul=simrestart.fetch()
-pdb.set_trace()
+#pdb.set_trace()
 simul.run()
 
 del simul

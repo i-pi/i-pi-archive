@@ -1,6 +1,6 @@
 import numpy as np
 import math, random
-import gc, objgraph
+import gc#, objgraph
 from utils.depend import *
 from utils.restart import Restart
 from utils.units  import *
@@ -132,7 +132,7 @@ class Simulation(dobject):
          if ((self.step+1) % self.dstride["trajectory"] ==0) : io_pdb.print_pdb(self.beads.centroid, self.cell, self.tcout)         
 
          print "times:  #p", self.ensemble.ptime/(self.step+1), "  #q",  self.ensemble.qtime/(self.step+1), "  #t",  self.ensemble.ttime/(self.step+1)
-         print  "objvalue count: ", objgraph.count('depend_value'), objgraph.count('depend_array'), objgraph.count('Atom'),
+         #print  "objvalue count: ", objgraph.count('depend_value'), objgraph.count('depend_array'), objgraph.count('Atom'),
 
       if self.step < self.tsteps: self.step+=1         
       self.write_chk()
