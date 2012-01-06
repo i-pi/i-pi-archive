@@ -6,8 +6,9 @@
       implicit none
 
       type(Atom), dimension(:), allocatable :: atoms
-      type(Atom), dimension(:), allocatable :: ref_atoms
+      !type(Atom), dimension(:), allocatable :: ref_atoms
       type(Cell_vec) :: cell
+      double precision, dimension(:,:), allocatable :: ref_pos
       double precision pot
       double precision, dimension(:), allocatable :: buffer
       double precision, dimension(:,:), allocatable :: f
@@ -47,8 +48,6 @@
             call readbuffer(socket, parbuffer, nat)
             read(parbuffer(1:nat),*) eps, sigma, rc, rn
             correction = 4*eps*((sigma/rc)**12 - (sigma/rc)**6)
-            !correction = exp(1.713d0-1.5671d0*rc-0.00993d0*rc**2) -
-     !1 (12.14d0/rc**6 + 215.2d0/rc**8 - 143.1d0/rc**9 + 4813.9d0/rc**10)
             isinit=.true.
             write(*,*) "LJ potential initialised with values eps=", 
      c          eps, ", sigma=",sigma, ", rc=", rc, ", rn=", rn
@@ -77,16 +76,25 @@
                allocate(n_list(size(atoms)-1))
                allocate(index_list(size(atoms)*(size(atoms)-1)/2))
                call nearest_neighbours(atoms, cell, n_list, index_list)
-               allocate(ref_atoms(size(atoms)))
-               ref_atoms = atoms
+               !allocate(ref_atoms(size(atoms)))
+               !ref_atoms = atoms
+               allocate(ref_pos(3,size(atoms)))
+               do i = 1, nat
+                  ref_pos(:,i) = nearest_image(cell, atoms(i)%pos)
+               end do
             end if
-            
+
             do i = 1, size(atoms)
-               q_diff = atoms(i)%pos - ref_atoms(i)%pos
+               !qdiff = ref_atoms(i)%pos - atoms(i)%pos
+               q_diff = nearest_image(cell,
+     1                 nearest_image(cell,atoms(i)%pos) - ref_pos(:,i))
                if (2.0*abs(dot_product(q_diff, q_diff)) >= rn-rc) then
                   call nearest_neighbours(atoms, cell, 
      c                     n_list, index_list)
-                  ref_atoms = atoms
+                  !ref_atoms = atoms
+                  do j = 1, nat
+                     ref_pos(:,j) = nearest_image(cell, atoms(i)%pos)
+                  end do
                   exit
                end if
             end do
@@ -110,5 +118,27 @@
          end if
       enddo
       deallocate(n_list, atoms, f)
+
+      contains
+
+         function nearest_image(cell, q)
+            Type(Cell_vec), intent(in) :: cell
+            double precision, dimension(3), intent(in) :: q
+
+            double precision, dimension(3) :: nearest_image
+            double precision, dimension(3) :: s
+
+            integer i
+
+            s = matmul(cell%ih, q)
+            do i = 1, 3
+               s(i) = s(i) - dnint(s(i))
+            end do
+            s = matmul(cell%h, s)
+            do i = 1, 3
+               nearest_image(i) = s(i)
+            end do
+
+         end function   
 
       end program
