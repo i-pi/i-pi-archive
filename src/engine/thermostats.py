@@ -174,11 +174,10 @@ class ThermoSVR(Thermostat):
       """Updates the atom velocities with a langevin thermostat"""
       
       K=np.dot(depstrip(self.p),depstrip(self.p)/depstrip(self.m))*0.5
-      nf=len(self.p)
       
       r1=self.prng.g
-      if (nf-1)%2==0: rg=2.0*self.prng.gamma((nf-1)/2)
-      else: rg=2.0*self.prng.gamma((nf-2)/2)+self.prng.g**2
+      if (self.ndof-1)%2==0: rg=2.0*self.prng.gamma((self.ndof-1)/2)
+      else: rg=2.0*self.prng.gamma((self.ndof-2)/2)+self.prng.g**2
             
       alpha2=self.et+self.K/K*(1-self.et)*(r1**2+rg)+2.0*r1*math.sqrt(self.K/K*self.et*(1-self.et))
       alpha=math.sqrt(alpha2)

@@ -156,9 +156,9 @@ class Simulation(dobject):
    
    def write_output(self):
       for what in self.outlist:
-         try:
-            quantity = self.properties[what]
-         except: raise TypeError(what+" is not a recognized property")
+#         try:
+         quantity = self.properties[what]
+#         except: raise TypeError(what+" is not a recognized property")
          self.fout.write(write_type(float, quantity) + " ")
          
       self.fout.write("\n")   

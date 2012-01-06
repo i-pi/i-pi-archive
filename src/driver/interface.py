@@ -5,7 +5,7 @@ import time, pdb
 
 HDRLEN=12
 UPDATEFREQ=100
-TIMEOUT=0.05
+TIMEOUT=1.0 # try to trigger more timeout events
 SERVERTIMEOUT=2.0*TIMEOUT
 
 def Message(mystr): return string.ljust(string.upper(mystr),HDRLEN)
@@ -64,13 +64,14 @@ class Driver(socket.socket):
       blen=dest.itemsize*dest.size
       if (blen>len(self._buf)) : self._buf.resize(blen)  # keeps a permanent buffer, which is expanded if necessary
       bpos=0
-
+      bpart=0
       while bpos<blen:
+         timeout=False
          try:
             bpart=self.recv_into(self._buf[bpos:], blen-bpos )
          except socket.timeout:
-            print "timeout in recvall, trying again"; pass
-         if (bpart == 0 ): raise Disconnected()
+            print "timeout in recvall, trying again"; timeout=True; pass
+         if (not timeout and bpart == 0 ): raise Disconnected()
          bpos+=bpart
 #   pre-2.5 version. needed to run on the good ole' neptune
 #         try:

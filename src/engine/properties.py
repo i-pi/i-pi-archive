@@ -8,6 +8,7 @@ from cell import *
 from ensembles import *
 from forces import *
 
+_DEFAULT_DBETA=1e-5
 class Properties(dobject):
    """A proxy to compute and output properties of the system, which may require putting together bits and pieces
       from different elements of the simulation."""   
@@ -20,7 +21,7 @@ class Properties(dobject):
       self.beads = simul.beads
       self.cell = simul.cell
       self.forces = simul.forces
-      self.simul=simul
+      self.simul=simul      
 
       dset(self, "time", depend_value(name="time",  func=self.get_time, dependencies=[dget(self.simul,"step"), dget(self.ensemble,"dt")]))
       self.property_dict["time"] = dget(self,"time")
@@ -47,6 +48,14 @@ class Properties(dobject):
       dset(self, "kin_cv", depend_value(name="kin_cv", func=self.get_kincv, dependencies=[dget(self.beads,"q"),dget(self.forces,"f"),dget(self.ensemble,"temp")]))
       self.property_dict["kinetic_cvirial"] = dget(self,"kin_cv")
 
+      # creates dummy beads and forces to compute displaced and scaled estimators
+      self.dbeads=simul.beads.copy()
+      self.dforces=ForceBeads()
+      self.dforces.bind(self.dbeads, self.simul.cell,  self.simul._forcemodel)
+      
+      dset(self, "kin_yama", depend_value(name="kin_yama", func=self.get_kinyama, dependencies=[dget(self.beads,"q"),dget(self.ensemble,"temp")]))
+      self.property_dict["kinetic_yamamoto"] = dget(self,"kin_yama")
+      
       
    def get_kin(self):          return self.beads.kin/self.beads.nbeads
    def get_time(self):         return (1+self.simul.step)*self.ensemble.dt
@@ -61,10 +70,28 @@ class Properties(dobject):
       for b in range(self.beads.nbeads):
          kcv+=np.dot(depstrip(self.beads.q[b])-depstrip(self.beads.qc),depstrip(self.forces.f[b]))
       kcv*=-0.5/self.beads.nbeads
+      print kcv
       kcv+=0.5*Constants.kb*self.ensemble.temp*(3*self.beads.natoms) 
       return kcv
 
+   def get_kinyama(self):        
       
+      
+      dbeta=_DEFAULT_DBETA
+      splus=math.sqrt(1.0+dbeta); sminus=math.sqrt(1.0-dbeta)
+      
+      for b in range(self.beads.nbeads):
+         self.dbeads[b].q=self.beads.centroid.q*(1.0-splus)+splus*self.beads[b].q      
+      vplus=self.dforces.pot/self.beads.nbeads
+      
+      for b in range(self.beads.nbeads):
+         self.dbeads[b].q=self.beads.centroid.q*(1.0-sminus)+sminus*self.beads[b].q      
+      vminus=self.dforces.pot/self.beads.nbeads
+
+      kyama=((1.0+dbeta)*vplus-(1.0-dbeta)*vminus)/(2*dbeta)-self.forces.pot/self.beads.nbeads
+      kyama+=0.5*Constants.kb*self.ensemble.temp*(3*self.beads.natoms) 
+      return kyama
+            
    def get_press(self):
       p = depstrip(self.atoms.p)
       m = depstrip(self.atoms.m3)

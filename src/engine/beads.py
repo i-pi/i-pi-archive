@@ -53,6 +53,14 @@ class Beads(dobject):
       dset(self,"kins",depend_array(name="kins",value=np.zeros(nbeads, float), func=self.kin_gather, dependencies=[dget(b,"kin") for b in self._blist] ) )
       dset(self,"kin",depend_value(name="kin", func=self.get_kin, dependencies=[dget(self,"kins")]) )
 
+   def copy(self):
+      newbd=Beads(self.natoms, self.nbeads)
+      newbd.q[:]=self.q
+      newbd.p[:]=self.p
+      newbd.m[:]=self.m
+      newbd.names[:]=self.names
+      return newbd
+
    def m3tosm3(self): return np.sqrt(self.m3)
    def mtom3(self): m3=np.zeros((self.nbeads,3*self.natoms),float); m3[:,0:3*self.natoms:3]=self.m; m3[:,1:3*self.natoms:3]=m3[:,0:3*self.natoms:3]; m3[:,2:3*self.natoms:3]=m3[:,0:3*self.natoms:3]; return m3
    
