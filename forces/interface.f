@@ -28,8 +28,6 @@
       character*1024 :: parbuffer
       integer socket, nat
       
-      counter = 0
-      
       call open_socket(socket)
       do while (.true.)
          
@@ -74,7 +72,7 @@
             if ((allocated(n_list)) .neqv. .true.) then
                allocate(f(3,size(atoms)))
                allocate(n_list(size(atoms)-1))
-               allocate(index_list(size(atoms)*(size(atoms)-1)/2))
+               allocate(index_list((size(atoms)*(size(atoms)-1))/2))
                call nearest_neighbours(atoms, cell, n_list, index_list)
                !allocate(ref_atoms(size(atoms)))
                !ref_atoms = atoms
@@ -85,13 +83,24 @@
             end if
 
             do i = 1, size(atoms)
-               !qdiff = ref_atoms(i)%pos - atoms(i)%pos
+               !q_diff = ref_atoms(i)%pos - atoms(i)%pos
                q_diff = nearest_image(cell,
      1                 nearest_image(cell,atoms(i)%pos) - ref_pos(:,i))
                if (2.0*abs(dot_product(q_diff, q_diff)) >= rn-rc) then
                   call nearest_neighbours(atoms, cell, 
      c                     n_list, index_list)
                   !ref_atoms = atoms
+                  !n_list = 0
+                  !index_list = 0
+                  !counter = 1
+                  !do j = 1, size(atoms)-1
+                  !   do ios = j+1, size(atoms)
+                  !      n_list(j) = n_list(j) + 1
+                  !      index_list(counter) = ios
+                  !      counter = counter + 1
+                  !   end do
+                  !end do
+
                   do j = 1, nat
                      ref_pos(:,j) = nearest_image(cell, atoms(i)%pos)
                   end do
