@@ -27,7 +27,8 @@ class RestartSimulation(Restart):
              "stride" : ( RestartValue, (dict, {})),
              "prefix": (RestartValue, (str, "prefix")), 
              "properties": (RestartArray, (str,np.zeros(0, np.dtype('|S12'))) ),
-             "initialize": (RestartArray, (str,np.zeros(0, np.dtype('|S12'))) )             
+             "initialize": (RestartArray, (str,np.zeros(0, np.dtype('|S12'))) ),
+             "fd_delta":   ( RestartValue, (float, 0.0)) 
             }
 
    def store(self, simul):
@@ -42,6 +43,7 @@ class RestartSimulation(Restart):
       self.prefix.store(simul.prefix)
       self.properties.store(simul.outlist)
       self.initialize.store(simul.initlist)
+      self.fd_delta.store(simul.properties.fd_delta)
             
    def fetch(self):
       self.check()
@@ -67,11 +69,14 @@ class RestartSimulation(Restart):
       if (len(ilist)==0) : ilist=None
       
       # list of properties to be printed out
-      return Simulation(nbeads, ncell, self.force.fetch(), self.ensemble.fetch(), 
+      rsim=Simulation(nbeads, ncell, self.force.fetch(), self.ensemble.fetch(), 
                      nprng, self.step.fetch(), tsteps=self.total_steps.fetch(), stride=dstride,
                      prefix=self.prefix.fetch(), outlist=olist, initlist=ilist )
+      if (self.fd_delta.fetch()!=0.0) : rsim.properties.fd_delta=self.fd_delta.fetch(); 
+      return rsim
 
    def check(self):
+      
       if self.beads.nbeads.fetch() == 0:  # no beads keyword provided, default to creating a necklace centered at a single configuration -- provided by the atoms keyword
          atoms=self.atoms.fetch() # fetches the template atoms block and creates a beads object
          if atoms.natoms == 0:  raise TypeError("Either a <beads> or a <atoms> block must be provided")
@@ -123,7 +128,7 @@ class Simulation(dobject):
       self._forcemodel.socket.start_thread()
    
       if (self.step == 0):
-         self.write_output();  io_pdb.print_pdb_path(self.beads, self.cell, self.tout);  io_pdb.print_pdb(self.beads.centroid, self.cell, self.tcout)
+         self.step=-1;   self.write_output();  io_pdb.print_pdb_path(self.beads, self.cell, self.tout);  io_pdb.print_pdb(self.beads.centroid, self.cell, self.tcout);    self.step=0
       for self.step in range(self.step,self.tsteps):               
          self.ensemble.step()
          if ((self.step+1) % self.dstride["checkpoint"] ==0) : self.write_chk()      
@@ -151,14 +156,16 @@ class Simulation(dobject):
       
       # initialize velocities
       if "velocities" in self.initlist:  self.beads.p=math.sqrt(self.ensemble.ntemp*Constants.kb)* self.beads.sm3*self.prng.gvec((self.beads.nbeads, 3*self.beads.natoms))
+      if self.ensemble.fixcom:
+         self.ensemble.rmcom(); self.ensemble.rmcom()
       
       self.initlist=np.zeros(0, np.dtype('|S12'))   # sets this to nothing so in the checkpoint initialization won't be required
    
    def write_output(self):
       for what in self.outlist:
-#         try:
-         quantity = self.properties[what]
-#         except: raise TypeError(what+" is not a recognized property")
+         try:
+            quantity = self.properties[what]
+         except: raise TypeError(what+" is not a recognized property")
          self.fout.write(write_type(float, quantity) + " ")
          
       self.fout.write("\n")   
