@@ -118,7 +118,7 @@ class ThermoPILE_L(Thermostat):
       for t in self._thermos:
          if t is None: 
             it+=1; continue   
-         t.bind(atoms=beads[it],prng=self.prng, ndof=(ndof if it==0 else None)) # bind thermostat t to the it-th bead
+         t.bind(pm=(beads.pnm[it,:],beads.m3[0,:]),prng=self.prng, ndof=(ndof if it==0 else None)) # bind thermostat t to the it-th bead
          # pipes temp and dt
          deppipe(self,"temp", t, "temp")
          deppipe(self,"dt", t, "dt")
@@ -127,6 +127,7 @@ class ThermoPILE_L(Thermostat):
          if it==0:
             deppipe(self,"tau", t, "tau")
          else:
+            # here we manually connect _thermos[i].tau to tauk[i]. simple and clear.
             dget(t,"tau").add_dependency(dget(self,"tauk"))
             dget(t,"tau")._func=make_taugetter(it)
          dget(self,"ethermo").add_dependency(dget(t,"ethermo"))
@@ -197,7 +198,7 @@ class ThermoPILE_G(ThermoPILE_L):
       self._thermos[0]=ThermoSVR(temp=1, dt=1, tau=1) 
       
       t=self._thermos[0]      
-      t.bind(atoms=beads[0],prng=self.prng, ndof=ndof)
+      t.bind(pm=(beads.pnm[0,:],beads.m3[0,:]),prng=self.prng, ndof=ndof)
       deppipe(self,"temp", t, "temp")
       deppipe(self,"dt", t, "dt")
       deppipe(self,"tau", t, "tau")
