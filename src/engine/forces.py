@@ -130,35 +130,19 @@ class ForceBeads(dobject):
    def pot(self): return self.pots.sum()
 
    def vir(self): return self.virs.sum()
-         
+
    def f_gather(self): 
       start=time.time()
       newf=np.zeros((self.nbeads,3*self.natoms),float)
       
       self.queue()
-#      print "time queueing", time.time()-start
-#      print "update", self._forces[0].socket.time_update, 
-#      print "distribute", self._forces[0].socket.time_distribute
-#      self._forces[0].socket.time_update=0
-#      self._forces[0].socket.time_distribute=0
-
 
       #serial
       for b in range(self.nbeads): newf[b]=self._forces[b].f
       # threaded      
-#      bthreads=[]
-#      print "starting threads"
-#      for b in range(self.nbeads): 
-#         thread=threading.Thread(target=self._getbead, args=(b,newf,))
-#         thread.start()
-#         bthreads.append(thread)
-
-#      print "waiting threads"      
-#      for b in range(self.nbeads): bthreads[b].join()
-#      print "threads joined in"
 
       return newf
-      
+
 import time
 LATENCY=5e-3
 class FFSocket(ForceField):

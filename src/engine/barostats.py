@@ -11,8 +11,8 @@ class Barostat(dobject):
 
       # This kind of stretches the concept of synced dependencies: sext holds more information than pext but....
       sync_ext=synchronizer()
-      dset(self,"sext",depend_array(name='sext', value=np.zeros((3,3)), deps=depend_sync(synchro=sync_ext, func={"pext" : self.p2s} )) )
-      dset(self,"pext",depend_value(name='pext', value=0.0, deps=depend_sync(synchro=sync_ext, func={"sext" : self.s2p} )) )            
+      dset(self,"sext",depend_array(name='sext', value=np.zeros((3,3)), synchro=sync_ext, func={"pext" : self.p2s} ) )
+      dset(self,"pext",depend_value(name='pext', value=0.0, synchro=sync_ext, func={"sext" : self.s2p} ) )            
       if sext is None:
          self.pext=pext
       else:
@@ -25,30 +25,31 @@ class Barostat(dobject):
       if dt is None: self.dt=2.0*self.thermostat.dt
       else: self.dt=dt
       dset(self.thermostat,"dt",   #this involves A LOT of piping
-         depend_value(name="dt",deps=depend_func(func=self.get_halfdt,dependencies=[depget(self,"dt")],dependants=depget(self.thermostat,"dt")._dependants) ) )
+         depend_value(name="dt", func=self.get_halfdt,dependencies=[dget(self,"dt")],dependants=dget(self.thermostat,"dt")._dependants)  )
            
       #temp
-      dset(self, "temp", dget(self.thermostat,"temp"))
+      dset(self, "temp", depend_value(name="temp", value=temp))
+      deppipe(self, "temp", self.thermostat,"temp")
       if not temp is None: self.temp=temp
       
       self.timer=0.0
       
    def get_halfdt(self):  return self.dt*0.5
          
-   def bind(self, atoms, cell, force):
+   def bind(self, beads, cell, forces):
       """Binding function which prepares most of the stuff which will be necessary for a barostat"""
-      self.atoms=atoms
+      self.beads=beads
       self.cell=cell
-      self.force=force
+      self.forces=forces
 
-      dset(self,"pot",depend_value(name='pot', deps=depend_func(func=self.get_pot, 
-          dependencies=[ depget(cell,"V0"), depget(cell,"strain"), depget(self,"sext")  ]  ) ) )            
-      dset(self,"piext",depend_value(name='piext', deps=depend_func(func=self.get_piext, 
-          dependencies=[ depget(cell,"V0"), depget(cell,"V"), depget(cell,"h"), depget(cell,"ih0"), depget(cell,"strain"), depget(self,"sext")  ]  ) ) )     
-      dset(self,"stress",depend_value(name='stress', deps=depend_func(func=self.get_stress, 
-          dependencies=[ depget(atoms,"kstress"), depget(cell,"V"), depget(force,"vir")  ]  ) ) )     
-      dset(self,"press",depend_value(name='press', deps=depend_func(func=self.get_press, 
-          dependencies=[ depget(self,"stress") ]  ) ) )
+      dset(self,"pot",depend_value(name='pot', func=self.get_pot, 
+          dependencies=[ dget(cell,"V0"), dget(cell,"strain"), dget(self,"sext")  ]  ) )            
+      dset(self,"piext",depend_value(name='piext', func=self.get_piext, 
+          dependencies=[ dget(cell,"V0"), dget(cell,"V"), dget(cell,"h"), dget(cell,"ih0"), dget(cell,"strain"), dget(self,"sext")  ] ) )     
+      dset(self,"stress",depend_value(name='stress', func=self.get_stress, 
+          dependencies=[ dget(beads,"kstress"), dget(cell,"V"), dget(forces,"vir")  ]  ) )
+      dset(self,"press",depend_value(name='press', func=self.get_press, 
+          dependencies=[ dget(self,"stress") ] ) )
                 
    def s2p(self): return np.trace(self.sext)/3.0
    def p2s(self): return self.pext*np.identity(3)
@@ -70,8 +71,8 @@ class Barostat(dobject):
 
    def get_piext(self):
       """Calculates the external stress tensor"""
-      root = np.dot(self.cell.h, self.cell.ih0).view(np.ndarray)
-      pi = np.dot(root, self.sext)
+      root = np.dot(depstrip(self.cell.h), depstrip(self.cell.ih0))
+      pi = np.dot(root, depstrip(self.sext))
       
       pi = np.dot(pi, np.transpose(root))
       pi *= self.cell.V0/self.cell.V
@@ -80,7 +81,9 @@ class Barostat(dobject):
    def get_stress(self):
       """Calculates the elastic strain energy of the cell"""
       
-      return (self.atoms.kstress+self.force.vir)/self.cell.V    
+      #return (self.beads.kstress+self.forces.vir/self.beads.nbeads)/self.cell.V
+      return (np.zeros((3,3)) + self.forces.vir/self.beads.nbeads)/self.cell.V
+
 #TODO  also include a possible explicit dependence of U on h
 
    def get_press(self):
@@ -160,8 +163,9 @@ class BaroFlexi(Barostat):
       
       vel_mat = (self.cell.p/self.cell.m).view(np.ndarray)
 
-      vel_mat*=self.dt
-      exp_mat=exp_ut3x3(vel_mat)
+      dist_mat = vel_mat*self.dt
+      #vel_mat*=self.dt
+      exp_mat=exp_ut3x3(dist_mat)
       neg_exp_mat = invert_ut3x3(exp_mat)
       sinh_mat = 0.5*(exp_mat - neg_exp_mat)
       ips_mat = np.dot( sinh_mat, invert_ut3x3(vel_mat) )
@@ -199,11 +203,11 @@ class BaroRigid(Barostat):
       """Calculates the elastic strain energy of the cell"""
       return self.cell.V*self.pext
       
-   def bind(self, atoms, cell, force):
-      super(BaroRigid,self).bind(atoms, cell, force)
+   def bind(self, atoms, cell, forces):
+      super(BaroRigid,self).bind(atoms, cell, forces)
       self.thermostat.bind(pm=(self.cell.P, self.cell.M))
-      dset(self,"pot",depend_value(name='pot', deps=depend_func(func=self.get_pot, 
-          dependencies=[ depget(self.cell,"V"), depget(self,"pext")  ]  ) ) )            
+      dset(self,"pot",depend_value(name='pot', func=self.get_pot, 
+          dependencies=[ dget(self.cell,"V"), dget(self,"pext")  ] ) )            
       
    def pstep(self):
       
@@ -212,42 +216,36 @@ class BaroRigid(Barostat):
       dthalf3=dthalf**3/3.0     
       
       #step on the cell velocities - first term, which only depends on "cell" quantities      
-      #pV=np.trace(np.dot(self.cell.ih,self.cell.p))*self.cell.V
-      #print "check start ",self.pV, np.trace(np.dot(self.cell.ih,self.cell.p))*self.cell.V
       self.cell.P += dthalf*3.0*(self.cell.V*(self.press - self.pext) + 2.0*Constants.kb*self.temp)
 
-
       #now must compute the terms depending on outer products of f and p
-      f = self.force.f.view(np.ndarray)
-      m = self.atoms.m3.view(np.ndarray)
-      p = self.atoms.p.view(np.ndarray)  # this strips the dependency checks from p, making it inexpensive to scan through ...
+      f = depstrip(self.forces.fnm[0,:])/self.beads.sm3[0,:]
+      m = depstrip(self.beads.m3[0,:])
+      p = depstrip(self.beads.pc)
             
       self.cell.P+=dthalf2*np.dot(p,f/m)+dthalf3*np.dot(f,f/m)
    
-      self.atoms.p += f*dthalf      
+      self.beads.p += depstrip(self.forces.f)*dthalf      
       
            
-   def qstep(self):
+   def qcstep(self):
       """Takes the atom positions, velocities and forces and integrates the 
          equations of motion forward by a step dt"""
       eta = self.cell.P[0]/self.cell.m
       exp, neg_exp = ( math.exp(eta*self.dt), math.exp(-eta*self.dt))
       sinh = 0.5*(exp - neg_exp)
 
-      
-      p = self.atoms.p.view(np.ndarray) 
-      q = self.atoms.q.view(np.ndarray)   # this strips the dependency checks off p and q, making it inexpensive to scan through ...
-      m = self.atoms.m3.view(np.ndarray)      
+      p = depstrip(self.beads.pnm[0,:]) 
+      q = depstrip(self.beads.qnm[0,:])
+      m = depstrip(self.beads.m3[0,:])      
       q*=exp
       q+=(sinh/eta)* p/m
       p *= neg_exp
 
-      depget(self.atoms,"p").taint(taintme=False)  # .. but one must remember to taint it manually!
-      depget(self.atoms,"q").taint(taintme=False)  # .. but one must remember to taint it manually!
+      self.beads.qnm[0,:] = q
+      self.beads.pnm[0,:] = p
 
       self.cell.V*=exp**3
-              
-              
       
 class RestartBaro(Restart):
    attribs={ "kind": (RestartValue, (str, "rigid")) }
