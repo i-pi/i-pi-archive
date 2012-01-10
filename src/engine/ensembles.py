@@ -143,10 +143,10 @@ class NVEEnsemble(Ensemble):
    
 
    def pstep(self): 
-      self.beads.p += self.forces.f * (self.dt*0.5)
+      self.beads.p += depstrip(self.forces.f) * (self.dt*0.5)
    
    def qcstep(self):
-      self.beads.qc += self.beads.pc/self.beads.atoms.m3*self.dt
+      self.beads.qnm[0,:] += depstrip(self.beads.pnm)[0,:]/depstrip(self.beads.m3)[0,:]*self.dt
 
    def qstep(self):
       """Velocity Verlet time step"""
@@ -165,11 +165,22 @@ class NVEEnsemble(Ensemble):
             self.beads.pnm[k]=pq[0,:]*sm                    
       
    def step(self): 
+      self.ptime-=time.time()
       self.pstep()
+      self.ptime+=time.time()
+
+      self.qtime-=time.time()
       self.qcstep()
       self.qstep()
+      self.qtime+=time.time()
+
+      self.ptime-=time.time()
       self.pstep()
+      self.ptime+=time.time()
+
+      self.ttime-=time.time()
       self.rmcom()
+      self.ttime+=time.time()
       
 class NVTEnsemble(NVEEnsemble):
    def __init__(self, dt, temp, nmstep=True, thermostat=Thermostat(), fixcom=False):
@@ -197,6 +208,7 @@ class NVTEnsemble(NVEEnsemble):
       self.thermostat.step()
       self.rmcom()
       self.ttime+=time.time()
+
       self.ptime-=time.time()
       self.pstep()
       self.ptime+=time.time()
@@ -209,6 +221,7 @@ class NVTEnsemble(NVEEnsemble):
       self.ptime-=time.time()
       self.pstep()
       self.ptime+=time.time()
+
       self.ttime-=time.time()
       self.thermostat.step()
       self.rmcom()      
@@ -250,16 +263,30 @@ class NPTEnsemble(NVTEnsemble):
       
    def step(self):
       """Velocity Verlet time step"""
+      self.ttime-=time.time()
       self.thermostat.step()
       self.barostat.thermostat.step()
-      self.rmcom()            
+      self.rmcom()           
+      self.ttime+=time.time() 
+
+      self.ptime-=time.time()
       self.barostat.pstep()
+      self.ptime+=time.time()
+
+      self.qtime-=time.time()
       self.barostat.qcstep()
       self.qstep()
+      self.qtime+=time.time()
+
+      self.ptime-=time.time()
       self.barostat.pstep()
+      self.ptime+=time.time()
+
+      self.ttime-=time.time()
       self.barostat.thermostat.step()
       self.thermostat.step()      
       self.rmcom()
+      self.ttime+=time.time()
                         
 #class NSTEnsemble(NVTEnsemble):
 #   def __init__(self, dt=None, temp=None, pext=None, sext=None, thermostat=Thermostat(), barostat=Barostat(), fixcom=False ):

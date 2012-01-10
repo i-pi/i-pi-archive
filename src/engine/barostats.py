@@ -61,7 +61,7 @@ class Barostat(dobject):
       """Dummy atoms barostat step""" 
       self.thermostat.step()
       self.pstep()
-      self.qstep()
+      self.qcstep()
       self.pstep()
       self.thermostat.step()
       
@@ -82,7 +82,7 @@ class Barostat(dobject):
       """Calculates the elastic strain energy of the cell"""
       
       #return (self.beads.kstress+self.forces.vir/self.beads.nbeads)/self.cell.V
-      return (np.zeros((3,3)) + self.forces.vir/self.beads.nbeads)/self.cell.V
+      return (np.identity(3)*self.beads.natoms*Constants.kb*self.temp/self.beads.nbeads + self.forces.vir/self.beads.nbeads)/self.cell.V
 
 #TODO  also include a possible explicit dependence of U on h
 
@@ -219,8 +219,8 @@ class BaroRigid(Barostat):
       self.cell.P += dthalf*3.0*(self.cell.V*(self.press - self.pext) + 2.0*Constants.kb*self.temp)
 
       #now must compute the terms depending on outer products of f and p
-      f = depstrip(self.forces.fnm[0,:])/self.beads.sm3[0,:]
-      m = depstrip(self.beads.m3[0,:])
+      f = depstrip(self.forces.fnm)[0,:]/math.sqrt(self.beads.nbeads)
+      m = depstrip(self.beads.m3)[0,:]
       p = depstrip(self.beads.pc)
             
       self.cell.P+=dthalf2*np.dot(p,f/m)+dthalf3*np.dot(f,f/m)
@@ -235,9 +235,9 @@ class BaroRigid(Barostat):
       exp, neg_exp = ( math.exp(eta*self.dt), math.exp(-eta*self.dt))
       sinh = 0.5*(exp - neg_exp)
 
-      p = depstrip(self.beads.pnm[0,:]) 
-      q = depstrip(self.beads.qnm[0,:])
-      m = depstrip(self.beads.m3[0,:])      
+      p = depstrip(self.beads.pnm)[0,:] 
+      q = depstrip(self.beads.qnm)[0,:]
+      m = depstrip(self.beads.m3)[0,:]      
       q*=exp
       q+=(sinh/eta)* p/m
       p *= neg_exp
