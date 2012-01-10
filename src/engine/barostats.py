@@ -84,13 +84,13 @@ class Barostat(dobject):
       #return (self.beads.kstress+self.forces.vir/self.beads.nbeads)/self.cell.V
       return (np.identity(3)*self.beads.natoms*Constants.kb*self.temp/self.beads.nbeads + self.forces.vir/self.beads.nbeads)/self.cell.V
 
+#TODO  make this something that isn't utter rubbish
 #TODO  also include a possible explicit dependence of U on h
 
    def get_press(self):
       return np.trace(self.stress)/3.0
 
 class BaroFlexi(Barostat):
-
 
    def bind(self, atoms, cell, force):
       super(BaroFlexi,self).bind(atoms,cell,force)
