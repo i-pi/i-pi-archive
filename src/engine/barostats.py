@@ -7,8 +7,8 @@ from utils.mathtools import eigensystem_ut3x3, invert_ut3x3, exp_ut3x3, det_ut3x
 from engine.thermostats import Thermostat, RestartThermo
 
 class Barostat(dobject): 
-   def __init__(self, pext=0.0, sext = None, dt = None, temp = None, thermostat=Thermostat()):
-
+   def __init__(self, pext=0.0, sext = None, dt = None, temp = None, thermostat=None):
+     
       # This kind of stretches the concept of synced dependencies: sext holds more information than pext but....
       sync_ext=synchronizer()
       dset(self,"sext",depend_array(name='sext', value=np.zeros((3,3)), synchro=sync_ext, func={"pext" : self.p2s} ) )
@@ -18,6 +18,8 @@ class Barostat(dobject):
       else:
          self.sext=sext
       
+
+      if thermostat is None: thermostat=Thermostat()
       self.thermostat=thermostat   
       # binds options for dt and temperature of the thermostat to those in the barostat
      

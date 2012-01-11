@@ -50,8 +50,8 @@ class Atoms(dobject):
          dset(self,"names",_prebind[3])
          
          
-      dset(self,"px",self.p[0:3*natoms:3]);       dset(self,"py",self.p[1:3*natoms:3]);      dset(self,"pz",self.p[2:3*natoms:3])
-      dset(self,"qx",self.q[0:3*natoms:3]);       dset(self,"qy",self.q[1:3*natoms:3]);      dset(self,"qz",self.q[2:3*natoms:3])      
+      dset(self,"px",self.p[0:3*natoms:3],name="px");       dset(self,"py",self.p[1:3*natoms:3],name="py");      dset(self,"pz",self.p[2:3*natoms:3],name="pz")
+      dset(self,"qx",self.q[0:3*natoms:3],name="qx");       dset(self,"qy",self.q[1:3*natoms:3],name="qy");      dset(self,"qz",self.q[2:3*natoms:3],name="qz")      
       
 
       # Interface to get a 3*n-sized array with masses      

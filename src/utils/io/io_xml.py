@@ -1,4 +1,4 @@
-from xml.sax import parseString
+from xml.sax import parseString, parse
 from xml.sax.handler import ContentHandler 
 import numpy as np
 import string
@@ -32,9 +32,14 @@ class xml_handler(ContentHandler):
       self.open.pop(self.level)
       self.level-=1
 
-def parse_xml(buf):
+def xml_parse_string(buf):
    myhandle=xml_handler()
    parseString(buf, myhandle)
+   return myhandle.root
+
+def xml_parse_file(stream):
+   myhandle=xml_handler()
+   parse(stream, myhandle)
    return myhandle.root
 
 def read_type(type, data):

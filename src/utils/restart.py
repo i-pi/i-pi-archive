@@ -1,22 +1,20 @@
 import numpy as np
-import types
-
-import pdb
-
-
 from  io.io_xml import *
 
 class Restart(object):   
    fields={}
    attribs={}
+
    def __init__(self):
       for f, v in self.fields.iteritems():    self.__dict__[f]=v[0](*v[1])
       for a, v in self.attribs.iteritems():   self.__dict__[a]=v[0](*v[1])     
       
-   def store(self, value): pass
-   
-   def fetch(self): pass
-      
+   def store(self, value): 
+      pass
+            
+   def fetch(self): 
+      if not self.check(): raise AssertionError("Consistency check failed in Restart.fetch")
+            
    def check(self): return True
    
    def write(self, name="", indent=""): 
@@ -58,7 +56,6 @@ class RestartValue(Restart):
       return self.value
       
    def write(self, name="", indent=""): 
-      #return indent+"<"+name+">"+str(self.value)+"</"+name+">\n"
       return indent + "<" + name + ">" + write_type(self.type, self.value) + "</" + name + ">\n"
    
    def parse(self, xml=None, text=""):
@@ -105,6 +102,8 @@ class RestartArray(Restart):
    def parse(self, xml=None, text=""):
       if xml is None: pass #should print an error!
       else:   
-         self.shape.store(read_type(tuple,xml.attribs["shape"]))
          self.value=read_array(self.type,xml.fields["_text"]) 
+         if "shape" in xml.attribs: 
+            self.shape.store(read_type(tuple,xml.attribs["shape"]))
+         else: self.shape.store(self.value.shape)
       

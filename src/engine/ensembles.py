@@ -183,9 +183,11 @@ class NVEEnsemble(Ensemble):
       self.ttime+=time.time()
       
 class NVTEnsemble(NVEEnsemble):
-   def __init__(self, dt, temp, nmstep=True, thermostat=Thermostat(), fixcom=False):
+   def __init__(self, dt=None, temp=None, nmstep=True, thermostat=None, fixcom=False):
       super(NVTEnsemble,self).__init__(dt=dt,temp=temp, nmstep=nmstep, fixcom=fixcom)
-      self.thermostat=thermostat
+
+      if thermostat is None: self.thermostat=Thermostat()
+      else:      self.thermostat=thermostat
       
       self.dt=dt
       self.temp=temp
