@@ -175,9 +175,11 @@ class NVEEnsemble(Ensemble):
       self.rmcom()
       
 class NVTEnsemble(NVEEnsemble):
-   def __init__(self, dt=None, temp=None, nmstep=True, thermostat=Thermostat(), fixcom=False):
+   def __init__(self, dt=None, temp=None, nmstep=True, thermostat=None, fixcom=False):
       super(NVTEnsemble,self).__init__(dt=dt,temp=temp, nmstep=nmstep, fixcom=fixcom)
-      self.thermostat=thermostat
+
+      if thermostat is None: self.thermostat=Thermostat()
+      else:      self.thermostat=thermostat
       
       self.temp=self.thermostat.temp;       
       self.dt=self.thermostat.dt;

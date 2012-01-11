@@ -50,8 +50,8 @@ class Atoms(dobject):
          dset(self,"names",_prebind[3])
          
          
-      dset(self,"px",self.p[0:3*natoms:3]);       dset(self,"py",self.p[1:3*natoms:3]);      dset(self,"pz",self.p[2:3*natoms:3])
-      dset(self,"qx",self.q[0:3*natoms:3]);       dset(self,"qy",self.q[1:3*natoms:3]);      dset(self,"qz",self.q[2:3*natoms:3])      
+      dset(self,"px",self.p[0:3*natoms:3],name="px");       dset(self,"py",self.p[1:3*natoms:3],name="py");      dset(self,"pz",self.p[2:3*natoms:3],name="pz")
+      dset(self,"qx",self.q[0:3*natoms:3],name="qx");       dset(self,"qy",self.q[1:3*natoms:3],name="qy");      dset(self,"qz",self.q[2:3*natoms:3],name="qz")      
       
 
       # Interface to get a 3*n-sized array with masses      
@@ -99,7 +99,7 @@ class Atoms(dobject):
    def get_kstress(self):
       """Calculates the contribution of the atom to the kinetic stress tensor"""
       p=self.p.view(np.ndarray)
-      ks = numpy.zeros((3,3),float)
+      ks = np.zeros((3,3),float)
       ks[0,0]=np.dot(self.px,self.px/self.m)
       ks[1,1]=np.dot(self.py,self.py/self.m)
       ks[2,2]=np.dot(self.pz,self.pz/self.m)

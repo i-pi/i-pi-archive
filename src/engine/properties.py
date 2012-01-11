@@ -33,7 +33,7 @@ class Properties(dobject):
       self.property_dict["conserved"] = dget(self,"econs")
       
       dset(self, "kin", depend_value(name="kin", func=self.get_kin, dependencies=[dget(self.beads,"kin"),dget(self.cell,"kin")]))
-      self.property_dict["kinetic"] = dget(self,"kin")
+      self.property_dict["kinetic_md"] = dget(self,"kin")
       
       dset(self, "pot", depend_value(name="pot", func=self.get_pot, dependencies=[dget(self.forces,"pot")]))      
       self.property_dict["potential"] = dget(self,"pot")
@@ -45,12 +45,21 @@ class Properties(dobject):
       dset(self, "cell_params", depend_value(name="cell_params", func=self.get_cell_params, dependencies=[dget(self.cell, "h")]))
       self.property_dict["cell_parameters"] = dget(self,"cell_params")
 
-      dset(self, "press", depend_value(name="press", func=self.get_press, dependencies=[dget(self.beads, "p"), dget(self.beads, "m3"), dget(self.forces, "vir"), dget(self.cell, "V")]))
-      self.property_dict["pressure"] = dget(self,"press")
+      dset(self, "stress", depend_value(name="stress", func=self.get_stress, dependencies=[dget(self.beads, "kstress"), dget(self.forces, "vir"), dget(self.cell, "V")]))
+      self.property_dict["stress_md.xx"] = depend_value(name="scl_xx", dependencies=[dget(self, "stress")], func=(lambda : self.stress[0,0]) ) 
+      
+      dset(self, "press", depend_value(name="press", func=self.get_press, dependencies=[dget(self,"stress")]))
+      self.property_dict["pressure_md"] = dget(self,"press")
 
       dset(self, "kin_cv", depend_value(name="kin_cv", func=self.get_kincv, dependencies=[dget(self.beads,"q"),dget(self.forces,"f"),dget(self.ensemble,"temp")]))
-      self.property_dict["kinetic_cvirial"] = dget(self,"kin_cv")
+      self.property_dict["kinetic_cv"] = dget(self,"kin_cv")
 
+      dset(self, "kstress_cv", depend_value(name="kstress_cv", func=self.get_kstresscv, dependencies=[dget(self.beads,"q"),dget(self.forces,"f"),dget(self.ensemble,"temp")]))
+      dset(self, "stress_cv", depend_value(name="stress_cv", func=self.get_stresscv, dependencies=[dget(self,"kstress_cv"),dget(self.forces,"vir"), dget(self.cell, "V")]))
+      self.property_dict["stress_cv.xx"] = depend_value(name="scv_xx", dependencies=[dget(self, "stress_cv")], func=(lambda : self.stress_cv[0,0]) ) 
+      dset(self, "press_cv", depend_value(name="press_cv", func=self.get_presscv, dependencies=[dget(self,"stress_cv")]))
+      self.property_dict["pressure_cv"] = dget(self,"press_cv")
+      
       # creates dummy beads and forces to compute displaced and scaled estimators
       self.dbeads=simul.beads.copy()
       self.dforces=ForceBeads()
@@ -68,6 +77,11 @@ class Properties(dobject):
    def get_temp(self):         return self.beads.kin/(0.5*Constants.kb*(3*self.beads.natoms*self.beads.nbeads-(3 if self.ensemble.fixcom else 0))*self.beads.nbeads)
    def get_econs(self):        return self.ensemble.econs/self.beads.nbeads
 
+   def get_stress(self):  return (self.forces.vir+self.beads.kstress)/self.cell.V                  
+   def get_press(self):   return np.trace(self.stress)/3.0
+   def get_stresscv(self):  return (self.forces.vir+self.kstress_cv)/self.cell.V                  
+   def get_presscv(self):   return np.trace(self.stress_cv)/3.0
+   
    def get_kincv(self):        
       kcv=0.0
       for b in range(self.beads.nbeads):
@@ -75,6 +89,18 @@ class Properties(dobject):
       kcv*=-0.5/self.beads.nbeads
       kcv+=0.5*Constants.kb*self.ensemble.temp*(3*self.beads.natoms) 
       return kcv
+
+   def get_kstresscv(self):        
+      kst=np.zeros((3,3),float)
+      q=depstrip(self.beads.q); qc=depstrip(self.beads.qc); na3=3*self.beads.natoms;
+      for b in range(self.beads.nbeads):
+         for i in range(3):
+            for j in range(i,3):
+               kst[i,j]+=np.dot(q[b,i:na3:3]-qc[i:na3:3],depstrip(self.forces.f[b])[j:na3:3])
+
+      kst*=-1/self.beads.nbeads
+      for i in range(3): kst[i,i]+=Constants.kb*self.ensemble.temp*(3*self.beads.natoms) 
+      return kst
 
    def get_kinyama(self):              
       
@@ -99,13 +125,7 @@ class Properties(dobject):
          else: break
          
       return kyama
-            
-   def get_press(self):
-      p = depstrip(self.atoms.p)
-      m = depstrip(self.atoms.m3)
-      vir = depstrip(self.forces.vir)
-      return (np.dot(p,p/m) + np.trace(vir))/(3.0*self.cell.V)
-   
+         
    def get_cell_params(self):
       a, b, c, alpha, beta, gamma = h2abc(self.cell.h)
       return [a, b, c, alpha, beta, gamma]

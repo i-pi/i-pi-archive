@@ -87,8 +87,12 @@ class RestartSimulation(Restart):
          self.beads.store(rbeads)
       
 class Simulation(dobject):
-   """Represents a simulation cell. Includes the cell parameters, 
-      the atoms and the like."""   
+   """
+   Main simulation object. Contains all the references and the main dynamics loop.
+   
+   
+   
+   """   
 
    def __init__(self, beads, cell, force, ensemble, prng,
                step=0, tsteps=1000, stride=None, prefix="prefix", outlist=None, initlist=None):
@@ -165,7 +169,7 @@ class Simulation(dobject):
       for what in self.outlist:
          try:
             quantity = self.properties[what]
-         except: raise TypeError(what+" is not a recognized property")
+         except KeyError: raise KeyError(what+" is not a recognized property")
          self.fout.write(write_type(float, quantity) + " ")
          
       self.fout.write("\n")   

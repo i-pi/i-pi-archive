@@ -8,15 +8,16 @@ import pdb
 
 
 ifile=open(sys.argv[1],"r")
-
-buf="";
-for a in ifile: buf+=a
-xmlrestart=parse_xml(buf)
+xmlrestart=xml_parse_file(ifile)
 
 simrestart=simulation.RestartSimulation();
 simrestart.parse(xmlrestart.fields["simulation"])
 simul=simrestart.fetch()
-#pdb.set_trace()
+
+import utils.depgraph as udg
+udg.plot_deps()
+
+pdb.set_trace()
 simul.run()
 
 del simul

@@ -23,10 +23,10 @@ class Beads(dobject):
             
       # sets up synchronized storage for normal-modes and beads representations
       sync_q=synchronizer();    sync_p=synchronizer()
-      dset(self,"q",depend_array(name="q",value=np.zeros((nbeads,3*natoms), float), func={"qnm":self.nm2b_q}, synchro=sync_q) )
-      dset(self,"p",depend_array(name="p",value=np.zeros((nbeads,3*natoms), float), func={"pnm":self.nm2b_p}, synchro=sync_p) )
-      dset(self,"qnm",depend_array(name="qnm",value=np.zeros((nbeads,3*natoms), float), func={"q":self.b2nm_q}, synchro=sync_q) )
-      dset(self,"pnm",depend_array(name="pnm",value=np.zeros((nbeads,3*natoms), float), func={"p":self.b2nm_p}, synchro=sync_p) )
+      dset(self,"q",   depend_array(name="q",   value=np.zeros((nbeads,3*natoms), float), func={"qnm":self.nm2b_q}, synchro=sync_q ) )
+      dset(self,"p",   depend_array(name="p",   value=np.zeros((nbeads,3*natoms), float), func={"pnm":self.nm2b_p}, synchro=sync_p ) )
+      dset(self,"qnm", depend_array(name="qnm", value=np.zeros((nbeads,3*natoms), float), func={"q":self.b2nm_q},   synchro=sync_q ) )
+      dset(self,"pnm", depend_array(name="pnm", value=np.zeros((nbeads,3*natoms), float), func={"p":self.b2nm_p},   synchro=sync_p ) )
 
       
       # sets up matrices for normal modes transformation
@@ -52,6 +52,7 @@ class Beads(dobject):
       dset(self,"fpath",depend_array(name="fpath", value=np.zeros((nbeads,3*natoms), float), func=self.fpath, dependencies=[dget(self,"q")]) )
       dset(self,"kins",depend_array(name="kins",value=np.zeros(nbeads, float), func=self.kin_gather, dependencies=[dget(b,"kin") for b in self._blist] ) )
       dset(self,"kin",depend_value(name="kin", func=self.get_kin, dependencies=[dget(self,"kins")]) )
+      dset(self,"kstress",depend_array(name="kstress",value=np.zeros((3,3), float), func=self.get_kstress, dependencies=[dget(b,"kstress") for b in self._blist] ) )
 
    def copy(self):
       newbd=Beads(self.natoms, self.nbeads)
@@ -73,6 +74,10 @@ class Beads(dobject):
    
    def kin_gather(self):  return np.array([b.kin for b in self._blist])
    def get_kin(self):     return self.kins.sum()
+   def get_kstress(self):     
+      ks=np.zeros((3,3),float)
+      for b in self: ks+=b.kstress
+      return ks
       
    def vpath(self):  # this is actually the path harmonic potential without the multiplication by omega_n^2
       epath=0.0
@@ -116,7 +121,7 @@ class RestartBeads(Restart):
    fields={ "nbeads" : (RestartValue, (int, 0)), "natoms" : (RestartValue, (int, 0)),  "q" : (RestartArray,(float,np.zeros(0))),  "p" : (RestartArray,(float,np.zeros(0))),
             "m" : (RestartArray,(float, np.zeros(0))),  "names" : (RestartArray,(str,np.zeros(0, np.dtype('|S6')))),
             "init_temp": (RestartValue, (float, -1.0))  }
-       
+   
    def __init__(self, beads=None):
       super(RestartBeads,self).__init__()
       if not beads is None: self.store(beads)
@@ -131,7 +136,6 @@ class RestartBeads(Restart):
       self.names.store(depstrip(beads.names))
       
    def fetch(self):
-      self.check()
       beads=Beads(self.natoms.fetch(),self.nbeads.fetch())
       beads.q=self.q.fetch()
       beads.p=self.p.fetch()      

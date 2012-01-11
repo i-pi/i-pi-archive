@@ -156,20 +156,39 @@ class depend_array(np.ndarray, depend_base):
 
    def flatten(self):
       return self.reshape(self.size)
+   
+   @staticmethod
+   def __scalarindex(index, depth=1):
+      """Checks if an index points at a scalar value.
+      
+      Returns a logical stating whether a __get__ instruction based
+      on index would return a scalar.      
 
+      Arguments:
+         index : the index to be checked
+         depth : the rank of the array which is being accessed      
+      """
+      
+      if (np.isscalar(index) and depth <= 1):
+         return True
+      elif (isinstance(index, tuple) and len(index)==depth):
+         for i in index:
+            if not np.isscalar(i): return False
+         return True
+      return False
+      
    def __getitem__(self,index):
 #      print "getitem", self.name, self.deps.tainted(), index
       
       if self.tainted():  
          self.update_auto()
          self.taint(taintme=False)
-              
-      if (not np.isscalar(index) or self.ndim > 1 ):
-#         return depend_array(super(depend_array,self).__getitem__(index), deps=self.deps, name=self.name, tainted=self.deps._tainted)  
-#         return depend_array(self.view(np.ndarray)[index], name=self._name, synchro=self._synchro, func=self._func, dependants=self._dependants, dependencies=[], tainted=self._tainted)  
-         return depend_array(self.base[index], name=self._name, synchro=self._synchro, func=self._func, dependants=self._dependants, dependencies=[], tainted=self._tainted, storage=self._storage)  
-      else:
-         return self.view(np.ndarray)[index]
+           
+      if (self.__scalarindex(index, self.ndim)):
+         return depstrip(self)[index]
+      else:      
+         return depend_array(self.base[index], name=self._name, synchro=self._synchro, func=self._func, dependants=self._dependants, dependencies=[], tainted=self._tainted, storage=self._storage)
+
 
    def __getslice__(self,i,j):
       return self.__getitem__(slice(i,j,None))
@@ -205,8 +224,10 @@ class depend_array(np.ndarray, depend_base):
 
 def dget(obj,member):
    return obj.__dict__[member]
-def dset(obj,member,value):
+   
+def dset(obj,member,value,name=None):
    obj.__dict__[member]=value
+   if not name is None: obj.__dict__[member]._name=name
    
 def depstrip(deparray):
    return deparray.view(np.ndarray)

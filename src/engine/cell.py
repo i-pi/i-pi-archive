@@ -21,8 +21,9 @@ class Cell(dobject):
       h0 = reference cell, default = h
       pext = external pressure tensor, default = 0"""
 
-   def __init__(self, h = np.identity(3, float), m=1.0):      
-     
+   def __init__(self, h = None, m=1.0):      
+      
+      if h is None: h=np.identity(3, float)      
       #un-dependent properties
       dset(self,"h",depend_array(name = 'h', value = h) )
       dset(self,"p",depend_array(name = 'p', value = np.zeros((3,3),float)) )
@@ -72,7 +73,8 @@ class Cell(dobject):
 
 
 class CellFlexi(Cell):
-   def __init__(self, h = np.identity(3, float), h0=None, m=1.0):    
+   def __init__(self, h = None, h0=None, m=1.0):    
+      if h is None: h=np.identity(3, float)      
       super(CellFlexi,self).__init__(h=h, m=m)
       # must redefine most values to set up sync
       # interface for accessing the cell degrees of freedom as flat size-6 arrays
@@ -121,7 +123,9 @@ class CellFlexi(Cell):
       
       
 class CellRigid(Cell):
-   def __init__(self, h = np.identity(3, float), m=1.0):    
+   def __init__(self, h =None, m=1.0):    
+      if h is None: h=np.identity(3, float)     
+      
       super(CellRigid,self).__init__(h, m)
 
       #reference cell volume
