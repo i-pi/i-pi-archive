@@ -32,8 +32,6 @@ class RestartForce(Restart):
       Attributes:
          type: A string indicating the type being used. 'socket' is currently
             the only available option.
-
-      Fields:
          interface: A restart interface instance.
          parameters: A dictionary of the parameters used by the driver. Of the
             form {"name": value}.

@@ -22,8 +22,7 @@ Classes:
    depend_value: Depend class for scalar objects.
    depend_array: Depend class for arrays.
    synchronizer: Class that holds the different objects that are related to each
-      other and the functions to change between the representations,
-      and keeps track of which property has been set manually.
+      other and keeps track of which property has been set manually.
    dobject: An extension of the standard library object that overloads __get__
       and __set__, so that we can use the standard syntax for setting and 
       getting the depend object, i.e. foo = value, not foo.set(value).
@@ -31,9 +30,11 @@ Classes:
 Functions:
    dget: Gets the dependencies of a depend object.
    dset: Sets the dependencies of a depend object.
-   depstrip: Used on an 
-   depcopy:
-   deppipe:   
+   depstrip: Used on a depend_array object, to access its value without
+      needing the depend machinery, and so much more quickly. Must not be used
+      if the value of the array is to be changed.
+   depcopy: Copies the dependencies from one object to another
+   deppipe: Used to make two objects be synchronized to the same value.
 """
 
 __all__ = ['depend_base', 'depend_value', 'depend_array', 'synchronizer', 
@@ -42,7 +43,25 @@ __all__ = ['depend_base', 'depend_value', 'depend_array', 'synchronizer',
 import numpy as np
 
 class synchronizer(object):
+   """Class to implement synched objects.
+
+   Holds the objects used to keep two or more objects in step with each other. 
+   This is shared between all the synched objects.
+
+   Attributes:
+      synched: A dictionary containing all the synched objects, of the form
+         {"name": depend object}.
+      manual: A string containing the name of the object being manually changed.
+   """
+
    def __init__(self, deps=None):
+      """Initialises synchronizer.
+
+      Args:
+         deps: Optional dictionary giving the synched objects of the form
+            {"name": depend object}.
+      """
+
       if deps is None:
          self.synced=dict()
       else:
@@ -53,8 +72,57 @@ class synchronizer(object):
 
 #TODO put some error checks in the init to make sure that the object is initialized from consistent synchro and func states
 class depend_base(object):
-   """Prototype class for dependency handling"""
-   def __init__(self, name="", synchro=None, func=None, dependants=None, dependencies=None, tainted=None):
+   """Base class for dependency handling.
+
+   Builds the majority of the machinery required for the different depend
+   objects. Contains functions to add and remove dependencies, the tainting 
+   mechanism by which information about which objects have been updated is
+   passed around the dependency network, and the manual and automatic update
+   functions to check that depend objects with functions are not manually
+   updated and that synchronized objects are kept in step with the one manually
+   changed.
+
+   Attributes:
+      _tainted: An array containing one boolean, which is True if one of the
+         dependencies has been changed since the last time the value was 
+         cached.
+      _func: A function name giving the method of calculating the value, 
+         if required. None otherwise.
+      _name: The name of the depend base object.
+      _synchro: A synchronizer object to deal with synched objects, if
+         required. None otherwise.
+      _dependants: A list containing all objects dependent on the self.
+   """ 
+
+   def __init__(self, name, synchro=None, func=None, dependants=None, dependencies=None, tainted=None):
+      """Initialises depend base.
+
+      An unusual initialisation routine, as it has to be able to deal with the
+      depend array mechanism for returning slices as new depend arrays.
+
+      This is the reason for the penultimate if statement; it automatically
+      taints objects created from scratch but does nothing to slices which are
+      not tainted.
+
+      Also, the last if statement makes sure that if a synchronized property is
+      sliced, this initialization routine does not automatically set it to the
+      manually updated property.
+
+      Args:
+         name: A string giving the name of self.
+         tainted: An optional array containing one boolean which is True if one
+         of the dependencies has been changed.
+         func: An optional argument that can be specified either by a function 
+            name, or for synchronized values a dictionary of the form 
+            {"name": function name}; where "name" is one of the other
+            synched objects and function name is the name of a function to
+            get the object "name" from self.
+         synchro: An optional synchronizer object.
+         dependants: An optional list containing objects that depend on self.
+         dependencies: An optional list containing objects that self 
+            depends upon.
+   """
+
       self._dependants=[]
       if tainted is None:
          tainted=np.array([True],bool)
@@ -66,9 +134,6 @@ class depend_base(object):
       self._func=func
       self._name=name
       self._synchro=synchro
-      if not self._synchro is None and not self._name in self._synchro.synced:
-         self._synchro.synced[self._name]=self
-         self._synchro.manual=self._name
          
       for item in dependencies:
          item.add_dependant(self, tainted)
@@ -76,8 +141,18 @@ class depend_base(object):
       self._dependants=dependants
       if (tainted): 
          self.taint(taintme=tainted)
+
+      if not self._synchro is None and not self._name in self._synchro.synced:
+         self._synchro.synced[self._name]=self
+         self._synchro.manual=self._name
    
    def remove_dependant(self, rmdep):
+      """Removes a dependency.
+
+      Args:
+         rmdep: The depend object to be removed from the dependency list.
+      """
+
       irm=-1
       for idep in range(len(self._dependants)): 
          if self._dependants[idep] is rmdep: 
@@ -86,19 +161,48 @@ class depend_base(object):
          self._dependants.pop(irm)
          
    def add_dependant(self, newdep, tainted=True):
-      """Makes newdep dependent on self"""
+      """Adds a dependant property.
+
+      Args:
+         newdep: The depend object to be added to the dependency list.
+         tainted: A boolean that decides whether newdep should be tainted.
+            True by default.
+      """
+
       self._dependants.append(newdep)
       if tainted: 
          newdep.taint(taintme=True)      
 
    def add_dependency(self, newdep, tainted=True):
-      """Makes self dependent on newdep"""
+      """Adds a dependency.
+
+      Args:
+         newdep: The depend object self now depends upon.
+         tainted: A boolean that decides whether self should 
+            be tainted. True by default.
+      """
+
       newdep._dependants.append(self)      
       if tainted: 
          self.taint(taintme=True)
 
    def taint(self,taintme=True):
-      """Recursively sets tainted flag on dependent objects."""
+      """Recursively sets tainted flag on dependent objects.
+
+      The main function dealing with the dependencies. Taints all objects 
+      further down the dependency tree until either all objects have been
+      tainted, or it reaches only objects that have already been tainted. Note
+      that in the case of a dependency loop the initial setting of _tainted to
+      True prevents an infinite loop occuring.
+
+      Also, in the case of a synchro object, the manually set quantity is not
+      tainted, as it is assumed that synchro objects only depend on each other.
+
+      Args:
+         taintme: A boolean giving whether self should be tainted at the end.
+            True by default.
+      """
+
       self._tainted[:] = True
       for item in self._dependants: 
          if (not item.tainted()):
@@ -111,10 +215,16 @@ class depend_base(object):
       else: self._tainted[:] = taintme
       
    def tainted(self):
-      """Returns tainted flag"""
+      """Returns tainted flag."""
+
       return self._tainted[0]
       
    def update_auto(self):
+      """Automatic update routine.
+
+      Updates the value when get has been called and self has been tainted.
+      """
+
       if not self._synchro is None:
          if (not self._name == self._synchro.manual):
             self.set(self._func[self._synchro.manual](), manual=False)
@@ -126,6 +236,16 @@ class depend_base(object):
          print "####"+self._name+" probably shouldn't be tainted (value)!"
 
    def update_man(self): 
+      """Manual update routine.
+
+      Updates the value when the value has been manually set. Also raises an
+      exception if a calculated quantity has been manually set. Also starts the
+      tainting routine.
+
+      Raises:
+         NameError: If a calculated quantity has been manually set.
+      """
+
       if not self._synchro is None:     
          self._synchro.manual=self._name
          for v in self._synchro.synced.values():
@@ -136,8 +256,15 @@ class depend_base(object):
       else:
          self.taint(taintme=False)     
             
-   def set(self, value, manual=False): pass           
-   def get(self): pass      
+   def set(self, value, manual=False):
+      """Dummy setting routine."""
+
+      pass           
+
+   def get(self):      
+      """Dummy getting routine."""
+
+      pass
 
 
 class depend_value(depend_base):
@@ -193,13 +320,19 @@ class depend_array(np.ndarray, depend_base):
    @staticmethod
    def __scalarindex(index, depth=1):
       """Checks if an index points at a scalar value.
-      
-      Returns a logical stating whether a __get__ instruction based
-      on index would return a scalar.      
+
+      Used so that looking up one item in an array returns a scalar, whereas
+      looking up a slice of the array returns a new array with the same
+      dependencies as the original, so that changing the slice also changes
+      the global array.
 
       Arguments:
          index : the index to be checked
          depth : the rank of the array which is being accessed      
+      
+      Returns:
+         A logical stating whether a __get__ instruction based
+         on index would return a scalar.      
       """
       
       if (np.isscalar(index) and depth <= 1):
