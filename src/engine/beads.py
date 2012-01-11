@@ -54,6 +54,10 @@ class Beads(dobject):
       dset(self,"kin",depend_value(name="kin", func=self.get_kin, dependencies=[dget(self,"kins")]) )
       dset(self,"kstress",depend_array(name="kstress",value=np.zeros((3,3), float), func=self.get_kstress, dependencies=[dget(b,"kstress") for b in self._blist] ) )
 
+
+#TODO get rid of this
+      dset(self,"kstress",depend_value(name="kstress", func=self.get_kin, value = np.zeros((3,3))) )
+
    def copy(self):
       newbd=Beads(self.natoms, self.nbeads)
       newbd.q[:]=self.q

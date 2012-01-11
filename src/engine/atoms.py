@@ -98,8 +98,7 @@ class Atoms(dobject):
       
    def get_kstress(self):
       """Calculates the contribution of the atom to the kinetic stress tensor"""
-      p=self.p.view(np.ndarray)
-      ks = np.zeros((3,3),float)
+      ks = numpy.zeros((3,3),float)
       ks[0,0]=np.dot(self.px,self.px/self.m)
       ks[1,1]=np.dot(self.py,self.py/self.m)
       ks[2,2]=np.dot(self.pz,self.pz/self.m)

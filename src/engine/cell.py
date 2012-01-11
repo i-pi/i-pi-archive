@@ -193,6 +193,8 @@ class RestartCell(Restart):
       if self.from_file.fetch() != "":
          myatoms, mycell = utils.io.io_pdb.read_pdb(open(self.from_file.fetch(),"r")) 
          self.h.store(mycell.h)
-         self.h0.store(mycell.h0)
-         self.m.store(mycell.m)
+         if (self.h0.fetch() == np.zeros((3,3))).all():
+            self.h0.store(mycell.h0)
+         if self.m.fetch() == 0.0:
+            self.m.store(mycell.m)
    

@@ -107,7 +107,7 @@
             type(Atom), dimension(:), intent(in) :: atoms
             type(Cell_vec), intent(in) :: cell
             integer, dimension(size(atoms)-1), intent(in) :: n_list
-            integer, dimension(size(atoms)*(size(atoms)-1)/2), 
+            integer, dimension((size(atoms)*(size(atoms)-1))/2), 
      c           intent(in) :: index_list
             double precision, intent(out) :: pot
             double precision, dimension(3,size(atoms)), 
