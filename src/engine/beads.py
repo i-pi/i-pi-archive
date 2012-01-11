@@ -22,7 +22,8 @@ class Beads(dobject):
       dset(self,"sm3",depend_array(name="sm3",value=np.zeros((nbeads,3*natoms), float),func=self.m3tosm3, dependencies=[dget(self,"m3")]))
             
       # sets up synchronized storage for normal-modes and beads representations
-      sync_q=synchronizer();    sync_p=synchronizer()
+      sync_q=synchronizer()
+      sync_p=synchronizer()
       dset(self,"q",depend_array(name="q",value=np.zeros((nbeads,3*natoms), float), func={"qnm":self.nm2b_q}, synchro=sync_q) )
       dset(self,"p",depend_array(name="p",value=np.zeros((nbeads,3*natoms), float), func={"pnm":self.nm2b_p}, synchro=sync_p) )
       dset(self,"qnm",depend_array(name="qnm",value=np.zeros((nbeads,3*natoms), float), func={"q":self.b2nm_q}, synchro=sync_q) )

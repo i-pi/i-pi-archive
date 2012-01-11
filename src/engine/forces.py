@@ -11,11 +11,6 @@ Classes:
    FFSocket: Deals with a single replica of the system
    ForceBeads: Deals with the parallelization of the force calculation for
       a PI simulation.
-
-Exceptions:
-
-Functions:
-
 """
 
 __all__ = ['RestartForce', 'ForceField', 'ForceBeads', 'FFSocket']
@@ -72,7 +67,7 @@ class RestartForce(Restart):
 
       if self.type.fetch().upper() == "SOCKET": 
          force=FFSocket(pars=self.parameters.fetch(), interface=self.interface.fetch())
-      else : 
+      else: 
          force=ForceField()
       return force
       
@@ -90,7 +85,8 @@ class ForceField(dobject):
    Depend objects:
       ufv: A list of the form [pot, f, vir]. These quantities are calculated 
          all at one time by the driver, so are collected together. Each separate
-         object is then taken from the list.
+         object is then taken from the list. Depends on the atom positions and 
+         the system box.
       pot = The potential energy of the system.
       f: An array containing all the components of the force of the form
          [x1, y1, z1, x2, y2, z2,..., xn, yn, zn].
@@ -209,9 +205,12 @@ class ForceBeads(dobject):
          representations.
 
    Depend objects:
-      f: An array containing the components of the force.
-      pots: A list containing the potential energy for each system replica.
-      virs: A list containing the virial tensor for each system replica.
+      f: An array containing the components of the force. Depends on each
+         replica's ufv list.
+      pots: A list containing the potential energy for each system replica. 
+         Depends on each replica's ufv list.
+      virs: A list containing the virial tensor for each system replica. 
+         Depends on each replica's ufv list.
       pot: The appropriate estimator for the potential energy.
       vir: The appropriate estimator for the virial tensor.
       fnm: An array containing the components of the force in the normal mode
@@ -231,8 +230,6 @@ class ForceBeads(dobject):
 
       if not (beads is None or cell is None or force is None): 
          self.bind(beads, cell, force)
-      else: 
-         pass   
 
    def bind(self, beads, cell, force):
       """Binds beads, cell and force to the forcefield.
@@ -258,7 +255,6 @@ class ForceBeads(dobject):
       for b in range(self.nbeads):
          newf=force.copy()
          newf.bind(beads[b], cell)
-         newf.blocking=False
          self._forces.append(newf)
                
       dset(self,"f",depend_array(name="f",value=np.zeros((self.nbeads,3*self.natoms), float), func=self.f_gather,     
