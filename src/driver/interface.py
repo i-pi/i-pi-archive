@@ -165,14 +165,14 @@ class Driver(socket.socket):
          timeout = False
          try:
             bpart = 1
-            bpart = self.recv_into(self._buf[bpos:], blen-bpos )
+            bpart = self.recv_into(self._buf[bpos:], blen-bpos)
          except socket.timeout:
             print "timeout in recvall, trying again"
             timeout = True
             pass
          if (not timeout and bpart == 0):
             raise Disconnected()
-         bpos+=bpart
+         bpos += bpart
 #TODO this Disconnected() exception currently just causes the program to hang.
 #This should do something more graceful
 
@@ -285,9 +285,9 @@ class RestartInterface(Restart):
    Attributes:
       address: A string giving the host name.
       port: An integer giving the port used by the socket.
-      slots: An integer giving the number of available slots.
+      slots: An integer giving the maximum allowed backlog of queued clients.
       latency: A float giving the number of seconds that the interface waits
-         between calls to the driver for data.
+         before updating the client list.
       mode: A string giving the type of socket used.
    """
 
@@ -330,17 +330,17 @@ class Interface(object):
    Attributes:
       address: A string giving the name of the host network.
       port: An integer giving the port the socket will be using.
-      slots: An integer giving the number of available slots.
+      slots: An integer giving the maximum allowed backlog of queued clients.
       mode: A string giving the type of socket used.
       latency: A float giving the number of seconds the interface will wait 
-         between calls to the driver for data.
+         before updating the client list.
       server: The socket used for data transmition.
       clients: A list of the driver clients connected to the server.
       requests: A list of all the jobs required in the current PIMD step.
       jobs: A list of all the jobs currently running.
-      _poll_thread: The thread the server is running on.
-      _prev_kill: Holds the signals to be sent to all clients when a kill 
-         signal is sent.
+      _poll_thread: The thread the poll loop is running on.
+      _prev_kill: Holds the signals to be sent to clean up the main thread 
+         when a kill signal is sent.
       _poll_true: A boolean giving whether the thread is alive.
    """
 
@@ -351,11 +351,11 @@ class Interface(object):
          address: An optional string giving the name of the host server.
             Defaults to 'localhost'.
          port: An optional integer giving the port number. Defaults to 31415.
-         slots: An optional integer giving the number of allowed clients. 
-            Defaults to 4.
+         slots: An optional integer giving the maximum allowed backlog of 
+            queueing clients. Defaults to 4.
          mode: An optional string giving the type of socket. Defaults to 'unix'.
          latency: An optional float giving the time in seconds the socket will 
-            wait between calls to the driver for data. Defaults to 1e-3.
+            wait before updating the client list. Defaults to 1e-3.
 
       Raises:
          NameError: Raised if mode is not 'unix' or 'inet'.
@@ -369,12 +369,12 @@ class Interface(object):
       
       if self.mode == "unix":
          self.server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-         self.server.bind("/tmp/wrappi_"+address)
+         self.server.bind("/tmp/wrappi_" + address)
       elif self.mode == "inet":
          self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
          self.server.bind((address,port))
       else:
-         raise NameError("Interface mode "+self.mode+" is not implemented (should be unix/inet)")
+         raise NameError("Interface mode " + self.mode + " is not implemented (should be unix/inet)")
 
       self.server.listen(slots)
       self.server.settimeout(SERVERTIMEOUT)
@@ -531,18 +531,15 @@ class Interface(object):
    def _kill_handler(self, signal, frame):
       """Deals with handling a kill call gracefully.
 
-      Prevents any of the threads becoming zombies, by transmitting a
-      kill signal to all running signals using the standard python function
-      signal.signal(). See also start_thread() and end_thread(). Called when 
-      signals SIG_INT and SIG_TERM are received.
+      Prevents any of the threads becoming zombies, by intercepting a
+      kill signal using the standard python function signal.signal() and
+      then closing the socket and the spawned threads before closing the main
+      thread. Called when signals SIG_INT and SIG_TERM are received.
 
       Args:
          signal: An integer giving the signal number of the signal received 
             from the socket.
          frame: Current stack frame.
-
-      Returns:
-         The previous signal handler. Used in start_thread.
       """
 
       print "kill called"
@@ -555,6 +552,13 @@ class Interface(object):
          self._prev_kill[signal](signal, frame)
       
    def _poll_loop(self):   
+      """The main thread loop.
+
+      Runs until either the program finishes or a kill call is sent. Updates
+      the pool of clients every UPDATEFREQ loops and loops every latency
+      seconds until _poll_true becomes false.
+      """
+
       poll_iter=0
       while self._poll_true:
          time.sleep(self.latency)
@@ -566,9 +570,21 @@ class Interface(object):
       self._poll_thread=None   
    
    def start_thread(self):
+      """Spawns a new thread.
+
+      Splits the main program into two threads, one that runs the polling loop
+      which updates the client list, and one which gets the data. Also sets up
+      the machinery to deal with a kill call, in the case of a Ctrl-C or
+      similar signal the signal is intercepted by the _kill_handler function, 
+      which cleans up the spawned thread before closing the main thread.
+
+      Raises:
+         NameError: Raised if the polling thread already exists.
+      """
+
       if not self._poll_thread is None:
          raise NameError("Polling thread already started")      
-      self._poll_thread = threading.Thread(target=self._poll_loop, name="poll_"+self.address)
+      self._poll_thread = threading.Thread(target=self._poll_loop, name="poll_" + self.address)
       self._poll_thread.daemon = True
       self._poll_true = True
       self._prev_kill[signal.SIGINT] = signal.signal(signal.SIGINT, self._kill_handler)
@@ -576,14 +592,27 @@ class Interface(object):
       self._poll_thread.start()
    
    def end_thread(self):
+      """Closes the spawned thread.
+
+      Deals with cleaning up the spawned thread cleanly. First sets 
+      _poll_true to false to indicate that the poll_loop should be exited, then
+      closes the spawned thread and removes it.
+      """
+
       self._poll_true=False
       if not self._poll_thread is None:
          self._poll_thread.join()
       self._poll_thread=None
    
    def __del__(self):
+      """Removes the socket.
+
+      Closes the interface and removes the socket. Also unlinks the socket if
+      possible, so that the port can be reused immediately.
+      """
+
       print "shutting down interface"
       self.server.shutdown(socket.SHUT_RDWR)
       self.server.close()
       if self.mode=="unix":
-         os.unlink("/tmp/wrappi_"+self.address)                 
+         os.unlink("/tmp/wrappi_" + self.address)                 
