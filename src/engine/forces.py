@@ -85,7 +85,7 @@ class ForceField(dobject):
          all at one time by the driver, so are collected together. Each separate
          object is then taken from the list. Depends on the atom positions and 
          the system box.
-      pot = The potential energy of the system.
+      pot = A float giving the potential energy of the system.
       f: An array containing all the components of the force of the form
          [x1, y1, z1, x2, y2, z2,..., xn, yn, zn].
       fx: A slice of f containing only the x components of the forces.
@@ -196,8 +196,8 @@ class ForceBeads(dobject):
    separate replicas, and collecting the data from each replica.
 
    Attributes:
-      natoms: Number of atoms.
-      nbeads: Number of beads.
+      natoms: An integer giving the number of atoms.
+      nbeads: An integer giving the number of beads.
       _forces: A list containing all the force objects for each system replica.
       Cb2nm: The transformation matrix between the bead and normal mode 
          representations.
@@ -209,8 +209,8 @@ class ForceBeads(dobject):
          Depends on each replica's ufv list.
       virs: A list containing the virial tensor for each system replica. 
          Depends on each replica's ufv list.
-      pot: The appropriate estimator for the potential energy.
-      vir: The appropriate estimator for the virial tensor.
+      pot: The sum of the potential energy of the replicas.
+      vir: The sum of the virial tensor of the replicas.
       fnm: An array containing the components of the force in the normal mode
          representation.
    """
@@ -356,7 +356,8 @@ class FFSocket(ForceField):
          communication between the forcefield and the driver is done.
       request: During the force calculation step this holds a dictionary
          containing the relevant data for determining the progress of the step.
-         Of the form {"status": status, "result": result}.
+         Of the form {"atoms": atoms, "cell": cell, "pars": parameters, 
+                      "status": status, "result": result}.
    """
 
    def __init__(self, pars=None, interface=None):

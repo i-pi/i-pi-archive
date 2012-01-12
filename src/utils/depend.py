@@ -161,6 +161,7 @@ class depend_base(object):
       if irm >=0: 
          self._dependants.pop(irm)
       #self._dependants = [dep for dep in self._dependants if dep is not rmdep]
+      #self._dependants.remove(rmdep)
          
    def add_dependant(self, newdep, tainted=True):
       """Adds a dependant property.
