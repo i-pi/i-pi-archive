@@ -64,9 +64,9 @@ class RestartForce(Restart):
       """
 
       if self.type.fetch().upper() == "SOCKET": 
-         force=FFSocket(pars=self.parameters.fetch(), interface=self.interface.fetch())
+         force = FFSocket(pars=self.parameters.fetch(), interface=self.interface.fetch())
       else: 
-         force=ForceField()
+         force = ForceField()
       return force
       
 
@@ -130,7 +130,7 @@ class ForceField(dobject):
       dset(self,"pot",depend_value(name="pot", func=self.get_pot, dependencies=[dget(self,"ufv")] )  )
       dset(self,"vir", depend_array(name="vir", value=np.zeros((3,3),float),func=self.get_vir, dependencies=[dget(self,"ufv")] ) )
       
-      fbase=np.zeros(atoms.natoms*3, float)
+      fbase = np.zeros(atoms.natoms*3, float)
       dset(self,"f", depend_array(name="f", value=fbase, func=self.get_f, dependencies=[dget(self,"ufv")]) )
       dset(self,"fx", depend_array(name="fx", value=fbase[0:3*atoms.natoms:3]));
       dset(self,"fy", depend_array(name="fy", value=fbase[1:3*atoms.natoms:3]));
@@ -183,8 +183,8 @@ class ForceField(dobject):
       """
 
       [pot, f, vir] = self.ufv
-      vir[1,0]=0.0
-      vir[2,0:2]=0.0
+      vir[1,0] = 0.0
+      vir[2,0:2] = 0.0
       return vir
 
 
@@ -246,12 +246,12 @@ class ForceBeads(dobject):
             each replica of the system.
       """
 
-      self.natoms=beads.natoms
-      self.nbeads=beads.nbeads
+      self.natoms = beads.natoms
+      self.nbeads = beads.nbeads
 
-      self._forces=[];
+      self._forces = [];
       for b in range(self.nbeads):
-         newf=force.copy()
+         newf = force.copy()
          newf.bind(beads[b], cell)
          self._forces.append(newf)
                
@@ -267,7 +267,7 @@ class ForceBeads(dobject):
           dependencies=[dget(self,"virs")] ) )
 
       dset(self,"fnm",depend_array(name="fnm",value=np.zeros((self.nbeads,3*self.natoms), float), func=self.b2nm_f, dependencies=[dget(self,"f")] ) )
-      self.Cb2nm=beads.Cb2nm
+      self.Cb2nm = beads.Cb2nm
       
    def b2nm_f(self): 
       """Transforms force to normal mode representation.
@@ -313,11 +313,11 @@ class ForceBeads(dobject):
          array for replica i of the system.
       """
 
-      newf=np.zeros((self.nbeads,3*self.natoms),float)
+      newf = np.zeros((self.nbeads,3*self.natoms),float)
       
       self.queue()
       for b in range(self.nbeads): 
-         newf[b]=self._forces[b].f
+         newf[b] = self._forces[b].f
 
       return newf
       
@@ -370,14 +370,14 @@ class FFSocket(ForceField):
 
       super(FFSocket,self).__init__() 
       if interface is None:
-         self.socket=Interface()
+         self.socket = Interface()
       else:
-         self.socket=interface
+         self.socket = interface
       if pars is None:
-         self.pars={}
+         self.pars = {}
       else:
-         self.pars=pars     
-      self.request=None
+         self.pars = pars     
+      self.request = None
       
    def copy(self):    
       """Creates a deep copy without the bound objects.
@@ -403,12 +403,12 @@ class FFSocket(ForceField):
       """
 
       if self.request is None: 
-         self.request=self.socket.queue(self.atoms, self.cell, self.pars)
+         self.request = self.socket.queue(self.atoms, self.cell, self.pars)
       while self.request["status"] != "Done": 
          time.sleep(self.socket.latency)
       self.socket.release(self.request)
-      result=self.request["result"]
-      self.request=None
+      result = self.request["result"]
+      self.request = None
       
       return result
       
@@ -421,4 +421,4 @@ class FFSocket(ForceField):
       """
 
       if self.request is None and dget(self,"ufv").tainted():
-         self.request=self.socket.queue(self.atoms, self.cell, self.pars)
+         self.request = self.socket.queue(self.atoms, self.cell, self.pars)

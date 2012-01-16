@@ -1,7 +1,7 @@
 """Contains simple algorithms.
 
 Functions:
-   matrix_exp: Computes the exponential of a general matrix via a Taylor series.
+   matrix_exp: Computes the exponential of a square matrix via a Taylor series.
    stab_cholesky: 
    h2abc: Takes the representation of a cell box in terms of an upper triangular
       matrix of column vectors, and returns the representation in terms of the 
@@ -16,11 +16,14 @@ Functions:
    exp_ut3x3: Computes the exponential of a 3*3 upper triangular matrix.
 """
 
+__all__ = ['matrix_exp', 'stab_cholesky', 'h2abc', 'abc2h', 'invert_ut3x3',
+           'det_ut3x3', 'eigensystem_ut3x3', 'exp_ut3x3']
+
 import numpy as np
 import math
 
 def matrix_exp(M, ntaylor=8, nsquare=8):
-   """Computes the exponential of a general matrix via a Taylor series.
+   """Computes the exponential of a square matrix via a Taylor series.
 
    Calculates the matrix exponential by first calculating exp(M/(2**nsquare)), 
    then squaring the result the appropriate number of times.

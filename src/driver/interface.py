@@ -399,7 +399,7 @@ class Interface(object):
             driver for initialisation. Defaults to {}.
       """
 
-      if pars if None:
+      if pars is None:
          pars = {}
       try:
          par_str = str(pars["eps"]) + " " + str(pars["sigma"]) + " " + str(pars["cutoff"]) + " " + str(pars["nearest_neighbour"])

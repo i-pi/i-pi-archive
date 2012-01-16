@@ -18,47 +18,62 @@ class MRG32k3a:
 
    @staticmethod
    def U01(status):
-      p1=MRG32k3a.a12*status[0,1]-MRG32k3a.a13n*status[0,0]
-      k=int(p1/MRG32k3a.m1)
+      p1 = MRG32k3a.a12*status[0,1] - MRG32k3a.a13n*status[0,0]
+      k = int(p1/MRG32k3a.m1)
 
-      p1=p1-k*MRG32k3a.m1
-      if (p1<0.0) : p1+=MRG32k3a.m1
-      status[0,0]=status[0,1]; status[0,1]=status[0,2]; status[0,2]=p1
+      p1 = p1 - k*MRG32k3a.m1
+      if (p1<0.0):
+         p1 += MRG32k3a.m1
+      status[0,0] = status[0,1]
+      status[0,1] = status[0,2]
+      status[0,2] = p1
 
-      p2=MRG32k3a.a21*status[1,2]-MRG32k3a.a23n*status[1,0]
-      k=int(p2/MRG32k3a.m2)
-      p2=p2-k*MRG32k3a.m2
-      if (p2<0.0): p2+=MRG32k3a.m2
-      status[1,0]=status[1,1]; status[1,1]=status[1,2]; status[1,2]=p2
+      p2 = MRG32k3a.a21*status[1,2] - MRG32k3a.a23n*status[1,0]
+      k = int(p2/MRG32k3a.m2)
+      p2 = p2-k*MRG32k3a.m2
+      if (p2<0.0):
+         p2 += MRG32k3a.m2
+      status[1,0] = status[1,1]
+      status[1,1] = status[1,2]
+      status[1,2] = p2
       
-      if (p1>p2):    u=(p1-p2)*MRG32k3a.norm
-      else:          u=(p1-p2+MRG32k3a.m1)*MRG32k3a.norm
+      if (p1>p2):
+         ui = (p1 - p2)*MRG32k3a.norm
+      else:
+         u = (p1 - p2 + MRG32k3a.m1)*MRG32k3a.norm
 
-      if (MRG32k3a.anti):  return 1-u
-      else:            return u
+      if (MRG32k3a.anti):
+         return 1 - u
+      else:
+         return u
 
 class Random(object):
    def __init__(self, seed=12345, state=None):
-      self.rng=np.random.mtrand.RandomState(seed=seed)
-      self.seed=seed
+      self.rng = np.random.mtrand.RandomState(seed=seed)
+      self.seed = seed
       if state is None:   
          self.rng.seed(seed)        
       else:
-         self.state=state
+         self.state = state
 
    @property
-   def state(self):        return self.rng.get_state()
+   def state(self):
+      return self.rng.get_state()
 
    @state.setter
-   def state(self, value): return self.rng.set_state(value)
+   def state(self, value):
+      return self.rng.set_state(value)
 
    @property
-   def u(self):   return self.rng.random_sample()
+   def u(self):
+      return self.rng.random_sample()
 
    @property
-   def g(self):   return self.rng.standard_normal()
+   def g(self):
+      return self.rng.standard_normal()
    
-   def gamma(self, k, theta=1.0): return self.rng.gamma(k,theta)
+   def gamma(self, k, theta=1.0):
+      return self.rng.gamma(k,theta)
       
 #      # generates a Gaussian variate with zero mean and unit varianceq
 #      # uses a ratio-of-uniforms rather than the usual box-mueller method
@@ -75,7 +90,8 @@ class Random(object):
 
 #      return v/u
 
-   def gvec(self, shape):    return self.rng.standard_normal(shape)
+   def gvec(self, shape):
+      return self.rng.standard_normal(shape)
 #      v=np.zeros(shape,float)
 #      sz=v.size; fv=v.flat
 #      for i in range(sz):
@@ -84,23 +100,25 @@ class Random(object):
 
 
 class RestartRandom(Restart):
-   fields={"seed" : (RestartValue, (int, 123456)), 
-            "state": (RestartArray, (np.uint, np.zeros(0, np.uint ))),
-            "has_gauss": (RestartValue, (int, 0)),  
-            "gauss": (RestartValue, (float,  0.00 )),
-            "set_pos": (RestartValue, (int, 0))
-          }
+   fields = {"seed" : (RestartValue, (int, 123456)), 
+             "state": (RestartArray, (np.uint, np.zeros(0, np.uint ))),
+             "has_gauss": (RestartValue, (int, 0)),  
+             "gauss": (RestartValue, (float,  0.00 )),
+             "set_pos": (RestartValue, (int, 0))
+            }
 
    def store(self, prng):
       self.seed.store(prng.seed)
-      gstate=prng.state
+      gstate = prng.state
       self.state.store(gstate[1])
       self.set_pos.store(gstate[2])
       self.has_gauss.store(gstate[3])
       self.gauss.store(gstate[4])
 
    def fetch(self):
-      state=self.state.fetch()
-      if state.shape==(0,): return Random(seed=self.seed.fetch())
-      else: return Random(state=('MT19937', self.state.fetch(), self.set_pos.fetch(), self.has_gauss.fetch(), self.gauss.fetch() ))
+      state = self.state.fetch()
+      if state.shape == (0,):
+         return Random(seed=self.seed.fetch())
+      else:
+         return Random(state=('MT19937', self.state.fetch(), self.set_pos.fetch(), self.has_gauss.fetch(), self.gauss.fetch() ))
 

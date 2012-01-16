@@ -64,11 +64,11 @@ class synchronizer(object):
       """
 
       if deps is None:
-         self.synced=dict()
+         self.synced = dict()
       else:
-         self.synced=deps
+         self.synced = deps
          
-      self.manual=None
+      self.manual = None
 
 
 #TODO put some error checks in the init to make sure that the object is initialized from consistent synchro and func states
@@ -126,26 +126,26 @@ class depend_base(object):
 
       self._dependants=[]
       if tainted is None:
-         tainted=np.array([True],bool)
+         tainted = np.array([True],bool)
       if dependants is None:
-         dependants=[]
+         dependants = []
       if dependencies is None:
-         dependencies=[]
-      self._tainted=tainted
-      self._func=func
-      self._name=name
-      self._synchro=synchro
+         dependencies = []
+      self._tainted = tainted
+      self._func = func
+      self._name = name
+      self._synchro = synchro
          
       for item in dependencies:
          item.add_dependant(self, tainted)
       
-      self._dependants=dependants
+      self._dependants = dependants
       if (tainted): 
          self.taint(taintme=tainted)
 
       if not self._synchro is None and not self._name in self._synchro.synced:
-         self._synchro.synced[self._name]=self
-         self._synchro.manual=self._name
+         self._synchro.synced[self._name] = self
+         self._synchro.manual = self._name
    
    def remove_dependant(self, rmdep):
       """Removes a dependency.
@@ -154,11 +154,11 @@ class depend_base(object):
          rmdep: The depend object to be removed from the dependency list.
       """
 
-      irm=-1
+      irm = -1
       for idep in range(len(self._dependants)): 
          if self._dependants[idep] is rmdep: 
-            irm=idep
-      if irm >=0: 
+            irm = idep
+      if irm >= 0: 
          self._dependants.pop(irm)
       #self._dependants = [dep for dep in self._dependants if dep is not rmdep]
       #self._dependants.remove(rmdep)
@@ -214,7 +214,7 @@ class depend_base(object):
          for v in self._synchro.synced.values():
             if (not v.tainted()) and (not v is self):
                v.taint(taintme=True)
-         self._tainted[:]=(taintme and (not self._name == self._synchro.manual))         
+         self._tainted[:] = (taintme and (not self._name == self._synchro.manual))         
       else: self._tainted[:] = taintme
       
    def tainted(self):
@@ -232,11 +232,11 @@ class depend_base(object):
          if (not self._name == self._synchro.manual):
             self.set(self._func[self._synchro.manual](), manual=False)
          else:
-            print "####"+self._name+" probably shouldn't be tainted (synchro)!"
+            print "####" + self._name + " probably shouldn't be tainted (synchro)!"
       elif not self._func is None: 
          self.set(self._func(), manual=False)
       else: 
-         print "####"+self._name+" probably shouldn't be tainted (value)!"
+         print "####" + self._name + " probably shouldn't be tainted (value)!"
 
    def update_man(self): 
       """Manual update routine.
@@ -250,12 +250,12 @@ class depend_base(object):
       """
 
       if not self._synchro is None:     
-         self._synchro.manual=self._name
+         self._synchro.manual = self._name
          for v in self._synchro.synced.values():
             v.taint(taintme=True)
-         self._tainted[:]=False      
+         self._tainted[:] = False      
       elif not self._func is None:
-         raise NameError("Cannot set manually the value of the automatically-computed property <"+self._name+">")
+         raise NameError("Cannot set manually the value of the automatically-computed property <" + self._name + ">")
       else:
          self.taint(taintme=False)     
             
@@ -295,7 +295,7 @@ class depend_value(depend_base):
             depends upon.
       """
 
-      self._value=value
+      self._value = value
       super(depend_value,self).__init__(name, synchro, func, dependants, dependencies, tainted)
 
    def get(self):
@@ -324,7 +324,7 @@ class depend_value(depend_base):
       manually updated.
       """
 
-      self._value=value
+      self._value = value
       self.taint(taintme=False)
       if (manual):
          self.update_man()
@@ -385,9 +385,9 @@ class depend_array(np.ndarray, depend_base):
 
       super(depend_array,self).__init__(name, synchro, func, dependants, dependencies, tainted)
       if storage is None:
-         self._storage=value
+         self._storage = value
       else:
-         self._storage=storage
+         self._storage = storage
             
    def __array_finalize__(self, obj):  
       """Deals with properly creating some arrays.
@@ -401,10 +401,10 @@ class depend_array(np.ndarray, depend_base):
       """
 
       depend_base.__init__(self, name="") 
-      self._storage=self
+      self._storage = self
    
    # whenever possible in compound operations just return a regular ndarray
-   __array_priority__=-1.0  
+   __array_priority__ = -1.0  
       
    def reshape(self, newshape):
       """Changes the shape of the base array.
@@ -501,10 +501,10 @@ class depend_array(np.ndarray, depend_base):
 
       self.taint(taintme=False)
       if manual:
-         self.base[index]=value
+         self.base[index] = value
          self.update_man()
       else:
-         self._storage[index]=value
+         self._storage[index] = value
       
    def __setslice__(self,i,j,value):
       """Overwrites standard set function."""
@@ -561,9 +561,9 @@ def dset(obj,member,value,name=None):
       KeyError: If member is not an attribute of obj.
    """
 
-   obj.__dict__[member]=value
+   obj.__dict__[member] = value
    if not name is None: 
-      obj.__dict__[member]._name=name
+      obj.__dict__[member]._name = name
    
 def depstrip(deparray):
    """Removes dependencies from a depend_array.
@@ -608,14 +608,14 @@ def depcopy(objfrom,memberfrom,objto,memberto):
    Args:
       See deppipe.
    """
-   dfrom=dget(objfrom,memberfrom)
-   dto=dget(objto,memberto)
-   dto._dependants=dfrom._dependants
-   dto._synchro=dfrom._synchro   
-   dto._tainted=dfrom._tainted
-   dto._func=dfrom._func
+   dfrom = dget(objfrom,memberfrom)
+   dto = dget(objto,memberto)
+   dto._dependants = dfrom._dependants
+   dto._synchro = dfrom._synchro   
+   dto._tainted = dfrom._tainted
+   dto._func = dfrom._func
    if hasattr(dfrom,"_storage"):
-      dto._storage=dfrom._storage
+      dto._storage = dfrom._storage
    
 
 class dobject(object): 
