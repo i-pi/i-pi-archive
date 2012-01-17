@@ -47,13 +47,26 @@ class Properties(dobject):
       cell: The Cell object in simul.
       forces: The Forces object in simul.
       property_dict: A dictionary containing all the properties that can be
-         output. All the following attributes are contained within it.
+         output.
       time: A float giving the time passed in the simulation.
       econs: A float giving the conserved quantity.
-      kin: A float giving the simulation kinetic energy. Not the same as the
-         actual kinetic energy in a PIMD code, as the PIMD simulation is held
-         at a higher temperature than a classical simulation.
-      kin: A float giving the potential energy.
+      kin: A float giving the classical kinetic energy estimator.
+      pot: A float giving the potential energy estimator.
+      temp: A float giving the classical kinetic temperature estimator.
+      cell_params: A list giving the lengths of the cell box and the angles
+         between them.
+      stress: An array giving the components of the classical stress tensor
+         estimator.
+      press: A float giving the classical pressure estimator.
+      kin_cv: A float giving the quantum centroid virial kinetic energy 
+         estimator.
+      kstress_cv: An array giving the components of the quantum centroid virial
+         kinetic stress tensor estimator.
+      stress_cv: An array giving the components of the quantum centroid virial
+         stress tensor estimator.
+      press_cv: A float giving the quantum centroid virial pressure estimator.
+      kin_yama: A float giving the quantum displaced path estimator for the
+         kinetic energy.
    """
 
    def __init__(self):
@@ -63,6 +76,31 @@ class Properties(dobject):
       self.fd_delta = -_DEFAULT_FINDIFF
       
    def bind(self, simul):
+      """Binds the necessary objects from the simulation to calculate the
+      required properties.
+
+      This function takes the appropriate simulation object, and creates the
+      property_dict object which holds all the objects which can be output.
+      It is given by: 
+      {'time': time elapsed,
+      'conserved': conserved quantity,
+      'kinetic_md': classical kinetic energy estimator,
+      'potential': potential energy estimator,
+      'temperature': classical kinetic temperature estimator,
+      'cell_parameters': simulation box lengths and the angles between them,
+      'V': simulation box volume,
+      'stress_md.xx': the xx component of the classical stress tensor estimator,
+      'pressure_md': classical pressure estimator
+      'kinetic_cv': quantum centroid virial kinetic energy estimator,
+      'stress_cv.xx': xx component of the quantum centroid virial estimator of 
+         the stress tensor,
+      'pressure_cv': quantum centroid virial pressure estimator
+      'kinetic_yamamoto': quantum displaced path kinetic energy estimator}.
+
+      Args:
+         simul: The Simulation object to be bound.
+      """
+
       self.ensemble = simul.ensemble
       self.beads = simul.beads
       self.cell = simul.cell
@@ -103,39 +141,69 @@ class Properties(dobject):
       dset(self, "press_cv", depend_value(name="press_cv", func=self.get_presscv, dependencies=[dget(self,"stress_cv")]))
       self.property_dict["pressure_cv"] = dget(self,"press_cv")
       
-      # creates dummy beads and forces to compute displaced and scaled estimators
       self.dbeads = simul.beads.copy()
       self.dforces = ForceBeads()
       self.dforces.bind(self.dbeads, self.simul.cell,  self.simul._forcemodel)     
-      
       dset(self, "kin_yama", depend_value(name="kin_yama", func=self.get_kinyama, dependencies=[dget(self.beads,"q"),dget(self.ensemble,"temp")]))
       self.property_dict["kinetic_yamamoto"] = dget(self,"kin_yama")
       
-      
    def get_kin(self):
+      """Calculates the classical kinetic energy estimator."""
+
       return self.beads.kin/self.beads.nbeads
+
    def get_time(self):
+      """Calculates the elapsed simulation time."""
+
       return (1 + self.simul.step)*self.ensemble.dt
+
    def __getitem__(self,key):
+      """Retrieves the item given by key.
+
+      Args:
+         key: A string contained in property_dict.
+      """
+
       return self.property_dict[key].get()
 
    def get_pot(self):
+      """Calculates the potential energy estimator."""
+
       return self.forces.pot/self.beads.nbeads
+
    def get_temp(self):
+      """Calculates the classical kinetic temperature estimator."""
+
       return self.beads.kin/(0.5*Constants.kb*(3*self.beads.natoms*self.beads.nbeads - (3 if self.ensemble.fixcom else 0))*self.beads.nbeads)
+
    def get_econs(self):
+      """Calculates the conserved quantity estimator."""
+
       return self.ensemble.econs/self.beads.nbeads
 
    def get_stress(self):
+      """Calculates the classical kinetic energy estimator."""
+
       return (self.forces.vir + self.beads.kstress)/self.cell.V
+
    def get_press(self):
+      """Calculates the classical pressure estimator."""
+
       return np.trace(self.stress)/3.0
+
    def get_stresscv(self):
+      """Calculates the quantum central virial stress tensor estimator."""
+
       return (self.forces.vir + self.kstress_cv)/self.cell.V                  
+
    def get_presscv(self):
+      """Calculates the quantum central virial pressure estimator."""
+
       return np.trace(self.stress_cv)/3.0
    
    def get_kincv(self):        
+      """Calculates the quantum central virial kinetic energy estimator."""
+
       kcv=0.0
       for b in range(self.beads.nbeads):
          kcv += np.dot(depstrip(self.beads.q[b]) - depstrip(self.beads.qc), depstrip(self.forces.f[b]))
@@ -144,6 +212,10 @@ class Properties(dobject):
       return kcv
 
    def get_kstresscv(self):        
+      """Calculates the quantum central virial kinetic stress tensor 
+      estimator.
+      """
+
       kst=np.zeros((3,3),float)
       q=depstrip(self.beads.q)
       qc=depstrip(self.beads.qc)
@@ -158,6 +230,7 @@ class Properties(dobject):
       return kst
 
    def get_kinyama(self):              
+      """Calculates the quantum displaced path kinetic energy estimator."""
       
       dbeta = abs(self.fd_delta)
       
@@ -186,6 +259,8 @@ class Properties(dobject):
       return kyama
          
    def get_cell_params(self):
+      """Returns a list of the cell box lengths and the angles between them."""
+
       a, b, c, alpha, beta, gamma = h2abc(self.cell.h)
       return [a, b, c, alpha, beta, gamma]
 
