@@ -1,3 +1,12 @@
+"""Holds the class which computes required simple properties.
+
+Classes:
+   Properties: This is the class that holds all the algorithms to calculate
+      the important properties that should be output.
+"""
+
+__all__ = ['properties']
+
 import numpy as np
 import math, random
 from utils.depend import *
@@ -8,23 +17,57 @@ from cell import *
 from ensembles import *
 from forces import *
 
-_DEFAULT_FINDIFF=1e-5
-_DEFAULT_FDERROR=1e-9
-_DEFAULT_MINFID=1e-12
+_DEFAULT_FINDIFF = 1e-5
+_DEFAULT_FDERROR = 1e-9
+_DEFAULT_MINFID = 1e-12
 class Properties(dobject):
-   """A proxy to compute and output properties of the system, which may require putting together bits and pieces
-      from different elements of the simulation."""   
+   """A proxy to compute and output properties of the system.
+
+   Takes the fundamental properties calculated during the simulation, and 
+   prepares them for output. It also contains simple algorithms to calculate
+   other properties not calculated during the simulation itself, so that 
+   these can also be output.
+
+   Attributes:
+      _DEFAULT_FINDIFF: A float giving the size of the finite difference
+         parameter used in the Yamamoto kinetic energy estimator.
+      fd_delta: Equivalent to _DEFAULT_FINDIFF.
+      _DEFAULT_FDERROR: A float giving the size of the minimum precision 
+         allowed for the finite difference calculation in the Yamamoto kinetic
+         energy estimator.
+      _DEFAULT_MINFID: A float giving the maximum displacement in the Yamamoto 
+         kinetic energy estimator.
+      dbeads: A dummy Beads object used in the Yamamoto kinetic energy
+         estimator.
+      dforces: A dummy Forces object used in the Yamamoto kinetic energy
+         estimator.
+      simul: The Simulation object containing the data to be output.
+      ensemble: The Ensemble object in simul.
+      beads: The Beads object in simul.
+      cell: The Cell object in simul.
+      forces: The Forces object in simul.
+      property_dict: A dictionary containing all the properties that can be
+         output. All the following attributes are contained within it.
+      time: A float giving the time passed in the simulation.
+      econs: A float giving the conserved quantity.
+      kin: A float giving the simulation kinetic energy. Not the same as the
+         actual kinetic energy in a PIMD code, as the PIMD simulation is held
+         at a higher temperature than a classical simulation.
+      kin: A float giving the potential energy.
+   """
 
    def __init__(self):
+      """Initialises Properties."""
+
       self.property_dict = {}
-      self.fd_delta=-_DEFAULT_FINDIFF
+      self.fd_delta = -_DEFAULT_FINDIFF
       
    def bind(self, simul):
       self.ensemble = simul.ensemble
       self.beads = simul.beads
       self.cell = simul.cell
       self.forces = simul.forces
-      self.simul=simul      
+      self.simul = simul      
 
       dset(self, "time", depend_value(name="time",  func=self.get_time, dependencies=[dget(self.simul,"step"), dget(self.ensemble,"dt")]))
       self.property_dict["time"] = dget(self,"time")
@@ -61,68 +104,84 @@ class Properties(dobject):
       self.property_dict["pressure_cv"] = dget(self,"press_cv")
       
       # creates dummy beads and forces to compute displaced and scaled estimators
-      self.dbeads=simul.beads.copy()
-      self.dforces=ForceBeads()
+      self.dbeads = simul.beads.copy()
+      self.dforces = ForceBeads()
       self.dforces.bind(self.dbeads, self.simul.cell,  self.simul._forcemodel)     
       
       dset(self, "kin_yama", depend_value(name="kin_yama", func=self.get_kinyama, dependencies=[dget(self.beads,"q"),dget(self.ensemble,"temp")]))
       self.property_dict["kinetic_yamamoto"] = dget(self,"kin_yama")
       
       
-   def get_kin(self):          return self.beads.kin/self.beads.nbeads
-   def get_time(self):         return (1+self.simul.step)*self.ensemble.dt
-   def __getitem__(self,key):  return self.property_dict[key].get()
+   def get_kin(self):
+      return self.beads.kin/self.beads.nbeads
+   def get_time(self):
+      return (1 + self.simul.step)*self.ensemble.dt
+   def __getitem__(self,key):
+      return self.property_dict[key].get()
 
-   def get_pot(self):          return self.forces.pot/self.beads.nbeads
-   def get_temp(self):         return self.beads.kin/(0.5*Constants.kb*(3*self.beads.natoms*self.beads.nbeads-(3 if self.ensemble.fixcom else 0))*self.beads.nbeads)
-   def get_econs(self):        return self.ensemble.econs/self.beads.nbeads
+   def get_pot(self):
+      return self.forces.pot/self.beads.nbeads
+   def get_temp(self):
+      return self.beads.kin/(0.5*Constants.kb*(3*self.beads.natoms*self.beads.nbeads - (3 if self.ensemble.fixcom else 0))*self.beads.nbeads)
+   def get_econs(self):
+      return self.ensemble.econs/self.beads.nbeads
 
-   def get_stress(self):  return (self.forces.vir+self.beads.kstress)/self.cell.V                  
-   def get_press(self):   return np.trace(self.stress)/3.0
-   def get_stresscv(self):  return (self.forces.vir+self.kstress_cv)/self.cell.V                  
-   def get_presscv(self):   return np.trace(self.stress_cv)/3.0
+   def get_stress(self):
+      return (self.forces.vir + self.beads.kstress)/self.cell.V
+   def get_press(self):
+      return np.trace(self.stress)/3.0
+   def get_stresscv(self):
+      return (self.forces.vir + self.kstress_cv)/self.cell.V                  
+   def get_presscv(self):
+      return np.trace(self.stress_cv)/3.0
    
    def get_kincv(self):        
       kcv=0.0
       for b in range(self.beads.nbeads):
-         kcv+=np.dot(depstrip(self.beads.q[b])-depstrip(self.beads.qc),depstrip(self.forces.f[b]))
-      kcv*=-0.5/self.beads.nbeads
-      kcv+=0.5*Constants.kb*self.ensemble.temp*(3*self.beads.natoms) 
+         kcv += np.dot(depstrip(self.beads.q[b]) - depstrip(self.beads.qc), depstrip(self.forces.f[b]))
+      kcv *= -0.5/self.beads.nbeads
+      kcv += 0.5*Constants.kb*self.ensemble.temp*(3*self.beads.natoms) 
       return kcv
 
    def get_kstresscv(self):        
       kst=np.zeros((3,3),float)
-      q=depstrip(self.beads.q); qc=depstrip(self.beads.qc); na3=3*self.beads.natoms;
+      q=depstrip(self.beads.q)
+      qc=depstrip(self.beads.qc)
+      na3=3*self.beads.natoms;
       for b in range(self.beads.nbeads):
          for i in range(3):
             for j in range(i,3):
-               kst[i,j]+=np.dot(q[b,i:na3:3]-qc[i:na3:3],depstrip(self.forces.f[b])[j:na3:3])
+               kst[i,j] += np.dot(q[b,i:na3:3] - qc[i:na3:3], depstrip(self.forces.f[b])[j:na3:3])
 
-      kst*=-1/self.beads.nbeads
-      for i in range(3): kst[i,i]+=Constants.kb*self.ensemble.temp*(3*self.beads.natoms) 
+      kst *= -1/self.beads.nbeads
+      for i in range(3): kst[i,i] += Constants.kb*self.ensemble.temp*(3*self.beads.natoms) 
       return kst
 
    def get_kinyama(self):              
       
-      dbeta=abs(self.fd_delta)
+      dbeta = abs(self.fd_delta)
       
-      v0=self.pot
+      v0 = self.pot
       while True: 
-         splus=math.sqrt(1.0+dbeta); sminus=math.sqrt(1.0-dbeta)
+         splus = math.sqrt(1.0 + dbeta)
+         sminus = math.sqrt(1.0 - dbeta)
          
          for b in range(self.beads.nbeads):
-            self.dbeads[b].q=self.beads.centroid.q*(1.0-splus)+splus*self.beads[b].q      
-         vplus=self.dforces.pot/self.beads.nbeads
+            self.dbeads[b].q = self.beads.centroid.q*(1.0 - splus) + splus*self.beads[b].q
+         vplus = self.dforces.pot/self.beads.nbeads
          
          for b in range(self.beads.nbeads):
-            self.dbeads[b].q=self.beads.centroid.q*(1.0-sminus)+sminus*self.beads[b].q      
-         vminus=self.dforces.pot/self.beads.nbeads
+            self.dbeads[b].q = self.beads.centroid.q*(1.0 - sminus) + sminus*self.beads[b].q      
+         vminus = self.dforces.pot/self.beads.nbeads
 
-         kyama=((1.0+dbeta)*vplus-(1.0-dbeta)*vminus)/(2*dbeta)-v0
-         kyama+=0.5*Constants.kb*self.ensemble.temp*(3*self.beads.natoms) 
-         if (self.fd_delta<0 and abs((vplus+vminus)/(v0*2)-1.0)>_DEFAULT_FDERROR and dbeta> _DEFAULT_MINFID):
-            dbeta*=0.5; print "Reducing displacement in Yamamoto kinetic estimator"; continue
-         else: break
+         kyama = ((1.0 + dbeta)*vplus - (1.0 - dbeta)*vminus)/(2*dbeta) - v0
+         kyama += 0.5*Constants.kb*self.ensemble.temp*(3*self.beads.natoms) 
+         if (self.fd_delta < 0 and abs((vplus + vminus)/(v0*2) - 1.0) > _DEFAULT_FDERROR and dbeta > _DEFAULT_MINFID):
+            dbeta *= 0.5
+            print "Reducing displacement in Yamamoto kinetic estimator"
+            continue
+         else:
+            break
          
       return kyama
          
