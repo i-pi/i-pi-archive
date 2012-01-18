@@ -148,6 +148,21 @@ class Properties(dobject):
       dset(self, "kin_yama", depend_value(name="kin_yama", func=self.get_kinyama, dependencies=[dget(self.beads,"q"),dget(self.ensemble,"temp")]))
       self.property_dict["kinetic_yamamoto"] = dget(self,"kin_yama")
       
+   def add_property(self, prop_name, dep_name, func, deps=None):
+      "Adds a property to the property list.
+
+      Args:
+         prop_name: A string giving the keyword that will identify the property 
+            in the output list.
+         dep_name: A string giving the name of the attribute created in the 
+            Properties object.
+         func: The function used to compute the property.
+         deps: A list of depend objects on which the property will depend upon.
+      """
+
+      dset(self, dep_name, depend_value(name=dep_name, func=func, dependencies=deps))
+      self.property_dict[prop_name] = dget(self, dep_name)
+
    def get_kin(self):
       """Calculates the classical kinetic energy estimator."""
 
@@ -176,7 +191,12 @@ class Properties(dobject):
       return self.forces.pot/self.beads.nbeads
 
    def get_temp(self):
-      """Calculates the classical kinetic temperature estimator."""
+      """Calculates the classical kinetic temperature estimator.
+
+      Note that in the case that the centre of mass constraint there will be
+      one less degree of freedom than without, so this has to be taken into
+      account when calculating the kinetic temperature.
+      """
 
       return self.beads.kin/(0.5*Constants.kb*(3*self.beads.natoms*self.beads.nbeads - (3 if self.ensemble.fixcom else 0))*self.beads.nbeads)
 
@@ -220,21 +240,26 @@ class Properties(dobject):
       estimator.
       """
 
-      kst=np.zeros((3,3),float)
-      q=depstrip(self.beads.q)
-      qc=depstrip(self.beads.qc)
-      na3=3*self.beads.natoms;
+      kst = np.zeros((3,3),float)
+      q = depstrip(self.beads.q)
+      qc = depstrip(self.beads.qc)
+      na3 = 3*self.beads.natoms;
       for b in range(self.beads.nbeads):
          for i in range(3):
             for j in range(i,3):
                kst[i,j] += np.dot(q[b,i:na3:3] - qc[i:na3:3], depstrip(self.forces.f[b])[j:na3:3])
 
       kst *= -1/self.beads.nbeads
-      for i in range(3): kst[i,i] += Constants.kb*self.ensemble.temp*(3*self.beads.natoms) 
+      for i in range(3):
+         kst[i,i] += Constants.kb*self.ensemble.temp*(3*self.beads.natoms) 
       return kst
 
    def get_kinyama(self):              
-      """Calculates the quantum scaled coordinate kinetic energy estimator."""
+      """Calculates the quantum scaled coordinate kinetic energy estimator.
+
+      Uses a finite difference method to calculate the kinetic energy estimator
+      without requiring the forces as for the centroid virial estimator.
+      """
       
       dbeta = abs(self.fd_delta)
       

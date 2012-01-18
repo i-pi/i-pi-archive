@@ -21,7 +21,6 @@ from utils.restart import *
 import utils.io.io_pdb
 from utils.mathtools import *
 from utils import units
-import pdb
          
 class Cell(dobject):
    """Base class to represent the simulation cell in a periodic system.
@@ -47,8 +46,8 @@ class Cell(dobject):
 
       Args:
          h: Optional array giving the initial lattice vector matrix. The 
-            reference cell matrix is set equal to this. Defaults to a 3*3 
-            identity matrix.
+            reference cell matrix is set equal to this. Must be an upper
+            triangular 3*3 matrix. Defaults to a 3*3 identity matrix.
          m: Optional float giving the effective mass of the cell. Defaults to 1.
       """
       
@@ -87,6 +86,9 @@ class Cell(dobject):
       """Uses the minimum image convention to return a particle to the
          unit cell.
 
+      Args:
+         atom: An Atom object.
+
       Returns:
          An array giving the position of the image that is inside the 
          system box.
@@ -104,6 +106,10 @@ class Cell(dobject):
       This is only rigorously accurate in the case of a cubic cell,
       but gives the correct results as long as the cut-off radius is defined
       as smaller than the smallest width between parallel faces.
+
+      Args:
+         atom1: An Atom object.
+         atom2: An Atom object.
 
       Returns:
          An array giving the minimum distance between the positions of atoms 
@@ -133,14 +139,27 @@ class CellFlexi(Cell):
          matrix in vector form.
       m6: An array with 6 components all equal to the cell mass. Used when all
          the cell degrees of freedom need to be divided by the cell mass.
+      V: A float giving the volume of the system box.
+      V0: A float giving the volume of the reference cell.
       kin: The kinetic energy of the cell.
    """
 
    def __init__(self, h=None, h0=None, m=1.0):    
+      """Initialises flexible cell class.
+
+      Args:
+         h: Optional array giving the initial lattice vector matrix. The 
+            reference cell matrix is set equal to this. Must be an upper
+            triangular 3*3 matrix. Defaults to a 3*3 identity matrix.
+         h0: Optional array giving the reference lattice vector matrix. 
+            Must be an upper triangular 3*3 matrix. Defaults to a h.
+         m: Optional float giving the effective mass of the cell. Defaults to 1.
+      """
 
       if h is None:
          h = np.identity(3, float)
       super(CellFlexi,self).__init__(h=h, m=m)
+
       sync_h=synchronizer()
       sync_p=synchronizer()
       dset(self, "h6", depend_array(name="h6", value=np.zeros(6,float), func={"h":self.htoh6}, synchro=sync_h) )      
@@ -218,18 +237,28 @@ class CellFlexi(Cell):
       return p
    
    def mtom6(self):
-      """."""
+      """Creates a mass vector.
 
-      m6=np.zeros(6, float)
-      m6=self.m
+      Makes a 6 component vector with all the components equal to the cell mass.
+      Used in algorithms that require that the mass associated with each degree
+      of freedom be given, such as in the thermostat.
+
+      Returns:
+         A vector with 6 components.
+      """
+
+      m6 = np.zeros(6, float)
+      m6 = self.m
       return m6
       
    def get_volume(self):
-      """Calculates the volume of the unit cell, assuming an upper-triangular
-         lattice vector matrix"""         
+      """Calculates the volume of the system box."""         
+
       return det_ut3x3(self.h)
 
    def get_volume0(self):
+      """Calculates the volume of the reference box."""
+
       return det_ut3x3(self.h0)
             
    def get_kin(self):
@@ -239,26 +268,47 @@ class CellFlexi(Cell):
       
       
 class CellRigid(Cell):
-   def __init__(self, h =None, m=1.0):    
-      if h is None: h=np.identity(3, float)     
-      
+   """Cell object for isotropic cell dynamics simulations.
+
+   Note that in this class, as the cell box shape is fixed, the main 
+   dynamical variable is the volume, not any of the lattice parameters, so
+   the lattice vector matrix is taken to depend upon the volume rather than 
+   the other way around.
+
+   Attributes:
+      V: A float giving the volume of the system box.
+      V0: A float giving the volume of the reference cell.
+      P: A float givin the rate of change of volume divided by the cell mass,
+         in effect the volume momentum.
+      M: An array of one element, containing the mass. Used to access the mass 
+         as an array in the thermostating step.
+      kin: The kinetic energy of the cell.
+   """
+
+   def __init__(self, h=None, m=1.0):    
+      """Initialises rigid cell class.
+
+      Args:
+         h: Optional array giving the initial lattice vector matrix. The 
+            reference cell matrix is set equal to this. Must be an upper
+            triangular 3*3 matrix. Defaults to a 3*3 identity matrix.
+         m: Optional float giving the effective mass of the cell. Defaults to 1.
+      """
+
+      if h is None:
+         h=np.identity(3, float)
       super(CellRigid,self).__init__(h, m)
 
-      #reference cell volume
       dset(self, "V0", depend_value(name = 'V0', func=self.get_volume0, dependencies=[dget(self,"h0")]) )
       dset(self, "V", depend_value(name = 'V', value=self.get_volume0()) )
 
-      # here h0 is taken as the reference cell, and the real dynamical variable is the volume. Hence, h is a derived quantity            
       dset(self, "h", depend_array(name = 'h', value = h, func=self.Vtoh, dependencies=[dget(self,"V"),dget(self,"h0")]) )
       dset(self, "ih" , depend_array(name = "ih", value = np.zeros((3,3),float), func=self.get_ih, dependencies=[dget(self,"h")]) )
 
-
-      # rate of volume change times m ("volume momentum")      
       dset(self, "P", depend_array(name = 'P', value=np.zeros(1,float)) )
-      # array-like access to the mass (useful for thermostatting)
       dset(self, "M", depend_array(name="M", value=np.zeros(1,float), func=self.mtoM, dependencies=[dget(self,"m")]) )
       
-      # this must be well-thought
+      #TODO this must be well-thought
       dset(self, "p", depend_array(name = 'p', value = np.zeros((3,3),float), func=self.Ptop, dependencies=[dget(self,"P"),dget(self,"h0")]) )
 
       dset(self, "kin", depend_value(name = "kin", func=self.get_kin, dependencies=[dget(self,"P"),dget(self,"m")]) )
