@@ -113,7 +113,12 @@ class Driver(socket.socket):
       self.status = self._getstatus()
       
    def _getstatus(self):   
-      """Gets driver status."""
+      """Gets driver status.
+
+      Returns:
+         An integer labelling the status via bitwise or of the relevant members
+         of Status.
+      """
 
       if not self.busyonstatus:
          try:
@@ -155,6 +160,9 @@ class Driver(socket.socket):
 
       Raises:
          Disconnected: Raised if client is disconnected.
+
+      Returns:
+         The data read from the socket to be read into dest.
       """
 
       blen = dest.itemsize*dest.size
@@ -242,6 +250,9 @@ class Driver(socket.socket):
       Raises:
          InvalidStatus: Raised if the status is not HasData.
          Disconnected: Raised if the driver has disconnected.
+
+      Returns:
+         A list of the form [potential, force, virial].
       """
 
       if (self.status & Status.HasData):
@@ -397,6 +408,13 @@ class Interface(object):
          cell: A Cell object giving the system box.
          pars: An optional dictionary giving the parameters to be sent to the
             driver for initialisation. Defaults to {}.
+
+      Returns:
+         A list giving the status of the request of the form {'atoms': Atoms 
+         object giving the atom positions, 'cell': Cell object giving the
+         system box, 'pars': parameter string, 'result': holds the result as a
+         list once the computation is done, 'status': a string labelling the 
+         status}.
       """
 
       if pars is None:

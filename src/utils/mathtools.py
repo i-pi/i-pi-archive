@@ -3,12 +3,12 @@
 Functions:
    matrix_exp: Computes the exponential of a square matrix via a Taylor series.
    stab_cholesky: 
-   h2abc: Takes the representation of a cell box in terms of an upper triangular
-      matrix of column vectors, and returns the representation in terms of the 
-      box lengths and the angles between them.
-   abc2h: Takes the representation of a cell box in terms of the box lengths
-      and the angles between them, and returns the representation in terms of an
-      upper triangular matrix of column vectors.
+   h2abc: Takes the representation of the system box in terms of an upper 
+      triangular matrix of column vectors, and returns the representation in 
+      terms of the lattice vector lengths and the angles between them.
+   abc2h: Takes the representation of the system box in terms of the lattice 
+      vector lengths and the angles between them, and returns the 
+      representation in terms of an upper triangular lattice vector matrix.
    invert_ut3x3: Inverts a 3*3 upper triangular matrix.
    det_ut3x3(h): Finds the determinant of a 3*3 upper triangular matrix.
    eigensystem_ut3x3: Finds the eigenvector matrix and eigenvalues of a 3*3
@@ -34,6 +34,9 @@ def matrix_exp(M, ntaylor=8, nsquare=8):
          Defaults to 8.
       nsquare: Optional integer giving how many times the original matrix will
          be halved. Defaults to 8.
+
+   Returns:
+      The matrix exponential of M.
    """
 
    n = M.shape[1]
@@ -86,6 +89,9 @@ def h2abc(h):
 
    Args: 
       h: Cell matrix in upper triangular column vector form.
+
+   Returns:
+      A list containing the lattice vector lengths and the angles between them.
    """
    
    a = float(h[0,0])
@@ -108,6 +114,9 @@ def abc2h(a, b, c, alpha, beta, gamma):
       alpha: Angle between sides b and c.
       beta: Angle between sides a and c.
       gamma: Angle between sides b and a.
+
+   Returns:
+      An array giving the lattice vector matrix in upper triangular form.
    """
 
    h = np.zeros((3,3) ,float)
@@ -124,6 +133,9 @@ def invert_ut3x3(h):
 
    Args:
       h: An upper triangular 3*3 matrix.
+
+   Returns:
+      The inverse matrix of h.
    """
 
    ih = np.zeros((3,3), float)
@@ -139,6 +151,9 @@ def eigensystem_ut3x3(p):
 
    Args:
       p: An upper triangular 3*3 matrix.
+
+   Returns:
+      An array giving the 3 eigenvalues of p, and the eigenvector matrix of p.
    """
 
    eigp = np.zeros((3,3), float)
@@ -163,6 +178,9 @@ def det_ut3x3(h):
 
    Args:
       h: An upper triangular 3*3 matrix.
+
+   Returns:
+      The determinant of h.
    """
 
    return h[0,0]*h[1,1]*h[2,2]
@@ -176,9 +194,10 @@ def exp_ut3x3(h):
    denominator tends to zero are calculated via a Taylor series in this limit.
 
    Args:
-      MINSERIES: A float giving the minimum size of the denominator before we
-         revert to calculating it by a Taylor series.
       h: An upper triangular 3*3 matrix.
+
+   Returns:
+      The matrix exponential of h.
    """
    eh = np.zeros((3,3), float)
    e00 = math.exp(h[0,0])

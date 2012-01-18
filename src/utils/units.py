@@ -20,6 +20,7 @@ class Constants:
    hbar = 1.0
    amu = 1822.8885
 
+
 class Elements(dict):
    """Class which contains the mass of different elements.
 
@@ -47,6 +48,9 @@ class Elements(dict):
 
       Args:
          label: The atomic symbol of the atom whose mass is required.
+
+      Returns:
+         A float giving the mass of the atom with atomic symbol label.
       """
 
       return cls.mass_list[label]*Constants.amu

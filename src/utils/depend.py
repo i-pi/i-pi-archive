@@ -215,7 +215,8 @@ class depend_base(object):
             if (not v.tainted()) and (not v is self):
                v.taint(taintme=True)
          self._tainted[:] = (taintme and (not self._name == self._synchro.manual))         
-      else: self._tainted[:] = taintme
+      else:
+         self._tainted[:] = taintme
       
    def tainted(self):
       """Returns tainted flag."""
@@ -419,7 +420,11 @@ class depend_array(np.ndarray, depend_base):
       return depend_array(self.base.reshape(newshape), name=self._name, synchro=self._synchro, func=self._func, dependants=self._dependants, tainted=self._tainted, storage=self._storage)  
 
    def flatten(self):
-      """Makes the base array one dimensional."""
+      """Makes the base array one dimensional.
+
+      Returns:
+         A flattened array.
+      """
 
       return self.reshape(self.size)
    

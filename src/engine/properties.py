@@ -163,6 +163,9 @@ class Properties(dobject):
 
       Args:
          key: A string contained in property_dict.
+
+      Returns:
+         The property labelled by the keyword key.
       """
 
       return self.property_dict[key].get()
@@ -260,7 +263,11 @@ class Properties(dobject):
       return kyama
          
    def get_cell_params(self):
-      """Returns a list of the cell box lengths and the angles between them."""
+      """Returns a list of the cell box lengths and the angles between them.
+
+      Returns:
+         A list of the form [a, b, c, alpha, beta, gamma].
+      """
 
       a, b, c, alpha, beta, gamma = h2abc(self.cell.h)
       return [a, b, c, alpha, beta, gamma]

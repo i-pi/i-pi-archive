@@ -119,7 +119,7 @@ class ForceField(dobject):
 
       Args:
          atoms: The Atoms object from which the positions are taken.
-         cell: The Cell object from which the cell box is taken.
+         cell: The Cell object from which the system box is taken.
       """
 
       self.atoms = atoms
