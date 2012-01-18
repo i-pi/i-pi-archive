@@ -1,1 +1,1 @@
-__all__ = ["atoms", "cell", "simulation", "forces", "ensembles", "properties", "thermostats", "barostats","beads", "output"]
+__all__ = ["atoms", "cell", "simulation", "forces", "ensembles", "properties", "thermostats", "barostats","beads",]

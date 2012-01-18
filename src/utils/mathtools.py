@@ -98,8 +98,8 @@ def h2abc(h):
    return a, b, c, alpha, beta, gamma
 
 def abc2h(a, b, c, alpha, beta, gamma):
-   """Returns a cell matrix given a description in terms of the vector lengths
-      and the angles in between.
+   """Returns a lattice vector matrix given a description in terms of the 
+   lattice vector lengths and the angles in between.
 
    Args:
       a: First cell vector length.
@@ -157,8 +157,9 @@ def eigensystem_ut3x3(p):
 def det_ut3x3(h):
    """Calculates the determinant of a 3*3 upper triangular matrix.
 
-   Note that the volume of the unit cell when the cell box is expressed as a 
-   3*3 upper triangular matrix is given by the determinant of this matrix.
+   Note that the volume of the system box when the lattice vector matrix is 
+   expressed as a 3*3 upper triangular matrix is given by the determinant of 
+   this matrix.
 
    Args:
       h: An upper triangular 3*3 matrix.

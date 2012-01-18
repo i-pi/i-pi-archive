@@ -1,11 +1,12 @@
-"""Holds the class which computes required simple properties.
+"""Holds the class which computes important properties of the system, and 
+prepares them for output.
 
 Classes:
    Properties: This is the class that holds all the algorithms to calculate
       the important properties that should be output.
 """
 
-__all__ = ['properties']
+__all__ = ['Properties']
 
 import numpy as np
 import math, random
@@ -53,7 +54,7 @@ class Properties(dobject):
       kin: A float giving the classical kinetic energy estimator.
       pot: A float giving the potential energy estimator.
       temp: A float giving the classical kinetic temperature estimator.
-      cell_params: A list giving the lengths of the cell box and the angles
+      cell_params: A list giving lattice vector lengths and the angles
          between them.
       stress: An array giving the components of the classical stress tensor
          estimator.
@@ -65,7 +66,7 @@ class Properties(dobject):
       stress_cv: An array giving the components of the quantum centroid virial
          stress tensor estimator.
       press_cv: A float giving the quantum centroid virial pressure estimator.
-      kin_yama: A float giving the quantum displaced path estimator for the
+      kin_yama: A float giving the quantum scaled coordinate estimator for the
          kinetic energy.
    """
 
@@ -82,20 +83,20 @@ class Properties(dobject):
       This function takes the appropriate simulation object, and creates the
       property_dict object which holds all the objects which can be output.
       It is given by: 
-      {'time': time elapsed,
-      'conserved': conserved quantity,
-      'kinetic_md': classical kinetic energy estimator,
-      'potential': potential energy estimator,
-      'temperature': classical kinetic temperature estimator,
-      'cell_parameters': simulation box lengths and the angles between them,
-      'V': simulation box volume,
-      'stress_md.xx': the xx component of the classical stress tensor estimator,
-      'pressure_md': classical pressure estimator
-      'kinetic_cv': quantum centroid virial kinetic energy estimator,
+      {'time': Time elapsed,
+      'conserved': Conserved quantity,
+      'kinetic_md': Classical kinetic energy estimator,
+      'potential': Potential energy estimator,
+      'temperature': Classical kinetic temperature estimator,
+      'cell_parameters': Lattice vector lengths and the angles between them,
+      'V': Simulation box volume,
+      'stress_md.xx': The xx component of the classical stress tensor estimator,
+      'pressure_md': Classical pressure estimator
+      'kinetic_cv': Quantum centroid virial kinetic energy estimator,
       'stress_cv.xx': xx component of the quantum centroid virial estimator of 
          the stress tensor,
-      'pressure_cv': quantum centroid virial pressure estimator
-      'kinetic_yamamoto': quantum displaced path kinetic energy estimator}.
+      'pressure_cv': Quantum centroid virial pressure estimator
+      'kinetic_yamamoto': Quantum scaled coordinate kinetic energy estimator}.
 
       Args:
          simul: The Simulation object to be bound.
@@ -230,7 +231,7 @@ class Properties(dobject):
       return kst
 
    def get_kinyama(self):              
-      """Calculates the quantum displaced path kinetic energy estimator."""
+      """Calculates the quantum scaled coordinate kinetic energy estimator."""
       
       dbeta = abs(self.fd_delta)
       

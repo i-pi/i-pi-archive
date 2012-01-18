@@ -615,4 +615,4 @@ class Interface(object):
       self.server.shutdown(socket.SHUT_RDWR)
       self.server.close()
       if self.mode=="unix":
-         os.unlink("/tmp/wrappi_" + self.address)                 
+         os.unlink("/tmp/wrappi_" + self.address)

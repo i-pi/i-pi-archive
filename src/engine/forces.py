@@ -16,9 +16,8 @@ Classes:
 __all__ = ['RestartForce', 'ForceField', 'ForceBeads', 'FFSocket']
 
 import numpy as np
-import math, time, threading
+import math, time
 from utils.depend import *
-from utils.io import io_system
 from driver.interface import Interface, RestartInterface
 from utils.restart import *
 

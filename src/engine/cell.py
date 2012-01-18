@@ -1,3 +1,19 @@
+"""Contains the classes which deal with the system box. 
+
+Used for implementing the minimum image convention, as well as holding the 
+dynamical variables and the methods required for variable cell NST and NPT 
+dynamics.
+
+Classes: 
+   Cell: Base cell class with the generic methouds and attributes.
+   CellFlexi: Cell class with methods for flexible cell dynamics.
+   CellRigid: Cell class with methods for isotropic cell dynamics.
+   RestartCell: Deals with creating the Cell object from a file, and writing
+      the checkpoints.
+"""
+
+__all__ = ['Cell', 'CellFlexi', 'CellRigid', 'RestartCell']
+
 import numpy as np
 import math
 from utils.depend import *
@@ -8,29 +24,41 @@ from utils import units
 import pdb
          
 class Cell(dobject):
-   """Represents the simulation cell in a periodic system
-      Contains: h = lattice vector matrix, p = lattice momentum matrix (NST),
-      pc = lattice scalar momentum (NPT), w = barostat mass, pext = external 
-      pressure tensor, V = volume, ih = inverse lattice matrix, 
-      (h0, ih0, V0) = as above, but for reference cell (pext = 0), 
-      kin = kinetic energy, pot = strain potential, 
-      strain = strain tensor, piext = external stress tensor
-      Initialised by: cell = Cell(h, w, h0, pext)
-      h is the lattice vector matrix
-      w = barostat mass, default = 1.0
-      h0 = reference cell, default = h
-      pext = external pressure tensor, default = 0"""
+   """Base class to represent the simulation cell in a periodic system.
 
-   def __init__(self, h = None, m=1.0):      
+   This class has the base attributes required for either flexible or 
+   isotropic cell dynamics. Uses an upper triangular matrix to prevent 
+   unphysical rotations of the cell (see P. Raiteri, J. Gale and G. Bussi, 
+   J. Phys.: Condens. Matter 23 334213 (2011)).
+
+   Attributes:
+      h: An array giving the lattice vector matrix.
+      p: An array giving the lattice vector momenta.
+      m: A float giving the effective cell mass.
+      h0: An array giving the reference lattice vector matrix, under no
+         external pressure.
+      ih: An array giving the inverse of h.
+      ih0: An array giving the inverse of h0.
+      strain: An array giving the strain tensor.
+   """
+
+   def __init__(self, h=None, m=1.0):      
+      """Initialises base cell class.
+
+      Args:
+         h: Optional array giving the initial lattice vector matrix. The 
+            reference cell matrix is set equal to this. Defaults to a 3*3 
+            identity matrix.
+         m: Optional float giving the effective mass of the cell. Defaults to 1.
+      """
       
-      if h is None: h=np.identity(3, float)      
-      #un-dependent properties
+      if h is None:
+         h = np.identity(3, float)      
       dset(self,"h",depend_array(name = 'h', value = h) )
       dset(self,"p",depend_array(name = 'p', value = np.zeros((3,3),float)) )
       dset(self,"m",depend_value(name = "m", value = m) )
 
-      #reference cell      
-      h0=np.array(h,copy=True)
+      h0 = np.array(h,copy=True)
       dset(self,"h0",depend_array(name = 'h0', value = h0 ) )
             
       dset(self, "ih" , depend_array(name = "ih", value = np.zeros((3,3),float), func=self.get_ih, dependencies=[dget(self,"h")]) )
@@ -38,12 +66,17 @@ class Cell(dobject):
       dset(self, "strain", depend_value(name = "strain", func=self.get_strain, dependencies=[dget(self,"h"),dget(self,"h0")]) )
             
    def get_ih(self):
-      """Inverts a 3*3 (upper-triangular) cell matrix"""
-      return invert_ut3x3(self.h)      
-   def get_ih0(self):      return invert_ut3x3(self.h0)      
+      """Inverts the lattice vector matrix."""
+
+      return invert_ut3x3(self.h)  
+    
+   def get_ih0(self):
+      """Inverts the reference lattice vector matrix."""
+
+      return invert_ut3x3(self.h0)      
 
    def get_strain(self):
-      """Computes the strain tensor from the unit cell and reference cell"""
+      """Computes the strain tensor from the unit cell and reference cell."""
 
       root = np.dot(self.h, self.ih0).view(np.ndarray)
       eps = np.dot(np.transpose(root), root) - np.identity(3, float)
@@ -52,23 +85,25 @@ class Cell(dobject):
       
    def apply_pbc(self, atom):
       """Uses the minimum image convention to return a particle to the
-         unit cell"""
-      s=np.dot(self.ih,atom.q)
+         unit cell."""
+
+      s = np.dot(self.ih,atom.q)
       for i in range(3):
          s[i] = s[i] - round(s[i])
       return np.dot(self.h,s)
 
    def minimum_distance(self, atom1, atom2):
       """Takes two atoms and tries to find the smallest vector between two 
-         images. This is only rigorously accurate in the case of a cubic cell,
-         but gives the correct results as long as the cut-off radius is defined
-         as smaller than the smallest width between parallel faces."""
+      images. 
 
-      s=np.dot(self.ih,atom1.q-atom2.q)
-      
+      This is only rigorously accurate in the case of a cubic cell,
+      but gives the correct results as long as the cut-off radius is defined
+      as smaller than the smallest width between parallel faces.
+      """
+
+      s = np.dot(self.ih,atom1.q-atom2.q)
       for i in range(3):
          s[i] -= round(s[i])
-         
       return np.dot(self.h, s)
 
 
