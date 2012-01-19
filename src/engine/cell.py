@@ -62,7 +62,7 @@ class Cell(dobject):
             
       dset(self, "ih" , depend_array(name = "ih", value = np.zeros((3,3),float), func=self.get_ih, dependencies=[dget(self,"h")]) )
       dset(self, "ih0" , depend_array(name = "ih0", value = np.zeros((3,3),float), func=self.get_ih0, dependencies=[dget(self,"h0")]) )
-      dset(self, "strain", depend_value(name = "strain", func=self.get_strain, dependencies=[dget(self,"h"),dget(self,"h0")]) )
+      dset(self, "strain", depend_value(name = "strain", func=self.get_strain, dependencies=[dget(self,"h"),dget(self,"ih0")]) )
             
    def get_ih(self):
       """Inverts the lattice vector matrix."""
@@ -77,7 +77,7 @@ class Cell(dobject):
    def get_strain(self):
       """Computes the strain tensor from the unit cell and reference cell."""
 
-      root = np.dot(self.h, self.ih0).view(np.ndarray)
+      root = np.dot(depstrip(self.h), depstrip(self.ih0))
       eps = np.dot(np.transpose(root), root) - np.identity(3, float)
       eps *= 0.5
       return eps
@@ -170,7 +170,7 @@ class CellFlexi(Cell):
       dset(self, "m6", depend_array(name= "m6", value=np.zeros(6,float), func=self.mtom6, dependencies=[dget(self,"m")]) )
 
       dset(self, "ih", depend_array(name = "ih", value = np.zeros((3,3),float), func=self.get_ih, dependencies=[dget(self,"h")]) )
-      dset(self, "strain", depend_value(name = "strain", func=self.get_strain, dependencies=[dget(self,"h"),dget(self,"h0")]) )
+      dset(self, "strain", depend_value(name = "strain", func=self.get_strain, dependencies=[dget(self,"h"),dget(self,"ih0")]) )
       
       if not h0 is None:
          self.h0 = h0
@@ -178,7 +178,7 @@ class CellFlexi(Cell):
       dset(self, "V", depend_value(name = 'V', func=self.get_volume, dependencies=[dget(self,"h")]) )
       dset(self, "V0", depend_value(name = 'V0', func=self.get_volume0, dependencies=[dget(self,"h0")]) )
       
-      dset(self, "kin", depend_value(name = "kin", func=self.get_kin, dependencies=[dget(self,"p"),dget(self,"m")]) )
+      dset(self, "kin", depend_value(name = "kin", func=self.get_kin, dependencies=[dget(self,"p6"),dget(self,"m")]) )
       
    def htoh6(self):
       """Transforms the lattice vector matrix from matrix to vector form.
@@ -262,7 +262,8 @@ class CellFlexi(Cell):
       return det_ut3x3(self.h0)
             
    def get_kin(self):
-      """Calculates the kinetic energy of the cell from the cell parameters"""
+      """Calculates the kinetic energy of the cell from the cell parameters."""
+
       p6=depstrip(self.p6)
       return np.dot(p6,p6)/(2.0*self.m)
       
@@ -302,7 +303,7 @@ class CellRigid(Cell):
       dset(self, "V0", depend_value(name = 'V0', func=self.get_volume0, dependencies=[dget(self,"h0")]) )
       dset(self, "V", depend_value(name = 'V', value=self.get_volume0()) )
 
-      dset(self, "h", depend_array(name = 'h', value = h, func=self.Vtoh, dependencies=[dget(self,"V"),dget(self,"h0")]) )
+      dset(self, "h", depend_array(name = 'h', value = h, func=self.Vtoh, dependencies=[dget(self,"V"),dget(self,"h0"),dget(self,"V0")]) )
       dset(self, "ih" , depend_array(name = "ih", value = np.zeros((3,3),float), func=self.get_ih, dependencies=[dget(self,"h")]) )
 
       dset(self, "P", depend_array(name = 'P', value=np.zeros(1,float)) )
@@ -314,22 +315,59 @@ class CellRigid(Cell):
       dset(self, "kin", depend_value(name = "kin", func=self.get_kin, dependencies=[dget(self,"P"),dget(self,"m")]) )
       
    def mtoM(self):
+      """Makes the cell mass a vector quantity."""
+
       return np.identity(1)*self.m
 
    def Vtoh(self):
+      """Gets the lattice vector matrix from the volume."""
+
       return depstrip(self.h0).copy()*(self.V/self.V0)**(1.0/3.0)
 
    def Ptop(self):
+      """Forms the lattice momentum matrix from the volume momentum.
+
+      To be implemented.
+      """
+
       pass
 
    def get_volume0(self):
+      """Calculates the volume of the reference box."""
+
       return det_ut3x3(depstrip(self.h0))
             
    def get_kin(self):
+      """Calculates the kinetic energy of the cell from the cell parameters."""
+
       return self.P[0]**2/(2.0*self.m)
 
       
 class RestartCell(Restart):
+   """Cell restart class.
+
+   Handles generating the appropraite cell class from the xml input file,
+   and generating the xml checkpoint tags and data from an instance of the 
+   object.
+
+   Attributes:
+      m: An optional float giving the mass of the cell. Defaults to 0.0.
+      h: An optional array giving the system box. Defaults to a 3*3 identity 
+         matrix.
+      h0: An optional array giving the reference box. Defaults to an array 
+         of zeros.
+      p: An optional array giving the lattice momentum matrix. Defaults to an 
+         array of zeros.
+      P: An optional float giving the conjugate momentum to the volume 
+         fluctuations. Defaults to 0.0.
+      init_temp: An optional float to give the effective temperature that the 
+         cell velocities should be initialised to. Defaults to -1.0.
+      from_file: An optional string giving the name of a pdb file containing
+         the initial cell and atom positions. Defaults to ''.
+      flexible: A boolean giving whether the cell will be allowed to change 
+         shape. Defaults to False.
+   """
+
    fields={ "m" : (RestartValue, (float, 0.0)), "h" : (RestartArray,(float,np.identity(3))), 
             "h0" : (RestartArray,(float,np.zeros((3,3)))), "p" : (RestartArray,(float,np.zeros((3,3),float))),
             "P" : (RestartValue,(float,0.0)), "init_temp": (RestartValue, (float, -1.0)),
@@ -337,11 +375,21 @@ class RestartCell(Restart):
    attribs={ "flexible" : (RestartValue, (bool, False)) }
     
    def __init__(self, cell=None):
+      """Initialises RestartCell."""
+
       super(RestartCell,self).__init__()
       if not cell is None:
          self.store(cell)
       
    def store(self, cell, filename=""):
+      """Takes a Cell instance and stores of minimal representation of it.
+
+      Args:
+         cell: A cell object.
+         filename: An optional float giving a file to read the cell dimensions
+            from. Defaults to ''.
+      """
+
       self.from_file.store(filename)
       self.flexible.store(type(cell) is CellFlexi)
       self.m.store(cell.m)
@@ -354,6 +402,13 @@ class RestartCell(Restart):
       self.from_file.store(cell.from_file)
       
    def fetch(self):
+      """Creates a cell object.
+
+      Returns: 
+         A cell object of the appropriate type and with the appropriate 
+         properties given the attributes of the RestartCell object.
+      """
+
       self.check()
       if (self.flexible.fetch()): 
          cell = CellFlexi(h=self.h.fetch(), m=self.m.fetch())
@@ -367,6 +422,13 @@ class RestartCell(Restart):
       return cell
       
    def check(self):
+      """Function that deals with optional arguments.
+      
+      Deals with the init_temp and from_file arguments, and uses
+      them to initialise some of the cell parameters depending on which ones
+      have been specified.
+      """
+
       if (self.init_temp.fetch() >= 0):
          pass
       if self.from_file.fetch() != "":

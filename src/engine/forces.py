@@ -24,17 +24,17 @@ from utils.restart import *
 class RestartForce(Restart):
    """Forcefield restart class.
 
-      Handles generating the appropriate forcefield class from the xml
-      input file, and generating the xml checkpoint tags and data from an 
-      instance of the object.
+   Handles generating the appropriate forcefield class from the xml
+   input file, and generating the xml checkpoint tags and data from an 
+   instance of the object.
 
-      Attributes:
-         type: A string indicating the type being used. 'socket' is currently
-            the only available option.
-         interface: A restart interface instance.
-         parameters: A dictionary of the parameters used by the driver. Of the
-            form {"name": value}.
-      """
+   Attributes:
+      type: A string indicating the type being used. 'socket' is currently
+         the only available option.
+      interface: A restart interface instance.
+      parameters: A dictionary of the parameters used by the driver. Of the
+         form {"name": value}.
+   """
 
    attribs = { "type" : (RestartValue,(str,"socket")) }
    fields =  { "interface" : (RestartInterface,()), "parameters" : (RestartValue, (dict,None)) }
