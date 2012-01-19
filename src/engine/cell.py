@@ -313,13 +313,20 @@ class CellRigid(Cell):
 
       dset(self, "kin", depend_value(name = "kin", func=self.get_kin, dependencies=[dget(self,"P"),dget(self,"m")]) )
       
-   def mtoM(self): return np.identity(1)*self.m
-   def Vtoh(self): return self.h0.view(np.ndarray).copy()*(self.V/self.V0)**(1.0/3.0)
-   def Ptop(self): pass
+   def mtoM(self):
+      return np.identity(1)*self.m
 
-   def get_volume0(self): return det_ut3x3(self.h0)
+   def Vtoh(self):
+      return depstrip(self.h0).copy()*(self.V/self.V0)**(1.0/3.0)
+
+   def Ptop(self):
+      pass
+
+   def get_volume0(self):
+      return det_ut3x3(depstrip(self.h0))
             
-   def get_kin(self):   return self.P[0]**2/(2.0*self.m)
+   def get_kin(self):
+      return self.P[0]**2/(2.0*self.m)
 
       
 class RestartCell(Restart):
@@ -331,7 +338,8 @@ class RestartCell(Restart):
     
    def __init__(self, cell=None):
       super(RestartCell,self).__init__()
-      if not cell is None: self.store(cell)
+      if not cell is None:
+         self.store(cell)
       
    def store(self, cell, filename=""):
       self.from_file.store(filename)
@@ -339,24 +347,28 @@ class RestartCell(Restart):
       self.m.store(cell.m)
       self.h.store(cell.h)
       self.h0.store(cell.h0)
-      if type(cell) is CellFlexi:  self.p.store(cell.p)
-      else: self.P.store(cell.P[0])
+      if type(cell) is CellFlexi:
+         self.p.store(cell.p)
+      else:
+         self.P.store(cell.P[0])
       self.from_file.store(cell.from_file)
       
    def fetch(self):
       self.check()
       if (self.flexible.fetch()): 
-         cell=CellFlexi(h=self.h.fetch(), m=self.m.fetch())
-         if det_ut3x3(self.h0.fetch())==0.0: cell.h0=cell.h
-         cell.p=self.p.fetch()
+         cell = CellFlexi(h=self.h.fetch(), m=self.m.fetch())
+         if det_ut3x3(self.h0.fetch()) == 0.0:
+            cell.h0 = cell.h
+         cell.p = self.p.fetch()
       else:
-         cell=CellRigid(h=self.h.fetch(), m=self.m.fetch())
-         cell.P=self.P.fetch()
+         cell = CellRigid(h=self.h.fetch(), m=self.m.fetch())
+         cell.P = self.P.fetch()
       cell.from_file = self.from_file.fetch()
       return cell
       
    def check(self):
-      if (self.init_temp.fetch()>=0) : pass
+      if (self.init_temp.fetch() >= 0):
+         pass
       if self.from_file.fetch() != "":
          myatoms, mycell = utils.io.io_pdb.read_pdb(open(self.from_file.fetch(),"r")) 
          self.h.store(mycell.h)
@@ -364,4 +376,5 @@ class RestartCell(Restart):
             self.h0.store(mycell.h0)
          if self.m.fetch() == 0.0:
             self.m.store(mycell.m)
+         self.from_file.store("")
    

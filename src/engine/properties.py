@@ -89,7 +89,7 @@ class Properties(dobject):
       'potential': Potential energy estimator,
       'temperature': Classical kinetic temperature estimator,
       'cell_parameters': Lattice vector lengths and the angles between them,
-      'V': Simulation box volume,
+      'volume': Simulation box volume,
       'stress_md.xx': The xx component of the classical stress tensor estimator,
       'pressure_md': Classical pressure estimator
       'kinetic_cv': Quantum centroid virial kinetic energy estimator,
@@ -108,47 +108,32 @@ class Properties(dobject):
       self.forces = simul.forces
       self.simul = simul      
 
-      dset(self, "time", depend_value(name="time",  func=self.get_time, dependencies=[dget(self.simul,"step"), dget(self.ensemble,"dt")]))
-      self.property_dict["time"] = dget(self,"time")
-      
-      dset(self, "econs", depend_value(name="econs", func=self.get_econs, dependencies=[dget(self.ensemble,"econs")]))
-      self.property_dict["conserved"] = dget(self,"econs")
-      
-      dset(self, "kin", depend_value(name="kin", func=self.get_kin, dependencies=[dget(self.beads,"kin"),dget(self.cell,"kin")]))
-      self.property_dict["kinetic_md"] = dget(self,"kin")
-      
-      dset(self, "pot", depend_value(name="pot", func=self.get_pot, dependencies=[dget(self.forces,"pot")]))      
-      self.property_dict["potential"] = dget(self,"pot")
-
-      dset(self, "temp", depend_value(name="temp", func=self.get_temp, dependencies=[dget(self.beads,"kin")]))      
-      self.property_dict["temperature"] = dget(self,"temp")     
-     
-      self.property_dict["V"] = dget(self.cell,"V")
-      dset(self, "cell_params", depend_value(name="cell_params", func=self.get_cell_params, dependencies=[dget(self.cell, "h")]))
-      self.property_dict["cell_parameters"] = dget(self,"cell_params")
+      self.add_property(prop_name="time", dep_name="time", func=self.get_time, dependencies=[dget(self.simul, "step"), dget(self.ensemble, "dt")])
+      self.add_property(prop_name="conserved", dep_name="econs", func=self.get_econs, dependencies=[dget(self.ensemble, "econs")])
+      self.add_property(prop_name="kinetic_md", dep_name="kin", func=self.get_kin, dependencies=[dget(self.beads, "kin"), dget(self.cell, "kin")])
+      self.add_property(prop_name="potential", dep_name="pot", func=self.get_pot, dependencies=[dget(self.forces, "pot")])
+      self.add_property(prop_name="temperature", dep_name="temp", func=self.get_temp, dependencies=[dget(self.beads, "kin")])
+      self.property_dict["volume"] = dget(self.cell,"V")
+      self.add_property(prop_name="cell_parameters", dep_name="cell_params", func=self.get_cell_params, dependencies=[dget(self.cell, "h")])
 
       dset(self, "stress", depend_value(name="stress", func=self.get_stress, dependencies=[dget(self.beads, "kstress"), dget(self.forces, "vir"), dget(self.cell, "V")]))
       self.property_dict["stress_md.xx"] = depend_value(name="scl_xx", dependencies=[dget(self, "stress")], func=(lambda : self.stress[0,0]) ) 
       
-      dset(self, "press", depend_value(name="press", func=self.get_press, dependencies=[dget(self,"stress")]))
-      self.property_dict["pressure_md"] = dget(self,"press")
-
-      dset(self, "kin_cv", depend_value(name="kin_cv", func=self.get_kincv, dependencies=[dget(self.beads,"q"),dget(self.forces,"f"),dget(self.ensemble,"temp")]))
-      self.property_dict["kinetic_cv"] = dget(self,"kin_cv")
+      self.add_property(prop_name="pressure_md", dep_name="press", func=self.get_press, dependencies=[dget(self, "stress")])
+      self.add_property(prop_name="kinetic_cv", dep_name="kin_cv", func=self.get_kincv, dependencies=[dget(self.beads, "q"), dget(self.forces, "f"), dget(self.ensemble, "temp")])
 
       dset(self, "kstress_cv", depend_value(name="kstress_cv", func=self.get_kstresscv, dependencies=[dget(self.beads,"q"),dget(self.forces,"f"),dget(self.ensemble,"temp")]))
       dset(self, "stress_cv", depend_value(name="stress_cv", func=self.get_stresscv, dependencies=[dget(self,"kstress_cv"),dget(self.forces,"vir"), dget(self.cell, "V")]))
       self.property_dict["stress_cv.xx"] = depend_value(name="scv_xx", dependencies=[dget(self, "stress_cv")], func=(lambda : self.stress_cv[0,0]) ) 
-      dset(self, "press_cv", depend_value(name="press_cv", func=self.get_presscv, dependencies=[dget(self,"stress_cv")]))
-      self.property_dict["pressure_cv"] = dget(self,"press_cv")
+
+      self.add_property(prop_name="pressure_cv", dep_name="press_cv", func=self.get_presscv, dependencies=[dget(self, "stress_cv")])
       
       self.dbeads = simul.beads.copy()
       self.dforces = ForceBeads()
-      self.dforces.bind(self.dbeads, self.simul.cell,  self.simul._forcemodel)     
-      dset(self, "kin_yama", depend_value(name="kin_yama", func=self.get_kinyama, dependencies=[dget(self.beads,"q"),dget(self.ensemble,"temp")]))
-      self.property_dict["kinetic_yamamoto"] = dget(self,"kin_yama")
+      self.dforces.bind(self.dbeads, self.simul.cell,  self.simul._forcemodel)
+      self.add_property(prop_name="kinetic_yamamoto", dep_name="kin_yama", func=self.get_kinyama, dependencies=[dget(self.beads, "q"), dget(self.ensemble, "temp")])
       
-   def add_property(self, prop_name, dep_name, func, deps=None):
+   def add_property(self, prop_name, dep_name, func, dependencies=None):
       "Adds a property to the property list.
 
       Args:
@@ -157,10 +142,11 @@ class Properties(dobject):
          dep_name: A string giving the name of the attribute created in the 
             Properties object.
          func: The function used to compute the property.
-         deps: A list of depend objects on which the property will depend upon.
+         dependencies: A list of depend objects on which the property will 
+            depend upon.
       """
 
-      dset(self, dep_name, depend_value(name=dep_name, func=func, dependencies=deps))
+      dset(self, dep_name, depend_value(name=dep_name, func=func, dependencies=dependencies))
       self.property_dict[prop_name] = dget(self, dep_name)
 
    def get_kin(self):
