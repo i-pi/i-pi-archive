@@ -1,6 +1,7 @@
 import numpy as np
 from utils.depend import *
 from utils.restart import *
+import utils.io.io_pdb
 from utils import units
 
 class Atom(dobject):
@@ -136,12 +137,14 @@ class RestartAtoms(Restart):
       return atoms
    
    def write(self,  name="", indent=""):
-      if self.natoms.fetch()>0: return super(RestartAtoms,self).write(name=name,indent=indent)
-      else: return ""
+      if self.natoms.fetch()>0:
+         return super(RestartAtoms,self).write(name=name,indent=indent)
+      else:
+         return ""
       
    
    def check(self): 
       # if required get data from file and/or initialize
       if self.from_file.fetch() != "":
-         myatoms, mycell = read_pdb(open(self.from_file.fetch(),"r"))
+         myatoms, mycell = utils.io.io_pdb.read_pdb(open(self.from_file.fetch(),"r"))
          self.store(myatoms, self.from_file.fetch())      

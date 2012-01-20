@@ -18,14 +18,14 @@ import sys
 from engine import simulation
 from utils.io.io_xml import *
 
-def main():
+def main(file_name):
    """Runs the simulation.
 
    Will be run automatically when the module is run as a script. Will give an 
    error if an input file has not been provided.
    """
 
-   ifile = open(sys.argv[1],"r")
+   ifile = open(file_name,"r")
    xmlrestart = xml_parse_file(ifile)
    
    simrestart = simulation.RestartSimulation()
@@ -36,4 +36,4 @@ def main():
    del simul
 
 if __name__ == '__main__':
-   main()
+   main(sys.argv[1])

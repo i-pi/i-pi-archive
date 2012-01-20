@@ -1,1 +1,1 @@
-__all__ = [ "io_pdb", "io_xml" ]
+__all__ = [ "io_xml", "io_pdb" ]

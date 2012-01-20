@@ -134,7 +134,7 @@ class Properties(dobject):
       self.add_property(prop_name="kinetic_yamamoto", dep_name="kin_yama", func=self.get_kinyama, dependencies=[dget(self.beads, "q"), dget(self.ensemble, "temp")])
       
    def add_property(self, prop_name, dep_name, func, dependencies=None):
-      "Adds a property to the property list.
+      """Adds a property to the property list.
 
       Args:
          prop_name: A string giving the keyword that will identify the property 
