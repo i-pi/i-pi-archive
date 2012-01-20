@@ -87,6 +87,11 @@ def read_pdb(filedesc):
 
    Args:
       filedesc: An open readable file object from a pdb formatted file.
+
+   Returns:
+      An Atoms object with the appropriate atom labels, masses and positions, 
+      and a Cell object with the appropriate cell dimensions and an estimate 
+      of a reasonable cell mass.
    """
 
    header = filedesc.readline()
