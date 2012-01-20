@@ -1,8 +1,30 @@
+"""Main script from which the simulation is run.
+
+Deals with creation of the simulation object, reading the input file and 
+initialising the system. 
+
+Run using:
+      python main.py input_file.xml
+
+Where 'input_file.xml' should be replaced by the name of the xml input_file from
+which the system data will be read. For a description of the input file, see the
+reference manual.
+
+Functions:
+   main: Runs the simulation.
+"""
+
 import sys
-from engine import *
+from engine import simulation
 from utils.io.io_xml import *
 
 def main():
+   """Runs the simulation.
+
+   Will be run automatically when the module is run as a script. Will give an 
+   error if an input file has not been provided.
+   """
+
    ifile = open(sys.argv[1],"r")
    xmlrestart = xml_parse_file(ifile)
    

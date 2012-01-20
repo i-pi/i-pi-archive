@@ -1,12 +1,38 @@
+"""Contains the classes used to keep track of the pseudo-random numbers.
+
+Allows the user to specify a seed for the random number generator.
+These are used in initialising the velocities and in stochastic thermostats.
+The state of the random number generator is kept track of, so that the if the
+simulation is restarted from a checkpoint, we will see the same dynamics as if 
+it had not been stopped.
+
+Classes:
+   MRG32k3a: A class implementing a basic L'Ecuyer MRG32k3a random number
+      generator.
+   Random: An interface between the numpy.random module and the user.
+   RestartRandom: Deals with creating the Random object from a file, and 
+      writing the checkpoints.
+"""
+
+__all__ = ['MRG32k3a', 'Random', 'RestartRandom']
+
 import numpy as np
 import math
 from restart import Restart, RestartValue, RestartArray
-import pdb
 
 class MRG32k3a:
-   # a stripped-down version of L'Ecuyer MRG32k3a. Good efficiency and RN quality,
-   # it is possible to do arbitrary jumps in the stream (but this is not implemented here)
-   anti=False
+   """Class implementing a simple L'Ecuyer MRG32k3a.
+
+   A simple uniform pseudo-random number generator class.
+   This type of random number generator has the ability to jump an arbitrary
+   distance in the stream, but this has not yet been implemented.
+
+   Attributes:
+      anti: A boolean giving whether the distribution is from 0 to 1 or from
+         1 to 0.
+      m1:
+   """
+   anti = False
    m1     =  4294967087.0        
    m2     =  4294944443.0        
    a12    =    1403580.0         
@@ -47,6 +73,7 @@ class MRG32k3a:
       else:
          return u
 
+
 class Random(object):
    def __init__(self, seed=12345, state=None):
       self.rng = np.random.mtrand.RandomState(seed=seed)
@@ -74,29 +101,9 @@ class Random(object):
    
    def gamma(self, k, theta=1.0):
       return self.rng.gamma(k,theta)
-      
-#      # generates a Gaussian variate with zero mean and unit varianceq
-#      # uses a ratio-of-uniforms rather than the usual box-mueller method
-#      # as this is (often) faster, and avoids the hassle of storing one of the samples
-#      while True:
-#         u=self.u; v=self.u 
-#         v=1.7156*(v-0.5)  
-#         x=u-0.449871
-#         y=abs(v)+0.386595
-#         q=x*x+y*(0.19600*y-0.25472*x)
-#         if (q < 0.27597): break
-#         if (q > 0.27846): continue
-#         if (v*v<-4.0*math.log(u)*u*u): break
-
-#      return v/u
 
    def gvec(self, shape):
       return self.rng.standard_normal(shape)
-#      v=np.zeros(shape,float)
-#      sz=v.size; fv=v.flat
-#      for i in range(sz):
-#         fv[i]=self.g
-#      return v
 
 
 class RestartRandom(Restart):

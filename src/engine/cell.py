@@ -309,8 +309,7 @@ class CellRigid(Cell):
       dset(self, "P", depend_array(name = 'P', value=np.zeros(1,float)) )
       dset(self, "M", depend_array(name="M", value=np.zeros(1,float), func=self.mtoM, dependencies=[dget(self,"m")]) )
       
-      #TODO this must be well-thought
-      dset(self, "p", depend_array(name = 'p', value = np.zeros((3,3),float), func=self.Ptop, dependencies=[dget(self,"P"),dget(self,"h0")]) )
+      dset(self, "p", depend_array(name = 'p', value = np.zeros((3,3),float), func=self.Ptop, dependencies=[dget(self,"P"),dget(self,"V"),dget(self,"h"),dget(self,"ih")]) )
 
       dset(self, "kin", depend_value(name = "kin", func=self.get_kin, dependencies=[dget(self,"P"),dget(self,"m")]) )
       
@@ -325,12 +324,13 @@ class CellRigid(Cell):
       return depstrip(self.h0).copy()*(self.V/self.V0)**(1.0/3.0)
 
    def Ptop(self):
-      """Forms the lattice momentum matrix from the volume momentum.
+      """Forms the lattice momentum matrix from the volume momentum."""
 
-      To be implemented.
-      """
-
-      pass
+      dhdV = np.zeros((3,3))
+      dhdV[0,0] = 1.0/(self.h[1,1]*self.h[2,2])
+      dhdV[1,1] = 1.0/(self.h[0,0]*self.h[2,2])
+      dhdV[2,2] = 1.0/(self.h[1,1]*self.h[0,0])
+      return np.dot(dhdV, self.ih)*3*self.V*self.P
 
    def get_volume0(self):
       """Calculates the volume of the reference box."""
