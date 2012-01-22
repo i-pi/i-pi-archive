@@ -50,7 +50,9 @@ class xml_node(object):
 
       Args:
          attribs: An optional dictionary giving attribute data. Defaults to {}.
-         fields: An optional dictionary giving main data. Defaults to {}.
+         fields: An optional dictionary holding all the data between the start
+            and end tags, including information about other nodes. 
+            Defaults to {}.
          name: An optional string giving the tag name. Defaults to ''.
       """
 
@@ -186,10 +188,13 @@ def read_float(data):
    """Reads a string and outputs a float.
 
    Can also read from a fortran double precision format string of the form
-   1.0000D00, by replacing the D with E to turn it into python format.
+   1.0D0, by replacing the D with E to turn it into a python format float.
 
    Args:
       data: The string to be read in.
+
+   Raises: 
+      ValueError: Raised if the input data is not of the correct format.
 
    Returns:
       A float.
@@ -202,6 +207,9 @@ def read_int(data):
 
    Args:
       data: The string to be read in.
+
+   Raises: 
+      ValueError: Raised if the input data is not of the correct format.
 
    Returns:
       An integer.
@@ -251,8 +259,11 @@ def read_list(data, delims="[]", split=",", strip=" \n\t'"):
       strip: Characters to be removed from the beginning and end of each 
          element. ' \n\t' by default.
 
+   Raises: 
+      ValueError: Raised if the input data is not of the correct format.
+
    Returns:
-      A list.
+      A list of strings.
    """
 
    try:
@@ -271,18 +282,18 @@ def read_array(dtype, data):
    """Reads a formatted string and outputs an array.
 
    The format is as for standard python arrays, which is
-   [array[0], array[1],..., array[n]]
+   [array[0], array[1],..., array[n]]. Note the use of comma separators, and 
+   the use of square brackets.
 
    Args:
-      data: The string to be read in. '[]' by default.
-      delims: A string of two characters giving the first and last character of
-         the list format. ',' by default.
-      split: The character between different elements of the list format.
-      strip: Characters to be removed from the beginning and end of each 
-         element. ' \n\t' by default.
+      data: The string to be read in.
+      dtype: The data type of the elements of the target array.
+
+   Raises: 
+      ValueError: Raised if the input data is not of the correct format.
 
    Returns:
-      A list.
+      An array of data type dtype.
    """
 
    rlist = read_list(data)
@@ -292,15 +303,42 @@ def read_array(dtype, data):
    return np.array(rlist, dtype)
 
 def read_tuple(data):
-   """Takes a line with a tuple of the form: 
-      (tuple[0], tuple[1], tuple[2],...), and interprets it"""
+   """Reads a formatted string and outputs a tuple.
+
+   The format is as for standard python tuples, which is
+   (tuple[0], tuple[1],..., tuple[n]). Used for the shapes of arrays, so 
+   assumes integer values for the elements of the tuple. Note the comma 
+   separators, and the use of brackets.
+
+   Args:
+      data: The string to be read in.
+
+   Raises: 
+      ValueError: Raised if the input data is not of the correct format.
+
+   Returns:
+      A tuple of integers.
+   """
 
    rlist = read_list(data, delims="()")
    return tuple([int(i) for i in rlist])
 
 def read_dict(data):
-   """Takes a line with an map of the form:
-      {kw[0]: value[0], kw[1]: value[1], ...}, and interprets it"""
+   """Reads a formatted string and outputs a dictionary.
+
+   The format is as for standard python dictionaries, which is
+   {keyword[0]: arg[0], keyword[1]: arg[1],..., keyword[n]: arg[n]}. Note the
+   comma separators, and the use of curly brackets.
+
+   Args:
+      data: The string to be read in.
+
+   Raises: 
+      ValueError: Raised if the input data is not of the correct format.
+
+   Returns:
+      A dictionary of strings.
+   """
 
    rlist = read_list(data,delims="{}")
    def mystrip(data):
@@ -317,15 +355,41 @@ def read_dict(data):
 readtype_funcs = {np.ndarray: read_array, dict: read_dict, float: read_float, int: read_int, bool: read_bool, str: string.strip, tuple: read_tuple, np.uint : read_int}
 
 def write_type(type, data):
+   """Writes a formatted string from a value of a specified type.
+
+   Args:
+      data: The value to be read in.
+      type: The data type of the value.
+
+   Raises:
+      TypeError: Raised if it tries to write from a data type that has not been
+         implemented.
+
+   Returns:
+      A formatted string.
+   """
+
    if not type in writetype_funcs:
       raise TypeError("Conversion not available for given type")
    return writetype_funcs[type](data)
 
 def write_list(data, delims="[]"):
-   """Takes a line with an array of the form: 
-      [array[0], array[1], array[2],...], and interprets it"""
+   """Writes a formatted string from a list.
 
-   rstr = delims[0];
+   The format of the output is as for a standard python list, 
+   [list[0], list[1],..., list[n]]. Note the space after the commas, and the
+   use of square brackets.
+
+   Args:
+      data: The value to be read in.
+      delims: An optional string of two characters giving the first and last
+         character to be printed. Defaults to "[]".
+
+   Returns:
+      A formatted string.
+   """
+
+   rstr = delims[0]
    
    for v in data:
       rstr += str(v) + ", "
@@ -335,16 +399,69 @@ def write_list(data, delims="[]"):
    return rstr
 
 def write_tuple(data):
+   """Writes a formatted string from a tuple.
+
+   The format of the output is as for a standard python tuple, 
+   (tuple[0], tuple[1],..., tuple[n]). Note the space after the commas, and the
+   use of brackets.
+
+   Args:
+      data: The value to be read in.
+
+   Returns:
+      A formatted string.
+   """
+
    return write_list(data, delims="()")
 
 def write_float(data):
+   """Writes a formatted string from a float.
+
+   Floats are printed out in exponential format, to 8 decimal places and 
+   filling up any spaces under 16 not used with spaces.
+
+   For example 1.0 --> '  1.00000000e+00'
+
+   Args:
+      data: The value to be read in.
+
+   Returns:
+      A formatted string.
+   """
+
    return "%16.8e" % (data)
 
 def write_bool(data):
+   """Writes a formatted string from a float.
+
+   Booleans are printed as a string of either ' true' or 'false'. Note that
+   both are printed out as exactly 5 characters.
+
+   Args:
+      data: The value to be read in.
+
+   Returns:
+      A formatted string.
+   """
+
    return "%5.5s" % (str(data))
 
 def write_dict(data, delims="{}"):
-   
+   """Writes a formatted string from a dictionary.
+
+   The format of the output is as for a standard python dictionary, 
+   {keyword[0]: arg[0], keyword[1]: arg[1],..., keyword[n]: arg[n]}. Note the 
+   space after the commas, and the use of curly brackets.
+
+   Args:
+      data: The value to be read in.
+      delims: An optional string of two characters giving the first and last
+         character to be printed. Defaults to "{}".
+
+   Returns:
+      A formatted string.
+   """
+
    rstr = delims[0]
    for v in data:
       rstr += str(v) + ": " + str(data[v]) + ", "
