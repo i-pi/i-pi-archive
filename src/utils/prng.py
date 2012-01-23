@@ -1,4 +1,4 @@
-"""Contains the classes used to keep track of the pseudo-random numbers.
+"""Contains the classes used to generate pseudo-random numbers.
 
 Allows the user to specify a seed for the random number generator.
 These are used in initialising the velocities and in stochastic thermostats.

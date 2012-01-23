@@ -375,7 +375,11 @@ class RestartCell(Restart):
    attribs={ "flexible" : (RestartValue, (bool, False)) }
     
    def __init__(self, cell=None):
-      """Initialises RestartCell."""
+      """Initialises RestartCell.
+
+      Args:
+         cell: A Cell object from which to initialise from.
+      """
 
       super(RestartCell,self).__init__()
       if not cell is None:
@@ -426,7 +430,7 @@ class RestartCell(Restart):
       
       Deals with the init_temp and from_file arguments, and uses
       them to initialise some of the cell parameters depending on which ones
-      have been specified.
+      have been specified explicitly.
       """
 
       if (self.init_temp.fetch() >= 0):

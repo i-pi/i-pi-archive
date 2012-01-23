@@ -21,8 +21,7 @@ from utils.io.io_xml import *
 def main(file_name):
    """Runs the simulation.
 
-   Will be run automatically when the module is run as a script. Will give an 
-   error if an input file has not been provided.
+   Will be run automatically when the module is run as a script.
    """
 
    ifile = open(file_name,"r")
