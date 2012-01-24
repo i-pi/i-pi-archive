@@ -84,14 +84,13 @@ class ForceField(dobject):
          all at one time by the driver, so are collected together. Each separate
          object is then taken from the list. Depends on the atom positions and 
          the system box.
-      pot = A float giving the potential energy of the system.
-      f: An array containing all the components of the force of the form
-         [x1, y1, z1, x2, y2, z2,..., xn, yn, zn].
+      pot = A float giving the potential energy of the system. Depends on ufv.
+      f: An array containing all the components of the force. Depends on ufv.
       fx: A slice of f containing only the x components of the forces.
       fy: A slice of f containing only the y components of the forces.
       fz: A slice of f containing only the z components of the forces.
       vir: An array containing the components of the virial tensor in upper 
-         triangular form, not divided by the volume.
+         triangular form, not divided by the volume. Depends on ufv.
    """
 
    def __init__(self):
@@ -118,7 +117,7 @@ class ForceField(dobject):
       that the driver returns and the dependency network.
 
       Args:
-         atoms: The Atoms object from which the positions are taken.
+         atoms: The Atoms object from which the atom positions are taken.
          cell: The Cell object from which the system box is taken.
       """
 
@@ -238,8 +237,8 @@ class ForceBeads(dobject):
       hold the data that the driver returns and the dependency network. 
 
       Args:
-         beads: Beads object, to be bound to the forcefield.
-         cell: Cell object, to be bound to the forcefield.
+         beads: Beads object from which the bead positions are taken.
+         cell: Cell object from which the system box is taken.
          force: Force object, to be bound to the forcefield. This
             should be a FFSocket or equivalent, so that it can be copied for
             each replica of the system.

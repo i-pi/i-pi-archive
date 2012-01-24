@@ -1,6 +1,5 @@
 import numpy as np
 import math, random
-import gc#, objgraph
 from utils.depend import *
 from utils.restart import Restart
 from utils.units  import *
@@ -10,10 +9,8 @@ from atoms import *
 from cell import *
 from ensembles import RestartEnsemble
 from forces import RestartForce, ForceBeads
-#from output import RestartOutput
 from beads import Beads, RestartBeads
 from properties import Properties
-#from forces import *
 
 _DEFAULT_STRIDES={"checkpoint": 1000, "properties": 10, "progress": 100, "trajectory": 20,  "trajectory_full": 100}
 _DEFAULT_OUTPUT=[ "time", "conserved", "kinetic", "potential" ]

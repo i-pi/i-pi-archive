@@ -1,3 +1,20 @@
+"""Contains the classes that deal with constant pressure dynamics.
+
+Contains the algorithms which propagate the position and momenta steps in the
+constant pressure and constant stress ensembles. Holds the properties directly
+related to these ensembles, such as the internal and external pressure and 
+stress and the strain energy.
+
+Classes:
+   Barostat: Base barostat class with the generic methods and attributes.
+   BaroFlexi: Deals with flexible cell dynamics. Used for NST ensembles.
+   BaroRigid: Deals with rigid cell dynamics. Used for NVT and NPT ensembles.
+   RestartBaro: Deals with creating the barostat object from a file, and 
+      writing the checkpoints.
+"""
+
+__all__ = ['Barostat', 'BaroFlexi', 'BaroRigid', 'RestartBaro']
+
 import math, time
 import numpy as np
 from utils.depend import *
@@ -7,42 +24,95 @@ from utils.mathtools import eigensystem_ut3x3, invert_ut3x3, exp_ut3x3, det_ut3x
 from engine.thermostats import Thermostat, RestartThermo
 
 class Barostat(dobject): 
+   """Base barostat class.
+
+   Gives the standard methods and quantities needed in all the barostat classes.
+
+   Attributes:
+      thermostat: A thermostat object used to keep the cell momenta at a 
+         specified kinetic temperature.
+      beads: A beads object giving the atoms positions
+      cell: A cell object giving the system box.
+      forces: A forces object giving the virial and the forces acting on 
+         each bead.
+
+   Depend objects:
+      sext: The external stress tensor.
+      pext: The external pressure.
+      dt: The time step used in the algorithms. Depends on the simulation dt.
+      temp: The temperature used in the algorithms. Depends on the simulation
+         temp.
+      pot: The elastic strain potential for the cell.
+      piext: The accumulated stress compared to the reference cell.
+      stress: The internal stress.
+      press: The internal pressure.
+   """
+
    def __init__(self, pext=0.0, sext=None, dt=None, temp=None, thermostat=None):
+      """Initialises base barostat class.
+
+      Note that the external stress and the external pressure are synchronized.
+      This makes most sense going from the stress to the pressure, but if you 
+      must go in the other direction the stress is assumed to be isotropic.
+
+      Args:
+         pext: Optional float giving the external pressure. Defaults to 
+            Tr(sext)/3.0
+         sext: Optional array givin the external stress tensor. Defaults to 
+            pext*I, where I is a 3*3 identity matrix.
+         dt: Optional float giving the time step for the algorithms. Defaults
+            to the simulation dt.
+         temp: Optional float giving the temperature for the thermostat. 
+            Defaults to the simulation temp.
+         thermostat: Optional thermostat object. Defaults to Thermostat().
+      """
      
-      # This kind of stretches the concept of synced dependencies: sext holds more information than pext but....
       sync_ext=synchronizer()
       dset(self,"sext",depend_array(name='sext', value=np.zeros((3,3)), synchro=sync_ext, func={"pext" : self.p2s} ) )
       dset(self,"pext",depend_value(name='pext', value=0.0, synchro=sync_ext, func={"sext" : self.s2p} ) )            
       if sext is None:
-         self.pext=pext
+         self.pext = pext
       else:
-         self.sext=sext
+         self.sext = sext
       
 
       if thermostat is None:
-         thermostat=Thermostat()
-      self.thermostat=thermostat   
-      # binds options for dt and temperature of the thermostat to those in the barostat
+         thermostat = Thermostat()
+      self.thermostat = thermostat   
      
       dset(self,"dt",depend_value(name='dt'))
       if dt is None:
-         self.dt=2.0*self.thermostat.dt
+         self.dt = 2.0*self.thermostat.dt
       else:
-         self.dt=dt
-      dset(self.thermostat,"dt",   #this involves A LOT of piping
+         self.dt = dt
+      dset(self.thermostat,"dt",   
          depend_value(name="dt", func=self.get_halfdt,dependencies=[dget(self,"dt")],dependants=dget(self.thermostat,"dt")._dependants)  )
            
-      #temp
       dset(self, "temp", depend_value(name="temp", value=temp))
       deppipe(self, "temp", self.thermostat,"temp")
-      if not temp is None: self.temp=temp
+      if not temp is None:
+         self.temp = temp
       
-      self.timer=0.0
-      
-   def get_halfdt(self):  return self.dt*0.5
+   def get_halfdt(self):
+      """Returns half the simulation timestep."""
+
+      return self.dt*0.5
          
    def bind(self, beads, cell, forces):
-      """Binding function which prepares most of the stuff which will be necessary for a barostat"""
+      """Binds beads, cell and forces to the barostat.
+
+      This takes an beads object, a cell object and a forces object and makes 
+      them members of the barostat. It also then creates the objects that will
+      hold the data needed in the barostat algorithms and the dependency 
+      network.
+
+      Args:
+         beads: The beads object from which the bead positions are taken.
+         cell: The cell object from which the system box is taken.
+         forces: The forcefield object from which the force and virial are
+            taken.
+      """
+
       self.beads=beads
       self.cell=cell
       self.forces=forces
@@ -56,14 +126,29 @@ class Barostat(dobject):
       dset(self,"press",depend_value(name='press', func=self.get_press, 
           dependencies=[ dget(self,"stress") ] ) )
                 
-   def s2p(self): return np.trace(self.sext)/3.0
-   def p2s(self): return self.pext*np.identity(3)
+   def s2p(self):
+      """Converts the external stress to the external pressure."""
+
+      return np.trace(self.sext)/3.0
+
+   def p2s(self):
+      """Converts the external pressure to an isotropic external stress."""
+
+      return self.pext*np.identity(3)
       
-   def pstep(self): pass
-   def qstep(self): pass   
+   def pstep(self):
+      """Dummy momenta update step."""
+
+      pass
+
+   def qcstep(self):
+      """Dummy centroid position update step."""
+
+      pass   
       
    def step(self):
-      """Dummy atoms barostat step""" 
+      """Classical barostat step.""" 
+
       self.thermostat.step()
       self.pstep()
       self.qcstep()
@@ -71,11 +156,18 @@ class Barostat(dobject):
       self.thermostat.step()
       
    def get_pot(self):
-      """Calculates the elastic strain energy of the cell"""
+      """Calculates the elastic strain energy of the cell."""
+
       return self.cell.V0*np.trace(np.dot(self.sext, self.cell.strain))
 
    def get_piext(self):
-      """Calculates the external stress tensor"""
+      """Calculates the accumulated external stress tensor.
+
+      This tensor is calculated with respect to the reference cell, and so
+      gives a measure of the stress due to deviation from the cell for zero
+      external pressure.
+      """
+
       root = np.dot(depstrip(self.cell.h), depstrip(self.cell.ih0))
       pi = np.dot(root, depstrip(self.sext))
       
@@ -84,7 +176,7 @@ class Barostat(dobject):
       return pi
       
    def get_stress(self):
-      """Calculates the elastic strain energy of the cell"""
+      """Calculates the internal stress tensor."""
       
       #return (self.beads.kstress+self.forces.vir/self.beads.nbeads)/self.cell.V
       return (np.identity(3)*self.beads.natoms*Constants.kb*self.temp/self.beads.nbeads + self.forces.vir/self.beads.nbeads)/self.cell.V
@@ -93,10 +185,16 @@ class Barostat(dobject):
 #TODO  also include a possible explicit dependence of U on h
 
    def get_press(self):
+      """Calculates the internal pressure."""
+
       return np.trace(self.stress)/3.0
 
 
 class BaroFlexi(Barostat):
+   """Barostat object for flexible cell simulations.
+
+   """
+
 
    def bind(self, beads, cell, forces):
       super(BaroFlexi,self).bind(beads, cell, forces)

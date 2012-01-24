@@ -1,3 +1,18 @@
+"""Contains the classes which deal with the atoms.
+
+Used for holding information about the atoms, including the positions, masses
+momenta and kinetic energy. Has separate classes for accessing the global 
+arrays of atoms and for individual atoms.
+
+Classes:
+   Atom: Class with methods dealing with individual atoms.
+   Atoms: Class with methods dealing with all the atoms.
+   RestartAtoms: Deals with creating the Atoms object from a file, and
+      writing the checkpoints.
+"""
+
+__all__ = ['Atoms', 'Atom', 'RestartAtoms']
+
 import numpy as np
 from utils.depend import *
 from utils.restart import *
@@ -11,14 +26,16 @@ class Atom(dobject):
    views of the large arrays which contain all the coordinates. 
 
    Attributes:
+      kin: The kinetic energy of the atom.
+      kstress: The contribution of the atom to the kinetic stress tensor.
+
+   Depend objects:
       p: The three components of the momentum of the atom.
       q: The three components of the position of the atom.
       m: The mass of the atom.
       name: The name of the atom.
       m3: An array of 3 elements with each element being the mass of the atom.
          Used when each degree of freedom needs to be divided by the mass.
-      kin: The kinetic energy of the atom.
-      kstress: The contribution of the atom to the kinetic stress tensor.
    """
             
    def __init__(self, system, index):
@@ -64,6 +81,8 @@ class Atoms(dobject):
 
    Attributes:
       natoms: An integer giving the number of atoms.
+
+   Depend objects:
       p: An array giving the components of the atom positions.
       q: An array giving the components of the atom momenta.
       m: An array giving the atom masses.
@@ -297,9 +316,12 @@ class RestartAtoms(Restart):
    def write(self,  name="", indent=""):
       """Overloads Restart write() function so that nothing is written if
       no atoms are present.
+
+      Returns:
+         A string giving the appropriate xml tags for the checkpoint file.
       """
 
-      if self.natoms.fetch()>0:
+      if self.natoms.fetch() > 0:
          return super(RestartAtoms,self).write(name=name,indent=indent)
       else:
          return ""

@@ -2,7 +2,7 @@
 
 Used for implementing the minimum image convention, as well as holding the 
 dynamical variables and the methods required for variable cell NST and NPT 
-dynamics.
+dynamics, such as the strain, the volume and the lattice vector matrix.
 
 Classes: 
    Cell: Base cell class with the generic methouds and attributes.
@@ -30,7 +30,7 @@ class Cell(dobject):
    unphysical rotations of the cell (see P. Raiteri, J. Gale and G. Bussi, 
    J. Phys.: Condens. Matter 23 334213 (2011)).
 
-   Attributes:
+   Depend objects:
       h: An array giving the lattice vector matrix.
       p: An array giving the lattice vector momenta.
       m: A float giving the effective cell mass.
@@ -38,7 +38,7 @@ class Cell(dobject):
          external pressure.
       ih: An array giving the inverse of h.
       ih0: An array giving the inverse of h0.
-      strain: An array giving the strain tensor.
+      strain: An array giving the strain tensor. Depends on h and ih0.
    """
 
    def __init__(self, h=None, m=1.0):      
@@ -132,16 +132,16 @@ class CellFlexi(Cell):
    the initial system box can be in a strained configuration while the 
    reference cell is for the unstrained case, as required.
 
-   Attributes:
+   Depend objects:
       h6: An array giving the 6 non-zero components of the lattice vector 
          matrix in vector form.
       p6: An array giving the 6 non-zero components of the lattice momentum 
          matrix in vector form.
       m6: An array with 6 components all equal to the cell mass. Used when all
          the cell degrees of freedom need to be divided by the cell mass.
-      V: A float giving the volume of the system box.
-      V0: A float giving the volume of the reference cell.
-      kin: The kinetic energy of the cell.
+      V: A float giving the volume of the system box. Depends on h.
+      V0: A float giving the volume of the reference cell. Depends on h0.
+      kin: The kinetic energy of the cell. Depends on p6 and m.
    """
 
    def __init__(self, h=None, h0=None, m=1.0):    
@@ -276,14 +276,13 @@ class CellRigid(Cell):
    the lattice vector matrix is taken to depend upon the volume rather than 
    the other way around.
 
-   Attributes:
-      V: A float giving the volume of the system box.
-      V0: A float giving the volume of the reference cell.
-      P: A float givin the rate of change of volume divided by the cell mass,
-         in effect the volume momentum.
+   Depend objects:
+      V: A float giving the volume of the system box. h depends on V.
+      V0: A float giving the volume of the reference cell. Depends on h0.
+      P: A float giving the effective volume momentum.
       M: An array of one element, containing the mass. Used to access the mass 
          as an array in the thermostating step.
-      kin: The kinetic energy of the cell.
+      kin: The kinetic energy of the cell. Depends on P and m.
    """
 
    def __init__(self, h=None, m=1.0):    
