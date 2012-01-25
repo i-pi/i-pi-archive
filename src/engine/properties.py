@@ -30,9 +30,9 @@ class Properties(dobject):
    these can also be output.
 
    Attributes:
-      _DEFAULT_FINDIFF: A float giving the size of the finite difference
-         parameter used in the Yamamoto kinetic energy estimator.
-      fd_delta: Equivalent to _DEFAULT_FINDIFF.
+      fd_delta: A float giving the size of the finite difference
+         parameter used in the Yamamoto kinetic energy estimator. Defaults 
+         to _DEFAULT_FINDIFF.
       _DEFAULT_FDERROR: A float giving the size of the minimum precision 
          allowed for the finite difference calculation in the Yamamoto kinetic
          energy estimator.
@@ -43,10 +43,12 @@ class Properties(dobject):
       dforces: A dummy Forces object used in the Yamamoto kinetic energy
          estimator.
       simul: The Simulation object containing the data to be output.
-      ensemble: The Ensemble object in simul.
-      beads: The Beads object in simul.
-      cell: The Cell object in simul.
-      forces: The Forces object in simul.
+      ensemble: An ensemble object giving the objects necessary for producing
+         the correct ensemble.
+      beads: A beads object giving the atoms positions.
+      cell: A cell object giving the system box.
+      forces: A forcefield object giving the force calculator for each 
+         replica of the system.
       property_dict: A dictionary containing all the properties that can be
          output.
       time: A float giving the time passed in the simulation.

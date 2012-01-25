@@ -408,7 +408,7 @@ class RestartBaro(Restart):
 
       Returns:
          A barostat object of the appropriate type and with the appropriate 
-         interface given the attributes of the RestartBaro object.
+         thermostat given the attributes of the RestartBaro object.
       """
 
       if self.kind.fetch().upper() == "RIGID":
