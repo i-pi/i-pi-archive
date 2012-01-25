@@ -26,9 +26,9 @@ class Cell(dobject):
    """Base class to represent the simulation cell in a periodic system.
 
    This class has the base attributes required for either flexible or 
-   isotropic cell dynamics. Uses an upper triangular matrix to prevent 
-   unphysical rotations of the cell (see P. Raiteri, J. Gale and G. Bussi, 
-   J. Phys.: Condens. Matter 23 334213 (2011)).
+   isotropic cell dynamics. Uses an upper triangular lattice vector matrix to 
+   prevent unphysical rotations of the cell (see P. Raiteri, J. Gale and 
+   G. Bussi, J. Phys.: Condens. Matter 23 334213 (2011)).
 
    Depend objects:
       h: An array giving the lattice vector matrix.

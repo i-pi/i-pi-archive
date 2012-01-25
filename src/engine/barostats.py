@@ -193,15 +193,40 @@ class Barostat(dobject):
 class BaroFlexi(Barostat):
    """Barostat object for flexible cell simulations.
 
+   Propagates the relevant equations of motion to give a constant stress 
+   ensemble assuming an upper triangular lattice vector matrix 
+   (see P. Raiteri, J. Gale and G. Bussi, J. Phys.: Condens. Matter 23 334213 
+   (2011)). Note that the volume fluctuations are assumed to 
+   only affect the centroid normal mode, and so the other modes are just 
+   propagated in the same way as for constant volume ensembles.
    """
 
-
    def bind(self, beads, cell, forces):
+      """Binds beads, cell and forces to the barostat.
+
+      As for the base class bind, except the cell is also bound to the 
+      thermostat.
+
+      Args:
+         beads: The beads object from which the bead positions are taken.
+         cell: The cell object from which the system box is taken.
+         forces: The forcefield object from which the force and virial are
+            taken.
+      """
+
       super(BaroFlexi,self).bind(beads, cell, forces)
       self.thermostat.bind(cell=self.cell)
 
    def pstep(self):
-      
+      """Propagates the cell and centroid momenta.
+
+      Updates the centroid momenta as for the velocity verlet momentum step, but
+      also updates the cell momenta based on the mismatch of the internal and
+      external stress tensors and the motion of the centroids. Note that the 
+      outer product terms are done by splitting the sum up into several
+      dot product calculations to make the calculation faster.
+      """
+
       dthalf = self.dt*0.5
       dthalf2 = dthalf**2/2.0
       dthalf3 = dthalf**3/3.0     
@@ -238,8 +263,15 @@ class BaroFlexi(Barostat):
       self.beads.p += self.forces.f*dthalf      
       
    def qcstep(self):
-      """Takes the atom positions, velocities and forces and integrates the 
-         equations of motion forward by a step dt"""
+      """Propagates the cell and centroid position and momenta.
+
+      Updates the centroid and cell momenta and postions due to the motion 
+      of the cell box. Note that the dot product terms in the algorithms
+      for the different centroids are done in one step by first unflattening
+      the position, momenta into the x, y and z components and using matrix
+      multiplication.
+      """
+
       vel_mat = depstrip(self.cell.p)/self.cell.m
 
       dist_mat = vel_mat*self.dt
@@ -262,18 +294,46 @@ class BaroFlexi(Barostat):
 
       
 class BaroRigid(Barostat):
+   """Barostat object for rigid cell simulations.
+
+   Note that the volume fluctuations are assumed to 
+   only affect the centroid normal mode, and so the other modes are just 
+   propagated in the same way as for constant volume ensembles. The potential
+   is calculated in a simpler way than for flexible dynamics, as there is no
+   contribution from change in system box shape.
+   """
 
    def get_pot(self):
-      """Calculates the elastic strain energy of the cell"""
+      """Calculates the elastic strain energy of the cell."""
+
       return self.cell.V*self.pext
       
    def bind(self, beads, cell, forces):
+      """Binds beads, cell and forces to the barostat.
+
+      As for the base class bind, except the cell is also bound to the 
+      thermostat, and as the potential has been redifined it's
+      dependencies must also be updated.
+
+      Args:
+         beads: The beads object from which the bead positions are taken.
+         cell: The cell object from which the system box is taken.
+         forces: The forcefield object from which the force and virial are
+            taken.
+      """
+
       super(BaroRigid,self).bind(beads, cell, forces)
       self.thermostat.bind(pm=(self.cell.P, self.cell.M))
       dset(self,"pot",depend_value(name='pot', func=self.get_pot, 
           dependencies=[ dget(self.cell,"V"), dget(self,"pext")  ] ) )
       
    def pstep(self):
+      """Propagates the cell and centroid momenta.
+
+      Updates the centroid momenta as for the velocity verlet momentum step, but
+      also updates the cell momenta based on the mismatch of the internal and
+      external pressure and the motion of the centroids.
+      """
       
       dthalf = self.dt*0.5
       dthalf2 = dthalf**2/2.0
@@ -290,8 +350,12 @@ class BaroRigid(Barostat):
       self.beads.p += depstrip(self.forces.f)*dthalf      
            
    def qcstep(self):
-      """Takes the atom positions, velocities and forces and integrates the 
-         equations of motion forward by a step dt"""
+      """Propagates the cell and centroid position and momenta.
+
+      Updates the centroid and cell momenta and postions due to the motion 
+      of the cell box.
+      """
+
       vel = self.cell.P[0]/self.cell.m
       exp, neg_exp = (math.exp(vel*self.dt), math.exp(-vel*self.dt))
       sinh = 0.5*(exp - neg_exp)
@@ -310,10 +374,27 @@ class BaroRigid(Barostat):
 
       
 class RestartBaro(Restart):
+   """Barostat restart class.
+
+   Handles generating the appropriate cell class from teh xml input file, and
+   generating the xml checkpoint tags and data from an instance of the object.
+
+   Attributes:
+      kind: An optional string giving the type of barostat used. Defaults to
+         'rigid'.
+      thermostat: A thermostat object giving the cell thermostat.
+   """
+
    attribs={ "kind": (RestartValue, (str, "rigid")) }
    fields={ "thermostat": (RestartThermo, ()) }
    
    def store(self, baro):
+      """Takes a barostat instance and stores of minimal representation of it.
+
+      Args:
+         baro: A barostat object.
+      """
+
       if type(baro) is BaroRigid:
          self.kind.store("rigid")
       if type(baro) is BaroFlexi:
@@ -323,6 +404,13 @@ class RestartBaro(Restart):
       self.thermostat.store(baro.thermostat)
       
    def fetch(self):
+      """Creates a barostat object.
+
+      Returns:
+         A barostat object of the appropriate type and with the appropriate 
+         interface given the attributes of the RestartBaro object.
+      """
+
       if self.kind.fetch().upper() == "RIGID":
          baro=BaroRigid(thermostat=self.thermostat.fetch())
       elif self.kind.fetch().upper() == "FLEXIBLE":
