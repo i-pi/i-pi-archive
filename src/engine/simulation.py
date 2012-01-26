@@ -163,7 +163,7 @@ class Simulation(dobject):
    
    Attributes:
       nbeads: The number of the replicas of the system.
-      beads: A beads object giving the atoms positions.
+      beads: A beads object giving the atom positions.
       cell: A cell object giving the system box.
       prng: A random number object.
       _forcemodel: A forcefield object giving the force calculator for each 
@@ -196,6 +196,25 @@ class Simulation(dobject):
       """Initialises Simulation class.
 
       Args:
+         beads: A beads object giving the atom positions.
+         cell: A cell object giving the system box.
+         force: A forcefield object giving the force calculator for each replica
+            of the system.
+         ensemble: An ensemble object giving the objects necessary for 
+            producing the correct ensemble.
+         prng: A random number object.
+         step: An optional integer giving the current simulation time step. 
+            Defaults to 0.
+         tsteps: An optional integer giving the total number of steps. Defaults
+            to 1000.
+         stride: An optional dictionary giving the number of steps between 
+            printing out data for the different types of data. 
+         prefix: An optional string giving the prefix for all the output files. 
+            Defaults to 'prefix'.
+         outlist: An array of strings giving all the properties that should 
+            be output space separated.
+         initlist: An array of strings giving all the quantities that should
+            be output.
       """
 
       print "@@@@@ initializing with total_Steps", tsteps, "and dt", ensemble.dt
@@ -216,7 +235,7 @@ class Simulation(dobject):
       else:
          self.dstride = stride
       if outlist is None:
-         self.outlist = np.array(_DEFAULT_OUTPUT,np.dtype('|S12') )
+         self.outlist = np.array(_DEFAULT_OUTPUT, np.dtype('|S12') )
       else:
          self.outlist = outlist
       if initlist is None:
@@ -229,12 +248,21 @@ class Simulation(dobject):
       self.bind()
       
    def bind(self):
+      """Calls the bind routines for all the objects in the simulation."""
+
       self.forces.bind(self.beads, self.cell,  self._forcemodel)
       self.ensemble.bind(self.beads, self.cell, self.forces, self.prng)
       self.properties.bind(self)
       self.init()
 
    def run(self):
+      """Runs the simulation.
+
+      Does all the simulation steps, and outputs data to the appropriate files
+      when necessary. Also deals with starting and cleaning up the threads used
+      in the communication between the driver and the PIMD code.
+      """
+
       self._forcemodel.socket.start_thread()
    
       if (self.step == 0):
@@ -245,6 +273,7 @@ class Simulation(dobject):
          self.step = 0
       for self.step in range(self.step,self.tsteps):               
          self.ensemble.step()
+
          if ((self.step+1) % self.dstride["checkpoint"] == 0):
             self.write_chk()      
          if ((self.step+1) % self.dstride["properties"] == 0):
@@ -263,11 +292,19 @@ class Simulation(dobject):
       self._forcemodel.socket.end_thread()      
    
    def init(self):
+      """Deals with the file initialization.
+
+      Opens the different output files. Also initialises the cell and
+      atom velocities if required, and then removes the list of quantities to
+      be initialized, so that if the simulation is restarted these quantities
+      are not re-initialized.
+      """
+
       self.fout = open(self.prefix + ".out", "a")
-      ohead="# "
+      ohead = "# "
       for l in self.outlist:
          ohead += "%16s"%(l)
-      self.fout.write(ohead + "\n")      
+      self.fout.write(ohead + "\n")
       self.tcout = open(self.prefix + ".pdb", "a")
       self.tout = open(self.prefix + ".full.pdb", "a")      
       self.ichk = 0
@@ -281,6 +318,16 @@ class Simulation(dobject):
       self.initlist = np.zeros(0, np.dtype('|S12'))
    
    def write_output(self):
+      """Outputs the required properties of the system.
+
+      Note that properties are outputted using the same format as for the 
+      output to the xml checkpoint files, as specified in io_xml.
+
+      Raises:
+         KeyError: Raised if one of the properties specified in the output list
+            are not contained in the property_dict member of properties.
+      """
+
       for what in self.outlist:
          try:
             quantity = self.properties[what]
@@ -292,6 +339,13 @@ class Simulation(dobject):
       self.fout.flush()   
       
    def write_chk(self):
+      """Outputs the xml checkpoint files.
+
+      Note that each checkpoint is written to a different file, so that old 
+      checkpoint files can still be used to restart the system if a problem
+      is found.
+      """
+
       new = False
       self.ichk += 1
       while (not new):
