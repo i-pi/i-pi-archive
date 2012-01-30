@@ -11,38 +11,30 @@ Classes:
    FFSocket: Deals with a single replica of the system
    ForceBeads: Deals with the parallelization of the force calculation for
       a PI simulation.
-
-Exceptions:
-
-Functions:
-
 """
 
 __all__ = ['RestartForce', 'ForceField', 'ForceBeads', 'FFSocket']
 
 import numpy as np
-import math, time, threading
+import math, time
 from utils.depend import *
-from utils.io import io_system
 from driver.interface import Interface, RestartInterface
 from utils.restart import *
 
 class RestartForce(Restart):
    """Forcefield restart class.
 
-      Handles generating the appropriate forcefield class from the xml
-      input file, and generating the xml checkpoint tags and data from an 
-      instance of the object.
+   Handles generating the appropriate forcefield class from the xml
+   input file, and generating the xml checkpoint tags and data from an 
+   instance of the object.
 
-      Attributes:
-         type: A string indicating the type being used. 'socket' is currently
-            the only available option.
-
-      Fields:
-         interface: A restart interface instance.
-         parameters: A dictionary of the parameters used by the driver. Of the
-            form {"name": value}.
-      """
+   Attributes:
+      type: A string indicating the type being used. 'socket' is currently
+         the only available option.
+      interface: A restart interface instance.
+      parameters: A dictionary of the parameters used by the driver. Of the
+         form {"name": value}.
+   """
 
    attribs = { "type" : (RestartValue,(str,"socket")) }
    fields =  { "interface" : (RestartInterface,()), "parameters" : (RestartValue, (dict,{})) }
@@ -71,9 +63,9 @@ class RestartForce(Restart):
       """
 
       if self.type.fetch().upper() == "SOCKET": 
-         force=FFSocket(pars=self.parameters.fetch(), interface=self.interface.fetch())
-      else : 
-         force=ForceField()
+         force = FFSocket(pars=self.parameters.fetch(), interface=self.interface.fetch())
+      else: 
+         force = ForceField()
       return force
       
 
@@ -90,15 +82,15 @@ class ForceField(dobject):
    Depend objects:
       ufv: A list of the form [pot, f, vir]. These quantities are calculated 
          all at one time by the driver, so are collected together. Each separate
-         object is then taken from the list.
-      pot = The potential energy of the system.
-      f: An array containing all the components of the force of the form
-         [x1, y1, z1, x2, y2, z2,..., xn, yn, zn].
+         object is then taken from the list. Depends on the atom positions and 
+         the system box.
+      pot = A float giving the potential energy of the system. Depends on ufv.
+      f: An array containing all the components of the force. Depends on ufv.
       fx: A slice of f containing only the x components of the forces.
       fy: A slice of f containing only the y components of the forces.
       fz: A slice of f containing only the z components of the forces.
       vir: An array containing the components of the virial tensor in upper 
-         triangular form, not divided by the volume.
+         triangular form, not divided by the volume. Depends on ufv.
    """
 
    def __init__(self):
@@ -126,8 +118,8 @@ class ForceField(dobject):
       that the driver returns and the dependency network.
 
       Args:
-         atoms: The Atoms object from which the positions are taken.
-         cell: The Cell object from which the cell box is taken.
+         atoms: The Atoms object from which the atom positions are taken.
+         cell: The Cell object from which the system box is taken.
       """
 
       # stores a reference to the atoms and cell we are computing forces for
@@ -206,18 +198,21 @@ class ForceBeads(dobject):
    separate replicas, and collecting the data from each replica.
 
    Attributes:
-      natoms: Number of atoms.
-      nbeads: Number of beads.
+      natoms: An integer giving the number of atoms.
+      nbeads: An integer giving the number of beads.
       _forces: A list containing all the force objects for each system replica.
       Cb2nm: The transformation matrix between the bead and normal mode 
          representations.
 
    Depend objects:
-      f: An array containing the components of the force.
-      pots: A list containing the potential energy for each system replica.
-      virs: A list containing the virial tensor for each system replica.
-      pot: The appropriate estimator for the potential energy.
-      vir: The appropriate estimator for the virial tensor.
+      f: An array containing the components of the force. Depends on each
+         replica's ufv list.
+      pots: A list containing the potential energy for each system replica. 
+         Depends on each replica's ufv list.
+      virs: A list containing the virial tensor for each system replica. 
+         Depends on each replica's ufv list.
+      pot: The sum of the potential energy of the replicas.
+      vir: The sum of the virial tensor of the replicas.
       fnm: An array containing the components of the force in the normal mode
          representation.
    """
@@ -246,21 +241,22 @@ class ForceBeads(dobject):
       hold the data that the driver returns and the dependency network. 
 
       Args:
-         beads: Beads object, to be bound to the forcefield.
-         cell: Cell object, to be bound to the forcefield.
+         beads: Beads object from which the bead positions are taken.
+         cell: Cell object from which the system box is taken.
          force: Force object, to be bound to the forcefield. This
             should be a FFSocket or equivalent, so that it can be copied for
             each replica of the system.
       """
 
       # stores a copy of the number of atoms and of beads !TODO! make them read-only properties
-      self.natoms=beads.natoms
-      self.nbeads=beads.nbeads
+      self.natoms = beads.natoms
+      self.nbeads = beads.nbeads
 
       # creates an array of force objects, which are bound to the beads and the cell
-      self._forces=[];
+      self._forces = [];
       for b in range(self.nbeads):
-         newf=force.copy();   newf.bind(beads[b], cell)
+         newf = force.copy()
+         newf.bind(beads[b], cell)
          self._forces.append(newf)
       
       # f is a big array which assembles the forces on individual beads
@@ -279,7 +275,7 @@ class ForceBeads(dobject):
 
       # optionally, transforms in normal-modes representation
       dset(self,"fnm",depend_array(name="fnm",value=np.zeros((self.nbeads,3*self.natoms), float), func=self.b2nm_f, dependencies=[dget(self,"f")] ) )
-      self.Cb2nm=beads.Cb2nm
+      self.Cb2nm = beads.Cb2nm
       
    def queue(self): 
       "Submits all the required force calculations to the interface."""
@@ -327,11 +323,11 @@ class ForceBeads(dobject):
          array for replica i of the system.
       """
 
-      newf=np.zeros((self.nbeads,3*self.natoms),float)
+      newf = np.zeros((self.nbeads,3*self.natoms),float)
       
       self.queue()
       for b in range(self.nbeads): 
-         newf[b]=self._forces[b].f
+         newf[b] = self._forces[b].f
 
       return newf
       
@@ -370,7 +366,8 @@ class FFSocket(ForceField):
          communication between the forcefield and the driver is done.
       request: During the force calculation step this holds a dictionary
          containing the relevant data for determining the progress of the step.
-         Of the form {"status": status, "result": result}.
+         Of the form {"atoms": atoms, "cell": cell, "pars": parameters, 
+                      "status": status, "result": result}.
    """
 
    def __init__(self, pars=None, interface=None):
@@ -384,15 +381,15 @@ class FFSocket(ForceField):
       # a socket to the communication library is created or linked
       super(FFSocket,self).__init__() 
       if interface is None:
-         self.socket=Interface()
+         self.socket = Interface()
       else:
-         self.socket=interface
-         
+         self.socket = interface
+
       if pars is None:
-         self.pars={}
+         self.pars = {}
       else:
-         self.pars=pars     
-      self.request=None
+         self.pars = pars     
+      self.request = None
       
    def copy(self):    
       """Creates a deep copy without the bound objects.
@@ -420,12 +417,14 @@ class FFSocket(ForceField):
 
       # this is converting the distribution library requests into [ u, f, v ]  lists
       if self.request is None: 
-         self.request=self.socket.queue(self.atoms, self.cell, self.pars)
+         self.request = self.socket.queue(self.atoms, self.cell, self.pars)
       while self.request["status"] != "Done": 
          time.sleep(self.socket.latency)
-      self.socket.release(self.request) # makes sure that resources are freed now that we have the data
-      result=self.request["result"]
-      self.request=None
+
+      # data has been collected, so the request can be released and a slot freed up for new calculations
+      self.socket.release(self.request)
+      result = self.request["result"]
+      self.request = None
       
       return result
       
@@ -438,4 +437,4 @@ class FFSocket(ForceField):
       """
 
       if self.request is None and dget(self,"ufv").tainted():
-         self.request=self.socket.queue(self.atoms, self.cell, self.pars)
+         self.request = self.socket.queue(self.atoms, self.cell, self.pars)

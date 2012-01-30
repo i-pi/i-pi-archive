@@ -1,3 +1,20 @@
+"""Contains the classes that deal with constant pressure dynamics.
+
+Contains the algorithms which propagate the position and momenta steps in the
+constant pressure and constant stress ensembles. Holds the properties directly
+related to these ensembles, such as the internal and external pressure and 
+stress and the strain energy.
+
+Classes:
+   Barostat: Base barostat class with the generic methods and attributes.
+   BaroFlexi: Deals with flexible cell dynamics. Used for NST ensembles.
+   BaroRigid: Deals with rigid cell dynamics. Used for NVT and NPT ensembles.
+   RestartBaro: Deals with creating the barostat object from a file, and 
+      writing the checkpoints.
+"""
+
+__all__ = ['Barostat', 'BaroFlexi', 'BaroRigid', 'RestartBaro']
+
 import math, time
 import numpy as np
 from utils.depend import *
@@ -7,39 +24,95 @@ from utils.mathtools import eigensystem_ut3x3, invert_ut3x3, exp_ut3x3, det_ut3x
 from engine.thermostats import Thermostat, RestartThermo
 
 class Barostat(dobject): 
-   def __init__(self, pext=0.0, sext = None, dt = None, temp = None, thermostat=None):
+   """Base barostat class.
+
+   Gives the standard methods and quantities needed in all the barostat classes.
+
+   Attributes:
+      thermostat: A thermostat object used to keep the cell momenta at a 
+         specified kinetic temperature.
+      beads: A beads object giving the atoms positions
+      cell: A cell object giving the system box.
+      forces: A forces object giving the virial and the forces acting on 
+         each bead.
+
+   Depend objects:
+      sext: The external stress tensor.
+      pext: The external pressure.
+      dt: The time step used in the algorithms. Depends on the simulation dt.
+      temp: The temperature used in the algorithms. Depends on the simulation
+         temp.
+      pot: The elastic strain potential for the cell.
+      piext: The accumulated stress compared to the reference cell.
+      stress: The internal stress.
+      press: The internal pressure.
+   """
+
+   def __init__(self, pext=0.0, sext=None, dt=None, temp=None, thermostat=None):
+      """Initialises base barostat class.
+
+      Note that the external stress and the external pressure are synchronized.
+      This makes most sense going from the stress to the pressure, but if you 
+      must go in the other direction the stress is assumed to be isotropic.
+
+      Args:
+         pext: Optional float giving the external pressure. Defaults to 
+            Tr(sext)/3.0
+         sext: Optional array givin the external stress tensor. Defaults to 
+            pext*I, where I is a 3*3 identity matrix.
+         dt: Optional float giving the time step for the algorithms. Defaults
+            to the simulation dt.
+         temp: Optional float giving the temperature for the thermostat. 
+            Defaults to the simulation temp.
+         thermostat: Optional thermostat object. Defaults to Thermostat().
+      """
      
-      # This kind of stretches the concept of synced dependencies: sext holds more information than pext but....
       sync_ext=synchronizer()
       dset(self,"sext",depend_array(name='sext', value=np.zeros((3,3)), synchro=sync_ext, func={"pext" : self.p2s} ) )
       dset(self,"pext",depend_value(name='pext', value=0.0, synchro=sync_ext, func={"sext" : self.s2p} ) )            
       if sext is None:
-         self.pext=pext
+         self.pext = pext
       else:
-         self.sext=sext
+         self.sext = sext
       
 
-      if thermostat is None: thermostat=Thermostat()
-      self.thermostat=thermostat   
-      # binds options for dt and temperature of the thermostat to those in the barostat
+      if thermostat is None:
+         thermostat = Thermostat()
+      self.thermostat = thermostat   
      
       dset(self,"dt",depend_value(name='dt'))
-      if dt is None: self.dt=2.0*self.thermostat.dt
-      else: self.dt=dt
-      dset(self.thermostat,"dt",   #this involves A LOT of piping
+      if dt is None:
+         self.dt = 2.0*self.thermostat.dt
+      else:
+         self.dt = dt
+      dset(self.thermostat,"dt",   
          depend_value(name="dt", func=self.get_halfdt,dependencies=[dget(self,"dt")],dependants=dget(self.thermostat,"dt")._dependants)  )
            
-      #temp
       dset(self, "temp", depend_value(name="temp", value=temp))
       deppipe(self, "temp", self.thermostat,"temp")
-      if not temp is None: self.temp=temp
+      if not temp is None:
+         self.temp = temp
       
-      self.timer=0.0
-      
-   def get_halfdt(self):  return self.dt*0.5
+   def get_halfdt(self):
+      """Returns half the simulation timestep."""
+
+      return self.dt*0.5
          
    def bind(self, beads, cell, forces):
-      """Binding function which prepares most of the stuff which will be necessary for a barostat"""
+      """Binds beads, cell and forces to the barostat.
+
+      This takes an beads object, a cell object and a forces object and makes 
+      them members of the barostat. It also then creates the objects that will
+      hold the data needed in the barostat algorithms and the dependency 
+      network.
+
+      Args:
+         beads: The beads object from which the bead positions are taken.
+         cell: The cell object from which the system box is taken.
+         forces: The forcefield object from which the force and virial are
+            taken.
+      """
+
       self.beads=beads
       self.cell=cell
       self.forces=forces
@@ -53,14 +126,29 @@ class Barostat(dobject):
       dset(self,"press",depend_value(name='press', func=self.get_press, 
           dependencies=[ dget(self,"stress") ] ) )
                 
-   def s2p(self): return np.trace(self.sext)/3.0
-   def p2s(self): return self.pext*np.identity(3)
+   def s2p(self):
+      """Converts the external stress to the external pressure."""
+
+      return np.trace(self.sext)/3.0
+
+   def p2s(self):
+      """Converts the external pressure to an isotropic external stress."""
+
+      return self.pext*np.identity(3)
       
-   def pstep(self): pass
-   def qstep(self): pass   
+   def pstep(self):
+      """Dummy momenta update step."""
+
+      pass
+
+   def qcstep(self):
+      """Dummy centroid position update step."""
+
+      pass   
       
    def step(self):
-      """Dummy atoms barostat step""" 
+      """Classical barostat step.""" 
+
       self.thermostat.step()
       self.pstep()
       self.qcstep()
@@ -68,11 +156,18 @@ class Barostat(dobject):
       self.thermostat.step()
       
    def get_pot(self):
-      """Calculates the elastic strain energy of the cell"""
+      """Calculates the elastic strain energy of the cell."""
+
       return self.cell.V0*np.trace(np.dot(self.sext, self.cell.strain))
 
    def get_piext(self):
-      """Calculates the external stress tensor"""
+      """Calculates the accumulated external stress tensor.
+
+      This tensor is calculated with respect to the reference cell, and so
+      gives a measure of the stress due to deviation from the cell for zero
+      external pressure.
+      """
+
       root = np.dot(depstrip(self.cell.h), depstrip(self.cell.ih0))
       pi = np.dot(root, depstrip(self.sext))
       
@@ -81,7 +176,7 @@ class Barostat(dobject):
       return pi
       
    def get_stress(self):
-      """Calculates the elastic strain energy of the cell"""
+      """Calculates the internal stress tensor."""
       
       #return (self.beads.kstress+self.forces.vir/self.beads.nbeads)/self.cell.V
       return (np.identity(3)*self.beads.natoms*Constants.kb*self.temp/self.beads.nbeads + self.forces.vir/self.beads.nbeads)/self.cell.V
@@ -90,178 +185,237 @@ class Barostat(dobject):
 #TODO  also include a possible explicit dependence of U on h
 
    def get_press(self):
+      """Calculates the internal pressure."""
+
       return np.trace(self.stress)/3.0
 
-class BaroFlexi(Barostat):
 
-   def bind(self, atoms, cell, force):
-      super(BaroFlexi,self).bind(atoms,cell,force)
+class BaroFlexi(Barostat):
+   """Barostat object for flexible cell simulations.
+
+   Propagates the relevant equations of motion to give a constant stress 
+   ensemble assuming an upper triangular lattice vector matrix 
+   (see P. Raiteri, J. Gale and G. Bussi, J. Phys.: Condens. Matter 23 334213 
+   (2011)). Note that the volume fluctuations are assumed to 
+   only affect the centroid normal mode, and so the other modes are just 
+   propagated in the same way as for constant volume ensembles.
+   """
+
+   def bind(self, beads, cell, forces):
+      """Binds beads, cell and forces to the barostat.
+
+      As for the base class bind, except the cell is also bound to the 
+      thermostat.
+
+      Args:
+         beads: The beads object from which the bead positions are taken.
+         cell: The cell object from which the system box is taken.
+         forces: The forcefield object from which the force and virial are
+            taken.
+      """
+
+      super(BaroFlexi,self).bind(beads, cell, forces)
       self.thermostat.bind(cell=self.cell)
 
-#   def exp_p(self):
-#      dist_mat = (self.cell.p*self.dt/self.cell.m).view(np.ndarray)
-##      exp_mat=matrix_exp(dist_mat);  neg_exp_mat=matrix_exp(-1.0*dist_mat);       
-#      eig, eigvals = eigensystem_ut3x3(dist_mat)
-#      i_eig = invert_ut3x3(eig)
-
-#      exp_mat = np.zeros((3,3))
-#      neg_exp_mat = np.zeros((3,3))
-#      for i in range(3):
-#         exp_mat[i,i] = math.exp(eigvals[i])
-#         neg_exp_mat[i,i] = math.exp(-eigvals[i])
-
-#      exp_mat = np.dot(eig, exp_mat)
-#      exp_mat = np.dot(exp_mat, i_eig)
-#         
-#      neg_exp_mat = np.dot(eig, neg_exp_mat)
-#      neg_exp_mat = np.dot(neg_exp_mat, i_eig)
-
-#      em2=exp_ut3x3(dist_mat)
-#      iem=exp_ut3x3(-dist_mat)      
-#      return exp_mat, neg_exp_mat
-
    def pstep(self):
-      
+      """Propagates the cell and centroid momenta.
+
+      Updates the centroid momenta as for the velocity verlet momentum step, but
+      also updates the cell momenta based on the mismatch of the internal and
+      external stress tensors and the motion of the centroids. Note that the 
+      outer product terms are done by splitting the sum up into several
+      dot product calculations to make the calculation faster.
+      """
+
       dthalf = self.dt*0.5
-      dthalf2=dthalf**2/2.0
-      dthalf3=dthalf**3/3.0     
+      dthalf2 = dthalf**2/2.0
+      dthalf3 = dthalf**3/3.0     
 
       L = np.zeros((3,3))
-      for i in range(3): L[i,i] = 3.0 - i
+      for i in range(3):
+         L[i,i] = 3.0 - i
       
-      #step on the cell velocities - first term, which only depends on "cell" quantities
       self.cell.p += dthalf*(self.cell.V*(self.stress - self.piext) + 2.0*Constants.kb*self.thermostat.temp*L)       
-     # pdb.set_trace()
 
-      #now must compute the terms depending on outer products of f and p
-      m = depstrip(self.atoms.m)
-#      m = self.atoms.m.view(np.ndarray)
-#      p = self.atoms.p.view(np.ndarray)  # this strips the dependency checks from p, making it inexpensive to scan through ...
-#      nat=self.atoms.natoms
+      m = depstrip(self.beads.m)
 
-      # faster way is to compute the products from the slices
-      fx=depstrip(self.force.fx);       fy=depstrip(self.force.fy);       fz=depstrip(self.force.fz);
-      fxm=fx/m;                         fym=fy/m;                         fzm=fz/m;             
-      #px=depstrip(self.force.px);       py=depstrip(self.force.py);       pz=depstrip(self.force.pz);        
-      p = depstrip(self.atoms.p)
-      px = p[0:3*self.atoms.natoms:3];  py = p[1:3*self.atoms.natoms:3];  pz = p[2:3*self.atoms.natoms:3]
+      fc = depstrip(self.forces.fnm)/math.sqrt(self.beads.nbeads)
+      fx = fc[0:3*self.beads.natoms:3]
+      fy = fc[1:3*self.beads.natoms:3]
+      fz = fc[2:3*self.beads.natoms:3]
+      fxm = fx/m
+      fym = fy/m
+      fzm = fz/m
+
+      pc = depstrip(self.beads.pc)
+      px = pc[0:3*self.atoms.natoms:3]
+      py = pc[1:3*self.atoms.natoms:3]
+      pz = pc[2:3*self.atoms.natoms:3]
       
-      cp=np.zeros((3,3),float)
-      cp[0,0]=dthalf2*2.0*np.dot(fxm,px) + dthalf3*np.dot(fx,fxm)
-      cp[1,1]=dthalf2*2.0*np.dot(fym,py) + dthalf3*np.dot(fy,fym)
-      cp[2,2]=dthalf2*2.0*np.dot(fzm,pz) + dthalf3*np.dot(fz,fzm)
-      cp[0,1]=dthalf2*(np.dot(fxm,py)+np.dot(px,fym)) + dthalf3*np.dot(fx,fym)
-      cp[0,2]=dthalf2*(np.dot(fxm,pz)+np.dot(px,fzm)) + dthalf3*np.dot(fx,fzm)
-      cp[1,2]=dthalf2*(np.dot(fym,pz)+np.dot(py,fzm)) + dthalf3*np.dot(fy,fzm)            
+      cp = np.zeros((3,3),float)
+      cp[0,0] = dthalf2*2.0*np.dot(fxm,px) + dthalf3*np.dot(fx,fxm)
+      cp[1,1] = dthalf2*2.0*np.dot(fym,py) + dthalf3*np.dot(fy,fym)
+      cp[2,2] = dthalf2*2.0*np.dot(fzm,pz) + dthalf3*np.dot(fz,fzm)
+      cp[0,1] = dthalf2*(np.dot(fxm,py) + np.dot(px,fym)) + dthalf3*np.dot(fx,fym)
+      cp[0,2] = dthalf2*(np.dot(fxm,pz) + np.dot(px,fzm)) + dthalf3*np.dot(fx,fzm)
+      cp[1,2] = dthalf2*(np.dot(fym,pz) + np.dot(py,fzm)) + dthalf3*np.dot(fy,fzm)            
+      self.cell.p += cp
+      self.beads.p += self.forces.f*dthalf      
       
-      self.cell.p+=cp
-      self.atoms.p += self.force.f*dthalf      
-      
-   def qstep(self):
-      """Takes the atom positions, velocities and forces and integrates the 
-         equations of motion forward by a step dt"""
-      #(self.cell.p*self.dt/self.cell.m).view(np.ndarray)
-      self.timer-=time.clock()
-      
-      vel_mat = (self.cell.p/self.cell.m).view(np.ndarray)
+   def qcstep(self):
+      """Propagates the cell and centroid position and momenta.
+
+      Updates the centroid and cell momenta and postions due to the motion 
+      of the cell box. Note that the dot product terms in the algorithms
+      for the different centroids are done in one step by first unflattening
+      the position, momenta into the x, y and z components and using matrix
+      multiplication.
+      """
+
+      vel_mat = depstrip(self.cell.p)/self.cell.m
 
       dist_mat = vel_mat*self.dt
-      #vel_mat*=self.dt
-      exp_mat=exp_ut3x3(dist_mat)
+      exp_mat = exp_ut3x3(dist_mat)
       neg_exp_mat = invert_ut3x3(exp_mat)
       sinh_mat = 0.5*(exp_mat - neg_exp_mat)
       ips_mat = np.dot( sinh_mat, invert_ut3x3(vel_mat) )
 
-      nat=len(self.atoms)
-      p = self.atoms.p.view(np.ndarray).copy().reshape((nat,3)) 
-      q = self.atoms.q.view(np.ndarray).copy().reshape((nat,3))   # this strips the dependency checks off p and q, making it inexpensive to scan through ...
-      m3 = self.atoms.m3.view(np.ndarray).copy().reshape((nat,3))       
+      pc = depstrip(self.beads.pc).reshape((self.beads.natoms,3)) 
+      qc = depstrip(self.beads.qc).reshape((self.beads.natoms,3))
+      m3 = depstrip(self.beads.m3)[0,:].reshape((self.beads.natoms,3))       
 
-#      k=0
-#      for i in range(nat):
-#         kn=k+3  
-#         q[k:kn] = np.dot(exp_mat, q[k:kn]) + np.dot(ips_mat, p[k:kn]/m[i])
-#         p[k:kn] = np.dot(neg_exp_mat, p[k:kn])
-#         k=kn
-#      depget(self.atoms,"p").taint(taintme=False)  # .. but one must remember to taint it manually!
-#      depget(self.atoms,"q").taint(taintme=False)  # .. but one must remember to taint it manually!
-      
-      #pdb.set_trace()
-      
-      # quick multiplication  by making it in matrix form
-      q=np.dot(q,exp_mat.T)+np.dot(p/m3,ips_mat.T)
-      p=np.dot(p,neg_exp_mat.T)
+      qc = np.dot(qc,exp_mat.T)+np.dot(pc/m3,ips_mat.T)
+      pc = np.dot(pc,neg_exp_mat.T)
 
-      # assigns back to actual storage
-      self.atoms.q=q.reshape(3*nat)
-      self.atoms.p=p.reshape(3*nat)
+      self.beads.qnm[0,:] = qc.reshape(3*nat)*math.sqrt(self.beads.nbeads)
+      self.beads.pnm[0,:] = pc.reshape(3*nat)*math.sqrt(self.beads.nbeads)
                     
-      self.cell.h=np.dot(exp_mat, self.cell.h)
-      self.timer+=time.clock()
+      self.cell.h = np.dot(exp_mat, self.cell.h)
+
       
 class BaroRigid(Barostat):
+   """Barostat object for rigid cell simulations.
+
+   Note that the volume fluctuations are assumed to 
+   only affect the centroid normal mode, and so the other modes are just 
+   propagated in the same way as for constant volume ensembles. The potential
+   is calculated in a simpler way than for flexible dynamics, as there is no
+   contribution from change in system box shape.
+   """
 
    def get_pot(self):
-      """Calculates the elastic strain energy of the cell"""
+      """Calculates the elastic strain energy of the cell."""
+
       return self.cell.V*self.pext
       
-   def bind(self, atoms, cell, forces):
-      super(BaroRigid,self).bind(atoms, cell, forces)
+   def bind(self, beads, cell, forces):
+      """Binds beads, cell and forces to the barostat.
+
+      As for the base class bind, except the cell is also bound to the 
+      thermostat, and as the potential has been redifined it's
+      dependencies must also be updated.
+
+      Args:
+         beads: The beads object from which the bead positions are taken.
+         cell: The cell object from which the system box is taken.
+         forces: The forcefield object from which the force and virial are
+            taken.
+      """
+
+      super(BaroRigid,self).bind(beads, cell, forces)
       self.thermostat.bind(pm=(self.cell.P, self.cell.M))
       dset(self,"pot",depend_value(name='pot', func=self.get_pot, 
-          dependencies=[ dget(self.cell,"V"), dget(self,"pext")  ] ) )            
+          dependencies=[ dget(self.cell,"V"), dget(self,"pext")  ] ) )
       
    def pstep(self):
+      """Propagates the cell and centroid momenta.
+
+      Updates the centroid momenta as for the velocity verlet momentum step, but
+      also updates the cell momenta based on the mismatch of the internal and
+      external pressure and the motion of the centroids.
+      """
       
       dthalf = self.dt*0.5
-      dthalf2=dthalf**2/2.0
-      dthalf3=dthalf**3/3.0     
+      dthalf2 = dthalf**2/2.0
+      dthalf3 = dthalf**3/3.0     
       
-      #step on the cell velocities - first term, which only depends on "cell" quantities      
       self.cell.P += dthalf*3.0*(self.cell.V*(self.press - self.pext) + 2.0*Constants.kb*self.temp)
 
-      #now must compute the terms depending on outer products of f and p
-      f = depstrip(self.forces.fnm)[0,:]/math.sqrt(self.beads.nbeads)
+      fc = depstrip(self.forces.fnm)[0,:]/math.sqrt(self.beads.nbeads)
       m = depstrip(self.beads.m3)[0,:]
-      p = depstrip(self.beads.pc)
+      pc = depstrip(self.beads.pc)
             
-      self.cell.P+=dthalf2*np.dot(p,f/m)+dthalf3*np.dot(f,f/m)
+      self.cell.P += dthalf2*np.dot(pc,fc/m) + dthalf3*np.dot(fc,fc/m)
    
       self.beads.p += depstrip(self.forces.f)*dthalf      
-      
            
    def qcstep(self):
-      """Takes the atom positions, velocities and forces and integrates the 
-         equations of motion forward by a step dt"""
-      eta = self.cell.P[0]/self.cell.m
-      exp, neg_exp = ( math.exp(eta*self.dt), math.exp(-eta*self.dt))
+      """Propagates the cell and centroid position and momenta.
+
+      Updates the centroid and cell momenta and postions due to the motion 
+      of the cell box.
+      """
+
+      vel = self.cell.P[0]/self.cell.m
+      exp, neg_exp = (math.exp(vel*self.dt), math.exp(-vel*self.dt))
       sinh = 0.5*(exp - neg_exp)
 
-      p = depstrip(self.beads.pnm)[0,:] 
-      q = depstrip(self.beads.qnm)[0,:]
+      pc = depstrip(self.beads.pc)
+      qc = depstrip(self.beads.qc)
       m = depstrip(self.beads.m3)[0,:]      
-      q*=exp
-      q+=(sinh/eta)* p/m
-      p *= neg_exp
+      qc*=exp
+      qc+=(sinh/vel)* pc/m
+      pc *= neg_exp
 
-      self.beads.qnm[0,:] = q
-      self.beads.pnm[0,:] = p
+      self.beads.qnm[0,:] = qc*math.sqrt(self.beads.nbeads)
+      self.beads.pnm[0,:] = pc*math.sqrt(self.beads.nbeads)
 
       self.cell.V*=exp**3
+
       
 class RestartBaro(Restart):
+   """Barostat restart class.
+
+   Handles generating the appropriate cell class from teh xml input file, and
+   generating the xml checkpoint tags and data from an instance of the object.
+
+   Attributes:
+      kind: An optional string giving the type of barostat used. Defaults to
+         'rigid'.
+      thermostat: A thermostat object giving the cell thermostat.
+   """
+
    attribs={ "kind": (RestartValue, (str, "rigid")) }
-   fields={ "thermostat" : (RestartThermo, ()) }
+   fields={ "thermostat": (RestartThermo, ()) }
    
    def store(self, baro):
-      if type(baro) is BaroRigid: self.kind.store("rigid")
-      if type(baro) is BaroFlexi: self.kind.store("flexible")
-      else: self.kind.store("unknown")      
+      """Takes a barostat instance and stores of minimal representation of it.
+
+      Args:
+         baro: A barostat object.
+      """
+
+      if type(baro) is BaroRigid:
+         self.kind.store("rigid")
+      if type(baro) is BaroFlexi:
+         self.kind.store("flexible")
+      else:
+         self.kind.store("unknown")      
       self.thermostat.store(baro.thermostat)
       
    def fetch(self):
-      if self.kind.fetch().upper() == "RIGID" :      baro=BaroRigid(thermostat=self.thermostat.fetch())
-      elif self.kind.fetch().upper() == "FLEXIBLE" : baro=BaroFlexi(thermostat=self.thermostat.fetch())
-      else: baro=Barostat(thermostat=self.thermostat.fetch())
+      """Creates a barostat object.
+
+      Returns:
+         A barostat object of the appropriate type and with the appropriate 
+         thermostat given the attributes of the RestartBaro object.
+      """
+
+      if self.kind.fetch().upper() == "RIGID":
+         baro=BaroRigid(thermostat=self.thermostat.fetch())
+      elif self.kind.fetch().upper() == "FLEXIBLE":
+         baro=BaroFlexi(thermostat=self.thermostat.fetch())
+      else:
+         baro=Barostat(thermostat=self.thermostat.fetch())
 
       return baro

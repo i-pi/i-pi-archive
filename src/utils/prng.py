@@ -1,12 +1,38 @@
+"""Contains the classes used to generate pseudo-random numbers.
+
+Allows the user to specify a seed for the random number generator.
+These are used in initialising the velocities and in stochastic thermostats.
+The state of the random number generator is kept track of, so that the if the
+simulation is restarted from a checkpoint, we will see the same dynamics as if 
+it had not been stopped.
+
+Classes:
+   MRG32k3a: A class implementing a basic L'Ecuyer MRG32k3a random number
+      generator.
+   Random: An interface between the numpy.random module and the user.
+   RestartRandom: Deals with creating the Random object from a file, and 
+      writing the checkpoints.
+"""
+
+__all__ = ['MRG32k3a', 'Random', 'RestartRandom']
+
 import numpy as np
 import math
 from restart import Restart, RestartValue, RestartArray
-import pdb
 
 class MRG32k3a:
-   # a stripped-down version of L'Ecuyer MRG32k3a. Good efficiency and RN quality,
-   # it is possible to do arbitrary jumps in the stream (but this is not implemented here)
-   anti=False
+   """Class implementing a simple L'Ecuyer MRG32k3a.
+
+   A simple uniform pseudo-random number generator class.
+   This type of random number generator has the ability to jump an arbitrary
+   distance in the stream, but this has not yet been implemented.
+
+   Attributes:
+      anti: A boolean giving whether the distribution is from 0 to 1 or from
+         1 to 0.
+      m1:
+   """
+   anti = False
    m1     =  4294967087.0        
    m2     =  4294944443.0        
    a12    =    1403580.0         
@@ -18,89 +44,88 @@ class MRG32k3a:
 
    @staticmethod
    def U01(status):
-      p1=MRG32k3a.a12*status[0,1]-MRG32k3a.a13n*status[0,0]
-      k=int(p1/MRG32k3a.m1)
+      p1 = MRG32k3a.a12*status[0,1] - MRG32k3a.a13n*status[0,0]
+      k = int(p1/MRG32k3a.m1)
 
-      p1=p1-k*MRG32k3a.m1
-      if (p1<0.0) : p1+=MRG32k3a.m1
-      status[0,0]=status[0,1]; status[0,1]=status[0,2]; status[0,2]=p1
+      p1 = p1 - k*MRG32k3a.m1
+      if (p1<0.0):
+         p1 += MRG32k3a.m1
+      status[0,0] = status[0,1]
+      status[0,1] = status[0,2]
+      status[0,2] = p1
 
-      p2=MRG32k3a.a21*status[1,2]-MRG32k3a.a23n*status[1,0]
-      k=int(p2/MRG32k3a.m2)
-      p2=p2-k*MRG32k3a.m2
-      if (p2<0.0): p2+=MRG32k3a.m2
-      status[1,0]=status[1,1]; status[1,1]=status[1,2]; status[1,2]=p2
+      p2 = MRG32k3a.a21*status[1,2] - MRG32k3a.a23n*status[1,0]
+      k = int(p2/MRG32k3a.m2)
+      p2 = p2-k*MRG32k3a.m2
+      if (p2<0.0):
+         p2 += MRG32k3a.m2
+      status[1,0] = status[1,1]
+      status[1,1] = status[1,2]
+      status[1,2] = p2
       
-      if (p1>p2):    u=(p1-p2)*MRG32k3a.norm
-      else:          u=(p1-p2+MRG32k3a.m1)*MRG32k3a.norm
+      if (p1>p2):
+         ui = (p1 - p2)*MRG32k3a.norm
+      else:
+         u = (p1 - p2 + MRG32k3a.m1)*MRG32k3a.norm
 
-      if (MRG32k3a.anti):  return 1-u
-      else:            return u
+      if (MRG32k3a.anti):
+         return 1 - u
+      else:
+         return u
+
 
 class Random(object):
    def __init__(self, seed=12345, state=None):
-      self.rng=np.random.mtrand.RandomState(seed=seed)
-      self.seed=seed
+      self.rng = np.random.mtrand.RandomState(seed=seed)
+      self.seed = seed
       if state is None:   
          self.rng.seed(seed)        
       else:
-         self.state=state
+         self.state = state
 
    @property
-   def state(self):        return self.rng.get_state()
+   def state(self):
+      return self.rng.get_state()
 
    @state.setter
-   def state(self, value): return self.rng.set_state(value)
+   def state(self, value):
+      return self.rng.set_state(value)
 
    @property
-   def u(self):   return self.rng.random_sample()
+   def u(self):
+      return self.rng.random_sample()
 
    @property
-   def g(self):   return self.rng.standard_normal()
+   def g(self):
+      return self.rng.standard_normal()
    
-   def gamma(self, k, theta=1.0): return self.rng.gamma(k,theta)
-      
-#      # generates a Gaussian variate with zero mean and unit varianceq
-#      # uses a ratio-of-uniforms rather than the usual box-mueller method
-#      # as this is (often) faster, and avoids the hassle of storing one of the samples
-#      while True:
-#         u=self.u; v=self.u 
-#         v=1.7156*(v-0.5)  
-#         x=u-0.449871
-#         y=abs(v)+0.386595
-#         q=x*x+y*(0.19600*y-0.25472*x)
-#         if (q < 0.27597): break
-#         if (q > 0.27846): continue
-#         if (v*v<-4.0*math.log(u)*u*u): break
+   def gamma(self, k, theta=1.0):
+      return self.rng.gamma(k,theta)
 
-#      return v/u
-
-   def gvec(self, shape):    return self.rng.standard_normal(shape)
-#      v=np.zeros(shape,float)
-#      sz=v.size; fv=v.flat
-#      for i in range(sz):
-#         fv[i]=self.g
-#      return v
+   def gvec(self, shape):
+      return self.rng.standard_normal(shape)
 
 
 class RestartRandom(Restart):
-   fields={"seed" : (RestartValue, (int, 123456)), 
-            "state": (RestartArray, (np.uint, np.zeros(0, np.uint ))),
-            "has_gauss": (RestartValue, (int, 0)),  
-            "gauss": (RestartValue, (float,  0.00 )),
-            "set_pos": (RestartValue, (int, 0))
-          }
+   fields = {"seed" : (RestartValue, (int, 123456)), 
+             "state": (RestartArray, (np.uint, np.zeros(0, np.uint ))),
+             "has_gauss": (RestartValue, (int, 0)),  
+             "gauss": (RestartValue, (float,  0.00 )),
+             "set_pos": (RestartValue, (int, 0))
+            }
 
    def store(self, prng):
       self.seed.store(prng.seed)
-      gstate=prng.state
+      gstate = prng.state
       self.state.store(gstate[1])
       self.set_pos.store(gstate[2])
       self.has_gauss.store(gstate[3])
       self.gauss.store(gstate[4])
 
    def fetch(self):
-      state=self.state.fetch()
-      if state.shape==(0,): return Random(seed=self.seed.fetch())
-      else: return Random(state=('MT19937', self.state.fetch(), self.set_pos.fetch(), self.has_gauss.fetch(), self.gauss.fetch() ))
+      state = self.state.fetch()
+      if state.shape == (0,):
+         return Random(seed=self.seed.fetch())
+      else:
+         return Random(state=('MT19937', self.state.fetch(), self.set_pos.fetch(), self.has_gauss.fetch(), self.gauss.fetch() ))
 

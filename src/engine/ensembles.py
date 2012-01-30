@@ -235,14 +235,19 @@ class NVTEnsemble(NVEEnsemble):
       return NVEEnsemble.get_econs(self)+self.thermostat.ethermo 
 
 class NPTEnsemble(NVTEnsemble):
-   def __init__(self, dt, temp, pext, nmstep = True, thermostat=Thermostat(), barostat=Barostat(), fixcom=False):
+   def __init__(self, dt, temp, pext=None, sext=None, nmstep = True, thermostat=Thermostat(), barostat=Barostat(), fixcom=False):
       super(NPTEnsemble,self).__init__(dt=dt, temp=temp, nmstep=nmstep, thermostat=thermostat, fixcom=fixcom)
       self.barostat=barostat
-      
-      #set the barostat pressure
-      dset(self,"pext",depend_value(name="pext", value=pext) )
-      deppipe(self, "pext", self.barostat, "pext")
 
+      if pext is not None:
+         dset(self,"pext",depend_value(name="pext", value=pext) )
+         deppipe(self, "pext", self.barostat, "pext")
+      elif sext is not None:
+         dset(self,"sext",depend_value(name="sext", value=pext) )
+         deppipe(self, "sext", self.barostat, "sext")
+      else:
+         raise TypeError("You must provide either the pressure or stress")
+         
    def bind(self, beads, cell, bforce, prng):
       super(NPTEnsemble,self).bind(beads, cell, bforce, prng)
       self.barostat.bind(beads, cell, bforce)
@@ -290,39 +295,67 @@ class NPTEnsemble(NVTEnsemble):
       self.rmcom()
       self.ttime+=time.time()
                         
-#class NSTEnsemble(NVTEnsemble):
-#   def __init__(self, dt=None, temp=None, pext=None, sext=None, thermostat=Thermostat(), barostat=Barostat(), fixcom=False ):
-#      super(NSTEnsemble,self).__init__(dt=dt, temp=temp, thermostat=thermostat,fixcom=fixcom)
-#      self.barostat=barostat
-#            
-#      # "binds" the dt, temp and p properties of the barostat to those of the ensemble. 
-#      # the thermostat has been already bound in NVTEnsemble init so we must make sure to copy all dependencies as well
-#      depcopy(self,"temp", self.barostat,"temp")
-#      depcopy(self,"temp", self.barostat.thermostat,"temp")
-#      depcopy(self, "dt", self.barostat, "dt")
-#            
-#      #dulicate pext & sext from the barostat 
-#      dset(self, "pext", dget(self.barostat,"pext"))
-#      dset(self, "sext", dget(self.barostat,"sext"))      
-#      if not pext is None: self.pext=pext
-#      if not sext is None: self.sext=sext
-#      
-#   def bind(self, atoms, cell, force):
-#      super(NSTEnsemble,self).bind(atoms, cell, force)
-#      self.barostat.bind(atoms, cell, force)
+class NSTEnsemble(NVTEnsemble):
+   def __init__(self, dt, temp, pext=None, sext=None, thermostat=Thermostat(), barostat=Barostat(), fixcom=False ):
+      super(NSTEnsemble,self).__init__(dt=dt, temp=temp, thermostat=thermostat,fixcom=fixcom)
+      self.barostat=barostat
+            
+      if sext is not None:
+         dset(self,"sext",depend_value(name="sext", value=pext) )
+         deppipe(self, "sext", self.barostat, "sext")
+      elif pext is not None:
+         dset(self,"pext",depend_value(name="pext", value=pext) )
+         deppipe(self, "pext", self.barostat, "pext")
+         print "Only external pressure given, assuming that the stress is isotropic"
+      else:
+         raise TypeError("You must provide either the pressure or stress")
+         
+      # "binds" the dt, temp and p properties of the barostat to those of the ensemble. 
+      # the thermostat has been already bound in NVTEnsemble init so we must make sure to copy all dependencies as well
+      depcopy(self,"temp", self.barostat,"temp")
+      depcopy(self,"temp", self.barostat.thermostat,"temp")
+      depcopy(self, "dt", self.barostat, "dt")
+            
+      dget(self,"econs").add_dependency(dget(self.barostat.thermostat, "ethermo"))
+      dget(self,"econs").add_dependency(dget(self.barostat, "pot"))
+      dget(self,"econs").add_dependency(dget(self.thermostat, "temp"))
+      dget(self,"econs").add_dependency(dget(self.cell, "kin"))
+      dget(self,"econs").add_dependency(dget(self.cell, "h"))
+      
+   def bind(self, beads, cell, force):
+      super(NSTEnsemble,self).bind(beads, cell, force)
+      self.barostat.bind(beads, cell, force)
 
-#   def get_econs(self):
-#      """Calculates the conserved energy quantity for constant T ensembles"""
-#      xv=0.0 # extra term stemming from the Jacobian
-#      for i in range(3):  xv+=math.log(self.cell.h[i,i])*(3-i)
-#      return NVTEnsemble.get_econs(self)++self.barostat.thermostat.ethermo+self.barostat.pot+self.cell.kin-2.0*Constants.kb*self.thermostat.temp*xv
-#      
-#   def step(self):
-#      """Velocity Verlet time step"""
-#      self.thermostat.step()         
-#      self.timer-=time.clock()       
-#      self.rm_com()            
-#      self.timer+=time.clock()        
-#      self.barostat.step()
-#      self.thermostat.step()      
-#      self.rm_com()      
+   def get_econs(self):
+      """Calculates the conserved energy quantity for constant T ensembles"""
+      xv = 0.0 # extra term stemming from the Jacobian
+      for i in range(3):
+         xv += math.log(self.cell.h[i,i])*(3-i)
+      return NVTEnsemble.get_econs(self) + self.barostat.thermostat.ethermo + self.barostat.pot + self.cell.kin - 2.0*Constants.kb*self.thermostat.temp*xv
+      
+   def step(self):
+      """Velocity Verlet time step"""
+      self.ttime-=time.time()
+      self.thermostat.step()
+      self.barostat.thermostat.step()
+      self.rmcom()           
+      self.ttime+=time.time() 
+
+      self.ptime-=time.time()
+      self.barostat.pstep()
+      self.ptime+=time.time()
+
+      self.qtime-=time.time()
+      self.barostat.qcstep()
+      self.qstep()
+      self.qtime+=time.time()
+
+      self.ptime-=time.time()
+      self.barostat.pstep()
+      self.ptime+=time.time()
+
+      self.ttime-=time.time()
+      self.barostat.thermostat.step()
+      self.thermostat.step()      
+      self.rmcom()
+      self.ttime+=time.time()
