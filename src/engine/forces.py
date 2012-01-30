@@ -45,7 +45,7 @@ class RestartForce(Restart):
       """
 
    attribs = { "type" : (RestartValue,(str,"socket")) }
-   fields =  { "interface" : (RestartInterface,()), "parameters" : (RestartValue, (dict,None)) }
+   fields =  { "interface" : (RestartInterface,()), "parameters" : (RestartValue, (dict,{})) }
    
    def store(self, force):
       """Takes a ForceField instance and stores a minimal representation of it.

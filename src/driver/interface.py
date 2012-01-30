@@ -184,7 +184,9 @@ class Interface(object):
       self.time_distribute=0.0      
       
    def queue(self, atoms,cell, pars={}):
-      par_str = str(pars["eps"]) + " " + str(pars["sigma"]) + " " + str(pars["cutoff"]) + " " + str(pars["nearest_neighbour"])
+      if not pars == {}: 
+         par_str = str(pars["eps"]) + " " + str(pars["sigma"]) + " " + str(pars["cutoff"]) + " " + str(pars["nearest_neighbour"])
+      else : par_str=" "
       newreq={"atoms":atoms,"cell":cell, "pars":par_str, "result":None, "status":"Queued"}
       self.requests.append(newreq);
       return newreq
