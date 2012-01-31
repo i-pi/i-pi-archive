@@ -417,17 +417,13 @@ class Interface(object):
          status}.
       """
 
+      par_str = " "
+      
       if not pars is None: 
-         par_str = str(pars["eps"]) + " " + str(pars["sigma"]) + " " + str(pars["cutoff"]) + " " + str(pars["nearest_neighbour"])
+         for k,v in pars.items():
+            par_str += k+" : "+ str(v) + " , "
       else : par_str=" "
 
-#      if pars is None:
-#         pars = {}
-#      try:
-#         par_str = str(pars["eps"]) + " " + str(pars["sigma"]) + " " + str(pars["cutoff"]) + " " + str(pars["nearest_neighbour"])
-#      except KeyError as err:
-#         print "Parameter dictionary incorrectly formatted."
-#         raise err
 #TODO currently parameter string is hard coded for LJ potential. Needs adapting
 #to general forcefields.
 
