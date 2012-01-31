@@ -149,7 +149,7 @@ class NVEEnsemble(Ensemble):
       self.beads.p += depstrip(self.forces.f) * (self.dt*0.5)
    
    def qcstep(self):
-      self.beads.qnm[0,:] += depstrip(self.beads.pnm)[0,:]/depstrip(self.beads.m)*self.dt
+      self.beads.qnm[0,:] += depstrip(self.beads.pnm)[0,:]/depstrip(self.beads.m3)[0]*self.dt
 
    def qstep(self):
       """Velocity Verlet time step"""
