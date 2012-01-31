@@ -37,7 +37,7 @@ class RestartForce(Restart):
    """
 
    attribs = { "type" : (RestartValue,(str,"socket")) }
-   fields =  { "interface" : (RestartInterface,()), "parameters" : (RestartValue, (dict,None)) }
+   fields =  { "interface" : (RestartInterface,()), "parameters" : (RestartValue, (dict,{})) }
    
    def store(self, force):
       """Takes a ForceField instance and stores a minimal representation of it.
@@ -96,6 +96,7 @@ class ForceField(dobject):
    def __init__(self):
       """Initialises ForceField."""
 
+      # ufv is a list [ u, f, vir ]  which stores the results of the force calculation
       dset(self,"ufv", depend_value(name="ufv", func=self.get_all))
       
    def copy(self):
@@ -121,14 +122,19 @@ class ForceField(dobject):
          cell: The Cell object from which the system box is taken.
       """
 
+      # stores a reference to the atoms and cell we are computing forces for
       self.atoms = atoms
       self.cell = cell
-      dget(self,"ufv").add_dependency(dget(self.atoms,"q"))
-      dget(self,"ufv").add_dependency(dget(self.cell,"h"))      
-      dset(self,"pot",depend_value(name="pot", func=self.get_pot, dependencies=[dget(self,"ufv")] )  )
-      dset(self,"vir", depend_array(name="vir", value=np.zeros((3,3),float),func=self.get_vir, dependencies=[dget(self,"ufv")] ) )
       
-      fbase = np.zeros(atoms.natoms*3, float)
+      # ufv depends on the atomic positions and on the cell
+      dget(self,"ufv").add_dependency(dget(self.atoms,"q"))
+      dget(self,"ufv").add_dependency(dget(self.cell,"h")) 
+      
+      # potential and virial are to be extracted very simply from ufv
+      dset(self,"pot",depend_value(name="pot", func=self.get_pot, dependencies=[dget(self,"ufv")] )  )
+      dset(self,"vir", depend_array(name="vir", value=np.zeros((3,3),float),func=self.get_vir, dependencies=[dget(self,"ufv")] ) )            
+      # the force requires a bit more work, to define shortcuts to xyz slices
+      fbase=np.zeros(atoms.natoms*3, float)
       dset(self,"f", depend_array(name="f", value=fbase, func=self.get_f, dependencies=[dget(self,"ufv")]) )
       dset(self,"fx", depend_array(name="fx", value=fbase[0:3*atoms.natoms:3]));
       dset(self,"fy", depend_array(name="fy", value=fbase[1:3*atoms.natoms:3]));
@@ -159,8 +165,7 @@ class ForceField(dobject):
          Potential energy.
       """
 
-      [pot, f, vir] = self.ufv
-      return pot
+      return self.ufv[0]
 
    def get_f(self):
       """Calls get_all routine of forcefield to update force.
@@ -169,8 +174,7 @@ class ForceField(dobject):
          An array containing all the components of the force.
       """
 
-      [pot, f, vir] = self.ufv
-      return f
+      return self.ufv[1]
 
    def get_vir(self):
       """Calls get_all routine of forcefield to update virial.
@@ -180,9 +184,9 @@ class ForceField(dobject):
          by the volume.
       """
 
-      [pot, f, vir] = self.ufv
-      vir[1,0] = 0.0
-      vir[2,0:2] = 0.0
+      vir = self.ufv[2]
+      vir[1,0]=0.0
+      vir[2,0:2]=0.0
       return vir
 
 
@@ -224,7 +228,7 @@ class ForceBeads(dobject):
             each replica of the system.
       """
 
-      if not (beads is None or cell is None or force is None): 
+      if not (beads is None or cell is None or force is None):       # only initializes if all arguments are given
          self.bind(beads, cell, force)
 
    def bind(self, beads, cell, force):
@@ -244,29 +248,43 @@ class ForceBeads(dobject):
             each replica of the system.
       """
 
+      # stores a copy of the number of atoms and of beads !TODO! make them read-only properties
       self.natoms = beads.natoms
       self.nbeads = beads.nbeads
 
+      # creates an array of force objects, which are bound to the beads and the cell
       self._forces = [];
       for b in range(self.nbeads):
          newf = force.copy()
          newf.bind(beads[b], cell)
          self._forces.append(newf)
-               
+      
+      # f is a big array which assembles the forces on individual beads
       dset(self,"f",depend_array(name="f",value=np.zeros((self.nbeads,3*self.natoms), float), func=self.f_gather,     
           dependencies=[dget(self._forces[b],"f")  for b in range(self.nbeads)] ) )
+      # collection of pots and virs from individual beads
       dset(self,"pots",depend_array(name="pots", value=np.zeros(self.nbeads,float), func=self.pot_gather,     
           dependencies=[dget(self._forces[b],"pot")  for b in range(self.nbeads)] ) )
       dset(self,"virs",depend_array(name="virs", value=np.zeros((self.nbeads,3,3),float), func=self.vir_gather,     
           dependencies=[dget(self._forces[b],"vir")  for b in range(self.nbeads)] ) )          
+      # total potential and total virial 
       dset(self,"pot",depend_value(name="pot", func=self.pot,     
           dependencies=[dget(self,"pots")] ) )
       dset(self,"vir",depend_value(name="vir", func=self.vir,
           dependencies=[dget(self,"virs")] ) )
 
+      # optionally, transforms in normal-modes representation
       dset(self,"fnm",depend_array(name="fnm",value=np.zeros((self.nbeads,3*self.natoms), float), func=self.b2nm_f, dependencies=[dget(self,"f")] ) )
       self.Cb2nm = beads.Cb2nm
       
+   def queue(self): 
+      "Submits all the required force calculations to the interface."""
+      
+      # this should be called in functions which access u,v,f for ALL the beads,
+      # before accessing them. it is basically pre-queueing so that the distributed-computing magic can work
+      for b in range(self.nbeads):  self._forces[b].queue()
+
+   # here are the functions to automatically compute depobjects
    def b2nm_f(self): 
       """Transforms force to normal mode representation.
 
@@ -276,12 +294,6 @@ class ForceBeads(dobject):
       """
 
       return np.dot(self.Cb2nm,depstrip(self.f))
-
-   def queue(self): 
-      "Submits all the required force calculations to the interface."""
-
-      for b in range(self.nbeads): 
-         self._forces[b].queue()
 
    def pot_gather(self):
       """Obtains the potential energy for each replica.
@@ -366,11 +378,13 @@ class FFSocket(ForceField):
          interface: Optional Interface object, which contains the socket.
       """
 
+      # a socket to the communication library is created or linked
       super(FFSocket,self).__init__() 
       if interface is None:
          self.socket = Interface()
       else:
          self.socket = interface
+
       if pars is None:
          self.pars = {}
       else:
@@ -386,6 +400,7 @@ class FFSocket(ForceField):
          A FFSocket object without atoms or cell attributes.
       """
 
+      # does not copy the bound objects (i.e., the returned forcefield must be bound before use)
       return type(self)(self.pars, self.socket)
 
    def get_all(self):
@@ -400,10 +415,13 @@ class FFSocket(ForceField):
          A list of the form [potential, force, virial].
       """
 
+      # this is converting the distribution library requests into [ u, f, v ]  lists
       if self.request is None: 
          self.request = self.socket.queue(self.atoms, self.cell, self.pars)
       while self.request["status"] != "Done": 
          time.sleep(self.socket.latency)
+
+      # data has been collected, so the request can be released and a slot freed up for new calculations
       self.socket.release(self.request)
       result = self.request["result"]
       self.request = None
