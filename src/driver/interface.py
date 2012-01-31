@@ -135,7 +135,7 @@ class Driver(socket.socket):
       try:
          reply = self.recv(HDRLEN)
       except socket.timeout: 
-         print "timeout in status recv"
+         print " @SOCKET:   Timeout in status recv!"
          return Status.Up | Status.Busy | Status.Timeout
       except:
          return Status.Disconnected
@@ -149,7 +149,7 @@ class Driver(socket.socket):
       elif reply == Message("havedata"):
          return Status.Up | Status.HasData
       else:
-         print "Unrecognized reply", reply         
+         print " @SOCKET:    Unrecognized reply: ", reply         
          return Status.Up
    
    def recvall(self, dest):      
@@ -175,7 +175,7 @@ class Driver(socket.socket):
             bpart = 1
             bpart = self.recv_into(self._buf[bpos:], blen-bpos)
          except socket.timeout:
-            print "timeout in recvall, trying again"
+            print " @SOCKET:   Timeout in status recvall, trying again!"
             timeout = True
             pass
          if (not timeout and bpart == 0):
@@ -262,12 +262,12 @@ class Driver(socket.socket):
             try:
                reply = self.recv(HDRLEN)
             except socket.timeout: 
-               print "timeout in recvforce, try again!!"
+               print " @SOCKET:   Timeout in getforce, trying again!"
                continue
             if reply == Message("forceready"):
                break          
             else:
-               print "oh-oh. got ", reply, "in getforce"
+               print " @SOCKET:   Unexpected getforce reply: ", reply
             if reply == "":
                raise Disconnected()
       else:
@@ -453,11 +453,11 @@ class Interface(object):
       for c in self.clients[:]:         
          if not (c.status & Status.Up):
             try:
-               print "removing dead client"
+               print " @SOCKET:   Client died or got unresponsive. Removing from the list."
                c.shutdown(socket.SHUT_RDWR)
                c.close()
             except:
-               "Exception removing client"
+               print " @SOCKET:   Could not properly shutdown client!"
                pass
             self.clients.remove(c)
             for [k,j] in self.jobs[:]:
@@ -472,13 +472,13 @@ class Interface(object):
             client, address = self.server.accept()
             client.settimeout(TIMEOUT)
             driver = Driver(client)
-            print "client ", address, "accepted, now handshaking"
+            print " @SOCKET:   Client asked for connection from ", address". Now hand-shaking."
             driver.poll()
             if (driver.status | Status.Up):
                self.clients.append(driver)
-               print "handshake completed"
+               print " @SOCKET:   Handshaking was successful. Added to the client list."
             else:
-               print "handshake failed"
+               print " @SOCKET:   Handshaking failed. Dropping connection."
                client.shutdown(socket.SHUT_RDWR)
                client.close()
          else:
@@ -509,7 +509,7 @@ class Interface(object):
             while c.status & Status.Busy:
                c.poll()
             if not (c.status & Status.Up): 
-               print "Client died badly while getting forces!"
+               print " @SOCKET:   Client died a horrible death while getting forces. Will try to cleanup."
                continue
             r["status"] = "Done"
             self.jobs.remove([r,c])
@@ -527,7 +527,7 @@ class Interface(object):
                if fc.status & Status.HasData:
                   continue                              
                if not (fc.status & (Status.Ready | Status.NeedsInit | Status.Busy) ): 
-                  print "something weird is going on with a client, status is:",fc.status," - trying again later"
+                  print " @SOCKET:   (1) Client is in an unexpected status ",fc.status". Will try to keep calm and carry on."
                   continue
 
                while fc.status & Status.Busy:
@@ -544,7 +544,7 @@ class Interface(object):
                   self.jobs.append([r,fc])
                   break
                else:
-                  print "something very weird is going on with a client: status is:",fc.status," - trying again later"
+                  print " @SOCKET:   (2) Client is in an unexpected status ",fc.status". Will try to keep calm and carry on."
 
    def _kill_handler(self, signal, frame):
       """Deals with handling a kill call gracefully.
@@ -560,7 +560,7 @@ class Interface(object):
          frame: Current stack frame.
       """
 
-      print "kill called"
+      print " @SOCKET:   Kill signal. Trying to make a clean exit."
       self.end_thread()
       try:
          self.__del__()
@@ -576,7 +576,8 @@ class Interface(object):
       the pool of clients every UPDATEFREQ loops and loops every latency
       seconds until _poll_true becomes false.
       """
-
+      
+      print " @SOCKET:   Starting the polling thread main loop."
       poll_iter=0
       while self._poll_true:
          time.sleep(self.latency)
@@ -629,7 +630,7 @@ class Interface(object):
       possible, so that the port can be reused immediately.
       """
 
-      print "shutting down interface"
+      print " @SOCKET:   Shutting down the server interface."
       self.server.shutdown(socket.SHUT_RDWR)
       self.server.close()
       if self.mode=="unix":
