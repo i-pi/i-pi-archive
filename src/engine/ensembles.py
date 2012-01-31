@@ -91,9 +91,12 @@ class Ensemble(dobject):
       pqk[0]=np.array([[1,0],[self.dt,1]])
       for b in range(1,self.beads.nbeads):
          dtomegak=self.omegak[b]*self.dt
-         c=math.cos(dtomegak); s=math.sin(dtomegak)
-         pqk[b,0,0]=c;         pqk[b,1,1]=c
-         pqk[b,0,1]=-s*self.omegak[b];         pqk[b,1,0]=s/self.omegak[b];
+         c=math.cos(dtomegak)
+         s=math.sin(dtomegak)
+         pqk[b,0,0]=c
+         pqk[b,1,1]=c
+         pqk[b,0,1]=-s*self.omegak[b]
+         pqk[b,1,0]=s/self.omegak[b]
       return pqk
 
          
@@ -146,7 +149,7 @@ class NVEEnsemble(Ensemble):
       self.beads.p += depstrip(self.forces.f) * (self.dt*0.5)
    
    def qcstep(self):
-      self.beads.qnm[0,:] += depstrip(self.beads.pnm)[0,:]/depstrip(self.beads.m3)[0,:]*self.dt
+      self.beads.qnm[0,:] += depstrip(self.beads.pnm)[0,:]/depstrip(self.beads.m)*self.dt
 
    def qstep(self):
       """Velocity Verlet time step"""
