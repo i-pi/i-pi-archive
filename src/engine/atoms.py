@@ -1,6 +1,6 @@
 """Contains the classes which deal with the atoms.
 
-Used for holding information about the atoms, including the positions, masses
+Used for holding information about the atoms, including their positions, masses
 momenta and kinetic energy. Has separate classes for accessing the global 
 arrays of atoms and for individual atoms.
 
@@ -80,7 +80,7 @@ class Atoms(dobject):
    and a convenience-access is provided through a list of Atom objects.
 
    Attributes:
-      natoms: An integer giving the number of atoms.
+      natoms: The number of atoms.
 
    Depend objects:
       p: An array giving the components of the atom positions.
@@ -159,8 +159,10 @@ class Atoms(dobject):
    def __len__(self):
       """Length function.
 
-      This is called whenever the standard function len(atoms) is used. Returns
-      natoms.
+      This is called whenever the standard function len(atoms) is used. 
+
+      Returns:
+         The number of atoms.
       """
 
       return self.natoms
@@ -175,7 +177,10 @@ class Atoms(dobject):
       held at any one time.
 
       Args:
-         index: The atom that needs to be accessed.
+         index: The index of the atom to be accessed.
+
+      Returns:
+         The atom given by the index.
       """
 
       return Atom(self,index)
@@ -191,8 +196,8 @@ class Atoms(dobject):
       held at any one time.
 
       Args:
-         index: The atom that needs to be accessed.
-         value: The atom object that holds the new value.
+         index: The atom to be changed.
+         value: The Atom object that holds the new values.
       """
 
       pat = Atom(self,index)

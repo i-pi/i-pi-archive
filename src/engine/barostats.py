@@ -282,7 +282,7 @@ class BaroFlexi(Barostat):
 
       pc = depstrip(self.beads.pc).reshape((self.beads.natoms,3)) 
       qc = depstrip(self.beads.qc).reshape((self.beads.natoms,3))
-      m3 = depstrip(self.beads.m3)[0,:].reshape((self.beads.natoms,3))       
+      m = depstrip(self.beads.m).reshape((self.beads.natoms,3))       
 
       qc = np.dot(qc,exp_mat.T)+np.dot(pc/m3,ips_mat.T)
       pc = np.dot(pc,neg_exp_mat.T)
@@ -342,7 +342,7 @@ class BaroRigid(Barostat):
       self.cell.P += dthalf*3.0*(self.cell.V*(self.press - self.pext) + 2.0*Constants.kb*self.temp)
 
       fc = depstrip(self.forces.fnm)[0,:]/math.sqrt(self.beads.nbeads)
-      m = depstrip(self.beads.m3)[0,:]
+      m = depstrip(self.beads.m)
       pc = depstrip(self.beads.pc)
             
       self.cell.P += dthalf2*np.dot(pc,fc/m) + dthalf3*np.dot(fc,fc/m)
@@ -362,7 +362,7 @@ class BaroRigid(Barostat):
 
       pc = depstrip(self.beads.pc)
       qc = depstrip(self.beads.qc)
-      m = depstrip(self.beads.m3)[0,:]      
+      m = depstrip(self.beads.m)      
       qc*=exp
       qc+=(sinh/vel)* pc/m
       pc *= neg_exp
