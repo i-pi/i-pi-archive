@@ -17,7 +17,7 @@ __all__ = ['RestartSimulation', 'Simulation']
 import numpy as np
 import math, random
 from utils.depend import *
-from utils.restart import Restart
+from utils.restart import *
 from utils.units  import *
 from utils.prng   import *
 from utils.io     import *
@@ -152,8 +152,7 @@ class RestartSimulation(Restart):
          rbeads = Beads(atoms.natoms, nbeads)
          for b in range(rbeads.nbeads):
             rbeads[b] = atoms.copy()
-         self.beads.store(rbeads)
-      
+         self.beads.store(rbeads)      
 
 class Simulation(dobject):
    """Main simulation object. 
@@ -237,14 +236,15 @@ class Simulation(dobject):
       if outlist is None:
          self.outlist = np.array(_DEFAULT_OUTPUT, np.dtype('|S12') )
       else:
-         self.outlist = outlist
+         self.outlist = outlist                                    
+
+      self.properties = Properties()
+         
       if initlist is None:
          self.initlist = np.zeros(0, np.dtype('|S12'))
       else:
          self.initlist = initlist
-
-      self.properties = Properties()
-      
+                  
       self.bind()
       
    def bind(self):
@@ -254,6 +254,13 @@ class Simulation(dobject):
       self.ensemble.bind(self.beads, self.cell, self.forces, self.prng)
       self.properties.bind(self)
       self.init()
+
+      # Checks as soon as possible if some asked-for properties are missing or mispelled
+      for what in self.outlist:
+         if not what in self.properties.property_dict.keys():
+            print "Computable properties list: ", self.properties.property_dict.keys()
+            raise KeyError(what + " is not a recognized property")
+
 
    def run(self):
       """Runs the simulation.
