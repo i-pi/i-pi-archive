@@ -216,7 +216,7 @@ class Simulation(dobject):
             be output.
       """
 
-      print "@@@@@ initializing with total_Steps", tsteps, "and dt", ensemble.dt
+      print " # Initializing simulation object "
       self.nbeads = len(beads)
       self.beads = beads
       self.cell = cell
@@ -280,6 +280,8 @@ class Simulation(dobject):
          self.step = 0
       for self.step in range(self.step,self.tsteps):               
          self.ensemble.step()
+         print " # MD step % 7d complete. Timings --> p-step: %10.5f  q-step: %10.5f  t-step: %10.5f" % (self.step, self.ensemble.ptime, self.ensemble.qtime, self.ensemble.ttime )
+         print " # MD diagnostics: V: %10.5e    Kcv: %10.5e   Ecns: %10.5e" % (self.properties["potential"], self.properties["kinetic_cv"], self.properties["conserved"] )
 
          if ((self.step+1) % self.dstride["checkpoint"] == 0):
             self.write_chk()      
@@ -290,8 +292,7 @@ class Simulation(dobject):
          if ((self.step+1) % self.dstride["trajectory"] == 0):
             io_pdb.print_pdb(self.beads.centroid, self.cell, self.tcout)
 
-         print "times:  #p", self.ensemble.ptime/(self.step+1), "  #q",  self.ensemble.qtime/(self.step+1), "  #t",  self.ensemble.ttime/(self.step+1)
-
+         
       if self.step < self.tsteps:
          self.step += 1         
       self.write_chk()

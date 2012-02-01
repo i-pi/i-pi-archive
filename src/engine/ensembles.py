@@ -140,7 +140,6 @@ class NVEEnsemble(Ensemble):
 
          # subtracts COM _velocity_
          pcom*=1.0/(nb*self.beads[0].M)
-         print "COM VELOCITY: ", pcom
          for i in range(3): self.beads.p[:,i:na3:3]-=m*pcom[i]
          
    
@@ -168,11 +167,11 @@ class NVEEnsemble(Ensemble):
             self.beads.pnm[k]=pq[0,:]*sm                    
       
    def step(self): 
-      self.ptime-=time.time()
+      self.ptime=-time.time()
       self.pstep()
       self.ptime+=time.time()
 
-      self.qtime-=time.time()
+      self.qtime=-time.time()
       self.qcstep()
       self.qstep()
       self.qtime+=time.time()
@@ -181,7 +180,7 @@ class NVEEnsemble(Ensemble):
       self.pstep()
       self.ptime+=time.time()
 
-      self.ttime-=time.time()
+      self.ttime=-time.time()
       self.rmcom()
       self.ttime+=time.time()
       
@@ -209,16 +208,16 @@ class NVTEnsemble(NVEEnsemble):
       dget(self,"econs").add_dependency(dget(self.thermostat, "ethermo"))
       
    def step(self): 
-      self.ttime-=time.time()
+      self.ttime=-time.time()
       self.thermostat.step()
       self.rmcom()
       self.ttime+=time.time()
 
-      self.ptime-=time.time()
+      self.ptime=-time.time()
       self.pstep()
       self.ptime+=time.time()
       
-      self.qtime-=time.time()
+      self.qtime=-time.time()
       self.qcstep()
       self.qstep()
       self.qtime+=time.time()

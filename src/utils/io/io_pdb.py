@@ -126,6 +126,5 @@ def read_pdb(filedesc):
       nat.m = Elements.mass(names[i])
       totmass += Elements.mass(names[i])
 
-   print "garbage colllecting: ", gc.collect()
    cell.m = totmass
    return atoms, cell

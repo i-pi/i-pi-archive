@@ -1,0 +1,296 @@
+diff -rupN espresso//Modules/control_flags.f90 driver//Modules/control_flags.f90
+--- espresso//Modules/control_flags.f90	2012-02-01 14:14:34.393359061 +0000
++++ driver//Modules/control_flags.f90	2012-02-01 14:24:52.993358904 +0000
+@@ -178,6 +178,7 @@ MODULE control_flags
+     lscf    =.FALSE., &! if .TRUE. the calc. is selfconsistent
+     lbfgs   =.FALSE., &! if .TRUE. the calc. is a relaxation based on BFGS
+     lmd     =.FALSE., &! if .TRUE. the calc. is a dynamics
++    ldriver =.FALSE., &! if .TRUE. run in driver mode
+     llang   =.FALSE., &! if .TRUE. the calc. is Langevin dynamics
+     lpath   =.FALSE., &! if .TRUE. the calc. is a path optimizations
+     lneb    =.FALSE., &! if .TRUE. the calc. is NEB dynamics
+diff -rupN espresso//Modules/input_parameters.f90 driver//Modules/input_parameters.f90
+--- espresso//Modules/input_parameters.f90	2012-02-01 14:14:34.403359061 +0000
++++ driver//Modules/input_parameters.f90	2012-02-01 14:42:37.013358634 +0000
+@@ -96,9 +96,9 @@ MODULE input_parameters
+         CHARACTER(len=80) :: calculation = 'none'
+           ! Specify the type of the simulation
+           ! See below for allowed values
+-        CHARACTER(len=80) :: calculation_allowed(15)
++        CHARACTER(len=80) :: calculation_allowed(16)
+         DATA calculation_allowed / 'scf', 'nscf', 'relax', 'md', 'cp', &
+-          'vc-relax', 'vc-md', 'vc-cp', 'bands', 'neb', 'smd', 'cp-wf', &
++          'vc-relax', 'vc-md', 'vc-cp', 'bands', 'neb', 'smd', 'cp-wf', 'driver', &
+           'cp-wf-nscf','cp-wf-pbe0', 'pbe0-nscf'/   ! Lingzhu Kong
+         CHARACTER(len=80) :: verbosity = 'default'
+           ! define the verbosity of the code output
+@@ -153,6 +153,10 @@ MODULE input_parameters
+           ! specify the prefix for the output file, if not specified the
+           ! files are opened as standard fortran units.
+ 
++        CHARACTER(len=1024) :: srvaddress = 'localhost:31415'
++          ! specify the hostname:port of the socket opened on the server side
++          ! to run in driver mode.
++          
+         CHARACTER(len=256) :: pseudo_dir = './'
+           ! specify the directory containing the pseudopotentials
+ 
+@@ -259,7 +263,7 @@ MODULE input_parameters
+           forc_conv_thr, pseudo_dir, disk_io, tefield, dipfield, lberry,  &
+           gdir, nppstr, wf_collect, printwfc, lelfield, nberrycyc, refg,  &
+           tefield2, saverho, tabps, lkpoint_dir, use_wannier, lecrpa,     &
+-          vdw_table_name
++          vdw_table_name, srvaddress
+ 
+ 
+ #if defined ( __MS2)
+diff -rupN espresso//Modules/io_files.f90 driver//Modules/io_files.f90
+--- espresso//Modules/io_files.f90	2012-02-01 14:14:34.393359061 +0000
++++ driver//Modules/io_files.f90	2012-02-01 14:27:03.943358870 +0000
+@@ -20,6 +20,8 @@ MODULE io_files
+   CHARACTER(len=256) :: tmp_dir = './'            ! directory for temporary files
+   CHARACTER(len=256) :: wfc_dir = 'undefined'     ! directory for large files on each node, should be kept 'undefined' if not known 
+   CHARACTER(len=256) :: prefix  = 'os'            ! prepended to file names
++  CHARACTER(len=1024) :: srvaddress = 'localhost:31415'     ! address of the server for driver mode 
++  
+   CHARACTER(len=6)   :: nd_nmbr = '000000'        ! node number (used only in parallel case)
+   CHARACTER(len=256) :: pseudo_dir = './'    ! original location of PP files
+   CHARACTER(len=256) :: pseudo_dir_cur = ' ' ! current location when restarting
+diff -rupN espresso//Modules/read_namelists.f90 driver//Modules/read_namelists.f90
+--- espresso//Modules/read_namelists.f90	2012-02-01 14:14:34.393359061 +0000
++++ driver//Modules/read_namelists.f90	2012-02-01 14:40:55.793358659 +0000
+@@ -741,6 +741,7 @@ MODULE read_namelists_module
+        CALL mp_bcast( outdir,        ionode_id )
+        CALL mp_bcast( wfcdir,        ionode_id )
+        CALL mp_bcast( prefix,        ionode_id )
++       CALL mp_bcast( srvaddress,    ionode_id )       
+        CALL mp_bcast( max_seconds,   ionode_id )
+        CALL mp_bcast( ekin_conv_thr, ionode_id )
+        CALL mp_bcast( etot_conv_thr, ionode_id )
+@@ -1782,6 +1783,8 @@ MODULE read_namelists_module
+              ELSE IF( prog == 'PW' ) THEN
+                 ion_dynamics = 'beeman'
+              END IF
++         CASE ('driver')
++            !do nothing
+              !
+           CASE DEFAULT
+              !
+diff -rupN espresso//PW/src/driver.f90 driver//PW/src/driver.f90
+--- espresso//PW/src/driver.f90	1970-01-01 01:00:00.000000000 +0100
++++ driver//PW/src/driver.f90	2012-02-01 14:46:20.963358577 +0000
+@@ -0,0 +1,98 @@
++  SUBROUTINE driver()
++    USE io_global,        ONLY : stdout, ionode, ionode_id
++    USE io_files,         ONLY : srvaddress
++    USE mp_global,        ONLY : mp_startup, mp_bcast, mp_global_end, intra_image_comm
++    USE control_flags,    ONLY : conv_elec
++    
++    USE ions_base,              ONLY : tau
++    USE cell_base,              ONLY : alat, at, omega
++    USE force_mod,              ONLY : force
++    USE ener,                   ONLY : etot
++    IMPLICIT NONE
++    
++    INTEGER, PARAMETER :: MSGLEN=12
++    LOGICAL :: isinit=.true., hasdata=.false.
++    CHARACTER*12 :: header
++    CHARACTER*1024 :: parbuffer
++    INTEGER socket, nat
++    INTEGER inet, port, ccmd, i
++    CHARACTER*1024 :: host  
++    REAL *8 :: cellh(3,3), cellih(3,3), vir(3,3), pot
++    REAL*8, ALLOCATABLE :: combuf(:)
++    REAL*8 :: sigma(3,3)
++    inet=1
++    host=srvaddress(1:INDEX(srvaddress,':',back=.true.)-1)//achar(0)
++    read(srvaddress(INDEX(srvaddress,':',back=.true.)+1:),*) port
++    
++    IF (ionode) write(*,*) " @ DRIVER MODE: Connecting to host:port ", trim(host), port
++    
++    IF (srvaddress(1:INDEX(srvaddress,':')-1).eq.('UNIX')) THEN
++      inet=0
++      host=srvaddress(6:INDEX(srvaddress,':',back=.true.)-1)//achar(0)    
++    ENDIF
++
++    IF (ionode) call open_socket(socket, inet, port, host)          
++  
++    driver_loop: DO
++      ! do communication on master node only...
++      if (ionode) call readbuffer(socket, header, MSGLEN)      
++      call mp_bcast(header,ionode_id, intra_image_comm)
++      
++      if (ionode) write(*,*) " @ DRIVER MODE: Message from server: ", header
++      if (trim(header) == "STATUS") then
++         if (ionode) then  ! does not  need init (well, maybe it should, just to check atom numbers and the like... )
++            if (hasdata) then
++               call writebuffer(socket,"HAVEDATA    ",MSGLEN)
++            else
++               call writebuffer(socket,"READY       ",MSGLEN)
++            endif
++         endif
++      else if (trim(header) == "POSDATA") then              
++         if (ionode) then        
++            call readbuffer(socket, cellh, 9*8)
++            call readbuffer(socket, cellih, 9*8)
++            call readbuffer(socket, nat, 4)
++            cellh=transpose(cellh)
++            cellih=transpose(cellih)
++         endif
++         call mp_bcast(cellh,ionode_id, intra_image_comm)
++         call mp_bcast(cellih,ionode_id, intra_image_comm)
++         call mp_bcast(nat,ionode_id, intra_image_comm)
++         if (.not.allocated(combuf)) allocate(combuf(3*nat))
++         if (ionode) call readbuffer(socket, combuf, nat*3*8)
++         call mp_bcast(combuf,ionode_id, intra_image_comm)
++         
++         tau = RESHAPE(combuf, (/ 3 , nat /) )/alat                  
++         at = cellh / alat
++                  
++         if (ionode) write(*,*) " @ DRIVER MODE: Received positions "
++         CALL hinit1()
++         CALL electrons()
++         IF ( .NOT. conv_elec ) THEN
++           CALL punch( 'all' )
++           CALL stop_run( conv_elec )
++         ENDIF         
++         CALL forces()
++         CALL stress(sigma)
++         
++         combuf=RESHAPE(force, (/ 3 * nat /) ) * 0.5   ! return force in atomic units
++         pot=etot * 0.5   ! return potential in atomic units
++         vir=transpose(sigma)*omega*0.5   ! return virial in atomic units and without the volume scaling
++                  
++         hasdata=.true.
++      else if (trim(header)=="GETFORCE") then
++         if (ionode) write(*,*) " @ DRIVER MODE: Returning v,forces,stress "
++         if (ionode) then      
++            call writebuffer(socket,"FORCEREADY  ",MSGLEN)            
++            call writebuffer(socket,pot,8)
++            call writebuffer(socket,nat,4)            
++            call writebuffer(socket,combuf,3*nat*8)
++            call writebuffer(socket,vir,9*8)
++         endif
++         hasdata=.false.
++         CALL punch( 'config' )
++         CALL save_in_ions()
++      endif
++    ENDDO driver_loop    
++    
++  END SUBROUTINE
+diff -rupN espresso//PW/src/input.f90 driver//PW/src/input.f90
+--- espresso//PW/src/input.f90	2012-02-01 14:14:27.623359062 +0000
++++ driver//PW/src/input.f90	2012-02-01 14:32:40.783358785 +0000
+@@ -79,7 +79,8 @@ SUBROUTINE iosys()
+   USE io_files,      ONLY : input_drho, output_drho, &
+                             psfile, tmp_dir, wfc_dir, &
+                             prefix_     => prefix, &
+-                            pseudo_dir_ => pseudo_dir
++                            pseudo_dir_ => pseudo_dir, &
++                            srvaddress_ => srvaddress
+   !
+   USE force_mod,     ONLY : lforce, lstres, force
+   !
+@@ -165,7 +166,7 @@ SUBROUTINE iosys()
+                             lkpoint_dir_      => lkpoint_dir, &
+                             tqr_              => tqr, &
+                             io_level, ethr, lscf, lbfgs, lmd, &
+-                            ldamped, lbands, llang,           &
++                            ldamped, lbands, llang, ldriver,  &
+                             lconstrain, restart, twfcollect, &
+                             llondon, do_makov_payne, &
+                             lecrpa_           => lecrpa
+@@ -220,8 +221,8 @@ SUBROUTINE iosys()
+                                wfcdir, prefix, etot_conv_thr, forc_conv_thr,   &
+                                pseudo_dir, disk_io, tefield, dipfield, lberry, &
+                                gdir, nppstr, wf_collect,lelfield, efield,      &
+-                               nberrycyc, lkpoint_dir, efield_cart, lecrpa,    &
+-                               vdw_table_name
++                               nberrycyc, lkpoint_dir, efield_cart, lecrpa,    & 
++                               vdw_table_name, srvaddress
+ 
+ #if defined __MS2
+   USE input_parameters, ONLY : MS2_enabled, MS2_handler
+@@ -393,6 +394,12 @@ SUBROUTINE iosys()
+                    & ' not supported', 1 )
+      END SELECT
+      !
++  CASE( 'driver' )
++     !
++     ldriver   = .true.
++     lscf      = .true.
++     lforce    = .true. 
++     lstres    = .true.
+   CASE( 'vc-relax' )
+      !
+      lscf      = .true.
+@@ -482,7 +489,7 @@ SUBROUTINE iosys()
+      !
+   END SELECT
+   !
+-  lstres = lmovecell .OR. ( tstress .and. lscf )
++  lstres = ldriver .OR. lmovecell .OR. ( tstress .and. lscf )
+   !
+   IF ( tefield .and. ( .not. nosym ) ) THEN
+      nosym = .true.
+@@ -1098,6 +1105,7 @@ SUBROUTINE iosys()
+   tefield_    = tefield
+   dipfield_   = dipfield
+   prefix_     = trim( prefix )
++  srvaddress_ = trim( srvaddress)
+   pseudo_dir_ = trimcheck( pseudo_dir )
+   nstep_      = nstep
+   iprint_     = iprint
+diff -rupN espresso//PW/src/Makefile driver//PW/src/Makefile
+--- espresso//PW/src/Makefile	2012-02-01 14:14:27.633359062 +0000
++++ driver//PW/src/Makefile	2012-02-01 14:33:57.173358766 +0000
+@@ -60,6 +60,7 @@ divide.o \
+ divide_et_impera.o \
+ dqvan2.o \
+ drhoc.o \
++driver.o \
+ dvloc_of_g.o \
+ dynamics_module.o \
+ efermig.o \
+@@ -235,7 +236,7 @@ LIBOBJS	= ../../flib/ptools.a ../../flib
+ all : tldeps pw.x generate_vdW_kernel_table.x
+ 
+ pw.x : $(PWOBJS) libpw.a $(LIBOBJS) 
+-	$(LD) $(LDFLAGS) -o $@ \
++	$(LD) $(LDFLAGS) ./sockets.o -o $@ \
+ 	   $(PWOBJS) libpw.a $(QEMODS) $(LIBOBJS) $(LIBS)
+ 	- ( cd ../../bin; ln -fs ../PW/src/$@ . )
+ 
+diff -rupN espresso//PW/src/pwscf.f90 driver//PW/src/pwscf.f90
+--- espresso//PW/src/pwscf.f90	2012-02-01 14:14:27.613359062 +0000
++++ driver//PW/src/pwscf.f90	2012-02-01 14:31:44.303358799 +0000
+@@ -14,7 +14,7 @@ PROGRAM pwscf
+   USE io_global,        ONLY : stdout, ionode, ionode_id
+   USE parameters,       ONLY : ntypx, npk, lmaxx
+   USE cell_base,        ONLY : fix_volume
+-  USE control_flags,    ONLY : conv_elec, gamma_only, lscf
++  USE control_flags,    ONLY : conv_elec, gamma_only, lscf, ldriver
+   USE control_flags,    ONLY : conv_ions, istep, nstep, restart, lmd, lbfgs
+   USE force_mod,        ONLY : lforce, lstres, sigma
+   USE environment,      ONLY : environment_start
+@@ -102,6 +102,11 @@ PROGRAM pwscf
+   !
+   CALL init_run()
+   !
++  if (ldriver) THEN 
++    CALL driver()
++    GOTO 111
++  end if
++  !
+   main_loop: DO
+      !
+      ! ... electronic self-consistentcy
+@@ -174,7 +179,7 @@ PROGRAM pwscf
+   !
+   ! ... save final data file
+   !
+-  CALL punch('all')
++111  CALL punch('all')
+   CALL stop_run( conv_ions )
+   !
+   !  END IF      

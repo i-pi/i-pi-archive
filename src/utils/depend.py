@@ -140,29 +140,20 @@ class depend_base(object):
          item.add_dependant(self, tainted)
       
       self._dependants = dependants
-      if (tainted): 
-         self.taint(taintme=tainted)
 
       if not self._synchro is None and not self._name in self._synchro.synced:
          self._synchro.synced[self._name] = self
          self._synchro.manual = self._name
-   
-   def remove_dependant(self, rmdep):
-      """Removes a dependency.
 
-      Args:
-         rmdep: The depend object to be removed from the dependency list.
-      """
+      # Don't taint self if the object is a primitive one. However, do propagate tainting to dependants if required.
+      if (tainted):
+         if self._func is None: 
+            self.taint(taintme=False)      
+         else:
+            self.taint(taintme=tainted)
 
-      irm = -1
-      for idep in range(len(self._dependants)): 
-         if self._dependants[idep] is rmdep: 
-            irm = idep
-      if irm >= 0: 
-         self._dependants.pop(irm)
-      #self._dependants = [dep for dep in self._dependants if dep is not rmdep]
-      #self._dependants.remove(rmdep)
-         
+
+            
    def add_dependant(self, newdep, tainted=True):
       """Adds a dependant property.
 

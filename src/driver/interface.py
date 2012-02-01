@@ -456,9 +456,7 @@ class Interface(object):
                print " @SOCKET:   Client died or got unresponsive. Removing from the list."
                c.shutdown(socket.SHUT_RDWR)
                c.close()
-            except:
-               print " @SOCKET:   Could not properly shutdown client!"
-               pass
+            except:   pass
             self.clients.remove(c)
             for [k,j] in self.jobs[:]:
                if j is c:
@@ -472,7 +470,7 @@ class Interface(object):
             client, address = self.server.accept()
             client.settimeout(TIMEOUT)
             driver = Driver(client)
-            print " @SOCKET:   Client asked for connection from ", address". Now hand-shaking."
+            print " @SOCKET:   Client asked for connection from ", address, ". Now hand-shaking."
             driver.poll()
             if (driver.status | Status.Up):
                self.clients.append(driver)
@@ -527,7 +525,7 @@ class Interface(object):
                if fc.status & Status.HasData:
                   continue                              
                if not (fc.status & (Status.Ready | Status.NeedsInit | Status.Busy) ): 
-                  print " @SOCKET:   (1) Client is in an unexpected status ",fc.status". Will try to keep calm and carry on."
+                  print " @SOCKET:   (1) Client is in an unexpected status ",fc.status, ". Will try to keep calm and carry on."
                   continue
 
                while fc.status & Status.Busy:
@@ -544,7 +542,7 @@ class Interface(object):
                   self.jobs.append([r,fc])
                   break
                else:
-                  print " @SOCKET:   (2) Client is in an unexpected status ",fc.status". Will try to keep calm and carry on."
+                  print " @SOCKET:   (2) Client is in an unexpected status ",fc.status,". Will try to keep calm and carry on."
 
    def _kill_handler(self, signal, frame):
       """Deals with handling a kill call gracefully.
