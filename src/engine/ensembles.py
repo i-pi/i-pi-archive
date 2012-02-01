@@ -1,3 +1,23 @@
+"""Contains the classes that deal with the different dynamics required in 
+different types of ensembles.
+
+Holds the algorithms required for normal mode propagators, and the objects to
+do the constant temperature and pressure algorithms. Also calculates the 
+appropriate conserved energy quantity for the ensemble of choice.
+
+Classes:
+   RestartEnsemble: Deals with creating the ensemble object from a file, 
+      and writing the checkpoints.
+   Ensemble: Base ensemble class with generic methods and attributes.
+   NVEEnsemble: Deals with constant energy dynamics.
+   NVTEnsemble: Deals with constant temperature dynamics.
+   NPTEnsemble: Deals with constant pressure dynamics.
+   NSTEnsemble: Deals with constant stress dynamics.
+"""
+
+__all__ = ['RestartEnsemble', 'Ensemble', 'NVEEnsemble', 'NVTEnsemble', 
+           'NPTEnsemble', 'NSTEnsemble']
+
 from utils.depend import *
 from utils.restart import *
 from utils import units
@@ -6,12 +26,36 @@ from barostats import *
 import time
 
 class RestartEnsemble(Restart):
+   """Ensemble restart class.
+
+   Handles generating the appropriate ensemble class from the xml input file,
+   and generating the xml checkpoint tags and data from an instance of the 
+   object.
+
+   Attributes:
+      type: An optional string giving the type of ensemble to be simulated.
+         Defaults to 'unknown'.
+      thermostat: The thermostat to be used for constant temperature dynamics.
+      barostat: The barostat to be used for constant pressure or stress
+         dynamics.
+      timestep: An optional float giving the size of the timestep in atomic
+         units. Defaults to 1.0.
+      temperature: An optional float giving the temperature in Kelvin. Defaults
+         to 1.0.
+      pressure: An optional float giving the external pressure in atomic units.
+         Defaults to 1.0.
+      stress: An optional array giving the external stress tensor in atomic
+         units. Defaults to an identity array.
+      fixcom: An optional boolean which decides whether the centre of mass 
+         motion will be constrained or not. Defaults to False.
+   """
+
    attribs={"type"  : (RestartValue, (str, "unknown")) }
    fields={"thermostat" : (RestartThermo, () ), "barostat" : (RestartBaro, () ), 
            "timestep": (RestartValue, (float,"1.0")) ,
            "temperature" : (RestartValue, (float, 1.0)), "pressure" : (RestartValue, (float,"1.0")) ,
            "stress" : (RestartArray, (float, np.identity(3))), 
-           "nm_propagator": (RestartValue, (bool, True)), "fixcom": (RestartValue, (bool, False)) }
+           "fixcom": (RestartValue, (bool, False)) }
    
    def store(self, ens):
       if type(ens) is NVEEnsemble:    
@@ -25,7 +69,6 @@ class RestartEnsemble(Restart):
       
       self.timestep.store(ens.dt)
       self.temperature.store(ens.temp)
-      self.nm_propagator.store(ens.nmstep)
       
       if tens>0: 
          self.thermostat.store(ens.thermostat)
@@ -39,15 +82,15 @@ class RestartEnsemble(Restart):
 
    def fetch(self):
       if   self.type.fetch().upper() == "NVE" :
-         ens=NVEEnsemble(dt=self.timestep.fetch(), temp=self.temperature.fetch(), nmstep=self.nm_propagator.fetch(), fixcom=self.fixcom.fetch())
+         ens=NVEEnsemble(dt=self.timestep.fetch(), temp=self.temperature.fetch(), fixcom=self.fixcom.fetch())
       elif self.type.fetch().upper() == "NVT" : 
-         ens=NVTEnsemble(dt=self.timestep.fetch(), temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(),  nmstep=self.nm_propagator.fetch(),
-                        fixcom=self.fixcom.fetch() )
+         ens=NVTEnsemble(dt=self.timestep.fetch(), temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(),
+                        fixcom=self.fixcom.fetch())
       elif self.type.fetch().upper() == "NPT" : 
-         ens=NPTEnsemble(dt=self.timestep.fetch(), temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(),   nmstep=self.nm_propagator.fetch(),
+         ens=NPTEnsemble(dt=self.timestep.fetch(), temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(),
                         fixcom=self.fixcom.fetch(), pext=self.pressure.fetch(), barostat=self.barostat.fetch() )
       elif self.type.fetch().upper() == "NST" : 
-         ens=NSTEnsemble(dt=self.timestep.fetch(), temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(),  nmstep=self.nm_propagator.fetch(),
+         ens=NSTEnsemble(dt=self.timestep.fetch(), temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(),
                         fixcom=self.fixcom.fetch(), sext=self.stress.fetch(), barostat=self.barostat.fetch() )
       return ens
       
@@ -58,18 +101,17 @@ class Ensemble(dobject):
       Initialised by: ens = ensemble(system)
       system is a System object, containing the atom and cell coordinates"""
 
-   def __init__(self, dt, temp, nmstep=True):
+   def __init__(self, dt, temp):
       dset(self,"econs",depend_value(name='econs',func=self.get_econs) )
       dset(self, "temp", depend_value(name='temp',value=temp))       
       dset(self, "dt",   depend_value(name='dt',value=dt))
-      self.nmstep=nmstep      
-      self.timer=0.0
+      self.timer = 0.0
       
    def bind(self, beads, cell, bforce, prng):
-      self.beads=beads
-      self.cell=cell
-      self.forces=bforce
-      self.prng=prng
+      self.beads = beads
+      self.cell = cell
+      self.forces = bforce
+      self.prng = prng
 
       dset(self,"ntemp", depend_value(name='ntemp',func=self.get_ntemp,dependencies=[dget(self,"temp")]))
       dget(self,"econs").add_dependency(dget(self.beads, "kin"))
@@ -82,21 +124,30 @@ class Ensemble(dobject):
       dset(self,"omegak",depend_array(name='omegak',value=np.zeros(self.beads.nbeads,float),func=self.get_omegak, dependencies=[dget(self,"omegan")]) )
       dset(self,"prop_pq",depend_array(name='prop_pq',value=np.zeros((self.beads.nbeads,2,2),float),func=self.get_prop_pq, 
                                       dependencies=[dget(self,"omegak"), dget(self,"dt")]) )
-   def get_ntemp(self):   return self.temp*self.beads.nbeads
-   def get_omegan(self):  return self.ntemp*units.Constants.kb/units.Constants.hbar
-   def get_omegan2(self): return self.omegan**2
-   def get_omegak(self):  return 2*self.omegan*np.array([math.sin(k*math.pi/self.beads.nbeads) for k in range(self.beads.nbeads) ])
+
+   def get_ntemp(self):
+      return self.temp*self.beads.nbeads
+
+   def get_omegan(self):
+      return self.ntemp*units.Constants.kb/units.Constants.hbar
+
+   def get_omegan2(self):
+      return self.omegan**2
+
+   def get_omegak(self):
+      return 2*self.omegan*np.array([math.sin(k*math.pi/self.beads.nbeads) for k in range(self.beads.nbeads)])
+
    def get_prop_pq(self): 
-      pqk=np.zeros((self.beads.nbeads,2,2), float)
-      pqk[0]=np.array([[1,0],[self.dt,1]])
-      for b in range(1,self.beads.nbeads):
-         dtomegak=self.omegak[b]*self.dt
-         c=math.cos(dtomegak)
-         s=math.sin(dtomegak)
-         pqk[b,0,0]=c
-         pqk[b,1,1]=c
-         pqk[b,0,1]=-s*self.omegak[b]
-         pqk[b,1,0]=s/self.omegak[b]
+      pqk = np.zeros((self.beads.nbeads,2,2), float)
+      pqk[0] = np.array([[1,0], [self.dt,1]])
+      for b in range(1, self.beads.nbeads):
+         dtomegak = self.omegak[b]*self.dt
+         c = math.cos(dtomegak)
+         s = math.sin(dtomegak)
+         pqk[b,0,0] = c
+         pqk[b,1,1] = c
+         pqk[b,0,1] = -s*self.omegak[b]
+         pqk[b,1,0] = s/self.omegak[b]
       return pqk
 
          
@@ -114,90 +165,82 @@ class Ensemble(dobject):
 
    def get_econs(self):
       """Calculates the conserved energy quantity for constant E ensembles"""
-      return self.beads.kin+self.beads.vpath*self.omegan2+self.forces.pot
+      return self.beads.kin + self.beads.vpath*self.omegan2 + self.forces.pot
       
       
 class NVEEnsemble(Ensemble):
-   def __init__(self, dt, temp, nmstep=True, fixcom=False):  # PIMD requires a temperature even for NVE (to define the spring constant)
-      super(NVEEnsemble,self).__init__(dt=dt,temp=temp, nmstep=nmstep)
-      self.fixcom=fixcom
+   def __init__(self, dt, temp, fixcom=False):  # PIMD requires a temperature even for NVE (to define the spring constant)
+      super(NVEEnsemble,self).__init__(dt=dt,temp=temp)
+      self.fixcom = fixcom
 
    def rmcom(self):
       if (self.fixcom):
-         pcom=np.zeros(3,float);
+         pcom = np.zeros(3,float);
          
-         p=depstrip(self.beads.p);
-         na3=self.beads.natoms*3; nb=self.beads.nbeads;         
-         m=depstrip(self.beads.m3)[:,0:na3:3];                  
+         p = depstrip(self.beads.p)
+         na3 = self.beads.natoms*3
+         nb = self.beads.nbeads
+         m = depstrip(self.beads.m3)[:,0:na3:3]
          # computes center of mass
-         for i in range(3): pcom[i]=p[:,i:na3:3].sum();
+         for i in range(3):
+            pcom[i] = p[:,i:na3:3].sum()
 
          if hasattr(self,"thermostat"):
-            if hasattr(self.thermostat, "_thermos") : # in case of multiple thermostats, mangle with the centroid thermostat only
-               self.thermostat._thermos[0].ethermo+=np.dot(pcom,pcom)/(2.0*self.beads[0].M*nb)
+            if hasattr(self.thermostat, "_thermos"): # in case of multiple thermostats, mangle with the centroid thermostat only
+               self.thermostat._thermos[0].ethermo += np.dot(pcom,pcom)/(2.0*self.beads[0].M*nb)
             else:
-               self.thermostat.ethermo+=np.dot(pcom,pcom)/(2.0*self.beads[0].M*nb)
+               self.thermostat.ethermo += np.dot(pcom,pcom)/(2.0*self.beads[0].M*nb)
 
          # subtracts COM _velocity_
-         pcom*=1.0/(nb*self.beads[0].M)
+         pcom *= 1.0/(nb*self.beads[0].M)
          print "COM VELOCITY: ", pcom
-         for i in range(3): self.beads.p[:,i:na3:3]-=m*pcom[i]
-         
-   
+         for i in range(3):
+            self.beads.p[:,i:na3:3] -= m*pcom[i]
 
    def pstep(self): 
-      self.beads.p += depstrip(self.forces.f) * (self.dt*0.5)
+      self.beads.p += depstrip(self.forces.f)*(self.dt*0.5)
    
    def qcstep(self):
-      self.beads.qnm[0,:] += depstrip(self.beads.pnm)[0,:]/depstrip(self.beads.m)*self.dt
+      self.beads.qnm[0,:] += depstrip(self.beads.pnm)[0,:]/depstrip(self.beads.m3)[0,:]*self.dt
 
    def qstep(self):
       """Velocity Verlet time step"""
-      if self.beads.nbeads==1:
+      if self.beads.nbeads == 1:
          pass
       else:
          # does normal modes propagation
-         pq=np.zeros((2,self.beads.natoms*3),float)     #allocates a temporary to store pnm[i] and qnm[i]
-         sm=depstrip(self.beads.sm3[0])                 #all the beads have the same masses
+         pq = np.zeros((2,self.beads.natoms*3),float)     #allocates a temporary to store pnm[i] and qnm[i]
+         sm = depstrip(self.beads.sm3[0])                 #all the beads have the same masses
          for k in range(1,self.beads.nbeads):
             # works in mass-scaled coordinates so that all free-particle propagators are equal
-            pq[0,:]=depstrip(self.beads.pnm[k])/sm
-            pq[1,:]=depstrip(self.beads.qnm[k])*sm
-            pq=np.dot(self.prop_pq[k],pq)
-            self.beads.qnm[k]=pq[1,:]/sm         
-            self.beads.pnm[k]=pq[0,:]*sm                    
+            pq[0,:] = depstrip(self.beads.pnm[k])/sm
+            pq[1,:] = depstrip(self.beads.qnm[k])*sm
+            pq = np.dot(self.prop_pq[k],pq)
+            self.beads.qnm[k] = pq[1,:]/sm         
+            self.beads.pnm[k] = pq[0,:]*sm                    
       
    def step(self): 
-      self.ptime-=time.time()
       self.pstep()
-      self.ptime+=time.time()
 
-      self.qtime-=time.time()
       self.qcstep()
       self.qstep()
-      self.qtime+=time.time()
 
-      self.ptime-=time.time()
       self.pstep()
-      self.ptime+=time.time()
 
-      self.ttime-=time.time()
       self.rmcom()
-      self.ttime+=time.time()
       
+
 class NVTEnsemble(NVEEnsemble):
-   def __init__(self, dt=None, temp=None, nmstep=True, thermostat=None, fixcom=False):
-      super(NVTEnsemble,self).__init__(dt=dt,temp=temp, nmstep=nmstep, fixcom=fixcom)
+   def __init__(self, dt=None, temp=None, thermostat=None, fixcom=False):
+      super(NVTEnsemble,self).__init__(dt=dt,temp=temp, fixcom=fixcom)
 
-      if thermostat is None: self.thermostat=Thermostat()
-      else:      self.thermostat=thermostat
+      if thermostat is None:
+         self.thermostat = Thermostat()
+      else:
+         self.thermostat = thermostat
       
-      self.dt=dt
-      self.temp=temp
-      self.ptime=0
-      self.qtime=0
-      self.ttime=0
-
+      self.dt = dt
+      self.temp = temp
 
    def bind(self,beads, cell, bforce,prng):
       super(NVTEnsemble,self).bind(beads, cell, bforce, prng)
@@ -209,38 +252,27 @@ class NVTEnsemble(NVEEnsemble):
       dget(self,"econs").add_dependency(dget(self.thermostat, "ethermo"))
       
    def step(self): 
-      self.ttime-=time.time()
       self.thermostat.step()
       self.rmcom()
-      self.ttime+=time.time()
 
-      self.ptime-=time.time()
       self.pstep()
-      self.ptime+=time.time()
       
-      self.qtime-=time.time()
       self.qcstep()
       self.qstep()
-      self.qtime+=time.time()
 
-      self.ptime-=time.time()
       self.pstep()
-      self.ptime+=time.time()
 
-      self.ttime-=time.time()
       self.thermostat.step()
       self.rmcom()      
-      self.ttime+=time.time()
-
 
    def get_econs(self):
       """Calculates the conserved energy quantity for constant T ensembles"""
-      return NVEEnsemble.get_econs(self)+self.thermostat.ethermo 
+      return NVEEnsemble.get_econs(self) + self.thermostat.ethermo 
 
 class NPTEnsemble(NVTEnsemble):
-   def __init__(self, dt, temp, pext=None, sext=None, nmstep = True, thermostat=Thermostat(), barostat=Barostat(), fixcom=False):
-      super(NPTEnsemble,self).__init__(dt=dt, temp=temp, nmstep=nmstep, thermostat=thermostat, fixcom=fixcom)
-      self.barostat=barostat
+   def __init__(self, dt, temp, pext=None, sext=None, thermostat=Thermostat(), barostat=Barostat(), fixcom=False):
+      super(NPTEnsemble,self).__init__(dt=dt, temp=temp, thermostat=thermostat, fixcom=fixcom)
+      self.barostat = barostat
 
       if pext is not None:
          dset(self,"pext",depend_value(name="pext", value=pext) )
@@ -269,39 +301,29 @@ class NPTEnsemble(NVTEnsemble):
 
    def get_econs(self):
       """Calculates the conserved energy quantity for constant T ensembles"""
-      return NVTEnsemble.get_econs(self)+self.barostat.thermostat.ethermo+self.barostat.pot+ self.cell.kin - 2.0*Constants.kb*self.thermostat.temp*math.log(self.cell.V)
+      return NVTEnsemble.get_econs(self) + self.barostat.thermostat.ethermo + self.barostat.pot + self.cell.kin - 2.0*Constants.kb*self.thermostat.temp*math.log(self.cell.V)
       
    def step(self):
       """Velocity Verlet time step"""
-      self.ttime-=time.time()
       self.thermostat.step()
       self.barostat.thermostat.step()
       self.rmcom()           
-      self.ttime+=time.time() 
 
-      self.ptime-=time.time()
       self.barostat.pstep()
-      self.ptime+=time.time()
 
-      self.qtime-=time.time()
       self.barostat.qcstep()
       self.qstep()
-      self.qtime+=time.time()
 
-      self.ptime-=time.time()
       self.barostat.pstep()
-      self.ptime+=time.time()
 
-      self.ttime-=time.time()
       self.barostat.thermostat.step()
       self.thermostat.step()      
       self.rmcom()
-      self.ttime+=time.time()
                         
 class NSTEnsemble(NVTEnsemble):
    def __init__(self, dt, temp, pext=None, sext=None, thermostat=Thermostat(), barostat=Barostat(), fixcom=False ):
       super(NSTEnsemble,self).__init__(dt=dt, temp=temp, thermostat=thermostat,fixcom=fixcom)
-      self.barostat=barostat
+      self.barostat = barostat
             
       if sext is not None:
          dset(self,"sext",depend_value(name="sext", value=pext) )
@@ -337,28 +359,17 @@ class NSTEnsemble(NVTEnsemble):
       return NVTEnsemble.get_econs(self) + self.barostat.thermostat.ethermo + self.barostat.pot + self.cell.kin - 2.0*Constants.kb*self.thermostat.temp*xv
       
    def step(self):
-      """Velocity Verlet time step"""
-      self.ttime-=time.time()
       self.thermostat.step()
       self.barostat.thermostat.step()
       self.rmcom()           
-      self.ttime+=time.time() 
 
-      self.ptime-=time.time()
       self.barostat.pstep()
-      self.ptime+=time.time()
 
-      self.qtime-=time.time()
       self.barostat.qcstep()
       self.qstep()
-      self.qtime+=time.time()
 
-      self.ptime-=time.time()
       self.barostat.pstep()
-      self.ptime+=time.time()
 
-      self.ttime-=time.time()
       self.barostat.thermostat.step()
       self.thermostat.step()      
       self.rmcom()
-      self.ttime+=time.time()

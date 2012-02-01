@@ -376,8 +376,9 @@ class BaroRigid(Barostat):
 class RestartBaro(Restart):
    """Barostat restart class.
 
-   Handles generating the appropriate cell class from teh xml input file, and
-   generating the xml checkpoint tags and data from an instance of the object.
+   Handles generating the appropriate barostat class from the xml input file, 
+   and generating the xml checkpoint tags and data from an 
+   instance of the object.
 
    Attributes:
       kind: An optional string giving the type of barostat used. Defaults to
