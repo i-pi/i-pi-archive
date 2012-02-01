@@ -58,6 +58,12 @@ class RestartEnsemble(Restart):
            "fixcom": (RestartValue, (bool, False)) }
    
    def store(self, ens):
+      """Takes an ensemble instance and stores a minimal representation of it.
+
+      Args:
+         ens: An ensemble object.
+      """
+
       if type(ens) is NVEEnsemble:    
          self.type.store("nve"); tens=0
       elif type(ens) is NVTEnsemble:  
@@ -70,10 +76,10 @@ class RestartEnsemble(Restart):
       self.timestep.store(ens.dt)
       self.temperature.store(ens.temp)
       
-      if tens>0: 
+      if tens > 0: 
          self.thermostat.store(ens.thermostat)
          self.fixcom.store(ens.fixcom)
-      if tens>1:
+      if tens > 1:
          self.barostat.store(ens.barostat)
       if tens == 2:
          self.pressure.store(ens.pext)
@@ -81,33 +87,90 @@ class RestartEnsemble(Restart):
          self.stress.store(ens.pext)
 
    def fetch(self):
-      if   self.type.fetch().upper() == "NVE" :
-         ens=NVEEnsemble(dt=self.timestep.fetch(), temp=self.temperature.fetch(), fixcom=self.fixcom.fetch())
+      """Creates an ensemble object.
+
+      Returns:
+         An ensemble object of the appropriate type and with the appropriate
+         objects given the attributes of the RestartEnsemble object.
+      """
+
+      if self.type.fetch().upper() == "NVE" :
+         ens = NVEEnsemble(dt=self.timestep.fetch(), temp=self.temperature.fetch(), fixcom=self.fixcom.fetch())
       elif self.type.fetch().upper() == "NVT" : 
-         ens=NVTEnsemble(dt=self.timestep.fetch(), temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(),
+         ens = NVTEnsemble(dt=self.timestep.fetch(), temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(),
                         fixcom=self.fixcom.fetch())
       elif self.type.fetch().upper() == "NPT" : 
-         ens=NPTEnsemble(dt=self.timestep.fetch(), temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(),
+         ens = NPTEnsemble(dt=self.timestep.fetch(), temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(),
                         fixcom=self.fixcom.fetch(), pext=self.pressure.fetch(), barostat=self.barostat.fetch() )
       elif self.type.fetch().upper() == "NST" : 
-         ens=NSTEnsemble(dt=self.timestep.fetch(), temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(),
+         ens = NSTEnsemble(dt=self.timestep.fetch(), temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(),
                         fixcom=self.fixcom.fetch(), sext=self.stress.fetch(), barostat=self.barostat.fetch() )
       return ens
       
 class Ensemble(dobject): 
-   """General ensemble object, with no particle motion
-      Contains: syst = System object, containing the atom and cell coordinates, 
-      econs = conserved energy quantity.
-      Initialised by: ens = ensemble(system)
-      system is a System object, containing the atom and cell coordinates"""
+   """Base ensemble class.
+
+      Gives the standard methods and attributes needed in all the 
+      ensemble classes.
+
+      Attributes:
+         beads: A beads object giving the atoms positions.
+         cell: A cell object giving the system box.
+         forces: A forces object giving the virial and the forces acting on
+            each bead.
+         prng: A random number generator object.
+
+      Depend objects:
+         econs: The conserved energy quantity appropriate to the given 
+            ensemble. Depends on the various energy terms which make it up,
+            which are different depending on the ensemble.
+         temp: The system temperature.
+         dt: The timestep for the algorithms.
+         ntemp: The simulation temperature. Will be nbeads times higher than
+            the system temperature as PIMD calculations are done at this 
+            effective classical temperature.
+         omegan: The spring constant for the interaction between the replicas.  
+            Depends on the simulation temperature.
+         omegan2: omegan**2.
+         omegak: The normal mode frequencies for the free ring polymer.
+            Depends on omegan.
+         prop_pq: An array holding the exact normal mode propagator for the
+            free ring polymer, using mass scaled coordinates. 
+            See J. Chem. Phys. 133, 124101 (2010). Depends on the bead masses
+            and the timestep.
+      """
 
    def __init__(self, dt, temp):
+      """Initialises Ensemble.
+
+      Args:
+         dt: The timestep of the simulation algorithms.
+         temp: The temperature.
+      """
+
       dset(self,"econs",depend_value(name='econs',func=self.get_econs) )
       dset(self, "temp", depend_value(name='temp',value=temp))       
       dset(self, "dt",   depend_value(name='dt',value=dt))
-      self.timer = 0.0
       
    def bind(self, beads, cell, bforce, prng):
+      """Binds beads, cell, bforce and prng to the ensemble.
+
+      This takes a beads object, a cell object, a forcefield object and a 
+      random number generator object and makes them members of the ensemble.
+      It also then creates the objects that will hold the data needed in the
+      ensemble algorithms and the dependency network. Note that the conserved
+      quantity is defined in the init, but as each ensemble has a different
+      conserved quantity the dependencies are defined in bind.
+
+      Args:
+         beads: The beads object from whcih the bead positions are taken.
+         cell: The cell object from which the system box is taken.
+         bforce: The forcefield object from which the force and virial are
+            taken.
+         prng: The random number generator object which controls random number
+            generation.
+      """
+
       self.beads = beads
       self.cell = cell
       self.forces = bforce
@@ -118,7 +181,6 @@ class Ensemble(dobject):
       dget(self,"econs").add_dependency(dget(self.forces, "pot"))
       dget(self,"econs").add_dependency(dget(self.beads, "vpath"))
       
-      #also computes frequencies and matrices needed for the propagator
       dset(self,"omegan",depend_value(name='omegan',func=self.get_omegan, dependencies=[dget(self,"ntemp")]) )
       dset(self,"omegan2",depend_value(name='omegan2',func=self.get_omegan2, dependencies=[dget(self,"omegan")]) )
       dset(self,"omegak",depend_array(name='omegak',value=np.zeros(self.beads.nbeads,float),func=self.get_omegak, dependencies=[dget(self,"omegan")]) )
@@ -126,18 +188,44 @@ class Ensemble(dobject):
                                       dependencies=[dget(self,"omegak"), dget(self,"dt")]) )
 
    def get_ntemp(self):
+      """Returns the simulation temperature."""
+
       return self.temp*self.beads.nbeads
 
    def get_omegan(self):
+      """Returns the spring constant for the interaction between replicas."""
+
       return self.ntemp*units.Constants.kb/units.Constants.hbar
 
    def get_omegan2(self):
+      """Returns omegan**2."""
+
       return self.omegan**2
 
    def get_omegak(self):
+      """Gets the normal mode frequencies.
+
+      Returns:
+         A list of the normal mode frequencies for the free ring polymer.
+         The first element is the centroid frequency (0.0).
+      """
+
       return 2*self.omegan*np.array([math.sin(k*math.pi/self.beads.nbeads) for k in range(self.beads.nbeads)])
 
    def get_prop_pq(self): 
+      """Gets the normal mode propagator matrix.
+
+      Note the special treatment for the centroid normal mode, which is
+      propagated using the standard velocity Verlet algorithm as required.
+      Note that both the normal mode positions and momenta are propagated
+      using this matrix.
+
+      Returns:
+         An array of the form (nbeads, 2, 2). Each 2*2 array prop_pq[i,:,:] 
+         gives the exact propagator for the i-th normal mode of the 
+         ring polymer.
+      """
+
       pqk = np.zeros((self.beads.nbeads,2,2), float)
       pqk[0] = np.array([[1,0], [self.dt,1]])
       for b in range(1, self.beads.nbeads):
@@ -152,28 +240,69 @@ class Ensemble(dobject):
 
          
    def pstep(self): 
-      """Dummy routine which does nothing"""
+      """Dummy momenta propagator which does nothing."""
+
       pass
 
-   def qstep(self): 
-      """Dummy routine which does nothing"""
+   def qcstep(self): 
+      """Dummy centroid position step which does nothing."""
+
       pass
 
    def step(self): 
-      """Dummy routine which does nothing"""
+      """Dummy routine which does nothing."""
+
       pass
 
    def get_econs(self):
-      """Calculates the conserved energy quantity for constant E ensembles"""
+      """Calculates the conserved energy quantity for constant energy 
+      ensemble.
+      """
+
       return self.beads.kin + self.beads.vpath*self.omegan2 + self.forces.pot
       
       
 class NVEEnsemble(Ensemble):
-   def __init__(self, dt, temp, fixcom=False):  # PIMD requires a temperature even for NVE (to define the spring constant)
+   """Ensemble object for constant energy simulations.
+
+   Has the relevant conserved quantity and normal mode propagator for the 
+   constant energy ensemble. Note that a temperature of some kind must be 
+   defined so that the spring potential can be calculated.
+
+   Attributes:
+      fixcom: A boolean which decides whether the centre of mass 
+         motion will be constrained or not.
+   
+   Depend objects:
+      econs: Conserved energy quantity. Depends on the bead kinetic and 
+         potential energy, and the spring potential energy.
+   """
+
+   def __init__(self, dt, temp, fixcom=False):
+      """Initialises NVEEnsemble.
+
+      Args:
+         dt: The simulation timestep.
+         temp: The system temperature.
+         fixcom: An optional boolean which decides whether the centre of mass
+            motion will be constrained or not. Defaults to False.
+      """
+
       super(NVEEnsemble,self).__init__(dt=dt,temp=temp)
       self.fixcom = fixcom
 
    def rmcom(self):
+      """This removes the centre of mass contribution to the kinetic energy.
+
+      Calculates the centre of mass momenta, then removes the mass weighted
+      contribution from each atom. If the ensemble defines a thermostat, then
+      the contribution to the conserved quantity due to this subtraction is 
+      added to the total energy removed from the kinetic energy due to the 
+      thermostat. If there is a choice of thermostats, the thermostat 
+      connected to the centroid is chosen, to minimise the disturbance to the 
+      ring polymer motion.
+      """
+
       if (self.fixcom):
          pcom = np.zeros(3,float);
          
@@ -181,38 +310,46 @@ class NVEEnsemble(Ensemble):
          na3 = self.beads.natoms*3
          nb = self.beads.nbeads
          m = depstrip(self.beads.m3)[:,0:na3:3]
-         # computes center of mass
          for i in range(3):
             pcom[i] = p[:,i:na3:3].sum()
 
          if hasattr(self,"thermostat"):
-            if hasattr(self.thermostat, "_thermos"): # in case of multiple thermostats, mangle with the centroid thermostat only
+            if hasattr(self.thermostat, "_thermos"):
                self.thermostat._thermos[0].ethermo += np.dot(pcom,pcom)/(2.0*self.beads[0].M*nb)
             else:
                self.thermostat.ethermo += np.dot(pcom,pcom)/(2.0*self.beads[0].M*nb)
 
-         # subtracts COM _velocity_
          pcom *= 1.0/(nb*self.beads[0].M)
          print "COM VELOCITY: ", pcom
          for i in range(3):
             self.beads.p[:,i:na3:3] -= m*pcom[i]
 
    def pstep(self): 
+      """Velocity Verlet momenta propagator."""
+
       self.beads.p += depstrip(self.forces.f)*(self.dt*0.5)
    
    def qcstep(self):
+      """Velocity Verlet centroid position propagator."""
+
       self.beads.qnm[0,:] += depstrip(self.beads.pnm)[0,:]/depstrip(self.beads.m3)[0,:]*self.dt
 
    def qstep(self):
-      """Velocity Verlet time step"""
+      """Exact normal mode propagator for the free ring polymer.
+
+      Note that the propagator works in mass scaled coordinates, so that the
+      propagator matrix can be determined independently from the particular
+      atom masses, and so the same propagator will work for all the atoms in 
+      the system. All the ring polymers are propagated at the same time by a
+      matrix multiplication.
+      """
+
       if self.beads.nbeads == 1:
          pass
       else:
-         # does normal modes propagation
-         pq = np.zeros((2,self.beads.natoms*3),float)     #allocates a temporary to store pnm[i] and qnm[i]
-         sm = depstrip(self.beads.sm3[0])                 #all the beads have the same masses
-         for k in range(1,self.beads.nbeads):
-            # works in mass-scaled coordinates so that all free-particle propagators are equal
+         pq = np.zeros((2,self.beads.natoms*3),float)
+         sm = depstrip(self.beads.sm3[0])
+         for k in range(2,self.beads.nbeads):
             pq[0,:] = depstrip(self.beads.pnm[k])/sm
             pq[1,:] = depstrip(self.beads.qnm[k])*sm
             pq = np.dot(self.prop_pq[k],pq)
@@ -220,6 +357,8 @@ class NVEEnsemble(Ensemble):
             self.beads.pnm[k] = pq[0,:]*sm                    
       
    def step(self): 
+      """Does one simulation time step."""
+
       self.pstep()
 
       self.qcstep()
@@ -231,27 +370,71 @@ class NVEEnsemble(Ensemble):
       
 
 class NVTEnsemble(NVEEnsemble):
-   def __init__(self, dt=None, temp=None, thermostat=None, fixcom=False):
+   """Ensemble object for constant temperature simulations.
+
+   Has the relevant conserved quantity and normal mode propagator for the 
+   constant temperature ensemble. Contains a thermostat object containing the
+   algorithms to keep the temperature constant.
+
+   Attributes:
+      thermostat: A thermostat object to keep the temperature constant.
+   
+   Depend objects:
+      econs: Conserved energy quantity. Depends on the bead kinetic and 
+         potential energy, the spring potential energy and the heat 
+         transferred to the thermostat.
+   """
+
+   def __init__(self, dt, temp, thermostat=None, fixcom=False):
+      """Initialises NVTEnsemble.
+
+      Args:
+         dt: The simulation timestep.
+         temp: The system temperature.
+         thermostat: A thermostat object to keep the temperature constant.
+            Defaults to Thermostat()
+         fixcom: An optional boolean which decides whether the centre of mass
+            motion will be constrained or not. Defaults to False.
+      """
+
       super(NVTEnsemble,self).__init__(dt=dt,temp=temp, fixcom=fixcom)
 
       if thermostat is None:
          self.thermostat = Thermostat()
       else:
          self.thermostat = thermostat
-      
-      self.dt = dt
-      self.temp = temp
 
-   def bind(self,beads, cell, bforce,prng):
+   def bind(self, beads, cell, bforce, prng):
+      """Binds beads, cell, bforce and prng to the ensemble.
+
+      This takes a beads object, a cell object, a forcefield object and a 
+      random number generator object and makes them members of the ensemble.
+      It also then creates the objects that will hold the data needed in the
+      ensemble algorithms and the dependency network. Also note that the 
+      thermostat timestep and temperature are defined relative to the system
+      temperature, and the the thermostat temperature is held at the 
+      higher simulation temperature, as is appropriate.
+
+      Args:
+         beads: The beads object from whcih the bead positions are taken.
+         cell: The cell object from which the system box is taken.
+         bforce: The forcefield object from which the force and virial are
+            taken.
+         prng: The random number generator object which controls random number
+            generation.
+      """
+
       super(NVTEnsemble,self).bind(beads, cell, bforce, prng)
       self.thermostat.bind(beads=self.beads,prng=prng,ndof=(3*(self.beads.natoms-1) if self.fixcom else None) )
-      #merges the definitions of dt and temp
+
       deppipe(self,"ntemp", self.thermostat,"temp")
       deppipe(self,"dt", self.thermostat, "dt")
 
       dget(self,"econs").add_dependency(dget(self.thermostat, "ethermo"))
       
    def step(self): 
+      """Does one simulation time step."""
+
       self.thermostat.step()
       self.rmcom()
 
@@ -266,7 +449,10 @@ class NVTEnsemble(NVEEnsemble):
       self.rmcom()      
 
    def get_econs(self):
-      """Calculates the conserved energy quantity for constant T ensembles"""
+      """Calculates the conserved energy quantity for constant temperature 
+      ensemble.
+      """
+
       return NVEEnsemble.get_econs(self) + self.thermostat.ethermo 
 
 class NPTEnsemble(NVTEnsemble):

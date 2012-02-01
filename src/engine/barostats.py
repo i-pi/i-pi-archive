@@ -26,7 +26,7 @@ from engine.thermostats import Thermostat, RestartThermo
 class Barostat(dobject): 
    """Base barostat class.
 
-   Gives the standard methods and quantities needed in all the barostat classes.
+   Gives the standard methods and attributes needed in all the barostat classes.
 
    Attributes:
       thermostat: A thermostat object used to keep the cell momenta at a 
@@ -101,9 +101,9 @@ class Barostat(dobject):
    def bind(self, beads, cell, forces):
       """Binds beads, cell and forces to the barostat.
 
-      This takes an beads object, a cell object and a forces object and makes 
-      them members of the barostat. It also then creates the objects that will
-      hold the data needed in the barostat algorithms and the dependency 
+      This takes an beads object, a cell object and a forcefield object and 
+      makes them members of the barostat. It also then creates the objects that
+      will hold the data needed in the barostat algorithms and the dependency 
       network.
 
       Args:
@@ -137,17 +137,17 @@ class Barostat(dobject):
       return self.pext*np.identity(3)
       
    def pstep(self):
-      """Dummy momenta update step."""
+      """Dummy momenta propagator step."""
 
       pass
 
    def qcstep(self):
-      """Dummy centroid position update step."""
+      """Dummy centroid position propagator step."""
 
       pass   
       
    def step(self):
-      """Classical barostat step.""" 
+      """Classical barostat propagator.""" 
 
       self.thermostat.step()
       self.pstep()
