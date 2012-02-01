@@ -421,8 +421,9 @@ class Interface(object):
       
       if not pars is None: 
          for k,v in pars.items():
-            par_str += k+" : "+ str(v) + " , "
-      else : par_str=" "
+            par_str += k + " : " + str(v) + " , "
+      else:
+         par_str = " "
 
 #TODO currently parameter string is hard coded for LJ potential. Needs adapting
 #to general forcefields.

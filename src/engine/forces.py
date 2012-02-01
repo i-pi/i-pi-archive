@@ -134,7 +134,7 @@ class ForceField(dobject):
       dset(self,"pot",depend_value(name="pot", func=self.get_pot, dependencies=[dget(self,"ufv")] )  )
       dset(self,"vir", depend_array(name="vir", value=np.zeros((3,3),float),func=self.get_vir, dependencies=[dget(self,"ufv")] ) )            
       # the force requires a bit more work, to define shortcuts to xyz slices
-      fbase=np.zeros(atoms.natoms*3, float)
+      fbase = np.zeros(atoms.natoms*3, float)
       dset(self,"f", depend_array(name="f", value=fbase, func=self.get_f, dependencies=[dget(self,"ufv")]) )
       dset(self,"fx", depend_array(name="fx", value=fbase[0:3*atoms.natoms:3]));
       dset(self,"fy", depend_array(name="fy", value=fbase[1:3*atoms.natoms:3]));
@@ -185,8 +185,8 @@ class ForceField(dobject):
       """
 
       vir = self.ufv[2]
-      vir[1,0]=0.0
-      vir[2,0:2]=0.0
+      vir[1,0] = 0.0
+      vir[2,0:2] = 0.0
       return vir
 
 

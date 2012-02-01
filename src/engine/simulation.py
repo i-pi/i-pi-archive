@@ -43,7 +43,7 @@ class RestartSimulation(Restart):
       atoms: A restart atoms instance.
       beads: A restart beads instance.
       cell: A restart cell instance.
-      prng: A restart random number instance.
+      prng: A random number generator object.
       nbeads: A float giving the number of beads.
       step: An integer giving the current simulation step. Defaults to 0.
       total_steps: The total number of steps. Defaults to 0.
@@ -164,7 +164,7 @@ class Simulation(dobject):
       nbeads: The number of the replicas of the system.
       beads: A beads object giving the atom positions.
       cell: A cell object giving the system box.
-      prng: A random number object.
+      prng: A random number generator object.
       _forcemodel: A forcefield object giving the force calculator for each 
          replica of the system.
       forces: A ForceBeads object for calculating the forces for all the 
