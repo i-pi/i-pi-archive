@@ -1,0 +1,36 @@
+<simulation>
+   <initialize shape="(1)">  [ velocities ]  </initialize>
+   <properties shape='(5)'>  [ time, conserved, temperature, kinetic_cv, potential ] </properties>   
+   <stride> { properties : 1, trajectory: 20, trajectory_full: 200,  checkpoint:250 } </stride>
+   <prefix> test_ph2 </prefix>
+   <total_steps>20000</total_steps>
+   <prng><seed>31415</seed></prng>
+   <force type='socket'>
+      <interface mode="unix">
+         <address>wrap-pi</address>   <port>31415</port>    <slots>4</slots> <latency>0.001</latency>
+      </interface>
+   </force>
+   <atoms>
+      <from_file>ph2-108.pdb</from_file>
+   </atoms>
+   <nbeads>24</nbeads>
+   <cell flexible='False'>
+      <h shape='(3, 3)'> 
+       [ 33.726, 5.71316101504e-15, 5.71316101504e-15,
+         0.0, 33.726,  5.71316101504e-15, 
+         0.0, 0.0, 33.726 ]
+      </h>
+      <m>25000.7229</m>
+   </cell>
+   <ensemble type='nvt'>
+      <nm_propagator>true</nm_propagator>
+      <thermostat kind='pile-g'>
+         <tau>1e3</tau>
+         <ethermo>0.0</ethermo>
+      </thermostat>
+      <timestep>50.0</timestep>
+      <pressure>1.0</pressure>
+      <fixcom>False</fixcom>
+      <temperature>25</temperature>
+   </ensemble>
+</simulation>

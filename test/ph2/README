@@ -1,0 +1,24 @@
+ -- Example with the rudimentary LJ/PH2 code --
+
+ * First, compile the driver code in forces/. Should be as simple as make.
+   Note you may need first to compile sockets.c in src/driver before you link
+
+ * Go back to the example directory and run
+$ python ../../main.py input.xml
+ 
+   the wrapper will start and sit waiting on the UDS /tmp/wrappi.
+ 
+ * Open a separate terminal and run the SG driver code 
+ 
+$ path/forces/ljengine.x -u -h wrap-pi -r 15.0
+
+   You can run multiple instances of the code; it is so fast that parallel scaling won't 
+   be appreciable.
+
+ * If your system does not support Unix domain sockets, just set in input.xml
+   <interface mode="inet"> and <address>localhost</address>
+
+  then run the driver as ljengine -h localhost -r 15.0
+
+
+   
