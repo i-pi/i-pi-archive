@@ -108,7 +108,7 @@ class RestartEnsemble(Restart):
       return ens
       
 class Ensemble(dobject): 
-   """Base ensemble class.
+   """Base (do-nothing) ensemble class.
 
       Gives the standard methods and attributes needed in all the 
       ensemble classes.
@@ -148,9 +148,9 @@ class Ensemble(dobject):
          temp: The temperature.
       """
 
-      dset(self,"econs",depend_value(name='econs',func=self.get_econs) )
-      dset(self, "temp", depend_value(name='temp',value=temp))       
-      dset(self, "dt",   depend_value(name='dt',value=dt))
+      dset(self, "econs", depend_value(name='econs', func=self.get_econs) )
+      dset(self, "temp",  depend_value(name='temp',  value=temp))       
+      dset(self, "dt",    depend_value(name='dt',    value=dt))
       
    def bind(self, beads, cell, bforce, prng):
       """Binds beads, cell, bforce and prng to the ensemble.
@@ -171,16 +171,21 @@ class Ensemble(dobject):
             generation.
       """
 
+      # store local references to the different bits of the simulation
       self.beads = beads
       self.cell = cell
       self.forces = bforce
       self.prng = prng
-
+       
+      # n times the temperature 
       dset(self,"ntemp", depend_value(name='ntemp',func=self.get_ntemp,dependencies=[dget(self,"temp")]))
+      
+      # dependencies of the conserved quantity
       dget(self,"econs").add_dependency(dget(self.beads, "kin"))
       dget(self,"econs").add_dependency(dget(self.forces, "pot"))
       dget(self,"econs").add_dependency(dget(self.beads, "vpath"))
       
+      # create path related properties
       dset(self,"omegan",depend_value(name='omegan',func=self.get_omegan, dependencies=[dget(self,"ntemp")]) )
       dset(self,"omegan2",depend_value(name='omegan2',func=self.get_omegan2, dependencies=[dget(self,"omegan")]) )
       dset(self,"omegak",depend_array(name='omegak',value=np.zeros(self.beads.nbeads,float),func=self.get_omegak, dependencies=[dget(self,"omegan")]) )
@@ -188,7 +193,7 @@ class Ensemble(dobject):
                                       dependencies=[dget(self,"omegak"), dget(self,"dt")]) )
 
    def get_ntemp(self):
-      """Returns the simulation temperature."""
+      """Returns the PI simulation temperature (P times the physical T)."""
 
       return self.temp*self.beads.nbeads
 
@@ -241,7 +246,7 @@ class Ensemble(dobject):
          
    def pstep(self): 
       """Dummy momenta propagator which does nothing."""
-
+      
       pass
 
    def qcstep(self): 
