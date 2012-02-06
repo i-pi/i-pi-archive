@@ -276,6 +276,9 @@ def read_list(data, delims="[]", split=",", strip=" \n\t'"):
    for i in range(len(rlist)):
       rlist[i] = rlist[i].strip(strip)
 
+   # handles empty lists correctly
+   if len(rlist)==1 and rlist[0]=="": rlist=[] 
+    
    return rlist
 
 def read_array(dtype, data):
@@ -344,6 +347,7 @@ def read_dict(data):
    def mystrip(data):
       return data.strip(" \n\t'")
    rdict = {}
+   print "read list ",rlist
    for s in rlist:
       rtuple = map(mystrip,s.split(":"))      
       if not len(rtuple) == 2:

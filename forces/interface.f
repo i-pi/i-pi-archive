@@ -42,15 +42,21 @@
             ccmd=1
          elseif (parbuffer == "-p") then 
             ccmd=2
+         elseif (parbuffer == "-r") then 
+            ccmd=3
          else
             if (ccmd==0) then 
                write(*,*) "Unrecognized command line argument", ccmd
+               write(*,*) 
+     c "SYNTAX: ljengine.x [-u] -h hostname -p port -r cutoff"
                call exit(-1)
             endif
             if (ccmd==1) then
                host=trim(parbuffer)//achar(0)
             elseif (ccmd==2) then
                read(parbuffer,*) port
+            elseif (ccmd==3) then
+               read(parbuffer,*) rc
             endif
             ccmd=0            
          endif
@@ -74,9 +80,11 @@
          else if (trim(header) == "INIT") then     
             call readbuffer(socket, nat, 4)
             call readbuffer(socket, parbuffer, nat)
-            read(parbuffer(1:nat),*) eps, sigma, rc, rn
+            ! no need to read stuff, this is not LJ 
+            !read(parbuffer(1:nat),*) eps, sigma, rc, rn
             !correction = 4*eps*((sigma/rc)**12 - (sigma/rc)**6)
 !            correction=0
+            rn=rc*1.2
             correction = exp(1.713d0-1.5671d0*rc-0.00993d0*rc**2) -
      1 (12.14d0/rc**6 + 215.2d0/rc**8 - 143.1d0/rc**9 + 4813.9d0/rc**10)
             isinit=.true.
