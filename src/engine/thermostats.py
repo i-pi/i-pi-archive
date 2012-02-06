@@ -56,11 +56,11 @@ class ThermoLangevin(Thermostat):
    """Represent a langevin thermostat for constant T simulations.
       Contains: temp = temperature, dt = time step, econs =
       change in the kinetic energy due to the thermostat,
-      tau = thermostat mass, sm = sqrt(mass), (T,S) = thermostat parameters
+      tau = thermostat time scale, sm = sqrt(mass), (T,S) = thermostat parameters
       Initialised by: thermo = langevin(temp, dt, tau, econs)
       temp = temperature, default = 1.0
       dt = time step, default = 1.0
-      tau = thermostat mass, default = 1.0
+      tau = thermostat relaxation time, default = 1.0
       econs = conserved energy quantity, default = 0.0"""
 
    def get_T(self):
@@ -113,8 +113,8 @@ class ThermoPILE_L(Thermostat):
       
       # must pipe all the dependencies in such a way that values for the nm thermostats
       # are automatically updated based on the "master" thermostat
-      it=0
       def make_taugetter(k): return lambda: self.tauk[k-1]
+      it=0
       for t in self._thermos:
          if t is None: 
             it+=1; continue   
@@ -151,11 +151,11 @@ class ThermoSVR(Thermostat):
    """Represent a stochastic velocity rescaling thermostat for constant T simulations.
       Contains: temp = temperature, dt = time step, econs =
       change in the kinetic energy due to the thermostat,
-      tau = thermostat mass, sm = sqrt(mass), (T,S) = thermostat parameters
+      tau = thermostat relaxation time, sm = sqrt(mass), (T,S) = thermostat parameters
       Initialised by: thermo = langevin(temp, dt, tau, econs)
       temp = temperature, default = 1.0
       dt = time step, default = 1.0
-      tau = thermostat mass, default = 1.0
+      tau = thermostat relaxation time, default = 1.0
       econs = conserved energy quantity, default = 0.0"""
 
    def get_et(self):
@@ -203,6 +203,50 @@ class ThermoPILE_G(ThermoPILE_L):
       deppipe(self,"dt", t, "dt")
       deppipe(self,"tau", t, "tau")
       dget(self,"ethermo").add_dependency(dget(t,"ethermo"))
+  
+class ThermoGLE(Thermostat):     
+   """Represent a GLE thermostat.
+      Contains: dt = time step, econs = change in the kinetic energy due to the thermostat,
+      tau = thermostat relaxation time, sm = sqrt(mass), A = friction matrix, C = static covariance,
+      temp = temperature,  (T,S) = GLE propagator matrices
+      Initialised by: thermo = ThermoGLE(temp, dt, A, C, econs)
+      temp = temperature, default = 1.0
+      A = friction, default 1x1 matrix value 1
+      C = static covariance, default identity (sizeof(A)) x temp
+      dt = time step, default = 1.0
+      tau = thermostat relaxation time, default = 1.0
+      econs = conserved energy quantity, default = 0.0"""
+
+   def get_T(self):
+      """Calculates T in p(0) = T*p(dt) + S*random.gauss()"""
+      return math.exp(-0.5*self.dt/self.tau)
+      
+   def get_S(self):      
+      """Calculates S in p(0) = T*p(dt) + S*random.gauss()"""
+      return math.sqrt(Constants.kb*self.temp*(1-self.T**2))   
+  
+   def __init__(self, temp = 1.0, dt = 1.0, A = None, C = None, ethermo=0.0):
+      super(ThermoLangevin,self).__init__(temp,dt,ethermo)
+      
+      dset(self,"tau",depend_value(value=tau,name='tau'))
+      dset(self,"T",  depend_value(name="T",func=self.get_T, dependencies=[dget(self,"tau"), dget(self,"dt")]))
+      dset(self,"S",  depend_value(name="S",func=self.get_S, dependencies=[dget(self,"temp"), dget(self,"T")]))
+      
+   def step(self):
+      """Updates the atom velocities with a langevin thermostat"""
+      
+      p=self.p.view(np.ndarray).copy()
+      
+      p/=self.sm
+
+      self.ethermo+=np.dot(p,p)*0.5
+      p*=self.T
+      p+=self.S*self.prng.gvec(len(p))
+      self.ethermo-=np.dot(p,p)*0.5      
+
+      p*=self.sm      
+            
+      self.p=p
             
 class RestartThermo(Restart):
    attribs={ "kind": (RestartValue, (str, "langevin")) }

@@ -180,16 +180,17 @@ class Ensemble(dobject):
       # n times the temperature 
       dset(self,"ntemp", depend_value(name='ntemp',func=self.get_ntemp,dependencies=[dget(self,"temp")]))
       
+      # dependencies of the conserved quantity
+      dget(self,"econs").add_dependency(dget(self.beads, "kin"))
+      dget(self,"econs").add_dependency(dget(self.forces, "pot"))
+      dget(self,"econs").add_dependency(dget(self.beads, "vpath"))
+      
       # create path related properties
       dset(self,"omegan",depend_value(name='omegan',func=self.get_omegan, dependencies=[dget(self,"ntemp")]) )
       dset(self,"omegan2",depend_value(name='omegan2',func=self.get_omegan2, dependencies=[dget(self,"omegan")]) )
       dset(self,"omegak",depend_array(name='omegak',value=np.zeros(self.beads.nbeads,float),func=self.get_omegak, dependencies=[dget(self,"omegan")]) )
       dset(self,"prop_pq",depend_array(name='prop_pq',value=np.zeros((self.beads.nbeads,2,2),float),func=self.get_prop_pq, 
                                       dependencies=[dget(self,"omegak"), dget(self,"dt")]) )
-      dget(self,"econs").add_dependency(dget(self.beads, "kin"))
-      dget(self,"econs").add_dependency(dget(self.forces, "pot"))
-      dget(self,"econs").add_dependency(dget(self.beads, "vpath"))
-      dget(self,"econs").add_dependency(dget(self, "omegan2"))
 
    def get_ntemp(self):
       """Returns the PI simulation temperature (P times the physical T)."""
@@ -323,10 +324,10 @@ class NVEEnsemble(Ensemble):
             else:
                self.thermostat.ethermo += np.dot(pcom,pcom)/(2.0*self.beads[0].M*nb)
 
-         pcom *= 1.0/(nb*self.beads[0].M)
-         print "COM VELOCITY: ", pcom
-         for i in range(3):
-            self.beads.p[:,i:na3:3] -= m*pcom[i]
+         # subtracts COM _velocity_
+         pcom*=1.0/(nb*self.beads[0].M)
+         for i in range(3): self.beads.p[:,i:na3:3]-=m*pcom[i]
+         
 
    def pstep(self): 
       """Velocity Verlet momenta propagator."""
@@ -336,7 +337,7 @@ class NVEEnsemble(Ensemble):
    def qcstep(self):
       """Velocity Verlet centroid position propagator."""
 
-      self.beads.qnm[0,:] += depstrip(self.beads.pnm)[0,:]/depstrip(self.beads.m3)[0,:]*self.dt
+      self.beads.qnm[0,:] += depstrip(self.beads.pnm)[0,:]/depstrip(self.beads.m3)[0]*self.dt
 
    def qstep(self):
       """Exact normal mode propagator for the free ring polymer.
@@ -363,14 +364,22 @@ class NVEEnsemble(Ensemble):
    def step(self): 
       """Does one simulation time step."""
 
+      self.ptime=-time.time()
       self.pstep()
+      self.ptime+=time.time()
 
+      self.qtime=-time.time()
       self.qcstep()
       self.qstep()
+      self.qtime+=time.time()
 
+      self.ptime-=time.time()
       self.pstep()
+      self.ptime+=time.time()
 
+      self.ttime=-time.time()
       self.rmcom()
+      self.ttime+=time.time()
       
 
 class NVTEnsemble(NVEEnsemble):
@@ -439,22 +448,32 @@ class NVTEnsemble(NVEEnsemble):
    def step(self): 
       """Does one simulation time step."""
 
+      self.ttime=-time.time()
       self.thermostat.step()
       self.rmcom()
+      self.ttime+=time.time()
 
+      self.ptime=-time.time()
       self.pstep()
+      self.ptime+=time.time()
       
+      self.qtime=-time.time()
       self.qcstep()
       self.qstep()
+      self.qtime+=time.time()
 
+      self.ptime-=time.time()
       self.pstep()
+      self.ptime+=time.time()
 
+      self.ttime-=time.time()
       self.thermostat.step()
-      self.rmcom()      
+      self.rmcom()
+      self.ttime+=time.time()
 
    def get_econs(self):
       """Calculates the conserved energy quantity for constant temperature 
-      ensembles.
+      ensemble.
       """
 
       return NVEEnsemble.get_econs(self) + self.thermostat.ethermo 
@@ -494,8 +513,6 @@ class NPTEnsemble(NVTEnsemble):
          fixcom: An optional boolean which decides whether the centre of mass
             motion will be constrained or not. Defaults to False.
       """
-
-      super(NPTEnsemble,self).__init__(dt=dt, temp=temp, thermostat=thermostat, fixcom=fixcom)
       if barostat == None:
          self.barostat = Barostat()
       else:
@@ -530,9 +547,12 @@ class NPTEnsemble(NVTEnsemble):
             generation.
       """
 
+
       super(NPTEnsemble,self).bind(beads, cell, bforce, prng)
       self.barostat.bind(beads, cell, bforce)
 
+      # "binds" the dt, temp and p properties of the barostat to those of the ensemble. 
+      # the thermostat has been already bound in NVTEnsemble init so we must make sure to copy all dependencies as well
       deppipe(self,"ntemp", self.barostat,"temp")
       deppipe(self,"ntemp", self.barostat.thermostat,"temp")
       deppipe(self, "dt", self.barostat, "dt")
@@ -544,10 +564,7 @@ class NPTEnsemble(NVTEnsemble):
       dget(self,"econs").add_dependency(dget(self.cell, "V"))
 
    def get_econs(self):
-      """Calculates the conserved energy quantity for constant pressure 
-      ensembles.
-      """
-
+      """Calculates the conserved energy quantity for constant T ensembles"""
       return NVTEnsemble.get_econs(self) + self.barostat.thermostat.ethermo + self.barostat.pot + self.cell.kin - 2.0*Constants.kb*self.thermostat.temp*math.log(self.cell.V)
       
    def step(self):
