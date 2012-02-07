@@ -133,7 +133,7 @@ class ThermoPILE_L(Thermostat):
             dget(t,"tau")._func=make_taugetter(it)
          dget(self,"ethermo").add_dependency(dget(t,"ethermo"))
          it+=1     
-               
+             
       dget(self,"ethermo")._func=self.get_ethermo;
          
    def get_tauk(self):  
@@ -262,7 +262,7 @@ class ThermoGLE(Thermostat):
          self.s=np.zeros((self.ns+1,len(dget(self,"m"))))
          
          # Initializes the s vector in the free-particle limit
-         SC=stab_cholesky(self.C)         
+         SC=stab_cholesky(self.C*Constants.kb)         
          self.s=np.dot(SC, self.prng.gvec(self.s.shape)) 
       else : print " @ GLE BIND: Restarting additional DOFs! "
       

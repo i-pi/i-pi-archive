@@ -24,7 +24,7 @@
    </cell>
    <ensemble type='nvt'>
       <nm_propagator>true</nm_propagator>
-      <thermostat kind='pile-g'>
+      <thermostat kind='pile_g'>
          <tau>1e3</tau>
          <ethermo>0.0</ethermo>
       </thermostat>
