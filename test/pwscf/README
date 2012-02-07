@@ -7,7 +7,7 @@ $ python ../../src/main.py lithium.xml
 
 * In another terminal, create copies of the pwrun directory, change in  and launch the patched pw.x
 
-$ cp -r pwrun pw-1
+$ cp -r pw_li pw-1
 $ cd pw-1
 $ pw-driver.x < driver.in
 
@@ -20,3 +20,5 @@ $ pw-driver.x < driver.in
     selected is accessible from outside
  3. change the srvaddress input parameter in driver.in, making it point to the same address and port
  4. copy pwrun to the remote machine (do not forget the pseudo!) and launch n copies of pw-driver.x remotely
+
+* A similar example is provided in water.xml and pw_h2o

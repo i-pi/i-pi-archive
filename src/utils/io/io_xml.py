@@ -347,7 +347,6 @@ def read_dict(data):
    def mystrip(data):
       return data.strip(" \n\t'")
    rdict = {}
-   print "read list ",rlist
    for s in rlist:
       rtuple = map(mystrip,s.split(":"))      
       if not len(rtuple) == 2:

@@ -214,44 +214,68 @@ class ThermoGLE(Thermostat):
       A = friction, default 1x1 matrix value 1
       C = static covariance, default identity (sizeof(A)) x temp
       dt = time step, default = 1.0
-      tau = thermostat relaxation time, default = 1.0
       econs = conserved energy quantity, default = 0.0"""
 
    def get_T(self):
       """Calculates T in p(0) = T*p(dt) + S*random.gauss()"""
-      return math.exp(-0.5*self.dt/self.tau)
+      return matrix_exp(-0.5*self.dt*self.A)
       
    def get_S(self):      
       """Calculates S in p(0) = T*p(dt) + S*random.gauss()"""
-      return math.sqrt(Constants.kb*self.temp*(1-self.T**2))   
+      SST=Constants.kb*(self.C-np.dot(self.T.T,np.dot(self.C,self.T)))
+      return stab_cholesky(SST)
   
+   def get_C(self):
+      """Calculates C from temp (if C is not set explicitely)"""
+      rC=np.identity(self.ns+1,float)*self.temp
+      return rC[:]
+      
    def __init__(self, temp = 1.0, dt = 1.0, A = None, C = None, ethermo=0.0):
-      super(ThermoLangevin,self).__init__(temp,dt,ethermo)
+      super(ThermoGLE,self).__init__(temp,dt,ethermo)
       
-      dset(self,"tau",depend_value(value=tau,name='tau'))
-      dset(self,"T",  depend_value(name="T",func=self.get_T, dependencies=[dget(self,"tau"), dget(self,"dt")]))
-      dset(self,"S",  depend_value(name="S",func=self.get_S, dependencies=[dget(self,"temp"), dget(self,"T")]))
+      if A is None: A=np.identity(1,float)
+      dset(self,"A",depend_value(value=A.copy(),name='A'))
+
+      self.ns=len(self.A)-1;
+
+      # now, this is tricky. if C is taken from temp, then we want it to be updated
+      # as a depend of temp. Otherwise, we want it to be an independent beast.
+      if C is None: 
+         C=np.identity(self.ns+1,float)*self.temp         
+         dset(self,"C",depend_value(name='C', func=self.get_C, dependencies=[dget(self,"temp")]))
+      else:
+         dset(self,"C",depend_value(value=C.copy(),name='C'))
       
+      dset(self,"T",  depend_value(name="T",func=self.get_T, dependencies=[dget(self,"A"), dget(self,"dt")]))
+      dset(self,"S",  depend_value(name="S",func=self.get_S, dependencies=[dget(self,"C"), dget(self,"T")]))
+  
+   def bind(self, beads=None, atoms=None, cell=None, pm=None, prng=None, ndof=None):
+      super(ThermoGLE,self).bind(beads,atoms,cell,pm,prng,ndof)
+
+      # allocates an array of s's !TODO INIT AND RESTART
+      self.s=np.zeros((self.ns+1,len(dget(self,"m"))))
+                  
    def step(self):
-      """Updates the atom velocities with a langevin thermostat"""
+      """Updates the atom velocities with a GLE thermostat"""
+      
       
       p=self.p.view(np.ndarray).copy()
       
-      p/=self.sm
+      self.s[0,:]=self.p/self.sm
 
-      self.ethermo+=np.dot(p,p)*0.5
-      p*=self.T
-      p+=self.S*self.prng.gvec(len(p))
-      self.ethermo-=np.dot(p,p)*0.5      
+      self.ethermo+=np.dot(self.s[0],self.s[0])*0.5
+      self.s=np.mult(self.T,self.s)+np.mult(self.S,self.prng.gvec(self.s.shape))
+      self.ethermo-=np.dot(self.s[0],self.s[0])*0.5
 
-      p*=self.sm      
-            
-      self.p=p
+      self.p=self.s[0]*self.sm
             
 class RestartThermo(Restart):
    attribs={ "kind": (RestartValue, (str, "langevin")) }
    fields={ "ethermo" : (RestartValue, (float, 0.0)), 
-            "tau" : (RestartValue, (float, 1.0))  }
+            "tau" : (RestartValue, (float, 1.0)) ,
+            "A" : (RestartArray,(float, np.zeros(0))),
+            "C" : (RestartArray,(float, np.zeros(0)))
+             }
    
    def store(self, thermo):
       if type(thermo) is ThermoLangevin: 
@@ -265,7 +289,11 @@ class RestartThermo(Restart):
          self.tau.store(thermo.tau)
       elif type(thermo) is ThermoPILE_G: 
          self.kind.store("pile_g")
-         self.tau.store(thermo.tau)                  
+         self.tau.store(thermo.tau)     
+      elif type(thermo) is ThermoGLE: 
+         self.kind.store("gle")
+         self.A.store(thermo.A)
+         if dget(thermo,"C")._func is None: self.C.store(thermo.C)
       else: self.kind.store("unknown")      
       self.ethermo.store(thermo.ethermo)
       
@@ -273,7 +301,11 @@ class RestartThermo(Restart):
       if self.kind.fetch() == "langevin" : thermo=ThermoLangevin(tau=self.tau.fetch())
       elif self.kind.fetch() == "svr" : thermo=ThermoSVR(tau=self.tau.fetch())
       elif self.kind.fetch() == "pile_l" : thermo=ThermoPILE_L(tau=self.tau.fetch())
-      elif self.kind.fetch() == "pile_g" : thermo=ThermoPILE_G(tau=self.tau.fetch())            
+      elif self.kind.fetch() == "pile_g" : thermo=ThermoPILE_G(tau=self.tau.fetch())
+      elif self.kind.fetch() == "gle" : 
+         rC=self.C.fetch(); 
+         if len(rC)==0: rC=None
+         thermo=ThermoGLE(A=self.A.fetch(),C=rC)
       else: thermo=Thermostat()
       thermo.ethermo=self.ethermo.fetch()
       return thermo
