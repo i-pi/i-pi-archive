@@ -3,6 +3,7 @@ import math
 from utils.depend   import *
 from utils.units    import *
 from utils.restart  import *
+from utils.mathtools import matrix_exp, stab_cholesky
 from utils.prng import Random
 from beads import Beads
 
@@ -246,25 +247,35 @@ class ThermoGLE(Thermostat):
       else:
          dset(self,"C",depend_value(value=C.copy(),name='C'))
       
-      dset(self,"T",  depend_value(name="T",func=self.get_T, dependencies=[dget(self,"A"), dget(self,"dt")]))
+      dset(self,"T",  depend_value(name="T",func=self.get_T, dependencies=[dget(self,"A"), dget(self,"dt")]))      
       dset(self,"S",  depend_value(name="S",func=self.get_S, dependencies=[dget(self,"C"), dget(self,"T")]))
+      
+      self.s=np.zeros(0)
+  
   
    def bind(self, beads=None, atoms=None, cell=None, pm=None, prng=None, ndof=None):
       super(ThermoGLE,self).bind(beads,atoms,cell,pm,prng,ndof)
 
-      # allocates an array of s's !TODO INIT AND RESTART
-      self.s=np.zeros((self.ns+1,len(dget(self,"m"))))
+      # allocates, initializes or restarts an array of s's 
+      if self.s.shape != ( self.ns+1, len(dget(self,"m") )) :
+         if len(self.s) > 0 : print " @ GLE BIND: Warning: s array size mismatch on restart! "
+         self.s=np.zeros((self.ns+1,len(dget(self,"m"))))
+         
+         # Initializes the s vector in the free-particle limit
+         SC=stab_cholesky(self.C)         
+         self.s=np.dot(SC, self.prng.gvec(self.s.shape)) 
+      else : print " @ GLE BIND: Restarting additional DOFs! "
+      
                   
    def step(self):
-      """Updates the atom velocities with a GLE thermostat"""
-      
+      """Updates the atom velocities with a GLE thermostat"""      
       
       p=self.p.view(np.ndarray).copy()
       
       self.s[0,:]=self.p/self.sm
 
       self.ethermo+=np.dot(self.s[0],self.s[0])*0.5
-      self.s=np.mult(self.T,self.s)+np.mult(self.S,self.prng.gvec(self.s.shape))
+      self.s=np.dot(self.T,self.s)+np.dot(self.S,self.prng.gvec(self.s.shape))
       self.ethermo-=np.dot(self.s[0],self.s[0])*0.5
 
       self.p=self.s[0]*self.sm
@@ -274,7 +285,8 @@ class RestartThermo(Restart):
    fields={ "ethermo" : (RestartValue, (float, 0.0)), 
             "tau" : (RestartValue, (float, 1.0)) ,
             "A" : (RestartArray,(float, np.zeros(0))),
-            "C" : (RestartArray,(float, np.zeros(0)))
+            "C" : (RestartArray,(float, np.zeros(0))),
+            "s" : (RestartArray,(float, np.zeros(0)))
              }
    
    def store(self, thermo):
@@ -294,6 +306,7 @@ class RestartThermo(Restart):
          self.kind.store("gle")
          self.A.store(thermo.A)
          if dget(thermo,"C")._func is None: self.C.store(thermo.C)
+         self.s.store(thermo.s)
       else: self.kind.store("unknown")      
       self.ethermo.store(thermo.ethermo)
       
@@ -306,7 +319,7 @@ class RestartThermo(Restart):
          rC=self.C.fetch(); 
          if len(rC)==0: rC=None
          thermo=ThermoGLE(A=self.A.fetch(),C=rC)
-      else: thermo=Thermostat()
-      thermo.ethermo=self.ethermo.fetch()
+         thermo.s=self.s.fetch()
+      else: raise TypeError("Invalid thermostat kind "+self.kind.fetch())
       return thermo
            

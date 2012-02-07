@@ -2,8 +2,8 @@
    <initialize shape="(1)">  [ velocities ]  </initialize>
    <properties>  [ time, conserved, temperature, kinetic_cv, potential ] </properties>   
    <stride> { properties : 1, trajectory: 1,  trajectory_full : 1,  checkpoint:10 } </stride>
-   <prefix> h2o </prefix>
-   <total_steps>100</total_steps>
+   <prefix> wat </prefix>
+   <total_steps>1000</total_steps>
    <prng><seed>31415</seed></prng>
    <force type='socket'>
       <interface mode="inet">
@@ -28,7 +28,7 @@
          <tau>1e2</tau>
          <ethermo>0.0</ethermo>
       </thermostat>
-      <timestep>50</timestep>
+      <timestep>20</timestep>
       <pressure>1.0</pressure>
       <fixcom>True</fixcom>
       <temperature>150</temperature>

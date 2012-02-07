@@ -319,10 +319,11 @@ class Simulation(dobject):
       
       if "velocities" in self.initlist:
          self.beads.p = math.sqrt(self.ensemble.ntemp*Constants.kb)*self.beads.sm3*self.prng.gvec((self.beads.nbeads, 3*self.beads.natoms))
+
       if self.ensemble.fixcom:
          self.ensemble.rmcom()
-         #self.ensemble.rmcom()
       
+      # Zeroes out the initlist, such that in restarts no initialization will be required
       self.initlist = np.zeros(0, np.dtype('|S12'))
    
    def write_output(self):

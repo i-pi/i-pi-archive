@@ -336,7 +336,6 @@ class NVEEnsemble(Ensemble):
    
    def qcstep(self):
       """Velocity Verlet centroid position propagator."""
-
       self.beads.qnm[0,:] += depstrip(self.beads.pnm)[0,:]/depstrip(self.beads.m3)[0]*self.dt
 
    def qstep(self):
@@ -349,12 +348,17 @@ class NVEEnsemble(Ensemble):
       matrix multiplication.
       """
 
+#      non-NM propagator for tests
+#      self.beads.p += self.beads.fpath* (self.omegan2*self.dt*0.5)
+#      self.beads.q += self.beads.p/self.beads.m3*self.dt
+#      self.beads.p += self.beads.fpath* (self.omegan2*self.dt*0.5)
+
       if self.beads.nbeads == 1:
          pass
       else:
          pq = np.zeros((2,self.beads.natoms*3),float)
          sm = depstrip(self.beads.sm3[0])
-         for k in range(2,self.beads.nbeads):
+         for k in range(1,self.beads.nbeads):
             pq[0,:] = depstrip(self.beads.pnm[k])/sm
             pq[1,:] = depstrip(self.beads.qnm[k])*sm
             pq = np.dot(self.prop_pq[k],pq)
