@@ -392,9 +392,18 @@ class depend_array(np.ndarray, depend_base):
       __init__(), so need to be initialized.
       """
 
+      print "finalize",type(self), type(obj)
       depend_base.__init__(self, name="") 
       self._storage = self
    
+   def __array_prepare__(self, arr, context=None):
+      print "prep",type(self), type(arr)#, context
+      return super(depend_array,self).__array_prepare__(arr,context)
+
+   def __array_wrap__(self, arr, context=None):
+      print "wrap",type(self), type(arr)#, context
+      return super(depend_array,self).__array_wrap__(arr,context)
+
    # whenever possible in compound operations just return a regular ndarray
    __array_priority__ = -1.0  
       
