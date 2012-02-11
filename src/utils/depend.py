@@ -497,7 +497,10 @@ class depend_array(np.ndarray, depend_base):
 
       self.taint(taintme=False)
       if manual:
-         self.base[index] = value
+         if self.base is None:
+            super(depend_array,self).__setitem__(index,value)
+         else: 
+            self.base[index] = value
          self.update_man()
       else:
          self._storage[index] = value

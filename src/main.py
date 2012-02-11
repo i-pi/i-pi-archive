@@ -31,6 +31,8 @@ def main(file_name):
    simrestart.parse(xmlrestart.fields["simulation"])
    simul = simrestart.fetch()
    
+   a=simul.cell.apply_pbc(simul.beads[0][0]);
+   print simul.beads[0][0], a
    simul.run()
    del simul
 

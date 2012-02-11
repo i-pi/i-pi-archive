@@ -21,7 +21,8 @@ from utils.restart import *
 import utils.io.io_pdb
 from utils.mathtools import *
 from utils import units
-         
+import pdb      
+   
 class Cell(dobject):
    """Base class to represent the simulation cell in a periodic system.
 
@@ -95,8 +96,10 @@ class Cell(dobject):
       """
 
       s = np.dot(self.ih,atom.q)
+
       for i in range(3):
          s[i] = s[i] - round(s[i])
+      pdb.set_trace()
       return np.dot(self.h,s)
 
    def minimum_distance(self, atom1, atom2):
