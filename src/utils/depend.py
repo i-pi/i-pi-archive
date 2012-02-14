@@ -261,7 +261,6 @@ class depend_base(object):
 
       pass
 
-
 class depend_value(depend_base):
    """Scalar class for dependency handling.
 
@@ -335,10 +334,11 @@ class depend_array(np.ndarray, depend_base):
    array. Initialisation is also done in a different way for ndarrays.
 
    Attributes:
-      _storage: The base array. Equal to value unless self is a slice.
+      _bval: The base deparray storage space. Equal to depstrip(self) unless self is a slice.
+
    """
 
-   def __new__(cls, value, name, synchro=None, func=None, dependants=None, dependencies=None, tainted=None, storage=None):
+   def __new__(cls, value, name, synchro=None, func=None, dependants=None, dependencies=None, tainted=None, base=None):
       """Creates a new array from a template.
 
       Called whenever a new instance of depend_array is created. Casts the
@@ -352,7 +352,7 @@ class depend_array(np.ndarray, depend_base):
       obj = np.asarray(value).view(cls)
       return obj
 
-   def __init__(self, value, name, synchro=None, func=None, dependants=None, dependencies=None, tainted=None, storage=None):
+   def __init__(self, value, name, synchro=None, func=None, dependants=None, dependencies=None, tainted=None, base=None):
       """Initialises depend_array.
 
       Note that this is only called when a new array is created by an 
@@ -360,7 +360,7 @@ class depend_array(np.ndarray, depend_base):
 
       Args:
          name: A string giving the name of self.
-         value: The array to serve as the memory base.
+         value: The (numpy) array to serve as the memory base.
          tainted: An optional array giving the tainted flag. Default is [True].
          func: An optional argument that can be specified either by a function 
             name, or for synchronized values a dictionary of the form 
@@ -371,16 +371,24 @@ class depend_array(np.ndarray, depend_base):
          dependants: An optional list containing objects that depend on self.
          dependencies: An optional list containing objects that self 
             depends upon.
-         storage: An optional array giving the base array if the array is a
+         base: An optional array giving the base array if the array is a
             slice.
       """
 
       super(depend_array,self).__init__(name, synchro, func, dependants, dependencies, tainted)
-      if storage is None:
-         self._storage = value
+
+      if base is None:
+         self._bval = value
       else:
-         self._storage = storage
+         self._bval = base
             
+   def copy(self, order='C', maskna=None):
+      """ Just a wrapper for numpy copy mechanism """
+      
+      # Sets a flag and hands control to the numpy copy
+      self._fcopy=True
+      return super(depend_array,self).copy(order)
+      
    def __array_finalize__(self, obj):  
       """Deals with properly creating some arrays.
 
@@ -392,17 +400,60 @@ class depend_array(np.ndarray, depend_base):
       __init__(), so need to be initialized.
       """
 
-      print "finalize",type(self), type(obj)
       depend_base.__init__(self, name="") 
-      self._storage = self
+
+      if type(obj) is depend_array:
+         # we are in a view cast or in new from template. unfortunately 
+         # there is no sure way to tell (or so it seems). hence we need to handle
+         # special cases, and hope we are in a view cast otherwise.
+         if hasattr(obj,"_fcopy"):
+            del(obj._fcopy) # removes the "copy flag"
+            self._bval = depstrip(self)
+         else:   
+            # assumes we are in view cast, so copy over the attributes from the parent
+            # object. typical case: when transpose is performed as a view.
+            super(depend_array,self).__init__(obj._name, obj._synchro, obj._func, obj._dependants, None, obj._tainted)
+            self._bval = obj._bval
+      else:
+         # most likely we came here on the way to init. just sets a defaults for safety
+         self._bval = depstrip(self)
+
    
    def __array_prepare__(self, arr, context=None):
-      print "prep",type(self), type(arr)#, context
-      return super(depend_array,self).__array_prepare__(arr,context)
+      """ Prepare output array for ufunc.
+      
+      Depending on the context we try to understand if we are doing an in-place operation
+      (in which case we want to keep the return value a deparray) or we are
+      generating a new array as a result of the ufunc. In this case there is no
+      way to know if dependencies should be copied, so we strip and return a
+      ndarray.
+      
+      """
+      
+      if context is None or len(context)<2 or not type(context[0]) is np.ufunc:
+         # it is not clear what we should do. in doubt, strip dependencies.
+         return np.ndarray.__array_prepare__(self.view(np.ndarray),arr.view(np.ndarray),context)
+      elif len(context[1])>context[0].nin and context[0].nout>0:
+         # we are being called by a ufunc with a output argument, which is being
+         # actually used. most likely, something like an increment, so we pass on a 
+         # deparray
+         return super(depend_array,self).__array_prepare__(arr,context)         
+      else:
+         # apparently we are generating a new array. we have no way of knowing its
+         # dependencies, so we'd better return a ndarray view!
+         return np.ndarray.__array_prepare__(self.view(np.ndarray),arr.view(np.ndarray),context)
 
    def __array_wrap__(self, arr, context=None):
-      print "wrap",type(self), type(arr)#, context
-      return super(depend_array,self).__array_wrap__(arr,context)
+      """ Wraps up output array from ufunc. 
+      
+      See docstring of __array_prepare__ """
+      
+      if context is None or len(context)<2 or not type(context[0]) is np.ufunc:
+         return np.ndarray.__array_wrap__(self.view(np.ndarray),arr.view(np.ndarray),context)
+      elif len(context[1])>context[0].nin and context[0].nout>0:
+         return super(depend_array,self).__array_wrap__(arr,context)         
+      else:
+         return np.ndarray.__array_wrap__(self.view(np.ndarray),arr.view(np.ndarray),context)
 
    # whenever possible in compound operations just return a regular ndarray
    __array_priority__ = -1.0  
@@ -417,7 +468,7 @@ class depend_array(np.ndarray, depend_base):
          A depend_array with the dimensions given by newshape.
       """
 
-      return depend_array(self.base.reshape(newshape), name=self._name, synchro=self._synchro, func=self._func, dependants=self._dependants, tainted=self._tainted, storage=self._storage)  
+      return depend_array(depstrip(self).reshape(newshape), name=self._name, synchro=self._synchro, func=self._func, dependants=self._dependants, tainted=self._tainted, base=self._bval)  
 
    def flatten(self):
       """Makes the base array one dimensional.
@@ -434,7 +485,7 @@ class depend_array(np.ndarray, depend_base):
 
       Used so that looking up one item in an array returns a scalar, whereas
       looking up a slice of the array returns a new array with the same
-      dependencies as the original, so that changing the slice also changes
+      dependencies as the original, so that changing the slice also taints
       the global array.
 
       Arguments:
@@ -450,6 +501,7 @@ class depend_array(np.ndarray, depend_base):
       if (np.isscalar(index) and depth <= 1):
          return True
       elif (isinstance(index, tuple) and len(index)==depth):
+          #if the index is a tuple check it does not contain slices
          for i in index:
             if not np.isscalar(i): return False
          return True
@@ -460,7 +512,8 @@ class depend_array(np.ndarray, depend_base):
 
       Overwrites the standard method of getting value, so that value
       is recalculated if tainted. Scalar slices are returned as an ndarray, 
-      so without depend machinery.
+      so without depend machinery. If you need a "scalar depend" which
+      behaves as a slice, just create a 1x1 matrix, e.g b=a(7,1:2)
 
       Args:
          index: A slice variable giving the appropriate slice to be read.
@@ -473,7 +526,8 @@ class depend_array(np.ndarray, depend_base):
       if (self.__scalarindex(index, self.ndim)):
          return depstrip(self)[index]
       else:      
-         return depend_array(self.base[index], name=self._name, synchro=self._synchro, func=self._func, dependants=self._dependants, tainted=self._tainted, storage=self._storage)
+         return depend_array(depstrip(self)[index], name=self._name, synchro=self._synchro, func=self._func, dependants=self._dependants, tainted=self._tainted, base=self._bval)
+   
 
    def __getslice__(self,i,j):
       """Overwrites standard get function."""
@@ -506,13 +560,12 @@ class depend_array(np.ndarray, depend_base):
 
       self.taint(taintme=False)
       if manual:
-         if self.base is None:
-            super(depend_array,self).__setitem__(index,value)
-         else: 
-            self.base[index] = value
+         depstrip(self)[index] = value
          self.update_man()
-      else:
-         self._storage[index] = value
+      elif index == slice(None,None,None):
+         self._bval[index] = value
+      else: 
+         raise IndexError("Automatically computed arrays should span the whole parent")
       
    def __setslice__(self,i,j,value):
       """Overwrites standard set function."""
@@ -532,6 +585,19 @@ class depend_array(np.ndarray, depend_base):
       """Overwrites standard set function."""
 
       self.__setitem__(slice(None,None),value=value)
+
+# np.dot and other numpy.linalg functions have the nasty habit to 
+# view cast to generate the output. Since we don't want to pass on
+# dependencies to the result of these functions, and we can't use
+# the ufunc mechanism to demote the class type to ndarray, we must
+# overwrite np.dot and other similar functions.
+# BEGINS NUMPY FUNCTIONS OVERRIDE
+# ** np.dot
+__dp_dot=np.dot
+def dep_dot(a, b):   return depstrip(__dp_dot(a,b))
+np.dot=dep_dot
+# ENDS NUMPY FUNCTIONS OVERRIDE
+
 
 def dget(obj,member):
    """Takes an object and retrieves one of its attributes.

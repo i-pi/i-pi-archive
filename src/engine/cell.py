@@ -99,7 +99,7 @@ class Cell(dobject):
 
       for i in range(3):
          s[i] = s[i] - round(s[i])
-      pdb.set_trace()
+
       return np.dot(self.h,s)
 
    def minimum_distance(self, atom1, atom2):
