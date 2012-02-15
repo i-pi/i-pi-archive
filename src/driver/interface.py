@@ -171,28 +171,33 @@ class Driver(socket.socket):
       bpos = 0
       while bpos<blen:
          timeout = False
+
+#   pre-2.5 version. 
          try:
             bpart = 1
-            bpart = self.recv_into(self._buf[bpos:], blen-bpos)
+            bpart=self.recv( blen-bpos )
+            self._buf[bpos:bpos+len(bpart)]=np.fromstring(bpart, np.byte)
          except socket.timeout:
             print " @SOCKET:   Timeout in status recvall, trying again!"
             timeout = True
             pass
          if (not timeout and bpart == 0):
             raise Disconnected()
-         bpos += bpart
-#TODO this Disconnected() exception currently just causes the program to hang.
-#This should do something more graceful
+         bpos+=len(bpart)
 
-#   pre-2.5 version. needed to run on the good ole' neptune
+#   post-2.5 version: slightly more compact for modern python versions
 #         try:
 #            bpart = 1
-#            bpart=self.recv( blen-bpos )
-#            self._buf[bpos:bpos+len(bpart)]=np.fromstring(bpart, np.byte)
+#            bpart = self.recv_into(self._buf[bpos:], blen-bpos)
 #         except socket.timeout:
-#            print "timeout in recvall, trying again"; pass
-#         if (len(bpart) == 0 ): raise Disconnected()
-#         bpos+=len(bpart)
+#            print " @SOCKET:   Timeout in status recvall, trying again!"
+#            timeout = True
+#            pass
+#         if (not timeout and bpart == 0):
+#            raise Disconnected()
+#         bpos += bpart
+#TODO this Disconnected() exception currently just causes the program to hang.
+#This should do something more graceful
 
       if np.isscalar(dest):
          return np.fromstring(self._buf[0:blen], dest.dtype)[0]

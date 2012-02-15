@@ -437,7 +437,9 @@ class NVTEnsemble(NVEEnsemble):
       """
 
       super(NVTEnsemble,self).bind(beads, cell, bforce, prng)
-      self.thermostat.bind(beads=self.beads,prng=prng,ndof=(3*(self.beads.natoms-1) if self.fixcom else None) )
+      ndof=None; 
+      if self.fixcom: ndof=3*(self.beads.natoms-1)
+      self.thermostat.bind(beads=self.beads,prng=prng,ndof=ndof )
 
       deppipe(self,"ntemp", self.thermostat,"temp")
       deppipe(self,"dt", self.thermostat, "dt")

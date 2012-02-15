@@ -185,8 +185,9 @@ class Properties(dobject):
       one less degree of freedom than without, so this has to be taken into
       account when calculating the kinetic temperature.
       """
-
-      return self.beads.kin/(0.5*Constants.kb*(3*self.beads.natoms*self.beads.nbeads - (3 if self.ensemble.fixcom else 0))*self.beads.nbeads)
+      if self.ensemble.fixcom: mdof=3 
+      else: mdof=0
+      return self.beads.kin/(0.5*Constants.kb*(3*self.beads.natoms*self.beads.nbeads - mdof)*self.beads.nbeads)
 
    def get_econs(self):
       """Calculates the conserved quantity estimator."""
