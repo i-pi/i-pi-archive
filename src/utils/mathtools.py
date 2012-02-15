@@ -2,7 +2,7 @@
 
 Functions:
    matrix_exp: Computes the exponential of a square matrix via a Taylor series.
-   stab_cholesky: 
+   stab_cholesky: A numerically stable version of the Cholesky decomposition.
    h2abc: Takes the representation of the system box in terms of an upper 
       triangular matrix of column vectors, and returns the representation in 
       terms of the lattice vector lengths and the angles between them.
@@ -57,6 +57,21 @@ def matrix_exp(M, ntaylor=8, nsquare=8):
    return EM
 
 def stab_cholesky(M):
+   """ A numerically stable version of the Cholesky decomposition.
+
+   Used in the GLE implementation. Since many of the matrices used in this
+   algorithm have very large and very small numbers in at once, to handle a 
+   wide range of frequencies, the naive algorithm can end up having to calculate
+   the square root of a very small negative number, which breaks the algorithm.
+
+   Instead of this, an LDU decomposition is used, and any small negative numbers
+   in the diagonal D matrix are assumed to be due to numerical precision errors,
+   and so are replaced with zero.
+
+   Args:
+      M: The matrix to be decomposed.
+   """
+
    n = M.shape[1]
    D = np.zeros(n,float)
    L = np.zeros(M.shape,float)
