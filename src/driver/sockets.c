@@ -1,3 +1,16 @@
+/* Contains the functions used for the socket communication.
+
+Contains both the functions that transmit data to the socket and read the data
+back out again once finished, and the function which opens the socket initially.
+
+Functions:
+   error: Prints an error message and then exits.
+   open_socket_: Opens a socket with the required host server, socket type and
+      port number.
+   write_buffer_: Writes a string to the socket.
+   read_buffer_: Reads data from the socket.
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -9,9 +22,26 @@
 #include <netdb.h> 
 
 void error(const char *msg)
+// Prints an error message and then exits.
+
 {   perror(msg);  exit(0);   }
 
-void open_socket_(int *psockfd, int* inet, int* port, char* host)  // the darn fortran passes an extra argument for the string length. here I just ignore it
+void open_socket_(int *psockfd, int* inet, int* port, char* host)  
+/* Opens a socket.
+
+Note that fortran passes an extra argument for the string length, but this is 
+ignored here for C compatibility.
+
+Args:
+   psockfd: The id of the socket that will be created.
+   inet: An integer that determines whether the socket will be an inet or unix
+      domain socket. Gives unix if 0, inet otherwise.
+   port: The port number for the socket to be created. Low numbers are often
+      reserved for important channels, so use of numbers of 4 or more digits is 
+      recommended.
+   host: The name of the host server.
+*/
+
 {
    int sockfd, portno, n;
    struct hostent *server;
@@ -52,6 +82,14 @@ void open_socket_(int *psockfd, int* inet, int* port, char* host)  // the darn f
 }
 
 void writebuffer_(int *psockfd, char *data, int* plen)
+/* Writes to a socket.
+
+Args:
+   psockfd: The id of the socket that will be written to.
+   data: The data to be written to the socket.
+   plen: The length of the data in bytes.
+*/
+
 {
    int n;   
    int sockfd=*psockfd;
@@ -63,6 +101,14 @@ void writebuffer_(int *psockfd, char *data, int* plen)
 
 
 void readbuffer_(int *psockfd, char *data, int* plen)
+/* Reads from a socket.
+
+Args:
+   psockfd: The id of the socket that will be read from.
+   data: The storage array for data read from the socket.
+   plen: The length of the data in bytes.
+*/
+
 {
    int n, nr;
    int sockfd=*psockfd;

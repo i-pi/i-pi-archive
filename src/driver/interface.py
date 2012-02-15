@@ -169,13 +169,13 @@ class Driver(socket.socket):
       if (blen>len(self._buf)): 
          self._buf.resize(blen)
       bpos = 0
-      while bpos<blen:
+      while bpos < blen:
          timeout = False
 
 #   pre-2.5 version. 
          try:
             bpart = 1
-            bpart=self.recv( blen-bpos )
+            bpart = self.recv( blen-bpos )
             self._buf[bpos:bpos+len(bpart)]=np.fromstring(bpart, np.byte)
          except socket.timeout:
             print " @SOCKET:   Timeout in status recvall, trying again!"

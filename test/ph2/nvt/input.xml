@@ -6,8 +6,8 @@
    <total_steps>20000</total_steps>
    <prng><seed>31415</seed></prng>
    <force type='socket'>
-      <interface mode="unix">
-         <address>wrap-pi</address>   <port>31415</port>    <slots>4</slots> <latency>0.001</latency>
+      <interface mode="inet">
+         <address>deimos.chem.ox.ac.uk</address>   <port>31415</port>    <slots>4</slots> <latency>0.01</latency>
       </interface>
    </force>
    <atoms>

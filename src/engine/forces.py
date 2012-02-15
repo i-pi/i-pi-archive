@@ -315,6 +315,10 @@ class ForceBeads(dobject):
       self.queue()
       return np.array([b.vir for b in self._forces], float)
 
+#   def _getbead(self, b, newf):
+#      newf[b]=self._forces[b].f
+#      return
+
    def f_gather(self): 
       """Obtains the global force vector.
 
@@ -328,6 +332,22 @@ class ForceBeads(dobject):
       self.queue()
       for b in range(self.nbeads): 
          newf[b] = self._forces[b].f
+
+      #serial
+#      for b in range(self.nbeads): newf[b]=self._forces[b].f
+      # threaded      
+#      bthreads=[]
+#      print "starting threads"
+#      for b in range(self.nbeads): 
+#         thread=threading.Thread(target=self._getbead, args=(b,newf,))
+#         thread.start()
+#         bthreads.append(thread)
+
+#      print "waiting threads"      
+#      for b in range(self.nbeads): bthreads[b].join()
+#      print "threads joined in"
+
+
 
       return newf
       

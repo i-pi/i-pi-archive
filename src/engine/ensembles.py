@@ -325,8 +325,9 @@ class NVEEnsemble(Ensemble):
                self.thermostat.ethermo += np.dot(pcom,pcom)/(2.0*self.beads[0].M*nb)
 
          # subtracts COM _velocity_
-         pcom*=1.0/(nb*self.beads[0].M)
-         for i in range(3): self.beads.p[:,i:na3:3]-=m*pcom[i]
+         pcom *= 1.0/(nb*self.beads[0].M)
+         for i in range(3):
+            self.beads.p[:,i:na3:3] -= m*pcom[i]
          
 
    def pstep(self): 
@@ -363,22 +364,22 @@ class NVEEnsemble(Ensemble):
    def step(self): 
       """Does one simulation time step."""
 
-      self.ptime=-time.time()
+      self.ptime = -time.time()
       self.pstep()
-      self.ptime+=time.time()
+      self.ptime += time.time()
 
-      self.qtime=-time.time()
+      self.qtime = -time.time()
       self.qcstep()
       self.qstep()
-      self.qtime+=time.time()
+      self.qtime += time.time()
 
-      self.ptime-=time.time()
+      self.ptime -= time.time()
       self.pstep()
-      self.ptime+=time.time()
+      self.ptime += time.time()
 
-      self.ttime=-time.time()
+      self.ttime = -time.time()
       self.rmcom()
-      self.ttime+=time.time()
+      self.ttime += time.time()
       
 
 class NVTEnsemble(NVEEnsemble):
@@ -437,8 +438,9 @@ class NVTEnsemble(NVEEnsemble):
       """
 
       super(NVTEnsemble,self).bind(beads, cell, bforce, prng)
-      ndof=None; 
-      if self.fixcom: ndof=3*(self.beads.natoms-1)
+      ndof=None 
+      if self.fixcom:
+         ndof = 3*(self.beads.natoms-1)
       self.thermostat.bind(beads=self.beads,prng=prng,ndof=ndof )
 
       deppipe(self,"ntemp", self.thermostat,"temp")
@@ -449,28 +451,28 @@ class NVTEnsemble(NVEEnsemble):
    def step(self): 
       """Does one simulation time step."""
 
-      self.ttime=-time.time()
+      self.ttime = -time.time()
       self.thermostat.step()
       self.rmcom()
-      self.ttime+=time.time()
+      self.ttime += time.time()
 
-      self.ptime=-time.time()
+      self.ptime = -time.time()
       self.pstep()
-      self.ptime+=time.time()
+      self.ptime += time.time()
       
-      self.qtime=-time.time()
+      self.qtime = -time.time()
       self.qcstep()
       self.qstep()
-      self.qtime+=time.time()
+      self.qtime += time.time()
 
-      self.ptime-=time.time()
+      self.ptime -= time.time()
       self.pstep()
-      self.ptime+=time.time()
+      self.ptime += time.time()
 
-      self.ttime-=time.time()
+      self.ttime -= time.time()
       self.thermostat.step()
       self.rmcom()
-      self.ttime+=time.time()
+      self.ttime += time.time()
 
    def get_econs(self):
       """Calculates the conserved energy quantity for constant temperature 
