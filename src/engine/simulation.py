@@ -177,7 +177,8 @@ class Simulation(dobject):
          the correct ensemble.
       tsteps: The total number of steps.
       prefix: A prefix for all the output files.
-      format: A string specifying both the format and the extension of traj output
+      format: A string specifying both the format and the extension of traj 
+         output.
       dstride: A dictionary giving number of steps between printing out 
          data for the different types of data. Defaults to _DEFAULT_STRIDES.
       outlist: An array of strings giving the different properties to output.
@@ -300,13 +301,16 @@ class Simulation(dobject):
          if ((self.step+1) % self.dstride["properties"] == 0):
             self.write_output()
          if ((self.step+1) % self.dstride["trajectory_full"] == 0):            
-            if self.format == "pdb":      io_pdb.print_pdb_path(self.beads, self.cell, self.tout)
-            elif self.format == "xyz":    io_xyz.print_xyz_path(self.beads, self.cell, self.tout)            
+            if self.format == "pdb":
+               io_pdb.print_pdb_path(self.beads, self.cell, self.tout)
+            elif self.format == "xyz":
+               io_xyz.print_xyz_path(self.beads, self.cell, self.tout)
          if ((self.step+1) % self.dstride["trajectory"] == 0):
-            if self.format == "pdb":      io_pdb.print_pdb(self.beads.centroid, self.cell, self.tcout)
-            elif self.format == "xyz": io_xyz.print_xyz(self.beads.centroid, self.cell, self.tcout)
+            if self.format == "pdb":
+               io_pdb.print_pdb(self.beads.centroid, self.cell, self.tcout)
+            elif self.format == "xyz":
+               io_xyz.print_xyz(self.beads.centroid, self.cell, self.tcout)
 
-         
       if self.step < self.tsteps:
          self.step += 1         
       self.write_chk()
