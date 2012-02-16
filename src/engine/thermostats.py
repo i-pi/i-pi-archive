@@ -119,7 +119,9 @@ class ThermoPILE_L(Thermostat):
       for t in self._thermos:
          if t is None: 
             it+=1; continue   
-         t.bind(pm=(beads.pnm[it,:],beads.m3[0,:]),prng=self.prng, ndof=(ndof if it==0 else None)) # bind thermostat t to the it-th bead
+         if it>0: ndof=None # only the centroid thermostat may have ndof!=3Nat
+
+         t.bind(pm=(beads.pnm[it,:],beads.m3[0,:]),prng=self.prng, ndof=ndof) # bind thermostat t to the it-th bead
          # pipes temp and dt
          deppipe(self,"temp", t, "temp")
          deppipe(self,"dt", t, "dt")
