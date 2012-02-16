@@ -51,6 +51,8 @@ class RestartSimulation(Restart):
          data for the different types of data. Defaults to _DEFAULT_STRIDES.
       prefix: A string giving the prefix for all the output files. Defaults to
          'prefix'.
+      traj_format: A string giving the format of the trajectory output files. 
+         Defaults to 'pdb'.
       properties: An array of strings giving all the properties that should 
          be output space separated. Defaults to _DEFAULT_OUTPUT.
       initialize: An array of strings giving all the quantities that should
@@ -213,6 +215,8 @@ class Simulation(dobject):
             printing out data for the different types of data. 
          prefix: An optional string giving the prefix for all the output files. 
             Defaults to 'prefix'.
+         format: An optional string giving the output format for the 
+            trajectory files. Defaults to 'pdb'.
          outlist: An array of strings giving all the properties that should 
             be output space separated.
          initlist: An array of strings giving all the quantities that should

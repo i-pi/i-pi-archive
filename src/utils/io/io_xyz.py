@@ -21,9 +21,8 @@ import gc
 def print_xyz_path(beads, cell, filedesc = sys.stdout):
    """Prints all the bead configurations, into a xyz formatted file.
 
-   Prints the ring polymer springs as well as the bead positions using the
-   CONECT command. Also prints the cell parameters in standard xyz form. Note 
-   that the angles are in degrees.
+   Prints all the replicas for each time step separately, rather than all at
+   once.
 
    Args:
       beads: A beads object giving the bead positions.
@@ -46,9 +45,6 @@ def print_xyz_path(beads, cell, filedesc = sys.stdout):
 
 def print_xyz(atoms, cell, filedesc = sys.stdout):
    """Prints the centroid configurations, into a xyz formatted file.
-
-   Also prints the cell parameters in standard xyz form. Note 
-   that the angles are in degrees.
 
    Args:
       beads: An atoms object giving the centroid positions.
