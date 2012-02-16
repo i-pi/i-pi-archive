@@ -29,6 +29,16 @@ class Restart(object):
    Has the generic methods for dealing with the restart file. Parses the input
    data, outputs the output data, and deals with storing and returning the 
    data obtained during the simulation for the restart files.
+
+   Attributes:
+      fields: A dictionary holding the possible tags contained within the 
+         tags for this restart object, which are then turned into the objects
+         held by the object given by this restart object. The dictionary is
+         of the form:
+         {"tag": (restart_type, (data_type, default_value)), ... }.
+      attribs: A dictionary holding the attribute data for the tag for this
+         restart object. The dictionary is of the form:
+         {"attrib_name": (restart_type, (data_type, default_value)), ... }.
    """
  
    fields = {}
