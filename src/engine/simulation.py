@@ -68,6 +68,7 @@ class RestartSimulation(Restart):
              "total_steps": (RestartValue, (int, 1000) ), 
              "stride" : ( RestartValue, (dict, {})),
              "prefix": (RestartValue, (str, "prefix")), 
+             "traj_format": (RestartValue, (str, "pdb")),              
              "properties": (RestartArray, (str,np.zeros(0, np.dtype('|S12'))) ),
              "initialize": (RestartArray, (str,np.zeros(0, np.dtype('|S12'))) ),
              "fd_delta":   ( RestartValue, (float, 0.0)) 
@@ -89,6 +90,7 @@ class RestartSimulation(Restart):
       self.total_steps.store(simul.tsteps)
       self.stride.store(simul.dstride)
       self.prefix.store(simul.prefix)
+      self.traj_format.store(simul.format)      
       self.properties.store(simul.outlist)
       self.initialize.store(simul.initlist)
       self.fd_delta.store(simul.properties.fd_delta)
@@ -127,7 +129,7 @@ class RestartSimulation(Restart):
       rsim = Simulation(nbeads, ncell, self.force.fetch(), 
                      self.ensemble.fetch(), nprng, self.step.fetch(), 
                      tsteps=self.total_steps.fetch(), stride=dstride,
-                     prefix=self.prefix.fetch(), outlist=olist, initlist=ilist)
+                     prefix=self.prefix.fetch(), format=self.traj_format.fetch(), outlist=olist, initlist=ilist)
 
       if (self.fd_delta.fetch() != 0.0):
          rsim.properties.fd_delta = self.fd_delta.fetch()
@@ -173,6 +175,7 @@ class Simulation(dobject):
          the correct ensemble.
       tsteps: The total number of steps.
       prefix: A prefix for all the output files.
+      format: A string specifying both the format and the extension of traj output
       dstride: A dictionary giving number of steps between printing out 
          data for the different types of data. Defaults to _DEFAULT_STRIDES.
       outlist: An array of strings giving the different properties to output.
@@ -191,7 +194,7 @@ class Simulation(dobject):
    """   
 
    def __init__(self, beads, cell, force, ensemble, prng, step=0, tsteps=1000, 
-               stride=None, prefix="prefix", outlist=None, initlist=None):
+               stride=None, prefix="prefix", format="pdb", outlist=None, initlist=None):
       """Initialises Simulation class.
 
       Args:
@@ -229,6 +232,7 @@ class Simulation(dobject):
       self.tsteps = tsteps
       
       self.prefix = prefix
+      self.format = format      
       if stride is None:
          self.dstride = dict(_DEFAULT_STRIDES)
       else:
@@ -275,8 +279,12 @@ class Simulation(dobject):
       if (self.step == 0):
          self.step = -1
          self.write_output()
-         io_pdb.print_pdb_path(self.beads, self.cell, self.tout)
-         io_pdb.print_pdb(self.beads.centroid, self.cell, self.tcout)
+         if self.format == "pdb": 
+            io_pdb.print_pdb_path(self.beads, self.cell, self.tout)
+            io_pdb.print_pdb(self.beads.centroid, self.cell, self.tcout)
+         elif self.format == "xyz": 
+            io_xyz.print_xyz_path(self.beads, self.cell, self.tout)            
+            io_xyz.print_xyz(self.beads.centroid, self.cell, self.tcout)
          self.step = 0
       for self.step in range(self.step,self.tsteps):               
          self.ensemble.step()
@@ -287,10 +295,12 @@ class Simulation(dobject):
             self.write_chk()      
          if ((self.step+1) % self.dstride["properties"] == 0):
             self.write_output()
-         if ((self.step+1) % self.dstride["trajectory_full"] == 0):
-            io_pdb.print_pdb_path(self.beads, self.cell, self.tout)
+         if ((self.step+1) % self.dstride["trajectory_full"] == 0):            
+            if self.format == "pdb":      io_pdb.print_pdb_path(self.beads, self.cell, self.tout)
+            elif self.format == "xyz":    io_xyz.print_xyz_path(self.beads, self.cell, self.tout)            
          if ((self.step+1) % self.dstride["trajectory"] == 0):
-            io_pdb.print_pdb(self.beads.centroid, self.cell, self.tcout)
+            if self.format == "pdb":      io_pdb.print_pdb(self.beads.centroid, self.cell, self.tcout)
+            elif self.format == "xyz": io_xyz.print_xyz(self.beads.centroid, self.cell, self.tcout)
 
          
       if self.step < self.tsteps:
@@ -313,8 +323,8 @@ class Simulation(dobject):
       for l in self.outlist:
          ohead += "%16s"%(l)
       self.fout.write(ohead + "\n")
-      self.tcout = open(self.prefix + ".pdb", "a")
-      self.tout = open(self.prefix + ".full.pdb", "a")      
+      self.tcout = open(self.prefix + "." + self.format, "a")
+      self.tout = open(self.prefix + ".full." + self.format, "a")      
       self.ichk = 0
       
       if "velocities" in self.initlist:

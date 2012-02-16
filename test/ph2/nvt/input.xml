@@ -3,6 +3,7 @@
    <properties shape='(5)'>  [ time, conserved, temperature, kinetic_cv, potential ] </properties>   
    <stride> { properties : 1, trajectory: 20, trajectory_full: 200,  checkpoint:250 } </stride>
    <prefix> test_ph2 </prefix>
+   <traj_format> xyz </traj_format>
    <total_steps>20000</total_steps>
    <prng><seed>31415</seed></prng>
    <force type='socket'>
