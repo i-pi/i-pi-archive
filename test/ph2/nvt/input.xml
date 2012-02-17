@@ -7,8 +7,8 @@
    <total_steps>20000</total_steps>
    <prng><seed>31415</seed></prng>
    <force type='socket'>
-      <interface mode="inet">
-         <address>deimos.chem.ox.ac.uk</address>   <port>31415</port>    <slots>4</slots> <latency>0.01</latency>
+      <interface mode="unix">
+         <address>localhost</address>   <port>31415</port>    <slots>4</slots> <latency>0.01</latency>
       </interface>
    </force>
    <atoms>

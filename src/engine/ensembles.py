@@ -446,7 +446,7 @@ class NVTEnsemble(NVEEnsemble):
       deppipe(self,"ntemp", self.thermostat,"temp")
       deppipe(self,"dt", self.thermostat, "dt")
 
-      dget(self,"econs").add_dependency(dget(self.thermostat, "ethermo"))
+      dget(self,"econs").add_dependency(dget(self.thermostat, "ethermo"))      
       
    def step(self): 
       """Does one simulation time step."""

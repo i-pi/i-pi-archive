@@ -22,7 +22,7 @@ __all__ = ['matrix_exp', 'stab_cholesky', 'h2abc', 'abc2h', 'invert_ut3x3',
 import numpy as np
 import math
 
-def matrix_exp(M, ntaylor=8, nsquare=8):
+def matrix_exp(M, ntaylor=15, nsquare=15):
    """Computes the exponential of a square matrix via a Taylor series.
 
    Calculates the matrix exponential by first calculating exp(M/(2**nsquare)), 
@@ -31,9 +31,9 @@ def matrix_exp(M, ntaylor=8, nsquare=8):
    Args:
       M: Matrix to be exponentiated.
       ntaylor: Optional integer giving the number of terms in the Taylor series.
-         Defaults to 8.
+         Defaults to 15.
       nsquare: Optional integer giving how many times the original matrix will
-         be halved. Defaults to 8.
+         be halved. Defaults to 15.
 
    Returns:
       The matrix exponential of M.
@@ -55,7 +55,7 @@ def matrix_exp(M, ntaylor=8, nsquare=8):
    for i in range(nsquare):
       EM = np.dot(EM,EM)
    return EM
-
+import pdb
 def stab_cholesky(M):
    """ A numerically stable version of the Cholesky decomposition.
 
@@ -77,14 +77,14 @@ def stab_cholesky(M):
    L = np.zeros(M.shape,float)
    for i in range(n):
       L[i,i] = 1.
-      D[i] = M[i,i]
       for j in range(i):
          L[i,j] = M[i,j]
          for k in range(j):
             L[i,j] -= L[i,k]*L[j,k]*D[k]
          if (not D[j] == 0.0):
             L[i,j] = L[i,j]/D[j]
-
+         else: pdb.set_trace()
+      D[i] = M[i,i]
       for k in range(i):
          D[i] -= L[i,k]*L[i,k]*D[k]
 
@@ -93,7 +93,8 @@ def stab_cholesky(M):
       if (D[i]>0):
          D[i] = math.sqrt(D[i])
       else:
-         D[i] = 0.0
+         print " # stab-cholesky warning: zeroing negative element", D[i]
+         D[i] = 0 
       for j in range(i+1):
          S[i,j] += L[i,j]*D[j]
    return S

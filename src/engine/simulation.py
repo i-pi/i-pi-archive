@@ -21,6 +21,7 @@ from utils.restart import *
 from utils.units  import *
 from utils.prng   import *
 from utils.io     import *
+from utils.io.io_xml import *
 from atoms import *
 from cell import *
 from ensembles import RestartEnsemble
