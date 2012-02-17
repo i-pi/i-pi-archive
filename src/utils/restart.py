@@ -73,6 +73,27 @@ class Restart(object):
       return True
    
    def write(self, name="", indent=""): 
+      """Writes data to the xml file.
+
+      Writes the tag, attributes, data and closing tag appropriate to the
+      particular fields and attribs data. Writes in a recursive manner, so
+      that objects contained in the fields dictionary have their write function
+      called, so that their tags are written between the start and end tags 
+      of this object, as is required for the xml format.
+      
+      This also adds an indent to the lower levels of the xml heirarchy, 
+      so that it is easy to see which tags contain other tags.
+
+      Args:
+         name: An optional string giving the tag name. Defaults to "".
+         indent: An optional string giving the string to be added to the start
+            of the line, so usually a number of tabs. Defaults to "".
+
+      Returns:
+         A string giving all the data contained in the fields and attribs
+         dictionaries, in the appropriate xml format.
+      """
+
       rstr = indent + "<" + name;
       for a in self.attribs:      
          rstr += " " + a + "='" + str(self.__dict__[a].fetch()) + "'"
@@ -83,6 +104,25 @@ class Restart(object):
       return rstr
    
    def parse(self, xml=None, text=""): 
+      """Parses an xml file.
+
+      Uses the xml_node class defined in io_xml to read all the information 
+      contained within the root tags, and uses it to give values for the attribs
+      and fields data recursively. It does this by giving all the data between 
+      the appropriate field tag to the appropriate field restart object as a 
+      string, and the appropriate attribute data to the appropriate attribs
+      restart object as a string. These data are then parsed by these objects
+      until all the information is read, or an input error is found. 
+
+      Args:
+         xml: An xml_node object containing the all the data for the parent
+            tag.
+         text: The data held between the start and end tags.
+
+      Raises:
+         To be implemented.
+      """
+
       if not xml is None:
          for a, v in xml.attribs.iteritems() :
             if a in self.attribs: 
