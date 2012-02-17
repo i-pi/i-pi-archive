@@ -137,7 +137,30 @@ class Restart(object):
 
    
 class RestartValue(Restart):
+   """Scalar class for restart handling.
+
+   Has the methods for dealing with simple data tags of the form:
+   <tag_name> data </tag_name>, where data is just a value. Takes the data and
+   converts it to the required data_type, so that it can be used in the 
+   simulation.
+
+   Attributes:
+      type: Data type of the data.
+      value: Value of data. Also specifies data type if type is None.
+      default: Default value if the tag is not specified.
+   """
+ 
    def __init__(self, dtype=None, value=None, default=None):      
+      """Initialises RestartValue.
+
+      Args:
+         dtype: An optional data type. Defaults to None.
+         value: An optional value for the data. Defaults to None. Also
+            specifies the data type if type is None.
+         default: Optional default value if the tag is not specified. Defaults
+            to None.
+      """
+
       super(RestartValue,self).__init__()
       if not dtype is None:
          self.type = dtype
@@ -153,15 +176,44 @@ class RestartValue(Restart):
          self.store(default)
       
    def store(self, value):
+      """Converts the data to the appropriate data type and stores it.
+
+      Args:
+         value: The raw data to be stored.
+      """
+
       self.value = self.type(value)
       
    def fetch(self): 
+      """Returns the stored data."""
+
       return self.value
       
    def write(self, name="", indent=""): 
+      """Writes data to the xml file.
+
+      Writes the data in the appropriate format between appropriate tags.
+
+      Args:
+         name: An optional string giving the tag name. Defaults to "".
+         indent: An optional string giving the string to be added to the start
+            of the line, so usually a number of tabs. Defaults to "".
+
+      Returns:
+         A string giving the stored value in the appropriate xml format.
+      """
+
       return indent + "<" + name + ">" + write_type(self.type, self.value) + "</" + name + ">\n"
    
    def parse(self, xml=None, text=""):
+      """Reads the data for a single value from an xml file.
+
+      Args:
+         xml: An xml_node object containing the all the data for the parent
+            tag.
+         text: The data held between the start and end tags.
+      """
+
       if xml is None:
          self.value = read_type(self.type, text)
       else:   
@@ -170,8 +222,34 @@ class RestartValue(Restart):
          
 ELPERLINE = 5
 class RestartArray(Restart):
+   """Array class for restart handling.
+
+   Has the methods for dealing with simple data tags of the form:
+   <tag_name shape="(shape)"> data </tag_name>, where data is just an array and    of the form [data[0], data[1], ... , data[length]]. 
+   
+   Takes the data and converts it to the required data_type, 
+   so that it can be used in the simulation. Also holds the shape of the array,
+   so that we can use a simple 1D list of data to specify a multi-dimensional
+   array.
+
+   Attributes:
+      type: Data type of the data.
+      value: Value of data. Also specifies data type if type is None.
+      default: Default value if the tag is not specified.
+   """
+ 
    attribs = { "shape" : (RestartValue,(tuple, ())) }
    def __init__(self, dtype=None, value=None, default=None):
+      """Initialises RestartArray.
+
+      Args:
+         dtype: An optional data type. Defaults to None.
+         value: An optional value for the data. Defaults to None. Also
+            specifies the data type if type is None.
+         default: Optional default value if the tag is not specified. Defaults
+            to None.
+      """
+
       super(RestartArray,self).__init__()
       
       if not dtype is None:
@@ -188,17 +266,45 @@ class RestartArray(Restart):
          self.store(default)
    
    def store(self, value):
+      """Converts the data to the appropriate data type and shape and stores it.
+
+      Args:
+         value: The raw data to be stored.
+      """
+
       self.shape.store(value.shape)
       self.value = np.array(value, dtype=self.type).flatten().copy()
       
    def fetch(self): 
+      """Fetches the stored data.
+
+      If the shape has not been specified, it assumes a 1D array of the 
+      same length as the data list.
+      """
+
       if self.shape.fetch() == (0,):
          return np.resize(self.value,0).copy()
       else:
          return self.value.reshape(self.shape.fetch()).copy()
 
    def write(self, name="", indent=""): 
-      rstr = indent + "<" + name + " shape='" + write_tuple(self.shape.fetch()) + "'> ";
+      """Writes data to the xml file.
+
+      Writes the data in the appropriate format between appropriate tags. Note
+      that only ELPERLINE values are printed on each line if there are more than
+      this in the array. If the values are floats, or another data type with
+      a fixed width of data output, then they are aligned in columns.
+
+      Args:
+         name: An optional string giving the tag name. Defaults to "".
+         indent: An optional string giving the string to be added to the start
+            of the line, so usually a number of tabs. Defaults to "".
+
+      Returns:
+         A string giving the stored value in the appropriate xml format.
+      """
+
+      rstr = indent + "<" + name + " shape='" + write_tuple(self.shape.fetch()) + "'> "
       if (len(self.value)>ELPERLINE):
          rstr += "\n" + indent + " [ "
       else:
@@ -216,6 +322,14 @@ class RestartArray(Restart):
       return rstr
       
    def parse(self, xml=None, text=""):
+      """Reads the data for a single array from an xml file.
+
+      Args:
+         xml: An xml_node object containing the all the data for the parent
+            tag.
+         text: The data held between the start and end tags.
+      """
+
       if xml is None:
          pass #TODO should print an error!
       else:   
