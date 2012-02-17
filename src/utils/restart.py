@@ -45,19 +45,31 @@ class Restart(object):
    attribs = {}
 
    def __init__(self):
+      """Initialises Restart.
+
+      Automatically adds all the fields and attribs names to the objects
+      dictionary, along with a default initial value, if specified.
+      """
+
       for f, v in self.fields.iteritems():
          self.__dict__[f] = v[0](*v[1])
       for a, v in self.attribs.iteritems():
          self.__dict__[a] = v[0](*v[1])     
       
-   def store(self, value): 
+   def store(self, value):
+      """Dummy function for storing data."""
+
       pass
             
-   def fetch(self): 
+   def fetch(self):
+      """Dummy function to retrieve data."""
+
       if not self.check():
          raise AssertionError("Consistency check failed in Restart.fetch")
             
    def check(self):
+      """Dummy function to check for input errors."""
+
       return True
    
    def write(self, name="", indent=""): 

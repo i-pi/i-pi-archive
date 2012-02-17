@@ -151,8 +151,6 @@ class depend_base(object):
             self.taint(taintme=False)      
          else:
             self.taint(taintme=tainted)
-
-
             
    def add_dependant(self, newdep, tainted=True):
       """Adds a dependant property.
@@ -334,8 +332,8 @@ class depend_array(np.ndarray, depend_base):
    array. Initialisation is also done in a different way for ndarrays.
 
    Attributes:
-      _bval: The base deparray storage space. Equal to depstrip(self) unless self is a slice.
-
+      _bval: The base deparray storage space. Equal to depstrip(self) unless 
+         self is a slice.
    """
 
    def __new__(cls, value, name, synchro=None, func=None, dependants=None, dependencies=None, tainted=None, base=None):
@@ -371,8 +369,6 @@ class depend_array(np.ndarray, depend_base):
          dependants: An optional list containing objects that depend on self.
          dependencies: An optional list containing objects that self 
             depends upon.
-         base: An optional array giving the base array if the array is a
-            slice.
       """
 
       super(depend_array,self).__init__(name, synchro, func, dependants, dependencies, tainted)
@@ -383,7 +379,7 @@ class depend_array(np.ndarray, depend_base):
          self._bval = base
             
    def copy(self, order='C', maskna=None):
-      """ Just a wrapper for numpy copy mechanism """
+      """Wrapper for numpy copy mechanism."""
       
       # Sets a flag and hands control to the numpy copy
       self._fcopy=True
@@ -403,31 +399,31 @@ class depend_array(np.ndarray, depend_base):
       depend_base.__init__(self, name="") 
 
       if type(obj) is depend_array:
-         # we are in a view cast or in new from template. unfortunately 
-         # there is no sure way to tell (or so it seems). hence we need to handle
-         # special cases, and hope we are in a view cast otherwise.
+         # We are in a view cast or in new from template. Unfortunately 
+         # there is no sure way to tell (or so it seems). Hence we need to 
+         # handle special cases, and hope we are in a view cast otherwise.
          if hasattr(obj,"_fcopy"):
             del(obj._fcopy) # removes the "copy flag"
             self._bval = depstrip(self)
          else:   
-            # assumes we are in view cast, so copy over the attributes from the parent
-            # object. typical case: when transpose is performed as a view.
+            # Assumes we are in view cast, so copy over the attributes from the
+            # parent object. Typical case: when transpose is performed as a 
+            # view.
             super(depend_array,self).__init__(obj._name, obj._synchro, obj._func, obj._dependants, None, obj._tainted)
             self._bval = obj._bval
       else:
-         # most likely we came here on the way to init. just sets a defaults for safety
+         # Most likely we came here on the way to init. 
+         # Just sets a defaults for safety
          self._bval = depstrip(self)
 
-   
    def __array_prepare__(self, arr, context=None):
-      """ Prepare output array for ufunc.
+      """Prepare output array for ufunc.
       
-      Depending on the context we try to understand if we are doing an in-place operation
-      (in which case we want to keep the return value a deparray) or we are
-      generating a new array as a result of the ufunc. In this case there is no
-      way to know if dependencies should be copied, so we strip and return a
-      ndarray.
-      
+      Depending on the context we try to understand if we are doing an 
+      in-place operation (in which case we want to keep the return value a 
+      deparray) or we are generating a new array as a result of the ufunc. 
+      In this case there is no way to know if dependencies should be copied, 
+      so we strip and return a ndarray.
       """
       
       if context is None or len(context)<2 or not type(context[0]) is np.ufunc:
@@ -446,7 +442,8 @@ class depend_array(np.ndarray, depend_base):
    def __array_wrap__(self, arr, context=None):
       """ Wraps up output array from ufunc. 
       
-      See docstring of __array_prepare__ """
+      See docstring of __array_prepare__().
+      """
       
       if context is None or len(context)<2 or not type(context[0]) is np.ufunc:
          return np.ndarray.__array_wrap__(self.view(np.ndarray),arr.view(np.ndarray),context)

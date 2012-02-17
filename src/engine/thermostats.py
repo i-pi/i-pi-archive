@@ -206,7 +206,7 @@ class ThermoPILE_G(ThermoPILE_L):
       deppipe(self,"dt", t, "dt")
       deppipe(self,"tau", t, "tau")
       dget(self,"ethermo").add_dependency(dget(t,"ethermo"))
-  
+
 class ThermoGLE(Thermostat):     
    """Represent a GLE thermostat.
       Contains: dt = time step, econs = change in the kinetic energy due to the thermostat,
@@ -225,7 +225,7 @@ class ThermoGLE(Thermostat):
       
    def get_S(self):      
       """Calculates S in p(0) = T*p(dt) + S*random.gauss()"""
-      SST=Constants.kb*(self.C-np.dot(self.T.T,np.dot(self.C,self.T)))
+      SST=Constants.kb*(self.C-np.dot(self.T,np.dot(self.C,self.T.T)))
       return stab_cholesky(SST)
   
    def get_C(self):
