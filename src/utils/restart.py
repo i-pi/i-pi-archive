@@ -225,7 +225,8 @@ class RestartArray(Restart):
    """Array class for restart handling.
 
    Has the methods for dealing with simple data tags of the form:
-   <tag_name shape="(shape)"> data </tag_name>, where data is just an array and    of the form [data[0], data[1], ... , data[length]]. 
+   <tag_name shape="(shape)"> data </tag_name>, where data is just an array and
+   of the form [data[0], data[1], ... , data[length]]. 
    
    Takes the data and converts it to the required data_type, 
    so that it can be used in the simulation. Also holds the shape of the array,

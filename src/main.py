@@ -14,6 +14,8 @@ Functions:
    main: Runs the simulation.
 """
 
+__all__ = ['main']
+
 import sys
 from engine import simulation
 from utils.io.io_xml import *
@@ -21,15 +23,17 @@ from utils.io.io_xml import *
 def main(file_name):
    """Runs the simulation.
 
-   Will be run automatically when the module is run as a script.
+   Will run automatically when the module is used as a script.
    """
 
    ifile = open(file_name,"r")
-   xmlrestart = xml_parse_file(ifile)
+   xmlrestart = xml_parse_file(ifile) # Parses the file.
    
    simrestart = simulation.RestartSimulation()
-   simrestart.parse(xmlrestart.fields["simulation"])
-   simul = simrestart.fetch()
+   simrestart.parse(xmlrestart.fields["simulation"]) # Checks the input
+                                                     # and partitions it
+                                                     # appropriately.
+   simul = simrestart.fetch() # Creates the appropriate simulation object.
    
    simul.run()
    del simul
