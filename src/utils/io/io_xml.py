@@ -36,8 +36,9 @@ class xml_node(object):
    """Class to handle a particular xml tag.
 
    Tags are generally written in the form 
-   <tag_name attribs="attrib_data"> main_data </tag_name>. This holds the data
-   tag_name, attrib_data and main_data.
+   <tag_name attribs="attrib_data"> main_data </tag_name>. This class holds
+   tag_name, attrib_data and main_data separately so they can be used to
+   create the objects with the appropriate names and data.
 
    Attributes:
       attribs: The attribute data for the tag.

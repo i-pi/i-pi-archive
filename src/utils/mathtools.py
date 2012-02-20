@@ -55,14 +55,16 @@ def matrix_exp(M, ntaylor=15, nsquare=15):
    for i in range(nsquare):
       EM = np.dot(EM,EM)
    return EM
-import pdb
+          
 def stab_cholesky(M):
    """ A numerically stable version of the Cholesky decomposition.
 
    Used in the GLE implementation. Since many of the matrices used in this
    algorithm have very large and very small numbers in at once, to handle a 
-   wide range of frequencies, the naive algorithm can end up having to calculate
-   the square root of a very small negative number, which breaks the algorithm.
+   wide range of frequencies, a naive algorithm can end up having to calculate
+   the square root of a negative number, which breaks the algorithm. This is 
+   due to numerical precision errors turning a very tiny positive eigenvalue
+   into a tiny negative value.
 
    Instead of this, an LDU decomposition is used, and any small negative numbers
    in the diagonal D matrix are assumed to be due to numerical precision errors,
@@ -83,7 +85,6 @@ def stab_cholesky(M):
             L[i,j] -= L[i,k]*L[j,k]*D[k]
          if (not D[j] == 0.0):
             L[i,j] = L[i,j]/D[j]
-         else: pdb.set_trace()
       D[i] = M[i,i]
       for k in range(i):
          D[i] -= L[i,k]*L[i,k]*D[k]
