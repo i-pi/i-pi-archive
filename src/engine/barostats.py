@@ -40,8 +40,8 @@ class Barostat(dobject):
       sext: The external stress tensor.
       pext: The external pressure.
       dt: The time step used in the algorithms. Depends on the simulation dt.
-      temp: The temperature used in the algorithms. Depends on the simulation
-         temp.
+      temp: The simulation temperature. Higher than the system temperature by
+         a factor of the number of beads. Depends on the simulation temp.
       pot: The elastic strain potential for the cell.
       piext: The accumulated stress compared to the reference cell.
       stress: The internal stress.

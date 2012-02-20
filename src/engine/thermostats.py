@@ -1,3 +1,29 @@
+"""Contains the classes that deal with constant temperature dynamics.
+
+Contains the algorithms which propagate the thermostatting steps in the constant
+temperature ensembles. Includes the new GLE thermostat, which can be used to 
+run PI+GLE dynamics, reducing the number of path integral beads required.
+
+Classes:
+   Thermostat: Base thermostat class with the generic methods and attributes.
+   ThermoLangevin: Holds the algorithms for a langevin thermostat.
+   ThermoPILE_L: Holds the algorithms for a path-integral langevin equation
+      thermostat, with a thermostat coupled directly to the 
+      centroid coordinate of each bead.
+   ThermoPILE_G: Holds the algorithms for a path-integral langevin equation 
+      thermostat, with a thermostat coupled to the kinetic energy for 
+      the entire system.
+   ThermoSVR: Holds the algorithms for a stochastic velocity rescaling
+      thermostat.
+   ThermoGLE: Holds the algorithms for a generalised langevin equation 
+      thermostat.
+   RestartThermo: Deals with creating the barostat object from a file, and
+      writing the checkpoints.
+"""
+
+__all__ = ['Thermostat', 'ThermoLangevin', 'ThermoPILE_L', 'ThermoPILE_G',
+           'ThermoSVR', 'ThermoGLE', 'RestartThermo']
+
 import numpy as np
 import math
 from utils.depend   import *
@@ -8,15 +34,33 @@ from utils.prng import Random
 from beads import Beads
 
 class Thermostat(dobject): 
-   """Represent a thermostat for constant T simulations.
-      Contains: temp = temperature, dt = time step, econs =
-      change in the kinetic energy due to the thermostat
+   """Base thermostat class.
+
+   Gives the standard methods and attributes needed in all the thermostat
+   classes.
+
+   Attributes:
+      prng: A pseudo random number generator object.
+      ndof: The number of degrees of freedom the thermostat will be coupled to.
+
+   Depend objects:
+      dt: The time step used in the algorithms. Depends on the simulation dt.
+      temp: The simulation temperature. Higher than the system temperature by
+         a factor of the number of beads. Depends on the simulation temp.
+      ethermo: The total energy exchanged with the bath due to the thermostat.
+      p: The momentum vector that the thermostat is coupled to. Depends on the
+         beads p object.
+      m: The mass vector associated with p. Depends on the beads m object.
+      sm: The square root of the mass vector.
+   """
+
+   def __init__(self, temp = 1.0, dt = 1.0, ethermo=0.0):
+      """
       Initialised by: thermo = thermostat(temp, dt, econs)
       temp = temperature, default = 1.0
       dt = time step, default = 1.0
       econs = conserved energy quantity, default = 0.0"""
 
-   def __init__(self, temp = 1.0, dt = 1.0, ethermo=0.0):
       dset(self,"temp",   depend_value(name='temp', value=temp))
       dset(self,"dt",     depend_value(name='dt', value=dt))      
       dset(self,"ethermo",depend_value(name='ethermo',value=ethermo))
