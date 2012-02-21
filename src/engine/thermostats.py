@@ -55,17 +55,48 @@ class Thermostat(dobject):
    """
 
    def __init__(self, temp = 1.0, dt = 1.0, ethermo=0.0):
+      """Initialises Thermostat.
+
+      Args:
+         temp: The simulation temperature. Defaults to 1.0. 
+         dt: The simulation time step. Defaults to 1.0.
+         ethermo: The initial conserved energy quantity. Defaults to 0.0. Will
+            be non-zero if the thermostat is initialised from a checkpoint file.
       """
-      Initialised by: thermo = thermostat(temp, dt, econs)
-      temp = temperature, default = 1.0
-      dt = time step, default = 1.0
-      econs = conserved energy quantity, default = 0.0"""
 
       dset(self,"temp",   depend_value(name='temp', value=temp))
       dset(self,"dt",     depend_value(name='dt', value=dt))      
       dset(self,"ethermo",depend_value(name='ethermo',value=ethermo))
 
    def bind(self, beads=None, atoms=None, cell=None, pm=None, prng=None, ndof=None):
+      """Binds, the appropriate degrees of freedom to the thermostat.
+
+      This takes an object with degrees of freedom, and makes their momentum
+      and mass vectors members of the thermostat. It also then creates the 
+      objects that will hold the data needed in the thermostat algorithms 
+      and the dependency network.
+
+      Args:
+         beads: An optional beads object to take the mass and momentum vectors 
+            from.
+         atoms: An optional atoms object to take the mass and momentum vectors
+            from.
+         cell: An optional cell object to take the mass and momentum vectors 
+            from.
+         pm: An optional tuple containing a single momentum value and its
+            conjugate mass.
+         prng: An optional pseudo random number generator object. Defaults to
+            Random().
+         ndof: An optional integer which can specify the total number of
+            degrees of freedom. Defaults to len(p). Used if conservation of
+            linear momentum is being applied, as this removes three degrees of 
+            freedom.
+
+      Raises:
+         TypeError: Raised if no appropriate degree of freedom or object
+            containing a momentum vector is specified for 
+            the thermostat to couple to.
+      """
 
       if prng is None:
          self.prng = Random()
@@ -96,41 +127,56 @@ class Thermostat(dobject):
                                      func=self.get_sm, dependencies=[dget(self,"m")] ) )
       
    def get_sm(self):
+      """Retrieves the square root of the mass matrix."""
+
       return np.sqrt(self.m)
    
    def step(self):                
-      """Dummy atoms thermostat step"""       
+      """Dummy thermostat step."""       
       
       pass
 
 class ThermoLangevin(Thermostat):     
-   """Represent a langevin thermostat for constant T simulations.
-      Contains: temp = temperature, dt = time step, econs =
-      change in the kinetic energy due to the thermostat,
-      tau = thermostat time scale, sm = sqrt(mass), (T,S) = thermostat parameters
-      Initialised by: thermo = langevin(temp, dt, tau, econs)
-      temp = temperature, default = 1.0
-      dt = time step, default = 1.0
-      tau = thermostat relaxation time, default = 1.0
-      econs = conserved energy quantity, default = 0.0"""
+   """Represents a langevin thermostat.
+
+   Depend objects:
+      tau: Thermostat damping time scale. Larger values give a less strongly
+         coupled thermostat.
+      T: Coefficient of the diffusive contribution of the thermostat, i.e. the
+         drift back towards equilibrium
+      S: Coefficient of the stochastic contribution of the thermostat, i.e. 
+         the uncorrelated Gaussian noise.
+   """
 
    def get_T(self):
-      """Calculates T in p(0) = T*p(dt) + S*random.gauss()"""
+      """Calculates the coefficient of the overall drift of the velocities."""
+
       return math.exp(-0.5*self.dt/self.tau)
       
    def get_S(self):      
-      """Calculates S in p(0) = T*p(dt) + S*random.gauss()"""
+      """Calculates the coefficient of the white noise."""
+
       return math.sqrt(Constants.kb*self.temp*(1 - self.T**2))   
   
    def __init__(self, temp = 1.0, dt = 1.0, tau = 1.0, ethermo=0.0):
-      super(ThermoLangevin,self).__init__(temp,dt,ethermo)
+      """Initialises ThermoLangevin.
+
+      Args:
+         temp: The simulation temperature. Defaults to 1.0. 
+         dt: The simulation time step. Defaults to 1.0.
+         tau: The thermostat damping timescale. Defaults to 1.0.
+         ethermo: The initial conserved energy quantity. Defaults to 0.0. Will
+            be non-zero if the thermostat is initialised from a checkpoint file.
+      """
+
+      super(ThermoLangevin,self).__init__(temp, dt, ethermo)
       
       dset(self,"tau",depend_value(value=tau,name='tau'))
       dset(self,"T",  depend_value(name="T",func=self.get_T, dependencies=[dget(self,"tau"), dget(self,"dt")]))
       dset(self,"S",  depend_value(name="S",func=self.get_S, dependencies=[dget(self,"temp"), dget(self,"T")]))
       
    def step(self):
-      """Updates the atom velocities with a langevin thermostat"""
+      """Updates the bound momentum vector with a langevin thermostat."""
       
       p = self.p.view(np.ndarray).copy()
       
@@ -146,7 +192,36 @@ class ThermoLangevin(Thermostat):
       self.p = p
 
 class ThermoPILE_L(Thermostat):    
+   """Represents a PILE thermostat with a local centroid thermostat.
+
+   Attributes:
+      _thermos: The list of the different thermostats for all the ring polymer
+         normal modes.
+
+   Depend objects:
+      tau: Centroid thermostat damping time scale. Larger values give a 
+         less strongly coupled centroid thermostat.
+      tauk: Thermostat damping time scale for the non-centroid normal modes.
+         Depends on the ring polymer spring constant, and thus the simulation
+         temperature.
+
+   Raises:
+      TypeError: Raised if the thermostat is used with any object other than
+         a beads object, so that we make sure that the objects needed for the
+         normal mode transformation exist.
+   """
+
    def __init__(self, temp = 1.0, dt = 1.0, tau = 1.0, ethermo=0.0):
+      """Initialises ThermoPILE_L.
+
+      Args:
+         temp: The simulation temperature. Defaults to 1.0. 
+         dt: The simulation time step. Defaults to 1.0.
+         tau: The centroid thermostat damping timescale. Defaults to 1.0.
+         ethermo: The initial conserved energy quantity. Defaults to 0.0. Will
+            be non-zero if the thermostat is initialised from a checkpoint file.
+      """
+
       super(ThermoPILE_L,self).__init__(temp,dt,ethermo)
       dset(self,"tau",depend_value(value=tau,name='tau'))
 

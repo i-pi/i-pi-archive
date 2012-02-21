@@ -101,7 +101,7 @@ class Barostat(dobject):
    def bind(self, beads, cell, forces):
       """Binds beads, cell and forces to the barostat.
 
-      This takes an beads object, a cell object and a forcefield object and 
+      This takes a beads object, a cell object and a forcefield object and 
       makes them members of the barostat. It also then creates the objects that
       will hold the data needed in the barostat algorithms and the dependency 
       network.
