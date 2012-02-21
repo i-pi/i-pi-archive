@@ -60,8 +60,9 @@ class Thermostat(dobject):
       Args:
          temp: The simulation temperature. Defaults to 1.0. 
          dt: The simulation time step. Defaults to 1.0.
-         ethermo: The initial conserved energy quantity. Defaults to 0.0. Will
-            be non-zero if the thermostat is initialised from a checkpoint file.
+         ethermo: The initial heat energy transferred to the bath. 
+            Defaults to 0.0. Will be non-zero if the thermostat is 
+            initialised from a checkpoint file.
       """
 
       dset(self,"temp",   depend_value(name='temp', value=temp))
@@ -69,7 +70,7 @@ class Thermostat(dobject):
       dset(self,"ethermo",depend_value(name='ethermo',value=ethermo))
 
    def bind(self, beads=None, atoms=None, cell=None, pm=None, prng=None, ndof=None):
-      """Binds, the appropriate degrees of freedom to the thermostat.
+      """Binds the appropriate degrees of freedom to the thermostat.
 
       This takes an object with degrees of freedom, and makes their momentum
       and mass vectors members of the thermostat. It also then creates the 
@@ -127,7 +128,12 @@ class Thermostat(dobject):
                                      func=self.get_sm, dependencies=[dget(self,"m")] ) )
       
    def get_sm(self):
-      """Retrieves the square root of the mass matrix."""
+      """Retrieves the square root of the mass matrix.
+
+      Returns:
+         A vector of the square root of the mass matrix with one value for
+         each degree of freedom.
+      """
 
       return np.sqrt(self.m)
    
@@ -143,9 +149,9 @@ class ThermoLangevin(Thermostat):
       tau: Thermostat damping time scale. Larger values give a less strongly
          coupled thermostat.
       T: Coefficient of the diffusive contribution of the thermostat, i.e. the
-         drift back towards equilibrium
+         drift back towards equilibrium. Depends on tau and the time step.
       S: Coefficient of the stochastic contribution of the thermostat, i.e. 
-         the uncorrelated Gaussian noise.
+         the uncorrelated Gaussian noise. Depends on T and the temperature.
    """
 
    def get_T(self):
@@ -165,8 +171,9 @@ class ThermoLangevin(Thermostat):
          temp: The simulation temperature. Defaults to 1.0. 
          dt: The simulation time step. Defaults to 1.0.
          tau: The thermostat damping timescale. Defaults to 1.0.
-         ethermo: The initial conserved energy quantity. Defaults to 0.0. Will
-            be non-zero if the thermostat is initialised from a checkpoint file.
+         ethermo: The initial heat energy transferred to the bath. 
+            Defaults to 0.0. Will be non-zero if the thermostat is 
+            initialised from a checkpoint file.
       """
 
       super(ThermoLangevin,self).__init__(temp, dt, ethermo)
@@ -177,7 +184,7 @@ class ThermoLangevin(Thermostat):
       
    def step(self):
       """Updates the bound momentum vector with a langevin thermostat."""
-      
+
       p = self.p.view(np.ndarray).copy()
       
       p /= self.sm
@@ -225,8 +232,37 @@ class ThermoPILE_L(Thermostat):
       super(ThermoPILE_L,self).__init__(temp,dt,ethermo)
       dset(self,"tau",depend_value(value=tau,name='tau'))
 
-   # optionally does not bind the centroid, so we can re-use all of this in the PILE_G case
    def bind(self, beads=None, prng=None, bindcentroid=True, ndof=None):  
+      """Binds the appropriate degrees of freedom to the thermostat.
+
+      This takes a beads object with degrees of freedom, and makes its momentum
+      and mass vectors members of the thermostat. It also then creates the 
+      objects that will hold the data needed in the thermostat algorithms 
+      and the dependency network.
+
+      Gives the interface for both the PILE_L and PILE_G thermostats, which 
+      only differ in their treatment of the centroid coordinate momenta. 
+
+      Args:
+         beads: An optional beads object to take the mass and momentum vectors 
+            from.
+         prng: An optional pseudo random number generator object. Defaults to
+            Random().
+         bindcentroid: An optional boolean which decides whether a Langevin
+            thermostat is attached to the centroid mode of each atom 
+            separately, or the total kinetic energy. Defaults to True, which
+            gives a thermostat bound to each centroid momentum.
+         ndof: An optional integer which can specify the total number of
+            degrees of freedom. Defaults to len(p). Used if conservation of
+            linear momentum is being applied, as this removes three degrees of 
+            freedom.
+
+      Raises:
+         TypeError: Raised if no appropriate degree of freedom or object
+            containing a momentum vector is specified for 
+            the thermostat to couple to.
+      """
+
       if beads is None or not type(beads) is Beads:
          raise TypeError("ThermoPILE_L.bind expects a Beads argument to bind to")
       if prng is None:
@@ -236,6 +272,8 @@ class ThermoPILE_L(Thermostat):
       
       # creates a set of thermostats to be applied to individual normal modes
       self._thermos = [ ThermoLangevin(temp=1, dt=1, tau=1) for b in range(beads.nbeads) ]
+      # optionally does not bind the centroid, so we can re-use all of this 
+      # in the PILE_G case
       if not bindcentroid:
          self._thermos[0] = None
       
@@ -270,38 +308,71 @@ class ThermoPILE_L(Thermostat):
              
       dget(self,"ethermo")._func = self.get_ethermo;
          
-   def get_tauk(self):  
+   def get_tauk(self):
+      """Computes the thermostat damping time scale for the non-centroid 
+      normal modes.
+
+      Returns:
+         An array with the damping time scales for the non-centroid modes.
+      """
+
       return np.array([1.0/(4*self.temp*Constants.kb/Constants.hbar*math.sin(k*math.pi/len(self._thermos))) for k in range(1,len(self._thermos)) ])
 
    def get_ethermo(self):
+      """Computes the total energy transferred to the heat bath for all the 
+      thermostats.
+      """
+
       et = 0.0;
       for t in self._thermos:
          et += t.ethermo
       return et
             
    def step(self):
+      """Updates the bound momentum vector with a PILE thermostat."""
+
       # super-cool! just loop over the thermostats! it's as easy as that! 
       for t in self._thermos:
          t.step()        
 
 class ThermoSVR(Thermostat):     
-   """Represent a stochastic velocity rescaling thermostat for constant T simulations.
-      Contains: temp = temperature, dt = time step, econs =
-      change in the kinetic energy due to the thermostat,
-      tau = thermostat relaxation time, sm = sqrt(mass), (T,S) = thermostat parameters
-      Initialised by: thermo = langevin(temp, dt, tau, econs)
-      temp = temperature, default = 1.0
-      dt = time step, default = 1.0
-      tau = thermostat relaxation time, default = 1.0
-      econs = conserved energy quantity, default = 0.0"""
+   """Represent a stochastic velocity rescaling thermostat.
+
+   Depend objects:
+      tau: Centroid thermostat damping time scale. Larger values give a 
+         less strongly coupled centroid thermostat.
+      K: Scaling factor for the total kinetic energy. Depends on the 
+         temperature.
+      et: Parameter determining the strength of the thermostat coupling.
+         Depends on tau and the time step.
+   """
 
    def get_et(self):
+      """Calculates the thermostat coupling strength parameter."""
+
       return math.exp(-0.5*self.dt/self.tau)
 
    def get_K(self):
+      """Calculates the total kinetic energy scaling factor.
+
+      As everywhere the total kinetic energy is used in the algorithm it is
+      scaled by a factor of 2*beta, this factor is calculated here for
+      convenience.
+      """
+
       return Constants.kb*self.temp*0.5
       
    def __init__(self, temp = 1.0, dt = 1.0, tau = 1.0, ethermo=0.0):
+      """Initialises ThermoSVR.
+
+      Args:
+         temp: The simulation temperature. Defaults to 1.0. 
+         dt: The simulation time step. Defaults to 1.0.
+         tau: The thermostat damping timescale. Defaults to 1.0.
+         ethermo: The initial conserved energy quantity. Defaults to 0.0. Will
+            be non-zero if the thermostat is initialised from a checkpoint file.
+      """
+
       super(ThermoSVR,self).__init__(temp,dt,ethermo)
       
       dset(self,"tau",depend_value(value=tau,name='tau'))
@@ -309,7 +380,9 @@ class ThermoSVR(Thermostat):
       dset(self,"K",  depend_value(name="K",func=self.get_K, dependencies=[dget(self,"temp")]))
       
    def step(self):
-      """Updates the atom velocities with a langevin thermostat"""
+      """Updates the bound momentum vector with a stochastic velocity rescaling
+      thermostat.
+      """
       
       K = np.dot(depstrip(self.p),depstrip(self.p)/depstrip(self.m))*0.5
       
@@ -328,10 +401,48 @@ class ThermoSVR(Thermostat):
       self.p *= alpha
 
 class ThermoPILE_G(ThermoPILE_L):    
+   """Represents a PILE thermostat with a global centroid thermostat.
+
+   Simply replaces the Langevin thermostat for the centroid normal mode with
+   a global velocity rescaling thermostat.
+   """
+
    def __init__(self, temp = 1.0, dt = 1.0, tau = 1.0, ethermo=0.0):
+      """Initialises ThermoPILE_G.
+
+      Args:
+         temp: The simulation temperature. Defaults to 1.0. 
+         dt: The simulation time step. Defaults to 1.0.
+         tau: The centroid thermostat damping timescale. Defaults to 1.0.
+         ethermo: The initial conserved energy quantity. Defaults to 0.0. Will
+            be non-zero if the thermostat is initialised from a checkpoint file.
+      """
+
       super(ThermoPILE_G,self).__init__(temp,dt,tau,ethermo)
       
    def bind(self, beads=None, prng=None, ndof=None):   
+      """Binds the appropriate degrees of freedom to the thermostat.
+
+      This takes a beads object with degrees of freedom, and makes its momentum
+      and mass vectors members of the thermostat. It also then creates the 
+      objects that will hold the data needed in the thermostat algorithms 
+      and the dependency network.
+
+      Uses the PILE_L bind interface, with bindcentroid set to false so we can
+      specify that thermostat separately, and then binds a global 
+      thermostat to that mode.
+
+      Args:
+         beads: An optional beads object to take the mass and momentum vectors 
+            from.
+         prng: An optional pseudo random number generator object. Defaults to
+            Random().
+         ndof: An optional integer which can specify the total number of
+            degrees of freedom. Defaults to len(p). Used if conservation of
+            linear momentum is being applied, as this removes three degrees of 
+            freedom.
+      """
+
       # first binds as a local PILE, then substitutes the thermostat on the centroid
       super(ThermoPILE_G,self).bind(beads=beads,prng=prng,bindcentroid=False, ndof=ndof) 
             
