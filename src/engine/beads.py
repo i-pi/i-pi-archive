@@ -87,7 +87,7 @@ class Beads(dobject):
       
       self.Cb2nm = np.zeros((nbeads,nbeads))
       self.Cb2nm[0,:] = math.sqrt(1.0/nbeads)
-      for i in range(1,nbeads/2):
+      for i in range(1,nbeads/2+1):
          for j in range(nbeads):
             self.Cb2nm[i,j] = math.sqrt(2.0/nbeads)*math.cos(2*math.pi*j*i/float(nbeads))
       if (nbeads%2) == 0:  

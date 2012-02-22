@@ -18,6 +18,8 @@ Classes:
 __all__ = ['RestartEnsemble', 'Ensemble', 'NVEEnsemble', 'NVTEnsemble', 
            'NPTEnsemble', 'NSTEnsemble']
 
+import numpy as np
+import math 
 from utils.depend import *
 from utils.restart import *
 from utils import units
