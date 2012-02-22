@@ -455,7 +455,7 @@ class Interface(object):
       disconnected are removed and their jobs removed from the list of
       running jobs and new clients are connected to the server.
       """
-
+     
       for c in self.clients[:]:         
          if not (c.status & Status.Up):
             try:
@@ -585,7 +585,8 @@ class Interface(object):
       poll_iter=0
       while self._poll_true:
          time.sleep(self.latency)
-         if poll_iter>UPDATEFREQ:
+         # makes sure to remove a dead client as soon as possible. 
+         if poll_iter>UPDATEFREQ or (len(self.clients)>0 and not( self.clients[0].status & Status.Up)) :
             self.pool_update()
             poll_iter=0
          poll_iter+=1
