@@ -336,7 +336,7 @@ class ThermoPILE_L(Thermostat):
          t.step()        
 
 class ThermoSVR(Thermostat):     
-   """Represent a stochastic velocity rescaling thermostat.
+   """Represents a stochastic velocity rescaling thermostat.
 
    Depend objects:
       tau: Centroid thermostat damping time scale. Larger values give a 
@@ -429,8 +429,8 @@ class ThermoPILE_G(ThermoPILE_L):
       and the dependency network.
 
       Uses the PILE_L bind interface, with bindcentroid set to false so we can
-      specify that thermostat separately, and then binds a global 
-      thermostat to that mode.
+      specify that thermostat separately, by binding a global 
+      thermostat to the centroid mode.
 
       Args:
          beads: An optional beads object to take the mass and momentum vectors 
@@ -456,23 +456,47 @@ class ThermoPILE_G(ThermoPILE_L):
       dget(self,"ethermo").add_dependency(dget(t,"ethermo"))
 
 class ThermoGLE(Thermostat):     
-   """Represent a GLE thermostat.
-      Contains: dt = time step, econs = change in the kinetic energy due to the thermostat,
-      tau = thermostat relaxation time, sm = sqrt(mass), A = friction matrix, C = static covariance,
-      temp = temperature,  (T,S) = GLE propagator matrices
-      Initialised by: thermo = ThermoGLE(temp, dt, A, C, econs)
-      temp = temperature, default = 1.0
-      A = friction, default 1x1 matrix value 1
-      C = static covariance, default identity (sizeof(A)) x temp
-      dt = time step, default = 1.0
-      econs = conserved energy quantity, default = 0.0"""
+   """Represents a GLE thermostat.
+
+   This is similar to a langevin thermostat, in that it uses Gaussian random
+   numbers to simulate a heat bath acting on the system, but simulates a 
+   non-Markovian system by using a Markovian formulation in an extended phase
+   space. This allows for a much greater degree of flexibility, and this 
+   thermostat, properly fitted, can give the an approximation to the correct
+   quantum ensemble even for a classical, 1-bead simulation. More reasonably, 
+   using this thermostat allows for a far smaller number of replicas of the
+   system to be used, as the convergence of the properties
+   of the system is accelerated with respect to number of beads when PI+GLE 
+   are used in combination. (See M. Ceriotti, D. E. Manolopoulos, M. Parinello,
+   J. Chem. Phys. 134, 084104 (2011)).
+
+   Attributes: 
+      ns: The number of auxilliary degrees of freedom.
+      s: An array holding all the momenta, including the ones for the
+         auxilliary degrees of freedom.
+
+   Depend objects:
+      A: Drift matrix giving the damping time scales for all the different 
+         degrees of freedom.
+      C: Static covariance matrix. 
+         Satisfies A.C + C.transpose(A) = B.transpose(B), where B is the 
+         diffusion matrix, giving the strength of the coupling of the system
+         with the heat bath, and thus the size of the stochastic 
+         contribution of the thermostat.
+      T: Matrix for the diffusive contribution of the thermostat, i.e. the
+         drift back towards equilibrium. Depends on A and the time step.
+      S: Matrix for the stochastic contribution of the thermostat, i.e. 
+         the uncorrelated Gaussian noise. Depends on C and T.
+   """
 
    def get_T(self):
-      """Calculates T in p(0) = T*p(dt) + S*random.gauss()"""
+      """Calculates the matrix for the overall drift of the velocities."""
+
       return matrix_exp(-0.5*self.dt*self.A)
       
    def get_S(self):      
-      """Calculates S in p(0) = T*p(dt) + S*random.gauss()"""
+      """Calculates the matrix for the coloured noise."""
+
       SST = Constants.kb*(self.C - np.dot(self.T,np.dot(self.C,self.T.T)))
       return stab_cholesky(SST)
   
@@ -482,6 +506,21 @@ class ThermoGLE(Thermostat):
       return rC[:]
       
    def __init__(self, temp = 1.0, dt = 1.0, A = None, C = None, ethermo=0.0):
+      """Initialises ThermoGLE.
+
+      Args:
+         temp: The simulation temperature. Defaults to 1.0. 
+         dt: The simulation time step. Defaults to 1.0.
+         A: An optional matrix giving the drift matrix. Defaults to a single
+            value of 1.0.
+         C: An optional matrix giving the covariance matrix. Defaults to an 
+            identity matrix times temperature with the same dimensions as the
+            total number of degrees of freedom in the system.
+         ethermo: The initial heat energy transferred to the bath. 
+            Defaults to 0.0. Will be non-zero if the thermostat is 
+            initialised from a checkpoint file.
+      """
+
       super(ThermoGLE,self).__init__(temp,dt,ethermo)
       
       if A is None:
@@ -504,11 +543,41 @@ class ThermoGLE(Thermostat):
       self.s = np.zeros(0)
   
    def bind(self, beads=None, atoms=None, cell=None, pm=None, prng=None, ndof=None):
+      """Binds the appropriate degrees of freedom to the thermostat.
+
+      This takes an object with degrees of freedom, and makes their momentum
+      and mass vectors members of the thermostat. It also then creates the 
+      objects that will hold the data needed in the thermostat algorithms 
+      and the dependency network.
+
+      Args:
+         beads: An optional beads object to take the mass and momentum vectors 
+            from.
+         atoms: An optional atoms object to take the mass and momentum vectors
+            from.
+         cell: An optional cell object to take the mass and momentum vectors 
+            from.
+         pm: An optional tuple containing a single momentum value and its
+            conjugate mass.
+         prng: An optional pseudo random number generator object. Defaults to
+            Random().
+         ndof: An optional integer which can specify the total number of
+            degrees of freedom. Defaults to len(p). Used if conservation of
+            linear momentum is being applied, as this removes three degrees of 
+            freedom.
+
+      Raises:
+         TypeError: Raised if no appropriate degree of freedom or object
+            containing a momentum vector is specified for 
+            the thermostat to couple to.
+      """
+
       super(ThermoGLE,self).bind(beads,atoms,cell,pm,prng,ndof)
 
       # allocates, initializes or restarts an array of s's 
       if self.s.shape != ( self.ns + 1, len(dget(self,"m") )) :
-         if len(self.s) > 0 : print " @ GLE BIND: Warning: s array size mismatch on restart! "
+         if len(self.s) > 0:
+            print " @ GLE BIND: Warning: s array size mismatch on restart! "
          self.s = np.zeros((self.ns + 1,len(dget(self,"m"))))
          
          # Initializes the s vector in the free-particle limit
@@ -518,7 +587,7 @@ class ThermoGLE(Thermostat):
          print " @ GLE BIND: Restarting additional DOFs! "
               
    def step(self):
-      """Updates the atom velocities with a GLE thermostat"""      
+      """Updates the bound momentum vector with a GLE thermostat"""      
       
       p = self.p.view(np.ndarray).copy()
       
@@ -531,6 +600,23 @@ class ThermoGLE(Thermostat):
       self.p = self.s[0]*self.sm
             
 class RestartThermo(Restart):
+   """Thermostat restart class.
+
+   Handles generating the appropriate thermostat class from the xml input file,
+   and generating the xml checkpoiunt tags and data from an instance of the
+   object.
+
+   Attributes:
+      kind: An optional string giving the type of the thermostat used. Defaults
+         to 'langevin'.
+      ethermo: An optional float giving the amount of heat energy transferred
+         to the bath. Defaults to 0.0.
+      tau: An optional float giving the damping time scale. Defaults to 1.0.
+      A: An optional array of floats giving the drift matrix. Defaults to 0.0.
+      C: An optional array of floats giving the static covariance matrix. 
+         Defaults to 0.0.
+   """
+
    attribs = { "kind": (RestartValue, (str, "langevin")) }
    fields = { "ethermo" : (RestartValue, (float, 0.0)), 
             "tau" : (RestartValue, (float, 1.0)) ,
@@ -540,6 +626,12 @@ class RestartThermo(Restart):
              }
    
    def store(self, thermo):
+      """Takes a thermostat instance and stores a minimal representation of it.
+
+      Args:
+         thermo: A thermostat object.
+      """
+
       if type(thermo) is ThermoLangevin: 
          self.kind.store("langevin")
          self.tau.store(thermo.tau)
@@ -563,6 +655,13 @@ class RestartThermo(Restart):
       self.ethermo.store(thermo.ethermo)
       
    def fetch(self):
+      """Creates a thermostat object.
+
+      Returns:
+         A thermostat object of the appropriate type and with the appropriate
+         parameters given the attributes of the RestartThermo object.
+      """
+
       if self.kind.fetch() == "langevin":
          thermo = ThermoLangevin(tau=self.tau.fetch())
       elif self.kind.fetch() == "svr":

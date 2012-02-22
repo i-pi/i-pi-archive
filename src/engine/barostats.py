@@ -195,7 +195,7 @@ class BaroFlexi(Barostat):
 
    Propagates the relevant equations of motion to give a constant stress 
    ensemble assuming an upper triangular lattice vector matrix 
-   (see P. Raiteri, J. Gale and G. Bussi, J. Phys.: Condens. Matter 23 334213 
+   (see P. Raiteri, J. Gale and G. Bussi, J. Phys.: Condens. Matter 23, 334213 
    (2011)). Note that the volume fluctuations are assumed to 
    only affect the centroid normal mode, and so the other modes are just 
    propagated in the same way as for constant volume ensembles.
@@ -390,7 +390,7 @@ class RestartBaro(Restart):
    fields={ "thermostat": (RestartThermo, ()) }
    
    def store(self, baro):
-      """Takes a barostat instance and stores of minimal representation of it.
+      """Takes a barostat instance and stores a minimal representation of it.
 
       Args:
          baro: A barostat object.
