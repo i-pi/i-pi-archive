@@ -40,8 +40,8 @@ class Barostat(dobject):
       sext: The external stress tensor.
       pext: The external pressure.
       dt: The time step used in the algorithms. Depends on the simulation dt.
-      temp: The temperature used in the algorithms. Depends on the simulation
-         temp.
+      temp: The simulation temperature. Higher than the system temperature by
+         a factor of the number of beads. Depends on the simulation temp.
       pot: The elastic strain potential for the cell.
       piext: The accumulated stress compared to the reference cell.
       stress: The internal stress.
@@ -101,7 +101,7 @@ class Barostat(dobject):
    def bind(self, beads, cell, forces):
       """Binds beads, cell and forces to the barostat.
 
-      This takes an beads object, a cell object and a forcefield object and 
+      This takes a beads object, a cell object and a forcefield object and 
       makes them members of the barostat. It also then creates the objects that
       will hold the data needed in the barostat algorithms and the dependency 
       network.
@@ -195,7 +195,7 @@ class BaroFlexi(Barostat):
 
    Propagates the relevant equations of motion to give a constant stress 
    ensemble assuming an upper triangular lattice vector matrix 
-   (see P. Raiteri, J. Gale and G. Bussi, J. Phys.: Condens. Matter 23 334213 
+   (see P. Raiteri, J. Gale and G. Bussi, J. Phys.: Condens. Matter 23, 334213 
    (2011)). Note that the volume fluctuations are assumed to 
    only affect the centroid normal mode, and so the other modes are just 
    propagated in the same way as for constant volume ensembles.
@@ -390,7 +390,7 @@ class RestartBaro(Restart):
    fields={ "thermostat": (RestartThermo, ()) }
    
    def store(self, baro):
-      """Takes a barostat instance and stores of minimal representation of it.
+      """Takes a barostat instance and stores a minimal representation of it.
 
       Args:
          baro: A barostat object.
