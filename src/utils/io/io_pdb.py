@@ -98,7 +98,7 @@ def read_pdb(filedesc):
    a = float(header[6:15]);      b = float(header[15:24]);    c = float(header[24:33]);
    alpha = float(header[33:40]); beta = float(header[40:47]); gamma = float(header[47:54]);
    alpha *= math.pi/180.0;       beta *= math.pi/180.0;       gamma *= math.pi/180.0
-   h = mt.abc2h(a, b, c, alpha, beta, gamma)
+   h = mt.abc2h(a, b, c, alpha, beta, gamma) #/ 0.529177
    cell = Cell(h)
    
    
@@ -112,7 +112,7 @@ def read_pdb(filedesc):
       x = float(body[31:39])
       y = float(body[39:47])
       z = float(body[47:55])
-      pos = np.array([x,y,z])
+      pos = np.array([x,y,z]) #/ 0.529177
       qatoms.append(pos)
       
       body = filedesc.readline()
