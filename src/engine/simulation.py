@@ -16,6 +16,7 @@ __all__ = ['RestartSimulation', 'Simulation']
 
 import numpy as np
 import math, random
+import os.path
 from utils.depend import *
 from utils.restart import *
 from utils.units  import *
@@ -272,6 +273,19 @@ class Simulation(dobject):
             raise KeyError(what + " is not a recognized property")
 
 
+   def print_traj(self):
+      if ((self.step+1) % self.dstride["trajectory_full"] == 0):            
+         if self.format == "pdb":
+            io_pdb.print_pdb_path(self.beads, self.cell, self.tout)
+         elif self.format == "xyz":
+            io_xyz.print_xyz_path(self.beads, self.cell, self.tout)
+      if ((self.step+1) % self.dstride["trajectory"] == 0):
+         if self.format == "pdb":
+            io_pdb.print_pdb(self.beads.centroid, self.cell, self.tcout)
+         elif self.format == "xyz":
+            io_xyz.print_xyz(self.beads.centroid, self.cell, self.tcout)
+   
+
    def run(self):
       """Runs the simulation.
 
@@ -282,16 +296,14 @@ class Simulation(dobject):
 
       self._forcemodel.socket.start_thread()
    
+      # prints inital configuration -- only if we are not restarting
       if (self.step == 0):
          self.step = -1
          self.write_output()
-         if self.format == "pdb": 
-            io_pdb.print_pdb_path(self.beads, self.cell, self.tout)
-            io_pdb.print_pdb(self.beads.centroid, self.cell, self.tcout)
-         elif self.format == "xyz": 
-            io_xyz.print_xyz_path(self.beads, self.cell, self.tout)            
-            io_xyz.print_xyz(self.beads.centroid, self.cell, self.tcout)
+         self.print_traj()
          self.step = 0
+         
+      # main MD loop
       for self.step in range(self.step,self.tsteps):               
          self.ensemble.step()
          print " # MD step % 7d complete. Timings --> p-step: %10.5f  q-step: %10.5f  t-step: %10.5f" % (self.step, self.ensemble.ptime, self.ensemble.qtime, self.ensemble.ttime )
@@ -301,17 +313,12 @@ class Simulation(dobject):
             self.write_chk()      
          if ((self.step+1) % self.dstride["properties"] == 0):
             self.write_output()
-         if ((self.step+1) % self.dstride["trajectory_full"] == 0):            
-            if self.format == "pdb":
-               io_pdb.print_pdb_path(self.beads, self.cell, self.tout)
-            elif self.format == "xyz":
-               io_xyz.print_xyz_path(self.beads, self.cell, self.tout)
-         if ((self.step+1) % self.dstride["trajectory"] == 0):
-            if self.format == "pdb":
-               io_pdb.print_pdb(self.beads.centroid, self.cell, self.tcout)
-            elif self.format == "xyz":
-               io_xyz.print_xyz(self.beads.centroid, self.cell, self.tcout)
-
+         if ((self.step+1) % self.dstride["trajectory_full"] == 0 or
+            (self.step+1) % self.dstride["trajectory"] == 0):
+            self.print_traj()
+         if os.path.exists("EXIT"): # soft-exit
+            break
+         
       if self.step < self.tsteps:
          self.step += 1         
       self.write_chk()
