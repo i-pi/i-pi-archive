@@ -678,4 +678,6 @@ class RestartThermo(Restart):
          thermo.s = self.s.fetch()
       else:
          raise TypeError("Invalid thermostat kind " + self.kind.fetch())
+         
+      thermo.ethermo=self.ethermo.fetch()
       return thermo

@@ -107,6 +107,8 @@ class RestartEnsemble(Restart):
       elif self.type.fetch().upper() == "NST" : 
          ens = NSTEnsemble(dt=self.timestep.fetch(), temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(),
                         fixcom=self.fixcom.fetch(), sext=self.stress.fetch(), barostat=self.barostat.fetch() )
+                        
+      print "thermostat energy", ens.thermostat.ethermo
       return ens
       
 class Ensemble(dobject): 

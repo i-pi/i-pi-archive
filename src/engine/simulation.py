@@ -24,6 +24,7 @@ from utils.prng   import *
 from utils.io     import *
 from utils.io.io_xml import *
 from atoms import *
+import time
 from cell import *
 from ensembles import RestartEnsemble
 from forces import RestartForce, ForceBeads
@@ -193,6 +194,8 @@ class Simulation(dobject):
       tout: File to output the full trajectory to.
       ichk: A number keeping track of all the restart files generated so far,
          so that old files are not overwritten.
+      status: A RestartSimulation object used to deal gracefully with soft exit
+         in the middle of a force calculation
 
    Depend objects:
       step: The current simulation step.
@@ -261,16 +264,18 @@ class Simulation(dobject):
    def bind(self):
       """Calls the bind routines for all the objects in the simulation."""
 
-      self.forces.bind(self.beads, self.cell,  self._forcemodel)
+      self.forces.bind(self.beads, self.cell,  self._forcemodel, softexit=self.soft_exit)
       self.ensemble.bind(self.beads, self.cell, self.forces, self.prng)
       self.properties.bind(self)
       self.init()
-
+      self.status = RestartSimulation();      self.status.store(self);
+      
       # Checks as soon as possible if some asked-for properties are missing or mispelled
       for what in self.outlist:
          if not what in self.properties.property_dict.keys():
             print "Computable properties list: ", self.properties.property_dict.keys()
             raise KeyError(what + " is not a recognized property")
+            
 
 
    def print_traj(self):
@@ -285,6 +290,19 @@ class Simulation(dobject):
          elif self.format == "xyz":
             io_xyz.print_xyz(self.beads.centroid, self.cell, self.tcout)
    
+   def soft_exit(self, rollback=True):
+      """Deals with a soft exit request. 
+      
+      Tries to ensure that a consistent restart checkpoint is 
+      written out. 
+       """   
+      
+      if self.step < self.tsteps:   self.step += 1         
+      if not rollback: self.status.store(self)         
+      self.write_chk()
+
+      self._forcemodel.socket.end_thread()      
+      exit()
 
    def run(self):
       """Runs the simulation.
@@ -302,13 +320,21 @@ class Simulation(dobject):
          self.write_output()
          self.print_traj()
          self.step = 0
-         
+                 
+      self.chtime=0
       # main MD loop
-      for self.step in range(self.step,self.tsteps):               
+      for self.step in range(self.step,self.tsteps):   
+         # stores the state before doing a step. 
+         # this is a bit time-consuming but makes sure that we can honor soft exit requests
+         # without screwing the trajectory
+         self.status.store(self) 
+         
          self.ensemble.step()
          print " # MD step % 7d complete. Timings --> p-step: %10.5f  q-step: %10.5f  t-step: %10.5f" % (self.step, self.ensemble.ptime, self.ensemble.qtime, self.ensemble.ttime )
          print " # MD diagnostics: V: %10.5e    Kcv: %10.5e   Ecns: %10.5e" % (self.properties["potential"], self.properties["kinetic_cv"], self.properties["conserved"] )
 
+         if os.path.exists("EXIT"): # soft-exit
+            self.soft_exit(rollback=False)
          if ((self.step+1) % self.dstride["checkpoint"] == 0):
             self.write_chk()      
          if ((self.step+1) % self.dstride["properties"] == 0):
@@ -316,15 +342,9 @@ class Simulation(dobject):
          if ((self.step+1) % self.dstride["trajectory_full"] == 0 or
             (self.step+1) % self.dstride["trajectory"] == 0):
             self.print_traj()
-         if os.path.exists("EXIT"): # soft-exit
-            break
-         
-      if self.step < self.tsteps:
-         self.step += 1         
-      self.write_chk()
 
-      self._forcemodel.socket.end_thread()      
-   
+      self.soft_exit(rollback=False)
+            
    def init(self):
       """Deals with the file initialization.
 
@@ -392,8 +412,6 @@ class Simulation(dobject):
             check_file = open(self.prefix + ".restart" + str(self.ichk), "w")
             new = True
       
-      r = RestartSimulation()
-      r.store(self)
-      check_file.write(r.write(name="simulation"))
+      check_file.write(self.status.write(name="simulation"))
       check_file.close()
       

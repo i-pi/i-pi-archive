@@ -110,7 +110,7 @@ class ForceField(dobject):
 
       return type(self)()
       
-   def bind(self, atoms, cell):
+   def bind(self, atoms, cell, softexit=None):
       """Binds atoms and cell to the forcefield.
 
       This takes an atoms object and a cell object and makes them members of
@@ -125,6 +125,7 @@ class ForceField(dobject):
       # stores a reference to the atoms and cell we are computing forces for
       self.atoms = atoms
       self.cell = cell
+      self.softexit = softexit
       
       # ufv depends on the atomic positions and on the cell
       dget(self,"ufv").add_dependency(dget(self.atoms,"q"))
@@ -231,7 +232,7 @@ class ForceBeads(dobject):
       if not (beads is None or cell is None or force is None):       # only initializes if all arguments are given
          self.bind(beads, cell, force)
 
-   def bind(self, beads, cell, force):
+   def bind(self, beads, cell, force, softexit=None):
       """Binds beads, cell and force to the forcefield.
 
       Takes the beads, cell objects and makes them members of the forcefield.
@@ -251,13 +252,14 @@ class ForceBeads(dobject):
       # stores a copy of the number of atoms and of beads !TODO! make them read-only properties
       self.natoms = beads.natoms
       self.nbeads = beads.nbeads
-
+      self.softexit = softexit
+      
       # creates an array of force objects, which are bound to the beads and the cell
       self._forces = [];
       for b in range(self.nbeads):
          newf = force.copy()
-         newf.bind(beads[b], cell)
-         self._forces.append(newf)
+         newf.bind(beads[b], cell, softexit=self.softexit)
+         self._forces.append(newf)      
       
       # f is a big array which assembles the forces on individual beads
       dset(self,"f",depend_array(name="f",value=np.zeros((self.nbeads,3*self.natoms), float), func=self.f_gather,     
@@ -439,8 +441,12 @@ class FFSocket(ForceField):
       if self.request is None: 
          self.request = self.socket.queue(self.atoms, self.cell, self.pars)
       while self.request["status"] != "Done": 
+         if self.request["status"] == "Exit": break
          time.sleep(self.socket.latency)
-
+      if self.request["status"] == "Exit": 
+         print " @Force:   Soft exit request."
+         if not self.softexit is None: self.softexit()
+      
       # data has been collected, so the request can be released and a slot freed up for new calculations
       self.socket.release(self.request)
       result = self.request["result"]

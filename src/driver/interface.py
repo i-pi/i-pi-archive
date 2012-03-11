@@ -585,12 +585,19 @@ class Interface(object):
       poll_iter=0
       while self._poll_true:
          time.sleep(self.latency)
-         # makes sure to remove a dead client as soon as possible. 
+         # makes sure to remove the last dead client as soon as possible. 
          if poll_iter>UPDATEFREQ or (len(self.clients)>0 and not( self.clients[0].status & Status.Up)) :
             self.pool_update()
             poll_iter=0
          poll_iter+=1
          self.pool_distribute()
+         
+         if os.path.exists("EXIT"): # soft-exit
+            print " @SOCKET:   Soft exit request. Flushing job queue."
+            freec = self.clients[:]     
+            # releases all pending requests       
+            for r in self.requests:   r["status"]="Exit"
+            for fc in freec:          self.clients.remove(fc)
       self._poll_thread=None   
    
    def start_thread(self):
@@ -610,9 +617,9 @@ class Interface(object):
          raise NameError("Polling thread already started")      
       self._poll_thread = threading.Thread(target=self._poll_loop, name="poll_" + self.address)
       self._poll_thread.daemon = True
-      self._poll_true = True
       self._prev_kill[signal.SIGINT] = signal.signal(signal.SIGINT, self._kill_handler)
       self._prev_kill[signal.SIGTERM] = signal.signal(signal.SIGTERM, self._kill_handler)    
+      self._poll_true = True      
       self._poll_thread.start()
    
    def end_thread(self):
