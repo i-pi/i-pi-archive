@@ -271,7 +271,7 @@ class RestartAtoms(Restart):
 
    fields={ "natoms" : (RestartValue, (int,0)), "q" : (RestartArray,(float,np.zeros(0))),  "p" : (RestartArray,(float,np.zeros(0))),
             "m" : (RestartArray,(float, np.zeros(0))),  "names" : (RestartArray,(str,np.zeros(0, np.dtype('|S6')))),
-            "from_file" : (RestartValue,(str, "")), "init_temp": (RestartValue, (float, -1.0))  }
+            "from_file" : (RestartValue,(str, "", "length")), "init_temp": (RestartValue, (float, -1.0))  }
        
    def __init__(self, atoms=None, filename=""):
       """Initialises RestartAtoms.
@@ -342,4 +342,6 @@ class RestartAtoms(Restart):
 
       if self.from_file.fetch() != "":
          myatoms, mycell = utils.io.io_pdb.read_pdb(open(self.from_file.fetch(),"r"))
+         if "units" in self.from_file.attribs:
+            myatoms.q*=self.from_file.units.to_internal(1.0,self.from_file.attribs["units"])
          self.store(myatoms, self.from_file.fetch())      

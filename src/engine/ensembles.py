@@ -54,7 +54,7 @@ class RestartEnsemble(Restart):
 
    attribs={"type"  : (RestartValue, (str, "unknown")) }
    fields={"thermostat" : (RestartThermo, () ), "barostat" : (RestartBaro, () ), 
-           "timestep": (RestartValue, (float,"1.0")) ,
+           "timestep": (RestartValue, (float,"1.0","time")) ,
            "temperature" : (RestartValue, (float, 1.0)), "pressure" : (RestartValue, (float,"1.0")) ,
            "stress" : (RestartArray, (float, np.identity(3))), 
            "fixcom": (RestartValue, (bool, False)) }

@@ -58,3 +58,45 @@ class Elements(dict):
 
       return cls.mass_list[label]*Constants.amu
 
+UnitMap= { 
+   "energy" :   {
+      "atomic_unit"  : 1.00, 
+      "electronvolt" : 0.036749326,
+      "joule"        : 2.2937128e+17,
+      "kj_mol"       : 0.00038087989,
+      "kcal_mol"     : 0.0015946679,
+      "kelvin"       : 3.1668152e-06
+      },
+   "time" :     {
+      "atomic_unit"  : 1.00,
+      "second"       : 4.1341373e+16,
+      "picosecond"   : 41341.373,
+      "femtosecond"  : 41.341373
+      },
+   "length" :     {
+      "atomic_unit"  : 1.00,
+      "angstrom"     : 1.8897261,
+      "nanometer"    : 0.18897261
+      }
+}
+class Units(object):
+   """ A class to perform simple unit conversions based on a map """
+   
+   def __init__(self, family="number"):
+      if not (family == "number"  or family in UnitMap):
+         raise IndexError(family+" is an undefined units kind.")
+      self.family=family
+      
+   def to_internal(self, number, unit):
+      """ Converts number from the "unit" units string to internal units """
+      if self.family == "number": return number
+      if not unit in UnitMap[self.family]:
+         raise TypeError(unit+" is an undefined unit for kind "+self.family+".")
+      return number*UnitMap[self.family][unit]
+
+   def to_user(self, number, unit):
+      """ Converts number from internal units to the specified unit """
+      return number/UnitMap[self.family][unit]
+      
+      
+

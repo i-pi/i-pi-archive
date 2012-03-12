@@ -73,7 +73,7 @@ class RestartSimulation(Restart):
              "total_steps": (RestartValue, (int, 1000) ), 
              "stride" : ( RestartValue, (dict, {})),
              "prefix": (RestartValue, (str, "prefix")), 
-             "traj_format": (RestartValue, (str, "pdb")),              
+             "traj_format": (RestartValue, (str, "pdb", "length")),              
              "properties": (RestartArray, (str,np.zeros(0, np.dtype('|S12'))) ),
              "initialize": (RestartArray, (str,np.zeros(0, np.dtype('|S12'))) ),
              "fd_delta":   ( RestartValue, (float, 0.0)) 

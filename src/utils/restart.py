@@ -22,6 +22,7 @@ __all__ = ['Restart', 'RestartValue', 'RestartArray']
 
 import numpy as np
 from  io.io_xml import *
+from units import Units
 
 class Restart(object):
    """Base class for restart handling.
@@ -148,9 +149,10 @@ class RestartValue(Restart):
       type: Data type of the data.
       value: Value of data. Also specifies data type if type is None.
       default: Default value if the tag is not specified.
+      units: a Units object or None, used for automatic input conversion
    """
  
-   def __init__(self, dtype=None, value=None, default=None):      
+   def __init__(self, dtype=None, value=None, units=None, default=None):      
       """Initialises RestartValue.
 
       Args:
@@ -159,6 +161,9 @@ class RestartValue(Restart):
             specifies the data type if type is None.
          default: Optional default value if the tag is not specified. Defaults
             to None.
+         units: A string defining the _kind_ of units assigned to the variable
+            e.g. "energy", "time"...
+         attribs: A list of the attribs found in the XML file
       """
 
       super(RestartValue,self).__init__()
@@ -169,20 +174,28 @@ class RestartValue(Restart):
       else:
          raise TypeError("You must provide either value or dtype")
 
+      if not units is None: 
+         self.units = Units(units)
+      else:
+         self.units = None
+      
       self.default = default
       if not value is None:
          self.store(value)
       elif not default is None:
          self.store(default)
+         
+      self.attribs={}
       
-   def store(self, value):
+   def store(self, value, units=""):
       """Converts the data to the appropriate data type and stores it.
 
       Args:
          value: The raw data to be stored.
       """
-
+      
       self.value = self.type(value)
+      
       
    def fetch(self): 
       """Returns the stored data."""
@@ -217,7 +230,16 @@ class RestartValue(Restart):
       if xml is None:
          self.value = read_type(self.type, text)
       else:   
-         self.value = read_type(self.type, xml.fields["_text"])
+         self.value = read_type(self.type, xml.fields["_text"])      
+         self.attribs = xml.attribs
+         if "units" in xml.attribs:
+            if self.units is None:
+               raise TypeError("RestartValue instance doesn't have defined units.")
+            else:
+               try:
+                  self.value = self.units.to_internal(self.value,xml.attribs["units"])
+               except TypeError: pass  # we may want to define a units attribute for values which are not numbers
+                  
 
          
 ELPERLINE = 5
