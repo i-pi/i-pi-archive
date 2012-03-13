@@ -107,6 +107,10 @@ class RestartSimulation(Restart):
          A simulation object of the appropriate type and with the appropriate
          properties and other objects given the attributes of the 
          RestartSimulation object.
+
+      Raises:
+         TypeError: Raised if one of the file types in the stride keyword
+            is incorrect.
       """
 
       self.check()
@@ -147,6 +151,9 @@ class RestartSimulation(Restart):
       no beads argument, the bead positions are generated from the atoms, with 
       the necklace being fixed at the atom position. Similarly, if no nbeads
       argument is specified a classical simulation is done.
+
+      Raises:
+         TypeError: Raised if no beads or atoms attribute is defined.
       """
 
       if self.beads.nbeads.fetch() == 0:
@@ -262,13 +269,19 @@ class Simulation(dobject):
       self.bind()
       
    def bind(self):
-      """Calls the bind routines for all the objects in the simulation."""
+      """Calls the bind routines for all the objects in the simulation.
+
+      Raises:
+         KeyError: Raised if one of the requested output properties is not 
+            defined in the property list.
+      """
 
       self.forces.bind(self.beads, self.cell,  self._forcemodel, softexit=self.soft_exit)
       self.ensemble.bind(self.beads, self.cell, self.forces, self.prng)
       self.properties.bind(self)
       self.init()
-      self.status = RestartSimulation();      self.status.store(self);
+      self.status = RestartSimulation()
+      self.status.store(self)
       
       # Checks as soon as possible if some asked-for properties are missing or mispelled
       for what in self.outlist:
@@ -276,9 +289,14 @@ class Simulation(dobject):
             print "Computable properties list: ", self.properties.property_dict.keys()
             raise KeyError(what + " is not a recognized property")
             
-
-
    def print_traj(self):
+      """Prints an output file of the appropriate format.
+
+      Uses the stride defined for the different trajectory files to decide
+      whether to print out on a particular step, and uses the format specifier
+      to decide what type of trajectory to output.
+      """
+
       if ((self.step+1) % self.dstride["trajectory_full"] == 0):            
          if self.format == "pdb":
             io_pdb.print_pdb_path(self.beads, self.cell, self.tout)
@@ -297,8 +315,10 @@ class Simulation(dobject):
       written out. 
        """   
       
-      if self.step < self.tsteps:   self.step += 1         
-      if not rollback: self.status.store(self)         
+      if self.step < self.tsteps:
+         self.step += 1         
+      if not rollback:
+         self.status.store(self)         
       self.write_chk()
 
       self._forcemodel.socket.end_thread()      
