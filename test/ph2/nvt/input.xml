@@ -12,7 +12,7 @@
       </interface>
    </force>
    <atoms>
-      <from_file>ph2-108.pdb</from_file>
+      <from_file>our_ref.pdb</from_file>
    </atoms>
    <nbeads>24</nbeads>
    <cell flexible='False'>
