@@ -60,6 +60,8 @@ class RestartSimulation(Restart):
          Defaults to 'pdb'.
       properties: An array of strings giving all the properties that should 
          be output space separated. Defaults to _DEFAULT_OUTPUT.
+      trajectories: An array of strings giving all the trajectory data that should 
+         be output space separated. Defaults to _DEFAULT_TRAJ.
       initialize: An array of strings giving all the quantities that should
          be output.
       fd_delta: A float giving the size of the finite difference
@@ -141,9 +143,13 @@ class RestartSimulation(Restart):
                      prefix=self.prefix.fetch(),  outlist=olist, trajlist=tlist, initlist=ilist)
 
       if (self.fd_delta.fetch() != 0.0):
-         rsim.properties.fd_delta = self.fd_delta.fetch()
-      
+         rsim.properties.fd_delta = self.fd_delta.fetch()      
+
       rsim.trajs.format=self.traj_format.fetch()
+
+      # binds and inits the simulation object just before returning
+      rsim.bind()
+      rsim.init()
       
       return rsim
 
@@ -241,7 +247,8 @@ class Simulation(dobject):
       self.prng = prng
       self._forcemodel = force
       self.forces = ForceBeads()
-            
+      self.status = None
+      
       self.ensemble = ensemble
       dset(self, "step", depend_value(name="step", value=step))
       self.tsteps = tsteps
@@ -269,9 +276,7 @@ class Simulation(dobject):
          self.initlist = np.zeros(0, np.dtype('|S12'))
       else:
          self.initlist = initlist
-                  
-      self.bind()
-      
+                        
    def bind(self):
       """Calls the bind routines for all the objects in the simulation."""
 
@@ -281,7 +286,7 @@ class Simulation(dobject):
 
       # binds output management objects
       self.properties.bind(self); self.trajs.bind(self)
-      self.init()
+
       self.status = RestartSimulation();      self.status.store(self);
       
       # Checks as soon as possible if some asked-for properties are missing or mispelled
@@ -334,15 +339,15 @@ class Simulation(dobject):
          print " # MD step % 7d complete. Timings --> p-step: %10.5f  q-step: %10.5f  t-step: %10.5f" % (self.step, self.ensemble.ptime, self.ensemble.qtime, self.ensemble.ttime )
          print " # MD diagnostics: V: %10.5e    Kcv: %10.5e   Ecns: %10.5e" % (self.properties["potential"], self.properties["kinetic_cv"], self.properties["conserved"] )
 
-         if os.path.exists("EXIT"): # soft-exit
-            self.soft_exit(rollback=False)
          if ((self.step+1) % self.dstride["checkpoint"] == 0):
             self.write_chk()      
          if ((self.step+1) % self.dstride["properties"] == 0):
             self.write_output()
          if ((self.step+1) % self.dstride["trajectory"] == 0):
             self.write_traj()
-
+         if os.path.exists("EXIT"): # soft-exit
+            self.soft_exit(rollback=False)
+            
       self.soft_exit(rollback=False)
             
    def init(self):
@@ -359,8 +364,12 @@ class Simulation(dobject):
       for l in self.outlist:
          ohead += "%16s"%(l)
       self.fout.write(ohead + "\n")
-      self.tcout = open(self.prefix + ".centroid." + self.trajs.format, "a")
-      self.tout = [ open(self.prefix + ".full_" +str(b)+"."+ self.trajs.format, "a") for b in range(self.beads.nbeads) ]
+      
+      
+      # self.tcout = open(self.prefix + ".centroid." + self.trajs.format, "a")  
+      self.tout = {}    
+      for what in self.trajlist:
+         self.tout[what] = [ open(self.prefix + "." + what[0:3] + "_" +str(b)+"."+ self.trajs.format, "a") for b in range(self.beads.nbeads) ]
 
       self.ichk = 0      
       if "velocities" in self.initlist:
@@ -378,7 +387,7 @@ class Simulation(dobject):
       
       for what in self.trajlist:      
          for b in range(self.beads.nbeads):
-            self.trajs.print_bead(what, b, self.tout[b])
+            self.trajs.print_bead(what, b, self.tout[what][b])
 
    
    def write_output(self):

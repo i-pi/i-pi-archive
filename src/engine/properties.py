@@ -287,6 +287,8 @@ class Properties(dobject):
       a, b, c, alpha, beta, gamma = h2abc(self.cell.h)
       return [a, b, c, alpha, beta, gamma]
 
+
+
 class Trajectories(dobject):
    """ A simple class to take care of output of trajectory data. """
    
@@ -296,12 +298,23 @@ class Trajectories(dobject):
       self.format = format
       
    def bind(self, simul):
-      """ Binds to a simulation object to fetch atomic and force data """
+      """ Binds to a simulation object to fetch atomic and force data.
+      
+      Args:
+         simul: The simulation object that will be managed by this Trajectories.
+      """
 
       self.simul = simul
       self.fatom = simul.beads[0].copy()
       
    def print_bead(self, what, b, stream):
+      """ Prints out a frame of a trajectory for the specified quantity and bead. 
+            
+      Args:
+         what: A string specifying what to print.
+         b: The bead index.
+         stream: A reference to the stream on which data will be printed.
+      """
       
       if what == "positions":
          self.fatom.q = self.simul.beads.q[b]
