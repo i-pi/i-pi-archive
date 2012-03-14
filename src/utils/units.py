@@ -3,9 +3,11 @@
 Classes:
    Constants: Class whose members are fundamental contants.
    Elements: Class which contains the mass of different elements
+   Units: Class which contains the methods needed to transform
+      between different systems of units.
 """
 
-__all__ = ['Constants', 'Elements']
+__all__ = ['Constants', 'Elements', 'Units', 'UnitMap']
 
 class Constants:
    """Class whose members are fundamental contants.
@@ -26,7 +28,8 @@ class Elements(dict):
 
    Attributes:
       mass_list: A dictionary containing the masses of different elements.
-         Has the form {"label": Mass in a.m.u.}.
+         Has the form {"label": Mass in a.m.u.}. Note that the generic "X"
+         label is assumed to be an electron.
    """
 
    mass_list={
@@ -35,6 +38,7 @@ class Elements(dict):
      "D"   :    2.0141,     
      "Si"  :   28.0860,
      "O"   :   15.9994,
+     "N"   :   14.0067,
      "H2"  :    2.0160,
      "Li"  :    6.9410,     
      "Ar"  :   39.9480,
@@ -58,7 +62,7 @@ class Elements(dict):
 
       return cls.mass_list[label]*Constants.amu
 
-UnitMap= { 
+UnitMap = { 
    "energy" :   {
       "" : 1.00,
       "atomic_unit"  : 1.00, 
@@ -96,24 +100,59 @@ UnitMap= {
       "atomic_unit"  : 1.00
       }            
 }
+
+
 class Units(object):
-   """ A class to perform simple unit conversions based on a map """
+   """A class to perform simple unit conversions based on a map.
+
+   Uses the UnitMap object, which is a dictionary of the form 
+   {'unit type': {'name': value}}, where the value is the value of the 
+   particular unit described by name in atomic units.
+
+   Attributes:
+      family: The unit type. Will be either a base unit such as 'time', a 
+         derived unit such as 'force', or unitless, which is given by 'number'. 
+   """
    
    def __init__(self, family="number"):
+      """Initialises Units.
+
+      Args:
+         family: The unit type. Defaults to 'number'.
+
+      Raises:
+         IndexError: Raised if the unit type given has not been defined.
+      """
+
       if not (family == "number"  or family in UnitMap):
-         raise IndexError(family+" is an undefined units kind.")
-      self.family=family
+         raise IndexError(family + " is an undefined units kind.")
+      self.family = family
       
    def to_internal(self, number, unit):
-      """ Converts number from the "unit" units string to internal units """
-      if self.family == "number": return number
+      """Converts number from the unit type given to internal units using the 
+      appropriate conversion factor.
+
+      Args:
+         number: The value of the number in the unit given.
+         unit: The particular unit of the appropriate unit type that the 
+            number is given in.
+
+      Raises:
+         TypeError: Raised if the unit given is not of the correct type.
+      """
+
+      if self.family == "number":
+         return number
       if not unit in UnitMap[self.family]:
-         raise TypeError(unit+" is an undefined unit for kind "+self.family+".")
+         raise TypeError(unit + " is an undefined unit for kind " + self.family + ".")
       return number*UnitMap[self.family][unit]
 
    def to_user(self, number, unit):
-      """ Converts number from internal units to the specified unit """
-      return number/UnitMap[self.family][unit]
-      
-      
+      """Converts number from internal units to the specified unit.
 
+      Args:
+         number: The value of the number in internal units.
+         unit: The unit for the number to be converted into.
+      """
+
+      return number/UnitMap[self.family][unit]

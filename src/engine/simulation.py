@@ -112,6 +112,10 @@ class RestartSimulation(Restart):
          A simulation object of the appropriate type and with the appropriate
          properties and other objects given the attributes of the 
          RestartSimulation object.
+
+      Raises:
+         TypeError: Raised if one of the file types in the stride keyword
+            is incorrect.
       """
 
       self.check()
@@ -160,6 +164,9 @@ class RestartSimulation(Restart):
       no beads argument, the bead positions are generated from the atoms, with 
       the necklace being fixed at the atom position. Similarly, if no nbeads
       argument is specified a classical simulation is done.
+
+      Raises:
+         TypeError: Raised if no beads or atoms attribute is defined.
       """
 
       if self.beads.nbeads.fetch() == 0:
@@ -278,23 +285,29 @@ class Simulation(dobject):
          self.initlist = initlist
                         
    def bind(self):
-      """Calls the bind routines for all the objects in the simulation."""
+      """Calls the bind routines for all the objects in the simulation.
+
+      Raises:
+         KeyError: Raised if one of the requested output properties is not 
+            defined in the property list.
+      """
 
       # binds important computation engines
       self.forces.bind(self.beads, self.cell,  self._forcemodel, softexit=self.soft_exit)
       self.ensemble.bind(self.beads, self.cell, self.forces, self.prng)
 
       # binds output management objects
-      self.properties.bind(self); self.trajs.bind(self)
-
-      self.status = RestartSimulation();      self.status.store(self);
+      self.properties.bind(self); 
+      self.trajs.bind(self)
+      
+      self.status = RestartSimulation();      
+      self.status.store(self);
       
       # Checks as soon as possible if some asked-for properties are missing or mispelled
       for what in self.outlist:
          if not what in self.properties.property_dict.keys():
             print "Computable properties list: ", self.properties.property_dict.keys()
             raise KeyError(what + " is not a recognized property")
-            
    
    def soft_exit(self, rollback=True):
       """Deals with a soft exit request. 
@@ -303,8 +316,10 @@ class Simulation(dobject):
       written out. 
        """   
       
-      if self.step < self.tsteps:   self.step += 1         
-      if not rollback: self.status.store(self)         
+      if self.step < self.tsteps:
+         self.step += 1         
+      if not rollback:
+         self.status.store(self)         
       self.write_chk()
 
       self._forcemodel.socket.end_thread()      
