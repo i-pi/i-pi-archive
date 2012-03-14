@@ -29,10 +29,12 @@ from cell import *
 from ensembles import RestartEnsemble
 from forces import RestartForce, ForceBeads
 from beads import Beads, RestartBeads
-from properties import Properties
+from properties import Properties, Trajectories
 
-_DEFAULT_STRIDES={"checkpoint": 1000, "properties": 10, "progress": 100, "trajectory": 20,  "trajectory_full": 100}
+_DEFAULT_STRIDES={"checkpoint": 1000, "properties": 10, "progress": 100, "centroid": 20,  "trajectory": 100}
 _DEFAULT_OUTPUT=[ "time", "conserved", "kinetic", "potential" ]
+_DEFAULT_TRAJ=[ "positions" ]
+
 class RestartSimulation(Restart):
    """Simulation restart class.
 
@@ -72,11 +74,12 @@ class RestartSimulation(Restart):
              "step" : ( RestartValue, (int, 0)), 
              "total_steps": (RestartValue, (int, 1000) ), 
              "stride" : ( RestartValue, (dict, {})),
-             "prefix": (RestartValue, (str, "prefix")), 
-             "traj_format": (RestartValue, (str, "pdb", "length")),              
+             "prefix": (RestartValue, (str, "prefix")),            
              "properties": (RestartArray, (str,np.zeros(0, np.dtype('|S12'))) ),
              "initialize": (RestartArray, (str,np.zeros(0, np.dtype('|S12'))) ),
-             "fd_delta":   ( RestartValue, (float, 0.0)) 
+             "fd_delta":   ( RestartValue, (float, 0.0)),
+             "traj_format": (RestartValue, (str, "pdb")),   
+             "trajectories": (RestartArray, (str,np.zeros(0, np.dtype('|S12'))) )
             }
 
    def store(self, simul):
@@ -95,7 +98,7 @@ class RestartSimulation(Restart):
       self.total_steps.store(simul.tsteps)
       self.stride.store(simul.dstride)
       self.prefix.store(simul.prefix)
-      self.traj_format.store(simul.format)      
+      self.traj_format.store(simul.trajs.format)      
       self.properties.store(simul.outlist)
       self.initialize.store(simul.initlist)
       self.fd_delta.store(simul.properties.fd_delta)
@@ -124,20 +127,24 @@ class RestartSimulation(Restart):
       dstride.update(vstride)
       
       olist = self.properties.fetch()
-      if (len(olist) == 0):
-         olist = None
+      if (len(olist) == 0):    olist = None
+
+      tlist = self.trajectories.fetch()
+      if (len(tlist) == 0):    tlist = None
 
       ilist = self.initialize.fetch()
-      if (len(ilist) == 0):
-         ilist = None
+      if (len(ilist) == 0):    ilist = None
       
       rsim = Simulation(nbeads, ncell, self.force.fetch(), 
                      self.ensemble.fetch(), nprng, self.step.fetch(), 
                      tsteps=self.total_steps.fetch(), stride=dstride,
-                     prefix=self.prefix.fetch(), format=self.traj_format.fetch(), outlist=olist, initlist=ilist)
+                     prefix=self.prefix.fetch(),  outlist=olist, trajlist=tlist, initlist=ilist)
 
       if (self.fd_delta.fetch() != 0.0):
          rsim.properties.fd_delta = self.fd_delta.fetch()
+      
+      rsim.trajs.format=self.traj_format.fetch()
+      
       return rsim
 
    def check(self):
@@ -202,7 +209,7 @@ class Simulation(dobject):
    """   
 
    def __init__(self, beads, cell, force, ensemble, prng, step=0, tsteps=1000, 
-               stride=None, prefix="prefix", format="pdb", outlist=None, initlist=None):
+               stride=None, prefix="prefix", outlist=None, trajlist=None, initlist=None):
       """Initialises Simulation class.
 
       Args:
@@ -221,8 +228,6 @@ class Simulation(dobject):
             printing out data for the different types of data. 
          prefix: An optional string giving the prefix for all the output files. 
             Defaults to 'prefix'.
-         format: An optional string giving the output format for the 
-            trajectory files. Defaults to 'pdb'.
          outlist: An array of strings giving all the properties that should 
             be output space separated.
          initlist: An array of strings giving all the quantities that should
@@ -241,18 +246,24 @@ class Simulation(dobject):
       dset(self, "step", depend_value(name="step", value=step))
       self.tsteps = tsteps
       
-      self.prefix = prefix
-      self.format = format      
+      self.prefix = prefix      
       if stride is None:
          self.dstride = dict(_DEFAULT_STRIDES)
       else:
          self.dstride = stride
+
       if outlist is None:
          self.outlist = np.array(_DEFAULT_OUTPUT, np.dtype('|S12') )
       else:
          self.outlist = outlist                                    
 
+      if trajlist is None:
+         self.trajlist = np.array(_DEFAULT_TRAJ, np.dtype('|S12') )
+      else:
+         self.trajlist = trajlist                                    
+
       self.properties = Properties()
+      self.trajs = Trajectories()
          
       if initlist is None:
          self.initlist = np.zeros(0, np.dtype('|S12'))
@@ -264,9 +275,12 @@ class Simulation(dobject):
    def bind(self):
       """Calls the bind routines for all the objects in the simulation."""
 
+      # binds important computation engines
       self.forces.bind(self.beads, self.cell,  self._forcemodel, softexit=self.soft_exit)
       self.ensemble.bind(self.beads, self.cell, self.forces, self.prng)
-      self.properties.bind(self)
+
+      # binds output management objects
+      self.properties.bind(self); self.trajs.bind(self)
       self.init()
       self.status = RestartSimulation();      self.status.store(self);
       
@@ -276,19 +290,6 @@ class Simulation(dobject):
             print "Computable properties list: ", self.properties.property_dict.keys()
             raise KeyError(what + " is not a recognized property")
             
-
-
-   def print_traj(self):
-      if ((self.step+1) % self.dstride["trajectory_full"] == 0):            
-         if self.format == "pdb":
-            io_pdb.print_pdb_path(self.beads, self.cell, self.tout)
-         elif self.format == "xyz":
-            io_xyz.print_xyz_path(self.beads, self.cell, self.tout)
-      if ((self.step+1) % self.dstride["trajectory"] == 0):
-         if self.format == "pdb":
-            io_pdb.print_pdb(self.beads.centroid, self.cell, self.tcout)
-         elif self.format == "xyz":
-            io_xyz.print_xyz(self.beads.centroid, self.cell, self.tcout)
    
    def soft_exit(self, rollback=True):
       """Deals with a soft exit request. 
@@ -318,7 +319,7 @@ class Simulation(dobject):
       if (self.step == 0):
          self.step = -1
          self.write_output()
-         self.print_traj()
+         self.write_traj()
          self.step = 0
                  
       self.chtime=0
@@ -339,9 +340,8 @@ class Simulation(dobject):
             self.write_chk()      
          if ((self.step+1) % self.dstride["properties"] == 0):
             self.write_output()
-         if ((self.step+1) % self.dstride["trajectory_full"] == 0 or
-            (self.step+1) % self.dstride["trajectory"] == 0):
-            self.print_traj()
+         if ((self.step+1) % self.dstride["trajectory"] == 0):
+            self.write_traj()
 
       self.soft_exit(rollback=False)
             
@@ -359,10 +359,10 @@ class Simulation(dobject):
       for l in self.outlist:
          ohead += "%16s"%(l)
       self.fout.write(ohead + "\n")
-      self.tcout = open(self.prefix + "." + self.format, "a")
-      self.tout = open(self.prefix + ".full." + self.format, "a")      
-      self.ichk = 0
-      
+      self.tcout = open(self.prefix + ".centroid." + self.trajs.format, "a")
+      self.tout = [ open(self.prefix + ".full_" +str(b)+"."+ self.trajs.format, "a") for b in range(self.beads.nbeads) ]
+
+      self.ichk = 0      
       if "velocities" in self.initlist:
          self.beads.p = math.sqrt(self.ensemble.ntemp*Constants.kb)*self.beads.sm3*self.prng.gvec((self.beads.nbeads, 3*self.beads.natoms))
 
@@ -371,6 +371,15 @@ class Simulation(dobject):
       
       # Zeroes out the initlist, such that in restarts no initialization will be required
       self.initlist = np.zeros(0, np.dtype('|S12'))
+
+
+   def write_traj(self):
+      """ Writes out the required trajectories """
+      
+      for what in self.trajlist:      
+         for b in range(self.beads.nbeads):
+            self.trajs.print_bead(what, b, self.tout[b])
+
    
    def write_output(self):
       """Outputs the required properties of the system.

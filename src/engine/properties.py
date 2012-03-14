@@ -13,6 +13,7 @@ import math, random
 from utils.depend import *
 from utils.units import Constants
 from utils.mathtools import h2abc
+from utils.io import *
 from atoms import *
 from cell import *
 from ensembles import *
@@ -286,3 +287,32 @@ class Properties(dobject):
       a, b, c, alpha, beta, gamma = h2abc(self.cell.h)
       return [a, b, c, alpha, beta, gamma]
 
+class Trajectories(dobject):
+   """ A simple class to take care of output of trajectory data. """
+   
+   def __init__(self, format = "pdb"):
+      """ Initialises a Trajectories object. """
+
+      self.format = format
+      
+   def bind(self, simul):
+      """ Binds to a simulation object to fetch atomic and force data """
+
+      self.simul = simul
+      self.fatom = simul.beads[0].copy()
+      
+   def print_bead(self, what, b, stream):
+      
+      if what == "positions":
+         self.fatom.q = self.simul.beads.q[b]
+      elif what == "velocities":
+         self.fatom.q = self.simul.beads.p[b]/self.simul.beads.m3[0]      
+      elif what == "forces":
+         self.fatom.q = self.simul.forces.f[b]
+      else:
+         raise IndexError("<"+what+"> is not a recognized trajectory output")
+      
+      if self.format == "pdb":
+         io_pdb.print_pdb(self.fatom, self.simul.cell, stream, title= "Bead: "+str(b))
+      elif self.format == "xyz":
+         io_xyz.print_xyz(self.fatom, self.simul.cell, stream)

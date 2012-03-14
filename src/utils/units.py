@@ -60,6 +60,7 @@ class Elements(dict):
 
 UnitMap= { 
    "energy" :   {
+      "" : 1.00,
       "atomic_unit"  : 1.00, 
       "electronvolt" : 0.036749326,
       "joule"        : 2.2937128e+17,
@@ -68,16 +69,32 @@ UnitMap= {
       "kelvin"       : 3.1668152e-06
       },
    "time" :     {
+      "" : 1.00,
       "atomic_unit"  : 1.00,
       "second"       : 4.1341373e+16,
       "picosecond"   : 41341.373,
       "femtosecond"  : 41.341373
       },
    "length" :     {
+      "" : 1.00,
       "atomic_unit"  : 1.00,
       "angstrom"     : 1.8897261,
       "nanometer"    : 0.18897261
-      }
+      },
+   "length" :     {
+      "" : 1.00,
+      "atomic_unit"  : 1.00,
+      "angstrom"     : 1.8897261,
+      "nanometer"    : 0.18897261
+      },
+   "velocity":    {
+      "" : 1.00,
+      "atomic_unit"  : 1.00
+      },           
+   "force":       {
+      "" : 1.00,
+      "atomic_unit"  : 1.00
+      }            
 }
 class Units(object):
    """ A class to perform simple unit conversions based on a map """
