@@ -16,7 +16,7 @@ __all__ = ['RestartSimulation', 'Simulation']
 
 import numpy as np
 import math, random
-import os.path
+import os.path, sys
 from utils.depend import *
 from utils.restart import *
 from utils.units  import *
@@ -323,7 +323,7 @@ class Simulation(dobject):
       self.write_chk()
 
       self._forcemodel.socket.end_thread()      
-      exit()
+      sys.exit()
 
    def run(self):
       """Runs the simulation.
