@@ -5,9 +5,78 @@
 \makeindex
 
 \begin{document}
+\begin{titlepage}
+\begin{center}
 
+\vspace*{+5.5cm}
+
+{\LARGE Wrap-pi PIMD code}
+\end{center}
+\end{titlepage}
+
+\pagenumbering{roman}
+
+\tableofcontents
+\listoffigures
+
+\newpage
+\pagenumbering{arabic}
+
+\chapter{Introduction}
+\section{Motivation}
+\section{Molecular dynamics}
+\section{Path integral generalization}
+\section{Ab initio potentials}
+
+\chapter{Conventions}
+\section{Nomenclature}
+\section{Internal units}
+
+\chapter{Forces}
+\section{Sockets}
+\section{Driver compatibility}
+\subsection{dlpoly}
+\subsection{cp2k}
+\subsection{lammps}
+\subsection{Quantum Espresso}
+
+\chapter{Algorithms}
+\section{Integrators}
+\subsection{Trotter decomposition}
+\subsection{Thermostats}
+\subsection{Barostats}
+\section{Output}
+\subsection{Estimator theory}
+
+\chapter{Input and output files}
+\section{Configuration and trajectory files}
+\subsection{pdb}
+\subsection{xyz}
+\section{xml input file}
+\section{Tags}
+\subsection{initialize}
+\subsection{properties}
+\subsection{stride}
+\subsection{prefix}
+\subsection{total\_steps}
+\subsection{prng}
+\subsection{force}
+etc...
+\section{Restart file}
+\subsection{Restarting from file}
+\section{Property output}
+
+\chapter{User's tips}
+\section{Soft exit}
 
 \chapter{Developer's tips}
 \section{Dependable memoizer class}
+\section{Class hierarchy}
+\section{Output customization}
+\section{xml parsing}
+\section{Interface}
+
+\begin{thebibliography}{99}
+\end{thebibliography}
 
 \end{document}
