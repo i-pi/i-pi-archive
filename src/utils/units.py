@@ -98,7 +98,12 @@ UnitMap = {
    "force":       {
       "" : 1.00,
       "atomic_unit"  : 1.00
-      }            
+      },
+   "mass":        {
+      "" : 1.00,
+      "atomic_unit"  : 1.00,
+      "electronmass" : 1.00/Constants.amu
+      }
 }
 
 

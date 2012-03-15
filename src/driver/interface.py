@@ -430,9 +430,6 @@ class Interface(object):
       else:
          par_str = " "
 
-#TODO currently parameter string is hard coded for LJ potential. Needs adapting
-#to general forcefields.
-
       newreq = {"atoms": atoms, "cell": cell, "pars": par_str, "result": None, "status": "Queued"}
       self.requests.append(newreq)
       return newreq
@@ -543,7 +540,7 @@ class Interface(object):
                      fc.poll()
                if fc.status & Status.Ready:
                   fc.sendpos(r["atoms"], r["cell"])
-                  r["status"]="Running"
+                  r["status"] = "Running"
                   fc.poll()
                   self.jobs.append([r,fc])
                   break
@@ -582,23 +579,25 @@ class Interface(object):
       """
       
       print " @SOCKET:   Starting the polling thread main loop."
-      poll_iter=0
+      poll_iter = 0
       while self._poll_true:
          time.sleep(self.latency)
          # makes sure to remove the last dead client as soon as possible. 
-         if poll_iter>UPDATEFREQ or (len(self.clients)>0 and not( self.clients[0].status & Status.Up)) :
+         if poll_iter > UPDATEFREQ or (len(self.clients) > 0 and not(self.clients[0].status & Status.Up)):
             self.pool_update()
-            poll_iter=0
-         poll_iter+=1
+            poll_iter = 0
+         poll_iter += 1
          self.pool_distribute()
          
          if os.path.exists("EXIT"): # soft-exit
             print " @SOCKET:   Soft exit request. Flushing job queue."
             freec = self.clients[:]     
             # releases all pending requests       
-            for r in self.requests:   r["status"]="Exit"
-            for fc in freec:          self.clients.remove(fc)
-      self._poll_thread=None   
+            for r in self.requests:
+               r["status"] = "Exit"
+            for fc in freec:
+               self.clients.remove(fc)
+      self._poll_thread = None   
    
    def start_thread(self):
       """Spawns a new thread.
@@ -630,10 +629,10 @@ class Interface(object):
       closes the spawned thread and removes it.
       """
 
-      self._poll_true=False
+      self._poll_true = False
       if not self._poll_thread is None:
          self._poll_thread.join()
-      self._poll_thread=None
+      self._poll_thread = None
    
    def __del__(self):
       """Removes the socket.
@@ -645,5 +644,5 @@ class Interface(object):
       print " @SOCKET:   Shutting down the server interface."
       self.server.shutdown(socket.SHUT_RDWR)
       self.server.close()
-      if self.mode=="unix":
+      if self.mode == "unix":
          os.unlink("/tmp/wrappi_" + self.address)

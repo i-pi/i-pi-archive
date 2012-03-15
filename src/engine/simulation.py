@@ -60,8 +60,8 @@ class RestartSimulation(Restart):
          Defaults to 'pdb'.
       properties: An array of strings giving all the properties that should 
          be output space separated. Defaults to _DEFAULT_OUTPUT.
-      trajectories: An array of strings giving all the trajectory data that should 
-         be output space separated. Defaults to _DEFAULT_TRAJ.
+      trajectories: An array of strings giving all the trajectory data that 
+         should be output space separated. Defaults to _DEFAULT_TRAJ.
       initialize: An array of strings giving all the quantities that should
          be output.
       fd_delta: A float giving the size of the finite difference
@@ -133,18 +133,22 @@ class RestartSimulation(Restart):
       dstride.update(vstride)
       
       olist = self.properties.fetch()
-      if (len(olist) == 0):    olist = None
+      if (len(olist) == 0):
+         olist = None
 
       tlist = self.trajectories.fetch()
-      if (len(tlist) == 0):    tlist = None
+      if (len(tlist) == 0):
+         tlist = None
 
       ilist = self.initialize.fetch()
-      if (len(ilist) == 0):    ilist = None
+      if (len(ilist) == 0):
+         ilist = None
       
       rsim = Simulation(nbeads, ncell, self.force.fetch(), 
                      self.ensemble.fetch(), nprng, self.step.fetch(), 
                      tsteps=self.total_steps.fetch(), stride=dstride,
-                     prefix=self.prefix.fetch(),  outlist=olist, trajlist=tlist, initlist=ilist)
+                     prefix=self.prefix.fetch(),  outlist=olist, 
+                     trajlist=tlist, initlist=ilist)
 
       if (self.fd_delta.fetch() != 0.0):
          rsim.properties.fd_delta = self.fd_delta.fetch()      
@@ -297,11 +301,11 @@ class Simulation(dobject):
       self.ensemble.bind(self.beads, self.cell, self.forces, self.prng)
 
       # binds output management objects
-      self.properties.bind(self); 
+      self.properties.bind(self)
       self.trajs.bind(self)
       
-      self.status = RestartSimulation();      
-      self.status.store(self);
+      self.status = RestartSimulation()
+      self.status.store(self)
       
       # Checks as soon as possible if some asked-for properties are missing or mispelled
       for what in self.outlist:
@@ -314,7 +318,7 @@ class Simulation(dobject):
       
       Tries to ensure that a consistent restart checkpoint is 
       written out. 
-       """   
+      """   
       
       if self.step < self.tsteps:
          self.step += 1         
@@ -346,8 +350,8 @@ class Simulation(dobject):
       # main MD loop
       for self.step in range(self.step,self.tsteps):   
          # stores the state before doing a step. 
-         # this is a bit time-consuming but makes sure that we can honor soft exit requests
-         # without screwing the trajectory
+         # this is a bit time-consuming but makes sure that we can honor soft 
+         # exit requests without screwing the trajectory
          self.status.store(self) 
          
          self.ensemble.step()
@@ -384,7 +388,7 @@ class Simulation(dobject):
       # self.tcout = open(self.prefix + ".centroid." + self.trajs.format, "a")  
       self.tout = {}    
       for what in self.trajlist:
-         self.tout[what] = [ open(self.prefix + "." + what[0:3] + "_" +str(b)+"."+ self.trajs.format, "a") for b in range(self.beads.nbeads) ]
+         self.tout[what] = [ open(self.prefix + "." + what[0:3] + "_" + str(b) + "." + self.trajs.format, "a") for b in range(self.beads.nbeads) ]
 
       self.ichk = 0      
       if "velocities" in self.initlist:

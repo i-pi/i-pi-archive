@@ -4,9 +4,11 @@ prepares them for output.
 Classes:
    Properties: This is the class that holds all the algorithms to calculate
       the important properties that should be output.
+   Trajectories: This class deals with outputting all position data in the
+      appropriate format.
 """
 
-__all__ = ['Properties']
+__all__ = ['Properties', 'Trajectories']
 
 import numpy as np
 import math, random
@@ -288,12 +290,24 @@ class Properties(dobject):
       return [a, b, c, alpha, beta, gamma]
 
 
-
 class Trajectories(dobject):
-   """ A simple class to take care of output of trajectory data. """
+   """A simple class to take care of output of trajectory data.
+
+   Attributes:
+      format: The file format for the output files.
+      simul: The simulation object from which the position data will be 
+         obtained.
+      fatom: A dummy beads object used so that individual replica trajectories
+         can be output.
+   """
    
    def __init__(self, format = "pdb"):
-      """ Initialises a Trajectories object. """
+      """Initialises a Trajectories object.
+
+      Args:
+         format: A format string giving the file format for the output files.
+            Defaults to 'pdb'.
+      """
 
       self.format = format
       
@@ -308,8 +322,8 @@ class Trajectories(dobject):
       self.fatom = simul.beads[0].copy()
       
    def print_bead(self, what, b, stream):
-      """ Prints out a frame of a trajectory for the specified quantity and bead. 
-            
+      """Prints out a frame of a trajectory for the specified quantity and bead.
+
       Args:
          what: A string specifying what to print.
          b: The bead index.
