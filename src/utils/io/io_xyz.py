@@ -43,7 +43,7 @@ def print_xyz_path(beads, cell, filedesc = sys.stdout):
          bead = beads[j][i]
          filedesc.write("%8s %12.5e %12.5e %12.5e\n" % (bead.name[0],bead.q[0],bead.q[1],bead.q[2]))
 
-def print_xyz(atoms, cell, filedesc = sys.stdout):
+def print_xyz(atoms, cell, filedesc = sys.stdout, title=""):
    """Prints the centroid configurations, into a xyz formatted file.
 
    Args:
@@ -58,7 +58,7 @@ def print_xyz(atoms, cell, filedesc = sys.stdout):
    gamma *= 180.0/math.pi
 
    natoms = atoms.natoms
-   filedesc.write("%d\n# CELL(abcABC): %10.5f  %10.5f  %10.5f  %10.5f  %10.5f  %10.5f \n" % ( natoms, a,b,c,alpha,beta,gamma))
+   filedesc.write("%d\n# CELL(abcABC): %10.5f  %10.5f  %10.5f  %10.5f  %10.5f  %10.5f  %s\n" % ( natoms, a,b,c,alpha,beta,gamma, title))
    for i in range(natoms):
       atom = atoms[i]
       filedesc.write("%8s %12.5e %12.5e %12.5e\n" % (atom.name[0],atom.q[0],atom.q[1],atom.q[2]))   

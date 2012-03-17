@@ -340,6 +340,6 @@ class Trajectories(dobject):
          raise IndexError("<"+what+"> is not a recognized trajectory output")
       
       if self.format == "pdb":
-         io_pdb.print_pdb(self.fatom, self.simul.cell, stream, title= "Bead: "+str(b))
+         io_pdb.print_pdb(self.fatom, self.simul.cell, stream, title= ("Step:  %10d  Bead:   %5d " % (self.simul.step+1, b) ) )
       elif self.format == "xyz":
-         io_xyz.print_xyz(self.fatom, self.simul.cell, stream)
+         io_xyz.print_xyz(self.fatom, self.simul.cell, stream, title= ("Step:  %10d  Bead:   %5d " % (self.simul.step+1, b) ) )
