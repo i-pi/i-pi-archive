@@ -102,6 +102,7 @@ class RestartSimulation(Restart):
       self.prefix.store(simul.prefix)
       self.traj_format.store(simul.trajs.format)      
       self.properties.store(simul.outlist)
+      self.trajectories.store(simul.trajlist)
       self.initialize.store(simul.initlist)
       self.fd_delta.store(simul.properties.fd_delta)
             
