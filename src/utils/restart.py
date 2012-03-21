@@ -49,7 +49,8 @@ class Restart(object):
       """Initialises Restart.
 
       Automatically adds all the fields and attribs names to the objects
-      dictionary, along with a default initial value, if specified.
+      dictionary as keys, then initialises all the appropriate restart objects
+      as the corresponding values.
       """
 
       for f, v in self.fields.iteritems():
@@ -163,7 +164,7 @@ class RestartValue(Restart):
             to None.
          units: A string defining the _kind_ of units assigned to the variable
             e.g. "energy", "time"...
-         attribs: A list of the attribs found in the XML file
+         attribs: A list of the attribs found in the XML file.
       """
 
       super(RestartValue,self).__init__()
@@ -238,8 +239,8 @@ class RestartValue(Restart):
             else:
                try:
                   self.value = self.units.to_internal(self.value,xml.attribs["units"])
-               except TypeError: pass  # we may want to define a units attribute for values which are not numbers
-                  
+               except TypeError:
+                  pass  # we may want to define a units attribute for values which are not numbers
 
          
 ELPERLINE = 5
