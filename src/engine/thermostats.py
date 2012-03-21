@@ -17,12 +17,12 @@ Classes:
       thermostat.
    ThermoGLE: Holds the algorithms for a generalised langevin equation 
       thermostat.
-   RestartThermo: Deals with creating the barostat object from a file, and
+   RestartThermo: Deals with creating the thermostat object from a file, and
       writing the checkpoints.
 """
 
 __all__ = ['Thermostat', 'ThermoLangevin', 'ThermoPILE_L', 'ThermoPILE_G',
-           'ThermoSVR', 'ThermoGLE', 'RestartThermo']
+           'ThermoSVR', 'ThermoGLE', 'ThermoNMGLE', 'RestartThermo']
 
 import numpy as np
 import math
@@ -492,11 +492,12 @@ class ThermoGLE(Thermostat):
    def get_T(self):
       """Calculates the matrix for the overall drift of the velocities."""
 
+      print "Getting T", self.A
       return matrix_exp(-0.5*self.dt*self.A)
       
    def get_S(self):      
       """Calculates the matrix for the coloured noise."""
-
+      print "Getting S", self.C
       SST = Constants.kb*(self.C - np.dot(self.T,np.dot(self.C,self.T.T)))
       return stab_cholesky(SST)
   
@@ -598,6 +599,194 @@ class ThermoGLE(Thermostat):
       self.ethermo -= np.dot(self.s[0],self.s[0])*0.5
 
       self.p = self.s[0]*self.sm
+
+class ThermoNMGLE(Thermostat):     
+   """Represents a "normal-modes" GLE thermostat.
+
+   An extension to the GLE thermostat which is applied in the
+   normal modes representation, and which allows to use a different
+   GLE for each normal mode
+
+   Attributes: 
+      ns: The number of auxilliary degrees of freedom.
+      nb: The number of beads.
+      s: An array holding all the momenta, including the ones for the
+         auxilliary degrees of freedom.
+
+   Depend objects:
+      A: Drift matrix giving the damping time scales for all the different 
+         degrees of freedom (must contain nb terms).
+      C: Static covariance matrix. 
+         Satisfies A.C + C.transpose(A) = B.transpose(B), where B is the 
+         diffusion matrix, giving the strength of the coupling of the system
+         with the heat bath, and thus the size of the stochastic 
+         contribution of the thermostat.
+      T: Matrix for the diffusive contribution of the thermostat, i.e. the
+         drift back towards equilibrium. Depends on A and the time step.
+      S: Matrix for the stochastic contribution of the thermostat, i.e. 
+         the uncorrelated Gaussian noise. Depends on C and T.
+   """
+
+#   def get_T(self):
+#      """Calculates the matrix for the overall drift of the velocities."""
+
+#      rv = np.ndarray((self.nb, self.ns+1, self.ns+1), float)
+#      for b in range(0,self.nb) : rv[b]=matrix_exp(-0.5*self.dt*self.A[b])
+#      return rv[:]
+#      
+#   def get_S(self):      
+#      """Calculates the matrix for the coloured noise."""
+
+#      rv = np.ndarray((self.nb, self.ns+1, self.ns+1), float)
+#      for b in range(0,self.nb) :
+#         SST = Constants.kb*(self.C - np.dot(self.T,np.dot(self.C,self.T.T)))
+#         rv[b]=stab_cholesky(SST)
+#      return rv[:]
+  
+   def get_C(self):
+      """Calculates C from temp (if C is not set explicitely)"""
+
+      rv = np.ndarray((self.nb, self.ns+1, self.ns+1), float)
+      for b in range(0,self.nb) : rv[b] = np.identity(self.ns + 1,float)*self.temp
+      return rv[:]
+      
+   def __init__(self, temp = 1.0, dt = 1.0, A = None, C = None, ethermo=0.0):
+      """Initialises ThermoGLE.
+
+      Args:
+         temp: The simulation temperature. Defaults to 1.0. 
+         dt: The simulation time step. Defaults to 1.0.
+         A: An optional matrix giving the drift matrix. Defaults to a single
+            value of 1.0.
+         C: An optional matrix giving the covariance matrix. Defaults to an 
+            identity matrix times temperature with the same dimensions as the
+            total number of degrees of freedom in the system.
+         ethermo: The initial heat energy transferred to the bath. 
+            Defaults to 0.0. Will be non-zero if the thermostat is 
+            initialised from a checkpoint file.
+      """
+
+      super(ThermoNMGLE,self).__init__(temp,dt,ethermo)
+      
+      if A is None:
+         A = np.identity(1,float)
+      dset(self,"A",depend_value(value=A.copy(),name='A'))
+
+      self.nb = len(self.A)
+      self.ns = len(self.A[0]) - 1;
+
+      # now, this is tricky. if C is taken from temp, then we want it to be updated
+      # as a depend of temp. Otherwise, we want it to be an independent beast.
+      if C is None: 
+         dset(self,"C",depend_value(name='C', func=self.get_C, dependencies=[dget(self,"temp")]))
+      else:
+         dset(self,"C",depend_value(value=C.copy(),name='C'))
+      
+#      dset(self,"T",  depend_value(name="T",func=self.get_T, dependencies=[dget(self,"A"), dget(self,"dt")]))      
+#      dset(self,"S",  depend_value(name="S",func=self.get_S, dependencies=[dget(self,"C"), dget(self,"T")]))
+#      
+#      self.s = np.zeros(0)
+  
+   def bind(self, beads=None, atoms=None, cell=None, pm=None, prng=None, ndof=None):
+      """Binds the appropriate degrees of freedom to the thermostat.
+
+      This takes an object with degrees of freedom, and makes their momentum
+      and mass vectors members of the thermostat. It also then creates the 
+      objects that will hold the data needed in the thermostat algorithms 
+      and the dependency network. Actually, this specific thermostat requires
+      being called on a beads object.
+
+      Args:
+         beads: An optional beads object to take the mass and momentum vectors 
+            from.
+         atoms: An optional atoms object to take the mass and momentum vectors
+            from.
+         cell: An optional cell object to take the mass and momentum vectors 
+            from.
+         pm: An optional tuple containing a single momentum value and its
+            conjugate mass.
+         prng: An optional pseudo random number generator object. Defaults to
+            Random().
+         ndof: An optional integer which can specify the total number of
+            degrees of freedom. Defaults to len(p). Used if conservation of
+            linear momentum is being applied, as this removes three degrees of 
+            freedom.
+
+      Raises:
+         TypeError: Raised if no appropriate degree of freedom or object
+            containing a momentum vector is specified for 
+            the thermostat to couple to.
+      """
+
+      if beads is None or not type(beads) is Beads:
+         raise TypeError("ThermoNMGLE.bind expects a Beads argument to bind to")
+
+      if prng is None:
+         self.prng = Random()
+      else:
+         self.prng = prng  
+      
+      if (beads.nbeads != self.nb):
+         raise IndexError("Number of beads "+str(beads.nbeads)+" doesn't match GLE parameters nb= "+str(self.nb) )
+
+      # creates a set of thermostats to be applied to individual normal modes
+      self._thermos = [ ThermoGLE(temp=1, dt=1, A=self.A[b], C=self.C[b]) for b in range(beads.nbeads) ]
+            
+      # must pipe all the dependencies in such a way that values for the nm thermostats
+      # are automatically updated based on the "master" thermostat
+      def make_Agetter(k):
+         return lambda: self.A[k]
+      def make_Cgetter(k):
+         return lambda: self.C[k]
+
+      it = 0
+      for t in self._thermos:
+         t.bind(pm=(beads.pnm[it,:],beads.m3[0,:]), prng=self.prng) # bind thermostat t to the it-th normal mode
+
+         # pipes temp and dt
+         deppipe(self,"temp", t, "temp")
+         deppipe(self,"dt", t, "dt")
+
+         # here we pipe the A and C of individual NM to the "master" arrays
+         dget(t,"A").add_dependency(dget(self,"A"))
+         dget(t,"A")._func = make_Agetter(it)
+         dget(t,"C").add_dependency(dget(self,"C"))
+         dget(t,"C")._func = make_Cgetter(it)
+         dget(self,"ethermo").add_dependency(dget(t,"ethermo"))
+         it += 1
+             
+      dget(self,"ethermo")._func = self.get_ethermo;
+
+#      super(ThermoNMGLE,self).bind(beads,atoms,cell,pm,prng,ndof)
+
+      # allocates, initializes or restarts an array of s's 
+      if self.s.shape != ( self.nb, self.ns + 1, beads.natoms *3 ) :
+         if len(self.s) > 0:
+            print " @ GLE BIND: Warning: s array size mismatch on restart! "
+         self.s = np.zeros(  ( self.nb, self.ns + 1, beads.natoms*3 )  )
+         
+         # Initializes the s vector in the free-particle limit
+         for b in range(self.nb):
+            SC = stab_cholesky(self.C[b]*Constants.kb)         
+            self.s[b] = np.dot(SC, self.prng.gvec(self.s[b].shape)) 
+            self._thermos[b].s=self.s[b]
+      else:
+         print " @ GLE BIND: Restarting additional DOFs! "
+              
+   def step(self):
+      """Updates the thermostat in NM representation by looping over the individual DOFs."""
+
+      for t in self._thermos:
+         t.step()        
+
+   def get_ethermo(self):
+      """Computes the total energy transferred to the heat bath for all the nm thermostats. """
+
+      et = 0.0;
+      for t in self._thermos:
+         et += t.ethermo
+      return et
+
             
 class RestartThermo(Restart):
    """Thermostat restart class.
@@ -672,9 +861,13 @@ class RestartThermo(Restart):
          thermo = ThermoPILE_G(tau=self.tau.fetch())
       elif self.kind.fetch() == "gle":
          rC = self.C.fetch()
-         if len(rC) == 0:
-            rC = None
+         if len(rC) == 0:  rC = None
          thermo = ThermoGLE(A=self.A.fetch(),C=rC)
+         thermo.s = self.s.fetch()
+      elif self.kind.fetch() == "nm_gle":
+         rC = self.C.fetch()
+         if len(rC) == 0:   rC = None
+         thermo = ThermoNMGLE(A=self.A.fetch(),C=rC)
          thermo.s = self.s.fetch()
       else:
          raise TypeError("Invalid thermostat kind " + self.kind.fetch())
