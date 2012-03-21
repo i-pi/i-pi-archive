@@ -2,7 +2,17 @@
 \usepackage{makeidx}
 \usepackage{color}
 \usepackage{multicol}
+\usepackage{amsmath}
 \makeindex
+
+\newcommand{\dd}{\; \mathrm{d}}
+\newcommand{\Tr}{\mathrm{Tr}}
+\newcommand{\bra}{< \! \!}
+\newcommand{\ket}{\! \! >}
+\newcommand{\betan}{\beta_N}
+\newcommand{\logn}{\mathrm{ln}}
+\newcommand{\expon}{\mathrm{exp}}
+\newcommand{\Imag}{\mathrm{Im}}
 
 \begin{document}
 \begin{titlepage}
@@ -23,11 +33,60 @@
 \pagenumbering{arabic}
 
 \chapter{Introduction}
-\section{Motivation}
+wrap-pi is a path integral molecular dynamics (PIMD) wrapper written in python for ab initio density functional theory (DFT) codes. It currently works with the DFT codes QUANTUM ESPRESSO and CP2K, as well as the classical codes LAMMPS and DLPOLY.
+
+It is designed to separate the calculation of the potential energy, forces and virial of a system from the algorithmic steps that propagate the dynamics. This allows the time intesive force calculation to be done by heavily optimised external codes while the dynamics and properties of interest can be calculated in the most transparent manner possible.
+
+This manual will be in 5 parts, each with the following information:
+\begin{itemize}
+\item In this chapter we discuss the functionality of the wrapper, the problems it is trying to solve, and information about the wrapper itself.
+\item In the second chapter we will give instructions for the correct download, installation and running of the wrapper and specific driver codes.
+\item In the third chapter we explain the procedure for creating simulations with the appropriate features, and the form of the input and output files expected.
+\item In the fourth chapter the theory behind the algorithms used in the wrapper are discussed.
+\item In the final chapter we discuss some of the inner workings of the code to facilitate user modification of it.
+\end{itemize}
+\section{Nomenclature}
 \subsection{Molecular dynamics}
+Molecular dynamics is a way of sampling the possible states of a system by propagating the positions and momenta of the particles in the system in discrete time steps according to a set of physical rules.
+
+By choosing the algorithm used to propagate the momenta correctly, the probability of the system being in a particular state will be the same as that of a physically realistic system, such as a system in contact with an external heat bath.
+
+We will call the complete set of possible states of the system an ensemble of states. The relevant ensembles we will be interested in are:
+\begin{description}
+\item[NVE ensemble] This gives constant particle number, volume and energy, and corresponds to an isolated physical system.
+\item[NVT ensemble] This gives constant particle number, volume and temperature, and corresponds to a physical system in thermal equilibrium with a heat bath.
+\item[NPT ensemble] This gives constant particle number, pressure and temperature, and corresponds to a physical system in thermal equilibrium with a heat bath and in equilibrium with a pressure bath.
+
+We will call the total number of possible states of a system for any given set of external variables the partition function of that system.
+\end{description}
 \subsection{Path integral generalization}
+In the path integral generalization of classical mechanics, we use the following isomorphism between the quantum partition function of a system and a classical partition function in a higher phase space:
+\begin{equation}
+Q = \Tr (e^{-\hat{H} \beta}) \\
+\end{equation}
+\begin{align}
+&Q = \lim_{N\to \infty} \prod_{i=1}^N \left[ \int_{-\infty}^\infty  
+\left( \frac{ 2 \pi m}{h^2 \betan} \right) ^{\frac{3}{2}} 
+e^{-\hat{U}_N \betan} \dd \textbf{r}_i \right] \\
+& \hat{U}_N=
+\sum_{i=1}^N \left[ \frac{m}{2 \betan^2 \hbar^2}(\textbf{r}_i-\textbf{r}_{i-1})^2+\hat{V}_i \right] \\
+&\betan = \frac{\beta}{N} \nonumber
+\end{align}
+Where \(\hat{H}\) is the quantum Hamiltonian of the system, which is the operator corresponding to the observable energy, \(\hat{V}_i\) is the potential of the replica of the system corresponding to the label \(i\), and \(\hat{U}_N\) is a classical configurational Hamiltonian in the extended phase space, which only depends on particle coordinates. 
+
+In practice we do not need to go to the limit of infinite \(N\), as convergence can often be achieved with a small increase of phase space. Note that this classical Hamiltonian is equivalent to that of a \(N\) replicas of the original system, with a harmonic potential between adjacent replicas. We will call this set of replicas of each atom a ring polymer, and the component particles of this ring polymer beads.
+
+The last thing we must do to make the connection with molecular dynamics is to add fictitious ring polymer momenta to allow us to sample the phase space more effectively. In our code we make the choice corresponding to assigning each bead the mass of the corresponding atom:
+\begin{align}
+&Q = \lim_{N\to \infty} \prod_{i=1}^N \left[ \int_{-\infty}^\infty  
+\int_{-\infty}^\infty \left( \frac{ 1 }{2 \pi \hbar} \right) ^3 
+e^{-\hat{H}_N \betan} \dd \textbf{r}_i \dd \textbf{p}_i \right] \\
+&\hat{H}_N = \hat{U}_N + \sum_{i=1}^N \frac{\textbf{p}_i^2}{2 m}
+\end{align}
+
+This is then the partition function corresponding to the NVE ensemble for the quantum system, and as it is a purely classical problem the algorithms used in classical dynamics and the generalizations used to sample other ensembles can be applied to this system in exactly the same way.
 \subsection{Ab initio potentials}
-\subsection{Sockets}
+
 \section{Driver compatibility}
 \subsection{Quantum Espresso}
 \subsection{dlpoly}
@@ -75,6 +134,7 @@
 \section{Class hierarchy}
 \section{Output customization}
 \section{xml parsing}
+\subsection{Sockets}
 \section{Interface}
 
 \begin{thebibliography}{99}
