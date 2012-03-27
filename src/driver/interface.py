@@ -93,6 +93,7 @@ class Driver(socket.socket):
       _buf: A string buffer to hold the reply from the driver.
       busyonstatus: Boolean giving whether the driver is busy.
       status: Keeps track of the status of the driver.
+      lastreq: The ID of the last request processed by the client. 
    """
 
    def __init__(self, socket):
@@ -106,6 +107,7 @@ class Driver(socket.socket):
       self._buf = np.zeros(0,np.byte)
       self.busyonstatus = False
       self.status = Status.Up
+      self.lastreq = None
       
    def poll(self):
       """Waits for driver status."""
@@ -402,7 +404,7 @@ class Interface(object):
       self._prev_kill = {}
       self._poll_true = False
       
-   def queue(self, atoms, cell, pars=None):
+   def queue(self, atoms, cell, pars=None, reqid=0):
       """Adds a request.
 
       Note that the pars dictionary need to be sent as a string of a 
@@ -413,6 +415,8 @@ class Interface(object):
          cell: A Cell object giving the system box.
          pars: An optional dictionary giving the parameters to be sent to the
             driver for initialisation. Defaults to {}.
+         reqid: An optional integer that identifies requests of the same type,
+            e.g. the bead index
 
       Returns:
          A list giving the status of the request of the form {'atoms': Atoms 
@@ -430,7 +434,7 @@ class Interface(object):
       else:
          par_str = " "
 
-      newreq = {"atoms": atoms, "cell": cell, "pars": par_str, "result": None, "status": "Queued"}
+      newreq = {"atoms": atoms, "cell": cell, "pars": par_str, "result": None, "status": "Queued", "id": reqid }
       self.requests.append(newreq)
       return newreq
       
@@ -513,6 +517,7 @@ class Interface(object):
                print " @SOCKET:   Client died a horrible death while getting forces. Will try to cleanup."
                continue
             r["status"] = "Done"
+            c.lastreq = r["id"] # saves the ID of the request that the client has just processed
             self.jobs.remove([r,c])
                      
       for r in self.requests:
@@ -521,31 +526,41 @@ class Interface(object):
             for [r2, c] in self.jobs:
                freec.remove(c)            
             
-            for fc in freec:
-               if not (fc.status & Status.Up):
-                  self.clients.remove(fc)
-                  continue                  
-               if fc.status & Status.HasData:
-                  continue                              
-               if not (fc.status & (Status.Ready | Status.NeedsInit | Status.Busy) ): 
-                  print " @SOCKET:   (1) Client is in an unexpected status ",fc.status, ". Will try to keep calm and carry on."
-                  continue
+            for match_ids in ( True, False):
+               matched = False
+               for fc in freec:
+                  if not (fc.status & Status.Up):
+                     self.clients.remove(fc)
+                     continue                  
+                  if fc.status & Status.HasData:
+                     continue                              
+                  if not (fc.status & (Status.Ready | Status.NeedsInit | Status.Busy) ): 
+                     print " @SOCKET:   (1) Client is in an unexpected status ",fc.status, ". Will try to keep calm and carry on."
+                     continue
+                  # First, tries to match request ids and lastreq clients.
+                  # If it can't match on the first round, gives up and assigns requests
+                  # on a first-come first-serve basis
+                  if match_ids and not fc.lastreq is r["id"]:
+                     continue
 
-               while fc.status & Status.Busy:
-                  fc.poll()            
-               if fc.status & Status.NeedsInit:
-                  fc.initialize(r["pars"])
-                  fc.poll()               
+                  print " @SOCKET: Assigning request id ", r["id"], " to client with last-id ", fc.lastreq
                   while fc.status & Status.Busy:
+                     fc.poll()            
+                  if fc.status & Status.NeedsInit:
+                     fc.initialize(r["pars"])
+                     fc.poll()               
+                     while fc.status & Status.Busy: # waits for initialization to finish. hopefully this is fast
+                        fc.poll()
+                  if fc.status & Status.Ready:
+                     fc.sendpos(r["atoms"], r["cell"])
+                     r["status"] = "Running"
                      fc.poll()
-               if fc.status & Status.Ready:
-                  fc.sendpos(r["atoms"], r["cell"])
-                  r["status"] = "Running"
-                  fc.poll()
-                  self.jobs.append([r,fc])
-                  break
-               else:
-                  print " @SOCKET:   (2) Client is in an unexpected status ",fc.status,". Will try to keep calm and carry on."
+                     self.jobs.append([r,fc])
+                     matched = True
+                     break
+                  else:
+                     print " @SOCKET:   (2) Client is in an unexpected status ",fc.status,". Will try to keep calm and carry on."
+               if matched: break # doesn't do a second round if it managed to assign the job
 
    def _kill_handler(self, signal, frame):
       """Deals with handling a kill call gracefully.
