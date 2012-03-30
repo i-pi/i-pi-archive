@@ -284,7 +284,7 @@ class ForceBeads(dobject):
       
       # this should be called in functions which access u,v,f for ALL the beads,
       # before accessing them. it is basically pre-queueing so that the distributed-computing magic can work
-      for b in range(self.nbeads):  self._forces[b].queue()
+      for b in range(self.nbeads):  self._forces[b].queue(reqid=b)
 
    # here are the functions to automatically compute depobjects
    def b2nm_f(self): 
@@ -439,7 +439,7 @@ class FFSocket(ForceField):
 
       # this is converting the distribution library requests into [ u, f, v ]  lists
       if self.request is None: 
-         self.request = self.socket.queue(self.atoms, self.cell, self.pars)
+         self.request = self.socket.queue(self.atoms, self.cell, pars=self.pars, reqid=-1)
       while self.request["status"] != "Done": 
          if self.request["status"] == "Exit": break
          time.sleep(self.socket.latency)
@@ -454,7 +454,7 @@ class FFSocket(ForceField):
       
       return result
       
-   def queue(self):
+   def queue(self, reqid=-1):
       """Sends the job to the interface queue directly.
 
       Allows the ForceBeads object to ask for the ufv list of each replica
@@ -463,4 +463,4 @@ class FFSocket(ForceField):
       """
 
       if self.request is None and dget(self,"ufv").tainted():
-         self.request = self.socket.queue(self.atoms, self.cell, self.pars)
+         self.request = self.socket.queue(self.atoms, self.cell, pars=self.pars, reqid=reqid)
