@@ -560,7 +560,9 @@ class Interface(object):
                      break
                   else:
                      print " @SOCKET:   (2) Client is in an unexpected status ",fc.status,". Will try to keep calm and carry on."
-               if matched: break # doesn't do a second round if it managed to assign the job
+               if matched: 
+                  break # doesn't do a second round if it managed to 
+                        # assign the job
 
    def _kill_handler(self, signal, frame):
       """Deals with handling a kill call gracefully.
