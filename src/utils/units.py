@@ -35,7 +35,8 @@ class Elements(dict):
    mass_list={
      "X"   :    1.0000/Constants.amu, 
      "H"   :    1.0079,
-     "D"   :    2.0141,     
+     "D"   :    2.0141,
+     "Z"   :   1.4035738,   #an interpolated H--D atom
      "Si"  :   28.0860,
      "O"   :   15.9994,
      "N"   :   14.0067,

@@ -86,6 +86,7 @@ def print_pdb(atoms, cell, filedesc = sys.stdout, title=""):
       filedesc.write("ATOM  %5i %4s%1s%3s %1s%4i%1s   %8.3f%8.3f%8.3f%6.2f%6.2f          %2s%2i\n" % (i+1, atom.name[0],' ','  1',' ',1,' ',atom.q[0],atom.q[1],atom.q[2],0.0,0.0,'  ',0))
 
    filedesc.write("END\n")
+   filedesc.flush()
 
 def read_pdb(filedesc):
    """Takes a pdb-style file and creates an Atoms and Cell object.

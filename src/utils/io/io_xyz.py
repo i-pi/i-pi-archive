@@ -62,6 +62,7 @@ def print_xyz(atoms, cell, filedesc = sys.stdout, title=""):
    for i in range(natoms):
       atom = atoms[i]
       filedesc.write("%8s %12.5e %12.5e %12.5e\n" % (atom.name[0],atom.q[0],atom.q[1],atom.q[2]))   
+   filedesc.flush()
 
 def read_xyz(filedesc):
    """Takes a xyz-style file and creates an Atoms and Cell object.

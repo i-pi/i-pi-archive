@@ -32,7 +32,7 @@ from utils.restart import Restart, RestartValue
 
 HDRLEN = 12
 UPDATEFREQ = 100
-TIMEOUT = 2.0 
+TIMEOUT = 5.0 
 SERVERTIMEOUT = 2.0*TIMEOUT
 
 def Message(mystr):
@@ -427,7 +427,7 @@ class Interface(object):
          list once the computation is done, 'status': a string labelling the 
          status}.
       """
-      print self.softexit
+
       par_str = " "
       
       if not pars is None: 
@@ -583,7 +583,6 @@ class Interface(object):
       print " @SOCKET:   Kill signal. Trying to make a clean exit."
       self.end_thread()
 
-      print " This is softexit : ", self.softexit      
       if (not self.softexit is None):
          self.softexit()
          time.sleep(TIMEOUT) # give it some time to die gracefully
