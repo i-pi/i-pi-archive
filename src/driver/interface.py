@@ -32,7 +32,7 @@ from utils.restart import Restart, RestartValue
 
 HDRLEN = 12
 UPDATEFREQ = 100
-TIMEOUT = 1.0 
+TIMEOUT = 2.0 
 SERVERTIMEOUT = 2.0*TIMEOUT
 
 def Message(mystr):
@@ -374,6 +374,7 @@ class Interface(object):
          mode: An optional string giving the type of socket. Defaults to 'unix'.
          latency: An optional float giving the time in seconds the socket will 
             wait before updating the client list. Defaults to 1e-3.
+         softexit: A hook for calling a soft-exit procedure
 
       Raises:
          NameError: Raised if mode is not 'unix' or 'inet'.
@@ -384,7 +385,8 @@ class Interface(object):
       self.slots = slots
       self.mode = mode
       self.latency = latency
-      
+      self.softexit = None      
+
       if self.mode == "unix":
          self.server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
          self.server.bind("/tmp/wrappi_" + address)
@@ -425,7 +427,7 @@ class Interface(object):
          list once the computation is done, 'status': a string labelling the 
          status}.
       """
-
+      print self.softexit
       par_str = " "
       
       if not pars is None: 
@@ -578,6 +580,12 @@ class Interface(object):
 
       print " @SOCKET:   Kill signal. Trying to make a clean exit."
       self.end_thread()
+
+      print " This is softexit : ", self.softexit      
+      if (not self.softexit is None):
+         self.softexit()
+         time.sleep(TIMEOUT) # give it some time to die gracefully
+         
       try:
          self.__del__()
       except:

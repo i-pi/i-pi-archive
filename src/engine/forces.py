@@ -412,6 +412,14 @@ class FFSocket(ForceField):
       else:
          self.pars = pars     
       self.request = None
+
+   def bind(self, atoms, cell, softexit=None):
+      """ Pass on the binding request but also makes sure to set the socket's softexit. """
+
+      super(FFSocket,self).bind(atoms, cell, softexit)
+      if not self.softexit is None:
+         self.socket.softexit=self.softexit
+
       
    def copy(self):    
       """Creates a deep copy without the bound objects.
