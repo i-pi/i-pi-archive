@@ -17,6 +17,8 @@ Classes:
       thermostat.
    ThermoGLE: Holds the algorithms for a generalised langevin equation 
       thermostat.
+   ThermoNMGLE: Holds the algorithms for a generalised langevin equation 
+      thermostat in the normal mode representation.
    RestartThermo: Deals with creating the thermostat object from a file, and
       writing the checkpoints.
 """
@@ -602,7 +604,7 @@ class ThermoGLE(Thermostat):
       self.p = self.s[0]*self.sm
 
 class ThermoNMGLE(Thermostat):     
-   """Represents a "normal-modes" GLE thermostat.
+   """Represents a 'normal-modes' GLE thermostat.
 
    An extension to the GLE thermostat which is applied in the
    normal modes representation, and which allows to use a different
@@ -645,10 +647,11 @@ class ThermoNMGLE(Thermostat):
 #      return rv[:]
   
    def get_C(self):
-      """Calculates C from temp (if C is not set explicitely)"""
+      """Calculates C from temp (if C is not set explicitely)."""
 
       rv = np.ndarray((self.nb, self.ns+1, self.ns+1), float)
-      for b in range(0,self.nb) : rv[b] = np.identity(self.ns + 1,float)*self.temp
+      for b in range(0,self.nb):
+         rv[b] = np.identity(self.ns + 1,float)*self.temp
       return rv[:]
       
    def __init__(self, temp = 1.0, dt = 1.0, A = None, C = None, ethermo=0.0):
@@ -714,8 +717,7 @@ class ThermoNMGLE(Thermostat):
             freedom.
 
       Raises:
-         TypeError: Raised if no appropriate degree of freedom or object
-            containing a momentum vector is specified for 
+         TypeError: Raised if no beads object is specified for
             the thermostat to couple to.
       """
 
@@ -728,13 +730,13 @@ class ThermoNMGLE(Thermostat):
          self.prng = prng  
       
       if (beads.nbeads != self.nb):
-         raise IndexError("Number of beads "+str(beads.nbeads)+" doesn't match GLE parameters nb= "+str(self.nb) )
+         raise IndexError("Number of beads " + str(beads.nbeads) + " doesn't match GLE parameters nb= " + str(self.nb) )
 
       # allocates, initializes or restarts an array of s's 
       if self.s.shape != ( self.nb, self.ns + 1, beads.natoms *3 ) :
          if len(self.s) > 0:
             print " @ GLE BIND: Warning: s array size mismatch on restart! "
-         self.s = np.zeros(  ( self.nb, self.ns + 1, beads.natoms*3 )  )
+         self.s = np.zeros(( self.nb, self.ns + 1, beads.natoms*3 ))
          
          # Initializes the s vector in the free-particle limit
          for b in range(self.nb):
@@ -775,13 +777,17 @@ class ThermoNMGLE(Thermostat):
 #      super(ThermoNMGLE,self).bind(beads,atoms,cell,pm,prng,ndof)
               
    def step(self):
-      """Updates the thermostat in NM representation by looping over the individual DOFs."""
+      """Updates the thermostat in NM representation by looping over the 
+      individual DOFs.
+      """
 
       for t in self._thermos:
          t.step()        
 
    def get_ethermo(self):
-      """Computes the total energy transferred to the heat bath for all the nm thermostats. """
+      """Computes the total energy transferred to the heat bath for all the nm 
+      thermostats.
+      """
 
       et = 0.0;
       for t in self._thermos:
@@ -879,5 +885,5 @@ class RestartThermo(Restart):
       else:
          raise TypeError("Invalid thermostat kind " + self.kind.fetch())
          
-      thermo.ethermo=self.ethermo.fetch()
+      thermo.ethermo = self.ethermo.fetch()
       return thermo

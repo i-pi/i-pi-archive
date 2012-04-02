@@ -283,8 +283,10 @@ class ForceBeads(dobject):
       "Submits all the required force calculations to the interface."""
       
       # this should be called in functions which access u,v,f for ALL the beads,
-      # before accessing them. it is basically pre-queueing so that the distributed-computing magic can work
-      for b in range(self.nbeads):  self._forces[b].queue(reqid=b)
+      # before accessing them. it is basically pre-queueing so that the 
+      # distributed-computing magic can work
+      for b in range(self.nbeads):
+         self._forces[b].queue(reqid=b)
 
    # here are the functions to automatically compute depobjects
    def b2nm_f(self): 
