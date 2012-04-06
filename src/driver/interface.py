@@ -436,7 +436,9 @@ class Interface(object):
       else:
          par_str = " "
 
-      newreq = {"atoms": atoms, "cell": cell, "pars": par_str, "result": None, "status": "Queued", "id": reqid }
+      newreq = {"atoms": atoms, "cell": cell, "pars": par_str, 
+                "result": None, "status": "Queued", "id": reqid,
+                "start": -1 }
       self.requests.append(newreq)
       return newreq
       
@@ -471,6 +473,7 @@ class Interface(object):
                if j is c:
                   self.jobs.remove([k,j])
                k["status"] = "Queued"
+               k["start"] = -1
 
       keepsearch = True
       while keepsearch:
@@ -514,6 +517,9 @@ class Interface(object):
                continue
             c.poll()
             while c.status & Status.Busy:
+               if r["start"]>0 and time.time()-r["start"]> 2:
+                  print " @SOCKET:  hasdata for bead ", r["id"], " has been running for ", time.time()-r["start"]
+                  r["start"] = time.time()
                c.poll()
             if not (c.status & Status.Up): 
                print " @SOCKET:   Client died a horrible death while getting forces. Will try to cleanup."
@@ -521,6 +527,9 @@ class Interface(object):
             r["status"] = "Done"
             c.lastreq = r["id"] # saves the ID of the request that the client has just processed
             self.jobs.remove([r,c])
+         if r["start"]>0 and time.time()-r["start"]> 2:
+            print " @SOCKET:  request for bead ", r["id"], " has been running for ", time.time()-r["start"]
+            r["start"] = time.time()
                      
       for r in self.requests:
          if r["status"] == "Queued":
@@ -556,6 +565,7 @@ class Interface(object):
                   if fc.status & Status.Ready:
                      fc.sendpos(r["atoms"], r["cell"])
                      r["status"] = "Running"
+                     r["start"] = time.time() # sets start time for the request
                      fc.poll()
                      self.jobs.append([r,fc])
                      matched = True
