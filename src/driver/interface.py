@@ -564,7 +564,7 @@ class Interface(object):
             for [r2, c] in self.jobs:
                freec.remove(c)            
             
-            for match_ids in ( True, False):
+            for match_ids in ( "match", "none", "any" ):
                matched = False
                for fc in freec:
                   if not (fc.status & Status.Up):
@@ -578,7 +578,9 @@ class Interface(object):
                   # First, tries to match request ids and lastreq clients.
                   # If it can't match on the first round, gives up and assigns requests
                   # on a first-come first-serve basis
-                  if match_ids and not fc.lastreq is r["id"]:
+                  if match_ids == "match" and not fc.lastreq is r["id"]:
+                     continue
+                  elif match_ids == "none" and not fc.lastreq is None:
                      continue
 
                   print " @SOCKET: Assigning request id ", r["id"], " to client with last-id ", fc.lastreq
@@ -600,8 +602,7 @@ class Interface(object):
                   else:
                      print " @SOCKET:   (2) Client is in an unexpected status ",fc.status,". Will try to keep calm and carry on."
                if matched: 
-                  break # doesn't do a second round if it managed to 
-                        # assign the job
+                  break # doesn't do a second (or third) round if it managed to assign the job
 
    def _kill_handler(self, signal, frame):
       """Deals with handling a kill call gracefully.
