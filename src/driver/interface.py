@@ -34,6 +34,7 @@ HDRLEN = 12
 UPDATEFREQ = 100
 TIMEOUT = 5.0 
 SERVERTIMEOUT = 2.0*TIMEOUT
+EVALTIMEOUT = 100.0*TIMEOUT
 
 def Message(mystr):
    """Returns a header of standard length HDRLEN."""
@@ -128,7 +129,11 @@ class Driver(socket.socket):
          except:
             return Status.Disconnected
 
-      readable, writable, errored = select.select([self], [], [], 0.0)
+      try:
+         readable, writable, errored = select.select([self], [], [], 0.0)
+      except:
+         return Status.Disconnected
+
       if not self in readable:
          self.busyonstatus = True
          return Status.Up | Status.Busy
@@ -307,10 +312,13 @@ class RestartInterface(Restart):
       latency: A float giving the number of seconds that the interface waits
          before updating the client list.
       mode: A string giving the type of socket used.
+      timeout: A float giving a number of seconds after which a calculation core
+         is considered dead. Defaults to zero, i.e. no timeout.
    """
 
    fields = { "address" : (RestartValue, (str, "localhost")), "port" : (RestartValue, (int,31415)),
-            "slots" : (RestartValue, (int, 4) ), "latency" : (RestartValue, (float, 1e-3))  }
+            "slots" : (RestartValue, (int, 4) ), "latency" : (RestartValue, (float, 1e-3)), 
+            "timeout": (RestartValue, (float, 0.0))  }
    attribs = { "mode": (RestartValue, (str, "unix") ) }
 
    def store(self, iface):
@@ -325,6 +333,7 @@ class RestartInterface(Restart):
       self.address.store(iface.address)
       self.port.store(iface.port)
       self.slots.store(iface.slots)
+      self.timeout.store(iface.timeout)
       
    def fetch(self):
       """Creates an Interface object.
@@ -334,7 +343,9 @@ class RestartInterface(Restart):
          of the RestartInterface object.
       """
 
-      return Interface(address=self.address.fetch(), port=self.port.fetch(), slots=self.slots.fetch(), mode=self.mode.fetch(), latency=self.latency.fetch())
+      return Interface(address=self.address.fetch(), port=self.port.fetch(), 
+            slots=self.slots.fetch(), mode=self.mode.fetch(), 
+            latency=self.latency.fetch(), timeout=self.timeout.fetch())
 
             
 class Interface(object):
@@ -352,6 +363,8 @@ class Interface(object):
       mode: A string giving the type of socket used.
       latency: A float giving the number of seconds the interface will wait 
          before updating the client list.
+      timeout: A float giving a timeout limit for considering a calculation dead 
+         and dropping the connection.
       server: The socket used for data transmition.
       clients: A list of the driver clients connected to the server.
       requests: A list of all the jobs required in the current PIMD step.
@@ -362,7 +375,7 @@ class Interface(object):
       _poll_true: A boolean giving whether the thread is alive.
    """
 
-   def __init__(self, address="localhost", port=31415, slots=4, mode="unix", latency=1e-3):
+   def __init__(self, address="localhost", port=31415, slots=4, mode="unix", latency=1e-3, timeout=1.0):
       """Initialises interface.
 
       Args:
@@ -385,6 +398,7 @@ class Interface(object):
       self.slots = slots
       self.mode = mode
       self.latency = latency
+      self.timeout = timeout
       self.softexit = None      
 
       if self.mode == "unix":
@@ -516,10 +530,15 @@ class Interface(object):
                c.status = 0
                continue
             c.poll()
-            while c.status & Status.Busy:
-               if r["start"]>0 and time.time()-r["start"]> 2:
+            while c.status & Status.Busy: # waits, but check if we got stuck.               
+               if self.timeout>0 and r["start"]>0 and time.time()-r["start"]> self.timeout:
                   print " @SOCKET:  hasdata for bead ", r["id"], " has been running for ", time.time()-r["start"]
-                  r["start"] = time.time()
+                  try:
+                     print " @SOCKET:   Client died or got unresponsive. Closing socket."
+                     c.shutdown(socket.SHUT_RDWR)
+                     c.close()
+                  except:   pass
+                  continue
                c.poll()
             if not (c.status & Status.Up): 
                print " @SOCKET:   Client died a horrible death while getting forces. Will try to cleanup."
@@ -527,9 +546,17 @@ class Interface(object):
             r["status"] = "Done"
             c.lastreq = r["id"] # saves the ID of the request that the client has just processed
             self.jobs.remove([r,c])
-         if r["start"]>0 and time.time()-r["start"]> 2:
+         if self.timeout==0.0 and r["start"]>0 and time.time()-r["start"]> EVALTIMEOUT:
+            # regardless of options, writes something if the client gets stuck for a very long time!
             print " @SOCKET:  request for bead ", r["id"], " has been running for ", time.time()-r["start"]
-            r["start"] = time.time()
+            r["start"]=time.time()
+         if self.timeout>0 and r["start"]>0 and time.time()-r["start"]> self.timeout:
+            print " @SOCKET:  request for bead ", r["id"], " has been running for ", time.time()-r["start"]
+            try:
+               print " @SOCKET:   Client died or got unresponsive. Closing socket."
+               c.shutdown(socket.SHUT_RDWR)
+               c.close()
+            except:   pass
                      
       for r in self.requests:
          if r["status"] == "Queued":
