@@ -36,7 +36,7 @@ class Elements(dict):
      "X"   :    1.0000/Constants.amu, 
      "H"   :    1.0079,
      "D"   :    2.0141,
-     "Z"   :   1.4035738,   #an interpolated H--D atom
+     "Z"   :   1.382943,   #an interpolated H--D atom, based on y=1/sqrt(m) scaling
      "Si"  :   28.0860,
      "O"   :   15.9994,
      "N"   :   14.0067,
