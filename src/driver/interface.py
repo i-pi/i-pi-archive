@@ -583,7 +583,9 @@ class Interface(object):
                   elif match_ids == "none" and not fc.lastreq is None:
                      continue
 
-                  print " @SOCKET: Assigning [",match_ids,"] request id ", r["id"], " to client with last-id ", fc.lastreq, "(",fc.getpeername(),")"
+                  try:
+                     print " @SOCKET: Assigning [",match_ids,"] request id ", r["id"], " to client with last-id ", fc.lastreq, "(",self.clients.index(fc),"/",len(self.clients),":",fc.getpeername(),")"              
+                  except:  pass
 
                   while fc.status & Status.Busy:
                      fc.poll()            
