@@ -109,6 +109,7 @@ class Driver(socket.socket):
       self.busyonstatus = False
       self.status = Status.Up
       self.lastreq = None
+      self.locked = False
       
    def poll(self):
       """Waits for driver status."""
@@ -583,6 +584,8 @@ class Interface(object):
                   elif match_ids == "none" and not fc.lastreq is None:
                      continue
 
+                  if match_ids == "match": 
+                     fc.locked = True
                   try:
                      print " @SOCKET: Assigning [",match_ids,"] request id ", r["id"], " to client with last-id ", fc.lastreq, "(",self.clients.index(fc),"/",len(self.clients),":",fc.getpeername(),")"              
                   except:  pass
