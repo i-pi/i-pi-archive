@@ -95,6 +95,7 @@ class Driver(socket.socket):
       busyonstatus: Boolean giving whether the driver is busy.
       status: Keeps track of the status of the driver.
       lastreq: The ID of the last request processed by the client. 
+      locked: Flag to mark if the client has been working consistently on one image.
    """
 
    def __init__(self, socket):
@@ -565,7 +566,7 @@ class Interface(object):
             for [r2, c] in self.jobs:
                freec.remove(c)            
             
-            for match_ids in ( "match", "none", "any" ):
+            for match_ids in ( "match", "none", "free", "any" ):
                matched = False
                for fc in freec:
                   if not (fc.status & Status.Up):
@@ -583,9 +584,12 @@ class Interface(object):
                      continue
                   elif match_ids == "none" and not fc.lastreq is None:
                      continue
+                  elif match_ids == "free" and fc.locked:
+                     continue
 
-                  if match_ids == "match": 
-                     fc.locked = True
+                  # if we have been using the same client for the same bead, mark it
+                  fc.locked =  (fc.lastreq is r["id"])
+         
                   try:
                      print " @SOCKET: Assigning [",match_ids,"] request id ", r["id"], " to client with last-id ", fc.lastreq, "(",self.clients.index(fc),"/",len(self.clients),":",fc.getpeername(),")"              
                   except:  pass
