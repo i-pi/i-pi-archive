@@ -321,7 +321,20 @@ class Trajectories(dobject):
       self.simul = simul
       self.fatom = simul.beads[0].copy()
       
-   def print_bead(self, what, b, stream):
+      # a few, "fancier", per-atom properties
+      dset(self, "atomic_kincv", depend_array(name="atomic_kincv", value=np.zeros(self.simul.beads.natoms*3),
+           func=self.get_akcv, dependencies=[dget(self.simul.forces,"f"), dget(self.simul.beads,"q"), dget(self.simul.beads,"qc"), dget(self.simul.ensemble,"temp")]))      
+      
+      
+   def get_akcv(self):
+      rv=np.zeros(self.simul.beads.natoms*3)
+      for b in range(self.simul.beads.nbeads):
+         rv[:]+=(self.simul.beads.q[b]-self.simul.beads.qc)*self.simul.forces.f[b]
+      rv*=-0.5/self.simul.nbeads
+      rv+=0.5*Constants.kb*self.simul.ensemble.temp
+      return rv
+   
+   def print_traj(self, what, stream, b=0):
       """Prints out a frame of a trajectory for the specified quantity and bead.
 
       Args:
@@ -336,6 +349,10 @@ class Trajectories(dobject):
          self.fatom.q = self.simul.beads.p[b]/self.simul.beads.m3[0]      
       elif what == "forces":
          self.fatom.q = self.simul.forces.f[b]
+      elif what == "kinetic_cv":
+         self.fatom.q = self.atomic_kincv         
+      elif what == "centroid":
+         self.fatom.q = self.simul.beads.qc
       else:
          raise IndexError("<"+what+"> is not a recognized trajectory output")
       

@@ -389,7 +389,10 @@ class Simulation(dobject):
       # self.tcout = open(self.prefix + ".centroid." + self.trajs.format, "a")  
       self.tout = {}    
       for what in self.trajlist:
-         self.tout[what] = [ open(self.prefix + "." + what[0:3] + "_" + str(b) + "." + self.trajs.format, "a") for b in range(self.beads.nbeads) ]
+         if what in [ "positions", "velocities", "forces" ]:
+            self.tout[what] = [ open(self.prefix + "." + what[0:3] + "_" + str(b) + "." + self.trajs.format, "a") for b in range(self.beads.nbeads) ]
+         else:
+            self.tout[what] = open(self.prefix + "." + what[0:3] + "." + self.trajs.format, "a")
 
       self.ichk = 0      
       if "velocities" in self.initlist:
@@ -405,10 +408,13 @@ class Simulation(dobject):
    def write_traj(self):
       """ Writes out the required trajectories """
       
-      for what in self.trajlist:      
-         for b in range(self.beads.nbeads):
-            self.trajs.print_bead(what, b, self.tout[what][b])
-
+      for what in self.trajlist:
+         # quick-and-dirty way to check whether a trajectory is "global" or per-bead
+         if hasattr(self.tout[what], "__getitem__"):   
+            for b in range(self.beads.nbeads):
+               self.trajs.print_traj(what, self.tout[what][b], b)
+         else:
+            self.trajs.print_traj(what, self.tout[what])
    
    def write_output(self):
       """Outputs the required properties of the system.
