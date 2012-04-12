@@ -34,7 +34,7 @@ HDRLEN = 12
 UPDATEFREQ = 100
 TIMEOUT = 5.0 
 SERVERTIMEOUT = 2.0*TIMEOUT
-EVALTIMEOUT = 100.0*TIMEOUT
+NTIMEOUT = 10
 
 def Message(mystr):
    """Returns a header of standard length HDRLEN."""
@@ -178,17 +178,23 @@ class Driver(socket.socket):
       if (blen>len(self._buf)): 
          self._buf.resize(blen)
       bpos = 0
+      ntimeout=0
+      
       while bpos < blen:
          timeout = False
 
 #   pre-2.5 version. 
          try:
-            bpart = 1
+            bpart = ""
             bpart = self.recv( blen-bpos )
             self._buf[bpos:bpos+len(bpart)]=np.fromstring(bpart, np.byte)
          except socket.timeout:
             print " @SOCKET:   Timeout in status recvall, trying again!"
             timeout = True
+            ntimeout+=1
+            if ntimeout > NTIMEOUT:
+               print " @SOCKET:  Couldn't receive within ", NTIMEOUT, " attempts. Time to give up!"
+               raise Disconnected()               
             pass
          if (not timeout and bpart == 0):
             raise Disconnected()
@@ -525,7 +531,7 @@ class Interface(object):
             c.poll()
 
       for [r,c] in self.jobs[:]:
-         if c.status & Status.HasData:
+         if c.status & Status.HasData:            
             try:
                r["result"] = c.getforce()
             except Disconnected:
@@ -540,6 +546,7 @@ class Interface(object):
                      c.shutdown(socket.SHUT_RDWR)
                      c.close()
                   except:   pass
+                  c.poll()
                   continue
                c.poll()
             if not (c.status & Status.Up): 
@@ -548,16 +555,14 @@ class Interface(object):
             r["status"] = "Done"
             c.lastreq = r["id"] # saves the ID of the request that the client has just processed
             self.jobs.remove([r,c])
-         if self.timeout==0.0 and r["start"]>0 and time.time()-r["start"]> EVALTIMEOUT:
-            # regardless of options, writes something if the client gets stuck for a very long time!
-            print " @SOCKET:  request for bead ", r["id"], " has been running for ", time.time()-r["start"]
-            r["start"]=time.time()
          if self.timeout>0 and r["start"]>0 and time.time()-r["start"]> self.timeout:
             print " @SOCKET:  request for bead ", r["id"], " has been running for ", time.time()-r["start"]
             try:
                print " @SOCKET:   Client died or got unresponsive. Closing socket."
                c.shutdown(socket.SHUT_RDWR)
                c.close()
+               c.poll()
+#               return  # makes sure the dead client gets removed straight away
             except:   pass
                      
       for r in self.requests:
