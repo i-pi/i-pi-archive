@@ -224,7 +224,6 @@ status open
 
 \begin_layout Plain Layout
 
-\size largest
 
 \backslash
 wrappi
@@ -372,6 +371,207 @@ In the final chapter we discuss some of the inner workings of the code to
 \end_layout
 
 \begin_layout Section
+Shell variables
+\end_layout
+
+\begin_layout Standard
+In all that follows, we will make use of the following definitions:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Tabular
+<lyxtabular version="3" rows="9" columns="2">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="0">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Name
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Definition
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+src_dir
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+The directory in which the wrapper code has been installed
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+np_dir
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+The directory in which the NumPy library has been installed
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+np_dd_dir
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+The directory in which the NumPy tar file has been downloaded
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+driver_dir
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+The directory in which the driver code has been downloaded
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+np_vers
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+The version of NumPy installed
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+py_vers
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+The version of Python installed
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+esp_dd_dir
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+The directory in which the Quantum Espresso has been downloaded
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+esp_vers
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+The version of Quantum Espresso installed
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
 Driver compatibility
 \end_layout
 
@@ -383,18 +583,43 @@ There are currently patches available for Quantum Espresso version 4.3.2,
 \end_layout
 
 \begin_layout Standard
-None of these codes come with the wrap-pi package, and must be downloaded
- separately.
+None of these codes come with the 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+wrappi
+\end_layout
+
+\end_inset
+
+ package, and must be downloaded separately.
  See chapter 2 for more details of how to do this.
  
 \end_layout
 
 \begin_layout Section
-Functionality
+Online resources
 \end_layout
 
-\begin_layout Section
-Online resources
+\begin_layout Standard
+For more information about 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+wrappi
+\end_layout
+
+\end_inset
+
+ and to download the source code go to [appropriate wrappi website].
 \end_layout
 
 \begin_layout Standard
@@ -408,7 +633,20 @@ Credits
 \end_layout
 
 \begin_layout Section
-Citing wrap-pi
+Citing 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+wrappi
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Section
@@ -489,7 +727,16 @@ Communication protocol
 
 \begin_layout Chapter
 Installing 
-\begin_inset Formula $\wrappi$
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+wrappi
+\end_layout
+
 \end_inset
 
 
@@ -708,11 +955,188 @@ Another important consideration is the basis set used for the
 \end_layout
 
 \begin_layout Section
-Package download and testing
+System requirements
 \end_layout
 
-\begin_layout Subsection
-wrap-pi download
+\begin_layout Standard
+To install and run 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+wrappi
+\end_layout
+
+\end_inset
+
+, you will need to have:
+\end_layout
+
+\begin_layout Itemize
+A modern C compiler
+\end_layout
+
+\begin_layout Itemize
+Python version 2.4 or later
+\end_layout
+
+\begin_layout Itemize
+The Python array library NumPy
+\end_layout
+
+\begin_layout Standard
+Additionally, most driver codes will have their own software requirements.
+\end_layout
+
+\begin_layout Section
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+wrappi
+\end_layout
+
+\end_inset
+
+ download
+\end_layout
+
+\begin_layout Standard
+A tar file can be downloaded from the website [appropriate wrap-pi website].
+ To install this you need to input the following commands:
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+cd $src_dir
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+tar xf [wrapper_tar_file.tar]
+\end_layout
+
+\begin_layout Standard
+You can also download the git repository at [github repository name] using
+ the commands:
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+cd $src_dir
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+git clone [name of repository]
+\end_layout
+
+\begin_layout Section
+NumPy download
+\end_layout
+
+\begin_layout Standard
+Many clusters do not have NumPy already installed upon them.
+ How NumPy can be installed depends on whether you have root access or not,
+ and on the version of python you are using.
+\end_layout
+
+\begin_layout Standard
+In any case you must first obtain the NumPy code using the following commands:
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+cd $np_dd_dir
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+tar czf $np_vers.tar.gz
+\end_layout
+
+\begin_layout Standard
+You must now install this code.
+ Note that this requires the distutils package that comes with the python-dev
+ package.
+ Assuming that the required software is installed, the NumPy package is
+ built using:
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+python setup.py build
+\end_layout
+
+\begin_layout Standard
+The next step is to install the package.
+ By default the download is to the directory /usr/local.
+ This however is only accessible if you have root access.
+ In this case all that needs to be done to finish the install is:
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+python setup.py install
+\end_layout
+
+\begin_layout Standard
+If you do not have root access, then the next step depends on which version
+ of Python is beind used.
+ With versions 2.6 or later there is a simple command to automatically download
+ into the directory $HOME/local:
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+python setup.py install --user
+\end_layout
+
+\begin_layout Standard
+With Python 2.4/2.5 the process is a little more involved.
+ First you must explicitly install the package in the directory of choice
+ with the following command:
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+python setup.py install --prefix=$np_dir
+\end_layout
+
+\begin_layout Standard
+Next, you must tell python where to find this library, by appending to the
+ linux environment variable 
+\series bold
+PYTHONPATH
+\series default
+:
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+export PYTHONPATH=$PYTHONPATH:$np_dir/lib64/$py_vers/site-packages
+\end_layout
+
+\begin_layout Standard
+You may have to replace lib64 with lib depending on whether you are installing
+ to a 64-bit or 32-bit architecture.
 \end_layout
 
 \begin_layout Section
@@ -721,6 +1145,66 @@ Driver installation and compilation
 
 \begin_layout Subsection
 Quantum Espresso
+\end_layout
+
+\begin_layout Standard
+You can download the source code for Quantum Espresso at: www.quantum-espresso.org
+/
+\end_layout
+
+\begin_layout Standard
+For Quantum Espresso version 4.3.2, there is a patch file to allow it to be
+ used as a driver code with 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+wrappi
+\end_layout
+
+\end_inset
+
+ in the directory $src_dir/patches/pwscf.
+ This can be applied to the Quantum Espresso source code using:
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+cd $esp_dd_dir
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+tar zxvf $esp_vers.tar.gz
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+patch -p1 <
+\series default
+ 
+\series bold
+$src_dir/patches/pwscf
+\end_layout
+
+\begin_layout Standard
+After this, continue the download as per the instructions at www.quantum-espress.o
+rg/.
+\end_layout
+
+\begin_layout Standard
+Later versions of the code already have driver functionality, and so no
+ patch needs to be applied before compiling.
+\end_layout
+
+\begin_layout Subsection
+CP2K
 \end_layout
 
 \begin_layout Subsection
@@ -733,7 +1217,16 @@ Testing
 
 \begin_layout Chapter
 Running 
-\begin_inset Formula $\wrappi$
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+wrappi
+\end_layout
+
 \end_inset
 
 
