@@ -327,11 +327,15 @@ class Trajectories(dobject):
       
       
    def get_akcv(self):
-      rv=np.zeros(self.simul.beads.natoms*3)
+      """Calculates the contribution to the kinetic energy due to each degree
+      of freedom.
+      """
+
+      rv = np.zeros(self.simul.beads.natoms*3)
       for b in range(self.simul.beads.nbeads):
-         rv[:]+=(self.simul.beads.q[b]-self.simul.beads.qc)*self.simul.forces.f[b]
-      rv*=-0.5/self.simul.nbeads
-      rv+=0.5*Constants.kb*self.simul.ensemble.temp
+         rv[:] += (self.simul.beads.q[b]-self.simul.beads.qc)*self.simul.forces.f[b]
+      rv *= -0.5/self.simul.nbeads
+      rv += 0.5*Constants.kb*self.simul.ensemble.temp
       return rv
    
    def print_traj(self, what, stream, b=0):

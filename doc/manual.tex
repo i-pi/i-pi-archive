@@ -193,6 +193,10 @@ interact with the wrapper.
 successful, show the correct form of the input files, and show some of the 
 capabilities of the wrapper.
 \end{description}
+\section{System requirements}
+Running wrap-pi requires python v2.4 and the numpy package as well as a C 
+compiler such as gcc. Also, each of the driver codes have their own 
+requirements. wrap-pi currently only runs on linux based operating systems. 
 \section{Online resources}
 To obtain the parameters needed to run Path Integral with Generalized 
 Langevin Equation Thermostat (PIGLET) calculations, you can use the website:
@@ -212,9 +216,52 @@ Langevin Equation Thermostat (PIGLET) calculations, you can use the website:
 \section{Testing}
 
 \chapter{Running wrap-pi}
+In this chapter we discuss the procedure required to set up and execute 
+simulations, as well as the expected output.
 \section{Commmand line syntax}
+The simplest way to run the wrapper code is from the command line, with a 
+command of the form:
+
+\begin{center}
+python main.py \emph{input\_file.xml}
+\end{center} 
+Where \emph{input\_file.xml} is replaced with the name of the input file.
+
+It is also possible to run the simulation from within another script, using
+the function main in the module main.py. To do this, you can use a python module
+of the form:
+\\
+\\
+from main import *
+\\ \\
+\hspace*{1.6 cm} \vdots
+\\ \\
+input="input\_file.xml"
+\\
+main(input)
+\\ \\
+\hspace*{1.6 cm} \vdots
+\\ \\
+Note that this code only starts the wrapper and initialises the socket. 
+To run any dynamics a driver code must also connect to the socket, so that the
+forces and potential can be evaluated.
 \section{Input files}
 \subsection{xml file}
+This is the main input file for the wrapper code. The xml format is based on a
+heirarchial tree structure of data held between tags. The format is <tag\_name> data </tag\_name>
+
+In this code, each tag
+corresponds to an object used in the code, and the data to the value of this 
+object. The data may either be a simple value or another set of tags. The
+latter case corresponds to the situation where an object in the wrap-pi code
+contains another object.
+
+A list of the possible tag names, and their position in the heirarchy, is 
+given in table 2.1:
+
+\begin{table}
+blah
+\end{table}
 \subsection{Configuration file}
 \subsection{Internal units}
 \section{Driver input}

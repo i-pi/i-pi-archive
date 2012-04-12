@@ -175,7 +175,7 @@ class Driver(socket.socket):
       """
 
       blen = dest.itemsize*dest.size
-      if (blen>len(self._buf)): 
+      if (blen > len(self._buf)): 
          self._buf.resize(blen)
       bpos = 0
       ntimeout=0
@@ -555,6 +555,7 @@ class Interface(object):
             r["status"] = "Done"
             c.lastreq = r["id"] # saves the ID of the request that the client has just processed
             self.jobs.remove([r,c])
+            
          if self.timeout>0 and r["start"]>0 and time.time()-r["start"]> self.timeout:
             print " @SOCKET:  request for bead ", r["id"], " has been running for ", time.time()-r["start"]
             try:
@@ -562,8 +563,8 @@ class Interface(object):
                c.shutdown(socket.SHUT_RDWR)
                c.close()
                c.poll()
-#               return  # makes sure the dead client gets removed straight away
-            except:   pass
+            except:   
+               pass
                      
       for r in self.requests:
          if r["status"] == "Queued":
