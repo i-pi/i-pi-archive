@@ -175,7 +175,7 @@ class Driver(socket.socket):
       """
 
       blen = dest.itemsize*dest.size
-      if (blen>len(self._buf)): 
+      if (blen > len(self._buf)): 
          self._buf.resize(blen)
       bpos = 0
       while bpos < blen:
@@ -548,17 +548,18 @@ class Interface(object):
             r["status"] = "Done"
             c.lastreq = r["id"] # saves the ID of the request that the client has just processed
             self.jobs.remove([r,c])
-         if self.timeout==0.0 and r["start"]>0 and time.time()-r["start"]> EVALTIMEOUT:
+         if self.timeout == 0.0 and r["start"] > 0 and time.time() - r["start"] >  EVALTIMEOUT:
             # regardless of options, writes something if the client gets stuck for a very long time!
-            print " @SOCKET:  request for bead ", r["id"], " has been running for ", time.time()-r["start"]
-            r["start"]=time.time()
-         if self.timeout>0 and r["start"]>0 and time.time()-r["start"]> self.timeout:
-            print " @SOCKET:  request for bead ", r["id"], " has been running for ", time.time()-r["start"]
+            print " @SOCKET:  request for bead ", r["id"], " has been running for ", time.time() - r["start"]
+            r["start"] = time.time()
+         if self.timeout > 0 and r["start"] > 0 and time.time() - r["start"] > self.timeout:
+            print " @SOCKET:  request for bead ", r["id"], " has been running for ", time.time() - r["start"]
             try:
                print " @SOCKET:   Client died or got unresponsive. Closing socket."
                c.shutdown(socket.SHUT_RDWR)
                c.close()
-            except:   pass
+            except:
+               pass
                      
       for r in self.requests:
          if r["status"] == "Queued":

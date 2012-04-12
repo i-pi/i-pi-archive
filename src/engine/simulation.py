@@ -31,9 +31,9 @@ from forces import RestartForce, ForceBeads
 from beads import Beads, RestartBeads
 from properties import Properties, Trajectories
 
-_DEFAULT_STRIDES={"checkpoint": 1000, "properties": 10, "progress": 100, "centroid": 20,  "trajectory": 100}
-_DEFAULT_OUTPUT=[ "time", "conserved", "kinetic", "potential" ]
-_DEFAULT_TRAJ=[ "positions" ]
+_DEFAULT_STRIDES = {"checkpoint": 1000, "properties": 10, "progress": 100, "centroid": 20,  "trajectory": 100}
+_DEFAULT_OUTPUT = [ "time", "conserved", "kinetic", "potential" ]
+_DEFAULT_TRAJ = [ "positions" ]
 
 class RestartSimulation(Restart):
    """Simulation restart class.
