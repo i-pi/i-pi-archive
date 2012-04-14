@@ -565,60 +565,118 @@ class Interface(object):
                c.poll()
             except:   
                pass
-                     
+      
+      freec = self.clients[:]
+      for [r2, c] in self.jobs:
+         freec.remove(c)            
+
+      pendr = self.requests[:]
       for r in self.requests:
-         if r["status"] == "Queued":
-            freec = self.clients[:]
-            for [r2, c] in self.jobs:
-               freec.remove(c)            
-            
-            for match_ids in ( "match", "none", "free", "any" ):
-               matched = False
-               for fc in freec:
-                  if not (fc.status & Status.Up):
-                     self.clients.remove(fc)
-                     continue                  
-                  if fc.status & Status.HasData:
-                     continue                              
-                  if not (fc.status & (Status.Ready | Status.NeedsInit | Status.Busy) ): 
-                     print " @SOCKET:   (1) Client is in an unexpected status ",fc.status, ". Will try to keep calm and carry on."
-                     continue
-                  # First, tries to match request ids and lastreq clients.
-                  # If it can't match on the first round, gives up and assigns requests
-                  # on a first-come first-serve basis
-                  if match_ids == "match" and not fc.lastreq is r["id"]:
-                     continue
-                  elif match_ids == "none" and not fc.lastreq is None:
-                     continue
-                  elif match_ids == "free" and fc.locked:
-                     continue
+         if r["status"] != "Queued":
+            pendr.remove(r)
 
-                  # if we have been using the same client for the same bead, mark it
-                  fc.locked =  (fc.lastreq is r["id"])
-         
-                  try:
-                     print " @SOCKET: Assigning [",match_ids,"] request id ", r["id"], " to client with last-id ", fc.lastreq, "(",self.clients.index(fc),"/",len(self.clients),":",fc.getpeername(),")"              
-                  except:  pass
+      for fc in freec[:] :
+         matched = False
+         # first, makes sure that the client is REALLY free
+         if not (fc.status & Status.Up):
+            self.clients.remove(fc)
+            freec.remove[fc] # now that we are looping several times, 
+            continue
+         if fc.status & Status.HasData:
+            continue
+         if not (fc.status & (Status.Ready | Status.NeedsInit | Status.Busy) ): 
+            print " @SOCKET:   (1) Client is in an unexpected status ", fc.status, ". Will try to keep calm and carry on."
+            continue                      
+         for match_ids in ( "match", "none", "free", "any" ):
+            for r in pendr[:]:
+               if match_ids == "match" and not fc.lastreq is r["id"]:
+                  continue
+               elif match_ids == "none" and not fc.lastreq is None:
+                  continue
+               elif match_ids == "free" and fc.locked:
+                  continue               
+               
+               try:
+                  print " @SOCKET: Assigning [",match_ids,"] request id ", r["id"], " to client with last-id ", fc.lastreq, "(",self.clients.index(fc),"/",len(self.clients),":",fc.getpeername(),")"              
+               except:  pass               
 
-                  while fc.status & Status.Busy:
-                     fc.poll()            
-                  if fc.status & Status.NeedsInit:
-                     fc.initialize(r["pars"])
-                     fc.poll()               
-                     while fc.status & Status.Busy: # waits for initialization to finish. hopefully this is fast
-                        fc.poll()
-                  if fc.status & Status.Ready:
-                     fc.sendpos(r["atoms"], r["cell"])
-                     r["status"] = "Running"
-                     r["start"] = time.time() # sets start time for the request
+               while fc.status & Status.Busy:
+                  fc.poll()            
+               if fc.status & Status.NeedsInit:
+                  fc.initialize(r["pars"])
+                  fc.poll()               
+                  while fc.status & Status.Busy: # waits for initialization to finish. hopefully this is fast
                      fc.poll()
-                     self.jobs.append([r,fc])
-                     matched = True
-                     break
-                  else:
-                     print " @SOCKET:   (2) Client is in an unexpected status ",fc.status,". Will try to keep calm and carry on."
-               if matched: 
-                  break # doesn't do a second (or third) round if it managed to assign the job
+               if fc.status & Status.Ready:
+                  fc.sendpos(r["atoms"], r["cell"])
+                  r["status"] = "Running"
+                  r["start"] = time.time() # sets start time for the request
+                  fc.poll()
+                  self.jobs.append([r,fc])
+                  fc.locked =  (fc.lastreq is r["id"]) 
+                  matched = True
+                  pendr.remove(r)
+                  break
+               else:
+                  print " @SOCKET:   (2) Client is in an unexpected status ",fc.status,". Will try to keep calm and carry on."
+            if matched: 
+               break # doesn't do a second (or third) round if it managed to assign the job
+               
+               
+#      for r in self.requests:
+#         if r["status"] == "Queued":
+#            freec = self.clients[:]
+#            for [r2, c] in self.jobs:
+#               freec.remove(c)            
+#                                 
+#            for match_ids in ( "match", "none", "free", "any" ):
+#               matched = False
+#               for fc in freec[:]:
+#                  if not (fc.status & Status.Up):
+#                     self.clients.remove(fc)
+#                     freec.remove[fc] # now that we are looping several times, 
+#                     continue                  
+#                  if fc.status & Status.HasData:
+#                     continue                              
+#                  if not (fc.status & (Status.Ready | Status.NeedsInit | Status.Busy) ): 
+#                     print " @SOCKET:   (1) Client is in an unexpected status ",fc.status, ". Will try to keep calm and carry on."
+#                     continue
+#                  # First, tries to match request ids and lastreq clients.
+#                  # If it can't match on the first round, gives up and assigns requests
+#                  # on a first-come first-serve basis
+#                  if match_ids == "match" and not fc.lastreq is r["id"]:
+#                     continue
+#                  elif match_ids == "none" and not fc.lastreq is None:
+#                     continue
+#                  elif match_ids == "free" and fc.locked:
+#                     continue
+
+#                  # if we have been using the same client for the same bead, mark it
+#                  fc.locked =  (fc.lastreq is r["id"])
+#         
+#                  try:
+#                     print " @SOCKET: Assigning [",match_ids,"] request id ", r["id"], " to client with last-id ", fc.lastreq, "(",self.clients.index(fc),"/",len(self.clients),":",fc.getpeername(),")"              
+#                  except:  pass
+
+#                  while fc.status & Status.Busy:
+#                     fc.poll()            
+#                  if fc.status & Status.NeedsInit:
+#                     fc.initialize(r["pars"])
+#                     fc.poll()               
+#                     while fc.status & Status.Busy: # waits for initialization to finish. hopefully this is fast
+#                        fc.poll()
+#                  if fc.status & Status.Ready:
+#                     fc.sendpos(r["atoms"], r["cell"])
+#                     r["status"] = "Running"
+#                     r["start"] = time.time() # sets start time for the request
+#                     fc.poll()
+#                     self.jobs.append([r,fc])
+#                     matched = True
+#                     break
+#                  else:
+#                     print " @SOCKET:   (2) Client is in an unexpected status ",fc.status,". Will try to keep calm and carry on."
+#               if matched: 
+#                  break # doesn't do a second (or third) round if it managed to assign the job
 
    def _kill_handler(self, signal, frame):
       """Deals with handling a kill call gracefully.
