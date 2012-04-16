@@ -152,7 +152,7 @@
             call get_all(atoms, cell, n_list, index_list, pot, f, vir)
             vir = transpose(vir)
             ! artificially slow donw evaluation
-            !call sleep(2)
+            ! call sleep(5)
             write(*,*) "computed energy is ",pot
             hasdata=.true.            
          else if (trim(header)=="GETFORCE") then
@@ -162,9 +162,13 @@
             do i = 1, nat
                buffer(3*(i-1)+1:3*i)=f(:,i)
             enddo
+            ! artificially slow donw transfer
+            !call sleep(5)
             call writebuffer(socket,buffer,3*nat*8)
             call writebuffer(socket,vir,9*8)
             hasdata=.false.            
+            !hang AFTER transfer is complete
+            !call sleep(5)
          else
             write(*,*) "Now got ", header
          end if
