@@ -389,6 +389,8 @@ In all that follows, we will make use of the following definitions:
 \begin_inset Text
 
 \begin_layout Plain Layout
+
+\size small
 Name
 \end_layout
 
@@ -398,6 +400,8 @@ Name
 \begin_inset Text
 
 \begin_layout Plain Layout
+
+\size small
 Definition
 \end_layout
 
@@ -409,6 +413,8 @@ Definition
 \begin_inset Text
 
 \begin_layout Plain Layout
+
+\size small
 src_dir
 \end_layout
 
@@ -418,6 +424,8 @@ src_dir
 \begin_inset Text
 
 \begin_layout Plain Layout
+
+\size small
 The directory in which the wrapper code has been installed
 \end_layout
 
@@ -429,6 +437,8 @@ The directory in which the wrapper code has been installed
 \begin_inset Text
 
 \begin_layout Plain Layout
+
+\size small
 np_dir
 \end_layout
 
@@ -438,6 +448,8 @@ np_dir
 \begin_inset Text
 
 \begin_layout Plain Layout
+
+\size small
 The directory in which the NumPy library has been installed
 \end_layout
 
@@ -449,6 +461,8 @@ The directory in which the NumPy library has been installed
 \begin_inset Text
 
 \begin_layout Plain Layout
+
+\size small
 np_dd_dir
 \end_layout
 
@@ -458,6 +472,8 @@ np_dd_dir
 \begin_inset Text
 
 \begin_layout Plain Layout
+
+\size small
 The directory in which the NumPy tar file has been downloaded
 \end_layout
 
@@ -469,6 +485,8 @@ The directory in which the NumPy tar file has been downloaded
 \begin_inset Text
 
 \begin_layout Plain Layout
+
+\size small
 driver_dir
 \end_layout
 
@@ -478,6 +496,8 @@ driver_dir
 \begin_inset Text
 
 \begin_layout Plain Layout
+
+\size small
 The directory in which the driver code has been downloaded
 \end_layout
 
@@ -489,6 +509,8 @@ The directory in which the driver code has been downloaded
 \begin_inset Text
 
 \begin_layout Plain Layout
+
+\size small
 np_vers
 \end_layout
 
@@ -498,6 +520,8 @@ np_vers
 \begin_inset Text
 
 \begin_layout Plain Layout
+
+\size small
 The version of NumPy installed
 \end_layout
 
@@ -509,6 +533,8 @@ The version of NumPy installed
 \begin_inset Text
 
 \begin_layout Plain Layout
+
+\size small
 py_vers
 \end_layout
 
@@ -518,6 +544,8 @@ py_vers
 \begin_inset Text
 
 \begin_layout Plain Layout
+
+\size small
 The version of Python installed
 \end_layout
 
@@ -529,6 +557,8 @@ The version of Python installed
 \begin_inset Text
 
 \begin_layout Plain Layout
+
+\size small
 esp_dd_dir
 \end_layout
 
@@ -538,6 +568,8 @@ esp_dd_dir
 \begin_inset Text
 
 \begin_layout Plain Layout
+
+\size small
 The directory in which the Quantum Espresso has been downloaded
 \end_layout
 
@@ -549,6 +581,8 @@ The directory in which the Quantum Espresso has been downloaded
 \begin_inset Text
 
 \begin_layout Plain Layout
+
+\size small
 esp_vers
 \end_layout
 
@@ -558,6 +592,8 @@ esp_vers
 \begin_inset Text
 
 \begin_layout Plain Layout
+
+\size small
 The version of Quantum Espresso installed
 \end_layout
 
@@ -715,6 +751,74 @@ test Contains examples that can be used to make sure the build has been
  successful, show the correct form of the input files, and show some of
  the capabilities of the wrapper.
  
+\end_layout
+
+\begin_layout Subsection
+Code structure
+\end_layout
+
+\begin_layout Standard
+To run a simulation, the following steps are followed by the code:
+\end_layout
+
+\begin_layout Enumerate
+The input file is read, parsed and interpreted.
+\end_layout
+
+\begin_layout Enumerate
+The appropriate python objects are created and initialized.
+\end_layout
+
+\begin_layout Enumerate
+A socket is opened, and the wrapper waits for a driver code to connect.
+\end_layout
+
+\begin_layout Enumerate
+Once at least one driver code has connected, the simulation is run forward
+ in discrete time steps.
+\end_layout
+
+\begin_layout Standard
+Each time step splits up into the following stages:
+\end_layout
+
+\begin_layout Enumerate
+The momenta of the particles are adjusted by an external thermostat, if
+ applicable.
+\end_layout
+
+\begin_layout Enumerate
+The momenta of the particles are adjusted according to the forces acting
+ on them
+\end_layout
+
+\begin_layout Enumerate
+The centroid coordinates of the ring polymers are adjusted according to
+ their momenta (and in constant pressure simulations the cell momenta).
+\end_layout
+
+\begin_layout Enumerate
+The internal modes of the ring polymer are adjusted according to their momenta.
+\end_layout
+
+\begin_layout Enumerate
+The forces are recalculated by the driver code.
+\end_layout
+
+\begin_layout Enumerate
+See step 2.
+\end_layout
+
+\begin_layout Enumerate
+See step 1.
+\end_layout
+
+\begin_layout Subsection
+Object Hierarchy
+\end_layout
+
+\begin_layout Standard
+[Maybe insert a graphic here?]
 \end_layout
 
 \begin_layout Section
@@ -1233,7 +1337,121 @@ wrappi
 \end_layout
 
 \begin_layout Section
-Command line syntax
+How to run 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+/wrappi
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Command line interface
+\end_layout
+
+\begin_layout Standard
+The best way to run 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+wrappi
+\end_layout
+
+\end_inset
+
+ is via the command line.
+ If the xml-formatted input file is called input_file.xml, then the command
+ to do this is:
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+python $src_dir/main.py input_file.xml
+\end_layout
+
+\begin_layout Standard
+This is the recommended way of initializing 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+wrappi
+\end_layout
+
+\end_inset
+
+, as it is both the simplest, and the easiest to script for lots of similar
+ runs with different parameters.
+\end_layout
+
+\begin_layout Subsection
+Python interface
+\end_layout
+
+\begin_layout Standard
+It is also possible to run 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+/wrappi
+\end_layout
+
+\end_inset
+
+ from inside a Python script.
+ This can be done via the following code:
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+from main import *
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+vspace*{0.5 cm}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+main (
+\begin_inset Quotes eld
+\end_inset
+
+input_file.xml
+\begin_inset Quotes erd
+\end_inset
+
+)
 \end_layout
 
 \begin_layout Section
@@ -1244,8 +1462,71 @@ Input files
 xml file
 \end_layout
 
+\begin_layout Standard
+This is the main input file from which the simulation parameters are initialized.
+ The standard xml format is a set of hierarchially nested tags, each with
+ a start tag, which may or may not have an attribute parameter, some contained
+ data, which may or may not contain other tags, and a closing tag.
+ The syntax required is:
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+<tag_name attribute_name='attribute_data'>tag_data</tag_name>
+\end_layout
+
+\begin_layout Standard
+The code uses this hierarchial structure to help read the data; if a particular
+ object is held within a parent object in the code, then the tag for that
+ object will be within the appropriate parent tags.
+ In this manner, the entire class structure needed for the simulation can
+ be constructed iteratively; the data between the two tags is assumed to
+ correspond to data held within the object given by the tag name, which
+ may have more tags corresponding to other child objects, so data held within
+ those tags are assumed to correspond to data held within the child objects,
+ and so on until all the data has been read.
+\end_layout
+
+\begin_layout Standard
+To help detect any user error the acceptable tag names, type of data and
+ possible default values are all specified in the code, in a specialized
+ restart class for each class of object.
+ More information on how the xml file is read can be found in Chapter 6.
+\end_layout
+
 \begin_layout Subsection
 Configuration file
+\end_layout
+
+\begin_layout Standard
+The initial configuration data can be initialized both through the xml file,
+ and through a separate configuration file.
+ The configuration file is specified using the from_file tag name in the
+ xml file, with the tag name simply giving the file name of the configuration
+ file.
+ The currently accepted file formats are:
+\end_layout
+
+\begin_layout Itemize
+pdb
+\end_layout
+
+\begin_layout Standard
+These files can be used to specify the initial centroid positions, cell
+ parameters and atom identities.
+ The code will then try to assign masses to the atoms based on their atomic
+ symbol, and an appropriate cell 
+\begin_inset Quotes eld
+\end_inset
+
+mass
+\begin_inset Quotes erd
+\end_inset
+
+ for use in constant pressure simulations.
+ Any of this data can be overwritten by the xml file by using the appropriate
+ tag names and data.
 \end_layout
 
 \begin_layout Subsection
@@ -1274,6 +1555,19 @@ Restart file
 
 \begin_layout Subsection
 Soft exit
+\end_layout
+
+\begin_layout Standard
+To stop the program in such a way that it makes sure to save the data generated
+ in a restart file, simply create a file 
+\begin_inset Quotes eld
+\end_inset
+
+EXIT
+\begin_inset Quotes erd
+\end_inset
+
+ in the directory in which you are running the code.
 \end_layout
 
 \begin_layout Section
