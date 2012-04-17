@@ -66,10 +66,9 @@ class Restart(object):
    def fetch(self):
       """Dummy function to retrieve data."""
 
-      if not self.check():
-         raise AssertionError("Consistency check failed in Restart.fetch")
+      pass
             
-   def check(self):
+   def check(self, xml=None):
       """Dummy function to check for input errors."""
 
       return True
@@ -122,22 +121,32 @@ class Restart(object):
          text: The data held between the start and end tags.
 
       Raises:
-         To be implemented.
+         NameError: Raised if one of the tags in the xml input file is 
+            incorrect.
+         AssertionError: Raised if a consistancy check is failed in reading
+            the data.
       """
 
       if not xml is None:
+#         if not self.check(xml=xml):
+#            raise AssertionError("Consistency check failed in Restart.fetch")
+#TODO add this everywhere, so that we can check the input properly.
          for a, v in xml.attribs.iteritems() :
             if a in self.attribs: 
                self.__dict__[a].parse(text=v)
+            elif a == "_text":
+               pass
             else:
-               pass #TODO raise an exception
+               raise NameError("Attribute name '" + a + "' is not a recognized property of '" + xml.name + "' objects")
          for f, v in xml.fields.iteritems():
             if f in self.fields:
                self.__dict__[f].parse(xml=v)
+            elif f == "_text":
+               pass
             else:
-               pass #TODO raise an exception            
+               raise NameError("Tag name '" + f + "' is not a recognized property of '" + xml.name + "' objects")
 
-   
+ 
 class RestartValue(Restart):
    """Scalar class for restart handling.
 

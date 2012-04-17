@@ -36,7 +36,7 @@ class Elements(dict):
      "X"   :    1.0000/Constants.amu, 
      "H"   :    1.0079,
      "D"   :    2.0141,
-     "Z"   :   1.382943,   #an interpolated H--D atom, based on y=1/sqrt(m) scaling
+     "Z"   :  1.382943, #an interpolated H--D atom, based on y=1/sqrt(m) scaling
      "Si"  :   28.0860,
      "O"   :   15.9994,
      "N"   :   14.0067,
@@ -86,12 +86,6 @@ UnitMap = {
       "angstrom"     : 1.8897261,
       "nanometer"    : 0.18897261
       },
-   "length" :     {
-      "" : 1.00,
-      "atomic_unit"  : 1.00,
-      "angstrom"     : 1.8897261,
-      "nanometer"    : 0.18897261
-      },
    "velocity":    {
       "" : 1.00,
       "atomic_unit"  : 1.00
@@ -104,6 +98,14 @@ UnitMap = {
       "" : 1.00,
       "atomic_unit"  : 1.00,
       "electronmass" : 1.00/Constants.amu
+      },
+   "pressure" :     {
+      "" : 1.00,
+      "atomic_unit"  : 1.00,
+      "bar"          : 3.398827377e-9,
+      "atmosphere"   : 3.44386184e-9,
+      "pascal"       : 3.398827377e-14,
+      "kilopascal"   : 3.398827377e-11
       }
 }
 
