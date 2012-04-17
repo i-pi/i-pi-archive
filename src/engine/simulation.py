@@ -382,7 +382,7 @@ class Simulation(dobject):
       self.fout = open(self.prefix + ".out", "a")
       ohead = "# "
       for l in self.outlist:
-         ohead += "%16s"%(l)
+         ohead += "%16s"%(l) + " "
       self.fout.write(ohead + "\n")
       
       
@@ -427,6 +427,7 @@ class Simulation(dobject):
             are not contained in the property_dict member of properties.
       """
 
+      self.fout.write("  ")
       for what in self.outlist:
          try:
             quantity = self.properties[what]

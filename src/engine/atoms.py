@@ -343,5 +343,5 @@ class RestartAtoms(Restart):
       if self.from_file.fetch() != "":
          myatoms, mycell = utils.io.io_pdb.read_pdb(open(self.from_file.fetch(),"r"))
          if "units" in self.from_file.attribs:
-            myatoms.q*=self.from_file.units.to_internal(1.0,self.from_file.attribs["units"])
+            myatoms.q *= self.from_file.units.to_internal(1.0,self.from_file.attribs["units"])
          self.store(myatoms, self.from_file.fetch())      
