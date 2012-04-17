@@ -64,6 +64,9 @@ class Elements(dict):
       return cls.mass_list[label]*Constants.amu
 
 UnitMap = { 
+   "undefined" : {
+      "" : 1.00 
+      },      
    "energy" :   {
       "" : 1.00,
       "atomic_unit"  : 1.00, 
