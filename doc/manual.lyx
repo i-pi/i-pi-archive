@@ -1479,8 +1479,8 @@ g to the socket with one or more driver codes.
 \series bold
 driver_comm
 \series default
-, the following code will run wrapper and 4 driver codes, and background
- the result:
+, the following code will run the wrapper, outputting the statistics to
+ a log file, and 4 driver codes, then background the result:
 \end_layout
 
 \begin_layout Standard

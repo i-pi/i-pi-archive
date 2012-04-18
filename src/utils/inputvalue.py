@@ -25,9 +25,9 @@ from  io.io_xml import *
 from units import UnitMap
 
 class Input(object):
-   """Base class for restart handling.
+   """Base class for input handling.
 
-   Has the generic methods for dealing with the restart file. Parses the input
+   Has the generic methods for dealing with the xml input file. Parses the input
    data, outputs the output data, and deals with storing and returning the 
    data obtained during the simulation for the restart files.
 
@@ -36,10 +36,31 @@ class Input(object):
          tags for this restart object, which are then turned into the objects
          held by the object given by this restart object. The dictionary is
          of the form:
-         {"tag": (restart_type, (data_type, default_value)), ... }.
+         {"tag name": ( Input_object, 
+                                 {"default": default value,
+                                  "dtype": data type,
+                                  "options": list of available options,
+                                  "help": help string,
+                                  "dimension": dimensionality of data}), ... }.
       attribs: A dictionary holding the attribute data for the tag for this
          restart object. The dictionary is of the form:
-         {"attrib_name": (restart_type, (data_type, default_value)), ... }.
+         {"attribute name": ( Input_object, 
+                                 {"default": default value,
+                                  "dtype": data type,
+                                  "options": list of available options,
+                                  "help": help string,
+                                  "dimension": dimensionality of data}), ... }.
+      default_help: The default help string.
+      default_dimension: The default unit dimensionality.
+      default_units: The default unit type.
+      default_value: The default value.
+      _help: The help string of the object. Defaults to default_help.
+      _dimension: The dimensionality of the value. Defaults to 
+         default_dimension.
+      units: The unit type of the value. Defaults to default_units.
+      _default: Optional default value.
+      _optional: A bool giving whether the field is a required field.
+      _explicit: A bool giving whether the field has been specified by the user.
    """
  
    fields = {}
@@ -52,9 +73,15 @@ class Input(object):
    def __init__(self, help=None, dimension=None, units = None, default=None):
       """Initialises Input.
 
-      Automatically adds all the fields and attribs names to the objects
-      dictionary as keys, then initialises all the appropriate restart objects
+      Automatically adds all the fields and attribs names to the input object's
+      dictionary, then initialises all the appropriate input objects
       as the corresponding values.
+
+      Args:
+         help: A help string.
+         dimension: The dimensionality of the value.
+         units: The units of the value.
+         default: A default value.
       """
 
       if help is None:
@@ -71,21 +98,26 @@ class Input(object):
          self.units = units
       if default is None:     
          self._default = self.default_value
-         self._optional = False
+         self._optional = False #True if must be input by user.
       else:                   
          self._default = default
          self._optional = True
          
-      self._explicit = False
+      self._explicit = False #True if set by the user.
 
+      #For each tag name in the fields and attribs dictionaries,
+      #creates and object of the type given, expanding the dictionary to give 
+      #the arguments of the __init__() function, then adds it to the input 
+      #object's dictionary.
       for f, v in self.fields.iteritems():
          self.__dict__[f] = v[0](**v[1])
       for a, v in self.attribs.iteritems():
          self.__dict__[a] = v[0](**v[1])
       
    def adapt(self):
-      """ Dummy function being called after the parsing of attributes
-          and before the parsing of fields. """
+      """Dummy function being called after the parsing of attributes
+      and before the parsing of fields.
+      """
       
       pass
       
@@ -102,7 +134,13 @@ class Input(object):
       pass
             
    def check(self):
-      """Dummy function to check for input errors."""
+      """Base function to check for input errors.
+
+      Raises:
+         TypeError: Raised if the user has defined a unit type that is
+            incompatible with the dimensionality of the value.
+         ValueError: Raised if the user does not specify a required field.
+      """
 
       if not (self.units in UnitMap[self._dimension]):
          raise TypeError("Unit type " + self.units + " is not compatible with dimension " + self._dimension)
@@ -159,8 +197,7 @@ class Input(object):
       Raises:
          NameError: Raised if one of the tags in the xml input file is 
             incorrect.
-         AssertionError: Raised if a consistancy check is failed in reading
-            the data.
+         ValueError: Raised if the user does not specify a required field.
       """
 
       self._explicit = True
@@ -192,7 +229,17 @@ class Input(object):
          if not (vf._explicit or vf._optional):
             raise ValueError("Field name '" + f + "' is mandatory and was not found in the input for the property " + xml.name)
       
-   def help(self, level=0, stop_level=None, format=None):
+   def help(self, level=0, stop_level=None):
+      """Function to generate a LaTeX formatted manual.
+
+      Args:
+         level: Current level of the hierarchy being considered.
+         stop_level: The depth to which information will be given.
+
+      Returns: 
+         An LaTeX formatted string that can be compiled to give a help 
+         document.
+      """
 
       if (not stop_level is None and level > stop_level):
          return ""
@@ -231,7 +278,7 @@ class Input(object):
       return rstr
        
 class InputValue(Input):
-   """Scalar class for restart handling.
+   """Scalar class for input handling.
 
    Has the methods for dealing with simple data tags of the form:
    <tag_name> data </tag_name>, where data is just a value. Takes the data and
@@ -241,22 +288,21 @@ class InputValue(Input):
    Attributes:
       type: Data type of the data.
       value: Value of data. Also specifies data type if type is None.
-      default: Default value if the tag is not specified.
-      units: a Units object or None, used for automatic input conversion
+      _valid: An optional list of valid options.
    """
  
    def __init__(self,  help=None, dimension=None, units = None, default=None, dtype=None, value=None, options=None):
       """Initialises InputValue.
 
       Args:
+         help: A help string.
+         dimension: The dimensionality of the value.
+         units: The units of the value.
+         default: A default value.
          dtype: An optional data type. Defaults to None.
          value: An optional value for the data. Defaults to None. Also
             specifies the data type if type is None.
-         default: Optional default value if the tag is not specified. Defaults
-            to None.
-         units: A string defining the _kind_ of units assigned to the variable
-            e.g. "energy", "time"...
-         attribs: A list of the attribs found in the XML file.
+         options: An optional list of valid options.
       """
 
       super(InputValue,self).__init__(help, dimension, units, default)
@@ -283,7 +329,7 @@ class InputValue(Input):
       self.attribs={}
       
    def store(self, value):
-      """Converts the data to the appropriate data type and stores it.
+      """Converts the data to the appropriate data type and units and stores it.
 
       Args:
          value: The raw data to be stored.
@@ -295,7 +341,7 @@ class InputValue(Input):
          self.value /= UnitMap[self._dimension][self.units]
       
    def fetch(self): 
-      """Returns the stored data."""
+      """Returns the stored data in the user defined units."""
 
       super(InputValue,self).fetch()
       if self._dimension != "undefined":
@@ -304,10 +350,15 @@ class InputValue(Input):
          return self.value
 
    def check(self):
+      """Function to check for input errors.
+
+      Raises:
+         ValueError: Raised if the value chosen is not one of the valid options.
+      """
       
       super(InputValue,self).check()
       if not (self._valid is None or self.value in self._valid):         
-         raise ValueError(str(self.value) + " is not a valid option ("+str(self._valid)+")")
+         raise ValueError(str(self.value) + " is not a valid option (" + str(self._valid) + ")")
 
       
    def write(self, name="", indent=""): 
@@ -348,19 +399,17 @@ class InputValue(Input):
          self.value = read_type(self.type, xml.fields["_text"])      
          if "units" in xml.attribs:
             self.units = xml.attribs["units"]
-      if hasattr(self, "opt_list"):
-         self.index = self.opt_list.name2index(self.value)           
 
 
 ELPERLINE = 5
 class InputArray(Input):
-   """Array class for restart handling.
+   """Array class for input handling.
 
    Has the methods for dealing with simple data tags of the form:
-   <tag_name shape="(shape)"> data </tag_name>, where data is just an array and
+   <tag_name shape="(shape)"> data </tag_name>, where data is an array
    of the form [data[0], data[1], ... , data[length]]. 
    
-   Takes the data and converts it to the required data_type, 
+   Takes the data and converts it to the required data type, 
    so that it can be used in the simulation. Also holds the shape of the array,
    so that we can use a simple 1D list of data to specify a multi-dimensional
    array.
@@ -368,7 +417,6 @@ class InputArray(Input):
    Attributes:
       type: Data type of the data.
       value: Value of data. Also specifies data type if type is None.
-      default: Default value if the tag is not specified.
    """
  
    attribs = { "shape" : (InputValue, 
@@ -380,11 +428,13 @@ class InputArray(Input):
       """Initialises InputArray.
 
       Args:
+         help: A help string.
+         dimension: The dimensionality of the value.
+         units: The units of the value.
+         default: A default value.
          dtype: An optional data type. Defaults to None.
          value: An optional value for the data. Defaults to None. Also
             specifies the data type if type is None.
-         default: Optional default value if the tag is not specified. Defaults
-            to None.
       """
 
       super(InputArray,self).__init__(help, dimension, units, default)
@@ -402,7 +452,8 @@ class InputArray(Input):
          self.store(self._default)
          
    def store(self, value):
-      """Converts the data to the appropriate data type and shape and stores it.
+      """Converts the data to the appropriate data type, shape and units and 
+      stores it.
 
       Args:
          value: The raw data to be stored.
@@ -416,7 +467,7 @@ class InputArray(Input):
          self.shape.store((len(self.value),))
       
    def fetch(self): 
-      """Returns the stored data."""
+      """Returns the stored data in the user defined units."""
 
       super(InputArray,self).fetch()
 
@@ -492,7 +543,6 @@ class InputArray(Input):
             self.shape.store(read_type(tuple, xml.attribs["shape"]))
          else:
             self.shape.store(self.value.shape)
-
 
 
 class InputTest(Input):
