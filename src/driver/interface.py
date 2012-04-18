@@ -23,12 +23,10 @@ Exceptions:
       used if the structure of the program is correct.
 """
 
-__all__ = ['Message', 'Disconnected', 'InvalidStatus', 'Status', 'Driver',
-           'RestartInterface', 'Interface']
+__all__ = ['Message', 'Disconnected', 'InvalidStatus', 'Status', 'Driver', 'Interface']
 
 import socket, select, threading, signal, string, os, time
 import numpy as np
-from utils.restart import Restart, RestartValue
 
 HDRLEN = 12
 UPDATEFREQ = 100
@@ -305,56 +303,6 @@ class Driver(socket.socket):
       mvir = self.recvall(mvir)
       return [mu, mf, mvir]
 
-                  
-class RestartInterface(Restart):         
-   """Interface restart class.
-
-   Handles generating the apporopriate interface class from the xml
-   input file, and generating the xml checkpoin tags and data from an
-   instance of the object.
-
-   Attributes:
-      address: A string giving the host name.
-      port: An integer giving the port used by the socket.
-      slots: An integer giving the maximum allowed backlog of queued clients.
-      latency: A float giving the number of seconds that the interface waits
-         before updating the client list.
-      mode: A string giving the type of socket used.
-      timeout: A float giving a number of seconds after which a calculation core
-         is considered dead. Defaults to zero, i.e. no timeout.
-   """
-
-   fields = { "address" : (RestartValue, (str, "localhost")), "port" : (RestartValue, (int,31415)),
-            "slots" : (RestartValue, (int, 4) ), "latency" : (RestartValue, (float, 1e-3)), 
-            "timeout": (RestartValue, (float, 0.0))  }
-   attribs = { "mode": (RestartValue, (str, "unix") ) }
-
-   def store(self, iface):
-      """Takes an Interface instance and stores a minimal representation of it.
-
-      Args:
-         iface: An interface object.
-      """
-
-      self.latency.store(iface.latency)
-      self.mode.store(iface.mode)
-      self.address.store(iface.address)
-      self.port.store(iface.port)
-      self.slots.store(iface.slots)
-      self.timeout.store(iface.timeout)
-      
-   def fetch(self):
-      """Creates an Interface object.
-
-      Returns:
-         An interface object with the appropriate socket given the attributes
-         of the RestartInterface object.
-      """
-
-      return Interface(address=self.address.fetch(), port=self.port.fetch(), 
-            slots=self.slots.fetch(), mode=self.mode.fetch(), 
-            latency=self.latency.fetch(), timeout=self.timeout.fetch())
-
             
 class Interface(object):
    """Host server class.
@@ -579,7 +527,7 @@ class Interface(object):
          matched = False
          # first, makes sure that the client is REALLY free
          if not (fc.status & Status.Up):
-            self.clients.remove(fc)
+            self.clients.remove(fc)   # if fc is in freec it can't be associated with a job (we just checked for that above)
             freec.remove[fc] # now that we are looping several times, 
             continue
          if fc.status & Status.HasData:
@@ -727,12 +675,17 @@ class Interface(object):
          
          if os.path.exists("EXIT"): # soft-exit
             print " @SOCKET:   Soft exit request. Flushing job queue."
-            freec = self.clients[:]     
             # releases all pending requests       
             for r in self.requests:
                r["status"] = "Exit"
-            for fc in freec:
-               self.clients.remove(fc)
+            for c in self.clients:
+               try:
+                  c.shutdown(socket.SHUT_RDWR)
+                  c.close()
+               except:   pass
+            # flush it all down the drain
+            self.clients = []
+            self.jobs = []
       self._poll_thread = None   
    
    def start_thread(self):
