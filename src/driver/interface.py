@@ -528,7 +528,6 @@ class Interface(object):
          # first, makes sure that the client is REALLY free
          if not (fc.status & Status.Up):
             self.clients.remove(fc)   # if fc is in freec it can't be associated with a job (we just checked for that above)
-            freec.remove[fc] # now that we are looping several times, 
             continue
          if fc.status & Status.HasData:
             continue
