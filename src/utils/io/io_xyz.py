@@ -13,7 +13,6 @@ __all__ = ['print_xyz_path', 'print_xyz', 'read_xyz']
 import numpy as np
 import math, sys
 import utils.mathtools as mt
-from engine.cell import Cell
 from engine.atoms import Atoms
 from utils.units import *
 import gc
@@ -76,6 +75,28 @@ def read_xyz(filedesc):
       of a reasonable cell mass.
    """
 
-   print "WILL DO THIS SOMETIMES...."
+   natoms = int(filedesc.readline())
+   comment = filedesc.readline()
 
-   return atoms, cell
+   body = filedesc.readline()
+   qatoms = []
+   names = []
+   while (body.strip() != "" and body.strip() != "END"):
+      body = body.split()
+      names.append(body[0])
+      x = float(body[1])
+      y = float(body[2])
+      z = float(body[3])
+      pos = np.array([x,y,z])
+      qatoms.append(pos)
+      
+      body = filedesc.readline()
+   
+   atoms = Atoms(natoms)
+   for i in range(natoms):
+      nat = atoms[i]
+      nat.q = qatoms[i]
+      nat.name = names[i]
+      nat.m = Elements.mass(names[i])
+
+   return atoms

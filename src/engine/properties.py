@@ -343,7 +343,7 @@ class Trajectories(dobject):
 
       Args:
          what: A string specifying what to print.
-         b: The bead index.
+         b: The bead index. Defaults to 0.
          stream: A reference to the stream on which data will be printed.
       """
       
@@ -358,9 +358,9 @@ class Trajectories(dobject):
       elif what == "centroid":
          self.fatom.q = self.simul.beads.qc
       else:
-         raise IndexError("<"+what+"> is not a recognized trajectory output")
+         raise IndexError("<" + what + "> is not a recognized trajectory output")
       
       if self.format == "pdb":
-         io_pdb.print_pdb(self.fatom, self.simul.cell, stream, title= ("Step:  %10d  Bead:   %5d " % (self.simul.step+1, b) ) )
+         io_pdb.print_pdb(self.fatom, self.simul.cell, stream, title=("Step:  %10d  Bead:   %5d " % (self.simul.step+1, b) ) )
       elif self.format == "xyz":
-         io_xyz.print_xyz(self.fatom, self.simul.cell, stream, title= ("Step:  %10d  Bead:   %5d " % (self.simul.step+1, b) ) )
+         io_xyz.print_xyz(self.fatom, self.simul.cell, stream, title=("Step:  %10d  Bead:   %5d " % (self.simul.step+1, b) ) )
