@@ -525,33 +525,36 @@ class InputTest2(Input):
                                     "default": True})}
 
    default_help = "A test for a nested new input class"
-  
-myinput = InputTest()
-myinput2 = InputTest2()
+     
+     
+def main(file_name):
+   # TEMPORARY WHILE WE TEST THE NEW INPUT    
+   myinput = InputTest()
+   myinput2 = InputTest2()
 
 
-ifile = open("test.xml","r")
-ifile2 = open("test2.xml","r")
-xmlrestart = xml_parse_file(ifile) # Parses the file.
-xmlrestart2 = xml_parse_file(ifile2)
-   
-myinput.parse(xmlrestart.fields["test"]) 
-myinput2.parse(xmlrestart2.fields["test"]) 
+   ifile = open("test.xml","r")
+   ifile2 = open("test2.xml","r")
+   xmlrestart = xml_parse_file(ifile) # Parses the file.
+   xmlrestart2 = xml_parse_file(ifile2)
+      
+   myinput.parse(xmlrestart.fields["test"]) 
+   myinput2.parse(xmlrestart2.fields["test"]) 
 
-print "timestep: ", myinput.timestep.fetch()
-print "label: ", myinput.label.fetch()
-print "mandatory: ", myinput.mandatory.fetch()
-print "array: ", myinput.array.fetch()
-print "opt_list: ", myinput.label._valid
+   print "timestep: ", myinput.timestep.fetch()
+   print "label: ", myinput.label.fetch()
+   print "mandatory: ", myinput.mandatory.fetch()
+   print "array: ", myinput.array.fetch()
+   print "opt_list: ", myinput.label._valid
 
-print
-print myinput.write("test")
-print
-print
-print "other: ", myinput2.other.fetch()
-print "label: ", myinput2.nest.label.fetch()
-print
-print myinput2.write("test")
+   print
+   print myinput.write("test")
+   print
+   print
+   print "other: ", myinput2.other.fetch()
+   print "label: ", myinput2.nest.label.fetch()
+   print
+   print myinput2.write("test")
 
 #helpfile = open("inputtest/helpfile.tex","w")
 #helpfile.write(myinput2.help(stop_level = 2))
