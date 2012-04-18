@@ -20,6 +20,7 @@ import math, time
 from utils.depend import *
 from driver.interface import Interface, RestartInterface
 from utils.restart import *
+from utils.inputvalue import *
 
 class RestartForce(Restart):
    """Forcefield restart class.

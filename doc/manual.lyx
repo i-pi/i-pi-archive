@@ -1156,7 +1156,13 @@ Many clusters do not have NumPy already installed upon them.
 \end_layout
 
 \begin_layout Standard
-In any case you must first obtain the NumPy code using the following commands:
+In any case you must first obtain the NumPy code.
+ The numpy library can be downloaded as a tar file from http://sourceforge.net/pr
+ojects/numpy/files/NumPy/
+\end_layout
+
+\begin_layout Standard
+This must then be extracted using the following commands:
 \end_layout
 
 \begin_layout Itemize
@@ -1514,9 +1520,13 @@ The initial configuration data can be initialized both through the xml file,
 pdb
 \end_layout
 
+\begin_layout Itemize
+xyz
+\end_layout
+
 \begin_layout Standard
-These files can be used to specify the initial centroid positions, cell
- parameters and atom identities.
+These files can be used to specify the initial centroid positions and atom
+ identities and, depending on the format, the cell parameters as well.
  The code will then try to assign masses to the atoms based on their atomic
  symbol, and an appropriate cell 
 \begin_inset Quotes eld
@@ -1850,8 +1860,23 @@ This is the output file for for all the system and simulation level properties,
 \begin_layout Standard
 The format of the file is given by a comment line giving the name of all
  the properties to be printed, followed by the rows giving their values
- at regular intervals given by the properties keyword of the stride list
- of the input file.
+ at regular intervals given by the 
+\begin_inset Quotes eld
+\end_inset
+
+properties
+\begin_inset Quotes erd
+\end_inset
+
+ keyword of the 
+\begin_inset Quotes eld
+\end_inset
+
+stride
+\begin_inset Quotes erd
+\end_inset
+
+ list of the input file.
  The file is fixed formatted, with two blank characters at the start of
  each row, then the data in the same order as the header row.
  Each column is 16 characters wide and every float is written in exponential
@@ -1860,6 +1885,102 @@ The format of the file is given by a comment line giving the name of all
 
 \begin_layout Subsection
 Trajectory files
+\end_layout
+
+\begin_layout Standard
+These are the output file for atomic properties.
+ It will print out a configuration in the format given by the 
+\begin_inset Quotes eld
+\end_inset
+
+traj_format
+\begin_inset Quotes erd
+\end_inset
+
+ parameter in the xml input file at intervals governed by the value of the
+ 
+\begin_inset Quotes eld
+\end_inset
+
+trajectory
+\begin_inset Quotes erd
+\end_inset
+
+ keyword of the 
+\begin_inset Quotes eld
+\end_inset
+
+stride
+\begin_inset Quotes erd
+\end_inset
+
+ list of the input file.
+ Depending on the chosen property to output, it will either print a file
+ for each bead or just for each atom.
+ The possible choices of output properties are:
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Quotes eld
+\end_inset
+
+positions
+\begin_inset Quotes erd
+\end_inset
+
+: Gives the bead positions.
+ Prints a separate file for each replica of the system
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Quotes eld
+\end_inset
+
+velocities
+\begin_inset Quotes erd
+\end_inset
+
+: As above, except for the velocities.
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Quotes eld
+\end_inset
+
+forces
+\begin_inset Quotes erd
+\end_inset
+
+: As above, except for the forces.
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Quotes eld
+\end_inset
+
+kinetic_cv
+\begin_inset Quotes erd
+\end_inset
+
+: Prints the contribution of each atom to the total kinetic energy.
+ Prints only one file.
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Quotes eld
+\end_inset
+
+centroid
+\begin_inset Quotes erd
+\end_inset
+
+: Prints the position of the centroid coordinate.
+ Prints only one file.
+\end_layout
+
+\begin_layout Standard
+The allowable file formats for the trajectory output files are the same
+ as for the configuration input files.
 \end_layout
 
 \begin_layout Chapter
