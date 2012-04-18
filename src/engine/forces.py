@@ -375,6 +375,10 @@ class ForceBeads(dobject):
 
       return self.virs.sum()
 
+class FFMulti(ForceField):
+   """ A force class defining a superimposition of multiple force fields. """
+   
+   pass
 
 class FFSocket(ForceField):
    """Interface between the PIMD code and the socket for a single replica.

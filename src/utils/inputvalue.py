@@ -77,6 +77,12 @@ class Input(object):
       for a, v in self.attribs.iteritems():
          self.__dict__[a] = v[0](**v[1])
       
+   def adapt(self):
+      """ Dummy function being called after the parsing of attributes
+          and before the parsing of fields. """
+      
+      pass
+      
    def store(self, value):
       """Dummy function for storing data."""
 
@@ -163,7 +169,11 @@ class Input(object):
                pass
             else:
                raise NameError("Attribute name '" + a + "' is not a recognized property of '" + xml.name + "' objects")
+         
+         self.adapt()      
+         
          for f, v in xml.fields.iteritems():
+            print "field:", f, "\n", v.fields
             if f in self.fields:
                self.__dict__[f].parse(xml=v)
             elif f == "_text":
@@ -180,9 +190,9 @@ class Input(object):
          if not (vf._explicit or vf._optional):
             raise ValueError("Field name '" + f + "' is mandatory and was not found in the input for the property "+ xml.name)
       
-   def help(self, level=0, stop_level=None):
+   def help(self, level=0, stop_level=None, format=None):
 
-      if (not stop_level is None and level>stop_level) return "";
+      if (not stop_level is None and level>stop_level): return "";
       
       rstr=""
       rstr+=self._help+"\n"
@@ -338,4 +348,4 @@ print "timestep: ", myinput.timestep.fetch()
 print "label: ", myinput.label.fetch()
 print "mandatory: ", myinput.mandatory.fetch()
 
-print myinput.help()
+#print myinput.help()
