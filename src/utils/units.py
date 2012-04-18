@@ -39,6 +39,7 @@ class Elements(dict):
      "Z"   :  1.382943, #an interpolated H--D atom, based on y=1/sqrt(m) scaling
      "Si"  :   28.0860,
      "O"   :   15.9994,
+     "Cl"  :   35.453,
      "N"   :   14.0067,
      "H2"  :    2.0160,
      "Li"  :    6.9410,     
