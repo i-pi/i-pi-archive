@@ -27,7 +27,8 @@ from atoms import *
 import time
 from cell import *
 from ensembles import RestartEnsemble
-from forces import RestartForce, ForceBeads
+from forces import ForceBeads
+from inputs.forces import RestartForce
 from beads import Beads, RestartBeads
 from properties import Properties, Trajectories
 

@@ -45,6 +45,9 @@ class Restart(object):
    fields = {}
    attribs = {}
 
+   # a bunch of attributes just to make this compatible (?) with the new inputvalue mechanism
+   _explicit = True
+
    def __init__(self):
       """Initialises Restart.
 

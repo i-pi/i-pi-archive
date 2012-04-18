@@ -83,6 +83,12 @@ class Input(object):
       for a, v in self.attribs.iteritems():
          self.__dict__[a] = v[0](**v[1])
       
+   def adapt(self):
+      """ Dummy function being called after the parsing of attributes
+          and before the parsing of fields. """
+      
+      pass
+      
    def store(self, value):
       """Dummy function for storing data."""
 
@@ -166,6 +172,9 @@ class Input(object):
                pass
             else:
                raise NameError("Attribute name '" + a + "' is not a recognized property of '" + xml.name + "' objects")
+         
+         self.adapt()      
+         
          for f, v in xml.fields.iteritems():
             if f in self.fields:
                self.__dict__[f].parse(xml=v)
@@ -183,7 +192,7 @@ class Input(object):
          if not (vf._explicit or vf._optional):
             raise ValueError("Field name '" + f + "' is mandatory and was not found in the input for the property " + xml.name)
       
-   def help(self, level=0, stop_level=None):
+   def help(self, level=0, stop_level=None, format=None):
 
       if (not stop_level is None and level > stop_level):
          return ""
@@ -236,7 +245,7 @@ class InputValue(Input):
       units: a Units object or None, used for automatic input conversion
    """
  
-   def __init__(self,  help=None, dimension=None, units = None, default=None, dtype=None, value=None, opt_list=None):
+   def __init__(self,  help=None, dimension=None, units = None, default=None, dtype=None, value=None, options=None):
       """Initialises InputValue.
 
       Args:
@@ -259,13 +268,13 @@ class InputValue(Input):
       else:
          raise TypeError("You must provide either value or dtype")
 
-      if opt_list is not None:
-         self.opt_list = InputEnum(values=opt_list)
-         try:
-            self.opt_list.name2index(self._default)
-         except ValueError:
-            raise ValueError("Default value not in opt_list " + str(self.opt_list.values))
-         
+      if options is not None:
+         self._valid = options
+         if not default is None and not self._default in self._valid:
+            raise ValueError("Default value not in option list " + str(self._valid))
+      else:
+         self._valid = None
+      
       if not value is None:
          self.store(value)
       elif not self._default is None:
@@ -293,6 +302,13 @@ class InputValue(Input):
          return self.value*UnitMap[self._dimension][self.units]
       else:
          return self.value
+
+   def check(self):
+      
+      super(InputValue,self).check()
+      if not (self._valid is None or self.value in self._valid):         
+         raise ValueError(str(self.value) + " is not a valid option ("+str(self._valid)+")")
+
       
    def write(self, name="", indent=""): 
       """Writes data in xml file format.
@@ -333,8 +349,8 @@ class InputValue(Input):
          if "units" in xml.attribs:
             self.units = xml.attribs["units"]
       if hasattr(self, "opt_list"):
-         self.index = self.opt_list.name2index(self.value)
-            
+         self.index = self.opt_list.name2index(self.value)           
+
 
 ELPERLINE = 5
 class InputArray(Input):
@@ -477,19 +493,6 @@ class InputArray(Input):
          else:
             self.shape.store(self.value.shape)
 
-class InputEnum:
-   def __init__(self, values):
-      self.values = values
-
-   def name2index(self, value):
-      try:
-         index = self.values.index(value)      
-         return index
-      except ValueError:
-         raise ValueError(value + " is not a valid option")
-
-   def index2name(self, index):
-      return values[index]
 
 
 class InputTest(Input):
@@ -502,7 +505,7 @@ class InputTest(Input):
         "label" :    ( InputValue, { "help" : "name of something", 
                                      "dtype" : str,
                                      "default" : "name2",
-                                     "opt_list" : ["name1", "name2", "name3"]}),
+                                     "options" : ["name1", "name2", "name3"]}),
         "mandatory" : ( InputValue, {"help" : "an integer which must be there", 
                                      "dtype": int } ), 
         "array" : ( InputArray, { "help" : "lets try an array variable", 
@@ -522,37 +525,38 @@ class InputTest2(Input):
                                     "default": True})}
 
    default_help = "A test for a nested new input class"
-  
-myinput = InputTest()
-myinput2 = InputTest2()
+     
+     
+def main(file_name):
+   # TEMPORARY WHILE WE TEST THE NEW INPUT    
+   myinput = InputTest()
+   myinput2 = InputTest2()
 
 
-ifile = open("test.xml","r")
-ifile2 = open("test2.xml","r")
-xmlrestart = xml_parse_file(ifile) # Parses the file.
-xmlrestart2 = xml_parse_file(ifile2)
-   
-myinput.parse(xmlrestart.fields["test"]) 
-myinput2.parse(xmlrestart2.fields["test"]) 
+   ifile = open("test.xml","r")
+   ifile2 = open("test2.xml","r")
+   xmlrestart = xml_parse_file(ifile) # Parses the file.
+   xmlrestart2 = xml_parse_file(ifile2)
+      
+   myinput.parse(xmlrestart.fields["test"]) 
+   myinput2.parse(xmlrestart2.fields["test"]) 
 
-print "timestep: ", myinput.timestep.fetch()
-print "label: ", myinput.label.fetch()
-print "mandatory: ", myinput.mandatory.fetch()
-print "array: ", myinput.array.fetch()
-print "opt_list: ", myinput.label.opt_list.values
-print "index: ", myinput.label.index
+   print "timestep: ", myinput.timestep.fetch()
+   print "label: ", myinput.label.fetch()
+   print "mandatory: ", myinput.mandatory.fetch()
+   print "array: ", myinput.array.fetch()
+   print "opt_list: ", myinput.label._valid
 
-print
-print myinput.write("test")
-print
-print
-print "other: ", myinput2.other.fetch()
-print "label: ", myinput2.nest.label.fetch()
-print "index: ", myinput2.nest.label.index
-print
-print myinput2.write("test")
+   print
+   print myinput.write("test")
+   print
+   print
+   print "other: ", myinput2.other.fetch()
+   print "label: ", myinput2.nest.label.fetch()
+   print
+   print myinput2.write("test")
 
-helpfile = open("inputtest/helpfile.tex","w")
+#helpfile = open("inputtest/helpfile.tex","w")
 #helpfile.write(myinput2.help(stop_level = 2))
-helpfile.write(myinput2.help())
+#helpfile.write(myinput2.help())
 

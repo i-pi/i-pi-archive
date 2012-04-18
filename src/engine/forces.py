@@ -13,61 +13,12 @@ Classes:
       a PI simulation.
 """
 
-__all__ = ['RestartForce', 'ForceField', 'ForceBeads', 'FFSocket']
+__all__ = ['ForceField', 'ForceBeads', 'FFSocket']
 
 import numpy as np
 import math, time
 from utils.depend import *
-from driver.interface import Interface, RestartInterface
-from utils.restart import *
-
-class RestartForce(Restart):
-   """Forcefield restart class.
-
-   Handles generating the appropriate forcefield class from the xml
-   input file, and generating the xml checkpoint tags and data from an 
-   instance of the object.
-
-   Attributes:
-      type: A string indicating the type being used. 'socket' is currently
-         the only available option.
-      interface: A restart interface instance.
-      parameters: A dictionary of the parameters used by the driver. Of the
-         form {"name": value}.
-   """
-
-   attribs = { "type" : (RestartValue,(str,"socket")) }
-   fields =  { "interface" : (RestartInterface,()), "parameters" : (RestartValue, (dict,{})) }
-   
-   def store(self, force):
-      """Takes a ForceField instance and stores a minimal representation of it.
-
-      Args:
-         force: A forcefield object.
-      """
-
-      if (type(force) is FFSocket):  
-         self.type.store("socket")
-         self.interface.store(force.socket)
-         self.parameters.store(force.pars)
-      else: 
-         self.type.store("unknown")
-         
-
-   def fetch(self):
-      """Creates a forcefield object.
-
-      Returns:
-         A forcefield object of the appropriate type and with the appropriate
-         interface given the attributes of the RestartForce object.
-      """
-
-      if self.type.fetch().upper() == "SOCKET": 
-         force = FFSocket(pars=self.parameters.fetch(), interface=self.interface.fetch())
-      else: 
-         force = ForceField()
-      return force
-      
+from driver.interface import Interface
 
 class ForceField(dobject):
    """Base forcefield class.
@@ -375,6 +326,10 @@ class ForceBeads(dobject):
 
       return self.virs.sum()
 
+class FFMulti(ForceField):
+   """ A force class defining a superimposition of multiple force fields. """
+   
+   pass
 
 class FFSocket(ForceField):
    """Interface between the PIMD code and the socket for a single replica.
