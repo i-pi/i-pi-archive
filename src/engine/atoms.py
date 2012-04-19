@@ -7,15 +7,12 @@ arrays of atoms and for individual atoms.
 Classes:
    Atom: Class with methods dealing with individual atoms.
    Atoms: Class with methods dealing with all the atoms.
-   RestartAtoms: Deals with creating the Atoms object from a file, and
-      writing the checkpoints.
 """
 
-__all__ = ['Atoms', 'Atom', 'RestartAtoms']
+__all__ = ['Atoms', 'Atom']
 
 import numpy as np
 from utils.depend import *
-from utils.restart import *
 import utils.io.io_pdb
 from utils import units
 
@@ -245,103 +242,3 @@ class Atoms(dobject):
       ks[0,2] = np.dot(self.px,self.pz/self.m)
       ks[1,2] = np.dot(self.py,self.pz/self.m)                        
       return ks
-      
-class RestartAtoms(Restart):
-   """Atoms restart class.
-
-   Handles generating the appropriate atoms class from the xml input file,
-   and generating the xml checkpoint tags and data from an instance of the 
-   object.
-
-   Attributes:
-      natoms: An optional integer giving the number of atoms. Defaults to 0.
-      q: An optional array giving the atom positions. Defaults to an empty
-         array with no elements.
-      p: An optional array giving the atom momenta. Defaults to an empty
-         array with no elements.
-      m: An optional array giving the atom masses. Defaults to an empty
-         array with no elements.
-      names: An optional array giving the atom names. Defaults to an empty
-         array with no elements.
-      from_file: An optional string giving a pdb format file with the atom
-         positions. Defaults to ''.
-      init_temp: An optional float giving the kinetic temperature to 
-         initialise the atom momenta to.
-   """
-
-   fields={ "natoms" : (RestartValue, (int,0)), "q" : (RestartArray,(float,np.zeros(0))),  "p" : (RestartArray,(float,np.zeros(0))),
-            "m" : (RestartArray,(float, np.zeros(0))),  "names" : (RestartArray,(str,np.zeros(0, np.dtype('|S6')))),
-            "from_file" : (RestartValue,(str, "", "length")), "init_temp": (RestartValue, (float, -1.0))  }
-       
-   def __init__(self, atoms=None, filename=""):
-      """Initialises RestartAtoms.
-
-      Args:
-         atoms: An optional Atoms object from which to initialise from.
-         filename: An optional string giving a filename to take the atom 
-            positions from. Defaults to ''.
-      """
-
-      super(RestartAtoms,self).__init__()
-      if not atoms is None:
-         self.store(atoms, filename="")
-                       
-   def store(self, atoms, filename=""):
-      """Takes an Atoms instance and stores a minimal representation of it.
-
-      Args:
-         atoms: An Atoms object from which to initialise from.
-         filename: An optional string giving a filename to take the atom 
-            positions from. Defaults to ''.
-      """
-
-      self.natoms.store(atoms.natoms)
-      self.q.store(depstrip(atoms.q))
-      self.p.store(depstrip(atoms.p))
-      self.m.store(depstrip(atoms.m))
-      self.names.store(depstrip(atoms.names))
-      self.from_file.store(filename)
-      
-   def fetch(self):
-      """Creates an atoms object.
-
-      Returns:
-         An atoms object of the appropriate type and with the appropriate
-         properties given the attributes of the RestartAtoms object.
-      """
-
-      self.check()
-      atoms=Atoms(self.natoms.fetch())
-      atoms.q=self.q.fetch()
-      atoms.p=self.p.fetch()      
-      atoms.m=self.m.fetch()   
-      atoms.names=self.names.fetch()
-      return atoms
-   
-   def write(self,  name="", indent=""):
-      """Overloads Restart write() function so that nothing is written if
-      no atoms are present.
-
-      Returns:
-         A string giving the appropriate xml tags for the checkpoint file.
-      """
-
-      if self.natoms.fetch() > 0:
-         return super(RestartAtoms,self).write(name=name,indent=indent)
-      else:
-         return ""
-      
-   
-   def check(self): 
-      """Function that deals with optional arguments.
-
-      Deals with the init_temp and from_file arguments, and uses them to 
-      intialise some of the atoms parameters depending on which ones have
-      been specified explicitly.
-      """
-
-      if self.from_file.fetch() != "":
-         myatoms, mycell = utils.io.io_pdb.read_pdb(open(self.from_file.fetch(),"r"))
-         if "units" in self.from_file.attribs:
-            myatoms.q *= self.from_file.units.to_internal(1.0,self.from_file.attribs["units"])
-         self.store(myatoms, self.from_file.fetch())      

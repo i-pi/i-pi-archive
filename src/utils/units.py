@@ -95,6 +95,10 @@ UnitMap = {
       "" : 1.00,
       "atomic_unit"  : 1.00
       },           
+   "momentum":    {
+      "" : 1.00,
+      "atomic_unit"  : 1.00
+      },           
    "force":       {
       "" : 1.00,
       "atomic_unit"  : 1.00
