@@ -825,8 +825,261 @@ Object Hierarchy
 Dependency detection and automatic property caching
 \end_layout
 
+\begin_layout Subsection
+Rationale
+\end_layout
+
+\begin_layout Standard
+One of the utility classes that is defined in the code, from which most
+ of the classes in the code inherit, is the dobject class.
+ Similarly, many of the variables contained in these classes are depend
+ objects.
+\end_layout
+
+\begin_layout Standard
+The depend object class has been designed so that every time it is accessed
+ it checks all of the other depend objects on which it is dependent to see
+ if they have changed, and if so recalculates its value.
+ The dobject class overrides the mechanism by which you can access the members
+ of an instance of it, so that they are accessed via the dependency detection
+ functions.
+\end_layout
+
+\begin_layout Standard
+These classes have been defined so that, instead of cluttering up the code
+ with functions to recalculate the various parameters of the simulation,
+ we simply have to define the function by which to recalculate them and
+ the other objects which they depend upon when they are created, and then
+ they will automatically be updated when required.
+\end_layout
+
+\begin_layout Standard
+As an example, take the total kinetic energy for one replica of the system.
+ This is a property of the total momentum vector and the mass vector of
+ the different atoms.
+ Therefore, we would create a 
+\begin_inset Quotes eld
+\end_inset
+
+kin
+\begin_inset Quotes erd
+\end_inset
+
+ object in the atoms class that has dependencies 
+\begin_inset Quotes eld
+\end_inset
+
+mass
+\begin_inset Quotes erd
+\end_inset
+
+ and 
+\begin_inset Quotes eld
+\end_inset
+
+momentum
+\begin_inset Quotes erd
+\end_inset
+
+, and a recalculation function that calculated 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+(
+\backslash
+frac{
+\backslash
+bf{p}^2}{2
+\backslash
+bf{m}}
+\backslash
+)
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Having done this, any time we access atoms.kin, the code will check to see
+ if either the mass vector or momentum vector has changed.
+ If it has will recalculate the kinetic energy before returning it, otherwise
+ it will simply return the cached value.
+\end_layout
+
+\begin_layout Subsection
+Synchronized objects
+\end_layout
+
+\begin_layout Standard
+As well as checking for dependencies, the same infrastructure can also be
+ used to synchronize two objects which are different representations of
+ the same data.
+ A good example of this is the bead coordinates in the cartesian and normal
+ mode representations.
+ Both of these represent the same data, but have different numerical values.
+\end_layout
+
+\begin_layout Standard
+In this case we can use a synchronize object, which holds a dictionary of
+ functions to transform one representation to another.
+ In the case of the normal mode and cartesian representations of position,
+ the transformation can be done either by multiplying the position vector
+ by a transformation matrix, or via a Fourier transform.
+\end_layout
+
+\begin_layout Standard
+Using this class, whenever we make a change to one of the representations,
+ the others are automatically recalculated by reapplying the transformation
+ function the next time they are accessed.
+\end_layout
+
 \begin_layout Section
 Communication protocol
+\end_layout
+
+\begin_layout Standard
+The 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+wrappi
+\end_layout
+
+\end_inset
+
+ code is only a wrapper code; it only runs the molecular dynamics loop and
+ does not calculate the force and potential acting on each particle.
+ To do this 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+wrappi
+\end_layout
+
+\end_inset
+
+ must interface with a driver code.
+ The major design principle behind 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+wrappi
+\end_layout
+
+\end_inset
+
+ is to keep the wrapper and driver codes as far separated as possible.
+ To this end, we run them completely separately, and only allow communication
+ through a socket.
+\end_layout
+
+\begin_layout Subsection
+Sockets
+\end_layout
+
+\begin_layout Standard
+A socket is a data transfer device that is designed for internet communication.
+ Each socket is described by an IP address and a port number.
+ On top of this, they can either be an internet socket or a local unix socket.
+ Each of these different variables is important in a different way.
+\end_layout
+
+\begin_layout Standard
+The IP address is specified in the code by the 
+\begin_inset Quotes eld
+\end_inset
+
+address
+\begin_inset Quotes erd
+\end_inset
+
+ tag.
+ This is generally the name of the network on which the wrapper code is
+ running, or localhost, which is the generic name for the network used for
+ local communication.
+\end_layout
+
+\begin_layout Standard
+The port number is specified in the code by the 
+\begin_inset Quotes eld
+\end_inset
+
+port
+\begin_inset Quotes erd
+\end_inset
+
+ tag.
+ The port number is important because it is used to separate the different
+ kinds of data transfer.
+ The port number is an integer between 1-65535, each of which specifies
+ a different port.
+ As many of the lower numbers are protected for use in important system
+ processes or internet communication, it is generally sensible to use numbers
+ between 1025-65535 for simulations.
+\end_layout
+
+\begin_layout Standard
+A unix or intenet socket is specified by the 
+\begin_inset Quotes eld
+\end_inset
+
+mode
+\begin_inset Quotes erd
+\end_inset
+
+ attribute of the 
+\begin_inset Quotes eld
+\end_inset
+
+interface
+\begin_inset Quotes erd
+\end_inset
+
+ tag.
+ The unix/inet distinction is an important one, the unix socket is faster
+ than an internet socket, but can only be used for local communication.
+ Generally, the simulation should only be run locally if a simple classical
+ potential is being used, as complicated empirical potentials or 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{ab initio}
+\end_layout
+
+\end_inset
+
+ potentials make the force calculation the bottleneck in the code, so the
+ advantage of using unix sockets is lost.
+\end_layout
+
+\begin_layout Subsection
+Data transfer
+\end_layout
+
+\begin_layout Standard
+To 
 \end_layout
 
 \begin_layout Chapter
@@ -1516,6 +1769,12 @@ null &
 \end_layout
 
 \begin_layout Standard
+In general, we want to choose the number of driver codes to be a divisor
+ of the total number of replicas of the system, as otherwise there will
+ be idle driver codes at the end of each step.
+\end_layout
+
+\begin_layout Standard
 For most simulations, especially those running with expensive ab initio
  forces and potentials, we will want to run the code on a computational
  cluster.
@@ -1538,6 +1797,59 @@ The only modification required to the above code to do this is to change
  The usual process required to do this is to write a shell script which
  runs the driver codes, then use a program such as qsub to submit this job
  to the cluster.
+\end_layout
+
+\begin_layout Subsection
+Running multiple simulations
+\end_layout
+
+\begin_layout Standard
+While running one simulation is useful, the power of the socket communications
+ method is most aptly demonstrated when multiple simulations are run at
+ once.
+\end_layout
+
+\begin_layout Standard
+Firstly, the wrapper code is dormant until a driver code connects to the
+ socket, so many wrapper codes can be run at once without using large amounts
+ of CPU time waiting for the driver codes.
+ This is especially useful when the driver codes are being run on a cluster,
+ and may have to wait a long time to reach the front of the queue.
+\end_layout
+
+\begin_layout Standard
+Secondly, each different simulation can be kept separate very easily, by
+ just adjusting the port number of each parallel simulation.
+ This is very easy to write a shell script to do.
+ For example, if we assume the simulations will be run in directories called
+ sim_1, sim_2, etc., then we can write:
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+i=0; for a in sim_*; do cd $a; ((i++)); port=((10000+$i)); sed 
+\begin_inset Quotes eld
+\end_inset
+
+s/XXX/$port/g
+\begin_inset Quotes erd
+\end_inset
+
+ input.template > $a/input_file.xml; cd ..; done
+\end_layout
+
+\begin_layout Standard
+This will replace a string 
+\begin_inset Quotes eld
+\end_inset
+
+XXXX
+\begin_inset Quotes erd
+\end_inset
+
+ in a template file with a port number, which will be different for each
+ simulation.
 \end_layout
 
 \begin_layout Section

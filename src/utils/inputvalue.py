@@ -261,16 +261,16 @@ class Input(object):
          rstr += r"{\\ \bf DATA TYPE: }" + self.type.__name__ + "\\\\\n"
       
       if len(self.attribs) != 0 and level != stop_level:
-         rstr += "\paragraph{Attributes}\n\\begin{itemize}\n"
+         rstr += "\\paragraph{Attributes}\n\\begin{itemize}\n"
          for a in self.attribs:
-            rstr += "\item {\\bf " + a + "}:\n " + self.__dict__[a].help(level+1, stop_level)
-         rstr += "\end{itemize}\n\n"
+            rstr += "\\item {\\bf " + a + "}:\n " + self.__dict__[a].help(level+1, stop_level)
+         rstr += "\\end{itemize}\n\n"
             
       if len(self.fields) != 0 and level != stop_level:
-         rstr += "\paragraph{Fields}\n\\begin{itemize}\n"
+         rstr += "\\paragraph{Fields}\n\\begin{itemize}\n"
          for f in self.fields:
-            rstr += "\item {\\bf " + f + "}:\n " + self.__dict__[f].help(level+1, stop_level)
-         rstr += "\end{itemize}\n\n"
+            rstr += "\\item {\\bf " + f + "}:\n " + self.__dict__[f].help(level+1, stop_level)
+         rstr += "\\end{itemize}\n\n"
 
       if level == 0:
          rstr += r"\end{document}"
