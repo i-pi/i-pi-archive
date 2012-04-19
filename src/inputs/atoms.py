@@ -83,7 +83,7 @@ class RestartAtoms(Input):
       if not atoms is None:
          self.store(atoms, filename="")
       else:
-         super(RestartAtoms,self).store(atoms)
+         self._explicit = True #Needed because no default...
                        
    def store(self, atoms, filename=""):
       """Takes an Atoms instance and stores a minimal representation of it.

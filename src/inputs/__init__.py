@@ -1,1 +1,1 @@
-__all__ = [ 'forces', 'inputs' ]
+__all__ = [ 'interface', 'forces', 'atoms', 'beads', 'prng' ]

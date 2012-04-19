@@ -260,8 +260,8 @@ class Input(object):
       if hasattr(self, _valid):
          if self._valid is not None: 
             rstr += r"{\\ \bf OPTIONS: }" 
-               for option in self._valid:
-                  rstr += str(option) + ", "
+            for option in self._valid:
+               rstr += str(option) + ", "
             rstr.rstrip(", ")
             rstr +=  "\\\\\n"
 
@@ -468,6 +468,7 @@ class InputArray(Input):
       """
 
       super(InputArray,self).store(value)
+      self.shape.store(value.shape)
       self.value = np.array(value, dtype=self.type).flatten().copy()
       if self._dimension != "undefined":
          self.value /= UnitMap[self._dimension][self.units]

@@ -31,7 +31,8 @@ from forces import ForceBeads
 from inputs.forces import RestartForce
 from inputs.prng import RestartRandom
 from inputs.atoms import RestartAtoms
-from beads import Beads, RestartBeads
+from inputs.beads import RestartBeads
+from beads import Beads
 from properties import Properties, Trajectories
 
 _DEFAULT_STRIDES = {"checkpoint": 1000, "properties": 10, "progress": 100, "centroid": 20,  "trajectory": 100}
