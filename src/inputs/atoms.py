@@ -1,7 +1,8 @@
 """Deals with creating the atoms class.
 
 Generates an atoms class either from a set of positions and momenta, or from 
-a configuration file.
+a configuration file. This class is only used if no beads tag is present in
+the xml file.
 
 Classes:
    RestartAtoms: Deals with creating the Atoms object from a file, and 
@@ -13,6 +14,7 @@ from engine.atoms import *
 from utils.inputvalue import *
 import utils.io.io_pdb
 from utils.depend import *
+from utils.units import *
 
 __all__ = ['RestartAtoms']
       
@@ -60,6 +62,10 @@ class RestartAtoms(Input):
             "from_file" : (InputValue, {"dtype"     : str, 
                                         "default"   : "", 
                                         "help"      : "Gives the name of the file from which the configurations are taken, if present."}),
+            "file_units": (InputValue, {"dtype"     : str,
+                                        "default"   : "",
+                                        "help"      : "The units in which the lengths in the configuration file are given.",
+                                        "options"   : ['', 'atomic_unit', 'angstrom', 'nanometer'] }),
             "init_temp" : (InputValue, {"dtype"     : float, 
                                         "default"   : -1.0,
                                         "help"      : "The temperature at which the initial velocity distribution is taken, if applicable."})  }
@@ -76,6 +82,8 @@ class RestartAtoms(Input):
       super(RestartAtoms,self).__init__()
       if not atoms is None:
          self.store(atoms, filename="")
+      else:
+         super(RestartAtoms,self).store(atoms)
                        
    def store(self, atoms, filename=""):
       """Takes an Atoms instance and stores a minimal representation of it.
@@ -135,6 +143,5 @@ class RestartAtoms(Input):
       super(RestartAtoms,self).check()
       if self.from_file.fetch() != "":
          myatoms, mycell = utils.io.io_pdb.read_pdb(open(self.from_file.fetch(),"r"))
-         if "units" in self.from_file.attribs:
-            myatoms.q *= self.from_file.units.to_internal(1.0,self.from_file.attribs["units"])
+         myatoms.q *= UnitMap["length"][self.file_units.fetch()]
          self.store(myatoms, self.from_file.fetch())

@@ -257,6 +257,14 @@ class Input(object):
       if self._default != None: 
          rstr += r"{\\ \bf DEFAULT: }" + str(self._default) + "\\\\\n"
 
+      if hasattr(self, _valid):
+         if self._valid is not None: 
+            rstr += r"{\\ \bf OPTIONS: }" 
+               for option in self._valid:
+                  rstr += str(option) + ", "
+            rstr.rstrip(", ")
+            rstr +=  "\\\\\n"
+
       if hasattr(self, "type"): 
          rstr += r"{\\ \bf DATA TYPE: }" + self.type.__name__ + "\\\\\n"
       
