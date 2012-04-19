@@ -9,8 +9,6 @@ Classes:
       combinations of different status options.
    Driver: Class to deal with communication between a client and the driver
       code.
-   RestartInterface: Deals with creating the Interface object from a file, and
-      writing the checkpoints.
    Interface: Host server class. Deals with distribution of all the jobs 
       between the different client servers.
 

@@ -8,15 +8,12 @@ it had not been stopped.
 
 Classes:
    Random: An interface between the numpy.random module and the user.
-   RestartRandom: Deals with creating the Random object from a file, and 
-      writing the checkpoints.
 """
 
-__all__ = ['Random', 'RestartRandom']
+__all__ = ['Random']
 
 import numpy as np
 import math
-from restart import Restart, RestartValue, RestartArray
 
 class Random(object):
    """Class to interface with the standard pseudo-random number generator.
@@ -114,62 +111,3 @@ class Random(object):
       """
 
       return self.rng.standard_normal(shape)
-
-
-class RestartRandom(Restart):
-   """Random restart class.
-
-   Handles generating the appropriate random number class from the xml 
-   input file, and generating the xml checkpoint tags and data from an 
-   instance of the object.
-
-   Attributes:
-      seed: An optional integer giving a seed to initialise the random number
-         generator from. Defaults to 123456.
-      state: An optional array giving the state of the random number generator.
-         Defaults to an empty array.
-      has_gauss: An optional integer giving whether there is a stored 
-         Gaussian number or not. Defaults to 0.
-      gauss: An optional float giving the stored Gaussian number. Defaults to
-         0.0.
-      set_pos: An optional integer giving the position in the state array
-         that is being read from. Defaults to 0.
-   """
-
-   fields = {"seed" : (RestartValue, (int, 123456)), 
-             "state": (RestartArray, (np.uint, np.zeros(0, np.uint ))),
-             "has_gauss": (RestartValue, (int, 0)),  
-             "gauss": (RestartValue, (float,  0.00 )),
-             "set_pos": (RestartValue, (int, 0))
-            }
-
-   def store(self, prng):
-      """Takes a random number instance and stores a minimal 
-      representation of it.
-
-      Args:
-         prng: A random number object from which to initialise from.
-      """
-
-      self.seed.store(prng.seed)
-      gstate = prng.state
-      self.state.store(gstate[1])
-      self.set_pos.store(gstate[2])
-      self.has_gauss.store(gstate[3])
-      self.gauss.store(gstate[4])
-
-   def fetch(self):
-      """Creates a random number object.
-
-      Returns:
-         An random number object of the appropriate type and with the 
-         appropriate properties given the attributes of the RestartRandom
-         object.
-      """
-
-      state = self.state.fetch()
-      if state.shape == (0,):
-         return Random(seed=self.seed.fetch())
-      else:
-         return Random(state=('MT19937', self.state.fetch(), self.set_pos.fetch(), self.has_gauss.fetch(), self.gauss.fetch() ))
-

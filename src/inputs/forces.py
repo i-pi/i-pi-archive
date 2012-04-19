@@ -1,30 +1,19 @@
-"""Contains the classes that connect the driver to the python code.
-
-Communicates with the driver code, obtaining the force, virial and potential.
-Deals with creating the jobs that will be sent to the driver, and 
-returning the results to the python code.
+"""Deals with creating the forcefield class.
 
 Classes:
    RestartForce: Deals with creating the ForceField object from a file, and
       writing the checkpoints.
-   ForceField: Base forcefield class with the generic methods and attributes.
-   FFSocket: Deals with a single replica of the system
-   ForceBeads: Deals with the parallelization of the force calculation for
-      a PI simulation.
 """
 
 __all__ = ['RestartForce']
 
-import numpy as np
-import math, time
 from utils.depend import *
 from engine.forces import *
 from inputs.interface import RestartInterface
-from utils.restart import *
 from utils.inputvalue import *
 
 class RestartForce(Input):
-   """Forcefield restart class.
+   """Forcefield input class.
 
    Handles generating the appropriate forcefield class from the xml
    input file, and generating the xml checkpoint tags and data from an 
@@ -39,12 +28,13 @@ class RestartForce(Input):
    """
 
    attribs = { "type" : ( InputValue, { "dtype"   :  str, 
-                                       "default" : "socket",
-                                       "options" : [ "socket" ],
-                                       "help"    : "Well, we'll write a help string some day"  }  )}
-   fields =  { "interface"  : ( RestartInterface, { } ),                      # THESE WILL HAVE TO BE RE-WRITTEN WHEN THE CORRESPONDING INTERFACES ARE UPDATED
-               "parameters" : ( RestartValue, { "dtype" : dict, 
-                                                "default" : {} }) }
+                                        "default" : "socket",
+                                        "options" : [ "socket" ],
+                                        "help"    : "Specifies which kind of force object is created"  }  )}
+   fields =  { "interface"  : ( RestartInterface, {"help": "Specifies the parameters for the socket interface." } ),
+               "parameters" : ( InputValue, { "dtype"   : dict, 
+                                              "default" : {},
+                                              "help"    : "deprecated dictionary of initialization parameters. May be removed in the future." }) }
    
    def store(self, force):
       """Takes a ForceField instance and stores a minimal representation of it.
@@ -53,6 +43,7 @@ class RestartForce(Input):
          force: A forcefield object.
       """
 
+      super(RestartForce,self).store(force)
       if (type(force) is FFSocket):  
          self.type.store("socket")
          self.interface.store(force.socket)
@@ -69,6 +60,7 @@ class RestartForce(Input):
          interface given the attributes of the RestartForce object.
       """
 
+      super(RestartForce,self).fetch()
       if self.type.fetch().upper() == "SOCKET": 
          force = FFSocket(pars=self.parameters.fetch(), interface=self.interface.fetch())
       else: 

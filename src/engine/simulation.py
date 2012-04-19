@@ -29,6 +29,7 @@ from cell import *
 from ensembles import RestartEnsemble
 from forces import ForceBeads
 from inputs.forces import RestartForce
+from inputs.prng import RestartRandom
 from beads import Beads, RestartBeads
 from properties import Properties, Trajectories
 

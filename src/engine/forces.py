@@ -5,8 +5,6 @@ Deals with creating the jobs that will be sent to the driver, and
 returning the results to the python code.
 
 Classes:
-   RestartForce: Deals with creating the ForceField object from a file, and
-      writing the checkpoints.
    ForceField: Base forcefield class with the generic methods and attributes.
    FFSocket: Deals with a single replica of the system
    ForceBeads: Deals with the parallelization of the force calculation for

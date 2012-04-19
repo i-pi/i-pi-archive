@@ -1,40 +1,19 @@
-"""Deals with the socket communication between the PIMD and driver code.
-
-Deals with creating the socket, transmitting and receiving data, accepting and
-removing different driver routines and the parallelization of the force
-calculation.
+"""Deals with creating the interface between the wrapper and the socket.
 
 Classes:
-   Status: Simple class to keep track of the status, uses bitwise or to give
-      combinations of different status options.
-   Driver: Class to deal with communication between a client and the driver
-      code.
    RestartInterface: Deals with creating the Interface object from a file, and
       writing the checkpoints.
-   Interface: Host server class. Deals with distribution of all the jobs 
-      between the different client servers.
-
-Functions:
-   Message: Sends a header string through the socket.
-
-Exceptions:
-   Disconnected: Raised if client has been disconnected.
-   InvalidStatus: Raised if client has the wrong status. Shouldn't have to be
-      used if the structure of the program is correct.
 """
 
 __all__ = [ 'RestartInterface' ]
 
 import socket, select, threading, signal, string, os, time
 import numpy as np
-from utils.restart import Restart, RestartValue
 from utils.inputvalue import Input, InputValue
 from driver.interface import *
 
-
-
 class RestartInterface(Input):         
-   """Interface restart class.
+   """Interface input class.
 
    Handles generating the apporopriate interface class from the xml
    input file, and generating the xml checkpoin tags and data from an
@@ -51,16 +30,25 @@ class RestartInterface(Input):
          is considered dead. Defaults to zero, i.e. no timeout.
    """
 
-   fields = { "address" : (InputValue, { "dtype" : str, "default" : "localhost" } ), 
-              "port" :    (InputValue, { "dtype" : int, "default" :  31415      } ),
-              "slots" :   (InputValue, { "dtype" : int, "default" :  4          } ), 
-              "latency" : (InputValue, { "dtype" : float, "default" : 1e-3      } ), 
-              "timeout":  (InputValue, { "dtype" : float, "default" : 0.0       } ) }
-   attribs = { "mode": (InputValue, { "dtype" : str,
-                                      "options" : [ "unix", "inet" ],
-                                      "default" : "inet", 
-                                      "help"    : "Specifies whether the driver interface will listen onto a internet socket [inet] or onto a unix socket[unix]" } ) 
-             }
+   fields = {"address": (InputValue, {"dtype"   : str,
+                                      "default" : "localhost", 
+                                      "help"    : "This gives the server address that the socket will run on" } ), 
+             "port":    (InputValue, {"dtype"   : int, 
+                                      "default" :  31415, 
+                                      "help"    : "This gives the port number that defines the socket"} ),
+             "slots":   (InputValue, {"dtype"   : int, 
+                                      "default" : 4, 
+                                      "help"    : "This gives the number of client codes that queue at any one time"} ), 
+             "latency": (InputValue, {"dtype"   : float, 
+                                      "default" : 1e-3,
+                                      "help"    : "This gives the number of seconds between each check for new clients"} ),
+             "timeout": (InputValue, {"dtype"   : float, 
+                                      "default" : 0.0, 
+                                      "help"    : "This gives the number of seconds before assuming a calculation has died. If 0 there is no timeout." } )}
+   attribs = { "mode": (InputValue, {"dtype"    : str,
+                                     "options"  : [ "unix", "inet" ],
+                                     "default"  : "inet", 
+                                     "help"     : "Specifies whether the driver interface will listen onto a internet socket [inet] or onto a unix socket[unix]" } )}
 
    def store(self, iface):
       """Takes an Interface instance and stores a minimal representation of it.
@@ -69,6 +57,7 @@ class RestartInterface(Input):
          iface: An interface object.
       """
 
+      super(RestartInterface,self).store(iface)
       self.latency.store(iface.latency)
       self.mode.store(iface.mode)
       self.address.store(iface.address)
@@ -84,6 +73,7 @@ class RestartInterface(Input):
          of the RestartInterface object.
       """
 
+      super(RestartInterface,self).fetch()
       return Interface(address=self.address.fetch(), port=self.port.fetch(), 
             slots=self.slots.fetch(), mode=self.mode.fetch(), 
             latency=self.latency.fetch(), timeout=self.timeout.fetch())
