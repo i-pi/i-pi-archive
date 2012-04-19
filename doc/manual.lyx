@@ -997,7 +997,14 @@ Sockets
 
 \begin_layout Standard
 A socket is a data transfer device that is designed for internet communication.
- Each socket is described by an IP address and a port number.
+ It supports both multiple connections to the same socket, and two way communica
+tion.
+ This makes it ideal for communication between the wrapper code and multiple
+ driver codes.
+\end_layout
+
+\begin_layout Standard
+Each socket is described by an IP address and a port number.
  On top of this, they can either be an internet socket or a local unix socket.
  Each of these different variables is important in a different way.
 \end_layout
@@ -1074,12 +1081,211 @@ emph{ab initio}
  advantage of using unix sockets is lost.
 \end_layout
 
+\begin_layout Standard
+In our code, there are a two other input parameters that may be used.
+ 
+\begin_inset Quotes eld
+\end_inset
+
+latency
+\begin_inset Quotes erd
+\end_inset
+
+ specifies the length of time between each check to see if any new driver
+ codes have connected, and 
+\begin_inset Quotes eld
+\end_inset
+
+slots
+\begin_inset Quotes erd
+\end_inset
+
+ specifies how many driver codes can queue between checks.
+ Neither is likely to be important in running the code.
+\end_layout
+
 \begin_layout Subsection
 Data transfer
 \end_layout
 
 \begin_layout Standard
-To 
+To make the transfer as simple as possible, the data is transferred in binary
+ format.
+ The transfer protocol is to send a header string of 12 characters specifying
+ the stage of the data transfer, followed if necessary by data, then wait
+ for data to be returned.
+ We use 4-bit integers, 8-bit floats and 12 character strings for the transfer.
+ A typical step is of the form:
+\end_layout
+
+\begin_layout Enumerate
+A header string of 
+\begin_inset Quotes eld
+\end_inset
+
+STATUS
+\begin_inset Quotes erd
+\end_inset
+
+ is sent by the server socket, specifying what stage of the data transfer
+ is being done.
+\end_layout
+
+\begin_layout Enumerate
+A header string is then returned, giving the status.
+ Recognized options are:
+\end_layout
+
+\begin_deeper
+\begin_layout Description
+\begin_inset Quotes eld
+\end_inset
+
+NEEDINIT
+\begin_inset Quotes erd
+\end_inset
+
+: If the driver code needs any initialising data, it can be sent here.
+ The server code will then send a header string 
+\begin_inset Quotes eld
+\end_inset
+
+INIT
+\begin_inset Quotes erd
+\end_inset
+
+, followed by an integer giving the number of bits in the initialization
+ string, then the initialization string itself.
+ [Deprecated, may be removed from later versions of 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+wrappi
+\end_layout
+
+\end_inset
+
+]
+\end_layout
+
+\begin_layout Description
+\begin_inset Quotes eld
+\end_inset
+
+READY
+\begin_inset Quotes erd
+\end_inset
+
+: Sent if the driver code is ready to calculate the forces.
+ The server socket will then send a string 
+\begin_inset Quotes eld
+\end_inset
+
+POSDATA
+\begin_inset Quotes erd
+\end_inset
+
+, then nine floats the cell vector matrix, then another nine floats for
+ the inverse matrix, (which need to be transposed if the driver code is
+ written in fortran).
+ The server socket will then send one integer giving the number of atoms,
+ then the position data as 3 floats for each atom giving the 3 cartesian
+ components of the bead position.
+\end_layout
+
+\begin_layout Description
+\begin_inset Quotes eld
+\end_inset
+
+HAVEDATA
+\begin_inset Quotes erd
+\end_inset
+
+: This is sent if the driver has calculated the potential and forces.
+ The server socket then sends a string 
+\begin_inset Quotes eld
+\end_inset
+
+GETFORCE
+\begin_inset Quotes erd
+\end_inset
+
+, and the client socket returns 
+\begin_inset Quotes eld
+\end_inset
+
+FORCEREADY
+\begin_inset Quotes erd
+\end_inset
+
+.
+ The potential is then returned as a float, the number of atoms as an integer,
+ then the force data as 3 floats per atom in the same way as the positions,
+ and the virial as 9 floats in the same way as the cell vector matrix.
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+The server socket waits for an amount of time given by the latency before
+ asking for 
+\begin_inset Quotes eld
+\end_inset
+
+STATUS
+\begin_inset Quotes erd
+\end_inset
+
+ again, until the force data for each replica of the system has been calculated
+ and returned, upon which the job is finished and the molecular dynamics
+ loop starts.
+\end_layout
+
+\begin_layout Subsection
+Parallelization
+\end_layout
+
+\begin_layout Standard
+This type of data transfer is well suited to working with PIMD, as it allows
+ multiple driver codes to connect to the server socket of one simulation,
+ so that different replicas of the system can be assigned to different driver
+ codes so their forces can be computed in parallel.
+\end_layout
+
+\begin_layout Standard
+In the case that there are as many driver codes as replicas of the system,
+ this is very simple, as each replica will be assigned its own driver code.
+ For most potentials, the slowdown due to the socket communication is not
+ appreciable, and in this case the force calculation will essentially be
+ as fast as a purely classical simulation.
+ 
+\end_layout
+
+\begin_layout Standard
+Also, for subsequent steps, the interface will assign a particular replica
+ of the system to the same driver code which calculated the forces for it
+ the last step.
+ This reduces the amount the configuration changes between calculations
+ on a particular driver code, which can speed up certain calculations.
+\end_layout
+
+\begin_layout Standard
+In the case where there are too few driver codes, then the socket interface
+ will assign spare jobs to the first driver code that finishes running,
+ after matching all possible jobs to the same driver code that calculated
+ it last time step.
+\end_layout
+
+\begin_layout Standard
+This is especially useful when the calculations are being run on a cluster.
+ In this case, you can split up the driver codes, and they will connect
+ whenever they reach the front of the queue.
+ More driver codes can connect at any time, and if there is a problem and
+ any driver code dies, it is simply removed from the driver list and any
+ job it was running reassigned.
 \end_layout
 
 \begin_layout Chapter
