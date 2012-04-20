@@ -269,6 +269,8 @@ class ThermoPILE_L(Thermostat):
       else:
          self.prng = prng  
       
+      prev_ethermo=self.ethermo
+            
       # creates a set of thermostats to be applied to individual normal modes
       self._thermos = [ ThermoLangevin(temp=1, dt=1, tau=1) for b in range(beads.nbeads) ]
       # optionally does not bind the centroid, so we can re-use all of this 
@@ -304,8 +306,14 @@ class ThermoPILE_L(Thermostat):
             dget(t,"tau")._func = make_taugetter(it)
          dget(self,"ethermo").add_dependency(dget(t,"ethermo"))
          it += 1     
-             
-      dget(self,"ethermo")._func = self.get_ethermo;
+
+      # since the ethermo will be "delegated" to the normal modes thermostats, one has to split 
+      # any previously-stored value between the sub-thermostats 
+      if bindcentroid:
+         for t in self._thermos:
+            t.ethermo = prev_ethermo/beads.nbeads
+         dget(self,"ethermo")._func = self.get_ethermo;
+         # if we are not binding the centroid just yet, this bit of the piping is delegated to the function which is actually calling this
          
    def get_tauk(self):
       """Computes the thermostat damping time scale for the non-centroid 
@@ -443,6 +451,9 @@ class ThermoPILE_G(ThermoPILE_L):
       """
 
       # first binds as a local PILE, then substitutes the thermostat on the centroid
+      
+      
+      prev_ethermo=self.ethermo
       super(ThermoPILE_G,self).bind(beads=beads,prng=prng,bindcentroid=False, ndof=ndof) 
             
       self._thermos[0] = ThermoSVR(temp=1, dt=1, tau=1) 
@@ -451,8 +462,13 @@ class ThermoPILE_G(ThermoPILE_L):
       t.bind(pm=(beads.pnm[0,:],beads.m3[0,:]),prng=self.prng, ndof=ndof)
       deppipe(self,"temp", t, "temp")
       deppipe(self,"dt", t, "dt")
-      deppipe(self,"tau", t, "tau")
+      deppipe(self,"tau", t, "tau")           
       dget(self,"ethermo").add_dependency(dget(t,"ethermo"))
+
+      # splits any previous ethermo between the thermostats, and finishes to bind ethermo to the sum function
+      for t in self._thermos:
+         t.ethermo = prev_ethermo/beads.nbeads
+      dget(self,"ethermo")._func = self.get_ethermo;
 
 class ThermoGLE(Thermostat):     
    """Represents a GLE thermostat.
@@ -571,7 +587,7 @@ class ThermoGLE(Thermostat):
             containing a momentum vector is specified for 
             the thermostat to couple to.
       """
-
+      
       super(ThermoGLE,self).bind(beads,atoms,cell,pm,prng,ndof)
 
       # allocates, initializes or restarts an array of s's 
@@ -742,6 +758,8 @@ class ThermoNMGLE(Thermostat):
       else:
          print " @ GLE BIND: Restarting additional DOFs! "
 
+      prev_ethermo=self.ethermo
+      
       # creates a set of thermostats to be applied to individual normal modes
       self._thermos = [ ThermoGLE(temp=1, dt=1, A=self.A[b], C=self.C[b]) for b in range(beads.nbeads) ]
             
@@ -768,7 +786,12 @@ class ThermoNMGLE(Thermostat):
          dget(t,"C")._func = make_Cgetter(it)
          dget(self,"ethermo").add_dependency(dget(t,"ethermo"))
          it += 1
-             
+
+      # since the ethermo will be "delegated" to the normal modes thermostats, one has to split 
+      # any previously-stored value between the sub-thermostats 
+      for t in self._thermos:
+         t.ethermo = prev_ethermo/beads.nbeads
+
       dget(self,"ethermo")._func = self.get_ethermo;
 
 #      super(ThermoNMGLE,self).bind(beads,atoms,cell,pm,prng,ndof)

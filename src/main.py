@@ -36,7 +36,6 @@ def main(file_name):
                                                      # appropriately.
 
    simul = simrestart.fetch() # Creates the appropriate simulation object.
-   
    simul.run()
    del simul
 

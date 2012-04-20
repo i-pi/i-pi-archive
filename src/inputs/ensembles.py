@@ -120,7 +120,6 @@ class RestartEnsemble(Input):
          ens = NSTEnsemble(dt=self.timestep.fetch(), temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(),
                         fixcom=self.fixcom.fetch(), sext=self.stress.fetch(), barostat=self.barostat.fetch() )
                         
-      print "thermostat energy", ens.thermostat.ethermo
       return ens
       
    def check(self):

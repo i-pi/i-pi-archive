@@ -128,10 +128,12 @@ class RestartAtoms(Input):
 
       if self.natoms.fetch() > 0:
          return super(RestartAtoms,self).write(name=name,indent=indent)
-      else:
+      elif self.from_file.fetch()!="":
          rstr=InputValue(dtype=str)
          rstr.store(self.from_file.fetch())
          return indent+"<"+name+">"+rstr.write("from_file","")+"</"+name+">\n";
+      else:
+         return ""
       
    
    def check(self): 

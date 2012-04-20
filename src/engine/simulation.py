@@ -110,6 +110,7 @@ class Simulation(dobject):
       self.status = None
       
       self.ensemble = ensemble
+      
       dset(self, "step", depend_value(name="step", value=step))
       self.tsteps = tsteps
       
@@ -136,6 +137,7 @@ class Simulation(dobject):
          self.initlist = {}
       else:
          self.initlist = initlist
+
                         
    def bind(self):
       """Calls the bind routines for all the objects in the simulation.

@@ -136,4 +136,5 @@ class RestartThermo(Input):
          raise TypeError("Invalid thermostat kind " + self.kind.fetch())
          
       thermo.ethermo = self.ethermo.fetch()
+
       return thermo
