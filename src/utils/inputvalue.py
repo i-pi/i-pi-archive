@@ -229,15 +229,16 @@ class Input(object):
          if not (vf._explicit or vf._optional):
             raise ValueError("Field name '" + f + "' is mandatory and was not found in the input for the property " + xml.name)
       
-   def help(self, level=0, stop_level=None):
+   def help_latex(self, level=0, stop_level=None):
       """Function to generate a LaTeX formatted manual.
 
       Args:
          level: Current level of the hierarchy being considered.
-         stop_level: The depth to which information will be given.
+         stop_level: The depth to which information will be given. If not given,
+            will give all information.
 
       Returns: 
-         An LaTeX formatted string that can be compiled to give a help 
+         A LaTeX formatted string that can be compiled to give a help 
          document.
       """
 
@@ -257,7 +258,7 @@ class Input(object):
       if self._default != None: 
          rstr += r"{\\ \bf DEFAULT: }" + str(self._default) + "\\\\\n"
 
-      if hasattr(self, _valid):
+      if hasattr(self, "_valid"):
          if self._valid is not None: 
             rstr += r"{\\ \bf OPTIONS: }" 
             for option in self._valid:
@@ -284,6 +285,72 @@ class Input(object):
          rstr += r"\end{document}"
        
       return rstr
+
+   def help_xml(self, name="", indent="", level=0, stop_level=None):
+      """Function to generate an xml formatted manual.
+
+      Args:
+         name: A string giving the name of the root node.
+         level: Current level of the hierarchy being considered.
+         stop_level: The depth to which information will be given. If not given,
+            all information will be given
+
+      Returns: 
+         An xml formatted string.
+      """
+
+      if (not stop_level is None and level > stop_level):
+         return ""
+
+      show_attribs = (len(self.attribs) == 0 and level == stop_level)
+      show_fields = (len(self.fields) != 0 and level != stop_level)
+
+      rstr = ""
+      rstr = indent + "<" + name;
+      for a in self.attribs: 
+         rstr += " " + a + "=''"
+      rstr += ">\n"
+
+      rstr += indent + "   <help>" + self._help + "</help>\n"
+      if show_attribs:
+         for a in self.attribs:
+            rstr += indent + "   <" + a + "_help>" + a._help + "</" + a + "_help>\n"
+
+      if self._dimension != "undefined":
+         rstr += indent + "   <dimension>" + self._dimension + "</dimension>\n"
+         if show_attribs:
+            for a in self.attribs:
+               if a._dimension != "undefined":
+                  rstr += indent + "   <" + a + "_dimension>" + a._dimension + "</" + a + "_dimension>\n"
+
+      if self._default is not None:
+         rstr += indent + "   <default>" + str(self._default) + "</default>\n"
+         if show_attribs:
+            for a in self.attribs:
+               if a._default is not None:
+                  rstr += indent + "   <" + a + "_default>" + a._default + "</" + a + "_default>\n"
+
+      if hasattr(self, "_valid"):
+         rstr += indent + "   <options>" + str(self._valid) + "</options>\n"
+         if show_attribs:
+            for a in self.attribs:
+               if hasattr(a, "_valid"):
+                  rstr += indent + "   <" + a + "_options>" + a._valid + "</" + a + "_options>\n"
+
+      if hasattr(self, "type"): 
+         rstr += indent + "   <dtype>" + self.type.__name__ + "</dtype>\n"
+         if show_attribs:
+            for a in self.attribs:
+               if hasattr(a, "type"):
+                  rstr += indent + "   <" + a + "_dtype>" + a.type + "</" + a + "_dtype>\n"
+
+      if show_fields:
+         for f in self.fields:
+            rstr += self.__dict__[f].help_xml(f, "   " + indent, level+1, stop_level)
+
+      rstr += indent + "</" + name + ">\n"
+      return rstr
+
        
 class InputValue(Input):
    """Scalar class for input handling.
