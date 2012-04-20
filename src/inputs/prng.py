@@ -3,17 +3,17 @@
 Generates a random number generator either from a seed number, or from a state vector.
 
 Classes:
-   RestartRandom: Deals with creating the Random object from a file, and 
+   InputRandom: Deals with creating the Random object from a file, and 
       writing the checkpoints.
 """
 
-__all__ = ['RestartRandom']
+__all__ = ['InputRandom']
 
 import numpy as np
 from utils.prng import *
 from utils.inputvalue import *
 
-class RestartRandom(Input):
+class InputRandom(Input):
    """Random input class.
 
    Handles generating the appropriate random number class from the xml 
@@ -57,7 +57,7 @@ class RestartRandom(Input):
          prng: A random number object from which to initialise from.
       """
 
-      super(RestartRandom,self).store(prng)
+      super(InputRandom,self).store(prng)
       self.seed.store(prng.seed)
       gstate = prng.state
       self.state.store(gstate[1])
@@ -70,11 +70,11 @@ class RestartRandom(Input):
 
       Returns:
          An random number object of the appropriate type and with the 
-         appropriate properties given the attributes of the RestartRandom
+         appropriate properties given the attributes of the InputRandom
          object.
       """
 
-      super(RestartRandom,self).fetch()
+      super(InputRandom,self).fetch()
       state = self.state.fetch()
       if state.shape == (0,):
          return Random(seed=self.seed.fetch())

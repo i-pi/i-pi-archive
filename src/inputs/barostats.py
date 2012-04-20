@@ -1,7 +1,7 @@
 """Deals with creating the barostat class.
 
 Classes:
-   RestartBaro: Deals with creating the Barostat object from a file, and 
+   InputBaro: Deals with creating the Barostat object from a file, and 
       writing the checkpoints.
 """
 
@@ -10,9 +10,9 @@ import engine.thermostats
 from utils.inputvalue import *
 from inputs.thermostats import *
 
-__all__ = ['RestartBaro']
+__all__ = ['InputBaro']
       
-class RestartBaro(Input):
+class InputBaro(Input):
    """Barostat input class.
 
    Handles generating the appropriate barostat class from the xml input file, 
@@ -29,7 +29,7 @@ class RestartBaro(Input):
                                    "default"  : "rigid",
                                    "help"     : "The type of barostat.",
                                    "options"  : ["rigid", "flexible"]}) }
-   fields={ "thermostat": (RestartThermo, {"default" : engine.thermostats.Thermostat(),
+   fields={ "thermostat": (InputThermo, {"default" : engine.thermostats.Thermostat(),
                                            "help"    : "The thermostat for the cell. Keeps the cell velocity distribution at the correct temperature."}) }
 
    def store(self, baro):
@@ -39,7 +39,7 @@ class RestartBaro(Input):
          baro: A barostat object.
       """
 
-      super(RestartBaro,self).store(baro)
+      super(InputBaro,self).store(baro)
       if type(baro) is BaroRigid:
          self.kind.store("rigid")
       if type(baro) is BaroFlexi:
@@ -53,10 +53,10 @@ class RestartBaro(Input):
 
       Returns:
          A barostat object of the appropriate type and with the appropriate 
-         thermostat given the attributes of the RestartBaro object.
+         thermostat given the attributes of the InputBaro object.
       """
 
-      super(RestartBaro,self).fetch()
+      super(InputBaro,self).fetch()
       if self.kind.fetch().upper() == "RIGID":
          baro=BaroRigid(thermostat=self.thermostat.fetch())
       elif self.kind.fetch().upper() == "FLEXIBLE":

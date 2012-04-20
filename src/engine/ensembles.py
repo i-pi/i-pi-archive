@@ -23,8 +23,8 @@ from utils.restart import *
 from utils import units
 from thermostats import *
 from barostats import *
-from inputs.thermostats import RestartThermo
-from inputs.barostats import RestartBaro
+from inputs.thermostats import InputThermo
+from inputs.barostats import InputBaro
 import time
 
 class Ensemble(dobject): 

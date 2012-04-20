@@ -7,7 +7,7 @@ not inherently system dependent, like the running of each time step,
 choosing which properties to initialise, and which properties to output.
 
 Classes:
-   RestartSimulation: Deals with creating the simulation object from a file, 
+   InputSimulation: Deals with creating the simulation object from a file, 
       and writing the checkpoints.
    Simulation: Deals with running the simulation and outputting the results.
 """
@@ -28,7 +28,7 @@ from cell import *
 from forces import ForceBeads
 from beads import Beads
 from properties import Properties, Trajectories
-from inputs.simulation import RestartSimulation
+from inputs.simulation import InputSimulation
 
 _DEFAULT_STRIDES = {"checkpoint": 1000, "properties": 10, "progress": 100, "centroid": 20,  "trajectory": 100}
 _DEFAULT_OUTPUT = [ "time", "conserved", "kinetic", "potential" ]
@@ -67,7 +67,7 @@ class Simulation(dobject):
       tout: File to output the full trajectory to.
       ichk: A number keeping track of all the restart files generated so far,
          so that old files are not overwritten.
-      status: A RestartSimulation object used to deal gracefully with soft exit
+      status: A InputSimulation object used to deal gracefully with soft exit
          in the middle of a force calculation
 
    Depend objects:
@@ -155,7 +155,7 @@ class Simulation(dobject):
       self.properties.bind(self)
       self.trajs.bind(self)
       
-      self.status = RestartSimulation()
+      self.status = InputSimulation()
       self.status.store(self)
       
       # Checks as soon as possible if some asked-for properties are missing or mispelled

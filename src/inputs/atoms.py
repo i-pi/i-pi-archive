@@ -5,7 +5,7 @@ a configuration file. This class is only used if no beads tag is present in
 the xml file.
 
 Classes:
-   RestartAtoms: Deals with creating the Atoms object from a file, and 
+   InputAtoms: Deals with creating the Atoms object from a file, and 
       writing the checkpoints.
 """
 
@@ -16,9 +16,9 @@ import utils.io.io_pdb
 from utils.depend import *
 from utils.units import *
 
-__all__ = ['RestartAtoms']
+__all__ = ['InputAtoms']
       
-class RestartAtoms(Input):
+class InputAtoms(Input):
    """Atoms input class.
 
    Handles generating the appropriate atoms class from the xml input file,
@@ -72,7 +72,7 @@ class RestartAtoms(Input):
                                         "dimension" : "temperature"})  }
        
 #   def __init__(self, atoms=None, filename=""):
-#      """Initialises RestartAtoms.
+#      """Initialises InputAtoms.
 
 #      Args:
 #         atoms: An optional Atoms object from which to initialise from.
@@ -80,7 +80,7 @@ class RestartAtoms(Input):
 #            positions from. Defaults to ''.
 #      """
 
-#      super(RestartAtoms,self).__init__()
+#      super(InputAtoms,self).__init__()
 #      self._optional = True
 #      if not atoms is None:
 #         self.store(atoms, filename="")
@@ -94,7 +94,7 @@ class RestartAtoms(Input):
             positions from. Defaults to ''.
       """
 
-      super(RestartAtoms,self).store()
+      super(InputAtoms,self).store()
       self.natoms.store(atoms.natoms)
       self.q.store(depstrip(atoms.q))
       self.p.store(depstrip(atoms.p))
@@ -107,10 +107,10 @@ class RestartAtoms(Input):
 
       Returns:
          An atoms object of the appropriate type and with the appropriate
-         properties given the attributes of the RestartAtoms object.
+         properties given the attributes of the InputAtoms object.
       """
 
-      super(RestartAtoms,self).fetch()
+      super(InputAtoms,self).fetch()
       atoms = Atoms(self.natoms.fetch())
       atoms.q = self.q.fetch()
       atoms.p = self.p.fetch() 
@@ -119,7 +119,7 @@ class RestartAtoms(Input):
       return atoms
    
    def write(self,  name="", indent=""):
-      """Overloads Restart write() function so that nothing is written if
+      """Overloads Input write() function so that nothing is written if
       no atoms are present.
 
       Returns:
@@ -127,7 +127,7 @@ class RestartAtoms(Input):
       """
 
       if self.natoms.fetch() > 0:
-         return super(RestartAtoms,self).write(name=name,indent=indent)
+         return super(InputAtoms,self).write(name=name,indent=indent)
       elif self.from_file.fetch()!="":
          rstr=InputValue(dtype=str)
          rstr.store(self.from_file.fetch())
@@ -144,7 +144,7 @@ class RestartAtoms(Input):
       been specified explicitly.
       """
 
-      super(RestartAtoms,self).check()
+      super(InputAtoms,self).check()
       if self.from_file.fetch() != "":
          myatoms, mycell = utils.io.io_pdb.read_pdb(open(self.from_file.fetch(),"r"))
          myatoms.q *= UnitMap["length"][self.file_units.fetch()]

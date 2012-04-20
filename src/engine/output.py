@@ -6,10 +6,10 @@ from utils.depend import *
 import engine.simulation
 import sys
 
-class RestartOutput(Restart):
-   fields={"stdout_stride": (RestartValue, (int, 100)), "energy_stride": (RestartValue, (int, 1)), 
-           "traj_stride": (RestartValue, (int, 500)), "checkpoint_stride": (RestartValue, (int, 1000)),
-           "file_prefix": (RestartValue, (str, "")), "quantity_list": (RestartValue, (str, ""))}
+class InputOutput(Input):
+   fields={"stdout_stride": (InputValue, (int, 100)), "energy_stride": (InputValue, (int, 1)), 
+           "traj_stride": (InputValue, (int, 500)), "checkpoint_stride": (InputValue, (int, 1000)),
+           "file_prefix": (InputValue, (str, "")), "quantity_list": (InputValue, (str, ""))}
 
    def store(self, output):
       self.stdout_stride.store(output.stdout)
@@ -38,7 +38,7 @@ class Output(dobject):
 
       self.number = 0
       self.file_check()
-      self.restart = engine.simulation.RestartSimulation()
+      self.restart = engine.simulation.InputSimulation()
 
    def file_check(self):
       new = False

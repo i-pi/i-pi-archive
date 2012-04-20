@@ -1,7 +1,7 @@
 """Deals with creating the ensembles class.
 
 Classes:
-   RestartEnsemble: Deals with creating the Ensemble object from a file, and 
+   InputEnsemble: Deals with creating the Ensemble object from a file, and 
       writing the checkpoints.
 """
 
@@ -14,9 +14,9 @@ from inputs.barostats import *
 from inputs.thermostats import *
 from utils.units import *
 
-__all__ = ['RestartEnsemble']
+__all__ = ['InputEnsemble']
 
-class RestartEnsemble(Input):
+class InputEnsemble(Input):
    """Ensemble input class.
 
    Handles generating the appropriate ensemble class from the xml input file,
@@ -45,9 +45,9 @@ class RestartEnsemble(Input):
                                     "default" : "nve",
                                     "help"    : "The ensemble that will be sampled during the simulation.",
                                     "options" : ['nve', 'nvt', 'npt', 'nst']}) }
-   fields={"thermostat" : (RestartThermo, {"default"   : engine.thermostats.Thermostat(),
+   fields={"thermostat" : (InputThermo, {"default"   : engine.thermostats.Thermostat(),
                                            "help"      : "The thermostat for the atoms, keeps the atom velocity distribution at the correct temperature."} ),
-           "barostat" : (RestartBaro, {"default"       : engine.barostats.Barostat(),
+           "barostat" : (InputBaro, {"default"       : engine.barostats.Barostat(),
                                        "help"          : "The barostat for the simulation."} ), 
            "timestep": (InputValue, {"dtype"         : float,
                                      "default"       : "1.0",
@@ -76,7 +76,7 @@ class RestartEnsemble(Input):
          ens: An ensemble object.
       """
 
-      super(RestartEnsemble,self).store(ens)
+      super(InputEnsemble,self).store(ens)
       if type(ens) is NVEEnsemble:    
          self.type.store("nve"); tens=0
       elif type(ens) is NVTEnsemble:  
@@ -104,10 +104,10 @@ class RestartEnsemble(Input):
 
       Returns:
          An ensemble object of the appropriate type and with the appropriate
-         objects given the attributes of the RestartEnsemble object.
+         objects given the attributes of the InputEnsemble object.
       """
 
-      super(RestartEnsemble,self).fetch()
+      super(InputEnsemble,self).fetch()
       if self.type.fetch() == "nve" :
          ens = NVEEnsemble(dt=self.timestep.fetch(), temp=self.temperature.fetch(), fixcom=self.fixcom.fetch())
       elif self.type.fetch() == "nvt" : 
@@ -129,7 +129,7 @@ class RestartEnsemble(Input):
       they have been defined by the user and not given the default values.
       """
 
-      super(RestartEnsemble,self).check()
+      super(InputEnsemble,self).check()
       if self.type.fetch() == "nvt":
          if self.thermostat._explicit == False:
             raise ValueError("No thermostat tag supplied for NVT simulation")

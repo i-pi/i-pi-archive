@@ -1,18 +1,18 @@
 """Deals with creating the interface between the wrapper and the socket.
 
 Classes:
-   RestartInterface: Deals with creating the Interface object from a file, and
+   InputInterface: Deals with creating the Interface object from a file, and
       writing the checkpoints.
 """
 
-__all__ = [ 'RestartInterface' ]
+__all__ = [ 'InputInterface' ]
 
 import socket, select, threading, signal, string, os, time
 import numpy as np
 from utils.inputvalue import Input, InputValue
 from driver.interface import *
 
-class RestartInterface(Input):         
+class InputInterface(Input):         
    """Interface input class.
 
    Handles generating the apporopriate interface class from the xml
@@ -57,7 +57,7 @@ class RestartInterface(Input):
          iface: An interface object.
       """
 
-      super(RestartInterface,self).store(iface)
+      super(InputInterface,self).store(iface)
       self.latency.store(iface.latency)
       self.mode.store(iface.mode)
       self.address.store(iface.address)
@@ -70,10 +70,10 @@ class RestartInterface(Input):
 
       Returns:
          An interface object with the appropriate socket given the attributes
-         of the RestartInterface object.
+         of the InputInterface object.
       """
 
-      super(RestartInterface,self).fetch()
+      super(InputInterface,self).fetch()
       return Interface(address=self.address.fetch(), port=self.port.fetch(), 
             slots=self.slots.fetch(), mode=self.mode.fetch(), 
             latency=self.latency.fetch(), timeout=self.timeout.fetch())

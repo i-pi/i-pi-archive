@@ -4,7 +4,7 @@ Generates an cell class either from a set of positions and momenta, or from
 a configuration file.
 
 Classes:
-   RestartCell: Deals with creating the Cell object from a file, and 
+   InputCell: Deals with creating the Cell object from a file, and 
       writing the checkpoints.
 """
 
@@ -13,9 +13,9 @@ from utils.io.io_pdb import *
 from engine.cell import *
 from utils.inputvalue import *
 
-__all__ = [ 'RestartCell' ]
+__all__ = [ 'InputCell' ]
       
-class RestartCell(Input):
+class InputCell(Input):
    """Cell input class.
 
    Handles generating the appropriate cell class from the xml input file,
@@ -72,13 +72,13 @@ class RestartCell(Input):
                                           "help"     : "Whether the cell parameters can change during the simulation."}) }
     
 #   def __init__(self, cell=None):
-#      """Initialises RestartCell.
+#      """Initialises InputCell.
 
 #      Args:
 #         cell: A Cell object from which to initialise from.
 #      """
 
-#      super(RestartCell,self).__init__()
+#      super(InputCell,self).__init__()
 #      if not cell is None:
 #         self.store(cell)
       
@@ -91,7 +91,7 @@ class RestartCell(Input):
             from. Defaults to ''.
       """
 
-      super(RestartCell,self).store(cell)
+      super(InputCell,self).store(cell)
       self.from_file.store(filename)
       self.flexible.store(type(cell) is CellFlexi)
       self.m.store(cell.m)
@@ -108,10 +108,10 @@ class RestartCell(Input):
 
       Returns: 
          A cell object of the appropriate type and with the appropriate 
-         properties given the attributes of the RestartCell object.
+         properties given the attributes of the InputCell object.
       """
 
-      super(RestartCell,self).fetch()
+      super(InputCell,self).fetch()
       if (self.flexible.fetch()): 
          cell = CellFlexi(h=self.h.fetch(), m=self.m.fetch())
          if det_ut3x3(self.h0.fetch()) == 0.0:
@@ -131,7 +131,7 @@ class RestartCell(Input):
       have been specified explicitly.
       """
 
-      super(RestartCell,self).check()
+      super(InputCell,self).check()
       if self.from_file.fetch() != "":
          myatoms, mycell = utils.io.io_pdb.read_pdb(open(self.from_file.fetch(),"r")) 
          if (self.h0.fetch() == np.zeros((3,3))).all():

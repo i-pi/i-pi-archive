@@ -4,11 +4,11 @@ Chooses between the different possible thermostat options and creates the
 appropriate thermostat object, with suitable parameters.
 
 Classes:
-   RestartThermo: Deals with creating the thermostat object from a file, and
+   InputThermo: Deals with creating the thermostat object from a file, and
       writing the checkpoints.
 """
 
-__all__ = ['RestartThermo']
+__all__ = ['InputThermo']
 
 import numpy as np
 import math
@@ -16,7 +16,7 @@ from utils.depend   import *
 from utils.inputvalue  import *
 from engine.thermostats import *
             
-class RestartThermo(Input):
+class InputThermo(Input):
    """Thermostat input class.
 
    Handles generating the appropriate thermostat class from the xml input file,
@@ -57,7 +57,7 @@ class RestartThermo(Input):
                                     "dimension" : "temperature" }),
             "s" : (InputArray, {    "dtype"     : float, 
                                     "default"   : np.zeros(0),
-                                    "help"      : "Restart values for the additional momenta in GLE.",
+                                    "help"      : "Input values for the additional momenta in GLE.",
                                     "dimension" : "ms-momentum" })
              }
    
@@ -71,7 +71,7 @@ class RestartThermo(Input):
          TypeError: Raised if the thermostat is not a recognized type.
       """
 
-      super(RestartThermo,self).store(thermo)
+      super(InputThermo,self).store(thermo)
       if type(thermo) is ThermoLangevin: 
          self.kind.store("langevin")
          self.tau.store(thermo.tau)
@@ -105,13 +105,13 @@ class RestartThermo(Input):
 
       Returns:
          A thermostat object of the appropriate type and with the appropriate
-         parameters given the attributes of the RestartThermo object.
+         parameters given the attributes of the InputThermo object.
 
       Raises:
          TypeError: Raised if the thermostat type is not a recognized option.
       """
 
-      super(RestartThermo,self).fetch()
+      super(InputThermo,self).fetch()
       if self.kind.fetch() == "langevin":
          thermo = ThermoLangevin(tau=self.tau.fetch())
       elif self.kind.fetch() == "svr":

@@ -600,7 +600,7 @@ class ThermoGLE(Thermostat):
          SC = stab_cholesky(self.C*Constants.kb)         
          self.s[:] = np.dot(SC, self.prng.gvec(self.s.shape)) 
       else:
-         print " @ GLE BIND: Restarting additional DOFs! "
+         print " @ GLE BIND: Inputing additional DOFs! "
               
    def step(self):
       """Updates the bound momentum vector with a GLE thermostat"""      
@@ -756,7 +756,7 @@ class ThermoNMGLE(Thermostat):
             SC = stab_cholesky(self.C[b]*Constants.kb)         
             self.s[b] = np.dot(SC, self.prng.gvec(self.s[b].shape)) 
       else:
-         print " @ GLE BIND: Restarting additional DOFs! "
+         print " @ GLE BIND: Inputing additional DOFs! "
 
       prev_ethermo=self.ethermo
       

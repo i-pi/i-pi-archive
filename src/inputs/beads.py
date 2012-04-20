@@ -1,7 +1,7 @@
 """Deals with creating the beads class.
 
 Classes:
-   RestartBeads: Deals with creating the Beads object from a file, and 
+   InputBeads: Deals with creating the Beads object from a file, and 
       writing the checkpoints.
 """
 
@@ -13,9 +13,9 @@ import utils.io.io_pdb
 from utils.depend import *
 from utils.units import *
 from inputs.atoms import *
-__all__ = ['RestartBeads']
+__all__ = ['InputBeads']
       
-class RestartBeads(Input):
+class InputBeads(Input):
    """Beads input class.
 
    Handles generating the appropriate beads class from the xml input file,
@@ -42,7 +42,7 @@ class RestartBeads(Input):
                                         "help"      : "The number of atoms"}), 
             "nbeads"    : (InputValue, {"dtype"     : int,
                                         "help"      : "The number of beads"}), 
-            "start_centroid"     : (RestartAtoms, {"help" : "Start at centroid? Write better string", "default" : Atoms(0) }),
+            "start_centroid"     : (InputAtoms, {"help" : "Start at centroid? Write better string", "default" : Atoms(0) }),
             "q"         : (InputArray, {"dtype"     : float,
                                         "default"   : np.zeros(0),
                                         "help"      : "The positions of the atoms, in the format [x1, y1, z1, x2, ... ]",
@@ -64,7 +64,7 @@ class RestartBeads(Input):
                                         "dimension" : "temperature"})  }
 
    def write(self,  name="", indent=""):
-      """Overloads Restart write() function so that nothing is written if
+      """Overloads Input write() function so that nothing is written if
       no atoms are present.
 
       Returns:
@@ -72,7 +72,7 @@ class RestartBeads(Input):
       """
 
       if self.nbeads.fetch() > 0:
-         return super(RestartBeads,self).write(name=name,indent=indent)
+         return super(InputBeads,self).write(name=name,indent=indent)
       else:
          return ""
                        
@@ -83,7 +83,7 @@ class RestartBeads(Input):
          beads: A Beads object from which to initialise from.
       """
 
-      super(RestartBeads,self).store()
+      super(InputBeads,self).store()
       self.natoms.store(beads.natoms)
       self.nbeads.store(beads.nbeads)
 
@@ -97,10 +97,10 @@ class RestartBeads(Input):
 
       Returns:
          A beads object of the appropriate type and with the appropriate
-         properties given the attributes of the RestartBeads object.
+         properties given the attributes of the InputBeads object.
       """
 
-      super(RestartBeads,self).fetch()
+      super(InputBeads,self).fetch()
       beads = Beads(self.natoms.fetch(),self.nbeads.fetch())
       beads.q = self.q.fetch()
       beads.p = self.p.fetch()  
@@ -111,7 +111,7 @@ class RestartBeads(Input):
       
    def check(self):
 
-      super(RestartBeads,self).check()
+      super(InputBeads,self).check()
       if self.q._explicit : 
          pass
       elif self.start_centroid._explicit:
