@@ -78,6 +78,11 @@ UnitMap = {
       "kcal_mol"     : 0.0015946679,
       "kelvin"       : 3.1668152e-06
       },
+   "temperature" :   {
+      "" : 1.00,
+      "atomic_unit"  : 1.00, 
+      "kelvin"       : 1.00
+      },
    "time" :     {
       "" : 1.00,
       "atomic_unit"  : 1.00,
@@ -85,6 +90,12 @@ UnitMap = {
       "picosecond"   : 41341.373,
       "femtosecond"  : 41.341373
       },
+   "frequency" :   {   # TODO fill up units here
+      "" : 1.00
+      },     
+   "ms-momentum" :   {   # TODO fill up units here (mass-scaled momentum)
+      "" : 1.00
+      }, 
    "length" :     {
       "" : 1.00,
       "atomic_unit"  : 1.00,

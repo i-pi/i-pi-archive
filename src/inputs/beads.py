@@ -80,6 +80,7 @@ class RestartBeads(Input):
          beads: A Beads object from which to initialise from.
       """
 
+      super(RestartBeads,self).store(beads)
       self.natoms.store(beads.natoms)
       self.nbeads.store(beads.nbeads)
 
@@ -87,7 +88,7 @@ class RestartBeads(Input):
       self.p.store(depstrip(beads.p))
       self.m.store(depstrip(beads.m))
       self.names.store(depstrip(beads.names))
-      
+
    def fetch(self):
       """Creates a beads object.
 
@@ -96,6 +97,7 @@ class RestartBeads(Input):
          properties given the attributes of the RestartBeads object.
       """
 
+      super(RestartBeads,self).fetch()
       beads = Beads(self.natoms.fetch(),self.nbeads.fetch())
       beads.q = self.q.fetch()
       beads.p = self.p.fetch()      
