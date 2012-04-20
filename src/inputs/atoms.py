@@ -130,8 +130,22 @@ class RestartAtoms(Input):
       else:
          return ""
       
-   
-   def check(self): 
+#   
+#   def check(self): 
+#      """Function that deals with optional arguments.
+#
+#      Deals with the init_temp and from_file arguments, and uses them to 
+#      intialise some of the atoms parameters depending on which ones have
+#      been specified explicitly.
+#      """
+#
+#      super(RestartAtoms,self).check()
+#      if self.from_file.fetch() != "":
+#         myatoms, mycell = utils.io.io_pdb.read_pdb(open(self.from_file.fetch(),"r"))
+#         myatoms.q *= UnitMap["length"][self.file_units.fetch()]
+#         self.store(myatoms, self.from_file.fetch())
+#
+   def adapt(self):
       """Function that deals with optional arguments.
 
       Deals with the init_temp and from_file arguments, and uses them to 
@@ -139,8 +153,12 @@ class RestartAtoms(Input):
       been specified explicitly.
       """
 
-      super(RestartAtoms,self).check()
       if self.from_file.fetch() != "":
-         myatoms, mycell = utils.io.io_pdb.read_pdb(open(self.from_file.fetch(),"r"))
+         myatoms, mycell = units.io.io_pdb.read_pdb(open(self.from_file.fetch(),"r"))
          myatoms.q *= UnitMap["length"][self.file_units.fetch()]
-         self.store(myatoms, self.from_file.fetch())
+         if self.q.fetch() == np.zeros(0):
+            self.q.store(myatoms.q)
+         if self.m.fetch() == np.zeros(0):
+            self.m.store(myatoms.m)
+         if self.names.fetch() == np.zeros(0):
+            self.names.store(myatoms.names)
