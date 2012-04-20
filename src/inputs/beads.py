@@ -30,12 +30,27 @@ class RestartBeads(Input):
    """   
    
    fields={ 
-      "nbeads" : (InputValue, { "dtype" : int, "default" : 0}), 
-      "natoms" : (InputValue, { "dtype" : int, "default" : 0}),  
-      "q" : (InputArray, { "dtype" : float, "default" : np.zeros(0)}),
-      "p" : (InputArray, { "dtype" : float, "default" : np.zeros(0)}), 
-      "m" : (InputArray, { "dtype" : float, "default" : np.zeros(0)}),
-      "names" : (InputArray, { "dtype" : str, "default" : np.zeros(0,np.dtype('|S6'))}), 
+      "nbeads" : (InputValue, {  "dtype" : int, 
+                                 "default" : 0,
+                                 "help" : "The number of PI replicas" }), 
+      "natoms" : (InputValue, {  "dtype" : int, 
+                                 "default" : 0,
+                                 "help" : "The number of atoms" }),  
+      "q" : (InputArray, {       "dtype" : float, 
+                                 "default" : np.zeros(0)
+                                 "help" : "The positions of the atoms, in the format [x1, y1, z1, x2, ... ]",
+                                 "dimension" : "length" }),
+      "p" : (InputArray, {       "dtype"     : float,
+                                 "default"   : np.zeros(0),
+                                 "help"      : "The momenta of the atoms, in the format [px1, py1, pz1, px2, ... ]",
+                                 "dimension" : "momentum" }),
+      "m" : (InputArray, {       "dtype"     : float, 
+                                 "default"   : np.zeros(0),
+                                 "help"      : "The masses of the atoms, in the format [m1, m2, ... ]",
+                                 "dimension" : "mass" }),
+      "names" : (InputArray,  {  "dtype"     : str,
+                                 "default"   : np.zeros(0, np.dtype('|S6')),
+                                 "help"      : "The names of the atoms, in the format [name1, name2, ... ]" }),
       "init_temp": (InputValue, { "dtype" : int, "default" : -1.0 }),    }
    
    def __init__(self, beads=None):
