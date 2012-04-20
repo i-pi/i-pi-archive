@@ -80,10 +80,9 @@ class RestartAtoms(Input):
       """
 
       super(RestartAtoms,self).__init__()
+      self._optional = True
       if not atoms is None:
          self.store(atoms, filename="")
-      else:
-         self._explicit = True #Needed because no default...
                        
    def store(self, atoms, filename=""):
       """Takes an Atoms instance and stores a minimal representation of it.
