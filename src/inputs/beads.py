@@ -37,7 +37,7 @@ class RestartBeads(Input):
                                  "default" : 0,
                                  "help" : "The number of atoms" }),  
       "q" : (InputArray, {       "dtype" : float, 
-                                 "default" : np.zeros(0)
+                                 "default" : np.zeros(0),
                                  "help" : "The positions of the atoms, in the format [x1, y1, z1, x2, ... ]",
                                  "dimension" : "length" }),
       "p" : (InputArray, {       "dtype"     : float,

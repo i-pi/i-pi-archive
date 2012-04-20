@@ -24,13 +24,12 @@ Classes:
 """
 
 __all__ = ['Thermostat', 'ThermoLangevin', 'ThermoPILE_L', 'ThermoPILE_G',
-           'ThermoSVR', 'ThermoGLE', 'ThermoNMGLE', 'RestartThermo']
+           'ThermoSVR', 'ThermoGLE', 'ThermoNMGLE']
 
 import numpy as np
 import math
 from utils.depend   import *
 from utils.units    import *
-from utils.restart  import *
 from utils.mathtools import matrix_exp, stab_cholesky
 from utils.prng import Random
 from beads import Beads
@@ -794,96 +793,3 @@ class ThermoNMGLE(Thermostat):
          et += t.ethermo
       return et
 
-            
-class RestartThermo(Restart):
-   """Thermostat restart class.
-
-   Handles generating the appropriate thermostat class from the xml input file,
-   and generating the xml checkpoiunt tags and data from an instance of the
-   object.
-
-   Attributes:
-      kind: An optional string giving the type of the thermostat used. Defaults
-         to 'langevin'.
-      ethermo: An optional float giving the amount of heat energy transferred
-         to the bath. Defaults to 0.0.
-      tau: An optional float giving the damping time scale. Defaults to 1.0.
-      A: An optional array of floats giving the drift matrix. Defaults to 0.0.
-      C: An optional array of floats giving the static covariance matrix. 
-         Defaults to 0.0.
-   """
-
-   attribs = { "kind": (RestartValue, (str, "langevin")) }
-   fields = { "ethermo" : (RestartValue, (float, 0.0)), 
-            "tau" : (RestartValue, (float, 1.0)) ,
-            "A" : (RestartArray,(float, np.zeros(0))),
-            "C" : (RestartArray,(float, np.zeros(0))),
-            "s" : (RestartArray,(float, np.zeros(0)))
-             }
-   
-   def store(self, thermo):
-      """Takes a thermostat instance and stores a minimal representation of it.
-
-      Args:
-         thermo: A thermostat object.
-      """
-
-      if type(thermo) is ThermoLangevin: 
-         self.kind.store("langevin")
-         self.tau.store(thermo.tau)
-      elif type(thermo) is ThermoSVR: 
-         self.kind.store("svr")
-         self.tau.store(thermo.tau)         
-      elif type(thermo) is ThermoPILE_L: 
-         self.kind.store("pile_l")
-         self.tau.store(thermo.tau)
-      elif type(thermo) is ThermoPILE_G: 
-         self.kind.store("pile_g")
-         self.tau.store(thermo.tau)     
-      elif type(thermo) is ThermoGLE: 
-         self.kind.store("gle")
-         self.A.store(thermo.A)
-         if dget(thermo,"C")._func is None:
-            self.C.store(thermo.C)
-         self.s.store(thermo.s)
-      elif type(thermo) is ThermoNMGLE: 
-         self.kind.store("nm_gle")
-         self.A.store(thermo.A)
-         if dget(thermo,"C")._func is None:
-            self.C.store(thermo.C)
-         self.s.store(thermo.s)
-      else:
-         self.kind.store("unknown")      
-      self.ethermo.store(thermo.ethermo)
-      
-   def fetch(self):
-      """Creates a thermostat object.
-
-      Returns:
-         A thermostat object of the appropriate type and with the appropriate
-         parameters given the attributes of the RestartThermo object.
-      """
-
-      if self.kind.fetch() == "langevin":
-         thermo = ThermoLangevin(tau=self.tau.fetch())
-      elif self.kind.fetch() == "svr":
-         thermo = ThermoSVR(tau=self.tau.fetch())
-      elif self.kind.fetch() == "pile_l":
-         thermo = ThermoPILE_L(tau=self.tau.fetch())
-      elif self.kind.fetch() == "pile_g":
-         thermo = ThermoPILE_G(tau=self.tau.fetch())
-      elif self.kind.fetch() == "gle":
-         rC = self.C.fetch()
-         if len(rC) == 0:  rC = None
-         thermo = ThermoGLE(A=self.A.fetch(),C=rC)
-         thermo.s = self.s.fetch()
-      elif self.kind.fetch() == "nm_gle":
-         rC = self.C.fetch()
-         if len(rC) == 0:   rC = None
-         thermo = ThermoNMGLE(A=self.A.fetch(),C=rC)
-         thermo.s = self.s.fetch()
-      else:
-         raise TypeError("Invalid thermostat kind " + self.kind.fetch())
-         
-      thermo.ethermo = self.ethermo.fetch()
-      return thermo

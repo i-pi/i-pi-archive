@@ -21,7 +21,8 @@ from utils.depend import *
 from utils.restart import *
 from utils.units import *
 from utils.mathtools import eigensystem_ut3x3, invert_ut3x3, exp_ut3x3, det_ut3x3
-from engine.thermostats import Thermostat, RestartThermo
+from engine.thermostats import Thermostat
+from inputs.thermostats import RestartThermo
 
 class Barostat(dobject): 
    """Base barostat class.
