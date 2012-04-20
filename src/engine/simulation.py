@@ -26,13 +26,13 @@ from utils.io.io_xml import *
 from atoms import *
 import time
 from cell import *
-from ensembles import RestartEnsemble
 from forces import ForceBeads
 from inputs.forces import RestartForce
 from inputs.prng import RestartRandom
 from inputs.atoms import RestartAtoms
 from inputs.beads import RestartBeads
 from inputs.cell import RestartCell
+from inputs.ensembles import RestartEnsemble
 from beads import Beads
 from properties import Properties, Trajectories
 

@@ -6,6 +6,7 @@ Classes:
 """
 
 from engine.barostats import *
+import engine.thermostats
 from utils.inputvalue import *
 from inputs.thermostats import *
 
@@ -24,12 +25,13 @@ class RestartBaro(Input):
       thermostat: A thermostat object giving the cell thermostat.
    """
 
-   attribs={ "kind": (InputValue, {"dtype": str, 
-                                   "default": "rigid",
-                                   "help": "The type of barostat.",
-                                   "options": ["rigid", "flexible"]}) }
-   fields={ "thermostat": (RestartThermo, {}) }
-   
+   attribs={ "kind": (InputValue, {"dtype"    : str, 
+                                   "default"  : "rigid",
+                                   "help"     : "The type of barostat.",
+                                   "options"  : ["rigid", "flexible"]}) }
+   fields={ "thermostat": (RestartThermo, {"default" : engine.thermostats.Thermostat(),
+                                           "help"    : "The thermostat for the cell. Keeps the cell velocity distribution at the correct temperature."}) }
+
    def store(self, baro):
       """Takes a barostat instance and stores a minimal representation of it.
 

@@ -6,8 +6,6 @@ do the constant temperature and pressure algorithms. Also calculates the
 appropriate conserved energy quantity for the ensemble of choice.
 
 Classes:
-   RestartEnsemble: Deals with creating the ensemble object from a file, 
-      and writing the checkpoints.
    Ensemble: Base ensemble class with generic methods and attributes.
    NVEEnsemble: Deals with constant energy dynamics.
    NVTEnsemble: Deals with constant temperature dynamics.
@@ -15,7 +13,7 @@ Classes:
    NSTEnsemble: Deals with constant stress dynamics.
 """
 
-__all__ = ['RestartEnsemble', 'Ensemble', 'NVEEnsemble', 'NVTEnsemble', 
+__all__ = ['Ensemble', 'NVEEnsemble', 'NVTEnsemble', 
            'NPTEnsemble', 'NSTEnsemble']
 
 import numpy as np
@@ -29,90 +27,6 @@ from inputs.thermostats import RestartThermo
 from inputs.barostats import RestartBaro
 import time
 
-class RestartEnsemble(Restart):
-   """Ensemble restart class.
-
-   Handles generating the appropriate ensemble class from the xml input file,
-   and generating the xml checkpoint tags and data from an instance of the 
-   object.
-
-   Attributes:
-      type: An optional string giving the type of ensemble to be simulated.
-         Defaults to 'unknown'.
-      thermostat: The thermostat to be used for constant temperature dynamics.
-      barostat: The barostat to be used for constant pressure or stress
-         dynamics.
-      timestep: An optional float giving the size of the timestep in atomic
-         units. Defaults to 1.0.
-      temperature: An optional float giving the temperature in Kelvin. Defaults
-         to 1.0.
-      pressure: An optional float giving the external pressure in atomic units.
-         Defaults to 1.0.
-      stress: An optional array giving the external stress tensor in atomic
-         units. Defaults to an identity array.
-      fixcom: An optional boolean which decides whether the centre of mass 
-         motion will be constrained or not. Defaults to False.
-   """
-
-   attribs={"type"  : (RestartValue, (str, "unknown")) }
-   fields={"thermostat" : (RestartThermo, () ), "barostat" : (RestartBaro, () ), 
-           "timestep": (RestartValue, (float,"1.0","time")) ,
-           "temperature" : (RestartValue, (float, 1.0)), "pressure" : (RestartValue, (float,"1.0")) ,
-           "stress" : (RestartArray, (float, np.identity(3))), 
-           "fixcom": (RestartValue, (bool, False)) }
-   
-   def store(self, ens):
-      """Takes an ensemble instance and stores a minimal representation of it.
-
-      Args:
-         ens: An ensemble object.
-      """
-
-      if type(ens) is NVEEnsemble:    
-         self.type.store("nve"); tens=0
-      elif type(ens) is NVTEnsemble:  
-         self.type.store("nvt"); tens=1
-      elif type(ens) is NPTEnsemble:  
-         self.type.store("npt"); tens=2
-      elif type(ens) is NSTEnsemble:  
-         self.type.store("nst"); tens=3
-      
-      self.timestep.store(ens.dt)
-      self.temperature.store(ens.temp)
-      
-      if tens > 0: 
-         self.thermostat.store(ens.thermostat)
-         self.fixcom.store(ens.fixcom)
-      if tens > 1:
-         self.barostat.store(ens.barostat)
-      if tens == 2:
-         self.pressure.store(ens.pext)
-      if tens == 3:
-         self.stress.store(ens.pext)
-
-   def fetch(self):
-      """Creates an ensemble object.
-
-      Returns:
-         An ensemble object of the appropriate type and with the appropriate
-         objects given the attributes of the RestartEnsemble object.
-      """
-
-      if self.type.fetch().upper() == "NVE" :
-         ens = NVEEnsemble(dt=self.timestep.fetch(), temp=self.temperature.fetch(), fixcom=self.fixcom.fetch())
-      elif self.type.fetch().upper() == "NVT" : 
-         ens = NVTEnsemble(dt=self.timestep.fetch(), temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(),
-                        fixcom=self.fixcom.fetch())
-      elif self.type.fetch().upper() == "NPT" : 
-         ens = NPTEnsemble(dt=self.timestep.fetch(), temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(),
-                        fixcom=self.fixcom.fetch(), pext=self.pressure.fetch(), barostat=self.barostat.fetch() )
-      elif self.type.fetch().upper() == "NST" : 
-         ens = NSTEnsemble(dt=self.timestep.fetch(), temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(),
-                        fixcom=self.fixcom.fetch(), sext=self.stress.fetch(), barostat=self.barostat.fetch() )
-                        
-      print "thermostat energy", ens.thermostat.ethermo
-      return ens
-      
 class Ensemble(dobject): 
    """Base (do-nothing) ensemble class.
 
