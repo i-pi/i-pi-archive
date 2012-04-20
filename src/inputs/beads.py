@@ -7,11 +7,12 @@ Classes:
 
 import numpy as np
 from engine.beads import *
+from engine.atoms import Atoms
 from utils.inputvalue import *
 import utils.io.io_pdb
 from utils.depend import *
 from utils.units import *
-
+from inputs.atoms import *
 __all__ = ['RestartBeads']
       
 class RestartBeads(Input):
@@ -40,8 +41,8 @@ class RestartBeads(Input):
                                         "default"   : 0,
                                         "help"      : "The number of atoms"}), 
             "nbeads"    : (InputValue, {"dtype"     : int,
-                                        "default"   : 0,
                                         "help"      : "The number of beads"}), 
+            "start_centroid"     : (RestartAtoms, {"help" : "Start at centroid? Write better string", "default" : Atoms(0) }),
             "q"         : (InputArray, {"dtype"     : float,
                                         "default"   : np.zeros(0),
                                         "help"      : "The positions of the atoms, in the format [x1, y1, z1, x2, ... ]",
@@ -61,18 +62,19 @@ class RestartBeads(Input):
                                         "default"   : -1.0,
                                         "help"      : "The temperature at which the initial velocity distribution is taken, if applicable.",
                                         "dimension" : "temperature"})  }
-   
-   def __init__(self, beads=None):
-      """Initialises RestartBeads.
 
-      Args:
-         atoms: An optional Beads object from which to initialise from.
+   def write(self,  name="", indent=""):
+      """Overloads Restart write() function so that nothing is written if
+      no atoms are present.
+
+      Returns:
+         A string giving the appropriate xml tags for the checkpoint file.
       """
 
-      super(RestartBeads,self).__init__()
-      self._optional = True
-      if not beads is None:
-         self.store(beads)
+      if self.nbeads.fetch() > 0:
+         return super(RestartBeads,self).write(name=name,indent=indent)
+      else:
+         return ""
                        
    def store(self, beads):
       """Takes a Beads instance and stores a minimal representation of it.
@@ -81,7 +83,7 @@ class RestartBeads(Input):
          beads: A Beads object from which to initialise from.
       """
 
-      super(RestartBeads,self).store(beads)
+      super(RestartBeads,self).store()
       self.natoms.store(beads.natoms)
       self.nbeads.store(beads.nbeads)
 
@@ -101,7 +103,36 @@ class RestartBeads(Input):
       super(RestartBeads,self).fetch()
       beads = Beads(self.natoms.fetch(),self.nbeads.fetch())
       beads.q = self.q.fetch()
-      beads.p = self.p.fetch()      
+      beads.p = self.p.fetch()  
       beads.m = self.m.fetch()   
       beads.names = self.names.fetch()
       return beads
+      
+      
+   def check(self):
+
+      super(RestartBeads,self).check()
+      if self.q._explicit : 
+         pass
+      elif self.start_centroid._explicit:
+         # reads the start_config atom tag and created dummy tags for the full bead object
+         atoms = self.start_centroid.fetch()
+         self.natoms.store(atoms.natoms)
+         q = np.zeros((self.nbeads.fetch(),self.natoms.fetch()*3))
+         p = np.zeros((self.nbeads.fetch(),self.natoms.fetch()*3))
+         m = atoms.m
+         names = atoms.names
+         for b in range(self.nbeads.fetch()):
+            q[b]=atoms.q[:]; p[b]=atoms.p[:];
+
+         self.q.store(q)
+         self.p.store(p)
+         self.m.store(m)
+         self.names.store(names)
+
+      else:
+         raise ValueError("Must provide explicit positions or give start_config.")
+         
+      
+      
+      

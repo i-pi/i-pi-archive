@@ -18,6 +18,7 @@ __all__ = ['main']
 
 import sys
 from engine import simulation
+from inputs.simulation import RestartSimulation
 from utils.io.io_xml import *
 
 def main(file_name):
@@ -29,7 +30,7 @@ def main(file_name):
    ifile = open(file_name,"r")
    xmlrestart = xml_parse_file(ifile) # Parses the file.
    
-   simrestart = simulation.RestartSimulation()
+   simrestart = RestartSimulation()
    simrestart.parse(xmlrestart.fields["simulation"]) # Checks the input
                                                      # and partitions it
                                                      # appropriately.

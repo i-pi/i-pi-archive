@@ -108,15 +108,15 @@ class RestartEnsemble(Input):
       """
 
       super(RestartEnsemble,self).fetch()
-      if self.type.fetch().upper() == "NVE" :
+      if self.type.fetch() == "nve" :
          ens = NVEEnsemble(dt=self.timestep.fetch(), temp=self.temperature.fetch(), fixcom=self.fixcom.fetch())
-      elif self.type.fetch().upper() == "NVT" : 
+      elif self.type.fetch() == "nvt" : 
          ens = NVTEnsemble(dt=self.timestep.fetch(), temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(),
                         fixcom=self.fixcom.fetch())
-      elif self.type.fetch().upper() == "NPT" : 
+      elif self.type.fetch() == "npt" : 
          ens = NPTEnsemble(dt=self.timestep.fetch(), temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(),
                         fixcom=self.fixcom.fetch(), pext=self.pressure.fetch(), barostat=self.barostat.fetch() )
-      elif self.type.fetch().upper() == "NST" : 
+      elif self.type.fetch() == "nst" : 
          ens = NSTEnsemble(dt=self.timestep.fetch(), temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(),
                         fixcom=self.fixcom.fetch(), sext=self.stress.fetch(), barostat=self.barostat.fetch() )
                         
@@ -131,17 +131,17 @@ class RestartEnsemble(Input):
       """
 
       super(RestartEnsemble,self).check()
-      if self.type.fetch().upper() == "NVT":
+      if self.type.fetch() == "nvt":
          if self.thermostat._explicit == False:
             raise ValueError("No thermostat tag supplied for NVT simulation")
-      if self.type.fetch().upper() == "NPT":
+      if self.type.fetch() == "npt":
          if self.thermostat._explicit == False:
             raise ValueError("No thermostat tag supplied for NPT simulation")
          if self.barostat._explicit == False:
             raise ValueError("No barostat tag supplied for NPT simulation")
          if self.barostat.thermostat._explicit == False:
             raise ValueError("No thermostat tag supplied in barostat for NPT simulation")
-      if self.type.fetch().upper() == "NST":
+      if self.type.fetch() == "nst":
          if self.thermostat._explicit == False:
             raise ValueError("No thermostat tag supplied for NST simulation")
          if self.barostat._explicit == False:

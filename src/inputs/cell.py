@@ -71,16 +71,16 @@ class RestartCell(Input):
                                           "default"  : False,
                                           "help"     : "Whether the cell parameters can change during the simulation."}) }
     
-   def __init__(self, cell=None):
-      """Initialises RestartCell.
+#   def __init__(self, cell=None):
+#      """Initialises RestartCell.
 
-      Args:
-         cell: A Cell object from which to initialise from.
-      """
+#      Args:
+#         cell: A Cell object from which to initialise from.
+#      """
 
-      super(RestartCell,self).__init__()
-      if not cell is None:
-         self.store(cell)
+#      super(RestartCell,self).__init__()
+#      if not cell is None:
+#         self.store(cell)
       
    def store(self, cell, filename=""):
       """Takes a Cell instance and stores of minimal representation of it.

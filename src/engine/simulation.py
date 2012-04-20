@@ -12,13 +12,12 @@ Classes:
    Simulation: Deals with running the simulation and outputting the results.
 """
 
-__all__ = ['RestartSimulation', 'Simulation']
+__all__ = ['Simulation']
 
 import numpy as np
 import math, random
 import os.path, sys
 from utils.depend import *
-from utils.restart import *
 from utils.units  import *
 from utils.prng   import *
 from utils.io     import *
@@ -27,169 +26,13 @@ from atoms import *
 import time
 from cell import *
 from forces import ForceBeads
-from inputs.forces import RestartForce
-from inputs.prng import RestartRandom
-from inputs.atoms import RestartAtoms
-from inputs.beads import RestartBeads
-from inputs.cell import RestartCell
-from inputs.ensembles import RestartEnsemble
 from beads import Beads
 from properties import Properties, Trajectories
+from inputs.simulation import RestartSimulation
 
 _DEFAULT_STRIDES = {"checkpoint": 1000, "properties": 10, "progress": 100, "centroid": 20,  "trajectory": 100}
 _DEFAULT_OUTPUT = [ "time", "conserved", "kinetic", "potential" ]
 _DEFAULT_TRAJ = [ "positions" ]
-
-class RestartSimulation(Restart):
-   """Simulation restart class.
-
-   Handles generating the appropriate forcefield class from the xml input file,
-   and generating the xml checkpoint tags and data from an instance of the
-   object.
-
-   Attributes:
-      force: A restart force instance. Used as a model for all the replicas.
-      ensemble: A restart ensemble instance.
-      atoms: A restart atoms instance.
-      beads: A restart beads instance.
-      cell: A restart cell instance.
-      prng: A random number generator object.
-      nbeads: A float giving the number of beads.
-      step: An integer giving the current simulation step. Defaults to 0.
-      total_steps: The total number of steps. Defaults to 0.
-      stride: A dictionary giving the number of steps between printing out 
-         data for the different types of data. Defaults to _DEFAULT_STRIDES.
-      prefix: A string giving the prefix for all the output files. Defaults to
-         'prefix'.
-      traj_format: A string giving the format of the trajectory output files. 
-         Defaults to 'pdb'.
-      properties: An array of strings giving all the properties that should 
-         be output space separated. Defaults to _DEFAULT_OUTPUT.
-      trajectories: An array of strings giving all the trajectory data that 
-         should be output space separated. Defaults to _DEFAULT_TRAJ.
-      initialize: An array of strings giving all the quantities that should
-         be output.
-      fd_delta: A float giving the size of the finite difference
-         parameter used in the Yamamoto kinetic energy estimator. Defaults 
-         to 0.
-   """
-
-   fields= { "force" : (RestartForce, ()),  "ensemble": (RestartEnsemble, ()), 
-             "atoms" : (RestartAtoms, ()), "beads" : (RestartBeads, ()), 
-             "cell" : (RestartCell, ()), "prng" : (RestartRandom, ()),
-             "nbeads": (RestartValue, (int, 0 ) ),              
-             "step" : ( RestartValue, (int, 0)), 
-             "total_steps": (RestartValue, (int, 1000) ), 
-             "stride" : ( RestartValue, (dict, {})),
-             "prefix": (RestartValue, (str, "prefix")),            
-             "properties": (RestartArray, (str,np.zeros(0, np.dtype('|S12'))) ),
-             "initialize": (RestartArray, (str,np.zeros(0, np.dtype('|S12'))) ),
-             "fd_delta":   ( RestartValue, (float, 0.0)),
-             "traj_format": (RestartValue, (str, "pdb")),   
-             "trajectories": (RestartArray, (str,np.zeros(0, np.dtype('|S12'))) )
-            }
-
-   def store(self, simul):
-      """Takes a simulation instance and stores a minimal representation of it.
-
-      Args:
-         simul: A simulation object.
-      """
-
-      self.force.store(simul._forcemodel)
-      self.ensemble.store(simul.ensemble)
-      self.beads.store(simul.beads)
-      self.cell.store(simul.cell)
-      self.prng.store(simul.prng)
-      self.step.store(simul.step)
-      self.total_steps.store(simul.tsteps)
-      self.stride.store(simul.dstride)
-      self.prefix.store(simul.prefix)
-      self.traj_format.store(simul.trajs.format)      
-      self.properties.store(simul.outlist)
-      self.trajectories.store(simul.trajlist)
-      self.initialize.store(simul.initlist)
-      self.fd_delta.store(simul.properties.fd_delta)
-            
-   def fetch(self):
-      """Creates a simulation object.
-
-      Returns:
-         A simulation object of the appropriate type and with the appropriate
-         properties and other objects given the attributes of the 
-         RestartSimulation object.
-
-      Raises:
-         TypeError: Raised if one of the file types in the stride keyword
-            is incorrect.
-      """
-
-      self.check()
-      nbeads = self.beads.fetch()
-      ncell = self.cell.fetch()
-      nprng = self.prng.fetch()
-
-      dstride = dict(_DEFAULT_STRIDES)
-      istride = self.stride.fetch()
-      vstride = {}
-      for k,s in istride.items(): 
-         if not k in dstride:
-            raise TypeError(k + " is not a valid input for the stride keyword")
-         vstride[k] = int(s)
-      dstride.update(vstride)
-      
-      olist = self.properties.fetch()
-      if (len(olist) == 0):
-         olist = None
-
-      tlist = self.trajectories.fetch()
-      if (len(tlist) == 0):
-         tlist = None
-
-      ilist = self.initialize.fetch()
-      if (len(ilist) == 0):
-         ilist = None
-      
-      rsim = Simulation(nbeads, ncell, self.force.fetch(), 
-                     self.ensemble.fetch(), nprng, self.step.fetch(), 
-                     tsteps=self.total_steps.fetch(), stride=dstride,
-                     prefix=self.prefix.fetch(),  outlist=olist, 
-                     trajlist=tlist, initlist=ilist)
-
-      if (self.fd_delta.fetch() != 0.0):
-         rsim.properties.fd_delta = self.fd_delta.fetch()      
-
-      rsim.trajs.format=self.traj_format.fetch()
-
-      # binds and inits the simulation object just before returning
-      rsim.bind()
-      rsim.init()
-      
-      return rsim
-
-   def check(self):
-      """Function that deals with optional arguments.
-
-      Deals with the difference between classical and PI dynamics. If there is
-      no beads argument, the bead positions are generated from the atoms, with 
-      the necklace being fixed at the atom position. Similarly, if no nbeads
-      argument is specified a classical simulation is done.
-
-      Raises:
-         TypeError: Raised if no beads or atoms attribute is defined.
-      """
-
-      if self.beads.nbeads.fetch() == 0:
-         atoms = self.atoms.fetch() 
-         if atoms.natoms == 0:
-            raise TypeError("Either a <beads> or a <atoms> block must be provided")
-         nbeads = self.nbeads.fetch()
-         if nbeads == 0:
-            nbeads = 1
-         rbeads = Beads(atoms.natoms, nbeads)
-         for b in range(rbeads.nbeads):
-            rbeads[b] = atoms.copy()
-         self.beads.store(rbeads)      
 
 class Simulation(dobject):
    """Main simulation object. 
@@ -290,7 +133,7 @@ class Simulation(dobject):
       self.trajs = Trajectories()
          
       if initlist is None:
-         self.initlist = np.zeros(0, np.dtype('|S12'))
+         self.initlist = {}
       else:
          self.initlist = initlist
                         
@@ -401,6 +244,7 @@ class Simulation(dobject):
 
       self.ichk = 0      
       if "velocities" in self.initlist:
+         # as of now, just ignore the value given for velocities in initlist. we may decide to initialize with a different temperature?
          self.beads.p = math.sqrt(self.ensemble.ntemp*Constants.kb)*self.beads.sm3*self.prng.gvec((self.beads.nbeads, 3*self.beads.natoms))
 
       if self.ensemble.fixcom:

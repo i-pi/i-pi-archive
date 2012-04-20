@@ -71,19 +71,19 @@ class RestartAtoms(Input):
                                         "help"      : "The temperature at which the initial velocity distribution is taken, if applicable.",
                                         "dimension" : "temperature"})  }
        
-   def __init__(self, atoms=None, filename=""):
-      """Initialises RestartAtoms.
+#   def __init__(self, atoms=None, filename=""):
+#      """Initialises RestartAtoms.
 
-      Args:
-         atoms: An optional Atoms object from which to initialise from.
-         filename: An optional string giving a filename to take the atom 
-            positions from. Defaults to ''.
-      """
+#      Args:
+#         atoms: An optional Atoms object from which to initialise from.
+#         filename: An optional string giving a filename to take the atom 
+#            positions from. Defaults to ''.
+#      """
 
-      super(RestartAtoms,self).__init__()
-      self._optional = True
-      if not atoms is None:
-         self.store(atoms, filename="")
+#      super(RestartAtoms,self).__init__()
+#      self._optional = True
+#      if not atoms is None:
+#         self.store(atoms, filename="")
                        
    def store(self, atoms, filename=""):
       """Takes an Atoms instance and stores a minimal representation of it.
@@ -94,7 +94,7 @@ class RestartAtoms(Input):
             positions from. Defaults to ''.
       """
 
-      super(RestartAtoms,self).store(atoms)
+      super(RestartAtoms,self).store()
       self.natoms.store(atoms.natoms)
       self.q.store(depstrip(atoms.q))
       self.p.store(depstrip(atoms.p))
@@ -129,7 +129,9 @@ class RestartAtoms(Input):
       if self.natoms.fetch() > 0:
          return super(RestartAtoms,self).write(name=name,indent=indent)
       else:
-         return ""
+         rstr=InputValue(dtype=str)
+         rstr.store(self.from_file.fetch())
+         return indent+"<"+name+">"+rstr.write("from_file","")+"</"+name+">\n";
       
    
    def check(self): 

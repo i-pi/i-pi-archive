@@ -121,7 +121,7 @@ class Input(object):
       
       pass
       
-   def store(self, value):
+   def store(self, value=None):
       """Dummy function for storing data."""
 
       self._explicit = True
@@ -366,7 +366,7 @@ class InputValue(Input):
       _valid: An optional list of valid options.
    """
  
-   def __init__(self,  help=None, dimension=None, units = None, default=None, dtype=None, value=None, options=None):
+   def __init__(self,  help=None, dimension=None, units = None, default=None, dtype=None, options=None):
       """Initialises InputValue.
 
       Args:
@@ -396,10 +396,10 @@ class InputValue(Input):
       else:
          self._valid = None
       
-      if not value is None:
-         self.store(value)
-      elif not self._default is None:
+      
+      if not self._default is None:
          self.store(self._default)
+         self._explicit = False
 
       self.attribs={}
       
@@ -499,7 +499,7 @@ class InputArray(Input):
                   "help": "The shape of the array",
                   "default": (0,)}) }
 
-   def __init__(self, help=None, dimension=None, units=None, default=None, dtype=None, value=None):
+   def __init__(self, help=None, dimension=None, units=None, default=None, dtype=None):
       """Initialises InputArray.
 
       Args:
@@ -521,10 +521,9 @@ class InputArray(Input):
       else:
          raise TypeError("You must provide either value or dtype")
 
-      if not value is None:
-         self.store(value)
-      elif not self._default is None:
+      if not self._default is None:
          self.store(self._default)
+         self._explicit = False
          
    def store(self, value):
       """Converts the data to the appropriate data type, shape and units and 
