@@ -59,7 +59,8 @@ class RestartBeads(Input):
                                         "help"      : "The names of the atoms, in the format [name1, name2, ... ]"}),
             "init_temp" : (InputValue, {"dtype"     : float, 
                                         "default"   : -1.0,
-                                        "help"      : "The temperature at which the initial velocity distribution is taken, if applicable."})  }
+                                        "help"      : "The temperature at which the initial velocity distribution is taken, if applicable.",
+                                        "dimension" : "temperature"})  }
    
    def __init__(self, beads=None):
       """Initialises RestartBeads.

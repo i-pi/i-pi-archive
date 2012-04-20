@@ -69,7 +69,8 @@ class RestartAtoms(Input):
                                         "options"   : ['', 'atomic_unit', 'angstrom', 'nanometer'] }),
             "init_temp" : (InputValue, {"dtype"     : float, 
                                         "default"   : -1.0,
-                                        "help"      : "The temperature at which the initial velocity distribution is taken, if applicable."})  }
+                                        "help"      : "The temperature at which the initial velocity distribution is taken, if applicable.",
+                                        "dimension" : "temperature"})  }
        
    def __init__(self, atoms=None, filename=""):
       """Initialises RestartAtoms.

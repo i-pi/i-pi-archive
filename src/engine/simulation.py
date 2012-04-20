@@ -32,6 +32,7 @@ from inputs.forces import RestartForce
 from inputs.prng import RestartRandom
 from inputs.atoms import RestartAtoms
 from inputs.beads import RestartBeads
+from inputs.cell import RestartCell
 from beads import Beads
 from properties import Properties, Trajectories
 

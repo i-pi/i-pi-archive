@@ -66,6 +66,9 @@ class RestartThermo(Input):
 
       Args:
          thermo: A thermostat object.
+
+      Raises:
+         TypeError: Raised if the thermostat is not a recognized type.
       """
 
       super(RestartThermo,self).store(thermo)
@@ -94,7 +97,7 @@ class RestartThermo(Input):
             self.C.store(thermo.C)
          self.s.store(thermo.s)
       else:
-         self.kind.store("unknown")      
+         raise TypeError("Unknown thermostat kind")
       self.ethermo.store(thermo.ethermo)
       
    def fetch(self):
@@ -103,6 +106,9 @@ class RestartThermo(Input):
       Returns:
          A thermostat object of the appropriate type and with the appropriate
          parameters given the attributes of the RestartThermo object.
+
+      Raises:
+         TypeError: Raised if the thermostat type is not a recognized option.
       """
 
       super(RestartThermo,self).fetch()
@@ -116,12 +122,14 @@ class RestartThermo(Input):
          thermo = ThermoPILE_G(tau=self.tau.fetch())
       elif self.kind.fetch() == "gle":
          rC = self.C.fetch()
-         if len(rC) == 0:  rC = None
+         if len(rC) == 0:
+            rC = None
          thermo = ThermoGLE(A=self.A.fetch(),C=rC)
          thermo.s = self.s.fetch()
       elif self.kind.fetch() == "nm_gle":
          rC = self.C.fetch()
-         if len(rC) == 0:   rC = None
+         if len(rC) == 0:
+            rC = None
          thermo = ThermoNMGLE(A=self.A.fetch(),C=rC)
          thermo.s = self.s.fetch()
       else:

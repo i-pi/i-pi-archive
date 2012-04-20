@@ -8,20 +8,15 @@ Classes:
    Cell: Base cell class with the generic methouds and attributes.
    CellFlexi: Cell class with methods for flexible cell dynamics.
    CellRigid: Cell class with methods for isotropic cell dynamics.
-   RestartCell: Deals with creating the Cell object from a file, and writing
-      the checkpoints.
 """
 
-__all__ = ['Cell', 'CellFlexi', 'CellRigid', 'RestartCell']
+__all__ = ['Cell', 'CellFlexi', 'CellRigid']
 
 import numpy as np
 import math
 from utils.depend import *
-from utils.restart import *
-import utils.io.io_pdb
 from utils.mathtools import *
 from utils import units
-import pdb      
    
 class Cell(dobject):
    """Base class to represent the simulation cell in a periodic system.
@@ -343,106 +338,3 @@ class CellRigid(Cell):
       """Calculates the kinetic energy of the cell from the cell parameters."""
 
       return self.P[0]**2/(2.0*self.m)
-
-      
-class RestartCell(Restart):
-   """Cell restart class.
-
-   Handles generating the appropraite cell class from the xml input file,
-   and generating the xml checkpoint tags and data from an instance of the 
-   object.
-
-   Attributes:
-      m: An optional float giving the mass of the cell. Defaults to 0.0.
-      h: An optional array giving the system box. Defaults to a 3*3 identity 
-         matrix.
-      h0: An optional array giving the reference box. Defaults to an array 
-         of zeros.
-      p: An optional array giving the lattice momentum matrix. Defaults to an 
-         array of zeros.
-      P: An optional float giving the conjugate momentum to the volume 
-         fluctuations. Defaults to 0.0.
-      init_temp: An optional float to give the effective temperature that the 
-         cell velocities should be initialised to. Defaults to -1.0.
-      from_file: An optional string giving the name of a pdb file containing
-         the initial cell and atom positions. Defaults to ''.
-      flexible: A boolean giving whether the cell will be allowed to change 
-         shape. Defaults to False.
-   """
-
-   fields={ "m" : (RestartValue, (float, 0.0)), "h" : (RestartArray,(float,np.identity(3))), 
-            "h0" : (RestartArray,(float,np.zeros((3,3)))), "p" : (RestartArray,(float,np.zeros((3,3),float))),
-            "P" : (RestartValue,(float,0.0)), "init_temp": (RestartValue, (float, -1.0)),
-            "from_file": (RestartValue,(str,"")) }
-   attribs={ "flexible" : (RestartValue, (bool, False)) }
-    
-   def __init__(self, cell=None):
-      """Initialises RestartCell.
-
-      Args:
-         cell: A Cell object from which to initialise from.
-      """
-
-      super(RestartCell,self).__init__()
-      if not cell is None:
-         self.store(cell)
-      
-   def store(self, cell, filename=""):
-      """Takes a Cell instance and stores of minimal representation of it.
-
-      Args:
-         cell: A cell object.
-         filename: An optional float giving a file to read the cell dimensions
-            from. Defaults to ''.
-      """
-
-      self.from_file.store(filename)
-      self.flexible.store(type(cell) is CellFlexi)
-      self.m.store(cell.m)
-      self.h.store(cell.h)
-      self.h0.store(cell.h0)
-      if type(cell) is CellFlexi:
-         self.p.store(cell.p)
-      else:
-         self.P.store(cell.P[0])
-      self.from_file.store(cell.from_file)
-      
-   def fetch(self):
-      """Creates a cell object.
-
-      Returns: 
-         A cell object of the appropriate type and with the appropriate 
-         properties given the attributes of the RestartCell object.
-      """
-
-      self.check()
-      if (self.flexible.fetch()): 
-         cell = CellFlexi(h=self.h.fetch(), m=self.m.fetch())
-         if det_ut3x3(self.h0.fetch()) == 0.0:
-            cell.h0 = cell.h
-         cell.p = self.p.fetch()
-      else:
-         cell = CellRigid(h=self.h.fetch(), m=self.m.fetch())
-         cell.P = self.P.fetch()
-      cell.from_file = self.from_file.fetch()
-      return cell
-      
-   def check(self):
-      """Function that deals with optional arguments.
-      
-      Deals with the init_temp and from_file arguments, and uses
-      them to initialise some of the cell parameters depending on which ones
-      have been specified explicitly.
-      """
-
-      if (self.init_temp.fetch() >= 0):
-         pass
-      if self.from_file.fetch() != "":
-         myatoms, mycell = utils.io.io_pdb.read_pdb(open(self.from_file.fetch(),"r")) 
-         self.h.store(mycell.h)
-         if (self.h0.fetch() == np.zeros((3,3))).all():
-            self.h0.store(mycell.h0)
-         if self.m.fetch() == 0.0:
-            self.m.store(mycell.m)
-         self.from_file.store("")
-   

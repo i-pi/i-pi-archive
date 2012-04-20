@@ -13,7 +13,6 @@ __all__ = ['Atoms', 'Atom']
 
 import numpy as np
 from utils.depend import *
-import utils.io.io_pdb
 from utils import units
 
 class Atom(dobject):

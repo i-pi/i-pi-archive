@@ -19,8 +19,6 @@ Classes:
       thermostat.
    ThermoNMGLE: Holds the algorithms for a generalised langevin equation 
       thermostat in the normal mode representation.
-   RestartThermo: Deals with creating the thermostat object from a file, and
-      writing the checkpoints.
 """
 
 __all__ = ['Thermostat', 'ThermoLangevin', 'ThermoPILE_L', 'ThermoPILE_G',
