@@ -26,6 +26,7 @@ from utils import units
 from thermostats import *
 from barostats import *
 from inputs.thermostats import RestartThermo
+from inputs.barostats import RestartBaro
 import time
 
 class RestartEnsemble(Restart):

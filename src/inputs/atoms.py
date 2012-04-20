@@ -15,7 +15,6 @@ from utils.inputvalue import *
 import utils.io.io_pdb
 from utils.depend import *
 from utils.units import *
-from utils.io.io_pdb import *
 
 __all__ = ['RestartAtoms']
       

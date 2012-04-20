@@ -9,16 +9,13 @@ Classes:
    Barostat: Base barostat class with the generic methods and attributes.
    BaroFlexi: Deals with flexible cell dynamics. Used for NST ensembles.
    BaroRigid: Deals with rigid cell dynamics. Used for NVT and NPT ensembles.
-   RestartBaro: Deals with creating the barostat object from a file, and 
-      writing the checkpoints.
 """
 
-__all__ = ['Barostat', 'BaroFlexi', 'BaroRigid', 'RestartBaro']
+__all__ = ['Barostat', 'BaroFlexi', 'BaroRigid']
 
 import math, time
 import numpy as np
 from utils.depend import *
-from utils.restart import *
 from utils.units import *
 from utils.mathtools import eigensystem_ut3x3, invert_ut3x3, exp_ut3x3, det_ut3x3
 from engine.thermostats import Thermostat
@@ -372,52 +369,3 @@ class BaroRigid(Barostat):
       self.beads.pnm[0,:] = pc*math.sqrt(self.beads.nbeads)
 
       self.cell.V*=exp**3
-
-      
-class RestartBaro(Restart):
-   """Barostat restart class.
-
-   Handles generating the appropriate barostat class from the xml input file, 
-   and generating the xml checkpoint tags and data from an 
-   instance of the object.
-
-   Attributes:
-      kind: An optional string giving the type of barostat used. Defaults to
-         'rigid'.
-      thermostat: A thermostat object giving the cell thermostat.
-   """
-
-   attribs={ "kind": (RestartValue, (str, "rigid")) }
-   fields={ "thermostat": (RestartThermo, ()) }
-   
-   def store(self, baro):
-      """Takes a barostat instance and stores a minimal representation of it.
-
-      Args:
-         baro: A barostat object.
-      """
-
-      if type(baro) is BaroRigid:
-         self.kind.store("rigid")
-      if type(baro) is BaroFlexi:
-         self.kind.store("flexible")
-      else:
-         self.kind.store("unknown")      
-      self.thermostat.store(baro.thermostat)
-      
-   def fetch(self):
-      """Creates a barostat object.
-
-      Returns:
-         A barostat object of the appropriate type and with the appropriate 
-         thermostat given the attributes of the RestartBaro object.
-      """
-
-      if self.kind.fetch().upper() == "RIGID":
-         baro=BaroRigid(thermostat=self.thermostat.fetch())
-      elif self.kind.fetch().upper() == "FLEXIBLE":
-         baro=BaroFlexi(thermostat=self.thermostat.fetch())
-      else:
-         baro=Barostat(thermostat=self.thermostat.fetch())
-
-      return baro
