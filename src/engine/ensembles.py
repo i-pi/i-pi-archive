@@ -19,7 +19,6 @@ __all__ = ['Ensemble', 'NVEEnsemble', 'NVTEnsemble',
 import numpy as np
 import math 
 from utils.depend import *
-from utils.restart import *
 from utils import units
 from thermostats import *
 from barostats import *

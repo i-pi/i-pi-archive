@@ -266,8 +266,8 @@ class Input(object):
             rstr.rstrip(", ")
             rstr +=  "\\\\\n"
 
-      if hasattr(self, "type"): 
-         rstr += r"{\\ \bf DATA TYPE: }" + self.type.__name__ + "\\\\\n"
+      if hasattr(self, "dtype"): 
+         rstr += r"{\\ \bf DATA TYPE: }" + self.dtype.__name__ + "\\\\\n"
       
       if len(self.attribs) != 0 and level != stop_level:
          rstr += "\\paragraph{Attributes}\n\\begin{itemize}\n"

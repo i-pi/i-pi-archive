@@ -71,20 +71,6 @@ class InputAtoms(Input):
                                         "help"      : "The temperature at which the initial velocity distribution is taken, if applicable.",
                                         "dimension" : "temperature"})  }
        
-#   def __init__(self, atoms=None, filename=""):
-#      """Initialises InputAtoms.
-
-#      Args:
-#         atoms: An optional Atoms object from which to initialise from.
-#         filename: An optional string giving a filename to take the atom 
-#            positions from. Defaults to ''.
-#      """
-
-#      super(InputAtoms,self).__init__()
-#      self._optional = True
-#      if not atoms is None:
-#         self.store(atoms, filename="")
-                       
    def store(self, atoms, filename=""):
       """Takes an Atoms instance and stores a minimal representation of it.
 

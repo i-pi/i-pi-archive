@@ -71,7 +71,7 @@ class InputBeads(Input):
          A string giving the appropriate xml tags for the checkpoint file.
       """
 
-      if self.nbeads.fetch() > 0:
+      if self.nbeads._explicit and self.nbeads.fetch() > 0:
          return super(InputBeads,self).write(name=name,indent=indent)
       else:
          return ""
