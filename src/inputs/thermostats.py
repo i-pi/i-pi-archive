@@ -1,24 +1,9 @@
-"""Contains the classes that deal with constant temperature dynamics.
+"""Deals with creating the thermostats class.
 
-Contains the algorithms which propagate the thermostatting steps in the constant
-temperature ensembles. Includes the new GLE thermostat, which can be used to 
-run PI+GLE dynamics, reducing the number of path integral beads required.
+Chooses between the different possible thermostat options and creates the
+appropriate thermostat object, with suitable parameters.
 
 Classes:
-   Thermostat: Base thermostat class with the generic methods and attributes.
-   ThermoLangevin: Holds the algorithms for a langevin thermostat.
-   ThermoPILE_L: Holds the algorithms for a path-integral langevin equation
-      thermostat, with a thermostat coupled directly to the 
-      centroid coordinate of each bead.
-   ThermoPILE_G: Holds the algorithms for a path-integral langevin equation 
-      thermostat, with a thermostat coupled to the kinetic energy for 
-      the entire system.
-   ThermoSVR: Holds the algorithms for a stochastic velocity rescaling
-      thermostat.
-   ThermoGLE: Holds the algorithms for a generalised langevin equation 
-      thermostat.
-   ThermoNMGLE: Holds the algorithms for a generalised langevin equation 
-      thermostat in the normal mode representation.
    RestartThermo: Deals with creating the thermostat object from a file, and
       writing the checkpoints.
 """
@@ -32,7 +17,7 @@ from utils.inputvalue  import *
 from engine.thermostats import *
             
 class RestartThermo(Input):
-   """Thermostat restart class.
+   """Thermostat input class.
 
    Handles generating the appropriate thermostat class from the xml input file,
    and generating the xml checkpoiunt tags and data from an instance of the
@@ -49,30 +34,30 @@ class RestartThermo(Input):
          Defaults to 0.0.
    """
 
-   attribs = { "kind": (InputValue, { "dtype" : str, 
-                                        "default" : "langevin",
-                                        "options" : [ "langevin", "svr", "pile_l", "pile_g", "gle", "nm_gle" ],
-                                        "help" : "The style of thermostatting."
+   attribs = { "kind": (InputValue, { "dtype"   : str, 
+                                      "default" : "langevin",
+                                      "options" : [ "langevin", "svr", "pile_l", "pile_g", "gle", "nm_gle" ],
+                                      "help"    : "The style of thermostatting."
                                          }) }
-   fields = { "ethermo" : (InputValue, {  "dtype" : float, 
-                                          "default" : 0.0,
-                                          "help" : "The initial value of the thermostat energy. Only useful in restarts to guarantee continuity of the conserved quantity. ",
+   fields = { "ethermo" : (InputValue, {  "dtype"     : float, 
+                                          "default"   : 0.0,
+                                          "help"      : "The initial value of the thermostat energy. Only useful in restarts to guarantee continuity of the conserved quantity. ",
                                           "dimension" : "energy" }), 
-            "tau" : (InputValue, {  "dtype" : float, 
-                                    "default" : 0.0,
-                                    "help" : "The target temperature for the thermostat.",
+            "tau" : (InputValue, {  "dtype"     : float, 
+                                    "default"   : 0.0,
+                                    "help"      : "The target temperature for the thermostat.",
                                     "dimension" : "temperature" }) ,
-            "A" : (InputArray, {    "dtype" : float, 
-                                    "default" : np.zeros(0),
-                                    "help" : "The friction matrix for GLE thermostats.",
+            "A" : (InputArray, {    "dtype"     : float, 
+                                    "default"   : np.zeros(0),
+                                    "help"      : "The friction matrix for GLE thermostats.",
                                     "dimension" : "frequency" }),
-            "C" : (InputArray, {    "dtype" : float, 
-                                    "default" : np.zeros(0),
-                                    "help" : "The covariance matrix for GLE thermostats.",
+            "C" : (InputArray, {    "dtype"     : float, 
+                                    "default"   : np.zeros(0),
+                                    "help"      : "The covariance matrix for GLE thermostats.",
                                     "dimension" : "temperature" }),
-            "s" : (InputArray, {  "dtype" : float, 
-                                    "default" : np.zeros(0),
-                                    "help" : "Restart values for the additional momenta in GLE.",
+            "s" : (InputArray, {    "dtype"     : float, 
+                                    "default"   : np.zeros(0),
+                                    "help"      : "Restart values for the additional momenta in GLE.",
                                     "dimension" : "ms-momentum" })
              }
    
@@ -83,6 +68,7 @@ class RestartThermo(Input):
          thermo: A thermostat object.
       """
 
+      super(RestartThermo,self).store(thermo)
       if type(thermo) is ThermoLangevin: 
          self.kind.store("langevin")
          self.tau.store(thermo.tau)
@@ -119,6 +105,7 @@ class RestartThermo(Input):
          parameters given the attributes of the RestartThermo object.
       """
 
+      super(RestartThermo,self).fetch()
       if self.kind.fetch() == "langevin":
          thermo = ThermoLangevin(tau=self.tau.fetch())
       elif self.kind.fetch() == "svr":
