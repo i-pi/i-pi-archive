@@ -1,4 +1,4 @@
-"""Contains the callses which deal with all the beads.
+"""Contains the classes which deal with all the beads.
 
 Used for holding information about the beads, including their positions, masses
 momenta and kinetic energy. Has different objects for the position and normal
