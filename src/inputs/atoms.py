@@ -112,7 +112,7 @@ class RestartAtoms(Input):
       super(RestartAtoms,self).fetch()
       atoms = Atoms(self.natoms.fetch())
       atoms.q = self.q.fetch()
-      atoms.p = self.p.fetch()      
+      atoms.p = self.p.fetch() 
       atoms.m = self.m.fetch()   
       atoms.names = self.names.fetch()
       return atoms
