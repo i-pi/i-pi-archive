@@ -253,21 +253,21 @@ class Input(object):
       rstr += self._help + "\n"
       
       if self._dimension != "undefined": 
-         rstr += "{\\ \\ \\bf DIMENSION: }" + self._dimension + "\\ \\ \n"
+         rstr += "{\\\\ \\bf DIMENSION: }" + self._dimension + "\\ \\ \n"
 
       if self._default != None: 
-         rstr += "{\\ \\ \\bf DEFAULT: }" + str(self._default) + "\\ \\ \n"
+         rstr += "{\\\\ \\bf DEFAULT: }" + str(self._default) + "\\ \\ \n"
 
       if hasattr(self, "_valid"):
          if self._valid is not None: 
-            rstr += "{\\ \\ \\bf OPTIONS: }" 
+            rstr += "{\\\\ \\bf OPTIONS: }" 
             for option in self._valid:
                rstr += str(option) + ", "
             rstr.rstrip(", ")
-            rstr +=  "\\ \\ \n"
+            rstr +=  "\\\\ \n"
 
-      if hasattr(self, "type"): 
-         rstr += "{\\ \\ \\bf DATA TYPE: }" + self.type.__name__ + "\\ \\ \n"
+      if hasattr(self, "dtype"): 
+         rstr += "{\\\\ \\bf DATA TYPE: }" + self.dtype.__name__ + "\\ \\ \n"
       
       if len(self.attribs) != 0 and level != stop_level:
          rstr += "\\paragraph{Attributes}\n \\begin{itemize}\n"
@@ -283,7 +283,13 @@ class Input(object):
 
       if level == 0:
          rstr += "\\end{document}"
-       
+      
+      rstr = rstr.replace('_', '\\_')
+      rstr = rstr.replace('\\\\_', '\\_')
+      rstr = rstr.replace('...', '\\ldots ')
+      rstr = rstr.replace('<', '\\textless ')
+      rstr = rstr.replace('>', '\\textgreater ')
+
       return rstr
 
    def help_xml(self, name="", indent="", level=0, stop_level=None):
@@ -314,35 +320,37 @@ class Input(object):
       rstr += indent + "   <help>" + self._help + "</help>\n"
       if show_attribs:
          for a in self.attribs:
-            rstr += indent + "   <" + a + "_help>" + a._help + "</" + a + "_help>\n"
+            rstr += indent + "   <" + a + "_help>" + self.__dict__[a]._help + "</" + a + "_help>\n"
 
       if self._dimension != "undefined":
          rstr += indent + "   <dimension>" + self._dimension + "</dimension>\n"
          if show_attribs:
             for a in self.attribs:
-               if a._dimension != "undefined":
-                  rstr += indent + "   <" + a + "_dimension>" + a._dimension + "</" + a + "_dimension>\n"
+               if self.__dict__[a]._dimension != "undefined":
+                  rstr += indent + "   <" + a + "_dimension>" + self.__dict__[a]._dimension + "</" + a + "_dimension>\n"
 
       if self._default is not None:
          rstr += indent + "   <default>" + str(self._default) + "</default>\n"
          if show_attribs:
             for a in self.attribs:
-               if a._default is not None:
-                  rstr += indent + "   <" + a + "_default>" + a._default + "</" + a + "_default>\n"
+               if self.__dict__[a]._default is not None:
+                  rstr += indent + "   <" + a + "_default>" + str(self.__dict__[a]._default) + "</" + a + "_default>\n"
 
       if hasattr(self, "_valid"):
-         rstr += indent + "   <options>" + str(self._valid) + "</options>\n"
+         if self._valid is not None:
+            rstr += indent + "   <options>" + str(self._valid) + "</options>\n"
          if show_attribs:
             for a in self.attribs:
-               if hasattr(a, "_valid"):
-                  rstr += indent + "   <" + a + "_options>" + a._valid + "</" + a + "_options>\n"
+               if hasattr(self.__dict__[a], "_valid"):
+                  if self.__dict__[a]._valid is not None:
+                     rstr += indent + "   <" + a + "_options>" + str(self.__dict__[a]._valid) + "</" + a + "_options>\n"
 
-      if hasattr(self, "type"): 
-         rstr += indent + "   <dtype>" + self.type.__name__ + "</dtype>\n"
+      if hasattr(self, "dtype"): 
+         rstr += indent + "   <dtype>" + self.dtype.__name__ + "</dtype>\n"
          if show_attribs:
             for a in self.attribs:
-               if hasattr(a, "type"):
-                  rstr += indent + "   <" + a + "_dtype>" + a.type + "</" + a + "_dtype>\n"
+               if hasattr(self.__dict__[a], "type"):
+                  rstr += indent + "   <" + a + "_dtype>" + self.__dict__[a].type + "</" + a + "_dtype>\n"
 
       if show_fields:
          for f in self.fields:
@@ -395,7 +403,6 @@ class InputValue(Input):
             raise ValueError("Default value not in option list " + str(self._valid))
       else:
          self._valid = None
-      
       
       if not self._default is None:
          self.store(self._default)

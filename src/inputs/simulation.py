@@ -104,6 +104,8 @@ class InputSimulation(Input):
                                              "default" : np.zeros(0, np.dtype('|S12')),
                                              "help"    : "A list of the allowed properties to print out the per-atom or per-bead trajectories of. Allowed values are ['positions', 'velocities', 'forces', 'kinetic_cv', 'centroid']."})}
 
+   default_help = "This is the top level class that deals with the running of the simulation, including holding the simulation specific properties such as the time step and outputting the data."
+
    def store(self, simul):
       """Takes a simulation instance and stores a minimal representation of it.
 
