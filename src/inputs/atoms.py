@@ -65,7 +65,7 @@ class InputAtoms(Input):
             "file_units": (InputValue, {"dtype"     : str,
                                         "default"   : "",
                                         "help"      : "The units in which the lengths in the configuration file are given.",
-                                        "options"   : ['', 'atomic_unit', 'angstrom', 'nanometer'] }),
+                                        "options"   : [unit for unit in UnitMap["length"]] }),
             "init_temp" : (InputValue, {"dtype"     : float, 
                                         "default"   : -1.0,
                                         "help"      : "The temperature at which the initial velocity distribution is taken, if applicable.",
@@ -106,7 +106,8 @@ class InputAtoms(Input):
    
    def write(self,  name="", indent=""):
       """Overloads Input write() function so that nothing is written if
-      no atoms are present.
+      no atoms are present. This occurs if the beads object has been specified,
+      so that the classical atoms object is not initialized.
 
       Returns:
          A string giving the appropriate xml tags for the checkpoint file.
@@ -114,10 +115,10 @@ class InputAtoms(Input):
 
       if self.natoms.fetch() > 0:
          return super(InputAtoms,self).write(name=name,indent=indent)
-      elif self.from_file.fetch()!="":
-         rstr=InputValue(dtype=str)
+      elif self.from_file.fetch() != "":
+         rstr = InputValue(dtype=str)
          rstr.store(self.from_file.fetch())
-         return indent+"<"+name+">"+rstr.write("from_file","")+"</"+name+">\n";
+         return indent + "<" + name + ">" + rstr.write("from_file","") + "</" + name + ">\n"
       else:
          return ""
       
@@ -131,16 +132,20 @@ class InputAtoms(Input):
       """
 
       super(InputAtoms,self).check()
-      if self.from_file.fetch() != "":
+      if not (self.from_file._explicit or self.q._explicit):
+         raise ValueError("Must provide explicit positions or give from_file.")
+      if self.from_file._explicit:
          myatoms, mycell = utils.io.io_pdb.read_pdb(open(self.from_file.fetch(),"r"))
          myatoms.q *= UnitMap["length"][self.file_units.fetch()]
-         if len(self.q.fetch()) == 0:
+
+         # We can overwrite any of the properties in from_file
+         # by specifying them in atoms.
+         if not self.q._explicit:
             self.q.store(depstrip(myatoms.q))
-         if len(self.p.fetch()) == 0:
+         if not self.p._explicit:
             self.p.store(depstrip(myatoms.p))
-         if len(self.m.fetch()) == 0:
+         if not self.m._explicit:
             self.m.store(depstrip(myatoms.m))
-         if len(self.names.fetch()) == 0:
+         if not self.names._explicit:
             self.names.store(depstrip(myatoms.names))
-         if self.natoms.fetch() == 0:
-            self.natoms.store(myatoms.natoms)
+         self.natoms.store(myatoms.natoms)

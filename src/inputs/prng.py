@@ -75,8 +75,7 @@ class InputRandom(Input):
       """
 
       super(InputRandom,self).fetch()
-      state = self.state.fetch()
-      if state.shape == (0,):
+      if not self.state._explicit:
          return Random(seed=self.seed.fetch())
       else:
          return Random(state=('MT19937',self.state.fetch(), self.set_pos.fetch(), self.has_gauss.fetch(), self.gauss.fetch() ))

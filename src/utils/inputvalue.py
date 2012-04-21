@@ -247,42 +247,42 @@ class Input(object):
 
       rstr = ""
       if level == 0:
-         rstr += r"\documentclass[12pt,fleqn]{report}"
+         rstr += "\\documentclass[12pt,fleqn]{report}"
          rstr += "\n\\begin{document}\n"
       
       rstr += self._help + "\n"
       
       if self._dimension != "undefined": 
-         rstr += r"{\\ \bf DIMENSION: }" + self._dimension + "\\\\\n"
+         rstr += "{\\ \\ \\bf DIMENSION: }" + self._dimension + "\\ \\ \n"
 
       if self._default != None: 
-         rstr += r"{\\ \bf DEFAULT: }" + str(self._default) + "\\\\\n"
+         rstr += "{\\ \\ \\bf DEFAULT: }" + str(self._default) + "\\ \\ \n"
 
       if hasattr(self, "_valid"):
          if self._valid is not None: 
-            rstr += r"{\\ \bf OPTIONS: }" 
+            rstr += "{\\ \\ \\bf OPTIONS: }" 
             for option in self._valid:
                rstr += str(option) + ", "
             rstr.rstrip(", ")
-            rstr +=  "\\\\\n"
+            rstr +=  "\\ \\ \n"
 
-      if hasattr(self, "dtype"): 
-         rstr += r"{\\ \bf DATA TYPE: }" + self.dtype.__name__ + "\\\\\n"
+      if hasattr(self, "type"): 
+         rstr += "{\\ \\ \\bf DATA TYPE: }" + self.type.__name__ + "\\ \\ \n"
       
       if len(self.attribs) != 0 and level != stop_level:
-         rstr += "\\paragraph{Attributes}\n\\begin{itemize}\n"
+         rstr += "\\paragraph{Attributes}\n \\begin{itemize}\n"
          for a in self.attribs:
             rstr += "\\item {\\bf " + a + "}:\n " + self.__dict__[a].help_latex(level+1, stop_level)
-         rstr += "\\end{itemize}\n\n"
+         rstr += "\\end{itemize}\n \n"
             
       if len(self.fields) != 0 and level != stop_level:
-         rstr += "\\paragraph{Fields}\n\\begin{itemize}\n"
+         rstr += "\\paragraph{Fields}\n \\begin{itemize}\n"
          for f in self.fields:
             rstr += "\\item {\\bf " + f + "}:\n " + self.__dict__[f].help_latex(level+1, stop_level)
-         rstr += "\\end{itemize}\n\n"
+         rstr += "\\end{itemize}\n \n"
 
       if level == 0:
-         rstr += r"\end{document}"
+         rstr += "\\end{document}"
        
       return rstr
 

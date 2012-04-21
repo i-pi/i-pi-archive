@@ -49,7 +49,7 @@ class InputForce(Input):
          self.interface.store(force.socket)
          self.parameters.store(force.pars)
       else: 
-         self.type.store("unknown")
+         raise TypeError("The type " + type(force).__name__ + " is not a valid forcefield type")
          
 
    def fetch(self):
@@ -61,8 +61,9 @@ class InputForce(Input):
       """
 
       super(InputForce,self).fetch()
-      if self.type.fetch().upper() == "SOCKET": 
+      if self.type.fetch() == "socket": 
          force = FFSocket(pars=self.parameters.fetch(), interface=self.interface.fetch())
       else: 
-         force = ForceField()
+         raise ValueError("Kind " + self.kind.fetch() + " is not a valid kind of forcefield")
+
       return force

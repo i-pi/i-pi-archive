@@ -30,7 +30,7 @@ class InputBaro(Input):
                                    "help"     : "The type of barostat.",
                                    "options"  : ["rigid", "flexible"]}) }
    fields={ "thermostat": (InputThermo, {"default" : engine.thermostats.Thermostat(),
-                                           "help"    : "The thermostat for the cell. Keeps the cell velocity distribution at the correct temperature."}) }
+                                         "help"    : "The thermostat for the cell. Keeps the cell velocity distribution at the correct temperature."}) }
 
    def store(self, baro):
       """Takes a barostat instance and stores a minimal representation of it.
@@ -40,12 +40,12 @@ class InputBaro(Input):
       """
 
       super(InputBaro,self).store(baro)
-      if type(baro) is BaroRigid:
+      if type(baro) is BaroRigid or type(baro) is Barostat:
          self.kind.store("rigid")
       if type(baro) is BaroFlexi:
          self.kind.store("flexible")
       else:
-         self.kind.store("unknown")      
+         raise TypeError("The type " + type(baro).__name__ + " is not a valid barostat type")
       self.thermostat.store(baro.thermostat)
       
    def fetch(self):
@@ -57,11 +57,11 @@ class InputBaro(Input):
       """
 
       super(InputBaro,self).fetch()
-      if self.kind.fetch().upper() == "RIGID":
+      if self.kind.fetch() == "rigid":
          baro=BaroRigid(thermostat=self.thermostat.fetch())
-      elif self.kind.fetch().upper() == "FLEXIBLE":
+      elif self.kind.fetch() == "flexible":
          baro=BaroFlexi(thermostat=self.thermostat.fetch())
       else:
-         baro=Barostat(thermostat=self.thermostat.fetch())
+         raise ValueError("Kind " + self.kind.fetch() + " is not a valid kind of barostat")
 
       return baro
