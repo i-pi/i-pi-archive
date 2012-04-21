@@ -1,4 +1,9 @@
+"""Deals with creating the simulation class.
 
+Classes:
+   InputSimulation: Deals with creating the Simulation object from a file, and 
+      writing the checkpoints.
+"""
 
 __all__ = ['InputSimulation']
 
@@ -28,7 +33,7 @@ _DEFAULT_OUTPUT = [ "time", "conserved", "kinetic", "potential" ]
 _DEFAULT_TRAJ = [ "positions" ]
 
 class InputSimulation(Input):
-   """Simulation restart class.
+   """Simulation input class.
 
    Handles generating the appropriate forcefield class from the xml input file,
    and generating the xml checkpoint tags and data from an instance of the
@@ -61,24 +66,43 @@ class InputSimulation(Input):
          to 0.
    """
 
-   fields= { "force" :   (InputForce, { "help" : "" }),  
-             "ensemble": (InputEnsemble, { "help" : "" } ), 
-             "prng" :    (InputRandom, { "help" : "" , "default" : Random() } ),
+   fields= { "force" :   (InputForce,    { "help"  : "Deals with the assigning of jobs to different driver codes, and collecting the data." }),  
+             "ensemble": (InputEnsemble, { "help"  : "Holds all the information that is ensemble specific, such as the temperature and the external pressure, and the thermostats and barostats that control it." } ),
+             "prng" :    (InputRandom,   { "help"  : "Deals with the pseudo-random number generator.",
+                                         "default" : Random() } ),
+             "atoms" :   (InputAtoms, { "help"     : "Deals with classical simulations.", 
+                                        "default"  : Atoms(0) } ), 
+             "beads" :   (InputBeads, { "help"     : "Deals with path integral simulations.", 
+                                        "default"  : Beads(0,1) } ),
+             "cell" :    (InputCell,   { "help"    : "Deals with the cell parameters, and stores their momenta in flexible cell calculations." }), 
 
-             "atoms" :   (InputAtoms, { "help" : "", "default" : Atoms(0) } ), 
-             "beads" :   (InputBeads, { "help" : "", "default" : Beads(0,1) } ), 
-             "cell" :    (InputCell,   { "help" : "" }), 
-
-             "step" :       ( InputValue, { "dtype" : int, "default" : 0, "help" : "" }), 
-             "total_steps": ( InputValue, { "dtype" : int, "default" : 1000, "help" : "" }), 
-             "stride" :     ( InputValue, { "dtype" : dict, "default" : {}, "help" : "" }), 
-             "prefix":      ( InputValue, { "dtype" : str, "default" : "prefix", "help" : "" }),  
-             "properties":  ( InputArray, { "dtype" : str, "default" : np.zeros(0, np.dtype('|S12')) }),
-             "initialize":  ( InputValue, { "dtype" : dict, "default" : {}, "help" : "" }), 
-             "fd_delta":    ( InputValue, { "dtype" : float, "default" : 0.0, "help" : "" }), 
-             "traj_format": ( InputValue, { "dtype" : str, "default" : "pdb", "help" : "" }),  
-             "trajectories": ( InputArray, { "dtype" : str, "default" : np.zeros(0, np.dtype('|S12')) })
-            }
+             "step" :       ( InputValue, { "dtype"    : int, 
+                                            "default"  : 0, 
+                                            "help"     : "How many time steps have been done." }), 
+             "total_steps": ( InputValue, { "dtype"    : int, 
+                                            "default"  : 1000,
+                                            "help"     : "The total number of steps that will be done." }), 
+             "stride" :     ( InputValue, { "dtype"    : dict,
+                                            "default"  : {},
+                                            "help"     : "Dictionary holding the number of steps between printing the different kinds of files. The allowed keywords are ['checkpoint', 'properties', 'progress', 'trajectory', centroid']" }), 
+             "prefix":      ( InputValue, { "dtype"    : str,
+                                            "default"  : "prefix",
+                                            "help"     : "A string that will be the prefix for all the output file names." }),
+             "properties":  ( InputArray, { "dtype"    : str,
+                                            "default"  : np.zeros(0, np.dtype('|S12')),
+                                            "help"     : "A list of the properties that will be printed in the properties output file. See the manual for a full list of acceptable names."}),
+             "initialize":  ( InputValue, { "dtype"    : dict,
+                                            "default"  : {},
+                                            "help"     : "A dictionary giving the properties of the system that need to be initialized. The allowed keywords are ['velocities']." }), 
+             "fd_delta":    ( InputValue, { "dtype"    : float,
+                                            "default"  : 0.0,
+                                            "help"     : "The parameter used in the finite difference differentiation in the calculation of the scaled path velocity estimator." }), 
+             "traj_format": ( InputValue, { "dtype"    : str,
+                                            "default"  : "pdb",
+                                            "help"     : "The file format for the output file. Allowed keywords are ['pdb', 'xyz']." }),  
+             "trajectories": ( InputArray, { "dtype"   : str,
+                                             "default" : np.zeros(0, np.dtype('|S12')),
+                                             "help"    : "A list of the allowed properties to print out the per-atom or per-bead trajectories of. Allowed values are ['positions', 'velocities', 'forces', 'kinetic_cv', 'centroid']."})}
 
    def store(self, simul):
       """Takes a simulation instance and stores a minimal representation of it.
@@ -92,7 +116,6 @@ class InputSimulation(Input):
       self.ensemble.store(simul.ensemble)
       
       # If we are running a classical simulation, hide the "beads" machinery in the restarts
-      print "SAFE HERE", simul.beads.nbeads
       if simul.beads.nbeads > 1 :
          self.beads.store(simul.beads)
       else:
@@ -156,7 +179,7 @@ class InputSimulation(Input):
                      prefix=self.prefix.fetch(),  outlist=olist, 
                      trajlist=tlist, initlist=ilist)
 
-      if (self.fd_delta.fetch() != 0.0):
+      if self.fd_delta._explicit:
          rsim.properties.fd_delta = self.fd_delta.fetch()      
 
       rsim.trajs.format=self.traj_format.fetch()
