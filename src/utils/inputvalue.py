@@ -253,21 +253,21 @@ class Input(object):
       rstr += self._help + "\n"
       
       if self._dimension != "undefined": 
-         rstr += "{\\\\ \\bf DIMENSION: }" + self._dimension + "\\ \\ \n"
+         rstr += "{\\\\ \\bf DIMENSION: }" + self._dimension + "\n"
 
-      if self._default != None: 
-         rstr += "{\\\\ \\bf DEFAULT: }" + str(self._default) + "\\ \\ \n"
+      if self._default != None and hasattr(self, "type"):
+         rstr += "{\\\\ \\bf DEFAULT: }" + self.pprint(self._default) + "\n"
 
       if hasattr(self, "_valid"):
          if self._valid is not None: 
             rstr += "{\\\\ \\bf OPTIONS: }" 
             for option in self._valid:
-               rstr += str(option) + ", "
-            rstr.rstrip(", ")
-            rstr +=  "\\\\ \n"
+               rstr += "'" + str(option) + "', "
+            rstr = rstr.rstrip(", ")
+            rstr +=  "\n"
 
-      if hasattr(self, "dtype"): 
-         rstr += "{\\\\ \\bf DATA TYPE: }" + self.dtype.__name__ + "\\ \\ \n"
+      if hasattr(self, "type") and hasattr(self.type, "__name__"):
+         rstr += "{\\\\ \\bf DATA TYPE: }" + self.type.__name__ + "\n"
       
       if len(self.attribs) != 0 and level != stop_level:
          rstr += "\\paragraph{Attributes}\n \\begin{itemize}\n"
@@ -287,16 +287,49 @@ class Input(object):
       rstr = rstr.replace('_', '\\_')
       rstr = rstr.replace('\\\\_', '\\_')
       rstr = rstr.replace('...', '\\ldots ')
-      rstr = rstr.replace('<', '\\textless ')
-      rstr = rstr.replace('>', '\\textgreater ')
 
       return rstr
+
+   def pprint(self, default, indent="", latex = True):
+      """Function to convert arrays and other objects to human-readable strings.
+
+      Args:
+         default: The object that needs to be converted to a string.
+         dtype: The type of data being printed.
+         indent: The indent at the beginning of a line.
+      """
+
+      if type(default) is np.ndarray:
+         if default.shape == (0,):
+            return "[ ]"
+         else:
+            rstr = "\n" + indent + "      "
+            rstr += str(default).replace("\n", "\n" + indent + "      ")
+            if not latex:
+               rstr += "\n" + indent + "   "
+
+            return rstr
+      elif type(default) == str:
+         if latex:
+            return "'" + default + "'"
+         else:
+            return " " + default + " "
+      elif default == []:
+         return "[ ]"
+      elif default == {}:
+         if latex:
+            return "\\{ \\}"
+         else:
+            return "{ }"
+      else:
+         return str(default)
 
    def help_xml(self, name="", indent="", level=0, stop_level=None):
       """Function to generate an xml formatted manual.
 
       Args:
          name: A string giving the name of the root node.
+         indent: The indent at the beginning of a line.
          level: Current level of the hierarchy being considered.
          stop_level: The depth to which information will be given. If not given,
             all information will be given
@@ -324,33 +357,33 @@ class Input(object):
 
       if self._dimension != "undefined":
          rstr += indent + "   <dimension>" + self._dimension + "</dimension>\n"
-         if show_attribs:
-            for a in self.attribs:
-               if self.__dict__[a]._dimension != "undefined":
-                  rstr += indent + "   <" + a + "_dimension>" + self.__dict__[a]._dimension + "</" + a + "_dimension>\n"
+      if show_attribs:
+         for a in self.attribs:
+            if self.__dict__[a]._dimension != "undefined":
+               rstr += indent + "   <" + a + "_dimension>" + self.__dict__[a]._dimension + "</" + a + "_dimension>\n"
 
-      if self._default is not None:
-         rstr += indent + "   <default>" + str(self._default) + "</default>\n"
-         if show_attribs:
-            for a in self.attribs:
-               if self.__dict__[a]._default is not None:
-                  rstr += indent + "   <" + a + "_default>" + str(self.__dict__[a]._default) + "</" + a + "_default>\n"
+      if self._default is not None and hasattr(self, "type"):
+         rstr += indent + "   <default>" + self.pprint(self._default, indent=indent, latex=False) + "</default>\n"
+      if show_attribs:
+         for a in self.attribs:
+            if self.__dict__[a]._default is not None:
+               rstr += indent + "   <" + a + "_default>" + self.pprint(self.__dict__[a]._default, indent=indent, latex=False) + "</" + a + "_default>\n"
 
       if hasattr(self, "_valid"):
          if self._valid is not None:
             rstr += indent + "   <options>" + str(self._valid) + "</options>\n"
-         if show_attribs:
-            for a in self.attribs:
-               if hasattr(self.__dict__[a], "_valid"):
-                  if self.__dict__[a]._valid is not None:
-                     rstr += indent + "   <" + a + "_options>" + str(self.__dict__[a]._valid) + "</" + a + "_options>\n"
+      if show_attribs:
+         for a in self.attribs:
+            if hasattr(self.__dict__[a], "_valid"):
+               if self.__dict__[a]._valid is not None:
+                  rstr += indent + "   <" + a + "_options>" + str(self.__dict__[a]._valid) + "</" + a + "_options>\n"
 
-      if hasattr(self, "dtype"): 
-         rstr += indent + "   <dtype>" + self.dtype.__name__ + "</dtype>\n"
-         if show_attribs:
-            for a in self.attribs:
-               if hasattr(self.__dict__[a], "type"):
-                  rstr += indent + "   <" + a + "_dtype>" + self.__dict__[a].type + "</" + a + "_dtype>\n"
+      if hasattr(self, "type") and hasattr(self.type, "__name__"): 
+         rstr += indent + "   <dtype>" + self.type.__name__ + "</dtype>\n"
+      if show_attribs:
+         for a in self.attribs:
+            if hasattr(self.__dict__[a], "type") and hasattr(self.__dict__[a].type, "__name__"):
+               rstr += indent + "   <" + a + "_dtype>" + self.__dict__[a].type.__name__ + "</" + a + "_dtype>\n"
 
       if show_fields:
          for f in self.fields:
@@ -392,10 +425,8 @@ class InputValue(Input):
 
       if not dtype is None:
          self.type = dtype
-      elif not self.value is None:
-         self.type = type(value)
       else:
-         raise TypeError("You must provide either value or dtype")
+         raise TypeError("You must provide dtype")
 
       if options is not None:
          self._valid = options
