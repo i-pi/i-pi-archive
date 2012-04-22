@@ -41,47 +41,36 @@ class InputCell(Input):
    """
 
    fields={ "m" : (InputValue, {"dtype"      : float, 
-                                  "default"    : 0.0,
-                                  "help"       : "The 'mass' of the cell, used in constant pressure simulations.",
-                                  "dimension"  : "mass"}),
+                                "default"    : 0.0,
+                                "help"       : "The 'mass' of the cell, used in constant pressure simulations.",
+                                "dimension"  : "mass"}),
             "h" : (InputArray, {"dtype"      : float,
-                                  "default"    : np.zeros((3,3)),
-                                  "help"       : "The cell vector matrix",
-                                  "dimension"  : "length"}), 
+                                "default"    : np.zeros((3,3)),
+                                "help"       : "The cell vector matrix",
+                                "dimension"  : "length"}), 
             "h0" : (InputArray, {"dtype"     : float,
-                                   "default"   : np.zeros((3,3)), 
-                                   "help"      : "The reference cell vector matrix. Defined as the unstressed equilibrium cell.",
-                                   "dimension" : "length"}),
+                                 "default"   : np.zeros((3,3)), 
+                                 "help"      : "The reference cell vector matrix. Defined as the unstressed equilibrium cell.",
+                                 "dimension" : "length"}),
             "p" : (InputArray, {"dtype"      : float,
-                                  "default"    : np.zeros((3,3),float),
-                                  "help"       : "The cell 'momenta' matrix, used in constant pressure simulations.",
-                                  "dimension"  : "momentum"}),
+                                "default"    : np.zeros((3,3),float),
+                                "help"       : "The cell 'momenta' matrix, used in constant pressure simulations.",
+                                "dimension"  : "momentum"}),
             "P" : (InputValue, {"dtype"      : float,
-                                  "default"    : 0.0,
-                                  "help"       : "The scalar cell 'momentum', used in constant pressure simulations.",
-                                  "dimension"  : "momentum"}),
+                                "default"    : 0.0,
+                                "help"       : "The scalar cell 'momentum', used in constant pressure simulations.",
+                                "dimension"  : "momentum"}),
             "init_temp": (InputValue, {"dtype"     : float, 
-                                         "default"   : -1.0,
-                                         "help"      : "The temperature at which the initial velocity distribution is taken, if applicable.",
-                                         "dimension" : "temperature"}),
+                                       "default"   : -1.0,
+                                       "help"      : "The temperature at which the initial velocity distribution is taken, if applicable.",
+                                       "dimension" : "temperature"}),
             "from_file": (InputValue, {"dtype"     : str,
-                                         "default"   : "",
-                                         "help"      : "A file from which to take the cell parameters from.",}) }
+                                       "default"   : "",
+                                       "help"      : "A file from which to take the cell parameters from.",}) }
    attribs={ "flexible" : (InputValue, {"dtype"    : bool, 
-                                          "default"  : False,
-                                          "help"     : "Whether the cell parameters can change during the simulation."}) }
+                                        "default"  : False,
+                                        "help"     : "Whether the cell parameters can change during the simulation."}) }
     
-#   def __init__(self, cell=None):
-#      """Initialises InputCell.
-
-#      Args:
-#         cell: A Cell object from which to initialise from.
-#      """
-
-#      super(InputCell,self).__init__()
-#      if not cell is None:
-#         self.store(cell)
-      
    def store(self, cell, filename=""):
       """Takes a Cell instance and stores of minimal representation of it.
 
@@ -114,7 +103,7 @@ class InputCell(Input):
       super(InputCell,self).fetch()
       if (self.flexible.fetch()): 
          cell = CellFlexi(h=self.h.fetch(), m=self.m.fetch())
-         if det_ut3x3(self.h0.fetch()) == 0.0:
+         if not self.h0._explicit:
             cell.h0 = cell.h
          cell.p = self.p.fetch()
       else:
@@ -132,12 +121,12 @@ class InputCell(Input):
       """
 
       super(InputCell,self).check()
-      if self.from_file.fetch() != "":
+      if self.from_file._explicit:
          myatoms, mycell = utils.io.io_pdb.read_pdb(open(self.from_file.fetch(),"r")) 
-         if (self.h0.fetch() == np.zeros((3,3))).all():
+         if not self.h0._explicit:
             self.h.store(mycell.h)
-         if (self.h0.fetch() == np.zeros((3,3))).all():
+         if not self.h0._explicit:
             self.h0.store(mycell.h0)
-         if self.m.fetch() == 0.0:
+         if not self.m._explicit:
             self.m.store(mycell.m)
          self.from_file.store("")

@@ -13,6 +13,7 @@ import utils.io.io_pdb
 from utils.depend import *
 from utils.units import *
 from inputs.atoms import *
+
 __all__ = ['InputBeads']
       
 class InputBeads(Input):
@@ -42,7 +43,8 @@ class InputBeads(Input):
                                         "help"      : "The number of atoms"}), 
             "nbeads"    : (InputValue, {"dtype"     : int,
                                         "help"      : "The number of beads"}), 
-            "start_centroid"     : (InputAtoms, {"help" : "Start at centroid? Write better string", "default" : Atoms(0) }),
+            "start_centroid"     : (InputAtoms, {"help"    : "An atoms object from which the centroid coordinates can be initialized", 
+                                                 "default" : Atoms(0) }),
             "q"         : (InputArray, {"dtype"     : float,
                                         "default"   : np.zeros(0),
                                         "help"      : "The positions of the atoms, in the format [x1, y1, z1, x2, ... ]",
@@ -65,7 +67,8 @@ class InputBeads(Input):
 
    def write(self,  name="", indent=""):
       """Overloads Input write() function so that nothing is written if
-      no atoms are present.
+      no beads are present. This will happen if only the classical configuration
+      has been specified.
 
       Returns:
          A string giving the appropriate xml tags for the checkpoint file.
@@ -110,11 +113,16 @@ class InputBeads(Input):
       
       
    def check(self):
+      """Function that deals with optional arguments.
+
+      Deals with deciding which values to initialize from the centroid 
+      configurations, and which values to initialize from an explicit array. 
+      """
 
       super(InputBeads,self).check()
-      if self.q._explicit : 
-         pass
-      elif self.start_centroid._explicit:
+      if not (self.start_centroid._explicit or self.q._explicit):
+         raise ValueError("Must provide explicit positions or give start_config.")
+      if self.start_centroid._explicit:
          # reads the start_config atom tag and created dummy tags for the full bead object
          atoms = self.start_centroid.fetch()
          self.natoms.store(atoms.natoms)
@@ -123,16 +131,16 @@ class InputBeads(Input):
          m = atoms.m
          names = atoms.names
          for b in range(self.nbeads.fetch()):
-            q[b]=atoms.q[:]; p[b]=atoms.p[:];
+            q[b] = atoms.q[:]
+            p[b] = atoms.p[:]
 
-         self.q.store(q)
-         self.p.store(p)
-         self.m.store(m)
-         self.names.store(names)
-
-      else:
-         raise ValueError("Must provide explicit positions or give start_config.")
-         
-      
-      
-      
+         # We can overwrite any of the properties in start_centroid
+         # by specifying them in beads.
+         if not self.q._explicit:
+            self.q.store(q)
+         if not self.p._explicit:
+            self.p.store(p)
+         if not self.m._explicit:
+            self.m.store(m)
+         if not self.names._explicit:
+            self.names.store(names)

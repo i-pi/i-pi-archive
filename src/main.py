@@ -35,6 +35,11 @@ def main(file_name):
                                                      # and partitions it
                                                      # appropriately.
 
+#   xml_output = open("helptest/help.xml","w")
+#   latex_output = open("helptest/help.tex","w")
+#   xml_output.write(simrestart.help_xml("simulation"))
+#   latex_output.write(simrestart.help_latex())
+#   exit(1)
    simul = simrestart.fetch() # Creates the appropriate simulation object.
    simul.run()
    del simul

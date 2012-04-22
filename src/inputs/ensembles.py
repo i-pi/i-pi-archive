@@ -46,9 +46,9 @@ class InputEnsemble(Input):
                                     "help"    : "The ensemble that will be sampled during the simulation.",
                                     "options" : ['nve', 'nvt', 'npt', 'nst']}) }
    fields={"thermostat" : (InputThermo, {"default"   : engine.thermostats.Thermostat(),
-                                           "help"      : "The thermostat for the atoms, keeps the atom velocity distribution at the correct temperature."} ),
+                                         "help"      : "The thermostat for the atoms, keeps the atom velocity distribution at the correct temperature."} ),
            "barostat" : (InputBaro, {"default"       : engine.barostats.Barostat(),
-                                       "help"          : "The barostat for the simulation."} ), 
+                                     "help"          : "The barostat for the simulation."} ), 
            "timestep": (InputValue, {"dtype"         : float,
                                      "default"       : "1.0",
                                      "help"          : "The time step.",
@@ -78,13 +78,17 @@ class InputEnsemble(Input):
 
       super(InputEnsemble,self).store(ens)
       if type(ens) is NVEEnsemble:    
-         self.type.store("nve"); tens=0
+         self.type.store("nve")
+         tens=0
       elif type(ens) is NVTEnsemble:  
-         self.type.store("nvt"); tens=1
+         self.type.store("nvt")
+         tens=1
       elif type(ens) is NPTEnsemble:  
-         self.type.store("npt"); tens=2
+         self.type.store("npt")
+         tens=2
       elif type(ens) is NSTEnsemble:  
-         self.type.store("nst"); tens=3
+         self.type.store("nst")
+         tens=3
       
       self.timestep.store(ens.dt)
       self.temperature.store(ens.temp)
@@ -95,9 +99,9 @@ class InputEnsemble(Input):
       if tens > 1:
          self.barostat.store(ens.barostat)
       if tens == 2:
-         self.pressure.store(ens.pext)
+         self.pressure.store(ens.pext)  #TODO choose between pext and sext
       if tens == 3:
-         self.stress.store(ens.pext)
+         self.stress.store(ens.sext)
 
    def fetch(self):
       """Creates an ensemble object.

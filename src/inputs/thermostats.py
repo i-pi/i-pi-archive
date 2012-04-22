@@ -97,7 +97,7 @@ class InputThermo(Input):
             self.C.store(thermo.C)
          self.s.store(thermo.s)
       else:
-         raise TypeError("Unknown thermostat kind")
+         raise TypeError("Unknown thermostat kind " + type(thermo).__name__)
       self.ethermo.store(thermo.ethermo)
       
    def fetch(self):
