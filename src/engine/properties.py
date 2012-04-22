@@ -113,11 +113,13 @@ class Properties(dobject):
       self.forces = simul.forces
       self.simul = simul      
 
+      self.add_property(prop_name="step", dep_name="step", func=self.get_step, dependencies=[dget(self.simul, "step")])
       self.add_property(prop_name="time", dep_name="time", func=self.get_time, dependencies=[dget(self.simul, "step"), dget(self.ensemble, "dt")])
       self.add_property(prop_name="conserved", dep_name="econs", func=self.get_econs, dependencies=[dget(self.ensemble, "econs")])
       self.add_property(prop_name="kinetic_md", dep_name="kin", func=self.get_kin, dependencies=[dget(self.beads, "kin"), dget(self.cell, "kin")])
       self.add_property(prop_name="potential", dep_name="pot", func=self.get_pot, dependencies=[dget(self.forces, "pot")])
       self.add_property(prop_name="temperature", dep_name="temp", func=self.get_temp, dependencies=[dget(self.beads, "kin")])
+
       self.property_dict["volume"] = dget(self.cell,"V")
       self.add_property(prop_name="cell_parameters", dep_name="cell_params", func=self.get_cell_params, dependencies=[dget(self.cell, "h")])
 
@@ -163,6 +165,11 @@ class Properties(dobject):
       """Calculates the elapsed simulation time."""
 
       return (1 + self.simul.step)*self.ensemble.dt
+
+   def get_step(self):
+      """Return the simulation step."""
+
+      return (1 + self.simul.step)
 
    def __getitem__(self,key):
       """Retrieves the item given by key.
@@ -324,6 +331,8 @@ class Trajectories(dobject):
       # a few, "fancier", per-atom properties
       dset(self, "atomic_kincv", depend_array(name="atomic_kincv", value=np.zeros(self.simul.beads.natoms*3),
            func=self.get_akcv, dependencies=[dget(self.simul.forces,"f"), dget(self.simul.beads,"q"), dget(self.simul.beads,"qc"), dget(self.simul.ensemble,"temp")]))      
+      dset(self, "atomic_kod", depend_array(name="atomic_kod", value=np.zeros(self.simul.beads.natoms*3),
+           func=self.get_akcv_od, dependencies=[dget(self.simul.forces,"f"), dget(self.simul.beads,"q"), dget(self.simul.beads,"qc"), dget(self.simul.ensemble,"temp")]))      
       
       
    def get_akcv(self):
@@ -337,7 +346,28 @@ class Trajectories(dobject):
       rv *= -0.5/self.simul.nbeads
       rv += 0.5*Constants.kb*self.simul.ensemble.temp
       return rv
-   
+
+   def get_akcv_od(self):
+      """Calculates the "off-diagonal" contribution to the kinetic energy tensor 
+      due to each atom.
+      """
+
+      rv = np.zeros((self.simul.beads.natoms,3))
+      # helper arrays to make it more transparent what we are computing
+      dq = np.zeros((self.simul.beads.natoms,3))
+      f = np.zeros((self.simul.beads.natoms,3))
+      for b in range(self.simul.beads.nbeads):
+         dq[:] = (self.simul.beads.q[b]-self.simul.beads.qc).reshape((self.simul.beads.natoms,3))
+         f[:] = self.simul.forces.f[b].reshape((self.simul.beads.natoms,3))
+         rv[:,0] += dq[:,0]*f[:,1]+dq[:,1]*f[:,0]
+         rv[:,1] += dq[:,1]*f[:,2]+dq[:,2]*f[:,1]
+         rv[:,2] += dq[:,0]*f[:,2]+dq[:,2]*f[:,0]
+      rv *= 0.5
+      rv *= -0.5/self.simul.nbeads
+      # rv += 0.5*Constants.kb*self.simul.ensemble.temp
+      
+      return rv.reshape(self.simul.beads.natoms*3)
+         
    def print_traj(self, what, stream, b=0):
       """Prints out a frame of a trajectory for the specified quantity and bead.
 
@@ -354,7 +384,9 @@ class Trajectories(dobject):
       elif what == "forces":
          self.fatom.q = self.simul.forces.f[b]
       elif what == "kinetic_cv":
-         self.fatom.q = self.atomic_kincv         
+         self.fatom.q = self.atomic_kincv 
+      elif what == "kodterms_cv":
+         self.fatom.q = self.atomic_kod
       elif what == "centroid":
          self.fatom.q = self.simul.beads.qc
       else:
