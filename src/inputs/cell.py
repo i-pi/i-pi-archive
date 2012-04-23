@@ -9,7 +9,7 @@ Classes:
 """
 
 import numpy as np
-from utils.io.io_pdb import *
+import utils.io.io_pdb, utils.io.io_xyz
 from engine.cell import *
 from utils.inputvalue import *
 
@@ -122,7 +122,13 @@ class InputCell(Input):
 
       super(InputCell,self).check()
       if self.from_file._explicit:
-         myatoms, mycell = utils.io.io_pdb.read_pdb(open(self.from_file.fetch(),"r")) 
+         
+         filename=self.from_file.fetch(); ext=filename[len(filename)-3:]
+         if (ext == "pdb"):
+            myatoms, mycell = utils.io.io_pdb.read_pdb(open(self.from_file.fetch(),"r"))
+         else:
+            raise ValueError("Unrecognized extension for cell configuration")
+
          if not self.h0._explicit:
             self.h.store(mycell.h)
          if not self.h0._explicit:
