@@ -247,7 +247,7 @@ class Simulation(dobject):
 
       self.ichk = 0      
       if "velocities" in self.initlist:
-         init_temp = self.initlist["velocities"]
+         init_temp = float(self.initlist["velocities"])*self.beads.nbeads
          if init_temp == 0:
             self.beads.p = math.sqrt(self.ensemble.ntemp*Constants.kb)*self.beads.sm3*self.prng.gvec((self.beads.nbeads, 3*self.beads.natoms))
          else:

@@ -12,6 +12,7 @@ import numpy as np
 import utils.io.io_pdb, utils.io.io_xyz
 from engine.cell import *
 from utils.inputvalue import *
+from utils.units import UnitMap
 
 __all__ = [ 'InputCell' ]
       
