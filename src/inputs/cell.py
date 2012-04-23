@@ -123,16 +123,30 @@ class InputCell(Input):
       super(InputCell,self).check()
       if self.from_file._explicit:
          
-         filename=self.from_file.fetch(); ext=filename[len(filename)-3:]
+         filename=self.from_file.fetch()
+         ext=filename[len(filename)-3:]
          if (ext == "pdb"):
             myatoms, mycell = utils.io.io_pdb.read_pdb(open(self.from_file.fetch(),"r"))
          else:
             raise ValueError("Unrecognized extension for cell configuration")
 
-         if not self.h0._explicit:
+         if not self.h._explicit:
             self.h.store(mycell.h)
          if not self.h0._explicit:
             self.h0.store(mycell.h0)
          if not self.m._explicit:
             self.m.store(mycell.m)
          self.from_file.store("")
+
+      h = self.h.fetch()
+      h0 = self.h0.fetch()
+      if not (h.shape == (3,3) and h0.shape == (3,3)):
+         raise ValueError("Incorrect shape for cell vector matrices.")
+      if not (h[1,0] == h[2,0] == h[2,1] == h0[1,0] == h0[2,0] == h0[2,1] == 0):
+         print "Warning: cell vector matrix must be upper triangular, all elements below the diagonal being set to zero."
+         h[1,0] = 0
+         h[2,0] = 0
+         h[2,1] = 0
+         h0[1,0] = 0
+         h0[2,0] = 0
+         h0[2,1] = 0

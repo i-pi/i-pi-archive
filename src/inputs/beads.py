@@ -144,3 +144,9 @@ class InputBeads(Input):
             self.m.store(m)
          if not self.names._explicit:
             self.names.store(names)
+
+      if not 3*self.natoms.fetch()*self.nbeads.fetch() == self.q.fetch().size == self.p.fetch().size == 3*self.nbeads.fetch()*len(self.m.fetch()) == 3*self.nbeads.fetch()*len(self.names.fetch()):
+            raise ValueError("Incompatible dimensions of the beads' data arrays.")
+      for mass in self.m.fetch():
+         if mass <= 0:
+            raise ValueError("Unphysical atom mass")

@@ -416,8 +416,6 @@ class InputValue(Input):
          units: The units of the value.
          default: A default value.
          dtype: An optional data type. Defaults to None.
-         value: An optional value for the data. Defaults to None. Also
-            specifies the data type if type is None.
          options: An optional list of valid options.
       """
 
@@ -546,18 +544,14 @@ class InputArray(Input):
          units: The units of the value.
          default: A default value.
          dtype: An optional data type. Defaults to None.
-         value: An optional value for the data. Defaults to None. Also
-            specifies the data type if type is None.
       """
 
       super(InputArray,self).__init__(help, dimension, units, default)
       
       if not dtype is None:
          self.type = dtype
-      elif not self.value is None:
-         self.type = type(value)
       else:
-         raise TypeError("You must provide either value or dtype")
+         raise TypeError("You must provide dtype")
 
       if not self._default is None:
          self.store(self._default)
@@ -656,70 +650,3 @@ class InputArray(Input):
             self.shape.store(read_type(tuple, xml.attribs["shape"]))
          else:
             self.shape.store(self.value.shape)
-
-
-class InputTest(Input):
-   
-   fields = {
-        "timestep" : ( InputValue, { "help"  : "time step of the simulation",
-                                     "dtype" : float,
-                                     "dimension" : "time",
-                                     "default" : 1.0     } ), 
-        "label" :    ( InputValue, { "help" : "name of something", 
-                                     "dtype" : str,
-                                     "default" : "name2",
-                                     "options" : ["name1", "name2", "name3"]}),
-        "mandatory" : ( InputValue, {"help" : "an integer which must be there", 
-                                     "dtype": int } ), 
-        "array" : ( InputArray, { "help" : "lets try an array variable", 
-                                  "dtype": float,
-                                  "dimension": "mass",
-                                  "default": np.array([1,2,3,4,5])}),
-        "mandarray" : ( InputArray, { "help" : "more array variables", 
-                                      "dtype": int})
-        }
-
-   default_help = "A test for the new input class"        
-
-class InputTest2(Input):
-   fields = { "nest" : (InputTest, {"help" : "This should test nesting"}),
-              "other": (InputValue,{"help" : "Another field",
-                                    "dtype": bool,
-                                    "default": True})}
-
-   default_help = "A test for a nested new input class"
-     
-     
-def main(file_name):
-   # TEMPORARY WHILE WE TEST THE NEW INPUT    
-   myinput = InputTest()
-   myinput2 = InputTest2()
-
-
-   ifile = open("test.xml","r")
-   ifile2 = open("test2.xml","r")
-   xmlrestart = xml_parse_file(ifile) # Parses the file.
-   xmlrestart2 = xml_parse_file(ifile2)
-      
-   myinput.parse(xmlrestart.fields["test"]) 
-   myinput2.parse(xmlrestart2.fields["test"]) 
-
-   print "timestep: ", myinput.timestep.fetch()
-   print "label: ", myinput.label.fetch()
-   print "mandatory: ", myinput.mandatory.fetch()
-   print "array: ", myinput.array.fetch()
-   print "opt_list: ", myinput.label._valid
-
-   print
-   print myinput.write("test")
-   print
-   print
-   print "other: ", myinput2.other.fetch()
-   print "label: ", myinput2.nest.label.fetch()
-   print
-   print myinput2.write("test")
-
-#helpfile = open("inputtest/helpfile.tex","w")
-#helpfile.write(myinput2.help(stop_level = 2))
-#helpfile.write(myinput2.help())
-

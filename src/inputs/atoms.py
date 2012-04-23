@@ -136,11 +136,12 @@ class InputAtoms(Input):
          raise ValueError("Must provide explicit positions or give from_file.")
       if self.from_file._explicit:
       
-         filename=self.from_file.fetch(); ext=filename[len(filename)-3:]
+         filename=self.from_file.fetch()
+         ext=filename[len(filename)-3:]
          if (ext == "pdb"):
             myatoms, mycell = utils.io.io_pdb.read_pdb(open(self.from_file.fetch(),"r"))
          elif (ext == "xyz"):
-            myatoms, mycell = utils.io.io_pdb.read_xyz(open(self.from_file.fetch(),"r"))
+            myatoms = utils.io.io_pdb.read_xyz(open(self.from_file.fetch(),"r"))
          else:
             raise ValueError("Unrecognized extension for atomic configuration file")
             
@@ -157,3 +158,9 @@ class InputAtoms(Input):
          if not self.names._explicit:
             self.names.store(depstrip(myatoms.names))
          self.natoms.store(myatoms.natoms)
+
+      if not 3*self.natoms.fetch() == len(self.q.fetch()) == len(self.p.fetch()) == 3*len(self.m.fetch()) == 3*len(self.names.fetch()):
+            raise ValueError("Incompatible dimensions of the atoms' data arrays.")
+      for mass in self.m.fetch():
+         if mass <= 0:
+            raise ValueError("Unphysical atom mass")

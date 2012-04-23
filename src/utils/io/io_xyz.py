@@ -64,15 +64,13 @@ def print_xyz(atoms, cell, filedesc = sys.stdout, title=""):
    filedesc.flush()
 
 def read_xyz(filedesc):
-   """Takes a xyz-style file and creates an Atoms and Cell object.
+   """Takes a xyz-style file and creates an Atoms object.
 
    Args:
       filedesc: An open readable file object from a xyz formatted file.
 
    Returns:
-      An Atoms object with the appropriate atom labels, masses and positions, 
-      and a Cell object with the appropriate cell dimensions and an estimate 
-      of a reasonable cell mass.
+      An Atoms object with the appropriate atom labels, masses and positions.
    """
 
    natoms = int(filedesc.readline())
@@ -92,6 +90,9 @@ def read_xyz(filedesc):
       
       body = filedesc.readline()
    
+   if natoms != len(names):
+      raise ValueError("The number of atom records does not match the header of the xyz file.")
+
    atoms = Atoms(natoms)
    for i in range(natoms):
       nat = atoms[i]
