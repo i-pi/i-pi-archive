@@ -32,8 +32,8 @@ class InputThermo(Input):
       A: An optional array of floats giving the drift matrix. Defaults to 0.0.
       C: An optional array of floats giving the static covariance matrix. 
          Defaults to 0.0.
-      s: An optional array of floats giving the additional momenta in GLE. 
-         Defaults to 0.0.
+      s: An optional array of floats giving the additional momentum-scaled
+         momenta in GLE. Defaults to 0.0.
    """
 
    attribs = { "kind": (InputValue, { "dtype"   : str, 

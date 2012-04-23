@@ -739,6 +739,10 @@ utils Holds the modules containing the utility functions used in the other
  
 \end_layout
 
+\begin_layout Description
+inputs Holds the modules containing the classes that read the input files.
+\end_layout
+
 \end_deeper
 \begin_layout Description
 patches Contains the patch notes needed to allow the driver codes to interact
@@ -1939,7 +1943,7 @@ g to the socket with one or more driver codes.
 driver_comm
 \series default
 , the following code will run the wrapper, outputting the statistics to
- a log file, and 4 driver codes, then background the result:
+ a file log, and 4 driver codes, then background the result:
 \end_layout
 
 \begin_layout Standard
@@ -2391,7 +2395,29 @@ units
 \end_inset
 
  attribute.
- 
+ For example, if you wanted to specify the cell parameters in units of angstrom
+ rather than bohr radii, then in the input file you would specify 
+\begin_inset Quotes eld
+\end_inset
+
+<h units='angstrom'> 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ldots
+\end_layout
+
+\end_inset
+
+ </h>
+\begin_inset Quotes erd
+\end_inset
+
+
 \end_layout
 
 \begin_layout Section
@@ -2527,6 +2553,18 @@ kinetic_cv
 \end_inset
 
 : Prints the contribution of each atom to the total kinetic energy.
+ Prints only one file.
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Quotes eld
+\end_inset
+
+kodterms_cv
+\begin_inset Quotes erd
+\end_inset
+
+: Prints the off-diagonal contributions to the kinetic energy tensor.
  Prints only one file.
 \end_layout
 
