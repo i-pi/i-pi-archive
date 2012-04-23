@@ -49,6 +49,8 @@ class InputRandom(Input):
                                          "default" : 0,
                                          "help"    : "Gives the position in the state array that the random number generator is reading from."})}
 
+   default_help = "Deals with the pseudo-random number generator."
+
    def store(self, prng):
       """Takes a random number instance and stores a minimal 
       representation of it.

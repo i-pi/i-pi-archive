@@ -72,6 +72,8 @@ class InputAtoms(Input):
                                         "default"   : -1.0,
                                         "help"      : "The temperature at which the initial velocity distribution is taken, if applicable.",
                                         "dimension" : "temperature"})  }
+
+   default_help = "Deals with single replicas of the system or classical simulations."
        
    def store(self, atoms, filename=""):
       """Takes an Atoms instance and stores a minimal representation of it.

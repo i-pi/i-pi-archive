@@ -31,10 +31,12 @@ class InputForce(Input):
                                         "default" : "socket",
                                         "options" : [ "socket" ],
                                         "help"    : "Specifies which kind of force object is created"  }  )}
-   fields =  { "interface"  : ( InputInterface, {"help": "Specifies the parameters for the socket interface." } ),
+   fields =  { "interface"  : ( InputInterface, {"help": InputInterface.default_help } ),
                "parameters" : ( InputValue, { "dtype"   : dict, 
                                               "default" : {},
                                               "help"    : "deprecated dictionary of initialization parameters. May be removed in the future." }) }
+
+   default_help = "Deals with the assigning of jobs to different driver codes, and collecting the data."
    
    def store(self, force):
       """Takes a ForceField instance and stores a minimal representation of it.

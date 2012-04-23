@@ -62,6 +62,8 @@ class InputThermo(Input):
                                     "help"      : "Input values for the additional momenta in GLE.",
                                     "dimension" : "ms-momentum" })
              }
+
+   default_help = "Simulates an external heat bath to keep the velocity distribution at the correct temperature."
    
    def store(self, thermo):
       """Takes a thermostat instance and stores a minimal representation of it.

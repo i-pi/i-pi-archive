@@ -66,6 +66,8 @@ class InputBeads(Input):
                                         "help"      : "The temperature at which the initial velocity distribution is taken, if applicable.",
                                         "dimension" : "temperature"})  }
 
+   default_help = "Deals with path integral simulations."
+
    def write(self,  name="", indent=""):
       """Overloads Input write() function so that nothing is written if
       no beads are present. This will happen if only the classical configuration

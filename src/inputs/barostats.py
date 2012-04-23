@@ -32,6 +32,8 @@ class InputBaro(Input):
    fields={ "thermostat": (InputThermo, {"default" : engine.thermostats.Thermostat(),
                                          "help"    : "The thermostat for the cell. Keeps the cell velocity distribution at the correct temperature."}) }
 
+   default_help = "Simulates an external pressure bath to keep the pressure or stress at the external values."
+
    def store(self, baro):
       """Takes a barostat instance and stores a minimal representation of it.
 

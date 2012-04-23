@@ -48,7 +48,7 @@ class InputEnsemble(Input):
    fields={"thermostat" : (InputThermo, {"default"   : engine.thermostats.Thermostat(),
                                          "help"      : "The thermostat for the atoms, keeps the atom velocity distribution at the correct temperature."} ),
            "barostat" : (InputBaro, {"default"       : engine.barostats.Barostat(),
-                                     "help"          : "The barostat for the simulation."} ), 
+                                     "help"          : InputBaro.default_help}),
            "timestep": (InputValue, {"dtype"         : float,
                                      "default"       : "1.0",
                                      "help"          : "The time step.",
@@ -68,6 +68,8 @@ class InputEnsemble(Input):
            "fixcom": (InputValue, {"dtype"           : bool, 
                                    "default"         : False,
                                    "help"            : "This describes whether the centre of mass of the particles is fixed."}) }
+
+   default_help = "Holds all the information that is ensemble specific, such as the temperature and the external pressure, and the thermostats and barostats that control it."
    
    def store(self, ens):
       """Takes an ensemble instance and stores a minimal representation of it.

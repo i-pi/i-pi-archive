@@ -7,8 +7,6 @@ not inherently system dependent, like the running of each time step,
 choosing which properties to initialise, and which properties to output.
 
 Classes:
-   InputSimulation: Deals with creating the simulation object from a file, 
-      and writing the checkpoints.
    Simulation: Deals with running the simulation and outputting the results.
 """
 
@@ -28,7 +26,7 @@ from cell import *
 from forces import ForceBeads
 from beads import Beads
 from properties import Properties, Trajectories
-from inputs.simulation import InputSimulation
+import inputs.simulation
 
 _DEFAULT_STRIDES = {"checkpoint": 1000, "properties": 10, "progress": 100, "centroid": 20,  "trajectory": 100}
 _DEFAULT_OUTPUT = [ "time", "conserved", "kinetic_cv", "potential" ]
@@ -156,7 +154,7 @@ class Simulation(dobject):
       self.properties.bind(self)
       self.trajs.bind(self)
       
-      self.status = InputSimulation()
+      self.status = inputs.simulation.InputSimulation()
       self.status.store(self)
       
       # Checks as soon as possible if some asked-for properties are missing or mispelled

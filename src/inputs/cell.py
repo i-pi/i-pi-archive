@@ -77,6 +77,8 @@ class InputCell(Input):
    attribs={ "flexible" : (InputValue, {"dtype"    : bool, 
                                         "default"  : False,
                                         "help"     : "Whether the cell parameters can change during the simulation."}) }
+
+   default_help = "Deals with the cell parameters, and stores their momenta in flexible cell calculations."
     
    def store(self, cell, filename=""):
       """Takes a Cell instance and stores of minimal representation of it.

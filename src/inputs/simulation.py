@@ -65,16 +65,15 @@ class InputSimulation(Input):
          to 0.
    """
 
-   fields= { "force" :   (InputForce,    { "help"  : "Deals with the assigning of jobs to different driver codes, and collecting the data." }),  
-             "ensemble": (InputEnsemble, { "help"  : "Holds all the information that is ensemble specific, such as the temperature and the external pressure, and the thermostats and barostats that control it." } ),
-             "prng" :    (InputRandom,   { "help"  : "Deals with the pseudo-random number generator.",
+   fields= { "force" :   (InputForce,    { "help"  : InputForce.default_help }),
+             "ensemble": (InputEnsemble, { "help"  : InputEnsemble.default_help } ),
+             "prng" :    (InputRandom,   { "help"  : InputRandom.default_help,
                                          "default" : Random() } ),
              "atoms" :   (InputAtoms, { "help"     : "Deals with classical simulations.", 
                                         "default"  : Atoms(0) } ), 
-             "beads" :   (InputBeads, { "help"     : "Deals with path integral simulations.", 
+             "beads" :   (InputBeads, { "help"     : InputBeads.default_help, 
                                         "default"  : Beads(0,1) } ),
-             "cell" :    (InputCell,   { "help"    : "Deals with the cell parameters, and stores their momenta in flexible cell calculations." }), 
-
+             "cell" :    (InputCell,   { "help"    : InputCell.default_help }),
              "step" :       ( InputValue, { "dtype"    : int, 
                                             "default"  : 0, 
                                             "help"     : "How many time steps have been done." }), 
