@@ -12,7 +12,7 @@ Classes:
 import numpy as np
 from engine.atoms import *
 from utils.inputvalue import *
-import utils.io.io_pdb
+import utils.io.io_pdb, utils.io.io_xyz
 from utils.depend import *
 from utils.units import *
 
@@ -135,7 +135,15 @@ class InputAtoms(Input):
       if not (self.from_file._explicit or self.q._explicit):
          raise ValueError("Must provide explicit positions or give from_file.")
       if self.from_file._explicit:
-         myatoms, mycell = utils.io.io_pdb.read_pdb(open(self.from_file.fetch(),"r"))
+      
+         filename=self.from_file.fetch(); ext=filename[len(filename)-3:]
+         if (ext == "pdb"):
+            myatoms, mycell = utils.io.io_pdb.read_pdb(open(self.from_file.fetch(),"r"))
+         elif (ext == "xyz"):
+            myatoms, mycell = utils.io.io_pdb.read_xyz(open(self.from_file.fetch(),"r"))
+         else:
+            raise ValueError("Unrecognized extension for atomic configuration file")
+            
          myatoms.q *= UnitMap["length"][self.file_units.fetch()]
 
          # We can overwrite any of the properties in from_file
