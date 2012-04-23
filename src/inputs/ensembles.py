@@ -99,7 +99,7 @@ class InputEnsemble(Input):
       if tens > 1:
          self.barostat.store(ens.barostat)
       if tens == 2:
-         self.pressure.store(ens.pext)  #TODO choose between pext and sext
+         self.pressure.store(ens.pext)
       if tens == 3:
          self.stress.store(ens.sext)
 
@@ -153,3 +153,13 @@ class InputEnsemble(Input):
             raise ValueError("No thermostat tag supplied in barostat for NST simulation")
          if self.barostat.kind.fetch() == "rigid":
             raise ValueError("You must use a flexible barostat to do constant stress simulations.")
+
+      if self.timestep.fetch() <= 0:
+         raise ValueError("Non-positive timestep specified.")
+      if self.temperature.fetch() <= 0:
+            raise ValueError("Non-positive temperature specified.")
+
+      if self.type.fetch() == "nst" or self.type.fetch() == "npt":
+         if not self.pressure._explicit or self.stress._explicit:
+            raise ValueError("Neither pressure or stress supplied for constant pressure simulation")
+         #TODO Initialise pressure from stress if only stress is supplied, and vice-versa
