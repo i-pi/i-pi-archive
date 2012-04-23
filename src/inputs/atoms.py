@@ -37,6 +37,8 @@ class InputAtoms(Input):
          array with no elements.
       from_file: An optional string giving a pdb format file with the atom
          positions. Defaults to ''.
+      file_units: An optional string giving the length units that the file is
+         specified by. Defaults to ''.
       init_temp: An optional float giving the kinetic temperature to 
          initialise the atom momenta to.
    """

@@ -58,9 +58,10 @@ class Simulation(dobject):
       dstride: A dictionary giving number of steps between printing out 
          data for the different types of data. Defaults to _DEFAULT_STRIDES.
       outlist: An array of strings giving the different properties to output.
-      initlist: An array of the properties that should be initialised. Set to 
-         zero after the initialisation, so that the checkpoints don't specify
-         any properties to be initialised.
+      initlist: A dictionary of the properties that should be initialised with
+         their values. Set to zero after the initialisation, so that the 
+         checkpoints don't specify any properties to be initialised after the 
+         simulation is restarted.
       properties: A properties object.
       fout: File to output the properties to.
       tcout: File to output the centroid trajectory to.
@@ -246,8 +247,11 @@ class Simulation(dobject):
 
       self.ichk = 0      
       if "velocities" in self.initlist:
-         # as of now, just ignore the value given for velocities in initlist. we may decide to initialize with a different temperature?
-         self.beads.p = math.sqrt(self.ensemble.ntemp*Constants.kb)*self.beads.sm3*self.prng.gvec((self.beads.nbeads, 3*self.beads.natoms))
+         init_temp = self.initlist["velocities"]
+         if init_temp == 0:
+            self.beads.p = math.sqrt(self.ensemble.ntemp*Constants.kb)*self.beads.sm3*self.prng.gvec((self.beads.nbeads, 3*self.beads.natoms))
+         else:
+            self.beads.p = math.sqrt(init_temp*Constants.kb)*self.beads.sm3*self.prng.gvec((self.beads.nbeads, 3*self.beads.natoms))
 
       if self.ensemble.fixcom:
          self.ensemble.rmcom()

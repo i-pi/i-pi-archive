@@ -29,7 +29,7 @@ from engine.beads import Beads
 import engine.simulation
 
 _DEFAULT_STRIDES = {"checkpoint": 1000, "properties": 10, "progress": 100, "centroid": 20,  "trajectory": 100}
-_DEFAULT_OUTPUT = [ "time", "conserved", "kinetic", "potential" ]
+_DEFAULT_OUTPUT = [ "time", "conserved", "kinetic_cv", "potential" ]
 _DEFAULT_TRAJ = [ "positions" ]
 
 class InputSimulation(Input):
@@ -46,7 +46,6 @@ class InputSimulation(Input):
       beads: A restart beads instance.
       cell: A restart cell instance.
       prng: A random number generator object.
-      nbeads: A float giving the number of beads.
       step: An integer giving the current simulation step. Defaults to 0.
       total_steps: The total number of steps. Defaults to 0.
       stride: A dictionary giving the number of steps between printing out 
@@ -93,7 +92,7 @@ class InputSimulation(Input):
                                             "help"     : "A list of the properties that will be printed in the properties output file. See the manual for a full list of acceptable names."}),
              "initialize":  ( InputValue, { "dtype"    : dict,
                                             "default"  : {},
-                                            "help"     : "A dictionary giving the properties of the system that need to be initialized. The allowed keywords are ['velocities']." }), 
+                                            "help"     : "A dictionary giving the properties of the system that need to be initialized, and their initial values. The allowed keywords are ['velocities']. The initial value of 'velocities' corresponds to the temperature to initialise the velocity distribution from. If 0, then the sysytem temperature is used." }), 
              "fd_delta":    ( InputValue, { "dtype"    : float,
                                             "default"  : 0.0,
                                             "help"     : "The parameter used in the finite difference differentiation in the calculation of the scaled path velocity estimator." }), 

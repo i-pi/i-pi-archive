@@ -36,6 +36,8 @@ class InputCell(Input):
          cell velocities should be initialised to. Defaults to -1.0.
       from_file: An optional string giving the name of a pdb file containing
          the initial cell and atom positions. Defaults to ''.
+      file_units: An optional string giving the length units that the file is
+         specified by. Defaults to ''.
       flexible: A boolean giving whether the cell will be allowed to change 
          shape. Defaults to False.
    """
@@ -64,9 +66,13 @@ class InputCell(Input):
                                        "default"   : -1.0,
                                        "help"      : "The temperature at which the initial velocity distribution is taken, if applicable.",
                                        "dimension" : "temperature"}),
+            "file_units": (InputValue, {"dtype"    : str,
+                                        "default"  : "",
+                                        "help"     : "The units in which the lengths in the configuration file are given.",
+                                        "options"  : [unit for unit in UnitMap["length"]] }),
             "from_file": (InputValue, {"dtype"     : str,
                                        "default"   : "",
-                                       "help"      : "A file from which to take the cell parameters from.",}) }
+                                       "help"      : "A file from which to take the cell parameters from."}) }
    attribs={ "flexible" : (InputValue, {"dtype"    : bool, 
                                         "default"  : False,
                                         "help"     : "Whether the cell parameters can change during the simulation."}) }
@@ -127,6 +133,8 @@ class InputCell(Input):
          ext=filename[len(filename)-3:]
          if (ext == "pdb"):
             myatoms, mycell = utils.io.io_pdb.read_pdb(open(self.from_file.fetch(),"r"))
+            mycell.h *= UnitMap["length"][self.file_units.fetch()]
+            mycell.h0 *= UnitMap["length"][self.file_units.fetch()]
          else:
             raise ValueError("Unrecognized extension for cell configuration")
 
