@@ -98,12 +98,12 @@ class Input(object):
          self.units = units
       if default is None:     
          self._default = self.default_value
-         self._optional = False #True if must be input by user.
+         self._optional = False #False if must be input by user.
       else:                   
          self._default = default
          self._optional = True
          
-      self._explicit = False #True if set by the user.
+      self._explicit = False #True if has been set by the user.
 
       #For each tag name in the fields and attribs dictionaries,
       #creates and object of the type given, expanding the dictionary to give 

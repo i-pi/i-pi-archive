@@ -7,7 +7,6 @@ Classes:
 
 __all__ = ['InputForce']
 
-from utils.depend import *
 from engine.forces import *
 from inputs.interface import InputInterface
 from utils.inputvalue import *

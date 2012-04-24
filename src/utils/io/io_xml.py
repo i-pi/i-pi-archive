@@ -105,6 +105,8 @@ class xml_handler(ContentHandler):
 
       newnode = xml_node(attribs=dict((k,attrs[k]) for k in attrs.keys()), name=name, fields={})
       self.open.append(newnode)
+      if name in self.open[self.level].fields:
+         print "Warning, tag " + name + " specified twice, overwriting old data"
       self.open[self.level].fields[name] = newnode
       self.buffer.append("")
       self.level += 1      
