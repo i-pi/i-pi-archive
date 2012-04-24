@@ -88,19 +88,23 @@ class Properties(dobject):
       property_dict object which holds all the objects which can be output.
       It is given by: 
       {'time': Time elapsed,
+      'step': The current time step,
       'conserved': Conserved quantity,
-      'kinetic_md': Classical kinetic energy estimator,
-      'potential': Potential energy estimator,
       'temperature': Classical kinetic temperature estimator,
-      'cell_parameters': Lattice vector lengths and the angles between them,
       'volume': Simulation box volume,
-      'stress_md.xx': The xx component of the classical stress tensor estimator,
-      'pressure_md': Classical pressure estimator
+      'h': Cell vector matrix. Requires arguments x and v to give h[x,v],
+      'potential': Potential energy estimator,
+      'kinetic_md': Classical kinetic energy estimator,
       'kinetic_cv': Quantum centroid virial kinetic energy estimator,
-      'stress_cv.xx': xx component of the quantum centroid virial estimator of 
-         the stress tensor,
-      'pressure_cv': Quantum centroid virial pressure estimator
-      'kinetic_yamamoto': Quantum scaled coordinate kinetic energy estimator}.
+      'stress_md': The classical stress tensor estimator. Requires arguments
+         x and v, to give stress[x,v],
+      'pressure_md': Classical pressure estimator,
+      'stress_cv': The quantum centroid virial estimator of 
+         the stress tensor. Requires arguments x and v, to give stress[x,v],
+      'pressure_cv': Quantum centroid virial pressure estimator,
+      'kstress_cv': Quantum centroid virial kinetic stress tensor estimator.
+         Requires arguments x and v, to give kstress[x,v],
+      'kin_yama': Quantum scaled coordinate kinetic energy estimator}.
 
       Args:
          simul: The Simulation object to be bound.
@@ -140,6 +144,10 @@ class Properties(dobject):
    def __getitem__(self, key):
       """Retrieves the item given by key.
 
+      Note that if the key contains a string (arg1=value1; arg2=value2; ... )
+      then it will add the appropriate arguments and value pairs
+      to the calculation function of the property.
+
       Args:
          key: A string contained in property_dict.
 
@@ -171,6 +179,7 @@ class Properties(dobject):
       one less degree of freedom than without, so this has to be taken into
       account when calculating the kinetic temperature.
       """
+
       if self.ensemble.fixcom:
          mdof=3 
       else:
@@ -183,7 +192,10 @@ class Properties(dobject):
       return self.ensemble.econs/(self.beads.nbeads*self.beads.natoms)
 
    def get_stress(self, x=0, v=0):
-      """Calculates the classical kinetic energy estimator."""
+      """Calculates the classical kinetic energy estimator.
+
+      Returns stress[x,v].
+      """
 
       stress = (self.forces.vir + self.beads.kstress)/self.cell.V
       return stress[x,v]
@@ -195,7 +207,10 @@ class Properties(dobject):
       return np.trace(stress)/3.0
 
    def get_stresscv(self, x=0, v=0):
-      """Calculates the quantum central virial stress tensor estimator."""
+      """Calculates the quantum central virial stress tensor estimator.
+
+      Returns stress[x,v].
+      """
 
       kstress = np.zeros((3,3))
       kstress[0,0] = self.get_kstresscv(0,0)
@@ -238,6 +253,8 @@ class Properties(dobject):
    def get_kstresscv(self, x=0, v=0):        
       """Calculates the quantum central virial kinetic stress tensor 
       estimator.
+
+      Returns kstress[x,v].
       """
 
       kst = np.zeros((3,3),float)
