@@ -159,7 +159,14 @@ class Simulation(dobject):
       
       # Checks as soon as possible if some asked-for properties are missing or mispelled
       for what in self.outlist:
-         if not what in self.properties.property_dict.keys():
+         if '(' in what:
+            argstart = what.find('(')
+            key = what[0:argstart]
+            if not key in self.properties.property_dict.keys():
+               print "Computable properties list: ", self.properties.property_dict.keys()
+               raise KeyError(key + " is not a recognized property")
+
+         elif not what in self.properties.property_dict.keys():
             print "Computable properties list: ", self.properties.property_dict.keys()
             raise KeyError(what + " is not a recognized property")
    

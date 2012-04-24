@@ -280,7 +280,8 @@ def read_list(data, delims="[]", split=",", strip=" \n\t'"):
       rlist[i] = rlist[i].strip(strip)
 
    # handles empty lists correctly
-   if len(rlist)==1 and rlist[0]=="": rlist=[] 
+   if len(rlist)==1 and rlist[0]=="":
+      rlist=[] 
     
    return rlist
 
@@ -329,7 +330,7 @@ def read_tuple(data):
    rlist = read_list(data, delims="()")
    return tuple([int(i) for i in rlist])
 
-def read_dict(data):
+def read_dict(data, delims="{}", split=":"):
    """Reads a formatted string and outputs a dictionary.
 
    The format is as for standard python dictionaries, which is
@@ -346,14 +347,14 @@ def read_dict(data):
       A dictionary of strings.
    """
 
-   rlist = read_list(data,delims="{}")
+   rlist = read_list(data,delims=delims)
    def mystrip(data):
       return data.strip(" \n\t'")
    rdict = {}
    for s in rlist:
-      rtuple = map(mystrip,s.split(":"))      
+      rtuple = map(mystrip,s.split(split))      
       if not len(rtuple) == 2:
-         raise ValueError("Format for a key:value format is wrong for item" + s)
+         raise ValueError("Format for a key:value format is wrong for item " + s)
       rdict[rtuple[0]] = rtuple[1]
       
    return rdict   

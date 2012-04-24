@@ -79,6 +79,7 @@ class Properties(dobject):
       """Initialises Properties."""
 
       self.property_dict = {}
+      self.arg_dict = {}
       self.fd_delta = -_DEFAULT_FINDIFF
       
    def bind(self, simul):
@@ -111,7 +112,7 @@ class Properties(dobject):
       self.beads = simul.beads
       self.cell = simul.cell
       self.forces = simul.forces
-      self.simul = simul      
+      self.simul = simul
 
       self.add_property(prop_name="step", dep_name="step", func=self.get_step, dependencies=[dget(self.simul, "step")])
       self.add_property(prop_name="time", dep_name="time", func=self.get_time, dependencies=[dget(self.simul, "step"), dget(self.ensemble, "dt")])
@@ -181,6 +182,23 @@ class Properties(dobject):
          The property labelled by the keyword key.
       """
 
+      args = {}
+      if '(' in key:
+         argstart = key.find('(')
+         argstop = key.find(')', argstart)
+         if argstop == -1:
+            raise ValueError("Incorrect format in property name " + key)
+         argstr = key[argstart:argstop+1]
+         arglist = io_xml.read_list(argstr, delims="()", split=";")
+         def mystrip(data):
+            return data.strip(" \n\t'")
+         for s in arglist:
+            argtuple = map(mystrip,s.split("="))      
+            if not len(argtuple) == 2:
+               raise ValueError("Format arg=value is wrong for item " + s)
+            args[argtuple[0]] = argtuple[1]
+         key = key[0:argstart]
+         self.arg_dict[key] = args
       return self.property_dict[key].get()
 
    def get_pot(self):
@@ -195,8 +213,10 @@ class Properties(dobject):
       one less degree of freedom than without, so this has to be taken into
       account when calculating the kinetic temperature.
       """
-      if self.ensemble.fixcom: mdof=3 
-      else: mdof=0
+      if self.ensemble.fixcom:
+         mdof=3 
+      else:
+         mdof=0
       return self.beads.kin/(0.5*Constants.kb*(3*self.beads.natoms*self.beads.nbeads - mdof)*self.beads.nbeads)
 
    def get_econs(self):
@@ -289,12 +309,17 @@ class Properties(dobject):
    def get_cell_params(self):
       """Returns a list of the cell box lengths and the angles between them.
 
+      Note that the x and v parameters can be specified in the input file 
+      by using the syntax:
+      properties = [ ... , cell_parameters(x=0, v=2), ... ]'
+
       Returns:
-         A list of the form [a, b, c, alpha, beta, gamma].
+         A float giving the x-th component of the v-th cell vector.
       """
 
-      a, b, c, alpha, beta, gamma = h2abc(self.cell.h)
-      return [a, b, c, alpha, beta, gamma]
+      x = self.arg_dict["cell_parameters"]["x"]
+      v = self.arg_dict["cell_parameters"]["v"]
+      return self.cell.h[x,v]
 
 
 class Trajectories(dobject):
