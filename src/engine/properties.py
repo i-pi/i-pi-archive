@@ -113,32 +113,48 @@ class Properties(dobject):
       self.forces = simul.forces
       self.simul = simul
 
-      self.add_property(prop_name="step", dep_name="step", func=self.get_step, dependencies=[dget(self.simul, "step")])
-      self.add_property(prop_name="time", dep_name="time", func=self.get_time, dependencies=[dget(self.simul, "step"), dget(self.ensemble, "dt")])
-      self.add_property(prop_name="conserved", dep_name="econs", func=self.get_econs, dependencies=[dget(self.ensemble, "econs")])
-      self.add_property(prop_name="kinetic_md", dep_name="kin", func=self.get_kin, dependencies=[dget(self.beads, "kin"), dget(self.cell, "kin")])
-      self.add_property(prop_name="potential", dep_name="pot", func=self.get_pot, dependencies=[dget(self.forces, "pot")])
-      self.add_property(prop_name="temperature", dep_name="temp", func=self.get_temp, dependencies=[dget(self.beads, "kin")])
 
-      self.property_dict["volume"] = dget(self.cell,"V")
-      self.add_property(prop_name="h", dep_name="cell_params", func=self.get_cell_params, wrapper=self.wrap_cell, dependencies=[dget(self.cell, "h")])
-
-      dset(self, "stress", depend_value(name="stress", func=self.get_stress, dependencies=[dget(self.beads, "kstress"), dget(self.forces, "vir"), dget(self.cell, "V")]))
-      self.property_dict["stress_md.xx"] = depend_value(name="scl_xx", dependencies=[dget(self, "stress")], func=(lambda : self.stress[0,0]) ) 
+      self.property_dict["step"]= lambda: (1 + self.simul.step)
+      self.property_dict["time"]= lambda: (1 + self.simul.step)*self.ensemble.dt
+      self.property_dict["conserved"]=self.get_econs
+      self.property_dict["kinetic_md"]=self.get_kin
+      self.property_dict["potential"]=self.get_pot
+      self.property_dict["temperature"]=self.get_temp
+      self.property_dict["volume"] = lambda: self.cell.V
       
-      self.add_property(prop_name="pressure_md", dep_name="press", func=self.get_press, dependencies=[dget(self, "stress")])
-      self.add_property(prop_name="kinetic_cv", dep_name="kin_cv", func=self.get_kincv, dependencies=[dget(self.beads, "q"), dget(self.forces, "f"), dget(self.ensemble, "temp")])
-
-      dset(self, "kstress_cv", depend_value(name="kstress_cv", func=self.get_kstresscv, dependencies=[dget(self.beads,"q"),dget(self.forces,"f"),dget(self.ensemble,"temp")]))
-      dset(self, "stress_cv", depend_value(name="stress_cv", func=self.get_stresscv, dependencies=[dget(self,"kstress_cv"),dget(self.forces,"vir"), dget(self.cell, "V")]))
-      self.property_dict["stress_cv.xx"] = depend_value(name="scv_xx", dependencies=[dget(self, "stress_cv")], func=(lambda : self.stress_cv[0,0]) ) 
-
-      self.add_property(prop_name="pressure_cv", dep_name="press_cv", func=self.get_presscv, dependencies=[dget(self, "stress_cv")])
       
-      self.dbeads = simul.beads.copy()
-      self.dforces = ForceBeads()
-      self.dforces.bind(self.dbeads, self.simul.cell,  self.simul._forcemodel)
-      self.add_property(prop_name="kinetic_yamamoto", dep_name="kin_yama", func=self.get_kinyama, dependencies=[dget(self.beads, "q"), dget(self.ensemble, "temp")])
+      self.property_dict["h"] = self.wrap_cell
+      
+      self.property_dict["kinetic_cv"]=self.get_kincv
+      
+#      self.add_property(prop_name="step", dep_name="step", func=self.get_step, dependencies=[dget(self.simul, "step")])
+#      self.add_property(prop_name="time", dep_name="time", func=self.get_time, dependencies=[dget(self.simul, "step"), dget(self.ensemble, "dt")])
+#      self.add_property(prop_name="conserved", dep_name="econs", func=self.get_econs, dependencies=[dget(self.ensemble, "econs")])
+#      self.add_property(prop_name="kinetic_md", dep_name="kin", func=self.get_kin, dependencies=[dget(self.beads, "kin"), dget(self.cell, "kin")])
+#      self.add_property(prop_name="potential", dep_name="pot", func=self.get_pot, dependencies=[dget(self.forces, "pot")])
+#      self.add_property(prop_name="temperature", dep_name="temp", func=self.get_temp, dependencies=[dget(self.beads, "kin")])
+
+#      self.property_dict["volume"] = dget(self.cell,"V")
+#      self.add_property(prop_name="h", dep_name="cell_params", func=self.get_cell_params, wrapper=self.wrap_cell, dependencies=[dget(self.cell, "h")])
+#      self.add_property(prop_name="h", dep_name="cell_params", func=self.get_cell_params, wrapper=self.wrap_cell, dependencies=[dget(self.cell, "h")])
+#            
+
+#      dset(self, "stress", depend_value(name="stress", func=self.get_stress, dependencies=[dget(self.beads, "kstress"), dget(self.forces, "vir"), dget(self.cell, "V")]))
+#      self.property_dict["stress_md.xx"] = depend_value(name="scl_xx", dependencies=[dget(self, "stress")], func=(lambda : self.stress[0,0]) ) 
+#      
+#      self.add_property(prop_name="pressure_md", dep_name="press", func=self.get_press, dependencies=[dget(self, "stress")])
+#      self.add_property(prop_name="kinetic_cv", dep_name="kin_cv", func=self.get_kincv, dependencies=[dget(self.beads, "q"), dget(self.forces, "f"), dget(self.ensemble, "temp")])
+
+#      dset(self, "kstress_cv", depend_value(name="kstress_cv", func=self.get_kstresscv, dependencies=[dget(self.beads,"q"),dget(self.forces,"f"),dget(self.ensemble,"temp")]))
+#      dset(self, "stress_cv", depend_value(name="stress_cv", func=self.get_stresscv, dependencies=[dget(self,"kstress_cv"),dget(self.forces,"vir"), dget(self.cell, "V")]))
+#      self.property_dict["stress_cv.xx"] = depend_value(name="scv_xx", dependencies=[dget(self, "stress_cv")], func=(lambda : self.stress_cv[0,0]) ) 
+
+#      self.add_property(prop_name="pressure_cv", dep_name="press_cv", func=self.get_presscv, dependencies=[dget(self, "stress_cv")])
+#      
+#      self.dbeads = simul.beads.copy()
+#      self.dforces = ForceBeads()
+#      self.dforces.bind(self.dbeads, self.simul.cell,  self.simul._forcemodel)
+#      self.add_property(prop_name="kinetic_yamamoto", dep_name="kin_yama", func=self.get_kinyama, dependencies=[dget(self.beads, "q"), dget(self.ensemble, "temp")])
       
    def add_property(self, prop_name, dep_name, func, wrapper=None, dependencies=None):
       """Adds a property to the property list.
@@ -170,16 +186,6 @@ class Properties(dobject):
 
       return self.beads.kin/self.beads.nbeads
 
-   def get_time(self):
-      """Calculates the elapsed simulation time."""
-
-      return (1 + self.simul.step)*self.ensemble.dt
-
-   def get_step(self):
-      """Return the simulation step."""
-
-      return (1 + self.simul.step)
-
    def __getitem__(self, key):
       """Retrieves the item given by key.
 
@@ -203,9 +209,9 @@ class Properties(dobject):
 
          arglist = io_xml.read_dict(argstr, delims="()", split=";", key_split="=")
          
-         return self.property_dict[key](arglist)
+         return self.property_dict[key](**arglist)
       else:
-         return self.property_dict[key].get()
+         return self.property_dict[key]()
 
    def get_pot(self):
       """Calculates the potential energy estimator."""
@@ -311,25 +317,11 @@ class Properties(dobject):
             break
          
       return kyama
-         
-   def get_cell_params(self):
-      """Returns a list of the cell box lengths and the angles between them.
 
-      Note that the x and v parameters can be specified in the input file 
-      by using the syntax:
-      properties = [ ... , h(x=0, v=2), ... ]'
-
-      Returns:
-         A float giving the x-th component of the v-th cell vector.
-      """
-
-      return self.cell.h
       
-   def wrap_cell(self, cell, extra):
+   def wrap_cell(self, x, v):
    
-      x = extra["x"]
-      v = extra["v"]
-      return cell[x,v]
+      return self.cell.h[x,v]
 
 
 class Trajectories(dobject):
