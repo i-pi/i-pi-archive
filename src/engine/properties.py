@@ -59,8 +59,7 @@ class Properties(dobject):
       kin: A float giving the classical kinetic energy estimator.
       pot: A float giving the potential energy estimator.
       temp: A float giving the classical kinetic temperature estimator.
-      cell_params: A list giving lattice vector lengths and the angles
-         between them.
+      h: The elements of the unit cell matrix [h(x=vector_index,v=coordinate_index)]
       stress: An array giving the components of the classical stress tensor
          estimator.
       press: A float giving the classical pressure estimator.
@@ -122,7 +121,7 @@ class Properties(dobject):
       self.add_property(prop_name="temperature", dep_name="temp", func=self.get_temp, dependencies=[dget(self.beads, "kin")])
 
       self.property_dict["volume"] = dget(self.cell,"V")
-      self.add_property(prop_name="cell_parameters", dep_name="cell_params", func=self.get_cell_params, dependencies=[dget(self.cell, "h")])
+      self.add_property(prop_name="h", dep_name="cell_params", func=self.get_cell_params, wrapper=self.wrap_cell, dependencies=[dget(self.cell, "h")])
 
       dset(self, "stress", depend_value(name="stress", func=self.get_stress, dependencies=[dget(self.beads, "kstress"), dget(self.forces, "vir"), dget(self.cell, "V")]))
       self.property_dict["stress_md.xx"] = depend_value(name="scl_xx", dependencies=[dget(self, "stress")], func=(lambda : self.stress[0,0]) ) 
@@ -141,7 +140,7 @@ class Properties(dobject):
       self.dforces.bind(self.dbeads, self.simul.cell,  self.simul._forcemodel)
       self.add_property(prop_name="kinetic_yamamoto", dep_name="kin_yama", func=self.get_kinyama, dependencies=[dget(self.beads, "q"), dget(self.ensemble, "temp")])
       
-   def add_property(self, prop_name, dep_name, func, dependencies=None):
+   def add_property(self, prop_name, dep_name, func, wrapper=None, dependencies=None):
       """Adds a property to the property list.
 
       Args:
@@ -155,7 +154,16 @@ class Properties(dobject):
       """
 
       dset(self, dep_name, depend_value(name=dep_name, func=func, dependencies=dependencies))
-      self.property_dict[prop_name] = dget(self, dep_name)
+      if wrapper is None:
+         self.property_dict[prop_name] = dget(self, dep_name)
+      else:
+         # This is here to allow for properties with arguments, i.e. a property which can be 
+         # requested with a modifier. For instance, one can define h(x=a,v=b) which shall return
+         # h[a,b]. To get this to work, we can't directly use a depend object which picks the cell,
+         # as we want to get something different depending on the extra arguments. 
+         # So the wrapper should have one argument which is the "compound" value of the depend, 
+         # and an extra argument which is a dictionary specifying how we should proceed. 
+         self.property_dict[prop_name] = lambda extra: wrapper(dget(self, dep_name).get(), extra)
 
    def get_kin(self):
       """Calculates the classical kinetic energy estimator."""
@@ -172,7 +180,7 @@ class Properties(dobject):
 
       return (1 + self.simul.step)
 
-   def __getitem__(self,key):
+   def __getitem__(self, key):
       """Retrieves the item given by key.
 
       Args:
@@ -184,22 +192,20 @@ class Properties(dobject):
 
       args = {}
       if '(' in key:
+         # If the property has additional arguments
          argstart = key.find('(')
          argstop = key.find(')', argstart)
          if argstop == -1:
             raise ValueError("Incorrect format in property name " + key)
+         
          argstr = key[argstart:argstop+1]
-         arglist = io_xml.read_list(argstr, delims="()", split=";")
-         def mystrip(data):
-            return data.strip(" \n\t'")
-         for s in arglist:
-            argtuple = map(mystrip,s.split("="))      
-            if not len(argtuple) == 2:
-               raise ValueError("Format arg=value is wrong for item " + s)
-            args[argtuple[0]] = argtuple[1]
-         key = key[0:argstart]
-         self.arg_dict[key] = args
-      return self.property_dict[key].get()
+         key = key[0:argstart] # strips the arguments from key name
+
+         arglist = io_xml.read_dict(argstr, delims="()", split=";", key_split="=")
+         
+         return self.property_dict[key](arglist)
+      else:
+         return self.property_dict[key].get()
 
    def get_pot(self):
       """Calculates the potential energy estimator."""
@@ -311,15 +317,19 @@ class Properties(dobject):
 
       Note that the x and v parameters can be specified in the input file 
       by using the syntax:
-      properties = [ ... , cell_parameters(x=0, v=2), ... ]'
+      properties = [ ... , h(x=0, v=2), ... ]'
 
       Returns:
          A float giving the x-th component of the v-th cell vector.
       """
 
-      x = self.arg_dict["cell_parameters"]["x"]
-      v = self.arg_dict["cell_parameters"]["v"]
-      return self.cell.h[x,v]
+      return self.cell.h
+      
+   def wrap_cell(self, cell, extra):
+   
+      x = extra["x"]
+      v = extra["v"]
+      return cell[x,v]
 
 
 class Trajectories(dobject):

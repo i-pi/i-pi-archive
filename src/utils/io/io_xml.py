@@ -330,7 +330,7 @@ def read_tuple(data):
    rlist = read_list(data, delims="()")
    return tuple([int(i) for i in rlist])
 
-def read_dict(data, delims="{}", split=":"):
+def read_dict(data, delims="{}", split=",", key_split=":"):
    """Reads a formatted string and outputs a dictionary.
 
    The format is as for standard python dictionaries, which is
@@ -347,12 +347,12 @@ def read_dict(data, delims="{}", split=":"):
       A dictionary of strings.
    """
 
-   rlist = read_list(data,delims=delims)
+   rlist = read_list(data,delims=delims, split=split)
    def mystrip(data):
       return data.strip(" \n\t'")
    rdict = {}
    for s in rlist:
-      rtuple = map(mystrip,s.split(split))      
+      rtuple = map(mystrip,s.split(key_split))      
       if not len(rtuple) == 2:
          raise ValueError("Format for a key:value format is wrong for item " + s)
       rdict[rtuple[0]] = rtuple[1]
