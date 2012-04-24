@@ -106,7 +106,7 @@ class ForceField(dobject):
          and all components of the force and virial have been set to zero.
       """
 
-      return [0.0, numpy.zeros(3*self.atoms.natoms), numpy.zeros((3,3),float)]
+      return [0.0, np.zeros(3*self.atoms.natoms), np.zeros((3,3),float)]
 
    def get_pot(self):
       """Calls get_all routine of forcefield to update potential.
@@ -322,7 +322,10 @@ class ForceBeads(dobject):
           Virial sum.
       """
 
-      return self.virs.sum()
+      v = np.zeros((3,3))
+      for i in range(len(self.virs)):
+         v += self.virs[i]
+      return v
 
 class FFMulti(ForceField):
    """ A force class defining a superimposition of multiple force fields. """

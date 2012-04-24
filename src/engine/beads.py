@@ -211,8 +211,8 @@ class Beads(dobject):
       """
 
       ks = np.zeros((3,3),float)
-      for b in self:
-         ks += b.kstress
+      for b in range(self.nbeads):
+         ks += self[b].kstress
       return ks
       
    def vpath(self):

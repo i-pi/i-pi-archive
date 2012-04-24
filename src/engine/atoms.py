@@ -233,7 +233,7 @@ class Atoms(dobject):
       tensor.
       """
 
-      ks = numpy.zeros((3,3),float)
+      ks = np.zeros((3,3),float)
       ks[0,0] = np.dot(self.px,self.px/self.m)
       ks[1,1] = np.dot(self.py,self.py/self.m)
       ks[2,2] = np.dot(self.pz,self.pz/self.m)
