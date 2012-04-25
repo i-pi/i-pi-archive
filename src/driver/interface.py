@@ -483,6 +483,10 @@ class Interface(object):
             except Disconnected:
                c.status = 0
                continue
+            except:
+              print " @SOCKET:   Client got in a awkward state during getforce. Will mark as disconnected and try to carry on."
+              c.status = 0
+              continue
             c.poll()
             while c.status & Status.Busy: # waits, but check if we got stuck.               
                if self.timeout>0 and r["start"]>0 and time.time()-r["start"]> self.timeout:
