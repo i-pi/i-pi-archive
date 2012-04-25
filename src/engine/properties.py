@@ -137,6 +137,8 @@ class Properties(dobject):
 
       self.property_dict["kin_yama"] = self.get_kinyama
 
+      self.property_dict["linlin"] = self.get_linlin
+
       self.dbeads = simul.beads.copy()
       self.dforces = ForceBeads()
       self.dforces.bind(self.dbeads, self.simul.cell,  self.simul._forcemodel)
@@ -206,55 +208,9 @@ class Properties(dobject):
       stress = (self.forces.vir + self.beads.kstress)/self.cell.V
       return np.trace(stress)/3.0
 
-   def get_stresscv(self, x=0, v=0):
-      """Calculates the quantum central virial stress tensor estimator.
-
-      Returns stress[x,v].
-      """
-
-      kstress = np.zeros((3,3))
-      kstress[0,0] = self.get_kstresscv(0,0)
-      kstress[0,1] = self.get_kstresscv(0,1)
-      kstress[0,2] = self.get_kstresscv(0,2)
-      kstress[1,0] = self.get_kstresscv(1,0)
-      kstress[1,1] = self.get_kstresscv(1,1)
-      kstress[1,2] = self.get_kstresscv(1,2)
-      kstress[2,0] = self.get_kstresscv(2,0)
-      kstress[2,1] = self.get_kstresscv(2,1)
-      kstress[2,2] = self.get_kstresscv(2,2)
-      stress = (self.forces.vir + kstress)/self.cell.V                  
-      return stress[x,v]
-
-   def get_presscv(self):
-      """Calculates the quantum central virial pressure estimator."""
-
-      kstress = np.zeros((3,3))
-      kstress[0,0] = self.get_kstresscv(0,0)
-      kstress[0,1] = self.get_kstresscv(0,1)
-      kstress[0,2] = self.get_kstresscv(0,2)
-      kstress[1,0] = self.get_kstresscv(1,0)
-      kstress[1,1] = self.get_kstresscv(1,1)
-      kstress[1,2] = self.get_kstresscv(1,2)
-      kstress[2,0] = self.get_kstresscv(2,0)
-      kstress[2,1] = self.get_kstresscv(2,1)
-      kstress[2,2] = self.get_kstresscv(2,2)
-      return np.trace(self.forces.vir + kstress)/(3.0*self.cell.V)
-   
-   def get_kincv(self):        
-      """Calculates the quantum central virial kinetic energy estimator."""
-
-      kcv=0.0
-      for b in range(self.beads.nbeads):
-         kcv += np.dot(depstrip(self.beads.q[b]) - depstrip(self.beads.qc), depstrip(self.forces.f[b]))
-      kcv *= -0.5/self.beads.nbeads
-      kcv += 0.5*Constants.kb*self.ensemble.temp*(3*self.beads.natoms) 
-      return kcv
-
-   def get_kstresscv(self, x=0, v=0):        
+   def kstress_cv(self):
       """Calculates the quantum central virial kinetic stress tensor 
       estimator.
-
-      Returns kstress[x,v].
       """
 
       kst = np.zeros((3,3),float)
@@ -269,7 +225,39 @@ class Properties(dobject):
       kst *= -1/self.beads.nbeads
       for i in range(3):
          kst[i,i] += Constants.kb*self.ensemble.temp*(3*self.beads.natoms) 
-      return kst[x,v]
+      return kst
+
+   def get_kstresscv(self, x=0, v=0):        
+      """Calculates the quantum central virial kinetic stress tensor 
+      estimator.
+
+      Returns kstress[x,v].
+      """
+
+      return self.kstress()[x,v]
+
+   def get_stresscv(self, x=0, v=0):
+      """Calculates the quantum central virial stress tensor estimator.
+
+      Returns stress[x,v].
+      """
+
+      return (self.forces.vir + self.kstress())/self.cell.V                  
+
+   def get_presscv(self):
+      """Calculates the quantum central virial pressure estimator."""
+
+      return np.trace(self.forces.vir + self.kstress())/(3.0*self.cell.V)
+   
+   def get_kincv(self):        
+      """Calculates the quantum central virial kinetic energy estimator."""
+
+      kcv=0.0
+      for b in range(self.beads.nbeads):
+         kcv += np.dot(depstrip(self.beads.q[b]) - depstrip(self.beads.qc), depstrip(self.forces.f[b]))
+      kcv *= -0.5/self.beads.nbeads
+      kcv += 0.5*Constants.kb*self.ensemble.temp*(3*self.beads.natoms) 
+      return kcv
 
    def get_kinyama(self):              
       """Calculates the quantum scaled coordinate kinetic energy estimator.
@@ -303,6 +291,37 @@ class Properties(dobject):
             break
          
       return kyama
+
+   def opening(self, bead):
+      """Path opening function.
+
+      Used in the Lin Lin momentum distribution estimator.
+      """
+
+      return bead/self.beads.nbeads + 0.5*(1.0/self.beads.nbeads - 1.0)
+
+   def get_linlin(self, ux=0, uy=0, uz=0, atom=0):
+      """Gives the estimator for the momentum distribution, by opening the 
+      ring polymer path.
+
+      Args:
+         ux: The x component of the opening vector.
+         uy: The y component of the opening vector.
+         uz: The z component of the opening vector.
+         atom: The atom for which the path will be opened.
+      """
+
+      u = np.array([float(ux), float(uy), float(uz)])
+      for at in range(self.beads.natoms):
+         if at == atom:
+            for bead in range(self.beads.nbeads):
+               self.dbeads.q[bead,3*at:3*(at+1)] = self.opening(bead)*u + self.beads.q[bead,3*at:3*(at+1)]
+         else:
+            self.dbeads.q[:,3*at:3*(at+1)] = self.beads.q[:,3*at:3*(at+1)]
+
+      n0 = math.exp(self.beads.m[atom]*np.dot(u,u)*self.ensemble.temp*Constants.kb/(2*Constants.hbar**2))
+
+      return n0*math.exp(-(self.dforces.pot - self.forces.pot)/(self.ensemble.ntemp*Constants.kb))
 
    def wrap_cell(self, x=0, v=0):
       """Returns the the x-th component of the v-th cell vector."""

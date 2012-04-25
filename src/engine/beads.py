@@ -41,8 +41,8 @@ class Beads(dobject):
    Depend objects:
       names: An array giving the atom names.
       m: An array giving the atom masses.
-      m3: An array giving all the bead masses.
-      sm3: An array giving the square root of all the bead masses.
+      m3: An array giving the mass associated with each degree of freedom.
+      sm3: An array giving the square root of m3.
       q: An array giving all the bead positions.
       p: An array giving all the bead momenta.
       qnm: An array giving the normal mode representation of the beads.
@@ -203,7 +203,7 @@ class Beads(dobject):
    def get_kstress(self):     
       """Calculates the total kinetic stress tensor of all the replicas.
 
-      Note that this does not correspond to the total kinetic stress tensor
+      Note that this does not correspond to the quantum kinetic stress tensor
       estimate for the system.
 
       Returns:

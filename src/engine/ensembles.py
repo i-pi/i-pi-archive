@@ -48,8 +48,8 @@ class Ensemble(dobject):
          ntemp: The simulation temperature. Will be nbeads times higher than
             the system temperature as PIMD calculations are done at this 
             effective classical temperature.
-         omegan: The spring constant for the interaction between the replicas.  
-            Depends on the simulation temperature.
+         omegan: The effective vibrational frequency for the interaction 
+            between the replicas. Depends on the simulation temperature.
          omegan2: omegan**2.
          omegak: The normal mode frequencies for the free ring polymer.
             Depends on omegan.
@@ -117,7 +117,9 @@ class Ensemble(dobject):
       return self.temp*self.beads.nbeads
 
    def get_omegan(self):
-      """Returns the spring constant for the interaction between replicas."""
+      """Returns the effective vibrational frequency for the interaction 
+      between replicas.
+      """
 
       return self.ntemp*units.Constants.kb/units.Constants.hbar
 
