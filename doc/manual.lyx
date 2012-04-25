@@ -341,32 +341,36 @@ This manual will be in 5 parts, each with the following information:
 \end_layout
 
 \begin_layout Itemize
-In this chapter we discuss the functionality of the wrapper and the problems
- it is trying to solve.
+In this chapter we discuss some of the background information for the wrapper
+ and define the terms to be used throughout the manual.
  
 \end_layout
 
 \begin_layout Itemize
-In the second chapter we will give instructions for the correct download,
- installation and running of the wrapper and specific driver codes.
+In the second chapter we will discuss some of the design principles of the
+ wrapper, and some of the inner workings of the code.
  
 \end_layout
 
 \begin_layout Itemize
-In the third chapter we explain the procedure for creating simulations with
+In the third chapter we will discuss how to install the code, and test that
+ it is working.
+\end_layout
+
+\begin_layout Itemize
+In the fourth chapter we explain the procedure for running simulations with
  the appropriate features, and the form of the input and output files.
  
 \end_layout
 
 \begin_layout Itemize
-In the fourth chapter the theory behind the algorithms used in the wrapper
+In the fifth chapter the theory behind the algorithms used in the wrapper
  are discussed.
  
 \end_layout
 
 \begin_layout Itemize
-In the final chapter we discuss some of the inner workings of the code to
- facilitate user modification of it.
+In the final chapter we discuss what is needed to modify the code.
  
 \end_layout
 
@@ -559,7 +563,7 @@ wrappi
 \end_inset
 
  package, and must be downloaded separately.
- See chapter 2 for more details of how to do this.
+ See chapter 3 for more details of how to do this.
  
 \end_layout
 
@@ -2689,31 +2693,262 @@ Developer's tips
 \end_layout
 
 \begin_layout Section
-Dependancy class
+Properties
+\end_layout
+
+\begin_layout Standard
+While many of the simple properties of interest can be output directly to
+ the properties output file, and many others can be obtained by post-processing
+ the available data, it may be that some property you wish to calculate
+ is not explicitly available for output.
+\end_layout
+
+\begin_layout Standard
+In this case, you may wish to modify the code so that this property can
+ be output.
+ All the code to do this is found in the 
+\begin_inset Quotes eld
+\end_inset
+
+properties.py
+\begin_inset Quotes erd
+\end_inset
+
+ module in the 
+\begin_inset Quotes eld
+\end_inset
+
+engine
+\begin_inset Quotes erd
+\end_inset
+
+ directory.
+ To add a new property to the existing list, you must first define a function
+ that calculates this property.
+\end_layout
+
+\begin_layout Standard
+In standard Python notation, we must define a new function inside the 
+\begin_inset Quotes eld
+\end_inset
+
+Properties
+\begin_inset Quotes erd
+\end_inset
+
+ class.
+ This is written by:
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+def new_func(self):
+\end_layout
+
+\begin_layout Standard
+...code here...
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+return value
+\end_layout
+
+\begin_layout Standard
+We can now use this function to calculate the property of interest.
+ If the name of this property is 
+\begin_inset Quotes eld
+\end_inset
+
+new_prop
+\begin_inset Quotes erd
+\end_inset
+
+, we can add this to the dictionary of named properties by:
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+self.property_dict[
+\begin_inset Quotes eld
+\end_inset
+
+new_prop
+\begin_inset Quotes erd
+\end_inset
+
+] = new_func
+\end_layout
+
+\begin_layout Standard
+We now simply need to add the name 
+\begin_inset Quotes eld
+\end_inset
+
+new_prop
+\begin_inset Quotes erd
+\end_inset
+
+ in the properties list in the xml input file, and the property will be
+ written to the properties output file when appropriate.
+\end_layout
+
+\begin_layout Standard
+If you need a function with arguments, then the code we need is given by:
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+self.property_dict[
+\begin_inset Quotes eld
+\end_inset
+
+new_arg_prop
+\begin_inset Quotes erd
+\end_inset
+
+] = new_arg_func
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+def new_arg_func(self, arg1, arg2, 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+\series bold
+
+\backslash
+ldots
+\end_layout
+
+\end_inset
+
+ ):
+\end_layout
+
+\begin_layout Standard
+...code here...
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+return value
+\end_layout
+
+\begin_layout Standard
+Now in the property list you must put:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Quotes eld
+\end_inset
+
+<properties> [ new_arg_prop(arg1=val1; arg2=val2; 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ldots
+\end_layout
+
+\end_inset
+
+ ), 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ldots
+\end_layout
+
+\end_inset
+
+ ] </properties>
+\begin_inset Quotes erd
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The code will now automatically call the function with the arguments defined
+ in the properties list.
+\end_layout
+
+\begin_layout Section
+Creating a new class
+\end_layout
+
+\begin_layout Standard
+While creating a new property may be possible by using existing objects,
+ it may be that you wish to calculate something in a way that is not implemented
+ by the code.
+ In this case, it may be necessary to create a new class to do the calculation.
+ To do this efficiently, you must be understand some of the more advanced
+ features of the code.
 \end_layout
 
 \begin_layout Subsection
-Dependancy graph
+Depend objects
 \end_layout
 
-\begin_layout Section
-Class hierarchy
-\end_layout
+\begin_layout Standard
+Many of the new objects created inside a class may depend on other objects
+ in the code for their value.
+ As discussed in Chapter 3, the calculation of such variables is facilitated
+ by the use of the 
+\begin_inset Quotes eld
+\end_inset
 
-\begin_layout Section
-Output customization
-\end_layout
+depend
+\begin_inset Quotes erd
+\end_inset
 
-\begin_layout Section
-xml parsing
+ classes defined in the 
+\begin_inset Quotes eld
+\end_inset
+
+utils
+\begin_inset Quotes erd
+\end_inset
+
+ directory.
 \end_layout
 
 \begin_layout Subsection
-Sockets
+Input class
+\end_layout
+
+\begin_layout Standard
+To be able to use the xml input file to create an instance of this new class,
+ and to write the file to the restart file, you must create a new input
+ class, or modify an old one to recognize the new class.
 \end_layout
 
 \begin_layout Section
-Interface
+Submitting patches
+\end_layout
+
+\begin_layout Standard
+This code is still in developement, and any submissions to improve the code
+ are welcome.
+ However, to be considered as a candidate for inclusion in the main version
+ of the code, and additions must adhere to the following policies:
 \end_layout
 
 \end_body
