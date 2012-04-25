@@ -2099,7 +2099,7 @@ The code uses this hierarchial structure to help read the data; if a particular
 \begin_layout Standard
 To help detect any user error the acceptable tag names, type of data and
  possible default values are all specified in the code, in a specialized
- restart class for each class of object.
+ input class for each class of object.
  More information on how the xml file is read can be found in Chapter 6.
 \end_layout
 
@@ -2448,6 +2448,131 @@ This is the output file for for all the system and simulation level properties,
 \end_layout
 
 \begin_layout Standard
+The format of the property list is: <properties> [ prop1name, prop2name,
+ prop3name(arg1=value1; arg2=value2), 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ldots
+\end_layout
+
+\end_inset
+
+ ] </properties>.
+ Some of the properties that require array indices or other parameters to
+ be specified will require the arguments to be specified as shown above.
+ A full list of the allowed property names is given below:
+\end_layout
+
+\begin_layout Description
+time: Total time elapsed in the simulation.
+\end_layout
+
+\begin_layout Description
+step: The current simulation time step.
+\end_layout
+
+\begin_layout Description
+conserved: The value of the conserved quantity for the simulation.
+\end_layout
+
+\begin_layout Description
+temperature: The system temperature.
+ Note that for path integral simulations this is not the same as the simulation
+ temperature, as the particles are held at a higher classical temperature.
+\end_layout
+
+\begin_layout Description
+volume: The volume of the system box.
+\end_layout
+
+\begin_layout Description
+h: The unit cell vector matrix.
+ You must specify the args x and v to get the index h[x,v].
+ If not specified, they both default to 0.
+\end_layout
+
+\begin_layout Description
+potential: The potential energy of the system.
+\end_layout
+
+\begin_layout Description
+kinetic_md: The classical simulation kinetic energy.
+\end_layout
+
+\begin_layout Description
+kinetic_cv: The centroid virial quantum kinetic energy estimator.
+\end_layout
+
+\begin_layout Description
+stress_md: The classical stress tensor.
+ You must specify the args x and v to get the index stress_md[x,v].
+ If not specified, they both default to 0.
+\end_layout
+
+\begin_layout Description
+stress_cv: The quantum stress tensor estimator.
+ You must specify the args x and v to get the index stress_cv[x,v].
+ If not specified, they both default to 0.
+\end_layout
+
+\begin_layout Description
+pressure_md: The classical simulation pressure.
+ 
+\end_layout
+
+\begin_layout Description
+pressure_cv: The quantum pressure estimator.
+\end_layout
+
+\begin_layout Description
+kstress_cv: The quantum kinetic stress tensor estimator.
+ You must specify the args x and v to get the index stress_cv[x,v].
+ If not specified, they both default to 0.
+\end_layout
+
+\begin_layout Description
+kin_yama: The scaled path quantum kinetic energy estimator.
+\end_layout
+
+\begin_layout Description
+linlin: A point of the scaled Fourier transform of the momentum distribution.
+ Given by 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+(
+\backslash
+tilde{n}(
+\backslash
+textbf{x})
+\backslash
+)
+\end_layout
+
+\end_inset
+
+ in Phys.
+ Rev.
+ Lett.
+ 
+\series bold
+105
+\series default
+, 110602.
+ You must specify the args ux, uy and uz to give the displaced path vector,
+ and atom to give the atom for which the path will be opened.
+\end_layout
+
+\begin_layout Standard
 The format of the file is given by a comment line giving the name of all
  the properties to be printed, followed by the rows giving their values
  at regular intervals given by the 
@@ -2510,73 +2635,32 @@ stride
  The possible choices of output properties are:
 \end_layout
 
-\begin_layout Itemize
-\begin_inset Quotes eld
-\end_inset
-
-positions
-\begin_inset Quotes erd
-\end_inset
-
-: Gives the bead positions.
+\begin_layout Description
+positions: Gives the bead positions.
  Prints a separate file for each replica of the system
 \end_layout
 
-\begin_layout Itemize
-\begin_inset Quotes eld
-\end_inset
-
-velocities
-\begin_inset Quotes erd
-\end_inset
-
-: As above, except prints the velocities.
+\begin_layout Description
+velocities: As above, except prints the velocities.
 \end_layout
 
-\begin_layout Itemize
-\begin_inset Quotes eld
-\end_inset
-
-forces
-\begin_inset Quotes erd
-\end_inset
-
-: As above, except prints the forces.
+\begin_layout Description
+forces: As above, except prints the forces.
 \end_layout
 
-\begin_layout Itemize
-\begin_inset Quotes eld
-\end_inset
-
-kinetic_cv
-\begin_inset Quotes erd
-\end_inset
-
-: Prints the contribution of each atom to the total kinetic energy.
+\begin_layout Description
+kinetic_cv: Prints the contribution of each atom to the total kinetic energy.
  Prints only one file.
 \end_layout
 
-\begin_layout Itemize
-\begin_inset Quotes eld
-\end_inset
-
-kodterms_cv
-\begin_inset Quotes erd
-\end_inset
-
-: Prints the off-diagonal contributions to the kinetic energy tensor.
+\begin_layout Description
+kodterms_cv: Prints the off-diagonal contributions to the kinetic energy
+ tensor.
  Prints only one file.
 \end_layout
 
-\begin_layout Itemize
-\begin_inset Quotes eld
-\end_inset
-
-centroid
-\begin_inset Quotes erd
-\end_inset
-
-: Prints the position of the centroid coordinate of each atom.
+\begin_layout Description
+centroid: Prints the position of the centroid coordinate of each atom.
  Prints only one file.
 \end_layout
 

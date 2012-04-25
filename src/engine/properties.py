@@ -104,7 +104,9 @@ class Properties(dobject):
       'pressure_cv': Quantum centroid virial pressure estimator,
       'kstress_cv': Quantum centroid virial kinetic stress tensor estimator.
          Requires arguments x and v, to give kstress[x,v],
-      'kin_yama': Quantum scaled coordinate kinetic energy estimator}.
+      'kin_yama': Quantum scaled coordinate kinetic energy estimator,
+      'linlin': The scaled Fourier transform of the momentum distribution.
+         Given by n(x) in Lin Lin et al., Phys. Rev. Lett. 105, 110602.}.
 
       Args:
          simul: The Simulation object to be bound.
