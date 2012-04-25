@@ -379,228 +379,154 @@ In all that follows, we will make use of the following definitions:
 \end_layout
 
 \begin_layout Standard
-\begin_inset Tabular
-<lyxtabular version="3" rows="9" columns="2">
-<features tabularvalignment="middle">
-<column alignment="center" valignment="top" width="0">
-<column alignment="center" valignment="top" width="0">
-<row>
-<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
-\begin_inset Text
+\begin_inset ERT
+status open
 
 \begin_layout Plain Layout
 
-\size small
-Name
-\end_layout
 
-\end_inset
-</cell>
-<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
+\backslash
+begin{tabular}{|l|p{10cm}|}
+\end_layout
 
 \begin_layout Plain Layout
 
-\size small
-Definition
-\end_layout
 
-\end_inset
-</cell>
-</row>
-<row>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
+\backslash
+hline
+\end_layout
 
 \begin_layout Plain Layout
 
-\size small
-src_dir
-\end_layout
+Name & Definition 
+\backslash
 
-\end_inset
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
+\backslash
+ 
+\backslash
+hline
+\end_layout
 
 \begin_layout Plain Layout
 
-\size small
-The directory in which the wrapper code has been installed
-\end_layout
+src
+\backslash
+_dir & The directory in which the wrapper code has been installed 
+\backslash
 
-\end_inset
-</cell>
-</row>
-<row>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
+\backslash
+ 
+\backslash
+hline
+\end_layout
 
 \begin_layout Plain Layout
 
-\size small
-np_dir
-\end_layout
+np
+\backslash
+_dir & The directory in which the NumPy code has been installed 
+\backslash
 
-\end_inset
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
+\backslash
+ 
+\backslash
+hline
+\end_layout
 
 \begin_layout Plain Layout
 
-\size small
-The directory in which the NumPy library has been installed
-\end_layout
+np
+\backslash
+_dd
+\backslash
+_dir & The directory in which the NumPy tar file has been downloaded 
+\backslash
 
-\end_inset
-</cell>
-</row>
-<row>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
+\backslash
+ 
+\backslash
+hline
+\end_layout
 
 \begin_layout Plain Layout
 
-\size small
-np_dd_dir
-\end_layout
+driver
+\backslash
+_dir & The directory in which the driver code has been downloaded 
+\backslash
 
-\end_inset
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
+\backslash
+ 
+\backslash
+hline
+\end_layout
 
 \begin_layout Plain Layout
 
-\size small
-The directory in which the NumPy tar file has been downloaded
-\end_layout
+np
+\backslash
+_vers & The version of NumPy installed 
+\backslash
 
-\end_inset
-</cell>
-</row>
-<row>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
+\backslash
+ 
+\backslash
+hline
+\end_layout
 
 \begin_layout Plain Layout
 
-\size small
-driver_dir
-\end_layout
+py
+\backslash
+_vers & The version of Python installed 
+\backslash
 
-\end_inset
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
+\backslash
+ 
+\backslash
+hline
+\end_layout
 
 \begin_layout Plain Layout
 
-\size small
-The directory in which the driver code has been downloaded
-\end_layout
+esp
+\backslash
+_dd
+\backslash
+_dir & The directory in which the Quantum Espresso code has been downloaded
+ 
+\backslash
 
-\end_inset
-</cell>
-</row>
-<row>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
+\backslash
+ 
+\backslash
+hline
+\end_layout
 
 \begin_layout Plain Layout
 
-\size small
-np_vers
-\end_layout
+esp
+\backslash
+_vers & The version of Quantum Espresso installed 
+\backslash
 
-\end_inset
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
+\backslash
+
+\end_layout
 
 \begin_layout Plain Layout
 
-\size small
-The version of NumPy installed
-\end_layout
 
-\end_inset
-</cell>
-</row>
-<row>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
+\backslash
+hline
+\end_layout
 
 \begin_layout Plain Layout
 
-\size small
-py_vers
+
+\backslash
+end{tabular}
 \end_layout
-
-\end_inset
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\begin_layout Plain Layout
-
-\size small
-The version of Python installed
-\end_layout
-
-\end_inset
-</cell>
-</row>
-<row>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\begin_layout Plain Layout
-
-\size small
-esp_dd_dir
-\end_layout
-
-\end_inset
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\begin_layout Plain Layout
-
-\size small
-The directory in which the Quantum Espresso has been downloaded
-\end_layout
-
-\end_inset
-</cell>
-</row>
-<row>
-<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\begin_layout Plain Layout
-
-\size small
-esp_vers
-\end_layout
-
-\end_inset
-</cell>
-<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\begin_layout Plain Layout
-
-\size small
-The version of Quantum Espresso installed
-\end_layout
-
-\end_inset
-</cell>
-</row>
-</lyxtabular>
 
 \end_inset
 
@@ -706,8 +632,7 @@ The code is separated into the following directory structure:
 \end_layout
 
 \begin_layout Description
-forces Contains a few stand-alone fortran modules for running particular
- simple tests without needing to download one of the driver libraries.
+forces Contains a few stand-alone fortran modules for running simple tests.
  
 \end_layout
 
@@ -1778,10 +1703,6 @@ Later versions of the code already have driver functionality, and so no
 
 \begin_layout Subsection
 CP2K
-\end_layout
-
-\begin_layout Subsection
-dlpoly
 \end_layout
 
 \begin_layout Section

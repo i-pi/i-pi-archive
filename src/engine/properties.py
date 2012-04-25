@@ -201,6 +201,8 @@ class Properties(dobject):
       Returns stress[x,v].
       """
 
+      x = int(x)
+      v = int(v)
       stress = (self.forces.vir + self.beads.kstress)/self.cell.V
       return stress[x,v]
 
@@ -236,6 +238,8 @@ class Properties(dobject):
       Returns kstress[x,v].
       """
 
+      x = int(x)
+      v = int(v)
       return self.kstress()[x,v]
 
    def get_stresscv(self, x=0, v=0):
@@ -244,7 +248,10 @@ class Properties(dobject):
       Returns stress[x,v].
       """
 
-      return (self.forces.vir + self.kstress())/self.cell.V                  
+      x = int(x)
+      v = int(v)
+      stress = (self.forces.vir + self.kstress())/self.cell.V                  
+      return stress[x,v]
 
    def get_presscv(self):
       """Calculates the quantum central virial pressure estimator."""
@@ -314,6 +321,7 @@ class Properties(dobject):
       """
 
       u = np.array([float(ux), float(uy), float(uz)])
+      atom = int(atom)
       for at in range(self.beads.natoms):
          if at == atom:
             for bead in range(self.beads.nbeads):
