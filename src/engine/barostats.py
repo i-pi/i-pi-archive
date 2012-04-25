@@ -73,7 +73,6 @@ class Barostat(dobject):
       else:
          self.sext = sext
       
-
       if thermostat is None:
          thermostat = Thermostat()
       self.thermostat = thermostat   
@@ -143,15 +142,6 @@ class Barostat(dobject):
       """Dummy centroid position propagator step."""
 
       pass   
-      
-   def step(self):
-      """Classical barostat propagator.""" 
-
-      self.thermostat.step()
-      self.pstep()
-      self.qcstep()
-      self.pstep()
-      self.thermostat.step()
       
    def get_pot(self):
       """Calculates the elastic strain energy of the cell."""

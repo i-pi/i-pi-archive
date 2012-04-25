@@ -123,8 +123,9 @@ class Thermostat(dobject):
       else:
          self.ndof = ndof
       
-      dset(self,"sm",depend_array(name="sm", value=np.zeros(len(dget(self,"m"))), 
-                                     func=self.get_sm, dependencies=[dget(self,"m")] ) )
+      dset(self, "sm", 
+                  depend_array(name="sm", value=np.zeros(len(dget(self,"m"))), 
+                             func=self.get_sm, dependencies=[dget(self,"m")]))
       
    def get_sm(self):
       """Retrieves the square root of the mass matrix.
@@ -301,7 +302,8 @@ class ThermoPILE_L(Thermostat):
          if it == 0:
             deppipe(self,"tau", t, "tau")
          else:
-            # here we manually connect _thermos[i].tau to tauk[i]. simple and clear.
+            # Here we manually connect _thermos[i].tau to tauk[i].
+            # Simple and clear.
             dget(t,"tau").add_dependency(dget(self,"tauk"))
             dget(t,"tau")._func = make_taugetter(it)
          dget(self,"ethermo").add_dependency(dget(t,"ethermo"))
@@ -591,10 +593,10 @@ class ThermoGLE(Thermostat):
       super(ThermoGLE,self).bind(beads,atoms,cell,pm,prng,ndof)
 
       # allocates, initializes or restarts an array of s's 
-      if self.s.shape != ( self.ns + 1, len(dget(self,"m") )) :
+      if self.s.shape != (self.ns + 1, len(dget(self,"m"))):
          if len(self.s) > 0:
             print " @ GLE BIND: Warning: s array size mismatch on restart! "
-         self.s = np.zeros((self.ns + 1,len(dget(self,"m"))))
+         self.s = np.zeros((self.ns + 1, len(dget(self,"m"))))
          
          # Initializes the s vector in the free-particle limit
          SC = stab_cholesky(self.C*Constants.kb)         
@@ -605,16 +607,16 @@ class ThermoGLE(Thermostat):
    def step(self):
       """Updates the bound momentum vector with a GLE thermostat"""      
       
-      p = self.p.view(np.ndarray).copy()
+      p = depstrip(self.p).copy()
       
       self.s[0,:] = self.p/self.sm
 
       self.ethermo += np.dot(self.s[0],self.s[0])*0.5
       self.s[:] = np.dot(self.T,self.s) + np.dot(self.S,self.prng.gvec(self.s.shape))
-#      self.s[:]=tmps
       self.ethermo -= np.dot(self.s[0],self.s[0])*0.5
 
       self.p = self.s[0]*self.sm
+
 
 class ThermoNMGLE(Thermostat):     
    """Represents a 'normal-modes' GLE thermostat.
@@ -746,10 +748,10 @@ class ThermoNMGLE(Thermostat):
          raise IndexError("Number of beads " + str(beads.nbeads) + " doesn't match GLE parameters nb= " + str(self.nb) )
 
       # allocates, initializes or restarts an array of s's 
-      if self.s.shape != ( self.nb, self.ns + 1, beads.natoms *3 ) :
+      if self.s.shape != (self.nb, self.ns + 1, beads.natoms *3) :
          if len(self.s) > 0:
             print " @ GLE BIND: Warning: s array size mismatch on restart! "
-         self.s = np.zeros(( self.nb, self.ns + 1, beads.natoms*3 ))
+         self.s = np.zeros((self.nb, self.ns + 1, beads.natoms*3))
          
          # Initializes the s vector in the free-particle limit
          for b in range(self.nb):
@@ -761,7 +763,7 @@ class ThermoNMGLE(Thermostat):
       prev_ethermo=self.ethermo
       
       # creates a set of thermostats to be applied to individual normal modes
-      self._thermos = [ ThermoGLE(temp=1, dt=1, A=self.A[b], C=self.C[b]) for b in range(beads.nbeads) ]
+      self._thermos = [ThermoGLE(temp=1, dt=1, A=self.A[b], C=self.C[b]) for b in range(beads.nbeads)]
             
       # must pipe all the dependencies in such a way that values for the nm thermostats
       # are automatically updated based on the "master" thermostat

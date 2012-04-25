@@ -178,7 +178,8 @@ class ForceBeads(dobject):
             each replica of the system.
       """
 
-      if not (beads is None or cell is None or force is None):       # only initializes if all arguments are given
+      if not (beads is None or cell is None or force is None):
+         # only initializes if all arguments are given
          self.bind(beads, cell, force)
 
    def bind(self, beads, cell, force, softexit=None):
@@ -300,8 +301,6 @@ class ForceBeads(dobject):
 #      for b in range(self.nbeads): bthreads[b].join()
 #      print "threads joined in"
 
-
-
       return newf
       
    def pot(self):
@@ -407,11 +406,13 @@ class FFSocket(ForceField):
       if self.request is None: 
          self.request = self.socket.queue(self.atoms, self.cell, pars=self.pars, reqid=-1)
       while self.request["status"] != "Done": 
-         if self.request["status"] == "Exit": break
+         if self.request["status"] == "Exit":
+            break
          time.sleep(self.socket.latency)
       if self.request["status"] == "Exit": 
          print " @Force:   Soft exit request."
-         if not self.softexit is None: self.softexit()
+         if not self.softexit is None:
+            self.softexit()
       
       # data has been collected, so the request can be released and a slot freed up for new calculations
       self.socket.release(self.request)

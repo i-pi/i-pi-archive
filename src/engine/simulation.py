@@ -264,9 +264,8 @@ class Simulation(dobject):
       # Zeroes out the initlist, such that in restarts no initialization will be required
       self.initlist = np.zeros(0, np.dtype('|S12'))
 
-
    def write_traj(self):
-      """ Writes out the required trajectories """
+      """Writes out the required trajectories."""
       
       for what in self.trajlist:
          # quick-and-dirty way to check whether a trajectory is "global" or per-bead

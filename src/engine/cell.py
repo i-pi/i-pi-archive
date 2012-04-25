@@ -311,7 +311,10 @@ class CellRigid(Cell):
       dset(self, "kin", depend_value(name = "kin", func=self.get_kin, dependencies=[dget(self,"P"),dget(self,"m")]) )
       
    def mtoM(self):
-      """Makes the cell mass a vector quantity."""
+      """Makes the cell mass a vector quantity.
+
+      This allows us to use array subscripting to get the mass.
+      """
 
       return np.identity(1)*self.m
 

@@ -223,10 +223,11 @@ class NVEEnsemble(Ensemble):
       Calculates the centre of mass momenta, then removes the mass weighted
       contribution from each atom. If the ensemble defines a thermostat, then
       the contribution to the conserved quantity due to this subtraction is 
-      added to the total energy removed from the kinetic energy due to the 
-      thermostat. If there is a choice of thermostats, the thermostat 
-      connected to the centroid is chosen, to minimise the disturbance to the 
-      ring polymer motion.
+      added to the thermostat heat energy, as it is assumed that the centre of
+      mass motion is due to the thermostat. 
+
+      If there is a choice of thermostats, the thermostat 
+      connected to the centroid is chosen.
       """
 
       if (self.fixcom):
@@ -249,7 +250,6 @@ class NVEEnsemble(Ensemble):
          pcom *= 1.0/(nb*self.beads[0].M)
          for i in range(3):
             self.beads.p[:,i:na3:3] -= m*pcom[i]
-         
 
    def pstep(self): 
       """Velocity Verlet momenta propagator."""
@@ -268,6 +268,9 @@ class NVEEnsemble(Ensemble):
       atom masses, and so the same propagator will work for all the atoms in 
       the system. All the ring polymers are propagated at the same time by a
       matrix multiplication.
+
+      Also note that the centroid coordinate is propagated in qcstep, so is
+      not altered here.
       """
 
       if self.beads.nbeads == 1:
@@ -359,7 +362,7 @@ class NVTEnsemble(NVEEnsemble):
       """
 
       super(NVTEnsemble,self).bind(beads, cell, bforce, prng)
-      ndof=None 
+      ndof = None 
       if self.fixcom:
          ndof = 3*(self.beads.natoms-1)
          

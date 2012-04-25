@@ -141,6 +141,9 @@ class Properties(dobject):
 
       self.property_dict["linlin"] = self.get_linlin
 
+      # dummy beads and forcefield objects so that we can use scaled and
+      # displaced path estimators without changing the simulation bead 
+      # coordinates
       self.dbeads = simul.beads.copy()
       self.dforces = ForceBeads()
       self.dforces.bind(self.dbeads, self.simul.cell,  self.simul._forcemodel)
@@ -171,7 +174,6 @@ class Properties(dobject):
          key = key[0:argstart] # strips the arguments from key name
 
          arglist = io_xml.read_dict(argstr, delims="()", split=";", key_split="=")
-         
          return self.property_dict[key](**arglist)
       else:
          return self.property_dict[key]()
@@ -374,9 +376,8 @@ class Trajectories(dobject):
       dset(self, "atomic_kincv", depend_array(name="atomic_kincv", value=np.zeros(self.simul.beads.natoms*3),
            func=self.get_akcv, dependencies=[dget(self.simul.forces,"f"), dget(self.simul.beads,"q"), dget(self.simul.beads,"qc"), dget(self.simul.ensemble,"temp")]))      
       dset(self, "atomic_kod", depend_array(name="atomic_kod", value=np.zeros(self.simul.beads.natoms*3),
-           func=self.get_akcv_od, dependencies=[dget(self.simul.forces,"f"), dget(self.simul.beads,"q"), dget(self.simul.beads,"qc"), dget(self.simul.ensemble,"temp")]))      
-      
-      
+           func=self.get_akcv_od, dependencies=[dget(self.simul.forces,"f"), dget(self.simul.beads,"q"), dget(self.simul.beads,"qc"), dget(self.simul.ensemble,"temp")]))
+
    def get_akcv(self):
       """Calculates the contribution to the kinetic energy due to each degree
       of freedom.
@@ -390,7 +391,7 @@ class Trajectories(dobject):
       return rv
 
    def get_akcv_od(self):
-      """Calculates the "off-diagonal" contribution to the kinetic energy tensor 
+      """Calculates the "off-diagonal" contribution to the kinetic energy tensor
       due to each atom.
       """
 
