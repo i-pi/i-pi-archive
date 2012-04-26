@@ -67,6 +67,7 @@ class InputBeads(Input):
                                         "dimension" : "temperature"})  }
 
    default_help = "Deals with path integral simulations."
+   default_label = "BEADS"
 
    def write(self,  name="", indent=""):
       """Overloads Input write() function so that nothing is written if

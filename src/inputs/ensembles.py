@@ -70,6 +70,7 @@ class InputEnsemble(Input):
                                    "help"            : "This describes whether the centre of mass of the particles is fixed."}) }
 
    default_help = "Holds all the information that is ensemble specific, such as the temperature and the external pressure, and the thermostats and barostats that control it."
+   default_label = "ENSEMBLE"
    
    def store(self, ens):
       """Takes an ensemble instance and stores a minimal representation of it.

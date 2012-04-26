@@ -33,6 +33,7 @@ class InputBaro(Input):
                                          "help"    : "The thermostat for the cell. Keeps the cell velocity distribution at the correct temperature."}) }
 
    default_help = "Simulates an external pressure bath to keep the pressure or stress at the external values."
+   default_label = "BAROSTAT"
 
    def store(self, baro):
       """Takes a barostat instance and stores a minimal representation of it.

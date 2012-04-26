@@ -64,6 +64,7 @@ class InputThermo(Input):
              }
 
    default_help = "Simulates an external heat bath to keep the velocity distribution at the correct temperature."
+   default_label = "THERMOSTATS"
    
    def store(self, thermo):
       """Takes a thermostat instance and stores a minimal representation of it.

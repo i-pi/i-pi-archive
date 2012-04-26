@@ -590,8 +590,18 @@ wrappi
 
 \begin_layout Standard
 To obtain the parameters needed to run Path Integral with Generalized Langevin
- Equation Thermostat (PIGLET) calculations, you can use the website: http://gle4
-md.berlios.de/ 
+ Equation Thermostat (PIGLET) calculations, you can use the website: 
+\begin_inset Flex URL
+status collapsed
+
+\begin_layout Plain Layout
+
+http://gle4md.berlios.de/ 
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Section
@@ -1549,8 +1559,18 @@ Many clusters do not have NumPy already installed upon them.
 
 \begin_layout Standard
 In any case you must first obtain the NumPy code.
- The numpy library can be downloaded as a tar file from http://sourceforge.net/pr
-ojects/numpy/files/NumPy/
+ The numpy library can be downloaded as a tar file from 
+\begin_inset Flex URL
+status collapsed
+
+\begin_layout Plain Layout
+
+http://sourceforge.net/projects/numpy/files/NumPy/
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -1650,8 +1670,21 @@ Quantum Espresso
 \end_layout
 
 \begin_layout Standard
-You can download the source code for Quantum Espresso at: www.quantum-espresso.org
-/
+You can download the source code for Quantum Espresso at:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Flex URL
+status collapsed
+
+\begin_layout Plain Layout
+
+www.quantum-espresso.org/
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -1696,8 +1729,21 @@ $src_dir/patches/pwscf
 \end_layout
 
 \begin_layout Standard
-After this, continue the download as per the instructions at www.quantum-espress.o
-rg/.
+After this, continue the download as per the instructions at:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Flex URL
+status collapsed
+
+\begin_layout Plain Layout
+
+www.quantum-espress.org/
+\end_layout
+
+\end_inset
+
+.
 \end_layout
 
 \begin_layout Standard
@@ -1792,7 +1838,9 @@ status open
 
 \begin_layout Plain Layout
 
-/wrappi
+
+\backslash
+wrappi
 \end_layout
 
 \end_inset
@@ -2823,7 +2871,6 @@ status open
 
 \begin_layout Plain Layout
 
-\series bold
 
 \backslash
 ldots

@@ -69,6 +69,7 @@ class Input(object):
    default_dimension = "undefined"
    default_units = ""
    default_value = None
+   default_label = ""
 
    def __init__(self, help=None, dimension=None, units = None, default=None):
       """Initialises Input.
@@ -104,6 +105,8 @@ class Input(object):
          self._optional = True
          
       self._explicit = False #True if has been set by the user.
+
+      self._label = self.default_label
 
       #For each tag name in the fields and attribs dictionaries,
       #creates and object of the type given, expanding the dictionary to give 
@@ -229,7 +232,7 @@ class Input(object):
          if not (vf._explicit or vf._optional):
             raise ValueError("Field name '" + f + "' is mandatory and was not found in the input for the property " + xml.name)
       
-   def help_latex(self, level=0, stop_level=None):
+   def help_latex(self, level=0, stop_level=None, ref=False):
       """Function to generate a LaTeX formatted manual.
 
       Args:
@@ -248,8 +251,12 @@ class Input(object):
       rstr = ""
       if level == 0:
          rstr += "\\documentclass[12pt,fleqn]{report}"
+         rstr += "\n\\usepackage{hyperref}"
          rstr += "\n\\begin{document}\n"
-      
+         if self._label != "":
+            rstr += "\\subsection{" + self._label + "}\n"
+            rstr += "\\label{" + self._label + "}\n"
+
       rstr += self._help + "\n"
       
       if self._dimension != "undefined": 
@@ -278,7 +285,10 @@ class Input(object):
       if len(self.fields) != 0 and level != stop_level:
          rstr += "\\paragraph{Fields}\n \\begin{itemize}\n"
          for f in self.fields:
-            rstr += "\\item {\\bf " + f + "}:\n " + self.__dict__[f].help_latex(level+1, stop_level)
+            if self.__dict__[f]._label == "" or not ref:
+               rstr += "\\item {\\bf " + f + "}:\n " + self.__dict__[f].help_latex(level+1, stop_level)
+            else:
+               rstr += "\\item {\\bf \hyperref[" + self.__dict__[f]._label + "]{" + self.__dict__[f]._label + "} }:\n " + self.__dict__[f].help_latex(level+1, stop_level)
          rstr += "\\end{itemize}\n \n"
 
       if level == 0:

@@ -74,6 +74,7 @@ class InputAtoms(Input):
                                         "dimension" : "temperature"})  }
 
    default_help = "Deals with single replicas of the system or classical simulations."
+   default_label = "ATOMS"
        
    def store(self, atoms, filename=""):
       """Takes an Atoms instance and stores a minimal representation of it.

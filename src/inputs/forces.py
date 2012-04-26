@@ -36,6 +36,7 @@ class InputForce(Input):
                                               "help"    : "deprecated dictionary of initialization parameters. May be removed in the future." }) }
 
    default_help = "Deals with the assigning of jobs to different driver codes, and collecting the data."
+   default_label = "FORCES"
    
    def store(self, force):
       """Takes a ForceField instance and stores a minimal representation of it.

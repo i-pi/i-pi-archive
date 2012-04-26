@@ -51,6 +51,7 @@ class InputInterface(Input):
                                      "help"     : "Specifies whether the driver interface will listen onto a internet socket [inet] or onto a unix socket [unix]" } )}
 
    default_help = "Specifies the parameters for the socket interface."
+   default_label = "INTERFACE"
 
    def store(self, iface):
       """Takes an Interface instance and stores a minimal representation of it.

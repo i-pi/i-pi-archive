@@ -79,6 +79,7 @@ class InputCell(Input):
                                         "help"     : "Whether the cell parameters can change during the simulation."}) }
 
    default_help = "Deals with the cell parameters, and stores their momenta in flexible cell calculations."
+   default_label = "CELL"
     
    def store(self, cell, filename=""):
       """Takes a Cell instance and stores of minimal representation of it.
