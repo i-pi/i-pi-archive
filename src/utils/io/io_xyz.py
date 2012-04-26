@@ -12,6 +12,7 @@ __all__ = ['print_xyz_path', 'print_xyz', 'read_xyz']
 
 import numpy as np
 import math, sys
+from utils.depend import depstrip
 import utils.mathtools as mt
 from engine.atoms import Atoms
 from utils.units import *
@@ -58,9 +59,11 @@ def print_xyz(atoms, cell, filedesc = sys.stdout, title=""):
 
    natoms = atoms.natoms
    filedesc.write("%d\n# CELL(abcABC): %10.5f  %10.5f  %10.5f  %10.5f  %10.5f  %10.5f  %s\n" % ( natoms, a,b,c,alpha,beta,gamma, title))
+   # direct access to avoid unnecessary slow-down
+   qs=depstrip(atoms.q)
+   lab=depstrip(atoms.names)
    for i in range(natoms):
-      atom = atoms[i]
-      filedesc.write("%8s %12.5e %12.5e %12.5e\n" % (atom.name[0],atom.q[0],atom.q[1],atom.q[2]))   
+      filedesc.write("%8s %12.5e %12.5e %12.5e\n" % (lab[i],qs[3*i],qs[3*i+1],qs[3*i+2]))   
    filedesc.flush()
 
 def read_xyz(filedesc):
