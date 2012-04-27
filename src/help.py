@@ -14,7 +14,7 @@ from optparse import OptionParser
 
 __all__ = ['help']
 
-objects = {'barostats': barostats.InputBaro(), 'cell': cell.InputCell(), 'simulation': simulation.InputSimulation(), 'ensembles': ensembles.InputEnsemble(), 'thermostats': thermostats.InputThermo(), 'interface': interface.InputInterface(), 'forces': forces.InputForce(), 'atoms': atoms.InputAtoms(0), 'beads': beads.InputBeads(0,1), 'prng': prng.InputRandom()}
+objects = {'barostats': barostats.InputBaro(), 'cell': cell.InputCell(), 'simulation': simulation.InputSimulation(), 'ensembles': ensembles.InputEnsemble(), 'thermostats': thermostats.InputThermo(), 'interface': interface.InputInterface(), 'forces': forces.InputForce(), 'atoms': atoms.InputAtoms(), 'beads': beads.InputBeads(), 'prng': prng.InputRandom()}
 
 usage = "usage: python %prog [options]"
 parser = OptionParser(usage=usage)

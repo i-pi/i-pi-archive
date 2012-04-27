@@ -250,10 +250,10 @@ class Input(object):
 
       rstr = ""
       if level == 0:
-         rstr += "\\documentclass[12pt,fleqn]{report}"
-         rstr += "\n\\usepackage{hyperref}"
-         rstr += "\n\\begin{document}\n"
-         if self._label != "":
+         if not ref:
+            rstr += "\\documentclass[12pt,fleqn]{report}"
+            rstr += "\n\\begin{document}\n"
+         if self._label != "" and ref:
             rstr += "\\subsection{" + self._label + "}\n"
             rstr += "\\label{" + self._label + "}\n"
 
@@ -288,10 +288,10 @@ class Input(object):
             if self.__dict__[f]._label == "" or not ref:
                rstr += "\\item {\\bf " + f + "}:\n " + self.__dict__[f].help_latex(level+1, stop_level)
             else:
-               rstr += "\\item {\\bf \hyperref[" + self.__dict__[f]._label + "]{" + self.__dict__[f]._label + "} }:\n " + self.__dict__[f].help_latex(level+1, stop_level)
+               rstr += "\\item {\\bf \hyperref[" + self.__dict__[f]._label + "]{" + f + "} }:\n " + self.__dict__[f].help_latex(level+1, stop_level)
          rstr += "\\end{itemize}\n \n"
 
-      if level == 0:
+      if level == 0 and not ref:
          rstr += "\\end{document}"
       
       rstr = rstr.replace('_', '\\_')

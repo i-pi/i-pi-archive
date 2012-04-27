@@ -1,0 +1,108 @@
+\subsection{ENSEMBLE}
+\label{ENSEMBLE}
+Holds all the information that is ensemble specific, such as the temperature and the external pressure, and the thermostats and barostats that control it.
+\paragraph{Attributes}
+ \begin{itemize}
+\item {\bf type}:
+ The ensemble that will be sampled during the simulation.
+{\\ \bf DEFAULT: }'nve'
+{\\ \bf OPTIONS: }'nve', 'nvt', 'npt', 'nst'
+{\\ \bf DATA TYPE: }str
+\end{itemize}
+ 
+\paragraph{Fields}
+ \begin{itemize}
+\item {\bf stress}:
+ The external stress.
+{\\ \bf DIMENSION: }pressure
+{\\ \bf DEFAULT: }
+      [[ 1.  0.  0.]
+       [ 0.  1.  0.]
+       [ 0.  0.  1.]]
+{\\ \bf DATA TYPE: }float
+\paragraph{Attributes}
+ \begin{itemize}
+\item {\bf shape}:
+ The shape of the array
+{\\ \bf DEFAULT: }(0,)
+{\\ \bf DATA TYPE: }tuple
+\end{itemize}
+ 
+\item {\bf \hyperref[BAROSTAT]{barostat} }:
+ Simulates an external pressure bath to keep the pressure or stress at the external values.
+\paragraph{Attributes}
+ \begin{itemize}
+\item {\bf kind}:
+ The type of barostat.
+{\\ \bf DEFAULT: }'rigid'
+{\\ \bf OPTIONS: }'rigid', 'flexible'
+{\\ \bf DATA TYPE: }str
+\end{itemize}
+ 
+\paragraph{Fields}
+ \begin{itemize}
+\item {\bf thermostat}:
+ The thermostat for the cell. Keeps the cell velocity distribution at the correct temperature.
+\end{itemize}
+ 
+\item {\bf \hyperref[THERMOSTATS]{thermostat} }:
+ The thermostat for the atoms, keeps the atom velocity distribution at the correct temperature.
+\paragraph{Attributes}
+ \begin{itemize}
+\item {\bf kind}:
+ The style of thermostatting.
+{\\ \bf DEFAULT: }'langevin'
+{\\ \bf OPTIONS: }'langevin', 'svr', 'pile\_l', 'pile\_g', 'gle', 'nm\_gle'
+{\\ \bf DATA TYPE: }str
+\end{itemize}
+ 
+\paragraph{Fields}
+ \begin{itemize}
+\item {\bf A}:
+ The friction matrix for GLE thermostats.
+{\\ \bf DIMENSION: }frequency
+{\\ \bf DEFAULT: }[ ]
+{\\ \bf DATA TYPE: }float
+\item {\bf tau}:
+ The target temperature for the thermostat.
+{\\ \bf DIMENSION: }temperature
+{\\ \bf DEFAULT: }0.0
+{\\ \bf DATA TYPE: }float
+\item {\bf C}:
+ The covariance matrix for GLE thermostats.
+{\\ \bf DIMENSION: }temperature
+{\\ \bf DEFAULT: }[ ]
+{\\ \bf DATA TYPE: }float
+\item {\bf s}:
+ Input values for the additional momenta in GLE.
+{\\ \bf DIMENSION: }ms-momentum
+{\\ \bf DEFAULT: }[ ]
+{\\ \bf DATA TYPE: }float
+\item {\bf ethermo}:
+ The initial value of the thermostat energy. Only useful in restarts to guarantee continuity of the conserved quantity. 
+{\\ \bf DIMENSION: }energy
+{\\ \bf DEFAULT: }0.0
+{\\ \bf DATA TYPE: }float
+\end{itemize}
+ 
+\item {\bf timestep}:
+ The time step.
+{\\ \bf DIMENSION: }time
+{\\ \bf DEFAULT: }'1.0'
+{\\ \bf DATA TYPE: }float
+\item {\bf pressure}:
+ The external pressure.
+{\\ \bf DIMENSION: }pressure
+{\\ \bf DEFAULT: }'1.0'
+{\\ \bf DATA TYPE: }float
+\item {\bf fixcom}:
+ This describes whether the centre of mass of the particles is fixed.
+{\\ \bf DEFAULT: }False
+{\\ \bf DATA TYPE: }bool
+\item {\bf temperature}:
+ The temperature of the system.
+{\\ \bf DIMENSION: }temperature
+{\\ \bf DEFAULT: }1.0
+{\\ \bf DATA TYPE: }float
+\end{itemize}
+ 
