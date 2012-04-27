@@ -1,4 +1,4 @@
-\subsection{BAROSTAT}
+\section{BAROSTAT}
 \label{BAROSTAT}
 Simulates an external pressure bath to keep the pressure or stress at the external values.
 \paragraph{Attributes}
@@ -21,35 +21,6 @@ Simulates an external pressure bath to keep the pressure or stress at the extern
 {\\ \bf DEFAULT: }'langevin'
 {\\ \bf OPTIONS: }'langevin', 'svr', 'pile\_l', 'pile\_g', 'gle', 'nm\_gle'
 {\\ \bf DATA TYPE: }str
-\end{itemize}
- 
-\paragraph{Fields}
- \begin{itemize}
-\item {\bf A}:
- The friction matrix for GLE thermostats.
-{\\ \bf DIMENSION: }frequency
-{\\ \bf DEFAULT: }[ ]
-{\\ \bf DATA TYPE: }float
-\item {\bf tau}:
- The target temperature for the thermostat.
-{\\ \bf DIMENSION: }temperature
-{\\ \bf DEFAULT: }0.0
-{\\ \bf DATA TYPE: }float
-\item {\bf C}:
- The covariance matrix for GLE thermostats.
-{\\ \bf DIMENSION: }temperature
-{\\ \bf DEFAULT: }[ ]
-{\\ \bf DATA TYPE: }float
-\item {\bf s}:
- Input values for the additional momenta in GLE.
-{\\ \bf DIMENSION: }ms-momentum
-{\\ \bf DEFAULT: }[ ]
-{\\ \bf DATA TYPE: }float
-\item {\bf ethermo}:
- The initial value of the thermostat energy. Only useful in restarts to guarantee continuity of the conserved quantity. 
-{\\ \bf DIMENSION: }energy
-{\\ \bf DEFAULT: }0.0
-{\\ \bf DATA TYPE: }float
 \end{itemize}
  
 \end{itemize}

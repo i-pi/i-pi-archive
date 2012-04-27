@@ -466,6 +466,25 @@ ref{dev}
  
 \end_layout
 
+\begin_layout Itemize
+In chapter
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+~
+\backslash
+ref{hierarchy}
+\end_layout
+
+\end_inset
+
+ a full list of the major classes used in the code is given, along with
+ the appropriate tag names and a brief description of all the fields that
+ can be specified in the xml input file.
+\end_layout
+
 \begin_layout Section
 Shell variables
 \end_layout
@@ -681,8 +700,11 @@ wrappi
 \end_layout
 
 \begin_layout Standard
-To obtain the parameters needed to run Path Integral with Generalized Langevin
- Equation Thermostat (PIGLET) calculations, you can use the website: 
+Parameters to run Path Integral with Generalized Langevin Equation Thermostat
+ (PIGLET) calculations can be found on the website:
+\end_layout
+
+\begin_layout Standard
 \begin_inset Flex URL
 status collapsed
 
@@ -862,14 +884,6 @@ See step 2.
 
 \begin_layout Enumerate
 See step 1.
-\end_layout
-
-\begin_layout Subsection
-Object Hierarchy
-\end_layout
-
-\begin_layout Standard
-[Maybe insert a graphic here?]
 \end_layout
 
 \begin_layout Section
@@ -2213,7 +2227,34 @@ The code uses this hierarchial structure to help read the data; if a particular
 To help detect any user error the acceptable tag names, type of data and
  possible default values are all specified in the code, in a specialized
  input class for each class of object.
- More information on how the xml file is read can be found in Chapter 6.
+ More information on how the xml file is read can be found in chapter
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+~
+\backslash
+ref{dev}
+\end_layout
+
+\end_inset
+
+, and a full list of all the available tags and a brief description of their
+ function is given in chapter
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+~
+\backslash
+ref{hierarchy}
+\end_layout
+
+\end_inset
+
+.
 \end_layout
 
 \begin_layout Subsection
@@ -3149,6 +3190,10 @@ utils
  directory.
 \end_layout
 
+\begin_layout Standard
+The basic way to create a new depend object is to use the function dset:
+\end_layout
+
 \begin_layout Subsection
 Input class
 \end_layout
@@ -3157,6 +3202,204 @@ Input class
 To be able to use the xml input file to create an instance of this new class,
  and to write the file to the restart file, you must create a new input
  class, or modify an old one to recognize the new class.
+\end_layout
+
+\begin_layout Standard
+Each input class must have the following class attributes:
+\end_layout
+
+\begin_layout Description
+fields: This is a dictionary giving the tag names for the objects that can
+ be specified in the xml input file within the tags of your class.
+ The format is 
+\begin_inset Quotes eld
+\end_inset
+
+{
+\begin_inset Quotes erd
+\end_inset
+
+tag_name1
+\begin_inset Quotes erd
+\end_inset
+
+ : (InputClass, {
+\begin_inset Quotes erd
+\end_inset
+
+default
+\begin_inset Quotes erd
+\end_inset
+
+: default_value, 
+\begin_inset Quotes eld
+\end_inset
+
+help
+\begin_inset Quotes erd
+\end_inset
+
+: 
+\begin_inset Quotes eld
+\end_inset
+
+help_string
+\begin_inset Quotes erd
+\end_inset
+
+, 
+\begin_inset Quotes eld
+\end_inset
+
+dtype
+\begin_inset Quotes erd
+\end_inset
+
+: data type, 
+\begin_inset Quotes eld
+\end_inset
+
+options
+\begin_inset Quotes erd
+\end_inset
+
+: ['option1', 'option2', 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ldots
+\end_layout
+
+\end_inset
+
+ ], 
+\begin_inset Quotes eld
+\end_inset
+
+dimension
+\begin_inset Quotes erd
+\end_inset
+
+: dimensionality of the data}), 
+\begin_inset Quotes eld
+\end_inset
+
+tag_name2
+\begin_inset Quotes erd
+\end_inset
+
+: 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ldots
+\end_layout
+
+\end_inset
+
+ }
+\begin_inset Quotes erd
+\end_inset
+
+.
+ Note that the 
+\begin_inset Quotes eld
+\end_inset
+
+dtype
+\begin_inset Quotes erd
+\end_inset
+
+, 
+\begin_inset Quotes eld
+\end_inset
+
+options
+\begin_inset Quotes erd
+\end_inset
+
+ and 
+\begin_inset Quotes eld
+\end_inset
+
+dimension
+\begin_inset Quotes erd
+\end_inset
+
+ only need to be given values if they are a simple InputValue or InputArray
+ class, just containing data and no tags.
+ You should make sure to specify a tag for all the variables that will be
+ necessary to create an instance of your class.
+\end_layout
+
+\begin_layout Description
+attribs: This is a dictionary of the same form as 
+\series bold
+fields
+\series default
+, but for the tag attribute data instead.
+ These should always be simple data classes InputValue or InputArray, as
+ their value must be specified by the user.
+\end_layout
+
+\begin_layout Description
+default_help: This is the help string that will be given to help explain
+ the new class to others if no other help string is given.
+ It will also be the help string seen in the section in the latex file for
+ the new class.
+\end_layout
+
+\begin_layout Description
+default_label: This is the label used to identify the appropriate section
+ in the latex help file so that different sections can cross-reference with
+ the others.
+\end_layout
+
+\begin_layout Standard
+The class can have the following functions:
+\end_layout
+
+\begin_layout Description
+fetch: This takes the InputClass object and creates a new object of your
+ class from it.
+ You must make sure to call the base class fetch function using the standard
+ Python function super.
+\end_layout
+
+\begin_layout Description
+store: This takes an object of your class, and stores the relevant information
+ needed to reinitialize it in an InputClass object.
+ You must make sure to call the base class store function using the standard
+ Python function super.
+\end_layout
+
+\begin_layout Description
+check: This is an optional function that will check to see if the data specified
+ in the input file will create a valid instance of your class, and possibly
+ raise an exception otherwise.
+ You must make sure to call the base class check function using the standard
+ Python function super.
+\end_layout
+
+\begin_layout Description
+write: This is a function that you can use to override the base class write
+ function, so that you can tailor what is printed to the restart file.
+\end_layout
+
+\begin_layout Standard
+The last thing that you must do to be able to use your class is to create
+ an appropriate fields tag in the parent class where you want the instance
+ of your class to be held, with InputClass set to the name of your input
+ class, and alter the check, store and fetch functions of the input class
+ of the parent class.
 \end_layout
 
 \begin_layout Section
@@ -3168,6 +3411,26 @@ This code is still in developement, and any submissions to improve the code
  are welcome.
  However, to be considered as a candidate for inclusion in the main version
  of the code, and additions must adhere to the following policies:
+\end_layout
+
+\begin_layout Chapter
+Input class hierarchy
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+label{hierarchy}
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard

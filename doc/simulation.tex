@@ -1,4 +1,4 @@
-\subsection{SIMULATION}
+\section{SIMULATION}
 \label{SIMULATION}
 This is the top level class that deals with the running of the simulation, including holding the simulation specific properties such as the time step and outputting the data.
 \paragraph{Fields}
@@ -12,16 +12,6 @@ This is the top level class that deals with the running of the simulation, inclu
 {\\ \bf DEFAULT: }'socket'
 {\\ \bf OPTIONS: }'socket'
 {\\ \bf DATA TYPE: }str
-\end{itemize}
- 
-\paragraph{Fields}
- \begin{itemize}
-\item {\bf interface}:
- Specifies the parameters for the socket interface.
-\item {\bf parameters}:
- deprecated dictionary of initialization parameters. May be removed in the future.
-{\\ \bf DEFAULT: }\{ \}
-{\\ \bf DATA TYPE: }dict
 \end{itemize}
  
 \item {\bf trajectories}:
@@ -38,47 +28,6 @@ This is the top level class that deals with the running of the simulation, inclu
  
 \item {\bf \hyperref[ATOMS]{atoms} }:
  Deals with classical simulations.
-\paragraph{Fields}
- \begin{itemize}
-\item {\bf q}:
- The positions of the atoms, in the format [x1, y1, z1, x2, \ldots  ]
-{\\ \bf DIMENSION: }length
-{\\ \bf DEFAULT: }[ ]
-{\\ \bf DATA TYPE: }float
-\item {\bf p}:
- The momenta of the atoms, in the format [px1, py1, pz1, px2, \ldots  ]
-{\\ \bf DIMENSION: }momentum
-{\\ \bf DEFAULT: }[ ]
-{\\ \bf DATA TYPE: }float
-\item {\bf natoms}:
- The number of atoms
-{\\ \bf DEFAULT: }0
-{\\ \bf DATA TYPE: }int
-\item {\bf names}:
- The names of the atoms, in the format [name1, name2, \ldots  ]
-{\\ \bf DEFAULT: }[ ]
-{\\ \bf DATA TYPE: }str
-\item {\bf file\_units}:
- The units in which the lengths in the configuration file are given.
-{\\ \bf DEFAULT: }''
-{\\ \bf OPTIONS: }'', 'nanometer', 'angstrom', 'atomic\_unit'
-{\\ \bf DATA TYPE: }str
-\item {\bf from\_file}:
- Gives the name of the file from which the configurations are taken, if present.
-{\\ \bf DEFAULT: }''
-{\\ \bf DATA TYPE: }str
-\item {\bf m}:
- The masses of the atoms, in the format [m1, m2, \ldots  ]
-{\\ \bf DIMENSION: }mass
-{\\ \bf DEFAULT: }[ ]
-{\\ \bf DATA TYPE: }float
-\item {\bf init\_temp}:
- The temperature at which the initial velocity distribution is taken, if applicable.
-{\\ \bf DIMENSION: }temperature
-{\\ \bf DEFAULT: }-1.0
-{\\ \bf DATA TYPE: }float
-\end{itemize}
- 
 \item {\bf step}:
  How many time steps have been done.
 {\\ \bf DEFAULT: }0
@@ -101,43 +50,6 @@ This is the top level class that deals with the running of the simulation, inclu
  
 \item {\bf \hyperref[BEADS]{beads} }:
  Deals with path integral simulations.
-\paragraph{Fields}
- \begin{itemize}
-\item {\bf q}:
- The positions of the atoms, in the format [x1, y1, z1, x2, \ldots  ]
-{\\ \bf DIMENSION: }length
-{\\ \bf DEFAULT: }[ ]
-{\\ \bf DATA TYPE: }float
-\item {\bf p}:
- The momenta of the atoms, in the format [px1, py1, pz1, px2, \ldots  ]
-{\\ \bf DIMENSION: }momentum
-{\\ \bf DEFAULT: }[ ]
-{\\ \bf DATA TYPE: }float
-\item {\bf natoms}:
- The number of atoms
-{\\ \bf DEFAULT: }0
-{\\ \bf DATA TYPE: }int
-\item {\bf start\_centroid}:
- An atoms object from which the centroid coordinates can be initialized
-\item {\bf nbeads}:
- The number of beads
-{\\ \bf DATA TYPE: }int
-\item {\bf m}:
- The masses of the atoms, in the format [m1, m2, \ldots  ]
-{\\ \bf DIMENSION: }mass
-{\\ \bf DEFAULT: }[ ]
-{\\ \bf DATA TYPE: }float
-\item {\bf init\_temp}:
- The temperature at which the initial velocity distribution is taken, if applicable.
-{\\ \bf DIMENSION: }temperature
-{\\ \bf DEFAULT: }-1.0
-{\\ \bf DATA TYPE: }float
-\item {\bf names}:
- The names of the atoms, in the format [name1, name2, \ldots  ]
-{\\ \bf DEFAULT: }[ ]
-{\\ \bf DATA TYPE: }str
-\end{itemize}
- 
 \item {\bf total\_steps}:
  The total number of steps that will be done.
 {\\ \bf DEFAULT: }1000
@@ -160,58 +72,6 @@ This is the top level class that deals with the running of the simulation, inclu
 {\\ \bf DATA TYPE: }bool
 \end{itemize}
  
-\paragraph{Fields}
- \begin{itemize}
-\item {\bf from\_file}:
- A file from which to take the cell parameters from.
-{\\ \bf DEFAULT: }''
-{\\ \bf DATA TYPE: }str
-\item {\bf p}:
- The cell 'momenta' matrix, used in constant pressure simulations.
-{\\ \bf DIMENSION: }momentum
-{\\ \bf DEFAULT: }
-      [[ 0.  0.  0.]
-       [ 0.  0.  0.]
-       [ 0.  0.  0.]]
-{\\ \bf DATA TYPE: }float
-\item {\bf init\_temp}:
- The temperature at which the initial velocity distribution is taken, if applicable.
-{\\ \bf DIMENSION: }temperature
-{\\ \bf DEFAULT: }-1.0
-{\\ \bf DATA TYPE: }float
-\item {\bf P}:
- The scalar cell 'momentum', used in constant pressure simulations.
-{\\ \bf DIMENSION: }momentum
-{\\ \bf DEFAULT: }0.0
-{\\ \bf DATA TYPE: }float
-\item {\bf file\_units}:
- The units in which the lengths in the configuration file are given.
-{\\ \bf DEFAULT: }''
-{\\ \bf OPTIONS: }'', 'nanometer', 'angstrom', 'atomic\_unit'
-{\\ \bf DATA TYPE: }str
-\item {\bf h}:
- The cell vector matrix
-{\\ \bf DIMENSION: }length
-{\\ \bf DEFAULT: }
-      [[ 0.  0.  0.]
-       [ 0.  0.  0.]
-       [ 0.  0.  0.]]
-{\\ \bf DATA TYPE: }float
-\item {\bf h0}:
- The reference cell vector matrix. Defined as the unstressed equilibrium cell.
-{\\ \bf DIMENSION: }length
-{\\ \bf DEFAULT: }
-      [[ 0.  0.  0.]
-       [ 0.  0.  0.]
-       [ 0.  0.  0.]]
-{\\ \bf DATA TYPE: }float
-\item {\bf m}:
- The 'mass' of the cell, used in constant pressure simulations.
-{\\ \bf DIMENSION: }mass
-{\\ \bf DEFAULT: }0.0
-{\\ \bf DATA TYPE: }float
-\end{itemize}
- 
 \item {\bf stride}:
  Dictionary holding the number of steps between printing the different kinds of files. The allowed keywords are ['checkpoint', 'properties', 'progress', 'trajectory', centroid']
 {\\ \bf DEFAULT: }\{ \}
@@ -222,30 +82,6 @@ This is the top level class that deals with the running of the simulation, inclu
 {\\ \bf DATA TYPE: }str
 \item {\bf \hyperref[RANDOM]{prng} }:
  Deals with the pseudo-random number generator.
-\paragraph{Fields}
- \begin{itemize}
-\item {\bf has\_gauss}:
- Determines whether there is a stored gaussian number or not. A value of 0 means there is none stored.
-{\\ \bf DEFAULT: }0
-{\\ \bf DATA TYPE: }int
-\item {\bf state}:
- Gives the state vector for the random number generator. Avoid directly modifying this unless you are very familiar with the inner workings of the algorithm used.
-{\\ \bf DEFAULT: }[ ]
-{\\ \bf DATA TYPE: }uint64
-\item {\bf seed}:
- This is the seed number used to generate the initial state of the random number generator.
-{\\ \bf DEFAULT: }123456
-{\\ \bf DATA TYPE: }int
-\item {\bf set\_pos}:
- Gives the position in the state array that the random number generator is reading from.
-{\\ \bf DEFAULT: }0
-{\\ \bf DATA TYPE: }int
-\item {\bf gauss}:
- The stored Gaussian number.
-{\\ \bf DEFAULT: }0.0
-{\\ \bf DATA TYPE: }float
-\end{itemize}
- 
 \item {\bf \hyperref[ENSEMBLE]{ensemble} }:
  Holds all the information that is ensemble specific, such as the temperature and the external pressure, and the thermostats and barostats that control it.
 \paragraph{Attributes}
@@ -255,41 +91,6 @@ This is the top level class that deals with the running of the simulation, inclu
 {\\ \bf DEFAULT: }'nve'
 {\\ \bf OPTIONS: }'nve', 'nvt', 'npt', 'nst'
 {\\ \bf DATA TYPE: }str
-\end{itemize}
- 
-\paragraph{Fields}
- \begin{itemize}
-\item {\bf stress}:
- The external stress.
-{\\ \bf DIMENSION: }pressure
-{\\ \bf DEFAULT: }
-      [[ 1.  0.  0.]
-       [ 0.  1.  0.]
-       [ 0.  0.  1.]]
-{\\ \bf DATA TYPE: }float
-\item {\bf barostat}:
- Simulates an external pressure bath to keep the pressure or stress at the external values.
-\item {\bf thermostat}:
- The thermostat for the atoms, keeps the atom velocity distribution at the correct temperature.
-\item {\bf timestep}:
- The time step.
-{\\ \bf DIMENSION: }time
-{\\ \bf DEFAULT: }'1.0'
-{\\ \bf DATA TYPE: }float
-\item {\bf pressure}:
- The external pressure.
-{\\ \bf DIMENSION: }pressure
-{\\ \bf DEFAULT: }'1.0'
-{\\ \bf DATA TYPE: }float
-\item {\bf fixcom}:
- This describes whether the centre of mass of the particles is fixed.
-{\\ \bf DEFAULT: }False
-{\\ \bf DATA TYPE: }bool
-\item {\bf temperature}:
- The temperature of the system.
-{\\ \bf DIMENSION: }temperature
-{\\ \bf DEFAULT: }1.0
-{\\ \bf DATA TYPE: }float
 \end{itemize}
  
 \end{itemize}

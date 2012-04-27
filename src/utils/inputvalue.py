@@ -254,7 +254,7 @@ class Input(object):
             rstr += "\\documentclass[12pt,fleqn]{report}"
             rstr += "\n\\begin{document}\n"
          if self._label != "" and ref:
-            rstr += "\\subsection{" + self._label + "}\n"
+            rstr += "\\section{" + self._label + "}\n"
             rstr += "\\label{" + self._label + "}\n"
 
       rstr += self._help + "\n"
@@ -276,17 +276,17 @@ class Input(object):
       if hasattr(self, "type") and hasattr(self.type, "__name__"):
          rstr += "{\\\\ \\bf DATA TYPE: }" + self.type.__name__ + "\n"
       
-      if len(self.attribs) != 0 and level != stop_level:
+      if len(self.attribs) != 0:
          rstr += "\\paragraph{Attributes}\n \\begin{itemize}\n"
          for a in self.attribs:
-            rstr += "\\item {\\bf " + a + "}:\n " + self.__dict__[a].help_latex(level+1, stop_level)
+            rstr += "\\item {\\bf " + a + "}:\n " + self.__dict__[a].help_latex(level, stop_level, ref)
          rstr += "\\end{itemize}\n \n"
             
       if len(self.fields) != 0 and level != stop_level:
          rstr += "\\paragraph{Fields}\n \\begin{itemize}\n"
          for f in self.fields:
             if self.__dict__[f]._label == "" or not ref:
-               rstr += "\\item {\\bf " + f + "}:\n " + self.__dict__[f].help_latex(level+1, stop_level)
+               rstr += "\\item {\\bf " + f + "}:\n " + self.__dict__[f].help_latex(level+1, stop_level, ref)
             else:
                rstr += "\\item {\\bf \hyperref[" + self.__dict__[f]._label + "]{" + f + "} }:\n " + self.__dict__[f].help_latex(level+1, stop_level)
          rstr += "\\end{itemize}\n \n"
@@ -351,7 +351,7 @@ class Input(object):
       if (not stop_level is None and level > stop_level):
          return ""
 
-      show_attribs = (len(self.attribs) != 0 and level != stop_level)
+      show_attribs = (len(self.attribs) != 0)
       show_fields = (len(self.fields) != 0 and level != stop_level)
 
       rstr = ""
