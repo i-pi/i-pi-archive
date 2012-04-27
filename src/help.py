@@ -45,6 +45,9 @@ def help(latex=False, xml=False, levels = None, option='simulation', prefix="hel
       option: A string specifying which object will be used as the root object
          for the latex and xml files. Defaults to 'simulation'.
       prefix: File prefix for the output files. Defaults to 'help'.
+      ref: Boolean specifying whether the latex file will be a stand-alone
+         document, or will instead be intended to be used in a larger document
+         with cross references between the different objects.
    """
 
    simrestart = objects[option]

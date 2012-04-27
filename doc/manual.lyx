@@ -2583,7 +2583,7 @@ Quantum Espresso
 \end_layout
 
 \begin_layout Subsection
-dlpoly
+CP2K
 \end_layout
 
 \begin_layout Section
@@ -3191,7 +3191,450 @@ utils
 \end_layout
 
 \begin_layout Standard
-The basic way to create a new depend object is to use the function dset:
+Since the 
+\begin_inset Quotes eld
+\end_inset
+
+dobject
+\begin_inset Quotes erd
+\end_inset
+
+ class overwrites the standard way of getting and setting functions, so
+ there is a special syntax for creating them.
+ To create a depend object 
+\begin_inset Quotes eld
+\end_inset
+
+value
+\begin_inset Quotes erd
+\end_inset
+
+ with name 
+\begin_inset Quotes eld
+\end_inset
+
+name
+\begin_inset Quotes erd
+\end_inset
+
+ inside an object 
+\begin_inset Quotes eld
+\end_inset
+
+object
+\begin_inset Quotes erd
+\end_inset
+
+, you need to use the syntax: 
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+dset(object, 
+\begin_inset Quotes eld
+\end_inset
+
+name
+\begin_inset Quotes erd
+\end_inset
+
+, value)
+\end_layout
+
+\begin_layout Standard
+The arguments that are important for creating 
+\begin_inset Quotes eld
+\end_inset
+
+depend
+\begin_inset Quotes erd
+\end_inset
+
+ objects are:
+\end_layout
+
+\begin_layout Description
+name: A string giving the name of the depend object.
+\end_layout
+
+\begin_layout Description
+value: 
+\begin_inset Quotes eld
+\end_inset
+
+depend_array
+\begin_inset Quotes erd
+\end_inset
+
+ only.
+ Defines the memory the object references.
+\end_layout
+
+\begin_layout Description
+synchro: An optional 
+\begin_inset Quotes eld
+\end_inset
+
+synchronizer
+\begin_inset Quotes erd
+\end_inset
+
+ object.
+ This keeps track of different views on the same data.
+\end_layout
+
+\begin_layout Description
+func: An optional function to recalculate the object when one of its dependencie
+s are updated.
+\end_layout
+
+\begin_layout Description
+dependencies: An optional list of the 
+\begin_inset Quotes eld
+\end_inset
+
+depend
+\begin_inset Quotes erd
+\end_inset
+
+ objects which are required to recalculate the new 
+\begin_inset Quotes eld
+\end_inset
+
+depend
+\begin_inset Quotes erd
+\end_inset
+
+ object.
+ Essentially all the 
+\begin_inset Quotes eld
+\end_inset
+
+depend
+\begin_inset Quotes erd
+\end_inset
+
+ objects that appear in 
+\series bold
+func
+\series default
+.
+\end_layout
+
+\begin_layout Standard
+There are two different classes of 
+\begin_inset Quotes eld
+\end_inset
+
+depend
+\begin_inset Quotes erd
+\end_inset
+
+ objects, 
+\begin_inset Quotes eld
+\end_inset
+
+depend_value
+\begin_inset Quotes erd
+\end_inset
+
+ and 
+\begin_inset Quotes eld
+\end_inset
+
+depend_array
+\begin_inset Quotes erd
+\end_inset
+
+.
+ The 
+\begin_inset Quotes eld
+\end_inset
+
+depend_array
+\begin_inset Quotes erd
+\end_inset
+
+ class is a specialist class for NumPy arrays, to deal with the slicing
+ mechanism.
+ This means that for the 
+\begin_inset Quotes eld
+\end_inset
+
+depend_array
+\begin_inset Quotes erd
+\end_inset
+
+ class there is a second method of creating new 
+\begin_inset Quotes eld
+\end_inset
+
+depend
+\begin_inset Quotes erd
+\end_inset
+
+ objects, you can take a slice of an old one.
+ 
+\end_layout
+
+\begin_layout Standard
+This will return a slice with the same dependencies and synchro objects,
+ and a reference to the correct slice of the base array of the parent 
+\begin_inset Quotes eld
+\end_inset
+
+depend_array
+\begin_inset Quotes erd
+\end_inset
+
+ object, so that the automatic updating keeps all the data consistent.
+ Note that it is therefore incorrect to create a new 
+\begin_inset Quotes eld
+\end_inset
+
+depend_array
+\begin_inset Quotes erd
+\end_inset
+
+ object that is a slice of an old one using the 
+\series bold
+dset
+\series default
+ function, as it will not copy the dependencies correctly.
+\end_layout
+
+\begin_layout Standard
+There is also a method for dealing with separate objects that are different
+ views on the same data; the 
+\begin_inset Quotes eld
+\end_inset
+
+synchronizer
+\begin_inset Quotes erd
+\end_inset
+
+ object.
+ This object is shared with all of the different views to the same data,
+ and deals with keeping all of them consistent with each other.
+\end_layout
+
+\begin_layout Standard
+Also, the 
+\series bold
+func
+\series default
+ initialization argument must be a dictionary of functions that transform
+ from the 
+\begin_inset Quotes eld
+\end_inset
+
+depend
+\begin_inset Quotes erd
+\end_inset
+
+ object being created to the other synchronized objects, using the syntax:
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+func = {
+\begin_inset Quotes erd
+\end_inset
+
+synchro1
+\begin_inset Quotes erd
+\end_inset
+
+: func1, 
+\begin_inset Quotes eld
+\end_inset
+
+synchro2
+\begin_inset Quotes erd
+\end_inset
+
+: func2, 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ldots
+\end_layout
+
+\end_inset
+
+ }
+\end_layout
+
+\begin_layout Standard
+Where 
+\begin_inset Quotes eld
+\end_inset
+
+synchroN
+\begin_inset Quotes erd
+\end_inset
+
+ is the 
+\begin_inset Quotes eld
+\end_inset
+
+name
+\begin_inset Quotes erd
+\end_inset
+
+ of the Nth synchro object, and 
+\begin_inset Quotes eld
+\end_inset
+
+funcN
+\begin_inset Quotes erd
+\end_inset
+
+ transforms from the 
+\begin_inset Quotes eld
+\end_inset
+
+synchroN
+\begin_inset Quotes erd
+\end_inset
+
+ object to the one being created.
+\end_layout
+
+\begin_layout Standard
+Finally, there are several utility functions that help to manipulate 
+\begin_inset Quotes eld
+\end_inset
+
+depend
+\begin_inset Quotes erd
+\end_inset
+
+ objects:
+\end_layout
+
+\begin_layout Description
+dget: Gets a specified 
+\begin_inset Quotes eld
+\end_inset
+
+depend
+\begin_inset Quotes erd
+\end_inset
+
+ object inside a 
+\begin_inset Quotes eld
+\end_inset
+
+dobject
+\begin_inset Quotes erd
+\end_inset
+
+ class.
+ Needed since the 
+\begin_inset Quotes eld
+\end_inset
+
+dobject
+\begin_inset Quotes erd
+\end_inset
+
+ class overrides the standard Python method of getting attributes, so you
+ need a way to get the 
+\begin_inset Quotes eld
+\end_inset
+
+depend
+\begin_inset Quotes erd
+\end_inset
+
+ object and not just its value.
+\end_layout
+
+\begin_layout Description
+dset: Creates a 
+\begin_inset Quotes eld
+\end_inset
+
+depend
+\begin_inset Quotes erd
+\end_inset
+
+ object inside a 
+\begin_inset Quotes eld
+\end_inset
+
+dobject
+\begin_inset Quotes erd
+\end_inset
+
+ class.
+ Needed for the same reason as 
+\series bold
+dget
+\series default
+.
+\end_layout
+
+\begin_layout Description
+depstrip: Takes a 
+\begin_inset Quotes eld
+\end_inset
+
+depend_array
+\begin_inset Quotes erd
+\end_inset
+
+ object and returns the base array.
+ Useful in algorithms where the array is used as a read-only variable, as
+ it removes the dependancy network from the object, and so speeds up the
+ calculation.
+\end_layout
+
+\begin_layout Description
+depcopy: Copies the 
+\begin_inset Quotes eld
+\end_inset
+
+dependencies
+\begin_inset Quotes erd
+\end_inset
+
+ and 
+\begin_inset Quotes eld
+\end_inset
+
+synchronizer
+\begin_inset Quotes erd
+\end_inset
+
+ objects from one 
+\begin_inset Quotes eld
+\end_inset
+
+depend
+\begin_inset Quotes erd
+\end_inset
+
+ object to another.
+\end_layout
+
+\begin_layout Description
+deppipe: Creates a new 
+\begin_inset Quotes eld
+\end_inset
+
+depend
+\begin_inset Quotes erd
+\end_inset
+
+ object so that it keeps the same value as one that has already been created.
 \end_layout
 
 \begin_layout Subsection
@@ -3263,7 +3706,7 @@ options
 \begin_inset Quotes erd
 \end_inset
 
-: ['option1', 'option2', 
+: [option1, option2, 
 \begin_inset ERT
 status open
 
@@ -3396,10 +3839,10 @@ write: This is a function that you can use to override the base class write
 
 \begin_layout Standard
 The last thing that you must do to be able to use your class is to create
- an appropriate fields tag in the parent class where you want the instance
- of your class to be held, with InputClass set to the name of your input
- class, and alter the check, store and fetch functions of the input class
- of the parent class.
+ an appropriate fields tag in the parent input class where you want the
+ instance of your class to be held, with InputClass set to the name of your
+ input class, and alter the check, store and fetch functions of the input
+ class of the parent class.
 \end_layout
 
 \begin_layout Section

@@ -239,6 +239,9 @@ class Input(object):
          level: Current level of the hierarchy being considered.
          stop_level: The depth to which information will be given. If not given,
             will give all information.
+         ref: A boolean giving whether the latex file produced will be a 
+            stand-alone document, or will be intended as a section of a larger
+            document with cross-references between the different sections.
 
       Returns: 
          A LaTeX formatted string that can be compiled to give a help 
@@ -305,8 +308,10 @@ class Input(object):
 
       Args:
          default: The object that needs to be converted to a string.
-         dtype: The type of data being printed.
          indent: The indent at the beginning of a line.
+         latex: A boolean giving whether the string will be latex-format.
+
+      Returns: A formatted string.
       """
 
       if type(default) is np.ndarray:
