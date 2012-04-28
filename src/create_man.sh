@@ -1,6 +1,4 @@
-help_dir=~/projects/NST_sim/wrap-pi/doc
-src_dir=~/projects/NST_sim/wrap-pi/src
-cd $src_dir
+help_dir=../doc
 python help.py -x -o $help_dir/help
 python help.py -l -n 1 -o $help_dir/simulation -r
 python help.py -l -n 1 -o $help_dir/atoms -r -i atoms

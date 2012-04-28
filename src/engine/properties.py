@@ -311,7 +311,7 @@ class Properties(dobject):
 
       return bead/self.beads.nbeads + 0.5*(1.0/self.beads.nbeads - 1.0)
 
-   def get_linlin(self, ux=0, uy=0, uz=0, atom=0):
+   def get_linlin(self, ux=0, uy=0, uz=0, atom='H'):
       """Gives the estimator for the momentum distribution, by opening the 
       ring polymer path.
 
@@ -319,21 +319,31 @@ class Properties(dobject):
          ux: The x component of the opening vector.
          uy: The y component of the opening vector.
          uz: The z component of the opening vector.
-         atom: The atom for which the path will be opened.
+         atom: The atom type for which the path will be opened.
       """
 
       u = np.array([float(ux), float(uy), float(uz)])
-      atom = int(atom)
+      count = 0
+      n = 0.0
       for at in range(self.beads.natoms):
-         if at == atom:
+         if self.beads.names[at] == atom:
+            index = at 
+            # Keeps record of one of the atom indices so we can get
+            # the mass later.
+
+            count += 1
+            self.dbeads.q[:] = self.beads.q[:]
             for bead in range(self.beads.nbeads):
-               self.dbeads.q[bead,3*at:3*(at+1)] = self.opening(bead)*u + self.beads.q[bead,3*at:3*(at+1)]
-         else:
-            self.dbeads.q[:,3*at:3*(at+1)] = self.beads.q[:,3*at:3*(at+1)]
+               self.dbeads.q[bead,3*at:3*(at+1)] += self.opening(bead)*u
+            n += math.exp(-(self.dforces.pot - self.forces.pot)/(self.ensemble.ntemp*Constants.kb))
 
-      n0 = math.exp(self.beads.m[atom]*np.dot(u,u)*self.ensemble.temp*Constants.kb/(2*Constants.hbar**2))
 
-      return n0*math.exp(-(self.dforces.pot - self.forces.pot)/(self.ensemble.ntemp*Constants.kb))
+      if count == 0:
+         print "Warning, no atom with the given name found for lin-lin momentum distribution estimator."
+         return 0.0
+      else:
+         n0 = math.exp(self.beads.m[index]*np.dot(u,u)*self.ensemble.temp*Constants.kb/(2*Constants.hbar**2))
+         return n*n0/float(count)
 
    def wrap_cell(self, x=0, v=0):
       """Returns the the x-th component of the v-th cell vector."""
