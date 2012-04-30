@@ -29,11 +29,11 @@ class InputForce(Input):
    attribs = { "type" : ( InputValue, { "dtype"   :  str, 
                                         "default" : "socket",
                                         "options" : [ "socket" ],
-                                        "help"    : "Specifies which kind of force object is created"  }  )}
+                                        "help"    : "Specifies which kind of force object is created."  }  )}
    fields =  { "interface"  : ( InputInterface, {"help": InputInterface.default_help } ),
                "parameters" : ( InputValue, { "dtype"   : dict, 
                                               "default" : {},
-                                              "help"    : "deprecated dictionary of initialization parameters. May be removed in the future." }) }
+                                              "help"    : "Deprecated dictionary of initialization parameters. May be removed in the future." }) }
 
    default_help = "Deals with the assigning of jobs to different driver codes, and collecting the data."
    default_label = "FORCES"

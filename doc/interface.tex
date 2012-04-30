@@ -4,7 +4,7 @@ Specifies the parameters for the socket interface.
 \paragraph{Attributes}
  \begin{itemize}
 \item {\bf mode}:
- Specifies whether the driver interface will listen onto a internet socket [inet] or onto a unix socket [unix]
+ Specifies whether the driver interface will listen onto a internet socket [inet] or onto a unix socket [unix].
 {\\ \bf DEFAULT: }'inet'
 {\\ \bf OPTIONS: }'unix', 'inet'
 {\\ \bf DATA TYPE: }str
@@ -13,15 +13,15 @@ Specifies the parameters for the socket interface.
 \paragraph{Fields}
  \begin{itemize}
 \item {\bf latency}:
- This gives the number of seconds between each check for new clients
+ This gives the number of seconds between each check for new clients.
 {\\ \bf DEFAULT: }0.001
 {\\ \bf DATA TYPE: }float
 \item {\bf slots}:
- This gives the number of client codes that queue at any one time
+ This gives the number of client codes that can queue at any one time.
 {\\ \bf DEFAULT: }4
 {\\ \bf DATA TYPE: }int
 \item {\bf port}:
- This gives the port number that defines the socket
+ This gives the port number that defines the socket.
 {\\ \bf DEFAULT: }31415
 {\\ \bf DATA TYPE: }int
 \item {\bf timeout}:
@@ -29,7 +29,7 @@ Specifies the parameters for the socket interface.
 {\\ \bf DEFAULT: }0.0
 {\\ \bf DATA TYPE: }float
 \item {\bf address}:
- This gives the server address that the socket will run on
+ This gives the server address that the socket will run on.
 {\\ \bf DEFAULT: }'localhost'
 {\\ \bf DATA TYPE: }str
 \end{itemize}

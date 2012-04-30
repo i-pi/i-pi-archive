@@ -4,7 +4,7 @@ Deals with the cell parameters, and stores their momenta in flexible cell calcul
 \paragraph{Attributes}
  \begin{itemize}
 \item {\bf flexible}:
- Whether the cell parameters can change during the simulation.
+ Describes whether the simulation box shape can change, or just the volume.
 {\\ \bf DEFAULT: }False
 {\\ \bf DATA TYPE: }bool
 \end{itemize}
@@ -26,28 +26,18 @@ Deals with the cell parameters, and stores their momenta in flexible cell calcul
 \paragraph{Attributes}
  \begin{itemize}
 \item {\bf shape}:
- The shape of the array
+ The shape of the array.
 {\\ \bf DEFAULT: }(0,)
 {\\ \bf DATA TYPE: }tuple
 \end{itemize}
  
-\item {\bf init\_temp}:
- The temperature at which the initial velocity distribution is taken, if applicable.
-{\\ \bf DIMENSION: }temperature
-{\\ \bf DEFAULT: }-1.0
-{\\ \bf DATA TYPE: }float
-\item {\bf P}:
- The scalar cell 'momentum', used in constant pressure simulations.
-{\\ \bf DIMENSION: }momentum
-{\\ \bf DEFAULT: }0.0
-{\\ \bf DATA TYPE: }float
 \item {\bf file\_units}:
  The units in which the lengths in the configuration file are given.
 {\\ \bf DEFAULT: }''
 {\\ \bf OPTIONS: }'', 'nanometer', 'angstrom', 'atomic\_unit'
 {\\ \bf DATA TYPE: }str
 \item {\bf h}:
- The cell vector matrix
+ The cell vector matrix.
 {\\ \bf DIMENSION: }length
 {\\ \bf DEFAULT: }
       [[ 0.  0.  0.]
@@ -57,13 +47,13 @@ Deals with the cell parameters, and stores their momenta in flexible cell calcul
 \paragraph{Attributes}
  \begin{itemize}
 \item {\bf shape}:
- The shape of the array
+ The shape of the array.
 {\\ \bf DEFAULT: }(0,)
 {\\ \bf DATA TYPE: }tuple
 \end{itemize}
  
 \item {\bf h0}:
- The reference cell vector matrix. Defined as the unstressed equilibrium cell.
+ The reference cell vector matrix. Defined as the unstressed equilibrium cell. Will be given the same value as h if not specified by the user.
 {\\ \bf DIMENSION: }length
 {\\ \bf DEFAULT: }
       [[ 0.  0.  0.]
@@ -73,7 +63,7 @@ Deals with the cell parameters, and stores their momenta in flexible cell calcul
 \paragraph{Attributes}
  \begin{itemize}
 \item {\bf shape}:
- The shape of the array
+ The shape of the array.
 {\\ \bf DEFAULT: }(0,)
 {\\ \bf DATA TYPE: }tuple
 \end{itemize}
@@ -81,6 +71,11 @@ Deals with the cell parameters, and stores their momenta in flexible cell calcul
 \item {\bf m}:
  The 'mass' of the cell, used in constant pressure simulations.
 {\\ \bf DIMENSION: }mass
+{\\ \bf DEFAULT: }0.0
+{\\ \bf DATA TYPE: }float
+\item {\bf P}:
+ The scalar cell 'momentum', used in constant pressure simulations.
+{\\ \bf DIMENSION: }momentum
 {\\ \bf DEFAULT: }0.0
 {\\ \bf DATA TYPE: }float
 \end{itemize}

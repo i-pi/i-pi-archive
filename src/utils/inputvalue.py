@@ -550,7 +550,7 @@ class InputArray(Input):
  
    attribs = { "shape" : (InputValue, 
                  {"dtype": tuple, 
-                  "help": "The shape of the array",
+                  "help": "The shape of the array.",
                   "default": (0,)}) }
 
    def __init__(self, help=None, dimension=None, units=None, default=None, dtype=None):

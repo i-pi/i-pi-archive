@@ -23,7 +23,7 @@ Holds all the information that is ensemble specific, such as the temperature and
 \paragraph{Attributes}
  \begin{itemize}
 \item {\bf shape}:
- The shape of the array
+ The shape of the array.
 {\\ \bf DEFAULT: }(0,)
 {\\ \bf DATA TYPE: }tuple
 \end{itemize}
@@ -33,7 +33,7 @@ Holds all the information that is ensemble specific, such as the temperature and
 \paragraph{Attributes}
  \begin{itemize}
 \item {\bf kind}:
- The type of barostat.
+ The type of barostat. 'Rigid' gives a barostat that keeps the internal pressure constant by allowing cell volume changes, whereas flexible allows the shape of the cell to fluctuate too.
 {\\ \bf DEFAULT: }'rigid'
 {\\ \bf OPTIONS: }'rigid', 'flexible'
 {\\ \bf DATA TYPE: }str

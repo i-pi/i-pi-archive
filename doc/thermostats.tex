@@ -20,13 +20,13 @@ Simulates an external heat bath to keep the velocity distribution at the correct
 \paragraph{Attributes}
  \begin{itemize}
 \item {\bf shape}:
- The shape of the array
+ The shape of the array.
 {\\ \bf DEFAULT: }(0,)
 {\\ \bf DATA TYPE: }tuple
 \end{itemize}
  
 \item {\bf tau}:
- The target temperature for the thermostat.
+ The friction coefficient for white noise thermostats.
 {\\ \bf DIMENSION: }temperature
 {\\ \bf DEFAULT: }0.0
 {\\ \bf DATA TYPE: }float
@@ -38,7 +38,7 @@ Simulates an external heat bath to keep the velocity distribution at the correct
 \paragraph{Attributes}
  \begin{itemize}
 \item {\bf shape}:
- The shape of the array
+ The shape of the array.
 {\\ \bf DEFAULT: }(0,)
 {\\ \bf DATA TYPE: }tuple
 \end{itemize}
@@ -51,13 +51,13 @@ Simulates an external heat bath to keep the velocity distribution at the correct
 \paragraph{Attributes}
  \begin{itemize}
 \item {\bf shape}:
- The shape of the array
+ The shape of the array.
 {\\ \bf DEFAULT: }(0,)
 {\\ \bf DATA TYPE: }tuple
 \end{itemize}
  
 \item {\bf ethermo}:
- The initial value of the thermostat energy. Only useful in restarts to guarantee continuity of the conserved quantity. 
+ The initial value of the thermostat energy. Used when the simulation is restarted to guarantee continuity of the conserved quantity.
 {\\ \bf DIMENSION: }energy
 {\\ \bf DEFAULT: }0.0
 {\\ \bf DATA TYPE: }float

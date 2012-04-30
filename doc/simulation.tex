@@ -8,26 +8,26 @@ This is the top level class that deals with the running of the simulation, inclu
 \paragraph{Attributes}
  \begin{itemize}
 \item {\bf type}:
- Specifies which kind of force object is created
+ Specifies which kind of force object is created.
 {\\ \bf DEFAULT: }'socket'
 {\\ \bf OPTIONS: }'socket'
 {\\ \bf DATA TYPE: }str
 \end{itemize}
  
 \item {\bf trajectories}:
- A list of the allowed properties to print out the per-atom or per-bead trajectories of. Allowed values are ['positions', 'velocities', 'forces', 'kinetic\_cv', 'centroid'].
+ A list of the properties to print out the per-atom or per-bead trajectories of. Allowed values are ['positions', 'velocities', 'forces', 'kinetic\_cv', 'centroid'].
 {\\ \bf DEFAULT: }[ ]
 {\\ \bf DATA TYPE: }str
 \paragraph{Attributes}
  \begin{itemize}
 \item {\bf shape}:
- The shape of the array
+ The shape of the array.
 {\\ \bf DEFAULT: }(0,)
 {\\ \bf DATA TYPE: }tuple
 \end{itemize}
  
 \item {\bf \hyperref[ATOMS]{atoms} }:
- Deals with classical simulations.
+ Deals with classical simulations. Only needs to be specified if a classical simulation is required, and should be left blank otherwise.
 \item {\bf step}:
  How many time steps have been done.
 {\\ \bf DEFAULT: }0
@@ -37,19 +37,19 @@ This is the top level class that deals with the running of the simulation, inclu
 {\\ \bf DEFAULT: }\{ \}
 {\\ \bf DATA TYPE: }dict
 \item {\bf properties}:
- A list of the properties that will be printed in the properties output file. See the manual for a full list of acceptable names.
+ A list of the properties that will be printed in the properties output file. See the appropriate chapter in the manual for a full list of acceptable names.
 {\\ \bf DEFAULT: }[ ]
 {\\ \bf DATA TYPE: }str
 \paragraph{Attributes}
  \begin{itemize}
 \item {\bf shape}:
- The shape of the array
+ The shape of the array.
 {\\ \bf DEFAULT: }(0,)
 {\\ \bf DATA TYPE: }tuple
 \end{itemize}
  
 \item {\bf \hyperref[BEADS]{beads} }:
- Deals with path integral simulations.
+ Deals with path integral simulations. Only needs to be specified if the atoms tag is not, but overwrites it otherwise.
 \item {\bf total\_steps}:
  The total number of steps that will be done.
 {\\ \bf DEFAULT: }1000
@@ -59,7 +59,7 @@ This is the top level class that deals with the running of the simulation, inclu
 {\\ \bf DEFAULT: }'prefix'
 {\\ \bf DATA TYPE: }str
 \item {\bf fd\_delta}:
- The parameter used in the finite difference differentiation in the calculation of the scaled path velocity estimator.
+ The parameter used in the finite difference differentiation in the calculation of the scaled path velocity estimator. Defaults to 1e-5.
 {\\ \bf DEFAULT: }0.0
 {\\ \bf DATA TYPE: }float
 \item {\bf \hyperref[CELL]{cell} }:
@@ -67,13 +67,13 @@ This is the top level class that deals with the running of the simulation, inclu
 \paragraph{Attributes}
  \begin{itemize}
 \item {\bf flexible}:
- Whether the cell parameters can change during the simulation.
+ Describes whether the simulation box shape can change, or just the volume.
 {\\ \bf DEFAULT: }False
 {\\ \bf DATA TYPE: }bool
 \end{itemize}
  
 \item {\bf stride}:
- Dictionary holding the number of steps between printing the different kinds of files. The allowed keywords are ['checkpoint', 'properties', 'progress', 'trajectory', centroid']
+ Dictionary holding the number of steps between printing the different kinds of files. The allowed keywords are ['checkpoint', 'properties', 'progress', 'trajectory', centroid']. The default strides are {'checkpoint': 1000, 'properties': 10, 'progress': 100, 'centroid': 20, 'trajectory': 100}.
 {\\ \bf DEFAULT: }\{ \}
 {\\ \bf DATA TYPE: }dict
 \item {\bf traj\_format}:
@@ -81,7 +81,7 @@ This is the top level class that deals with the running of the simulation, inclu
 {\\ \bf DEFAULT: }'pdb'
 {\\ \bf DATA TYPE: }str
 \item {\bf \hyperref[RANDOM]{prng} }:
- Deals with the pseudo-random number generator.
+ Deals with the pseudo-random number generator. It is not necessary to specify this tag.
 \item {\bf \hyperref[ENSEMBLE]{ensemble} }:
  Holds all the information that is ensemble specific, such as the temperature and the external pressure, and the thermostats and barostats that control it.
 \paragraph{Attributes}
