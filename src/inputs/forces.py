@@ -64,7 +64,8 @@ class InputForce(Input):
 
       super(InputForce,self).fetch()
       if self.type.fetch() == "socket": 
-         force = FFSocket(pars=self.parameters.fetch(), interface=self.interface.fetch())
+         force = FFSocket(pars=self.parameters.fetch(), 
+            interface=self.interface.fetch())
       else: 
          raise ValueError("Kind " + self.kind.fetch() + " is not a valid kind of forcefield")
 

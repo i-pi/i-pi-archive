@@ -133,9 +133,10 @@ class Properties(dobject):
    def __getitem__(self, key):
       """Retrieves the item given by key.
 
-      Note that if the key contains a string (arg1=value1; arg2=value2; ... )
+      Note that if the key contains a string (arg1; arg2; ... )
       then it will add the appropriate arguments and value pairs
-      to the calculation function of the property.
+      to the calculation function of the property. Note the brackets and
+      the semi-colon separators.
 
       Args:
          key: A string contained in property_dict.
@@ -144,7 +145,7 @@ class Properties(dobject):
          The property labelled by the keyword key.
       """
 
-      args = {}
+      args = []
       if '(' in key:
          # If the property has additional arguments
          argstart = key.find('(')
@@ -155,8 +156,8 @@ class Properties(dobject):
          argstr = key[argstart:argstop+1]
          key = key[0:argstart] # strips the arguments from key name
 
-         arglist = io_xml.read_dict(argstr, delims="()", split=";", key_split="=")
-         return self.property_dict[key](**arglist)
+         arglist = io_xml.read_tuple(argstr, delims="()", split=";")
+         return self.property_dict[key](*arglist)
       else:
          return self.property_dict[key]()
 

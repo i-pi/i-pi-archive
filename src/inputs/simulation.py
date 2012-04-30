@@ -205,7 +205,8 @@ class InputSimulation(Input):
       
       super(InputSimulation,self).check()
 
-      if self.beads._explicit :  # nothing to be done here! user/restart provides a beads object
+      if self.beads._explicit :  
+         # nothing to be done here! user/restart provides a beads object
          pass
       elif self.atoms._explicit : 
          # user is providing atoms: assume a classical simulation
@@ -213,7 +214,8 @@ class InputSimulation(Input):
          nbeads = 1
          rbeads = Beads(atoms.natoms, nbeads)
          rbeads[0] = atoms.copy() 
-         # we create a dummy beads storage so that fetch can proceed as if a beads object had been specified
+         # we create a dummy beads storage so that fetch can proceed as if a 
+         # beads object had been specified
          self.beads.store(rbeads)      
       else: 
          raise TypeError("Either a <beads> or a <atoms> block must be provided")

@@ -353,7 +353,7 @@ It is designed to separate the calculation of the potential energy, forces
 \end_layout
 
 \begin_layout Standard
-This manual will be in 5 parts, each with the following information: 
+This manual will contain the following information: 
 \end_layout
 
 \begin_layout Itemize
@@ -776,51 +776,52 @@ The code is separated into the following directory structure:
 \end_layout
 
 \begin_layout Description
-forces Contains a few stand-alone fortran modules for running simple tests.
+forces: Contains a few stand-alone fortran driver modules for running simple
+ tests.
  
 \end_layout
 
 \begin_layout Description
-doc Contains the documentation, including this manual.
+doc: Contains the documentation, including this manual.
  
 \end_layout
 
 \begin_layout Description
-src Contains the source code for the wrapper.
+src: Contains the source code for the wrapper.
  This is further subdivided into: 
 \end_layout
 
 \begin_deeper
 \begin_layout Description
-engine Holds the modules containing the internally used objects and algorithms
+engine: Holds the modules containing the internally used objects and algorithms
  
 \end_layout
 
 \begin_layout Description
-forces Holds the modules containing the objects that deal with the driver
+forces: Holds the modules containing the objects that deal with the driver
  communication and data transfer.
  
 \end_layout
 
 \begin_layout Description
-utils Holds the modules containing the utility functions used in the other
+utils: Holds the modules containing the utility functions used in the other
  modules.
  
 \end_layout
 
 \begin_layout Description
-inputs Holds the modules containing the classes that read the input files.
+inputs: Holds the modules containing the classes that read the input files.
 \end_layout
 
 \end_deeper
 \begin_layout Description
-patches Contains the patch notes needed to allow the driver codes to interact
+patches: Contains the patch notes needed to allow the driver codes to interact
  with the wrapper.
  
 \end_layout
 
 \begin_layout Description
-test Contains examples that can be used to make sure the build has been
+test: Contains examples that can be used to make sure the build has been
  successful, show the correct form of the input files, and show some of
  the capabilities of the wrapper.
  
@@ -1105,7 +1106,7 @@ port
  a different port.
  As many of the lower numbers are protected for use in important system
  processes or internet communication, it is generally sensible to use numbers
- between 1025-65535 for simulations.
+ in the range 1025-65535 for simulations.
 \end_layout
 
 \begin_layout Standard
@@ -1166,7 +1167,8 @@ slots
 \end_inset
 
  specifies how many driver codes can queue between checks.
- Neither is likely to be important in running the code.
+ Neither is likely to be important in running the code, but may be used
+ to optimize the data transfer if required.
 \end_layout
 
 \begin_layout Subsection
@@ -2603,7 +2605,7 @@ This is the output file for for all the system and simulation level properties,
 
 \begin_layout Standard
 The format of the property list is: <properties> [ prop1name, prop2name,
- prop3name(arg1=value1; arg2=value2), 
+ prop3name(arg1; arg2), 
 \begin_inset ERT
 status open
 
@@ -3112,7 +3114,7 @@ Now in the property list you must put:
 \begin_inset Quotes eld
 \end_inset
 
-<properties> [ new_arg_prop(arg1=val1; arg2=val2; 
+<properties> [ new_arg_prop(arg1; arg2; 
 \begin_inset ERT
 status open
 
@@ -3853,7 +3855,7 @@ Submitting patches
 This code is still in developement, and any submissions to improve the code
  are welcome.
  However, to be considered as a candidate for inclusion in the main version
- of the code, and additions must adhere to the following policies:
+ of the code additions must adhere to the following policies:
 \end_layout
 
 \begin_layout Chapter
@@ -3874,6 +3876,37 @@ label{hierarchy}
 \end_inset
 
 
+\end_layout
+
+\begin_layout Standard
+The following chapter gives a complete list of the tags that can be specified
+ in the xml input file, along with the hierarchy of objects.
+ Note that every xml input file must start with the root tag 
+\begin_inset Quotes eld
+\end_inset
+
+simulation
+\begin_inset Quotes erd
+\end_inset
+
+.
+ See the accompanying 
+\begin_inset Quotes eld
+\end_inset
+
+help.xml
+\begin_inset Quotes erd
+\end_inset
+
+ file in the 
+\begin_inset Quotes eld
+\end_inset
+
+doc
+\begin_inset Quotes erd
+\end_inset
+
+ directory to see the recommended input file structure.
 \end_layout
 
 \begin_layout Standard
