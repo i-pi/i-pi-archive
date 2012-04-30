@@ -124,8 +124,8 @@ class Thermostat(dobject):
          self.ndof = ndof
       
       dset(self, "sm", 
-                  depend_array(name="sm", value=np.zeros(len(dget(self,"m"))), 
-                             func=self.get_sm, dependencies=[dget(self,"m")]))
+         depend_array(name="sm", value=np.zeros(len(dget(self,"m"))), 
+            func=self.get_sm, dependencies=[dget(self,"m")]))
       
    def get_sm(self):
       """Retrieves the square root of the mass matrix.
@@ -179,8 +179,12 @@ class ThermoLangevin(Thermostat):
       super(ThermoLangevin,self).__init__(temp, dt, ethermo)
       
       dset(self,"tau",depend_value(value=tau,name='tau'))
-      dset(self,"T",  depend_value(name="T",func=self.get_T, dependencies=[dget(self,"tau"), dget(self,"dt")]))
-      dset(self,"S",  depend_value(name="S",func=self.get_S, dependencies=[dget(self,"temp"), dget(self,"T")]))
+      dset(self,"T",  
+         depend_value(name="T",func=self.get_T, 
+            dependencies=[dget(self,"tau"), dget(self,"dt")]))
+      dset(self,"S",  
+         depend_value(name="S",func=self.get_S,  
+            dependencies=[dget(self,"temp"), dget(self,"T")]))
       
    def step(self):
       """Updates the bound momentum vector with a langevin thermostat."""
@@ -279,7 +283,9 @@ class ThermoPILE_L(Thermostat):
       if not bindcentroid:
          self._thermos[0] = None
       
-      dset(self,"tauk",depend_array(name="tauk", value=np.zeros(beads.nbeads-1,float), func=self.get_tauk, dependencies=[dget(self,"temp")]) )
+      dset(self,"tauk",
+         depend_array(name="tauk", value=np.zeros(beads.nbeads-1,float), 
+            func=self.get_tauk, dependencies=[dget(self,"temp")]) )
       
       # must pipe all the dependencies in such a way that values for the nm thermostats
       # are automatically updated based on the "master" thermostat
@@ -293,7 +299,8 @@ class ThermoPILE_L(Thermostat):
          if it > 0:
             ndof = None # only the centroid thermostat may have ndof!=3Nat
 
-         t.bind(pm=(beads.pnm[it,:],beads.m3[0,:]),prng=self.prng, ndof=ndof) # bind thermostat t to the it-th bead
+         # bind thermostat t to the it-th bead
+         t.bind(pm=(beads.pnm[it,:],beads.m3[0,:]),prng=self.prng, ndof=ndof) 
          # pipes temp and dt
          deppipe(self,"temp", t, "temp")
          deppipe(self,"dt", t, "dt")
@@ -309,13 +316,15 @@ class ThermoPILE_L(Thermostat):
          dget(self,"ethermo").add_dependency(dget(t,"ethermo"))
          it += 1     
 
-      # since the ethermo will be "delegated" to the normal modes thermostats, one has to split 
+      # since the ethermo will be "delegated" to the normal modes thermostats, 
+      # one has to split 
       # any previously-stored value between the sub-thermostats 
       if bindcentroid:
          for t in self._thermos:
             t.ethermo = prev_ethermo/beads.nbeads
          dget(self,"ethermo")._func = self.get_ethermo;
-         # if we are not binding the centroid just yet, this bit of the piping is delegated to the function which is actually calling this
+         # if we are not binding the centroid just yet, this bit of the piping 
+         # is delegated to the function which is actually calling this
          
    def get_tauk(self):
       """Computes the thermostat damping time scale for the non-centroid 
@@ -385,8 +394,11 @@ class ThermoSVR(Thermostat):
       super(ThermoSVR,self).__init__(temp,dt,ethermo)
       
       dset(self,"tau",depend_value(value=tau,name='tau'))
-      dset(self,"et",  depend_value(name="et",func=self.get_et, dependencies=[dget(self,"tau"), dget(self,"dt")]))
-      dset(self,"K",  depend_value(name="K",func=self.get_K, dependencies=[dget(self,"temp")]))
+      dset(self,"et",  
+         depend_value(name="et",func=self.get_et, 
+            dependencies=[dget(self,"tau"), dget(self,"dt")]))
+      dset(self,"K",  
+         depend_value(name="K",func=self.get_K, dependencies=[dget(self,"temp")]))
       
    def step(self):
       """Updates the bound momentum vector with a stochastic velocity rescaling
@@ -551,12 +563,18 @@ class ThermoGLE(Thermostat):
       # as a depend of temp. Otherwise, we want it to be an independent beast.
       if C is None: 
          C = np.identity(self.ns+1,float)*self.temp         
-         dset(self,"C",depend_value(name='C', func=self.get_C, dependencies=[dget(self,"temp")]))
+         dset(self,"C",
+            depend_value(name='C', func=self.get_C, 
+               dependencies=[dget(self,"temp")]))
       else:
          dset(self,"C",depend_value(value=C.copy(),name='C'))
       
-      dset(self,"T",  depend_value(name="T",func=self.get_T, dependencies=[dget(self,"A"), dget(self,"dt")]))      
-      dset(self,"S",  depend_value(name="S",func=self.get_S, dependencies=[dget(self,"C"), dget(self,"T")]))
+      dset(self,"T",  
+         depend_value(name="T",func=self.get_T, 
+            dependencies=[dget(self,"A"), dget(self,"dt")]))      
+      dset(self,"S",  
+         depend_value(name="S",func=self.get_S, 
+            dependencies=[dget(self,"C"), dget(self,"T")]))
       
       self.s = np.zeros(0)
   
@@ -694,8 +712,9 @@ class ThermoNMGLE(Thermostat):
       self.nb = len(self.A)
       self.ns = len(self.A[0]) - 1;
 
-      # now, this is tricky. if C is taken from temp, then we want it to be updated
-      # as a depend of temp. Otherwise, we want it to be an independent beast.
+      # now, this is tricky. if C is taken from temp, then we want it to be 
+      # updated as a depend of temp.
+      # Otherwise, we want it to be an independent beast.
       if C is None: 
          dset(self,"C",depend_value(name='C', func=self.get_C, dependencies=[dget(self,"temp")]))
       else:
@@ -765,8 +784,8 @@ class ThermoNMGLE(Thermostat):
       # creates a set of thermostats to be applied to individual normal modes
       self._thermos = [ThermoGLE(temp=1, dt=1, A=self.A[b], C=self.C[b]) for b in range(beads.nbeads)]
             
-      # must pipe all the dependencies in such a way that values for the nm thermostats
-      # are automatically updated based on the "master" thermostat
+      # must pipe all the dependencies in such a way that values for the nm 
+      # thermostats are automatically updated based on the "master" thermostat
       def make_Agetter(k):
          return lambda: self.A[k]
       def make_Cgetter(k):
@@ -789,7 +808,8 @@ class ThermoNMGLE(Thermostat):
          dget(self,"ethermo").add_dependency(dget(t,"ethermo"))
          it += 1
 
-      # since the ethermo will be "delegated" to the normal modes thermostats, one has to split 
+      # since the ethermo will be "delegated" to the normal modes thermostats, 
+      # one has to split 
       # any previously-stored value between the sub-thermostats 
       for t in self._thermos:
          t.ethermo = prev_ethermo/beads.nbeads

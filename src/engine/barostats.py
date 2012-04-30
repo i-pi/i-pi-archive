@@ -70,8 +70,12 @@ class Barostat(dobject):
       """
      
       sync_ext=synchronizer()
-      dset(self,"sext",depend_array(name='sext', value=np.zeros((3,3)), synchro=sync_ext, func={"pext" : self.p2s} ) )
-      dset(self,"pext",depend_value(name='pext', value=0.0, synchro=sync_ext, func={"sext" : self.s2p} ) )            
+      dset(self,"sext",
+         depend_array(name='sext', value=np.zeros((3,3)), synchro=sync_ext, 
+            func={"pext" : self.p2s} ) )
+      dset(self,"pext",
+         depend_value(name='pext', value=0.0, synchro=sync_ext, 
+            func={"sext" : self.s2p} ) )            
       if sext is None:
          self.pext = pext
       else:
@@ -87,7 +91,9 @@ class Barostat(dobject):
       else:
          self.dt = dt
       dset(self.thermostat,"dt",   
-         depend_value(name="dt", func=self.get_halfdt,dependencies=[dget(self,"dt")],dependants=dget(self.thermostat,"dt")._dependants)  )
+         depend_value(name="dt", func=self.get_halfdt,
+            dependencies=[dget(self,"dt")],
+               dependants=dget(self.thermostat,"dt")._dependants)  )
            
       dset(self, "temp", depend_value(name="temp", value=temp))
       deppipe(self, "temp", self.thermostat,"temp")
@@ -118,14 +124,18 @@ class Barostat(dobject):
       self.cell=cell
       self.forces=forces
 
-      dset(self,"pot",depend_value(name='pot', func=self.get_pot, 
-          dependencies=[ dget(cell,"V0"), dget(cell,"strain"), dget(self,"sext")  ]  ) )            
-      dset(self,"piext",depend_value(name='piext', func=self.get_piext, 
-          dependencies=[ dget(cell,"V0"), dget(cell,"V"), dget(cell,"h"), dget(cell,"ih0"), dget(cell,"strain"), dget(self,"sext")  ] ) )     
-      dset(self,"stress",depend_value(name='stress', func=self.get_stress, 
-          dependencies=[ dget(beads,"kstress"), dget(cell,"V"), dget(forces,"vir")  ]  ) )
-      dset(self,"press",depend_value(name='press', func=self.get_press, 
-          dependencies=[ dget(self,"stress") ] ) )
+      dset(self,"pot",
+         depend_value(name='pot', func=self.get_pot, 
+            dependencies=[ dget(cell,"V0"), dget(cell,"strain"), dget(self,"sext")  ]  ) )            
+      dset(self,"piext",
+         depend_value(name='piext', func=self.get_piext, 
+            dependencies=[ dget(cell,"V0"), dget(cell,"V"), dget(cell,"h"), dget(cell,"ih0"), dget(cell,"strain"), dget(self,"sext")  ] ) )     
+      dset(self,"stress",
+         depend_value(name='stress', func=self.get_stress, 
+            dependencies=[ dget(beads,"kstress"), dget(cell,"V"), dget(forces,"vir")  ]  ) )
+      dset(self,"press",
+         depend_value(name='press', func=self.get_press, 
+            dependencies=[ dget(self,"stress") ] ) )
                 
    def s2p(self):
       """Converts the external stress to the external pressure."""

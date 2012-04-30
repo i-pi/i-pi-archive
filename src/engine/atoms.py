@@ -116,10 +116,11 @@ class Atoms(dobject):
       self.natoms = natoms
       
       if _prebind is None:
-         dset(self,"q",depend_array(name="q",value=np.zeros(3*natoms, float)) ) 
-         dset(self,"p",depend_array(name="p",value=np.zeros(3*natoms, float)) )
-         dset(self,"m",depend_array(name="m",value=np.zeros(natoms, float)) )
-         dset(self,"names",depend_array(name="names",value=np.zeros(natoms, np.dtype('|S6'))) )         
+         dset(self,"q",depend_array(name="q",value=np.zeros(3*natoms, float)))
+         dset(self,"p",depend_array(name="p",value=np.zeros(3*natoms, float)))
+         dset(self,"m",depend_array(name="m",value=np.zeros(natoms, float)))
+         dset(self,"names",
+            depend_array(name="names",value=np.zeros(natoms, np.dtype('|S6'))))         
       else:
          dset(self,"q",_prebind[0]) 
          dset(self,"p",_prebind[1]) 
@@ -133,11 +134,19 @@ class Atoms(dobject):
       self.qy=self.q[1:3*natoms:3]
       self.qz=self.q[2:3*natoms:3]
       
-      dset(self,"m3",depend_array(name="m3",value=np.zeros(3*natoms, float),func=self.mtom3, dependencies=[dget(self,"m")]))
+      dset(self,"m3",
+         depend_array(name="m3",value=np.zeros(3*natoms, float),func=self.mtom3,
+            dependencies=[dget(self,"m")]))
 
-      dset(self,"M",depend_value(name="M",func=self.get_msum,dependencies=[dget(self,"m")]) )      
-      dset(self,"kin",depend_value(name="kin",func=self.get_kin,dependencies=[dget(self,"p"),dget(self,"m3")]) )
-      dset(self,"kstress",depend_value(name="kstress",func=self.get_kstress,dependencies=[dget(self,"px"),dget(self,"py"),dget(self,"pz"),dget(self,"m")]) )
+      dset(self,"M",
+         depend_value(name="M",func=self.get_msum,
+            dependencies=[dget(self,"m")]) )      
+      dset(self,"kin",
+         depend_value(name="kin",func=self.get_kin,
+            dependencies=[dget(self,"p"),dget(self,"m3")]) )
+      dset(self,"kstress",
+         depend_value(name="kstress",func=self.get_kstress,
+            dependencies=[dget(self,"px"),dget(self,"py"),dget(self,"pz"),dget(self,"m")]) )
    
    def copy(self):
       """Creates a new Atoms object.
