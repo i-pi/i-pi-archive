@@ -501,13 +501,16 @@ class InputValue(Input):
          A string giving the stored value in the appropriate xml format.
       """
 
-      rstr = indent + "<" + name
-      if self.units == "":
-         rstr += ">"
+      if self.value != "":
+         rstr = indent + "<" + name
+         if self.units == "":
+            rstr += ">"
+         else:
+            rstr += " units='" + self.units + "'>"
+         rstr += write_type(self.type, self.value) + "</" + name + ">\n"
+         return rstr
       else:
-         rstr += " units='" + self.units + "'>"
-      rstr += write_type(self.type, self.value) + "</" + name + ">\n"
-      return rstr
+         return ""
    
    def parse(self, xml=None, text=""):
       """Reads the data for a single value from an xml file.
