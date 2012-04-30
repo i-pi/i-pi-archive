@@ -40,10 +40,14 @@ class Barostat(dobject):
       dt: The time step used in the algorithms. Depends on the simulation dt.
       temp: The simulation temperature. Higher than the system temperature by
          a factor of the number of beads. Depends on the simulation temp.
-      pot: The elastic strain potential for the cell.
-      piext: The accumulated stress compared to the reference cell.
-      stress: The internal stress.
-      press: The internal pressure.
+      pot: The elastic strain potential for the cell. Depends on sext, the 
+         reference cell volume, and the strain.
+      piext: The accumulated stress compared to the reference cell. Depends
+         on the reference cell volume and vector matrix, the cell volume and 
+         vector matrix, the strain and sext.
+      stress: The internal stress. Depends on the cell kinetic stress tensor
+         and volume and the forces virial.
+      press: The internal pressure. Depends on the stress.
    """
 
    def __init__(self, pext=0.0, sext=None, dt=None, temp=None, thermostat=None):

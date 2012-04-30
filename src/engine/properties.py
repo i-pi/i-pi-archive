@@ -54,24 +54,6 @@ class Properties(dobject):
          replica of the system.
       property_dict: A dictionary containing all the properties that can be
          output.
-      time: A float giving the time passed in the simulation.
-      econs: A float giving the conserved quantity.
-      kin: A float giving the classical kinetic energy estimator.
-      pot: A float giving the potential energy estimator.
-      temp: A float giving the classical kinetic temperature estimator.
-      h: The elements of the unit cell matrix [h(x=vector_index,v=coordinate_index)]
-      stress: An array giving the components of the classical stress tensor
-         estimator.
-      press: A float giving the classical pressure estimator.
-      kin_cv: A float giving the quantum centroid virial kinetic energy 
-         estimator.
-      kstress_cv: An array giving the components of the quantum centroid virial
-         kinetic stress tensor estimator.
-      stress_cv: An array giving the components of the quantum centroid virial
-         stress tensor estimator.
-      press_cv: A float giving the quantum centroid virial pressure estimator.
-      kin_yama: A float giving the quantum scaled coordinate estimator for the
-         kinetic energy.
    """
 
    def __init__(self):

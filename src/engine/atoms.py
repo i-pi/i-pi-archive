@@ -87,8 +87,9 @@ class Atoms(dobject):
          three times. Used when each degree of freedom needs to be divided 
          by the mass.
       M: The total mass of all the atoms.
-      kin: The total kinetic energy of the atoms.
-      kstress: The contribution of the atoms to the kinetic stress tensor.
+      kin: The total kinetic energy of the atoms. Depends on p and m3.
+      kstress: The contribution of the atoms to the kinetic stress tensor. 
+         Depends on px, py, pz and m.
       qx: An array giving the x components of the positions.
       qy: An array giving the y components of the positions.
       qz: An array giving the z components of the positions.
@@ -136,7 +137,7 @@ class Atoms(dobject):
 
       dset(self,"M",depend_value(name="M",func=self.get_msum,dependencies=[dget(self,"m")]) )      
       dset(self,"kin",depend_value(name="kin",func=self.get_kin,dependencies=[dget(self,"p"),dget(self,"m3")]) )
-      dset(self,"kstress",depend_value(name="kstress",func=self.get_kstress,dependencies=[dget(self,"p"),dget(self,"m")]) )
+      dset(self,"kstress",depend_value(name="kstress",func=self.get_kstress,dependencies=[dget(self,"px"),dget(self,"py"),dget(self,"pz"),dget(self,"m")]) )
    
    def copy(self):
       """Creates a new Atoms object.

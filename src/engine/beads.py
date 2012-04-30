@@ -47,10 +47,12 @@ class Beads(dobject):
       p: An array giving all the bead momenta.
       qnm: An array giving the normal mode representation of the beads.
       pnm: An array giving the normal mode representation of the bead momenta.
-      qc: An array giving the centroid positions.
-      pc: An array giving the centroid momenta.
+      qc: An array giving the centroid positions. Depends on qnm.
+      pc: An array giving the centroid momenta. Depends on pnm.
       vpath: The spring potential between the beads, divided by omegan**2.
+         Depends on q.
       fpath: The spring force between the beads, divided by omegan**2.
+         Depends on q.
       kins: A list of the kinetic energy of each replica.
       kin: The total kinetic energy of the system. Note that this is not the
          same as the estimate of the kinetic energy of the system, which is
