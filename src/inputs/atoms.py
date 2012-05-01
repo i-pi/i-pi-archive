@@ -39,41 +39,36 @@ class InputAtoms(Input):
          positions. Defaults to ''.
       file_units: An optional string giving the length units that the file is
          specified by. Defaults to ''.
-      init_temp: An optional float giving the kinetic temperature to 
-         initialise the atom momenta to.
    """
 
    fields={ "natoms"    : (InputValue, {"dtype"     : int,
                                         "default"   : 0,
-                                        "help"      : "The number of atoms" }), 
+                                        "help"      : "The number of atoms." }), 
             "q"         : (InputArray, {"dtype"     : float,
                                         "default"   : np.zeros(0),
-                                        "help"      : "The positions of the atoms, in the format [x1, y1, z1, x2, ... ]",
+                                        "help"      : "The positions of the atoms, in the format [x1, y1, z1, x2, ... ].",
                                         "dimension" : "length" }),
             "p"         : (InputArray, {"dtype"     : float,
                                         "default"   : np.zeros(0),
-                                        "help"      : "The momenta of the atoms, in the format [px1, py1, pz1, px2, ... ]",
+                                        "help"      : "The momenta of the atoms, in the format [px1, py1, pz1, px2, ... ].",
                                         "dimension" : "momentum" }),
             "m"         : (InputArray, {"dtype"     : float, 
                                         "default"   : np.zeros(0),
-                                        "help"      : "The masses of the atoms, in the format [m1, m2, ... ]",
+                                        "help"      : "The masses of the atoms, in the format [m1, m2, ... ].",
                                         "dimension" : "mass" }),
             "names"     : (InputArray, {"dtype"     : str,
                                         "default"   : np.zeros(0, np.dtype('|S6')),
-                                        "help"      : "The names of the atoms, in the format [name1, name2, ... ]" }),
+                                        "help"      : "The names of the atoms, in the format [name1, name2, ... ]." }),
             "from_file" : (InputValue, {"dtype"     : str, 
                                         "default"   : "", 
-                                        "help"      : "Gives the name of the file from which the configurations are taken, if present." }),
+                                        "help"      : "Gives the name of the file from which the configurations are taken, if present. Any value given in this file can be overwritten by specifying it explicitly." }),
             "file_units": (InputValue, {"dtype"     : str,
                                         "default"   : "",
                                         "help"      : "The units in which the lengths in the configuration file are given.",
-                                        "options"   : [unit for unit in UnitMap["length"]] }),
-            "init_temp" : (InputValue, {"dtype"     : float, 
-                                        "default"   : -1.0,
-                                        "help"      : "The temperature at which the initial velocity distribution is taken, if applicable.",
-                                        "dimension" : "temperature"})  }
+                                        "options"   : [unit for unit in UnitMap["length"]]})  }
 
    default_help = "Deals with single replicas of the system or classical simulations."
+   default_label = "ATOMS"
        
    def store(self, atoms, filename=""):
       """Takes an Atoms instance and stores a minimal representation of it.

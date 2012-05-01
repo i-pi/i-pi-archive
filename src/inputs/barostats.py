@@ -27,12 +27,13 @@ class InputBaro(Input):
 
    attribs={ "kind": (InputValue, {"dtype"    : str, 
                                    "default"  : "rigid",
-                                   "help"     : "The type of barostat.",
+                                   "help"     : "The type of barostat. 'Rigid' gives a barostat that keeps the internal pressure constant by allowing cell volume changes, whereas flexible allows the shape of the cell to fluctuate too.",
                                    "options"  : ["rigid", "flexible"]}) }
    fields={ "thermostat": (InputThermo, {"default" : engine.thermostats.Thermostat(),
                                          "help"    : "The thermostat for the cell. Keeps the cell velocity distribution at the correct temperature."}) }
 
    default_help = "Simulates an external pressure bath to keep the pressure or stress at the external values."
+   default_label = "BAROSTAT"
 
    def store(self, baro):
       """Takes a barostat instance and stores a minimal representation of it.

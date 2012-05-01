@@ -54,24 +54,6 @@ class Properties(dobject):
          replica of the system.
       property_dict: A dictionary containing all the properties that can be
          output.
-      time: A float giving the time passed in the simulation.
-      econs: A float giving the conserved quantity.
-      kin: A float giving the classical kinetic energy estimator.
-      pot: A float giving the potential energy estimator.
-      temp: A float giving the classical kinetic temperature estimator.
-      h: The elements of the unit cell matrix [h(x=vector_index,v=coordinate_index)]
-      stress: An array giving the components of the classical stress tensor
-         estimator.
-      press: A float giving the classical pressure estimator.
-      kin_cv: A float giving the quantum centroid virial kinetic energy 
-         estimator.
-      kstress_cv: An array giving the components of the quantum centroid virial
-         kinetic stress tensor estimator.
-      stress_cv: An array giving the components of the quantum centroid virial
-         stress tensor estimator.
-      press_cv: A float giving the quantum centroid virial pressure estimator.
-      kin_yama: A float giving the quantum scaled coordinate estimator for the
-         kinetic energy.
    """
 
    def __init__(self):
@@ -151,9 +133,10 @@ class Properties(dobject):
    def __getitem__(self, key):
       """Retrieves the item given by key.
 
-      Note that if the key contains a string (arg1=value1; arg2=value2; ... )
+      Note that if the key contains a string (arg1; arg2; ... )
       then it will add the appropriate arguments and value pairs
-      to the calculation function of the property.
+      to the calculation function of the property. Note the brackets and
+      the semi-colon separators.
 
       Args:
          key: A string contained in property_dict.
@@ -162,7 +145,7 @@ class Properties(dobject):
          The property labelled by the keyword key.
       """
 
-      args = {}
+      args = []
       if '(' in key:
          # If the property has additional arguments
          argstart = key.find('(')
@@ -173,8 +156,8 @@ class Properties(dobject):
          argstr = key[argstart:argstop+1]
          key = key[0:argstart] # strips the arguments from key name
 
-         arglist = io_xml.read_dict(argstr, delims="()", split=";", key_split="=")
-         return self.property_dict[key](**arglist)
+         arglist = io_xml.read_tuple(argstr, delims="()", split=";")
+         return self.property_dict[key](*arglist)
       else:
          return self.property_dict[key]()
 
@@ -311,7 +294,7 @@ class Properties(dobject):
 
       return bead/self.beads.nbeads + 0.5*(1.0/self.beads.nbeads - 1.0)
 
-   def get_linlin(self, ux=0, uy=0, uz=0, atom=0):
+   def get_linlin(self, ux=0, uy=0, uz=0, atom='H'):
       """Gives the estimator for the momentum distribution, by opening the 
       ring polymer path.
 
@@ -319,21 +302,31 @@ class Properties(dobject):
          ux: The x component of the opening vector.
          uy: The y component of the opening vector.
          uz: The z component of the opening vector.
-         atom: The atom for which the path will be opened.
+         atom: The atom type for which the path will be opened.
       """
 
       u = np.array([float(ux), float(uy), float(uz)])
-      atom = int(atom)
+      count = 0
+      n = 0.0
       for at in range(self.beads.natoms):
-         if at == atom:
+         if self.beads.names[at] == atom:
+            index = at 
+            # Keeps record of one of the atom indices so we can get
+            # the mass later.
+
+            count += 1
+            self.dbeads.q[:] = self.beads.q[:]
             for bead in range(self.beads.nbeads):
-               self.dbeads.q[bead,3*at:3*(at+1)] = self.opening(bead)*u + self.beads.q[bead,3*at:3*(at+1)]
-         else:
-            self.dbeads.q[:,3*at:3*(at+1)] = self.beads.q[:,3*at:3*(at+1)]
+               self.dbeads.q[bead,3*at:3*(at+1)] += self.opening(bead)*u
+            n += math.exp(-(self.dforces.pot - self.forces.pot)/(self.ensemble.ntemp*Constants.kb))
 
-      n0 = math.exp(self.beads.m[atom]*np.dot(u,u)*self.ensemble.temp*Constants.kb/(2*Constants.hbar**2))
 
-      return n0*math.exp(-(self.dforces.pot - self.forces.pot)/(self.ensemble.ntemp*Constants.kb))
+      if count == 0:
+         print "Warning, no atom with the given name found for lin-lin momentum distribution estimator."
+         return 0.0
+      else:
+         n0 = math.exp(self.beads.m[index]*np.dot(u,u)*self.ensemble.temp*Constants.kb/(2*Constants.hbar**2))
+         return n*n0/float(count)
 
    def wrap_cell(self, x=0, v=0):
       """Returns the the x-th component of the v-th cell vector."""

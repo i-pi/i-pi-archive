@@ -43,11 +43,11 @@ class InputThermo(Input):
                                          }) }
    fields = { "ethermo" : (InputValue, {  "dtype"     : float, 
                                           "default"   : 0.0,
-                                          "help"      : "The initial value of the thermostat energy. Only useful in restarts to guarantee continuity of the conserved quantity. ",
+                                          "help"      : "The initial value of the thermostat energy. Used when the simulation is restarted to guarantee continuity of the conserved quantity.",
                                           "dimension" : "energy" }), 
             "tau" : (InputValue, {  "dtype"     : float, 
                                     "default"   : 0.0,
-                                    "help"      : "The target temperature for the thermostat.",
+                                    "help"      : "The friction coefficient for white noise thermostats.",
                                     "dimension" : "temperature" }) ,
             "A" : (InputArray, {    "dtype"     : float, 
                                     "default"   : np.zeros(0),
@@ -64,6 +64,7 @@ class InputThermo(Input):
              }
 
    default_help = "Simulates an external heat bath to keep the velocity distribution at the correct temperature."
+   default_label = "THERMOSTATS"
    
    def store(self, thermo):
       """Takes a thermostat instance and stores a minimal representation of it.

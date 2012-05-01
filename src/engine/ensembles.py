@@ -105,11 +105,19 @@ class Ensemble(dobject):
       dget(self,"econs").add_dependency(dget(self.beads, "vpath"))
       
       # create path related properties
-      dset(self,"omegan",depend_value(name='omegan',func=self.get_omegan, dependencies=[dget(self,"ntemp")]) )
-      dset(self,"omegan2",depend_value(name='omegan2',func=self.get_omegan2, dependencies=[dget(self,"omegan")]) )
-      dset(self,"omegak",depend_array(name='omegak',value=np.zeros(self.beads.nbeads,float),func=self.get_omegak, dependencies=[dget(self,"omegan")]) )
-      dset(self,"prop_pq",depend_array(name='prop_pq',value=np.zeros((self.beads.nbeads,2,2),float),func=self.get_prop_pq, 
-                                      dependencies=[dget(self,"omegak"), dget(self,"dt")]) )
+      dset(self,"omegan",
+         depend_value(name='omegan',func=self.get_omegan, 
+            dependencies=[dget(self,"ntemp")]) )
+      dset(self,"omegan2",
+         depend_value(name='omegan2',func=self.get_omegan2, 
+            dependencies=[dget(self,"omegan")]) )
+      dset(self,"omegak",
+         depend_array(name='omegak',value=np.zeros(self.beads.nbeads,float),
+            func=self.get_omegak, dependencies=[dget(self,"omegan")]) )
+      dset(self,"prop_pq",
+         depend_array(name='prop_pq',value=np.zeros((self.beads.nbeads,2,2)),
+            func=self.get_prop_pq, 
+               dependencies=[dget(self,"omegak"), dget(self,"dt")]) )
 
    def get_ntemp(self):
       """Returns the PI simulation temperature (P times the physical T)."""

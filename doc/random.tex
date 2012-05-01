@@ -1,0 +1,35 @@
+\section{RANDOM}
+\label{RANDOM}
+Deals with the pseudo-random number generator.
+\paragraph{Fields}
+ \begin{itemize}
+\item {\bf has\_gauss}:
+ Determines whether there is a stored gaussian number or not. A value of 0 means there is none stored.
+{\\ \bf DEFAULT: }0
+{\\ \bf DATA TYPE: }int
+\item {\bf state}:
+ Gives the state vector for the random number generator. Avoid directly modifying this unless you are very familiar with the inner workings of the algorithm used.
+{\\ \bf DEFAULT: }[ ]
+{\\ \bf DATA TYPE: }uint64
+\paragraph{Attributes}
+ \begin{itemize}
+\item {\bf shape}:
+ The shape of the array.
+{\\ \bf DEFAULT: }(0,)
+{\\ \bf DATA TYPE: }tuple
+\end{itemize}
+ 
+\item {\bf seed}:
+ This is the seed number used to generate the initial state of the random number generator.
+{\\ \bf DEFAULT: }123456
+{\\ \bf DATA TYPE: }int
+\item {\bf set\_pos}:
+ Gives the position in the state array that the random number generator is reading from.
+{\\ \bf DEFAULT: }0
+{\\ \bf DATA TYPE: }int
+\item {\bf gauss}:
+ The stored Gaussian number.
+{\\ \bf DEFAULT: }0.0
+{\\ \bf DATA TYPE: }float
+\end{itemize}
+ 

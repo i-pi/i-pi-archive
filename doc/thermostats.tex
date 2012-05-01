@@ -1,0 +1,65 @@
+\section{THERMOSTATS}
+\label{THERMOSTATS}
+Simulates an external heat bath to keep the velocity distribution at the correct temperature.
+\paragraph{Attributes}
+ \begin{itemize}
+\item {\bf kind}:
+ The style of thermostatting.
+{\\ \bf DEFAULT: }'langevin'
+{\\ \bf OPTIONS: }'langevin', 'svr', 'pile\_l', 'pile\_g', 'gle', 'nm\_gle'
+{\\ \bf DATA TYPE: }str
+\end{itemize}
+ 
+\paragraph{Fields}
+ \begin{itemize}
+\item {\bf A}:
+ The friction matrix for GLE thermostats.
+{\\ \bf DIMENSION: }frequency
+{\\ \bf DEFAULT: }[ ]
+{\\ \bf DATA TYPE: }float
+\paragraph{Attributes}
+ \begin{itemize}
+\item {\bf shape}:
+ The shape of the array.
+{\\ \bf DEFAULT: }(0,)
+{\\ \bf DATA TYPE: }tuple
+\end{itemize}
+ 
+\item {\bf tau}:
+ The friction coefficient for white noise thermostats.
+{\\ \bf DIMENSION: }temperature
+{\\ \bf DEFAULT: }0.0
+{\\ \bf DATA TYPE: }float
+\item {\bf C}:
+ The covariance matrix for GLE thermostats.
+{\\ \bf DIMENSION: }temperature
+{\\ \bf DEFAULT: }[ ]
+{\\ \bf DATA TYPE: }float
+\paragraph{Attributes}
+ \begin{itemize}
+\item {\bf shape}:
+ The shape of the array.
+{\\ \bf DEFAULT: }(0,)
+{\\ \bf DATA TYPE: }tuple
+\end{itemize}
+ 
+\item {\bf s}:
+ Input values for the additional momenta in GLE.
+{\\ \bf DIMENSION: }ms-momentum
+{\\ \bf DEFAULT: }[ ]
+{\\ \bf DATA TYPE: }float
+\paragraph{Attributes}
+ \begin{itemize}
+\item {\bf shape}:
+ The shape of the array.
+{\\ \bf DEFAULT: }(0,)
+{\\ \bf DATA TYPE: }tuple
+\end{itemize}
+ 
+\item {\bf ethermo}:
+ The initial value of the thermostat energy. Used when the simulation is restarted to guarantee continuity of the conserved quantity.
+{\\ \bf DIMENSION: }energy
+{\\ \bf DEFAULT: }0.0
+{\\ \bf DATA TYPE: }float
+\end{itemize}
+ 

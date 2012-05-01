@@ -1,0 +1,27 @@
+\section{BAROSTAT}
+\label{BAROSTAT}
+Simulates an external pressure bath to keep the pressure or stress at the external values.
+\paragraph{Attributes}
+ \begin{itemize}
+\item {\bf kind}:
+ The type of barostat. 'Rigid' gives a barostat that keeps the internal pressure constant by allowing cell volume changes, whereas flexible allows the shape of the cell to fluctuate too.
+{\\ \bf DEFAULT: }'rigid'
+{\\ \bf OPTIONS: }'rigid', 'flexible'
+{\\ \bf DATA TYPE: }str
+\end{itemize}
+ 
+\paragraph{Fields}
+ \begin{itemize}
+\item {\bf \hyperref[THERMOSTATS]{thermostat} }:
+ The thermostat for the cell. Keeps the cell velocity distribution at the correct temperature.
+\paragraph{Attributes}
+ \begin{itemize}
+\item {\bf kind}:
+ The style of thermostatting.
+{\\ \bf DEFAULT: }'langevin'
+{\\ \bf OPTIONS: }'langevin', 'svr', 'pile\_l', 'pile\_g', 'gle', 'nm\_gle'
+{\\ \bf DATA TYPE: }str
+\end{itemize}
+ 
+\end{itemize}
+ 

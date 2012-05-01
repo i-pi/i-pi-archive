@@ -62,7 +62,6 @@ class Simulation(dobject):
          simulation is restarted.
       properties: A properties object.
       fout: File to output the properties to.
-      tcout: File to output the centroid trajectory to.
       tout: File to output the full trajectory to.
       ichk: A number keeping track of all the restart files generated so far,
          so that old files are not overwritten.
@@ -95,8 +94,10 @@ class Simulation(dobject):
             Defaults to 'prefix'.
          outlist: An array of strings giving all the properties that should 
             be output space separated.
-         initlist: An array of strings giving all the quantities that should
-            be output.
+         trajlist: An array of strings giving all the trajectories that should
+            be output. 
+         initlist: A dictionary of keys giving all the quantities that should
+            be initialized with values giving their initial value.
       """
 
       print " # Initializing simulation object "
@@ -262,7 +263,7 @@ class Simulation(dobject):
          self.ensemble.rmcom()
       
       # Zeroes out the initlist, such that in restarts no initialization will be required
-      self.initlist = np.zeros(0, np.dtype('|S12'))
+      self.initlist = {}
 
    def write_traj(self):
       """Writes out the required trajectories."""

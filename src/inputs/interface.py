@@ -32,25 +32,26 @@ class InputInterface(Input):
 
    fields = {"address": (InputValue, {"dtype"   : str,
                                       "default" : "localhost", 
-                                      "help"    : "This gives the server address that the socket will run on" } ), 
+                                      "help"    : "This gives the server address that the socket will run on." } ), 
              "port":    (InputValue, {"dtype"   : int, 
-                                      "default" :  31415, 
-                                      "help"    : "This gives the port number that defines the socket"} ),
+                                      "default" : 31415, 
+                                      "help"    : "This gives the port number that defines the socket."} ),
              "slots":   (InputValue, {"dtype"   : int, 
                                       "default" : 4, 
-                                      "help"    : "This gives the number of client codes that queue at any one time"} ), 
+                                      "help"    : "This gives the number of client codes that can queue at any one time."} ), 
              "latency": (InputValue, {"dtype"   : float, 
                                       "default" : 1e-3,
-                                      "help"    : "This gives the number of seconds between each check for new clients"} ),
+                                      "help"    : "This gives the number of seconds between each check for new clients."} ),
              "timeout": (InputValue, {"dtype"   : float, 
                                       "default" : 0.0, 
                                       "help"    : "This gives the number of seconds before assuming a calculation has died. If 0 there is no timeout." } )}
    attribs = { "mode": (InputValue, {"dtype"    : str,
                                      "options"  : [ "unix", "inet" ],
                                      "default"  : "inet", 
-                                     "help"     : "Specifies whether the driver interface will listen onto a internet socket [inet] or onto a unix socket [unix]" } )}
+                                     "help"     : "Specifies whether the driver interface will listen onto a internet socket [inet] or onto a unix socket [unix]." } )}
 
    default_help = "Specifies the parameters for the socket interface."
+   default_label = "INTERFACE"
 
    def store(self, iface):
       """Takes an Interface instance and stores a minimal representation of it.

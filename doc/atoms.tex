@@ -1,0 +1,71 @@
+\section{ATOMS}
+\label{ATOMS}
+Deals with single replicas of the system or classical simulations.
+\paragraph{Fields}
+ \begin{itemize}
+\item {\bf from\_file}:
+ Gives the name of the file from which the configurations are taken, if present. Any value given in this file can be overwritten by specifying it explicitly.
+{\\ \bf DEFAULT: }''
+{\\ \bf DATA TYPE: }str
+\item {\bf natoms}:
+ The number of atoms.
+{\\ \bf DEFAULT: }0
+{\\ \bf DATA TYPE: }int
+\item {\bf file\_units}:
+ The units in which the lengths in the configuration file are given.
+{\\ \bf DEFAULT: }''
+{\\ \bf OPTIONS: }'', 'nanometer', 'angstrom', 'atomic\_unit'
+{\\ \bf DATA TYPE: }str
+\item {\bf m}:
+ The masses of the atoms, in the format [m1, m2, \ldots  ].
+{\\ \bf DIMENSION: }mass
+{\\ \bf DEFAULT: }[ ]
+{\\ \bf DATA TYPE: }float
+\paragraph{Attributes}
+ \begin{itemize}
+\item {\bf shape}:
+ The shape of the array.
+{\\ \bf DEFAULT: }(0,)
+{\\ \bf DATA TYPE: }tuple
+\end{itemize}
+ 
+\item {\bf q}:
+ The positions of the atoms, in the format [x1, y1, z1, x2, \ldots  ].
+{\\ \bf DIMENSION: }length
+{\\ \bf DEFAULT: }[ ]
+{\\ \bf DATA TYPE: }float
+\paragraph{Attributes}
+ \begin{itemize}
+\item {\bf shape}:
+ The shape of the array.
+{\\ \bf DEFAULT: }(0,)
+{\\ \bf DATA TYPE: }tuple
+\end{itemize}
+ 
+\item {\bf p}:
+ The momenta of the atoms, in the format [px1, py1, pz1, px2, \ldots  ].
+{\\ \bf DIMENSION: }momentum
+{\\ \bf DEFAULT: }[ ]
+{\\ \bf DATA TYPE: }float
+\paragraph{Attributes}
+ \begin{itemize}
+\item {\bf shape}:
+ The shape of the array.
+{\\ \bf DEFAULT: }(0,)
+{\\ \bf DATA TYPE: }tuple
+\end{itemize}
+ 
+\item {\bf names}:
+ The names of the atoms, in the format [name1, name2, \ldots  ].
+{\\ \bf DEFAULT: }[ ]
+{\\ \bf DATA TYPE: }str
+\paragraph{Attributes}
+ \begin{itemize}
+\item {\bf shape}:
+ The shape of the array.
+{\\ \bf DEFAULT: }(0,)
+{\\ \bf DATA TYPE: }tuple
+\end{itemize}
+ 
+\end{itemize}
+ 

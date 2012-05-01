@@ -81,14 +81,21 @@ class ForceField(dobject):
       dget(self,"ufv").add_dependency(dget(self.cell,"h")) 
       
       # potential and virial are to be extracted very simply from ufv
-      dset(self,"pot",depend_value(name="pot", func=self.get_pot, dependencies=[dget(self,"ufv")] )  )
-      dset(self,"vir", depend_array(name="vir", value=np.zeros((3,3),float),func=self.get_vir, dependencies=[dget(self,"ufv")] ) )            
+      dset(self,"pot",
+         depend_value(name="pot", func=self.get_pot, 
+            dependencies=[dget(self,"ufv")]))
+      dset(self,"vir", 
+         depend_array(name="vir", value=np.zeros((3,3),float),func=self.get_vir,
+            dependencies=[dget(self,"ufv")]))            
       # the force requires a bit more work, to define shortcuts to xyz slices
+      # without calculating the force at this point.
       fbase = np.zeros(atoms.natoms*3, float)
-      dset(self,"f", depend_array(name="f", value=fbase, func=self.get_f, dependencies=[dget(self,"ufv")]) )
-      dset(self,"fx", depend_array(name="fx", value=fbase[0:3*atoms.natoms:3]));
-      dset(self,"fy", depend_array(name="fy", value=fbase[1:3*atoms.natoms:3]));
-      dset(self,"fz", depend_array(name="fz", value=fbase[2:3*atoms.natoms:3]));
+      dset(self,"f", 
+         depend_array(name="f", value=fbase, func=self.get_f, 
+            dependencies=[dget(self,"ufv")]))
+      dset(self,"fx", depend_array(name="fx", value=fbase[0:3*atoms.natoms:3]))
+      dset(self,"fy", depend_array(name="fy", value=fbase[1:3*atoms.natoms:3]))
+      dset(self,"fz", depend_array(name="fz", value=fbase[2:3*atoms.natoms:3]))
       depcopy(self,"f", self,"fx")
       depcopy(self,"f", self,"fy")
       depcopy(self,"f", self,"fz")
@@ -212,21 +219,29 @@ class ForceBeads(dobject):
          self._forces.append(newf)      
       
       # f is a big array which assembles the forces on individual beads
-      dset(self,"f",depend_array(name="f",value=np.zeros((self.nbeads,3*self.natoms), float), func=self.f_gather,     
-          dependencies=[dget(self._forces[b],"f")  for b in range(self.nbeads)] ) )
+      dset(self,"f",
+         depend_array(name="f",value=np.zeros((self.nbeads,3*self.natoms)), 
+            func=self.f_gather,     
+               dependencies=[dget(self._forces[b],"f") for b in range(self.nbeads)]))
       # collection of pots and virs from individual beads
-      dset(self,"pots",depend_array(name="pots", value=np.zeros(self.nbeads,float), func=self.pot_gather,     
-          dependencies=[dget(self._forces[b],"pot")  for b in range(self.nbeads)] ) )
-      dset(self,"virs",depend_array(name="virs", value=np.zeros((self.nbeads,3,3),float), func=self.vir_gather,     
-          dependencies=[dget(self._forces[b],"vir")  for b in range(self.nbeads)] ) )          
+      dset(self,"pots",
+         depend_array(name="pots", value=np.zeros(self.nbeads,float), 
+            func=self.pot_gather,     
+               dependencies=[dget(self._forces[b],"pot") for b in range(self.nbeads)]))
+      dset(self,"virs",
+         depend_array(name="virs", value=np.zeros((self.nbeads,3,3),float), 
+            func=self.vir_gather,     
+               dependencies=[dget(self._forces[b],"vir") for b in range(self.nbeads)]))
       # total potential and total virial 
-      dset(self,"pot",depend_value(name="pot", func=self.pot,     
-          dependencies=[dget(self,"pots")] ) )
-      dset(self,"vir",depend_value(name="vir", func=self.vir,
-          dependencies=[dget(self,"virs")] ) )
+      dset(self,"pot",
+         depend_value(name="pot", func=self.pot, dependencies=[dget(self,"pots")]))
+      dset(self,"vir",
+         depend_value(name="vir", func=self.vir, dependencies=[dget(self,"virs")]))
 
       # optionally, transforms in normal-modes representation
-      dset(self,"fnm",depend_array(name="fnm",value=np.zeros((self.nbeads,3*self.natoms), float), func=self.b2nm_f, dependencies=[dget(self,"f")] ) )
+      dset(self,"fnm",
+         depend_array(name="fnm",value=np.zeros((self.nbeads,3*self.natoms)), 
+            func=self.b2nm_f, dependencies=[dget(self,"f")]))
       self.Cb2nm = beads.Cb2nm
       
    def queue(self): 

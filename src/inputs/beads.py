@@ -35,38 +35,33 @@ class InputBeads(Input):
          with no elements.
       names: An optional array giving the bead names. Defaults to an empty
          array with no elements.
-      init_temp: An optional float giving the kinetic temperature to 
-         intialise the bead momenta to.
    """
 
    fields={ "natoms"    : (InputValue, {"dtype"     : int,
                                         "default"   : 0,
-                                        "help"      : "The number of atoms"}), 
+                                        "help"      : "The number of atoms."}), 
             "nbeads"    : (InputValue, {"dtype"     : int,
-                                        "help"      : "The number of beads"}), 
-            "start_centroid"     : (InputAtoms, {"help"    : "An atoms object from which the centroid coordinates can be initialized", 
+                                        "help"      : "The number of beads."}), 
+            "start_centroid"     : (InputAtoms, {"help"    : "An atoms object from which the centroid coordinates can be initialized. Any parameters given here can be overwritten by specifying them explicitly.", 
                                                  "default" : Atoms(0) }),
             "q"         : (InputArray, {"dtype"     : float,
                                         "default"   : np.zeros(0),
-                                        "help"      : "The positions of the atoms, in the format [x1, y1, z1, x2, ... ]",
+                                        "help"      : "The positions of the beads. In an array of size [nbeads, 3*natoms].",
                                         "dimension" : "length"}),
             "p"         : (InputArray, {"dtype"     : float,
                                         "default"   : np.zeros(0),
-                                        "help"      : "The momenta of the atoms, in the format [px1, py1, pz1, px2, ... ]",
+                                        "help"      : "The momenta of the beads. In an array of size [nbeads, 3*natoms].",
                                         "dimension" : "momentum"}),
             "m"         : (InputArray, {"dtype"     : float, 
                                         "default"   : np.zeros(0),
-                                        "help"      : "The masses of the atoms, in the format [m1, m2, ... ]",
+                                        "help"      : "The masses of the atoms, in the format [m1, m2, ... ].",
                                         "dimension" : "mass"}),
             "names"     : (InputArray, {"dtype"     : str,
                                         "default"   : np.zeros(0, np.dtype('|S6')),
-                                        "help"      : "The names of the atoms, in the format [name1, name2, ... ]"}),
-            "init_temp" : (InputValue, {"dtype"     : float, 
-                                        "default"   : -1.0,
-                                        "help"      : "The temperature at which the initial velocity distribution is taken, if applicable.",
-                                        "dimension" : "temperature"})  }
+                                        "help"      : "The names of the atoms, in the format [name1, name2, ... ]."})  }
 
    default_help = "Deals with path integral simulations."
+   default_label = "BEADS"
 
    def write(self,  name="", indent=""):
       """Overloads Input write() function so that nothing is written if

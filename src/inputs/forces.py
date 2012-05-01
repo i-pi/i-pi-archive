@@ -29,13 +29,14 @@ class InputForce(Input):
    attribs = { "type" : ( InputValue, { "dtype"   :  str, 
                                         "default" : "socket",
                                         "options" : [ "socket" ],
-                                        "help"    : "Specifies which kind of force object is created"  }  )}
+                                        "help"    : "Specifies which kind of force object is created."  }  )}
    fields =  { "interface"  : ( InputInterface, {"help": InputInterface.default_help } ),
                "parameters" : ( InputValue, { "dtype"   : dict, 
                                               "default" : {},
-                                              "help"    : "deprecated dictionary of initialization parameters. May be removed in the future." }) }
+                                              "help"    : "Deprecated dictionary of initialization parameters. May be removed in the future." }) }
 
    default_help = "Deals with the assigning of jobs to different driver codes, and collecting the data."
+   default_label = "FORCES"
    
    def store(self, force):
       """Takes a ForceField instance and stores a minimal representation of it.
@@ -63,7 +64,8 @@ class InputForce(Input):
 
       super(InputForce,self).fetch()
       if self.type.fetch() == "socket": 
-         force = FFSocket(pars=self.parameters.fetch(), interface=self.interface.fetch())
+         force = FFSocket(pars=self.parameters.fetch(), 
+            interface=self.interface.fetch())
       else: 
          raise ValueError("Kind " + self.kind.fetch() + " is not a valid kind of forcefield")
 

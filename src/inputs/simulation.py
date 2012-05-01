@@ -67,11 +67,11 @@ class InputSimulation(Input):
 
    fields= { "force" :   (InputForce,    { "help"  : InputForce.default_help }),
              "ensemble": (InputEnsemble, { "help"  : InputEnsemble.default_help } ),
-             "prng" :    (InputRandom,   { "help"  : InputRandom.default_help,
+             "prng" :    (InputRandom,   { "help"  : InputRandom.default_help + " It is not necessary to specify this tag.",
                                          "default" : Random() } ),
-             "atoms" :   (InputAtoms, { "help"     : "Deals with classical simulations.", 
+             "atoms" :   (InputAtoms, { "help"     : "Deals with classical simulations. Only needs to be specified if a classical simulation is required, and should be left blank otherwise.", 
                                         "default"  : Atoms(0) } ), 
-             "beads" :   (InputBeads, { "help"     : InputBeads.default_help, 
+             "beads" :   (InputBeads, { "help"     : InputBeads.default_help + " Only needs to be specified if the atoms tag is not, but overwrites it otherwise.", 
                                         "default"  : Beads(0,1) } ),
              "cell" :    (InputCell,   { "help"    : InputCell.default_help }),
              "step" :       ( InputValue, { "dtype"    : int, 
@@ -82,27 +82,28 @@ class InputSimulation(Input):
                                             "help"     : "The total number of steps that will be done." }), 
              "stride" :     ( InputValue, { "dtype"    : dict,
                                             "default"  : {},
-                                            "help"     : "Dictionary holding the number of steps between printing the different kinds of files. The allowed keywords are ['checkpoint', 'properties', 'progress', 'trajectory', centroid']" }), 
+                                            "help"     : "Dictionary holding the number of steps between printing the different kinds of files. The allowed keywords are ['checkpoint', 'properties', 'progress', 'trajectory', centroid']. The default strides are {'checkpoint': 1000, 'properties': 10, 'progress': 100, 'centroid': 20, 'trajectory': 100}." }), 
              "prefix":      ( InputValue, { "dtype"    : str,
                                             "default"  : "prefix",
                                             "help"     : "A string that will be the prefix for all the output file names." }),
              "properties":  ( InputArray, { "dtype"    : str,
                                             "default"  : np.zeros(0, np.dtype('|S12')),
-                                            "help"     : "A list of the properties that will be printed in the properties output file. See the manual for a full list of acceptable names."}),
+                                            "help"     : "A list of the properties that will be printed in the properties output file. See the appropriate chapter in the manual for a full list of acceptable names."}),
              "initialize":  ( InputValue, { "dtype"    : dict,
                                             "default"  : {},
                                             "help"     : "A dictionary giving the properties of the system that need to be initialized, and their initial values. The allowed keywords are ['velocities']. The initial value of 'velocities' corresponds to the temperature to initialise the velocity distribution from. If 0, then the sysytem temperature is used." }), 
              "fd_delta":    ( InputValue, { "dtype"    : float,
                                             "default"  : 0.0,
-                                            "help"     : "The parameter used in the finite difference differentiation in the calculation of the scaled path velocity estimator." }), 
+                                            "help"     : "The parameter used in the finite difference differentiation in the calculation of the scaled path velocity estimator. Defaults to 1e-5." }), 
              "traj_format": ( InputValue, { "dtype"    : str,
                                             "default"  : "pdb",
                                             "help"     : "The file format for the output file. Allowed keywords are ['pdb', 'xyz']." }),  
              "trajectories": ( InputArray, { "dtype"   : str,
                                              "default" : np.zeros(0, np.dtype('|S12')),
-                                             "help"    : "A list of the allowed properties to print out the per-atom or per-bead trajectories of. Allowed values are ['positions', 'velocities', 'forces', 'kinetic_cv', 'centroid']."})}
+                                             "help"    : "A list of the properties to print out the per-atom or per-bead trajectories of. Allowed values are ['positions', 'velocities', 'forces', 'kinetic_cv', 'centroid']."})}
 
    default_help = "This is the top level class that deals with the running of the simulation, including holding the simulation specific properties such as the time step and outputting the data."
+   default_label = "SIMULATION"
 
    def store(self, simul):
       """Takes a simulation instance and stores a minimal representation of it.
@@ -204,7 +205,8 @@ class InputSimulation(Input):
       
       super(InputSimulation,self).check()
 
-      if self.beads._explicit :  # nothing to be done here! user/restart provides a beads object
+      if self.beads._explicit :  
+         # nothing to be done here! user/restart provides a beads object
          pass
       elif self.atoms._explicit : 
          # user is providing atoms: assume a classical simulation
@@ -212,7 +214,8 @@ class InputSimulation(Input):
          nbeads = 1
          rbeads = Beads(atoms.natoms, nbeads)
          rbeads[0] = atoms.copy() 
-         # we create a dummy beads storage so that fetch can proceed as if a beads object had been specified
+         # we create a dummy beads storage so that fetch can proceed as if a 
+         # beads object had been specified
          self.beads.store(rbeads)      
       else: 
          raise TypeError("Either a <beads> or a <atoms> block must be provided")

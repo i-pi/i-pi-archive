@@ -289,7 +289,7 @@ def read_array(dtype, data):
    """Reads a formatted string and outputs an array.
 
    The format is as for standard python arrays, which is
-   [array[0], array[1],..., array[n]]. Note the use of comma separators, and 
+   [array[0], array[1], ... , array[n]]. Note the use of comma separators, and 
    the use of square brackets.
 
    Args:
@@ -309,16 +309,21 @@ def read_array(dtype, data):
    
    return np.array(rlist, dtype)
 
-def read_tuple(data):
+def read_tuple(data, delims="()", split=",", strip=" \n\t'"):
    """Reads a formatted string and outputs a tuple.
 
    The format is as for standard python tuples, which is
-   (tuple[0], tuple[1],..., tuple[n]). Used for the shapes of arrays, so 
+   (tuple[0], tuple[1], ... , tuple[n]). Used for the shapes of arrays, so 
    assumes integer values for the elements of the tuple. Note the comma 
    separators, and the use of brackets.
 
    Args:
       data: The string to be read in.
+      delims: A string of two characters giving the first and last character of
+         the list format. ',' by default.
+      split: The character between different elements of the list format.
+      strip: Characters to be removed from the beginning and end of each 
+         element. ' \n\t' by default.
 
    Raises: 
       ValueError: Raised if the input data is not of the correct format.
@@ -327,18 +332,24 @@ def read_tuple(data):
       A tuple of integers.
    """
 
-   rlist = read_list(data, delims="()")
+   rlist = read_list(data, delims=delims, split=split, strip=strip)
    return tuple([int(i) for i in rlist])
 
-def read_dict(data, delims="{}", split=",", key_split=":"):
+def read_dict(data, delims="{}", split=",", key_split=":", strip=" \n\t"):
    """Reads a formatted string and outputs a dictionary.
 
    The format is as for standard python dictionaries, which is
-   {keyword[0]: arg[0], keyword[1]: arg[1],..., keyword[n]: arg[n]}. Note the
+   {keyword[0]: arg[0], keyword[1]: arg[1], ... , keyword[n]: arg[n]}. Note the
    comma separators, and the use of curly brackets.
 
    Args:
       data: The string to be read in.
+      delims: A string of two characters giving the first and last character of
+         the list format. ',' by default.
+      split: The character between different elements of the list format.
+      key_split: The character between the key word and the value.
+      strip: Characters to be removed from the beginning and end of each 
+         element. ' \n\t' by default.
 
    Raises: 
       ValueError: Raised if the input data is not of the correct format.
@@ -347,9 +358,9 @@ def read_dict(data, delims="{}", split=",", key_split=":"):
       A dictionary of strings.
    """
 
-   rlist = read_list(data,delims=delims, split=split)
+   rlist = read_list(data, delims=delims, split=split, strip=strip)
    def mystrip(data):
-      return data.strip(" \n\t'")
+      return data.strip(strip)
    rdict = {}
    for s in rlist:
       rtuple = map(mystrip,s.split(key_split))      
@@ -365,8 +376,8 @@ def write_type(type, data):
    """Writes a formatted string from a value of a specified type.
 
    Args:
-      data: The value to be read in.
       type: The data type of the value.
+      data: The value to be read in.
 
    Raises:
       TypeError: Raised if it tries to write from a data type that has not been
