@@ -501,7 +501,8 @@ class InputValue(Input):
          A string giving the stored value in the appropriate xml format.
       """
 
-      if self.value != "":
+      if self._explicit or self.value != "":
+         # does not write out empty strings unless explicitly asked -- avoids problems with restarts containing empty fields
          rstr = indent + "<" + name
          if self.units == "":
             rstr += ">"
