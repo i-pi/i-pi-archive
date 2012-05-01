@@ -9,4 +9,4 @@ python help.py -l -n 1 -o $help_dir/forces -r -i forces
 python help.py -l -n 1 -o $help_dir/ensembles -r -i ensembles
 python help.py -l -n 1 -o $help_dir/interface -r -i interface
 python help.py -l -n 1 -o $help_dir/thermostats -r -i thermostats
-python help.py -l -n 1 -o $help_dir/random -r -i prng
+python help.py -l -n 1 -o $help_dir/prng -r -i prng
