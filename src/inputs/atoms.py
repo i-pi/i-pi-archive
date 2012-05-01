@@ -140,7 +140,7 @@ class InputAtoms(Input):
          if (ext == "pdb"):
             myatoms, mycell = utils.io.io_pdb.read_pdb(open(self.from_file.fetch(),"r"))
          elif (ext == "xyz"):
-            myatoms = utils.io.io_pdb.read_xyz(open(self.from_file.fetch(),"r"))
+            myatoms = utils.io.io_xyz.read_xyz(open(self.from_file.fetch(),"r"))
          else:
             raise ValueError("Unrecognized extension for atomic configuration file")
             
