@@ -39,7 +39,7 @@ class InputThermo(Input):
    attribs = { "kind": (InputValue, { "dtype"   : str, 
                                       "default" : "langevin",
                                       "options" : [ "langevin", "svr", "pile_l", "pile_g", "gle", "nm_gle" ],
-                                      "help"    : "The style of thermostatting."
+                                      "help"    : "The style of thermostatting. 'langevin' specifies a white noise langevin equation to be attached to the cartesian representation of the momenta. 'svr' attaches a velocity rescaling thermostat to the cartesian representation of the momenta. Both 'pile_l' and 'pile_g' attaches a white noise langevin thermostat to the normal mode representation, with 'pile_l' attaching a local langevin thermostat to the centroid mode and 'pile_g' instead attaching a global velocity rescaling thermostat. 'gle' attaches a coloured noise langevin thermostat to the cartesian representation of the momenta, and 'nm_gle' attaches a coloured noise langevin thermostat to the normal mode representation of the momenta."
                                          }) }
    fields = { "ethermo" : (InputValue, {  "dtype"     : float, 
                                           "default"   : 0.0,

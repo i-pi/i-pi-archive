@@ -80,3 +80,19 @@ class InputInterface(Input):
       return Interface(address=self.address.fetch(), port=self.port.fetch(), 
             slots=self.slots.fetch(), mode=self.mode.fetch(), 
             latency=self.latency.fetch(), timeout=self.timeout.fetch())
+
+   def check(self):
+      """Function that deals with optional arguments."""
+
+      super(InputInterface,self).check()
+      if self.port.fetch() < 1 or self.port.fetch() > 65535:
+         raise ValueError("Port number out of acceptable range.")
+      elif self.port.fetch() < 1025: 
+         print "Warning, low port number being used, this may interrupt important system processes."
+      
+      if self.slots.fetch() < 1 or self.slots.fetch() > 5:
+         raise ValueError("Slot number out of acceptable range.")
+      if self.latency.fetch() < 0:
+         raise ValueError("Negative latency parameter specified.")
+      if self.timeout.fetch() < 0.0:
+         raise ValueError("Negative timeout parameter specified.")
