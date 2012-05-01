@@ -501,17 +501,17 @@ class InputValue(Input):
          A string giving the stored value in the appropriate xml format.
       """
 
-      if self._explicit or self.value != "":
-         # does not write out empty strings unless explicitly asked -- avoids problems with restarts containing empty fields
-         rstr = indent + "<" + name
-         if self.units == "":
-            rstr += ">"
-         else:
-            rstr += " units='" + self.units + "'>"
-         rstr += write_type(self.type, self.value) + "</" + name + ">\n"
-         return rstr
-      else:
+      if hasattr(self.value,"__len__") and len(self.value)==0 :
+         # does not write out empty strings or lists
          return ""
+
+      rstr = indent + "<" + name
+      if self.units == "":
+         rstr += ">"
+      else:
+         rstr += " units='" + self.units + "'>"
+      rstr += write_type(self.type, self.value) + "</" + name + ">\n"
+      return rstr
    
    def parse(self, xml=None, text=""):
       """Reads the data for a single value from an xml file.
@@ -623,6 +623,10 @@ class InputArray(Input):
       Returns:
          A string giving the stored value in the appropriate xml format.
       """
+
+      if len(self.value)==0 :
+         # does not write out empty strings or lists
+         return ""
 
       rstr = indent + "<" + name + " shape='" + write_tuple(self.shape.fetch())
       if self.units == "":
