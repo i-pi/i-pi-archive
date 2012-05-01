@@ -204,7 +204,6 @@ class Simulation(dobject):
          self.write_traj()
          self.step = 0
                  
-      self.chtime=0
       # main MD loop
       for self.step in range(self.step,self.tsteps):   
          # stores the state before doing a step. 

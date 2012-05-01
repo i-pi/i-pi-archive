@@ -125,7 +125,7 @@ class InputAtoms(Input):
    def check(self): 
       """Function that deals with optional arguments.
 
-      Deals with the init_temp and from_file arguments, and uses them to 
+      Deals with the from_file argument, and uses it to 
       intialise some of the atoms parameters depending on which ones have
       been specified explicitly.
       """
@@ -158,8 +158,15 @@ class InputAtoms(Input):
             self.names.store(depstrip(myatoms.names))
          self.natoms.store(myatoms.natoms)
 
-      if not 3*self.natoms.fetch() == len(self.q.fetch()) == len(self.p.fetch()) == 3*len(self.m.fetch()) == 3*len(self.names.fetch()):
-            raise ValueError("Incompatible dimensions of the atoms' data arrays.")
+      if not (3*self.natoms.fetch(),) == self.q.fetch().shape:
+         raise ValueError("q array is the wrong shape in atoms object.")
+      if not (3*self.natoms.fetch(),) == self.p.fetch().shape:
+         raise ValueError("p array is the wrong shape in atoms object.")
+      if not (self.natoms.fetch(),) == self.m.fetch().shape:
+         raise ValueError("m array is the wrong shape in atoms object.")
+      if not (self.natoms.fetch(),) == self.names.fetch().shape:
+         raise ValueError("names array is the wrong shape in atoms object.")
+
       for mass in self.m.fetch():
          if mass <= 0:
             raise ValueError("Unphysical atom mass")

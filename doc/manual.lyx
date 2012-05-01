@@ -3966,13 +3966,6 @@ input{atoms}
 
 
 \backslash
-input{random}
-\end_layout
-
-\begin_layout Plain Layout
-
-
-\backslash
 input{barostats}
 \end_layout
 
@@ -3981,6 +3974,13 @@ input{barostats}
 
 \backslash
 input{thermostats}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+input{prng}
 \end_layout
 
 \end_inset
