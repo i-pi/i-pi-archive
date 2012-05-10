@@ -14,7 +14,7 @@ Functions:
    eigensystem_ut3x3: Finds the eigenvector matrix and eigenvalues of a 3*3
       upper triangular matrix
    exp_ut3x3: Computes the exponential of a 3*3 upper triangular matrix.
-   root_herm: Computes the square root of a 3*3 positive-definite hermitian
+   root_herm: Computes the square root of a positive-definite hermitian
       matrix.
 """
 
@@ -96,7 +96,7 @@ def stab_cholesky(M):
       if (D[i]>0):
          D[i] = math.sqrt(D[i])
       else:
-         print " # stab-cholesky warning: zeroing negative element", D[i]
+         print " # stab-cholesky warning: zeroing negative element ", D[i]
          D[i] = 0 
       for j in range(i+1):
          S[i,j] += L[i,j]*D[j]
@@ -255,7 +255,7 @@ def exp_ut3x3(h):
    return eh  
 
 def root_herm(A):
-   """Gives the square root of a 3*3 hermitian matrix with real eigenvalues.
+   """Gives the square root of a hermitian matrix with real eigenvalues.
 
    Returns:
       A matrix such that itself matrix multiplied by its transpose gives the
@@ -263,7 +263,12 @@ def root_herm(A):
    """
 
    eigvals, eigvecs = np.linalg.eigh(A)
-   diag = np.zeros((3,3))
-   for i in range(3):
-      diag[i,i] = math.sqrt(eigvals[i])
+   ndgrs = len(eigvals)
+   diag = np.zeros((ndgrs,ndgrs))
+   for i in range(ndgrs):
+      if eigvals[i] >= 0:
+         diag[i,i] = math.sqrt(eigvals[i])
+      else:
+         print " # matrix square root warning: zeroing negative element ", eigvals[i]
+         diag[i,i] = 0
    return np.dot(eigvecs, np.dot(diag, eigvecs.T))
