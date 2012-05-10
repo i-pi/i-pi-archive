@@ -14,10 +14,12 @@ Functions:
    eigensystem_ut3x3: Finds the eigenvector matrix and eigenvalues of a 3*3
       upper triangular matrix
    exp_ut3x3: Computes the exponential of a 3*3 upper triangular matrix.
+   root_herm: Computes the square root of a 3*3 positive-definite hermitian
+      matrix.
 """
 
 __all__ = ['matrix_exp', 'stab_cholesky', 'h2abc', 'abc2h', 'invert_ut3x3',
-           'det_ut3x3', 'eigensystem_ut3x3', 'exp_ut3x3']
+           'det_ut3x3', 'eigensystem_ut3x3', 'exp_ut3x3', 'root_herm']
 
 import numpy as np
 import math
@@ -251,3 +253,17 @@ def exp_ut3x3(h):
       eh[0,2] += h[0,1]*h[0,2]*e00/24.0*(12.0 + 4*(h[1,1] + h[2,2] - 2*h[0,0]) + (h[1,1] - h[0,0])*(h[2,2] - h[0,0]))
       
    return eh  
+
+def root_herm(A):
+   """Gives the square root of a 3*3 hermitian matrix with real eigenvalues.
+
+   Returns:
+      A matrix such that itself matrix multiplied by its transpose gives the
+      original matrix.
+   """
+
+   eigvals, eigvecs = np.linalg.eigh(A)
+   diag = np.zeros((3,3))
+   for i in range(3):
+      diag[i,i] = math.sqrt(eigvals[i])
+   return np.dot(eigvecs, np.dot(diag, eigvecs.T))
