@@ -234,9 +234,11 @@ class ForceBeads(dobject):
                dependencies=[dget(self._forces[b],"vir") for b in range(self.nbeads)]))
       # total potential and total virial 
       dset(self,"pot",
-         depend_value(name="pot", func=self.pot, dependencies=[dget(self,"pots")]))
+         depend_value(name="pot", func=self.pot, 
+            dependencies=[dget(self,"pots")]))
       dset(self,"vir",
-         depend_value(name="vir", func=self.vir, dependencies=[dget(self,"virs")]))
+         depend_value(name="vir", func=self.vir, 
+            dependencies=[dget(self,"virs")]))
 
       # optionally, transforms in normal-modes representation
       dset(self,"fnm",
@@ -245,7 +247,7 @@ class ForceBeads(dobject):
       self.Cb2nm = beads.Cb2nm
       
    def queue(self): 
-      "Submits all the required force calculations to the interface."""
+      """Submits all the required force calculations to the interface."""
       
       # this should be called in functions which access u,v,f for ALL the beads,
       # before accessing them. it is basically pre-queueing so that the 
@@ -255,7 +257,7 @@ class ForceBeads(dobject):
 
    # here are the functions to automatically compute depobjects
    def b2nm_f(self): 
-      """Transforms force to normal mode representation.
+      """Transforms force array to normal mode representation.
 
       Returns:
          An array giving all the force components in the normal mode 
@@ -330,21 +332,18 @@ class ForceBeads(dobject):
       return self.pots.sum()
 
    def vir(self): 
-      """Sums the virial of each replica. Not the actual system virial.
+      """Sums the virial of each replica.
+
+      Not the actual system virial.
 
       Returns:
           Virial sum.
       """
 
-      v = np.zeros((3,3))
-      for i in range(len(self.virs)):
-         v += self.virs[i]
-      return v
-
-class FFMulti(ForceField):
-   """ A force class defining a superimposition of multiple force fields. """
-   
-   pass
+      vir = np.zeros((3,3))
+      for v in self.virs:
+         vir += v
+      return vir
 
 class FFSocket(ForceField):
    """Interface between the PIMD code and the socket for a single replica.
