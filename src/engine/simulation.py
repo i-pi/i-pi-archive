@@ -7,8 +7,6 @@ not inherently system dependent, like the running of each time step,
 choosing which properties to initialise, and which properties to output.
 
 Classes:
-   InputSimulation: Deals with creating the simulation object from a file, 
-      and writing the checkpoints.
    Simulation: Deals with running the simulation and outputting the results.
 """
 
@@ -28,7 +26,7 @@ from cell import *
 from forces import ForceBeads
 from beads import Beads
 from properties import Properties, Trajectories
-from inputs.simulation import InputSimulation
+import inputs.simulation
 
 _DEFAULT_STRIDES = {"checkpoint": 1000, "properties": 10, "progress": 100, "centroid": 20,  "trajectory": 100}
 _DEFAULT_OUTPUT = [ "time", "conserved", "kinetic_cv", "potential" ]
@@ -58,12 +56,12 @@ class Simulation(dobject):
       dstride: A dictionary giving number of steps between printing out 
          data for the different types of data. Defaults to _DEFAULT_STRIDES.
       outlist: An array of strings giving the different properties to output.
-      initlist: An array of the properties that should be initialised. Set to 
-         zero after the initialisation, so that the checkpoints don't specify
-         any properties to be initialised.
+      initlist: A dictionary of the properties that should be initialised with
+         their values. Set to zero after the initialisation, so that the 
+         checkpoints don't specify any properties to be initialised after the 
+         simulation is restarted.
       properties: A properties object.
       fout: File to output the properties to.
-      tcout: File to output the centroid trajectory to.
       tout: File to output the full trajectory to.
       ichk: A number keeping track of all the restart files generated so far,
          so that old files are not overwritten.
@@ -96,8 +94,10 @@ class Simulation(dobject):
             Defaults to 'prefix'.
          outlist: An array of strings giving all the properties that should 
             be output space separated.
-         initlist: An array of strings giving all the quantities that should
-            be output.
+         trajlist: An array of strings giving all the trajectories that should
+            be output. 
+         initlist: A dictionary of keys giving all the quantities that should
+            be initialized with values giving their initial value.
       """
 
       print " # Initializing simulation object "
@@ -155,12 +155,19 @@ class Simulation(dobject):
       self.properties.bind(self)
       self.trajs.bind(self)
       
-      self.status = InputSimulation()
+      self.status = inputs.simulation.InputSimulation()
       self.status.store(self)
       
       # Checks as soon as possible if some asked-for properties are missing or mispelled
       for what in self.outlist:
-         if not what in self.properties.property_dict.keys():
+         if '(' in what:
+            argstart = what.find('(')
+            key = what[0:argstart]
+            if not key in self.properties.property_dict.keys():
+               print "Computable properties list: ", self.properties.property_dict.keys()
+               raise KeyError(key + " is not a recognized property")
+
+         elif not what in self.properties.property_dict.keys():
             print "Computable properties list: ", self.properties.property_dict.keys()
             raise KeyError(what + " is not a recognized property")
    
@@ -197,7 +204,6 @@ class Simulation(dobject):
          self.write_traj()
          self.step = 0
                  
-      self.chtime=0
       # main MD loop
       for self.step in range(self.step,self.tsteps):   
          # stores the state before doing a step. 
@@ -246,18 +252,20 @@ class Simulation(dobject):
 
       self.ichk = 0      
       if "velocities" in self.initlist:
-         # as of now, just ignore the value given for velocities in initlist. we may decide to initialize with a different temperature?
-         self.beads.p = math.sqrt(self.ensemble.ntemp*Constants.kb)*self.beads.sm3*self.prng.gvec((self.beads.nbeads, 3*self.beads.natoms))
+         init_temp = float(self.initlist["velocities"])*self.beads.nbeads
+         if init_temp == 0:
+            self.beads.p = math.sqrt(self.ensemble.ntemp*Constants.kb)*self.beads.sm3*self.prng.gvec((self.beads.nbeads, 3*self.beads.natoms))
+         else:
+            self.beads.p = math.sqrt(init_temp*Constants.kb)*self.beads.sm3*self.prng.gvec((self.beads.nbeads, 3*self.beads.natoms))
 
       if self.ensemble.fixcom:
          self.ensemble.rmcom()
       
       # Zeroes out the initlist, such that in restarts no initialization will be required
-      self.initlist = np.zeros(0, np.dtype('|S12'))
-
+      self.initlist = {}
 
    def write_traj(self):
-      """ Writes out the required trajectories """
+      """Writes out the required trajectories."""
       
       for what in self.trajlist:
          # quick-and-dirty way to check whether a trajectory is "global" or per-bead

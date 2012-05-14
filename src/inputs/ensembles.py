@@ -48,7 +48,7 @@ class InputEnsemble(Input):
    fields={"thermostat" : (InputThermo, {"default"   : engine.thermostats.Thermostat(),
                                          "help"      : "The thermostat for the atoms, keeps the atom velocity distribution at the correct temperature."} ),
            "barostat" : (InputBaro, {"default"       : engine.barostats.Barostat(),
-                                     "help"          : "The barostat for the simulation."} ), 
+                                     "help"          : InputBaro.default_help}),
            "timestep": (InputValue, {"dtype"         : float,
                                      "default"       : "1.0",
                                      "help"          : "The time step.",
@@ -68,6 +68,9 @@ class InputEnsemble(Input):
            "fixcom": (InputValue, {"dtype"           : bool, 
                                    "default"         : False,
                                    "help"            : "This describes whether the centre of mass of the particles is fixed."}) }
+
+   default_help = "Holds all the information that is ensemble specific, such as the temperature and the external pressure, and the thermostats and barostats that control it."
+   default_label = "ENSEMBLE"
    
    def store(self, ens):
       """Takes an ensemble instance and stores a minimal representation of it.
@@ -113,16 +116,22 @@ class InputEnsemble(Input):
 
       super(InputEnsemble,self).fetch()
       if self.type.fetch() == "nve" :
-         ens = NVEEnsemble(dt=self.timestep.fetch(), temp=self.temperature.fetch(), fixcom=self.fixcom.fetch())
+         ens = NVEEnsemble(dt=self.timestep.fetch(), 
+            temp=self.temperature.fetch(), fixcom=self.fixcom.fetch())
       elif self.type.fetch() == "nvt" : 
-         ens = NVTEnsemble(dt=self.timestep.fetch(), temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(),
-                        fixcom=self.fixcom.fetch())
+         ens = NVTEnsemble(dt=self.timestep.fetch(), 
+            temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(),
+               fixcom=self.fixcom.fetch())
       elif self.type.fetch() == "npt" : 
-         ens = NPTEnsemble(dt=self.timestep.fetch(), temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(),
-                        fixcom=self.fixcom.fetch(), pext=self.pressure.fetch(), barostat=self.barostat.fetch() )
+         ens = NPTEnsemble(dt=self.timestep.fetch(), 
+            temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(),
+               fixcom=self.fixcom.fetch(), pext=self.pressure.fetch(), 
+                  barostat=self.barostat.fetch() )
       elif self.type.fetch() == "nst" : 
-         ens = NSTEnsemble(dt=self.timestep.fetch(), temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(),
-                        fixcom=self.fixcom.fetch(), sext=self.stress.fetch(), barostat=self.barostat.fetch() )
+         ens = NSTEnsemble(dt=self.timestep.fetch(), 
+            temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(),
+               fixcom=self.fixcom.fetch(), sext=self.stress.fetch(), 
+                  barostat=self.barostat.fetch() )
                         
       return ens
       

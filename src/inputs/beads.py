@@ -26,6 +26,7 @@ class InputBeads(Input):
    Attributes:
       nbeads: An optional integer giving the number of beads. Defaults to 0.
       natoms: An optional integer giving the number of atoms. Defaults to 0.
+      start_centroid: An atoms object to initialize the centroid postions from.
       q: An optional array giving the bead positions. Defaults to an empty
          array with no elements.
       p: An optional array giving the bead momenta. Defaults to an empty
@@ -34,36 +35,33 @@ class InputBeads(Input):
          with no elements.
       names: An optional array giving the bead names. Defaults to an empty
          array with no elements.
-      init_temp: An optional float giving the kinetic temperature to 
-         intialise the bead momenta to.
    """
 
    fields={ "natoms"    : (InputValue, {"dtype"     : int,
                                         "default"   : 0,
-                                        "help"      : "The number of atoms"}), 
+                                        "help"      : "The number of atoms."}), 
             "nbeads"    : (InputValue, {"dtype"     : int,
-                                        "help"      : "The number of beads"}), 
-            "start_centroid"     : (InputAtoms, {"help"    : "An atoms object from which the centroid coordinates can be initialized", 
+                                        "help"      : "The number of beads."}), 
+            "start_centroid"     : (InputAtoms, {"help"    : "An atoms object from which the centroid coordinates can be initialized. Any parameters given here can be overwritten by specifying them explicitly.", 
                                                  "default" : Atoms(0) }),
             "q"         : (InputArray, {"dtype"     : float,
                                         "default"   : np.zeros(0),
-                                        "help"      : "The positions of the atoms, in the format [x1, y1, z1, x2, ... ]",
+                                        "help"      : "The positions of the beads. In an array of size [nbeads, 3*natoms].",
                                         "dimension" : "length"}),
             "p"         : (InputArray, {"dtype"     : float,
                                         "default"   : np.zeros(0),
-                                        "help"      : "The momenta of the atoms, in the format [px1, py1, pz1, px2, ... ]",
+                                        "help"      : "The momenta of the beads. In an array of size [nbeads, 3*natoms].",
                                         "dimension" : "momentum"}),
             "m"         : (InputArray, {"dtype"     : float, 
                                         "default"   : np.zeros(0),
-                                        "help"      : "The masses of the atoms, in the format [m1, m2, ... ]",
+                                        "help"      : "The masses of the atoms, in the format [m1, m2, ... ].",
                                         "dimension" : "mass"}),
             "names"     : (InputArray, {"dtype"     : str,
                                         "default"   : np.zeros(0, np.dtype('|S6')),
-                                        "help"      : "The names of the atoms, in the format [name1, name2, ... ]"}),
-            "init_temp" : (InputValue, {"dtype"     : float, 
-                                        "default"   : -1.0,
-                                        "help"      : "The temperature at which the initial velocity distribution is taken, if applicable.",
-                                        "dimension" : "temperature"})  }
+                                        "help"      : "The names of the atoms, in the format [name1, name2, ... ]."})  }
+
+   default_help = "Deals with path integral simulations."
+   default_label = "BEADS"
 
    def write(self,  name="", indent=""):
       """Overloads Input write() function so that nothing is written if
@@ -145,8 +143,15 @@ class InputBeads(Input):
          if not self.names._explicit:
             self.names.store(names)
 
-      if not 3*self.natoms.fetch()*self.nbeads.fetch() == self.q.fetch().size == self.p.fetch().size == 3*self.nbeads.fetch()*len(self.m.fetch()) == 3*self.nbeads.fetch()*len(self.names.fetch()):
-            raise ValueError("Incompatible dimensions of the beads' data arrays.")
+      if not (self.nbeads.fetch(),3*self.natoms.fetch()) == self.q.fetch().shape:
+         raise ValueError("q array is the wrong shape in beads object.")
+      if not (self.nbeads.fetch(),3*self.natoms.fetch()) == self.p.fetch().shape:
+         raise ValueError("p array is the wrong shape in beads object.")
+      if not (self.natoms.fetch(),) == self.m.fetch().shape:
+         raise ValueError("m array is the wrong shape in beads object.")
+      if not (self.natoms.fetch(),) == self.names.fetch().shape:
+         raise ValueError("names array is the wrong shape in beads object.")
+
       for mass in self.m.fetch():
          if mass <= 0:
             raise ValueError("Unphysical atom mass")

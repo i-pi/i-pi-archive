@@ -483,6 +483,10 @@ class Interface(object):
             except Disconnected:
                c.status = 0
                continue
+            except:
+              print " @SOCKET:   Client got in a awkward state during getforce. Will mark as disconnected and try to carry on."
+              c.status = 0
+              continue
             c.poll()
             while c.status & Status.Busy: # waits, but check if we got stuck.               
                if self.timeout>0 and r["start"]>0 and time.time()-r["start"]> self.timeout:
@@ -491,7 +495,8 @@ class Interface(object):
                      print " @SOCKET:   Client died or got unresponsive. Closing socket."
                      c.shutdown(socket.SHUT_RDWR)
                      c.close()
-                  except:   pass
+                  except:
+                     pass
                   c.poll()
                   continue
                c.poll()
@@ -543,7 +548,8 @@ class Interface(object):
                
                try:
                   print " @SOCKET: Assigning [",match_ids,"] request id ", r["id"], " to client with last-id ", fc.lastreq, "(",self.clients.index(fc),"/",len(self.clients),":",fc.getpeername(),")"              
-               except:  pass               
+               except:
+                  pass               
 
                while fc.status & Status.Busy:
                   fc.poll()            

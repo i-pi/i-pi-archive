@@ -12,6 +12,7 @@ import numpy as np
 import utils.io.io_pdb, utils.io.io_xyz
 from engine.cell import *
 from utils.inputvalue import *
+from utils.units import UnitMap
 
 __all__ = [ 'InputCell' ]
       
@@ -32,10 +33,10 @@ class InputCell(Input):
          array of zeros.
       P: An optional float giving the conjugate momentum to the volume 
          fluctuations. Defaults to 0.0.
-      init_temp: An optional float to give the effective temperature that the 
-         cell velocities should be initialised to. Defaults to -1.0.
       from_file: An optional string giving the name of a pdb file containing
          the initial cell and atom positions. Defaults to ''.
+      file_units: An optional string giving the length units that the file is
+         specified by. Defaults to ''.
       flexible: A boolean giving whether the cell will be allowed to change 
          shape. Defaults to False.
    """
@@ -46,11 +47,11 @@ class InputCell(Input):
                                 "dimension"  : "mass"}),
             "h" : (InputArray, {"dtype"      : float,
                                 "default"    : np.zeros((3,3)),
-                                "help"       : "The cell vector matrix",
+                                "help"       : "The cell vector matrix.",
                                 "dimension"  : "length"}), 
             "h0" : (InputArray, {"dtype"     : float,
                                  "default"   : np.zeros((3,3)), 
-                                 "help"      : "The reference cell vector matrix. Defined as the unstressed equilibrium cell.",
+                                 "help"      : "The reference cell vector matrix. Defined as the unstressed equilibrium cell. Will be given the same value as h if not specified by the user.",
                                  "dimension" : "length"}),
             "p" : (InputArray, {"dtype"      : float,
                                 "default"    : np.zeros((3,3),float),
@@ -60,16 +61,19 @@ class InputCell(Input):
                                 "default"    : 0.0,
                                 "help"       : "The scalar cell 'momentum', used in constant pressure simulations.",
                                 "dimension"  : "momentum"}),
-            "init_temp": (InputValue, {"dtype"     : float, 
-                                       "default"   : -1.0,
-                                       "help"      : "The temperature at which the initial velocity distribution is taken, if applicable.",
-                                       "dimension" : "temperature"}),
+            "file_units": (InputValue, {"dtype"    : str,
+                                        "default"  : "",
+                                        "help"     : "The units in which the lengths in the configuration file are given.",
+                                        "options"  : [unit for unit in UnitMap["length"]] }),
             "from_file": (InputValue, {"dtype"     : str,
                                        "default"   : "",
-                                       "help"      : "A file from which to take the cell parameters from.",}) }
+                                       "help"      : "A file from which to take the cell parameters from."}) }
    attribs={ "flexible" : (InputValue, {"dtype"    : bool, 
                                         "default"  : False,
-                                        "help"     : "Whether the cell parameters can change during the simulation."}) }
+                                        "help"     : "Describes whether the simulation box shape can change, or just the volume."}) }
+
+   default_help = "Deals with the cell parameters, and stores their momenta in flexible cell calculations."
+   default_label = "CELL"
     
    def store(self, cell, filename=""):
       """Takes a Cell instance and stores of minimal representation of it.
@@ -127,6 +131,8 @@ class InputCell(Input):
          ext=filename[len(filename)-3:]
          if (ext == "pdb"):
             myatoms, mycell = utils.io.io_pdb.read_pdb(open(self.from_file.fetch(),"r"))
+            mycell.h *= UnitMap["length"][self.file_units.fetch()]
+            mycell.h0 *= UnitMap["length"][self.file_units.fetch()]
          else:
             raise ValueError("Unrecognized extension for cell configuration")
 

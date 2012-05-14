@@ -69,6 +69,7 @@ class Input(object):
    default_dimension = "undefined"
    default_units = ""
    default_value = None
+   default_label = ""
 
    def __init__(self, help=None, dimension=None, units = None, default=None):
       """Initialises Input.
@@ -98,12 +99,14 @@ class Input(object):
          self.units = units
       if default is None:     
          self._default = self.default_value
-         self._optional = False #True if must be input by user.
+         self._optional = False #False if must be input by user.
       else:                   
          self._default = default
          self._optional = True
          
-      self._explicit = False #True if set by the user.
+      self._explicit = False #True if has been set by the user.
+
+      self._label = self.default_label
 
       #For each tag name in the fields and attribs dictionaries,
       #creates and object of the type given, expanding the dictionary to give 
@@ -229,13 +232,16 @@ class Input(object):
          if not (vf._explicit or vf._optional):
             raise ValueError("Field name '" + f + "' is mandatory and was not found in the input for the property " + xml.name)
       
-   def help_latex(self, level=0, stop_level=None):
+   def help_latex(self, level=0, stop_level=None, ref=False):
       """Function to generate a LaTeX formatted manual.
 
       Args:
          level: Current level of the hierarchy being considered.
          stop_level: The depth to which information will be given. If not given,
             will give all information.
+         ref: A boolean giving whether the latex file produced will be a 
+            stand-alone document, or will be intended as a section of a larger
+            document with cross-references between the different sections.
 
       Returns: 
          A LaTeX formatted string that can be compiled to give a help 
@@ -247,9 +253,13 @@ class Input(object):
 
       rstr = ""
       if level == 0:
-         rstr += "\\documentclass[12pt,fleqn]{report}"
-         rstr += "\n\\begin{document}\n"
-      
+         if not ref:
+            rstr += "\\documentclass[12pt,fleqn]{report}"
+            rstr += "\n\\begin{document}\n"
+         if self._label != "" and ref:
+            rstr += "\\section{" + self._label + "}\n"
+            rstr += "\\label{" + self._label + "}\n"
+
       rstr += self._help + "\n"
       
       if self._dimension != "undefined": 
@@ -269,19 +279,22 @@ class Input(object):
       if hasattr(self, "type") and hasattr(self.type, "__name__"):
          rstr += "{\\\\ \\bf DATA TYPE: }" + self.type.__name__ + "\n"
       
-      if len(self.attribs) != 0 and level != stop_level:
+      if len(self.attribs) != 0:
          rstr += "\\paragraph{Attributes}\n \\begin{itemize}\n"
          for a in self.attribs:
-            rstr += "\\item {\\bf " + a + "}:\n " + self.__dict__[a].help_latex(level+1, stop_level)
+            rstr += "\\item {\\bf " + a + "}:\n " + self.__dict__[a].help_latex(level, stop_level, ref)
          rstr += "\\end{itemize}\n \n"
             
       if len(self.fields) != 0 and level != stop_level:
          rstr += "\\paragraph{Fields}\n \\begin{itemize}\n"
          for f in self.fields:
-            rstr += "\\item {\\bf " + f + "}:\n " + self.__dict__[f].help_latex(level+1, stop_level)
+            if self.__dict__[f]._label == "" or not ref:
+               rstr += "\\item {\\bf " + f + "}:\n " + self.__dict__[f].help_latex(level+1, stop_level, ref)
+            else:
+               rstr += "\\item {\\bf \hyperref[" + self.__dict__[f]._label + "]{" + f + "} }:\n " + self.__dict__[f].help_latex(level+1, stop_level)
          rstr += "\\end{itemize}\n \n"
 
-      if level == 0:
+      if level == 0 and not ref:
          rstr += "\\end{document}"
       
       rstr = rstr.replace('_', '\\_')
@@ -295,8 +308,10 @@ class Input(object):
 
       Args:
          default: The object that needs to be converted to a string.
-         dtype: The type of data being printed.
          indent: The indent at the beginning of a line.
+         latex: A boolean giving whether the string will be latex-format.
+
+      Returns: A formatted string.
       """
 
       if type(default) is np.ndarray:
@@ -341,7 +356,7 @@ class Input(object):
       if (not stop_level is None and level > stop_level):
          return ""
 
-      show_attribs = (len(self.attribs) != 0 and level != stop_level)
+      show_attribs = (len(self.attribs) != 0)
       show_fields = (len(self.fields) != 0 and level != stop_level)
 
       rstr = ""
@@ -486,6 +501,10 @@ class InputValue(Input):
          A string giving the stored value in the appropriate xml format.
       """
 
+      if hasattr(self.value,"__len__") and len(self.value)==0 :
+         # does not write out empty strings or lists
+         return ""
+
       rstr = indent + "<" + name
       if self.units == "":
          rstr += ">"
@@ -532,7 +551,7 @@ class InputArray(Input):
  
    attribs = { "shape" : (InputValue, 
                  {"dtype": tuple, 
-                  "help": "The shape of the array",
+                  "help": "The shape of the array.",
                   "default": (0,)}) }
 
    def __init__(self, help=None, dimension=None, units=None, default=None, dtype=None):
@@ -604,6 +623,10 @@ class InputArray(Input):
       Returns:
          A string giving the stored value in the appropriate xml format.
       """
+
+      if len(self.value)==0 :
+         # does not write out empty strings or lists
+         return ""
 
       rstr = indent + "<" + name + " shape='" + write_tuple(self.shape.fetch())
       if self.units == "":

@@ -37,39 +37,38 @@ class InputAtoms(Input):
          array with no elements.
       from_file: An optional string giving a pdb format file with the atom
          positions. Defaults to ''.
-      init_temp: An optional float giving the kinetic temperature to 
-         initialise the atom momenta to.
+      file_units: An optional string giving the length units that the file is
+         specified by. Defaults to ''.
    """
 
    fields={ "natoms"    : (InputValue, {"dtype"     : int,
                                         "default"   : 0,
-                                        "help"      : "The number of atoms" }), 
+                                        "help"      : "The number of atoms." }), 
             "q"         : (InputArray, {"dtype"     : float,
                                         "default"   : np.zeros(0),
-                                        "help"      : "The positions of the atoms, in the format [x1, y1, z1, x2, ... ]",
+                                        "help"      : "The positions of the atoms, in the format [x1, y1, z1, x2, ... ].",
                                         "dimension" : "length" }),
             "p"         : (InputArray, {"dtype"     : float,
                                         "default"   : np.zeros(0),
-                                        "help"      : "The momenta of the atoms, in the format [px1, py1, pz1, px2, ... ]",
+                                        "help"      : "The momenta of the atoms, in the format [px1, py1, pz1, px2, ... ].",
                                         "dimension" : "momentum" }),
             "m"         : (InputArray, {"dtype"     : float, 
                                         "default"   : np.zeros(0),
-                                        "help"      : "The masses of the atoms, in the format [m1, m2, ... ]",
+                                        "help"      : "The masses of the atoms, in the format [m1, m2, ... ].",
                                         "dimension" : "mass" }),
             "names"     : (InputArray, {"dtype"     : str,
                                         "default"   : np.zeros(0, np.dtype('|S6')),
-                                        "help"      : "The names of the atoms, in the format [name1, name2, ... ]" }),
+                                        "help"      : "The names of the atoms, in the format [name1, name2, ... ]." }),
             "from_file" : (InputValue, {"dtype"     : str, 
                                         "default"   : "", 
-                                        "help"      : "Gives the name of the file from which the configurations are taken, if present." }),
+                                        "help"      : "Gives the name of the file from which the configurations are taken, if present. Any value given in this file can be overwritten by specifying it explicitly." }),
             "file_units": (InputValue, {"dtype"     : str,
                                         "default"   : "",
                                         "help"      : "The units in which the lengths in the configuration file are given.",
-                                        "options"   : [unit for unit in UnitMap["length"]] }),
-            "init_temp" : (InputValue, {"dtype"     : float, 
-                                        "default"   : -1.0,
-                                        "help"      : "The temperature at which the initial velocity distribution is taken, if applicable.",
-                                        "dimension" : "temperature"})  }
+                                        "options"   : [unit for unit in UnitMap["length"]]})  }
+
+   default_help = "Deals with single replicas of the system or classical simulations."
+   default_label = "ATOMS"
        
    def store(self, atoms, filename=""):
       """Takes an Atoms instance and stores a minimal representation of it.
@@ -126,7 +125,7 @@ class InputAtoms(Input):
    def check(self): 
       """Function that deals with optional arguments.
 
-      Deals with the init_temp and from_file arguments, and uses them to 
+      Deals with the from_file argument, and uses it to 
       intialise some of the atoms parameters depending on which ones have
       been specified explicitly.
       """
@@ -141,7 +140,7 @@ class InputAtoms(Input):
          if (ext == "pdb"):
             myatoms, mycell = utils.io.io_pdb.read_pdb(open(self.from_file.fetch(),"r"))
          elif (ext == "xyz"):
-            myatoms = utils.io.io_pdb.read_xyz(open(self.from_file.fetch(),"r"))
+            myatoms = utils.io.io_xyz.read_xyz(open(self.from_file.fetch(),"r"))
          else:
             raise ValueError("Unrecognized extension for atomic configuration file")
             
@@ -159,8 +158,15 @@ class InputAtoms(Input):
             self.names.store(depstrip(myatoms.names))
          self.natoms.store(myatoms.natoms)
 
-      if not 3*self.natoms.fetch() == len(self.q.fetch()) == len(self.p.fetch()) == 3*len(self.m.fetch()) == 3*len(self.names.fetch()):
-            raise ValueError("Incompatible dimensions of the atoms' data arrays.")
+      if not (3*self.natoms.fetch(),) == self.q.fetch().shape:
+         raise ValueError("q array is the wrong shape in atoms object.")
+      if not (3*self.natoms.fetch(),) == self.p.fetch().shape:
+         raise ValueError("p array is the wrong shape in atoms object.")
+      if not (self.natoms.fetch(),) == self.m.fetch().shape:
+         raise ValueError("m array is the wrong shape in atoms object.")
+      if not (self.natoms.fetch(),) == self.names.fetch().shape:
+         raise ValueError("names array is the wrong shape in atoms object.")
+
       for mass in self.m.fetch():
          if mass <= 0:
             raise ValueError("Unphysical atom mass")

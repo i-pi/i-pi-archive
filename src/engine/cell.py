@@ -56,9 +56,15 @@ class Cell(dobject):
       h0 = np.array(h,copy=True)
       dset(self,"h0",depend_array(name = 'h0', value = h0 ) )
             
-      dset(self, "ih" , depend_array(name = "ih", value = np.zeros((3,3),float), func=self.get_ih, dependencies=[dget(self,"h")]) )
-      dset(self, "ih0" , depend_array(name = "ih0", value = np.zeros((3,3),float), func=self.get_ih0, dependencies=[dget(self,"h0")]) )
-      dset(self, "strain", depend_value(name = "strain", func=self.get_strain, dependencies=[dget(self,"h"),dget(self,"ih0")]) )
+      dset(self,"ih", 
+         depend_array(name = "ih", value = np.zeros((3,3),float), 
+            func=self.get_ih, dependencies=[dget(self,"h")]) )
+      dset(self,"ih0", 
+         depend_array(name = "ih0", value = np.zeros((3,3),float), 
+            func=self.get_ih0, dependencies=[dget(self,"h0")]) )
+      dset(self,"strain", 
+         depend_value(name = "strain", func=self.get_strain, 
+            dependencies=[dget(self,"h"),dget(self,"ih0")]) )
             
    def get_ih(self):
       """Inverts the lattice vector matrix."""
@@ -160,23 +166,43 @@ class CellFlexi(Cell):
 
       sync_h=synchronizer()
       sync_p=synchronizer()
-      dset(self, "h6", depend_array(name="h6", value=np.zeros(6,float), func={"h":self.htoh6}, synchro=sync_h) )      
-      dset(self, "p6", depend_array(name="p6", value=np.zeros(6,float), func={"p":self.ptop6}, synchro=sync_p) )
+      dset(self,"h6", 
+         depend_array(name="h6", value=np.zeros(6,float), 
+            func={"h":self.htoh6}, synchro=sync_h) )      
+      dset(self,"p6", 
+         depend_array(name="p6", value=np.zeros(6,float), 
+            func={"p":self.ptop6}, synchro=sync_p) )
                 
-      dset(self, "h", depend_array(name = 'h', value = h, func={"h6":self.h6toh}, synchro=sync_h) )
-      dset(self, "p", depend_array(name = 'p', value = np.zeros((3,3),float), func={"p6":self.p6top}, synchro=sync_p) )
-      dset(self, "m6", depend_array(name= "m6", value=np.zeros(6,float), func=self.mtom6, dependencies=[dget(self,"m")]) )
+      dset(self,"h", 
+         depend_array(name = 'h', value = h, 
+            func={"h6":self.h6toh}, synchro=sync_h) )
+      dset(self,"p", 
+         depend_array(name = 'p', value = np.zeros((3,3),float), 
+            func={"p6":self.p6top}, synchro=sync_p) )
+      dset(self,"m6", 
+         depend_array(name= "m6", value=np.zeros(6,float), 
+            func=self.mtom6, dependencies=[dget(self,"m")]) )
 
-      dset(self, "ih", depend_array(name = "ih", value = np.zeros((3,3),float), func=self.get_ih, dependencies=[dget(self,"h")]) )
-      dset(self, "strain", depend_value(name = "strain", func=self.get_strain, dependencies=[dget(self,"h"),dget(self,"ih0")]) )
+      dset(self,"ih", 
+         depend_array(name = "ih", value = np.zeros((3,3),float), 
+            func=self.get_ih, dependencies=[dget(self,"h")]) )
+      dset(self,"strain", 
+         depend_value(name = "strain", func=self.get_strain, 
+            dependencies=[dget(self,"h"),dget(self,"ih0")]) )
       
       if not h0 is None:
          self.h0 = h0
       
-      dset(self, "V", depend_value(name = 'V', func=self.get_volume, dependencies=[dget(self,"h")]) )
-      dset(self, "V0", depend_value(name = 'V0', func=self.get_volume0, dependencies=[dget(self,"h0")]) )
+      dset(self,"V", 
+         depend_value(name = 'V', func=self.get_volume, 
+            dependencies=[dget(self,"h")]) )
+      dset(self,"V0", 
+         depend_value(name = 'V0', func=self.get_volume0, 
+            dependencies=[dget(self,"h0")]) )
       
-      dset(self, "kin", depend_value(name = "kin", func=self.get_kin, dependencies=[dget(self,"p6"),dget(self,"m")]) )
+      dset(self,"kin", 
+         depend_value(name = "kin", func=self.get_kin, 
+            dependencies=[dget(self,"p6"),dget(self,"m")]) )
       
    def htoh6(self):
       """Transforms the lattice vector matrix from matrix to vector form.
@@ -297,21 +323,38 @@ class CellRigid(Cell):
          h=np.identity(3, float)
       super(CellRigid,self).__init__(h, m)
 
-      dset(self, "V0", depend_value(name = 'V0', func=self.get_volume0, dependencies=[dget(self,"h0")]) )
-      dset(self, "V", depend_value(name = 'V', value=self.get_volume0()) )
+      dset(self,"V0", 
+         depend_value(name = 'V0', func=self.get_volume0, 
+            dependencies=[dget(self,"h0")]) )
+      dset(self,"V", 
+         depend_value(name = 'V', value=self.get_volume0()) )
 
-      dset(self, "h", depend_array(name = 'h', value = h, func=self.Vtoh, dependencies=[dget(self,"V"),dget(self,"h0"),dget(self,"V0")]) )
-      dset(self, "ih" , depend_array(name = "ih", value = np.zeros((3,3),float), func=self.get_ih, dependencies=[dget(self,"h")]) )
+      dset(self,"h", 
+         depend_array(name = 'h', value = h, func=self.Vtoh, 
+            dependencies=[dget(self,"V"),dget(self,"h0"),dget(self,"V0")]) )
+      dset(self,"ih", 
+         depend_array(name = "ih", value = np.zeros((3,3),float), 
+            func=self.get_ih, dependencies=[dget(self,"h")]) )
 
-      dset(self, "P", depend_array(name = 'P', value=np.zeros(1,float)) )
-      dset(self, "M", depend_array(name="M", value=np.zeros(1,float), func=self.mtoM, dependencies=[dget(self,"m")]) )
+      dset(self,"P", 
+         depend_array(name = 'P', value=np.zeros(1,float)) )
+      dset(self,"M", 
+         depend_array(name="M", value=np.zeros(1,float), 
+            func=self.mtoM, dependencies=[dget(self,"m")]) )
       
-      dset(self, "p", depend_array(name = 'p', value = np.zeros((3,3),float), func=self.Ptop, dependencies=[dget(self,"P"),dget(self,"V"),dget(self,"h"),dget(self,"ih")]) )
+      dset(self,"p", 
+         depend_array(name = 'p', value = np.zeros((3,3),float), func=self.Ptop,
+            dependencies=[dget(self,"P"),dget(self,"V"),dget(self,"h"),dget(self,"ih")]) )
 
-      dset(self, "kin", depend_value(name = "kin", func=self.get_kin, dependencies=[dget(self,"P"),dget(self,"m")]) )
+      dset(self,"kin", 
+         depend_value(name = "kin", func=self.get_kin, 
+            dependencies=[dget(self,"P"),dget(self,"m")]) )
       
    def mtoM(self):
-      """Makes the cell mass a vector quantity."""
+      """Makes the cell mass a vector quantity.
+
+      This allows us to use array subscripting to get the mass.
+      """
 
       return np.identity(1)*self.m
 

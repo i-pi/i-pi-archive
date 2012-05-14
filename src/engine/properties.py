@@ -54,25 +54,6 @@ class Properties(dobject):
          replica of the system.
       property_dict: A dictionary containing all the properties that can be
          output.
-      time: A float giving the time passed in the simulation.
-      econs: A float giving the conserved quantity.
-      kin: A float giving the classical kinetic energy estimator.
-      pot: A float giving the potential energy estimator.
-      temp: A float giving the classical kinetic temperature estimator.
-      cell_params: A list giving lattice vector lengths and the angles
-         between them.
-      stress: An array giving the components of the classical stress tensor
-         estimator.
-      press: A float giving the classical pressure estimator.
-      kin_cv: A float giving the quantum centroid virial kinetic energy 
-         estimator.
-      kstress_cv: An array giving the components of the quantum centroid virial
-         kinetic stress tensor estimator.
-      stress_cv: An array giving the components of the quantum centroid virial
-         stress tensor estimator.
-      press_cv: A float giving the quantum centroid virial pressure estimator.
-      kin_yama: A float giving the quantum scaled coordinate estimator for the
-         kinetic energy.
    """
 
    def __init__(self):
@@ -89,19 +70,25 @@ class Properties(dobject):
       property_dict object which holds all the objects which can be output.
       It is given by: 
       {'time': Time elapsed,
+      'step': The current time step,
       'conserved': Conserved quantity,
-      'kinetic_md': Classical kinetic energy estimator,
-      'potential': Potential energy estimator,
       'temperature': Classical kinetic temperature estimator,
-      'cell_parameters': Lattice vector lengths and the angles between them,
       'volume': Simulation box volume,
-      'stress_md.xx': The xx component of the classical stress tensor estimator,
-      'pressure_md': Classical pressure estimator
+      'h': Cell vector matrix. Requires arguments x and v to give h[x,v],
+      'potential': Potential energy estimator,
+      'kinetic_md': Classical kinetic energy estimator,
       'kinetic_cv': Quantum centroid virial kinetic energy estimator,
-      'stress_cv.xx': xx component of the quantum centroid virial estimator of 
-         the stress tensor,
-      'pressure_cv': Quantum centroid virial pressure estimator
-      'kinetic_yamamoto': Quantum scaled coordinate kinetic energy estimator}.
+      'stress_md': The classical stress tensor estimator. Requires arguments
+         x and v, to give stress[x,v],
+      'pressure_md': Classical pressure estimator,
+      'stress_cv': The quantum centroid virial estimator of 
+         the stress tensor. Requires arguments x and v, to give stress[x,v],
+      'pressure_cv': Quantum centroid virial pressure estimator,
+      'kstress_cv': Quantum centroid virial kinetic stress tensor estimator.
+         Requires arguments x and v, to give kstress[x,v],
+      'kin_yama': Quantum scaled coordinate kinetic energy estimator,
+      'linlin': The scaled Fourier transform of the momentum distribution.
+         Given by n(x) in Lin Lin et al., Phys. Rev. Lett. 105, 110602.}.
 
       Args:
          simul: The Simulation object to be bound.
@@ -111,68 +98,45 @@ class Properties(dobject):
       self.beads = simul.beads
       self.cell = simul.cell
       self.forces = simul.forces
-      self.simul = simul      
+      self.simul = simul
 
-      self.add_property(prop_name="step", dep_name="step", func=self.get_step, dependencies=[dget(self.simul, "step")])
-      self.add_property(prop_name="time", dep_name="time", func=self.get_time, dependencies=[dget(self.simul, "step"), dget(self.ensemble, "dt")])
-      self.add_property(prop_name="conserved", dep_name="econs", func=self.get_econs, dependencies=[dget(self.ensemble, "econs")])
-      self.add_property(prop_name="kinetic_md", dep_name="kin", func=self.get_kin, dependencies=[dget(self.beads, "kin"), dget(self.cell, "kin")])
-      self.add_property(prop_name="potential", dep_name="pot", func=self.get_pot, dependencies=[dget(self.forces, "pot")])
-      self.add_property(prop_name="temperature", dep_name="temp", func=self.get_temp, dependencies=[dget(self.beads, "kin")])
 
-      self.property_dict["volume"] = dget(self.cell,"V")
-      self.add_property(prop_name="cell_parameters", dep_name="cell_params", func=self.get_cell_params, dependencies=[dget(self.cell, "h")])
-
-      dset(self, "stress", depend_value(name="stress", func=self.get_stress, dependencies=[dget(self.beads, "kstress"), dget(self.forces, "vir"), dget(self.cell, "V")]))
-      self.property_dict["stress_md.xx"] = depend_value(name="scl_xx", dependencies=[dget(self, "stress")], func=(lambda : self.stress[0,0]) ) 
+      self.property_dict["step"] = lambda: (1 + self.simul.step)
+      self.property_dict["time"] = lambda: (1 + self.simul.step)*self.ensemble.dt
+      self.property_dict["conserved"] = self.get_econs
+      self.property_dict["temperature"] = self.get_temp
+      self.property_dict["volume"] = lambda: self.cell.V
       
-      self.add_property(prop_name="pressure_md", dep_name="press", func=self.get_press, dependencies=[dget(self, "stress")])
-      self.add_property(prop_name="kinetic_cv", dep_name="kin_cv", func=self.get_kincv, dependencies=[dget(self.beads, "q"), dget(self.forces, "f"), dget(self.ensemble, "temp")])
-
-      dset(self, "kstress_cv", depend_value(name="kstress_cv", func=self.get_kstresscv, dependencies=[dget(self.beads,"q"),dget(self.forces,"f"),dget(self.ensemble,"temp")]))
-      dset(self, "stress_cv", depend_value(name="stress_cv", func=self.get_stresscv, dependencies=[dget(self,"kstress_cv"),dget(self.forces,"vir"), dget(self.cell, "V")]))
-      self.property_dict["stress_cv.xx"] = depend_value(name="scv_xx", dependencies=[dget(self, "stress_cv")], func=(lambda : self.stress_cv[0,0]) ) 
-
-      self.add_property(prop_name="pressure_cv", dep_name="press_cv", func=self.get_presscv, dependencies=[dget(self, "stress_cv")])
+      self.property_dict["h"] = self.wrap_cell
       
+      self.property_dict["potential"] = lambda: self.forces.pot/self.beads.nbeads
+      self.property_dict["kinetic_md"] = lambda: self.beads.kin/self.beads.nbeads
+      self.property_dict["kinetic_cv"] = self.get_kincv
+
+      self.property_dict["stress_md"] = self.get_stress
+      self.property_dict["pressure_md"] = self.get_press
+      self.property_dict["stress_cv"] = self.get_stresscv
+      self.property_dict["pressure_cv"] = self.get_presscv
+      self.property_dict["kstress_cv"] = self.get_kstresscv
+
+      self.property_dict["kin_yama"] = self.get_kinyama
+
+      self.property_dict["linlin"] = self.get_linlin
+
+      # dummy beads and forcefield objects so that we can use scaled and
+      # displaced path estimators without changing the simulation bead 
+      # coordinates
       self.dbeads = simul.beads.copy()
       self.dforces = ForceBeads()
       self.dforces.bind(self.dbeads, self.simul.cell,  self.simul._forcemodel)
-      self.add_property(prop_name="kinetic_yamamoto", dep_name="kin_yama", func=self.get_kinyama, dependencies=[dget(self.beads, "q"), dget(self.ensemble, "temp")])
       
-   def add_property(self, prop_name, dep_name, func, dependencies=None):
-      """Adds a property to the property list.
-
-      Args:
-         prop_name: A string giving the keyword that will identify the property 
-            in the output list.
-         dep_name: A string giving the name of the attribute created in the 
-            Properties object.
-         func: The function used to compute the property.
-         dependencies: A list of depend objects on which the property will 
-            depend upon.
-      """
-
-      dset(self, dep_name, depend_value(name=dep_name, func=func, dependencies=dependencies))
-      self.property_dict[prop_name] = dget(self, dep_name)
-
-   def get_kin(self):
-      """Calculates the classical kinetic energy estimator."""
-
-      return self.beads.kin/self.beads.nbeads
-
-   def get_time(self):
-      """Calculates the elapsed simulation time."""
-
-      return (1 + self.simul.step)*self.ensemble.dt
-
-   def get_step(self):
-      """Return the simulation step."""
-
-      return (1 + self.simul.step)
-
-   def __getitem__(self,key):
+   def __getitem__(self, key):
       """Retrieves the item given by key.
+
+      Note that if the key contains a string (arg1; arg2; ... )
+      then it will add the appropriate arguments and value pairs
+      to the calculation function of the property. Note the brackets and
+      the semi-colon separators.
 
       Args:
          key: A string contained in property_dict.
@@ -181,12 +145,21 @@ class Properties(dobject):
          The property labelled by the keyword key.
       """
 
-      return self.property_dict[key].get()
+      args = []
+      if '(' in key:
+         # If the property has additional arguments
+         argstart = key.find('(')
+         argstop = key.find(')', argstart)
+         if argstop == -1:
+            raise ValueError("Incorrect format in property name " + key)
+         
+         argstr = key[argstart:argstop+1]
+         key = key[0:argstart] # strips the arguments from key name
 
-   def get_pot(self):
-      """Calculates the potential energy estimator."""
-
-      return self.forces.pot/self.beads.nbeads
+         arglist = io_xml.read_tuple(argstr, delims="()", split=";")
+         return self.property_dict[key](*arglist)
+      else:
+         return self.property_dict[key]()
 
    def get_temp(self):
       """Calculates the classical kinetic temperature estimator.
@@ -195,8 +168,11 @@ class Properties(dobject):
       one less degree of freedom than without, so this has to be taken into
       account when calculating the kinetic temperature.
       """
-      if self.ensemble.fixcom: mdof=3 
-      else: mdof=0
+
+      if self.ensemble.fixcom:
+         mdof=3 
+      else:
+         mdof=0
       return self.beads.kin/(0.5*Constants.kb*(3*self.beads.natoms*self.beads.nbeads - mdof)*self.beads.nbeads)
 
    def get_econs(self):
@@ -204,37 +180,24 @@ class Properties(dobject):
 
       return self.ensemble.econs/(self.beads.nbeads*self.beads.natoms)
 
-   def get_stress(self):
-      """Calculates the classical kinetic energy estimator."""
+   def get_stress(self, x=0, v=0):
+      """Calculates the classical kinetic energy estimator.
 
-      return (self.forces.vir + self.beads.kstress)/self.cell.V
+      Returns stress[x,v].
+      """
+
+      x = int(x)
+      v = int(v)
+      stress = (self.forces.vir + self.beads.kstress)/self.cell.V
+      return stress[x,v]
 
    def get_press(self):
       """Calculates the classical pressure estimator."""
 
-      return np.trace(self.stress)/3.0
+      stress = (self.forces.vir + self.beads.kstress)/self.cell.V
+      return np.trace(stress)/3.0
 
-   def get_stresscv(self):
-      """Calculates the quantum central virial stress tensor estimator."""
-
-      return (self.forces.vir + self.kstress_cv)/self.cell.V                  
-
-   def get_presscv(self):
-      """Calculates the quantum central virial pressure estimator."""
-
-      return np.trace(self.stress_cv)/3.0
-   
-   def get_kincv(self):        
-      """Calculates the quantum central virial kinetic energy estimator."""
-
-      kcv=0.0
-      for b in range(self.beads.nbeads):
-         kcv += np.dot(depstrip(self.beads.q[b]) - depstrip(self.beads.qc), depstrip(self.forces.f[b]))
-      kcv *= -0.5/self.beads.nbeads
-      kcv += 0.5*Constants.kb*self.ensemble.temp*(3*self.beads.natoms) 
-      return kcv
-
-   def get_kstresscv(self):        
+   def kstress_cv(self):
       """Calculates the quantum central virial kinetic stress tensor 
       estimator.
       """
@@ -253,6 +216,43 @@ class Properties(dobject):
          kst[i,i] += Constants.kb*self.ensemble.temp*(3*self.beads.natoms) 
       return kst
 
+   def get_kstresscv(self, x=0, v=0):        
+      """Calculates the quantum central virial kinetic stress tensor 
+      estimator.
+
+      Returns kstress[x,v].
+      """
+
+      x = int(x)
+      v = int(v)
+      return self.kstress()[x,v]
+
+   def get_stresscv(self, x=0, v=0):
+      """Calculates the quantum central virial stress tensor estimator.
+
+      Returns stress[x,v].
+      """
+
+      x = int(x)
+      v = int(v)
+      stress = (self.forces.vir + self.kstress())/self.cell.V                  
+      return stress[x,v]
+
+   def get_presscv(self):
+      """Calculates the quantum central virial pressure estimator."""
+
+      return np.trace(self.forces.vir + self.kstress())/(3.0*self.cell.V)
+   
+   def get_kincv(self):        
+      """Calculates the quantum central virial kinetic energy estimator."""
+
+      kcv=0.0
+      for b in range(self.beads.nbeads):
+         kcv += np.dot(depstrip(self.beads.q[b]) - depstrip(self.beads.qc), depstrip(self.forces.f[b]))
+      kcv *= -0.5/self.beads.nbeads
+      kcv += 0.5*Constants.kb*self.ensemble.temp*(3*self.beads.natoms) 
+      return kcv
+
    def get_kinyama(self):              
       """Calculates the quantum scaled coordinate kinetic energy estimator.
 
@@ -262,7 +262,7 @@ class Properties(dobject):
       
       dbeta = abs(self.fd_delta)
       
-      v0 = self.pot
+      v0 = self.forces.pot/self.beads.nbeads
       while True: 
          splus = math.sqrt(1.0 + dbeta)
          sminus = math.sqrt(1.0 - dbeta)
@@ -285,16 +285,53 @@ class Properties(dobject):
             break
          
       return kyama
-         
-   def get_cell_params(self):
-      """Returns a list of the cell box lengths and the angles between them.
 
-      Returns:
-         A list of the form [a, b, c, alpha, beta, gamma].
+   def opening(self, bead):
+      """Path opening function.
+
+      Used in the Lin Lin momentum distribution estimator.
       """
 
-      a, b, c, alpha, beta, gamma = h2abc(self.cell.h)
-      return [a, b, c, alpha, beta, gamma]
+      return bead/self.beads.nbeads + 0.5*(1.0/self.beads.nbeads - 1.0)
+
+   def get_linlin(self, ux=0, uy=0, uz=0, atom='H'):
+      """Gives the estimator for the momentum distribution, by opening the 
+      ring polymer path.
+
+      Args:
+         ux: The x component of the opening vector.
+         uy: The y component of the opening vector.
+         uz: The z component of the opening vector.
+         atom: The atom type for which the path will be opened.
+      """
+
+      u = np.array([float(ux), float(uy), float(uz)])
+      count = 0
+      n = 0.0
+      for at in range(self.beads.natoms):
+         if self.beads.names[at] == atom:
+            index = at 
+            # Keeps record of one of the atom indices so we can get
+            # the mass later.
+
+            count += 1
+            self.dbeads.q[:] = self.beads.q[:]
+            for bead in range(self.beads.nbeads):
+               self.dbeads.q[bead,3*at:3*(at+1)] += self.opening(bead)*u
+            n += math.exp(-(self.dforces.pot - self.forces.pot)/(self.ensemble.ntemp*Constants.kb))
+
+
+      if count == 0:
+         print "Warning, no atom with the given name found for lin-lin momentum distribution estimator."
+         return 0.0
+      else:
+         n0 = math.exp(self.beads.m[index]*np.dot(u,u)*self.ensemble.temp*Constants.kb/(2*Constants.hbar**2))
+         return n*n0/float(count)
+
+   def wrap_cell(self, x=0, v=0):
+      """Returns the the x-th component of the v-th cell vector."""
+   
+      return self.cell.h[x,v]
 
 
 class Trajectories(dobject):
@@ -332,9 +369,8 @@ class Trajectories(dobject):
       dset(self, "atomic_kincv", depend_array(name="atomic_kincv", value=np.zeros(self.simul.beads.natoms*3),
            func=self.get_akcv, dependencies=[dget(self.simul.forces,"f"), dget(self.simul.beads,"q"), dget(self.simul.beads,"qc"), dget(self.simul.ensemble,"temp")]))      
       dset(self, "atomic_kod", depend_array(name="atomic_kod", value=np.zeros(self.simul.beads.natoms*3),
-           func=self.get_akcv_od, dependencies=[dget(self.simul.forces,"f"), dget(self.simul.beads,"q"), dget(self.simul.beads,"qc"), dget(self.simul.ensemble,"temp")]))      
-      
-      
+           func=self.get_akcv_od, dependencies=[dget(self.simul.forces,"f"), dget(self.simul.beads,"q"), dget(self.simul.beads,"qc"), dget(self.simul.ensemble,"temp")]))
+
    def get_akcv(self):
       """Calculates the contribution to the kinetic energy due to each degree
       of freedom.
@@ -348,7 +384,7 @@ class Trajectories(dobject):
       return rv
 
    def get_akcv_od(self):
-      """Calculates the "off-diagonal" contribution to the kinetic energy tensor 
+      """Calculates the "off-diagonal" contribution to the kinetic energy tensor
       due to each atom.
       """
 

@@ -317,6 +317,22 @@ status open
 
 
 \backslash
+label{intro}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
 wrappi
 \end_layout
 
@@ -337,37 +353,136 @@ It is designed to separate the calculation of the potential energy, forces
 \end_layout
 
 \begin_layout Standard
-This manual will be in 5 parts, each with the following information: 
+This manual will contain the following information: 
 \end_layout
 
 \begin_layout Itemize
-In this chapter we discuss the functionality of the wrapper and the problems
- it is trying to solve.
+In chapter
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+~
+\backslash
+ref{intro}
+\end_layout
+
+\end_inset
+
+ we discuss some of the background information for the wrapper and define
+ the terms to be used throughout the manual.
  
 \end_layout
 
 \begin_layout Itemize
-In the second chapter we will give instructions for the correct download,
- installation and running of the wrapper and specific driver codes.
+In chapter
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+~
+\backslash
+ref{progpar}
+\end_layout
+
+\end_inset
+
+ we will discuss some of the design principles of the wrapper, and some
+ of the inner workings of the code.
  
 \end_layout
 
 \begin_layout Itemize
-In the third chapter we explain the procedure for creating simulations with
- the appropriate features, and the form of the input and output files.
+In chapter
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+~
+\backslash
+ref{install}
+\end_layout
+
+\end_inset
+
+ we will discuss how to install the code, and test that it is working.
+\end_layout
+
+\begin_layout Itemize
+In chapter
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+~
+\backslash
+ref{run}
+\end_layout
+
+\end_inset
+
+ we explain the procedure for running simulations with the appropriate features,
+ and the form of the input and output files.
  
 \end_layout
 
 \begin_layout Itemize
-In the fourth chapter the theory behind the algorithms used in the wrapper
- are discussed.
+In chapter
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+~
+\backslash
+ref{algorithms}
+\end_layout
+
+\end_inset
+
+ the theory behind the algorithms used in the wrapper are discussed.
  
 \end_layout
 
 \begin_layout Itemize
-In the final chapter we discuss some of the inner workings of the code to
- facilitate user modification of it.
+In chapter
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+~
+\backslash
+ref{dev}
+\end_layout
+
+\end_inset
+
+ we discuss what is needed to modify the code.
  
+\end_layout
+
+\begin_layout Itemize
+In chapter
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+~
+\backslash
+ref{hierarchy}
+\end_layout
+
+\end_inset
+
+ a full list of the major classes used in the code is given, along with
+ the appropriate tag names and a brief description of all the fields that
+ can be specified in the xml input file.
 \end_layout
 
 \begin_layout Section
@@ -379,228 +494,154 @@ In all that follows, we will make use of the following definitions:
 \end_layout
 
 \begin_layout Standard
-\begin_inset Tabular
-<lyxtabular version="3" rows="9" columns="2">
-<features tabularvalignment="middle">
-<column alignment="center" valignment="top" width="0">
-<column alignment="center" valignment="top" width="0">
-<row>
-<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
-\begin_inset Text
+\begin_inset ERT
+status open
 
 \begin_layout Plain Layout
 
-\size small
-Name
-\end_layout
 
-\end_inset
-</cell>
-<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
+\backslash
+begin{tabular}{|l|p{10cm}|}
+\end_layout
 
 \begin_layout Plain Layout
 
-\size small
-Definition
-\end_layout
 
-\end_inset
-</cell>
-</row>
-<row>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
+\backslash
+hline
+\end_layout
 
 \begin_layout Plain Layout
 
-\size small
-src_dir
-\end_layout
+Name & Definition 
+\backslash
 
-\end_inset
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
+\backslash
+ 
+\backslash
+hline
+\end_layout
 
 \begin_layout Plain Layout
 
-\size small
-The directory in which the wrapper code has been installed
-\end_layout
+src
+\backslash
+_dir & The directory in which the wrapper code has been installed 
+\backslash
 
-\end_inset
-</cell>
-</row>
-<row>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
+\backslash
+ 
+\backslash
+hline
+\end_layout
 
 \begin_layout Plain Layout
 
-\size small
-np_dir
-\end_layout
+np
+\backslash
+_dir & The directory in which the NumPy code has been installed 
+\backslash
 
-\end_inset
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
+\backslash
+ 
+\backslash
+hline
+\end_layout
 
 \begin_layout Plain Layout
 
-\size small
-The directory in which the NumPy library has been installed
-\end_layout
+np
+\backslash
+_dd
+\backslash
+_dir & The directory in which the NumPy tar file has been downloaded 
+\backslash
 
-\end_inset
-</cell>
-</row>
-<row>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
+\backslash
+ 
+\backslash
+hline
+\end_layout
 
 \begin_layout Plain Layout
 
-\size small
-np_dd_dir
-\end_layout
+driver
+\backslash
+_dir & The directory in which the driver code has been downloaded 
+\backslash
 
-\end_inset
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
+\backslash
+ 
+\backslash
+hline
+\end_layout
 
 \begin_layout Plain Layout
 
-\size small
-The directory in which the NumPy tar file has been downloaded
-\end_layout
+np
+\backslash
+_vers & The version of NumPy installed 
+\backslash
 
-\end_inset
-</cell>
-</row>
-<row>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
+\backslash
+ 
+\backslash
+hline
+\end_layout
 
 \begin_layout Plain Layout
 
-\size small
-driver_dir
-\end_layout
+py
+\backslash
+_vers & The version of Python installed 
+\backslash
 
-\end_inset
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
+\backslash
+ 
+\backslash
+hline
+\end_layout
 
 \begin_layout Plain Layout
 
-\size small
-The directory in which the driver code has been downloaded
-\end_layout
+esp
+\backslash
+_dd
+\backslash
+_dir & The directory in which the Quantum Espresso code has been downloaded
+ 
+\backslash
 
-\end_inset
-</cell>
-</row>
-<row>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
+\backslash
+ 
+\backslash
+hline
+\end_layout
 
 \begin_layout Plain Layout
 
-\size small
-np_vers
-\end_layout
+esp
+\backslash
+_vers & The version of Quantum Espresso installed 
+\backslash
 
-\end_inset
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
+\backslash
+
+\end_layout
 
 \begin_layout Plain Layout
 
-\size small
-The version of NumPy installed
-\end_layout
 
-\end_inset
-</cell>
-</row>
-<row>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
+\backslash
+hline
+\end_layout
 
 \begin_layout Plain Layout
 
-\size small
-py_vers
+
+\backslash
+end{tabular}
 \end_layout
-
-\end_inset
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\begin_layout Plain Layout
-
-\size small
-The version of Python installed
-\end_layout
-
-\end_inset
-</cell>
-</row>
-<row>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\begin_layout Plain Layout
-
-\size small
-esp_dd_dir
-\end_layout
-
-\end_inset
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\begin_layout Plain Layout
-
-\size small
-The directory in which the Quantum Espresso has been downloaded
-\end_layout
-
-\end_inset
-</cell>
-</row>
-<row>
-<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\begin_layout Plain Layout
-
-\size small
-esp_vers
-\end_layout
-
-\end_inset
-</cell>
-<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\begin_layout Plain Layout
-
-\size small
-The version of Quantum Espresso installed
-\end_layout
-
-\end_inset
-</cell>
-</row>
-</lyxtabular>
 
 \end_inset
 
@@ -633,7 +674,7 @@ wrappi
 \end_inset
 
  package, and must be downloaded separately.
- See chapter 2 for more details of how to do this.
+ See chapter 3 for more details of how to do this.
  
 \end_layout
 
@@ -659,9 +700,22 @@ wrappi
 \end_layout
 
 \begin_layout Standard
-To obtain the parameters needed to run Path Integral with Generalized Langevin
- Equation Thermostat (PIGLET) calculations, you can use the website: http://gle4
-md.berlios.de/ 
+Parameters to run Path Integral with Generalized Langevin Equation Thermostat
+ (PIGLET) calculations can be found on the website:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Flex URL
+status collapsed
+
+\begin_layout Plain Layout
+
+http://gle4md.berlios.de/ 
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Section
@@ -693,6 +747,22 @@ License
 Programming paradigm
 \end_layout
 
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+label{progpar}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
 \begin_layout Section
 Structure of the code
 \end_layout
@@ -706,48 +776,52 @@ The code is separated into the following directory structure:
 \end_layout
 
 \begin_layout Description
-forces Contains a few stand-alone fortran modules for running particular
- simple tests without needing to download one of the driver libraries.
+forces: Contains a few stand-alone fortran driver modules for running simple
+ tests.
  
 \end_layout
 
 \begin_layout Description
-doc Contains the documentation, including this manual.
+doc: Contains the documentation, including this manual.
  
 \end_layout
 
 \begin_layout Description
-src Contains the source code for the wrapper.
+src: Contains the source code for the wrapper.
  This is further subdivided into: 
 \end_layout
 
 \begin_deeper
 \begin_layout Description
-engine Holds the modules containing the internally used objects and algorithms
+engine: Holds the modules containing the internally used objects and algorithms
  
 \end_layout
 
 \begin_layout Description
-forces Holds the modules containing the objects that deal with the driver
+forces: Holds the modules containing the objects that deal with the driver
  communication and data transfer.
  
 \end_layout
 
 \begin_layout Description
-utils Holds the modules containing the utility functions used in the other
+utils: Holds the modules containing the utility functions used in the other
  modules.
  
 \end_layout
 
+\begin_layout Description
+inputs: Holds the modules containing the classes that read the input files.
+\end_layout
+
 \end_deeper
 \begin_layout Description
-patches Contains the patch notes needed to allow the driver codes to interact
+patches: Contains the patch notes needed to allow the driver codes to interact
  with the wrapper.
  
 \end_layout
 
 \begin_layout Description
-test Contains examples that can be used to make sure the build has been
+test: Contains examples that can be used to make sure the build has been
  successful, show the correct form of the input files, and show some of
  the capabilities of the wrapper.
  
@@ -811,14 +885,6 @@ See step 2.
 
 \begin_layout Enumerate
 See step 1.
-\end_layout
-
-\begin_layout Subsection
-Object Hierarchy
-\end_layout
-
-\begin_layout Standard
-[Maybe insert a graphic here?]
 \end_layout
 
 \begin_layout Section
@@ -1040,7 +1106,7 @@ port
  a different port.
  As many of the lower numbers are protected for use in important system
  processes or internet communication, it is generally sensible to use numbers
- between 1025-65535 for simulations.
+ in the range 1025-65535 for simulations.
 \end_layout
 
 \begin_layout Standard
@@ -1101,7 +1167,8 @@ slots
 \end_inset
 
  specifies how many driver codes can queue between checks.
- Neither is likely to be important in running the code.
+ Neither is likely to be important in running the code, but may be used
+ to optimize the data transfer if required.
 \end_layout
 
 \begin_layout Subsection
@@ -1298,6 +1365,22 @@ status open
 
 \backslash
 wrappi
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+label{install}
 \end_layout
 
 \end_inset
@@ -1616,8 +1699,18 @@ Many clusters do not have NumPy already installed upon them.
 
 \begin_layout Standard
 In any case you must first obtain the NumPy code.
- The numpy library can be downloaded as a tar file from http://sourceforge.net/pr
-ojects/numpy/files/NumPy/
+ The numpy library can be downloaded as a tar file from 
+\begin_inset Flex URL
+status collapsed
+
+\begin_layout Plain Layout
+
+http://sourceforge.net/projects/numpy/files/NumPy/
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -1717,8 +1810,21 @@ Quantum Espresso
 \end_layout
 
 \begin_layout Standard
-You can download the source code for Quantum Espresso at: www.quantum-espresso.org
-/
+You can download the source code for Quantum Espresso at:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Flex URL
+status collapsed
+
+\begin_layout Plain Layout
+
+www.quantum-espresso.org/
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -1763,8 +1869,21 @@ $src_dir/patches/pwscf
 \end_layout
 
 \begin_layout Standard
-After this, continue the download as per the instructions at www.quantum-espress.o
-rg/.
+After this, continue the download as per the instructions at:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Flex URL
+status collapsed
+
+\begin_layout Plain Layout
+
+www.quantum-espress.org/
+\end_layout
+
+\end_inset
+
+.
 \end_layout
 
 \begin_layout Standard
@@ -1774,10 +1893,6 @@ Later versions of the code already have driver functionality, and so no
 
 \begin_layout Subsection
 CP2K
-\end_layout
-
-\begin_layout Subsection
-dlpoly
 \end_layout
 
 \begin_layout Section
@@ -1794,6 +1909,22 @@ status open
 
 \backslash
 wrappi
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+label{run}
 \end_layout
 
 \end_inset
@@ -1863,7 +1994,9 @@ status open
 
 \begin_layout Plain Layout
 
-/wrappi
+
+\backslash
+wrappi
 \end_layout
 
 \end_inset
@@ -1939,7 +2072,7 @@ g to the socket with one or more driver codes.
 driver_comm
 \series default
 , the following code will run the wrapper, outputting the statistics to
- a log file, and 4 driver codes, then background the result:
+ a file log, and 4 driver codes, then background the result:
 \end_layout
 
 \begin_layout Standard
@@ -2095,8 +2228,35 @@ The code uses this hierarchial structure to help read the data; if a particular
 \begin_layout Standard
 To help detect any user error the acceptable tag names, type of data and
  possible default values are all specified in the code, in a specialized
- restart class for each class of object.
- More information on how the xml file is read can be found in Chapter 6.
+ input class for each class of object.
+ More information on how the xml file is read can be found in chapter
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+~
+\backslash
+ref{dev}
+\end_layout
+
+\end_inset
+
+, and a full list of all the available tags and a brief description of their
+ function is given in chapter
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+~
+\backslash
+ref{hierarchy}
+\end_layout
+
+\end_inset
+
+.
 \end_layout
 
 \begin_layout Subsection
@@ -2391,7 +2551,29 @@ units
 \end_inset
 
  attribute.
- 
+ For example, if you wanted to specify the cell parameters in units of angstrom
+ rather than bohr radii, then in the input file you would specify 
+\begin_inset Quotes eld
+\end_inset
+
+<h units='angstrom'> 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ldots
+\end_layout
+
+\end_inset
+
+ </h>
+\begin_inset Quotes erd
+\end_inset
+
+
 \end_layout
 
 \begin_layout Section
@@ -2403,7 +2585,7 @@ Quantum Espresso
 \end_layout
 
 \begin_layout Subsection
-dlpoly
+CP2K
 \end_layout
 
 \begin_layout Section
@@ -2419,6 +2601,131 @@ This is the output file for for all the system and simulation level properties,
  such as the total energy and the overall time taken.
  The properties that are output are determined by the properties list in
  the xml input file.
+\end_layout
+
+\begin_layout Standard
+The format of the property list is: <properties> [ prop1name, prop2name,
+ prop3name(arg1; arg2), 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ldots
+\end_layout
+
+\end_inset
+
+ ] </properties>.
+ Some of the properties that require array indices or other parameters to
+ be specified will require the arguments to be specified as shown above.
+ A full list of the allowed property names is given below:
+\end_layout
+
+\begin_layout Description
+time: Total time elapsed in the simulation.
+\end_layout
+
+\begin_layout Description
+step: The current simulation time step.
+\end_layout
+
+\begin_layout Description
+conserved: The value of the conserved quantity for the simulation.
+\end_layout
+
+\begin_layout Description
+temperature: The system temperature.
+ Note that for path integral simulations this is not the same as the simulation
+ temperature, as the particles are held at a higher classical temperature.
+\end_layout
+
+\begin_layout Description
+volume: The volume of the system box.
+\end_layout
+
+\begin_layout Description
+h: The unit cell vector matrix.
+ You must specify the args x and v to get the index h[x,v].
+ If not specified, they both default to 0.
+\end_layout
+
+\begin_layout Description
+potential: The potential energy of the system.
+\end_layout
+
+\begin_layout Description
+kinetic_md: The classical simulation kinetic energy.
+\end_layout
+
+\begin_layout Description
+kinetic_cv: The centroid virial quantum kinetic energy estimator.
+\end_layout
+
+\begin_layout Description
+stress_md: The classical stress tensor.
+ You must specify the args x and v to get the index stress_md[x,v].
+ If not specified, they both default to 0.
+\end_layout
+
+\begin_layout Description
+stress_cv: The quantum stress tensor estimator.
+ You must specify the args x and v to get the index stress_cv[x,v].
+ If not specified, they both default to 0.
+\end_layout
+
+\begin_layout Description
+pressure_md: The classical simulation pressure.
+ 
+\end_layout
+
+\begin_layout Description
+pressure_cv: The quantum pressure estimator.
+\end_layout
+
+\begin_layout Description
+kstress_cv: The quantum kinetic stress tensor estimator.
+ You must specify the args x and v to get the index stress_cv[x,v].
+ If not specified, they both default to 0.
+\end_layout
+
+\begin_layout Description
+kin_yama: The scaled path quantum kinetic energy estimator.
+\end_layout
+
+\begin_layout Description
+linlin: A point of the scaled Fourier transform of the momentum distribution.
+ Given by 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+(
+\backslash
+tilde{n}(
+\backslash
+textbf{x})
+\backslash
+)
+\end_layout
+
+\end_inset
+
+ in Phys.
+ Rev.
+ Lett.
+ 
+\series bold
+105
+\series default
+, 110602.
+ You must specify the args ux, uy and uz to give the displaced path vector,
+ and atom to give the atom for which the path will be opened.
 \end_layout
 
 \begin_layout Standard
@@ -2484,61 +2791,32 @@ stride
  The possible choices of output properties are:
 \end_layout
 
-\begin_layout Itemize
-\begin_inset Quotes eld
-\end_inset
-
-positions
-\begin_inset Quotes erd
-\end_inset
-
-: Gives the bead positions.
+\begin_layout Description
+positions: Gives the bead positions.
  Prints a separate file for each replica of the system
 \end_layout
 
-\begin_layout Itemize
-\begin_inset Quotes eld
-\end_inset
-
-velocities
-\begin_inset Quotes erd
-\end_inset
-
-: As above, except prints the velocities.
+\begin_layout Description
+velocities: As above, except prints the velocities.
 \end_layout
 
-\begin_layout Itemize
-\begin_inset Quotes eld
-\end_inset
-
-forces
-\begin_inset Quotes erd
-\end_inset
-
-: As above, except prints the forces.
+\begin_layout Description
+forces: As above, except prints the forces.
 \end_layout
 
-\begin_layout Itemize
-\begin_inset Quotes eld
-\end_inset
-
-kinetic_cv
-\begin_inset Quotes erd
-\end_inset
-
-: Prints the contribution of each atom to the total kinetic energy.
+\begin_layout Description
+kinetic_cv: Prints the contribution of each atom to the total kinetic energy.
  Prints only one file.
 \end_layout
 
-\begin_layout Itemize
-\begin_inset Quotes eld
-\end_inset
+\begin_layout Description
+kodterms_cv: Prints the off-diagonal contributions to the kinetic energy
+ tensor.
+ Prints only one file.
+\end_layout
 
-centroid
-\begin_inset Quotes erd
-\end_inset
-
-: Prints the position of the centroid coordinate of each atom.
+\begin_layout Description
+centroid: Prints the position of the centroid coordinate of each atom.
  Prints only one file.
 \end_layout
 
@@ -2613,6 +2891,22 @@ An important point to note is that since each time step is split into several
 Algorithms
 \end_layout
 
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+label{algorithms}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
 \begin_layout Section
 Integrators
 \end_layout
@@ -2645,32 +2939,1061 @@ Estimator theory
 Developer's tips
 \end_layout
 
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+label{dev}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
 \begin_layout Section
-Dependancy class
+Properties
+\end_layout
+
+\begin_layout Standard
+While many of the simple properties of interest can be output directly to
+ the properties output file, and many others can be obtained by post-processing
+ the available data, it may be that some property you wish to calculate
+ is not explicitly available for output.
+\end_layout
+
+\begin_layout Standard
+In this case, you may wish to modify the code so that this property can
+ be output.
+ All the code to do this is found in the 
+\begin_inset Quotes eld
+\end_inset
+
+properties.py
+\begin_inset Quotes erd
+\end_inset
+
+ module in the 
+\begin_inset Quotes eld
+\end_inset
+
+engine
+\begin_inset Quotes erd
+\end_inset
+
+ directory.
+ To add a new property to the existing list, you must first define a function
+ that calculates this property.
+\end_layout
+
+\begin_layout Standard
+In standard Python notation, we must define a new function inside the 
+\begin_inset Quotes eld
+\end_inset
+
+Properties
+\begin_inset Quotes erd
+\end_inset
+
+ class.
+ This is written by:
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+def new_func(self):
+\end_layout
+
+\begin_layout Standard
+...code here...
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+return value
+\end_layout
+
+\begin_layout Standard
+We can now use this function to calculate the property of interest.
+ If the name of this property is 
+\begin_inset Quotes eld
+\end_inset
+
+new_prop
+\begin_inset Quotes erd
+\end_inset
+
+, we can add this to the dictionary of named properties by:
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+self.property_dict[
+\begin_inset Quotes eld
+\end_inset
+
+new_prop
+\begin_inset Quotes erd
+\end_inset
+
+] = new_func
+\end_layout
+
+\begin_layout Standard
+We now simply need to add the name 
+\begin_inset Quotes eld
+\end_inset
+
+new_prop
+\begin_inset Quotes erd
+\end_inset
+
+ in the properties list in the xml input file, and the property will be
+ written to the properties output file when appropriate.
+\end_layout
+
+\begin_layout Standard
+If you need a function with arguments, then the code we need is given by:
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+self.property_dict[
+\begin_inset Quotes eld
+\end_inset
+
+new_arg_prop
+\begin_inset Quotes erd
+\end_inset
+
+] = new_arg_func
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+def new_arg_func(self, arg1, arg2, 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ldots
+\end_layout
+
+\end_inset
+
+ ):
+\end_layout
+
+\begin_layout Standard
+...code here...
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+return value
+\end_layout
+
+\begin_layout Standard
+Now in the property list you must put:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Quotes eld
+\end_inset
+
+<properties> [ new_arg_prop(arg1; arg2; 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ldots
+\end_layout
+
+\end_inset
+
+ ), 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ldots
+\end_layout
+
+\end_inset
+
+ ] </properties>
+\begin_inset Quotes erd
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The code will now automatically call the function with the arguments defined
+ in the properties list.
+\end_layout
+
+\begin_layout Section
+Creating a new class
+\end_layout
+
+\begin_layout Standard
+While creating a new property may be possible by using existing objects,
+ it may be that you wish to calculate something in a way that is not implemented
+ by the code.
+ In this case, it may be necessary to create a new class to do the calculation.
+ To do this efficiently, you must be understand some of the more advanced
+ features of the code.
 \end_layout
 
 \begin_layout Subsection
-Dependancy graph
+Depend objects
 \end_layout
 
-\begin_layout Section
-Class hierarchy
+\begin_layout Standard
+Many of the new objects created inside a class may depend on other objects
+ in the code for their value.
+ As discussed in Chapter 3, the calculation of such variables is facilitated
+ by the use of the 
+\begin_inset Quotes eld
+\end_inset
+
+depend
+\begin_inset Quotes erd
+\end_inset
+
+ classes defined in the 
+\begin_inset Quotes eld
+\end_inset
+
+utils
+\begin_inset Quotes erd
+\end_inset
+
+ directory.
 \end_layout
 
-\begin_layout Section
-Output customization
+\begin_layout Standard
+Since the 
+\begin_inset Quotes eld
+\end_inset
+
+dobject
+\begin_inset Quotes erd
+\end_inset
+
+ class overwrites the standard way of getting and setting functions, so
+ there is a special syntax for creating them.
+ To create a depend object 
+\begin_inset Quotes eld
+\end_inset
+
+value
+\begin_inset Quotes erd
+\end_inset
+
+ with name 
+\begin_inset Quotes eld
+\end_inset
+
+name
+\begin_inset Quotes erd
+\end_inset
+
+ inside an object 
+\begin_inset Quotes eld
+\end_inset
+
+object
+\begin_inset Quotes erd
+\end_inset
+
+, you need to use the syntax: 
 \end_layout
 
-\begin_layout Section
-xml parsing
+\begin_layout Standard
+
+\series bold
+dset(object, 
+\begin_inset Quotes eld
+\end_inset
+
+name
+\begin_inset Quotes erd
+\end_inset
+
+, value)
+\end_layout
+
+\begin_layout Standard
+The arguments that are important for creating 
+\begin_inset Quotes eld
+\end_inset
+
+depend
+\begin_inset Quotes erd
+\end_inset
+
+ objects are:
+\end_layout
+
+\begin_layout Description
+name: A string giving the name of the depend object.
+\end_layout
+
+\begin_layout Description
+value: 
+\begin_inset Quotes eld
+\end_inset
+
+depend_array
+\begin_inset Quotes erd
+\end_inset
+
+ only.
+ Defines the memory the object references.
+\end_layout
+
+\begin_layout Description
+synchro: An optional 
+\begin_inset Quotes eld
+\end_inset
+
+synchronizer
+\begin_inset Quotes erd
+\end_inset
+
+ object.
+ This keeps track of different views on the same data.
+\end_layout
+
+\begin_layout Description
+func: An optional function to recalculate the object when one of its dependencie
+s are updated.
+\end_layout
+
+\begin_layout Description
+dependencies: An optional list of the 
+\begin_inset Quotes eld
+\end_inset
+
+depend
+\begin_inset Quotes erd
+\end_inset
+
+ objects which are required to recalculate the new 
+\begin_inset Quotes eld
+\end_inset
+
+depend
+\begin_inset Quotes erd
+\end_inset
+
+ object.
+ Essentially all the 
+\begin_inset Quotes eld
+\end_inset
+
+depend
+\begin_inset Quotes erd
+\end_inset
+
+ objects that appear in 
+\series bold
+func
+\series default
+.
+\end_layout
+
+\begin_layout Standard
+There are two different classes of 
+\begin_inset Quotes eld
+\end_inset
+
+depend
+\begin_inset Quotes erd
+\end_inset
+
+ objects, 
+\begin_inset Quotes eld
+\end_inset
+
+depend_value
+\begin_inset Quotes erd
+\end_inset
+
+ and 
+\begin_inset Quotes eld
+\end_inset
+
+depend_array
+\begin_inset Quotes erd
+\end_inset
+
+.
+ The 
+\begin_inset Quotes eld
+\end_inset
+
+depend_array
+\begin_inset Quotes erd
+\end_inset
+
+ class is a specialist class for NumPy arrays, to deal with the slicing
+ mechanism.
+ This means that for the 
+\begin_inset Quotes eld
+\end_inset
+
+depend_array
+\begin_inset Quotes erd
+\end_inset
+
+ class there is a second method of creating new 
+\begin_inset Quotes eld
+\end_inset
+
+depend
+\begin_inset Quotes erd
+\end_inset
+
+ objects, you can take a slice of an old one.
+ 
+\end_layout
+
+\begin_layout Standard
+This will return a slice with the same dependencies and synchro objects,
+ and a reference to the correct slice of the base array of the parent 
+\begin_inset Quotes eld
+\end_inset
+
+depend_array
+\begin_inset Quotes erd
+\end_inset
+
+ object, so that the automatic updating keeps all the data consistent.
+ Note that it is therefore incorrect to create a new 
+\begin_inset Quotes eld
+\end_inset
+
+depend_array
+\begin_inset Quotes erd
+\end_inset
+
+ object that is a slice of an old one using the 
+\series bold
+dset
+\series default
+ function, as it will not copy the dependencies correctly.
+\end_layout
+
+\begin_layout Standard
+There is also a method for dealing with separate objects that are different
+ views on the same data; the 
+\begin_inset Quotes eld
+\end_inset
+
+synchronizer
+\begin_inset Quotes erd
+\end_inset
+
+ object.
+ This object is shared with all of the different views to the same data,
+ and deals with keeping all of them consistent with each other.
+\end_layout
+
+\begin_layout Standard
+Also, the 
+\series bold
+func
+\series default
+ initialization argument must be a dictionary of functions that transform
+ from the 
+\begin_inset Quotes eld
+\end_inset
+
+depend
+\begin_inset Quotes erd
+\end_inset
+
+ object being created to the other synchronized objects, using the syntax:
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+func = {
+\begin_inset Quotes erd
+\end_inset
+
+synchro1
+\begin_inset Quotes erd
+\end_inset
+
+: func1, 
+\begin_inset Quotes eld
+\end_inset
+
+synchro2
+\begin_inset Quotes erd
+\end_inset
+
+: func2, 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ldots
+\end_layout
+
+\end_inset
+
+ }
+\end_layout
+
+\begin_layout Standard
+Where 
+\begin_inset Quotes eld
+\end_inset
+
+synchroN
+\begin_inset Quotes erd
+\end_inset
+
+ is the 
+\begin_inset Quotes eld
+\end_inset
+
+name
+\begin_inset Quotes erd
+\end_inset
+
+ of the Nth synchro object, and 
+\begin_inset Quotes eld
+\end_inset
+
+funcN
+\begin_inset Quotes erd
+\end_inset
+
+ transforms from the 
+\begin_inset Quotes eld
+\end_inset
+
+synchroN
+\begin_inset Quotes erd
+\end_inset
+
+ object to the one being created.
+\end_layout
+
+\begin_layout Standard
+Finally, there are several utility functions that help to manipulate 
+\begin_inset Quotes eld
+\end_inset
+
+depend
+\begin_inset Quotes erd
+\end_inset
+
+ objects:
+\end_layout
+
+\begin_layout Description
+dget: Gets a specified 
+\begin_inset Quotes eld
+\end_inset
+
+depend
+\begin_inset Quotes erd
+\end_inset
+
+ object inside a 
+\begin_inset Quotes eld
+\end_inset
+
+dobject
+\begin_inset Quotes erd
+\end_inset
+
+ class.
+ Needed since the 
+\begin_inset Quotes eld
+\end_inset
+
+dobject
+\begin_inset Quotes erd
+\end_inset
+
+ class overrides the standard Python method of getting attributes, so you
+ need a way to get the 
+\begin_inset Quotes eld
+\end_inset
+
+depend
+\begin_inset Quotes erd
+\end_inset
+
+ object and not just its value.
+\end_layout
+
+\begin_layout Description
+dset: Creates a 
+\begin_inset Quotes eld
+\end_inset
+
+depend
+\begin_inset Quotes erd
+\end_inset
+
+ object inside a 
+\begin_inset Quotes eld
+\end_inset
+
+dobject
+\begin_inset Quotes erd
+\end_inset
+
+ class.
+ Needed for the same reason as 
+\series bold
+dget
+\series default
+.
+\end_layout
+
+\begin_layout Description
+depstrip: Takes a 
+\begin_inset Quotes eld
+\end_inset
+
+depend_array
+\begin_inset Quotes erd
+\end_inset
+
+ object and returns the base array.
+ Useful in algorithms where the array is used as a read-only variable, as
+ it removes the dependancy network from the object, and so speeds up the
+ calculation.
+\end_layout
+
+\begin_layout Description
+depcopy: Copies the 
+\begin_inset Quotes eld
+\end_inset
+
+dependencies
+\begin_inset Quotes erd
+\end_inset
+
+ and 
+\begin_inset Quotes eld
+\end_inset
+
+synchronizer
+\begin_inset Quotes erd
+\end_inset
+
+ objects from one 
+\begin_inset Quotes eld
+\end_inset
+
+depend
+\begin_inset Quotes erd
+\end_inset
+
+ object to another.
+\end_layout
+
+\begin_layout Description
+deppipe: Creates a new 
+\begin_inset Quotes eld
+\end_inset
+
+depend
+\begin_inset Quotes erd
+\end_inset
+
+ object so that it keeps the same value as one that has already been created.
 \end_layout
 
 \begin_layout Subsection
-Sockets
+Input class
+\end_layout
+
+\begin_layout Standard
+To be able to use the xml input file to create an instance of this new class,
+ and to write the file to the restart file, you must create a new input
+ class, or modify an old one to recognize the new class.
+\end_layout
+
+\begin_layout Standard
+Each input class must have the following class attributes:
+\end_layout
+
+\begin_layout Description
+fields: This is a dictionary giving the tag names for the objects that can
+ be specified in the xml input file within the tags of your class.
+ The format is 
+\begin_inset Quotes eld
+\end_inset
+
+{
+\begin_inset Quotes erd
+\end_inset
+
+tag_name1
+\begin_inset Quotes erd
+\end_inset
+
+ : (InputClass, {
+\begin_inset Quotes erd
+\end_inset
+
+default
+\begin_inset Quotes erd
+\end_inset
+
+: default_value, 
+\begin_inset Quotes eld
+\end_inset
+
+help
+\begin_inset Quotes erd
+\end_inset
+
+: 
+\begin_inset Quotes eld
+\end_inset
+
+help_string
+\begin_inset Quotes erd
+\end_inset
+
+, 
+\begin_inset Quotes eld
+\end_inset
+
+dtype
+\begin_inset Quotes erd
+\end_inset
+
+: data type, 
+\begin_inset Quotes eld
+\end_inset
+
+options
+\begin_inset Quotes erd
+\end_inset
+
+: [option1, option2, 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ldots
+\end_layout
+
+\end_inset
+
+ ], 
+\begin_inset Quotes eld
+\end_inset
+
+dimension
+\begin_inset Quotes erd
+\end_inset
+
+: dimensionality of the data}), 
+\begin_inset Quotes eld
+\end_inset
+
+tag_name2
+\begin_inset Quotes erd
+\end_inset
+
+: 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ldots
+\end_layout
+
+\end_inset
+
+ }
+\begin_inset Quotes erd
+\end_inset
+
+.
+ Note that the 
+\begin_inset Quotes eld
+\end_inset
+
+dtype
+\begin_inset Quotes erd
+\end_inset
+
+, 
+\begin_inset Quotes eld
+\end_inset
+
+options
+\begin_inset Quotes erd
+\end_inset
+
+ and 
+\begin_inset Quotes eld
+\end_inset
+
+dimension
+\begin_inset Quotes erd
+\end_inset
+
+ only need to be given values if they are a simple InputValue or InputArray
+ class, just containing data and no tags.
+ You should make sure to specify a tag for all the variables that will be
+ necessary to create an instance of your class.
+\end_layout
+
+\begin_layout Description
+attribs: This is a dictionary of the same form as 
+\series bold
+fields
+\series default
+, but for the tag attribute data instead.
+ These should always be simple data classes InputValue or InputArray, as
+ their value must be specified by the user.
+\end_layout
+
+\begin_layout Description
+default_help: This is the help string that will be given to help explain
+ the new class to others if no other help string is given.
+ It will also be the help string seen in the section in the latex file for
+ the new class.
+\end_layout
+
+\begin_layout Description
+default_label: This is the label used to identify the appropriate section
+ in the latex help file so that different sections can cross-reference with
+ the others.
+\end_layout
+
+\begin_layout Standard
+The class can have the following functions:
+\end_layout
+
+\begin_layout Description
+fetch: This takes the InputClass object and creates a new object of your
+ class from it.
+ You must make sure to call the base class fetch function using the standard
+ Python function super.
+\end_layout
+
+\begin_layout Description
+store: This takes an object of your class, and stores the relevant information
+ needed to reinitialize it in an InputClass object.
+ You must make sure to call the base class store function using the standard
+ Python function super.
+\end_layout
+
+\begin_layout Description
+check: This is an optional function that will check to see if the data specified
+ in the input file will create a valid instance of your class, and possibly
+ raise an exception otherwise.
+ You must make sure to call the base class check function using the standard
+ Python function super.
+\end_layout
+
+\begin_layout Description
+write: This is a function that you can use to override the base class write
+ function, so that you can tailor what is printed to the restart file.
+\end_layout
+
+\begin_layout Standard
+The last thing that you must do to be able to use your class is to create
+ an appropriate fields tag in the parent input class where you want the
+ instance of your class to be held, with InputClass set to the name of your
+ input class, and alter the check, store and fetch functions of the input
+ class of the parent class.
 \end_layout
 
 \begin_layout Section
-Interface
+Submitting patches
+\end_layout
+
+\begin_layout Standard
+This code is still in developement, and any submissions to improve the code
+ are welcome.
+ However, to be considered as a candidate for inclusion in the main version
+ of the code additions must adhere to the standards described in this section.
+\end_layout
+
+\begin_layout Subsection
+Testing
+\end_layout
+
+\begin_layout Subsection
+Documentation
+\end_layout
+
+\begin_layout Chapter
+Input class hierarchy
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+label{hierarchy}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The following chapter gives a complete list of the tags that can be specified
+ in the xml input file, along with the hierarchy of objects.
+ Note that every xml input file must start with the root tag 
+\begin_inset Quotes eld
+\end_inset
+
+simulation
+\begin_inset Quotes erd
+\end_inset
+
+.
+ See the accompanying 
+\begin_inset Quotes eld
+\end_inset
+
+help.xml
+\begin_inset Quotes erd
+\end_inset
+
+ file in the 
+\begin_inset Quotes eld
+\end_inset
+
+doc
+\begin_inset Quotes erd
+\end_inset
+
+ directory to see the recommended input file structure.
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+input{simulation}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+input{ensembles}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+input{forces}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+input{interface}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+input{cell}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+input{beads}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+input{atoms}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+input{barostats}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+input{thermostats}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+input{prng}
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \end_body

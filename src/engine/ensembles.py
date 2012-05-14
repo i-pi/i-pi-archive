@@ -48,8 +48,8 @@ class Ensemble(dobject):
          ntemp: The simulation temperature. Will be nbeads times higher than
             the system temperature as PIMD calculations are done at this 
             effective classical temperature.
-         omegan: The spring constant for the interaction between the replicas.  
-            Depends on the simulation temperature.
+         omegan: The effective vibrational frequency for the interaction 
+            between the replicas. Depends on the simulation temperature.
          omegan2: omegan**2.
          omegak: The normal mode frequencies for the free ring polymer.
             Depends on omegan.
@@ -105,11 +105,19 @@ class Ensemble(dobject):
       dget(self,"econs").add_dependency(dget(self.beads, "vpath"))
       
       # create path related properties
-      dset(self,"omegan",depend_value(name='omegan',func=self.get_omegan, dependencies=[dget(self,"ntemp")]) )
-      dset(self,"omegan2",depend_value(name='omegan2',func=self.get_omegan2, dependencies=[dget(self,"omegan")]) )
-      dset(self,"omegak",depend_array(name='omegak',value=np.zeros(self.beads.nbeads,float),func=self.get_omegak, dependencies=[dget(self,"omegan")]) )
-      dset(self,"prop_pq",depend_array(name='prop_pq',value=np.zeros((self.beads.nbeads,2,2),float),func=self.get_prop_pq, 
-                                      dependencies=[dget(self,"omegak"), dget(self,"dt")]) )
+      dset(self,"omegan",
+         depend_value(name='omegan',func=self.get_omegan, 
+            dependencies=[dget(self,"ntemp")]) )
+      dset(self,"omegan2",
+         depend_value(name='omegan2',func=self.get_omegan2, 
+            dependencies=[dget(self,"omegan")]) )
+      dset(self,"omegak",
+         depend_array(name='omegak',value=np.zeros(self.beads.nbeads,float),
+            func=self.get_omegak, dependencies=[dget(self,"omegan")]) )
+      dset(self,"prop_pq",
+         depend_array(name='prop_pq',value=np.zeros((self.beads.nbeads,2,2)),
+            func=self.get_prop_pq, 
+               dependencies=[dget(self,"omegak"), dget(self,"dt")]) )
 
    def get_ntemp(self):
       """Returns the PI simulation temperature (P times the physical T)."""
@@ -117,7 +125,9 @@ class Ensemble(dobject):
       return self.temp*self.beads.nbeads
 
    def get_omegan(self):
-      """Returns the spring constant for the interaction between replicas."""
+      """Returns the effective vibrational frequency for the interaction 
+      between replicas.
+      """
 
       return self.ntemp*units.Constants.kb/units.Constants.hbar
 
@@ -221,10 +231,11 @@ class NVEEnsemble(Ensemble):
       Calculates the centre of mass momenta, then removes the mass weighted
       contribution from each atom. If the ensemble defines a thermostat, then
       the contribution to the conserved quantity due to this subtraction is 
-      added to the total energy removed from the kinetic energy due to the 
-      thermostat. If there is a choice of thermostats, the thermostat 
-      connected to the centroid is chosen, to minimise the disturbance to the 
-      ring polymer motion.
+      added to the thermostat heat energy, as it is assumed that the centre of
+      mass motion is due to the thermostat. 
+
+      If there is a choice of thermostats, the thermostat 
+      connected to the centroid is chosen.
       """
 
       if (self.fixcom):
@@ -247,7 +258,6 @@ class NVEEnsemble(Ensemble):
          pcom *= 1.0/(nb*self.beads[0].M)
          for i in range(3):
             self.beads.p[:,i:na3:3] -= m*pcom[i]
-         
 
    def pstep(self): 
       """Velocity Verlet momenta propagator."""
@@ -266,6 +276,9 @@ class NVEEnsemble(Ensemble):
       atom masses, and so the same propagator will work for all the atoms in 
       the system. All the ring polymers are propagated at the same time by a
       matrix multiplication.
+
+      Also note that the centroid coordinate is propagated in qcstep, so is
+      not altered here.
       """
 
       if self.beads.nbeads == 1:
@@ -357,7 +370,7 @@ class NVTEnsemble(NVEEnsemble):
       """
 
       super(NVTEnsemble,self).bind(beads, cell, bforce, prng)
-      ndof=None 
+      ndof = None 
       if self.fixcom:
          ndof = 3*(self.beads.natoms-1)
          

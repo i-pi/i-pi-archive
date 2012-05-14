@@ -87,8 +87,9 @@ class Atoms(dobject):
          three times. Used when each degree of freedom needs to be divided 
          by the mass.
       M: The total mass of all the atoms.
-      kin: The total kinetic energy of the atoms.
-      kstress: The contribution of the atoms to the kinetic stress tensor.
+      kin: The total kinetic energy of the atoms. Depends on p and m3.
+      kstress: The contribution of the atoms to the kinetic stress tensor. 
+         Depends on px, py, pz and m.
       qx: An array giving the x components of the positions.
       qy: An array giving the y components of the positions.
       qz: An array giving the z components of the positions.
@@ -115,28 +116,37 @@ class Atoms(dobject):
       self.natoms = natoms
       
       if _prebind is None:
-         dset(self,"q",depend_array(name="q",value=np.zeros(3*natoms, float)) ) 
-         dset(self,"p",depend_array(name="p",value=np.zeros(3*natoms, float)) )
-         dset(self,"m",depend_array(name="m",value=np.zeros(natoms, float)) )
-         dset(self,"names",depend_array(name="names",value=np.zeros(natoms, np.dtype('|S6'))) )         
+         dset(self,"q",depend_array(name="q",value=np.zeros(3*natoms, float)))
+         dset(self,"p",depend_array(name="p",value=np.zeros(3*natoms, float)))
+         dset(self,"m",depend_array(name="m",value=np.zeros(natoms, float)))
+         dset(self,"names",
+            depend_array(name="names",value=np.zeros(natoms, np.dtype('|S6'))))         
       else:
          dset(self,"q",_prebind[0]) 
          dset(self,"p",_prebind[1]) 
          dset(self,"m",_prebind[2])
          dset(self,"names",_prebind[3])
  
-      dset(self,"px",self.p[0:3*natoms:3],name="px")
-      dset(self,"py",self.p[1:3*natoms:3],name="py")
-      dset(self,"pz",self.p[2:3*natoms:3],name="pz")
-      dset(self,"qx",self.q[0:3*natoms:3],name="qx")
-      dset(self,"qy",self.q[1:3*natoms:3],name="qy")
-      dset(self,"qz",self.q[2:3*natoms:3],name="qz")      
+      self.px=self.p[0:3*natoms:3]
+      self.py=self.p[1:3*natoms:3]
+      self.pz=self.p[2:3*natoms:3]
+      self.qx=self.q[0:3*natoms:3]
+      self.qy=self.q[1:3*natoms:3]
+      self.qz=self.q[2:3*natoms:3]
       
-      dset(self,"m3",depend_array(name="m3",value=np.zeros(3*natoms, float),func=self.mtom3, dependencies=[dget(self,"m")]))
+      dset(self,"m3",
+         depend_array(name="m3",value=np.zeros(3*natoms, float),func=self.mtom3,
+            dependencies=[dget(self,"m")]))
 
-      dset(self,"M",depend_value(name="M",func=self.get_msum,dependencies=[dget(self,"m")]) )      
-      dset(self,"kin",depend_value(name="kin",func=self.get_kin,dependencies=[dget(self,"p"),dget(self,"m3")]) )
-      dset(self,"kstress",depend_value(name="kstress",func=self.get_kstress,dependencies=[dget(self,"p"),dget(self,"m")]) )
+      dset(self,"M",
+         depend_value(name="M",func=self.get_msum,
+            dependencies=[dget(self,"m")]) )      
+      dset(self,"kin",
+         depend_value(name="kin",func=self.get_kin,
+            dependencies=[dget(self,"p"),dget(self,"m3")]) )
+      dset(self,"kstress",
+         depend_value(name="kstress",func=self.get_kstress,
+            dependencies=[dget(self,"px"),dget(self,"py"),dget(self,"pz"),dget(self,"m")]) )
    
    def copy(self):
       """Creates a new Atoms object.
@@ -233,7 +243,7 @@ class Atoms(dobject):
       tensor.
       """
 
-      ks = numpy.zeros((3,3),float)
+      ks = np.zeros((3,3),float)
       ks[0,0] = np.dot(self.px,self.px/self.m)
       ks[1,1] = np.dot(self.py,self.py/self.m)
       ks[2,2] = np.dot(self.pz,self.pz/self.m)
