@@ -232,7 +232,7 @@ class InputSimulation(Input):
          if not stride in ["checkpoint", "properties", "progress", "trajectory", "centroid"]:
             raise ValueError("Output file " + stride + " is not a valid keyword for stride.")
       for traj in self.trajectories.fetch():
-         if not traj in ["positions", "velocities", "forces", "kinetic_cv", "centroid"]:
+         if not traj in ["positions", "velocities", "forces", "kinetic_cv", "kodterms_cv", "centroid"]:
             raise ValueError("Output trajectory file " + traj + " is not a valid keyword for trajectories.")
 
       #TODO do something about fd_delta...

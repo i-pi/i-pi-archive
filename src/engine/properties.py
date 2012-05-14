@@ -119,6 +119,8 @@ class Properties(dobject):
       self.property_dict["pressure_cv"] = self.get_presscv
       self.property_dict["kstress_cv"] = self.get_kstresscv
 
+      self.property_dict["gle_ke"] = self.get_gleke
+
       self.property_dict["kin_yama"] = self.get_kinyama
 
       self.property_dict["linlin"] = self.get_linlin
@@ -246,12 +248,22 @@ class Properties(dobject):
    def get_kincv(self):        
       """Calculates the quantum central virial kinetic energy estimator."""
 
-      kcv=0.0
+      kcv = 0.0
       for b in range(self.beads.nbeads):
          kcv += np.dot(depstrip(self.beads.q[b]) - depstrip(self.beads.qc), depstrip(self.forces.f[b]))
       kcv *= -0.5/self.beads.nbeads
       kcv += 0.5*Constants.kb*self.ensemble.temp*(3*self.beads.natoms) 
       return kcv
+
+   def get_gleke(self, mode=0):
+      """Calculates the kinetic energy of the nm-gle additional momenta."""
+
+      gleke = 0.0
+      s = depstrip(self.ensemble.thermostat.s)
+      for i in range(len(s[0,:,0])):
+         for alpha in range(len(s[0,0,:])):
+            gleke += s[mode, i, alpha]**2/2.0
+      return gleke
 
    def get_kinyama(self):              
       """Calculates the quantum scaled coordinate kinetic energy estimator.
