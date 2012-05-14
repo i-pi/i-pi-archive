@@ -73,7 +73,8 @@ class Simulation(dobject):
    """   
 
    def __init__(self, beads, cell, force, ensemble, prng, step=0, tsteps=1000, 
-               stride=None, prefix="prefix", outlist=None, trajlist=None, initlist=None):
+               stride=None, prefix="prefix", outlist=None, trajlist=None, 
+               initlist=None):
       """Initialises Simulation class.
 
       Args:

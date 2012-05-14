@@ -86,6 +86,9 @@ class Properties(dobject):
       'pressure_cv': Quantum centroid virial pressure estimator,
       'kstress_cv': Quantum centroid virial kinetic stress tensor estimator.
          Requires arguments x and v, to give kstress[x,v],
+      'gle_ke': Kinetic energy for the additional momenta for the normal
+         mode kinetic energy estimator. Takes one argument, which gives the
+         mode that the kinetic energy is given for,
       'kin_yama': Quantum scaled coordinate kinetic energy estimator,
       'linlin': The scaled Fourier transform of the momentum distribution.
          Given by n(x) in Lin Lin et al., Phys. Rev. Lett. 105, 110602.}.
@@ -256,7 +259,12 @@ class Properties(dobject):
       return kcv
 
    def get_gleke(self, mode=0):
-      """Calculates the kinetic energy of the nm-gle additional momenta."""
+      """Calculates the kinetic energy of the nm-gle additional momenta.
+
+      Args:
+         mode: Gives the index of the normal mode thermostat we want the 
+            kinetic energy for.
+      """
 
       gleke = 0.0
       s = depstrip(self.ensemble.thermostat.s)

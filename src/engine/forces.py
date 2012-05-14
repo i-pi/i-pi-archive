@@ -27,6 +27,8 @@ class ForceField(dobject):
    Attributes: 
       atoms: An Atoms object containing all the atom positions.
       cell: A Cell object containing the system box.
+      softexit: A function to help make sure the printed restart file is
+         consistent.
 
    Depend objects:
       ufv: A list of the form [pot, f, vir]. These quantities are calculated 
@@ -69,6 +71,8 @@ class ForceField(dobject):
       Args:
          atoms: The Atoms object from which the atom positions are taken.
          cell: The Cell object from which the system box is taken.
+         softexit: A function to help make sure the printed restart file is
+            consistent.
       """
 
       # stores a reference to the atoms and cell we are computing forces for
@@ -160,6 +164,8 @@ class ForceBeads(dobject):
       _forces: A list containing all the force objects for each system replica.
       Cb2nm: The transformation matrix between the bead and normal mode 
          representations.
+      softexit: A function to help make sure the printed restart file is
+         consistent.
 
    Depend objects:
       f: An array containing the components of the force. Depends on each
@@ -204,6 +210,8 @@ class ForceBeads(dobject):
          force: Force object, to be bound to the forcefield. This
             should be a FFSocket or equivalent, so that it can be copied for
             each replica of the system.
+         softexit: A function to help make sure the printed restart file is
+            consistent.
       """
 
       # stores a copy of the number of atoms and of beads !TODO! make them read-only properties
@@ -345,6 +353,7 @@ class ForceBeads(dobject):
          vir += v
       return vir
 
+
 class FFSocket(ForceField):
    """Interface between the PIMD code and the socket for a single replica.
 
@@ -354,13 +363,14 @@ class FFSocket(ForceField):
 
    Attributes:
       parameters: A dictionary of the parameters used by the driver. Of the
-         form {"name": value}.
+         form {'name': value}.
       socket: The interface object which contains the socket through which 
          communication between the forcefield and the driver is done.
       request: During the force calculation step this holds a dictionary
          containing the relevant data for determining the progress of the step.
-         Of the form {"atoms": atoms, "cell": cell, "pars": parameters, 
-                      "status": status, "result": result}.
+         Of the form {'atoms': atoms, 'cell': cell, 'pars': parameters, 
+                      'status': status, 'result': result, 'id': bead id,
+                      'start': starting time}.
    """
 
    def __init__(self, pars=None, interface=None):
@@ -385,13 +395,21 @@ class FFSocket(ForceField):
       self.request = None
 
    def bind(self, atoms, cell, softexit=None):
-      """ Pass on the binding request but also makes sure to set the socket's softexit. """
+      """Pass on the binding request from ForceBeads.
+
+      Also makes sure to set the socket's softexit.
+
+      Args:
+         atoms: Atoms object from which the bead positions are taken.
+         cell: Cell object from which the system box is taken.
+         softexit: A function to help make sure the printed restart file is
+            consistent.
+      """
 
       super(FFSocket,self).bind(atoms, cell, softexit)
       if not self.softexit is None:
          self.socket.softexit=self.softexit
 
-      
    def copy(self):    
       """Creates a deep copy without the bound objects.
 
@@ -441,6 +459,10 @@ class FFSocket(ForceField):
       Allows the ForceBeads object to ask for the ufv list of each replica
       directly without going through the get_all function. This allows 
       all the jobs to be sent at once, allowing them to be parallelized.
+
+      Args:
+         reqid: An optional integer that indentifies requests of the same type,
+            e.g. the bead index.
       """
 
       if self.request is None and dget(self,"ufv").tainted():

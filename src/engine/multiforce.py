@@ -1,7 +1,7 @@
 """Contains the classes that deal with ring polymer contraction schemes.
 
 Classes:
-   MultiForce: 
+   MultiForce: Deals with ring polymer contraction schemes.
 """
 
 __all__ = ['MultiForce']
@@ -19,14 +19,37 @@ class MultiForce(dobject):
    positions to different driver codes.
 
    Attributes:
+      nreduced: A list giving the number of beads on each of the contracted
+         ring polymers.
+      natoms: An integer giving the number of atoms.
+      nbeads: An integer giving the number of beads.
+      _forces: A list containing all the forcefield objects for each system 
+         replica. The first forcefield object is that for the full ring polymer.
+      Cb2nm: The transformation matrix between the bead and normal mode 
+         representations.
+      softexit: A function to help make sure the printed restart file is
+         consistent.
+      _forces: A list of the forcefields which will be used to calculate
+         the forces, potential and virial.
+      beadlist: A list of beads objects for each of the contracted ring
+         polymers. The first beads object is the full ring polymer.
 
    Depend objects:
+      f: An array containing the components of the force.
+      pots: A list containing the potential energy for each forcefield. 
+      virs: A list containing the virial tensor for each forcefield. 
+      pot: The total potential energy.
+      vir: The virial tensor.
+      fnm: An array containing the components of the force in the normal mode
+         representation.
    """
 
    def __init__(self, nreduced = None, forces = None, beads=None, cell=None):
       """Initialises Multiforce.
 
       Args:
+         beads: Optional beads object, to be bound to the forcefield.
+         cell: Optional cell object, to be bound to the forcefield.
          nreduced: An array giving the number of beads for the contracted 
             ring polymers.
          forces: Force field objects specifying the potential for each of the
@@ -42,6 +65,14 @@ class MultiForce(dobject):
          self.bind(beads, cell, forces)
 
    def bind(self, beads, cell, forces, softexit=None):
+      """Binds atoms, cell and forces to the forcefield.
+
+      Args:
+         bead: The Beads object from which the bead positions are taken.
+         cell: The Cell object from which the system box is taken.
+         softexit: A function to help make sure the printed restart file is
+            consistent.
+      """
       self.natoms = beads.natoms
       self.nbeads = beads.nbeads
       self.softexit = softexit
