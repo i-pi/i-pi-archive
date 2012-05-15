@@ -17,10 +17,13 @@ Functions:
    root_herm: Computes the square root of a positive-definite hermitian
       matrix.
    nm_trans: Uses an FFT algorithm to do the normal mode transformation.
+   inv_nm_trans: Uses an FFT algorithm to do the inverse normal mode
+      transformation.
 """
 
 __all__ = ['matrix_exp', 'stab_cholesky', 'h2abc', 'abc2h', 'invert_ut3x3',
-           'det_ut3x3', 'eigensystem_ut3x3', 'exp_ut3x3', 'root_herm']
+           'det_ut3x3', 'eigensystem_ut3x3', 'exp_ut3x3', 'root_herm',
+           'nm_trans', 'inv_nm_trans']
 
 import numpy as np
 import math
@@ -293,6 +296,7 @@ def nm_trans(q):
    nbeads = len(q)
    if nbeads < 3:
       return temp_mat.real/math.sqrt(nbeads)
+
    nmodes = nbeads/2
    odd = nbeads - 2*nmodes  # 0 if even, 1 if odd
 
@@ -309,3 +313,36 @@ def nm_trans(q):
       (qnm[1:nmodes+1,:], qnm[nbeads:nmodes:-1,:]) = (temp_mat[1:,:].real, temp_mat[1:,:].imag)
 
    return qnm
+
+def inv_nm_trans(qnm):
+   """Performs the inverse normal mode transformation using FFT.
+
+   Args:
+      qnm: A 2 dimensional matrix in the normal mode representation. The first 
+         dimension gives the different normal mode coordinates, and the second
+         the different degrees of freedom.
+
+   Returns:
+      A matrix of the same shape as qnm, but in the bead representation.
+   """
+
+   nbeads = len(qnm)
+   if nbeads < 3:
+      return np.fft.irfft(qnm*math.sqrt(nbeads), n=nbeads, axis=0)
+
+   nmodes = nbeads/2
+   odd = nbeads - 2*nmodes  # 0 if even, 1 if odd
+
+   qnm_complex = np.zeros((nmodes+1, len(qnm[0,:])), complex)
+   qnm_complex[0,:] = qnm[0,:]
+   if not odd:
+      (qnm_complex[1:-1,:].real, qnm_complex[1:-1,:].imag) = (qnm[1:nmodes,:], qnm[nbeads:nmodes:-1,:])
+      qnm_complex[1:-1,:] /= math.sqrt(2)
+      qnm_complex[nmodes,:] = qnm[nmodes,:]
+   else:
+      (qnm_complex[1:,:].real, qnm_complex[1:,:].imag) = (qnm[1:nmodes+1,:], qnm[nbeads:nmodes:-1,:])
+      qnm_complex[1:,:] /= math.sqrt(2)
+
+   qnm_complex *= math.sqrt(nbeads)
+
+   return np.fft.irfft(qnm_complex, n=nbeads, axis=0)

@@ -192,6 +192,9 @@ class MultiForce(dobject):
    def expand(self):
       """Transforms the force acting on each of the contracted ring polymers
       back to the full ring polymer.
+
+      Returns:
+         The total force over each of the forcefields.
       """
 
       newf = np.zeros((self.nbeads,3*self.natoms))
