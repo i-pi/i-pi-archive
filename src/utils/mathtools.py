@@ -16,6 +16,7 @@ Functions:
    exp_ut3x3: Computes the exponential of a 3*3 upper triangular matrix.
    root_herm: Computes the square root of a positive-definite hermitian
       matrix.
+   nm_trans: Uses an FFT algorithm to do the normal mode transformation.
 """
 
 __all__ = ['matrix_exp', 'stab_cholesky', 'h2abc', 'abc2h', 'invert_ut3x3',
@@ -257,6 +258,9 @@ def exp_ut3x3(h):
 def root_herm(A):
    """Gives the square root of a hermitian matrix with real eigenvalues.
 
+   Args:
+      A: A Hermitian matrix.
+
    Returns:
       A matrix such that itself matrix multiplied by its transpose gives the
       original matrix.
@@ -272,3 +276,36 @@ def root_herm(A):
          print " # matrix square root warning: zeroing negative element ", eigvals[i]
          diag[i,i] = 0
    return np.dot(eigvecs, np.dot(diag, eigvecs.T))
+
+def nm_trans(q):
+   """Performs the normal mode transformation using FFT.
+
+   Args:
+      q: A 2 dimensional matrix in the bead representation. The first 
+         dimension gives the different bead coordinates, and the second
+         the different degrees of freedom.
+
+   Returns:
+      A matrix of the same shape as q, but in the normal mode representation.
+   """
+
+   temp_mat = np.fft.rfft(q, axis=0)
+   nbeads = len(q)
+   if nbeads < 3:
+      return temp_mat.real/math.sqrt(nbeads)
+   nmodes = nbeads/2
+   odd = nbeads - 2*nmodes  # 0 if even, 1 if odd
+
+   temp_mat /= math.sqrt(nbeads)
+   qnm = np.zeros(q.shape)
+   qnm[0,:] = temp_mat[0,:].real
+
+   if not odd:
+      temp_mat[1:-1,:] *= math.sqrt(2)
+      (qnm[1:nmodes,:], qnm[nbeads:nmodes:-1,:]) = (temp_mat[1:-1,:].real, temp_mat[1:-1,:].imag)
+      qnm[nmodes,:] = temp_mat[nmodes,:].real
+   else:
+      temp_mat[1:,:] *= math.sqrt(2)
+      (qnm[1:nmodes+1,:], qnm[nbeads:nmodes:-1,:]) = (temp_mat[1:,:].real, temp_mat[1:,:].imag)
+
+   return qnm
