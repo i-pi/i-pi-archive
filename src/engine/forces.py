@@ -331,7 +331,7 @@ class ForceBeads(dobject):
    def pot(self):
       """Sums the potential of each replica.
 
-      Used to check energy conservation. 
+      Used to check energy conservation. Not the actual system potential.
 
       Returns:
          Potential energy sum.

@@ -79,9 +79,9 @@ class MultiForce(dobject):
       self._forces = [ForceBeads() for force in forces]
 
       self.beadlist = [beads]
-      for f in range(len(nreduced)):
+      for r in range(len(nreduced)):
          self.beadlist.append(Beads(natoms=beads.natoms, 
-            nbeads=self.nreduced[f]))
+            nbeads=self.nreduced[r]))
 
       for f in range(len(forces)):
          self._forces[f].bind(beadlist[f], cell, forces[f], softexit) 
@@ -117,6 +117,7 @@ class MultiForce(dobject):
    def queue(self):
       """Submits all the required force calculations to the interface."""
 
+      self.contract()
       for force in self._forces:
          force.queue()
 
@@ -161,7 +162,6 @@ class MultiForce(dobject):
          contracted ring polymers.
       """
 
-      self.contract()
       self.queue()
       return self.expand()
 
@@ -198,11 +198,19 @@ class MultiForce(dobject):
       """
 
       newf = np.zeros((self.nbeads,3*self.natoms))
+      vir = np.zeros((3,3))
 
-      newf += self._forces[0]
+      newf += self._forces[0].f
+      vir += self._forces[0].vir
+
       for i in range(len(self.nreduced)):
          nred = self.nreduced[i]
          for j in range(-nred/2+1,nred/2+1):
             newf[j] += np.dot(self.Cnm2b[:,j],depstrip(self._forces[i+1].fnm))*math.sqrt(self.nbeads/float(self.beadlist[i+1]))
+
+      #TODO do the same for the virial.
+      # I think we need: W = T.T*W_contracted*(T.T)^(-1) = T.T*W_contracted*T
+
+      #TODO do this with FFT
 
       return newf

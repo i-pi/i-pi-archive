@@ -230,7 +230,7 @@ class Properties(dobject):
 
       x = int(x)
       v = int(v)
-      return self.kstress()[x,v]
+      return self.kstress_cv()[x,v]
 
    def get_stresscv(self, x=0, v=0):
       """Calculates the quantum central virial stress tensor estimator.
@@ -240,13 +240,13 @@ class Properties(dobject):
 
       x = int(x)
       v = int(v)
-      stress = (self.forces.vir + self.kstress())/self.cell.V                  
+      stress = (self.forces.vir/float(self.beads.nbeads) + self.kstress_cv())/self.cell.V                  
       return stress[x,v]
 
    def get_presscv(self):
       """Calculates the quantum central virial pressure estimator."""
 
-      return np.trace(self.forces.vir + self.kstress())/(3.0*self.cell.V)
+      return np.trace(self.forces.vir/float(self.beads.nbeads) + self.kstress_cv())/(3.0*self.cell.V)
    
    def get_kincv(self):        
       """Calculates the quantum central virial kinetic energy estimator."""
