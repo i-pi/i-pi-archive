@@ -393,7 +393,8 @@ class Interface(object):
          object giving the atom positions, 'cell': Cell object giving the
          system box, 'pars': parameter string, 'result': holds the result as a
          list once the computation is done, 'status': a string labelling the 
-         status}.
+         status, 'id': the id of the request, usually the bead number, 'start':
+         the starting time for the calculation, used to check for timeouts.}.
       """
 
       par_str = " "
@@ -435,7 +436,8 @@ class Interface(object):
                print " @SOCKET:   Client ", c.getpeername(), " died or got unresponsive(C). Removing from the list."
                c.shutdown(socket.SHUT_RDWR)
                c.close()
-            except:   pass
+            except:  
+               pass
             c.status = 0
             self.clients.remove(c)
             for [k,j] in self.jobs[:]:

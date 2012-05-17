@@ -3855,7 +3855,15 @@ Submitting patches
 This code is still in developement, and any submissions to improve the code
  are welcome.
  However, to be considered as a candidate for inclusion in the main version
- of the code additions must adhere to the following policies:
+ of the code additions must adhere to the standards described in this section.
+\end_layout
+
+\begin_layout Subsection
+Testing
+\end_layout
+
+\begin_layout Subsection
+Documentation
 \end_layout
 
 \begin_layout Chapter

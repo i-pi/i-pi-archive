@@ -97,7 +97,9 @@ class InputSimulation(Input):
                                             "help"     : "The parameter used in the finite difference differentiation in the calculation of the scaled path velocity estimator. Defaults to 1e-5." }), 
              "traj_format": ( InputValue, { "dtype"    : str,
                                             "default"  : "pdb",
-                                            "help"     : "The file format for the output file. Allowed keywords are ['pdb', 'xyz']." }),  
+                                            "help"     : "The file format for the output file. Allowed keywords are ['pdb', 'xyz'].",
+                                            "options"  : ["pdb", "xyz"] }),  
+                                            
              "trajectories": ( InputArray, { "dtype"   : str,
                                              "default" : np.zeros(0, np.dtype('|S12')),
                                              "help"    : "A list of the properties to print out the per-atom or per-bead trajectories of. Allowed values are ['positions', 'velocities', 'forces', 'kinetic_cv', 'centroid']."})}
@@ -219,4 +221,18 @@ class InputSimulation(Input):
          self.beads.store(rbeads)      
       else: 
          raise TypeError("Either a <beads> or a <atoms> block must be provided")
-         
+
+      if self.total_steps.fetch() <= self.step.fetch():
+         raise ValueError("Current step greater than total steps, no dynamics will be done.")
+
+      for init in self.initialize.fetch():
+         if not init in ["velocities"]:
+            raise ValueError("Initialization parameter " + init + " is not a valid keyword for initialize.")
+      for stride in self.stride.fetch():
+         if not stride in ["checkpoint", "properties", "progress", "trajectory", "centroid"]:
+            raise ValueError("Output file " + stride + " is not a valid keyword for stride.")
+      for traj in self.trajectories.fetch():
+         if not traj in ["positions", "velocities", "forces", "kinetic_cv", "kodterms_cv", "centroid"]:
+            raise ValueError("Output trajectory file " + traj + " is not a valid keyword for trajectories.")
+
+      #TODO do something about fd_delta...

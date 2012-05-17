@@ -14,10 +14,16 @@ Functions:
    eigensystem_ut3x3: Finds the eigenvector matrix and eigenvalues of a 3*3
       upper triangular matrix
    exp_ut3x3: Computes the exponential of a 3*3 upper triangular matrix.
+   root_herm: Computes the square root of a positive-definite hermitian
+      matrix.
+   nm_trans: Uses an FFT algorithm to do the normal mode transformation.
+   inv_nm_trans: Uses an FFT algorithm to do the inverse normal mode
+      transformation.
 """
 
 __all__ = ['matrix_exp', 'stab_cholesky', 'h2abc', 'abc2h', 'invert_ut3x3',
-           'det_ut3x3', 'eigensystem_ut3x3', 'exp_ut3x3']
+           'det_ut3x3', 'eigensystem_ut3x3', 'exp_ut3x3', 'root_herm',
+           'nm_trans', 'inv_nm_trans']
 
 import numpy as np
 import math
@@ -94,7 +100,7 @@ def stab_cholesky(M):
       if (D[i]>0):
          D[i] = math.sqrt(D[i])
       else:
-         print " # stab-cholesky warning: zeroing negative element", D[i]
+         print " # stab-cholesky warning: zeroing negative element ", D[i]
          D[i] = 0 
       for j in range(i+1):
          S[i,j] += L[i,j]*D[j]
@@ -251,3 +257,92 @@ def exp_ut3x3(h):
       eh[0,2] += h[0,1]*h[0,2]*e00/24.0*(12.0 + 4*(h[1,1] + h[2,2] - 2*h[0,0]) + (h[1,1] - h[0,0])*(h[2,2] - h[0,0]))
       
    return eh  
+
+def root_herm(A):
+   """Gives the square root of a hermitian matrix with real eigenvalues.
+
+   Args:
+      A: A Hermitian matrix.
+
+   Returns:
+      A matrix such that itself matrix multiplied by its transpose gives the
+      original matrix.
+   """
+
+   eigvals, eigvecs = np.linalg.eigh(A)
+   ndgrs = len(eigvals)
+   diag = np.zeros((ndgrs,ndgrs))
+   for i in range(ndgrs):
+      if eigvals[i] >= 0:
+         diag[i,i] = math.sqrt(eigvals[i])
+      else:
+         print " # matrix square root warning: zeroing negative element ", eigvals[i]
+         diag[i,i] = 0
+   return np.dot(eigvecs, np.dot(diag, eigvecs.T))
+
+def nm_trans(q):
+   """Performs the normal mode transformation using FFT.
+
+   Args:
+      q: A 2 dimensional matrix in the bead representation. The first 
+         dimension gives the different bead coordinates, and the second
+         the different degrees of freedom.
+
+   Returns:
+      A matrix of the same shape as q, but in the normal mode representation.
+   """
+
+   temp_mat = np.fft.rfft(q, axis=0)
+   nbeads = len(q)
+   if nbeads < 3:
+      return temp_mat.real/math.sqrt(nbeads)
+
+   nmodes = nbeads/2
+   odd = nbeads - 2*nmodes  # 0 if even, 1 if odd
+
+   temp_mat /= math.sqrt(nbeads)
+   qnm = np.zeros(q.shape)
+   qnm[0,:] = temp_mat[0,:].real
+
+   if not odd:
+      temp_mat[1:-1,:] *= math.sqrt(2)
+      (qnm[1:nmodes,:], qnm[nbeads:nmodes:-1,:]) = (temp_mat[1:-1,:].real, temp_mat[1:-1,:].imag)
+      qnm[nmodes,:] = temp_mat[nmodes,:].real
+   else:
+      temp_mat[1:,:] *= math.sqrt(2)
+      (qnm[1:nmodes+1,:], qnm[nbeads:nmodes:-1,:]) = (temp_mat[1:,:].real, temp_mat[1:,:].imag)
+
+   return qnm
+
+def inv_nm_trans(qnm):
+   """Performs the inverse normal mode transformation using FFT.
+
+   Args:
+      qnm: A 2 dimensional matrix in the normal mode representation. The first 
+         dimension gives the different normal mode coordinates, and the second
+         the different degrees of freedom.
+
+   Returns:
+      A matrix of the same shape as qnm, but in the bead representation.
+   """
+
+   nbeads = len(qnm)
+   if nbeads < 3:
+      return np.fft.irfft(qnm*math.sqrt(nbeads), n=nbeads, axis=0)
+
+   nmodes = nbeads/2
+   odd = nbeads - 2*nmodes  # 0 if even, 1 if odd
+
+   qnm_complex = np.zeros((nmodes+1, len(qnm[0,:])), complex)
+   qnm_complex[0,:] = qnm[0,:]
+   if not odd:
+      (qnm_complex[1:-1,:].real, qnm_complex[1:-1,:].imag) = (qnm[1:nmodes,:], qnm[nbeads:nmodes:-1,:])
+      qnm_complex[1:-1,:] /= math.sqrt(2)
+      qnm_complex[nmodes,:] = qnm[nmodes,:]
+   else:
+      (qnm_complex[1:,:].real, qnm_complex[1:,:].imag) = (qnm[1:nmodes+1,:], qnm[nbeads:nmodes:-1,:])
+      qnm_complex[1:,:] /= math.sqrt(2)
+
+   qnm_complex *= math.sqrt(nbeads)
+
+   return np.fft.irfft(qnm_complex, n=nbeads, axis=0)

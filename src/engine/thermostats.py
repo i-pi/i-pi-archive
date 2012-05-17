@@ -526,12 +526,14 @@ class ThermoGLE(Thermostat):
       
    def get_S(self):      
       """Calculates the matrix for the coloured noise."""
+
       print "Getting S", self.C
       SST = Constants.kb*(self.C - np.dot(self.T,np.dot(self.C,self.T.T)))
       return stab_cholesky(SST)
-  
+
    def get_C(self):
       """Calculates C from temp (if C is not set explicitely)"""
+
       rC = np.identity(self.ns + 1,float)*self.temp
       return rC[:]
       
@@ -657,10 +659,6 @@ class ThermoNMGLE(Thermostat):
          diffusion matrix, giving the strength of the coupling of the system
          with the heat bath, and thus the size of the stochastic 
          contribution of the thermostat.
-      T: Matrix for the diffusive contribution of the thermostat, i.e. the
-         drift back towards equilibrium. Depends on A and the time step.
-      S: Matrix for the stochastic contribution of the thermostat, i.e. 
-         the uncorrelated Gaussian noise. Depends on C and T.
    """
 
 #   def get_T(self):
@@ -719,7 +717,7 @@ class ThermoNMGLE(Thermostat):
          dset(self,"C",depend_value(name='C', func=self.get_C, dependencies=[dget(self,"temp")]))
       else:
          dset(self,"C",depend_value(value=C.copy(),name='C'))
-      
+
 #      dset(self,"T",  depend_value(name="T",func=self.get_T, dependencies=[dget(self,"A"), dget(self,"dt")]))      
 #      dset(self,"S",  depend_value(name="S",func=self.get_S, dependencies=[dget(self,"C"), dget(self,"T")]))
 #      
