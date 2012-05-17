@@ -433,17 +433,18 @@ class Interface(object):
       for c in self.clients[:]:         
          if not (c.status & Status.Up):
             try:
-               print " @SOCKET:   Client died or got unresponsive. Removing from the list."
+               print " @SOCKET:   Client ", c.getpeername(), " died or got unresponsive(C). Removing from the list."
                c.shutdown(socket.SHUT_RDWR)
                c.close()
-            except:
+            except:  
                pass
+            c.status = 0
             self.clients.remove(c)
             for [k,j] in self.jobs[:]:
                if j is c:
                   self.jobs.remove([k,j])
-               k["status"] = "Queued"
-               k["start"] = -1
+                  k["status"] = "Queued"
+                  k["start"] = -1
 
       keepsearch = True
       while keepsearch:
@@ -494,12 +495,12 @@ class Interface(object):
                if self.timeout>0 and r["start"]>0 and time.time()-r["start"]> self.timeout:
                   print " @SOCKET:  hasdata for bead ", r["id"], " has been running for ", time.time()-r["start"]
                   try:
-                     print " @SOCKET:   Client died or got unresponsive. Closing socket."
+                     print " @SOCKET:   Client ", c.getpeername(), " died or got unresponsive (A). Closing socket."
                      c.shutdown(socket.SHUT_RDWR)
                      c.close()
                   except:
                      pass
-                  c.poll()
+                  c.status = 0 
                   continue
                c.poll()
             if not (c.status & Status.Up): 
@@ -512,12 +513,13 @@ class Interface(object):
          if self.timeout>0 and r["start"]>0 and time.time()-r["start"]> self.timeout:
             print " @SOCKET:  request for bead ", r["id"], " has been running for ", time.time()-r["start"]
             try:
-               print " @SOCKET:   Client died or got unresponsive. Closing socket."
+               print " @SOCKET:   Client ", c.getpeername(), " died or got unresponsive (B). Closing socket."
                c.shutdown(socket.SHUT_RDWR)
                c.close()
                c.poll()
             except:   
                pass
+            c.status = 0
       
       freec = self.clients[:]
       for [r2, c] in self.jobs:
