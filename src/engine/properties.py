@@ -210,11 +210,12 @@ class Properties(dobject):
       kst = np.zeros((3,3),float)
       q = depstrip(self.beads.q)
       qc = depstrip(self.beads.qc)
-      na3 = 3*self.beads.natoms;
+      na3 = 3*self.beads.natoms
       for b in range(self.beads.nbeads):
          for i in range(3):
             for j in range(i,3):
-               kst[i,j] += np.dot(q[b,i:na3:3] - qc[i:na3:3], depstrip(self.forces.f[b])[j:na3:3])
+               kst[i,j] += np.dot(q[b,i:na3:3] - qc[i:na3:3], 
+                  depstrip(self.forces.f[b])[j:na3:3])
 
       kst *= -1/self.beads.nbeads
       for i in range(3):
@@ -268,9 +269,15 @@ class Properties(dobject):
 
       gleke = 0.0
       s = depstrip(self.ensemble.thermostat.s)
-      for i in range(len(s[0,:,0])):
-         for alpha in range(len(s[0,0,:])):
-            gleke += s[mode, i, alpha]**2/2.0
+      if len(s.shape) < 2:
+         raise NameError("gle_ke called without a gle thermostat")
+      elif len(s.shape) == 2:
+         for alpha in range(len(s[0,:])):
+            gleke += s[mode, alpha]**2/2.0
+      else:
+         for i in range(len(s[0,:,0])):
+            for alpha in range(len(s[0,0,:])):
+               gleke += s[mode, i, alpha]**2/2.0
       return gleke
 
    def get_kinyama(self):              

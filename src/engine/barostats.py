@@ -93,7 +93,7 @@ class Barostat(dobject):
       dset(self.thermostat,"dt",   
          depend_value(name="dt", func=self.get_halfdt,
             dependencies=[dget(self,"dt")],
-               dependants=dget(self.thermostat,"dt")._dependants)  )
+               dependants=dget(self.thermostat,"dt")._dependants))
            
       dset(self, "temp", depend_value(name="temp", value=temp))
       deppipe(self, "temp", self.thermostat,"temp")
@@ -126,16 +126,19 @@ class Barostat(dobject):
 
       dset(self,"pot",
          depend_value(name='pot', func=self.get_pot, 
-            dependencies=[ dget(cell,"V0"), dget(cell,"strain"), dget(self,"sext")  ]  ) )            
+            dependencies=[ dget(cell,"V0"), dget(cell,"strain"), dget(self,"sext") ]))            
       dset(self,"piext",
          depend_value(name='piext', func=self.get_piext, 
-            dependencies=[ dget(cell,"V0"), dget(cell,"V"), dget(cell,"h"), dget(cell,"ih0"), dget(cell,"strain"), dget(self,"sext")  ] ) )     
+            dependencies=[ dget(cell,"V0"), dget(cell,"V"), dget(cell,"h"), dget(cell,"ih0"), dget(cell,"strain"), dget(self,"sext") ]))     
+      dset(self,"kstress",
+         depend_value(name='kstress', func=self.get_kstress, 
+            dependencies=[ dget(beads,"q"), dget(beads,"qc"), dget(self,"temp") , dget(forces,"f") ]))
       dset(self,"stress",
          depend_value(name='stress', func=self.get_stress, 
-            dependencies=[ dget(beads,"kstress"), dget(cell,"V"), dget(forces,"vir")  ]  ) )
+            dependencies=[ dget(self,"kstress"), dget(cell,"V"), dget(forces,"vir") ]))
       dset(self,"press",
          depend_value(name='press', func=self.get_press, 
-            dependencies=[ dget(self,"stress") ] ) )
+            dependencies=[ dget(self,"stress") ]))
                 
    def s2p(self):
       """Converts the external stress to the external pressure."""
@@ -177,11 +180,31 @@ class Barostat(dobject):
       pi *= self.cell.V0/self.cell.V
       return pi
       
+   def get_kstress(self):
+      """Calculates the quantum central virial kinetic stress tensor 
+      estimator.
+      """
+
+      kst = np.zeros((3,3),float)
+      q = depstrip(self.beads.q)
+      qc = depstrip(self.beads.qc)
+      na3 = 3*self.beads.natoms
+      for b in range(self.beads.nbeads):
+         for i in range(3):
+            for j in range(i,3):
+               kst[i,j] -= np.dot(q[b,i:na3:3] - qc[i:na3:3], 
+                  depstrip(self.forces.f[b])[j:na3:3])
+
+      for i in range(3):
+         kst[i,i] += Constants.kb*self.temp*(3*self.beads.natoms)
+      kst *= 1.0/self.beads.nbeads
+      return kst
+
    def get_stress(self):
       """Calculates the internal stress tensor."""
       
       #return (self.beads.kstress+self.forces.vir/self.beads.nbeads)/self.cell.V
-      return (np.identity(3)*self.beads.natoms*Constants.kb*self.temp/self.beads.nbeads + self.forces.vir/self.beads.nbeads)/self.cell.V
+      return (self.kstress + self.forces.vir/float(self.beads.nbeads))/self.cell.V
 
 #TODO  make this something that isn't utter rubbish
 #TODO  also include a possible explicit dependence of U on h
