@@ -107,7 +107,6 @@ def read_pdb(filedesc):
    h = mt.abc2h(a, b, c, alpha, beta, gamma) #/ 0.529177
    cell = Cell(h)
    
-   
    natoms = 0
    body = filedesc.readline()
    qatoms = []

@@ -375,7 +375,7 @@ class NVTEnsemble(NVEEnsemble):
          ndof = 3*(self.beads.natoms-1)
          
       self.thermostat.bind(beads=self.beads,prng=prng,ndof=ndof )
-      
+
       deppipe(self,"ntemp", self.thermostat,"temp")
       deppipe(self,"dt", self.thermostat, "dt")
 
@@ -458,10 +458,15 @@ class NPTEnsemble(NVTEnsemble):
          self.barostat = barostat
 
       if pext is not None:
-         dset(self,"pext",depend_value(name="pext", value=pext) )
+         dset(self,"pext",depend_value(name="pext", value=pext))
          deppipe(self, "pext", self.barostat, "pext")
+         #TODO This needs to be replaced, as self.barostat.pext has a 
+         # synchro object, and as such this does not work
+         # We should probably make ensemble.pext and ensemble.sext the
+         # synchro objects, and then use deppipe to define the barostat
+         # equivalents
       elif sext is not None:
-         dset(self,"sext",depend_value(name="sext", value=pext) )
+         dset(self,"sext",depend_value(name="sext", value=pext))
          deppipe(self, "sext", self.barostat, "sext")
       else:
          raise TypeError("You must provide either the pressure or stress")
@@ -541,7 +546,7 @@ class NPTEnsemble(NVTEnsemble):
       self.thermostat.step()      
       self.rmcom()
       self.ttime += time.time()
-                        
+
 
 class NSTEnsemble(NVTEnsemble):
    """Ensemble object for constant stress simulations.

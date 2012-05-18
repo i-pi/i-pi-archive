@@ -72,10 +72,10 @@ class Barostat(dobject):
       sync_ext=synchronizer()
       dset(self,"sext",
          depend_array(name='sext', value=np.zeros((3,3)), synchro=sync_ext, 
-            func={"pext" : self.p2s} ) )
+            func={"pext" : self.p2s}))
       dset(self,"pext",
          depend_value(name='pext', value=0.0, synchro=sync_ext, 
-            func={"sext" : self.s2p} ) )            
+            func={"sext" : self.s2p}))            
       if sext is None:
          self.pext = pext
       else:
@@ -203,7 +203,6 @@ class Barostat(dobject):
    def get_stress(self):
       """Calculates the internal stress tensor."""
       
-      #return (self.beads.kstress+self.forces.vir/self.beads.nbeads)/self.cell.V
       return (self.kstress + self.forces.vir/float(self.beads.nbeads))/self.cell.V
 
 #TODO  make this something that isn't utter rubbish
@@ -371,6 +370,7 @@ class BaroRigid(Barostat):
       pc = depstrip(self.beads.pc)
             
       self.cell.P += dthalf2*np.dot(pc,fc/m) + dthalf3*np.dot(fc,fc/m)
+      #Should dthalf2 be dthalf2*2?
    
       self.beads.p += depstrip(self.forces.f)*dthalf      
            
@@ -395,4 +395,4 @@ class BaroRigid(Barostat):
       self.beads.qnm[0,:] = qc*math.sqrt(self.beads.nbeads)
       self.beads.pnm[0,:] = pc*math.sqrt(self.beads.nbeads)
 
-      self.cell.V*=exp**3
+      self.cell.V *= exp**3
