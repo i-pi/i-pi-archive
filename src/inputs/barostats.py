@@ -45,7 +45,7 @@ class InputBaro(Input):
       super(InputBaro,self).store(baro)
       if type(baro) is BaroRigid or type(baro) is Barostat:
          self.kind.store("rigid")
-      if type(baro) is BaroFlexi:
+      elif type(baro) is BaroFlexi:
          self.kind.store("flexible")
       else:
          raise TypeError("The type " + type(baro).__name__ + " is not a valid barostat type")

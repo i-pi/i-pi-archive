@@ -109,7 +109,7 @@ class Thermostat(dobject):
       elif not atoms is None:
          dset(self,"p",dget(atoms, "p"))
          dset(self,"m",dget(atoms, "m3"))               
-      elif not cell is None:   
+      elif not cell is None:
          dset(self,"p",dget(cell, "p6"))
          dset(self,"m",dget(cell, "m6"))      
       elif not pm is None:   

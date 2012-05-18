@@ -451,6 +451,7 @@ class NPTEnsemble(NVTEnsemble):
             motion will be constrained or not. Defaults to False.
       """
 
+      super(NPTEnsemble,self).__init__(dt, temp, thermostat, fixcom)
       if barostat == None:
          self.barostat = Barostat()
       else:
@@ -503,7 +504,7 @@ class NPTEnsemble(NVTEnsemble):
       ensemble.
       """
 
-      return NVTEnsemble.get_econs(self) + self.barostat.thermostat.ethermo + self.barostat.pot + self.cell.kin - 2.0*Constants.kb*self.thermostat.temp*math.log(self.cell.V)
+      return NVTEnsemble.get_econs(self) + self.barostat.thermostat.ethermo + self.barostat.pot + self.cell.kin - 2.0*units.Constants.kb*self.thermostat.temp*math.log(self.cell.V)
       
    def step(self):
       """NPT time step.
@@ -516,20 +517,30 @@ class NPTEnsemble(NVTEnsemble):
       the radius of gyration of the ring polymers.
       """
 
+      self.ttime = -time.time()
       self.thermostat.step()
       self.barostat.thermostat.step()
       self.rmcom()           
+      self.ttime += time.time()
 
+      self.ptime = -time.time()
       self.barostat.pstep()
+      self.ptime += time.time()
 
+      self.qtime = -time.time()
       self.barostat.qcstep()
       self.qstep()
+      self.qtime += time.time()
 
+      self.ptime -= time.time()
       self.barostat.pstep()
+      self.ptime += time.time()
 
+      self.ttime -= time.time()
       self.barostat.thermostat.step()
       self.thermostat.step()      
       self.rmcom()
+      self.ttime += time.time()
                         
 
 class NSTEnsemble(NVTEnsemble):
@@ -625,7 +636,7 @@ class NSTEnsemble(NVTEnsemble):
       xv = 0.0 
       for i in range(3):
          xv += math.log(self.cell.h[i,i])*(3-i)
-      return NVTEnsemble.get_econs(self) + self.barostat.thermostat.ethermo + self.barostat.pot + self.cell.kin - 2.0*Constants.kb*self.thermostat.temp*xv
+      return NVTEnsemble.get_econs(self) + self.barostat.thermostat.ethermo + self.barostat.pot + self.cell.kin - 2.0*units.Constants.kb*self.thermostat.temp*xv
       
    def step(self):
       """NST time step.
@@ -638,17 +649,27 @@ class NSTEnsemble(NVTEnsemble):
       the radius of gyration of the ring polymers.
       """
 
+      self.ttime = -time.time()
       self.thermostat.step()
       self.barostat.thermostat.step()
       self.rmcom()           
+      self.ttime += time.time()
 
+      self.ptime = -time.time()
       self.barostat.pstep()
+      self.ptime += time.time()
 
+      self.qtime = -time.time()
       self.barostat.qcstep()
       self.qstep()
+      self.qtime += time.time()
 
+      self.ptime -= time.time()
       self.barostat.pstep()
+      self.ptime += time.time()
 
+      self.ttime -= time.time()
       self.barostat.thermostat.step()
       self.thermostat.step()      
       self.rmcom()
+      self.ttime += time.time()

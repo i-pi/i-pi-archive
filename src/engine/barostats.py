@@ -181,7 +181,7 @@ class Barostat(dobject):
       return pi
       
    def get_kstress(self):
-      """Calculates the quantum central virial kinetic stress tensor 
+      """Calculates the quantum centroid virial kinetic stress tensor 
       estimator.
       """
 
@@ -367,7 +367,7 @@ class BaroRigid(Barostat):
       self.cell.P += dthalf*3.0*(self.cell.V*(self.press - self.pext) + 2.0*Constants.kb*self.temp)
 
       fc = depstrip(self.forces.fnm)[0,:]/math.sqrt(self.beads.nbeads)
-      m = depstrip(self.beads.m)
+      m = depstrip(self.beads.centroid.m3)
       pc = depstrip(self.beads.pc)
             
       self.cell.P += dthalf2*np.dot(pc,fc/m) + dthalf3*np.dot(fc,fc/m)
@@ -381,15 +381,15 @@ class BaroRigid(Barostat):
       of the cell box.
       """
 
-      vel = self.cell.P[0]/self.cell.m
+      vel = self.cell.P/self.cell.M
       exp, neg_exp = (math.exp(vel*self.dt), math.exp(-vel*self.dt))
       sinh = 0.5*(exp - neg_exp)
 
       pc = depstrip(self.beads.pc)
       qc = depstrip(self.beads.qc)
-      m = depstrip(self.beads.m)      
-      qc*=exp
-      qc+=(sinh/vel)* pc/m
+      m = depstrip(self.beads.centroid.m3)      
+      qc *= exp
+      qc += (sinh/vel)*pc/m
       pc *= neg_exp
 
       self.beads.qnm[0,:] = qc*math.sqrt(self.beads.nbeads)

@@ -203,7 +203,7 @@ class Properties(dobject):
       return np.trace(stress)/3.0
 
    def kstress_cv(self):
-      """Calculates the quantum central virial kinetic stress tensor 
+      """Calculates the quantum centroid virial kinetic stress tensor 
       estimator.
       """
 
@@ -223,7 +223,7 @@ class Properties(dobject):
       return kst
 
    def get_kstresscv(self, x=0, v=0):        
-      """Calculates the quantum central virial kinetic stress tensor 
+      """Calculates the quantum centroid virial kinetic stress tensor 
       estimator.
 
       Returns kstress[x,v].
@@ -234,7 +234,7 @@ class Properties(dobject):
       return self.kstress_cv()[x,v]
 
    def get_stresscv(self, x=0, v=0):
-      """Calculates the quantum central virial stress tensor estimator.
+      """Calculates the quantum centroid virial stress tensor estimator.
 
       Returns stress[x,v].
       """
@@ -245,12 +245,12 @@ class Properties(dobject):
       return stress[x,v]
 
    def get_presscv(self):
-      """Calculates the quantum central virial pressure estimator."""
+      """Calculates the quantum centroid virial pressure estimator."""
 
       return np.trace(self.forces.vir/float(self.beads.nbeads) + self.kstress_cv())/(3.0*self.cell.V)
    
    def get_kincv(self):        
-      """Calculates the quantum central virial kinetic energy estimator."""
+      """Calculates the quantum centroid virial kinetic energy estimator."""
 
       kcv = 0.0
       for b in range(self.beads.nbeads):
