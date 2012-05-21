@@ -440,8 +440,8 @@ class Interface(object):
             for [k,j] in self.jobs[:]:
                if j is c:
                   self.jobs.remove([k,j])
-               k["status"] = "Queued"
-               k["start"] = -1
+                  k["status"] = "Queued"
+                  k["start"] = -1
 
       keepsearch = True
       while keepsearch:
