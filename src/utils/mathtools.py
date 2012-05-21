@@ -269,6 +269,8 @@ def root_herm(A):
       original matrix.
    """
 
+   if not (abs(A.T - A) < 1e-10).all():
+      raise ValueError("Non-Hermitian matrix passed to root_herm function")
    eigvals, eigvecs = np.linalg.eigh(A)
    ndgrs = len(eigvals)
    diag = np.zeros((ndgrs,ndgrs))
