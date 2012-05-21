@@ -38,7 +38,7 @@ class InputThermo(Input):
 
    attribs = { "kind": (InputValue, { "dtype"   : str, 
                                       "default" : "langevin",
-                                      "options" : [ "langevin", "svr", "pile_l", "pile_g", "gle", "nm_gle", "nm_gle_g" ],
+                                      "options" : [ "langevin", "svr", "pile_l", "pile_g", "gle", "nm_gle" ],
                                       "help"    : "The style of thermostatting. 'langevin' specifies a white noise langevin equation to be attached to the cartesian representation of the momenta. 'svr' attaches a velocity rescaling thermostat to the cartesian representation of the momenta. Both 'pile_l' and 'pile_g' attaches a white noise langevin thermostat to the normal mode representation, with 'pile_l' attaching a local langevin thermostat to the centroid mode and 'pile_g' instead attaching a global velocity rescaling thermostat. 'gle' attaches a coloured noise langevin thermostat to the cartesian representation of the momenta, and 'nm_gle' attaches a coloured noise langevin thermostat to the normal mode representation of the momenta."
                                          }) }
    fields = { "ethermo" : (InputValue, {  "dtype"     : float, 
@@ -101,13 +101,6 @@ class InputThermo(Input):
          if dget(thermo,"C")._func is None:
             self.C.store(thermo.C)
          self.s.store(thermo.s)
-      elif type(thermo) is ThermoNMGLEG: 
-         self.kind.store("nm_gle_g")
-         self.A.store(thermo.A)
-         self.tau.store(thermo.tau)
-         if dget(thermo,"C")._func is None:
-            self.C.store(thermo.C)
-         self.s.store(thermo.s)
       else:
          raise TypeError("Unknown thermostat kind " + type(thermo).__name__)
       self.ethermo.store(thermo.ethermo)
@@ -143,12 +136,6 @@ class InputThermo(Input):
          if len(rC) == 0:
             rC = None
          thermo = ThermoNMGLE(A=self.A.fetch(),C=rC)
-         thermo.s = self.s.fetch()
-      elif self.kind.fetch() == "nm_gle_g":
-         rC = self.C.fetch()
-         if len(rC) == 0:
-            rC = None
-         thermo = ThermoNMGLEG(A=self.A.fetch(),C=rC, tau=self.tau.fetch())
          thermo.s = self.s.fetch()
       else:
          raise TypeError("Invalid thermostat kind " + self.kind.fetch())

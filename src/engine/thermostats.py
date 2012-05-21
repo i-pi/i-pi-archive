@@ -22,7 +22,7 @@ Classes:
 """
 
 __all__ = ['Thermostat', 'ThermoLangevin', 'ThermoPILE_L', 'ThermoPILE_G',
-           'ThermoSVR', 'ThermoGLE', 'ThermoNMGLE', 'ThermoNMGLEG']
+           'ThermoSVR', 'ThermoGLE', 'ThermoNMGLE']
 
 import numpy as np
 import math
@@ -842,27 +842,4 @@ class ThermoNMGLE(Thermostat):
          et += t.ethermo
       return et
 
-
-class ThermoNMGLEG(ThermoNMGLE):     
-
-   def __init__(self, temp = 1.0, dt = 1.0, A = None, C = None, tau=1.0, ethermo=0.0):
-
-      super(ThermoNMGLEG,self).__init__(temp, dt, A, C, ethermo)
-      dset(self,"tau",depend_value(value=tau,name='tau'))
-      
-   def bind(self, beads=None, atoms=None, cell=None, pm=None, prng=None, ndof=None):
-   
-      super(ThermoNMGLEG,self).bind(beads, atoms, cell, pm, prng, ndof)
-      
-      t=ThermoSVR(self.temp, self.dt, self.tau)
-
-      t.bind(pm=(beads.pnm[0,:],beads.m3[0,:]), prng=self.prng) # bind global thermostat to centroid
-
-      # pipes temp and dt
-      deppipe(self,"temp", t, "temp")
-      deppipe(self,"dt", t, "dt")
-      deppipe(self,"tau", t, "tau")
-      
-      dget(self,"ethermo").add_dependency(dget(t,"ethermo"))
-      self._thermos.append(t)      
 
