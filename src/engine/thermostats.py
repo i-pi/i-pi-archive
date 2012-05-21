@@ -22,7 +22,7 @@ Classes:
 """
 
 __all__ = ['Thermostat', 'ThermoLangevin', 'ThermoPILE_L', 'ThermoPILE_G',
-           'ThermoSVR', 'ThermoGLE', 'ThermoNMGLE']
+           'ThermoSVR', 'ThermoGLE', 'ThermoNMGLE', 'ThermoNMGLEG']
 
 import numpy as np
 import math
@@ -660,22 +660,6 @@ class ThermoNMGLE(Thermostat):
          with the heat bath, and thus the size of the stochastic 
          contribution of the thermostat.
    """
-
-#   def get_T(self):
-#      """Calculates the matrix for the overall drift of the velocities."""
-
-#      rv = np.ndarray((self.nb, self.ns+1, self.ns+1), float)
-#      for b in range(0,self.nb) : rv[b]=matrix_exp(-0.5*self.dt*self.A[b])
-#      return rv[:]
-#      
-#   def get_S(self):      
-#      """Calculates the matrix for the coloured noise."""
-
-#      rv = np.ndarray((self.nb, self.ns+1, self.ns+1), float)
-#      for b in range(0,self.nb) :
-#         SST = Constants.kb*(self.C - np.dot(self.T,np.dot(self.C,self.T.T)))
-#         rv[b]=stab_cholesky(SST)
-#      return rv[:]
   
    def get_C(self):
       """Calculates C from temp (if C is not set explicitely)."""
@@ -806,6 +790,30 @@ class ThermoNMGLE(Thermostat):
          dget(self,"ethermo").add_dependency(dget(t,"ethermo"))
          it += 1
 
+
+      # debug: print A C T and S to file
+      fmat=open("matrices","w")
+      self.dt=20.670687
+      fmat.write(" # timestep %15.7e\n" % (self.dt) )
+      fmat.write(" # A matrix\n");
+      for r in self._thermos[1].A:
+         for v in r: fmat.write("%20.13e  " % (v))
+         fmat.write("\n");
+      fmat.write(" # C matrix\n");
+      for r in self._thermos[1].C:
+         for v in r: fmat.write("%20.13e  " % (v))
+         fmat.write("\n");
+      fmat.write(" # T matrix\n");
+      for r in self._thermos[1].T:
+         for v in r: fmat.write("%20.13e  " % (v))
+         fmat.write("\n");
+      fmat.write(" # S matrix\n");
+      for r in self._thermos[1].S:
+         for v in r: fmat.write("%20.13e  " % (v))
+         fmat.write("\n");
+         
+         
+
       # since the ethermo will be "delegated" to the normal modes thermostats, 
       # one has to split 
       # any previously-stored value between the sub-thermostats 
@@ -833,4 +841,28 @@ class ThermoNMGLE(Thermostat):
       for t in self._thermos:
          et += t.ethermo
       return et
+
+
+class ThermoNMGLEG(ThermoNMGLE):     
+
+   def __init__(self, temp = 1.0, dt = 1.0, A = None, C = None, tau=1.0, ethermo=0.0):
+
+      super(ThermoNMGLEG,self).__init__(temp, dt, A, C, ethermo)
+      dset(self,"tau",depend_value(value=tau,name='tau'))
+      
+   def bind(self, beads=None, atoms=None, cell=None, pm=None, prng=None, ndof=None):
+   
+      super(ThermoNMGLEG,self).bind(beads, atoms, cell, pm, prng, ndof)
+      
+      t=ThermoSVR(self.temp, self.dt, self.tau)
+
+      t.bind(pm=(beads.pnm[0,:],beads.m3[0,:]), prng=self.prng) # bind global thermostat to centroid
+
+      # pipes temp and dt
+      deppipe(self,"temp", t, "temp")
+      deppipe(self,"dt", t, "dt")
+      deppipe(self,"tau", t, "tau")
+      
+      dget(self,"ethermo").add_dependency(dget(t,"ethermo"))
+      self._thermos.append(t)      
 
