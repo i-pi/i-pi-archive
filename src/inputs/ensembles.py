@@ -44,9 +44,11 @@ class InputEnsemble(Input):
    attribs={"type"  : (InputValue, {"dtype"   : str,
                                     "default" : "nve",
                                     "help"    : "The ensemble that will be sampled during the simulation.",
-                                    "options" : ['nve', 'nvt' ]}) }
+                                    "options" : ['nve', 'nvt', 'npt', 'nst']}) }
    fields={"thermostat" : (InputThermo, {"default"   : engine.thermostats.Thermostat(),
                                          "help"      : "The thermostat for the atoms, keeps the atom velocity distribution at the correct temperature."} ),
+           "barostat" : (InputBaro, {"default"       : engine.barostats.Barostat(),
+                                     "help"          : InputBaro.default_help}),
            "timestep": (InputValue, {"dtype"         : float,
                                      "default"       : "1.0",
                                      "help"          : "The time step.",
@@ -55,6 +57,14 @@ class InputEnsemble(Input):
                                          "default"   : 1.0,
                                          "help"      : "The temperature of the system.",
                                          "dimension" : "temperature"}),
+           "pressure" : (InputValue, {"dtype"        : float,
+                                      "default"      : "1.0",
+                                      "help"         : "The external pressure.",
+                                      "dimension"    : "pressure"}),
+           "stress" : (InputArray, {"dtype"          : float, 
+                                    "default"        : np.identity(3),
+                                    "help"           : "The external stress.",
+                                    "dimension"      : "pressure"}), 
            "fixcom": (InputValue, {"dtype"           : bool, 
                                    "default"         : False,
                                    "help"            : "This describes whether the centre of mass of the particles is fixed."}) }
@@ -136,8 +146,29 @@ class InputEnsemble(Input):
       if self.type.fetch() == "nvt":
          if self.thermostat._explicit == False:
             raise ValueError("No thermostat tag supplied for NVT simulation")
+      if self.type.fetch() == "npt":
+         if self.thermostat._explicit == False:
+            raise ValueError("No thermostat tag supplied for NPT simulation")
+         if self.barostat._explicit == False:
+            raise ValueError("No barostat tag supplied for NPT simulation")
+         if self.barostat.thermostat._explicit == False:
+            raise ValueError("No thermostat tag supplied in barostat for NPT simulation")
+      if self.type.fetch() == "nst":
+         if self.thermostat._explicit == False:
+            raise ValueError("No thermostat tag supplied for NST simulation")
+         if self.barostat._explicit == False:
+            raise ValueError("No barostat tag supplied for NST simulation")
+         if self.barostat.thermostat._explicit == False:
+            raise ValueError("No thermostat tag supplied in barostat for NST simulation")
+         if self.barostat.kind.fetch() == "rigid":
+            raise ValueError("You must use a flexible barostat to do constant stress simulations.")
 
       if self.timestep.fetch() <= 0:
          raise ValueError("Non-positive timestep specified.")
       if self.temperature.fetch() <= 0:
             raise ValueError("Non-positive temperature specified.")
+
+      if self.type.fetch() == "nst" or self.type.fetch() == "npt":
+         if not self.pressure._explicit or self.stress._explicit:
+            raise ValueError("Neither pressure or stress supplied for constant pressure simulation")
+         #TODO Initialise pressure from stress if only stress is supplied, and vice-versa
