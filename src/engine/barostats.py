@@ -72,10 +72,10 @@ class Barostat(dobject):
       sync_ext=synchronizer()
       dset(self,"sext",
          depend_array(name='sext', value=np.zeros((3,3)), synchro=sync_ext, 
-            func={"pext" : self.p2s} ) )
+            func={"pext" : self.p2s}))
       dset(self,"pext",
          depend_value(name='pext', value=0.0, synchro=sync_ext, 
-            func={"sext" : self.s2p} ) )            
+            func={"sext" : self.s2p}))            
       if sext is None:
          self.pext = pext
       else:
@@ -93,7 +93,7 @@ class Barostat(dobject):
       dset(self.thermostat,"dt",   
          depend_value(name="dt", func=self.get_halfdt,
             dependencies=[dget(self,"dt")],
-               dependants=dget(self.thermostat,"dt")._dependants)  )
+               dependants=dget(self.thermostat,"dt")._dependants))
            
       dset(self, "temp", depend_value(name="temp", value=temp))
       deppipe(self, "temp", self.thermostat,"temp")
@@ -126,16 +126,19 @@ class Barostat(dobject):
 
       dset(self,"pot",
          depend_value(name='pot', func=self.get_pot, 
-            dependencies=[ dget(cell,"V0"), dget(cell,"strain"), dget(self,"sext")  ]  ) )            
+            dependencies=[ dget(cell,"V0"), dget(cell,"strain"), dget(self,"sext") ]))            
       dset(self,"piext",
          depend_value(name='piext', func=self.get_piext, 
-            dependencies=[ dget(cell,"V0"), dget(cell,"V"), dget(cell,"h"), dget(cell,"ih0"), dget(cell,"strain"), dget(self,"sext")  ] ) )     
+            dependencies=[ dget(cell,"V0"), dget(cell,"V"), dget(cell,"h"), dget(cell,"ih0"), dget(cell,"strain"), dget(self,"sext") ]))     
+      dset(self,"kstress",
+         depend_value(name='kstress', func=self.get_kstress, 
+            dependencies=[ dget(beads,"q"), dget(beads,"qc"), dget(self,"temp") , dget(forces,"f") ]))
       dset(self,"stress",
          depend_value(name='stress', func=self.get_stress, 
-            dependencies=[ dget(beads,"kstress"), dget(cell,"V"), dget(forces,"vir")  ]  ) )
+            dependencies=[ dget(self,"kstress"), dget(cell,"V"), dget(forces,"vir") ]))
       dset(self,"press",
          depend_value(name='press', func=self.get_press, 
-            dependencies=[ dget(self,"stress") ] ) )
+            dependencies=[ dget(self,"stress") ]))
                 
    def s2p(self):
       """Converts the external stress to the external pressure."""
@@ -177,11 +180,30 @@ class Barostat(dobject):
       pi *= self.cell.V0/self.cell.V
       return pi
       
+   def get_kstress(self):
+      """Calculates the quantum centroid virial kinetic stress tensor 
+      estimator.
+      """
+
+      kst = np.zeros((3,3),float)
+      q = depstrip(self.beads.q)
+      qc = depstrip(self.beads.qc)
+      na3 = 3*self.beads.natoms
+      for b in range(self.beads.nbeads):
+         for i in range(3):
+            for j in range(i,3):
+               kst[i,j] -= np.dot(q[b,i:na3:3] - qc[i:na3:3], 
+                  depstrip(self.forces.f[b])[j:na3:3])
+
+      for i in range(3):
+         kst[i,i] += Constants.kb*self.temp*(3*self.beads.natoms)
+      kst *= 1.0/self.beads.nbeads
+      return kst
+
    def get_stress(self):
       """Calculates the internal stress tensor."""
       
-      #return (self.beads.kstress+self.forces.vir/self.beads.nbeads)/self.cell.V
-      return (np.identity(3)*self.beads.natoms*Constants.kb*self.temp/self.beads.nbeads + self.forces.vir/self.beads.nbeads)/self.cell.V
+      return (self.kstress + self.forces.vir/float(self.beads.nbeads))/self.cell.V
 
 #TODO  make this something that isn't utter rubbish
 #TODO  also include a possible explicit dependence of U on h
@@ -344,10 +366,11 @@ class BaroRigid(Barostat):
       self.cell.P += dthalf*3.0*(self.cell.V*(self.press - self.pext) + 2.0*Constants.kb*self.temp)
 
       fc = depstrip(self.forces.fnm)[0,:]/math.sqrt(self.beads.nbeads)
-      m = depstrip(self.beads.m)
+      m = depstrip(self.beads.centroid.m3)
       pc = depstrip(self.beads.pc)
             
       self.cell.P += dthalf2*np.dot(pc,fc/m) + dthalf3*np.dot(fc,fc/m)
+      #Should dthalf2 be dthalf2*2?
    
       self.beads.p += depstrip(self.forces.f)*dthalf      
            
@@ -358,18 +381,18 @@ class BaroRigid(Barostat):
       of the cell box.
       """
 
-      vel = self.cell.P[0]/self.cell.m
+      vel = self.cell.P/self.cell.M
       exp, neg_exp = (math.exp(vel*self.dt), math.exp(-vel*self.dt))
       sinh = 0.5*(exp - neg_exp)
 
       pc = depstrip(self.beads.pc)
       qc = depstrip(self.beads.qc)
-      m = depstrip(self.beads.m)      
-      qc*=exp
-      qc+=(sinh/vel)* pc/m
+      m = depstrip(self.beads.centroid.m3)      
+      qc *= exp
+      qc += (sinh/vel)*pc/m
       pc *= neg_exp
 
       self.beads.qnm[0,:] = qc*math.sqrt(self.beads.nbeads)
       self.beads.pnm[0,:] = pc*math.sqrt(self.beads.nbeads)
 
-      self.cell.V*=exp**3
+      self.cell.V *= exp**3

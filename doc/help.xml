@@ -1,0 +1,494 @@
+<simulation>
+   <help>This is the top level class that deals with the running of the simulation, including holding the simulation specific properties such as the time step and outputting the data.</help>
+   <force type=''>
+      <help>Deals with the assigning of jobs to different driver codes, and collecting the data.</help>
+      <type_help>Specifies which kind of force object is created.</type_help>
+      <type_default> socket </type_default>
+      <type_options>['socket']</type_options>
+      <type_dtype>str</type_dtype>
+      <interface mode=''>
+         <help>Specifies the parameters for the socket interface.</help>
+         <mode_help>Specifies whether the driver interface will listen onto a internet socket [inet] or onto a unix socket [unix].</mode_help>
+         <mode_default> inet </mode_default>
+         <mode_options>['unix', 'inet']</mode_options>
+         <mode_dtype>str</mode_dtype>
+         <latency>
+            <help>This gives the number of seconds between each check for new clients.</help>
+            <default>0.001</default>
+            <dtype>float</dtype>
+         </latency>
+         <slots>
+            <help>This gives the number of client codes that can queue at any one time.</help>
+            <default>4</default>
+            <dtype>int</dtype>
+         </slots>
+         <port>
+            <help>This gives the port number that defines the socket.</help>
+            <default>31415</default>
+            <dtype>int</dtype>
+         </port>
+         <timeout>
+            <help>This gives the number of seconds before assuming a calculation has died. If 0 there is no timeout.</help>
+            <default>0.0</default>
+            <dtype>float</dtype>
+         </timeout>
+         <address>
+            <help>This gives the server address that the socket will run on.</help>
+            <default> localhost </default>
+            <dtype>str</dtype>
+         </address>
+      </interface>
+      <parameters>
+         <help>Deprecated dictionary of initialization parameters. May be removed in the future.</help>
+         <default>{ }</default>
+         <dtype>dict</dtype>
+      </parameters>
+   </force>
+   <trajectories shape=''>
+      <help>A list of the properties to print out the per-atom or per-bead trajectories of. Allowed values are ['positions', 'velocities', 'forces', 'kinetic_cv', 'centroid'].</help>
+      <shape_help>The shape of the array.</shape_help>
+      <default>[ ]</default>
+      <shape_default>(0,)</shape_default>
+      <dtype>str</dtype>
+      <shape_dtype>tuple</shape_dtype>
+   </trajectories>
+   <atoms>
+      <help>Deals with classical simulations. Only needs to be specified if a classical simulation is required, and should be left blank otherwise.</help>
+      <from_file>
+         <help>Gives the name of the file from which the configurations are taken, if present. Any value given in this file can be overwritten by specifying it explicitly.</help>
+         <default>  </default>
+         <dtype>str</dtype>
+      </from_file>
+      <natoms>
+         <help>The number of atoms.</help>
+         <default>0</default>
+         <dtype>int</dtype>
+      </natoms>
+      <file_units>
+         <help>The units in which the lengths in the configuration file are given.</help>
+         <default>  </default>
+         <options>['', 'nanometer', 'angstrom', 'atomic_unit']</options>
+         <dtype>str</dtype>
+      </file_units>
+      <m shape=''>
+         <help>The masses of the atoms, in the format [m1, m2, ... ].</help>
+         <shape_help>The shape of the array.</shape_help>
+         <dimension>mass</dimension>
+         <default>[ ]</default>
+         <shape_default>(0,)</shape_default>
+         <dtype>float</dtype>
+         <shape_dtype>tuple</shape_dtype>
+      </m>
+      <q shape=''>
+         <help>The positions of the atoms, in the format [x1, y1, z1, x2, ... ].</help>
+         <shape_help>The shape of the array.</shape_help>
+         <dimension>length</dimension>
+         <default>[ ]</default>
+         <shape_default>(0,)</shape_default>
+         <dtype>float</dtype>
+         <shape_dtype>tuple</shape_dtype>
+      </q>
+      <p shape=''>
+         <help>The momenta of the atoms, in the format [px1, py1, pz1, px2, ... ].</help>
+         <shape_help>The shape of the array.</shape_help>
+         <dimension>momentum</dimension>
+         <default>[ ]</default>
+         <shape_default>(0,)</shape_default>
+         <dtype>float</dtype>
+         <shape_dtype>tuple</shape_dtype>
+      </p>
+      <names shape=''>
+         <help>The names of the atoms, in the format [name1, name2, ... ].</help>
+         <shape_help>The shape of the array.</shape_help>
+         <default>[ ]</default>
+         <shape_default>(0,)</shape_default>
+         <dtype>str</dtype>
+         <shape_dtype>tuple</shape_dtype>
+      </names>
+   </atoms>
+   <step>
+      <help>How many time steps have been done.</help>
+      <default>0</default>
+      <dtype>int</dtype>
+   </step>
+   <initialize>
+      <help>A dictionary giving the properties of the system that need to be initialized, and their initial values. The allowed keywords are ['velocities']. The initial value of 'velocities' corresponds to the temperature to initialise the velocity distribution from. If 0, then the sysytem temperature is used.</help>
+      <default>{ }</default>
+      <dtype>dict</dtype>
+   </initialize>
+   <properties shape=''>
+      <help>A list of the properties that will be printed in the properties output file. See the appropriate chapter in the manual for a full list of acceptable names.</help>
+      <shape_help>The shape of the array.</shape_help>
+      <default>[ ]</default>
+      <shape_default>(0,)</shape_default>
+      <dtype>str</dtype>
+      <shape_dtype>tuple</shape_dtype>
+   </properties>
+   <beads>
+      <help>Deals with path integral simulations. Only needs to be specified if the atoms tag is not, but overwrites it otherwise.</help>
+      <natoms>
+         <help>The number of atoms.</help>
+         <default>0</default>
+         <dtype>int</dtype>
+      </natoms>
+      <nbeads>
+         <help>The number of beads.</help>
+         <dtype>int</dtype>
+      </nbeads>
+      <m shape=''>
+         <help>The masses of the atoms, in the format [m1, m2, ... ].</help>
+         <shape_help>The shape of the array.</shape_help>
+         <dimension>mass</dimension>
+         <default>[ ]</default>
+         <shape_default>(0,)</shape_default>
+         <dtype>float</dtype>
+         <shape_dtype>tuple</shape_dtype>
+      </m>
+      <q shape=''>
+         <help>The positions of the beads. In an array of size [nbeads, 3*natoms].</help>
+         <shape_help>The shape of the array.</shape_help>
+         <dimension>length</dimension>
+         <default>[ ]</default>
+         <shape_default>(0,)</shape_default>
+         <dtype>float</dtype>
+         <shape_dtype>tuple</shape_dtype>
+      </q>
+      <p shape=''>
+         <help>The momenta of the beads. In an array of size [nbeads, 3*natoms].</help>
+         <shape_help>The shape of the array.</shape_help>
+         <dimension>momentum</dimension>
+         <default>[ ]</default>
+         <shape_default>(0,)</shape_default>
+         <dtype>float</dtype>
+         <shape_dtype>tuple</shape_dtype>
+      </p>
+      <start_centroid>
+         <help>An atoms object from which the centroid coordinates can be initialized. Any parameters given here can be overwritten by specifying them explicitly.</help>
+         <from_file>
+            <help>Gives the name of the file from which the configurations are taken, if present. Any value given in this file can be overwritten by specifying it explicitly.</help>
+            <default>  </default>
+            <dtype>str</dtype>
+         </from_file>
+         <natoms>
+            <help>The number of atoms.</help>
+            <default>0</default>
+            <dtype>int</dtype>
+         </natoms>
+         <file_units>
+            <help>The units in which the lengths in the configuration file are given.</help>
+            <default>  </default>
+            <options>['', 'nanometer', 'angstrom', 'atomic_unit']</options>
+            <dtype>str</dtype>
+         </file_units>
+         <m shape=''>
+            <help>The masses of the atoms, in the format [m1, m2, ... ].</help>
+            <shape_help>The shape of the array.</shape_help>
+            <dimension>mass</dimension>
+            <default>[ ]</default>
+            <shape_default>(0,)</shape_default>
+            <dtype>float</dtype>
+            <shape_dtype>tuple</shape_dtype>
+         </m>
+         <q shape=''>
+            <help>The positions of the atoms, in the format [x1, y1, z1, x2, ... ].</help>
+            <shape_help>The shape of the array.</shape_help>
+            <dimension>length</dimension>
+            <default>[ ]</default>
+            <shape_default>(0,)</shape_default>
+            <dtype>float</dtype>
+            <shape_dtype>tuple</shape_dtype>
+         </q>
+         <p shape=''>
+            <help>The momenta of the atoms, in the format [px1, py1, pz1, px2, ... ].</help>
+            <shape_help>The shape of the array.</shape_help>
+            <dimension>momentum</dimension>
+            <default>[ ]</default>
+            <shape_default>(0,)</shape_default>
+            <dtype>float</dtype>
+            <shape_dtype>tuple</shape_dtype>
+         </p>
+         <names shape=''>
+            <help>The names of the atoms, in the format [name1, name2, ... ].</help>
+            <shape_help>The shape of the array.</shape_help>
+            <default>[ ]</default>
+            <shape_default>(0,)</shape_default>
+            <dtype>str</dtype>
+            <shape_dtype>tuple</shape_dtype>
+         </names>
+      </start_centroid>
+      <names shape=''>
+         <help>The names of the atoms, in the format [name1, name2, ... ].</help>
+         <shape_help>The shape of the array.</shape_help>
+         <default>[ ]</default>
+         <shape_default>(0,)</shape_default>
+         <dtype>str</dtype>
+         <shape_dtype>tuple</shape_dtype>
+      </names>
+   </beads>
+   <total_steps>
+      <help>The total number of steps that will be done.</help>
+      <default>1000</default>
+      <dtype>int</dtype>
+   </total_steps>
+   <prefix>
+      <help>A string that will be the prefix for all the output file names.</help>
+      <default> prefix </default>
+      <dtype>str</dtype>
+   </prefix>
+   <fd_delta>
+      <help>The parameter used in the finite difference differentiation in the calculation of the scaled path velocity estimator. Defaults to 1e-5.</help>
+      <default>0.0</default>
+      <dtype>float</dtype>
+   </fd_delta>
+   <cell flexible=''>
+      <help>Deals with the cell parameters, and stores their momenta in flexible cell calculations.</help>
+      <flexible_help>Describes whether the simulation box shape can change, or just the volume.</flexible_help>
+      <flexible_default>False</flexible_default>
+      <flexible_dtype>bool</flexible_dtype>
+      <from_file>
+         <help>A file from which to take the cell parameters from.</help>
+         <default>  </default>
+         <dtype>str</dtype>
+      </from_file>
+      <p shape=''>
+         <help>The cell 'momenta' matrix, used in constant pressure simulations.</help>
+         <shape_help>The shape of the array.</shape_help>
+         <dimension>momentum</dimension>
+         <default>
+            [[ 0.  0.  0.]
+             [ 0.  0.  0.]
+             [ 0.  0.  0.]]
+         </default>
+         <shape_default>(0,)</shape_default>
+         <dtype>float</dtype>
+         <shape_dtype>tuple</shape_dtype>
+      </p>
+      <file_units>
+         <help>The units in which the lengths in the configuration file are given.</help>
+         <default>  </default>
+         <options>['', 'nanometer', 'angstrom', 'atomic_unit']</options>
+         <dtype>str</dtype>
+      </file_units>
+      <h shape=''>
+         <help>The cell vector matrix.</help>
+         <shape_help>The shape of the array.</shape_help>
+         <dimension>length</dimension>
+         <default>
+            [[ 0.  0.  0.]
+             [ 0.  0.  0.]
+             [ 0.  0.  0.]]
+         </default>
+         <shape_default>(0,)</shape_default>
+         <dtype>float</dtype>
+         <shape_dtype>tuple</shape_dtype>
+      </h>
+      <h0 shape=''>
+         <help>The reference cell vector matrix. Defined as the unstressed equilibrium cell. Will be given the same value as h if not specified by the user.</help>
+         <shape_help>The shape of the array.</shape_help>
+         <dimension>length</dimension>
+         <default>
+            [[ 0.  0.  0.]
+             [ 0.  0.  0.]
+             [ 0.  0.  0.]]
+         </default>
+         <shape_default>(0,)</shape_default>
+         <dtype>float</dtype>
+         <shape_dtype>tuple</shape_dtype>
+      </h0>
+      <m>
+         <help>The 'mass' of the cell, used in constant pressure simulations.</help>
+         <dimension>mass</dimension>
+         <default>0.0</default>
+         <dtype>float</dtype>
+      </m>
+      <P>
+         <help>The scalar cell 'momentum', used in constant pressure simulations.</help>
+         <dimension>momentum</dimension>
+         <default>0.0</default>
+         <dtype>float</dtype>
+      </P>
+   </cell>
+   <stride>
+      <help>Dictionary holding the number of steps between printing the different kinds of files. The allowed keywords are ['checkpoint', 'properties', 'progress', 'trajectory', centroid']. The default strides are {'checkpoint': 1000, 'properties': 10, 'progress': 100, 'centroid': 20, 'trajectory': 100}.</help>
+      <default>{ }</default>
+      <dtype>dict</dtype>
+   </stride>
+   <traj_format>
+      <help>The file format for the output file. Allowed keywords are ['pdb', 'xyz'].</help>
+      <default> pdb </default>
+      <dtype>str</dtype>
+   </traj_format>
+   <prng>
+      <help>Deals with the pseudo-random number generator. It is not necessary to specify this tag.</help>
+      <has_gauss>
+         <help>Determines whether there is a stored gaussian number or not. A value of 0 means there is none stored.</help>
+         <default>0</default>
+         <dtype>int</dtype>
+      </has_gauss>
+      <state shape=''>
+         <help>Gives the state vector for the random number generator. Avoid directly modifying this unless you are very familiar with the inner workings of the algorithm used.</help>
+         <shape_help>The shape of the array.</shape_help>
+         <default>[ ]</default>
+         <shape_default>(0,)</shape_default>
+         <dtype>uint64</dtype>
+         <shape_dtype>tuple</shape_dtype>
+      </state>
+      <seed>
+         <help>This is the seed number used to generate the initial state of the random number generator.</help>
+         <default>123456</default>
+         <dtype>int</dtype>
+      </seed>
+      <set_pos>
+         <help>Gives the position in the state array that the random number generator is reading from.</help>
+         <default>0</default>
+         <dtype>int</dtype>
+      </set_pos>
+      <gauss>
+         <help>The stored Gaussian number.</help>
+         <default>0.0</default>
+         <dtype>float</dtype>
+      </gauss>
+   </prng>
+   <ensemble type=''>
+      <help>Holds all the information that is ensemble specific, such as the temperature and the external pressure, and the thermostats and barostats that control it.</help>
+      <type_help>The ensemble that will be sampled during the simulation.</type_help>
+      <type_default> nve </type_default>
+      <type_options>['nve', 'nvt', 'npt', 'nst']</type_options>
+      <type_dtype>str</type_dtype>
+      <stress shape=''>
+         <help>The external stress.</help>
+         <shape_help>The shape of the array.</shape_help>
+         <dimension>pressure</dimension>
+         <default>
+            [[ 1.  0.  0.]
+             [ 0.  1.  0.]
+             [ 0.  0.  1.]]
+         </default>
+         <shape_default>(0,)</shape_default>
+         <dtype>float</dtype>
+         <shape_dtype>tuple</shape_dtype>
+      </stress>
+      <barostat kind=''>
+         <help>Simulates an external pressure bath to keep the pressure or stress at the external values.</help>
+         <kind_help>The type of barostat. 'Rigid' gives a barostat that keeps the internal pressure constant by allowing cell volume changes, whereas flexible allows the shape of the cell to fluctuate too.</kind_help>
+         <kind_default> rigid </kind_default>
+         <kind_options>['rigid', 'flexible']</kind_options>
+         <kind_dtype>str</kind_dtype>
+         <thermostat kind=''>
+            <help>The thermostat for the cell. Keeps the cell velocity distribution at the correct temperature.</help>
+            <kind_help>The style of thermostatting.</kind_help>
+            <kind_default> langevin </kind_default>
+            <kind_options>['langevin', 'svr', 'pile_l', 'pile_g', 'gle', 'nm_gle']</kind_options>
+            <kind_dtype>str</kind_dtype>
+            <A shape=''>
+               <help>The friction matrix for GLE thermostats.</help>
+               <shape_help>The shape of the array.</shape_help>
+               <dimension>frequency</dimension>
+               <default>[ ]</default>
+               <shape_default>(0,)</shape_default>
+               <dtype>float</dtype>
+               <shape_dtype>tuple</shape_dtype>
+            </A>
+            <tau>
+               <help>The friction coefficient for white noise thermostats.</help>
+               <dimension>temperature</dimension>
+               <default>0.0</default>
+               <dtype>float</dtype>
+            </tau>
+            <C shape=''>
+               <help>The covariance matrix for GLE thermostats.</help>
+               <shape_help>The shape of the array.</shape_help>
+               <dimension>temperature</dimension>
+               <default>[ ]</default>
+               <shape_default>(0,)</shape_default>
+               <dtype>float</dtype>
+               <shape_dtype>tuple</shape_dtype>
+            </C>
+            <s shape=''>
+               <help>Input values for the additional momenta in GLE.</help>
+               <shape_help>The shape of the array.</shape_help>
+               <dimension>ms-momentum</dimension>
+               <default>[ ]</default>
+               <shape_default>(0,)</shape_default>
+               <dtype>float</dtype>
+               <shape_dtype>tuple</shape_dtype>
+            </s>
+            <ethermo>
+               <help>The initial value of the thermostat energy. Used when the simulation is restarted to guarantee continuity of the conserved quantity.</help>
+               <dimension>energy</dimension>
+               <default>0.0</default>
+               <dtype>float</dtype>
+            </ethermo>
+         </thermostat>
+      </barostat>
+      <thermostat kind=''>
+         <help>The thermostat for the atoms, keeps the atom velocity distribution at the correct temperature.</help>
+         <kind_help>The style of thermostatting.</kind_help>
+         <kind_default> langevin </kind_default>
+         <kind_options>['langevin', 'svr', 'pile_l', 'pile_g', 'gle', 'nm_gle']</kind_options>
+         <kind_dtype>str</kind_dtype>
+         <A shape=''>
+            <help>The friction matrix for GLE thermostats.</help>
+            <shape_help>The shape of the array.</shape_help>
+            <dimension>frequency</dimension>
+            <default>[ ]</default>
+            <shape_default>(0,)</shape_default>
+            <dtype>float</dtype>
+            <shape_dtype>tuple</shape_dtype>
+         </A>
+         <tau>
+            <help>The friction coefficient for white noise thermostats.</help>
+            <dimension>temperature</dimension>
+            <default>0.0</default>
+            <dtype>float</dtype>
+         </tau>
+         <C shape=''>
+            <help>The covariance matrix for GLE thermostats.</help>
+            <shape_help>The shape of the array.</shape_help>
+            <dimension>temperature</dimension>
+            <default>[ ]</default>
+            <shape_default>(0,)</shape_default>
+            <dtype>float</dtype>
+            <shape_dtype>tuple</shape_dtype>
+         </C>
+         <s shape=''>
+            <help>Input values for the additional momenta in GLE.</help>
+            <shape_help>The shape of the array.</shape_help>
+            <dimension>ms-momentum</dimension>
+            <default>[ ]</default>
+            <shape_default>(0,)</shape_default>
+            <dtype>float</dtype>
+            <shape_dtype>tuple</shape_dtype>
+         </s>
+         <ethermo>
+            <help>The initial value of the thermostat energy. Used when the simulation is restarted to guarantee continuity of the conserved quantity.</help>
+            <dimension>energy</dimension>
+            <default>0.0</default>
+            <dtype>float</dtype>
+         </ethermo>
+      </thermostat>
+      <timestep>
+         <help>The time step.</help>
+         <dimension>time</dimension>
+         <default> 1.0 </default>
+         <dtype>float</dtype>
+      </timestep>
+      <pressure>
+         <help>The external pressure.</help>
+         <dimension>pressure</dimension>
+         <default> 1.0 </default>
+         <dtype>float</dtype>
+      </pressure>
+      <fixcom>
+         <help>This describes whether the centre of mass of the particles is fixed.</help>
+         <default>False</default>
+         <dtype>bool</dtype>
+      </fixcom>
+      <temperature>
+         <help>The temperature of the system.</help>
+         <dimension>temperature</dimension>
+         <default>1.0</default>
+         <dtype>float</dtype>
+      </temperature>
+   </ensemble>
+</simulation>

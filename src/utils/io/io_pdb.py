@@ -56,13 +56,13 @@ def print_pdb_path(beads, cell, filedesc = sys.stdout):
    filedesc.write("END\n")
 
 def print_pdb(atoms, cell, filedesc = sys.stdout, title=""):
-   """Prints the centroid configurations, into a pdb formatted file.
+   """Prints the atom configurations, into a pdb formatted file.
 
    Also prints the cell parameters in standard pdb form. Note 
    that the angles are in degrees.
 
    Args:
-      beads: An atoms object giving the centroid positions.
+      beads: An atoms object giving the atom positions.
       cell: A cell object giving the system box.
       filedesc: An open writable file object. Defaults to standard output.
       title: An optional string of max. 70 characters.
@@ -106,7 +106,6 @@ def read_pdb(filedesc):
    alpha *= math.pi/180.0;       beta *= math.pi/180.0;       gamma *= math.pi/180.0
    h = mt.abc2h(a, b, c, alpha, beta, gamma) #/ 0.529177
    cell = Cell(h)
-   
    
    natoms = 0
    body = filedesc.readline()

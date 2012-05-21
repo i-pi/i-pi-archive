@@ -86,6 +86,9 @@ class Properties(dobject):
       'pressure_cv': Quantum centroid virial pressure estimator,
       'kstress_cv': Quantum centroid virial kinetic stress tensor estimator.
          Requires arguments x and v, to give kstress[x,v],
+      'gle_ke': Kinetic energy for the additional momenta for the normal
+         mode kinetic energy estimator. Takes one argument, which gives the
+         mode that the kinetic energy is given for,
       'kin_yama': Quantum scaled coordinate kinetic energy estimator,
       'linlin': The scaled Fourier transform of the momentum distribution.
          Given by n(x) in Lin Lin et al., Phys. Rev. Lett. 105, 110602.}.
@@ -118,6 +121,8 @@ class Properties(dobject):
       self.property_dict["stress_cv"] = self.get_stresscv
       self.property_dict["pressure_cv"] = self.get_presscv
       self.property_dict["kstress_cv"] = self.get_kstresscv
+
+      self.property_dict["gle_ke"] = self.get_gleke
 
       self.property_dict["kin_yama"] = self.get_kinyama
 
@@ -198,18 +203,19 @@ class Properties(dobject):
       return np.trace(stress)/3.0
 
    def kstress_cv(self):
-      """Calculates the quantum central virial kinetic stress tensor 
+      """Calculates the quantum centroid virial kinetic stress tensor 
       estimator.
       """
 
       kst = np.zeros((3,3),float)
       q = depstrip(self.beads.q)
       qc = depstrip(self.beads.qc)
-      na3 = 3*self.beads.natoms;
+      na3 = 3*self.beads.natoms
       for b in range(self.beads.nbeads):
          for i in range(3):
             for j in range(i,3):
-               kst[i,j] += np.dot(q[b,i:na3:3] - qc[i:na3:3], depstrip(self.forces.f[b])[j:na3:3])
+               kst[i,j] += np.dot(q[b,i:na3:3] - qc[i:na3:3], 
+                  depstrip(self.forces.f[b])[j:na3:3])
 
       kst *= -1/self.beads.nbeads
       for i in range(3):
@@ -217,7 +223,7 @@ class Properties(dobject):
       return kst
 
    def get_kstresscv(self, x=0, v=0):        
-      """Calculates the quantum central virial kinetic stress tensor 
+      """Calculates the quantum centroid virial kinetic stress tensor 
       estimator.
 
       Returns kstress[x,v].
@@ -225,33 +231,54 @@ class Properties(dobject):
 
       x = int(x)
       v = int(v)
-      return self.kstress()[x,v]
+      return self.kstress_cv()[x,v]
 
    def get_stresscv(self, x=0, v=0):
-      """Calculates the quantum central virial stress tensor estimator.
+      """Calculates the quantum centroid virial stress tensor estimator.
 
       Returns stress[x,v].
       """
 
       x = int(x)
       v = int(v)
-      stress = (self.forces.vir + self.kstress())/self.cell.V                  
+      stress = (self.forces.vir/float(self.beads.nbeads) + self.kstress_cv())/self.cell.V                  
       return stress[x,v]
 
    def get_presscv(self):
-      """Calculates the quantum central virial pressure estimator."""
+      """Calculates the quantum centroid virial pressure estimator."""
 
-      return np.trace(self.forces.vir + self.kstress())/(3.0*self.cell.V)
+      return np.trace(self.forces.vir/float(self.beads.nbeads) + self.kstress_cv())/(3.0*self.cell.V)
    
    def get_kincv(self):        
-      """Calculates the quantum central virial kinetic energy estimator."""
+      """Calculates the quantum centroid virial kinetic energy estimator."""
 
-      kcv=0.0
+      kcv = 0.0
       for b in range(self.beads.nbeads):
          kcv += np.dot(depstrip(self.beads.q[b]) - depstrip(self.beads.qc), depstrip(self.forces.f[b]))
       kcv *= -0.5/self.beads.nbeads
       kcv += 0.5*Constants.kb*self.ensemble.temp*(3*self.beads.natoms) 
       return kcv
+
+   def get_gleke(self, mode=0):
+      """Calculates the kinetic energy of the nm-gle additional momenta.
+
+      Args:
+         mode: Gives the index of the normal mode thermostat we want the 
+            kinetic energy for.
+      """
+
+      gleke = 0.0
+      s = depstrip(self.ensemble.thermostat.s)
+      if len(s.shape) < 2:
+         raise NameError("gle_ke called without a gle thermostat")
+      elif len(s.shape) == 2:
+         for alpha in range(len(s[0,:])):
+            gleke += s[mode, alpha]**2/2.0
+      else:
+         for i in range(len(s[0,:,0])):
+            for alpha in range(len(s[0,0,:])):
+               gleke += s[mode, i, alpha]**2/2.0
+      return gleke
 
    def get_kinyama(self):              
       """Calculates the quantum scaled coordinate kinetic energy estimator.

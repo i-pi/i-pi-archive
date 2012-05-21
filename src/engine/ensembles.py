@@ -375,7 +375,7 @@ class NVTEnsemble(NVEEnsemble):
          ndof = 3*(self.beads.natoms-1)
          
       self.thermostat.bind(beads=self.beads,prng=prng,ndof=ndof )
-      
+
       deppipe(self,"ntemp", self.thermostat,"temp")
       deppipe(self,"dt", self.thermostat, "dt")
 
@@ -451,16 +451,22 @@ class NPTEnsemble(NVTEnsemble):
             motion will be constrained or not. Defaults to False.
       """
 
+      super(NPTEnsemble,self).__init__(dt, temp, thermostat, fixcom)
       if barostat == None:
          self.barostat = Barostat()
       else:
          self.barostat = barostat
 
       if pext is not None:
-         dset(self,"pext",depend_value(name="pext", value=pext) )
+         dset(self,"pext",depend_value(name="pext", value=pext))
          deppipe(self, "pext", self.barostat, "pext")
+         #TODO This needs to be replaced, as self.barostat.pext has a 
+         # synchro object, and as such this does not work
+         # We should probably make ensemble.pext and ensemble.sext the
+         # synchro objects, and then use deppipe to define the barostat
+         # equivalents
       elif sext is not None:
-         dset(self,"sext",depend_value(name="sext", value=pext) )
+         dset(self,"sext",depend_value(name="sext", value=pext))
          deppipe(self, "sext", self.barostat, "sext")
       else:
          raise TypeError("You must provide either the pressure or stress")
@@ -503,7 +509,7 @@ class NPTEnsemble(NVTEnsemble):
       ensemble.
       """
 
-      return NVTEnsemble.get_econs(self) + self.barostat.thermostat.ethermo + self.barostat.pot + self.cell.kin - 2.0*Constants.kb*self.thermostat.temp*math.log(self.cell.V)
+      return NVTEnsemble.get_econs(self) + self.barostat.thermostat.ethermo + self.barostat.pot + self.cell.kin - 2.0*units.Constants.kb*self.thermostat.temp*math.log(self.cell.V)
       
    def step(self):
       """NPT time step.
@@ -516,21 +522,31 @@ class NPTEnsemble(NVTEnsemble):
       the radius of gyration of the ring polymers.
       """
 
+      self.ttime = -time.time()
       self.thermostat.step()
       self.barostat.thermostat.step()
       self.rmcom()           
+      self.ttime += time.time()
 
+      self.ptime = -time.time()
       self.barostat.pstep()
+      self.ptime += time.time()
 
+      self.qtime = -time.time()
       self.barostat.qcstep()
       self.qstep()
+      self.qtime += time.time()
 
+      self.ptime -= time.time()
       self.barostat.pstep()
+      self.ptime += time.time()
 
+      self.ttime -= time.time()
       self.barostat.thermostat.step()
       self.thermostat.step()      
       self.rmcom()
-                        
+      self.ttime += time.time()
+
 
 class NSTEnsemble(NVTEnsemble):
    """Ensemble object for constant stress simulations.
@@ -625,7 +641,7 @@ class NSTEnsemble(NVTEnsemble):
       xv = 0.0 
       for i in range(3):
          xv += math.log(self.cell.h[i,i])*(3-i)
-      return NVTEnsemble.get_econs(self) + self.barostat.thermostat.ethermo + self.barostat.pot + self.cell.kin - 2.0*Constants.kb*self.thermostat.temp*xv
+      return NVTEnsemble.get_econs(self) + self.barostat.thermostat.ethermo + self.barostat.pot + self.cell.kin - 2.0*units.Constants.kb*self.thermostat.temp*xv
       
    def step(self):
       """NST time step.
@@ -638,17 +654,27 @@ class NSTEnsemble(NVTEnsemble):
       the radius of gyration of the ring polymers.
       """
 
+      self.ttime = -time.time()
       self.thermostat.step()
       self.barostat.thermostat.step()
       self.rmcom()           
+      self.ttime += time.time()
 
+      self.ptime = -time.time()
       self.barostat.pstep()
+      self.ptime += time.time()
 
+      self.qtime = -time.time()
       self.barostat.qcstep()
       self.qstep()
+      self.qtime += time.time()
 
+      self.ptime -= time.time()
       self.barostat.pstep()
+      self.ptime += time.time()
 
+      self.ttime -= time.time()
       self.barostat.thermostat.step()
       self.thermostat.step()      
       self.rmcom()
+      self.ttime += time.time()
