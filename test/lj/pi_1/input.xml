@@ -1,0 +1,38 @@
+<simulation>
+   <initialize>  { velocities : 90}  </initialize>
+   <properties>  [ time, conserved, temperature, kinetic_cv, potential, pressure_cv, pressure_md, kstress_cv(0;0), virial_cv(0;0)] </properties>
+   <trajectories>[positions]</trajectories>
+   <stride> { properties : 5, trajectory: 20000,  checkpoint:20000 } </stride>
+   <prefix> test </prefix>
+   <total_steps>200000</total_steps>
+   <prng><seed>33428</seed></prng>
+   <force type='socket'>
+      <interface mode="unix">
+         <address>localhost</address>   <port>33428</port>    <slots>4</slots> <latency>0.001</latency>
+      </interface>
+   </force>
+   <beads>
+      <start_centroid>
+         <from_file>our_ref.pdb</from_file>
+      </start_centroid>
+      <nbeads>1</nbeads>
+   </beads>
+   <cell flexible='False'>
+      <h shape='(3, 3)'> 
+       [ 71.230, 5.71316101504e-15, 5.71316101504e-15,
+         0.0, 71.230,  5.71316101504e-15, 
+         0.0, 0.0, 71.230 ]
+      </h>
+      <m>25000.7229</m>
+   </cell>
+   <ensemble type='nvt'>
+      <thermostat kind='pile_g'>
+         <tau>1e2</tau>
+         <ethermo>0.0</ethermo>
+      </thermostat>
+      <timestep>206.70687</timestep>
+      <pressure>1.0</pressure>
+      <fixcom>False</fixcom>
+      <temperature>59.6646</temperature>
+   </ensemble>
+</simulation>
