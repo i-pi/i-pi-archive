@@ -196,7 +196,7 @@ class Barostat(dobject):
                   depstrip(self.forces.f[b])[j:na3:3])
 
       for i in range(3):
-         kst[i,i] += Constants.kb*self.temp*(3*self.beads.natoms)
+         kst[i,i] += Constants.kb*self.temp*(self.beads.natoms)
       kst *= 1.0/self.beads.nbeads
       return kst
 

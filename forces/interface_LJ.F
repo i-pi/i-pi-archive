@@ -83,8 +83,8 @@
             !read(parbuffer(1:nat),*) eps, sigma, rc, rn
             eps = 1.1663e-4
             sigma = 5.270446
-            correction = 4*eps*((sigma/rc)**12 - (sigma/rc)**6)
-            !correction=0
+            !correction = 4*eps*((sigma/rc)**12 - (sigma/rc)**6)
+            correction=0
             rn=rc*1.2
             isinit=.true.
 !            write(*,*) "LJ potential initialised with values eps=", 

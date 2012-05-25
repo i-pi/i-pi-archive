@@ -1,8 +1,8 @@
 <simulation>
-   <initialize>  { velocities : 90}  </initialize>
+   <initialize>  { velocities : 120}  </initialize>
    <properties>  [ time, conserved, temperature, kinetic_cv, potential, pressure_cv, pressure_md, kstress_cv(0;0), virial_cv(0;0)] </properties>
    <trajectories>[positions]</trajectories>
-   <stride> { properties : 5, trajectory: 20000,  checkpoint:20000 } </stride>
+   <stride> { properties : 5, trajectory: 100,  checkpoint:2000 } </stride>
    <prefix> test </prefix>
    <total_steps>200000</total_steps>
    <prng><seed>33428</seed></prng>

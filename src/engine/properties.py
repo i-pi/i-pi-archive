@@ -243,7 +243,7 @@ class Properties(dobject):
                kst[i,j] += np.dot(q[b,i:na3:3] - qc[i:na3:3], 
                   depstrip(self.forces.f[b])[j:na3:3])
 
-      kst *= -1/self.beads.nbeads
+      kst *= -1.0/float(self.beads.nbeads)
       for i in range(3):
          kst[i,i] += Constants.kb*self.ensemble.temp*(self.beads.natoms) 
       return kst

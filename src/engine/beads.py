@@ -121,11 +121,11 @@ class Beads(dobject):
       self.centroid = Atoms(natoms, _prebind=(self.qc, self.pc, self.m, self.names))
       
       dset(self,"vpath",
-         depend_value(name="vpath", func=self.vpath, 
+         depend_value(name="vpath", func=self.get_vpath, 
             dependencies=[dget(self,"q")]) )
       dset(self,"fpath",
          depend_array(name="fpath", value=np.zeros((nbeads,3*natoms), float), 
-            func=self.fpath, dependencies=[dget(self,"q")]) )
+            func=self.get_fpath, dependencies=[dget(self,"q")]) )
       dset(self,"kins",
          depend_array(name="kins",value=np.zeros(nbeads, float), 
             func=self.kin_gather, 
@@ -246,7 +246,7 @@ class Beads(dobject):
          ks += self[b].kstress
       return ks
       
-   def vpath(self):
+   def get_vpath(self):
       """Calculates the spring potential between the replicas.
 
       Note that this is actually the harmonic potential without being
@@ -265,7 +265,7 @@ class Beads(dobject):
          epath += np.dot(dq, m*dq)
       return epath*0.5  
 
-   def fpath(self):
+   def get_fpath(self):
       """Calculates the spring force between the replicas.
 
       Note that this is actually the harmonic force without being
