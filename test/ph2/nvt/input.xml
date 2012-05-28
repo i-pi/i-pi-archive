@@ -1,18 +1,18 @@
 <simulation>
-   <initialize shape="(1)">  { velocities : 300 }  </initialize>
+   <initialize shape="(1)">  { velocities : 50 }  </initialize>
    <properties shape='(5)'>  [ time, conserved, temperature, kinetic_cv, potential ] </properties>   
-   <stride> { properties : 1, trajectory: 20,  checkpoint:1 } </stride>
-   <prefix> test_ph2 </prefix>
+   <stride> { properties : 5, trajectory: 100,  checkpoint:2000 } </stride>
+   <prefix> test </prefix>
    <traj_format> xyz </traj_format>
-   <total_steps>2000</total_steps>
+   <total_steps>200000</total_steps>
    <prng><seed>31415</seed></prng>
    <force type='socket'>
       <interface mode="inet">
-         <address>cub.inf.usi.ch</address>   <port>31415</port>    <slots>4</slots> <latency>0.01</latency>
+         <address>wrap-pi</address>   <port>31415</port>    <slots>4</slots> <latency>0.01</latency>
       </interface>
    </force>
    <atoms>
-      <from_file>ph2-108.pdb</from_file>
+      <from_file>our_ref.pdb</from_file>
    </atoms>
    <cell flexible='False'>
       <h shape='(3, 3)'> 

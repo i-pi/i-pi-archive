@@ -1,14 +1,14 @@
 <simulation>
    <initialize>  { velocities : 120}  </initialize>
-   <properties>  [ time, conserved, temperature, kinetic_cv, potential, pressure_cv, pressure_md, kstress_cv(0;0), virial_cv(0;0)] </properties>
+   <properties>  [ time, conserved, temperature, kinetic_cv, potential, pressure_cv, kstress_cv(0;0), virial_cv(0;0)] </properties>
    <trajectories>[positions]</trajectories>
    <stride> { properties : 5, trajectory: 100,  checkpoint:2000 } </stride>
    <prefix> test </prefix>
    <total_steps>200000</total_steps>
-   <prng><seed>33428</seed></prng>
+   <prng><seed>3348</seed></prng>
    <force type='socket'>
       <interface mode="unix">
-         <address>localhost</address>   <port>33428</port>    <slots>4</slots> <latency>0.001</latency>
+         <address>localhost</address>   <port>31415</port>    <slots>4</slots> <latency>0.001</latency>
       </interface>
    </force>
    <beads>
