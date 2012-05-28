@@ -133,6 +133,7 @@
             end do
 
             call get_all(atoms, cell, n_list, index_list, pot, f, vir)
+            call long_range_corr(cell, nat, vir, pot)
             vir = transpose(vir)
             write(*,*) "computed energy is ",pot
             hasdata=.true.            
