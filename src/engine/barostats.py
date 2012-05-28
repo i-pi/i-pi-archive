@@ -205,9 +205,6 @@ class Barostat(dobject):
       
       return (self.kstress + self.forces.vir/float(self.beads.nbeads))/self.cell.V
 
-#TODO  make this something that isn't utter rubbish
-#TODO  also include a possible explicit dependence of U on h
-
    def get_press(self):
       """Calculates the internal pressure."""
 

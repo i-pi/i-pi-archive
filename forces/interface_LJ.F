@@ -149,6 +149,7 @@
             end do
 
             call get_all(atoms, cell, n_list, index_list, pot, f, vir)
+            call long_range_corr(cell, nat, vir, pot)
             vir = transpose(vir)
             ! artificially slow donw evaluation
             ! call sleep(5)
@@ -195,5 +196,33 @@
             end do
 
          end function   
+
+         subroutine long_range_corr(cell, natoms, stress, pot)
+            Type(Cell_vec), intent(in) :: cell
+            integer, intent(in) :: natoms
+
+            double precision, dimension(3,3), intent(inout) :: stress
+            double precision, intent(inout) :: pot
+
+            double precision :: volume, pot_corr, pi, normalization
+            double precision :: dpot, dforce
+
+            pi = 3.14159265358979
+
+            volume = cell%h(1,1)*cell%h(2,2)*cell%h(3,3)
+
+            normalization = 2*pi*natoms**2/volume
+
+            pot_corr = normalization*long_range(rc) 
+
+            pot = pot + pot_corr
+
+            call LJ_functions(rc, dpot, dforce)
+            do i = 1,3
+               stress(i,i) = stress(i,i) + (normalization/3.0*rc**3
+     1                          *dpot + pot_corr)
+            end do
+
+         end subroutine
 
       end program

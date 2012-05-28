@@ -32,6 +32,20 @@
       
          end subroutine
 
+         double precision function long_range(rc)
+            double precision, intent(in) :: rc
+
+            double precision :: sigma3, sbyr3, sbyr6
+
+            sbyr3 = sigma/rc
+            sbyr3 = sbyr3*sbyr3*sbyr3
+            sbyr6 = sbyr3*sbyr3
+            sigma3 = sigma*sigma*sigma
+
+            long_range = 4*eps*sigma3/3.0*(sbyr3*(sbyr6/3.0 - 1.0))
+
+         end function
+
          subroutine separation(atoms, i, j, cell, rij, r)
             type(Atom), dimension(:), intent(in) :: atoms
             integer, intent(in) :: i
