@@ -2,8 +2,6 @@
          use sys_vars
       implicit none
 
-      !private
-      !public :: get_all
       double precision :: sigma, rc, rn, eps, correction
 
       double precision, parameter :: alpha = 1.713d0
@@ -79,6 +77,26 @@
             force = exp_force+disp_diff*long_range+disp*long_range_diff
          
          end subroutine
+
+         double precision function long_range(rc)
+            double precision, intent(in) :: rc
+
+            double precision :: onr, onr2, onr3, onr5, onr6, onr7
+
+            onr = 1.0/rc
+            onr2 = onr*onr
+            onr3 = onr2*onr
+            onr5 = onr3*onr2
+            onr6 = onr3*onr3
+            onr7 = onr5*onr2
+
+            long_range = C_9*onr6/6.0 - C_6*onr3/3.0 - C_8*onr5/5.0
+     1                      - C_10*onr7/7.0
+            !Note that we both assume that rc > rc_exp, and that the 
+            !contribution to the long range potential due to the hard-core
+            !repulsive potential is negligible
+
+         end function
 
          subroutine separation(atoms, i, j, cell, rij, r)
             type(Atom), dimension(:), intent(in) :: atoms
@@ -175,7 +193,6 @@
             start = 1
             do i = 1, size(atoms)-1
                finish = start + n_list(i) - 1
-               !do j = i+1, size(atoms)
                do j = start, finish
                   call SG_fij(atoms, i, index_list(j), cell, fij, 
      1                        rij, pot_ij)
@@ -193,7 +210,6 @@
                start = finish + 1
 
             end do
-            !vir = vir/volume
 
          end subroutine
 

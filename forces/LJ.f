@@ -2,11 +2,7 @@
          use sys_vars
       implicit none
 
-      public
       double precision :: sigma, rc, rn, eps, correction
-
-      public :: get_all, nearest_neighbours
-
 
       contains
 
@@ -143,7 +139,7 @@
 
             do i = 1, size(atoms)-1
                finish = start + n_list(i) - 1
-               do j = start, finish !if n_list(i) == 0, what happens?
+               do j = start, finish 
                   call LJ_fij(atoms, i, index_list(j), cell, fij, 
      c                   rij, pot_ij)
 

@@ -4,7 +4,6 @@
       implicit none
 
       type(Atom), dimension(:), allocatable :: atoms
-      !type(Atom), dimension(:), allocatable :: ref_atoms
       type(Cell_vec) :: cell
       double precision, dimension(:,:), allocatable :: ref_pos
       double precision pot
@@ -68,6 +67,7 @@
          
          call readbuffer(socket, header, MSGLEN)
          write(*,*) "Message from server: ", header
+
          if (trim(header) == "STATUS") then
             if (.not. isinit) then
                call writebuffer(socket,"NEEDINIT    ",MSGLEN)
@@ -76,24 +76,22 @@
             else
                call writebuffer(socket,"READY       ",MSGLEN)
             endif
+
          else if (trim(header) == "INIT") then     
             call readbuffer(socket, nat, 4)
             call readbuffer(socket, parbuffer, nat)
-            ! no need to read stuff, this is not LJ 
-            !read(parbuffer(1:nat),*) eps, sigma, rc, rn
             eps = 1.1663e-4
             sigma = 5.270446
             !correction = 4*eps*((sigma/rc)**12 - (sigma/rc)**6)
             correction=0
             rn=rc*1.2
             isinit=.true.
-!            write(*,*) "LJ potential initialised with values eps=", 
-!     c          eps, ", sigma=",sigma, ", rc=", rc, ", rn=", rn
+
          else if (trim(header) == "POSDATA") then              
             call readbuffer(socket, cell%h, 9*8)
             call readbuffer(socket, cell%ih, 9*8)
-            cell%h=transpose(cell%h)
-            cell%ih=transpose(cell%ih)
+            cell%h=transpose(cell%h)    !fortran data arrays held transposed
+            cell%ih=transpose(cell%ih)  !compared to python arrays
             call readbuffer(socket, nat, 4)
             if ( .not. allocated(buffer) ) then
                write(*,*) "allocating buffer"
@@ -114,8 +112,6 @@
                allocate(n_list(size(atoms)-1))
                allocate(index_list((size(atoms)*(size(atoms)-1))/2))
                call nearest_neighbours(atoms, cell, n_list, index_list)
-               !allocate(ref_atoms(size(atoms)))
-               !ref_atoms = atoms
                allocate(ref_pos(3,size(atoms)))
                do i = 1, nat
                   ref_pos(:,i) = nearest_image(cell, atoms(i)%pos)
@@ -123,23 +119,12 @@
             end if
 
             do i = 1, size(atoms)
-               !q_diff = ref_atoms(i)%pos - atoms(i)%pos
                q_diff = nearest_image(cell,
      1                 nearest_image(cell,atoms(i)%pos) - ref_pos(:,i))
+
                if (2.0*abs(dot_product(q_diff, q_diff)) >= rn-rc) then
                   call nearest_neighbours(atoms, cell, 
      c                     n_list, index_list)
-                  !ref_atoms = atoms
-                  !n_list = 0
-                  !index_list = 0
-                  !counter = 1
-                  !do j = 1, size(atoms)-1
-                  !   do ios = j+1, size(atoms)
-                  !      n_list(j) = n_list(j) + 1
-                  !      index_list(counter) = ios
-                  !      counter = counter + 1
-                  !   end do
-                  !end do
 
                   do j = 1, nat
                      ref_pos(:,j) = nearest_image(cell, atoms(i)%pos)
@@ -151,10 +136,9 @@
             call get_all(atoms, cell, n_list, index_list, pot, f, vir)
             call long_range_corr(cell, nat, vir, pot)
             vir = transpose(vir)
-            ! artificially slow donw evaluation
-            ! call sleep(5)
             write(*,*) "computed energy is ",pot
             hasdata=.true.            
+
          else if (trim(header)=="GETFORCE") then
             call writebuffer(socket,"FORCEREADY  ",MSGLEN)            
             call writebuffer(socket,pot,8)
@@ -162,17 +146,16 @@
             do i = 1, nat
                buffer(3*(i-1)+1:3*i)=f(:,i)
             enddo
-            ! artificially slow donw transfer
-            !call sleep(5)
             call writebuffer(socket,buffer,3*nat*8)
             call writebuffer(socket,vir,9*8)
             hasdata=.false.            
-            !hang AFTER transfer is complete
-            !call sleep(5)
+
          else
             write(*,*) "Now got ", header
          end if
+
       enddo
+
       deallocate(n_list, atoms, f)
 
       contains
