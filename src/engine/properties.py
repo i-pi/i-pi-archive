@@ -427,10 +427,13 @@ class Trajectories(dobject):
       self.fatom = simul.beads[0].copy()
       
       # a few, "fancier", per-atom properties
-      dset(self, "atomic_kincv", depend_array(name="atomic_kincv", value=np.zeros(self.simul.beads.natoms*3),
-           func=self.get_akcv, dependencies=[dget(self.simul.forces,"f"), dget(self.simul.beads,"q"), dget(self.simul.beads,"qc"), dget(self.simul.ensemble,"temp")]))      
-      dset(self, "atomic_kod", depend_array(name="atomic_kod", value=np.zeros(self.simul.beads.natoms*3),
-           func=self.get_akcv_od, dependencies=[dget(self.simul.forces,"f"), dget(self.simul.beads,"q"), dget(self.simul.beads,"qc"), dget(self.simul.ensemble,"temp")]))
+      dset(self, "atomic_kincv", 
+         depend_array(name="atomic_kincv", 
+            value=np.zeros(self.simul.beads.natoms*3), func=self.get_akcv, 
+               dependencies=[dget(self.simul.forces,"f"), dget(self.simul.beads,"q"), dget(self.simul.beads,"qc"), dget(self.simul.ensemble,"temp")]))      
+      dset(self, "atomic_kod", depend_array(name="atomic_kod", 
+         value=np.zeros(self.simul.beads.natoms*3), func=self.get_akcv_od, 
+            dependencies=[dget(self.simul.forces,"f"), dget(self.simul.beads,"q"), dget(self.simul.beads,"qc"), dget(self.simul.ensemble,"temp")]))
 
    def get_akcv(self):
       """Calculates the contribution to the kinetic energy due to each degree
