@@ -1,8 +1,8 @@
 <simulation>
-   <initialize shape="(1)">  [ velocities ]  </initialize>
+   <initialize shape="(1)">  { velocities : 150} </initialize>
    <properties>  [ time, conserved, temperature, kinetic_cv, potential ] </properties>   
-   <stride> { properties : 1, trajectory: 1,  trajectory_full : 1,  checkpoint:10 } </stride>
-   <prefix> wat </prefix>
+   <stride> { properties : 1, trajectory: 1,  checkpoint:10 } </stride>
+   <prefix> water </prefix>
    <total_steps>1000</total_steps>
    <prng><seed>31415</seed></prng>
    <force type='socket'>
@@ -10,10 +10,12 @@
          <address>localhost</address>   <port>31415</port>    <slots>4</slots>   <latency> 0.01</latency>
       </interface>
    </force>
-   <atoms>
-      <from_file>h2o.pdb</from_file>
-   </atoms>
-   <nbeads>8</nbeads>
+   <beads>
+      <atoms>
+         <from_file>h2o.pdb</from_file>
+      </atoms>
+      <nbeads>8</nbeads>
+   </beads>
    <cell flexible='False'>
       <h shape='(3, 3)'> 
        [ 10, 0, 1e-10,
@@ -23,7 +25,6 @@
       <m>25000.7229</m>
    </cell>
    <ensemble type='nvt'>
-      <nm_propagator>true</nm_propagator>
       <thermostat kind='pile_g'>
          <tau>1e2</tau>
          <ethermo>0.0</ethermo>

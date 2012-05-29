@@ -722,6 +722,22 @@ http://gle4md.berlios.de/
 Credits
 \end_layout
 
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+wrappi
+\end_layout
+
+\end_inset
+
+ has been developed by Michele Ceriotti and Joshua More.
+\end_layout
+
 \begin_layout Section
 Citing 
 \begin_inset ERT
@@ -2082,6 +2098,89 @@ CP2K
 
 \begin_layout Section
 Testing
+\end_layout
+
+\begin_layout Standard
+Several test cases are distributed with the code to ensure that your distributio
+n is working correctly.
+ There are also simple tests to see if the driver codes are working correctly.
+\end_layout
+
+\begin_layout Standard
+All the input files are contained in the directory test, which is subdivided
+ into the following directories:
+\end_layout
+
+\begin_layout Description
+lj: This gives a simple classical Lennard-Jones simulation of Ne.
+ The state point is given by (N, 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+(
+\backslash
+rho
+\backslash
+)
+\end_layout
+
+\end_inset
+
+, T) = (864, 0.35, 1.62) in reduced Lennard-Jones units, so that the results
+ can be compared to those in the paper
+ 
+\lang english
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+cite{lverlet67pr}
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Description
+ph2: This simulates para-hydrogen using the isotropic Silvera-Goldman pair
+ potential.
+ There are two directories, nvt and Tuckerman, which can be compared to
+ the results of 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+cite{mill-mano05jcp}
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+cite{mart-tuck99jcp}
+\end_layout
+
+\end_inset
+
+ respectively.
 \end_layout
 
 \begin_layout Chapter
@@ -4305,6 +4404,17 @@ input{thermostats}
 \backslash
 input{prng}
 \end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset bibtex
+LatexCommand bibtex
+bibfiles "mybib"
+options "/home/joshuamore/Downloads/elsarticle/model1-num-names"
 
 \end_inset
 
