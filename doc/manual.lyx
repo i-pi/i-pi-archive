@@ -653,14 +653,14 @@ Driver compatibility
 \end_layout
 
 \begin_layout Standard
-There are currently patches available for Quantum Espresso version 4.3.2,
- CP2K version 2.2, dlpoly version 2.16 and LAMMPS 14 Feb 2012.
- The next version of Quantum Espresso will have the patch as part of the
- main code.
+There are currently patches available for Quantum Espresso version 4.3.2 and
+ CP2K version 2.2.
+ Both patches have been added to the current developement branches of these
+ codes, and should be included as standard in newer versions.
 \end_layout
 
 \begin_layout Standard
-None of these codes come with the 
+These codes do not come as part of the 
 \begin_inset ERT
 status open
 
@@ -1130,7 +1130,8 @@ interface
  The unix/inet distinction is an important one, the unix socket is faster
  than an internet socket, but can only be used for local communication.
  Generally, the simulation should only be run locally if a simple classical
- potential is being used, as complicated empirical potentials or 
+ potential is being used.
+ If complicated empirical potentials or 
 \begin_inset ERT
 status open
 
@@ -1143,12 +1144,12 @@ emph{ab initio}
 
 \end_inset
 
- potentials make the force calculation the bottleneck in the code, so the
- advantage of using unix sockets is lost.
+ potentials are used the force calculation becomes the bottleneck in the
+ code, so the advantage of using unix sockets is lost.
 \end_layout
 
 \begin_layout Standard
-In our code, there are a two other input parameters that may be used.
+There are a two other input parameters that may be used.
  
 \begin_inset Quotes eld
 \end_inset
@@ -1297,18 +1298,9 @@ FORCEREADY
 
 \end_deeper
 \begin_layout Enumerate
-The server socket waits for an amount of time given by the latency before
- asking for 
-\begin_inset Quotes eld
-\end_inset
-
-STATUS
-\begin_inset Quotes erd
-\end_inset
-
- again, until the force data for each replica of the system has been calculated
- and returned, upon which the job is finished and the molecular dynamics
- loop starts.
+The server socket waits until the force data for each replica of the system
+ has been calculated and returned, upon which the job is finished and the
+ molecular dynamics loop starts.
 \end_layout
 
 \begin_layout Subsection
@@ -1340,7 +1332,7 @@ Also, for subsequent steps, the interface will assign a particular replica
 \end_layout
 
 \begin_layout Standard
-In the case where there are too few driver codes, then the socket interface
+In the case where there are fewer driver codes than beads, the socket interface
  will assign spare jobs to the first driver code that finishes running,
  after matching all possible jobs to the same driver code that calculated
  it last time step.
@@ -1635,6 +1627,10 @@ The Python array library NumPy
 
 \begin_layout Standard
 Additionally, most driver codes will have their own software requirements.
+ Many of them, including the test driver codes given in the test directories,
+ will need a fortran compiler.
+ Most will also need to be linked with some mathematical libraries, such
+ as BLAS, FFTW and LAPACK.
 \end_layout
 
 \begin_layout Section
@@ -1658,16 +1654,37 @@ A tar file can be downloaded from the website [appropriate wrap-pi website].
  To install this you need to input the following commands:
 \end_layout
 
-\begin_layout Itemize
+\begin_layout Standard
+\begin_inset ERT
+status open
 
-\series bold
-cd $src_dir
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
 \end_layout
 
-\begin_layout Itemize
+\begin_layout Plain Layout
 
-\series bold
-tar xf [wrapper_tar_file.tar]
+> cd $src_dir
+\end_layout
+
+\begin_layout Plain Layout
+
+> tar xf [wrapper_tar_file.tar]
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -1675,16 +1692,37 @@ You can also download the git repository at [github repository name] using
  the commands:
 \end_layout
 
-\begin_layout Itemize
+\begin_layout Standard
+\begin_inset ERT
+status open
 
-\series bold
-cd $src_dir
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
 \end_layout
 
-\begin_layout Itemize
+\begin_layout Plain Layout
 
-\series bold
-git clone [name of repository]
+> cd $src_dir
+\end_layout
+
+\begin_layout Plain Layout
+
+> git clone [github repository name]
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Section
@@ -1717,16 +1755,37 @@ http://sourceforge.net/projects/numpy/files/NumPy/
 This must then be extracted using the following commands:
 \end_layout
 
-\begin_layout Itemize
+\begin_layout Standard
+\begin_inset ERT
+status open
 
-\series bold
-cd $np_dd_dir
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
 \end_layout
 
-\begin_layout Itemize
+\begin_layout Plain Layout
 
-\series bold
-tar czf $np_vers.tar.gz
+> cd $np_dd_dir
+\end_layout
+
+\begin_layout Plain Layout
+
+> tar czf $np_vers.tar.gz
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -1738,9 +1797,31 @@ You must now install this code.
 \end_layout
 
 \begin_layout Standard
+\begin_inset ERT
+status open
 
-\series bold
-python setup.py build
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+> python setup.py build
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -1751,9 +1832,31 @@ The next step is to install the package.
 \end_layout
 
 \begin_layout Standard
+\begin_inset ERT
+status open
 
-\series bold
-python setup.py install
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+> python setup.py install
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -1764,9 +1867,31 @@ If you do not have root access, then the next step depends on which version
 \end_layout
 
 \begin_layout Standard
+\begin_inset ERT
+status open
 
-\series bold
-python setup.py install --user
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+> python setup.py install --user
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -1776,9 +1901,31 @@ With Python 2.4/2.5 the process is a little more involved.
 \end_layout
 
 \begin_layout Standard
+\begin_inset ERT
+status open
 
-\series bold
-python setup.py install --prefix=$np_dir
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+> python setup.py install --prefix=$np_dir
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -1791,9 +1938,31 @@ PYTHONPATH
 \end_layout
 
 \begin_layout Standard
+\begin_inset ERT
+status open
 
-\series bold
-export PYTHONPATH=$PYTHONPATH:$np_dir/lib64/$py_vers/site-packages
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+> export PYTHONPATH=$PYTHONPATH:$np_dir/lib64/$py_vers/site-packages
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -1846,26 +2015,42 @@ wrappi
  This can be applied to the Quantum Espresso source code using:
 \end_layout
 
-\begin_layout Itemize
+\begin_layout Standard
+\begin_inset ERT
+status open
 
-\series bold
-cd $esp_dd_dir
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
 \end_layout
 
-\begin_layout Itemize
+\begin_layout Plain Layout
 
-\series bold
-tar zxvf $esp_vers.tar.gz
+> cd $esp_dd_dir
 \end_layout
 
-\begin_layout Itemize
+\begin_layout Plain Layout
 
-\series bold
-patch -p1 <
-\series default
- 
-\series bold
-$src_dir/patches/pwscf
+> tar zxvf $esp_vers.tar.gz
+\end_layout
+
+\begin_layout Plain Layout
+
+> patch -p1 < $src_dir/patches/pwscf
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -1960,9 +2145,31 @@ wrappi
 \end_layout
 
 \begin_layout Standard
+\begin_inset ERT
+status open
 
-\series bold
-python $src_dir/main.py input_file.xml
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+> python $src_dir/main.py input_file.xml
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -2006,12 +2213,6 @@ wrappi
 \end_layout
 
 \begin_layout Standard
-
-\series bold
-from main import *
-\end_layout
-
-\begin_layout Standard
 \begin_inset ERT
 status open
 
@@ -2019,26 +2220,33 @@ status open
 
 
 \backslash
-vspace*{0.5 cm}
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+from main import *
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+main("input_file.xml")
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
 \end_layout
 
 \end_inset
 
 
-\end_layout
-
-\begin_layout Standard
-
-\series bold
-main (
-\begin_inset Quotes eld
-\end_inset
-
-input_file.xml
-\begin_inset Quotes erd
-\end_inset
-
-)
 \end_layout
 
 \begin_layout Section
@@ -2076,35 +2284,50 @@ driver_comm
 \end_layout
 
 \begin_layout Standard
+\begin_inset ERT
+status open
 
-\series bold
-bash -c 
-\begin_inset Quotes eld
-\end_inset
-
-python $src_dir/main.py input_file.xml &> log &
-\begin_inset Quotes erd
-\end_inset
+\begin_layout Plain Layout
 
 
+\backslash
+begin{verbatim}
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 
-\series bold
-for a in `seq 1 4`; do bash -c 
-\begin_inset Quotes eld
-\end_inset
+> bash -c "python $src_dir/main.py input_file.xml &> log &"
+\end_layout
 
-driver_comm &> 
+\begin_layout Plain Layout
+
+> for a in `seq 1 4`
+\end_layout
+
+\begin_layout Plain Layout
+
+> do bash -c "driver_comm &> 
 \backslash
 dev
 \backslash
-null &
-\begin_inset Quotes erd
+null &"
+\end_layout
+
+\begin_layout Plain Layout
+
+> done
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
 \end_inset
 
-; done
+
 \end_layout
 
 \begin_layout Standard
@@ -2165,17 +2388,66 @@ Secondly, each different simulation can be kept separate very easily, by
 \end_layout
 
 \begin_layout Standard
+\begin_inset ERT
+status open
 
-\series bold
-i=0; for a in sim_*; do cd $a; ((i++)); port=((10000+$i)); sed 
-\begin_inset Quotes eld
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+> i=0
+\end_layout
+
+\begin_layout Plain Layout
+
+> for a in sim_*
+\end_layout
+
+\begin_layout Plain Layout
+
+> do cd $a
+\end_layout
+
+\begin_layout Plain Layout
+
+>   ((i++))
+\end_layout
+
+\begin_layout Plain Layout
+
+>   port=((10000+$i))
+\end_layout
+
+\begin_layout Plain Layout
+
+>   sed s/XXX/$port/g input.template > $a/input_file.xml
+\end_layout
+
+\begin_layout Plain Layout
+
+>   cd ..
+\end_layout
+
+\begin_layout Plain Layout
+
+> done
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
 \end_inset
 
-s/XXX/$port/g
-\begin_inset Quotes erd
-\end_inset
 
- input.template > $a/input_file.xml; cd ..; done
 \end_layout
 
 \begin_layout Standard
@@ -2208,9 +2480,31 @@ This is the main input file from which the simulation parameters are initialized
 \end_layout
 
 \begin_layout Standard
+\begin_inset ERT
+status open
 
-\series bold
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
 <tag_name attribute_name='attribute_data'>tag_data</tag_name>
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -2552,11 +2846,10 @@ units
 
  attribute.
  For example, if you wanted to specify the cell parameters in units of angstrom
- rather than bohr radii, then in the input file you would specify 
-\begin_inset Quotes eld
-\end_inset
+ rather than bohr radii, then in the input file you would specify:
+\end_layout
 
-<h units='angstrom'> 
+\begin_layout Standard
 \begin_inset ERT
 status open
 
@@ -2564,16 +2857,15 @@ status open
 
 
 \backslash
-ldots
+begin{verbatim}<h units='angstrom'> ...
+ </h>
+\backslash
+end{verbatim}
 \end_layout
 
 \end_inset
 
- </h>
-\begin_inset Quotes erd
-\end_inset
-
-
+ 
 \end_layout
 
 \begin_layout Section
@@ -2604,8 +2896,10 @@ This is the output file for for all the system and simulation level properties,
 \end_layout
 
 \begin_layout Standard
-The format of the property list is: <properties> [ prop1name, prop2name,
- prop3name(arg1; arg2), 
+The format of the property list is:
+\end_layout
+
+\begin_layout Standard
 \begin_inset ERT
 status open
 
@@ -2613,13 +2907,29 @@ status open
 
 
 \backslash
-ldots
+begin{verbatim}<properties>
+\end_layout
+
+\begin_layout Plain Layout
+
+   [ prop1name, prop2name, prop3name(arg1; arg2), ...
+  ]
+\end_layout
+
+\begin_layout Plain Layout
+
+</properties>
+\backslash
+end{verbatim}
 \end_layout
 
 \end_inset
 
- ] </properties>.
- Some of the properties that require array indices or other parameters to
+
+\end_layout
+
+\begin_layout Standard
+Some of the properties that require array indices or other parameters to
  be specified will require the arguments to be specified as shown above.
  A full list of the allowed property names is given below:
 \end_layout
@@ -3004,19 +3314,41 @@ Properties
 \end_layout
 
 \begin_layout Standard
+\begin_inset ERT
+status open
 
-\series bold
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
 def new_func(self):
 \end_layout
 
-\begin_layout Standard
-...code here...
+\begin_layout Plain Layout
+
+   ...code here...
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 
-\series bold
-return value
+   return value
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -3033,17 +3365,31 @@ new_prop
 \end_layout
 
 \begin_layout Standard
+\begin_inset ERT
+status open
 
-\series bold
-self.property_dict[
-\begin_inset Quotes eld
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+self.property_dict[new_prop] = new_func
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
 \end_inset
 
-new_prop
-\begin_inset Quotes erd
-\end_inset
 
-] = new_func
 \end_layout
 
 \begin_layout Standard
@@ -3055,8 +3401,16 @@ new_prop
 \begin_inset Quotes erd
 \end_inset
 
- in the properties list in the xml input file, and the property will be
- written to the properties output file when appropriate.
+ in the 
+\begin_inset Quotes eld
+\end_inset
+
+properties
+\begin_inset Quotes erd
+\end_inset
+
+ list in the xml input file, and the property will be written to the properties
+ output file when appropriate.
 \end_layout
 
 \begin_layout Standard
@@ -3064,23 +3418,6 @@ If you need a function with arguments, then the code we need is given by:
 \end_layout
 
 \begin_layout Standard
-
-\series bold
-self.property_dict[
-\begin_inset Quotes eld
-\end_inset
-
-new_arg_prop
-\begin_inset Quotes erd
-\end_inset
-
-] = new_arg_func
-\end_layout
-
-\begin_layout Standard
-
-\series bold
-def new_arg_func(self, arg1, arg2, 
 \begin_inset ERT
 status open
 
@@ -3088,22 +3425,45 @@ status open
 
 
 \backslash
-ldots
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+self.property_dict[new_arg_prop] = new_arg_func
+\end_layout
+
+\begin_layout Plain Layout
+
+...code here...
+\end_layout
+
+\begin_layout Plain Layout
+
+def new_arg_func(self, arg1, arg2, ...
+ ):
+\end_layout
+
+\begin_layout Plain Layout
+
+   ...more code here...
+\end_layout
+
+\begin_layout Plain Layout
+
+   return value
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
 \end_layout
 
 \end_inset
 
- ):
-\end_layout
 
-\begin_layout Standard
-...code here...
-\end_layout
-
-\begin_layout Standard
-
-\series bold
-return value
 \end_layout
 
 \begin_layout Standard
@@ -3111,10 +3471,6 @@ Now in the property list you must put:
 \end_layout
 
 \begin_layout Standard
-\begin_inset Quotes eld
-\end_inset
-
-<properties> [ new_arg_prop(arg1; arg2; 
 \begin_inset ERT
 status open
 
@@ -3122,26 +3478,33 @@ status open
 
 
 \backslash
-ldots
+begin{verbatim}
 \end_layout
 
-\end_inset
+\begin_layout Plain Layout
 
- ), 
-\begin_inset ERT
-status open
+<properties>
+\end_layout
+
+\begin_layout Plain Layout
+
+   [ new_arg_prop(arg1; arg2; ...
+ ), ...
+ ]
+\end_layout
+
+\begin_layout Plain Layout
+
+</properties>
+\end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-ldots
+end{verbatim}
 \end_layout
 
-\end_inset
-
- ] </properties>
-\begin_inset Quotes erd
 \end_inset
 
 
@@ -3231,17 +3594,31 @@ object
 \end_layout
 
 \begin_layout Standard
+\begin_inset ERT
+status open
 
-\series bold
-dset(object, 
-\begin_inset Quotes eld
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+dset(object, name, value)
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
 \end_inset
 
-name
-\begin_inset Quotes erd
-\end_inset
 
-, value)
 \end_layout
 
 \begin_layout Standard
@@ -3309,7 +3686,7 @@ depend
 \end_inset
 
  object.
- Essentially all the 
+ Essentially a list of all the 
 \begin_inset Quotes eld
 \end_inset
 
@@ -3439,25 +3816,6 @@ depend
 \end_layout
 
 \begin_layout Standard
-
-\series bold
-func = {
-\begin_inset Quotes erd
-\end_inset
-
-synchro1
-\begin_inset Quotes erd
-\end_inset
-
-: func1, 
-\begin_inset Quotes eld
-\end_inset
-
-synchro2
-\begin_inset Quotes erd
-\end_inset
-
-: func2, 
 \begin_inset ERT
 status open
 
@@ -3465,12 +3823,25 @@ status open
 
 
 \backslash
-ldots
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+func = {synchro1: func1, synchro2: func2, ...
+ }
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
 \end_layout
 
 \end_inset
 
- }
+
 \end_layout
 
 \begin_layout Standard
@@ -3656,59 +4027,15 @@ Each input class must have the following class attributes:
 \begin_layout Description
 fields: This is a dictionary giving the tag names for the objects that can
  be specified in the xml input file within the tags of your class.
- The format is 
-\begin_inset Quotes eld
-\end_inset
-
-{
-\begin_inset Quotes erd
-\end_inset
-
-tag_name1
-\begin_inset Quotes erd
-\end_inset
-
- : (InputClass, {
-\begin_inset Quotes erd
-\end_inset
-
-default
-\begin_inset Quotes erd
-\end_inset
-
-: default_value, 
-\begin_inset Quotes eld
-\end_inset
-
-help
-\begin_inset Quotes erd
-\end_inset
-
-: 
-\begin_inset Quotes eld
-\end_inset
-
-help_string
-\begin_inset Quotes erd
-\end_inset
-
-, 
-\begin_inset Quotes eld
-\end_inset
-
-dtype
-\begin_inset Quotes erd
-\end_inset
-
-: data type, 
-\begin_inset Quotes eld
-\end_inset
-
-options
-\begin_inset Quotes erd
-\end_inset
-
-: [option1, option2, 
+ Every object that can be given a value by the user should be a keyword
+ of this dictionary, or of the 
+\series bold
+attributes 
+\series default
+dictionary.
+ Within the dictionary, you must specify the particular class of input object
+ that will be created and arguments to initialize it.
+ The format of the dictionary is: 
 \begin_inset ERT
 status open
 
@@ -3716,73 +4043,61 @@ status open
 
 
 \backslash
-ldots
+begin{verbatim}
 \end_layout
-
-\end_inset
-
- ], 
-\begin_inset Quotes eld
-\end_inset
-
-dimension
-\begin_inset Quotes erd
-\end_inset
-
-: dimensionality of the data}), 
-\begin_inset Quotes eld
-\end_inset
-
-tag_name2
-\begin_inset Quotes erd
-\end_inset
-
-: 
-\begin_inset ERT
-status open
 
 \begin_layout Plain Layout
 
-
-\backslash
-ldots
+{tag_name1 :
 \end_layout
 
-\end_inset
+\begin_layout Plain Layout
 
+   (InputClass, 
+\end_layout
+
+\begin_layout Plain Layout
+
+      {default: default value,
+\end_layout
+
+\begin_layout Plain Layout
+
+       help: help string, 
+\end_layout
+
+\begin_layout Plain Layout
+
+       dtype: data type,
+\end_layout
+
+\begin_layout Plain Layout
+
+       options: [option1, option2, ...
+ ],
+\end_layout
+
+\begin_layout Plain Layout
+
+       dimension: dimensionality of the data}), 
+\end_layout
+
+\begin_layout Plain Layout
+
+tag_name2: ...
  }
-\begin_inset Quotes erd
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
 \end_inset
 
-.
- Note that the 
-\begin_inset Quotes eld
-\end_inset
 
-dtype
-\begin_inset Quotes erd
-\end_inset
-
-, 
-\begin_inset Quotes eld
-\end_inset
-
-options
-\begin_inset Quotes erd
-\end_inset
-
- and 
-\begin_inset Quotes eld
-\end_inset
-
-dimension
-\begin_inset Quotes erd
-\end_inset
-
- only need to be given values if they are a simple InputValue or InputArray
- class, just containing data and no tags.
- You should make sure to specify a tag for all the variables that will be
- necessary to create an instance of your class.
 \end_layout
 
 \begin_layout Description
