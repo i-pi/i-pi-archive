@@ -4276,7 +4276,7 @@ The last thing that you must do to be able to use your class is to create
 \end_layout
 
 \begin_layout Section
-Submitting patches
+Submitting improvements
 \end_layout
 
 \begin_layout Standard
@@ -4290,12 +4290,85 @@ This code is still in developement, and any submissions to improve the code
 Testing
 \end_layout
 
+\begin_layout Standard
+Any new code should be tested for bugs before being submitted.
+ At the very least the modified code should reproduce the properties in
+ the test directory, and be shown to give the expected new results.
+ Preferably, new results found with wrap-PI should also be compared with
+ other published results, and a suitable test case added to the test directory.
+\end_layout
+
+\begin_layout Standard
+It should also be tested for user input error, especially if a new input
+ class has been created, so that such errors can be detected before the
+ simulation is run.
+ For example, if a parameter cannot be negative then this should be tested
+ in the code, so that a sensible error message is given if the user inputs
+ a negative value.
+\end_layout
+
 \begin_layout Subsection
 Documentation
 \end_layout
 
 \begin_layout Standard
-We have taken great care to make sure that all the 
+We have taken great care to make sure that all the code is well documented,
+ and as such any submissions should be documented to the same standard.
+ We have used the Google Python Style Guide, 
+\begin_inset Flex URL
+status collapsed
+
+\begin_layout Plain Layout
+
+http://google-styleguide.googlecode.com/svn/trunk/pyguide.html
+\end_layout
+
+\end_inset
+
+, as a template for the documentation.
+\end_layout
+
+\begin_layout Standard
+For each module we require the following documentation:
+\end_layout
+
+\begin_layout Itemize
+Each new module must be added to the __init__.py and README files of the
+ directory in which it is found.
+\end_layout
+
+\begin_layout Itemize
+At the head of each new module, you must give a string with a summary and
+ a brief description of the module with all the classes and functions that
+ it defines, and an __all__ object giving the same classes and functions
+ as above.
+\end_layout
+
+\begin_layout Itemize
+Each class must have a docstring giving a summary, a brief description of
+ its purpose and the variables it contains, including a separate section
+ for any depend objects defined, and what their dependencies are.
+ Input classes must also have a help string defined for all its tags, and
+ an appropriate default tag.
+\end_layout
+
+\begin_layout Itemize
+Each function must have a docstring giving a summary, a brief description
+ of its purpose, any arguments it uses, any exceptions it can raise and
+ what is returned by the function, if not None.
+ 
+\end_layout
+
+\begin_layout Itemize
+Any new module must have its input class added to the create_man.py file
+ in the doc directory, so that the automatic manual creation will work correctly.
+\end_layout
+
+\begin_layout Standard
+If new modules are being submitted, then all of the above documentation
+ should be done.
+ If only a new class or function is being added, then only parts of the
+ above will be necessary.
 \end_layout
 
 \begin_layout Chapter

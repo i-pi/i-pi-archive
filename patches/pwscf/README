@@ -1,0 +1,10 @@
+ -- Driver patches directory --
+
+ * This directory gives the patches required to compile the driver codes such
+   that they can be used with wrap-PI.
+
+ * Files:
+   - driver.f90: Gives the module that replaces the internal MD loop of the 
+      Quantum-Espresso code such that it can be used as a driver.
+   - pw-driver.patch: A diff file that can be used to edit the Quantum-Espresso 
+      code so that it can be used as a driver.
