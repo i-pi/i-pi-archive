@@ -316,6 +316,7 @@
    <traj_format>
       <help>The file format for the output file. Allowed keywords are ['pdb', 'xyz'].</help>
       <default> pdb </default>
+      <options>['pdb', 'xyz']</options>
       <dtype>str</dtype>
    </traj_format>
    <prng>
@@ -376,9 +377,9 @@
          <kind_dtype>str</kind_dtype>
          <thermostat kind=''>
             <help>The thermostat for the cell. Keeps the cell velocity distribution at the correct temperature.</help>
-            <kind_help>The style of thermostatting.</kind_help>
+            <kind_help>The style of thermostatting. 'langevin' specifies a white noise langevin equation to be attached to the cartesian representation of the momenta. 'svr' attaches a velocity rescaling thermostat to the cartesian representation of the momenta. Both 'pile_l' and 'pile_g' attaches a white noise langevin thermostat to the normal mode representation, with 'pile_l' attaching a local langevin thermostat to the centroid mode and 'pile_g' instead attaching a global velocity rescaling thermostat. 'gle' attaches a coloured noise langevin thermostat to the cartesian representation of the momenta, and 'nm_gle' attaches a coloured noise langevin thermostat to the normal mode representation of the momenta.</kind_help>
             <kind_default> langevin </kind_default>
-            <kind_options>['langevin', 'svr', 'pile_l', 'pile_g', 'gle', 'nm_gle']</kind_options>
+            <kind_options>['langevin', 'svr', 'pile_l', 'pile_g', 'gle', 'nm_gle', 'nm_gle_g']</kind_options>
             <kind_dtype>str</kind_dtype>
             <A shape=''>
                <help>The friction matrix for GLE thermostats.</help>
@@ -423,9 +424,9 @@
       </barostat>
       <thermostat kind=''>
          <help>The thermostat for the atoms, keeps the atom velocity distribution at the correct temperature.</help>
-         <kind_help>The style of thermostatting.</kind_help>
+         <kind_help>The style of thermostatting. 'langevin' specifies a white noise langevin equation to be attached to the cartesian representation of the momenta. 'svr' attaches a velocity rescaling thermostat to the cartesian representation of the momenta. Both 'pile_l' and 'pile_g' attaches a white noise langevin thermostat to the normal mode representation, with 'pile_l' attaching a local langevin thermostat to the centroid mode and 'pile_g' instead attaching a global velocity rescaling thermostat. 'gle' attaches a coloured noise langevin thermostat to the cartesian representation of the momenta, and 'nm_gle' attaches a coloured noise langevin thermostat to the normal mode representation of the momenta.</kind_help>
          <kind_default> langevin </kind_default>
-         <kind_options>['langevin', 'svr', 'pile_l', 'pile_g', 'gle', 'nm_gle']</kind_options>
+         <kind_options>['langevin', 'svr', 'pile_l', 'pile_g', 'gle', 'nm_gle', 'nm_gle_g']</kind_options>
          <kind_dtype>str</kind_dtype>
          <A shape=''>
             <help>The friction matrix for GLE thermostats.</help>

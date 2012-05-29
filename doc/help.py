@@ -8,6 +8,11 @@ Functions:
 """
 
 import sys
+
+src_dir = "../src/"
+
+sys.path.append(src_dir)
+
 from inputs import *
 from utils.io.io_xml import *
 from optparse import OptionParser

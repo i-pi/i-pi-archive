@@ -44,9 +44,9 @@ Holds all the information that is ensemble specific, such as the temperature and
 \paragraph{Attributes}
  \begin{itemize}
 \item {\bf kind}:
- The style of thermostatting.
+ The style of thermostatting. 'langevin' specifies a white noise langevin equation to be attached to the cartesian representation of the momenta. 'svr' attaches a velocity rescaling thermostat to the cartesian representation of the momenta. Both 'pile\_l' and 'pile\_g' attaches a white noise langevin thermostat to the normal mode representation, with 'pile\_l' attaching a local langevin thermostat to the centroid mode and 'pile\_g' instead attaching a global velocity rescaling thermostat. 'gle' attaches a coloured noise langevin thermostat to the cartesian representation of the momenta, and 'nm\_gle' attaches a coloured noise langevin thermostat to the normal mode representation of the momenta.
 {\\ \bf DEFAULT: }'langevin'
-{\\ \bf OPTIONS: }'langevin', 'svr', 'pile\_l', 'pile\_g', 'gle', 'nm\_gle'
+{\\ \bf OPTIONS: }'langevin', 'svr', 'pile\_l', 'pile\_g', 'gle', 'nm\_gle', 'nm\_gle\_g'
 {\\ \bf DATA TYPE: }str
 \end{itemize}
  

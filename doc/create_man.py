@@ -1,8 +1,4 @@
-import sys
-
-src_dir = "../src/"
-
-sys.path.append(src_dir)
+"""Help script which automatically generates the manual files."""
 
 from help import help
 
