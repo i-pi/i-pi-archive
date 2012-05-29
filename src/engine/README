@@ -1,0 +1,15 @@
+ -- Engine code directory --
+
+ * This is the directory containing all the major class definitions.
+
+ * Files:
+   - atoms.py: Deals with classical simulations.
+   - beads.py: Deals with quantum simulations.
+   - barostats.py: Deals with constant pressure and stress simulations.
+   - cell.py: Deals with the simulation box.
+   - thermostats.py: Deals with constant temperature simulations.
+   - ensembles.py: Deals with the different ensembles.
+   - simulation.py: Deals with all the top level information, such as 
+      input/output.
+   - properties.py: Deals with calculating all the output properties.
+   - forces.py: Deals with creating the jobs to send to the driver code.

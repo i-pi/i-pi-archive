@@ -1,0 +1,16 @@
+ -- Utility functions directory --
+
+ * This is the directory containing functions that are used in the other 
+   modules in the code.
+
+ * Files:
+   - depend.py: Deals with the dependency detection, value caching and 
+      automatic updating of variables.
+   - mathtools.py: Contains the algorithms used in various parts of the code.
+   - vim inputvalue.py: Contains the base classes used in reading the xml
+      input file, and creating the restart file.
+   - prng.py: Deals with random number generation.
+   - units.py: Holds atomic masses, fundamental constants, and unit conversions.
+
+ * Directories:
+   - io: Holds the modules that deal with reading and outputting files.

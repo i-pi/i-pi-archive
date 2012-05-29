@@ -1,0 +1,14 @@
+ -- Driver code directory --
+
+ * This gives simple test driver codes.
+
+ * Files:
+   - LJ.f: Lennard-Jones driver.
+   - interface_LJ.F: Socket interface for the Lennard-Jones driver.
+   - SG.f: Silvera-Goldman driver.
+   - interface_SG.F: Socket interface for the Silvera-Goldman driver.
+   - sys_vars.f: Holds simple classes used in the other files.
+   - oned.F: Holds a simple one dimensional harmonic potential.
+   - Makefile: A makefile that which compiles all the fortran code as 
+      necessary.
+   - xml_read.f: A module giving functions to read xml style files.

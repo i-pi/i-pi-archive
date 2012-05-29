@@ -814,7 +814,7 @@ engine: Holds the modules containing the internally used objects and algorithms
 \end_layout
 
 \begin_layout Description
-forces: Holds the modules containing the objects that deal with the driver
+driver: Holds the modules containing the objects that deal with the driver
  communication and data transfer.
  
 \end_layout
@@ -2175,12 +2175,19 @@ status open
 
 
 \backslash
-cite{mart-tuck99jcp}
+cite{mart+99jcp}
 \end_layout
 
 \end_inset
 
  respectively.
+\end_layout
+
+\begin_layout Description
+pwscf: This has two simple examples to test to see if the Quantum-Espresso
+ driver is functioning correctly.
+ There is one simple 4-atom lithium test, and a test using a single water
+ molecule.
 \end_layout
 
 \begin_layout Chapter
@@ -3011,7 +3018,8 @@ begin{verbatim}<properties>
 
 \begin_layout Plain Layout
 
-   [ prop1name, prop2name, prop3name(arg1; arg2), ...
+   [ prop1name, prop2name, prop3name(arg1; arg2, ...
+ ), ...
   ]
 \end_layout
 
@@ -3125,16 +3133,22 @@ textbf{x})
 
 \end_inset
 
- in Phys.
- Rev.
- Lett.
- 
-\series bold
-105
-\series default
-, 110602.
+ in 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+cite{linlin+10prl}
+\end_layout
+
+\end_inset
+
+.
  You must specify the args ux, uy and uz to give the displaced path vector,
- and atom to give the atom for which the path will be opened.
+ and atom to give the name of the atom for which the path will be opened.
 \end_layout
 
 \begin_layout Standard
@@ -3476,7 +3490,7 @@ begin{verbatim}
 
 \begin_layout Plain Layout
 
-self.property_dict[new_prop] = new_func
+self.property_dict["new_prop"] = new_func
 \end_layout
 
 \begin_layout Plain Layout
@@ -3529,7 +3543,7 @@ begin{verbatim}
 
 \begin_layout Plain Layout
 
-self.property_dict[new_arg_prop] = new_arg_func
+self.property_dict["new_arg_prop"] = new_arg_func
 \end_layout
 
 \begin_layout Plain Layout
@@ -4278,6 +4292,10 @@ Testing
 
 \begin_layout Subsection
 Documentation
+\end_layout
+
+\begin_layout Standard
+We have taken great care to make sure that all the 
 \end_layout
 
 \begin_layout Chapter
