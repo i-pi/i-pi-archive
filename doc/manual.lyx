@@ -7,6 +7,7 @@
 \@ifundefined{definecolor} {\usepackage{color}}{}
 \usepackage{multicol}\makeindex
 \usepackage{xspace}
+\usepackage[numbers]{natbib}
 \end_preamble
 \options fleqn
 \use_default_options false
@@ -2131,10 +2132,7 @@ rho
 \end_inset
 
 , T) = (864, 0.35, 1.62) in reduced Lennard-Jones units, so that the results
- can be compared to those in the paper
- 
-\lang english
-
+ can be compared to those in the paper 
 \begin_inset ERT
 status open
 
@@ -4505,7 +4503,7 @@ input{prng}
 \begin_inset CommandInset bibtex
 LatexCommand bibtex
 bibfiles "mybib"
-options "/home/joshuamore/Downloads/elsarticle/model1-num-names"
+options "elsart-num-names"
 
 \end_inset
 
