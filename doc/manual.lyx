@@ -439,24 +439,6 @@ status open
 
 ~
 \backslash
-ref{algorithms}
-\end_layout
-
-\end_inset
-
- the theory behind the algorithms used in the wrapper are discussed.
- 
-\end_layout
-
-\begin_layout Itemize
-In chapter
-\begin_inset ERT
-status open
-
-\begin_layout Plain Layout
-
-~
-\backslash
 ref{dev}
 \end_layout
 
@@ -3396,54 +3378,6 @@ An important point to note is that since each time step is split into several
  is created must correspond to the state of the system at the start of the
  step.
  To this end, the state of the system is saved at the start of every step.
-\end_layout
-
-\begin_layout Chapter
-Algorithms
-\end_layout
-
-\begin_layout Standard
-\begin_inset ERT
-status open
-
-\begin_layout Plain Layout
-
-
-\backslash
-label{algorithms}
-\end_layout
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Section
-Integrators
-\end_layout
-
-\begin_layout Subsection
-Trotter decomposition
-\end_layout
-
-\begin_layout Subsection
-Ring polymer normal mode coordinates
-\end_layout
-
-\begin_layout Subsection
-Constant temperature simulations
-\end_layout
-
-\begin_layout Subsection
-Constant pressure simulations
-\end_layout
-
-\begin_layout Section
-Output
-\end_layout
-
-\begin_layout Subsection
-Estimator theory
 \end_layout
 
 \begin_layout Chapter

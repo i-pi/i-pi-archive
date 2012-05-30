@@ -15,7 +15,7 @@ This is the top level class that deals with the running of the simulation, inclu
 \end{itemize}
  
 \item {\bf trajectories}:
- A list of the properties to print out the per-atom or per-bead trajectories of. Allowed values are ['positions', 'velocities', 'forces', 'kinetic\_cv', 'centroid'].
+ A list of the properties to print out the per-atom or per-bead trajectories of. Allowed values are ['positions', 'velocities', 'forces', 'kinetic\_cv', 'centroid', 'kodterms\_cv']. 'kinetic\_cv' gives the quantum kinetic energy estimator for each degree of freedom, whereas 'kodterms\_cv' gives the off-diagonal elements of the kinetic stress tensor estimator for each degree of freedom. The others are self-explanatory.
 {\\ \bf DEFAULT: }[ ]
 {\\ \bf DATA TYPE: }str
 \paragraph{Attributes}
@@ -73,7 +73,7 @@ This is the top level class that deals with the running of the simulation, inclu
 \end{itemize}
  
 \item {\bf stride}:
- Dictionary holding the number of steps between printing the different kinds of files. The allowed keywords are ['checkpoint', 'properties', 'progress', 'trajectory', centroid']. The default strides are {'checkpoint': 1000, 'properties': 10, 'progress': 100, 'centroid': 20, 'trajectory': 100}.
+ Dictionary holding the number of steps between printing the different kinds of files. The allowed keywords are ['checkpoint', 'properties', 'progress', 'trajectory', 'centroid']. The default strides are {'checkpoint': 1000, 'properties': 10, 'progress': 100, 'centroid': 20, 'trajectory': 100}.
 {\\ \bf DEFAULT: }\{ \}
 {\\ \bf DATA TYPE: }dict
 \item {\bf traj\_format}:

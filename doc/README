@@ -5,9 +5,10 @@
  * Files:
    - manual.lyx: lyx file giving the manual template
    - create_man.py: python script which automatically generates latex help files
-      for all the classes.
+      for all the classes, for use in the manual.
    - help.py: python script which can generate custom help files for
       different files.
    - help.xml: Automatically generated xml help file.
-   - *.tex: Automatically generated latex help files for all the classes.
+   - *.tex: Automatically generated latex help files for all the classes, for
+      use in the manual.
    - mybib.bib: Bibliography file for the manual.

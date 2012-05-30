@@ -82,7 +82,7 @@ class InputSimulation(Input):
                                             "help"     : "The total number of steps that will be done." }), 
              "stride" :     ( InputValue, { "dtype"    : dict,
                                             "default"  : {},
-                                            "help"     : "Dictionary holding the number of steps between printing the different kinds of files. The allowed keywords are ['checkpoint', 'properties', 'progress', 'trajectory', centroid']. The default strides are {'checkpoint': 1000, 'properties': 10, 'progress': 100, 'centroid': 20, 'trajectory': 100}." }), 
+                                            "help"     : "Dictionary holding the number of steps between printing the different kinds of files. The allowed keywords are ['checkpoint', 'properties', 'progress', 'trajectory', 'centroid']. The default strides are {'checkpoint': 1000, 'properties': 10, 'progress': 100, 'centroid': 20, 'trajectory': 100}." }), 
              "prefix":      ( InputValue, { "dtype"    : str,
                                             "default"  : "prefix",
                                             "help"     : "A string that will be the prefix for all the output file names." }),
@@ -102,7 +102,7 @@ class InputSimulation(Input):
                                             
              "trajectories": ( InputArray, { "dtype"   : str,
                                              "default" : np.zeros(0, np.dtype('|S12')),
-                                             "help"    : "A list of the properties to print out the per-atom or per-bead trajectories of. Allowed values are ['positions', 'velocities', 'forces', 'kinetic_cv', 'centroid']."})}
+                                             "help"    : "A list of the properties to print out the per-atom or per-bead trajectories of. Allowed values are ['positions', 'velocities', 'forces', 'kinetic_cv', 'centroid', 'kodterms_cv']. 'kinetic_cv' gives the quantum kinetic energy estimator for each degree of freedom, whereas 'kodterms_cv' gives the off-diagonal elements of the kinetic stress tensor estimator for each degree of freedom. The others are self-explanatory."})}
 
    default_help = "This is the top level class that deals with the running of the simulation, including holding the simulation specific properties such as the time step and outputting the data."
    default_label = "SIMULATION"

@@ -1,14 +1,15 @@
 .PHONY : all clean
-all : manual.pdf
+all : create_man manual.pdf
 
-%.pdf : %.tex %.bbl
-	while (pdflatex $*.tex ; \
-	grep -q "Rerun to get cross" $*.log ) do true ; \
-	done
+create_man :
+	python create_man.py
+
+manual.pdf : 
+	lyx --export pdf2 manual.lyx
 
 %.bbl : %.tex biblio.bib
 	pdflatex $*.tex
 	-bibtex $*
 	
 clean: 
-	bash -c "rm -f manual{.log,.bbl,.idx,.aux,.blg,Notes.bib}"
+	bash -c "rm -f *.tex help.xml manual.pdf"
