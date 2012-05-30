@@ -341,8 +341,7 @@ wrappi
 
  is a path integral molecular dynamics (PIMD) wrapper written in Python
  for ab initio density functional theory (DFT) codes.
- It currently works with the DFT codes QUANTUM ESPRESSO and CP2K, as well
- as the classical codes LAMMPS and DLPOLY.
+ It currently works with the DFT codes QUANTUM ESPRESSO and CP2K.
 \end_layout
 
 \begin_layout Standard
@@ -675,7 +674,20 @@ wrappi
 \end_inset
 
  package, and must be downloaded separately.
- See chapter 3 for more details of how to do this.
+ See chapter
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+~
+\backslash
+ref{install}
+\end_layout
+
+\end_inset
+
+ for more details of how to do this.
  
 \end_layout
 
@@ -1645,7 +1657,7 @@ The Python array library NumPy
 \begin_layout Standard
 Additionally, most driver codes will have their own software requirements.
  Many of them, including the test driver codes given in the test directories,
- will need a fortran compiler.
+ will need a modern fortran compiler.
  Most will also need to be linked with some mathematical libraries, such
  as BLAS, FFTW and LAPACK.
 \end_layout
@@ -2362,7 +2374,97 @@ CP2K
 \end_layout
 
 \begin_layout Subsection
-Quantum Espresso
+Quantum-Espresso
+\end_layout
+
+\begin_layout Standard
+Suppose we want to run Quantum-Espresso as the driver code, and we have
+ compiled it as given above, and have an input file which will give the
+ correct forces and potential.
+ If we want to connect to a socket on the host address host_address and
+ on the port number port, then we would add the following lines to the input
+ file:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+&CONTROL
+\end_layout
+
+\begin_layout Plain Layout
+
+   calculation=`driver'
+\end_layout
+
+\begin_layout Plain Layout
+
+   srvaddress=`host_address:port'
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+If we wanted to run on a UNIX port instead of an INET port, we would instead
+ write:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+&CONTROL
+\end_layout
+
+\begin_layout Plain Layout
+
+   calculation=`driver'
+\end_layout
+
+\begin_layout Plain Layout
+
+   srvaddress=`UNIX:host_address:port'
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Section
@@ -2596,7 +2698,7 @@ begin{verbatim}
 
 \begin_layout Plain Layout
 
-<tag_name attribute_name='attribute_data'>tag_data</tag_name>
+<tag_name attribute_name=`attribute_data'>tag_data</tag_name>
 \end_layout
 
 \begin_layout Plain Layout
@@ -2961,7 +3063,7 @@ status open
 
 
 \backslash
-begin{verbatim}<h units='angstrom'> ...
+begin{verbatim}<h units=`angstrom'> ...
  </h>
 \backslash
 end{verbatim}
@@ -2970,18 +3072,6 @@ end{verbatim}
 \end_inset
 
  
-\end_layout
-
-\begin_layout Section
-Driver input
-\end_layout
-
-\begin_layout Subsection
-Quantum Espresso
-\end_layout
-
-\begin_layout Subsection
-CP2K
 \end_layout
 
 \begin_layout Section
@@ -3989,6 +4079,12 @@ synchroN
 \end_inset
 
  object to the one being created.
+ Note that we have to make sure that we do not mix the two forms of 
+\series bold
+func
+\series default
+, synchonized objects can only depend on the other synchronized objects,
+ and not on any other depend objects.
 \end_layout
 
 \begin_layout Standard
