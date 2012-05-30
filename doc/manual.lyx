@@ -775,10 +775,6 @@ label{progpar}
 \end_layout
 
 \begin_layout Section
-Structure of the code
-\end_layout
-
-\begin_layout Subsection
 Directory structure
 \end_layout
 
@@ -836,66 +832,6 @@ test: Contains examples that can be used to make sure the build has been
  successful, show the correct form of the input files, and show some of
  the capabilities of the wrapper.
  
-\end_layout
-
-\begin_layout Subsection
-Code structure
-\end_layout
-
-\begin_layout Standard
-To run a simulation, the following steps are followed by the code:
-\end_layout
-
-\begin_layout Enumerate
-The input file is read, parsed and interpreted.
-\end_layout
-
-\begin_layout Enumerate
-The appropriate python objects are created and initialized.
-\end_layout
-
-\begin_layout Enumerate
-A socket is opened, and the wrapper waits for a driver code to connect.
-\end_layout
-
-\begin_layout Enumerate
-Once at least one driver code has connected, the simulation is run forward
- in discrete time steps.
-\end_layout
-
-\begin_layout Standard
-Each time step splits up into the following stages:
-\end_layout
-
-\begin_layout Enumerate
-The momenta of the particles are adjusted by an external thermostat, if
- applicable.
-\end_layout
-
-\begin_layout Enumerate
-The momenta of the particles are adjusted according to the forces acting
- on them
-\end_layout
-
-\begin_layout Enumerate
-The centroid coordinates of the ring polymers are adjusted according to
- their momenta (and in constant pressure simulations the cell momenta).
-\end_layout
-
-\begin_layout Enumerate
-The internal modes of the ring polymer are adjusted according to their momenta.
-\end_layout
-
-\begin_layout Enumerate
-The forces are recalculated by the driver code.
-\end_layout
-
-\begin_layout Enumerate
-See step 2.
-\end_layout
-
-\begin_layout Enumerate
-See step 1.
 \end_layout
 
 \begin_layout Section

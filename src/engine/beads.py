@@ -58,6 +58,7 @@ class Beads(dobject):
          same as the estimate of the kinetic energy of the system, which is
          contained in the properties module. 
       kstress: The total kinetic stress tensor for the system.
+      rg: The radius of gyration of each atom.
    """   
 
    def __init__(self, natoms, nbeads):
@@ -122,21 +123,25 @@ class Beads(dobject):
       
       dset(self,"vpath",
          depend_value(name="vpath", func=self.get_vpath, 
-            dependencies=[dget(self,"q")]) )
+            dependencies=[dget(self,"q")]))
       dset(self,"fpath",
          depend_array(name="fpath", value=np.zeros((nbeads,3*natoms), float), 
-            func=self.get_fpath, dependencies=[dget(self,"q")]) )
+            func=self.get_fpath, dependencies=[dget(self,"q")]))
       dset(self,"kins",
          depend_array(name="kins",value=np.zeros(nbeads, float), 
             func=self.kin_gather, 
-               dependencies=[dget(b,"kin") for b in self._blist] ) )
+               dependencies=[dget(b,"kin") for b in self._blist]))
       dset(self,"kin",
          depend_value(name="kin", func=self.get_kin, 
-            dependencies=[dget(self,"kins")]) )
+            dependencies=[dget(self,"kins")]))
       dset(self,"kstress",
          depend_array(name="kstress",value=np.zeros((3,3), float), 
             func=self.get_kstress, 
-               dependencies=[dget(b,"kstress") for b in self._blist] ) )
+               dependencies=[dget(b,"kstress") for b in self._blist]))
+      dset(self,"rg",
+         depend_array(name="rg", value=np.zeros(3*natoms), 
+            func=self.get_rg, 
+               dependencies=[dget(self,"q"), dget(self,"qc")]))
 
    def copy(self):
       """Creates a new beads object from the original.
@@ -291,6 +296,24 @@ class Beads(dobject):
          else:
             f[nbeads-1] += dq
       return f
+
+   def get_rg(self):
+      """Calculates the radius of gyration of the ring polymers.i
+
+      Note that, as trajectories are printed out for each degree of freedom,
+      whereas the radius of gyration is only defined per atom, we have
+      repeated the value for each atom 3 times so that it can be printed out
+      using the same functions as for properties such as the positions.
+      """
+
+      q = depstrip(self.q)
+      qc = depstrip(self.qc)
+      rg = np.zeros(3*self.natoms)
+      for i in range(self.nbeads):
+         for j in range(self.natoms):
+            dq = q[i,3*j:3*(j+1)] - qc[3*j:3*(j+1)]
+            rg[3*j:3*(j+1)] += np.dot(dq,dq)
+      return np.sqrt(rg/float(self.nbeads))
       
    def __len__(self):
       """Length function.

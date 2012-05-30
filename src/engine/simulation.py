@@ -269,7 +269,8 @@ class Simulation(dobject):
       """Writes out the required trajectories."""
       
       for what in self.trajlist:
-         # quick-and-dirty way to check whether a trajectory is "global" or per-bead
+         # quick-and-dirty way to check if a trajectory is "global" or per-bead
+         # Checks to see if there is a list of files or just a single file.
          if hasattr(self.tout[what], "__getitem__"):   
             for b in range(self.beads.nbeads):
                self.trajs.print_traj(what, self.tout[what][b], b)

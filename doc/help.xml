@@ -45,7 +45,7 @@
       </parameters>
    </force>
    <trajectories shape=''>
-      <help>A list of the properties to print out the per-atom or per-bead trajectories of. Allowed values are ['positions', 'velocities', 'forces', 'kinetic_cv', 'centroid', 'kodterms_cv']. 'kinetic_cv' gives the quantum kinetic energy estimator for each degree of freedom, whereas 'kodterms_cv' gives the off-diagonal elements of the kinetic stress tensor estimator for each degree of freedom. The others are self-explanatory.</help>
+      <help>A list of the properties to print out the per-atom or per-bead trajectories of. Allowed values are ['positions', 'velocities', 'forces', 'kinetic_cv', 'kodterms_cv', 'centroid', 'gyration']. 'kinetic_cv' gives the quantum kinetic energy estimator for each degree of freedom, whereas 'kodterms_cv' gives the off-diagonal elements of the kinetic stress tensor estimator for each degree of freedom. 'gyration' gives the radius of gyration of each atom. The others are self-explanatory.</help>
       <shape_help>The shape of the array.</shape_help>
       <default>[ ]</default>
       <shape_default>(0,)</shape_default>

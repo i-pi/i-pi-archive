@@ -489,6 +489,8 @@ class Trajectories(dobject):
          self.fatom.q = self.atomic_kod
       elif what == "centroid":
          self.fatom.q = self.simul.beads.qc
+      elif what == "gyration":
+         self.fatom.q = self.simul.beads.rg
       else:
          raise IndexError("<" + what + "> is not a recognized trajectory output")
       
