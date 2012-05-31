@@ -228,10 +228,11 @@ class Simulation(dobject):
       self.soft_exit(rollback=False)
             
    def init(self):
-      """Deals with the file initialization.
+      """Deals with initialization.
 
-      Opens the different output files. Also initialises the cell and
-      atom velocities if required, and then removes the list of quantities to
+      Opens the different output files. Also initialises the 
+      atom velocities, and the higher frequency normal modes if required.
+      It then removes the list of quantities to
       be initialized, so that if the simulation is restarted these quantities
       are not re-initialized.
       """
@@ -252,6 +253,18 @@ class Simulation(dobject):
             self.tout[what] = open(self.prefix + "." + what[0:3] + "." + self.trajs.format, "a")
 
       self.ichk = 0      
+
+      if "normal_modes" in self.initlist:
+         init_temp = float(self.initlist["normal_modes"])*self.beads.nbeads
+         for b in range(1,self.beads.nbeads):
+            if (self.beads.qnm[b] == 0.0).all:
+               if init_temp == 0: 
+                  self.beads.qnm[b] = math.sqrt(self.ensemble.ntemp*Constants.kb)/(self.ensemble.omegak[b]*self.beads.sm3[b])*np.prng.gvec(3*self.beads.natoms)
+                  self.beads.pnm[b] = math.sqrt(self.ensemble.ntemp*Constants.kb)*self.beads.sm3[b]*self.prng.gvec(3*self.beads.natoms)
+               else:
+                  self.beads.qnm[b] = math.sqrt(init_temp*Constants.kb)/(self.ensemble.omegak[b]*self.beads.sm3[b])*self.prng.gvec(3*self.beads.natoms)
+                  self.beads.pnm[b] = math.sqrt(init_temp*Constants.kb)*self.beads.sm3[b]*self.prng.gvec(3*self.beads.natoms)
+
       if "velocities" in self.initlist:
          init_temp = float(self.initlist["velocities"])*self.beads.nbeads
          if init_temp == 0:

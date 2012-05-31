@@ -8,3 +8,4 @@ bin/*
 *.out
 *.o
 *.tex
+*.pdf

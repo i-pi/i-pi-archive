@@ -6,6 +6,7 @@ Classes:
 """
 
 import numpy as np
+import math
 from engine.beads import *
 from engine.atoms import Atoms
 from utils.inputvalue import *
@@ -118,30 +119,69 @@ class InputBeads(Input):
       """
 
       super(InputBeads,self).check()
-      if not (self.start_centroid._explicit or self.q._explicit):
-         raise ValueError("Must provide explicit positions or give start_config.")
+      if not (self.start_centroid._explicit or self.q._explicit): #or self.start_beads._explicit):
+         raise ValueError("You must provide a way of generating the starting configuration.")
+      #if self.start_beads._explicit:
+      #   beads = self.start_beads.fetch()
+      #   self.natoms.store(beads.natoms)
+      #   dbeads = Beads(beads.natoms, self.nbeads.fetch())
+      #   for b in range(beads.nbeads):
+      #      dbeads.qnm[b] = depstrip(beads.qnm[b])*math.sqrt(dbeads.nbeads/float(beads.nbeads))
+      #      dbeads.pnm[b] = depstrip(beads.pnm[b])*math.sqrt(dbeads.nbeads/float(beads.nbeads))
+      #   dbeads.qnm[beads.nbeads:,:] = 0.0
+      #   dbeads.pnm[beads.nbeads:,:] = 0.0
+
+      #   # We can overwrite any of the properties in start_beads
+      #   # by specifying them in beads.
+      #   if not self.q._explicit:
+      #      self.q.store(depstrip(dbeads.q))
+      #   if not self.p._explicit:
+      #      self.p.store(depstrip(dbeads.p))
+      #   if not self.m._explicit:
+      #      self.m.store(depstrip(beads.m))
+      #   if not self.names._explicit:
+      #      self.names.store(depstrip(beads.names))
+
       if self.start_centroid._explicit:
          # reads the start_config atom tag and created dummy tags for the full bead object
+         #atoms = self.start_centroid.fetch()
+         #self.natoms.store(atoms.natoms)
+         #q = np.zeros((self.nbeads.fetch(),self.natoms.fetch()*3))
+         #p = np.zeros((self.nbeads.fetch(),self.natoms.fetch()*3))
+         #m = atoms.m
+         #names = atoms.names
+         #for b in range(self.nbeads.fetch()):
+         #   q[b] = atoms.q[:]
+         #   p[b] = atoms.p[:]
+
+         ## We can overwrite any of the properties in start_centroid
+         ## by specifying them in beads.
+         #if not self.q._explicit:
+         #   self.q.store(q)
+         #if not self.p._explicit:
+         #   self.p.store(p)
+         #if not self.m._explicit:
+         #   self.m.store(m)
+         #if not self.names._explicit:
+         #   self.names.store(names)
          atoms = self.start_centroid.fetch()
          self.natoms.store(atoms.natoms)
-         q = np.zeros((self.nbeads.fetch(),self.natoms.fetch()*3))
-         p = np.zeros((self.nbeads.fetch(),self.natoms.fetch()*3))
-         m = atoms.m
-         names = atoms.names
-         for b in range(self.nbeads.fetch()):
-            q[b] = atoms.q[:]
-            p[b] = atoms.p[:]
+         dbeads = Beads(atoms.natoms, self.nbeads.fetch())
+         dbeads.qnm[0,:] = depstrip(atoms.q)*math.sqrt(dbeads.nbeads)
+         dbeads.pnm[0,:] = depstrip(atoms.p)*math.sqrt(dbeads.nbeads)
+         dbeads.qnm[1:,:] = 0.0
+         dbeads.pnm[1:,:] = 0.0
 
          # We can overwrite any of the properties in start_centroid
          # by specifying them in beads.
          if not self.q._explicit:
-            self.q.store(q)
+            self.q.store(depstrip(dbeads.q))
          if not self.p._explicit:
-            self.p.store(p)
+            self.p.store(depstrip(dbeads.p))
          if not self.m._explicit:
-            self.m.store(m)
+            self.m.store(depstrip(atoms.m))
          if not self.names._explicit:
-            self.names.store(names)
+            self.names.store(depstrip(atoms.names))
 
       if not (self.nbeads.fetch(),3*self.natoms.fetch()) == self.q.fetch().shape:
          raise ValueError("q array is the wrong shape in beads object.")

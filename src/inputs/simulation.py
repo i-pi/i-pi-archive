@@ -91,7 +91,7 @@ class InputSimulation(Input):
                                             "help"     : "A list of the properties that will be printed in the properties output file. See the appropriate chapter in the manual for a full list of acceptable names."}),
              "initialize":  ( InputValue, { "dtype"    : dict,
                                             "default"  : {},
-                                            "help"     : "A dictionary giving the properties of the system that need to be initialized, and their initial values. The allowed keywords are ['velocities']. The initial value of 'velocities' corresponds to the temperature to initialise the velocity distribution from. If 0, then the sysytem temperature is used." }), 
+                                            "help"     : "A dictionary giving the properties of the system that need to be initialized, and their initial values. The allowed keywords are ['velocities', 'normal_modes']. The initial value of 'velocities' corresponds to the temperature to initialise the velocity distribution from. If 0, then the system temperature is used. The initial value of 'normal_modes' corresponds to the temperature from which to initialize the higher normal mode frequencies from, if we start a simulation from a configuration with a smaller number of beads. If 0, then the system temperature is used." }), 
              "fd_delta":    ( InputValue, { "dtype"    : float,
                                             "default"  : 0.0,
                                             "help"     : "The parameter used in the finite difference differentiation in the calculation of the scaled path velocity estimator. Defaults to 1e-5." }), 
@@ -207,10 +207,10 @@ class InputSimulation(Input):
       
       super(InputSimulation,self).check()
 
-      if self.beads._explicit :  
+      if self.beads._explicit:  
          # nothing to be done here! user/restart provides a beads object
          pass
-      elif self.atoms._explicit : 
+      elif self.atoms._explicit: 
          # user is providing atoms: assume a classical simulation
          atoms = self.atoms.fetch()
          nbeads = 1
@@ -226,7 +226,7 @@ class InputSimulation(Input):
          raise ValueError("Current step greater than total steps, no dynamics will be done.")
 
       for init in self.initialize.fetch():
-         if not init in ["velocities"]:
+         if not init in ["velocities", "normal_modes"]:
             raise ValueError("Initialization parameter " + init + " is not a valid keyword for initialize.")
       for stride in self.stride.fetch():
          if not stride in ["checkpoint", "properties", "progress", "trajectory", "centroid"]:

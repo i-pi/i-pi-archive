@@ -40,7 +40,11 @@ def help(latex=False, xml=False, levels = None, option='simulation', prefix="hel
    Will write an xml file 'prefix.xml' if xml=True and a latex file 'prefix.tex'
    if latex=True. Will write out tags to a depth equal to the value of levels, 
    if it is specified, and will print using a root tag as specified by 
-   the value of option.
+   the value of option. The output will be given by prefix.tex and/or 
+   prefix.xml, if latex and/or xml is True respectively. Can also print out 
+   sections of latex documents with cross-references rather than entire 
+   documents, so that we can input them into other latex documents, such as
+   the manual.
 
    Args:
       latex: Boolean specifying whether a latex file will be printed.

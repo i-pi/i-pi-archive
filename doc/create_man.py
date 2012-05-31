@@ -1,4 +1,7 @@
-"""Help script which automatically generates the manual files."""
+"""Help script which automatically generates the manual files.
+
+Also creates an xml file with the full list of all the tags.
+"""
 
 from help import help
 
