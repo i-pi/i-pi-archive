@@ -28,10 +28,14 @@ class InputStartBeads(Input):
    Attributes:
       nbeads: An optional integer giving the number of beads. Defaults to 0.
       natoms: An optional integer giving the number of atoms. Defaults to 0.
-      q: An array giving the bead positions.
-      p: An array giving the bead momenta.
-      m: An array giving the bead masses.
-      names: An array giving the bead names.
+      q: An optional array giving the bead positions. Defaults to an empty
+         array with no elements.
+      p: An optional array giving the bead momenta. Defaults to an empty
+         array with no elements.
+      m: An optional array giving the bead masses. Defaults to an empty array
+         with no elements.
+      names: An optional array giving the bead names. Defaults to an empty
+         array with no elements.
    """
 
    fields={ "natoms"    : (InputValue, {"dtype"     : int,
@@ -55,23 +59,18 @@ class InputStartBeads(Input):
                                         "default"   : np.zeros(0, np.dtype('|S6')),
                                         "help"      : "The names of the atoms, in the format [name1, name2, ... ]."})  }
 
-   default_help = "Bead configurations from which to restart a simulation from."
+   default_help = "Bead configurations from which to restart a simulation from. Used if the number of beads should be changed after a restart."
    default_label = "RESTART BEADS"
 
    def write(self,  name="", indent=""):
-      """Overloads Input write() function so that nothing is written if
-      no beads are present. This will happen if only the classical configuration
-      has been specified.
+      """Overloads Input write() function so that we don't restart using this         configuration again.
 
       Returns:
-         A string giving the appropriate xml tags for the checkpoint file.
+         An empty string.
       """
 
-      if self.nbeads._explicit and self.nbeads.fetch() > 0:
-         return super(InputStartBeads,self).write(name=name,indent=indent)
-      else:
-         return ""
-                       
+      return ""
+
    def store(self, beads):
       """Takes a Beads instance and stores a minimal representation of it.
 
@@ -134,7 +133,7 @@ class InputBeads(InputStartBeads):
       nbeads: An optional integer giving the number of beads. Defaults to 0.
       natoms: An optional integer giving the number of atoms. Defaults to 0.
       start_centroid: An atoms object to initialize the centroid postions from.
-      start_beads: An atoms object to initialize the normal mode 
+      start_beads: A beads object to initialize the normal mode 
          coordinates from.
       q: An optional array giving the bead positions. Defaults to an empty
          array with no elements.
@@ -171,8 +170,22 @@ class InputBeads(InputStartBeads):
                                         "default"   : np.zeros(0, np.dtype('|S6')),
                                         "help"      : "The names of the atoms, in the format [name1, name2, ... ]."})  }
 
-   default_help = "Deals with path integral simulations."
+   default_help = "Deals with the configurations of path integral simulations."
    default_label = "BEADS"
+
+   def write(self,  name="", indent=""):
+      """Overloads Input write() function so that nothing is written if
+      no beads are present. This will happen if only the classical configuration
+      has been specified.
+
+      Returns:
+         A string giving the appropriate xml tags for the checkpoint file.
+      """
+
+      if self.nbeads._explicit and self.nbeads.fetch() > 0:
+         return super(InputStartBeads,self).write(name=name,indent=indent)
+      else:
+         return ""
 
    def check(self):
       """Function that deals with optional arguments.
@@ -181,7 +194,6 @@ class InputBeads(InputStartBeads):
       configurations, and which values to initialize from an explicit array. 
       """
 
-      Input.check(self)
       if not (self.start_centroid._explicit or self.q._explicit or self.start_beads._explicit):
          raise ValueError("You must provide a way of generating the starting configuration.")
       if self.start_beads._explicit:
@@ -205,7 +217,7 @@ class InputBeads(InputStartBeads):
          if not self.names._explicit:
             self.names.store(depstrip(beads.names))
 
-      if self.start_centroid._explicit:
+      elif self.start_centroid._explicit:
          atoms = self.start_centroid.fetch()
          self.natoms.store(atoms.natoms)
          dbeads = Beads(atoms.natoms, self.nbeads.fetch())
@@ -225,16 +237,4 @@ class InputBeads(InputStartBeads):
          if not self.names._explicit:
             self.names.store(depstrip(atoms.names))
 
-      if not (self.nbeads.fetch(),3*self.natoms.fetch()) == self.q.fetch().shape:
-         raise ValueError("q array is the wrong shape in beads object.")
-      if not (self.nbeads.fetch(),3*self.natoms.fetch()) == self.p.fetch().shape:
-         raise ValueError("p array is the wrong shape in beads object.")
-      if not (self.natoms.fetch(),) == self.m.fetch().shape:
-         raise ValueError("m array is the wrong shape in beads object.")
-      if not (self.natoms.fetch(),) == self.names.fetch().shape:
-         raise ValueError("names array is the wrong shape in beads object.")
-
-      for mass in self.m.fetch():
-         if mass <= 0:
-            raise ValueError("Unphysical atom mass")
-
+      super(InputBeads,self).check()
