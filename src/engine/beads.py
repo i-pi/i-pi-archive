@@ -58,7 +58,7 @@ class Beads(dobject):
          same as the estimate of the kinetic energy of the system, which is
          contained in the properties module. 
       kstress: The total kinetic stress tensor for the system.
-      rg: The radius of gyration of each atom.
+      rg: An array giving the radius of gyration of each atom.
    """   
 
    def __init__(self, natoms, nbeads):
@@ -298,7 +298,7 @@ class Beads(dobject):
       return f
 
    def get_rg(self):
-      """Calculates the radius of gyration of the ring polymers.i
+      """Calculates the radius of gyration of the ring polymers.
 
       Note that, as trajectories are printed out for each degree of freedom,
       whereas the radius of gyration is only defined per atom, we have

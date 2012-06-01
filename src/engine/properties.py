@@ -76,20 +76,21 @@ class Properties(dobject):
       'volume': Simulation box volume,
       'h': Cell vector matrix. Requires arguments x and v to give h[x,v],
       'potential': Potential energy estimator,
+      'spring': The spring potential energy estimator,
       'kinetic_md': Classical kinetic energy estimator,
       'kinetic_cv': Quantum centroid virial kinetic energy estimator,
       'stress_md': The classical stress tensor estimator. Requires arguments
          x and v, to give stress[x,v],
-      'pressure_md': Classical pressure estimator,
-      'kstress_md': Classical kinetic stress tensor estimator. Requires
-         arguments x and v, to give kstress[x,v],
-      'virial_md': Classical virial tensor estimator. Requires arguments x and
-         v, to give vir[x,v],
       'stress_cv': The quantum centroid virial estimator of 
          the stress tensor. Requires arguments x and v, to give stress[x,v],
+      'pressure_md': Classical pressure estimator,
       'pressure_cv': Quantum centroid virial pressure estimator,
+      'kstress_md': Classical kinetic stress tensor estimator. Requires
+         arguments x and v, to give kstress[x,v],
       'kstress_cv': Quantum centroid virial kinetic stress tensor estimator.
          Requires arguments x and v, to give kstress[x,v],
+      'virial_md': Classical virial tensor estimator. Requires arguments x and
+         v, to give vir[x,v],
       'virial_cv': Quantum centroid virial virial tensor estimator. Requires
          arguments x and v, to give vir[x,v],
       'gle_ke': Kinetic energy for the additional momenta for the normal
@@ -115,10 +116,10 @@ class Properties(dobject):
       self.property_dict["conserved"] = self.get_econs
       self.property_dict["temperature"] = self.get_temp
       self.property_dict["volume"] = lambda: self.cell.V
-      
       self.property_dict["h"] = self.wrap_cell
       
       self.property_dict["potential"] = lambda: self.forces.pot/self.beads.nbeads
+      self.property_dict["spring"] = lambda: self.beads.vpath*self.ensemble.omegan2
       self.property_dict["kinetic_md"] = lambda: self.beads.kin/self.beads.nbeads
       self.property_dict["kinetic_cv"] = self.get_kincv
 
