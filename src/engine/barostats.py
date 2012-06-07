@@ -69,17 +69,8 @@ class Barostat(dobject):
          thermostat: Optional thermostat object. Defaults to Thermostat().
       """
      
-      sync_ext=synchronizer()
-      dset(self,"sext",
-         depend_array(name='sext', value=np.zeros((3,3)), synchro=sync_ext, 
-            func={"pext" : self.p2s}))
-      dset(self,"pext",
-         depend_value(name='pext', value=0.0, synchro=sync_ext, 
-            func={"sext" : self.s2p}))            
-      if sext is None:
-         self.pext = pext
-      else:
-         self.sext = sext
+      dset(self,"pext",depend_value(name="pext", value=pext))
+      dset(self,"sext",depend_value(name="sext", value=pext))
       
       if thermostat is None:
          thermostat = Thermostat()
@@ -139,16 +130,6 @@ class Barostat(dobject):
       dset(self,"press",
          depend_value(name='press', func=self.get_press, 
             dependencies=[ dget(self,"stress") ]))
-                
-   def s2p(self):
-      """Converts the external stress to the external pressure."""
-
-      return np.trace(self.sext)/3.0
-
-   def p2s(self):
-      """Converts the external pressure to an isotropic external stress."""
-
-      return self.pext*np.identity(3)
       
    def pstep(self):
       """Dummy momenta propagator step."""

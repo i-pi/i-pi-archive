@@ -457,20 +457,34 @@ class NPTEnsemble(NVTEnsemble):
       else:
          self.barostat = barostat
 
+      sync_ext=synchronizer()
+      dset(self,"sext",
+         depend_array(name='sext', value=np.zeros((3,3)), synchro=sync_ext, 
+            func={"pext" : self.p2s}))
+      dset(self,"pext",
+         depend_value(name='pext', value=0.0, synchro=sync_ext, 
+            func={"sext" : self.s2p}))            
       if pext is not None:
          dset(self,"pext",depend_value(name="pext", value=pext))
          deppipe(self, "pext", self.barostat, "pext")
-         #TODO This needs to be replaced, as self.barostat.pext has a 
-         # synchro object, and as such this does not work
-         # We should probably make ensemble.pext and ensemble.sext the
-         # synchro objects, and then use deppipe to define the barostat
-         # equivalents
+         deppipe(self, "sext", self.barostat, "sext")
       elif sext is not None:
          dset(self,"sext",depend_value(name="sext", value=pext))
          deppipe(self, "sext", self.barostat, "sext")
+         deppipe(self, "pext", self.barostat, "pext")
       else:
          raise TypeError("You must provide either the pressure or stress")
-         
+
+   def s2p(self):
+      """Converts the external stress to the external pressure."""
+
+      return np.trace(self.sext)/3.0
+
+   def p2s(self):
+      """Converts the external pressure to an isotropic external stress."""
+
+      return self.pext*np.identity(3)
+ 
    def bind(self, beads, cell, bforce, prng):
       """Binds beads, cell, bforce and prng to the ensemble.
 
@@ -590,11 +604,20 @@ class NSTEnsemble(NVTEnsemble):
       else:
          self.barostat = barostat
             
+      sync_ext=synchronizer()
+      dset(self,"sext",
+         depend_array(name='sext', value=np.zeros((3,3)), synchro=sync_ext, 
+            func={"pext" : self.p2s}))
+      dset(self,"pext",
+         depend_value(name='pext', value=0.0, synchro=sync_ext, 
+            func={"sext" : self.s2p}))            
       if sext is not None:
-         dset(self,"sext",depend_value(name="sext", value=pext) )
+         dset(self,"pext",depend_value(name="pext", value=pext))
+         deppipe(self, "pext", self.barostat, "pext")
          deppipe(self, "sext", self.barostat, "sext")
       elif pext is not None:
-         dset(self,"pext",depend_value(name="pext", value=pext) )
+         dset(self,"sext",depend_value(name="sext", value=pext))
+         deppipe(self, "sext", self.barostat, "sext")
          deppipe(self, "pext", self.barostat, "pext")
          print "Only external pressure given, assuming that the stress is isotropic"
       else:
