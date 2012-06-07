@@ -3112,6 +3112,10 @@ temperature: The system temperature.
 \end_layout
 
 \begin_layout Description
+density: The system density.
+\end_layout
+
+\begin_layout Description
 volume: The volume of the system box.
 \end_layout
 

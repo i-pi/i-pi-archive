@@ -9,6 +9,7 @@ __all__ = ['InputMulti']
 
 import numpy as np
 from engine.forces import *
+from inputs.forces import *
 from utils.inputvalue import *
 
 class InputMulti(Input):
@@ -56,7 +57,7 @@ class InputMulti(Input):
          interface given the attributes of the InputMulti object.
       """
 
-      super(InputForce,self).fetch()
+      super(InputMulti,self).fetch()
       forcelist = [self.main_force.fetch(), self.force2.fetch(), 
                   self.force3.fetch()]
       force = MultiForce(nreduced=self.reduced_beads.fetch(), forces=forcelist)

@@ -73,6 +73,7 @@ class Properties(dobject):
       'step': The current time step,
       'conserved': Conserved quantity,
       'temperature': Classical kinetic temperature estimator,
+      'density': Density of the system,
       'volume': Simulation box volume,
       'h': Cell vector matrix. Requires arguments x and v to give h[x,v],
       'potential': Potential energy estimator,
@@ -115,6 +116,7 @@ class Properties(dobject):
       self.property_dict["time"] = lambda: (1 + self.simul.step)*self.ensemble.dt
       self.property_dict["conserved"] = self.get_econs
       self.property_dict["temperature"] = self.get_temp
+      self.property_dict["density"] = lambda: self.beads.m.sum()/self.cell.V
       self.property_dict["volume"] = lambda: self.cell.V
       self.property_dict["h"] = self.wrap_cell
       
