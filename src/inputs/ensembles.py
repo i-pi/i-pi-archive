@@ -169,6 +169,5 @@ class InputEnsemble(Input):
             raise ValueError("Non-positive temperature specified.")
 
       if self.type.fetch() == "nst" or self.type.fetch() == "npt":
-         if not self.pressure._explicit or self.stress._explicit:
+         if not (self.pressure._explicit or self.stress._explicit):
             raise ValueError("Neither pressure or stress supplied for constant pressure simulation")
-         #TODO Initialise pressure from stress if only stress is supplied, and vice-versa

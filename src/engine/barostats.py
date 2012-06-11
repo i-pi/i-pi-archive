@@ -241,7 +241,7 @@ class BaroFlexi(Barostat):
 
       m = depstrip(self.beads.m)
 
-      fc = depstrip(self.forces.fnm)/math.sqrt(self.beads.nbeads)
+      fc = depstrip(self.forces.fnm[0])/math.sqrt(self.beads.nbeads)
       fx = fc[0:3*self.beads.natoms:3]
       fy = fc[1:3*self.beads.natoms:3]
       fz = fc[2:3*self.beads.natoms:3]
@@ -250,9 +250,9 @@ class BaroFlexi(Barostat):
       fzm = fz/m
 
       pc = depstrip(self.beads.pc)
-      px = pc[0:3*self.atoms.natoms:3]
-      py = pc[1:3*self.atoms.natoms:3]
-      pz = pc[2:3*self.atoms.natoms:3]
+      px = pc[0:3*self.beads.natoms:3]
+      py = pc[1:3*self.beads.natoms:3]
+      pz = pc[2:3*self.beads.natoms:3]
       
       cp = np.zeros((3,3),float)
       cp[0,0] = dthalf2*2.0*np.dot(fxm,px) + dthalf3*np.dot(fx,fxm)
@@ -282,9 +282,14 @@ class BaroFlexi(Barostat):
       sinh_mat = 0.5*(exp_mat - neg_exp_mat)
       ips_mat = np.dot( sinh_mat, invert_ut3x3(vel_mat) )
 
-      pc = depstrip(self.beads.pc).reshape((self.beads.natoms,3)) 
-      qc = depstrip(self.beads.qc).reshape((self.beads.natoms,3))
-      m = depstrip(self.beads.m).reshape((self.beads.natoms,3))       
+      nat = self.beads.natoms
+
+      pc = depstrip(self.beads.pc).reshape((nat,3)) 
+      qc = depstrip(self.beads.qc).reshape((nat,3))
+      m = depstrip(self.beads.m)
+      m3 = np.zeros((nat,3))
+      for i in range(3):
+         m3[:,i] = m
 
       qc = np.dot(qc,exp_mat.T)+np.dot(pc/m3,ips_mat.T)
       pc = np.dot(pc,neg_exp_mat.T)

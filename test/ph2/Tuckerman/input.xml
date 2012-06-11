@@ -1,6 +1,6 @@
 <simulation>
-   <initialize>  { velocities : 50}  </initialize>
-   <properties>  [ time, conserved, temperature, kinetic_cv, potential, pressure_cv, kstress_cv(0;0), virial_cv(0;0)] </properties>
+   <initialize>  { velocities : 50, normal_modes : 25}  </initialize>
+   <properties>  [ time, conserved, temperature, kinetic_cv, potential, pressure_cv, kstress_cv(0;0), virial_cv(0;0), volume] </properties>
    <trajectories>[positions]</trajectories>
    <stride> { properties : 5, trajectory: 100,  checkpoint:2000 } </stride>
    <prefix> test </prefix>
@@ -23,15 +23,20 @@
          0.0, 44.660,  5.71316101504e-15, 
          0.0, 0.0, 44.660 ]
       </h>
-      <m>25000.7229</m>
+      <m>3000000</m>
    </cell>
-   <ensemble type='nvt'>
+   <ensemble type='npt'>
+      <barostat kind='rigid'>
+         <thermostat kind='langevin'>
+            <tau>1e5</tau>
+         </thermostat>
+      </barostat>
       <thermostat kind='pile_l'>
          <tau>1e5</tau>
          <ethermo>0.0</ethermo>
       </thermostat>
-      <timestep>206.70687</timestep>
-      <pressure>1.0</pressure>
+      <timestep>60</timestep>
+      <pressure>0</pressure>
       <fixcom>False</fixcom>
       <temperature>25</temperature>
    </ensemble>

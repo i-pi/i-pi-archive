@@ -612,16 +612,26 @@ class NSTEnsemble(NVTEnsemble):
          depend_value(name='pext', value=0.0, synchro=sync_ext, 
             func={"sext" : self.s2p}))            
       if sext is not None:
+         dset(self,"sext",depend_value(name="sext", value=sext))
+         deppipe(self, "sext", self.barostat, "sext")
+         deppipe(self, "pext", self.barostat, "pext")
+      elif pext is not None:
          dset(self,"pext",depend_value(name="pext", value=pext))
          deppipe(self, "pext", self.barostat, "pext")
          deppipe(self, "sext", self.barostat, "sext")
-      elif pext is not None:
-         dset(self,"sext",depend_value(name="sext", value=pext))
-         deppipe(self, "sext", self.barostat, "sext")
-         deppipe(self, "pext", self.barostat, "pext")
          print "Only external pressure given, assuming that the stress is isotropic"
       else:
          raise TypeError("You must provide either the pressure or stress")
+
+   def s2p(self):
+      """Converts the external stress to the external pressure."""
+
+      return np.trace(self.sext)/3.0
+
+   def p2s(self):
+      """Converts the external pressure to an isotropic external stress."""
+
+      return self.pext*np.identity(3)
          
    def bind(self, beads, cell, bforce, prng):
       """Binds beads, cell, bforce and prng to the ensemble.
@@ -644,11 +654,11 @@ class NSTEnsemble(NVTEnsemble):
       """
 
       super(NSTEnsemble,self).bind(beads, cell, bforce, prng)
-      self.barostat.bind(beads, cell, force)
+      self.barostat.bind(beads, cell, bforce)
 
-      depcopy(self,"temp", self.barostat,"temp")
-      depcopy(self,"temp", self.barostat.thermostat,"temp")
-      depcopy(self, "dt", self.barostat, "dt")
+      deppipe(self,"ntemp", self.barostat,"temp")
+      deppipe(self,"ntemp", self.barostat.thermostat,"temp")
+      deppipe(self, "dt", self.barostat, "dt")
             
       dget(self,"econs").add_dependency(dget(self.barostat.thermostat, "ethermo"))
       dget(self,"econs").add_dependency(dget(self.barostat, "pot"))
