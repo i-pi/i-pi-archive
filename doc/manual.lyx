@@ -4176,7 +4176,7 @@ depend
 \end_layout
 
 \begin_layout Description
-deppipe: Creates a new 
+deppipe: Gives one 
 \begin_inset Quotes eld
 \end_inset
 
@@ -4184,7 +4184,8 @@ depend
 \begin_inset Quotes erd
 \end_inset
 
- object so that it keeps the same value as one that has already been created.
+ object the same value as another, and adds a dependency such that this
+ remains the case.
 \end_layout
 
 \begin_layout Subsection
