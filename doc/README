@@ -12,3 +12,12 @@
    - *.tex: Automatically generated latex help files for all the classes, for
       use in the manual.
    - mybib.bib: Bibliography file for the manual.
+   - Makefile: The makefile for the automatically generated manual. To make the
+      manual, use:
+
+$ make
+
+      To remove all the created files again, use:
+
+$ make clean
+

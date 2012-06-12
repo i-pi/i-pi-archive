@@ -8,7 +8,7 @@
           State point: (N, V, T) = (108, 31.7 cm**3 mol**(-1), 25 K)
    - Tuckerman: Glenn J. Martyna, Adam Hughes and Mark E. Tuckerman, J. Chem.
                 Phys. 110, 3275, (1999)
-                State point: (N, V, T) = (256, 89075 bohrradius**3, 25 K)
+                State point: (N, P, T) = (256, 0 MPa, 25 K)
 
  * First, compile the driver code in forces/. Should be as simple as make.
    Note you may need first to compile sockets.c in src/driver before you link

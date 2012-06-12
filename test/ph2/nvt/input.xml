@@ -1,6 +1,6 @@
 <simulation>
-   <initialize shape="(1)">  { velocities : 50 }  </initialize>
-   <properties shape='(5)'>  [ time, conserved, temperature, kinetic_cv, potential ] </properties>   
+   <initialize>  { velocities : 50 }  </initialize>
+   <properties shape='(5)'>  [ time, conserved, temperature, kinetic_cv, potential ] </properties>
    <stride> { properties : 5, trajectory: 100,  checkpoint:2000 } </stride>
    <prefix> test </prefix>
    <traj_format> xyz </traj_format>
@@ -28,7 +28,6 @@
          <ethermo>0.0</ethermo>
       </thermostat>
       <timestep>50.0</timestep>
-      <pressure>1.0</pressure>
       <fixcom>False</fixcom>
       <temperature>25</temperature>
    </ensemble>

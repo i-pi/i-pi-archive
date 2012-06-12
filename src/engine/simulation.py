@@ -272,6 +272,15 @@ class Simulation(dobject):
          else:
             self.beads.p = math.sqrt(init_temp*Constants.kb)*self.beads.sm3*self.prng.gvec((self.beads.nbeads, 3*self.beads.natoms))
 
+      if "cell_velocities" in self.initlist:
+         init_temp = float(self.initlist["cell_velocities"])*self.beads.nbeads
+         if init_temp == 0:
+            init_temp = math.sqrt(self.ensemble.ntemp)
+         if hasattr(self.cell,"p6"):
+            self.cell.p6 = math.sqrt(init_temp*Constants.kb*self.cell.m)*self.prng.gvec(6)
+         else:
+            self.cell.P = math.sqrt(init_temp*Constants.kb*self.cell.m)*self.prng.gvec(1)
+
       if self.ensemble.fixcom:
          self.ensemble.rmcom()
       

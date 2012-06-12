@@ -1,6 +1,6 @@
 <simulation>
    <initialize>  { velocities : 120}  </initialize>
-   <properties>  [ time, conserved, temperature, kinetic_cv, potential, pressure_cv, kstress_cv(0;0), virial_cv(0;0)] </properties>
+   <properties>  [ time, conserved, temperature, kinetic_cv, potential, pressure_cv] </properties>
    <trajectories>[positions]</trajectories>
    <stride> { properties : 5, trajectory: 100,  checkpoint:2000 } </stride>
    <prefix> test </prefix>
@@ -31,7 +31,6 @@
          <ethermo>0.0</ethermo>
       </thermostat>
       <timestep>206.70687</timestep>
-      <pressure>1.0</pressure>
       <fixcom>False</fixcom>
       <temperature>59.6646</temperature>
    </ensemble>

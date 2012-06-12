@@ -1,5 +1,5 @@
 <simulation>
-   <initialize shape="(1)">  { velocities : 150}  </initialize>
+   <initialize>  { velocities : 150}  </initialize>
    <properties>  [ time, conserved, temperature, kinetic_cv, potential ] </properties>   
    <stride> { properties : 1, trajectory: 1,  checkpoint:10 } </stride>
    <prefix> pw_li </prefix>
@@ -7,7 +7,7 @@
    <prng><seed>31415</seed></prng>
    <force type='socket'>
       <interface mode="inet">
-         <address>localhost</address>   <port>31415</port>    <slots>4</slots>   <latency> 0.01</latency>
+         <address>wrap-pi</address>   <port>31415</port>    <slots>4</slots>   <latency> 0.01</latency>
       </interface>
    </force>
    <beads>
@@ -30,7 +30,6 @@
          <ethermo>0.0</ethermo>
       </thermostat>
       <timestep>50</timestep>
-      <pressure>1.0</pressure>
       <fixcom>True</fixcom>
       <temperature>150</temperature>
    </ensemble>

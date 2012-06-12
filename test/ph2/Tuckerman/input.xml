@@ -1,6 +1,6 @@
 <simulation>
    <initialize>  { velocities : 50, normal_modes : 25}  </initialize>
-   <properties>  [ time, conserved, temperature, kinetic_cv, potential, pressure_cv, kstress_cv(0;0), virial_cv(0;0), volume] </properties>
+   <properties>  [ time, conserved, temperature, kinetic_cv, potential, pressure_cv, volume] </properties>
    <trajectories>[positions]</trajectories>
    <stride> { properties : 5, trajectory: 100,  checkpoint:2000 } </stride>
    <prefix> test </prefix>
@@ -8,7 +8,7 @@
    <prng><seed>33428</seed></prng>
    <force type='socket'>
       <interface mode="unix">
-         <address>localhost</address>   <port>31415</port>    <slots>4</slots> <latency>0.001</latency>
+         <address>wrap-pi</address>   <port>31415</port>    <slots>4</slots> <latency>0.001</latency>
       </interface>
    </force>
    <beads>
