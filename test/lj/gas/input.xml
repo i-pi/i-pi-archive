@@ -1,6 +1,6 @@
 <simulation>
    <initialize>  { velocities : 120}  </initialize>
-   <properties>  [ time, conserved, temperature, kinetic_cv, potential, pressure_cv] </properties>
+   <properties>  [ time, conserved, temperature, kinetic_cv, potential, pressure_cv, volume] </properties>
    <trajectories>[positions]</trajectories>
    <stride> { properties : 5, trajectory: 100,  checkpoint:2000 } </stride>
    <prefix> test </prefix>

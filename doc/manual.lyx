@@ -2044,7 +2044,7 @@ All the input files are contained in the directory test, which is subdivided
 
 \begin_layout Description
 lj: This gives a simple classical Lennard-Jones simulation of Ne.
- The state point is given by (N, 
+ The state points are given by (N, 
 \begin_inset ERT
 status open
 
@@ -2061,7 +2061,24 @@ rho
 
 \end_inset
 
-, T) = (864, 0.35, 1.62) in reduced Lennard-Jones units, so that the results
+, T) = (864, 0.35, 1.62) and (N, 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+(
+\backslash
+rho
+\backslash
+)
+\end_layout
+
+\end_inset
+
+, T) = (864, 0.75, 1.069) in reduced Lennard-Jones units, so that the results
  can be compared to those in the paper 
 \begin_inset ERT
 status open

@@ -3,15 +3,17 @@
  * This gives an example of Neon with a Lennard-Jones potential 
    pair potential, as tested against the following paper:
 
-   - pi_1: Loup Verlet, Phys. Rev. 159, 1, (1967)
+   - gas: Loup Verlet, Phys. Rev. 159, 1, (1967)
            State point (N, rho, T) = (864, 0.35, 1.620)
+   - liquid: Loup Verlet, Phys. Rev. 159, 1, (1967)
+           State point (N, rho, T) = (864, 0.75, 1.069)
 
  * First, compile the driver code in forces/. Should be as simple as make.
    Note you may need first to compile sockets.c in src/driver before you link
 
  * Go back to the example directory and run
 
-$ python ../../main.py input.xml
+$ python ../../../main.py input.xml
  
    the wrapper will start and sit waiting on the UDS /tmp/wrappi.
  
