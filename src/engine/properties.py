@@ -456,7 +456,7 @@ class Trajectories(dobject):
       """
 
       rv = np.zeros((self.simul.beads.natoms,3))
-      # helper arrays to make it more transparent what we are computing
+      # helper arrays to make it more obvious what we are computing
       dq = np.zeros((self.simul.beads.natoms,3))
       f = np.zeros((self.simul.beads.natoms,3))
       for b in range(self.simul.beads.nbeads):
