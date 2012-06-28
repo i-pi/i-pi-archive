@@ -102,7 +102,7 @@ class InputSimulation(Input):
                                             
              "trajectories": ( InputArray, { "dtype"   : str,
                                              "default" : np.zeros(0, np.dtype('|S12')),
-                                             "help"    : "A list of the properties to print out the per-atom or per-bead trajectories of. Allowed values are ['positions', 'velocities', 'forces', 'kinetic_cv', 'kodterms_cv', 'centroid', 'gyration']. 'kinetic_cv' gives the quantum kinetic energy estimator for each degree of freedom, whereas 'kodterms_cv' gives the off-diagonal elements of the kinetic stress tensor estimator for each degree of freedom. 'gyration' gives the radius of gyration of each atom. The others are self-explanatory."})}
+                                             "help"    : "A list of the properties to print out the per-atom or per-bead trajectories of. Allowed values are ['positions', 'velocities', 'forces', 'kinetic_cv', 'kodterms_cv', 'centroid', 'momentum_centroid', 'gyration']. 'kinetic_cv' gives the quantum kinetic energy estimator for each degree of freedom, whereas 'kodterms_cv' gives the off-diagonal elements of the kinetic stress tensor estimator for each degree of freedom. 'gyration' gives the radius of gyration of each atom. The others are self-explanatory."})}
 
    default_help = "This is the top level class that deals with the running of the simulation, including holding the simulation specific properties such as the time step and outputting the data."
    default_label = "SIMULATION"
@@ -232,7 +232,7 @@ class InputSimulation(Input):
          if not stride in ["checkpoint", "properties", "progress", "trajectory", "centroid"]:
             raise ValueError("Output file " + stride + " is not a valid keyword for stride.")
       for traj in self.trajectories.fetch():
-         if not traj in ["positions", "velocities", "forces", "kinetic_cv", "kodterms_cv", "centroid", "gyration"]:
+         if not traj in ["positions", "velocities", "forces", "kinetic_cv", "kodterms_cv", "centroid", "momentum_centroid", "gyration"]:
             raise ValueError("Output trajectory file " + traj + " is not a valid keyword for trajectories.")
 
       #TODO do something about fd_delta...
