@@ -1,6 +1,6 @@
 <simulation>
    <initialize>  { velocities : 50 }  </initialize>
-   <properties shape='(5)'>  [ time, conserved, temperature, kinetic_cv, potential ] </properties>
+   <properties>  [ time, conserved, temperature, kinetic_cv, potential ] </properties>
    <stride> { properties : 5, trajectory: 100,  checkpoint:2000 } </stride>
    <prefix> test </prefix>
    <traj_format> xyz </traj_format>
@@ -11,9 +11,12 @@
          <address>wrap-pi</address>   <port>31415</port>    <slots>4</slots> <latency>0.01</latency>
       </interface>
    </force>
-   <atoms>
-      <from_file>our_ref.pdb</from_file>
-   </atoms>
+   <beads>
+      <start_centroid>
+         <from_file>our_ref.pdb</from_file>
+      </start_centroid>
+      <nbeads>24</nbeads>
+   </beads>
    <cell flexible='False'>
       <h shape='(3, 3)'> 
        [ 33.726, 5.71316101504e-15, 5.71316101504e-15,
@@ -23,7 +26,7 @@
       <m>25000.7229</m>
    </cell>
    <ensemble type='nvt'>
-      <thermostat kind='svr'>
+      <thermostat kind='pile_l'>
          <tau>1e3</tau>
          <ethermo>0.0</ethermo>
       </thermostat>

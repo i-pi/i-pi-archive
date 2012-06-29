@@ -460,7 +460,7 @@ class Trajectories(dobject):
       """
 
       rv = np.zeros((self.simul.beads.natoms,3))
-      # helper arrays to make it more transparent what we are computing
+      # helper arrays to make it more obvious what we are computing
       dq = np.zeros((self.simul.beads.natoms,3))
       f = np.zeros((self.simul.beads.natoms,3))
       for b in range(self.simul.beads.nbeads):
@@ -511,6 +511,8 @@ class Trajectories(dobject):
          self.fatom.q = self.atomic_kod
       elif what == "centroid":
          self.fatom.q = self.simul.beads.qc
+      elif what == "momentum_centroid":
+         self.fatom.q = self.simul.beads.pc
       elif what == "gyration":
          self.fatom.q = self.simul.beads.rg
       else:
