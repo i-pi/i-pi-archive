@@ -20,6 +20,7 @@ import sys
 from engine import simulation
 from inputs.simulation import InputSimulation
 from utils.io.io_xml import *
+import pdb 
 
 def main(file_name):
    """Runs the simulation.
@@ -41,6 +42,7 @@ def main(file_name):
 #   latex_output.write(simrestart.help_latex())
 #   exit(1)
    simul = simrestart.fetch() # Creates the appropriate simulation object.
+#   pdb.set_trace()
    simul.run()
    del simul
 

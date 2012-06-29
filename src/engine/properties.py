@@ -437,6 +437,10 @@ class Trajectories(dobject):
       dset(self, "atomic_kod", depend_array(name="atomic_kod", 
          value=np.zeros(self.simul.beads.natoms*3), func=self.get_akcv_od, 
             dependencies=[dget(self.simul.forces,"f"), dget(self.simul.beads,"q"), dget(self.simul.beads,"qc"), dget(self.simul.ensemble,"temp")]))
+      dset(self, "atomic_spring", 
+         depend_array(name="atomic_spring", 
+            value=np.zeros(self.simul.beads.natoms*3), func=self.get_aspr, 
+               dependencies=[dget(self.simul.beads,"q"), dget(self.simul.beads,"m3"), dget(self.simul.ensemble,"omegan")])) 
 
    def get_akcv(self):
       """Calculates the contribution to the kinetic energy due to each degree
@@ -470,6 +474,19 @@ class Trajectories(dobject):
       # rv += 0.5*Constants.kb*self.simul.ensemble.temp
       
       return rv.reshape(self.simul.beads.natoms*3)
+
+   def get_aspr(self):
+      """Calculates the contribution to the kinetic energy due to each degree
+      of freedom.
+      """
+
+      rv = np.zeros(self.simul.beads.natoms*3)
+      for b in range(1,self.simul.beads.nbeads):
+         rv[:] += (self.simul.beads.q[b]-self.simul.beads.q[b-1])*(self.simul.beads.q[b]-self.simul.beads.q[b-1])*self.simul.beads.m3[b]
+      rv[:] += (self.simul.beads.q[0]-self.simul.beads.q[self.simul.beads.nbeads-1])*(self.simul.beads.q[0]-self.simul.beads.q[self.simul.beads.nbeads-1])*self.simul.beads.m3[0]
+         
+      rv *= 0.5*self.simul.ensemble.omegan**2
+      return rv
          
    def print_traj(self, what, stream, b=0):
       """Prints out a frame of a trajectory for the specified quantity and bead.
@@ -488,6 +505,8 @@ class Trajectories(dobject):
          self.fatom.q = self.simul.forces.f[b]
       elif what == "kinetic_cv":
          self.fatom.q = self.atomic_kincv 
+      elif what == "spring":
+         self.fatom.q = self.atomic_spring
       elif what == "kodterms_cv":
          self.fatom.q = self.atomic_kod
       elif what == "centroid":
