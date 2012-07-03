@@ -122,7 +122,6 @@
      1                 atoms(i)%pos - ref_pos(:,i))
 
                if (2.0*sqrt(dot_product(q_diff, q_diff)) >= rn-rc) then
-                  write(*,*) "updating neighbour list"
                   call nearest_neighbours(atoms, cell, 
      c                     n_list, index_list)
 

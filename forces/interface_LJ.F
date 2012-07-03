@@ -114,20 +114,20 @@
                call nearest_neighbours(atoms, cell, n_list, index_list)
                allocate(ref_pos(3,size(atoms)))
                do i = 1, nat
-                  ref_pos(:,i) = nearest_image(cell, atoms(i)%pos)
+                  ref_pos(:,i) = atoms(i)%pos
                end do
             end if
 
             do i = 1, size(atoms)
                q_diff = nearest_image(cell,
-     1                 nearest_image(cell,atoms(i)%pos) - ref_pos(:,i))
+     1                 atoms(i)%pos - ref_pos(:,i))
 
-               if (2.0*abs(dot_product(q_diff, q_diff)) >= rn-rc) then
+               if (2.0*sqrt(dot_product(q_diff, q_diff)) >= rn-rc) then
                   call nearest_neighbours(atoms, cell, 
      c                     n_list, index_list)
 
                   do j = 1, nat
-                     ref_pos(:,j) = nearest_image(cell, atoms(i)%pos)
+                     ref_pos(:,j) = atoms(j)%pos
                   end do
                   exit
                end if
