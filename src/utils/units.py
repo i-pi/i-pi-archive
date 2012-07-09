@@ -33,20 +33,64 @@ class Elements(dict):
    """
 
    mass_list={
-     "X"   :    1.0000/Constants.amu, 
-     "H"   :    1.0079,
-     "D"   :    2.0141,
-     "Z"   :  1.382943, #an interpolated H--D atom, based on y=1/sqrt(m) scaling
-     "Si"  :   28.0860,
-     "O"   :   15.9994,
-     "Cl"  :   35.453,
-     "Na"  :   22.9898,
-     "N"   :   14.0067,
-     "H2"  :    2.0160,
-     "Li"  :    6.9410,     
-     "Ar"  :   39.9480,
-     "I"   :  126.9045, 
-     "Ne"  :   20.1797
+      "X"   :    1.0000/Constants.amu, 
+      "H"   :   1.00794,
+      "D"   :    2.0141,
+      "Z"   :  1.382943, #an interpolated H-D atom, based on y=1/sqrt(m) scaling
+      "H2"  :    2.0160,
+      "He"  :  4.002602,
+      "Li"  :    6.9410,     
+      "Be"  :  9.012182,
+      "B"   :    10.811,
+      "C"   :   12.0107,
+      "N"   :  14.00674,
+      "O"   :   15.9994,
+      "F"   : 18.998403,
+      "Ne"  :   20.1797,
+      "Na"  : 22.989770,
+      "Mg"  :   24.3050,
+      "Al"  : 26.981538,
+      "Si"  :   28.0855,
+      "P"   : 30.973761,
+      "S"   :    32.066,
+      "Cl"  :   35.4527,
+      "Ar"  :   39.9480,
+      "K"   :   39.0983,
+      "Ca"  :    40.078,
+      "Sc"  : 44.955910,
+      "Ti"  :    47.867,
+      "V"   :   50.9415,
+      "Cr"  :   51.9961,
+      "Mn"  : 54.938049,
+      "Fe"  :    55.845,
+      "Co"  : 58.933200,
+      "Ni"  :   58.6934,
+      "Cu"  :    63.546,
+      "Zn"  :     65.39,
+      "Ga"  :    69.723,
+      "Ge"  :     72.61,
+      "As"  :  74.92160,
+      "Se"  :     78.96,
+      "Br"  :    79.904,
+      "Kr"  :     83.80,
+      "Rb"  :   85.4678,
+      "Sr"  :     87.62,
+      "Y"   :  88.90585,
+      "Zr"  :    91.224,
+      "Nb"  :  92.90638,
+      "Mo"  :     95.94,
+      "Tc"  :      98.0,
+      "Ru"  :    101.07,
+      "Rh"  : 102.90550,
+      "Pd"  :    106.42,
+      "Ag"  :  107.8682, 
+      "Cd"  :   112.411,
+      "In"  :   114.818,
+      "Sn"  :   118.710,
+      "Sb"  :   121.760,
+      "Te"  :    127.60,
+      "I"   : 126.90447,
+      "Xe"  :    131.29
    }   
    
    @classmethod
@@ -64,69 +108,77 @@ class Elements(dict):
          A float giving the mass of the atom with atomic symbol label.
       """
 
-      return cls.mass_list[label]*Constants.amu
+      try:
+         return cls.mass_list[label]*Constants.amu
+      except KeyError:
+         print "Unknown element given, you must specify the mass"
+         return -1.0
 
 UnitMap = { 
-   "undefined" : {
-      "" : 1.00 
+   "undefined": {
+      ""             : 1.00 
       },      
-   "energy" :   {
-      "" : 1.00,
+   "energy":   {
+      ""             : 1.00,
       "atomic_unit"  : 1.00, 
       "electronvolt" : 0.036749326,
-      "joule"        : 2.2937128e+17,
       "kj_mol"       : 0.00038087989,
       "kcal_mol"     : 0.0015946679,
       "kelvin"       : 3.1668152e-06
       },
-   "temperature" :   {
-      "" : 1.00,
+   "temperature":   {
+      ""             : 1.00,
       "atomic_unit"  : 1.00, 
       "kelvin"       : 1.00
       },
-   "time" :     {
-      "" : 1.00,
+   "time":     {
+      ""             : 1.00,
       "atomic_unit"  : 1.00,
-      "second"       : 4.1341373e+16,
       "picosecond"   : 41341.373,
       "femtosecond"  : 41.341373
       },
-   "frequency" :   {   # TODO fill up units here
-      "" : 1.00
+   "frequency" :   {   # TODO fill up units here 
+                       # also, we may or may not need some 2*pi factors here
+      ""             : 1.00,
+      "atomic_unit"  : 1.00,
+      "wavenumber"   : 8.0685297e-28,
+      "hertz"        : 2.4188843e-17
       },     
    "ms-momentum" :   {   # TODO fill up units here (mass-scaled momentum)
-      "" : 1.00
+      ""             : 1.00,
+      "atomic_unit"  : 1.00
       }, 
    "length" :     {
-      "" : 1.00,
+      ""             : 1.00,
       "atomic_unit"  : 1.00,
       "angstrom"     : 1.8897261,
-      "nanometer"    : 0.18897261
+      "nanometer"    : 18.897261
       },
    "velocity":    {
-      "" : 1.00,
-      "atomic_unit"  : 1.00
+      ""            : 1.00,
+      "atomic_unit" : 1.00,
+      "SI_unit"     : 4.5710289e-7
       },           
    "momentum":    {
-      "" : 1.00,
+      ""             : 1.00,
       "atomic_unit"  : 1.00
       },           
-   "force":       {
-      "" : 1.00,
-      "atomic_unit"  : 1.00
-      },
    "mass":        {
-      "" : 1.00,
+      ""             : 1.00,
       "atomic_unit"  : 1.00,
+      "dalton"       : 1.00,
       "electronmass" : 1.00/Constants.amu
       },
    "pressure" :     {
-      "" : 1.00,
+      ""             : 1.00,
       "atomic_unit"  : 1.00,
       "bar"          : 3.398827377e-9,
+      "kilobar"      : 3.398827377e-6,
       "atmosphere"   : 3.44386184e-9,
       "pascal"       : 3.398827377e-14,
       "kilopascal"   : 3.398827377e-11
+      "megapascal"   : 3.398827377e-8,
+      "gigapascal"   : 3.398827377e-5
       }
 }
 
