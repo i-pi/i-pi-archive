@@ -176,7 +176,7 @@ UnitMap = {
       "kilobar"      : 3.398827377e-6,
       "atmosphere"   : 3.44386184e-9,
       "pascal"       : 3.398827377e-14,
-      "kilopascal"   : 3.398827377e-11
+      "kilopascal"   : 3.398827377e-11,
       "megapascal"   : 3.398827377e-8,
       "gigapascal"   : 3.398827377e-5
       }

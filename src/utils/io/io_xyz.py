@@ -1,9 +1,8 @@
 """Contains the functions used to print the trajectories and read input
-configurations.
+configurations with xyz formatting.
 
 Functions:
-   print_xyz_path: Prints all the bead configurations, and shows the ring
-      polymer connectivity.
+   print_xyz_path: Prints all the bead configurations.
    print_xyz: Prints the centroid configurations.
    read_xyz: Reads the cell parameters and atom configurations from a xyz file.
 """
@@ -50,6 +49,7 @@ def print_xyz(atoms, cell, filedesc = sys.stdout, title=""):
       beads: An atoms object giving the centroid positions.
       cell: A cell object giving the system box.
       filedesc: An open writable file object. Defaults to standard output.
+      title: This gives a string to be appended to the comment line.
    """
 
    a, b, c, alpha, beta, gamma = mt.h2abc(cell.h)

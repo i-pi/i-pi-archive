@@ -1,5 +1,5 @@
 """Contains the functions used to print the trajectories and read input
-configurations.
+configurations with pdb formatting.
 
 Functions:
    print_pdb_path: Prints all the bead configurations, and shows the ring

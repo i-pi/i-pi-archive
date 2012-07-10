@@ -1,5 +1,5 @@
 """Contains the functions used to read the input file and print the checkpoint
-files.
+files with xml formatting.
 
 Functions:
    xml_node: Class to handle a particular xml tag.
