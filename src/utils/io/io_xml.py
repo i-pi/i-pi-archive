@@ -333,7 +333,7 @@ def read_tuple(data, delims="()", split=",", strip=" \n\t'"):
    """
 
    rlist = read_list(data, delims=delims, split=split, strip=strip)
-   return tuple([int(i) for i in rlist])
+   return tuple([float(i) for i in rlist])
 
 def read_dict(data, delims="{}", split=",", key_split=":", strip=" \n\t"):
    """Reads a formatted string and outputs a dictionary.
