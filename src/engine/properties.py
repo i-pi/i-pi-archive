@@ -14,7 +14,7 @@ import numpy as np
 import math, random
 from utils.depend import *
 from utils.units import Constants
-from utils.mathtools import h2abc
+from utils.mathtools import logsumlog, h2abc
 from utils.io import *
 from atoms import *
 from cell import *
@@ -100,6 +100,8 @@ class Properties(dobject):
       'kin_yama': Quantum scaled coordinate kinetic energy estimator,
       'linlin': The scaled Fourier transform of the momentum distribution.
          Given by n(x) in Lin Lin et al., Phys. Rev. Lett. 105, 110602.}.
+      'isotope': Tcv(m/m') and log(R(m/m')) for isotope substitution calculations
+
 
       Args:
          simul: The Simulation object to be bound.
@@ -140,6 +142,7 @@ class Properties(dobject):
       self.property_dict["kin_yama"] = self.get_kinyama
 
       self.property_dict["linlin"] = self.get_linlin
+      self.property_dict["isotope_y"] = self.get_isotope_yama
 
       # dummy beads and forcefield objects so that we can use scaled and
       # displaced path estimators without changing the simulation bead 
@@ -174,7 +177,7 @@ class Properties(dobject):
          argstr = key[argstart:argstop+1]
          key = key[0:argstart] # strips the arguments from key name
 
-         arglist = io_xml.read_tuple(argstr, delims="()", split=";")
+         arglist = io_xml.read_tuple(argstr, delims="()", split=";", arg_type=str)
          return self.property_dict[key](*arglist)
       else:
          return self.property_dict[key]()
@@ -286,15 +289,32 @@ class Properties(dobject):
 
       return self.forces.vir[x,v]/float(self.beads.nbeads)
 
-   def get_kincv(self):        
+   def get_kincv(self, atom=""):        
       """Calculates the quantum centroid virial kinetic energy estimator."""
 
-      kcv = 0.0
-      for b in range(self.beads.nbeads):
-         kcv += np.dot(depstrip(self.beads.q[b]) - depstrip(self.beads.qc), depstrip(self.forces.f[b]))
-      kcv *= -0.5/self.beads.nbeads
-      kcv += 0.5*Constants.kb*self.ensemble.temp*(3*self.beads.natoms) 
-      return kcv
+      try:
+         iatom=int(atom)
+         latom=""
+      except:
+         iatom=-1
+         latom=atom
+         
+         
+      q=depstrip(self.beads.q); qc=depstrip(self.beads.qc); f=depstrip(self.forces.f)
+
+      print "KiNETiC CV", atom, iatom, latom
+      acv=0.0
+      for i in range(self.beads.natoms):
+         if (atom!="" and iatom!=i and latom!=self.beads.names[i]): continue
+         
+         kcv = 0.0      
+         for b in range(self.beads.nbeads):
+            kcv += np.dot(q[b,3*i:3*(i+1)] - qc[3*i:3*(i+1)], f[b,3*i:3*(i+1)])
+         kcv *= -0.5/self.beads.nbeads
+         kcv += 1.5*Constants.kb*self.ensemble.temp
+         acv+=kcv
+
+      return acv
 
    def get_gleke(self, mode=0):
       """Calculates the kinetic energy of the nm-gle additional momenta.
@@ -382,7 +402,7 @@ class Properties(dobject):
             self.dbeads.q[:] = self.beads.q[:]
             for bead in range(self.beads.nbeads):
                self.dbeads.q[bead,3*at:3*(at+1)] += self.opening(bead)*u
-            n += math.exp(-(self.dforces.pot - self.forces.pot)/(self.ensemble.ntemp*Constants.kb))
+            n += math.exp(-(self.dforces.pot - self.forces.pot)/(self.ensemble.ntemp*Constants.kb*self.beads.nbeads))
 
 
       if count == 0:
@@ -396,6 +416,64 @@ class Properties(dobject):
       """Returns the the x-th component of the v-th cell vector."""
    
       return self.cell.h[x,v]
+
+   def get_isotope_yama(self, alpha="1.0", atom=""):
+      """Gives the components of the yamamoto scaled-mass KE estimator for a given atom index.
+
+      Args:
+          alpha: m'/m the mass ratio
+          atom:  the index of the atom to compute the isotope fractionation pair for, or a label
+          
+      Returns: 
+          a tuple from which one can reconstruct all that is needed to compute the SMKEE:
+          (sum_deltah, sum_ke, log(sum(weights)), log(sum(weight*ke)), sign(sum(weight*ke)) )
+      """ 
+
+      try:
+         iatom=int(atom)
+         latom=""
+      except:
+         iatom=-1
+         latom=atom
+         
+      alpha=float(alpha)
+
+      atcv=0.0; alogr=0.0; law=0.0; lawke=0.0; sawke=1.0; ni=0; 
+            
+      for i in range(self.beads.natoms):
+         if (atom!="" and iatom!=i and latom!=self.beads.names[i]): continue
+         
+         ni+=1;
+         self.dbeads.q[:]=self.beads.q[:]
+         for b in range(self.beads.nbeads):
+            self.dbeads.q[b,3*i:3*(i+1)]= ( self.beads.qc[3*i:3*(i+1)]+
+                        np.sqrt(1.0/alpha)*(self.beads.q[b,3*i:3*(i+1)]-self.beads.qc[3*i:3*(i+1)])  )
+         
+         tcv=0.0
+         for b in range(self.beads.nbeads):
+            tcv+=np.dot( (self.dbeads.q[b,3*i:3*(i+1)]-self.dbeads.qc[3*i:3*(i+1)]), 
+                          self.dforces.f[b,3*i:3*(i+1)] )
+         tcv *= -0.5/self.simul.nbeads
+         tcv += 1.5*Constants.kb*self.simul.ensemble.temp  
+         
+         logr=(self.dforces.pot-self.forces.pot)/(Constants.kb*self.simul.ensemble.temp*self.beads.nbeads)
+         
+         atcv+=tcv;
+         alogr+=logr;
+         
+         #accumulates log averages in a way which preserves accuracy
+         if (ni==1): law=-logr
+         else:       (law, drop)=logsumlog( (law,1.0), (-logr,1.0)) 
+
+         #here we need to take care of the sign of tcv, which might as well be negative...
+         if (ni==1):  
+            lawke=-logr+np.log(abs(tcv)); sawke=np.sign(tcv);
+         else: (lawke, sawke) = logsumlog( (lawke, sawke), (-logr+np.log(abs(tcv)), np.sign(tcv)) )
+                  
+         print "CHECK", ni, logr, tcv, law, lawke
+      if ni==0: raise ValueError("Couldn't find an atom which matched the argument of isotope_y")
+      
+      return (alogr, atcv, law, lawke, sawke)
 
 
 class Trajectories(dobject):

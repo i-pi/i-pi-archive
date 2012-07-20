@@ -19,14 +19,38 @@ Functions:
    nm_trans: Uses an FFT algorithm to do the normal mode transformation.
    inv_nm_trans: Uses an FFT algorithm to do the inverse normal mode
       transformation.
+   logsumlog: Routine to accumulate the logarithm of a sum 
 """
 
 __all__ = ['matrix_exp', 'stab_cholesky', 'h2abc', 'abc2h', 'invert_ut3x3',
            'det_ut3x3', 'eigensystem_ut3x3', 'exp_ut3x3', 'root_herm',
-           'nm_trans', 'inv_nm_trans']
+           'nm_trans', 'inv_nm_trans', 'logsumlog' ]
 
 import numpy as np
 import math
+
+
+def logsumlog(lasa, lbsb):
+   """Computes log(|A+B|) and sign(A+B) given log(|A|), log(|B|), sign(A), sign(B)
+   
+   Args:
+      lasa: (log(|A|), sign(A)) as a tuple
+      lbsb: (log(|B|), sign(B)) as a tuple      
+
+   Returns:
+      (log(|A+B|), sign(A+B)) as a tuple      
+   """
+   
+   (la,sa)=lasa
+   (lb,sb)=lbsb
+   
+   if (la>lb): 
+      sr=sa; lr=la+np.log(1.0+sb*np.exp(lb-la))
+   else: 
+      sr=sb; lr=lb+np.log(1.0+sa*np.exp(la-lb))
+   
+   return (lr,sr)      
+   
 
 def matrix_exp(M, ntaylor=15, nsquare=15):
    """Computes the exponential of a square matrix via a Taylor series.

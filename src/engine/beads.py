@@ -82,6 +82,15 @@ class Beads(dobject):
          depend_array(name="sm3",value=np.zeros((nbeads,3*natoms), float),
             func=self.m3tosm3, dependencies=[dget(self,"m3")]))
             
+      dset(self,"dynm_factors",depend_array(name="dmf", value=np.zeros(nbeads,float)) )
+      self.dynm_factors[:]=1.0
+      
+      dset(self,"dynm3",
+         depend_array(name="dm3",value=np.zeros((nbeads,3*natoms), float),
+            func=self.m3todm3, dependencies=[dget(self,"m3"), dget(self,"dynm_factors") ]))
+
+            
+            
       sync_q = synchronizer()
       sync_p = synchronizer()
       dset(self,"q",
@@ -156,6 +165,16 @@ class Beads(dobject):
       newbd.m[:] = self.m
       newbd.names[:] = self.names
       return newbd
+
+
+   def m3todm3(self):
+      """Takes the mass array and returns the square rooted mass array."""
+      
+      print "rescaling NM dynamical masses to ", self.dynm_factors
+      dm3=np.zeros(self.m3.shape,float)
+      for b in range(self.nbeads): dm3[b]=self.m3[b]*self.dynm_factors[b]
+
+      return dm3
 
    def m3tosm3(self):
       """Takes the mass array and returns the square rooted mass array."""

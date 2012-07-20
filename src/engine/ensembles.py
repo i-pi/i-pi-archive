@@ -59,7 +59,7 @@ class Ensemble(dobject):
             and the timestep.
       """
 
-   def __init__(self, dt, temp):
+   def __init__(self, dt, temp, nm_freqs=None):
       """Initialises Ensemble.
 
       Args:
@@ -70,6 +70,9 @@ class Ensemble(dobject):
       dset(self, "econs", depend_value(name='econs', func=self.get_econs) )
       dset(self, "temp",  depend_value(name='temp',  value=temp))       
       dset(self, "dt",    depend_value(name='dt',    value=dt))
+      if nm_freqs is None: nm_freqs=np.zeros(0,float)
+      dset(self, "nm_freqs", depend_value(name='nm_freqs', value=nm_freqs))
+      
       
    def bind(self, beads, cell, bforce, prng):
       """Binds beads, cell, bforce and prng to the ensemble.
@@ -110,14 +113,21 @@ class Ensemble(dobject):
             dependencies=[dget(self,"ntemp")]) )
       dset(self,"omegan2",
          depend_value(name='omegan2',func=self.get_omegan2, 
-            dependencies=[dget(self,"omegan")]) )
+            dependencies=[dget(self,"omegan")]) )            
       dset(self,"omegak",
-         depend_array(name='omegak',value=np.zeros(self.beads.nbeads,float),
-            func=self.get_omegak, dependencies=[dget(self,"omegan")]) )
+            depend_array(name='omegak',value=np.zeros(self.beads.nbeads,float),
+               func=self.get_omegak, dependencies=[dget(self,"omegan")]) )
+
+      dset(self,"dynm_factors",
+            depend_array(name='dmf',value=np.zeros(self.beads.nbeads,float),
+               func=self.get_dmf, dependencies=[dget(self,"omegak"),  dget(self,"nm_freqs")]) )
+               
+      deppipe(self,"dynm_factors", self.beads, "dynm_factors")
+
       dset(self,"prop_pq",
          depend_array(name='prop_pq',value=np.zeros((self.beads.nbeads,2,2)),
             func=self.get_prop_pq, 
-               dependencies=[dget(self,"omegak"), dget(self,"dt")]) )
+               dependencies=[dget(self,"omegak"), dget(self,"dt"), dget(self,"dynm_factors")]) )
 
    def get_ntemp(self):
       """Returns the PI simulation temperature (P times the physical T)."""
@@ -146,6 +156,19 @@ class Ensemble(dobject):
 
       return 2*self.omegan*np.array([math.sin(k*math.pi/self.beads.nbeads) for k in range(self.beads.nbeads)])
 
+   def get_dmf(self):
+      """Returns dynamical mass factors, i.e. the scaling of normal mode masses that determine the path dynamics (but not statics)."""
+      
+      dmf=np.zeros(self.beads.nbeads,float)
+      dmf[:]=1.0
+      for b in range(1, self.beads.nbeads):
+         if self.nm_freqs.size==self.beads.nbeads: sk=self.omegak[b]/self.nm_freqs[b]
+         elif self.nm_freqs.size==1: sk=self.omegak[b]/self.nm_freqs[0]
+         else: sk=1.0
+         dmf[b]=sk**2
+              
+      return dmf
+
    def get_prop_pq(self): 
       """Gets the normal mode propagator matrix.
 
@@ -162,14 +185,17 @@ class Ensemble(dobject):
 
       pqk = np.zeros((self.beads.nbeads,2,2), float)
       pqk[0] = np.array([[1,0], [self.dt,1]])
+            
       for b in range(1, self.beads.nbeads):
-         dtomegak = self.omegak[b]*self.dt
+         sk=np.sqrt(self.dynm_factors[b]) # NOTE THAT THE PROPAGATOR USES MASS-SCALED MOMENTA!
+         print "rescaled frequency is ", self.omegak[b]/sk
+         dtomegak = self.omegak[b]*self.dt/sk
          c = math.cos(dtomegak)
          s = math.sin(dtomegak)
          pqk[b,0,0] = c
          pqk[b,1,1] = c
-         pqk[b,0,1] = -s*self.omegak[b]
-         pqk[b,1,0] = s/self.omegak[b]
+         pqk[b,0,1] = -s*self.omegak[b]*sk
+         pqk[b,1,0] = s/(self.omegak[b]*sk)
       return pqk
 
          
@@ -212,7 +238,7 @@ class NVEEnsemble(Ensemble):
          potential energy, and the spring potential energy.
    """
 
-   def __init__(self, dt, temp, fixcom=False):
+   def __init__(self, dt, temp, nm_freqs=None, fixcom=False):
       """Initialises NVEEnsemble.
 
       Args:
@@ -222,7 +248,7 @@ class NVEEnsemble(Ensemble):
             motion will be constrained or not. Defaults to False.
       """
 
-      super(NVEEnsemble,self).__init__(dt=dt,temp=temp)
+      super(NVEEnsemble,self).__init__(dt=dt,temp=temp,nm_freqs=nm_freqs)
       self.fixcom = fixcom
 
    def rmcom(self):
@@ -330,7 +356,7 @@ class NVTEnsemble(NVEEnsemble):
          transferred to the thermostat.
    """
 
-   def __init__(self, dt, temp, thermostat=None, fixcom=False):
+   def __init__(self, dt, temp, thermostat=None, nm_freqs=None, fixcom=False):
       """Initialises NVTEnsemble.
 
       Args:
@@ -342,7 +368,7 @@ class NVTEnsemble(NVEEnsemble):
             motion will be constrained or not. Defaults to False.
       """
 
-      super(NVTEnsemble,self).__init__(dt=dt,temp=temp, fixcom=fixcom)
+      super(NVTEnsemble,self).__init__(dt=dt,temp=temp, nm_freqs=nm_freqs, fixcom=fixcom)
 
       if thermostat is None:
          self.thermostat = Thermostat()
@@ -435,7 +461,7 @@ class NPTEnsemble(NVTEnsemble):
       sext: External stress tensor.
    """
 
-   def __init__(self, dt, temp, pext=None, sext=None, thermostat=None, barostat=None, fixcom=False):
+   def __init__(self, dt, temp, pext=None, sext=None, thermostat=None, barostat=None, nm_freqs=None, fixcom=False):
       """Initialises NPTEnsemble.
 
       Args:
@@ -451,7 +477,7 @@ class NPTEnsemble(NVTEnsemble):
             motion will be constrained or not. Defaults to False.
       """
 
-      super(NPTEnsemble,self).__init__(dt, temp, thermostat, fixcom)
+      super(NPTEnsemble,self).__init__(dt, temp, thermostat, nm_freqs=nm_freqs, fixcom=fixcom)
       if barostat == None:
          self.barostat = Barostat()
       else:
@@ -582,7 +608,7 @@ class NSTEnsemble(NVTEnsemble):
       sext: External stress tensor.
    """
 
-   def __init__(self, dt, temp, pext=None, sext=None, thermostat=None, barostat=None, fixcom=False ):
+   def __init__(self, dt, temp, pext=None, sext=None, thermostat=None, barostat=None, nm_freqs=None, fixcom=False ):
       """Initialises NSTEnsemble.
 
       Args:
@@ -598,7 +624,7 @@ class NSTEnsemble(NVTEnsemble):
             motion will be constrained or not. Defaults to False.
       """
 
-      super(NSTEnsemble,self).__init__(dt=dt, temp=temp, thermostat=thermostat,fixcom=fixcom)
+      super(NSTEnsemble,self).__init__(dt=dt, temp=temp, thermostat=thermostat, nm_freqs=nm_freqs, fixcom=fixcom)
       if barostat is None:
          self.barostat = Barostat()
       else:

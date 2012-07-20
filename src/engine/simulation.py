@@ -316,8 +316,13 @@ class Simulation(dobject):
             quantity = self.properties[what]
          except KeyError:
             raise KeyError(what + " is not a recognized property")
-         self.fout.write(write_type(float, quantity) + " ")
-         
+         if not hasattr(quantity,"__len__") :
+            self.fout.write(write_type(float, quantity) + "   ")
+         else:
+            self.fout.write(" [ ")
+            for el in quantity:  self.fout.write(write_type(float, el) + " ")
+            self.fout.write(" ] ")
+                     
       self.fout.write("\n")   
       self.fout.flush()   
       

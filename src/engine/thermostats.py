@@ -283,10 +283,12 @@ class ThermoPILE_L(Thermostat):
       if not bindcentroid:
          self._thermos[0] = None
       
+      self.beads=beads
+      
       dset(self,"tauk",
          depend_array(name="tauk", value=np.zeros(beads.nbeads-1,float), 
-            func=self.get_tauk, dependencies=[dget(self,"temp")]) )
-      
+            func=self.get_tauk, dependencies=[dget(self,"temp"), dget(beads,"dynm_factors")] ) )
+
       # must pipe all the dependencies in such a way that values for the nm thermostats
       # are automatically updated based on the "master" thermostat
       def make_taugetter(k):
@@ -300,7 +302,7 @@ class ThermoPILE_L(Thermostat):
             ndof = None # only the centroid thermostat may have ndof!=3Nat
 
          # bind thermostat t to the it-th bead
-         t.bind(pm=(beads.pnm[it,:],beads.m3[0,:]),prng=self.prng, ndof=ndof) 
+         t.bind(pm=(beads.pnm[it,:],beads.dynm3[it,:]),prng=self.prng, ndof=ndof) 
          # pipes temp and dt
          deppipe(self,"temp", t, "temp")
          deppipe(self,"dt", t, "dt")
@@ -334,7 +336,33 @@ class ThermoPILE_L(Thermostat):
          An array with the damping time scales for the non-centroid modes.
       """
 
-      return np.array([1.0/(4*self.temp*Constants.kb/Constants.hbar*math.sin(k*math.pi/len(self._thermos))) for k in range(1,len(self._thermos)) ])
+      return  np.array([
+       1.0/( 4*self.temp*Constants.kb/Constants.hbar*math.sin(k*math.pi/len(self._thermos))/np.sqrt(self.beads.dynm_factors[k]) ) 
+            for k in range(1,len(self._thermos)) ])  
+#      if (self.beads.nm_freqs.size==1):
+#         return np.array([1/self.beads.nm_freqs[0] for k in range(1,len(self._thermos)) ])   # CMD
+#      elif (self.beads.nm_freqs.size==self.beads.nbeads):
+#         return np.array([1/self.beads.nm_freqs[k] for k in range(1,len(self._thermos)) ])   # manual
+#      else:
+#         return np.array([1.0/self.beads.omegak[k] for k in range(1,len(self._thermos)) ])
+
+#   def get_m3k(self):
+#      """Computes the thermostat damping time scale for the non-centroid 
+#      normal modes.
+
+#      Returns:
+#         An array with the damping time scales for the non-centroid modes.
+#      """
+
+#      rm=self.beads.m3.copy()
+#      if (self.beads.nm_freqs.size==1):
+#         for i in range(1,self.beads.nbeads): rm[k]*=(self.beads.omegak[k]/self.beads.nm_freqs[0])**2  #CMD
+#      elif (self.beads.nm_freqs.size==self.beads.nbeads):
+#         for i in range(1,self.beads.nbeads): rm[k]*=(self.beads.omegak[k]/self.beads.nm_freqs[k])**2  # manual
+
+#      return rm
+#            
+      
 
    def get_ethermo(self):
       """Computes the total energy transferred to the heat bath for all the 
@@ -701,11 +729,6 @@ class ThermoNMGLE(Thermostat):
          dset(self,"C",depend_value(name='C', func=self.get_C, dependencies=[dget(self,"temp")]))
       else:
          dset(self,"C",depend_value(value=C.copy(),name='C'))
-
-#      dset(self,"T",  depend_value(name="T",func=self.get_T, dependencies=[dget(self,"A"), dget(self,"dt")]))      
-#      dset(self,"S",  depend_value(name="S",func=self.get_S, dependencies=[dget(self,"C"), dget(self,"T")]))
-#      
-#      self.s = np.zeros(0)
   
    def bind(self, beads=None, atoms=None, cell=None, pm=None, prng=None, ndof=None):
       """Binds the appropriate degrees of freedom to the thermostat.
@@ -773,10 +796,12 @@ class ThermoNMGLE(Thermostat):
       def make_Cgetter(k):
          return lambda: self.C[k]
 
+
+      
       it = 0
       for t in self._thermos:
          t.s=self.s[it]  # gets the s's as a slice of self.s
-         t.bind(pm=(beads.pnm[it,:],beads.m3[0,:]), prng=self.prng) # bind thermostat t to the it-th normal mode
+         t.bind(pm=(beads.pnm[it,:],beads.dynm3[it,:]), prng=self.prng) # bind thermostat t to the it-th normal mode
 
          # pipes temp and dt
          deppipe(self,"temp", t, "temp")

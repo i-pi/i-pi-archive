@@ -65,6 +65,14 @@ class InputEnsemble(Input):
                                     "default"        : np.identity(3),
                                     "help"           : "The external stress.",
                                     "dimension"      : "pressure"}), 
+           "path_mode" : (InputValue, {"dtype"   : str,
+                                    "default" : "rpmd",
+                                    "help"    : "How to determine bead masses.",
+                                    "options" : ['rpmd', 'cmd', 'manual']}),
+           "nm_freqs" : (InputArray, {"dtype"        : float, 
+                                    "default"        : np.identity(0),
+                                    "help"           : "Manual frequencies for the ring polymer normal modes. Just one number if doing CMD.",
+                                    "dimension"      : "frequency"}), 
            "fixcom": (InputValue, {"dtype"           : bool, 
                                    "default"         : False,
                                    "help"            : "This describes whether the centre of mass of the particles is fixed."}) }
@@ -105,6 +113,13 @@ class InputEnsemble(Input):
          self.pressure.store(ens.pext)
       if tens == 3:
          self.stress.store(ens.sext)
+         
+      if (ens.nm_freqs.size>0):
+         self.nm_freqs.store(ens.nm_freqs)
+         if ens.nm_freqs.size==1:   self.path_mode.store("cmd")         
+         else:                      self.path_mode.store("manual")
+      else:
+         self.path_mode.store("rpmd")
 
    def fetch(self):
       """Creates an ensemble object.
@@ -115,24 +130,28 @@ class InputEnsemble(Input):
       """
 
       super(InputEnsemble,self).fetch()
+      
+      pf=None
+      if self.path_mode.fetch() != "rpmd": pf=self.nm_freqs.fetch()
+         
       if self.type.fetch() == "nve" :
          ens = NVEEnsemble(dt=self.timestep.fetch(), 
-            temp=self.temperature.fetch(), fixcom=self.fixcom.fetch())
+            temp=self.temperature.fetch(), nm_freqs=pf, fixcom=self.fixcom.fetch())
       elif self.type.fetch() == "nvt" : 
          ens = NVTEnsemble(dt=self.timestep.fetch(), 
-            temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(),
+            temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), nm_freqs=pf,
                fixcom=self.fixcom.fetch())
       elif self.type.fetch() == "npt" : 
          ens = NPTEnsemble(dt=self.timestep.fetch(), 
-            temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(),
+            temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), nm_freqs=pf,
                fixcom=self.fixcom.fetch(), pext=self.pressure.fetch(), 
                   barostat=self.barostat.fetch() )
       elif self.type.fetch() == "nst" : 
          ens = NSTEnsemble(dt=self.timestep.fetch(), 
-            temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(),
+            temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), nm_freqs=pf,
                fixcom=self.fixcom.fetch(), sext=self.stress.fetch(), 
                   barostat=self.barostat.fetch() )
-                        
+      
       return ens
       
    def check(self):
@@ -153,6 +172,7 @@ class InputEnsemble(Input):
             raise ValueError("No barostat tag supplied for NPT simulation")
          if self.barostat.thermostat._explicit == False:
             raise ValueError("No thermostat tag supplied in barostat for NPT simulation")
+            
       if self.type.fetch() == "nst":
          if self.thermostat._explicit == False:
             raise ValueError("No thermostat tag supplied for NST simulation")
@@ -171,3 +191,11 @@ class InputEnsemble(Input):
       if self.type.fetch() == "nst" or self.type.fetch() == "npt":
          if not (self.pressure._explicit or self.stress._explicit):
             raise ValueError("Neither pressure or stress supplied for constant pressure simulation")
+            
+      if self.path_mode.fetch() == "cmd":
+         if self.nm_freqs.fetch().size != 1:
+            raise ValueError("For cmd simulation, nm_freqs should be a size-1 array containing the NM frequency")
+      elif self.path_mode.fetch() == "manual":
+         if self.nm_freqs.fetch().size < 1:
+            raise ValueError("When 'manual' path frequencies are specified, the nm_freqs option should be specified giving the NM frequencies.")
+      
