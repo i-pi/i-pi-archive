@@ -309,12 +309,11 @@ def read_array(dtype, data):
    
    return np.array(rlist, dtype)
 
-def read_tuple(data, delims="()", split=",", strip=" \n\t'"):
+def read_tuple(data, delims="()", split=",", strip=" \n\t'", arg_type=int):
    """Reads a formatted string and outputs a tuple.
 
    The format is as for standard python tuples, which is
-   (tuple[0], tuple[1], ... , tuple[n]). Used for the shapes of arrays, so 
-   assumes integer values for the elements of the tuple. Note the comma 
+   (tuple[0], tuple[1], ... , tuple[n]). Note the comma 
    separators, and the use of brackets.
 
    Args:
@@ -324,6 +323,8 @@ def read_tuple(data, delims="()", split=",", strip=" \n\t'"):
       split: The character between different elements of the list format.
       strip: Characters to be removed from the beginning and end of each 
          element. ' \n\t' by default.
+      arg_type: The strings in the input will be converted, and a tuple 
+         of ar_type will be returned. 
 
    Raises: 
       ValueError: Raised if the input data is not of the correct format.
@@ -333,7 +334,7 @@ def read_tuple(data, delims="()", split=",", strip=" \n\t'"):
    """
 
    rlist = read_list(data, delims=delims, split=split, strip=strip)
-   return tuple([float(i) for i in rlist])
+   return tuple([arg_type(i) for i in rlist])
 
 def read_dict(data, delims="{}", split=",", key_split=":", strip=" \n\t"):
    """Reads a formatted string and outputs a dictionary.
