@@ -142,7 +142,8 @@ class Properties(dobject):
       self.property_dict["kin_yama"] = self.get_kinyama
 
       self.property_dict["linlin"] = self.get_linlin
-      self.property_dict["isotope_y"] = self.get_isotope_yama
+      self.property_dict["isotope_yama"] = self.get_isotope_yama
+      self.property_dict["isotope_thermo"] = self.get_isotope_thermo      
 
       # dummy beads and forcefield objects so that we can use scaled and
       # displaced path estimators without changing the simulation bead 
@@ -425,7 +426,8 @@ class Properties(dobject):
           atom:  the index of the atom to compute the isotope fractionation pair for, or a label
           
       Returns: 
-          a tuple from which one can reconstruct all that is needed to compute the SMKEE:
+          a tuple from which one can reconstruct all that is needed to compute the SMKEE,
+          and its statistical accuracy:
           (sum_deltah, sum_ke, log(sum(weights)), log(sum(weight*ke)), sign(sum(weight*ke)) )
       """ 
 
@@ -439,15 +441,21 @@ class Properties(dobject):
       alpha=float(alpha)
 
       atcv=0.0; alogr=0.0; law=0.0; lawke=0.0; sawke=1.0; ni=0; 
-            
+      
+      # strips dependency control since we are not gonna change the true beads in what follows
+      q=depstrip(self.beads.q); f=depstrip(self.forces.f); qc=depstrip(self.beads.qc);     
+      
       for i in range(self.beads.natoms):
+         # selects only the atoms we care about
          if (atom!="" and iatom!=i and latom!=self.beads.names[i]): continue
          
          ni+=1;
-         self.dbeads.q[:]=self.beads.q[:]
+         
+         # arranges coordinate-scaled beads in a auxiliary beads object
+         self.dbeads.q[:]=q[:]
          for b in range(self.beads.nbeads):
-            self.dbeads.q[b,3*i:3*(i+1)]= ( self.beads.qc[3*i:3*(i+1)]+
-                        np.sqrt(1.0/alpha)*(self.beads.q[b,3*i:3*(i+1)]-self.beads.qc[3*i:3*(i+1)])  )
+            self.dbeads.q[b,3*i:3*(i+1)]= ( qc[3*i:3*(i+1)]+
+                        np.sqrt(1.0/alpha)*(q[b,3*i:3*(i+1)]-qc[3*i:3*(i+1)])  )
          
          tcv=0.0
          for b in range(self.beads.nbeads):
@@ -465,7 +473,7 @@ class Properties(dobject):
          if (ni==1): law=-logr
          else:       (law, drop)=logsumlog( (law,1.0), (-logr,1.0)) 
 
-         #here we need to take care of the sign of tcv, which might as well be negative...
+         #here we need to take care of the sign of tcv, which might as well be negative... almost never but...
          if (ni==1):  
             lawke=-logr+np.log(abs(tcv)); sawke=np.sign(tcv);
          else: (lawke, sawke) = logsumlog( (lawke, sawke), (-logr+np.log(abs(tcv)), np.sign(tcv)) )
@@ -475,6 +483,68 @@ class Properties(dobject):
       
       return (alogr, atcv, law, lawke, sawke)
 
+
+   def get_isotope_thermo(self, alpha="1.0", atom=""):
+      """Gives the components of the thermodynamic scaled-mass KE estimator for a given atom index.
+
+      Args:
+          alpha: m'/m the mass ratio
+          atom:  the index of the atom to compute the isotope fractionation pair for, or a label
+          
+      Returns: 
+          a tuple from which one can reconstruct all that is needed to compute the SMKEE:
+          (sum_deltah, sum_ke, log(sum(weights)), log(sum(weight*ke)), sign(sum(weight*ke)) )
+      """ 
+
+      try:
+         iatom=int(atom)
+         latom=""
+      except:
+         iatom=-1
+         latom=atom
+         
+      alpha=float(alpha)
+
+      atcv=0.0; alogr=0.0; law=0.0; lawke=0.0; sawke=1.0; ni=0; 
+      # strips dependency control since we are not gonna change the true beads in what follows
+      q=depstrip(self.beads.q); f=depstrip(self.forces.f); qc=depstrip(self.beads.qc);           
+      for i in range(self.beads.natoms):
+         # selects only the atoms we care about
+         if (atom!="" and iatom!=i and latom!=self.beads.names[i]): continue
+         
+         ni+=1;
+         
+         spr=0.0
+         for b in range(1,self.beads.nbeads):
+            for j in range(3*i,3*(i+1)): spr+=(q[b,j]-q[b-1,j])**2
+         for j in range(3*i,3*(i+1)): spr+=(q[self.beads.nbeads-1,j]-q[0,j])**2         
+         spr*=0.5*self.beads.m[i]*self.ensemble.omegan2
+
+         # centroid virial contribution from atom i         
+         tcv=0.0
+         for b in range(self.beads.nbeads):
+            tcv+=np.dot( (q[b,3*i:3*(i+1)]-qc[3*i:3*(i+1)]), f[b,3*i:3*(i+1)] )
+         tcv *= -0.5/self.simul.nbeads
+         tcv += 1.5*Constants.kb*self.simul.ensemble.temp  
+                  
+         logr=(alpha-1)*spr/(Constants.kb*self.simul.ensemble.temp*self.beads.nbeads)
+         
+         atcv+=tcv;
+         alogr+=logr;
+         
+         #accumulates log averages in a way which preserves accuracy
+         if (ni==1): law=-logr
+         else:       (law, drop)=logsumlog( (law,1.0), (-logr,1.0)) 
+
+         #here we need to take care of the sign of tcv, which might as well be negative... almost never but...
+         if (ni==1):  
+            lawke=-logr+np.log(abs(tcv)); sawke=np.sign(tcv);
+         else: (lawke, sawke) = logsumlog( (lawke, sawke), (-logr+np.log(abs(tcv)), np.sign(tcv)) )
+                  
+         print "THERMO", ni, logr, tcv, law, lawke
+      if ni==0: raise ValueError("Couldn't find an atom which matched the argument of isotope_y")
+      
+      return (alogr, atcv, law, lawke, sawke)
 
 class Trajectories(dobject):
    """A simple class to take care of output of trajectory data.
