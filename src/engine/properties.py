@@ -440,7 +440,7 @@ class Properties(dobject):
          
       alpha=float(alpha)
 
-      atcv=0.0; alogr=0.0; law=0.0; lawke=0.0; sawke=1.0; ni=0; 
+      atcv=0.0; atcv2=0.0; alogr=0.0; alogr2=0.0; law=0.0; lawke=0.0; sawke=1.0; ni=0; 
       
       # strips dependency control since we are not gonna change the true beads in what follows
       q=depstrip(self.beads.q); f=depstrip(self.forces.f); qc=depstrip(self.beads.qc);     
@@ -466,8 +466,8 @@ class Properties(dobject):
          
          logr=(self.dforces.pot-self.forces.pot)/(Constants.kb*self.simul.ensemble.temp*self.beads.nbeads)
          
-         atcv+=tcv;
-         alogr+=logr;
+         atcv+=tcv; atcv2+=tcv*tcv;
+         alogr+=logr; alogr2+=logr*logr;
          
          #accumulates log averages in a way which preserves accuracy
          if (ni==1): law=-logr
@@ -481,7 +481,7 @@ class Properties(dobject):
          print "CHECK", ni, logr, tcv, law, lawke
       if ni==0: raise ValueError("Couldn't find an atom which matched the argument of isotope_y")
       
-      return (alogr, atcv, law, lawke, sawke)
+      return (alogr, alogr2, atcv, atcv2, law, lawke, sawke)
 
 
    def get_isotope_thermo(self, alpha="1.0", atom=""):
@@ -505,7 +505,7 @@ class Properties(dobject):
          
       alpha=float(alpha)
 
-      atcv=0.0; alogr=0.0; law=0.0; lawke=0.0; sawke=1.0; ni=0; 
+      atcv=0.0; alogr=0.0; atcv2=0.0; alogr2=0.0; law=0.0; lawke=0.0; sawke=1.0; ni=0; 
       # strips dependency control since we are not gonna change the true beads in what follows
       q=depstrip(self.beads.q); f=depstrip(self.forces.f); qc=depstrip(self.beads.qc);           
       for i in range(self.beads.natoms):
@@ -529,8 +529,8 @@ class Properties(dobject):
                   
          logr=(alpha-1)*spr/(Constants.kb*self.simul.ensemble.temp*self.beads.nbeads)
          
-         atcv+=tcv;
-         alogr+=logr;
+         atcv+=tcv; atcv2+=tcv*tcv;
+         alogr+=logr; alogr2+=alogr*alogr;
          
          #accumulates log averages in a way which preserves accuracy
          if (ni==1): law=-logr
@@ -544,7 +544,7 @@ class Properties(dobject):
          print "THERMO", ni, logr, tcv, law, lawke
       if ni==0: raise ValueError("Couldn't find an atom which matched the argument of isotope_y")
       
-      return (alogr, atcv, law, lawke, sawke)
+      return (alogr, alogr2, atcv, atcv2, law, lawke, sawke)
 
 class Trajectories(dobject):
    """A simple class to take care of output of trajectory data.
