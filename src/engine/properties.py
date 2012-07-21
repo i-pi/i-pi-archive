@@ -466,7 +466,7 @@ class Properties(dobject):
          
          logr=(self.dforces.pot-self.forces.pot)/(Constants.kb*self.simul.ensemble.temp*self.beads.nbeads)
          
-         atcv+=tcv; atcv2+=tcv*tcv;
+         atcv+=tcv;   atcv2+=tcv*tcv;
          alogr+=logr; alogr2+=logr*logr;
          
          #accumulates log averages in a way which preserves accuracy
@@ -529,8 +529,8 @@ class Properties(dobject):
                   
          logr=(alpha-1)*spr/(Constants.kb*self.simul.ensemble.temp*self.beads.nbeads)
          
-         atcv+=tcv; atcv2+=tcv*tcv;
-         alogr+=logr; alogr2+=alogr*alogr;
+         atcv+=tcv;   atcv2+=tcv*tcv;
+         alogr+=logr; alogr2+=logr*logr;
          
          #accumulates log averages in a way which preserves accuracy
          if (ni==1): law=-logr
