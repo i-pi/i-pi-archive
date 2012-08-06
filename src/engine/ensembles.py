@@ -70,7 +70,10 @@ class Ensemble(dobject):
       dset(self, "econs", depend_value(name='econs', func=self.get_econs) )
       dset(self, "temp",  depend_value(name='temp',  value=temp))       
       dset(self, "dt",    depend_value(name='dt',    value=dt))
-      if nm_freqs is None: nm_freqs=np.zeros(0,float)
+      if nm_freqs is None:
+         nm_freqs=np.zeros(0,float)
+      #TODO add nm_freqs to the documentation of Ensemble, in the 
+      #depend object section.
       dset(self, "nm_freqs", depend_value(name='nm_freqs', value=nm_freqs))
       
       
@@ -123,6 +126,7 @@ class Ensemble(dobject):
                func=self.get_dmf, dependencies=[dget(self,"omegak"),  dget(self,"nm_freqs")]) )
                
       deppipe(self,"dynm_factors", self.beads, "dynm_factors")
+#TODO document these two as for Beads.
 
       dset(self,"prop_pq",
          depend_array(name='prop_pq',value=np.zeros((self.beads.nbeads,2,2)),
@@ -157,15 +161,19 @@ class Ensemble(dobject):
       return 2*self.omegan*np.array([math.sin(k*math.pi/self.beads.nbeads) for k in range(self.beads.nbeads)])
 
    def get_dmf(self):
-      """Returns dynamical mass factors, i.e. the scaling of normal mode masses that determine the path dynamics (but not statics)."""
+      """Returns dynamical mass factors, i.e. the scaling of normal mode 
+      masses that determine the path dynamics (but not statics)."""
       
-      dmf=np.zeros(self.beads.nbeads,float)
-      dmf[:]=1.0
+      dmf = np.zeros(self.beads.nbeads,float)
+      dmf[:] = 1.0
       for b in range(1, self.beads.nbeads):
-         if self.nm_freqs.size==self.beads.nbeads: sk=self.omegak[b]/self.nm_freqs[b]
-         elif self.nm_freqs.size==1: sk=self.omegak[b]/self.nm_freqs[0]
-         else: sk=1.0
-         dmf[b]=sk**2
+         if self.nm_freqs.size == self.beads.nbeads:
+            sk = self.omegak[b]/self.nm_freqs[b]
+         elif self.nm_freqs.size == 1:
+            sk = self.omegak[b]/self.nm_freqs[0]
+         else:
+            sk = 1.0
+         dmf[b] = sk**2
               
       return dmf
 
@@ -187,7 +195,7 @@ class Ensemble(dobject):
       pqk[0] = np.array([[1,0], [self.dt,1]])
             
       for b in range(1, self.beads.nbeads):
-         sk=np.sqrt(self.dynm_factors[b]) # NOTE THAT THE PROPAGATOR USES MASS-SCALED MOMENTA!
+         sk = np.sqrt(self.dynm_factors[b]) # NOTE THAT THE PROPAGATOR USES MASS-SCALED MOMENTA!
          print "rescaled frequency is ", self.omegak[b]/sk
          dtomegak = self.omegak[b]*self.dt/sk
          c = math.cos(dtomegak)
@@ -198,7 +206,6 @@ class Ensemble(dobject):
          pqk[b,1,0] = s/(self.omegak[b]*sk)
       return pqk
 
-         
    def pstep(self): 
       """Dummy momenta propagator which does nothing."""
       

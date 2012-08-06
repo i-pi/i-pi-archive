@@ -65,10 +65,10 @@ class InputEnsemble(Input):
                                     "default"        : np.identity(3),
                                     "help"           : "The external stress.",
                                     "dimension"      : "pressure"}), 
-           "path_mode" : (InputValue, {"dtype"   : str,
-                                    "default" : "rpmd",
-                                    "help"    : "How to determine bead masses.",
-                                    "options" : ['rpmd', 'cmd', 'manual']}),
+           "path_mode" : (InputValue, {"dtype"       : str,
+                                    "default"        : "rpmd",
+                                    "help"           : "How to determine bead masses.",
+                                    "options"        : ['rpmd', 'cmd', 'manual']}),
            "nm_freqs" : (InputArray, {"dtype"        : float, 
                                     "default"        : np.identity(0),
                                     "help"           : "Manual frequencies for the ring polymer normal modes. Just one number if doing CMD.",
@@ -90,16 +90,16 @@ class InputEnsemble(Input):
       super(InputEnsemble,self).store(ens)
       if type(ens) is NVEEnsemble:    
          self.type.store("nve")
-         tens=0
+         tens = 0
       elif type(ens) is NVTEnsemble:  
          self.type.store("nvt")
-         tens=1
+         tens = 1
       elif type(ens) is NPTEnsemble:  
          self.type.store("npt")
-         tens=2
+         tens = 2
       elif type(ens) is NSTEnsemble:  
          self.type.store("nst")
-         tens=3
+         tens = 3
       
       self.timestep.store(ens.dt)
       self.temperature.store(ens.temp)
@@ -116,8 +116,10 @@ class InputEnsemble(Input):
          
       if (ens.nm_freqs.size>0):
          self.nm_freqs.store(ens.nm_freqs)
-         if ens.nm_freqs.size==1:   self.path_mode.store("cmd")         
-         else:                      self.path_mode.store("manual")
+         if ens.nm_freqs.size==1:
+            self.path_mode.store("cmd")         
+         else:
+            self.path_mode.store("manual")
       else:
          self.path_mode.store("rpmd")
 
@@ -131,26 +133,28 @@ class InputEnsemble(Input):
 
       super(InputEnsemble,self).fetch()
       
-      pf=None
-      if self.path_mode.fetch() != "rpmd": pf=self.nm_freqs.fetch()
+      pf = None
+      if self.path_mode.fetch() != "rpmd":
+         pf = self.nm_freqs.fetch()
          
       if self.type.fetch() == "nve" :
          ens = NVEEnsemble(dt=self.timestep.fetch(), 
-            temp=self.temperature.fetch(), nm_freqs=pf, fixcom=self.fixcom.fetch())
+            temp=self.temperature.fetch(), nm_freqs=pf, 
+               fixcom=self.fixcom.fetch())
       elif self.type.fetch() == "nvt" : 
          ens = NVTEnsemble(dt=self.timestep.fetch(), 
-            temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), nm_freqs=pf,
-               fixcom=self.fixcom.fetch())
+            temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), 
+               nm_freqs=pf, fixcom=self.fixcom.fetch())
       elif self.type.fetch() == "npt" : 
          ens = NPTEnsemble(dt=self.timestep.fetch(), 
-            temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), nm_freqs=pf,
-               fixcom=self.fixcom.fetch(), pext=self.pressure.fetch(), 
-                  barostat=self.barostat.fetch() )
+            temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), 
+               nm_freqs=pf, fixcom=self.fixcom.fetch(), 
+                  pext=self.pressure.fetch(), barostat=self.barostat.fetch() )
       elif self.type.fetch() == "nst" : 
          ens = NSTEnsemble(dt=self.timestep.fetch(), 
-            temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), nm_freqs=pf,
-               fixcom=self.fixcom.fetch(), sext=self.stress.fetch(), 
-                  barostat=self.barostat.fetch() )
+            temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), 
+               nm_freqs=pf, fixcom=self.fixcom.fetch(), 
+                  sext=self.stress.fetch(), barostat=self.barostat.fetch() )
       
       return ens
       
@@ -198,4 +202,3 @@ class InputEnsemble(Input):
       elif self.path_mode.fetch() == "manual":
          if self.nm_freqs.fetch().size < 1:
             raise ValueError("When 'manual' path frequencies are specified, the nm_freqs option should be specified giving the NM frequencies.")
-      

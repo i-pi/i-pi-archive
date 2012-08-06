@@ -283,7 +283,7 @@ class ThermoPILE_L(Thermostat):
       if not bindcentroid:
          self._thermos[0] = None
       
-      self.beads=beads
+      self.beads = beads
       
       dset(self,"tauk",
          depend_array(name="tauk", value=np.zeros(beads.nbeads-1,float), 
@@ -784,7 +784,7 @@ class ThermoNMGLE(Thermostat):
       else:
          print " @ GLE BIND: Inputing additional DOFs! "
 
-      prev_ethermo=self.ethermo
+      prev_ethermo = self.ethermo
       
       # creates a set of thermostats to be applied to individual normal modes
       self._thermos = [ThermoGLE(temp=1, dt=1, A=self.A[b], C=self.C[b]) for b in range(beads.nbeads)]
@@ -795,12 +795,10 @@ class ThermoNMGLE(Thermostat):
          return lambda: self.A[k]
       def make_Cgetter(k):
          return lambda: self.C[k]
-
-
       
       it = 0
       for t in self._thermos:
-         t.s=self.s[it]  # gets the s's as a slice of self.s
+         t.s = self.s[it]  # gets the s's as a slice of self.s
          t.bind(pm=(beads.pnm[it,:],beads.dynm3[it,:]), prng=self.prng) # bind thermostat t to the it-th normal mode
 
          # pipes temp and dt
@@ -817,24 +815,28 @@ class ThermoNMGLE(Thermostat):
 
 
       # debug: print A C T and S to file
-      fmat=open("matrices","w")
-      self.dt=20.670687
+      fmat = open("matrices","w")
+      self.dt = 20.670687
       fmat.write(" # timestep %15.7e\n" % (self.dt) )
       fmat.write(" # A matrix\n");
       for r in self._thermos[1].A:
-         for v in r: fmat.write("%20.13e  " % (v))
+         for v in r:
+            fmat.write("%20.13e  " % (v))
          fmat.write("\n");
       fmat.write(" # C matrix\n");
       for r in self._thermos[1].C:
-         for v in r: fmat.write("%20.13e  " % (v))
+         for v in r:
+            fmat.write("%20.13e  " % (v))
          fmat.write("\n");
       fmat.write(" # T matrix\n");
       for r in self._thermos[1].T:
-         for v in r: fmat.write("%20.13e  " % (v))
+         for v in r:
+            fmat.write("%20.13e  " % (v))
          fmat.write("\n");
       fmat.write(" # S matrix\n");
       for r in self._thermos[1].S:
-         for v in r: fmat.write("%20.13e  " % (v))
+         for v in r:
+            fmat.write("%20.13e  " % (v))
          fmat.write("\n");
          
          
@@ -869,7 +871,7 @@ class ThermoNMGLE(Thermostat):
 
 
 class ThermoNMGLEG(ThermoNMGLE):     
-
+#TODO document this object properly!!!
    def __init__(self, temp = 1.0, dt = 1.0, A = None, C = None, tau=1.0, ethermo=0.0):
 
       super(ThermoNMGLEG,self).__init__(temp, dt, A, C, ethermo)

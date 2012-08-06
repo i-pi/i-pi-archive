@@ -320,7 +320,8 @@ class Simulation(dobject):
             self.fout.write(write_type(float, quantity) + "   ")
          else:
             self.fout.write(" [ ")
-            for el in quantity:  self.fout.write(write_type(float, el) + " ")
+            for el in quantity:
+               self.fout.write(write_type(float, el) + " ")
             self.fout.write(" ] ")
                      
       self.fout.write("\n")   

@@ -29,9 +29,9 @@ __all__ = ['matrix_exp', 'stab_cholesky', 'h2abc', 'abc2h', 'invert_ut3x3',
 import numpy as np
 import math
 
-
 def logsumlog(lasa, lbsb):
-   """Computes log(|A+B|) and sign(A+B) given log(|A|), log(|B|), sign(A), sign(B)
+   """Computes log(|A+B|) and sign(A+B) given log(|A|), log(|B|), 
+   sign(A), sign(B).
    
    Args:
       lasa: (log(|A|), sign(A)) as a tuple
@@ -41,16 +41,17 @@ def logsumlog(lasa, lbsb):
       (log(|A+B|), sign(A+B)) as a tuple      
    """
    
-   (la,sa)=lasa
-   (lb,sb)=lbsb
+   (la,sa) = lasa
+   (lb,sb) = lbsb
    
    if (la>lb): 
-      sr=sa; lr=la+np.log(1.0+sb*np.exp(lb-la))
+      sr = sa
+      lr = la + np.log(1.0+sb*np.exp(lb-la))
    else: 
-      sr=sb; lr=lb+np.log(1.0+sa*np.exp(la-lb))
+      sr = sb
+      lr = lb + np.log(1.0+sa*np.exp(la-lb))
    
    return (lr,sr)      
-   
 
 def matrix_exp(M, ntaylor=15, nsquare=15):
    """Computes the exponential of a square matrix via a Taylor series.
@@ -119,7 +120,7 @@ def stab_cholesky(M):
       for k in range(i):
          D[i] -= L[i,k]*L[i,k]*D[k]
 
-   S=np.zeros(M.shape,float)
+   S = np.zeros(M.shape,float)
    for i in range(n): 
       if (D[i]>0):
          D[i] = math.sqrt(D[i])
