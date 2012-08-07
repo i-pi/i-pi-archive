@@ -583,7 +583,7 @@ class Properties(dobject):
          if (ni==1):
             law = -logr
          else:
-         (law, drop) = logsumlog( (law,1.0), (-logr,1.0)) 
+            (law, drop) = logsumlog( (law,1.0), (-logr,1.0)) 
 
          #here we need to take care of the sign of tcv, which might as well be negative... almost never but...
          if (ni==1):  

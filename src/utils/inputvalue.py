@@ -180,7 +180,7 @@ class Input(object):
          rstr += self.__dict__[f].write(f, "   " + indent)
       rstr += indent + "</" + name + ">\n"
       return rstr
-   
+
    def parse(self, xml=None, text=""): 
       """Parses an xml file.
 

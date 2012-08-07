@@ -19,20 +19,15 @@ class MultiForce(dobject):
    positions to different driver codes.
 
    Attributes:
-      nreduced: A list giving the number of beads on each of the contracted
-         ring polymers.
       natoms: An integer giving the number of atoms.
       nbeads: An integer giving the number of beads.
-      _forces: A list containing all the forcefield objects for each system 
-         replica. The first forcefield object is that for the full ring polymer.
+      _forces: A list of the forcefields which will be used to calculate
+         the forces, potential and virial.
+      _contracted: A list containing all the bead objects for each forcefield.
       Cb2nm: The transformation matrix between the bead and normal mode 
          representations.
       softexit: A function to help make sure the printed restart file is
          consistent.
-      _forces: A list of the forcefields which will be used to calculate
-         the forces, potential and virial.
-      beadlist: A list of beads objects for each of the contracted ring
-         polymers. The first beads object is the full ring polymer.
 
    Depend objects:
       f: An array containing the components of the force.
@@ -44,22 +39,14 @@ class MultiForce(dobject):
          representation.
    """
 
-   def __init__(self, nreduced = None, forces = None, beads=None, cell=None):
+   def __init__(self, forces = None, beads=None, cell=None):
       """Initialises Multiforce.
 
       Args:
          beads: Optional beads object, to be bound to the forcefield.
          cell: Optional cell object, to be bound to the forcefield.
-         nreduced: An array giving the number of beads for the contracted 
-            ring polymers.
-         forces: Force field objects specifying the potential for each of the
-            ring polymer sizes. 
+         forces: Force field objects for each of the contracted ring polymers. 
       """
-
-      if nreduced is None:
-         nreduced = []
-
-      self.nreduced = nreduced
 
       if not (beads is None or cell is None or forces is None):
          self.bind(beads, cell, forces)
@@ -70,21 +57,30 @@ class MultiForce(dobject):
       Args:
          bead: The Beads object from which the bead positions are taken.
          cell: The Cell object from which the system box is taken.
+         forces: A list of the different forcefields for each of the contracted
+            ring polymers. 
          softexit: A function to help make sure the printed restart file is
             consistent.
       """
+
       self.natoms = beads.natoms
       self.nbeads = beads.nbeads
+      self.beads = beads
       self.softexit = softexit
       self._forces = [ForceBeads() for force in forces]
 
-      self.beadlist = [beads]
-      for r in range(len(nreduced)):
-         self.beadlist.append(Beads(natoms=beads.natoms, 
-            nbeads=self.nreduced[r]))
+      self._contracted = []
+      for f in range(forces):
+         if forces[f].nreduced == 0:
+            forces[f].nreduced = self.nbeads
+         self._contracted.append(Beads(natoms=beads.natoms, 
+            nbeads=forces[f].nreduced))
+         dget(self._contracted[f], "q")._func = contract_wrapper(f)
+         dget(self._contracted[f], "q").add_dependency(dget(self.beads,"qnm"))
+         dget(self._contracted[f], "q").add_dependency(dget(self.beads,"q"))
 
       for f in range(len(forces)):
-         self._forces[f].bind(beadlist[f], cell, forces[f], softexit) 
+         self._forces[f].bind(self._contracted[f], cell, forces[f], softexit) 
 
       dset(self,"f",
          depend_array(name="f",value=np.zeros((self.nbeads,3*self.natoms)),
@@ -105,7 +101,7 @@ class MultiForce(dobject):
          depend_value(name="pot", func=self.pot, 
             dependencies=[dget(self,"pots")]))
       dset(self,"vir",
-         depend_value(name="vir", func=self.pot, 
+         depend_value(name="vir", func=self.vir, 
             dependencies=[dget(self,"virs")]))
 
       dset(self,"fnm",
@@ -117,7 +113,6 @@ class MultiForce(dobject):
    def queue(self):
       """Submits all the required force calculations to the interface."""
 
-      self.contract()
       for force in self._forces:
          force.queue()
 
@@ -149,7 +144,8 @@ class MultiForce(dobject):
       """
 
       self.queue()
-      return np.array([f.vir for f in self._forces])
+      (f, vir) = self.expand()
+      return vir
 
    def f_gather(self):
       """Obtains the global force vector.
@@ -163,7 +159,8 @@ class MultiForce(dobject):
       """
 
       self.queue()
-      return self.expand()
+      (f, vir) = self.expand()
+      return f
 
    def pot(self):
       """Sums the potentials acting on each of the contracted ring polymers."""
@@ -181,13 +178,23 @@ class MultiForce(dobject):
          vir += v
       return vir
 
-   def contract(self):
+   def contract(self, i=0):
       """Computes the contracted ring polymers."""
 
-      for i in range(len(self.nreduced)):
-         nred = self.nreduced[i]
+      nred = self._forces[i].nreduced
+      newq = numpy.zeros(nred)
+      if nred == self.nbeads:
+         newq = self.beads.q
+      else:
          for j in range(-nred/2+1, nred/2+1):
-            self.beadlist[i+1].q[j] = np.dot(self.beadlist[i+1].Cnm2b[:,j], depstrip(self.beadlist[0].qnm))*math.sqrt(self.beadlist[i+1].nbeads/float(self.nbeads))
+            newq = np.dot(self._contracted[i].Cnm2b[:,j], depstrip(self.beads.qnm))*math.sqrt(nred/float(self.nbeads))
+
+      return newq
+
+   def contract_lambda(self, i=0):
+      """Wrapper for the function contract()."""
+
+      return lambda: contract(i)
 
    def expand(self):
       """Transforms the force acting on each of the contracted ring polymers
@@ -197,16 +204,17 @@ class MultiForce(dobject):
          The total force over each of the forcefields.
       """
 
+#TODO make this the _func for self.f and self.vir
       newf = np.zeros((self.nbeads,3*self.natoms))
       vir = np.zeros((3,3))
 
-      newf += self._forces[0].f
-      vir += self._forces[0].vir
-
-      for i in range(len(self.nreduced)):
+      for i in range(len(self._forces)):
          nred = self.nreduced[i]
-         for j in range(-nred/2+1,nred/2+1):
-            newf[j] += np.dot(self.Cnm2b[:,j],depstrip(self._forces[i+1].fnm))*math.sqrt(self.nbeads/float(self.beadlist[i+1]))
+         if nred == self.nbeads:
+            newf += self._forces[i]
+         else:
+            for j in range(-nred/2+1,nred/2+1):
+               newf[j] += np.dot(self.Cnm2b[:,j],depstrip(self._forces[i].fnm))*math.sqrt(self.nbeads/float(nred))
 
       #TODO do the same for the virial.
       # I think we need: W = T.T*W_contracted*(T.T)^(-1) = T.T*W_contracted*T
