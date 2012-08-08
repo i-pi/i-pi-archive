@@ -3,8 +3,8 @@
  * This gives two examples of para-H2 with the isotropic Silvera-Goldman 
    pair potential, as tested against two different papers:
 
-   - nvt: Thomas F. Miller and David E. Manolopoulos, J. Chem. Phys. 122,
-          184503, (2005)
+   - nvt and RPMD: Thomas F. Miller and David E. Manolopoulos, 
+          J. Chem. Phys. 122, 184503, (2005)
           State point: (N, V, T) = (108, 31.7 cm**3 mol**(-1), 25 K)
    - Tuckerman: Glenn J. Martyna, Adam Hughes and Mark E. Tuckerman, J. Chem.
                 Phys. 110, 3275, (1999)
@@ -32,3 +32,6 @@ $ path/forces/sgengine.x -u -h wrap-pi -r 15.0
   then run the driver as:
 
 $ path/forces/sgengine.x -h localhost -r 15.0
+
+ * See the separate README file in RPMD for instructions on how to run these
+   calculations.

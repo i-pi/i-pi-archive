@@ -12,3 +12,16 @@
    - Makefile: A makefile that which compiles all the fortran code as 
       necessary.
    - xml_read.f: A module giving functions to read xml style files.
+
+ * There are also two shell scripts for running the RPMD runs easily. These are:
+   - launch_multi.sh: This starts an entire run of 100 tests.
+   - launch.sh: This starts one of the runs
+
+ * Let us say that in the RPMD directory you have run run_3, which has an
+   initial port number of 31413. To start the driver codes then, you need do:
+
+$ qsub launch_multi.sh 31413
+
+ * To run all the RPMD driver codes, simply do: 
+
+$ for a in `seq 31411 31415`; do qsub launch.sh $a; done

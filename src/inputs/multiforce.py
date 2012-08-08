@@ -93,7 +93,7 @@ class InputMulti(Input):
       """
 
       super(InputMulti,self).store()
-      self.nfields.store(force._forces)
+      self.nfields.store(len(force._forces))
       for ff in range(len(force._forces)):
          force_name = "force" + str(ff+1)
          self.__dict__[force_name].store(force._forces[ff])
@@ -145,6 +145,7 @@ class InputMulti(Input):
          except KeyError:
             if not self.nfields._explicit:
                self.nfields.store(len(forcelist))
+               print "'nfields' tag in 'multiforce' not given, and has been set to ", len(forcelist)
             elif len(forcelist) != self.nfields.fetch():
                raise ValueError("The number of forcefields does not match the 'nfields' attribute")
             elif len(forcelist) == 0:
@@ -162,4 +163,6 @@ class InputMulti(Input):
       """
 
       super(InputMulti,self).check()
-      #TODO make sure the reduced ring polymer sizes are odd and less than nbeads
+      #TODO make sure the reduced ring polymer sizes are odd and less than 
+      #nbeads. This will need to be done after we know what nbeads is, so
+      #probably in ensemble.
