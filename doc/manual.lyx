@@ -2099,7 +2099,7 @@ cite{lverlet67pr}
 ph2: This simulates para-hydrogen using the isotropic Silvera-Goldman pair
  potential.
  There are three directories, RPMD, nvt and Tuckerman.
- RPMD and nvt have test which can be compared to the results of 
+ RPMD and nvt have tests which can be compared to the results of 
 \begin_inset ERT
 status open
 
@@ -2112,7 +2112,7 @@ cite{mill-mano05jcp}
 
 \end_inset
 
-, and Tuckerman has results which can be compared to the results of 
+, and Tuckerman has tests which can be compared to the results of 
 \begin_inset ERT
 status open
 
