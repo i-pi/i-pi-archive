@@ -2098,8 +2098,8 @@ cite{lverlet67pr}
 \begin_layout Description
 ph2: This simulates para-hydrogen using the isotropic Silvera-Goldman pair
  potential.
- There are two directories, nvt and Tuckerman, which can be compared to
- the results of 
+ There are three directories, RPMD, nvt and Tuckerman.
+ RPMD and nvt have test which can be compared to the results of 
 \begin_inset ERT
 status open
 
@@ -2112,7 +2112,7 @@ cite{mill-mano05jcp}
 
 \end_inset
 
- and 
+, and Tuckerman has results which can be compared to the results of 
 \begin_inset ERT
 status open
 
@@ -2125,7 +2125,7 @@ cite{mart+99jcp}
 
 \end_inset
 
- respectively.
+.
 \end_layout
 
 \begin_layout Description
@@ -3121,7 +3121,7 @@ Mass
 \begin_inset Text
 
 \begin_layout Plain Layout
-Atomic mass unit
+Electron mass
 \end_layout
 
 \end_inset
@@ -3130,7 +3130,7 @@ Atomic mass unit
 \begin_inset Text
 
 \begin_layout Plain Layout
-1.6605387e-27 kg
+9.1093819e-31 kg
 \end_layout
 
 \end_inset

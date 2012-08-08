@@ -166,8 +166,8 @@ UnitMap = {
    "mass":        {
       ""             : 1.00,
       "atomic_unit"  : 1.00,
-      "dalton"       : 1.00,
-      "electronmass" : 1.00/Constants.amu
+      "dalton"       : 1.00*Constants.amu,
+      "electronmass" : 1.00
       },
    "pressure" :     {
       ""             : 1.00,
