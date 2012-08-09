@@ -65,7 +65,9 @@ class Ensemble(dobject):
       Args:
          dt: The timestep of the simulation algorithms.
          temp: The temperature.
+         nm_freqs:
       """
+#TODO add nm_freqs to the doc string
 
       dset(self, "econs", depend_value(name='econs', func=self.get_econs) )
       dset(self, "temp",  depend_value(name='temp',  value=temp))       

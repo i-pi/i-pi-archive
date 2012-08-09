@@ -165,15 +165,15 @@ class InputSimulation(Input):
       dstride.update(vstride)
       
       olist = self.properties.fetch()
-      if (len(olist) == 0):
+      if not self.properties._explicit:
          olist = None
 
       tlist = self.trajectories.fetch()
-      if (len(tlist) == 0):
+      if not self.trajectories._explicit:
          tlist = None
 
       ilist = self.initialize.fetch()
-      if (len(ilist) == 0):
+      if not self.initialize._explicit:
          ilist = None
       
       rsim = engine.simulation.Simulation(nbeads, ncell, self.force.fetch(), 
