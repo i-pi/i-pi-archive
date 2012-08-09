@@ -109,9 +109,15 @@ class InputCell(Input):
          cell = CellFlexi(h=self.h.fetch(), m=self.m.fetch())
          if not self.h0._explicit:
             cell.h0 = cell.h
+         else:
+            cell.h0 = self.h0.fetch()
          cell.p = self.p.fetch()
       else:
          cell = CellRigid(h=self.h.fetch(), m=self.m.fetch())
+         if not self.h0._explicit:
+            cell.h0 = cell.h
+         else:
+            cell.h0 = self.h0.fetch()
          cell.P = self.P.fetch()
       cell.from_file = self.from_file.fetch()
       return cell

@@ -169,6 +169,7 @@ class Beads(dobject):
 
    def m3todm3(self):
       """Takes the mass array and returns the square rooted mass array."""
+      #TODO make this doc string correct.
       
       print "rescaling NM dynamical masses to ", self.dynm_factors
       dm3 = np.zeros(self.m3.shape,float)

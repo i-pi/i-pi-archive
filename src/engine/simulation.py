@@ -158,7 +158,7 @@ class Simulation(dobject):
       
       self.status = inputs.simulation.InputSimulation()
       self.status.store(self)
-      
+
       # Checks as soon as possible if some asked-for properties are missing or mispelled
       for what in self.outlist:
          if '(' in what:
@@ -224,7 +224,7 @@ class Simulation(dobject):
             self.write_traj()
          if os.path.exists("EXIT"): # soft-exit
             self.soft_exit(rollback=False)
-            
+
       self.soft_exit(rollback=False)
             
    def init(self):
