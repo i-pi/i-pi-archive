@@ -7,7 +7,9 @@ Classes:
       between different systems of units.
 """
 
-__all__ = ['Constants', 'Elements', 'Units', 'UnitMap']
+import re
+
+__all__ = ['Constants', 'Elements', 'UnitMap', 'unit_to_internal', 'unit_to_user' ]
 
 class Constants:
    """Class whose members are fundamental contants.
@@ -114,6 +116,7 @@ class Elements(dict):
          print "Unknown element given, you must specify the mass"
          return -1.0
 
+# thes are the conversion FROM atomic units to the unit stated
 UnitMap = { 
    "undefined": {
       ""             : 1.00 
@@ -122,8 +125,8 @@ UnitMap = {
       ""             : 1.00,
       "atomic_unit"  : 1.00, 
       "electronvolt" : 0.036749326,
-      "kj_mol"       : 0.00038087989,
-      "kcal_mol"     : 0.0015946679,
+      "j_mol"       : 0.00038087989,
+      "cal_mol"     : 0.0015946679,
       "kelvin"       : 3.1668152e-06
       },
    "temperature":   {
@@ -134,14 +137,13 @@ UnitMap = {
    "time":     {
       ""             : 1.00,
       "atomic_unit"  : 1.00,
-      "picosecond"   : 41341.373,
-      "femtosecond"  : 41.341373
+      "second"       : 4.1341373e+16
       },
    "frequency" :   {   # TODO fill up units here 
                        # also, we may or may not need some 2*pi factors here
       ""             : 1.00,
       "atomic_unit"  : 1.00,
-      "wavenumber"   : 8.0685297e-28,
+      "invcm"        : 8.0685297e-28,
       "hertz"        : 2.4188843e-17
       },     
    "ms-momentum" :   {   # TODO fill up units here (mass-scaled momentum)
@@ -152,7 +154,7 @@ UnitMap = {
       ""             : 1.00,
       "atomic_unit"  : 1.00,
       "angstrom"     : 1.8897261,
-      "nanometer"    : 18.897261
+      "meter"        : 1.8897261e+10
       },
    "velocity":    {
       ""            : 1.00,
@@ -173,67 +175,58 @@ UnitMap = {
       ""             : 1.00,
       "atomic_unit"  : 1.00,
       "bar"          : 3.398827377e-9,
-      "kilobar"      : 3.398827377e-6,
       "atmosphere"   : 3.44386184e-9,
-      "pascal"       : 3.398827377e-14,
-      "kilopascal"   : 3.398827377e-11,
-      "megapascal"   : 3.398827377e-8,
-      "gigapascal"   : 3.398827377e-5
+      "pascal"       : 3.398827377e-14
       }
 }
 
+# a list of magnitude prefixes
+UnitPrefix = {
+   "" : 1.0,
+   "yotta" : 1e24, "zetta" : 1e21, "exa" : 1e18, "peta" : 1e15,
+   "tera" : 1e12, "giga" : 1e9, "mega" : 1e6, "kilo" : 1e3,
+   "milli" : 1e-3, "micro" : 1e-6, "nano" : 1e-9, "pico" : 1e-12,
+   "femto" : 1e-15, "atto" : 1e-18, "zepto" : 1e-21, "yocto" : 1e-24
+}
 
-class Units(object):
-   """A class to perform simple unit conversions based on a map.
+# builds a RE to match prefix and split out the base unit
+UnitPrefixRE=""
+for key in UnitPrefix: UnitPrefixRE = UnitPrefixRE+key+"|"
+UnitPrefixRE = " *("+UnitPrefixRE[1:-1] + ")(.*) *"
+print "KEY DICTIONARY : ", UnitPrefixRE
+UnitPrefixRE = re.compile(UnitPrefixRE)
 
-   Uses the UnitMap object, which is a dictionary of the form 
-   {'unit type': {'name': value}}, where the value is the value of the 
-   particular unit described by name in atomic units.
+########################################################################
+#  Atomic units are used EVERYWHERE internally. In order to quickly    #
+#  interface with any "outside" unit, we set up a simple conversion    #
+#  library.                                                            # 
+########################################################################
 
-   Attributes:
-      family: The unit type. Will be either a base unit such as 'time', a 
-         derived unit such as 'force', or unitless, which is given by 'number'. 
-   """
+def unit_to_internal(family, unit, number):
+   """ Converts a number of given dimensions and units into internal units. """
    
-   def __init__(self, family="number"):
-      """Initialises Units.
+   if not (family == "number"  or family in UnitMap):
+      raise IndexError(family + " is an undefined units kind.")
+   if family == "number":
+      return number
 
-      Args:
-         family: The unit type. Defaults to 'number'.
 
-      Raises:
-         IndexError: Raised if the unit type given has not been defined.
-      """
-
-      if not (family == "number"  or family in UnitMap):
-         raise IndexError(family + " is an undefined units kind.")
-      self.family = family
+   if unit == "":
+      prefix=""; base=""
+   else:
+      m = UnitPrefixRE.match(unit);   
+      if m is None : raise ValueError("Unit "+unit+" is not structured with a prefix+base syntax.")   
+      prefix = m.group(1); base = m.group(2); 
       
-   def to_internal(self, number, unit):
-      """Converts number from the unit type given to internal units using the 
-      appropriate conversion factor.
+   if not prefix in UnitPrefix:
+      raise TypeError(prefix + " is not a valid unit prefix.")      
+   if not base in UnitMap[family]:
+      raise TypeError(base + " is an undefined unit for kind " + family + ".")
+      
+   print "converted "+unit+" to "+  str(number*UnitMap[family][base]*UnitPrefix[prefix])
+   return number*UnitMap[family][base]*UnitPrefix[prefix]
 
-      Args:
-         number: The value of the number in the unit given.
-         unit: The particular unit of the appropriate unit type that the 
-            number is given in.
-
-      Raises:
-         TypeError: Raised if the unit given is not of the correct type.
-      """
-
-      if self.family == "number":
-         return number
-      if not unit in UnitMap[self.family]:
-         raise TypeError(unit + " is an undefined unit for kind " + self.family + ".")
-      return number*UnitMap[self.family][unit]
-
-   def to_user(self, number, unit):
-      """Converts number from internal units to the specified unit.
-
-      Args:
-         number: The value of the number in internal units.
-         unit: The unit for the number to be converted into.
-      """
-
-      return number/UnitMap[self.family][unit]
+def unit_to_user(family, unit, number):
+   """ Converts a number of given dimensions from internal to user units. """
+   
+   return number/unit_to_internal(family, unit, 1.0)

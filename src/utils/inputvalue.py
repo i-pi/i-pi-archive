@@ -22,7 +22,7 @@ __all__ = ['Input', 'InputValue', 'InputArray']
 
 import numpy as np
 from  io.io_xml import *
-from units import UnitMap
+from units import unit_to_internal, unit_to_user
 
 class Input(object):
    """Base class for input handling.
@@ -140,13 +140,9 @@ class Input(object):
       """Base function to check for input errors.
 
       Raises:
-         TypeError: Raised if the user has defined a unit type that is
-            incompatible with the dimensionality of the value.
          ValueError: Raised if the user does not specify a required field.
       """
 
-      if not (self.units in UnitMap[self._dimension]):
-         raise TypeError("Unit type " + self.units + " is not compatible with dimension " + self._dimension)
       if not (self._explicit or self._optional):
          raise ValueError("Uninitialized Input value of type " + type(self).__name__)
    
@@ -464,14 +460,14 @@ class InputValue(Input):
       super(InputValue,self).store(value)
       self.value = self.type(value)
       if self._dimension != "undefined":
-         self.value /= UnitMap[self._dimension][self.units]
+         self.value = unit_to_user(self._dimension, self.units, self.value)
       
    def fetch(self): 
       """Returns the stored data in the user defined units."""
 
       super(InputValue,self).fetch()
       if self._dimension != "undefined":
-         return self.value*UnitMap[self._dimension][self.units]
+         return unit_to_internal(self._dimension, self.units, self.value)
       else:
          return self.value
 
@@ -588,7 +584,7 @@ class InputArray(Input):
       self.shape.store(value.shape)
       self.value = np.array(value, dtype=self.type).flatten().copy()
       if self._dimension != "undefined":
-         self.value /= UnitMap[self._dimension][self.units]
+         self.value *= unit_to_user(self._dimension,self.units,1.0)
       if self.shape.fetch() == (0,):
          self.shape.store((len(self.value),))
       
@@ -603,7 +599,7 @@ class InputArray(Input):
          value = self.value.reshape(self.shape.fetch()).copy()
 
       if self._dimension != "undefined":
-         return value*UnitMap[self._dimension][self.units]
+         return value*unit_to_internal(self._dimension,self.units,1.0)
       else:
          return value
 
