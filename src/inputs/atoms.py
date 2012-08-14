@@ -14,7 +14,7 @@ from engine.atoms import *
 from utils.inputvalue import *
 import utils.io.io_pdb, utils.io.io_xyz
 from utils.depend import *
-from utils.units import *
+from utils.units import unit_to_internal
 
 __all__ = ['InputAtoms']
       
@@ -38,7 +38,7 @@ class InputAtoms(Input):
       from_file: An optional string giving a pdb format file with the atom
          positions. Defaults to ''.
       file_units: An optional string giving the length units that the file is
-         specified by. Defaults to ''.
+         specified by. Defaults to '' [atomic units].
    """
 
    fields={ "natoms"    : (InputValue, {"dtype"     : int,
@@ -64,8 +64,7 @@ class InputAtoms(Input):
                                         "help"      : "Gives the name of the file from which the configurations are taken, if present. Any value given in this file can be overwritten by specifying it explicitly." }),
             "file_units": (InputValue, {"dtype"     : str,
                                         "default"   : "",
-                                        "help"      : "The units in which the lengths in the configuration file are given.",
-                                        "options"   : [unit for unit in UnitMap["length"]]})  }
+                                        "help"      : "The units in which the lengths in the configuration file are given." })  }
 
    default_help = "Deals with single replicas of the system or classical simulations."
    default_label = "ATOMS"
@@ -144,7 +143,7 @@ class InputAtoms(Input):
          else:
             raise ValueError("Unrecognized extension for atomic configuration file")
             
-         myatoms.q *= UnitMap["length"][self.file_units.fetch()]
+         myatoms.q *= unit_to_internal("length", self.file_units.fetch(),1.0)
 
          # We can overwrite any of the properties in from_file
          # by specifying them in atoms.

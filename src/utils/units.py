@@ -9,7 +9,7 @@ Classes:
 
 import re
 
-__all__ = ['Constants', 'Elements', 'UnitMap', 'unit_to_internal', 'unit_to_user' ]
+__all__ = ['Constants', 'Elements', 'unit_to_internal', 'unit_to_user' ]
 
 class Constants:
    """Class whose members are fundamental contants.
@@ -192,7 +192,7 @@ UnitPrefix = {
 # builds a RE to match prefix and split out the base unit
 UnitPrefixRE=""
 for key in UnitPrefix: UnitPrefixRE = UnitPrefixRE+key+"|"
-UnitPrefixRE = " *("+UnitPrefixRE[1:-1] + ")(.*) *"
+UnitPrefixRE = " *("+UnitPrefixRE[1:] + ")(.*) *"
 print "KEY DICTIONARY : ", UnitPrefixRE
 UnitPrefixRE = re.compile(UnitPrefixRE)
 
