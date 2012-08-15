@@ -10,7 +10,7 @@ Classes:
    Simulation: Deals with running the simulation and outputting the results.
 """
 
-__all__ = ['Simulation']
+__all__ = ['Simulation', 'PropertyOutput' ]
 
 import numpy as np
 import math, random
@@ -32,6 +32,190 @@ _DEFAULT_STRIDES = {"checkpoint": 1000, "properties": 10, "progress": 100, "cent
 _DEFAULT_OUTPUT = [ "time", "conserved", "kinetic_cv", "potential" ]
 _DEFAULT_TRAJ = [ "positions" ]
 
+class PropertyOutput(dobject):
+   """ Mini-class dealing with outputting a set of properties to file.
+   
+      Does not do any calculation, just manages opening a file, getting data 
+      from a Properties object and outputting with the desired stride. 
+   """
+   
+   def __init__(self, filename="out", stride=1, outlist=[]):
+      """ Initializes a property output stream opening the corresponding file name. 
+         Also writes out headers.  """
+      self.filename=filename
+      self.outlist=outlist
+      self.stride=stride
+      self.out=None
+      
+      
+   def bind(self, simul):
+      """ Binds output proxy to simulation object. """
+
+      self.simul=simul
+      
+      # Checks as soon as possible if some asked-for properties are missing or mispelled
+      for what in self.outlist:
+         if '(' in what:
+            argstart = what.find('(')
+            key = what[0:argstart]
+            if not key in self.simul.properties.property_dict.keys():
+               print "Computable properties list: ", self.properties.property_dict.keys()
+               raise KeyError(key + " is not a recognized property")
+
+         elif not what in self.simul.properties.property_dict.keys():
+            print "Computable properties list: ", self.properties.property_dict.keys()
+            raise KeyError(what + " is not a recognized property")
+         
+      self.open_stream()
+      
+   def open_stream(self):
+      """ Opens the output stream. """
+
+      try:
+         self.out=open(self.filename, "a")
+      except:
+         raise ValueError("Could not open file "+self.filename+" for output")
+
+      ohead = "# "
+      for l in self.outlist:
+         ohead += "%16s"%(l) + " "
+      self.out.write(ohead + "\n")
+         
+
+   def close_stream():
+      """ Closes the output stream. """ 
+      
+      self.out.close()
+            
+   def write(self):
+      """Outputs the required properties of the system. 
+
+      Note that properties are outputted using the same format as for the 
+      output to the xml checkpoint files, as specified in io_xml.
+
+      Raises:
+         KeyError: Raised if one of the properties specified in the output list
+            are not contained in the property_dict member of properties.
+      """
+
+   
+      if not (self.simul.step+1) % self.stride == 0:   return
+      self.out.write("  ")      
+      for what in self.outlist:
+         try:
+            quantity = self.simul.properties[what]
+         except KeyError:
+            raise KeyError(what + " is not a recognized property")
+         if not hasattr(quantity,"__len__") :
+            self.out.write(write_type(float, quantity) + "   ")
+         else:
+            self.out.write(" [ ")
+            for el in quantity:
+               self.fout.write(write_type(float, el) + " ")
+            self.out.write(" ] ")
+                     
+      self.out.write("\n")   
+      self.out.flush()   
+
+
+class TrajectoryOutput(dobject):
+   """ Mini-class dealing with outputting atom-based properties as a trajectory file.
+
+      Does not do any calculation, just manages opening a file, getting data 
+      from a Trajectories object and outputting with the desired stride. 
+   """
+   
+   
+   def __init__(self, filename="out", stride=1, what="", format="xyz"):
+      """ Initializes a property output stream opening the corresponding file name. 
+         Also writes out headers.  """
+      self.filename=filename
+      self.what=what
+      self.stride=stride
+      self.format=format
+      self.out=None
+      
+      
+   def bind(self, simul):
+      """ Binds output proxy to simulation object. """
+
+      self.simul=simul      
+      self.open_stream()
+      
+   def open_stream(self):
+      """ Opens the output stream(s). """
+
+      if self.what in [ "positions", "velocities", "forces" ]: 
+         # must write out trajectories for each bead, so must create b streams
+         self.out=[]
+         for b in range(self.simul.beads.nbeads):
+            padb=( ("%0"+str(int(1+np.floor(np.log(self.simul.beads.nbeads)/np.log(10))))+"d") % (b) )
+            try:
+               self.out.append( open(self.filename+"_"+padb+"."+self.format, "a") )
+            except:
+               raise ValueError("Could not open file "+self.filename+"_"+padb+"."+self.format+" for output")         
+
+   def close_stream():
+      """ Closes the output stream. """ 
+      
+      if hasattr(self.out, "__getitem__"):   
+         for o in self.out: o.close()
+      else:
+         self.out.close()
+
+   def write(self):
+      """Writes out the required trajectories."""
+      
+      if not (self.simul.step+1) % self.stride == 0:   return
+      
+      # quick-and-dirty way to check if a trajectory is "global" or per-bead
+      # Checks to see if there is a list of files or just a single file.
+      if hasattr(self.out, "__getitem__"):   
+         for b in range(len(self.out)):
+            self.simul.trajs.print_traj(self.what, self.out[b], b, format=self.format)
+      else:
+         self.simul.trajs.print_traj(self.what, self.out, b=0, format=self.format)
+
+class CheckpointOutput(dobject):
+   """ Mini-class dealing with outputting checkpoints. """
+   
+   
+   def __init__(self, filename="restart", stride=1000, overwrite=True, step=0):
+      """ Initializes a property output stream opening the corresponding file name. 
+         Also writes out headers.  """
+      self.filename=filename
+      self.step=step
+      self.stride=stride
+      self.overwrite=overwrite
+      
+      
+   def bind(self, simul):
+      """ Binds output proxy to simulation object. """
+
+      self.simul=simul
+      self.status=inputs.simulation.InputSimulation(); self.status.store(simul)
+      
+   def store(self):
+      self.status.store(self.simul)
+      
+   def write(self):
+      """Writes out the required trajectories."""
+      
+      if not (self.simul.step+1) % self.stride == 0:   return
+      
+      if self.overwrite: filename=self.filename
+      else: filename=self.filename+"_"+str(self.step)      
+      
+      self.store()
+      check_file = open(filename, "w")            
+      check_file.write(self.status.write(name="simulation"))
+      check_file.close()      
+      
+      self.step+=1
+         
+                 
+                 
+
 class Simulation(dobject):
    """Main simulation object. 
 
@@ -39,7 +223,6 @@ class Simulation(dobject):
    initialisation and output.
    
    Attributes:
-      nbeads: The number of the replicas of the system.
       beads: A beads object giving the atom positions.
       cell: A cell object giving the system box.
       prng: A random number generator object.
@@ -50,31 +233,22 @@ class Simulation(dobject):
       ensemble: An ensemble object giving the objects necessary for producing
          the correct ensemble.
       tsteps: The total number of steps.
-      prefix: A prefix for all the output files.
       format: A string specifying both the format and the extension of traj 
          output.
-      dstride: A dictionary giving number of steps between printing out 
-         data for the different types of data. Defaults to _DEFAULT_STRIDES.
-      outlist: An array of strings giving the different properties to output.
+      outputs: A list of output objects that should 
       initlist: A dictionary of the properties that should be initialised with
          their values. Set to zero after the initialisation, so that the 
          checkpoints don't specify any properties to be initialised after the 
          simulation is restarted.
       properties: A properties object.
-      fout: File to output the properties to.
-      tout: File to output the full trajectory to.
-      ichk: A number keeping track of all the restart files generated so far,
-         so that old files are not overwritten.
-      status: A InputSimulation object used to deal gracefully with soft exit
+      chk: A CheckoutOutput object used to deal gracefully with soft exit
          in the middle of a force calculation
 
    Depend objects:
       step: The current simulation step.
    """   
 
-   def __init__(self, beads, cell, force, ensemble, prng, step=0, tsteps=1000, 
-               stride=None, prefix="prefix", outlist=None, trajlist=None, 
-               initlist=None):
+   def __init__(self, beads, cell, force, ensemble, prng, outputs, step=0, tsteps=1000,  initlist=None):
       """Initialises Simulation class.
 
       Args:
@@ -85,18 +259,11 @@ class Simulation(dobject):
          ensemble: An ensemble object giving the objects necessary for 
             producing the correct ensemble.
          prng: A random number object.
+         outputs: A list of output objects. 
          step: An optional integer giving the current simulation time step. 
             Defaults to 0.
          tsteps: An optional integer giving the total number of steps. Defaults
             to 1000.
-         stride: An optional dictionary giving the number of steps between 
-            printing out data for the different types of data. 
-         prefix: An optional string giving the prefix for all the output files. 
-            Defaults to 'prefix'.
-         outlist: An array of strings giving all the properties that should 
-            be output space separated.
-         trajlist: An array of strings giving all the trajectories that should
-            be output. 
          initlist: A dictionary of keys giving all the quantities that should
             be initialized with values giving their initial value.
       """
@@ -108,28 +275,13 @@ class Simulation(dobject):
       self.prng = prng
       self._forcemodel = force
       self.forces = ForceBeads()
-      self.status = None
+      self.outputs = outputs
+      self.chk = None
       
       self.ensemble = ensemble
       
       dset(self, "step", depend_value(name="step", value=step))
-      self.tsteps = tsteps
-      
-      self.prefix = prefix      
-      if stride is None:
-         self.dstride = dict(_DEFAULT_STRIDES)
-      else:
-         self.dstride = stride
-
-      if outlist is None:
-         self.outlist = np.array(_DEFAULT_OUTPUT, np.dtype('|S12') )
-      else:
-         self.outlist = outlist                                    
-
-      if trajlist is None:
-         self.trajlist = np.array(_DEFAULT_TRAJ, np.dtype('|S12') )
-      else:
-         self.trajlist = trajlist                                    
+      self.tsteps = tsteps                             
 
       self.properties = Properties()
       self.trajs = Trajectories()
@@ -155,23 +307,12 @@ class Simulation(dobject):
       # binds output management objects
       self.properties.bind(self)
       self.trajs.bind(self)
-      
-      self.status = inputs.simulation.InputSimulation()
-      self.status.store(self)
+      for o in self.outputs:    o.bind(self)
 
-      # Checks as soon as possible if some asked-for properties are missing or mispelled
-      for what in self.outlist:
-         if '(' in what:
-            argstart = what.find('(')
-            key = what[0:argstart]
-            if not key in self.properties.property_dict.keys():
-               print "Computable properties list: ", self.properties.property_dict.keys()
-               raise KeyError(key + " is not a recognized property")
+      self.chk=CheckpointOutput("RESTART", 1, True, 0)
+      self.chk.bind(self)
 
-         elif not what in self.properties.property_dict.keys():
-            print "Computable properties list: ", self.properties.property_dict.keys()
-            raise KeyError(what + " is not a recognized property")
-   
+
    def soft_exit(self, rollback=True):
       """Deals with a soft exit request. 
       
@@ -182,8 +323,8 @@ class Simulation(dobject):
       if self.step < self.tsteps:
          self.step += 1         
       if not rollback:
-         self.status.store(self)         
-      self.write_chk()
+         self.chk.store()         
+      self.chk.write()
 
       self._forcemodel.socket.end_thread()      
       sys.exit()
@@ -201,8 +342,7 @@ class Simulation(dobject):
       # prints inital configuration -- only if we are not restarting
       if (self.step == 0):
          self.step = -1
-         self.write_output()
-         self.write_traj()
+         for o in self.outputs:  o.write()
          self.step = 0
                  
       # main MD loop
@@ -210,18 +350,14 @@ class Simulation(dobject):
          # stores the state before doing a step. 
          # this is a bit time-consuming but makes sure that we can honor soft 
          # exit requests without screwing the trajectory
-         self.status.store(self) 
+         self.chk.store() 
          
          self.ensemble.step()
          print " # MD step % 7d complete. Timings --> p-step: %10.5f  q-step: %10.5f  t-step: %10.5f" % (self.step, self.ensemble.ptime, self.ensemble.qtime, self.ensemble.ttime )
          print " # MD diagnostics: V: %10.5e    Kcv: %10.5e   Ecns: %10.5e" % (self.properties["potential"], self.properties["kinetic_cv"], self.properties["conserved"] )
+            
+         for o in self.outputs:  o.write()
 
-         if ((self.step+1) % self.dstride["checkpoint"] == 0):
-            self.write_chk()      
-         if ((self.step+1) % self.dstride["properties"] == 0):
-            self.write_output()
-         if ((self.step+1) % self.dstride["trajectory"] == 0):
-            self.write_traj()
          if os.path.exists("EXIT"): # soft-exit
             self.soft_exit(rollback=False)
 
@@ -235,24 +371,7 @@ class Simulation(dobject):
       It then removes the list of quantities to
       be initialized, so that if the simulation is restarted these quantities
       are not re-initialized.
-      """
-
-      self.fout = open(self.prefix + ".out", "a")
-      ohead = "# "
-      for l in self.outlist:
-         ohead += "%16s"%(l) + " "
-      self.fout.write(ohead + "\n")
-      
-      
-      # self.tcout = open(self.prefix + ".centroid." + self.trajs.format, "a")  
-      self.tout = {}    
-      for what in self.trajlist:
-         if what in [ "positions", "velocities", "forces" ]:
-            self.tout[what] = [ open(self.prefix + "." + what[0:3] + "_" + str(b) + "." + self.trajs.format, "a") for b in range(self.beads.nbeads) ]
-         else:
-            self.tout[what] = open(self.prefix + "." + what[0:3] + "." + self.trajs.format, "a")
-
-      self.ichk = 0      
+      """  
 
       if "normal_modes" in self.initlist:
          init_temp = float(self.initlist["normal_modes"])*self.beads.nbeads
@@ -286,66 +405,3 @@ class Simulation(dobject):
       
       # Zeroes out the initlist, such that in restarts no initialization will be required
       self.initlist = {}
-
-   def write_traj(self):
-      """Writes out the required trajectories."""
-      
-      for what in self.trajlist:
-         # quick-and-dirty way to check if a trajectory is "global" or per-bead
-         # Checks to see if there is a list of files or just a single file.
-         if hasattr(self.tout[what], "__getitem__"):   
-            for b in range(self.beads.nbeads):
-               self.trajs.print_traj(what, self.tout[what][b], b)
-         else:
-            self.trajs.print_traj(what, self.tout[what])
-   
-   def write_output(self):
-      """Outputs the required properties of the system.
-
-      Note that properties are outputted using the same format as for the 
-      output to the xml checkpoint files, as specified in io_xml.
-
-      Raises:
-         KeyError: Raised if one of the properties specified in the output list
-            are not contained in the property_dict member of properties.
-      """
-
-      self.fout.write("  ")
-      for what in self.outlist:
-         try:
-            quantity = self.properties[what]
-         except KeyError:
-            raise KeyError(what + " is not a recognized property")
-         if not hasattr(quantity,"__len__") :
-            self.fout.write(write_type(float, quantity) + "   ")
-         else:
-            self.fout.write(" [ ")
-            for el in quantity:
-               self.fout.write(write_type(float, el) + " ")
-            self.fout.write(" ] ")
-                     
-      self.fout.write("\n")   
-      self.fout.flush()   
-      
-   def write_chk(self):
-      """Outputs the xml checkpoint files.
-
-      Note that each checkpoint is written to a different file, so that old 
-      checkpoint files can still be used to restart the system if a problem
-      is found.
-      """
-
-      new = False
-      self.ichk += 1
-      while (not new):
-         try:
-            check_file = open(self.prefix + ".restart" + str(self.ichk), "r")
-            check_file.close()
-            self.ichk += 1
-         except IOError:
-            check_file = open(self.prefix + ".restart" + str(self.ichk), "w")
-            new = True
-      
-      check_file.write(self.status.write(name="simulation"))
-      check_file.close()
-      

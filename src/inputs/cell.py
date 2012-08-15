@@ -150,7 +150,9 @@ class InputCell(Input):
             self.m.store(mycell.m)
          self.from_file.store("")
 
+      
       h = self.h.fetch()
+      print "h value is ",h
       h0 = self.h0.fetch()
       if not (h.shape == (3,3) and h0.shape == (3,3)):
          raise ValueError("Incorrect shape for cell vector matrices.")

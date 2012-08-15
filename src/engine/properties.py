@@ -308,7 +308,6 @@ class Properties(dobject):
       qc=depstrip(self.beads.qc)
       f=depstrip(self.forces.f)
 
-      print "KINETIC CV", atom, iatom, latom
       acv = 0.0
       for i in range(self.beads.natoms):
          if (atom != "" and iatom != i and latom != self.beads.names[i]):
@@ -609,16 +608,9 @@ class Trajectories(dobject):
          can be output.
    """
    
-   def __init__(self, format = "pdb"):
-      """Initialises a Trajectories object.
+   def __init__(self):
+      """Initialises a Trajectories object.  """
 
-      Args:
-         format: A format string giving the file format for the output files.
-            Defaults to 'pdb'.
-      """
-
-      self.format = format
-      
    def bind(self, simul):
       """ Binds to a simulation object to fetch atomic and force data.
       
@@ -688,7 +680,7 @@ class Trajectories(dobject):
       rv *= 0.5*self.simul.ensemble.omegan**2
       return rv
          
-   def print_traj(self, what, stream, b=0):
+   def print_traj(self, what, stream, b=0, format="pdb"):
       """Prints out a frame of a trajectory for the specified quantity and bead.
 
       Args:
@@ -718,7 +710,7 @@ class Trajectories(dobject):
       else:
          raise IndexError("<" + what + "> is not a recognized trajectory output")
       
-      if self.format == "pdb":
+      if format == "pdb":
          io_pdb.print_pdb(self.fatom, self.simul.cell, stream, title=("Step:  %10d  Bead:   %5d " % (self.simul.step+1, b) ) )
-      elif self.format == "xyz":
+      elif format == "xyz":
          io_xyz.print_xyz(self.fatom, self.simul.cell, stream, title=("Step:  %10d  Bead:   %5d " % (self.simul.step+1, b) ) )

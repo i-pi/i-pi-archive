@@ -193,7 +193,6 @@ UnitPrefix = {
 UnitPrefixRE=""
 for key in UnitPrefix: UnitPrefixRE = UnitPrefixRE+key+"|"
 UnitPrefixRE = " *("+UnitPrefixRE[1:] + ")(.*) *"
-print "KEY DICTIONARY : ", UnitPrefixRE
 UnitPrefixRE = re.compile(UnitPrefixRE)
 
 ########################################################################
@@ -223,7 +222,6 @@ def unit_to_internal(family, unit, number):
    if not base in UnitMap[family]:
       raise TypeError(base + " is an undefined unit for kind " + family + ".")
       
-   print "converted "+unit+" to "+  str(number*UnitMap[family][base]*UnitPrefix[prefix])
    return number*UnitMap[family][base]*UnitPrefix[prefix]
 
 def unit_to_user(family, unit, number):

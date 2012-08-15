@@ -27,10 +27,165 @@ from inputs.ensembles import InputEnsemble
 from engine.atoms import Atoms
 from engine.beads import Beads
 import engine.simulation
+from copy import copy
 
 _DEFAULT_STRIDES = {"checkpoint": 1000, "properties": 10, "progress": 100, "centroid": 20,  "trajectory": 100}
 _DEFAULT_OUTPUT = [ "time", "conserved", "kinetic_cv", "potential" ]
 _DEFAULT_TRAJ = [ "positions" ]
+
+class InputProperties(InputArray):
+   """ Simple input class to describe output for properties.
+   
+      Storage class for PropertyOutput.
+   """
+
+   attribs=copy(InputArray.attribs)
+   attribs["filename"]=(InputValue,{ "dtype" : str, "default": "out"} )
+   attribs["stride"]=(InputValue,{ "dtype" : int, "default": 1 } )
+   
+   def __init__(self):
+      """ Initializes an InputProperties object by just calling the parent
+          with appropriate arguments. """
+          
+      super(InputProperties,self).__init__(dtype=str, default=engine.simulation.PropertyOutput("out", 1, np.zeros(0, np.dtype('|S12') ) ))
+   
+   def fetch(self):
+      """ Returns a PropertyOutput object. """
+           
+      return engine.simulation.PropertyOutput(self.filename.fetch(), self.stride.fetch(), super(InputProperties,self).fetch())
+      
+   def store(self, prop):
+      """ Stores a PropertyOutput object. """
+   
+      super(InputProperties,self).store(prop.outlist)
+      self.stride.store(prop.stride)
+      self.filename.store(prop.filename)
+
+class InputTrajectory(InputValue):
+   """ Simple input class to describe output for properties.
+   
+      Storage class for TrajectoryOutput.
+   """
+   
+   attribs=copy(InputValue.attribs)
+   attribs["filename"]=(InputValue,{ "dtype" : str, "default": "pos"} )
+   attribs["stride"]=(InputValue,{ "dtype" : int, "default": 1 } )
+   attribs["format"]=(InputValue,{ "dtype" : str, "default": "xyz" } )
+      
+   def __init__(self):
+      """ Initializes an InputTrajectory object by just calling the parent
+          with appropriate arguments. """
+          
+      super(InputTrajectory,self).__init__(dtype=str, default=engine.simulation.TrajectoryOutput("pos", 1, "positions", "xyz" ))
+   
+   def fetch(self):
+      """ Returns a TrajectoryOutput object. """
+           
+      return engine.simulation.TrajectoryOutput(self.filename.fetch(), self.stride.fetch(), super(InputTrajectory,self).fetch(),self.format.fetch())
+
+   def check(self):
+   
+      super(InputTrajectory,self).check()
+      if not self.value in ["positions", "velocities", "forces", "kinetic_cv", "kodterms_cv", "centroid", "momentum_centroid", "gyration", "spring" ]:
+         raise ValueError("Output trajectory file " + self.value + " is not a valid keyword for trajectories.")
+      
+   def store(self, traj):
+      """ Stores a PropertyOutput object. """
+   
+      super(InputTrajectory,self).store(traj.what)
+      self.stride.store(traj.stride)
+      self.filename.store(traj.filename)      
+      self.format.store(traj.format)      
+
+class InputCheckpoint(InputValue):
+   """ Simple input class to describe output for properties.
+   
+      Storage class for CheckpointOutput.
+   """
+   
+   attribs=copy(InputValue.attribs)
+   attribs["filename"]=(InputValue,{ "dtype" : str, "default": "restart"} )
+   attribs["stride"]=(InputValue,{ "dtype" : int, "default": 1 } )
+   attribs["overwrite"]=(InputValue,{ "dtype" : bool, "default": True } )   
+      
+   def __init__(self):
+      """ Initializes an InputTrajectory object by just calling the parent
+          with appropriate arguments. """
+          
+      super(InputCheckpoint,self).__init__(dtype=int, default=engine.simulation.CheckpointOutput("restart", 1000, True))
+   
+   def fetch(self):
+      """ Returns a CheckpointOutput object. """
+       
+      print "reading checkpoint"
+      step=super(InputCheckpoint,self).fetch()      
+      print  "checkpoint ",step, " ", self.overwrite.fetch()
+      return engine.simulation.CheckpointOutput(self.filename.fetch(), self.stride.fetch(), self.overwrite.fetch(), step=step )
+
+   def parse(self, xml=None, text=""):
+
+      # just a quick hack to allow an empty element
+      try: 
+         super(InputCheckpoint,self).parse(xml,text)
+      except:
+         self.value=0
+            
+   def store(self, chk):
+      """ Stores a PropertyOutput object. """
+   
+      super(InputCheckpoint,self).store(chk.step)
+      self.stride.store(chk.stride)
+      self.filename.store(chk.filename)      
+      self.overwrite.store(chk.overwrite)    
+   
+class InputOutputs(Input):
+   """ List of outputs input class. """
+   
+   attribs = { "prefix" : ( InputValue, { "dtype" : str,
+                                          "default"  : "",
+                                          "help"     : "A string that will be the prefix for all the output file names." })
+             }
+   
+   def extend(self, name,  xml, parent=""): 
+      """ Dynamically adds a new input property object to the "extra" list """
+      
+      if name=="properties": 
+         newprop=InputProperties()
+      elif name=="trajectory": 
+         newprop=InputTrajectory()
+      elif name=="checkpoint": 
+         newprop=InputCheckpoint()
+         
+      newprop.parse(xml=xml)
+      self.extra.append( (name, newprop) )
+
+   def fetch(self):
+      """ Returs a list of the output objects included in this dynamic container. """
+            
+      outlist=[ p.fetch() for (n, p) in self.extra ]
+      prefix=self.prefix.fetch()
+      if not prefix == "":
+         for p in outlist: p.filename=prefix+"."+p.filename
+         
+      return outlist
+      
+   def store(self, plist):
+      """ Stores a list of the output objects, creating a sequence of dynamic containers. """
+      
+      self.extra=[]
+      
+      self.prefix.store("")      
+      for el in plist:
+         if (isinstance(el, engine.simulation.PropertyOutput)):
+            ip=InputProperties(); ip.store(el)
+            self.extra.append(("properties", ip) )
+         if (isinstance(el, engine.simulation.TrajectoryOutput)):
+            ip=InputTrajectory(); ip.store(el)
+            self.extra.append(("trajectory", ip) )
+         if (isinstance(el, engine.simulation.CheckpointOutput)):
+            ip=InputCheckpoint(); ip.store(el)
+            self.extra.append(("checkpoint", ip) )            
+
 
 class InputSimulation(Input):
    """Simulation input class.
@@ -50,12 +205,8 @@ class InputSimulation(Input):
       total_steps: The total number of steps. Defaults to 0.
       stride: A dictionary giving the number of steps between printing out 
          data for the different types of data. Defaults to _DEFAULT_STRIDES.
-      prefix: A string giving the prefix for all the output files. Defaults to
-         'prefix'.
       traj_format: A string giving the format of the trajectory output files. 
          Defaults to 'pdb'.
-      properties: An array of strings giving all the properties that should 
-         be output space separated. Defaults to _DEFAULT_OUTPUT.
       trajectories: An array of strings giving all the trajectory data that 
          should be output space separated. Defaults to _DEFAULT_TRAJ.
       initialize: An array of strings giving all the quantities that should
@@ -74,35 +225,30 @@ class InputSimulation(Input):
              "beads" :   (InputBeads, { "help"     : InputBeads.default_help + " Only needs to be specified if the atoms tag is not, but overwrites it otherwise.", 
                                         "default"  : Beads(0,1) } ),
              "cell" :    (InputCell,   { "help"    : InputCell.default_help }),
+             "output" :  (InputOutputs, { "help" : "A series of properties or trajectories tags containing information on how output should be generated. " }), #!TODO
              "step" :       ( InputValue, { "dtype"    : int, 
                                             "default"  : 0, 
                                             "help"     : "How many time steps have been done." }), 
              "total_steps": ( InputValue, { "dtype"    : int, 
                                             "default"  : 1000,
-                                            "help"     : "The total number of steps that will be done." }), 
-             "stride" :     ( InputValue, { "dtype"    : dict,
-                                            "default"  : {},
-                                            "help"     : "Dictionary holding the number of steps between printing the different kinds of files. The allowed keywords are ['checkpoint', 'properties', 'progress', 'trajectory', 'centroid']. The default strides are {'checkpoint': 1000, 'properties': 10, 'progress': 100, 'centroid': 20, 'trajectory': 100}." }), 
-             "prefix":      ( InputValue, { "dtype"    : str,
-                                            "default"  : "prefix",
-                                            "help"     : "A string that will be the prefix for all the output file names." }),
-             "properties":  ( InputArray, { "dtype"    : str,
-                                            "default"  : np.zeros(0, np.dtype('|S12')),
-                                            "help"     : "A list of the properties that will be printed in the properties output file. See the appropriate chapter in the manual for a full list of acceptable names."}),
+                                            "help"     : "The total number of steps that will be done." }),              
              "initialize":  ( InputValue, { "dtype"    : dict,
                                             "default"  : {},
                                             "help"     : "A dictionary giving the properties of the system that need to be initialized, and their initial values. The allowed keywords are ['velocities', 'cell_velocities', 'normal_modes']. The initial value of 'velocities' corresponds to the temperature to initialise the velocity distribution from. If 0, then the system temperature is used. 'cell_velocities' is the same but for the cell velocity. The initial value of 'normal_modes' corresponds to the temperature from which to initialize the higher normal mode frequencies from, if we start a simulation from a configuration with a smaller number of beads. If 0, then the system temperature is used." }), 
              "fd_delta":    ( InputValue, { "dtype"    : float,
                                             "default"  : 0.0,
-                                            "help"     : "The parameter used in the finite difference differentiation in the calculation of the scaled path velocity estimator. Defaults to 1e-5." }), 
-             "traj_format": ( InputValue, { "dtype"    : str,
-                                            "default"  : "pdb",
-                                            "help"     : "The file format for the output file. Allowed keywords are ['pdb', 'xyz'].",
-                                            "options"  : ["pdb", "xyz"] }),  
-                                            
-             "trajectories": ( InputArray, { "dtype"   : str,
-                                             "default" : np.zeros(0, np.dtype('|S12')),
-                                             "help"    : "A list of the properties to print out the per-atom or per-bead trajectories of. Allowed values are ['positions', 'velocities', 'forces', 'kinetic_cv', 'kodterms_cv', 'momentum_centroid', 'centroid', 'gyration', 'spring']. 'kinetic_cv' gives the quantum kinetic energy estimator for each degree of freedom, whereas 'kodterms_cv' gives the off-diagonal elements of the kinetic stress tensor estimator for each degree of freedom. 'gyration' gives the radius of gyration of each atom. 'spring' prints the per-DOF spring term in the PI Hamiltonian. The others are self-explanatory."})}
+                                            "help"     : "The parameter used in the finite difference differentiation in the calculation of the scaled path velocity estimator. Defaults to 1e-5." })
+#             "traj_format": ( InputValue, { "dtype"    : str,
+#                                            "default"  : "pdb",
+#                                            "help"     : "The file format for the output file. Allowed keywords are ['pdb', 'xyz'].",
+#                                            "options"  : ["pdb", "xyz"] }),  
+#                                            
+#             "trajectories": ( InputArray, { "dtype"   : str,
+#                                             "default" : np.zeros(0, np.dtype('|S12')),
+#                                             "help"    : 
+#                                             "A list of the properties to print out the per-atom or per-bead trajectories of. Allowed values are ['positions', 'velocities', 'forces', 'kinetic_cv', 'kodterms_cv', 'momentum_centroid', 'centroid', 'gyration', 'spring']. 'kinetic_cv' gives the quantum kinetic energy estimator for each degree of freedom, whereas 'kodterms_cv' gives the off-diagonal elements of the kinetic stress tensor estimator for each degree of freedom. 'gyration' gives the radius of gyration of each atom. 'spring' prints the per-DOF spring term in the PI Hamiltonian. The others are self-explanatory."})
+#                                             
+                                             }
 
    default_help = "This is the top level class that deals with the running of the simulation, including holding the simulation specific properties such as the time step and outputting the data."
    default_label = "SIMULATION"
@@ -128,11 +274,7 @@ class InputSimulation(Input):
       self.prng.store(simul.prng)
       self.step.store(simul.step)
       self.total_steps.store(simul.tsteps)
-      self.stride.store(simul.dstride)
-      self.prefix.store(simul.prefix)
-      self.traj_format.store(simul.trajs.format)      
-      self.properties.store(simul.outlist)
-      self.trajectories.store(simul.trajlist)
+      self.output.store(simul.outputs)
       self.initialize.store(simul.initlist)
       self.fd_delta.store(simul.properties.fd_delta)
             
@@ -155,37 +297,16 @@ class InputSimulation(Input):
       ncell = self.cell.fetch()
       nprng = self.prng.fetch()
 
-      dstride = dict(_DEFAULT_STRIDES)
-      istride = self.stride.fetch()
-      vstride = {}
-      for k,s in istride.items(): 
-         if not k in dstride:
-            raise TypeError(k + " is not a valid input for the stride keyword")
-         vstride[k] = int(s)
-      dstride.update(vstride)
-      
-      olist = self.properties.fetch()
-      if not self.properties._explicit:
-         olist = None
-
-      tlist = self.trajectories.fetch()
-      if not self.trajectories._explicit:
-         tlist = None
-
       ilist = self.initialize.fetch()
       if not self.initialize._explicit:
          ilist = None
       
       rsim = engine.simulation.Simulation(nbeads, ncell, self.force.fetch(), 
-                     self.ensemble.fetch(), nprng, self.step.fetch(), 
-                     tsteps=self.total_steps.fetch(), stride=dstride,
-                     prefix=self.prefix.fetch(),  outlist=olist, 
-                     trajlist=tlist, initlist=ilist)
+                     self.ensemble.fetch(), nprng, self.output.fetch(), self.step.fetch(), 
+                     tsteps=self.total_steps.fetch(),  initlist=ilist)
 
       if self.fd_delta._explicit:
          rsim.properties.fd_delta = self.fd_delta.fetch()      
-
-      rsim.trajs.format=self.traj_format.fetch()
 
       # binds and inits the simulation object just before returning
       rsim.bind()
@@ -228,11 +349,5 @@ class InputSimulation(Input):
       for init in self.initialize.fetch():
          if not init in ["velocities", "normal_modes", "cell_velocities"]:
             raise ValueError("Initialization parameter " + init + " is not a valid keyword for initialize.")
-      for stride in self.stride.fetch():
-         if not stride in ["checkpoint", "properties", "progress", "trajectory", "centroid"]:
-            raise ValueError("Output file " + stride + " is not a valid keyword for stride.")
-      for traj in self.trajectories.fetch():
-         if not traj in ["positions", "velocities", "forces", "kinetic_cv", "kodterms_cv", "centroid", "momentum_centroid", "gyration", "spring" ]:
-            raise ValueError("Output trajectory file " + traj + " is not a valid keyword for trajectories.")
 
       #TODO do something about fd_delta...

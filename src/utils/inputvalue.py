@@ -50,6 +50,9 @@ class Input(object):
                                   "options": list of available options,
                                   "help": help string,
                                   "dimension": dimensionality of data}), ... }.
+      extra: A list of tuples ( "name", Input_object ) that may be used to 
+         extend the capabilities of the class, i.e. to hold several instances of 
+         a field with the same name, or to hold variable numbers of elements.
       default_help: The default help string.
       default_dimension: The default unit dimensionality.
       default_units: The default unit type.
@@ -65,6 +68,7 @@ class Input(object):
  
    fields = {}
    attribs = {}
+
    default_help = "Generic input value"
    default_dimension = "undefined"
    default_units = ""
@@ -83,7 +87,11 @@ class Input(object):
          dimension: The dimensionality of the value.
          units: The units of the value.
          default: A default value.
+
       """
+
+      # list of extended (dynamic) fields
+      self.extra = []
 
       if help is None:
          self._help = self.default_help  
@@ -146,6 +154,14 @@ class Input(object):
       if not (self._explicit or self._optional):
          raise ValueError("Uninitialized Input value of type " + type(self).__name__)
    
+   def extend(self, name,  xml, parent=""): 
+      """ Dummy call to add elements to the 'extra' list. 
+      
+      In this general implementation, extensions are not considered, so a error is raised. """
+      
+      raise NameError("Tag name '" + name + "' is not a recognized property of '" + parent + "' objects")
+      
+      
    def write(self, name="", indent=""): 
       """Writes data in xml file format.
 
@@ -174,6 +190,10 @@ class Input(object):
       rstr += ">\n"
       for f in self.fields:
          rstr += self.__dict__[f].write(f, "   " + indent)
+      
+      for (f,v) in self.extra:  # also write out extended (dynamic) fields if present
+         rstr += v.write(f, "   " + indent)
+      
       rstr += indent + "</" + name + ">\n"
       return rstr
 
@@ -200,24 +220,26 @@ class Input(object):
       """
 
       self._explicit = True
-      if not xml is None:
-         for a, v in xml.attribs.iteritems() :
-            if a in self.attribs: 
-               self.__dict__[a].parse(text=v)
-            elif a == "_text":
-               pass
-            else:
-               raise NameError("Attribute name '" + a + "' is not a recognized property of '" + xml.name + "' objects")
-         
-         self.adapt()      
-         
-         for f, v in xml.fields.iteritems():
-            if f in self.fields:
-               self.__dict__[f].parse(xml=v)
-            elif f == "_text":
-               pass
-            else:
-               raise NameError("Tag name '" + f + "' is not a recognized property of '" + xml.name + "' objects")
+      if xml is None:
+         raise ValueError("Input.parse should be called with a xml tag")
+
+      for a, v in xml.attribs.iteritems() :
+         if a in self.attribs: 
+            self.__dict__[a].parse(text=v)
+         elif a == "_text":
+            pass
+         else:
+            raise NameError("Attribute name '" + a + "' is not a recognized property of '" + xml.name + "' objects")
+      
+      self.adapt()      
+      
+      for (f, v) in xml.fields:
+         if f in self.fields:
+            self.__dict__[f].parse(xml=v)
+         elif f == "_text":
+            pass
+         else:
+            self.extend(f, v, xml.name) 
                
       for a in self.attribs:
          va = self.__dict__[a]
@@ -447,8 +469,6 @@ class InputValue(Input):
       if not self._default is None:
          self.store(self._default)
          self._explicit = False
-
-      self.attribs={}
       
    def store(self, value):
       """Converts the data to the appropriate data type and units and stores it.
@@ -502,6 +522,9 @@ class InputValue(Input):
          return ""
 
       rstr = indent + "<" + name
+      for a in self.attribs:      
+         if a == "units" : continue
+         rstr += " " + a + "='" + str(self.__dict__[a].fetch()) + "'"            
       if self.units == "":
          rstr += ">"
       else:
@@ -522,10 +545,16 @@ class InputValue(Input):
       if xml is None:
          self.value = read_type(self.type, text)
       else:   
-         self.value = read_type(self.type, xml.fields["_text"])      
          if "units" in xml.attribs:
             self.units = xml.attribs["units"]
 
+         for a in xml.attribs:                                                
+            if a == "units" : continue
+            if not (a in self.__dict__):
+               raise NameError("Attribute name '" + a + "' is not a recognized property of '" + xml.name + "' objects")
+            self.__dict__[a].store(read_type(self.__dict__[a].type, xml.attribs[a]) )
+
+         self.value = read_type(self.type, xml.fields[0][1])
 
 ELPERLINE = 5
 class InputArray(Input):
@@ -625,6 +654,9 @@ class InputArray(Input):
          return ""
 
       rstr = indent + "<" + name + " shape='" + write_tuple(self.shape.fetch())
+      for a in self.attribs:      
+         if a == "shape" : continue
+         rstr += " " + a + "='" + str(self.__dict__[a].fetch()) + "'"
       if self.units == "":
          rstr += "'>"
       else:
@@ -650,7 +682,7 @@ class InputArray(Input):
       return rstr
 
    def parse(self, xml=None, text=""):
-      """Reads the data for a single value from an xml file.
+      """Reads the data for an array from an xml file.
 
       Args:
          xml: An xml_node object containing the all the data for the parent
@@ -660,12 +692,20 @@ class InputArray(Input):
 
       self._explicit = True
       if xml is None:
-         pass 
+         self.value = read_array(self.type, text)       
       else:   
-         self.value = read_array(self.type, xml.fields["_text"])      
+         if xml.fields[0][0] != "_text": raise ValueError("InputArray should not contain further XML tags")
+         self.value = read_array(self.type, xml.fields[0][1])
          if "units" in xml.attribs:
-            self.units = xml.attribs["units"]
+            self.units = xml.attribs["units"]               
          if "shape" in xml.attribs:
             self.shape.store(read_type(tuple, xml.attribs["shape"]))
          else:
             self.shape.store(self.value.shape)
+            
+         for a in xml.attribs:                                    
+            if a == "shape" or a == "units" : continue
+            if not (a in self.__dict__):
+               raise NameError("Attribute name '" + a + "' is not a recognized property of '" + xml.name + "' objects")
+            print "parsing extra attribute ", a
+            self.__dict__[a].store(xml.attribs[a])

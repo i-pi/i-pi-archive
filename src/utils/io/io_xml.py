@@ -60,7 +60,8 @@ class xml_node(object):
       if attribs is None:
          attribs = {}
       if fields is None:
-         fields = {}
+         fields = []
+
       self.attribs = attribs
       self.name = name         
       self.fields = fields
@@ -86,7 +87,7 @@ class xml_handler(ContentHandler):
    def __init__(self):
       """Initialises xml_handler."""
 
-      self.root = xml_node(name="root", fields={})
+      self.root = xml_node(name="root", fields=[])
       self.open = [self.root]
       self.level = 0
       self.buffer = [""]
@@ -103,11 +104,11 @@ class xml_handler(ContentHandler):
          attrs: The attribute data.
       """
 
-      newnode = xml_node(attribs=dict((k,attrs[k]) for k in attrs.keys()), name=name, fields={})
+      newnode = xml_node(attribs=dict((k,attrs[k]) for k in attrs.keys()), name=name, fields=[])
       self.open.append(newnode)
-      if name in self.open[self.level].fields:
-         print "Warning, tag " + name + " specified twice, overwriting old data"
-      self.open[self.level].fields[name] = newnode
+#      if name in self.open[self.level].fields:
+#         print "Warning, tag " + name + " specified twice, overwriting old data in fields"
+      self.open[self.level].fields.append((name,newnode))
       self.buffer.append("")
       self.level += 1      
 
@@ -134,7 +135,7 @@ class xml_handler(ContentHandler):
          name: The tag_name.
       """
 
-      self.open[self.level].fields["_text"] = self.buffer[self.level]
+      self.open[self.level].fields.append(("_text" , self.buffer[self.level]))
       self.buffer.pop(self.level)
       self.open.pop(self.level)
       self.level -= 1
@@ -235,6 +236,7 @@ def read_bool(data):
    Returns:
       A boolean.
    """
+
 
    if data.strip().upper() == "TRUE":
       return True
