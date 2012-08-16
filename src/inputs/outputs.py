@@ -20,7 +20,7 @@ class InputProperties(InputArray):
       """ Initializes an InputProperties object by just calling the parent
           with appropriate arguments. """
 
-      super(InputProperties,self).__init__(dtype=str, default=engine.outputs.PropertyOutput("out", 1, np.zeros(0, np.dtype('|S12') ) ), help=help)
+      super(InputProperties,self).__init__(dtype=str, dimension=dimension, default=default, units=units, help=help)
 
    def fetch(self):
       """ Returns a PropertyOutput object. """
@@ -48,7 +48,7 @@ class InputTrajectory(InputValue):
    def __init__(self, help=None, dimension=None, units=None, default=None, dtype=None):
       """ Initializes an InputTrajectory object by just calling the parent. """
 
-      super(InputTrajectory,self).__init__(dtype=str, default=engine.outputs.TrajectoryOutput("pos", 1, "positions", "xyz" ), help=help)
+      super(InputTrajectory,self).__init__(dtype=str, dimension=dimension, default=default, units=units, help=help)
 
    def fetch(self):
       """ Returns a TrajectoryOutput object. """
@@ -92,7 +92,7 @@ class InputCheckpoint(InputValue):
       """ Initializes an InputTrajectory object by just calling the parent
           with appropriate arguments. """
 
-      super(InputCheckpoint,self).__init__(dtype=int, default=engine.outputs.CheckpointOutput("restart", 1000, True), help=help)
+      super(InputCheckpoint,self).__init__(dtype=int, dimension=dimension, default=default, units=units, help=help)
 
    def fetch(self):
       """ Returns a CheckpointOutput object. """
@@ -131,9 +131,9 @@ class InputOutputs(Input):
                                           "help"     : "A string that will be the pre-pended to each output file name." })
              }
 
-   fields = {  "<properties>" : (InputProperties, { "help" : "Each of the <properties> tags specify how to create a file in which one or more properties are written, one line per frame. " } ),
-               "<trajectory>" : (InputTrajectory, { "help" : "Each of the <trajectory> tags specify how to create a trajectory file, containing a list of per-atom-coordinate properties. " } ),
-               "<checkpoint>" : (InputCheckpoint, { "help" : "Each of the <checkpoint> tags specify how to create a checkpoint file, which can be used to restart a simulation. " } ),
+   dynamic = {  "properties" : (InputProperties, { "help" : "Each of the <properties> tags specify how to create a file in which one or more properties are written, one line per frame. " } ),
+               "trajectory" : (InputTrajectory, { "help" : "Each of the <trajectory> tags specify how to create a trajectory file, containing a list of per-atom-coordinate properties. " } ),
+               "checkpoint" : (InputCheckpoint, { "help" : "Each of the <checkpoint> tags specify how to create a checkpoint file, which can be used to restart a simulation. " } ),
             }
 
    default_help = """This class defines how properties, trajectories and checkpoints should be output during the simulation.
@@ -141,18 +141,12 @@ class InputOutputs(Input):
     one output file should be created and managed. """
    default_label = "OUTPUTS"
 
-   def extend(self, name,  xml, parent=""):
-      """ Dynamically adds a new input property object to the "extra" list """
+   def __init__(self, help=None, dimension=None, units = None, default=None):
 
-      if name=="properties":
-         newprop=InputProperties()
-      elif name=="trajectory":
-         newprop=InputTrajectory()
-      elif name=="checkpoint":
-         newprop=InputCheckpoint()
-
-      newprop.parse(xml=xml)
-      self.extra.append( (name, newprop) )
+      super(InputOutputs,self).__init__(help, dimension, units, default)
+      if not self._default is None:
+         self.store(self._default)
+         self._explicit = False
 
    def fetch(self):
       """ Returs a list of the output objects included in this dynamic container. """
@@ -180,3 +174,5 @@ class InputOutputs(Input):
          if (isinstance(el, engine.outputs.CheckpointOutput)):
             ip=InputCheckpoint(); ip.store(el)
             self.extra.append(("checkpoint", ip) )
+
+      print "stored", self.extra

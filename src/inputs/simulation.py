@@ -27,21 +27,13 @@ from inputs.ensembles import InputEnsemble
 from inputs.outputs import InputOutputs
 from engine.atoms import Atoms
 from engine.beads import Beads
-from engine.outputs import *
+import engine.outputs
 import engine.simulation
 
 
 _DEFAULT_STRIDES = {"checkpoint": 1000, "properties": 10, "progress": 100, "centroid": 20,  "trajectory": 100}
 _DEFAULT_OUTPUT = [ "time", "conserved", "kinetic_cv", "potential" ]
 _DEFAULT_TRAJ = [ "positions" ]
-
-_DefaultOutput=None #InputOutputs()
-#~ _DefaultOutput.store([
-                     #~ engine.simulation.PropertyOutput("md", 10, [ "time", "step", "conserved", "temperature", "potential", "kinetic_cv" ]),
-                     #~ engine.simulation.TrajectoryOutput("pos", 100, "positions", "xyz"),
-                     #~ engine.simulation.CheckpointOutput("checkpoint",1000,overwrite=True)
-                    #~ ])
-#~ _DefaultOutput.store("wrap_pi")
 
 class InputSimulation(Input):
    """Simulation input class.
@@ -82,7 +74,11 @@ class InputSimulation(Input):
                                         "default"  : Beads(0,1) } ),
              "cell" :    (InputCell,   { "help"    : InputCell.default_help }),
              "output" :  (InputOutputs, { "help" : InputOutputs.default_help ,
-                                          "default" : _DefaultOutput  }),
+                                          "default" : [
+                  engine.outputs.PropertyOutput("wrap-pi.md", 10, [ "time", "step", "conserved", "temperature", "potential", "kinetic_cv" ] ),
+                  engine.outputs.TrajectoryOutput("wrap-pi.pos", 100, "positions", "xyz"),
+                  engine.outputs.CheckpointOutput("wrap-pi.checkpoint",1000,overwrite=True)
+                                                      ]  }),
              "step" :       ( InputValue, { "dtype"    : int,
                                             "default"  : 0,
                                             "help"     : "How many time steps have been done." }),

@@ -68,6 +68,7 @@ class Input(object):
 
    fields = {}
    attribs = {}
+   dynamic = {}
 
    default_help = "Generic input value"
    default_dimension = "undefined"
@@ -125,6 +126,7 @@ class Input(object):
       for a, v in self.attribs.iteritems():
          self.__dict__[a] = v[0](**v[1])
 
+
    def adapt(self):
       """Dummy function being called after the parsing of attributes
       and before the parsing of fields.
@@ -154,12 +156,15 @@ class Input(object):
       if not (self._explicit or self._optional):
          raise ValueError("Uninitialized Input value of type " + type(self).__name__)
 
-   def extend(self, name,  xml, parent=""):
-      """ Dummy call to add elements to the 'extra' list.
+   def extend(self, name,  xml):
+      """ Dynamically add elements to the 'extra' list.
 
-      In this general implementation, extensions are not considered, so a error is raised. """
+      Picks from one of the templates in the self.dynamic dictionary, then parses. """
 
-      raise NameError("Tag name '" + name + "' is not a recognized property of '" + parent + "' objects")
+      newfield = self.dynamic[name][0](**self.dynamic[name][1])
+      newfield.parse(xml)
+      self.extra.append((name,newfield))
+
 
 
    def write(self, name="", indent=""):
@@ -187,13 +192,13 @@ class Input(object):
 
       rstr = indent + "<" + name;
       for a in self.attribs:
-         if a[0] != '<':  rstr += " " + a + "='" + str(self.__dict__[a].fetch()) + "'"
+         rstr += " " + a + "='" + str(self.__dict__[a].fetch()) + "'"
       rstr += ">\n"
       for f in self.fields:
-         if f[0] != '<' : rstr += self.__dict__[f].write(f, "   " + indent)
+         rstr += self.__dict__[f].write(f, "   " + indent)
 
       for (f,v) in self.extra:  # also write out extended (dynamic) fields if present
-         if f[0] != '<' : rstr += v.write(f, "   " + indent)
+         rstr += v.write(f, "   " + indent)
 
       rstr += indent + "</" + name + ">\n"
       return rstr
@@ -239,16 +244,16 @@ class Input(object):
             self.__dict__[f].parse(xml=v)
          elif f == "_text":
             pass
+         elif f in self.dynamic:
+            self.extend(f, v)
          else:
-            self.extend(f, v, xml.name)
+            raise NameError("Tag name '" + name + "' is not a recognized property of '" + parent + "' objects")
 
       for a in self.attribs:
-         if a[0] == '<' : continue
          va = self.__dict__[a]
          if not (va._explicit or va._optional):
             raise ValueError("Attribute name '" + a + "' is mandatory and was not found in the input for the property " + xml.name)
       for f in self.fields:
-         if f[0] == '<' : continue
          vf = self.__dict__[f]
          if not (vf._explicit or vf._optional):
             raise ValueError("Field name '" + f + "' is mandatory and was not found in the input for the property " + xml.name)
@@ -526,7 +531,7 @@ class InputValue(Input):
 
       rstr = indent + "<" + name
       for a in self.attribs:
-         if a == "units"  or a[0] == '<': continue
+         if a == "units": continue
          rstr += " " + a + "='" + str(self.__dict__[a].fetch()) + "'"
       if self.units == "":
          rstr += ">"
@@ -658,7 +663,7 @@ class InputArray(Input):
 
       rstr = indent + "<" + name + " shape='" + write_tuple(self.shape.fetch())+"'"
       for a in self.attribs:
-         if a == "shape"  or a[0] == '<': continue
+         if a == "shape": continue
          rstr += " " + a + "='" + str(self.__dict__[a].fetch()) + "'"
       if self.units == "":
          rstr += ">"

@@ -3,7 +3,6 @@
 import numpy as np
 from utils.depend import *
 from utils.io.io_xml import *
-import inputs.simulation
 
 __all__=[ 'PropertyOutput', 'TrajectoryOutput', 'CheckpointOutput' ]
 
@@ -14,11 +13,11 @@ class PropertyOutput(dobject):
       from a Properties object and outputting with the desired stride.
    """
 
-   def __init__(self, filename="out", stride=1, outlist=[]):
+   def __init__(self, filename="out", stride=1, outlist=np.zeros(0,np.dtype('|S12')) ):
       """ Initializes a property output stream opening the corresponding file name.
          Also writes out headers.  """
       self.filename=filename
-      self.outlist=outlist
+      self.outlist=np.asarray(outlist,np.dtype('|S12'))
       self.stride=stride
       self.out=None
 
@@ -179,6 +178,7 @@ class CheckpointOutput(dobject):
    def bind(self, simul):
       """ Binds output proxy to simulation object. """
 
+      import inputs.simulation
       self.simul=simul
       self.status=inputs.simulation.InputSimulation(); self.status.store(simul)
 
