@@ -4,13 +4,17 @@ from copy import copy
 import engine.outputs
 import numpy as np
 
-__all__=[ 'InputOutputs' ]
+__all__=['InputOutputs', 'InputProperties', 'InputTrajectory', 
+         'InputCheckpoint']
 
 class InputProperties(InputArray):
    """ Simple input class to describe output for properties.
 
       Storage class for PropertyOutput.
    """
+
+   default_help = """This class deals with the output of one property. """
+   default_label = "PROPERTIES"
 
    attribs=copy(InputArray.attribs)
    attribs["filename"]=(InputValue,{ "dtype" : str, "default": "out"} )
@@ -39,6 +43,9 @@ class InputTrajectory(InputValue):
 
       Storage class for TrajectoryOutput.
    """
+
+   default_help = """This class defines how one trajectory file should be output. """
+   default_label = "TRAJECTORY"
 
    attribs=copy(InputValue.attribs)
    attribs["filename"]=(InputValue,{ "dtype" : str, "default": "pos"} )

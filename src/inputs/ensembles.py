@@ -154,11 +154,19 @@ class InputEnsemble(Input):
             temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), 
                nm_freqs=pf, fixcom=self.fixcom.fetch())
       elif self.type.fetch() == "npt" : 
+         if not self.pressure._explicit:
+            print "Stress rather than pressure set for constant pressure simulation. Calculating the pressure from the trace of the stress tensor."
+            self.pressure.store(np.trace(self.stress.fetch())/3.0)
+
          ens = NPTEnsemble(dt=self.timestep.fetch(), 
             temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), 
                nm_freqs=pf, fixcom=self.fixcom.fetch(), 
                   pext=self.pressure.fetch(), barostat=self.barostat.fetch() )
       elif self.type.fetch() == "nst" : 
+         if not self.stress._explicit:
+            print "Pressure rather than stress set for constant stress simulation. Assuming an isotropic stress tensor."
+            self.stress.store(np.identity(3)*self.pressure.fetch())
+
          ens = NSTEnsemble(dt=self.timestep.fetch(), 
             temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), 
                nm_freqs=pf, fixcom=self.fixcom.fetch(), 

@@ -165,8 +165,6 @@ class Input(object):
       newfield.parse(xml)
       self.extra.append((name,newfield))
 
-
-
    def write(self, name="", indent=""):
       """Writes data in xml file format.
 
@@ -320,6 +318,16 @@ class Input(object):
                rstr += "\\item {\\bf \hyperref[" + self.__dict__[f]._label + "]{" + f + "} }:\n " + self.__dict__[f].help_latex(level+1, stop_level)
          rstr += "\\end{itemize}\n \n"
 
+      if len(self.dynamic) != 0 and level != stop_level:
+         rstr += "\\paragraph{Dynamic attributes}\n \\begin{itemize}\n"
+         for f, v in self.dynamic.iteritems():
+            dummy_obj = v[0](**v[1])
+            if dummy_obj._label == "" or not ref:
+               rstr += "\\item {\\bf " + f + "}:\n " + dummy_obj.help_latex(level+1, stop_level, ref)
+            else:
+               rstr += "\\item {\\bf \hyperref[" + dummy_obj._label + "]{" + f + "} }:\n " + dummy_obj.help_latex(level+1, stop_level)
+         rstr += "\\end{itemize}\n \n"
+
       if level == 0 and not ref:
          rstr += "\\end{document}"
 
@@ -383,7 +391,7 @@ class Input(object):
          return ""
 
       show_attribs = (len(self.attribs) != 0)
-      show_fields = (len(self.fields) != 0 and level != stop_level)
+      show_fields = (not (len(self.fields) == 0 and len(self.dynamic) == 0)) and level != stop_level
 
       rstr = ""
       rstr = indent + "<" + name;
@@ -429,6 +437,9 @@ class Input(object):
       if show_fields:
          for f in self.fields:
             rstr += self.__dict__[f].help_xml(f, "   " + indent, level+1, stop_level)
+         for f, v in self.dynamic.iteritems():
+            dummy_obj = v[0](**v[1])
+            rstr += dummy_obj.help_xml(f, "   " + indent, level+1, stop_level)
 
       rstr += indent + "</" + name + ">\n"
       return rstr
