@@ -17,7 +17,7 @@ If one decides to actively work on one issue, it should indicate it on the title
 New dynamic attributes should be properly included in the documentation. 
 Also, the whole input generation method should be bug-checked and documented with comments in the code.
 
-**   Robust input defaults (MC)
+**   Robust input defaults (MC) (JM)
 In many places the default value of a storage class is set by defining 
 fields = { "tag" : ( Class, { "default" : EngineClass(default paramenters) } ) }
 This is bad, because the class is generated at parse time, and 
@@ -33,6 +33,12 @@ InputSimulation.__init__(self, .... default=None, ....):
 
 ***  Move the synchro business out of Beads and into NormalModes (MC) (MC)
 
+** We should add a check function to InputThermo (JM)
 
+* Remove parameters tag from InputForce completely (JM) (JM)
+
+** Currently, the acceptable trajectory file types are hard-coded into the 
+check function of InputTrajectory. We should find a more easily maintainable
+method of doing this. (JM)
 
      
