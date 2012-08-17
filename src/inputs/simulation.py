@@ -30,11 +30,6 @@ from engine.beads import Beads
 import engine.outputs
 import engine.simulation
 
-
-_DEFAULT_STRIDES = {"checkpoint": 1000, "properties": 10, "progress": 100, "centroid": 20,  "trajectory": 100}
-_DEFAULT_OUTPUT = [ "time", "conserved", "kinetic_cv", "potential" ]
-_DEFAULT_TRAJ = [ "positions" ]
-
 class InputSimulation(Input):
    """Simulation input class.
 
@@ -87,20 +82,7 @@ class InputSimulation(Input):
                                             "help"     : "The total number of steps that will be done." }),
              "initialize":  ( InputValue, { "dtype"    : dict,
                                             "default"  : {},
-                                            "help"     : "A dictionary giving the properties of the system that need to be initialized, and their initial values. The allowed keywords are ['velocities', 'cell_velocities', 'normal_modes']. The initial value of 'velocities' corresponds to the temperature to initialise the velocity distribution from. If 0, then the system temperature is used. 'cell_velocities' is the same but for the cell velocity. The initial value of 'normal_modes' corresponds to the temperature from which to initialize the higher normal mode frequencies from, if we start a simulation from a configuration with a smaller number of beads. If 0, then the system temperature is used." }),
-             "fd_delta":    ( InputValue, { "dtype"    : float,
-                                            "default"  : 0.0,
-                                            "help"     : "The parameter used in the finite difference differentiation in the calculation of the scaled path velocity estimator. Defaults to 1e-5." })
-#             "traj_format": ( InputValue, { "dtype"    : str,
-#                                            "default"  : "pdb",
-#                                            "help"     : "The file format for the output file. Allowed keywords are ['pdb', 'xyz'].",
-#                                            "options"  : ["pdb", "xyz"] }),
-#
-#             "trajectories": ( InputArray, { "dtype"   : str,
-#                                             "default" : np.zeros(0, np.dtype('|S12')),
-#                                             "help"    :
-#                                             "A list of the properties to print out the per-atom or per-bead trajectories of. Allowed values are ['positions', 'velocities', 'forces', 'kinetic_cv', 'kodterms_cv', 'momentum_centroid', 'centroid', 'gyration', 'spring']. 'kinetic_cv' gives the quantum kinetic energy estimator for each degree of freedom, whereas 'kodterms_cv' gives the off-diagonal elements of the kinetic stress tensor estimator for each degree of freedom. 'gyration' gives the radius of gyration of each atom. 'spring' prints the per-DOF spring term in the PI Hamiltonian. The others are self-explanatory."})
-#
+                                            "help"     : "A dictionary giving the properties of the system that need to be initialized, and their initial values. The allowed keywords are ['velocities', 'cell_velocities', 'normal_modes']. The initial value of 'velocities' corresponds to the temperature to initialise the velocity distribution from. If 0, then the system temperature is used. 'cell_velocities' is the same but for the cell velocity. The initial value of 'normal_modes' corresponds to the temperature from which to initialize the higher normal mode frequencies from, if we start a simulation from a configuration with a smaller number of beads. If 0, then the system temperature is used." })
                                              }
 
    default_help = "This is the top level class that deals with the running of the simulation, including holding the simulation specific properties such as the time step and outputting the data."
@@ -129,7 +111,6 @@ class InputSimulation(Input):
       self.total_steps.store(simul.tsteps)
       self.output.store(simul.outputs)
       self.initialize.store(simul.initlist)
-      self.fd_delta.store(simul.properties.fd_delta)
 
    def fetch(self):
       """Creates a simulation object.
@@ -157,9 +138,6 @@ class InputSimulation(Input):
       rsim = engine.simulation.Simulation(nbeads, ncell, self.force.fetch(),
                      self.ensemble.fetch(), nprng, self.output.fetch(), self.step.fetch(),
                      tsteps=self.total_steps.fetch(),  initlist=ilist)
-
-      if self.fd_delta._explicit:
-         rsim.properties.fd_delta = self.fd_delta.fetch()
 
       # binds and inits the simulation object just before returning
       rsim.bind()
@@ -203,4 +181,3 @@ class InputSimulation(Input):
          if not init in ["velocities", "normal_modes", "cell_velocities"]:
             raise ValueError("Initialization parameter " + init + " is not a valid keyword for initialize.")
 
-      #TODO do something about fd_delta...

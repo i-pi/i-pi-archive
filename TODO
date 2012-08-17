@@ -1,0 +1,38 @@
+A list of things that should be fixed or improved
+Format of "bug-reports":
+
+PRIORITY  Title of bug (REPORTER) (ASSIGNEE)
+Longer description....
+
+PRIORITY:
+*    Can wait
+**   Should be done before release
+***  High priority
+**** Code broken! Must fix now!
+The person who "reports" a bug should indicate his initials in the title.
+If one decides to actively work on one issue, it should indicate it on the title line.
+
+
+**   Clean up help (MC)  
+New dynamic attributes should be properly included in the documentation. 
+Also, the whole input generation method should be bug-checked and documented with comments in the code.
+
+**   Robust input defaults (MC)
+In many places the default value of a storage class is set by defining 
+fields = { "tag" : ( Class, { "default" : EngineClass(default paramenters) } ) }
+This is bad, because the class is generated at parse time, and 
+just one default object will be returned by any instance of the 
+container Input class. 
+Defaults which are not immutable (strings, ints or floats) should be defined by
+overloading the __init__ class and calling the parent class with the appropriate default, e.g.
+InputSimulation.__init__(self, .... default=None, ....):
+   if (default is None): default=WhateverClass(parameters)
+   super(InputSimulation,self).__init__(..... default=default ...)
+
+**** Make the new NM thing actually work (MC) (MC)
+
+***  Move the synchro business out of Beads and into NormalModes (MC) (MC)
+
+
+
+     
