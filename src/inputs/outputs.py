@@ -174,5 +174,3 @@ class InputOutputs(Input):
          if (isinstance(el, engine.outputs.CheckpointOutput)):
             ip=InputCheckpoint(); ip.store(el)
             self.extra.append(("checkpoint", ip) )
-
-      print "stored", self.extra

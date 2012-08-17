@@ -1,9 +1,9 @@
 """Deals with creating the beads class.
 
 Classes:
-   InputStartBeads: Deals with starting a simulation from a different 
+   InputStartBeads: Deals with starting a simulation from a different
       number of beads.
-   InputBeads: Deals with creating the Beads object from a file, and 
+   InputBeads: Deals with creating the Beads object from a file, and
       writing the checkpoints.
 """
 
@@ -22,7 +22,7 @@ __all__ = ['InputBeads', 'InputStartBeads']
 class InputStartBeads(Input):
    """Beads restart input class.
 
-   Generates a stripped down input beads class, that can be used to 
+   Generates a stripped down input beads class, that can be used to
    initialize another simulation from a different number of beads.
 
    Attributes:
@@ -40,9 +40,9 @@ class InputStartBeads(Input):
 
    fields={ "natoms"    : (InputValue, {"dtype"     : int,
                                         "default"   : 0,
-                                        "help"      : "The number of atoms."}), 
+                                        "help"      : "The number of atoms."}),
             "nbeads"    : (InputValue, {"dtype"     : int,
-                                        "help"      : "The number of beads."}), 
+                                        "help"      : "The number of beads."}),
             "q"         : (InputArray, {"dtype"     : float,
                                         "default"   : np.zeros(0),
                                         "help"      : "The positions of the beads. In an array of size [nbeads, 3*natoms].",
@@ -51,7 +51,7 @@ class InputStartBeads(Input):
                                         "default"   : np.zeros(0),
                                         "help"      : "The momenta of the beads. In an array of size [nbeads, 3*natoms].",
                                         "dimension" : "momentum"}),
-            "m"         : (InputArray, {"dtype"     : float, 
+            "m"         : (InputArray, {"dtype"     : float,
                                         "default"   : np.zeros(0),
                                         "help"      : "The masses of the atoms, in the format [m1, m2, ... ].",
                                         "dimension" : "mass"}),
@@ -98,11 +98,11 @@ class InputStartBeads(Input):
       super(InputStartBeads,self).fetch()
       beads = Beads(self.natoms.fetch(),self.nbeads.fetch())
       beads.q = self.q.fetch()
-      beads.p = self.p.fetch()  
-      beads.m = self.m.fetch()   
+      beads.p = self.p.fetch()
+      beads.m = self.m.fetch()
       beads.names = self.names.fetch()
       return beads
-      
+
    def check(self):
       """Function that deals with checking for incorrect input."""
 
@@ -121,19 +121,19 @@ class InputStartBeads(Input):
       for mass in self.m.fetch():
          if mass <= 0:
             raise ValueError("Unphysical atom mass")
-      
+
 class InputBeads(InputStartBeads):
    """Beads input class.
 
    Handles generating the appropriate beads class from the xml input file,
-   and generating the xml checkpoint tags and data from an instance of the 
+   and generating the xml checkpoint tags and data from an instance of the
    object.
 
    Attributes:
       nbeads: An optional integer giving the number of beads. Defaults to 0.
       natoms: An optional integer giving the number of atoms. Defaults to 0.
       start_centroid: An atoms object to initialize the centroid postions from.
-      start_beads: A beads object to initialize the normal mode 
+      start_beads: A beads object to initialize the normal mode
          coordinates from.
       q: An optional array giving the bead positions. Defaults to an empty
          array with no elements.
@@ -147,12 +147,12 @@ class InputBeads(InputStartBeads):
 
    fields={ "natoms"    : (InputValue, {"dtype"     : int,
                                         "default"   : 0,
-                                        "help"      : "The number of atoms."}), 
+                                        "help"      : "The number of atoms."}),
             "nbeads"    : (InputValue, {"dtype"     : int,
-                                        "help"      : "The number of beads."}), 
-            "start_centroid"     : (InputAtoms, {"help"    : "An atoms object from which the centroid coordinates can be initialized. Any parameters given here can be overwritten by specifying them explicitly.", 
+                                        "help"      : "The number of beads."}),
+            "start_centroid"     : (InputAtoms, {"help"    : "An atoms object from which the centroid coordinates can be initialized. Any parameters given here can be overwritten by specifying them explicitly.",
                                                  "default" : Atoms(0) }),
-            "start_beads"     : (InputStartBeads, {"help"    : "An beads object from which the lower frequency normal mode coordinates can be initialized. Any parameters given here can be overwritten by specifying them explicitly.", 
+            "start_beads"     : (InputStartBeads, {"help"    : "An beads object from which the lower frequency normal mode coordinates can be initialized. Any parameters given here can be overwritten by specifying them explicitly.",
                                                  "default" : Beads(0, 1) }),
             "q"         : (InputArray, {"dtype"     : float,
                                         "default"   : np.zeros(0),
@@ -162,7 +162,7 @@ class InputBeads(InputStartBeads):
                                         "default"   : np.zeros(0),
                                         "help"      : "The momenta of the beads. In an array of size [nbeads, 3*natoms].",
                                         "dimension" : "momentum"}),
-            "m"         : (InputArray, {"dtype"     : float, 
+            "m"         : (InputArray, {"dtype"     : float,
                                         "default"   : np.zeros(0),
                                         "help"      : "The masses of the atoms, in the format [m1, m2, ... ].",
                                         "dimension" : "mass"}),
@@ -190,21 +190,23 @@ class InputBeads(InputStartBeads):
    def check(self):
       """Function that deals with optional arguments.
 
-      Deals with deciding which values to initialize from the centroid 
-      configurations, and which values to initialize from an explicit array. 
+      Deals with deciding which values to initialize from the centroid
+      configurations, and which values to initialize from an explicit array.
       """
 
       if not (self.start_centroid._explicit or self.q._explicit or self.start_beads._explicit):
          raise ValueError("You must provide a way of generating the starting configuration.")
-      if self.start_beads._explicit:
-         beads = self.start_beads.fetch()
-         self.natoms.store(beads.natoms)
-         dbeads = Beads(beads.natoms, self.nbeads.fetch())
-         for b in range(beads.nbeads):
-            dbeads.qnm[b] = depstrip(beads.qnm[b])*math.sqrt(dbeads.nbeads/float(beads.nbeads))
-            dbeads.pnm[b] = depstrip(beads.pnm[b])*math.sqrt(dbeads.nbeads/float(beads.nbeads))
-         dbeads.qnm[beads.nbeads:,:] = 0.0
-         dbeads.pnm[beads.nbeads:,:] = 0.0
+
+      #!TODO refurbish this way of setting up the necklace
+      #~ if self.start_beads._explicit:
+         #~ beads = self.start_beads.fetch()
+         #~ self.natoms.store(beads.natoms)
+         #~ dbeads = Beads(beads.natoms, self.nbeads.fetch())
+         #~ for b in range(beads.nbeads):
+            #~ dbeads.qnm[b] = depstrip(beads.qnm[b])*math.sqrt(dbeads.nbeads/float(beads.nbeads))
+            #~ dbeads.pnm[b] = depstrip(beads.pnm[b])*math.sqrt(dbeads.nbeads/float(beads.nbeads))
+         #~ dbeads.qnm[beads.nbeads:,:] = 0.0
+         #~ dbeads.pnm[beads.nbeads:,:] = 0.0
 
          # We can overwrite any of the properties in start_beads
          # by specifying them in beads.
@@ -221,10 +223,10 @@ class InputBeads(InputStartBeads):
          atoms = self.start_centroid.fetch()
          self.natoms.store(atoms.natoms)
          dbeads = Beads(atoms.natoms, self.nbeads.fetch())
-         dbeads.qnm[0,:] = depstrip(atoms.q)*math.sqrt(dbeads.nbeads)
-         dbeads.pnm[0,:] = depstrip(atoms.p)*math.sqrt(dbeads.nbeads)
-         dbeads.qnm[1:,:] = 0.0
-         dbeads.pnm[1:,:] = 0.0
+
+         for b in range(self.nbeads.fetch()):
+            dbeads.q[b,:]=depstrip(atoms.q)
+            dbeads.p[b,:]=depstrip(atoms.p)
 
          # We can overwrite any of the properties in start_centroid
          # by specifying them in beads.

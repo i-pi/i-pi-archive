@@ -247,7 +247,7 @@ class Input(object):
          elif f in self.dynamic:
             self.extend(f, v)
          else:
-            raise NameError("Tag name '" + name + "' is not a recognized property of '" + parent + "' objects")
+            raise NameError("Tag name '" + f + "' is not a recognized property of '" + xml.name + "' objects")
 
       for a in self.attribs:
          va = self.__dict__[a]

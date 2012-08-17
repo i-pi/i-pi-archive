@@ -1,7 +1,7 @@
 """Deals with creating the ensembles class.
 
 Classes:
-   InputEnsemble: Deals with creating the Ensemble object from a file, and 
+   InputEnsemble: Deals with creating the Ensemble object from a file, and
       writing the checkpoints.
 """
 
@@ -20,7 +20,7 @@ class InputEnsemble(Input):
    """Ensemble input class.
 
    Handles generating the appropriate ensemble class from the xml input file,
-   and generating the xml checkpoint tags and data from an instance of the 
+   and generating the xml checkpoint tags and data from an instance of the
    object.
 
    Attributes:
@@ -37,15 +37,15 @@ class InputEnsemble(Input):
          Defaults to 1.0.
       stress: An optional array giving the external stress tensor in atomic
          units. Defaults to an identity array.
-      path_mode: An optional array giving the type of calculation being run, 
+      path_mode: An optional array giving the type of calculation being run,
          and thus the method used to define the bead masses. Defaults to
          'rpmd'.
       nm_freqs: An optional array which defines the ring polymer normal
-         mode frequencies, or the scaling factor as used in 
-         partially-adiabatic CMD if path_mode is 'cmd'. See 
-         S. Habershon, G. Fanourgakis and D. E. Manolopoulos, J. Chem. Phys. 
+         mode frequencies, or the scaling factor as used in
+         partially-adiabatic CMD if path_mode is 'cmd'. See
+         S. Habershon, G. Fanourgakis and D. E. Manolopoulos, J. Chem. Phys.
          129, 074501, (2008) for the definition of this scaling factor.
-      fixcom: An optional boolean which decides whether the centre of mass 
+      fixcom: An optional boolean which decides whether the centre of mass
          motion will be constrained or not. Defaults to False.
    """
 
@@ -61,7 +61,7 @@ class InputEnsemble(Input):
                                      "default"       : "1.0",
                                      "help"          : "The time step.",
                                      "dimension"     : "time"}),
-           "temperature" : (InputValue, {"dtype"     : float, 
+           "temperature" : (InputValue, {"dtype"     : float,
                                          "default"   : 1.0,
                                          "help"      : "The temperature of the system.",
                                          "dimension" : "temperature"}),
@@ -69,25 +69,18 @@ class InputEnsemble(Input):
                                       "default"      : "1.0",
                                       "help"         : "The external pressure.",
                                       "dimension"    : "pressure"}),
-           "stress" : (InputArray, {"dtype"          : float, 
+           "stress" : (InputArray, {"dtype"          : float,
                                     "default"        : np.identity(3),
                                     "help"           : "The external stress.",
-                                    "dimension"      : "pressure"}), 
-           "path_mode" : (InputValue, {"dtype"       : str,
-                                    "default"        : "rpmd",
-                                    "help"           : "How to determine bead masses.",
-                                    "options"        : ['rpmd', 'cmd', 'manual']}),
-           "nm_freqs" : (InputArray, {"dtype"        : float, 
-                                    "default"        : np.identity(0),
-                                    "help"           : "Manual frequencies for the ring polymer normal modes. Just one number if doing CMD.",
-                                    "dimension"      : "frequency"}), 
-           "fixcom": (InputValue, {"dtype"           : bool, 
+                                    "dimension"      : "pressure"}),
+           "fixcom": (InputValue, {"dtype"           : bool,
                                    "default"         : False,
-                                   "help"            : "This describes whether the centre of mass of the particles is fixed."}) }
+                                   "help"            : "This describes whether the centre of mass of the particles is fixed."})
+         }
 
    default_help = "Holds all the information that is ensemble specific, such as the temperature and the external pressure, and the thermostats and barostats that control it."
    default_label = "ENSEMBLE"
-   
+
    def store(self, ens):
       """Takes an ensemble instance and stores a minimal representation of it.
 
@@ -96,23 +89,23 @@ class InputEnsemble(Input):
       """
 
       super(InputEnsemble,self).store(ens)
-      if type(ens) is NVEEnsemble:    
+      if type(ens) is NVEEnsemble:
          self.type.store("nve")
          tens = 0
-      elif type(ens) is NVTEnsemble:  
+      elif type(ens) is NVTEnsemble:
          self.type.store("nvt")
          tens = 1
-      elif type(ens) is NPTEnsemble:  
+      elif type(ens) is NPTEnsemble:
          self.type.store("npt")
          tens = 2
-      elif type(ens) is NSTEnsemble:  
+      elif type(ens) is NSTEnsemble:
          self.type.store("nst")
          tens = 3
-      
+
       self.timestep.store(ens.dt)
       self.temperature.store(ens.temp)
-      
-      if tens > 0: 
+
+      if tens > 0:
          self.thermostat.store(ens.thermostat)
          self.fixcom.store(ens.fixcom)
       if tens > 1:
@@ -121,15 +114,6 @@ class InputEnsemble(Input):
          self.pressure.store(ens.pext)
       if tens == 3:
          self.stress.store(ens.sext)
-         
-      if (ens.nm_freqs.size>0):
-         self.nm_freqs.store(ens.nm_freqs)
-         if ens.nm_freqs.size==1:
-            self.path_mode.store("cmd")         
-         else:
-            self.path_mode.store("manual")
-      else:
-         self.path_mode.store("rpmd")
 
    def fetch(self):
       """Creates an ensemble object.
@@ -140,36 +124,28 @@ class InputEnsemble(Input):
       """
 
       super(InputEnsemble,self).fetch()
-      
-      pf = None
-      if self.path_mode.fetch() != "rpmd":
-         pf = self.nm_freqs.fetch()
-         
+
       if self.type.fetch() == "nve" :
-         ens = NVEEnsemble(dt=self.timestep.fetch(), 
-            temp=self.temperature.fetch(), nm_freqs=pf, 
-               fixcom=self.fixcom.fetch())
-      elif self.type.fetch() == "nvt" : 
-         ens = NVTEnsemble(dt=self.timestep.fetch(), 
-            temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), 
-               nm_freqs=pf, fixcom=self.fixcom.fetch())
-      elif self.type.fetch() == "npt" : 
-         ens = NPTEnsemble(dt=self.timestep.fetch(), 
-            temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), 
-               nm_freqs=pf, fixcom=self.fixcom.fetch(), 
+         ens = NVEEnsemble(dt=self.timestep.fetch(),
+            temp=self.temperature.fetch(), fixcom=self.fixcom.fetch())
+      elif self.type.fetch() == "nvt" :
+         ens = NVTEnsemble(dt=self.timestep.fetch(),
+            temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), fixcom=self.fixcom.fetch())
+      elif self.type.fetch() == "npt" :
+         ens = NPTEnsemble(dt=self.timestep.fetch(),
+            temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), fixcom=self.fixcom.fetch(),
                   pext=self.pressure.fetch(), barostat=self.barostat.fetch() )
-      elif self.type.fetch() == "nst" : 
-         ens = NSTEnsemble(dt=self.timestep.fetch(), 
-            temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), 
-               nm_freqs=pf, fixcom=self.fixcom.fetch(), 
+      elif self.type.fetch() == "nst" :
+         ens = NSTEnsemble(dt=self.timestep.fetch(),
+            temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), fixcom=self.fixcom.fetch(),
                   sext=self.stress.fetch(), barostat=self.barostat.fetch() )
-      
+
       return ens
-      
+
    def check(self):
       """Function that deals with optional arguments.
 
-      Makes sure that if the ensemble requires a thermostat or barostat that 
+      Makes sure that if the ensemble requires a thermostat or barostat that
       they have been defined by the user and not given the default values.
       """
 
@@ -184,7 +160,7 @@ class InputEnsemble(Input):
             raise ValueError("No barostat tag supplied for NPT simulation")
          if self.barostat.thermostat._explicit == False:
             raise ValueError("No thermostat tag supplied in barostat for NPT simulation")
-            
+
       if self.type.fetch() == "nst":
          if self.thermostat._explicit == False:
             raise ValueError("No thermostat tag supplied for NST simulation")
@@ -203,10 +179,3 @@ class InputEnsemble(Input):
       if self.type.fetch() == "nst" or self.type.fetch() == "npt":
          if not (self.pressure._explicit or self.stress._explicit):
             raise ValueError("Neither pressure or stress supplied for constant pressure simulation")
-            
-      if self.path_mode.fetch() == "cmd":
-         if self.nm_freqs.fetch().size != 1:
-            raise ValueError("For cmd simulation, nm_freqs should be a size-1 array containing the NM frequency")
-      elif self.path_mode.fetch() == "manual":
-         if self.nm_freqs.fetch().size < 1:
-            raise ValueError("When 'manual' path frequencies are specified, the nm_freqs option should be specified giving the NM frequencies.")

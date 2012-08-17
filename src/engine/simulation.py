@@ -25,6 +25,7 @@ import time
 from cell import *
 from forces import ForceBeads
 from beads import Beads
+from normalmodes import NormalModes
 from properties import Properties, Trajectories
 from outputs import CheckpointOutput
 import inputs.simulation
@@ -49,7 +50,8 @@ class Simulation(dobject):
       tsteps: The total number of steps.
       format: A string specifying both the format and the extension of traj
          output.
-      outputs: A list of output objects that should
+      outputs: A list of output objects that should be printed during the run
+      nm:  A helper object dealing with normal modes transformation
       initlist: A dictionary of the properties that should be initialised with
          their values. Set to zero after the initialisation, so that the
          checkpoints don't specify any properties to be initialised after the
@@ -62,7 +64,7 @@ class Simulation(dobject):
       step: The current simulation step.
    """
 
-   def __init__(self, beads, cell, force, ensemble, prng, outputs, step=0, tsteps=1000,  initlist=None):
+   def __init__(self, beads, cell, force, ensemble, prng, outputs, nm, step=0, tsteps=1000,  initlist=None):
       """Initialises Simulation class.
 
       Args:
@@ -74,6 +76,7 @@ class Simulation(dobject):
             producing the correct ensemble.
          prng: A random number object.
          outputs: A list of output objects.
+         nm: A class dealing with path NM operations.
          step: An optional integer giving the current simulation time step.
             Defaults to 0.
          tsteps: An optional integer giving the total number of steps. Defaults
@@ -85,6 +88,7 @@ class Simulation(dobject):
       print " # Initializing simulation object "
       self.nbeads = len(beads)
       self.beads = beads
+      self.nm = nm
       self.cell = cell
       self.prng = prng
       self._forcemodel = force
@@ -92,7 +96,9 @@ class Simulation(dobject):
       self.outputs = outputs
       self.chk = None
 
+
       self.ensemble = ensemble
+
 
       dset(self, "step", depend_value(name="step", value=step))
       self.tsteps = tsteps
@@ -115,8 +121,9 @@ class Simulation(dobject):
       """
 
       # binds important computation engines
+      self.nm.bind(self.beads, self.ensemble)
       self.forces.bind(self.beads, self.cell,  self._forcemodel, softexit=self.soft_exit)
-      self.ensemble.bind(self.beads, self.cell, self.forces, self.prng)
+      self.ensemble.bind(self.beads, self.nm, self.cell, self.forces, self.prng)
 
       # binds output management objects
       self.properties.bind(self)

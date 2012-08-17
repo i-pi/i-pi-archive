@@ -25,6 +25,8 @@ from inputs.beads import InputBeads
 from inputs.cell import InputCell
 from inputs.ensembles import InputEnsemble
 from inputs.outputs import InputOutputs
+from inputs.normalmodes import InputNormalModes
+from engine.normalmodes import NormalModes
 from engine.atoms import Atoms
 from engine.beads import Beads
 import engine.outputs
@@ -42,6 +44,7 @@ class InputSimulation(Input):
       ensemble: A restart ensemble instance.
       atoms: A restart atoms instance.
       beads: A restart beads instance.
+      normal_modes: Setup of normal mode integrator.
       cell: A restart cell instance.
       prng: A random number generator object.
       step: An integer giving the current simulation step. Defaults to 0.
@@ -59,6 +62,8 @@ class InputSimulation(Input):
          to 0.
    """
 
+   #TODO all of these defaults set to objects are bad practice because the defaults will be instanciated at parse time.
+   #should
    fields= { "force" :   (InputForce,    { "help"  : InputForce.default_help }),
              "ensemble": (InputEnsemble, { "help"  : InputEnsemble.default_help } ),
              "prng" :    (InputRandom,   { "help"  : InputRandom.default_help + " It is not necessary to specify this tag.",
@@ -67,6 +72,8 @@ class InputSimulation(Input):
                                         "default"  : Atoms(0) } ),
              "beads" :   (InputBeads, { "help"     : InputBeads.default_help + " Only needs to be specified if the atoms tag is not, but overwrites it otherwise.",
                                         "default"  : Beads(0,1) } ),
+             "normal_modes" :   (InputNormalModes, { "help"     : InputNormalModes.default_help,
+                                        "default"  : NormalModes("rpmd",[]) } ),
              "cell" :    (InputCell,   { "help"    : InputCell.default_help }),
              "output" :  (InputOutputs, { "help" : InputOutputs.default_help ,
                                           "default" : [
@@ -105,6 +112,7 @@ class InputSimulation(Input):
       else:
          self.atoms.store(simul.beads[0])
 
+      self.normal_modes.store(simul.nm)
       self.cell.store(simul.cell)
       self.prng.store(simul.prng)
       self.step.store(simul.step)
@@ -136,7 +144,8 @@ class InputSimulation(Input):
          ilist = None
 
       rsim = engine.simulation.Simulation(nbeads, ncell, self.force.fetch(),
-                     self.ensemble.fetch(), nprng, self.output.fetch(), self.step.fetch(),
+                     self.ensemble.fetch(), nprng, self.output.fetch(),
+                     self.normal_modes.fetch(), self.step.fetch(),
                      tsteps=self.total_steps.fetch(),  initlist=ilist)
 
       # binds and inits the simulation object just before returning

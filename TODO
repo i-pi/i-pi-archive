@@ -33,6 +33,6 @@ InputSimulation.__init__(self, .... default=None, ....):
 
 ***  Move the synchro business out of Beads and into NormalModes (MC) (MC)
 
-
+**   Fix (or remove) "spring_nrg" trajectory output. Not really needed anymore... (MC)
 
      

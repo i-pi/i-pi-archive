@@ -2,7 +2,7 @@
 
 Used for holding information about the beads, including their positions, masses
 momenta and kinetic energy. Has different objects for the position and normal
-mode representations, and has a special centroid atoms object for when the 
+mode representations, and has a special centroid atoms object for when the
 centroid coordinate is required.
 
 Classes:
@@ -16,7 +16,7 @@ import math
 from utils.depend import *
 from engine.atoms import Atoms
 from utils import units
-         
+
 class Beads(dobject):
    """Storage for the beads positions and velocities.
 
@@ -24,7 +24,7 @@ class Beads(dobject):
    and a convenience-access to each replica of the system is provided through a
    list of Atoms objects. Contains arrays of both the normal mode representation
    and the position representation, and various sized arrays for the atom
-   labels and masses. Also contains the potential and force between 
+   labels and masses. Also contains the potential and force between
    neighbouring replicas.
 
    Attributes:
@@ -34,7 +34,7 @@ class Beads(dobject):
          representations
       Cnm2b: Transformation matrix between the normal mode and bead
          representations
-      _blist: A list of Atoms objects for each replica of the system. Each 
+      _blist: A list of Atoms objects for each replica of the system. Each
          replica is assumed to have the same mass and atom label.
       centroid: An atoms object giving the centroid coordinate of the beads.
 
@@ -56,10 +56,10 @@ class Beads(dobject):
       kins: A list of the kinetic energy of each replica.
       kin: The total kinetic energy of the system. Note that this is not the
          same as the estimate of the kinetic energy of the system, which is
-         contained in the properties module. 
+         contained in the properties module.
       kstress: The total kinetic stress tensor for the system.
       rg: An array giving the radius of gyration of each atom.
-   """   
+   """
 
    def __init__(self, natoms, nbeads):
       """Initialises Beads.
@@ -74,82 +74,53 @@ class Beads(dobject):
 
       dset(self,"names",
          depend_array(name="names",value=np.zeros(natoms, np.dtype('|S6'))) )
-      dset(self,"m",depend_array(name="m",value=np.zeros(natoms, float)) )     
+      dset(self,"m",depend_array(name="m",value=np.zeros(natoms, float)) )
       dset(self,"m3",
          depend_array(name="m3",value=np.zeros((nbeads,3*natoms), float),
             func=self.mtom3, dependencies=[dget(self,"m")]))
       dset(self,"sm3",
          depend_array(name="sm3",value=np.zeros((nbeads,3*natoms), float),
             func=self.m3tosm3, dependencies=[dget(self,"m3")]))
-            
-      dset(self,"dynm_factors",depend_array(name="dmf", value=np.zeros(nbeads,float)) )
-      self.dynm_factors[:] = 1.0
-      
-      dset(self,"dynm3",
-         depend_array(name="dm3",value=np.zeros((nbeads,3*natoms), float),
-            func=self.m3todm3, dependencies=[dget(self,"m3"), dget(self,"dynm_factors") ]))
-#TODO add dynm3 and dynm_factors to documentation of Beads in the 'depend
-#objects section.
 
+      # pre-sets up synchronizers for beads <--> nm representations
       sync_q = synchronizer()
       sync_p = synchronizer()
       dset(self,"q",
-         depend_array(name="q",value=np.zeros((nbeads,3*natoms), float), 
-            func={"qnm":self.nm2b_q}, synchro=sync_q) )
+         depend_array(name="q",value=np.zeros((nbeads,3*natoms), float), synchro=sync_q ) )
       dset(self,"p",
-         depend_array(name="p",value=np.zeros((nbeads,3*natoms), float), 
-            func={"pnm":self.nm2b_p}, synchro=sync_p) )
-      dset(self,"qnm",
-         depend_array(name="qnm",value=np.zeros((nbeads,3*natoms), float), 
-            func={"q":self.b2nm_q}, synchro=sync_q) )
-      dset(self,"pnm",
-         depend_array(name="pnm",value=np.zeros((nbeads,3*natoms), float), 
-            func={"p":self.b2nm_p}, synchro=sync_p) )
-      
-      self.Cb2nm = np.zeros((nbeads,nbeads))
-      self.Cb2nm[0,:] = math.sqrt(1.0/nbeads)
-      for i in range(1,nbeads/2+1):
-         for j in range(nbeads):
-            self.Cb2nm[i,j] = math.sqrt(2.0/nbeads)*math.cos(2*math.pi*j*i/float(nbeads))
-      if (nbeads%2) == 0:  
-         self.Cb2nm[nbeads/2,0:nbeads:2] = math.sqrt(1.0/nbeads)
-         self.Cb2nm[nbeads/2,1:nbeads:2] = -math.sqrt(1.0/nbeads)
-      for i in range(nbeads/2+1, nbeads):
-         for j in range(nbeads):
-            self.Cb2nm[i,j] = math.sqrt(2.0/nbeads)*math.sin(2*math.pi*j*i/float(nbeads))
-
-      self.Cnm2b = self.Cb2nm.T.copy()
-
+         depend_array(name="p",value=np.zeros((nbeads,3*natoms), float), synchro=sync_p ) )
       self._blist = [Atoms(natoms, _prebind=( self.q[i,:], self.p[i,:], self.m,  self.names )) for i in range(nbeads) ]
 
+
       dset(self,"qc",
-         depend_array(name="qc",value=np.zeros(3*natoms, float), 
-            func=self.get_qc, dependencies=[dget(self,"qnm")] ) )      
+         depend_array(name="qc",value=np.zeros(3*natoms, float),
+            func=self.get_qc, dependencies=[dget(self,"q")] ) )
       dset(self,"pc",
-         depend_array(name="pc",value=np.zeros(3*natoms, float), 
-            func=self.get_pc, dependencies=[dget(self,"pnm")] ) )      
+         depend_array(name="pc",value=np.zeros(3*natoms, float),
+            func=self.get_pc, dependencies=[dget(self,"q")] ) )
+
       self.centroid = Atoms(natoms, _prebind=(self.qc, self.pc, self.m, self.names))
-      
+
       dset(self,"vpath",
-         depend_value(name="vpath", func=self.get_vpath, 
+         depend_value(name="vpath", func=self.get_vpath,
             dependencies=[dget(self,"q")]))
       dset(self,"fpath",
-         depend_array(name="fpath", value=np.zeros((nbeads,3*natoms), float), 
+         depend_array(name="fpath", value=np.zeros((nbeads,3*natoms), float),
             func=self.get_fpath, dependencies=[dget(self,"q")]))
       dset(self,"kins",
-         depend_array(name="kins",value=np.zeros(nbeads, float), 
-            func=self.kin_gather, 
+         depend_array(name="kins",value=np.zeros(nbeads, float),
+            func=self.kin_gather,
                dependencies=[dget(b,"kin") for b in self._blist]))
       dset(self,"kin",
-         depend_value(name="kin", func=self.get_kin, 
+         depend_value(name="kin", func=self.get_kin,
             dependencies=[dget(self,"kins")]))
       dset(self,"kstress",
-         depend_array(name="kstress",value=np.zeros((3,3), float), 
-            func=self.get_kstress, 
+         depend_array(name="kstress",value=np.zeros((3,3), float),
+            func=self.get_kstress,
                dependencies=[dget(b,"kstress") for b in self._blist]))
       dset(self,"rg",
-         depend_array(name="rg", value=np.zeros(3*natoms), 
-            func=self.get_rg, 
+         depend_array(name="rg", value=np.zeros(3*natoms),
+            func=self.get_rg,
                dependencies=[dget(self,"q"), dget(self,"qc")]))
 
    def copy(self):
@@ -166,17 +137,6 @@ class Beads(dobject):
       newbd.names[:] = self.names
       return newbd
 
-
-   def m3todm3(self):
-      """Takes the mass array and returns the square rooted mass array."""
-      #TODO make this doc string correct.
-      
-      print "rescaling NM dynamical masses to ", self.dynm_factors
-      dm3 = np.zeros(self.m3.shape,float)
-      for b in range(self.nbeads):
-         dm3[b] = self.m3[b]*self.dynm_factors[b]
-
-      return dm3
 
    def m3tosm3(self):
       """Takes the mass array and returns the square rooted mass array."""
@@ -197,45 +157,17 @@ class Beads(dobject):
       m3[:,1:3*self.natoms:3] = m3[:,0:3*self.natoms:3]
       m3[:,2:3*self.natoms:3] = m3[:,0:3*self.natoms:3]
       return m3
-   
-   def nm2b_q(self):
-      """Takes the normal mode representation for q and returns the bead 
-      representation.
-      """
-
-      return np.dot(self.Cnm2b,depstrip(self.qnm))
-
-   def nm2b_p(self):
-      """Takes the normal mode representation for p and returns the bead 
-      representation.
-      """
-
-      return np.dot(self.Cnm2b,depstrip(self.pnm))
-
-   def b2nm_q(self):
-      """Takes the bead representation for q and returns the normal mode 
-      representation.
-      """
-
-      return np.dot(self.Cb2nm,depstrip(self.q))
-
-   def b2nm_p(self):
-      """Takes the bead representation for p and returns the normal mode
-      representation.
-      """
-
-      return np.dot(self.Cb2nm,depstrip(self.p))
 
    def get_qc(self):
       """Gets the centroid coordinates."""
 
-      return depstrip(self.qnm)[0,:]/math.sqrt(self.nbeads)
+      return np.dot(np.ones(self.nbeads,float),depstrip(self.q))/float(self.nbeads)
 
    def get_pc(self):
       """Gets the centroid momenta."""
 
-      return depstrip(self.pnm)[0,:]/math.sqrt(self.nbeads)
-   
+      return np.dot(np.ones(self.nbeads,float),depstrip(self.p))/float(self.nbeads)
+
    def kin_gather(self):
       """Gets the kinetic energy for all the replicas.
 
@@ -257,7 +189,7 @@ class Beads(dobject):
 
       return self.kins.sum()
 
-   def get_kstress(self):     
+   def get_kstress(self):
       """Calculates the total kinetic stress tensor of all the replicas.
 
       Note that this does not correspond to the quantum kinetic stress tensor
@@ -271,7 +203,7 @@ class Beads(dobject):
       for b in range(self.nbeads):
          ks += self[b].kstress
       return ks
-      
+
    def get_vpath(self):
       """Calculates the spring potential between the replicas.
 
@@ -289,7 +221,7 @@ class Beads(dobject):
          else:
             dq = q[b,:] - q[self.nbeads-1,:]
          epath += np.dot(dq, m*dq)
-      return epath*0.5  
+      return epath*0.5
 
    def get_fpath(self):
       """Calculates the spring force between the replicas.
@@ -302,7 +234,7 @@ class Beads(dobject):
       nbeads = self.nbeads
       natoms = self.natoms
       f = np.zeros((nbeads,3*natoms),float)
-      
+
       q = depstrip(self.q)
       m = depstrip(self.m3[0])
       for b in range(nbeads):
@@ -335,7 +267,7 @@ class Beads(dobject):
             dq = q[i,3*j:3*(j+1)] - qc[3*j:3*(j+1)]
             rg[3*j:3*(j+1)] += np.dot(dq,dq)
       return np.sqrt(rg/float(self.nbeads))
-      
+
    def __len__(self):
       """Length function.
 
@@ -346,7 +278,7 @@ class Beads(dobject):
       """
 
       return self.nbeads
-   
+
    def __getitem__(self,index):
       """Overwrites standard getting function.
 
@@ -375,6 +307,6 @@ class Beads(dobject):
       """
 
       self._blist[index].p[:] = value.p
-      self._blist[index].q[:] = value.q 
-      self._blist[index].m[:] = value.m      
-      self._blist[index].names[:] = value.names         
+      self._blist[index].q[:] = value.q
+      self._blist[index].m[:] = value.m
+      self._blist[index].names[:] = value.names

@@ -9,7 +9,7 @@ Classes:
       combinations of different status options.
    Driver: Class to deal with communication between a client and the driver
       code.
-   Interface: Host server class. Deals with distribution of all the jobs 
+   Interface: Host server class. Deals with distribution of all the jobs
       between the different client servers.
 
 Functions:
@@ -28,7 +28,7 @@ import numpy as np
 
 HDRLEN = 12
 UPDATEFREQ = 100
-TIMEOUT = 5.0 
+TIMEOUT = 5.0
 SERVERTIMEOUT = 2.0*TIMEOUT
 NTIMEOUT = 10
 
@@ -38,28 +38,28 @@ def Message(mystr):
    return string.ljust(string.upper(mystr), HDRLEN)
 
 
-class Disconnected(Exception): 
+class Disconnected(Exception):
    """Disconnected: Raised if client has been disconnected."""
 
    pass
 
 
 class InvalidStatus(Exception):
-   """InvalidStatus: Raised if client has the wrong status. 
+   """InvalidStatus: Raised if client has the wrong status.
 
    Shouldn't have to be used if the structure of the program is correct.
    """
 
    pass
 
-class Status: 
+class Status:
    """Simple class used to keep track of the status of the client.
 
    Uses bitwise or to give combinations of different status options.
    i.e. Status.Up | Status.Ready would be understood to mean that the client
    was connected and ready to receive the position and cell data.
 
-   Attributes: 
+   Attributes:
       Disconnected: Flag for if the client has disconnected.
       Up: Flag for if the client is running.
       Ready: Flag for if the client has ready to receive position and cell data.
@@ -86,11 +86,11 @@ class Driver(socket.socket):
    of the status of the driver. Initialises the driver forcefield, sends the
    position and cell data, and receives the force data.
 
-   Attributes: 
+   Attributes:
       _buf: A string buffer to hold the reply from the driver.
       busyonstatus: Boolean giving whether the driver is busy.
       status: Keeps track of the status of the driver.
-      lastreq: The ID of the last request processed by the client. 
+      lastreq: The ID of the last request processed by the client.
       locked: Flag to mark if the client has been working consistently on one image.
    """
 
@@ -107,13 +107,13 @@ class Driver(socket.socket):
       self.status = Status.Up
       self.lastreq = None
       self.locked = False
-      
+
    def poll(self):
       """Waits for driver status."""
 
       self.status = self._getstatus()
-      
-   def _getstatus(self):   
+
+   def _getstatus(self):
       """Gets driver status.
 
       Returns:
@@ -123,7 +123,7 @@ class Driver(socket.socket):
 
       if not self.busyonstatus:
          try:
-            self.sendall(Message("status"))      
+            self.sendall(Message("status"))
          except:
             return Status.Disconnected
 
@@ -135,16 +135,16 @@ class Driver(socket.socket):
       if not self in readable:
          self.busyonstatus = True
          return Status.Up | Status.Busy
-      
+
       self.busyonstatus = False
       try:
          reply = self.recv(HDRLEN)
-      except socket.timeout: 
+      except socket.timeout:
          print " @SOCKET:   Timeout in status recv!"
          return Status.Up | Status.Busy | Status.Timeout
       except:
          return Status.Disconnected
-         
+
       if not len(reply) == HDRLEN:
          return Status.Disconnected
       elif reply == Message("ready"):
@@ -154,10 +154,10 @@ class Driver(socket.socket):
       elif reply == Message("havedata"):
          return Status.Up | Status.HasData
       else:
-         print " @SOCKET:    Unrecognized reply: ", reply         
+         print " @SOCKET:    Unrecognized reply: ", reply
          return Status.Up
-   
-   def recvall(self, dest):      
+
+   def recvall(self, dest):
       """Gets the potential energy, force and virial from the driver.
 
       Args:
@@ -171,15 +171,15 @@ class Driver(socket.socket):
       """
 
       blen = dest.itemsize*dest.size
-      if (blen > len(self._buf)): 
+      if (blen > len(self._buf)):
          self._buf.resize(blen)
       bpos = 0
       ntimeout=0
-      
+
       while bpos < blen:
          timeout = False
 
-#   pre-2.5 version. 
+#   pre-2.5 version.
          try:
             bpart = ""
             bpart = self.recv( blen-bpos )
@@ -190,7 +190,7 @@ class Driver(socket.socket):
             ntimeout+=1
             if ntimeout > NTIMEOUT:
                print " @SOCKET:  Couldn't receive within ", NTIMEOUT, " attempts. Time to give up!"
-               raise Disconnected()               
+               raise Disconnected()
             pass
          if (not timeout and bpart == 0):
             raise Disconnected()
@@ -214,7 +214,7 @@ class Driver(socket.socket):
          return np.fromstring(self._buf[0:blen], dest.dtype)[0]
       else:
          return np.fromstring(self._buf[0:blen], dest.dtype).reshape(dest.shape)
-       
+
    def initialize(self, pars):
       """Sends the initialisation string to the driver.
 
@@ -229,13 +229,13 @@ class Driver(socket.socket):
          try:
             self.sendall(Message("init"))
             self.sendall(np.int32(len(pars)))
-            self.sendall(pars)                        
-         except: 
+            self.sendall(pars)
+         except:
             self.poll()
             return
       else:
          raise InvalidStatus("Status in init was " + self.status)
-               
+
    def sendpos(self, atoms, cell):
       """Sends the position and cell data to the driver.
 
@@ -251,10 +251,10 @@ class Driver(socket.socket):
          try:
             self.sendall(Message("posdata"))
             self.sendall(cell.h, 9*8)
-            self.sendall(cell.ih, 9*8)      
+            self.sendall(cell.ih, 9*8)
             self.sendall(np.int32(len(atoms)))
             self.sendall(atoms.q, len(atoms)*3*8)
-         except: 
+         except:
             self.poll()
             return
       else:
@@ -277,17 +277,17 @@ class Driver(socket.socket):
          while True:
             try:
                reply = self.recv(HDRLEN)
-            except socket.timeout: 
+            except socket.timeout:
                print " @SOCKET:   Timeout in getforce, trying again!"
                continue
             if reply == Message("forceready"):
-               break          
+               break
             else:
                print " @SOCKET:   Unexpected getforce reply: ", reply
             if reply == "":
                raise Disconnected()
       else:
-         raise InvalidStatus("Status in getforce was " + self.status)      
+         raise InvalidStatus("Status in getforce was " + self.status)
 
       mu = np.float64()
       mu = self.recvall(mu)
@@ -301,7 +301,7 @@ class Driver(socket.socket):
       mvir = self.recvall(mvir)
       return [mu, mf, mvir]
 
-            
+
 class Interface(object):
    """Host server class.
 
@@ -315,16 +315,16 @@ class Interface(object):
       port: An integer giving the port the socket will be using.
       slots: An integer giving the maximum allowed backlog of queued clients.
       mode: A string giving the type of socket used.
-      latency: A float giving the number of seconds the interface will wait 
+      latency: A float giving the number of seconds the interface will wait
          before updating the client list.
-      timeout: A float giving a timeout limit for considering a calculation dead 
+      timeout: A float giving a timeout limit for considering a calculation dead
          and dropping the connection.
       server: The socket used for data transmition.
       clients: A list of the driver clients connected to the server.
       requests: A list of all the jobs required in the current PIMD step.
       jobs: A list of all the jobs currently running.
       _poll_thread: The thread the poll loop is running on.
-      _prev_kill: Holds the signals to be sent to clean up the main thread 
+      _prev_kill: Holds the signals to be sent to clean up the main thread
          when a kill signal is sent.
       _poll_true: A boolean giving whether the thread is alive.
    """
@@ -336,10 +336,10 @@ class Interface(object):
          address: An optional string giving the name of the host server.
             Defaults to 'localhost'.
          port: An optional integer giving the port number. Defaults to 31415.
-         slots: An optional integer giving the maximum allowed backlog of 
+         slots: An optional integer giving the maximum allowed backlog of
             queueing clients. Defaults to 4.
          mode: An optional string giving the type of socket. Defaults to 'unix'.
-         latency: An optional float giving the time in seconds the socket will 
+         latency: An optional float giving the time in seconds the socket will
             wait before updating the client list. Defaults to 1e-3.
          softexit: A hook for calling a soft-exit procedure
 
@@ -353,7 +353,7 @@ class Interface(object):
       self.mode = mode
       self.latency = latency
       self.timeout = timeout
-      self.softexit = None      
+      self.softexit = None
 
       if self.mode == "unix":
          self.server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -368,16 +368,16 @@ class Interface(object):
       self.server.settimeout(SERVERTIMEOUT)
       self.clients = []
       self.requests = []
-      self.jobs = []      
+      self.jobs = []
 
       self._poll_thread = None
       self._prev_kill = {}
       self._poll_true = False
-      
+
    def queue(self, atoms, cell, pars=None, reqid=0):
       """Adds a request.
 
-      Note that the pars dictionary need to be sent as a string of a 
+      Note that the pars dictionary need to be sent as a string of a
       standard format so that the initialisation of the driver can be done.
 
       Args:
@@ -389,28 +389,28 @@ class Interface(object):
             e.g. the bead index
 
       Returns:
-         A list giving the status of the request of the form {'atoms': Atoms 
+         A list giving the status of the request of the form {'atoms': Atoms
          object giving the atom positions, 'cell': Cell object giving the
          system box, 'pars': parameter string, 'result': holds the result as a
-         list once the computation is done, 'status': a string labelling the 
+         list once the computation is done, 'status': a string labelling the
          status, 'id': the id of the request, usually the bead number, 'start':
          the starting time for the calculation, used to check for timeouts.}.
       """
 
       par_str = " "
-      
-      if not pars is None: 
+
+      if not pars is None:
          for k,v in pars.items():
             par_str += k + " : " + str(v) + " , "
       else:
          par_str = " "
 
-      newreq = {"atoms": atoms, "cell": cell, "pars": par_str, 
+      newreq = {"atoms": atoms, "cell": cell, "pars": par_str,
                 "result": None, "status": "Queued", "id": reqid,
                 "start": -1 }
       self.requests.append(newreq)
       return newreq
-      
+
    def release(self, request):
       """Empties the list of requests once finished.
 
@@ -418,25 +418,25 @@ class Interface(object):
          request: A list of requests that are done.
       """
 
-      if request in self.requests:         
+      if request in self.requests:
          self.requests.remove(request)
-         
+
    def pool_update(self):
-      """Deals with keeping the pool of client drivers up-to-date during a 
+      """Deals with keeping the pool of client drivers up-to-date during a
       force calculation step.
 
       Deals with maintaining the client list. Clients that have
       disconnected are removed and their jobs removed from the list of
       running jobs and new clients are connected to the server.
       """
-     
-      for c in self.clients[:]:         
+
+      for c in self.clients[:]:
          if not (c.status & Status.Up):
             try:
                print " @SOCKET:   Client ", c.getpeername(), " died or got unresponsive(C). Removing from the list."
                c.shutdown(socket.SHUT_RDWR)
                c.close()
-            except:  
+            except:
                pass
             c.status = 0
             self.clients.remove(c)
@@ -464,9 +464,9 @@ class Interface(object):
                client.close()
          else:
             keepsearch = False
-         
+
    def pool_distribute(self):
-      """Deals with keeping the list of jobs up-to-date during a force 
+      """Deals with keeping the list of jobs up-to-date during a force
       calculation step.
 
       Deals with maintaining the jobs list. Gets data from drivers that have
@@ -480,7 +480,7 @@ class Interface(object):
             c.poll()
 
       for [r,c] in self.jobs[:]:
-         if c.status & Status.HasData:            
+         if c.status & Status.HasData:
             try:
                r["result"] = c.getforce()
             except Disconnected:
@@ -491,7 +491,7 @@ class Interface(object):
               c.status = 0
               continue
             c.poll()
-            while c.status & Status.Busy: # waits, but check if we got stuck.               
+            while c.status & Status.Busy: # waits, but check if we got stuck.
                if self.timeout>0 and r["start"]>0 and time.time()-r["start"]> self.timeout:
                   print " @SOCKET:  hasdata for bead ", r["id"], " has been running for ", time.time()-r["start"]
                   try:
@@ -500,16 +500,16 @@ class Interface(object):
                      c.close()
                   except:
                      pass
-                  c.status = 0 
+                  c.status = 0
                   continue
                c.poll()
-            if not (c.status & Status.Up): 
+            if not (c.status & Status.Up):
                print " @SOCKET:   Client died a horrible death while getting forces. Will try to cleanup."
                continue
             r["status"] = "Done"
             c.lastreq = r["id"] # saves the ID of the request that the client has just processed
             self.jobs.remove([r,c])
-            
+
          if self.timeout>0 and r["start"]>0 and time.time()-r["start"]> self.timeout:
             print " @SOCKET:  request for bead ", r["id"], " has been running for ", time.time()-r["start"]
             try:
@@ -517,13 +517,13 @@ class Interface(object):
                c.shutdown(socket.SHUT_RDWR)
                c.close()
                c.poll()
-            except:   
+            except:
                pass
             c.status = 0
-      
+
       freec = self.clients[:]
       for [r2, c] in self.jobs:
-         freec.remove(c)            
+         freec.remove(c)
 
       pendr = self.requests[:]
       for r in self.requests:
@@ -538,9 +538,9 @@ class Interface(object):
             continue
          if fc.status & Status.HasData:
             continue
-         if not (fc.status & (Status.Ready | Status.NeedsInit | Status.Busy) ): 
+         if not (fc.status & (Status.Ready | Status.NeedsInit | Status.Busy) ):
             print " @SOCKET:   (1) Client is in an unexpected status ", fc.status, ". Will try to keep calm and carry on."
-            continue                      
+            continue
          for match_ids in ( "match", "none", "free", "any" ):
             for r in pendr[:]:
                if match_ids == "match" and not fc.lastreq is r["id"]:
@@ -548,18 +548,18 @@ class Interface(object):
                elif match_ids == "none" and not fc.lastreq is None:
                   continue
                elif match_ids == "free" and fc.locked:
-                  continue               
-               
+                  continue
+
                try:
-                  print " @SOCKET: Assigning [",match_ids,"] request id ", r["id"], " to client with last-id ", fc.lastreq, "(",self.clients.index(fc),"/",len(self.clients),":",fc.getpeername(),")"              
+                  print " @SOCKET: Assigning [",match_ids,"] request id ", r["id"], " to client with last-id ", fc.lastreq, "(",self.clients.index(fc),"/",len(self.clients),":",fc.getpeername(),")"
                except:
-                  pass               
+                  pass
 
                while fc.status & Status.Busy:
-                  fc.poll()            
+                  fc.poll()
                if fc.status & Status.NeedsInit:
                   fc.initialize(r["pars"])
-                  fc.poll()               
+                  fc.poll()
                   while fc.status & Status.Busy: # waits for initialization to finish. hopefully this is fast
                      fc.poll()
                if fc.status & Status.Ready:
@@ -568,32 +568,32 @@ class Interface(object):
                   r["start"] = time.time() # sets start time for the request
                   fc.poll()
                   self.jobs.append([r,fc])
-                  fc.locked =  (fc.lastreq is r["id"]) 
+                  fc.locked =  (fc.lastreq is r["id"])
                   matched = True
                   pendr.remove(r)
                   break
                else:
                   print " @SOCKET:   (2) Client is in an unexpected status ",fc.status,". Will try to keep calm and carry on."
-            if matched: 
+            if matched:
                break # doesn't do a second (or third) round if it managed to assign the job
-               
-               
+
+
 #      for r in self.requests:
 #         if r["status"] == "Queued":
 #            freec = self.clients[:]
 #            for [r2, c] in self.jobs:
-#               freec.remove(c)            
-#                                 
+#               freec.remove(c)
+#
 #            for match_ids in ( "match", "none", "free", "any" ):
 #               matched = False
 #               for fc in freec[:]:
 #                  if not (fc.status & Status.Up):
 #                     self.clients.remove(fc)
-#                     freec.remove[fc] # now that we are looping several times, 
-#                     continue                  
+#                     freec.remove[fc] # now that we are looping several times,
+#                     continue
 #                  if fc.status & Status.HasData:
-#                     continue                              
-#                  if not (fc.status & (Status.Ready | Status.NeedsInit | Status.Busy) ): 
+#                     continue
+#                  if not (fc.status & (Status.Ready | Status.NeedsInit | Status.Busy) ):
 #                     print " @SOCKET:   (1) Client is in an unexpected status ",fc.status, ". Will try to keep calm and carry on."
 #                     continue
 #                  # First, tries to match request ids and lastreq clients.
@@ -608,16 +608,16 @@ class Interface(object):
 
 #                  # if we have been using the same client for the same bead, mark it
 #                  fc.locked =  (fc.lastreq is r["id"])
-#         
+#
 #                  try:
-#                     print " @SOCKET: Assigning [",match_ids,"] request id ", r["id"], " to client with last-id ", fc.lastreq, "(",self.clients.index(fc),"/",len(self.clients),":",fc.getpeername(),")"              
+#                     print " @SOCKET: Assigning [",match_ids,"] request id ", r["id"], " to client with last-id ", fc.lastreq, "(",self.clients.index(fc),"/",len(self.clients),":",fc.getpeername(),")"
 #                  except:  pass
 
 #                  while fc.status & Status.Busy:
-#                     fc.poll()            
+#                     fc.poll()
 #                  if fc.status & Status.NeedsInit:
 #                     fc.initialize(r["pars"])
-#                     fc.poll()               
+#                     fc.poll()
 #                     while fc.status & Status.Busy: # waits for initialization to finish. hopefully this is fast
 #                        fc.poll()
 #                  if fc.status & Status.Ready:
@@ -630,7 +630,7 @@ class Interface(object):
 #                     break
 #                  else:
 #                     print " @SOCKET:   (2) Client is in an unexpected status ",fc.status,". Will try to keep calm and carry on."
-#               if matched: 
+#               if matched:
 #                  break # doesn't do a second (or third) round if it managed to assign the job
 
    def _kill_handler(self, signal, frame):
@@ -642,7 +642,7 @@ class Interface(object):
       thread. Called when signals SIG_INT and SIG_TERM are received.
 
       Args:
-         signal: An integer giving the signal number of the signal received 
+         signal: An integer giving the signal number of the signal received
             from the socket.
          frame: Current stack frame.
       """
@@ -653,36 +653,36 @@ class Interface(object):
       if (not self.softexit is None):
          self.softexit()
          time.sleep(TIMEOUT) # give it some time to die gracefully
-         
+
       try:
          self.__del__()
       except:
-         pass      
+         pass
       if signal in self._prev_kill:
          self._prev_kill[signal](signal, frame)
-      
-   def _poll_loop(self):   
+
+   def _poll_loop(self):
       """The main thread loop.
 
       Runs until either the program finishes or a kill call is sent. Updates
       the pool of clients every UPDATEFREQ loops and loops every latency
       seconds until _poll_true becomes false.
       """
-      
+
       print " @SOCKET:   Starting the polling thread main loop."
       poll_iter = 0
       while self._poll_true:
          time.sleep(self.latency)
-         # makes sure to remove the last dead client as soon as possible. 
+         # makes sure to remove the last dead client as soon as possible.
          if poll_iter > UPDATEFREQ or (len(self.clients) > 0 and not(self.clients[0].status & Status.Up)):
             self.pool_update()
             poll_iter = 0
          poll_iter += 1
          self.pool_distribute()
-         
+
          if os.path.exists("EXIT"): # soft-exit
             print " @SOCKET:   Soft exit request. Flushing job queue."
-            # releases all pending requests       
+            # releases all pending requests
             for r in self.requests:
                r["status"] = "Exit"
             for c in self.clients:
@@ -693,15 +693,15 @@ class Interface(object):
             # flush it all down the drain
             self.clients = []
             self.jobs = []
-      self._poll_thread = None   
-   
+      self._poll_thread = None
+
    def start_thread(self):
       """Spawns a new thread.
 
       Splits the main program into two threads, one that runs the polling loop
       which updates the client list, and one which gets the data. Also sets up
       the machinery to deal with a kill call, in the case of a Ctrl-C or
-      similar signal the signal is intercepted by the _kill_handler function, 
+      similar signal the signal is intercepted by the _kill_handler function,
       which cleans up the spawned thread before closing the main thread.
 
       Raises:
@@ -709,18 +709,18 @@ class Interface(object):
       """
 
       if not self._poll_thread is None:
-         raise NameError("Polling thread already started")      
+         raise NameError("Polling thread already started")
       self._poll_thread = threading.Thread(target=self._poll_loop, name="poll_" + self.address)
       self._poll_thread.daemon = True
       self._prev_kill[signal.SIGINT] = signal.signal(signal.SIGINT, self._kill_handler)
-      self._prev_kill[signal.SIGTERM] = signal.signal(signal.SIGTERM, self._kill_handler)    
-      self._poll_true = True      
+      self._prev_kill[signal.SIGTERM] = signal.signal(signal.SIGTERM, self._kill_handler)
+      self._poll_true = True
       self._poll_thread.start()
-   
+
    def end_thread(self):
       """Closes the spawned thread.
 
-      Deals with cleaning up the spawned thread cleanly. First sets 
+      Deals with cleaning up the spawned thread cleanly. First sets
       _poll_true to false to indicate that the poll_loop should be exited, then
       closes the spawned thread and removes it.
       """
@@ -729,7 +729,7 @@ class Interface(object):
       if not self._poll_thread is None:
          self._poll_thread.join()
       self._poll_thread = None
-   
+
    def __del__(self):
       """Removes the socket.
 
