@@ -82,13 +82,10 @@ class Beads(dobject):
          depend_array(name="sm3",value=np.zeros((nbeads,3*natoms), float),
             func=self.m3tosm3, dependencies=[dget(self,"m3")]))
 
-      # pre-sets up synchronizers for beads <--> nm representations
-      sync_q = synchronizer()
-      sync_p = synchronizer()
       dset(self,"q",
-         depend_array(name="q",value=np.zeros((nbeads,3*natoms), float), synchro=sync_q ) )
+         depend_array(name="q",value=np.zeros((nbeads,3*natoms), float)) )
       dset(self,"p",
-         depend_array(name="p",value=np.zeros((nbeads,3*natoms), float), synchro=sync_p ) )
+         depend_array(name="p",value=np.zeros((nbeads,3*natoms), float)) )
       self._blist = [Atoms(natoms, _prebind=( self.q[i,:], self.p[i,:], self.m,  self.names )) for i in range(nbeads) ]
 
 

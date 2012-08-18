@@ -36,21 +36,28 @@ class NormalModes(dobject):
       self.ensemble=ensemble
       # creates arrays to store normal modes representation of the path.
       # must do a lot of piping to create "ex post" a synchronization between the beads and the nm
+      sync_q = synchronizer()
+      sync_p = synchronizer()
       dset(self,"qnm",
          depend_array(name="qnm",value=np.zeros((self.nbeads,3*self.natoms), float),
-            func={"q": self.b2nm_q}, synchro=dget(self.beads,"q")._synchro ) )
+            func={"q": self.b2nm_q}, synchro=sync_q ) )
       dset(self,"pnm",
          depend_array(name="pnm",value=np.zeros((self.nbeads,3*self.natoms), float),
-            func={"p": self.b2nm_p}, synchro=dget(self.beads,"p")._synchro ) )
+            func={"p": self.b2nm_p}, synchro=sync_p ) )
 
       # must overwrite the functions
       dget(self.beads, "q")._func = { "qnm": self.nm2b_q }
       dget(self.beads, "p")._func = { "pnm": self.nm2b_p }
+      dget(self.beads, "q").add_synchro(sync_q)
+      dget(self.beads, "p").add_synchro(sync_p)
 
       # also within the "atomic" interface to beads
       for b in range(self.nbeads):
          dget(self.beads._blist[b],"q")._func = { "qnm": self.nm2b_q }
          dget(self.beads._blist[b],"p")._func = { "pnm": self.nm2b_p }
+         dget(self.beads._blist[b],"q").add_synchro(sync_q)
+         dget(self.beads._blist[b],"p").add_synchro(sync_p)
+
 
       # finally, we mark the beads as those containing the set positions
       dget(self.beads, "q").update_man()
