@@ -75,12 +75,7 @@ class InputSimulation(Input):
              "normal_modes" :   (InputNormalModes, { "help"     : InputNormalModes.default_help,
                                         "default"  : NormalModes("rpmd",[]) } ),
              "cell" :    (InputCell,   { "help"    : InputCell.default_help }),
-             "output" :  (InputOutputs, { "help" : InputOutputs.default_help ,
-                                          "default" : [
-                  engine.outputs.PropertyOutput("wrap-pi.md", 10, [ "time", "step", "conserved", "temperature", "potential", "kinetic_cv" ] ),
-                  engine.outputs.TrajectoryOutput("wrap-pi.pos", 100, "positions", "xyz"),
-                  engine.outputs.CheckpointOutput("wrap-pi.checkpoint",1000,overwrite=True)
-                                                      ]  }),
+             "output" :  (InputOutputs, { "help" : InputOutputs.default_help  }),
              "step" :       ( InputValue, { "dtype"    : int,
                                             "default"  : 0,
                                             "help"     : "How many time steps have been done." }),

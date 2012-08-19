@@ -35,13 +35,13 @@ class Elements(dict):
    """
 
    mass_list={
-      "X"   :    1.0000/Constants.amu, 
+      "X"   :    1.0000/Constants.amu,
       "H"   :   1.00794,
       "D"   :    2.0141,
       "Z"   :  1.382943, #an interpolated H-D atom, based on y=1/sqrt(m) scaling
       "H2"  :    2.0160,
       "He"  :  4.002602,
-      "Li"  :    6.9410,     
+      "Li"  :    6.9410,
       "Be"  :  9.012182,
       "B"   :    10.811,
       "C"   :   12.0107,
@@ -85,7 +85,7 @@ class Elements(dict):
       "Ru"  :    101.07,
       "Rh"  : 102.90550,
       "Pd"  :    106.42,
-      "Ag"  :  107.8682, 
+      "Ag"  :  107.8682,
       "Cd"  :   112.411,
       "In"  :   114.818,
       "Sn"  :   118.710,
@@ -93,14 +93,14 @@ class Elements(dict):
       "Te"  :    127.60,
       "I"   : 126.90447,
       "Xe"  :    131.29
-   }   
-   
+   }
+
    @classmethod
    def mass(cls, label):
       """Function to access the mass_list attribute.
-   
-      Note that this does not require an instance of the Elements class to be 
-      created, as this is a class method. Therefore using Elements.mass(label) 
+
+      Note that this does not require an instance of the Elements class to be
+      created, as this is a class method. Therefore using Elements.mass(label)
       will give the mass of the element with the atomic symbol given by label.
 
       Args:
@@ -117,13 +117,13 @@ class Elements(dict):
          return -1.0
 
 # thes are the conversion FROM atomic units to the unit stated
-UnitMap = { 
+UnitMap = {
    "undefined": {
-      ""             : 1.00 
-      },      
+      ""             : 1.00
+      },
    "energy":   {
       ""             : 1.00,
-      "atomic_unit"  : 1.00, 
+      "atomic_unit"  : 1.00,
       "electronvolt" : 0.036749326,
       "j_mol"       : 0.00038087989,
       "cal_mol"     : 0.0015946679,
@@ -131,7 +131,7 @@ UnitMap = {
       },
    "temperature":   {
       ""             : 1.00,
-      "atomic_unit"  : 1.00, 
+      "atomic_unit"  : 1.00,
       "kelvin"       : 1.00
       },
    "time":     {
@@ -139,17 +139,17 @@ UnitMap = {
       "atomic_unit"  : 1.00,
       "second"       : 4.1341373e+16
       },
-   "frequency" :   {   # TODO fill up units here 
+   "frequency" :   {   # TODO fill up units here
                        # also, we may or may not need some 2*pi factors here
       ""             : 1.00,
       "atomic_unit"  : 1.00,
       "invcm"        : 8.0685297e-28,
       "hertz"        : 2.4188843e-17
-      },     
+      },
    "ms-momentum" :   {   # TODO fill up units here (mass-scaled momentum)
       ""             : 1.00,
       "atomic_unit"  : 1.00
-      }, 
+      },
    "length" :     {
       ""             : 1.00,
       "atomic_unit"  : 1.00,
@@ -160,11 +160,11 @@ UnitMap = {
       ""            : 1.00,
       "atomic_unit" : 1.00,
       "SI_unit"     : 4.5710289e-7
-      },           
+      },
    "momentum":    {
       ""             : 1.00,
       "atomic_unit"  : 1.00
-      },           
+      },
    "mass":        {
       ""             : 1.00,
       "atomic_unit"  : 1.00,
@@ -177,7 +177,18 @@ UnitMap = {
       "bar"          : 3.398827377e-9,
       "atmosphere"   : 3.44386184e-9,
       "pascal"       : 3.398827377e-14
+      },
+   "density" : {
+      ""             : 1.00,
+      "atomic_unit"  : 1.00,
+      "g/cm^3"       : 0.0061473157
+      },
+    "force" : {
+      ""             : 1.00,
+      "atomic_unit"  : 1.00,
+      "newton"       : 8.2387218e-08
       }
+
 }
 
 # a list of magnitude prefixes
@@ -198,12 +209,12 @@ UnitPrefixRE = re.compile(UnitPrefixRE)
 ########################################################################
 #  Atomic units are used EVERYWHERE internally. In order to quickly    #
 #  interface with any "outside" unit, we set up a simple conversion    #
-#  library.                                                            # 
+#  library.                                                            #
 ########################################################################
 
 def unit_to_internal(family, unit, number):
    """ Converts a number of given dimensions and units into internal units. """
-   
+
    if not (family == "number"  or family in UnitMap):
       raise IndexError(family + " is an undefined units kind.")
    if family == "number":
@@ -213,18 +224,18 @@ def unit_to_internal(family, unit, number):
    if unit == "":
       prefix=""; base=""
    else:
-      m = UnitPrefixRE.match(unit);   
-      if m is None : raise ValueError("Unit "+unit+" is not structured with a prefix+base syntax.")   
-      prefix = m.group(1); base = m.group(2); 
-      
+      m = UnitPrefixRE.match(unit);
+      if m is None : raise ValueError("Unit "+unit+" is not structured with a prefix+base syntax.")
+      prefix = m.group(1); base = m.group(2);
+
    if not prefix in UnitPrefix:
-      raise TypeError(prefix + " is not a valid unit prefix.")      
+      raise TypeError(prefix + " is not a valid unit prefix.")
    if not base in UnitMap[family]:
       raise TypeError(base + " is an undefined unit for kind " + family + ".")
-      
+
    return number*UnitMap[family][base]*UnitPrefix[prefix]
 
 def unit_to_user(family, unit, number):
    """ Converts a number of given dimensions from internal to user units. """
-   
+
    return number/unit_to_internal(family, unit, 1.0)

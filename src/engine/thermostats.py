@@ -1,3 +1,4 @@
+
 """Contains the classes that deal with constant temperature dynamics.
 
 Contains the algorithms which propagate the thermostatting steps in the constant
@@ -278,17 +279,16 @@ class ThermoPILE_L(Thermostat):
       prev_ethermo=self.ethermo
 
       # creates a set of thermostats to be applied to individual normal modes
-      self._thermos = [ ThermoLangevin(temp=1, dt=1, tau=1) for b in range(beads.nbeads) ]
+      self._thermos = [ ThermoLangevin(temp=1, dt=1, tau=1) for b in range(nm.nbeads) ]
       # optionally does not bind the centroid, so we can re-use all of this
       # in the PILE_G case
-      if not bindcentroid:
-         self._thermos[0] = None
+      if not bindcentroid:  self._thermos[0] = None
 
       self.nm = nm
 
       dset(self,"tauk",
          depend_array(name="tauk", value=np.zeros(nm.nbeads-1,float),
-            func=self.get_tauk, dependencies=[dget(self,"temp")] ) ) # SHOULD MODIFY FOR CENTROID MASSES, dget(nm,"dynm_factors")] ) )
+            func=self.get_tauk, dependencies=[dget(self,"temp"), dget(nm,"dynomegak")] ) )
 
       # must pipe all the dependencies in such a way that values for the nm thermostats
       # are automatically updated based on the "master" thermostat
@@ -324,7 +324,7 @@ class ThermoPILE_L(Thermostat):
       # any previously-stored value between the sub-thermostats
       if bindcentroid:
          for t in self._thermos:
-            t.ethermo = prev_ethermo/beads.nbeads
+            t.ethermo = prev_ethermo/nm.nbeads
          dget(self,"ethermo")._func = self.get_ethermo;
          # if we are not binding the centroid just yet, this bit of the piping
          # is delegated to the function which is actually calling this
@@ -337,32 +337,7 @@ class ThermoPILE_L(Thermostat):
          An array with the damping time scales for the non-centroid modes.
       """
 
-      return  np.array([
-       1.0/( 4*self.temp*Constants.kb/Constants.hbar*math.sin(k*math.pi/len(self._thermos)) ) # /np.sqrt(self.beads.dynm_factors[k]) )
-            for k in range(1,len(self._thermos)) ])
-#      if (self.beads.nm_freqs.size==1):
-#         return np.array([1/self.beads.nm_freqs[0] for k in range(1,len(self._thermos)) ])   # CMD
-#      elif (self.beads.nm_freqs.size==self.beads.nbeads):
-#         return np.array([1/self.beads.nm_freqs[k] for k in range(1,len(self._thermos)) ])   # manual
-#      else:
-#         return np.array([1.0/self.beads.omegak[k] for k in range(1,len(self._thermos)) ])
-
-#   def get_m3k(self):
-#      """Computes the thermostat damping time scale for the non-centroid
-#      normal modes.
-
-#      Returns:
-#         An array with the damping time scales for the non-centroid modes.
-#      """
-
-#      rm=self.beads.m3.copy()
-#      if (self.beads.nm_freqs.size==1):
-#         for i in range(1,self.beads.nbeads): rm[k]*=(self.beads.omegak[k]/self.beads.nm_freqs[0])**2  #CMD
-#      elif (self.beads.nm_freqs.size==self.beads.nbeads):
-#         for i in range(1,self.beads.nbeads): rm[k]*=(self.beads.omegak[k]/self.beads.nm_freqs[k])**2  # manual
-
-#      return rm
-#
+      return  np.array([ 1.0/(2*self.nm.dynomegak[k])  for k in range(1,len(self._thermos)) ])
 
 
    def get_ethermo(self):
@@ -395,7 +370,7 @@ class ThermoSVR(Thermostat):
    """
 
    def get_et(self):
-      """Calculates the thermostat coupling strength parameter."""
+      """Calculates the damping term in the propagator."""
 
       return math.exp(-0.5*self.dt/self.tau)
 
@@ -431,7 +406,8 @@ class ThermoSVR(Thermostat):
 
    def step(self):
       """Updates the bound momentum vector with a stochastic velocity rescaling
-      thermostat.
+      thermostat. See
+      G Bussi, D Donadio, M Parrinello, Journal of Chemical Physics 126, 014101 (2007)
       """
 
       K = np.dot(depstrip(self.p),depstrip(self.p)/depstrip(self.m))*0.5
@@ -510,7 +486,7 @@ class ThermoPILE_G(ThermoPILE_L):
 
       # splits any previous ethermo between the thermostats, and finishes to bind ethermo to the sum function
       for t in self._thermos:
-         t.ethermo = prev_ethermo/beads.nbeads
+         t.ethermo = prev_ethermo/nm.nbeads
       dget(self,"ethermo")._func = self.get_ethermo;
 
 class ThermoGLE(Thermostat):

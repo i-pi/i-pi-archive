@@ -8,18 +8,28 @@ Classes:
       appropriate format.
 """
 
-__all__ = ['Properties', 'Trajectories']
+__all__ = ['Properties', 'Trajectories', 'getkey']
 
 import numpy as np
 import math, random
 from utils.depend import *
-from utils.units import Constants
+from utils.units import Constants, unit_to_internal, unit_to_user
 from utils.mathtools import logsumlog, h2abc
 from utils.io import *
 from atoms import *
 from cell import *
 from ensembles import *
 from forces import *
+
+def getkey(pstring):
+   """ Strips units and argument lists from a property/trajectory keyword. """
+
+   pa=pstring.find('(');
+   if pa<0: pa=len(pstring)
+   pu=pstring.find('{');
+   if pu<0: pu=len(pstring)
+   return pstring[0:min(pa,pu)]
+
 
 class Properties(dobject):
    """A proxy to compute and output properties of the system.
@@ -108,41 +118,45 @@ class Properties(dobject):
 
       self.ensemble = simul.ensemble
       self.beads = simul.beads
+      self.nm = simul.nm
       self.cell = simul.cell
       self.forces = simul.forces
       self.simul = simul
 
 
-      self.property_dict["step"] = lambda: (1 + self.simul.step)
-      self.property_dict["time"] = lambda: (1 + self.simul.step)*self.ensemble.dt
-      self.property_dict["conserved"] = self.get_econs
-      self.property_dict["temperature"] = self.get_temp
-      self.property_dict["density"] = lambda: self.beads.m.sum()/self.cell.V
-      self.property_dict["volume"] = lambda: self.cell.V
-      self.property_dict["h"] = self.wrap_cell
+      self.property_dict["step"] = { "dimension" : "number", "func" : (lambda: (1 + self.simul.step)) }
+      self.property_dict["time"] = { "dimension": "time", "func": (lambda: (1 + self.simul.step)*self.ensemble.dt) }
+      self.property_dict["conserved"] = {"dimension" : "energy", "func" : self.get_econs }
+      self.property_dict["temperature"] = { "dimension" : "temperature", "func" : self.get_temp }
+      self.property_dict["density"] = {"dimension" : "density", "func": (lambda: self.beads.m.sum()/self.cell.V) }
+      self.property_dict["volume"] = {"dimension": "volume", "func" :(lambda: self.cell.V) }
+      self.property_dict["h"] = {"dimension" : "length", "func" :self.wrap_cell }
 
-      self.property_dict["potential"] = lambda: self.forces.pot/self.beads.nbeads
-      self.property_dict["spring"] = lambda: self.beads.vpath*self.ensemble.omegan2
-      self.property_dict["kinetic_md"] = lambda: self.beads.kin/self.beads.nbeads
-      self.property_dict["kinetic_cv"] = self.get_kincv
+      self.property_dict["potential"] =  {"dimension" : "energy", "func": (lambda: self.forces.pot/self.beads.nbeads ) }
+      self.property_dict["spring"] =     {"dimension" : "energy", "func": (lambda: self.beads.vpath*self.nm.omegan2) }
+      self.property_dict["kinetic_md"] = {"dimension" : "energy", "func": (lambda: self.beads.kin/self.beads.nbeads) }
+      self.property_dict["kinetic_cv"] = {"dimension" : "energy", "func": self.get_kincv }
 
-      self.property_dict["stress_md"] = self.get_stress
-      self.property_dict["pressure_md"] = self.get_press
-      self.property_dict["kstress_md"] = self.get_kstress
-      self.property_dict["virial_md"] = self.get_vir
+      self.property_dict["stress_md"] = {"func" : self.get_stress }
+      self.property_dict["pressure_md"] = {"func" : self.get_press }
+      self.property_dict["kstress_md"] = {"func" : self.get_kstress }
+      self.property_dict["virial_md"] = {"func" : self.get_vir }
 
-      self.property_dict["stress_cv"] = self.get_stresscv
-      self.property_dict["pressure_cv"] = self.get_presscv
-      self.property_dict["kstress_cv"] = self.get_kstresscv
-      self.property_dict["virial_cv"] = self.get_vircv
+      self.property_dict["stress_cv"] =   {"func" : self.get_stresscv      }
+      self.property_dict["pressure_cv"] = {"func" : self.get_presscv       }
+      self.property_dict["kstress_cv"] =  {"func" :  self.get_kstresscv    }
+      self.property_dict["virial_cv"] =   {"func" : self.get_vircv         }
 
-      self.property_dict["gle_ke"] = self.get_gleke
+      self.property_dict["gle_ke"] =   {"func" : self.get_gleke             }
 
-      self.property_dict["kin_yama"] = self.get_kinyama
+      self.property_dict["kin_yama"] = {"func" : self.get_kinyama           }
 
-      self.property_dict["linlin"] = self.get_linlin
-      self.property_dict["isotope_yama"] = self.get_isotope_yama
-      self.property_dict["isotope_thermo"] = self.get_isotope_thermo
+      self.property_dict["linlin"] =   {"func" : self.get_linlin            }
+      self.property_dict["isotope_sc"] = {"func" : self.get_isotope_yama ,
+        "help" :  "Scaled coordinates free energy perturbation scaled mass KE estimator. Prints everything which is needed to compute the kinetic energy for a isotope-substituted system. The 7 elements are: <h> <h^2> <T_CV> <T_CV^2> ln(<e^-h>) ln(|<T_CV e^-h>|) sign(<T_CV e^-h>). Mixed units, so outputs only in a.u." }
+
+      self.property_dict["isotope_thermo"] = {"dimension" : "undefined", "func" : self.get_isotope_thermo, "size" : 7,
+        "help" : "Thermodynamic free energy perturbation scaled mass KE estimator. Prints everything which is needed to compute the kinetic energy for a isotope-substituted system. The 7 elements are: <h> <h^2> <T_CV> <T_CV^2> ln(<e^-h>) ln(|<T_CV e^-h>|) sign(<T_CV e^-h>). Mixed units, so outputs only in a.u." }
 
       # dummy beads and forcefield objects so that we can use scaled and
       # displaced path estimators without changing the simulation bead
@@ -167,20 +181,36 @@ class Properties(dobject):
       """
 
       args = []
+      unit=""
+      arglist=()
+      unstart=len(key)
+      argstart=unstart
+
+      if '}' in key:
+         # the property has a user-defined unit
+         unstart = key.find('{')
+         unstop = key.find('}', unstart)
+         if unstop == -1:
+            raise ValueError("Incorrect format in property units " + key)
+         unit = key[unstart+1:unstop]
       if '(' in key:
          # If the property has additional arguments
          argstart = key.find('(')
          argstop = key.find(')', argstart)
          if argstop == -1:
-            raise ValueError("Incorrect format in property name " + key)
+            raise ValueError("Incorrect format in property arguments " + key)
 
          argstr = key[argstart:argstop+1]
-         key = key[0:argstart] # strips the arguments from key name
-
          arglist = io_xml.read_tuple(argstr, delims="()", split=";", arg_type=str)
-         return self.property_dict[key](*arglist)
-      else:
-         return self.property_dict[key]()
+
+
+      key = key[0:min(unstart,argstart)] # strips the arguments from key name
+      pkey = self.property_dict[key]
+
+      if "dimension" in pkey and unit != "":
+         return  unit_to_user(pkey["dimension"], unit, pkey["func"](*arglist))
+      else:   return pkey["func"](*arglist)
+
 
    def get_temp(self):
       """Calculates the classical kinetic temperature estimator.
@@ -512,7 +542,6 @@ class Properties(dobject):
 
       return (alogr, alogr2, atcv, atcv2, law, lawke, sawke)
 
-
    def get_isotope_thermo(self, alpha="1.0", atom=""):
       """Gives the components of the thermodynamic scaled-mass KE
       estimator for a given atom index.
@@ -566,7 +595,7 @@ class Properties(dobject):
          for j in range(3*i,3*(i+1)):
             spr += (q[self.beads.nbeads-1,j]-q[0,j])**2
 
-         spr *= 0.5*self.beads.m[i]*self.ensemble.omegan2
+         spr *= 0.5*self.beads.m[i]*self.nm.omegan2
 
          # centroid virial contribution from atom i
          tcv = 0.0
@@ -595,11 +624,10 @@ class Properties(dobject):
          else:
             (lawke, sawke) = logsumlog( (lawke, sawke), (-logr+np.log(abs(tcv)), np.sign(tcv)) )
 
-         print "THERMO", ni, logr, tcv, law, lawke
       if ni==0:
          raise ValueError("Couldn't find an atom which matched the argument of isotope_y")
 
-      return (alogr, alogr2, atcv, atcv2, law, lawke, sawke)
+      return np.asarray([alogr, alogr2, atcv, atcv2, law, lawke, sawke])
 
 class Trajectories(dobject):
    """A simple class to take care of output of trajectory data.
@@ -615,6 +643,9 @@ class Trajectories(dobject):
    def __init__(self):
       """Initialises a Trajectories object.  """
 
+      self. traj_dict = {}
+
+
    def bind(self, simul):
       """ Binds to a simulation object to fetch atomic and force data.
 
@@ -625,18 +656,17 @@ class Trajectories(dobject):
       self.simul = simul
       self.fatom = simul.beads[0].copy()
 
-      # a few, "fancier", per-atom properties
-      dset(self, "atomic_kincv",
-         depend_array(name="atomic_kincv",
-            value=np.zeros(self.simul.beads.natoms*3), func=self.get_akcv,
-               dependencies=[dget(self.simul.forces,"f"), dget(self.simul.beads,"q"), dget(self.simul.beads,"qc"), dget(self.simul.ensemble,"temp")]))
-      dset(self, "atomic_kod", depend_array(name="atomic_kod",
-         value=np.zeros(self.simul.beads.natoms*3), func=self.get_akcv_od,
-            dependencies=[dget(self.simul.forces,"f"), dget(self.simul.beads,"q"), dget(self.simul.beads,"qc"), dget(self.simul.ensemble,"temp")]))
-      #~ dset(self, "atomic_spring",
-         #~ depend_array(name="atomic_spring",
-            #~ value=np.zeros(self.simul.beads.natoms*3), func=self.get_aspr,
-               #~ dependencies=[dget(self.simul.beads,"q"), dget(self.simul.beads,"m3"), dget(self.simul.ensemble,"omegan")]))
+
+      self.traj_dict["positions"] =  { "dimension" : "length", "func" : (lambda : 1.0*self.simul.beads.q) }
+      self.traj_dict["velocities"] =  { "dimension" : "velocity", "func" : (lambda : self.simul.beads.p/self.simul.beads.m3) }
+      self.traj_dict["forces"] =  { "dimension" : "force", "func" : (lambda : 1.0*self.simul.force.f) }
+      self.traj_dict["kinetic_cv"] =  { "dimension" : "energy", "func" : self.get_akcv }
+      self.traj_dict["kinetic_od"] =  { "dimension" : "energy", "func" : self.get_akcv_od }
+      self.traj_dict["springs"] =  { "dimension" : "energy", "func" : self.get_aspr }
+      self.traj_dict["r_gyration"] =  { "dimension" : "length", "func" : (lambda : 1.0*self.simul.beads.rg) }
+      self.traj_dict["x_centroid"] =  { "dimension" : "length", "func" : (lambda : 1.0*self.simul.beads.qc)  }
+      self.traj_dict["v_centroid"] =  { "dimension" : "length", "func" : (lambda : self.simul.beads.pc/self.simul.beads.m3[0])  }
+
 
    def get_akcv(self):
       """Calculates the contribution to the kinetic energy due to each degree
@@ -681,8 +711,44 @@ class Trajectories(dobject):
          rv[:] += (self.simul.beads.q[b]-self.simul.beads.q[b-1])*(self.simul.beads.q[b]-self.simul.beads.q[b-1])*self.simul.beads.m3[b]
       rv[:] += (self.simul.beads.q[0]-self.simul.beads.q[self.simul.beads.nbeads-1])*(self.simul.beads.q[0]-self.simul.beads.q[self.simul.beads.nbeads-1])*self.simul.beads.m3[0]
 
-      rv *= 0.5*self.simul.ensemble.omegan**2
+      rv *= 0.5*self.simul.nm.omegan2
       return rv
+
+   def __getitem__(self, key):
+      """ Gets one of the trajectories. """
+
+      args = []
+      unit=""
+      arglist=()
+      unstart=len(key)
+      argstart=unstart
+
+
+      if '}' in key:
+         # the property has a user-defined unit
+         unstart = key.find('{')
+         unstop = key.find('}', unstart)
+         if unstop == -1:
+            raise ValueError("Incorrect format in trajectory units " + key)
+         unit = key[unstart+1:unstop]
+      if '(' in key:
+         # If the property has additional arguments
+         argstart = key.find('(')
+         argstop = key.find(')', argstart)
+         if argstop == -1:
+            raise ValueError("Incorrect format in trajectory arguments " + key)
+
+         argstr = key[argstart:argstop+1]
+         arglist = io_xml.read_tuple(argstr, delims="()", split=";", arg_type=str)
+
+
+      key = key[0:min(unstart,argstart)] # strips the arguments from key name
+      pkey = self.traj_dict[key]
+
+      if "dimension" in pkey and unit != "":
+         return  unit_to_user(pkey["dimension"], unit, 1.0) * pkey["func"](*arglist)
+      else:   return pkey["func"](*arglist)
+
 
    def print_traj(self, what, stream, b=0, format="pdb"):
       """Prints out a frame of a trajectory for the specified quantity and bead.
@@ -693,28 +759,12 @@ class Trajectories(dobject):
          stream: A reference to the stream on which data will be printed.
       """
 
-      if what == "positions":
-         self.fatom.q = self.simul.beads.q[b]
-      elif what == "velocities":
-         self.fatom.q = self.simul.beads.p[b]/self.simul.beads.m3[0]
-      elif what == "forces":
-         self.fatom.q = self.simul.forces.f[b]
-      elif what == "kinetic_cv":
-         self.fatom.q = self.atomic_kincv
-      elif what == "spring":
-         self.fatom.q = self.atomic_spring
-      elif what == "kodterms_cv":
-         self.fatom.q = self.atomic_kod
-      elif what == "centroid":
-         self.fatom.q = self.simul.beads.qc
-      elif what == "momentum_centroid":
-         self.fatom.q = self.simul.beads.pc
-      elif what == "gyration":
-         self.fatom.q = self.simul.beads.rg
-      else:
-         raise IndexError("<" + what + "> is not a recognized trajectory output")
+      cq = self[what]
+      if getkey(what) in [ "positions", "velocities", "forces" ] :
+         self.fatom.q[:]= cq[b]
+      else: self.fatom.q[:] = cq
 
       if format == "pdb":
-         io_pdb.print_pdb(self.fatom, self.simul.cell, stream, title=("Step:  %10d  Bead:   %5d " % (self.simul.step+1, b) ) )
+         io_pdb.print_pdb(self.fatom, self.simul.cell, stream, title=("Traj: %s Step:  %10d  Bead:   %5d " % (what, self.simul.step+1, b) ) )
       elif format == "xyz":
-         io_xyz.print_xyz(self.fatom, self.simul.cell, stream, title=("Step:  %10d  Bead:   %5d " % (self.simul.step+1, b) ) )
+         io_xyz.print_xyz(self.fatom, self.simul.cell, stream, title=("Traj: %s Step:  %10d  Bead:   %5d " % (what, self.simul.step+1, b) ) )

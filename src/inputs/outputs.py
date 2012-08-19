@@ -3,8 +3,9 @@ from utils.inputvalue import *
 from copy import copy
 import engine.outputs
 import numpy as np
+from engine.properties import getkey
 
-__all__=['InputOutputs', 'InputProperties', 'InputTrajectory', 
+__all__=['InputOutputs', 'InputProperties', 'InputTrajectory',
          'InputCheckpoint']
 
 class InputProperties(InputArray):
@@ -48,7 +49,7 @@ class InputTrajectory(InputValue):
    default_label = "TRAJECTORY"
 
    attribs=copy(InputValue.attribs)
-   attribs["filename"]=(InputValue,{ "dtype" : str, "default": "pos"} )
+   attribs["filename"]=(InputValue,{ "dtype" : str, "default": "traj"} )
    attribs["stride"]=(InputValue,{ "dtype" : int, "default": 1 } )
    attribs["format"]=(InputValue,{ "dtype" : str, "default": "xyz" } )
 
@@ -61,12 +62,6 @@ class InputTrajectory(InputValue):
       """ Returns a TrajectoryOutput object. """
 
       return engine.outputs.TrajectoryOutput(self.filename.fetch(), self.stride.fetch(), super(InputTrajectory,self).fetch(),self.format.fetch())
-
-   def check(self):
-
-      super(InputTrajectory,self).check()
-      if not self.value in ["positions", "velocities", "forces", "kinetic_cv", "kodterms_cv", "centroid", "momentum_centroid", "gyration", "spring" ]:
-         raise ValueError("Output trajectory file " + self.value + " is not a valid keyword for trajectories.")
 
    def store(self, traj):
       """ Stores a PropertyOutput object. """
@@ -150,6 +145,11 @@ class InputOutputs(Input):
 
    def __init__(self, help=None, dimension=None, units = None, default=None):
 
+      # sets default in a "dynamic" way.
+      if default is None:
+         default = [ engine.outputs.PropertyOutput("wrap-pi.md", 10, [ "time", "step", "conserved", "temperature", "potential", "kinetic_cv" ] ),
+                     engine.outputs.TrajectoryOutput("wrap-pi.pos", 100, "positions", "xyz"),
+                     engine.outputs.CheckpointOutput("wrap-pi.checkpoint",1000,overwrite=True)          ]
       super(InputOutputs,self).__init__(help, dimension, units, default)
       if not self._default is None:
          self.store(self._default)

@@ -3,6 +3,7 @@
 import numpy as np
 from utils.depend import *
 from utils.io.io_xml import *
+from engine.properties import getkey
 
 __all__=[ 'PropertyOutput', 'TrajectoryOutput', 'CheckpointOutput' ]
 
@@ -13,11 +14,11 @@ class PropertyOutput(dobject):
       from a Properties object and outputting with the desired stride.
    """
 
-   def __init__(self, filename="out", stride=1, outlist=np.zeros(0,np.dtype('|S12')) ):
+   def __init__(self, filename="out", stride=1, outlist=np.zeros(0,np.dtype('|S1024')) ):
       """ Initializes a property output stream opening the corresponding file name.
          Also writes out headers.  """
       self.filename=filename
-      self.outlist=np.asarray(outlist,np.dtype('|S12'))
+      self.outlist=np.asarray(outlist,np.dtype('|S1024'))
       self.stride=stride
       self.out=None
 
@@ -29,16 +30,11 @@ class PropertyOutput(dobject):
 
       # Checks as soon as possible if some asked-for properties are missing or mispelled
       for what in self.outlist:
-         if '(' in what:
-            argstart = what.find('(')
-            key = what[0:argstart]
-            if not key in self.simul.properties.property_dict.keys():
-               print "Computable properties list: ", self.properties.property_dict.keys()
-               raise KeyError(key + " is not a recognized property")
-
-         elif not what in self.simul.properties.property_dict.keys():
-            print "Computable properties list: ", self.properties.property_dict.keys()
-            raise KeyError(what + " is not a recognized property")
+         key=getkey(what)
+         print what, " what<>key", key
+         if not key in self.simul.properties.property_dict.keys():
+            print "Computable properties list: ", self.simul.properties.property_dict.keys()
+            raise KeyError(key + " is not a recognized property")
 
       self.open_stream()
 
@@ -50,10 +46,24 @@ class PropertyOutput(dobject):
       except:
          raise ValueError("Could not open file "+self.filename+" for output")
 
-      ohead = "# "
-      for l in self.outlist:
-         ohead += "%16s"%(l) + " "
-      self.out.write(ohead + "\n")
+      # print nice header if information is available on the properties
+      if (self.simul.step==0) :
+         icol=1
+         for what in self.outlist:
+            ohead = "# "
+            key=getkey(what)
+            prop = self.simul.properties.property_dict[key]
+
+            if "size" in prop and prop["size"]>1:
+               ohead+= "cols. %3d-%3d " % ( icol, icol+prop["size"] )
+               icol+=prop["size"]
+            else:
+               ohead+= "column    %3d " % ( icol )
+               icol+=1
+            ohead += " --> %s " % (what)
+            if "help" in prop:
+               ohead+=" : "+prop["help"]
+            self.out.write(ohead + "\n")
 
 
    def close_stream():
@@ -83,10 +93,8 @@ class PropertyOutput(dobject):
          if not hasattr(quantity,"__len__") :
             self.out.write(write_type(float, quantity) + "   ")
          else:
-            self.out.write(" [ ")
             for el in quantity:
-               self.fout.write(write_type(float, el) + " ")
-            self.out.write(" ] ")
+               self.out.write(write_type(float, el) + " ")
 
       self.out.write("\n")
       self.out.flush()
@@ -119,7 +127,7 @@ class TrajectoryOutput(dobject):
    def open_stream(self):
       """ Opens the output stream(s). """
 
-      if self.what in [ "positions", "velocities", "forces" ]:
+      if getkey(self.what) in [ "positions", "velocities", "forces" ]:
          # must write out trajectories for each bead, so must create b streams
          self.out=[]
          for b in range(self.simul.beads.nbeads):
@@ -128,6 +136,11 @@ class TrajectoryOutput(dobject):
                self.out.append( open(self.filename+"_"+padb+"."+self.format, "a") )
             except:
                raise ValueError("Could not open file "+self.filename+"_"+padb+"."+self.format+" for output")
+      else:
+         try:
+            self.out=( open(self.filename+"."+self.format, "a") )
+         except:
+            raise ValueError("Could not open file "+self.filename+"."+self.format+" for output")
 
    def close_stream():
       """ Closes the output stream. """

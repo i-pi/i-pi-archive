@@ -44,3 +44,6 @@ More in general, rationalize and clean up the available properties and trajector
 check function of InputTrajectory. We should find a more easily maintainable
 method of doing this. (JM)
 
+***  Benchmark the new propert implementation. (MC)
+Completely revamped properties and trajectories scheme. 
+Now it is possible to specify units and a short help string.
