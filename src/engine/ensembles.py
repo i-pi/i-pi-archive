@@ -300,6 +300,8 @@ class NVTEnsemble(NVEEnsemble):
 
       if isinstance(self.thermostat,ThermoNMGLE) or isinstance(self.thermostat,ThermoNMGLEG) or isinstance(self.thermostat,ThermoPILE_L) or isinstance(self.thermostat,ThermoPILE_G):
          self.thermostat.bind(nm=self.nm,prng=prng,ndof=ndof )
+      else:
+         self.thermostat.bind(beads=self.beads,prng=prng,ndof=ndof )
 
       deppipe(self,"ntemp", self.thermostat,"temp")
       deppipe(self,"dt", self.thermostat, "dt")

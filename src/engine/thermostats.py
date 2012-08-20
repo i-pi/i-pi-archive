@@ -105,6 +105,7 @@ class Thermostat(dobject):
       else:
          self.prng = prng
 
+      print "initializing thermostat", beads, pm
       if not beads is None:
          dset(self,"p",beads.p.flatten())
          dset(self,"m",beads.m3.flatten())
