@@ -643,8 +643,7 @@ class Trajectories(dobject):
    def __init__(self):
       """Initialises a Trajectories object.  """
 
-      self. traj_dict = {}
-
+      self.traj_dict = {}
 
    def bind(self, simul):
       """ Binds to a simulation object to fetch atomic and force data.

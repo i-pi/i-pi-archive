@@ -492,8 +492,8 @@ class Interface(object):
               continue
             c.poll()
             while c.status & Status.Busy: # waits, but check if we got stuck.
-               if self.timeout>0 and r["start"]>0 and time.time()-r["start"]> self.timeout:
-                  print " @SOCKET:  hasdata for bead ", r["id"], " has been running for ", time.time()-r["start"]
+               if self.timeout > 0 and r["start"] > 0 and time.time() - r["start"] > self.timeout:
+                  print " @SOCKET:  hasdata for bead ", r["id"], " has been running for ", time.time() - r["start"]
                   try:
                      print " @SOCKET:   Client ", c.getpeername(), " died or got unresponsive (A). Closing socket."
                      c.shutdown(socket.SHUT_RDWR)
@@ -510,8 +510,8 @@ class Interface(object):
             c.lastreq = r["id"] # saves the ID of the request that the client has just processed
             self.jobs.remove([r,c])
 
-         if self.timeout>0 and r["start"]>0 and time.time()-r["start"]> self.timeout:
-            print " @SOCKET:  request for bead ", r["id"], " has been running for ", time.time()-r["start"]
+         if self.timeout > 0 and r["start"] > 0 and time.time() - r["start"] > self.timeout:
+            print " @SOCKET:  request for bead ", r["id"], " has been running for ", time.time() - r["start"]
             try:
                print " @SOCKET:   Client ", c.getpeername(), " died or got unresponsive (B). Closing socket."
                c.shutdown(socket.SHUT_RDWR)
