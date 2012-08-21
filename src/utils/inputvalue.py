@@ -269,8 +269,6 @@ class Input(object):
       if xml is None:
          raise ValueError("Input.parse should be called with a xml tag")
 
-      print "INPUT parsing ", xml.name
-
       for a, v in xml.attribs.iteritems() :
          if a in self.attribs:
             self.__dict__[a].parse(text=v)
@@ -758,7 +756,6 @@ class InputArray(Input):
       if xml is None:
          self.value = read_array(self.type, text)
       else:
-         print "PARSING ", xml.name
          if xml.fields[0][0] != "_text": raise ValueError("InputArray should not contain further XML tags")
          self.value = read_array(self.type, xml.fields[0][1])
          if "units" in xml.attribs:

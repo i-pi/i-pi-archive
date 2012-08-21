@@ -143,7 +143,7 @@ UnitMap = {
                        # also, we may or may not need some 2*pi factors here
       ""             : 1.00,
       "atomic_unit"  : 1.00,
-      "invcm"        : 8.0685297e-28,
+      "inversecm"    : 4.5563353e-06,
       "hertz"        : 2.4188843e-17
       },
    "ms-momentum" :   {   # TODO fill up units here (mass-scaled momentum)

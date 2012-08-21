@@ -31,7 +31,6 @@ class PropertyOutput(dobject):
       # Checks as soon as possible if some asked-for properties are missing or mispelled
       for what in self.outlist:
          key=getkey(what)
-         print what, " what<>key", key
          if not key in self.simul.properties.property_dict.keys():
             print "Computable properties list: ", self.simul.properties.property_dict.keys()
             raise KeyError(key + " is not a recognized property")
@@ -122,6 +121,13 @@ class TrajectoryOutput(dobject):
       """ Binds output proxy to simulation object. """
 
       self.simul=simul
+
+      # Checks as soon as possible if some asked-for trajs are missing or mispelled
+      key=getkey(self.what)
+      if not key in self.simul.trajs.traj_dict.keys():
+         print "Computable properties list: ", self.simul.trajs.traj_dict.keys()
+         raise KeyError(key + " is not a recognized output trajectory")
+
       self.open_stream()
 
    def open_stream(self):
