@@ -17,7 +17,10 @@ DONE **   Clean up help (MC) (JM)
 New dynamic attributes should be properly included in the documentation. 
 
 **   Clean up help (MC) (JM)
-The whole input generation method should be bug-checked and documented with comments in the code.
+The whole input generation method should be documented with comments in the code.
+
+**   Clean up help (MC)
+The whole input generation method should be bug-checked.
 
 DONE **   Robust input defaults (MC) (JM)
 In many places the default value of a storage class is set by defining 
@@ -45,3 +48,20 @@ More in general, rationalize and clean up the available properties and trajector
 ***  Benchmark the new propert implementation. (MC)
 Completely revamped properties and trajectories scheme. 
 Now it is possible to specify units and a short help string.
+
+* Multiforce object should be implemented. (JM)
+Probably should wait until the normal mode stuff is known to be working fully.
+
+* Find out why NPT and NST ensembles both appear to give jumps in the 
+conserved quantity (JM)
+I have made some progress with this. I got it to stop and go back one step 
+and print a restart file whenever there was a jump. Restarting from this file
+did not reproduce the jump, suggesting that there was a problem with the 
+neighbour lists, not the wrapper.
+I then made it redo the neighbour list at each time step. This appeared to 
+reduce the frequency and magnitude of the energy jumps, but not eliminate them.
+The effect is much larger with a NST than with a NPT ensemble, in fact the 
+jumps appear to be very rare with the NPT ensemble.
+
+* Figure out how to use FFTW with python for the normal-mode 
+transformations. (JM)

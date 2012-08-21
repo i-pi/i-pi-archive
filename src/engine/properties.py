@@ -6,6 +6,10 @@ Classes:
       the important properties that should be output.
    Trajectories: This class deals with outputting all position data in the
       appropriate format.
+
+Functions:
+   getkey: This functions strips the units and argument list specification
+      from a string specifying an output parameter.
 """
 
 __all__ = ['Properties', 'Trajectories', 'getkey']
@@ -22,12 +26,19 @@ from ensembles import *
 from forces import *
 
 def getkey(pstring):
-   """ Strips units and argument lists from a property/trajectory keyword. """
+   """Strips units and argument lists from a property/trajectory keyword.
 
-   pa=pstring.find('(');
-   if pa<0: pa=len(pstring)
-   pu=pstring.find('{');
-   if pu<0: pu=len(pstring)
+   Args:
+      pstring: The string input by the user that specifies an output, 
+         which in general will specify units and argument lists.
+   """
+
+   pa = pstring.find('(')
+   if pa < 0:
+      pa=len(pstring)
+   pu = pstring.find('{')
+   if pu < 0:
+      pu = len(pstring)
    return pstring[0:min(pa,pu)]
 
 
