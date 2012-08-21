@@ -314,52 +314,68 @@ class Input(object):
          document.
       """
 
+      #stops when we've printed out the prerequisite number of levels
       if (not stop_level is None and level > stop_level):
          return ""
 
       rstr = ""
       if level == 0:
-         if not ref:
+         if not ref: 
+            #assumes that it is a stand-alone document, so must have 
+            #document options.
             rstr += "\\documentclass[12pt,fleqn]{report}"
             rstr += "\n\\begin{document}\n"
          if self._label != "" and ref:
+            #assumes that it is part of a cross-referenced document, so only
+            #starts a new section.
             rstr += "\\section{" + self._label + "}\n"
             rstr += "\\label{" + self._label + "}\n"
 
-      rstr += self._help + "\n"
+      rstr += self._help + "\n"  #help string
 
       if self._dimension != "undefined":
          rstr += "{\\\\ \\bf DIMENSION: }" + self._dimension + "\n"
+         #gives dimension
 
       if self._default != None and hasattr(self, "type"):
          rstr += "{\\\\ \\bf DEFAULT: }" + self.pprint(self._default) + "\n"
+         #gives default value, but only if it is not a class object.
 
       if hasattr(self, "_valid"):
          if self._valid is not None:
-            rstr += "{\\\\ \\bf OPTIONS: }"
-            for option in self._valid:
+            rstr += "{\\\\ \\bf OPTIONS: }" #prints out valid options, if
+            for option in self._valid:      #required.
                rstr += "'" + str(option) + "', "
             rstr = rstr.rstrip(", ")
             rstr +=  "\n"
 
       if hasattr(self, "type") and hasattr(self.type, "__name__"):
          rstr += "{\\\\ \\bf DATA TYPE: }" + self.type.__name__ + "\n"
+         #if possible, prints out the type of data that is being used
 
-      if len(self.attribs) != 0:
+      if len(self.attribs) != 0: 
+         #Repeats the above instructions for the attributes
          rstr += "\\paragraph{Attributes}\n \\begin{itemize}\n"
          for a in self.attribs:
             rstr += "\\item {\\bf " + a + "}:\n " + self.__dict__[a].help_latex(level, stop_level, ref)
          rstr += "\\end{itemize}\n \n"
 
+      #As above, for the fields. Only prints out if we have not reached the
+      #user-specified limit.
       if len(self.fields) != 0 and level != stop_level:
          rstr += "\\paragraph{Fields}\n \\begin{itemize}\n"
          for f in self.fields:
             if self.__dict__[f]._label == "" or not ref:
                rstr += "\\item {\\bf " + f + "}:\n " + self.__dict__[f].help_latex(level+1, stop_level, ref)
-            else:
+            else: 
+            #adds a hyperlink to the section title if a label has been specified
+            #and the file is part of a larger document.
                rstr += "\\item {\\bf \hyperref[" + self.__dict__[f]._label + "]{" + f + "} }:\n " + self.__dict__[f].help_latex(level+1, stop_level)
          rstr += "\\end{itemize}\n \n"
 
+      #Exactly the same as for the fields, except we must create the dynamic
+      #objects ourselves, as they are not automatically added to the __dict__
+      #object in __init__ like the objects in fields.
       if len(self.dynamic) != 0 and level != stop_level:
          rstr += "\\paragraph{Dynamic attributes}\n \\begin{itemize}\n"
          for f, v in self.dynamic.iteritems():
@@ -370,9 +386,11 @@ class Input(object):
                rstr += "\\item {\\bf \hyperref[" + dummy_obj._label + "]{" + f + "} }:\n " + dummy_obj.help_latex(level+1, stop_level)
          rstr += "\\end{itemize}\n \n"
 
-      if level == 0 and not ref:
+      if level == 0 and not ref:  
+         #ends the created document if it is not part of a larger document
          rstr += "\\end{document}"
 
+      #Some escape characters are necessary for the proper latex formatting
       rstr = rstr.replace('_', '\\_')
       rstr = rstr.replace('\\\\_', '\\_')
       rstr = rstr.replace('...', '\\ldots ')
@@ -393,8 +411,9 @@ class Input(object):
 
       if type(default) is np.ndarray:
          if default.shape == (0,):
-            return "[ ]"
+            return "[ ]" #proper treatment of empty arrays.
          else:
+            #indents new lines for multi-D arrays properly
             rstr = "\n" + indent + "      "
             rstr += str(default).replace("\n", "\n" + indent + "      ")
             if not latex:
@@ -403,18 +422,18 @@ class Input(object):
             return rstr
       elif type(default) == str:
          if latex:
-            return "'" + default + "'"
+            return "'" + default + "'" #indicates that it is a string
          else:
             return " " + default + " "
       elif default == []:
          return "[ ]"
       elif default == {}:
          if latex:
-            return "\\{ \\}"
-         else:
+            return "\\{ \\}" #again, escape characters needed for latex 
+         else:               #formatting
             return "{ }"
       else:
-         return str(default)
+         return str(default) #in most cases standard formatting will do
 
    def help_xml(self, name="", indent="", level=0, stop_level=None):
       """Function to generate an xml formatted manual.
@@ -430,30 +449,34 @@ class Input(object):
          An xml formatted string.
       """
 
+      #stops when we've printed out the prerequisite number of levels
       if (not stop_level is None and level > stop_level):
          return ""
 
+      #these are booleans which tell us whether there are any attributes
+      #and fields to print out
       show_attribs = (len(self.attribs) != 0)
       show_fields = (not (len(self.fields) == 0 and len(self.dynamic) == 0)) and level != stop_level
 
       rstr = ""
-      rstr = indent + "<" + name;
+      rstr = indent + "<" + name; #prints tag name
       for a in self.attribs:
-         rstr += " " + a + "=''"
+         rstr += " " + a + "=''" #prints attribute names
       rstr += ">\n"
 
+      #prints help string
       rstr += indent + "   <help>" + self._help + "</help>\n"
       if show_attribs:
          for a in self.attribs:
+            #information about tags is found in tags beginning with the name
+            #of the attribute
             rstr += indent + "   <" + a + "_help>" + self.__dict__[a]._help + "</" + a + "_help>\n"
 
+      #prints dimensionality of the object
       if self._dimension != "undefined":
          rstr += indent + "   <dimension>" + self._dimension + "</dimension>\n"
-      if show_attribs:
-         for a in self.attribs:
-            if self.__dict__[a]._dimension != "undefined":
-               rstr += indent + "   <" + a + "_dimension>" + self.__dict__[a]._dimension + "</" + a + "_dimension>\n"
 
+      #prints default value, but only if it is not a class object.
       if self._default is not None and hasattr(self, "type"):
          rstr += indent + "   <default>" + self.pprint(self._default, indent=indent, latex=False) + "</default>\n"
       if show_attribs:
@@ -461,6 +484,7 @@ class Input(object):
             if self.__dict__[a]._default is not None:
                rstr += indent + "   <" + a + "_default>" + self.pprint(self.__dict__[a]._default, indent=indent, latex=False) + "</" + a + "_default>\n"
 
+      #prints out valid options, if required.
       if hasattr(self, "_valid"):
          if self._valid is not None:
             rstr += indent + "   <options>" + str(self._valid) + "</options>\n"
@@ -470,6 +494,7 @@ class Input(object):
                if self.__dict__[a]._valid is not None:
                   rstr += indent + "   <" + a + "_options>" + str(self.__dict__[a]._valid) + "</" + a + "_options>\n"
 
+      #if possible, prints out the type of data that is being used
       if hasattr(self, "type") and hasattr(self.type, "__name__"):
          rstr += indent + "   <dtype>" + self.type.__name__ + "</dtype>\n"
       if show_attribs:
@@ -477,10 +502,15 @@ class Input(object):
             if hasattr(self.__dict__[a], "type") and hasattr(self.__dict__[a].type, "__name__"):
                rstr += indent + "   <" + a + "_dtype>" + self.__dict__[a].type.__name__ + "</" + a + "_dtype>\n"
 
+      #repeats the above instructions for any fields or dynamic tags.
+      #these will only be printed if their level in the hierarchy is not above
+      #the user specified limit.
       if show_fields:
          for f in self.fields:
             rstr += self.__dict__[f].help_xml(f, "   " + indent, level+1, stop_level)
          for f, v in self.dynamic.iteritems():
+            #we must create the object manually, as dynamic objects are
+            #not automatically added to the input object's dictionary
             dummy_obj = v[0](**v[1])
             rstr += dummy_obj.help_xml(f, "   " + indent, level+1, stop_level)
 
