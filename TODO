@@ -13,9 +13,11 @@ The person who "reports" a bug should indicate his initials in the title.
 If one decides to actively work on one issue, it should indicate it on the title line.
 
 
-**   Clean up help (MC) (JM)
+DONE **   Clean up help (MC) (JM)
 New dynamic attributes should be properly included in the documentation. 
-Also, the whole input generation method should be bug-checked and documented with comments in the code.
+
+**   Clean up help (MC) (JM)
+The whole input generation method should be bug-checked and documented with comments in the code.
 
 DONE **   Robust input defaults (MC) (JM)
 In many places the default value of a storage class is set by defining 

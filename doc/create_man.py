@@ -1,23 +1,20 @@
 """Help script which automatically generates the manual files.
 
+Creates a latex file, corresponding to a section of the manual, for each of
+the classes specified in help.py. It uses help.py to generate information 
+about the tags for each class, and will include cross-references so that the
+title of each tag corresponding to a different class will also be a hyperlink
+in the manual to the section corresponding to that class.
+
+Note that any new input class type must be added to the objects 
+dictionary in help.py and the latex help file must be added to the end of 
+the manual.lyx file for it to be included in the automatic help generation.
+
 Also creates an xml file with the full list of all the tags.
 """
 
-from help import help
+from help import help, objects
 
 help(xml=True)
-help(latex=True, levels=1, option='simulation', prefix="simulation", ref=True)
-help(latex=True, levels=1, option='atoms', prefix="atoms", ref=True)
-help(latex=True, levels=1, option='barostats', prefix="barostats", ref=True)
-help(latex=True, levels=1, option='beads', prefix="beads", ref=True)
-help(latex=True, levels=1, option='cell', prefix="cell", ref=True)
-help(latex=True, levels=1, option='forces', prefix="forces", ref=True)
-help(latex=True, levels=1, option='ensembles', prefix="ensembles", ref=True)
-help(latex=True, levels=1, option='interface', prefix="interface", ref=True)
-help(latex=True, levels=1, option='thermostats', prefix="thermostats", ref=True)
-help(latex=True, levels=1, option='prng', prefix="prng", ref=True)
-help(latex=True, levels=1, option='output', prefix="output", ref=True)
-help(latex=True, levels=1, option='trajectory', prefix="trajectory", ref=True)
-help(latex=True, levels=1, option='properties', prefix="properties", ref=True)
-help(latex=True, levels=1, option='checkpoint', prefix="checkpoint", ref=True)
-help(latex=True, levels=1, option='start_beads', prefix="start_beads", ref=True)
+for opt in objects:
+   help(latex=True, levels=1, option=opt, prefix=opt, ref=True)

@@ -1,7 +1,20 @@
 """Help script which automatically generates help files.
 
+This takes an input class specified by the user, and then uses the
+automatic help generation functions to generate appropriate help files for this
+class, giving information about the tags and the attributes of this class.
+
+There are several options that can be specified, including the depth of the tag
+hierarchy that will be output, the output format and the output file name.
+
 A full help message can be found by running 'python help.py -h' or
 'python help.py --help'.
+
+Note that any new input class type must be added to the objects 
+dictionary and the latex help file must be added to the end of 
+the manual.lyx file for it to be included in the automatic help generation.
+If you do create a new input class type, please include this in the help string
+for the -i option.
 
 Functions:
    help: Writes the help file.
@@ -17,7 +30,7 @@ from inputs import *
 from utils.io.io_xml import *
 from optparse import OptionParser
 
-__all__ = ['help']
+__all__ = ['help', 'objects']
 
 objects = {'barostats': barostats.InputBaro(), 'cell': cell.InputCell(), 'simulation': simulation.InputSimulation(), 'ensembles': ensembles.InputEnsemble(), 'thermostats': thermostats.InputThermo(), 'interface': interface.InputInterface(), 'forces': forces.InputForce(), 'atoms': atoms.InputAtoms(), 'beads': beads.InputBeads(), 'prng': prng.InputRandom(), 'start_beads': beads.InputStartBeads(), 'output': simulation.InputOutputs(), 'properties': outputs.InputProperties(), 'checkpoint': outputs.InputCheckpoint(), 'trajectory': outputs.InputTrajectory() }
 
