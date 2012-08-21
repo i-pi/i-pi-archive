@@ -37,7 +37,7 @@ class InputRandom(Input):
                                          "default" : 123456,
                                          "help"    : "This is the seed number used to generate the initial state of the random number generator."}), 
              "state"     : (InputArray, {"dtype"   : np.uint, 
-                                         "default" : np.zeros(0, np.uint ),
+                                         "default" : ClassDefault(type=np.zeros, kwargs={'shape': (0,), 'dtype': np.uint}),
                                          "help"    : "Gives the state vector for the random number generator. Avoid directly modifying this unless you are very familiar with the inner workings of the algorithm used."}),
              "has_gauss" : (InputValue, {"dtype"   : int, 
                                          "default" : 0,

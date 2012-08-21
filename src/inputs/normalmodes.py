@@ -21,7 +21,7 @@ class InputNormalModes(Input):
 
    fields = {
                "frequencies" : (InputArray, {"dtype"        : float,
-                                    "default"        : np.identity(0),
+                                    "default"        : ClassDefault(type=np.identity, args=(0,)),
                                     "help"           : "Manual frequencies for the ring polymer normal modes. Just one number if doing CMD.",
                                     "dimension"      : "frequency"})
              }

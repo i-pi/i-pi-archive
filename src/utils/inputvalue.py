@@ -16,13 +16,52 @@ Classes:
    Input: Base input class with the generic methods and attributes.
    InputValue: Input class for scalar objects.
    InputArray: Input class for arrays.
+   ClassDefault: Class used to create mutable objects dynamically.
 """
 
-__all__ = ['Input', 'InputValue', 'InputArray']
+__all__ = ['Input', 'InputValue', 'InputArray', 'ClassDefault']
 
 import numpy as np
 from  io.io_xml import *
 from units import unit_to_internal, unit_to_user
+
+class ClassDefault(object):
+   """Contains information required to dynamically create objects
+
+   Used so that we can define mutable default input values to various tags 
+   without the usual trouble with having a class object that is also mutable,
+   namely that all members of that class share the same mutable object, so that
+   changing it for one instance of that class changes it for all others. It 
+   does this by not holding the mutable default value, but instead the
+   information to create it, so that each instance of an input class can
+   have a separate instance of the default value.
+
+   Attributes:
+      type: Either a class type or function call from which to create the
+         default object.
+      args: A tuple giving positional arguments to be passed to the function.
+      kwargs: A dictionary giving key word arguments to be passed to the 
+         function.
+   """
+
+   def __init__(self, type, args = None, kwargs = None):
+      """Initialises ClassDefault.
+
+      Args:
+         type: The class or function to be used to create the default object.
+         args: The arguments to be used to initialise the default value.
+         kwargs: The key word arguments to be used to initialise the default
+            value.
+      """
+
+      if args is None:
+         args = ()
+      if kwargs is None:
+         kwargs = {}
+      self.type = type
+      self.args = args
+      self.kwargs = kwargs
+
 
 class Input(object):
    """Base class for input handling.
@@ -109,6 +148,9 @@ class Input(object):
       if default is None:
          self._default = self.default_value
          self._optional = False #False if must be input by user.
+      elif hasattr(default, 'type') and hasattr(default, 'args') and hasattr(default, 'kwargs'):
+         self._default = default.type(*default.args, **default.kwargs)
+         self._optional = True
       else:
          self._default = default
          self._optional = True
@@ -125,7 +167,6 @@ class Input(object):
          self.__dict__[f] = v[0](**v[1])
       for a, v in self.attribs.iteritems():
          self.__dict__[a] = v[0](**v[1])
-
 
    def adapt(self):
       """Dummy function being called after the parsing of attributes
@@ -348,7 +389,8 @@ class Input(object):
          indent: The indent at the beginning of a line.
          latex: A boolean giving whether the string will be latex-format.
 
-      Returns: A formatted string.
+      Returns:
+         A formatted string.
       """
 
       if type(default) is np.ndarray:

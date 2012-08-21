@@ -26,7 +26,7 @@ class InputMulti(Input):
                                        "help"    : "The total number of forcefields that will be used. If not specified, then it will assume that the last number 'x' for which 'forcex' is specified is the correct value. Note that this will mean that any error in the number or name of the forcefields will not be checked.",
                                        "default" : 1}) }
    fields =  { "force1"  : ( InputForce, { "help"    : "Force field that calculates the force acting on a contracted ring polymer. If more than one force field is needed, you can specify 'force2', 'force3', etc. and the same input fields will work. If the 'type' attribute is 'socket', then the forces will be evaluated on the full ring polymer.",
-                                           "default" : FFSocket() } )}
+                                           "default" : ClassDefault(type=FFSocket) } )}
 
    default_help = "Deals with ring polymer contraction, and assigning the different jobs to the different driver codes."
    default_label = "MULTIFORCE"
