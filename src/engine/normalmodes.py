@@ -87,6 +87,18 @@ class NormalModes(dobject):
             func=self.get_prop_pq,
                dependencies=[dget(self,"omegak"), dget(self,"nm_mass"), dget(self.ensemble,"dt")]) )
 
+      # if the mass matrix is not the RPMD one, the MD kinetic energy can't be
+      # obtained in the bead representation because the masses are all mixed up
+      dset(self,"kins",
+         depend_array(name="kins",value=np.zeros(self.nbeads, float),
+            func=self.get_kins,
+               dependencies=[dget(self,"pnm"), dget(self.beads,"sm3"), dget(self, "nm_mass") ] ))
+      dset(self,"kin",
+         depend_value(name="kin", func=self.get_kin,
+            dependencies=[dget(self,"kins")] ))
+      dset(self,"kstress",
+         depend_array(name="kstress",value=np.zeros((3,3), float),
+            func=self.get_kstress,dependencies=[dget(self,"pnm"), dget(self.beads,"sm3"), dget(self, "nm_mass") ] ))
 
    def setup_transform(self, nbeads):
       """ Sets up matrices for normal-mode transformation. """
@@ -174,6 +186,11 @@ class NormalModes(dobject):
          pqk[b,1,1] = c
          pqk[b,0,1] = -s*self.omegak[b]*sk
          pqk[b,1,0] = s/(self.omegak[b]*sk)
+
+      print "mass", self.nm_mass
+      print pqk
+
+
       return pqk
 
    def get_nmm(self):
@@ -208,7 +225,7 @@ class NormalModes(dobject):
             raise ValueError("WMAX-CMD mode requires <frequencies> to contain [wmax, wtarget]. All the internal modes for a SHO of frequency wmax will be matched with wtarget.")
          wmax=self.nm_freqs[0]; wt=self.nm_freqs[1];
          for b in range(1, self.nbeads):
-            sk = 1.0/nb.sqrt((wt/wmax)**2*(1+(wmax/self.omegak[0])**2)/(1.0+(self.omegak[b]/wmax)**2))
+            sk = 1.0/np.sqrt((wt/wmax)**2*(1+(wmax/self.omegak[1])**2)/(1.0+(self.omegak[b]/wmax)**2))
             dmf[b] = sk**2
 
       return dmf
@@ -248,3 +265,57 @@ class NormalModes(dobject):
             pq = np.dot(self.prop_pq[k],pq)
             self.qnm[k] = pq[1,:]/sm
             self.pnm[k] = pq[0,:]*sm
+
+
+   def get_kins(self):
+      """Gets the MD kinetic energy for all the normal modes.
+
+      Returns:
+         A list of the kinetic energy for each NM.
+      """
+
+      kmd = np.zeros(self.nbeads,float)
+      sm = depstrip(self.beads.sm3[0])
+      pnm = depstrip(self.pnm)
+      for b in range(self.nbeads):
+         sp = pnm[b]/sm  # mass-scaled momentum of b-th NM
+         kmd[b] = np.dot(sp,sp)*0.5/self.nm_mass[b]   # also takes care of the possibility of having non-RPMD masses
+
+      return kmd
+
+   def get_kin(self):
+      """Gets the total MD kinetic energy.
+
+      Note that this does not correspond to the total kinetic energy estimate
+      for the system.
+
+      Returns:
+         The sum of the kinetic energy of each NM in the path.
+      """
+
+      return self.kins.sum()
+
+   def get_kstress(self):
+      """Calculates the total MD kinetic stress tensor.
+
+      Note that this does not correspond to the quantum kinetic stress tensor
+      estimate for the system.
+
+      Returns:
+         The sum of the MD kinetic stress tensor contributions from each NM.
+      """
+
+      #TODO MUST VERIFY THIS IS CORRECT
+      kmd = np.zeros((3,3),float)
+      sm = depstrip(self.beads.sm3[0])
+      pnm = depstrip(self.pnm)
+      for b in range(self.nbeads):
+         sp = pnm[b]/sm  # mass-scaled momentum of b-th NM
+
+         for i in range(3):
+            for j in range(3):
+               # computes the outer product of the p of various normal modes singling out Cartesian components to build the tensor
+               # also takes care of the possibility of having non-RPMD masses
+               kmd[i,j] += np.dot(sp[i:3*self.natoms:3],sp[j:3*self.natoms:3])*0.5/self.nm_mass[b]
+
+      return kmd
