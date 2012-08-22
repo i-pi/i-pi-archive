@@ -23,7 +23,7 @@ class nm_trans:
       tmatrices: A set of matrices for contracting and expanding ring polymers.
    """
 
-   def __init__(self, beads=None):
+   def __init__(self, nbeads=None):
       """Initialises nm_trans.
 
       Args:
@@ -33,8 +33,8 @@ class nm_trans:
       
       self.cmatrices = {}
       self.tmatrices = {}
-      if beads is not None:
-         self.setup_transform(beads)
+      if nbeads is not None:
+         self.setup_transform(nbeads)
 
    def setup_transform(self, nbeads):
       """ Sets up matrices for normal-mode transformation. """
@@ -57,24 +57,24 @@ class nm_trans:
 
       self.cmatrices[nbeads] = (Cb2nm, Cnm2b)
 
-   def setup_contract(self, nbeads, nred):
+   def setup_contract(self, nred, nbeads):
       """ Sets up matrices for ring polymer contraction. """
 
       try:
          full = self.cmatrices[nbeads]
       except KeyError:
-         self.setup_tranform(nbeads)
+         self.setup_transform(nbeads)
          full = self.cmatrices[nbeads]
       try:
          contracted = self.cmatrices[nred]
       except KeyError:
-         self.setup_tranform(nred)
+         self.setup_transform(nred)
          contracted = self.cmatrices[nred]
 
       Tf2c = np.zeros((nred, nbeads))
       for j in range(-nred/2+1, nred/2+1): 
          #taking the lower frequency normal modes only.
-         Tf2c += numpy.outer(contracted[1][:,j], full[0][j,:])
+         Tf2c += np.outer(contracted[1][:,j], full[0][j,:])
 
       Tc2f = Tf2c.T.copy()
       #normalization to set contracted ring polymer to a different effecive
@@ -146,7 +146,7 @@ class nm_trans:
          try:
             return np.dot(self.tmatrices[nred][0], q)
          except KeyError:
-            self.setup_contract(nred)
+            self.setup_contract(nred, nbeads)
             return np.dot(self.tmatrices[nred][0], q)
 
    def expand(self, q, nbeads):
@@ -170,7 +170,7 @@ class nm_trans:
          try:
             return np.dot(self.tmatrices[nred][1], q)
          except KeyError:
-            self.setup_contract(nred)
+            self.setup_contract(nred, nbeads)
             return np.dot(self.tmatrices[nred][1], q)
 
 
