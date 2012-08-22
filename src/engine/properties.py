@@ -224,10 +224,10 @@ class Properties(dobject):
 
 
    def get_temp(self):
-      """Calculates the classical kinetic temperature estimator.
+      """Calculates the MD kinetic temperature.
 
       Note that in the case that the centre of mass constraint there will be
-      one less degree of freedom than without, so this has to be taken into
+      3 fewer degrees of freedom than without, so this has to be taken into
       account when calculating the kinetic temperature.
       """
 
@@ -235,7 +235,9 @@ class Properties(dobject):
          mdof=3
       else:
          mdof=0
-      return self.beads.kin/(0.5*Constants.kb*(3*self.beads.natoms*self.beads.nbeads - mdof)*self.beads.nbeads)
+
+      # use the KE computed in the NM representation in order to avoid problems when mass scaling is used
+      return self.nm.kin/(0.5*Constants.kb*(3*self.beads.natoms*self.beads.nbeads - mdof)*self.nm.nbeads)
 
    def get_econs(self):
       """Calculates the conserved quantity estimator."""

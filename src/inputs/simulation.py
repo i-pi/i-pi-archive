@@ -67,11 +67,11 @@ class InputSimulation(Input):
    fields= { "force" :   (InputForce,    { "help"  : InputForce.default_help }),
              "ensemble": (InputEnsemble, { "help"  : InputEnsemble.default_help } ),
              "prng" :    (InputRandom,   { "help"  : InputRandom.default_help + " It is not necessary to specify this tag.",
-                                         "default" : ClassDefault(type=Random)} ),
+                                         "default" : input_default(factory=Random)} ),
              "atoms" :   (InputAtoms, { "help"     : "Deals with classical simulations. Only needs to be specified if a classical simulation is required, and should be left blank otherwise.",
-                                        "default"  : ClassDefault(type=Atoms, kwargs={'natoms': 0}) } ),
+                                        "default"  : input_default(factory=Atoms, kwargs={'natoms': 0}) } ),
              "beads" :   (InputBeads, { "help"     : InputBeads.default_help + " Only needs to be specified if the atoms tag is not, but overwrites it otherwise.",
-                                        "default"  : ClassDefault(type=Beads, kwargs={'natoms': 0, 'nbeads': 1}) } ),
+                                        "default"  : input_default(factory=Beads, kwargs={'natoms': 0, 'nbeads': 1}) } ),
              "normal_modes" :   (InputNormalModes, { "help"     : InputNormalModes.default_help,
                                         "default"  : input_default(factory=NormalModes, kwargs={'mode': "rpmd"}) } ),
              "cell" :    (InputCell,   { "help"    : InputCell.default_help }),
@@ -84,7 +84,7 @@ class InputSimulation(Input):
                                             "default"  : 1000,
                                             "help"     : "The total number of steps that will be done." }),
              "initialize":  ( InputValue, { "dtype"    : dict,
-                                            "default"  : ClassDefault(type=dict),
+                                            "default"  : input_default(factory=dict),
                                             "help"     : "A dictionary giving the properties of the system that need to be initialized, and their initial values. The allowed keywords are ['velocities', 'cell_velocities', 'normal_modes']. The initial value of 'velocities' corresponds to the temperature to initialise the velocity distribution from. If 0, then the system temperature is used. 'cell_velocities' is the same but for the cell velocity. The initial value of 'normal_modes' corresponds to the temperature from which to initialize the higher normal mode frequencies from, if we start a simulation from a configuration with a smaller number of beads. If 0, then the system temperature is used." })
                                              }
 
