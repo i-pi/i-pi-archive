@@ -13,9 +13,11 @@ class NormalModes(dobject):
    dynamical mass matrix change, etc.
    """
 
-   def __init__(self, mode="rpmd", freqs=[]):
+   def __init__(self, mode="rpmd", freqs=None):
       """ Sets the options for the normal mode transform. """
 
+      if freqs is None:
+         freqs = []
       dset(self,"mode",   depend_value(name='mode', value=mode))
       dset(self,"nm_freqs",
          depend_array(name="nm_freqs",value=np.asarray(freqs, float) ) )
