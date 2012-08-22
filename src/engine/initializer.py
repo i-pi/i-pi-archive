@@ -19,7 +19,6 @@ class Initializer(dobject):
 
    def __init__(self, nbeads=0, queue=None):
 
-      if nbeads < 1: raise ValueError("Must specify number of beads when creating a Initializer object")
       self.nbeads = nbeads
 
       if queue is None:
@@ -71,7 +70,7 @@ class Initializer(dobject):
          simul.beads.names=ibeads.names
          for b in range(self.nbeads):
             simul.beads.q[b] = ibeads[0].q; simul.beads.p[b] = ibeads[0].p
-      elif self.beads.nbeads<1: raise ValueError("Could not initialize the path configuration, neither explicitly nor from <initialize>")
+      elif simul.beads.nbeads<1: raise ValueError("Could not initialize the path configuration, neither explicitly nor from <initialize>")
 
       # TODO work out a cleaner Cell object which can work for NPT, NVT etc
       #~ if icell.V > 0.0:

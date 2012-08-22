@@ -29,6 +29,8 @@ from inputs.normalmodes import InputNormalModes
 from engine.normalmodes import NormalModes
 from engine.atoms import Atoms
 from engine.beads import Beads
+from engine.initializer import Initializer
+
 import engine.outputs
 import engine.simulation
 
@@ -69,7 +71,7 @@ class InputSimulation(Input):
              "prng" :    (InputRandom,   { "help"  : InputRandom.default_help + " Optional.",
                                          "default" : input_default(factory=Random)} ),
              "initialize" : (InputInitializer, { "help" : InputInitializer.default_help,
-                                                "default" : input_default(factory=InputInitializer) } ),
+                                                "default" : input_default(factory=Initializer) } ),
              "beads" :   (InputBeads, { "help"     : InputBeads.default_help,
                                         "default"  : input_default(factory=Beads, kwargs={'natoms': 0, 'nbeads': 0}) } ),
              "normal_modes" :   (InputNormalModes, { "help"     : InputNormalModes.default_help,
@@ -83,9 +85,6 @@ class InputSimulation(Input):
              "total_steps": ( InputValue, { "dtype"    : int,
                                             "default"  : 1000,
                                             "help"     : "The total number of steps that will be done." })
-             #~ "initialize":  ( InputValue, { "dtype"    : dict,
-                                            #~ "default"  : input_default(factory=dict),
-                                            #~ "help"     : "A dictionary giving the properties of the system that need to be initialized, and their initial values. The allowed keywords are ['velocities', 'cell_velocities', 'normal_modes']. The initial value of 'velocities' corresponds to the temperature to initialise the velocity distribution from. If 0, then the system temperature is used. 'cell_velocities' is the same but for the cell velocity. The initial value of 'normal_modes' corresponds to the temperature from which to initialize the higher normal mode frequencies from, if we start a simulation from a configuration with a smaller number of beads. If 0, then the system temperature is used." })
                                              }
 
    default_help = "This is the top level class that deals with the running of the simulation, including holding the simulation specific properties such as the time step and outputting the data."

@@ -54,6 +54,29 @@ class InputInitializer(Input):
 
       return ""
 
+   def store(self, ii):
+
+      print "Storing input thing", ii
+      self.extra = []
+
+      for (k, el) in ii.queue:
+         if k == "file" :
+            ip = InputInitFile()
+            ip.store(el)
+            self.extra.append(("file", ip))
+         elif k == "beads" :
+            ip = InputBeads()
+            ip.store(el)
+            self.extra.append(("beads", ip))
+         elif k == "cell" :
+            ip = InputCell()
+            ip.store(el)
+            self.extra.append(("cell", ip))
+
+      self.nbeads.store(ii.nbeads)
+
+
+
    def fetch(self):
 
       super(InputInitializer,self).fetch()

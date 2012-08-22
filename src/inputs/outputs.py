@@ -173,11 +173,11 @@ class InputOutputs(Input):
             ip = InputProperties()
             ip.store(el)
             self.extra.append(("properties", ip))
-         if (isinstance(el, engine.outputs.TrajectoryOutput)):
+         elif (isinstance(el, engine.outputs.TrajectoryOutput)):
             ip = InputTrajectory()
             ip.store(el)
             self.extra.append(("trajectory", ip))
-         if (isinstance(el, engine.outputs.CheckpointOutput)):
+         elif (isinstance(el, engine.outputs.CheckpointOutput)):
             ip = InputCheckpoint()
             ip.store(el)
             self.extra.append(("checkpoint", ip))

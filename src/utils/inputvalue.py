@@ -145,6 +145,7 @@ class Input(object):
          self.units = self.default_units
       else:
          self.units = units
+
       if default is None:
          self._default = self.default_value
          self._optional = False #False if must be input by user.
@@ -168,6 +169,11 @@ class Input(object):
 
       for a, v in self.attribs.iteritems():
          self.__dict__[a] = v[0](**v[1])
+
+      if not self._default is None:
+         self.store(self._default)
+         self._explicit = False
+
 
    def adapt(self):
       """Dummy function being called after the parsing of attributes
@@ -545,12 +551,12 @@ class InputValue(Input):
          options: An optional list of valid options.
       """
 
-      super(InputValue,self).__init__(help, dimension, units, default)
-
       if not dtype is None:
          self.type = dtype
       else:
          raise TypeError("You must provide dtype")
+
+      super(InputValue,self).__init__(help, dimension, units, default)
 
       if options is not None:
          self._valid = options
@@ -558,10 +564,6 @@ class InputValue(Input):
             raise ValueError("Default value not in option list " + str(self._valid))
       else:
          self._valid = None
-
-      if not self._default is None:
-         self.store(self._default)
-         self._explicit = False
 
    def store(self, value):
       """Converts the data to the appropriate data type and units and stores it.
@@ -683,16 +685,12 @@ class InputArray(Input):
          dtype: An optional data type. Defaults to None.
       """
 
-      super(InputArray,self).__init__(help, dimension, units, default)
-
       if not dtype is None:
          self.type = dtype
       else:
          raise TypeError("You must provide dtype")
 
-      if not self._default is None:
-         self.store(self._default)
-         self._explicit = False
+      super(InputArray,self).__init__(help, dimension, units, default)
 
    def store(self, value):
       """Converts the data to the appropriate data type, shape and units and
