@@ -4,6 +4,8 @@ import numpy as np
 import math
 from utils.depend import *
 from utils import units
+from utils import nmtransform
+
 __all__ = [ "NormalModes" ]
 
 class NormalModes(dobject):
@@ -34,8 +36,8 @@ class NormalModes(dobject):
       self.natoms = beads.natoms
 
       # stores a reference to the bound beads and ensemble objects
-      self.beads=beads
-      self.ensemble=ensemble
+      self.beads = beads
+      self.ensemble = ensemble
       # creates arrays to store normal modes representation of the path.
       # must do a lot of piping to create "ex post" a synchronization between the beads and the nm
       sync_q = synchronizer()
@@ -66,23 +68,29 @@ class NormalModes(dobject):
       dget(self.beads, "p").update_man()
 
       # sets up what's necessary to perform nm transformation.
-      self.setup_transform(self.nbeads)
+      #self.setup_transform(self.nbeads)
+      self.transform = nmtransform.nm_trans(nbeads=self.nbeads)
 
       # create path-frequencies related properties
       dset(self,"omegan",
-         depend_value(name='omegan', func=self.get_omegan,dependencies=[dget(self.ensemble,"temp")]) )
+         depend_value(name='omegan', func=self.get_omegan,
+            dependencies=[dget(self.ensemble,"temp")]) )
       dset(self,"omegan2", depend_value(name='omegan2',func=self.get_omegan2,
             dependencies=[dget(self,"omegan")]) )
-      dset(self,"omegak", depend_array(name='omegak',value=np.zeros(self.beads.nbeads,float),
-               func=self.get_omegak, dependencies=[dget(self,"omegan")]) )
+      dset(self,"omegak", depend_array(name='omegak',
+         value=np.zeros(self.beads.nbeads,float),
+            func=self.get_omegak, dependencies=[dget(self,"omegan")]) )
 
       # sets up "dynamical" masses -- mass-scalings to give the correct RPMD/CMD dynamics
-      dset(self,"nm_mass", depend_array(name="nmm",value=np.zeros(self.nbeads, float),
-         func=self.get_nmm, dependencies=[dget(self,"nm_freqs"), dget(self,"mode") ]) )
-      dset(self,"dynm3", depend_array(name="dm3",value=np.zeros((self.nbeads,3*self.natoms), float),
-         func=self.get_dynm3, dependencies=[dget(self,"nm_freqs"), dget(self.beads, "m3")] ) )
-      dset(self,"dynomegak", depend_array(name="dynomegak",value=np.zeros(self.nbeads, float),
-         func=self.get_dynwk, dependencies=[dget(self,"nm_mass"), dget(self,"omegak") ]) )
+      dset(self,"nm_mass", depend_array(name="nmm",
+         value=np.zeros(self.nbeads, float), func=self.get_nmm, 
+            dependencies=[dget(self,"nm_freqs"), dget(self,"mode") ]) )
+      dset(self,"dynm3", depend_array(name="dm3",
+         value=np.zeros((self.nbeads,3*self.natoms), float),func=self.get_dynm3,
+            dependencies=[dget(self,"nm_freqs"), dget(self.beads, "m3")] ) )
+      dset(self,"dynomegak", depend_array(name="dynomegak",
+         value=np.zeros(self.nbeads, float), func=self.get_dynwk, 
+            dependencies=[dget(self,"nm_mass"), dget(self,"omegak") ]) )
 
       dset(self,"prop_pq",
          depend_array(name='prop_pq',value=np.zeros((self.beads.nbeads,2,2)),
@@ -99,33 +107,34 @@ class NormalModes(dobject):
          depend_value(name="kin", func=self.get_kin,
             dependencies=[dget(self,"kins")] ))
       dset(self,"kstress",
-         depend_array(name="kstress",value=np.zeros((3,3), float),
-            func=self.get_kstress,dependencies=[dget(self,"pnm"), dget(self.beads,"sm3"), dget(self, "nm_mass") ] ))
+         depend_array(name="kstress",value=np.zeros((3,3), float), 
+            func=self.get_kstress,
+               dependencies=[dget(self,"pnm"), dget(self.beads,"sm3"), dget(self, "nm_mass") ] ))
 
-   def setup_transform(self, nbeads):
-      """ Sets up matrices for normal-mode transformation. """
-
-      # Todo: optional Fourier transform?
-
-      self.Cb2nm = np.zeros((nbeads,nbeads))
-      self.Cb2nm[0,:] = math.sqrt(1.0/nbeads)
-      for i in range(1,nbeads/2+1):
-         for j in range(nbeads):
-            self.Cb2nm[i,j] = math.sqrt(2.0/nbeads)*math.cos(2*math.pi*j*i/float(nbeads))
-      if (nbeads%2) == 0:
-         self.Cb2nm[nbeads/2,0:nbeads:2] = math.sqrt(1.0/nbeads)
-         self.Cb2nm[nbeads/2,1:nbeads:2] = -math.sqrt(1.0/nbeads)
-      for i in range(nbeads/2+1, nbeads):
-         for j in range(nbeads):
-            self.Cb2nm[i,j] = math.sqrt(2.0/nbeads)*math.sin(2*math.pi*j*i/float(nbeads))
-
-      self.Cnm2b = self.Cb2nm.T.copy()
+#   def setup_transform(self, nbeads):
+#      """ Sets up matrices for normal-mode transformation. """
+#
+#      # Todo: optional Fourier transform?
+#
+#      self.Cb2nm = np.zeros((nbeads,nbeads))
+#      self.Cb2nm[0,:] = math.sqrt(1.0/nbeads)
+#      for i in range(1,nbeads/2+1):
+#         for j in range(nbeads):
+#            self.Cb2nm[i,j] = math.sqrt(2.0/nbeads)*math.cos(2*math.pi*j*i/float(nbeads))
+#      if (nbeads%2) == 0:
+#         self.Cb2nm[nbeads/2,0:nbeads:2] = math.sqrt(1.0/nbeads)
+#         self.Cb2nm[nbeads/2,1:nbeads:2] = -math.sqrt(1.0/nbeads)
+#      for i in range(nbeads/2+1, nbeads):
+#         for j in range(nbeads):
+#            self.Cb2nm[i,j] = math.sqrt(2.0/nbeads)*math.sin(2*math.pi*j*i/float(nbeads))
+#
+#      self.Cnm2b = self.Cb2nm.T.copy()
 
    # A few functions which just transform back and forth from beads to NM representation
-   def nm2b_q(self):  return np.dot(self.Cnm2b,depstrip(self.qnm))
-   def nm2b_p(self):  return np.dot(self.Cnm2b,depstrip(self.pnm))
-   def b2nm_q(self):  return np.dot(self.Cb2nm,depstrip(self.beads.q))
-   def b2nm_p(self):  return np.dot(self.Cb2nm,depstrip(self.beads.p))
+   def nm2b_q(self):  return self.transform.reverse(depstrip(self.qnm))
+   def nm2b_p(self):  return self.transform.reverse(depstrip(self.pnm))
+   def b2nm_q(self):  return self.transform.forward(depstrip(self.beads.q))
+   def b2nm_p(self):  return self.transform.forward(depstrip(self.beads.p))
 
 
    def get_omegan(self):
@@ -204,28 +213,29 @@ class NormalModes(dobject):
       dmf = np.zeros(self.nbeads,float)
       dmf[:] = 1.0
       if self.mode == "rpmd":
-         if len(self.nm_freqs)>0:
+         if len(self.nm_freqs) > 0:
             print "Warning: nm.frequencies will be ignored for RPMD mode."
       elif self.mode == "manual":
-         if len(self.nm_freqs)!=self.nbeads-1:
+         if len(self.nm_freqs) != self.nbeads-1:
             raise ValueError("Manual path mode requires <frequencies> to contain (nbeads-1) frequencies, one for each internal mode of the path.")
          for b in range(1, self.nbeads):
             sk = self.omegak[b]/self.nm_freqs[b-1]
             dmf[b] = sk**2
       elif self.mode == "pa-cmd":
-         if len(self.nm_freqs)>1:
+         if len(self.nm_freqs) > 1:
             print "Warning: only the first element in nm.frequencies will be considered for PA-CMD mode."
-         if len(self.nm_freqs)==0:
+         if len(self.nm_freqs) == 0:
             raise ValueError("PA-CMD mode requires <frequencies> to contain the target frequency of all the internal modes.")
          for b in range(1, self.nbeads):
             sk = self.omegak[b]/self.nm_freqs[0]
             dmf[b] = sk**2
       elif self.mode == "wmax-cmd":
-         if len(self.nm_freqs)>2:
+         if len(self.nm_freqs) > 2:
             print "Warning: only the first two element in nm.frequencies will be considered for WMAX-CMD mode."
-         if len(self.nm_freqs)<2:
+         if len(self.nm_freqs) < 2:
             raise ValueError("WMAX-CMD mode requires <frequencies> to contain [wmax, wtarget]. All the internal modes for a SHO of frequency wmax will be matched with wtarget.")
-         wmax=self.nm_freqs[0]; wt=self.nm_freqs[1];
+         wmax = self.nm_freqs[0]
+         wt = self.nm_freqs[1]
          for b in range(1, self.nbeads):
             sk = 1.0/np.sqrt((wt/wmax)**2*(1+(wmax/self.omegak[1])**2)/(1.0+(self.omegak[b]/wmax)**2))
             dmf[b] = sk**2
@@ -241,7 +251,6 @@ class NormalModes(dobject):
          dm3[b] = self.beads.m3[b]*self.nm_mass[b]
 
       return dm3
-
 
    def free_qstep(self):
       """Exact normal mode propagator for the free ring polymer.

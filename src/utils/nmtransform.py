@@ -1,7 +1,7 @@
 """Contains functions for doing the inverse and forward normal mode transforms.
 
 Classes:
-   nm_trans: Uses a matrix multiplication to do the normal mode transformations.
+   nm_trans: Uses matrix multiplication to do normal mode transformations.
 
 Functions:
    FFT_nm_trans: Uses an FFT algorithm to do the normal mode transformation.
@@ -17,10 +17,12 @@ import math
 class nm_trans:
    """Performs the normal mode transformation using a matrix multiplication.
 
+   Holds helper routines for the normal mode transformations.
+
    Attributes:
       cmatrices: A set of transformation matrices for the normal mode 
          transformations.
-      tmatrices: A set of matrices for contracting and expanding ring polymers.
+      tmatrices: A set of transformation matrices for ring polymer contraction.
    """
 
    def __init__(self, nbeads=None):
@@ -37,7 +39,11 @@ class nm_trans:
          self.setup_transform(nbeads)
 
    def setup_transform(self, nbeads):
-      """ Sets up matrices for normal-mode transformation. """
+      """Sets up matrices for normal-mode transformation.
+
+      Args:
+         nbeads: The number of beads in the ring polymer.
+      """
 
       # Todo: optional Fourier transform?
 
@@ -58,7 +64,12 @@ class nm_trans:
       self.cmatrices[nbeads] = (Cb2nm, Cnm2b)
 
    def setup_contract(self, nred, nbeads):
-      """ Sets up matrices for ring polymer contraction. """
+      """Sets up matrices for ring polymer contraction.
+
+      Args:
+         nred: The number of beads in the contracted ring polymer.
+         nbeads: The number of beads in the full ring polymer.
+      """
 
       try:
          full = self.cmatrices[nbeads]
@@ -112,7 +123,7 @@ class nm_trans:
             the second the different degrees of freedom.
 
       Returns:
-         A matrix of the same shape as q, but in the bead representation.
+         A matrix of the same shape as qnm, but in the bead representation.
       """
 
       nbeads = len(qnm)
@@ -156,7 +167,7 @@ class nm_trans:
          q: A 2 dimensional matrix in the bead representation. 
             The first dimension gives the contracted bead coordinates,
             and the second the different degrees of freedom.
-         nbeads: The number of beads needed in the full ring polymer.
+         nbeads: The number of beads in the full ring polymer.
 
       Returns:
          A matrix with the same number of atoms as q, but with the 
