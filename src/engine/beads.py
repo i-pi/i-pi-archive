@@ -30,10 +30,6 @@ class Beads(dobject):
    Attributes:
       natoms: The number of atoms.
       nbeads: The number of beads.
-      Cb2nm: Transformation matrix between the bead and normal mode
-         representations
-      Cnm2b: Transformation matrix between the normal mode and bead
-         representations
       _blist: A list of Atoms objects for each replica of the system. Each
          replica is assumed to have the same mass and atom label.
       centroid: An atoms object giving the centroid coordinate of the beads.

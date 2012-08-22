@@ -162,8 +162,6 @@ class ForceBeads(dobject):
       natoms: An integer giving the number of atoms.
       nbeads: An integer giving the number of beads.
       _forces: A list containing all the force objects for each system replica.
-      Cb2nm: The transformation matrix between the bead and normal mode
-         representations.
       softexit: A function to help make sure the printed restart file is
          consistent.
 
@@ -273,6 +271,7 @@ class ForceBeads(dobject):
       """
 
       return np.dot(self.Cb2nm,depstrip(self.f))
+      #TODO this is necessarily broken. Fix it!
 
    def pot_gather(self):
       """Obtains the potential energy for each replica.
