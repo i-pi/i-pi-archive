@@ -20,7 +20,7 @@ class nm_trans:
    Holds helper routines for the normal mode transformations.
 
    Attributes:
-      cmatrices: A set of transformation matrices for the normal mode 
+      cmatrices: A set of transformation matrices for the normal mode
          transformations.
       tmatrices: A set of transformation matrices for ring polymer contraction.
    """
@@ -32,7 +32,7 @@ class nm_trans:
          beads: An optional number of beads to use to create the transformation
             matrix.
       """
-      
+
       self.cmatrices = {}
       self.tmatrices = {}
       if nbeads is not None:
@@ -83,7 +83,7 @@ class nm_trans:
          contracted = self.cmatrices[nred]
 
       Tf2c = np.zeros((nred, nbeads))
-      for j in range(-nred/2+1, nred/2+1): 
+      for j in range(-nred/2+1, nred/2+1):
          #taking the lower frequency normal modes only.
          Tf2c += np.outer(contracted[1][:,j], full[0][j,:])
 
@@ -95,11 +95,11 @@ class nm_trans:
 
       self.tmatrices[nred] = (Tf2c, Tc2f)
 
-   def forward(self, q):
+   def b2nm(self, q):
       """This performs the forward normal mode transformation.
 
       Args:
-         q: A 2 dimensional matrix in the bead representation. The first 
+         q: A 2 dimensional matrix in the bead representation. The first
             dimension gives the different bead coordinates, and the second
             the different degrees of freedom.
 
@@ -114,12 +114,12 @@ class nm_trans:
          self.setup_transform(nbeads)
          return np.dot(self.cmatrices[nbeads][0], q)
 
-   def reverse(self, qnm):
+   def nm2b(self, qnm):
       """This performs the forward normal mode transformation.
 
       Args:
-         qnm: A 2 dimensional matrix in the normal mode representation. 
-            The first dimension gives the different bead coordinates, and 
+         qnm: A 2 dimensional matrix in the normal mode representation.
+            The first dimension gives the different bead coordinates, and
             the second the different degrees of freedom.
 
       Returns:
@@ -140,13 +140,13 @@ class nm_trans:
       appropriate smaller ring polymer from a larger one
 
       Args:
-         q: A 2 dimensional matrix in the bead representation. The first 
+         q: A 2 dimensional matrix in the bead representation. The first
             dimension gives the full bead coordinates, and the second
             the different degrees of freedom.
          nred: The number of beads in the contracted ring polymer.
 
       Returns:
-         A matrix of the same number of atoms as q, but with a smaller 
+         A matrix of the same number of atoms as q, but with a smaller
          number of beads.
       """
 
@@ -164,13 +164,13 @@ class nm_trans:
       """This performs the ring polymer expansion.
 
       Args:
-         q: A 2 dimensional matrix in the bead representation. 
+         q: A 2 dimensional matrix in the bead representation.
             The first dimension gives the contracted bead coordinates,
             and the second the different degrees of freedom.
          nbeads: The number of beads in the full ring polymer.
 
       Returns:
-         A matrix with the same number of atoms as q, but with the 
+         A matrix with the same number of atoms as q, but with the
          full number of beads.
       """
 
@@ -189,7 +189,7 @@ def FFT_nm_trans(q):
    """Performs the normal mode transformation using FFT.
 
    Args:
-      q: A 2 dimensional matrix in the bead representation. The first 
+      q: A 2 dimensional matrix in the bead representation. The first
          dimension gives the different bead coordinates, and the second
          the different degrees of freedom.
 
@@ -223,7 +223,7 @@ def FFT_inv_nm_trans(qnm):
    """Performs the inverse normal mode transformation using FFT.
 
    Args:
-      qnm: A 2 dimensional matrix in the normal mode representation. The first 
+      qnm: A 2 dimensional matrix in the normal mode representation. The first
          dimension gives the different normal mode coordinates, and the second
          the different degrees of freedom.
 

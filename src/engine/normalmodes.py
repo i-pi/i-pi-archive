@@ -38,27 +38,33 @@ class NormalModes(dobject):
       # stores a reference to the bound beads and ensemble objects
       self.beads = beads
       self.ensemble = ensemble
+
+      # sets up what's necessary to perform nm transformation.
+      #self.setup_transform(self.nbeads)
+      self.transform = nmtransform.nm_trans(nbeads=self.nbeads)
+
+
       # creates arrays to store normal modes representation of the path.
       # must do a lot of piping to create "ex post" a synchronization between the beads and the nm
       sync_q = synchronizer()
       sync_p = synchronizer()
       dset(self,"qnm",
          depend_array(name="qnm",value=np.zeros((self.nbeads,3*self.natoms), float),
-            func={"q": self.b2nm_q}, synchro=sync_q ) )
+            func={"q": (lambda : self.transform.b2nm(depstrip(self.beads.q)) ) }, synchro=sync_q ) )
       dset(self,"pnm",
          depend_array(name="pnm",value=np.zeros((self.nbeads,3*self.natoms), float),
-            func={"p": self.b2nm_p}, synchro=sync_p ) )
+            func={"p": (lambda : self.transform.b2nm(depstrip(self.beads.p)) ) }, synchro=sync_p ) )
 
       # must overwrite the functions
-      dget(self.beads, "q")._func = { "qnm": self.nm2b_q }
-      dget(self.beads, "p")._func = { "pnm": self.nm2b_p }
+      dget(self.beads, "q")._func = { "qnm": (lambda : self.transform.nm2b(depstrip(self.qnm)) )  }
+      dget(self.beads, "p")._func = { "pnm": (lambda : self.transform.nm2b(depstrip(self.pnm)) )  }
       dget(self.beads, "q").add_synchro(sync_q)
       dget(self.beads, "p").add_synchro(sync_p)
 
       # also within the "atomic" interface to beads
       for b in range(self.nbeads):
-         dget(self.beads._blist[b],"q")._func = { "qnm": self.nm2b_q }
-         dget(self.beads._blist[b],"p")._func = { "pnm": self.nm2b_p }
+         dget(self.beads._blist[b],"q")._func = { "qnm": (lambda : self.transform.nm2b(depstrip(self.qnm)) )  }
+         dget(self.beads._blist[b],"p")._func = { "pnm": (lambda : self.transform.nm2b(depstrip(self.pnm)) )  }
          dget(self.beads._blist[b],"q").add_synchro(sync_q)
          dget(self.beads._blist[b],"p").add_synchro(sync_p)
 
@@ -66,10 +72,6 @@ class NormalModes(dobject):
       # finally, we mark the beads as those containing the set positions
       dget(self.beads, "q").update_man()
       dget(self.beads, "p").update_man()
-
-      # sets up what's necessary to perform nm transformation.
-      #self.setup_transform(self.nbeads)
-      self.transform = nmtransform.nm_trans(nbeads=self.nbeads)
 
       # create path-frequencies related properties
       dset(self,"omegan",
@@ -83,13 +85,13 @@ class NormalModes(dobject):
 
       # sets up "dynamical" masses -- mass-scalings to give the correct RPMD/CMD dynamics
       dset(self,"nm_mass", depend_array(name="nmm",
-         value=np.zeros(self.nbeads, float), func=self.get_nmm, 
+         value=np.zeros(self.nbeads, float), func=self.get_nmm,
             dependencies=[dget(self,"nm_freqs"), dget(self,"mode") ]) )
       dset(self,"dynm3", depend_array(name="dm3",
          value=np.zeros((self.nbeads,3*self.natoms), float),func=self.get_dynm3,
             dependencies=[dget(self,"nm_freqs"), dget(self.beads, "m3")] ) )
       dset(self,"dynomegak", depend_array(name="dynomegak",
-         value=np.zeros(self.nbeads, float), func=self.get_dynwk, 
+         value=np.zeros(self.nbeads, float), func=self.get_dynwk,
             dependencies=[dget(self,"nm_mass"), dget(self,"omegak") ]) )
 
       dset(self,"prop_pq",
@@ -107,7 +109,7 @@ class NormalModes(dobject):
          depend_value(name="kin", func=self.get_kin,
             dependencies=[dget(self,"kins")] ))
       dset(self,"kstress",
-         depend_array(name="kstress",value=np.zeros((3,3), float), 
+         depend_array(name="kstress",value=np.zeros((3,3), float),
             func=self.get_kstress,
                dependencies=[dget(self,"pnm"), dget(self.beads,"sm3"), dget(self, "nm_mass") ] ))
 
@@ -131,11 +133,11 @@ class NormalModes(dobject):
 #      self.Cnm2b = self.Cb2nm.T.copy()
 
    # A few functions which just transform back and forth from beads to NM representation
-   def nm2b_q(self):  return self.transform.reverse(depstrip(self.qnm))
-   def nm2b_p(self):  return self.transform.reverse(depstrip(self.pnm))
-   def b2nm_q(self):  return self.transform.forward(depstrip(self.beads.q))
-   def b2nm_p(self):  return self.transform.forward(depstrip(self.beads.p))
-
+   #~ def nm2b_q(self):  return self.transform.reverse(depstrip(self.qnm))
+   #~ def nm2b_p(self):  return self.transform.reverse(depstrip(self.pnm))
+   #~ def b2nm_q(self):  return self.transform.forward(depstrip(self.beads.q))
+   #~ def b2nm_p(self):  return self.transform.forward(depstrip(self.beads.p))
+#~
 
    def get_omegan(self):
       """Returns the effective vibrational frequency for the interaction
