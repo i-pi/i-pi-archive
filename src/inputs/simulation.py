@@ -20,7 +20,7 @@ from atoms import *
 from cell import *
 from inputs.forces import InputForce
 from inputs.prng import InputRandom
-from inputs.atoms import InputAtoms
+from inputs.initializer import InputInitializer
 from inputs.beads import InputBeads
 from inputs.cell import InputCell
 from inputs.ensembles import InputEnsemble
@@ -66,12 +66,12 @@ class InputSimulation(Input):
    #should
    fields= { "force" :   (InputForce,    { "help"  : InputForce.default_help }),
              "ensemble": (InputEnsemble, { "help"  : InputEnsemble.default_help } ),
-             "prng" :    (InputRandom,   { "help"  : InputRandom.default_help + " It is not necessary to specify this tag.",
+             "prng" :    (InputRandom,   { "help"  : InputRandom.default_help + " Optional.",
                                          "default" : input_default(factory=Random)} ),
-             "atoms" :   (InputAtoms, { "help"     : "Deals with classical simulations. Only needs to be specified if a classical simulation is required, and should be left blank otherwise.",
-                                        "default"  : input_default(factory=Atoms, kwargs={'natoms': 0}) } ),
-             "beads" :   (InputBeads, { "help"     : InputBeads.default_help + " Only needs to be specified if the atoms tag is not, but overwrites it otherwise.",
-                                        "default"  : input_default(factory=Beads, kwargs={'natoms': 0, 'nbeads': 1}) } ),
+             "initialize" : (InputInitializer, { "help" : InputInitializer.default_help,
+                                                "default" : input_default(factory=InputInitializer) } ),
+             "beads" :   (InputBeads, { "help"     : InputBeads.default_help,
+                                        "default"  : input_default(factory=Beads, kwargs={'natoms': 0, 'nbeads': 0}) } ),
              "normal_modes" :   (InputNormalModes, { "help"     : InputNormalModes.default_help,
                                         "default"  : input_default(factory=NormalModes, kwargs={'mode': "rpmd", 'freqs': []}) } ),
              "cell" :    (InputCell,   { "help"    : InputCell.default_help }),
@@ -81,10 +81,10 @@ class InputSimulation(Input):
                                             "help"     : "How many time steps have been done." }),
              "total_steps": ( InputValue, { "dtype"    : int,
                                             "default"  : 1000,
-                                            "help"     : "The total number of steps that will be done." }),
-             "initialize":  ( InputValue, { "dtype"    : dict,
-                                            "default"  : input_default(factory=dict),
-                                            "help"     : "A dictionary giving the properties of the system that need to be initialized, and their initial values. The allowed keywords are ['velocities', 'cell_velocities', 'normal_modes']. The initial value of 'velocities' corresponds to the temperature to initialise the velocity distribution from. If 0, then the system temperature is used. 'cell_velocities' is the same but for the cell velocity. The initial value of 'normal_modes' corresponds to the temperature from which to initialize the higher normal mode frequencies from, if we start a simulation from a configuration with a smaller number of beads. If 0, then the system temperature is used." })
+                                            "help"     : "The total number of steps that will be done." })
+             #~ "initialize":  ( InputValue, { "dtype"    : dict,
+                                            #~ "default"  : input_default(factory=dict),
+                                            #~ "help"     : "A dictionary giving the properties of the system that need to be initialized, and their initial values. The allowed keywords are ['velocities', 'cell_velocities', 'normal_modes']. The initial value of 'velocities' corresponds to the temperature to initialise the velocity distribution from. If 0, then the system temperature is used. 'cell_velocities' is the same but for the cell velocity. The initial value of 'normal_modes' corresponds to the temperature from which to initialize the higher normal mode frequencies from, if we start a simulation from a configuration with a smaller number of beads. If 0, then the system temperature is used." })
                                              }
 
    default_help = "This is the top level class that deals with the running of the simulation, including holding the simulation specific properties such as the time step and outputting the data."
@@ -101,11 +101,7 @@ class InputSimulation(Input):
       self.force.store(simul._forcemodel)
       self.ensemble.store(simul.ensemble)
 
-      # If we are running a classical simulation, hide the "beads" machinery in the restarts
-      if simul.beads.nbeads > 1 :
-         self.beads.store(simul.beads)
-      else:
-         self.atoms.store(simul.beads[0])
+      self.beads.store(simul.beads)
 
       self.normal_modes.store(simul.nm)
       self.cell.store(simul.cell)
@@ -113,7 +109,6 @@ class InputSimulation(Input):
       self.step.store(simul.step)
       self.total_steps.store(simul.tsteps)
       self.output.store(simul.outputs)
-      self.initialize.store(simul.initlist)
 
    def fetch(self):
       """Creates a simulation object.
@@ -134,18 +129,15 @@ class InputSimulation(Input):
       ncell = self.cell.fetch()
       nprng = self.prng.fetch()
 
-      ilist = self.initialize.fetch()
-      if not self.initialize._explicit:
-         ilist = None
 
+      # this creates a simulation object which gathers all the little bits
       rsim = engine.simulation.Simulation(nbeads, ncell, self.force.fetch(),
                      self.ensemble.fetch(), nprng, self.output.fetch(),
-                     self.normal_modes.fetch(), self.step.fetch(),
-                     tsteps=self.total_steps.fetch(),  initlist=ilist)
+                     self.normal_modes.fetch(), self.initialize.fetch(), self.step.fetch(),
+                     tsteps=self.total_steps.fetch())
 
-      # binds and inits the simulation object just before returning
+      # this does all of the piping between the components of the simulation
       rsim.bind()
-      rsim.init()
 
       return rsim
 
@@ -163,25 +155,25 @@ class InputSimulation(Input):
 
       super(InputSimulation,self).check()
 
-      if self.beads._explicit:
-         # nothing to be done here! user/restart provides a beads object
-         pass
-      elif self.atoms._explicit:
-         # user is providing atoms: assume a classical simulation
-         atoms = self.atoms.fetch()
-         nbeads = 1
-         rbeads = Beads(atoms.natoms, nbeads)
-         rbeads[0] = atoms.copy()
-         # we create a dummy beads storage so that fetch can proceed as if a
-         # beads object had been specified
-         self.beads.store(rbeads)
-      else:
-         raise TypeError("Either a <beads> or a <atoms> block must be provided")
+      #~ if self.beads._explicit:
+         #~ # nothing to be done here! user/restart provides a beads object
+         #~ pass
+      #~ elif self.atoms._explicit:
+         #~ # user is providing atoms: assume a classical simulation
+         #~ atoms = self.atoms.fetch()
+         #~ nbeads = 1
+         #~ rbeads = Beads(atoms.natoms, nbeads)
+         #~ rbeads[0] = atoms.copy()
+         #~ # we create a dummy beads storage so that fetch can proceed as if a
+         #~ # beads object had been specified
+         #~ self.beads.store(rbeads)
+      #~ else:
+         #~ raise TypeError("Either a <beads> or a <atoms> block must be provided")
 
       if self.total_steps.fetch() <= self.step.fetch():
          raise ValueError("Current step greater than total steps, no dynamics will be done.")
 
-      for init in self.initialize.fetch():
-         if not init in ["velocities", "normal_modes", "cell_velocities"]:
-            raise ValueError("Initialization parameter " + init + " is not a valid keyword for initialize.")
+      #~ for init in self.initialize.fetch():
+         #~ if not init in ["velocities", "normal_modes", "cell_velocities"]:
+            #~ raise ValueError("Initialization parameter " + init + " is not a valid keyword for initialize.")
 

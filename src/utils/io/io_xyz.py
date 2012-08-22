@@ -30,12 +30,12 @@ def print_xyz_path(beads, cell, filedesc = sys.stdout):
    """
 
    a, b, c, alpha, beta, gamma = mt.h2abc(cell.h)
-   alpha *= 180.0/math.pi 
+   alpha *= 180.0/math.pi
    beta  *= 180.0/math.pi
    gamma *= 180.0/math.pi
 
    natoms = beads.natoms
-   nbeads = beads.nbeads   
+   nbeads = beads.nbeads
    for j in range(nbeads):
       filedesc.write("%d\n# bead: %d CELL(abcABC): %10.5f  %10.5f  %10.5f  %10.5f  %10.5f  %10.5f \n" % ( natoms, j, a,b,c,alpha,beta,gamma))
       for i in range(natoms):
@@ -53,7 +53,7 @@ def print_xyz(atoms, cell, filedesc = sys.stdout, title=""):
    """
 
    a, b, c, alpha, beta, gamma = mt.h2abc(cell.h)
-   alpha *= 180.0/math.pi 
+   alpha *= 180.0/math.pi
    beta  *= 180.0/math.pi
    gamma *= 180.0/math.pi
 
@@ -63,7 +63,7 @@ def print_xyz(atoms, cell, filedesc = sys.stdout, title=""):
    qs=depstrip(atoms.q)
    lab=depstrip(atoms.names)
    for i in range(natoms):
-      filedesc.write("%8s %12.5e %12.5e %12.5e\n" % (lab[i],qs[3*i],qs[3*i+1],qs[3*i+2]))   
+      filedesc.write("%8s %12.5e %12.5e %12.5e\n" % (lab[i],qs[3*i],qs[3*i+1],qs[3*i+2]))
    filedesc.flush()
 
 def read_xyz(filedesc):
@@ -79,10 +79,12 @@ def read_xyz(filedesc):
    natoms = int(filedesc.readline())
    comment = filedesc.readline()
 
-   body = filedesc.readline()
    qatoms = []
    names = []
-   while (body.strip() != "" and body.strip() != "END"):
+   iat=0
+   while (iat<natoms):
+      body = filedesc.readline()
+      if body.strip() == "": break
       body = body.split()
       names.append(body[0])
       x = float(body[1])
@@ -90,9 +92,8 @@ def read_xyz(filedesc):
       z = float(body[3])
       pos = np.array([x,y,z])
       qatoms.append(pos)
-      
-      body = filedesc.readline()
-   
+      iat+=1
+
    if natoms != len(names):
       raise ValueError("The number of atom records does not match the header of the xyz file.")
 

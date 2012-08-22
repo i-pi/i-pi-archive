@@ -64,7 +64,7 @@ class Simulation(dobject):
       step: The current simulation step.
    """
 
-   def __init__(self, beads, cell, force, ensemble, prng, outputs, nm, step=0, tsteps=1000,  initlist=None):
+   def __init__(self, beads, cell, force, ensemble, prng, outputs, nm, init, step=0, tsteps=1000):
       """Initialises Simulation class.
 
       Args:
@@ -86,18 +86,20 @@ class Simulation(dobject):
       """
 
       print " # Initializing simulation object "
-      self.nbeads = len(beads)
+      self.ensemble = ensemble
       self.beads = beads
-      self.nm = nm
       self.cell = cell
+
+      # initialize the configuration of the system
+      init.init(self)
+
+      self.nbeads = len(beads)
+      self.nm = nm
       self.prng = prng
       self._forcemodel = force
       self.forces = ForceBeads()
       self.outputs = outputs
-      self.chk = None
 
-
-      self.ensemble = ensemble
 
 
       dset(self, "step", depend_value(name="step", value=step))
@@ -105,11 +107,7 @@ class Simulation(dobject):
 
       self.properties = Properties()
       self.trajs = Trajectories()
-
-      if initlist is None:
-         self.initlist = {}
-      else:
-         self.initlist = initlist
+      self.chk = None
 
 
    def bind(self):
@@ -184,45 +182,45 @@ class Simulation(dobject):
 
       self.soft_exit(rollback=False)
 
-   def init(self):
-      """Deals with initialization.
-
-      Opens the different output files. Also initialises the
-      atom velocities, and the higher frequency normal modes if required.
-      It then removes the list of quantities to
-      be initialized, so that if the simulation is restarted these quantities
-      are not re-initialized.
-      """
-
-      if "normal_modes" in self.initlist:
-         init_temp = float(self.initlist["normal_modes"])*self.beads.nbeads
-         for b in range(1,self.beads.nbeads):
-            if (self.beads.qnm[b] == 0.0).all:
-               if init_temp == 0:
-                  self.beads.qnm[b] = math.sqrt(self.ensemble.ntemp*Constants.kb)/(self.ensemble.omegak[b]*self.beads.sm3[b])*np.prng.gvec(3*self.beads.natoms)
-                  self.beads.pnm[b] = math.sqrt(self.ensemble.ntemp*Constants.kb)*self.beads.sm3[b]*self.prng.gvec(3*self.beads.natoms)
-               else:
-                  self.beads.qnm[b] = math.sqrt(init_temp*Constants.kb)/(self.ensemble.omegak[b]*self.beads.sm3[b])*self.prng.gvec(3*self.beads.natoms)
-                  self.beads.pnm[b] = math.sqrt(init_temp*Constants.kb)*self.beads.sm3[b]*self.prng.gvec(3*self.beads.natoms)
-
-      if "velocities" in self.initlist:
-         init_temp = float(self.initlist["velocities"])*self.beads.nbeads
-         if init_temp == 0:
-            self.beads.p = math.sqrt(self.ensemble.ntemp*Constants.kb)*self.beads.sm3*self.prng.gvec((self.beads.nbeads, 3*self.beads.natoms))
-         else:
-            self.beads.p = math.sqrt(init_temp*Constants.kb)*self.beads.sm3*self.prng.gvec((self.beads.nbeads, 3*self.beads.natoms))
-
-      if "cell_velocities" in self.initlist:
-         init_temp = float(self.initlist["cell_velocities"])*self.beads.nbeads
-         if init_temp == 0:
-            init_temp = math.sqrt(self.ensemble.ntemp)
-         if hasattr(self.cell,"p6"):
-            self.cell.p6 = math.sqrt(init_temp*Constants.kb*self.cell.m)*self.prng.gvec(6)
-         else:
-            self.cell.P = math.sqrt(init_temp*Constants.kb*self.cell.m)*self.prng.gvec(1)
-
-      if self.ensemble.fixcom:
-         self.ensemble.rmcom()
-
-      # Zeroes out the initlist, such that in restarts no initialization will be required
-      self.initlist = {}
+   #~ def init(self):
+      #~ """Deals with initialization.
+#~
+      #~ Opens the different output files. Also initialises the
+      #~ atom velocities, and the higher frequency normal modes if required.
+      #~ It then removes the list of quantities to
+      #~ be initialized, so that if the simulation is restarted these quantities
+      #~ are not re-initialized.
+      #~ """
+#~
+      #~ if "normal_modes" in self.initlist:
+         #~ init_temp = float(self.initlist["normal_modes"])*self.beads.nbeads
+         #~ for b in range(1,self.beads.nbeads):
+            #~ if (self.beads.qnm[b] == 0.0).all:
+               #~ if init_temp == 0:
+                  #~ self.beads.qnm[b] = math.sqrt(self.ensemble.ntemp*Constants.kb)/(self.ensemble.omegak[b]*self.beads.sm3[b])*np.prng.gvec(3*self.beads.natoms)
+                  #~ self.beads.pnm[b] = math.sqrt(self.ensemble.ntemp*Constants.kb)*self.beads.sm3[b]*self.prng.gvec(3*self.beads.natoms)
+               #~ else:
+                  #~ self.beads.qnm[b] = math.sqrt(init_temp*Constants.kb)/(self.ensemble.omegak[b]*self.beads.sm3[b])*self.prng.gvec(3*self.beads.natoms)
+                  #~ self.beads.pnm[b] = math.sqrt(init_temp*Constants.kb)*self.beads.sm3[b]*self.prng.gvec(3*self.beads.natoms)
+#~
+      #~ if "velocities" in self.initlist:
+         #~ init_temp = float(self.initlist["velocities"])*self.beads.nbeads
+         #~ if init_temp == 0:
+            #~ self.beads.p = math.sqrt(self.ensemble.ntemp*Constants.kb)*self.beads.sm3*self.prng.gvec((self.beads.nbeads, 3*self.beads.natoms))
+         #~ else:
+            #~ self.beads.p = math.sqrt(init_temp*Constants.kb)*self.beads.sm3*self.prng.gvec((self.beads.nbeads, 3*self.beads.natoms))
+#~
+      #~ if "cell_velocities" in self.initlist:
+         #~ init_temp = float(self.initlist["cell_velocities"])*self.beads.nbeads
+         #~ if init_temp == 0:
+            #~ init_temp = math.sqrt(self.ensemble.ntemp)
+         #~ if hasattr(self.cell,"p6"):
+            #~ self.cell.p6 = math.sqrt(init_temp*Constants.kb*self.cell.m)*self.prng.gvec(6)
+         #~ else:
+            #~ self.cell.P = math.sqrt(init_temp*Constants.kb*self.cell.m)*self.prng.gvec(1)
+#~
+      #~ if self.ensemble.fixcom:
+         #~ self.ensemble.rmcom()
+#~
+      #~ # Zeroes out the initlist, such that in restarts no initialization will be required
+      #~ self.initlist = {}

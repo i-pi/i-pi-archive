@@ -165,6 +165,7 @@ class Input(object):
       #object's dictionary.
       for f, v in self.fields.iteritems():
          self.__dict__[f] = v[0](**v[1])
+
       for a, v in self.attribs.iteritems():
          self.__dict__[a] = v[0](**v[1])
 

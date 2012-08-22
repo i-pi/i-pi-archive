@@ -412,6 +412,10 @@ class ThermoSVR(Thermostat):
 
       K = np.dot(depstrip(self.p),depstrip(self.p)/depstrip(self.m))*0.5
 
+      # rescaling is un-defined if the KE is zero
+      if K==0.0 : return
+
+      # gets the stochastic term (basically a Gamma distribution for the kinetic energy)
       r1 = self.prng.g
       if (self.ndof-1)%2 == 0:
          rg = 2.0*self.prng.gamma((self.ndof-1)/2)

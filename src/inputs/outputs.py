@@ -99,9 +99,7 @@ class InputCheckpoint(InputValue):
    def fetch(self):
       """ Returns a CheckpointOutput object. """
 
-      print "reading checkpoint"
       step=super(InputCheckpoint,self).fetch()
-      print  "checkpoint ",step, " ", self.overwrite.fetch()
       return engine.outputs.CheckpointOutput(self.filename.fetch(), self.stride.fetch(), self.overwrite.fetch(), step=step )
 
    def parse(self, xml=None, text=""):

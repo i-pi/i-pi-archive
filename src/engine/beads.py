@@ -69,6 +69,9 @@ class Beads(dobject):
          nbeads: Number of beads.
       """
 
+      self.resize(natoms, nbeads)
+
+   def resize(self, natoms, nbeads):
       self.natoms = natoms
       self.nbeads = nbeads
 

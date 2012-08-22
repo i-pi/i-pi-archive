@@ -45,13 +45,12 @@ class InputBeads(Input):
          array with no elements.
    """
 
-   attribs = {  "natoms"    : (InputValue, {"dtype"     : int,
-                                            "default"   : 0,
+   attribs = {  "natoms"    : (InputValue, {"dtype"     : int,  "default"   : 0,
                                             "help"      : "The number of atoms."}),
-                "nbeads"    : (InputValue, {"dtype"     : int,
-                                            "help"      : "The number of beads."}),
-   fields={
-            "q"         : (InputArray, {"dtype"     : float,
+                "nbeads"    : (InputValue, {"dtype"     : int,  "default"   : 0,
+                                            "help"      : "The number of beads."})
+            }
+   fields={ "q"         : (InputArray, {"dtype"     : float,
                                         "default"   : input_default(factory=np.zeros, args = (0,)),
                                         "help"      : "The positions of the beads. In an array of size [nbeads, 3*natoms].",
                                         "dimension" : "length"}),
@@ -99,9 +98,14 @@ class InputBeads(Input):
       beads = Beads(self.natoms.fetch(),self.nbeads.fetch())
 
       # tries to fill up with as much data as available and valid
-      q=self.q.fetch(); if (q.shape == (beads.nbeads,3*beads.natoms)) : beads.q=q
-      p=self.p.fetch(); if (p.shape == (beads.nbeads,3*beads.natoms)) : beads.p=p
-      m=self.q.fetch(); if (m.shape == (3*beads.natoms)) : beads.m=m
-      n=self.q.fetch(); if (m.shape == (3*beads.natoms)) : beads.names=n
+      # TODO should print warnings (or just abort?) if the arrays are not empty and size mismatch
+      q=self.q.fetch();
+      if (q.shape == (beads.nbeads,3*beads.natoms)) : beads.q=q
+      p=self.p.fetch();
+      if (p.shape == (beads.nbeads,3*beads.natoms)) : beads.p=p
+      m=self.m.fetch();
+      if (m.shape == (beads.natoms,)) : beads.m=m
+      n=self.names.fetch();
+      if (n.shape == (beads.natoms,)) : beads.names=n
 
       return beads
