@@ -16,22 +16,22 @@ Classes:
    Input: Base input class with the generic methods and attributes.
    InputValue: Input class for scalar objects.
    InputArray: Input class for arrays.
-   ClassDefault: Class used to create mutable objects dynamically.
+   input_default: Class used to create mutable objects dynamically.
 """
 
-__all__ = ['Input', 'InputValue', 'InputArray', 'ClassDefault']
+__all__ = ['Input', 'InputValue', 'InputArray', 'input_default']
 
 import numpy as np
 from  io.io_xml import *
 from units import unit_to_internal, unit_to_user
 
-class ClassDefault(object):
+class input_default(object):
    """Contains information required to dynamically create objects
 
-   Used so that we can define mutable default input values to various tags 
+   Used so that we can define mutable default input values to various tags
    without the usual trouble with having a class object that is also mutable,
    namely that all members of that class share the same mutable object, so that
-   changing it for one instance of that class changes it for all others. It 
+   changing it for one instance of that class changes it for all others. It
    does this by not holding the mutable default value, but instead the
    information to create it, so that each instance of an input class can
    have a separate instance of the default value.
@@ -40,12 +40,12 @@ class ClassDefault(object):
       type: Either a class type or function call from which to create the
          default object.
       args: A tuple giving positional arguments to be passed to the function.
-      kwargs: A dictionary giving key word arguments to be passed to the 
+      kwargs: A dictionary giving key word arguments to be passed to the
          function.
    """
 
-   def __init__(self, type, args = None, kwargs = None):
-      """Initialises ClassDefault.
+   def __init__(self, factory, args = None, kwargs = None):
+      """Initialises input_default.
 
       Args:
          type: The class or function to be used to create the default object.
@@ -58,7 +58,7 @@ class ClassDefault(object):
          args = ()
       if kwargs is None:
          kwargs = {}
-      self.type = type
+      self.factory = factory
       self.args = args
       self.kwargs = kwargs
 
@@ -148,8 +148,8 @@ class Input(object):
       if default is None:
          self._default = self.default_value
          self._optional = False #False if must be input by user.
-      elif hasattr(default, 'type') and hasattr(default, 'args') and hasattr(default, 'kwargs'):
-         self._default = default.type(*default.args, **default.kwargs)
+      elif isinstance(default,input_default):
+         self._default = default.factory(*default.args, **default.kwargs)
          self._optional = True
       else:
          self._default = default
@@ -320,8 +320,8 @@ class Input(object):
 
       rstr = ""
       if level == 0:
-         if not ref: 
-            #assumes that it is a stand-alone document, so must have 
+         if not ref:
+            #assumes that it is a stand-alone document, so must have
             #document options.
             rstr += "\\documentclass[12pt,fleqn]{report}"
             rstr += "\n\\begin{document}\n"
@@ -353,7 +353,7 @@ class Input(object):
          rstr += "{\\\\ \\bf DATA TYPE: }" + self.type.__name__ + "\n"
          #if possible, prints out the type of data that is being used
 
-      if len(self.attribs) != 0: 
+      if len(self.attribs) != 0:
          #Repeats the above instructions for the attributes
          rstr += "\\paragraph{Attributes}\n \\begin{itemize}\n"
          for a in self.attribs:
@@ -367,7 +367,7 @@ class Input(object):
          for f in self.fields:
             if self.__dict__[f]._label == "" or not ref:
                rstr += "\\item {\\bf " + f + "}:\n " + self.__dict__[f].help_latex(level+1, stop_level, ref)
-            else: 
+            else:
             #adds a hyperlink to the section title if a label has been specified
             #and the file is part of a larger document.
                rstr += "\\item {\\bf \hyperref[" + self.__dict__[f]._label + "]{" + f + "} }:\n " + self.__dict__[f].help_latex(level+1, stop_level)
@@ -386,7 +386,7 @@ class Input(object):
                rstr += "\\item {\\bf \hyperref[" + dummy_obj._label + "]{" + f + "} }:\n " + dummy_obj.help_latex(level+1, stop_level)
          rstr += "\\end{itemize}\n \n"
 
-      if level == 0 and not ref:  
+      if level == 0 and not ref:
          #ends the created document if it is not part of a larger document
          rstr += "\\end{document}"
 
@@ -429,7 +429,7 @@ class Input(object):
          return "[ ]"
       elif default == {}:
          if latex:
-            return "\\{ \\}" #again, escape characters needed for latex 
+            return "\\{ \\}" #again, escape characters needed for latex
          else:               #formatting
             return "{ }"
       else:

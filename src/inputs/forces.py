@@ -37,7 +37,7 @@ class InputForce(Input):
                                               "default" : 0,
                                               "help"    : "If the forcefield is to be evaluated on a contracted ring polymer, this gives the number of beads that are used. If not specified, the forcefield will be evaluated on the full ring polymer." } ),
                "parameters" : ( InputValue, { "dtype"   : dict, 
-                                              "default" : ClassDefault(type=dict),
+                                              "default" : input_default(factory=dict),
                                               "help"    : "Deprecated dictionary of initialization parameters. May be removed in the future." }) }
 
    default_help = "Deals with the assigning of jobs to different driver codes, and collecting the data."

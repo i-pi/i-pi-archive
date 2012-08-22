@@ -50,15 +50,15 @@ class InputThermo(Input):
                                     "help"      : "The friction coefficient for white noise thermostats.",
                                     "dimension" : "time" }) ,
             "A" : (InputArray, {    "dtype"     : float,
-                                    "default"   : ClassDefault(type=np.zeros, args = (0,)),
+                                    "default"   : input_default(factory=np.zeros, args = (0,)),
                                     "help"      : "The friction matrix for GLE thermostats.",
                                     "dimension" : "frequency" }),
             "C" : (InputArray, {    "dtype"     : float,
-                                    "default"   : ClassDefault(type=np.zeros, args = (0,)),
+                                    "default"   : input_default(factory=np.zeros, args = (0,)),
                                     "help"      : "The covariance matrix for GLE thermostats.",
                                     "dimension" : "temperature" }),
             "s" : (InputArray, {    "dtype"     : float,
-                                    "default"   : ClassDefault(type=np.zeros, args = (0,)),
+                                    "default"   : input_default(factory=np.zeros, args = (0,)),
                                     "help"      : "Input values for the additional momenta in GLE.",
                                     "dimension" : "ms-momentum" })
              }

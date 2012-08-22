@@ -29,7 +29,7 @@ class InputBaro(Input):
                                    "default"  : "rigid",
                                    "help"     : "The type of barostat. 'Rigid' gives a barostat that keeps the internal pressure constant by allowing cell volume changes, whereas flexible allows the shape of the cell to fluctuate too.",
                                    "options"  : ["rigid", "flexible"]}) }
-   fields={ "thermostat": (InputThermo, {"default" : ClassDefault(type=engine.thermostats.Thermostat),
+   fields={ "thermostat": (InputThermo, {"default" : input_default(factory=engine.thermostats.Thermostat),
                                          "help"    : "The thermostat for the cell. Keeps the cell velocity distribution at the correct temperature."}) }
 
    default_help = "Simulates an external pressure bath to keep the pressure or stress at the external values."

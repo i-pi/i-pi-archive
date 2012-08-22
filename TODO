@@ -34,9 +34,9 @@ InputSimulation.__init__(self, .... default=None, ....):
    if (default is None): default=WhateverClass(parameters)
    super(InputSimulation,self).__init__(..... default=default ...)
 
-**** Make the new NM thing actually work (MC) (MC)
+DONE **** Make the new NM thing actually work (MC) (MC)
 
-DONE (needs verification) ***  Move the synchro business out of Beads and into NormalModes (MC) (MC)
+DONE ***  Move the synchro business out of Beads and into NormalModes (MC) (MC)
 
 **   Fix (or remove) "spring_nrg" trajectory output. Not really needed anymore... (MC)
 More in general, rationalize and clean up the available properties and trajectories.     
