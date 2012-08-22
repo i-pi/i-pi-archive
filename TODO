@@ -43,8 +43,6 @@ More in general, rationalize and clean up the available properties and trajector
 
 ** We should add a check function to InputThermo (JM)
 
-* Remove parameters tag from InputForce completely (JM) (JM)
-
 ***  Benchmark the new propert implementation. (MC)
 Completely revamped properties and trajectories scheme. 
 Now it is possible to specify units and a short help string.

@@ -141,41 +141,43 @@ class InputOutputs(Input):
     one output file should be created and managed. """
    default_label = "OUTPUTS"
 
-   def __init__(self, help=None, dimension=None, units = None, default=None):
+   @classmethod
+   def make_default(cls):
+      """Used to make the default value of the outputs class for use when no
+      output is specified.
+      """
 
-      # sets default in a "dynamic" way.
-      if default is None:
-         default = [ engine.outputs.PropertyOutput("wrap-pi.md", 10, [ "time", "step", "conserved", "temperature", "potential", "kinetic_cv" ] ),
-                     engine.outputs.TrajectoryOutput("wrap-pi.pos", 100, "positions", "xyz"),
-                     engine.outputs.CheckpointOutput("wrap-pi.checkpoint",1000,overwrite=True)          ]
-      super(InputOutputs,self).__init__(help, dimension, units, default)
-      if not self._default is None:
-         self.store(self._default)
-         self._explicit = False
+      return [ engine.outputs.PropertyOutput("wrap-pi.md", 10, [ "time", "step", "conserved", "temperature", "potential", "kinetic_cv" ] ),
+               engine.outputs.TrajectoryOutput("wrap-pi.pos", 100, "positions", "xyz"),
+               engine.outputs.CheckpointOutput("wrap-pi.checkpoint",1000,overwrite=True)]
 
    def fetch(self):
       """ Returs a list of the output objects included in this dynamic container. """
 
-      outlist=[ p.fetch() for (n, p) in self.extra ]
-      prefix=self.prefix.fetch()
+      outlist = [ p.fetch() for (n, p) in self.extra ]
+      prefix = self.prefix.fetch()
       if not prefix == "":
-         for p in outlist: p.filename=prefix+"."+p.filename
+         for p in outlist:
+            p.filename = prefix + "." + p.filename
 
       return outlist
 
    def store(self, plist):
       """ Stores a list of the output objects, creating a sequence of dynamic containers. """
 
-      self.extra=[]
+      self.extra = []
 
       self.prefix.store("")
       for el in plist:
          if (isinstance(el, engine.outputs.PropertyOutput)):
-            ip=InputProperties(); ip.store(el)
-            self.extra.append(("properties", ip) )
+            ip = InputProperties()
+            ip.store(el)
+            self.extra.append(("properties", ip))
          if (isinstance(el, engine.outputs.TrajectoryOutput)):
-            ip=InputTrajectory(); ip.store(el)
-            self.extra.append(("trajectory", ip) )
+            ip = InputTrajectory()
+            ip.store(el)
+            self.extra.append(("trajectory", ip))
          if (isinstance(el, engine.outputs.CheckpointOutput)):
-            ip=InputCheckpoint(); ip.store(el)
-            self.extra.append(("checkpoint", ip) )
+            ip = InputCheckpoint()
+            ip.store(el)
+            self.extra.append(("checkpoint", ip))
