@@ -16,8 +16,6 @@ from utils.units  import *
 from utils.prng   import *
 from utils.io     import *
 from utils.io.io_xml import *
-from atoms import *
-from cell import *
 from inputs.forces import InputForce
 from inputs.prng import InputRandom
 from inputs.initializer import InputInitializer
@@ -29,6 +27,7 @@ from inputs.normalmodes import InputNormalModes
 from engine.normalmodes import NormalModes
 from engine.atoms import Atoms
 from engine.beads import Beads
+from engine.cell import Cell
 from engine.initializer import Initializer
 
 import engine.outputs
@@ -76,7 +75,8 @@ class InputSimulation(Input):
                                         "default"  : input_default(factory=Beads, kwargs={'natoms': 0, 'nbeads': 0}) } ),
              "normal_modes" :   (InputNormalModes, { "help"     : InputNormalModes.default_help,
                                         "default"  : input_default(factory=NormalModes, kwargs={'mode': "rpmd"}) } ),
-             "cell" :    (InputCell,   { "help"    : InputCell.default_help }),
+             "cell" :    (InputCell,   { "help"    : InputCell.default_help,
+                                        "default"  : input_default(factory=Cell) }),
              "output" :  (InputOutputs, { "help"   : InputOutputs.default_help,
                                           "default": input_default(factory=InputOutputs.make_default)  }),
              "step" :       ( InputValue, { "dtype"    : int,
@@ -129,6 +129,7 @@ class InputSimulation(Input):
       ncell = self.cell.fetch()
       nprng = self.prng.fetch()
 
+      print "read in cell", ncell.h
 
       # this creates a simulation object which gathers all the little bits
       rsim = engine.simulation.Simulation(nbeads, ncell, self.force.fetch(),

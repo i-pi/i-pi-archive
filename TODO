@@ -44,7 +44,7 @@ DONE (probably) **   Fix (or remove) "spring_nrg" trajectory output. Not really 
 
 ** We should add a check function to InputThermo (JM)
 
-***  Benchmark the new propert implementation. (MC)
+***  Benchmark the new property implementation. (MC)
 Completely revamped properties and trajectories scheme. 
 Now it is possible to specify units and a short help string.
 
