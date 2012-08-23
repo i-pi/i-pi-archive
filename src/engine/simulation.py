@@ -23,7 +23,7 @@ from utils.io.io_xml import *
 from atoms import *
 import time
 from cell import *
-from forces import ForceBeads
+from forces import Forces
 from beads import Beads
 from normalmodes import NormalModes
 from properties import Properties, Trajectories
@@ -96,10 +96,8 @@ class Simulation(dobject):
       init.init(self)
 
       self._forcemodel = force
-      self.forces = ForceBeads()
+      self.forces = Forces()
       self.outputs = outputs
-
-
 
       dset(self, "step", depend_value(name="step", value=step))
       self.tsteps = tsteps
@@ -145,7 +143,8 @@ class Simulation(dobject):
          self.chk.store()
       self.chk.write()
 
-      self._forcemodel.socket.end_thread()
+      self.forces.stop()
+
       sys.exit()
 
    def run(self):
@@ -156,7 +155,7 @@ class Simulation(dobject):
       in the communication between the driver and the PIMD code.
       """
 
-      self._forcemodel.socket.start_thread()
+      self.forces.run()
 
       # prints inital configuration -- only if we are not restarting
       if (self.step == 0):

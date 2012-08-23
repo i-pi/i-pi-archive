@@ -173,7 +173,7 @@ class Properties(dobject):
       # displaced path estimators without changing the simulation bead
       # coordinates
       self.dbeads = simul.beads.copy()
-      self.dforces = ForceBeads()
+      self.dforces = Forces()
       self.dforces.bind(self.dbeads, self.simul.cell,  self.simul._forcemodel)
 
    def __getitem__(self, key):

@@ -32,7 +32,9 @@ def mk_nm_matrix(nbeads):
 def mk_rs_matrix(nb1, nb2):
    """ Gets the matrix that transforms a path with nb1 beads into one with nb2 beads. q_2 = T_12 q_1. """
 
-   if (nb1>nb2):
+   if (nb1==nb2):
+      return np.identity(nb1,float)
+   elif (nb1>nb2):
       b1_nm=mk_nm_matrix(nb1)
       nm_b2=mk_nm_matrix(nb2).T
 
@@ -42,7 +44,7 @@ def mk_rs_matrix(nb1, nb2):
       for i in range(1,nb2/2+1):
          b1_b2[i,i]=1.0; b1_b2[nb2-i,nb1-i]=1.0
       if (nb2%2==0):
-         b1_b2[nb2/2,nb2/2]=0.5; b1_b2[nb2/2,nb2/2+1]=0.5;
+         b1_b2[nb2/2,nb2/2]=0.5; b1_b2[nb2/2,nb1-nb2/2]=0.5;
 
       rs_b1_b2=np.dot(nm_b2,np.dot(b1_b2,b1_nm))
       return rs_b1_b2*np.sqrt(float(nb2)/float(nb1))

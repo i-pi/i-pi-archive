@@ -11,12 +11,15 @@ Classes:
       a PI simulation.
 """
 
-__all__ = ['ForceField', 'ForceBeads', 'FFSocket']
+__all__ = ['ForceField', 'ForceBeads', 'Forces', 'FFSocket']
 
 import numpy as np
 import math, time
 from utils.depend import *
+from utils.nmtransform import nm_rescale
 from driver.interface import Interface
+from beads import Beads
+
 
 class ForceField(dobject):
    """Base forcefield class.
@@ -44,11 +47,13 @@ class ForceField(dobject):
          triangular form, not divided by the volume. Depends on ufv.
    """
 
-   def __init__(self):
+   def __init__(self, nbeads=0, weight=1.0):
       """Initialises ForceField."""
 
       # ufv is a list [ u, f, vir ]  which stores the results of the force calculation
       dset(self,"ufv", depend_value(name="ufv", func=self.get_all))
+      self.nbeads = nbeads
+      self.weight = weight
 
    def copy(self):
       """Creates a deep copy without the bound objects.
@@ -59,7 +64,7 @@ class ForceField(dobject):
          A ForceField object without atoms or cell attributes.
       """
 
-      return type(self)()
+      return type(self)(self.nbeads, self.weight)
 
    def bind(self, atoms, cell, softexit=None):
       """Binds atoms and cell to the forcefield.
@@ -109,6 +114,16 @@ class ForceField(dobject):
 
       pass
 
+   def stop(self):
+      """Dummy queueing method."""
+
+      pass
+
+   def run(self):
+      """Dummy queueing method."""
+
+      pass
+
    def get_all(self):
       """Dummy driver routine.
 
@@ -152,7 +167,7 @@ class ForceField(dobject):
 
 
 class ForceBeads(dobject):
-   """Interface between the PIMD code and the socket.
+   """Class that gathers all the forces together.
 
    Collects many forcefield instances and parallelizes getting the forces
    in a PIMD environment. Deals with splitting the bead representation into
@@ -178,20 +193,6 @@ class ForceBeads(dobject):
          representation.
    """
 
-   def __init__(self, beads=None, cell=None, force=None):
-      """Initialises ForceBeads.
-
-      Args:
-         beads: Optional beads object, to be bound to the forcefield.
-         cell: Optional cell object, to be bound to the forcefield.
-         force: Optional force object, to be bound to the forcefield. This
-            should be a FFSocket or equivalent, so that it can be copied for
-            each replica of the system.
-      """
-
-      if not (beads is None or cell is None or force is None):
-         # only initializes if all arguments are given
-         self.bind(beads, cell, force)
 
    def bind(self, beads, cell, force, softexit=None):
       """Binds beads, cell and force to the forcefield.
@@ -229,6 +230,7 @@ class ForceBeads(dobject):
          depend_array(name="f",value=np.zeros((self.nbeads,3*self.natoms)),
             func=self.f_gather,
                dependencies=[dget(self._forces[b],"f") for b in range(self.nbeads)]))
+
       # collection of pots and virs from individual beads
       dset(self,"pots",
          depend_array(name="pots", value=np.zeros(self.nbeads,float),
@@ -251,6 +253,14 @@ class ForceBeads(dobject):
          #~ depend_array(name="fnm",value=np.zeros((self.nbeads,3*self.natoms)),
             #~ func=self.b2nm_f, dependencies=[dget(self,"f")]))
       #~ self.Cb2nm = beads.Cb2nm
+
+   def run(self):
+      for b in range(self.nbeads):
+         self._forces[b].run()
+
+   def stop(self):
+      for b in range(self.nbeads):
+         self._forces[b].stop()
 
    def queue(self):
       """Submits all the required force calculations to the interface."""
@@ -371,7 +381,7 @@ class FFSocket(ForceField):
                       'start': starting time}.
    """
 
-   def __init__(self, pars=None, interface=None):
+   def __init__(self, pars=None, interface=None, nbeads=0, weight=1.0):
       """Initialises FFSocket.
 
       Args:
@@ -380,7 +390,7 @@ class FFSocket(ForceField):
       """
 
       # a socket to the communication library is created or linked
-      super(FFSocket,self).__init__()
+      super(FFSocket,self).__init__(nbeads=nbeads, weight=weight)
       if interface is None:
          self.socket = Interface()
       else:
@@ -465,3 +475,119 @@ class FFSocket(ForceField):
 
       if self.request is None and dget(self,"ufv").tainted():
          self.request = self.socket.queue(self.atoms, self.cell, pars=self.pars, reqid=reqid)
+
+   def run(self):
+      if not self.socket.started(): self.socket.start_thread()
+
+   def stop(self):
+      if self.socket.started(): self.socket.end_thread()
+
+class Forces(dobject):
+   def bind(self, beads, cell, flist, softexit=None):
+
+      self.natoms = beads.natoms
+      self.nbeads = beads.nbeads
+      self.nforces = len(flist)
+      self.softexit = softexit
+
+
+      # flist should be a list of tuples containing ( "name", force_model, bead_number )
+      self.mforces=[]
+      self.mbeads=[]
+      self.mweights=[]
+      self.mrpc=[]
+
+      print "initializing multiforce object"
+      # creates new force objects, possibly acting on contracted path representations
+
+      def make_rpc(rpc, beads):
+         return lambda: rpc.b1tob2(depstrip(beads.q))
+
+      for ( ftype, fmodel) in flist:
+
+         # creates an automatically-updated contracted beads object
+         rpc_beads=fmodel.nbeads
+         newweight=fmodel.weight
+
+         if rpc_beads == 0: rpc_beads = beads.nbeads
+         print "creating one force here", newweight, rpc_beads
+
+         newbeads=Beads(beads.natoms, rpc_beads)
+         newrpc=nm_rescale(beads.nbeads, rpc_beads)
+
+         frpc=make_rpc(newrpc, beads)
+         dget(newbeads,"q")._func=frpc
+         for b in newbeads: dget(b,"q")._func=frpc      # must update also indirect access to the beads coordinates
+         dget(beads,"q").add_dependant(dget(newbeads,"q"))        # makes newbeads.q depend from beads.q
+
+         #now we create a new forcebeads which is bound to newbeads!
+         newforce=ForceBeads()
+         newforce.bind(newbeads, cell, fmodel, softexit)
+
+         self.mweights.append(newweight)
+         self.mbeads.append(newbeads)
+         self.mforces.append(newforce)
+         self.mrpc.append(newrpc)
+
+      #now must expose an interface that gives overall forces
+
+      dset(self,"f",
+         depend_array(name="f",value=np.zeros((self.nbeads,3*self.natoms)),
+            func=self.f_combine,dependencies=[dget(ff, "f") for ff in self.mforces]
+         ) )
+
+      # collection of pots and virs from individual ff objects
+      dset(self,"pots",
+         depend_array(name="pots", value=np.zeros(self.nbeads,float),
+            func=self.pot_combine,dependencies=[dget(ff, "pots") for ff in self.mforces]) )
+
+      ### must take care of the virials!
+      dset(self,"virs",
+         depend_array(name="virs", value=np.zeros((self.nbeads,3,3),float),
+         func=self.vir_combine, dependencies=[dget(ff, "virs") for ff in self.mforces]) )
+
+      # total potential and total virial
+      dset(self,"pot",
+         depend_value(name="pot", func=(lambda: self.pots.sum()),
+            dependencies=[dget(self,"pots")]))
+      dset(self,"vir",
+         depend_value(name="vir", func=(lambda: self.virs.sum()),
+            dependencies=[dget(self,"virs")]))
+
+   def run(self):
+      for ff in self.mforces: ff.run()
+
+   def stop(self):
+      for ff in self.mforces: ff.stop()
+
+   def queue(self):
+      for ff in self.mforces: ff.queue()
+
+   def f_combine(self):
+
+      self.queue()
+      rf=np.zeros((self.nbeads,3*self.natoms),float)
+      for k in range(self.nforces):
+         rf+=self.mweights[k]*self.mrpc[k].b2tob1(self.mforces[k].f)   # "expand" to the total number of beads the forces from the contracted one
+      return rf
+
+   def pot_combine(self):
+
+      self.queue()
+      rp=np.zeros(self.nbeads,float)
+      for k in range(self.nforces):
+         rp+=self.mweights[k]*self.mrpc[k].b2tob1(self.mforces[k].pots)   # "expand" to the total number of beads the potentials from the contracted one
+      return rp
+
+   def vir_combine(self):
+
+      self.queue()
+
+      rp=np.zeros((self.nbeads,3,3),float)
+      for k in range(self.nforces):
+         virs=depstrip(self.mforces[k].virs)
+         # "expand" to the total number of beads the virials from the contracted one, element by element
+         for i in range(3):
+            for j in range(3):
+               rp[:,i,j]+=self.mweights[k]*self.mrpc[k].b2tob1(virs[:,i,j])
+      return rp

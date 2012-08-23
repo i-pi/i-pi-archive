@@ -16,7 +16,7 @@ from utils.units  import *
 from utils.prng   import *
 from utils.io     import *
 from utils.io.io_xml import *
-from inputs.forces import InputForce
+from inputs.forces import InputForces
 from inputs.prng import InputRandom
 from inputs.initializer import InputInitializer
 from inputs.beads import InputBeads
@@ -65,7 +65,7 @@ class InputSimulation(Input):
 
    #TODO all of these defaults set to objects are bad practice because the defaults will be instanciated at parse time.
    #should
-   fields= { "force" :   (InputForce,    { "help"  : InputForce.default_help }),
+   fields= { "forces" :   (InputForces,    { "help"  : InputForces.default_help }),
              "ensemble": (InputEnsemble, { "help"  : InputEnsemble.default_help } ),
              "prng" :    (InputRandom,   { "help"  : InputRandom.default_help + " Optional.",
                                          "default" : input_default(factory=Random)} ),
@@ -98,7 +98,7 @@ class InputSimulation(Input):
       """
 
       super(InputSimulation,self).store()
-      self.force.store(simul._forcemodel)
+      self.forces.store(simul._forcemodel)
       self.ensemble.store(simul.ensemble)
 
       self.beads.store(simul.beads)
@@ -132,7 +132,7 @@ class InputSimulation(Input):
       print "read in cell", ncell.h
 
       # this creates a simulation object which gathers all the little bits
-      rsim = engine.simulation.Simulation(nbeads, ncell, self.force.fetch(),
+      rsim = engine.simulation.Simulation(nbeads, ncell, self.forces.fetch(),
                      self.ensemble.fetch(), nprng, self.output.fetch(),
                      self.normal_modes.fetch(), self.initialize.fetch(), self.step.fetch(),
                      tsteps=self.total_steps.fetch())

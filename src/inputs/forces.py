@@ -5,17 +5,18 @@ Classes:
       writing the checkpoints.
 """
 
-__all__ = ['InputForce']
+__all__ = ['InputForces']
 
 from engine.forces import *
 from inputs.interface import InputInterface
 from utils.inputvalue import *
+from copy import copy
 
-class InputForce(Input):
-   """Forcefield input class.
+class InputFFSocket(InputInterface):
+   """FFSocket input class.
 
    Handles generating the appropriate forcefield class from the xml
-   input file, and generating the xml checkpoint tags and data from an 
+   input file, and generating the xml checkpoint tags and data from an
    instance of the object.
 
    Attributes:
@@ -28,21 +29,17 @@ class InputForce(Input):
          contraction scheme is being used.
    """
 
-   attribs = { "type"     : ( InputValue, { "dtype"   : str, 
-                                            "default" : "socket",
-                                            "options" : ["socket"],
-                                            "help"    : "Specifies which kind of force object is created."  }  ), 
-               "nreduced" : ( InputValue, { "dtype"   : int,
-                                            "default" : 0,
-                                            "help"    : "If the forcefield is to be evaluated on a contracted ring polymer, this gives the number of beads that are used. If not specified, the forcefield will be evaluated on the full ring polymer." } ) }
-   fields =  { "interface"  : ( InputInterface, {"help" : InputInterface.default_help } ),
-               "parameters" : ( InputValue, { "dtype"   : dict, 
-                                              "default" : input_default(factory=dict),
-                                              "help"    : "Deprecated dictionary of initialization parameters. May be removed in the future." }) }
+   attribs = copy(InputInterface.attribs)
+   attribs["nbeads"] = ( InputValue, { "dtype"   : int,
+                                         "default" : 0,
+                                         "help"    : "If the forcefield is to be evaluated on a contracted ring polymer, this gives the number of beads that are used. If not specified, the forcefield will be evaluated on the full ring polymer." } )
+   attribs["weight"] = ( InputValue, { "dtype"   : float,
+                                         "default" : 1.0,
+                                         "help"    : "This force term will be added to give the total force using this weight." } )
 
    default_help = "Deals with the assigning of jobs to different driver codes, and collecting the data."
    default_label = "FORCES"
-   
+
    def store(self, force):
       """Takes a ForceField instance and stores a minimal representation of it.
 
@@ -50,14 +47,12 @@ class InputForce(Input):
          force: A forcefield object.
       """
 
-      super(InputForce,self).store(force)
-      if (type(force) is FFSocket):  
-         self.type.store("socket")
-         self.interface.store(force.socket)
-         self.parameters.store(force.pars)
-         self.nreduced.store(force.nbeads)
-      else: 
-         raise TypeError("The type " + type(force).__name__ + " is not a valid forcefield type")
+      if (not type(force) is FFSocket):
+         raise TypeError("The type " + type(force).__name__ + " is not a valid socket forcefield")
+
+      super(InputFFSocket,self).store(force.socket)
+      self.nbeads.store(force.nbeads)
+      self.weight.store(force.weight)
 
    def fetch(self):
       """Creates a forcefield object.
@@ -67,13 +62,35 @@ class InputForce(Input):
          interface given the attributes of the InputForce object.
       """
 
-      super(InputForce,self).fetch()
-      if self.type.fetch() == "socket": 
-         force = FFSocket(pars=self.parameters.fetch(), 
-            interface=self.interface.fetch())
-         if self.nreduced._explicit:
-            force.nbeads = self.nreduced.fetch()
-      else: 
-         raise ValueError("Kind " + self.kind.fetch() + " is not a valid kind of forcefield")
+      interface=super(InputFFSocket,self).fetch()
+      force = FFSocket( interface=interface,nbeads=self.nbeads.fetch(),weight=self.weight.fetch() )
 
+      print "reading force", self.nbeads.fetch(), " ", self.weight.fetch()
       return force
+
+
+class InputForces(Input):
+
+   dynamic = {  "socket" : (InputFFSocket, { "help" : "Each of the <properties> tags specify how to create a file in which one or more properties are written, one line per frame. " } )
+            }
+
+   def fetch(self):
+      """ Returs a list of the output objects included in this dynamic container. """
+
+      super(InputForces, self).fetch()
+      flist = [ (n, f.fetch()) for (n, f) in self.extra ]
+
+      return flist
+
+   def store(self, flist):
+      """ Stores a list of the output objects, creating a sequence of dynamic containers. """
+
+      super(InputForces, self).store()
+      self.extra = []
+
+      print "storing forces", flist
+      for el in flist:
+         if el[0]=="socket":
+            iff = InputFFSocket()
+            iff.store(el[1])
+            self.extra.append(("socket", iff))
