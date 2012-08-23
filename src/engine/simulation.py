@@ -86,6 +86,7 @@ class Simulation(dobject):
       """
 
       print " # Initializing simulation object "
+      self.prng = prng
       self.ensemble = ensemble
       self.beads = beads
       self.cell = cell
@@ -94,9 +95,6 @@ class Simulation(dobject):
       # initialize the configuration of the system
       init.init(self)
 
-#      self.nbeads = len(beads)
-
-      self.prng = prng
       self._forcemodel = force
       self.forces = ForceBeads()
       self.outputs = outputs

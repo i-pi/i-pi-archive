@@ -37,7 +37,9 @@ class InputInitializer(Input):
    dynamic = {
            "beads" : (InputBeads, { "help" : "Inputs the configuration of the path as a Beads object" }),
            "cell" : (InputCell, { "help" : "Inputs the configuration of the cell as a Cell object" }),
-           "file" : (InputInitFile, {"help" : "Reads bead(s) and cell configuration from an external file" })
+           "file" : (InputInitFile, {"help" : "Reads bead(s) and cell configuration from an external file" }),
+           "resample_v" : (InputValue, {"dtype" : float,
+                           "help" : "Re-sample the beads velocities from a Maxwell distribution at the given temperature - or the ensemble temperature if a negative temperature is specified.", "default": -1.0})
            }
 
    default_help = "Specifies the number of beads, and how the system should be initialized."
@@ -70,6 +72,10 @@ class InputInitializer(Input):
             ip = InputCell()
             ip.store(el)
             self.extra.append(("cell", ip))
+         elif k == "resample_v" :
+            ip = InputValue(dtype=float)
+            ip.store(el)
+            self.extra.append(("resample_v", ip))
 
       self.nbeads.store(ii.nbeads)
 

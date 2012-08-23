@@ -2,9 +2,14 @@
 from beads import Beads
 from cell import Cell
 from normalmodes import NormalModes
+from ensembles import Ensemble
+
 from utils.io.io_xyz import read_xyz
 from utils.io.io_pdb import read_pdb
 from utils.depend import dobject
+from utils.units import Constants
+from utils.nmtransform import nm_rescale
+import numpy as np
 
 __all__ = ['Initializer', 'InitFile']
 
@@ -61,9 +66,10 @@ class Initializer(dobject):
             for b in range(rbeads.nbeads):
                rbeads[b].q = ratoms[b].q
 
-            # TODO scale rbeads up to self.nbeads!
+            # scale rbeads up (or down) to self.nbeads!
             gbeads=Beads(rbeads.natoms,self.nbeads)
-            for b in range(self.nbeads): gbeads[b].q = rbeads[0].q
+            res=nm_rescale(rbeads.nbeads,gbeads.nbeads)
+            gbeads.q = res.b1tob2(rbeads.q)
             gbeads.m=rbeads.m; gbeads.names=rbeads.names
 
             if ibeads.nbeads == self.nbeads: print "WARNING: initialize from <file> overwrites previous path configuration."
@@ -78,10 +84,13 @@ class Initializer(dobject):
             rbeads=v
             if rbeads.nbeads == self.nbeads: gbeads=rbeads
             else:
-               # TODO scale rbeads up to self.nbeads!
                gbeads=Beads(rbeads.natoms,self.nbeads)
-               for b in range(self.nbeads):
-                  gbeads[b].q = rbeads[0].q; gbeads[b].p = rbeads[0].p
+
+               # scale rbeads up to self.nbeads!
+               res=nm_rescale(rbeads.nbeads,gbeads.nbeads)
+               gbeads.q = res.b1tob2(rbeads.q)
+               gbeads.p = res.b1tob2(rbeads.p)
+
                gbeads.m=rbeads.m; gbeads.names=rbeads.names
 
             if ibeads.nbeads > 0: print "WARNING: initialize from <beads> overwrites previous path configuration"
@@ -104,9 +113,27 @@ class Initializer(dobject):
             #~ simul.cell=icell
          #~ elif simul.cell.V == 0.0 : raise ValueError("Could not initialize the cell configuration, neither explicitly nor from <initialize>")
 
-         if k=="resample":
-            inm=NormalModes()
-            pass
+         if k=="resample_v":
+            if ibeads.natoms == 0: raise ValueError("Trying to resample velocities before having any structural information.")
+
+            rtemp=v;
+            if rtemp<0: rtemp=simul.ensemble.temp
+            print "initializing at temperature", rtemp
+
+
+            # pull together a mock initialization to get NM masses right without too much code duplication
+            rbeads.resize(ibeads.natoms, ibeads.nbeads)
+            rbeads.m[:]=ibeads.m
+            rnm=NormalModes(mode=simul.nm.mode, freqs=simul.nm.nm_freqs)
+            rens=Ensemble(dt=simul.ensemble.dt, temp=simul.ensemble.temp)
+            rnm.bind(rbeads,rens)
+            # then we exploit the sync magic to do a complicated initialization in the NM representation
+            # with (possibly) shifted-frequencies NM
+            rnm.pnm=simul.prng.gvec((rbeads.nbeads,3*rbeads.natoms))*np.sqrt(rnm.dynm3)*np.sqrt(rbeads.nbeads*rtemp*Constants.kb)
+
+            ibeads.p=rbeads.p
+
+      print simul.beads.p
 
 
 
