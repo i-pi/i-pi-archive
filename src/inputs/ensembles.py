@@ -52,7 +52,7 @@ class InputEnsemble(Input):
    attribs={"type"  : (InputValue, {"dtype"   : str,
                                     "default" : "nve",
                                     "help"    : "The ensemble that will be sampled during the simulation.",
-                                    "options" : ['nve', 'nvt', 'npt', 'nst']}) }
+                                    "options" : ['nve', 'nvt', 'npt']}) }
    fields={"thermostat" : (InputThermo, {"default"   : input_default(factory=engine.thermostats.Thermostat),
                                          "help"      : "The thermostat for the atoms, keeps the atom velocity distribution at the correct temperature."} ),
            "barostat" : (InputBaro, {"default"       : input_default(factory=engine.barostats.Barostat),
@@ -69,10 +69,6 @@ class InputEnsemble(Input):
                                       "default"      : "1.0",
                                       "help"         : "The external pressure.",
                                       "dimension"    : "pressure"}),
-           "stress" : (InputArray, {"dtype"          : float,
-                                    "default"        : input_default(factory=np.identity, args=(3,)),
-                                    "help"           : "The external stress.",
-                                    "dimension"      : "pressure"}),
            "fixcom": (InputValue, {"dtype"           : bool,
                                    "default"         : False,
                                    "help"            : "This describes whether the centre of mass of the particles is fixed."})
@@ -98,9 +94,6 @@ class InputEnsemble(Input):
       elif type(ens) is NPTEnsemble:
          self.type.store("npt")
          tens = 2
-      elif type(ens) is NSTEnsemble:
-         self.type.store("nst")
-         tens = 3
 
       self.timestep.store(ens.dt)
       self.temperature.store(ens.temp)
@@ -112,8 +105,6 @@ class InputEnsemble(Input):
          self.barostat.store(ens.barostat)
       if tens == 2:
          self.pressure.store(ens.pext)
-      if tens == 3:
-         self.stress.store(ens.sext)
 
    def fetch(self):
       """Creates an ensemble object.
@@ -135,10 +126,6 @@ class InputEnsemble(Input):
          ens = NPTEnsemble(dt=self.timestep.fetch(),
             temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), fixcom=self.fixcom.fetch(),
                   pext=self.pressure.fetch(), barostat=self.barostat.fetch() )
-      elif self.type.fetch() == "nst" :
-         ens = NSTEnsemble(dt=self.timestep.fetch(),
-            temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), fixcom=self.fixcom.fetch(),
-                  sext=self.stress.fetch(), barostat=self.barostat.fetch() )
 
       return ens
 
@@ -161,21 +148,11 @@ class InputEnsemble(Input):
          if self.barostat.thermostat._explicit == False:
             raise ValueError("No thermostat tag supplied in barostat for NPT simulation")
 
-      if self.type.fetch() == "nst":
-         if self.thermostat._explicit == False:
-            raise ValueError("No thermostat tag supplied for NST simulation")
-         if self.barostat._explicit == False:
-            raise ValueError("No barostat tag supplied for NST simulation")
-         if self.barostat.thermostat._explicit == False:
-            raise ValueError("No thermostat tag supplied in barostat for NST simulation")
-         if self.barostat.kind.fetch() == "rigid":
-            raise ValueError("You must use a flexible barostat to do constant stress simulations.")
-
       if self.timestep.fetch() <= 0:
          raise ValueError("Non-positive timestep specified.")
       if self.temperature.fetch() <= 0:
             raise ValueError("Non-positive temperature specified.")
 
-      if self.type.fetch() == "nst" or self.type.fetch() == "npt":
-         if not (self.pressure._explicit or self.stress._explicit):
-            raise ValueError("Neither pressure or stress supplied for constant pressure simulation")
+      if self.type.fetch() == "npt":
+         if not self.pressure._explicit:
+            raise ValueError("Pressure should be supplied for constant pressure simulation")
