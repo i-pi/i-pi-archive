@@ -38,7 +38,7 @@ DONE **** Make the new NM thing actually work (MC) (MC)
 
 DONE ***  Move the synchro business out of Beads and into NormalModes (MC) (MC)
 
-**   Fix (or remove) "spring_nrg" trajectory output. Not really needed anymore... (MC)
+DONE (probably) **   Fix (or remove) "spring_nrg" trajectory output. Not really needed anymore... (MC)
 More in general, rationalize and clean up the available properties and trajectories.     
 
 ** We should add a check function to InputThermo (JM)

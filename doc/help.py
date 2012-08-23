@@ -32,7 +32,7 @@ from optparse import OptionParser
 
 __all__ = ['help', 'objects']
 
-objects = {'barostats': barostats.InputBaro(), 'cell': cell.InputCell(), 'simulation': simulation.InputSimulation(), 'ensembles': ensembles.InputEnsemble(), 'thermostats': thermostats.InputThermo(), 'interface': interface.InputInterface(), 'forces': forces.InputForce(), 'atoms': atoms.InputAtoms(), 'beads': beads.InputBeads(), 'prng': prng.InputRandom(), 'start_beads': beads.InputStartBeads(), 'output': simulation.InputOutputs(), 'properties': outputs.InputProperties(), 'checkpoint': outputs.InputCheckpoint(), 'trajectory': outputs.InputTrajectory() }
+objects = {'barostats': barostats.InputBaro(), 'cell': cell.InputCell(), 'simulation': simulation.InputSimulation(), 'ensembles': ensembles.InputEnsemble(), 'thermostats': thermostats.InputThermo(), 'interface': interface.InputInterface(), 'forces': forces.InputForce(), 'atoms': atoms.InputAtoms(), 'beads': beads.InputBeads(), 'prng': prng.InputRandom(), 'output': simulation.InputOutputs(), 'properties': outputs.InputProperties(), 'checkpoint': outputs.InputCheckpoint(), 'trajectory': outputs.InputTrajectory() }
 
 usage = "usage: python %prog [options]"
 parser = OptionParser(usage=usage)
@@ -40,7 +40,7 @@ parser.add_option("-x", action="store_true", dest = "xml", default=False, help="
 parser.add_option("-l", action="store_true", dest = "latex", default=False, help="write a latex help file")
 parser.add_option("-n", action="store", type="int", dest="levels", help="number of levels depth to which data is printed out")
 parser.add_option("-o", action="store", dest="prefix", help="Prefix for the output files", default="help")
-parser.add_option("-i", action="store", dest="opt", help="Root object for the help files. Options: ['barostats', 'cell', 'simulation', 'ensembles', 'thermostats', 'interface', 'forces', 'atoms', 'beads', 'prng', 'start_beads', 'output', 'trajectory', 'properties', 'checkpoint']", default='simulation')
+parser.add_option("-i", action="store", dest="opt", help="Root object for the help files. Options: ['barostats', 'cell', 'simulation', 'ensembles', 'thermostats', 'interface', 'forces', 'atoms', 'beads', 'prng', 'output', 'trajectory', 'properties', 'checkpoint']", default='simulation')
 parser.add_option("-r", action="store_true", dest = "ref", default=False, help="add references to a latex help file. Ignored if -l is not present")
 (options, args) = parser.parse_args()
 
