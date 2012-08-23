@@ -59,7 +59,7 @@ class Ensemble(dobject):
             and the timestep.
       """
 
-   def __init__(self, dt, temp, nm_freqs=None):
+   def __init__(self, dt, temp):
       """Initialises Ensemble.
 
       Args:
@@ -72,12 +72,6 @@ class Ensemble(dobject):
       dset(self, "econs", depend_value(name='econs', func=self.get_econs) )
       dset(self, "temp",  depend_value(name='temp',  value=temp))
       dset(self, "dt",    depend_value(name='dt',    value=dt))
-
-      if nm_freqs is None:
-         nm_freqs=np.zeros(0,float)
-      #TODO add nm_freqs to the documentation of Ensemble, in the
-      #depend object section.
-      dset(self, "nm_freqs", depend_value(name='nm_freqs', value=nm_freqs))
 
 
    def bind(self, beads, nm, cell, bforce, prng):
@@ -141,7 +135,7 @@ class Ensemble(dobject):
       ensembles.
       """
 
-      return self.beads.kin + self.beads.vpath*self.nm.omegan2 + self.forces.pot
+      return self.nm.kin + self.beads.vpath*self.nm.omegan2 + self.forces.pot
 
 
 class NVEEnsemble(Ensemble):
