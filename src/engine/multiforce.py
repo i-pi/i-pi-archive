@@ -51,15 +51,16 @@ class MultiForce(dobject):
          self.forcelist = []
       else:
          self.forcelist = forcelist
+      self.nforces = len(forcelist)
 
-   def bind(self, beads, cell, softexit=None):
+   def bind(self, beads, cell, nm, softexit=None):
       """Binds atoms, cell and forces to the forcefield.
 
       Args:
          bead: The Beads object from which the bead positions are taken.
          cell: The Cell object from which the system box is taken.
-         forces: A list of the different forcefields for each of the contracted
-            ring polymers. 
+         nm: A NormalModes object used in the ringpolymer contraction 
+            and expansion.
          softexit: A function to help make sure the printed restart file is
             consistent.
       """
@@ -67,6 +68,8 @@ class MultiForce(dobject):
       self.natoms = beads.natoms
       self.nbeads = beads.nbeads
       self.beads = beads
+      self.cell = cell
+      self.nm = nm
       self.softexit = softexit
       self._forces = [ForceBeads() for force in self.forcelist]
 
@@ -76,12 +79,11 @@ class MultiForce(dobject):
             forces[f].nbeads = self.nbeads
          self._contracted.append(Beads(natoms=beads.natoms, 
             nbeads=self.forcelist[f].nbeads))
-         #dget(self._contracted[f], "q")._func = contract_wrapper(f)
-         #dget(self._contracted[f], "q").add_dependency(dget(self.beads,"qnm"))
-         #dget(self._contracted[f], "q").add_dependency(dget(self.beads,"q"))
+         dget(self._contracted[f], "q")._func = self.contract_wrapper(f)
+         dget(self._contracted[f], "q").add_dependency(dget(self.beads,"q"))
 
-      for f in range(len(forces)):
-         self._forces[f].bind(self._contracted[f], cell, forces[f], softexit) 
+      for f in range(len(self.forcelist)):
+         self._forces[f].bind(self._contracted[f], cell, self.forcelist[f], softexit) 
 
       dset(self,"f",
          depend_array(name="f",value=np.zeros((self.nbeads,3*self.natoms)),
@@ -89,12 +91,12 @@ class MultiForce(dobject):
                dependencies=[dget(force,"f") for force in self._forces]))
 
       dset(self,"pots",
-         depend_array(name="pots",value=np.zeros((self.nbeads,3*self.natoms)),
+         depend_array(name="pots",value=np.zeros(self.nbeads),
             func=self.f_gather,
                dependencies=[dget(force,"pot") for force in self._forces]))
 
       dset(self,"virs",
-         depend_array(name="virs",value=np.zeros((self.nbeads,3*self.natoms)),
+         depend_array(name="virs",value=np.zeros((self.nbeads,3,3)),
             func=self.f_gather,
                dependencies=[dget(force,"vir") for force in self._forces]))
 
@@ -102,30 +104,14 @@ class MultiForce(dobject):
          depend_value(name="pot", func=self.pot, 
             dependencies=[dget(self,"pots")]))
       dset(self,"vir",
-         depend_value(name="vir", func=self.vir, 
+         depend_array(name="vir", value=np.zeros((3,3)), func=self.vir, 
             dependencies=[dget(self,"virs")]))
-
-      dset(self,"fnm",
-         depend_array(name="fnm",value=np.zeros((self.nbeads,3*self.natoms)),
-            func=self.b2nm_f, dependencies=[dget(self,"f")]))
-      self.Cb2nm = beads.Cb2nm
-      self.Cnm2b = beads.Cnm2b
 
    def queue(self):
       """Submits all the required force calculations to the interface."""
 
       for force in self._forces:
          force.queue()
-
-   def b2nm_f(self):
-      """Transforms force array to normal mode representation.
-
-      Returns:
-         An array giving all the force components in the normal mode
-         representation. Normal mode i is given by fnm[i,:].
-      """
-
-      return np.dot(self.Cb2nm,depstrip(self.f))
 
    def pot_gather(self):
       """Obtains the potential energy for each replica.

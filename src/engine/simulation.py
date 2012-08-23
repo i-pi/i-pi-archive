@@ -127,9 +127,10 @@ class Simulation(dobject):
       # binds output management objects
       self.properties.bind(self)
       self.trajs.bind(self)
-      for o in self.outputs:    o.bind(self)
+      for o in self.outputs:
+         o.bind(self)
 
-      self.chk=CheckpointOutput("RESTART", 1, True, 0)
+      self.chk = CheckpointOutput("RESTART", 1, True, 0)
       self.chk.bind(self)
 
 
@@ -162,7 +163,8 @@ class Simulation(dobject):
       # prints inital configuration -- only if we are not restarting
       if (self.step == 0):
          self.step = -1
-         for o in self.outputs:  o.write()
+         for o in self.outputs:
+            o.write()
          self.step = 0
 
       # main MD loop
@@ -176,7 +178,8 @@ class Simulation(dobject):
          print " # MD step % 7d complete. Timings --> p-step: %10.5f  q-step: %10.5f  t-step: %10.5f" % (self.step, self.ensemble.ptime, self.ensemble.qtime, self.ensemble.ttime )
          print " # MD diagnostics: V: %10.5e    Kcv: %10.5e   Ecns: %10.5e" % (self.properties["potential"], self.properties["kinetic_cv"], self.properties["conserved"] )
 
-         for o in self.outputs:  o.write()
+         for o in self.outputs:
+            o.write()
 
          if os.path.exists("EXIT"): # soft-exit
             self.soft_exit(rollback=False)

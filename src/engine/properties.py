@@ -192,10 +192,10 @@ class Properties(dobject):
       """
 
       args = []
-      unit=""
-      arglist=()
-      unstart=len(key)
-      argstart=unstart
+      unit = ""
+      arglist = ()
+      unstart = len(key)
+      argstart = unstart
 
       if '}' in key:
          # the property has a user-defined unit
@@ -220,7 +220,8 @@ class Properties(dobject):
 
       if "dimension" in pkey and unit != "":
          return  unit_to_user(pkey["dimension"], unit, pkey["func"](*arglist))
-      else:   return pkey["func"](*arglist)
+      else:
+         return pkey["func"](*arglist)
 
 
    def get_temp(self):
@@ -336,16 +337,15 @@ class Properties(dobject):
       """Calculates the quantum centroid virial kinetic energy estimator."""
 
       try:
-         iatom=int(atom)
-         latom=""
+         iatom = int(atom)
+         latom = ""
       except:
-         iatom=-1
-         latom=atom
+         iatom = -1
+         latom = atom
 
-
-      q=depstrip(self.beads.q)
-      qc=depstrip(self.beads.qc)
-      f=depstrip(self.forces.f)
+      q = depstrip(self.beads.q)
+      qc = depstrip(self.beads.qc)
+      f = depstrip(self.forces.f)
 
       acv = 0.0
       for i in range(self.beads.natoms):
@@ -537,20 +537,20 @@ class Properties(dobject):
          alogr2 += logr*logr;
 
          #accumulates log averages in a way which preserves accuracy
-         if (ni==1):
+         if (ni == 1):
             law = -logr
          else:
             (law, drop) = logsumlog( (law,1.0), (-logr,1.0))
 
          #here we need to take care of the sign of tcv, which might as well be negative... almost never but...
-         if (ni==1):
+         if (ni == 1):
             lawke = -logr + np.log(abs(tcv))
             sawke = np.sign(tcv);
          else:
             (lawke, sawke) = logsumlog( (lawke, sawke), (-logr+np.log(abs(tcv)), np.sign(tcv)) )
 
          print "CHECK", ni, logr, tcv, law, lawke
-      if ni==0:
+      if ni == 0:
          raise ValueError("Couldn't find an atom which matched the argument of isotope_y")
 
       return (alogr, alogr2, atcv, atcv2, law, lawke, sawke)
@@ -625,19 +625,19 @@ class Properties(dobject):
          alogr2 += logr*logr
 
          #accumulates log averages in a way which preserves accuracy
-         if (ni==1):
+         if (ni == 1):
             law = -logr
          else:
             (law, drop) = logsumlog( (law,1.0), (-logr,1.0))
 
          #here we need to take care of the sign of tcv, which might as well be negative... almost never but...
-         if (ni==1):
+         if (ni == 1):
             lawke = -logr+np.log(abs(tcv))
             sawke=np.sign(tcv)
          else:
             (lawke, sawke) = logsumlog( (lawke, sawke), (-logr+np.log(abs(tcv)), np.sign(tcv)) )
 
-      if ni==0:
+      if ni == 0:
          raise ValueError("Couldn't find an atom which matched the argument of isotope_y")
 
       return np.asarray([alogr, alogr2, atcv, atcv2, law, lawke, sawke])
@@ -678,7 +678,6 @@ class Trajectories(dobject):
       self.traj_dict["r_gyration"] =  { "dimension" : "length", "func" : (lambda : 1.0*self.simul.beads.rg) }
       self.traj_dict["x_centroid"] =  { "dimension" : "length", "func" : (lambda : 1.0*self.simul.beads.qc)  }
       self.traj_dict["v_centroid"] =  { "dimension" : "length", "func" : (lambda : self.simul.beads.pc/self.simul.beads.m3[0])  }
-
 
    def get_akcv(self):
       """Calculates the contribution to the kinetic energy due to each degree
@@ -730,11 +729,10 @@ class Trajectories(dobject):
       """ Gets one of the trajectories. """
 
       args = []
-      unit=""
-      arglist=()
-      unstart=len(key)
-      argstart=unstart
-
+      unit = ""
+      arglist = ()
+      unstart = len(key)
+      argstart = unstart
 
       if '}' in key:
          # the property has a user-defined unit
@@ -759,7 +757,8 @@ class Trajectories(dobject):
 
       if "dimension" in pkey and unit != "":
          return  unit_to_user(pkey["dimension"], unit, 1.0) * pkey["func"](*arglist)
-      else:   return pkey["func"](*arglist)
+      else:
+         return pkey["func"](*arglist)
 
 
    def print_traj(self, what, stream, b=0, format="pdb"):

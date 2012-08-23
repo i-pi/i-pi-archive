@@ -50,7 +50,7 @@ Now it is possible to specify units and a short help string.
 
 * Multiforce object should be implemented. (JM) (JM)
 
-* Find out why NPT and NST ensembles both appear to give jumps in the 
+** Find out why NPT and NST ensembles both appear to give jumps in the 
 conserved quantity (JM)
 I have made some progress with this. I got it to stop and go back one step 
 and print a restart file whenever there was a jump. Restarting from this file
@@ -66,3 +66,6 @@ transformations. (JM)
 
 ** We might not need the type attribute of the forcefields, since we only use
 type "socket". If so, we should remove it. (JM)
+
+** Add help strings to all the trajectories and properties in the property
+list (JM)

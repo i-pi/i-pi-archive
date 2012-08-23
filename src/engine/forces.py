@@ -262,16 +262,15 @@ class ForceBeads(dobject):
          self._forces[b].queue(reqid=b)
 
    # here are the functions to automatically compute depobjects
-   def b2nm_f(self):
-      """Transforms force array to normal mode representation.
+   #def b2nm_f(self):
+   #   """Transforms force array to normal mode representation.
 
-      Returns:
-         An array giving all the force components in the normal mode
-         representation. Normal mode i is given by fnm[i,:].
-      """
+   #   Returns:
+   #      An array giving all the force components in the normal mode
+   #      representation. Normal mode i is given by fnm[i,:].
+   #   """
 
-      return np.dot(self.Cb2nm,depstrip(self.f))
-      #TODO this is necessarily broken. Fix it!
+   #   return np.dot(self.Cb2nm,depstrip(self.f))
 
    def pot_gather(self):
       """Obtains the potential energy for each replica.
