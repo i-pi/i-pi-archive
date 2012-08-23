@@ -1,5 +1,3 @@
-
-
 from utils.inputvalue import *
 from copy import copy
 from inputs.beads import InputBeads

@@ -89,12 +89,13 @@ class Simulation(dobject):
       self.ensemble = ensemble
       self.beads = beads
       self.cell = cell
+      self.nm = nm
 
       # initialize the configuration of the system
       init.init(self)
 
-      self.nbeads = len(beads)
-      self.nm = nm
+#      self.nbeads = len(beads)
+
       self.prng = prng
       self._forcemodel = force
       self.forces = ForceBeads()
