@@ -9,7 +9,7 @@ Functions:
       transformation.
 """
 
-__all__ = ['nm_trans', 'nm_rescale' ]
+__all__ = ['nm_trans', 'nm_rescale', 'FFT_nm_trans', 'FFT_inv_nm_trans' ]
 
 import numpy as np
 
@@ -246,3 +246,71 @@ class nm_rescale:
          #~ except KeyError:
             #~ self.setup_contract(nred, nbeads)
             #~ return np.dot(self.tmatrices[nred][1], q)
+
+
+def FFT_nm_trans(q):
+   """Performs the normal mode transformation using FFT.
+
+   Args:
+      q: A 2 dimensional matrix in the bead representation. The first
+         dimension gives the different bead coordinates, and the second
+         the different degrees of freedom.
+
+   Returns:
+      A matrix of the same shape as q, but in the normal mode representation.
+   """
+
+   temp_mat = np.fft.rfft(q, axis=0)
+   nbeads = len(q)
+   if nbeads < 3:
+      return temp_mat.real/math.sqrt(nbeads)
+
+   nmodes = nbeads/2
+   odd = nbeads - 2*nmodes  # 0 if even, 1 if odd
+
+   temp_mat /= math.sqrt(nbeads)
+   qnm = np.zeros(q.shape)
+   qnm[0,:] = temp_mat[0,:].real
+
+   if not odd:
+      temp_mat[1:-1,:] *= math.sqrt(2)
+      (qnm[1:nmodes,:], qnm[nbeads:nmodes:-1,:]) = (temp_mat[1:-1,:].real, temp_mat[1:-1,:].imag)
+      qnm[nmodes,:] = temp_mat[nmodes,:].real
+   else:
+      temp_mat[1:,:] *= math.sqrt(2)
+      (qnm[1:nmodes+1,:], qnm[nbeads:nmodes:-1,:]) = (temp_mat[1:,:].real, temp_mat[1:,:].imag)
+
+   return qnm
+
+def FFT_inv_nm_trans(qnm):
+   """Performs the inverse normal mode transformation using FFT.
+
+   Args:
+      qnm: A 2 dimensional matrix in the normal mode representation. The first
+         dimension gives the different normal mode coordinates, and the second
+         the different degrees of freedom.
+
+   Returns:
+      A matrix of the same shape as qnm, but in the bead representation.
+   """
+
+   nbeads = len(qnm)
+   if nbeads < 3:
+      return np.fft.irfft(qnm*math.sqrt(nbeads), n=nbeads, axis=0)
+
+   nmodes = nbeads/2
+   odd = nbeads - 2*nmodes  # 0 if even, 1 if odd
+
+   qnm_complex = np.zeros((nmodes+1, len(qnm[0,:])), complex)
+   qnm_complex[0,:] = qnm[0,:]
+   if not odd:
+      (qnm_complex[1:-1,:].real, qnm_complex[1:-1,:].imag) = (qnm[1:nmodes,:], qnm[nbeads:nmodes:-1,:])
+      qnm_complex[1:-1,:] /= math.sqrt(2)
+      qnm_complex[nmodes,:] = qnm[nmodes,:]
+   else:
+      (qnm_complex[1:,:].real, qnm_complex[1:,:].imag) = (qnm[1:nmodes+1,:], qnm[nbeads:nmodes:-1,:])
+      qnm_complex[1:,:] /= math.sqrt(2)
+
+   qnm_complex *= math.sqrt(nbeads)
+
+   return np.fft.irfft(qnm_complex, n=nbeads, axis=0)
