@@ -39,7 +39,8 @@ DONE **** Make the new NM thing actually work (MC) (MC)
 DONE ***  Move the synchro business out of Beads and into NormalModes (MC) (MC)
 
 DONE (probably) **   Fix (or remove) "spring_nrg" trajectory output. Not really needed anymore... (MC)
-More in general, rationalize and clean up the available properties and trajectories.     
+
+** More in general, rationalize and clean up the available properties and trajectories. (MC)
 
 ** We should add a check function to InputThermo (JM)
 
@@ -47,8 +48,7 @@ More in general, rationalize and clean up the available properties and trajector
 Completely revamped properties and trajectories scheme. 
 Now it is possible to specify units and a short help string.
 
-* Multiforce object should be implemented. (JM)
-Probably should wait until the normal mode stuff is known to be working fully.
+* Multiforce object should be implemented. (JM) (JM)
 
 * Find out why NPT and NST ensembles both appear to give jumps in the 
 conserved quantity (JM)
@@ -63,3 +63,6 @@ jumps appear to be very rare with the NPT ensemble.
 
 * Figure out how to use FFTW with python for the normal-mode 
 transformations. (JM)
+
+** We might not need the type attribute of the forcefields, since we only use
+type "socket". If so, we should remove it. (JM)

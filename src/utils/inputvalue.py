@@ -207,7 +207,13 @@ class Input(object):
    def extend(self, name,  xml):
       """ Dynamically add elements to the 'extra' list.
 
-      Picks from one of the templates in the self.dynamic dictionary, then parses. """
+      Picks from one of the templates in the self.dynamic dictionary, then 
+      parses.
+
+      Args:
+         name: The tag name of the dynamically stored tag.
+         xml: The xml_node object used to parse the data stored in the tags.
+      """
 
       newfield = self.dynamic[name][0](**self.dynamic[name][1])
       newfield.parse(xml)
