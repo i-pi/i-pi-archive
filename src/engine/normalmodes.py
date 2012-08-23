@@ -24,8 +24,6 @@ class NormalModes(dobject):
       dset(self,"nm_freqs",
          depend_array(name="nm_freqs",value=np.asarray(freqs, float) ) )
 
-      pass
-
    def bind(self, beads, ensemble):
       """ Initializes the normal modes object and binds to beads and ensemble.
 
@@ -202,7 +200,6 @@ class NormalModes(dobject):
 
       print "mass", self.nm_mass
       print pqk
-
 
       return pqk
 

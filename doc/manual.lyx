@@ -4781,13 +4781,6 @@ input{beads}
 
 
 \backslash
-input{start_beads}
-\end_layout
-
-\begin_layout Plain Layout
-
-
-\backslash
 input{atoms}
 \end_layout
 
