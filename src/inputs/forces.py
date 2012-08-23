@@ -15,7 +15,7 @@ class InputForce(Input):
    """Forcefield input class.
 
    Handles generating the appropriate forcefield class from the xml
-   input file, and generating the xml checkpoint tags and data from an
+   input file, and generating the xml checkpoint tags and data from an 
    instance of the object.
 
    Attributes:
@@ -28,19 +28,21 @@ class InputForce(Input):
          contraction scheme is being used.
    """
 
-   attribs = { "type"     : ( InputValue, { "dtype"   : str,
+   attribs = { "type"     : ( InputValue, { "dtype"   : str, 
                                             "default" : "socket",
                                             "options" : ["socket"],
-                                            "help"    : "Specifies which kind of force object is created."  }  )
-              }
+                                            "help"    : "Specifies which kind of force object is created."  }  ), 
+               "nreduced" : ( InputValue, { "dtype"   : int,
+                                            "default" : 0,
+                                            "help"    : "If the forcefield is to be evaluated on a contracted ring polymer, this gives the number of beads that are used. If not specified, the forcefield will be evaluated on the full ring polymer." } ) }
    fields =  { "interface"  : ( InputInterface, {"help" : InputInterface.default_help } ),
-               "parameters" : ( InputValue, { "dtype"   : dict,
+               "parameters" : ( InputValue, { "dtype"   : dict, 
                                               "default" : input_default(factory=dict),
                                               "help"    : "Deprecated dictionary of initialization parameters. May be removed in the future." }) }
 
    default_help = "Deals with the assigning of jobs to different driver codes, and collecting the data."
    default_label = "FORCES"
-
+   
    def store(self, force):
       """Takes a ForceField instance and stores a minimal representation of it.
 
@@ -49,11 +51,12 @@ class InputForce(Input):
       """
 
       super(InputForce,self).store(force)
-      if (type(force) is FFSocket):
+      if (type(force) is FFSocket):  
          self.type.store("socket")
          self.interface.store(force.socket)
          self.parameters.store(force.pars)
-      else:
+         self.nreduced.store(force.nbeads)
+      else: 
          raise TypeError("The type " + type(force).__name__ + " is not a valid forcefield type")
 
    def fetch(self):
@@ -65,10 +68,12 @@ class InputForce(Input):
       """
 
       super(InputForce,self).fetch()
-      if self.type.fetch() == "socket":
-         force = FFSocket(pars=self.parameters.fetch(),
+      if self.type.fetch() == "socket": 
+         force = FFSocket(pars=self.parameters.fetch(), 
             interface=self.interface.fetch())
-      else:
+         if self.nreduced._explicit:
+            force.nbeads = self.nreduced.fetch()
+      else: 
          raise ValueError("Kind " + self.kind.fetch() + " is not a valid kind of forcefield")
 
       return force
