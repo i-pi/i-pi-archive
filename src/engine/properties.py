@@ -29,7 +29,7 @@ def getkey(pstring):
    """Strips units and argument lists from a property/trajectory keyword.
 
    Args:
-      pstring: The string input by the user that specifies an output, 
+      pstring: The string input by the user that specifies an output,
          which in general will specify units and argument lists.
    """
 
@@ -145,7 +145,7 @@ class Properties(dobject):
 
       self.property_dict["potential"] =  {"dimension" : "energy", "func": (lambda: self.forces.pot/self.beads.nbeads ) }
       self.property_dict["spring"] =     {"dimension" : "energy", "func": (lambda: self.beads.vpath*self.nm.omegan2) }
-      self.property_dict["kinetic_md"] = {"dimension" : "energy", "func": (lambda: self.beads.kin/self.beads.nbeads) }
+      self.property_dict["kinetic_md"] = {"dimension" : "energy", "func": (lambda: self.nm.kin/self.beads.nbeads) }
       self.property_dict["kinetic_cv"] = {"dimension" : "energy", "func": self.get_kincv }
 
       self.property_dict["stress_md"] = {"func" : self.get_stress }
