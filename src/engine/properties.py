@@ -162,6 +162,7 @@ class Properties(dobject):
 
       self.property_dict["kin_yama"] = {"func" : self.get_kinyama           }
 
+      self.property_dict["linlin"] =   {"func" : self.get_linlin            }
       self.property_dict["isotope_sc"] = {"func" : self.get_isotope_yama ,
         "help" :  "Scaled coordinates free energy perturbation scaled mass KE estimator. Prints everything which is needed to compute the kinetic energy for a isotope-substituted system. The 7 elements are: <h> <h^2> <T_CV> <T_CV^2> ln(<e^-h>) ln(|<T_CV e^-h>|) sign(<T_CV e^-h>). Mixed units, so outputs only in a.u." }
 
@@ -232,9 +233,9 @@ class Properties(dobject):
       """
 
       if self.ensemble.fixcom:
-         mdof=3
+         mdof = 3
       else:
-         mdof=0
+         mdof = 0
 
       # use the KE computed in the NM representation in order to avoid problems when mass scaling is used
       return self.nm.kin/(0.5*Constants.kb*(3*self.beads.natoms*self.beads.nbeads - mdof)*self.nm.nbeads)
@@ -342,6 +343,7 @@ class Properties(dobject):
          iatom = -1
          latom = atom
 
+
       q = depstrip(self.beads.q)
       qc = depstrip(self.beads.qc)
       f = depstrip(self.forces.f)
@@ -422,6 +424,47 @@ class Properties(dobject):
 
       return kyama
 
+   def opening(self, bead):
+      """Path opening function.
+
+      Used in the Lin Lin momentum distribution estimator.
+      """
+
+      return bead/self.beads.nbeads + 0.5*(1.0/self.beads.nbeads - 1.0)
+
+   def get_linlin(self, ux=0, uy=0, uz=0, atom='H'):
+      """Gives the estimator for the momentum distribution, by opening the
+      ring polymer path.
+
+      Args:
+         ux: The x component of the opening vector.
+         uy: The y component of the opening vector.
+         uz: The z component of the opening vector.
+         atom: The atom type for which the path will be opened.
+      """
+
+      u = np.array([float(ux), float(uy), float(uz)])
+      count = 0
+      n = 0.0
+      for at in range(self.beads.natoms):
+         if self.beads.names[at] == atom:
+            index = at
+            # Keeps record of one of the atom indices so we can get
+            # the mass later.
+
+            count += 1
+            self.dbeads.q[:] = self.beads.q[:]
+            for bead in range(self.beads.nbeads):
+               self.dbeads.q[bead,3*at:3*(at+1)] += self.opening(bead)*u
+            n += math.exp(-(self.dforces.pot - self.forces.pot)/(self.ensemble.ntemp*Constants.kb*self.beads.nbeads))
+
+      if count == 0:
+         print "Warning, no atom with the given name found for lin-lin momentum distribution estimator."
+         return 0.0
+      else:
+         n0 = math.exp(self.beads.m[index]*np.dot(u,u)*self.ensemble.temp*Constants.kb/(2*Constants.hbar**2))
+         return n*n0/float(count)
+
    def wrap_cell(self, x=0, v=0):
       """Returns the the x-th component of the v-th cell vector."""
 
@@ -495,20 +538,20 @@ class Properties(dobject):
          alogr2 += logr*logr;
 
          #accumulates log averages in a way which preserves accuracy
-         if (ni == 1):
+         if (ni==1):
             law = -logr
          else:
             (law, drop) = logsumlog( (law,1.0), (-logr,1.0))
 
          #here we need to take care of the sign of tcv, which might as well be negative... almost never but...
-         if (ni == 1):
+         if (ni==1):
             lawke = -logr + np.log(abs(tcv))
             sawke = np.sign(tcv);
          else:
             (lawke, sawke) = logsumlog( (lawke, sawke), (-logr+np.log(abs(tcv)), np.sign(tcv)) )
 
          print "CHECK", ni, logr, tcv, law, lawke
-      if ni == 0:
+      if ni==0:
          raise ValueError("Couldn't find an atom which matched the argument of isotope_y")
 
       return (alogr, alogr2, atcv, atcv2, law, lawke, sawke)
@@ -583,19 +626,19 @@ class Properties(dobject):
          alogr2 += logr*logr
 
          #accumulates log averages in a way which preserves accuracy
-         if (ni == 1):
+         if (ni==1):
             law = -logr
          else:
             (law, drop) = logsumlog( (law,1.0), (-logr,1.0))
 
          #here we need to take care of the sign of tcv, which might as well be negative... almost never but...
-         if (ni == 1):
+         if (ni==1):
             lawke = -logr+np.log(abs(tcv))
             sawke=np.sign(tcv)
          else:
             (lawke, sawke) = logsumlog( (lawke, sawke), (-logr+np.log(abs(tcv)), np.sign(tcv)) )
 
-      if ni == 0:
+      if ni==0:
          raise ValueError("Couldn't find an atom which matched the argument of isotope_y")
 
       return np.asarray([alogr, alogr2, atcv, atcv2, law, lawke, sawke])
@@ -636,6 +679,7 @@ class Trajectories(dobject):
       self.traj_dict["r_gyration"] =  { "dimension" : "length", "func" : (lambda : 1.0*self.simul.beads.rg) }
       self.traj_dict["x_centroid"] =  { "dimension" : "length", "func" : (lambda : 1.0*self.simul.beads.qc)  }
       self.traj_dict["v_centroid"] =  { "dimension" : "length", "func" : (lambda : self.simul.beads.pc/self.simul.beads.m3[0])  }
+
 
    def get_akcv(self):
       """Calculates the contribution to the kinetic energy due to each degree
@@ -691,6 +735,7 @@ class Trajectories(dobject):
       arglist = ()
       unstart = len(key)
       argstart = unstart
+
 
       if '}' in key:
          # the property has a user-defined unit
