@@ -38,9 +38,7 @@ class NormalModes(dobject):
       self.ensemble = ensemble
 
       # sets up what's necessary to perform nm transformation.
-      #self.setup_transform(self.nbeads)
       self.transform = nmtransform.nm_trans(nbeads=self.nbeads)
-
 
       # creates arrays to store normal modes representation of the path.
       # must do a lot of piping to create "ex post" a synchronization between the beads and the nm

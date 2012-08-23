@@ -28,14 +28,14 @@ class InputForce(Input):
          contraction scheme is being used.
    """
 
-   attribs = { "type" : ( InputValue, { "dtype"   :  str, 
-                                        "default" : "socket",
-                                        "options" : [ "socket", "reduced" ],
-                                        "help"    : "Specifies which kind of force object is created."  }  )}
-   fields =  { "interface"  : ( InputInterface, {"help": InputInterface.default_help } ),
-               "nreduced"   : ( InputValue, { "dtype"   : int,
-                                              "default" : 0,
-                                              "help"    : "If the forcefield is to be evaluated on a contracted ring polymer, this gives the number of beads that are used. If not specified, the forcefield will be evaluated on the full ring polymer." } ),
+   attribs = { "type"     : ( InputValue, { "dtype"   : str, 
+                                            "default" : "socket",
+                                            "options" : ["socket"],
+                                            "help"    : "Specifies which kind of force object is created."  }  ), 
+               "nreduced" : ( InputValue, { "dtype"   : int,
+                                            "default" : 0,
+                                            "help"    : "If the forcefield is to be evaluated on a contracted ring polymer, this gives the number of beads that are used. If not specified, the forcefield will be evaluated on the full ring polymer." } ) }
+   fields =  { "interface"  : ( InputInterface, {"help" : InputInterface.default_help } ),
                "parameters" : ( InputValue, { "dtype"   : dict, 
                                               "default" : input_default(factory=dict),
                                               "help"    : "Deprecated dictionary of initialization parameters. May be removed in the future." }) }
@@ -55,11 +55,7 @@ class InputForce(Input):
          self.type.store("socket")
          self.interface.store(force.socket)
          self.parameters.store(force.pars)
-      elif (type(force) is FFReduced):
-         self.type.store("reduced")
-         self.interface.store(force.socket)
-         self.parameters.store(force.pars)
-         self.nreduced.store(force.nreduced)
+         self.nreduced.store(force.nbeads)
       else: 
          raise TypeError("The type " + type(force).__name__ + " is not a valid forcefield type")
 
@@ -75,9 +71,8 @@ class InputForce(Input):
       if self.type.fetch() == "socket": 
          force = FFSocket(pars=self.parameters.fetch(), 
             interface=self.interface.fetch())
-      elif self.type.fetch() == "reduced":
-         force = FFReduced(pars=self.parameters.fetch(), 
-            interface=self.interface.fetch(), nreduced=self.nreduced.fetch())
+         if self.nreduced._explicit:
+            force.nbeads = self.nreduced.fetch()
       else: 
          raise ValueError("Kind " + self.kind.fetch() + " is not a valid kind of forcefield")
 

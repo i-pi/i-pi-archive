@@ -39,19 +39,20 @@ class MultiForce(dobject):
          representation.
    """
 
-   def __init__(self, forces = None, beads=None, cell=None):
+   def __init__(self, forcelist = None):
       """Initialises Multiforce.
 
       Args:
-         beads: Optional beads object, to be bound to the forcefield.
-         cell: Optional cell object, to be bound to the forcefield.
-         forces: Force field objects for each of the contracted ring polymers. 
+         forcelist: A list of force field objects for each of the contracted 
+            ring polymers. 
       """
 
-      if not (beads is None or cell is None or forces is None):
-         self.bind(beads, cell, forces)
+      if forcelist is None:
+         self.forcelist = []
+      else:
+         self.forcelist = forcelist
 
-   def bind(self, beads, cell, forces, softexit=None):
+   def bind(self, beads, cell, softexit=None):
       """Binds atoms, cell and forces to the forcefield.
 
       Args:
@@ -67,17 +68,17 @@ class MultiForce(dobject):
       self.nbeads = beads.nbeads
       self.beads = beads
       self.softexit = softexit
-      self._forces = [ForceBeads() for force in forces]
+      self._forces = [ForceBeads() for force in self.forcelist]
 
       self._contracted = []
-      for f in range(forces):
-         if forces[f].nreduced == 0:
-            forces[f].nreduced = self.nbeads
+      for f in range(len(self.forcelist)):
+         if not hasattr(forces[f], 'nbeads'):
+            forces[f].nbeads = self.nbeads
          self._contracted.append(Beads(natoms=beads.natoms, 
-            nbeads=forces[f].nreduced))
-         dget(self._contracted[f], "q")._func = contract_wrapper(f)
-         dget(self._contracted[f], "q").add_dependency(dget(self.beads,"qnm"))
-         dget(self._contracted[f], "q").add_dependency(dget(self.beads,"q"))
+            nbeads=self.forcelist[f].nbeads))
+         #dget(self._contracted[f], "q")._func = contract_wrapper(f)
+         #dget(self._contracted[f], "q").add_dependency(dget(self.beads,"qnm"))
+         #dget(self._contracted[f], "q").add_dependency(dget(self.beads,"q"))
 
       for f in range(len(forces)):
          self._forces[f].bind(self._contracted[f], cell, forces[f], softexit) 
