@@ -695,6 +695,9 @@ class Interface(object):
             self.jobs = []
       self._poll_thread = None
 
+   def started(self):
+      return (not self._poll_thread is None)
+
    def start_thread(self):
       """Spawns a new thread.
 

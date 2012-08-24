@@ -44,7 +44,7 @@ DONE ***  Move the synchro business out of Beads and into NormalModes (MC) (MC)
 
 ** We should add a check function to InputThermo (JM)
 
-***  Benchmark the new propert implementation. (MC)
+***  Benchmark the new property implementation. (MC)
 Completely revamped properties and trajectories scheme. 
 Now it is possible to specify units and a short help string.
 
