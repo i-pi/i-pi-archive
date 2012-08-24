@@ -67,10 +67,14 @@ transformations. (JM)
 DONE ** Add help strings to all the trajectories and properties in the property
 list (JM) (JM)
 
-*** Take care that all the arguments for the properties, are being converted to 
-the correct type. (JM)
+DONE *** Take care that all the arguments for the properties, are being converted to the correct type. (JM) (JM)
 I'm pretty sure that at the moment we're using strings as index variables 
 rather than integers.
 
 * It might be useful to have some kind of standardized error message format
 (JM)
+
+** In both engine and inputs directories, we need to document initializer, 
+
+*** Rework the cell class, and the NPT ensemble (JM)
+normalmodes and outputs (JM)

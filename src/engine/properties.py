@@ -268,6 +268,8 @@ class Properties(dobject):
       Returns kstress[x,v].
       """
 
+      x = int(x)
+      v = int(v)
       return self.beads.kstress[x,v]
 
    def get_vir(self, x=0, v=0):
@@ -276,6 +278,8 @@ class Properties(dobject):
       Returns vir[x,v].
       """
 
+      x = int(x)
+      v = int(v)
       return self.forces.vir[x,v]
 
    def kstress_cv(self):
@@ -331,15 +335,19 @@ class Properties(dobject):
       Returns vir[x,v].
       """
 
+      x = int(x)
+      v = int(v)
       return self.forces.vir[x,v]/float(self.beads.nbeads)
 
    def get_kincv(self, atom=""):
       """Calculates the quantum centroid virial kinetic energy estimator."""
 
       try:
+         #iatom gives the index of the atom to be studied
          iatom = int(atom)
          latom = ""
       except:
+         #here 'atom' is a label rather than an index which is stored in latom
          iatom = -1
          latom = atom
 
@@ -370,6 +378,7 @@ class Properties(dobject):
             kinetic energy for.
       """
 
+      mode = int(mode)
       gleke = 0.0
       s = depstrip(self.ensemble.thermostat.s)
       if len(s.shape) < 2:
@@ -398,7 +407,7 @@ class Properties(dobject):
          scaled down automatically to avoid discontinuities in the potential.
       """
 
-      dbeta = abs(fd_delta)
+      dbeta = abs(float(fd_delta))
 
       v0 = self.forces.pot/self.beads.nbeads
       while True:
@@ -428,6 +437,8 @@ class Properties(dobject):
    def wrap_cell(self, x=0, v=0):
       """Returns the the x-th component of the v-th cell vector."""
 
+      x = int(x)
+      v = int(v)
       return self.cell.h[x,v]
 
    def get_isotope_yama(self, alpha="1.0", atom=""):
@@ -447,9 +458,11 @@ class Properties(dobject):
       """
 
       try:
+         #iatom gives the index of the atom to be studied
          iatom = int(atom)
          latom = ""
       except:
+         #here 'atom' is a label rather than an index which is stored in latom
          iatom = -1
          latom = atom
 
@@ -533,9 +546,11 @@ class Properties(dobject):
       """
 
       try:
+         #iatom gives the index of the atom to be studied
          iatom = int(atom)
          latom = ""
       except:
+         #here 'atom' is a label rather than an index which is stored in latom
          iatom = -1
          latom = atom
 
