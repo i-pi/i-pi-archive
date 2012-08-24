@@ -38,7 +38,7 @@ class ForceField(dobject):
          all at one time by the driver, so are collected together. Each separate
          object is then taken from the list. Depends on the atom positions and
          the system box.
-      pot = A float giving the potential energy of the system. Depends on ufv.
+      pot: A float giving the potential energy of the system. Depends on ufv.
       f: An array containing all the components of the force. Depends on ufv.
       fx: A slice of f containing only the x components of the forces.
       fy: A slice of f containing only the y components of the forces.
@@ -93,21 +93,20 @@ class ForceField(dobject):
       dset(self,"pot",
          depend_value(name="pot", func=self.get_pot,
             dependencies=[dget(self,"ufv")]))
+
       dset(self,"vir",
          depend_array(name="vir", value=np.zeros((3,3),float),func=self.get_vir,
             dependencies=[dget(self,"ufv")]))
+
       # the force requires a bit more work, to define shortcuts to xyz slices
       # without calculating the force at this point.
-      fbase = np.zeros(atoms.natoms*3, float)
       dset(self,"f",
-         depend_array(name="f", value=fbase, func=self.get_f,
+         depend_array(name="f", value=np.zeros(atoms.natoms*3, float), func=self.get_f,
             dependencies=[dget(self,"ufv")]))
-      dset(self,"fx", depend_array(name="fx", value=fbase[0:3*atoms.natoms:3]))
-      dset(self,"fy", depend_array(name="fy", value=fbase[1:3*atoms.natoms:3]))
-      dset(self,"fz", depend_array(name="fz", value=fbase[2:3*atoms.natoms:3]))
-      depcopy(self,"f", self,"fx")
-      depcopy(self,"f", self,"fy")
-      depcopy(self,"f", self,"fz")
+
+      self.fx=self.f[0:3*atoms.natoms:3]
+      self.fy=self.f[1:3*atoms.natoms:3]
+      self.fz=self.f[2:3*atoms.natoms:3]
 
    def queue(self):
       """Dummy queueing method."""
