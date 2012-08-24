@@ -115,8 +115,6 @@ class Properties(dobject):
          mode kinetic energy estimator. Takes one argument, which gives the
          mode that the kinetic energy is given for,
       'kin_yama': Quantum scaled coordinate kinetic energy estimator,
-      'linlin': The scaled Fourier transform of the momentum distribution.
-         Given by n(x) in Lin Lin et al., Phys. Rev. Lett. 105, 110602,
       'isotope_yama': Tcv(m/m') and log(R(m/m')) for isotope substitution
          calculations using the Yamamoto estimator,
       'isotope_thermo': Tcv(m/m') and log(R(m/m')) for isotope substitution
@@ -135,39 +133,38 @@ class Properties(dobject):
       self.simul = simul
 
 
-      self.property_dict["step"] = { "dimension" : "number", "func" : (lambda: (1 + self.simul.step)) }
-      self.property_dict["time"] = { "dimension": "time", "func": (lambda: (1 + self.simul.step)*self.ensemble.dt) }
-      self.property_dict["conserved"] = {"dimension" : "energy", "func" : self.get_econs }
-      self.property_dict["temperature"] = { "dimension" : "temperature", "func" : self.get_temp }
-      self.property_dict["density"] = {"dimension" : "density", "func": (lambda: self.beads.m.sum()/self.cell.V) }
-      self.property_dict["volume"] = {"dimension": "volume", "func" :(lambda: self.cell.V) }
-      self.property_dict["h"] = {"dimension" : "length", "func" :self.wrap_cell }
+      self.property_dict["step"] = { "dimension" : "number", "func" : (lambda: (1 + self.simul.step)), "help" : "The current time step of the simulation." }
+      self.property_dict["time"] = { "dimension": "time", "func": (lambda: (1 + self.simul.step)*self.ensemble.dt), "help": "The elapsed simulation time." }
+      self.property_dict["conserved"] = {"dimension" : "energy", "func" : self.get_econs, "help": "The value of the conserved energy quantity per bead." }
+      self.property_dict["temperature"] = { "dimension" : "temperature", "func" : self.get_temp, "help": "The current physical temperature." }
+      self.property_dict["density"] = {"dimension" : "density", "func": (lambda: self.beads.m.sum()/self.cell.V), "help": "The physical density of the system." }
+      self.property_dict["volume"] = {"dimension": "volume", "func" :(lambda: self.cell.V), "help": "The volume of the cell box." }
+      self.property_dict["h"] = {"dimension" : "length", "func": self.wrap_cell, "help": "Gives one of the cell parameters. Takes arguments 'x' and 'v', which gives h[x,v]. By default gives h[0,0]." }
 
-      self.property_dict["potential"] =  {"dimension" : "energy", "func": (lambda: self.forces.pot/self.beads.nbeads ) }
-      self.property_dict["spring"] =     {"dimension" : "energy", "func": (lambda: self.beads.vpath*self.nm.omegan2) }
-      self.property_dict["kinetic_md"] = {"dimension" : "energy", "func": (lambda: self.nm.kin/self.beads.nbeads) }
-      self.property_dict["kinetic_cv"] = {"dimension" : "energy", "func": self.get_kincv }
+      self.property_dict["potential"] =  {"dimension" : "energy", "func": (lambda: self.forces.pot/self.beads.nbeads ), "help": "The potential energy of the system." }
+      self.property_dict["spring"] =     {"dimension" : "energy", "func": (lambda: self.beads.vpath*self.nm.omegan2), "help": "The spring potential energy between the beads." }
+      self.property_dict["kinetic_md"] = {"dimension" : "energy", "func": (lambda: self.nm.kin/self.beads.nbeads), "help": "The classical kinetic energy of the simulation." }
+      self.property_dict["kinetic_cv"] = {"dimension" : "energy", "func": self.get_kincv, "help": "The physical kinetic energy of the system." }
 
-      self.property_dict["stress_md"] = {"func" : self.get_stress }
-      self.property_dict["pressure_md"] = {"func" : self.get_press }
-      self.property_dict["kstress_md"] = {"func" : self.get_kstress }
-      self.property_dict["virial_md"] = {"func" : self.get_vir }
+      self.property_dict["stress_md"] = {"func" : self.get_stress, "help": "The classical stress tensor of the simulation. Takes arguments 'x' and 'v', which gives stress[x,v]. By default gives stress[0,0]."}
+      self.property_dict["pressure_md"] = {"func" : self.get_press, "help": "The classical pressure of the simulation." }
+      self.property_dict["kstress_md"] = {"func" : self.get_kstress, "help": "The classical kinetic stress tensor of the simulation. Takes arguments 'x' and 'v', which gives kstress[x,v]. By default gives kstress[0,0]." }
+      self.property_dict["virial_md"] = {"func" : self.get_vir, "help": "The classical virial tensor of the simulation. Takes arguments 'x' and 'v', which gives virial[x,v]. By default gives virial[0,0]." }
 
-      self.property_dict["stress_cv"] =   {"func" : self.get_stresscv      }
-      self.property_dict["pressure_cv"] = {"func" : self.get_presscv       }
-      self.property_dict["kstress_cv"] =  {"func" :  self.get_kstresscv    }
-      self.property_dict["virial_cv"] =   {"func" : self.get_vircv         }
+      self.property_dict["stress_cv"] =   {"func" : self.get_stresscv, "help": "The physical stress tensor of the system. Takes arguments 'x' and 'v', which gives stress[x,v]. By default gives stress[0,0]."      }
+      self.property_dict["pressure_cv"] = {"func" : self.get_presscv, "help": "The physical pressure of the system."       }
+      self.property_dict["kstress_cv"] =  {"func" :  self.get_kstresscv, "help": "The physical kinetic stress tensor of the system. Takes arguments 'x' and 'v', which gives kstress[x,v]. By default gives kstress[0,0]."    }
+      self.property_dict["virial_cv"] =   {"func" : self.get_vircv, "help": "The physical virial tensor of the system. Takes arguments 'x' and 'v', which gives virial[x,v]. By default gives virial[0,0]."         }
 
-      self.property_dict["gle_ke"] =   {"func" : self.get_gleke             }
+      self.property_dict["gle_ke"] =   {"func" : self.get_gleke, "help": "Gives the kinetic energy associated with the additional degrees of freedom used in the GLE thermostat. Takes an argument 'mode' which gives the degree of freedom that is looked at, and defaults to 0."             }
 
-      self.property_dict["kin_yama"] = {"func" : self.get_kinyama           }
+      self.property_dict["kin_yama"] = {"func" : self.get_kinyama, "help": "Gives the kinyama kinetic energy estimator. Takes one argument, 'fd_delta', which gives the value of the finite difference parameter used. It defaults to " + str(-_DEFAULT_FINDIFF) + "."           }
 
-      self.property_dict["linlin"] =   {"func" : self.get_linlin            }
       self.property_dict["isotope_sc"] = {"func" : self.get_isotope_yama ,
-        "help" :  "Scaled coordinates free energy perturbation scaled mass KE estimator. Prints everything which is needed to compute the kinetic energy for a isotope-substituted system. The 7 elements are: <h> <h^2> <T_CV> <T_CV^2> ln(<e^-h>) ln(|<T_CV e^-h>|) sign(<T_CV e^-h>). Mixed units, so outputs only in a.u." }
+        "help" :  "Scaled coordinates free energy perturbation scaled mass KE estimator. Prints everything which is needed to compute the kinetic energy for a isotope-substituted system. The 7 elements are: <h> <h^2> <T_CV> <T_CV^2> ln(<e^-h>) ln(|<T_CV e^-h>|) sign(<T_CV e^-h>). Mixed units, so outputs only in a.u. Takes two arguments, 'alpha' and 'atom', which give the scaled mass parameter and the atom of interest respectively, and default to '1.0' and ''. The 'atom' argument can either be the label of a particular kind of atom, or an index of a specific atom." }
 
       self.property_dict["isotope_thermo"] = {"dimension" : "undefined", "func" : self.get_isotope_thermo, "size" : 7,
-        "help" : "Thermodynamic free energy perturbation scaled mass KE estimator. Prints everything which is needed to compute the kinetic energy for a isotope-substituted system. The 7 elements are: <h> <h^2> <T_CV> <T_CV^2> ln(<e^-h>) ln(|<T_CV e^-h>|) sign(<T_CV e^-h>). Mixed units, so outputs only in a.u." }
+        "help" : "Thermodynamic free energy perturbation scaled mass KE estimator. Prints everything which is needed to compute the kinetic energy for a isotope-substituted system. The 7 elements are: <h> <h^2> <T_CV> <T_CV^2> ln(<e^-h>) ln(|<T_CV e^-h>|) sign(<T_CV e^-h>). Mixed units, so outputs only in a.u. Takes two arguments, 'alpha' and 'atom', which give the scaled mass parameter and the atom of interest respectively, and default to '1.0' and ''. The 'atom' argument can either be the label of a particular kind of atom, or an index of a specific atom." }
 
       # dummy beads and forcefield objects so that we can use scaled and
       # displaced path estimators without changing the simulation bead
@@ -218,11 +215,12 @@ class Properties(dobject):
       key = key[0:min(unstart,argstart)] # strips the arguments from key name
       pkey = self.property_dict[key]
 
+      #pkey["func"](*arglist) gives the value of the property in atomic units
+      #unit_to_user returns the value in the user specified units.
       if "dimension" in pkey and unit != "":
          return  unit_to_user(pkey["dimension"], unit, pkey["func"](*arglist))
       else:
          return pkey["func"](*arglist)
-
 
    def get_temp(self):
       """Calculates the MD kinetic temperature.
@@ -241,7 +239,7 @@ class Properties(dobject):
       return self.nm.kin/(0.5*Constants.kb*(3*self.beads.natoms*self.beads.nbeads - mdof)*self.nm.nbeads)
 
    def get_econs(self):
-      """Calculates the conserved quantity estimator."""
+      """Calculates the conserved quantity estimator per bead."""
 
       return self.ensemble.econs/(self.beads.nbeads*self.beads.natoms)
 
@@ -389,12 +387,13 @@ class Properties(dobject):
    def get_kinyama(self, fd_delta= - _DEFAULT_FINDIFF):
       """Calculates the quantum scaled coordinate kinetic energy estimator.
 
-      Args:
-         fd_delta: the relative finite difference in temperature to apply in computing
-            finite-difference quantities. If it is negative, will be scaled down automatically
-            to avoid discontinuities in the potential.
       Uses a finite difference method to calculate the kinetic energy estimator
       without requiring the forces as for the centroid virial estimator.
+
+      Args:
+         fd_delta: the relative finite difference in temperature to apply in 
+         computing finite-difference quantities. If it is negative, will be 
+         scaled down automatically to avoid discontinuities in the potential.
       """
 
       dbeta = abs(fd_delta)
@@ -423,47 +422,6 @@ class Properties(dobject):
             break
 
       return kyama
-
-   def opening(self, bead):
-      """Path opening function.
-
-      Used in the Lin Lin momentum distribution estimator.
-      """
-
-      return bead/self.beads.nbeads + 0.5*(1.0/self.beads.nbeads - 1.0)
-
-   def get_linlin(self, ux=0, uy=0, uz=0, atom='H'):
-      """Gives the estimator for the momentum distribution, by opening the
-      ring polymer path.
-
-      Args:
-         ux: The x component of the opening vector.
-         uy: The y component of the opening vector.
-         uz: The z component of the opening vector.
-         atom: The atom type for which the path will be opened.
-      """
-
-      u = np.array([float(ux), float(uy), float(uz)])
-      count = 0
-      n = 0.0
-      for at in range(self.beads.natoms):
-         if self.beads.names[at] == atom:
-            index = at
-            # Keeps record of one of the atom indices so we can get
-            # the mass later.
-
-            count += 1
-            self.dbeads.q[:] = self.beads.q[:]
-            for bead in range(self.beads.nbeads):
-               self.dbeads.q[bead,3*at:3*(at+1)] += self.opening(bead)*u
-            n += math.exp(-(self.dforces.pot - self.forces.pot)/(self.ensemble.ntemp*Constants.kb*self.beads.nbeads))
-
-      if count == 0:
-         print "Warning, no atom with the given name found for lin-lin momentum distribution estimator."
-         return 0.0
-      else:
-         n0 = math.exp(self.beads.m[index]*np.dot(u,u)*self.ensemble.temp*Constants.kb/(2*Constants.hbar**2))
-         return n*n0/float(count)
 
    def wrap_cell(self, x=0, v=0):
       """Returns the the x-th component of the v-th cell vector."""
