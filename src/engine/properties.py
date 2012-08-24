@@ -120,7 +120,6 @@ class Properties(dobject):
       'isotope_thermo': Tcv(m/m') and log(R(m/m')) for isotope substitution
          calculations using the thermodynamic estimator.}.
 
-
       Args:
          simul: The Simulation object to be bound.
       """
@@ -131,7 +130,6 @@ class Properties(dobject):
       self.cell = simul.cell
       self.forces = simul.forces
       self.simul = simul
-
 
       self.property_dict["step"] = { "dimension" : "number", "func" : (lambda: (1 + self.simul.step)), "help" : "The current time step of the simulation." }
       self.property_dict["time"] = { "dimension": "time", "func": (lambda: (1 + self.simul.step)*self.ensemble.dt), "help": "The elapsed simulation time." }
@@ -146,6 +144,7 @@ class Properties(dobject):
       self.property_dict["kinetic_md"] = {"dimension" : "energy", "func": (lambda: self.nm.kin/self.beads.nbeads), "help": "The classical kinetic energy of the simulation." }
       self.property_dict["kinetic_cv"] = {"dimension" : "energy", "func": self.get_kincv, "help": "The physical kinetic energy of the system." }
 
+      #TODO give these properties a 'dimension' key.
       self.property_dict["stress_md"] = {"func" : self.get_stress, "help": "The classical stress tensor of the simulation. Takes arguments 'x' and 'v', which gives stress[x,v]. By default gives stress[0,0]."}
       self.property_dict["pressure_md"] = {"func" : self.get_press, "help": "The classical pressure of the simulation." }
       self.property_dict["kstress_md"] = {"func" : self.get_kstress, "help": "The classical kinetic stress tensor of the simulation. Takes arguments 'x' and 'v', which gives kstress[x,v]. By default gives kstress[0,0]." }
@@ -181,6 +180,10 @@ class Properties(dobject):
       to the calculation function of the property. Note the brackets and
       the semi-colon separators.
 
+      Similarly, if the key contains a string {unit}, then it will take
+      the string 'unit' and use it to define the units that the property
+      is output in.
+
       Args:
          key: A string contained in property_dict.
 
@@ -210,7 +213,6 @@ class Properties(dobject):
 
          argstr = key[argstart:argstop+1]
          arglist = io_xml.read_tuple(argstr, delims="()", split=";", arg_type=str)
-
 
       key = key[0:min(unstart,argstart)] # strips the arguments from key name
       pkey = self.property_dict[key]
@@ -601,6 +603,7 @@ class Properties(dobject):
 
       return np.asarray([alogr, alogr2, atcv, atcv2, law, lawke, sawke])
 
+
 class Trajectories(dobject):
    """A simple class to take care of output of trajectory data.
 
@@ -628,15 +631,15 @@ class Trajectories(dobject):
       self.fatom = simul.beads[0].copy()
 
 
-      self.traj_dict["positions"] =  { "dimension" : "length", "func" : (lambda : 1.0*self.simul.beads.q) }
-      self.traj_dict["velocities"] =  { "dimension" : "velocity", "func" : (lambda : self.simul.beads.p/self.simul.beads.m3) }
-      self.traj_dict["forces"] =  { "dimension" : "force", "func" : (lambda : 1.0*self.simul.force.f) }
-      self.traj_dict["kinetic_cv"] =  { "dimension" : "energy", "func" : self.get_akcv }
-      self.traj_dict["kinetic_od"] =  { "dimension" : "energy", "func" : self.get_akcv_od }
-      self.traj_dict["springs"] =  { "dimension" : "energy", "func" : self.get_aspr }
-      self.traj_dict["r_gyration"] =  { "dimension" : "length", "func" : (lambda : 1.0*self.simul.beads.rg) }
-      self.traj_dict["x_centroid"] =  { "dimension" : "length", "func" : (lambda : 1.0*self.simul.beads.qc)  }
-      self.traj_dict["v_centroid"] =  { "dimension" : "length", "func" : (lambda : self.simul.beads.pc/self.simul.beads.m3[0])  }
+      self.traj_dict["positions"] =  { "dimension" : "length", "func" : (lambda : 1.0*self.simul.beads.q), "help": "Prints the coordinate trajectories." }
+      self.traj_dict["velocities"] =  { "dimension" : "velocity", "func" : (lambda : self.simul.beads.p/self.simul.beads.m3), "help": "Prints the velocity trajectories." }
+      self.traj_dict["forces"] =  { "dimension" : "force", "func" : (lambda : 1.0*self.simul.force.f), "help": "Prints the force trajectories." }
+      self.traj_dict["kinetic_cv"] =  { "dimension" : "energy", "func" : self.get_akcv, "help": "Prints the kinetic energy for each bead, resolved into Cartesian components." }
+      self.traj_dict["kinetic_od"] =  { "dimension" : "energy", "func" : self.get_akcv_od, "help": "Prints the off diagonal elements of the kinetic stress tensor, for each bead." }
+      self.traj_dict["springs"] =  { "dimension" : "energy", "func" : self.get_aspr, "help": "Prints the spring potential for each atom, resolved into Cartesian components." }
+      self.traj_dict["r_gyration"] =  { "dimension" : "length", "func" : (lambda : 1.0*self.simul.beads.rg), "help": "Prints the radius of gyration for each atom." }
+      self.traj_dict["x_centroid"] =  { "dimension" : "length", "func" : (lambda : 1.0*self.simul.beads.qc), "help": "Prints the centroid coordinates for each atom."  }
+      self.traj_dict["v_centroid"] =  { "dimension" : "length", "func" : (lambda : self.simul.beads.pc/self.simul.beads.m3[0]), "help": "Prints the velocity centroid for each atom."  }
 
 
    def get_akcv(self):
@@ -676,6 +679,7 @@ class Trajectories(dobject):
       """Calculates the contribution to the kinetic energy due to each degree
       of freedom.
       """
+      #TODO What the hell does this do?
 
       rv = np.zeros(self.simul.beads.natoms*3)
       for b in range(1,self.simul.beads.nbeads):
@@ -712,7 +716,6 @@ class Trajectories(dobject):
          argstr = key[argstart:argstop+1]
          arglist = io_xml.read_tuple(argstr, delims="()", split=";", arg_type=str)
 
-
       key = key[0:min(unstart,argstart)] # strips the arguments from key name
       pkey = self.traj_dict[key]
 
@@ -720,7 +723,6 @@ class Trajectories(dobject):
          return  unit_to_user(pkey["dimension"], unit, 1.0) * pkey["func"](*arglist)
       else:
          return pkey["func"](*arglist)
-
 
    def print_traj(self, what, stream, b=0, format="pdb"):
       """Prints out a frame of a trajectory for the specified quantity and bead.
