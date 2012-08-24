@@ -7,8 +7,10 @@ returning the results to the python code.
 Classes:
    ForceField: Base forcefield class with the generic methods and attributes.
    FFSocket: Deals with a single replica of the system
-   ForceBeads: Deals with the parallelization of the force calculation for
-      a PI simulation.
+   ForceBeads: Deals with the parallelization of the force calculation over
+      different beads.
+   Forces: Deals with the parallelizatoin of the force calculation over 
+      different forcefields.
 """
 
 __all__ = ['ForceField', 'ForceBeads', 'Forces', 'FFSocket']
@@ -19,7 +21,6 @@ from utils.depend import *
 from utils.nmtransform import nm_rescale
 from driver.interface import Interface
 from beads import Beads
-
 
 class ForceField(dobject):
    """Base forcefield class.
@@ -50,7 +51,8 @@ class ForceField(dobject):
    def __init__(self):
       """Initialises ForceField."""
 
-      # ufv is a list [ u, f, vir ]  which stores the results of the force calculation
+      # ufv is a list [ u, f, vir ]  which stores the results of the force 
+      #calculation
       dset(self,"ufv", depend_value(name="ufv", func=self.get_all))
 
    def copy(self):
@@ -96,9 +98,8 @@ class ForceField(dobject):
          depend_array(name="vir", value=np.zeros((3,3),float),func=self.get_vir,
             dependencies=[dget(self,"ufv")]))
 
-
-       # NB: the force requires a bit more work, to define shortcuts to xyz slices
-       # without calculating the force at this point.
+      # NB: the force requires a bit more work, to define shortcuts to xyz 
+      # slices without calculating the force at this point.
       fbase = np.zeros(atoms.natoms*3, float)
       dset(self,"f",
          depend_array(name="f", value=fbase, func=self.get_f,
@@ -110,8 +111,6 @@ class ForceField(dobject):
       depcopy(self,"f", self,"fx")
       depcopy(self,"f", self,"fy")
       depcopy(self,"f", self,"fz")
-
-
 
    def queue(self):
       """Dummy queueing method."""
@@ -262,7 +261,8 @@ class FFSocket(ForceField):
          if not self.softexit is None:
             self.softexit()
 
-      # data has been collected, so the request can be released and a slot freed up for new calculations
+      # data has been collected, so the request can be released and a slot 
+      #freed up for new calculations
       self.socket.release(self.request)
       result = self.request["result"]
       self.request = None
@@ -285,25 +285,42 @@ class FFSocket(ForceField):
          self.request = self.socket.queue(self.atoms, self.cell, pars=self.pars, reqid=reqid)
 
    def run(self):
-      if not self.socket.started(): self.socket.start_thread()
+      """Makes the socket start looking for driver codes.
+
+      Tells the interface code to start the thread that looks for 
+      connection from the driver codes in a loop. Until this point no
+      jobs can be queued.
+      """
+
+      if not self.socket.started():
+         self.socket.start_thread()
 
    def stop(self):
-      if self.socket.started(): self.socket.end_thread()
+      """Makes the socket stop looking for driver codes.
+
+      Tells the interface code to stop the thread that looks for 
+      connection from the driver codes in a loop. After this point no
+      jobs can be queued.
+      """
+
+      if self.socket.started():
+         self.socket.end_thread()
 
 
 class ForceBeads(dobject):
-   """Class that gathers all the forces together.
+   """Class that gathers the forces for each replica together.
 
-   Collects many forcefield instances and parallelizes getting the forces
-   in a PIMD environment. Deals with splitting the bead representation into
+   Deals with splitting the bead representation into
    separate replicas, and collecting the data from each replica.
 
    Attributes:
       natoms: An integer giving the number of atoms.
       nbeads: An integer giving the number of beads.
-      _forces: A list containing all the force objects for each system replica.
+      f_model: A model used to create the forcefield objects for each replica
+         of the system.
       softexit: A function to help make sure the printed restart file is
          consistent.
+      _forces: A list of the forcefield objects for all the replicas.
 
    Depend objects:
       f: An array containing the components of the force. Depends on each
@@ -319,6 +336,18 @@ class ForceBeads(dobject):
    """
 
    def __init__(self, model, nbeads=0, weight=1.0):
+      """Initializes ForceBeads
+
+      Args:
+         model: A model to be used to create the forcefield objects for all
+            the replicas of the system.
+         nbeads: The number of replicas.
+         weight: A relative weight to be given to the values obtained with this
+            forcefield. When the contribution of all the forcefields is
+            combined to give a total force, the contribution of this forcefield
+            will be weighted by this factor.
+      """
+
       self.f_model = model
       self.nbeads = nbeads
       self.weight = weight
@@ -326,10 +355,11 @@ class ForceBeads(dobject):
    def copy(self):
       """Creates a deep copy without the bound objects.
 
-      Used in ForceBeads to create a FFSocket for each replica of the system.
+      Used so that we can create multiple Forces objects from the same 
+      Forcebeads model, without binding a particular ForceBeads object twice.
 
       Returns:
-         A FFSocket object without atoms or cell attributes.
+         A ForceBeads object without atoms or cell attributes.
       """
 
       # does not copy the bound objects (i.e., the returned forcefield must be bound before use)
@@ -355,12 +385,15 @@ class ForceBeads(dobject):
             consistent.
       """
 
-      # stores a copy of the number of atoms and of beads !TODO! make them read-only properties
+      # stores a copy of the number of atoms and of beads 
+      #!TODO! make them read-only properties
       self.natoms = beads.natoms
       self.softexit = softexit
-      if (self.nbeads != beads.nbeads) : raise ValueError("Binding together a Beads and a ForceBeads objects with different numbers of beads")
+      if (self.nbeads != beads.nbeads):
+         raise ValueError("Binding together a Beads and a ForceBeads objects with different numbers of beads")
 
-      # creates an array of force objects, which are bound to the beads and the cell
+      # creates an array of force objects, which are bound to the beads 
+      #and the cell
       self._forces = [];
       for b in range(self.nbeads):
          new_force = self.f_model.copy()
@@ -385,17 +418,31 @@ class ForceBeads(dobject):
 
       # total potential and total virial
       dset(self,"pot",
-         depend_value(name="pot", func=self.get_pot,
+         depend_value(name="pot", func=(lambda: self.pots.sum()),
             dependencies=[dget(self,"pots")]))
       dset(self,"vir",
          depend_value(name="vir", func=self.get_vir,
             dependencies=[dget(self,"virs")]))
 
    def run(self):
+      """Makes the socket start looking for driver codes.
+
+      Tells the interface code to start the thread that looks for 
+      connection from the driver codes in a loop. Until this point no
+      jobs can be queued.
+      """
+
       for b in range(self.nbeads):
          self._forces[b].run()
 
    def stop(self):
+      """Makes the socket stop looking for driver codes.
+
+      Tells the interface code to stop the thread that looks for 
+      connection from the driver codes in a loop. After this point no
+      jobs can be queued.
+      """
+
       for b in range(self.nbeads):
          self._forces[b].stop()
 
@@ -407,7 +454,6 @@ class ForceBeads(dobject):
       # distributed-computing magic can work
       for b in range(self.nbeads):
          self._forces[b].queue(reqid=b)
-
 
    def pot_gather(self):
       """Obtains the potential energy for each replica.
@@ -431,7 +477,7 @@ class ForceBeads(dobject):
 
 
    def f_gather(self):
-      """Obtains the global force vector.
+      """Obtains the force vector for each replica.
 
       Returns:
          An array with all the components of the force. Row i gives the force
@@ -459,17 +505,6 @@ class ForceBeads(dobject):
 #      print "threads joined in"
 
       return newf
-
-   def get_pot(self):
-      """Sums the potential of each replica.
-
-      Used to check energy conservation. Not the actual system potential.
-
-      Returns:
-         Potential energy sum.
-      """
-
-      return self.pots.sum()
 
    def get_vir(self):
       """Sums the virial of each replica.
@@ -506,13 +541,45 @@ class ForceBeads(dobject):
          index: The index of the replica of the system to be accessed.
 
       Returns:
-         The replica of the system given by the index.
+         The forces acting on the replica of the system given by the index.
       """
 
       return self._forces[index]
 
 
 class Forces(dobject):
+   """Class that gathers all the forces together.
+
+   Collects many forcefield instances and parallelizes getting the forces
+   in a PIMD environment.
+
+   Attributes:
+      natoms: An integer giving the number of atoms.
+      nbeads: An integer giving the number of beads.
+      f_model: A model used to create the forcefield objects for each replica
+         of the system.
+      softexit: A function to help make sure the printed restart file is
+         consistent.
+      mforces: A list of all the forcefield objects.
+      mbeads: A list of all the beads objects. Some of these may be contracted
+         ring polymers, with a smaller number of beads than of the simulation.
+      mweights: A list of the weights of all the forcefields.
+      mrpc: A list of the objects containing the functions required to
+         contract the ring polymers of the different forcefields.
+
+   Depend objects:
+      f: An array containing the components of the force. Depends on each
+         replica's ufv list.
+      pots: A list containing the potential energy for each system replica.
+         Depends on each replica's ufv list.
+      virs: A list containing the virial tensor for each system replica.
+         Depends on each replica's ufv list.
+      pot: The sum of the potential energy of the replicas.
+      vir: The sum of the virial tensor of the replicas.
+      fnm: An array containing the components of the force in the normal mode
+         representation.
+   """
+
 
    def bind(self, beads, cell, flist, softexit=None):
 
@@ -521,41 +588,47 @@ class Forces(dobject):
       self.nforces = len(flist)
       self.softexit = softexit
 
-
       # flist should be a list of tuples containing ( "name", forcebeads)
-      self.mforces=[]
-      self.mbeads=[]
-      self.mweights=[]
-      self.mrpc=[]
+      self.mforces = []
+      self.mbeads = []
+      self.mweights = []
+      self.mrpc = []
 
-
-      # a "function factory" to generate functions to automatically update contracted paths
+      # a "function factory" to generate functions to automatically update 
+      #contracted paths
       def make_rpc(rpc, beads):
          return lambda: rpc.b1tob2(depstrip(beads.q))
 
-
-      # creates new force objects, possibly acting on contracted path representations
-      for ( ftype, fbeads) in flist:
+      # creates new force objects, possibly acting on contracted path 
+      #representations
+      for (ftype, fbeads) in flist:
 
          # creates an automatically-updated contracted beads object
-         newb=fbeads.nbeads
-         newforce=fbeads.copy()
-         newweight=fbeads.weight
+         newb = fbeads.nbeads
+         newforce = fbeads.copy()
+         newweight = fbeads.weight
 
-         # if the number of beads for this force component is unspecified, assume full force evaluation
-         if newb == 0: newb = beads.nbeads
+         # if the number of beads for this force component is unspecified, 
+         #assume full force evaluation
+         if newb == 0:
+            newb = beads.nbeads
 
-         newbeads=Beads(beads.natoms, newb)
-         newrpc=nm_rescale(beads.nbeads, newb)
+         newbeads = Beads(beads.natoms, newb)
+         newrpc = nm_rescale(beads.nbeads, newb)
 
-         newf=make_rpc(newrpc, beads)
-         dget(newbeads,"q")._func=newf
-         for b in newbeads: dget(b,"q")._func=newf      # must update also indirect access to the beads coordinates
-         dget(beads,"q").add_dependant(dget(newbeads,"q"))        # makes newbeads.q depend from beads.q
+         newf = make_rpc(newrpc, beads)
+         dget(newbeads,"q")._func = newf
+         for b in newbeads: 
+            # must update also indirect access to the beads coordinates
+            dget(b,"q")._func = newf
+
+         # makes newbeads.q depend from beads.q
+         dget(beads,"q").add_dependant(dget(newbeads,"q"))
 
          #now we create a new forcebeads which is bound to newbeads!
          newforce.bind(newbeads, cell, softexit)
 
+         #adds information we will later need to the appropriate lists.
          self.mweights.append(newweight)
          self.mbeads.append(newbeads)
          self.mforces.append(newforce)
@@ -564,8 +637,7 @@ class Forces(dobject):
       #now must expose an interface that gives overall forces
       dset(self,"f",
          depend_array(name="f",value=np.zeros((self.nbeads,3*self.natoms)),
-            func=self.f_combine,dependencies=[dget(ff, "f") for ff in self.mforces]
-         ) )
+            func=self.f_combine,dependencies=[dget(ff, "f") for ff in self.mforces] ) )
 
       # collection of pots and virs from individual ff objects
       dset(self,"pots",
@@ -582,43 +654,83 @@ class Forces(dobject):
          depend_value(name="pot", func=(lambda: self.pots.sum()),
             dependencies=[dget(self,"pots")]))
       dset(self,"vir",
-         depend_value(name="vir", func=(lambda: self.virs.sum()),
+         depend_value(name="vir", func=self.get_vir(),
             dependencies=[dget(self,"virs")]))
 
    def run(self):
-      for ff in self.mforces: ff.run()
+      """Makes the socket start looking for driver codes.
+
+      Tells the interface code to start the thread that looks for 
+      connection from the driver codes in a loop. Until this point no
+      jobs can be queued.
+      """
+
+      for ff in self.mforces:
+         ff.run()
 
    def stop(self):
-      for ff in self.mforces: ff.stop()
+      """Makes the socket stop looking for driver codes.
+
+      Tells the interface code to stop the thread that looks for 
+      connection from the driver codes in a loop. After this point no
+      jobs can be queued.
+      """
+
+      for ff in self.mforces:
+         ff.stop()
 
    def queue(self):
-      for ff in self.mforces: ff.queue()
+      """Submits all the required force calculations to the forcefields."""
+
+      for ff in self.mforces:
+         ff.queue()
+
+   def get_vir(self):
+      """Sums the virial of each forcefield.
+
+      Not the actual system virial.
+
+      Returns:
+          Virial sum.
+      """
+
+      vir = np.zeros((3,3))
+      for v in self.virs:
+         vir += v
+      return vir
 
    def f_combine(self):
+      """Obtains the total force vector."""
 
       self.queue()
-      rf=np.zeros((self.nbeads,3*self.natoms),float)
+      rf = np.zeros((self.nbeads,3*self.natoms),float)
       for k in range(self.nforces):
-         rf+=self.mweights[k]*self.mrpc[k].b2tob1(self.mforces[k].f)   # "expand" to the total number of beads the forces from the contracted one
+         # "expand" to the total number of beads the forces from the 
+         #contracted one
+         rf += self.mweights[k]*self.mrpc[k].b2tob1(self.mforces[k].f)   
       return rf
 
    def pot_combine(self):
+      """Obtains the potential energy for each forcefield."""
 
       self.queue()
-      rp=np.zeros(self.nbeads,float)
+      rp = np.zeros(self.nbeads,float)
       for k in range(self.nforces):
-         rp+=self.mweights[k]*self.mrpc[k].b2tob1(self.mforces[k].pots)   # "expand" to the total number of beads the potentials from the contracted one
+         # "expand" to the total number of beads the potentials from the 
+         #contracted one
+         rp += self.mweights[k]*self.mrpc[k].b2tob1(self.mforces[k].pots)
       return rp
 
    def vir_combine(self):
+      """Obtains the virial tensor for each forcefield."""
 
       self.queue()
-
-      rp=np.zeros((self.nbeads,3,3),float)
+      rp = np.zeros((self.nbeads,3,3),float)
       for k in range(self.nforces):
-         virs=depstrip(self.mforces[k].virs)
-         # "expand" to the total number of beads the virials from the contracted one, element by element
+         virs = depstrip(self.mforces[k].virs)
+         # "expand" to the total number of beads the virials from the 
+         #contracted one, element by element
          for i in range(3):
             for j in range(3):
-               rp[:,i,j]+=self.mweights[k]*self.mrpc[k].b2tob1(virs[:,i,j])
+               rp[:,i,j] += self.mweights[k]*self.mrpc[k].b2tob1(virs[:,i,j])
       return rp

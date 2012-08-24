@@ -75,6 +75,6 @@ rather than integers.
 (JM)
 
 ** In both engine and inputs directories, we need to document initializer, 
-normalmodes and outputs (JM)
+normalmodes, forces and outputs (JM) (JM)
 
 *** Rework the cell class, and the NPT ensemble (JM)
