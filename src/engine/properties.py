@@ -74,6 +74,10 @@ class Properties(dobject):
          output.
    """
 
+   _DEFAULT_FINDIFF = 1e-5
+   _DEFAULT_FDERROR = 1e-9
+   _DEFAULT_MINFID = 1e-12
+
    def __init__(self):
       """Initialises Properties."""
 
@@ -157,7 +161,7 @@ class Properties(dobject):
 
       self.property_dict["gle_ke"] =   {"func" : self.get_gleke, "help": "Gives the kinetic energy associated with the additional degrees of freedom used in the GLE thermostat. Takes an argument 'mode' which gives the degree of freedom that is looked at, and defaults to 0."             }
 
-      self.property_dict["kin_yama"] = {"func" : self.get_kinyama, "help": "Gives the kinyama kinetic energy estimator. Takes one argument, 'fd_delta', which gives the value of the finite difference parameter used. It defaults to " + str(-_DEFAULT_FINDIFF) + "."           }
+      self.property_dict["kin_yama"] = {"func" : self.get_kinyama, "help": "Gives the Yamamoto kinetic energy estimator. Takes one argument, 'fd_delta', which gives the value of the finite difference parameter used. It defaults to " + str(-self._DEFAULT_FINDIFF) + "."           }
 
       self.property_dict["isotope_sc"] = {"func" : self.get_isotope_yama ,
         "help" :  "Scaled coordinates free energy perturbation scaled mass KE estimator. Prints everything which is needed to compute the kinetic energy for a isotope-substituted system. The 7 elements are: <h> <h^2> <T_CV> <T_CV^2> ln(<e^-h>) ln(|<T_CV e^-h>|) sign(<T_CV e^-h>). Mixed units, so outputs only in a.u. Takes two arguments, 'alpha' and 'atom', which give the scaled mass parameter and the atom of interest respectively, and default to '1.0' and ''. The 'atom' argument can either be the label of a particular kind of atom, or an index of a specific atom." }
@@ -392,9 +396,7 @@ class Properties(dobject):
                gleke += s[mode, i, alpha]**2/2.0
       return gleke
 
-   _DEFAULT_FINDIFF = 1e-5
-   _DEFAULT_FDERROR = 1e-9
-   _DEFAULT_MINFID = 1e-12
+
    def get_kinyama(self, fd_delta= - _DEFAULT_FINDIFF):
       """Calculates the quantum scaled coordinate kinetic energy estimator.
 
@@ -402,8 +404,8 @@ class Properties(dobject):
       without requiring the forces as for the centroid virial estimator.
 
       Args:
-         fd_delta: the relative finite difference in temperature to apply in 
-         computing finite-difference quantities. If it is negative, will be 
+         fd_delta: the relative finite difference in temperature to apply in
+         computing finite-difference quantities. If it is negative, will be
          scaled down automatically to avoid discontinuities in the potential.
       """
 
