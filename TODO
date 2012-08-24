@@ -38,7 +38,7 @@ DONE **** Make the new NM thing actually work (MC) (MC)
 
 DONE ***  Move the synchro business out of Beads and into NormalModes (MC) (MC)
 
-DONE (probably) **   Fix (or remove) "spring_nrg" trajectory output. Not really needed anymore... (MC)
+**   Fix (or remove) "springs" trajectory output. Not really needed anymore... (MC)
 
 ** More in general, rationalize and clean up the available properties and trajectories. (MC)
 
@@ -75,6 +75,6 @@ rather than integers.
 (JM)
 
 ** In both engine and inputs directories, we need to document initializer, 
+normalmodes and outputs (JM)
 
 *** Rework the cell class, and the NPT ensemble (JM)
-normalmodes and outputs (JM)
