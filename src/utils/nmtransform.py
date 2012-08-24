@@ -2,11 +2,14 @@
 
 Classes:
    nm_trans: Uses matrix multiplication to do normal mode transformations.
+   nm_rescale: Uses matrix multiplication to do ring polymer contraction 
+      or expansion.
 
 Functions:
-   FFT_nm_trans: Uses an FFT algorithm to do the normal mode transformation.
-   FFT_inv_nm_trans: Uses an FFT algorithm to do the inverse normal mode
-      transformation.
+   mk_nm_matrix: Makes a matrix to transform between the normal mode and bead
+      representations.
+   mk_rs_matrix: Makes a matrix to transform between one number of beads and
+      another. Higher normal modes in the case of an expansion are set to zero.
 """
 
 __all__ = ['nm_trans', 'nm_rescale' ]
@@ -14,7 +17,15 @@ __all__ = ['nm_trans', 'nm_rescale' ]
 import numpy as np
 
 def mk_nm_matrix(nbeads):
-   """ Gets the matrix that transforms normal modes to beads. q_nm = b2nm . q_beads. """
+   """Gets the matrix that transforms from the bead representation 
+   to the normal mode representation. 
+
+   If we return from this function a matrix C, then we transform between the
+   bead and normal mode representation using q_nm = C . q_b, q_b = C.T . q_nm
+
+   Args:
+      nbeads: The number of beads.
+   """
 
    b2nm = np.zeros((nbeads,nbeads))
    b2nm[0,:] = np.sqrt(1.0/nbeads)
@@ -30,7 +41,16 @@ def mk_nm_matrix(nbeads):
    return b2nm
 
 def mk_rs_matrix(nb1, nb2):
-   """ Gets the matrix that transforms a path with nb1 beads into one with nb2 beads. q_2 = T_12 q_1. """
+   """Gets the matrix that transforms a path with nb1 beads into one with 
+   nb2 beads. 
+
+   If we return from this function a matrix T, then we transform between the
+   bead and normal mode representation using q_2 = T . q_1 
+
+   Args:
+      nb1: The initial number of beads.
+      nb2: The final number of beads.
+   """
 
    if (nb1>nb2):
       b1_nm=mk_nm_matrix(nb1)
@@ -50,199 +70,80 @@ def mk_rs_matrix(nb1, nb2):
       return mk_rs_matrix(nb2, nb1).T*(float(nb2)/float(nb1))
 
 
-
 class nm_trans:
-   """Helper class to perform beads <--> normal modes transformation for vectors describing a path of nbeads beads. """
+   """Helper class to perform beads <--> normal modes transformation.
+
+   Attributes:
+      _b2nm: The matrix to transform between the bead and normal mode 
+         representations.
+      _nm2b: The matrix to transform between the normal mode and bead
+         representations.
+   """
+
    def __init__(self, nbeads):
+      """Initializes nm_trans.
+
+      Args:
+         nbeads: The number of beads.
+      """
+
       self._b2nm=mk_nm_matrix(nbeads)
       self._nm2b=self._b2nm.T
 
    def b2nm(self, q):
+      """Transforms a matrix to the normal mode representation.
+
+      Args:
+         q: A matrix with nbeads rows, in the bead representation.
+      """
+
       return np.dot(self._b2nm,q)
 
    def nm2b(self, q):
+      """Transforms a matrix to the bead representation.
+
+      Args:
+         q: A matrix with nbeads rows, in the normal mode representation.
+      """
+
       return np.dot(self._nm2b,q)
 
 
 class nm_rescale:
-   """Helper class to rescale vectors describing a path of nbeads1 beads into those of a nbeads2 path -- and vice-versa. """
+   """Helper class to rescale a ring polymer between different number of beads.
+
+   Attributes:
+      _b1tob2: The matrix to transform between a ring polymer with 'nbeads1' 
+         beads and another with 'nbeads2' beads.
+      _b2tob1: The matrix to transform between a ring polymer with 'nbeads2' 
+         beads and another with 'nbeads1' beads.
+   """
+
    def __init__(self, nbeads1, nbeads2):
+      """Initializes nm_rescale.
+
+      Args:
+         nbeads1: The initial number of beads.
+         nbeads2: The rescaled number of beads.
+      """
+
       self._b1tob2=mk_rs_matrix(nbeads1,nbeads2)
       self._b2tob1=self._b1tob2.T*(float(nbeads1)/float(nbeads2))
 
    def b1tob2(self, q):
+      """Transforms a matrix from one value of beads to another.
+
+      Args:
+         q: A matrix with nbeads1 rows, in the bead representation.
+      """
+
       return np.dot(self._b1tob2,q)
 
    def b2tob1(self, q):
+      """Transforms a matrix from one value of beads to another.
+
+      Args:
+         q: A matrix with nbeads2 rows, in the bead representation.
+      """
+
       return np.dot(self._b2tob1,q)
-
-
-#~ class nm_trans:
-   #~ """Performs the normal mode transformation using a matrix multiplication.
-#~
-   #~ Holds helper routines for the normal mode transformations.
-#~
-   #~ Attributes:
-      #~ cmatrices: A set of transformation matrices for the normal mode
-         #~ transformations.
-      #~ tmatrices: A set of transformation matrices for ring polymer contraction.
-   #~ """
-#~
-   #~ def __init__(self, nbeads=None):
-      #~ """Initialises nm_trans.
-#~
-      #~ Args:
-         #~ beads: An optional number of beads to use to create the transformation
-            #~ matrix.
-      #~ """
-#~
-      #~ self.cmatrices = {}
-      #~ self.tmatrices = {}
-      #~ if nbeads is not None:
-         #~ self.setup_transform(nbeads)
-#~
-   #~ def setup_transform(self, nbeads):
-      #~ """Sets up matrices for normal-mode transformation.
-#~
-      #~ Args:
-         #~ nbeads: The number of beads in the ring polymer.
-      #~ """
-#~
-      #~ # Todo: optional Fourier transform?
-#~
-      #~ Cb2nm = np.zeros((nbeads,nbeads))
-      #~ Cb2nm[0,:] = math.sqrt(1.0/nbeads)
-      #~ for i in range(1,nbeads/2+1):
-         #~ for j in range(nbeads):
-            #~ Cb2nm[i,j] = math.sqrt(2.0/nbeads)*math.cos(2*math.pi*j*i/float(nbeads))
-      #~ if (nbeads%2) == 0:
-         #~ Cb2nm[nbeads/2,0:nbeads:2] = math.sqrt(1.0/nbeads)
-         #~ Cb2nm[nbeads/2,1:nbeads:2] = -math.sqrt(1.0/nbeads)
-      #~ for i in range(nbeads/2+1, nbeads):
-         #~ for j in range(nbeads):
-            #~ Cb2nm[i,j] = math.sqrt(2.0/nbeads)*math.sin(2*math.pi*j*i/float(nbeads))
-#~
-      #~ Cnm2b = Cb2nm.T.copy()
-#~
-      #~ self.cmatrices[nbeads] = (Cb2nm, Cnm2b)
-#~
-   #~ def setup_contract(self, nred, nbeads):
-      #~ """Sets up matrices for ring polymer contraction.
-#~
-      #~ Args:
-         #~ nred: The number of beads in the contracted ring polymer.
-         #~ nbeads: The number of beads in the full ring polymer.
-      #~ """
-#~
-      #~ try:
-         #~ full = self.cmatrices[nbeads]
-      #~ except KeyError:
-         #~ self.setup_transform(nbeads)
-         #~ full = self.cmatrices[nbeads]
-      #~ try:
-         #~ contracted = self.cmatrices[nred]
-      #~ except KeyError:
-         #~ self.setup_transform(nred)
-         #~ contracted = self.cmatrices[nred]
-#~
-      #~ Tf2c = np.zeros((nred, nbeads))
-      #~ for j in range(-nred/2+1, nred/2+1):
-         #~ #taking the lower frequency normal modes only.
-         #~ Tf2c += np.outer(contracted[1][:,j], full[0][j,:])
-#~
-      #~ Tc2f = Tf2c.T.copy()
-      #~ #normalization to set contracted ring polymer to a different effecive
-      #~ #temperature.
-      #~ Tf2c *= math.sqrt(nred/float(nbeads))
-      #~ Tc2f *= math.sqrt(nbeads/float(nred))
-#~
-      #~ self.tmatrices[nred] = (Tf2c, Tc2f)
-#~
-   #~ def b2nm(self, q):
-      #~ """This performs the forward normal mode transformation.
-#~
-      #~ Args:
-         #~ q: A 2 dimensional matrix in the bead representation. The first
-            #~ dimension gives the different bead coordinates, and the second
-            #~ the different degrees of freedom.
-#~
-      #~ Returns:
-         #~ A matrix of the same shape as q, but in the normal mode representation.
-      #~ """
-#~
-      #~ nbeads = len(q)
-      #~ try:
-         #~ return np.dot(self.cmatrices[nbeads][0], q)
-      #~ except KeyError:
-         #~ self.setup_transform(nbeads)
-         #~ return np.dot(self.cmatrices[nbeads][0], q)
-#~
-   #~ def nm2b(self, qnm):
-      #~ """This performs the forward normal mode transformation.
-#~
-      #~ Args:
-         #~ qnm: A 2 dimensional matrix in the normal mode representation.
-            #~ The first dimension gives the different bead coordinates, and
-            #~ the second the different degrees of freedom.
-#~
-      #~ Returns:
-         #~ A matrix of the same shape as qnm, but in the bead representation.
-      #~ """
-#~
-      #~ nbeads = len(qnm)
-      #~ try:
-         #~ return np.dot(self.cmatrices[nbeads][1], qnm)
-      #~ except KeyError:
-         #~ self.setup_transform(nbeads)
-         #~ return np.dot(self.cmatrices[nbeads][1], qnm)
-#~
-   #~ def contract(self, q, nred):
-      #~ """This performs a ring polymer contraction.
-#~
-      #~ This is used in the ring polymer contraction scheme, to create an
-      #~ appropriate smaller ring polymer from a larger one
-#~
-      #~ Args:
-         #~ q: A 2 dimensional matrix in the bead representation. The first
-            #~ dimension gives the full bead coordinates, and the second
-            #~ the different degrees of freedom.
-         #~ nred: The number of beads in the contracted ring polymer.
-#~
-      #~ Returns:
-         #~ A matrix of the same number of atoms as q, but with a smaller
-         #~ number of beads.
-      #~ """
-#~
-      #~ nbeads = len(q)
-      #~ if nred == nbeads:
-         #~ return q
-      #~ else:
-         #~ try:
-            #~ return np.dot(self.tmatrices[nred][0], q)
-         #~ except KeyError:
-            #~ self.setup_contract(nred, nbeads)
-            #~ return np.dot(self.tmatrices[nred][0], q)
-#~
-   #~ def expand(self, q, nbeads):
-      #~ """This performs the ring polymer expansion.
-#~
-      #~ Args:
-         #~ q: A 2 dimensional matrix in the bead representation.
-            #~ The first dimension gives the contracted bead coordinates,
-            #~ and the second the different degrees of freedom.
-         #~ nbeads: The number of beads in the full ring polymer.
-#~
-      #~ Returns:
-         #~ A matrix with the same number of atoms as q, but with the
-         #~ full number of beads.
-      #~ """
-#~
-      #~ nred = len(q)
-      #~ if nred == nbeads:
-         #~ return q
-      #~ else:
-         #~ try:
-            #~ return np.dot(self.tmatrices[nred][1], q)
-         #~ except KeyError:
-            #~ self.setup_contract(nred, nbeads)
-            #~ return np.dot(self.tmatrices[nred][1], q)
