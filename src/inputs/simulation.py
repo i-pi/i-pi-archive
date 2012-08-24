@@ -98,7 +98,7 @@ class InputSimulation(Input):
       """
 
       super(InputSimulation,self).store()
-      self.forces.store(simul._forcemodel)
+      self.forces.store(simul.flist)
       self.ensemble.store(simul.ensemble)
 
       self.beads.store(simul.beads)

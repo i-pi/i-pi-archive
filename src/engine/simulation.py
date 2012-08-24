@@ -64,7 +64,7 @@ class Simulation(dobject):
       step: The current simulation step.
    """
 
-   def __init__(self, beads, cell, force, ensemble, prng, outputs, nm, init, step=0, tsteps=1000):
+   def __init__(self, beads, cell, forces, ensemble, prng, outputs, nm, init, step=0, tsteps=1000):
       """Initialises Simulation class.
 
       Args:
@@ -95,7 +95,7 @@ class Simulation(dobject):
       # initialize the configuration of the system
       init.init(self)
 
-      self._forcemodel = force
+      self.flist=forces
       self.forces = Forces()
       self.outputs = outputs
 
@@ -117,7 +117,7 @@ class Simulation(dobject):
 
       # binds important computation engines
       self.nm.bind(self.beads, self.ensemble)
-      self.forces.bind(self.beads, self.cell,  self._forcemodel, softexit=self.soft_exit)
+      self.forces.bind(self.beads, self.cell, self.flist, softexit=self.soft_exit)
       self.ensemble.bind(self.beads, self.nm, self.cell, self.forces, self.prng)
 
       # binds output management objects
