@@ -72,7 +72,7 @@ I'm pretty sure that at the moment we're using strings as index variables
 rather than integers.
 
 * It might be useful to have some kind of standardized error message format
-(JM)
+(JM) (JM)
 
 ** In both engine and inputs directories, we need to document initializer, 
 normalmodes, forces and outputs (JM) (JM)

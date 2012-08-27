@@ -359,7 +359,7 @@ class ForceBeads(dobject):
       Forcebeads model, without binding a particular ForceBeads object twice.
 
       Returns:
-         A ForceBeads object without atoms or cell attributes.
+         A ForceBeads object without beads or cell attributes.
       """
 
       # does not copy the bound objects (i.e., the returned forcefield must be bound before use)
