@@ -68,6 +68,22 @@ class Beads(dobject):
       self.resize(natoms, nbeads)
 
    def resize(self, natoms, nbeads):
+      """Creates all the data arrays needed in the simulation.
+
+      Effectively initializes the whole Beads object, according to the
+      specified number of atoms and beads. Is also used, as the name suggests,
+      to resize the data to a new number of beads when this is necessary, for
+      example in initialization from a simulation with a different number of 
+      beads.
+
+      Also creates, or recreates, the dependency network, as this requires
+      the data arrays to be created for it to work.
+
+      Args:
+         natoms: The number of atoms.
+         nbeads: The number of beads.
+      """
+
       self.natoms = natoms
       self.nbeads = nbeads
 

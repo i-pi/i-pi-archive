@@ -29,16 +29,57 @@ import numpy as np
 __all__ = ['Initializer', 'InitFile']
 
 class InitFile(dobject):
+   """Class that holds data about a particular input file.
+
+   Attributes:
+      filename: A string giving the name of the file.
+      format: A string giving the extension of the file.
+   """
 
    def __init__(self, filename="", format=""):
+      """Initializes InitFile.
+
+      Args:
+         filename: A string giving the name of the file.
+         format: A string giving the extension of the file.
+      """
 
       self.filename = filename
       self.format = format
 
 
 class Initializer(dobject):
+   """Class that deals with the initialization of data.
+
+   This can either be used to initialize the atom positions and the cell data
+   from a file, or to initialize them from a beads, atoms or cell object.
+
+   Currently, we use a ring polymer contraction scheme to create a new beads
+   object from one given in initialize if they have different numbers of beads,
+   as described in the paper T. E. Markland and D. E. Manolopoulos, J. Chem. 
+   Phys. 129, 024105, (2008). If the new beads object has more beads than
+   the beads object it was initialized from, we set the higher ring polymer
+   normal modes to zero.
+
+   Attributes: 
+      queue: A list of things to initialize. Each member of the list is a tuple
+         of the form ('type', 'object'), where 'type' specifies what kind of
+         initialization is being done, and 'object' gives the data to
+         initialize it from.
+   """
 
    def __init__(self, nbeads=0, queue=None):
+      """Initializes Initializer.
+
+      Arguments:
+         nbeads: The number of beads that we need in the simulation. Not
+            necessarily the same as the number of beads of the objects we are
+            initializing the data from.
+         queue: A list of things to initialize. Each member of the list is a 
+            tuple of the form ('type', 'object'), where 'type' specifies what 
+            kind of initialization is being done, and 'object' gives the data to
+            initialize it from.
+      """
 
       self.nbeads = nbeads
 
@@ -48,12 +89,21 @@ class Initializer(dobject):
          self.queue = queue
 
    def init(self, simul):
+      """Initializes the simulation.
+
+      Takes a simulation object, and uses all the data in the initialization
+      queue to fill up the data needed to run the simulation.
+
+      Args:
+         simul: A simulation object to be initialized.
+      """
 
       ibeads = simul.beads
       icell = simul.cell
       for (k,v) in self.queue:
          if k == "file" :
             # initialize from file
+            # in this case 'v' is a InitFile instance.
 
             rfile = open(v.filename,"r")
             ratoms = []
@@ -61,6 +111,8 @@ class Initializer(dobject):
             rbeads = Beads(0,0)
             if (v.format == "xyz"):
                while True:
+               #while loop, so that more than one configuration can be given
+               #so multiple beads can be initialized at once.
                   try:
                      myatoms = read_xyz(rfile)
                   except:
@@ -68,6 +120,8 @@ class Initializer(dobject):
                   ratoms.append(myatoms)
             elif (v.format == "pdb"):
                while True:
+               #while loop, so that more than one configuration can be given
+               #so multiple beads can be initialized at once.
                   try:
                      myatoms, mycell = read_pdb(open(rfile,"r"))
                   except:
