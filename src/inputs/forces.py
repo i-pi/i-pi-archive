@@ -1,8 +1,9 @@
 """Deals with creating the forcefield class.
 
 Classes:
-   InputForce: Deals with creating the ForceField object from a file, and
-      writing the checkpoints.
+   InputForces: Deals with creating all the forcefield objects.
+   InputForceBeads: Base class to deal with one particular forcefield object.
+   InputFBSocket: Deals with creating a forcefield using sockets.
 """
 
 __all__ = ['InputForces', 'InputForceBeads', "InputFBSocket"]
@@ -15,18 +16,13 @@ from copy import copy
 class InputForceBeads(Input):
    """ForceBeads input class.
 
-   Handles generating the appropriate forcefield class from the xml
+   Handles generating one instance of a particular forcefield class from the xml
    input file, and generating the xml checkpoint tags and data from an
    instance of the object.
 
    Attributes:
-      type: A string indicating the type being used. 'socket' is currently
-         the only available option.
-      interface: A restart interface instance.
-      parameters: A dictionary of the parameters used by the driver. Of the
-         form {"name": value}.
-      nreduced: An integer giving the number of beads to use if a ring polymer
-         contraction scheme is being used.
+      nbeads: The number of beads that the forcefield will be evaluated on.
+      weight: A scaling factor for the contribution from this forcefield.
    """
 
    attribs = { "nbeads" : ( InputValue, { "dtype"   : int,
@@ -37,14 +33,14 @@ class InputForceBeads(Input):
                                          "help"    : "This force term will be added to give the total force using this weight." } )
             }
 
-   default_help = "Deals with the assigning of jobs to different driver codes, and collecting the data."
+   default_help = "Deals with the assigning of force calculation jobs and collecting the data."
    default_label = "FORCEBEADS"
 
    def store(self, forceb):
-      """Takes a ForceField instance and stores a minimal representation of it.
+      """Takes a ForceBeads instance and stores a minimal representation of it.
 
       Args:
-         force: A forcefield object.
+         forceb: A ForceBeads object.
       """
 
       #~ if (not type(force) is FFSocket):
@@ -55,11 +51,10 @@ class InputForceBeads(Input):
       self.weight.store(forceb.weight)
 
    def fetch(self):
-      """Creates a forcefield object.
+      """Creates a ForceBeads object.
 
       Returns:
-         A forcefield object of the appropriate type and with the appropriate
-         interface given the attributes of the InputForce object.
+         A ForceBeads object.
       """
 
       super(InputForceBeads,self).fetch()
@@ -68,16 +63,25 @@ class InputForceBeads(Input):
 
 
 class InputFBSocket(InputForceBeads, InputInterface):
+   """Creates a ForceBeads object with a socket interface.
+
+   Handles generating one instance of a socket interface forcefield class.
+   Shares its attributes between InputForceBeads, which deals with creating the
+   forcefield, and InputInterface, which deals with creating the socket
+   interface.
+   """
 
    attribs = copy(InputInterface.attribs)
    attribs.update(InputForceBeads.attribs)
 
+   default_help = "Deals with the assigning of force calculation jobs to different driver codes, and collecting the data, using a socket for the data communication."
+   default_label = "FORCESOCKET"
 
    def store(self, forceb):
       """Takes a ForceField instance and stores a minimal representation of it.
 
       Args:
-         force: A forcefield object.
+         forceb: A ForceBeads object with a FFSocket forcemodel object.
       """
 
       if (not type(forceb.f_model) is FFSocket):
@@ -87,18 +91,38 @@ class InputFBSocket(InputForceBeads, InputInterface):
       InputInterface.store(self,forceb.f_model.socket)
 
    def fetch(self):
+      """Creates a ForceBeads object.
+
+      Returns:
+         A ForceBeads object with the correct socket parameters.
+      """
 
       return ForceBeads(model=FFSocket( interface=InputInterface.fetch(self) ),nbeads=self.nbeads.fetch(),weight=self.weight.fetch() )
 
 
-
 class InputForces(Input):
+   """Deals with creating all the forcefield objects required in the 
+   simulation.
 
-   dynamic = {  "socket" : (InputFBSocket, { "help" : "Each of the <properties> tags specify how to create a file in which one or more properties are written, one line per frame. " } )
+   Attributes:
+      extra: A list of all the forcefield objects read in dynamically from
+         the xml input file.
+   """
+
+   dynamic = {  "socket" : (InputFBSocket, { "help" : InputFBSocket.default_help } )
             }
 
+   default_help = "Deals with creating all the necessary forcefield objects."
+   default_label = "MULTIFORCE"
+
    def fetch(self):
-      """ Returs a list of the output objects included in this dynamic container. """
+      """Returns a list of the output objects included in this dynamic 
+      container.
+
+      Returns:
+         A list of tuples, with each tuple being of the form ('type', 'object'),
+         where 'type' is the type of forcefield, and 'object' is a
+      """
 
       super(InputForces, self).fetch()
       flist = [ (n, f.fetch()) for (n, f) in self.extra ]
@@ -106,7 +130,14 @@ class InputForces(Input):
       return flist
 
    def store(self, flist):
-      """ Stores a list of the output objects, creating a sequence of dynamic containers. """
+      """Stores a list of the output objects, creating a sequence of 
+      dynamic containers.
+
+      Args:
+         A list of tuples, with each tuple being of the form ('type', 'object'),
+         where 'type' is the type of forcefield, and 'object' is a
+         forcefield object of that type.
+      """
 
       super(InputForces, self).store()
       self.extra = []

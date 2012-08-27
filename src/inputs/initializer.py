@@ -1,3 +1,12 @@
+"""Deals with creating the initiliazer class.
+
+Classes:
+   InputInitializer: Initializes the classes that initialize the simulation
+      data.
+   InputInitFile: Initializes the classes that initialize the simulation data
+      from a file.
+"""
+
 from utils.inputvalue import *
 from copy import copy
 from inputs.beads import InputBeads
@@ -6,28 +15,50 @@ import engine.initializer as ei
 
 __all__ = ['InputInitializer', 'InputInitFile']
 
-
 class InputInitFile(InputValue):
-   """Class to handle input from file. """
+   """Class to handle input from file.
 
-   attribs=copy(InputValue.attribs)
+   Attributes:
+      format: The format of the file to read data from.
+   """
+
+   attribs = copy(InputValue.attribs)
    attribs["format"]=(InputValue,{ "dtype" : str, "default": "xyz"} )
 
    def __init__(self, help=None, dimension=None, units=None, default=None, dtype=None):
-      """ Initializes an InputInitFile object by just calling the parent
-          with appropriate arguments. """
+      """Initializes InputInitFile. 
+
+      Just calls the parent initialize function with appropriate arguments.
+      """
 
       super(InputInitFile,self).__init__(dtype=str, dimension=dimension, default=default, units=units, help=help)
 
    def store(self,iif):
+      """Takes a InitFile instance and stores a minimal representation of it.
+
+      Args:
+         iif: An input file object.
+      """
+
       super(InputInitFile,self).store(iif.filename)
       self.format.store(iif.format)
 
    def fetch(self):
+      """Creates an input file object.
+
+      Returns:
+         An input file object.
+      """
+
       return ei.InitFile(filename=super(InputInitFile,self).fetch(), format=self.format.fetch() )
 
 class InputInitializer(Input):
    """Input class to handle initialization.
+
+   Attributes:
+      nbeads: The number of beads to be used in the simulation.
+      extra: A list of all the initialize objects read in dynamically from
+         the xml input file.
    """
 
    attribs = { "nbeads"    : (InputValue, {"dtype"     : int,
@@ -46,7 +77,8 @@ class InputInitializer(Input):
    default_label = "INITIALIZER"
 
    def write(self,  name="", indent=""):
-      """Overloads Input write() function so that we never write out InputInitializer to restart files.
+      """Overloads Input write() function so that we never write out 
+      InputInitializer to restart files.
 
       Returns:
          An empty string.
@@ -55,6 +87,11 @@ class InputInitializer(Input):
       return ""
 
    def store(self, ii):
+      """Takes a Initializer instance and stores a minimal representation of it.
+
+      Args:
+         iif: An initializer object.
+      """
 
       print "Storing input thing", ii
       self.extra = []
@@ -79,9 +116,12 @@ class InputInitializer(Input):
 
       self.nbeads.store(ii.nbeads)
 
-
-
    def fetch(self):
+      """Creates an initializer object.
+
+      Returns:
+         An initializer object.
+      """
 
       super(InputInitializer,self).fetch()
 
