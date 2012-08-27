@@ -134,9 +134,9 @@ class InputForces(Input):
       dynamic containers.
 
       Args:
-         A list of tuples, with each tuple being of the form ('type', 'object'),
-         where 'type' is the type of forcefield, and 'object' is a
-         forcefield object of that type.
+         flist: A list of tuples, with each tuple being of the form 
+         ('type', 'object') where 'type' is the type of forcefield 
+         and 'object' is a forcefield object of that type.
       """
 
       super(InputForces, self).store()

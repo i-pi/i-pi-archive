@@ -267,7 +267,7 @@ class Input(object):
       until all the information is read, or an input error is found.
 
       Args:
-         xml: An xml_node object containing the all the data for the parent
+         xml: An xml_node object containing all the data for the parent
             tag.
          text: The data held between the start and end tags.
 
