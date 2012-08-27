@@ -1,4 +1,14 @@
+"""Contains the classes that deal with the normal mode representation.
 
+Deals with the normal mode transformation, including the complications 
+introduced by PA-CMD when the bead masses are rescaled. Also deals with
+the change in the dynamics introduced by this mass-scaling, and has its
+own functions to calculate the kinetic energy, and the exact propagator
+in the normal mode representation under the ring polymer Hamiltonian.
+
+Classes:
+   NormalModes: Deals with the normal mode transformation in RPMD and PA-CMD.
+"""
 
 import numpy as np
 import math
@@ -13,6 +23,32 @@ class NormalModes(dobject):
 
    Normal-modes transformation, determination of path frequencies,
    dynamical mass matrix change, etc.
+
+   Attributes:
+      mode: A string specifying how the bead masses are chosen.
+      natoms: The number of atoms.
+      nbeads: The number of beads.
+      beads: The beads object for which the normal mode transformation should
+         be done.
+      ensemble: The ensemble object, specifying the temperature to hold the 
+         system to.
+      transform: A nm_trans object that contains the functions that are
+         required for the normal mode transformation.
+
+   Depend objects:
+      nm_freqs: An array that specifies how the normal mode frequencies
+         of the ring polymers are to be calculated.
+      qnm: The bead positions in the normal mode representation.
+      pnm: The bead momenta in the normal mode representation.
+      omegan: The effective vibrational frequency for the interaction
+         between the replicas. Depends on the simulation temperature.
+      omegan2: omegan**2.
+      omegak: The normal mode frequencies for the free ring polymer.
+         Depends on omegan.
+      prop_pq: An array holding the exact normal mode propagator for the
+         free ring polymer, using mass scaled coordinates.
+         See J. Chem. Phys. 133, 124101 (2010). Depends on the bead masses
+         and the timestep.
    """
 
    def __init__(self, mode="rpmd", freqs=None):

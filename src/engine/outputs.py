@@ -1,36 +1,67 @@
-""" Mini classes to deal with output of simulation data. """
+"""Classes to deal with output of simulation data.
+
+Holds classes to deal with the output of different properties, trajectories
+and the restart files.
+
+Classes:
+   PropertyOutput: Deals with outputting properties.
+   TrajectoryOutput: Deals with outputting trajectories.
+   CheckpointOutput: Deals with outputting restart files.
+"""
 
 import numpy as np
+import inputs.simulation
 from utils.depend import *
 from utils.io.io_xml import *
 from engine.properties import getkey
 
-__all__=[ 'PropertyOutput', 'TrajectoryOutput', 'CheckpointOutput' ]
+__all__ = [ 'PropertyOutput', 'TrajectoryOutput', 'CheckpointOutput' ]
 
 class PropertyOutput(dobject):
-   """ Mini-class dealing with outputting a set of properties to file.
+   """Class dealing with outputting a set of properties to file.
 
-      Does not do any calculation, just manages opening a file, getting data
-      from a Properties object and outputting with the desired stride.
+   Does not do any calculation, just manages opening a file, getting data
+   from a Properties object and outputting with the desired stride.
+
+   Attributes:
+      filename: The name of the file to output to.
+      outlist: A list of the properties to be output.
+      stride: The number of steps that should be taken between outputting the 
+         data to file.
+      out: The output stream on which to output the properties.
+      simul: The simulation object to get the data to be output from.
    """
 
    def __init__(self, filename="out", stride=1, outlist=np.zeros(0,np.dtype('|S1024')) ):
-      """ Initializes a property output stream opening the corresponding file name.
-         Also writes out headers.  """
-      self.filename=filename
-      self.outlist=np.asarray(outlist,np.dtype('|S1024'))
-      self.stride=stride
-      self.out=None
+      """Initializes a property output stream opening the corresponding 
+      file name.
 
+      Also writes out headers.
+
+      Args:
+         filename: A string giving the name of the file to be output to.
+         stride: An integer giving how many steps should be taken between
+            outputting the data to file.
+         outlist: A list of all the properties that should be output.
+      """
+
+      self.filename = filename
+      self.outlist = np.asarray(outlist,np.dtype('|S1024'))
+      self.stride = stride
+      self.out = None
 
    def bind(self, simul):
-      """ Binds output proxy to simulation object. """
+      """Binds output proxy to simulation object.
 
-      self.simul=simul
+      Args:
+         simul: A simulation object to be bound.
+      """
+
+      self.simul = simul
 
       # Checks as soon as possible if some asked-for properties are missing or mispelled
       for what in self.outlist:
-         key=getkey(what)
+         key = getkey(what)
          if not key in self.simul.properties.property_dict.keys():
             print "Computable properties list: ", self.simul.properties.property_dict.keys()
             raise KeyError(key + " is not a recognized property")
@@ -38,35 +69,34 @@ class PropertyOutput(dobject):
       self.open_stream()
 
    def open_stream(self):
-      """ Opens the output stream. """
+      """Opens the output stream."""
 
       try:
-         self.out=open(self.filename, "a")
+         self.out = open(self.filename, "a")
       except:
-         raise ValueError("Could not open file "+self.filename+" for output")
+         raise ValueError("Could not open file " + self.filename + " for output")
 
       # print nice header if information is available on the properties
-      if (self.simul.step==0) :
-         icol=1
+      if (self.simul.step == 0) :
+         icol = 1
          for what in self.outlist:
             ohead = "# "
-            key=getkey(what)
+            key = getkey(what)
             prop = self.simul.properties.property_dict[key]
 
             if "size" in prop and prop["size"]>1:
-               ohead+= "cols. %3d-%3d " % ( icol, icol+prop["size"] )
-               icol+=prop["size"]
+               ohead += "cols. %3d-%3d " % ( icol, icol+prop["size"] )
+               icol += prop["size"]
             else:
-               ohead+= "column    %3d " % ( icol )
-               icol+=1
+               ohead += "column    %3d " % ( icol )
+               icol += 1
             ohead += " --> %s " % (what)
             if "help" in prop:
-               ohead+=" : "+prop["help"]
+               ohead += " : "+prop["help"]
             self.out.write(ohead + "\n")
 
-
    def close_stream():
-      """ Closes the output stream. """
+      """Closes the output stream."""
 
       self.out.close()
 
@@ -81,8 +111,8 @@ class PropertyOutput(dobject):
             are not contained in the property_dict member of properties.
       """
 
-
-      if not (self.simul.step+1) % self.stride == 0:   return
+      if not (self.simul.step + 1) % self.stride == 0:
+         return
       self.out.write("  ")
       for what in self.outlist:
          try:
@@ -100,30 +130,53 @@ class PropertyOutput(dobject):
 
 
 class TrajectoryOutput(dobject):
-   """ Mini-class dealing with outputting atom-based properties as a trajectory file.
+   """Class dealing with outputting atom-based properties as a 
+   trajectory file.
 
-      Does not do any calculation, just manages opening a file, getting data
-      from a Trajectories object and outputting with the desired stride.
+   Does not do any calculation, just manages opening a file, getting data
+   from a Trajectories object and outputting with the desired stride.
+
+   Attributes:
+      filename: The (base) name of the file to output to.
+      format: The format of the trajectory file to be created.
+      what: The trajectory that needs to be output.
+      stride: The number of steps that should be taken between outputting the 
+         data to file.
+      out: The output stream on which to output the trajectories.
+      simul: The simulation object to get the data to be output from.
    """
 
-
    def __init__(self, filename="out", stride=1, what="", format="xyz"):
-      """ Initializes a property output stream opening the corresponding file name.
-         Also writes out headers.  """
-      self.filename=filename
-      self.what=what
-      self.stride=stride
-      self.format=format
-      self.out=None
+      """ Initializes a property output stream opening the corresponding 
+      file name.
 
+      Also writes out headers.
+
+      Args:
+         filename: A string giving the name of the file to be output to.
+         stride: An integer giving how many steps should be taken between
+            outputting the data to file.
+         what: A string specifying what trajectory should be output.
+         format: A string specifying the type of trajectory file to be created.
+      """
+
+      self.filename = filename
+      self.what = what
+      self.stride = stride
+      self.format = format
+      self.out = None
 
    def bind(self, simul):
-      """ Binds output proxy to simulation object. """
+      """Binds output proxy to simulation object.
 
-      self.simul=simul
+      Args:
+         simul: A simulation object to be bound.
+      """
+
+      self.simul = simul
 
       # Checks as soon as possible if some asked-for trajs are missing or mispelled
-      key=getkey(self.what)
+      key = getkey(self.what)
       if not key in self.simul.trajs.traj_dict.keys():
          print "Computable properties list: ", self.simul.trajs.traj_dict.keys()
          raise KeyError(key + " is not a recognized output trajectory")
@@ -131,35 +184,37 @@ class TrajectoryOutput(dobject):
       self.open_stream()
 
    def open_stream(self):
-      """ Opens the output stream(s). """
+      """Opens the output stream(s)."""
 
       if getkey(self.what) in [ "positions", "velocities", "forces" ]:
          # must write out trajectories for each bead, so must create b streams
-         self.out=[]
+         self.out = []
          for b in range(self.simul.beads.nbeads):
-            padb=( ("%0"+str(int(1+np.floor(np.log(self.simul.beads.nbeads)/np.log(10))))+"d") % (b) )
+            padb = ( ("%0" + str(int(1 + np.floor(np.log(self.simul.beads.nbeads)/np.log(10)))) + "d") % (b) )
             try:
-               self.out.append( open(self.filename+"_"+padb+"."+self.format, "a") )
+               self.out.append( open(self.filename + "_" + padb + "." + self.format, "a") )
             except:
-               raise ValueError("Could not open file "+self.filename+"_"+padb+"."+self.format+" for output")
+               raise ValueError("Could not open file " + self.filename + "_" + padb + "." + self.format + " for output")
       else:
          try:
-            self.out=( open(self.filename+"."+self.format, "a") )
+            self.out = ( open(self.filename + "." + self.format, "a") )
          except:
-            raise ValueError("Could not open file "+self.filename+"."+self.format+" for output")
+            raise ValueError("Could not open file " + self.filename + "." + self.format + " for output")
 
    def close_stream():
-      """ Closes the output stream. """
+      """Closes the output stream."""
 
       if hasattr(self.out, "__getitem__"):
-         for o in self.out: o.close()
+         for o in self.out:
+            o.close()
       else:
          self.out.close()
 
    def write(self):
       """Writes out the required trajectories."""
 
-      if not (self.simul.step+1) % self.stride == 0:   return
+      if not (self.simul.step + 1) % self.stride == 0:
+         return
 
       # quick-and-dirty way to check if a trajectory is "global" or per-bead
       # Checks to see if there is a list of files or just a single file.
@@ -171,52 +226,74 @@ class TrajectoryOutput(dobject):
 
 
 class CheckpointOutput(dobject):
-   """ Mini-class dealing with outputting checkpoints.
+   """Class dealing with outputting checkpoints.
 
    Saves the complete status of the simulation at regular intervals.
 
    Attributes:
-      filename: the (base) filename for the checkpoint file file.
+      filename: The (base) name of the file to output to.
       step: the number of times a checkpoint has been written out.
-      stride: will print out a checkpoint every <stride> MD steps.
-      overwrite: if True, the checkpoint file is overwritten at each output.
-         if False, will output to filename_step. note that no check is done
-         on whether filename_step exists already.
+      stride: The number of steps that should be taken between outputting the 
+         data to file.
+      overwrite: If True, the checkpoint file is overwritten at each output.
+         If False, will output to 'filename_step'. Note that no check is done
+         on whether 'filename_step' exists already.
    """
 
 
    def __init__(self, filename="restart", stride=1000, overwrite=True, step=0):
-      """ Initializes a checkpoint output proxy. """
+      """Initializes a checkpoint output proxy.
 
-      self.filename=filename
-      self.step=step
-      self.stride=stride
-      self.overwrite=overwrite
+      Args:
+         filename: A string giving the name of the file to be output to.
+         stride: An integer giving how many steps should be taken between
+            outputting the data to file.
+         overwrite: If True, the checkpoint file is overwritten at each output.
+            If False, will output to 'filename_step'. Note that no check is done
+            on whether 'filename_step' exists already.
+         step: The number of checkpoint files that have been created so far.
+      """
 
+      self.filename = filename
+      self.step = step
+      self.stride = stride
+      self.overwrite = overwrite
 
    def bind(self, simul):
-      """ Binds output proxy to simulation object. """
+      """Binds output proxy to simulation object.
 
-      import inputs.simulation
-      self.simul=simul
-      self.status=inputs.simulation.InputSimulation(); self.status.store(simul)
+      Args:
+         simul: A simulation object to be bound.
+      """
+
+      self.simul = simul
+      self.status = inputs.simulation.InputSimulation()
+      self.status.store(simul)
 
    def store(self):
+      """Stores the current simulation status.
+
+      Used so that, if halfway through a step a kill signal is received, 
+      we can output a checkpoint file corresponding to the beginning of the
+      current step, which is the last time that both the velocities and
+      positions would have been consistent.
+      """
+
       self.status.store(self.simul)
 
    def write(self):
       """Writes out the required trajectories."""
 
-      if not (self.simul.step+1) % self.stride == 0:   return
+      if not (self.simul.step + 1) % self.stride == 0:
+         return
 
-      if self.overwrite: filename=self.filename
-      else: filename=self.filename+"_"+str(self.step)
+      if self.overwrite:
+         filename = self.filename
+      else:
+         filename = self.filename + "_" + str(self.step)
 
-      self.step+=1    # advances the step counter before saving, so next time the correct index will be loaded.
+      self.step += 1    # advances the step counter before saving, so next time the correct index will be loaded.
       self.store()
       check_file = open(filename, "w")
       check_file.write(self.status.write(name="simulation"))
       check_file.close()
-
-
-

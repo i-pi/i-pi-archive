@@ -27,35 +27,26 @@ import time
 class Ensemble(dobject):
    """Base (do-nothing) ensemble class.
 
-      Gives the standard methods and attributes needed in all the
-      ensemble classes.
+   Gives the standard methods and attributes needed in all the
+   ensemble classes.
 
-      Attributes:
-         beads: A beads object giving the atoms positions.
-         cell: A cell object giving the system box.
-         forces: A forces object giving the virial and the forces acting on
-            each bead.
-         prng: A random number generator object.
+   Attributes:
+      beads: A beads object giving the atoms positions.
+      cell: A cell object giving the system box.
+      forces: A forces object giving the virial and the forces acting on
+         each bead.
+      prng: A random number generator object.
 
-      Depend objects:
-         econs: The conserved energy quantity appropriate to the given
-            ensemble. Depends on the various energy terms which make it up,
-            which are different depending on the ensemble.
-         temp: The system temperature.
-         dt: The timestep for the algorithms.
-         ntemp: The simulation temperature. Will be nbeads times higher than
-            the system temperature as PIMD calculations are done at this
-            effective classical temperature.
-         omegan: The effective vibrational frequency for the interaction
-            between the replicas. Depends on the simulation temperature.
-         omegan2: omegan**2.
-         omegak: The normal mode frequencies for the free ring polymer.
-            Depends on omegan.
-         prop_pq: An array holding the exact normal mode propagator for the
-            free ring polymer, using mass scaled coordinates.
-            See J. Chem. Phys. 133, 124101 (2010). Depends on the bead masses
-            and the timestep.
-      """
+   Depend objects:
+      econs: The conserved energy quantity appropriate to the given
+         ensemble. Depends on the various energy terms which make it up,
+         which are different depending on the ensemble.
+      temp: The system temperature.
+      dt: The timestep for the algorithms.
+      ntemp: The simulation temperature. Will be nbeads times higher than
+         the system temperature as PIMD calculations are done at this
+         effective classical temperature.
+   """
 
    def __init__(self, dt, temp):
       """Initialises Ensemble.
@@ -63,7 +54,6 @@ class Ensemble(dobject):
       Args:
          dt: The timestep of the simulation algorithms.
          temp: The temperature.
-         nm_freqs:
       """
 #TODO add nm_freqs to the doc string
 
