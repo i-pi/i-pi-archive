@@ -421,7 +421,7 @@ class ForceBeads(dobject):
          depend_value(name="pot", func=(lambda: self.pots.sum()),
             dependencies=[dget(self,"pots")]))
       dset(self,"vir",
-         depend_value(name="vir", func=self.get_vir,
+         depend_array(name="vir", func=self.get_vir, value=np.zeros((3,3)),
             dependencies=[dget(self,"virs")]))
 
    def run(self):
@@ -654,7 +654,7 @@ class Forces(dobject):
          depend_value(name="pot", func=(lambda: self.pots.sum()),
             dependencies=[dget(self,"pots")]))
       dset(self,"vir",
-         depend_value(name="vir", func=self.get_vir(),
+         depend_array(name="vir", func=self.get_vir, value=np.zeros((3,3)),
             dependencies=[dget(self,"virs")]))
 
    def run(self):
