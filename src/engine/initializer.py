@@ -125,7 +125,7 @@ class Initializer(dobject):
                #while loop, so that more than one configuration can be given
                #so multiple beads can be initialized at once.
                   try:
-                     myatoms, mycell = read_pdb(open(rfile,"r"))
+                     myatoms, mycell = read_pdb(rfile)
                   except:
                      break
                   ratoms.append(myatoms)
