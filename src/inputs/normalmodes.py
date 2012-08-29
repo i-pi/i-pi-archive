@@ -23,7 +23,7 @@ class InputNormalModes(InputArray):
    """
 
    attribs=copy(InputArray.attribs)
-   attribs["mode"]= (InputValue, {"dtype"   : str,
+   attribs["mode"]= (InputAttribute, {"dtype"   : str,
                                     "default" : "rpmd",
                                     "help"    : "How the dynamical masses are calculated",
                                     "options" : ['pa-cmd', 'wmax-cmd', 'manual', 'rpmd']})
@@ -38,16 +38,16 @@ class InputNormalModes(InputArray):
    default_help = "Describes how the dynamic of the path must be performed, by manipulating the frequencies of normal modes."
    default_label = "NORMALMODES"
 
-   def __init__(self, help=None, dimension=None, units=None, default=None, dtype=None):
-      """ Initializes InputNormalModes. 
+   def __init__(self, help=None, dimension=None, default=None, dtype=None):
+      """ Initializes InputNormalModes.
 
       Just calls the parent initialization function with appropriate arguments.
       """
 
-      super(InputNormalModes,self).__init__(dtype=float, dimension="frequency", default=default, units=units, help=help)
+      super(InputNormalModes,self).__init__(help=help, default=default, dtype=float, dimension="frequency")
 
    def store(self, nm):
-      """Takes a normal modes instance and stores a minimal representation 
+      """Takes a normal modes instance and stores a minimal representation
       of it.
 
       Args:

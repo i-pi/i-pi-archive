@@ -32,16 +32,16 @@ class InputProperties(InputArray):
    default_label = "PROPERTIES"
 
    attribs=copy(InputArray.attribs)
-   attribs["filename"]=(InputValue,{ "dtype" : str, "default": "out"} )
-   attribs["stride"]=(InputValue,{ "dtype" : int, "default": 1 } )
+   attribs["filename"]=(InputAttribute,{ "dtype" : str, "default": "out"} )
+   attribs["stride"]=(InputAttribute,{ "dtype" : int, "default": 1 } )
 
-   def __init__(self, help=None, dimension=None, units=None, default=None, dtype=None):
-      """Initializes InputProperties. 
+   def __init__(self, help=None,  default=None, dtype=None, dimension=None):
+      """Initializes InputProperties.
 
       Just calls the parent initialization function with appropriate arguments.
       """
 
-      super(InputProperties,self).__init__(dtype=str, dimension=dimension, default=default, units=units, help=help)
+      super(InputProperties,self).__init__(help=help, default=default, dtype=str, dimension=dimension)
 
    def fetch(self):
       """Returns a PropertyOutput object."""
@@ -72,17 +72,17 @@ class InputTrajectory(InputValue):
    default_label = "TRAJECTORY"
 
    attribs=copy(InputValue.attribs)
-   attribs["filename"]=(InputValue,{ "dtype" : str, "default": "traj"} )
-   attribs["stride"]=(InputValue,{ "dtype" : int, "default": 1 } )
-   attribs["format"]=(InputValue,{ "dtype" : str, "default": "xyz" } )
+   attribs["filename"]=(InputAttribute,{ "dtype" : str, "default": "traj"} )
+   attribs["stride"]=(InputAttribute,{ "dtype" : int, "default": 1 } )
+   attribs["format"]=(InputAttribute,{ "dtype" : str, "default": "xyz" } )
 
-   def __init__(self, help=None, dimension=None, units=None, default=None, dtype=None):
-      """Initializes InputTrajectory. 
+   def __init__(self, help=None,  default=None, dtype=None, dimension=None):
+      """Initializes InputTrajectory.
 
       Just calls the parent initialization function with appropriate arguments.
       """
 
-      super(InputTrajectory,self).__init__(dtype=str, dimension=dimension, default=default, units=units, help=help)
+      super(InputTrajectory,self).__init__(help=help, default=default, dtype=str, dimension=dimension)
 
    def fetch(self):
       """Returns a TrajectoryOutput object."""
@@ -107,7 +107,7 @@ class InputCheckpoint(InputValue):
       filename: The (base) name of the file to output to.
       stride: The number of steps that should be taken between outputting the
          data to file.
-      overwrite: whether checkpoints should be overwritten, or multiple 
+      overwrite: whether checkpoints should be overwritten, or multiple
          files output.
    """
 
@@ -115,17 +115,17 @@ class InputCheckpoint(InputValue):
    default_label = "CHECKPOINT"
 
    attribs=copy(InputValue.attribs)
-   attribs["filename"]=(InputValue,{ "dtype" : str, "default": "restart"} )
-   attribs["stride"]=(InputValue,{ "dtype" : int, "default": 1 } )
-   attribs["overwrite"]=(InputValue,{ "dtype" : bool, "default": True } )
+   attribs["filename"]=(InputAttribute,{ "dtype" : str, "default": "restart"} )
+   attribs["stride"]=(InputAttribute,{ "dtype" : int, "default": 1 } )
+   attribs["overwrite"]=(InputAttribute,{ "dtype" : bool, "default": True } )
 
-   def __init__(self, help=None, dimension=None, units=None, default=None, dtype=None):
-      """Initializes InputCheckpoint. 
+   def __init__(self, help=None,  default=None, dtype=None, dimension=None):
+      """Initializes InputCheckpoint.
 
       Just calls the parent initialization function with appropriate arguments.
       """
 
-      super(InputCheckpoint,self).__init__(dtype=int, dimension=dimension, default=default, units=units, help=help)
+      super(InputCheckpoint,self).__init__(help=help, default=default, dtype=int, dimension=dimension)
 
    def fetch(self):
       """Returns a CheckpointOutput object."""
@@ -163,18 +163,18 @@ class InputCheckpoint(InputValue):
 class InputOutputs(Input):
    """ List of outputs input class.
 
-   An example of a dynamic input class: a variable number of tags might be 
-   present, corresponding to different output requests. This allows for 
-   instance to print multiple property outputs, with different content 
+   An example of a dynamic input class: a variable number of tags might be
+   present, corresponding to different output requests. This allows for
+   instance to print multiple property outputs, with different content
    and/or output frequency.
 
    Attributes:
-      prefix: A string that will be appended to all output files from this 
+      prefix: A string that will be appended to all output files from this
          simulation.
       extra: A list of all the output objects.
    """
 
-   attribs = { "prefix" : ( InputValue, { "dtype" : str,
+   attribs = { "prefix" : ( InputAttribute, { "dtype" : str,
                                           "default"  : "wrap-pi",
                                           "help"     : "A string that will be the pre-pended to each output file name." })
              }
@@ -194,7 +194,7 @@ class InputOutputs(Input):
       """Used to make the default value of the outputs class for use when no
       output is specified.
 
-      Needed since this is a fairly complicated default, with many mutable 
+      Needed since this is a fairly complicated default, with many mutable
       objects, and the default has to be generated by a function that does not
       use any mutable objects as arguments.
       """
@@ -204,7 +204,7 @@ class InputOutputs(Input):
                engine.outputs.CheckpointOutput("wrap-pi.checkpoint",1000,overwrite=True)]
 
    def fetch(self):
-      """Returns a list of the output objects included in this dynamic 
+      """Returns a list of the output objects included in this dynamic
       container.
 
       Returns:
@@ -223,12 +223,12 @@ class InputOutputs(Input):
       return outlist
 
    def store(self, plist):
-      """ Stores a list of the output objects, creating a sequence of 
+      """ Stores a list of the output objects, creating a sequence of
       dynamic containers.
 
       Args:
-         plist: A list of tuples, with each tuple being of the form 
-            ('type', 'object') where 'type' is the type of forcefield and 
+         plist: A list of tuples, with each tuple being of the form
+            ('type', 'object') where 'type' is the type of forcefield and
             'object' is a particular object of that type.
       """
 

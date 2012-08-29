@@ -31,7 +31,7 @@ class InputCell(InputArray):
       """ Initializes an InputCell object by just calling the parent
           with appropriate arguments. """
 
-      super(InputCell,self).__init__(dtype=float, dimension="length", default=default, units=units, help=help)
+      super(InputCell,self).__init__(dtype=float, dimension="length", default=default, help=help)
 
    def store(self, cell):
       """Takes a Cell instance and stores of minimal representation of it.

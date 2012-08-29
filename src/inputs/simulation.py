@@ -125,15 +125,10 @@ class InputSimulation(Input):
 
       super(InputSimulation,self).fetch()
 
-      nbeads = self.beads.fetch()
-      ncell = self.cell.fetch()
-      nprng = self.prng.fetch()
-
-      print "read in cell", ncell.h
-
       # this creates a simulation object which gathers all the little bits
-      rsim = engine.simulation.Simulation(nbeads, ncell, self.forces.fetch(),
-                     self.ensemble.fetch(), nprng, self.output.fetch(),
+      #TODO use named arguments since this list is a bit too long...
+      rsim = engine.simulation.Simulation(self.beads.fetch(), self.cell.fetch(), self.forces.fetch(),
+                     self.ensemble.fetch(), self.prng.fetch(), self.output.fetch(),
                      self.normal_modes.fetch(), self.initialize.fetch(), self.step.fetch(),
                      tsteps=self.total_steps.fetch())
 

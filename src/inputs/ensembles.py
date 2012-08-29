@@ -49,7 +49,7 @@ class InputEnsemble(Input):
          motion will be constrained or not. Defaults to False.
    """
 
-   attribs={"type"  : (InputValue, {"dtype"   : str,
+   attribs={"type"  : (InputAttribute, {"dtype"   : str,
                                     "default" : "nve",
                                     "help"    : "The ensemble that will be sampled during the simulation.",
                                     "options" : ['nve', 'nvt', 'npt']}) }
@@ -58,7 +58,7 @@ class InputEnsemble(Input):
            "barostat" : (InputBaro, {"default"       : input_default(factory=engine.barostats.Barostat),
                                      "help"          : InputBaro.default_help}),
            "timestep": (InputValue, {"dtype"         : float,
-                                     "default"       : "1.0",
+                                     "default"       : 1.0,
                                      "help"          : "The time step.",
                                      "dimension"     : "time"}),
            "temperature" : (InputValue, {"dtype"     : float,
@@ -66,7 +66,7 @@ class InputEnsemble(Input):
                                          "help"      : "The temperature of the system.",
                                          "dimension" : "temperature"}),
            "pressure" : (InputValue, {"dtype"        : float,
-                                      "default"      : "1.0",
+                                      "default"      : 1.0,
                                       "help"         : "The external pressure.",
                                       "dimension"    : "pressure"}),
            "fixcom": (InputValue, {"dtype"           : bool,

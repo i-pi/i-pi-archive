@@ -23,24 +23,24 @@ class InputInitFile(InputValue):
    """
 
    attribs = copy(InputValue.attribs)
-   attribs["format"]=(InputValue,{ "dtype" : str, "default": "xyz"} )
+   attribs["format"]=(InputAttribute,{ "dtype" : str, "default": "xyz"} )
 
-   def __init__(self, help=None, dimension=None, units=None, default=None, dtype=None):
-      """Initializes InputInitFile. 
+   def __init__(self, help=None, default=None, dtype=None, dimension=None):
+      """Initializes InputInitFile.
 
       Just calls the parent initialize function with appropriate arguments.
       """
 
-      super(InputInitFile,self).__init__(dtype=str, dimension=dimension, default=default, units=units, help=help)
+      super(InputInitFile,self).__init__(dtype=str, dimension=dimension, default=default, help=help)
 
-   def store(self,iif):
+   def store(self, iif):
       """Takes a InitFile instance and stores a minimal representation of it.
 
       Args:
          iif: An input file object.
       """
 
-      super(InputInitFile,self).store(iif.filename)
+      super(InputInitFile,self).store(iif.filename, units=iif.units)
       self.format.store(iif.format)
 
    def fetch(self):
@@ -50,7 +50,7 @@ class InputInitFile(InputValue):
          An input file object.
       """
 
-      return ei.InitFile(filename=super(InputInitFile,self).fetch(), format=self.format.fetch() )
+      return ei.InitFile(filename=super(InputInitFile,self).fetch(), format=self.format.fetch(), units=self.units.fetch() )
 
 class InputInitializer(Input):
    """Input class to handle initialization.
@@ -61,7 +61,7 @@ class InputInitializer(Input):
          the xml input file.
    """
 
-   attribs = { "nbeads"    : (InputValue, {"dtype"     : int,
+   attribs = { "nbeads"    : (InputAttribute, {"dtype"     : int,
                                         "help"      : "The number of beads. Will override any provision from inside the initializer."})
             }
 
@@ -77,7 +77,7 @@ class InputInitializer(Input):
    default_label = "INITIALIZER"
 
    def write(self,  name="", indent=""):
-      """Overloads Input write() function so that we never write out 
+      """Overloads Input write() function so that we never write out
       InputInitializer to restart files.
 
       Returns:

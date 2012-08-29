@@ -25,10 +25,10 @@ class InputForceBeads(Input):
       weight: A scaling factor for the contribution from this forcefield.
    """
 
-   attribs = { "nbeads" : ( InputValue, { "dtype"   : int,
+   attribs = { "nbeads" : ( InputAttribute, { "dtype"   : int,
                                          "default" : 0,
                                          "help"    : "If the forcefield is to be evaluated on a contracted ring polymer, this gives the number of beads that are used. If not specified, the forcefield will be evaluated on the full ring polymer." } ),
-               "weight" : ( InputValue, { "dtype"   : float,
+               "weight" : ( InputAttribute, { "dtype"   : float,
                                          "default" : 1.0,
                                          "help"    : "This force term will be added to give the total force using this weight." } )
             }
@@ -101,7 +101,7 @@ class InputFBSocket(InputForceBeads, InputInterface):
 
 
 class InputForces(Input):
-   """Deals with creating all the forcefield objects required in the 
+   """Deals with creating all the forcefield objects required in the
    simulation.
 
    Attributes:
@@ -116,7 +116,7 @@ class InputForces(Input):
    default_label = "MULTIFORCE"
 
    def fetch(self):
-      """Returns a list of the output objects included in this dynamic 
+      """Returns a list of the output objects included in this dynamic
       container.
 
       Returns:
@@ -130,12 +130,12 @@ class InputForces(Input):
       return flist
 
    def store(self, flist):
-      """Stores a list of the output objects, creating a sequence of 
+      """Stores a list of the output objects, creating a sequence of
       dynamic containers.
 
       Args:
-         flist: A list of tuples, with each tuple being of the form 
-         ('type', 'object') where 'type' is the type of forcefield 
+         flist: A list of tuples, with each tuple being of the form
+         ('type', 'object') where 'type' is the type of forcefield
          and 'object' is a forcefield object of that type.
       """
 

@@ -25,7 +25,7 @@ class InputBaro(Input):
       thermostat: A thermostat object giving the cell thermostat.
    """
 
-   attribs={ "kind": (InputValue, {"dtype"    : str,
+   attribs={ "kind": (InputAttribute, {"dtype"    : str,
                                    "default"  : "rigid",
                                    "help"     : "The type of barostat. 'Rigid' gives a barostat that keeps the internal pressure constant by allowing cell volume changes, whereas flexible allows the shape of the cell to fluctuate too.",
                                    "options"  : ["rigid"]}) }

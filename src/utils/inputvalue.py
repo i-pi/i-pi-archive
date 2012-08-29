@@ -19,11 +19,12 @@ Classes:
    input_default: Class used to create mutable objects dynamically.
 """
 
-__all__ = ['Input', 'InputValue', 'InputArray', 'input_default']
+__all__ = ['Input', 'InputValue', 'InputAttribute', 'InputArray', 'input_default']
 
 import numpy as np
-from  io.io_xml import *
+from io.io_xml import *
 from units import unit_to_internal, unit_to_user
+from copy import copy
 
 class input_default(object):
    """Contains information required to dynamically create objects
@@ -93,13 +94,8 @@ class Input(object):
          extend the capabilities of the class, i.e. to hold several instances of
          a field with the same name, or to hold variable numbers of elements.
       default_help: The default help string.
-      default_dimension: The default unit dimensionality.
-      default_units: The default unit type.
       default_value: The default value.
       _help: The help string of the object. Defaults to default_help.
-      _dimension: The dimensionality of the value. Defaults to
-         default_dimension.
-      units: The unit type of the value. Defaults to default_units.
       _default: Optional default value.
       _optional: A bool giving whether the field is a required field.
       _explicit: A bool giving whether the field has been specified by the user.
@@ -110,12 +106,10 @@ class Input(object):
    dynamic = {}
 
    default_help = "Generic input value"
-   default_dimension = "undefined"
-   default_units = ""
    default_value = None
    default_label = ""
 
-   def __init__(self, help=None, dimension=None, units = None, default=None):
+   def __init__(self, help=None, default=None):
       """Initialises Input.
 
       Automatically adds all the fields and attribs names to the input object's
@@ -137,14 +131,6 @@ class Input(object):
          self._help = self.default_help
       else:
          self._help = help
-      if dimension is None:
-         self._dimension = self.default_dimension
-      else:
-         self._dimension = dimension
-      if units is None:
-         self.units = self.default_units
-      else:
-         self.units = units
 
       if default is None:
          self._default = self.default_value
@@ -174,13 +160,8 @@ class Input(object):
          self.store(self._default)
          self._explicit = False
 
+      self._text = ""
 
-   def adapt(self):
-      """Dummy function being called after the parsing of attributes
-      and before the parsing of fields.
-      """
-
-      pass
 
    def store(self, value=None):
       """Dummy function for storing data."""
@@ -207,7 +188,7 @@ class Input(object):
    def extend(self, name,  xml):
       """ Dynamically add elements to the 'extra' list.
 
-      Picks from one of the templates in the self.dynamic dictionary, then 
+      Picks from one of the templates in the self.dynamic dictionary, then
       parses.
 
       Args:
@@ -219,7 +200,7 @@ class Input(object):
       newfield.parse(xml)
       self.extra.append((name,newfield))
 
-   def write(self, name="", indent=""):
+   def write(self, name="", indent="", text="\n"):
       """Writes data in xml file format.
 
       Writes the tag, attributes, data and closing tag appropriate to the
@@ -244,8 +225,10 @@ class Input(object):
 
       rstr = indent + "<" + name;
       for a in self.attribs:
-         rstr += " " + a + "='" + str(self.__dict__[a].fetch()) + "'"
-      rstr += ">\n"
+         if self.__dict__[a].fetch() != self.__dict__[a]._default:
+            rstr += " " + self.__dict__[a].write(name=a)
+      rstr += ">"
+      rstr += text
       for f in self.fields:
          rstr += self.__dict__[f].write(f, "   " + indent)
 
@@ -280,36 +263,34 @@ class Input(object):
       self.extra = []
       self._explicit = True
       if xml is None:
-         raise ValueError("Input.parse should be called with a xml tag")
+         self._text = text
+      else:
+         for a, v in xml.attribs.iteritems() :
+            if a in self.attribs:
+               self.__dict__[a].parse(text=v)
+            elif a == "_text":
+               pass
+            else:
+               raise NameError("Attribute name '" + a + "' is not a recognized property of '" + xml.name + "' objects")
 
-      for a, v in xml.attribs.iteritems() :
-         if a in self.attribs:
-            self.__dict__[a].parse(text=v)
-         elif a == "_text":
-            pass
-         else:
-            raise NameError("Attribute name '" + a + "' is not a recognized property of '" + xml.name + "' objects")
+         for (f, v) in xml.fields:
+            if f in self.fields:
+               self.__dict__[f].parse(xml=v)
+            elif f == "_text":
+               self._text = v
+            elif f in self.dynamic:
+               self.extend(f, v)
+            else:
+               raise NameError("Tag name '" + f + "' is not a recognized property of '" + xml.name + "' objects")
 
-      self.adapt()
-
-      for (f, v) in xml.fields:
-         if f in self.fields:
-            self.__dict__[f].parse(xml=v)
-         elif f == "_text":
-            pass
-         elif f in self.dynamic:
-            self.extend(f, v)
-         else:
-            raise NameError("Tag name '" + f + "' is not a recognized property of '" + xml.name + "' objects")
-
-      for a in self.attribs:
-         va = self.__dict__[a]
-         if not (va._explicit or va._optional):
-            raise ValueError("Attribute name '" + a + "' is mandatory and was not found in the input for the property " + xml.name)
-      for f in self.fields:
-         vf = self.__dict__[f]
-         if not (vf._explicit or vf._optional):
-            raise ValueError("Field name '" + f + "' is mandatory and was not found in the input for the property " + xml.name)
+         for a in self.attribs:
+            va = self.__dict__[a]
+            if not (va._explicit or va._optional):
+               raise ValueError("Attribute name '" + a + "' is mandatory and was not found in the input for the property " + xml.name)
+         for f in self.fields:
+            vf = self.__dict__[f]
+            if not (vf._explicit or vf._optional):
+               raise ValueError("Field name '" + f + "' is mandatory and was not found in the input for the property " + xml.name)
 
    def help_latex(self, level=0, stop_level=None, ref=False):
       """Function to generate a LaTeX formatted manual.
@@ -531,7 +512,82 @@ class Input(object):
       return rstr
 
 
-class InputValue(Input):
+class InputAttribute(Input):
+
+   def __init__(self,  help=None, default=None, dtype=None, options=None):
+      if not dtype is None:
+         self.type = dtype
+      else:
+         raise TypeError("You must provide dtype")
+
+      super(InputAttribute,self).__init__(help, default)
+
+      if options is not None:
+         self._valid = options
+         if not default is None and not self._default in self._valid:
+            raise ValueError("Default value not in option list " + str(self._valid))
+      else:
+         self._valid = None
+
+   def parse(self, text=""):
+      """Reads the data for a single value from an xml file.
+
+      Args:
+         xml: An xml_node object containing the all the data for the parent
+            tag.
+         text: The data held between the start and end tags.
+      """
+
+      super(InputAttribute, self).parse(text=text)
+
+      self.value = read_type(self.type, self._text)
+
+   def store(self, value):
+      """Converts the data to the appropriate data type and units and stores it.
+
+      Args:
+         value: The raw data to be stored.
+      """
+      super(InputAttribute,self).store(value)
+      self.value = value
+
+
+   def fetch(self):
+      """Returns the stored data in the user defined units."""
+
+      super(InputAttribute,self).fetch()
+      return self.value
+
+   def check(self):
+      """Function to check for input errors.
+
+      Raises:
+         ValueError: Raised if the value chosen is not one of the valid options.
+      """
+
+      super(InputAttribute,self).check()
+      if not (self._valid is None or self.value in self._valid):
+         raise ValueError(str(self.value) + " is not a valid option (" + str(self._valid) + ")")
+
+
+   def write(self, name=""):
+      """Writes data in xml file format.
+
+      Writes the data in the appropriate format between appropriate tags.
+
+      Args:
+         name: An optional string giving the tag name. Defaults to "".
+         indent: An optional string giving the string to be added to the start
+            of the line, so usually a number of tabs. Defaults to "".
+
+      Returns:
+         A string giving the stored value in the appropriate xml format.
+      """
+
+      return name+"='"+write_type(self.type, self.value)+"'"
+
+
+class InputValue(InputAttribute):
    """Scalar class for input handling.
 
    Has the methods for dealing with simple data tags of the form:
@@ -545,7 +601,13 @@ class InputValue(Input):
       _valid: An optional list of valid options.
    """
 
-   def __init__(self,  help=None, dimension=None, units = None, default=None, dtype=None, options=None):
+   default_dimension = "undefined"
+   default_units = ""
+
+   attribs= { "units" : ( InputAttribute, { "dtype" : str, "help" : "who knows", "default" : default_units } ) }
+
+
+   def __init__(self,  help=None, default=None, dtype=None, options=None, dimension=None):
       """Initialises InputValue.
 
       Args:
@@ -557,49 +619,53 @@ class InputValue(Input):
          options: An optional list of valid options.
       """
 
-      if not dtype is None:
-         self.type = dtype
+      # a note on units handling:
+      # 1) units are only processed at parse/fetch time: internally EVERYTHING is in internal units
+      # 2) if one adds an explicit "units" attribute to a derived class, the internal units handling will be just ignored
+      if dimension is None:
+         self._dimension=self.default_dimension
       else:
-         raise TypeError("You must provide dtype")
+         self._dimension=dimension
 
-      super(InputValue,self).__init__(help, dimension, units, default)
+      super(InputValue,self).__init__(help, default, dtype, options)
 
-      if options is not None:
-         self._valid = options
-         if not default is None and not self._default in self._valid:
-            raise ValueError("Default value not in option list " + str(self._valid))
-      else:
-         self._valid = None
 
-   def store(self, value):
+   def store(self, value, units=None):
       """Converts the data to the appropriate data type and units and stores it.
 
       Args:
          value: The raw data to be stored.
       """
-
       super(InputValue,self).store(value)
-      self.value = self.type(value)
+
+      if not units is None:
+         self.units.store(units)
+
+      self.value = value
+      if self._dimension != "undefined":
+         self.value *= unit_to_user(self._dimension, self.units.fetch(), 1.0)
+
 
    def fetch(self):
       """Returns the stored data in the user defined units."""
 
       super(InputValue,self).fetch()
+
+      rval=self.value
       if self._dimension != "undefined":
-         return unit_to_internal(self._dimension, self.units, self.value)
-      else:
-         return self.value
+         rval *= unit_to_internal(self._dimension, self.units.fetch(), 1.0)
+      return rval
 
-   def check(self):
-      """Function to check for input errors.
-
-      Raises:
-         ValueError: Raised if the value chosen is not one of the valid options.
-      """
-
-      super(InputValue,self).check()
-      if not (self._valid is None or self.value in self._valid):
-         raise ValueError(str(self.value) + " is not a valid option (" + str(self._valid) + ")")
+   #~ def check(self):
+      #~ """Function to check for input errors.
+#~
+      #~ Raises:
+         #~ ValueError: Raised if the value chosen is not one of the valid options.
+      #~ """
+#~
+      #~ super(InputValue,self).check()
+      #~ if not (self._valid is None or self.value in self._valid):
+         #~ raise ValueError(str(self.value) + " is not a valid option (" + str(self._valid) + ")")
 
 
    def write(self, name="", indent=""):
@@ -616,17 +682,11 @@ class InputValue(Input):
          A string giving the stored value in the appropriate xml format.
       """
 
-      if hasattr(self.value,"__len__") and len(self.value)==0 :
-         # does not write out empty strings or lists
-         return ""
+      #~ if hasattr(self.value,"__len__") and len(self.value)==0 :
+         #~ # does not write out empty strings or lists
+         #~ return ""
 
-      rstr = indent + "<" + name
-      for a in self.attribs:
-         if a == "units": continue
-         rstr += " " + a + "='" + str(self.__dict__[a].fetch()) + "'"
-      rstr += ">"
-      rstr += write_type(self.type, self.value) + "</" + name + ">\n"
-      return rstr
+      return Input.write(self, name=name, indent=indent, text=write_type(self.type, self.value))
 
    def parse(self, xml=None, text=""):
       """Reads the data for a single value from an xml file.
@@ -637,23 +697,29 @@ class InputValue(Input):
          text: The data held between the start and end tags.
       """
 
-      self._explicit = True
-      if xml is None:
-         self.value = read_type(self.type, text)
-      else:
-         if "units" in xml.attribs:
-            self.units = xml.attribs["units"]
+      #super(InputValue, self).parse(xml=xml, text=text)
+      Input.parse(self, xml=xml, text=text)
+      self.value = read_type(self.type, self._text)
 
-         for a in xml.attribs:
-            if a == "units" : continue
-            if not (a in self.__dict__):
-               raise NameError("Attribute name '" + a + "' is not a recognized property of '" + xml.name + "' objects")
-            self.__dict__[a].store(read_type(self.__dict__[a].type, xml.attribs[a]) )
+      #~ self._explicit = True
+      #~ if xml is None:
+         #~ self.value = read_type(self.type, text)
+      #~ else:
+         #~ for a in xml.attribs:
+            #~ if a in self.__dict__:
+               #~ self.__dict__[a].store(read_type(self.__dict__[a].type, xml.attribs[a]) )
+            #~ elif a == "units" :
+               #~ self._units = xml.attribs["units"]
+            #~ else:
+               #~ raise NameError("Attribute name '" + a + "' is not a recognized property of '" + xml.name + "' objects")
+#~
+         #~ # possibly we do a conversion to internal units
+         #~ self.value = read_type(self.type, xml.fields[0][1])
+         #~ i
 
-         self.value = read_type(self.type, xml.fields[0][1])
 
 ELPERLINE = 5
-class InputArray(Input):
+class InputArray(InputValue):
    """Array class for input handling.
 
    Has the methods for dealing with simple data tags of the form:
@@ -670,12 +736,10 @@ class InputArray(Input):
       value: Value of data. Also specifies data type if type is None.
    """
 
-   attribs = { "shape" : (InputValue,
-                 {"dtype": tuple,
-                  "help": "The shape of the array.",
-                  "default": (0,)}) }
+   attribs = copy(InputValue.attribs)
+   attribs["shape"] = (InputAttribute,  {"dtype": tuple,  "help": "The shape of the array.", "default": (0,)})
 
-   def __init__(self, help=None, dimension=None, units=None, default=None, dtype=None):
+   def __init__(self,  help=None, default=None, dtype=None, dimension=None):
       """Initialises InputArray.
 
       Args:
@@ -686,14 +750,9 @@ class InputArray(Input):
          dtype: An optional data type. Defaults to None.
       """
 
-      if not dtype is None:
-         self.type = dtype
-      else:
-         raise TypeError("You must provide dtype")
+      super(InputArray,self).__init__(help, default, dtype, dimension=dimension)
 
-      super(InputArray,self).__init__(help, dimension, units, default)
-
-   def store(self, value):
+   def store(self, value, units=""):
       """Converts the data to the appropriate data type, shape and units and
       stores it.
 
@@ -701,26 +760,23 @@ class InputArray(Input):
          value: The raw data to be stored.
       """
 
-      super(InputArray,self).store(value)
+      super(InputArray,self).store(value=np.array(value, dtype=self.type).flatten().copy(), units=units)
       self.shape.store(value.shape)
-      self.value = np.array(value, dtype=self.type).flatten().copy()
       if self.shape.fetch() == (0,):
          self.shape.store((len(self.value),))
 
    def fetch(self):
       """Returns the stored data in the user defined units."""
 
-      super(InputArray,self).fetch()
+      value=super(InputArray,self).fetch()
 
       if self.shape.fetch() == (0,):
          value = np.resize(self.value,0).copy()
       else:
          value = self.value.reshape(self.shape.fetch()).copy()
 
-      if self._dimension != "undefined":
-         return value*unit_to_internal(self._dimension,self.units,1.0)
-      else:
-         return value
+      return value
+
 
    def write(self, name="", indent=""):
       """Writes data in xml file format.
@@ -739,16 +795,17 @@ class InputArray(Input):
          A string giving the stored value in the appropriate xml format.
       """
 
-      if len(self.value)==0 :
-         # does not write out empty strings or lists
-         return ""
+      #~ if len(self.value)==0 :
+         #~ # does not write out empty strings or lists
+         #~ return ""
+#~
+      #~ rstr = indent + "<" + name + " shape='" + write_tuple(self.shape.fetch())+"'"
+      #~ for a in self.attribs:
+         #~ if a == "shape" or a == "units": continue
+         #~ rstr += " " + a + "='" + str(self.__dict__[a].fetch()) + "'"
+      #~ rstr += ">"
 
-      rstr = indent + "<" + name + " shape='" + write_tuple(self.shape.fetch())+"'"
-      for a in self.attribs:
-         if a == "shape" or a == "units": continue
-         rstr += " " + a + "='" + str(self.__dict__[a].fetch()) + "'"
-      rstr += ">"
-
+      rstr=""
       if (len(self.value) > ELPERLINE):
          rstr += "\n" + indent + " [ "
       else:
@@ -765,8 +822,7 @@ class InputArray(Input):
       else:
          rstr += " ] "
 
-      rstr += "</" + name + ">\n"
-      return rstr
+      return Input.write(self, name=name, indent=indent, text=rstr)
 
    def parse(self, xml=None, text=""):
       """Reads the data for an array from an xml file.
@@ -777,21 +833,27 @@ class InputArray(Input):
          text: The data held between the start and end tags.
       """
 
-      self._explicit = True
-      if xml is None:
-         self.value = read_array(self.type, text)
-      else:
-         if xml.fields[0][0] != "_text": raise ValueError("InputArray should not contain further XML tags")
-         self.value = read_array(self.type, xml.fields[0][1])
-         if "units" in xml.attribs:
-            self.units = xml.attribs["units"]
-         if "shape" in xml.attribs:
-            self.shape.store(read_type(tuple, xml.attribs["shape"]))
-         else:
-            self.shape.store(self.value.shape)
+      Input.parse(self, xml=xml, text=text)
+      self.value = read_array(self.type, self._text)
+      if self.shape.fetch() == (0,):
+         self.shape.store((len(self.value),))
 
-         for a in xml.attribs:
-            if a == "shape" or a == "units" : continue
-            if not (a in self.__dict__):
-               raise NameError("Attribute name '" + a + "' is not a recognized property of '" + xml.name + "' objects")
-            self.__dict__[a].store(xml.attribs[a])
+      #~ self._explicit = True
+      #~ if xml is None:
+         #~ self.value = read_array(self.type, text)
+      #~ else:
+         #~ if xml.fields[0][0] != "_text": raise ValueError("InputArray should not contain further XML tags")
+         #~ self.value = read_array(self.type, xml.fields[0][1])
+#~
+         #~ if "units" in xml.attribs:
+            #~ self.units = xml.attribs["units"]
+         #~ if "shape" in xml.attribs:
+            #~ self.shape.store(read_type(tuple, xml.attribs["shape"]))
+         #~ else:
+            #~ self.shape.store(self.value.shape)
+#~
+         #~ for a in xml.attribs:
+            #~ if a == "shape" or a == "units" : continue
+            #~ if not (a in self.__dict__):
+               #~ raise NameError("Attribute name '" + a + "' is not a recognized property of '" + xml.name + "' objects")
+            #~ self.__dict__[a].store(xml.attribs[a])

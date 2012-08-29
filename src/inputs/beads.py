@@ -45,9 +45,9 @@ class InputBeads(Input):
          array with no elements.
    """
 
-   attribs = {  "natoms"    : (InputValue, {"dtype"     : int,  "default"   : 0,
+   attribs = {  "natoms"    : (InputAttribute, {"dtype"     : int,  "default"   : 0,
                                             "help"      : "The number of atoms."}),
-                "nbeads"    : (InputValue, {"dtype"     : int,  "default"   : 0,
+                "nbeads"    : (InputAttribute, {"dtype"     : int,  "default"   : 0,
                                             "help"      : "The number of beads."})
             }
    fields={ "q"         : (InputArray, {"dtype"     : float,
