@@ -580,8 +580,6 @@ class InputValue(Input):
 
       super(InputValue,self).store(value)
       self.value = self.type(value)
-      if self._dimension != "undefined":
-         self.value = unit_to_user(self._dimension, self.units, self.value)
 
    def fetch(self):
       """Returns the stored data in the user defined units."""
@@ -626,10 +624,7 @@ class InputValue(Input):
       for a in self.attribs:
          if a == "units": continue
          rstr += " " + a + "='" + str(self.__dict__[a].fetch()) + "'"
-      if self.units == "":
-         rstr += ">"
-      else:
-         rstr += " units='" + self.units + "'>"
+      rstr += ">"
       rstr += write_type(self.type, self.value) + "</" + name + ">\n"
       return rstr
 
@@ -709,8 +704,6 @@ class InputArray(Input):
       super(InputArray,self).store(value)
       self.shape.store(value.shape)
       self.value = np.array(value, dtype=self.type).flatten().copy()
-      if self._dimension != "undefined":
-         self.value *= unit_to_user(self._dimension,self.units,1.0)
       if self.shape.fetch() == (0,):
          self.shape.store((len(self.value),))
 
@@ -752,12 +745,9 @@ class InputArray(Input):
 
       rstr = indent + "<" + name + " shape='" + write_tuple(self.shape.fetch())+"'"
       for a in self.attribs:
-         if a == "shape": continue
+         if a == "shape" or a == "units": continue
          rstr += " " + a + "='" + str(self.__dict__[a].fetch()) + "'"
-      if self.units == "":
-         rstr += ">"
-      else:
-         rstr += " units='" + self.units + "'>"
+      rstr += ">"
 
       if (len(self.value) > ELPERLINE):
          rstr += "\n" + indent + " [ "
