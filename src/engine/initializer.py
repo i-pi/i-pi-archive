@@ -56,12 +56,12 @@ class Initializer(dobject):
 
    Currently, we use a ring polymer contraction scheme to create a new beads
    object from one given in initialize if they have different numbers of beads,
-   as described in the paper T. E. Markland and D. E. Manolopoulos, J. Chem. 
+   as described in the paper T. E. Markland and D. E. Manolopoulos, J. Chem.
    Phys. 129, 024105, (2008). If the new beads object has more beads than
    the beads object it was initialized from, we set the higher ring polymer
    normal modes to zero.
 
-   Attributes: 
+   Attributes:
       queue: A list of things to initialize. Each member of the list is a tuple
          of the form ('type', 'object'), where 'type' specifies what kind of
          initialization is being done, and 'object' gives the data to
@@ -75,8 +75,8 @@ class Initializer(dobject):
          nbeads: The number of beads that we need in the simulation. Not
             necessarily the same as the number of beads of the objects we are
             initializing the data from.
-         queue: A list of things to initialize. Each member of the list is a 
-            tuple of the form ('type', 'object'), where 'type' specifies what 
+         queue: A list of things to initialize. Each member of the list is a
+            tuple of the form ('type', 'object'), where 'type' specifies what
             kind of initialization is being done, and 'object' gives the data to
             initialize it from.
       """
@@ -198,11 +198,16 @@ class Initializer(dobject):
                ibeads.names = gbeads.names
 
          if k=="cell":
-            pass
-         # TODO work out a cleaner Cell object which can work for NPT, NVT etc
-         #~ if icell.V > 0.0:
-            #~ simul.cell=icell
-         #~ elif simul.cell.V == 0.0 : raise ValueError("Could not initialize the cell configuration, neither explicitly nor from <initialize>")
+            # TODO work out a cleaner Cell object which can work for NPT, NVT etc
+            rcell=v
+
+            if icell.V > 0.0:
+               print "WARNING: initialize from <cell> overwrites previous cell configuration"
+
+            if rcell.V > 0.0:
+               icell.h=rcell.h
+            else: ValueError("Could not initialize the cell configuration from <initialize>.")
+
 
          if k == "resample_v":
             if ibeads.natoms == 0:
@@ -214,7 +219,7 @@ class Initializer(dobject):
             print "initializing at temperature", rtemp
 
 
-            # pull together a mock initialization to get NM masses right 
+            # pull together a mock initialization to get NM masses right
             #without too much code duplication
             rbeads.resize(ibeads.natoms, ibeads.nbeads)
             rbeads.m[:] = ibeads.m
@@ -228,4 +233,7 @@ class Initializer(dobject):
 
             ibeads.p = rbeads.p
 
-      print simul.beads.p
+      if ibeads.natoms == 0:
+         raise ValueError("Could not initialize the path configuration, neither explicitly nor from <initialize>")
+      if icell.V == 0.0 :
+         raise ValueError("Could not initialize the cell configuration, neither explicitly nor from <initialize>")
