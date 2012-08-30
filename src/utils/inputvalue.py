@@ -235,7 +235,10 @@ class Input(object):
       for (f,v) in self.extra:  # also write out extended (dynamic) fields if present
          rstr += v.write(f, "   " + indent)
 
-      rstr += indent + "</" + name + ">\n"
+      if text.find('\n') >= 0:
+         rstr += indent + "</" + name + ">\n"
+      else:
+         rstr += "</" + name + ">\n"
       return rstr
 
    def parse(self, xml=None, text=""):
@@ -818,7 +821,7 @@ class InputArray(InputValue):
 
       rstr = rstr.rstrip(", ")
       if (len(self.value) > ELPERLINE):
-         rstr += " ]\n" + indent
+         rstr += " ]\n"
       else:
          rstr += " ] "
 
