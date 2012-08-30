@@ -135,7 +135,7 @@ class Initializer(dobject):
             if not rcell is None:
                if icell.V > 0.0 :
                   print "WARNING: initialize from <file> overwrites previous cell configuration"
-               icell = rcell
+               icell.h = rcell.h
 
             rbeads.resize(natoms=ratoms[0].natoms, nbeads=len(ratoms))
             rbeads.names = ratoms[0].names
@@ -239,3 +239,5 @@ class Initializer(dobject):
          raise ValueError("Could not initialize the path configuration, neither explicitly nor from <initialize>")
       if icell.V == 0.0 :
          raise ValueError("Could not initialize the cell configuration, neither explicitly nor from <initialize>")
+
+      print "WTF", simul.cell.h
