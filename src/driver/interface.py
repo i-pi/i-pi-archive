@@ -361,7 +361,11 @@ class Interface(object):
    def open(self):
       if self.mode == "unix":
          self.server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-         self.server.bind("/tmp/wrappi_" + self.address)
+         try:
+            self.server.bind("/tmp/wrappi_" + self.address)
+         except:
+            raise ValueError("Error opening unix socket. Check if a file "+("/tmp/wrappi_" + self.address)+" exists, and remove it if unused.")
+
       elif self.mode == "inet":
          self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
          self.server.bind((self.address,self.port))
