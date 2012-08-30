@@ -63,14 +63,14 @@ class InputCell(InputArray):
 
       super(InputCell,self).check()
 
-      h=self.value.copy()
+      h=self.value
       if h.size != 9: raise ValueError("Cell objects must contain a 3x3 matrix describing the cell vectors.")
 
-      h.shape=(3,3)
-      if not (h[1,0] == 0.0 and h[2,0] == 0.0 and h[2,1] == 0.0):
+      h.shape=(9,)
+      if not (h[3] == 0.0 and h[6] == 0.0 and h[7] == 0.0):
          print "Warning: cell vector matrix must be upper triangular, all elements below the diagonal being set to zero."
-         h[1,0] = 0
-         h[2,0] = 0
-         h[2,1] = 0
-      self.store(Cell(h))
+         h[3] = 0
+         h[6] = 0
+         h[7] = 0
+
 

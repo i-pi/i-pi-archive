@@ -354,25 +354,32 @@ class Interface(object):
       self.latency = latency
       self.timeout = timeout
       self.softexit = None
+      self._poll_thread = None
+      self._prev_kill = {}
+      self._poll_true = False
 
+   def open(self):
       if self.mode == "unix":
          self.server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-         self.server.bind("/tmp/wrappi_" + address)
+         self.server.bind("/tmp/wrappi_" + self.address)
       elif self.mode == "inet":
          self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-         self.server.bind((address,port))
+         self.server.bind((self.address,self.port))
       else:
          raise NameError("Interface mode " + self.mode + " is not implemented (should be unix/inet)")
 
-      self.server.listen(slots)
+      self.server.listen(self.slots)
       self.server.settimeout(SERVERTIMEOUT)
       self.clients = []
       self.requests = []
       self.jobs = []
 
-      self._poll_thread = None
-      self._prev_kill = {}
-      self._poll_true = False
+   def close(self):
+      print " @SOCKET:   Shutting down the server interface."
+      self.server.shutdown(socket.SHUT_RDWR)
+      self.server.close()
+      if self.mode == "unix":
+         os.unlink("/tmp/wrappi_" + self.address)
 
    def queue(self, atoms, cell, pars=None, reqid=0):
       """Adds a request.
@@ -711,6 +718,7 @@ class Interface(object):
          NameError: Raised if the polling thread already exists.
       """
 
+      self.open()
       if not self._poll_thread is None:
          raise NameError("Polling thread already started")
       self._poll_thread = threading.Thread(target=self._poll_loop, name="poll_" + self.address)
@@ -732,16 +740,4 @@ class Interface(object):
       if not self._poll_thread is None:
          self._poll_thread.join()
       self._poll_thread = None
-
-   def __del__(self):
-      """Removes the socket.
-
-      Closes the interface and removes the socket. Also unlinks the socket if
-      possible, so that the port can be reused immediately.
-      """
-
-      print " @SOCKET:   Shutting down the server interface."
-      self.server.shutdown(socket.SHUT_RDWR)
-      self.server.close()
-      if self.mode == "unix":
-         os.unlink("/tmp/wrappi_" + self.address)
+      self.close()

@@ -63,6 +63,12 @@ class input_default(object):
       self.args = args
       self.kwargs = kwargs
 
+def _match(a,b):
+   if not type(a) == type(b): return False
+   if hasattr(a,"__len__")  and len(a) != len(b): return False
+   if hasattr(a,"shape")  and a.shape != b.shape: return False
+   if a != b: return False
+   return True
 
 class Input(object):
    """Base class for input handling.
@@ -200,6 +206,7 @@ class Input(object):
       newfield.parse(xml)
       self.extra.append((name,newfield))
 
+
    def write(self, name="", indent="", text="\n"):
       """Writes data in xml file format.
 
@@ -225,12 +232,14 @@ class Input(object):
 
       rstr = indent + "<" + name;
       for a in self.attribs:
-         if self.__dict__[a].fetch() != self.__dict__[a]._default:
+         if not _match(self.__dict__[a].fetch(), self.__dict__[a]._default):
             rstr += " " + self.__dict__[a].write(name=a)
       rstr += ">"
       rstr += text
       for f in self.fields:
-         rstr += self.__dict__[f].write(f, "   " + indent)
+        print "writing field ",f, self.__dict__[f]._default, self.__dict__[f].fetch()
+        if not _match(self.__dict__[f].fetch(), self.__dict__[f]._default):
+            rstr += self.__dict__[f].write(f, "   " + indent)
 
       for (f,v) in self.extra:  # also write out extended (dynamic) fields if present
          rstr += v.write(f, "   " + indent)
@@ -645,8 +654,8 @@ class InputValue(InputAttribute):
          self.units.store(units)
 
       self.value = value
-      #if self._dimension != "undefined":
-      #   self.value *= unit_to_user(self._dimension, self.units.fetch(), 1.0)
+      if self._dimension != "undefined":
+         self.value *= unit_to_user(self._dimension, self.units.fetch(), 1.0)
 
 
    def fetch(self):
