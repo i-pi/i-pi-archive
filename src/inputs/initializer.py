@@ -93,7 +93,6 @@ class InputInitializer(Input):
          iif: An initializer object.
       """
 
-      print "Storing input thing", ii
       self.extra = []
 
       for (k, el) in ii.queue:

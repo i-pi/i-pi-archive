@@ -1,7 +1,7 @@
 """Main script from which the simulation is run.
 
-Deals with creation of the simulation object, reading the input file and 
-initialising the system. 
+Deals with creation of the simulation object, reading the input file and
+initialising the system.
 
 Run using:
       python main.py input_file.xml
@@ -29,7 +29,7 @@ def main(file_name):
 
    ifile = open(file_name,"r")
    xmlrestart = xml_parse_file(ifile) # Parses the file.
-   
+
    simrestart = InputSimulation()
    simrestart.parse(xmlrestart.fields[0][1]) # Checks the input
                                                      # and partitions it

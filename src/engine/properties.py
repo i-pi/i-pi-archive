@@ -233,19 +233,25 @@ class Properties(dobject):
 
    def get_atomx(self, atom="", bead="-1"):
 
-      if atom=="": raise ValueError("Must specify the index for atom_x property")
-      atom=int(atom)
-      bead=int(bead)
-      if bead < 0: return self.beads.centroid[atom].q
-      else:  return self.beads[bead][atom].q
+      if atom == "":
+         raise ValueError("Must specify the index for atom_x property")
+      atom = int(atom)
+      bead = int(bead)
+      if bead < 0:
+         return self.beads.centroid[atom].q
+      else:
+         return self.beads[bead][atom].q
 
    def get_atomv(self, atom="", bead="-1"):
 
-      if atom=="": raise ValueError("Must specify the index for atom_x property")
-      atom=int(atom)
-      bead=int(bead)
-      if bead < 0: return self.beads.centroid[atom].p/ self.beads.m[atom]
-      else:  return self.beads[bead][atom].p/ self.beads.m[atom]
+      if atom == "":
+         raise ValueError("Must specify the index for atom_x property")
+      atom = int(atom)
+      bead = int(bead)
+      if bead < 0:
+         return self.beads.centroid[atom].p/ self.beads.m[atom]
+      else:
+         return self.beads[bead][atom].p/ self.beads.m[atom]
 
 
    def get_temp(self):
