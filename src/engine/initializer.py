@@ -164,6 +164,10 @@ class Initializer(dobject):
 
          if k == "beads":
             rbeads = v
+            print "names ", v.names
+            print "vq", v.m
+	    print "uq", np.linalg.norm(v.q)
+
             if rbeads.nbeads == self.nbeads:
                gbeads = rbeads
             else:
@@ -186,6 +190,7 @@ class Initializer(dobject):
                raise ValueError("Initialization tries to mix up structures with different atom numbers.")
 
             # consider a vectors of zeros as a "ignore field" statement
+
             if np.linalg.norm(gbeads.q) > 0.0:
                ibeads.q = gbeads.q
             if np.linalg.norm(gbeads.p) > 0.0:
