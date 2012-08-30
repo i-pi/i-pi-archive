@@ -31,8 +31,8 @@ class ForceField(dobject):
    Attributes:
       atoms: An Atoms object containing all the atom positions.
       cell: A Cell object containing the system box.
-      softexit: A function to help make sure the printed restart file is
-         consistent.
+      softexit: A function to help make sure the restart file can be printed in
+         a consistent manner.
 
    Depend objects:
       ufv: A list of the form [pot, f, vir]. These quantities are calculated

@@ -319,6 +319,8 @@ class Interface(object):
          before updating the client list.
       timeout: A float giving a timeout limit for considering a calculation dead
          and dropping the connection.
+      softexit: A function to help make sure the restart file can be printed in
+         a consistent manner.
       server: The socket used for data transmition.
       clients: A list of the driver clients connected to the server.
       requests: A list of all the jobs required in the current PIMD step.
@@ -359,6 +361,12 @@ class Interface(object):
       self._poll_true = False
 
    def open(self):
+      """Creates a new socket.
+
+      Used so that we can create a interface object without having to also
+      create the associated socket object.
+      """
+
       if self.mode == "unix":
          self.server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
          self.server.bind("/tmp/wrappi_" + self.address)
@@ -375,6 +383,8 @@ class Interface(object):
       self.jobs = []
 
    def close(self):
+      """Closes down the socket."""
+
       print " @SOCKET:   Shutting down the server interface."
       self.server.shutdown(socket.SHUT_RDWR)
       self.server.close()
@@ -703,6 +713,8 @@ class Interface(object):
       self._poll_thread = None
 
    def started(self):
+      """Returns a boolean specifying whether the thread has started yet."""
+
       return (not self._poll_thread is None)
 
    def start_thread(self):
