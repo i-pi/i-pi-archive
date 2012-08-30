@@ -645,8 +645,8 @@ class InputValue(InputAttribute):
          self.units.store(units)
 
       self.value = value
-      if self._dimension != "undefined":
-         self.value *= unit_to_user(self._dimension, self.units.fetch(), 1.0)
+      #if self._dimension != "undefined":
+      #   self.value *= unit_to_user(self._dimension, self.units.fetch(), 1.0)
 
 
    def fetch(self):
@@ -755,7 +755,7 @@ class InputArray(InputValue):
 
       super(InputArray,self).__init__(help, default, dtype, dimension=dimension)
 
-   def store(self, value, units=""):
+   def store(self, value, units=None):
       """Converts the data to the appropriate data type, shape and units and
       stores it.
 
