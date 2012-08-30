@@ -148,6 +148,9 @@ class Properties(dobject):
       self.property_dict["kinetic_md"] = {"dimension" : "energy", "func": (lambda: self.nm.kin/self.beads.nbeads), "help": "The classical kinetic energy of the simulation." }
       self.property_dict["kinetic_cv"] = {"dimension" : "energy", "func": self.get_kincv, "help": "The physical kinetic energy of the system." }
 
+      self.property_dict["atom_x"] = { "dimension" : "length", "func": self.get_atomx, "help": "Prints to properties the position (x,y,z) of a particle given its index. atom_x(index, bead) if bead is not specified, refers to the centroid.", "size" : 3 }
+      self.property_dict["atom_v"] = { "dimension" : "velocity", "func": self.get_atomv, "help": "Prints to properties the velocity (x,y,z) of a particle given its index. atom_v(index, bead) if bead is not specified, refers to the centroid.", "size" : 3 }
+
       #TODO give these properties a 'dimension' key.
       self.property_dict["stress_md"] = {"func" : self.get_stress, "help": "The classical stress tensor of the simulation. Takes arguments 'x' and 'v', which gives stress[x,v]. By default gives stress[0,0]."}
       self.property_dict["pressure_md"] = {"func" : self.get_press, "help": "The classical pressure of the simulation." }
@@ -227,6 +230,23 @@ class Properties(dobject):
          return  unit_to_user(pkey["dimension"], unit, pkey["func"](*arglist))
       else:
          return pkey["func"](*arglist)
+
+   def get_atomx(self, atom="", bead="-1"):
+
+      if atom=="": raise ValueError("Must specify the index for atom_x property")
+      atom=int(atom)
+      bead=int(bead)
+      if bead < 0: return self.beads.centroid[atom].q
+      else:  return self.beads[bead][atom].q
+
+   def get_atomv(self, atom="", bead="-1"):
+
+      if atom=="": raise ValueError("Must specify the index for atom_x property")
+      atom=int(atom)
+      bead=int(bead)
+      if bead < 0: return self.beads.centroid[atom].p/ self.beads.m[atom]
+      else:  return self.beads[bead][atom].p/ self.beads.m[atom]
+
 
    def get_temp(self):
       """Calculates the MD kinetic temperature.

@@ -550,10 +550,10 @@ class Interface(object):
                elif match_ids == "free" and fc.locked:
                   continue
 
-               try:
-                  print " @SOCKET: Assigning [",match_ids,"] request id ", r["id"], " to client with last-id ", fc.lastreq, "(",self.clients.index(fc),"/",len(self.clients),":",fc.getpeername(),")"
-               except:
-                  pass
+#               try:
+#                  print " @SOCKET: Assigning [",match_ids,"] request id ", r["id"], " to client with last-id ", fc.lastreq, "(",self.clients.index(fc),"/",len(self.clients),":",fc.getpeername(),")"
+#               except:
+#                  pass
 
                while fc.status & Status.Busy:
                   fc.poll()

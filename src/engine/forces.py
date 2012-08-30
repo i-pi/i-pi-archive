@@ -9,7 +9,7 @@ Classes:
    FFSocket: Deals with a single replica of the system
    ForceBeads: Deals with the parallelization of the force calculation over
       different beads.
-   Forces: Deals with the parallelizatoin of the force calculation over 
+   Forces: Deals with the parallelizatoin of the force calculation over
       different forcefields.
 """
 
@@ -51,7 +51,7 @@ class ForceField(dobject):
    def __init__(self):
       """Initialises ForceField."""
 
-      # ufv is a list [ u, f, vir ]  which stores the results of the force 
+      # ufv is a list [ u, f, vir ]  which stores the results of the force
       #calculation
       dset(self,"ufv", depend_value(name="ufv", func=self.get_all))
 
@@ -98,7 +98,7 @@ class ForceField(dobject):
          depend_array(name="vir", value=np.zeros((3,3),float),func=self.get_vir,
             dependencies=[dget(self,"ufv")]))
 
-      # NB: the force requires a bit more work, to define shortcuts to xyz 
+      # NB: the force requires a bit more work, to define shortcuts to xyz
       # slices without calculating the force at this point.
       fbase = np.zeros(atoms.natoms*3, float)
       dset(self,"f",
@@ -261,7 +261,7 @@ class FFSocket(ForceField):
          if not self.softexit is None:
             self.softexit()
 
-      # data has been collected, so the request can be released and a slot 
+      # data has been collected, so the request can be released and a slot
       #freed up for new calculations
       self.socket.release(self.request)
       result = self.request["result"]
@@ -287,7 +287,7 @@ class FFSocket(ForceField):
    def run(self):
       """Makes the socket start looking for driver codes.
 
-      Tells the interface code to start the thread that looks for 
+      Tells the interface code to start the thread that looks for
       connection from the driver codes in a loop. Until this point no
       jobs can be queued.
       """
@@ -298,7 +298,7 @@ class FFSocket(ForceField):
    def stop(self):
       """Makes the socket stop looking for driver codes.
 
-      Tells the interface code to stop the thread that looks for 
+      Tells the interface code to stop the thread that looks for
       connection from the driver codes in a loop. After this point no
       jobs can be queued.
       """
@@ -355,7 +355,7 @@ class ForceBeads(dobject):
    def copy(self):
       """Creates a deep copy without the bound objects.
 
-      Used so that we can create multiple Forces objects from the same 
+      Used so that we can create multiple Forces objects from the same
       Forcebeads model, without binding a particular ForceBeads object twice.
 
       Returns:
@@ -385,14 +385,14 @@ class ForceBeads(dobject):
             consistent.
       """
 
-      # stores a copy of the number of atoms and of beads 
+      # stores a copy of the number of atoms and of beads
       #!TODO! make them read-only properties
       self.natoms = beads.natoms
       self.softexit = softexit
       if (self.nbeads != beads.nbeads):
          raise ValueError("Binding together a Beads and a ForceBeads objects with different numbers of beads")
 
-      # creates an array of force objects, which are bound to the beads 
+      # creates an array of force objects, which are bound to the beads
       #and the cell
       self._forces = [];
       for b in range(self.nbeads):
@@ -427,7 +427,7 @@ class ForceBeads(dobject):
    def run(self):
       """Makes the socket start looking for driver codes.
 
-      Tells the interface code to start the thread that looks for 
+      Tells the interface code to start the thread that looks for
       connection from the driver codes in a loop. Until this point no
       jobs can be queued.
       """
@@ -438,7 +438,7 @@ class ForceBeads(dobject):
    def stop(self):
       """Makes the socket stop looking for driver codes.
 
-      Tells the interface code to stop the thread that looks for 
+      Tells the interface code to stop the thread that looks for
       connection from the driver codes in a loop. After this point no
       jobs can be queued.
       """
@@ -594,12 +594,12 @@ class Forces(dobject):
       self.mweights = []
       self.mrpc = []
 
-      # a "function factory" to generate functions to automatically update 
+      # a "function factory" to generate functions to automatically update
       #contracted paths
       def make_rpc(rpc, beads):
          return lambda: rpc.b1tob2(depstrip(beads.q))
 
-      # creates new force objects, possibly acting on contracted path 
+      # creates new force objects, possibly acting on contracted path
       #representations
       for (ftype, fbeads) in flist:
 
@@ -608,17 +608,18 @@ class Forces(dobject):
          newforce = fbeads.copy()
          newweight = fbeads.weight
 
-         # if the number of beads for this force component is unspecified, 
+         # if the number of beads for this force component is unspecified,
          #assume full force evaluation
          if newb == 0:
             newb = beads.nbeads
+            newforce.nbeads = newb
 
          newbeads = Beads(beads.natoms, newb)
          newrpc = nm_rescale(beads.nbeads, newb)
 
          newf = make_rpc(newrpc, beads)
          dget(newbeads,"q")._func = newf
-         for b in newbeads: 
+         for b in newbeads:
             # must update also indirect access to the beads coordinates
             dget(b,"q")._func = newf
 
@@ -660,7 +661,7 @@ class Forces(dobject):
    def run(self):
       """Makes the socket start looking for driver codes.
 
-      Tells the interface code to start the thread that looks for 
+      Tells the interface code to start the thread that looks for
       connection from the driver codes in a loop. Until this point no
       jobs can be queued.
       """
@@ -671,7 +672,7 @@ class Forces(dobject):
    def stop(self):
       """Makes the socket stop looking for driver codes.
 
-      Tells the interface code to stop the thread that looks for 
+      Tells the interface code to stop the thread that looks for
       connection from the driver codes in a loop. After this point no
       jobs can be queued.
       """
@@ -705,9 +706,9 @@ class Forces(dobject):
       self.queue()
       rf = np.zeros((self.nbeads,3*self.natoms),float)
       for k in range(self.nforces):
-         # "expand" to the total number of beads the forces from the 
+         # "expand" to the total number of beads the forces from the
          #contracted one
-         rf += self.mweights[k]*self.mrpc[k].b2tob1(self.mforces[k].f)   
+         rf += self.mweights[k]*self.mrpc[k].b2tob1(self.mforces[k].f)
       return rf
 
    def pot_combine(self):
@@ -716,7 +717,7 @@ class Forces(dobject):
       self.queue()
       rp = np.zeros(self.nbeads,float)
       for k in range(self.nforces):
-         # "expand" to the total number of beads the potentials from the 
+         # "expand" to the total number of beads the potentials from the
          #contracted one
          rp += self.mweights[k]*self.mrpc[k].b2tob1(self.mforces[k].pots)
       return rp
@@ -728,7 +729,7 @@ class Forces(dobject):
       rp = np.zeros((self.nbeads,3,3),float)
       for k in range(self.nforces):
          virs = depstrip(self.mforces[k].virs)
-         # "expand" to the total number of beads the virials from the 
+         # "expand" to the total number of beads the virials from the
          #contracted one, element by element
          for i in range(3):
             for j in range(3):
