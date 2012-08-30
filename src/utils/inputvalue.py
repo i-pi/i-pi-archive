@@ -237,7 +237,6 @@ class Input(object):
       rstr += ">"
       rstr += text
       for f in self.fields:
-        print "writing field ",f, self.__dict__[f]._default, self.__dict__[f].fetch()
         if not _match(self.__dict__[f].fetch(), self.__dict__[f]._default):
             rstr += self.__dict__[f].write(f, "   " + indent)
 
