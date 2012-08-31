@@ -78,7 +78,7 @@ class InputTrajectory(InputValue):
                                            "help": "The name of the file that the trajectory information will be output to."} )
    attribs["stride"] = (InputAttribute,{ "dtype" : int, "default": 1, 
                                          "help": "The number of steps between successive writes." } )
-   attribs["format"] = (InputAttribute,{ "dtype" : str, "default": "xyz"
+   attribs["format"] = (InputAttribute,{ "dtype" : str, "default": "xyz",
                                        "help": "The output file format." } )
 
    def __init__(self, help=None,  default=None, dtype=None, dimension=None):
