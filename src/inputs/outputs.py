@@ -130,7 +130,7 @@ class InputCheckpoint(InputValue):
    def fetch(self):
       """Returns a CheckpointOutput object."""
 
-      step=super(InputCheckpoint,self).fetch()
+      step = super(InputCheckpoint,self).fetch()
       return engine.outputs.CheckpointOutput(self.filename.fetch(), self.stride.fetch(), self.overwrite.fetch(), step=step )
 
    def parse(self, xml=None, text=""):

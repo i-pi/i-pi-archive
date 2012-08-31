@@ -41,9 +41,9 @@ class Simulation(dobject):
       beads: A beads object giving the atom positions.
       cell: A cell object giving the system box.
       prng: A random number generator object.
-      _forcemodel: A forcefield object giving the force calculator for each
-         replica of the system.
-      forces: A ForceBeads object for calculating the forces for all the
+      flist: A list of forcefield objects giving different ways to partially
+         calculate the forces.
+      forces: A Forces object for calculating the total force for all the
          replicas.
       ensemble: An ensemble object giving the objects necessary for producing
          the correct ensemble.
@@ -52,13 +52,9 @@ class Simulation(dobject):
          output.
       outputs: A list of output objects that should be printed during the run
       nm:  A helper object dealing with normal modes transformation
-      initlist: A dictionary of the properties that should be initialised with
-         their values. Set to zero after the initialisation, so that the
-         checkpoints don't specify any properties to be initialised after the
-         simulation is restarted.
-      properties: A properties object.
-      chk: A CheckoutOutput object used to deal gracefully with soft exit
-         in the middle of a force calculation
+      properties: A property object for dealing with property output.
+      trajs: A trajectory object for dealing with trajectory output.
+      chk: A checkpoint object for dealing with checkpoint output.
 
    Depend objects:
       step: The current simulation step.
@@ -70,19 +66,18 @@ class Simulation(dobject):
       Args:
          beads: A beads object giving the atom positions.
          cell: A cell object giving the system box.
-         force: A forcefield object giving the force calculator for each replica
-            of the system.
+         forces: A forcefield object giving the force calculator for each 
+            replica of the system.
          ensemble: An ensemble object giving the objects necessary for
             producing the correct ensemble.
          prng: A random number object.
          outputs: A list of output objects.
          nm: A class dealing with path NM operations.
+         init: A class to deal with initializing the simulation object.
          step: An optional integer giving the current simulation time step.
             Defaults to 0.
          tsteps: An optional integer giving the total number of steps. Defaults
             to 1000.
-         initlist: A dictionary of keys giving all the quantities that should
-            be initialized with values giving their initial value.
       """
 
       print " # Initializing simulation object "
@@ -95,7 +90,7 @@ class Simulation(dobject):
       # initialize the configuration of the system
       init.init(self)
 
-      self.flist=forces
+      self.flist = forces
       self.forces = Forces()
       self.outputs = outputs
 
@@ -105,7 +100,6 @@ class Simulation(dobject):
       self.properties = Properties()
       self.trajs = Trajectories()
       self.chk = None
-
 
    def bind(self):
       """Calls the bind routines for all the objects in the simulation.
@@ -128,7 +122,6 @@ class Simulation(dobject):
 
       self.chk = CheckpointOutput("RESTART", 1, True, 0)
       self.chk.bind(self)
-
 
    def soft_exit(self, rollback=True):
       """Deals with a soft exit request.
@@ -182,46 +175,3 @@ class Simulation(dobject):
             self.soft_exit(rollback=False)
 
       self.soft_exit(rollback=False)
-
-   #~ def init(self):
-      #~ """Deals with initialization.
-#~
-      #~ Opens the different output files. Also initialises the
-      #~ atom velocities, and the higher frequency normal modes if required.
-      #~ It then removes the list of quantities to
-      #~ be initialized, so that if the simulation is restarted these quantities
-      #~ are not re-initialized.
-      #~ """
-#~
-      #~ if "normal_modes" in self.initlist:
-         #~ init_temp = float(self.initlist["normal_modes"])*self.beads.nbeads
-         #~ for b in range(1,self.beads.nbeads):
-            #~ if (self.beads.qnm[b] == 0.0).all:
-               #~ if init_temp == 0:
-                  #~ self.beads.qnm[b] = math.sqrt(self.ensemble.ntemp*Constants.kb)/(self.ensemble.omegak[b]*self.beads.sm3[b])*np.prng.gvec(3*self.beads.natoms)
-                  #~ self.beads.pnm[b] = math.sqrt(self.ensemble.ntemp*Constants.kb)*self.beads.sm3[b]*self.prng.gvec(3*self.beads.natoms)
-               #~ else:
-                  #~ self.beads.qnm[b] = math.sqrt(init_temp*Constants.kb)/(self.ensemble.omegak[b]*self.beads.sm3[b])*self.prng.gvec(3*self.beads.natoms)
-                  #~ self.beads.pnm[b] = math.sqrt(init_temp*Constants.kb)*self.beads.sm3[b]*self.prng.gvec(3*self.beads.natoms)
-#~
-      #~ if "velocities" in self.initlist:
-         #~ init_temp = float(self.initlist["velocities"])*self.beads.nbeads
-         #~ if init_temp == 0:
-            #~ self.beads.p = math.sqrt(self.ensemble.ntemp*Constants.kb)*self.beads.sm3*self.prng.gvec((self.beads.nbeads, 3*self.beads.natoms))
-         #~ else:
-            #~ self.beads.p = math.sqrt(init_temp*Constants.kb)*self.beads.sm3*self.prng.gvec((self.beads.nbeads, 3*self.beads.natoms))
-#~
-      #~ if "cell_velocities" in self.initlist:
-         #~ init_temp = float(self.initlist["cell_velocities"])*self.beads.nbeads
-         #~ if init_temp == 0:
-            #~ init_temp = math.sqrt(self.ensemble.ntemp)
-         #~ if hasattr(self.cell,"p6"):
-            #~ self.cell.p6 = math.sqrt(init_temp*Constants.kb*self.cell.m)*self.prng.gvec(6)
-         #~ else:
-            #~ self.cell.P = math.sqrt(init_temp*Constants.kb*self.cell.m)*self.prng.gvec(1)
-#~
-      #~ if self.ensemble.fixcom:
-         #~ self.ensemble.rmcom()
-#~
-      #~ # Zeroes out the initlist, such that in restarts no initialization will be required
-      #~ self.initlist = {}
