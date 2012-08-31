@@ -47,6 +47,8 @@ def _match(a,b):
       return False
    if hasattr(a,"shape")  and a.shape != b.shape:
       return False
+   if type(a) == np.ndarray:
+      return (a == b).all()
    if a != b:
       return False
    return True
@@ -173,7 +175,7 @@ class Input(object):
          #creates default dynamically if a suitable template is defined.
          self._default = default.factory(*default.args, **default.kwargs)
       else:
-         self._default=default
+         self._default = default
 
       self._optional = not (self._default is None)
 
@@ -305,13 +307,13 @@ class Input(object):
       for a in self.attribs:
          ea = self.__dict__[a]
          if not ea._default is None:
-            ea.store(ea._default); ea._explicit=False
+            ea.store(ea._default)
+            ea._explicit = False
       for f in self.fields:
          ef = self.__dict__[f]
          if not ef._default is None:
-            ef.store(ef._default); ef._explicit=False
-
-
+            ef.store(ef._default)
+            ef._explicit = False
 
       self.extra = []
       self._explicit = True
@@ -345,7 +347,6 @@ class Input(object):
             vf = self.__dict__[f]
             if not (vf._explicit or vf._optional):
                raise ValueError("Field name '" + f + "' is mandatory and was not found in the input for the property " + xml.name)
-
 
    def help_latex(self, level=0, stop_level=None, ref=False):
       """Function to generate a LaTeX formatted manual.
