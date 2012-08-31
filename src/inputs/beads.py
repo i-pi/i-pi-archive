@@ -99,13 +99,17 @@ class InputBeads(Input):
 
       # tries to fill up with as much data as available and valid
       # TODO should print warnings (or just abort?) if the arrays are not empty and size mismatch
-      q=self.q.fetch();
+      q=self.q.fetch();      
       if (q.shape == (beads.nbeads,3*beads.natoms)) : beads.q=q
+      elif len(q) != 0 : raise ValueError("Array shape mismatches for q in <beads> input.")
       p=self.p.fetch();
       if (p.shape == (beads.nbeads,3*beads.natoms)) : beads.p=p
+      elif len(p) != 0 : raise ValueError("Array shape mismatches for p in <beads> input.")
       m=self.m.fetch();
       if (m.shape == (beads.natoms,)) : beads.m=m
+      elif len(m) != 0 : raise ValueError("Array shape mismatches for m in <beads> input.")
       n=self.names.fetch();
       if (n.shape == (beads.natoms,)) : beads.names=n
+      elif len(n) != 0 : raise ValueError("Array shape mismatches for names in <beads> input.")
 
       return beads
