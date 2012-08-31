@@ -701,7 +701,7 @@ class InputValue(InputAttribute):
 
       super(InputValue,self).__init__(help, default, dtype, options)
 
-   def store(self, value, units=None):
+   def store(self, value, units=""):
       """Converts the data to the appropriate data type and units and stores it.
 
       Args:
@@ -712,13 +712,13 @@ class InputValue(InputAttribute):
 
       super(InputValue,self).store(value)
 
-      if not units is None:
+      if units != "":
          self.units.store(units) #User can define in the code the units to be
                                  #printed
 
       self.value = value
       if self._dimension != "undefined":
-         self.value *= unit_to_user(self._dimension, self.units.fetch(), 1.0)
+         self.value *= unit_to_user(self._dimension, units, 1.0)
 
    def fetch(self):
       """Returns the stored data in the user defined units."""
@@ -791,7 +791,7 @@ class InputArray(InputValue):
 
       super(InputArray,self).__init__(help, default, dtype, dimension=dimension)
 
-   def store(self, value, units=None):
+   def store(self, value, units=""):
       """Converts the data to the appropriate data type, shape and units and
       stores it.
 

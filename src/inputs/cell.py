@@ -72,5 +72,3 @@ class InputCell(InputArray):
          h[3] = 0
          h[6] = 0
          h[7] = 0
-
-
