@@ -172,7 +172,6 @@ class Input(object):
       if isinstance(default,input_default):
          #creates default dynamically if a suitable template is defined.
          self._default = default.factory(*default.args, **default.kwargs)
-         self._optional = True
       else:
          self._default=default
 
@@ -306,11 +305,11 @@ class Input(object):
       for a in self.attribs:
          ea = self.__dict__[a]
          if not ea._default is None:
-            ea.store(ea._default)
+            ea.store(ea._default); ea._explicit=False
       for f in self.fields:
          ef = self.__dict__[f]
          if not ef._default is None:
-            ef.store(ef._default)
+            ef.store(ef._default); ef._explicit=False
 
 
 
@@ -346,6 +345,7 @@ class Input(object):
             vf = self.__dict__[f]
             if not (vf._explicit or vf._optional):
                raise ValueError("Field name '" + f + "' is mandatory and was not found in the input for the property " + xml.name)
+
 
    def help_latex(self, level=0, stop_level=None, ref=False):
       """Function to generate a LaTeX formatted manual.
