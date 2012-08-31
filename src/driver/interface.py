@@ -710,7 +710,8 @@ class Interface(object):
                try:
                   c.shutdown(socket.SHUT_RDWR)
                   c.close()
-               except:   pass
+               except:
+                  pass
             # flush it all down the drain
             self.clients = []
             self.jobs = []

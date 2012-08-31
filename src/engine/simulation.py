@@ -134,7 +134,7 @@ class Simulation(dobject):
          self.step += 1
       if not rollback:
          self.chk.store()
-      self.chk.write()
+      self.chk.write(store=False)
 
       self.forces.stop()
 
