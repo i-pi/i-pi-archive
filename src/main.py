@@ -34,7 +34,6 @@ def main(file_name):
    simrestart.parse(xmlrestart.fields[0][1]) # Checks the input
                                                      # and partitions it
                                                      # appropriately.
-
    simul = simrestart.fetch() # Creates the appropriate simulation object.
    simul.run()
    del simul

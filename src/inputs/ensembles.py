@@ -50,7 +50,6 @@ class InputEnsemble(Input):
    """
 
    attribs={"type"  : (InputAttribute, {"dtype"   : str,
-                                    "default" : "nve",
                                     "help"    : "The ensemble that will be sampled during the simulation.",
                                     "options" : ['nve', 'nvt', 'npt']}) }
    fields={"thermostat" : (InputThermo, {"default"   : input_default(factory=engine.thermostats.Thermostat),

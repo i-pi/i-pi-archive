@@ -75,9 +75,9 @@ class input_default(object):
 
       Args:
          type: The class or function to be used to create the default object.
-         args: A tuple giving the arguments to be used to initialise 
+         args: A tuple giving the arguments to be used to initialise
             the default value.
-         kwargs: A dictionary giving the key word arguments to be used 
+         kwargs: A dictionary giving the key word arguments to be used
             to initialise the default value.
       """
 
@@ -134,7 +134,6 @@ class Input(object):
          extend the capabilities of the class, i.e. to hold several instances of
          a field with the same name, or to hold variable numbers of elements.
       default_help: The default help string.
-      default_value: The default value.
       _help: The help string of the object. Defaults to default_help.
       _default: Optional default value.
       _optional: A bool giving whether the field is a required field.
@@ -147,7 +146,6 @@ class Input(object):
    dynamic = {}
 
    default_help = "Generic input value"
-   default_value = None
    default_label = "" #used as a way to reference a particular class using
                       #hyperlinks
 
@@ -171,18 +169,14 @@ class Input(object):
       else:
          self._help = help
 
-      if default is None:
-         self._default = self.default_value
-         self._optional = False #False if must be input by user.
-      elif isinstance(default,input_default):
+      if isinstance(default,input_default):
          #creates default dynamically if a suitable template is defined.
          self._default = default.factory(*default.args, **default.kwargs)
          self._optional = True
       else:
-         self._default = default
-         self._optional = True
+         self._default=default
 
-      self._explicit = False #True if has been set by the user.
+      self._optional = not (self._default is None)
 
       self._label = self.default_label
 
@@ -198,8 +192,8 @@ class Input(object):
 
       if not self._default is None:
          self.store(self._default)
-         self._explicit = False #store automatically sets _explicit to True,
-                                #so we reset it to false here.
+
+      self._explicit = False #True if has been set by the user.
 
       self._text = ""
 
@@ -276,7 +270,7 @@ class Input(object):
          if not _match(self.__dict__[f].fetch(), self.__dict__[f]._default):
             rstr += self.__dict__[f].write(f, "   " + indent)
 
-      for (f,v) in self.extra:  
+      for (f,v) in self.extra:
          # also write out extended (dynamic) fields if present
          rstr += v.write(f, "   " + indent)
 
@@ -307,6 +301,18 @@ class Input(object):
             incorrect.
          ValueError: Raised if the user does not specify a required field.
       """
+
+      # before starting, sets everything to its default -- if a default is set!
+      for a in self.attribs:
+         ea = self.__dict__[a]
+         if not ea._default is None:
+            ea.store(ea._default)
+      for f in self.fields:
+         ef = self.__dict__[f]
+         if not ef._default is None:
+            ef.store(ef._default)
+
+
 
       self.extra = []
       self._explicit = True
@@ -684,9 +690,9 @@ class InputValue(InputAttribute):
       """
 
       # a note on units handling:
-      # 1) units are only processed at parse/fetch time: 
+      # 1) units are only processed at parse/fetch time:
       #    internally EVERYTHING is in internal units
-      # 2) if one adds an explicit "units" attribute to a derived class, 
+      # 2) if one adds an explicit "units" attribute to a derived class,
       #    the internal units handling will be just ignored
       if dimension is None:
          self._dimension = self.default_dimension
