@@ -31,9 +31,11 @@ class InputProperties(InputArray):
    default_help = """This class deals with the output of one property. """
    default_label = "PROPERTIES"
 
-   attribs=copy(InputArray.attribs)
-   attribs["filename"]=(InputAttribute,{ "dtype" : str, "default": "out"} )
-   attribs["stride"]=(InputAttribute,{ "dtype" : int, "default": 1 } )
+   attribs = copy(InputArray.attribs)
+   attribs["filename"] = (InputAttribute,{ "dtype" : str, "default": "out",
+                                           "help": "The name of the file that the property information will be output to."} )
+   attribs["stride"] = (InputAttribute,{ "dtype" : int, "default": 1,
+                                         "help": "The number of steps between successive writes." } )
 
    def __init__(self, help=None,  default=None, dtype=None, dimension=None):
       """Initializes InputProperties.
@@ -72,9 +74,12 @@ class InputTrajectory(InputValue):
    default_label = "TRAJECTORY"
 
    attribs=copy(InputValue.attribs)
-   attribs["filename"]=(InputAttribute,{ "dtype" : str, "default": "traj"} )
-   attribs["stride"]=(InputAttribute,{ "dtype" : int, "default": 1 } )
-   attribs["format"]=(InputAttribute,{ "dtype" : str, "default": "xyz" } )
+   attribs["filename"] = (InputAttribute,{ "dtype" : str, "default": "traj",
+                                           "help": "The name of the file that the trajectory information will be output to."} )
+   attribs["stride"] = (InputAttribute,{ "dtype" : int, "default": 1, 
+                                         "help": "The number of steps between successive writes." } )
+   attribs["format"] = (InputAttribute,{ "dtype" : str, "default": "xyz"
+                                       "help": "The output file format." } )
 
    def __init__(self, help=None,  default=None, dtype=None, dimension=None):
       """Initializes InputTrajectory.
@@ -115,9 +120,12 @@ class InputCheckpoint(InputValue):
    default_label = "CHECKPOINT"
 
    attribs=copy(InputValue.attribs)
-   attribs["filename"]=(InputAttribute,{ "dtype" : str, "default": "restart"} )
-   attribs["stride"]=(InputAttribute,{ "dtype" : int, "default": 1 } )
-   attribs["overwrite"]=(InputAttribute,{ "dtype" : bool, "default": True } )
+   attribs["filename"] = (InputAttribute,{ "dtype" : str, "default": "restart",
+                                           "help": "The name of the file that the checkpoints will be output to."} )
+   attribs["stride"] = (InputAttribute,{ "dtype" : int, "default": 1,
+                                         "help": "The number of steps between successive writes." } )
+   attribs["overwrite"] = (InputAttribute,{ "dtype" : bool, "default": True,
+                                            "help": "This specifies whether or not each consecutive checkpoint file will overwrite the old one."} )
 
    def __init__(self, help=None,  default=None, dtype=None, dimension=None):
       """Initializes InputCheckpoint.

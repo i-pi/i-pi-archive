@@ -16,7 +16,7 @@ If one decides to actively work on one issue, it should indicate it on the title
 DONE **   Clean up help (MC) (JM)
 New dynamic attributes should be properly included in the documentation. 
 
-**   Clean up help (MC) (JM)
+DONE **   Clean up help (MC) (JM)
 The whole input generation method should be documented with comments in the code.
 
 **   Clean up help (MC)
@@ -78,3 +78,5 @@ DONE ** In both engine and inputs directories, we need to document initializer,
 normalmodes, forces and outputs (JM) (JM)
 
 *** Rework the cell class, and the NPT ensemble (JM)
+
+** Add property and trajectory help string to the manual (JM) (JM)
