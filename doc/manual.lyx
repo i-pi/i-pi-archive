@@ -4746,6 +4746,20 @@ input{simulation}
 
 
 \backslash
+input{initializer}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+input{init_file}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
 input{ensembles}
 \end_layout
 
@@ -4760,7 +4774,7 @@ input{forces}
 
 
 \backslash
-input{interface}
+input{socket}
 \end_layout
 
 \begin_layout Plain Layout
@@ -4782,6 +4796,13 @@ input{beads}
 
 \backslash
 input{atoms}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+input{normal_modes}
 \end_layout
 
 \begin_layout Plain Layout

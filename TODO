@@ -48,7 +48,7 @@ DONE ***  Move the synchro business out of Beads and into NormalModes (MC) (MC)
 Completely revamped properties and trajectories scheme. 
 Now it is possible to specify units and a short help string.
 
-* Multiforce object should be implemented. (JM) (JM)
+DONE * Multiforce object should be implemented. (JM) (JM)
 
 ** Find out why NPT and NST ensembles both appear to give jumps in the 
 conserved quantity (JM)

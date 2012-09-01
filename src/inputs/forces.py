@@ -33,7 +33,7 @@ class InputForceBeads(Input):
                                          "help"    : "This force term will be added to give the total force using this weight." } )
             }
 
-   default_help = "Deals with the assigning of force calculation jobs and collecting the data."
+   default_help = "Base class that deals with the assigning of force calculation jobs and collecting the data."
    default_label = "FORCEBEADS"
 
    def store(self, forceb):

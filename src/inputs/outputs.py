@@ -28,7 +28,7 @@ class InputProperties(InputArray):
          data to file.
    """
 
-   default_help = """This class deals with the output of one property. """
+   default_help = """This class deals with the output of properties to one file. Between each property tag there should be an array of strings, each of which specifies one property to be output."""
    default_label = "PROPERTIES"
 
    attribs = copy(InputArray.attribs)
@@ -70,7 +70,7 @@ class InputTrajectory(InputValue):
       format: The format of the trajectory output file.
    """
 
-   default_help = """This class defines how one trajectory file should be output. """
+   default_help = """This class defines how one trajectory file should be output. Between each trajectory tag one string should be given, which specifies what data is to be output."""
    default_label = "TRAJECTORY"
 
    attribs=copy(InputValue.attribs)
@@ -116,7 +116,7 @@ class InputCheckpoint(InputValue):
          files output.
    """
 
-   default_help = """This class defines how a checkpoint file should be output. """
+   default_help = """This class defines how a checkpoint file should be output. Optionally, between the checkpoint tags, you can specify one integer giving the current step of the simulation. By default this integer will be zero."""
    default_label = "CHECKPOINT"
 
    attribs=copy(InputValue.attribs)
