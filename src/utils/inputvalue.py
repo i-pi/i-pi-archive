@@ -349,7 +349,7 @@ class Input(object):
                raise ValueError("Field name '" + f + "' is mandatory and was not found in the input for the property " + xml.name)
 
    def help_latex(self, level=0, stop_level=None, ref=False):
-      """Function to generate a LaTeX formatted manual.
+      """Function to generate a LaTeX formatted help file.
 
       Args:
          level: Current level of the hierarchy being considered.
@@ -360,8 +360,7 @@ class Input(object):
             document with cross-references between the different sections.
 
       Returns:
-         A LaTeX formatted string that can be compiled to give a help
-         document.
+         A LaTeX formatted string.
       """
 
       #stops when we've printed out the prerequisite number of levels
@@ -451,6 +450,9 @@ class Input(object):
       rstr = rstr.replace('_', '\\_')
       rstr = rstr.replace('\\\\_', '\\_')
       rstr = rstr.replace('...', '\\ldots ')
+      rstr = rstr.replace('<', '$<$')
+      rstr = rstr.replace('>', '$>$')
+      rstr = rstr.replace('|', '$|$')
 
       return rstr
 
@@ -494,7 +496,7 @@ class Input(object):
          return " " + str(default) + " " 
 
    def help_xml(self, name="", indent="", level=0, stop_level=None):
-      """Function to generate an xml formatted manual.
+      """Function to generate an xml formatted help file.
 
       Args:
          name: A string giving the name of the root node.

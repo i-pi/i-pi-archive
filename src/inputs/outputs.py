@@ -187,14 +187,14 @@ class InputOutputs(Input):
                                           "help"     : "A string that will be the pre-pended to each output file name." })
              }
 
-   dynamic = {  "properties" : (InputProperties, { "help" : "Each of the <properties> tags specify how to create a file in which one or more properties are written, one line per frame. " } ),
-               "trajectory" : (InputTrajectory, { "help" : "Each of the <trajectory> tags specify how to create a trajectory file, containing a list of per-atom-coordinate properties. " } ),
-               "checkpoint" : (InputCheckpoint, { "help" : "Each of the <checkpoint> tags specify how to create a checkpoint file, which can be used to restart a simulation. " } ),
+   dynamic = {  "properties" : (InputProperties, { "help" : "Each of the properties tags specify how to create a file in which one or more properties are written, one line per frame. " } ),
+               "trajectory" : (InputTrajectory, { "help" : "Each of the trajectory tags specify how to create a trajectory file, containing a list of per-atom-coordinate properties. " } ),
+               "checkpoint" : (InputCheckpoint, { "help" : "Each of the checkpoint tags specify how to create a checkpoint file, which can be used to restart a simulation. " } ),
             }
 
    default_help = """This class defines how properties, trajectories and checkpoints should be output during the simulation.
-    May contain zero, one or many instances of <properties>, <trajectory> or <checkpoint> tags, each giving instructions on how
-    one output file should be created and managed. """
+    May contain zero, one or many instances of properties, trajectory or checkpoint tags, each giving instructions on how
+    one output file should be created and managed."""
    default_label = "OUTPUTS"
 
    @classmethod

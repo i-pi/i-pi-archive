@@ -26,7 +26,7 @@ class InputInitFile(InputValue):
    attribs["format"] = (InputAttribute,{ "dtype" : str, "default": "xyz", "help": "The input file format."} )
 
    default_label = "INITFILE"
-   default_help = "This is a simple utility class to deal with initialization from file. Holds all the data needed to open the file and read its contents."
+   default_help = "This is a simple utility class to deal with initialization from file. Holds all the data needed to open the file and read its contents. The data held between its tags corresponds the the name of the file."
 
    def __init__(self, help=None, default=None, dtype=None, dimension=None):
       """Initializes InputInitFile.

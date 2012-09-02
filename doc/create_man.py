@@ -14,7 +14,10 @@ Also creates an xml file with the full list of all the tags.
 """
 
 from help import help, objects
+from help_list import help_list, list_objects
 
 help(xml=True)
 for opt in objects:
    help(latex=True, levels=1, option=opt, prefix=opt, ref=True)
+for opt in list_objects:
+   help_list(option=opt, prefix=opt, ref=True)

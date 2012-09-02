@@ -79,4 +79,6 @@ normalmodes, forces and outputs (JM) (JM)
 
 *** Rework the cell class, and the NPT ensemble (JM)
 
-** Add property and trajectory help string to the manual (JM) (JM)
+DONE ** Add property and trajectory help string to the manual (JM) (JM)
+
+*** Re-write the input files for all the test directories. (JM)

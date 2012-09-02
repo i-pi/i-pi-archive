@@ -3332,114 +3332,7 @@ Some of the properties that require array indices or other parameters to
  A full list of the allowed property names is given below:
 \end_layout
 
-\begin_layout Description
-time: Total time elapsed in the simulation.
-\end_layout
-
-\begin_layout Description
-step: The current simulation time step.
-\end_layout
-
-\begin_layout Description
-conserved: The value of the conserved quantity for the simulation.
-\end_layout
-
-\begin_layout Description
-temperature: The system temperature.
- Note that for path integral simulations this is not the same as the simulation
- temperature, as the particles are held at a higher classical temperature.
-\end_layout
-
-\begin_layout Description
-density: The system density.
-\end_layout
-
-\begin_layout Description
-volume: The volume of the system box.
-\end_layout
-
-\begin_layout Description
-h: The unit cell vector matrix.
- You must specify the args x and v to get the index h[x,v].
- If not specified, they both default to 0.
-\end_layout
-
-\begin_layout Description
-potential: The potential energy of the system.
-\end_layout
-
-\begin_layout Description
-spring: The spring potential energy of the ring polymers.
-\end_layout
-
-\begin_layout Description
-kinetic_md: The classical simulation kinetic energy.
-\end_layout
-
-\begin_layout Description
-kinetic_cv: The centroid virial quantum kinetic energy estimator.
-\end_layout
-
-\begin_layout Description
-stress_md: The classical stress tensor.
- You must specify the args x and v to get the index stress_md[x,v].
- If not specified, they both default to 0.
-\end_layout
-
-\begin_layout Description
-stress_cv: The quantum stress tensor estimator.
- You must specify the args x and v to get the index stress_cv[x,v].
- If not specified, they both default to 0.
-\end_layout
-
-\begin_layout Description
-pressure_md: The classical simulation pressure.
- 
-\end_layout
-
-\begin_layout Description
-pressure_cv: The quantum pressure estimator.
-\end_layout
-
-\begin_layout Description
-kstress_md: The classical kinetic stress tensor estimator.
- You must specify the args x and v to get the index kstress_md[x,v].
- If not specified, they both default to 0.
-\end_layout
-
-\begin_layout Description
-kstress_cv: The quantum kinetic stress tensor estimator.
- You must specify the args x and v to get the index kstress_cv[x,v].
- If not specified, they both default to 0.
-\end_layout
-
-\begin_layout Description
-virial_md: The classical virial tensor estimator.
- You must specify the args x and v to get the index virial_md[x,v].
- If not specified, they both default to 0.
-\end_layout
-
-\begin_layout Description
-virial_cv: The quantum virial tensor estimator.
- You must specify the args x and v to get the index virial_cv[x,v].
- If not specified, they both default to 0.
-\end_layout
-
-\begin_layout Description
-gle_ke: The kinetic energy estimator for the additional momenta in the GLE
- thermostat.
- You must specify the arg mode, which gives which of the additional degrees
- of freedom we will give the kinetic energy for.
- If not specified, it defaults to 0.
-\end_layout
-
-\begin_layout Description
-kin_yama: The scaled path quantum kinetic energy estimator.
-\end_layout
-
-\begin_layout Description
-linlin: A point of the scaled Fourier transform of the momentum distribution.
- Given by 
+\begin_layout Standard
 \begin_inset ERT
 status open
 
@@ -3447,33 +3340,12 @@ status open
 
 
 \backslash
-(
-\backslash
-tilde{n}(
-\backslash
-textbf{x})
-\backslash
-)
+input{property_list}
 \end_layout
 
 \end_inset
 
- in 
-\begin_inset ERT
-status open
 
-\begin_layout Plain Layout
-
-
-\backslash
-cite{linlin+10prl}
-\end_layout
-
-\end_inset
-
-.
- You must specify the args ux, uy and uz to give the displaced path vector,
- and atom to give the name of the atom for which the path will be opened.
 \end_layout
 
 \begin_layout Standard
@@ -3539,40 +3411,20 @@ stride
  The possible choices of output properties are:
 \end_layout
 
-\begin_layout Description
-positions: Gives the bead positions.
- Prints a separate file for each replica of the system
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+input{trajectory_list}
 \end_layout
 
-\begin_layout Description
-velocities: As above, except prints the velocities.
-\end_layout
+\end_inset
 
-\begin_layout Description
-forces: As above, except prints the forces.
-\end_layout
 
-\begin_layout Description
-kinetic_cv: Prints the contribution of each atom to the total kinetic energy.
- Prints only one file.
-\end_layout
-
-\begin_layout Description
-kodterms_cv: Prints the off-diagonal contributions to the kinetic energy
- tensor.
- Prints only one file.
-\end_layout
-
-\begin_layout Description
-centroid: Prints the position of the centroid coordinate of each atom.
- Prints only one file.
-\end_layout
-
-\begin_layout Description
-gyration: Prints the radius of gyration for each of the atoms in the system.
- Prints one file, but note that as we have 3 degrees of freedom per atom
- to print out in each trajectory, the radius of gyration is repeated 3 times
- for each atom.
 \end_layout
 
 \begin_layout Standard

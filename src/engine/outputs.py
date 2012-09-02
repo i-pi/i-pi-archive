@@ -92,7 +92,7 @@ class PropertyOutput(dobject):
                icol += 1
             ohead += " --> %s " % (what)
             if "help" in prop:
-               ohead += " : "+prop["help"]
+               ohead += " : " + prop["help"]
             self.out.write(ohead + "\n")
 
    def close_stream():
