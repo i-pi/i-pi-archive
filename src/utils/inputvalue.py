@@ -235,7 +235,6 @@ class Input(object):
       newfield.parse(xml)
       self.extra.append((name,newfield))
 
-
    def write(self, name="", indent="", text="\n"):
       """Writes data in xml file format.
 
@@ -386,10 +385,13 @@ class Input(object):
          rstr += "{\\\\ \\bf DIMENSION: }" + self._dimension + "\n"
          #gives dimension
 
-      if self._default != None and str(self._default).find('<') < 0:
-         #If the default is a class without a well-defined __str__ function,
-         #it does not print it out.
-         rstr += "{\\\\ \\bf DEFAULT: }" + self.pprint(self._default) + "\n"
+      if self._default != None and hasattr(self, 'value'):
+         #We only print out the default if it has a well defined value.
+         #For classes such as InputCell, self._default is not the value,
+         #instead it is an object that is stored to give the default value in
+         #self.value. For this reason we print out self.value at this stage,
+         #and not self._default
+         rstr += "{\\\\ \\bf DEFAULT: }" + self.pprint(self.value) + "\n"
 
       if hasattr(self, "_valid"):
          if self._valid is not None:
@@ -539,10 +541,13 @@ class Input(object):
       if hasattr(self, '_dimension') and self._dimension != "undefined":
          rstr += indent + "   <dimension> " + self._dimension + " </dimension>\n"
 
-      if self._default is not None and str(self._default).find('<') < 0:
-         #If the default is a class without a well-defined __str__ function,
-         #it does not print it out.
-         rstr += indent + "   <default>" + self.pprint(self._default, indent=indent, latex=False) + "</default>\n"
+      if self._default is not None and hasattr(self, 'value'):
+         #We only print out the default if it has a well defined value.
+         #For classes such as InputCell, self._default is not the value,
+         #instead it is an object that is stored, putting the default value in
+         #self.value. For this reason we print out self.value at this stage,
+         #and not self._default
+         rstr += indent + "   <default>" + self.pprint(self.value, indent=indent, latex=False) + "</default>\n"
       if show_attribs:
          for a in self.attribs:
             if not (a == "units" and self._dimension == "undefined"):
