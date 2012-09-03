@@ -69,7 +69,9 @@ class Barostat(dobject):
       """
 
       dset(self,"pext",depend_value(name="pext", value=pext))
-      dset(self,"sext",depend_value(name="sext", value=pext))
+      if sext is None:
+         sext = np.zeros((3,3))
+      dset(self,"sext",depend_array(name="sext", value=sext))
 
       if thermostat is None:
          thermostat = Thermostat()
@@ -110,9 +112,9 @@ class Barostat(dobject):
             taken.
       """
 
-      self.beads=beads
-      self.cell=cell
-      self.forces=forces
+      self.beads = beads
+      self.cell = cell
+      self.forces = forces
 
       dset(self,"pot",
          depend_value(name='pot', func=self.get_pot,
