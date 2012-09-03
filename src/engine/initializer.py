@@ -211,7 +211,7 @@ class Initializer(dobject):
             if np.linalg.norm(gbeads.m) > 0.0:
                ibeads.m = gbeads.m
             try:
-               for n in ibeads.names:
+               for n in gbeads.names:
                   if n != "":
                      raise ValueError()
             except:
