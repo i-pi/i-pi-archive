@@ -21,9 +21,11 @@ from ensembles import Ensemble
 
 from utils.io.io_xyz import read_xyz
 from utils.io.io_pdb import read_pdb
+from utils.io.io_xml import xml_parse_file
 from utils.depend import dobject
 from utils.units import Constants
 from utils.nmtransform import nm_rescale
+import inputs.simulation
 import numpy as np
 
 __all__ = ['Initializer', 'InitFile']
@@ -131,17 +133,28 @@ class Initializer(dobject):
                   ratoms.append(myatoms)
                   if rcell is None:
                      rcell = mycell
+            elif (v.format == "chk" or v.format == "checkpoint"):
+               # reads configuration from a checkpoint file
+               rfile = open(v.filename,"r")
+               xmlchk = xml_parse_file(rfile) # Parses the file.
 
-            if not rcell is None:
-               if icell.V > 0.0 :
-                  print "WARNING: initialize from <file> overwrites previous cell configuration"
-               icell.h = rcell.h
+               simchk = inputs.simulation.InputSimulation()
+               simchk.parse(xmlchk.fields[0][1])
+               rcell = simchk.cell.fetch()
+               rbeads = simchk.beads.fetch()
 
-            rbeads.resize(natoms=ratoms[0].natoms, nbeads=len(ratoms))
-            rbeads.names = ratoms[0].names
-            rbeads.m = ratoms[0].m
-            for b in range(rbeads.nbeads):
-               rbeads[b].q = ratoms[b].q
+            if not (v.format == "chk" or v.format == "checkpoint"):
+               # assembles the list of atomic configurations into a beads object
+               if not rcell is None:
+                  if icell.V > 0.0 :
+                     print "WARNING: initialize from <file> overwrites previous cell configuration"
+                  icell.h = rcell.h
+
+               rbeads.resize(natoms=ratoms[0].natoms, nbeads=len(ratoms))
+               rbeads.names = ratoms[0].names
+               rbeads.m = ratoms[0].m
+               for b in range(rbeads.nbeads):
+                  rbeads[b].q = ratoms[b].q
 
             # scale rbeads up (or down) to self.nbeads!
             gbeads = Beads(rbeads.natoms,self.nbeads)
