@@ -87,9 +87,15 @@ class xml_handler(ContentHandler):
    def __init__(self):
       """Initialises xml_handler."""
 
+      #root xml node with all the data
       self.root = xml_node(name="root", fields=[])
       self.open = [self.root]
+      #current level of the hierarchy
       self.level = 0
+      #Holds all the data between each of the tags.
+      #If level = 1, then buffer[0] holds all the data collected between the 
+      #root tags, and buffer[1] holds all the data collected between the 
+      #first child tag.
       self.buffer = [""]
       
    def startElement(self, name, attrs): 
@@ -104,11 +110,13 @@ class xml_handler(ContentHandler):
          attrs: The attribute data.
       """
 
+      #creates a new node
       newnode = xml_node(attribs=dict((k,attrs[k]) for k in attrs.keys()), name=name, fields=[])
+      #adds it to the list of open nodes
       self.open.append(newnode)
-#      if name in self.open[self.level].fields:
-#         print "Warning, tag " + name + " specified twice, overwriting old data in fields"
+      #adds it to the list of fields of the parent tag
       self.open[self.level].fields.append((name,newnode))
+      #gets ready to read new data
       self.buffer.append("")
       self.level += 1      
 
@@ -123,7 +131,7 @@ class xml_handler(ContentHandler):
          data: The data to be read.
       """
 
-      self.buffer[self.level]+=data
+      self.buffer[self.level] += data
       
    def endElement(self, name):
       """Reads a closing tag.
@@ -135,7 +143,13 @@ class xml_handler(ContentHandler):
          name: The tag_name.
       """
 
+      #all the text found between the tags stored in the appropriate xml_node
+      #object
       self.open[self.level].fields.append(("_text" , self.buffer[self.level]))
+      #'closes' the xml_node object, as we are no longer within its tags, so
+      #there is no more data to be added to it.
+      #Note that the xml_node is still held within the parent tag, so we
+      #no longer require this xml node object.
       self.buffer.pop(self.level)
       self.open.pop(self.level)
       self.level -= 1

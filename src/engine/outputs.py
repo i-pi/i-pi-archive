@@ -92,7 +92,7 @@ class PropertyOutput(dobject):
                icol += 1
             ohead += " --> %s " % (what)
             if "help" in prop:
-               ohead += " : "+prop["help"]
+               ohead += " : " + prop["help"]
             self.out.write(ohead + "\n")
 
    def close_stream():
@@ -281,8 +281,22 @@ class CheckpointOutput(dobject):
 
       self.status.store(self.simul)
 
-   def write(self):
-      """Writes out the required trajectories."""
+   def write(self, store=True):
+      """Writes out the required trajectories.
+
+      Used for both the checkpoint files and the soft-exit restart file.
+      We have slightly different behaviour for these two different types of
+      checkpoint file, as the soft-exit files have their store() function
+      called automatically, and we do not want this to be updated as the
+      status of the simulation after a soft-exit call is unlikely to be in
+      a consistent state. On the other hand, the standard checkpoint files 
+      are not automatically updated in this way, and we must manually store the
+      current state of the system before writing them.
+
+      Args:
+         store: A boolean saying whether the state of the system should be
+            stored before writing the checkpoint file.
+      """
 
       if not (self.simul.step + 1) % self.stride == 0:
          return
@@ -292,8 +306,9 @@ class CheckpointOutput(dobject):
       else:
          filename = self.filename + "_" + str(self.step)
 
-      self.step += 1    # advances the step counter before saving, so next time the correct index will be loaded.
-      self.store()
+      if store:
+         self.step += 1    # advances the step counter before saving, so next time the correct index will be loaded.
+         self.store()
       check_file = open(filename, "w")
       check_file.write(self.status.write(name="simulation"))
       check_file.close()

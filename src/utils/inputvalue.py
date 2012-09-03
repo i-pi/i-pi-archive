@@ -47,6 +47,8 @@ def _match(a,b):
       return False
    if hasattr(a,"shape")  and a.shape != b.shape:
       return False
+   if type(a) == np.ndarray:
+      return (a == b).all()
    if a != b:
       return False
    return True
@@ -173,7 +175,7 @@ class Input(object):
          #creates default dynamically if a suitable template is defined.
          self._default = default.factory(*default.args, **default.kwargs)
       else:
-         self._default=default
+         self._default = default
 
       self._optional = not (self._default is None)
 
@@ -232,7 +234,6 @@ class Input(object):
       newfield = self.dynamic[name][0](**self.dynamic[name][1])
       newfield.parse(xml)
       self.extra.append((name,newfield))
-
 
    def write(self, name="", indent="", text="\n"):
       """Writes data in xml file format.
@@ -305,13 +306,13 @@ class Input(object):
       for a in self.attribs:
          ea = self.__dict__[a]
          if not ea._default is None:
-            ea.store(ea._default); ea._explicit=False
+            ea.store(ea._default)
+            ea._explicit = False
       for f in self.fields:
          ef = self.__dict__[f]
          if not ef._default is None:
-            ef.store(ef._default); ef._explicit=False
-
-
+            ef.store(ef._default)
+            ef._explicit = False
 
       self.extra = []
       self._explicit = True
@@ -346,9 +347,8 @@ class Input(object):
             if not (vf._explicit or vf._optional):
                raise ValueError("Field name '" + f + "' is mandatory and was not found in the input for the property " + xml.name)
 
-
    def help_latex(self, level=0, stop_level=None, ref=False):
-      """Function to generate a LaTeX formatted manual.
+      """Function to generate a LaTeX formatted help file.
 
       Args:
          level: Current level of the hierarchy being considered.
@@ -359,8 +359,7 @@ class Input(object):
             document with cross-references between the different sections.
 
       Returns:
-         A LaTeX formatted string that can be compiled to give a help
-         document.
+         A LaTeX formatted string.
       """
 
       #stops when we've printed out the prerequisite number of levels
@@ -382,13 +381,17 @@ class Input(object):
 
       rstr += self._help + "\n"  #help string
 
-      if self._dimension != "undefined":
+      if hasattr(self, '_dimension') and self._dimension != "undefined":
          rstr += "{\\\\ \\bf DIMENSION: }" + self._dimension + "\n"
          #gives dimension
 
-      if self._default != None and hasattr(self, "type"):
-         rstr += "{\\\\ \\bf DEFAULT: }" + self.pprint(self._default) + "\n"
-         #gives default value, but only if it is not a class object.
+      if self._default != None and hasattr(self, 'value'):
+         #We only print out the default if it has a well defined value.
+         #For classes such as InputCell, self._default is not the value,
+         #instead it is an object that is stored to give the default value in
+         #self.value. For this reason we print out self.value at this stage,
+         #and not self._default
+         rstr += "{\\\\ \\bf DEFAULT: }" + self.pprint(self.value) + "\n"
 
       if hasattr(self, "_valid"):
          if self._valid is not None:
@@ -402,12 +405,18 @@ class Input(object):
          rstr += "{\\\\ \\bf DATA TYPE: }" + self.type.__name__ + "\n"
          #if possible, prints out the type of data that is being used
 
+      #Repeats the above instructions for the attributes
       if len(self.attribs) != 0:
-         #Repeats the above instructions for the attributes
-         rstr += "\\paragraph{Attributes}\n \\begin{itemize}\n"
-         for a in self.attribs:
-            rstr += "\\item {\\bf " + a + "}:\n " + self.__dict__[a].help_latex(level, stop_level, ref)
-         rstr += "\\end{itemize}\n \n"
+         #don't print out units if not necessary
+         if len(self.attribs) == 1 and (("units" in self.attribs) and self._dimension == "undefined"):
+            pass
+         else:
+            rstr += "\\paragraph{Attributes}\n \\begin{itemize}\n"
+            for a in self.attribs:
+               #don't print out units if not necessary
+               if not (a == "units" and self._dimension == "undefined"):
+                  rstr += "\\item {\\bf " + a + "}:\n " + self.__dict__[a].help_latex(level, stop_level, ref)
+            rstr += "\\end{itemize}\n \n"
 
       #As above, for the fields. Only prints out if we have not reached the
       #user-specified limit.
@@ -443,6 +452,9 @@ class Input(object):
       rstr = rstr.replace('_', '\\_')
       rstr = rstr.replace('\\\\_', '\\_')
       rstr = rstr.replace('...', '\\ldots ')
+      rstr = rstr.replace('<', '$<$')
+      rstr = rstr.replace('>', '$>$')
+      rstr = rstr.replace('|', '$|$')
 
       return rstr
 
@@ -460,7 +472,7 @@ class Input(object):
 
       if type(default) is np.ndarray:
          if default.shape == (0,):
-            return "[ ]" #proper treatment of empty arrays.
+            return " [ ] " #proper treatment of empty arrays.
          else:
             #indents new lines for multi-D arrays properly
             rstr = "\n" + indent + "      "
@@ -475,17 +487,18 @@ class Input(object):
          else:
             return " " + default + " "
       elif default == []:
-         return "[ ]"
+         return " [ ] "
       elif default == {}:
          if latex:
-            return "\\{ \\}" #again, escape characters needed for latex
+            return " \\{ \\} " #again, escape characters needed for latex
          else:               #formatting
-            return "{ }"
+            return " { } "
       else:
-         return str(default) #in most cases standard formatting will do
+         #in most cases standard formatting will do
+         return " " + str(default) + " " 
 
    def help_xml(self, name="", indent="", level=0, stop_level=None):
-      """Function to generate an xml formatted manual.
+      """Function to generate an xml formatted help file.
 
       Args:
          name: A string giving the name of the root node.
@@ -510,46 +523,56 @@ class Input(object):
       rstr = ""
       rstr = indent + "<" + name; #prints tag name
       for a in self.attribs:
-         rstr += " " + a + "=''" #prints attribute names
+         if not (a == "units" and self._dimension == "undefined"):
+            #don't print out units if not necessary
+            rstr += " " + a + "=''" #prints attribute names
       rstr += ">\n"
 
       #prints help string
-      rstr += indent + "   <help>" + self._help + "</help>\n"
+      rstr += indent + "   <help> " + self._help + " </help>\n"
       if show_attribs:
          for a in self.attribs:
-            #information about tags is found in tags beginning with the name
-            #of the attribute
-            rstr += indent + "   <" + a + "_help>" + self.__dict__[a]._help + "</" + a + "_help>\n"
+            if not (a == "units" and self._dimension == "undefined"):
+               #information about tags is found in tags beginning with the name
+               #of the attribute
+               rstr += indent + "   <" + a + "_help> " + self.__dict__[a]._help + " </" + a + "_help>\n"
 
       #prints dimensionality of the object
-      if self._dimension != "undefined":
-         rstr += indent + "   <dimension>" + self._dimension + "</dimension>\n"
+      if hasattr(self, '_dimension') and self._dimension != "undefined":
+         rstr += indent + "   <dimension> " + self._dimension + " </dimension>\n"
 
-      #prints default value, but only if it is not a class object.
-      if self._default is not None and hasattr(self, "type"):
-         rstr += indent + "   <default>" + self.pprint(self._default, indent=indent, latex=False) + "</default>\n"
+      if self._default is not None and hasattr(self, 'value'):
+         #We only print out the default if it has a well defined value.
+         #For classes such as InputCell, self._default is not the value,
+         #instead it is an object that is stored, putting the default value in
+         #self.value. For this reason we print out self.value at this stage,
+         #and not self._default
+         rstr += indent + "   <default>" + self.pprint(self.value, indent=indent, latex=False) + "</default>\n"
       if show_attribs:
          for a in self.attribs:
-            if self.__dict__[a]._default is not None:
-               rstr += indent + "   <" + a + "_default>" + self.pprint(self.__dict__[a]._default, indent=indent, latex=False) + "</" + a + "_default>\n"
+            if not (a == "units" and self._dimension == "undefined"):
+               if self.__dict__[a]._default is not None:
+                  rstr += indent + "   <" + a + "_default>" + self.pprint(self.__dict__[a]._default, indent=indent, latex=False) + "</" + a + "_default>\n"
 
       #prints out valid options, if required.
       if hasattr(self, "_valid"):
          if self._valid is not None:
-            rstr += indent + "   <options>" + str(self._valid) + "</options>\n"
+            rstr += indent + "   <options> " + str(self._valid) + " </options>\n"
       if show_attribs:
          for a in self.attribs:
-            if hasattr(self.__dict__[a], "_valid"):
-               if self.__dict__[a]._valid is not None:
-                  rstr += indent + "   <" + a + "_options>" + str(self.__dict__[a]._valid) + "</" + a + "_options>\n"
+            if not (a == "units" and self._dimension == "undefined"):
+               if hasattr(self.__dict__[a], "_valid"):
+                  if self.__dict__[a]._valid is not None:
+                     rstr += indent + "   <" + a + "_options> " + str(self.__dict__[a]._valid) + " </" + a + "_options>\n"
 
       #if possible, prints out the type of data that is being used
       if hasattr(self, "type") and hasattr(self.type, "__name__"):
-         rstr += indent + "   <dtype>" + self.type.__name__ + "</dtype>\n"
+         rstr += indent + "   <dtype> " + self.type.__name__ + " </dtype>\n"
       if show_attribs:
          for a in self.attribs:
-            if hasattr(self.__dict__[a], "type") and hasattr(self.__dict__[a].type, "__name__"):
-               rstr += indent + "   <" + a + "_dtype>" + self.__dict__[a].type.__name__ + "</" + a + "_dtype>\n"
+            if not (a == "units" and self._dimension == "undefined"):
+               if hasattr(self.__dict__[a], "type") and hasattr(self.__dict__[a].type, "__name__"):
+                  rstr += indent + "   <" + a + "_dtype> " + self.__dict__[a].type.__name__ + " </" + a + "_dtype>\n"
 
       #repeats the above instructions for any fields or dynamic tags.
       #these will only be printed if their level in the hierarchy is not above

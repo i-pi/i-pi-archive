@@ -10,9 +10,11 @@ Classes:
 Functions:
    getkey: This functions strips the units and argument list specification
       from a string specifying an output parameter.
+   help_latex: This returns a string that can be used in the manual to
+      specify the different available outputs.
 """
 
-__all__ = ['Properties', 'Trajectories', 'getkey']
+__all__ = ['Properties', 'Trajectories', 'getkey', 'help_latex']
 
 import numpy as np
 import math, random
@@ -40,6 +42,60 @@ def getkey(pstring):
    if pu < 0:
       pu = len(pstring)
    return pstring[0:min(pa,pu)]
+
+def help_latex(idict, ref=False):
+   """Function to generate a LaTeX formatted file.
+
+   Args:
+      idict: Either property_dict or traj_dict, to be used to
+         generate the help file.
+      ref: A boolean giving whether the latex file produced will be a
+         stand-alone document, or will be intended as a section of a larger
+         document with cross-references between the different sections.
+
+   Returns:
+      A LaTeX formatted string.
+   """
+
+   rstr = ""
+   if not ref:
+      #assumes that it is a stand-alone document, so must have document
+      #options.
+      rstr += "\\documentclass[12pt,fleqn]{report}"
+      rstr += "\n\\begin{document}\n"
+      rstr += "The following are different allowable ouputs:\n"
+   rstr += "\\begin{itemize}\n"
+
+   for out in idict:
+      rstr += "\\item {\\bf " + out + "}: " + idict[out]['help'] + "\n"
+      try:
+         if idict[out]['dimension'] != "undefined":
+            #doesn't print out dimension if not necessary.
+            dimstr = "\n {\\bf DIMENSION}: " + idict[out]['dimension'] + '\n'
+            rstr += dimstr
+      except KeyError:
+         pass
+      try:
+         sizestr = "\n{\\bf SIZE}: " + str(idict[out]['size']) + '\n'
+         rstr += sizestr
+      except KeyError:
+         pass
+
+   rstr += "\\end{itemize}\n"
+
+   if not ref:
+      #ends the created document if it is not part of a larger document
+      rstr += "\\end{document}"
+
+   # Some escape characters are necessary for the proper latex formatting
+   rstr = rstr.replace('_', '\\_')
+   rstr = rstr.replace('\\\\_', '\\_')
+   rstr = rstr.replace('...', '\\ldots ')
+   rstr = rstr.replace('<', '$<$')
+   rstr = rstr.replace('>', '$>$')
+   rstr = rstr.replace('|', '$|$')
+
+   return rstr
 
 
 class Properties(dobject):
@@ -81,7 +137,35 @@ class Properties(dobject):
    def __init__(self):
       """Initialises Properties."""
 
-      self.property_dict = {}
+      self.property_dict = {
+      "step": { "dimension" : "number", "help" : "The current time step of the simulation." },
+      "time": { "dimension": "time", "help": "The elapsed simulation time." },
+      "conserved": {"dimension" : "energy", "help": "The value of the conserved energy quantity per bead." },
+      "temperature": { "dimension" : "temperature", "help": "The current physical temperature." },
+      "density": {"dimension" : "density", "help": "The physical density of the system." },
+      "volume": {"dimension": "volume", "help": "The volume of the cell box." },
+      "h": {"dimension" : "length", "help": "Gives one of the cell parameters. Takes arguments 'x' and 'v', which gives h[x,v]. By default gives h[0,0]." },
+      "potential": {"dimension" : "energy", "help": "The potential energy of the system." },
+      "spring": {"dimension" : "energy", "help": "The spring potential energy between the beads." },
+      "kinetic_md": {"dimension" : "energy", "help": "The classical kinetic energy of the simulation." },
+      "kinetic_cv": {"dimension" : "energy", "help": "The physical kinetic energy of the system." },
+      "atom_x": { "dimension" : "length", "help": "Prints to properties the position (x,y,z) of a particle given its index. Takes arguments index and bead. If bead is not specified, refers to the centroid.", "size" : 3 },
+      "atom_v": { "dimension" : "velocity", "help": "Prints to properties the velocity (x,y,z) of a particle given its index. Takes arguments index and bead. If bead is not specified, refers to the centroid.", "size" : 3 },
+      "stress_md": {"help": "The classical stress tensor of the simulation. Takes arguments 'x' and 'v', which gives stress[x,v]. By default gives stress[0,0]."},
+      "pressure_md": {"help": "The classical pressure of the simulation." },
+      "kstress_md": {"help": "The classical kinetic stress tensor of the simulation. Takes arguments 'x' and 'v', which gives kstress[x,v]. By default gives kstress[0,0]." },
+      "virial_md": {"help": "The classical virial tensor of the simulation. Takes arguments 'x' and 'v', which gives virial[x,v]. By default gives virial[0,0]."},
+      "stress_cv": {"help": "The physical stress tensor of the system. Takes arguments 'x' and 'v', which gives stress[x,v]. By default gives stress[0,0]."},
+      "pressure_cv": {"help": "The physical pressure of the system."},
+      "kstress_cv": {"help": "The physical kinetic stress tensor of the system. Takes arguments 'x' and 'v', which gives kstress[x,v]. By default gives kstress[0,0]."},
+      "virial_cv": {"help": "The physical virial tensor of the system. Takes arguments 'x' and 'v', which gives virial[x,v]. By default gives virial[0,0]."},
+      "gle_ke": {"help": "Gives the kinetic energy associated with the additional degrees of freedom used in the GLE thermostat. Takes an argument 'mode' which gives the degree of freedom that is looked at, and defaults to 0."},
+      "kin_yama": {"help": "Gives the Yamamoto kinetic energy estimator. Takes one argument, 'fd_delta', which gives the value of the finite difference parameter used. It defaults to " + str(-self._DEFAULT_FINDIFF) + "."},
+      "isotope_sc": {"dimension": "undefined", "size": 7,
+                     "help" :  "Scaled coordinates free energy perturbation scaled mass KE estimator. Prints everything which is needed to compute the kinetic energy for a isotope-substituted system. The 7 elements are: <h> <h**2> <T_CV> <T_CV**2> ln(<e**(-h)>) ln(|<T_CV e**(-h)>|) sign(<T_CV e**(-h)>). Mixed units, so outputs only in a.u. Takes two arguments, 'alpha' and 'atom', which give the scaled mass parameter and the atom of interest respectively, and default to '1.0' and ''. The 'atom' argument can either be the label of a particular kind of atom, or an index of a specific atom." },
+      "isotope_thermo": {"dimension" : "undefined", "size" : 7,
+                         "help" : "Thermodynamic free energy perturbation scaled mass KE estimator. Prints everything which is needed to compute the kinetic energy for a isotope-substituted system. The 7 elements are: <h> <h**2> <T_CV> <T_CV**2> ln(<e**(-h)>) ln(|<T_CV e**(-h)>|) sign(<T_CV e**(-h)>). Mixed units, so outputs only in a.u. Takes two arguments, 'alpha' and 'atom', which give the scaled mass parameter and the atom of interest respectively, and default to '1.0' and ''. The 'atom' argument can either be the label of a particular kind of atom, or an index of a specific atom." }
+      }
 
    def bind(self, simul):
       """Binds the necessary objects from the simulation to calculate the
@@ -135,42 +219,40 @@ class Properties(dobject):
       self.forces = simul.forces
       self.simul = simul
 
-      self.property_dict["step"] = { "dimension" : "number", "func" : (lambda: (1 + self.simul.step)), "help" : "The current time step of the simulation." }
-      self.property_dict["time"] = { "dimension": "time", "func": (lambda: (1 + self.simul.step)*self.ensemble.dt), "help": "The elapsed simulation time." }
-      self.property_dict["conserved"] = {"dimension" : "energy", "func" : self.get_econs, "help": "The value of the conserved energy quantity per bead." }
-      self.property_dict["temperature"] = { "dimension" : "temperature", "func" : self.get_temp, "help": "The current physical temperature." }
-      self.property_dict["density"] = {"dimension" : "density", "func": (lambda: self.beads.m.sum()/self.cell.V), "help": "The physical density of the system." }
-      self.property_dict["volume"] = {"dimension": "volume", "func" :(lambda: self.cell.V), "help": "The volume of the cell box." }
-      self.property_dict["h"] = {"dimension" : "length", "func": self.wrap_cell, "help": "Gives one of the cell parameters. Takes arguments 'x' and 'v', which gives h[x,v]. By default gives h[0,0]." }
+      self.property_dict["step"]['func'] = (lambda: (1 + self.simul.step))
+      self.property_dict["time"]['func'] = (lambda: (1 + self.simul.step)*self.ensemble.dt)
+      self.property_dict["conserved"]['func'] = self.get_econs
+      self.property_dict["temperature"]['func'] = self.get_temp
+      self.property_dict["density"]['func'] = (lambda: self.beads.m.sum()/self.cell.V)
+      self.property_dict["volume"]['func'] = (lambda: self.cell.V)
+      self.property_dict["h"]['func'] = self.wrap_cell
 
-      self.property_dict["potential"] =  {"dimension" : "energy", "func": (lambda: self.forces.pot/self.beads.nbeads ), "help": "The potential energy of the system." }
-      self.property_dict["spring"] =     {"dimension" : "energy", "func": (lambda: self.beads.vpath*self.nm.omegan2), "help": "The spring potential energy between the beads." }
-      self.property_dict["kinetic_md"] = {"dimension" : "energy", "func": (lambda: self.nm.kin/self.beads.nbeads), "help": "The classical kinetic energy of the simulation." }
-      self.property_dict["kinetic_cv"] = {"dimension" : "energy", "func": self.get_kincv, "help": "The physical kinetic energy of the system." }
+      self.property_dict["potential"]['func'] = (lambda: self.forces.pot/self.beads.nbeads )
+      self.property_dict["spring"]['func'] = (lambda: self.beads.vpath*self.nm.omegan2)
+      self.property_dict["kinetic_md"]['func'] = (lambda: self.nm.kin/self.beads.nbeads)
+      self.property_dict["kinetic_cv"]['func'] = self.get_kincv
 
-      self.property_dict["atom_x"] = { "dimension" : "length", "func": self.get_atomx, "help": "Prints to properties the position (x,y,z) of a particle given its index. atom_x(index, bead) if bead is not specified, refers to the centroid.", "size" : 3 }
-      self.property_dict["atom_v"] = { "dimension" : "velocity", "func": self.get_atomv, "help": "Prints to properties the velocity (x,y,z) of a particle given its index. atom_v(index, bead) if bead is not specified, refers to the centroid.", "size" : 3 }
+      self.property_dict["atom_x"]['func'] = self.get_atomx
+      self.property_dict["atom_v"]['func'] = self.get_atomv
 
       #TODO give these properties a 'dimension' key.
-      self.property_dict["stress_md"] = {"func" : self.get_stress, "help": "The classical stress tensor of the simulation. Takes arguments 'x' and 'v', which gives stress[x,v]. By default gives stress[0,0]."}
-      self.property_dict["pressure_md"] = {"func" : self.get_press, "help": "The classical pressure of the simulation." }
-      self.property_dict["kstress_md"] = {"func" : self.get_kstress, "help": "The classical kinetic stress tensor of the simulation. Takes arguments 'x' and 'v', which gives kstress[x,v]. By default gives kstress[0,0]." }
-      self.property_dict["virial_md"] = {"func" : self.get_vir, "help": "The classical virial tensor of the simulation. Takes arguments 'x' and 'v', which gives virial[x,v]. By default gives virial[0,0]." }
+      self.property_dict["stress_md"]['func'] = self.get_stress
+      self.property_dict["pressure_md"]['func'] = self.get_press
+      self.property_dict["kstress_md"]['func'] = self.get_kstress
+      self.property_dict["virial_md"]['func'] = self.get_vir
 
-      self.property_dict["stress_cv"] =   {"func" : self.get_stresscv, "help": "The physical stress tensor of the system. Takes arguments 'x' and 'v', which gives stress[x,v]. By default gives stress[0,0]."      }
-      self.property_dict["pressure_cv"] = {"func" : self.get_presscv, "help": "The physical pressure of the system."       }
-      self.property_dict["kstress_cv"] =  {"func" :  self.get_kstresscv, "help": "The physical kinetic stress tensor of the system. Takes arguments 'x' and 'v', which gives kstress[x,v]. By default gives kstress[0,0]."    }
-      self.property_dict["virial_cv"] =   {"func" : self.get_vircv, "help": "The physical virial tensor of the system. Takes arguments 'x' and 'v', which gives virial[x,v]. By default gives virial[0,0]."         }
+      self.property_dict["stress_cv"]['func'] = self.get_stresscv
+      self.property_dict["pressure_cv"]['func'] = self.get_presscv
+      self.property_dict["kstress_cv"]['func'] = self.get_kstresscv
+      self.property_dict["virial_cv"]['func'] = self.get_vircv
 
-      self.property_dict["gle_ke"] =   {"func" : self.get_gleke, "help": "Gives the kinetic energy associated with the additional degrees of freedom used in the GLE thermostat. Takes an argument 'mode' which gives the degree of freedom that is looked at, and defaults to 0."             }
+      self.property_dict["gle_ke"]['func'] = self.get_gleke
 
-      self.property_dict["kin_yama"] = {"func" : self.get_kinyama, "help": "Gives the Yamamoto kinetic energy estimator. Takes one argument, 'fd_delta', which gives the value of the finite difference parameter used. It defaults to " + str(-self._DEFAULT_FINDIFF) + "."           }
+      self.property_dict["kin_yama"]['func'] = self.get_kinyama
 
-      self.property_dict["isotope_sc"] = {"func" : self.get_isotope_yama ,
-        "help" :  "Scaled coordinates free energy perturbation scaled mass KE estimator. Prints everything which is needed to compute the kinetic energy for a isotope-substituted system. The 7 elements are: <h> <h^2> <T_CV> <T_CV^2> ln(<e^-h>) ln(|<T_CV e^-h>|) sign(<T_CV e^-h>). Mixed units, so outputs only in a.u. Takes two arguments, 'alpha' and 'atom', which give the scaled mass parameter and the atom of interest respectively, and default to '1.0' and ''. The 'atom' argument can either be the label of a particular kind of atom, or an index of a specific atom." }
+      self.property_dict["isotope_sc"]['func'] = self.get_isotope_yama
 
-      self.property_dict["isotope_thermo"] = {"dimension" : "undefined", "func" : self.get_isotope_thermo, "size" : 7,
-        "help" : "Thermodynamic free energy perturbation scaled mass KE estimator. Prints everything which is needed to compute the kinetic energy for a isotope-substituted system. The 7 elements are: <h> <h^2> <T_CV> <T_CV^2> ln(<e^-h>) ln(|<T_CV e^-h>|) sign(<T_CV e^-h>). Mixed units, so outputs only in a.u. Takes two arguments, 'alpha' and 'atom', which give the scaled mass parameter and the atom of interest respectively, and default to '1.0' and ''. The 'atom' argument can either be the label of a particular kind of atom, or an index of a specific atom." }
+      self.property_dict["isotope_thermo"]['func'] = self.get_isotope_thermo
 
       # dummy beads and forcefield objects so that we can use scaled and
       # displaced path estimators without changing the simulation bead
@@ -252,7 +334,6 @@ class Properties(dobject):
          return self.beads.centroid[atom].p/ self.beads.m[atom]
       else:
          return self.beads[bead][atom].p/ self.beads.m[atom]
-
 
    def get_temp(self):
       """Calculates the MD kinetic temperature.
@@ -539,20 +620,20 @@ class Properties(dobject):
          alogr2 += logr*logr;
 
          #accumulates log averages in a way which preserves accuracy
-         if (ni==1):
+         if (ni == 1):
             law = -logr
          else:
             (law, drop) = logsumlog( (law,1.0), (-logr,1.0))
 
          #here we need to take care of the sign of tcv, which might as well be negative... almost never but...
-         if (ni==1):
+         if (ni == 1):
             lawke = -logr + np.log(abs(tcv))
             sawke = np.sign(tcv);
          else:
             (lawke, sawke) = logsumlog( (lawke, sawke), (-logr+np.log(abs(tcv)), np.sign(tcv)) )
 
          print "CHECK", ni, logr, tcv, law, lawke
-      if ni==0:
+      if ni == 0:
          raise ValueError("Couldn't find an atom which matched the argument of isotope_y")
 
       return (alogr, alogr2, atcv, atcv2, law, lawke, sawke)
@@ -629,19 +710,19 @@ class Properties(dobject):
          alogr2 += logr*logr
 
          #accumulates log averages in a way which preserves accuracy
-         if (ni==1):
+         if (ni == 1):
             law = -logr
          else:
             (law, drop) = logsumlog( (law,1.0), (-logr,1.0))
 
          #here we need to take care of the sign of tcv, which might as well be negative... almost never but...
-         if (ni==1):
+         if (ni == 1):
             lawke = -logr+np.log(abs(tcv))
-            sawke=np.sign(tcv)
+            sawke = np.sign(tcv)
          else:
             (lawke, sawke) = logsumlog( (lawke, sawke), (-logr+np.log(abs(tcv)), np.sign(tcv)) )
 
-      if ni==0:
+      if ni == 0:
          raise ValueError("Couldn't find an atom which matched the argument of isotope_y")
 
       return np.asarray([alogr, alogr2, atcv, atcv2, law, lawke, sawke])
@@ -661,7 +742,18 @@ class Trajectories(dobject):
    def __init__(self):
       """Initialises a Trajectories object.  """
 
-      self.traj_dict = {}
+      self.traj_dict = {
+      "positions": {"dimension" : "length", "help": "Prints the coordinate trajectories."},
+      "velocities": {"dimension" : "velocity", "help": "Prints the velocity trajectories."},
+      "forces": {"dimension" : "force", "help": "Prints the force trajectories."},
+      "kinetic_cv": {"dimension" : "energy", "help": "Prints the kinetic energy for each bead, resolved into Cartesian components."},
+      "kinetic_od": {"dimension" : "energy", "help": "Prints the off diagonal elements of the kinetic stress tensor, for each bead."},
+      "springs": {"dimension" : "energy", "help": "Prints the spring potential for each atom, resolved into Cartesian components."},
+      "r_gyration": {"dimension" : "length", "help": "Prints the radius of gyration for each atom."},
+      "x_centroid": {"dimension" : "length", "help": "Prints the centroid coordinates for each atom."},
+      "v_centroid": {"dimension" : "length", "help": "Prints the velocity centroid for each atom."}
+      }
+      
 
    def bind(self, simul):
       """ Binds to a simulation object to fetch atomic and force data.
@@ -673,17 +765,15 @@ class Trajectories(dobject):
       self.simul = simul
       self.fatom = simul.beads[0].copy()
 
-
-      self.traj_dict["positions"] =  { "dimension" : "length", "func" : (lambda : 1.0*self.simul.beads.q), "help": "Prints the coordinate trajectories." }
-      self.traj_dict["velocities"] =  { "dimension" : "velocity", "func" : (lambda : self.simul.beads.p/self.simul.beads.m3), "help": "Prints the velocity trajectories." }
-      self.traj_dict["forces"] =  { "dimension" : "force", "func" : (lambda : 1.0*self.simul.force.f), "help": "Prints the force trajectories." }
-      self.traj_dict["kinetic_cv"] =  { "dimension" : "energy", "func" : self.get_akcv, "help": "Prints the kinetic energy for each bead, resolved into Cartesian components." }
-      self.traj_dict["kinetic_od"] =  { "dimension" : "energy", "func" : self.get_akcv_od, "help": "Prints the off diagonal elements of the kinetic stress tensor, for each bead." }
-      self.traj_dict["springs"] =  { "dimension" : "energy", "func" : self.get_aspr, "help": "Prints the spring potential for each atom, resolved into Cartesian components." }
-      self.traj_dict["r_gyration"] =  { "dimension" : "length", "func" : (lambda : 1.0*self.simul.beads.rg), "help": "Prints the radius of gyration for each atom." }
-      self.traj_dict["x_centroid"] =  { "dimension" : "length", "func" : (lambda : 1.0*self.simul.beads.qc), "help": "Prints the centroid coordinates for each atom."  }
-      self.traj_dict["v_centroid"] =  { "dimension" : "length", "func" : (lambda : self.simul.beads.pc/self.simul.beads.m3[0]), "help": "Prints the velocity centroid for each atom."  }
-
+      self.traj_dict["positions"]['func'] = (lambda : 1.0*self.simul.beads.q)
+      self.traj_dict["velocities"]['func'] = (lambda : self.simul.beads.p/self.simul.beads.m3)
+      self.traj_dict["forces"]['func'] = (lambda : 1.0*self.simul.force.f)
+      self.traj_dict["kinetic_cv"]['func'] = self.get_akcv
+      self.traj_dict["kinetic_od"]['func'] = self.get_akcv_od
+      self.traj_dict["springs"]['func'] = self.get_aspr
+      self.traj_dict["r_gyration"]['func'] = (lambda : 1.0*self.simul.beads.rg)
+      self.traj_dict["x_centroid"]['func'] = (lambda : 1.0*self.simul.beads.qc)
+      self.traj_dict["v_centroid"]['func'] = (lambda : self.simul.beads.pc/self.simul.beads.m3[0])
 
    def get_akcv(self):
       """Calculates the contribution to the kinetic energy due to each degree
@@ -778,7 +868,7 @@ class Trajectories(dobject):
 
       cq = self[what]
       if getkey(what) in [ "positions", "velocities", "forces" ] :
-         self.fatom.q[:]= cq[b]
+         self.fatom.q[:] = cq[b]
       else: self.fatom.q[:] = cq
 
       if format == "pdb":

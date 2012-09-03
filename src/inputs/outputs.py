@@ -28,12 +28,14 @@ class InputProperties(InputArray):
          data to file.
    """
 
-   default_help = """This class deals with the output of one property. """
+   default_help = """This class deals with the output of properties to one file. Between each property tag there should be an array of strings, each of which specifies one property to be output."""
    default_label = "PROPERTIES"
 
-   attribs=copy(InputArray.attribs)
-   attribs["filename"]=(InputAttribute,{ "dtype" : str, "default": "out"} )
-   attribs["stride"]=(InputAttribute,{ "dtype" : int, "default": 1 } )
+   attribs = copy(InputArray.attribs)
+   attribs["filename"] = (InputAttribute,{ "dtype" : str, "default": "out",
+                                           "help": "The name of the file that the property information will be output to."} )
+   attribs["stride"] = (InputAttribute,{ "dtype" : int, "default": 1,
+                                         "help": "The number of steps between successive writes." } )
 
    def __init__(self, help=None,  default=None, dtype=None, dimension=None):
       """Initializes InputProperties.
@@ -68,13 +70,16 @@ class InputTrajectory(InputValue):
       format: The format of the trajectory output file.
    """
 
-   default_help = """This class defines how one trajectory file should be output. """
+   default_help = """This class defines how one trajectory file should be output. Between each trajectory tag one string should be given, which specifies what data is to be output."""
    default_label = "TRAJECTORY"
 
    attribs=copy(InputValue.attribs)
-   attribs["filename"]=(InputAttribute,{ "dtype" : str, "default": "traj"} )
-   attribs["stride"]=(InputAttribute,{ "dtype" : int, "default": 1 } )
-   attribs["format"]=(InputAttribute,{ "dtype" : str, "default": "xyz" } )
+   attribs["filename"] = (InputAttribute,{ "dtype" : str, "default": "traj",
+                                           "help": "The name of the file that the trajectory information will be output to."} )
+   attribs["stride"] = (InputAttribute,{ "dtype" : int, "default": 1, 
+                                         "help": "The number of steps between successive writes." } )
+   attribs["format"] = (InputAttribute,{ "dtype" : str, "default": "xyz",
+                                       "help": "The output file format." } )
 
    def __init__(self, help=None,  default=None, dtype=None, dimension=None):
       """Initializes InputTrajectory.
@@ -111,13 +116,16 @@ class InputCheckpoint(InputValue):
          files output.
    """
 
-   default_help = """This class defines how a checkpoint file should be output. """
+   default_help = """This class defines how a checkpoint file should be output. Optionally, between the checkpoint tags, you can specify one integer giving the current step of the simulation. By default this integer will be zero."""
    default_label = "CHECKPOINT"
 
    attribs=copy(InputValue.attribs)
-   attribs["filename"]=(InputAttribute,{ "dtype" : str, "default": "restart"} )
-   attribs["stride"]=(InputAttribute,{ "dtype" : int, "default": 1 } )
-   attribs["overwrite"]=(InputAttribute,{ "dtype" : bool, "default": True } )
+   attribs["filename"] = (InputAttribute,{ "dtype" : str, "default": "restart",
+                                           "help": "The name of the file that the checkpoints will be output to."} )
+   attribs["stride"] = (InputAttribute,{ "dtype" : int, "default": 1,
+                                         "help": "The number of steps between successive writes." } )
+   attribs["overwrite"] = (InputAttribute,{ "dtype" : bool, "default": True,
+                                            "help": "This specifies whether or not each consecutive checkpoint file will overwrite the old one."} )
 
    def __init__(self, help=None,  default=None, dtype=None, dimension=None):
       """Initializes InputCheckpoint.
@@ -130,7 +138,7 @@ class InputCheckpoint(InputValue):
    def fetch(self):
       """Returns a CheckpointOutput object."""
 
-      step=super(InputCheckpoint,self).fetch()
+      step = super(InputCheckpoint,self).fetch()
       return engine.outputs.CheckpointOutput(self.filename.fetch(), self.stride.fetch(), self.overwrite.fetch(), step=step )
 
    def parse(self, xml=None, text=""):
@@ -179,14 +187,14 @@ class InputOutputs(Input):
                                           "help"     : "A string that will be the pre-pended to each output file name." })
              }
 
-   dynamic = {  "properties" : (InputProperties, { "help" : "Each of the <properties> tags specify how to create a file in which one or more properties are written, one line per frame. " } ),
-               "trajectory" : (InputTrajectory, { "help" : "Each of the <trajectory> tags specify how to create a trajectory file, containing a list of per-atom-coordinate properties. " } ),
-               "checkpoint" : (InputCheckpoint, { "help" : "Each of the <checkpoint> tags specify how to create a checkpoint file, which can be used to restart a simulation. " } ),
+   dynamic = {  "properties" : (InputProperties, { "help" : "Each of the properties tags specify how to create a file in which one or more properties are written, one line per frame. " } ),
+               "trajectory" : (InputTrajectory, { "help" : "Each of the trajectory tags specify how to create a trajectory file, containing a list of per-atom-coordinate properties. " } ),
+               "checkpoint" : (InputCheckpoint, { "help" : "Each of the checkpoint tags specify how to create a checkpoint file, which can be used to restart a simulation. " } ),
             }
 
    default_help = """This class defines how properties, trajectories and checkpoints should be output during the simulation.
-    May contain zero, one or many instances of <properties>, <trajectory> or <checkpoint> tags, each giving instructions on how
-    one output file should be created and managed. """
+    May contain zero, one or many instances of properties, trajectory or checkpoint tags, each giving instructions on how
+    one output file should be created and managed."""
    default_label = "OUTPUTS"
 
    @classmethod

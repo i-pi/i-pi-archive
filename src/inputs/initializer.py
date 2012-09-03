@@ -23,7 +23,10 @@ class InputInitFile(InputValue):
    """
 
    attribs = copy(InputValue.attribs)
-   attribs["format"]=(InputAttribute,{ "dtype" : str, "default": "xyz"} )
+   attribs["format"] = (InputAttribute,{ "dtype" : str, "default": "xyz", "help": "The input file format."} )
+
+   default_label = "INITFILE"
+   default_help = "This is a simple utility class to deal with initialization from file. Holds all the data needed to open the file and read its contents. The data held between its tags corresponds the the name of the file."
 
    def __init__(self, help=None, default=None, dtype=None, dimension=None):
       """Initializes InputInitFile.
@@ -69,7 +72,8 @@ class InputInitializer(Input):
            "beads" : (InputBeads, { "help" : "Inputs the configuration of the path as a Beads object" }),
            "cell" : (InputCell, { "help" : "Inputs the configuration of the cell as a Cell object" }),
            "file" : (InputInitFile, {"help" : "Reads bead(s) and cell configuration from an external file" }),
-           "resample_v" : (InputValue, {"dtype" : float,
+           "resample_v" : (InputValue, {"dimension": "temperature", 
+                                        "dtype" : float,
                            "help" : "Re-sample the beads velocities from a Maxwell distribution at the given temperature - or the ensemble temperature if a negative temperature is specified.", "default": -1.0})
            }
 

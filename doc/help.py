@@ -32,7 +32,23 @@ from optparse import OptionParser
 
 __all__ = ['help', 'objects']
 
-objects = {'barostats': barostats.InputBaro(), 'cell': cell.InputCell(), 'simulation': simulation.InputSimulation(), 'ensembles': ensembles.InputEnsemble(), 'thermostats': thermostats.InputThermo(), 'interface': interface.InputInterface(), 'forces': forces.InputForce(), 'atoms': atoms.InputAtoms(), 'beads': beads.InputBeads(), 'prng': prng.InputRandom(), 'output': simulation.InputOutputs(), 'properties': outputs.InputProperties(), 'checkpoint': outputs.InputCheckpoint(), 'trajectory': outputs.InputTrajectory() }
+objects = { 'barostats': barostats.InputBaro(), 
+            'cell': cell.InputCell(),
+            'simulation': simulation.InputSimulation(),
+            'ensembles': ensembles.InputEnsemble(),
+            'thermostats': thermostats.InputThermo(),
+            'socket': forces.InputFBSocket(),
+            'forces': forces.InputForces(),
+            'atoms': atoms.InputAtoms(),
+            'beads': beads.InputBeads(),
+            'prng': prng.InputRandom(),
+            'init_file': initializer.InputInitFile(),
+            'initializer': initializer.InputInitializer(),
+            'normal_modes': normalmodes.InputNormalModes(),
+            'output': outputs.InputOutputs(),
+            'properties': outputs.InputProperties(),
+            'checkpoint': outputs.InputCheckpoint(),
+            'trajectory': outputs.InputTrajectory() }
 
 usage = "usage: python %prog [options]"
 parser = OptionParser(usage=usage)

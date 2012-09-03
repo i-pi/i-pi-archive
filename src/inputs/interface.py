@@ -86,12 +86,12 @@ class InputInterface(Input):
 
       super(InputInterface,self).check()
       if self.port.fetch() < 1 or self.port.fetch() > 65535:
-         raise ValueError("Port number out of acceptable range.")
+         raise ValueError("Port number " + str(self.port.fetch()) + " out of acceptable range.")
       elif self.port.fetch() < 1025:
          print "Warning, low port number being used, this may interrupt important system processes."
 
       if self.slots.fetch() < 1 or self.slots.fetch() > 5:
-         raise ValueError("Slot number "+str(self.slots.fetch())+ " out of acceptable range.")
+         raise ValueError("Slot number " + str(self.slots.fetch()) + " out of acceptable range.")
       if self.latency.fetch() < 0:
          raise ValueError("Negative latency parameter specified.")
       if self.timeout.fetch() < 0.0:
