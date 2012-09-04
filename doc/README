@@ -8,6 +8,8 @@
       for all the classes, for use in the manual.
    - help.py: python script which can generate custom help files for
       different files.
+   - help_list.py: python script which can generate custom help files for
+      the output files.
    - help.xml: Automatically generated xml help file.
    - *.tex: Automatically generated latex help files for all the classes, for
       use in the manual.
