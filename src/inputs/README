@@ -13,7 +13,12 @@
    - ensembles.py: Creates objects that deal with the different ensembles.
    - simulation.py: Creates objects that deal with all the top level 
       information, such as input/output.
-   - properties.py: Creates objects that deal with calculating all the 
-      output properties.
-   - forces.py: Creates objects that deal with creating the jobs to send to 
+   - outputs.py: Creates objects that deal with output files.
+   - forces.py: Creates objects that deal with the jobs to send to 
       the driver code.
+   - interface.py: Creates objects that deal with socket creation.
+   - prng.py: Creates the objects that deal with random number generation.
+   - normalmodes.py: Creates the objects that deal with the normal mode
+      transformation.
+   - initializer.py: Creates the objects that deal with initializing the
+      simulation.
