@@ -25,7 +25,7 @@ from inputs.barostats import InputBaro
 import time
 
 class Ensemble(dobject):
-   """Base (do-nothing) ensemble class.
+   """Base ensemble class.
 
    Gives the standard methods and attributes needed in all the
    ensemble classes.
@@ -55,7 +55,6 @@ class Ensemble(dobject):
          dt: The timestep of the simulation algorithms.
          temp: The temperature.
       """
-#TODO add nm_freqs to the doc string
 
       dset(self, "econs", depend_value(name='econs', func=self.get_econs) )
       dset(self, "temp",  depend_value(name='temp',  value=temp))
@@ -89,7 +88,8 @@ class Ensemble(dobject):
       self.nm = nm
 
       # n times the temperature
-      dset(self,"ntemp", depend_value(name='ntemp',func=self.get_ntemp,dependencies=[dget(self,"temp")]))
+      dset(self,"ntemp", depend_value(name='ntemp',func=self.get_ntemp,
+         dependencies=[dget(self,"temp")]))
 
       # dependencies of the conserved quantity
       dget(self,"econs").add_dependency(dget(self.beads, "kin"))
@@ -136,6 +136,9 @@ class NVEEnsemble(Ensemble):
    Attributes:
       fixcom: A boolean which decides whether the centre of mass
          motion will be constrained or not.
+      ptime: The time taken in updating the velocities.
+      qtime: The time taken in updating the positions.
+      ttime: The time taken in applying the thermostat steps.
 
    Depend objects:
       econs: Conserved energy quantity. Depends on the bead kinetic and
@@ -280,6 +283,8 @@ class NVTEnsemble(NVEEnsemble):
       if self.fixcom:
          ndof = 3*(self.beads.natoms-1)
 
+      #decides whether the thermostat will work in the normal mode or 
+      #the bead representation.
       if isinstance(self.thermostat,ThermoNMGLE) or isinstance(self.thermostat,ThermoNMGLEG) or isinstance(self.thermostat,ThermoPILE_L) or isinstance(self.thermostat,ThermoPILE_G):
          self.thermostat.bind(nm=self.nm,prng=prng,ndof=ndof )
       else:

@@ -41,8 +41,6 @@ class Beads(dobject):
       sm3: An array giving the square root of m3.
       q: An array giving all the bead positions.
       p: An array giving all the bead momenta.
-      qnm: An array giving the normal mode representation of the beads.
-      pnm: An array giving the normal mode representation of the bead momenta.
       qc: An array giving the centroid positions. Depends on qnm.
       pc: An array giving the centroid momenta. Depends on pnm.
       vpath: The spring potential between the beads, divided by omegan**2.

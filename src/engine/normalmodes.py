@@ -239,9 +239,6 @@ class NormalModes(dobject):
          pqk[b,0,1] = -s*self.omegak[b]*sk
          pqk[b,1,0] = s/(self.omegak[b]*sk)
 
-      print "mass", self.nm_mass
-      print pqk
-
       return pqk
 
    def get_nmm(self):

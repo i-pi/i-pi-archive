@@ -63,7 +63,7 @@ def help_latex(idict, ref=False):
       #options.
       rstr += "\\documentclass[12pt,fleqn]{report}"
       rstr += "\n\\begin{document}\n"
-      rstr += "The following are different allowable ouputs:\n"
+      rstr += "The following are the different allowable ouputs:\n"
    rstr += "\\begin{itemize}\n"
 
    for out in idict:
@@ -123,6 +123,7 @@ class Properties(dobject):
       ensemble: An ensemble object giving the objects necessary for producing
          the correct ensemble.
       beads: A beads object giving the atoms positions.
+      nm: A normal modes object giving the normal mode representation.
       cell: A cell object giving the system box.
       forces: A forcefield object giving the force calculator for each
          replica of the system.
@@ -181,6 +182,8 @@ class Properties(dobject):
       'density': Density of the system,
       'volume': Simulation box volume,
       'h': Cell vector matrix. Requires arguments x and v to give h[x,v],
+      'atom_x': Gives a vector of the centroid positions of a particular atom,
+      'atom_v': Gives a vector of the centroid velocities of a particular atom,
       'potential': Potential energy estimator,
       'spring': The spring potential energy estimator,
       'kinetic_md': Classical kinetic energy estimator,
@@ -503,7 +506,6 @@ class Properties(dobject):
                gleke += s[mode, i, alpha]**2/2.0
       return gleke
 
-
    def get_kinyama(self, fd_delta= - _DEFAULT_FINDIFF):
       """Calculates the quantum scaled coordinate kinetic energy estimator.
 
@@ -732,15 +734,16 @@ class Trajectories(dobject):
    """A simple class to take care of output of trajectory data.
 
    Attributes:
-      format: The file format for the output files.
       simul: The simulation object from which the position data will be
          obtained.
       fatom: A dummy beads object used so that individual replica trajectories
          can be output.
+      traj_dict: A dictionary containing all the trajectories that can be
+         output.
    """
 
    def __init__(self):
-      """Initialises a Trajectories object.  """
+      """Initialises a Trajectories object."""
 
       self.traj_dict = {
       "positions": {"dimension" : "length", "help": "Prints the coordinate trajectories."},

@@ -32,7 +32,7 @@ class PropertyOutput(dobject):
       simul: The simulation object to get the data to be output from.
    """
 
-   def __init__(self, filename="out", stride=1, outlist=np.zeros(0,np.dtype('|S1024')) ):
+   def __init__(self, filename="out", stride=1, outlist=None):
       """Initializes a property output stream opening the corresponding 
       file name.
 
@@ -45,6 +45,8 @@ class PropertyOutput(dobject):
          outlist: A list of all the properties that should be output.
       """
 
+      if outlist is None:
+         outlist = np.zeros(0,np.dtype('|S1024'))
       self.filename = filename
       self.outlist = np.asarray(outlist,np.dtype('|S1024'))
       self.stride = stride
@@ -59,7 +61,8 @@ class PropertyOutput(dobject):
 
       self.simul = simul
 
-      # Checks as soon as possible if some asked-for properties are missing or mispelled
+      # Checks as soon as possible if some asked-for properties are 
+      # missing or mispelled
       for what in self.outlist:
          key = getkey(what)
          if not key in self.simul.properties.property_dict.keys():
@@ -238,6 +241,8 @@ class CheckpointOutput(dobject):
       overwrite: If True, the checkpoint file is overwritten at each output.
          If False, will output to 'filename_step'. Note that no check is done
          on whether 'filename_step' exists already.
+      simul: The simulation object to get the data to be output from.
+      status: An input simulation object used to write out the checkpoint file.
    """
 
 

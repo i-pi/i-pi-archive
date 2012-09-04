@@ -100,6 +100,11 @@ class Initializer(dobject):
 
       Args:
          simul: A simulation object to be initialized.
+
+      Raises:
+         ValueError: Raised if there is a problem with the initialization,
+            if something that should have been has not been, or if the objects
+            that have been specified are not compatible with each other.
       """
 
       ibeads = simul.beads

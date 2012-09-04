@@ -1,11 +1,9 @@
 """Contains the classes which deal with the system box.
 
-Used for implementing the minimum image convention, as well as holding the
-dynamical variables and the methods required for variable cell NST and NPT
-dynamics, such as the strain, the volume and the lattice vector matrix.
+Used for implementing the minimum image convention.
 
 Classes:
-   Cell: Base cell class with the generic methouds and attributes.
+   Cell: Base cell class with the generic methods and attributes.
 """
 
 __all__ = ['Cell']
@@ -21,8 +19,7 @@ class Cell(dobject):
 
    This class has the base attributes required for either flexible or
    isotropic cell dynamics. Uses an upper triangular lattice vector matrix to
-   prevent unphysical rotations of the cell (see P. Raiteri, J. Gale and
-   G. Bussi, J. Phys.: Condens. Matter 23 334213 (2011)).
+   represent the cell.
 
    Depend objects:
       h: An array giving the lattice vector matrix.

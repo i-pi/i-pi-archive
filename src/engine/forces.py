@@ -234,7 +234,8 @@ class FFSocket(ForceField):
          A FFSocket object without atoms or cell attributes.
       """
 
-      # does not copy the bound objects (i.e., the returned forcefield must be bound before use)
+      # does not copy the bound objects 
+      # (i.e., the returned forcefield must be bound before use)
       return type(self)(self.pars, self.socket)
 
    def get_all(self):
@@ -321,6 +322,8 @@ class ForceBeads(dobject):
       softexit: A function to help make sure the printed restart file is
          consistent.
       _forces: A list of the forcefield objects for all the replicas.
+      weight: A float that will be used to weight the contribution of this
+         forcefield to the total force.
 
    Depend objects:
       f: An array containing the components of the force. Depends on each
@@ -475,7 +478,6 @@ class ForceBeads(dobject):
       self.queue()
       return np.array([b.vir for b in self._forces], float)
 
-
    def f_gather(self):
       """Obtains the force vector for each replica.
 
@@ -489,6 +491,8 @@ class ForceBeads(dobject):
       self.queue()
       for b in range(self.nbeads):
          newf[b] = self._forces[b].f
+
+      return newf
 
       #serial
 #      for b in range(self.nbeads): newf[b]=self._forces[b].f
@@ -504,12 +508,11 @@ class ForceBeads(dobject):
 #      for b in range(self.nbeads): bthreads[b].join()
 #      print "threads joined in"
 
-      return newf
-
    def get_vir(self):
       """Sums the virial of each replica.
 
-      Not the actual system virial.
+      Not the actual system virial, as it has not been divided by either the
+      number of beads or the cell volume.
 
       Returns:
           Virial sum.
@@ -580,7 +583,6 @@ class Forces(dobject):
          representation.
    """
 
-
    def bind(self, beads, cell, flist, softexit=None):
 
       self.natoms = beads.natoms
@@ -638,17 +640,20 @@ class Forces(dobject):
       #now must expose an interface that gives overall forces
       dset(self,"f",
          depend_array(name="f",value=np.zeros((self.nbeads,3*self.natoms)),
-            func=self.f_combine,dependencies=[dget(ff, "f") for ff in self.mforces] ) )
+            func=self.f_combine,
+               dependencies=[dget(ff, "f") for ff in self.mforces] ) )
 
       # collection of pots and virs from individual ff objects
       dset(self,"pots",
          depend_array(name="pots", value=np.zeros(self.nbeads,float),
-            func=self.pot_combine,dependencies=[dget(ff, "pots") for ff in self.mforces]) )
+            func=self.pot_combine,
+               dependencies=[dget(ff, "pots") for ff in self.mforces]) )
 
       # must take care of the virials!
       dset(self,"virs",
          depend_array(name="virs", value=np.zeros((self.nbeads,3,3),float),
-         func=self.vir_combine, dependencies=[dget(ff, "virs") for ff in self.mforces]) )
+            func=self.vir_combine,
+               dependencies=[dget(ff, "virs") for ff in self.mforces]) )
 
       # total potential and total virial
       dset(self,"pot",
