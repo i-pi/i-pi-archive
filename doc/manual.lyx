@@ -3333,7 +3333,7 @@ status open
 
 
 \backslash
-begin{verbatim}<properties stride='' filename=''>
+begin{verbatim}<properties stride=`' filename=`'>
 \end_layout
 
 \begin_layout Plain Layout
@@ -3429,7 +3429,7 @@ status open
 
 
 \backslash
-begin{verbatim}<trajectory stride='' filename='' format=''>
+begin{verbatim}<trajectory stride=`' filename=`' format=`'>
 \end_layout
 
 \begin_layout Plain Layout
@@ -3535,7 +3535,7 @@ status open
 
 
 \backslash
-begin{verbatim}<checkpoint stride='' filename='' overwrite=''>
+begin{verbatim}<checkpoint stride=`' filename=`' overwrite=`'>
 \end_layout
 
 \begin_layout Plain Layout
