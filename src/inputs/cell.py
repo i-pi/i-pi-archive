@@ -50,8 +50,8 @@ class InputCell(InputArray):
          properties given the attributes of the InputCell object.
       """
 
-      h=super(InputCell,self).fetch();
-      h.shape=(3,3)
+      h = super(InputCell,self).fetch();
+      h.shape = (3,3)
 
       return Cell(h=h)
 
