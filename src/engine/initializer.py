@@ -23,7 +23,7 @@ from utils.io.io_xyz import read_xyz
 from utils.io.io_pdb import read_pdb
 from utils.io.io_xml import xml_parse_file
 from utils.depend import dobject
-from utils.units import Constants
+from utils.units import Constants, unit_to_internal
 from utils.nmtransform import nm_rescale
 import inputs.simulation
 import numpy as np
@@ -121,7 +121,10 @@ class Initializer(dobject):
                      myatoms = read_xyz(rfile)
                   except:
                      break
+                  myatoms.q *= unit_to_internal("length",v.units,1.0)
                   ratoms.append(myatoms)
+
+
             elif (v.format == "pdb"):
                while True:
                #while loop, so that more than one configuration can be given
@@ -130,9 +133,13 @@ class Initializer(dobject):
                      myatoms, mycell = read_pdb(rfile)
                   except:
                      break
+                  myatoms.q *= unit_to_internal("length",v.units,1.0)
+                  mycell.h  *= unit_to_internal("length",v.units,1.0)
                   ratoms.append(myatoms)
                   if rcell is None:
                      rcell = mycell
+
+
             elif (v.format == "chk" or v.format == "checkpoint"):
                # reads configuration from a checkpoint file
                rfile = open(v.filename,"r")
