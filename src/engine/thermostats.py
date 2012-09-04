@@ -115,7 +115,7 @@ class Thermostat(dobject):
          dset(self,"p",pm[0])
          dset(self,"m",pm[1])
       else:
-         raise TypeError("Thermostat.bind expects either Beads, Atoms, a Cell, or a (p,m) tuple to bind to")
+         raise TypeError("Thermostat.bind expects either Beads, Atoms, NormalModes, or a (p,m) tuple to bind to")
 
       if ndof is None:
          self.ndof = len(self.p)
@@ -406,8 +406,8 @@ class ThermoSVR(Thermostat):
 
    def step(self):
       """Updates the bound momentum vector with a stochastic velocity rescaling
-      thermostat. See
-      G Bussi, D Donadio, M Parrinello, Journal of Chemical Physics 126, 014101 (2007)
+      thermostat. See G Bussi, D Donadio, M Parrinello,
+      Journal of Chemical Physics 126, 014101 (2007)
       """
 
       K = np.dot(depstrip(self.p),depstrip(self.p)/depstrip(self.m))*0.5

@@ -22,18 +22,11 @@ class InputNormalModes(InputArray):
       mode: Specifies the method by which the dynamical masses are created.
    """
 
-   attribs=copy(InputArray.attribs)
-   attribs["mode"]= (InputAttribute, {"dtype"   : str,
-                                    "default" : "rpmd",
-                                    "help"    : "How the dynamical masses are calculated",
-                                    "options" : ['pa-cmd', 'wmax-cmd', 'manual', 'rpmd']})
-
-   #~ fields = {
-               #~ "frequencies" : (InputArray, {"dtype"        : float,
-                                    #~ "default"        : np.identity(0),
-                                    #~ "help"           : "Manual frequencies for the ring polymer normal modes. Just one number if doing CMD.",
-                                    #~ "dimension"      : "frequency"})
-             #~ }
+   attribs = copy(InputArray.attribs)
+   attribs["mode"] = (InputAttribute, {"dtype"   : str,
+                                       "default" : "rpmd",
+                                       "help"    : "How the dynamical masses are calculated",
+                                       "options" : ['pa-cmd', 'wmax-cmd', 'manual', 'rpmd']})
 
    default_help = "Describes how the dynamic of the path must be performed, by manipulating the frequencies of normal modes."
    default_label = "NORMALMODES"

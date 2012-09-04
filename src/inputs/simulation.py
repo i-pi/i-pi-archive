@@ -43,29 +43,18 @@ class InputSimulation(Input):
    Attributes:
       force: A restart force instance. Used as a model for all the replicas.
       ensemble: A restart ensemble instance.
-      atoms: A restart atoms instance.
       beads: A restart beads instance.
       normal_modes: Setup of normal mode integrator.
       cell: A restart cell instance.
+      output: A list of the required outputs.
       prng: A random number generator object.
       step: An integer giving the current simulation step. Defaults to 0.
       total_steps: The total number of steps. Defaults to 0.
-      stride: A dictionary giving the number of steps between printing out
-         data for the different types of data. Defaults to _DEFAULT_STRIDES.
-      traj_format: A string giving the format of the trajectory output files.
-         Defaults to 'pdb'.
-      trajectories: An array of strings giving all the trajectory data that
-         should be output space separated. Defaults to _DEFAULT_TRAJ.
       initialize: An array of strings giving all the quantities that should
          be output.
-      fd_delta: A float giving the size of the finite difference
-         parameter used in the Yamamoto kinetic energy estimator. Defaults
-         to 0.
    """
 
-   #TODO all of these defaults set to objects are bad practice because the defaults will be instanciated at parse time.
-   #should
-   fields= { "forces" :   (InputForces,    { "help"  : InputForces.default_help }),
+   fields = { "forces" :   (InputForces,    { "help"  : InputForces.default_help }),
              "ensemble": (InputEnsemble, { "help"  : InputEnsemble.default_help } ),
              "prng" :    (InputRandom,   { "help"  : InputRandom.default_help + " Optional.",
                                          "default" : input_default(factory=Random)} ),
@@ -127,10 +116,11 @@ class InputSimulation(Input):
 
       # this creates a simulation object which gathers all the little bits
       #TODO use named arguments since this list is a bit too long...
-      rsim = engine.simulation.Simulation(self.beads.fetch(), self.cell.fetch(), self.forces.fetch(),
-                     self.ensemble.fetch(), self.prng.fetch(), self.output.fetch(),
-                     self.normal_modes.fetch(), self.initialize.fetch(), self.step.fetch(),
-                     tsteps=self.total_steps.fetch())
+      rsim = engine.simulation.Simulation(self.beads.fetch(), self.cell.fetch(),
+               self.forces.fetch(), self.ensemble.fetch(), self.prng.fetch(), 
+                  self.output.fetch(), self.normal_modes.fetch(), 
+                     self.initialize.fetch(), self.step.fetch(),
+                        tsteps=self.total_steps.fetch())
 
       # this does all of the piping between the components of the simulation
       rsim.bind()
@@ -150,26 +140,5 @@ class InputSimulation(Input):
       """
 
       super(InputSimulation,self).check()
-
-      #~ if self.beads._explicit:
-         #~ # nothing to be done here! user/restart provides a beads object
-         #~ pass
-      #~ elif self.atoms._explicit:
-         #~ # user is providing atoms: assume a classical simulation
-         #~ atoms = self.atoms.fetch()
-         #~ nbeads = 1
-         #~ rbeads = Beads(atoms.natoms, nbeads)
-         #~ rbeads[0] = atoms.copy()
-         #~ # we create a dummy beads storage so that fetch can proceed as if a
-         #~ # beads object had been specified
-         #~ self.beads.store(rbeads)
-      #~ else:
-         #~ raise TypeError("Either a <beads> or a <atoms> block must be provided")
-
       if self.total_steps.fetch() <= self.step.fetch():
          raise ValueError("Current step greater than total steps, no dynamics will be done.")
-
-      #~ for init in self.initialize.fetch():
-         #~ if not init in ["velocities", "normal_modes", "cell_velocities"]:
-            #~ raise ValueError("Initialization parameter " + init + " is not a valid keyword for initialize.")
-

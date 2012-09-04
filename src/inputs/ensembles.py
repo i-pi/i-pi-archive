@@ -35,16 +35,6 @@ class InputEnsemble(Input):
          to 1.0.
       pressure: An optional float giving the external pressure in atomic units.
          Defaults to 1.0.
-      stress: An optional array giving the external stress tensor in atomic
-         units. Defaults to an identity array.
-      path_mode: An optional array giving the type of calculation being run,
-         and thus the method used to define the bead masses. Defaults to
-         'rpmd'.
-      nm_freqs: An optional array which defines the ring polymer normal
-         mode frequencies, or the scaling factor as used in
-         partially-adiabatic CMD if path_mode is 'cmd'. See
-         S. Habershon, G. Fanourgakis and D. E. Manolopoulos, J. Chem. Phys.
-         129, 074501, (2008) for the definition of this scaling factor.
       fixcom: An optional boolean which decides whether the centre of mass
          motion will be constrained or not. Defaults to False.
    """

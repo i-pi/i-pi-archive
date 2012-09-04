@@ -1,6 +1,7 @@
 """Deals with creating the random number generator.
 
-Generates a random number generator either from a seed number, or from a state vector.
+Generates a random number generator either from a seed number, or from a 
+state vector.
 
 Classes:
    InputRandom: Deals with creating the Random object from a file, and 

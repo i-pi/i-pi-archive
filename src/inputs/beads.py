@@ -1,8 +1,6 @@
 """Deals with creating the beads class.
 
 Classes:
-   InputStartBeads: Deals with starting a simulation from a different
-      number of beads.
    InputBeads: Deals with creating the Beads object from a file, and
       writing the checkpoints.
 """
@@ -45,26 +43,26 @@ class InputBeads(Input):
          array with no elements.
    """
 
-   attribs = {  "natoms"    : (InputAttribute, {"dtype"     : int,  "default"   : 0,
-                                            "help"      : "The number of atoms."}),
-                "nbeads"    : (InputAttribute, {"dtype"     : int,  "default"   : 0,
-                                            "help"      : "The number of beads."})
+   attribs = { "natoms"  : (InputAttribute, {"dtype" : int,  "default"   : 0,
+                                             "help"  : "The number of atoms."}),
+               "nbeads"  : (InputAttribute, {"dtype" : int,  "default"   : 0,
+                                             "help"  : "The number of beads."})
             }
-   fields={ "q"         : (InputArray, {"dtype"     : float,
-                                        "default"   : input_default(factory=np.zeros, args = (0,)),
-                                        "help"      : "The positions of the beads. In an array of size [nbeads, 3*natoms].",
-                                        "dimension" : "length"}),
-            "p"         : (InputArray, {"dtype"     : float,
-                                        "default"   : input_default(factory=np.zeros, args = (0,)),
-                                        "help"      : "The momenta of the beads. In an array of size [nbeads, 3*natoms].",
-                                        "dimension" : "momentum"}),
-            "m"         : (InputArray, {"dtype"     : float,
-                                        "default"   : input_default(factory=np.zeros, args = (0,)),
-                                        "help"      : "The masses of the atoms, in the format [m1, m2, ... ].",
-                                        "dimension" : "mass"}),
-            "names"     : (InputArray, {"dtype"     : str,
-                                        "default"   : input_default(factory=np.zeros, args=(0,), kwargs={'dtype': np.dtype('|S6')}),
-                                        "help"      : "The names of the atoms, in the format [name1, name2, ... ]."})  }
+   fields={ "q"     : (InputArray, {"dtype"     : float,
+                                    "default"   : input_default(factory=np.zeros, args = (0,)),
+                                    "help"      : "The positions of the beads. In an array of size [nbeads, 3*natoms].",
+                                    "dimension" : "length"}),
+            "p"     : (InputArray, {"dtype"     : float,
+                                    "default"   : input_default(factory=np.zeros, args = (0,)),
+                                    "help"      : "The momenta of the beads. In an array of size [nbeads, 3*natoms].",
+                                    "dimension" : "momentum"}),
+            "m"     : (InputArray, {"dtype"     : float,
+                                    "default"   : input_default(factory=np.zeros, args = (0,)),
+                                    "help"      : "The masses of the atoms, in the format [m1, m2, ... ].",
+                                    "dimension" : "mass"}),
+            "names" : (InputArray, {"dtype"     : str,
+                                    "default"   : input_default(factory=np.zeros, args=(0,), kwargs={'dtype': np.dtype('|S6')}),
+                                    "help"      : "The names of the atoms, in the format [name1, name2, ... ]."})  }
 
    default_help = "Describes the configurations of atoms in a path integral simulations."
    default_label = "BEADS"
@@ -98,18 +96,25 @@ class InputBeads(Input):
       beads = Beads(self.natoms.fetch(),self.nbeads.fetch())
 
       # tries to fill up with as much data as available and valid
-      # TODO should print warnings (or just abort?) if the arrays are not empty and size mismatch
-      q=self.q.fetch();      
-      if (q.shape == (beads.nbeads,3*beads.natoms)) : beads.q=q
-      elif len(q) != 0 : raise ValueError("Array shape mismatches for q in <beads> input.")
-      p=self.p.fetch();
-      if (p.shape == (beads.nbeads,3*beads.natoms)) : beads.p=p
-      elif len(p) != 0 : raise ValueError("Array shape mismatches for p in <beads> input.")
-      m=self.m.fetch();
-      if (m.shape == (beads.natoms,)) : beads.m=m
-      elif len(m) != 0 : raise ValueError("Array shape mismatches for m in <beads> input.")
-      n=self.names.fetch();
-      if (n.shape == (beads.natoms,)) : beads.names=n
-      elif len(n) != 0 : raise ValueError("Array shape mismatches for names in <beads> input.")
+      q = self.q.fetch()
+      if (q.shape == (beads.nbeads,3*beads.natoms)):
+         beads.q = q
+      elif len(q) != 0:
+         raise ValueError("Array shape mismatches for q in <beads> input.")
+      p = self.p.fetch()
+      if (p.shape == (beads.nbeads,3*beads.natoms)):
+         beads.p = p
+      elif len(p) != 0:
+         raise ValueError("Array shape mismatches for p in <beads> input.")
+      m = self.m.fetch()
+      if (m.shape == (beads.natoms,)):
+         beads.m = m
+      elif len(m) != 0:
+         raise ValueError("Array shape mismatches for m in <beads> input.")
+      n = self.names.fetch()
+      if (n.shape == (beads.natoms,)):
+         beads.names = n
+      elif len(n) != 0:
+         raise ValueError("Array shape mismatches for names in <beads> input.")
 
       return beads
