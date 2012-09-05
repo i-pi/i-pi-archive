@@ -753,7 +753,7 @@ class Trajectories(dobject):
       "x_centroid": {"dimension" : "length", "help": "Prints the centroid coordinates for each atom."},
       "v_centroid": {"dimension" : "length", "help": "Prints the velocity centroid for each atom."}
       }
-      
+
 
    def bind(self, simul):
       """ Binds to a simulation object to fetch atomic and force data.
@@ -767,7 +767,7 @@ class Trajectories(dobject):
 
       self.traj_dict["positions"]['func'] = (lambda : 1.0*self.simul.beads.q)
       self.traj_dict["velocities"]['func'] = (lambda : self.simul.beads.p/self.simul.beads.m3)
-      self.traj_dict["forces"]['func'] = (lambda : 1.0*self.simul.force.f)
+      self.traj_dict["forces"]['func'] = (lambda : 1.0*self.simul.forces.f)
       self.traj_dict["kinetic_cv"]['func'] = self.get_akcv
       self.traj_dict["kinetic_od"]['func'] = self.get_akcv_od
       self.traj_dict["springs"]['func'] = self.get_aspr
@@ -857,7 +857,7 @@ class Trajectories(dobject):
       else:
          return pkey["func"](*arglist)
 
-   def print_traj(self, what, stream, b=0, format="pdb"):
+   def print_traj(self, what, stream, b=0, format="pdb", cell_units="atomic_unit"):
       """Prints out a frame of a trajectory for the specified quantity and bead.
 
       Args:
@@ -871,7 +871,9 @@ class Trajectories(dobject):
          self.fatom.q[:] = cq[b]
       else: self.fatom.q[:] = cq
 
+      fcell=Cell(); fcell.h=self.simul.cell.h*unit_to_user("length", cell_units, 1.0)
+
       if format == "pdb":
-         io_pdb.print_pdb(self.fatom, self.simul.cell, stream, title=("Traj: %s Step:  %10d  Bead:   %5d " % (what, self.simul.step+1, b) ) )
+         io_pdb.print_pdb(self.fatom, fcell, stream, title=("Traj: %s Step:  %10d  Bead:   %5d " % (what, self.simul.step+1, b) ) )
       elif format == "xyz":
-         io_xyz.print_xyz(self.fatom, self.simul.cell, stream, title=("Traj: %s Step:  %10d  Bead:   %5d " % (what, self.simul.step+1, b) ) )
+         io_xyz.print_xyz(self.fatom, fcell, stream, title=("Traj: %s Step:  %10d  Bead:   %5d " % (what, self.simul.step+1, b) ) )

@@ -76,10 +76,12 @@ class InputTrajectory(InputValue):
    attribs=copy(InputValue.attribs)
    attribs["filename"] = (InputAttribute,{ "dtype" : str, "default": "traj",
                                            "help": "The name of the file that the trajectory information will be output to."} )
-   attribs["stride"] = (InputAttribute,{ "dtype" : int, "default": 1, 
+   attribs["stride"] = (InputAttribute,{ "dtype" : int, "default": 1,
                                          "help": "The number of steps between successive writes." } )
    attribs["format"] = (InputAttribute,{ "dtype" : str, "default": "xyz",
                                        "help": "The output file format." } )
+   attribs["cell_units"] = (InputAttribute,{ "dtype" : str, "default": "",
+                                       "help": "The units for the cell dimensions." } )
 
    def __init__(self, help=None,  default=None, dtype=None, dimension=None):
       """Initializes InputTrajectory.
@@ -92,7 +94,8 @@ class InputTrajectory(InputValue):
    def fetch(self):
       """Returns a TrajectoryOutput object."""
 
-      return engine.outputs.TrajectoryOutput(self.filename.fetch(), self.stride.fetch(), super(InputTrajectory,self).fetch(),self.format.fetch())
+      return engine.outputs.TrajectoryOutput(self.filename.fetch(), self.stride.fetch(),
+                     super(InputTrajectory,self).fetch(),self.format.fetch(), self.cell_units.fetch())
 
    def store(self, traj):
       """Stores a PropertyOutput object."""
@@ -101,6 +104,7 @@ class InputTrajectory(InputValue):
       self.stride.store(traj.stride)
       self.filename.store(traj.filename)
       self.format.store(traj.format)
+      self.cell_units.store(traj.cell_units)
 
 
 class InputCheckpoint(InputValue):

@@ -26,14 +26,14 @@ class PropertyOutput(dobject):
    Attributes:
       filename: The name of the file to output to.
       outlist: A list of the properties to be output.
-      stride: The number of steps that should be taken between outputting the 
+      stride: The number of steps that should be taken between outputting the
          data to file.
       out: The output stream on which to output the properties.
       simul: The simulation object to get the data to be output from.
    """
 
    def __init__(self, filename="out", stride=1, outlist=np.zeros(0,np.dtype('|S1024')) ):
-      """Initializes a property output stream opening the corresponding 
+      """Initializes a property output stream opening the corresponding
       file name.
 
       Also writes out headers.
@@ -130,7 +130,7 @@ class PropertyOutput(dobject):
 
 
 class TrajectoryOutput(dobject):
-   """Class dealing with outputting atom-based properties as a 
+   """Class dealing with outputting atom-based properties as a
    trajectory file.
 
    Does not do any calculation, just manages opening a file, getting data
@@ -140,14 +140,14 @@ class TrajectoryOutput(dobject):
       filename: The (base) name of the file to output to.
       format: The format of the trajectory file to be created.
       what: The trajectory that needs to be output.
-      stride: The number of steps that should be taken between outputting the 
+      stride: The number of steps that should be taken between outputting the
          data to file.
       out: The output stream on which to output the trajectories.
       simul: The simulation object to get the data to be output from.
    """
 
-   def __init__(self, filename="out", stride=1, what="", format="xyz"):
-      """ Initializes a property output stream opening the corresponding 
+   def __init__(self, filename="out", stride=1, what="", format="xyz", cell_units="atomic_unit"):
+      """ Initializes a property output stream opening the corresponding
       file name.
 
       Also writes out headers.
@@ -164,6 +164,7 @@ class TrajectoryOutput(dobject):
       self.what = what
       self.stride = stride
       self.format = format
+      self.cell_units=cell_units
       self.out = None
 
    def bind(self, simul):
@@ -178,7 +179,7 @@ class TrajectoryOutput(dobject):
       # Checks as soon as possible if some asked-for trajs are missing or mispelled
       key = getkey(self.what)
       if not key in self.simul.trajs.traj_dict.keys():
-         print "Computable properties list: ", self.simul.trajs.traj_dict.keys()
+         print "Computable trajectories list: ", self.simul.trajs.traj_dict.keys()
          raise KeyError(key + " is not a recognized output trajectory")
 
       self.open_stream()
@@ -220,9 +221,9 @@ class TrajectoryOutput(dobject):
       # Checks to see if there is a list of files or just a single file.
       if hasattr(self.out, "__getitem__"):
          for b in range(len(self.out)):
-            self.simul.trajs.print_traj(self.what, self.out[b], b, format=self.format)
+            self.simul.trajs.print_traj(self.what, self.out[b], b, format=self.format, cell_units=self.cell_units)
       else:
-         self.simul.trajs.print_traj(self.what, self.out, b=0, format=self.format)
+         self.simul.trajs.print_traj(self.what, self.out, b=0, format=self.format, cell_units=self.cell_units)
 
 
 class CheckpointOutput(dobject):
@@ -233,7 +234,7 @@ class CheckpointOutput(dobject):
    Attributes:
       filename: The (base) name of the file to output to.
       step: the number of times a checkpoint has been written out.
-      stride: The number of steps that should be taken between outputting the 
+      stride: The number of steps that should be taken between outputting the
          data to file.
       overwrite: If True, the checkpoint file is overwritten at each output.
          If False, will output to 'filename_step'. Note that no check is done
@@ -273,7 +274,7 @@ class CheckpointOutput(dobject):
    def store(self):
       """Stores the current simulation status.
 
-      Used so that, if halfway through a step a kill signal is received, 
+      Used so that, if halfway through a step a kill signal is received,
       we can output a checkpoint file corresponding to the beginning of the
       current step, which is the last time that both the velocities and
       positions would have been consistent.
@@ -289,7 +290,7 @@ class CheckpointOutput(dobject):
       checkpoint file, as the soft-exit files have their store() function
       called automatically, and we do not want this to be updated as the
       status of the simulation after a soft-exit call is unlikely to be in
-      a consistent state. On the other hand, the standard checkpoint files 
+      a consistent state. On the other hand, the standard checkpoint files
       are not automatically updated in this way, and we must manually store the
       current state of the system before writing them.
 

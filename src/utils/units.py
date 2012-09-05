@@ -92,7 +92,8 @@ class Elements(dict):
       "Sb"  :   121.760,
       "Te"  :    127.60,
       "I"   : 126.90447,
-      "Xe"  :    131.29
+      "Xe"  :    131.29,
+      "Cs"  : 132.90545
    }
 
    @classmethod
