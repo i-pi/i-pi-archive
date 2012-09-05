@@ -8,6 +8,9 @@ Classes:
 """
 
 import numpy as np
+import math
+from copy import copy
+import utils.mathtools as mt
 import utils.io.io_pdb, utils.io.io_xyz
 from engine.cell import *
 from utils.inputvalue import *
@@ -23,12 +26,20 @@ class InputCell(InputArray):
    object.
    """
 
+   attribs = copy(InputArray.attribs)
+   attribs["kind"] = (InputAttribute, { "dtype"  : str, 
+                                        "default": "h", 
+                                        "options": ["h", "abc", "abcABC"],
+                                        "help"   : "This decides whether the system box is created from a cell parameter matrix, or from the side lengths and angles between them. If 'kind' is 'h', then 'cell' takes a 3*3 cell vector matrix. If 'kind' is 'abcABC', then 'cell' takes an array of 6 floats, the first three being the length of the sides of the system parallelopiped, and the last three being the angles between those sides. Angle A corresponds to the angle between sides b and c, and so on for B and C. If kind is 'abc', then this is the same as ffor 'abcABC', but the cell is assumed to be orthorhombic."} )
+
    default_help = "Deals with the cell parameters."
    default_label = "CELL"
 
    def __init__(self, help=None, dimension=None, units=None, default=None, dtype=None):
-      """ Initializes an InputCell object by just calling the parent
-          with appropriate arguments. """
+      """Initializes InputCell. 
+
+      Just calls the parent initialization function with appropriate arguments.
+      """
 
       super(InputCell,self).__init__(dtype=float, dimension="length", default=default, help=help)
 
@@ -50,7 +61,7 @@ class InputCell(InputArray):
          properties given the attributes of the InputCell object.
       """
 
-      h = super(InputCell,self).fetch();
+      h = super(InputCell,self).fetch()
       h.shape = (3,3)
 
       return Cell(h=h)
@@ -63,8 +74,23 @@ class InputCell(InputArray):
       super(InputCell,self).check()
 
       h = self.value
-      if h.size != 9:
-         raise ValueError("Cell objects must contain a 3x3 matrix describing the cell vectors.")
+      if self.kind.fetch() == "h":
+         if h.size != 9:
+            raise ValueError("Cell objects must contain a 3x3 matrix describing the cell vectors.")
+      elif self.kind.fetch() == "abc":
+         if h.size != 3:
+            raise ValueError("If you are initializing cell from cell side lengths you must pass the 'cell' tag an array of 3 floats.")
+         else:
+            h = mt.abc2h(h[0], h[1], h[2], math.pi/2, math.pi/2, math.pi/2)
+            super(InputCell,self).store(h)
+            self.shape.store((3,3))
+      elif self.kind.fetch() == "abcABC":
+         if h.size != 6:
+            raise ValueError("If you are initializing cell from cell side lengths and angles you must pass the 'cell' tag an array of 6 floats.")
+         else:
+            h = mt.abc2h(h[0], h[1], h[2], h[3], h[4], h[5])
+            super(InputCell,self).store(h)
+            self.shape.store((3,3))
 
       h.shape = (9,)
       if not (h[3] == 0.0 and h[6] == 0.0 and h[7] == 0.0):

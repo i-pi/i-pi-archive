@@ -59,7 +59,7 @@ class InputBaro(Input):
 
       super(InputBaro,self).fetch()
       if self.kind.fetch() == "rigid":
-         baro=BaroRigid(thermostat=self.thermostat.fetch())
+         baro = BaroRigid(thermostat=self.thermostat.fetch())
       else:
          raise ValueError("Kind " + self.kind.fetch() + " is not a valid kind of barostat")
 

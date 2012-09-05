@@ -224,7 +224,7 @@ def unit_to_internal(family, unit, number):
 
 
    if unit == "":
-      prefix= " "
+      prefix = ""
       base = ""
    else:
       m = UnitPrefixRE.match(unit);
