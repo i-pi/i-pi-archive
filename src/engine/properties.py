@@ -157,7 +157,7 @@ class Properties(dobject):
       "volume": {     "dimension": "volume",
                       "help": "The volume of the cell box.",
                       'func': (lambda: self.cell.V) },
-      "h": {          "dimension" : "length",
+      "cell_h": {          "dimension" : "length",
                       "help": "Gives one of the cell parameters. Takes arguments 'x' and 'v', which gives h[x,v]. By default gives h[0,0].",
                       'func': self.wrap_cell},
       "potential": {  "dimension" : "energy",
@@ -172,6 +172,10 @@ class Properties(dobject):
       "kinetic_cv":  {"dimension" : "energy",
                       "help": "The physical kinetic energy of the system.",
                       'func': self.get_kincv},
+      "kinetic_tens":{"dimension" : "energy",
+                      "help" : "The Txx Tyy Tzz Txy Txz Tyz components of the kinetic energy tensor (c-v estimator).",
+                      "size" : 6,
+                      "func" : self.get_ktens},
       "atom_x": {     "dimension" : "length",
                       "help": "Prints to properties the position (x,y,z) of a particle given its index. Takes arguments index and bead. If bead is not specified, refers to the centroid.",
                       "size" : 3,
@@ -499,6 +503,44 @@ class Properties(dobject):
          acv += kcv
 
       return acv
+
+   def get_ktens(self, atom=""):
+      """Calculates the quantum centroid virial kinetic energy TENSOR estimator."""
+
+      try:
+         #iatom gives the index of the atom to be studied
+         iatom = int(atom)
+         latom = ""
+      except:
+         #here 'atom' is a label rather than an index which is stored in latom
+         iatom = -1
+         latom = atom
+
+
+      q = depstrip(self.beads.q)
+      qc = depstrip(self.beads.qc)
+      f = depstrip(self.forces.f)
+
+      tkcv = np.zeros((6),float)
+      kcv = np.zeros((6),float)
+      for i in range(self.beads.natoms):
+         if (atom != "" and iatom != i and latom != self.beads.names[i]):  continue
+
+         kcv[:]=0
+         for b in range(self.beads.nbeads):
+            kcv[0] += (q[b,3*i]-qc[3*i])*f[b,3*i]                                                #Txx
+            kcv[1] += (q[b,3*i+1]-qc[3*i+1])*f[b,3*i+1]                                          #Tyy
+            kcv[2] += (q[b,3*i+2]-qc[3*i+2])*f[b,3*i+2]                                          #Tzz
+            kcv[3] += 0.5*( (q[b,3*i]-qc[3*i])*f[b,3*i+1] + (q[b,3*i+1]-qc[3*i+1])*f[b,3*i] )    #Txy
+            kcv[4] += 0.5*( (q[b,3*i]-qc[3*i])*f[b,3*i+2] + (q[b,3*i+2]-qc[3*i+2])*f[b,3*i] )    #Txz
+            kcv[5] += 0.5*( (q[b,3*i+1]-qc[3*i+1])*f[b,3*i+2] + (q[b,3*i+2]-qc[3*i+2])*f[b,3*i+1] )    #Tyz
+
+         kcv*= -0.5/self.beads.nbeads
+         kcv[0:3]+=0.5*Constants.kb*self.ensemble.temp
+
+         tkcv += kcv
+
+      return tkcv
 
    def get_gleke(self, mode=0):
       """Calculates the kinetic energy of the nm-gle additional momenta.

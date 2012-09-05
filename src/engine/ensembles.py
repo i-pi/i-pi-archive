@@ -283,7 +283,7 @@ class NVTEnsemble(NVEEnsemble):
       if self.fixcom:
          ndof = 3*(self.beads.natoms-1)
 
-      #decides whether the thermostat will work in the normal mode or 
+      #decides whether the thermostat will work in the normal mode or
       #the bead representation.
       if isinstance(self.thermostat,ThermoNMGLE) or isinstance(self.thermostat,ThermoNMGLEG) or isinstance(self.thermostat,ThermoPILE_L) or isinstance(self.thermostat,ThermoPILE_G):
          self.thermostat.bind(nm=self.nm,prng=prng,ndof=ndof )
