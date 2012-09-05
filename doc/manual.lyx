@@ -187,6 +187,15 @@ sc wrap-PI}
 xspace}
 \end_layout
 
+\begin_layout Plain Layout
+
+
+\backslash
+newcommand{
+\backslash
+DFT}{Quantum Espresso, CP2K, CPMD and FHI-AIMS}
+\end_layout
+
 \end_inset
 
 
@@ -339,9 +348,22 @@ wrappi
 
 \end_inset
 
- is a path integral molecular dynamics (PIMD) wrapper written in Python
- for ab initio density functional theory (DFT) codes.
- It currently works with the DFT codes QUANTUM ESPRESSO and CP2K.
+ is a path integral molecular dynamics (PIMD) wrapper code written in Python
+ for use with ab initio density functional theory (DFT).
+ It currently works with the DFT codes 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+DFT
+\end_layout
+
+\end_inset
+
+.
 \end_layout
 
 \begin_layout Standard
@@ -822,8 +844,8 @@ inputs: Holds the modules containing the classes that read the input files.
 
 \end_deeper
 \begin_layout Description
-patches: Contains the patch notes needed to allow the driver codes to interact
- with the wrapper.
+patches: Contains the patch files that must be applied to allow the driver
+ codes to interact with the wrapper.
  
 \end_layout
 
@@ -999,8 +1021,8 @@ wrappi
 
 \end_inset
 
- is to keep the wrapper and driver codes as far separated as possible.
- To this end, we run them completely separately, and only allow communication
+ is to keep the wrapper and driver codes as separate as possible.
+ To this end we run them independently, with the only communication being
  through a socket.
 \end_layout
 
@@ -1010,16 +1032,16 @@ Sockets
 
 \begin_layout Standard
 A socket is a data transfer device that is designed for internet communication.
- It supports both multiple connections to the same socket, and two way communica
-tion.
+ It supports both multiple connections to the same socket and two way communicat
+ion.
  This makes it ideal for communication between the wrapper code and multiple
  driver codes.
 \end_layout
 
 \begin_layout Standard
-Each socket is described by an IP address and a port number.
- On top of this, they can either be an internet socket or a local unix socket.
- Each of these different variables is important in a different way.
+Each socket is described by an IP address.
+ A socket can either be an internet socket, capable of inter-computer communicat
+ion, or a local unix socket, which is optimized for local communication.
 \end_layout
 
 \begin_layout Standard
@@ -1038,7 +1060,8 @@ address
 \end_layout
 
 \begin_layout Standard
-The port number is specified in the code by the 
+Internet sockets also support a port number, which is specified in the code
+ by the 
 \begin_inset Quotes eld
 \end_inset
 
@@ -1047,13 +1070,13 @@ port
 \end_inset
 
  tag.
- The port number is important because it is used to separate the different
- kinds of data transfer.
+ The port number is important because it is used to distinguish between
+ different processes.
  The port number is an integer between 1-65535, each of which specifies
  a different port.
  As many of the lower numbers are protected for use in important system
- processes or internet communication, it is generally sensible to use numbers
- in the range 1025-65535 for simulations.
+ processes or internet communication, it is generally advisable to only
+ use numbers in the range 1025-65535 for simulations.
 \end_layout
 
 \begin_layout Standard
@@ -1077,7 +1100,7 @@ interface
  The unix/inet distinction is an important one, the unix socket is faster
  than an internet socket, but can only be used for local communication.
  Generally, the simulation should only be run locally if a simple classical
- potential is being used.
+ potential is being run.
  If complicated empirical potentials or 
 \begin_inset ERT
 status open
@@ -1124,7 +1147,7 @@ Data transfer
 \end_layout
 
 \begin_layout Standard
-To make the transfer as simple as possible, the data is transferred in binary
+To make the transfer as fast as possible, the data is transferred in binary
  format.
  The transfer protocol is to send a header string of 12 characters specifying
  the stage of the data transfer, followed if necessary by data, then wait
@@ -1171,20 +1194,6 @@ INIT
 
 , followed by an integer giving the number of bits in the initialization
  string, then the initialization string itself.
- [Deprecated, may be removed from later versions of 
-\begin_inset ERT
-status open
-
-\begin_layout Plain Layout
-
-
-\backslash
-wrappi
-\end_layout
-
-\end_inset
-
-]
 \end_layout
 
 \begin_layout Description
@@ -1264,18 +1273,32 @@ This type of data transfer is well suited to working with PIMD, as it allows
 \begin_layout Standard
 In the case that there are as many driver codes as replicas of the system,
  this is very simple, as each replica will be assigned its own driver code.
- For most potentials, the slowdown due to the socket communication is not
- appreciable, and in this case the force calculation will essentially be
- as fast as a purely classical simulation.
+ For 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{ab initio}
+\end_layout
+
+\end_inset
+
+ potentials the slowdown due to the socket communication is not appreciable,
+ and in this case the force calculation will essentially be as fast as a
+ purely classical simulation, although it will use more computational resources.
  
 \end_layout
 
 \begin_layout Standard
-Also, for subsequent steps, the interface will assign a particular replica
+In subsequent steps, the interface will attempt to assign a particular replica
  of the system to the same driver code which calculated the forces for it
  the last step.
- This reduces the amount the configuration changes between calculations
- on a particular driver code, which can speed up certain calculations.
+ This reduces the change in the particle positions between calculations
+ on a particular driver code, allowing the code to do the next calculation
+ more efficiently.
 \end_layout
 
 \begin_layout Standard
@@ -2939,15 +2962,23 @@ label{configfile}
 \begin_layout Standard
 The initial configuration data can be initialized both through the xml file,
  and through a separate configuration file.
- The configuration file is specified using the 
+ The configuration file is specified within the 
 \begin_inset Quotes eld
 \end_inset
 
-from_file
+initialize
 \begin_inset Quotes erd
 \end_inset
 
- tag name in the xml file.
+ tag name in the xml file by the tag 
+\begin_inset Quotes eld
+\end_inset
+
+file
+\begin_inset Quotes erd
+\end_inset
+
+.
  The currently accepted file formats are:
 \end_layout
 
@@ -2963,17 +2994,7 @@ xyz
 These files can be used to specify the initial centroid positions and atom
  identities and, depending on the format, the cell parameters as well.
  The code will then try to assign masses to the atoms based on their atomic
- symbol, and an appropriate cell 
-\begin_inset Quotes eld
-\end_inset
-
-mass
-\begin_inset Quotes erd
-\end_inset
-
- for use in constant pressure simulations.
- Any of this data can be overwritten by the xml file by using the appropriate
- tag names and data.
+ symbol.
 \end_layout
 
 \begin_layout Subsection
@@ -3267,6 +3288,21 @@ end{verbatim}
 Output files
 \end_layout
 
+\begin_layout Standard
+All output files are specified within the tag name 
+\begin_inset Quotes eld
+\end_inset
+
+output
+\begin_inset Quotes erd
+\end_inset
+
+ in the xml file.
+ Each tag held here specifies a particular output file, with data specifying
+ the file name, the data to be output and the number of steps between each
+ write, plus other relevant data.
+\end_layout
+
 \begin_layout Subsection
 Property file
 \end_layout
@@ -3274,22 +3310,15 @@ Property file
 \begin_layout Standard
 This is the output file for for all the system and simulation level properties,
  such as the total energy and the overall time taken.
- The properties that are output are determined by the properties list in
- the xml input file.
- All properties are output using atomic units, as defined in section
-\begin_inset ERT
-status open
-
-\begin_layout Plain Layout
-
-~
-\backslash
-ref{units}
-\end_layout
-
+ The properties that are output are determined by the 
+\begin_inset Quotes eld
 \end_inset
 
+properties
+\begin_inset Quotes erd
+\end_inset
 
+ tag in the xml input file.
 \end_layout
 
 \begin_layout Standard
@@ -3304,13 +3333,12 @@ status open
 
 
 \backslash
-begin{verbatim}<properties>
+begin{verbatim}<properties stride=`' filename=`'>
 \end_layout
 
 \begin_layout Plain Layout
 
-   [ prop1name, prop2name, prop3name(arg1; arg2, ...
- ), ...
+   [ prop1name{units}(arg1;...), prop2name{...}(...), ...
   ]
 \end_layout
 
@@ -3327,9 +3355,29 @@ end{verbatim}
 \end_layout
 
 \begin_layout Standard
-Some of the properties that require array indices or other parameters to
- be specified will require the arguments to be specified as shown above.
- A full list of the allowed property names is given below:
+This is an array of strings, each of which containing three different parts:
+\end_layout
+
+\begin_layout Itemize
+First, the property name, which describes which type of property is to be
+ output.
+ This is a mandatory part of the string.
+\end_layout
+
+\begin_layout Itemize
+Secondly, you can specify the units that the property will be output in.
+ This is specified between curly brackets, as shown above.
+ If this is not specified, then the property will be output in atomic units.
+\end_layout
+
+\begin_layout Itemize
+Thirdly, the arguments to be passed to the function can be specified between
+ standard brackets, with each argument separated by a semi-colon.
+ These may or may not be mandatory depending on the property.
+\end_layout
+
+\begin_layout Standard
+The different available property names are:
 \end_layout
 
 \begin_layout Standard
@@ -3349,17 +3397,10 @@ input{property_list}
 \end_layout
 
 \begin_layout Standard
-The format of the file is given by a comment line giving the name of all
- the properties to be printed, followed by the rows giving their values
- at regular intervals given by the 
-\begin_inset Quotes eld
-\end_inset
-
-properties
-\begin_inset Quotes erd
-\end_inset
-
- keyword of the 
+The format of the file is given by a comment line per property giving the
+ name of the properties and which columns of the input file will be used
+ to print it, followed by their values in the appropriate units at regular
+ intervals given by the 
 \begin_inset Quotes eld
 \end_inset
 
@@ -3380,34 +3421,62 @@ Trajectory files
 
 \begin_layout Standard
 These are the output file for atomic properties.
- It will print out a configuration in the format given by the 
-\begin_inset Quotes eld
-\end_inset
-
-traj_format
-\begin_inset Quotes erd
-\end_inset
-
- parameter in the xml input file at intervals governed by the value of the
  
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}<trajectory stride=`' filename=`' format=`'>
+\end_layout
+
+\begin_layout Plain Layout
+
+   traj_name{units}(arg1;...)
+\end_layout
+
+\begin_layout Plain Layout
+
+</trajectory>
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+This is very similar to the 
 \begin_inset Quotes eld
 \end_inset
 
-trajectory
+properties
 \begin_inset Quotes erd
 \end_inset
 
- keyword of the 
+ tag, but it has the additional tag 
 \begin_inset Quotes eld
 \end_inset
 
-stride
+format
 \begin_inset Quotes erd
 \end_inset
 
- list of the input file.
- Depending on the chosen property to output, it will either print a file
+ to specify the format of the output trajectory file, and only one trajectory
+ can be specified.
+ Depending on the chosen trajectory to output, it will either print a file
  for each bead or just for each atom.
+ If the trajectory is output for each bead, then the output file will not
+ be 
+\begin_inset Quotes eld
+\end_inset
+
+filename
+\begin_inset Quotes erd
+\end_inset
+
+, but the bead index will be appended to each file, so as to distinguish
+ between them.
  The possible choices of output properties are:
 \end_layout
 
@@ -3450,7 +3519,7 @@ Restart mechanism
 \end_layout
 
 \begin_layout Subsection
-Restart file
+Checkpoint files
 \end_layout
 
 \begin_layout Standard
@@ -3458,26 +3527,96 @@ As well as the above output files, the state of the system at a particular
  time step can also be saved to file.
  This gives a valid input file, with all the information required to restore
  the state of the system to what it was when the restart file was created.
- It is printed out at regular intervals, with a stride governed by the 
+ The syntax is:
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}<checkpoint stride=`' filename=`' overwrite=`'>
+\end_layout
+
+\begin_layout Plain Layout
+
+   step
+\end_layout
+
+\begin_layout Plain Layout
+
+</checkpoint>
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Again, this is similar to the 
 \begin_inset Quotes eld
 \end_inset
 
-checkpoint
+trajectory
 \begin_inset Quotes erd
 \end_inset
 
- keyword of the 
+ and 
 \begin_inset Quotes eld
 \end_inset
 
-stride
+properties
 \begin_inset Quotes erd
 \end_inset
 
- list of the input file.
+ tags, but instead of having a value which specifies what to output, the
+ value simply gives the current step.
+ There is also one additional attribute 
+\begin_inset Quotes eld
+\end_inset
+
+overwrite
+\begin_inset Quotes erd
+\end_inset
+
+, which specifies whether each new checkpoint file overwrites the old one,
+ or whether all checkpoint files are kept.
+ If they are kept, they will be written not to the file 
+\begin_inset Quotes eld
+\end_inset
+
+filename
+\begin_inset Quotes erd
+\end_inset
+
+, but instead an index will be appended to it to distinguish between different
+ files.
 \end_layout
 
 \begin_layout Subsection
+Restart file
+\end_layout
+
+\begin_layout Standard
+In the same way as the checkpoint files generated above, this outputs the
+ state of the system in such a form that the simulation can be restarted.
+ This however is automatically generated, and at the end of the simulation
+ outputs the final state of the system.
+ It outputs this data to the file 
+\begin_inset Quotes eld
+\end_inset
+
+RESTART
+\begin_inset Quotes erd
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Subsubsection
 Soft exit
 \end_layout
 
@@ -3492,7 +3631,16 @@ EXIT
 \end_inset
 
  in the directory in which you are running the code.
- The thread will automatically detect this and safely shut down the program.
+ The thread will automatically detect this and safely shut down the program,
+ outputting the correct 
+\begin_inset Quotes eld
+\end_inset
+
+RESTART
+\begin_inset Quotes erd
+\end_inset
+
+ file as detailed above.
  
 \end_layout
 

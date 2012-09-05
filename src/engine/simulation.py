@@ -102,12 +102,7 @@ class Simulation(dobject):
       self.chk = None
 
    def bind(self):
-      """Calls the bind routines for all the objects in the simulation.
-
-      Raises:
-         KeyError: Raised if one of the requested output properties is not
-            defined in the property list.
-      """
+      """Calls the bind routines for all the objects in the simulation."""
 
       # binds important computation engines
       self.nm.bind(self.beads, self.ensemble)

@@ -127,12 +127,12 @@ class Atoms(dobject):
          dset(self,"m",_prebind[2])
          dset(self,"names",_prebind[3])
  
-      self.px=self.p[0:3*natoms:3]
-      self.py=self.p[1:3*natoms:3]
-      self.pz=self.p[2:3*natoms:3]
-      self.qx=self.q[0:3*natoms:3]
-      self.qy=self.q[1:3*natoms:3]
-      self.qz=self.q[2:3*natoms:3]
+      self.px = self.p[0:3*natoms:3]
+      self.py = self.p[1:3*natoms:3]
+      self.pz = self.p[2:3*natoms:3]
+      self.qx = self.q[0:3*natoms:3]
+      self.qy = self.q[1:3*natoms:3]
+      self.qz = self.q[2:3*natoms:3]
       
       dset(self,"m3",
          depend_array(name="m3",value=np.zeros(3*natoms, float),func=self.mtom3,

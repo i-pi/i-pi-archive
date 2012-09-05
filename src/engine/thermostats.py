@@ -1,4 +1,3 @@
-
 """Contains the classes that deal with constant temperature dynamics.
 
 Contains the algorithms which propagate the thermostatting steps in the constant
@@ -20,6 +19,9 @@ Classes:
       thermostat.
    ThermoNMGLE: Holds the algorithms for a generalised langevin equation
       thermostat in the normal mode representation.
+   ThermoNMGLEG: Holds the algorithms for a generalised langevin equation
+      thermostat in the normal mode representation, with kinetic energy as
+      well as potential energy sampling optimization.
 """
 
 __all__ = ['Thermostat', 'ThermoLangevin', 'ThermoPILE_L', 'ThermoPILE_G',
@@ -70,7 +72,7 @@ class Thermostat(dobject):
       dset(self,"dt",     depend_value(name='dt', value=dt))
       dset(self,"ethermo",depend_value(name='ethermo',value=ethermo))
 
-   def bind(self, beads=None, atoms=None, cell=None, pm=None, prng=None, ndof=None):
+   def bind(self, beads=None, atoms=None, pm=None, prng=None, ndof=None):
       """Binds the appropriate degrees of freedom to the thermostat.
 
       This takes an object with degrees of freedom, and makes their momentum
@@ -82,8 +84,6 @@ class Thermostat(dobject):
          beads: An optional beads object to take the mass and momentum vectors
             from.
          atoms: An optional atoms object to take the mass and momentum vectors
-            from.
-         cell: An optional cell object to take the mass and momentum vectors
             from.
          pm: An optional tuple containing a single momentum value and its
             conjugate mass.
@@ -111,14 +111,11 @@ class Thermostat(dobject):
       elif not atoms is None:
          dset(self,"p",dget(atoms, "p"))
          dset(self,"m",dget(atoms, "m3"))
-      elif not cell is None:
-         dset(self,"p",dget(cell, "p6"))
-         dset(self,"m",dget(cell, "m6"))
       elif not pm is None:
          dset(self,"p",pm[0])
          dset(self,"m",pm[1])
       else:
-         raise TypeError("Thermostat.bind expects either Beads, Atoms, a Cell, or a (p,m) tuple to bind to")
+         raise TypeError("Thermostat.bind expects either Beads, Atoms, NormalModes, or a (p,m) tuple to bind to")
 
       if ndof is None:
          self.ndof = len(self.p)
@@ -143,6 +140,7 @@ class Thermostat(dobject):
       """Dummy thermostat step."""
 
       pass
+
 
 class ThermoLangevin(Thermostat):
    """Represents a langevin thermostat.
@@ -204,6 +202,7 @@ class ThermoLangevin(Thermostat):
 
       self.p = p
 
+
 class ThermoPILE_L(Thermostat):
    """Represents a PILE thermostat with a local centroid thermostat.
 
@@ -250,8 +249,8 @@ class ThermoPILE_L(Thermostat):
       only differ in their treatment of the centroid coordinate momenta.
 
       Args:
-         beads: An optional beads object to take the mass and momentum vectors
-            from.
+         nm: An optional normal mode object to take the mass and momentum 
+            vectors from.
          prng: An optional pseudo random number generator object. Defaults to
             Random().
          bindcentroid: An optional boolean which decides whether a Langevin
@@ -282,7 +281,8 @@ class ThermoPILE_L(Thermostat):
       self._thermos = [ ThermoLangevin(temp=1, dt=1, tau=1) for b in range(nm.nbeads) ]
       # optionally does not bind the centroid, so we can re-use all of this
       # in the PILE_G case
-      if not bindcentroid:  self._thermos[0] = None
+      if not bindcentroid:
+         self._thermos[0] = None
 
       self.nm = nm
 
@@ -339,7 +339,6 @@ class ThermoPILE_L(Thermostat):
 
       return  np.array([ 1.0/(2*self.nm.dynomegak[k])  for k in range(1,len(self._thermos)) ])
 
-
    def get_ethermo(self):
       """Computes the total energy transferred to the heat bath for all the
       thermostats.
@@ -356,6 +355,7 @@ class ThermoPILE_L(Thermostat):
       # super-cool! just loop over the thermostats! it's as easy as that!
       for t in self._thermos:
          t.step()
+
 
 class ThermoSVR(Thermostat):
    """Represents a stochastic velocity rescaling thermostat.
@@ -406,14 +406,15 @@ class ThermoSVR(Thermostat):
 
    def step(self):
       """Updates the bound momentum vector with a stochastic velocity rescaling
-      thermostat. See
-      G Bussi, D Donadio, M Parrinello, Journal of Chemical Physics 126, 014101 (2007)
+      thermostat. See G Bussi, D Donadio, M Parrinello,
+      Journal of Chemical Physics 126, 014101 (2007)
       """
 
       K = np.dot(depstrip(self.p),depstrip(self.p)/depstrip(self.m))*0.5
 
       # rescaling is un-defined if the KE is zero
-      if K==0.0 : return
+      if K == 0.0:
+         return
 
       # gets the stochastic term (basically a Gamma distribution for the kinetic energy)
       r1 = self.prng.g
@@ -429,6 +430,7 @@ class ThermoSVR(Thermostat):
 
       self.ethermo += K*(1-alpha2)
       self.p *= alpha
+
 
 class ThermoPILE_G(ThermoPILE_L):
    """Represents a PILE thermostat with a global centroid thermostat.
@@ -474,11 +476,10 @@ class ThermoPILE_G(ThermoPILE_L):
       """
 
       # first binds as a local PILE, then substitutes the thermostat on the centroid
-
-
-      prev_ethermo=self.ethermo
+      prev_ethermo = self.ethermo
       super(ThermoPILE_G,self).bind(nm=nm,prng=prng,bindcentroid=False, ndof=ndof)
 
+      #centroid thermostat
       self._thermos[0] = ThermoSVR(temp=1, dt=1, tau=1)
 
       t = self._thermos[0]
@@ -492,6 +493,7 @@ class ThermoPILE_G(ThermoPILE_L):
       for t in self._thermos:
          t.ethermo = prev_ethermo/nm.nbeads
       dget(self,"ethermo")._func = self.get_ethermo;
+
 
 class ThermoGLE(Thermostat):
    """Represents a GLE thermostat.
@@ -589,7 +591,7 @@ class ThermoGLE(Thermostat):
 
       self.s = np.zeros(0)
 
-   def bind(self, beads=None, atoms=None, cell=None, pm=None, prng=None, ndof=None):
+   def bind(self, beads=None, atoms=None, pm=None, prng=None, ndof=None):
       """Binds the appropriate degrees of freedom to the thermostat.
 
       This takes an object with degrees of freedom, and makes their momentum
@@ -601,8 +603,6 @@ class ThermoGLE(Thermostat):
          beads: An optional beads object to take the mass and momentum vectors
             from.
          atoms: An optional atoms object to take the mass and momentum vectors
-            from.
-         cell: An optional cell object to take the mass and momentum vectors
             from.
          pm: An optional tuple containing a single momentum value and its
             conjugate mass.
@@ -619,7 +619,7 @@ class ThermoGLE(Thermostat):
             the thermostat to couple to.
       """
 
-      super(ThermoGLE,self).bind(beads,atoms,cell,pm,prng,ndof)
+      super(ThermoGLE,self).bind(beads,atoms,pm,prng,ndof)
 
       # allocates, initializes or restarts an array of s's
       if self.s.shape != (self.ns + 1, len(dget(self,"m"))):
@@ -711,7 +711,7 @@ class ThermoNMGLE(Thermostat):
       else:
          dset(self,"C",depend_value(value=C.copy(),name='C'))
 
-   def bind(self, nm=None, atoms=None, cell=None, pm=None, prng=None, ndof=None):
+   def bind(self, nm=None, prng=None, ndof=None):
       """Binds the appropriate degrees of freedom to the thermostat.
 
       This takes an object with degrees of freedom, and makes their momentum
@@ -721,14 +721,8 @@ class ThermoNMGLE(Thermostat):
       being called on a beads object.
 
       Args:
-         beads: An optional beads object to take the mass and momentum vectors
-            from.
-         atoms: An optional atoms object to take the mass and momentum vectors
-            from.
-         cell: An optional cell object to take the mass and momentum vectors
-            from.
-         pm: An optional tuple containing a single momentum value and its
-            conjugate mass.
+         nm: An optional normal modes object to take the mass and momentum 
+            vectors from.
          prng: An optional pseudo random number generator object. Defaults to
             Random().
          ndof: An optional integer which can specify the total number of
@@ -750,7 +744,7 @@ class ThermoNMGLE(Thermostat):
          self.prng = prng
 
       if (nm.nbeads != self.nb):
-         raise IndexError("Number of beads " + str(beads.nbeads) + " doesn't match GLE parameters nb= " + str(self.nb) )
+         raise IndexError("Number of beads " + str(nm.nbeads) + " doesn't match GLE parameters nb= " + str(self.nb) )
 
       # allocates, initializes or restarts an array of s's
       if self.s.shape != (self.nb, self.ns + 1, nm.natoms *3) :
@@ -794,8 +788,6 @@ class ThermoNMGLE(Thermostat):
          dget(self,"ethermo").add_dependency(dget(t,"ethermo"))
          it += 1
 
-
-
       # since the ethermo will be "delegated" to the normal modes thermostats,
       # one has to split
       # any previously-stored value between the sub-thermostats
@@ -803,8 +795,6 @@ class ThermoNMGLE(Thermostat):
          t.ethermo = prev_ethermo/self.nb
 
       dget(self,"ethermo")._func = self.get_ethermo;
-
-#      super(ThermoNMGLE,self).bind(beads,atoms,cell,pm,prng,ndof)
 
    def step(self):
       """Updates the thermostat in NM representation by looping over the
@@ -826,17 +816,44 @@ class ThermoNMGLE(Thermostat):
 
 
 class ThermoNMGLEG(ThermoNMGLE):
-#TODO document this object properly!!!
+   """Represents a 'normal-modes' GLE thermostat.
+
+   An extension to the above NMGLE thermostat which in such a way that we
+   can optimize the sampling of both the kinetic and potential energy.
+
+   Depend objects:
+      tau: Thermostat damping time scale. Larger values give a less strongly
+         coupled thermostat.
+   """
+
    def __init__(self, temp = 1.0, dt = 1.0, A = None, C = None, tau=1.0, ethermo=0.0):
 
       super(ThermoNMGLEG,self).__init__(temp, dt, A, C, ethermo)
       dset(self,"tau",depend_value(value=tau,name='tau'))
 
-   def bind(self, nm=None, atoms=None, cell=None, pm=None, prng=None, ndof=None):
+   def bind(self, nm=None, prng=None, ndof=None):
+      """Binds the appropriate degrees of freedom to the thermostat.
 
-      super(ThermoNMGLEG,self).bind(nm, atoms, cell, pm, prng, ndof)
+      This takes an object with degrees of freedom, and makes their momentum
+      and mass vectors members of the thermostat. It also then creates the
+      objects that will hold the data needed in the thermostat algorithms
+      and the dependency network. Actually, this specific thermostat requires
+      being called on a beads object.
 
-      t=ThermoSVR(self.temp, self.dt, self.tau)
+      Args:
+         nm: An optional normal modes object to take the mass and momentum 
+            vectors from.
+         prng: An optional pseudo random number generator object. Defaults to
+            Random().
+         ndof: An optional integer which can specify the total number of
+            degrees of freedom. Defaults to len(p). Used if conservation of
+            linear momentum is being applied, as this removes three degrees of
+            freedom.
+      """
+
+      super(ThermoNMGLEG,self).bind(nm, pm, prng, ndof)
+
+      t = ThermoSVR(self.temp, self.dt, self.tau)
 
       t.bind(pm=(nm.pnm[0,:],nm.m3[0,:]), prng=self.prng) # bind global thermostat to centroid
 

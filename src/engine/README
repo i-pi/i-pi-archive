@@ -5,7 +5,7 @@
  * Files:
    - atoms.py: Deals with classical simulations.
    - beads.py: Deals with quantum simulations.
-   - barostats.py: Deals with constant pressure and stress simulations.
+   - barostats.py: Deals with constant pressure simulations.
    - cell.py: Deals with the simulation box.
    - thermostats.py: Deals with constant temperature simulations.
    - ensembles.py: Deals with the different ensembles.
@@ -13,3 +13,6 @@
       input/output.
    - properties.py: Deals with calculating all the output properties.
    - forces.py: Deals with creating the jobs to send to the driver code.
+   - outputs.py: Deals with the output files.
+   - normalmodes.py: Deals with the normal mode transformations.
+   - initializer.py: Deals with initialization of the simulation.

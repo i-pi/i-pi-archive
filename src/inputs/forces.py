@@ -43,9 +43,6 @@ class InputForceBeads(Input):
          forceb: A ForceBeads object.
       """
 
-      #~ if (not type(force) is FFSocket):
-         #~ raise TypeError("The type " + type(force).__name__ + " is not a valid socket forcefield")
-
       Input.store(self,forceb)
       self.nbeads.store(forceb.nbeads)
       self.weight.store(forceb.weight)

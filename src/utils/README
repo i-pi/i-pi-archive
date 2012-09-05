@@ -11,6 +11,8 @@
       input file, and creating the restart file.
    - prng.py: Deals with random number generation.
    - units.py: Holds atomic masses, fundamental constants, and unit conversions.
+   - nmtransform.py: Contains the algorithms that deal with the normal mode
+      and ring polymer contraction transformations.
 
  * Directories:
    - io: Holds the modules that deal with reading and outputting files.
