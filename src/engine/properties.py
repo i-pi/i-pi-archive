@@ -852,7 +852,7 @@ class Trajectories(dobject):
       rv = np.zeros(self.simul.beads.natoms*3)
       for b in range(self.simul.beads.nbeads):
          rv[:] += (self.simul.beads.q[b]-self.simul.beads.qc)*self.simul.forces.f[b]
-      rv *= -0.5/self.simul.nbeads
+      rv *= -0.5/self.simul.beads.nbeads
       rv += 0.5*Constants.kb*self.simul.ensemble.temp
       return rv
 
@@ -872,7 +872,7 @@ class Trajectories(dobject):
          rv[:,1] += dq[:,1]*f[:,2]+dq[:,2]*f[:,1]
          rv[:,2] += dq[:,0]*f[:,2]+dq[:,2]*f[:,0]
       rv *= 0.5
-      rv *= -0.5/self.simul.nbeads
+      rv *= -0.5/self.simul.beads.nbeads
       # rv += 0.5*Constants.kb*self.simul.ensemble.temp
 
       return rv.reshape(self.simul.beads.natoms*3)
