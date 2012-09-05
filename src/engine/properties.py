@@ -157,7 +157,7 @@ class Properties(dobject):
       "volume": {     "dimension": "volume",
                       "help": "The volume of the cell box.",
                       'func': (lambda: self.cell.V) },
-      "cell_h": {          "dimension" : "length",
+      "cell_h": {     "dimension" : "length",
                       "help": "Gives one of the cell parameters. Takes arguments 'x' and 'v', which gives h[x,v]. By default gives h[0,0].",
                       'func': self.wrap_cell},
       "potential": {  "dimension" : "energy",
@@ -524,9 +524,10 @@ class Properties(dobject):
       tkcv = np.zeros((6),float)
       kcv = np.zeros((6),float)
       for i in range(self.beads.natoms):
-         if (atom != "" and iatom != i and latom != self.beads.names[i]):  continue
+         if (atom != "" and iatom != i and latom != self.beads.names[i]):
+            continue
 
-         kcv[:]=0
+         kcv[:] = 0
          for b in range(self.beads.nbeads):
             kcv[0] += (q[b,3*i]-qc[3*i])*f[b,3*i]                                                #Txx
             kcv[1] += (q[b,3*i+1]-qc[3*i+1])*f[b,3*i+1]                                          #Tyy
@@ -535,8 +536,8 @@ class Properties(dobject):
             kcv[4] += 0.5*( (q[b,3*i]-qc[3*i])*f[b,3*i+2] + (q[b,3*i+2]-qc[3*i+2])*f[b,3*i] )    #Txz
             kcv[5] += 0.5*( (q[b,3*i+1]-qc[3*i+1])*f[b,3*i+2] + (q[b,3*i+2]-qc[3*i+2])*f[b,3*i+1] )    #Tyz
 
-         kcv*= -0.5/self.beads.nbeads
-         kcv[0:3]+=0.5*Constants.kb*self.ensemble.temp
+         kcv *= -0.5/self.beads.nbeads
+         kcv[0:3] += 0.5*Constants.kb*self.ensemble.temp
 
          tkcv += kcv
 

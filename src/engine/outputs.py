@@ -147,6 +147,7 @@ class TrajectoryOutput(dobject):
       stride: The number of steps that should be taken between outputting the
          data to file.
       out: The output stream on which to output the trajectories.
+      cell_units: The units that the cell parameters are given in.
       simul: The simulation object to get the data to be output from.
    """
 
@@ -162,13 +163,15 @@ class TrajectoryOutput(dobject):
             outputting the data to file.
          what: A string specifying what trajectory should be output.
          format: A string specifying the type of trajectory file to be created.
+         cell_units: A string specifying the units that the cell parameters are
+            given in.
       """
 
       self.filename = filename
       self.what = what
       self.stride = stride
       self.format = format
-      self.cell_units=cell_units
+      self.cell_units = cell_units
       self.out = None
 
    def bind(self, simul):
