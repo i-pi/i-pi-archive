@@ -68,6 +68,7 @@ class InputTrajectory(InputValue):
       stride: The number of steps that should be taken between outputting the
          data to file.
       format: The format of the trajectory output file.
+      cell_units: The units that the cell parameters are given in.
    """
 
    default_help = """This class defines how one trajectory file should be output. Between each trajectory tag one string should be given, which specifies what data is to be output."""

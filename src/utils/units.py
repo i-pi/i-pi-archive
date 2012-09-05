@@ -202,9 +202,10 @@ UnitPrefix = {
 }
 
 # builds a RE to match prefix and split out the base unit
-UnitPrefixRE=""
-for key in UnitPrefix: UnitPrefixRE = UnitPrefixRE+key+"|"
-UnitPrefixRE = " *("+UnitPrefixRE[1:] + ")(.*) *"
+UnitPrefixRE = ""
+for key in UnitPrefix:
+   UnitPrefixRE = UnitPrefixRE + key + "|"
+UnitPrefixRE = " *(" + UnitPrefixRE[1:] + ")(.*) *"
 UnitPrefixRE = re.compile(UnitPrefixRE)
 
 ########################################################################
@@ -223,11 +224,14 @@ def unit_to_internal(family, unit, number):
 
 
    if unit == "":
-      prefix=""; base=""
+      prefix = ""
+      base = ""
    else:
       m = UnitPrefixRE.match(unit);
-      if m is None : raise ValueError("Unit "+unit+" is not structured with a prefix+base syntax.")
-      prefix = m.group(1); base = m.group(2);
+      if m is None:
+         raise ValueError("Unit " + unit + " is not structured with a prefix+base syntax.")
+      prefix = m.group(1)
+      base = m.group(2)
 
    if not prefix in UnitPrefix:
       raise TypeError(prefix + " is not a valid unit prefix.")
