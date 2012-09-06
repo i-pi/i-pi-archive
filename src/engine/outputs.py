@@ -89,10 +89,10 @@ class PropertyOutput(dobject):
             prop = self.simul.properties.property_dict[key]
 
             if "size" in prop and prop["size"]>1:
-               ohead += "cols. %3d-%3d " % ( icol, icol+prop["size"] )
+               ohead += "cols.  %3d-%-3d" % ( icol, icol+prop["size"] + 1 )
                icol += prop["size"]
             else:
-               ohead += "column    %3d " % ( icol )
+               ohead += "column %3d    " % ( icol )
                icol += 1
             ohead += " --> %s " % (what)
             if "help" in prop:

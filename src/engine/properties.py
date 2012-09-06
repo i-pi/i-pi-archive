@@ -160,6 +160,10 @@ class Properties(dobject):
       "cell_h": {     "dimension" : "length",
                       "help": "Gives one of the cell parameters. Takes arguments 'x' and 'v', which gives h[x,v]. By default gives h[0,0].",
                       'func': self.wrap_cell},
+      "cell_h6": {    "dimension" : "length",
+                      "help": "Gives all the non-zero cell parameters.",
+                      "size": 6,
+                      'func': self.full_cell},
       "potential": {  "dimension" : "energy",
                       "help": "The potential energy of the system.",
                       'func': (lambda: self.forces.pot/self.beads.nbeads)},
@@ -227,45 +231,6 @@ class Properties(dobject):
    def bind(self, simul):
       """Binds the necessary objects from the simulation to calculate the
       required properties.
-
-      This function takes the appropriate simulation object, and creates the
-      property_dict object which holds all the objects which can be output.
-      It is given by:
-      {'time': Time elapsed,
-      'step': The current time step,
-      'conserved': Conserved quantity,
-      'temperature': Classical kinetic temperature estimator,
-      'density': Density of the system,
-      'volume': Simulation box volume,
-      'h': Cell vector matrix. Requires arguments x and v to give h[x,v],
-      'atom_x': Gives a vector of the centroid positions of a particular atom,
-      'atom_v': Gives a vector of the centroid velocities of a particular atom,
-      'potential': Potential energy estimator,
-      'spring': The spring potential energy estimator,
-      'kinetic_md': Classical kinetic energy estimator,
-      'kinetic_cv': Quantum centroid virial kinetic energy estimator,
-      'stress_md': The classical stress tensor estimator. Requires arguments
-         x and v, to give stress[x,v],
-      'stress_cv': The quantum centroid virial estimator of
-         the stress tensor. Requires arguments x and v, to give stress[x,v],
-      'pressure_md': Classical pressure estimator,
-      'pressure_cv': Quantum centroid virial pressure estimator,
-      'kstress_md': Classical kinetic stress tensor estimator. Requires
-         arguments x and v, to give kstress[x,v],
-      'kstress_cv': Quantum centroid virial kinetic stress tensor estimator.
-         Requires arguments x and v, to give kstress[x,v],
-      'virial_md': Classical virial tensor estimator. Requires arguments x and
-         v, to give vir[x,v],
-      'virial_cv': Quantum centroid virial virial tensor estimator. Requires
-         arguments x and v, to give vir[x,v],
-      'gle_ke': Kinetic energy for the additional momenta for the normal
-         mode kinetic energy estimator. Takes one argument, which gives the
-         mode that the kinetic energy is given for,
-      'kin_yama': Quantum scaled coordinate kinetic energy estimator,
-      'isotope_yama': Tcv(m/m') and log(R(m/m')) for isotope substitution
-         calculations using the Yamamoto estimator,
-      'isotope_thermo': Tcv(m/m') and log(R(m/m')) for isotope substitution
-         calculations using the thermodynamic estimator.}.
 
       Args:
          simul: The Simulation object to be bound.
@@ -337,6 +302,14 @@ class Properties(dobject):
          return pkey["func"](*arglist)
 
    def get_atomx(self, atom="", bead="-1"):
+      """Gives the position vector of one atom.
+
+      Args:
+         atom: The index of the atom for which the position vector will
+            be output.
+         bead: The index of the replica of the atom for which the position
+            vector will be output. If less than 0, then the centroid is used.
+      """
 
       if atom == "":
          raise ValueError("Must specify the index for atom_x property")
@@ -348,6 +321,14 @@ class Properties(dobject):
          return self.beads[bead][atom].q
 
    def get_atomv(self, atom="", bead="-1"):
+      """Gives the velocity vector of one atom.
+
+      Args:
+         atom: The index of the atom for which the velocity vector will
+            be output.
+         bead: The index of the replica of the atom for which the velocity
+            vector will be output. If less than 0, then the centroid is used.
+      """
 
       if atom == "":
          raise ValueError("Must specify the index for atom_x property")
@@ -505,7 +486,14 @@ class Properties(dobject):
       return acv
 
    def get_ktens(self, atom=""):
-      """Calculates the quantum centroid virial kinetic energy TENSOR estimator."""
+      """Calculates the quantum centroid virial kinetic energy 
+      TENSOR estimator.
+
+      Args:
+         atom: The index of the atom for which the kinetic energy tensor 
+            is to be output, or the index of the type of atoms for which
+            it should be output.
+      """
 
       try:
          #iatom gives the index of the atom to be studied
@@ -610,6 +598,14 @@ class Properties(dobject):
       x = int(x)
       v = int(v)
       return self.cell.h[x,v]
+
+   def full_cell(self):
+      """Returns a six-component vector giving all the non-zero components of
+      the cell vector matrix.
+      """
+
+      h = depstrip(self.cell.h)
+      return np.array([h[0,0], h[0,1], h[0,2], h[1,1], h[1,2], h[2,2]])
 
    def get_isotope_yama(self, alpha="1.0", atom=""):
       """Gives the components of the yamamoto scaled-mass KE estimator
@@ -901,7 +897,6 @@ class Trajectories(dobject):
       unstart = len(key)
       argstart = unstart
 
-
       if '}' in key:
          # the property has a user-defined unit
          unstart = key.find('{')
@@ -941,7 +936,8 @@ class Trajectories(dobject):
          self.fatom.q[:] = cq[b]
       else: self.fatom.q[:] = cq
 
-      fcell=Cell(); fcell.h=self.simul.cell.h*unit_to_user("length", cell_units, 1.0)
+      fcell = Cell()
+      fcell.h = self.simul.cell.h*unit_to_user("length", cell_units, 1.0)
 
       if format == "pdb":
          io_pdb.print_pdb(self.fatom, fcell, stream, title=("Traj: %s Step:  %10d  Bead:   %5d " % (what, self.simul.step+1, b) ) )
