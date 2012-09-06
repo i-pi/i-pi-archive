@@ -88,15 +88,15 @@ class PropertyOutput(dobject):
             key = getkey(what)
             prop = self.simul.properties.property_dict[key]
 
-            if "size" in prop and prop["size"]>1:
-               ohead += "cols.  %3d-%-3d" % ( icol, icol+prop["size"] + 1 )
+            if "size" in prop and prop["size"] > 1:
+               ohead += "cols.  %3d-%-3d" % ( icol, icol+prop["size"] - 1 )
                icol += prop["size"]
             else:
                ohead += "column %3d    " % ( icol )
                icol += 1
             ohead += " --> %s " % (what)
             if "help" in prop:
-               ohead += " : " + prop["help"]
+               ohead += ": " + prop["help"]
             self.out.write(ohead + "\n")
 
    def close_stream():
