@@ -155,13 +155,13 @@ class Initializer(dobject):
                rcell = simchk.cell.fetch()
                rbeads = simchk.beads.fetch()
 
+            if not rcell is None:
+               if icell.V > 0.0 :
+                  print "WARNING: initialize from <file> overwrites previous cell configuration"
+               icell.h = rcell.h
+
             if not (v.format == "chk" or v.format == "checkpoint"):
                # assembles the list of atomic configurations into a beads object
-               if not rcell is None:
-                  if icell.V > 0.0 :
-                     print "WARNING: initialize from <file> overwrites previous cell configuration"
-                  icell.h = rcell.h
-
                rbeads.resize(natoms=ratoms[0].natoms, nbeads=len(ratoms))
                rbeads.names = ratoms[0].names
                rbeads.m = ratoms[0].m
