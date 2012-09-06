@@ -27,16 +27,16 @@ class InputCell(InputArray):
    """
 
    attribs = copy(InputArray.attribs)
-   attribs["kind"] = (InputAttribute, { "dtype"  : str, 
-                                        "default": "h", 
+   attribs["kind"] = (InputAttribute, { "dtype"  : str,
+                                        "default": "h",
                                         "options": ["h", "abc", "abcABC"],
-                                        "help"   : "This decides whether the system box is created from a cell parameter matrix, or from the side lengths and angles between them. If 'kind' is 'h', then 'cell' takes a 3*3 cell vector matrix. If 'kind' is 'abcABC', then 'cell' takes an array of 6 floats, the first three being the length of the sides of the system parallelopiped, and the last three being the angles between those sides. Angle A corresponds to the angle between sides b and c, and so on for B and C. If kind is 'abc', then this is the same as ffor 'abcABC', but the cell is assumed to be orthorhombic."} )
+                                        "help"   : "This decides whether the system box is created from a cell parameter matrix, or from the side lengths and angles between them. If 'kind' is 'h', then 'cell' takes a 3*3 cell vector matrix. If 'kind' is 'abcABC', then 'cell' takes an array of 6 floats, the first three being the length of the sides of the system parallelopiped, and the last three being the angles (in degrees) between those sides. Angle A corresponds to the angle between sides b and c, and so on for B and C. If kind is 'abc', then this is the same as ffor 'abcABC', but the cell is assumed to be orthorhombic."} )
 
    default_help = "Deals with the cell parameters."
    default_label = "CELL"
 
    def __init__(self, help=None, dimension=None, units=None, default=None, dtype=None):
-      """Initializes InputCell. 
+      """Initializes InputCell.
 
       Just calls the parent initialization function with appropriate arguments.
       """
@@ -52,6 +52,7 @@ class InputCell(InputArray):
 
       super(InputCell,self).store(cell.h)
       self.shape.store((3,3))
+      self.kind.store("h")  # we always store the cell matrix
 
    def fetch(self):
       """Creates a cell object.
@@ -88,7 +89,7 @@ class InputCell(InputArray):
          if h.size != 6:
             raise ValueError("If you are initializing cell from cell side lengths and angles you must pass the 'cell' tag an array of 6 floats.")
          else:
-            h = mt.abc2h(h[0], h[1], h[2], h[3], h[4], h[5])
+            h = mt.abc2h(h[0], h[1], h[2], h[3]*math.pi/180.0, h[4]*math.pi/180.0, h[5]*math.pi/180.0)
             super(InputCell,self).store(h)
             self.shape.store((3,3))
 
