@@ -14,7 +14,7 @@ Functions:
       specify the different available outputs.
 """
 
-__all__ = ['Properties', 'Trajectories', 'getkey', 'help_latex']
+__all__ = ['Properties', 'Trajectories', 'getkey', 'getall', 'help_latex']
 
 import numpy as np
 import math, random
@@ -33,6 +33,8 @@ def getkey(pstring):
    Args:
       pstring: The string input by the user that specifies an output,
          which in general will specify units and argument lists.
+
+   Returns: A string giving the keyword for the property.
    """
 
    pa = pstring.find('(')
@@ -42,6 +44,43 @@ def getkey(pstring):
    if pu < 0:
       pu = len(pstring)
    return pstring[0:min(pa,pu)]
+
+def getall(pstring):
+   """Returns the keyword, units and argument list separately.
+
+   Args:
+      pstring: The string input by the user that specifies an output,
+         which in general will specify units and argument lists.
+
+   Returns: A tuple giving the keyword for the property, and its units
+      and argument list.
+   """
+
+   unit = ""
+   arglist = ()
+   unstart = len(pstring)
+   argstart = unstart
+
+   if '}' in pstring:
+      # the property has a user-defined unit
+      unstart = pstring.find('{')
+      unstop = pstring.find('}', unstart)
+      if unstop == -1:
+         raise ValueError("Incorrect format in units specification " + pstring)
+      unit = pstring[unstart+1:unstop]
+   if '(' in pstring:
+      # If the property has additional arguments
+      argstart = pstring.find('(')
+      argstop = pstring.find(')', argstart)
+      if argstop == -1:
+         raise ValueError("Incorrect format in argument list " + pstring)
+
+      argstr = pstring[argstart:argstop+1]
+      arglist = io_xml.read_tuple(argstr, delims="()", split=";", arg_type=str)
+
+   pstring = pstring[0:min(unstart,argstart)] # strips the arguments from pstring name
+
+   return (pstring, unit, arglist)
 
 def help_latex(idict, ref=False):
    """Function to generate a LaTeX formatted file.
@@ -268,30 +307,7 @@ class Properties(dobject):
          The property labelled by the keyword key.
       """
 
-      args = []
-      unit = ""
-      arglist = ()
-      unstart = len(key)
-      argstart = unstart
-
-      if '}' in key:
-         # the property has a user-defined unit
-         unstart = key.find('{')
-         unstop = key.find('}', unstart)
-         if unstop == -1:
-            raise ValueError("Incorrect format in property units " + key)
-         unit = key[unstart+1:unstop]
-      if '(' in key:
-         # If the property has additional arguments
-         argstart = key.find('(')
-         argstop = key.find(')', argstart)
-         if argstop == -1:
-            raise ValueError("Incorrect format in property arguments " + key)
-
-         argstr = key[argstart:argstop+1]
-         arglist = io_xml.read_tuple(argstr, delims="()", split=";", arg_type=str)
-
-      key = key[0:min(unstart,argstart)] # strips the arguments from key name
+      (key, unit, arglist) = getall(key)
       pkey = self.property_dict[key]
 
       #pkey["func"](*arglist) gives the value of the property in atomic units
@@ -896,30 +912,7 @@ class Trajectories(dobject):
    def __getitem__(self, key):
       """ Gets one of the trajectories. """
 
-      args = []
-      unit = ""
-      arglist = ()
-      unstart = len(key)
-      argstart = unstart
-
-      if '}' in key:
-         # the property has a user-defined unit
-         unstart = key.find('{')
-         unstop = key.find('}', unstart)
-         if unstop == -1:
-            raise ValueError("Incorrect format in trajectory units " + key)
-         unit = key[unstart+1:unstop]
-      if '(' in key:
-         # If the property has additional arguments
-         argstart = key.find('(')
-         argstop = key.find(')', argstart)
-         if argstop == -1:
-            raise ValueError("Incorrect format in trajectory arguments " + key)
-
-         argstr = key[argstart:argstop+1]
-         arglist = io_xml.read_tuple(argstr, delims="()", split=";", arg_type=str)
-
-      key = key[0:min(unstart,argstart)] # strips the arguments from key name
+      (key, unit, arglist) = getall(key)
       pkey = self.traj_dict[key]
 
       if "dimension" in pkey and unit != "":
