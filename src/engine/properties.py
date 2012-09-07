@@ -8,8 +8,10 @@ Classes:
       appropriate format.
 
 Functions:
-   getkey: This functions strips the units and argument list specification
+   getkey: This function strips the units and argument list specification
       from a string specifying an output parameter.
+   getall: This function gives the keyword, units and argument list 
+      specification from a string specifying an output parameter.
    help_latex: This returns a string that can be used in the manual to
       specify the different available outputs.
 """
@@ -203,6 +205,10 @@ class Properties(dobject):
                       "help": "Gives all the non-zero cell parameters.",
                       "size": 6,
                       'func': self.full_cell},
+      "cell_abcABC": {"dimension" : "undefined",
+                      "help": "Gives the lengths of the cell vectors and the angles between them as a list. Since there are a mixture of different units, these can only be output in atomic-units.",
+                      "size": 6,
+                      'func': self.cell_abcABC},
       "potential": {  "dimension" : "energy",
                       "help": "The potential energy of the system.",
                       'func': (lambda: self.forces.pot/self.beads.nbeads)},
@@ -626,6 +632,14 @@ class Properties(dobject):
 
       h = depstrip(self.cell.h)
       return np.array([h[0,0], h[0,1], h[0,2], h[1,1], h[1,2], h[2,2]])
+
+   def cell_abcABC(self):
+      """Returns the cell parameters as the length of the principle cell
+      vectors and the angles between them."""
+
+      h = depstrip(self.cell.h)
+      (a, b, c, alpha, beta, gamma) = h2abc(h)
+      return np.array([a, b, c, alpha*180/math.pi, beta*180/math.pi, gamma*180/math.pi])
 
    def get_isotope_yama(self, alpha="1.0", atom=""):
       """Gives the components of the yamamoto scaled-mass KE estimator
