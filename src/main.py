@@ -38,5 +38,6 @@ def main(file_name):
    simul.run()
    del simul
 
+#This is what is run if the file is run as a script.
 if __name__ == '__main__':
    main(sys.argv[1])

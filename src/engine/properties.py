@@ -385,7 +385,7 @@ class Properties(dobject):
 
       x = int(x)
       v = int(v)
-      return self.beads.kstress[x,v]
+      return self.beads.kstress[x,v]/self.cell.V
 
    def get_vir(self, x=0, v=0):
       """Calculates the classical virial tensor.
@@ -395,11 +395,15 @@ class Properties(dobject):
 
       x = int(x)
       v = int(v)
-      return self.forces.vir[x,v]
+      return self.forces.vir[x,v]/self.cell.V
 
    def kstress_cv(self):
       """Calculates the quantum centroid virial kinetic stress tensor
       estimator.
+
+      Note, in line with the beads.kstress tensor, this does not divide
+      by the volume, and so this must be done before the results are
+      output.
       """
 
       kst = np.zeros((3,3),float)
@@ -426,7 +430,7 @@ class Properties(dobject):
 
       x = int(x)
       v = int(v)
-      return self.kstress_cv()[x,v]
+      return self.kstress_cv()[x,v]/self.cell.V
 
    def get_stresscv(self, x=0, v=0):
       """Calculates the quantum centroid virial stress tensor estimator.
@@ -452,7 +456,7 @@ class Properties(dobject):
 
       x = int(x)
       v = int(v)
-      return self.forces.vir[x,v]/float(self.beads.nbeads)
+      return self.forces.vir[x,v]/(self.beads.nbeads*self.cell.V)
 
    def get_kincv(self, atom=""):
       """Calculates the quantum centroid virial kinetic energy estimator."""
@@ -517,11 +521,11 @@ class Properties(dobject):
 
          kcv[:] = 0
          for b in range(self.beads.nbeads):
-            kcv[0] += (q[b,3*i]-qc[3*i])*f[b,3*i]                                                #Txx
-            kcv[1] += (q[b,3*i+1]-qc[3*i+1])*f[b,3*i+1]                                          #Tyy
-            kcv[2] += (q[b,3*i+2]-qc[3*i+2])*f[b,3*i+2]                                          #Tzz
-            kcv[3] += 0.5*( (q[b,3*i]-qc[3*i])*f[b,3*i+1] + (q[b,3*i+1]-qc[3*i+1])*f[b,3*i] )    #Txy
-            kcv[4] += 0.5*( (q[b,3*i]-qc[3*i])*f[b,3*i+2] + (q[b,3*i+2]-qc[3*i+2])*f[b,3*i] )    #Txz
+            kcv[0] += (q[b,3*i]-qc[3*i])*f[b,3*i]                                                      #Txx
+            kcv[1] += (q[b,3*i+1]-qc[3*i+1])*f[b,3*i+1]                                                #Tyy
+            kcv[2] += (q[b,3*i+2]-qc[3*i+2])*f[b,3*i+2]                                                #Tzz
+            kcv[3] += 0.5*( (q[b,3*i]-qc[3*i])*f[b,3*i+1] + (q[b,3*i+1]-qc[3*i+1])*f[b,3*i] )          #Txy
+            kcv[4] += 0.5*( (q[b,3*i]-qc[3*i])*f[b,3*i+2] + (q[b,3*i+2]-qc[3*i+2])*f[b,3*i] )          #Txz
             kcv[5] += 0.5*( (q[b,3*i+1]-qc[3*i+1])*f[b,3*i+2] + (q[b,3*i+2]-qc[3*i+2])*f[b,3*i+1] )    #Tyz
 
          kcv *= -0.5/self.beads.nbeads
@@ -682,7 +686,8 @@ class Properties(dobject):
          else:
             (law, drop) = logsumlog( (law,1.0), (-logr,1.0))
 
-         #here we need to take care of the sign of tcv, which might as well be negative... almost never but...
+         #here we need to take care of the sign of tcv, which might as well be 
+         #negative... almost never but...
          if (ni == 1):
             lawke = -logr + np.log(abs(tcv))
             sawke = np.sign(tcv);
@@ -741,7 +746,7 @@ class Properties(dobject):
          if (atom != "" and iatom != i and latom != self.beads.names[i]):
             continue
 
-         ni += 1;
+         ni += 1
 
          spr = 0.0
          for b in range(1,self.beads.nbeads):
@@ -772,9 +777,10 @@ class Properties(dobject):
          else:
             (law, drop) = logsumlog( (law,1.0), (-logr,1.0))
 
-         #here we need to take care of the sign of tcv, which might as well be negative... almost never but...
+         #here we need to take care of the sign of tcv, which might as well be 
+         #negative... almost never but...
          if (ni == 1):
-            lawke = -logr+np.log(abs(tcv))
+            lawke = -logr + np.log(abs(tcv))
             sawke = np.sign(tcv)
          else:
             (lawke, sawke) = logsumlog( (lawke, sawke), (-logr+np.log(abs(tcv)), np.sign(tcv)) )
@@ -865,12 +871,11 @@ class Trajectories(dobject):
       for b in range(self.simul.beads.nbeads):
          dq[:] = (self.simul.beads.q[b]-self.simul.beads.qc).reshape((self.simul.beads.natoms,3))
          f[:] = self.simul.forces.f[b].reshape((self.simul.beads.natoms,3))
-         rv[:,0] += dq[:,0]*f[:,1]+dq[:,1]*f[:,0]
-         rv[:,1] += dq[:,1]*f[:,2]+dq[:,2]*f[:,1]
-         rv[:,2] += dq[:,0]*f[:,2]+dq[:,2]*f[:,0]
+         rv[:,0] += dq[:,0]*f[:,1] + dq[:,1]*f[:,0]
+         rv[:,1] += dq[:,1]*f[:,2] + dq[:,2]*f[:,1]
+         rv[:,2] += dq[:,0]*f[:,2] + dq[:,2]*f[:,0]
       rv *= 0.5
       rv *= -0.5/self.simul.beads.nbeads
-      # rv += 0.5*Constants.kb*self.simul.ensemble.temp
 
       return rv.reshape(self.simul.beads.natoms*3)
 
