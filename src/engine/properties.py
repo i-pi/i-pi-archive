@@ -206,7 +206,7 @@ class Properties(dobject):
                       "size": 6,
                       'func': self.full_cell},
       "cell_abcABC": {"dimension" : "undefined",
-                      "help": "Gives the lengths of the cell vectors and the angles between them as a list. Since there are a mixture of different units, these can only be output in atomic-units.",
+                      "help": "Gives the lengths of the cell vectors and the angles between them in degrees as a list. Since there are a mixture of different units, these can only be output in atomic-units.",
                       "size": 6,
                       'func': self.cell_abcABC},
       "potential": {  "dimension" : "energy",
