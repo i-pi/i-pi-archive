@@ -64,7 +64,7 @@ class InputBeads(Input):
                                     "default"   : input_default(factory=np.zeros, args=(0,), kwargs={'dtype': np.dtype('|S6')}),
                                     "help"      : "The names of the atoms, in the format [name1, name2, ... ]."})  }
 
-   default_help = "Describes the configurations of atoms in a path integral simulations."
+   default_help = "Describes the bead configurations in a path integral simulation."
    default_label = "BEADS"
 
 

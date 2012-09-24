@@ -189,7 +189,7 @@ class InputOutputs(Input):
 
    attribs = { "prefix" : ( InputAttribute, { "dtype" : str,
                                           "default"  : "wrap-pi",
-                                          "help"     : "A string that will be the pre-pended to each output file name." })
+                                          "help"     : "A string that will be the prepended to each output file name." })
              }
 
    dynamic = {  "properties" : (InputProperties, { "help" : "Each of the properties tags specify how to create a file in which one or more properties are written, one line per frame. " } ),

@@ -32,7 +32,7 @@ class InputCell(InputArray):
                                         "options": ["h", "abc", "abcABC"],
                                         "help"   : "This decides whether the system box is created from a cell parameter matrix, or from the side lengths and angles between them. If 'kind' is 'h', then 'cell' takes a 3*3 cell vector matrix. If 'kind' is 'abcABC', then 'cell' takes an array of 6 floats, the first three being the length of the sides of the system parallelopiped, and the last three being the angles (in degrees) between those sides. Angle A corresponds to the angle between sides b and c, and so on for B and C. If kind is 'abc', then this is the same as ffor 'abcABC', but the cell is assumed to be orthorhombic."} )
 
-   default_help = "Deals with the cell parameters."
+   default_help = "Deals with the cell parameters. Takes as arguments either the cell vector matrix, or the unit cell side lengths and the angles between them."
    default_label = "CELL"
 
    def __init__(self, help=None, dimension=None, units=None, default=None, dtype=None):

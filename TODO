@@ -83,4 +83,4 @@ DONE ** Add property and trajectory help string to the manual (JM) (JM)
 
 *** Re-write the input files for all the test directories. (JM)
 
-** Add read cell from (A, B, C) and (alpha, beta, gamma) (JM) (JM)
+DONE ** Add read cell from (A, B, C) and (alpha, beta, gamma) (JM) (JM)

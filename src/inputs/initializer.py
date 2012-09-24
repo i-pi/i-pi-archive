@@ -65,16 +65,16 @@ class InputInitializer(Input):
    """
 
    attribs = { "nbeads"    : (InputAttribute, {"dtype"     : int,
-                                        "help"      : "The number of beads. Will override any provision from inside the initializer."})
+                                        "help"      : "The number of beads. Will override any provision from inside the initializer. A ring polymer contraction scheme is used to scale down the number of beads if required. If instead the number of beads is scaled up, higher normal modes will be initialized to zero."})
             }
 
    dynamic = {
-           "beads" : (InputBeads, { "help" : "Inputs the configuration of the path as a Beads object" }),
-           "cell" : (InputCell, { "help" : "Inputs the configuration of the cell as a Cell object" }),
-           "file" : (InputInitFile, {"help" : "Reads bead(s) and cell configuration from an external file" }),
+           "beads" : (InputBeads, { "help" : "Initializes the configuration of the path from a Beads object" }),
+           "cell" : (InputCell, { "help" : "Initializes the configuration of the cell from a Cell object" }),
+           "file" : (InputInitFile, {"help" : "Initializes bead(s) and cell configuration from an external file" }),
            "resample_v" : (InputValue, {"dimension": "temperature", 
                                         "dtype" : float,
-                           "help" : "Re-sample the beads velocities from a Maxwell distribution at the given temperature - or the ensemble temperature if a negative temperature is specified.", "default": -1.0})
+                           "help" : "Re-sample the beads' velocities from a Maxwell distribution at the given temperature - or the ensemble temperature if a negative temperature is specified.", "default": -1.0})
            }
 
    default_help = "Specifies the number of beads, and how the system should be initialized."

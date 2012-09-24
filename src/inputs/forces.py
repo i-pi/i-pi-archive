@@ -30,7 +30,7 @@ class InputForceBeads(Input):
                                          "help"    : "If the forcefield is to be evaluated on a contracted ring polymer, this gives the number of beads that are used. If not specified, the forcefield will be evaluated on the full ring polymer." } ),
                "weight" : ( InputAttribute, { "dtype"   : float,
                                          "default" : 1.0,
-                                         "help"    : "This force term will be added to give the total force using this weight." } )
+                                         "help"    : "A scaling factor for this forcefield, to be applied before adding the force calculated by this forcefield to the total force." } )
             }
 
    default_help = "Base class that deals with the assigning of force calculation jobs and collecting the data."
@@ -72,7 +72,7 @@ class InputFBSocket(InputForceBeads, InputInterface):
    attribs.update(InputForceBeads.attribs)
 
    default_help = "Deals with the assigning of force calculation jobs to different driver codes, and collecting the data, using a socket for the data communication."
-   default_label = "FORCESOCKET"
+   default_label = "SOCKET"
 
    def store(self, forceb):
       """Takes a ForceField instance and stores a minimal representation of it.
@@ -110,7 +110,7 @@ class InputForces(Input):
             }
 
    default_help = "Deals with creating all the necessary forcefield objects."
-   default_label = "MULTIFORCE"
+   default_label = "FORCES"
 
    def fetch(self):
       """Returns a list of the output objects included in this dynamic

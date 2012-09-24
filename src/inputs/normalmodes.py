@@ -25,10 +25,10 @@ class InputNormalModes(InputArray):
    attribs = copy(InputArray.attribs)
    attribs["mode"] = (InputAttribute, {"dtype"   : str,
                                        "default" : "rpmd",
-                                       "help"    : "How the dynamical masses are calculated",
+                                       "help"    : "Specifies the technique to be used to calculate the dynamical masses. 'rpmd' simply assigns the bead masses the physical mass. 'manual' sets all the normal mode frequencies except the centroid normal mode manually. 'pa-cmd' takes an argument giving the frequency to set all the non-centroid normal modes to. 'wmax-cmd' is similar to 'pa-cmd', except instead of taking one argument it takes two. Normal modes at the first frequency will be scaled to the second frequency. All other normal mode frequencies are scaled by the same factor.",
                                        "options" : ['pa-cmd', 'wmax-cmd', 'manual', 'rpmd']})
 
-   default_help = "Describes how the dynamic of the path must be performed, by manipulating the frequencies of normal modes."
+   default_help = "Deals with the normal mode transformations, including the adjustment of bead masses to give the desired ring polymer normal mode frequencies if appropriate. Takes as arguments frequencies, of which different numbers must be specified and which are used to scale the normal mode frequencies in different ways depending on which 'mode' is specified."
    default_label = "NORMALMODES"
 
    def __init__(self, help=None, dimension=None, default=None, dtype=None):

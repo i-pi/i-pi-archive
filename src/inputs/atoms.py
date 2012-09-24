@@ -56,7 +56,7 @@ class InputAtoms(Input):
                                         "help"      : "The names of the atoms, in the format [name1, name2, ... ]." })
          }
 
-   default_help = "Deals with single replicas of the system or classical simulations."
+   default_help = "Deals with a single replica of the system or classical simulations."
    default_label = "ATOMS"
 
    def store(self, atoms):
