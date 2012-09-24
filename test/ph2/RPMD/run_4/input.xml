@@ -1,6 +1,5 @@
 <simulation>
-   <beads>
-      <natoms>108</natoms>
+   <beads natoms='108' nbeads='24'>
       <p shape='(24, 324)'>
        [   5.15976677e+00,  -7.92374109e-01,   4.14020234e+00,  -5.17517285e-01,   5.12238310e-01, 
            4.42348587e+00,   2.50326769e+00,   4.36111212e-01,   2.05172005e+00,   4.63585403e+00, 
@@ -1559,7 +1558,6 @@
           -1.57377398e+00,  -7.54699879e-01,  -5.35848386e+00,  -1.64750243e-01,  -3.99210848e+00, 
           -4.73420052e+00 ]
       </p>
-      <nbeads>24</nbeads>
       <m shape='(108)'>
        [   3.67494322e+03,   3.67494322e+03,   3.67494322e+03,   3.67494322e+03,   3.67494322e+03, 
            3.67494322e+03,   3.67494322e+03,   3.67494322e+03,   3.67494322e+03,   3.67494322e+03, 
@@ -3167,39 +3165,25 @@
          H2, H2, H2 ]
       </names>
    </beads>
-   <force type='socket'>
-      <interface mode='inet'>
+   <forces>
+      <socket mode='inet'>
          <latency>  1.00000000e-02</latency>
          <slots>4</slots>
          <port>31412</port>
          <timeout>  0.00000000e+00</timeout>
          <address>neptune.chem.ox.ac.uk</address>
-      </interface>
-   </force>
+      </socket>
+   </forces>
    <total_steps>8000</total_steps>
-   <fd_delta> -1.00000000e-05</fd_delta>
-   <trajectories> [momentum_centroid ] </trajectories>
-   <prefix>test1</prefix>
-   <cell flexible='False'>
-      <p shape='(3, 3)'>
-       [   0.00000000e+00,   0.00000000e+00,   0.00000000e+00,   0.00000000e+00,   0.00000000e+00, 
-           0.00000000e+00,   0.00000000e+00,   0.00000000e+00,   0.00000000e+00 ]
-      </p>
-      <h shape='(3, 3)'>
+   <output prefix='test1'>
+      <trajectory stride='1' filename='vel'> v_centroid </trajectory>
+      <properties stride='5'> [ time, conserved, temperature, kinetic_cv, potential, pressure_cv ] </properties>
+   </output>
+   <cell shape='(3, 3)'>
        [   3.37260000e+01,   5.71316102e-15,   5.71316102e-15,   0.00000000e+00,   3.37260000e+01, 
            5.71316102e-15,   0.00000000e+00,   0.00000000e+00,   3.37260000e+01 ]
-      </h>
-      <h0 shape='(3, 3)'>
-       [   3.37260000e+01,   5.71316102e-15,   5.71316102e-15,   0.00000000e+00,   3.37260000e+01, 
-           5.71316102e-15,   0.00000000e+00,   0.00000000e+00,   3.37260000e+01 ]
-      </h0>
-      <m>  2.50007229e+04</m>
-      <P>  0.00000000e+00</P>
    </cell>
-   <stride>{checkpoint: 9000, trajectory: 1, properties: 5}</stride>
    <step>0</step>
-   <traj_format>xyz</traj_format>
-   <properties shape='(5)'> [ time, conserved, temperature, kinetic_cv, potential ] </properties>
    <prng>
       <has_gauss>0</has_gauss>
       <state shape='(624)'>
@@ -3336,7 +3320,7 @@
    <ensemble type='nve'>
       <timestep>  2.00000000e+01</timestep>
       <pressure>  1.00000000e+00</pressure>
-      <fixcom>False</fixcom>
+      <fixcom>True</fixcom>
       <temperature>  2.50000000e+01</temperature>
    </ensemble>
 </simulation>

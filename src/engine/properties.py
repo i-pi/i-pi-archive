@@ -417,6 +417,7 @@ class Properties(dobject):
 
       x = int(x)
       v = int(v)
+      #TODO Maybe this should not be divided by V?
       return self.forces.vir[x,v]/self.cell.V
 
    def kstress_cv(self):

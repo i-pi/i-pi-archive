@@ -15,15 +15,15 @@
          real, parameter :: timestep = 20.0
          real :: p(3,nat,nsteps)
          real :: C(maxsteps)
-         real :: mass2nat = 1.0/(mass**2*nat) *
+         real :: mass2nat = 1.0/(nat) *
      1                      (atomictime_to_ps/bohr_to_angstrom)**2
          integer :: ncalcs
          integer i, j, k
 
          call GETARG(1, buffer)
 
-         write(input_file, '(3A)') "test", trim(buffer), ".mom.xyz"
-         write(output_file, '(3A)') "mom_corr", trim(buffer), ".out"
+         write(input_file, '(3A)') "test", trim(buffer), ".vel.xyz"
+         write(output_file, '(3A)') "vel_corr", trim(buffer), ".out"
 
          open(unit=11, file=trim(input_file), action="READ")
          open(unit=12, file=trim(output_file), action="WRITE")

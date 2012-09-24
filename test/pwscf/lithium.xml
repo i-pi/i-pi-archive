@@ -1,29 +1,20 @@
 <simulation>
-   <initialize>  { velocities : 150}  </initialize>
-   <properties>  [ time, conserved, temperature, kinetic_cv, potential ] </properties>   
-   <stride> { properties : 1, trajectory: 1,  checkpoint:10 } </stride>
-   <prefix> pw_li </prefix>
+   <initialize nbeads='8'>
+      <file format='pdb'> li-4.pdb </file>
+      <resample_v> 150 </resample_v>
+   </initialize>
+   <output prefix='lithium'>
+      <properties stride='1' filename='out'>  [ time, conserved, temperature, kinetic_cv, potential, pressure_cv] </properties>
+      <trajectory stride='1' filename='pos'>positions</trajectory>
+      <checkpoint stride='20'/>
+   </output>
    <total_steps>100</total_steps>
    <prng><seed>31415</seed></prng>
-   <force type='socket'>
-      <interface mode="inet">
+   <forces>
+      <socket mode="inet">
          <address>localhost</address>   <port>31415</port>    <slots>4</slots>   <latency> 0.01</latency>
-      </interface>
-   </force>
-   <beads>
-      <atoms>
-         <from_file>li-4.pdb</from_file>
-      </atoms>
-      <nbeads>8</nbeads>
-   </beads>
-   <cell flexible='False'>
-      <h shape='(3, 3)'> 
-       [ 6.57, 0, 1e-10,
-         0.0, 6.57, 0, 
-         0.0, 0.0, 6.57 ]
-      </h>
-      <m>25000.7229</m>
-   </cell>
+      </socket>
+   </forces>
    <ensemble type='nvt'>
       <thermostat kind='pile_g'>
          <tau>1e2</tau>

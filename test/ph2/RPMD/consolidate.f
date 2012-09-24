@@ -17,7 +17,7 @@
 
          C = 0.0
 
-         write(output_file, '(A16)') "mom_corr_tot.out"
+         write(output_file, '(A16)') "vel_corr_tot.out"
          open(unit=11, file=trim(output_file), action="WRITE")
          do i = 1, nruns
             do j = 1, ncalcs
@@ -29,7 +29,7 @@
                write(formatstr, '(A11 I1 A4)') 
      1                  "(A4 I1 A9 I", ndigits, " A4)"
                write(input_file, formatstr) 
-     1         "run_", i, "/mom_corr", j, ".out"
+     1         "run_", i, "/vel_corr", j, ".out"
 
                openfile = 11+j+(i-1)*ncalcs
                open(unit=openfile, 

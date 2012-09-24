@@ -9,7 +9,7 @@ nruns=100
 for j in `seq 1 5`; do
    cd run_$j
    for i in `seq 1 $nruns`; do
-      ../mom_est $i &
+      ../vel_est $i &
    done
    wait
    cd ..

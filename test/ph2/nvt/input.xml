@@ -1,30 +1,20 @@
 <simulation>
-   <initialize>  { velocities : 50 }  </initialize>
-   <properties>  [ time, conserved, temperature, kinetic_cv, potential ] </properties>
-   <stride> { properties : 5, trajectory: 100,  checkpoint:2000 } </stride>
-   <prefix> test </prefix>
-   <traj_format> xyz </traj_format>
+   <initialize nbeads='1'>
+      <file format='pdb'> our_ref.pdb </file>
+      <resample_v> 50 </resample_v>
+   </initialize>
+   <output prefix='test'>
+      <properties stride='5' filename='out'>  [ time, conserved, temperature, kinetic_cv, potential, pressure_cv] </properties>
+      <trajectory stride='100' filename='pos'>positions</trajectory>
+      <checkpoint stride='2000'/>
+   </output>
    <total_steps>200000</total_steps>
    <prng><seed>31415</seed></prng>
-   <force type='socket'>
-      <interface mode="inet">
+   <forces>
+      <socket nbeads='24' mode="inet">
          <address>wrap-pi</address>   <port>31415</port>    <slots>4</slots> <latency>0.01</latency>
-      </interface>
-   </force>
-   <beads>
-      <start_centroid>
-         <from_file>our_ref.pdb</from_file>
-      </start_centroid>
-      <nbeads>24</nbeads>
-   </beads>
-   <cell flexible='False'>
-      <h shape='(3, 3)'> 
-       [ 33.726, 5.71316101504e-15, 5.71316101504e-15,
-         0.0, 33.726,  5.71316101504e-15, 
-         0.0, 0.0, 33.726 ]
-      </h>
-      <m>25000.7229</m>
-   </cell>
+      </socket>
+   </forces>
    <ensemble type='nvt'>
       <thermostat kind='pile_l'>
          <tau>1e3</tau>
