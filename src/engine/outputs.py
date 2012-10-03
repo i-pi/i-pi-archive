@@ -120,7 +120,7 @@ class PropertyOutput(dobject):
       self.out.write("  ")
       for what in self.outlist:
          try:
-            quantity = self.simul.properties[what]
+            quantity = self.simul.properties[what]         
          except KeyError:
             raise KeyError(what + " is not a recognized property")
          if not hasattr(quantity,"__len__") :

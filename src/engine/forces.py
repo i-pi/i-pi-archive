@@ -35,25 +35,26 @@ class ForceField(dobject):
          a consistent manner.
 
    Depend objects:
-      ufv: A list of the form [pot, f, vir]. These quantities are calculated
+      ufvx: A list of the form [pot, f, vir]. These quantities are calculated
          all at one time by the driver, so are collected together. Each separate
          object is then taken from the list. Depends on the atom positions and
          the system box.
-      pot: A float giving the potential energy of the system. Depends on ufv.
-      f: An array containing all the components of the force. Depends on ufv.
+      extra: A string containing some formatted output returned by the client. Depends on ufvx.      
+      pot: A float giving the potential energy of the system. Depends on ufvx.
+      f: An array containing all the components of the force. Depends on ufvx.
       fx: A slice of f containing only the x components of the forces.
       fy: A slice of f containing only the y components of the forces.
       fz: A slice of f containing only the z components of the forces.
       vir: An array containing the components of the virial tensor in upper
-         triangular form, not divided by the volume. Depends on ufv.
+         triangular form, not divided by the volume. Depends on ufvx.
    """
 
    def __init__(self):
       """Initialises ForceField."""
 
-      # ufv is a list [ u, f, vir ]  which stores the results of the force
+      # ufvx is a list [ u, f, vir, extra ]  which stores the results of the force
       #calculation
-      dset(self,"ufv", depend_value(name="ufv", func=self.get_all))
+      dset(self,"ufvx", depend_value(name="ufvx", func=self.get_all))
 
    def copy(self):
       """Creates a deep copy without the bound objects.
@@ -86,24 +87,28 @@ class ForceField(dobject):
       self.softexit = softexit
 
       # ufv depends on the atomic positions and on the cell
-      dget(self,"ufv").add_dependency(dget(self.atoms,"q"))
-      dget(self,"ufv").add_dependency(dget(self.cell,"h"))
+      dget(self,"ufvx").add_dependency(dget(self.atoms,"q"))
+      dget(self,"ufvx").add_dependency(dget(self.cell,"h"))
 
       # potential and virial are to be extracted very simply from ufv
       dset(self,"pot",
          depend_value(name="pot", func=self.get_pot,
-            dependencies=[dget(self,"ufv")]))
+            dependencies=[dget(self,"ufvx")]))
 
       dset(self,"vir",
          depend_array(name="vir", value=np.zeros((3,3),float),func=self.get_vir,
-            dependencies=[dget(self,"ufv")]))
+            dependencies=[dget(self,"ufvx")]))
 
       # NB: the force requires a bit more work, to define shortcuts to xyz
       # slices without calculating the force at this point.
       fbase = np.zeros(atoms.natoms*3, float)
       dset(self,"f",
          depend_array(name="f", value=fbase, func=self.get_f,
-             dependencies=[dget(self,"ufv")]))
+             dependencies=[dget(self,"ufvx")]))
+
+      dset(self,"extra",
+         depend_value(name="extra", func=self.get_extra,
+            dependencies=[dget(self,"ufvx")]))
 
       dset(self,"fx", depend_array(name="fx", value=fbase[0:3*atoms.natoms:3]))
       dset(self,"fy", depend_array(name="fy", value=fbase[1:3*atoms.natoms:3]))
@@ -135,7 +140,7 @@ class ForceField(dobject):
          and all components of the force and virial have been set to zero.
       """
 
-      return [0.0, np.zeros(3*self.atoms.natoms), np.zeros((3,3),float)]
+      return [0.0, np.zeros(3*self.atoms.natoms), np.zeros((3,3),float), ""]
 
    def get_pot(self):
       """Calls get_all routine of forcefield to update potential.
@@ -144,7 +149,7 @@ class ForceField(dobject):
          Potential energy.
       """
 
-      return self.ufv[0]
+      return self.ufvx[0]
 
    def get_f(self):
       """Calls get_all routine of forcefield to update force.
@@ -153,7 +158,7 @@ class ForceField(dobject):
          An array containing all the components of the force.
       """
 
-      return self.ufv[1]
+      return self.ufvx[1]
 
    def get_vir(self):
       """Calls get_all routine of forcefield to update virial.
@@ -163,11 +168,20 @@ class ForceField(dobject):
          by the volume.
       """
 
-      vir = self.ufv[2]
+      vir = self.ufvx[2]
       vir[1,0] = 0.0
       vir[2,0:2] = 0.0
       return vir
 
+   def get_extra(self):
+      """Calls get_all routine of forcefield to update potential.
+
+      Returns:
+         A string containing all formatted additional output that the 
+         client might have produced.
+      """
+
+      return self.ufvx[3]
 
 class FFSocket(ForceField):
    """Interface between the PIMD code and the socket for a single replica.
@@ -244,10 +258,10 @@ class FFSocket(ForceField):
       When one of the force, potential or virial are called, this sends the
       atoms and cell to the driver through the interface, requesting that the
       driver does the calculation. This then waits until the driver is finished,
-      and then returns the ufv list.
+      and then returns the ufvx list.
 
       Returns:
-         A list of the form [potential, force, virial].
+         A list of the form [potential, force, virial, extra].
       """
 
       # this is converting the distribution library requests into [ u, f, v ]  lists
@@ -273,7 +287,7 @@ class FFSocket(ForceField):
    def queue(self, reqid=-1):
       """Sends the job to the interface queue directly.
 
-      Allows the ForceBeads object to ask for the ufv list of each replica
+      Allows the ForceBeads object to ask for the ufvx list of each replica
       directly without going through the get_all function. This allows
       all the jobs to be sent at once, allowing them to be parallelized.
 
@@ -282,7 +296,7 @@ class FFSocket(ForceField):
             e.g. the bead index.
       """
 
-      if self.request is None and dget(self,"ufv").tainted():
+      if self.request is None and dget(self,"ufvx").tainted():
          self.request = self.socket.queue(self.atoms, self.cell, pars=self.pars, reqid=reqid)
 
    def run(self):
@@ -327,11 +341,11 @@ class ForceBeads(dobject):
 
    Depend objects:
       f: An array containing the components of the force. Depends on each
-         replica's ufv list.
+         replica's ufvx list.
       pots: A list containing the potential energy for each system replica.
-         Depends on each replica's ufv list.
+         Depends on each replica's ufvx list.
       virs: A list containing the virial tensor for each system replica.
-         Depends on each replica's ufv list.
+         Depends on each replica's ufvx list.
       pot: The sum of the potential energy of the replicas.
       vir: The sum of the virial tensor of the replicas.
       fnm: An array containing the components of the force in the normal mode
@@ -418,6 +432,10 @@ class ForceBeads(dobject):
          depend_array(name="virs", value=np.zeros((self.nbeads,3,3),float),
             func=self.vir_gather,
                dependencies=[dget(self._forces[b],"vir") for b in range(self.nbeads)]))
+      dset(self,"extras",
+         depend_value(name="extras", value=np.zeros(self.nbeads,float),
+            func=self.extra_gather,
+               dependencies=[dget(self._forces[b],"extra") for b in range(self.nbeads)]))
 
       # total potential and total virial
       dset(self,"pot",
@@ -467,6 +485,16 @@ class ForceBeads(dobject):
 
       self.queue()
       return np.array([b.pot for b in self._forces], float)
+
+   def extra_gather(self):
+      """Obtains the potential energy for each replica.
+
+      Returns:
+         A list of the potential energy of each replica of the system.
+      """
+
+      self.queue()
+      return [b.extra for b in self._forces]
 
    def vir_gather(self):
       """Obtains the virial for each replica.
@@ -572,11 +600,12 @@ class Forces(dobject):
 
    Depend objects:
       f: An array containing the components of the force. Depends on each
-         replica's ufv list.
+         replica's ufvx list.
       pots: A list containing the potential energy for each system replica.
-         Depends on each replica's ufv list.
+         Depends on each replica's ufvx list.
       virs: A list containing the virial tensor for each system replica.
-         Depends on each replica's ufv list.
+         Depends on each replica's ufvx list.
+      extras: A list containing the "extra" strings for each replica.
       pot: The sum of the potential energy of the replicas.
       vir: The sum of the virial tensor of the replicas.
       fnm: An array containing the components of the force in the normal mode
@@ -655,6 +684,11 @@ class Forces(dobject):
             func=self.vir_combine,
                dependencies=[dget(ff, "virs") for ff in self.mforces]) )
 
+      dset(self,"extras",
+         depend_value(name="extras", value=np.zeros(self.nbeads,float),
+            func=self.extra_combine,
+               dependencies=[dget(ff, "extras") for ff in self.mforces]))
+
       # total potential and total virial
       dset(self,"pot",
          depend_value(name="pot", func=(lambda: self.pots.sum()),
@@ -725,6 +759,18 @@ class Forces(dobject):
          # "expand" to the total number of beads the potentials from the
          #contracted one
          rp += self.mweights[k]*self.mrpc[k].b2tob1(self.mforces[k].pots)
+      return rp
+
+   def extra_combine(self):
+      """Obtains the potential energy for each forcefield."""
+
+      self.queue()
+      rp = [ "" for b in range(self.nbeads) ]
+      for k in range(self.nforces):
+         # "expand" to the total number of beads the potentials from the
+         #contracted one
+         for b in range(self.nbeads):
+            rp[b] += self.mforces[k].extras[b]
       return rp
 
    def vir_combine(self):

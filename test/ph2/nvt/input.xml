@@ -1,17 +1,18 @@
 <simulation>
-   <initialize nbeads='1'>
+   <initialize nbeads='4'>
       <file format='pdb'> our_ref.pdb </file>
       <resample_v> 50 </resample_v>
    </initialize>
    <output prefix='test'>
       <properties stride='5' filename='out'>  [ time, conserved, temperature, kinetic_cv, potential, pressure_cv] </properties>
       <trajectory stride='100' filename='pos'>positions</trajectory>
+      <trajectory stride='10' filename='xtra'>extras</trajectory>
       <checkpoint stride='2000'/>
    </output>
    <total_steps>200000</total_steps>
    <prng><seed>31415</seed></prng>
    <forces>
-      <socket nbeads='24' mode="unix">
+      <socket nbeads='4' mode="unix">
          <address>wrap-pi</address>   <port>31415</port>    <slots>4</slots> <latency>0.01</latency>
       </socket>
    </forces>

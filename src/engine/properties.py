@@ -847,6 +847,9 @@ class Trajectories(dobject):
       "forces": {    "dimension" : "force",
                      "help": "Prints the force trajectories.",
                      'func': (lambda : 1.0*self.simul.forces.f)},
+      "extras": {    "dimension" : "",
+                     "help": "Prints the extras trajectories.",
+                     'func': (lambda : self.simul.forces.extras)},
       "kinetic_cv": {"dimension" : "energy",
                      "help": "Prints the kinetic energy for each bead, resolved into Cartesian components.",
                      'func': self.get_akcv},
@@ -947,6 +950,8 @@ class Trajectories(dobject):
       cq = self[what]
       if getkey(what) in [ "positions", "velocities", "forces" ] :
          self.fatom.q[:] = cq[b]
+      elif getkey(what) in [ "extras" ] :
+         print cq[b] #STUB. must print out bead b
       else: self.fatom.q[:] = cq
 
       fcell = Cell()
