@@ -992,9 +992,9 @@ wrappi
 
 \end_inset
 
- code is only a wrapper code; it only runs the molecular dynamics loop and
- does not calculate the force and potential acting on each particle.
- To do this 
+ code is only a wrapper code; it only runs the molecular dynamics algorithms
+ and does not calculate the force and potential acting on each particle.
+ To complete a time step then, 
 \begin_inset ERT
 status open
 
@@ -1149,9 +1149,8 @@ Data transfer
 \begin_layout Standard
 To make the transfer as fast as possible, the data is transferred in binary
  format.
- The transfer protocol is to send a header string of 12 characters specifying
- the stage of the data transfer, followed if necessary by data, then wait
- for data to be returned.
+ Each communication consists of a header string of 12 characters specifying
+ the stage of the data transfer, if necessary followed by data.
  We use 4-bit integers, 8-bit floats and 12 character strings for the transfer.
  A typical step is of the form:
 \end_layout
@@ -1267,35 +1266,15 @@ Parallelization
 This type of data transfer is well suited to working with PIMD, as it allows
  multiple driver codes to connect to the server socket of one simulation,
  so that different replicas of the system can be assigned to different driver
- codes so their forces can be computed in parallel.
+ codes and their forces computed in parallel.
 \end_layout
 
 \begin_layout Standard
 In the case that there are as many driver codes as replicas of the system,
  this is very simple, as each replica will be assigned its own driver code.
- For 
-\begin_inset ERT
-status open
-
-\begin_layout Plain Layout
-
-
-\backslash
-emph{ab initio}
-\end_layout
-
-\end_inset
-
- potentials the slowdown due to the socket communication is not appreciable,
- and in this case the force calculation will essentially be as fast as a
- purely classical simulation, although it will use more computational resources.
- 
-\end_layout
-
-\begin_layout Standard
-In subsequent steps, the interface will attempt to assign a particular replica
- of the system to the same driver code which calculated the forces for it
- the last step.
+ In subsequent steps, the interface will attempt to assign a particular
+ replica of the system to the same driver code which calculated the forces
+ for it the last step.
  This reduces the change in the particle positions between calculations
  on a particular driver code, allowing the code to do the next calculation
  more efficiently.
@@ -1309,12 +1288,26 @@ In the case where there are fewer driver codes than beads, the socket interface
 \end_layout
 
 \begin_layout Standard
+In general, we want to choose the number of driver codes to be a divisor
+ of the total number of replicas of the system, as otherwise there will
+ be idle driver codes at the end of each step.
+\end_layout
+
+\begin_layout Standard
 This is especially useful when the calculations are being run on a cluster.
  In this case, you can split up the driver codes, and they will connect
  whenever they reach the front of the queue.
  More driver codes can connect at any time, and if there is a problem and
  any driver code dies, it is simply removed from the driver list and any
  job it was running reassigned.
+\end_layout
+
+\begin_layout Subsection
+ssh tunnelling
+\end_layout
+
+\begin_layout Standard
+PUT SOMETHING HERE MICHELE! (I don't even know how to do that...)
 \end_layout
 
 \begin_layout Chapter
@@ -2435,7 +2428,7 @@ Running a simulation
 
 \begin_layout Standard
 A simulation is run by first running a wrapper code as above, and then connectin
-g to the socket with one or more driver codes.
+g to the server socket with one or more driver codes.
  For a small simulation, with a simple classical potential, it may be preferable
  to run both halves of the simulation on the same computer, especially as
  this allows us to use the faster unix domain sockets.
@@ -2495,12 +2488,6 @@ end{verbatim}
 \end_layout
 
 \begin_layout Standard
-In general, we want to choose the number of driver codes to be a divisor
- of the total number of replicas of the system, as otherwise there will
- be idle driver codes at the end of each step.
-\end_layout
-
-\begin_layout Standard
 For most simulations, especially those running with expensive ab initio
  forces and potentials, we will want to run the code on a computational
  cluster.
@@ -2523,6 +2510,17 @@ The only modification required to the above code to do this is to change
  The usual process required to do this is to write a shell script which
  runs the driver codes, then use a program such as qsub to submit this job
  to the cluster.
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+%Better explanation of this, please...
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Subsection
@@ -2530,9 +2528,9 @@ Running multiple simulations
 \end_layout
 
 \begin_layout Standard
-While running one simulation is useful, the power of the socket communications
- method is most aptly demonstrated when multiple simulations are run at
- once.
+While running a single simulation is useful, the power of the socket communicati
+ons method is most aptly demonstrated when multiple simulations are run
+ at once.
 \end_layout
 
 \begin_layout Standard
@@ -2544,8 +2542,8 @@ Firstly, the wrapper code is dormant until a driver code connects to the
 \end_layout
 
 \begin_layout Standard
-Secondly, each different simulation can be kept separate very easily, by
- just adjusting the port number of each parallel simulation.
+Secondly, each different simulation can be kept separate very easily by
+ just adjusting the port number of each simulation.
  This is very easy to write a shell script to do.
  For example, if we assume the simulations will be run in directories called
  sim_1, sim_2, etc., then we can write:
@@ -2619,12 +2617,14 @@ This will replace a string
 \begin_inset Quotes eld
 \end_inset
 
-XXXX
+XXX
 \begin_inset Quotes erd
 \end_inset
 
  in a template file with a port number, which will be different for each
  simulation.
+ However, note that this will only work if you are using inet sockets, as
+ the port number is silently ignored for unix sockets.
 \end_layout
 
 \begin_layout Section
@@ -3273,8 +3273,8 @@ status open
 
 
 \backslash
-begin{verbatim}<h units=`angstrom'> ...
- </h>
+begin{verbatim}<cell units=`angstrom'> ...
+ </cell>
 \backslash
 end{verbatim}
 \end_layout
@@ -3429,7 +3429,7 @@ status open
 
 
 \backslash
-begin{verbatim}<trajectory stride=`' filename=`' format=`'>
+begin{verbatim}<trajectory stride=`' filename=`' format=`' cell_units=`'>
 \end_layout
 
 \begin_layout Plain Layout
@@ -3454,7 +3454,7 @@ properties
 \begin_inset Quotes erd
 \end_inset
 
- tag, but it has the additional tag 
+ tag, but it has the additional tags 
 \begin_inset Quotes eld
 \end_inset
 
@@ -3462,8 +3462,17 @@ format
 \begin_inset Quotes erd
 \end_inset
 
- to specify the format of the output trajectory file, and only one trajectory
- can be specified.
+ and 
+\begin_inset Quotes eld
+\end_inset
+
+cell_units
+\begin_inset Quotes erd
+\end_inset
+
+, and only one trajectory can be specified.
+ `format' specifies the format of the output file, and `cell_units' specifies
+ the units in which the cell dimensions are output.
  Depending on the chosen trajectory to output, it will either print a file
  for each bead or just for each atom.
  If the trajectory is output for each bead, then the output file will not
@@ -3526,7 +3535,7 @@ Checkpoint files
 As well as the above output files, the state of the system at a particular
  time step can also be saved to file.
  This gives a valid input file, with all the information required to restore
- the state of the system to what it was when the restart file was created.
+ the state of the system to how it was when the restart file was created.
  The syntax is:
 \begin_inset ERT
 status open
@@ -3573,7 +3582,7 @@ properties
 \end_inset
 
  tags, but instead of having a value which specifies what to output, the
- value simply gives the current step.
+ value simply gives a number to identify which checkpoint is which.
  There is also one additional attribute 
 \begin_inset Quotes eld
 \end_inset
@@ -3596,6 +3605,26 @@ filename
  files.
 \end_layout
 
+\begin_layout Standard
+If there is no need to specify the `step' parameter, the following syntax
+ also works:
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}<checkpoint stride=`' filename=`' overwrite=`'/>
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
 \begin_layout Subsection
 Restart file
 \end_layout
@@ -3616,7 +3645,7 @@ RESTART
 .
 \end_layout
 
-\begin_layout Subsubsection
+\begin_layout Subsection
 Soft exit
 \end_layout
 
@@ -3631,8 +3660,8 @@ EXIT
 \end_inset
 
  in the directory in which you are running the code.
- The thread will automatically detect this and safely shut down the program,
- outputting the correct 
+ The thread handler will automatically detect this and safely shut down
+ the program, outputting the correct 
 \begin_inset Quotes eld
 \end_inset
 

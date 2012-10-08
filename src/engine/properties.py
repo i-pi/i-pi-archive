@@ -202,7 +202,7 @@ class Properties(dobject):
                       "help": "Gives one of the cell parameters. Takes arguments 'x' and 'v', which gives h[x,v]. By default gives h[0,0].",
                       'func': self.wrap_cell},
       "cell_h6": {    "dimension" : "length",
-                      "help": "Gives all the non-zero cell parameters.",
+                      "help": "Gives all the non-zero cell parameters, in the order hxx, hxy, hxz, hyy, hyz, hzz.",
                       "size": 6,
                       'func': self.full_cell},
       "cell_abcABC": {"dimension" : "undefined",
