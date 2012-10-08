@@ -299,7 +299,9 @@ class Driver(socket.socket):
 
       mvir = np.zeros((3,3),np.float64)
       mvir = self.recvall(mvir)
-      return [mu, mf, mvir]
+    
+      #!TODO must set up a machinery to intercept the "extra" return field
+      return [mu, mf, mvir, ""]  
 
 
 class Interface(object):
