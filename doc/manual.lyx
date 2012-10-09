@@ -447,9 +447,26 @@ ref{run}
 
 \end_inset
 
- we explain the procedure for running simulations with the appropriate features,
- and the form of the input and output files.
+ we explain the procedure for running simulations, and the form of the input
+ and output files.
  
+\end_layout
+
+\begin_layout Itemize
+In chapter
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+~
+\backslash
+ref{overview}
+\end_layout
+
+\end_inset
+
+, we explain some of the features of the wrapper code.
 \end_layout
 
 \begin_layout Itemize
@@ -858,6 +875,20 @@ test: Contains examples that can be used to make sure the build has been
 
 \begin_layout Section
 Dependency detection and automatic property caching
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+%MOVE THIS SECTION SOMEWHERE ELSE!!!!!!!
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Subsection
@@ -3308,6 +3339,22 @@ Property file
 \end_layout
 
 \begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+label{propertyfile}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
 This is the output file for for all the system and simulation level properties,
  such as the total energy and the overall time taken.
  The properties that are output are determined by the 
@@ -3682,6 +3729,290 @@ An important point to note is that since each time step is split into several
  is created must correspond to the state of the system at the start of the
  step.
  To this end, the state of the system is saved at the start of every step.
+\end_layout
+
+\begin_layout Chapter
+Feature overview
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+label{overview}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Ring polymer contraction
+\end_layout
+
+\begin_layout Standard
+Often, we will want to take a description of the system in terms of a certain
+ number of beads, and instead represent it with a different number of beads.
+ To do this, we use a ring polymer contraction scheme as presented in 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+cite{mark-mano08jcp}
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+This works by matching the amplitudes of the normal modes of the old ring
+ polymer with those of the new ring polymer.
+ The normal modes are matched in ascending frequency order, until either
+ all the ring polymer normal modes of the new ring polymer have been assigned
+ a frequency, or all the original ring polymer normal modes have been used.
+ Any remaining normal mode amplitudes are set to zero.
+\end_layout
+
+\begin_layout Standard
+This is used in two different cases:
+\end_layout
+
+\begin_layout Itemize
+Initializing a simulation from a previous simulation with a different number
+ of beads.
+\end_layout
+
+\begin_layout Itemize
+Calculating the long range part of the electronic potential with a reduced
+ number of beads.
+\end_layout
+
+\begin_layout Standard
+While the first of these is fairly self-explanatory, the second of these
+ is more complicated.
+ Often, empirical potentials can be split into a short-ranged potential
+ which is simple to calculate, and a long-ranged potential which is much
+ harder to calculate.
+ In many cases, the long-ranged part of the potential is also slowly varying
+ in space.
+\end_layout
+
+\begin_layout Standard
+If this is true, the long-ranged part of the potential will require fewer
+ beads to converge the calculated potential energy than the short-ranged
+ part, as it only varies slightly over the ring polymer length scale.
+ Since calculating the long-range part of the potential is the computational
+ bottleneck, the effort is comparable to calculating the whole potential
+ on the reduced ring polymer, with little loss of accuracy.
+\end_layout
+
+\begin_layout Standard
+Once the force, potential and virial have been calculated using the reduced
+ ring polymer, the resulting force and virial vectors are transformed back
+ to act on the original numbers of beads, before being used to propagate
+ the trajectory of the full ring polymer.
+\end_layout
+
+\begin_layout Standard
+To specify the number of beads that the system should be initialized to,
+ the 
+\begin_inset Quotes eld
+\end_inset
+
+nbeads
+\begin_inset Quotes erd
+\end_inset
+
+ attribute of the 
+\begin_inset Quotes eld
+\end_inset
+
+initialize
+\begin_inset Quotes erd
+\end_inset
+
+ tag simply needs to be set to the appropriate value in the input file.
+ This will take whatever configuration is specified in the initilialization
+ and use the above transformation to give a new configuration with the correct
+ number of beads.
+ Similarly, each forcefield can be calculated on any number of beads by
+ setting the 
+\begin_inset Quotes eld
+\end_inset
+
+nbeads
+\begin_inset Quotes erd
+\end_inset
+
+ attribute to the appropriate value.
+\end_layout
+
+\begin_layout Section
+Constant temperature simulations
+\end_layout
+
+\begin_layout Standard
+There are a variety of different stochastic thermostats implemented within
+ the wrapper.
+ All the algorithms that are used in the wrapper are based on either the
+ Langevin equation
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+~
+\backslash
+cite{plangevin1908cras}
+\end_layout
+
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+%perhaps a more relevant citation required here as well?
+\end_layout
+
+\end_inset
+
+ or stochastic velocity rescaling
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+~
+\backslash
+cite{buss-parr08cpc}
+\end_layout
+
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Standard
+The Langevin thermostat is a local thermostat, so couples to each degree
+ of freedom, whereas the stochastic velocity rescaling is a global algorithm,
+ so is only coupled to the total kinetic energy.
+ Global thermostats are less disruptive to the dynamics, and so are less
+ efficient than local thermostats for local properties but are much better
+ for calculations that require reorganisation of the structure, such as
+ dielectric constants
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+~
+\backslash
+cite{ceri+10jcp}
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+These techniques have been adapted specifically for PIMD simulations in
+ the path integral Langevin equation thermostat
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+~
+\backslash
+cite{ceri+10jcp}
+\end_layout
+
+\end_inset
+
+, which comes in a local or global form as above.
+ 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{A priori}
+\end_layout
+
+\end_inset
+
+ estimates can be made for the friction coefficients of the thermostats
+ coupled to the internal ring polymer normal modes, so this is much more
+ effective for path integral calculations than standard stochastic thermostats.
+\end_layout
+
+\begin_layout Subsection
+Generalized Langevin equation thermostats
+\end_layout
+
+\begin_layout Section
+Constant pressure simulations
+\end_layout
+
+\begin_layout Standard
+Constant pressure simulations are also possible within the wrapper.
+ There is one barostat currently implemented
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+~
+\backslash
+cite{buss+09jcp}
+\end_layout
+
+\end_inset
+
+, which is designed to be used in combination with stochastic thermostating,
+ so is only suitable for constant pressure and temperature simulations.
+ Note that these algorithms allow the system box size to fluctuate, which
+ can cause problems for some driver codes if variable cell dynamics have
+ not been implemented.
+\end_layout
+
+\begin_layout Section
+Dynamical property calculations
+\end_layout
+
+\begin_layout Standard
+As well as calculating static properties, as shown in section
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+~
+\backslash
+ref{propertyfile}
+\end_layout
+
+\end_inset
+
+, you can also use the PIMD formalism to calculate approximate dynamical
+ properties such as correlation functions.
 \end_layout
 
 \begin_layout Chapter
