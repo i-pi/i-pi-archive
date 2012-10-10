@@ -3910,10 +3910,9 @@ cite{buss-parr08cpc}
 The Langevin thermostat is a local thermostat, so couples to each degree
  of freedom, whereas the stochastic velocity rescaling is a global algorithm,
  so is only coupled to the total kinetic energy.
- Global thermostats are less disruptive to the dynamics, and so are less
- efficient than local thermostats for local properties but are much better
- for calculations that require reorganisation of the structure, such as
- dielectric constants
+ Global thermostats are less disruptive to the dynamics, so are less efficient
+ than local thermostats for local properties but are much better for calculation
+s that require reorganisation of the structure, such as dielectric constants
 \begin_inset ERT
 status open
 
@@ -3930,8 +3929,7 @@ cite{ceri+10jcp}
 \end_layout
 
 \begin_layout Standard
-These techniques have been adapted specifically for PIMD simulations in
- the path integral Langevin equation thermostat
+The path integral Langevin equation thermostat
 \begin_inset ERT
 status open
 
@@ -3944,7 +3942,8 @@ cite{ceri+10jcp}
 
 \end_inset
 
-, which comes in a local or global form as above.
+ adapts these algorithms for PIMD simulations, and may be either local or
+ global.
  
 \begin_inset ERT
 status open
@@ -3963,8 +3962,99 @@ emph{A priori}
  effective for path integral calculations than standard stochastic thermostats.
 \end_layout
 
+\begin_layout Standard
+Constant temperature simulations can be run by setting the 
+\begin_inset Quotes eld
+\end_inset
+
+type
+\begin_inset Quotes erd
+\end_inset
+
+ attribute of the 
+\begin_inset Quotes eld
+\end_inset
+
+ensemble
+\begin_inset Quotes erd
+\end_inset
+
+ tag to 
+\begin_inset Quotes eld
+\end_inset
+
+nvt
+\begin_inset Quotes erd
+\end_inset
+
+, and the 
+\begin_inset Quotes eld
+\end_inset
+
+thermostat
+\begin_inset Quotes erd
+\end_inset
+
+ tag specifies how the thermostat is defined.
+\end_layout
+
 \begin_layout Subsection
 Generalized Langevin equation thermostats
+\end_layout
+
+\begin_layout Standard
+The Langevin equation can be generalized to include non-Markovian effects,
+ so that the stochastic step of the algorithm requires information from
+ previous timesteps.
+ This is however very difficult to implement in practice.
+\end_layout
+
+\begin_layout Standard
+However, this can be shown to be mathematically equivalent to a Markovian
+ algorithm in an extended momentum phase space
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+cite{ceri+09jctc}
+\end_layout
+
+\end_inset
+
+.
+ This is much simpler to implement, and is more useful than the standard
+ Langevin algorithm for two reasons.
+\end_layout
+
+\begin_layout Standard
+Firstly, there are a large number of adjustable parameters so the thermostat
+ can be fine-tuned so that all the vibrational frequencies present in the
+ system are sampled efficiently rather than just a small range of frequencies.
+\end_layout
+
+\begin_layout Standard
+Secondly, the algorithm does not need to obey the fluctuation-dissipation
+ theorem.
+ The ensemble that is sampled can therefore be adjusted manually.
+ For example, using information from the harmonic limit, this thermostat
+ can attempt to enforce the quantum ensemble during a low bead PIMD simulation
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+cite{ceri+11jcp}
+\end_layout
+
+\end_inset
+
+, increasing the rate of convergence with respect to the number of beads
+ used.
 \end_layout
 
 \begin_layout Section
@@ -3987,10 +4077,47 @@ cite{buss+09jcp}
 \end_inset
 
 , which is designed to be used in combination with stochastic thermostating,
- so is only suitable for constant pressure and temperature simulations.
+ so is only suitable for simulations where both the pressure and temperature
+ are held constant.
  Note that these algorithms allow the system box size to fluctuate, which
  can cause problems for some driver codes if variable cell dynamics have
  not been implemented.
+\end_layout
+
+\begin_layout Standard
+Constant pressure simulations can be run by setting the 
+\begin_inset Quotes eld
+\end_inset
+
+type
+\begin_inset Quotes erd
+\end_inset
+
+ attribute of the 
+\begin_inset Quotes eld
+\end_inset
+
+ensemble
+\begin_inset Quotes erd
+\end_inset
+
+ tag to 
+\begin_inset Quotes eld
+\end_inset
+
+npt
+\begin_inset Quotes erd
+\end_inset
+
+, and the 
+\begin_inset Quotes eld
+\end_inset
+
+barostat
+\begin_inset Quotes erd
+\end_inset
+
+ tag specifies how the barostat is defined.
 \end_layout
 
 \begin_layout Section
