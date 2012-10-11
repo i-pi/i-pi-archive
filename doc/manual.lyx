@@ -3773,8 +3773,8 @@ Ring polymer contraction
 
 \begin_layout Standard
 Often, we will want to take a description of the system in terms of a certain
- number of beads, and instead represent it with a different number of beads.
- To do this, we use a ring polymer contraction scheme as presented in 
+ number of beads and instead represent it with a different number of beads.
+ In the wrapper this is done using a ring polymer contraction scheme
 \begin_inset ERT
 status open
 
@@ -3791,8 +3791,8 @@ cite{mark-mano08jcp}
 \end_layout
 
 \begin_layout Standard
-This works by matching the amplitudes of the normal modes of the old ring
- polymer with those of the new ring polymer.
+This works by matching the normal mode amplitudes of the old ring polymer
+ with those of the new ring polymer.
  The normal modes are matched in ascending frequency order, until either
  all the ring polymer normal modes of the new ring polymer have been assigned
  a frequency, or all the original ring polymer normal modes have been used.
@@ -3816,27 +3816,31 @@ Calculating the long range part of the electronic potential with a reduced
 \begin_layout Standard
 While the first of these is fairly self-explanatory, the second of these
  is more complicated.
- Often, empirical potentials can be split into a short-ranged potential
- which is simple to calculate, and a long-ranged potential which is much
- harder to calculate.
- In many cases, the long-ranged part of the potential is also slowly varying
- in space.
+ To understand this, consider an empirical potential model that can be split
+ into a short-ranged potential and a long-ranged potential, where the long-range
+d part of the potential is slowly varying in space.
+ This means that the long-ranged part of the potential will require fewer
+ beads to converge the calculated potential energy than the short-ranged
+ part, as it only varies slightly over the ring polymer length scale.
+ 
 \end_layout
 
 \begin_layout Standard
-If this is true, the long-ranged part of the potential will require fewer
- beads to converge the calculated potential energy than the short-ranged
- part, as it only varies slightly over the ring polymer length scale.
- Since calculating the long-range part of the potential is the computational
- bottleneck, the effort is comparable to calculating the whole potential
- on the reduced ring polymer, with little loss of accuracy.
+Also, let us suppose that the calculation of the long-range terms is the
+ computational bottleneck, as they are more numerous than the short-range
+ terms.
+ In this case calculating the long-range part of the potential on a contracted
+ ring polymer will have a large effect on the simulation time, even if the
+ short-range part is calculated on the full ring polymer.
+ Therefore this technique allows us to speed up the simulation without sacrifici
+ng accuracy.
 \end_layout
 
 \begin_layout Standard
 Once the force, potential and virial have been calculated using the reduced
  ring polymer, the resulting force and virial vectors are transformed back
- to act on the original numbers of beads, before being used to propagate
- the trajectory of the full ring polymer.
+ to their original size, before being used to propagate the trajectory of
+ the full ring polymer.
 \end_layout
 
 \begin_layout Standard
@@ -3927,8 +3931,9 @@ The Langevin thermostat is a local thermostat, so couples to each degree
  of freedom, whereas the stochastic velocity rescaling is a global algorithm,
  so is only coupled to the total kinetic energy.
  Global thermostats are less disruptive to the dynamics, so are less efficient
- than local thermostats for local properties but are much better for calculation
-s that require reorganisation of the structure, such as dielectric constants
+ than local thermostats for converging local properties but are much better
+ for calculations that require reorganisation of the structure, such as
+ dielectric constants
 \begin_inset ERT
 status open
 
@@ -3945,7 +3950,7 @@ cite{ceri+10jcp}
 \end_layout
 
 \begin_layout Standard
-The path integral Langevin equation thermostat
+The path integral Langevin equation (PILE) thermostat
 \begin_inset ERT
 status open
 
@@ -3961,6 +3966,9 @@ cite{ceri+10jcp}
  adapts these algorithms for PIMD simulations, and may be either local or
  global.
  
+It uses 
+\lang english
+
 \begin_inset ERT
 status open
 
@@ -3973,9 +3981,9 @@ emph{A priori}
 
 \end_inset
 
- estimates can be made for the friction coefficients of the thermostats
- coupled to the internal ring polymer normal modes, so this is much more
- effective for path integral calculations than standard stochastic thermostats.
+ estimates for the friction coefficients of the thermostats coupled to the
+ internal ring polymer normal modes, so this is much more effective for
+ path integral calculations than standard stochastic thermostats.
 \end_layout
 
 \begin_layout Standard
@@ -4033,7 +4041,7 @@ status open
 
 \begin_layout Plain Layout
 
-
+~
 \backslash
 cite{ceri+09jctc}
 \end_layout
@@ -4046,9 +4054,9 @@ cite{ceri+09jctc}
 \end_layout
 
 \begin_layout Standard
-Firstly, there are a large number of adjustable parameters so the thermostat
- can be fine-tuned so that all the vibrational frequencies present in the
- system are sampled efficiently rather than just a small range of frequencies.
+Firstly, there are a large number of adjustable parameters, so the thermostat
+ can be fine-tuned to efficiently sample all the vibrational frequencies
+ present in the system rather than just a small range of frequencies.
 \end_layout
 
 \begin_layout Standard
@@ -4056,13 +4064,14 @@ Secondly, the algorithm does not need to obey the fluctuation-dissipation
  theorem.
  The ensemble that is sampled can therefore be adjusted manually.
  For example, using information from the harmonic limit, this thermostat
- can attempt to enforce the quantum ensemble during a low bead PIMD simulation
+ can attempt to enforce the appropriate quantum ensemble during a low bead
+ PIMD simulation
 \begin_inset ERT
 status open
 
 \begin_layout Plain Layout
 
-
+~
 \backslash
 cite{ceri+11jcp}
 \end_layout
@@ -4163,7 +4172,7 @@ status open
 
 \begin_layout Plain Layout
 
-
+~
 \backslash
 cite{crai-mano04jcp}
 \end_layout
@@ -4176,7 +4185,7 @@ status open
 
 \begin_layout Plain Layout
 
-
+~
 \backslash
 cite{habe+08jcp}
 \end_layout
@@ -4190,8 +4199,8 @@ cite{habe+08jcp}
 RPMD uses the trajectories generated during a PIMD run to calculate correlation
  functions, so is straightforward to use.
  The largest difference between RPMD and PIMD is that stochastic thermostats
- usually disrupt the particle motion too much to be used in dynamical property
- calculations.
+ usually disrupt the particle motion too much to be used in the calculation
+ of dynamical properties.
  An example of one way to run an RPMD simulation is given in one of the
  test directories, as explained in section
 \begin_inset ERT
@@ -4211,8 +4220,8 @@ ref{tests}
 
 \begin_layout Standard
 PA-CMD uses different dynamics to calculate correlation functions.
- In particular, the ring polymer bead masses are scaled so as to shift the
- ring polymer normal mode frequencies.
+ In particular, the ring polymer bead masses are scaled, shifting the ring
+ polymer normal mode frequencies.
  This is particularly useful where non-zero frequency components of the
  correlation functions are important, as the ring polymer normal mode frequencie
 s in this case will contaminate the spectrum.
