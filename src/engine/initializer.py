@@ -109,15 +109,17 @@ class Initializer(dobject):
 
       ibeads = simul.beads
       icell = simul.cell
+
+      ratoms = []
+      rcell = None
+      rbeads = Beads(0,0)
+
       for (k,v) in self.queue:
          if k == "file" :
             # initialize from file
             # in this case 'v' is a InitFile instance.
 
             rfile = open(v.filename,"r")
-            ratoms = []
-            rcell = None
-            rbeads = Beads(0,0)
             if (v.format == "xyz"):
                while True:
                #while loop, so that more than one configuration can be given
@@ -229,16 +231,16 @@ class Initializer(dobject):
             except:
                ibeads.names = gbeads.names
 
-         if k=="cell":
-            # TODO work out a cleaner Cell object which can work for NPT, NVT etc
-            rcell=v
+         if k == "cell":
+            rcell = v
 
             if icell.V > 0.0:
                print "WARNING: initialize from <cell> overwrites previous cell configuration"
 
             if rcell.V > 0.0:
-               icell.h=rcell.h
-            else: ValueError("Could not initialize the cell configuration from <initialize>.")
+               icell.h = rcell.h
+            else:
+               ValueError("Could not initialize the cell configuration from <initialize>.")
 
 
          if k == "resample_v":

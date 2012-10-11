@@ -15,7 +15,7 @@
       <socket mode="unix">
          <address>wrap-pi</address>   <port>31415</port>    <slots>4</slots> <latency>0.001</latency>
       </socket>
-   </force>
+   </forces>
    <cell shape='(3,3)'>
        [ 44.660, 5.71316101504e-15, 5.71316101504e-15,
          0.0, 44.660,  5.71316101504e-15, 

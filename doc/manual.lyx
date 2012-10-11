@@ -2079,6 +2079,22 @@ Testing
 \end_layout
 
 \begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+label{tests}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
 Several test cases are distributed with the code to ensure that your distributio
 n is working correctly.
  There are also simple tests to see if the driver codes are working correctly.
@@ -4125,7 +4141,7 @@ Dynamical property calculations
 \end_layout
 
 \begin_layout Standard
-As well as calculating static properties, as shown in section
+As well as calculating the static properties shown in section
 \begin_inset ERT
 status open
 
@@ -4138,8 +4154,92 @@ ref{propertyfile}
 
 \end_inset
 
-, you can also use the PIMD formalism to calculate approximate dynamical
+, the wrapper code is capable of calculating approximations to dynamical
  properties such as correlation functions.
+ Currently, two different techniques have been implemented for this, ring
+ polymer molecular dynamics (RPMD)
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+cite{crai-mano04jcp}
+\end_layout
+
+\end_inset
+
+ and partially adiabatic centroid molecular dynamics (PA-CMD)
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+cite{habe+08jcp}
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+RPMD uses the trajectories generated during a PIMD run to calculate correlation
+ functions, so is straightforward to use.
+ The largest difference between RPMD and PIMD is that stochastic thermostats
+ usually disrupt the particle motion too much to be used in dynamical property
+ calculations.
+ An example of one way to run an RPMD simulation is given in one of the
+ test directories, as explained in section
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+~
+\backslash
+ref{tests}
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+PA-CMD uses different dynamics to calculate correlation functions.
+ In particular, the ring polymer bead masses are scaled so as to shift the
+ ring polymer normal mode frequencies.
+ This is particularly useful where non-zero frequency components of the
+ correlation functions are important, as the ring polymer normal mode frequencie
+s in this case will contaminate the spectrum.
+ PA-CMD avoids this by shifting these frequencies out of the frequency range
+ of interest.
+\end_layout
+
+\begin_layout Standard
+PA-CMD dynamics can be used by adjusting the 
+\begin_inset Quotes eld
+\end_inset
+
+mode
+\begin_inset Quotes erd
+\end_inset
+
+ attribute of the 
+\begin_inset Quotes eld
+\end_inset
+
+normal_modes
+\begin_inset Quotes erd
+\end_inset
+
+ tag.
+ Normal modes takes an array argument, which can be used to specify how
+ the ring polymer normal mode frequencies are defined.
 \end_layout
 
 \begin_layout Chapter

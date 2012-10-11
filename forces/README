@@ -24,4 +24,4 @@ $ qsub launch_multi.sh 31413
 
  * To run all the RPMD driver codes, simply do: 
 
-$ for a in `seq 31411 31415`; do qsub launch.sh $a; done
+$ for a in `seq 31411 31415`; do qsub launch_multi.sh $a; done
