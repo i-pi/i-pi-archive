@@ -447,9 +447,26 @@ ref{run}
 
 \end_inset
 
- we explain the procedure for running simulations with the appropriate features,
- and the form of the input and output files.
+ we explain the procedure for running simulations, and the form of the input
+ and output files.
  
+\end_layout
+
+\begin_layout Itemize
+In chapter
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+~
+\backslash
+ref{overview}
+\end_layout
+
+\end_inset
+
+, we explain some of the features of the wrapper code.
 \end_layout
 
 \begin_layout Itemize
@@ -860,6 +877,20 @@ test: Contains examples that can be used to make sure the build has been
 Dependency detection and automatic property caching
 \end_layout
 
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+%MOVE THIS SECTION SOMEWHERE ELSE!!!!!!!
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
 \begin_layout Subsection
 Rationale
 \end_layout
@@ -992,9 +1023,9 @@ wrappi
 
 \end_inset
 
- code is only a wrapper code; it only runs the molecular dynamics loop and
- does not calculate the force and potential acting on each particle.
- To do this 
+ code is only a wrapper code; it only runs the molecular dynamics algorithms
+ and does not calculate the force and potential acting on each particle.
+ To complete a time step then, 
 \begin_inset ERT
 status open
 
@@ -1149,9 +1180,8 @@ Data transfer
 \begin_layout Standard
 To make the transfer as fast as possible, the data is transferred in binary
  format.
- The transfer protocol is to send a header string of 12 characters specifying
- the stage of the data transfer, followed if necessary by data, then wait
- for data to be returned.
+ Each communication consists of a header string of 12 characters specifying
+ the stage of the data transfer, if necessary followed by data.
  We use 4-bit integers, 8-bit floats and 12 character strings for the transfer.
  A typical step is of the form:
 \end_layout
@@ -1267,35 +1297,15 @@ Parallelization
 This type of data transfer is well suited to working with PIMD, as it allows
  multiple driver codes to connect to the server socket of one simulation,
  so that different replicas of the system can be assigned to different driver
- codes so their forces can be computed in parallel.
+ codes and their forces computed in parallel.
 \end_layout
 
 \begin_layout Standard
 In the case that there are as many driver codes as replicas of the system,
  this is very simple, as each replica will be assigned its own driver code.
- For 
-\begin_inset ERT
-status open
-
-\begin_layout Plain Layout
-
-
-\backslash
-emph{ab initio}
-\end_layout
-
-\end_inset
-
- potentials the slowdown due to the socket communication is not appreciable,
- and in this case the force calculation will essentially be as fast as a
- purely classical simulation, although it will use more computational resources.
- 
-\end_layout
-
-\begin_layout Standard
-In subsequent steps, the interface will attempt to assign a particular replica
- of the system to the same driver code which calculated the forces for it
- the last step.
+ In subsequent steps, the interface will attempt to assign a particular
+ replica of the system to the same driver code which calculated the forces
+ for it the last step.
  This reduces the change in the particle positions between calculations
  on a particular driver code, allowing the code to do the next calculation
  more efficiently.
@@ -1309,12 +1319,26 @@ In the case where there are fewer driver codes than beads, the socket interface
 \end_layout
 
 \begin_layout Standard
+In general, we want to choose the number of driver codes to be a divisor
+ of the total number of replicas of the system, as otherwise there will
+ be idle driver codes at the end of each step.
+\end_layout
+
+\begin_layout Standard
 This is especially useful when the calculations are being run on a cluster.
  In this case, you can split up the driver codes, and they will connect
  whenever they reach the front of the queue.
  More driver codes can connect at any time, and if there is a problem and
  any driver code dies, it is simply removed from the driver list and any
  job it was running reassigned.
+\end_layout
+
+\begin_layout Subsection
+ssh tunnelling
+\end_layout
+
+\begin_layout Standard
+PUT SOMETHING HERE MICHELE! (I don't even know how to do that...)
 \end_layout
 
 \begin_layout Chapter
@@ -2055,6 +2079,22 @@ Testing
 \end_layout
 
 \begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+label{tests}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
 Several test cases are distributed with the code to ensure that your distributio
 n is working correctly.
  There are also simple tests to see if the driver codes are working correctly.
@@ -2435,7 +2475,7 @@ Running a simulation
 
 \begin_layout Standard
 A simulation is run by first running a wrapper code as above, and then connectin
-g to the socket with one or more driver codes.
+g to the server socket with one or more driver codes.
  For a small simulation, with a simple classical potential, it may be preferable
  to run both halves of the simulation on the same computer, especially as
  this allows us to use the faster unix domain sockets.
@@ -2495,12 +2535,6 @@ end{verbatim}
 \end_layout
 
 \begin_layout Standard
-In general, we want to choose the number of driver codes to be a divisor
- of the total number of replicas of the system, as otherwise there will
- be idle driver codes at the end of each step.
-\end_layout
-
-\begin_layout Standard
 For most simulations, especially those running with expensive ab initio
  forces and potentials, we will want to run the code on a computational
  cluster.
@@ -2523,6 +2557,17 @@ The only modification required to the above code to do this is to change
  The usual process required to do this is to write a shell script which
  runs the driver codes, then use a program such as qsub to submit this job
  to the cluster.
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+%Better explanation of this, please...
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Subsection
@@ -2530,9 +2575,9 @@ Running multiple simulations
 \end_layout
 
 \begin_layout Standard
-While running one simulation is useful, the power of the socket communications
- method is most aptly demonstrated when multiple simulations are run at
- once.
+While running a single simulation is useful, the power of the socket communicati
+ons method is most aptly demonstrated when multiple simulations are run
+ at once.
 \end_layout
 
 \begin_layout Standard
@@ -2544,8 +2589,8 @@ Firstly, the wrapper code is dormant until a driver code connects to the
 \end_layout
 
 \begin_layout Standard
-Secondly, each different simulation can be kept separate very easily, by
- just adjusting the port number of each parallel simulation.
+Secondly, each different simulation can be kept separate very easily by
+ just adjusting the port number of each simulation.
  This is very easy to write a shell script to do.
  For example, if we assume the simulations will be run in directories called
  sim_1, sim_2, etc., then we can write:
@@ -2619,12 +2664,14 @@ This will replace a string
 \begin_inset Quotes eld
 \end_inset
 
-XXXX
+XXX
 \begin_inset Quotes erd
 \end_inset
 
  in a template file with a port number, which will be different for each
  simulation.
+ However, note that this will only work if you are using inet sockets, as
+ the port number is silently ignored for unix sockets.
 \end_layout
 
 \begin_layout Section
@@ -3273,8 +3320,8 @@ status open
 
 
 \backslash
-begin{verbatim}<h units=`angstrom'> ...
- </h>
+begin{verbatim}<cell units=`angstrom'> ...
+ </cell>
 \backslash
 end{verbatim}
 \end_layout
@@ -3305,6 +3352,22 @@ output
 
 \begin_layout Subsection
 Property file
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+label{propertyfile}
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -3429,7 +3492,7 @@ status open
 
 
 \backslash
-begin{verbatim}<trajectory stride=`' filename=`' format=`'>
+begin{verbatim}<trajectory stride=`' filename=`' format=`' cell_units=`'>
 \end_layout
 
 \begin_layout Plain Layout
@@ -3454,7 +3517,7 @@ properties
 \begin_inset Quotes erd
 \end_inset
 
- tag, but it has the additional tag 
+ tag, but it has the additional tags 
 \begin_inset Quotes eld
 \end_inset
 
@@ -3462,8 +3525,17 @@ format
 \begin_inset Quotes erd
 \end_inset
 
- to specify the format of the output trajectory file, and only one trajectory
- can be specified.
+ and 
+\begin_inset Quotes eld
+\end_inset
+
+cell_units
+\begin_inset Quotes erd
+\end_inset
+
+, and only one trajectory can be specified.
+ `format' specifies the format of the output file, and `cell_units' specifies
+ the units in which the cell dimensions are output.
  Depending on the chosen trajectory to output, it will either print a file
  for each bead or just for each atom.
  If the trajectory is output for each bead, then the output file will not
@@ -3526,7 +3598,7 @@ Checkpoint files
 As well as the above output files, the state of the system at a particular
  time step can also be saved to file.
  This gives a valid input file, with all the information required to restore
- the state of the system to what it was when the restart file was created.
+ the state of the system to how it was when the restart file was created.
  The syntax is:
 \begin_inset ERT
 status open
@@ -3573,7 +3645,7 @@ properties
 \end_inset
 
  tags, but instead of having a value which specifies what to output, the
- value simply gives the current step.
+ value simply gives a number to identify which checkpoint is which.
  There is also one additional attribute 
 \begin_inset Quotes eld
 \end_inset
@@ -3596,6 +3668,26 @@ filename
  files.
 \end_layout
 
+\begin_layout Standard
+If there is no need to specify the `step' parameter, the following syntax
+ also works:
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}<checkpoint stride=`' filename=`' overwrite=`'/>
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
 \begin_layout Subsection
 Restart file
 \end_layout
@@ -3616,7 +3708,7 @@ RESTART
 .
 \end_layout
 
-\begin_layout Subsubsection
+\begin_layout Subsection
 Soft exit
 \end_layout
 
@@ -3631,8 +3723,8 @@ EXIT
 \end_inset
 
  in the directory in which you are running the code.
- The thread will automatically detect this and safely shut down the program,
- outputting the correct 
+ The thread handler will automatically detect this and safely shut down
+ the program, outputting the correct 
 \begin_inset Quotes eld
 \end_inset
 
@@ -3653,6 +3745,510 @@ An important point to note is that since each time step is split into several
  is created must correspond to the state of the system at the start of the
  step.
  To this end, the state of the system is saved at the start of every step.
+\end_layout
+
+\begin_layout Chapter
+Feature overview
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+label{overview}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Ring polymer contraction
+\end_layout
+
+\begin_layout Standard
+Often, we will want to take a description of the system in terms of a certain
+ number of beads and instead represent it with a different number of beads.
+ In the wrapper this is done using a ring polymer contraction scheme
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+cite{mark-mano08jcp}
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+This works by matching the normal mode amplitudes of the old ring polymer
+ with those of the new ring polymer.
+ The normal modes are matched in ascending frequency order, until either
+ all the ring polymer normal modes of the new ring polymer have been assigned
+ a frequency, or all the original ring polymer normal modes have been used.
+ Any remaining normal mode amplitudes are set to zero.
+\end_layout
+
+\begin_layout Standard
+This is used in two different cases:
+\end_layout
+
+\begin_layout Itemize
+Initializing a simulation from a previous simulation with a different number
+ of beads.
+\end_layout
+
+\begin_layout Itemize
+Calculating the long range part of the electronic potential with a reduced
+ number of beads.
+\end_layout
+
+\begin_layout Standard
+While the first of these is fairly self-explanatory, the second of these
+ is more complicated.
+ To understand this, consider an empirical potential model that can be split
+ into a short-ranged potential and a long-ranged potential, where the long-range
+d part of the potential is slowly varying in space.
+ This means that the long-ranged part of the potential will require fewer
+ beads to converge the calculated potential energy than the short-ranged
+ part, as it only varies slightly over the ring polymer length scale.
+ 
+\end_layout
+
+\begin_layout Standard
+Also, let us suppose that the calculation of the long-range terms is the
+ computational bottleneck, as they are more numerous than the short-range
+ terms.
+ In this case calculating the long-range part of the potential on a contracted
+ ring polymer will have a large effect on the simulation time, even if the
+ short-range part is calculated on the full ring polymer.
+ Therefore this technique allows us to speed up the simulation without sacrifici
+ng accuracy.
+\end_layout
+
+\begin_layout Standard
+Once the force, potential and virial have been calculated using the reduced
+ ring polymer, the resulting force and virial vectors are transformed back
+ to their original size, before being used to propagate the trajectory of
+ the full ring polymer.
+\end_layout
+
+\begin_layout Standard
+To specify the number of beads that the system should be initialized to,
+ the 
+\begin_inset Quotes eld
+\end_inset
+
+nbeads
+\begin_inset Quotes erd
+\end_inset
+
+ attribute of the 
+\begin_inset Quotes eld
+\end_inset
+
+initialize
+\begin_inset Quotes erd
+\end_inset
+
+ tag simply needs to be set to the appropriate value in the input file.
+ This will take whatever configuration is specified in the initilialization
+ and use the above transformation to give a new configuration with the correct
+ number of beads.
+ Similarly, each forcefield can be calculated on any number of beads by
+ setting the 
+\begin_inset Quotes eld
+\end_inset
+
+nbeads
+\begin_inset Quotes erd
+\end_inset
+
+ attribute to the appropriate value.
+\end_layout
+
+\begin_layout Section
+Constant temperature simulations
+\end_layout
+
+\begin_layout Standard
+There are a variety of different stochastic thermostats implemented within
+ the wrapper.
+ All the algorithms that are used in the wrapper are based on either the
+ Langevin equation
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+~
+\backslash
+cite{plangevin1908cras}
+\end_layout
+
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+%perhaps a more relevant citation required here as well?
+\end_layout
+
+\end_inset
+
+ or stochastic velocity rescaling
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+~
+\backslash
+cite{buss-parr08cpc}
+\end_layout
+
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Standard
+The Langevin thermostat is a local thermostat, so couples to each degree
+ of freedom, whereas the stochastic velocity rescaling is a global algorithm,
+ so is only coupled to the total kinetic energy.
+ Global thermostats are less disruptive to the dynamics, so are less efficient
+ than local thermostats for converging local properties but are much better
+ for calculations that require reorganisation of the structure, such as
+ dielectric constants
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+~
+\backslash
+cite{ceri+10jcp}
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+The path integral Langevin equation (PILE) thermostat
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+~
+\backslash
+cite{ceri+10jcp}
+\end_layout
+
+\end_inset
+
+ adapts these algorithms for PIMD simulations, and may be either local or
+ global.
+ 
+It uses 
+\lang english
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{A priori}
+\end_layout
+
+\end_inset
+
+ estimates for the friction coefficients of the thermostats coupled to the
+ internal ring polymer normal modes, so this is much more effective for
+ path integral calculations than standard stochastic thermostats.
+\end_layout
+
+\begin_layout Standard
+Constant temperature simulations can be run by setting the 
+\begin_inset Quotes eld
+\end_inset
+
+type
+\begin_inset Quotes erd
+\end_inset
+
+ attribute of the 
+\begin_inset Quotes eld
+\end_inset
+
+ensemble
+\begin_inset Quotes erd
+\end_inset
+
+ tag to 
+\begin_inset Quotes eld
+\end_inset
+
+nvt
+\begin_inset Quotes erd
+\end_inset
+
+, and the 
+\begin_inset Quotes eld
+\end_inset
+
+thermostat
+\begin_inset Quotes erd
+\end_inset
+
+ tag specifies how the thermostat is defined.
+\end_layout
+
+\begin_layout Subsection
+Generalized Langevin equation thermostats
+\end_layout
+
+\begin_layout Standard
+The Langevin equation can be generalized to include non-Markovian effects,
+ so that the stochastic step of the algorithm requires information from
+ previous timesteps.
+ This is however very difficult to implement in practice.
+\end_layout
+
+\begin_layout Standard
+However, this can be shown to be mathematically equivalent to a Markovian
+ algorithm in an extended momentum phase space
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+~
+\backslash
+cite{ceri+09jctc}
+\end_layout
+
+\end_inset
+
+.
+ This is much simpler to implement, and is more useful than the standard
+ Langevin algorithm for two reasons.
+\end_layout
+
+\begin_layout Standard
+Firstly, there are a large number of adjustable parameters, so the thermostat
+ can be fine-tuned to efficiently sample all the vibrational frequencies
+ present in the system rather than just a small range of frequencies.
+\end_layout
+
+\begin_layout Standard
+Secondly, the algorithm does not need to obey the fluctuation-dissipation
+ theorem.
+ The ensemble that is sampled can therefore be adjusted manually.
+ For example, using information from the harmonic limit, this thermostat
+ can attempt to enforce the appropriate quantum ensemble during a low bead
+ PIMD simulation
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+~
+\backslash
+cite{ceri+11jcp}
+\end_layout
+
+\end_inset
+
+, increasing the rate of convergence with respect to the number of beads
+ used.
+\end_layout
+
+\begin_layout Section
+Constant pressure simulations
+\end_layout
+
+\begin_layout Standard
+Constant pressure simulations are also possible within the wrapper.
+ There is one barostat currently implemented
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+~
+\backslash
+cite{buss+09jcp}
+\end_layout
+
+\end_inset
+
+, which is designed to be used in combination with stochastic thermostating,
+ so is only suitable for simulations where both the pressure and temperature
+ are held constant.
+ Note that these algorithms allow the system box size to fluctuate, which
+ can cause problems for some driver codes if variable cell dynamics have
+ not been implemented.
+\end_layout
+
+\begin_layout Standard
+Constant pressure simulations can be run by setting the 
+\begin_inset Quotes eld
+\end_inset
+
+type
+\begin_inset Quotes erd
+\end_inset
+
+ attribute of the 
+\begin_inset Quotes eld
+\end_inset
+
+ensemble
+\begin_inset Quotes erd
+\end_inset
+
+ tag to 
+\begin_inset Quotes eld
+\end_inset
+
+npt
+\begin_inset Quotes erd
+\end_inset
+
+, and the 
+\begin_inset Quotes eld
+\end_inset
+
+barostat
+\begin_inset Quotes erd
+\end_inset
+
+ tag specifies how the barostat is defined.
+\end_layout
+
+\begin_layout Section
+Dynamical property calculations
+\end_layout
+
+\begin_layout Standard
+As well as calculating the static properties shown in section
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+~
+\backslash
+ref{propertyfile}
+\end_layout
+
+\end_inset
+
+, the wrapper code is capable of calculating approximations to dynamical
+ properties such as correlation functions.
+ Currently, two different techniques have been implemented for this, ring
+ polymer molecular dynamics (RPMD)
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+~
+\backslash
+cite{crai-mano04jcp}
+\end_layout
+
+\end_inset
+
+ and partially adiabatic centroid molecular dynamics (PA-CMD)
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+~
+\backslash
+cite{habe+08jcp}
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+RPMD uses the trajectories generated during a PIMD run to calculate correlation
+ functions, so is straightforward to use.
+ The largest difference between RPMD and PIMD is that stochastic thermostats
+ usually disrupt the particle motion too much to be used in the calculation
+ of dynamical properties.
+ An example of one way to run an RPMD simulation is given in one of the
+ test directories, as explained in section
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+~
+\backslash
+ref{tests}
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+PA-CMD uses different dynamics to calculate correlation functions.
+ In particular, the ring polymer bead masses are scaled, shifting the ring
+ polymer normal mode frequencies.
+ This is particularly useful where non-zero frequency components of the
+ correlation functions are important, as the ring polymer normal mode frequencie
+s in this case will contaminate the spectrum.
+ PA-CMD avoids this by shifting these frequencies out of the frequency range
+ of interest.
+\end_layout
+
+\begin_layout Standard
+PA-CMD dynamics can be used by adjusting the 
+\begin_inset Quotes eld
+\end_inset
+
+mode
+\begin_inset Quotes erd
+\end_inset
+
+ attribute of the 
+\begin_inset Quotes eld
+\end_inset
+
+normal_modes
+\begin_inset Quotes erd
+\end_inset
+
+ tag.
+ Normal modes takes an array argument, which can be used to specify how
+ the ring polymer normal mode frequencies are defined.
 \end_layout
 
 \begin_layout Chapter
