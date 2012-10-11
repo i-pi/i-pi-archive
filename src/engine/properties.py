@@ -948,10 +948,13 @@ class Trajectories(dobject):
       """
 
       cq = self[what]
-      if getkey(what) in [ "positions", "velocities", "forces" ] :
+      if getkey(what) in [ "extras" ] :
+         stream.write(" #*EXTRAS*# Step:  %10d  Bead:  %5d  \n" % (self.simul.step+1, b) )
+         stream.write(cq[b])
+         stream.write("\n")
+         return
+      elif getkey(what) in [ "positions", "velocities", "forces" ] :
          self.fatom.q[:] = cq[b]
-      elif getkey(what) in [ "extras" ] :
-         print cq[b] #STUB. must print out bead b
       else: self.fatom.q[:] = cq
 
       fcell = Cell()
