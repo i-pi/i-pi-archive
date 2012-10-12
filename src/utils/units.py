@@ -214,6 +214,11 @@ UnitMap = {
       "angstrom"     : 1.8897261,
       "meter"        : 1.8897261e+10
       },
+   "volume" :     {
+      ""             : 1.00,
+      "atomic_unit"  : 1.00,
+      "angstrom3"    : 6.748334231,
+      },
    "velocity":    {
       ""            : 1.00,
       "atomic_unit" : 1.00,
@@ -239,7 +244,7 @@ UnitMap = {
    "density" : {
       ""             : 1.00,
       "atomic_unit"  : 1.00,
-      "g/cm^3"       : 0.0061473157
+      "g_ml"       : 0.0061473157
       },
     "force" : {
       ""             : 1.00,

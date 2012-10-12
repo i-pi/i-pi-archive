@@ -568,7 +568,11 @@ class Properties(dobject):
 
       mode = int(mode)
       gleke = 0.0
-      s = depstrip(self.ensemble.thermostat.s)
+      try:
+         s = depstrip(self.ensemble.thermostat.s)
+      except AttributeError:
+         return 0.0
+
       if len(s.shape) < 2:
          raise NameError("gle_ke called without a gle thermostat")
       elif len(s.shape) == 2:
@@ -610,7 +614,7 @@ class Properties(dobject):
          kyama = ((1.0 + dbeta)*vplus - (1.0 - dbeta)*vminus)/(2*dbeta) - v0
          kyama += 0.5*Constants.kb*self.ensemble.temp*(3*self.beads.natoms)
 
-         if (fd_delta < 0 and abs((vplus + vminus)/(v0*2) - 1.0) > _DEFAULT_FDERROR and dbeta > _DEFAULT_MINFID):
+         if (fd_delta < 0 and abs((vplus + vminus)/(v0*2) - 1.0) > self._DEFAULT_FDERROR and dbeta > self._DEFAULT_MINFID):
             dbeta *= 0.5
             print "Reducing displacement in Yamamoto kinetic estimator"
             continue
@@ -700,7 +704,7 @@ class Properties(dobject):
          for b in range(self.beads.nbeads):
             tcv += np.dot( (self.dbeads.q[b,3*i:3*(i+1)]-self.dbeads.qc[3*i:3*(i+1)]),
                           self.dforces.f[b,3*i:3*(i+1)] )
-         tcv *= -0.5/self.simul.nbeads
+         tcv *= -0.5/self.beads.nbeads
          tcv += 1.5*Constants.kb*self.simul.ensemble.temp
 
          logr = (self.dforces.pot-self.forces.pot)/(Constants.kb*self.simul.ensemble.temp*self.beads.nbeads)
@@ -792,7 +796,7 @@ class Properties(dobject):
          tcv = 0.0
          for b in range(self.beads.nbeads):
             tcv += np.dot( (q[b,3*i:3*(i+1)]-qc[3*i:3*(i+1)]), f[b,3*i:3*(i+1)])
-         tcv *= -0.5/self.simul.nbeads
+         tcv *= -0.5/self.beads.nbeads
          tcv += 1.5*Constants.kb*self.simul.ensemble.temp
 
          logr = (alpha-1)*spr/(Constants.kb*self.simul.ensemble.temp*self.beads.nbeads)
