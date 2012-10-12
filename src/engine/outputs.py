@@ -200,7 +200,8 @@ class TrajectoryOutput(dobject):
          for b in range(self.simul.beads.nbeads):
             padb = ( ("%0" + str(int(1 + np.floor(np.log(self.simul.beads.nbeads)/np.log(10)))) + "d") % (b) )
             try:
-               self.out.append( open(self.filename + "_" + padb + "." + self.format, "a") )
+               if getkey(self.what) == "extras" : self.out.append( open(self.filename + "_" + padb, "a") )
+               else: self.out.append( open(self.filename + "_" + padb + "." + self.format, "a") )
             except:
                raise ValueError("Could not open file " + self.filename + "_" + padb + "." + self.format + " for output")
       else:
