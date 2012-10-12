@@ -148,6 +148,8 @@
             enddo
             call writebuffer(socket,buffer,3*nat*8)
             call writebuffer(socket,vir,9*8)
+            nat=0
+            call writebuffer(socket,nat,4)            
             hasdata=.false.            
 
          else
