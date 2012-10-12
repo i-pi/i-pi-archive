@@ -6,9 +6,9 @@ initialising the system.
 Run using:
       python main.py input_file.xml
 
-Where 'input_file.xml' should be replaced by the name of the xml input_file from
-which the system data will be read. For a description of the input file, see the
-reference manual.
+Where 'input_file.xml' should be replaced by the name of the xml input file from
+which the system data will be read. For a description of how the input file 
+should be formatted, see the reference manual.
 
 Functions:
    main: Runs the simulation.
