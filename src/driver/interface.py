@@ -303,14 +303,15 @@ class Driver(socket.socket):
       #! Machinery to return a string as an "extra" field. Comment if you are using a old patched driver that does not return anything!
       mlen = np.int32()
       mlen = self.recvall(mlen)
-      if mlen>0 :
+      if mlen > 0 :
          mxtra = np.zeros(mlen,np.character)
          mxtra = self.recvall(mxtra)
          mxtra = "".join(mxtra)      
-      else: mxtra=""
+      else:
+         mxtra = ""
             
       #!TODO must set up a machinery to intercept the "extra" return field
-      return [mu, mf, mvir, mxtra ]
+      return [mu, mf, mvir, mxtra]
 
 
 class Interface(object):

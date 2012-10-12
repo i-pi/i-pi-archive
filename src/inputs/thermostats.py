@@ -160,3 +160,20 @@ class InputThermo(Input):
       thermo.ethermo = self.ethermo.fetch()
 
       return thermo
+
+   def check(self):
+      """Checks that the parameter arrays represents a valid thermostat."""
+
+      super(InputThermo,self).check()
+
+      if self.kind.fetch() in ["langevin", "svr", "pile_l", "pile_g", "nm_gle_g"]:
+         if self.tau.fetch() <= 0:
+            raise ValueError("The thermostat friction coefficient must be set to a positive value") 
+      if self.kind.fetch() in ["gle", "nm_gle", "nm_gle_g"]:
+         rA = self.A.fetch().copy()
+         rAT = rA.T
+         if not ((rA + rAT) > 0).all():
+            print "Warning, A+A.T is not positive definite. Check that GLE parameters are correct."
+         if not len(self.C.fetch()) == 0:
+            if not ((self.C.fetch()) > 0).all():
+               raise ValueError("The covariance matrix must be positive definite in GLE algorithm.")

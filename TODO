@@ -42,7 +42,7 @@ DONE ***  Move the synchro business out of Beads and into NormalModes (MC) (MC)
 
 ** More in general, rationalize and clean up the available properties and trajectories. (MC)
 
-** We should add a check function to InputThermo (JM)
+DONE ** We should add a check function to InputThermo (JM) (JM)
 
 ***  Benchmark the new property implementation. (MC)
 Completely revamped properties and trajectories scheme. 
@@ -84,3 +84,5 @@ DONE ** Add property and trajectory help string to the manual (JM) (JM)
 DONE *** Re-write the input files for all the test directories. (JM) (JM)
 
 DONE ** Add read cell from (A, B, C) and (alpha, beta, gamma) (JM) (JM)
+
+** Try to find a way to stop the socket blocking when you try to restart a simulation. (JM)
