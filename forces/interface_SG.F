@@ -147,6 +147,10 @@
             enddo
             call writebuffer(socket,buffer,3*nat*8)
             call writebuffer(socket,vir,9*8)
+!            nat=12
+            nat=0
+            call writebuffer(socket,nat,4)
+!            call writebuffer(socket,"abcdefghijkl",nat)            
             hasdata=.false.            
          else
             write(*,*) "Now got ", header
