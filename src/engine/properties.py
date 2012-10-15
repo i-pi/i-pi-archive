@@ -41,7 +41,7 @@ def getkey(pstring):
 
    pa = pstring.find('(')
    if pa < 0:
-      pa=len(pstring)
+      pa = len(pstring)
    pu = pstring.find('{')
    if pu < 0:
       pu = len(pstring)
@@ -202,9 +202,10 @@ class Properties(dobject):
                       "help": "Gives one of the cell parameters. Takes arguments 'x' and 'v', which gives h[x,v]. By default gives h[0,0].",
                       'func': self.wrap_cell},
       "cell_h6": {    "dimension" : "length",
-                      "help": "Gives all the non-zero cell parameters, in the order hxx, hxy, hxz, hyy, hyz, hzz.",
+                      "help": "Gives all the non-zero cell parameters, in the order h_xx, h_xy, h_xz, h_yy, h_yz, h_zz.",
                       "size": 6,
                       'func': self.full_cell},
+#TODO Should we switch to the same order as kinetic_tens?
       "cell_abcABC": {"dimension" : "undefined",
                       "help": "Gives the lengths of the cell vectors and the angles between them in degrees as a list. Since there are a mixture of different units, these can only be output in atomic-units.",
                       "size": 6,
@@ -218,11 +219,12 @@ class Properties(dobject):
       "kinetic_md":  {"dimension" : "energy",
                       "help": "The classical kinetic energy of the simulation.",
                       'func': (lambda: self.nm.kin/self.beads.nbeads)},
+#TODO is that actually what we want for kinetic_md?
       "kinetic_cv":  {"dimension" : "energy",
                       "help": "The physical kinetic energy of the system.",
                       'func': self.get_kincv},
       "kinetic_tens":{"dimension" : "energy",
-                      "help" : "The Txx Tyy Tzz Txy Txz Tyz components of the kinetic energy tensor (c-v estimator).",
+                      "help" : "The T_xx T_yy T_zz T_xy T_xz T_yz components of the kinetic energy tensor (c-v estimator).",
                       "size" : 6,
                       "func" : self.get_ktens},
       "atom_x": {     "dimension" : "length",
@@ -255,8 +257,9 @@ class Properties(dobject):
                       "help": "The physical kinetic stress tensor of the system. Takes arguments 'x' and 'v', which gives kstress[x,v]. By default gives kstress[0,0].",
                       'func': self.get_kstresscv},
       "virial_cv": {  "dimension": "pressure",
-                      "help": "The physical virial tensor of the system. Takes arguments 'x' and 'v', which gives virial[x,v]. By default gives virial[0,0].",
+                      "help": "The physical virial stress tensor of the system. Takes arguments 'x' and 'v', which gives virial[x,v]. By default gives virial[0,0].",
                       'func': self.get_vircv},
+#Tensor versions of all of these as well?
       "gle_ke": {     "dimension": "energy",
                       "help": "Gives the kinetic energy associated with the additional degrees of freedom used in the GLE thermostat. Takes an argument 'mode' which gives the degree of freedom that is looked at, and defaults to 0.",
                       'func': self.get_gleke},
