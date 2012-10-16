@@ -44,7 +44,7 @@ DONE ***  Move the synchro business out of Beads and into NormalModes (MC) (MC)
 
 DONE ** We should add a check function to InputThermo (JM) (JM)
 
-***  Benchmark the new property implementation. (MC) (JM)
+DONE ***  Benchmark the new property implementation. (MC) (JM)
 Completely revamped properties and trajectories scheme. 
 Now it is possible to specify units and a short help string.
 
@@ -86,3 +86,5 @@ DONE *** Re-write the input files for all the test directories. (JM) (JM)
 DONE ** Add read cell from (A, B, C) and (alpha, beta, gamma) (JM) (JM)
 
 ** Try to find a way to stop the socket blocking when you try to restart a simulation. (JM)
+
+* Merge the io_xyz.py and io_pdb.py files (JM)

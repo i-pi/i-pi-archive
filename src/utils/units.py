@@ -183,8 +183,8 @@ UnitMap = {
       ""             : 1.00,
       "atomic_unit"  : 1.00,
       "electronvolt" : 0.036749326,
-      "j_mol"       : 0.00038087989,
-      "cal_mol"     : 0.0015946679,
+      "j_mol"        : 0.00000038087989,
+      "cal_mol"      : 0.0000015946679,
       "kelvin"       : 3.1668152e-06
       },
    "temperature":   {
@@ -198,10 +198,11 @@ UnitMap = {
       "second"       : 4.1341373e+16
       },
    "frequency" :   {   # TODO fill up units here
-                       # also, we may or may not need some 2*pi factors here
+                       # I'm currently using frequency units, this may need
+                       # to be changed to angular frequency units.
       ""             : 1.00,
       "atomic_unit"  : 1.00,
-      "inversecm"    : 4.5563353e-06,
+      "inversecm"    : 7.251632699e-07,
       "hertz"        : 2.4188843e-17
       },
    "ms-momentum" :   {   # TODO fill up units here (mass-scaled momentum)
@@ -244,12 +245,12 @@ UnitMap = {
    "density" : {
       ""             : 1.00,
       "atomic_unit"  : 1.00,
-      "g_ml"       : 0.0061473157
+      "g_ml"         : 162.67263
       },
     "force" : {
       ""             : 1.00,
       "atomic_unit"  : 1.00,
-      "newton"       : 8.2387218e-08
+      "newton"       : 12137805
       }
 
 }
