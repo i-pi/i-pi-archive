@@ -9,7 +9,7 @@
       <trajectory stride='10' filename='xtra'>extras</trajectory>
       <checkpoint stride='2000'/>
    </output>
-   <total_steps>200000</total_steps>
+   <total_steps>20</total_steps>
    <prng><seed>31415</seed></prng>
    <forces>
       <socket nbeads='4' mode="unix">
