@@ -170,10 +170,4 @@ class InputThermo(Input):
          if self.tau.fetch() <= 0:
             raise ValueError("The thermostat friction coefficient must be set to a positive value") 
       if self.kind.fetch() in ["gle", "nm_gle", "nm_gle_g"]:
-         rA = self.A.fetch().copy()
-         rAT = rA.T
-         if not ((rA + rAT) > 0).all():
-            print "Warning, A+A.T is not positive definite. Check that GLE parameters are correct."
-         if not len(self.C.fetch()) == 0:
-            if not ((self.C.fetch()) > 0).all():
-               raise ValueError("The covariance matrix must be positive definite in GLE algorithm.")
+         pass  # PERHAPS DO CHECKS THAT MATRICES SATISFY REASONABLE CONDITIONS (POSITIVE-DEFINITENESS, ETC)
