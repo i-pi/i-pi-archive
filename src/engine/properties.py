@@ -263,6 +263,7 @@ class Properties(dobject):
       "gle_ke": {     "dimension": "energy",
                       "help": "Gives the kinetic energy associated with the additional degrees of freedom used in the GLE thermostat. Takes an argument 'mode' which gives the degree of freedom that is looked at, and defaults to 0.",
                       'func': self.get_gleke},
+#This is currently horribly messy, and should probably be removed.
       "kin_yama": {   "dimension": "energy",
                       "help": "Gives the Yamamoto kinetic energy estimator. Takes one argument, 'fd_delta', which gives the value of the finite difference parameter used. It defaults to " + str(-self._DEFAULT_FINDIFF) + ".",
                       'func': self.get_kinyama},
@@ -866,9 +867,11 @@ class Trajectories(dobject):
       "springs": {   "dimension" : "energy",
                      "help": "Prints the spring potential for each atom, resolved into Cartesian components.",
                      'func': self.get_aspr},
+#This may be deprecated.
       "r_gyration": {"dimension" : "length",
                      "help": "Prints the radius of gyration for each atom.",
                      'func': (lambda : 1.0*self.simul.beads.rg)},
+#r_gyration might be more suitable as a property.
       "x_centroid": {"dimension" : "length",
                      "help": "Prints the centroid coordinates for each atom.",
                      'func': (lambda : 1.0*self.simul.beads.qc)},

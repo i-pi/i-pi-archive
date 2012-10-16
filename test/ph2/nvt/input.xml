@@ -1,5 +1,5 @@
 <simulation>
-   <initialize nbeads='4'>
+   <initialize nbeads='24'>
       <file format='pdb'> our_ref.pdb </file>
       <resample_v> 50 </resample_v>
    </initialize>
@@ -12,7 +12,7 @@
    <total_steps>200000</total_steps>
    <prng><seed>31415</seed></prng>
    <forces>
-      <socket nbeads='4' mode="unix">
+      <socket nbeads='24' mode="unix">
          <address>wrap-pi</address>   <port>31415</port>    <slots>4</slots> <latency>0.01</latency>
       </socket>
    </forces>

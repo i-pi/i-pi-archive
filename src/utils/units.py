@@ -202,7 +202,7 @@ UnitMap = {
                        # to be changed to angular frequency units.
       ""             : 1.00,
       "atomic_unit"  : 1.00,
-      "inversecm"    : 7.251632699e-06,
+      "inversecm"    : 7.251632699e-07,
       "hertz"        : 2.4188843e-17
       },
    "ms-momentum" :   {   # TODO fill up units here (mass-scaled momentum)
