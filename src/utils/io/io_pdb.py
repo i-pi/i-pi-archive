@@ -10,6 +10,7 @@ Functions:
 
 __all__ = ['print_pdb_path', 'print_pdb', 'read_pdb']
 
+import os
 import numpy as np
 import math, sys
 import utils.mathtools as mt
@@ -87,6 +88,7 @@ def print_pdb(atoms, cell, filedesc = sys.stdout, title=""):
 
    filedesc.write("END\n")
    filedesc.flush()
+   os.fsync(filedesc)
 
 def read_pdb(filedesc):
    """Takes a pdb-style file and creates an Atoms and Cell object.
