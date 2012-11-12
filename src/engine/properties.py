@@ -384,7 +384,7 @@ class Properties(dobject):
    def get_econs(self):
       """Calculates the conserved quantity estimator per bead."""
 
-      return self.ensemble.econs/(self.beads.nbeads*self.beads.natoms)
+      return self.ensemble.econs/(self.beads.nbeads)
 
    def get_stress(self, x=0, v=0):
       """Calculates the classical kinetic energy estimator.
