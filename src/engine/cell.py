@@ -14,6 +14,7 @@ from utils.depend import *
 from utils.mathtools import *
 from utils import units
 
+
 class Cell(dobject):
    """Base class to represent the simulation cell in a periodic system.
 
@@ -68,10 +69,34 @@ class Cell(dobject):
 
       s = np.dot(self.ih,atom.q)
 
+      
       for i in range(3):
          s[i] = s[i] - round(s[i])
 
       return np.dot(self.h,s)
+
+   def array_pbc(self, pos):
+      """Uses the minimum image convention to return a list of particles to the
+         unit cell.
+
+      Args:
+         atom: An Atom object.
+
+      Returns:
+         An array giving the position of the image that is inside the
+         system box.
+      """
+
+      s = pos.copy()
+      s.shape=(len(pos)/3,3)
+
+      s = np.dot(self.ih,s.T)
+      s = s - np.round(s)
+
+      s=np.dot(self.h,s).T
+
+      pos=s.reshape((len(s)*3))
+
 
    def minimum_distance(self, atom1, atom2):
       """Takes two atoms and tries to find the smallest vector between two
