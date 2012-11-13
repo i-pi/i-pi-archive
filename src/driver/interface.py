@@ -566,10 +566,8 @@ class Interface(object):
          freec.remove(c)
 
       pendr = self.requests[:]
-      for r in self.requests:
-         if r["status"] != "Queued":
-            pendr.remove(r)
-
+      pendr = [ r for r in self.requests if r["status"] == "Queued" ]
+      
       for fc in freec[:] :
          matched = False
          # first, makes sure that the client is REALLY free
@@ -610,7 +608,7 @@ class Interface(object):
                   self.jobs.append([r,fc])
                   fc.locked =  (fc.lastreq is r["id"])
                   matched = True
-                  pendr.remove(r)
+                  pendr = [ nr for nr in pendr if (not nr is r) ] # removes r from the list of pending jobs
                   break
                else:
                   print " @SOCKET:   (2) Client is in an unexpected status ",fc.status,". Will try to keep calm and carry on."
