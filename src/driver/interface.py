@@ -440,8 +440,9 @@ class Interface(object):
          par_str = " "
 
       # APPLY PBC (perhaps should make this optional)
-      pbcpos=depstrip(atoms.q).copy()
+      pbcpos=depstrip(atoms.q).copy()      
       cell.array_pbc(pbcpos);
+      print np.dot(depstrip(atoms.q).copy()-pbcpos,depstrip(atoms.q).copy()-pbcpos)
       
       newreq = {"pos": pbcpos, "cell": cell, "pars": par_str,
                 "result": None, "status": "Queued", "id": reqid,
@@ -482,7 +483,8 @@ class Interface(object):
             self.clients.remove(c)
             for [k,j] in self.jobs[:]:
                if j is c:
-                  self.jobs.remove([k,j])
+                  self.jobs = [ w for w in self.jobs if not ( w[0] is k and w[1] is j ) ] # removes pair in a robust way
+                  #self.jobs.remove([k,j])
                   k["status"] = "Queued"
                   k["start"] = -1
 
@@ -548,7 +550,8 @@ class Interface(object):
                continue
             r["status"] = "Done"
             c.lastreq = r["id"] # saves the ID of the request that the client has just processed
-            self.jobs.remove([r,c])
+            self.jobs = [ w for w in self.jobs if not ( w[0] is r and w[1] is c ) ] # removes pair in a robust way                  
+            #self.jobs.remove([r,c])
 
          if self.timeout > 0 and r["start"] > 0 and time.time() - r["start"] > self.timeout:
             print " @SOCKET:  request for bead ", r["id"], " has been running for ", time.time() - r["start"]
