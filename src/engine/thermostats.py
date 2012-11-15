@@ -375,12 +375,7 @@ class ThermoSVR(Thermostat):
       return math.exp(-0.5*self.dt/self.tau)
 
    def get_K(self):
-      """Calculates the total kinetic energy scaling factor.
-
-      As everywhere the total kinetic energy is used in the algorithm it is
-      scaled by a factor of 2*beta, this factor is calculated here for
-      convenience.
-      """
+      """Calculates the average kinetic energy per degree of freedom."""
 
       return Constants.kb*self.temp*0.5
 
