@@ -43,8 +43,8 @@ class Thermostat(dobject):
    classes.
 
    Attributes:
-      prng: A pseudo random number generator object.
-      ndof: The number of degrees of freedom the thermostat will be coupled to.
+      prng:   A pseudo random number generator object.
+      fixdof: The number of degrees of freedom that will be constrained.
 
    Depend objects:
       dt: The time step used in the algorithms. Depends on the simulation dt.
@@ -72,7 +72,7 @@ class Thermostat(dobject):
       dset(self,"dt",     depend_value(name='dt', value=dt))
       dset(self,"ethermo",depend_value(name='ethermo',value=ethermo))
 
-   def bind(self, beads=None, atoms=None, pm=None, prng=None, ndof=None):
+   def bind(self, beads=None, atoms=None, pm=None, prng=None, fixdof=None):
       """Binds the appropriate degrees of freedom to the thermostat.
 
       This takes an object with degrees of freedom, and makes their momentum
@@ -89,10 +89,8 @@ class Thermostat(dobject):
             conjugate mass.
          prng: An optional pseudo random number generator object. Defaults to
             Random().
-         ndof: An optional integer which can specify the total number of
-            degrees of freedom. Defaults to len(p). Used if conservation of
-            linear momentum is being applied, as this removes three degrees of
-            freedom.
+         fixdof: An optional integer which can specify the number of constraints
+            applied to the system. Defaults to zero.
 
       Raises:
          TypeError: Raised if no appropriate degree of freedom or object
@@ -117,10 +115,10 @@ class Thermostat(dobject):
       else:
          raise TypeError("Thermostat.bind expects either Beads, Atoms, NormalModes, or a (p,m) tuple to bind to")
 
-      if ndof is None:
+      if fixdof is None:
          self.ndof = len(self.p)
       else:
-         self.ndof = ndof
+         self.ndof = len(self.p) - fixdof
 
       dset(self, "sm",
          depend_array(name="sm", value=np.zeros(len(dget(self,"m"))),
@@ -237,7 +235,7 @@ class ThermoPILE_L(Thermostat):
       super(ThermoPILE_L,self).__init__(temp,dt,ethermo)
       dset(self,"tau",depend_value(value=tau,name='tau'))
 
-   def bind(self, nm=None, prng=None, bindcentroid=True, ndof=None):
+   def bind(self, nm=None, prng=None, bindcentroid=True, fixdof=None):
       """Binds the appropriate degrees of freedom to the thermostat.
 
       This takes a beads object with degrees of freedom, and makes its momentum
@@ -257,10 +255,9 @@ class ThermoPILE_L(Thermostat):
             thermostat is attached to the centroid mode of each atom
             separately, or the total kinetic energy. Defaults to True, which
             gives a thermostat bound to each centroid momentum.
-         ndof: An optional integer which can specify the total number of
-            degrees of freedom. Defaults to len(p). Used if conservation of
-            linear momentum is being applied, as this removes three degrees of
-            freedom.
+         fixdof: An optional integer which can specify the number of constraints
+            applied to the system. Defaults to zero.
+
 
       Raises:
          TypeError: Raised if no appropriate degree of freedom or object
@@ -300,10 +297,10 @@ class ThermoPILE_L(Thermostat):
             it += 1
             continue
          if it > 0:
-            ndof = None # only the centroid thermostat may have ndof!=3Nat
+            fixdof = None # only the centroid thermostat may have constraints
 
          # bind thermostat t to the it-th bead
-         t.bind(pm=(nm.pnm[it,:],nm.dynm3[it,:]),prng=self.prng, ndof=ndof)
+         t.bind(pm=(nm.pnm[it,:],nm.dynm3[it,:]),prng=self.prng, fixdof=fixdof)
          # pipes temp and dt
          deppipe(self,"temp", t, "temp")
          deppipe(self,"dt", t, "dt")
@@ -452,7 +449,7 @@ class ThermoPILE_G(ThermoPILE_L):
 
       super(ThermoPILE_G,self).__init__(temp,dt,tau,ethermo)
 
-   def bind(self, nm=None, prng=None, ndof=None):
+   def bind(self, nm=None, prng=None, fixdof=None):
       """Binds the appropriate degrees of freedom to the thermostat.
 
       This takes a beads object with degrees of freedom, and makes its momentum
@@ -469,21 +466,20 @@ class ThermoPILE_G(ThermoPILE_L):
             from.
          prng: An optional pseudo random number generator object. Defaults to
             Random().
-         ndof: An optional integer which can specify the total number of
-            degrees of freedom. Defaults to len(p). Used if conservation of
-            linear momentum is being applied, as this removes three degrees of
-            freedom.
+         fixdof: An optional integer which can specify the number of constraints
+            applied to the system. Defaults to zero.
+
       """
 
       # first binds as a local PILE, then substitutes the thermostat on the centroid
       prev_ethermo = self.ethermo
-      super(ThermoPILE_G,self).bind(nm=nm,prng=prng,bindcentroid=False, ndof=ndof)
+      super(ThermoPILE_G,self).bind(nm=nm,prng=prng,bindcentroid=False, fixdof=fixdof)
 
       #centroid thermostat
       self._thermos[0] = ThermoSVR(temp=1, dt=1, tau=1)
 
       t = self._thermos[0]
-      t.bind(pm=(nm.pnm[0,:],nm.dynm3[0,:]),prng=self.prng, ndof=ndof)
+      t.bind(pm=(nm.pnm[0,:],nm.dynm3[0,:]),prng=self.prng, fixdof=fixdof)
       deppipe(self,"temp", t, "temp")
       deppipe(self,"dt", t, "dt")
       deppipe(self,"tau", t, "tau")
@@ -591,7 +587,7 @@ class ThermoGLE(Thermostat):
 
       self.s = np.zeros(0)
 
-   def bind(self, beads=None, atoms=None, pm=None, prng=None, ndof=None):
+   def bind(self, beads=None, atoms=None, pm=None, prng=None, fixdof=None):
       """Binds the appropriate degrees of freedom to the thermostat.
 
       This takes an object with degrees of freedom, and makes their momentum
@@ -608,10 +604,8 @@ class ThermoGLE(Thermostat):
             conjugate mass.
          prng: An optional pseudo random number generator object. Defaults to
             Random().
-         ndof: An optional integer which can specify the total number of
-            degrees of freedom. Defaults to len(p). Used if conservation of
-            linear momentum is being applied, as this removes three degrees of
-            freedom.
+         fixdof: An optional integer which can specify the number of constraints
+            applied to the system. Defaults to zero.
 
       Raises:
          TypeError: Raised if no appropriate degree of freedom or object
@@ -619,7 +613,7 @@ class ThermoGLE(Thermostat):
             the thermostat to couple to.
       """
 
-      super(ThermoGLE,self).bind(beads,atoms,pm,prng,ndof)
+      super(ThermoGLE,self).bind(beads,atoms,pm,prng,fixdof)
 
       # allocates, initializes or restarts an array of s's
       if self.s.shape != (self.ns + 1, len(dget(self,"m"))):
@@ -711,7 +705,7 @@ class ThermoNMGLE(Thermostat):
       else:
          dset(self,"C",depend_value(value=C.copy(),name='C'))
 
-   def bind(self, nm=None, prng=None, ndof=None):
+   def bind(self, nm=None, prng=None, fixndof=None):
       """Binds the appropriate degrees of freedom to the thermostat.
 
       This takes an object with degrees of freedom, and makes their momentum
@@ -725,10 +719,8 @@ class ThermoNMGLE(Thermostat):
             vectors from.
          prng: An optional pseudo random number generator object. Defaults to
             Random().
-         ndof: An optional integer which can specify the total number of
-            degrees of freedom. Defaults to len(p). Used if conservation of
-            linear momentum is being applied, as this removes three degrees of
-            freedom.
+         fixdof: An optional integer which can specify the number of constraints
+            applied to the system. Defaults to zero.
 
       Raises:
          TypeError: Raised if no beads object is specified for
@@ -831,7 +823,7 @@ class ThermoNMGLEG(ThermoNMGLE):
       super(ThermoNMGLEG,self).__init__(temp, dt, A, C, ethermo)
       dset(self,"tau",depend_value(value=tau,name='tau'))
 
-   def bind(self, nm=None, prng=None, ndof=None):
+   def bind(self, nm=None, prng=None, fixdof=None):
       """Binds the appropriate degrees of freedom to the thermostat.
 
       This takes an object with degrees of freedom, and makes their momentum
@@ -845,13 +837,11 @@ class ThermoNMGLEG(ThermoNMGLE):
             vectors from.
          prng: An optional pseudo random number generator object. Defaults to
             Random().
-         ndof: An optional integer which can specify the total number of
-            degrees of freedom. Defaults to len(p). Used if conservation of
-            linear momentum is being applied, as this removes three degrees of
-            freedom.
+         fixdof: An optional integer which can specify the number of constraints
+            applied to the system. Defaults to zero.
       """
 
-      super(ThermoNMGLEG,self).bind(nm, pm, prng, ndof)
+      super(ThermoNMGLEG,self).bind(nm, pm, prng, fixdof)
 
       t = ThermoSVR(self.temp, self.dt, self.tau)
 
