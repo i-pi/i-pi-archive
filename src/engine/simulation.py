@@ -152,21 +152,27 @@ class Simulation(dobject):
             o.write()
          self.step = 0
 
+      tottime = 0.0
       # main MD loop
       for self.step in range(self.step,self.tsteps):
          # stores the state before doing a step.
          # this is a bit time-consuming but makes sure that we can honor soft
          # exit requests without screwing the trajectory
+         
+         
+         tottime = -time.time()
          self.chk.store()
 
          self.ensemble.step()
-         print " # MD step % 7d complete. Timings --> p-step: %10.5f  q-step: %10.5f  t-step: %10.5f" % (self.step, self.ensemble.ptime, self.ensemble.qtime, self.ensemble.ttime )
-         print " # MD diagnostics: V: %10.5e    Kcv: %10.5e   Ecns: %10.5e" % (self.properties["potential"], self.properties["kinetic_cv"], self.properties["conserved"] )
-
+         
          for o in self.outputs:
             o.write()
 
          if os.path.exists("EXIT"): # soft-exit
             self.soft_exit(rollback=False)
+            
+         tottime+=time.time()
+         print " # MD step % 7d complete. Timings -->  %10.5e [p: %10.5e  q: %10.5e  t: %10.5e]" % (self.step, tottime, self.ensemble.ptime, self.ensemble.qtime, self.ensemble.ttime )
+         print " # MD diagnostics: V: %10.5e    Kcv: %10.5e   Ecns: %10.5e" % (self.properties["potential"], self.properties["kinetic_cv"], self.properties["conserved"] )
 
       self.soft_exit(rollback=False)
