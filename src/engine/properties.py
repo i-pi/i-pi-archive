@@ -384,7 +384,7 @@ class Properties(dobject):
    def get_econs(self):
       """Calculates the conserved quantity estimator per bead."""
 
-      return self.ensemble.econs/(self.beads.nbeads*self.beads.natoms)
+      return self.ensemble.econs/(self.beads.nbeads)
 
    def get_stress(self, x=0, v=0):
       """Calculates the classical kinetic energy estimator.
@@ -974,3 +974,5 @@ class Trajectories(dobject):
          io_pdb.print_pdb(self.fatom, fcell, stream, title=("Traj: %s Step:  %10d  Bead:   %5d " % (what, self.simul.step+1, b) ) )
       elif format == "xyz":
          io_xyz.print_xyz(self.fatom, fcell, stream, title=("Traj: %s Step:  %10d  Bead:   %5d " % (what, self.simul.step+1, b) ) )
+      elif format == "bin":
+         io_binary.print_bin(self.fatom, fcell, stream, title=("Traj: %s Step:  %10d  Bead:   %5d " % (what, self.simul.step+1, b) ) )

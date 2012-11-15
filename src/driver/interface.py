@@ -24,6 +24,7 @@ Exceptions:
 __all__ = ['Message', 'Disconnected', 'InvalidStatus', 'Status', 'Driver', 'Interface']
 
 import socket, select, threading, signal, string, os, time
+from utils.depend import depstrip
 import numpy as np
 
 HDRLEN = 12
@@ -236,11 +237,11 @@ class Driver(socket.socket):
       else:
          raise InvalidStatus("Status in init was " + self.status)
 
-   def sendpos(self, atoms, cell):
+   def sendpos(self, pos, cell):
       """Sends the position and cell data to the driver.
 
       Args:
-         atoms: An Atoms object giving the atom positions.
+         pos: An array containing the atom positions.
          cell: A cell object giving the system box.
 
       Raises:
@@ -252,8 +253,8 @@ class Driver(socket.socket):
             self.sendall(Message("posdata"))
             self.sendall(cell.h, 9*8)
             self.sendall(cell.ih, 9*8)
-            self.sendall(np.int32(len(atoms)))
-            self.sendall(atoms.q, len(atoms)*3*8)
+            self.sendall(np.int32(len(pos)/3))
+            self.sendall(pos, len(pos)*8)
          except:
             self.poll()
             return
@@ -438,9 +439,15 @@ class Interface(object):
       else:
          par_str = " "
 
-      newreq = {"atoms": atoms, "cell": cell, "pars": par_str,
+      # APPLY PBC (perhaps should make this optional)
+      pbcpos=depstrip(atoms.q).copy()      
+      cell.array_pbc(pbcpos);      
+      
+      newreq = {"pos": pbcpos, "cell": cell, "pars": par_str,
                 "result": None, "status": "Queued", "id": reqid,
                 "start": -1 }
+
+
       self.requests.append(newreq)
       return newreq
 
@@ -475,7 +482,8 @@ class Interface(object):
             self.clients.remove(c)
             for [k,j] in self.jobs[:]:
                if j is c:
-                  self.jobs.remove([k,j])
+                  self.jobs = [ w for w in self.jobs if not ( w[0] is k and w[1] is j ) ] # removes pair in a robust way
+                  #self.jobs.remove([k,j])
                   k["status"] = "Queued"
                   k["start"] = -1
 
@@ -541,7 +549,8 @@ class Interface(object):
                continue
             r["status"] = "Done"
             c.lastreq = r["id"] # saves the ID of the request that the client has just processed
-            self.jobs.remove([r,c])
+            self.jobs = [ w for w in self.jobs if not ( w[0] is r and w[1] is c ) ] # removes pair in a robust way                  
+            #self.jobs.remove([r,c])
 
          if self.timeout > 0 and r["start"] > 0 and time.time() - r["start"] > self.timeout:
             print " @SOCKET:  request for bead ", r["id"], " has been running for ", time.time() - r["start"]
@@ -559,10 +568,8 @@ class Interface(object):
          freec.remove(c)
 
       pendr = self.requests[:]
-      for r in self.requests:
-         if r["status"] != "Queued":
-            pendr.remove(r)
-
+      pendr = [ r for r in self.requests if r["status"] == "Queued" ]
+      
       for fc in freec[:] :
          matched = False
          # first, makes sure that the client is REALLY free
@@ -596,14 +603,14 @@ class Interface(object):
                   while fc.status & Status.Busy: # waits for initialization to finish. hopefully this is fast
                      fc.poll()
                if fc.status & Status.Ready:
-                  fc.sendpos(r["atoms"], r["cell"])
+                  fc.sendpos(r["pos"], r["cell"])
                   r["status"] = "Running"
                   r["start"] = time.time() # sets start time for the request
                   fc.poll()
                   self.jobs.append([r,fc])
                   fc.locked =  (fc.lastreq is r["id"])
                   matched = True
-                  pendr.remove(r)
+                  pendr = [ nr for nr in pendr if (not nr is r) ] # removes r from the list of pending jobs
                   break
                else:
                   print " @SOCKET:   (2) Client is in an unexpected status ",fc.status,". Will try to keep calm and carry on."

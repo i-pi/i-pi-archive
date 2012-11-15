@@ -279,17 +279,17 @@ class NVTEnsemble(NVEEnsemble):
       """
 
       super(NVTEnsemble,self).bind(beads, nm, cell, bforce, prng)
-      ndof = None
+      fixdof = None
       if self.fixcom:
-         ndof = 3*(self.beads.natoms-1)
+         fixdof = 3
 
       #decides whether the thermostat will work in the normal mode or
       #the bead representation.
       if isinstance(self.thermostat,ThermoNMGLE) or isinstance(self.thermostat,ThermoNMGLEG) or isinstance(self.thermostat,ThermoPILE_L) or isinstance(self.thermostat,ThermoPILE_G):
-         self.thermostat.bind(nm=self.nm,prng=prng,ndof=ndof )
+         self.thermostat.bind(nm=self.nm,prng=prng,fixdof=fixdof )
       else:
-         self.thermostat.bind(beads=self.beads,prng=prng,ndof=ndof )
-
+         self.thermostat.bind(beads=self.beads,prng=prng, fixdof=fixdof) 
+      
       deppipe(self,"ntemp", self.thermostat,"temp")
       deppipe(self,"dt", self.thermostat, "dt")
 

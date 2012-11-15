@@ -9,6 +9,7 @@ Classes:
    CheckpointOutput: Deals with outputting restart files.
 """
 
+import os
 import numpy as np
 import inputs.simulation
 from utils.depend import *
@@ -131,6 +132,7 @@ class PropertyOutput(dobject):
 
       self.out.write("\n")
       self.out.flush()
+      os.fsync(self.out)  # we REALLY want to print out! pretty please OS let us do it.
 
 
 class TrajectoryOutput(dobject):

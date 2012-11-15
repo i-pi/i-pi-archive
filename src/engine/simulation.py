@@ -66,7 +66,7 @@ class Simulation(dobject):
       Args:
          beads: A beads object giving the atom positions.
          cell: A cell object giving the system box.
-         forces: A forcefield object giving the force calculator for each 
+         forces: A forcefield object giving the force calculator for each
             replica of the system.
          ensemble: An ensemble object giving the objects necessary for
             producing the correct ensemble.

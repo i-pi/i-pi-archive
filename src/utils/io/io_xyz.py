@@ -9,6 +9,7 @@ Functions:
 
 __all__ = ['print_xyz_path', 'print_xyz', 'read_xyz']
 
+import os
 import numpy as np
 import math, sys
 from utils.depend import depstrip
@@ -65,6 +66,7 @@ def print_xyz(atoms, cell, filedesc = sys.stdout, title=""):
    for i in range(natoms):
       filedesc.write("%8s %12.5e %12.5e %12.5e\n" % (lab[i],qs[3*i],qs[3*i+1],qs[3*i+2]))
    filedesc.flush()
+   os.fsync(filedesc)
 
 def read_xyz(filedesc):
    """Takes a xyz-style file and creates an Atoms object.

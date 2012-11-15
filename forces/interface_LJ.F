@@ -80,8 +80,10 @@
          else if (trim(header) == "INIT") then     
             call readbuffer(socket, nat, 4)
             call readbuffer(socket, parbuffer, nat)
-            eps = 1.1663e-4
-            sigma = 5.270446
+            !eps = 1.1663e-4
+            !sigma = 5.270446
+            eps=1.0
+            sigma=1.0
             !correction = 4*eps*((sigma/rc)**12 - (sigma/rc)**6)
             correction=0
             rn=rc*1.2
