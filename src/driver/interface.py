@@ -175,7 +175,7 @@ class Driver(socket.socket):
       if (blen > len(self._buf)):
          self._buf.resize(blen)
       bpos = 0
-      ntimeout=0
+      ntimeout = 0
 
       while bpos < blen:
          timeout = False
@@ -188,7 +188,7 @@ class Driver(socket.socket):
          except socket.timeout:
             print " @SOCKET:   Timeout in status recvall, trying again!"
             timeout = True
-            ntimeout+=1
+            ntimeout += 1
             if ntimeout > NTIMEOUT:
                print " @SOCKET:  Couldn't receive within ", NTIMEOUT, " attempts. Time to give up!"
                raise Disconnected()
@@ -440,7 +440,7 @@ class Interface(object):
          par_str = " "
 
       # APPLY PBC (perhaps should make this optional)
-      pbcpos=depstrip(atoms.q).copy()      
+      pbcpos = depstrip(atoms.q).copy()      
       cell.array_pbc(pbcpos);      
       
       newreq = {"pos": pbcpos, "cell": cell, "pars": par_str,

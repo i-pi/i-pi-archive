@@ -87,4 +87,4 @@ DONE ** Add read cell from (A, B, C) and (alpha, beta, gamma) (JM) (JM)
 
 ** Try to find a way to stop the socket blocking when you try to restart a simulation. (JM)
 
-* Merge the io_xyz.py and io_pdb.py files (JM)
+* Merge the io_xyz.py, io_binary.py and io_pdb.py files (JM)

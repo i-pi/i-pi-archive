@@ -415,12 +415,12 @@ class ThermoSVR(Thermostat):
       else:
          rg = 2.0*self.prng.gamma((self.ndof-2)/2) + self.prng.g**2
 
-      alpha2 = self.et+self.K/K*(1-self.et)*(r1**2 + rg) + 2.0*r1*math.sqrt(self.K/K*self.et*(1-self.et))
+      alpha2 = self.et + self.K/K*(1 - self.et)*(r1**2 + rg) + 2.0*r1*math.sqrt(self.K/K*self.et*(1 - self.et))
       alpha = math.sqrt(alpha2)
-      if (r1 + math.sqrt(2*K/self.K*self.et/(1-self.et))) < 0:
+      if (r1 + math.sqrt(2*K/self.K*self.et/(1 - self.et))) < 0:
          alpha *= -1
 
-      self.ethermo += K*(1-alpha2)
+      self.ethermo += K*(1 - alpha2)
       self.p *= alpha
 
 

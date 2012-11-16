@@ -58,6 +58,13 @@ class InputForceBeads(Input):
 
       return ForceBeads(model=ForceField(), nbeads=self.nbeads.fetch(), weight=self.weight.fetch())
 
+   def check(self):
+      """Checks for optional parameters."""
+
+      super(self,Input).check()
+      if self.nbeads.fetch() < 0:
+         raise ValueError("The forces must be evaluated over a positive number of beads.")
+
 
 class InputFBSocket(InputForceBeads, InputInterface):
    """Creates a ForceBeads object with a socket interface.
@@ -96,6 +103,12 @@ class InputFBSocket(InputForceBeads, InputInterface):
 
       return ForceBeads(model=FFSocket( interface=InputInterface.fetch(self) ),nbeads=self.nbeads.fetch(),weight=self.weight.fetch() )
 
+   def check(self):
+      """Deals with optional parameters."""
+
+      InputInterface.check(self)
+      InputForceBeads.check(self)
+
 
 class InputForces(Input):
    """Deals with creating all the forcefield objects required in the
@@ -106,6 +119,8 @@ class InputForces(Input):
          the xml input file.
    """
 
+   #At the moment only socket driver codes implemented, other types
+   #could be used in principle
    dynamic = {  "socket" : (InputFBSocket, { "help" : InputFBSocket.default_help } )
             }
 
