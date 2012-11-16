@@ -372,12 +372,7 @@ class ThermoSVR(Thermostat):
       return math.exp(-0.5*self.dt/self.tau)
 
    def get_K(self):
-      """Calculates the total kinetic energy scaling factor.
-
-      As everywhere the total kinetic energy is used in the algorithm it is
-      scaled by a factor of 2*beta, this factor is calculated here for
-      convenience.
-      """
+      """Calculates the average kinetic energy per degree of freedom."""
 
       return Constants.kb*self.temp*0.5
 
@@ -420,12 +415,12 @@ class ThermoSVR(Thermostat):
       else:
          rg = 2.0*self.prng.gamma((self.ndof-2)/2) + self.prng.g**2
 
-      alpha2 = self.et+self.K/K*(1-self.et)*(r1**2 + rg) + 2.0*r1*math.sqrt(self.K/K*self.et*(1-self.et))
+      alpha2 = self.et + self.K/K*(1 - self.et)*(r1**2 + rg) + 2.0*r1*math.sqrt(self.K/K*self.et*(1 - self.et))
       alpha = math.sqrt(alpha2)
-      if (r1 + math.sqrt(2*K/self.K*self.et/(1-self.et))) < 0:
+      if (r1 + math.sqrt(2*K/self.K*self.et/(1 - self.et))) < 0:
          alpha *= -1
 
-      self.ethermo += K*(1-alpha2)
+      self.ethermo += K*(1 - alpha2)
       self.p *= alpha
 
 
@@ -705,7 +700,7 @@ class ThermoNMGLE(Thermostat):
       else:
          dset(self,"C",depend_value(value=C.copy(),name='C'))
 
-   def bind(self, nm=None, prng=None, fixndof=None):
+   def bind(self, nm=None, prng=None, fixdof=None):
       """Binds the appropriate degrees of freedom to the thermostat.
 
       This takes an object with degrees of freedom, and makes their momentum

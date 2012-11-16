@@ -80,8 +80,6 @@
             call readbuffer(socket, parbuffer, nat)
 
             isinit=.true.
-!            write(*,*) "LJ potential initialised with values eps=", 
-!     c          eps, ", sigma=",sigma, ", rc=", rc, ", rn=", rn
          else if (trim(header) == "POSDATA") then              
             call readbuffer(socket, cell%h, 9*8)
             call readbuffer(socket, cell%ih, 9*8)
@@ -123,7 +121,8 @@
             enddo
             call writebuffer(socket,buffer,3*nat*8)
             call writebuffer(socket,vir,9*8)
-            hasdata=.false.            
+            call writebuffer(socket,0,4) !No extra field, so send no data
+            hasdata=.false.
          else
             write(*,*) "Now got ", header
          end if

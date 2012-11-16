@@ -88,15 +88,14 @@ class Cell(dobject):
       """
 
       s = pos.copy()
-      s.shape=(len(pos)/3,3)
+      s.shape = (len(pos)/3,3)
 
       s = np.dot(self.ih,s.T)
       s = s - np.round(s)
 
-      s=np.dot(self.h,s).T
+      s = np.dot(self.h,s).T
 
-      pos=s.reshape((len(s)*3))
-
+      pos = s.reshape((len(s)*3))
 
    def minimum_distance(self, atom1, atom2):
       """Takes two atoms and tries to find the smallest vector between two
@@ -104,7 +103,8 @@ class Cell(dobject):
 
       This is only rigorously accurate in the case of a cubic cell,
       but gives the correct results as long as the cut-off radius is defined
-      as smaller than the smallest width between parallel faces.
+      as smaller than the smallest width between parallel faces even for 
+      triclinic cells.
 
       Args:
          atom1: An Atom object.

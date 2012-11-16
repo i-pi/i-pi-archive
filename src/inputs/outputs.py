@@ -60,6 +60,13 @@ class InputProperties(InputArray):
       self.flush.store(prop.flush)
       self.filename.store(prop.filename)
 
+   def check(self):
+      """Checks for optional parameters."""
+
+      super(InputProperties,self).check()
+      if self.stride.fetch() < 0:
+         raise ValueError("The stride length for the properties file output must be positive.")
+
 
 class InputTrajectory(InputValue):
    """Simple input class to describe output for trajectories.
@@ -113,6 +120,13 @@ class InputTrajectory(InputValue):
       self.filename.store(traj.filename)
       self.format.store(traj.format)
       self.cell_units.store(traj.cell_units)
+
+   def check(self):
+      """Checks for optional parameters."""
+
+      super(InputTrajectory,self).check()
+      if self.stride.fetch() < 0:
+         raise ValueError("The stride length for the trajectory file output must be positive.")
 
 
 class InputCheckpoint(InputValue):
@@ -169,7 +183,7 @@ class InputCheckpoint(InputValue):
       try:
          super(InputCheckpoint,self).parse(xml,text)
       except: #TODO make this except a specific exception, not every one
-         self.value=0  #This could hide actual errors, at least in theory.
+         self.value = 0  #This could hide actual errors, at least in theory.
 
    def store(self, chk):
       """Stores a CheckpointOutput object."""
@@ -178,6 +192,13 @@ class InputCheckpoint(InputValue):
       self.stride.store(chk.stride)
       self.filename.store(chk.filename)
       self.overwrite.store(chk.overwrite)
+
+   def check(self):
+      """Checks for optional parameters."""
+
+      super(InputCheckpoint,self).check()
+      if self.stride.fetch() < 0:
+         raise ValueError("The stride length for the checkpoint file output must be positive.")
 
 
 class InputOutputs(Input):
