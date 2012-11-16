@@ -36,7 +36,8 @@ class InputProperties(InputArray):
                                            "help": "The name of the file that the property information will be output to."} )
    attribs["stride"] = (InputAttribute,{ "dtype" : int, "default": 1,
                                          "help": "The number of steps between successive writes." } )
-
+   attribs["flush"] = (InputAttribute, {"dtype"    : int,    "default"  : 1,
+                                   "help"     : "How often should streams be flushed. 1 means each time, zero means never." })                                  
    def __init__(self, help=None,  default=None, dtype=None, dimension=None):
       """Initializes InputProperties.
 
@@ -48,13 +49,15 @@ class InputProperties(InputArray):
    def fetch(self):
       """Returns a PropertyOutput object."""
 
-      return engine.outputs.PropertyOutput(self.filename.fetch(), self.stride.fetch(), super(InputProperties,self).fetch())
+      return engine.outputs.PropertyOutput(filename=self.filename.fetch(),
+        stride=self.stride.fetch(), flush=self.flush.fetch(), outlist=super(InputProperties,self).fetch())
 
    def store(self, prop):
       """Stores a PropertyOutput object."""
 
       super(InputProperties,self).store(prop.outlist)
       self.stride.store(prop.stride)
+      self.flush.store(prop.flush)
       self.filename.store(prop.filename)
 
 
@@ -83,6 +86,8 @@ class InputTrajectory(InputValue):
                                        "help": "The output file format." } )
    attribs["cell_units"] = (InputAttribute,{ "dtype" : str, "default": "",
                                        "help": "The units for the cell dimensions." } )
+   attribs["flush"] = (InputAttribute, {"dtype"    : int,    "default"  : 1,
+                                   "help"     : "How often should streams be flushed. 1 means each time, zero means never." })
 
    def __init__(self, help=None,  default=None, dtype=None, dimension=None):
       """Initializes InputTrajectory.
@@ -95,14 +100,16 @@ class InputTrajectory(InputValue):
    def fetch(self):
       """Returns a TrajectoryOutput object."""
 
-      return engine.outputs.TrajectoryOutput(self.filename.fetch(), self.stride.fetch(),
-                     super(InputTrajectory,self).fetch(),self.format.fetch(), self.cell_units.fetch())
+      return engine.outputs.TrajectoryOutput(filename=self.filename.fetch(), stride=self.stride.fetch(),
+               flush=self.flush.fetch(), what=super(InputTrajectory,self).fetch(),
+               format=self.format.fetch(), cell_units=self.cell_units.fetch())
 
    def store(self, traj):
       """Stores a PropertyOutput object."""
 
       super(InputTrajectory,self).store(traj.what)
       self.stride.store(traj.stride)
+      self.flush.store(traj.flush)
       self.filename.store(traj.filename)
       self.format.store(traj.format)
       self.cell_units.store(traj.cell_units)

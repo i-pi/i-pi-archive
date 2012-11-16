@@ -27,14 +27,15 @@ class PropertyOutput(dobject):
    Attributes:
       filename: The name of the file to output to.
       outlist: A list of the properties to be output.
-      stride: The number of steps that should be taken between outputting the
+      stride: The number of steps that should be taken between outputting the      
          data to file.
+      flush: How often we should flush to disk.         
       out: The output stream on which to output the properties.
       simul: The simulation object to get the data to be output from.
    """
 
 
-   def __init__(self, filename="out", stride=1, outlist=None):
+   def __init__(self, filename="out", stride=1, flush=1, outlist=None):
       """Initializes a property output stream opening the corresponding
       file name.
 
@@ -52,6 +53,8 @@ class PropertyOutput(dobject):
       self.filename = filename
       self.outlist = np.asarray(outlist,np.dtype('|S1024'))
       self.stride = stride
+      self.flush=flush
+      self.nout=0
       self.out = None
 
    def bind(self, simul):
@@ -131,8 +134,12 @@ class PropertyOutput(dobject):
                self.out.write(write_type(float, el) + " ")
 
       self.out.write("\n")
-      self.out.flush()
-      os.fsync(self.out)  # we REALLY want to print out! pretty please OS let us do it.
+      
+      self.nout+=1
+      if self.flush>0 and self.nout>=self.flush :
+         self.out.flush()
+         os.fsync(self.out)  # we REALLY want to print out! pretty please OS let us do it.
+         self.nout=0
 
 
 class TrajectoryOutput(dobject):
@@ -153,7 +160,7 @@ class TrajectoryOutput(dobject):
       simul: The simulation object to get the data to be output from.
    """
 
-   def __init__(self, filename="out", stride=1, what="", format="xyz", cell_units="atomic_unit"):
+   def __init__(self, filename="out", stride=1, flush=1, what="", format="xyz", cell_units="atomic_unit"):
       """ Initializes a property output stream opening the corresponding
       file name.
 
@@ -163,6 +170,7 @@ class TrajectoryOutput(dobject):
          filename: A string giving the name of the file to be output to.
          stride: An integer giving how many steps should be taken between
             outputting the data to file.
+         flush: How often we should flush to disk
          what: A string specifying what trajectory should be output.
          format: A string specifying the type of trajectory file to be created.
          cell_units: A string specifying the units that the cell parameters are
@@ -172,9 +180,11 @@ class TrajectoryOutput(dobject):
       self.filename = filename
       self.what = what
       self.stride = stride
+      self.flush = flush
       self.format = format
       self.cell_units = cell_units
       self.out = None
+      self.nout = 0
 
    def bind(self, simul):
       """Binds output proxy to simulation object.
@@ -227,13 +237,17 @@ class TrajectoryOutput(dobject):
       if not (self.simul.step + 1) % self.stride == 0:
          return
 
+      doflush=False; self.nout+=1
+      if self.flush>0 and self.nout>=self.flush :
+         doflush=True; self.nout=0
+
       # quick-and-dirty way to check if a trajectory is "global" or per-bead
       # Checks to see if there is a list of files or just a single file.
       if hasattr(self.out, "__getitem__"):
          for b in range(len(self.out)):
-            self.simul.trajs.print_traj(self.what, self.out[b], b, format=self.format, cell_units=self.cell_units)
+            self.simul.trajs.print_traj(self.what, self.out[b], b, format=self.format, cell_units=self.cell_units, flush=doflush)
       else:
-         self.simul.trajs.print_traj(self.what, self.out, b=0, format=self.format, cell_units=self.cell_units)
+         self.simul.trajs.print_traj(self.what, self.out, b=0, format=self.format, cell_units=self.cell_units, flush=doflush)
 
 
 class CheckpointOutput(dobject):

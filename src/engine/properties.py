@@ -18,6 +18,7 @@ Functions:
 
 __all__ = ['Properties', 'Trajectories', 'getkey', 'getall', 'help_latex']
 
+import os
 import numpy as np
 import math, random
 from utils.depend import *
@@ -948,7 +949,7 @@ class Trajectories(dobject):
       else:
          return pkey["func"](*arglist)
 
-   def print_traj(self, what, stream, b=0, format="pdb", cell_units="atomic_unit"):
+   def print_traj(self, what, stream, b=0, format="pdb", cell_units="atomic_unit", flush=True):
       """Prints out a frame of a trajectory for the specified quantity and bead.
 
       Args:
@@ -976,3 +977,6 @@ class Trajectories(dobject):
          io_xyz.print_xyz(self.fatom, fcell, stream, title=("Traj: %s Step:  %10d  Bead:   %5d " % (what, self.simul.step+1, b) ) )
       elif format == "bin":
          io_binary.print_bin(self.fatom, fcell, stream, title=("Traj: %s Step:  %10d  Bead:   %5d " % (what, self.simul.step+1, b) ) )
+      if flush :
+         stream.flush()
+         os.fsync(stream)
