@@ -441,12 +441,11 @@ class Interface(object):
 
       # APPLY PBC (perhaps should make this optional)
       pbcpos = depstrip(atoms.q).copy()      
-      cell.array_pbc(pbcpos);      
+      cell.array_pbc(pbcpos)
       
       newreq = {"pos": pbcpos, "cell": cell, "pars": par_str,
                 "result": None, "status": "Queued", "id": reqid,
                 "start": -1 }
-
 
       self.requests.append(newreq)
       return newreq

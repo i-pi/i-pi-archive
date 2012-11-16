@@ -700,7 +700,7 @@ class ThermoNMGLE(Thermostat):
       else:
          dset(self,"C",depend_value(value=C.copy(),name='C'))
 
-   def bind(self, nm=None, prng=None, fixndof=None):
+   def bind(self, nm=None, prng=None, fixdof=None):
       """Binds the appropriate degrees of freedom to the thermostat.
 
       This takes an object with degrees of freedom, and makes their momentum
