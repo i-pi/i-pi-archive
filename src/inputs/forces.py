@@ -61,7 +61,7 @@ class InputForceBeads(Input):
    def check(self):
       """Checks for optional parameters."""
 
-      super(self,Input).check()
+      super(InputForceBeads,self).check()
       if self.nbeads.fetch() < 0:
          raise ValueError("The forces must be evaluated over a positive number of beads.")
 
