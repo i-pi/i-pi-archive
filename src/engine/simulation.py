@@ -48,6 +48,7 @@ class Simulation(dobject):
       ensemble: An ensemble object giving the objects necessary for producing
          the correct ensemble.
       tsteps: The total number of steps.
+      ttime: The wall clock time (in seconds).
       format: A string specifying both the format and the extension of traj
          output.
       outputs: A list of output objects that should be printed during the run
@@ -60,7 +61,7 @@ class Simulation(dobject):
       step: The current simulation step.
    """
 
-   def __init__(self, beads, cell, forces, ensemble, prng, outputs, nm, init, step=0, tsteps=1000):
+   def __init__(self, beads, cell, forces, ensemble, prng, outputs, nm, init, step=0, tsteps=1000, ttime=0):
       """Initialises Simulation class.
 
       Args:
@@ -96,6 +97,7 @@ class Simulation(dobject):
 
       dset(self, "step", depend_value(name="step", value=step))
       self.tsteps = tsteps
+      self.ttime = ttime
 
       self.properties = Properties()
       self.trajs = Trajectories()
@@ -152,7 +154,8 @@ class Simulation(dobject):
             o.write()
          self.step = 0
 
-      tottime = 0.0
+      steptime = 0.0
+      simtime =  time.time()
       # main MD loop
       for self.step in range(self.step,self.tsteps):
          # stores the state before doing a step.
@@ -160,7 +163,7 @@ class Simulation(dobject):
          # exit requests without screwing the trajectory
          
          
-         tottime = -time.time()
+         steptime = -time.time()
          self.chk.store()
 
          self.ensemble.step()
@@ -171,8 +174,12 @@ class Simulation(dobject):
          if os.path.exists("EXIT"): # soft-exit
             self.soft_exit(rollback=False)
             
-         tottime+=time.time()
-         print " # MD step % 7d complete. Timings -->  %10.5e [p: %10.5e  q: %10.5e  t: %10.5e]" % (self.step, tottime, self.ensemble.ptime, self.ensemble.qtime, self.ensemble.ttime )
+         steptime+=time.time()
+         print " # MD step % 7d complete. Timings -->  %10.5e [p: %10.5e  q: %10.5e  t: %10.5e]" % (self.step, steptime, self.ensemble.ptime, self.ensemble.qtime, self.ensemble.ttime )
          print " # MD diagnostics: V: %10.5e    Kcv: %10.5e   Ecns: %10.5e" % (self.properties["potential"], self.properties["kinetic_cv"], self.properties["conserved"] )
+                  
+         if (self.ttime > 0 and time.time()-simtime > self.ttime):
+            print " # Wall clock time expired! Bye bye"
+            break
 
       self.soft_exit(rollback=False)
