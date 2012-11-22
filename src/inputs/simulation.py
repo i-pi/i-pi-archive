@@ -49,7 +49,8 @@ class InputSimulation(Input):
       output: A list of the required outputs.
       prng: A random number generator object.
       step: An integer giving the current simulation step. Defaults to 0.
-      total_steps: The total number of steps. Defaults to 0.
+      total_steps: The total number of steps. Defaults to 1000
+      total_time:  The wall clock time limit. Defaults to 0 (no limit).
       initialize: An array of strings giving all the quantities that should
          be output.
    """
@@ -73,7 +74,10 @@ class InputSimulation(Input):
                                             "help"     : "How many time steps have been done." }),
              "total_steps": ( InputValue, { "dtype"    : int,
                                             "default"  : 1000,
-                                            "help"     : "The total number of steps that will be done." })
+                                            "help"     : "The total number of steps that will be done." }),
+             "total_time" :       ( InputValue, { "dtype"    : float,
+                                            "default"  : 0,
+                                            "help"     : "The wall clock time (in seconds)." }),
                                              }
 
    default_help = "This is the top level class that deals with the running of the simulation, including holding the simulation specific properties such as the time step and outputting the data."
@@ -97,6 +101,7 @@ class InputSimulation(Input):
       self.prng.store(simul.prng)
       self.step.store(simul.step)
       self.total_steps.store(simul.tsteps)
+      self.total_time.store(simul.ttime)
       self.output.store(simul.outputs)
 
    def fetch(self):
@@ -120,7 +125,8 @@ class InputSimulation(Input):
                self.forces.fetch(), self.ensemble.fetch(), self.prng.fetch(), 
                   self.output.fetch(), self.normal_modes.fetch(), 
                      self.initialize.fetch(), self.step.fetch(),
-                        tsteps=self.total_steps.fetch())
+                        tsteps=self.total_steps.fetch(),
+                        ttime=self.total_time.fetch())
 
       # this does all of the piping between the components of the simulation
       rsim.bind()
