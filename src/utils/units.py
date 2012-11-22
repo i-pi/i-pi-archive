@@ -1,7 +1,7 @@
 """Contains fundamental constants in atomic units.
 
 Classes:
-   Constants: Class whose members are fundamental contants.
+   Constants: Class whose members are fundamental constants.
    Elements: Class which contains the mass of different elements
    Units: Class which contains the methods needed to transform
       between different systems of units.
@@ -12,7 +12,7 @@ import re
 __all__ = ['Constants', 'Elements', 'unit_to_internal', 'unit_to_user' ]
 
 class Constants:
-   """Class whose members are fundamental contants.
+   """Class whose members are fundamental constants.
 
    Attributes:
       kb: Boltzmann constant.
@@ -174,7 +174,7 @@ class Elements(dict):
          print "Unknown element given, you must specify the mass"
          return -1.0
 
-# thes are the conversion FROM atomic units to the unit stated
+# these are the conversion FROM atomic units to the unit stated
 UnitMap = {
    "undefined": {
       ""             : 1.00
@@ -278,9 +278,25 @@ UnitPrefixRE = re.compile(UnitPrefixRE)
 ########################################################################
 
 def unit_to_internal(family, unit, number):
-   """ Converts a number of given dimensions and units into internal units. """
+   """Converts a number of given dimensions and units into internal units.
 
-   if not (family == "number"  or family in UnitMap):
+   Args:
+      unit: The units 'number' is originally in.
+      number: The value of the parameter in the units 'unit'.
+
+   Returns:
+      number: The number in internal units.
+
+   Raises:
+      ValueError: Raised if the user specified units aren't given in the
+         UnitMap dictionary.
+      IndexError: Raised if the programmer specified dimensionality for the
+         parameter isn't in UnitMap. Shouldn't happen, for obvious reasons.
+      TypeError: Raised if the prefix is correct, but the base unit is not, in
+         the user specified unit string.
+   """
+
+   if not (family == "number" or family in UnitMap):
       raise IndexError(family + " is an undefined units kind.")
    if family == "number":
       return number
@@ -304,6 +320,14 @@ def unit_to_internal(family, unit, number):
    return number*UnitMap[family][base]*UnitPrefix[prefix]
 
 def unit_to_user(family, unit, number):
-   """ Converts a number of given dimensions from internal to user units. """
+   """Converts a number of given dimensions from internal to user units.
+
+   Args:
+      unit: The units 'number' should be changed to.
+      number: The value of the parameter in internal units.
+
+   Returns:
+      The number in the user specified units
+   """
 
    return number/unit_to_internal(family, unit, 1.0)
