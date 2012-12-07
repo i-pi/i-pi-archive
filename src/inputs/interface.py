@@ -48,7 +48,11 @@ class InputInterface(Input):
    attribs = { "mode": (InputAttribute, {"dtype"    : str,
                                      "options"  : [ "unix", "inet" ],
                                      "default"  : "inet",
-                                     "help"     : "Specifies whether the driver interface will listen onto a internet socket [inet] or onto a unix socket [unix]." } )}
+                                     "help"     : "Specifies whether the driver interface will listen onto a internet socket [inet] or onto a unix socket [unix]." } ),
+               "pbc":  ( InputAttribute, { "dtype"   : bool,
+                                         "default" : True,
+                                         "help"    : "Applies periodic boundary conditions to thhe atoms coordinates before passing them on to the driver code." })
+              }
 
    default_help = "Specifies the parameters for the socket interface."
    default_label = "INTERFACE"
@@ -67,6 +71,7 @@ class InputInterface(Input):
       self.port.store(iface.port)
       self.slots.store(iface.slots)
       self.timeout.store(iface.timeout)
+      self.pbc.store(iface.dopbc)
 
    def fetch(self):
       """Creates an Interface object.
@@ -79,7 +84,7 @@ class InputInterface(Input):
       super(InputInterface,self).fetch()
       return Interface(address=self.address.fetch(), port=self.port.fetch(),
             slots=self.slots.fetch(), mode=self.mode.fetch(),
-            latency=self.latency.fetch(), timeout=self.timeout.fetch())
+            latency=self.latency.fetch(), timeout=self.timeout.fetch(), dopbc=self.pbc.fetch())
 
    def check(self):
       """Function that deals with optional arguments."""

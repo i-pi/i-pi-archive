@@ -300,17 +300,17 @@ class Driver(socket.socket):
 
       mvir = np.zeros((3,3),np.float64)
       mvir = self.recvall(mvir)
-      
+
       #! Machinery to return a string as an "extra" field. Comment if you are using a old patched driver that does not return anything!
       mlen = np.int32()
       mlen = self.recvall(mlen)
       if mlen > 0 :
          mxtra = np.zeros(mlen,np.character)
          mxtra = self.recvall(mxtra)
-         mxtra = "".join(mxtra)      
+         mxtra = "".join(mxtra)
       else:
          mxtra = ""
-            
+
       #!TODO must set up a machinery to intercept the "extra" return field
       return [mu, mf, mvir, mxtra]
 
@@ -344,7 +344,7 @@ class Interface(object):
       _poll_true: A boolean giving whether the thread is alive.
    """
 
-   def __init__(self, address="localhost", port=31415, slots=4, mode="unix", latency=1e-3, timeout=1.0):
+   def __init__(self, address="localhost", port=31415, slots=4, mode="unix", latency=1e-3, timeout=1.0, dopbc=True):
       """Initialises interface.
 
       Args:
@@ -368,6 +368,7 @@ class Interface(object):
       self.mode = mode
       self.latency = latency
       self.timeout = timeout
+      self.dopbc=dopbc
       self.softexit = None
       self._poll_thread = None
       self._prev_kill = {}
@@ -439,10 +440,11 @@ class Interface(object):
       else:
          par_str = " "
 
-      # APPLY PBC (perhaps should make this optional)
-      pbcpos = depstrip(atoms.q).copy()      
-      cell.array_pbc(pbcpos)
-      
+      # APPLY PBC -- this is useful for codes such as LAMMPS that don't do full PBC when computing distances
+      pbcpos = depstrip(atoms.q).copy()
+      if self.dopbc:
+         cell.array_pbc(pbcpos)
+
       newreq = {"pos": pbcpos, "cell": cell, "pars": par_str,
                 "result": None, "status": "Queued", "id": reqid,
                 "start": -1 }
@@ -548,7 +550,7 @@ class Interface(object):
                continue
             r["status"] = "Done"
             c.lastreq = r["id"] # saves the ID of the request that the client has just processed
-            self.jobs = [ w for w in self.jobs if not ( w[0] is r and w[1] is c ) ] # removes pair in a robust way                  
+            self.jobs = [ w for w in self.jobs if not ( w[0] is r and w[1] is c ) ] # removes pair in a robust way
             #self.jobs.remove([r,c])
 
          if self.timeout > 0 and r["start"] > 0 and time.time() - r["start"] > self.timeout:
@@ -568,7 +570,7 @@ class Interface(object):
 
       pendr = self.requests[:]
       pendr = [ r for r in self.requests if r["status"] == "Queued" ]
-      
+
       for fc in freec[:] :
          matched = False
          # first, makes sure that the client is REALLY free
