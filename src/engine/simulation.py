@@ -13,7 +13,7 @@ Classes:
 __all__ = ['Simulation']
 
 import numpy as np
-import math, random
+import math
 import os.path, sys
 from utils.depend import *
 from utils.units  import *
