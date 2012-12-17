@@ -8,7 +8,7 @@ Classes:
 __all__ = ['InputSimulation']
 
 import numpy as np
-import math, random
+import math
 import os.path, sys
 from utils.depend import *
 from utils.inputvalue import *

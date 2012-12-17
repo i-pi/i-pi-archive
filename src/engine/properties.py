@@ -20,7 +20,7 @@ __all__ = ['Properties', 'Trajectories', 'getkey', 'getall', 'help_latex']
 
 import os
 import numpy as np
-import math, random
+import math
 from utils.depend import *
 from utils.units import Constants, unit_to_internal, unit_to_user
 from utils.mathtools import logsumlog, h2abc
