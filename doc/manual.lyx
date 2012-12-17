@@ -196,6 +196,15 @@ newcommand{
 DFT}{Quantum Espresso, CP2K, CPMD and FHI-AIMS}
 \end_layout
 
+\begin_layout Plain Layout
+
+
+\backslash
+newcommand{
+\backslash
+empirical}{LAMMPS}
+\end_layout
+
 \end_inset
 
 
@@ -359,6 +368,19 @@ status open
 
 \backslash
 DFT
+\end_layout
+
+\end_inset
+
+ and the classical code 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+empirical
 \end_layout
 
 \end_inset
@@ -675,9 +697,8 @@ Driver compatibility
 
 \begin_layout Standard
 There are currently patches available for Quantum Espresso version 4.3.2 and
- CP2K version 2.2.
- Both patches have been added to the current developement branches of these
- codes, and should be included as standard in newer versions.
+ CP2K version 2.2.The patch for Quantum Espresso also works with version 5.0
+ with minor modifications.
 \end_layout
 
 \begin_layout Standard
@@ -1338,7 +1359,7 @@ ssh tunnelling
 \end_layout
 
 \begin_layout Standard
-PUT SOMETHING HERE MICHELE! (I don't even know how to do that...)
+PUT SOMETHING HERE MICHELE! (I don't know how to do that...)
 \end_layout
 
 \begin_layout Chapter
@@ -1625,6 +1646,8 @@ Additionally, most driver codes will have their own software requirements.
  will need a modern fortran compiler.
  Most will also need to be linked with some mathematical libraries, such
  as BLAS, FFTW and LAPACK.
+ Installation instructions should be provided as part of the code distribution
+ and on the appropriate website.
 \end_layout
 
 \begin_layout Section
@@ -2032,7 +2055,12 @@ begin{verbatim}
 
 \begin_layout Plain Layout
 
-> patch -p1 < $src_dir/patches/pwscf
+> cd $esp_vers
+\end_layout
+
+\begin_layout Plain Layout
+
+> patch -p1 < $src_dir/patches/pwscf/pw-driver.patch
 \end_layout
 
 \begin_layout Plain Layout
@@ -2063,11 +2091,6 @@ www.quantum-espress.org/
 \end_inset
 
 .
-\end_layout
-
-\begin_layout Standard
-Later versions of the code already have driver functionality, and so no
- patch needs to be applied before compiling.
 \end_layout
 
 \begin_layout Subsection
@@ -3309,7 +3332,7 @@ units
 
  attribute.
  For example, if you wanted to specify the cell parameters in units of angstrom
- rather than bohr radii, then in the input file you would specify:
+ rather than bohr radii then in the input file you would specify:
 \end_layout
 
 \begin_layout Standard
@@ -3538,8 +3561,8 @@ cell_units
  the units in which the cell dimensions are output.
  Depending on the chosen trajectory to output, it will either print a file
  for each bead or just for each atom.
- If the trajectory is output for each bead, then the output file will not
- be 
+ If the trajectory is output for each bead, then the output files will be
+ 
 \begin_inset Quotes eld
 \end_inset
 
@@ -3547,8 +3570,8 @@ filename
 \begin_inset Quotes erd
 \end_inset
 
-, but the bead index will be appended to each file, so as to distinguish
- between them.
+ with the bead index appended, so as to distinguish between the trajectories
+ of each bead.
  The possible choices of output properties are:
 \end_layout
 
@@ -3965,10 +3988,7 @@ cite{ceri+10jcp}
 
  adapts these algorithms for PIMD simulations, and may be either local or
  global.
- 
-It uses 
-\lang english
-
+ It uses 
 \begin_inset ERT
 status open
 
