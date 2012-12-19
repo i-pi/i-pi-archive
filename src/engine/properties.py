@@ -10,7 +10,7 @@ Classes:
 Functions:
    getkey: This function strips the units and argument list specification
       from a string specifying an output parameter.
-   getall: This function gives the keyword, units and argument list 
+   getall: This function gives the keyword, units and argument list
       specification from a string specifying an output parameter.
    help_latex: This returns a string that can be used in the manual to
       specify the different available outputs.
@@ -206,7 +206,7 @@ class Properties(dobject):
                       "help": "Gives all the non-zero cell parameters, in the order h_xx, h_xy, h_xz, h_yy, h_yz, h_zz.",
                       "size": 6,
                       'func': self.full_cell},
-#TODO Should we switch to the same order as kinetic_tens?
+#TODO Should we switch to the same order as kinetic_tens? YES PLEASE
       "cell_abcABC": {"dimension" : "undefined",
                       "help": "Gives the lengths of the cell vectors and the angles between them in degrees as a list. Since there are a mixture of different units, these can only be output in atomic-units.",
                       "size": 6,
@@ -268,11 +268,11 @@ class Properties(dobject):
       "kin_yama": {   "dimension": "energy",
                       "help": "Gives the Yamamoto kinetic energy estimator. Takes one argument, 'fd_delta', which gives the value of the finite difference parameter used. It defaults to " + str(-self._DEFAULT_FINDIFF) + ".",
                       'func': self.get_kinyama},
-      "isotope_sc":  {"dimension": "undefined",
+      "isotope_scfep":  {"dimension": "undefined",
                       "size": 7,
                       'func': self.get_isotope_yama,
                       "help" :  "Scaled coordinates free energy perturbation scaled mass KE estimator. Prints everything which is needed to compute the kinetic energy for a isotope-substituted system. The 7 elements are: <h> <h**2> <T_CV> <T_CV**2> ln(<e**(-h)>) ln(|<T_CV e**(-h)>|) sign(<T_CV e**(-h)>). Mixed units, so outputs only in a.u. Takes two arguments, 'alpha' and 'atom', which give the scaled mass parameter and the atom of interest respectively, and default to '1.0' and ''. The 'atom' argument can either be the label of a particular kind of atom, or an index of a specific atom." },
-      "isotope_thermo":  {"dimension" : "undefined",
+      "isotope_tdfep":  {"dimension" : "undefined",
                           "size" : 7,
                           'func': self.get_isotope_thermo,
                           "help" : "Thermodynamic free energy perturbation scaled mass KE estimator. Prints everything which is needed to compute the kinetic energy for a isotope-substituted system. The 7 elements are: <h> <h**2> <T_CV> <T_CV**2> ln(<e**(-h)>) ln(|<T_CV e**(-h)>|) sign(<T_CV e**(-h)>). Mixed units, so outputs only in a.u. Takes two arguments, 'alpha' and 'atom', which give the scaled mass parameter and the atom of interest respectively, and default to '1.0' and ''. The 'atom' argument can either be the label of a particular kind of atom, or an index of a specific atom." }
@@ -518,11 +518,11 @@ class Properties(dobject):
       return acv
 
    def get_ktens(self, atom=""):
-      """Calculates the quantum centroid virial kinetic energy 
+      """Calculates the quantum centroid virial kinetic energy
       TENSOR estimator.
 
       Args:
-         atom: The index of the atom for which the kinetic energy tensor 
+         atom: The index of the atom for which the kinetic energy tensor
             is to be output, or the index of the type of atoms for which
             it should be output.
       """
@@ -726,7 +726,7 @@ class Properties(dobject):
          else:
             (law, drop) = logsumlog( (law,1.0), (-logr,1.0))
 
-         #here we need to take care of the sign of tcv, which might as well be 
+         #here we need to take care of the sign of tcv, which might as well be
          #negative... almost never but...
          if (ni == 1):
             lawke = -logr + np.log(abs(tcv))
@@ -738,7 +738,7 @@ class Properties(dobject):
       if ni == 0:
          raise ValueError("Couldn't find an atom which matched the argument of isotope_y")
 
-      return (alogr, alogr2, atcv, atcv2, law, lawke, sawke)
+      return np.asarray[alogr/ni, alogr2/ni, atcv/ni, atcv2/ni, law, lawke, sawke])
 
    def get_isotope_thermo(self, alpha="1.0", atom=""):
       """Gives the components of the thermodynamic scaled-mass KE
@@ -817,7 +817,7 @@ class Properties(dobject):
          else:
             (law, drop) = logsumlog( (law,1.0), (-logr,1.0))
 
-         #here we need to take care of the sign of tcv, which might as well be 
+         #here we need to take care of the sign of tcv, which might as well be
          #negative... almost never but...
          if (ni == 1):
             lawke = -logr + np.log(abs(tcv))
@@ -828,7 +828,7 @@ class Properties(dobject):
       if ni == 0:
          raise ValueError("Couldn't find an atom which matched the argument of isotope_y")
 
-      return np.asarray([alogr, alogr2, atcv, atcv2, law, lawke, sawke])
+      return np.asarray([alogr/ni, alogr2/ni, atcv/ni, atcv2/ni, law, lawke, sawke])
 
 
 class Trajectories(dobject):
