@@ -135,11 +135,11 @@ class PropertyOutput(dobject):
 
       self.out.write("\n")
       
-      self.nout+=1
-      if self.flush>0 and self.nout>=self.flush :
+      self.nout += 1
+      if self.flush > 0 and self.nout >= self.flush :
          self.out.flush()
          os.fsync(self.out)  # we REALLY want to print out! pretty please OS let us do it.
-         self.nout=0
+         self.nout = 0
 
 
 class TrajectoryOutput(dobject):
@@ -237,9 +237,11 @@ class TrajectoryOutput(dobject):
       if not (self.simul.step + 1) % self.stride == 0:
          return
 
-      doflush=False; self.nout+=1
-      if self.flush>0 and self.nout>=self.flush :
-         doflush=True; self.nout=0
+      doflush = False
+      self.nout += 1
+      if self.flush > 0 and self.nout >= self.flush :
+         doflush = True
+         self.nout = 0
 
       # quick-and-dirty way to check if a trajectory is "global" or per-bead
       # Checks to see if there is a list of files or just a single file.

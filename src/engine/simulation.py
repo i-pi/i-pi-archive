@@ -174,11 +174,11 @@ class Simulation(dobject):
          if os.path.exists("EXIT"): # soft-exit
             self.soft_exit(rollback=False)
             
-         steptime+=time.time()
+         steptime += time.time()
          print " # MD step % 7d complete. Timings -->  %10.5e [p: %10.5e  q: %10.5e  t: %10.5e]" % (self.step, steptime, self.ensemble.ptime, self.ensemble.qtime, self.ensemble.ttime )
          print " # MD diagnostics: V: %10.5e    Kcv: %10.5e   Ecns: %10.5e" % (self.properties["potential"], self.properties["kinetic_cv"], self.properties["conserved"] )
                   
-         if (self.ttime > 0 and time.time()-simtime > self.ttime):
+         if (self.ttime > 0 and time.time() - simtime > self.ttime):
             print " # Wall clock time expired! Bye bye"
             break
 
