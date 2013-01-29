@@ -738,7 +738,7 @@ class Properties(dobject):
       if ni == 0:
          raise ValueError("Couldn't find an atom which matched the argument of isotope_y")
 
-      return np.asarray[alogr/ni, alogr2/ni, atcv/ni, atcv2/ni, law, lawke, sawke])
+      return np.asarray([alogr/ni, alogr2/ni, atcv/ni, atcv2/ni, law, lawke, sawke])
 
    def get_isotope_thermo(self, alpha="1.0", atom=""):
       """Gives the components of the thermodynamic scaled-mass KE
