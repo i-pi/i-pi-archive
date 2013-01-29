@@ -160,6 +160,9 @@ class Initializer(dobject):
             if not rcell is None:
                if icell.V > 0.0 :
                   print "WARNING: initialize from <file> overwrites previous cell configuration"
+               #Since the default unit cell is [[1,0,0],[0,1,0],[0,0,1]]
+               #this warning is shown no matter what. (i.e. the if statement
+               #is irrelevant.)
                icell.h = rcell.h
 
             if not (v.format == "chk" or v.format == "checkpoint"):
