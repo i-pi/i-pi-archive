@@ -22,13 +22,13 @@ def flatten(l, ltypes=(list)):
 def node_id(arg, useport=False):
    if isinstance(arg,int):     return ('o%d' % arg)
    if isinstance(arg,dp.depend_array):
-      if useport:  return ('o%d:o%d' % (id(arg._storage),id(arg))).replace('-', '_')
-      else: return ('o%d' % (id(arg._storage))).replace('-', '_')
+      if useport:  return ('o%d:o%d' % (id(arg._bval),id(arg))).replace('-', '_')
+      else: return ('o%d' % (id(arg._bval))).replace('-', '_')
    else:                       return ('o%d' % id(arg)).replace('-', '_')
 
 def depsame(d1, d2):
    if d1 is d2: return True
-   if isinstance(d1,dp.depend_array) and isinstance(d2,dp.depend_array) and d1._storage is d2._storage: return True
+   if isinstance(d1,dp.depend_array) and isinstance(d2,dp.depend_array) and d1._bval is d2._bval: return True
    return False
 
 def plot_deps(filename="dep_dump.dot"):
@@ -120,9 +120,10 @@ def plot_deps(filename="dep_dump.dot"):
       elif autofunc: style='fillcolor="#C05010",fontcolor=black'
       else: style='fillcolor="#B0B0B0",fontcolor=black'         
 
+
       if isinstance(o,dp.depend_array):
-         if not id(o._storage) in stores: stores[id(o._storage)]=([],(name,style))
-         stores[id(o._storage)][0].append(o)
+         if not id(o._bval) in stores: stores[id(o._bval)]=([],(name,style))
+         stores[id(o._bval)][0].append(o)
       else:
          dfile.write('  %s[shape=oval,label=%s,%s];\n' % (node_id(o),name,style))         
          
