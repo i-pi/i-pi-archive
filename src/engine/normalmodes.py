@@ -271,11 +271,11 @@ class NormalModes(dobject):
          if len(self.nm_freqs) > 2:
             print "Warning: only the first two element in nm.frequencies will be considered for WMAX-CMD mode."
          if len(self.nm_freqs) < 2:
-            raise ValueError("WMAX-CMD mode requires <frequencies> to contain [wmax, wtarget]. All the internal modes for a SHO of frequency wmax will be matched with wtarget.")
+            raise ValueError("WMAX-CMD mode requires <frequencies> to contain [wmax, wtarget]. The normal modes will be scaled such that the first internal mode is at frequency wtarget and all the normal modes coincide at frequency wmax.")
          wmax = self.nm_freqs[0]
          wt = self.nm_freqs[1]
          for b in range(1, self.nbeads):
-            sk = 1.0/np.sqrt((wt/wmax)**2*(1+(wmax/self.omegak[1])**2)/(1.0+(self.omegak[b]/wmax)**2))
+            sk = 1.0/np.sqrt((wt)**2*(1+(wmax/self.omegak[1])**2)/(wmax**2+(self.omegak[b])**2))
             dmf[b] = sk**2
 
       return dmf
