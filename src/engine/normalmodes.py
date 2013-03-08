@@ -52,20 +52,20 @@ class NormalModes(dobject):
          free ring polymer, using mass scaled coordinates.
          See J. Chem. Phys. 133, 124101 (2010). Depends on the bead masses
          and the timestep.
-      nm_mass: An array of dynamical mass factors associated with each of
+      nm_factor: An array of dynamical mass factors associated with each of
          the normal modes. Depends on nm_freqs and mode.
-      dynm3: An array giving the square root of nm_mass, for each degree of
-         freedom. Depends on nm_freqs and beads.m3.
-      dynomegak: The scaled vibrational frequencies. Depends on nm_mass and
+      dynm3: An array that gives the dynamical masses of individual atoms in the 
+         normal modes representation. Depends on nm_factor and beads.m3.
+      dynomegak: The scaled vibrational frequencies. Depends on nm_factor and
          omegak.
       kins: A list of the kinetic energy for each normal mode, as 
          calculated in the normal mode representation, using the 
-         dynamical mass factors. Depends on beads.sm3, beads.p and nm_mass.
+         dynamical mass factors. Depends on beads.sm3, beads.p and nm_factor.
       kin: The total kinetic energy, as calculated in the normal mode
          representation, using the dynamical mass factors.
       kstress: The kinetic stress tensor, as calculated in the normal mode
          representation, using the dynamical mass factors. Depends on 
-         beads.sm3, beads.p and nm_mass.
+         beads.sm3, beads.p and nm_factor.
    """
 
    def __init__(self, mode="rpmd", freqs=None):
@@ -149,7 +149,7 @@ class NormalModes(dobject):
             func=self.get_omegak, dependencies=[dget(self,"omegan")]) )
 
       # sets up "dynamical" masses -- mass-scalings to give the correct RPMD/CMD dynamics
-      dset(self,"nm_mass", depend_array(name="nmm",
+      dset(self,"nm_factor", depend_array(name="nmm",
          value=np.zeros(self.nbeads, float), func=self.get_nmm,
             dependencies=[dget(self,"nm_freqs"), dget(self,"mode") ]) )
       dset(self,"dynm3", depend_array(name="dm3",
@@ -157,26 +157,26 @@ class NormalModes(dobject):
             dependencies=[dget(self,"nm_freqs"), dget(self.beads, "m3")] ) )
       dset(self,"dynomegak", depend_array(name="dynomegak",
          value=np.zeros(self.nbeads, float), func=self.get_dynwk,
-            dependencies=[dget(self,"nm_mass"), dget(self,"omegak") ]) )
+            dependencies=[dget(self,"nm_factor"), dget(self,"omegak") ]) )
 
       dset(self,"prop_pq",
          depend_array(name='prop_pq',value=np.zeros((self.beads.nbeads,2,2)),
             func=self.get_prop_pq,
-               dependencies=[dget(self,"omegak"), dget(self,"nm_mass"), dget(self.ensemble,"dt")]) )
+               dependencies=[dget(self,"omegak"), dget(self,"nm_factor"), dget(self.ensemble,"dt")]) )
 
       # if the mass matrix is not the RPMD one, the MD kinetic energy can't be
       # obtained in the bead representation because the masses are all mixed up
       dset(self,"kins",
          depend_array(name="kins",value=np.zeros(self.nbeads, float),
             func=self.get_kins,
-               dependencies=[dget(self,"pnm"), dget(self.beads,"sm3"), dget(self, "nm_mass") ] ))
+               dependencies=[dget(self,"pnm"), dget(self.beads,"sm3"), dget(self, "nm_factor") ] ))
       dset(self,"kin",
          depend_value(name="kin", func=self.get_kin,
             dependencies=[dget(self,"kins")] ))
       dset(self,"kstress",
          depend_array(name="kstress",value=np.zeros((3,3), float),
             func=self.get_kstress,
-               dependencies=[dget(self,"pnm"), dget(self.beads,"sm3"), dget(self, "nm_mass") ] ))
+               dependencies=[dget(self,"pnm"), dget(self.beads,"sm3"), dget(self, "nm_factor") ] ))
 
    def get_omegan(self):
       """Returns the effective vibrational frequency for the interaction
@@ -208,7 +208,7 @@ class NormalModes(dobject):
          The first element is the centroid frequency (0.0).
       """
 
-      return self.omegak/np.sqrt(self.nm_mass)
+      return self.omegak/np.sqrt(self.nm_factor)
 
    def get_prop_pq(self):
       """Gets the normal mode propagator matrix.
@@ -229,7 +229,7 @@ class NormalModes(dobject):
       pqk[0] = np.array([[1,0], [dt,1]])
 
       for b in range(1, self.nbeads):
-         sk = np.sqrt(self.nm_mass[b]) # NOTE THAT THE PROPAGATOR USES MASS-SCALED MOMENTA!
+         sk = np.sqrt(self.nm_factor[b]) # NOTE THAT THE PROPAGATOR USES MASS-SCALED MOMENTA!
 
          dtomegak = self.omegak[b]*dt/sk
          c = math.cos(dtomegak)
@@ -281,11 +281,11 @@ class NormalModes(dobject):
       return dmf
 
    def get_dynm3(self):
-      """Takes the dynamical mass array and returns its square root."""
+      """Returns an array with the dynamical masses of individual atoms in the normal modes representation."""
 
       dm3 = np.zeros(self.beads.m3.shape,float)
       for b in range(self.nbeads):
-         dm3[b] = self.beads.m3[b]*self.nm_mass[b]
+         dm3[b] = self.beads.m3[b]*self.nm_factor[b]
 
       return dm3
 
@@ -326,7 +326,7 @@ class NormalModes(dobject):
       pnm = depstrip(self.pnm)
       for b in range(self.nbeads):
          sp = pnm[b]/sm  # mass-scaled momentum of b-th NM
-         kmd[b] = np.dot(sp,sp)*0.5/self.nm_mass[b]   # also takes care of the possibility of having non-RPMD masses
+         kmd[b] = np.dot(sp,sp)*0.5/self.nm_factor[b]   # also takes care of the possibility of having non-RPMD masses
 
       return kmd
 
@@ -364,6 +364,6 @@ class NormalModes(dobject):
                # computes the outer product of the p of various normal modes 
                # singling out Cartesian components to build the tensor
                # also takes care of the possibility of having non-RPMD masses
-               kmd[i,j] += np.dot(sp[i:3*self.natoms:3],sp[j:3*self.natoms:3])*0.5/self.nm_mass[b]
+               kmd[i,j] += np.dot(sp[i:3*self.natoms:3],sp[j:3*self.natoms:3])*0.5/self.nm_factor[b]
 
       return kmd
