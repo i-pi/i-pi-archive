@@ -803,10 +803,10 @@ class ThermoNMGLE(Thermostat):
 
 
 class ThermoNMGLEG(ThermoNMGLE):
-   """Represents a 'normal-modes' GLE thermostat.
+   """Represents a 'normal-modes' GLE thermostat + SVR.
 
-   An extension to the above NMGLE thermostat which in such a way that we
-   can optimize the sampling of both the kinetic and potential energy.
+   An extension to the above NMGLE thermostat which also adds a stochastic velocity 
+   rescaling to the centroid.
 
    Depend objects:
       tau: Thermostat damping time scale. Larger values give a less strongly
