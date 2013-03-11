@@ -803,10 +803,10 @@ class ThermoNMGLE(Thermostat):
 
 
 class ThermoNMGLEG(ThermoNMGLE):
-   """Represents a 'normal-modes' GLE thermostat.
+   """Represents a 'normal-modes' GLE thermostat + SVR.
 
-   An extension to the above NMGLE thermostat which in such a way that we
-   can optimize the sampling of both the kinetic and potential energy.
+   An extension to the above NMGLE thermostat which also adds a stochastic velocity 
+   rescaling to the centroid.
 
    Depend objects:
       tau: Thermostat damping time scale. Larger values give a less strongly
@@ -836,11 +836,11 @@ class ThermoNMGLEG(ThermoNMGLE):
             applied to the system. Defaults to zero.
       """
 
-      super(ThermoNMGLEG,self).bind(nm, pm, prng, fixdof)
+      super(ThermoNMGLEG,self).bind(nm, prng, fixdof)
 
       t = ThermoSVR(self.temp, self.dt, self.tau)
 
-      t.bind(pm=(nm.pnm[0,:],nm.m3[0,:]), prng=self.prng) # bind global thermostat to centroid
+      t.bind(pm=(nm.pnm[0,:],nm.dynm3[0,:]), prng=self.prng) # bind global thermostat to centroid
 
       # pipes temp and dt
       deppipe(self,"temp", t, "temp")

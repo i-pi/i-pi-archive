@@ -271,11 +271,11 @@ class Properties(dobject):
       "isotope_scfep":  {"dimension": "undefined",
                       "size": 7,
                       'func': self.get_isotope_yama,
-                      "help" :  "Scaled coordinates free energy perturbation scaled mass KE estimator. Prints everything which is needed to compute the kinetic energy for a isotope-substituted system. The 7 elements are: <h> <h**2> <T_CV> <T_CV**2> ln(<e**(-h)>) ln(|<T_CV e**(-h)>|) sign(<T_CV e**(-h)>). Mixed units, so outputs only in a.u. Takes two arguments, 'alpha' and 'atom', which give the scaled mass parameter and the atom of interest respectively, and default to '1.0' and ''. The 'atom' argument can either be the label of a particular kind of atom, or an index of a specific atom." },
+                      "help" :  "Scaled coordinates free energy perturbation scaled mass KE estimator. Prints everything which is needed to compute the kinetic energy for a isotope-substituted system. The 7 elements are: <h> <h**2> <T_CV> <T_CV**2> ln(sum(e**(-h))) ln(|sum(T_CV e**(-h))|) sign(sum(T_CV e**(-h))). Mixed units, so outputs only in a.u. Takes two arguments, 'alpha' and 'atom', which give the scaled mass parameter and the atom of interest respectively, and default to '1.0' and ''. The 'atom' argument can either be the label of a particular kind of atom, or an index of a specific atom." },
       "isotope_tdfep":  {"dimension" : "undefined",
                           "size" : 7,
                           'func': self.get_isotope_thermo,
-                          "help" : "Thermodynamic free energy perturbation scaled mass KE estimator. Prints everything which is needed to compute the kinetic energy for a isotope-substituted system. The 7 elements are: <h> <h**2> <T_CV> <T_CV**2> ln(<e**(-h)>) ln(|<T_CV e**(-h)>|) sign(<T_CV e**(-h)>). Mixed units, so outputs only in a.u. Takes two arguments, 'alpha' and 'atom', which give the scaled mass parameter and the atom of interest respectively, and default to '1.0' and ''. The 'atom' argument can either be the label of a particular kind of atom, or an index of a specific atom." }
+                          "help" : "Thermodynamic free energy perturbation scaled mass KE estimator. Prints everything which is needed to compute the kinetic energy for a isotope-substituted system. The 7 elements are: <h> <h**2> <T_CV> <T_CV**2> ln(sum(e**(-h))) ln(|sum(T_CV e**(-h))|) sign(sum(T_CV e**(-h))). Mixed units, so outputs only in a.u. Takes two arguments, 'alpha' and 'atom', which give the scaled mass parameter and the atom of interest respectively, and default to '1.0' and ''. The 'atom' argument can either be the label of a particular kind of atom, or an index of a specific atom." }
       }
 
    def bind(self, simul):
@@ -806,6 +806,7 @@ class Properties(dobject):
 
          logr = (alpha-1)*spr/(Constants.kb*self.simul.ensemble.temp*self.beads.nbeads)
 
+         
          atcv += tcv
          atcv2 += tcv*tcv
          alogr += logr
