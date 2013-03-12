@@ -197,12 +197,11 @@ UnitMap = {
       "atomic_unit"  : 1.00,
       "second"       : 4.1341373e+16
       },
-   "frequency" :   {   # TODO fill up units here
-                       # I'm currently using frequency units, this may need
-                       # to be changed to angular frequency units.
+   "frequency" :   {   # NB These are actually angular frequency units, internally!
       ""             : 1.00,
       "atomic_unit"  : 1.00,
-      "inversecm"    : 7.251632699e-07,
+      "inversecm"    : 4.5563353e-06, 
+      "hertz*rad"    : 1.5198298e-16,
       "hertz"        : 2.4188843e-17
       },
    "ms-momentum" :   {   # TODO fill up units here (mass-scaled momentum)
