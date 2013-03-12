@@ -99,18 +99,25 @@ class InputBeads(Input):
       q = self.q.fetch()
       if (q.shape == (beads.nbeads,3*beads.natoms)):
          beads.q = q
+      elif (beads.nbeads == 1 and q.shape == (3*beads.natoms,)):
+         beads.q = q
       elif len(q) != 0:
          raise ValueError("Array shape mismatches for q in <beads> input.")
+
       p = self.p.fetch()
       if (p.shape == (beads.nbeads,3*beads.natoms)):
          beads.p = p
+      elif (beads.nbeads == 1 and p.shape == (3*beads.natoms,)):
+         beads.p = p
       elif len(p) != 0:
          raise ValueError("Array shape mismatches for p in <beads> input.")
+
       m = self.m.fetch()
       if (m.shape == (beads.natoms,)):
          beads.m = m
       elif len(m) != 0:
          raise ValueError("Array shape mismatches for m in <beads> input.")
+
       n = self.names.fetch()
       if (n.shape == (beads.natoms,)):
          beads.names = n
