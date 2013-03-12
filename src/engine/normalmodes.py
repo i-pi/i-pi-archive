@@ -154,7 +154,7 @@ class NormalModes(dobject):
             dependencies=[dget(self,"nm_freqs"), dget(self,"mode") ]) )
       dset(self,"dynm3", depend_array(name="dm3",
          value=np.zeros((self.nbeads,3*self.natoms), float),func=self.get_dynm3,
-            dependencies=[dget(self,"nm_freqs"), dget(self.beads, "m3")] ) )
+            dependencies=[dget(self,"nm_factor"), dget(self.beads, "m3")] ) )
       dset(self,"dynomegak", depend_array(name="dynomegak",
          value=np.zeros(self.nbeads, float), func=self.get_dynwk,
             dependencies=[dget(self,"nm_factor"), dget(self,"omegak") ]) )
