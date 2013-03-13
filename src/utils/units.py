@@ -174,7 +174,7 @@ class Elements(dict):
          print "Unknown element given, you must specify the mass"
          return -1.0
 
-# these are the conversion FROM atomic units to the unit stated
+# these are the conversion FROM the unit stated to internal (atomic) units
 UnitMap = {
    "undefined": {
       ""             : 1.00
@@ -183,8 +183,8 @@ UnitMap = {
       ""             : 1.00,
       "atomic_unit"  : 1.00,
       "electronvolt" : 0.036749326,
-      "j_mol"        : 0.00000038087989,
-      "cal_mol"      : 0.0000015946679,
+      "j/mol"        : 0.00000038087989,
+      "cal/mol"      : 0.0000015946679,
       "kelvin"       : 3.1668152e-06
       },
    "temperature":   {
@@ -197,12 +197,12 @@ UnitMap = {
       "atomic_unit"  : 1.00,
       "second"       : 4.1341373e+16
       },
-   "frequency" :   {   # NB These are actually angular frequency units, internally!
+   "frequency" :   {   # NB Internally, ANGULAR frequencies are used.
       ""             : 1.00,
       "atomic_unit"  : 1.00,
       "inversecm"    : 4.5563353e-06, 
-      "hertz*rad"    : 1.5198298e-16,
-      "hertz"        : 2.4188843e-17
+      "hertz*rad"    : 2.4188843e-17,
+      "hertz"        : 1.5198298e-16
       },
    "ms-momentum" :   {   # TODO fill up units here (mass-scaled momentum)
       ""             : 1.00,
@@ -222,7 +222,7 @@ UnitMap = {
    "velocity":    {
       ""            : 1.00,
       "atomic_unit" : 1.00,
-      "SI_unit"     : 4.5710289e-7
+      "m/s"         : 4.5710289e-7
       },
    "momentum":    {
       ""             : 1.00,
@@ -244,7 +244,7 @@ UnitMap = {
    "density" : {
       ""             : 1.00,
       "atomic_unit"  : 1.00,
-      "g_ml"         : 162.67263
+      "g/cm3"        : 162.67263
       },
     "force" : {
       ""             : 1.00,
