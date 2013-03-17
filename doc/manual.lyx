@@ -1354,12 +1354,266 @@ This is especially useful when the calculations are being run on a cluster.
  job it was running reassigned.
 \end_layout
 
+\begin_layout Standard
+Finally, note that many driver codes will support internal parallelization,
+ using MPI or other similar protocols.
+ The wrapper is fully compatible with these types of runs, as the only data
+ passed to the wrapper are the final results, so it does not matter how
+ the driver does the calculation.
+ Information on how to run MPI processes can usually be found on the website
+ of the code provider if applicable.
+\end_layout
+
 \begin_layout Subsection
 ssh tunnelling
 \end_layout
 
 \begin_layout Standard
-PUT SOMETHING HERE MICHELE! (I don't know how to do that...)
+One problem that can often crop up when trying to connect to run a 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+wrappi
+\end_layout
+
+\end_inset
+
+ calculation is that there is a firewall around the network, especially
+ when the wrapper code is being run on a cluster.
+ This will often result in error messages such as 
+\begin_inset Quotes eld
+\end_inset
+
+Error connecting: Connection timed out
+\begin_inset Quotes erd
+\end_inset
+
+ or 
+\begin_inset Quotes eld
+\end_inset
+
+Error connecting: Connection refused
+\begin_inset Quotes erd
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+Let us suppose that the wrapper code is running on a host wrapper.net, and
+ that you are using port 12345.
+ However, when you try to connect to this port from a cluster computer,
+ let us call this driver.net, then you get error messages like the ones above,
+ due to a firewall on wrapper.net blocking port 12345.
+\end_layout
+
+\begin_layout Standard
+However, assuming that you can create an ssh connection between the two
+ computers, then you can use this to forward one of the ports on driver.net
+ to connect to the necessary port on wrapper.net.
+ The code required for this is:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+> ssh -f -N wrapper.net -L 23451:wrapper.net:12345
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The flags -f and -N just put the ssh process in the background.
+ Then comes the ssh server, which in this case is the computer on which
+ the wrapper code is running.
+ The -L flag sets up the ssh tunnel itself.
+ The above code will forward the port 23451 on driver.net to the port 12345
+ on wrapper.net, as required.
+\end_layout
+
+\begin_layout Standard
+Once this is done, then any data sent to port on 23451 on driver.net will
+ be forwarded through the ssh tunnel to port 12345 on wrapper.net.
+ By connecting to port 23451 on driver.net (or localhost, an alias for the
+ host the code is running on) with the driver the code should now run.
+\end_layout
+
+\begin_layout Standard
+If the ssh connection fails, with an error message 
+\begin_inset Quotes eld
+\end_inset
+
+ssh: connect to host wrapper.net port 22: Connection timed out
+\begin_inset Quotes erd
+\end_inset
+
+, then the wrapper.net server has also been set up with a firewall around
+ the standard ssh port, port 22.
+ In this case you can change what port is used to one that is open using
+ the -p flag, for example:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+> ssh -f -N wrapper.net -L 23451:wrapper.net:12345 -p 99
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Now let us suppose that driver.net is a cluster, and we wish to submit the
+ driver jobs to the queue.
+ The above code as it is will not work, since ssh requires a password.
+ However, you can set up ssh such that no password is needed.
+ 
+\end_layout
+
+\begin_layout Standard
+Firstly, on driver.net, we need to set up an ssh key.
+ This can be done using the command:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+> ssh-keygen -t rsa
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+It will then prompt you for a passphrase twice.
+ Since we wish to have use this for scripts without using a password, just
+ hit enter twice.
+ Note that this will mean that someone with temporary access to your account
+ could feasibly take a copy of the ssh key and then be able to use it, so
+ this should be used with caution.
+\end_layout
+
+\begin_layout Standard
+This should now have created two files in the directory ~/.ssh, id_rsa and
+ id_rsa.pub.
+ These should be readable only by you, so use the file permissions:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+> chmod 600 ~/.ssh/id_rsa ~/.ssh/id_rsa.pub
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Finally, copy the contents of the file id_rsa.pub and append them to the
+ file authorized_keys in the directory ~/.ssh of wrapper.net.
+ It should now be possible to ssh from driver.net to wrapper.net without using
+ a password.
+ We can now run the ssh command from a script, and so we can set up a ssh
+ tunnel from a cluster node.
+ Note that the cluster nodes will have a different IP address to the head
+ node, so use 
+\begin_inset Quotes eld
+\end_inset
+
+localhost
+\begin_inset Quotes erd
+\end_inset
+
+ rather than 
+\begin_inset Quotes eld
+\end_inset
+
+driver.net
+\begin_inset Quotes erd
+\end_inset
+
+ in the input file of the driver code.
 \end_layout
 
 \begin_layout Chapter
