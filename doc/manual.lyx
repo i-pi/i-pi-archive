@@ -193,7 +193,7 @@ xspace}
 \backslash
 newcommand{
 \backslash
-DFT}{Quantum Espresso, CP2K, CPMD and FHI-AIMS}
+DFT}{Quantum Espresso, CP2K, CPMD and FHI-AIMS }
 \end_layout
 
 \begin_layout Plain Layout
@@ -358,7 +358,20 @@ wrappi
 \end_inset
 
  is a path integral molecular dynamics (PIMD) wrapper code written in Python
- for use with ab initio density functional theory (DFT).
+ for use with 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{ab initio}
+\end_layout
+
+\end_inset
+
+ density functional theory (DFT).
  It currently works with the DFT codes 
 \begin_inset ERT
 status open
@@ -391,13 +404,28 @@ empirical
 \begin_layout Standard
 It is designed to separate the calculation of the potential energy, forces
  and virial of a system from the algorithmic steps that propagate the dynamics.
- This allows the time intesive force calculation to be done by heavily optimised
- external codes while the dynamics and properties of interest can be calculated
- in the most transparent manner possible.
+ The rationale behind this is that for 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{ab initio}
+\end_layout
+
+\end_inset
+
+ PIMD the force calculation generally takes much more time than the propagation
+ steps, and so there is no reason to optimize the running of the latter.
+ Instead we have attempted to provide a simple but powerful interface that
+ allows the use of the PIMD framework without the need for expert knowledge
+ on the subject.
 \end_layout
 
 \begin_layout Standard
-This manual will contain the following information: 
+This manual will be structured as follows: 
 \end_layout
 
 \begin_layout Itemize
@@ -407,7 +435,7 @@ status open
 
 \begin_layout Plain Layout
 
-~
+ 
 \backslash
 ref{intro}
 \end_layout
@@ -426,15 +454,15 @@ status open
 
 \begin_layout Plain Layout
 
-~
+ 
 \backslash
-ref{progpar}
+ref{commpro}
 \end_layout
 
 \end_inset
 
- we will discuss some of the design principles of the wrapper, and some
- of the inner workings of the code.
+ we will discuss how the communication between the driver and wrapper codes
+ are implemented.
  
 \end_layout
 
@@ -445,14 +473,14 @@ status open
 
 \begin_layout Plain Layout
 
-~
+ 
 \backslash
 ref{install}
 \end_layout
 
 \end_inset
 
- we will discuss how to install the code, and test that it is working.
+ we will discuss how to install the code and test that it is working.
 \end_layout
 
 \begin_layout Itemize
@@ -462,7 +490,7 @@ status open
 
 \begin_layout Plain Layout
 
-~
+ 
 \backslash
 ref{run}
 \end_layout
@@ -481,14 +509,14 @@ status open
 
 \begin_layout Plain Layout
 
-~
+ 
 \backslash
 ref{overview}
 \end_layout
 
 \end_inset
 
-, we explain some of the features of the wrapper code.
+ we explain some of the features of the wrapper code.
 \end_layout
 
 \begin_layout Itemize
@@ -498,7 +526,7 @@ status open
 
 \begin_layout Plain Layout
 
-~
+ 
 \backslash
 ref{dev}
 \end_layout
@@ -516,7 +544,7 @@ status open
 
 \begin_layout Plain Layout
 
-~
+ 
 \backslash
 ref{hierarchy}
 \end_layout
@@ -533,7 +561,8 @@ Shell variables
 \end_layout
 
 \begin_layout Standard
-In all that follows, we will make use of the following definitions:
+In all that follows, we will make use of the following definitions of shell
+ variables:
 \end_layout
 
 \begin_layout Standard
@@ -697,8 +726,9 @@ Driver compatibility
 
 \begin_layout Standard
 There are currently patches available for Quantum Espresso version 4.3.2 and
- CP2K version 2.2.The patch for Quantum Espresso also works with version 5.0
- with minor modifications.
+ CP2K version 2.2.
+ The patch for Quantum Espresso also works with version 5.0 with minor modificati
+ons.
 \end_layout
 
 \begin_layout Standard
@@ -755,8 +785,8 @@ wrappi
 \end_layout
 
 \begin_layout Standard
-Parameters to run Path Integral with Generalized Langevin Equation Thermostat
- (PIGLET) calculations can be found on the website:
+Parameters to run Path Integral with Generalized Langevin Equation thermostat
+ (PI+GLE) calculations can be found on the website:
 \end_layout
 
 \begin_layout Standard
@@ -791,6 +821,7 @@ wrappi
 \end_inset
 
  has been developed by Michele Ceriotti and Joshua More.
+ 
 \end_layout
 
 \begin_layout Section
@@ -815,223 +846,10 @@ License
 \end_layout
 
 \begin_layout Chapter
-Programming paradigm
-\end_layout
-
-\begin_layout Standard
-\begin_inset ERT
-status open
-
-\begin_layout Plain Layout
-
-
-\backslash
-label{progpar}
-\end_layout
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Section
-Directory structure
-\end_layout
-
-\begin_layout Standard
-The code is separated into the following directory structure: 
-\end_layout
-
-\begin_layout Description
-forces: Contains a few stand-alone fortran driver modules for running simple
- tests.
- 
-\end_layout
-
-\begin_layout Description
-doc: Contains the documentation, including this manual.
- 
-\end_layout
-
-\begin_layout Description
-src: Contains the source code for the wrapper.
- This is further subdivided into: 
-\end_layout
-
-\begin_deeper
-\begin_layout Description
-engine: Holds the modules containing the internally used objects and algorithms
- 
-\end_layout
-
-\begin_layout Description
-driver: Holds the modules containing the objects that deal with the driver
- communication and data transfer.
- 
-\end_layout
-
-\begin_layout Description
-utils: Holds the modules containing the utility functions used in the other
- modules.
- 
-\end_layout
-
-\begin_layout Description
-inputs: Holds the modules containing the classes that read the input files.
-\end_layout
-
-\end_deeper
-\begin_layout Description
-patches: Contains the patch files that must be applied to allow the driver
- codes to interact with the wrapper.
- 
-\end_layout
-
-\begin_layout Description
-test: Contains examples that can be used to make sure the build has been
- successful, show the correct form of the input files, and show some of
- the capabilities of the wrapper.
- 
-\end_layout
-
-\begin_layout Section
-Dependency detection and automatic property caching
-\end_layout
-
-\begin_layout Standard
-\begin_inset ERT
-status open
-
-\begin_layout Plain Layout
-
-%MOVE THIS SECTION SOMEWHERE ELSE!!!!!!!
-\end_layout
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Subsection
-Rationale
-\end_layout
-
-\begin_layout Standard
-One of the utility classes that is defined in the code, from which most
- of the classes in the code inherit, is the dobject class.
- Similarly, many of the variables contained in these classes are depend
- objects.
-\end_layout
-
-\begin_layout Standard
-The depend object class has been designed so that every time it is accessed
- it checks all of the other depend objects on which it is dependent to see
- if they have changed, and if so recalculates its value.
- The dobject class overrides the mechanism by which you can access the members
- of an instance of it, so that they are accessed via the dependency detection
- functions.
-\end_layout
-
-\begin_layout Standard
-These classes have been defined so that, instead of cluttering up the code
- with functions to recalculate the various parameters of the simulation,
- we simply have to define the function by which to recalculate them and
- the other objects which they depend upon when they are created, and then
- they will automatically be updated when required.
-\end_layout
-
-\begin_layout Standard
-As an example, take the total kinetic energy for one replica of the system.
- This is a property of the total momentum vector and the mass vector of
- the different atoms.
- Therefore, we would create a 
-\begin_inset Quotes eld
-\end_inset
-
-kin
-\begin_inset Quotes erd
-\end_inset
-
- object in the atoms class that has dependencies 
-\begin_inset Quotes eld
-\end_inset
-
-mass
-\begin_inset Quotes erd
-\end_inset
-
- and 
-\begin_inset Quotes eld
-\end_inset
-
-momentum
-\begin_inset Quotes erd
-\end_inset
-
-, and a recalculation function that calculated 
-\begin_inset ERT
-status open
-
-\begin_layout Plain Layout
-
-
-\backslash
-(
-\backslash
-frac{
-\backslash
-bf{p}^2}{2
-\backslash
-bf{m}}
-\backslash
-)
-\end_layout
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-Having done this, any time we access atoms.kin, the code will check to see
- if either the mass vector or momentum vector has changed.
- If it has will recalculate the kinetic energy before returning it, otherwise
- it will simply return the cached value.
-\end_layout
-
-\begin_layout Subsection
-Synchronized objects
-\end_layout
-
-\begin_layout Standard
-As well as checking for dependencies, the same infrastructure can also be
- used to synchronize two objects which are different representations of
- the same data.
- A good example of this is the bead coordinates in the cartesian and normal
- mode representations.
- Both of these represent the same data, but have different numerical values.
-\end_layout
-
-\begin_layout Standard
-In this case we can use a synchronize object, which holds a dictionary of
- functions to transform one representation to another.
- In the case of the normal mode and cartesian representations of position,
- the transformation can be done either by multiplying the position vector
- by a transformation matrix, or via a Fourier transform.
-\end_layout
-
-\begin_layout Standard
-Using this class, whenever we make a change to one of the representations,
- the others are automatically recalculated by reapplying the transformation
- function the next time they are accessed.
-\end_layout
-
-\begin_layout Section
 Communication protocol
 \end_layout
 
 \begin_layout Standard
-The 
 \begin_inset ERT
 status open
 
@@ -1039,65 +857,73 @@ status open
 
 
 \backslash
-wrappi
+label{commpro}
 \end_layout
 
 \end_inset
 
- code is only a wrapper code; it only runs the molecular dynamics algorithms
- and does not calculate the force and potential acting on each particle.
- To complete a time step then, 
-\begin_inset ERT
-status open
 
-\begin_layout Plain Layout
-
-
-\backslash
-wrappi
 \end_layout
 
-\end_inset
-
- must interface with a driver code.
- The major design principle behind 
-\begin_inset ERT
-status open
-
-\begin_layout Plain Layout
-
-
-\backslash
-wrappi
-\end_layout
-
-\end_inset
-
- is to keep the wrapper and driver codes as separate as possible.
- To this end we run them independently, with the only communication being
- through a socket.
-\end_layout
-
-\begin_layout Subsection
+\begin_layout Section
 Sockets
 \end_layout
 
 \begin_layout Standard
-A socket is a data transfer device that is designed for internet communication.
- It supports both multiple connections to the same socket and two way communicat
-ion.
- This makes it ideal for communication between the wrapper code and multiple
- driver codes.
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+wrappi
+\end_layout
+
+\end_inset
+
+ is only a wrapper code, it must interface with a driver code in order to
+ run any simulations.
+ The overarching design principle of 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+wrappi
+\end_layout
+
+\end_inset
+
+ is that these two codes should be as independent as possible, and so the
+ only communication between them is done through a socket.
+ A socket is a data transfer device that is designed for internet communication,
+ so supports both multiple client connections to the same server and two
+ way communication.
+ This makes sockets ideal for use in 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+wrappi
+\end_layout
+
+\end_inset
+
+, where each calculation may require multiple driver codes.
+ 
 \end_layout
 
 \begin_layout Standard
-Each socket is described by an IP address.
- A socket can either be an internet socket, capable of inter-computer communicat
-ion, or a local unix socket, which is optimized for local communication.
-\end_layout
-
-\begin_layout Standard
-The IP address is specified in the code by the 
+Sockets are described by an IP address and a port number, and can either
+ be an internet socket, capable of inter-computer communication, or a unix
+ socket, which is optimized for local communication.
+ The IP address is input by the user in the 
 \begin_inset Quotes eld
 \end_inset
 
@@ -1105,15 +931,23 @@ address
 \begin_inset Quotes erd
 \end_inset
 
- tag.
- This is generally the name of the network on which the wrapper code is
- running, or localhost, which is the generic name for the network used for
- local communication.
+ tag, and can be specified in two ways.
+ Firstly, every network has a unique numeric code of the form 123.45.678.901.
+ Secondly, most networks are named, so the name of the network on which
+ the wrapper code is running can be used as an alias for the IP address.
+ A specific case of this is 
+\begin_inset Quotes eld
+\end_inset
+
+localhost
+\begin_inset Quotes erd
+\end_inset
+
+, which is the generic name for the local network.
 \end_layout
 
 \begin_layout Standard
-Internet sockets also support a port number, which is specified in the code
- by the 
+The port number is specified in the code by the 
 \begin_inset Quotes eld
 \end_inset
 
@@ -1122,10 +956,8 @@ port
 \end_inset
 
  tag.
- The port number is important because it is used to distinguish between
- different processes.
- The port number is an integer between 1-65535, each of which specifies
- a different port.
+ It is an integer between 1 and 65535 used to distinguish between all the
+ different communication processes a particular computer is running.
  As many of the lower numbers are protected for use in important system
  processes or internet communication, it is generally advisable to only
  use numbers in the range 1025-65535 for simulations.
@@ -1144,15 +976,13 @@ mode
 \begin_inset Quotes eld
 \end_inset
 
-interface
+socket
 \begin_inset Quotes erd
 \end_inset
 
  tag.
- The unix/inet distinction is an important one, the unix socket is faster
- than an internet socket, but can only be used for local communication.
- Generally, the simulation should only be run locally if a simple classical
- potential is being run.
+ While they are faster than internet sockets, unix sockets should only be
+ used if a simple empirical potential is being run.
  If complicated empirical potentials or 
 \begin_inset ERT
 status open
@@ -1168,10 +998,25 @@ emph{ab initio}
 
  potentials are used the force calculation becomes the bottleneck in the
  code, so the advantage of using unix sockets is lost.
+ 
 \end_layout
 
 \begin_layout Standard
-There are a two other input parameters that may be used.
+Internet sockets have two main advantages that make them much more useful
+ in general.
+ Firstly, the driver code does not need to be run on the same computer as
+ the wrapper code.
+ In particular, if the driver codes are being run on a cluster this means
+ that you do not need to waste computing resources running the wrapper,
+ which is idle most of the time.
+ Secondly, the port number is not used for unix sockets, so if more than
+ one calculation is being run concurrently internet sockets must be used,
+ so that the driver codes connect to the correct wrapper code.
+\end_layout
+
+\begin_layout Standard
+There are a two other input parameters that may be used to specify how the
+ server socket looks for driver codes to connect to.
  
 \begin_inset Quotes eld
 \end_inset
@@ -1191,19 +1036,33 @@ slots
 
  specifies how many driver codes can queue between checks.
  Neither is likely to be important in running the code, but may be used
- to optimize the data transfer if required.
+ to optimize the connection time if required.
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 Data transfer
 \end_layout
 
 \begin_layout Standard
-To make the transfer as fast as possible, the data is transferred in binary
- format.
- Each communication consists of a header string of 12 characters specifying
- the stage of the data transfer, if necessary followed by data.
- We use 4-bit integers, 8-bit floats and 12 character strings for the transfer.
+Once at least one driver code has connected to the server socket, the force
+ calculation can start.
+ For this to happen the driver code needs the system configuration, and
+ likewise the wrapper needs the force and potential data to be returned
+ so that it can continue propagating the dynamics.
+\end_layout
+
+\begin_layout Standard
+To make sure that the connection is good, a simple query-response data transfer
+ protocol is used.
+ Before any data is sent through the socket a header string of 12 characters
+ is sent to verify which stage of the calculation the wrapper is at.
+ Once the driver sends the appropriate response header string, the data
+ is transferred.
+ If no response is given, the wrapper will either wait and try again, or
+ disconnect the driver code and reassign its job to another, depending on
+ what the severity of the problem.
+ The wrapper assumes that 4-bit integers, 8-bit floats and 1-bit characters
+ are used.
  A typical step is of the form:
 \end_layout
 
@@ -1216,12 +1075,11 @@ STATUS
 \begin_inset Quotes erd
 \end_inset
 
- is sent by the server socket, specifying what stage of the data transfer
- is being done.
+ is sent by the server socket.
 \end_layout
 
 \begin_layout Enumerate
-A header string is then returned, giving the status.
+A header string is then returned, giving the status of the driver code.
  Recognized options are:
 \end_layout
 
@@ -1310,66 +1168,70 @@ The server socket waits until the force data for each replica of the system
  molecular dynamics loop starts.
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 Parallelization
 \end_layout
 
 \begin_layout Standard
-This type of data transfer is well suited to working with PIMD, as it allows
- multiple driver codes to connect to the server socket of one simulation,
- so that different replicas of the system can be assigned to different driver
- codes and their forces computed in parallel.
+As mentioned before, one of the primary advantages of using this type of
+ data transfer is that it allows multiple driver codes to connect to one
+ wrapper code, so that different replicas of the system can be assigned
+ to different driver codes and their forces computed in parallel.
+ In fact it is trivially parallel, in the sense that no communication between
+ the driver codes is necessary.
 \end_layout
 
 \begin_layout Standard
-In the case that there are as many driver codes as replicas of the system,
+In the case that there are as many driver codes as replicas of the system
  this is very simple, as each replica will be assigned its own driver code.
  In subsequent steps, the interface will attempt to assign a particular
  replica of the system to the same driver code which calculated the forces
  for it the last step.
  This reduces the change in the particle positions between calculations
- on a particular driver code, allowing the code to do the next calculation
- more efficiently.
-\end_layout
-
-\begin_layout Standard
-In the case where there are fewer driver codes than beads, the socket interface
+ for a particular driver code, so the next step is done more efficiently.
+ In the case where there are fewer driver codes than beads, the socket interface
  will assign spare jobs to the first driver code that finishes running,
  after matching all possible jobs to the same driver code that calculated
  it last time step.
 \end_layout
 
 \begin_layout Standard
-In general, we want to choose the number of driver codes to be a divisor
- of the total number of replicas of the system, as otherwise there will
- be idle driver codes at the end of each step.
-\end_layout
-
-\begin_layout Standard
-This is especially useful when the calculations are being run on a cluster.
- In this case, you can split up the driver codes, and they will connect
- whenever they reach the front of the queue.
+This flexibility is especially useful when the calculations are being run
+ on a cluster, as in this case the driver codes will connect whenever they
+ reach the front of the queue.
  More driver codes can connect at any time, and if there is a problem and
- any driver code dies, it is simply removed from the driver list and any
- job it was running reassigned.
+ any driver code dies it is simply disconnected from the server socket and
+ any job it was running reassigned.
 \end_layout
 
 \begin_layout Standard
-Finally, note that many driver codes will support internal parallelization,
- using MPI or other similar protocols.
- The wrapper is fully compatible with these types of runs, as the only data
- passed to the wrapper are the final results, so it does not matter how
- the driver does the calculation.
- Information on how to run MPI processes can usually be found on the website
- of the code provider if applicable.
+Finally, note that many driver codes can be parallelized themselves, using
+ MPI or other similar protocols.
+ This is fully compatible with 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+wrappi
 \end_layout
 
-\begin_layout Subsection
+\end_inset
+
+, as it does not matter how the driver does the calculation since only the
+ forces, potential and virial are sent to the wrapper.
+ Information on how to run MPI processes can usually be found on the website
+ of the code provider if the driver can be parallelized in this way.
+\end_layout
+
+\begin_layout Section
 ssh tunnelling
 \end_layout
 
 \begin_layout Standard
-One problem that can often crop up when trying to connect to run a 
+One problem that can often crop up when trying to run a 
 \begin_inset ERT
 status open
 
@@ -1404,11 +1266,11 @@ Error connecting: Connection refused
 \end_layout
 
 \begin_layout Standard
-Let us suppose that the wrapper code is running on a host wrapper.net, and
- that you are using port 12345.
- However, when you try to connect to this port from a cluster computer,
- let us call this driver.net, then you get error messages like the ones above,
- due to a firewall on wrapper.net blocking port 12345.
+Let us suppose that the wrapper code is running on a host network wrapper.net,
+ and that you are using port 12345.
+ However, when you try to connect to this port from a computer, let us call
+ this driver.net, then you get error messages like the ones above, due to
+ a firewall on wrapper.net blocking port 12345.
 \end_layout
 
 \begin_layout Standard
@@ -1473,7 +1335,7 @@ ssh: connect to host wrapper.net port 22: Connection timed out
 
 , then the wrapper.net server has also been set up with a firewall around
  the standard ssh port, port 22.
- In this case you can change what port is used to one that is open using
+ In this case you can change which port is used to one that is open using
  the -p flag, for example:
 \end_layout
 
@@ -1503,6 +1365,10 @@ end{verbatim}
 \end_inset
 
 
+\end_layout
+
+\begin_layout Subsection
+Using a script to create a ssh connection
 \end_layout
 
 \begin_layout Standard
@@ -1548,8 +1414,8 @@ end{verbatim}
 
 \begin_layout Standard
 It will then prompt you for a passphrase twice.
- Since we wish to have use this for scripts without using a password, just
- hit enter twice.
+ Since we wish to have use this in a job script where we will not be able
+ to enter a password, just hit enter twice.
  Note that this will mean that someone with temporary access to your account
  could feasibly take a copy of the ssh key and then be able to use it, so
  this should be used with caution.
@@ -1558,7 +1424,8 @@ It will then prompt you for a passphrase twice.
 \begin_layout Standard
 This should now have created two files in the directory ~/.ssh, id_rsa and
  id_rsa.pub.
- These should be readable only by you, so use the file permissions:
+ These should be readable only by you, so use the following code to set
+ up the correct file permissions:
 \end_layout
 
 \begin_layout Standard
@@ -1896,8 +1763,15 @@ The Python array library NumPy
 
 \begin_layout Standard
 Additionally, most driver codes will have their own software requirements.
- Many of them, including the test driver codes given in the test directories,
- will need a modern fortran compiler.
+ Many of them, including the test driver codes given in the 
+\begin_inset Quotes eld
+\end_inset
+
+forces
+\begin_inset Quotes erd
+\end_inset
+
+ directory, will need a modern Fortran compiler.
  Most will also need to be linked with some mathematical libraries, such
  as BLAS, FFTW and LAPACK.
  Installation instructions should be provided as part of the code distribution
@@ -2001,14 +1875,15 @@ NumPy download
 \end_layout
 
 \begin_layout Standard
-Many clusters do not have NumPy already installed upon them.
- How NumPy can be installed depends on whether you have root access or not,
- and on the version of python you are using.
+NumPy is the standard Python mathematics library, and is used for most of
+ the array minipulation and linear algebra in the wrapper code.
+ How difficult it is to install NumPy depends on whether you have root access
+ or not, and on the version of Python you are using.
 \end_layout
 
 \begin_layout Standard
 In any case you must first obtain the NumPy code.
- The numpy library can be downloaded as a tar file from 
+ The NumPy library can be downloaded as a tar file from 
 \begin_inset Flex URL
 status collapsed
 
@@ -2019,11 +1894,7 @@ http://sourceforge.net/projects/numpy/files/NumPy/
 
 \end_inset
 
-
-\end_layout
-
-\begin_layout Standard
-This must then be extracted using the following commands:
+ This must then be extracted using the following commands:
 \end_layout
 
 \begin_layout Standard
@@ -2060,7 +1931,7 @@ end{verbatim}
 \end_layout
 
 \begin_layout Standard
-You must now install this code.
+Before installing this code it first needs to be configured correctly.
  Note that this requires the distutils package that comes with the python-dev
  package.
  Assuming that the required software is installed, the NumPy package is
@@ -2099,7 +1970,8 @@ end{verbatim}
 The next step is to install the package.
  By default the download is to the directory /usr/local.
  This however is only accessible if you have root access.
- In this case all that needs to be done to finish the install is:
+ If this is the case then all that needs to be done to finish the install
+ is:
 \end_layout
 
 \begin_layout Standard
@@ -4543,6 +4415,183 @@ label{dev}
 \end_inset
 
 
+\end_layout
+
+\begin_layout Section
+Directory structure
+\end_layout
+
+\begin_layout Standard
+The code is separated into the following directory structure: 
+\end_layout
+
+\begin_layout Description
+forces: Contains a few short fortran driver files for running simple tests.
+ 
+\end_layout
+
+\begin_layout Description
+doc: Contains the documentation, including this manual.
+ 
+\end_layout
+
+\begin_layout Description
+src: Contains the source code for the wrapper.
+ This is further subdivided into: 
+\end_layout
+
+\begin_deeper
+\begin_layout Description
+engine: Holds the modules containing the internally used objects and algorithms
+ 
+\end_layout
+
+\begin_layout Description
+driver: Holds the modules containing the objects that deal with the driver
+ communication and data transfer.
+ 
+\end_layout
+
+\begin_layout Description
+utils: Holds the modules containing the utility functions used in the other
+ modules.
+ 
+\end_layout
+
+\begin_layout Description
+inputs: Holds the modules containing the classes that read the input files.
+\end_layout
+
+\end_deeper
+\begin_layout Description
+patches: Contains the patch files that must be applied to allow the driver
+ codes to interact with the wrapper.
+ 
+\end_layout
+
+\begin_layout Description
+test: Contains examples that can be used to make sure the build has been
+ successful, show the correct form of the input files, and show some of
+ the capabilities of the wrapper.
+ 
+\end_layout
+
+\begin_layout Section
+Dependency detection and automatic property caching
+\end_layout
+
+\begin_layout Subsection
+Rationale
+\end_layout
+
+\begin_layout Standard
+One of the utility classes that is defined in the code, from which most
+ of the classes in the code inherit, is the dobject class.
+ Similarly, many of the variables contained in these classes are depend
+ objects.
+\end_layout
+
+\begin_layout Standard
+The depend object class has been designed so that every time it is accessed
+ it checks all of the other depend objects on which it is dependent to see
+ if they have changed, and if so recalculates its value.
+ The dobject class overrides the mechanism by which you can access the members
+ of an instance of it, so that they are accessed via the dependency detection
+ functions.
+\end_layout
+
+\begin_layout Standard
+These classes have been defined so that, instead of cluttering up the code
+ with functions to recalculate the various parameters of the simulation,
+ we simply have to define the function by which to recalculate them and
+ the other objects which they depend upon when they are created, and then
+ they will automatically be updated when required.
+\end_layout
+
+\begin_layout Standard
+As an example, take the total kinetic energy for one replica of the system.
+ This is a property of the total momentum vector and the mass vector of
+ the different atoms.
+ Therefore, we would create a 
+\begin_inset Quotes eld
+\end_inset
+
+kin
+\begin_inset Quotes erd
+\end_inset
+
+ object in the atoms class that has dependencies 
+\begin_inset Quotes eld
+\end_inset
+
+mass
+\begin_inset Quotes erd
+\end_inset
+
+ and 
+\begin_inset Quotes eld
+\end_inset
+
+momentum
+\begin_inset Quotes erd
+\end_inset
+
+, and a recalculation function that calculated 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+(
+\backslash
+frac{
+\backslash
+bf{p}^2}{2
+\backslash
+bf{m}}
+\backslash
+)
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Having done this, any time we access atoms.kin, the code will check to see
+ if either the mass vector or momentum vector has changed.
+ If it has will recalculate the kinetic energy before returning it, otherwise
+ it will simply return the cached value.
+\end_layout
+
+\begin_layout Subsection
+Synchronized objects
+\end_layout
+
+\begin_layout Standard
+As well as checking for dependencies, the same infrastructure can also be
+ used to synchronize two objects which are different representations of
+ the same data.
+ A good example of this is the bead coordinates in the cartesian and normal
+ mode representations.
+ Both of these represent the same data, but have different numerical values.
+\end_layout
+
+\begin_layout Standard
+In this case we can use a synchronize object, which holds a dictionary of
+ functions to transform one representation to another.
+ In the case of the normal mode and cartesian representations of position,
+ the transformation can be done either by multiplying the position vector
+ by a transformation matrix, or via a Fourier transform.
+\end_layout
+
+\begin_layout Standard
+Using this class, whenever we make a change to one of the representations,
+ the others are automatically recalculated by reapplying the transformation
+ function the next time they are accessed.
 \end_layout
 
 \begin_layout Section
