@@ -1231,6 +1231,22 @@ ssh tunnelling
 \end_layout
 
 \begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+label{ssh_sockets}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
 One problem that can often crop up when trying to run a 
 \begin_inset ERT
 status open
@@ -2220,7 +2236,21 @@ www.quantum-espress.org/
 \end_layout
 
 \begin_layout Subsection
-CP2K
+CP2K 
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+%I still don't even have this code, so can't write this bit...
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Section
@@ -2520,6 +2550,53 @@ How to run the driver
 CP2K
 \end_layout
 
+\begin_layout Standard
+To run CP2K with the wrapper, an additional file named 
+\begin_inset Quotes eld
+\end_inset
+
+serverfile
+\begin_inset Quotes erd
+\end_inset
+
+ must be kept in the same directory that CP2K is being run from.
+ It should contain a string a single line long, of the format 
+\begin_inset Quotes eld
+\end_inset
+
+mode:host:port_number
+\begin_inset Quotes erd
+\end_inset
+
+.
+ 
+\begin_inset Quotes eld
+\end_inset
+
+mode
+\begin_inset Quotes erd
+\end_inset
+
+ should either be 
+\begin_inset Quotes eld
+\end_inset
+
+INET
+\begin_inset Quotes erd
+\end_inset
+
+ or 
+\begin_inset Quotes eld
+\end_inset
+
+UNIX
+\begin_inset Quotes erd
+\end_inset
+
+, representing an internet or unix socket respectively.
+ The rest of the input file is the same as for a standard CP2K calculation.
+\end_layout
+
 \begin_layout Subsection
 Quantum-Espresso
 \end_layout
@@ -2551,12 +2628,27 @@ begin{verbatim}
 
 \begin_layout Plain Layout
 
+   ...
+\end_layout
+
+\begin_layout Plain Layout
+
    calculation=`driver'
 \end_layout
 
 \begin_layout Plain Layout
 
    srvaddress=`host_address:port'
+\end_layout
+
+\begin_layout Plain Layout
+
+   ...
+\end_layout
+
+\begin_layout Plain Layout
+
+/
 \end_layout
 
 \begin_layout Plain Layout
@@ -2594,12 +2686,27 @@ begin{verbatim}
 
 \begin_layout Plain Layout
 
+   ...
+\end_layout
+
+\begin_layout Plain Layout
+
    calculation=`driver'
 \end_layout
 
 \begin_layout Plain Layout
 
    srvaddress=`UNIX:host_address:port'
+\end_layout
+
+\begin_layout Plain Layout
+
+   ...
+\end_layout
+
+\begin_layout Plain Layout
+
+/
 \end_layout
 
 \begin_layout Plain Layout
@@ -2614,6 +2721,11 @@ end{verbatim}
 
 \end_layout
 
+\begin_layout Standard
+The rest of the input file should be the same as for a standard Quantum
+ Espresso calculation.
+\end_layout
+
 \begin_layout Section
 Running simulations
 \end_layout
@@ -2623,17 +2735,49 @@ Running a simulation
 \end_layout
 
 \begin_layout Standard
-A simulation is run by first running a wrapper code as above, and then connectin
-g to the server socket with one or more driver codes.
- For a small simulation, with a simple classical potential, it may be preferable
+There are two parts to any 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+wrappi
+\end_layout
+
+\end_inset
+
+ simulation.
+ First the wrapper is run, which starts the dynamics loop until the forces
+ are required.
+ Once the server socket has been opened, it then waits for connections from
+ driver codes.
+ 
+\end_layout
+
+\begin_layout Standard
+For a small simulation, with a simple classical potential, it may be preferable
  to run both halves of the simulation on the same computer, especially as
  this allows us to use the faster unix domain sockets.
  If we assume that the driver code is run by the command 
-\series bold
+\begin_inset Quotes eld
+\end_inset
+
 driver_comm
-\series default
-, the following code will run the wrapper, outputting the statistics to
- a file log, and 4 driver codes, then background the result:
+\begin_inset Quotes erd
+\end_inset
+
+, the following code will run the wrapper, redirect the wrapper's standard
+ output to a file 
+\begin_inset Quotes eld
+\end_inset
+
+log
+\begin_inset Quotes erd
+\end_inset
+
+, run four driver codes and then background the result:
 \end_layout
 
 \begin_layout Standard
@@ -2659,7 +2803,7 @@ begin{verbatim}
 
 \begin_layout Plain Layout
 
-> do bash -c "driver_comm &> 
+>    do bash -c "driver_comm &> 
 \backslash
 dev
 \backslash
@@ -2684,34 +2828,97 @@ end{verbatim}
 \end_layout
 
 \begin_layout Standard
-For most simulations, especially those running with expensive ab initio
- forces and potentials, we will want to run the code on a computational
- cluster.
- The best way to do this is to have the wrapper code running on the head
- node of the cluster, where we have the most control over it, and run the
- driver codes on the cluster nodes.
-\end_layout
-
-\begin_layout Standard
-Here we make use of both the inherent parallelization in the partitioning
- of different replicas to different drivers, and the socket communication
- mechanism which allows data transfer either by internet connection or by
- ssh tunnelling.
-\end_layout
-
-\begin_layout Standard
-The only modification required to the above code to do this is to change
- the driver command such that the driver code is submitted to the job queue
- rather than ran on the head node.
- The usual process required to do this is to write a shell script which
- runs the driver codes, then use a program such as qsub to submit this job
- to the cluster.
+However, for most simulations, especially those running with expensive 
 \begin_inset ERT
 status open
 
 \begin_layout Plain Layout
 
-%Better explanation of this, please...
+
+\backslash
+emph{ab initio}
+\end_layout
+
+\end_inset
+
+ forces and potentials, we will want to run the driver codes on a computational
+ cluster.
+ Here we run the wrapper code elsewhere, and simply use an internet socket
+ for the communication.
+ For information on how to do this, see section 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ref{ssh_sockets}
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+To run the driver on a cluster computer, two major changes must be implemented.
+ Firstly, the input file for the driver code should be changed so that it
+ connects to host network the wrapper is running on.
+ Secondly, to run the driver on a cluster a queueing program such as qsub
+ will need to be used.
+ These usually require a script file which can be executed on the cluster
+ computers to be submitted to a queue.
+ If we have a script file 
+\begin_inset Quotes eld
+\end_inset
+
+driver.sh
+\begin_inset Quotes erd
+\end_inset
+
+, which is set up to run 
+\begin_inset Quotes eld
+\end_inset
+
+driver_comm
+\begin_inset Quotes erd
+\end_inset
+
+, then the appropriate command would be:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+for a in `seq 1 4`
+\end_layout
+
+\begin_layout Plain Layout
+
+   do qsub driver.sh
+\end_layout
+
+\begin_layout Plain Layout
+
+done
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
 \end_layout
 
 \end_inset
@@ -2719,30 +2926,51 @@ status open
 
 \end_layout
 
+\begin_layout Standard
+Depending on which cluster is used, additional commands to set parameters
+ such as the walltime, number of nodes and number of programs can be used.
+ Check the qsub man page for the cluster you are running the code on for
+ more details.
+\end_layout
+
 \begin_layout Subsection
 Running multiple simulations
 \end_layout
 
 \begin_layout Standard
-While running a single simulation is useful, the power of the socket communicati
-ons method is most aptly demonstrated when multiple simulations are run
- at once.
+To set up multiple concurrent 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+wrappi
 \end_layout
 
-\begin_layout Standard
-Firstly, the wrapper code is dormant until a driver code connects to the
- socket, so many wrapper codes can be run at once without using large amounts
- of CPU time waiting for the driver codes.
- This is especially useful when the driver codes are being run on a cluster,
- and may have to wait a long time to reach the front of the queue.
+\end_inset
+
+ simulations each host socket has to be distinguishable, so that the driver
+ codes appropriate to each simulation connect only to the correct wrapper
+ code.
+ This can be done by adjusting the port number of each simulation, which
+ then acts as a unique identifier for each host socket.
+ This is very easy to write a shell script to do, if for example we assume
+ the simulations will be run in directories called sim_1, sim_2, 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ldots
 \end_layout
 
-\begin_layout Standard
-Secondly, each different simulation can be kept separate very easily by
- just adjusting the port number of each simulation.
- This is very easy to write a shell script to do.
- For example, if we assume the simulations will be run in directories called
- sim_1, sim_2, etc., then we can write:
+\end_inset
+
+, then we can write:
 \end_layout
 
 \begin_layout Standard
@@ -2817,8 +3045,9 @@ XXX
 \begin_inset Quotes erd
 \end_inset
 
- in a template file with a port number, which will be different for each
- simulation.
+ in a template file with a port number unique to each simulation.
+ If the same thing is done for the driver input files then this gives us
+ an easy way to specify which driver codes connect to which wrapper codes.
  However, note that this will only work if you are using inet sockets, as
  the port number is silently ignored for unix sockets.
 \end_layout
@@ -2833,10 +3062,16 @@ xml file
 
 \begin_layout Standard
 This is the main input file from which the simulation parameters are initialized.
- The standard xml format is a set of hierarchially nested tags, each with
- a start tag, which may or may not have an attribute parameter, some contained
- data, which may or may not contain other tags, and a closing tag.
- The syntax required is:
+ An xml file consists of a set of hierarchially nested tags.
+ There are three parts to an xml tag.
+ Each tag is identified by a tag name, which specifies the class or variable
+ that is being initialized.
+ Between the opening and closing tags there may be some data, which may
+ or may not contain other tags.
+ This will specify the contents of a class, or the value of a variable.
+ Finally, any tag can have attributes, which in the code are used for variables
+ which specify the state or type of class that will be created.
+ A xml tag has the following syntax:
 \end_layout
 
 \begin_layout Standard
@@ -2951,7 +3186,7 @@ Integer
 \begin_inset Text
 
 \begin_layout Plain Layout
-<tag>1</tag>
+<tag>12345</tag>
 \end_layout
 
 \end_inset
@@ -3093,12 +3328,16 @@ where each entry may be one of the types in the above table that has only
 The code uses this hierarchial structure to help read the data; if a particular
  object is held within a parent object in the code, then the tag for that
  object will be within the appropriate parent tags.
- In this manner, the entire class structure needed for the simulation can
- be constructed iteratively; the data between the two tags is assumed to
- correspond to data held within the object given by the tag name, which
- may have more tags corresponding to other child objects, so data held within
- those tags are assumed to correspond to data held within the child objects,
- and so on until all the data has been read.
+ This is used to make the structure of the simulation clear.
+ For example the system that is being studied is partly defined by the thermodyn
+amic ensemble that should be sampled, which in turn may be partly defined
+ by the temperature, and so on.
+ In the input file this would be specified by having a simulation tag, containin
+g an ensemble tag, which itself contains a temperature tag, which will contain
+ a float value corresponding to the temperature.
+ In the code itself this will correspond to a simulation object, which will
+ contain an ensemble object, which will contain a temperature variable.
+ In this manner, the simulation class structure can be constructed iteratively.
 \end_layout
 
 \begin_layout Standard
@@ -3531,10 +3770,7 @@ properties
 \end_inset
 
  tag in the xml input file.
-\end_layout
-
-\begin_layout Standard
-The format of the property list is:
+ The format of this tag is:
 \end_layout
 
 \begin_layout Standard
@@ -3545,7 +3781,7 @@ status open
 
 
 \backslash
-begin{verbatim}<properties stride=`' filename=`'>
+begin{verbatim}<properties stride=`' filename=`' flush=`'>
 \end_layout
 
 \begin_layout Plain Layout
@@ -3567,7 +3803,24 @@ end{verbatim}
 \end_layout
 
 \begin_layout Standard
-This is an array of strings, each of which containing three different parts:
+The attributes have the following meanings:
+\end_layout
+
+\begin_layout Description
+stride The number of steps between each output to file
+\end_layout
+
+\begin_layout Description
+filename The name of the output file
+\end_layout
+
+\begin_layout Description
+flush The number of steps between flushing the buffer
+\end_layout
+
+\begin_layout Standard
+This tag data is an array of strings, each of which containing three different
+ parts:
 \end_layout
 
 \begin_layout Itemize
@@ -3632,8 +3885,21 @@ Trajectory files
 \end_layout
 
 \begin_layout Standard
-These are the output file for atomic properties.
- 
+These are the output file for atomic or bead level properties, such as the
+ bead positions.
+ Each trajectory that should be output is specified by the 
+\begin_inset Quotes eld
+\end_inset
+
+trajectory
+\begin_inset Quotes erd
+\end_inset
+
+ tag in the input file.
+ These tags have the format:
+\end_layout
+
+\begin_layout Standard
 \begin_inset ERT
 status open
 
@@ -3641,7 +3907,8 @@ status open
 
 
 \backslash
-begin{verbatim}<trajectory stride=`' filename=`' format=`' cell_units=`'>
+begin{verbatim}<trajectory stride=`' filename=`' format=`' cell_units=`'
+ flush=`'>
 \end_layout
 
 \begin_layout Plain Layout
@@ -3686,9 +3953,8 @@ cell_units
  `format' specifies the format of the output file, and `cell_units' specifies
  the units in which the cell dimensions are output.
  Depending on the chosen trajectory to output, it will either print a file
- for each bead or just for each atom.
- If the trajectory is output for each bead, then the output files will be
- 
+ per bead or per atom.
+ If the trajectory is output per bead then the output files will be 
 \begin_inset Quotes eld
 \end_inset
 
@@ -3746,9 +4012,13 @@ Checkpoint files
 \begin_layout Standard
 As well as the above output files, the state of the system at a particular
  time step can also be saved to file.
- This gives a valid input file, with all the information required to restore
- the state of the system to how it was when the restart file was created.
- The syntax is:
+ These checkpoint files can be used as valid input files, with all the informati
+on required to restore the state of the system to the point at which the
+ file was created.
+ The syntax for this tag is:
+\end_layout
+
+\begin_layout Standard
 \begin_inset ERT
 status open
 
@@ -3818,8 +4088,11 @@ filename
 \end_layout
 
 \begin_layout Standard
-If there is no need to specify the `step' parameter, the following syntax
- also works:
+If the `step' parameter is not specified, the following syntax can also
+ be used:
+\end_layout
+
+\begin_layout Standard
 \begin_inset ERT
 status open
 
@@ -3842,11 +4115,9 @@ Restart file
 \end_layout
 
 \begin_layout Standard
-In the same way as the checkpoint files generated above, this outputs the
- state of the system in such a form that the simulation can be restarted.
- This however is automatically generated, and at the end of the simulation
- outputs the final state of the system.
- It outputs this data to the file 
+As well as checkpoint files during a simulation run, wrappi also creates
+ a file to restart from automatically at the end of the simulation, with
+ file name 
 \begin_inset Quotes eld
 \end_inset
 
@@ -3855,6 +4126,12 @@ RESTART
 \end_inset
 
 .
+ In the same way as the checkpoint files generated above, it contains the
+ state of the system is created by the wrapper, but it doesn't need to be
+ asked for by the user in the input file.
+ Its purpose is that if the user decides that insufficient steps where used
+ in an already completed simulation, then this file can be used to continue
+ from where it ended.
 \end_layout
 
 \begin_layout Subsection
@@ -3871,17 +4148,9 @@ EXIT
 \begin_inset Quotes erd
 \end_inset
 
- in the directory in which you are running the code.
+ in the directory in which the code is running.
  The thread handler will automatically detect this and safely shut down
- the program, outputting the correct 
-\begin_inset Quotes eld
-\end_inset
-
-RESTART
-\begin_inset Quotes erd
-\end_inset
-
- file as detailed above.
+ the program, outputting the restart file as detailed above.
  
 \end_layout
 
@@ -3929,7 +4198,7 @@ status open
 
 \begin_layout Plain Layout
 
-
+~
 \backslash
 cite{mark-mano08jcp}
 \end_layout
@@ -3953,18 +4222,42 @@ This is used in two different cases:
 \end_layout
 
 \begin_layout Itemize
-Initializing a simulation from a previous simulation with a different number
- of beads.
+Initializing a simulation from a previous one with a different number of
+ beads.
 \end_layout
 
 \begin_layout Itemize
-Calculating the long range part of the electronic potential with a reduced
- number of beads.
+Calculating long range interactions with a reduced number of beads.
 \end_layout
 
 \begin_layout Standard
-While the first of these is fairly self-explanatory, the second of these
- is more complicated.
+The first of these points is fairly self-explanatory.
+ To specify the number of beads that the system should be initialized to,
+ the 
+\begin_inset Quotes eld
+\end_inset
+
+nbeads
+\begin_inset Quotes erd
+\end_inset
+
+ attribute of the 
+\begin_inset Quotes eld
+\end_inset
+
+initialize
+\begin_inset Quotes erd
+\end_inset
+
+ tag simply needs to be set to the appropriate value in the input file.
+ This will take whatever configuration is specified in the initilialization
+ and use the above transformation to give a new configuration with the correct
+ number of beads.
+ 
+\end_layout
+
+\begin_layout Standard
+The second of these uses is more complicated.
  To understand this, consider an empirical potential model that can be split
  into a short-ranged potential and a long-ranged potential, where the long-range
 d part of the potential is slowly varying in space.
@@ -3988,13 +4281,20 @@ ng accuracy.
 \begin_layout Standard
 Once the force, potential and virial have been calculated using the reduced
  ring polymer, the resulting force and virial vectors are transformed back
- to their original size, before being used to propagate the trajectory of
- the full ring polymer.
+ to the appropriate size for the full ring polymer phase space, before being
+ used to propagate the trajectory.
 \end_layout
 
 \begin_layout Standard
-To specify the number of beads that the system should be initialized to,
- the 
+For a given 
+\begin_inset Quotes eld
+\end_inset
+
+socket
+\begin_inset Quotes erd
+\end_inset
+
+ tag, this can be specified in the input file by setting the 
 \begin_inset Quotes eld
 \end_inset
 
@@ -4002,28 +4302,10 @@ nbeads
 \begin_inset Quotes erd
 \end_inset
 
- attribute of the 
-\begin_inset Quotes eld
-\end_inset
-
-initialize
-\begin_inset Quotes erd
-\end_inset
-
- tag simply needs to be set to the appropriate value in the input file.
- This will take whatever configuration is specified in the initilialization
- and use the above transformation to give a new configuration with the correct
- number of beads.
- Similarly, each forcefield can be calculated on any number of beads by
- setting the 
-\begin_inset Quotes eld
-\end_inset
-
-nbeads
-\begin_inset Quotes erd
-\end_inset
-
- attribute to the appropriate value.
+ attribute.
+ This value will dictate how many beads will be used to calculate that part
+ of the force, and if it is not equal to the number of beads in the system
+ then ring polymer contraction will be used.
 \end_layout
 
 \begin_layout Section
@@ -4079,10 +4361,9 @@ cite{buss-parr08cpc}
 The Langevin thermostat is a local thermostat, so couples to each degree
  of freedom, whereas the stochastic velocity rescaling is a global algorithm,
  so is only coupled to the total kinetic energy.
- Global thermostats are less disruptive to the dynamics, so are less efficient
- than local thermostats for converging local properties but are much better
- for calculations that require reorganisation of the structure, such as
- dielectric constants
+ Global thermostats are less disruptive to the dynamics, so are much better
+ for calculation of properties that require reorganisation of the structure,
+ such as dielectric constants
 \begin_inset ERT
 status open
 
@@ -4096,6 +4377,8 @@ cite{ceri+10jcp}
 \end_inset
 
 .
+ However, they tend be less efficient for local properties such as the total
+ energy.
 \end_layout
 
 \begin_layout Standard
@@ -4122,7 +4405,7 @@ status open
 
 
 \backslash
-emph{A priori}
+emph{a priori}
 \end_layout
 
 \end_inset
@@ -4195,8 +4478,10 @@ cite{ceri+09jctc}
 \end_inset
 
 .
- This is much simpler to implement, and is more useful than the standard
- Langevin algorithm for two reasons.
+ This is much simpler to implement, but still maintains the increased power
+ and flexibility of the non-Markovian formulation.
+ In particular, this has two main advantages over standard Langevin equation
+ dynamics.
 \end_layout
 
 \begin_layout Standard
@@ -4207,9 +4492,8 @@ Firstly, there are a large number of adjustable parameters, so the thermostat
 
 \begin_layout Standard
 Secondly, the algorithm does not need to obey the fluctuation-dissipation
- theorem.
- The ensemble that is sampled can therefore be adjusted manually.
- For example, using information from the harmonic limit, this thermostat
+ theorem, so the ensemble that is sampled can be adjusted manually.
+ For example, using information from the harmonic limit this thermostat
  can attempt to enforce the appropriate quantum ensemble during a low bead
  PIMD simulation
 \begin_inset ERT
@@ -4280,7 +4564,8 @@ npt
 \begin_inset Quotes erd
 \end_inset
 
-, and the 
+.
+ The 
 \begin_inset Quotes eld
 \end_inset
 
@@ -4344,9 +4629,10 @@ cite{habe+08jcp}
 \begin_layout Standard
 RPMD uses the trajectories generated during a PIMD run to calculate correlation
  functions, so is straightforward to use.
- The largest difference between RPMD and PIMD is that stochastic thermostats
+ The largest difference between RPMD and PIMD is that local thermostats
  usually disrupt the particle motion too much to be used in the calculation
- of dynamical properties.
+ of dynamical properties, so often a constant energy ensemble must be sampled
+ instead.
  An example of one way to run an RPMD simulation is given in one of the
  test directories, as explained in section
 \begin_inset ERT
@@ -4370,7 +4656,7 @@ PA-CMD uses different dynamics to calculate correlation functions.
  polymer normal mode frequencies.
  This is particularly useful where non-zero frequency components of the
  correlation functions are important, as the ring polymer normal mode frequencie
-s in this case will contaminate the spectrum.
+s can contaminate the spectrum.
  PA-CMD avoids this by shifting these frequencies out of the frequency range
  of interest.
 \end_layout
@@ -4393,8 +4679,16 @@ normal_modes
 \end_inset
 
  tag.
- Normal modes takes an array argument, which can be used to specify how
- the ring polymer normal mode frequencies are defined.
+ 
+\begin_inset Quotes eld
+\end_inset
+
+normal modes
+\begin_inset Quotes erd
+\end_inset
+
+ takes an array argument, which can be used to specify how the ring polymer
+ normal mode frequencies are defined.
 \end_layout
 
 \begin_layout Chapter
