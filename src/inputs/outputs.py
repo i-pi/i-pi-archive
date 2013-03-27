@@ -93,6 +93,8 @@ class InputTrajectory(InputValue):
                                        "help": "The output file format." } )
    attribs["cell_units"] = (InputAttribute,{ "dtype" : str, "default": "",
                                        "help": "The units for the cell dimensions." } )
+   attribs["bead"] = (InputAttribute,{ "dtype" : int, "default": -1,
+                                         "help": "Print out only the specified bead. A negative value means print all." } )
    attribs["flush"] = (InputAttribute, {"dtype"    : int,    "default"  : 1,
                                    "help"     : "How often should streams be flushed. 1 means each time, zero means never." })
 
@@ -109,7 +111,7 @@ class InputTrajectory(InputValue):
 
       return engine.outputs.TrajectoryOutput(filename=self.filename.fetch(), stride=self.stride.fetch(),
                flush=self.flush.fetch(), what=super(InputTrajectory,self).fetch(),
-               format=self.format.fetch(), cell_units=self.cell_units.fetch())
+               format=self.format.fetch(), cell_units=self.cell_units.fetch(), ibead=self.bead.fetch())
 
    def store(self, traj):
       """Stores a PropertyOutput object."""
@@ -120,6 +122,7 @@ class InputTrajectory(InputValue):
       self.filename.store(traj.filename)
       self.format.store(traj.format)
       self.cell_units.store(traj.cell_units)
+      self.bead.store(traj.ibead)
 
    def check(self):
       """Checks for optional parameters."""
