@@ -89,5 +89,21 @@ DONE ** Add read cell from (A, B, C) and (alpha, beta, gamma) (JM) (JM)
 
 * Merge the io_xyz.py, io_binary.py and io_pdb.py files (JM)
 
-* In the manual, the attributes of the trajectory, properties and
-checkpoint tags in the code snippets of 4.5 and 4.6 are now out-of-date. (JM)
+DONE * In the manual, the attributes of the trajectory, properties and
+checkpoint tags in the code snippets of 4.5 and 4.6 are now out-of-date. (JM) (JM)
+
+** At the moment, only with InputValue or InputArray objects can we
+not print out the default values, because there is no way of comparing
+two larger class objects since they don't have a 'value' attribute.
+
+On the npt branch, I 'fixed' this by using the xml hierarchy, and comparing
+the 'value' attribute of all the child tags in turn. If all of the tags
+match, then the class and its default match, else they do not.
+There were still some inelegant parts of the code design, so a better solution
+should be sought. The idea is sound, but the implementation should be
+improved.
+
+PS: DO NOT try to make it so that things like empty strings are not output
+to the xml file, I've just realized that that is incompatible with the
+compulsary tag system we have. In this case the npt branch is WRONG.
+(JM) (JM)

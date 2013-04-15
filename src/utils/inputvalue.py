@@ -191,12 +191,20 @@ class Input(object):
       for a, v in self.attribs.iteritems():
          self.__dict__[a] = v[0](**v[1])
 
-      if not self._default is None:
-         self.store(self._default)
-
-      self._explicit = False #True if has been set by the user.
+      self.set_default()
 
       self._text = ""
+
+   def set_default(self):
+      """Sets the default value of the object."""
+
+      if not self._default is None:
+         self.store(self._default)
+      elif not hasattr(self, 'value'):
+         self.value = None #Makes sure we don't get exceptions when we
+                           #look for self.value
+
+      self._explicit = False #Since the value was not set by the user
 
    def store(self, value=None):
       """Dummy function for storing data."""
@@ -304,22 +312,16 @@ class Input(object):
 
       # before starting, sets everything to its default -- if a default is set!
       for a in self.attribs:
-         ea = self.__dict__[a]
-         if not ea._default is None:
-            ea.store(ea._default)
-            ea._explicit = False
+         self.__dict__[a].set_default()
       for f in self.fields:
-         ef = self.__dict__[f]
-         if not ef._default is None:
-            ef.store(ef._default)
-            ef._explicit = False
+         self.__dict__[f].set_default()
 
       self.extra = []
       self._explicit = True
       if xml is None:
          self._text = text
       else:
-         for a, v in xml.attribs.iteritems() :
+         for a, v in xml.attribs.iteritems():
             if a in self.attribs:
                self.__dict__[a].parse(text=v)
             elif a == "_text":
