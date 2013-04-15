@@ -29,7 +29,7 @@ def mk_nm_matrix(nbeads):
 
    b2nm = np.zeros((nbeads,nbeads))
    b2nm[0,:] = np.sqrt(1.0/nbeads)
-   for i in range(1,nbeads/2+1):
+   for i in range(1, nbeads/2+1):
       for j in range(nbeads):
          b2nm[i,j] = np.sqrt(2.0/nbeads)*np.cos(2*np.pi*j*i/float(nbeads))
    if (nbeads%2) == 0:
@@ -61,7 +61,7 @@ def mk_rs_matrix(nb1, nb2):
       # builds the "reduction" matrix that picks the normal modes we want to keep
       b1_b2 = np.zeros((nb2, nb1), float)
       b1_b2[0,0] = 1.0
-      for i in range(1,nb2/2+1):
+      for i in range(1, nb2/2+1):
          b1_b2[i,i] = 1.0
          b1_b2[nb2-i, nb1-i] = 1.0
       if (nb2 % 2 == 0):

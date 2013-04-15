@@ -53,8 +53,8 @@ class PropertyOutput(dobject):
       self.filename = filename
       self.outlist = np.asarray(outlist,np.dtype('|S1024'))
       self.stride = stride
-      self.flush=flush
-      self.nout=0
+      self.flush = flush
+      self.nout = 0
       self.out = None
 
    def bind(self, simul):
@@ -215,10 +215,14 @@ class TrajectoryOutput(dobject):
             # zero-padded bead number
             padb = ( ("%0" + str(int(1 + np.floor(np.log(self.simul.beads.nbeads)/np.log(10)))) + "d") % (b) )
             try:
-               if (self.ibead<0 or self.ibead==b):
-                  if getkey(self.what) == "extras" : self.out.append( open(self.filename + "_" + padb, "a") )
-                  else: self.out.append( open(self.filename + "_" + padb + "." + self.format, "a") )
-               else: self.out.append(None)  # creates null outputs if a single bead output is chosen
+               if (self.ibead < 0 or self.ibead == b):
+                  if getkey(self.what) == "extras":
+                     self.out.append(open(self.filename + "_" + padb, "a"))
+                  else:
+                     self.out.append(open(self.filename + "_" + padb + "." + self.format, "a"))
+               else:
+                  self.out.append(None) # creates null outputs if a 
+                                        # single bead output is chosen
             except:
                raise ValueError("Could not open file " + self.filename + "_" + padb + "." + self.format + " for output")
       else:

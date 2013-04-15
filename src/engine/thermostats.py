@@ -272,7 +272,7 @@ class ThermoPILE_L(Thermostat):
       else:
          self.prng = prng
 
-      prev_ethermo=self.ethermo
+      prev_ethermo = self.ethermo
 
       # creates a set of thermostats to be applied to individual normal modes
       self._thermos = [ ThermoLangevin(temp=1, dt=1, tau=1) for b in range(nm.nbeads) ]

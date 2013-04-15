@@ -296,8 +296,8 @@ def read_list(data, delims="[]", split=",", strip=" \n\t'"):
       rlist[i] = rlist[i].strip(strip)
 
    # handles empty lists correctly
-   if len(rlist)==1 and rlist[0]=="":
-      rlist=[] 
+   if len(rlist) == 1 and rlist[0] == "":
+      rlist = [] 
     
    return rlist
 

@@ -37,10 +37,10 @@ def print_xyz_path(beads, cell, filedesc = sys.stdout):
    natoms = beads.natoms
    nbeads = beads.nbeads
    for j in range(nbeads):
-      filedesc.write("%d\n# bead: %d CELL(abcABC): %10.5f  %10.5f  %10.5f  %10.5f  %10.5f  %10.5f \n" % ( natoms, j, a,b,c,alpha,beta,gamma))
+      filedesc.write("%d\n# bead: %d CELL(abcABC): %10.5f  %10.5f  %10.5f  %10.5f  %10.5f  %10.5f \n" % (natoms, j, a, b, c, alpha, beta, gamma))
       for i in range(natoms):
          bead = beads[j][i]
-         filedesc.write("%8s %12.5e %12.5e %12.5e\n" % (bead.name[0],bead.q[0],bead.q[1],bead.q[2]))
+         filedesc.write("%8s %12.5e %12.5e %12.5e\n" % (bead.name[0], bead.q[0], bead.q[1], bead.q[2]))
 
 def print_xyz(atoms, cell, filedesc = sys.stdout, title=""):
    """Prints the centroid configurations, into a xyz formatted file.
@@ -58,12 +58,12 @@ def print_xyz(atoms, cell, filedesc = sys.stdout, title=""):
    gamma *= 180.0/math.pi
 
    natoms = atoms.natoms
-   filedesc.write("%d\n# CELL(abcABC): %10.5f  %10.5f  %10.5f  %10.5f  %10.5f  %10.5f  %s\n" % ( natoms, a,b,c,alpha,beta,gamma, title))
+   filedesc.write("%d\n# CELL(abcABC): %10.5f  %10.5f  %10.5f  %10.5f  %10.5f  %10.5f  %s\n" % ( natoms, a, b, c, alpha, beta, gamma, title))
    # direct access to avoid unnecessary slow-down
-   qs=depstrip(atoms.q)
-   lab=depstrip(atoms.names)
+   qs = depstrip(atoms.q)
+   lab = depstrip(atoms.names)
    for i in range(natoms):
-      filedesc.write("%8s %12.5e %12.5e %12.5e\n" % (lab[i],qs[3*i],qs[3*i+1],qs[3*i+2]))
+      filedesc.write("%8s %12.5e %12.5e %12.5e\n" % (lab[i], qs[3*i], qs[3*i+1], qs[3*i+2]))
 
 def read_xyz(filedesc):
    """Takes a xyz-style file and creates an Atoms object.
@@ -80,8 +80,8 @@ def read_xyz(filedesc):
 
    qatoms = []
    names = []
-   iat=0
-   while (iat<natoms):
+   iat = 0
+   while (iat < natoms):
       body = filedesc.readline()
       if body.strip() == "": break
       body = body.split()

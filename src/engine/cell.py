@@ -35,7 +35,8 @@ class Cell(dobject):
             triangular 3*3 matrix. Defaults to a 3*3 identity matrix.
       """
 
-      if h is None:   h = np.identity(3, float)
+      if h is None:
+         h = np.identity(3, float)
       dset(self,"h",depend_array(name = 'h', value = h) )
 
       dset(self,"ih",

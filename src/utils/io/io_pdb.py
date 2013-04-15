@@ -36,7 +36,7 @@ def print_pdb_path(beads, cell, filedesc = sys.stdout):
    beta  *= 180.0/math.pi
    gamma *= 180.0/math.pi
    
-   z = 1
+   z = 1 #What even is this parameter?
    filedesc.write("CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f%s%4i\n" % (a, b, c, alpha, beta, gamma, " P 1        ", z))
 
    natoms = beads.natoms
@@ -51,7 +51,7 @@ def print_pdb_path(beads, cell, filedesc = sys.stdout):
          filedesc.write("CONECT%5i%5i\n" % (i+1, (nbeads-1)*natoms+i+1))            
       for j in range(nbeads-1):      
          for i in range(natoms):
-            filedesc.write("CONECT%5i%5i\n" % (j*natoms+i+1,(j+1)*natoms+i+1))
+            filedesc.write("CONECT%5i%5i\n" % (j*natoms+i+1, (j+1)*natoms+i+1))
                
    filedesc.write("END\n")
 
@@ -83,7 +83,7 @@ def print_pdb(atoms, cell, filedesc = sys.stdout, title=""):
    natoms = atoms.natoms
    for i in range(natoms):
       atom = atoms[i]
-      filedesc.write("ATOM  %5i %4s%1s%3s %1s%4i%1s   %8.3f%8.3f%8.3f%6.2f%6.2f          %2s%2i\n" % (i+1, atom.name[0],' ','  1',' ',1,' ',atom.q[0],atom.q[1],atom.q[2],0.0,0.0,'  ',0))
+      filedesc.write("ATOM  %5i %4s%1s%3s %1s%4i%1s   %8.3f%8.3f%8.3f%6.2f%6.2f          %2s%2i\n" % (i+1, atom.name[0], ' ', '  1', ' ', 1, ' ', atom.q[0], atom.q[1], atom.q[2], 0.0, 0.0, '  ', 0))
 
    filedesc.write("END\n")
 
@@ -100,10 +100,16 @@ def read_pdb(filedesc):
    """
 
    header = filedesc.readline()
-   a = float(header[6:15]);      b = float(header[15:24]);    c = float(header[24:33]);
-   alpha = float(header[33:40]); beta = float(header[40:47]); gamma = float(header[47:54]);
-   alpha *= math.pi/180.0;       beta *= math.pi/180.0;       gamma *= math.pi/180.0
-   h = mt.abc2h(a, b, c, alpha, beta, gamma) #/ 0.529177
+   a = float(header[6:15])
+   b = float(header[15:24])
+   c = float(header[24:33])
+   alpha = float(header[33:40])
+   beta = float(header[40:47])
+   gamma = float(header[47:54])
+   alpha *= math.pi/180.0
+   beta *= math.pi/180.0
+   gamma *= math.pi/180.0
+   h = mt.abc2h(a, b, c, alpha, beta, gamma)
    cell = Cell(h)
    
    natoms = 0
@@ -116,7 +122,7 @@ def read_pdb(filedesc):
       x = float(body[31:39])
       y = float(body[39:47])
       z = float(body[47:55])
-      pos = np.array([x,y,z]) #/ 0.529177
+      pos = np.array([x,y,z])
       qatoms.append(pos)
       
       body = filedesc.readline()

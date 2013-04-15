@@ -162,7 +162,6 @@ class Simulation(dobject):
          # this is a bit time-consuming but makes sure that we can honor soft
          # exit requests without screwing the trajectory
          
-         
          steptime = -time.time()
          self.chk.store()
 

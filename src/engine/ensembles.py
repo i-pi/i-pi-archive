@@ -56,7 +56,7 @@ class Ensemble(dobject):
          temp: The temperature.
       """
 
-      dset(self, "econs", depend_value(name='econs', func=self.get_econs) )
+      dset(self, "econs", depend_value(name='econs', func=self.get_econs))
       dset(self, "temp",  depend_value(name='temp',  value=temp))
       dset(self, "dt",    depend_value(name='dt',    value=dt))
 

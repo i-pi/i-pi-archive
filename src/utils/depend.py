@@ -124,7 +124,7 @@ class depend_base(object):
             depends upon.
       """
 
-      self._dependants=[]
+      self._dependants = []
       if tainted is None:
          tainted = np.array([True],bool)
       if dependants is None:
@@ -389,7 +389,7 @@ class depend_array(np.ndarray, depend_base):
       """Wrapper for numpy copy mechanism."""
 
       # Sets a flag and hands control to the numpy copy
-      self._fcopy=True
+      self._fcopy = True
       return super(depend_array,self).copy(order)
 
    def __array_finalize__(self, obj):
@@ -433,16 +433,17 @@ class depend_array(np.ndarray, depend_base):
       so we strip and return a ndarray.
       """
 
-      if context is None or len(context)<2 or not type(context[0]) is np.ufunc:
-         # it is not clear what we should do. in doubt, strip dependencies.
+      if context is None or len(context) < 2 or not type(context[0]) is np.ufunc:
+         # It is not clear what we should do. If in doubt, strip dependencies.
          return np.ndarray.__array_prepare__(self.view(np.ndarray),arr.view(np.ndarray),context)
-      elif len(context[1])>context[0].nin and context[0].nout>0:
-         # we are being called by a ufunc with a output argument, which is being
-         # actually used. most likely, something like an increment, so we pass on a
-         # deparray
+      elif len(context[1]) > context[0].nin and context[0].nout > 0:
+         # We are being called by a ufunc with a output argument, which is being
+         # actually used. Most likely, something like an increment, 
+         # so we pass on a deparray
          return super(depend_array,self).__array_prepare__(arr,context)
       else:
-         # apparently we are generating a new array. we have no way of knowing its
+         # Apparently we are generating a new array. 
+         # We have no way of knowing its
          # dependencies, so we'd better return a ndarray view!
          return np.ndarray.__array_prepare__(self.view(np.ndarray),arr.view(np.ndarray),context)
 
@@ -452,9 +453,9 @@ class depend_array(np.ndarray, depend_base):
       See docstring of __array_prepare__().
       """
 
-      if context is None or len(context)<2 or not type(context[0]) is np.ufunc:
+      if context is None or len(context) < 2 or not type(context[0]) is np.ufunc:
          return np.ndarray.__array_wrap__(self.view(np.ndarray),arr.view(np.ndarray),context)
-      elif len(context[1])>context[0].nin and context[0].nout>0:
+      elif len(context[1]) > context[0].nin and context[0].nout > 0:
          return super(depend_array,self).__array_wrap__(arr,context)
       else:
          return np.ndarray.__array_wrap__(self.view(np.ndarray),arr.view(np.ndarray),context)
@@ -590,6 +591,7 @@ class depend_array(np.ndarray, depend_base):
 
       self.__setitem__(slice(None,None),value=value)
 
+
 # np.dot and other numpy.linalg functions have the nasty habit to
 # view cast to generate the output. Since we don't want to pass on
 # dependencies to the result of these functions, and we can't use
@@ -597,11 +599,13 @@ class depend_array(np.ndarray, depend_base):
 # overwrite np.dot and other similar functions.
 # BEGINS NUMPY FUNCTIONS OVERRIDE
 # ** np.dot
-__dp_dot=np.dot
-def dep_dot(a, b):   return depstrip(__dp_dot(a,b))
-np.dot=dep_dot
-# ENDS NUMPY FUNCTIONS OVERRIDE
+__dp_dot = np.dot
 
+def dep_dot(a, b): 
+   return depstrip(__dp_dot(a,b))
+
+np.dot = dep_dot
+# ENDS NUMPY FUNCTIONS OVERRIDE
 
 def dget(obj,member):
    """Takes an object and retrieves one of its attributes.

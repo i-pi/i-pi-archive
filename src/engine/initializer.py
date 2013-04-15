@@ -274,5 +274,3 @@ class Initializer(dobject):
          raise ValueError("Could not initialize the path configuration, neither explicitly nor from <initialize>")
       if icell.V == 0.0 :
          raise ValueError("Could not initialize the cell configuration, neither explicitly nor from <initialize>")
-
-      print "WTF", simul.cell.h

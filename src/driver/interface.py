@@ -187,8 +187,8 @@ class Driver(socket.socket):
 #   pre-2.5 version.
          try:
             bpart = ""
-            bpart = self.recv( blen-bpos )
-            self._buf[bpos:bpos+len(bpart)]=np.fromstring(bpart, np.byte)
+            bpart = self.recv(blen - bpos)
+            self._buf[bpos:bpos + len(bpart)] = np.fromstring(bpart, np.byte)
          except socket.timeout:
             print " @SOCKET:   Timeout in status recvall, trying again!"
             timeout = True
@@ -199,7 +199,7 @@ class Driver(socket.socket):
             pass
          if (not timeout and bpart == 0):
             raise Disconnected()
-         bpos+=len(bpart)
+         bpos += len(bpart)
 
 #   post-2.5 version: slightly more compact for modern python versions
 #         try:
@@ -581,7 +581,7 @@ class Interface(object):
       pendr = self.requests[:]
       pendr = [ r for r in self.requests if r["status"] == "Queued" ]
 
-      for fc in freec[:] :
+      for fc in freec[:]:
          matched = False
          # first, makes sure that the client is REALLY free
          if not (fc.status & Status.Up):
@@ -621,13 +621,14 @@ class Interface(object):
                   self.jobs.append([r,fc])
                   fc.locked =  (fc.lastreq is r["id"])
                   matched = True
-                  pendr = [ nr for nr in pendr if (not nr is r) ] # removes r from the list of pending jobs
+                  # removes r from the list of pending jobs
+                  pendr = [nr for nr in pendr if (not nr is r)] 
                   break
                else:
-                  print " @SOCKET:   (2) Client is in an unexpected status ",fc.status,". Will try to keep calm and carry on."
+                  print " @SOCKET:   (2) Client is in an unexpected status ", fc.status, ". Will try to keep calm and carry on."
             if matched:
-               break # doesn't do a second (or third) round if it managed to assign the job
-
+               break # doesn't do a second (or third) round if it managed 
+                     # to assign the job
 
 #      for r in self.requests:
 #         if r["status"] == "Queued":
