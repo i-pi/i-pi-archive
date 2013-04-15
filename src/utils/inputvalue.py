@@ -397,7 +397,7 @@ class Input(object):
          if self._valid is not None:
             rstr += "{\\\\ \\bf OPTIONS: }" #prints out valid options, if
             for option in self._valid:      #required.
-               rstr += "'" + str(option) + "', "
+               rstr += "`" + str(option) + "', "
             rstr = rstr.rstrip(", ")
             rstr +=  "\n"
 
@@ -483,7 +483,7 @@ class Input(object):
             return rstr
       elif type(default) == str:
          if latex:
-            return "'" + default + "'" #indicates that it is a string
+            return "`" + default + "'" #indicates that it is a string
          else:
             return " " + default + " "
       elif default == []:
