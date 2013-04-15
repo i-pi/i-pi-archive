@@ -251,12 +251,13 @@ class TrajectoryOutput(dobject):
       # quick-and-dirty way to check if a trajectory is "global" or per-bead
       # Checks to see if there is a list of files or just a single file.
       if hasattr(self.out, "__getitem__"):
-         if self.ibead<0 :
+         if self.ibead < 0:
             for b in range(len(self.out)):
                self.simul.trajs.print_traj(self.what, self.out[b], b, format=self.format, cell_units=self.cell_units, flush=doflush)
-         elif self.ibead<len(self.out):
+         elif self.ibead < len(self.out):
             self.simul.trajs.print_traj(self.what, self.out[self.ibead], self.ibead, format=self.format, cell_units=self.cell_units, flush=doflush)
-         else: raise ValueError("Selected bead index "+str(self.ibead)+" does not exist for trajectory "+self.what)
+         else:
+            raise ValueError("Selected bead index " + str(self.ibead) + " does not exist for trajectory " + self.what)
       else:
          self.simul.trajs.print_traj(self.what, self.out, b=0, format=self.format, cell_units=self.cell_units, flush=doflush)
 

@@ -529,7 +529,8 @@ class Interface(object):
          if c.status & Status.HasData:
             try:
                r["result"] = c.getforce()
-               if len(r["result"][1]) != len(r["pos"]): raise InvalidSize
+               if len(r["result"][1]) != len(r["pos"]):
+                  raise InvalidSize
             except Disconnected:
                c.status = 0
                continue
