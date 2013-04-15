@@ -44,6 +44,10 @@ class Disconnected(Exception):
 
    pass
 
+class InvalidSize(Exception):
+   """Disconnected: Raised if client returns forces with inconsistent number of atoms."""
+
+   pass
 
 class InvalidStatus(Exception):
    """InvalidStatus: Raised if client has the wrong status.
@@ -269,7 +273,7 @@ class Driver(socket.socket):
          Disconnected: Raised if the driver has disconnected.
 
       Returns:
-         A list of the form [potential, force, virial].
+         A list of the form [potential, force, virial, extra].
       """
 
       if (self.status & Status.HasData):
@@ -525,13 +529,18 @@ class Interface(object):
          if c.status & Status.HasData:
             try:
                r["result"] = c.getforce()
+               if len(r["result"][1]) != len(r["pos"]): raise InvalidSize
             except Disconnected:
                c.status = 0
                continue
+            except InvalidSize:
+              print " @SOCKET:   Client returned an inconsistent number of forces. Will mark as disconnected and try to carry on."
+              c.status = 0
+              continue              
             except:
               print " @SOCKET:   Client got in a awkward state during getforce. Will mark as disconnected and try to carry on."
               c.status = 0
-              continue
+              continue              
             c.poll()
             while c.status & Status.Busy: # waits, but check if we got stuck.
                if self.timeout > 0 and r["start"] > 0 and time.time() - r["start"] > self.timeout:

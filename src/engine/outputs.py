@@ -160,7 +160,7 @@ class TrajectoryOutput(dobject):
       simul: The simulation object to get the data to be output from.
    """
 
-   def __init__(self, filename="out", stride=1, flush=1, what="", format="xyz", cell_units="atomic_unit"):
+   def __init__(self, filename="out", stride=1, flush=1, what="", format="xyz", cell_units="atomic_unit", ibead=-1):
       """ Initializes a property output stream opening the corresponding
       file name.
 
@@ -175,12 +175,14 @@ class TrajectoryOutput(dobject):
          format: A string specifying the type of trajectory file to be created.
          cell_units: A string specifying the units that the cell parameters are
             given in.
+         ibead: If positive, prints out only the selected bead. If negative, prints out one file per bead.
       """
 
       self.filename = filename
       self.what = what
       self.stride = stride
       self.flush = flush
+      self.ibead = ibead
       self.format = format
       self.cell_units = cell_units
       self.out = None
@@ -210,10 +212,13 @@ class TrajectoryOutput(dobject):
          # must write out trajectories for each bead, so must create b streams
          self.out = []
          for b in range(self.simul.beads.nbeads):
+            # zero-padded bead number
             padb = ( ("%0" + str(int(1 + np.floor(np.log(self.simul.beads.nbeads)/np.log(10)))) + "d") % (b) )
             try:
-               if getkey(self.what) == "extras" : self.out.append( open(self.filename + "_" + padb, "a") )
-               else: self.out.append( open(self.filename + "_" + padb + "." + self.format, "a") )
+               if (self.ibead<0 or self.ibead==b):
+                  if getkey(self.what) == "extras" : self.out.append( open(self.filename + "_" + padb, "a") )
+                  else: self.out.append( open(self.filename + "_" + padb + "." + self.format, "a") )
+               else: self.out.append(None)  # creates null outputs if a single bead output is chosen
             except:
                raise ValueError("Could not open file " + self.filename + "_" + padb + "." + self.format + " for output")
       else:
@@ -246,8 +251,12 @@ class TrajectoryOutput(dobject):
       # quick-and-dirty way to check if a trajectory is "global" or per-bead
       # Checks to see if there is a list of files or just a single file.
       if hasattr(self.out, "__getitem__"):
-         for b in range(len(self.out)):
-            self.simul.trajs.print_traj(self.what, self.out[b], b, format=self.format, cell_units=self.cell_units, flush=doflush)
+         if self.ibead<0 :
+            for b in range(len(self.out)):
+               self.simul.trajs.print_traj(self.what, self.out[b], b, format=self.format, cell_units=self.cell_units, flush=doflush)
+         elif self.ibead<len(self.out):
+            self.simul.trajs.print_traj(self.what, self.out[self.ibead], self.ibead, format=self.format, cell_units=self.cell_units, flush=doflush)
+         else: raise ValueError("Selected bead index "+str(self.ibead)+" does not exist for trajectory "+self.what)
       else:
          self.simul.trajs.print_traj(self.what, self.out, b=0, format=self.format, cell_units=self.cell_units, flush=doflush)
 
