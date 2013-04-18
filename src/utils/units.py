@@ -280,11 +280,12 @@ def unit_to_internal(family, unit, number):
    """Converts a number of given dimensions and units into internal units.
 
    Args:
+      family: The dimensionality of the number.
       unit: The units 'number' is originally in.
       number: The value of the parameter in the units 'unit'.
 
    Returns:
-      number: The number in internal units.
+      The number in internal units.
 
    Raises:
       ValueError: Raised if the user specified units aren't given in the
@@ -322,6 +323,7 @@ def unit_to_user(family, unit, number):
    """Converts a number of given dimensions from internal to user units.
 
    Args:
+      family: The dimensionality of the number.
       unit: The units 'number' should be changed to.
       number: The value of the parameter in internal units.
 
