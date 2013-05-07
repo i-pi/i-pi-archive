@@ -12,17 +12,18 @@ Classes:
    NPTEnsemble: Deals with constant pressure dynamics.
 """
 
-__all__ = ['Ensemble', 'NVEEnsemble', 'NVTEnsemble', 'NPTEnsemble']
+__all__ = ['Ensemble', 'NVEEnsemble', 'NVTEnsemble', 'NPTEnsemble', 'RERUNEnsemble']
 
 import numpy as np
-import math
+import time
+
 from utils.depend import *
 from utils import units
 from thermostats import *
 from barostats import *
 from inputs.thermostats import InputThermo
 from inputs.barostats import InputBaro
-import time
+from utils.softexit import softexit
 
 class Ensemble(dobject):
    """Base ensemble class.
@@ -36,6 +37,8 @@ class Ensemble(dobject):
       forces: A forces object giving the virial and the forces acting on
          each bead.
       prng: A random number generator object.
+      fixcom: A boolean which decides whether the centre of mass
+         motion will be constrained or not.
 
    Depend objects:
       econs: The conserved energy quantity appropriate to the given
@@ -48,17 +51,20 @@ class Ensemble(dobject):
          effective classical temperature.
    """
 
-   def __init__(self, dt, temp):
+   def __init__(self, dt, temp, fixcom=False):
       """Initialises Ensemble.
 
       Args:
          dt: The timestep of the simulation algorithms.
          temp: The temperature.
+         fixcom: An optional boolean which decides whether the centre of mass
+            motion will be constrained or not. Defaults to False.
       """
 
       dset(self, "econs", depend_value(name='econs', func=self.get_econs))
       dset(self, "temp",  depend_value(name='temp',  value=temp))
       dset(self, "dt",    depend_value(name='dt',    value=dt))
+      self.fixcom = fixcom
 
 
    def bind(self, beads, nm, cell, bforce, prng):
@@ -134,8 +140,6 @@ class NVEEnsemble(Ensemble):
    defined so that the spring potential can be calculated.
 
    Attributes:
-      fixcom: A boolean which decides whether the centre of mass
-         motion will be constrained or not.
       ptime: The time taken in updating the velocities.
       qtime: The time taken in updating the positions.
       ttime: The time taken in applying the thermostat steps.
@@ -155,8 +159,7 @@ class NVEEnsemble(Ensemble):
             motion will be constrained or not. Defaults to False.
       """
 
-      super(NVEEnsemble,self).__init__(dt=dt,temp=temp)
-      self.fixcom = fixcom
+      super(NVEEnsemble,self).__init__(dt=dt,temp=temp, fixcom=fixcom)
 
    def rmcom(self):
       """This removes the centre of mass contribution to the kinetic energy.
@@ -453,3 +456,82 @@ class NPTEnsemble(NVTEnsemble):
       self.thermostat.step()
       self.rmcom()
       self.ttime += time.time()
+
+from utils.io.io_xyz import read_xyz
+from utils.io.io_pdb import read_pdb
+from utils.io.io_xml import xml_parse_file
+from utils.units import Constants, unit_to_internal
+class RERUNEnsemble(Ensemble):
+   """Ensemble object that just loads snapshots from an external file in sequence.
+
+   Has the relevant conserved quantity and normal mode propagator for the
+   constant energy ensemble. Note that a temperature of some kind must be
+   defined so that the spring potential can be calculated.
+
+   Attributes:
+      intraj: The input trajectory file.
+      ptime: The time taken in updating the velocities.
+      qtime: The time taken in updating the positions.
+      ttime: The time taken in applying the thermostat steps.
+
+   Depend objects:
+      econs: Conserved energy quantity. Depends on the bead kinetic and
+         potential energy, and the spring potential energy.
+   """
+
+   def __init__(self, dt, temp, fixcom=False, intraj=None):
+      """Initialises NVEEnsemble.
+
+      Args:
+         dt: The simulation timestep.
+         temp: The system temperature.
+         fixcom: An optional boolean which decides whether the centre of mass
+            motion will be constrained or not. Defaults to False.
+      """
+
+      super(RERUNEnsemble,self).__init__(dt=dt,temp=temp,fixcom=fixcom)
+      if intraj == None: raise ValueError("Must provide an initialized InitFile object to read trajectory from")
+      self.intraj = intraj
+
+      self.rfile = open(self.intraj.filename,"r")
+
+   def step(self):
+      """Does one simulation time step."""
+
+      self.ptime=self.ttime=0
+      self.qtime = -time.time()
+
+      try:
+         if (self.intraj.format == "xyz"):
+            for b in self.beads:
+               myatoms = read_xyz(self.rfile)
+               myatoms.q *= unit_to_internal("length",self.intraj.units,1.0)
+               b.q[:]=myatoms.q
+         elif (self.intraj.format == "pdb"):
+            for b in self.beads:
+               myatoms, mycell = read_pdb(self.rfile)
+               myatoms.q *= unit_to_internal("length",self.intraj.units,1.0)
+               mycell.h  *= unit_to_internal("length",self.intraj.units,1.0)
+               b.q[:]=myatoms.q
+            self.cell.h[:]=mycell.h
+            print "cell", self.cell.h
+            print "atoms", self.beads.q[0,0:3]
+         elif (self.intraj.format == "chk" or self.intraj.format == "checkpoint"):
+            # reads configuration from a checkpoint file
+            rfile = open(self.rfile,"r")
+            xmlchk = xml_parse_file(self.rfile) # Parses the file.
+
+            simchk = inputs.simulation.InputSimulation()
+            simchk.parse(xmlchk.fields[0][1])
+            mycell = simchk.cell.fetch()
+            mybeads = simchk.beads.fetch()
+            self.cell.h[:]=mycell.h
+            self.beads.q[:]=mybeads.q
+
+      except:
+         raise
+         softexit.trigger(" # Finished reading re-run trajectory")
+
+      self.qtime += time.time()
+
+
