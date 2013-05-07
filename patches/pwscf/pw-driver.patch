@@ -77,9 +77,9 @@ diff -rupN espresso//Modules/read_namelists.f90 driver//Modules/read_namelists.f
            CASE DEFAULT
               !
 diff -rupN espresso//PW/src/driver.f90 driver//PW/src/driver.f90
---- espresso//PW/src/driver.f90	1970-01-01 01:00:00.000000000 +0100
+--- espresso//PW/src/driver.f90	1970-01-01 01:00:00.000000000 +0102
 +++ driver//PW/src/driver.f90	2012-02-01 14:46:20.963358577 +0000
-@@ -0,0 +1,98 @@
+@@ -0,0 +1,100 @@
 +  SUBROUTINE driver()
 +    USE io_global,        ONLY : stdout, ionode, ionode_id
 +    USE io_files,         ONLY : srvaddress
@@ -170,6 +170,8 @@ diff -rupN espresso//PW/src/driver.f90 driver//PW/src/driver.f90
 +            call writebuffer(socket,nat,4)            
 +            call writebuffer(socket,combuf,3*nat*8)
 +            call writebuffer(socket,vir,9*8)
++            nat = 0
++            call writebuffer(socket,nat,4)
 +         endif
 +         hasdata=.false.
 +         CALL punch( 'config' )
