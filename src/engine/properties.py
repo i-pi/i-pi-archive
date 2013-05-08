@@ -401,7 +401,6 @@ class Properties(dobject):
 
          # "spreads" the COM removal correction evenly over all the atoms...
          kedof=self.get_kinmd(atom)/nat*(self.beads.natoms/(3.0*self.beads.natoms*self.beads.nbeads - mdof))
-         print kedof
 
       return kedof/(0.5*Constants.kb)
 
@@ -577,22 +576,25 @@ class Properties(dobject):
 
       i = int(ni)
       j = int(nj)
+      mi=self.beads.m[i]
+      mj=self.beads.m[j]
 
       q = depstrip(self.beads.q)
       qc = depstrip(self.beads.qc)
       f = depstrip(self.forces.f)
 
+      # I implement this for the most general case. In practice T_ij = <p_i p_j>/(2sqrt(m_i m_j))
       kcv = np.zeros((6),float)
       for b in range(self.beads.nbeads):
-         kcv[0] += (q[b,3*i]-qc[3*i])*f[b,3*j]                                                      #Txx
-         kcv[1] += (q[b,3*i+1]-qc[3*i+1])*f[b,3*j+1]                                                #Tyy
-         kcv[2] += (q[b,3*i+2]-qc[3*i+2])*f[b,3*j+2]                                                #Tzz
-         kcv[3] += 0.5*( (q[b,3*i]-qc[3*i])*f[b,3*j+1] + (q[b,3*j+1]-qc[3*j+1])*f[b,3*i] )          #Txy
-         kcv[4] += 0.5*( (q[b,3*i]-qc[3*i])*f[b,3*j+2] + (q[b,3*j+2]-qc[3*j+2])*f[b,3*i] )          #Txz
-         kcv[5] += 0.5*( (q[b,3*i+1]-qc[3*i+1])*f[b,3*j+2] + (q[b,3*j+2]-qc[3*j+2])*f[b,3*i+1] )    #Tyz
+         kcv[0] += mi*(q[b,3*i]-qc[3*i])    *f[b,3*j]   + mj*(q[b,3*j]-qc[3*j])    *f[b,3*j]       #Txx
+         kcv[1] += mi*(q[b,3*i+1]-qc[3*i+1])*f[b,3*j+1] + mj*(q[b,3*j+1]-qc[3*j+1])*f[b,3*i+1]     #Tyy
+         kcv[2] += mi*(q[b,3*i+2]-qc[3*i+2])*f[b,3*j+2] + mj*(q[b,3*j+2]-qc[3*j+2])*f[b,3*i+2]     #Tzz
+         kcv[3] += mi*(q[b,3*i]-qc[3*i])*    f[b,3*j+1] + mj*(q[b,3*j+1]-qc[3*j+1])*f[b,3*i]       #Txy
+         kcv[4] += mi*(q[b,3*i]-qc[3*i])*    f[b,3*j+2] + mj*(q[b,3*j+2]-qc[3*j+2])*f[b,3*i]       #Txz
+         kcv[5] += mi*(q[b,3*i+1]-qc[3*i+1])*f[b,3*j+2] + mj*(q[b,3*j+2]-qc[3*j+2])*f[b,3*i+1]     #Tyz
 
-      kcv *= -0.5/self.beads.nbeads
-      kcv[0:3] += 0.5*Constants.kb*self.ensemble.temp
+      kcv *= -0.5/(self.beads.nbeads*2*np.sqrt(mi*mj))
+      if i==j : kcv[0:3] += 0.5*Constants.kb*self.ensemble.temp
 
       return kcv
 
