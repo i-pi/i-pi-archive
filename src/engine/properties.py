@@ -218,8 +218,7 @@ class Properties(dobject):
                       'func': (lambda: self.beads.vpath*self.nm.omegan2)},
       "kinetic_md":  {"dimension" : "energy",
                       "help": "The classical kinetic energy of the simulation.",
-                      'func': (lambda: self.nm.kin/self.beads.nbeads)},
-#TODO is that actually what we want for kinetic_md?
+                      'func': self.get_kinmd},
       "kinetic_cv":  {"dimension" : "energy",
                       "help": "The physical kinetic energy of the system.",
                       'func': self.get_kincv},
@@ -227,6 +226,10 @@ class Properties(dobject):
                       "help" : "The T_xx T_yy T_zz T_xy T_xz T_yz components of the kinetic energy tensor (c-v estimator).",
                       "size" : 6,
                       "func" : self.get_ktens},
+      "kinetic_ij":  {"dimension" : "energy",
+                      "help" : "The many-body T_xx T_yy T_zz T_xy T_xz T_yz components of the kinetic energy tensor, amongst atoms i and j (c-v estimator).",
+                      "size" : 6,
+                      "func" : self.get_kij},
       "atom_x": {     "dimension" : "length",
                       "help": "Prints to properties the position (x,y,z) of a particle given its index. Takes arguments index and bead. If bead is not specified, refers to the centroid.",
                       "size" : 3,
@@ -365,7 +368,7 @@ class Properties(dobject):
       else:
          return self.beads[bead][atom].p/ self.beads.m[atom]
 
-   def get_temp(self):
+   def get_temp(self, atom=""):
       """Calculates the MD kinetic temperature.
 
       Note that in the case that the centre of mass constraint there will be
@@ -378,8 +381,29 @@ class Properties(dobject):
       else:
          mdof = 0
 
-      # use the KE computed in the NM representation in order to avoid problems when mass scaling is used
-      return self.nm.kin/(0.5*Constants.kb*(3*self.beads.natoms*self.beads.nbeads - mdof)*self.nm.nbeads)
+
+      if atom=="":
+         # use the KE computed in the NM representation in order to avoid problems when mass scaling is used
+         kedof=self.get_kinmd()/(3*self.beads.natoms*self.beads.nbeads - mdof)
+      else:
+         try:
+            #iatom gives the index of the atom to be studied
+            iatom = int(atom)
+            latom = ""
+         except:
+            #here 'atom' is a label rather than an index which is stored in latom
+            iatom = -1
+            latom = atom
+
+         nat = 0
+         for i in range(self.beads.natoms):
+            if (iatom == i or latom == self.beads.names[i]): nat+=1
+
+         # "spreads" the COM removal correction evenly over all the atoms...
+         kedof=self.get_kinmd(atom)/nat*(self.beads.natoms/(3.0*self.beads.natoms*self.beads.nbeads - mdof))
+         print kedof
+
+      return kedof/(0.5*Constants.kb)
 
    def get_econs(self):
       """Calculates the conserved quantity estimator per bead."""
@@ -516,6 +540,63 @@ class Properties(dobject):
 
       return acv
 
+   def get_kinmd(self, atom=""):
+      """Calculates the classical kinetic energy of the simulation (p^2/2m)"""
+
+      if atom=="":
+         return self.nm.kin/self.beads.nbeads
+      else:
+         try:
+            #iatom gives the index of the atom to be studied
+            iatom = int(atom)
+            latom = ""
+         except:
+            #here 'atom' is a label rather than an index which is stored in latom
+            iatom = -1
+            latom = atom
+
+         pnm = depstrip(self.nm.pnm)
+         dm3 = depstrip(self.nm.dynm3)
+         kmd = 0.0
+         for i in range(self.beads.natoms):
+            if (atom != "" and iatom != i and latom != self.beads.names[i]):
+               continue
+            for b in range(self.beads.nbeads):
+               kmd+=(pnm[b,3*i]**2+pnm[b,3*i+1]**2+pnm[b,3*i+2]**2)/(2.0*dm3[b,3*i])
+         return kmd/self.beads.nbeads
+
+   def get_kij(self, ni="0", nj="0"):
+      """Calculates the quantum centroid virial kinetic energy
+      TENSOR estimator for two possibly different atom indices.
+
+      Args:
+         atom: The index of the atom for which the kinetic energy tensor
+            is to be output, or the index of the type of atoms for which
+            it should be output.
+      """
+
+      i = int(ni)
+      j = int(nj)
+
+      q = depstrip(self.beads.q)
+      qc = depstrip(self.beads.qc)
+      f = depstrip(self.forces.f)
+
+      kcv = np.zeros((6),float)
+      for b in range(self.beads.nbeads):
+         kcv[0] += (q[b,3*i]-qc[3*i])*f[b,3*j]                                                      #Txx
+         kcv[1] += (q[b,3*i+1]-qc[3*i+1])*f[b,3*j+1]                                                #Tyy
+         kcv[2] += (q[b,3*i+2]-qc[3*i+2])*f[b,3*j+2]                                                #Tzz
+         kcv[3] += 0.5*( (q[b,3*i]-qc[3*i])*f[b,3*j+1] + (q[b,3*j+1]-qc[3*j+1])*f[b,3*i] )          #Txy
+         kcv[4] += 0.5*( (q[b,3*i]-qc[3*i])*f[b,3*j+2] + (q[b,3*j+2]-qc[3*j+2])*f[b,3*i] )          #Txz
+         kcv[5] += 0.5*( (q[b,3*i+1]-qc[3*i+1])*f[b,3*j+2] + (q[b,3*j+2]-qc[3*j+2])*f[b,3*i+1] )    #Tyz
+
+      kcv *= -0.5/self.beads.nbeads
+      kcv[0:3] += 0.5*Constants.kb*self.ensemble.temp
+
+      return kcv
+
+
    def get_ktens(self, atom=""):
       """Calculates the quantum centroid virial kinetic energy
       TENSOR estimator.
@@ -536,29 +617,12 @@ class Properties(dobject):
          latom = atom
 
 
-      q = depstrip(self.beads.q)
-      qc = depstrip(self.beads.qc)
-      f = depstrip(self.forces.f)
-
       tkcv = np.zeros((6),float)
-      kcv = np.zeros((6),float)
       for i in range(self.beads.natoms):
          if (atom != "" and iatom != i and latom != self.beads.names[i]):
             continue
 
-         kcv[:] = 0
-         for b in range(self.beads.nbeads):
-            kcv[0] += (q[b,3*i]-qc[3*i])*f[b,3*i]                                                      #Txx
-            kcv[1] += (q[b,3*i+1]-qc[3*i+1])*f[b,3*i+1]                                                #Tyy
-            kcv[2] += (q[b,3*i+2]-qc[3*i+2])*f[b,3*i+2]                                                #Tzz
-            kcv[3] += 0.5*( (q[b,3*i]-qc[3*i])*f[b,3*i+1] + (q[b,3*i+1]-qc[3*i+1])*f[b,3*i] )          #Txy
-            kcv[4] += 0.5*( (q[b,3*i]-qc[3*i])*f[b,3*i+2] + (q[b,3*i+2]-qc[3*i+2])*f[b,3*i] )          #Txz
-            kcv[5] += 0.5*( (q[b,3*i+1]-qc[3*i+1])*f[b,3*i+2] + (q[b,3*i+2]-qc[3*i+2])*f[b,3*i+1] )    #Tyz
-
-         kcv *= -0.5/self.beads.nbeads
-         kcv[0:3] += 0.5*Constants.kb*self.ensemble.temp
-
-         tkcv += kcv
+         tkcv += self.get_kij(str(i), str(i))
 
       return tkcv
 
@@ -805,7 +869,7 @@ class Properties(dobject):
 
          logr = (alpha-1)*spr/(Constants.kb*self.simul.ensemble.temp*self.beads.nbeads)
 
-         
+
          atcv += tcv
          atcv2 += tcv*tcv
          alogr += logr
