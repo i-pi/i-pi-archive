@@ -72,7 +72,9 @@ class InputInitializer(Input):
            "beads" : (InputBeads, { "help" : "Initializes the configuration of the path from a Beads object" }),
            "cell" : (InputCell, { "help" : "Initializes the configuration of the cell from a Cell object" }),
            "file" : (InputInitFile, {"help" : "Initializes bead(s) and cell configuration from an external file" }),
-           "resample_v" : (InputValue, {"dimension": "temperature", 
+           "file_v" : (InputInitFile, {"help" : "Initializes bead(s) velocities from an external file" }),
+           "file_p" : (InputInitFile, {"help" : "Initializes bead(s) momenta from an external file" }),
+           "resample_v" : (InputValue, {"dimension": "temperature",
                                         "dtype" : float,
                            "help" : "Re-sample the beads' velocities from a Maxwell distribution at the given temperature - or the ensemble temperature if a negative temperature is specified.", "default": -1.0})
            }
@@ -104,6 +106,14 @@ class InputInitializer(Input):
             ip = InputInitFile()
             ip.store(el)
             self.extra.append(("file", ip))
+         elif k == "file_v" :
+            ip = InputInitFile()
+            ip.store(el)
+            self.extra.append(("file_v", ip))
+         elif k == "file_p" :
+            ip = InputInitFile()
+            ip.store(el)
+            self.extra.append(("file_p", ip))
          elif k == "beads" :
             ip = InputBeads()
             ip.store(el)

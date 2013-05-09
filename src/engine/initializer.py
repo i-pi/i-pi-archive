@@ -110,14 +110,15 @@ class Initializer(dobject):
       ibeads = simul.beads
       icell = simul.cell
 
-      ratoms = []
-      rcell = None
-      rbeads = Beads(0,0)
-
       for (k,v) in self.queue:
-         if k == "file" :
-            # initialize from file
+         ratoms = []
+         rcell = None
+         rbeads = Beads(0,0)
+         if k == "file"  or k == "file_v" or k == "file_p":
+            # initialize from file (positions, velocities or momenta)
             # in this case 'v' is a InitFile instance.
+            #! will do the first bit assuming we are reading positions,
+            #! and then convert to the appropriate units further down
 
             rfile = open(v.filename,"r")
             if (v.format == "xyz"):
@@ -128,9 +129,7 @@ class Initializer(dobject):
                      myatoms = read_xyz(rfile)
                   except:
                      break
-                  myatoms.q *= unit_to_internal("length",v.units,1.0)
                   ratoms.append(myatoms)
-
 
             elif (v.format == "pdb"):
                while True:
@@ -140,11 +139,11 @@ class Initializer(dobject):
                      myatoms, mycell = read_pdb(rfile)
                   except:
                      break
-                  myatoms.q *= unit_to_internal("length",v.units,1.0)
-                  mycell.h  *= unit_to_internal("length",v.units,1.0)
                   ratoms.append(myatoms)
-                  if rcell is None:
+                  if k=="file" and rcell is None:
+                     mycell.h *= unit_to_internal("length",v.units,1.0)
                      rcell = mycell
+
 
 
             elif (v.format == "chk" or v.format == "checkpoint"):
@@ -152,9 +151,10 @@ class Initializer(dobject):
                rfile = open(v.filename,"r")
                xmlchk = xml_parse_file(rfile) # Parses the file.
 
+               if k=="file_v": print "WARNING: reading from checkpoint actually initializes momenta, not velocities. Make sure this is what you want. "
                simchk = inputs.simulation.InputSimulation()
                simchk.parse(xmlchk.fields[0][1])
-               rcell = simchk.cell.fetch()
+               if k=="file": rcell = simchk.cell.fetch()
                rbeads = simchk.beads.fetch()
 
             if not rcell is None:
@@ -170,13 +170,22 @@ class Initializer(dobject):
                rbeads.resize(natoms=ratoms[0].natoms, nbeads=len(ratoms))
                rbeads.names = ratoms[0].names
                rbeads.m = ratoms[0].m
-               for b in range(rbeads.nbeads):
-                  rbeads[b].q = ratoms[b].q
+               if k == "file":
+                  for b in range(rbeads.nbeads):
+                     rbeads[b].q = ratoms[b].q * unit_to_internal("length",v.units,1.0)
+               elif k == "file_p":
+                  for b in range(rbeads.nbeads):
+                     rbeads[b].p = ratoms[b].q * unit_to_internal("momentum",v.units,1.0)
+               elif k == "file_v":
+                  for b in range(rbeads.nbeads):
+                     rbeads[b].p = ratoms[b].q * rbeads.m3 * unit_to_internal("velocity",v.units,1.0)
+
 
             # scale rbeads up (or down) to self.nbeads!
             gbeads = Beads(rbeads.natoms,self.nbeads)
             res = nm_rescale(rbeads.nbeads,gbeads.nbeads)
             gbeads.q = res.b1tob2(rbeads.q)
+            gbeads.p = res.b1tob2(rbeads.p)   ### CAUTION! THIS MAY BE WRONG WHEN RE-SAMPLING THE RING POLYMER. SHOULD CHECK MORE CAREFULLY!
             gbeads.m = rbeads.m
             gbeads.names = rbeads.names
 
@@ -188,15 +197,18 @@ class Initializer(dobject):
             if ibeads.natoms != gbeads.natoms:
                raise ValueError("Initialization tries to mix up structures with different atom numbers.")
 
-            ibeads.q = gbeads.q
-            ibeads.m = gbeads.m
-            ibeads.names = gbeads.names
+            if k == "file":
+               ibeads.q = gbeads.q
+               ibeads.m = gbeads.m
+               ibeads.names = gbeads.names
+            else:  # chk files always have the momenta, but we don't touch them unless required.
+               ibeads.p = gbeads.p
 
          if k == "beads":
             rbeads = v
             print "names ", v.names
             print "vq", v.m
-	    print "uq", np.linalg.norm(v.q)
+            print "uq", np.linalg.norm(v.q)
 
             if rbeads.nbeads == self.nbeads:
                gbeads = rbeads
