@@ -578,6 +578,8 @@ class Properties(dobject):
       j = int(nj)
       mi=self.beads.m[i]
       mj=self.beads.m[j]
+      ai=3*i
+      aj=3*j
 
       q = depstrip(self.beads.q)
       qc = depstrip(self.beads.qc)
@@ -586,12 +588,12 @@ class Properties(dobject):
       # I implement this for the most general case. In practice T_ij = <p_i p_j>/(2sqrt(m_i m_j))
       kcv = np.zeros((6),float)
       for b in range(self.beads.nbeads):
-         kcv[0] += mi*(q[b,3*i]-qc[3*i])    *f[b,3*j]   + mj*(q[b,3*j]-qc[3*j])    *f[b,3*j]       #Txx
-         kcv[1] += mi*(q[b,3*i+1]-qc[3*i+1])*f[b,3*j+1] + mj*(q[b,3*j+1]-qc[3*j+1])*f[b,3*i+1]     #Tyy
-         kcv[2] += mi*(q[b,3*i+2]-qc[3*i+2])*f[b,3*j+2] + mj*(q[b,3*j+2]-qc[3*j+2])*f[b,3*i+2]     #Tzz
-         kcv[3] += mi*(q[b,3*i]-qc[3*i])*    f[b,3*j+1] + mj*(q[b,3*j+1]-qc[3*j+1])*f[b,3*i]       #Txy
-         kcv[4] += mi*(q[b,3*i]-qc[3*i])*    f[b,3*j+2] + mj*(q[b,3*j+2]-qc[3*j+2])*f[b,3*i]       #Txz
-         kcv[5] += mi*(q[b,3*i+1]-qc[3*i+1])*f[b,3*j+2] + mj*(q[b,3*j+2]-qc[3*j+2])*f[b,3*i+1]     #Tyz
+         kcv[0] += mi*(q[b,ai]-qc[ai])    *f[b,aj]   + mj*(q[b,aj]-qc[aj])    *f[b,ai]       #Txx
+         kcv[1] += mi*(q[b,ai+1]-qc[ai+1])*f[b,aj+1] + mj*(q[b,aj+1]-qc[aj+1])*f[b,ai+1]     #Tyy
+         kcv[2] += mi*(q[b,ai+2]-qc[ai+2])*f[b,aj+2] + mj*(q[b,aj+2]-qc[aj+2])*f[b,ai+2]     #Tzz
+         kcv[3] += mi*(q[b,ai]-qc[ai])*    f[b,aj+1] + mj*(q[b,aj+1]-qc[aj+1])*f[b,ai]       #Txy
+         kcv[4] += mi*(q[b,ai]-qc[ai])*    f[b,aj+2] + mj*(q[b,aj+2]-qc[aj+2])*f[b,ai]       #Txz
+         kcv[5] += mi*(q[b,ai+1]-qc[ai+1])*f[b,aj+2] + mj*(q[b,aj+2]-qc[aj+2])*f[b,ai+1]     #Tyz
 
       kcv *= -0.5/(self.beads.nbeads*2*np.sqrt(mi*mj))
       if i==j : kcv[0:3] += 0.5*Constants.kb*self.ensemble.temp
