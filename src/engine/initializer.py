@@ -27,6 +27,7 @@ from utils.units import Constants, unit_to_internal
 from utils.nmtransform import nm_rescale
 import inputs.simulation
 import numpy as np
+import math
 
 __all__ = ['Initializer', 'InitFile']
 
@@ -107,12 +108,12 @@ class Initializer(dobject):
             that have been specified are not compatible with each other.
       """
 
-      ibeads = simul.beads
-      icell = simul.cell
+      ibeads = simul.beads  #i* means the original values from the simulation
+      icell = simul.cell    #object, i.e. the 'initial' values
 
       for (k,v) in self.queue:
-         ratoms = []
-         rcell = None
+         ratoms = []   #r* means the new values from the initializer, i.e. 
+         rcell = None  # the values 'read' from the restart file.
          rbeads = Beads(0,0)
          if k == "file"  or k == "file_v" or k == "file_p":
             # initialize from file (positions, velocities or momenta)
@@ -140,7 +141,7 @@ class Initializer(dobject):
                   except:
                      break
                   ratoms.append(myatoms)
-                  if k=="file" and rcell is None:
+                  if k == "file" and rcell is None:
                      mycell.h *= unit_to_internal("length",v.units,1.0)
                      rcell = mycell
 
@@ -151,10 +152,12 @@ class Initializer(dobject):
                rfile = open(v.filename,"r")
                xmlchk = xml_parse_file(rfile) # Parses the file.
 
-               if k=="file_v": print "WARNING: reading from checkpoint actually initializes momenta, not velocities. Make sure this is what you want. "
+               if k == "file_v":
+                  print "WARNING: reading from checkpoint actually initializes momenta, not velocities. Make sure this is what you want. "
                simchk = inputs.simulation.InputSimulation()
                simchk.parse(xmlchk.fields[0][1])
-               if k=="file": rcell = simchk.cell.fetch()
+               if k == "file":
+                  rcell = simchk.cell.fetch()
                rbeads = simchk.beads.fetch()
 
             if not rcell is None:
@@ -174,11 +177,13 @@ class Initializer(dobject):
                   for b in range(rbeads.nbeads):
                      rbeads[b].q = ratoms[b].q * unit_to_internal("length",v.units,1.0)
                elif k == "file_p":
+                  rescale_temp = math.sqrt(ibeads.nbeads/float(rbeads.nbeads))
                   for b in range(rbeads.nbeads):
-                     rbeads[b].p = ratoms[b].q * unit_to_internal("momentum",v.units,1.0)
+                     rbeads[b].p = ratoms[b].q * unit_to_internal("momentum",v.units,1.0) * rescale_temp
                elif k == "file_v":
+                  rescale_temp = math.sqrt(ibeads.nbeads/float(rbeads.nbeads))
                   for b in range(rbeads.nbeads):
-                     rbeads[b].p = ratoms[b].q * rbeads.m3 * unit_to_internal("velocity",v.units,1.0)
+                     rbeads[b].p = ratoms[b].q * rbeads.m3 * unit_to_internal("velocity",v.units,1.0) * rescale_temp
 
 
             # scale rbeads up (or down) to self.nbeads!
