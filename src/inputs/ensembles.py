@@ -24,7 +24,7 @@ class InputEnsemble(Input):
    object.
 
    Attributes:
-      type: An optional string giving the type of ensemble to be simulated.
+      mode: An optional string giving the mode of ensemble to be simulated.
          Defaults to 'unknown'.
       thermostat: The thermostat to be used for constant temperature dynamics.
       barostat: The barostat to be used for constant pressure or stress
@@ -39,7 +39,7 @@ class InputEnsemble(Input):
          motion will be constrained or not. Defaults to False.
    """
 
-   attribs={"type"  : (InputAttribute, {"dtype"   : str,
+   attribs={"mode"  : (InputAttribute, {"dtype"   : str,
                                     "help"    : "The ensemble that will be sampled during the simulation.",
                                     "options" : ['nve', 'nvt', 'npt']}) }
    fields={"thermostat" : (InputThermo, {"default"   : input_default(factory=engine.thermostats.Thermostat),
@@ -75,13 +75,13 @@ class InputEnsemble(Input):
 
       super(InputEnsemble,self).store(ens)
       if type(ens) is NVEEnsemble:
-         self.type.store("nve")
+         self.mode.store("nve")
          tens = 0
       elif type(ens) is NVTEnsemble:
-         self.type.store("nvt")
+         self.mode.store("nvt")
          tens = 1
       elif type(ens) is NPTEnsemble:
-         self.type.store("npt")
+         self.mode.store("npt")
          tens = 2
 
       self.timestep.store(ens.dt)
@@ -99,19 +99,19 @@ class InputEnsemble(Input):
       """Creates an ensemble object.
 
       Returns:
-         An ensemble object of the appropriate type and with the appropriate
+         An ensemble object of the appropriate mode and with the appropriate
          objects given the attributes of the InputEnsemble object.
       """
 
       super(InputEnsemble,self).fetch()
 
-      if self.type.fetch() == "nve" :
+      if self.mode.fetch() == "nve" :
          ens = NVEEnsemble(dt=self.timestep.fetch(),
             temp=self.temperature.fetch(), fixcom=self.fixcom.fetch())
-      elif self.type.fetch() == "nvt" :
+      elif self.mode.fetch() == "nvt" :
          ens = NVTEnsemble(dt=self.timestep.fetch(),
             temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), fixcom=self.fixcom.fetch())
-      elif self.type.fetch() == "npt" :
+      elif self.mode.fetch() == "npt" :
          ens = NPTEnsemble(dt=self.timestep.fetch(),
             temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), fixcom=self.fixcom.fetch(),
                   pext=self.pressure.fetch(), barostat=self.barostat.fetch() )
@@ -126,10 +126,10 @@ class InputEnsemble(Input):
       """
 
       super(InputEnsemble,self).check()
-      if self.type.fetch() == "nvt":
+      if self.mode.fetch() == "nvt":
          if self.thermostat._explicit == False:
             raise ValueError("No thermostat tag supplied for NVT simulation")
-      if self.type.fetch() == "npt":
+      if self.mode.fetch() == "npt":
          if self.thermostat._explicit == False:
             raise ValueError("No thermostat tag supplied for NPT simulation")
          if self.barostat._explicit == False:
@@ -142,6 +142,6 @@ class InputEnsemble(Input):
       if self.temperature.fetch() <= 0:
             raise ValueError("Non-positive temperature specified.")
 
-      if self.type.fetch() == "npt":
+      if self.mode.fetch() == "npt":
          if not self.pressure._explicit:
             raise ValueError("Pressure should be supplied for constant pressure simulation")

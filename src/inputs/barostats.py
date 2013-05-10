@@ -20,12 +20,12 @@ class InputBaro(Input):
    instance of the object.
 
    Attributes:
-      kind: An optional string giving the type of barostat used. Defaults to
+      mode: An optional string giving the type of barostat used. Defaults to
          'rigid'.
       thermostat: A thermostat object giving the cell thermostat.
    """
 
-   attribs={ "kind": (InputAttribute, {"dtype"    : str,
+   attribs={ "mode": (InputAttribute, {"dtype"    : str,
                                    "help"     : "The type of barostat. 'Rigid' gives a barostat that keeps the internal pressure constant by allowing cell volume changes, whereas flexible allows the shape of the cell to fluctuate too.",
                                    "options"  : ["rigid"]}) }
    fields={ "thermostat": (InputThermo, {"default" : input_default(factory=engine.thermostats.Thermostat),
@@ -43,7 +43,7 @@ class InputBaro(Input):
 
       super(InputBaro,self).store(baro)
       if type(baro) is BaroRigid or type(baro) is Barostat:
-         self.kind.store("rigid")
+         self.mode.store("rigid")
       else:
          raise TypeError("The type " + type(baro).__name__ + " is not a valid barostat type")
       self.thermostat.store(baro.thermostat)
@@ -57,9 +57,9 @@ class InputBaro(Input):
       """
 
       super(InputBaro,self).fetch()
-      if self.kind.fetch() == "rigid":
+      if self.mode.fetch() == "rigid":
          baro = BaroRigid(thermostat=self.thermostat.fetch())
       else:
-         raise ValueError("Kind " + self.kind.fetch() + " is not a valid kind of barostat")
+         raise ValueError(self.mode.fetch() + " is not a valid mode of barostat")
 
       return baro

@@ -24,7 +24,7 @@ class InputThermo(Input):
    object.
 
    Attributes:
-      kind: An optional string giving the type of the thermostat used. Defaults
+      mode: An optional string giving the type of the thermostat used. Defaults
          to 'langevin'.
       ethermo: An optional float giving the amount of heat energy transferred
          to the bath. Defaults to 0.0.
@@ -36,8 +36,7 @@ class InputThermo(Input):
          momenta in GLE. Defaults to 0.0.
    """
 
-   # TODO: consider renaming kind to mode for consistency with other bits of the code
-   attribs = { "kind": (InputAttribute, { "dtype"   : str,
+   attribs = { "mode": (InputAttribute, { "dtype"   : str,
                                       "options" : [ "", "langevin", "svr", "pile_l", "pile_g", "gle", "nm_gle", "nm_gle_g" ],
                                       "help"    : "The style of thermostatting. 'langevin' specifies a white noise langevin equation to be attached to the cartesian representation of the momenta. 'svr' attaches a velocity rescaling thermostat to the cartesian representation of the momenta. Both 'pile_l' and 'pile_g' attaches a white noise langevin thermostat to the normal mode representation, with 'pile_l' attaching a local langevin thermostat to the centroid mode and 'pile_g' instead attaching a global velocity rescaling thermostat. 'gle' attaches a coloured noise langevin thermostat to the cartesian representation of the momenta, and 'nm_gle' attaches a coloured noise langevin thermostat to the normal mode representation of the momenta. 'nm_gle_g' attaches a gle thermostat to the normal mode representation that minimises the correlation time of both the kinetic and potential energy."
                                          }) }
@@ -78,40 +77,40 @@ class InputThermo(Input):
 
       super(InputThermo,self).store(thermo)
       if type(thermo) is ThermoLangevin:
-         self.kind.store("langevin")
+         self.mode.store("langevin")
          self.tau.store(thermo.tau)
       elif type(thermo) is ThermoSVR:
-         self.kind.store("svr")
+         self.mode.store("svr")
          self.tau.store(thermo.tau)
       elif type(thermo) is ThermoPILE_L:
-         self.kind.store("pile_l")
+         self.mode.store("pile_l")
          self.tau.store(thermo.tau)
       elif type(thermo) is ThermoPILE_G:
-         self.kind.store("pile_g")
+         self.mode.store("pile_g")
          self.tau.store(thermo.tau)
       elif type(thermo) is ThermoGLE:
-         self.kind.store("gle")
+         self.mode.store("gle")
          self.A.store(thermo.A)
          if dget(thermo,"C")._func is None:
             self.C.store(thermo.C)
          self.s.store(thermo.s)
       elif type(thermo) is ThermoNMGLE:
-         self.kind.store("nm_gle")
+         self.mode.store("nm_gle")
          self.A.store(thermo.A)
          if dget(thermo,"C")._func is None:
             self.C.store(thermo.C)
          self.s.store(thermo.s)
       elif type(thermo) is ThermoNMGLEG:
-         self.kind.store("nm_gle_g")
+         self.mode.store("nm_gle_g")
          self.A.store(thermo.A)
          self.tau.store(thermo.tau)
          if dget(thermo,"C")._func is None:
             self.C.store(thermo.C)
          self.s.store(thermo.s)
       elif type(thermo) is Thermostat:
-         self.kind.store("")
+         self.mode.store("")
       else:
-         raise TypeError("Unknown thermostat kind " + type(thermo).__name__)
+         raise TypeError("Unknown thermostat mode " + type(thermo).__name__)
       self.ethermo.store(thermo.ethermo)
 
    def fetch(self):
@@ -126,36 +125,36 @@ class InputThermo(Input):
       """
 
       super(InputThermo,self).fetch()
-      if self.kind.fetch() == "langevin":
+      if self.mode.fetch() == "langevin":
          thermo = ThermoLangevin(tau=self.tau.fetch())
-      elif self.kind.fetch() == "svr":
+      elif self.mode.fetch() == "svr":
          thermo = ThermoSVR(tau=self.tau.fetch())
-      elif self.kind.fetch() == "pile_l":
+      elif self.mode.fetch() == "pile_l":
          thermo = ThermoPILE_L(tau=self.tau.fetch())
-      elif self.kind.fetch() == "pile_g":
+      elif self.mode.fetch() == "pile_g":
          thermo = ThermoPILE_G(tau=self.tau.fetch())
-      elif self.kind.fetch() == "gle":
+      elif self.mode.fetch() == "gle":
          rC = self.C.fetch()
          if len(rC) == 0:
             rC = None
          thermo = ThermoGLE(A=self.A.fetch(),C=rC)
          thermo.s = self.s.fetch()
-      elif self.kind.fetch() == "nm_gle":
+      elif self.mode.fetch() == "nm_gle":
          rC = self.C.fetch()
          if len(rC) == 0:
             rC = None
          thermo = ThermoNMGLE(A=self.A.fetch(),C=rC)
          thermo.s = self.s.fetch()
-      elif self.kind.fetch() == "nm_gle_g":
+      elif self.mode.fetch() == "nm_gle_g":
          rC = self.C.fetch()
          if len(rC) == 0:
             rC = None
          thermo = ThermoNMGLEG(A=self.A.fetch(),C=rC, tau=self.tau.fetch())
          thermo.s = self.s.fetch()
-      elif self.kind.fetch() == "" :
+      elif self.mode.fetch() == "" :
          thermo=Thermostat()
       else:
-         raise TypeError("Invalid thermostat kind " + self.kind.fetch())
+         raise TypeError("Invalid thermostat mode " + self.mode.fetch())
 
       thermo.ethermo = self.ethermo.fetch()
 
@@ -166,8 +165,8 @@ class InputThermo(Input):
 
       super(InputThermo,self).check()
 
-      if self.kind.fetch() in ["langevin", "svr", "pile_l", "pile_g", "nm_gle_g"]:
+      if self.mode.fetch() in ["langevin", "svr", "pile_l", "pile_g", "nm_gle_g"]:
          if self.tau.fetch() <= 0:
-            raise ValueError("The thermostat friction coefficient must be set to a positive value") 
-      if self.kind.fetch() in ["gle", "nm_gle", "nm_gle_g"]:
+            raise ValueError("The thermostat friction coefficient must be set to a positive value")
+      if self.mode.fetch() in ["gle", "nm_gle", "nm_gle_g"]:
          pass  # PERHAPS DO CHECKS THAT MATRICES SATISFY REASONABLE CONDITIONS (POSITIVE-DEFINITENESS, ETC)
