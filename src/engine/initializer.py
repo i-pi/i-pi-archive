@@ -105,13 +105,13 @@ class Initializer(dobject):
             that have been specified are not compatible with each other.
       """
 
-      ibeads = simul.beads
-      icell = simul.cell
+      ibeads = simul.beads  #i* means the original values from the simulation
+      icell = simul.cell    #object, i.e. the 'initial' values
 
       warn = (simul.verb > Verbosity.Quiet)
       for (k,v) in self.queue:
-         ratoms = []
-         rcell = None
+         ratoms = []   #r* means the new values from the initializer, i.e.
+         rcell = None  # the values 'read' from the restart file.
          rbeads = Beads(0,0)
 
          if simul.verb > Verbosity.Medium:
@@ -142,7 +142,7 @@ class Initializer(dobject):
                   except:
                      break
                   ratoms.append(myatoms)
-                  if k=="file" and rcell is None:
+                  if k == "file" and rcell is None:
                      mycell.h *= unit_to_internal("length",v.units,1.0)
                      rcell = mycell
 
@@ -153,19 +153,17 @@ class Initializer(dobject):
                rfile = open(v.filename,"r")
                xmlchk = xml_parse_file(rfile) # Parses the file.
 
-               if k=="file_v":
+               if k == "file_v":
                   if warn: print " ! WARNING ! Reading from checkpoint actually initializes momenta, not velocities. Make sure this is what you want. "
+
                simchk = inputs.simulation.InputSimulation()
                simchk.parse(xmlchk.fields[0][1])
-               if k=="file": rcell = simchk.cell.fetch()
+               if k == "file":
+                  rcell = simchk.cell.fetch()
                rbeads = simchk.beads.fetch()
 
             if not rcell is None:
-               if icell.V > 0.0 :
-                  if warn: print " ! WARNING ! Initialize from <file> overwrites previous cell configuration"
-               #Since the default unit cell is [[1,0,0],[0,1,0],[0,0,1]]
-               #this warning is shown no matter what. (i.e. the if statement
-               #is irrelevant.)
+               if warn: print " ! WARNING ! Initialize from <file> overwrites previous cell configuration"
                icell.h = rcell.h
 
             if not (v.format == "chk" or v.format == "checkpoint"):
@@ -190,7 +188,9 @@ class Initializer(dobject):
             if rbeads.nbeads != gbeads.nbeads and warn: print " # Initialize is rescaling from ", rbeads.nbeads, " to ", self.nbeads
 
             gbeads.q = res.b1tob2(rbeads.q)
-            gbeads.p = res.b1tob2(rbeads.p)   ### CAUTION! THIS MAY BE WRONG WHEN RE-SAMPLING THE RING POLYMER. SHOULD CHECK MORE CAREFULLY!
+            gbeads.p = res.b1tob2(rbeads.p) * np.sqrt(gbeads.nbeads/rbeads.nbeads)
+
+            ### CAUTION! THIS MAY BE WRONG WHEN (DE)CONTRACTING THE RING POLYMER. SHOULD CHECK CAREFULLY!
             gbeads.m = rbeads.m
             gbeads.names = rbeads.names
 
@@ -224,7 +224,7 @@ class Initializer(dobject):
                # scale rbeads up to self.nbeads!
                res = nm_rescale(rbeads.nbeads,gbeads.nbeads)
                gbeads.q = res.b1tob2(rbeads.q)
-               gbeads.p = res.b1tob2(rbeads.p)
+               gbeads.p = res.b1tob2(rbeads.p) * np.sqrt(gbeads.nbeads/rbeads.nbeads)   ### CAUTION! THIS MAY BE WRONG WHEN (DE)CONTRACTING THE RING POLYMER. SHOULD CHECK CAREFULLY!
 
                gbeads.m = rbeads.m
                gbeads.names = rbeads.names

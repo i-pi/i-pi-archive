@@ -23,7 +23,7 @@ class InputInitFile(InputValue):
    """
 
    attribs = copy(InputValue.attribs)
-   attribs["format"] = (InputAttribute,{ "dtype" : str, "default": "xyz", "help": "The input file format."} )
+   attribs["format"] = (InputAttribute,{ "dtype" : str, "default": "xyz", "help": "The input file format.", "options": ['xyz', 'pdb', 'chk', 'checkpoint']} )
 
    default_label = "INITFILE"
    default_help = "This is a simple utility class to deal with initialization from file. Holds all the data needed to open the file and read its contents. The data held between its tags corresponds the the name of the file."
