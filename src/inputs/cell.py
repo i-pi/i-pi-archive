@@ -27,10 +27,10 @@ class InputCell(InputArray):
    """
 
    attribs = copy(InputArray.attribs)
-   attribs["kind"] = (InputAttribute, { "dtype"  : str,
+   attribs["mode"] = (InputAttribute, { "dtype"  : str,
                                         "default": "h",
                                         "options": ["h", "abc", "abcABC"],
-                                        "help"   : "This decides whether the system box is created from a cell parameter matrix, or from the side lengths and angles between them. If 'kind' is 'h', then 'cell' takes a 3*3 cell vector matrix. If 'kind' is 'abcABC', then 'cell' takes an array of 6 floats, the first three being the length of the sides of the system parallelopiped, and the last three being the angles (in degrees) between those sides. Angle A corresponds to the angle between sides b and c, and so on for B and C. If kind is 'abc', then this is the same as ffor 'abcABC', but the cell is assumed to be orthorhombic."} )
+                                        "help"   : "This decides whether the system box is created from a cell parameter matrix, or from the side lengths and angles between them. If 'mode' is 'h', then 'cell' takes a 3*3 cell vector matrix. If 'mode' is 'abcABC', then 'cell' takes an array of 6 floats, the first three being the length of the sides of the system parallelopiped, and the last three being the angles (in degrees) between those sides. Angle A corresponds to the angle between sides b and c, and so on for B and C. If mode is 'abc', then this is the same as ffor 'abcABC', but the cell is assumed to be orthorhombic."} )
 
    default_help = "Deals with the cell parameters. Takes as arguments either the cell vector matrix, or the unit cell side lengths and the angles between them."
    default_label = "CELL"
@@ -52,7 +52,7 @@ class InputCell(InputArray):
 
       super(InputCell,self).store(cell.h)
       self.shape.store((3,3))
-      self.kind.store("h")  # we always store the cell matrix
+      self.mode.store("h")  # we always store the cell matrix
 
    def fetch(self):
       """Creates a cell object.
@@ -75,17 +75,17 @@ class InputCell(InputArray):
       super(InputCell,self).check()
 
       h = self.value
-      if self.kind.fetch() == "h":
+      if self.mode.fetch() == "h":
          if h.size != 9:
             raise ValueError("Cell objects must contain a 3x3 matrix describing the cell vectors.")
-      elif self.kind.fetch() == "abc":
+      elif self.mode.fetch() == "abc":
          if h.size != 3:
             raise ValueError("If you are initializing cell from cell side lengths you must pass the 'cell' tag an array of 3 floats.")
          else:
             h = mt.abc2h(h[0], h[1], h[2], math.pi/2, math.pi/2, math.pi/2)
             super(InputCell,self).store(h)
             self.shape.store((3,3))
-      elif self.kind.fetch() == "abcABC":
+      elif self.mode.fetch() == "abcABC":
          if h.size != 6:
             raise ValueError("If you are initializing cell from cell side lengths and angles you must pass the 'cell' tag an array of 6 floats.")
          else:

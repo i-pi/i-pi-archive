@@ -7,7 +7,7 @@ Functions:
    read_xyz: Reads the cell parameters and atom configurations from a xyz file.
 """
 
-__all__ = ['print_xyz_path', 'print_xyz', 'read_xyz']
+__all__ = ['print_xyz_path', 'print_xyz', 'read_xyz', 'iter_xyz']
 
 import numpy as np
 import math, sys
@@ -75,7 +75,10 @@ def read_xyz(filedesc):
       An Atoms object with the appropriate atom labels, masses and positions.
    """
 
-   natoms = int(filedesc.readline())
+   natoms = filedesc.readline()
+   if natoms == "":
+      raise EOFError("The file descriptor hit EOF.")
+   natoms = int(natoms)
    comment = filedesc.readline()
 
    qatoms = []
@@ -104,3 +107,20 @@ def read_xyz(filedesc):
       nat.m = Elements.mass(names[i])
 
    return atoms
+
+def iter_xyz(filedesc):
+   """Takes a xyz-style file and yields one Atoms object after another.
+
+   Args:
+      filedesc: An open readable file object from a xyz formatted file.
+
+   Returns:
+      Generator over the xyz trajectory, that yields
+      Atoms objects with the appropriate atom labels, masses and positions.
+   """
+   try:
+      while 1:
+         atoms = read_xyz(filedesc)
+         yield atoms
+   except EOFError:
+      pass

@@ -697,8 +697,8 @@ def depcopy(objfrom,memberfrom,objto,memberto):
    dto.add_synchro(dfrom._synchro)
    dto._tainted = dfrom._tainted
    dto._func = dfrom._func
-   if hasattr(dfrom,"_storage"):
-      dto._storage = dfrom._storage
+   if hasattr(dfrom,"_bval"):
+      dto._bval = dfrom._bval
 
 
 class dobject(object):

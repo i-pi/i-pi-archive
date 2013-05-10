@@ -108,6 +108,7 @@ class Driver(socket.socket):
 
       super(Driver,self).__init__(_sock=socket)
       self._buf = np.zeros(0,np.byte)
+      self.peername = self.getpeername()
       self.busyonstatus = False
       self.status = Status.Up
       self.lastreq = None
@@ -478,7 +479,7 @@ class Interface(object):
       for c in self.clients[:]:
          if not (c.status & Status.Up):
             try:
-               print " @SOCKET:   Client ", c.getpeername(), " died or got unresponsive(C). Removing from the list."
+               print " @SOCKET:   Client ", c.peername, " died or got unresponsive(C). Removing from the list."
                c.shutdown(socket.SHUT_RDWR)
                c.close()
             except:
@@ -537,19 +538,19 @@ class Interface(object):
             except InvalidSize:
               print " @SOCKET:   Client returned an inconsistent number of forces. Will mark as disconnected and try to carry on."
               c.status = 0
-              continue              
+              continue
             except:
               print " @SOCKET:   Client got in a awkward state during getforce. Will mark as disconnected and try to carry on."
               c.status = 0
-              continue              
+              continue
             c.poll()
             while c.status & Status.Busy: # waits, but check if we got stuck.
                if self.timeout > 0 and r["start"] > 0 and time.time() - r["start"] > self.timeout:
-                  print " @SOCKET:  hasdata for bead ", r["id"], " has been running for ", time.time() - r["start"]
+                  print " @SOCKET:  Timeout! HASDATA for bead ", r["id"], " has been running for ", time.time() - r["start"]
                   try:
-                     print " @SOCKET:   Client ", c.getpeername(), " died or got unresponsive (A). Closing socket."
                      c.shutdown(socket.SHUT_RDWR)
                      c.close()
+                     print " @SOCKET:   Client ", c.peername, " died or got unresponsive (A). Closing socket."
                   except:
                      pass
                   c.status = 0
@@ -564,9 +565,9 @@ class Interface(object):
             #self.jobs.remove([r,c])
 
          if self.timeout > 0 and r["start"] > 0 and time.time() - r["start"] > self.timeout:
-            print " @SOCKET:  request for bead ", r["id"], " has been running for ", time.time() - r["start"]
+            print " @SOCKET: Timeout! Request for bead ", r["id"], " has been running for ", time.time() - r["start"]
             try:
-               print " @SOCKET:   Client ", c.getpeername(), " died or got unresponsive (B). Closing socket."
+               print " @SOCKET:   Client ", c.peername, " died or got unresponsive (B). Closing socket."
                c.shutdown(socket.SHUT_RDWR)
                c.close()
                c.poll()
@@ -590,7 +591,7 @@ class Interface(object):
          if fc.status & Status.HasData:
             continue
          if not (fc.status & (Status.Ready | Status.NeedsInit | Status.Busy) ):
-            print " @SOCKET:   (1) Client is in an unexpected status ", fc.status, ". Will try to keep calm and carry on."
+            print " @SOCKET: Client ", fc.peername, " is in an unexpected status ", fc.status, " at (1). Will try to keep calm and carry on."
             continue
          for match_ids in ( "match", "none", "free", "any" ):
             for r in pendr[:]:
@@ -602,7 +603,7 @@ class Interface(object):
                   continue
 
 #               try:
-#                  print " @SOCKET: Assigning [",match_ids,"] request id ", r["id"], " to client with last-id ", fc.lastreq, "(",self.clients.index(fc),"/",len(self.clients),":",fc.getpeername(),")"
+#                  print " @SOCKET: Assigning [",match_ids,"] request id ", r["id"], " to client with last-id ", fc.lastreq, "(",self.clients.index(fc),"/",len(self.clients),":",fc.peername,")"
 #               except:
 #                  pass
 
@@ -622,68 +623,13 @@ class Interface(object):
                   fc.locked =  (fc.lastreq is r["id"])
                   matched = True
                   # removes r from the list of pending jobs
-                  pendr = [nr for nr in pendr if (not nr is r)] 
+                  pendr = [nr for nr in pendr if (not nr is r)]
                   break
                else:
-                  print " @SOCKET:   (2) Client is in an unexpected status ", fc.status, ". Will try to keep calm and carry on."
+                  print " @SOCKET: Client ", fc.peername, " is in an unexpected status ", fc.status, " at (2). Will try to keep calm and carry on."
             if matched:
-               break # doesn't do a second (or third) round if it managed 
+               break # doesn't do a second (or third) round if it managed
                      # to assign the job
-
-#      for r in self.requests:
-#         if r["status"] == "Queued":
-#            freec = self.clients[:]
-#            for [r2, c] in self.jobs:
-#               freec.remove(c)
-#
-#            for match_ids in ( "match", "none", "free", "any" ):
-#               matched = False
-#               for fc in freec[:]:
-#                  if not (fc.status & Status.Up):
-#                     self.clients.remove(fc)
-#                     freec.remove[fc] # now that we are looping several times,
-#                     continue
-#                  if fc.status & Status.HasData:
-#                     continue
-#                  if not (fc.status & (Status.Ready | Status.NeedsInit | Status.Busy) ):
-#                     print " @SOCKET:   (1) Client is in an unexpected status ",fc.status, ". Will try to keep calm and carry on."
-#                     continue
-#                  # First, tries to match request ids and lastreq clients.
-#                  # If it can't match on the first round, gives up and assigns requests
-#                  # on a first-come first-serve basis
-#                  if match_ids == "match" and not fc.lastreq is r["id"]:
-#                     continue
-#                  elif match_ids == "none" and not fc.lastreq is None:
-#                     continue
-#                  elif match_ids == "free" and fc.locked:
-#                     continue
-
-#                  # if we have been using the same client for the same bead, mark it
-#                  fc.locked =  (fc.lastreq is r["id"])
-#
-#                  try:
-#                     print " @SOCKET: Assigning [",match_ids,"] request id ", r["id"], " to client with last-id ", fc.lastreq, "(",self.clients.index(fc),"/",len(self.clients),":",fc.getpeername(),")"
-#                  except:  pass
-
-#                  while fc.status & Status.Busy:
-#                     fc.poll()
-#                  if fc.status & Status.NeedsInit:
-#                     fc.initialize(r["pars"])
-#                     fc.poll()
-#                     while fc.status & Status.Busy: # waits for initialization to finish. hopefully this is fast
-#                        fc.poll()
-#                  if fc.status & Status.Ready:
-#                     fc.sendpos(r["atoms"], r["cell"])
-#                     r["status"] = "Running"
-#                     r["start"] = time.time() # sets start time for the request
-#                     fc.poll()
-#                     self.jobs.append([r,fc])
-#                     matched = True
-#                     break
-#                  else:
-#                     print " @SOCKET:   (2) Client is in an unexpected status ",fc.status,". Will try to keep calm and carry on."
-#               if matched:
-#                  break # doesn't do a second (or third) round if it managed to assign the job
 
    def _kill_handler(self, signal, frame):
       """Deals with handling a kill call gracefully.
@@ -721,7 +667,7 @@ class Interface(object):
       seconds until _poll_true becomes false.
       """
 
-      print " @SOCKET:   Starting the polling thread main loop."
+      print " @SOCKET: Starting the polling thread main loop."
       poll_iter = 0
       while self._poll_true:
          time.sleep(self.latency)
@@ -733,7 +679,7 @@ class Interface(object):
          self.pool_distribute()
 
          if os.path.exists("EXIT"): # soft-exit
-            print " @SOCKET:   Soft exit request. Flushing job queue."
+            print " @SOCKET: Soft exit request. Flushing job queue."
             # releases all pending requests
             for r in self.requests:
                r["status"] = "Exit"

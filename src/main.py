@@ -1,3 +1,4 @@
+#!/usr/bin/python
 """Main script from which the simulation is run.
 
 Deals with creation of the simulation object, reading the input file and
