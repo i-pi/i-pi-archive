@@ -40,7 +40,7 @@ DONE ***  Move the synchro business out of Beads and into NormalModes (MC) (MC)
 
 **   Fix (or remove) "springs" trajectory output. Not really needed anymore... (MC)
 
-** More in general, rationalize and clean up the available properties and trajectories. (MC)
+DONE ** More in general, rationalize and clean up the available properties and trajectories. (MC)
 
 ** We should add a check function to InputThermo (JM)
 
@@ -86,6 +86,7 @@ DONE *** Re-write the input files for all the test directories. (JM) (JM)
 DONE ** Add read cell from (A, B, C) and (alpha, beta, gamma) (JM) (JM)
 
 ** Try to find a way to stop the socket blocking when you try to restart a simulation. (JM)
+NOTE (MC): if you refer to internet sockets, it is inevitable, one must wait a couple of minutes for the system to free the socket again
 
 * Merge the io_xyz.py, io_binary.py and io_pdb.py files (JM)
 
@@ -105,5 +106,5 @@ improved.
 
 PS: DO NOT try to make it so that things like empty strings are not output
 to the xml file, I've just realized that that is incompatible with the
-compulsary tag system we have. In this case the npt branch is WRONG.
+compulsory tag system we have. In this case the npt branch is WRONG.
 (JM) (JM)
