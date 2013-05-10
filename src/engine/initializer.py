@@ -23,7 +23,7 @@ from utils.io.io_xyz import read_xyz
 from utils.io.io_pdb import read_pdb
 from utils.io.io_xml import xml_parse_file
 from utils.depend import dobject
-from utils.units import Constants, unit_to_internal
+from utils.units import Constants, unit_to_internal, Verbosity
 from utils.nmtransform import nm_rescale
 import inputs.simulation
 import numpy as np
@@ -49,8 +49,6 @@ class InitFile(dobject):
       self.filename = filename
       self.format = format
       self.units = units
-      #TODO this must be then used somewhere....
-
 
 class Initializer(dobject):
    """Class that deals with the initialization of data.
@@ -110,10 +108,14 @@ class Initializer(dobject):
       ibeads = simul.beads
       icell = simul.cell
 
+      warn = (simul.verb > Verbosity.Quiet)
       for (k,v) in self.queue:
          ratoms = []
          rcell = None
          rbeads = Beads(0,0)
+
+         if simul.verb > Verbosity.Medium:
+            print " # inizializer parsing ", k, " object."
          if k == "file"  or k == "file_v" or k == "file_p":
             # initialize from file (positions, velocities or momenta)
             # in this case 'v' is a InitFile instance.
@@ -151,7 +153,8 @@ class Initializer(dobject):
                rfile = open(v.filename,"r")
                xmlchk = xml_parse_file(rfile) # Parses the file.
 
-               if k=="file_v": print "WARNING: reading from checkpoint actually initializes momenta, not velocities. Make sure this is what you want. "
+               if k=="file_v":
+                  if warn: print " ! WARNING ! Reading from checkpoint actually initializes momenta, not velocities. Make sure this is what you want. "
                simchk = inputs.simulation.InputSimulation()
                simchk.parse(xmlchk.fields[0][1])
                if k=="file": rcell = simchk.cell.fetch()
@@ -159,7 +162,7 @@ class Initializer(dobject):
 
             if not rcell is None:
                if icell.V > 0.0 :
-                  print "WARNING: initialize from <file> overwrites previous cell configuration"
+                  if warn: print " ! WARNING ! Initialize from <file> overwrites previous cell configuration"
                #Since the default unit cell is [[1,0,0],[0,1,0],[0,0,1]]
                #this warning is shown no matter what. (i.e. the if statement
                #is irrelevant.)
@@ -184,13 +187,15 @@ class Initializer(dobject):
             # scale rbeads up (or down) to self.nbeads!
             gbeads = Beads(rbeads.natoms,self.nbeads)
             res = nm_rescale(rbeads.nbeads,gbeads.nbeads)
+            if rbeads.nbeads != gbeads.nbeads and warn: print " # Initialize is rescaling from ", rbeads.nbeads, " to ", self.nbeads
+
             gbeads.q = res.b1tob2(rbeads.q)
             gbeads.p = res.b1tob2(rbeads.p)   ### CAUTION! THIS MAY BE WRONG WHEN RE-SAMPLING THE RING POLYMER. SHOULD CHECK MORE CAREFULLY!
             gbeads.m = rbeads.m
             gbeads.names = rbeads.names
 
             if ibeads.nbeads == self.nbeads:
-               print "WARNING: initialize from <file> overwrites previous path configuration."
+               if warn: print " ! WARNING ! Initialize from <file> overwrites previous path configuration."
             else:
                ibeads.resize(rbeads.natoms,self.nbeads)
 
@@ -213,6 +218,7 @@ class Initializer(dobject):
             if rbeads.nbeads == self.nbeads:
                gbeads = rbeads
             else:
+               if warn: print " # Initialize is rescaling from ", rbeads.nbeads, " to ", self.nbeads
                gbeads = Beads(rbeads.natoms,self.nbeads)
 
                # scale rbeads up to self.nbeads!
@@ -224,7 +230,7 @@ class Initializer(dobject):
                gbeads.names = rbeads.names
 
             if ibeads.nbeads > 0:
-               print "WARNING: initialize from <beads> overwrites previous path configuration"
+               if warn: print " ! WARNING ! Initialize from <beads> overwrites previous path configuration"
             else:
                ibeads.resize(rbeads.natoms,self.nbeads)
 
@@ -250,7 +256,7 @@ class Initializer(dobject):
             rcell = v
 
             if icell.V > 0.0:
-               print "WARNING: initialize from <cell> overwrites previous cell configuration"
+               if warn: print " ! WARNING ! Initialize from <cell> overwrites previous cell configuration"
 
             if rcell.V > 0.0:
                icell.h = rcell.h
@@ -265,8 +271,6 @@ class Initializer(dobject):
             rtemp = v
             if rtemp < 0:
                rtemp = simul.ensemble.temp
-            print "initializing at temperature", rtemp
-
 
             # pull together a mock initialization to get NM masses right
             #without too much code duplication

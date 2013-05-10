@@ -30,7 +30,6 @@ from properties import Properties, Trajectories
 from outputs import CheckpointOutput
 import inputs.simulation
 
-
 class Simulation(dobject):
    """Main simulation object.
 
@@ -61,7 +60,7 @@ class Simulation(dobject):
       step: The current simulation step.
    """
 
-   def __init__(self, beads, cell, forces, ensemble, prng, outputs, nm, init, step=0, tsteps=1000, ttime=0):
+   def __init__(self, beads, cell, forces, ensemble, prng, outputs, nm, init, step=0, tsteps=1000, ttime=0, verb=1):
       """Initialises Simulation class.
 
       Args:
@@ -81,12 +80,13 @@ class Simulation(dobject):
             to 1000.
       """
 
-      print " # Initializing simulation object "
+      if verb > Verbosity.Quiet: print " # Initializing simulation object "
       self.prng = prng
       self.ensemble = ensemble
       self.beads = beads
       self.cell = cell
       self.nm = nm
+      self.verb = verb
 
       # initialize the configuration of the system
       init.init(self)
@@ -103,12 +103,13 @@ class Simulation(dobject):
       self.trajs = Trajectories()
       self.chk = None
 
+
    def bind(self):
       """Calls the bind routines for all the objects in the simulation."""
 
       # binds important computation engines
       self.nm.bind(self.beads, self.ensemble)
-      self.forces.bind(self.beads, self.cell, self.flist, softexit=self.soft_exit)
+      self.forces.bind(self.beads, self.cell, self.flist, softexit=self.soft_exit, verb=self.verb)
       self.ensemble.bind(self.beads, self.nm, self.cell, self.forces, self.prng)
 
       # binds output management objects
@@ -161,22 +162,22 @@ class Simulation(dobject):
          # stores the state before doing a step.
          # this is a bit time-consuming but makes sure that we can honor soft
          # exit requests without screwing the trajectory
-         
+
          steptime = -time.time()
          self.chk.store()
 
          self.ensemble.step()
-         
+
          for o in self.outputs:
             o.write()
 
          if os.path.exists("EXIT"): # soft-exit
             self.soft_exit(rollback=False)
-            
+
          steptime += time.time()
          print " # MD step % 7d complete. Timings -->  %10.5e [p: %10.5e  q: %10.5e  t: %10.5e]" % (self.step, steptime, self.ensemble.ptime, self.ensemble.qtime, self.ensemble.ttime )
          print " # MD diagnostics: V: %10.5e    Kcv: %10.5e   Ecns: %10.5e" % (self.properties["potential"], self.properties["kinetic_cv"], self.properties["conserved"] )
-                  
+
          if (self.ttime > 0 and time.time() - simtime > self.ttime):
             print " # Wall clock time expired! Bye bye"
             break

@@ -80,6 +80,13 @@ class InputSimulation(Input):
                                             "help"     : "The wall clock time (in seconds)." }),
                                              }
 
+   attribs = { "verbosity" : (InputAttribute, { "dtype"   : str,
+                                      "default" : "low",
+                                      "options" : [ "quiet", "low", "medium", "high" ],
+                                      "help"    : "The level of output on stdout."
+                                         })
+             }
+
    default_help = "This is the top level class that deals with the running of the simulation, including holding the simulation specific properties such as the time step and outputting the data."
    default_label = "SIMULATION"
 
@@ -103,6 +110,15 @@ class InputSimulation(Input):
       self.total_steps.store(simul.tsteps)
       self.total_time.store(simul.ttime)
       self.output.store(simul.outputs)
+      if simul.verb == Verbosity.Quiet:
+         self.verbosity.store("quiet")
+      elif simul.verb == Verbosity.Low:
+         self.verbosity.store("low")
+      elif simul.verb == Verbosity.Medium:
+         self.verbosity.store("medium")
+      elif simul.verb == Verbosity.High:
+         self.verbosity.store("high")
+
 
    def fetch(self):
       """Creates a simulation object.
@@ -120,13 +136,22 @@ class InputSimulation(Input):
       super(InputSimulation,self).fetch()
 
       # this creates a simulation object which gathers all the little bits
+      verb=self.verbosity.fetch()
+      if verb == "quiet":
+         verb = Verbosity.Quiet
+      elif verb == "low":
+         verb = Verbosity.Low
+      elif verb == "medium":
+         verb = Verbosity.Medium
+      elif verb == "high":
+         verb = Verbosity.High
       #TODO use named arguments since this list is a bit too long...
       rsim = engine.simulation.Simulation(self.beads.fetch(), self.cell.fetch(),
-               self.forces.fetch(), self.ensemble.fetch(), self.prng.fetch(), 
-                  self.output.fetch(), self.normal_modes.fetch(), 
+               self.forces.fetch(), self.ensemble.fetch(), self.prng.fetch(),
+                  self.output.fetch(), self.normal_modes.fetch(),
                      self.initialize.fetch(), self.step.fetch(),
                         tsteps=self.total_steps.fetch(),
-                        ttime=self.total_time.fetch())
+                        ttime=self.total_time.fetch(), verb=verb)
 
       # this does all of the piping between the components of the simulation
       rsim.bind()

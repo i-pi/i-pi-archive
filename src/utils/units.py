@@ -9,7 +9,13 @@ Classes:
 
 import re
 
-__all__ = ['Constants', 'Elements', 'unit_to_internal', 'unit_to_user' ]
+__all__ = ['Constants', 'Elements', 'unit_to_internal', 'unit_to_user', 'Verbosity' ]
+
+class Verbosity:
+   Quiet  = 0
+   Low    = 1
+   Medium = 2
+   High = 3
 
 class Constants:
    """Class whose members are fundamental constants.
@@ -200,7 +206,7 @@ UnitMap = {
    "frequency" :   {   # NB Internally, ANGULAR frequencies are used.
       ""             : 1.00,
       "atomic_unit"  : 1.00,
-      "inversecm"    : 4.5563353e-06, 
+      "inversecm"    : 4.5563353e-06,
       "hertz*rad"    : 2.4188843e-17,
       "hertz"        : 1.5198298e-16
       },

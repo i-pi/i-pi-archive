@@ -85,6 +85,7 @@ class InputInterface(Input):
       return Interface(address=self.address.fetch(), port=self.port.fetch(),
             slots=self.slots.fetch(), mode=self.mode.fetch(),
             latency=self.latency.fetch(), timeout=self.timeout.fetch(), dopbc=self.pbc.fetch())
+#            verb=Verbosity.Quiet) # starts as quiet
 
    def check(self):
       """Function that deals with optional arguments."""
