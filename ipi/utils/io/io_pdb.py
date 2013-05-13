@@ -153,3 +153,20 @@ def read_pdb(filedesc):
    atoms.m = np.asarray(masses)
 
    return atoms, cell
+
+def iter_pdb(filedesc):
+   """Takes a pdb-style file and yields one Atoms, Cell tuple after another.
+
+   Args:
+      filedesc: An open readable file object from a pdb formatted file.
+
+   Returns:
+      Generator over the pdb trajectory, that yields
+      (Atoms, Cell) tuple with the appropriate atom labels, masses and positions.
+   """
+   try:
+      while 1:
+         atoms, cell = read_pdb(filedesc)
+         yield atoms, cell
+   except EOFError:
+      pass
