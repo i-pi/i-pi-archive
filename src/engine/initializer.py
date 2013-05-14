@@ -154,7 +154,8 @@ class Initializer(dobject):
                xmlchk = xml_parse_file(rfile) # Parses the file.
 
                if k == "file_v":
-                  if warn: print " ! WARNING ! Reading from checkpoint actually initializes momenta, not velocities. Make sure this is what you want. "
+                  if warn: 
+                     print " ! WARNING ! Reading from checkpoint actually initializes momenta, not velocities. Make sure this is what you want. "
 
                simchk = inputs.simulation.InputSimulation()
                simchk.parse(xmlchk.fields[0][1])
@@ -163,7 +164,8 @@ class Initializer(dobject):
                rbeads = simchk.beads.fetch()
 
             if not rcell is None:
-               if warn: print " ! WARNING ! Initialize from <file> overwrites previous cell configuration"
+               if warn: 
+                  print " ! WARNING ! Initialize from <file> overwrites previous cell configuration"
                icell.h = rcell.h
 
             if not (v.format == "chk" or v.format == "checkpoint"):
@@ -185,7 +187,8 @@ class Initializer(dobject):
             # scale rbeads up (or down) to self.nbeads!
             gbeads = Beads(rbeads.natoms,self.nbeads)
             res = nm_rescale(rbeads.nbeads,gbeads.nbeads)
-            if rbeads.nbeads != gbeads.nbeads and warn: print " # Initialize is rescaling from ", rbeads.nbeads, " to ", self.nbeads
+            if rbeads.nbeads != gbeads.nbeads and warn: 
+               print " # Initialize is rescaling from ", rbeads.nbeads, " to ", self.nbeads
 
             gbeads.q = res.b1tob2(rbeads.q)
             gbeads.p = res.b1tob2(rbeads.p) * np.sqrt(gbeads.nbeads/rbeads.nbeads)
@@ -195,7 +198,8 @@ class Initializer(dobject):
             gbeads.names = rbeads.names
 
             if ibeads.nbeads == self.nbeads:
-               if warn: print " ! WARNING ! Initialize from <file> overwrites previous path configuration."
+               if warn: 
+                  print " ! WARNING ! Initialize from <file> overwrites previous path configuration."
             else:
                ibeads.resize(rbeads.natoms,self.nbeads)
 
@@ -218,7 +222,8 @@ class Initializer(dobject):
             if rbeads.nbeads == self.nbeads:
                gbeads = rbeads
             else:
-               if warn: print " # Initialize is rescaling from ", rbeads.nbeads, " to ", self.nbeads
+               if warn: 
+                  print " # Initialize is rescaling from ", rbeads.nbeads, " to ", self.nbeads
                gbeads = Beads(rbeads.natoms,self.nbeads)
 
                # scale rbeads up to self.nbeads!
@@ -230,7 +235,8 @@ class Initializer(dobject):
                gbeads.names = rbeads.names
 
             if ibeads.nbeads > 0:
-               if warn: print " ! WARNING ! Initialize from <beads> overwrites previous path configuration"
+               if warn: 
+                  print " ! WARNING ! Initialize from <beads> overwrites previous path configuration"
             else:
                ibeads.resize(rbeads.natoms,self.nbeads)
 
@@ -256,7 +262,8 @@ class Initializer(dobject):
             rcell = v
 
             if icell.V > 0.0:
-               if warn: print " ! WARNING ! Initialize from <cell> overwrites previous cell configuration"
+               if warn: 
+                  print " ! WARNING ! Initialize from <cell> overwrites previous cell configuration"
 
             if rcell.V > 0.0:
                icell.h = rcell.h

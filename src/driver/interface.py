@@ -150,7 +150,8 @@ class Driver(socket.socket):
       try:
          reply = self.recv(HDRLEN)
       except socket.timeout:
-         if self.verb > Verbosity.Quiet: print " @SOCKET:   Timeout in status recv!"
+         if self.verb > Verbosity.Quiet: 
+            print " @SOCKET:   Timeout in status recv!"
          return Status.Up | Status.Busy | Status.Timeout
       except:
          return Status.Disconnected
@@ -164,7 +165,8 @@ class Driver(socket.socket):
       elif reply == Message("havedata"):
          return Status.Up | Status.HasData
       else:
-         if self.verb > Verbosity.Quiet: print " @SOCKET:    Unrecognized reply: ", reply
+         if self.verb > Verbosity.Quiet: 
+            print " @SOCKET:    Unrecognized reply: ", reply
          return Status.Up
 
    def recvall(self, dest):
@@ -195,11 +197,13 @@ class Driver(socket.socket):
             bpart = self.recv(blen - bpos)
             self._buf[bpos:bpos + len(bpart)] = np.fromstring(bpart, np.byte)
          except socket.timeout:
-            if self.verb > Verbosity.Quiet: print " @SOCKET:   Timeout in status recvall, trying again!"
+            if self.verb > Verbosity.Quiet: 
+               print " @SOCKET:   Timeout in status recvall, trying again!"
             timeout = True
             ntimeout += 1
             if ntimeout > NTIMEOUT:
-               if self.verb > Verbosity.Quiet: print " @SOCKET:  Couldn't receive within ", NTIMEOUT, " attempts. Time to give up!"
+               if self.verb > Verbosity.Quiet: 
+                  print " @SOCKET:  Couldn't receive within ", NTIMEOUT, " attempts. Time to give up!"
                raise Disconnected()
             pass
          if (not timeout and bpart == 0):
@@ -288,12 +292,14 @@ class Driver(socket.socket):
             try:
                reply = self.recv(HDRLEN)
             except socket.timeout:
-               if self.verb > Verbosity.Quiet: print " @SOCKET:   Timeout in getforce, trying again!"
+               if self.verb > Verbosity.Quiet: 
+                  print " @SOCKET:   Timeout in getforce, trying again!"
                continue
             if reply == Message("forceready"):
                break
             else:
-               if self.verb > Verbosity.Quiet: print " @SOCKET:   Unexpected getforce reply: ", reply
+               if self.verb > Verbosity.Quiet: 
+                  print " @SOCKET:   Unexpected getforce reply: ", reply
             if reply == "":
                raise Disconnected()
       else:
@@ -414,7 +420,8 @@ class Interface(object):
    def close(self):
       """Closes down the socket."""
 
-      if self.verb > Verbosity.Quiet: print " @SOCKET: Shutting down the driver interface."
+      if self.verb > Verbosity.Quiet: 
+         print " @SOCKET: Shutting down the driver interface."
       self.server.shutdown(socket.SHUT_RDWR)
       self.server.close()
       if self.mode == "unix":
@@ -485,7 +492,8 @@ class Interface(object):
       for c in self.clients[:]:
          if not (c.status & Status.Up):
             try:
-               if self.verb > Verbosity.Quiet: print " @SOCKET:   Client ", c.peername, " died or got unresponsive(C). Removing from the list."
+               if self.verb > Verbosity.Quiet: 
+                  print " @SOCKET:   Client ", c.peername, " died or got unresponsive(C). Removing from the list."
                c.shutdown(socket.SHUT_RDWR)
                c.close()
             except:
@@ -506,13 +514,16 @@ class Interface(object):
             client, address = self.server.accept()
             client.settimeout(TIMEOUT)
             driver = Driver(client, verb=self.verb)
-            if self.verb > Verbosity.Quiet: print " @SOCKET:   Client asked for connection from ", address, ". Now hand-shaking."
+            if self.verb > Verbosity.Quiet: 
+               print " @SOCKET:   Client asked for connection from ", address, ". Now hand-shaking."
             driver.poll()
             if (driver.status | Status.Up):
                self.clients.append(driver)
-               if self.verb > Verbosity.Quiet: print " @SOCKET:   Handshaking was successful. Added to the client list."
+               if self.verb > Verbosity.Quiet: 
+                  print " @SOCKET:   Handshaking was successful. Added to the client list."
             else:
-               if self.verb > Verbosity.Quiet: print " @SOCKET:   Handshaking failed. Dropping connection."
+               if self.verb > Verbosity.Quiet: 
+                  print " @SOCKET:   Handshaking failed. Dropping connection."
                client.shutdown(socket.SHUT_RDWR)
                client.close()
          else:
@@ -542,28 +553,33 @@ class Interface(object):
                c.status = 0
                continue
             except InvalidSize:
-              if self.verb > Verbosity.Quiet: print " @SOCKET:   Client returned an inconsistent number of forces. Will mark as disconnected and try to carry on."
-              c.status = 0
-              continue
+               if self.verb > Verbosity.Quiet: 
+                  print " @SOCKET:   Client returned an inconsistent number of forces. Will mark as disconnected and try to carry on."
+               c.status = 0
+               continue
             except:
-              if self.verb > Verbosity.Quiet: print " @SOCKET:   Client got in a awkward state during getforce. Will mark as disconnected and try to carry on."
-              c.status = 0
-              continue
+               if self.verb > Verbosity.Quiet: 
+                  print " @SOCKET:   Client got in a awkward state during getforce. Will mark as disconnected and try to carry on."
+               c.status = 0
+               continue
             c.poll()
             while c.status & Status.Busy: # waits, but check if we got stuck.
                if self.timeout > 0 and r["start"] > 0 and time.time() - r["start"] > self.timeout:
-                  if self.verb > Verbosity.Quiet: print " @SOCKET:  Timeout! HASDATA for bead ", r["id"], " has been running for ", time.time() - r["start"]
+                  if self.verb > Verbosity.Quiet: 
+                     print " @SOCKET:  Timeout! HASDATA for bead ", r["id"], " has been running for ", time.time() - r["start"]
                   try:
                      c.shutdown(socket.SHUT_RDWR)
                      c.close()
-                     if self.verb > Verbosity.Quiet: print " @SOCKET:   Client ", c.peername, " died or got unresponsive (A). Closing socket."
+                     if self.verb > Verbosity.Quiet: 
+                        print " @SOCKET:   Client ", c.peername, " died or got unresponsive (A). Closing socket."
                   except:
                      pass
                   c.status = 0
                   continue
                c.poll()
             if not (c.status & Status.Up):
-               if self.verb > Verbosity.Quiet: print " @SOCKET:   Client died a horrible death while getting forces. Will try to cleanup."
+               if self.verb > Verbosity.Quiet: 
+                  print " @SOCKET:   Client died a horrible death while getting forces. Will try to cleanup."
                continue
             r["status"] = "Done"
             c.lastreq = r["id"] # saves the ID of the request that the client has just processed
@@ -571,9 +587,11 @@ class Interface(object):
             #self.jobs.remove([r,c])
 
          if self.timeout > 0 and r["start"] > 0 and time.time() - r["start"] > self.timeout:
-            if self.verb > Verbosity.Quiet: print " @SOCKET: Timeout! Request for bead ", r["id"], " has been running for ", time.time() - r["start"]
+            if self.verb > Verbosity.Quiet: 
+               print " @SOCKET: Timeout! Request for bead ", r["id"], " has been running for ", time.time() - r["start"]
             try:
-               if self.verb > Verbosity.Quiet: print " @SOCKET:   Client ", c.peername, " died or got unresponsive (B). Closing socket."
+               if self.verb > Verbosity.Quiet: 
+                  print " @SOCKET:   Client ", c.peername, " died or got unresponsive (B). Closing socket."
                c.shutdown(socket.SHUT_RDWR)
                c.close()
                c.poll()
@@ -597,7 +615,8 @@ class Interface(object):
          if fc.status & Status.HasData:
             continue
          if not (fc.status & (Status.Ready | Status.NeedsInit | Status.Busy) ):
-            if self.verb > Verbosity.Quiet: print " @SOCKET: Client ", fc.peername, " is in an unexpected status ", fc.status, " at (1). Will try to keep calm and carry on."
+            if self.verb > Verbosity.Quiet: 
+               print " @SOCKET: Client ", fc.peername, " is in an unexpected status ", fc.status, " at (1). Will try to keep calm and carry on."
             continue
          for match_ids in ( "match", "none", "free", "any" ):
             for r in pendr[:]:
@@ -632,7 +651,8 @@ class Interface(object):
                   pendr = [nr for nr in pendr if (not nr is r)]
                   break
                else:
-                  if self.verb > Verbosity.Quiet: print " @SOCKET: Client ", fc.peername, " is in an unexpected status ", fc.status, " at (2). Will try to keep calm and carry on."
+                  if self.verb > Verbosity.Quiet: 
+                     print " @SOCKET: Client ", fc.peername, " is in an unexpected status ", fc.status, " at (2). Will try to keep calm and carry on."
             if matched:
                break # doesn't do a second (or third) round if it managed
                      # to assign the job
@@ -651,7 +671,8 @@ class Interface(object):
          frame: Current stack frame.
       """
 
-      if self.verb > Verbosity.Quiet: print " @SOCKET:   Kill signal. Trying to make a clean exit."
+      if self.verb > Verbosity.Quiet: 
+         print " @SOCKET:   Kill signal. Trying to make a clean exit."
       self.end_thread()
 
       if (not self.softexit is None):
@@ -673,7 +694,8 @@ class Interface(object):
       seconds until _poll_true becomes false.
       """
 
-      if self.verb > Verbosity.Quiet: print " @SOCKET: Starting the polling thread main loop."
+      if self.verb > Verbosity.Quiet: 
+         print " @SOCKET: Starting the polling thread main loop."
       poll_iter = 0
       while self._poll_true:
          time.sleep(self.latency)
@@ -685,7 +707,8 @@ class Interface(object):
          self.pool_distribute()
 
          if os.path.exists("EXIT"): # soft-exit
-            if self.verb > Verbosity.Quiet: print " @SOCKET: Soft exit request. Flushing job queue."
+            if self.verb > Verbosity.Quiet: 
+               print " @SOCKET: Soft exit request. Flushing job queue."
             # releases all pending requests
             for r in self.requests:
                r["status"] = "Exit"

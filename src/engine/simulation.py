@@ -80,7 +80,8 @@ class Simulation(dobject):
             to 1000.
       """
 
-      if verb > Verbosity.Quiet: print " # Initializing simulation object "
+      if verb > Verbosity.Quiet: 
+         print " # Initializing simulation object "
       self.prng = prng
       self.ensemble = ensemble
       self.beads = beads
