@@ -88,7 +88,7 @@ class Barostat(dobject):
       deppipe(self, "temp", self.thermostat,"temp")
 
 
-   def bind(self, beads, nm, cell, forces, prng=None):
+   def bind(self, beads, nm, cell, forces, prng=None, fixdof=None):
       """Binds beads, cell and forces to the barostat.
 
       This takes a beads object, a cell object and a forcefield object and
@@ -98,9 +98,12 @@ class Barostat(dobject):
 
       Args:
          beads: The beads object from which the bead positions are taken.
+         nm: The normal modes propagator object
          cell: The cell object from which the system box is taken.
          forces: The forcefield object from which the force and virial are
             taken.
+         prng: The parent PRNG to bind the thermostat to
+         fixdof: Whether the simulation has some blocked degrees of freedom.
       """
 
       self.beads = beads
@@ -121,6 +124,10 @@ class Barostat(dobject):
          depend_value(name='press', func=self.get_press,
             dependencies=[ dget(self,"stress") ]))
 
+      if fixdof is None:
+         self.fixdof = 0
+      else: self.fixdof = fixdof
+
 
    def get_pot(self):
       """Calculates the elastic strain energy of the cell."""
@@ -138,20 +145,18 @@ class Barostat(dobject):
       qc = depstrip(self.beads.qc)
       pc = depstrip(self.beads.pc)
       m = depstrip(self.beads.m[0])
-
       na3 = 3*self.beads.natoms
+
       for b in range(self.beads.nbeads):
          for i in range(3):
             for j in range(i,3):
                kst[i,j] -= np.dot(q[b,i:na3:3] - qc[i:na3:3],
                   depstrip(self.forces.f[b])[j:na3:3])
-      kst *= 1.0/self.beads.nbeads
 
       # NOTE: In order to have a well-defined conserved quantity, the Nf kT term in the
       # diagonal stress estimator must be taken from the centroid kinetic energy.
-      na3=self.beads.natoms*3
       for i in range(3):
-         kst[i,i] += np.dot(pc[i:na3:3],pc[i:na3:3]/m)
+         kst[i,i] += np.dot(pc[i:na3:3],pc[i:na3:3]/m) *self.beads.nbeads + self.fixdof/3.0*Constants.kb*self.temp
 
 
 
@@ -160,7 +165,7 @@ class Barostat(dobject):
    def get_stress(self):
       """Calculates the internal stress tensor."""
 
-      return (self.kstress + self.forces.vir/float(self.beads.nbeads))/self.cell.V
+      return (self.kstress + self.forces.vir)/self.cell.V
 
    def get_press(self):
       """Calculates the internal pressure."""
@@ -211,9 +216,9 @@ class BaroBZP(Barostat):
       else: self.p = 0.0
 
 
-   def bind(self, beads, nm, cell, forces, prng=None):
+   def bind(self, beads, nm, cell, forces, prng=None, fixdof=None):
 
-      super(BaroBZP, self).bind(beads, nm, cell, forces)
+      super(BaroBZP, self).bind(beads, nm, cell, forces, prng, fixdof)
 
       # obtain the thermostat mass from the given time constant
       # note that the barostat temperature is nbeads times the physical T
@@ -235,7 +240,7 @@ class BaroBZP(Barostat):
    def get_ebaro(self):
 
       # Note to self: here there should be a term c*log(V)*kb*T*nbeads where c is the same as used in the propagator.
-      return self.thermostat.ethermo + self.kin + self.pot - 2.0*np.log(self.cell.V)*Constants.kb*self.temp
+      return self.thermostat.ethermo + self.kin + self.pot -np.log(self.cell.V)*Constants.kb*self.temp #- 2.0*np.log(self.cell.V)*Constants.kb*self.temp
 
 
    def pstep(self):
@@ -248,7 +253,7 @@ class BaroBZP(Barostat):
       # The 2 kb T is meant to count for fixed center of mass ensemble corrections.
       # Should make it dependent on fixcom and incidentally I think it should be just 1 kb T nbeads.
       # Anyway, it is a small correction so whatever.
-      self.p += dthalf*3.0*(self.beads.nbeads*self.cell.V* ( self.press - self.pext ) + 2.0*Constants.kb*self.temp)
+      self.p += dthalf*3.0*(self.cell.V* ( self.press - self.beads.nbeads*self.pext ) ) # + 1.0*Constants.kb*self.temp)
 
       fc = np.sum(depstrip(self.forces.f),0)/self.beads.nbeads
       m = depstrip(self.beads.m3[0])

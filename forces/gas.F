@@ -11,8 +11,6 @@
       double precision, dimension(:,:), allocatable :: f
       double precision, dimension(3,3) :: vir
 
-      double precision, dimension(3) :: dx
-      double precision d, du
 
       integer i, j, k, ios, counter
       integer, dimension(:), allocatable :: n_list
@@ -41,21 +39,17 @@
             ccmd=1
          elseif (parbuffer == "-p") then
             ccmd=2
-         elseif (parbuffer == "-k") then
-            ccmd=3
          else
             if (ccmd==0) then
                write(*,*) "Unrecognized command line argument", ccmd
                write(*,*)
-     c "SYNTAX: gas_mol.x [-u] -h hostname -p port -r cutoff -k spring"
+     c "SYNTAX: gas.x [-u] -h hostname -p port"
                call exit(-1)
             endif
             if (ccmd==1) then
                host=trim(parbuffer)//achar(0)
             elseif (ccmd==2) then
                read(parbuffer,*) port
-            elseif (ccmd==3) then
-               read(parbuffer,*) kq
             endif
             ccmd=0
          endif
@@ -105,24 +99,10 @@
             end if
 
 
-            dx = atoms(2)%pos-atoms(1)%pos
-            d = dot_product(dx,dx)
-            pot=0.5*kq*d
-            d = sqrt(d)
-            du = kq*d
-
-            f(:,1)= du*dx/d
-            f(:,2)= -du*dx/d
-
-
-            vir = 0.0
-            do i = 1,nat
-               do j = 1,3
-                  do k=1,3
-                   vir(j,k) = vir(j,k) + f(j,i)*dx(k)
-                  enddo
-               enddo
-            enddo
+            ! ideal gas
+            pot=0
+            f=0
+            vir=0
 
             vir = transpose(vir)
 

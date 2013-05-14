@@ -71,7 +71,7 @@ class Beads(dobject):
       Effectively initializes the whole Beads object, according to the
       specified number of atoms and beads. Is also used, as the name suggests,
       to resize the data to a new number of beads when this is necessary, for
-      example in initialization from a simulation with a different number of 
+      example in initialization from a simulation with a different number of
       beads.
 
       Also creates, or recreates, the dependency network, as this requires
@@ -87,6 +87,8 @@ class Beads(dobject):
 
       dset(self,"names",
          depend_array(name="names",value=np.zeros(natoms, np.dtype('|S6'))) )
+
+      # atom masses, and mass-related arrays
       dset(self,"m",depend_array(name="m",value=np.zeros(natoms, float)) )
       dset(self,"m3",
          depend_array(name="m3",value=np.zeros((nbeads,3*natoms), float),
@@ -95,13 +97,13 @@ class Beads(dobject):
          depend_array(name="sm3",value=np.zeros((nbeads,3*natoms), float),
             func=self.m3tosm3, dependencies=[dget(self,"m3")]))
 
+      # positions and momenta. bead representation, base storage used everywhere
       dset(self,"q",
          depend_array(name="q",value=np.zeros((nbeads,3*natoms), float)) )
       dset(self,"p",
          depend_array(name="p",value=np.zeros((nbeads,3*natoms), float)) )
-      self._blist = [Atoms(natoms, _prebind=( self.q[i,:], self.p[i,:], self.m,  self.names )) for i in range(nbeads) ]
 
-
+      # position and momentum of the centroid
       dset(self,"qc",
          depend_array(name="qc",value=np.zeros(3*natoms, float),
             func=self.get_qc, dependencies=[dget(self,"q")] ) )
@@ -109,14 +111,26 @@ class Beads(dobject):
          depend_array(name="pc",value=np.zeros(3*natoms, float),
             func=self.get_pc, dependencies=[dget(self,"q")] ) )
 
+      # create proxies to access the centroid and the individual beads as Atoms objects
       self.centroid = Atoms(natoms, _prebind=(self.qc, self.pc, self.m, self.names))
+      self._blist = [Atoms(natoms, _prebind=( self.q[i,:], self.p[i,:], self.m,  self.names )) for i in range(nbeads) ]
 
+      # path springs potential and force
       dset(self,"vpath",
          depend_value(name="vpath", func=self.get_vpath,
             dependencies=[dget(self,"q")]))
       dset(self,"fpath",
          depend_array(name="fpath", value=np.zeros((nbeads,3*natoms), float),
             func=self.get_fpath, dependencies=[dget(self,"q")]))
+
+      # the gyration radius of the ring polymer
+      dset(self,"rg",
+         depend_array(name="rg", value=np.zeros(3*natoms),
+            func=self.get_rg,
+               dependencies=[dget(self,"q"), dget(self,"qc")]))
+
+
+      # kinetic energies of thhe beads, and total (classical) kinetic stress tensor
       dset(self,"kins",
          depend_array(name="kins",value=np.zeros(nbeads, float),
             func=self.kin_gather,
@@ -128,10 +142,6 @@ class Beads(dobject):
          depend_array(name="kstress",value=np.zeros((3,3), float),
             func=self.get_kstress,
                dependencies=[dget(b,"kstress") for b in self._blist]))
-      dset(self,"rg",
-         depend_array(name="rg", value=np.zeros(3*natoms),
-            func=self.get_rg,
-               dependencies=[dget(self,"q"), dget(self,"qc")]))
 
    def copy(self):
       """Creates a new beads object from the original.
@@ -278,6 +288,7 @@ class Beads(dobject):
             rg[3*j:3*(j+1)] += np.dot(dq,dq)
       return np.sqrt(rg/float(self.nbeads))
 
+   # A set of functions to access individual beads as Atoms objects
    def __len__(self):
       """Length function.
 
