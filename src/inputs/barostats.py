@@ -5,6 +5,7 @@ Classes:
       writing the checkpoints.
 """
 
+import numpy as np
 from engine.barostats import *
 import engine.thermostats
 from utils.inputvalue import *
@@ -34,7 +35,11 @@ class InputBaro(Input):
             "tau": (InputValue, {"default" : 1.0,
                                   "dtype" : float,
                                   "dimension" : "time",
-                                  "help"    : "The time constant associated with the dynamics of the piston."})
+                                  "help"    : "The time constant associated with the dynamics of the piston."}),
+            "p": (InputArray, {  "dtype"     : float,
+                                 "default"   : input_default(factory=np.zeros, args = (0,)),
+                                 "help"      : "Momentum (or momenta) of the piston.",
+                                 "dimension" : "momentum" })
            }
 
    default_help = "Simulates an external pressure bath to keep the pressure at the external values."
@@ -48,14 +53,16 @@ class InputBaro(Input):
       """
 
       super(InputBaro,self).store(baro)
+      self.thermostat.store(baro.thermostat)
+      self.tau.store(baro.tau)
       if type(baro) is BaroBZP:
          self.mode.store("bzp")
+         self.p.store(baro.p)
       elif type(baro) is Barostat:
          self.mode.store("dummy")
       else:
          raise TypeError("The type " + type(baro).__name__ + " is not a valid barostat type")
-      self.thermostat.store(baro.thermostat)
-      self.tau.store(baro.tau)
+
 
    def fetch(self):
       """Creates a barostat object.
@@ -68,6 +75,7 @@ class InputBaro(Input):
       super(InputBaro,self).fetch()
       if self.mode.fetch() == "bzp":
          baro = BaroBZP(thermostat=self.thermostat.fetch(), tau=self.tau.fetch())
+         if self.p._explicit: baro.p = self.p.fetch()
       elif self.mode.fetch() == "dummy":
          baro = Barostat(thermostat=self.thermostat.fetch(), tau=self.tau.fetch())
       else:

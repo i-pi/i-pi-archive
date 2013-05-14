@@ -396,7 +396,7 @@ class NPTEnsemble(NVTEnsemble):
       """
 
       super(NPTEnsemble,self).bind(beads, nm, cell, bforce, prng)
-      self.barostat.bind(beads, nm, cell, bforce)
+      self.barostat.bind(beads, nm, cell, bforce, prng=prng)
 
 
       deppipe(self,"ntemp", self.barostat, "temp")
@@ -409,7 +409,6 @@ class NPTEnsemble(NVTEnsemble):
       ensemble.
       """
 
-      print "ECONSCHK", self.nm.kin, self.beads.vpath*self.nm.omegan2, self.forces.pot, self.thermostat.ethermo,
       return NVTEnsemble.get_econs(self) + self.barostat.ebaro
 
    def step(self):

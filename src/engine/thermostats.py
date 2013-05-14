@@ -99,6 +99,7 @@ class Thermostat(dobject):
       """
 
       if prng is None:
+         print " ! WARNING ! Initializing thermostat from standard random PRNG"
          self.prng = Random()
       else:
          self.prng = prng
@@ -247,7 +248,7 @@ class ThermoPILE_L(Thermostat):
       only differ in their treatment of the centroid coordinate momenta.
 
       Args:
-         nm: An optional normal mode object to take the mass and momentum 
+         nm: An optional normal mode object to take the mass and momentum
             vectors from.
          prng: An optional pseudo random number generator object. Defaults to
             Random().
@@ -710,7 +711,7 @@ class ThermoNMGLE(Thermostat):
       being called on a beads object.
 
       Args:
-         nm: An optional normal modes object to take the mass and momentum 
+         nm: An optional normal modes object to take the mass and momentum
             vectors from.
          prng: An optional pseudo random number generator object. Defaults to
             Random().
@@ -805,7 +806,7 @@ class ThermoNMGLE(Thermostat):
 class ThermoNMGLEG(ThermoNMGLE):
    """Represents a 'normal-modes' GLE thermostat + SVR.
 
-   An extension to the above NMGLE thermostat which also adds a stochastic velocity 
+   An extension to the above NMGLE thermostat which also adds a stochastic velocity
    rescaling to the centroid.
 
    Depend objects:
@@ -828,7 +829,7 @@ class ThermoNMGLEG(ThermoNMGLE):
       being called on a beads object.
 
       Args:
-         nm: An optional normal modes object to take the mass and momentum 
+         nm: An optional normal modes object to take the mass and momentum
             vectors from.
          prng: An optional pseudo random number generator object. Defaults to
             Random().

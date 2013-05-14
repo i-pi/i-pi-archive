@@ -119,12 +119,12 @@
             end if
 
                  !call every step
-                  call nearest_neighbours(atoms, cell,
-     c                     n_list, index_list)
+!                  call nearest_neighbours(atoms, cell,
+!     c                     n_list, index_list)
 
-            do i = 1, 0! size(atoms)
+            do i = 1, size(atoms)
                q_diff = nearest_image(cell,
-     1                 atoms(i)%pos - ref_pos(:,i))
+     c                 atoms(i)%pos - ref_pos(:,i))
 
                if (2.0*sqrt(dot_product(q_diff, q_diff)) >= rn-rc) then
                   call nearest_neighbours(atoms, cell, 
