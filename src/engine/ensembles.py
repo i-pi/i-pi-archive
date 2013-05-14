@@ -123,7 +123,7 @@ class Ensemble(dobject):
       ensembles.
       """
 
-      return self.nm.kin + self.beads.vpath*self.nm.omegan2 + self.forces.pot
+      return self.beads.vpath*self.nm.omegan2 + self.nm.kin + self.forces.pot
 
 
 class NVEEnsemble(Ensemble):
@@ -409,6 +409,7 @@ class NPTEnsemble(NVTEnsemble):
       ensemble.
       """
 
+      print "ECONSCHK", self.nm.kin, self.beads.vpath*self.nm.omegan2, self.forces.pot, self.thermostat.ethermo,
       return NVTEnsemble.get_econs(self) + self.barostat.ebaro
 
    def step(self):

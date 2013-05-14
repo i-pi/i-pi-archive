@@ -125,7 +125,7 @@ class Barostat(dobject):
    def get_pot(self):
       """Calculates the elastic strain energy of the cell."""
 
-      return self.cell.V*self.pext
+      return self.cell.V*self.pext*self.beads.nbeads
 
    def get_kstress(self):
       """Calculates the quantum centroid virial kinetic stress tensor
@@ -135,6 +135,8 @@ class Barostat(dobject):
       kst = np.zeros((3,3),float)
       q = depstrip(self.beads.q)
       qc = depstrip(self.beads.qc)
+      pc = depstrip(self.beads.pc)
+      m = depstrip(self.beads.m[0])
 
       na3 = 3*self.beads.natoms
       for b in range(self.beads.nbeads):
@@ -143,10 +145,14 @@ class Barostat(dobject):
                kst[i,j] -= np.dot(q[b,i:na3:3] - qc[i:na3:3],
                   depstrip(self.forces.f[b])[j:na3:3])
 
-      bkin = self.beads.kin*2.0/3
-      print "KINCHK", bkin, Constants.kb*self.temp*(self.beads.natoms), np.trace(kst)
+      bkin = np.dot(pc,pc/self.beads.m3[0])*self.beads.nbeads
+      #bkin = Constants.kb*self.temp*(self.beads.natoms)
+      print "KINCHK", bkin/3, Constants.kb*self.temp*(self.beads.natoms), np.trace(kst)
+      na3=self.beads.natoms*3
       for i in range(3):
-         kst[i,i] += bkin #Constants.kb*self.temp*(self.beads.natoms) # here the temperature is the PI temperature -- so must divide by nbeads AFTER
+         bkin-=np.dot(pc[i:na3:3],pc[i:na3:3]/m)*self.beads.nbeads
+         kst[i,i] += np.dot(pc[i:na3:3],pc[i:na3:3]/m)*self.beads.nbeads  #Constants.kb*self.temp*(self.beads.natoms) # here the temperature is the PI temperature -- so must divide by nbeads AFTER
+      print "remainder", bkin
       kst *= 1.0/self.beads.nbeads
 
 
@@ -155,6 +161,7 @@ class Barostat(dobject):
    def get_stress(self):
       """Calculates the internal stress tensor."""
 
+      print "KSTRESS", np.trace(self.kstress), np.trace(self.forces.vir/float(self.beads.nbeads))
       return (self.kstress + self.forces.vir/float(self.beads.nbeads))/self.cell.V
 
    def get_press(self):
@@ -210,9 +217,10 @@ class BaroBZP(Barostat):
 
       super(BaroBZP, self).bind(beads, nm, cell, forces)
 
-      # obtain the thermostat mass from the
+      # obtain the thermostat mass from the given time constant
+      # note that the barostat temperature is nbeads times the physical T
       dset(self,"m", depend_array(name='m', value=np.atleast_1d(0.0),
-                        func=(lambda:np.asarray([3*self.beads.natoms*Constants.kb*self.temp* self.tau**2])), dependencies =  [ dget(self,"tau"), dget(self,"temp") ] ))
+                        func=(lambda:np.asarray([self.tau**2*3*self.beads.natoms*Constants.kb*self.temp])), dependencies =  [ dget(self,"tau"), dget(self,"temp") ] ))
 
       # binds the thermostat to the piston degrees of freedom
       self.thermostat.bind(pm=[ self.p, self.m ])
@@ -228,8 +236,8 @@ class BaroBZP(Barostat):
 
    def get_ebaro(self):
 
-      print self.kin, self.pot,  - 2.0*Constants.kb*self.temp*np.log(self.cell.V) , self.thermostat.ethermo
-      return self.kin + self.pot  - 2.0*Constants.kb*self.temp*np.log(self.cell.V) + self.thermostat.ethermo
+      print  self.kin, self.pot, -2.0*Constants.kb*self.temp*np.log(self.cell.V) , self.thermostat.ethermo
+      return self.thermostat.ethermo + self.kin + self.pot - 2.0*np.log(self.cell.V)*Constants.kb*self.temp
 
 
    def pstep(self):
@@ -239,13 +247,14 @@ class BaroBZP(Barostat):
       dthalf2 = dthalf**2
       dthalf3 = dthalf**3/3.0
 
-      self.p += dthalf*3.0*(self.cell.V*(self.press - self.pext) + 2.0*Constants.kb*self.temp)
+      self.p += dthalf*3.0*(self.beads.nbeads*self.cell.V* ( self.press - self.pext ) + 2.0*Constants.kb*self.temp)
 
       fc = np.sum(depstrip(self.forces.f),0)/self.beads.nbeads
       m = depstrip(self.beads.m3[0])
       pc = depstrip(self.beads.pc)
 
-      self.p += dthalf2*np.dot(pc,fc/m) + dthalf3*np.dot(fc,fc/m)
+      self.p +=self.beads.nbeads*(dthalf2*np.dot(pc,fc/m) + dthalf3*np.dot(fc,fc/m))
+      print "chk", dthalf*3.0*(self.cell.V*self.beads.nbeads*(self.press - self.pext)), dthalf*3.0*2.0*Constants.kb*self.temp, dthalf2*np.dot(pc,fc/m) + dthalf3*np.dot(fc,fc/m)
 
       self.beads.p += depstrip(self.forces.f)*dthalf
 
@@ -256,7 +265,8 @@ class BaroBZP(Barostat):
       vel = self.p[0]/self.m[0]
       exp, neg_exp = (np.exp(vel*self.dt), np.exp(-vel*self.dt))
       sinh = 0.5*(exp - neg_exp)
-
+      print "timesteps", sinh/vel, self.dt
+      print "barobatics bT= %f  tT= %f  kT= %f" % (self.temp, self.thermostat.temp, self.kin*2/Constants.kb)
       m = depstrip(self.beads.m3[0])
 
       self.nm.qnm[0,:] *= exp
