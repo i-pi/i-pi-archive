@@ -19,7 +19,7 @@ import numpy as np
 import math, time
 from utils.depend import *
 from utils.nmtransform import nm_rescale
-from driver.interface import Interface
+from interfaces.sockets import InterfaceSocket
 from beads import Beads
 from utils.units import Verbosity
 
@@ -215,7 +215,7 @@ class FFSocket(ForceField):
       # a socket to the communication library is created or linked
       super(FFSocket,self).__init__()
       if interface is None:
-         self.socket = Interface()
+         self.socket = InterfaceSocket()
       else:
          self.socket = interface
 

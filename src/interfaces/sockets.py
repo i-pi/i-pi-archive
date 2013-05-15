@@ -7,9 +7,9 @@ calculation.
 Classes:
    Status: Simple class to keep track of the status, uses bitwise or to give
       combinations of different status options.
-   Driver: Class to deal with communication between a client and the driver
+   DriverSocket: Class to deal with communication between a client and the driver
       code.
-   Interface: Host server class. Deals with distribution of all the jobs
+   InterfaceSocket: Host server class. Deals with distribution of all the jobs
       between the different client servers.
 
 Functions:
@@ -21,7 +21,7 @@ Exceptions:
       used if the structure of the program is correct.
 """
 
-__all__ = ['Message', 'Disconnected', 'InvalidStatus', 'Status', 'Driver', 'Interface']
+__all__ = ['Message', 'Disconnected', 'InvalidStatus', 'Status', 'DriverSocket', 'InterfaceSocket']
 
 import socket, select, threading, signal, string, os, time
 from utils.depend import depstrip
@@ -87,7 +87,7 @@ class Status:
    Timeout = 32
 
 
-class Driver(socket.socket):
+class DriverSocket(socket.socket):
    """Deals with communication between the client and driver code.
 
    Deals with sending and receiving the data from the driver code. Keeps track
@@ -103,13 +103,13 @@ class Driver(socket.socket):
    """
 
    def __init__(self, socket, verb=Verbosity.Low):
-      """Initialises Driver.
+      """Initialises DriverSocket.
 
       Args:
          socket: A socket through which the communication should be done.
       """
 
-      super(Driver,self).__init__(_sock=socket)
+      super(DriverSocket,self).__init__(_sock=socket)
       self._buf = np.zeros(0,np.byte)
       self.peername = self.getpeername()
       self.busyonstatus = False
@@ -324,7 +324,7 @@ class Driver(socket.socket):
       return [mu, mf, mvir, mxtra]
 
 
-class Interface(object):
+class InterfaceSocket(object):
    """Host server class.
 
    Deals with distribution of all the jobs between the different client servers
@@ -403,7 +403,7 @@ class Interface(object):
          self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
          self.server.bind((self.address,self.port))
       else:
-         raise NameError("Interface mode " + self.mode + " is not implemented (should be unix/inet)")
+         raise NameError("InterfaceSocket mode " + self.mode + " is not implemented (should be unix/inet)")
 
       self.server.listen(self.slots)
       self.server.settimeout(SERVERTIMEOUT)
@@ -505,7 +505,7 @@ class Interface(object):
          if self.server in readable:
             client, address = self.server.accept()
             client.settimeout(TIMEOUT)
-            driver = Driver(client, verb=self.verb)
+            driver = DriverSocket(client, verb=self.verb)
             if self.verb > Verbosity.Quiet: print " @SOCKET:   Client asked for connection from ", address, ". Now hand-shaking."
             driver.poll()
             if (driver.status | Status.Up):
