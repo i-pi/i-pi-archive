@@ -21,7 +21,7 @@ Exceptions:
       used if the structure of the program is correct.
 """
 
-__all__ = ['Message', 'Disconnected', 'InvalidStatus', 'Status', 'DriverSocket', 'InterfaceSocket']
+__all__ = ['InterfaceSocket']
 
 import socket, select, threading, signal, string, os, time
 from utils.depend import depstrip
