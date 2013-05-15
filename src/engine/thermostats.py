@@ -119,7 +119,7 @@ class Thermostat(dobject):
       if fixdof is None:
          self.ndof = len(self.p)
       else:
-         self.ndof = len(self.p) - fixdof
+         self.ndof = float(len(self.p) - fixdof)
 
       dset(self, "sm",
          depend_array(name="sm", value=np.zeros(len(dget(self,"m"))),

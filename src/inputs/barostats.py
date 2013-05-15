@@ -29,7 +29,7 @@ class InputBaro(Input):
    attribs={ "mode": (InputAttribute, {"dtype"    : str,
                                    "default" : "dummy",
                                    "help"     : "The type of barostat. 'bzp' gives a Bussi-Zykova-Parrinello isotropic barostat.",
-                                   "options"  : ["dummy", "bzp"]}) }
+                                   "options"  : ["dummy", "bzp", "mht"]}) }
    fields={ "thermostat": (InputThermo, {"default" : input_default(factory=engine.thermostats.Thermostat),
                                          "help"    : "The thermostat for the cell. Keeps the cell velocity distribution at the correct temperature."}),
             "tau": (InputValue, {"default" : 1.0,
@@ -58,6 +58,9 @@ class InputBaro(Input):
       if type(baro) is BaroBZP:
          self.mode.store("bzp")
          self.p.store(baro.p)
+      elif type(baro) is BaroMHT:
+         self.mode.store("mht")
+         self.p.store(baro.p)
       elif type(baro) is Barostat:
          self.mode.store("dummy")
       else:
@@ -75,6 +78,9 @@ class InputBaro(Input):
       super(InputBaro,self).fetch()
       if self.mode.fetch() == "bzp":
          baro = BaroBZP(thermostat=self.thermostat.fetch(), tau=self.tau.fetch())
+         if self.p._explicit: baro.p = self.p.fetch()
+      elif self.mode.fetch() == "mht":
+         baro = BaroMHT(thermostat=self.thermostat.fetch(), tau=self.tau.fetch())
          if self.p._explicit: baro.p = self.p.fetch()
       elif self.mode.fetch() == "dummy":
          baro = Barostat(thermostat=self.thermostat.fetch(), tau=self.tau.fetch())

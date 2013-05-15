@@ -431,8 +431,7 @@ class Properties(dobject):
       # returns estimator MULTIPLIED BY NBEADS -- again for consistency with the virial, etc...
       kst=np.zeros((3,3),float)
       kst[:,:] = self.beads.kstress
-      for i in range(3):
-         kst[i,i] += mdof/3.0*Constants.kb*self.ensemble.temp*self.beads.nbeads
+      # for i in range(3):     kst[i,i] += mdof/3.0*Constants.kb*self.ensemble.temp*self.beads.nbeads
 
       return kst
 
@@ -505,7 +504,7 @@ class Properties(dobject):
          mdof = 0
       # return the CV estimator MULTIPLIED BY NBEADS -- again for consistency with the virial, kstress_MD, etc...
       for i in range(3):
-         kst[i,i] += (np.dot(pc[i:na3:3],pc[i:na3:3]/m) + 2.0*(mdof/9.0)*Constants.kb*self.ensemble.temp)*self.beads.nbeads
+         kst[i,i] += self.beads.nbeads * ( np.dot(pc[i:na3:3],pc[i:na3:3]/m) ) #+ 2.0*(mdof/3.0)*Constants.kb*self.ensemble.temp)
 
       return kst
 
