@@ -240,7 +240,7 @@ class BaroBZP(Barostat):
    def get_ebaro(self):
 
       # Note to self: here there should be a term c*log(V)*kb*T*nbeads where c is the same as used in the propagator.
-      return self.thermostat.ethermo + self.kin + self.pot - 2.0* (self.beads.natoms-self.mdof/3.0)*np.log(self.cell.V)*Constants.kb*self.temp
+      return self.thermostat.ethermo + self.kin + self.pot - np.log(self.cell.V)*Constants.kb*self.temp
 
 
    def pstep(self):
@@ -250,11 +250,11 @@ class BaroBZP(Barostat):
       dthalf2 = dthalf**2
       dthalf3 = dthalf**3/3.0
 
-      # The 2 kb T is meant to count for fixed center of mass ensemble corrections.
-      # Should make it dependent on fixcom and incidentally I think it should be just 1 kb T nbeads.
+      # This differs from the BZP thermostat in that it uses just one kT in the propagator.
+      # This leads to an ensemble equaivalent to Martyna-Hughes-Tuckermann for both fixed and moving COM
       # Anyway, it is a small correction so whatever.
       self.p += dthalf*3.0*( self.cell.V* ( self.press - self.beads.nbeads*self.pext ) +
-                2.0*(self.beads.natoms-self.mdof/3.0)*Constants.kb*self.temp )
+                Constants.kb*self.temp )
 
       fc = np.sum(depstrip(self.forces.f),0)/self.beads.nbeads
       m = depstrip(self.beads.m3[0])
@@ -354,11 +354,8 @@ class BaroMHT(Barostat):
       m = depstrip(self.beads.m3[0])
       pc = depstrip(self.beads.pc)
 
-      # The 2 kb T is meant to count for fixed center of mass ensemble corrections.
-      # Should make it dependent on fixcom and incidentally I think it should be just 1 kb T nbeads.
-      # Anyway, it is a small correction so whatever.
       self.p += dthalf*3.0*( self.cell.V* ( self.press - self.beads.nbeads*self.pext ) +
-                1.0/self.mdof*np.dot(pc,pc/m) )
+                float(self.beads.nbeads)/self.mdof*np.dot(pc,pc/m) )
 
       self.beads.p += depstrip(self.forces.f)*dthalf
 
