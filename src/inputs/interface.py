@@ -5,14 +5,14 @@ Classes:
       writing the checkpoints.
 """
 
-__all__ = [ 'InputInterface' ]
+__all__ = [ 'InputInterfaceSocket' ]
 
 import socket, select, threading, signal, string, os, time
 import numpy as np
 from utils.inputvalue import *
-from driver.interface import *
+from interfaces.sockets import *
 
-class InputInterface(Input):
+class InputInterfaceSocket(Input):
    """Interface input class.
 
    Handles generating the apporopriate interface class from the xml
@@ -64,7 +64,7 @@ class InputInterface(Input):
          iface: An interface object.
       """
 
-      super(InputInterface,self).store(iface)
+      super(InputInterfaceSocket,self).store(iface)
       self.latency.store(iface.latency)
       self.mode.store(iface.mode)
       self.address.store(iface.address)
@@ -74,23 +74,22 @@ class InputInterface(Input):
       self.pbc.store(iface.dopbc)
 
    def fetch(self):
-      """Creates an Interface object.
+      """Creates an InterfaceSocket object.
 
       Returns:
          An interface object with the appropriate socket given the attributes
-         of the InputInterface object.
+         of the InputInterfaceSocket object.
       """
 
-      super(InputInterface,self).fetch()
-      return Interface(address=self.address.fetch(), port=self.port.fetch(),
+      super(InputInterfaceSocket,self).fetch()
+      return InterfaceSocket(address=self.address.fetch(), port=self.port.fetch(),
             slots=self.slots.fetch(), mode=self.mode.fetch(),
             latency=self.latency.fetch(), timeout=self.timeout.fetch(), dopbc=self.pbc.fetch())
-#            verb=Verbosity.Quiet) # starts as quiet
 
    def check(self):
       """Function that deals with optional arguments."""
 
-      super(InputInterface,self).check()
+      super(InputInterfaceSocket,self).check()
       if self.port.fetch() < 1 or self.port.fetch() > 65535:
          raise ValueError("Port number " + str(self.port.fetch()) + " out of acceptable range.")
       elif self.port.fetch() < 1025:

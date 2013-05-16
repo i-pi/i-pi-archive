@@ -16,6 +16,7 @@ from utils.units  import *
 from utils.prng   import *
 from utils.io     import *
 from utils.io.io_xml import *
+from utils.messages import verbosity
 from inputs.forces import InputForces
 from inputs.prng import InputRandom
 from inputs.initializer import InputInitializer
@@ -82,7 +83,7 @@ class InputSimulation(Input):
 
    attribs = { "verbosity" : (InputAttribute, { "dtype"   : str,
                                       "default" : "low",
-                                      "options" : [ "quiet", "low", "medium", "high" ],
+                                      "options" : [ "quiet", "low", "medium", "high", "debug" ],
                                       "help"    : "The level of output on stdout."
                                          })
              }
@@ -110,15 +111,21 @@ class InputSimulation(Input):
       self.total_steps.store(simul.tsteps)
       self.total_time.store(simul.ttime)
       self.output.store(simul.outputs)
-      if simul.verb == Verbosity.Quiet:
-         self.verbosity.store("quiet")
-      elif simul.verb == Verbosity.Low:
-         self.verbosity.store("low")
-      elif simul.verb == Verbosity.Medium:
-         self.verbosity.store("medium")
-      elif simul.verb == Verbosity.High:
-         self.verbosity.store("high")
 
+      # this we pick from the messages class. kind of a "global" but it seems to
+      # be the best way to pass around the (global) information on the level of output.
+      if verbosity.quiet:
+         self.verbosity.store("quiet")
+      elif verbosity.low:
+         self.verbosity.store("low")
+      elif verbosity.medium:
+         self.verbosity.store("medium")
+      elif verbosity.high:
+         self.verbosity.store("high")
+      elif verbosity.debug:
+         self.verbosity.store("debug")
+      else:
+         raise ValueError("Invalid verbosity level")
 
    def fetch(self):
       """Creates a simulation object.
@@ -135,23 +142,18 @@ class InputSimulation(Input):
 
       super(InputSimulation,self).fetch()
 
+      # small hack: initialize here the verbosity level -- we really assume to have
+      # just one simulation object
+      verbosity.level=self.verbosity.fetch()
+
       # this creates a simulation object which gathers all the little bits
-      verb=self.verbosity.fetch()
-      if verb == "quiet":
-         verb = Verbosity.Quiet
-      elif verb == "low":
-         verb = Verbosity.Low
-      elif verb == "medium":
-         verb = Verbosity.Medium
-      elif verb == "high":
-         verb = Verbosity.High
       #TODO use named arguments since this list is a bit too long...
       rsim = engine.simulation.Simulation(self.beads.fetch(), self.cell.fetch(),
                self.forces.fetch(), self.ensemble.fetch(), self.prng.fetch(),
                   self.output.fetch(), self.normal_modes.fetch(),
                      self.initialize.fetch(), self.step.fetch(),
                         tsteps=self.total_steps.fetch(),
-                        ttime=self.total_time.fetch(), verb=verb)
+                        ttime=self.total_time.fetch())
 
       # this does all of the piping between the components of the simulation
       rsim.bind()

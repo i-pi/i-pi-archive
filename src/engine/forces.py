@@ -19,9 +19,9 @@ import numpy as np
 import math, time
 from utils.depend import *
 from utils.nmtransform import nm_rescale
-from driver.interface import Interface
+from interfaces.sockets import InterfaceSocket
 from beads import Beads
-from utils.units import Verbosity
+from utils.messages import Verbosity, warning
 
 class ForceField(dobject):
    """Base forcefield class.
@@ -68,7 +68,7 @@ class ForceField(dobject):
 
       return type(self)(self.nbeads, self.weight)
 
-   def bind(self, atoms, cell, softexit=None, verb=Verbosity.Low):
+   def bind(self, atoms, cell, softexit=None):
       """Binds atoms and cell to the forcefield.
 
       This takes an atoms object and a cell object and makes them members of
@@ -86,7 +86,6 @@ class ForceField(dobject):
       self.atoms = atoms
       self.cell = cell
       self.softexit = softexit
-      self.verb = verb
 
       # ufv depends on the atomic positions and on the cell
       dget(self,"ufvx").add_dependency(dget(self.atoms,"q"))
@@ -215,7 +214,7 @@ class FFSocket(ForceField):
       # a socket to the communication library is created or linked
       super(FFSocket,self).__init__()
       if interface is None:
-         self.socket = Interface()
+         self.socket = InterfaceSocket()
       else:
          self.socket = interface
 
@@ -225,7 +224,7 @@ class FFSocket(ForceField):
          self.pars = pars
       self.request = None
 
-   def bind(self, atoms, cell, softexit=None,  verb=Verbosity.Low):
+   def bind(self, atoms, cell, softexit=None):
       """Pass on the binding request from ForceBeads.
 
       Also makes sure to set the socket's softexit.
@@ -237,10 +236,9 @@ class FFSocket(ForceField):
             consistent.
       """
 
-      super(FFSocket,self).bind(atoms, cell, softexit,  verb=verb)
+      super(FFSocket,self).bind(atoms, cell, softexit)
       if not self.softexit is None:
          self.socket.softexit = self.softexit
-      self.socket.verb = verb
 
    def copy(self):
       """Creates a deep copy without the bound objects.
@@ -386,7 +384,7 @@ class ForceBeads(dobject):
       return type(self)(self.f_model, self.nbeads, self.weight)
 
 
-   def bind(self, beads, cell, softexit=None, verb=Verbosity.Low):
+   def bind(self, beads, cell, softexit=None):
       """Binds beads, cell and force to the forcefield.
 
       Takes the beads, cell objects and makes them members of the forcefield.
@@ -417,7 +415,7 @@ class ForceBeads(dobject):
       self._forces = [];
       for b in range(self.nbeads):
          new_force = self.f_model.copy()
-         new_force.bind(beads[b], cell, softexit=self.softexit, verb=verb)
+         new_force.bind(beads[b], cell, softexit=self.softexit)
          self._forces.append(new_force)
 
       # f is a big array which assembles the forces on individual beads
@@ -613,13 +611,12 @@ class Forces(dobject):
          representation.
    """
 
-   def bind(self, beads, cell, flist, softexit=None,  verb=Verbosity.Low):
+   def bind(self, beads, cell, flist, softexit=None):
 
       self.natoms = beads.natoms
       self.nbeads = beads.nbeads
       self.nforces = len(flist)
       self.softexit = softexit
-      self.verb = verb
 
       # flist should be a list of tuples containing ( "name", forcebeads)
       self.mforces = []
@@ -660,7 +657,7 @@ class Forces(dobject):
          dget(beads,"q").add_dependant(dget(newbeads,"q"))
 
          #now we create a new forcebeads which is bound to newbeads!
-         newforce.bind(newbeads, cell, softexit, verb)
+         newforce.bind(newbeads, cell, softexit)
 
          #adds information we will later need to the appropriate lists.
          self.mweights.append(newweight)

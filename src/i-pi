@@ -22,26 +22,7 @@ import sys
 from engine import simulation
 from inputs.simulation import InputSimulation
 from utils.io.io_xml import *
-
-def help():
-   """Prints out a help string."""
-
-   print """usage:  wrap-pi input """
-
-def banner():
-   """Prints out a banner."""
-
-   print """
-   ############################################################################
-   #    _        _______  _____                                               #
-   #   (_)      |_   __ \|_   _|    v. 0.9alpha                               #
-   #   __  ______ | |__) | | |                                                #
-   #  [  ||______||  ___/  | |      A python interface for (ab initio)        #
-   #   | |       _| |_    _| |_     (path integral) molecular dynamics.       #
-   #  [___]     |_____|  |_____|                                              #
-   #                                                                          #
-   ############################################################################
-   """
+from utils.messages import banner, help, verbosity
 
 def main(file_name):
    """Runs the simulation.
@@ -56,6 +37,7 @@ def main(file_name):
    simrestart = InputSimulation()
    # Checks the input and partitions it appropriately.
    simrestart.parse(xmlrestart.fields[0][1])
+   # Here we must do this manually; from here on everything should be automated by the messages classes
    if simrestart.verbosity.fetch() != "quiet" :
       banner()
       print " # wrap-pi starting from input file: ", file_name
@@ -68,7 +50,6 @@ def main(file_name):
       print " ---  end input file content  --- "
 
    simul = simrestart.fetch() # Creates the appropriate simulation object.
-
    simul.run()
 
    del simul

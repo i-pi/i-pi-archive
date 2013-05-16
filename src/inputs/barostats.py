@@ -5,6 +5,7 @@ Classes:
       writing the checkpoints.
 """
 
+import numpy as np
 from engine.barostats import *
 import engine.thermostats
 from utils.inputvalue import *
@@ -26,12 +27,22 @@ class InputBaro(Input):
    """
 
    attribs={ "mode": (InputAttribute, {"dtype"    : str,
-                                   "help"     : "The type of barostat. 'Rigid' gives a barostat that keeps the internal pressure constant by allowing cell volume changes, whereas flexible allows the shape of the cell to fluctuate too.",
-                                   "options"  : ["rigid"]}) }
+                                   "default" : "dummy",
+                                   "help"     : "The type of barostat. 'bzp' gives a Bussi-Zykova-Parrinello isotropic barostat.",
+                                   "options"  : ["dummy", "bzp", "mht"]}) }
    fields={ "thermostat": (InputThermo, {"default" : input_default(factory=engine.thermostats.Thermostat),
-                                         "help"    : "The thermostat for the cell. Keeps the cell velocity distribution at the correct temperature."}) }
+                                         "help"    : "The thermostat for the cell. Keeps the cell velocity distribution at the correct temperature."}),
+            "tau": (InputValue, {"default" : 1.0,
+                                  "dtype" : float,
+                                  "dimension" : "time",
+                                  "help"    : "The time constant associated with the dynamics of the piston."}),
+            "p": (InputArray, {  "dtype"     : float,
+                                 "default"   : input_default(factory=np.zeros, args = (0,)),
+                                 "help"      : "Momentum (or momenta) of the piston.",
+                                 "dimension" : "momentum" })
+           }
 
-   default_help = "Simulates an external pressure bath to keep the pressure or stress at the external values."
+   default_help = "Simulates an external pressure bath to keep the pressure at the external values."
    default_label = "BAROSTAT"
 
    def store(self, baro):
@@ -42,11 +53,19 @@ class InputBaro(Input):
       """
 
       super(InputBaro,self).store(baro)
-      if type(baro) is BaroRigid or type(baro) is Barostat:
-         self.mode.store("rigid")
+      self.thermostat.store(baro.thermostat)
+      self.tau.store(baro.tau)
+      if type(baro) is BaroBZP:
+         self.mode.store("bzp")
+         self.p.store(baro.p)
+      elif type(baro) is BaroMHT:
+         self.mode.store("mht")
+         self.p.store(baro.p)
+      elif type(baro) is Barostat:
+         self.mode.store("dummy")
       else:
          raise TypeError("The type " + type(baro).__name__ + " is not a valid barostat type")
-      self.thermostat.store(baro.thermostat)
+
 
    def fetch(self):
       """Creates a barostat object.
@@ -57,8 +76,14 @@ class InputBaro(Input):
       """
 
       super(InputBaro,self).fetch()
-      if self.mode.fetch() == "rigid":
-         baro = BaroRigid(thermostat=self.thermostat.fetch())
+      if self.mode.fetch() == "bzp":
+         baro = BaroBZP(thermostat=self.thermostat.fetch(), tau=self.tau.fetch())
+         if self.p._explicit: baro.p = self.p.fetch()
+      elif self.mode.fetch() == "mht":
+         baro = BaroMHT(thermostat=self.thermostat.fetch(), tau=self.tau.fetch())
+         if self.p._explicit: baro.p = self.p.fetch()
+      elif self.mode.fetch() == "dummy":
+         baro = Barostat(thermostat=self.thermostat.fetch(), tau=self.tau.fetch())
       else:
          raise ValueError(self.mode.fetch() + " is not a valid mode of barostat")
 

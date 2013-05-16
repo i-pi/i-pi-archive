@@ -1,7 +1,8 @@
-/* Contains the functions used for the socket communication.
+/* A minimal wrapper for socket communication.
 
 Contains both the functions that transmit data to the socket and read the data
 back out again once finished, and the function which opens the socket initially.
+Can be linked to a FORTRAN code that does not support sockets natively.
 
 Functions:
    error: Prints an error message and then exits.
@@ -19,17 +20,16 @@ Functions:
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <sys/un.h>
-#include <netdb.h> 
+#include <netdb.h>
 
 void error(const char *msg)
 // Prints an error message and then exits.
+{   perror(msg);  exit(-1);   }
 
-{   perror(msg);  exit(0);   }
-
-void open_socket_(int *psockfd, int* inet, int* port, char* host)  
+void open_socket_(int *psockfd, int* inet, int* port, char* host)
 /* Opens a socket.
 
-Note that fortran passes an extra argument for the string length, but this is 
+Note that fortran passes an extra argument for the string length, but this is
 ignored here for C compatibility.
 
 Args:
@@ -37,7 +37,7 @@ Args:
    inet: An integer that determines whether the socket will be an inet or unix
       domain socket. Gives unix if 0, inet otherwise.
    port: The port number for the socket to be created. Low numbers are often
-      reserved for important channels, so use of numbers of 4 or more digits is 
+      reserved for important channels, so use of numbers of 4 or more digits is
       recommended.
    host: The name of the host server.
 */
@@ -46,19 +46,19 @@ Args:
    int sockfd, portno, n;
    struct hostent *server;
 
-   fprintf(stderr, "Connection requested %s, %d, %d\n", host, *port, *inet);
    struct sockaddr * psock; int ssock;
+
    if (*inet>0)
-   {  
+   {  // creates an internet socket
       struct sockaddr_in serv_addr;      psock=(struct sockaddr *)&serv_addr;     ssock=sizeof(serv_addr);
       sockfd = socket(AF_INET, SOCK_STREAM, 0);
       if (sockfd < 0)  error("ERROR opening socket");
-   
+
       server = gethostbyname(host);
       if (server == NULL)
       {
          fprintf(stderr, "ERROR, no such host %s \n", host);
-         exit(0);
+         exit(-1);
       }
 
       bzero((char *) &serv_addr, sizeof(serv_addr));
@@ -67,7 +67,7 @@ Args:
       serv_addr.sin_port = htons(*port);
    }
    else
-   {
+   {  // creates a unix socket
       struct sockaddr_un serv_addr;      psock=(struct sockaddr *)&serv_addr;     ssock=sizeof(serv_addr);
       sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
       bzero((char *) &serv_addr, sizeof(serv_addr));
@@ -75,7 +75,7 @@ Args:
       strcpy(serv_addr.sun_path, "/tmp/wrappi_");
       strcpy(serv_addr.sun_path+12, host);
    }
-   
+
    if (connect(sockfd, psock, ssock) < 0) error("ERROR connecting");
 
    *psockfd=sockfd;
@@ -91,7 +91,7 @@ Args:
 */
 
 {
-   int n;   
+   int n;
    int sockfd=*psockfd;
    int len=*plen;
 
@@ -115,7 +115,7 @@ Args:
    int len=*plen;
 
    n = nr = read(sockfd,data,len);
-   
+
    while (nr>0 && n<len )
    {  nr=read(sockfd,&data[n],len-n); n+=nr; }
 

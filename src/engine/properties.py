@@ -299,7 +299,7 @@ class Properties(dobject):
       # coordinates
       self.dbeads = simul.beads.copy()
       self.dforces = Forces()
-      self.dforces.bind(self.dbeads, self.simul.cell,  self.simul.flist, self.simul.soft_exit, self.simul.verb)
+      self.dforces.bind(self.dbeads, self.simul.cell,  self.simul.flist, self.simul.soft_exit)
 
    def __getitem__(self, key):
       """Retrieves the item given by key.
@@ -413,6 +413,28 @@ class Properties(dobject):
 
       return self.ensemble.econs/(self.beads.nbeads)
 
+
+   def kstress_md(self):
+      """Calculates the classical MD virial kinetic stress tensor
+      estimator.
+
+      Note, in line with the beads.kstress tensor, this does not divide
+      by the volume, and so this must be done before the results are
+      output.
+      """
+
+      # We should add some terms to account for the possibly fixed center of mass
+      if self.ensemble.fixcom:
+         mdof = 3
+      else:
+         mdof = 0
+      # returns estimator MULTIPLIED BY NBEADS -- again for consistency with the virial, etc...
+      kst=np.zeros((3,3),float)
+      kst[:,:] = self.beads.kstress
+      # for i in range(3):     kst[i,i] += mdof/3.0*Constants.kb*self.ensemble.temp*self.beads.nbeads
+
+      return kst
+
    def get_stress(self, x=0, v=0):
       """Calculates the classical kinetic energy estimator.
 
@@ -421,13 +443,13 @@ class Properties(dobject):
 
       x = int(x)
       v = int(v)
-      stress = (self.forces.vir + self.beads.kstress)/self.cell.V
+      stress = (self.forces.vir + self.kstress_md())/self.cell.V
       return stress[x,v]
 
    def get_press(self):
-      """Calculates the classical pressure estimator."""
+      """Calculates the classical MD pressure estimator."""
 
-      stress = (self.forces.vir + self.beads.kstress)/self.cell.V
+      stress = (self.forces.vir + self.kstress_md())/self.cell.V/self.beads.nbeads
       return np.trace(stress)/3.0
 
    def get_kstress(self, x=0, v=0):
@@ -438,7 +460,7 @@ class Properties(dobject):
 
       x = int(x)
       v = int(v)
-      return self.beads.kstress[x,v]/self.cell.V
+      return self.self.kstress_md()[x,v]/self.cell.V
 
    def get_vir(self, x=0, v=0):
       """Calculates the classical virial tensor.
@@ -463,16 +485,27 @@ class Properties(dobject):
       kst = np.zeros((3,3),float)
       q = depstrip(self.beads.q)
       qc = depstrip(self.beads.qc)
+      pc = depstrip(self.beads.pc)
+      m = depstrip(self.beads.m[0])
       na3 = 3*self.beads.natoms
+
       for b in range(self.beads.nbeads):
          for i in range(3):
             for j in range(i,3):
-               kst[i,j] += np.dot(q[b,i:na3:3] - qc[i:na3:3],
+               kst[i,j] -= np.dot(q[b,i:na3:3] - qc[i:na3:3],
                   depstrip(self.forces.f[b])[j:na3:3])
 
-      kst *= -1.0/float(self.beads.nbeads)
+      # NOTE: In order to have a well-defined conserved quantity, the Nf kT term in the
+      # diagonal stress estimator must be taken from the centroid kinetic energy.
+      # Furthermore, we should add some terms from the possibly fixed center of mass
+      if self.ensemble.fixcom:
+         mdof = 3
+      else:
+         mdof = 0
+      # return the CV estimator MULTIPLIED BY NBEADS -- again for consistency with the virial, kstress_MD, etc...
       for i in range(3):
-         kst[i,i] += Constants.kb*self.ensemble.temp*(self.beads.natoms)
+         kst[i,i] += self.beads.nbeads * ( np.dot(pc[i:na3:3],pc[i:na3:3]/m) ) #+ 2.0*(mdof/3.0)*Constants.kb*self.ensemble.temp)
+
       return kst
 
    def get_kstresscv(self, x=0, v=0):
@@ -484,7 +517,7 @@ class Properties(dobject):
 
       x = int(x)
       v = int(v)
-      return self.kstress_cv()[x,v]/self.cell.V
+      return self.kstress_cv()[x,v]/(self.cell.V*float(self.beads.nbeads))
 
    def get_stresscv(self, x=0, v=0):
       """Calculates the quantum centroid virial stress tensor estimator.
@@ -494,13 +527,13 @@ class Properties(dobject):
 
       x = int(x)
       v = int(v)
-      stress = (self.forces.vir/float(self.beads.nbeads) + self.kstress_cv())/self.cell.V
+      stress = (self.forces.vir + self.kstress_cv())/(self.cell.V*float(self.beads.nbeads))
       return stress[x,v]
 
    def get_presscv(self):
       """Calculates the quantum centroid virial pressure estimator."""
 
-      return np.trace(self.forces.vir/float(self.beads.nbeads) + self.kstress_cv())/(3.0*self.cell.V)
+      return np.trace(self.forces.vir+ self.kstress_cv())/(3.0*self.cell.V*float(self.beads.nbeads))
 
    def get_vircv(self, x=0, v=0):
       """Calculates the quantum centroid virial tensor estimator.

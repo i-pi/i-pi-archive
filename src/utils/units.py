@@ -9,13 +9,8 @@ Classes:
 
 import re
 
-__all__ = ['Constants', 'Elements', 'unit_to_internal', 'unit_to_user', 'Verbosity' ]
+__all__ = ['Constants', 'Elements', 'unit_to_internal', 'unit_to_user']
 
-class Verbosity:
-   Quiet  = 0
-   Low    = 1
-   Medium = 2
-   High = 3
 
 class Constants:
    """Class whose members are fundamental constants.
