@@ -20,6 +20,7 @@ from utils.units  import *
 from utils.prng   import *
 from utils.io     import *
 from utils.io.io_xml import *
+from utils.messages import verbosity, info
 from atoms import *
 import time
 from cell import *
@@ -60,7 +61,7 @@ class Simulation(dobject):
       step: The current simulation step.
    """
 
-   def __init__(self, beads, cell, forces, ensemble, prng, outputs, nm, init, step=0, tsteps=1000, ttime=0, verb=1):
+   def __init__(self, beads, cell, forces, ensemble, prng, outputs, nm, init, step=0, tsteps=1000, ttime=0):
       """Initialises Simulation class.
 
       Args:
@@ -80,13 +81,13 @@ class Simulation(dobject):
             to 1000.
       """
 
-      if verb > Verbosity.Quiet: print " # Initializing simulation object "
+      info(" # Initializing simulation object ", verbosity.low )
+
       self.prng = prng
       self.ensemble = ensemble
       self.beads = beads
       self.cell = cell
       self.nm = nm
-      self.verb = verb
 
       # initialize the configuration of the system
       init.init(self)
@@ -109,7 +110,7 @@ class Simulation(dobject):
 
       # binds important computation engines
       self.nm.bind(self.beads, self.ensemble)
-      self.forces.bind(self.beads, self.cell, self.flist, softexit=self.soft_exit, verb=self.verb)
+      self.forces.bind(self.beads, self.cell, self.flist, softexit=self.soft_exit)
       self.ensemble.bind(self.beads, self.nm, self.cell, self.forces, self.prng)
 
       # binds output management objects

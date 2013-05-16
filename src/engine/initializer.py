@@ -23,10 +23,12 @@ from utils.io.io_xyz import read_xyz
 from utils.io.io_pdb import read_pdb
 from utils.io.io_xml import xml_parse_file
 from utils.depend import dobject
-from utils.units import Constants, unit_to_internal, Verbosity
+from utils.units import Constants, unit_to_internal
 from utils.nmtransform import nm_rescale
+from utils.messages import verbosity, warning, info
 import inputs.simulation
 import numpy as np
+
 
 __all__ = ['Initializer', 'InitFile']
 
@@ -108,14 +110,13 @@ class Initializer(dobject):
       ibeads = simul.beads  #i* means the original values from the simulation
       icell = simul.cell    #object, i.e. the 'initial' values
 
-      warn = (simul.verb > Verbosity.Quiet)
+
       for (k,v) in self.queue:
          ratoms = []   #r* means the new values from the initializer, i.e.
          rcell = None  # the values 'read' from the restart file.
          rbeads = Beads(0,0)
 
-         if simul.verb > Verbosity.Medium:
-            print " # inizializer parsing ", k, " object."
+         info(" # inizializer parsing "+ str(k) + " object.", verbosity.high)
          if k == "file"  or k == "file_v" or k == "file_p":
             # initialize from file (positions, velocities or momenta)
             # in this case 'v' is a InitFile instance.
@@ -154,7 +155,8 @@ class Initializer(dobject):
                xmlchk = xml_parse_file(rfile) # Parses the file.
 
                if k == "file_v":
-                  if warn: print " ! WARNING ! Reading from checkpoint actually initializes momenta, not velocities. Make sure this is what you want. "
+                  warning(" Reading from checkpoint actually initializes momenta, not velocities. Make sure this is what you want. ",
+                          verbosity.low)
 
                simchk = inputs.simulation.InputSimulation()
                simchk.parse(xmlchk.fields[0][1])
@@ -163,7 +165,7 @@ class Initializer(dobject):
                rbeads = simchk.beads.fetch()
 
             if not rcell is None:
-               if warn: print " ! WARNING ! Initialize from <file> overwrites previous cell configuration"
+               warning(" Initialize from <file> overwrites previous cell configuration. ", verbosity.low)
                icell.h = rcell.h
 
             if not (v.format == "chk" or v.format == "checkpoint"):
@@ -185,17 +187,20 @@ class Initializer(dobject):
             # scale rbeads up (or down) to self.nbeads!
             gbeads = Beads(rbeads.natoms,self.nbeads)
             res = nm_rescale(rbeads.nbeads,gbeads.nbeads)
-            if rbeads.nbeads != gbeads.nbeads and warn: print " # Initialize is rescaling from ", rbeads.nbeads, " to ", self.nbeads
+            if rbeads.nbeads != gbeads.nbeads:
+               warning(" # Initialize is rescaling from %5d beads to %5d beads" % (rbeads.nbeads, self.nbeads),
+                     verbosity.low)
 
             gbeads.q = res.b1tob2(rbeads.q)
             gbeads.p = res.b1tob2(rbeads.p) * np.sqrt(gbeads.nbeads/rbeads.nbeads)
 
             ### CAUTION! THIS MAY BE WRONG WHEN (DE)CONTRACTING THE RING POLYMER. SHOULD CHECK CAREFULLY!
+            #TODO: is this checked? then the comment should go
             gbeads.m = rbeads.m
             gbeads.names = rbeads.names
 
             if ibeads.nbeads == self.nbeads:
-               if warn: print " ! WARNING ! Initialize from <file> overwrites previous path configuration."
+               warning("Initialize from <file> overwrites previous path configuration.", verbosity.low)
             else:
                ibeads.resize(rbeads.natoms,self.nbeads)
 
@@ -218,7 +223,8 @@ class Initializer(dobject):
             if rbeads.nbeads == self.nbeads:
                gbeads = rbeads
             else:
-               if warn: print " # Initialize is rescaling from ", rbeads.nbeads, " to ", self.nbeads
+               warning(" # Initialize is rescaling from %5d beads to %5d beads" % (rbeads.nbeads, self.nbeads),
+                     verbosity.low)
                gbeads = Beads(rbeads.natoms,self.nbeads)
 
                # scale rbeads up to self.nbeads!
@@ -230,7 +236,7 @@ class Initializer(dobject):
                gbeads.names = rbeads.names
 
             if ibeads.nbeads > 0:
-               if warn: print " ! WARNING ! Initialize from <beads> overwrites previous path configuration"
+               warning("Initialize from <beads> overwrites previous path configuration.", verbosity.low)
             else:
                ibeads.resize(rbeads.natoms,self.nbeads)
 
@@ -256,7 +262,7 @@ class Initializer(dobject):
             rcell = v
 
             if icell.V > 0.0:
-               if warn: print " ! WARNING ! Initialize from <cell> overwrites previous cell configuration"
+               warning("Initialize from <cell> overwrites previous cell configuration.", verbosity.low)
 
             if rcell.V > 0.0:
                icell.h = rcell.h
