@@ -160,6 +160,8 @@ class Simulation(dobject):
 
       steptime = 0.0
       simtime =  time.time()
+
+      cstep=0; tptime=0.0; tqtime=0.0; tttime=0.0; ttot=0.0;
       # main MD loop
       for self.step in range(self.step,self.tsteps):
          # stores the state before doing a step.
@@ -179,13 +181,19 @@ class Simulation(dobject):
             softexit.trigger()
 
          steptime += time.time()
+         ttot += steptime
+         tptime += self.ensemble.ptime
+         tqtime += self.ensemble.qtime
+         tttime += self.ensemble.ttime
+         cstep += 1
 
-         info(" # MD step % 7d complete. Timings -->  %10.5e [p: %10.5e  q: %10.5e  t: %10.5e]" %
-               (self.step, steptime, self.ensemble.ptime, self.ensemble.qtime, self.ensemble.ttime ),
-               verbosity.low )
-         info(" # MD diagnostics: V: %10.5e    Kcv: %10.5e   Ecns: %10.5e" %
-               (self.properties["potential"], self.properties["kinetic_cv"], self.properties["conserved"] ),
-               verbosity.medium)
+         if verbosity.high or (verbosity.medium and self.step%10 == 0) or (verbosity.low and self.step%100 == 0):
+            info(" # Average timings at MD step % 7d. t/step: %10.5e [p: %10.5e  q: %10.5e  t: %10.5e]" %
+               ( self.step, ttot/cstep, tptime/cstep, tqtime/cstep, tttime/cstep ) )
+            ttot = tptime = tqtime = tttime = 0.0; cstep=0
+            info(" # MD diagnostics: V: %10.5e    Kcv: %10.5e   Ecns: %10.5e" %
+               (self.properties["potential"], self.properties["kinetic_cv"], self.properties["conserved"] ) )
+
 
          if (self.ttime > 0 and time.time() - simtime > self.ttime):
             info(" # Wall clock time expired! Bye bye!", verbosity.low )
