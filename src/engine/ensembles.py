@@ -123,7 +123,7 @@ class Ensemble(dobject):
       ensembles.
       """
 
-      return self.nm.kin + self.beads.vpath*self.nm.omegan2 + self.forces.pot
+      return self.beads.vpath*self.nm.omegan2 + self.nm.kin + self.forces.pot
 
 
 class NVEEnsemble(Ensemble):
@@ -288,8 +288,8 @@ class NVTEnsemble(NVEEnsemble):
       if isinstance(self.thermostat,ThermoNMGLE) or isinstance(self.thermostat,ThermoNMGLEG) or isinstance(self.thermostat,ThermoPILE_L) or isinstance(self.thermostat,ThermoPILE_G):
          self.thermostat.bind(nm=self.nm,prng=prng,fixdof=fixdof )
       else:
-         self.thermostat.bind(beads=self.beads,prng=prng, fixdof=fixdof) 
-      
+         self.thermostat.bind(beads=self.beads,prng=prng, fixdof=fixdof)
+
       deppipe(self,"ntemp", self.thermostat,"temp")
       deppipe(self,"dt", self.thermostat, "dt")
 
@@ -346,17 +346,15 @@ class NPTEnsemble(NVTEnsemble):
          transferred to the beads and cell thermostat, the temperature and
          the cell volume.
       pext: External pressure.
-      sext: External stress tensor.
    """
 
-   def __init__(self, dt, temp, pext=None, sext=None, thermostat=None, barostat=None, nm_freqs=None, fixcom=False):
+   def __init__(self, dt, temp, pext, thermostat=None, barostat=None, fixcom=False):
       """Initialises NPTEnsemble.
 
       Args:
          dt: The simulation timestep.
          temp: The system temperature.
-         pext: An optional float giving the external pressure.
-         sext: An optional array giving the external stress tensor.
+         pext: The external pressure.
          thermostat: A thermostat object to keep the temperature constant.
             Defaults to Thermostat().
          barostat: A barostat object to keep the temperature constant.
@@ -365,39 +363,17 @@ class NPTEnsemble(NVTEnsemble):
             motion will be constrained or not. Defaults to False.
       """
 
-      super(NPTEnsemble,self).__init__(dt, temp, thermostat, nm_freqs=nm_freqs, fixcom=fixcom)
+      super(NPTEnsemble,self).__init__(dt, temp, thermostat, fixcom=fixcom)
       if barostat == None:
          self.barostat = Barostat()
       else:
          self.barostat = barostat
 
-      sync_ext=synchronizer()
-      dset(self,"sext",
-         depend_array(name='sext', value=np.zeros((3,3)), synchro=sync_ext,
-            func={"pext" : self.p2s}))
-      dset(self,"pext",
-         depend_value(name='pext', value=0.0, synchro=sync_ext,
-            func={"sext" : self.s2p}))
-      if pext is not None:
-         dset(self,"pext",depend_value(name="pext", value=pext))
-         deppipe(self, "pext", self.barostat, "pext")
-         deppipe(self, "sext", self.barostat, "sext")
-      elif sext is not None:
-         dset(self,"sext",depend_value(name="sext", value=pext))
-         deppipe(self, "sext", self.barostat, "sext")
-         deppipe(self, "pext", self.barostat, "pext")
-      else:
-         raise TypeError("You must provide either the pressure or stress")
+      dset(self,"pext",depend_value(name='pext'))
+      if not pext is None:
+         self.pext = pext
+      else: self.pext = 0.0
 
-   def s2p(self):
-      """Converts the external stress to the external pressure."""
-
-      return np.trace(self.sext)/3.0
-
-   def p2s(self):
-      """Converts the external pressure to an isotropic external stress."""
-
-      return self.pext*np.identity(3)
 
    def bind(self, beads, nm, cell, bforce, prng):
       """Binds beads, cell, bforce and prng to the ensemble.
@@ -419,25 +395,26 @@ class NPTEnsemble(NVTEnsemble):
             generation.
       """
 
-      super(NPTEnsemble,self).bind(beads, cell, nm, bforce, prng)
-      self.barostat.bind(beads, cell, bforce)
 
-      deppipe(self,"ntemp", self.barostat,"temp")
-      deppipe(self,"ntemp", self.barostat.thermostat,"temp")
-      deppipe(self, "dt", self.barostat, "dt")
+      fixdof = None
+      if self.fixcom:
+         fixdof = 3
 
-      dget(self,"econs").add_dependency(dget(self.barostat.thermostat, "ethermo"))
-      dget(self,"econs").add_dependency(dget(self.barostat, "pot"))
-      dget(self,"econs").add_dependency(dget(self.thermostat, "temp"))
-      dget(self,"econs").add_dependency(dget(self.cell, "kin"))
-      dget(self,"econs").add_dependency(dget(self.cell, "V"))
+      super(NPTEnsemble,self).bind(beads, nm, cell, bforce, prng)
+      self.barostat.bind(beads, nm, cell, bforce, prng=prng, fixdof=fixdof)
+
+
+      deppipe(self,"ntemp", self.barostat, "temp")
+      deppipe(self,"dt", self.barostat, "dt")
+      deppipe(self,"pext", self.barostat, "pext")
+      dget(self,"econs").add_dependency(dget(self.barostat, "ebaro"))
 
    def get_econs(self):
       """Calculates the conserved energy quantity for the constant pressure
       ensemble.
       """
 
-      return NVTEnsemble.get_econs(self) + self.barostat.thermostat.ethermo + self.barostat.pot + self.cell.kin - 2.0*units.Constants.kb*self.thermostat.temp*math.log(self.cell.V)
+      return NVTEnsemble.get_econs(self) + self.barostat.ebaro
 
    def step(self):
       """NPT time step.
@@ -462,7 +439,7 @@ class NPTEnsemble(NVTEnsemble):
 
       self.qtime = -time.time()
       self.barostat.qcstep()
-      self.qstep()
+      self.nm.free_qstep()
       self.qtime += time.time()
 
       self.ptime -= time.time()

@@ -1,7 +1,7 @@
 """Contains the classes which deal with the atoms.
 
 Used for holding information about the atoms, including their positions, masses
-momenta and kinetic energy. Has separate classes for accessing the global 
+momenta and kinetic energy. Has separate classes for accessing the global
 arrays of atoms and for individual atoms.
 
 Classes:
@@ -19,7 +19,7 @@ class Atom(dobject):
    """Represent an atom, with position, velocity, mass and related properties.
 
    This is actually only an interface to the Atoms class, i.e. only stores
-   views of the large arrays which contain all the coordinates. 
+   views of the large arrays which contain all the coordinates.
 
    Attributes:
       kin: The kinetic energy of the atom.
@@ -33,7 +33,7 @@ class Atom(dobject):
       m3: An array of 3 elements with each element being the mass of the atom.
          Used when each degree of freedom needs to be divided by the mass.
    """
-            
+
    def __init__(self, system, index):
       """Initialises Atom.
 
@@ -48,7 +48,7 @@ class Atom(dobject):
       dset(self,"m",system.m[index:index+1])
       dset(self,"name",system.names[index:index+1])
       dset(self,"m3",system.m3[3*index:3*index+3])
-      
+
    @property
    def kin(self):
       """Calculates the contribution of the atom to the kinetic energy."""
@@ -57,7 +57,7 @@ class Atom(dobject):
 
    @property
    def kstress(self):
-      """Calculates the contribution of the atom to the kinetic stress 
+      """Calculates the contribution of the atom to the kinetic stress
       tensor.
       """
 
@@ -65,12 +65,12 @@ class Atom(dobject):
       ks = numpy.zeros((3,3),float)
       for i in range(3):
          for j in range(i,3):
-            ks[i,j] = p[i]*p[j]            
+            ks[i,j] = p[i]*p[j]
       return ks/self.m
 
 
 class Atoms(dobject):
-   """Storage for the atoms' positions, masses and velocities. 
+   """Storage for the atoms' positions, masses and velocities.
 
    Everything is stored as 3*n sized contiguous arrays,
    and a convenience-access is provided through a list of Atom objects.
@@ -83,12 +83,12 @@ class Atoms(dobject):
       q: An array giving the components of the atom momenta.
       m: An array giving the atom masses.
       names: An array giving the atom names.
-      m3: An array of 3*n elements where each element of m has been copied 
-         three times. Used when each degree of freedom needs to be divided 
+      m3: An array of 3*n elements where each element of m has been copied
+         three times. Used when each degree of freedom needs to be divided
          by the mass.
       M: The total mass of all the atoms.
       kin: The total kinetic energy of the atoms. Depends on p and m3.
-      kstress: The contribution of the atoms to the kinetic stress tensor. 
+      kstress: The contribution of the atoms to the kinetic stress tensor.
          Depends on px, py, pz and m.
       qx: An array giving the x components of the positions.
       qy: An array giving the y components of the positions.
@@ -97,12 +97,12 @@ class Atoms(dobject):
       py: An array giving the y components of the momenta.
       pz: An array giving the z components of the momenta.
    """
-            
+
 
    def __init__(self, natoms, _prebind=None):
       """Initialises Atoms.
 
-      Each replica and the centroid coordinate are all held as Atoms objects, 
+      Each replica and the centroid coordinate are all held as Atoms objects,
       and so slices of the global position and momentum arrays must be used in
       the initialisation so that they always agree with each other.
 
@@ -114,40 +114,40 @@ class Atoms(dobject):
       """
 
       self.natoms = natoms
-      
+
       if _prebind is None:
          dset(self,"q",depend_array(name="q",value=np.zeros(3*natoms, float)))
          dset(self,"p",depend_array(name="p",value=np.zeros(3*natoms, float)))
          dset(self,"m",depend_array(name="m",value=np.zeros(natoms, float)))
          dset(self,"names",
-            depend_array(name="names",value=np.zeros(natoms, np.dtype('|S6'))))         
+            depend_array(name="names",value=np.zeros(natoms, np.dtype('|S6'))))
       else:
-         dset(self,"q",_prebind[0]) 
-         dset(self,"p",_prebind[1]) 
+         dset(self,"q",_prebind[0])
+         dset(self,"p",_prebind[1])
          dset(self,"m",_prebind[2])
          dset(self,"names",_prebind[3])
- 
+
       self.px = self.p[0:3*natoms:3]
       self.py = self.p[1:3*natoms:3]
       self.pz = self.p[2:3*natoms:3]
       self.qx = self.q[0:3*natoms:3]
       self.qy = self.q[1:3*natoms:3]
       self.qz = self.q[2:3*natoms:3]
-      
+
       dset(self,"m3",
          depend_array(name="m3",value=np.zeros(3*natoms, float),func=self.mtom3,
             dependencies=[dget(self,"m")]))
 
       dset(self,"M",
          depend_value(name="M",func=self.get_msum,
-            dependencies=[dget(self,"m")]) )      
+            dependencies=[dget(self,"m")]) )
       dset(self,"kin",
          depend_value(name="kin",func=self.get_kin,
             dependencies=[dget(self,"p"),dget(self,"m3")]) )
       dset(self,"kstress",
          depend_value(name="kstress",func=self.get_kstress,
             dependencies=[dget(self,"px"),dget(self,"py"),dget(self,"pz"),dget(self,"m")]) )
-   
+
    def copy(self):
       """Creates a new Atoms object.
 
@@ -161,11 +161,11 @@ class Atoms(dobject):
       newat.m[:] = self.m
       newat.names[:] = self.names
       return newat
-      
+
    def __len__(self):
       """Length function.
 
-      This is called whenever the standard function len(atoms) is used. 
+      This is called whenever the standard function len(atoms) is used.
 
       Returns:
          The number of atoms.
@@ -176,7 +176,7 @@ class Atoms(dobject):
    def __getitem__(self,index):
       """Overwrites standard getting function.
 
-      This is called whenever the standard function atoms[index] is used. 
+      This is called whenever the standard function atoms[index] is used.
       Returns an Atom object with the appropriate position and momenta arrays.
       Note that they are dynamically generated each time an Atom needs to be
       accessed, as this reduces the number of depend objects that need to be
@@ -194,7 +194,7 @@ class Atoms(dobject):
    def __setitem__(self,index,value):
       """Overwrites standard setting function.
 
-      This is called whenever the standard function atoms[index]=value is used. 
+      This is called whenever the standard function atoms[index]=value is used.
       Changes the position and momenta of the appropriate slice of the global
       position and momentum arrays to those given by value.
       Note that they are dynamically generated each time an Atom needs to be
@@ -208,7 +208,7 @@ class Atoms(dobject):
 
       pat = Atom(self,index)
       pat.p = value.p
-      pat.q = value.q 
+      pat.q = value.q
       pat.m = value.m
       pat.name = value.name
 
@@ -216,13 +216,13 @@ class Atoms(dobject):
       """Calculates the total mass."""
 
       return self.m.sum()
-   
+
    def mtom3(self):
       """Returns a 3*n mass array.
 
       Returns:
-         An array of 3*n elements where each element of m has been copied 
-         three times. Used when each degree of freedom needs to be divided 
+         An array of 3*n elements where each element of m has been copied
+         three times. Used when each degree of freedom needs to be divided
          by the mass.
       """
 
@@ -231,16 +231,16 @@ class Atoms(dobject):
       m3[1:3*self.natoms:3] = m3[0:3*self.natoms:3]
       m3[2:3*self.natoms:3] = m3[0:3*self.natoms:3]
       return m3
-                     
+
    def get_kin(self):
       """Calculates the total kinetic energy of the system."""
 
       p = depstrip(self.p)
       return 0.5*np.dot(p,p/depstrip(self.m3))
-      
+
    def get_kstress(self):
-      """Calculates the total contribution of the atoms to the kinetic stress 
-      tensor.
+      """Calculates the total contribution of the atoms to the kinetic stress
+      tensor -- not volume-scaled
       """
 
       ks = np.zeros((3,3),float)
@@ -249,5 +249,5 @@ class Atoms(dobject):
       ks[2,2] = np.dot(self.pz,self.pz/self.m)
       ks[0,1] = np.dot(self.px,self.py/self.m)
       ks[0,2] = np.dot(self.px,self.pz/self.m)
-      ks[1,2] = np.dot(self.py,self.pz/self.m)                        
+      ks[1,2] = np.dot(self.py,self.pz/self.m)
       return ks

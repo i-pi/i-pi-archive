@@ -34,7 +34,8 @@
             else
                dist_frac = rc_exp*on_r-1.0d0
                long_range = dexp(-(dist_frac)**2)
-         long_range_diff = 2.0d0*(dist_frac)*rc_exp*on_r**2*long_range
+               long_range_diff = 2.0d0*(dist_frac)*rc_exp* 
+     x                           on_r**2*long_range
             end if
 
          end subroutine
@@ -57,7 +58,7 @@
             double precision, intent(out) :: force
 
             double precision on_r, exp_pot, exp_force, long_range, 
-     1long_range_diff, disp, disp_diff
+     x                       long_range_diff, disp, disp_diff
 
             if (r > rc) then
                pot = 0.0d0
