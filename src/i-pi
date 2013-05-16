@@ -29,6 +29,7 @@ def main(file_name):
 
    Will run automatically when the module is used as a script.
    """
+
    ifile = open(file_name,"r")
    xmlrestart = xml_parse_file(ifile) # Parses the file.
    ifile.close()

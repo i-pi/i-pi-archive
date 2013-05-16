@@ -82,7 +82,6 @@ class Simulation(dobject):
       """
 
       info(" # Initializing simulation object ", verbosity.low )
-
       self.prng = prng
       self.ensemble = ensemble
       self.beads = beads
