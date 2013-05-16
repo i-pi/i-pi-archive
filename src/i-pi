@@ -34,7 +34,6 @@ def main(file_name):
    xmlrestart = xml_parse_file(ifile) # Parses the file.
    ifile.close()
 
-   if verbosity.low: print "ciao"
    simrestart = InputSimulation()
    # Checks the input and partitions it appropriately.
    simrestart.parse(xmlrestart.fields[0][1])
