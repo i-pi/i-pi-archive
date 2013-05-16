@@ -299,7 +299,7 @@ class Properties(dobject):
       # coordinates
       self.dbeads = simul.beads.copy()
       self.dforces = Forces()
-      self.dforces.bind(self.dbeads, self.simul.cell,  self.simul.flist, self.simul.soft_exit)
+      self.dforces.bind(self.dbeads, self.simul.cell,  self.simul.flist)
 
    def __getitem__(self, key):
       """Retrieves the item given by key.

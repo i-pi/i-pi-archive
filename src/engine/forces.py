@@ -19,6 +19,7 @@ import numpy as np
 import math, time
 from utils.depend import *
 from utils.nmtransform import nm_rescale
+from utils.softexit import softexit
 from interfaces.sockets import InterfaceSocket
 from beads import Beads
 from utils.messages import Verbosity, warning
@@ -32,8 +33,6 @@ class ForceField(dobject):
    Attributes:
       atoms: An Atoms object containing all the atom positions.
       cell: A Cell object containing the system box.
-      softexit: A function to help make sure the restart file can be printed in
-         a consistent manner.
 
    Depend objects:
       ufvx: A list of the form [pot, f, vir]. These quantities are calculated
@@ -68,7 +67,7 @@ class ForceField(dobject):
 
       return type(self)(self.nbeads, self.weight)
 
-   def bind(self, atoms, cell, softexit=None):
+   def bind(self, atoms, cell):
       """Binds atoms and cell to the forcefield.
 
       This takes an atoms object and a cell object and makes them members of
@@ -78,14 +77,11 @@ class ForceField(dobject):
       Args:
          atoms: The Atoms object from which the atom positions are taken.
          cell: The Cell object from which the system box is taken.
-         softexit: A function to help make sure the printed restart file is
-            consistent.
       """
 
       # stores a reference to the atoms and cell we are computing forces for
       self.atoms = atoms
       self.cell = cell
-      self.softexit = softexit
 
       # ufv depends on the atomic positions and on the cell
       dget(self,"ufvx").add_dependency(dget(self.atoms,"q"))
@@ -224,7 +220,7 @@ class FFSocket(ForceField):
          self.pars = pars
       self.request = None
 
-   def bind(self, atoms, cell, softexit=None):
+   def bind(self, atoms, cell):
       """Pass on the binding request from ForceBeads.
 
       Also makes sure to set the socket's softexit.
@@ -236,9 +232,7 @@ class FFSocket(ForceField):
             consistent.
       """
 
-      super(FFSocket,self).bind(atoms, cell, softexit)
-      if not self.softexit is None:
-         self.socket.softexit = self.softexit
+      super(FFSocket,self).bind(atoms, cell)
 
    def copy(self):
       """Creates a deep copy without the bound objects.
@@ -273,9 +267,7 @@ class FFSocket(ForceField):
             break
          time.sleep(self.socket.latency)
       if self.request["status"] == "Exit":
-         print " @Force:   Soft exit request."
-         if not self.softexit is None:
-            self.softexit()
+         softexit.trigger(" @Force: Requested returned a Exit status")
 
       # data has been collected, so the request can be released and a slot
       #freed up for new calculations
@@ -334,8 +326,6 @@ class ForceBeads(dobject):
       nbeads: An integer giving the number of beads.
       f_model: A model used to create the forcefield objects for each replica
          of the system.
-      softexit: A function to help make sure the printed restart file is
-         consistent.
       _forces: A list of the forcefield objects for all the replicas.
       weight: A float that will be used to weight the contribution of this
          forcefield to the total force.
@@ -384,7 +374,7 @@ class ForceBeads(dobject):
       return type(self)(self.f_model, self.nbeads, self.weight)
 
 
-   def bind(self, beads, cell, softexit=None):
+   def bind(self, beads, cell):
       """Binds beads, cell and force to the forcefield.
 
       Takes the beads, cell objects and makes them members of the forcefield.
@@ -406,7 +396,6 @@ class ForceBeads(dobject):
       # stores a copy of the number of atoms and of beads
       #!TODO! make them read-only properties
       self.natoms = beads.natoms
-      self.softexit = softexit
       if (self.nbeads != beads.nbeads):
          raise ValueError("Binding together a Beads and a ForceBeads objects with different numbers of beads")
 
@@ -415,7 +404,7 @@ class ForceBeads(dobject):
       self._forces = [];
       for b in range(self.nbeads):
          new_force = self.f_model.copy()
-         new_force.bind(beads[b], cell, softexit=self.softexit)
+         new_force.bind(beads[b], cell)
          self._forces.append(new_force)
 
       # f is a big array which assembles the forces on individual beads
@@ -588,8 +577,6 @@ class Forces(dobject):
    Attributes:
       natoms: An integer giving the number of atoms.
       nbeads: An integer giving the number of beads.
-      softexit: A function to help make sure the printed restart file is
-         consistent.
       mforces: A list of all the forcefield objects.
       mbeads: A list of all the beads objects. Some of these may be contracted
          ring polymers, with a smaller number of beads than of the simulation.
@@ -611,12 +598,11 @@ class Forces(dobject):
          representation.
    """
 
-   def bind(self, beads, cell, flist, softexit=None):
+   def bind(self, beads, cell, flist):
 
       self.natoms = beads.natoms
       self.nbeads = beads.nbeads
       self.nforces = len(flist)
-      self.softexit = softexit
 
       # flist should be a list of tuples containing ( "name", forcebeads)
       self.mforces = []
@@ -657,7 +643,7 @@ class Forces(dobject):
          dget(beads,"q").add_dependant(dget(newbeads,"q"))
 
          #now we create a new forcebeads which is bound to newbeads!
-         newforce.bind(newbeads, cell, softexit)
+         newforce.bind(newbeads, cell)
 
          #adds information we will later need to the appropriate lists.
          self.mweights.append(newweight)
