@@ -339,7 +339,6 @@ class BaroMHT(Barostat):
 
    def get_ebaro(self):
 
-      # Note to self: here there should be a term c*log(V)*kb*T*nbeads where c is the same as used in the propagator.
       return self.thermostat.ethermo + self.kin + self.pot
 
 
