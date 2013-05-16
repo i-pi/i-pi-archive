@@ -114,16 +114,16 @@ class InputSimulation(Input):
 
       # this we pick from the messages class. kind of a "global" but it seems to
       # be the best way to pass around the (global) information on the level of output.
-      if verbosity.quiet:
-         self.verbosity.store("quiet")
-      elif verbosity.low:
-         self.verbosity.store("low")
-      elif verbosity.medium:
-         self.verbosity.store("medium")
+      if verbosity.debug:
+         self.verbosity.store("debug")
       elif verbosity.high:
          self.verbosity.store("high")
-      elif verbosity.debug:
-         self.verbosity.store("debug")
+      elif verbosity.medium:
+         self.verbosity.store("medium")
+      elif verbosity.low:
+         self.verbosity.store("low")
+      elif verbosity.quiet:
+         self.verbosity.store("quiet")
       else:
          raise ValueError("Invalid verbosity level")
 
