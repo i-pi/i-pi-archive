@@ -26,6 +26,7 @@ __all__ = ['InterfaceSocket']
 import socket, select, threading, signal, string, os, time
 from utils.depend import depstrip
 from utils.messages import verbosity, warning, info
+from utils.softexit import softexit
 
 import numpy as np
 
@@ -340,8 +341,6 @@ class InterfaceSocket(object):
          before updating the client list.
       timeout: A float giving a timeout limit for considering a calculation dead
          and dropping the connection.
-      softexit: A function to help make sure the restart file can be printed in
-         a consistent manner.
       server: The socket used for data transmition.
       clients: A list of the driver clients connected to the server.
       requests: A list of all the jobs required in the current PIMD step.
@@ -364,7 +363,6 @@ class InterfaceSocket(object):
          mode: An optional string giving the type of socket. Defaults to 'unix'.
          latency: An optional float giving the time in seconds the socket will
             wait before updating the client list. Defaults to 1e-3.
-         softexit: A hook for calling a soft-exit procedure
 
       Raises:
          NameError: Raised if mode is not 'unix' or 'inet'.
@@ -377,7 +375,6 @@ class InterfaceSocket(object):
       self.latency = latency
       self.timeout = timeout
       self.dopbc=dopbc
-      self.softexit = None
       self._poll_thread = None
       self._prev_kill = {}
       self._poll_true = False
@@ -651,9 +648,7 @@ class InterfaceSocket(object):
       warning(" @SOCKET:   Kill signal. Trying to make a clean exit.", verbosity.low)
       self.end_thread()
 
-      if (not self.softexit is None):
-         self.softexit()
-         time.sleep(TIMEOUT) # give it some time to die gracefully
+      softexit.trigger(" @SOCKET: Kill signal received")
 
       try:
          self.__del__()
@@ -681,7 +676,7 @@ class InterfaceSocket(object):
          poll_iter += 1
          self.pool_distribute()
 
-         if os.path.exists("EXIT"): # soft-exit
+         if os.path.exists("EXIT"): # softexit
             info(" @SOCKET: Soft exit request from file EXIT. Flushing job queue.", verbosity.low)
             # releases all pending requests
             for r in self.requests:

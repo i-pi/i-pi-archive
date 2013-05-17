@@ -1,6 +1,6 @@
 """Contains the classes that deal with the normal mode representation.
 
-Deals with the normal mode transformation, including the complications 
+Deals with the normal mode transformation, including the complications
 introduced by PA-CMD when the bead masses are rescaled. Also deals with
 the change in the dynamics introduced by this mass-scaling, and has its
 own functions to calculate the kinetic energy, and the exact propagator
@@ -29,7 +29,7 @@ class NormalModes(dobject):
       nbeads: The number of beads.
       beads: The beads object for which the normal mode transformation should
          be done.
-      ensemble: The ensemble object, specifying the temperature to hold the 
+      ensemble: The ensemble object, specifying the temperature to hold the
          system to.
       transform: A nm_trans object that contains the functions that are
          required for the normal mode transformation.
@@ -37,7 +37,7 @@ class NormalModes(dobject):
    Depend objects:
       mode: A string specifying how the bead masses are chosen.
       nm_freqs: An array that specifies how the normal mode frequencies
-         of the ring polymers are to be calculated, and thus how the 
+         of the ring polymers are to be calculated, and thus how the
          bead masses should be chosen.
       qnm: The bead positions in the normal mode representation. Depends on
          beads.q.
@@ -54,17 +54,17 @@ class NormalModes(dobject):
          and the timestep.
       nm_factor: An array of dynamical mass factors associated with each of
          the normal modes. Depends on nm_freqs and mode.
-      dynm3: An array that gives the dynamical masses of individual atoms in the 
+      dynm3: An array that gives the dynamical masses of individual atoms in the
          normal modes representation. Depends on nm_factor and beads.m3.
       dynomegak: The scaled vibrational frequencies. Depends on nm_factor and
          omegak.
-      kins: A list of the kinetic energy for each normal mode, as 
-         calculated in the normal mode representation, using the 
+      kins: A list of the kinetic energy for each normal mode, as
+         calculated in the normal mode representation, using the
          dynamical mass factors. Depends on beads.sm3, beads.p and nm_factor.
       kin: The total kinetic energy, as calculated in the normal mode
          representation, using the dynamical mass factors.
       kstress: The kinetic stress tensor, as calculated in the normal mode
-         representation, using the dynamical mass factors. Depends on 
+         representation, using the dynamical mass factors. Depends on
          beads.sm3, beads.p and nm_factor.
    """
 
@@ -112,12 +112,12 @@ class NormalModes(dobject):
       dset(self,"qnm",
          depend_array(name="qnm",
             value=np.zeros((self.nbeads,3*self.natoms), float),
-               func={"q": (lambda : self.transform.b2nm(depstrip(self.beads.q)) ) }, 
+               func={"q": (lambda : self.transform.b2nm(depstrip(self.beads.q)) ) },
                   synchro=sync_q ) )
       dset(self,"pnm",
          depend_array(name="pnm",
             value=np.zeros((self.nbeads,3*self.natoms), float),
-               func={"p": (lambda : self.transform.b2nm(depstrip(self.beads.p)) ) }, 
+               func={"p": (lambda : self.transform.b2nm(depstrip(self.beads.p)) ) },
                   synchro=sync_p ) )
 
       # must overwrite the functions
@@ -245,7 +245,7 @@ class NormalModes(dobject):
       """Returns dynamical mass factors, i.e. the scaling of normal mode
       masses that determine the path dynamics (but not statics)."""
 
-      # also checks that the frequencies and the mode given in init are 
+      # also checks that the frequencies and the mode given in init are
       # consistent with the beads and ensemble
 
       dmf = np.zeros(self.nbeads,float)
@@ -308,10 +308,11 @@ class NormalModes(dobject):
       else:
          pq = np.zeros((2,self.natoms*3),float)
          sm = depstrip(self.beads.sm3[0])
+         prop_pq = depstrip(self.prop_pq)
          for k in range(1,self.nbeads):
-            pq[0,:] = depstrip(self.pnm[k])/sm
-            pq[1,:] = depstrip(self.qnm[k])*sm
-            pq = np.dot(self.prop_pq[k],pq)
+            pq[0,:] = depstrip(self.pnm)[k]/sm
+            pq[1,:] = depstrip(self.qnm)[k]*sm
+            pq = np.dot(prop_pq[k],pq)
             self.qnm[k] = pq[1,:]/sm
             self.pnm[k] = pq[0,:]*sm
 
@@ -325,9 +326,11 @@ class NormalModes(dobject):
       kmd = np.zeros(self.nbeads,float)
       sm = depstrip(self.beads.sm3[0])
       pnm = depstrip(self.pnm)
+      nmf = depstrip(self.nm_factor)
+
       for b in range(self.nbeads):
-         sp = pnm[b]/sm  # mass-scaled momentum of b-th NM
-         kmd[b] = np.dot(sp,sp)*0.5/self.nm_factor[b]   # also takes care of the possibility of having non-RPMD masses
+         sp = pnm[b]/sm                      # mass-scaled momentum of b-th NM
+         kmd[b] = np.dot(sp,sp)*0.5/nmf[b]   # also takes care of the possibility of having non-RPMD masses
 
       return kmd
 
@@ -357,14 +360,16 @@ class NormalModes(dobject):
       kmd = np.zeros((3,3),float)
       sm = depstrip(self.beads.sm3[0])
       pnm = depstrip(self.pnm)
+      nmf = depstrip(self.nm_factor)
+
       for b in range(self.nbeads):
          sp = pnm[b]/sm  # mass-scaled momentum of b-th NM
 
          for i in range(3):
             for j in range(3):
-               # computes the outer product of the p of various normal modes 
+               # computes the outer product of the p of various normal modes
                # singling out Cartesian components to build the tensor
                # also takes care of the possibility of having non-RPMD masses
-               kmd[i,j] += np.dot(sp[i:3*self.natoms:3],sp[j:3*self.natoms:3])*0.5/self.nm_factor[b]
+               kmd[i,j] += np.dot(sp[i:3*self.natoms:3],sp[j:3*self.natoms:3])/nmf[b]
 
       return kmd

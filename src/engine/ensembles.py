@@ -174,21 +174,23 @@ class NVEEnsemble(Ensemble):
       if (self.fixcom):
          pcom = np.zeros(3,float);
 
-         p = depstrip(self.beads.p)
          na3 = self.beads.natoms*3
          nb = self.beads.nbeads
+         p = depstrip(self.beads.p)
          m = depstrip(self.beads.m3)[:,0:na3:3]
+         M=self.beads[0].M
+
          for i in range(3):
             pcom[i] = p[:,i:na3:3].sum()
 
          if hasattr(self,"thermostat"):
             if hasattr(self.thermostat, "_thermos"):
-               self.thermostat._thermos[0].ethermo += np.dot(pcom,pcom)/(2.0*self.beads[0].M*nb)
+               self.thermostat._thermos[0].ethermo += np.dot(pcom,pcom)/(2.0*M*nb)
             else:
-               self.thermostat.ethermo += np.dot(pcom,pcom)/(2.0*self.beads[0].M*nb)
+               self.thermostat.ethermo += np.dot(pcom,pcom)/(2.0*M*nb)
 
          # subtracts COM _velocity_
-         pcom *= 1.0/(nb*self.beads[0].M)
+         pcom *= 1.0/(nb*M)
          for i in range(3):
             self.beads.p[:,i:na3:3] -= m*pcom[i]
 

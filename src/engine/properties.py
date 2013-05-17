@@ -299,7 +299,7 @@ class Properties(dobject):
       # coordinates
       self.dbeads = simul.beads.copy()
       self.dforces = Forces()
-      self.dforces.bind(self.dbeads, self.simul.cell,  self.simul.flist, self.simul.soft_exit)
+      self.dforces.bind(self.dbeads, self.simul.cell,  self.simul.flist)
 
    def __getitem__(self, key):
       """Retrieves the item given by key.
@@ -430,8 +430,8 @@ class Properties(dobject):
          mdof = 0
       # returns estimator MULTIPLIED BY NBEADS -- again for consistency with the virial, etc...
       kst=np.zeros((3,3),float)
-      kst[:,:] = self.beads.kstress
-      # for i in range(3):     kst[i,i] += mdof/3.0*Constants.kb*self.ensemble.temp*self.beads.nbeads
+
+      kst[:,:] = self.nm.kstress
 
       return kst
 
@@ -487,13 +487,14 @@ class Properties(dobject):
       qc = depstrip(self.beads.qc)
       pc = depstrip(self.beads.pc)
       m = depstrip(self.beads.m[0])
+      fall = depstrip(self.forces.f)
       na3 = 3*self.beads.natoms
 
       for b in range(self.beads.nbeads):
          for i in range(3):
             for j in range(i,3):
                kst[i,j] -= np.dot(q[b,i:na3:3] - qc[i:na3:3],
-                  depstrip(self.forces.f[b])[j:na3:3])
+                  fall[b,j:na3:3])
 
       # NOTE: In order to have a well-defined conserved quantity, the Nf kT term in the
       # diagonal stress estimator must be taken from the centroid kinetic energy.
@@ -572,9 +573,9 @@ class Properties(dobject):
          if (atom != "" and iatom != i and latom != self.beads.names[i]):
             continue
 
-         kcv = 0.0
+         kcv = 0.0; k=3*i
          for b in range(self.beads.nbeads):
-            kcv += np.dot(q[b,3*i:3*(i+1)] - qc[3*i:3*(i+1)], f[b,3*i:3*(i+1)])
+            kcv += (q[b,k] - qc[k])* f[b,k] + (q[b,k+1] - qc[k+1])* f[b,k+1] + (q[b,k+2] - qc[k+2])* f[b,k+2]
          kcv *= -0.5/self.beads.nbeads
          kcv += 1.5*Constants.kb*self.ensemble.temp
          acv += kcv
@@ -607,8 +608,9 @@ class Properties(dobject):
          for i in range(self.beads.natoms):
             if (atom != "" and iatom != i and latom != self.beads.names[i]):
                continue
+            k=3*i
             for b in range(self.beads.nbeads):
-               kmd += (pnm[b,3*i]**2 + pnm[b,3*i+1]**2 + pnm[b,3*i+2]**2)/(2.0*dm3[b,3*i])
+               kmd += (pnm[b,k]**2 + pnm[b,k+1]**2 + pnm[b,k+2]**2)/(2.0*dm3[b,k])
          return kmd/self.beads.nbeads
 
    def get_kij(self, ni="0", nj="0"):

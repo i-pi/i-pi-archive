@@ -1,7 +1,13 @@
 """Utility functions for outputting messages, diagnostics and errors'
 
 Classes:
-   Verbosity: Concise class to c
+   Verbosity: Concise class to check the selected level of output
+
+Functions:
+   banner:    Prints the program welcome "screen"
+   help:      Prints the input syntax help
+   info:      Prints some information to standard output, depending on the level of verbosity
+   warning:   Same as info, but with a "!W!" prefix and optionally printing a stack trace
 """
 
 import traceback, sys

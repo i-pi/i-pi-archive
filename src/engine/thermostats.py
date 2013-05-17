@@ -188,16 +188,17 @@ class ThermoLangevin(Thermostat):
    def step(self):
       """Updates the bound momentum vector with a langevin thermostat."""
 
-      p = self.p.view(np.ndarray).copy()
+      p = depstrip(self.p).copy()
+      sm = depstrip(self.sm)
 
-      p /= self.sm
+      p /= sm
 
       self.ethermo += np.dot(p,p)*0.5
       p *= self.T
       p += self.S*self.prng.gvec(len(p))
       self.ethermo -= np.dot(p,p)*0.5
 
-      p *= self.sm
+      p *= sm
 
       self.p = p
 

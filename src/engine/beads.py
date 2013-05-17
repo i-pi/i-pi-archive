@@ -234,7 +234,7 @@ class Beads(dobject):
 
       epath = 0.0
       q = depstrip(self.q)
-      m = depstrip(self.m3[0])
+      m = depstrip(self.m3)[0]
       for b in range(self.nbeads):
          if b > 0:
             dq = q[b,:] - q[b-1,:]
@@ -256,7 +256,7 @@ class Beads(dobject):
       f = np.zeros((nbeads,3*natoms),float)
 
       q = depstrip(self.q)
-      m = depstrip(self.m3[0])
+      m = depstrip(self.m3)[0]
       for b in range(nbeads):
          if b > 0:
             dq = q[b,:] - q[b-1,:]

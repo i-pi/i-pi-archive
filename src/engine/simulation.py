@@ -21,6 +21,7 @@ from utils.prng   import *
 from utils.io     import *
 from utils.io.io_xml import *
 from utils.messages import verbosity, info
+from utils.softexit import softexit
 from atoms import *
 import time
 from cell import *
@@ -102,6 +103,7 @@ class Simulation(dobject):
       self.properties = Properties()
       self.trajs = Trajectories()
       self.chk = None
+      self.rollback = True
 
 
    def bind(self):
@@ -109,7 +111,7 @@ class Simulation(dobject):
 
       # binds important computation engines
       self.nm.bind(self.beads, self.ensemble)
-      self.forces.bind(self.beads, self.cell, self.flist, softexit=self.soft_exit)
+      self.forces.bind(self.beads, self.cell, self.flist)
       self.ensemble.bind(self.beads, self.nm, self.cell, self.forces, self.prng)
 
       # binds output management objects
@@ -121,7 +123,10 @@ class Simulation(dobject):
       self.chk = CheckpointOutput("RESTART", 1, True, 0)
       self.chk.bind(self)
 
-   def soft_exit(self, rollback=True):
+      # registers the softexit routine
+      softexit.register(self.softexit)
+
+   def softexit(self):
       """Deals with a soft exit request.
 
       Tries to ensure that a consistent restart checkpoint is
@@ -130,13 +135,11 @@ class Simulation(dobject):
 
       if self.step < self.tsteps:
          self.step += 1
-      if not rollback:
+      if not self.rollback:
          self.chk.store()
       self.chk.write(store=False)
 
       self.forces.stop()
-
-      sys.exit()
 
    def run(self):
       """Runs the simulation.
@@ -157,6 +160,8 @@ class Simulation(dobject):
 
       steptime = 0.0
       simtime =  time.time()
+
+      cstep=0; tptime=0.0; tqtime=0.0; tttime=0.0; ttot=0.0;
       # main MD loop
       for self.step in range(self.step,self.tsteps):
          # stores the state before doing a step.
@@ -172,14 +177,26 @@ class Simulation(dobject):
             o.write()
 
          if os.path.exists("EXIT"): # soft-exit
-            self.soft_exit(rollback=False)
+            self.rollback=False
+            softexit.trigger()
 
          steptime += time.time()
-         print " # MD step % 7d complete. Timings -->  %10.5e [p: %10.5e  q: %10.5e  t: %10.5e]" % (self.step, steptime, self.ensemble.ptime, self.ensemble.qtime, self.ensemble.ttime )
-         print " # MD diagnostics: V: %10.5e    Kcv: %10.5e   Ecns: %10.5e" % (self.properties["potential"], self.properties["kinetic_cv"], self.properties["conserved"] )
+         ttot += steptime
+         tptime += self.ensemble.ptime
+         tqtime += self.ensemble.qtime
+         tttime += self.ensemble.ttime
+         cstep += 1
+
+         if verbosity.high or (verbosity.medium and self.step%100 == 0) or (verbosity.low and self.step%1000 == 0):
+            info(" # Average timings at MD step % 7d. t/step: %10.5e [p: %10.5e  q: %10.5e  t: %10.5e]" %
+               ( self.step, ttot/cstep, tptime/cstep, tqtime/cstep, tttime/cstep ) )
+            ttot = tptime = tqtime = tttime = 0.0; cstep=0
+            info(" # MD diagnostics: V: %10.5e    Kcv: %10.5e   Ecns: %10.5e" %
+               (self.properties["potential"], self.properties["kinetic_cv"], self.properties["conserved"] ) )
 
          if (self.ttime > 0 and time.time() - simtime > self.ttime):
-            print " # Wall clock time expired! Bye bye"
+            info(" # Wall clock time expired! Bye bye!", verbosity.low )
             break
 
-      self.soft_exit(rollback=False)
+      self.rollback=False
+      softexit.trigger()

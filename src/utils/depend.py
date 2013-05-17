@@ -41,6 +41,7 @@ Functions:
 __all__ = ['depend_base', 'depend_value', 'depend_array', 'synchronizer',
            'dobject', 'dget', 'dset', 'depstrip', 'depcopy', 'deppipe']
 
+
 import numpy as np
 
 class synchronizer(object):
@@ -204,11 +205,11 @@ class depend_base(object):
 
       self._tainted[:] = True
       for item in self._dependants:
-         if (not item.tainted()):
+         if (not item._tainted[0]):
             item.taint()
       if not self._synchro is None:
          for v in self._synchro.synced.values():
-            if (not v.tainted()) and (not v is self):
+            if (not v._tainted[0]) and (not v is self):
                v.taint(taintme=True)
          self._tainted[:] = (taintme and (not self._name == self._synchro.manual))
       else:
@@ -301,7 +302,7 @@ class depend_value(depend_base):
       is recalculated if tainted.
       """
 
-      if self.tainted():
+      if self._tainted[0]:
          self.update_auto()
          self.taint(taintme=False)
 
@@ -405,6 +406,8 @@ class depend_array(np.ndarray, depend_base):
 
       depend_base.__init__(self, name="")
 
+      self._asarray=self.view(np.ndarray) # stores a view of self without dependency machinery
+
       if type(obj) is depend_array:
          # We are in a view cast or in new from template. Unfortunately
          # there is no sure way to tell (or so it seems). Hence we need to
@@ -423,6 +426,7 @@ class depend_array(np.ndarray, depend_base):
          # Just sets a defaults for safety
          self._bval = depstrip(self)
 
+
    def __array_prepare__(self, arr, context=None):
       """Prepare output array for ufunc.
 
@@ -438,11 +442,11 @@ class depend_array(np.ndarray, depend_base):
          return np.ndarray.__array_prepare__(self.view(np.ndarray),arr.view(np.ndarray),context)
       elif len(context[1]) > context[0].nin and context[0].nout > 0:
          # We are being called by a ufunc with a output argument, which is being
-         # actually used. Most likely, something like an increment, 
+         # actually used. Most likely, something like an increment,
          # so we pass on a deparray
          return super(depend_array,self).__array_prepare__(arr,context)
       else:
-         # Apparently we are generating a new array. 
+         # Apparently we are generating a new array.
          # We have no way of knowing its
          # dependencies, so we'd better return a ndarray view!
          return np.ndarray.__array_prepare__(self.view(np.ndarray),arr.view(np.ndarray),context)
@@ -524,14 +528,14 @@ class depend_array(np.ndarray, depend_base):
          index: A slice variable giving the appropriate slice to be read.
       """
 
-      if self.tainted():
+      if self._tainted[0]:
          self.update_auto()
          self.taint(taintme=False)
 
       if (self.__scalarindex(index, self.ndim)):
-         return depstrip(self)[index]
+         return self._asarray[index]
       else:
-         return depend_array(depstrip(self)[index], name=self._name, synchro=self._synchro, func=self._func, dependants=self._dependants, tainted=self._tainted, base=self._bval)
+         return depend_array(self._asarray[index], name=self._name, synchro=self._synchro, func=self._func, dependants=self._dependants, tainted=self._tainted, base=self._bval)
 
 
    def __getslice__(self,i,j):
@@ -542,12 +546,18 @@ class depend_array(np.ndarray, depend_base):
    def get(self):
       """Alternative to standard get function."""
 
-      return self.__getitem__(slice(None,None,None))
+      return self.__get__(slice(None,None,None))
 
    def __get__(self, instance, owner):
       """Overwrites standard get function."""
 
-      return self.__getitem__(slice(None,None,None))
+      # It is worth duplicating this code that is also used in __getitem__ as this
+      # is called most of the time, and we avoid creating a load of copies pointing to the same depend_array
+      if self._tainted[0]:
+         self.update_auto()
+         self.taint(taintme=False)
+
+      return self
 
    def __setitem__(self,index,value,manual=True):
       """Alters value[index] and taints dependencies.
@@ -601,8 +611,11 @@ class depend_array(np.ndarray, depend_base):
 # ** np.dot
 __dp_dot = np.dot
 
-def dep_dot(a, b): 
-   return depstrip(__dp_dot(a,b))
+def dep_dot(da, db):
+   a=depstrip(da)
+   b=depstrip(db)
+
+   return __dp_dot(da,db)
 
 np.dot = dep_dot
 # ENDS NUMPY FUNCTIONS OVERRIDE
@@ -647,7 +660,7 @@ def dset(obj,member,value,name=None):
    if not name is None:
       obj.__dict__[member]._name = name
 
-def depstrip(deparray):
+def depstrip(da):
    """Removes dependencies from a depend_array.
 
    Takes a depend_array and returns its value as a ndarray, effectively
@@ -662,7 +675,13 @@ def depstrip(deparray):
       A ndarray with the same value as deparray.
    """
 
-   return deparray.view(np.ndarray)
+   if isinstance(da, depend_array): # only bother to strip dependencies if the array actually IS a depend_array
+      #if da._tainted[0]:
+      #   print "!!! WARNING depstrip called on tainted array WARNING !!!!!" # I think we can safely assume that when we call depstrip the array has been cleared already but I am not 100% sure so better check - and in case raise the update
+      #   da._asarray = da.view(np.ndarray)
+      return da._asarray
+   else:
+      return da
 
 def deppipe(objfrom,memberfrom,objto,memberto):
    """Synchronizes two depend objects.
