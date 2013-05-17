@@ -39,12 +39,8 @@ Functions:
 """
 
 __all__ = ['depend_base', 'depend_value', 'depend_array', 'synchronizer',
-           'dobject', 'dget', 'dset', 'depstrip', 'depcopy', 'deppipe', "gicall", "gidic"]
+           'dobject', 'dget', 'dset', 'depstrip', 'depcopy', 'deppipe']
 
-
-gicall=[0,0,0]
-gidic={}
-import traceback as tb
 
 import numpy as np
 
@@ -537,23 +533,8 @@ class depend_array(np.ndarray, depend_base):
          self.taint(taintme=False)
 
       if (self.__scalarindex(index, self.ndim)):
-         gicall[0]+=1
          return self._asarray[index]
       else:
-         gicall[1]+=1
-
-         stack=tb.extract_stack()
-         for k in range(-1,-len(stack),-1):
-            if not "depend.py" in stack[k][0]: break
-
-         if not stack[k] in gidic:
-            gidic[stack[k]]=0
-         else:
-            gidic[stack[k]]+=1
-         #print stack[k-1]
-         #print stack[k]
-         #print stack[k+1]
-
          return depend_array(self._asarray[index], name=self._name, synchro=self._synchro, func=self._func, dependants=self._dependants, tainted=self._tainted, base=self._bval)
 
 
@@ -577,8 +558,6 @@ class depend_array(np.ndarray, depend_base):
          self.taint(taintme=False)
 
       return self
-
-      #return self.__getitem__(slice(None,None,None))
 
    def __setitem__(self,index,value,manual=True):
       """Alters value[index] and taints dependencies.
