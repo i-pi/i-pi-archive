@@ -187,7 +187,7 @@ class Simulation(dobject):
          tttime += self.ensemble.ttime
          cstep += 1
 
-         if verbosity.high or (verbosity.medium and self.step%10 == 0) or (verbosity.low and self.step%100 == 0):
+         if verbosity.high or (verbosity.medium and self.step%100 == 0) or (verbosity.low and self.step%1000 == 0):
             info(" # Average timings at MD step % 7d. t/step: %10.5e [p: %10.5e  q: %10.5e  t: %10.5e]" %
                ( self.step, ttot/cstep, tptime/cstep, tqtime/cstep, tttime/cstep ) )
             ttot = tptime = tqtime = tttime = 0.0; cstep=0

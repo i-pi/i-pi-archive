@@ -432,7 +432,6 @@ class Properties(dobject):
       kst=np.zeros((3,3),float)
 
       kst[:,:] = self.nm.kstress
-      # for i in range(3):     kst[i,i] += mdof/3.0*Constants.kb*self.ensemble.temp*self.beads.nbeads
 
       return kst
 

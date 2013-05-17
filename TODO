@@ -38,11 +38,13 @@ DONE **** Make the new NM thing actually work (MC) (MC)
 
 DONE ***  Move the synchro business out of Beads and into NormalModes (MC) (MC)
 
+***  Fix PDB output NOT to use Atom interface, that is horribly slow (MC) (JM)
+
 **   Fix (or remove) "springs" trajectory output. Not really needed anymore... (MC)
 
 *** More in general, rationalize and clean up the available properties and trajectories. The help strings and function documentation often don't match, often which arguments are supposed to be passed to the function aren't given in the help string, some properties have tensorial equivalents and some don't, some are also trajectories and some aren't. This really needs to be tidied up. (MC/JM) (JM) 
 
-** We should add a check function to InputThermo (JM)
+*** Should NOT use the Cholesky decomposition in initializing GLE. Use symmetric decomposition instead (MC) (MC)
 
 DONE ***  Benchmark the new property implementation. (MC) (JM)
 Completely revamped properties and trajectories scheme. 
@@ -50,7 +52,12 @@ Now it is possible to specify units and a short help string.
 
 DONE * Multiforce object should be implemented. (JM) (JM)
 
-** Find out why NPT and NST ensembles both appear to give jumps in the 
+*** Write a very clean driver for LJ and SG for examples (JM) (JM)
+*** Test NPT on the pH2 system (JM) (JM)
+
+*   Implement NST (MC) (MC)
+
+DONE ** Find out why NPT and NST ensembles both appear to give jumps in the 
 conserved quantity (JM)
 I have made some progress with this. I got it to stop and go back one step 
 and print a restart file whenever there was a jump. Restarting from this file
@@ -71,22 +78,19 @@ DONE *** Take care that all the arguments for the properties, are being converte
 I'm pretty sure that at the moment we're using strings as index variables 
 rather than integers.
 
-* It might be useful to have some kind of standardized error message format
+DONE * It might be useful to have some kind of standardized error message format
 (JM) (JM)
 
 DONE ** In both engine and inputs directories, we need to document initializer, 
 normalmodes, forces and outputs (JM) (JM)
 
-*** Rework the cell class, and the NPT ensemble (JM)
+DONE *** Rework the cell class, and the NPT ensemble (JM)
 
 DONE ** Add property and trajectory help string to the manual (JM) (JM)
 
 DONE *** Re-write the input files for all the test directories. (JM) (JM)
 
 DONE ** Add read cell from (A, B, C) and (alpha, beta, gamma) (JM) (JM)
-
-** Try to find a way to stop the socket blocking when you try to restart a simulation. (JM)
-NOTE (MC): if you refer to internet sockets, it is inevitable, one must wait a couple of minutes for the system to free the socket again
 
 * Merge the io_xyz.py, io_binary.py and io_pdb.py files (JM)
 
