@@ -195,6 +195,12 @@ class Input(object):
 
       self._text = ""
 
+      # stores what we would write out if the default was set
+      self._defwrite = ""
+      if not self._default is None:
+         self._defwrite = self.write(name="%%NAME%%")
+
+
    def set_default(self):
       """Sets the default value of the object."""
 
@@ -268,14 +274,34 @@ class Input(object):
 
       rstr = indent + "<" + name;
       for a in self.attribs:
-         #only write out attributes that are not defaults
-         if not _match(self.__dict__[a].fetch(), self.__dict__[a]._default):
-            rstr += " " + self.__dict__[a].write(name=a)
+         # only write out attributes that are not defaults
+         # have a very simple way to check whether they actually add something:
+         # we compare with the string that would be output if the argument was set
+         # to its default
+         #me = self.__dict__[a].fetch()
+         #outstr = self.__dict__[a].write(name=a)
+
+         #if self.__dict__[a]._default is None:
+            #defstr = ""
+         #else:
+            #self.__dict__[a].store(self.__dict__[a]._default)
+            #defstr = self.__dict__[a].write(name=a)
+            #self.__dict__[a].store(me)
+         #print "output ", outstr
+         #print "default", defstr
+
+         defstr = self.__dict__[a]._defwrite.replace("%%NAME%%",a)
+         outstr = self.__dict__[a].write(name=a)
+#         if not _match(self.__dict__[a].fetch(), self.__dict__[a]._default):
+         if outstr != defstr:
+            rstr += " " + outstr #self.__dict__[a].write(name=a)
       rstr += ">"
       rstr += text
       for f in self.fields:
          #only write out fields that are not defaults
-         if not _match(self.__dict__[f].fetch(), self.__dict__[f]._default):
+
+         defstr = self.__dict__[f]._defwrite.replace("%%NAME%%",f)
+         if defstr != self.__dict__[f].write(f):   # here we must compute the write string twice not to be confused by indents.
             rstr += self.__dict__[f].write(f, "   " + indent)
 
       for (f,v) in self.extra:
@@ -497,7 +523,7 @@ class Input(object):
             return " { } "
       else:
          #in most cases standard formatting will do
-         return " " + str(default) + " " 
+         return " " + str(default) + " "
 
    def help_xml(self, name="", indent="", level=0, stop_level=None):
       """Function to generate an xml formatted help file.
@@ -631,6 +657,9 @@ class InputAttribute(Input):
             raise ValueError("Default value not in option list " + str(self._valid))
       else:
          self._valid = None
+
+      #if not self._default is None:
+      #   self._defwrite = self.write(name="%%NAME%%")
 
    def parse(self, text=""):
       """Reads the data for a single attribute value from an xml file.

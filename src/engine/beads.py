@@ -123,13 +123,6 @@ class Beads(dobject):
          depend_array(name="fpath", value=np.zeros((nbeads,3*natoms), float),
             func=self.get_fpath, dependencies=[dget(self,"q")]))
 
-      # the gyration radius of the ring polymer
-      dset(self,"rg",
-         depend_array(name="rg", value=np.zeros(3*natoms),
-            func=self.get_rg,
-               dependencies=[dget(self,"q"), dget(self,"qc")]))
-
-
       # kinetic energies of thhe beads, and total (classical) kinetic stress tensor
       dset(self,"kins",
          depend_array(name="kins",value=np.zeros(nbeads, float),
@@ -269,24 +262,6 @@ class Beads(dobject):
          else:
             f[nbeads-1] += dq
       return f
-
-   def get_rg(self):
-      """Calculates the radius of gyration of the ring polymers.
-
-      Note that, as trajectories are printed out for each degree of freedom,
-      whereas the radius of gyration is only defined per atom, we have
-      repeated the value for each atom 3 times so that it can be printed out
-      using the same functions as for properties such as the positions.
-      """
-
-      q = depstrip(self.q)
-      qc = depstrip(self.qc)
-      rg = np.zeros(3*self.natoms)
-      for i in range(self.nbeads):
-         for j in range(self.natoms):
-            dq = q[i,3*j:3*(j+1)] - qc[3*j:3*(j+1)]
-            rg[3*j:3*(j+1)] += np.dot(dq,dq)
-      return np.sqrt(rg/float(self.nbeads))
 
    # A set of functions to access individual beads as Atoms objects
    def __len__(self):
