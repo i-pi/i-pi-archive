@@ -253,23 +253,10 @@ class Input(object):
          # have a very simple way to check whether they actually add something:
          # we compare with the string that would be output if the argument was set
          # to its default
-         #me = self.__dict__[a].fetch()
-         #outstr = self.__dict__[a].write(name=a)
-
-         #if self.__dict__[a]._default is None:
-            #defstr = ""
-         #else:
-            #self.__dict__[a].store(self.__dict__[a]._default)
-            #defstr = self.__dict__[a].write(name=a)
-            #self.__dict__[a].store(me)
-         #print "output ", outstr
-         #print "default", defstr
-
          defstr = self.__dict__[a]._defwrite.replace("%%NAME%%",a)
          outstr = self.__dict__[a].write(name=a)
-#         if not _match(self.__dict__[a].fetch(), self.__dict__[a]._default):
          if outstr != defstr:
-            rstr += " " + outstr #self.__dict__[a].write(name=a)
+            rstr += " " + outstr
       rstr += ">"
       rstr += text
       for f in self.fields:
