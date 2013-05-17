@@ -27,31 +27,6 @@ from io.io_xml import *
 from units import unit_to_internal, unit_to_user
 from copy import copy
 
-def _match(a,b):
-   """Simple matching function.
-
-   Takes two arguments and looks to see if they are identical.
-
-   Used so that default values are not printed out to the restart file if
-   possible. We cannot just use the standard == notation, since this does
-   not appear to be implemented for NumPy arrays with string elements.
-
-   Args:
-      a: One object to be matched.
-      b: A second object to be matched.
-   """
-
-   if not type(a) == type(b):
-      return False
-   if hasattr(a,"__len__")  and len(a) != len(b):
-      return False
-   if hasattr(a,"shape")  and a.shape != b.shape:
-      return False
-   if type(a) == np.ndarray:
-      return (a == b).all()
-   if a != b:
-      return False
-   return True
 
 class input_default(object):
    """Contains information required to dynamically create objects
