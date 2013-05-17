@@ -1,5 +1,6 @@
       PROGRAM DRIVER
-         USE LJ, SG
+         USE LJ
+         USE SG
       IMPLICIT NONE
 
       ! SOCKET VARIABLES
@@ -11,6 +12,7 @@
       CHARACTER*1024 :: cmdbuffer, vops
       INTEGER ccmd, vstyle
       LOGICAL verbose
+      INTEGER commas(4), par_count      ! stores the index of commas in the parameter string
       DOUBLE PRECISION vpars(4)         ! array to store the parameters of the potential
 
       ! SOCKET COMMUNICATION BUFFERS
@@ -41,6 +43,7 @@
       host = "localhost"//achar(0)
       port = 31415
       verbose = .false.
+      par_count = 0
 
       DO i=1, IARGC()
          CALL GETARG(i, cmdbuffer)
@@ -80,8 +83,14 @@
                   vstyle = 0  ! ideal gas
                ENDIF
             ELSEIF (ccmd == 4) THEN
-               READ(cmdbuffer,*) vops
-               ! split into an array of parameters
+               par_count = 1
+               commas(1) = 0
+               DO WHILE (index(cmdbuffer(commas(par_count)+1:), ',') > 0) 
+                  commas(par_count + 1) = index(cmdbuffer(commas(par_count)+1:), ',') + commas(par_count)
+                  READ(cmdbuffer(commas(par_count)+1:commas(par_count + 1)-1),*) vpars(par_count)
+                  par_count = par_count + 1
+               ENDDO
+               READ(cmdbuffer(commas(par_count)+1:),*) vpars(par_count)
             ENDIF
             ccmd=0
          ENDIF
