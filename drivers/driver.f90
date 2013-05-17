@@ -1,5 +1,5 @@
       PROGRAM DRIVER
-
+         USE LJ, SG
       IMPLICIT NONE
 
       ! SOCKET VARIABLES
@@ -67,11 +67,11 @@
                WRITE(*,*) " For the ideal gas, no options needed! "
                CALL EXIT(-1)
             ENDIF
-            IF (ccmd==1) THEN
-               host=trim(cmdbuffer)//achar(0)
-            ELSEIF (ccmd==2) THEN
+            IF (ccmd == 1) THEN
+               host = trim(cmdbuffer)//achar(0)
+            ELSEIF (ccmd == 2) THEN
                READ(cmdbuffer,*) port
-            ELSEIF (ccmd==3) THEN
+            ELSEIF (ccmd == 3) THEN
                IF (trim(cmdbuffer) == "lj") THEN
                   vstyle = 1
                ELSEIF (trim(cmdbuffer) == "sg") THEN
@@ -79,7 +79,7 @@
                ELSE
                   vstyle = 0  ! ideal gas
                ENDIF
-            ELSEIF (ccmd==4) THEN
+            ELSEIF (ccmd == 4) THEN
                READ(cmdbuffer,*) vops
                ! split into an array of parameters
             ENDIF
