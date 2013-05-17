@@ -49,6 +49,49 @@
 
          END SUBROUTINE
 
+         SUBROUTINE vector_separation(cell_h, cell_ih, ri, rj, r)
+            ! Calculates the separation between two position vectors.
+            !
+            ! Note that minimum image convention is used, so only the image of
+            ! atom j that is the shortest distance from atom i is considered.
+            !
+            ! Also note that while this may not work if the simulation
+            ! box is highly skewed from orthorhombic, as
+            ! in this case it is possible to return a distance less than the
+            ! nearest neighbour distance. However, this will not be of 
+            ! importance unless the cut-off radius is more than half the 
+            ! width of the shortest face-face distance of the simulation box,
+            ! which should never be the case.
+            !
+            ! Args:
+            !    cell_h: The simulation box cell vector matrix.
+            !    cell_ih: The inverse of the simulation box cell vector matrix.
+            !    ri: The position vector of atom i.
+            !    rj: The position vector of atom j
+            !    r: The distance between atoms i and j.
+
+            DOUBLE PRECISION, DIMENSION(3,3), INTENT(IN) :: cell_h
+            DOUBLE PRECISION, DIMENSION(3,3), INTENT(IN) :: cell_ih
+            DOUBLE PRECISION, DIMENSION(3), INTENT(IN) :: ri 
+            DOUBLE PRECISION, DIMENSION(3), INTENT(IN) :: rj
+            DOUBLE PRECISION, INTENT(OUT) :: r 
+
+            INTEGER k
+            DOUBLE PRECISION, DIMENSION(3) :: sij
+            ! The separation in a basis where the simulation box  
+            ! is a unit cube.
+            DOUBLE PRECISION, DIMENSION(3) :: rij
+                                                   
+            sij = matmul(cell_ih, ri - rj)
+            DO k = 1, 3
+               ! Finds the smallest separation of all the images of atom i and j
+               sij(k) = sij(k) - dnint(sij(k)) 
+            ENDDO
+            rij = matmul(cell_h, sij)
+            r = sqrt(dot_product(rij, rij))
+
+         END SUBROUTINE
+
          SUBROUTINE nearest_neighbours(rn, natoms, atoms, cell_h, cell_ih, index_list, n_list)
             ! Creates a list of all the pairs of atoms that are closer together
             ! than a certain distance.
