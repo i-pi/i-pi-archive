@@ -193,6 +193,12 @@ class Simulation(dobject):
             ttot = tptime = tqtime = tttime = 0.0; cstep=0
             info(" # MD diagnostics: V: %10.5e    Kcv: %10.5e   Ecns: %10.5e" %
                (self.properties["potential"], self.properties["kinetic_cv"], self.properties["conserved"] ) )
+            print " # Calls to depend __getitem__", gicall
+            print " # Calls breakup:"
+            for (k,v) in gidic.items():
+               print v, "  ", k
+            print " # Ends breakup."
+
 
 
          if (self.ttime > 0 and time.time() - simtime > self.ttime):

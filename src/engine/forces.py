@@ -155,7 +155,7 @@ class ForceField(dobject):
          An array containing all the components of the force.
       """
 
-      return self.ufvx[1]
+      return depstrip(self.ufvx[1])
 
    def get_vir(self):
       """Calls get_all routine of forcefield to update virial.
@@ -165,7 +165,7 @@ class ForceField(dobject):
          by the volume.
       """
 
-      vir = self.ufvx[2]
+      vir = depstrip(self.ufvx[2])
       vir[1,0] = 0.0
       vir[2,0:2] = 0.0
       return vir
@@ -508,7 +508,7 @@ class ForceBeads(dobject):
 
       self.queue()
       for b in range(self.nbeads):
-         newf[b] = self._forces[b].f
+         newf[b] = depstrip(self._forces[b].f)
 
       return newf
 
@@ -537,7 +537,7 @@ class ForceBeads(dobject):
       """
 
       vir = np.zeros((3,3))
-      for v in self.virs:
+      for v in depstrip(self.virs):
          vir += v
       return vir
 
@@ -720,7 +720,7 @@ class Forces(dobject):
       """
 
       vir = np.zeros((3,3))
-      for v in self.virs:
+      for v in depstrip(self.virs):
          vir += v
       return vir
 
@@ -732,7 +732,7 @@ class Forces(dobject):
       for k in range(self.nforces):
          # "expand" to the total number of beads the forces from the
          #contracted one
-         rf += self.mweights[k]*self.mrpc[k].b2tob1(self.mforces[k].f)
+         rf += self.mweights[k]*self.mrpc[k].b2tob1(depstrip(self.mforces[k].f))
       return rf
 
    def pot_combine(self):

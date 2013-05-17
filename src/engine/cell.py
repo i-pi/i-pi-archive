@@ -70,7 +70,7 @@ class Cell(dobject):
 
       s = np.dot(self.ih,atom.q)
 
-      
+
       for i in range(3):
          s[i] = s[i] - round(s[i])
 
@@ -88,13 +88,13 @@ class Cell(dobject):
          system box.
       """
 
-      s = pos.copy()
+      s = depstrip(pos).copy()
       s.shape = (len(pos)/3,3)
 
-      s = np.dot(self.ih,s.T)
+      s = np.dot(depstrip(self.ih),s.T)
       s = s - np.round(s)
 
-      s = np.dot(self.h,s).T
+      s = np.dot(depstrip(self.h),s).T
 
       pos = s.reshape((len(s)*3))
 
@@ -104,7 +104,7 @@ class Cell(dobject):
 
       This is only rigorously accurate in the case of a cubic cell,
       but gives the correct results as long as the cut-off radius is defined
-      as smaller than the smallest width between parallel faces even for 
+      as smaller than the smallest width between parallel faces even for
       triclinic cells.
 
       Args:

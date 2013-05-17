@@ -144,14 +144,15 @@ class Barostat(dobject):
       q = depstrip(self.beads.q)
       qc = depstrip(self.beads.qc)
       pc = depstrip(self.beads.pc)
-      m = depstrip(self.beads.m[0])
+      m = depstrip(self.beads.m)[0]
       na3 = 3*self.beads.natoms
+      fall = depstrip(self.forces.f)
 
       for b in range(self.beads.nbeads):
          for i in range(3):
             for j in range(i,3):
                kst[i,j] -= np.dot(q[b,i:na3:3] - qc[i:na3:3],
-                  depstrip(self.forces.f[b])[j:na3:3])
+                  fall[b,j:na3:3])
 
       # NOTE: In order to have a well-defined conserved quantity, the Nf kT term in the
       # diagonal stress estimator must be taken from the centroid kinetic energy.
@@ -257,7 +258,7 @@ class BaroBZP(Barostat):
                 Constants.kb*self.temp )
 
       fc = np.sum(depstrip(self.forces.f),0)/self.beads.nbeads
-      m = depstrip(self.beads.m3[0])
+      m = depstrip(self.beads.m3)[0]
       pc = depstrip(self.beads.pc)
 
       # I am not 100% sure, but these higher-order terms come from integrating the pressure virial term,
@@ -274,10 +275,10 @@ class BaroBZP(Barostat):
       v = self.p[0]/self.m[0]
       expq, expp = (np.exp(v*self.dt), np.exp(-v*self.dt))
 
-      m = depstrip(self.beads.m3[0])
+      m = depstrip(self.beads.m3)[0]
 
       self.nm.qnm[0,:] *= expq
-      self.nm.qnm[0,:] += ((expq-expp)/(2.0*v))* (depstrip(self.nm.pnm[0,:])/depstrip(self.beads.m3[0]))
+      self.nm.qnm[0,:] += ((expq-expp)/(2.0*v))* (depstrip(self.nm.pnm)[0,:]/m3)
       self.nm.pnm[0,:] *= expp
 
       self.cell.h *= expq
@@ -350,7 +351,7 @@ class BaroMHT(Barostat):
       dthalf3 = dthalf**3/3.0
 
       fc = np.sum(depstrip(self.forces.f),0)/self.beads.nbeads
-      m = depstrip(self.beads.m3[0])
+      m = depstrip(self.beads.m3)[0]
       pc = depstrip(self.beads.pc)
 
       self.p += dthalf*3.0*( self.cell.V* ( self.press - self.beads.nbeads*self.pext ) +
@@ -366,11 +367,11 @@ class BaroMHT(Barostat):
       adof = (1+3.0/self.mdof)
       expq, expp = (np.exp(v*self.dt), np.exp( -v*self.dt * adof  ) )
 
-      m = depstrip(self.beads.m3[0])
+      m = depstrip(self.beads.m3)[0]
 
       self.nm.qnm[0,:] *= expq
       self.nm.qnm[0,:] += ((expq-expp)/(v*(1+adof)) *
-                    (depstrip(self.nm.pnm[0,:])/depstrip(self.beads.m3[0])) )
+                    (depstrip(self.nm.pnm)[0,:])/m)
       self.nm.pnm[0,:] *= expp
 
       self.cell.h *= expq
