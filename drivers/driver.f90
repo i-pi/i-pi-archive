@@ -106,14 +106,6 @@
       ENDDO
 
       IF (vstyle == 1) THEN
-         IF (par_count /= 1) THEN
-            WRITE(*,*) "Error: parameters not initialized."
-            WRITE(*,*) "For SG potential use -o cutoff "
-            CALL EXIT(-1) ! Note that if initialization from the wrapper is implemented this exit should be removed.
-         ENDIF
-         rc = vpars(1)
-         rn = rc*1.2
-      ELSEIF (vstyle == 2) THEN
          IF (par_count /= 3) THEN
             WRITE(*,*) "Error: parameters not initialized."
             WRITE(*,*) "For LJ potential use -o sigma,epsilon,cutoff "
@@ -122,6 +114,14 @@
          sigma = vpars(1)
          eps = vpars(2)
          rc = vpars(3)
+         rn = rc*1.2
+      ELSEIF (vstyle == 2) THEN
+         IF (par_count /= 1) THEN
+            WRITE(*,*) "Error: parameters not initialized."
+            WRITE(*,*) "For SG potential use -o cutoff "
+            CALL EXIT(-1) ! Note that if initialization from the wrapper is implemented this exit should be removed.
+         ENDIF
+         rc = vpars(1)
          rn = rc*1.2
       ENDIF
 
@@ -175,12 +175,12 @@
                nat = cbuf
                IF (verbose) WRITE(*,*) " Allocating buffer and data arrays, with ", nat, " atoms"
                ALLOCATE(msgbuffer(3*nat))
-               ALLOCATE(atoms(3,nat))
-               ALLOCATE(forces(3,nat))
+               ALLOCATE(atoms(nat,3))
+               ALLOCATE(forces(nat,3))
             ENDIF
 
             CALL readbuffer(socket, msgbuffer, nat*3*8)
-            atoms = reshape(msgbuffer,  (/ 3, nat /) )
+            atoms = reshape(msgbuffer,  (/ nat, 3 /) )
 
             IF (vstyle == 0) THEN   ! ideal gas, so no calculation done
                pot = 0

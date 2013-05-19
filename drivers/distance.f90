@@ -39,7 +39,7 @@
             ! The separation in a basis where the simulation box  
             ! is a unit cube.
                                                    
-            sij = matmul(cell_ih, atoms(:,i) - atoms(:,j))
+            sij = matmul(cell_ih, atoms(i,:) - atoms(j,:))
             DO k = 1, 3
                ! Finds the smallest separation of all the images of atom i and j
                sij(k) = sij(k) - dnint(sij(k)) 
