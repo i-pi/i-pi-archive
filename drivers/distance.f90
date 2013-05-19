@@ -49,8 +49,8 @@
 
          END SUBROUTINE
 
-         SUBROUTINE vector_separation(cell_h, cell_ih, ri, rj, r)
-            ! Calculates the separation between two position vectors.
+         SUBROUTINE vector_separation(cell_h, cell_ih, ri, rj, r2)
+            ! Calculates the squared distance between two position vectors.
             !
             ! Note that minimum image convention is used, so only the image of
             ! atom j that is the shortest distance from atom i is considered.
@@ -68,13 +68,13 @@
             !    cell_ih: The inverse of the simulation box cell vector matrix.
             !    ri: The position vector of atom i.
             !    rj: The position vector of atom j
-            !    r: The distance between atoms i and j.
+            !    r2: The square of the distance between atoms i and j.
 
             DOUBLE PRECISION, DIMENSION(3,3), INTENT(IN) :: cell_h
             DOUBLE PRECISION, DIMENSION(3,3), INTENT(IN) :: cell_ih
             DOUBLE PRECISION, DIMENSION(3), INTENT(IN) :: ri 
             DOUBLE PRECISION, DIMENSION(3), INTENT(IN) :: rj
-            DOUBLE PRECISION, INTENT(OUT) :: r 
+            DOUBLE PRECISION, INTENT(OUT) :: r2
 
             INTEGER k
             DOUBLE PRECISION, DIMENSION(3) :: sij
@@ -88,7 +88,7 @@
                sij(k) = sij(k) - dnint(sij(k)) 
             ENDDO
             rij = matmul(cell_h, sij)
-            r = sqrt(dot_product(rij, rij))
+            r2 = dot_product(rij, rij)
 
          END SUBROUTINE
 
