@@ -423,11 +423,6 @@ class Properties(dobject):
       output.
       """
 
-      # We should add some terms to account for the possibly fixed center of mass
-      if self.ensemble.fixcom:
-         mdof = 3
-      else:
-         mdof = 0
       # returns estimator MULTIPLIED BY NBEADS -- again for consistency with the virial, etc...
       kst=np.zeros((3,3),float)
 
@@ -967,7 +962,9 @@ class Trajectories(dobject):
    def __init__(self):
       """Initialises a Trajectories object."""
 
+
       self.traj_dict = {
+      # Note that here we want to return COPIES of the different arrays, so we make sure to make an operation in order not to return a reference.
       "positions": { "dimension" : "length",
                      "help": "Prints the coordinate trajectories.",
                      'func': (lambda : 1.0*self.simul.beads.q)},
@@ -986,14 +983,9 @@ class Trajectories(dobject):
       "kinetic_od": {"dimension" : "energy",
                      "help": "Prints the off diagonal elements of the kinetic stress tensor, for each bead.",
                      'func': self.get_akcv_od},
-      "springs": {   "dimension" : "energy",
-                     "help": "Prints the spring potential for each atom, resolved into Cartesian components.",
-                     'func': self.get_aspr},
-#This may be deprecated.
       "r_gyration": {"dimension" : "length",
-                     "help": "Prints the radius of gyration for each atom.",
-                     'func': (lambda : 1.0*self.simul.beads.rg)},
-#r_gyration might be more suitable as a property.
+                     "help": "Prints the radius of gyration for each atom, resolved into Cartesian components.",
+                     'func': self.get_rg},
       "x_centroid": {"dimension" : "length",
                      "help": "Prints the centroid coordinates for each atom.",
                      'func': (lambda : 1.0*self.simul.beads.qc)},
@@ -1045,19 +1037,24 @@ class Trajectories(dobject):
 
       return rv.reshape(self.simul.beads.natoms*3)
 
-   def get_aspr(self):
-      """Calculates the contribution to the kinetic energy due to each degree
-      of freedom.
+   def get_rg(self):
+      """Calculates the radius of gyration of the ring polymers.
+
+      Computes separately the x, y, z contributions so that the actual
+      gyration radius can be recovered as sqrt(rx^2+ry^2+rz^2).
       """
-      #TODO What the hell does this do?
 
-      rv = np.zeros(self.simul.beads.natoms*3)
-      for b in range(1,self.simul.beads.nbeads):
-         rv[:] += (self.simul.beads.q[b]-self.simul.beads.q[b-1])*(self.simul.beads.q[b]-self.simul.beads.q[b-1])*self.simul.beads.m3[b]
-      rv[:] += (self.simul.beads.q[0]-self.simul.beads.q[self.simul.beads.nbeads-1])*(self.simul.beads.q[0]-self.simul.beads.q[self.simul.beads.nbeads-1])*self.simul.beads.m3[0]
+      q = depstrip(self.simul.beads.q)
+      qc = depstrip(self.simul.beads.qc)
+      nat = self.simul.beads.natoms
+      nb = self.simul.beads.nbeads
+      rg = np.zeros(3*nat)
+      for i in range(nb):
+         for j in range(nat):
+            dq = q[i,3*j:3*(j+1)] - qc[3*j:3*(j+1)]
+            rg[3*j:3*(j+1)] += dq*dq
+      return np.sqrt(rg/float(nb))
 
-      rv *= 0.5*self.simul.nm.omegan2
-      return rv
 
    def __getitem__(self, key):
       """ Gets one of the trajectories. """

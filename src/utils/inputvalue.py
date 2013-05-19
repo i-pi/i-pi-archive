@@ -27,31 +27,6 @@ from io.io_xml import *
 from units import unit_to_internal, unit_to_user
 from copy import copy
 
-def _match(a,b):
-   """Simple matching function.
-
-   Takes two arguments and looks to see if they are identical.
-
-   Used so that default values are not printed out to the restart file if
-   possible. We cannot just use the standard == notation, since this does
-   not appear to be implemented for NumPy arrays with string elements.
-
-   Args:
-      a: One object to be matched.
-      b: A second object to be matched.
-   """
-
-   if not type(a) == type(b):
-      return False
-   if hasattr(a,"__len__")  and len(a) != len(b):
-      return False
-   if hasattr(a,"shape")  and a.shape != b.shape:
-      return False
-   if type(a) == np.ndarray:
-      return (a == b).all()
-   if a != b:
-      return False
-   return True
 
 class input_default(object):
    """Contains information required to dynamically create objects
@@ -195,6 +170,12 @@ class Input(object):
 
       self._text = ""
 
+      # stores what we would write out if the default was set
+      self._defwrite = ""
+      if not self._default is None:
+         self._defwrite = self.write(name="%%NAME%%")
+
+
    def set_default(self):
       """Sets the default value of the object."""
 
@@ -268,14 +249,21 @@ class Input(object):
 
       rstr = indent + "<" + name;
       for a in self.attribs:
-         #only write out attributes that are not defaults
-         if not _match(self.__dict__[a].fetch(), self.__dict__[a]._default):
-            rstr += " " + self.__dict__[a].write(name=a)
+         # only write out attributes that are not defaults
+         # have a very simple way to check whether they actually add something:
+         # we compare with the string that would be output if the argument was set
+         # to its default
+         defstr = self.__dict__[a]._defwrite.replace("%%NAME%%",a)
+         outstr = self.__dict__[a].write(name=a)
+         if outstr != defstr:
+            rstr += " " + outstr
       rstr += ">"
       rstr += text
       for f in self.fields:
          #only write out fields that are not defaults
-         if not _match(self.__dict__[f].fetch(), self.__dict__[f]._default):
+
+         defstr = self.__dict__[f]._defwrite.replace("%%NAME%%",f)
+         if defstr != self.__dict__[f].write(f):   # here we must compute the write string twice not to be confused by indents.
             rstr += self.__dict__[f].write(f, "   " + indent)
 
       for (f,v) in self.extra:
@@ -497,7 +485,7 @@ class Input(object):
             return " { } "
       else:
          #in most cases standard formatting will do
-         return " " + str(default) + " " 
+         return " " + str(default) + " "
 
    def help_xml(self, name="", indent="", level=0, stop_level=None):
       """Function to generate an xml formatted help file.
@@ -631,6 +619,9 @@ class InputAttribute(Input):
             raise ValueError("Default value not in option list " + str(self._valid))
       else:
          self._valid = None
+
+      #if not self._default is None:
+      #   self._defwrite = self.write(name="%%NAME%%")
 
    def parse(self, text=""):
       """Reads the data for a single attribute value from an xml file.
