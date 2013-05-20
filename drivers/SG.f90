@@ -17,10 +17,6 @@
 !       interaction of a pair of atoms.
 !    SG_longrange: Calculates the long range correction to the potential
 !       and virial.
-!    separation: Calculates the distance between two atoms in the minimum
-!       image convention.
-!    nearest_neighbours: Creates a list of all the pairs of atoms that are
-!       within a certain radius of each other.
 !    SG_getall: Calculates the potential and virial of the system and the
 !       forces acting on all the atoms.
 
@@ -222,7 +218,7 @@
 
             INTEGER i, j, k, l, start
             DOUBLE PRECISION, DIMENSION(3) :: fij, rij
-            DOUBLE PRECISION r, pot_ij, pot_lr, vir_lr, volume
+            DOUBLE PRECISION r2, pot_ij, pot_lr, vir_lr, volume
 
             forces = 0.0d0
             pot = 0.0d0
@@ -233,9 +229,9 @@
             DO i = 1, natoms - 1
                ! Only loops over the neigbour list, not all the atoms.
                DO j = start, index_list(i)
-                  CALL separation(atoms, cell_h, cell_ih, i, n_list(j), rij, r)
-                  IF (r < rc) THEN ! Only calculates contributions between neighbouring particles.
-                     CALL SG_fij(rij, r, pot_ij, fij)
+                  CALL vector_separation(cell_h, cell_ih, atoms(i,:), atoms(n_list(j),:), rij, r2)
+                  IF (r2 < rc*rc) THEN ! Only calculates contributions between neighbouring particles.
+                     CALL SG_fij(rij, sqrt(r2), pot_ij, fij)
 
                      forces(i,:) = forces(i,:) + fij
                      forces(n_list(j),:) = forces(n_list(j),:) - fij

@@ -82,8 +82,8 @@
             call readbuffer(socket, parbuffer, nat)
             correction=0
             rn=rc*1.2
-            correction = exp(1.713d0-1.5671d0*rc-0.00993d0*rc**2) -
-     x (12.14d0/rc**6 + 215.2d0/rc**8 - 143.1d0/rc**9 + 4813.9d0/rc**10)
+!            correction = exp(1.713d0-1.5671d0*rc-0.00993d0*rc**2) -
+!     x (12.14d0/rc**6 + 215.2d0/rc**8 - 143.1d0/rc**9 + 4813.9d0/rc**10)
             write(*,*) "using potential shift", correction
             isinit=.true.
 
