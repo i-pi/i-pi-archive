@@ -41,7 +41,6 @@ Functions:
 __all__ = ['depend_base', 'depend_value', 'depend_array', 'synchronizer',
            'dobject', 'dget', 'dset', 'depstrip', 'depcopy', 'deppipe']
 
-
 import numpy as np
 
 class synchronizer(object):
