@@ -19,8 +19,8 @@ interface.o: system_read.o LJ.o SG.o
 oned.x: oned.F
 	gfortran -O3 -o oned.x oned.F ../src/driver/sockets.o sys_vars.o
 
-gas.x: gas.F 
-	gfortran -O3 -o gas.x gas.F ../src/driver/sockets.o sys_vars.o
+#gas.x: gas.F 
+#	gfortran -O3 -o gas.x gas.F ../src/driver/sockets.o sys_vars.o
 
 ljengine.x: interface_LJ.F
 	gfortran -O3 -o ljengine.x ../src/driver/sockets.o $(OBJECTS) interface_LJ.F 

@@ -1,3 +1,9 @@
+! The main program which runs our driver test case potentials
+!
+! Currently the potentials implemented are the Lennard-Jones
+! potential, the Silvera-Goldman para-hydrogen potential and
+! the ideal gas (i.e. no electronic interaction at all)
+
       PROGRAM DRIVER
          USE LJ
          USE SG
@@ -47,23 +53,23 @@
       verbose = .false.
       par_count = 0
 
-      DO i=1, IARGC()
+      DO i = 1, IARGC()
          CALL GETARG(i, cmdbuffer)
          IF (cmdbuffer == "-u") THEN ! flag for unix socket
-            inet=0
-            ccmd=0
+            inet = 0
+            ccmd = 0
          ELSEIF (cmdbuffer == "-h") THEN ! read the hostname
-            ccmd=1
+            ccmd = 1
          ELSEIF (cmdbuffer == "-p") THEN ! reads the port number
-            ccmd=2
+            ccmd = 2
          ELSEIF (cmdbuffer == "-m") THEN ! reads the style of the potential function
-            ccmd=3
+            ccmd = 3
          ELSEIF (cmdbuffer == "-o") THEN ! reads the parameters
-            ccmd=4
+            ccmd = 4
          ELSEIF (cmdbuffer == "-v") THEN ! flag for verbose standard output
             verbose = .true.
          ELSE
-            IF (ccmd==0) THEN
+            IF (ccmd == 0) THEN
                WRITE(*,*) " Unrecognized command line argument", ccmd
                WRITE(*,*) " SYNTAX: driver.x [-u] -h hostname -p port -m [gas|lj|sg] -o 'comma_separated_parameters' [-v] "
                WRITE(*,*) ""
@@ -94,7 +100,8 @@
                ENDDO
                READ(cmdbuffer(commas(par_count)+1:),*) vpars(par_count)
             ENDIF
-            ccmd=0
+            isinit = .true.
+            ccmd = 0
          ENDIF
       ENDDO
 
@@ -197,7 +204,7 @@
                ! Checking to see if we need to re-calculate the neighbour list
                rc = init_rc*(volume/init_volume)**(1.0/3.0)
                DO i = 1, nat
-                  CALL vector_separation(cell_h, cell_ih, atoms(i,:), last_atoms(i,:), displacement)
+                  CALL separation(cell_h, cell_ih, atoms(i,:), last_atoms(i,:), displacement)
                   ! Note that displacement is the square of the distance moved by atom i since the last time the neighbour list was created.
                   IF (4*displacement > (rn-rc)*(rn-rc)) THEN
                      IF (verbose) WRITE(*,*) " Recalculating neighbour lists"

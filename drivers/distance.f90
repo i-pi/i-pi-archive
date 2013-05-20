@@ -1,10 +1,18 @@
+! This contains the algorithms needed to calculate the distance between atoms.
+!
+! Functions:
+!    vector_separation: Calculates the vector separating two atoms.
+!    separation: Calculates the square distance between two vectors.
+!    nearest_neighbours: Generates arrays to calculate the pairs of atoms within
+!       a certain radius of each other.
+
       MODULE DISTANCE
       IMPLICIT NONE
 
       CONTAINS
 
-         SUBROUTINE separation(atoms, cell_h, cell_ih, i, j, rij, r)
-            ! Calculates the separation between two atoms.
+         SUBROUTINE vector_separation(cell_h, cell_ih, ri, rj, rij, r2)
+            ! Calculates the vector separating two atoms.
             !
             ! Note that minimum image convention is used, so only the image of
             ! atom j that is the shortest distance from atom i is considered.
@@ -18,38 +26,36 @@
             ! which should never be the case.
             !
             ! Args:
-            !    atoms: A vector holding all the atom positions.
             !    cell_h: The simulation box cell vector matrix.
             !    cell_ih: The inverse of the simulation box cell vector matrix.
-            !    i: The index of the first atom.
-            !    j: The index of the second atom.
+            !    ri: The position vector of atom i.
+            !    rj: The position vector of atom j
             !    rij: The vector separating atoms i and j.
-            !    r: The distance between atoms i and j.
+            !    r2: The square of the distance between atoms i and j.
 
-            DOUBLE PRECISION, DIMENSION(:,:), INTENT(IN) :: atoms
             DOUBLE PRECISION, DIMENSION(3,3), INTENT(IN) :: cell_h
             DOUBLE PRECISION, DIMENSION(3,3), INTENT(IN) :: cell_ih
-            INTEGER, INTENT(IN) :: i
-            INTEGER, INTENT(IN) :: j
+            DOUBLE PRECISION, DIMENSION(3), INTENT(IN) :: ri
+            DOUBLE PRECISION, DIMENSION(3), INTENT(IN) :: rj
             DOUBLE PRECISION, DIMENSION(3), INTENT(OUT) :: rij 
-            DOUBLE PRECISION, INTENT(OUT) :: r 
+            DOUBLE PRECISION, INTENT(OUT) :: r2
 
             INTEGER k
             DOUBLE PRECISION, DIMENSION(3) :: sij  
             ! The separation in a basis where the simulation box  
             ! is a unit cube.
                                                    
-            sij = matmul(cell_ih, atoms(i,:) - atoms(j,:))
+            sij = matmul(cell_ih, ri - rj)
             DO k = 1, 3
                ! Finds the smallest separation of all the images of atom i and j
                sij(k) = sij(k) - dnint(sij(k)) 
             ENDDO
             rij = matmul(cell_h, sij)
-            r = sqrt(dot_product(rij, rij))
+            r2 = dot_product(rij,rij)
 
          END SUBROUTINE
 
-         SUBROUTINE vector_separation(cell_h, cell_ih, ri, rj, r2)
+         SUBROUTINE separation(cell_h, cell_ih, ri, rj, r2)
             ! Calculates the squared distance between two position vectors.
             !
             ! Note that minimum image convention is used, so only the image of
@@ -77,9 +83,9 @@
             DOUBLE PRECISION, INTENT(OUT) :: r2
 
             INTEGER k
-            DOUBLE PRECISION, DIMENSION(3) :: sij
             ! The separation in a basis where the simulation box  
             ! is a unit cube.
+            DOUBLE PRECISION, DIMENSION(3) :: sij
             DOUBLE PRECISION, DIMENSION(3) :: rij
                                                    
             sij = matmul(cell_ih, ri - rj)
@@ -124,14 +130,14 @@
 
             INTEGER :: i, j
             DOUBLE PRECISION, DIMENSION(3) :: rij
-            DOUBLE PRECISION r
+            DOUBLE PRECISION r2
 
          index_list(1) = 0
 
          DO i = 1, natoms - 1
             DO j = i + 1, natoms
-               CALL separation(atoms, cell_h, cell_ih, i, j, rij, r)
-               IF (r < rn) THEN
+               CALL separation(cell_h, cell_ih, atoms(i,:), atoms(j,:), r2)
+               IF (r2 < rn*rn) THEN
                   ! We have found an atom that neighbours atom i, so the
                   ! i-th index of index_list is incremented by one, and a new
                   ! entry is added to n_list.
