@@ -93,8 +93,8 @@
             DOUBLE PRECISION, INTENT(OUT) :: pot
             DOUBLE PRECISION, INTENT(OUT) :: force
 
-            pot = dexp(alpha-r*(beta+delta*r))
-            force = (beta+delta_diff*r)*pot
+            pot = dexp(alpha - r*(beta + delta*r))
+            force = (beta + delta_diff*r)*pot
 
          END SUBROUTINE
 
@@ -162,8 +162,8 @@
             !
             ! Note that we will assume that rc > rc_exp, and that 
             ! exp(alpha - beta*rc - delta*rc**2) << 0, so we can neglect the
-            ! contribution of the repulsive potential in the long range 
-            ! correction terms.
+            ! contribution of the repulsive potential and the dispersion 
+            ! damping function in the long range correction terms.
             !
             ! Args:
             !    rc: The cut-off radius.
@@ -237,8 +237,8 @@
                   IF (r < rc) THEN ! Only calculates contributions between neighbouring particles.
                      CALL SG_fij(rij, r, pot_ij, fij)
 
-                     forces(:,i) = forces(:,i) + fij
-                     forces(:,n_list(j)) = forces(:,n_list(j)) - fij
+                     forces(i,:) = forces(i,:) + fij
+                     forces(n_list(j),:) = forces(n_list(j),:) - fij
                      pot = pot + pot_ij
                      DO k = 1, 3
                         DO l = k, 3

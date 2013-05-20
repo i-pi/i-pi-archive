@@ -33,7 +33,8 @@
       ! NEIGHBOUR LIST ARRAYS
       INTEGER, DIMENSION(:), ALLOCATABLE :: n_list, index_list
       DOUBLE PRECISION init_volume ! needed to correctly adjust the cut-off radius for variable cell dynamics
-      DOUBLE PRECISION, ALLOCATABLE :: last_atoms(:,:) ! Tracks how far each atom has moved since the last call of nearest_neighbours
+      DOUBLE PRECISION, ALLOCATABLE :: last_atoms(:,:) ! Holds the positions when the neighbour list is created
+      DOUBLE PRECISION displacement ! Tracks how far each atom has moved since the last call of nearest_neighbours
 
       INTEGER i
 
@@ -105,14 +106,6 @@
       ENDDO
 
       IF (vstyle == 1) THEN
-         IF (par_count /= 1) THEN
-            WRITE(*,*) "Error: parameters not initialized."
-            WRITE(*,*) "For SG potential use -o cutoff "
-            CALL EXIT(-1) ! Note that if initialization from the wrapper is implemented this exit should be removed.
-         ENDIF
-         rc = vpars(1)
-         rn = rc*1.2
-      ELSEIF (vstyle == 2) THEN
          IF (par_count /= 3) THEN
             WRITE(*,*) "Error: parameters not initialized."
             WRITE(*,*) "For LJ potential use -o sigma,epsilon,cutoff "
@@ -121,6 +114,14 @@
          sigma = vpars(1)
          eps = vpars(2)
          rc = vpars(3)
+         rn = rc*1.2
+      ELSEIF (vstyle == 2) THEN
+         IF (par_count /= 1) THEN
+            WRITE(*,*) "Error: parameters not initialized."
+            WRITE(*,*) "For SG potential use -o cutoff "
+            CALL EXIT(-1) ! Note that if initialization from the wrapper is implemented this exit should be removed.
+         ENDIF
+         rc = vpars(1)
          rn = rc*1.2
       ENDIF
 
@@ -155,7 +156,6 @@
             CALL readbuffer(socket, cbuf, 4)
             CALL readbuffer(socket, initbuffer, cbuf)
             IF (verbose) WRITE(*,*) " Initializing system from wrapper, using ", trim(initbuffer)
-write(*,*) "                                                             "
             isinit=.true. ! We actually do nothing with this string, thanks anyway. Could be used to pass some information (e.g. the input parameters, or the index of the replica, from the driver
          ELSEIF (trim(header) == "POSDATA") THEN  ! The driver is sending the positions of the atoms. Here is where we do the calculation!
 
@@ -171,23 +171,24 @@ write(*,*) "                                                             "
             volume = cell_h(1,1)*cell_h(2,2)*cell_h(3,3)
 
             CALL readbuffer(socket, cbuf, 4)       ! The number of atoms in the cell
-            IF (nat < 0) THEN  ! Assumes that the number of atoms does not change throughout a simulation
+            IF (nat < 0) THEN  ! Assumes that the number of atoms does not change throughout a simulation, so only does this once
                nat = cbuf
-               IF (verbose) WRITE(*,*) " Allocating buffers, with ", nat, " atoms"
+               IF (verbose) WRITE(*,*) " Allocating buffer and data arrays, with ", nat, " atoms"
                ALLOCATE(msgbuffer(3*nat))
-               ALLOCATE(atoms(3,nat))
-               ALLOCATE(forces(3,nat))
+               ALLOCATE(atoms(nat,3))
+               ALLOCATE(forces(nat,3))
             ENDIF
 
             CALL readbuffer(socket, msgbuffer, nat*3*8)
-            atoms = reshape(msgbuffer,  (/ 3, nat /) )
+            atoms = reshape(msgbuffer,  (/ nat, 3 /) )
 
             IF (vstyle == 0) THEN   ! ideal gas, so no calculation done
                pot = 0
                forces = 0
                virial = 0
-            ELSEIF (vstyle == 1) THEN
+            ELSE
                IF ((allocated(n_list) .neqv. .true.)) THEN
+                  IF (verbose) WRITE(*,*) " Allocating neighbour lists."
                   ALLOCATE(n_list(nat*(nat-1)/2))
                   ALLOCATE(index_list(nat))
                   ALLOCATE(last_atoms(nat,3))
@@ -195,9 +196,26 @@ write(*,*) "                                                             "
                   last_atoms = atoms
                   init_volume = volume
                ENDIF
-               
+
+               ! Checking to see if we need to re-calculate the neighbour list
+               DO i = 1, nat
+                  CALL vector_separation(cell_h, cell_ih, atoms(i,:), last_atoms(i,:), displacement)
+                  ! Note that displacement is the square of the distance moved by atom i since the last time the neighbour list was created.
+                  IF (4*displacement > (rn-rc)*(rn-rc)) THEN
+                     CALL nearest_neighbours(rn, nat, atoms, cell_h, cell_ih, index_list, n_list)
+                     last_atoms = atoms
+                     EXIT
+                  ENDIF
+               ENDDO
+
+               IF (vstyle == 1) THEN
+                  CALL LJ_getall(rc, sigma, eps, nat, atoms, cell_h, cell_ih, index_list, n_list, pot, forces, virial)
+               ELSEIF (vstyle == 2) THEN
+                  CALL SG_getall(rc, nat, atoms, cell_h, cell_ih, index_list, n_list, pot, forces, virial)
+               ENDIF
+               IF (verbose) WRITE(*,*) " Calculated energy is ", pot
             ENDIF
-            hasdata=.true. ! Signal that we have data ready to be passed back to the wrapper
+            hasdata = .true. ! Signal that we have data ready to be passed back to the wrapper
          ELSEIF (trim(header) == "GETFORCE") THEN  ! The driver calculation is finished, it's time to send the results back to the wrapper
 
             ! Data must be re-formatted (and units converted) in the units and shapes used in the wrapper

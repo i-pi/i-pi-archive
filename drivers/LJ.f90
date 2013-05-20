@@ -168,8 +168,8 @@
                   IF (r < rc) THEN ! Only calculates contributions between neighbouring particles.
                      CALL LJ_fij(sigma, eps, rij, r, pot_ij, fij)
 
-                     forces(:,i) = forces(:,i) + fij
-                     forces(:,n_list(j)) = forces(:,n_list(j)) - fij
+                     forces(i,:) = forces(i,:) + fij
+                     forces(n_list(j),:) = forces(n_list(j),:) - fij
                      pot = pot + pot_ij
                      DO k = 1, 3
                         DO l = k, 3
