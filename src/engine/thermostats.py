@@ -31,7 +31,7 @@ import numpy as np
 import math
 from utils.depend   import *
 from utils.units    import *
-from utils.mathtools import matrix_exp, stab_cholesky
+from utils.mathtools import matrix_exp, stab_cholesky, root_herm
 from utils.prng import Random
 from beads import Beads
 from normalmodes import NormalModes
@@ -525,15 +525,15 @@ class ThermoGLE(Thermostat):
    def get_T(self):
       """Calculates the matrix for the overall drift of the velocities."""
 
-      print "Getting T", self.A
       return matrix_exp(-0.5*self.dt*self.A)
 
    def get_S(self):
       """Calculates the matrix for the coloured noise."""
 
-      print "Getting S", self.C
       SST = Constants.kb*(self.C - np.dot(self.T,np.dot(self.C,self.T.T)))
-      return stab_cholesky(SST)
+
+      # Uses a symetric decomposition rather than Cholesky, since it is more stable
+      return root_herm(SST)
 
    def get_C(self):
       """Calculates C from temp (if C is not set explicitely)"""
