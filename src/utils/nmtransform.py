@@ -157,6 +157,7 @@ class nm_rescale:
       return np.dot(self._b2tob1,q)
 
 
+
 class nm_fft:
    """Helper class to perform beads <--> normal modes transformation
       using Fast Fourier transforms.
@@ -202,7 +203,6 @@ class nm_fft:
       """
 
       return FFT_inv_nm_trans(nmq)
-
 
 def FFT_nm_trans(q):
    """Performs the normal mode transformation using FFT.
@@ -269,4 +269,3 @@ def FFT_inv_nm_trans(qnm):
    qnm_complex *= np.sqrt(nbeads)
 
    return np.fft.irfft(qnm_complex, n=nbeads, axis=0)
-
