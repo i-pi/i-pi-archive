@@ -116,9 +116,11 @@
             !    cell_h: The simulation box cell vector matrix.
             !    cell_ih: The inverse of the simulation box cell vector matrix.
             !    index_list: A array giving the last index of n_list that 
-            !       gives the neighbours of a given atom.
+            !       gives the neighbours of a given atom. Essentially keeps 
+            !       track of how many atoms neighbour a given atom.
             !    n_list: An array giving the indices of the atoms that neighbour
-            !       the atom determined by index_list.
+            !       the atom determined by index_list. Essentially keeps track
+            !       of which atoms neighbour a given atom.
 
             DOUBLE PRECISION, INTENT(IN) :: rn
             INTEGER, INTENT(IN) :: natoms

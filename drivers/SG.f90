@@ -29,6 +29,7 @@
       !        (C_6/r**6 + C_8/r**8 - C_9/r**9 + C_10/r**10)*f_c(r)
       ! where f_c(r) = exp(-(rc_exp/r - 1)**2) if r <= rc_exp
       !            = 1 otherwise
+      DOUBLE PRECISION, PARAMETER :: tau = 6.2831853071795862d0 !If you don't know why I used this name, you're not a real nerd
       DOUBLE PRECISION, PARAMETER :: alpha = 1.713d0
       DOUBLE PRECISION, PARAMETER :: beta = 1.5671d0
       DOUBLE PRECISION, PARAMETER :: delta = 0.00993d0
@@ -180,7 +181,7 @@
             onr6 = onr3*onr3
             onr5 = onr6*rc
             onr7 = onr6/rc
-            prefactor = 2*3.14159265358797324*natoms*natoms/volume
+            prefactor = tau*natoms*natoms/volume
 
             pot_lr = prefactor*(-C_6_int*onr3 - C_8_int*onr5 + C_9_int*onr6 - C_10_int*onr7)
             vir_lr = prefactor*(-C_6*onr3 - C_8*onr5 + C_9*onr6 - C_10*onr7)/3 + pot_lr
