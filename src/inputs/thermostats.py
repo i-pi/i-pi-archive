@@ -47,7 +47,10 @@ class InputThermo(Input):
             "tau" : (InputValue, {  "dtype"     : float,
                                     "default"   : 0.0,
                                     "help"      : "The friction coefficient for white noise thermostats.",
-                                    "dimension" : "time" }) ,
+                                    "dimension" : "time" }),
+            "pile_scale" : (InputValue, { "dtype" : float,
+                                    "default"   : 1.0,
+                                    "help"      : "Scaling for the PILE damping relative to the critical damping."} ),
             "A" : (InputArray, {    "dtype"     : float,
                                     "default"   : input_default(factory=np.zeros, args = (0,)),
                                     "help"      : "The friction matrix for GLE thermostats.",
@@ -85,9 +88,11 @@ class InputThermo(Input):
       elif type(thermo) is ThermoPILE_L:
          self.mode.store("pile_l")
          self.tau.store(thermo.tau)
+         self.pile_scale.store(thermo.pilescale)
       elif type(thermo) is ThermoPILE_G:
          self.mode.store("pile_g")
          self.tau.store(thermo.tau)
+         self.pile_scale.store(thermo.pilescale)
       elif type(thermo) is ThermoGLE:
          self.mode.store("gle")
          self.A.store(thermo.A)
@@ -130,9 +135,9 @@ class InputThermo(Input):
       elif self.mode.fetch() == "svr":
          thermo = ThermoSVR(tau=self.tau.fetch())
       elif self.mode.fetch() == "pile_l":
-         thermo = ThermoPILE_L(tau=self.tau.fetch())
+         thermo = ThermoPILE_L(tau=self.tau.fetch(), scale=self.pile_scale.fetch())
       elif self.mode.fetch() == "pile_g":
-         thermo = ThermoPILE_G(tau=self.tau.fetch())
+         thermo = ThermoPILE_G(tau=self.tau.fetch(), scale=self.pile_scale.fetch())
       elif self.mode.fetch() == "gle":
          rC = self.C.fetch()
          if len(rC) == 0:
