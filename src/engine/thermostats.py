@@ -223,7 +223,7 @@ class ThermoPILE_L(Thermostat):
          normal mode transformation exist.
    """
 
-   def __init__(self, temp = 1.0, dt = 1.0, tau = 1.0, ethermo=0.0):
+   def __init__(self, temp = 1.0, dt = 1.0, tau = 1.0, ethermo=0.0, scale=1.0):
       """Initialises ThermoPILE_L.
 
       Args:
@@ -236,6 +236,7 @@ class ThermoPILE_L(Thermostat):
 
       super(ThermoPILE_L,self).__init__(temp,dt,ethermo)
       dset(self,"tau",depend_value(value=tau,name='tau'))
+      dset(self,"pilescale",depend_value(value=scale,name='pilescale'))
 
    def bind(self, nm=None, prng=None, bindcentroid=True, fixdof=None):
       """Binds the appropriate degrees of freedom to the thermostat.
@@ -287,7 +288,7 @@ class ThermoPILE_L(Thermostat):
 
       dset(self,"tauk",
          depend_array(name="tauk", value=np.zeros(nm.nbeads-1,float),
-            func=self.get_tauk, dependencies=[dget(self,"temp"), dget(nm,"dynomegak")] ) )
+            func=self.get_tauk, dependencies=[dget(self,"pilescale"), dget(nm,"dynomegak")] ) )
 
       # must pipe all the dependencies in such a way that values for the nm thermostats
       # are automatically updated based on the "master" thermostat
@@ -336,7 +337,8 @@ class ThermoPILE_L(Thermostat):
          An array with the damping time scales for the non-centroid modes.
       """
 
-      return  np.array([ 1.0/(2*self.nm.dynomegak[k])  for k in range(1,len(self._thermos)) ])
+      # Also include an optional scaling factor to reduce the intensity of NM thermostats
+      return  np.array([ self.pilescale/(2*self.nm.dynomegak[k])  for k in range(1,len(self._thermos)) ])
 
    def get_ethermo(self):
       """Computes the total energy transferred to the heat bath for all the
@@ -433,7 +435,7 @@ class ThermoPILE_G(ThermoPILE_L):
    a global velocity rescaling thermostat.
    """
 
-   def __init__(self, temp = 1.0, dt = 1.0, tau = 1.0, ethermo=0.0):
+   def __init__(self, temp = 1.0, dt = 1.0, tau = 1.0, ethermo=0.0, scale = 1.0):
       """Initialises ThermoPILE_G.
 
       Args:
@@ -445,6 +447,7 @@ class ThermoPILE_G(ThermoPILE_L):
       """
 
       super(ThermoPILE_G,self).__init__(temp,dt,tau,ethermo)
+      dset(self,"pilescale",depend_value(value=scale,name='pilescale'))
 
    def bind(self, nm=None, prng=None, fixdof=None):
       """Binds the appropriate degrees of freedom to the thermostat.
