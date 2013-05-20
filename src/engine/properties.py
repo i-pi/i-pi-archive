@@ -1084,7 +1084,8 @@ class Trajectories(dobject):
          return
       elif getkey(what) in [ "positions", "velocities", "forces" ] :
          self.fatom.q[:] = cq[b]
-      else: self.fatom.q[:] = cq
+      else: 
+         self.fatom.q[:] = cq
 
       fcell = Cell()
       fcell.h = self.simul.cell.h*unit_to_user("length", cell_units, 1.0)

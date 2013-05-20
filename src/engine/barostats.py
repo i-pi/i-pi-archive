@@ -278,7 +278,7 @@ class BaroBZP(Barostat):
       m = depstrip(self.beads.m3)[0]
 
       self.nm.qnm[0,:] *= expq
-      self.nm.qnm[0,:] += ((expq-expp)/(2.0*v))* (depstrip(self.nm.pnm)[0,:]/m3)
+      self.nm.qnm[0,:] += ((expq-expp)/(2.0*v))* (depstrip(self.nm.pnm)[0,:]/m)
       self.nm.pnm[0,:] *= expp
 
       self.cell.h *= expq
