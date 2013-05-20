@@ -104,7 +104,7 @@ class NormalModes(dobject):
 
       # sets up what's necessary to perform nm transformation.
       #self.transform = nmtransform.nm_trans(nbeads=self.nbeads)
-      self.transform = nmtransform.nm_fft(nbeads=self.nbeads)
+      self.transform = nmtransform.nm_fft(nbeads=self.nbeads, natoms=self.natoms)
 
       # creates arrays to store normal modes representation of the path.
       # must do a lot of piping to create "ex post" a synchronization between the beads and the nm

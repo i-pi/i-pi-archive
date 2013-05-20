@@ -15,6 +15,7 @@ Functions:
 __all__ = ['nm_trans', 'nm_rescale', 'nm_fft', 'FFT_nm_trans', 'FFT_inv_nm_trans' ]
 
 import numpy as np
+import pyfftw
 
 def mk_nm_matrix(nbeads):
    """Gets the matrix that transforms from the bead representation
@@ -167,12 +168,17 @@ class nm_fft:
          representations.
    """
 
-   def __init__(self, nbeads):
+   def __init__(self, nbeads, natoms):
       """Initializes nm_trans.
 
       Args:
          nbeads: The number of beads.
       """
+
+      self.a = pyfftw.n_byte_align_empty((nbeads, 3*natoms), 16, 'float32')
+      self.b = pyfftw.n_byte_align_empty((nbeads//2+1, 3*natoms), 16, 'complex64')
+      self.fft = pyfftw.FFTW(self.a, self.b, axes=(0,), direction='FFTW_FORWARD')
+      self.ifft = pyfftw.FFTW(self.b, self.a, axes=(0,), direction='FFTW_BACKWARD')
 
       pass
 
@@ -183,6 +189,9 @@ class nm_fft:
          q: A matrix with nbeads rows, in the bead representation.
       """
 
+      self.a[:] = q
+      self.fft()
+      print self.b
       return FFT_nm_trans(q)
 
    def nm2b(self, nmq):
