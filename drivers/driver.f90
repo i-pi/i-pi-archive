@@ -32,18 +32,11 @@
 
       ! NEIGHBOUR LIST ARRAYS
       INTEGER, DIMENSION(:), ALLOCATABLE :: n_list, index_list
-      DOUBLE PRECISION init_volume ! needed to correctly adjust the cut-off radius for variable cell dynamics
+      DOUBLE PRECISION init_volume, init_rc ! needed to correctly adjust the cut-off radius for variable cell dynamics
       DOUBLE PRECISION, ALLOCATABLE :: last_atoms(:,:) ! Holds the positions when the neighbour list is created
       DOUBLE PRECISION displacement ! Tracks how far each atom has moved since the last call of nearest_neighbours
 
       INTEGER i
-
-!      integer i, j, k, ios, counter
-!      integer, dimension(:), allocatable :: n_list
-!      integer, dimension(:), allocatable :: index_list
-!      double precision :: time = 0.0, timeall=0.0, timewait=0.0
-!      integer countnum, countrate
-
 
       ! parse the command line parameters
       ! intialize defaults
@@ -56,18 +49,18 @@
 
       DO i=1, IARGC()
          CALL GETARG(i, cmdbuffer)
-         IF (cmdbuffer == "-u") THEN
+         IF (cmdbuffer == "-u") THEN ! flag for unix socket
             inet=0
             ccmd=0
-         ELSEIF (cmdbuffer == "-h") THEN
+         ELSEIF (cmdbuffer == "-h") THEN ! read the hostname
             ccmd=1
-         ELSEIF (cmdbuffer == "-p") THEN
+         ELSEIF (cmdbuffer == "-p") THEN ! reads the port number
             ccmd=2
          ELSEIF (cmdbuffer == "-m") THEN ! reads the style of the potential function
             ccmd=3
-         ELSEIF (cmdbuffer == "-o") THEN
+         ELSEIF (cmdbuffer == "-o") THEN ! reads the parameters
             ccmd=4
-         ELSEIF (cmdbuffer == "-v") THEN
+         ELSEIF (cmdbuffer == "-v") THEN ! flag for verbose standard output
             verbose = .true.
          ELSE
             IF (ccmd==0) THEN
@@ -109,7 +102,7 @@
          IF (par_count /= 3) THEN
             WRITE(*,*) "Error: parameters not initialized."
             WRITE(*,*) "For LJ potential use -o sigma,epsilon,cutoff "
-            CALL EXIT(-1)
+            CALL EXIT(-1) ! Note that if initialization from the wrapper is implemented this exit should be removed.
          ENDIF   
          sigma = vpars(1)
          eps = vpars(2)
@@ -180,7 +173,10 @@
             ENDIF
 
             CALL readbuffer(socket, msgbuffer, nat*3*8)
-            atoms = reshape(msgbuffer,  (/ nat, 3 /) )
+            !atoms = reshape(msgbuffer,  (/ nat, 3 /) )
+            DO i = 1, nat
+               atoms(i,:) = msgbuffer(3*(i-1)+1:3*i)
+            ENDDO
 
             IF (vstyle == 0) THEN   ! ideal gas, so no calculation done
                pot = 0
@@ -195,15 +191,19 @@
                   CALL nearest_neighbours(rn, nat, atoms, cell_h, cell_ih, index_list, n_list)
                   last_atoms = atoms
                   init_volume = volume
+                  init_rc = rc
                ENDIF
 
                ! Checking to see if we need to re-calculate the neighbour list
+               rc = init_rc*(volume/init_volume)**(1.0/3.0)
                DO i = 1, nat
                   CALL vector_separation(cell_h, cell_ih, atoms(i,:), last_atoms(i,:), displacement)
                   ! Note that displacement is the square of the distance moved by atom i since the last time the neighbour list was created.
                   IF (4*displacement > (rn-rc)*(rn-rc)) THEN
+                     IF (verbose) WRITE(*,*) " Recalculating neighbour lists"
                      CALL nearest_neighbours(rn, nat, atoms, cell_h, cell_ih, index_list, n_list)
                      last_atoms = atoms
+                     rn = 1.2*rc
                      EXIT
                   ENDIF
                ENDDO
@@ -219,7 +219,10 @@
          ELSEIF (trim(header) == "GETFORCE") THEN  ! The driver calculation is finished, it's time to send the results back to the wrapper
 
             ! Data must be re-formatted (and units converted) in the units and shapes used in the wrapper
-            msgbuffer = reshape(forces, (/ 3*nat /) )
+            !msgbuffer = reshape(forces, (/ 3*nat /) )
+            DO i = 1, nat
+               msgbuffer(3*(i-1)+1:3*i) = forces(i,:)
+            ENDDO
             virial = transpose(virial)
 
             CALL writebuffer(socket,"FORCEREADY  ",MSGLEN)
