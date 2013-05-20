@@ -44,7 +44,7 @@ DONE ***  Move the synchro business out of Beads and into NormalModes (MC) (MC)
 
 *** More in general, rationalize and clean up the available properties and trajectories. The help strings and function documentation often don't match, often which arguments are supposed to be passed to the function aren't given in the help string, some properties have tensorial equivalents and some don't, some are also trajectories and some aren't. This really needs to be tidied up. (MC/JM) (JM) 
 
-*** Should NOT use the Cholesky decomposition in initializing GLE. Use symmetric decomposition instead (MC) (MC)
+DONE (MC) *** Should NOT use the Cholesky decomposition in initializing GLE. Use symmetric decomposition instead (MC) (MC)
 
 DONE ***  Benchmark the new property implementation. (MC) (JM)
 Completely revamped properties and trajectories scheme. 
