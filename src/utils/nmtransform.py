@@ -16,7 +16,6 @@ Functions:
 __all__ = ['nm_trans', 'nm_rescale', 'nm_fft']
 
 import numpy as np
-import math
 
 def mk_nm_matrix(nbeads):
    """Gets the matrix that transforms from the bead representation
