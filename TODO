@@ -38,7 +38,7 @@ DONE **** Make the new NM thing actually work (MC) (MC)
 
 DONE ***  Move the synchro business out of Beads and into NormalModes (MC) (MC)
 
-***  Fix PDB output NOT to use Atom interface, that is horribly slow (MC) (JM)
+DONE ***  Fix PDB output NOT to use Atom interface, that is horribly slow (MC) (JM)
 
 **   Fix (or remove) "springs" trajectory output. Not really needed anymore... (MC)
 
@@ -52,7 +52,7 @@ Now it is possible to specify units and a short help string.
 
 DONE * Multiforce object should be implemented. (JM) (JM)
 
-*** Write a very clean driver for LJ and SG for examples (JM) (JM)
+DONE *** Write a very clean driver for LJ and SG for examples (JM) (JM)
 *** Test NPT on the pH2 system (JM) (JM)
 
 *   Implement NST (MC) (MC)
@@ -68,8 +68,8 @@ reduce the frequency and magnitude of the energy jumps, but not eliminate them.
 The effect is much larger with a NST than with a NPT ensemble, in fact the 
 jumps appear to be very rare with the NPT ensemble.
 
-* Figure out how to use FFTW with python for the normal-mode 
-transformations. (JM)
+DONE * Figure out how to use FFTW with python for the normal-mode 
+transformations. (JM) (JM)
 
 DONE ** Add help strings to all the trajectories and properties in the property
 list (JM) (JM)
@@ -97,7 +97,10 @@ DONE ** Add read cell from (A, B, C) and (alpha, beta, gamma) (JM) (JM)
 DONE * In the manual, the attributes of the trajectory, properties and
 checkpoint tags in the code snippets of 4.5 and 4.6 are now out-of-date. (JM) (JM)
 
-** At the moment, only with InputValue or InputArray objects can we
+** Write the paper (JM) 
+** Finish writing the manual (JM) (JM)
+
+DONE ** At the moment, only with InputValue or InputArray objects can we
 not print out the default values, because there is no way of comparing
 two larger class objects since they don't have a 'value' attribute.
 
@@ -111,4 +114,4 @@ improved.
 PS: DO NOT try to make it so that things like empty strings are not output
 to the xml file, I've just realized that that is incompatible with the
 compulsory tag system we have. In this case the npt branch is WRONG.
-(JM) (JM)
+(JM) (MC)
