@@ -282,7 +282,7 @@ class Initializer(dobject):
             #without too much code duplication
             rbeads.resize(ibeads.natoms, ibeads.nbeads)
             rbeads.m[:] = ibeads.m
-            rnm = NormalModes(mode=simul.nm.mode, freqs=simul.nm.nm_freqs)
+            rnm = NormalModes(mode=simul.nm.mode, transform_method=simul.nm.transform_method, freqs=simul.nm.nm_freqs)
             rens = Ensemble(dt=simul.ensemble.dt, temp=simul.ensemble.temp)
             rnm.bind(rbeads,rens)
             # then we exploit the sync magic to do a complicated initialization

@@ -27,6 +27,10 @@ class InputNormalModes(InputArray):
                                        "default" : "rpmd",
                                        "help"    : "Specifies the technique to be used to calculate the dynamical masses. 'rpmd' simply assigns the bead masses the physical mass. 'manual' sets all the normal mode frequencies except the centroid normal mode manually. 'pa-cmd' takes an argument giving the frequency to set all the non-centroid normal modes to. 'wmax-cmd' is similar to 'pa-cmd', except instead of taking one argument it takes two ([wmax,wtarget]). The lowest-lying normal mode will be set to wtarget for a free particle, and all the normal modes will coincide at frequency wmax. ",
                                        "options" : ['pa-cmd', 'wmax-cmd', 'manual', 'rpmd']})
+   attribs["transform"] = (InputValue,{"dtype"   : str,
+                                       "default" : "fft",
+                                       "help"    : "Specifies whether to calculate the normal mode transform using a fast Fourier transform or a matrix multiplication. For small numbers of beads the matrix multiplication may be faster.",
+                                       "options" : ['fft', 'matrix']})
 
    default_help = "Deals with the normal mode transformations, including the adjustment of bead masses to give the desired ring polymer normal mode frequencies if appropriate. Takes as arguments frequencies, of which different numbers must be specified and which are used to scale the normal mode frequencies in different ways depending on which 'mode' is specified."
    default_label = "NORMALMODES"
@@ -49,6 +53,7 @@ class InputNormalModes(InputArray):
 
       super(InputNormalModes,self).store(nm.nm_freqs)
       self.mode.store(nm.mode)
+      self.transform.store(nm.transform_method)
 
    def fetch(self):
       """Creates a normal modes object.
@@ -58,4 +63,4 @@ class InputNormalModes(InputArray):
       """
 
       super(InputNormalModes,self).check()
-      return NormalModes(self.mode.fetch(), super(InputNormalModes,self).fetch() )
+      return NormalModes(self.mode.fetch(), self.transform.fetch(), super(InputNormalModes,self).fetch() )
