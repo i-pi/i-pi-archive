@@ -481,7 +481,7 @@ class Properties(dobject):
       q = depstrip(self.beads.q)
       qc = depstrip(self.beads.qc)
       pc = depstrip(self.beads.pc)
-      m = depstrip(self.beads.m[0])
+      m = depstrip(self.beads.m)
       fall = depstrip(self.forces.f)
       na3 = 3*self.beads.natoms
 
@@ -491,16 +491,9 @@ class Properties(dobject):
                kst[i,j] -= np.dot(q[b,i:na3:3] - qc[i:na3:3],
                   fall[b,j:na3:3])
 
-      # NOTE: In order to have a well-defined conserved quantity, the Nf kT term in the
-      # diagonal stress estimator must be taken from the centroid kinetic energy.
-      # Furthermore, we should add some terms from the possibly fixed center of mass
-      if self.ensemble.fixcom:
-         mdof = 3
-      else:
-         mdof = 0
       # return the CV estimator MULTIPLIED BY NBEADS -- again for consistency with the virial, kstress_MD, etc...
       for i in range(3):
-         kst[i,i] += self.beads.nbeads * ( np.dot(pc[i:na3:3],pc[i:na3:3]/m) ) #+ 2.0*(mdof/3.0)*Constants.kb*self.ensemble.temp)
+         kst[i,i] += self.beads.nbeads * ( np.dot(pc[i:na3:3],pc[i:na3:3]/m) )
 
       return kst
 
@@ -1084,7 +1077,7 @@ class Trajectories(dobject):
          return
       elif getkey(what) in [ "positions", "velocities", "forces" ] :
          self.fatom.q[:] = cq[b]
-      else: 
+      else:
          self.fatom.q[:] = cq
 
       fcell = Cell()

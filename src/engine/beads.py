@@ -89,12 +89,12 @@ class Beads(dobject):
          depend_array(name="names",value=np.zeros(natoms, np.dtype('|S6'))) )
 
       # atom masses, and mass-related arrays
-      dset(self,"m",depend_array(name="m",value=np.zeros(natoms, float)) )
+      dset(self,"m",depend_array(name="m",value=np.zeros(natoms, float)) )   # this is the prototype mass array (just one independent of bead n)
       dset(self,"m3",
-         depend_array(name="m3",value=np.zeros((nbeads,3*natoms), float),
+         depend_array(name="m3",value=np.zeros((nbeads,3*natoms), float),    # this is m conveniently replicated to be (nb,3*nat)
             func=self.mtom3, dependencies=[dget(self,"m")]))
       dset(self,"sm3",
-         depend_array(name="sm3",value=np.zeros((nbeads,3*natoms), float),
+         depend_array(name="sm3",value=np.zeros((nbeads,3*natoms), float),   # this is just the square root of m3
             func=self.m3tosm3, dependencies=[dget(self,"m3")]))
 
       # positions and momenta. bead representation, base storage used everywhere
