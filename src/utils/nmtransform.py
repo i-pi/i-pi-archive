@@ -4,6 +4,7 @@ Classes:
    nm_trans: Uses matrix multiplication to do normal mode transformations.
    nm_rescale: Uses matrix multiplication to do ring polymer contraction
       or expansion.
+   nm_fft: Uses fast-Fourier transforms to do normal modes transformations.
 
 Functions:
    mk_nm_matrix: Makes a matrix to transform between the normal mode and bead
@@ -163,10 +164,16 @@ class nm_fft:
       using Fast Fourier transforms.
 
    Attributes:
-      _b2nm: The matrix to transform between the bead and normal mode
-         representations.
-      _nm2b: The matrix to transform between the normal mode and bead
-         representations.
+      fft: The fast-Fourier transform function to transform between the 
+         bead and normal mode representations.
+      ifft: The inverse fast-Fourier transform function to transform 
+         between the normal mode and bead representations.
+      qdummy: A matrix to hold a copy of the bead positions to transform
+         them to the normal mode representation.
+      qnmdummy: A matrix to hold a copy of the normal modes to transform
+         them to the bead representation.
+      nbeads: The number of beads.
+      natoms: The number of atoms.
    """
 
    def __init__(self, nbeads, natoms):
@@ -174,23 +181,25 @@ class nm_fft:
 
       Args:
          nbeads: The number of beads.
+         natoms: The number of atoms.
       """
 
       self.nbeads = nbeads
       self.natoms = natoms
       try:
          import pyfftw
-         self.a = pyfftw.n_byte_align_empty((nbeads, 3*natoms), 16, 'float32')
-         self.b = pyfftw.n_byte_align_empty((nbeads//2+1, 3*natoms), 16, 'complex64')
-         self.fft = pyfftw.FFTW(self.a, self.b, axes=(0,), direction='FFTW_FORWARD')
-         self.ifft = pyfftw.FFTW(self.b, self.a, axes=(0,), direction='FFTW_BACKWARD')
-      except ImportError:
-         self.a = np.zeros((nbeads,3*natoms), dtype='float32')
-         self.b = np.zeros((nbeads//2+1,3*natoms), dtype='complex64')
+         self.qdummy = pyfftw.n_byte_align_empty((nbeads, 3*natoms), 16, 'float32')
+         self.qnmdummy = pyfftw.n_byte_align_empty((nbeads//2+1, 3*natoms), 16, 'complex64')
+         self.fft = pyfftw.FFTW(self.qdummy, self.qnmdummy, axes=(0,), direction='FFTW_FORWARD')
+         self.ifft = pyfftw.FFTW(self.qnmdummy, self.qdummy, axes=(0,), direction='FFTW_BACKWARD')
+      except ImportError: #Uses standard numpy fft library if nothing better 
+                          #is available
+         self.qdummy = np.zeros((nbeads,3*natoms), dtype='float32')
+         self.qnmdummy = np.zeros((nbeads//2+1,3*natoms), dtype='complex64')
          def dummy_fft(self):
-            self.b = np.fft.rfft(self.a, axis=0)
+            self.qnmdummy = np.fft.rfft(self.qdummy, axis=0)
          def dummy_ifft(self):
-            self.a = np.fft.irfft(self.b, n=self.nbeads, axis=0)
+            self.qdummy = np.fft.irfft(self.qnmdummy, n=self.nbeads, axis=0)
          self.fft = lambda: dummy_fft(self)
          self.ifft = lambda: dummy_ifft(self)
 
@@ -198,27 +207,28 @@ class nm_fft:
       """Transforms a matrix to the normal mode representation.
 
       Args:
-         q: A matrix with nbeads rows, in the bead representation.
+         q: A matrix with nbeads rows and 3*natoms columns, 
+            in the bead representation.
       """
 
-      self.a[:] = q
+      self.qdummy[:] = q
       self.fft()
       if self.nbeads < 3:
-         return self.b.real/np.sqrt(self.nbeads)
+         return self.qnmdummy.real/np.sqrt(self.nbeads)
 
       nmodes = self.nbeads/2
 
-      self.b /= np.sqrt(self.nbeads)
+      self.qnmdummy /= np.sqrt(self.nbeads)
       qnm = np.zeros(q.shape)
-      qnm[0,:] = self.b[0,:].real
+      qnm[0,:] = self.qnmdummy[0,:].real
 
       if self.nbeads % 2 == 0:
-         self.b[1:-1,:] *= np.sqrt(2)
-         (qnm[1:nmodes,:], qnm[self.nbeads:nmodes:-1,:]) = (self.b[1:-1,:].real, self.b[1:-1,:].imag)
-         qnm[nmodes,:] = self.b[nmodes,:].real
+         self.qnmdummy[1:-1,:] *= np.sqrt(2)
+         (qnm[1:nmodes,:], qnm[self.nbeads:nmodes:-1,:]) = (self.qnmdummy[1:-1,:].real, self.qnmdummy[1:-1,:].imag)
+         qnm[nmodes,:] = self.qnmdummy[nmodes,:].real
       else:
-         self.b[1:,:] *= np.sqrt(2)
-         (qnm[1:nmodes+1,:], qnm[self.nbeads:nmodes:-1,:]) = (self.b[1:,:].real, self.b[1:,:].imag)
+         self.qnmdummy[1:,:] *= np.sqrt(2)
+         (qnm[1:nmodes+1,:], qnm[self.nbeads:nmodes:-1,:]) = (self.qnmdummy[1:,:].real, self.qnmdummy[1:,:].imag)
 
       return qnm
 
@@ -226,13 +236,14 @@ class nm_fft:
       """Transforms a matrix to the bead representation.
 
       Args:
-         q: A matrix with nbeads rows, in the normal mode representation.
+         qnm: A matrix with nbeads rows and 3*natoms columns, 
+            in the normal mode representation.
       """
 
       if self.nbeads < 3:
-         self.b[:] = qnm
+         self.qnmdummy[:] = qnm
          self.ifft()
-         return self.a*np.sqrt(self.nbeads)
+         return self.qdummy*np.sqrt(self.nbeads)
 
       nmodes = self.nbeads/2
       odd = self.nbeads - 2*nmodes  # 0 if even, 1 if odd
@@ -247,6 +258,6 @@ class nm_fft:
          (qnm_complex[1:,:].real, qnm_complex[1:,:].imag) = (qnm[1:nmodes+1,:], qnm[self.nbeads:nmodes:-1,:])
          qnm_complex[1:,:] /= np.sqrt(2)
 
-      self.b[:] = qnm_complex
+      self.qnmdummy[:] = qnm_complex
       self.ifft()
-      return self.a*np.sqrt(self.nbeads)
+      return self.qdummy*np.sqrt(self.nbeads)
