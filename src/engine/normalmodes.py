@@ -36,6 +36,8 @@ class NormalModes(dobject):
 
    Depend objects:
       mode: A string specifying how the bead masses are chosen.
+      transform_method: A string specifying how to do the normal mode
+         transformation.
       nm_freqs: An array that specifies how the normal mode frequencies
          of the ring polymers are to be calculated, and thus how the
          bead masses should be chosen.
@@ -68,19 +70,23 @@ class NormalModes(dobject):
          beads.sm3, beads.p and nm_factor.
    """
 
-   def __init__(self, mode="rpmd", freqs=None):
+   def __init__(self, mode="rpmd", transform_method="fft", freqs=None):
       """Initializes NormalModes.
 
       Sets the options for the normal mode transform.
 
       Args:
          mode: A string specifying how to calculate the bead masses.
+         transform_method: A string specifying how to do the normal mode
+            transformation.
          freqs: A list of data used to calculate the dynamical mass factors.
       """
 
       if freqs is None:
          freqs = []
       dset(self,"mode",   depend_value(name='mode', value=mode))
+      dset(self,"transform_method",
+         depend_value(name='transform_method', value=transform_method))
       dset(self,"nm_freqs",
          depend_array(name="nm_freqs",value=np.asarray(freqs, float) ) )
 
@@ -103,7 +109,10 @@ class NormalModes(dobject):
       self.ensemble = ensemble
 
       # sets up what's necessary to perform nm transformation.
-      self.transform = nmtransform.nm_trans(nbeads=self.nbeads)
+      if self.transform_method == "fft":
+         self.transform = nmtransform.nm_fft(nbeads=self.nbeads, natoms=self.natoms)
+      elif self.transform_method == "matrix":
+         self.transform = nmtransform.nm_trans(nbeads=self.nbeads)
 
       # creates arrays to store normal modes representation of the path.
       # must do a lot of piping to create "ex post" a synchronization between the beads and the nm

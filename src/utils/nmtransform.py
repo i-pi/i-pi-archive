@@ -2,8 +2,9 @@
 
 Classes:
    nm_trans: Uses matrix multiplication to do normal mode transformations.
-   nm_rescale: Uses matrix multiplication to do ring polymer contraction 
+   nm_rescale: Uses matrix multiplication to do ring polymer contraction
       or expansion.
+   nm_fft: Uses fast-Fourier transforms to do normal modes transformations.
 
 Functions:
    mk_nm_matrix: Makes a matrix to transform between the normal mode and bead
@@ -12,13 +13,14 @@ Functions:
       another. Higher normal modes in the case of an expansion are set to zero.
 """
 
-__all__ = ['nm_trans', 'nm_rescale' ]
+__all__ = ['nm_trans', 'nm_rescale', 'nm_fft']
 
 import numpy as np
+import math
 
 def mk_nm_matrix(nbeads):
-   """Gets the matrix that transforms from the bead representation 
-   to the normal mode representation. 
+   """Gets the matrix that transforms from the bead representation
+   to the normal mode representation.
 
    If we return from this function a matrix C, then we transform between the
    bead and normal mode representation using q_nm = C . q_b, q_b = C.T . q_nm
@@ -41,11 +43,11 @@ def mk_nm_matrix(nbeads):
    return b2nm
 
 def mk_rs_matrix(nb1, nb2):
-   """Gets the matrix that transforms a path with nb1 beads into one with 
-   nb2 beads. 
+   """Gets the matrix that transforms a path with nb1 beads into one with
+   nb2 beads.
 
    If we return from this function a matrix T, then we transform between the
-   bead and normal mode representation using q_2 = T . q_1 
+   bead and normal mode representation using q_2 = T . q_1
 
    Args:
       nb1: The initial number of beads.
@@ -65,7 +67,7 @@ def mk_rs_matrix(nb1, nb2):
          b1_b2[i,i] = 1.0
          b1_b2[nb2-i, nb1-i] = 1.0
       if (nb2 % 2 == 0):
-         #if the original number of beads is odd, and the new number is 
+         #if the original number of beads is odd, and the new number is
          #even then the non-degenerate mode's contribution needs to be split
          #equally among the appropriate degenerate modes of the new ring polymer
          b1_b2[nb2/2, nb2/2] = 0.5
@@ -81,7 +83,7 @@ class nm_trans:
    """Helper class to perform beads <--> normal modes transformation.
 
    Attributes:
-      _b2nm: The matrix to transform between the bead and normal mode 
+      _b2nm: The matrix to transform between the bead and normal mode
          representations.
       _nm2b: The matrix to transform between the normal mode and bead
          representations.
@@ -120,9 +122,9 @@ class nm_rescale:
    """Helper class to rescale a ring polymer between different number of beads.
 
    Attributes:
-      _b1tob2: The matrix to transform between a ring polymer with 'nbeads1' 
+      _b1tob2: The matrix to transform between a ring polymer with 'nbeads1'
          beads and another with 'nbeads2' beads.
-      _b2tob1: The matrix to transform between a ring polymer with 'nbeads2' 
+      _b2tob1: The matrix to transform between a ring polymer with 'nbeads2'
          beads and another with 'nbeads1' beads.
    """
 
@@ -154,3 +156,108 @@ class nm_rescale:
       """
 
       return np.dot(self._b2tob1,q)
+
+
+
+class nm_fft:
+   """Helper class to perform beads <--> normal modes transformation
+      using Fast Fourier transforms.
+
+   Attributes:
+      fft: The fast-Fourier transform function to transform between the 
+         bead and normal mode representations.
+      ifft: The inverse fast-Fourier transform function to transform 
+         between the normal mode and bead representations.
+      qdummy: A matrix to hold a copy of the bead positions to transform
+         them to the normal mode representation.
+      qnmdummy: A matrix to hold a copy of the normal modes to transform
+         them to the bead representation.
+      nbeads: The number of beads.
+      natoms: The number of atoms.
+   """
+
+   def __init__(self, nbeads, natoms):
+      """Initializes nm_trans.
+
+      Args:
+         nbeads: The number of beads.
+         natoms: The number of atoms.
+      """
+
+      self.nbeads = nbeads
+      self.natoms = natoms
+      try:
+         import pyfftw
+         self.qdummy = pyfftw.n_byte_align_empty((nbeads, 3*natoms), 16, 'float32')
+         self.qnmdummy = pyfftw.n_byte_align_empty((nbeads//2+1, 3*natoms), 16, 'complex64')
+         self.fft = pyfftw.FFTW(self.qdummy, self.qnmdummy, axes=(0,), direction='FFTW_FORWARD')
+         self.ifft = pyfftw.FFTW(self.qnmdummy, self.qdummy, axes=(0,), direction='FFTW_BACKWARD')
+      except ImportError: #Uses standard numpy fft library if nothing better 
+                          #is available
+         self.qdummy = np.zeros((nbeads,3*natoms), dtype='float32')
+         self.qnmdummy = np.zeros((nbeads//2+1,3*natoms), dtype='complex64')
+         def dummy_fft(self):
+            self.qnmdummy = np.fft.rfft(self.qdummy, axis=0)
+         def dummy_ifft(self):
+            self.qdummy = np.fft.irfft(self.qnmdummy, n=self.nbeads, axis=0)
+         self.fft = lambda: dummy_fft(self)
+         self.ifft = lambda: dummy_ifft(self)
+
+   def b2nm(self, q):
+      """Transforms a matrix to the normal mode representation.
+
+      Args:
+         q: A matrix with nbeads rows and 3*natoms columns, 
+            in the bead representation.
+      """
+
+      self.qdummy[:] = q
+      self.fft()
+      if self.nbeads < 3:
+         return self.qnmdummy.real/np.sqrt(self.nbeads)
+
+      nmodes = self.nbeads/2
+
+      self.qnmdummy /= np.sqrt(self.nbeads)
+      qnm = np.zeros(q.shape)
+      qnm[0,:] = self.qnmdummy[0,:].real
+
+      if self.nbeads % 2 == 0:
+         self.qnmdummy[1:-1,:] *= np.sqrt(2)
+         (qnm[1:nmodes,:], qnm[self.nbeads:nmodes:-1,:]) = (self.qnmdummy[1:-1,:].real, self.qnmdummy[1:-1,:].imag)
+         qnm[nmodes,:] = self.qnmdummy[nmodes,:].real
+      else:
+         self.qnmdummy[1:,:] *= np.sqrt(2)
+         (qnm[1:nmodes+1,:], qnm[self.nbeads:nmodes:-1,:]) = (self.qnmdummy[1:,:].real, self.qnmdummy[1:,:].imag)
+
+      return qnm
+
+   def nm2b(self, qnm):
+      """Transforms a matrix to the bead representation.
+
+      Args:
+         qnm: A matrix with nbeads rows and 3*natoms columns, 
+            in the normal mode representation.
+      """
+
+      if self.nbeads < 3:
+         self.qnmdummy[:] = qnm
+         self.ifft()
+         return self.qdummy*np.sqrt(self.nbeads)
+
+      nmodes = self.nbeads/2
+      odd = self.nbeads - 2*nmodes  # 0 if even, 1 if odd
+
+      qnm_complex = np.zeros((nmodes+1, len(qnm[0,:])), complex)
+      qnm_complex[0,:] = qnm[0,:]
+      if not odd:
+         (qnm_complex[1:-1,:].real, qnm_complex[1:-1,:].imag) = (qnm[1:nmodes,:], qnm[self.nbeads:nmodes:-1,:])
+         qnm_complex[1:-1,:] /= np.sqrt(2)
+         qnm_complex[nmodes,:] = qnm[nmodes,:]
+      else:
+         (qnm_complex[1:,:].real, qnm_complex[1:,:].imag) = (qnm[1:nmodes+1,:], qnm[self.nbeads:nmodes:-1,:])
+         qnm_complex[1:,:] /= np.sqrt(2)
+
+      self.qnmdummy[:] = qnm_complex
+      self.ifft()
+      return self.qdummy*np.sqrt(self.nbeads)

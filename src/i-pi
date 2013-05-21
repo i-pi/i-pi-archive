@@ -24,6 +24,8 @@ from inputs.simulation import InputSimulation
 from utils.io.io_xml import *
 from utils.messages import banner, help, verbosity
 
+from utils.depend import *
+
 def main(file_name):
    """Runs the simulation.
 
@@ -50,8 +52,8 @@ def main(file_name):
       print " ---  end input file content  --- "
 
    simul = simrestart.fetch() # Creates the appropriate simulation object.
-
    simul.run()
+
 
    del simul
 

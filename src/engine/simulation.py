@@ -194,6 +194,7 @@ class Simulation(dobject):
             info(" # MD diagnostics: V: %10.5e    Kcv: %10.5e   Ecns: %10.5e" %
                (self.properties["potential"], self.properties["kinetic_cv"], self.properties["conserved"] ) )
 
+
          if (self.ttime > 0 and time.time() - simtime > self.ttime):
             info(" # Wall clock time expired! Bye bye!", verbosity.low )
             break
