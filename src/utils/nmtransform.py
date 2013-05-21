@@ -195,9 +195,8 @@ class nm_fft:
 
       self.a[:] = q
       self.fft()
-      #print self.b
       if self.nbeads < 3:
-         return self.b.real/np.sqrt(nbeads)
+         return self.b.real/np.sqrt(self.nbeads)
 
       nmodes = self.nbeads/2
 
