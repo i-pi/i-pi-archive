@@ -15,7 +15,6 @@ from utils.depend import depstrip
 import utils.mathtools as mt
 from engine.atoms import Atoms
 from utils.units import *
-import gc
 
 def print_xyz_path(beads, cell, filedesc = sys.stdout):
    """Prints all the bead configurations, into a xyz formatted file.
@@ -39,8 +38,9 @@ def print_xyz_path(beads, cell, filedesc = sys.stdout):
    for j in range(nbeads):
       filedesc.write("%d\n# bead: %d CELL(abcABC): %10.5f  %10.5f  %10.5f  %10.5f  %10.5f  %10.5f \n" % (natoms, j, a, b, c, alpha, beta, gamma))
       for i in range(natoms):
-         bead = beads[j][i]
-         filedesc.write("%8s %12.5e %12.5e %12.5e\n" % (bead.name[0], bead.q[0], bead.q[1], bead.q[2]))
+         qs = depstrip(beads.q)
+         lab = depstrip(beads.names)
+         filedesc.write("%8s %12.5e %12.5e %12.5e\n" % (lab[i], qs[j][3*i], qs[j][3*i+1], qs[j][3*i+2]))
 
 def print_xyz(atoms, cell, filedesc = sys.stdout, title=""):
    """Prints the centroid configurations, into a xyz formatted file.
@@ -83,28 +83,36 @@ def read_xyz(filedesc):
 
    qatoms = []
    names = []
+   masses = []
    iat = 0
    while (iat < natoms):
       body = filedesc.readline()
-      if body.strip() == "": break
+      if body.strip() == "": 
+         break
       body = body.split()
-      names.append(body[0])
+      name = body[0]
+      names.append(name)
+      masses.append(Elements.mass(name))
       x = float(body[1])
       y = float(body[2])
       z = float(body[3])
-      pos = np.array([x,y,z])
-      qatoms.append(pos)
-      iat+=1
+      qatoms.append(x)
+      qatoms.append(y)
+      qatoms.append(z)
+      iat += 1
 
    if natoms != len(names):
       raise ValueError("The number of atom records does not match the header of the xyz file.")
 
    atoms = Atoms(natoms)
-   for i in range(natoms):
-      nat = atoms[i]
-      nat.q = qatoms[i]
-      nat.name = names[i]
-      nat.m = Elements.mass(names[i])
+#   for i in range(natoms):
+#      nat = atoms[i]
+#      nat.q = qatoms[i]
+#      nat.name = names[i]
+#      nat.m = Elements.mass(names[i])
+   atoms.q = np.asarray(qatoms)
+   atoms.names = np.asarray(names, dtype='|S4')
+   atoms.m = np.asarray(masses)
 
    return atoms
 

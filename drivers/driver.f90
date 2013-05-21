@@ -52,6 +52,7 @@
       port = 31415
       verbose = .false.
       par_count = 0
+      vstyle = -1
 
       DO i = 1, IARGC()
          CALL GETARG(i, cmdbuffer)
@@ -100,14 +101,27 @@
                ENDDO
                READ(cmdbuffer(commas(par_count)+1:),*) vpars(par_count)
             ENDIF
-            isinit = .true.
             ccmd = 0
          ENDIF
       ENDDO
 
-      IF (vstyle == 1) THEN
+      IF (vstyle == -1) THEN
+         WRITE(*,*) " Error, type of potential not specified."
+         WRITE(*,*) " SYNTAX: driver.x [-u] -h hostname -p port -m [gas|lj|sg] -o 'comma_separated_parameters' [-v] "
+         WRITE(*,*) ""
+         WRITE(*,*) " For LJ potential use -o sigma,epsilon,cutoff "
+         WRITE(*,*) " For SG potential use -o cutoff "
+         WRITE(*,*) " For the ideal gas, no options needed! "
+         CALL EXIT(-1)
+      ELSEIF (vstyle == 0) THEN
+         IF (par_count /= 0) THEN
+            WRITE(*,*) "Error: no initialization string needed for ideal gas."
+            CALL EXIT(-1) 
+         ENDIF   
+         isinit = .true.
+      ELSEIF (vstyle == 1) THEN
          IF (par_count /= 3) THEN
-            WRITE(*,*) "Error: parameters not initialized."
+            WRITE(*,*) "Error: parameters not initialized correctly."
             WRITE(*,*) "For LJ potential use -o sigma,epsilon,cutoff "
             CALL EXIT(-1) ! Note that if initialization from the wrapper is implemented this exit should be removed.
          ENDIF   
@@ -115,14 +129,16 @@
          eps = vpars(2)
          rc = vpars(3)
          rn = rc*1.2
+         isinit = .true.
       ELSEIF (vstyle == 2) THEN
          IF (par_count /= 1) THEN
-            WRITE(*,*) "Error: parameters not initialized."
+            WRITE(*,*) "Error: parameters not initialized correctly."
             WRITE(*,*) "For SG potential use -o cutoff "
             CALL EXIT(-1) ! Note that if initialization from the wrapper is implemented this exit should be removed.
          ENDIF
          rc = vpars(1)
          rn = rc*1.2
+         isinit = .true.
       ENDIF
 
       IF (verbose) THEN
@@ -168,6 +184,7 @@
             ! units and storage mode used in the driver.
             cell_h = transpose(cell_h)
             cell_ih = transpose(cell_ih)
+            ! We assume an upper triangular cell-vector matrix
             volume = cell_h(1,1)*cell_h(2,2)*cell_h(3,3)
 
             CALL readbuffer(socket, cbuf, 4)       ! The number of atoms in the cell
@@ -180,7 +197,6 @@
             ENDIF
 
             CALL readbuffer(socket, msgbuffer, nat*3*8)
-            !atoms = reshape(msgbuffer,  (/ nat, 3 /) )
             DO i = 1, nat
                atoms(i,:) = msgbuffer(3*(i-1)+1:3*i)
             ENDDO
@@ -226,7 +242,6 @@
          ELSEIF (trim(header) == "GETFORCE") THEN  ! The driver calculation is finished, it's time to send the results back to the wrapper
 
             ! Data must be re-formatted (and units converted) in the units and shapes used in the wrapper
-            !msgbuffer = reshape(forces, (/ 3*nat /) )
             DO i = 1, nat
                msgbuffer(3*(i-1)+1:3*i) = forces(i,:)
             ENDDO
@@ -237,7 +252,7 @@
             CALL writebuffer(socket,nat,4)  ! Writing the number of atoms
             CALL writebuffer(socket,msgbuffer,3*nat*8) ! Writing the forces
             CALL writebuffer(socket,virial,9*8)  ! Writing the virial tensor, NOT divided by the volume
-            cbuf = 7
+            cbuf = 7 ! Size of the "extras" string
             CALL writebuffer(socket,cbuf,4) ! This would write out the "extras" string, but in this case we only use a dummy string.
             CALL writebuffer(socket,"nothing",7)
 

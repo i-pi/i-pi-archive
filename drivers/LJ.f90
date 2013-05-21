@@ -20,6 +20,8 @@
          USE DISTANCE
       IMPLICIT NONE
 
+      DOUBLE PRECISION, PARAMETER :: four_tau_by_3 = 8.3775804095727811d0 
+
       CONTAINS
 
          SUBROUTINE LJ_functions(sigma, eps, r, pot, force)
@@ -106,7 +108,7 @@
             sbyr = sigma/rc
             s3byr3 = sbyr*sbyr*sbyr
             s6byr6 = s3byr3*s3byr3
-            prefactor = 8*3.14159265358979324*natoms*natoms*eps/(3*volume)
+            prefactor = four_tau_by_3*natoms*natoms*eps/volume
             prefactor = prefactor*s3byr3*sigma*sigma*sigma
 
             pot_lr = prefactor*(s6byr6/3-1)
@@ -183,7 +185,7 @@
             CALL LJ_longrange(rc, sigma, eps, natoms, volume, pot_lr, vir_lr)
             pot = pot + pot_lr
             DO k = 1, 3
-               virial(k,k) = virial(k,k) + vir_lr/3
+               virial(k,k) = virial(k,k) + vir_lr
             ENDDO
 
          END SUBROUTINE

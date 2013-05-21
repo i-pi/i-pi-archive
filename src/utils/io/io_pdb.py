@@ -12,11 +12,11 @@ __all__ = ['print_pdb_path', 'print_pdb', 'read_pdb']
 
 import numpy as np
 import math, sys
+from utils.depend import depstrip
 import utils.mathtools as mt
 from engine.cell import Cell
 from engine.atoms import Atoms
 from utils.units import *
-import gc
 
 def print_pdb_path(beads, cell, filedesc = sys.stdout):
    """Prints all the bead configurations, into a pdb formatted file.
@@ -43,8 +43,9 @@ def print_pdb_path(beads, cell, filedesc = sys.stdout):
    nbeads = beads.nbeads
    for j in range(nbeads):
       for i in range(natoms):
-         bead = beads[j][i]
-         filedesc.write("ATOM  %5i %4s%1s%3s %1s%4i%1s   %8.3f%8.3f%8.3f%6.2f%6.2f          %2s%2i\n" % (j*natoms+i+1, bead.name[0],' ','  1',' ',1,' ',bead.q[0],bead.q[1],bead.q[2],0.0,0.0,'  ',0))
+         qs = depstrip(beads.q)
+         lab = depstrip(beads.names)
+         filedesc.write("ATOM  %5i %4s%1s%3s %1s%4i%1s   %8.3f%8.3f%8.3f%6.2f%6.2f          %2s%2i\n" % (j*natoms+i+1, lab[i],' ','  1',' ',1,' ', qs[j][3*i], qs[j][3*i+1], qs[j][3*i+2],0.0,0.0,'  ',0))
 
    if nbeads > 1:
       for i in range(natoms):
@@ -81,9 +82,10 @@ def print_pdb(atoms, cell, filedesc = sys.stdout, title=""):
    filedesc.write("CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f%s%4i\n" % (a, b, c, alpha, beta, gamma, " P 1        ", z))
 
    natoms = atoms.natoms
+   qs = depstrip(atoms.q)
+   lab = depstrip(atoms.names)
    for i in range(natoms):
-      atom = atoms[i]
-      filedesc.write("ATOM  %5i %4s%1s%3s %1s%4i%1s   %8.3f%8.3f%8.3f%6.2f%6.2f          %2s%2i\n" % (i+1, atom.name[0], ' ', '  1', ' ', 1, ' ', atom.q[0], atom.q[1], atom.q[2], 0.0, 0.0, '  ', 0))
+      filedesc.write("ATOM  %5i %4s%1s%3s %1s%4i%1s   %8.3f%8.3f%8.3f%6.2f%6.2f          %2s%2i\n" % (i+1, lab[i], ' ', '  1', ' ', 1, ' ', qs[3*i], qs[3*i+1], qs[3*i+2], 0.0, 0.0, '  ', 0))
 
    filedesc.write("END\n")
 
@@ -116,25 +118,31 @@ def read_pdb(filedesc):
    body = filedesc.readline()
    qatoms = []
    names = []
+   masses = []
    while (body.strip() != "" and body.strip() != "END"):
       natoms += 1
-      names.append(body[12:16].strip())
+      name = body[12:16].strip()
+      names.append(name)
+      masses.append(Elements.mass(name))
       x = float(body[31:39])
       y = float(body[39:47])
       z = float(body[47:55])
-      pos = np.array([x,y,z])
-      qatoms.append(pos)
+      qatoms.append(x)
+      qatoms.append(y)
+      qatoms.append(z)
       
       body = filedesc.readline()
    
    atoms = Atoms(natoms)
-   totmass = 0.0
-   for i in range(natoms):
-      nat = atoms[i]
-      nat.q = qatoms[i]
-      nat.name = names[i]
-      nat.m = Elements.mass(names[i])
-      totmass += Elements.mass(names[i])
+#   totmass = 0.0
+#   for i in range(natoms):
+#      nat = atoms[i]
+#      nat.q = qatoms[i]
+#      nat.name = names[i]
+#      nat.m = Elements.mass(names[i])
+#      totmass += Elements.mass(names[i])
+   atoms.q = np.asarray(qatoms)
+   atoms.names = np.asarray(names,dtype='|S4')
+   atoms.m = np.asarray(masses)
 
-   cell.m = totmass
    return atoms, cell
