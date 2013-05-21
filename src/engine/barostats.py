@@ -144,7 +144,7 @@ class Barostat(dobject):
       q = depstrip(self.beads.q)
       qc = depstrip(self.beads.qc)
       pc = depstrip(self.beads.pc)
-      m = depstrip(self.beads.m)[0]
+      m = depstrip(self.beads.m)
       na3 = 3*self.beads.natoms
       fall = depstrip(self.forces.f)
 
