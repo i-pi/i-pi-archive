@@ -444,7 +444,7 @@ class Properties(dobject):
    def get_press(self):
       """Calculates the classical MD pressure estimator."""
 
-      stress = (self.forces.vir + self.kstress_md())/self.cell.V/self.beads.nbeads
+      stress = (self.forces.vir + self.kstress_md())/(self.cell.V*float(self.beads.nbeads))
       return np.trace(stress)/3.0
 
    def get_kstress(self, x=0, v=0):

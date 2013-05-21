@@ -109,7 +109,7 @@ class Beads(dobject):
             func=self.get_qc, dependencies=[dget(self,"q")] ) )
       dset(self,"pc",
          depend_array(name="pc",value=np.zeros(3*natoms, float),
-            func=self.get_pc, dependencies=[dget(self,"q")] ) )
+            func=self.get_pc, dependencies=[dget(self,"p")] ) )
 
       # create proxies to access the centroid and the individual beads as Atoms objects
       self.centroid = Atoms(natoms, _prebind=(self.qc, self.pc, self.m, self.names))
