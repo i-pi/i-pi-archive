@@ -122,7 +122,6 @@ def read_pdb(filedesc):
    names = []
    masses = []
    while (body.strip() != "" and body.strip() != "END"):
-      print "body", body
       natoms += 1
       name = body[12:16].strip()
       names.append(name)
@@ -136,7 +135,6 @@ def read_pdb(filedesc):
 
       body = filedesc.readline()
 
-   print "read", qatoms[0:3]
    atoms = Atoms(natoms)
    atoms.q = np.asarray(qatoms)
    atoms.names = np.asarray(names,dtype='|S4')

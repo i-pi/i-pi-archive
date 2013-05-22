@@ -24,6 +24,11 @@ from barostats import *
 from inputs.thermostats import InputThermo
 from inputs.barostats import InputBaro
 from utils.softexit import softexit
+from utils.io.io_xyz import read_xyz
+from utils.io.io_pdb import read_pdb
+from utils.io.io_xml import xml_parse_file
+from utils.units import Constants, unit_to_internal
+
 
 class Ensemble(dobject):
    """Base ensemble class.
@@ -457,10 +462,7 @@ class NPTEnsemble(NVTEnsemble):
       self.rmcom()
       self.ttime += time.time()
 
-from utils.io.io_xyz import read_xyz
-from utils.io.io_pdb import read_pdb
-from utils.io.io_xml import xml_parse_file
-from utils.units import Constants, unit_to_internal
+
 class RERUNEnsemble(Ensemble):
    """Ensemble object that just loads snapshots from an external file in sequence.
 
@@ -521,15 +523,14 @@ class RERUNEnsemble(Ensemble):
             rfile = open(self.rfile,"r")
             xmlchk = xml_parse_file(self.rfile) # Parses the file.
 
-            simchk = inputs.simulation.InputSimulation()
+            from inputs.simulation import InputSimulation
+            simchk = InputSimulation()
             simchk.parse(xmlchk.fields[0][1])
             mycell = simchk.cell.fetch()
             mybeads = simchk.beads.fetch()
             self.cell.h[:]=mycell.h
             self.beads.q[:]=mybeads.q
-
       except:
-         raise
          softexit.trigger(" # Finished reading re-run trajectory")
 
       self.qtime += time.time()
