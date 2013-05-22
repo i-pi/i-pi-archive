@@ -210,9 +210,11 @@ class nm_fft:
             in the bead representation.
       """
 
+      if self.nbeads == 1:
+         return q
       self.qdummy[:] = q
       self.fft()
-      if self.nbeads < 3:
+      if self.nbeads == 2:
          return self.qnmdummy.real/np.sqrt(self.nbeads)
 
       nmodes = self.nbeads/2
@@ -239,7 +241,9 @@ class nm_fft:
             in the normal mode representation.
       """
 
-      if self.nbeads < 3:
+      if self.nbeads == 1:
+         return qnm
+      if self.nbeads == 2:
          self.qnmdummy[:] = qnm
          self.ifft()
          return self.qdummy*np.sqrt(self.nbeads)
