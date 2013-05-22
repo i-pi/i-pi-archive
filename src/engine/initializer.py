@@ -39,7 +39,7 @@ class InitFile(dobject):
       format: A string giving the extension of the file.
    """
 
-   def __init__(self, filename="", format="", units=""):
+   def __init__(self, filename="", format="", units="", cell_units=""):
       """Initializes InitFile.
 
       Args:
@@ -50,6 +50,7 @@ class InitFile(dobject):
       self.filename = filename
       self.format = format
       self.units = units
+      self.cell_units = cell_units
 
 class Initializer(dobject):
    """Class that deals with the initialization of data.

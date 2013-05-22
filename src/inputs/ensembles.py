@@ -45,7 +45,7 @@ class InputEnsemble(Input):
 
    attribs={"mode"  : (InputAttribute, {"dtype"   : str,
                                     "help"    : "The ensemble that will be sampled during the simulation.",
-                                    "options" : ['nve', 'nvt', 'npt', 'rerun']}) }
+                                    "options" : ['nve', 'nvt', 'npt', 'replay']}) }
    fields={"thermostat" : (InputThermo, {"default"   : input_default(factory=engine.thermostats.Thermostat),
                                          "help"      : "The thermostat for the atoms, keeps the atom velocity distribution at the correct temperature."} ),
            "barostat" : (InputBaro, {"default"       : input_default(factory=engine.barostats.Barostat),
@@ -65,7 +65,7 @@ class InputEnsemble(Input):
            "fixcom": (InputValue, {"dtype"           : bool,
                                    "default"         : False,
                                    "help"            : "This describes whether the centre of mass of the particles is fixed."}),
-           "trajectory": (InputInitFile, {"default"           : input_default(factory=engine.initializer.InitFile),
+           "replay_file": (InputInitFile, {"default"           : input_default(factory=engine.initializer.InitFile),
                                        "help"            : "This describes the location to read a trajectory file from."})
 
          }
@@ -81,7 +81,7 @@ class InputEnsemble(Input):
       """
 
       super(InputEnsemble,self).store(ens)
-      if type(ens) is RERUNEnsemble:
+      if type(ens) is ReplayEnsemble:
          self.mode.store("rerun")
          tens = 0
       elif type(ens) is NVEEnsemble:
@@ -98,7 +98,7 @@ class InputEnsemble(Input):
       self.temperature.store(ens.temp)
 
       if tens==0:
-         self.trajectory.store(ens.intraj)
+         self.replay_file.store(ens.intraj)
       if tens > 1:
          self.thermostat.store(ens.thermostat)
          self.fixcom.store(ens.fixcom)
@@ -128,9 +128,11 @@ class InputEnsemble(Input):
          ens = NPTEnsemble(dt=self.timestep.fetch(),
             temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), fixcom=self.fixcom.fetch(),
                   pext=self.pressure.fetch(), barostat=self.barostat.fetch() )
-      elif self.mode.fetch() == "rerun":
-         ens = RERUNEnsemble(dt=self.timestep.fetch(),
-            temp=self.temperature.fetch(),fixcom=False,intraj=self.trajectory.fetch() )
+      elif self.mode.fetch() == "replay":
+         ens = ReplayEnsemble(dt=self.timestep.fetch(),
+            temp=self.temperature.fetch(),fixcom=False,intraj=self.replay_file.fetch() )
+      else:
+         raise ValueError("'"+self.mode.fetch()+"' is not a supported ensemble mode.")
 
       return ens
 

@@ -12,7 +12,7 @@ Classes:
    NPTEnsemble: Deals with constant pressure dynamics.
 """
 
-__all__ = ['Ensemble', 'NVEEnsemble', 'NVTEnsemble', 'NPTEnsemble', 'RERUNEnsemble']
+__all__ = ['Ensemble', 'NVEEnsemble', 'NVTEnsemble', 'NPTEnsemble', 'ReplayEnsemble']
 
 import numpy as np
 import time
@@ -463,7 +463,7 @@ class NPTEnsemble(NVTEnsemble):
       self.ttime += time.time()
 
 
-class RERUNEnsemble(Ensemble):
+class ReplayEnsemble(Ensemble):
    """Ensemble object that just loads snapshots from an external file in sequence.
 
    Has the relevant conserved quantity and normal mode propagator for the
@@ -491,7 +491,7 @@ class RERUNEnsemble(Ensemble):
             motion will be constrained or not. Defaults to False.
       """
 
-      super(RERUNEnsemble,self).__init__(dt=dt,temp=temp,fixcom=fixcom)
+      super(ReplayEnsemble,self).__init__(dt=dt,temp=temp,fixcom=fixcom)
       if intraj == None: raise ValueError("Must provide an initialized InitFile object to read trajectory from")
       self.intraj = intraj
 
@@ -513,11 +513,9 @@ class RERUNEnsemble(Ensemble):
             for b in self.beads:
                myatoms, mycell = read_pdb(self.rfile)
                myatoms.q *= unit_to_internal("length",self.intraj.units,1.0)
-               mycell.h  *= unit_to_internal("length",self.intraj.units,1.0)
+               mycell.h  *= unit_to_internal("length",self.intraj.cell_units,1.0)
                b.q[:]=myatoms.q
             self.cell.h[:]=mycell.h
-            print "cell", self.cell.h
-            print "atoms", self.beads.q[0,0:3]
          elif (self.intraj.format == "chk" or self.intraj.format == "checkpoint"):
             # reads configuration from a checkpoint file
             rfile = open(self.rfile,"r")
