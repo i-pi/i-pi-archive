@@ -943,7 +943,7 @@ localhost
 \begin_inset Quotes erd
 \end_inset
 
-, which is the generic name for the local network.
+, which is the generic name for the local network used by unix sockets.
 \end_layout
 
 \begin_layout Standard
@@ -964,7 +964,7 @@ port
 \end_layout
 
 \begin_layout Standard
-A unix or intenet socket is specified by the 
+A unix or internet socket is specified by the 
 \begin_inset Quotes eld
 \end_inset
 
@@ -1035,8 +1035,8 @@ slots
 \end_inset
 
  specifies how many driver codes can queue between checks.
- Neither is likely to be important in running the code, but may be used
- to optimize the connection time if required.
+ Neither is likely to be important in getting the code to run, but may be
+ used to optimize the connection time if required.
 \end_layout
 
 \begin_layout Section
@@ -1060,7 +1060,7 @@ To make sure that the connection is good, a simple query-response data transfer
  is transferred.
  If no response is given, the wrapper will either wait and try again, or
  disconnect the driver code and reassign its job to another, depending on
- what the severity of the problem.
+ the severity of the problem.
  The wrapper assumes that 4-bit integers, 8-bit floats and 1-bit characters
  are used.
  A typical step is of the form:
@@ -1071,7 +1071,11 @@ A header string of
 \begin_inset Quotes eld
 \end_inset
 
+
+\series bold
 STATUS
+\series default
+
 \begin_inset Quotes erd
 \end_inset
 
@@ -1185,8 +1189,8 @@ As mentioned before, one of the primary advantages of using this type of
 In the case that there are as many driver codes as replicas of the system
  this is very simple, as each replica will be assigned its own driver code.
  In subsequent steps, the interface will attempt to assign a particular
- replica of the system to the same driver code which calculated the forces
- for it the last step.
+ replica of the system to the driver code which calculated the forces for
+ it the last step.
  This reduces the change in the particle positions between calculations
  for a particular driver code, so the next step is done more efficiently.
  In the case where there are fewer driver codes than beads, the socket interface
@@ -1293,7 +1297,7 @@ Let us suppose that the wrapper code is running on a host network wrapper.net,
 However, assuming that you can create an ssh connection between the two
  computers, then you can use this to forward one of the ports on driver.net
  to connect to the necessary port on wrapper.net.
- The code required for this is:
+ This can be done with the following shell command:
 \end_layout
 
 \begin_layout Standard
@@ -1985,9 +1989,8 @@ end{verbatim}
 \begin_layout Standard
 The next step is to install the package.
  By default the download is to the directory /usr/local.
- This however is only accessible if you have root access.
- If this is the case then all that needs to be done to finish the install
- is:
+ If you have root access, and so can write to /usr, then all that needs
+ to be done to finish the install is:
 \end_layout
 
 \begin_layout Standard
@@ -2340,8 +2343,48 @@ cite{lverlet67pr}
 \begin_layout Description
 ph2: This simulates para-hydrogen using the isotropic Silvera-Goldman pair
  potential.
- There are three directories, RPMD, nvt and Tuckerman.
- RPMD and nvt have tests which can be compared to the results of 
+ There are three directories, 
+\begin_inset Quotes eld
+\end_inset
+
+RPMD
+\begin_inset Quotes erd
+\end_inset
+
+, 
+\begin_inset Quotes eld
+\end_inset
+
+nvt
+\begin_inset Quotes erd
+\end_inset
+
+ and 
+\begin_inset Quotes eld
+\end_inset
+
+Tuckerman
+\begin_inset Quotes erd
+\end_inset
+
+.
+ 
+\begin_inset Quotes eld
+\end_inset
+
+RPMD
+\begin_inset Quotes erd
+\end_inset
+
+ and 
+\begin_inset Quotes eld
+\end_inset
+
+nvt
+\begin_inset Quotes erd
+\end_inset
+
+ have tests which can be compared to the results of 
 \begin_inset ERT
 status open
 
@@ -2354,7 +2397,15 @@ cite{mill-mano05jcp}
 
 \end_inset
 
-, and Tuckerman has tests which can be compared to the results of 
+, and 
+\begin_inset Quotes eld
+\end_inset
+
+Tuckerman
+\begin_inset Quotes erd
+\end_inset
+
+ has tests which can be compared to the results of 
 \begin_inset ERT
 status open
 

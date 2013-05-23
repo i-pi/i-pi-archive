@@ -28,7 +28,7 @@ class InputBaro(Input):
 
    attribs={ "mode": (InputAttribute, {"dtype"    : str,
                                    "default" : "dummy",
-                                   "help"     : "The type of barostat. 'bzp' gives a Bussi-Zykova-Parrinello isotropic barostat.",
+                                   "help"     : "The type of barostat. 'bzp' gives a Bussi-Zykova-Parrinello isotropic barostat. 'mht' gives a Martyna-Hughes-Tuckerman isotropic barostat.",
                                    "options"  : ["dummy", "bzp", "mht"]}) }
    fields={ "thermostat": (InputThermo, {"default" : input_default(factory=engine.thermostats.Thermostat),
                                          "help"    : "The thermostat for the cell. Keeps the cell velocity distribution at the correct temperature."}),

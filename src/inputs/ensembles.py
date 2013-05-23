@@ -44,7 +44,7 @@ class InputEnsemble(Input):
    """
 
    attribs={"mode"  : (InputAttribute, {"dtype"   : str,
-                                    "help"    : "The ensemble that will be sampled during the simulation.",
+                                    "help"    : "The ensemble that will be sampled during the simulation. 'replay' means that a simulation is restarted from a previous simulation.",
                                     "options" : ['nve', 'nvt', 'npt', 'replay']}) }
    fields={"thermostat" : (InputThermo, {"default"   : input_default(factory=engine.thermostats.Thermostat),
                                          "help"      : "The thermostat for the atoms, keeps the atom velocity distribution at the correct temperature."} ),
@@ -63,7 +63,7 @@ class InputEnsemble(Input):
                                       "help"         : "The external pressure.",
                                       "dimension"    : "pressure"}),
            "fixcom": (InputValue, {"dtype"           : bool,
-                                   "default"         : False,
+                                   "default"         : True,
                                    "help"            : "This describes whether the centre of mass of the particles is fixed."}),
            "replay_file": (InputInitFile, {"default"           : input_default(factory=engine.initializer.InitFile),
                                        "help"            : "This describes the location to read a trajectory file from."})
