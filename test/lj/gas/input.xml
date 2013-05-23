@@ -4,11 +4,11 @@
       <resample_v> 120 </resample_v>
    </initialize>
    <output prefix='test'>
-      <properties stride='5' filename='out'>  [ time, conserved, temperature, kinetic_cv, potential, pressure_cv] </properties>
+      <properties stride='5' filename='out'>  [ time, conserved, temperature, kinetic_md, potential, pressure_md] </properties>
       <trajectory stride='100' filename='pos'>positions</trajectory>
       <checkpoint stride='2000'/>
    </output>
-   <total_steps>200000</total_steps>
+   <total_steps>100000</total_steps>
    <prng><seed>3348</seed></prng>
    <forces>
       <socket mode="unix">
@@ -17,10 +17,10 @@
    </forces>
    <ensemble mode='nvt'>
       <thermostat mode='pile_g'>
-         <tau>1e2</tau>
+         <tau>1e4</tau>
          <ethermo>0.0</ethermo>
       </thermostat>
-      <timestep>206.70687</timestep>
+      <timestep units='femtosecond'>0.4</timestep>
       <fixcom>False</fixcom>
       <temperature>59.6646</temperature>
    </ensemble>
