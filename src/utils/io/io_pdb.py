@@ -22,7 +22,7 @@ def print_pdb_path(beads, cell, filedesc = sys.stdout):
    """Prints all the bead configurations, into a pdb formatted file.
 
    Prints the ring polymer springs as well as the bead positions using the
-   CONECT command. Also prints the cell parameters in standard pdb form. Note 
+   CONECT command. Also prints the cell parameters in standard pdb form. Note
    that the angles are in degrees.
 
    Args:
@@ -32,10 +32,10 @@ def print_pdb_path(beads, cell, filedesc = sys.stdout):
    """
 
    a, b, c, alpha, beta, gamma = mt.h2abc(cell.h)
-   alpha *= 180.0/math.pi 
+   alpha *= 180.0/math.pi
    beta  *= 180.0/math.pi
    gamma *= 180.0/math.pi
-   
+
    z = 1 #What even is this parameter?
    filedesc.write("CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f%s%4i\n" % (a, b, c, alpha, beta, gamma, " P 1        ", z))
 
@@ -49,17 +49,17 @@ def print_pdb_path(beads, cell, filedesc = sys.stdout):
 
    if nbeads > 1:
       for i in range(natoms):
-         filedesc.write("CONECT%5i%5i\n" % (i+1, (nbeads-1)*natoms+i+1))            
-      for j in range(nbeads-1):      
+         filedesc.write("CONECT%5i%5i\n" % (i+1, (nbeads-1)*natoms+i+1))
+      for j in range(nbeads-1):
          for i in range(natoms):
             filedesc.write("CONECT%5i%5i\n" % (j*natoms+i+1, (j+1)*natoms+i+1))
-               
+
    filedesc.write("END\n")
 
 def print_pdb(atoms, cell, filedesc = sys.stdout, title=""):
    """Prints the atom configurations, into a pdb formatted file.
 
-   Also prints the cell parameters in standard pdb form. Note 
+   Also prints the cell parameters in standard pdb form. Note
    that the angles are in degrees.
 
    Args:
@@ -70,15 +70,15 @@ def print_pdb(atoms, cell, filedesc = sys.stdout, title=""):
    """
 
 
-   if title != "" : 
+   if title != "" :
       filedesc.write("TITLE   %70s\n" % (title))
-   
+
    a, b, c, alpha, beta, gamma = mt.h2abc(cell.h)
-   alpha *= 180.0/math.pi 
+   alpha *= 180.0/math.pi
    beta  *= 180.0/math.pi
    gamma *= 180.0/math.pi
-   
-   z = 1    
+
+   z = 1
    filedesc.write("CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f%s%4i\n" % (a, b, c, alpha, beta, gamma, " P 1        ", z))
 
    natoms = atoms.natoms
@@ -96,12 +96,14 @@ def read_pdb(filedesc):
       filedesc: An open readable file object from a pdb formatted file.
 
    Returns:
-      An Atoms object with the appropriate atom labels, masses and positions, 
-      and a Cell object with the appropriate cell dimensions and an estimate 
+      An Atoms object with the appropriate atom labels, masses and positions,
+      and a Cell object with the appropriate cell dimensions and an estimate
       of a reasonable cell mass.
    """
 
    header = filedesc.readline()
+   if "TITLE" in header: header = filedesc.readline()   # skip the comment field
+
    a = float(header[6:15])
    b = float(header[15:24])
    c = float(header[24:33])
@@ -113,7 +115,7 @@ def read_pdb(filedesc):
    gamma *= math.pi/180.0
    h = mt.abc2h(a, b, c, alpha, beta, gamma)
    cell = Cell(h)
-   
+
    natoms = 0
    body = filedesc.readline()
    qatoms = []
@@ -130,17 +132,10 @@ def read_pdb(filedesc):
       qatoms.append(x)
       qatoms.append(y)
       qatoms.append(z)
-      
+
       body = filedesc.readline()
-   
+
    atoms = Atoms(natoms)
-#   totmass = 0.0
-#   for i in range(natoms):
-#      nat = atoms[i]
-#      nat.q = qatoms[i]
-#      nat.name = names[i]
-#      nat.m = Elements.mass(names[i])
-#      totmass += Elements.mass(names[i])
    atoms.q = np.asarray(qatoms)
    atoms.names = np.asarray(names,dtype='|S4')
    atoms.m = np.asarray(masses)

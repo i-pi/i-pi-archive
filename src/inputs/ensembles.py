@@ -8,10 +8,12 @@ Classes:
 import numpy as np
 from engine.ensembles import *
 import engine.thermostats
+import engine.initializer
 import engine.barostats
 from utils.inputvalue import *
 from inputs.barostats import *
 from inputs.thermostats import *
+from inputs.initializer import InputInitFile
 from utils.units import *
 
 __all__ = ['InputEnsemble']
@@ -37,11 +39,13 @@ class InputEnsemble(Input):
          Defaults to 1.0.
       fixcom: An optional boolean which decides whether the centre of mass
          motion will be constrained or not. Defaults to False.
+      trajectory: An optional string that gives an input file name to get
+         a trajectory to be re-run.
    """
 
    attribs={"mode"  : (InputAttribute, {"dtype"   : str,
                                     "help"    : "The ensemble that will be sampled during the simulation.",
-                                    "options" : ['nve', 'nvt', 'npt']}) }
+                                    "options" : ['nve', 'nvt', 'npt', 'replay']}) }
    fields={"thermostat" : (InputThermo, {"default"   : input_default(factory=engine.thermostats.Thermostat),
                                          "help"      : "The thermostat for the atoms, keeps the atom velocity distribution at the correct temperature."} ),
            "barostat" : (InputBaro, {"default"       : input_default(factory=engine.barostats.Barostat),
@@ -60,7 +64,10 @@ class InputEnsemble(Input):
                                       "dimension"    : "pressure"}),
            "fixcom": (InputValue, {"dtype"           : bool,
                                    "default"         : False,
-                                   "help"            : "This describes whether the centre of mass of the particles is fixed."})
+                                   "help"            : "This describes whether the centre of mass of the particles is fixed."}),
+           "replay_file": (InputInitFile, {"default"           : input_default(factory=engine.initializer.InitFile),
+                                       "help"            : "This describes the location to read a trajectory file from."})
+
          }
 
    default_help = "Holds all the information that is ensemble specific, such as the temperature and the external pressure, and the thermostats and barostats that control it."
@@ -74,26 +81,32 @@ class InputEnsemble(Input):
       """
 
       super(InputEnsemble,self).store(ens)
-      if type(ens) is NVEEnsemble:
-         self.mode.store("nve")
+      if type(ens) is ReplayEnsemble:
+         self.mode.store("rerun")
          tens = 0
+      elif type(ens) is NVEEnsemble:
+         self.mode.store("nve")
+         tens = 1
       elif type(ens) is NVTEnsemble:
          self.mode.store("nvt")
-         tens = 1
+         tens = 2
       elif type(ens) is NPTEnsemble:
          self.mode.store("npt")
-         tens = 2
+         tens = 3
 
       self.timestep.store(ens.dt)
       self.temperature.store(ens.temp)
 
-      if tens > 0:
+      if tens==0:
+         self.replay_file.store(ens.intraj)
+      if tens > 1:
          self.thermostat.store(ens.thermostat)
          self.fixcom.store(ens.fixcom)
-      if tens > 1:
+      if tens > 2:
          self.barostat.store(ens.barostat)
-      if tens == 2:
+      if tens == 3:
          self.pressure.store(ens.pext)
+
 
    def fetch(self):
       """Creates an ensemble object.
@@ -115,6 +128,11 @@ class InputEnsemble(Input):
          ens = NPTEnsemble(dt=self.timestep.fetch(),
             temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), fixcom=self.fixcom.fetch(),
                   pext=self.pressure.fetch(), barostat=self.barostat.fetch() )
+      elif self.mode.fetch() == "replay":
+         ens = ReplayEnsemble(dt=self.timestep.fetch(),
+            temp=self.temperature.fetch(),fixcom=False,intraj=self.replay_file.fetch() )
+      else:
+         raise ValueError("'"+self.mode.fetch()+"' is not a supported ensemble mode.")
 
       return ens
 

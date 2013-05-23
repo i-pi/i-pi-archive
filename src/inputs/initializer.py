@@ -23,7 +23,9 @@ class InputInitFile(InputValue):
    """
 
    attribs = copy(InputValue.attribs)
-   attribs["format"] = (InputAttribute,{ "dtype" : str, "default": "xyz", "help": "The input file format.", "options": ['xyz', 'pdb', 'chk', 'checkpoint']} )
+   attribs["cell_units"] = (InputAttribute,{ "dtype" : str, "default": "",
+                                       "help": "The units for the cell dimensions." } )
+   attribs["format"] =     (InputAttribute,{ "dtype" : str, "default": "xyz", "help": "The input file format.", "options": ['xyz', 'pdb', 'chk', 'checkpoint']} )
 
    default_label = "INITFILE"
    default_help = "This is a simple utility class to deal with initialization from file. Holds all the data needed to open the file and read its contents. The data held between its tags corresponds the the name of the file."
@@ -45,6 +47,7 @@ class InputInitFile(InputValue):
 
       super(InputInitFile,self).store(iif.filename, units=iif.units)
       self.format.store(iif.format)
+      self.cell_units.store(iif.cell_units)
 
    def fetch(self):
       """Creates an input file object.
@@ -53,7 +56,9 @@ class InputInitFile(InputValue):
          An input file object.
       """
 
-      return ei.InitFile(filename=super(InputInitFile,self).fetch(), format=self.format.fetch(), units=self.units.fetch() )
+      return ei.InitFile(filename=super(InputInitFile,self).fetch(), format=self.format.fetch(),
+                         units=self.units.fetch(), cell_units=self.cell_units.fetch() )
+
 
 class InputInitializer(Input):
    """Input class to handle initialization.

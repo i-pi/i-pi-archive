@@ -14,6 +14,8 @@ Classes:
       Just holds the information needed to open the file.
 """
 
+import numpy as np
+
 from beads import Beads
 from cell import Cell
 from normalmodes import NormalModes
@@ -26,9 +28,6 @@ from utils.depend import dobject
 from utils.units import Constants, unit_to_internal
 from utils.nmtransform import nm_rescale
 from utils.messages import verbosity, warning, info
-import inputs.simulation
-import numpy as np
-
 
 __all__ = ['Initializer', 'InitFile']
 
@@ -40,7 +39,7 @@ class InitFile(dobject):
       format: A string giving the extension of the file.
    """
 
-   def __init__(self, filename="", format="", units=""):
+   def __init__(self, filename="", format="", units="", cell_units=""):
       """Initializes InitFile.
 
       Args:
@@ -51,6 +50,7 @@ class InitFile(dobject):
       self.filename = filename
       self.format = format
       self.units = units
+      self.cell_units = cell_units
 
 class Initializer(dobject):
    """Class that deals with the initialization of data.
@@ -158,7 +158,8 @@ class Initializer(dobject):
                   warning(" Reading from checkpoint actually initializes momenta, not velocities. Make sure this is what you want. ",
                           verbosity.low)
 
-               simchk = inputs.simulation.InputSimulation()
+               from inputs.simulation import InputSimulation
+               simchk = InputSimulation()
                simchk.parse(xmlchk.fields[0][1])
                if k == "file":
                   rcell = simchk.cell.fetch()
