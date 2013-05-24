@@ -61,6 +61,7 @@ def getall(pstring):
 
    unit = ""
    arglist = ()
+   kwarglist = {}
    unstart = len(pstring)
    argstart = unstart
 
@@ -80,10 +81,16 @@ def getall(pstring):
 
       argstr = pstring[argstart:argstop+1]
       arglist = io_xml.read_tuple(argstr, delims="()", split=";", arg_type=str)
+      for arg in arglist:
+         # If a keyword argument is used
+         equals = arg.find('=')
+         if equals >= 0:
+            kwarglist[arg[0:equals]] = arg[equals+1:]
+            arglist = tuple(a for a in arglist if not a == arg)
 
    pstring = pstring[0:min(unstart,argstart)] # strips the arguments from pstring name
 
-   return (pstring, unit, arglist)
+   return (pstring, unit, arglist, kwarglist)
 
 def help_latex(idict, ref=False):
    """Function to generate a LaTeX formatted file.
@@ -320,15 +327,15 @@ class Properties(dobject):
          The property labelled by the keyword key.
       """
 
-      (key, unit, arglist) = getall(key)
+      (key, unit, arglist, kwarglist) = getall(key)
       pkey = self.property_dict[key]
 
       #pkey["func"](*arglist) gives the value of the property in atomic units
       #unit_to_user returns the value in the user specified units.
       if "dimension" in pkey and unit != "":
-         return  unit_to_user(pkey["dimension"], unit, pkey["func"](*arglist))
+         return  unit_to_user(pkey["dimension"], unit, pkey["func"](*arglist,**kwarglist))
       else:
-         return pkey["func"](*arglist)
+         return pkey["func"](*arglist,**kwarglist)
 
    def get_atomx(self, atom="", bead="-1"):
       """Gives the position vector of one atom.
@@ -401,7 +408,8 @@ class Properties(dobject):
 
          nat = 0
          for i in range(self.beads.natoms):
-            if (iatom == i or latom == self.beads.names[i]): nat+=1
+            if (iatom == i or latom == self.beads.names[i]): 
+               nat += 1
 
          # "spreads" the COM removal correction evenly over all the atoms...
          kedof = self.get_kinmd(atom)/nat*(self.beads.natoms/(3.0*self.beads.natoms*self.beads.nbeads - mdof))
@@ -424,7 +432,7 @@ class Properties(dobject):
       """
 
       # returns estimator MULTIPLIED BY NBEADS -- again for consistency with the virial, etc...
-      kst=np.zeros((3,3),float)
+      kst = np.zeros((3,3),float)
 
       kst[:,:] = self.nm.kstress
 
@@ -660,7 +668,6 @@ class Properties(dobject):
          #here 'atom' is a label rather than an index which is stored in latom
          iatom = -1
          latom = atom
-
 
       tkcv = np.zeros((6),float)
       for i in range(self.beads.natoms):
@@ -1052,13 +1059,13 @@ class Trajectories(dobject):
    def __getitem__(self, key):
       """ Gets one of the trajectories. """
 
-      (key, unit, arglist) = getall(key)
+      (key, unit, arglist, kwarglist) = getall(key)
       pkey = self.traj_dict[key]
 
       if "dimension" in pkey and unit != "":
-         return  unit_to_user(pkey["dimension"], unit, 1.0) * pkey["func"](*arglist)
+         return  unit_to_user(pkey["dimension"], unit, 1.0) * pkey["func"](*arglist,**kwarglist)
       else:
-         return pkey["func"](*arglist)
+         return pkey["func"](*arglist,**kwarglist)
 
    def print_traj(self, what, stream, b=0, format="pdb", cell_units="atomic_unit", flush=True):
       """Prints out a frame of a trajectory for the specified quantity and bead.
