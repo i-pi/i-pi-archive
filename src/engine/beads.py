@@ -154,7 +154,7 @@ class Beads(dobject):
    def m3tosm3(self):
       """Takes the mass array and returns the square rooted mass array."""
 
-      return np.sqrt(self.m3)
+      return np.sqrt(depstrip(self.m3))
 
    def mtom3(self):
       """Takes the mass array for each bead and returns one with an element

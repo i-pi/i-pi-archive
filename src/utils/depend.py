@@ -405,8 +405,6 @@ class depend_array(np.ndarray, depend_base):
 
       depend_base.__init__(self, name="")
 
-      self._asarray=self.view(np.ndarray) # stores a view of self without dependency machinery
-
       if type(obj) is depend_array:
          # We are in a view cast or in new from template. Unfortunately
          # there is no sure way to tell (or so it seems). Hence we need to
@@ -532,9 +530,9 @@ class depend_array(np.ndarray, depend_base):
          self.taint(taintme=False)
 
       if (self.__scalarindex(index, self.ndim)):
-         return self._asarray[index]
+         return depstrip(self)[index]
       else:
-         return depend_array(self._asarray[index], name=self._name, synchro=self._synchro, func=self._func, dependants=self._dependants, tainted=self._tainted, base=self._bval)
+         return depend_array(depstrip(self)[index], name=self._name, synchro=self._synchro, func=self._func, dependants=self._dependants, tainted=self._tainted, base=self._bval)
 
 
    def __getslice__(self,i,j):
@@ -552,6 +550,7 @@ class depend_array(np.ndarray, depend_base):
 
       # It is worth duplicating this code that is also used in __getitem__ as this
       # is called most of the time, and we avoid creating a load of copies pointing to the same depend_array
+
       if self._tainted[0]:
          self.update_auto()
          self.taint(taintme=False)
@@ -677,8 +676,7 @@ def depstrip(da):
    if isinstance(da, depend_array): # only bother to strip dependencies if the array actually IS a depend_array
       #if da._tainted[0]:
       #   print "!!! WARNING depstrip called on tainted array WARNING !!!!!" # I think we can safely assume that when we call depstrip the array has been cleared already but I am not 100% sure so better check - and in case raise the update
-      #   da._asarray = da.view(np.ndarray)
-      return da._asarray
+      return da.view(np.ndarray)
    else:
       return da
 

@@ -32,6 +32,7 @@ from properties import Properties, Trajectories
 from outputs import CheckpointOutput
 import inputs.simulation
 
+
 class Simulation(dobject):
    """Main simulation object.
 
@@ -197,6 +198,8 @@ class Simulation(dobject):
          if (self.ttime > 0 and time.time() - simtime > self.ttime):
             info(" # Wall clock time expired! Bye bye!", verbosity.low )
             break
+
+
 
       self.rollback=False
       softexit.trigger()
