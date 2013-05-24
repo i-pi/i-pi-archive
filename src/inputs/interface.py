@@ -51,7 +51,7 @@ class InputInterfaceSocket(Input):
                                      "help"     : "Specifies whether the driver interface will listen onto a internet socket [inet] or onto a unix socket [unix]." } ),
                "pbc":  ( InputAttribute, { "dtype"   : bool,
                                          "default" : True,
-                                         "help"    : "Applies periodic boundary conditions to thhe atoms coordinates before passing them on to the driver code." })
+                                         "help"    : "Applies periodic boundary conditions to the atoms coordinates before passing them on to the driver code." })
               }
 
    default_help = "Specifies the parameters for the socket interface."

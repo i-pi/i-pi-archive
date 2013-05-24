@@ -84,13 +84,14 @@ class InputTrajectory(InputValue):
    default_help = """This class defines how one trajectory file should be output. Between each trajectory tag one string should be given, which specifies what data is to be output."""
    default_label = "TRAJECTORY"
 
-   attribs=copy(InputValue.attribs)
+   attribs = copy(InputValue.attribs)
    attribs["filename"] = (InputAttribute,{ "dtype" : str, "default": "traj",
                                            "help": "The name of the file that the trajectory information will be output to."} )
    attribs["stride"] = (InputAttribute,{ "dtype" : int, "default": 1,
                                          "help": "The number of steps between successive writes." } )
    attribs["format"] = (InputAttribute,{ "dtype" : str, "default": "xyz",
-                                       "help": "The output file format." } )
+                                       "help": "The output file format.",
+                                       "options": ['xyz', 'pdb'] } )
    attribs["cell_units"] = (InputAttribute,{ "dtype" : str, "default": "",
                                        "help": "The units for the cell dimensions." } )
    attribs["bead"] = (InputAttribute,{ "dtype" : int, "default": -1,

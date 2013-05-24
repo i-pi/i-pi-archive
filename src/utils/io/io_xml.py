@@ -346,7 +346,7 @@ def read_tuple(data, delims="()", split=",", strip=" \n\t'", arg_type=int):
       ValueError: Raised if the input data is not of the correct format.
 
    Returns:
-      A tuple of integers.
+      A tuple of elements of the specified data type.
    """
 
    rlist = read_list(data, delims=delims, split=split, strip=strip)

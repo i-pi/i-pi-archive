@@ -40,7 +40,7 @@ DONE ***  Move the synchro business out of Beads and into NormalModes (MC) (MC)
 
 DONE ***  Fix PDB output NOT to use Atom interface, that is horribly slow (MC) (JM)
 
-**   Fix (or remove) "springs" trajectory output. Not really needed anymore... (MC)
+DONE **   Fix (or remove) "springs" trajectory output. Not really needed anymore... (MC)
 
 *** More in general, rationalize and clean up the available properties and trajectories. The help strings and function documentation often don't match, often which arguments are supposed to be passed to the function aren't given in the help string, some properties have tensorial equivalents and some don't, some are also trajectories and some aren't. This really needs to be tidied up. (MC/JM) (JM) 
 

@@ -25,7 +25,7 @@ class InputInitFile(InputValue):
    attribs = copy(InputValue.attribs)
    attribs["cell_units"] = (InputAttribute,{ "dtype" : str, "default": "",
                                        "help": "The units for the cell dimensions." } )
-   attribs["format"] =     (InputAttribute,{ "dtype" : str, "default": "xyz", "help": "The input file format.", "options": ['xyz', 'pdb', 'chk', 'checkpoint']} )
+   attribs["format"] =     (InputAttribute,{ "dtype" : str, "default": "xyz", "help": "The input file format. 'xyz' and 'pdb' stand for xyz and pdb input files respectively. 'chk' and 'checkpoint' are both aliases for input from a restart file.", "options": ['xyz', 'pdb', 'chk', 'checkpoint']} )
 
    default_label = "INITFILE"
    default_help = "This is a simple utility class to deal with initialization from file. Holds all the data needed to open the file and read its contents. The data held between its tags corresponds the the name of the file."
