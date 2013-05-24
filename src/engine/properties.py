@@ -37,7 +37,8 @@ def getkey(pstring):
       pstring: The string input by the user that specifies an output,
          which in general will specify units and argument lists.
 
-   Returns: A string giving the keyword for the property.
+   Returns: A string giving the keyword for the property, stripped of the
+      argument lists and units key words.
    """
 
    pa = pstring.find('(')
@@ -46,7 +47,7 @@ def getkey(pstring):
    pu = pstring.find('{')
    if pu < 0:
       pu = len(pstring)
-   return pstring[0:min(pa,pu)]
+   return pstring[0:min(pa,pu)].strip()
 
 def getall(pstring):
    """Returns the keyword, units and argument list separately.
@@ -56,7 +57,7 @@ def getall(pstring):
          which in general will specify units and argument lists.
 
    Returns: A tuple giving the keyword for the property, and its units
-      and argument list.
+      argument list and key word argument list.  
    """
 
    unit = ""
@@ -85,10 +86,10 @@ def getall(pstring):
          # If a keyword argument is used
          equals = arg.find('=')
          if equals >= 0:
-            kwarglist[arg[0:equals]] = arg[equals+1:]
+            kwarglist[arg[0:equals].strip()] = arg[equals+1:].strip()
             arglist = tuple(a for a in arglist if not a == arg)
 
-   pstring = pstring[0:min(unstart,argstart)] # strips the arguments from pstring name
+   pstring = pstring[0:min(unstart,argstart)].strip() # strips the arguments from pstring name
 
    return (pstring, unit, arglist, kwarglist)
 
@@ -312,9 +313,12 @@ class Properties(dobject):
       """Retrieves the item given by key.
 
       Note that if the key contains a string (arg1; arg2; ... )
-      then it will add the appropriate arguments and value pairs
-      to the calculation function of the property. Note the brackets and
-      the semi-colon separators.
+      then it will pass the appropriate positional arguments to the
+      calculation function of the property. Note the brackets and
+      the semi-colon separators. If instead we have the syntax 
+      (arg1=val1;arg2; ... ), then the keyword/value pair (arg1,val1)
+      will be added to the keyword argument list. The appropriate key word
+      arguments will then be passed to the calculation function instead.
 
       Similarly, if the key contains a string {unit}, then it will take
       the string 'unit' and use it to define the units that the property
@@ -324,14 +328,17 @@ class Properties(dobject):
          key: A string contained in property_dict.
 
       Returns:
-         The property labelled by the keyword key.
+         The property labelled by the keyword key, along with its unit 
+         keyword, and the argument lists for the function used to calculate
+         the property specified by the keyword key.
       """
 
       (key, unit, arglist, kwarglist) = getall(key)
       pkey = self.property_dict[key]
 
-      #pkey["func"](*arglist) gives the value of the property in atomic units
-      #unit_to_user returns the value in the user specified units.
+      #pkey["func"](*arglist,**kwarglist) gives the value of the property 
+      #in atomic units unit_to_user returns the value in the user 
+      #specified units.
       if "dimension" in pkey and unit != "":
          return  unit_to_user(pkey["dimension"], unit, pkey["func"](*arglist,**kwarglist))
       else:
@@ -530,7 +537,7 @@ class Properties(dobject):
    def get_presscv(self):
       """Calculates the quantum centroid virial pressure estimator."""
 
-      return np.trace(self.forces.vir+ self.kstress_cv())/(3.0*self.cell.V*float(self.beads.nbeads))
+      return np.trace(self.forces.vir + self.kstress_cv())/(3.0*self.cell.V*float(self.beads.nbeads))
 
    def get_vircv(self, x=0, v=0):
       """Calculates the quantum centroid virial tensor estimator.
@@ -559,7 +566,6 @@ class Properties(dobject):
          iatom = -1
          latom = atom
 
-
       q = depstrip(self.beads.q)
       qc = depstrip(self.beads.qc)
       f = depstrip(self.forces.f)
@@ -569,7 +575,8 @@ class Properties(dobject):
          if (atom != "" and iatom != i and latom != self.beads.names[i]):
             continue
 
-         kcv = 0.0; k=3*i
+         kcv = 0.0
+         k = 3*i
          for b in range(self.beads.nbeads):
             kcv += (q[b,k] - qc[k])* f[b,k] + (q[b,k+1] - qc[k+1])* f[b,k+1] + (q[b,k+2] - qc[k+2])* f[b,k+2]
          kcv *= -0.5/self.beads.nbeads
@@ -604,7 +611,7 @@ class Properties(dobject):
          for i in range(self.beads.natoms):
             if (atom != "" and iatom != i and latom != self.beads.names[i]):
                continue
-            k=3*i
+            k = 3*i
             for b in range(self.beads.nbeads):
                kmd += (pnm[b,k]**2 + pnm[b,k+1]**2 + pnm[b,k+2]**2)/(2.0*dm3[b,k])
          return kmd/self.beads.nbeads
@@ -1057,11 +1064,36 @@ class Trajectories(dobject):
 
 
    def __getitem__(self, key):
-      """ Gets one of the trajectories. """
+      """Retrieves the item given by key.
+
+      Note that if the key contains a string (arg1; arg2; ... )
+      then it will pass the appropriate positional arguments to the
+      calculation function of the property. Note the brackets and
+      the semi-colon separators. If instead we have the syntax 
+      (arg1=val1;arg2; ... ), then the keyword/value pair (arg1,val1)
+      will be added to the keyword argument list. The appropriate key word
+      arguments will then be passed to the calculation function instead.
+
+      Similarly, if the key contains a string {unit}, then it will take
+      the string 'unit' and use it to define the units that the trajectory
+      is output in.
+
+      Args:
+         key: A string contained in trajectory_dict.
+
+      Returns:
+         The trajectory labelled by the keyword key, along with its unit 
+         keyword, and the argument lists for the function used to calculate
+         the trajectory specified by the keyword key.
+      """
+
 
       (key, unit, arglist, kwarglist) = getall(key)
       pkey = self.traj_dict[key]
 
+      #pkey["func"](*arglist,**kwarglist) gives the value of the trajectory 
+      #in atomic units unit_to_user returns the value in the user 
+      #specified units.
       if "dimension" in pkey and unit != "":
          return  unit_to_user(pkey["dimension"], unit, 1.0) * pkey["func"](*arglist,**kwarglist)
       else:
@@ -1074,6 +1106,10 @@ class Trajectories(dobject):
          what: A string specifying what to print.
          b: The bead index. Defaults to 0.
          stream: A reference to the stream on which data will be printed.
+         format: The output file format.
+         cell_units: The units used to specify the cell parameters.
+         flush: A boolean which specifies whether to flush the output buffer
+            after each write to file or not.
       """
 
       cq = self[what]
