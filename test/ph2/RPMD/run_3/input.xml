@@ -3171,7 +3171,7 @@
          <slots>4</slots>
          <port>31413</port>
          <timeout>  0.00000000e+00</timeout>
-         <address>neptune.chem.ox.ac.uk</address>
+         <address>localhost</address>
       </socket>
    </forces>
    <total_steps>8000</total_steps>
@@ -3183,7 +3183,6 @@
       <trajectory stride='1' filename='vel'> v_centroid </trajectory>
       <properties stride='5'> [ time, conserved, temperature, kinetic_cv, potential, pressure_cv ] </properties>
    </output>
-   <step>0</step>
    <prng>
       <has_gauss>0</has_gauss>
       <state shape='(624)'>
@@ -3317,7 +3316,7 @@
       <set_pos>80</set_pos>
       <gauss> -1.69030748e+00</gauss>
    </prng>
-   <ensemble type='nve'>
+   <ensemble mode='nve'>
       <timestep>  2.00000000e+01</timestep>
       <pressure>  1.00000000e+00</pressure>
       <fixcom>True</fixcom>

@@ -5040,7 +5040,7 @@
    </cell>
    <forces>
       <socket mode="unix">
-         <address>wrap-pi</address>   <port>31417</port>    <slots>4</slots> <latency>0.001</latency>
+         <address>localhost</address>   <port>31417</port>    <slots>4</slots> <latency>0.001</latency>
       </socket>
    </forces>
    <output prefix=''>

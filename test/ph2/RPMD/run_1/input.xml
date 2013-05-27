@@ -3171,7 +3171,7 @@
          <slots>4</slots>
          <port>31415</port>
          <timeout>  0.00000000e+00</timeout>
-         <address>neptune.chem.ox.ac.uk</address>
+         <address>localhost</address>
       </socket>
    </forces>
    <total_steps>8000</total_steps>
@@ -3183,7 +3183,6 @@
        [   3.37260000e+01,   5.71316102e-15,   5.71316102e-15,   0.00000000e+00,   3.37260000e+01, 
            5.71316102e-15,   0.00000000e+00,   0.00000000e+00,   3.37260000e+01 ]
    </cell>
-   <step>0</step>
    <prng>
       <has_gauss>0</has_gauss>
       <state shape='(624)'>
@@ -3317,7 +3316,7 @@
       <set_pos>152</set_pos>
       <gauss>  1.14133966e+00</gauss>
    </prng>
-   <ensemble type='nve'>
+   <ensemble mode='nve'>
       <timestep>  2.00000000e+01</timestep>
       <pressure>  1.00000000e+00</pressure>
       <fixcom>True</fixcom>
