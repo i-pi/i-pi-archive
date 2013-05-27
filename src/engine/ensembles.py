@@ -221,6 +221,7 @@ class NVEEnsemble(Ensemble):
 
       self.qtime = -time.time()
       self.qcstep()
+
       self.nm.free_qstep()
       self.qtime += time.time()
 

@@ -116,7 +116,7 @@ class Barostat(dobject):
             dependencies=[ dget(cell,"V"), dget(self,"pext") ]))
       dset(self,"kstress",
          depend_value(name='kstress', func=self.get_kstress,
-            dependencies=[ dget(beads,"q"), dget(beads,"qc"), dget(self,"temp") , dget(forces,"f") ]))
+            dependencies=[ dget(beads,"q"), dget(beads,"qc"), dget(beads,"pc"), dget(forces,"f") ]))
       dset(self,"stress",
          depend_value(name='stress', func=self.get_stress,
             dependencies=[ dget(self,"kstress"), dget(cell,"V"), dget(forces,"vir") ]))

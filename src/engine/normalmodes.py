@@ -316,7 +316,7 @@ class NormalModes(dobject):
          pass
       else:
          pq = np.zeros((2,self.natoms*3),float)
-         sm = depstrip(self.beads.sm3[0])
+         sm = depstrip(self.beads.sm3)[0]
          prop_pq = depstrip(self.prop_pq)
          for k in range(1,self.nbeads):
             pq[0,:] = depstrip(self.pnm)[k]/sm
