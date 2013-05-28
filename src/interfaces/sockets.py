@@ -122,6 +122,7 @@ class DriverSocket(socket.socket):
    def poll(self):
       """Waits for driver status."""
 
+      self.status = Status.Disconnected  # sets disconnected as failsafe status, in case _getstatus fails and exceptions are ignored upstream
       self.status = self._getstatus()
 
    def _getstatus(self):
@@ -550,6 +551,7 @@ class InterfaceSocket(object):
                   warning(" @SOCKET:  Timeout! HASDATA for bead "+str( r["id"])+ " has been running for "+str( time.time() - r["start"]), verbosity.low)
                   try:
                      warning(" @SOCKET:   Client " + str(c.peername) +" died or got unresponsive(A). Removing from the list.", verbosity.low)
+                     c.status = Status.Disconnected
                      c.shutdown(socket.SHUT_RDWR)
                      c.close()
                   except:
