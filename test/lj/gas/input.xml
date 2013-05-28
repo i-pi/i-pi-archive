@@ -3,7 +3,7 @@
       <file format='pdb'> our_ref.pdb </file>
       <resample_v> 120 </resample_v>
    </initialize>
-   <output prefix='test'>
+   <output prefix='lj-gas'>
       <properties stride='5' filename='out'>  [ time, conserved, temperature, kinetic_md, potential, pressure_md] </properties>
       <trajectory stride='100' filename='pos'>positions</trajectory>
       <checkpoint stride='2000'/>

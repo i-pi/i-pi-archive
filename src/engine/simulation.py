@@ -58,6 +58,11 @@ class Simulation(dobject):
       properties: A property object for dealing with property output.
       trajs: A trajectory object for dealing with trajectory output.
       chk: A checkpoint object for dealing with checkpoint output.
+      rollback: If set to true, the state of the simulation at the start
+         of the step will be output to a restart file rather than
+         the current state of the simulation. This is because we cannot
+         restart from half way through a step, only from the beginning of a
+         step, so this is necessary for the trajectory to be continuous.
 
    Depend objects:
       step: The current simulation step.
@@ -105,7 +110,6 @@ class Simulation(dobject):
       self.trajs = Trajectories()
       self.chk = None
       self.rollback = True
-
 
    def bind(self):
       """Calls the bind routines for all the objects in the simulation."""
@@ -162,7 +166,11 @@ class Simulation(dobject):
       steptime = 0.0
       simtime =  time.time()
 
-      cstep=0; tptime=0.0; tqtime=0.0; tttime=0.0; ttot=0.0;
+      cstep = 0
+      tptime = 0.0
+      tqtime = 0.0
+      tttime = 0.0
+      ttot = 0.0
       # main MD loop
       for self.step in range(self.step,self.tsteps):
          # stores the state before doing a step.
@@ -178,7 +186,7 @@ class Simulation(dobject):
             o.write()
 
          if os.path.exists("EXIT"): # soft-exit
-            self.rollback=False
+            self.rollback = False
             softexit.trigger()
 
          steptime += time.time()
@@ -191,7 +199,11 @@ class Simulation(dobject):
          if verbosity.high or (verbosity.medium and self.step%100 == 0) or (verbosity.low and self.step%1000 == 0):
             info(" # Average timings at MD step % 7d. t/step: %10.5e [p: %10.5e  q: %10.5e  t: %10.5e]" %
                ( self.step, ttot/cstep, tptime/cstep, tqtime/cstep, tttime/cstep ) )
-            ttot = tptime = tqtime = tttime = 0.0; cstep=0
+            cstep = 0
+            tptime = 0.0
+            tqtime = 0.0
+            tttime = 0.0
+            ttot = 0.0
             info(" # MD diagnostics: V: %10.5e    Kcv: %10.5e   Ecns: %10.5e" %
                (self.properties["potential"], self.properties["kinetic_cv"], self.properties["conserved"] ) )
 
@@ -199,7 +211,5 @@ class Simulation(dobject):
             info(" # Wall clock time expired! Bye bye!", verbosity.low )
             break
 
-
-
-      self.rollback=False
+      self.rollback = False
       softexit.trigger()

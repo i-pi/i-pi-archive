@@ -53,7 +53,7 @@ Now it is possible to specify units and a short help string.
 DONE * Multiforce object should be implemented. (JM) (JM)
 
 DONE *** Write a very clean driver for LJ and SG for examples (JM) (JM)
-*** Test NPT on the pH2 system (JM) (JM)
+DONE *** Test NPT on the pH2 system (JM) (JM)
 
 *   Implement NST (MC) (MC)
 
@@ -115,3 +115,6 @@ PS: DO NOT try to make it so that things like empty strings are not output
 to the xml file, I've just realized that that is incompatible with the
 compulsory tag system we have. In this case the npt branch is WRONG.
 (JM) (MC)
+
+** Implement warning() and info() everywhere (For example, it is missing
+from normalmodes.py) (JM) (JM)

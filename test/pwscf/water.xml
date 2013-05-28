@@ -9,14 +9,14 @@
       <checkpoint stride='20'/>
    </output>
    <total_steps>1000</total_steps>
-   <prng><seed>31415</seed></prng>
+   <prng><seed>31416</seed></prng>
    <forces>
       <socket mode="inet">
-         <address>localhost</address>   <port>31415</port>    <slots>4</slots>   <latency> 0.01</latency>
+         <address>localhost</address>   <port>31416</port>    <slots>4</slots>   <latency> 0.01</latency>
       </socket>
    </forces>
-   <ensemble type='nvt'>
-      <thermostat kind='pile_g'>
+   <ensemble mode='nvt'>
+      <thermostat mode='pile_g'>
          <tau>1e2</tau>
          <ethermo>0.0</ethermo>
       </thermostat>

@@ -1,0 +1,30 @@
+<simulation>
+   <initialize nbeads='20'>
+      <file format='pdb'> our_ref.pdb </file>
+      <resample_v> 40 </resample_v>
+   </initialize>
+   <output prefix=''>
+      <properties shape='(7)' filename='ph2-p20-20K-0bar-mht.out'>
+       [ step, conserved, temperature, potential{kelvin}, kinetic_cv{kelvin}, 
+         volume, pressure_cv ]
+      </properties>
+      <trajectory format='pdb' filename='ph2-p20-20K-0bar-mht.traj' stride='100' cell_units='angstrom'>positions{angstrom}</trajectory>
+   </output>
+   <total_steps>20000</total_steps>
+   <prng><seed>31416</seed></prng>
+   <forces>
+      <socket mode="unix">
+         <address>localhost</address>   <port>31416</port>    <slots>4</slots> <latency>0.001</latency>
+      </socket>
+   </forces>
+   <ensemble mode='nvt'>
+      <thermostat mode='pile_g'>
+         <tau>  4.13413730e+02</tau>
+         <ethermo> -4.67859114e+00</ethermo>
+      </thermostat>
+      <timestep units='femtosecond'>  1</timestep>
+      <fixcom> True</fixcom>
+      <temperature>  2.00000000e+01</temperature>
+      <pressure>0</pressure>
+   </ensemble>
+</simulation>

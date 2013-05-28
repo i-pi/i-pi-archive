@@ -35,6 +35,7 @@ from utils.mathtools import matrix_exp, stab_cholesky, root_herm
 from utils.prng import Random
 from beads import Beads
 from normalmodes import NormalModes
+from utils.messages import verbosity, warning, info
 
 class Thermostat(dobject):
    """Base thermostat class.
@@ -99,7 +100,7 @@ class Thermostat(dobject):
       """
 
       if prng is None:
-         print " ! WARNING ! Initializing thermostat from standard random PRNG"
+         warning("Initializing thermostat from standard random PRNG", verbosity.medium)
          self.prng = Random()
       else:
          self.prng = prng
@@ -618,14 +619,14 @@ class ThermoGLE(Thermostat):
       # allocates, initializes or restarts an array of s's
       if self.s.shape != (self.ns + 1, len(dget(self,"m"))):
          if len(self.s) > 0:
-            print " @ GLE BIND: Warning: s array size mismatch on restart! "
+            warning("mismatch in GLE s array size on restart", verbosity.low)
          self.s = np.zeros((self.ns + 1, len(dget(self,"m"))))
 
          # Initializes the s vector in the free-particle limit
          SC = stab_cholesky(self.C*Constants.kb)
          self.s[:] = np.dot(SC, self.prng.gvec(self.s.shape))
       else:
-         print " @ GLE BIND: Inputing additional DOFs! "
+         info("Inputing additional DOFs", verbosity.medium)
 
    def step(self):
       """Updates the bound momentum vector with a GLE thermostat"""
@@ -741,7 +742,7 @@ class ThermoNMGLE(Thermostat):
       # allocates, initializes or restarts an array of s's
       if self.s.shape != (self.nb, self.ns + 1, nm.natoms *3) :
          if len(self.s) > 0:
-            print " @ GLE BIND: Warning: s array size mismatch on restart! "
+            warning("mismatch in GLE s array size on restart", verbosity.low)
          self.s = np.zeros((self.nb, self.ns + 1, nm.natoms*3))
 
          # Initializes the s vector in the free-particle limit
@@ -749,7 +750,7 @@ class ThermoNMGLE(Thermostat):
             SC = stab_cholesky(self.C[b]*Constants.kb)
             self.s[b] = np.dot(SC, self.prng.gvec(self.s[b].shape))
       else:
-         print " @ GLE BIND: Inputing additional DOFs! "
+         info("Inputing additional DOFs in GLE", verbosity.medium)
 
       prev_ethermo = self.ethermo
 

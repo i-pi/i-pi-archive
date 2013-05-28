@@ -15,6 +15,7 @@ import utils.io.io_pdb, utils.io.io_xyz
 from engine.cell import *
 from utils.inputvalue import *
 from utils.units import UnitMap
+from utils.messages import verbosity, warning
 
 __all__ = [ 'InputCell' ]
 
@@ -95,7 +96,7 @@ class InputCell(InputArray):
 
       h.shape = (9,)
       if not (h[3] == 0.0 and h[6] == 0.0 and h[7] == 0.0):
-         print "Warning: cell vector matrix must be upper triangular, all elements below the diagonal being set to zero."
+         warning("Cell vector matrix must be upper triangular, all elements below the diagonal being set to zero.", verbosity.low)
          h[3] = 0
          h[6] = 0
          h[7] = 0

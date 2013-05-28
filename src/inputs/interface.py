@@ -11,6 +11,7 @@ import socket, select, threading, signal, string, os, time
 import numpy as np
 from utils.inputvalue import *
 from interfaces.sockets import *
+from utils.messages import verbosity, warning
 
 class InputInterfaceSocket(Input):
    """Interface input class.
@@ -93,7 +94,7 @@ class InputInterfaceSocket(Input):
       if self.port.fetch() < 1 or self.port.fetch() > 65535:
          raise ValueError("Port number " + str(self.port.fetch()) + " out of acceptable range.")
       elif self.port.fetch() < 1025:
-         print "Warning, low port number being used, this may interrupt important system processes."
+         warning("Low port number being used, this may interrupt important system processes.", verbosity.low)
 
       if self.slots.fetch() < 1 or self.slots.fetch() > 5:
          raise ValueError("Slot number " + str(self.slots.fetch()) + " out of acceptable range.")
