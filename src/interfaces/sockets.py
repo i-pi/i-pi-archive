@@ -606,10 +606,7 @@ class InterfaceSocket(object):
                elif match_ids == "free" and fc.locked:
                   continue
 
-#               try:
-#                  print " @SOCKET: Assigning [",match_ids,"] request id ", r["id"], " to client with last-id ", fc.lastreq, "(",self.clients.index(fc),"/",len(self.clients),":",fc.peername,")"
-#               except:
-#                  pass
+               info(" @SOCKET: Assigning [%5s] request id %4s to client with last-id %4s (% 3d/% 3d : %s)" % (match_ids,  str(r["id"]),  str(fc.lastreq), self.clients.index(fc), len(self.clients), str(fc.peername) ), verbosity.high )
 
                while fc.status & Status.Busy:
                   fc.poll()
