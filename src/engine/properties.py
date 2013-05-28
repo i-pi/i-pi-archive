@@ -29,6 +29,7 @@ from atoms import *
 from cell import *
 from ensembles import *
 from forces import *
+from utils.messages import verbosity, info
 
 def getkey(pstring):
    """Strips units and argument lists from a property/trajectory keyword.
@@ -742,7 +743,7 @@ class Properties(dobject):
 
          if (fd_delta < 0 and abs((vplus + vminus)/(v0*2) - 1.0) > self._DEFAULT_FDERROR and dbeta > self._DEFAULT_MINFID):
             dbeta *= 0.5
-            print "Reducing displacement in Yamamoto kinetic estimator"
+            info("Reducing displacement in Yamamoto kinetic estimator", verbosity.low)
             continue
          else:
             break
@@ -855,7 +856,6 @@ class Properties(dobject):
          else:
             (lawke, sawke) = logsumlog( (lawke, sawke), (-logr+np.log(abs(tcv)), np.sign(tcv)) )
 
-         print "CHECK", ni, logr, tcv, law, lawke
       if ni == 0:
          raise ValueError("Couldn't find an atom which matched the argument of isotope_y")
 

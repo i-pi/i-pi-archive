@@ -79,12 +79,14 @@ def banner():
 def info(text="", show=True ):
    """Prints a warning message."""
 
-   if not show: return
+   if not show:
+      return
    print text
 
 def warning(text="", show=True):
    """Prints a warning message."""
-   if not show: return
+   if not show:
+      return
    if verbosity.debug:
       traceback.print_stack(file=sys.stdout)
-   print " !W! "+text
+   print " !W! " + text

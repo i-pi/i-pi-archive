@@ -15,6 +15,7 @@ import math
 from utils.depend import *
 from utils import units
 from utils import nmtransform
+from utils.messages import verbosity, warning, info
 
 __all__ = [ "NormalModes" ]
 
@@ -261,7 +262,7 @@ class NormalModes(dobject):
       dmf[:] = 1.0
       if self.mode == "rpmd":
          if len(self.nm_freqs) > 0:
-            print "Warning: nm.frequencies will be ignored for RPMD mode."
+            warning("nm.frequencies will be ignored for RPMD mode.", verbosity.low)
       elif self.mode == "manual":
          if len(self.nm_freqs) != self.nbeads-1:
             raise ValueError("Manual path mode requires <frequencies> to contain (nbeads-1) frequencies, one for each internal mode of the path.")
@@ -270,16 +271,16 @@ class NormalModes(dobject):
             dmf[b] = sk**2
       elif self.mode == "pa-cmd":
          if len(self.nm_freqs) > 1:
-            print "Warning: only the first element in nm.frequencies will be considered for PA-CMD mode."
+            warning("Only the first element in nm.frequencies will be considered for PA-CMD mode.", verbosity.low)
          if len(self.nm_freqs) == 0:
             raise ValueError("PA-CMD mode requires <frequencies> to contain the target frequency of all the internal modes.")
          for b in range(1, self.nbeads):
             sk = self.omegak[b]/self.nm_freqs[0]
-            print "NM FACTOR ", b, sk, self.omegak[b], self.nm_freqs[0]
+            info("NM FACTOR " + str(b) + str(sk) + str(self.omegak[b]) + str(self.nm_freqs[0]), verbosity.medium)
             dmf[b] = sk**2
       elif self.mode == "wmax-cmd":
          if len(self.nm_freqs) > 2:
-            print "Warning: only the first two element in nm.frequencies will be considered for WMAX-CMD mode."
+            warning("Only the first two element in nm.frequencies will be considered for WMAX-CMD mode.", verbosity.low)
          if len(self.nm_freqs) < 2:
             raise ValueError("WMAX-CMD mode requires <frequencies> to contain [wmax, wtarget]. The normal modes will be scaled such that the first internal mode is at frequency wtarget and all the normal modes coincide at frequency wmax.")
          wmax = self.nm_freqs[0]

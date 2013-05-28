@@ -116,7 +116,7 @@ class Initializer(dobject):
          rcell = None  # the values 'read' from the restart file.
          rbeads = Beads(0,0)
 
-         info(" # inizializer parsing "+ str(k) + " object.", verbosity.high)
+         info(" # inizializer parsing " + str(k) + " object.", verbosity.high)
          if k == "file"  or k == "file_v" or k == "file_p":
             # initialize from file (positions, velocities or momenta)
             # in this case 'v' is a InitFile instance.
@@ -146,8 +146,6 @@ class Initializer(dobject):
                   if k == "file" and rcell is None:
                      mycell.h *= unit_to_internal("length",v.units,1.0)
                      rcell = mycell
-
-
 
             elif (v.format == "chk" or v.format == "checkpoint"):
                # reads configuration from a checkpoint file
@@ -217,9 +215,9 @@ class Initializer(dobject):
 
          if k == "beads":
             rbeads = v
-            print "names ", v.names
-            print "vq", v.m
-            print "uq", np.linalg.norm(v.q)
+            info("names " + str(v.names), verbosity.high)
+            info("vq" + str(v.m), verbosity.high)
+            info("uq" + str(np.linalg.norm(v.q)), verbosity.high)
 
             if rbeads.nbeads == self.nbeads:
                gbeads = rbeads
