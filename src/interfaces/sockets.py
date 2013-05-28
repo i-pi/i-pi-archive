@@ -23,6 +23,7 @@ Exceptions:
 
 __all__ = ['InterfaceSocket']
 
+import sys
 import socket, select, threading, signal, string, os, time
 from utils.depend import depstrip
 from utils.messages import verbosity, warning, info
@@ -548,9 +549,9 @@ class InterfaceSocket(object):
                if self.timeout > 0 and r["start"] > 0 and time.time() - r["start"] > self.timeout:
                   warning(" @SOCKET:  Timeout! HASDATA for bead "+str( r["id"])+ " has been running for "+str( time.time() - r["start"]), verbosity.low)
                   try:
+                     warning(" @SOCKET:   Client " + str(c.peername) +" died or got unresponsive(A). Removing from the list.", verbosity.low)
                      c.shutdown(socket.SHUT_RDWR)
                      c.close()
-                     warning(" @SOCKET:   Client " + str(c.peername) +" died or got unresponsive(A). Removing from the list.", verbosity.low)
                   except:
                      pass
                   c.status = 0
@@ -571,8 +572,9 @@ class InterfaceSocket(object):
                c.shutdown(socket.SHUT_RDWR)
                c.close()
                c.poll()
-            except:
-               pass
+            except: # print some more detailed information
+               e = sys.exc_info()[0]
+               print "<p>Error: %s</p>" % e
             c.status = 0
 
       freec = self.clients[:]
