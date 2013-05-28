@@ -53,7 +53,7 @@ Now it is possible to specify units and a short help string.
 DONE * Multiforce object should be implemented. (JM) (JM)
 
 DONE *** Write a very clean driver for LJ and SG for examples (JM) (JM)
-*** Test NPT on the pH2 system (JM) (JM)
+DONE *** Test NPT on the pH2 system (JM) (JM)
 
 *   Implement NST (MC) (MC)
 

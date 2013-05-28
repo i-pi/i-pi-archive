@@ -337,7 +337,7 @@ class Properties(dobject):
       pkey = self.property_dict[key]
 
       #pkey["func"](*arglist,**kwarglist) gives the value of the property 
-      #in atomic units unit_to_user returns the value in the user 
+      #in atomic units. unit_to_user() returns the value in the user 
       #specified units.
       if "dimension" in pkey and unit != "":
          return  unit_to_user(pkey["dimension"], unit, pkey["func"](*arglist,**kwarglist))
@@ -359,9 +359,9 @@ class Properties(dobject):
       atom = int(atom)
       bead = int(bead)
       if bead < 0:
-         return self.beads.centroid[atom].q
+         return self.beads.centroid.q[3*atom:3*(atom+1)]
       else:
-         return self.beads[bead][atom].q
+         return self.beads.q[bead,3*atom:3*(atom+1)]
 
    def get_atomv(self, atom="", bead="-1"):
       """Gives the velocity vector of one atom.
@@ -374,13 +374,13 @@ class Properties(dobject):
       """
 
       if atom == "":
-         raise ValueError("Must specify the index for atom_x property")
+         raise ValueError("Must specify the index for atom_v property")
       atom = int(atom)
       bead = int(bead)
       if bead < 0:
-         return self.beads.centroid[atom].p/ self.beads.m[atom]
+         return self.beads.centroid.p[3*atom:3*(atom+1)]/self.beads.m[atom]
       else:
-         return self.beads[bead][atom].p/ self.beads.m[atom]
+         return self.beads.p[bead,3*atom:3*(atom+1)]/self.beads.m[atom]
 
    def get_temp(self, atom=""):
       """Calculates the MD kinetic temperature.
@@ -398,7 +398,6 @@ class Properties(dobject):
          mdof = 3
       else:
          mdof = 0
-
 
       if atom == "":
          # use the KE computed in the NM representation in order to avoid problems when mass scaling is used
@@ -928,7 +927,6 @@ class Properties(dobject):
 
          logr = (alpha-1)*spr/(Constants.kb*self.simul.ensemble.temp*self.beads.nbeads)
 
-
          atcv += tcv
          atcv2 += tcv*tcv
          alogr += logr
@@ -1092,7 +1090,7 @@ class Trajectories(dobject):
       pkey = self.traj_dict[key]
 
       #pkey["func"](*arglist,**kwarglist) gives the value of the trajectory 
-      #in atomic units unit_to_user returns the value in the user 
+      #in atomic units. unit_to_user() returns the value in the user 
       #specified units.
       if "dimension" in pkey and unit != "":
          return  unit_to_user(pkey["dimension"], unit, 1.0) * pkey["func"](*arglist,**kwarglist)
