@@ -96,7 +96,7 @@ class Cell(dobject):
 
       s = np.dot(depstrip(self.h),s).T
 
-      pos = s.reshape((len(s)*3))
+      pos[:] = s.reshape((len(s)*3))
 
    def minimum_distance(self, atom1, atom2):
       """Takes two atoms and tries to find the smallest vector between two

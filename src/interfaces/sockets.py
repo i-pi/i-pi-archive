@@ -23,6 +23,7 @@ Exceptions:
 
 __all__ = ['InterfaceSocket']
 
+import sys
 import socket, select, threading, signal, string, os, time
 from utils.depend import depstrip
 from utils.messages import verbosity, warning, info
@@ -121,6 +122,7 @@ class DriverSocket(socket.socket):
    def poll(self):
       """Waits for driver status."""
 
+      self.status = Status.Disconnected  # sets disconnected as failsafe status, in case _getstatus fails and exceptions are ignored upstream
       self.status = self._getstatus()
 
    def _getstatus(self):
@@ -449,6 +451,7 @@ class InterfaceSocket(object):
       pbcpos = depstrip(atoms.q).copy()
       if self.dopbc:
          cell.array_pbc(pbcpos)
+         
 
       newreq = {"pos": pbcpos, "cell": cell, "pars": par_str,
                 "result": None, "status": "Queued", "id": reqid,
@@ -548,9 +551,10 @@ class InterfaceSocket(object):
                if self.timeout > 0 and r["start"] > 0 and time.time() - r["start"] > self.timeout:
                   warning(" @SOCKET:  Timeout! HASDATA for bead "+str( r["id"])+ " has been running for "+str( time.time() - r["start"]), verbosity.low)
                   try:
+                     warning(" @SOCKET:   Client " + str(c.peername) +" died or got unresponsive(A). Removing from the list.", verbosity.low)
+                     c.status = Status.Disconnected
                      c.shutdown(socket.SHUT_RDWR)
                      c.close()
-                     warning(" @SOCKET:   Client " + str(c.peername) +" died or got unresponsive(A). Removing from the list.", verbosity.low)
                   except:
                      pass
                   c.status = 0
@@ -571,8 +575,9 @@ class InterfaceSocket(object):
                c.shutdown(socket.SHUT_RDWR)
                c.close()
                c.poll()
-            except:
-               pass
+            except: # print some more detailed information
+               e = sys.exc_info()[0]
+               print "<p>Error: %s</p>" % e
             c.status = 0
 
       freec = self.clients[:]
@@ -602,10 +607,7 @@ class InterfaceSocket(object):
                elif match_ids == "free" and fc.locked:
                   continue
 
-#               try:
-#                  print " @SOCKET: Assigning [",match_ids,"] request id ", r["id"], " to client with last-id ", fc.lastreq, "(",self.clients.index(fc),"/",len(self.clients),":",fc.peername,")"
-#               except:
-#                  pass
+               info(" @SOCKET: Assigning [%5s] request id %4s to client with last-id %4s (% 3d/% 3d : %s)" % (match_ids,  str(r["id"]),  str(fc.lastreq), self.clients.index(fc), len(self.clients), str(fc.peername) ), verbosity.high )
 
                while fc.status & Status.Busy:
                   fc.poll()
