@@ -276,9 +276,9 @@ class Properties(dobject):
                       "help": "Gives the kinetic energy associated with the additional degrees of freedom used in the GLE thermostat. Takes an argument 'mode' which gives the degree of freedom that is looked at, and defaults to 0.",
                       'func': self.get_gleke},
 #This is currently horribly messy, and should probably be removed.
-      "kin_yama": {   "dimension": "energy",
-                      "help": "Gives the Yamamoto kinetic energy estimator. Takes one argument, 'fd_delta', which gives the value of the finite difference parameter used. It defaults to " + str(-self._DEFAULT_FINDIFF) + ".",
-                      'func': self.get_kinyama},
+      "yamamoto": {   "help": "Gives the estimators required to calculate the Yamamoto finite difference approximation to the kinetic energy and constant volume heat capacity. Returns eps_v and eps_v', as defined in Takeshi M. Yamamoto, Journal of Chemical Physics, 104101, 123 (2005). As the two estimators have a different dimension, this can only be output in atomic units. Takes one argument, 'fd_delta', which gives the value of the finite difference parameter used. It defaults to " + str(-self._DEFAULT_FINDIFF) + ". If the value of 'fd_delta' is negative, then its magnitude will be reduced automatically by the code if the finite difference error becomes too large.",
+                      'func': self.get_yama_estimators,
+                      "size": 2},
       "isotope_scfep":  {"dimension": "undefined",
                       "size": 7,
                       'func': self.get_isotope_yama,
@@ -711,11 +711,16 @@ class Properties(dobject):
                gleke += s[mode, i, alpha]**2/2.0
       return gleke
 
-   def get_kinyama(self, fd_delta= - _DEFAULT_FINDIFF):
+   def get_yama_estimators(self, fd_delta= - _DEFAULT_FINDIFF):
       """Calculates the quantum scaled coordinate kinetic energy estimator.
 
-      Uses a finite difference method to calculate the kinetic energy estimator
-      without requiring the forces as for the centroid virial estimator.
+      Uses a finite difference method to calculate the estimators
+      needed to calculate the energy and heat capacity of the system, as
+      shown in Takeshi M. Yamamoto, Journal of Chemical Physics,
+      104101, 123 (2005). Returns both eps_v and eps_v' as defined in
+      the above article. Note that heat capacity is calculated as
+      beta**2*kboltzmann*(<eps_v**2> - <eps_v>**2 - <eps_v'>), and the 
+      energy of the system as <eps_v>.
 
       Args:
          fd_delta: the relative finite difference in temperature to apply in
@@ -724,31 +729,37 @@ class Properties(dobject):
       """
 
       dbeta = abs(float(fd_delta))
+      beta = 1.0/(Constants.kb*self.ensemble.temp)
 
+      qc = depstrip(self.beads.centroid.q)
+      q = depstrip(self.beads.q)
       v0 = self.forces.pot/self.beads.nbeads
       while True:
          splus = math.sqrt(1.0 + dbeta)
          sminus = math.sqrt(1.0 - dbeta)
 
          for b in range(self.beads.nbeads):
-            self.dbeads[b].q = self.beads.centroid.q*(1.0 - splus) + splus*self.beads[b].q
+            self.dbeads[b].q = qc*(1.0 - splus) + splus*q[b,:]
          vplus = self.dforces.pot/self.beads.nbeads
 
          for b in range(self.beads.nbeads):
-            self.dbeads[b].q = self.beads.centroid.q*(1.0 - sminus) + sminus*self.beads[b].q
+            self.dbeads[b].q = qc*(1.0 - sminus) + sminus*q[b,:]
          vminus = self.dforces.pot/self.beads.nbeads
-
-         kyama = ((1.0 + dbeta)*vplus - (1.0 - dbeta)*vminus)/(2*dbeta) - v0
-         kyama += 0.5*Constants.kb*self.ensemble.temp*(3*self.beads.natoms)
 
          if (fd_delta < 0 and abs((vplus + vminus)/(v0*2) - 1.0) > self._DEFAULT_FDERROR and dbeta > self._DEFAULT_MINFID):
             dbeta *= 0.5
             info("Reducing displacement in Yamamoto kinetic estimator", verbosity.low)
             continue
          else:
+            eps = ((1.0 + dbeta)*vplus - (1.0 - dbeta)*vminus)/(2*dbeta)
+            eps += 0.5*(3*self.beads.natoms)/beta
+
+            eps_prime = ((1.0 + dbeta)*vplus + (1.0 - dbeta)*vminus - 2*v0)/(dbeta**2*beta)
+            eps_prime -= 0.5*(3*self.beads.natoms)/beta**2
+
             break
 
-      return kyama
+      return np.asarray([eps, eps_prime])
 
    def wrap_cell(self, x=0, v=0):
       """Returns the the x-th component of the v-th cell vector."""

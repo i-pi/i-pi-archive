@@ -8,6 +8,7 @@ Classes:
 """
 
 import re
+from utils.messages import verbosity, info
 
 __all__ = ['Constants', 'Elements', 'unit_to_internal', 'unit_to_user']
 
@@ -178,7 +179,7 @@ class Elements(dict):
       try:
          return cls.mass_list[label]*Constants.amu
       except KeyError:
-         print "Unknown element given, you must specify the mass"
+         info("Unknown element given, you must specify the mass", verbosity.low)
          return -1.0
 
 # these are the conversion FROM the unit stated to internal (atomic) units

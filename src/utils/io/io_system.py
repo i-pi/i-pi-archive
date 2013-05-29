@@ -13,10 +13,10 @@ def xml_write(atoms, cell, namedpipe):
    namedpipe.write("<System>\n")
    namedpipe.write(tab + "<natoms>" + str(len(atoms)) + "</natoms>\n")
 
-   nat=len(atoms)
-   qx=atoms.q[0:3*nat:3].view(np.ndarray)
-   qy=atoms.q[1:3*nat:3].view(np.ndarray)
-   qz=atoms.q[2:3*nat:3].view(np.ndarray)   
+   nat = len(atoms)
+   qx = atoms.q[0:3*nat:3].view(np.ndarray)
+   qy = atoms.q[1:3*nat:3].view(np.ndarray)
+   qz = atoms.q[2:3*nat:3].view(np.ndarray)   
 
    for i in range(nat):
       namedpipe.write(tab + "<Atom_vec>\n")

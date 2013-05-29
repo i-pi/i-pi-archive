@@ -25,6 +25,7 @@ __all__ = ['matrix_exp', 'stab_cholesky', 'h2abc', 'abc2h', 'invert_ut3x3',
 
 import numpy as np
 import math
+from utils.messages import verbosity, warning
 
 def logsumlog(lasa, lbsb):
    """Computes log(|A+B|) and sign(A+B) given log(|A|), log(|B|), 
@@ -122,7 +123,7 @@ def stab_cholesky(M):
       if (D[i]>0):
          D[i] = math.sqrt(D[i])
       else:
-         print " # stab-cholesky warning: zeroing negative element ", D[i]
+         warning("Zeroing negative element in stab-cholesky decomposition: " + str(D[i]), verbosity.low)
          D[i] = 0 
       for j in range(i+1):
          S[i,j] += L[i,j]*D[j]
@@ -300,7 +301,7 @@ def root_herm(A):
       if eigvals[i] >= 0:
          diag[i,i] = math.sqrt(eigvals[i])
       else:
-         print " # matrix square root warning: zeroing negative element ", eigvals[i]
+         warning("Zeroing negative element in matrix square root: " + str(eigvals[i]), verbosity.low)
          diag[i,i] = 0
    return np.dot(eigvecs, np.dot(diag, eigvecs.T))
 

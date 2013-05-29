@@ -42,6 +42,7 @@ __all__ = ['depend_base', 'depend_value', 'depend_array', 'synchronizer',
            'dobject', 'dget', 'dset', 'depstrip', 'depcopy', 'deppipe']
 
 import numpy as np
+from utils.messages import verbosity, warning
 
 class synchronizer(object):
    """Class to implement synched objects.
@@ -229,11 +230,11 @@ class depend_base(object):
          if (not self._name == self._synchro.manual):
             self.set(self._func[self._synchro.manual](), manual=False)
          else:
-            print "####" + self._name + " probably shouldn't be tainted (synchro)!"
+            warning(self._name + " probably shouldn't be tainted (synchro)", verbosity.low)
       elif not self._func is None:
          self.set(self._func(), manual=False)
       else:
-         print "####" + self._name + " probably shouldn't be tainted (value)!"
+         warning(self._name + " probably shouldn't be tainted (value)", verbosity.low)
 
    def update_man(self):
       """Manual update routine.
