@@ -449,6 +449,7 @@ class InterfaceSocket(object):
       pbcpos = depstrip(atoms.q).copy()
       if self.dopbc:
          cell.array_pbc(pbcpos)
+         
 
       newreq = {"pos": pbcpos, "cell": cell, "pars": par_str,
                 "result": None, "status": "Queued", "id": reqid,
