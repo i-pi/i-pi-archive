@@ -6,11 +6,12 @@ Classes:
    InputInitFile: Initializes the classes that initialize the simulation data
       from a file.
 """
-
+import numpy as np
 from utils.inputvalue import *
 from copy import copy
 from inputs.beads import InputBeads
 from inputs.cell import InputCell
+from utils.io import io_xml
 import engine.initializer as ei
 
 __all__ = ['InputInitializer', 'InputInitFile']
@@ -59,6 +60,144 @@ class InputInitFile(InputValue):
       return ei.InitFile(filename=super(InputInitFile,self).fetch(), format=self.format.fetch(),
                          units=self.units.fetch(), cell_units=self.cell_units.fetch() )
 
+class InputInitBase(InputValue):
+   """Base class to handle input.
+
+   Attributes:
+      format: The format of the file to read data from.
+   """
+
+   attribs = copy(InputValue.attribs)
+   attribs["mode"] =     (InputAttribute,{ "dtype" : str, "default": "array", "help": "The input file format. 'xyz' and 'pdb' stand for xyz and pdb input files respectively. 'chk' and 'checkpoint' are both aliases for input from a restart file.", "options": ['array', 'list', 'value', 'string']} )
+
+   default_label = "INITBASE"
+   default_help = "This is the base class for initialization. Initializers for different aspects of the simulation can be inherit for it for the base methods."
+
+   def __init__(self, help=None, default=None, dtype=None, dimension=None):
+      """Initializes InputInitFile.
+
+      Just calls the parent initialize function with appropriate arguments.
+      """
+
+      super(InputInitBase,self).__init__(dtype=str, dimension=dimension, default=default, help=help)
+
+   def store(self, ibase, mode=None):
+      """Takes a InitBase instance and stores a minimal representation of it.
+
+      Args:
+         ibase: An input base object.
+      """
+
+      if mode is None: mode = ibase.mode
+      if mode == "array" or mode == "list":
+         value = io_xml.write_list(ibase.value)
+      elif mode == "value":
+         value = str(ibase.value)
+      elif mode == "string":
+         value = ibase.value
+
+      super(InputInitBase,self).store(value, units=ibase.units)
+      self.mode.store(ibase.mode)
+
+   def fetch(self, mode=None):
+      """Creates an input base object.
+
+      Returns:
+         An input base object.
+      """
+
+      if mode is None : mode = self.mode.fetch()
+      value = super(InputInitBase,self).fetch()
+      if mode == "list":
+         value = io_xml.read_list(value)
+      if mode == "array":
+         value = io_xml.read_array(np.float, value)
+      elif mode == "value":
+         value = float(value)
+      elif mode == "string":
+         value = str(value)  # typically this will be a no-op
+
+      return ei.InitBase(value=value, mode=mode, units=self.units.fetch())
+
+class InputInitVector(InputInitBase):
+
+   attribs = copy(InputInitBase.attribs)
+   attribs["index"] =     (InputAttribute,{ "dtype" : int, "default": -1, "help": "The index of the atom of which we are to set the coordinate." } )
+   attribs["bead"]  =     (InputAttribute,{ "dtype" : int, "default": -1, "help": "The index of the bead of which we are to set the coordinate." } )
+   attribs["mode"] =     (InputAttribute,{ "dtype" : str, "default": "manual", "help": "The input file format. 'xyz' and 'pdb' stand for xyz and pdb input files respectively. 'chk' and 'checkpoint' are both aliases for input from a restart file.", "options": ['manual', 'atom', 'xyz', 'pdb', 'chk']} )
+
+
+   default_label = "INITVECTOR"
+   default_help = "This is a helper class to initialize a vector."
+
+   initclass = None
+
+   def store(self, ipos):
+
+      if ipos.mode == "manual" or ipos.mode == "atom":
+         super(InputInitVector,self).store(ipos, "manual")
+      else:
+         super(InputInitVector,self).store(ipos, "string")
+
+      self.index.store(ipos.index)
+      self.bead.store(ipos.bead)
+
+   def check(self):
+
+      if self.mode.fetch() == "atom" and self.index.fetch()<0:
+         raise ValueError("Atom initialization requires index to be specified")
+      elif self.mode.fetch() != "atom" and self.index.fetch()>=0:
+         raise ValueError("Index makes sense only with atom initialization")
+      super(InputInitVector,self).check()
+
+   def fetch(self):
+
+      mode = self.mode.fetch()
+      if mode == "manual" or mode == "atom":
+         ibase=super(InputInitVector,self).fetch("manual")
+      else:
+         ibase=super(InputInitVector,self).fetch("string")
+
+      return self.initclass(value=ibase.value, mode=mode, units=self.units.fetch(), index=self.index.fetch(), bead=self.bead.fetch())
+
+class InputInitPositions(InputInitVector):
+
+   attribs = copy(InputInitVector.attribs)
+
+   default_label = "INITPOSITIONS"
+   default_help = "This is the class to initialize positions."
+
+   initclass = ei.InitPositions
+
+class InputInitVelocities(InputInitVector):
+
+   attribs = copy(InputInitVector.attribs)
+   attribs["mode"][1]["options"].append( "thermal" )
+
+   default_label = "INITVELOCITIES"
+   default_help = "This is the class to initialize velocities."
+
+   initclass = ei.InitVelocities
+
+class InputInitMomenta(InputInitVector):
+
+   attribs = copy(InputInitVector.attribs)
+   attribs["mode"][1]["options"].append( "thermal" )
+
+   default_label = "INITMOMENTA"
+   default_help = "This is the class to initialize momenta."
+
+   initclass = ei.InitMomenta
+
+class InputInitCell(InputInitBase):
+
+   attribs = copy(InputInitBase.attribs)
+   attribs["mode"][1]["options"]= ['manual', 'pdb', 'chk']
+
+   default_label = "INITCELL"
+   default_help = "This is the class to initialize cell."
+
+   initclass = ei.InitMomenta
 
 class InputInitializer(Input):
    """Input class to handle initialization.
@@ -74,8 +213,13 @@ class InputInitializer(Input):
             }
 
    dynamic = {
+           "positions"  : (InputInitPositions, { "help" : "Initializes atomic positions" }),
+           "velocities" : (InputInitVelocities, { "help" : "Initializes atomic velocities" }),
+           "momenta"    : (InputInitMomenta, { "help" : "Initializes atomic momenta" }),
+
            "beads" : (InputBeads, { "help" : "Initializes the configuration of the path from a Beads object" }),
            "cell" : (InputCell, { "help" : "Initializes the configuration of the cell from a Cell object" }),
+
            "file" : (InputInitFile, {"help" : "Initializes bead(s) and cell configuration from an external file" }),
            "file_v" : (InputInitFile, {"help" : "Initializes bead(s) velocities from an external file" }),
            "file_p" : (InputInitFile, {"help" : "Initializes bead(s) momenta from an external file" }),
