@@ -329,7 +329,6 @@ class Initializer(dobject):
                simul.beads.resize(natoms,self.nbeads)
 
             set_vector(v, simul.beads.q, rq)
-            print rq[0], simul.beads.q[0]
             fpos = True
 
          elif (k == "velocities" or k == "momenta") and v.mode == "thermal" :   # intercept here thermal initialization, so we don't need to check further down

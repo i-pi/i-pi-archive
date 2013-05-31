@@ -147,7 +147,7 @@ class InputInitVector(InputInitBase):
       self.index.store(ipos.index)
       self.bead.store(ipos.bead)
 
-   def fetch(self):
+   def fetch(self, initclass=None):
 
       mode = self.mode.fetch()
       if mode == "manual":
@@ -158,7 +158,9 @@ class InputInitVector(InputInitBase):
       else:
          ibase=super(InputInitVector,self).fetch("string")
 
-      return self._initclass(value=ibase.value, mode=mode, units=self.units.fetch(), index=self.index.fetch(), bead=self.bead.fetch())
+      if initclass is None:
+         initclass = self._initclass
+      return initclass(value=ibase.value, mode=mode, units=self.units.fetch(), index=self.index.fetch(), bead=self.bead.fetch())
 
 class InputInitPositions(InputInitVector):
 
@@ -287,6 +289,7 @@ class InputInitializer(Input):
            "masses"    : (InputInitMasses, { "help" : "Initializes atomic masses" }),
            "labels"    : (InputInitLabels, { "help" : "Initializes atomic labels" }),
            "cell" :     (InputInitCell, { "help" : "Initializes the configuration of the cell" }),
+           "all" :      (InputInitVector, { "help" : "Initializes everything possible for the given mode" }),
 
            "beads" : (InputBeads, { "help" : "Initializes the configuration of the path from a Beads object" }),
 
@@ -321,6 +324,7 @@ class InputInitializer(Input):
 
       self.extra = []
 
+      # TODO: this is broken!
       for (k, el) in ii.queue:
          if k == "file" :
             ip = InputInitFile()
@@ -358,5 +362,22 @@ class InputInitializer(Input):
 
       super(InputInitializer,self).fetch()
 
-      return ei.Initializer(self.nbeads.fetch(), [ (k,v.fetch())  for (k,v) in self.extra ] )
+      initlist = []
+      for (k,v) in self.extra:
+         if k == "all":
+            mode = v.mode.fetch()
+            if mode == "xyz" or mode == "manual" or mode == "pdb" or mode == "chk":
+               initlist.append( ( "positions", v.fetch(initclass=ei.InitPositions) ) )
+            if mode == "xyz" or mode == "pdb" or mode == "chk":
+               rm=v.fetch(initclass=ei.InitMasses); rm.units = ""
+               initlist.append( ( "masses",   rm ) )
+               initlist.append( ( "labels",   v.fetch(initclass=ei.InitLabels) ) )
+            if mode == "pdb" or mode == "chk":
+               initlist.append( ( "cell", InputInitCell(base=v).fetch() ) )
+            if mode == "chk":
+               initlist.append( ( "momenta", InputInitMomenta(base=v).fetch() ) )
+         else:
+            initlist.append( (k, v.fetch()) )
+      print initlist
+      return ei.Initializer(self.nbeads.fetch(), initlist )
 
