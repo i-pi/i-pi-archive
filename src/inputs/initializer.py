@@ -15,51 +15,7 @@ from utils.io import io_xml
 import utils.mathtools as mt
 import engine.initializer as ei
 
-__all__ = ['InputInitializer', 'InputInitFile']
-
-class InputInitFile(InputValue):
-   """Class to handle input from file.
-
-   Attributes:
-      format: The format of the file to read data from.
-   """
-
-   attribs = copy(InputValue.attribs)
-   attribs["cell_units"] = (InputAttribute,{ "dtype" : str, "default": "",
-                                       "help": "The units for the cell dimensions." } )
-   attribs["format"] =     (InputAttribute,{ "dtype" : str, "default": "xyz", "help": "The input file format. 'xyz' and 'pdb' stand for xyz and pdb input files respectively. 'chk' and 'checkpoint' are both aliases for input from a restart file.", "options": ['xyz', 'pdb', 'chk', 'checkpoint']} )
-
-   default_label = "INITFILE"
-   default_help = "This is a simple utility class to deal with initialization from file. Holds all the data needed to open the file and read its contents. The data held between its tags corresponds the the name of the file."
-
-   def __init__(self, help=None, default=None, dtype=None, dimension=None):
-      """Initializes InputInitFile.
-
-      Just calls the parent initialize function with appropriate arguments.
-      """
-
-      super(InputInitFile,self).__init__(dtype=str, dimension=dimension, default=default, help=help)
-
-   def store(self, iif):
-      """Takes a InitFile instance and stores a minimal representation of it.
-
-      Args:
-         iif: An input file object.
-      """
-
-      super(InputInitFile,self).store(iif.filename, units=iif.units)
-      self.format.store(iif.format)
-      self.cell_units.store(iif.cell_units)
-
-   def fetch(self):
-      """Creates an input file object.
-
-      Returns:
-         An input file object.
-      """
-
-      return ei.InitFile(filename=super(InputInitFile,self).fetch(), format=self.format.fetch(),
-                         units=self.units.fetch(), cell_units=self.cell_units.fetch() )
+__all__ = ['InputInitializer', 'InputInitPositions', 'InputInitMomenta', 'InputInitVelocities', 'InputInitMasses', 'InputInitLabels', 'InputInitCell']
 
 class InputInitBase(InputValue):
    """Base class to handle input.
@@ -255,18 +211,31 @@ class InputInitMasses(InputInitVector):
    default_label = "INITMASSES"
    default_help = "This is the class to initialize atomic masses."
 
+   def fetch(self, initclass=None):
+
+      mode = self.mode.fetch()
+      print "mode", mode, " index", self.index.fetch()
+      if mode == "manual" and self.index.fetch()<0:
+         ibase=super(InputInitMasses,self).fetch()
+      else:
+         ibase=super(InputInitVector,self).fetch("string")
+         if mode == "manual": ibase.value=self._storageclass(ibase.value)
+
+      if initclass is None:
+         initclass = self._initclass
+      return initclass(value=ibase.value, mode=mode, units=ibase.units, index=self.index.fetch(), bead=self.bead.fetch())
+
    _initclass = ei.InitMasses
 
-class InputInitLabels(InputInitVector):
+class InputInitLabels(InputInitMasses):
 
-   attribs = deepcopy(InputInitVector.attribs)
-   attribs["mode"][1]["options"]= ['manual', 'xyz', 'pdb', 'chk']
+   attribs = deepcopy(InputInitMasses.attribs)
 
    default_label = "INITLABELS"
    default_help = "This is the class to initialize atomic labels."
 
    _storageclass = str
-   _initclass = ei.InitMomenta
+   _initclass = ei.InitLabels
 
 
 class InputInitializer(Input):
@@ -286,21 +255,12 @@ class InputInitializer(Input):
            "positions"  : (InputInitPositions, { "help" : "Initializes atomic positions" }),
            "velocities" : (InputInitVelocities, { "help" : "Initializes atomic velocities" }),
            "momenta"    : (InputInitMomenta, { "help" : "Initializes atomic momenta" }),
-           "masses"    : (InputInitMasses, { "help" : "Initializes atomic masses" }),
-           "labels"    : (InputInitLabels, { "help" : "Initializes atomic labels" }),
-           "cell" :     (InputInitCell, { "help" : "Initializes the configuration of the cell" }),
-           "all" :      (InputInitVector, { "help" : "Initializes everything possible for the given mode" }),
+           "masses"     : (InputInitMasses, { "help" : "Initializes atomic masses" }),
+           "labels"     : (InputInitLabels, { "help" : "Initializes atomic labels" }),
+           "cell"       :     (InputInitCell, { "help" : "Initializes the configuration of the cell" }),
+           "file"       :      (InputInitVector, { "help" : "Initializes everything possible for the given mode" }),
 
-           "beads" : (InputBeads, { "help" : "Initializes the configuration of the path from a Beads object" }),
-
-
-           "file" : (InputInitFile, {"help" : "Initializes bead(s) and cell configuration from an external file" }),
-           "file_v" : (InputInitFile, {"help" : "Initializes bead(s) velocities from an external file" }),
-           "file_p" : (InputInitFile, {"help" : "Initializes bead(s) momenta from an external file" }),
-           "resample_v" : (InputValue, {"dimension": "temperature",
-                                        "dtype" : float,
-                           "help" : "Re-sample the beads' velocities from a Maxwell distribution at the given temperature - or the ensemble temperature if a negative temperature is specified.", "default": -1.0})
-           }
+            }
 
    default_help = "Specifies the number of beads, and how the system should be initialized."
    default_label = "INITIALIZER"
@@ -324,32 +284,26 @@ class InputInitializer(Input):
 
       self.extra = []
 
-      # TODO: this is broken!
       for (k, el) in ii.queue:
-         if k == "file" :
-            ip = InputInitFile()
+         if k == "positions" :
+            ip = InputInitPositions()
             ip.store(el)
-            self.extra.append(("file", ip))
-         elif k == "file_v" :
-            ip = InputInitFile()
+         elif k == "velocities" :
+            ip = InputInitVelocities()
             ip.store(el)
-            self.extra.append(("file_v", ip))
-         elif k == "file_p" :
-            ip = InputInitFile()
+         elif k == "momenta" :
+            ip = InputInitMomenta()
             ip.store(el)
-            self.extra.append(("file_p", ip))
-         elif k == "beads" :
-            ip = InputBeads()
+         elif k == "masses" :
+            ip = InputInitMasses()
             ip.store(el)
-            self.extra.append(("beads", ip))
+         elif k == "labels" :
+            ip = InputInitLabels()
+            ip.store(el)
          elif k == "cell" :
-            ip = InputCell()
+            ip = InputInitCell()
             ip.store(el)
-            self.extra.append(("cell", ip))
-         elif k == "resample_v" :
-            ip = InputValue(dtype=float)
-            ip.store(el)
-            self.extra.append(("resample_v", ip))
+         self.extra.append((k, ip))
 
       self.nbeads.store(ii.nbeads)
 
@@ -364,7 +318,7 @@ class InputInitializer(Input):
 
       initlist = []
       for (k,v) in self.extra:
-         if k == "all":
+         if k == "file":
             mode = v.mode.fetch()
             if mode == "xyz" or mode == "manual" or mode == "pdb" or mode == "chk":
                initlist.append( ( "positions", v.fetch(initclass=ei.InitPositions) ) )
@@ -373,9 +327,10 @@ class InputInitializer(Input):
                initlist.append( ( "masses",   rm ) )
                initlist.append( ( "labels",   v.fetch(initclass=ei.InitLabels) ) )
             if mode == "pdb" or mode == "chk":
-               initlist.append( ( "cell", InputInitCell(base=v).fetch() ) )
+               initlist.append( ( "cell", v.fetch(initclass=ei.InitCell) ) )
             if mode == "chk":
-               initlist.append( ( "momenta", InputInitMomenta(base=v).fetch() ) )
+               rm=v.fetch(initclass=ei.InitMomenta); rm.units = ""
+               initlist.append( ( "momenta", rm ) )
          else:
             initlist.append( (k, v.fetch()) )
       print initlist

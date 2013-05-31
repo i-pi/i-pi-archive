@@ -13,7 +13,7 @@ import engine.barostats
 from utils.inputvalue import *
 from inputs.barostats import *
 from inputs.thermostats import *
-from inputs.initializer import InputInitFile
+from inputs.initializer import *
 from utils.units import *
 
 __all__ = ['InputEnsemble']
@@ -65,7 +65,7 @@ class InputEnsemble(Input):
            "fixcom": (InputValue, {"dtype"           : bool,
                                    "default"         : True,
                                    "help"            : "This describes whether the centre of mass of the particles is fixed."}),
-           "replay_file": (InputInitFile, {"default"           : input_default(factory=engine.initializer.InitFile),
+           "replay_file": (InputInitPositions, {"default"           : input_default(factory=engine.initializer.InitPositions, kwargs= {'value' : ""}),
                                        "help"            : "This describes the location to read a trajectory file from."})
 
          }

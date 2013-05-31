@@ -103,6 +103,8 @@ def read_pdb(filedesc):
 
    header = filedesc.readline()
    if "TITLE" in header: header = filedesc.readline()   # skip the comment field
+   if header == "":
+      raise EOFError("End of file or empty header in PDB file")
 
    a = float(header[6:15])
    b = float(header[15:24])

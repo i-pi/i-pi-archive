@@ -495,8 +495,9 @@ class ReplayEnsemble(Ensemble):
       super(ReplayEnsemble,self).__init__(dt=dt,temp=temp,fixcom=fixcom)
       if intraj == None: raise ValueError("Must provide an initialized InitFile object to read trajectory from")
       self.intraj = intraj
-
-      self.rfile = open(self.intraj.filename,"r")
+      if intraj.mode == "manual":
+         raise ValueError("Replay can only read from PDB or XYZ files -- or a single fram from a CHK file")
+      self.rfile = open(self.intraj.value,"r")
 
    def step(self):
       """Does one simulation time step."""
@@ -505,21 +506,21 @@ class ReplayEnsemble(Ensemble):
       self.qtime = -time.time()
 
       try:
-         if (self.intraj.format == "xyz"):
+
+         if (self.intraj.mode == "xyz"):
             for b in self.beads:
                myatoms = read_xyz(self.rfile)
                myatoms.q *= unit_to_internal("length",self.intraj.units,1.0)
                b.q[:]=myatoms.q
-         elif (self.intraj.format == "pdb"):
+         elif (self.intraj.mode == "pdb"):
             for b in self.beads:
                myatoms, mycell = read_pdb(self.rfile)
                myatoms.q *= unit_to_internal("length",self.intraj.units,1.0)
-               mycell.h  *= unit_to_internal("length",self.intraj.cell_units,1.0)
+               mycell.h  *= unit_to_internal("length",self.intraj.units,1.0)
                b.q[:]=myatoms.q
             self.cell.h[:]=mycell.h
-         elif (self.intraj.format == "chk" or self.intraj.format == "checkpoint"):
+         elif (self.intraj.mode == "chk" or self.intraj.mode == "checkpoint"):
             # reads configuration from a checkpoint file
-            rfile = open(self.rfile,"r")
             xmlchk = xml_parse_file(self.rfile) # Parses the file.
 
             from inputs.simulation import InputSimulation
@@ -529,7 +530,8 @@ class ReplayEnsemble(Ensemble):
             mybeads = simchk.beads.fetch()
             self.cell.h[:]=mycell.h
             self.beads.q[:]=mybeads.q
-      except:
+            softexit.trigger(" # Read single checkpoint")
+      except EOFError:
          softexit.trigger(" # Finished reading re-run trajectory")
 
       self.qtime += time.time()
