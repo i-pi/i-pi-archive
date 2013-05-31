@@ -29,7 +29,7 @@ from utils.units import Constants, unit_to_internal
 from utils.nmtransform import nm_rescale
 from utils.messages import verbosity, warning, info
 
-__all__ = ['Initializer', 'InitFile', 'InitPositions']
+__all__ = ['Initializer', 'InitFile', 'InitPositions', 'InitCell']
 
 class InitFile(dobject):
    """Class that holds data about a particular input file.
@@ -72,8 +72,8 @@ class InitBase(dobject):
       self.mode = mode
       self.units = units
 
-class InitCoord(InitBase):
-   """Positions initializer object.
+class InitVector(InitBase):
+   """Vector initializer object.
 
    Attributes:
       value: A duck-typed stored value.
@@ -88,13 +88,16 @@ class InitCoord(InitBase):
          format: A string giving the extension of the file.
       """
 
-      super(InitCoord, self).__init__(value, mode, units)
+      super(InitVector, self).__init__(value, mode, units)
       self.index = index
       self.bead = bead
 
-class InitPositions(InitCoord) : pass
-class InitVelocities(InitCoord) : pass
-class InitMomenta(InitCoord) : pass
+class InitPositions(InitVector) : pass
+class InitVelocities(InitVector) : pass
+class InitMomenta(InitVector) : pass
+class InitMasses(InitVector) : pass
+class InitLabels(InitVector) : pass
+class InitCell(InitBase): pass
 
 def init_xyz(filename):
 
@@ -137,23 +140,35 @@ def init_chk(filename):
 
    return (rbeads, rcell)
 
-def init_vector(iif, nbeads):
+def init_beads(iif, nbeads):
    mode = iif.mode; value = iif.value
    if mode == "xyz" or mode == "pdb":
       if mode == "xyz": ratoms = init_xyz(value)
       if mode == "pdb": ratoms = init_pdb(value)[0]
-      rq = np.zeros( (len(ratoms), ratoms[0].natoms * 3), float)
-      for i in range(len(ratoms)):   rq[i] = ratoms[i].q
+      rbeads = Beads(ratoms[0].natoms,len(ratoms))
+      for i in range(len(ratoms)): rbeads[i]=ratoms[i]
    elif mode == "chk":
-      rq = init_chk(value)[0].q
-   elif mode == "manual" or mode == "atom" :
+      rbeads = init_chk(value)[0]
+   elif mode == "manual":
+      raise ValueError("Cannot initialize manually a whole beads object.")
+
+   return rbeads
+
+def init_vector(iif, nbeads, momenta=False):
+   mode = iif.mode; value = iif.value
+   if mode == "xyz" or mode == "pdb":
+      rq = init_beads(iif, nbeads).q
+   elif mode == "chk":
+      if momenta: rq = init_beads(iif, nbeads).p
+      else:       rp = init_beads(iif, nbeads).q
+   elif mode == "manual":
       rq = value
 
    # determines the size of the input data
    if (rq.ndim > 1): # if the input has information on the number of beads
       nbeads = len(rq)
       natoms = len(rq[0])/3
-   if mode == "manual" or mode == "atom":
+   if mode == "manual":
       if iif.bead>=0: # if there is a bead specifier then we return a single bead slice
          nbeads = 1
       natoms = len(rq)/nbeads/3
@@ -178,9 +193,9 @@ def set_vector(iif, dq, rq):
       if nbeads != dbeads:
          warning(" # Initialize is rescaling from %5d beads to %5d beads" % (nbeads, dbeads), verbosity.low)
       if iif.index < 0:
-         dq = res.b1tob2(rq)
+         dq[:] = res.b1tob2(rq)
       else: # we are initializing a specific atom
-         dq[:,3*iif.index:3*(iif.index+1)] = rq
+         dq[:,3*iif.index:3*(iif.index+1)] = res.b1tob2(rq)
    else:  # we are initializing a specific bead
       if iif.index < 0:
          dq[iif.bead] = rq
@@ -252,7 +267,57 @@ class Initializer(dobject):
          fpos = fmom = fmass = flab = fcell = True
       for (k,v) in self.queue:
          info(" # Inizializer parsing " + str(k) + " object.", verbosity.high)
-         if k == "positions":
+
+         if k == "cell":
+            if fcell : warning("Overwriting previous cell parameters", verbosity.medium)
+            if v.mode == "pdb":
+               rh = init_pdb(v.value)[1].h
+            elif v.mode == "chk":
+               rh = init_chk(v.value)[0].cell.h
+            else:
+               rh = v.value.reshape((3,3))
+            rh *= unit_to_internal("length",v.units,1.0)
+
+            simul.cell.h = rh
+            if simul.cell.V == 0.0:
+               ValueError("Cell provided has zero volume")
+
+            fcell = True
+         elif k == "masses":
+            if fmass : warning("Overwriting previous atomic masses", verbosity.medium)
+            if v.mode == "manual":
+               rm = v.value
+            else:
+               rm = init_beads(v, self.nbeads).m
+            rm *= unit_to_internal("mass",v.units,1.0)
+
+            if v.bead < 0:   # we are initializing the path
+               if v.index < 0:
+                  simul.beads.m = rm
+               else: # we are initializing a specific atom
+                  simul.beads.m[v.index:v.index+1] = rm
+            else:
+               raise ValueError("Cannot change the mass of a single bead")
+            fmass = True
+
+         elif k == "labels":
+            if flab : warning("Overwriting previous atomic labels", verbosity.medium)
+            if v.mode == "manual":
+               rn = v.value
+            else:
+               rn = init_beads(v, self.nbeads).names
+
+            if v.bead < 0:   # we are initializing the path
+               if v.index < 0:
+                  simul.beads.names = rn
+               else: # we are initializing a specific atom
+                  simul.beads.names[v.index:v.index+1] = rn
+            else:
+               raise ValueError("Cannot change the label of a single bead")
+            flab = True
+
+         elif k == "positions":
+            if fpos : warning("Overwriting previous atomic positions", verbosity.medium)
             # read the atomic positions as a vector
             rq = init_vector(v, self.nbeads)
             rq *= unit_to_internal("length",v.units,1.0)
@@ -260,25 +325,26 @@ class Initializer(dobject):
 
             # check if we must initialize the simulation beads
             if simul.beads.nbeads == 0:
-               if v.mode == "atom": raise ValueError("Cannot initialize single atoms before the size of the system is known")
+               if v.index >= 0: raise ValueError("Cannot initialize single atoms before the size of the system is known")
                simul.beads.resize(natoms,self.nbeads)
 
             set_vector(v, simul.beads.q, rq)
+            print rq[0], simul.beads.q[0]
             fpos = True
 
          elif (k == "velocities" or k == "momenta") and v.mode == "thermal" :   # intercept here thermal initialization, so we don't need to check further down
+            if fmom : warning("Overwriting previous atomic momenta", verbosity.medium)
             if simul.beads.natoms == 0:
                raise ValueError("Trying to resample velocities before having any structural information.")
             if not fmass:
                raise ValueError("Trying to resample velocities before having masses.")
 
             rtemp = v.value
-            if rtemp == "auto" or rtemp == "":
-               warning(" # Using the simulation temperature to resample velocities", verbosity.low)
+            if rtemp <= 0:
+               warning("Using the simulation temperature to resample velocities", verbosity.low)
                rtemp = simul.ensemble.temp
             else:
                warning(" # Resampling velocities at temperature %s" % rtemp, verbosity.low)
-               rtemp = float(rtemp)
 
             # TODO -- Initialize a single atom!
 
@@ -298,22 +364,23 @@ class Initializer(dobject):
             fmom = True
 
          elif k == "momenta":
-
+            if fmom : warning("Overwriting previous atomic momenta", verbosity.medium)
             # read the atomic momenta as a vector
-            rp = init_vector(v, self.nbeads)
+            rp = init_vector(v, self.nbeads, momenta = True)
             rp *= unit_to_internal("momentum",v.units,1.0)
             (nbeads, natoms) = rp.shape;   natoms = natoms/3
 
             # checks if we must initialize the simulation beads
             if simul.beads.nbeads == 0:
-               if v.mode == "atom": raise ValueError("Cannot initialize single atoms before the size of the system is known")
+               if v.index >=0 : raise ValueError("Cannot initialize single atoms before the size of the system is known")
                simul.beads.resize(natoms,self.nbeads)
 
+            rp *= np.sqrt(self.nbeads/nbeads)
             set_vector(v, simul.beads.p, rp)
             fmom = True
 
          elif k == "velocities":
-
+            if fmom : warning("Overwriting previous atomic momenta", verbosity.medium)
             # read the atomic velocities as a vector
             rv = init_vector(v, self.nbeads)
             rv *= unit_to_internal("velocity",v.units,1.0)
@@ -325,7 +392,8 @@ class Initializer(dobject):
                simul.beads.resize(natoms,self.nbeads)
 
             warning(" # Initializing from velocities uses the previously defined masses -- not the masses inferred from the file -- to build momenta", verbosity.low)
-            rv *= simul.beads.m
+            rv *= simul.beads.m3
+            rv *= np.sqrt(self.nbeads/nbeads)
             set_vector(v, simul.beads.p, rv)
             fmom = True
 
@@ -474,16 +542,7 @@ class Initializer(dobject):
             except:
                ibeads.names = gbeads.names
 
-         if k == "cell":
-            rcell = v
 
-            if icell.V > 0.0:
-               warning("Initialize from <cell> overwrites previous cell configuration.", verbosity.low)
-
-            if rcell.V > 0.0:
-               icell.h = rcell.h
-            else:
-               ValueError("Could not initialize the cell configuration from <initialize>.")
 
 
          if k == "resample_v":
