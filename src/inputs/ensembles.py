@@ -65,8 +65,8 @@ class InputEnsemble(Input):
            "fixcom": (InputValue, {"dtype"           : bool,
                                    "default"         : True,
                                    "help"            : "This describes whether the centre of mass of the particles is fixed."}),
-           "replay_file": (InputInitPositions, {"default"           : input_default(factory=engine.initializer.InitPositions, kwargs= {'value' : ""}),
-                                       "help"            : "This describes the location to read a trajectory file from."})
+           "replay_file": (InputInitFile, {"default" : input_default(factory=engine.initializer.InitBase),
+                           "help"            : "This describes the location to read a trajectory file from."})
 
          }
 

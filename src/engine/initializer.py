@@ -29,7 +29,7 @@ from utils.units import Constants, unit_to_internal
 from utils.nmtransform import nm_rescale
 from utils.messages import verbosity, warning, info
 
-__all__ = ['Initializer', 'InitPositions', 'InitCell', 'InitVelocities', 'InitMomenta', 'InitMasses', 'InitLabels']
+__all__ = ['Initializer', 'InitBase', 'InitIndexed']
 
 class InitBase(dobject):
    """Base class for initializer objects.
@@ -39,7 +39,7 @@ class InitBase(dobject):
       mode: A string that determines how the value is to be interpreted.
    """
 
-   def __init__(self, value=None, mode="", units=""):
+   def __init__(self, value="", mode="", units="", **others):
       """Initializes InitFile.
 
       Args:
@@ -51,32 +51,13 @@ class InitBase(dobject):
       self.mode = mode
       self.units = units
 
-class InitVector(InitBase):
-   """Vector initializer object.
+      for (o, v) in others.items():
+         self.__dict__[o] = v
 
-   Attributes:
-      value: A duck-typed stored value.
-      mode: A string that determines how the value is to be interpreted.
-   """
+class InitIndexed(InitBase):
 
-   def __init__(self, value=None, mode="", units="", index=-1, bead=-1):
-      """Initializes InitFile.
-
-      Args:
-         filename: A string giving the name of the file.
-         format: A string giving the extension of the file.
-      """
-
-      super(InitVector, self).__init__(value, mode, units)
-      self.index = index
-      self.bead = bead
-
-class InitPositions(InitVector) : pass
-class InitVelocities(InitVector) : pass
-class InitMomenta(InitVector) : pass
-class InitMasses(InitVector) : pass
-class InitLabels(InitVector) : pass
-class InitCell(InitBase): pass
+   def __init__(self, value="", mode="", units="", index=-1, bead=-1):
+      super(InitIndexed,self).__init__(value=value, mode=mode, units=units, index=index, bead=bead)
 
 def init_xyz(filename):
 

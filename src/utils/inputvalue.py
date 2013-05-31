@@ -616,12 +616,9 @@ class InputAttribute(Input):
          if not default is None and not self._default in self._valid:
             #This makes sure that the programmer has set the default value
             #so that it is a valid value.
-            raise ValueError("Default value not in option list " + str(self._valid))
+            raise ValueError("Default value '" + str(self._default) + "' not in option list " + str(self._valid)+ "\n" + self._help)
       else:
          self._valid = None
-
-      #if not self._default is None:
-      #   self._defwrite = self.write(name="%%NAME%%")
 
    def parse(self, text=""):
       """Reads the data for a single attribute value from an xml file.

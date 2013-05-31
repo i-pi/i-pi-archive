@@ -15,127 +15,116 @@ from utils.io import io_xml
 import utils.mathtools as mt
 import engine.initializer as ei
 
-__all__ = ['InputInitializer', 'InputInitPositions', 'InputInitMomenta', 'InputInitVelocities', 'InputInitMasses', 'InputInitLabels', 'InputInitCell']
+__all__ = ['InputInitializer', 'InputInitFile', 'InputInitPositions', 'InputInitMomenta', 'InputInitVelocities', 'InputInitMasses', 'InputInitLabels', 'InputInitCell']
 
 class InputInitBase(InputValue):
    """Base class to handle input.
 
    Attributes:
-      format: The format of the file to read data from.
+
    """
 
    attribs = deepcopy(InputValue.attribs)
-   attribs["mode"] =     (InputAttribute,{ "dtype" : str, "default": "array", "help": "The input file format. 'xyz' and 'pdb' stand for xyz and pdb input files respectively. 'chk' and 'checkpoint' are both aliases for input from a restart file.", "options": ['array', 'list', 'value', 'string']} )
+   attribs["mode"] =     (InputAttribute,{ "dtype" : str, "default": "other", "help": "The input file format. 'xyz' and 'pdb' stand for xyz and pdb input files respectively. 'chk' and 'checkpoint' are both aliases for input from a restart file.", "options": None } )
 
    default_label = "INITBASE"
    default_help = "This is the base class for initialization. Initializers for different aspects of the simulation can be inherit for it for the base methods."
 
-   def __init__(self, help=None, default=None, dtype=None, dimension=None):
+   _initclass    = ei.InitBase
+   _storageclass = float
+
+   def __init__(self, help=None, default=None, dtype=None, options=None, dimension=None):
       """Initializes InputInitFile.
 
       Just calls the parent initialize function with appropriate arguments.
       """
 
-      super(InputInitBase,self).__init__(dtype=str, dimension=dimension, default=default, help=help)
+      super(InputInitBase,self).__init__(dtype=str, dimension=dimension, default=default, options=options, help=help)
 
-   def store(self, ibase, mode=None):
+   def store(self, ibase):
       """Takes a InitBase instance and stores a minimal representation of it.
 
       Args:
          ibase: An input base object.
       """
 
-      if mode is None: mode = ibase.mode
-      if mode == "array" or mode == "list":
-         value = io_xml.write_list(ibase.value)
-      elif mode == "value":
-         value = str(ibase.value)
-      elif mode == "string":
+      if ibase.mode == "manual":
+         if hasattr(value, __len__):
+            value = io_xml.write_list(ibase.value)
+         else:  # if it's a single value then just write the value
+            value = io_xml.write_type(self._storageclass, ibase.value)
+      else:  # just store the value as a string
          value = ibase.value
 
       super(InputInitBase,self).store(value, units=ibase.units)
-      self.mode.store(ibase.mode)
 
-   def fetch(self, mode=None):
+      for k in self.attribs:  # store additional attributes from the input class
+         self.__dict__[k].store(ibase.__dict__[k])
+
+   def getval(self):
+      value = super(InputInitBase,self).fetch()
+      if self.mode.fetch() == "manual":
+         if '[' in value and ']' in value: # value appears to be a list
+            if self._storageclass is float:
+               value = io_xml.read_array(np.float, value)
+            else:
+               value = io_xml.read_list(value)
+         else:
+            value = io_xml.read_type(self._storageclass, value)
+      else:
+         value = str(value)  # typically this will be a no-op
+      return value
+
+   def fetch(self, initclass=None):
       """Creates an input base object.
 
       Returns:
          An input base object.
       """
 
-      if mode is None : mode = self.mode.fetch()
-      value = super(InputInitBase,self).fetch()
-      if mode == "list":
-         value = io_xml.read_list(value)
-      if mode == "array":
-         value = io_xml.read_array(np.float, value)
-      elif mode == "value":
-         value = float(value)
-      elif mode == "string":
-         value = str(value)  # typically this will be a no-op
+      rdict = {}
+      for k in self.attribs:
+         rdict[k] = self.__dict__[k].fetch()
 
-      return ei.InitBase(value=value, mode=mode, units=self.units.fetch())
+      if initclass is None: # allows for some flexibility in return class
+         initclass = self._initclass
 
-class InputInitVector(InputInitBase):
+      return initclass(value=self.getval(), **rdict)
+
+class InputInitFile(InputInitBase):
+   attribs = deepcopy(InputInitBase.attribs)
+   attribs["mode"][1]["default"] = "chk"
+   attribs["mode"][1]["options"] = ["xyz", "pdb", "chk"]
+
+   default_label = "INITFILE"
+   default_help = "This is the class to initialize from file."
+
+class InputInitIndexed(InputInitBase):
 
    attribs = deepcopy(InputInitBase.attribs)
    attribs["index"] =     (InputAttribute,{ "dtype" : int, "default": -1, "help": "The index of the atom of which we are to set the coordinate." } )
    attribs["bead"]  =     (InputAttribute,{ "dtype" : int, "default": -1, "help": "The index of the bead of which we are to set the coordinate." } )
-   attribs["mode"] =     (InputAttribute,{ "dtype" : str, "default": "manual", "help": "The input file format. 'xyz' and 'pdb' stand for xyz and pdb input files respectively. 'chk' and 'checkpoint' are both aliases for input from a restart file.", "options": ['manual', 'xyz', 'pdb', 'chk']} )
 
+   default_label = "INITINDEXED"
+   default_help = "This is a helper class to initialize with an index."
 
-   default_label = "INITVECTOR"
-   default_help = "This is a helper class to initialize a vector."
+class InputInitPositions(InputInitIndexed):
 
-   _initclass = None
-   _storageclass = float
-
-   def store(self, ipos):
-
-      if ipos.mode == "manual":
-         if self._storageclass is float:
-            super(InputInitVector,self).store(ipos, "array")
-         else:
-            super(InputInitVector,self).store(ipos, "list")
-      else:
-         super(InputInitVector,self).store(ipos, "string")
-
-      self.index.store(ipos.index)
-      self.bead.store(ipos.bead)
-
-   def fetch(self, initclass=None):
-
-      mode = self.mode.fetch()
-      if mode == "manual":
-         if self._storageclass is float:
-            ibase=super(InputInitVector,self).fetch("array")
-         else:
-            ibase=super(InputInitVector,self).fetch("list")
-      else:
-         ibase=super(InputInitVector,self).fetch("string")
-
-      if initclass is None:
-         initclass = self._initclass
-      return initclass(value=ibase.value, mode=mode, units=self.units.fetch(), index=self.index.fetch(), bead=self.bead.fetch())
-
-class InputInitPositions(InputInitVector):
-
-   attribs = deepcopy(InputInitVector.attribs)
+   attribs = deepcopy(InputInitIndexed.attribs)
+   attribs["mode"][1]["default"] = "chk"
+   attribs["mode"][1]["options"] = ["manual", "xyz", "pdb", "chk"]
 
    default_label = "INITPOSITIONS"
    default_help = "This is the class to initialize positions."
+   _initclass = ei.InitIndexed
 
-   _initclass = ei.InitPositions
+class InputInitMomenta(InputInitPositions):
 
-class InputInitMomenta(InputInitVector):
-
-   attribs = deepcopy(InputInitVector.attribs)
+   attribs = deepcopy(InputInitPositions.attribs)
    attribs["mode"][1]["options"].append( "thermal" )
 
    default_label = "INITMOMENTA"
    default_help = "This is the class to initialize momenta."
-
-   _initclass = ei.InitMomenta
 
    def fetch(self):
       if self.mode.fetch() == "thermal":
@@ -146,13 +135,28 @@ class InputInitMomenta(InputInitVector):
 
 class InputInitVelocities(InputInitMomenta):
 
-   attribs = deepcopy(InputInitVector.attribs)
+   attribs = deepcopy(InputInitMomenta.attribs)
    attribs["mode"][1]["options"].append( "thermal" )
 
    default_label = "INITVELOCITIES"
    default_help = "This is the class to initialize velocities."
 
-   _initclass = ei.InitVelocities
+class InputInitMasses(InputInitPositions):
+
+   attribs = deepcopy(InputInitPositions.attribs)
+   attribs["mode"][1]["options"]= ['manual', 'xyz', 'pdb', 'chk']
+
+   default_label = "INITMASSES"
+   default_help = "This is the class to initialize atomic masses."
+
+class InputInitLabels(InputInitPositions):
+
+   attribs = deepcopy(InputInitPositions.attribs)
+
+   default_label = "INITLABELS"
+   default_help = "This is the class to initialize atomic labels."
+
+   _storageclass = str
 
 class InputInitCell(InputInitBase):
 
@@ -165,18 +169,14 @@ class InputInitCell(InputInitBase):
    default_label = "INITCELL"
    default_help = "This is the class to initialize cell."
 
-   def store(self, ipos):
-      if ipos.mode == "manual":
-         super(InputInitCell,self).store(ipos, "array")
-      else:
-         super(InputInitCell,self).store(ipos, "string")
-
    def fetch(self):
 
       mode = self.mode.fetch()
-      if mode == "manual" or mode == "abc" or mode == "abcABC":
-         ibase=super(InputInitCell,self).fetch("array")
-         h = ibase.value
+
+      ibase=super(InputInitCell,self).fetch()
+      if mode == "abc" or mode == "abcABC":
+
+         h = io_xml.read_array(np.float, ibase.value)
 
          if mode == "abc":
             if h.size != 3:
@@ -189,53 +189,21 @@ class InputInitCell(InputInitBase):
             else:
                h = mt.abc2h(h[0], h[1], h[2], h[3]*np.pi/180.0, h[4]*np.pi/180.0, h[5]*np.pi/180.0)
 
+         h.shape = (9,)
+         ibase.value = h
+         mode = "manual"
+
+      if mode == "manual":
+         h=ibase.value
          if h.size != 9:
                raise ValueError("Cell objects must contain a 3x3 matrix describing the cell vectors.")
 
-         h.shape = (9,)
          if not (h[3] == 0.0 and h[6] == 0.0 and h[7] == 0.0):
             warning("Cell vector matrix must be upper triangular, all elements below the diagonal being set to zero.", verbosity.low)
             h[3] = h[6] = h[7] = 0
          ibase.value = h
 
-      else:
-         ibase=super(InputInitCell,self).fetch("string")
-
-      return ei.InitCell(value=ibase.value, mode=mode, units=self.units.fetch())
-
-class InputInitMasses(InputInitVector):
-
-   attribs = deepcopy(InputInitVector.attribs)
-   attribs["mode"][1]["options"]= ['manual', 'xyz', 'pdb', 'chk']
-
-   default_label = "INITMASSES"
-   default_help = "This is the class to initialize atomic masses."
-
-   def fetch(self, initclass=None):
-
-      mode = self.mode.fetch()
-      print "mode", mode, " index", self.index.fetch()
-      if mode == "manual" and self.index.fetch()<0:
-         ibase=super(InputInitMasses,self).fetch()
-      else:
-         ibase=super(InputInitVector,self).fetch("string")
-         if mode == "manual": ibase.value=self._storageclass(ibase.value)
-
-      if initclass is None:
-         initclass = self._initclass
-      return initclass(value=ibase.value, mode=mode, units=ibase.units, index=self.index.fetch(), bead=self.bead.fetch())
-
-   _initclass = ei.InitMasses
-
-class InputInitLabels(InputInitMasses):
-
-   attribs = deepcopy(InputInitMasses.attribs)
-
-   default_label = "INITLABELS"
-   default_help = "This is the class to initialize atomic labels."
-
-   _storageclass = str
-   _initclass = ei.InitLabels
+      return self._initclass(value=ibase.value, mode=mode, units=self.units.fetch())
 
 
 class InputInitializer(Input):
@@ -252,13 +220,13 @@ class InputInitializer(Input):
             }
 
    dynamic = {
-           "positions"  : (InputInitPositions, { "help" : "Initializes atomic positions" }),
+           "positions"  : (InputInitPositions,  { "help" : "Initializes atomic positions"}),
            "velocities" : (InputInitVelocities, { "help" : "Initializes atomic velocities" }),
-           "momenta"    : (InputInitMomenta, { "help" : "Initializes atomic momenta" }),
-           "masses"     : (InputInitMasses, { "help" : "Initializes atomic masses" }),
-           "labels"     : (InputInitLabels, { "help" : "Initializes atomic labels" }),
-           "cell"       :     (InputInitCell, { "help" : "Initializes the configuration of the cell" }),
-           "file"       :      (InputInitVector, { "help" : "Initializes everything possible for the given mode" }),
+           "momenta"    : (InputInitMomenta,    { "help" : "Initializes atomic momenta" }),
+           "masses"     : (InputInitMasses,     { "help" : "Initializes atomic masses" }),
+           "labels"     : (InputInitLabels,     { "help" : "Initializes atomic labels" }),
+           "cell"       : (InputInitCell,       { "help" : "Initializes the configuration of the cell" }),
+           "file"       : (InputInitFile,       { "help" : "Initializes everything possible for the given mode" }),
 
             }
 
@@ -321,18 +289,19 @@ class InputInitializer(Input):
          if k == "file":
             mode = v.mode.fetch()
             if mode == "xyz" or mode == "manual" or mode == "pdb" or mode == "chk":
-               initlist.append( ( "positions", v.fetch(initclass=ei.InitPositions) ) )
+               initlist.append( ( "positions", v.fetch(initclass=ei.InitIndexed) ) )
             if mode == "xyz" or mode == "pdb" or mode == "chk":
-               rm=v.fetch(initclass=ei.InitMasses); rm.units = ""
+               rm=v.fetch(initclass=ei.InitIndexed); rm.units = ""
                initlist.append( ( "masses",   rm ) )
-               initlist.append( ( "labels",   v.fetch(initclass=ei.InitLabels) ) )
+               initlist.append( ( "labels",   v.fetch(initclass=ei.InitIndexed) ) )
             if mode == "pdb" or mode == "chk":
-               initlist.append( ( "cell", v.fetch(initclass=ei.InitCell) ) )
+               initlist.append( ( "cell", v.fetch(initclass=ei.InitIndexed) ) )
             if mode == "chk":
-               rm=v.fetch(initclass=ei.InitMomenta); rm.units = ""
+               rm=v.fetch(initclass=ei.InitIndexed); rm.units = ""
                initlist.append( ( "momenta", rm ) )
          else:
             initlist.append( (k, v.fetch()) )
-      print initlist
+
+
       return ei.Initializer(self.nbeads.fetch(), initlist )
 
