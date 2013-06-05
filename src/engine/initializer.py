@@ -310,17 +310,24 @@ class Initializer(dobject):
 
             rtemp = v.value
             if rtemp <= 0:
-               info("Using the simulation temperature to resample velocities", verbosity.low)
+               warning("Using the simulation temperature to resample velocities", verbosity.low)
                rtemp = simul.ensemble.temp
             else:
                info(" # Resampling velocities at temperature %s" % rtemp, verbosity.low)
 
-            # TODO -- Initialize a single atom!
-
             # pull together a mock initialization to get NM masses right
             #without too much code duplication
-            rbeads = Beads(simul.beads.natoms, simul.beads.nbeads)
-            rbeads.m[:] = simul.beads.m
+            if v.bead >= 0:
+               raise ValueError("Cannot thermalize a single bead")
+            if v.index >= 0:
+               rnatoms = 1
+            else:
+               rnatoms = simul.beads.natoms
+            rbeads = Beads(rnatoms, simul.beads.nbeads)
+            if v.index < 0:
+               rbeads.m[:] = simul.beads.m
+            else: 
+               rbeads.m[:] = simul.beads.m[v.index]
             rnm = NormalModes(mode=simul.nm.mode, transform_method=simul.nm.transform_method, freqs=simul.nm.nm_freqs)
             rens = Ensemble(dt=simul.ensemble.dt, temp=simul.ensemble.temp)
             rnm.bind(rbeads,rens)
@@ -329,7 +336,10 @@ class Initializer(dobject):
             # with (possibly) shifted-frequencies NM
             rnm.pnm = simul.prng.gvec((rbeads.nbeads,3*rbeads.natoms))*np.sqrt(rnm.dynm3)*np.sqrt(rbeads.nbeads*rtemp*Constants.kb)
 
-            simul.beads.p = rbeads.p
+            if v.index < 0:
+               simul.beads.p = rbeads.p
+            else:
+               simul.beads.p[:,3*v.index:3*(v.index+1)] = rbeads.p
             fmom = True
 
          elif k == "momenta":
