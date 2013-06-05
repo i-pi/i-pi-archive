@@ -245,6 +245,8 @@ class Initializer(dobject):
 
             fcell = True
          elif k == "masses":
+            if simul.beads.nbeads == 0:
+               raise ValueError("Cannot initialize the masses before the size of the system is known")
             if fmass: 
                warning("Overwriting previous atomic masses", verbosity.medium)
             if v.mode == "manual":
@@ -263,6 +265,8 @@ class Initializer(dobject):
             fmass = True
 
          elif k == "labels":
+            if simul.beads.nbeads == 0:
+               raise ValueError("Cannot initialize the labels before the size of the system is known")
             if flab: 
                warning("Overwriting previous atomic labels", verbosity.medium)
             if v.mode == "manual":
@@ -338,7 +342,7 @@ class Initializer(dobject):
 
             # checks if we must initialize the simulation beads
             if simul.beads.nbeads == 0:
-               if v.index >=0 : 
+               if v.index >= 0 : 
                   raise ValueError("Cannot initialize single atoms before the size of the system is known")
                simul.beads.resize(natoms,self.nbeads)
 
@@ -369,3 +373,11 @@ class Initializer(dobject):
             rv *= np.sqrt(self.nbeads/nbeads)
             set_vector(v, simul.beads.p, rv)
             fmom = True
+
+      if simul.beads.natoms == 0:
+         raise ValueError("Initializer could not initialize the path")
+      if simul.cell.V == 0:
+         raise ValueError("Initializer could not initialize the cell")
+      for i in range(len(simul.beads.m)):
+         if simul.beads.m[i] == 0:
+            raise ValueError("Initializer could not initialize the masses")

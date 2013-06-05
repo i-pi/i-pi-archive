@@ -36,7 +36,8 @@ class Cell(dobject):
       """
 
       if h is None:
-         h = np.identity(3, float)
+         #h = np.identity(3,float)
+         h = np.zeros((3,3), float)
       dset(self,"h",depend_array(name = 'h', value = h) )
 
       dset(self,"ih",
