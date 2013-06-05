@@ -234,7 +234,7 @@ class Initializer(dobject):
             if v.mode == "pdb":
                rh = init_pdb(v.value)[1].h
             elif v.mode == "chk":
-               rh = init_chk(v.value)[0].cell.h
+               rh = init_chk(v.value)[1].h
             else:
                rh = v.value.reshape((3,3))
             rh *= unit_to_internal("length",v.units,1.0)
