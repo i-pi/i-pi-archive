@@ -14,6 +14,7 @@ from inputs.cell import InputCell
 from utils.io import io_xml
 import utils.mathtools as mt
 import engine.initializer as ei
+from utils.messages import verbosity, warning
 
 __all__ = ['InputInitializer', 'InputInitFile', 'InputInitPositions', 'InputInitMomenta', 'InputInitVelocities', 'InputInitMasses', 'InputInitLabels', 'InputInitCell']
 
@@ -91,6 +92,7 @@ class InputInitBase(InputValue):
 
       return initclass(value=self.getval(), **rdict)
 
+
 class InputInitFile(InputInitBase):
    attribs = deepcopy(InputInitBase.attribs)
    attribs["mode"][1]["default"] = "chk"
@@ -98,6 +100,7 @@ class InputInitFile(InputInitBase):
 
    default_label = "INITFILE"
    default_help = "This is the class to initialize from file."
+
 
 class InputInitIndexed(InputInitBase):
 
@@ -108,6 +111,7 @@ class InputInitIndexed(InputInitBase):
    default_label = "INITINDEXED"
    default_help = "This is a helper class to initialize with an index."
 
+
 class InputInitPositions(InputInitIndexed):
 
    attribs = deepcopy(InputInitIndexed.attribs)
@@ -117,6 +121,7 @@ class InputInitPositions(InputInitIndexed):
    default_label = "INITPOSITIONS"
    default_help = "This is the class to initialize positions."
    _initclass = ei.InitIndexed
+
 
 class InputInitMomenta(InputInitPositions):
 
@@ -136,18 +141,20 @@ class InputInitMomenta(InputInitPositions):
 class InputInitVelocities(InputInitMomenta):
 
    attribs = deepcopy(InputInitMomenta.attribs)
-   attribs["mode"][1]["options"].append( "thermal" )
+   #attribs["mode"][1]["options"].append( "thermal" )
 
    default_label = "INITVELOCITIES"
    default_help = "This is the class to initialize velocities."
 
+
 class InputInitMasses(InputInitPositions):
 
    attribs = deepcopy(InputInitPositions.attribs)
-   attribs["mode"][1]["options"]= ['manual', 'xyz', 'pdb', 'chk']
+   #attribs["mode"][1]["options"]= ['manual', 'xyz', 'pdb', 'chk']
 
    default_label = "INITMASSES"
    default_help = "This is the class to initialize atomic masses."
+
 
 class InputInitLabels(InputInitPositions):
 
@@ -157,6 +164,7 @@ class InputInitLabels(InputInitPositions):
    default_help = "This is the class to initialize atomic labels."
 
    _storageclass = str
+
 
 class InputInitCell(InputInitBase):
 
@@ -173,7 +181,7 @@ class InputInitCell(InputInitBase):
 
       mode = self.mode.fetch()
 
-      ibase=super(InputInitCell,self).fetch()
+      ibase = super(InputInitCell,self).fetch()
       if mode == "abc" or mode == "abcABC":
 
          h = io_xml.read_array(np.float, ibase.value)
@@ -194,7 +202,7 @@ class InputInitCell(InputInitBase):
          mode = "manual"
 
       if mode == "manual":
-         h=ibase.value
+         h = ibase.value
          if h.size != 9:
                raise ValueError("Cell objects must contain a 3x3 matrix describing the cell vectors.")
 
@@ -291,17 +299,17 @@ class InputInitializer(Input):
             if mode == "xyz" or mode == "manual" or mode == "pdb" or mode == "chk":
                initlist.append( ( "positions", v.fetch(initclass=ei.InitIndexed) ) )
             if mode == "xyz" or mode == "pdb" or mode == "chk":
-               rm=v.fetch(initclass=ei.InitIndexed); rm.units = ""
+               rm = v.fetch(initclass=ei.InitIndexed)
+               rm.units = ""
                initlist.append( ( "masses",   rm ) )
                initlist.append( ( "labels",   v.fetch(initclass=ei.InitIndexed) ) )
             if mode == "pdb" or mode == "chk":
                initlist.append( ( "cell", v.fetch(initclass=ei.InitIndexed) ) )
             if mode == "chk":
-               rm=v.fetch(initclass=ei.InitIndexed); rm.units = ""
+               rm = v.fetch(initclass=ei.InitIndexed)
+               rm.units = ""
                initlist.append( ( "momenta", rm ) )
          else:
             initlist.append( (k, v.fetch()) )
 
-
       return ei.Initializer(self.nbeads.fetch(), initlist )
-
