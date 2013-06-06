@@ -242,11 +242,23 @@ class Properties(dobject):
       "atom_x": {     "dimension" : "length",
                       "help": "Prints to properties the position (x,y,z) of a particle given its index. Takes arguments index and bead. If bead is not specified, refers to the centroid.",
                       "size" : 3,
-                      'func': self.get_atomx},
+                      #'func': self.get_atomx},
+                      "func" : (lambda atom="", bead="-1": self.get_atom_vec(self.beads.q, atom=atom, bead=bead))},
       "atom_v": {     "dimension" : "velocity",
                       "help": "Prints to properties the velocity (x,y,z) of a particle given its index. Takes arguments index and bead. If bead is not specified, refers to the centroid.",
                       "size" : 3,
-                      'func': self.get_atomv},
+                      #'func': self.get_atomv},
+                      "func" : (lambda atom="", bead="-1": self.get_atom_vec(self.beads.p/self.beads.m3, atom=atom, bead=bead))},
+      "atom_p": {     "dimension" : "momentum",
+                      "help": "Prints to properties the momentum (x,y,z) of a particle given its index. Takes arguments index and bead. If bead is not specified, refers to the centroid.",
+                      "size" : 3,
+                      #'func': self.get_atomv},
+                      "func" : (lambda atom="", bead="-1": self.get_atom_vec(self.beads.p, atom=atom, bead=bead))},
+      "atom_f": {     "dimension" : "force",
+                      "help": "Prints to properties the force (x,y,z) of a particle given its index. Takes arguments index and bead. If bead is not specified, refers to the centroid.",
+                      "size" : 3,
+                      #'func': self.get_atomv},
+                      "func" : (lambda atom="", bead="-1": self.get_atom_vec(self.forces.f, atom=atom, bead=bead))},
       "stress_md": {  "dimension": "pressure",
                       "help": "The classical stress tensor of the simulation. Takes arguments 'x' and 'v', which gives stress[x,v]. By default gives stress[0,0].",
                       'func': self.get_stress},
@@ -345,43 +357,66 @@ class Properties(dobject):
       else:
          return pkey["func"](*arglist,**kwarglist)
 
-   def get_atomx(self, atom="", bead="-1"):
-      """Gives the position vector of one atom.
+#   def get_atomx(self, atom="", bead="-1"):
+#      """Gives the position vector of one atom.
+#
+#      Args:
+#         atom: The index of the atom for which the position vector will
+#            be output.
+#         bead: The index of the replica of the atom for which the position
+#            vector will be output. If less than 0, then the centroid is used.
+#      """
+#
+#      if atom == "":
+#         raise ValueError("Must specify the index for atom_x property")
+#      atom = int(atom)
+#      bead = int(bead)
+#      if bead < 0:
+#         return self.beads.centroid.q[3*atom:3*(atom+1)]
+#      else:
+#         return self.beads.q[bead,3*atom:3*(atom+1)]
+#
+#   def get_atomv(self, atom="", bead="-1"):
+#      """Gives the velocity vector of one atom.
+#
+#      Args:
+#         atom: The index of the atom for which the velocity vector will
+#            be output.
+#         bead: The index of the replica of the atom for which the velocity
+#            vector will be output. If less than 0, then the centroid is used.
+#      """
+#
+#      if atom == "":
+#         raise ValueError("Must specify the index for atom_v property")
+#      atom = int(atom)
+#      bead = int(bead)
+#      if bead < 0:
+#         return self.beads.centroid.p[3*atom:3*(atom+1)]/self.beads.m[atom]
+#      else:
+#         return self.beads.p[bead,3*atom:3*(atom+1)]/self.beads.m[atom]
+
+   def get_atom_vec(self, prop_vec, atom="", bead="-1"):
+      """Gives a vector for one atom.
 
       Args:
-         atom: The index of the atom for which the position vector will
+         prop_vec: An array from which to take the atomic vector from.
+         atom: The index of the atom for which the vector will
             be output.
-         bead: The index of the replica of the atom for which the position
+         bead: The index of the replica of the atom for which the
             vector will be output. If less than 0, then the centroid is used.
       """
 
       if atom == "":
-         raise ValueError("Must specify the index for atom_x property")
+         raise ValueError("Must specify the index for atom_vec property")
       atom = int(atom)
       bead = int(bead)
       if bead < 0:
-         return self.beads.centroid.q[3*atom:3*(atom+1)]
+         atom_vec = np.zeros(3)
+         for b in range(self.beads.nbeads):
+            atom_vec += prop_vec[b,3*atom:3*(atom+1)]
+         return atom_vec/float(self.beads.nbeads)
       else:
-         return self.beads.q[bead,3*atom:3*(atom+1)]
-
-   def get_atomv(self, atom="", bead="-1"):
-      """Gives the velocity vector of one atom.
-
-      Args:
-         atom: The index of the atom for which the velocity vector will
-            be output.
-         bead: The index of the replica of the atom for which the velocity
-            vector will be output. If less than 0, then the centroid is used.
-      """
-
-      if atom == "":
-         raise ValueError("Must specify the index for atom_v property")
-      atom = int(atom)
-      bead = int(bead)
-      if bead < 0:
-         return self.beads.centroid.p[3*atom:3*(atom+1)]/self.beads.m[atom]
-      else:
-         return self.beads.p[bead,3*atom:3*(atom+1)]/self.beads.m[atom]
+         return prop_vec[bead,3*atom:3*(atom+1)]
 
    def get_temp(self, atom=""):
       """Calculates the MD kinetic temperature.
