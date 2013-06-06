@@ -16,7 +16,7 @@ import utils.mathtools as mt
 import engine.initializer as ei
 from utils.messages import verbosity, warning
 
-__all__ = ['InputInitializer', 'InputInitFile', 'InputInitPositions', 'InputInitMomenta', 'InputInitVelocities', 'InputInitMasses', 'InputInitLabels', 'InputInitCell']
+__all__ = ['InputInitializer', 'InputInitFile', 'InputInitPositions', 'InputInitMomenta', 'InputInitVelocities', 'InputInitMasses', 'InputInitLabels', 'InputInitCell', 'InputInitThermo']
 
 class InputInitBase(InputValue):
    """Base class to handle input.
@@ -101,6 +101,13 @@ class InputInitFile(InputInitBase):
    default_label = "INITFILE"
    default_help = "This is the class to initialize from file."
 
+class InputInitThermo(InputInitBase):
+   attribs = deepcopy(InputInitBase.attribs)
+   attribs["mode"][1]["default"] = "manual"
+   attribs["mode"][1]["options"] = ["chk", "manual"]
+
+   default_label = "INITTHERMO"
+   default_help = "This is the class to initialize the thermostat (ethermo and fictitious momenta)."
 
 class InputInitIndexed(InputInitBase):
 
@@ -235,7 +242,7 @@ class InputInitializer(Input):
            "labels"     : (InputInitLabels,     { "help" : "Initializes atomic labels" }),
            "cell"       : (InputInitCell,       { "help" : "Initializes the configuration of the cell" }),
            "file"       : (InputInitFile,       { "help" : "Initializes everything possible for the given mode" }),
-
+           "gle"        : (InputInitThermo,     { "help" : "Initializes the additional momenta in a gle" })
             }
 
    default_help = "Specifies the number of beads, and how the system should be initialized."
@@ -278,6 +285,9 @@ class InputInitializer(Input):
             ip.store(el)
          elif k == "cell" :
             ip = InputInitCell()
+            ip.store(el)
+         elif k == "gle" :
+            ip = InputInitThermo()
             ip.store(el)
          self.extra.append((k, ip))
 

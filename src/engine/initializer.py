@@ -97,8 +97,9 @@ def init_chk(filename):
    simchk.parse(xmlchk.fields[0][1])
    rcell = simchk.cell.fetch()
    rbeads = simchk.beads.fetch()
+   rthermo = simchk.ensemble.thermostat.fetch()
 
-   return (rbeads, rcell)
+   return (rbeads, rcell, rthermo)
 
 def init_beads(iif, nbeads):
    mode = iif.mode; value = iif.value
@@ -202,11 +203,11 @@ class Initializer(dobject):
       else:
          self.queue = queue
 
-   def init(self, simul):
-      """Initializes the simulation.
+   def init_stage1(self, simul):
+      """Initializes the simulation -- first stage.
 
       Takes a simulation object, and uses all the data in the initialization
-      queue to fill up the data needed to run the simulation.
+      queue to fill up the beads data needed to run the simulation.
 
       Args:
          simul: A simulation object to be initialized.
@@ -217,19 +218,16 @@ class Initializer(dobject):
             that have been specified are not compatible with each other.
       """
 
-      ibeads = simul.beads  #i* means the original values from the simulation
-      icell = simul.cell    #object, i.e. the 'initial' values
-
-
       if simul.beads.nbeads == 0:
-         fpos = fmom = fmass = flab = fcell = False   # we don't have an explicitly defined beads object
+         fpos = fmom = fmass = flab = fcell = False   # we don't have an explicitly defined beads object yet
       else:
          fpos = fmom = fmass = flab = fcell = True
+
       for (k,v) in self.queue:
-         info(" # Inizializer parsing " + str(k) + " object.", verbosity.high)
+         info(" # Inizializer (stage 1) parsing " + str(k) + " object.", verbosity.high)
 
          if k == "cell":
-            if fcell : 
+            if fcell :
                warning("Overwriting previous cell parameters", verbosity.medium)
             if v.mode == "pdb":
                rh = init_pdb(v.value)[1].h
@@ -247,7 +245,7 @@ class Initializer(dobject):
          elif k == "masses":
             if simul.beads.nbeads == 0:
                raise ValueError("Cannot initialize the masses before the size of the system is known")
-            if fmass: 
+            if fmass:
                warning("Overwriting previous atomic masses", verbosity.medium)
             if v.mode == "manual":
                rm = v.value
@@ -267,7 +265,7 @@ class Initializer(dobject):
          elif k == "labels":
             if simul.beads.nbeads == 0:
                raise ValueError("Cannot initialize the labels before the size of the system is known")
-            if flab: 
+            if flab:
                warning("Overwriting previous atomic labels", verbosity.medium)
             if v.mode == "manual":
                rn = v.value
@@ -284,7 +282,7 @@ class Initializer(dobject):
             flab = True
 
          elif k == "positions":
-            if fpos: 
+            if fpos:
                warning("Overwriting previous atomic positions", verbosity.medium)
             # read the atomic positions as a vector
             rq = init_vector(v, self.nbeads)
@@ -293,7 +291,7 @@ class Initializer(dobject):
 
             # check if we must initialize the simulation beads
             if simul.beads.nbeads == 0:
-               if v.index >= 0: 
+               if v.index >= 0:
                   raise ValueError("Cannot initialize single atoms before the size of the system is known")
                simul.beads.resize(natoms,self.nbeads)
 
@@ -301,7 +299,7 @@ class Initializer(dobject):
             fpos = True
 
          elif (k == "velocities" or k == "momenta") and v.mode == "thermal" :   # intercept here thermal initialization, so we don't need to check further down
-            if fmom: 
+            if fmom:
                warning("Overwriting previous atomic momenta", verbosity.medium)
             if simul.beads.natoms == 0:
                raise ValueError("Trying to resample velocities before having any structural information.")
@@ -326,7 +324,7 @@ class Initializer(dobject):
             rbeads = Beads(rnatoms, simul.beads.nbeads)
             if v.index < 0:
                rbeads.m[:] = simul.beads.m
-            else: 
+            else:
                rbeads.m[:] = simul.beads.m[v.index]
             rnm = NormalModes(mode=simul.nm.mode, transform_method=simul.nm.transform_method, freqs=simul.nm.nm_freqs)
             rens = Ensemble(dt=simul.ensemble.dt, temp=simul.ensemble.temp)
@@ -343,7 +341,7 @@ class Initializer(dobject):
             fmom = True
 
          elif k == "momenta":
-            if fmom: 
+            if fmom:
                warning("Overwriting previous atomic momenta", verbosity.medium)
             # read the atomic momenta as a vector
             rp = init_vector(v, self.nbeads, momenta = True)
@@ -352,7 +350,7 @@ class Initializer(dobject):
 
             # checks if we must initialize the simulation beads
             if simul.beads.nbeads == 0:
-               if v.index >= 0 : 
+               if v.index >= 0 :
                   raise ValueError("Cannot initialize single atoms before the size of the system is known")
                simul.beads.resize(natoms,self.nbeads)
 
@@ -361,7 +359,7 @@ class Initializer(dobject):
             fmom = True
 
          elif k == "velocities":
-            if fmom: 
+            if fmom:
                warning("Overwriting previous atomic momenta", verbosity.medium)
             # read the atomic velocities as a vector
             rv = init_vector(v, self.nbeads)
@@ -373,7 +371,7 @@ class Initializer(dobject):
                ValueError("Cannot initialize velocities before the masses of the atoms are known")
                simul.beads.resize(natoms,self.nbeads)
 
-            warning(" # Initializing from velocities uses the previously defined masses -- not the masses inferred from the file -- to build momenta", verbosity.low)
+            warning("Initializing from velocities uses the previously defined masses -- not the masses inferred from the file -- to build momenta", verbosity.low)
             if v.index >= 0:
                rv *= simul.beads.m[v.index]
             elif v.bead >= 0:
@@ -383,11 +381,56 @@ class Initializer(dobject):
             rv *= np.sqrt(self.nbeads/nbeads)
             set_vector(v, simul.beads.p, rv)
             fmom = True
+         elif k == "thermostat": pass   # thermostats must be initialised in a second stage
 
-      if simul.beads.natoms == 0:
-         raise ValueError("Initializer could not initialize the path")
-      if simul.cell.V == 0:
-         raise ValueError("Initializer could not initialize the cell")
-      for i in range(len(simul.beads.m)):
-         if simul.beads.m[i] == 0:
-            raise ValueError("Initializer could not initialize the masses")
+      if not fpos:
+         raise ValueError("Could not initialize the atomic positions")
+      if not fcell:
+         raise ValueError("Could not initialize the cell")
+      if not fmass:
+         raise ValueError("Initializer could not initialize the masses")
+      if not flab:
+         raise ValueError("Initializer could not initialize the labels")
+      if not fmom:
+         warning("Could not initialise momenta. Will start with zero velocity.", verbosity.low)
+
+   def init_stage2(self, simul):
+      """Initializes the simulation -- second stage.
+
+      Takes a simulation object which has been fully generated,
+      and restarts additional information such as the thermostat internal state.
+
+      Args:
+         simul: A simulation object to be initialized.
+
+      Raises:
+         ValueError: Raised if there is a problem with the initialization,
+            if something that should have been has not been, or if the objects
+            that have been specified are not compatible with each other.
+      """
+
+      for (k,v) in self.queue:
+         info(" # Inizializer (stage 2) parsing " + str(k) + " object.", verbosity.high)
+
+         if k == "gle":
+            # read thermostat parameters from file
+            if not ( hasattr(simul.ensemble, "thermostat") ):
+               raise ValueError("Ensemble does not have a thermostat to initialize")
+            if not ( hasattr(simul.ensemble.thermostat, "s") ):
+               raise ValueError("There is nothing to initialize in non-GLE thermostats")
+            ssimul = simul.ensemble.thermostat.s
+            if v.mode == "manual":
+               sinput = v.value.copy()
+               if (sinput.size() != ssimul.size() ):
+                  raise ValueError("Size mismatch in thermostat initialization data")
+               sinput.shape = ssimul.shape
+            elif v.mode == "chk":
+               rthermo = init_chk(v.value)[2]
+               if not hasattr(rthermo,"s"):
+                  raise ValueError("Checkpoint file does not contain usable thermostat data")
+               sinput = rthermo.s.copy()
+               if sinput.shape != ssimul.shape :
+                  raise ValueError("Shape mismatch in thermostat initialization data")
+
+            # if all the preliminary checks are good, we can initialize the s's
+            ssimul[:] = sinput
