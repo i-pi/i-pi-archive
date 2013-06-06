@@ -28,10 +28,7 @@ def print_xyz_path(beads, cell, filedesc = sys.stdout):
       filedesc: An open writable file object. Defaults to standard output.
    """
 
-   a, b, c, alpha, beta, gamma = mt.h2abc(cell.h)
-   alpha *= 180.0/math.pi
-   beta  *= 180.0/math.pi
-   gamma *= 180.0/math.pi
+   a, b, c, alpha, beta, gamma = mt.h2abc_deg(cell.h)
 
    natoms = beads.natoms
    nbeads = beads.nbeads
@@ -52,10 +49,7 @@ def print_xyz(atoms, cell, filedesc = sys.stdout, title=""):
       title: This gives a string to be appended to the comment line.
    """
 
-   a, b, c, alpha, beta, gamma = mt.h2abc(cell.h)
-   alpha *= 180.0/math.pi
-   beta  *= 180.0/math.pi
-   gamma *= 180.0/math.pi
+   a, b, c, alpha, beta, gamma = mt.h2abc_deg(cell.h)
 
    natoms = atoms.natoms
    filedesc.write("%d\n# CELL(abcABC): %10.5f  %10.5f  %10.5f  %10.5f  %10.5f  %10.5f  %s\n" % ( natoms, a, b, c, alpha, beta, gamma, title))

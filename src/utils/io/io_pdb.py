@@ -31,10 +31,7 @@ def print_pdb_path(beads, cell, filedesc = sys.stdout):
       filedesc: An open writable file object. Defaults to standard output.
    """
 
-   a, b, c, alpha, beta, gamma = mt.h2abc(cell.h)
-   alpha *= 180.0/math.pi
-   beta  *= 180.0/math.pi
-   gamma *= 180.0/math.pi
+   a, b, c, alpha, beta, gamma = mt.h2abc_deg(cell.h)
 
    z = 1 #What even is this parameter?
    filedesc.write("CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f%s%4i\n" % (a, b, c, alpha, beta, gamma, " P 1        ", z))
@@ -73,10 +70,7 @@ def print_pdb(atoms, cell, filedesc = sys.stdout, title=""):
    if title != "" :
       filedesc.write("TITLE   %70s\n" % (title))
 
-   a, b, c, alpha, beta, gamma = mt.h2abc(cell.h)
-   alpha *= 180.0/math.pi
-   beta  *= 180.0/math.pi
-   gamma *= 180.0/math.pi
+   a, b, c, alpha, beta, gamma = mt.h2abc_deg(cell.h)
 
    z = 1
    filedesc.write("CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f%s%4i\n" % (a, b, c, alpha, beta, gamma, " P 1        ", z))

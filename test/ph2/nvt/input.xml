@@ -1,7 +1,7 @@
 <simulation>
    <initialize nbeads='24'>
-      <file format='pdb'> our_ref.pdb </file>
-      <resample_v> 50 </resample_v>
+      <file mode='pdb'> our_ref.pdb </file>
+      <velocities mode="thermal"> 50 </velocities>
    </initialize>
    <output prefix='ph2'>
       <properties stride='5' filename='out'>  [ time, conserved, temperature, kinetic_cv, potential, pressure_cv] </properties>

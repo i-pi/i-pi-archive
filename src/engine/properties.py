@@ -23,7 +23,7 @@ import numpy as np
 import math
 from utils.depend import *
 from utils.units import Constants, unit_to_internal, unit_to_user
-from utils.mathtools import logsumlog, h2abc
+from utils.mathtools import logsumlog, h2abc_deg
 from utils.io import *
 from atoms import *
 from cell import *
@@ -191,103 +191,97 @@ class Properties(dobject):
 
       self.property_dict = {
       "step": {       "dimension" : "number",
-                      "help" : "The current time step of the simulation.",
+                      "help" : "The current simulation time step.",
                       'func': (lambda: (1 + self.simul.step))},
       "time": {       "dimension": "time",
                       "help": "The elapsed simulation time.",
                       'func': (lambda: (1 + self.simul.step)*self.ensemble.dt)},
       "conserved": {  "dimension": "energy",
                       "help": "The value of the conserved energy quantity per bead.",
-                      'func': self.get_econs},
+                      'func': (lambda: self.ensemble.econs/float(self.beads.nbeads))},
       "temperature": {"dimension": "temperature",
-                      "help": "The current physical temperature.",
+                      "help": "The current physical temperature. Takes an argument 'atom', which can be either an atom label or index to specify which species to find the temperature of. If not specified, all atoms are used.",
                       'func': self.get_temp },
       "density": {    "dimension": "density",
-                      "help": "The physical density of the system.",
+                      "help": "The physical system density.",
                       'func': (lambda: self.beads.m.sum()/self.cell.V)},
       "volume": {     "dimension": "volume",
                       "help": "The volume of the cell box.",
                       'func': (lambda: self.cell.V) },
-      "cell_h": {     "dimension" : "length",
-                      "help": "Gives one of the cell parameters. Takes arguments 'x' and 'v', which gives h[x,v]. By default gives h[0,0].",
-                      'func': self.wrap_cell},
-      "cell_h6": {    "dimension" : "length",
-                      "help": "Gives all the non-zero cell parameters, in the order h_xx, h_yy, h_xz, h_xy, h_xz, h_yz.",
+      "cell_h": {    "dimension" : "length",
+                      "help": "Gives cell vector matrix. Returns the 6 components in the form [xx, yy, zz, xy, xz, yz].",
                       "size": 6,
-                      'func': self.full_cell},
+                      "func": (lambda: self.flatten(self.cell.h))},
       "cell_abcABC": {"dimension" : "undefined",
-                      "help": "Gives the lengths of the cell vectors and the angles between them in degrees as a list. Since there are a mixture of different units, these can only be output in atomic-units.",
+                      "help": "Gives the lengths of the cell vectors and the angles between them in degrees as a list of the form [a, b, c, A, B, C], where A is the angle between the sides of length b and c in degrees, and B and C are defined similarly. Since there are a mixture of different units, these can only be output in atomic-units.",
                       "size": 6,
-                      'func': self.cell_abcABC},
+                      'func': (lambda: np.asarray(h2abc_deg(self.cell.h)))},
       "potential": {  "dimension" : "energy",
-                      "help": "The potential energy of the system.",
+                      "help": "The physical system potential energy.",
                       'func': (lambda: self.forces.pot/self.beads.nbeads)},
       "spring": {     "dimension" : "energy",
                       "help": "The spring potential energy between the beads.",
                       'func': (lambda: self.beads.vpath*self.nm.omegan2)},
       "kinetic_md":  {"dimension" : "energy",
-                      "help": "The classical kinetic energy of the simulation.",
+                      "help": "The simulation kinetic energy. Takes an argument 'atom', which can be either an atom label or index to specify which species to find the temperature of. If not specified, all atoms are used.",
                       'func': self.get_kinmd},
       "kinetic_cv":  {"dimension" : "energy",
-                      "help": "The physical kinetic energy of the system.",
+                      "help": "The physical system kinetic energy. Takes an argument 'atom', which can be either an atom label or index to specify which species to find the temperature of. If not specified, all atoms are used.",
                       'func': self.get_kincv},
       "kinetic_tens":{"dimension" : "energy",
-                      "help" : "The T_xx T_yy T_zz T_xy T_xz T_yz components of the kinetic energy tensor (c-v estimator).",
+                      "help" : "The physical system kinetic energy tensor. Returns the 6 components in the form [xx, yy, zz, xy, xz, yz]. Takes an argument 'atom', which can be either an atom label or index to specify which species to find the temperature of. If not specified, all atoms are used.",
                       "size" : 6,
                       "func" : self.get_ktens},
       "kinetic_ij":  {"dimension" : "energy",
-                      "help" : "The many-body T_xx T_yy T_zz T_xy T_xz T_yz components of the kinetic energy tensor, amongst atoms i and j (c-v estimator).",
+                      "help" : "The physical system kinetic energy tensor, amongst atoms i and j. Returns the 6 components in the form [xx, yy, zz, xy, xz, yz]. Takes arguments 'i' and 'j', which give the indices of the appropriate two atoms.",
                       "size" : 6,
                       "func" : self.get_kij},
       "atom_x": {     "dimension" : "length",
                       "help": "Prints to properties the position (x,y,z) of a particle given its index. Takes arguments index and bead. If bead is not specified, refers to the centroid.",
                       "size" : 3,
-                      #'func': self.get_atomx},
                       "func" : (lambda atom="", bead="-1": self.get_atom_vec(self.beads.q, atom=atom, bead=bead))},
       "atom_v": {     "dimension" : "velocity",
                       "help": "Prints to properties the velocity (x,y,z) of a particle given its index. Takes arguments index and bead. If bead is not specified, refers to the centroid.",
                       "size" : 3,
-                      #'func': self.get_atomv},
                       "func" : (lambda atom="", bead="-1": self.get_atom_vec(self.beads.p/self.beads.m3, atom=atom, bead=bead))},
       "atom_p": {     "dimension" : "momentum",
                       "help": "Prints to properties the momentum (x,y,z) of a particle given its index. Takes arguments index and bead. If bead is not specified, refers to the centroid.",
                       "size" : 3,
-                      #'func': self.get_atomv},
                       "func" : (lambda atom="", bead="-1": self.get_atom_vec(self.beads.p, atom=atom, bead=bead))},
       "atom_f": {     "dimension" : "force",
-                      "help": "Prints to properties the force (x,y,z) of a particle given its index. Takes arguments index and bead. If bead is not specified, refers to the centroid.",
+                      "help": "Prints to properties the force (x,y,z) acting on a particle given its index. Takes arguments index and bead. If bead is not specified, refers to the centroid.",
                       "size" : 3,
-                      #'func': self.get_atomv},
                       "func" : (lambda atom="", bead="-1": self.get_atom_vec(self.forces.f, atom=atom, bead=bead))},
       "stress_md": {  "dimension": "pressure",
-                      "help": "The classical stress tensor of the simulation. Takes arguments 'x' and 'v', which gives stress[x,v]. By default gives stress[0,0].",
-                      'func': self.get_stress},
+                      "size" : 6,
+                      "help": "The simulation stress tensor. Returns the 6 components in the form [xx, yy, zz, xy, xz, yz].",
+                      "func": (lambda: self.flatten((self.forces.vir + self.nm.kstress)/self.cell.V))},
       "pressure_md": {"dimension": "pressure",
-                      "help": "The classical pressure of the simulation.",
-                      'func': self.get_press},
+                      "help": "The simulation pressure.",
+                      "func": (lambda: np.trace((self.forces.vir + self.nm.kstress)/(3.0*self.cell.V)))},
       "kstress_md":  {"dimension": "pressure",
-                      "help": "The classical kinetic stress tensor of the simulation. Takes arguments 'x' and 'v', which gives kstress[x,v]. By default gives kstress[0,0].",
-                      'func': self.get_kstress},
+                      "size" : 6,
+                      "help": "The simulation kinetic stress tensor. Returns the 6 components in the form [xx, yy, zz, xy, xz, yz].",
+                      "func": (lambda: self.flatten(self.nm.kstress/self.cell.V))},
       "virial_md": {  "dimension": "pressure",
-                      "help": "The classical virial tensor of the simulation. Takes arguments 'x' and 'v', which gives virial[x,v]. By default gives virial[0,0].",
-                      'func': self.get_vir},
+                      "size" : 6,
+                      "help": "The simulation virial tensor. Returns the 6 components in the form [xx, yy, zz, xy, xz, yz].",
+                      "func": (lambda: self.flatten(self.forces.vir/self.cell.V))},
       "stress_cv": {  "dimension": "pressure",
-                      "help": "The physical stress tensor of the system. Takes arguments 'x' and 'v', which gives stress[x,v]. By default gives stress[0,0].",
-                      'func': self.get_stresscv},
+                      "size" : 6,
+                      "help": "The physical system stress tensor.  Returns the 6 components in the form [xx, yy, zz, xy, xz, yz].",
+                      "func": (lambda: self.flatten(self.forces.vir + self.kstress_cv())/(self.cell.V*float(self.beads.nbeads)))},
       "pressure_cv": {"dimension": "pressure",
                       "help": "The physical pressure of the system.",
-                      'func': self.get_presscv},
+                      "func": (lambda: np.trace(self.forces.vir + self.kstress_cv())/(3.0*self.cell.V*float(self.beads.nbeads)))},
       "kstress_cv":  {"dimension": "pressure",
-                      "help": "The physical kinetic stress tensor of the system. Takes arguments 'x' and 'v', which gives kstress[x,v]. By default gives kstress[0,0].",
-                      'func': self.get_kstresscv},
+                      "size" : 6,
+                      "help": "The physical system kinetic stress tensor. Returns the 6 components in the form [xx, yy, zz, xy, xz, yz].",
+                      "func": (lambda: self.flatten(self.kstress_cv()/(self.cell.V*self.beads.nbeads)))},
       "virial_cv": {  "dimension": "pressure",
-                      "help": "The physical virial stress tensor of the system. Takes arguments 'x' and 'v', which gives virial[x,v]. By default gives virial[0,0].",
-                      'func': self.get_vircv},
-#Tensor versions of all of these as well?
-      "gle_ke": {     "dimension": "energy",
-                      "help": "Gives the kinetic energy associated with the additional degrees of freedom used in the GLE thermostat. Takes an argument 'mode' which gives the degree of freedom that is looked at, and defaults to 0.",
-                      'func': self.get_gleke},
-#This is currently horribly messy, and should probably be removed.
+                      "size" : 6,
+                      "help": "The physical system virial stress tensor. Returns the 6 components in the form [xx, yy, zz, xy, xz, yz].",
+                      "func": (lambda: self.flatten(self.forces.vir/(self.cell.V*self.beads.nbeads)))},
       "yamamoto": {   "help": "Gives the estimators required to calculate the Yamamoto finite difference approximation to the kinetic energy and constant volume heat capacity. Returns eps_v and eps_v', as defined in Takeshi M. Yamamoto, Journal of Chemical Physics, 104101, 123 (2005). As the two estimators have a different dimension, this can only be output in atomic units. Takes one argument, 'fd_delta', which gives the value of the finite difference parameter used. It defaults to " + str(-self._DEFAULT_FINDIFF) + ". If the value of 'fd_delta' is negative, then its magnitude will be reduced automatically by the code if the finite difference error becomes too large.",
                       'func': self.get_yama_estimators,
                       "size": 2},
@@ -353,47 +347,9 @@ class Properties(dobject):
       #in atomic units. unit_to_user() returns the value in the user 
       #specified units.
       if "dimension" in pkey and unit != "":
-         return  unit_to_user(pkey["dimension"], unit, pkey["func"](*arglist,**kwarglist))
+         return unit_to_user(pkey["dimension"], unit, pkey["func"](*arglist,**kwarglist))
       else:
          return pkey["func"](*arglist,**kwarglist)
-
-#   def get_atomx(self, atom="", bead="-1"):
-#      """Gives the position vector of one atom.
-#
-#      Args:
-#         atom: The index of the atom for which the position vector will
-#            be output.
-#         bead: The index of the replica of the atom for which the position
-#            vector will be output. If less than 0, then the centroid is used.
-#      """
-#
-#      if atom == "":
-#         raise ValueError("Must specify the index for atom_x property")
-#      atom = int(atom)
-#      bead = int(bead)
-#      if bead < 0:
-#         return self.beads.centroid.q[3*atom:3*(atom+1)]
-#      else:
-#         return self.beads.q[bead,3*atom:3*(atom+1)]
-#
-#   def get_atomv(self, atom="", bead="-1"):
-#      """Gives the velocity vector of one atom.
-#
-#      Args:
-#         atom: The index of the atom for which the velocity vector will
-#            be output.
-#         bead: The index of the replica of the atom for which the velocity
-#            vector will be output. If less than 0, then the centroid is used.
-#      """
-#
-#      if atom == "":
-#         raise ValueError("Must specify the index for atom_v property")
-#      atom = int(atom)
-#      bead = int(bead)
-#      if bead < 0:
-#         return self.beads.centroid.p[3*atom:3*(atom+1)]/self.beads.m[atom]
-#      else:
-#         return self.beads.p[bead,3*atom:3*(atom+1)]/self.beads.m[atom]
 
    def get_atom_vec(self, prop_vec, atom="", bead="-1"):
       """Gives a vector for one atom.
@@ -417,6 +373,13 @@ class Properties(dobject):
          return atom_vec/float(self.beads.nbeads)
       else:
          return prop_vec[bead,3*atom:3*(atom+1)]
+
+   def flatten(self, vec_2D):
+      """Takes a 3*3 upper-triangular array and returns it as a 1D array,
+      of the form [xx, yy, zz, xy, xz, yz].
+      """
+
+      return np.array([vec_2D[0,0], vec_2D[1,1], vec_2D[2,2], vec_2D[0,1], vec_2D[0,2], vec_2D[1,2]])
 
    def get_temp(self, atom=""):
       """Calculates the MD kinetic temperature.
@@ -458,73 +421,14 @@ class Properties(dobject):
 
       return kedof/(0.5*Constants.kb)
 
-   def get_econs(self):
-      """Calculates the conserved quantity estimator per bead."""
-
-      return self.ensemble.econs/(self.beads.nbeads)
-
-
-   def kstress_md(self):
-      """Calculates the classical MD virial kinetic stress tensor
-      estimator.
-
-      Note, in line with the beads.kstress tensor, this does not divide
-      by the volume, and so this must be done before the results are
-      output.
-      """
-
-      # returns estimator MULTIPLIED BY NBEADS -- again for consistency with the virial, etc...
-      kst = np.zeros((3,3),float)
-
-      kst[:,:] = self.nm.kstress
-
-      return kst
-
-   def get_stress(self, x=0, v=0):
-      """Calculates the classical kinetic energy estimator.
-
-      Returns stress[x,v].
-      """
-
-      x = int(x)
-      v = int(v)
-      stress = (self.forces.vir + self.kstress_md())/self.cell.V
-      return stress[x,v]
-
-   def get_press(self):
-      """Calculates the classical MD pressure estimator."""
-
-      stress = (self.forces.vir + self.kstress_md())/(self.cell.V*float(self.beads.nbeads))
-      return np.trace(stress)/3.0
-
-   def get_kstress(self, x=0, v=0):
-      """Calculates the classical kinetic stress tensor.
-
-      Returns kstress[x,v].
-      """
-
-      x = int(x)
-      v = int(v)
-      return self.self.kstress_md()[x,v]/self.cell.V
-
-   def get_vir(self, x=0, v=0):
-      """Calculates the classical virial tensor.
-
-      Returns vir[x,v].
-      """
-
-      x = int(x)
-      v = int(v)
-      #TODO Maybe this should not be divided by V?
-      return self.forces.vir[x,v]/self.cell.V
-
    def kstress_cv(self):
       """Calculates the quantum centroid virial kinetic stress tensor
       estimator.
 
-      Note, in line with the beads.kstress tensor, this does not divide
-      by the volume, and so this must be done before the results are
-      output.
+      Note that this is not divided by the volume or the number of beads.
+
+      Returns:
+         A 3*3 tensor with all the components of the tensor.
       """
 
       kst = np.zeros((3,3),float)
@@ -546,43 +450,6 @@ class Properties(dobject):
          kst[i,i] += self.beads.nbeads * ( np.dot(pc[i:na3:3],pc[i:na3:3]/m) )
 
       return kst
-
-   def get_kstresscv(self, x=0, v=0):
-      """Calculates the quantum centroid virial kinetic stress tensor
-      estimator.
-
-      Returns kstress[x,v].
-      """
-
-      x = int(x)
-      v = int(v)
-      return self.kstress_cv()[x,v]/(self.cell.V*float(self.beads.nbeads))
-
-   def get_stresscv(self, x=0, v=0):
-      """Calculates the quantum centroid virial stress tensor estimator.
-
-      Returns stress[x,v].
-      """
-
-      x = int(x)
-      v = int(v)
-      stress = (self.forces.vir + self.kstress_cv())/(self.cell.V*float(self.beads.nbeads))
-      return stress[x,v]
-
-   def get_presscv(self):
-      """Calculates the quantum centroid virial pressure estimator."""
-
-      return np.trace(self.forces.vir + self.kstress_cv())/(3.0*self.cell.V*float(self.beads.nbeads))
-
-   def get_vircv(self, x=0, v=0):
-      """Calculates the quantum centroid virial tensor estimator.
-
-      Returns vir[x,v].
-      """
-
-      x = int(x)
-      v = int(v)
-      return self.forces.vir[x,v]/(self.beads.nbeads*self.cell.V)
 
    def get_kincv(self, atom=""):
       """Calculates the quantum centroid virial kinetic energy estimator.
@@ -691,7 +558,6 @@ class Properties(dobject):
 
       return kcv
 
-
    def get_ktens(self, atom=""):
       """Calculates the quantum centroid virial kinetic energy
       TENSOR estimator.
@@ -719,32 +585,6 @@ class Properties(dobject):
          tkcv += self.get_kij(str(i), str(i))
 
       return tkcv
-
-   def get_gleke(self, mode=0):
-      """Calculates the kinetic energy of the nm-gle additional momenta.
-
-      Args:
-         mode: Gives the index of the normal mode thermostat we want the
-            kinetic energy for.
-      """
-
-      mode = int(mode)
-      gleke = 0.0
-      try:
-         s = depstrip(self.ensemble.thermostat.s)
-      except AttributeError:
-         return 0.0
-
-      if len(s.shape) < 2:
-         raise NameError("gle_ke called without a gle thermostat")
-      elif len(s.shape) == 2:
-         for alpha in range(len(s[0,:])):
-            gleke += s[mode, alpha]**2/2.0
-      else:
-         for i in range(len(s[0,:,0])):
-            for alpha in range(len(s[0,0,:])):
-               gleke += s[mode, i, alpha]**2/2.0
-      return gleke
 
    def get_yama_estimators(self, fd_delta= - _DEFAULT_FINDIFF):
       """Calculates the quantum scaled coordinate kinetic energy estimator.
@@ -795,29 +635,6 @@ class Properties(dobject):
             break
 
       return np.asarray([eps, eps_prime])
-
-   def wrap_cell(self, x=0, v=0):
-      """Returns the the x-th component of the v-th cell vector."""
-
-      x = int(x)
-      v = int(v)
-      return self.cell.h[x,v]
-
-   def full_cell(self):
-      """Returns a six-component vector giving all the non-zero components of
-      the cell vector matrix.
-      """
-
-      h = depstrip(self.cell.h)
-      return np.array([h[0,0], h[1,1], h[2,2], h[0,1], h[0,2], h[1,2]])
-
-   def cell_abcABC(self):
-      """Returns the cell parameters as the length of the principle cell
-      vectors and the angles between them."""
-
-      h = depstrip(self.cell.h)
-      (a, b, c, alpha, beta, gamma) = h2abc(h)
-      return np.array([a, b, c, alpha*180/math.pi, beta*180/math.pi, gamma*180/math.pi])
 
    def get_isotope_yama(self, alpha="1.0", atom=""):
       """Gives the components of the yamamoto scaled-mass KE estimator
@@ -1022,6 +839,9 @@ class Trajectories(dobject):
       "velocities": {"dimension" : "velocity",
                      "help": "Prints the velocity trajectories.",
                      'func': (lambda : self.simul.beads.p/self.simul.beads.m3)},
+      "momenta": {"dimension" : "momentum",
+                     "help": "Prints the momentum trajectories.",
+                     'func': (lambda : 1.0*self.simul.beads.p)},
       "forces": {    "dimension" : "force",
                      "help": "Prints the force trajectories.",
                      'func': (lambda : 1.0*self.simul.forces.f)},
@@ -1029,20 +849,26 @@ class Trajectories(dobject):
                      "help": "Prints the extras trajectories.",
                      'func': (lambda : self.simul.forces.extras)},
       "kinetic_cv": {"dimension" : "energy",
-                     "help": "Prints the kinetic energy for each bead, resolved into Cartesian components.",
+                     "help": "Prints the kinetic energy for each bead, resolved into Cartesian components. Prints out a vector of the form [xx, yy, zz]",
                      'func': self.get_akcv},
       "kinetic_od": {"dimension" : "energy",
-                     "help": "Prints the off diagonal elements of the kinetic stress tensor, for each bead.",
+                     "help": "Prints the off diagonal elements of the kinetic stress tensor, for each bead. Prints out a vector of the form [xy, xz, yz]",
                      'func': self.get_akcv_od},
       "r_gyration": {"dimension" : "length",
-                     "help": "Prints the radius of gyration for each atom, resolved into Cartesian components.",
+                     "help": "Prints the radius of gyration for each atom, resolved into Cartesian components. Prints out a vector of the form [xx, yy, zz]",
                      'func': self.get_rg},
       "x_centroid": {"dimension" : "length",
                      "help": "Prints the centroid coordinates for each atom.",
                      'func': (lambda : 1.0*self.simul.beads.qc)},
-      "v_centroid": {"dimension" : "length",
+      "v_centroid": {"dimension" : "velocity",
                      "help": "Prints the velocity centroid for each atom.",
-                     'func': (lambda : self.simul.beads.pc/self.simul.beads.m3[0])}
+                     'func': (lambda : self.simul.beads.pc/self.simul.beads.m3[0])},
+      "p_centroid": {"dimension" : "momentum",
+                     "help": "Prints the momentum centroid for each atom.",
+                     'func': (lambda : 1.0*self.simul.beads.pc)},
+      "f_centroid": {"dimension" : "force",
+                     "help": "Prints the force centroid for each atom.",
+                     'func': (lambda : np.sum(self.simul.forces.f,0)/float(self.simul.beads.nbeads))}
       }
 
 
@@ -1081,8 +907,8 @@ class Trajectories(dobject):
          dq[:] = (self.simul.beads.q[b]-self.simul.beads.qc).reshape((self.simul.beads.natoms,3))
          f[:] = self.simul.forces.f[b].reshape((self.simul.beads.natoms,3))
          rv[:,0] += dq[:,0]*f[:,1] + dq[:,1]*f[:,0]
-         rv[:,1] += dq[:,1]*f[:,2] + dq[:,2]*f[:,1]
-         rv[:,2] += dq[:,0]*f[:,2] + dq[:,2]*f[:,0]
+         rv[:,1] += dq[:,0]*f[:,2] + dq[:,2]*f[:,0]
+         rv[:,2] += dq[:,1]*f[:,2] + dq[:,2]*f[:,1]
       rv *= 0.5
       rv *= -0.5/self.simul.beads.nbeads
 
