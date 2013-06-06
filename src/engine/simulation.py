@@ -96,7 +96,8 @@ class Simulation(dobject):
       self.nm = nm
 
       # initialize the configuration of the system
-      init.init(self)
+      self.init = init
+      init.init_stage1(self)
 
       self.flist = forces
       self.forces = Forces()
@@ -118,6 +119,7 @@ class Simulation(dobject):
       self.nm.bind(self.beads, self.ensemble)
       self.forces.bind(self.beads, self.cell, self.flist)
       self.ensemble.bind(self.beads, self.nm, self.cell, self.forces, self.prng)
+      self.init.init_stage2(self)
 
       # binds output management objects
       self.properties.bind(self)
