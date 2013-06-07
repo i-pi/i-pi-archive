@@ -23,8 +23,8 @@ Exceptions:
 
 __all__ = ['InterfaceSocket']
 
-import sys
-import socket, select, threading, signal, string, os, time
+import sys, os
+import socket, select, threading, signal, string, time
 from utils.depend import depstrip
 from utils.messages import verbosity, warning, info
 from utils.softexit import softexit
@@ -380,6 +380,7 @@ class InterfaceSocket(object):
       self._poll_thread = None
       self._prev_kill = {}
       self._poll_true = False
+      self._poll_iter = 0 
 
    def open(self):
       """Creates a new socket.
@@ -487,7 +488,7 @@ class InterfaceSocket(object):
                c.close()
             except:
                pass
-            c.status = 0
+            c.status = Status.Disconnected
             self.clients.remove(c)
             for [k,j] in self.jobs[:]:
                if j is c:
@@ -526,9 +527,12 @@ class InterfaceSocket(object):
       """
 
       for c in self.clients:
+         if c.status == Status.Disconnected : # client disconnected. force a pool_update
+            self._poll_iter = UPDATEFREQ
+            return
          if not c.status & ( Status.Ready | Status.NeedsInit ):
             c.poll()
-
+           
       for [r,c] in self.jobs[:]:
          if c.status & Status.HasData:
             try:
@@ -536,28 +540,27 @@ class InterfaceSocket(object):
                if len(r["result"][1]) != len(r["pos"]):
                   raise InvalidSize
             except Disconnected:
-               c.status = 0
+               c.status = Status.Disconnected
                continue
             except InvalidSize:
               warning(" @SOCKET:   Client returned an inconsistent number of forces. Will mark as disconnected and try to carry on.", verbosity.low)
-              c.status = 0
+              c.status = Status.Disconnected
               continue
             except:
               warning(" @SOCKET:   Client got in a awkward state during getforce. Will mark as disconnected and try to carry on.", verbosity.low)
-              c.status = 0
+              c.status = Status.Disconnected
               continue
             c.poll()
             while c.status & Status.Busy: # waits, but check if we got stuck.
                if self.timeout > 0 and r["start"] > 0 and time.time() - r["start"] > self.timeout:
-                  warning(" @SOCKET:  Timeout! HASDATA for bead "+str( r["id"])+ " has been running for "+str( time.time() - r["start"]), verbosity.low)
+                  warning(" @SOCKET:  Timeout! HASDATA for bead "+str( r["id"])+ " has been running for "+str( time.time() - r["start"])+" sec.", verbosity.low)
+                  warning(" @SOCKET:   Client " + str(c.peername) +" died or got unresponsive(A). Disconnecting.", verbosity.low)
                   try:
-                     warning(" @SOCKET:   Client " + str(c.peername) +" died or got unresponsive(A). Removing from the list.", verbosity.low)
-                     c.status = Status.Disconnected
                      c.shutdown(socket.SHUT_RDWR)
-                     c.close()
                   except:
                      pass
-                  c.status = 0
+                  c.close()
+                  c.status = Status.Disconnected
                   continue
                c.poll()
             if not (c.status & Status.Up):
@@ -566,19 +569,18 @@ class InterfaceSocket(object):
             r["status"] = "Done"
             c.lastreq = r["id"] # saves the ID of the request that the client has just processed
             self.jobs = [ w for w in self.jobs if not ( w[0] is r and w[1] is c ) ] # removes pair in a robust way
-            #self.jobs.remove([r,c])
 
-         if self.timeout > 0 and r["start"] > 0 and time.time() - r["start"] > self.timeout:
-            warning(" @SOCKET:  Timeout! Request for bead "+str( r["id"])+ " has been running for "+str( time.time() - r["start"]), verbosity.low)
+         if self.timeout > 0 and c.status != Status.Disconnected and r["start"] > 0 and time.time() - r["start"] > self.timeout:
+            warning(" @SOCKET:  Timeout! Request for bead "+str( r["id"])+ " has been running for "+str( time.time() - r["start"])+" sec.", verbosity.low)
+            warning(" @SOCKET:   Client " + str(c.peername) +" died or got unresponsive(B). Disconnecting.",verbosity.low)
             try:
-               warning(" @SOCKET:   Client " + str(c.peername) +" died or got unresponsive(B). Removing from the list.",verbosity.low)
                c.shutdown(socket.SHUT_RDWR)
-               c.close()
-               c.poll()
-            except: # print some more detailed information
-               e = sys.exc_info()[0]
-               print "<p>Error: %s</p>" % e
-            c.status = 0
+            except socket.error:
+               e = sys.exc_info()
+               warning(" @SOCKET:  could not shut down cleanly the socket. %s: %s in file '%s' on line %d" % (e[0].__name__, e[1], os.path.basename(e[2].tb_frame.f_code.co_filename), e[2].tb_lineno), verbosity.low )
+            c.close()
+            c.poll()
+            c.status = Status.Disconnected
 
       freec = self.clients[:]
       for [r2, c] in self.jobs:
@@ -668,14 +670,14 @@ class InterfaceSocket(object):
       """
 
       info(" @SOCKET: Starting the polling thread main loop.", verbosity.low)
-      poll_iter = 0
+      self._poll_iter = UPDATEFREQ
       while self._poll_true:
          time.sleep(self.latency)
-         # makes sure to remove the last dead client as soon as possible.
-         if poll_iter > UPDATEFREQ or (len(self.clients) > 0 and not(self.clients[0].status & Status.Up)):
+         # makes sure to remove the last dead client as soon as possible -- and to get clients if we are dry
+         if self._poll_iter >= UPDATEFREQ or len(self.clients)==0 or (len(self.clients) > 0 and not(self.clients[0].status & Status.Up)):
             self.pool_update()
-            poll_iter = 0
-         poll_iter += 1
+            self._poll_iter = 0
+         self._poll_iter += 1
          self.pool_distribute()
 
          if os.path.exists("EXIT"): # softexit

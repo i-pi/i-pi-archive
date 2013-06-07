@@ -254,10 +254,15 @@ class Initializer(dobject):
             rm *= unit_to_internal("mass",v.units,1.0)
 
             if v.bead < 0:   # we are initializing the path
+               if (fmom and fmass):
+                  warning("Rescaling momenta to make up for changed mass", verbosity.medium)
+                  simul.beads.p/=simul.beads.sm3   # go to mass-scaled momenta, that are mass-invariant
                if v.index < 0:
                   simul.beads.m = rm
                else: # we are initializing a specific atom
                   simul.beads.m[v.index:v.index+1] = rm
+               if (fmom and fmass):  # finishes correcting the momenta
+                  simul.beads.p*=simul.beads.sm3  # back to normal momenta
             else:
                raise ValueError("Cannot change the mass of a single bead")
             fmass = True
