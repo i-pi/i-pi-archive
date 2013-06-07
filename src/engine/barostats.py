@@ -159,8 +159,6 @@ class Barostat(dobject):
       for i in range(3):
          kst[i,i] += np.dot(pc[i:na3:3],pc[i:na3:3]/m) *self.beads.nbeads
 
-
-
       return kst
 
    def get_stress(self):
@@ -350,7 +348,7 @@ class BaroMHT(Barostat):
       dthalf2 = dthalf**2
       dthalf3 = dthalf**3/3.0
 
-      fc = np.sum(depstrip(self.forces.f),0)/self.beads.nbeads
+      fc = np.sum(depstrip(self.forces.f),0)/float(self.beads.nbeads)
       m = depstrip(self.beads.m3)[0]
       pc = depstrip(self.beads.pc)
 

@@ -6,6 +6,10 @@ Functions:
    h2abc: Takes the representation of the system box in terms of an upper 
       triangular matrix of column vectors, and returns the representation in 
       terms of the lattice vector lengths and the angles between them.
+   h2abc_deg: Takes the representation of the system box in terms of an upper 
+      triangular matrix of column vectors, and returns the representation in 
+      terms of the lattice vector lengths and the angles between them in 
+      degrees.
    abc2h: Takes the representation of the system box in terms of the lattice 
       vector lengths and the angles between them, and returns the 
       representation in terms of an upper triangular lattice vector matrix.
@@ -19,9 +23,9 @@ Functions:
    logsumlog: Routine to accumulate the logarithm of a sum 
 """
 
-__all__ = ['matrix_exp', 'stab_cholesky', 'h2abc', 'abc2h', 'invert_ut3x3',
-           'det_ut3x3', 'eigensystem_ut3x3', 'exp_ut3x3', 'root_herm',
-           'logsumlog' ]
+__all__ = ['matrix_exp', 'stab_cholesky', 'h2abc', 'h2abc_deg', 'abc2h', 
+           'invert_ut3x3', 'det_ut3x3', 'eigensystem_ut3x3', 'exp_ut3x3', 
+            'root_herm', 'logsumlog' ]
 
 import numpy as np
 import math
@@ -42,12 +46,12 @@ def logsumlog(lasa, lbsb):
    (la,sa) = lasa
    (lb,sb) = lbsb
    
-   if (la>lb): 
+   if (la > lb): 
       sr = sa
-      lr = la + np.log(1.0+sb*np.exp(lb-la))
+      lr = la + np.log(1.0 + sb*np.exp(lb-la))
    else: 
       sr = sb
-      lr = lb + np.log(1.0+sa*np.exp(la-lb))
+      lr = lb + np.log(1.0 + sa*np.exp(la-lb))
    
    return (lr,sr)      
 
@@ -148,6 +152,21 @@ def h2abc(h):
    alpha = math.acos(np.dot(h[:,1], h[:,2])/(b*c))
 
    return a, b, c, alpha, beta, gamma
+
+def h2abc_deg(h):
+   """Returns a description of the cell in terms of the length of the 
+      lattice vectors and the angles between them in degrees.
+
+   Args: 
+      h: Cell matrix in upper triangular column vector form.
+
+   Returns:
+      A list containing the lattice vector lengths and the angles between them
+      in degrees.
+   """
+
+   (a, b, c, alpha, beta, gamma) = h2abc(h)
+   return a, b, c, alpha*180/math.pi, beta*180/math.pi, gamma*180/math.pi
 
 def abc2h(a, b, c, alpha, beta, gamma):
    """Returns a lattice vector matrix given a description in terms of the 
