@@ -5,7 +5,8 @@ Functions:
    stab_cholesky: A numerically stable version of the Cholesky decomposition.
    h2abc: Takes the representation of the system box in terms of an upper 
       triangular matrix of column vectors, and returns the representation in 
-      terms of the lattice vector lengths and the angles between them.
+      terms of the lattice vector lengths and the angles between them 
+      in radians.
    h2abc_deg: Takes the representation of the system box in terms of an upper 
       triangular matrix of column vectors, and returns the representation in 
       terms of the lattice vector lengths and the angles between them in 

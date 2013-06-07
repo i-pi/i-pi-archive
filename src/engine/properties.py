@@ -222,6 +222,9 @@ class Properties(dobject):
       "spring": {     "dimension" : "energy",
                       "help": "The spring potential energy between the beads.",
                       'func': (lambda: self.beads.vpath*self.nm.omegan2)},
+      "r_gyration": { "dimension" : "length",
+                      "help" : "Gives the average radius of gyration of the selected atoms. Takes an argument 'atom', which can be either an atom label or index to specify which species to find the radius of gyration of. If not specified, all atoms are used.",
+                      "func": self.get_rg},
       "kinetic_md":  {"dimension" : "energy",
                       "help": "The simulation kinetic energy. Takes an argument 'atom', which can be either an atom label or index to specify which species to find the temperature of. If not specified, all atoms are used.",
                       'func': self.get_kinmd},
@@ -270,10 +273,10 @@ class Properties(dobject):
       "stress_cv": {  "dimension": "pressure",
                       "size" : 6,
                       "help": "The physical system stress tensor.  Returns the 6 components in the form [xx, yy, zz, xy, xz, yz].",
-                      "func": (lambda: self.flatten(self.forces.vir + self.kstress_cv())/(self.cell.V*float(self.beads.nbeads)))},
+                      "func": (lambda: self.flatten(self.forces.vir + self.kstress_cv())/(self.cell.V*self.beads.nbeads))},
       "pressure_cv": {"dimension": "pressure",
                       "help": "The physical pressure of the system.",
-                      "func": (lambda: np.trace(self.forces.vir + self.kstress_cv())/(3.0*self.cell.V*float(self.beads.nbeads)))},
+                      "func": (lambda: np.trace(self.forces.vir + self.kstress_cv())/(3.0*self.cell.V*self.beads.nbeads))},
       "kstress_cv":  {"dimension": "pressure",
                       "size" : 6,
                       "help": "The physical system kinetic stress tensor. Returns the 6 components in the form [xx, yy, zz, xy, xz, yz].",
@@ -381,6 +384,45 @@ class Properties(dobject):
 
       return np.array([vec_2D[0,0], vec_2D[1,1], vec_2D[2,2], vec_2D[0,1], vec_2D[0,2], vec_2D[1,2]])
 
+   def get_rg(self, atom=""):
+      """Calculates the radius of gyration of the ring polymers.
+
+      Args:
+         atom: If given, specifies the atom to give the gyration radius
+            for. If not, the system average gyration radius is given.
+      """
+
+      try:
+         #iatom gives the index of the atom to be studied
+         iatom = int(atom)
+         latom = ""
+      except:
+         #here 'atom' is a label rather than an index which is stored in latom
+         iatom = -1
+         latom = atom
+
+      q = depstrip(self.beads.q)
+      qc = depstrip(self.beads.qc)
+      nat = self.beads.natoms
+      nb = self.beads.nbeads
+      rg_tot = 0.0
+      ncount = 0
+      for i in range(nat):
+         if (atom != "" and iatom != i and latom != self.beads.names[i]):
+            continue
+
+         rg_at = 0.0
+         for j in range(nb):
+            dq = q[j,3*i:3*(i+1)] - qc[3*i:3*(i+1)]
+            rg_at += np.dot(dq, dq)
+         ncount += 1
+         rg_tot += math.sqrt(rg_at/float(nb))
+
+      if ncount == 0:
+         raise ValueError("Couldn't find an atom which matched the argument of r_gyration")
+
+      return rg_tot/float(ncount)
+
    def get_temp(self, atom=""):
       """Calculates the MD kinetic temperature.
 
@@ -416,6 +458,8 @@ class Properties(dobject):
             if (iatom == i or latom == self.beads.names[i]): 
                nat += 1
 
+         if nat == 0:
+            raise ValueError("Couldn't find an atom which matched the argument of temperature")
          # "spreads" the COM removal correction evenly over all the atoms...
          kedof = self.get_kinmd(atom)/nat*(self.beads.natoms/(3.0*self.beads.natoms*self.beads.nbeads - mdof))
 
@@ -830,7 +874,6 @@ class Trajectories(dobject):
    def __init__(self):
       """Initialises a Trajectories object."""
 
-
       self.traj_dict = {
       # Note that here we want to return COPIES of the different arrays, so we make sure to make an operation in order not to return a reference.
       "positions": { "dimension" : "length",
@@ -932,7 +975,6 @@ class Trajectories(dobject):
             rg[3*j:3*(j+1)] += dq*dq
       return np.sqrt(rg/float(nb))
 
-
    def __getitem__(self, key):
       """Retrieves the item given by key.
 
@@ -956,7 +998,6 @@ class Trajectories(dobject):
          keyword, and the argument lists for the function used to calculate
          the trajectory specified by the keyword key.
       """
-
 
       (key, unit, arglist, kwarglist) = getall(key)
       pkey = self.traj_dict[key]
