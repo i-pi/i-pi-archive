@@ -58,7 +58,7 @@ def getall(pstring):
          which in general will specify units and argument lists.
 
    Returns: A tuple giving the keyword for the property, and its units
-      argument list and key word argument list.  
+      argument list and key word argument list.
    """
 
    unit = ""
@@ -199,15 +199,15 @@ class Properties(dobject):
       "conserved": {  "dimension": "energy",
                       "help": "The value of the conserved energy quantity per bead.",
                       'func': (lambda: self.ensemble.econs/float(self.beads.nbeads))},
-      "temperature": {"dimension": "temperature",
-                      "help": "The current physical temperature. Takes an argument 'atom', which can be either an atom label or index to specify which species to find the temperature of. If not specified, all atoms are used.",
-                      'func': self.get_temp },
       "density": {    "dimension": "density",
                       "help": "The physical system density.",
                       'func': (lambda: self.beads.m.sum()/self.cell.V)},
       "volume": {     "dimension": "volume",
                       "help": "The volume of the cell box.",
                       'func': (lambda: self.cell.V) },
+      "temperature": {"dimension": "temperature",
+                      "help": "The current physical temperature. Takes an argument 'atom', which can be either an atom label or index to specify which species to find the temperature of. If not specified, all atoms are used.",
+                      'func': self.get_temp },
       "cell_h": {    "dimension" : "length",
                       "help": "Gives cell vector matrix. Returns the 6 components in the form [xx, yy, zz, xy, xz, yz].",
                       "size": 6,
@@ -325,7 +325,7 @@ class Properties(dobject):
       Note that if the key contains a string (arg1; arg2; ... )
       then it will pass the appropriate positional arguments to the
       calculation function of the property. Note the brackets and
-      the semi-colon separators. If instead we have the syntax 
+      the semi-colon separators. If instead we have the syntax
       (arg1=val1;arg2; ... ), then the keyword/value pair (arg1,val1)
       will be added to the keyword argument list. The appropriate key word
       arguments will then be passed to the calculation function instead.
@@ -338,7 +338,7 @@ class Properties(dobject):
          key: A string contained in property_dict.
 
       Returns:
-         The property labelled by the keyword key, along with its unit 
+         The property labelled by the keyword key, along with its unit
          keyword, and the argument lists for the function used to calculate
          the property specified by the keyword key.
       """
@@ -346,8 +346,8 @@ class Properties(dobject):
       (key, unit, arglist, kwarglist) = getall(key)
       pkey = self.property_dict[key]
 
-      #pkey["func"](*arglist,**kwarglist) gives the value of the property 
-      #in atomic units. unit_to_user() returns the value in the user 
+      #pkey["func"](*arglist,**kwarglist) gives the value of the property
+      #in atomic units. unit_to_user() returns the value in the user
       #specified units.
       if "dimension" in pkey and unit != "":
          return unit_to_user(pkey["dimension"], unit, pkey["func"](*arglist,**kwarglist))
@@ -455,7 +455,7 @@ class Properties(dobject):
 
          nat = 0
          for i in range(self.beads.natoms):
-            if (iatom == i or latom == self.beads.names[i]): 
+            if (iatom == i or latom == self.beads.names[i]):
                nat += 1
 
          if nat == 0:
@@ -638,7 +638,7 @@ class Properties(dobject):
       shown in Takeshi M. Yamamoto, Journal of Chemical Physics,
       104101, 123 (2005). Returns both eps_v and eps_v' as defined in
       the above article. Note that heat capacity is calculated as
-      beta**2*kboltzmann*(<eps_v**2> - <eps_v>**2 - <eps_v'>), and the 
+      beta**2*kboltzmann*(<eps_v**2> - <eps_v>**2 - <eps_v'>), and the
       energy of the system as <eps_v>.
 
       Args:
@@ -981,7 +981,7 @@ class Trajectories(dobject):
       Note that if the key contains a string (arg1; arg2; ... )
       then it will pass the appropriate positional arguments to the
       calculation function of the property. Note the brackets and
-      the semi-colon separators. If instead we have the syntax 
+      the semi-colon separators. If instead we have the syntax
       (arg1=val1;arg2; ... ), then the keyword/value pair (arg1,val1)
       will be added to the keyword argument list. The appropriate key word
       arguments will then be passed to the calculation function instead.
@@ -994,7 +994,7 @@ class Trajectories(dobject):
          key: A string contained in trajectory_dict.
 
       Returns:
-         The trajectory labelled by the keyword key, along with its unit 
+         The trajectory labelled by the keyword key, along with its unit
          keyword, and the argument lists for the function used to calculate
          the trajectory specified by the keyword key.
       """
@@ -1002,8 +1002,8 @@ class Trajectories(dobject):
       (key, unit, arglist, kwarglist) = getall(key)
       pkey = self.traj_dict[key]
 
-      #pkey["func"](*arglist,**kwarglist) gives the value of the trajectory 
-      #in atomic units. unit_to_user() returns the value in the user 
+      #pkey["func"](*arglist,**kwarglist) gives the value of the trajectory
+      #in atomic units. unit_to_user() returns the value in the user
       #specified units.
       if "dimension" in pkey and unit != "":
          return  unit_to_user(pkey["dimension"], unit, 1.0) * pkey["func"](*arglist,**kwarglist)
