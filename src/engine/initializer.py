@@ -10,8 +10,17 @@ Classes:
       particular parameter. An example of the former would be initializing
       the configurations from a xyz file, an example of the latter would be
       initializing the velocities according to the physical temperature.
-   InitFile: Simple class that allows initialization of data from a file.
-      Just holds the information needed to open the file.
+   InitBase: Simple class that reads data from a string or file.
+   InitIndexed: The same as init base, but can also optionally hold
+      information about which atom or bead to initialize from.
+
+Functions:
+   init_xyz: Reads beads data from a xyz file.
+   init_pdb: Reads beads and cell data from a pdb file.
+   init_chk: Reads beads, cell and thermostat data from a checkpoint file.
+   init_beads: Initializes a beads object from an Initializer object.
+   init_vector: Initializes a vector from an Initializer object.
+   set_vector: Initializes a vector from another vector.
 """
 
 import numpy as np
@@ -37,14 +46,18 @@ class InitBase(dobject):
    Attributes:
       value: A duck-typed stored value.
       mode: A string that determines how the value is to be interpreted.
+      units: A string giving which unit the value is in.
    """
 
    def __init__(self, value="", mode="", units="", **others):
       """Initializes InitFile.
 
       Args:
-         filename: A string giving the name of the file.
-         format: A string giving the extension of the file.
+         value: A string which specifies what value to initialize the
+            simulation property to.
+         mode: A string specifiying what style of initialization should be
+            used to read the data.
+         units: A string giving which unit the value is in.
       """
 
       self.value = value
@@ -54,12 +67,40 @@ class InitBase(dobject):
       for (o, v) in others.items():
          self.__dict__[o] = v
 
+
 class InitIndexed(InitBase):
+   """Class to initialize objects which can be set for a particular bead.
+
+   Attributes:
+      index: Which atom to initialize the value of.
+      bead: Which bead to initialize the value of.
+   """
 
    def __init__(self, value="", mode="", units="", index=-1, bead=-1):
+      """Initializes InitFile.
+
+      Args:
+         value: A string which specifies what value to initialize the
+            simulation property to.
+         mode: A string specifiying what style of initialization should be
+            used to read the data.
+         units: A string giving which unit the value is in.
+         index: Which atom to initialize the value of.
+         bead: Which bead to initialize the value of.
+      """
+
       super(InitIndexed,self).__init__(value=value, mode=mode, units=units, index=index, bead=bead)
 
+
 def init_xyz(filename):
+   """Reads an xyz file and returns the data contained in it.
+
+   Args:
+      filename: A string giving the name of the xyz file to be read from.
+
+   Returns:
+      A list of Atoms objects as read from each frame of the xyz file.
+   """
 
    rfile = open(filename,"r")
    ratoms = []
@@ -74,6 +115,15 @@ def init_xyz(filename):
    return ratoms
 
 def init_pdb(filename):
+   """Reads an pdb file and returns the data contained in it.
+
+   Args:
+      filename: A string giving the name of the pdb file to be read from.
+
+   Returns:
+      A list of Atoms objects as read from each frame of the pdb file, and
+      a Cell object as read from the final pdb frame.
+   """
 
    rfile = open(filename,"r")
    ratoms = []
@@ -88,6 +138,16 @@ def init_pdb(filename):
    return ( ratoms, rcell ) # if multiple frames, the last cell is returned
 
 def init_chk(filename):
+   """Reads an checkpoint file and returns the data contained in it.
+
+   Args:
+      filename: A string giving the name of the checkpoint file to be read from.
+
+   Returns:
+      A Beads object, Cell object and Thermostat object as read from the 
+      checkpoint file.
+   """
+
    # reads configuration from a checkpoint file
    rfile = open(filename,"r")
    xmlchk = xml_parse_file(rfile) # Parses the file.
@@ -102,6 +162,17 @@ def init_chk(filename):
    return (rbeads, rcell, rthermo)
 
 def init_beads(iif, nbeads):
+   """A file to initialize a beads object from an appropriate initializer
+   object.
+
+   Args:
+      iif: An Initializer object which has information on the bead positions.
+      nbeads: The number of beads.
+
+   Raises:
+      ValueError: If called using an Initializer object with a 'manual' mode.
+   """
+
    mode = iif.mode; value = iif.value
    if mode == "xyz" or mode == "pdb":
       if mode == "xyz": ratoms = init_xyz(value)
@@ -116,6 +187,16 @@ def init_beads(iif, nbeads):
    return rbeads
 
 def init_vector(iif, nbeads, momenta=False):
+   """A file to initialize a vector from an appropriate initializer
+   object.
+
+   Args:
+      iif: An Initializer object specifying the value of a vector.
+      nbeads: The number of beads.
+      momenta: If bead momenta rather than positions are being initialized
+         from a checkpoint file, this is set to True.
+   """
+
    mode = iif.mode; value = iif.value
    if mode == "xyz" or mode == "pdb":
       rq = init_beads(iif, nbeads).q
@@ -138,6 +219,20 @@ def init_vector(iif, nbeads, momenta=False):
    return rq
 
 def set_vector(iif, dq, rq):
+   """A file to initialize a vector from an another vector.
+
+   If the first dimension is different, i.e. the two vectors correspond
+   to a different number of beads, then the ring polymer contraction/expansion
+   is used to rescale the original vector to the one used in the simulation,
+   as described in the paper T. E. Markland and D. E. Manolopoulos, J. Chem.
+   Phys. 129, 024105, (2008).
+
+   Args:
+      iif: An Initializer object specifying the value of a vector.
+      dq: The vector to be initialized.
+      rq: The vector to initialize from.
+   """
+
    (nbeads, natoms) = rq.shape; natoms/=3
    (dbeads, datoms) = dq.shape; datoms/=3
 
@@ -207,7 +302,7 @@ class Initializer(dobject):
       """Initializes the simulation -- first stage.
 
       Takes a simulation object, and uses all the data in the initialization
-      queue to fill up the beads data needed to run the simulation.
+      queue to fill up the beads and cell data needed to run the simulation.
 
       Args:
          simul: A simulation object to be initialized.
