@@ -1,15 +1,15 @@
 <simulation>
    <initialize nbeads='1'>
-      <file format='pdb'> our_ref.pdb </file>
-      <resample_v> 120 </resample_v>
+      <file mode='pdb'> our_ref.pdb </file>
+      <velocities mode='thermal'> 80 </velocities>
    </initialize>
-   <output prefix='lj-gas'>
-      <properties stride='5' filename='out'>  [ time, conserved, temperature, kinetic_md, potential, pressure_md] </properties>
+   <output prefix='lj'>
+      <properties stride='5' filename='out'>  [ time, conserved, temperature, kinetic_md, potential, pressure_md ] </properties>
       <trajectory stride='100' filename='pos'>positions</trajectory>
       <checkpoint stride='2000'/>
    </output>
    <total_steps>100000</total_steps>
-   <prng><seed>3348</seed></prng>
+   <prng><seed>3848</seed></prng>
    <forces>
       <socket mode="unix">
          <address>localhost</address>   <port>31415</port>    <slots>4</slots> <latency>0.001</latency>
@@ -20,8 +20,8 @@
          <tau>1e4</tau>
          <ethermo>0.0</ethermo>
       </thermostat>
-      <timestep units='femtosecond'>0.4</timestep>
-      <fixcom>False</fixcom>
-      <temperature>59.6646</temperature>
+      <timestep units='femtosecond'>0.2</timestep>
+      <fixcom>True</fixcom>
+      <temperature>40.32753474</temperature>
    </ensemble>
 </simulation>

@@ -1,9 +1,9 @@
 <simulation>
    <initialize nbeads='1'>
-      <file format='pdb'> our_ref.pdb </file>
-      <resample_v> 80 </resample_v>
+      <file mode='pdb'> our_ref.pdb </file>
+      <velocities mode='thermal'> 120 </velocities>
    </initialize>
-   <output prefix='lj-liquid'>
+   <output prefix='lj'>
       <properties stride='5' filename='out'>  [ time, conserved, temperature, kinetic_md, potential, pressure_md] </properties>
       <trajectory stride='100' filename='pos'>positions</trajectory>
       <checkpoint stride='2000'/>
@@ -22,6 +22,6 @@
       </thermostat>
       <timestep units='femtosecond'>0.4</timestep>
       <fixcom>False</fixcom>
-      <temperature>39.36998597</temperature>
+      <temperature>59.6646</temperature>
    </ensemble>
 </simulation>
