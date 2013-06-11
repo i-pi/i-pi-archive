@@ -2306,7 +2306,7 @@ rho
 
 \end_inset
 
-, T) = (864, 0.35, 1.62) and (N, 
+, T) = (864, 0.35, 1.62), (N, 
 \begin_inset ERT
 status open
 
@@ -2323,7 +2323,24 @@ rho
 
 \end_inset
 
-, T) = (864, 0.75, 1.069) in reduced Lennard-Jones units, so that the results
+, T) = (864, 0.75, 1.069) and (N, 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+(
+\backslash
+rho
+\backslash
+)
+\end_layout
+
+\end_inset
+
+, T) = (864, 0.88, 1.095) in reduced Lennard-Jones units, so that the results
  can be compared to those in the paper 
 \begin_inset ERT
 status open
@@ -2465,12 +2482,7 @@ label{run}
 How to run the wrapper
 \end_layout
 
-\begin_layout Subsection
-Command line interface
-\end_layout
-
 \begin_layout Standard
-The best way to run 
 \begin_inset ERT
 status open
 
@@ -2483,9 +2495,22 @@ wrappi
 
 \end_inset
 
- is via the command line.
+ simulations are run using the top level script found in the src directory.
  If the xml-formatted input file is called input_file.xml, then the command
- to do this is:
+ to run a 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+wrappi
+\end_layout
+
+\end_inset
+
+ simulation is:
 \end_layout
 
 \begin_layout Standard
@@ -2501,7 +2526,7 @@ begin{verbatim}
 
 \begin_layout Plain Layout
 
-> python $src_dir/main.py input_file.xml
+> python $src_dir/i-pi input_file.xml
 \end_layout
 
 \begin_layout Plain Layout
@@ -2517,80 +2542,10 @@ end{verbatim}
 \end_layout
 
 \begin_layout Standard
-This is the recommended way of initializing 
-\begin_inset ERT
-status open
-
-\begin_layout Plain Layout
-
-
-\backslash
-wrappi
-\end_layout
-
-\end_inset
-
-, as it is both the simplest, and the easiest to script for lots of similar
- runs with different parameters.
-\end_layout
-
-\begin_layout Subsection
-Python interface
-\end_layout
-
-\begin_layout Standard
-It is also possible to run 
-\begin_inset ERT
-status open
-
-\begin_layout Plain Layout
-
-
-\backslash
-wrappi
-\end_layout
-
-\end_inset
-
- from inside a Python script.
- This can be done via the following code:
-\end_layout
-
-\begin_layout Standard
-\begin_inset ERT
-status open
-
-\begin_layout Plain Layout
-
-
-\backslash
-begin{verbatim}
-\end_layout
-
-\begin_layout Plain Layout
-
-from main import *
-\end_layout
-
-\begin_layout Plain Layout
-
-\end_layout
-
-\begin_layout Plain Layout
-
-main("input_file.xml")
-\end_layout
-
-\begin_layout Plain Layout
-
-
-\backslash
-end{verbatim}
-\end_layout
-
-\end_inset
-
-
+The code will then have to wait until at least one driver code has connected
+ before running any dynamics.
+ At this point the code is essentially idle, and the only process that it
+ runs is to periodically poll the socket for connections.
 \end_layout
 
 \begin_layout Section
@@ -2655,7 +2610,7 @@ Quantum-Espresso
 \begin_layout Standard
 Suppose we want to run Quantum-Espresso as the driver code, and we have
  compiled it as given above, and have an input file which will give the
- correct forces and potential.
+ correct forces and potential for the system of interest.
  If we want to connect to a socket on the host address host_address and
  on the port number port, then we would add the following lines to the input
  file:
@@ -2979,7 +2934,7 @@ end{verbatim}
 
 \begin_layout Standard
 Depending on which cluster is used, additional commands to set parameters
- such as the walltime, number of nodes and number of programs can be used.
+ such as the walltime, number of nodes and number of cores can be used.
  Check the qsub man page for the cluster you are running the code on for
  more details.
 \end_layout
@@ -3370,9 +3325,10 @@ end{verbatim}
 \end_layout
 
 \begin_layout Standard
-where each entry may be one of the types in the above table that has only
- one value, and `array_shape' is a tuple that gives the shape of the generated
- array.
+where each entry has the same data type, which will be either float, int,
+ boolean or string, and `array_shape' is a tuple that gives the shape of
+ the generated array.
+ If the shape is not specified, then a 1D array will be assumed.
 \end_layout
 
 \begin_layout Standard
@@ -3383,9 +3339,31 @@ The code uses this hierarchial structure to help read the data; if a particular
  For example the system that is being studied is partly defined by the thermodyn
 amic ensemble that should be sampled, which in turn may be partly defined
  by the temperature, and so on.
- In the input file this would be specified by having a simulation tag, containin
-g an ensemble tag, which itself contains a temperature tag, which will contain
- a float value corresponding to the temperature.
+ In the input file this would be specified by having a 
+\begin_inset Quotes eld
+\end_inset
+
+simulation
+\begin_inset Quotes erd
+\end_inset
+
+ tag, containing an 
+\begin_inset Quotes eld
+\end_inset
+
+ensemble
+\begin_inset Quotes erd
+\end_inset
+
+ tag, which itself contains a 
+\begin_inset Quotes eld
+\end_inset
+
+temperature
+\begin_inset Quotes erd
+\end_inset
+
+ tag, which will contain a float value corresponding to the temperature.
  In the code itself this will correspond to a simulation object, which will
  contain an ensemble object, which will contain a temperature variable.
  In this manner, the simulation class structure can be constructed iteratively.
@@ -3456,15 +3434,15 @@ initialize
 \begin_inset Quotes erd
 \end_inset
 
- tag name in the xml file by the tag 
+ tag name in the xml file, with the 
 \begin_inset Quotes eld
 \end_inset
 
-file
+mode
 \begin_inset Quotes erd
 \end_inset
 
-.
+ attribute as the file format.
  The currently accepted file formats are:
 \end_layout
 
@@ -3477,10 +3455,50 @@ xyz
 \end_layout
 
 \begin_layout Standard
-These files can be used to specify the initial centroid positions and atom
- identities and, depending on the format, the cell parameters as well.
- The code will then try to assign masses to the atoms based on their atomic
- symbol.
+These files can be used to specify the initial atom positions, labels and
+ masses (based on atomic symbol) and, depending on the format, the cell
+ parameters as well.
+ It can either be held within a 
+\begin_inset Quotes eld
+\end_inset
+
+file
+\begin_inset Quotes erd
+\end_inset
+
+ tag, in which case all applicable information will be initialized, or 
+\begin_inset Quotes eld
+\end_inset
+
+positions
+\begin_inset Quotes erd
+\end_inset
+
+/
+\begin_inset Quotes erd
+\end_inset
+
+masses
+\begin_inset Quotes erd
+\end_inset
+
+/
+\begin_inset Quotes erd
+\end_inset
+
+labels
+\begin_inset Quotes erd
+\end_inset
+
+/
+\begin_inset Quotes erd
+\end_inset
+
+cell
+\begin_inset Quotes erd
+\end_inset
+
+, in which case only the specified property will be initialized.
 \end_layout
 
 \begin_layout Subsection
@@ -3832,7 +3850,7 @@ status open
 
 
 \backslash
-begin{verbatim}<properties stride=`' filename=`' flush=`'>
+begin{verbatim}<properties stride=`' filename=`' flush=`' shape=`'>
 \end_layout
 
 \begin_layout Plain Layout
@@ -3890,6 +3908,56 @@ Secondly, you can specify the units that the property will be output in.
 Thirdly, the arguments to be passed to the function can be specified between
  standard brackets, with each argument separated by a semi-colon.
  These may or may not be mandatory depending on the property.
+ The arguments can be specified by either of two different syntaxes, (name1=arg1
+;
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ldots
+\end_layout
+
+\end_inset
+
+) or (arg1;
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ldots
+\end_layout
+
+\end_inset
+
+).
+ The first explicitly assigns the argument with the name 
+\begin_inset Quotes eld
+\end_inset
+
+name1
+\begin_inset Quotes erd
+\end_inset
+
+ the value 
+\begin_inset Quotes eld
+\end_inset
+
+arg1
+\begin_inset Quotes erd
+\end_inset
+
+, whereas the second relies on the arguments being specified in the correct
+ order.
+ The two syntaxes may be mixed, but positional arguments must be specified
+ first otherwise undefined behaviour will result.
+ If this is not specified, then the defaults as defined in the properties.py
+ module will be used.
 \end_layout
 
 \begin_layout Standard
@@ -3959,7 +4027,7 @@ status open
 
 \backslash
 begin{verbatim}<trajectory stride=`' filename=`' format=`' cell_units=`'
- flush=`'>
+ flush=`' bead=`'>
 \end_layout
 
 \begin_layout Plain Layout
@@ -4015,6 +4083,16 @@ filename
 
  with the bead index appended, so as to distinguish between the trajectories
  of each bead.
+ In this case it is also possible to only output one trajectory by specifying
+ the 
+\begin_inset Quotes eld
+\end_inset
+
+bead
+\begin_inset Quotes erd
+\end_inset
+
+ attribute.
  The possible choices of output properties are:
 \end_layout
 
@@ -4214,6 +4292,57 @@ An important point to note is that since each time step is split into several
  is created must correspond to the state of the system at the start of the
  step.
  To this end, the state of the system is saved at the start of every step.
+\end_layout
+
+\begin_layout Subsection
+Initialization from RESTART
+\end_layout
+
+\begin_layout Standard
+As well as being a valid input file, the RESTART file can be used as a starting
+ point for simulations in two other ways.
+ Firstly, in the 
+\begin_inset Quotes eld
+\end_inset
+
+initialize
+\begin_inset Quotes erd
+\end_inset
+
+ tag, there is a 
+\begin_inset Quotes eld
+\end_inset
+
+chk
+\begin_inset Quotes erd
+\end_inset
+
+ option for the 
+\begin_inset Quotes eld
+\end_inset
+
+mode
+\begin_inset Quotes erd
+\end_inset
+
+ attribute of all the initializable properties.
+ This will use the restart file as a basis for initializing the specified
+ bits of data.
+\end_layout
+
+\begin_layout Standard
+Secondly, there is a particular ensemble type, 
+\begin_inset Quotes eld
+\end_inset
+
+replay_file
+\begin_inset Quotes erd
+\end_inset
+
+, which takes a configuration file with multiple frames or a checkpoint
+ file with one frame and reruns it without doing dynamics, by simply setting
+ the configuration to match that given by the input file at each frame.
+ 
 \end_layout
 
 \begin_layout Chapter
@@ -4595,7 +4724,7 @@ Constant pressure simulations can be run by setting the
 \begin_inset Quotes eld
 \end_inset
 
-type
+mode
 \begin_inset Quotes erd
 \end_inset
 
@@ -6018,6 +6147,55 @@ input{initializer}
 
 \backslash
 input{init_file}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+input{init_pos}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+input{init_mom}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+input{init_vel}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+input{init_lab}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+input{init_mass}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+input{init_cell}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+input{init_therm}
 \end_layout
 
 \begin_layout Plain Layout
