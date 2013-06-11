@@ -366,9 +366,14 @@ class Properties(dobject):
       """
 
       if atom == "":
-         raise ValueError("Must specify the index for atom_vec property")
+         raise IndexError("Must specify the index for atom_vec property")
       atom = int(atom)
       bead = int(bead)
+      if atom >= self.beads.natoms:
+         raise IndexError("Cannot output atom_vec property as atom index %d is larger than the number of atoms" % atom)
+      if bead >= self.beads.nbeads:
+         raise IndexError("Cannot output atom_vec property as bead index %d is larger than the number of beads" % bead)
+
       if bead < 0:
          atom_vec = np.zeros(3)
          for b in range(self.beads.nbeads):
@@ -396,7 +401,9 @@ class Properties(dobject):
          #iatom gives the index of the atom to be studied
          iatom = int(atom)
          latom = ""
-      except:
+         if iatom >= self.beads.natoms:
+            raise IndexError("Cannot output gyration radius as atom index %d is larger than the number of atoms" % iatom)
+      except ValueError:
          #here 'atom' is a label rather than an index which is stored in latom
          iatom = -1
          latom = atom
@@ -419,7 +426,7 @@ class Properties(dobject):
          rg_tot += math.sqrt(rg_at/float(nb))
 
       if ncount == 0:
-         raise ValueError("Couldn't find an atom which matched the argument of r_gyration")
+         raise IndexError("Couldn't find an atom which matched the argument of r_gyration")
 
       return rg_tot/float(ncount)
 
@@ -448,7 +455,9 @@ class Properties(dobject):
             #iatom gives the index of the atom to be studied
             iatom = int(atom)
             latom = ""
-         except:
+            if iatom >= self.beads.natoms:
+               raise IndexError("Cannot output temperature as atom index %d is larger than the number of atoms" % iatom)
+         except ValueError:
             #here 'atom' is a label rather than an index which is stored in latom
             iatom = -1
             latom = atom
@@ -459,7 +468,7 @@ class Properties(dobject):
                nat += 1
 
          if nat == 0:
-            raise ValueError("Couldn't find an atom which matched the argument of temperature")
+            raise IndexError("Couldn't find an atom which matched the argument of temperature")
          # "spreads" the COM removal correction evenly over all the atoms...
          kedof = self.get_kinmd(atom)/nat*(self.beads.natoms/(3.0*self.beads.natoms*self.beads.nbeads - mdof))
 
@@ -507,7 +516,9 @@ class Properties(dobject):
          #iatom gives the index of the atom to be studied
          iatom = int(atom)
          latom = ""
-      except:
+         if iatom >= self.beads.natoms:
+            raise IndexError("Cannot output kinetic energy as atom index %d is larger than the number of atoms" % iatom)
+      except ValueError:
          #here 'atom' is a label rather than an index which is stored in latom
          iatom = -1
          latom = atom
@@ -546,7 +557,9 @@ class Properties(dobject):
             #iatom gives the index of the atom to be studied
             iatom = int(atom)
             latom = ""
-         except:
+            if iatom >= self.beads.natoms:
+               raise IndexError("Cannot output kinetic energy as atom index %d is larger than the number of atoms" % iatom)
+         except ValueError:
             #here 'atom' is a label rather than an index which is stored in latom
             iatom = -1
             latom = atom
@@ -577,6 +590,10 @@ class Properties(dobject):
 
       i = int(ni)
       j = int(nj)
+      if i >= self.beads.natoms:
+         raise IndexError("Cannot output kinetic_ij as atom index %d is larger than the number of atoms" % i)
+      if j >= self.beads.natoms:
+         raise IndexError("Cannot output kinetic_ij as atom index %d is larger than the number of atoms" % j)
       mi = self.beads.m[i]
       mj = self.beads.m[j]
       ai = 3*i
@@ -616,7 +633,9 @@ class Properties(dobject):
          #iatom gives the index of the atom to be studied
          iatom = int(atom)
          latom = ""
-      except:
+         if iatom >= self.beads.natoms:
+            raise IndexError("Cannot output kinetic tensor as atom index %d is larger than the number of atoms" % iatom)
+      except ValueError:
          #here 'atom' is a label rather than an index which is stored in latom
          iatom = -1
          latom = atom
@@ -700,7 +719,9 @@ class Properties(dobject):
          #iatom gives the index of the atom to be studied
          iatom = int(atom)
          latom = ""
-      except:
+         if iatom >= self.beads.natoms:
+            raise IndexError("Cannot output scaled-mass kinetic energy estimator as atom index %d is larger than the number of atoms" % iatom)
+      except ValueError:
          #here 'atom' is a label rather than an index which is stored in latom
          iatom = -1
          latom = atom
@@ -764,7 +785,7 @@ class Properties(dobject):
             (lawke, sawke) = logsumlog( (lawke, sawke), (-logr+np.log(abs(tcv)), np.sign(tcv)) )
 
       if ni == 0:
-         raise ValueError("Couldn't find an atom which matched the argument of isotope_y")
+         raise IndexError("Couldn't find an atom which matched the argument of isotope_y")
 
       return np.asarray([alogr/ni, alogr2/ni, atcv/ni, atcv2/ni, law, lawke, sawke])
 
@@ -788,7 +809,9 @@ class Properties(dobject):
          #iatom gives the index of the atom to be studied
          iatom = int(atom)
          latom = ""
-      except:
+         if iatom >= self.beads.natoms:
+            raise IndexError("Cannot output scaled-mass kinetic energy estimator as atom index %d is larger than the number of atoms" % iatom)
+      except ValueError:
          #here 'atom' is a label rather than an index which is stored in latom
          iatom = -1
          latom = atom
@@ -854,7 +877,7 @@ class Properties(dobject):
             (lawke, sawke) = logsumlog( (lawke, sawke), (-logr+np.log(abs(tcv)), np.sign(tcv)) )
 
       if ni == 0:
-         raise ValueError("Couldn't find an atom which matched the argument of isotope_y")
+         raise IndexError("Couldn't find an atom which matched the argument of isotope_y")
 
       return np.asarray([alogr/ni, alogr2/ni, atcv/ni, atcv2/ni, law, lawke, sawke])
 
