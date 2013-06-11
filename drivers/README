@@ -3,19 +3,20 @@
  * This gives simple test driver codes.
 
  * Files:
-   - LJ.f: Lennard-Jones driver.
-   - interface_LJ.F: Socket interface for the Lennard-Jones driver.
-   - SG.f: Silvera-Goldman driver.
-   - interface_SG.F: Socket interface for the Silvera-Goldman driver.
-   - sys_vars.f: Holds simple classes used in the other files.
-   - oned.F: Holds a simple one dimensional harmonic potential.
+   - LJ.f90: Calculates the Lennard-Jones potential/forces/virial.
+   - SG.f90: Calculates the Silvera-Goldman potential/forces/virial.
+   - distance.f90: Deals with calculating the separation between atoms and
+      the neighbour list calculation.
+   - sockets.c: Contains the functions to create the client socket and read from
+      and write to it.
+   - driver.f90: Socket interface for the driver codes.
    - Makefile: A makefile that which compiles all the fortran code as 
       necessary.
-   - xml_read.f: A module giving functions to read xml style files.
 
  * There are also two shell scripts for running the RPMD runs easily. These are:
    - launch_multi.sh: This starts an entire run of 100 tests.
-   - launch.sh: This starts one of the runs
+   - launch.sh: This starts one of the runs. Note that you will have to replace
+      the host name to whatever the name of your local network is.
 
  * Let us say that in the RPMD directory you have run run_3, which has an
    initial port number of 31413. To start the driver codes then, you need do:

@@ -3,23 +3,27 @@
  * This gives all the documentation for the program.
 
  * Files:
-   - manual.lyx: lyx file giving the manual template
    - create_man.py: python script which automatically generates latex help files
       for all the classes, for use in the manual.
-   - help.py: python script which can generate custom help files for
-      different files.
    - help_list.py: python script which can generate custom help files for
       the output files.
-   - help.xml: Automatically generated xml help file.
-   - *.tex: Automatically generated latex help files for all the classes, for
-      use in the manual.
+   - help.py: python script which can generate custom help files for
+      different files.
+   - Makefile: The makefile for the automatically generated manual.
+   - manual.lyx: lyx file giving the manual template
    - mybib.bib: Bibliography file for the manual.
-   - Makefile: The makefile for the automatically generated manual. To make the
-      manual, use:
+
+ * There are also automatically generated help files, that are used to create
+   the manual:
+
+   - help.xml: Automatically generated xml help file.
+   - *.tex: Automatically generated latex help files for all the classes.
+
+ * To make all these files use:
 
 $ make
 
-      To remove all the created files again, use:
+ * To remove all the created files again, use:
 
 $ make clean
 
