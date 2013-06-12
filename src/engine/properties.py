@@ -196,9 +196,6 @@ class Properties(dobject):
       "time": {       "dimension": "time",
                       "help": "The elapsed simulation time.",
                       'func': (lambda: (1 + self.simul.step)*self.ensemble.dt)},
-      "conserved": {  "dimension": "energy",
-                      "help": "The value of the conserved energy quantity per bead.",
-                      'func': (lambda: self.ensemble.econs/float(self.beads.nbeads))},
       "temperature": {"dimension": "temperature",
                       "help": "The current physical temperature. Takes an argument 'atom', which can be either an atom label or index to specify which species to find the temperature of. If not specified, all atoms are used.",
                       'func': self.get_temp },
@@ -216,15 +213,15 @@ class Properties(dobject):
                       "help": "Gives the lengths of the cell vectors and the angles between them in degrees as a list of the form [a, b, c, A, B, C], where A is the angle between the sides of length b and c in degrees, and B and C are defined similarly. Since there are a mixture of different units, these can only be output in atomic-units.",
                       "size": 6,
                       'func': (lambda: np.asarray(h2abc_deg(self.cell.h)))},
+      "conserved": {  "dimension": "energy",
+                      "help": "The value of the conserved energy quantity per bead.",
+                      'func': (lambda: self.ensemble.econs/float(self.beads.nbeads))},
       "potential": {  "dimension" : "energy",
                       "help": "The physical system potential energy.",
                       'func': (lambda: self.forces.pot/self.beads.nbeads)},
       "spring": {     "dimension" : "energy",
                       "help": "The spring potential energy between the beads.",
                       'func': (lambda: self.beads.vpath*self.nm.omegan2)},
-      "r_gyration": { "dimension" : "length",
-                      "help" : "Gives the average radius of gyration of the selected atoms. Takes an argument 'atom', which can be either an atom label or index to specify which species to find the radius of gyration of. If not specified, all atoms are used.",
-                      "func": self.get_rg},
       "kinetic_md":  {"dimension" : "energy",
                       "help": "The simulation kinetic energy. Takes an argument 'atom', which can be either an atom label or index to specify which species to find the temperature of. If not specified, all atoms are used.",
                       'func': self.get_kinmd},
@@ -239,6 +236,9 @@ class Properties(dobject):
                       "help" : "The physical system kinetic energy tensor, amongst atoms i and j. Returns the 6 components in the form [xx, yy, zz, xy, xz, yz]. Takes arguments 'i' and 'j', which give the indices of the appropriate two atoms.",
                       "size" : 6,
                       "func" : self.get_kij},
+      "r_gyration": { "dimension" : "length",
+                      "help" : "Gives the average radius of gyration of the selected atoms. Takes an argument 'atom', which can be either an atom label or index to specify which species to find the radius of gyration of. If not specified, all atoms are used.",
+                      "func": self.get_rg},
       "atom_x": {     "dimension" : "length",
                       "help": "Prints to properties the position (x,y,z) of a particle given its index. Takes arguments index and bead. If bead is not specified, refers to the centroid.",
                       "size" : 3,
@@ -389,47 +389,6 @@ class Properties(dobject):
 
       return np.array([vec_2D[0,0], vec_2D[1,1], vec_2D[2,2], vec_2D[0,1], vec_2D[0,2], vec_2D[1,2]])
 
-   def get_rg(self, atom=""):
-      """Calculates the radius of gyration of the ring polymers.
-
-      Args:
-         atom: If given, specifies the atom to give the gyration radius
-            for. If not, the system average gyration radius is given.
-      """
-
-      try:
-         #iatom gives the index of the atom to be studied
-         iatom = int(atom)
-         latom = ""
-         if iatom >= self.beads.natoms:
-            raise IndexError("Cannot output gyration radius as atom index %d is larger than the number of atoms" % iatom)
-      except ValueError:
-         #here 'atom' is a label rather than an index which is stored in latom
-         iatom = -1
-         latom = atom
-
-      q = depstrip(self.beads.q)
-      qc = depstrip(self.beads.qc)
-      nat = self.beads.natoms
-      nb = self.beads.nbeads
-      rg_tot = 0.0
-      ncount = 0
-      for i in range(nat):
-         if (atom != "" and iatom != i and latom != self.beads.names[i]):
-            continue
-
-         rg_at = 0.0
-         for j in range(nb):
-            dq = q[j,3*i:3*(i+1)] - qc[3*i:3*(i+1)]
-            rg_at += np.dot(dq, dq)
-         ncount += 1
-         rg_tot += math.sqrt(rg_at/float(nb))
-
-      if ncount == 0:
-         raise IndexError("Couldn't find an atom which matched the argument of r_gyration")
-
-      return rg_tot/float(ncount)
-
    def get_temp(self, atom=""):
       """Calculates the MD kinetic temperature.
 
@@ -473,36 +432,6 @@ class Properties(dobject):
          kedof = self.get_kinmd(atom)/nat*(self.beads.natoms/(3.0*self.beads.natoms*self.beads.nbeads - mdof))
 
       return kedof/(0.5*Constants.kb)
-
-   def kstress_cv(self):
-      """Calculates the quantum centroid virial kinetic stress tensor
-      estimator.
-
-      Note that this is not divided by the volume or the number of beads.
-
-      Returns:
-         A 3*3 tensor with all the components of the tensor.
-      """
-
-      kst = np.zeros((3,3),float)
-      q = depstrip(self.beads.q)
-      qc = depstrip(self.beads.qc)
-      pc = depstrip(self.beads.pc)
-      m = depstrip(self.beads.m)
-      fall = depstrip(self.forces.f)
-      na3 = 3*self.beads.natoms
-
-      for b in range(self.beads.nbeads):
-         for i in range(3):
-            for j in range(i,3):
-               kst[i,j] -= np.dot(q[b,i:na3:3] - qc[i:na3:3],
-                  fall[b,j:na3:3])
-
-      # return the CV estimator MULTIPLIED BY NBEADS -- again for consistency with the virial, kstress_MD, etc...
-      for i in range(3):
-         kst[i,i] += self.beads.nbeads * ( np.dot(pc[i:na3:3],pc[i:na3:3]/m) )
-
-      return kst
 
    def get_kincv(self, atom=""):
       """Calculates the quantum centroid virial kinetic energy estimator.
@@ -575,6 +504,36 @@ class Properties(dobject):
                kmd += (pnm[b,k]**2 + pnm[b,k+1]**2 + pnm[b,k+2]**2)/(2.0*dm3[b,k])
          return kmd/self.beads.nbeads
 
+   def get_ktens(self, atom=""):
+      """Calculates the quantum centroid virial kinetic energy
+      TENSOR estimator.
+
+      Args:
+         atom: The index of the atom for which the kinetic energy tensor
+            is to be output, or the index of the type of atoms for which
+            it should be output.
+      """
+
+      try:
+         #iatom gives the index of the atom to be studied
+         iatom = int(atom)
+         latom = ""
+         if iatom >= self.beads.natoms:
+            raise IndexError("Cannot output kinetic tensor as atom index %d is larger than the number of atoms" % iatom)
+      except ValueError:
+         #here 'atom' is a label rather than an index which is stored in latom
+         iatom = -1
+         latom = atom
+
+      tkcv = np.zeros((6),float)
+      for i in range(self.beads.natoms):
+         if (atom != "" and iatom != i and latom != self.beads.names[i]):
+            continue
+
+         tkcv += self.get_kij(str(i), str(i))
+
+      return tkcv
+
    def get_kij(self, ni="0", nj="0"):
       """Calculates the quantum centroid virial kinetic energy
       TENSOR estimator for two possibly different atom indices.
@@ -619,14 +578,12 @@ class Properties(dobject):
 
       return kcv
 
-   def get_ktens(self, atom=""):
-      """Calculates the quantum centroid virial kinetic energy
-      TENSOR estimator.
+   def get_rg(self, atom=""):
+      """Calculates the radius of gyration of the ring polymers.
 
       Args:
-         atom: The index of the atom for which the kinetic energy tensor
-            is to be output, or the index of the type of atoms for which
-            it should be output.
+         atom: If given, specifies the atom to give the gyration radius
+            for. If not, the system average gyration radius is given.
       """
 
       try:
@@ -634,20 +591,63 @@ class Properties(dobject):
          iatom = int(atom)
          latom = ""
          if iatom >= self.beads.natoms:
-            raise IndexError("Cannot output kinetic tensor as atom index %d is larger than the number of atoms" % iatom)
+            raise IndexError("Cannot output gyration radius as atom index %d is larger than the number of atoms" % iatom)
       except ValueError:
          #here 'atom' is a label rather than an index which is stored in latom
          iatom = -1
          latom = atom
 
-      tkcv = np.zeros((6),float)
-      for i in range(self.beads.natoms):
+      q = depstrip(self.beads.q)
+      qc = depstrip(self.beads.qc)
+      nat = self.beads.natoms
+      nb = self.beads.nbeads
+      rg_tot = 0.0
+      ncount = 0
+      for i in range(nat):
          if (atom != "" and iatom != i and latom != self.beads.names[i]):
             continue
 
-         tkcv += self.get_kij(str(i), str(i))
+         rg_at = 0.0
+         for j in range(nb):
+            dq = q[j,3*i:3*(i+1)] - qc[3*i:3*(i+1)]
+            rg_at += np.dot(dq, dq)
+         ncount += 1
+         rg_tot += math.sqrt(rg_at/float(nb))
 
-      return tkcv
+      if ncount == 0:
+         raise IndexError("Couldn't find an atom which matched the argument of r_gyration")
+
+      return rg_tot/float(ncount)
+
+   def kstress_cv(self):
+      """Calculates the quantum centroid virial kinetic stress tensor
+      estimator.
+
+      Note that this is not divided by the volume or the number of beads.
+
+      Returns:
+         A 3*3 tensor with all the components of the tensor.
+      """
+
+      kst = np.zeros((3,3),float)
+      q = depstrip(self.beads.q)
+      qc = depstrip(self.beads.qc)
+      pc = depstrip(self.beads.pc)
+      m = depstrip(self.beads.m)
+      fall = depstrip(self.forces.f)
+      na3 = 3*self.beads.natoms
+
+      for b in range(self.beads.nbeads):
+         for i in range(3):
+            for j in range(i,3):
+               kst[i,j] -= np.dot(q[b,i:na3:3] - qc[i:na3:3],
+                  fall[b,j:na3:3])
+
+      # return the CV estimator MULTIPLIED BY NBEADS -- again for consistency with the virial, kstress_MD, etc...
+      for i in range(3):
+         kst[i,i] += self.beads.nbeads * ( np.dot(pc[i:na3:3],pc[i:na3:3]/m) )
+
+      return kst
 
    def get_yama_estimators(self, fd_delta= - _DEFAULT_FINDIFF):
       """Calculates the quantum scaled coordinate kinetic energy estimator.
@@ -911,18 +911,6 @@ class Trajectories(dobject):
       "forces": {    "dimension" : "force",
                      "help": "Prints the force trajectories.",
                      'func': (lambda : 1.0*self.simul.forces.f)},
-      "extras": {    "dimension" : "",
-                     "help": "Prints the extras trajectories.",
-                     'func': (lambda : self.simul.forces.extras)},
-      "kinetic_cv": {"dimension" : "energy",
-                     "help": "Prints the kinetic energy for each bead, resolved into Cartesian components. Prints out a vector of the form [xx, yy, zz]",
-                     'func': self.get_akcv},
-      "kinetic_od": {"dimension" : "energy",
-                     "help": "Prints the off diagonal elements of the kinetic stress tensor, for each bead. Prints out a vector of the form [xy, xz, yz]",
-                     'func': self.get_akcv_od},
-      "r_gyration": {"dimension" : "length",
-                     "help": "Prints the radius of gyration for each atom, resolved into Cartesian components. Prints out a vector of the form [xx, yy, zz]",
-                     'func': self.get_rg},
       "x_centroid": {"dimension" : "length",
                      "help": "Prints the centroid coordinates for each atom.",
                      'func': (lambda : 1.0*self.simul.beads.qc)},
@@ -934,7 +922,19 @@ class Trajectories(dobject):
                      'func': (lambda : 1.0*self.simul.beads.pc)},
       "f_centroid": {"dimension" : "force",
                      "help": "Prints the force centroid for each atom.",
-                     'func': (lambda : np.sum(self.simul.forces.f,0)/float(self.simul.beads.nbeads))}
+                     'func': (lambda : np.sum(self.simul.forces.f,0)/float(self.simul.beads.nbeads))},
+      "kinetic_cv": {"dimension" : "energy",
+                     "help": "Prints the kinetic energy for each bead, resolved into Cartesian components. Prints out a vector of the form [xx, yy, zz]",
+                     'func': self.get_akcv},
+      "kinetic_od": {"dimension" : "energy",
+                     "help": "Prints the off diagonal elements of the kinetic stress tensor, for each bead. Prints out a vector of the form [xy, xz, yz]",
+                     'func': self.get_akcv_od},
+      "r_gyration": {"dimension" : "length",
+                     "help": "Prints the radius of gyration for each atom, resolved into Cartesian components. Prints out a vector of the form [xx, yy, zz]",
+                     'func': self.get_rg},
+      "extras": {    "dimension" : "",
+                     "help": "Prints the extras trajectories.",
+                     'func': (lambda : self.simul.forces.extras)}
       }
 
 

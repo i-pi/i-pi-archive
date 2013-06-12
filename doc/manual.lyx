@@ -1770,19 +1770,37 @@ wrappi
 \end_layout
 
 \begin_layout Itemize
-A modern C compiler
+A modern C compiler (for the sockets.c module)
 \end_layout
 
 \begin_layout Itemize
-Python version 2.4 or later
+Python version 2.4 or greater
 \end_layout
 
 \begin_layout Itemize
-The Python array library NumPy
+The Python numerical library NumPy
 \end_layout
 
 \begin_layout Standard
-Additionally, most driver codes will have their own software requirements.
+Note that 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+wrappi
+\end_layout
+
+\end_inset
+
+ does not need to be compiled, it will run automatically as a script if
+ the appropriate libraries have been installed.
+\end_layout
+
+\begin_layout Standard
+Additionally, most driver codes will have their own requirements.
  Many of them, including the test driver codes given in the 
 \begin_inset Quotes eld
 \end_inset
@@ -2130,6 +2148,83 @@ end{verbatim}
 \begin_layout Standard
 You may have to replace lib64 with lib depending on whether you are installing
  to a 64-bit or 32-bit architecture.
+\end_layout
+
+\begin_layout Section
+PyFFTW
+\end_layout
+
+\begin_layout Standard
+Currently, the normal mode transformation is, at least by default, computed
+ using a fast-Fourier transform (FFT) library within the NumPy distribution.
+ This however is not the only distribution that could be used, and indeed
+ faster stand-alone versions exist.
+ The gold-standard FFT library is the FFTW library, which is a set of C
+ libraries that have been heavily optimized over a wide range of applications.
+ There have been a number of Python wrappers around the FFTW library, of
+ which currently one has been interfaced with 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+wrappi
+\end_layout
+
+\end_inset
+
+.
+ This code can be found at 
+\begin_inset Flex URL
+status collapsed
+
+\begin_layout Plain Layout
+
+https://github.com/hgomersall/pyFFTW
+\end_layout
+
+\end_inset
+
+, and has documentation at 
+\begin_inset Flex URL
+status collapsed
+
+\begin_layout Plain Layout
+
+http://hgomersall.github.io/pyFFTW/
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+This code has the following dependencies:
+\end_layout
+
+\begin_layout Itemize
+Python version 2.7 or greater
+\end_layout
+
+\begin_layout Itemize
+Numpy version 1.6 or greater
+\end_layout
+
+\begin_layout Itemize
+FFTW version 3.2 or greater
+\end_layout
+
+\begin_layout Standard
+This can be installed in the same way as NumPy, except using the code distributi
+on above, or using various installation packages as per the instructions
+ on the above documentation.
+ Note that no other options need to be specified in the input file, the
+ wrapper will check to see if this library can be installed, and if it can
+ it will be used by default.
+ Otherwise the slower NumPy version will be used.
 \end_layout
 
 \begin_layout Section
@@ -3373,20 +3468,7 @@ temperature
 To help detect any user error the acceptable tag names, type of data and
  possible default values are all specified in the code, in a specialized
  input class for each class of object.
- More information on how the xml file is read can be found in chapter
-\begin_inset ERT
-status open
-
-\begin_layout Plain Layout
-
-~
-\backslash
-ref{dev}
-\end_layout
-
-\end_inset
-
-, and a full list of all the available tags and a brief description of their
+ A full list of all the available tags and a brief description of their
  function is given in chapter
 \begin_inset ERT
 status open
