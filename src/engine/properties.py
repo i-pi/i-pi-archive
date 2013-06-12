@@ -29,7 +29,7 @@ from atoms import *
 from cell import *
 from ensembles import *
 from forces import *
-from utils.messages import verbosity, info
+from utils.messages import verbosity, info, warning
 
 def getkey(pstring):
    """Strips units and argument lists from a property/trajectory keyword.
@@ -424,15 +424,15 @@ class Properties(dobject):
             iatom = -1
             latom = atom
 
-         nat = 0
+         ncount = 0
          for i in range(self.beads.natoms):
             if (iatom == i or latom == self.beads.names[i]): 
-               nat += 1
+               ncount += 1
 
-         if nat == 0:
+         if ncount == 0:
             raise IndexError("Couldn't find an atom which matched the argument of temperature")
          # "spreads" the COM removal correction evenly over all the atoms...
-         kedof = self.get_kinmd(atom)/nat*(self.beads.natoms/(3.0*self.beads.natoms*self.beads.nbeads - mdof))
+         kedof = self.get_kinmd(atom)/ncount*(self.beads.natoms/(3.0*self.beads.natoms*self.beads.nbeads - mdof))
 
       return kedof/(0.5*Constants.kb)
 
@@ -460,6 +460,7 @@ class Properties(dobject):
       f = depstrip(self.forces.f)
 
       acv = 0.0
+      ncount = 0
       for i in range(self.beads.natoms):
          if (atom != "" and iatom != i and latom != self.beads.names[i]):
             continue
@@ -471,6 +472,10 @@ class Properties(dobject):
          kcv *= -0.5/self.beads.nbeads
          kcv += 1.5*Constants.kb*self.ensemble.temp
          acv += kcv
+         ncount += 1
+
+      if ncount == 0:
+         warning("Couldn't find an atom which matched the argument of kinetic energy, setting to zero.", verbosity.medium)
 
       return acv
 
@@ -499,12 +504,18 @@ class Properties(dobject):
          pnm = depstrip(self.nm.pnm)
          dm3 = depstrip(self.nm.dynm3)
          kmd = 0.0
+         ncount = 0
          for i in range(self.beads.natoms):
             if (atom != "" and iatom != i and latom != self.beads.names[i]):
                continue
             k = 3*i
             for b in range(self.beads.nbeads):
                kmd += (pnm[b,k]**2 + pnm[b,k+1]**2 + pnm[b,k+2]**2)/(2.0*dm3[b,k])
+            ncount += 1
+
+         if ncount == 0:
+            warning("Couldn't find an atom which matched the argument of kinetic energy, setting to zero.", verbosity.medium)
+
          return kmd/self.beads.nbeads
 
    def get_ktens(self, atom=""):
@@ -529,11 +540,16 @@ class Properties(dobject):
          latom = atom
 
       tkcv = np.zeros((6),float)
+      ncount = 0
       for i in range(self.beads.natoms):
          if (atom != "" and iatom != i and latom != self.beads.names[i]):
             continue
 
          tkcv += self.get_kij(str(i), str(i))
+         ncount += 1
+
+      if ncount == 0:
+         warning("Couldn't find an atom which matched the argument of kinetic tensor, setting to zero.", verbosity.medium)
 
       return tkcv
 
