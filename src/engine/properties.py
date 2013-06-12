@@ -117,7 +117,7 @@ def help_latex(idict, ref=False):
       rstr += "The following are the different allowable ouputs:\n"
    rstr += "\\begin{itemize}\n"
 
-   for out in idict:
+   for out in sorted(idict):
       rstr += "\\item {\\bf " + out + "}: " + idict[out]['help'] + "\n"
       try:
          if idict[out]['dimension'] != "undefined":
