@@ -285,6 +285,9 @@ class Properties(dobject):
                       "size" : 6,
                       "help": "The physical system virial stress tensor. Returns the 6 components in the form [xx, yy, zz, xy, xz, yz].",
                       "func": (lambda: self.flatten(self.forces.vir/(self.cell.V*self.beads.nbeads)))},
+      "linlin": {  "dimension": "undefined",
+                      "help": "This is the estimator for the end-to-end distribution for the sum over open paths, used to calculate the momentum distribution in L. Lin, J. A. Morrone, R. Car and M. Parrinello, 105, 110602 (2010), Phys. Rev. Lett. Takes arguments 'ux', 'uy' and 'uz', which are the components of the vector used to open the paths. Also takes an argument 'atom', which can be either an atom label or index to specify which species to find the temperature of. If not specified, all atoms are used.",
+                      "func": self.get_linlin},
       "yamamoto": {   "help": "Gives the estimators required to calculate the Yamamoto finite difference approximation to the kinetic energy and constant volume heat capacity. Returns eps_v and eps_v', as defined in Takeshi M. Yamamoto, Journal of Chemical Physics, 104101, 123 (2005). As the two estimators have a different dimension, this can only be output in atomic units. Takes one argument, 'fd_delta', which gives the value of the finite difference parameter used. It defaults to " + str(-self._DEFAULT_FINDIFF) + ". If the value of 'fd_delta' is negative, then its magnitude will be reduced automatically by the code if the finite difference error becomes too large.",
                       'func': self.get_yama_estimators,
                       "size": 2},
@@ -648,6 +651,67 @@ class Properties(dobject):
          kst[i,i] += self.beads.nbeads * ( np.dot(pc[i:na3:3],pc[i:na3:3]/m) )
 
       return kst
+
+   def opening(self, bead):
+      """Path opening function, used in linlin momentum distribution 
+      estimator.
+
+      Args:
+         bead: The index of the bead to shift.
+      """
+
+      return bead/float(self.beads.nbeads) + 0.5*(1.0/self.beads.nbeads - 1)
+
+   def get_linlin(self, ux="0", uy="0", uz="0", atom=""):
+      """Calculates the end-to-end distribution for a particular path opening
+      vector.
+
+      Args:
+         ux: The x-component of the path opening vector.
+         uy: The y-component of the path opening vector.
+         uz: The z-component of the path opening vector.
+         atom: If given, specifies the atom to give the kinetic energy
+            for. If not, the simulation kinetic energy is given.
+      """
+
+      try:
+         #iatom gives the index of the atom to be studied
+         iatom = int(atom)
+         latom = ""
+         if iatom >= self.beads.natoms:
+            raise IndexError("Cannot output linlin estimator as atom index %d is larger than the number of atoms" % iatom)
+      except ValueError:
+         #here 'atom' is a label rather than an index which is stored in latom
+         iatom = -1
+         latom = atom
+
+      beta = 1.0/(self.ensemble.temp*Constants.kb)
+
+      u = np.array([float(ux), float(uy), float(uz)])
+      u_size = np.dot(u,u)
+      q = depstrip(self.beads.q)
+      nat = self.beads.natoms
+      nb = self.beads.nbeads
+      nx_tot = 0.0
+      ncount = 0
+      for i in range(nat):
+         if (atom != "" and iatom != i and latom != self.beads.names[i]):
+            continue
+
+         mass = self.beads.m[i]
+         self.dbeads.q[:] = q
+         for b in range(nb):
+            self.dbeads.q[b,3*i:3*(i+1)] += self.opening(b)*u
+         dV = self.dforces.pot - self.forces.pot
+
+         n0 = math.exp(-mass*u_size/(2.0*beta*Constants.hbar**2))
+         nx_tot += n0*math.exp(-dV*beta/float(self.beads.nbeads))
+         ncount += 1
+
+      if ncount == 0:
+         raise IndexError("Couldn't find an atom which matched the argument of linlin")
+
+      return nx_tot/float(ncount)
 
    def get_yama_estimators(self, fd_delta= - _DEFAULT_FINDIFF):
       """Calculates the quantum scaled coordinate kinetic energy estimator.
