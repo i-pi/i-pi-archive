@@ -1,7 +1,7 @@
 <simulation>
    <initialize nbeads='16'>
       <file mode='pdb'> our_ref.pdb </file>
-      <velocities mode='thermal'> 10 </velocities>
+      <velocities mode='thermal'>3683.412077</velocities>
    </initialize>
    <output prefix='harm'>
       <properties stride='5' filename='out'>  [ time, conserved, temperature, kinetic_md, potential, pressure_md] </properties>
