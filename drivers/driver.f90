@@ -29,7 +29,7 @@
       DOUBLE PRECISION, ALLOCATABLE :: msgbuffer(:)
 
       ! PARAMETERS OF THE SYSTEM (CELL, ATOM POSITIONS, ...)
-      DOUBLE PRECISION sigma, eps, rc, rn ! potential parameters
+      DOUBLE PRECISION sigma, eps, rc, rn, ks ! potential parameters
       INTEGER nat
       DOUBLE PRECISION pot
       DOUBLE PRECISION, ALLOCATABLE :: atoms(:,:), forces(:,:)
@@ -72,10 +72,11 @@
          ELSE
             IF (ccmd == 0) THEN
                WRITE(*,*) " Unrecognized command line argument", ccmd
-               WRITE(*,*) " SYNTAX: driver.x [-u] -h hostname -p port -m [gas|lj|sg] -o 'comma_separated_parameters' [-v] "
+               WRITE(*,*) " SYNTAX: driver.x [-u] -h hostname -p port -m [gas|lj|sg|harm] -o 'comma_separated_parameters' [-v] "
                WRITE(*,*) ""
                WRITE(*,*) " For LJ potential use -o sigma,epsilon,cutoff "
                WRITE(*,*) " For SG potential use -o cutoff "
+               WRITE(*,*) " For 1D harmonic oscillator use -o k "
                WRITE(*,*) " For the ideal gas, no options needed! "
                CALL EXIT(-1)
             ENDIF
@@ -88,8 +89,14 @@
                   vstyle = 1
                ELSEIF (trim(cmdbuffer) == "sg") THEN
                   vstyle = 2
-               ELSE
+               ELSEIF (trim(cmdbuffer) == "harm") THEN
+                  vstyle = 3
+               ELSEIF (trim(cmdbuffer) == "gas") THEN
                   vstyle = 0  ! ideal gas
+               ELSE
+                  WRITE(*,*) " Unrecognized potential type ", trim(cmdbuffer)
+                  WRITE(*,*) " Use -m [gas|lj|sg|harm] "
+                  CALL EXIT(-1)
                ENDIF
             ELSEIF (ccmd == 4) THEN
                par_count = 1
@@ -138,6 +145,14 @@
          ENDIF
          rc = vpars(1)
          rn = rc*1.2
+         isinit = .true.
+      ELSEIF (vstyle == 3) THEN
+         IF (par_count /= 1) THEN
+            WRITE(*,*) "Error: parameters not initialized correctly."
+            WRITE(*,*) "For 1D harmonic potential use -o k "
+            CALL EXIT(-1) ! Note that if initialization from the wrapper is implemented this exit should be removed.
+         ENDIF
+         ks = vpars(1)
          isinit = .true.
       ENDIF
 
@@ -205,6 +220,12 @@
                pot = 0
                forces = 0
                virial = 0
+            ELSEIF (vstyle == 3) THEN ! 1D harmonic potential, so only uses the first position variable
+               pot = 0.5*ks*atoms(1,1)**2
+               forces = 0
+               forces(1,1) = -ks*atoms(1,1)
+               virial = 0
+               virial(1,1) = forces(1,1)*atoms(1,1)
             ELSE
                IF ((allocated(n_list) .neqv. .true.)) THEN
                   IF (verbose) WRITE(*,*) " Allocating neighbour lists."
