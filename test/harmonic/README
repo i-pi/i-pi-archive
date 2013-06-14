@@ -16,10 +16,12 @@
    and n1(u) = exp(-0.5*beta*k*u**2*(t*coth(t/2)-2)/(2*t**2))
 
  * For demonstration purposes, two values of u have been chosen such that 
-   n(u1) = 0.8 and n(u2) = 0.4 using the formulae above
+   n(u1) = 0.8 and n(u2) = 0.4 using the formula above
 
- * First, compile the driver code in forces/. Should be as simple as make.
-   Note you may need first to compile sockets.c in src/driver before you link
+ * To run, first compile the driver code in forces/. This should be as 
+   simple as: 
+
+$ make
 
  * Go back to the example directory and run
 

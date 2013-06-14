@@ -517,7 +517,8 @@ ref{overview}
 \end_inset
 
  we explain some of the features of the wrapper code.
-\end_layout
+\begin_inset Note Comment
+status open
 
 \begin_layout Itemize
 In chapter
@@ -535,6 +536,11 @@ ref{dev}
 
  we discuss what is needed to modify the code.
  
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Itemize
@@ -2160,7 +2166,7 @@ Currently, the normal mode transformation is, at least by default, computed
  This however is not the only distribution that could be used, and indeed
  faster stand-alone versions exist.
  The gold-standard FFT library is the FFTW library, which is a set of C
- libraries that have been heavily optimized over a wide range of applications.
+ libraries that have been heavily optimized for a wide range of applications.
  There have been a number of Python wrappers around the FFTW library, of
  which currently one has been interfaced with 
 \begin_inset ERT
@@ -2538,6 +2544,27 @@ pwscf: This has two simple examples to test to see if the Quantum-Espresso
  driver is functioning correctly.
  There is one simple 4-atom lithium test, and a test using a single water
  molecule.
+\end_layout
+
+\begin_layout Description
+harmonic: This has a simple example of a 1D harmonic oscillator.
+ This demonstrates the displaced path integral momentum distribution operator
+ as given in 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+cite{linlin+10prl}
+\end_layout
+
+\end_inset
+
+.
+ As the momentum distribution is known analytically for this simple system,
+ this provides an indication of how well the method is working.
 \end_layout
 
 \begin_layout Chapter
@@ -4953,11 +4980,263 @@ normal modes
  normal mode frequencies are defined.
 \end_layout
 
+\begin_layout Section
+Output properties
+\end_layout
+
+\begin_layout Standard
+While most of the properties that can be output during a 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+wrappi
+\end_layout
+
+\end_inset
+
+ simulation are self-explanatory, there are some for which the algorithms
+ used or the properties calculated are non-trivial and so deserve some comment.
+\end_layout
+
+\begin_layout Subsection
+Displaced path momentum distribution estimators
+\end_layout
+
+\begin_layout Standard
+Momentum distributions are very difficult quantities to calculate, because
+ they require knowledge of the off-diagonal elements of the density matrix.
+ In a path-integral context, this means that the distribution of open paths,
+ where two of the neighbouring beads in the ring polymer are not connected
+ by springs, must be sampled.
+ However, since the ensemble is defined by the distribution of closed paths,
+ only one path can be opened in this way at a time without introducing sampling
+ errors.
+ 
+\end_layout
+
+\begin_layout Standard
+Multiple techniques have been proposed to try and alleviate the problems
+ of poor statistical sampling that this causes, but in the wrapper only
+ the displaced path estimator of 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+cite{linlin+10prl}
+\end_layout
+
+\end_inset
+
+ has been implemented.
+ This uses a closed path integral simulation to generate the dynamics, and
+ only opens the paths when the estimator is to be calculated, so no sampling
+ errors are introduced by calculating this property for multiple atoms during
+ a particular timestep.
+\end_layout
+
+\begin_layout Standard
+This therefore gives better statistical sampling, as the property can be
+ calculated for all identical atoms in a particular timestep without introducing
+ errors.
+ Also, since the vector that opens the path can be chosen by the user, this
+ allows the phase space to be searched systematically.
+ The main disadvantages of this method are first that every time the property
+ is calculated a new force calculation must be done, and secondly that convergen
+ce is very poor for highly quantum systems.
+ The latter problem can be circumvented by a thermodynamic integration scheme,
+ although this reintroduces the sampling error problem that the open path
+ simulations have.
+ See 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+cite{linlin+10prl}
+\end_layout
+
+\end_inset
+
+ for a more in depth discussion of the method.
+\end_layout
+
+\begin_layout Subsection
+Finite difference energy and heat capacity estimators
+\end_layout
+
+\begin_layout Standard
+As the momenta associated with the beads in a PIMD simulation do not correspond
+ to physical variables, they cannot be used to help calculate statistical
+ averages.
+ Momentum dependent properties are therefore usually calculated using identities
+ derived from thermodynamics.
+ For example, the kinetic energy is calculated by:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{align} 
+\backslash
+langle 
+\backslash
+hat{T} 
+\backslash
+rangle = 
+\backslash
+langle 
+\backslash
+hat{H} 
+\backslash
+rangle - 
+\backslash
+langle 
+\backslash
+hat{V} 
+\backslash
+rangle = - 
+\backslash
+frac{
+\backslash
+partial 
+\backslash
+, 
+\backslash
+textrm{ln}(Z)}{
+\backslash
+partial 
+\backslash
+beta} - 
+\backslash
+langle 
+\backslash
+hat{V} 
+\backslash
+rangle 
+\backslash
+end{align} 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+This can then be used to derive an estimator for the kinetic energy using
+ the ring polymer Hamiltonian to calculate 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+(Z
+\backslash
+)
+\end_layout
+
+\end_inset
+
+.
+ There are two possible ways of representing the result.
+ If the result of the above calculation is used directly, then an estimator
+ that only depends on the positions of the beads is derived, but it involves
+ the difference of two large terms that scale with the number of beads and
+ so has a variance that increases linearly with the number of beads used.
+ The second result uses the virial theorem to derive another estimator with
+ the same average value, but with better statistics.
+ This method however involves the derivative of the potential with respect
+ to the bead positions.
+\end_layout
+
+\begin_layout Standard
+For the kinetic energy, we use the virial form, since we already must have
+ the first derivative of the potential (i.e.
+ the forces).
+ However, for other quantities such as the heat capacity, the virial estimator
+ involves second or higher derivatives, and so is much more costly to evaluate.
+\end_layout
+
+\begin_layout Standard
+Instead of having to compromise between statistical sampling and computational
+ expense, we take the approach of 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+cite{tyamamoto05jcp}
+\end_layout
+
+\end_inset
+
+ and calculate the temperature derivative by finite differences.
+ While this means that each step will require two extra force calculations
+ it has the same statistical properties as the virial estimator without
+ requiring potential derivatives to be calculated, so is often the most
+ efficient method to calculate such properties.
+\end_layout
+
+\begin_layout Subsection
+Extras list
+\end_layout
+
+\begin_layout Standard
+In many cases, the driver code calculation will derive important quantities
+ other than the potential, forces and virial, which may be necessary to
+ calculate properties of interest such as the charge distribution.
+ It is therefore useful to have a mechanism by which such data can be passed
+ back to the wrapper code, so that it does not have to be recalculated as
+ a post-processing step.
+ This is done in the code using an 
+\begin_inset Quotes eld
+\end_inset
+
+extras
+\begin_inset Quotes erd
+\end_inset
+
+ string.
+ This is passed at the end of the driver message, and read directly into
+ a string by the wrapper.
+ This can then be printed directly to file using the 
+\begin_inset Quotes eld
+\end_inset
+
+extras
+\begin_inset Quotes erd
+\end_inset
+
+ trajectory output.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Note Comment
+status open
+
 \begin_layout Chapter
 Developer's tips
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset ERT
 status open
 
@@ -4977,7 +5256,7 @@ label{dev}
 Directory structure
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 The code is separated into the following directory structure: 
 \end_layout
 
@@ -5040,14 +5319,14 @@ Dependency detection and automatic property caching
 Rationale
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 One of the utility classes that is defined in the code, from which most
  of the classes in the code inherit, is the dobject class.
  Similarly, many of the variables contained in these classes are depend
  objects.
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 The depend object class has been designed so that every time it is accessed
  it checks all of the other depend objects on which it is dependent to see
  if they have changed, and if so recalculates its value.
@@ -5056,7 +5335,7 @@ The depend object class has been designed so that every time it is accessed
  functions.
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 These classes have been defined so that, instead of cluttering up the code
  with functions to recalculate the various parameters of the simulation,
  we simply have to define the function by which to recalculate them and
@@ -5064,7 +5343,7 @@ These classes have been defined so that, instead of cluttering up the code
  they will automatically be updated when required.
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 As an example, take the total kinetic energy for one replica of the system.
  This is a property of the total momentum vector and the mass vector of
  the different atoms.
@@ -5116,7 +5395,7 @@ bf{m}}
 
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 Having done this, any time we access atoms.kin, the code will check to see
  if either the mass vector or momentum vector has changed.
  If it has will recalculate the kinetic energy before returning it, otherwise
@@ -5127,7 +5406,7 @@ Having done this, any time we access atoms.kin, the code will check to see
 Synchronized objects
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 As well as checking for dependencies, the same infrastructure can also be
  used to synchronize two objects which are different representations of
  the same data.
@@ -5136,7 +5415,7 @@ As well as checking for dependencies, the same infrastructure can also be
  Both of these represent the same data, but have different numerical values.
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 In this case we can use a synchronize object, which holds a dictionary of
  functions to transform one representation to another.
  In the case of the normal mode and cartesian representations of position,
@@ -5144,7 +5423,7 @@ In this case we can use a synchronize object, which holds a dictionary of
  by a transformation matrix, or via a Fourier transform.
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 Using this class, whenever we make a change to one of the representations,
  the others are automatically recalculated by reapplying the transformation
  function the next time they are accessed.
@@ -5154,14 +5433,14 @@ Using this class, whenever we make a change to one of the representations,
 Properties
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 While many of the simple properties of interest can be output directly to
  the properties output file, and many others can be obtained by post-processing
  the available data, it may be that some property you wish to calculate
  is not explicitly available for output.
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 In this case, you may wish to modify the code so that this property can
  be output.
  All the code to do this is found in the 
@@ -5185,7 +5464,7 @@ engine
  that calculates this property.
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 In standard Python notation, we must define a new function inside the 
 \begin_inset Quotes eld
 \end_inset
@@ -5198,7 +5477,7 @@ Properties
  This is written by:
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset ERT
 status open
 
@@ -5236,7 +5515,7 @@ end{verbatim}
 
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 We can now use this function to calculate the property of interest.
  If the name of this property is 
 \begin_inset Quotes eld
@@ -5249,7 +5528,7 @@ new_prop
 , we can add this to the dictionary of named properties by:
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset ERT
 status open
 
@@ -5277,7 +5556,7 @@ end{verbatim}
 
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 We now simply need to add the name 
 \begin_inset Quotes eld
 \end_inset
@@ -5298,11 +5577,11 @@ properties
  output file when appropriate.
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 If you need a function with arguments, then the code we need is given by:
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset ERT
 status open
 
@@ -5351,11 +5630,11 @@ end{verbatim}
 
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 Now in the property list you must put:
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset ERT
 status open
 
@@ -5395,7 +5674,7 @@ end{verbatim}
 
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 The code will now automatically call the function with the arguments defined
  in the properties list.
 \end_layout
@@ -5404,7 +5683,7 @@ The code will now automatically call the function with the arguments defined
 Creating a new class
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 While creating a new property may be possible by using existing objects,
  it may be that you wish to calculate something in a way that is not implemented
  by the code.
@@ -5417,7 +5696,7 @@ While creating a new property may be possible by using existing objects,
 Depend objects
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 Many of the new objects created inside a class may depend on other objects
  in the code for their value.
  As discussed in Chapter 3, the calculation of such variables is facilitated
@@ -5440,7 +5719,7 @@ utils
  directory.
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 Since the 
 \begin_inset Quotes eld
 \end_inset
@@ -5478,7 +5757,7 @@ object
 , you need to use the syntax: 
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset ERT
 status open
 
@@ -5506,7 +5785,7 @@ end{verbatim}
 
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 The arguments that are important for creating 
 \begin_inset Quotes eld
 \end_inset
@@ -5586,7 +5865,7 @@ func
 .
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 There are two different classes of 
 \begin_inset Quotes eld
 \end_inset
@@ -5642,7 +5921,7 @@ depend
  
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 This will return a slice with the same dependencies and synchro objects,
  and a reference to the correct slice of the base array of the parent 
 \begin_inset Quotes eld
@@ -5668,7 +5947,7 @@ dset
  function, as it will not copy the dependencies correctly.
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 There is also a method for dealing with separate objects that are different
  views on the same data; the 
 \begin_inset Quotes eld
@@ -5683,7 +5962,7 @@ synchronizer
  and deals with keeping all of them consistent with each other.
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 Also, the 
 \series bold
 func
@@ -5700,7 +5979,7 @@ depend
  object being created to the other synchronized objects, using the syntax:
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset ERT
 status open
 
@@ -5729,7 +6008,7 @@ end{verbatim}
 
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 Where 
 \begin_inset Quotes eld
 \end_inset
@@ -5771,7 +6050,7 @@ func
  and not on any other depend objects.
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 Finally, there are several utility functions that help to manipulate 
 \begin_inset Quotes eld
 \end_inset
@@ -5906,13 +6185,13 @@ depend
 Input class
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 To be able to use the xml input file to create an instance of this new class,
  and to write the file to the restart file, you must create a new input
  class, or modify an old one to recognize the new class.
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 Each input class must have the following class attributes:
 \end_layout
 
@@ -6015,7 +6294,7 @@ default_label: This is the label used to identify the appropriate section
  the others.
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 The class can have the following functions:
 \end_layout
 
@@ -6046,7 +6325,7 @@ write: This is a function that you can use to override the base class write
  function, so that you can tailor what is printed to the restart file.
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 The last thing that you must do to be able to use your class is to create
  an appropriate fields tag in the parent input class where you want the
  instance of your class to be held, with InputClass set to the name of your
@@ -6058,7 +6337,7 @@ The last thing that you must do to be able to use your class is to create
 Submitting improvements
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 This code is still in developement, and any submissions to improve the code
  are welcome.
  However, to be considered as a candidate for inclusion in the main version
@@ -6069,7 +6348,7 @@ This code is still in developement, and any submissions to improve the code
 Testing
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 Any new code should be tested for bugs before being submitted.
  At the very least the modified code should reproduce the properties in
  the test directory, and be shown to give the expected new results.
@@ -6077,7 +6356,7 @@ Any new code should be tested for bugs before being submitted.
  other published results, and a suitable test case added to the test directory.
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 It should also be tested for user input error, especially if a new input
  class has been created, so that such errors can be detected before the
  simulation is run.
@@ -6090,7 +6369,7 @@ It should also be tested for user input error, especially if a new input
 Documentation
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 We have taken great care to make sure that all the code is well documented,
  and as such any submissions should be documented to the same standard.
  We have used the Google Python Style Guide, 
@@ -6107,7 +6386,7 @@ http://google-styleguide.googlecode.com/svn/trunk/pyguide.html
 , as a template for the documentation.
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 For each module we require the following documentation:
 \end_layout
 
@@ -6144,11 +6423,16 @@ Any new class must have its input class added to the create_man.py and help.py
  work correctly.
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 If new modules are being submitted, then all of the above documentation
  should be done.
  If only a new class or function is being added, then only parts of the
  above will be necessary.
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Chapter

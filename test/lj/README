@@ -14,8 +14,9 @@
    the potental energy as found by this wrapper and by the LAMMPS MD code
    are both -5.86 rather than -5.66 as reported in the original paper.
 
- * First, compile the driver code in forces/. Should be as simple as make.
-   Note you may need first to compile sockets.c in src/driver before you link
+ * First, compile the driver code in forces/. This should be as simple as: 
+
+$ make
 
  * Go back to the example directory and run
 

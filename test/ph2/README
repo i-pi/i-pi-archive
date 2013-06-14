@@ -10,8 +10,9 @@
                 Phys. 110, 3275, (1999)
                 State point: (N, P, T) = (256, 0 MPa, 25 K)
 
- * First, compile the driver code in forces/. Should be as simple as make.
-   Note you may need first to compile sockets.c in src/driver before you link
+ * First, compile the driver code in forces/. This should be as simple as: 
+
+$ make
 
  * Go back to the example directory and run
 
