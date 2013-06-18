@@ -10,28 +10,29 @@
                 Phys. 110, 3275, (1999)
                 State point: (N, P, T) = (256, 0 MPa, 25 K)
 
- * First, compile the driver code in forces/. Should be as simple as make.
-   Note you may need first to compile sockets.c in src/driver before you link
+ * First, compile the driver code in forces/. This should be as simple as: 
+
+$ make
 
  * Go back to the example directory and run
 
-$ python ../../main.py input.xml
+$ python path/i-pi input.xml
  
    the wrapper will start and sit waiting on the UDS /tmp/wrappi.
  
  * Open a separate terminal and run the SG driver code 
  
-$ path/forces/sgengine.x -u -h wrap-pi -r 15.0
+$ path/drivers/driver.x -u -h localhost -m sg -o 15.0
 
    You can run multiple instances of the code; it is so fast that parallel 
    scaling won't be appreciable.
 
  * If your system does not support Unix domain sockets, just set in input.xml
-   <interface mode="inet"> and <address>localhost</address>
+   <socket mode="inet">
 
   then run the driver as:
 
-$ path/forces/sgengine.x -h localhost -r 15.0
+$ path/drivers/driver.x -h localhost -m sg -o 15.0
 
  * See the separate README file in RPMD for instructions on how to run these
    calculations.

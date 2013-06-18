@@ -4,8 +4,20 @@ Classes:
    InputInitializer: Initializes the classes that initialize the simulation
       data.
    InputInitFile: Initializes the classes that initialize the simulation data
-      from a file.
+      from a file. Rather than initializing one piece of data, everything that
+      can be initialized from that file will be.
+   InputInitPositions: Initializes the positions.
+   InputInitMomenta: Initializes the momenta.
+   InputInitVelocities: Initializes the velocities.
+   InputInitMasses: Initializes the masses.
+   InputInitLabels: Initializes the atom labels.
+   InputInitCell: Initializes the cell.
+   InputInitThermo: Initializes the thermostat.
+   InputInitBase: The base class for all Initializer objects.
+   InputInitIndexed: The class for all Initializer objects which can be called
+      to initialize data for a particular atom or bead.
 """
+
 import numpy as np
 from utils.inputvalue import *
 from copy import copy, deepcopy
@@ -19,14 +31,16 @@ from utils.messages import verbosity, warning
 __all__ = ['InputInitializer', 'InputInitFile', 'InputInitPositions', 'InputInitMomenta', 'InputInitVelocities', 'InputInitMasses', 'InputInitLabels', 'InputInitCell', 'InputInitThermo']
 
 class InputInitBase(InputValue):
-   """Base class to handle input.
+   """Base class to handle initialization.
 
    Attributes:
-
+      mode: The type of data to be initialized from.
+      _initclass: Which InputInit class to use to read the data.
+      _storageclass: Which data type to use to hold the data.
    """
 
    attribs = deepcopy(InputValue.attribs)
-   attribs["mode"] =     (InputAttribute,{ "dtype" : str, "default": "other", "help": "The input file format. 'xyz' and 'pdb' stand for xyz and pdb input files respectively. 'chk' and 'checkpoint' are both aliases for input from a restart file.", "options": None } )
+   attribs["mode"] =     (InputAttribute,{ "dtype" : str, "default": "other", "help": "The input data format. 'xyz' and 'pdb' stand for xyz and pdb input files respectively. 'chk' stands for initialization from a checkpoint file. 'manual' means that the value to initialize from is giving explicitly as a vector. 'thermal' means that the data is to be generated from a Maxwell-Boltzmann distribution at the given temperature.", "options": None } )
 
    default_label = "INITBASE"
    default_help = "This is the base class for initialization. Initializers for different aspects of the simulation can be inherit for it for the base methods."
@@ -63,6 +77,12 @@ class InputInitBase(InputValue):
          self.__dict__[k].store(ibase.__dict__[k])
 
    def getval(self):
+      """Calculates the value from the data supplied in the xml file.
+
+      Either reads the string from the input file as an array of numbers,
+      or as a string specifying either a file name or a single value.
+      """
+
       value = super(InputInitBase,self).fetch()
       if self.mode.fetch() == "manual":
          if '[' in value and ']' in value: # value appears to be a list
@@ -94,6 +114,8 @@ class InputInitBase(InputValue):
 
 
 class InputInitFile(InputInitBase):
+   """Class to handle initialization from a file."""
+
    attribs = deepcopy(InputInitBase.attribs)
    attribs["mode"][1]["default"] = "chk"
    attribs["mode"][1]["options"] = ["xyz", "pdb", "chk"]
@@ -101,7 +123,10 @@ class InputInitFile(InputInitBase):
    default_label = "INITFILE"
    default_help = "This is the class to initialize from file."
 
+
 class InputInitThermo(InputInitBase):
+   """Class to handle initialization of the thermostat."""
+
    attribs = deepcopy(InputInitBase.attribs)
    attribs["mode"][1]["default"] = "manual"
    attribs["mode"][1]["options"] = ["chk", "manual"]
@@ -109,7 +134,15 @@ class InputInitThermo(InputInitBase):
    default_label = "INITTHERMO"
    default_help = "This is the class to initialize the thermostat (ethermo and fictitious momenta)."
 
+
 class InputInitIndexed(InputInitBase):
+   """Class to handle initialization of properties which the value of each
+   bead and atom can be specified.
+
+   Attributes:
+      index: Which atom to initialize the value of.
+      bead: Which bead to initialize the value of.
+   """
 
    attribs = deepcopy(InputInitBase.attribs)
    attribs["index"] =     (InputAttribute,{ "dtype" : int, "default": -1, "help": "The index of the atom of which we are to set the coordinate." } )
@@ -120,6 +153,7 @@ class InputInitIndexed(InputInitBase):
 
 
 class InputInitPositions(InputInitIndexed):
+   """Class to handle initialization of the positions."""
 
    attribs = deepcopy(InputInitIndexed.attribs)
    attribs["mode"][1]["default"] = "chk"
@@ -131,6 +165,7 @@ class InputInitPositions(InputInitIndexed):
 
 
 class InputInitMomenta(InputInitPositions):
+   """Class to handle initialization of the momenta."""
 
    attribs = deepcopy(InputInitPositions.attribs)
    attribs["mode"][1]["options"].append( "thermal" )
@@ -139,6 +174,12 @@ class InputInitMomenta(InputInitPositions):
    default_help = "This is the class to initialize momenta."
 
    def fetch(self):
+      """Creates an momentum initializer object.
+
+      Note that the momenta can be initialized by a single value, specifying
+      the temperature at which to thermalize the momenta.
+      """
+
       if self.mode.fetch() == "thermal":
          return self._initclass(value=float(InputValue.fetch(self)),  mode=self.mode.fetch(), units=self.units.fetch(), index=self.index.fetch(), bead=self.bead.fetch())
       else:
@@ -146,24 +187,25 @@ class InputInitMomenta(InputInitPositions):
 
 
 class InputInitVelocities(InputInitMomenta):
+   """Class to handle initialization of the velocities."""
 
    attribs = deepcopy(InputInitMomenta.attribs)
-   #attribs["mode"][1]["options"].append( "thermal" )
 
    default_label = "INITVELOCITIES"
    default_help = "This is the class to initialize velocities."
 
 
 class InputInitMasses(InputInitPositions):
+   """Class to handle initialization of the masses."""
 
    attribs = deepcopy(InputInitPositions.attribs)
-   #attribs["mode"][1]["options"]= ['manual', 'xyz', 'pdb', 'chk']
 
    default_label = "INITMASSES"
    default_help = "This is the class to initialize atomic masses."
 
 
 class InputInitLabels(InputInitPositions):
+   """Class to handle initialization of the atom labels."""
 
    attribs = deepcopy(InputInitPositions.attribs)
 
@@ -174,17 +216,24 @@ class InputInitLabels(InputInitPositions):
 
 
 class InputInitCell(InputInitBase):
+   """Class to handle initialization of the cell."""
 
    attribs = deepcopy(InputInitBase.attribs)
    attribs["mode"] = (InputAttribute, { "dtype"  : str,
                                         "default": "manual",
                                         "options": ["manual", "pdb", "chk", "abc", "abcABC"],
-                                        "help"   : "This decides whether the system box is created from a cell parameter matrix, or from the side lengths and angles between them. If 'mode' is 'manual', then 'cell' takes a 9-elements vector containing the cell matrix (row-major). If 'mode' is 'abcABC', then 'cell' takes an array of 6 floats, the first three being the length of the sides of the system parallelopiped, and the last three being the angles (in degrees) between those sides. Angle A corresponds to the angle between sides b and c, and so on for B and C. If mode is 'abc', then this is the same as ffor 'abcABC', but the cell is assumed to be orthorhombic. 'pdb' and 'chk' read the cell from a PDB or a checkpoint file, respectively."} )
+                                        "help"   : "This decides whether the system box is created from a cell parameter matrix, or from the side lengths and angles between them. If 'mode' is 'manual', then 'cell' takes a 9-elements vector containing the cell matrix (row-major). If 'mode' is 'abcABC', then 'cell' takes an array of 6 floats, the first three being the length of the sides of the system parallelopiped, and the last three being the angles (in degrees) between those sides. Angle A corresponds to the angle between sides b and c, and so on for B and C. If mode is 'abc', then this is the same as for 'abcABC', but the cell is assumed to be orthorhombic. 'pdb' and 'chk' read the cell from a PDB or a checkpoint file, respectively."} )
 
    default_label = "INITCELL"
    default_help = "This is the class to initialize cell."
 
    def fetch(self):
+      """Creates a cell initializer object.
+
+      Note that the cell can be initialized from the lengths of the sides and
+      the angles between them instead of by a vector, as specified by the 
+      'abc' or 'abcABC' modes.
+      """
 
       mode = self.mode.fetch()
 
@@ -226,8 +275,6 @@ class InputInitializer(Input):
 
    Attributes:
       nbeads: The number of beads to be used in the simulation.
-      extra: A list of all the initialize objects read in dynamically from
-         the xml input file.
    """
 
    attribs = { "nbeads"    : (InputAttribute, {"dtype"     : int,
@@ -262,7 +309,7 @@ class InputInitializer(Input):
       """Takes a Initializer instance and stores a minimal representation of it.
 
       Args:
-         iif: An initializer object.
+         ii: An initializer object.
       """
 
       self.extra = []

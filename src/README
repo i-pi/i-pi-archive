@@ -3,12 +3,12 @@
  * This is the main source directory.
 
  * Files:
-   - main.py: Runs the simulation.
+   - i-pi: Runs the simulation.
 
  * Directories:
    - engine: Holds the modules containing the objects used during the 
       simulation.
-   - driver: Holds the modules containing the socket interface code.
+   - interfaces: Holds the modules containing the socket interface code.
    - utils: Holds the modules containing utility functions.
    - inputs: Holds the modules that deals with reading the input and the 
       restart mechanism.

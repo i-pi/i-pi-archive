@@ -8,6 +8,6 @@ port=$1
 nprocs=6
 
 for i in `seq 1 $nprocs`; do
-   ./sgengine.x -r 15.0 -h neptune.chem.ox.ac.uk -p $port &
+   ./driver.x -m sg -o 15.0 -h neptune.chem.ox.ac.uk -p $port &
 done
 wait

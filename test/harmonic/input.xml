@@ -1,0 +1,26 @@
+<simulation>
+   <initialize nbeads='16'>
+      <file mode='pdb'> our_ref.pdb </file>
+      <velocities mode='thermal'>3683.412077</velocities>
+   </initialize>
+   <output prefix='harm'>
+      <properties stride='5' filename='out'>  [ time, conserved, temperature, kinetic_md, potential, pressure_md] </properties>
+      <properties stride='100' filename='mom'> [time, linlin(ux=0.2552), linlin(ux=0.1255)] </properties>
+   </output>
+   <total_steps>100000</total_steps>
+   <prng><seed>3348</seed></prng>
+   <forces>
+      <socket mode="unix">
+         <address>localhost</address>   <port>31415</port>    <slots>4</slots> <latency>0.001</latency>
+      </socket>
+   </forces>
+   <ensemble mode='nvt'>
+      <thermostat mode='langevin'>
+         <tau>1e2</tau>
+         <ethermo>0.0</ethermo>
+      </thermostat>
+      <timestep units='femtosecond'>0.003</timestep>
+      <fixcom>False</fixcom>
+      <temperature>3683.412077</temperature>
+   </ensemble>
+</simulation>

@@ -220,7 +220,7 @@ class InputOutputs(Input):
    """
 
    attribs = { "prefix" : ( InputAttribute, { "dtype" : str,
-                                          "default"  : "wrap-pi",
+                                          "default"  : "d-pi",
                                           "help"     : "A string that will be prepended to each output file name." })
              }
 
@@ -244,9 +244,9 @@ class InputOutputs(Input):
       use any mutable objects as arguments.
       """
 
-      return [ engine.outputs.PropertyOutput("wrap-pi.md", 10, [ "time", "step", "conserved", "temperature", "potential", "kinetic_cv" ] ),
-               engine.outputs.TrajectoryOutput("wrap-pi.pos", 100, "positions", "xyz"),
-               engine.outputs.CheckpointOutput("wrap-pi.checkpoint",1000,overwrite=True)]
+      return [ engine.outputs.PropertyOutput("d-pi.md", 10, [ "time", "step", "conserved", "temperature", "potential", "kinetic_cv" ] ),
+               engine.outputs.TrajectoryOutput("d-pi.pos", 100, "positions", "xyz"),
+               engine.outputs.CheckpointOutput("d-pi.checkpoint",1000,overwrite=True)]
 
    def fetch(self):
       """Returns a list of the output objects included in this dynamic

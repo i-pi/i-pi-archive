@@ -207,9 +207,6 @@ def init_vector(iif, nbeads, momenta=False):
       rq = value
 
    # determines the size of the input data
-#   if (rq.ndim > 1): # if the input has information on the number of beads
-#      nbeads = len(rq)
-#      natoms = len(rq[0])/3
    if mode == "manual":
       if iif.bead >= 0: # if there is a bead specifier then we return a single bead slice
          nbeads = 1

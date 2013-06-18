@@ -7,8 +7,8 @@ calculation.
 Classes:
    Status: Simple class to keep track of the status, uses bitwise or to give
       combinations of different status options.
-   DriverSocket: Class to deal with communication between a client and the driver
-      code.
+   DriverSocket: Class to deal with communication between a client and 
+      the driver code.
    InterfaceSocket: Host server class. Deals with distribution of all the jobs
       between the different client servers.
 

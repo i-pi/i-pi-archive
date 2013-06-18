@@ -136,7 +136,7 @@ def stab_cholesky(M):
 
 def h2abc(h):
    """Returns a description of the cell in terms of the length of the 
-      lattice vectors and the angles between them.
+      lattice vectors and the angles between them in radians.
 
    Args: 
       h: Cell matrix in upper triangular column vector form.
@@ -177,9 +177,9 @@ def abc2h(a, b, c, alpha, beta, gamma):
       a: First cell vector length.
       b: Second cell vector length.
       c: Third cell vector length.
-      alpha: Angle between sides b and c.
-      beta: Angle between sides a and c.
-      gamma: Angle between sides b and a.
+      alpha: Angle between sides b and c in radians.
+      beta: Angle between sides a and c in radians.
+      gamma: Angle between sides b and a in radians.
 
    Returns:
       An array giving the lattice vector matrix in upper triangular form.

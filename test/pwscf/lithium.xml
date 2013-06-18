@@ -1,7 +1,7 @@
 <simulation>
    <initialize nbeads='8'>
-      <file format='pdb'> li-4.pdb </file>
-      <resample_v> 150 </resample_v>
+      <file mode='pdb'> li-4.pdb </file>
+      <velocities mode='thermal'> 150 </velocities>
    </initialize>
    <output prefix='lithium'>
       <properties stride='1' filename='out'>  [ time, conserved, temperature, kinetic_cv, potential, pressure_cv] </properties>
