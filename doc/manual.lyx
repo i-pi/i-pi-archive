@@ -518,7 +518,7 @@ ref{overview}
 
  we explain some of the features of the wrapper code.
 \begin_inset Note Comment
-status open
+status collapsed
 
 \begin_layout Itemize
 In chapter
@@ -4065,7 +4065,7 @@ arg1
  order.
  The two syntaxes may be mixed, but positional arguments must be specified
  first otherwise undefined behaviour will result.
- If this is not specified, then the defaults as defined in the properties.py
+ If no arguments are specified, then the defaults as defined in the properties.py
  module will be used.
 \end_layout
 
@@ -5230,7 +5230,7 @@ extras
 
 \begin_layout Standard
 \begin_inset Note Comment
-status open
+status collapsed
 
 \begin_layout Chapter
 Developer's tips
