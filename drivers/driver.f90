@@ -2,7 +2,7 @@
 !
 ! Currently the potentials implemented are the Lennard-Jones
 ! potential, the Silvera-Goldman para-hydrogen potential and
-! the ideal gas (i.e. no electronic interaction at all)
+! the ideal gas (i.e. no interaction at all)
 
       PROGRAM DRIVER
          USE LJ

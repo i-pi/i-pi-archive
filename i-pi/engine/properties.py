@@ -58,7 +58,7 @@ def getall(pstring):
          which in general will specify units and argument lists.
 
    Returns: A tuple giving the keyword for the property, and its units
-      argument list and key word argument list.  
+      argument list and key word argument list.
    """
 
    unit = ""
@@ -205,10 +205,13 @@ class Properties(dobject):
       "volume": {     "dimension": "volume",
                       "help": "The volume of the cell box.",
                       'func': (lambda: self.cell.V) },
+      "temperature": {"dimension": "temperature",
+                      "help": "The current physical temperature. Takes an argument 'atom', which can be either an atom label or index to specify which species to find the temperature of. If not specified, all atoms are used.",
+                      'func': self.get_temp },
       "cell_h": {    "dimension" : "length",
                       "help": "Gives cell vector matrix. Returns the 6 components in the form [xx, yy, zz, xy, xz, yz].",
                       "size": 6,
-                      "func": (lambda: self.flatten(self.cell.h))},
+                      "func": (lambda: self.tensor2vec(self.cell.h))},
       "cell_abcABC": {"dimension" : "undefined",
                       "help": "Gives the lengths of the cell vectors and the angles between them in degrees as a list of the form [a, b, c, A, B, C], where A is the angle between the sides of length b and c in degrees, and B and C are defined similarly. Since there are a mixture of different units, these can only be output in atomic-units.",
                       "size": 6,
@@ -258,33 +261,33 @@ class Properties(dobject):
       "stress_md": {  "dimension": "pressure",
                       "size" : 6,
                       "help": "The simulation stress tensor. Returns the 6 components in the form [xx, yy, zz, xy, xz, yz].",
-                      "func": (lambda: self.flatten((self.forces.vir + self.nm.kstress)/self.cell.V))},
+                      "func": (lambda: self.tensor2vec((self.forces.vir + self.nm.kstress)/self.cell.V))},
       "pressure_md": {"dimension": "pressure",
                       "help": "The simulation pressure.",
                       "func": (lambda: np.trace((self.forces.vir + self.nm.kstress)/(3.0*self.cell.V)))},
       "kstress_md":  {"dimension": "pressure",
                       "size" : 6,
                       "help": "The simulation kinetic stress tensor. Returns the 6 components in the form [xx, yy, zz, xy, xz, yz].",
-                      "func": (lambda: self.flatten(self.nm.kstress/self.cell.V))},
+                      "func": (lambda: self.tensor2vec(self.nm.kstress/self.cell.V))},
       "virial_md": {  "dimension": "pressure",
                       "size" : 6,
                       "help": "The simulation virial tensor. Returns the 6 components in the form [xx, yy, zz, xy, xz, yz].",
-                      "func": (lambda: self.flatten(self.forces.vir/self.cell.V))},
+                      "func": (lambda: self.tensor2vec(self.forces.vir/self.cell.V))},
       "stress_cv": {  "dimension": "pressure",
                       "size" : 6,
                       "help": "The physical system stress tensor.  Returns the 6 components in the form [xx, yy, zz, xy, xz, yz].",
-                      "func": (lambda: self.flatten(self.forces.vir + self.kstress_cv())/(self.cell.V*self.beads.nbeads))},
+                      "func": (lambda: self.tensor2vec(self.forces.vir + self.kstress_cv())/(self.cell.V*self.beads.nbeads))},
       "pressure_cv": {"dimension": "pressure",
                       "help": "The physical pressure of the system.",
                       "func": (lambda: np.trace(self.forces.vir + self.kstress_cv())/(3.0*self.cell.V*self.beads.nbeads))},
       "kstress_cv":  {"dimension": "pressure",
                       "size" : 6,
                       "help": "The physical system kinetic stress tensor. Returns the 6 components in the form [xx, yy, zz, xy, xz, yz].",
-                      "func": (lambda: self.flatten(self.kstress_cv()/(self.cell.V*self.beads.nbeads)))},
+                      "func": (lambda: self.tensor2vec(self.kstress_cv()/(self.cell.V*self.beads.nbeads)))},
       "virial_cv": {  "dimension": "pressure",
                       "size" : 6,
                       "help": "The physical system virial stress tensor. Returns the 6 components in the form [xx, yy, zz, xy, xz, yz].",
-                      "func": (lambda: self.flatten(self.forces.vir/(self.cell.V*self.beads.nbeads)))},
+                      "func": (lambda: self.tensor2vec(self.forces.vir/(self.cell.V*self.beads.nbeads)))},
       "linlin": {  "dimension": "undefined",
                       "help": "This is the estimator for the end-to-end distribution for the sum over open paths, used to calculate the momentum distribution in L. Lin, J. A. Morrone, R. Car and M. Parrinello, 105, 110602 (2010), Phys. Rev. Lett. Takes arguments 'ux', 'uy' and 'uz', which are the components of the vector used to open the paths. Also takes an argument 'atom', which can be either an atom label or index to specify which species to find the temperature of. If not specified, all atoms are used.",
                       "func": self.get_linlin},
@@ -328,7 +331,7 @@ class Properties(dobject):
       Note that if the key contains a string (arg1; arg2; ... )
       then it will pass the appropriate positional arguments to the
       calculation function of the property. Note the brackets and
-      the semi-colon separators. If instead we have the syntax 
+      the semi-colon separators. If instead we have the syntax
       (arg1=val1;arg2; ... ), then the keyword/value pair (arg1,val1)
       will be added to the keyword argument list. The appropriate key word
       arguments will then be passed to the calculation function instead.
@@ -341,7 +344,7 @@ class Properties(dobject):
          key: A string contained in property_dict.
 
       Returns:
-         The property labelled by the keyword key, along with its unit 
+         The property labelled by the keyword key, along with its unit
          keyword, and the argument lists for the function used to calculate
          the property specified by the keyword key.
       """
@@ -349,13 +352,20 @@ class Properties(dobject):
       (key, unit, arglist, kwarglist) = getall(key)
       pkey = self.property_dict[key]
 
-      #pkey["func"](*arglist,**kwarglist) gives the value of the property 
-      #in atomic units. unit_to_user() returns the value in the user 
+      #pkey["func"](*arglist,**kwarglist) gives the value of the property
+      #in atomic units. unit_to_user() returns the value in the user
       #specified units.
       if "dimension" in pkey and unit != "":
          return unit_to_user(pkey["dimension"], unit, pkey["func"](*arglist,**kwarglist))
       else:
          return pkey["func"](*arglist,**kwarglist)
+
+   def tensor2vec(self, tensor):
+      """Takes a 3*3 symmetric tensor and returns it as a 1D array,
+      containing the elements [xx, yy, zz, xy, xz, yz].
+      """
+
+      return np.array([tensor[0,0], tensor[1,1], tensor[2,2], tensor[0,1], tensor[0,2], tensor[1,2]])
 
    def get_atom_vec(self, prop_vec, atom="", bead="-1"):
       """Gives a vector for one atom.
@@ -384,13 +394,6 @@ class Properties(dobject):
          return atom_vec/float(self.beads.nbeads)
       else:
          return prop_vec[bead,3*atom:3*(atom+1)]
-
-   def flatten(self, vec_2D):
-      """Takes a 3*3 upper-triangular array and returns it as a 1D array,
-      of the form [xx, yy, zz, xy, xz, yz].
-      """
-
-      return np.array([vec_2D[0,0], vec_2D[1,1], vec_2D[2,2], vec_2D[0,1], vec_2D[0,2], vec_2D[1,2]])
 
    def get_temp(self, atom=""):
       """Calculates the MD kinetic temperature.
@@ -737,7 +740,7 @@ class Properties(dobject):
       shown in Takeshi M. Yamamoto, Journal of Chemical Physics,
       104101, 123 (2005). Returns both eps_v and eps_v' as defined in
       the above article. Note that heat capacity is calculated as
-      beta**2*kboltzmann*(<eps_v**2> - <eps_v>**2 - <eps_v'>), and the 
+      beta**2*kboltzmann*(<eps_v**2> - <eps_v>**2 - <eps_v'>), and the
       energy of the system as <eps_v>.
 
       Args:
@@ -1084,7 +1087,7 @@ class Trajectories(dobject):
       Note that if the key contains a string (arg1; arg2; ... )
       then it will pass the appropriate positional arguments to the
       calculation function of the property. Note the brackets and
-      the semi-colon separators. If instead we have the syntax 
+      the semi-colon separators. If instead we have the syntax
       (arg1=val1;arg2; ... ), then the keyword/value pair (arg1,val1)
       will be added to the keyword argument list. The appropriate key word
       arguments will then be passed to the calculation function instead.
@@ -1097,7 +1100,7 @@ class Trajectories(dobject):
          key: A string contained in trajectory_dict.
 
       Returns:
-         The trajectory labelled by the keyword key, along with its unit 
+         The trajectory labelled by the keyword key, along with its unit
          keyword, and the argument lists for the function used to calculate
          the trajectory specified by the keyword key.
       """
@@ -1105,8 +1108,8 @@ class Trajectories(dobject):
       (key, unit, arglist, kwarglist) = getall(key)
       pkey = self.traj_dict[key]
 
-      #pkey["func"](*arglist,**kwarglist) gives the value of the trajectory 
-      #in atomic units. unit_to_user() returns the value in the user 
+      #pkey["func"](*arglist,**kwarglist) gives the value of the trajectory
+      #in atomic units. unit_to_user() returns the value in the user
       #specified units.
       if "dimension" in pkey and unit != "":
          return  unit_to_user(pkey["dimension"], unit, 1.0) * pkey["func"](*arglist,**kwarglist)
