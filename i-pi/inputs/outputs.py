@@ -243,9 +243,9 @@ class InputOutputs(Input):
       use any mutable objects as arguments.
       """
 
-      return [ engine.outputs.PropertyOutput("d-pi.md", 10, [ "time", "step", "conserved", "temperature", "potential", "kinetic_cv" ] ),
-               engine.outputs.TrajectoryOutput("d-pi.pos", 100, "positions", "xyz"),
-               engine.outputs.CheckpointOutput("d-pi.checkpoint",1000,overwrite=True)]
+      return [ engine.outputs.PropertyOutput("i-pi.md", 10, [ "time", "step", "conserved", "temperature", "potential", "kinetic_cv" ] ),
+               engine.outputs.TrajectoryOutput("i-pi.pos", 100, "positions", "xyz"),
+               engine.outputs.CheckpointOutput("i-pi.checkpoint",1000,overwrite=True)]
 
    def fetch(self):
       """Returns a list of the output objects included in this dynamic
