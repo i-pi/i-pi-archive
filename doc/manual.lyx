@@ -4081,7 +4081,7 @@ status open
 
 
 \backslash
-input{property_list}
+input{auxiliary/property_list}
 \end_layout
 
 \end_inset
@@ -4213,7 +4213,7 @@ status open
 
 
 \backslash
-input{trajectory_list}
+input{auxiliary/trajectory_list}
 \end_layout
 
 \end_inset
@@ -6498,168 +6498,168 @@ status open
 
 
 \backslash
-input{simulation}
+input{auxiliary/simulation}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-input{initializer}
+input{auxiliary/initializer}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-input{init_file}
+input{auxiliary/init_file}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-input{init_pos}
+input{auxiliary/init_pos}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-input{init_mom}
+input{auxiliary/init_mom}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-input{init_vel}
+input{auxiliary/init_vel}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-input{init_lab}
+input{auxiliary/init_lab}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-input{init_mass}
+input{auxiliary/init_mass}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-input{init_cell}
+input{auxiliary/init_cell}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-input{init_therm}
+input{auxiliary/init_therm}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-input{ensembles}
+input{auxiliary/ensembles}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-input{forces}
+input{auxiliary/forces}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-input{socket}
+input{auxiliary/socket}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-input{cell}
+input{auxiliary/cell}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-input{beads}
+input{auxiliary/beads}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-input{atoms}
+input{auxiliary/atoms}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-input{normal_modes}
+input{auxiliary/normal_modes}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-input{barostats}
+input{auxiliary/barostats}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-input{thermostats}
+input{auxiliary/thermostats}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-input{prng}
+input{auxiliary/prng}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-input{output}
+input{auxiliary/output}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-input{checkpoint}
+input{auxiliary/checkpoint}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-input{properties}
+input{auxiliary/properties}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-input{trajectory}
+input{auxiliary/trajectory}
 \end_layout
 
 \end_inset
