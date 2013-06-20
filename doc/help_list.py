@@ -13,7 +13,7 @@ Functions:
 
 import sys
 
-src_dir = "../src/"
+src_dir = "../i-pi/"
 
 sys.path.append(src_dir)
 
