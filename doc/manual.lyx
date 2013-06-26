@@ -182,7 +182,7 @@ newcommand{
 \backslash
 wrappi}{{
 \backslash
-sc wrap-PI}
+sc i-PI}
 \backslash
 xspace}
 \end_layout
@@ -2888,24 +2888,7 @@ wrappi
 For a small simulation, with a simple classical potential, it may be preferable
  to run both halves of the simulation on the same computer, especially as
  this allows us to use the faster unix domain sockets.
- If we assume that the driver code is run by the command 
-\begin_inset Quotes eld
-\end_inset
-
-driver_comm
-\begin_inset Quotes erd
-\end_inset
-
-, the following code will run the wrapper, redirect the wrapper's standard
- output to a file 
-\begin_inset Quotes eld
-\end_inset
-
-log
-\begin_inset Quotes erd
-\end_inset
-
-, run four driver codes and then background the result:
+ This can be done using a single script, such as:
 \end_layout
 
 \begin_layout Standard
@@ -2921,26 +2904,147 @@ begin{verbatim}
 
 \begin_layout Plain Layout
 
-> bash -c "python $src_dir/main.py input_file.xml &> log &"
+#These are the parameters that need to be specified by
 \end_layout
 
 \begin_layout Plain Layout
 
-> for a in `seq 1 4`
+#the user.
+ The number of driver codes is given by $ndrivers,
 \end_layout
 
 \begin_layout Plain Layout
 
->    do bash -c "driver_comm &> 
-\backslash
-dev
-\backslash
-null &"
+#the i-pi source directory is given by $src_dir, and the code
 \end_layout
 
 \begin_layout Plain Layout
 
-> done
+#that runs one of the driver codes is given by $driver_comm
+\end_layout
+
+\begin_layout Plain Layout
+
+inputfile=...
+\end_layout
+
+\begin_layout Plain Layout
+
+hostname=...
+\end_layout
+
+\begin_layout Plain Layout
+
+port=...
+\end_layout
+
+\begin_layout Plain Layout
+
+ndrivers=...
+\end_layout
+
+\begin_layout Plain Layout
+
+src_dir=...
+\end_layout
+
+\begin_layout Plain Layout
+
+driver_comm="..."
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+#This modifies the input file.
+ If necessary, the driver code
+\end_layout
+
+\begin_layout Plain Layout
+
+#input file should be modified here too
+\end_layout
+
+\begin_layout Plain Layout
+
+sed -i "s/<address>[^<]*</<address>$hostname</" $inputfile
+\end_layout
+
+\begin_layout Plain Layout
+
+sed -i "s/<port>[^<]*</<port>$port</" $inputfile
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+if [ -e EXIT ]; then
+\end_layout
+
+\begin_layout Plain Layout
+
+   rm EXIT 
+\end_layout
+
+\begin_layout Plain Layout
+
+fi
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+#Runs the simulation.
+ If the job is to be run on the cluster,
+\end_layout
+
+\begin_layout Plain Layout
+
+#use qsub or a similar command rather than bash.
+ This also
+\end_layout
+
+\begin_layout Plain Layout
+
+#redirects the standard output to a file log.
+\end_layout
+
+\begin_layout Plain Layout
+
+bash -c "python $src_dir/i-pi $inputfile > log &"
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+sleep 20 #must wait for server to be initialized
+\end_layout
+
+\begin_layout Plain Layout
+
+for a in `seq 1 $ndrivers`; do
+\end_layout
+
+\begin_layout Plain Layout
+
+   bash -c "$driver_comm"
+\end_layout
+
+\begin_layout Plain Layout
+
+done 
 \end_layout
 
 \begin_layout Plain Layout

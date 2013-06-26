@@ -393,12 +393,14 @@ class InterfaceSocket(object):
          self.server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
          try:
             self.server.bind("/tmp/wrappi_" + self.address)
+            info("Created unix socket with address " + self.address, verbosity.medium)
          except:
-            raise ValueError("Error opening unix socket. Check if a file "+("/tmp/wrappi_" + self.address)+" exists, and remove it if unused.")
+            raise ValueError("Error opening unix socket. Check if a file " + ("/tmp/wrappi_" + self.address) + " exists, and remove it if unused.")
 
       elif self.mode == "inet":
          self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
          self.server.bind((self.address,self.port))
+         info("Created inet socket with address " + self.address + " and port number " + str(self.port), verbosity.medium)
       else:
          raise NameError("InterfaceSocket mode " + self.mode + " is not implemented (should be unix/inet)")
 
