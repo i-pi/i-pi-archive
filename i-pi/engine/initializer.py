@@ -316,7 +316,7 @@ class Initializer(dobject):
          fpos = fmom = fmass = flab = fcell = True
 
       for (k,v) in self.queue:
-         info(" # Inizializer (stage 1) parsing " + str(k) + " object.", verbosity.high)
+         info(" # Initializer (stage 1) parsing " + str(k) + " object.", verbosity.high)
 
          if k == "cell":
             if fcell :
@@ -480,16 +480,17 @@ class Initializer(dobject):
             fmom = True
          elif k == "thermostat": pass   # thermostats must be initialised in a second stage
 
-      if not fpos:
-         raise ValueError("Could not initialize the atomic positions")
-      if not fcell:
-         raise ValueError("Could not initialize the cell")
-      if not fmass:
-         raise ValueError("Initializer could not initialize the masses")
-      if not flab:
-         raise ValueError("Initializer could not initialize the labels")
+      if simul.beads.natoms == 0:
+         raise ValueError("Initializer could not initialize the atomic positions")
+      if simul.cell.V == 0:
+         raise ValueError("Initializer could not initialize the cell")
+      for i in range(simul.beads.natoms):
+         if simul.beads.m[i] <= 0:
+            raise ValueError("Initializer could not initialize the masses")
+         if simul.beads.names[i] == "":
+            raise ValueError("Initializer could not initialize the atom labels")
       if not fmom:
-         warning("Could not initialise momenta. Will start with zero velocity.", verbosity.low)
+         warning("Momenta not specified in initialize. Will start with zero velocity if they are not specified in beads.", verbosity.low)
 
    def init_stage2(self, simul):
       """Initializes the simulation -- second stage.
@@ -507,7 +508,7 @@ class Initializer(dobject):
       """
 
       for (k,v) in self.queue:
-         info(" # Inizializer (stage 2) parsing " + str(k) + " object.", verbosity.high)
+         info(" # Initializer (stage 2) parsing " + str(k) + " object.", verbosity.high)
 
          if k == "gle":
             # read thermostat parameters from file
