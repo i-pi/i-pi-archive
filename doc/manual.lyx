@@ -3003,19 +3003,12 @@ fi
 
 \begin_layout Plain Layout
 
-#Runs the simulation.
- If the job is to be run on the cluster,
+#Runs the simulation, and redirects the wrapper
 \end_layout
 
 \begin_layout Plain Layout
 
-#use qsub or a similar command rather than bash.
- This also
-\end_layout
-
-\begin_layout Plain Layout
-
-#redirects the standard output to a file log.
+#standard output to a file named 'log'.
 \end_layout
 
 \begin_layout Plain Layout
@@ -3075,8 +3068,8 @@ emph{ab initio}
 
  forces and potentials, we will want to run the driver codes on a computational
  cluster.
- Here we run the wrapper code elsewhere, and simply use an internet socket
- for the communication.
+ Here we run the wrapper code elsewhere, and use internet sockets for the
+ communication.
  For information on how to do this, see section 
 \begin_inset ERT
 status open
@@ -3095,29 +3088,19 @@ ref{ssh_sockets}
 
 \begin_layout Standard
 To run the driver on a cluster computer, two major changes must be implemented.
- Firstly, the input file for the driver code should be changed so that it
- connects to host network the wrapper is running on.
- Secondly, to run the driver on a cluster a queueing program such as qsub
- will need to be used.
- These usually require a script file which can be executed on the cluster
- computers to be submitted to a queue.
- If we have a script file 
-\begin_inset Quotes eld
-\end_inset
+ Firstly, the code required to run the driver code should be separated from
+ that of the wrapper code.
+ Secondly, the driver script should be executed using a queueing program
+ such as qsub rather than the bash shell script as above, and so will need
+ to have the appropriate directive comment lines.
+ Depending on which cluster is used, additional commands to set parameters
+ such as the walltime, number of nodes and number of cores can be used.
+ Check the qsub man page for the cluster you are running the code on for
+ more details.
+\end_layout
 
-driver.sh
-\begin_inset Quotes erd
-\end_inset
-
-, which is set up to run 
-\begin_inset Quotes eld
-\end_inset
-
-driver_comm
-\begin_inset Quotes erd
-\end_inset
-
-, then the appropriate command would be:
+\begin_layout Standard
+One possible driver script layout would be:
 \end_layout
 
 \begin_layout Standard
@@ -3133,17 +3116,123 @@ begin{verbatim}
 
 \begin_layout Plain Layout
 
-for a in `seq 1 4`
+#!/bin/bash
 \end_layout
 
 \begin_layout Plain Layout
 
-   do qsub driver.sh
+#$ -S /bin/bash
 \end_layout
 
 \begin_layout Plain Layout
 
-done
+#$ -N jobname
+\end_layout
+
+\begin_layout Plain Layout
+
+#$ ...
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+#use this if there are library files needed
+\end_layout
+
+\begin_layout Plain Layout
+
+#by the driver code that are not on the default path
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+#export LD_LIBRARY_PATH=...
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+#use this if ssh tunnelling is required
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+#wrapper_host=...
+ #the wrapper host address
+\end_layout
+
+\begin_layout Plain Layout
+
+#wrapper_port=...
+ #the wrapper port number
+\end_layout
+
+\begin_layout Plain Layout
+
+#driver_port=...
+ #the cluster port number
+\end_layout
+
+\begin_layout Plain Layout
+
+#ssh -f -N $wrapper_host -L $driver_port:$wrapper_host:$wrapper_port
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+inputfile=...
+\end_layout
+
+\begin_layout Plain Layout
+
+hostname=...
+\end_layout
+
+\begin_layout Plain Layout
+
+port=...
+\end_layout
+
+\begin_layout Plain Layout
+
+driver_comm="..."
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+#Modify driver input file if necessary
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+bash -c "driver_comm"
 \end_layout
 
 \begin_layout Plain Layout
@@ -3159,10 +3248,22 @@ end{verbatim}
 \end_layout
 
 \begin_layout Standard
-Depending on which cluster is used, additional commands to set parameters
- such as the walltime, number of nodes and number of cores can be used.
- Check the qsub man page for the cluster you are running the code on for
- more details.
+Note that it may be necessary to export libraries or modules if they are
+ not present by default, or to use an ssh tunnel if the cluster is not open
+ to the internet (see 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ref{ssh_sockets}
+\end_layout
+
+\end_inset
+
+).
 \end_layout
 
 \begin_layout Subsection
@@ -3186,10 +3287,11 @@ wrappi
  simulations each host socket has to be distinguishable, so that the driver
  codes appropriate to each simulation connect only to the correct wrapper
  code.
- This can be done by adjusting the port number of each simulation, which
- then acts as a unique identifier for each host socket.
- This is very easy to write a shell script to do, if for example we assume
- the simulations will be run in directories called sim_1, sim_2, 
+ This can be done with internet sockets by adjusting the port number for
+ each simulation, which then acts as a unique identifier for each server.
+ The shell scripts from before can be easily modified to do this, for example
+ if we assume the simulations will be run in directories called sim_1, sim_2,
+ 
 \begin_inset ERT
 status open
 
@@ -3218,42 +3320,56 @@ begin{verbatim}
 
 \begin_layout Plain Layout
 
-> i=0
+first_port=...
+ #The value of the port of sim_1
 \end_layout
 
 \begin_layout Plain Layout
 
-> for a in sim_*
+i=0
 \end_layout
 
 \begin_layout Plain Layout
 
-> do cd $a
+for a in sim_*; do 
 \end_layout
 
 \begin_layout Plain Layout
 
->   ((i++))
+   cd $a
 \end_layout
 
 \begin_layout Plain Layout
 
->   port=((10000+$i))
+   port=$((first_port+i))
 \end_layout
 
 \begin_layout Plain Layout
 
->   sed s/XXX/$port/g input.template > $a/input_file.xml
+   ((i++))
 \end_layout
 
 \begin_layout Plain Layout
 
->   cd ..
 \end_layout
 
 \begin_layout Plain Layout
 
-> done
+   #here we run the code for one simulation as before
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+   cd ..
+\end_layout
+
+\begin_layout Plain Layout
+
+done
 \end_layout
 
 \begin_layout Plain Layout
@@ -3266,22 +3382,6 @@ end{verbatim}
 \end_inset
 
 
-\end_layout
-
-\begin_layout Standard
-This will replace a string 
-\begin_inset Quotes eld
-\end_inset
-
-XXX
-\begin_inset Quotes erd
-\end_inset
-
- in a template file with a port number unique to each simulation.
- If the same thing is done for the driver input files then this gives us
- an easy way to specify which driver codes connect to which wrapper codes.
- However, note that this will only work if you are using inet sockets, as
- the port number is silently ignored for unix sockets.
 \end_layout
 
 \begin_layout Section
