@@ -325,7 +325,20 @@ pagenumbering{arabic}
 \end_layout
 
 \begin_layout Chapter
-Introduction
+About 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ipi
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -426,6 +439,105 @@ ipi
  is efficient enough that it can be used with empirical forcefields to perform
  simple benchmarks and preparatory simulations.
  
+\end_layout
+
+\begin_layout Section
+Implementation
+\end_layout
+
+\begin_layout Standard
+Explain more in details how the program works and why it works that way
+\end_layout
+
+\begin_layout Subsection
+Automated evaluation (depend objects)
+\end_layout
+
+\begin_layout Subsection
+Communication protocol
+\end_layout
+
+\begin_layout Subsection
+Internal units
+\end_layout
+
+\begin_layout Section
+Core features
+\end_layout
+
+\begin_layout Standard
+Tersely explain what the code can do, without entering into too much detail.
+ 
+\end_layout
+
+\begin_layout Section
+Licence and credits
+\end_layout
+
+\begin_layout Standard
+Say it's GPL, who initially developed it, and how it should be cited
+\end_layout
+
+\begin_layout Section
+References
+\end_layout
+
+\begin_layout Standard
+Including the on-line resources
+\end_layout
+
+\begin_layout Chapter
+Getting started
+\end_layout
+
+\begin_layout Standard
+Condense here the Installation and the Running chapters, but giving just
+ a simple 
+\begin_inset Quotes eld
+\end_inset
+
+hello world
+\begin_inset Quotes erd
+\end_inset
+
+ kind of explanation of how to run, without entering into details on input
+ and output.
+\end_layout
+
+\begin_layout Section
+A simple tutorial
+\end_layout
+
+\begin_layout Chapter
+User guide
+\end_layout
+
+\begin_layout Section
+Input file structure
+\end_layout
+
+\begin_layout Section
+Output files
+\end_layout
+
+\begin_layout Section
+Soft exit and restart
+\end_layout
+
+\begin_layout Section
+Distributed execution
+\end_layout
+
+\begin_layout Chapter
+Input reference
+\end_layout
+
+\begin_layout Chapter
+Troubleshooting
+\end_layout
+
+\begin_layout Part
+CURRENT MANUAL
 \end_layout
 
 \begin_layout Standard
