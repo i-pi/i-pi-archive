@@ -4285,7 +4285,7 @@ status open
 
 
 \backslash
-input{auxiliary/property_list}
+input{input_docs/property_list}
 \end_layout
 
 \end_inset
@@ -4417,7 +4417,7 @@ status open
 
 
 \backslash
-input{auxiliary/trajectory_list}
+input{input_docs/trajectory_list}
 \end_layout
 
 \end_inset
@@ -6702,168 +6702,168 @@ status open
 
 
 \backslash
-input{auxiliary/simulation}
+input{input_docs/simulation}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-input{auxiliary/initializer}
+input{input_docs/initializer}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-input{auxiliary/init_file}
+input{input_docs/init_file}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-input{auxiliary/init_pos}
+input{input_docs/init_pos}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-input{auxiliary/init_mom}
+input{input_docs/init_mom}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-input{auxiliary/init_vel}
+input{input_docs/init_vel}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-input{auxiliary/init_lab}
+input{input_docs/init_lab}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-input{auxiliary/init_mass}
+input{input_docs/init_mass}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-input{auxiliary/init_cell}
+input{input_docs/init_cell}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-input{auxiliary/init_therm}
+input{input_docs/init_therm}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-input{auxiliary/ensembles}
+input{input_docs/ensembles}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-input{auxiliary/forces}
+input{input_docs/forces}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-input{auxiliary/socket}
+input{input_docs/socket}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-input{auxiliary/cell}
+input{input_docs/cell}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-input{auxiliary/beads}
+input{input_docs/beads}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-input{auxiliary/atoms}
+input{input_docs/atoms}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-input{auxiliary/normal_modes}
+input{input_docs/normal_modes}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-input{auxiliary/barostats}
+input{input_docs/barostats}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-input{auxiliary/thermostats}
+input{input_docs/thermostats}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-input{auxiliary/prng}
+input{input_docs/prng}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-input{auxiliary/output}
+input{input_docs/output}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-input{auxiliary/checkpoint}
+input{input_docs/checkpoint}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-input{auxiliary/properties}
+input{input_docs/properties}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-input{auxiliary/trajectory}
+input{input_docs/trajectory}
 \end_layout
 
 \end_inset
@@ -6875,7 +6875,7 @@ input{auxiliary/trajectory}
 \begin_inset CommandInset bibtex
 LatexCommand bibtex
 bibfiles "mybib"
-options "elsart-num-names"
+options "elsarticle-num-names"
 
 \end_inset
 

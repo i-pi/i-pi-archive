@@ -1,12 +1,12 @@
-.PHONY : all clean
-all : create_man help_files/manual.pdf
+.PHONY : all clean aux
+all : manual.pdf
 
-create_man:
+aux:
 	python create_man.py
 
-help_files/manual.pdf: 
+manual.pdf: aux
 	lyx --export pdf2 manual.lyx
-	mv manual.pdf help_files/manual.pdf
+	mv manual.pdf help_files	
 	
 clean: 
-	bash -c "rm -rf help_files auxiliary"
+	bash -c "rm -rf help_files input_docs"
