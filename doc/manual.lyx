@@ -180,7 +180,7 @@ mathrm{Im}}
 \backslash
 newcommand{
 \backslash
-wrappi}{{
+ipi}{{
 \backslash
 sc i-PI}
 \backslash
@@ -245,7 +245,7 @@ status open
 
 
 \backslash
-wrappi
+ipi
 \end_layout
 
 \end_inset
@@ -352,13 +352,13 @@ status open
 
 
 \backslash
-wrappi
+ipi
 \end_layout
 
 \end_inset
 
- is a path integral molecular dynamics (PIMD) wrapper code written in Python
- for use with 
+ is a Path Integral Molecular Dynamics (PIMD) wrapper code written in Python,
+ designed to be used together with 
 \begin_inset ERT
 status open
 
@@ -371,40 +371,31 @@ emph{ab initio}
 
 \end_inset
 
- density functional theory (DFT).
- It currently works with the DFT codes 
-\begin_inset ERT
-status open
-
-\begin_layout Plain Layout
-
-
-\backslash
-DFT
-\end_layout
-
-\end_inset
-
- and the classical code 
-\begin_inset ERT
-status open
-
-\begin_layout Plain Layout
-
-
-\backslash
-empirical
-\end_layout
-
-\end_inset
-
-.
+ evaluation of the interactions between the atoms.
+ The main goal is to decouple the problem of evolving the ionic positions
+ to sample the appropriate thermodynamic ensemble and the problem of computing
+ the inter-atomic forces.
+ 
 \end_layout
 
 \begin_layout Standard
-It is designed to separate the calculation of the potential energy, forces
- and virial of a system from the algorithmic steps that propagate the dynamics.
- The rationale behind this is that for 
+The implementation is based on a client-server paradigm, where 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ipi
+\end_layout
+
+\end_inset
+
+ acts as the server and deals with the propagation of the nuclear dynamics,
+ whereas the calculation of the potential energy, forces and virial is delegated
+ to one or more instances of an external code, acting as clients.
+ Since the main focus is on performing 
 \begin_inset ERT
 status open
 
@@ -417,14 +408,31 @@ emph{ab initio}
 
 \end_inset
 
- PIMD the force calculation generally takes much more time than the propagation
- steps, and so there is no reason to optimize the running of the latter.
- Instead we have attempted to provide a simple but powerful interface that
- allows the use of the PIMD framework without the need for expert knowledge
- on the subject.
+ PIMD -- where the cost of the force evaluation is overwhelming relative
+ to the ionic dynamics -- clarity has been privileged over speed.
+ Still, the implementation of 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ipi
+\end_layout
+
+\end_inset
+
+ is efficient enough that it can be used with empirical forcefields to perform
+ simple benchmarks and preparatory simulations.
+ 
 \end_layout
 
 \begin_layout Standard
+\begin_inset Note Comment
+status open
+
+\begin_layout Plain Layout
 This manual will be structured as follows: 
 \end_layout
 
@@ -560,6 +568,11 @@ ref{hierarchy}
  a full list of the major classes used in the code is given, along with
  the appropriate tag names and a brief description of all the fields that
  can be specified in the xml input file.
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Section
@@ -746,7 +759,7 @@ status open
 
 
 \backslash
-wrappi
+ipi
 \end_layout
 
 \end_inset
@@ -782,7 +795,7 @@ status open
 
 
 \backslash
-wrappi
+ipi
 \end_layout
 
 \end_inset
@@ -821,7 +834,7 @@ status open
 
 
 \backslash
-wrappi
+ipi
 \end_layout
 
 \end_inset
@@ -839,7 +852,7 @@ status open
 
 
 \backslash
-wrappi
+ipi
 \end_layout
 
 \end_inset
@@ -883,7 +896,7 @@ status open
 
 
 \backslash
-wrappi
+ipi
 \end_layout
 
 \end_inset
@@ -898,7 +911,7 @@ status open
 
 
 \backslash
-wrappi
+ipi
 \end_layout
 
 \end_inset
@@ -916,7 +929,7 @@ status open
 
 
 \backslash
-wrappi
+ipi
 \end_layout
 
 \end_inset
@@ -1225,7 +1238,7 @@ status open
 
 
 \backslash
-wrappi
+ipi
 \end_layout
 
 \end_inset
@@ -1265,7 +1278,7 @@ status open
 
 
 \backslash
-wrappi
+ipi
 \end_layout
 
 \end_inset
@@ -1518,7 +1531,7 @@ status open
 
 
 \backslash
-wrappi
+ipi
 \end_layout
 
 \end_inset
@@ -1767,7 +1780,7 @@ status open
 
 
 \backslash
-wrappi
+ipi
 \end_layout
 
 \end_inset
@@ -1796,7 +1809,7 @@ status open
 
 
 \backslash
-wrappi
+ipi
 \end_layout
 
 \end_inset
@@ -1830,7 +1843,7 @@ status open
 
 
 \backslash
-wrappi
+ipi
 \end_layout
 
 \end_inset
@@ -2176,7 +2189,7 @@ status open
 
 
 \backslash
-wrappi
+ipi
 \end_layout
 
 \end_inset
@@ -2269,7 +2282,7 @@ status open
 
 
 \backslash
-wrappi
+ipi
 \end_layout
 
 \end_inset
@@ -2576,7 +2589,7 @@ status open
 
 
 \backslash
-wrappi
+ipi
 \end_layout
 
 \end_inset
@@ -2612,7 +2625,7 @@ status open
 
 
 \backslash
-wrappi
+ipi
 \end_layout
 
 \end_inset
@@ -2627,7 +2640,7 @@ status open
 
 
 \backslash
-wrappi
+ipi
 \end_layout
 
 \end_inset
@@ -2871,7 +2884,7 @@ status open
 
 
 \backslash
-wrappi
+ipi
 \end_layout
 
 \end_inset
@@ -3279,7 +3292,7 @@ status open
 
 
 \backslash
-wrappi
+ipi
 \end_layout
 
 \end_inset
@@ -3842,7 +3855,7 @@ status open
 
 
 \backslash
-wrappi
+ipi
 \end_layout
 
 \end_inset
@@ -5197,7 +5210,7 @@ status open
 
 
 \backslash
-wrappi
+ipi
 \end_layout
 
 \end_inset
