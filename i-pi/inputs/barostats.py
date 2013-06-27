@@ -42,7 +42,7 @@ class InputBaro(Input):
                                  "dimension" : "momentum" })
            }
 
-   default_help = "Simulates an external pressure bath to keep the pressure at the external values."
+   default_help = "Simulates an external pressure bath."
    default_label = "BAROSTAT"
 
    def store(self, baro):

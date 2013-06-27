@@ -13,11 +13,17 @@ the manual.lyx file for it to be included in the automatic help generation.
 Also creates an xml file with the full list of all the tags.
 """
 
+import os
 from help import help, objects
 from help_list import help_list, list_objects
 
-help(xml=True)
+if not os.path.exists("auxiliary"):
+   os.mkdir("auxiliary")
+if not os.path.exists("help_files"):
+   os.mkdir("help_files")
+
+help(xml=True, prefix="help_files/manual")
 for opt in objects:
-   help(latex=True, levels=1, option=opt, prefix=opt, ref=True)
+   help(latex=True, levels=1, option=opt, prefix=("auxiliary/" + opt), ref=True)
 for opt in list_objects:
-   help_list(option=opt, prefix=opt, ref=True)
+   help_list(option=opt, prefix=("auxiliary/" + opt), ref=True)

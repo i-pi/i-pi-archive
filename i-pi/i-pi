@@ -40,7 +40,7 @@ def main(file_name):
    # Here we must do this manually; from here on everything should be automated by the messages classes
    if simrestart.verbosity.fetch() != "quiet" :
       banner()
-      print " # wrap-pi starting from input file: ", file_name
+      print " # i-pi starting from input file: ", file_name
    if simrestart.verbosity.fetch() != "quiet" and simrestart.verbosity.fetch() != "low" :
       print " --- begin input file content --- "
       ifile = open(file_name,"r")

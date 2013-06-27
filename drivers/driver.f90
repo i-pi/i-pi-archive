@@ -114,7 +114,7 @@
 
       IF (vstyle == -1) THEN
          WRITE(*,*) " Error, type of potential not specified."
-         WRITE(*,*) " SYNTAX: driver.x [-u] -h hostname -p port -m [gas|lj|sg] -o 'comma_separated_parameters' [-v] "
+         WRITE(*,*) " SYNTAX: driver.x [-u] -h hostname -p port -m [gas|lj|sg|harm] -o 'comma_separated_parameters' [-v] "
          WRITE(*,*) ""
          WRITE(*,*) " For LJ potential use -o sigma,epsilon,cutoff "
          WRITE(*,*) " For SG potential use -o cutoff "

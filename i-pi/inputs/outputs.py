@@ -33,11 +33,12 @@ class InputProperties(InputArray):
 
    attribs = copy(InputArray.attribs)
    attribs["filename"] = (InputAttribute,{ "dtype" : str, "default": "out",
-                                           "help": "The name of the file that the property information will be output to."} )
+                                           "help": "A string to specify the name of the file that is output. The file name is given by 'prefix'.'filename' + format_specifier. The format specifier may also include a number if multiple similar files are output."} )
    attribs["stride"] = (InputAttribute,{ "dtype" : int, "default": 1,
                                          "help": "The number of steps between successive writes." } )
    attribs["flush"] = (InputAttribute, {"dtype"    : int,    "default"  : 1,
                                    "help"     : "How often should streams be flushed. 1 means each time, zero means never." })                                  
+
    def __init__(self, help=None,  default=None, dtype=None, dimension=None):
       """Initializes InputProperties.
 
@@ -86,7 +87,7 @@ class InputTrajectory(InputValue):
 
    attribs = copy(InputValue.attribs)
    attribs["filename"] = (InputAttribute,{ "dtype" : str, "default": "traj",
-                                           "help": "The name of the file that the trajectory information will be output to."} )
+                                           "help": "A string to specify the name of the file that is output. The file name is given by 'prefix'.'filename' + format_specifier. The format specifier may also include a number if multiple similar files are output."} )
    attribs["stride"] = (InputAttribute,{ "dtype" : int, "default": 1,
                                          "help": "The number of steps between successive writes." } )
    attribs["format"] = (InputAttribute,{ "dtype" : str, "default": "xyz",
@@ -151,7 +152,7 @@ class InputCheckpoint(InputValue):
 
    attribs=copy(InputValue.attribs)
    attribs["filename"] = (InputAttribute,{ "dtype" : str, "default": "restart",
-                                           "help": "The name of the file that the checkpoints will be output to."} )
+                                           "help": "A string to specify the name of the file that is output. The file name is given by 'prefix'.'filename' + format_specifier. The format specifier may also include a number if multiple similar files are output."} )
    attribs["stride"] = (InputAttribute,{ "dtype" : int, "default": 1,
                                          "help": "The number of steps between successive writes." } )
    attribs["overwrite"] = (InputAttribute,{ "dtype" : bool, "default": True,
@@ -220,8 +221,8 @@ class InputOutputs(Input):
    """
 
    attribs = { "prefix" : ( InputAttribute, { "dtype" : str,
-                                          "default"  : "d-pi",
-                                          "help"     : "A string that will be prepended to each output file name." })
+                                          "default"  : "i-pi",
+                                          "help"     : "A string that will be prepended to each output file name. The file name is given by 'prefix'.'filename' + format_specifier. The format specifier may also include a number if multiple similar files are output." })
              }
 
    dynamic = {  "properties" : (InputProperties, { "help" : "Each of the properties tags specify how to create a file in which one or more properties are written, one line per frame. " } ),
@@ -229,9 +230,7 @@ class InputOutputs(Input):
                "checkpoint" : (InputCheckpoint, { "help" : "Each of the checkpoint tags specify how to create a checkpoint file, which can be used to restart a simulation. " } ),
             }
 
-   default_help = """This class defines how properties, trajectories and checkpoints should be output during the simulation.
-    May contain zero, one or many instances of properties, trajectory or checkpoint tags, each giving instructions on how
-    one output file should be created and managed."""
+   default_help = """This class defines how properties, trajectories and checkpoints should be output during the simulation. May contain zero, one or many instances of properties, trajectory or checkpoint tags, each giving instructions on how one output file should be created and managed."""
    default_label = "OUTPUTS"
 
    @classmethod
@@ -244,9 +243,9 @@ class InputOutputs(Input):
       use any mutable objects as arguments.
       """
 
-      return [ engine.outputs.PropertyOutput("d-pi.md", 10, [ "time", "step", "conserved", "temperature", "potential", "kinetic_cv" ] ),
-               engine.outputs.TrajectoryOutput("d-pi.pos", 100, "positions", "xyz"),
-               engine.outputs.CheckpointOutput("d-pi.checkpoint",1000,overwrite=True)]
+      return [ engine.outputs.PropertyOutput("i-pi.md", 10, [ "time", "step", "conserved", "temperature", "potential", "kinetic_cv" ] ),
+               engine.outputs.TrajectoryOutput("i-pi.pos", 100, "positions", "xyz"),
+               engine.outputs.CheckpointOutput("i-pi.checkpoint",1000,overwrite=True)]
 
    def fetch(self):
       """Returns a list of the output objects included in this dynamic

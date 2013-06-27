@@ -1,12 +1,12 @@
 #!/bin/bash
 #$ -S /bin/bash
 #$ -cwd
-#$ -pe  orte 7
+#$ -pe  orte 4
 #$ -N ph2-wrappi
 
 nruns=100
 port=$1
-nprocs=6
+nprocs=4
 
 for i in `seq 1 $nruns`; do
    bash ./launch.sh $port

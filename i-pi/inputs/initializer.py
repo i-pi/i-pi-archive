@@ -119,6 +119,7 @@ class InputInitFile(InputInitBase):
    attribs = deepcopy(InputInitBase.attribs)
    attribs["mode"][1]["default"] = "chk"
    attribs["mode"][1]["options"] = ["xyz", "pdb", "chk"]
+   attribs["mode"][1]["help"] = "The input data format. 'xyz' and 'pdb' stand for xyz and pdb input files respectively. 'chk' stands for initialization from a checkpoint file."
 
    default_label = "INITFILE"
    default_help = "This is the class to initialize from file."
@@ -130,6 +131,7 @@ class InputInitThermo(InputInitBase):
    attribs = deepcopy(InputInitBase.attribs)
    attribs["mode"][1]["default"] = "manual"
    attribs["mode"][1]["options"] = ["chk", "manual"]
+   attribs["mode"][1]["help"] = "'chk' stands for initialization from a checkpoint file. 'manual' means that the value to initialize from is giving explicitly as a vector."
 
    default_label = "INITTHERMO"
    default_help = "This is the class to initialize the thermostat (ethermo and fictitious momenta)."
@@ -145,8 +147,8 @@ class InputInitIndexed(InputInitBase):
    """
 
    attribs = deepcopy(InputInitBase.attribs)
-   attribs["index"] =     (InputAttribute,{ "dtype" : int, "default": -1, "help": "The index of the atom of which we are to set the coordinate." } )
-   attribs["bead"]  =     (InputAttribute,{ "dtype" : int, "default": -1, "help": "The index of the bead of which we are to set the coordinate." } )
+   attribs["index"] =     (InputAttribute,{ "dtype" : int, "default": -1, "help": "The index of the atom for which the value will be set. If a negative value is specified, then all atoms are assumed." } )
+   attribs["bead"]  =     (InputAttribute,{ "dtype" : int, "default": -1, "help": "The index of the bead for which the value will be set. If a negative value is specified, then all beads are assumed." } )
 
    default_label = "INITINDEXED"
    default_help = "This is a helper class to initialize with an index."
@@ -158,6 +160,7 @@ class InputInitPositions(InputInitIndexed):
    attribs = deepcopy(InputInitIndexed.attribs)
    attribs["mode"][1]["default"] = "chk"
    attribs["mode"][1]["options"] = ["manual", "xyz", "pdb", "chk"]
+   attribs["mode"][1]["help"] = "The input data format. 'xyz' and 'pdb' stand for xyz and pdb input files respectively. 'chk' stands for initialization from a checkpoint file. 'manual' means that the value to initialize from is giving explicitly as a vector."
 
    default_label = "INITPOSITIONS"
    default_help = "This is the class to initialize positions."
@@ -169,6 +172,7 @@ class InputInitMomenta(InputInitPositions):
 
    attribs = deepcopy(InputInitPositions.attribs)
    attribs["mode"][1]["options"].append( "thermal" )
+   attribs["mode"][1]["help"] = "The input data format. 'xyz' and 'pdb' stand for xyz and pdb input files respectively. 'chk' stands for initialization from a checkpoint file. 'manual' means that the value to initialize from is giving explicitly as a vector. 'thermal' means that the data is to be generated from a Maxwell-Boltzmann distribution at the given temperature."
 
    default_label = "INITMOMENTA"
    default_help = "This is the class to initialize momenta."
