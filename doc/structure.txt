@@ -1,0 +1,57 @@
+OLD:
+   Chapter 1 - Introduction:
+      Driver compatibility
+      Online resources
+      License and credits
+   Chapter 2 - Communication protocol:
+      Sockets
+      Data transfer
+      Parallelization
+      SSH tunnelling
+   Chapter 3 - Installation:
+      System requirements
+      Downloading I-PI
+      Downloading NumPy
+      Downloading PyFFTW
+      Downloading drivers
+         - QE
+         - CP2K
+         - CPMD
+         - FHI-AIMS
+         - LAMMPS?
+         - DLPOLY?
+      Testing
+   Chapter 4 - Running I-PI:
+      Running the wrapper
+      Running the driver
+         - QE
+         etc.
+      Running simulations
+         - One
+         - Many
+      Input files
+         - xml input
+         - config files
+         - units
+      Output files
+         - property
+         - trajectory
+      Restart mechanism
+         - checkpoint files
+         - RESTART
+         - Soft exit
+         - Initialization from checkpoint
+   Chapter 5 - Feature Overview:
+      RPC
+      NVT
+         - PILE
+         - GLE
+      RPMD
+      Output
+         - Displaced path
+         - Scaled path
+         - Extras list
+   Chapter 6 - Input hierarchy
+      SIMULATION
+      etc.
+      NPT
