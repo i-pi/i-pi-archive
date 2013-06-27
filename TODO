@@ -100,21 +100,9 @@ checkpoint tags in the code snippets of 4.5 and 4.6 are now out-of-date. (JM) (J
 ** Write the paper (JM) 
 ** Finish writing the manual (JM) (JM)
 
-DONE ** At the moment, only with InputValue or InputArray objects can we
-not print out the default values, because there is no way of comparing
-two larger class objects since they don't have a 'value' attribute.
-
-On the npt branch, I 'fixed' this by using the xml hierarchy, and comparing
-the 'value' attribute of all the child tags in turn. If all of the tags
-match, then the class and its default match, else they do not.
-There were still some inelegant parts of the code design, so a better solution
-should be sought. The idea is sound, but the implementation should be
-improved.
-
-PS: DO NOT try to make it so that things like empty strings are not output
-to the xml file, I've just realized that that is incompatible with the
-compulsory tag system we have. In this case the npt branch is WRONG.
-(JM) (MC)
-
 DONE ** Implement warning() and info() everywhere (For example, it is missing
 from normalmodes.py) (JM) (JM)
+
+** Implement a more robust walltime clock limit mechanism. (MC)
+
+** Alternative communication mechanisms not relying on sockets (MC)
