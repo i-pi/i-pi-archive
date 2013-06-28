@@ -405,7 +405,7 @@ class Input(object):
             for a in self.attribs:
                #don't print out units if not necessary
                if not (a == "units" and self._dimension == "undefined"):
-                  rstr += "\\item {\\bf " + a + "}:\n " + self.__dict__[a].help_latex(level, stop_level, ref)
+                  rstr += "\\item {\\bf " + a + "}:\\\\\n " + self.__dict__[a].help_latex(level, stop_level, ref)
             rstr += "\\end{itemize}\n \n"
 
       #As above, for the fields. Only prints out if we have not reached the
@@ -414,11 +414,11 @@ class Input(object):
          rstr += "\\paragraph{Fields}\n \\begin{itemize}\n"
          for f in self.fields:
             if self.__dict__[f]._label == "" or not ref:
-               rstr += "\\item {\\bf " + f + "}:\n " + self.__dict__[f].help_latex(level+1, stop_level, ref)
+               rstr += "\\item {\\bf " + f + "}:\\\\\n " + self.__dict__[f].help_latex(level+1, stop_level, ref)
             else:
             #adds a hyperlink to the section title if a label has been specified
             #and the file is part of a larger document.
-               rstr += "\\item {\\bf \hyperref[" + self.__dict__[f]._label + "]{" + f + "} }:\n " + self.__dict__[f].help_latex(level+1, stop_level)
+               rstr += "\\item {\\bf \hyperref[" + self.__dict__[f]._label + "]{" + f + "} }:\\\\\n " + self.__dict__[f].help_latex(level+1, stop_level)
          rstr += "\\end{itemize}\n \n"
 
       #Exactly the same as for the fields, except we must create the dynamic
@@ -429,9 +429,9 @@ class Input(object):
          for f, v in self.dynamic.iteritems():
             dummy_obj = v[0](**v[1])
             if dummy_obj._label == "" or not ref:
-               rstr += "\\item {\\bf " + f + "}:\n " + dummy_obj.help_latex(level+1, stop_level, ref)
+               rstr += "\\item {\\bf " + f + "}:\\\\\n " + dummy_obj.help_latex(level+1, stop_level, ref)
             else:
-               rstr += "\\item {\\bf \hyperref[" + dummy_obj._label + "]{" + f + "} }:\n " + dummy_obj.help_latex(level+1, stop_level)
+               rstr += "\\item {\\bf \hyperref[" + dummy_obj._label + "]{" + f + "} }:\\\\\n " + dummy_obj.help_latex(level+1, stop_level)
          rstr += "\\end{itemize}\n \n"
 
       if level == 0 and not ref:
