@@ -383,8 +383,8 @@ class Input(object):
          #and not self._default
          rstr += "{\\\\ default: }" + self.pprint(self.value) + "\n"
 
-      if hasattr(self, "type") and hasattr(self.type, "__name__"):
-         rstr += "{\\\\ data type: }" + self.type.__name__ + "\n"
+      if issubclass(self.__class__, InputAttribute):
+         rstr += "{\\\\ data type: }" + self.type_print(self.type) + "\n"
          #if possible, prints out the type of data that is being used
 
       if hasattr(self, "_valid"):
@@ -487,6 +487,28 @@ class Input(object):
          #in most cases standard formatting will do
          return " " + str(default) + " "
 
+   def type_print(self, dtype):
+      """Function to convert a data types to human-readable strings.
+
+      Args:
+         dtype: A data type.
+      """
+
+      if dtype == bool:
+         return "boolean"
+      elif dtype == float or dtype == np.float64:
+         return "float"
+      elif dtype == int or dtype == np.uint64 or dtype == np.int64:
+         return "integer"
+      elif dtype == dict:
+         return "dictionary"
+      elif dtype == str:
+         return "string"
+      elif dtype == tuple:
+         return "tuple"
+      else:
+         raise TypeError("Unrecognized data type " + str(dtype))
+
    def help_xml(self, name="", indent="", level=0, stop_level=None):
       """Function to generate an xml formatted help file.
 
@@ -531,7 +553,7 @@ class Input(object):
       if hasattr(self, '_dimension') and self._dimension != "undefined":
          rstr += indent + "   <dimension> " + self._dimension + " </dimension>\n"
 
-      if self._default is not None and hasattr(self, 'value'):
+      if self._default != None and issubclass(self.__class__, InputAttribute):
          #We only print out the default if it has a well defined value.
          #For classes such as InputCell, self._default is not the value,
          #instead it is an object that is stored, putting the default value in
@@ -556,13 +578,12 @@ class Input(object):
                      rstr += indent + "   <" + a + "_options> " + str(self.__dict__[a]._valid) + " </" + a + "_options>\n"
 
       #if possible, prints out the type of data that is being used
-      if hasattr(self, "type") and hasattr(self.type, "__name__"):
-         rstr += indent + "   <dtype> " + self.type.__name__ + " </dtype>\n"
+      if issubclass(self.__class__, InputAttribute):
+         rstr += indent + "   <dtype> " + self.type_print(self.type) + " </dtype>\n"
       if show_attribs:
          for a in self.attribs:
             if not (a == "units" and self._dimension == "undefined"):
-               if hasattr(self.__dict__[a], "type") and hasattr(self.__dict__[a].type, "__name__"):
-                  rstr += indent + "   <" + a + "_dtype> " + self.__dict__[a].type.__name__ + " </" + a + "_dtype>\n"
+               rstr += indent + "   <" + a + "_dtype> " + self.type_print(self.__dict__[a].type) + " </" + a + "_dtype>\n"
 
       #repeats the above instructions for any fields or dynamic tags.
       #these will only be printed if their level in the hierarchy is not above
