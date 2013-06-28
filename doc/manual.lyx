@@ -4379,7 +4379,8 @@ begin{verbatim}<properties stride=`' filename=`' flush=`' shape=`'>
 
 \begin_layout Plain Layout
 
-   [ prop1name{units}(arg1;...), prop2name{...}(...), ...
+   [ prop1name{units}(arg1; ...
+ ), prop2name{...}(...), ...
   ]
 \end_layout
 
@@ -4434,6 +4435,9 @@ Thirdly, the arguments to be passed to the function can be specified between
  These may or may not be mandatory depending on the property.
  The arguments can be specified by either of two different syntaxes, (name1=arg1
 ;
+ 
+\lang english
+
 \begin_inset ERT
 status open
 
@@ -4446,7 +4450,7 @@ ldots
 
 \end_inset
 
-) or (arg1;
+ ) or (arg1; 
 \begin_inset ERT
 status open
 
@@ -4459,7 +4463,7 @@ ldots
 
 \end_inset
 
-).
+ ).
  The first explicitly assigns the argument with the name 
 \begin_inset Quotes eld
 \end_inset
