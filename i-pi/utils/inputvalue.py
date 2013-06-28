@@ -369,31 +369,31 @@ class Input(object):
             rstr += "\\section{" + self._label + "}\n"
             rstr += "\\label{" + self._label + "}\n"
 
-      rstr += self._help + "\n"  #help string
+      rstr += self._help + "\\vspace{1mm} \\\\"  #help string
 
       if hasattr(self, '_dimension') and self._dimension != "undefined":
-         rstr += "{\\\\ \\bf DIMENSION: }" + self._dimension + "\n"
+         rstr += "{\\\\ dimension: }" + self._dimension + "\n"
          #gives dimension
 
-      if self._default != None and hasattr(self, 'value'):
+      if self._default != None and issubclass(self.__class__, InputAttribute):
          #We only print out the default if it has a well defined value.
          #For classes such as InputCell, self._default is not the value,
          #instead it is an object that is stored to give the default value in
          #self.value. For this reason we print out self.value at this stage,
          #and not self._default
-         rstr += "{\\\\ \\bf DEFAULT: }" + self.pprint(self.value) + "\n"
+         rstr += "{\\\\ default: }" + self.pprint(self.value) + "\n"
+
+      if hasattr(self, "type") and hasattr(self.type, "__name__"):
+         rstr += "{\\\\ data type: }" + self.type.__name__ + "\n"
+         #if possible, prints out the type of data that is being used
 
       if hasattr(self, "_valid"):
          if self._valid is not None:
-            rstr += "{\\\\ \\bf OPTIONS: }" #prints out valid options, if
+            rstr += "{\\\\ options: }" #prints out valid options, if
             for option in self._valid:      #required.
                rstr += "`" + str(option) + "', "
             rstr = rstr.rstrip(", ")
             rstr +=  "\n"
-
-      if hasattr(self, "type") and hasattr(self.type, "__name__"):
-         rstr += "{\\\\ \\bf DATA TYPE: }" + self.type.__name__ + "\n"
-         #if possible, prints out the type of data that is being used
 
       #Repeats the above instructions for the attributes
       if len(self.attribs) != 0:
