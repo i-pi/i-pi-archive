@@ -118,16 +118,16 @@ def help_latex(idict, ref=False):
    rstr += "\\begin{itemize}\n"
 
    for out in sorted(idict):
-      rstr += "\\item {\\bf " + out + "}: " + idict[out]['help'] + "\n"
+      rstr += "\\item {\\bf " + out + "}:\\\\ " + idict[out]['help'] + "\n"
       try:
          if idict[out]['dimension'] != "undefined":
             #doesn't print out dimension if not necessary.
-            dimstr = "\n {\\bf DIMENSION}: " + idict[out]['dimension'] + '\n'
+            dimstr = "\n {dimension}: " + idict[out]['dimension'] + '\n'
             rstr += dimstr
       except KeyError:
          pass
       try:
-         sizestr = "\n{\\bf SIZE}: " + str(idict[out]['size']) + '\n'
+         sizestr = "\n{size}: " + str(idict[out]['size']) + '\n'
          rstr += sizestr
       except KeyError:
          pass
@@ -1015,8 +1015,7 @@ class Trajectories(dobject):
       "r_gyration": {"dimension" : "length",
                      "help": "Prints the radius of gyration for each atom, resolved into Cartesian components. Prints out a vector of the form [xx, yy, zz]",
                      'func': self.get_rg},
-      "extras": {    "dimension" : "",
-                     "help": "Prints the extras trajectories.",
+      "extras": {    "help": "Prints the extras trajectories.",
                      'func': (lambda : self.simul.forces.extras)}
       }
 
