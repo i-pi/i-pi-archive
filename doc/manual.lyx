@@ -505,6 +505,42 @@ hello world
 \end_layout
 
 \begin_layout Section
+Installation
+\end_layout
+
+\begin_layout Subsection
+Requirements
+\end_layout
+
+\begin_layout Subsubsection
+Installing Numpy
+\end_layout
+
+\begin_layout Subsubsection
+Installing PyFFTW
+\end_layout
+
+\begin_layout Subsection
+Drivers
+\end_layout
+
+\begin_layout Subsubsection
+Minimal driver code
+\end_layout
+
+\begin_layout Subsubsection
+Patching CP2K
+\end_layout
+
+\begin_layout Subsubsection
+Patching Quantum-Espresso
+\end_layout
+
+\begin_layout Subsubsection
+Writing a patch
+\end_layout
+
+\begin_layout Section
 A simple tutorial
 \end_layout
 
@@ -513,11 +549,49 @@ User guide
 \end_layout
 
 \begin_layout Section
-Input file structure
+Input files
+\end_layout
+
+\begin_layout Standard
+Just an overview of things that need being explained.
+ The Input reference is there for the details.
+\end_layout
+
+\begin_layout Subsection
+File format and general options
+\end_layout
+
+\begin_layout Subsection
+Initialization section
+\end_layout
+
+\begin_layout Subsection
+Overriding units
 \end_layout
 
 \begin_layout Section
 Output files
+\end_layout
+
+\begin_layout Standard
+An explanation of the output section, and a list of the available properties
+ and trajectories
+\end_layout
+
+\begin_layout Subsection
+Properties
+\end_layout
+
+\begin_layout Subsection
+Trajectories
+\end_layout
+
+\begin_layout Subsection
+Checkpoint files
+\end_layout
+
+\begin_layout Subsection
+Overriding units
 \end_layout
 
 \begin_layout Section
@@ -526,6 +600,18 @@ Soft exit and restart
 
 \begin_layout Section
 Distributed execution
+\end_layout
+
+\begin_layout Subsection
+Sockets
+\end_layout
+
+\begin_layout Subsection
+SSH Tunnelling
+\end_layout
+
+\begin_layout Subsection
+Execution models 
 \end_layout
 
 \begin_layout Chapter
