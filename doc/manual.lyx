@@ -542,7 +542,7 @@ CURRENT MANUAL
 
 \begin_layout Standard
 \begin_inset Note Comment
-status open
+status collapsed
 
 \begin_layout Plain Layout
 This manual will be structured as follows: 
@@ -637,30 +637,6 @@ ref{overview}
 \end_inset
 
  we explain some of the features of the wrapper code.
-\begin_inset Note Comment
-status collapsed
-
-\begin_layout Itemize
-In chapter
-\begin_inset ERT
-status open
-
-\begin_layout Plain Layout
-
- 
-\backslash
-ref{dev}
-\end_layout
-
-\end_inset
-
- we discuss what is needed to modify the code.
- 
-\end_layout
-
-\end_inset
-
-
 \end_layout
 
 \begin_layout Itemize
@@ -680,6 +656,30 @@ ref{hierarchy}
  a full list of the major classes used in the code is given, along with
  the appropriate tag names and a brief description of all the fields that
  can be specified in the xml input file.
+\end_layout
+
+\end_inset
+
+
+\begin_inset Note Comment
+status open
+
+\begin_layout Itemize
+In chapter
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+ 
+\backslash
+ref{dev}
+\end_layout
+
+\end_inset
+
+ we discuss what is needed to modify the code.
+ 
 \end_layout
 
 \end_inset
