@@ -35,7 +35,7 @@ class InputInterfaceSocket(Input):
                                       "default" : "localhost",
                                       "help"    : "This gives the server address that the socket will run on." } ),
              "port":    (InputValue, {"dtype"   : int,
-                                      "default" : 31415,
+                                      "default" : 65535,
                                       "help"    : "This gives the port number that defines the socket."} ),
              "slots":   (InputValue, {"dtype"   : int,
                                       "default" : 4,
