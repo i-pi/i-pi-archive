@@ -24,6 +24,8 @@ class Cell(dobject):
 
    Depend objects:
       h: An array giving the lattice vector matrix.
+      ih: An array giving the inverse of the lattice vector matrix.
+      V: The volume of the cell.
    """
 
    def __init__(self, h=None):

@@ -10,6 +10,10 @@ Classes:
    NVEEnsemble: Deals with constant energy dynamics.
    NVTEnsemble: Deals with constant temperature dynamics.
    NPTEnsemble: Deals with constant pressure dynamics.
+   ReplayEnsemble: Takes a trajectory, and simply sets the atom positions to
+      match it, rather than doing dynamics. In this way new properties can
+      be calculated on an old simulation, without having to rerun it from
+      scratch.
 """
 
 __all__ = ['Ensemble', 'NVEEnsemble', 'NVTEnsemble', 'NPTEnsemble', 'ReplayEnsemble']
@@ -42,6 +46,7 @@ class Ensemble(dobject):
       forces: A forces object giving the virial and the forces acting on
          each bead.
       prng: A random number generator object.
+      nm: An object which does the normal modes transformation.
       fixcom: A boolean which decides whether the centre of mass
          motion will be constrained or not.
 

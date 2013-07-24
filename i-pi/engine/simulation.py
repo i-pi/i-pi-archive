@@ -86,6 +86,8 @@ class Simulation(dobject):
             Defaults to 0.
          tsteps: An optional integer giving the total number of steps. Defaults
             to 1000.
+         ttime: The simulation running time. Used on restart, to keep a
+            cumulative total.
       """
 
       info(" # Initializing simulation object ", verbosity.low )
