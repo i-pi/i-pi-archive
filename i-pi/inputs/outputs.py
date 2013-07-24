@@ -26,6 +26,9 @@ class InputProperties(InputArray):
       filename: The name of the file to output to.
       stride: The number of steps that should be taken between outputting the
          data to file.
+      flush: An integer describing how often the output streams are flushed, 
+         so that it doesn't wait for the buffer to fill before outputting to
+         file.
    """
 
    default_help = """This class deals with the output of properties to one file. Between each property tag there should be an array of strings, each of which specifies one property to be output."""
@@ -80,6 +83,12 @@ class InputTrajectory(InputValue):
          data to file.
       format: The format of the trajectory output file.
       cell_units: The units that the cell parameters are given in.
+      bead: If the trajectory is a per-bead property, this can be used to
+         specify a single bead to output. If negative, it defaults to
+         the centroid.
+      flush: An integer describing how often the output streams are flushed, 
+         so that it doesn't wait for the buffer to fill before outputting to
+         file.
    """
 
    default_help = """This class defines how one trajectory file should be output. Between each trajectory tag one string should be given, which specifies what data is to be output."""
@@ -217,7 +226,11 @@ class InputOutputs(Input):
    Attributes:
       prefix: A string that will be appended to all output files from this
          simulation.
-      extra: A list of all the output objects.
+
+   Dynamic fields:
+      trajectory: Specifies a trajectory to be output
+      properties: Specifies some properties to be output.
+      checkpoint: Specifies a checkpoint file to be output.
    """
 
    attribs = { "prefix" : ( InputAttribute, { "dtype" : str,

@@ -21,12 +21,16 @@ class InputInterfaceSocket(Input):
    instance of the object.
 
    Attributes:
+      mode: A string giving the type of socket used.
+      pbc: A boolean giving whether the atom positions will be folded back
+         into the unit cell before being sent through the socket or not.
+
+   Fields:
       address: A string giving the host name.
       port: An integer giving the port used by the socket.
       slots: An integer giving the maximum allowed backlog of queued clients.
       latency: A float giving the number of seconds that the interface waits
          before updating the client list.
-      mode: A string giving the type of socket used.
       timeout: A float giving a number of seconds after which a calculation core
          is considered dead. Defaults to zero, i.e. no timeout.
    """

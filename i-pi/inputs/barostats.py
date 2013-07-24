@@ -23,7 +23,11 @@ class InputBaro(Input):
    Attributes:
       mode: An optional string giving the type of barostat used. Defaults to
          'rigid'.
+
+   Fields:
       thermostat: A thermostat object giving the cell thermostat.
+      tau: The time constant associated with the dynamics of the piston.
+      p: The conjugate momentum to the volume degree of freedom.
    """
 
    attribs={ "mode": (InputAttribute, {"dtype"    : str,

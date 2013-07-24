@@ -114,9 +114,8 @@ class InputForces(Input):
    """Deals with creating all the forcefield objects required in the
    simulation.
 
-   Attributes:
-      extra: A list of all the forcefield objects read in dynamically from
-         the xml input file.
+   Dynamic fields:
+      socket: Socket object to create the server socket.
    """
 
    #At the moment only socket driver codes implemented, other types

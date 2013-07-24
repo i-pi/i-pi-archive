@@ -42,6 +42,9 @@ class InputSimulation(Input):
    object.
 
    Attributes:
+      verbosity: A string saying how much should be output to standard output.
+
+   Fields:
       force: A restart force instance. Used as a model for all the replicas.
       ensemble: A restart ensemble instance.
       beads: A restart beads instance.

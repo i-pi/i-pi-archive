@@ -26,9 +26,12 @@ class InputThermo(Input):
    Attributes:
       mode: An optional string giving the type of the thermostat used. Defaults
          to 'langevin'.
+
+   Fields:
       ethermo: An optional float giving the amount of heat energy transferred
          to the bath. Defaults to 0.0.
       tau: An optional float giving the damping time scale. Defaults to 1.0.
+      pile_scale: Scaling for the PILE damping relative to the critical damping.
       A: An optional array of floats giving the drift matrix. Defaults to 0.0.
       C: An optional array of floats giving the static covariance matrix.
          Defaults to 0.0.

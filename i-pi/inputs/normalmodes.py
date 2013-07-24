@@ -20,6 +20,8 @@ class InputNormalModes(InputArray):
 
    Attributes:
       mode: Specifies the method by which the dynamical masses are created.
+      transform: Specifies whether the normal mode calculation will be
+         done using a FFT transform or a matrix multiplication.
    """
 
    attribs = copy(InputArray.attribs)

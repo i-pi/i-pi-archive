@@ -279,6 +279,18 @@ class InputInitializer(Input):
 
    Attributes:
       nbeads: The number of beads to be used in the simulation.
+
+   Dynamic fields:
+      positions: An object to initialize the positions from.
+      velocities: An object to initialize the velocities from.
+      momenta: An object to initialize the momenta from.
+      cell: An object to initialize the cell from.
+      masses: An object to initialize the masses from.
+      labels: An object to initialize the labels from.
+      gle: An object to initialize the GLE matrices from.
+      file: A file from which to initialize multiple properties from. Anything
+         that can be initialized either directly or indirectly from this file
+         will be.
    """
 
    attribs = { "nbeads"    : (InputAttribute, {"dtype"     : int,
