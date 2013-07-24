@@ -496,7 +496,7 @@ class ReplayEnsemble(Ensemble):
       if intraj == None: raise ValueError("Must provide an initialized InitFile object to read trajectory from")
       self.intraj = intraj
       if intraj.mode == "manual":
-         raise ValueError("Replay can only read from PDB or XYZ files -- or a single fram from a CHK file")
+         raise ValueError("Replay can only read from PDB or XYZ files -- or a single frame from a CHK file")
       self.rfile = open(self.intraj.value,"r")
 
    def step(self):

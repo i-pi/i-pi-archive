@@ -399,7 +399,7 @@ class Initializer(dobject):
             if fmom:
                warning("Overwriting previous atomic momenta", verbosity.medium)
             if simul.beads.natoms == 0:
-               raise ValueError("Trying to resample velocities before having any structural information.")
+               raise ValueError("Cannot initialize momenta before the size of the system is known.")
             if not fmass:
                raise ValueError("Trying to resample velocities before having masses.")
 

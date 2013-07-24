@@ -162,3 +162,6 @@ class InputEnsemble(Input):
       if self.mode.fetch() == "npt":
          if not self.pressure._explicit:
             raise ValueError("Pressure should be supplied for constant pressure simulation")
+      if self.mode.fetch() == "npt" or self.mode.fetch() == "nvt":
+         if not self.temperature._explicit:
+            raise ValueError("Temperature should be supplied for constant temperature simulation")

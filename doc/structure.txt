@@ -1,7 +1,7 @@
 OLD:                                      NEW:                 
    Chapter 1 - Introduction:                 Chapter 1 - Introduction:
       Driver compatibility                      Brief introduction to PIMD 
-      Online resources                          Implementation? (Seems out of place to me...)  
+      Online resources                          Implementation
       License and credits                       Core features
    Chapter 2 - Communication protocol:          License and credits
       Sockets                                   Online resources    
@@ -40,18 +40,18 @@ OLD:                                      NEW:
          - checkpoint files                         - RESTART            
          - RESTART                                  - Soft exit          
          - Soft exit                                - Initialization from checkpoint                
-         - Initialization from checkpoint        Chapter 5 - Feature Overview:
-   Chapter 5 - Feature Overview:                    RPC                       
-      RPC                                           NVT/NPT          
-      NVT/NPT                                          - PILE            
-         - PILE                                        - GLE          
-         - GLE                                      RPMD             
-      RPMD                                          Output        
-      Output                                           - Displaced path  
-         - Displaced path                              - Scaled path     
-         - Scaled path                                 - Extras list     
-         - Extras list                           Chapter 6 - Input hierarchy:
-   Chapter 6 - Input hierarchy:                     SIMULATION              
-      SIMULATION                                    etc.                    
-      etc.                                       Chapter 7 - Troubleshooting:
-                                                    TBD
+         - Initialization from checkpoint        Chapter 6 - Input hierarchy: 
+   Chapter 5 - Feature Overview:                    SIMULATION                
+      RPC                                           etc.                      
+      NVT/NPT                                    Chapter 7 - Troubleshooting: 
+         - PILE                                     TBD                       
+         - GLE                                   
+      RPMD                                       
+      Output                                     
+         - Displaced path                        
+         - Scaled path                           
+         - Extras list                          
+   Chapter 6 - Input hierarchy:                 
+      SIMULATION                                
+      etc.                                      
+                                                

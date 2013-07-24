@@ -442,23 +442,599 @@ ipi
 \end_layout
 
 \begin_layout Section
-Implementation
+Manual structure
 \end_layout
 
 \begin_layout Standard
-Explain more in details how the program works and why it works that way
+This manual will be structured as follows: 
+\end_layout
+
+\begin_layout Itemize
+In chapter
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+ 
+\backslash
+ref{intro}
+\end_layout
+
+\end_inset
+
+ we briefly discuss the basis for PIMD and some of the specialized techniques
+ used in 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ipi
+\end_layout
+
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Itemize
+In chapter
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+ 
+\backslash
+ref{install}
+\end_layout
+
+\end_inset
+
+ we will discuss how to install the code and test that it is working.
+\end_layout
+
+\begin_layout Itemize
+In chapter
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+ 
+\backslash
+ref{getstarted}
+\end_layout
+
+\end_inset
+
+ we give a brief tutorial on running simulations with 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ipi
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Itemize
+In chapter
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+ 
+\backslash
+ref{user}
+\end_layout
+
+\end_inset
+
+ we explain in more detail the form of the input and output files and how
+ the communication between the client and server codes is done.
+\end_layout
+
+\begin_layout Itemize
+In chapter
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+ 
+\backslash
+ref{hierarchy}
+\end_layout
+
+\end_inset
+
+ a full list of the major classes used in the code is given, along with
+ the appropriate tag names and a brief description of all the fields that
+ can be specified in the xml input file.
+\end_layout
+
+\begin_layout Itemize
+In chapter 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ref{trouble}
+\end_layout
+
+\end_inset
+
+ we list some of the more commonly encountered problems, and their solutions.
+\end_layout
+
+\begin_layout Section
+Path Integral Molecular Dynamics
+\end_layout
+
+\begin_layout Standard
+Molecular dynamics (MD) is a technique used to study the properties of bulk
+ materials, by applying Newton's equations to produce trajectories which
+ can be used to efficiently explore the phase space of a system.
+ This has been used for a huge range of different problems, to calculate
+ many equilibrium and dynamical properties, and can be used to study systems
+ from the atomistic scale to mesoscopic colloidal particles.
+\end_layout
+
+\begin_layout Standard
+However, while this technique has been very successful, in most implementations
+ the assumption is made that the nucleii behave as classical particles,
+ which for light nuclei such as hydrogen is often a very poor approximation.
+ For example, even at room temperature the vibrational frequency of an OH
+ stretch in water is about 5 times larger than the available thermal energy,
+ and so this motion will be highly quantized.
+ The current state-of-the-art method to include these nuclear quantum effects
+ (NQE) is path integral molecular dynamics (PIMD).
+\end_layout
+
+\begin_layout Standard
+PIMD generates the quantum-mechanical ensemble of a condensed phase system
+ by using MD in an extended phase space.
+ Derived from the path integral formalism of 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+cite{feyn-hibb65book}
+\end_layout
+
+\end_inset
+
+, this relates the statistics of a system of quantum particles to those
+ of an equivalent system of classical ring polymers, a ring polymer being
+ a number of replicas of a particle coupled by harmonic springs.
+ This so-called classical isomorphism is exact in the limit as the number
+ of replicas goes to infinity, but in practice is converged numerically
+ with only a finite number.
+\end_layout
+
+\begin_layout Standard
+PIMD can therefore generate phase space averages in the same way as standard
+ MD while also including NQE, and with only linear scaling with respect
+ to the number of replicas needed.
+ Also, many of the techniques developed to improve the scope and efficiency
+ of MD simulations can be applied straightforwardly to the equivalent PIMD
+ calculations.
+ Furthermore, PIMD can be used to generate approximate quantum dynamical
+ information 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+cite{crai-mano04jcp}
+\end_layout
+
+\end_inset
+
+, and so can also be used to calculate correlation functions.
+\end_layout
+
+\begin_layout Section
+Implementation
 \end_layout
 
 \begin_layout Subsection
 Automated evaluation (depend objects)
 \end_layout
 
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ipi
+\end_layout
+
+\end_inset
+
+ uses a caching mechanism with automatic value updating to make the code
+ used to propagate the dynamics as clear as possible.
+ Every variable used in the code is created using a 
+\begin_inset Quotes eld
+\end_inset
+
+depend
+\begin_inset Quotes erd
+\end_inset
+
+ object, which is given the parameters on which it depends and a function
+ used to calculate its value.
+ 
+\end_layout
+
+\begin_layout Standard
+This framework does two things.
+ Firstly, once the value of a 
+\begin_inset Quotes eld
+\end_inset
+
+depend
+\begin_inset Quotes erd
+\end_inset
+
+ object is calculated its value is cached, and so does not need to be recalculat
+ed every time that it is used.
+ Secondly, the code keeps track of when any of the dependencies of the variable
+ are updated, and automatically recalculates it the next time it is called.
+\end_layout
+
+\begin_layout Standard
+This means that, while overall the code infrastructure is more complicated,
+ the top level code that propagates the dynamics and calculates the output
+ properties is easier to read and understand, since there is no need for
+ an explicit function call whenever one of the variables is required.
+ Also, when writing the code, there is no need to check when the variables
+ used in the dynamics have to be updated.
+\end_layout
+
 \begin_layout Subsection
 Communication protocol
 \end_layout
 
+\begin_layout Standard
+Since 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ipi
+\end_layout
+
+\end_inset
+
+ is designed to be used with a wide range of codes, it needs to include
+ a simple and general method for communicating between the server and client.
+ Fortunately, there is a widely available communication technique that works
+ on a client/server paradigm, internet sockets.
+ These allow for communication between different machines, and are designed
+ for many-to-one data transfer, so are well suited for distributed programming.
+ 
+\end_layout
+
+\begin_layout Standard
+To make this as general as possible, only a minimal amount of information
+ is transferred between the two codes; the position, and cell parameters
+ in one direction, and the forces, virial and potential in the other.
+ Also, a simple set of C functions used to set up and use the client server
+ are provided as part of the 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ipi
+\end_layout
+
+\end_inset
+
+ distribution, so this can be interfaced with any code which is C-compatible.
+\end_layout
+
+\begin_layout Standard
+For more details about how sockets work, and how they are used in the code,
+ see 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ref{distrib}
+\end_layout
+
+\end_inset
+
+.
+ 
+\end_layout
+
 \begin_layout Subsection
 Internal units
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+label{units}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Internally 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ipi
+\end_layout
+
+\end_inset
+
+ uses electronic units, as given below:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Tabular
+<lyxtabular version="3" rows="7" columns="3">
+<features tabularvalignment="middle">
+<column alignment="left" valignment="top" width="0">
+<column alignment="left" valignment="top" width="0">
+<column alignment="left" valignment="top" width="0">
+<row>
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Unit
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Name
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+S.I.
+ Value
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Length
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Bohr radius
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+5.2917721e-11 m
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Time
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+N.A.
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+2.4188843e-17 s
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Mass
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Electron mass
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+9.1093819e-31 kg
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Temperature
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+kelvin
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1 K
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Energy
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Hartree
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+4.3597438e-18 J
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Pressure
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+N.A.
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+2.9421912e13 Pa
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Section
@@ -466,8 +1042,187 @@ Core features
 \end_layout
 
 \begin_layout Standard
-Tersely explain what the code can do, without entering into too much detail.
- 
+The functionality of 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ipi
+\end_layout
+
+\end_inset
+
+ includes:
+\end_layout
+
+\begin_layout Itemize
+Integrators for constant temperature ensembles, including: 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{itemize}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+item Local and global stochastic thermostats 
+\backslash
+cite{plangevin1908cras,buss-parr08cpc}, with optional optimized sampling
+ over the normal mode coordinates 
+\backslash
+cite{ceri+10jcp}.
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+item Optimal sampling generalized Langevin equation (GLE) thermostats 
+\backslash
+cite{ceri+09jctc}.
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+item Path integral + GLE (PI+GLE) thermostats 
+\backslash
+cite{ceri+11jcp} for accelerating convergence of potential energy with respect
+ to number of replicas, as well as the more recent PIGLET method 
+\backslash
+cite{ceri-mano12prl} which also converges kinetic energy quickly.
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{itemize}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+Integrators for constant pressure ensembles 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+cite{mart+99jcp,buss+09jpc}
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Itemize
+Ring polymer contraction 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+cite{mark-mano08jcp}
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Itemize
+Scaled path finite difference energy and heat capacity estimators 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+cite{tyamamoto05jcp}
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Itemize
+Displaced path momentum distribution estimator 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+cite{linlin+10prl}
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Itemize
+Dynamical property calculation modes:
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{itemize}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+item Ring polymer molecular dynamics 
+\backslash
+cite{crai-mano04jcp}.
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+item Partially-adiabatic centroid molecular dynamics 
+\backslash
+cite{habe+08jcp}.
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{itemize}
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Section
@@ -479,11 +1234,837 @@ Say it's GPL, who initially developed it, and how it should be cited
 \end_layout
 
 \begin_layout Section
-References
+Online resources
+\end_layout
+
+\begin_layout Subsection
+Python resources
 \end_layout
 
 \begin_layout Standard
-Including the on-line resources
+For help with Python programming, see 
+\begin_inset Flex URL
+status collapsed
+
+\begin_layout Plain Layout
+
+www.python.org
+\end_layout
+
+\end_inset
+
+.
+ For information about the NumPy mathematical library, see 
+\begin_inset Flex URL
+status collapsed
+
+\begin_layout Plain Layout
+
+www.numpy.org
+\end_layout
+
+\end_inset
+
+, and for worked examples of its capabilities see 
+\begin_inset Flex URL
+status collapsed
+
+\begin_layout Plain Layout
+
+www.scipy.org/Tentative_NumPy_Tutorial
+\end_layout
+
+\end_inset
+
+.
+ Finally, see 
+\begin_inset Flex URL
+status collapsed
+
+\begin_layout Plain Layout
+
+http://hgomersall.github.io/pyFFTW/
+\end_layout
+
+\end_inset
+
+ for documentation on the Python FFTW library that is currently implemented
+ with the wrapper.
+\end_layout
+
+\begin_layout Subsection
+Client code resources
+\end_layout
+
+\begin_layout Standard
+There are currently patches available for Quantum Espresso version 4.3.2 and
+ CP2K version 2.2.
+ The patch for Quantum Espresso also works with version 5.0 with minor modificati
+ons.
+ For more information about Quantum Espresso and CP2K, go to 
+\begin_inset Flex URL
+status collapsed
+
+\begin_layout Plain Layout
+
+www.quantum-espresso.org/
+\end_layout
+
+\end_inset
+
+ and ???????????????? respectively.
+\end_layout
+
+\begin_layout Standard
+These codes do not come as part of the 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ipi
+\end_layout
+
+\end_inset
+
+ package, and must be downloaded separately.
+ See chapter
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+~
+\backslash
+ref{install}
+\end_layout
+
+\end_inset
+
+ for more details of how to do this.
+ 
+\end_layout
+
+\begin_layout Subsection
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ipi
+\end_layout
+
+\end_inset
+
+ resources
+\end_layout
+
+\begin_layout Standard
+For more information about 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ipi
+\end_layout
+
+\end_inset
+
+ and to download the source code go to [appropriate wrappi website].
+\end_layout
+
+\begin_layout Standard
+Parameters to run Path Integral with Generalized Langevin Equation thermostat
+ (PI+GLE) calculations can be found on the website 
+\begin_inset Flex URL
+status collapsed
+
+\begin_layout Plain Layout
+
+http://gle4md.berlios.de/ 
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Section
+References
+\end_layout
+
+\begin_layout Chapter
+Installation
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+label{install}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Requirements
+\end_layout
+
+\begin_layout Standard
+To install and run 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ipi
+\end_layout
+
+\end_inset
+
+, you will need to have:
+\end_layout
+
+\begin_layout Itemize
+A C compiler (for the sockets.c module)
+\end_layout
+
+\begin_layout Itemize
+Python version 2.4 or greater
+\end_layout
+
+\begin_layout Itemize
+The Python numerical library NumPy
+\end_layout
+
+\begin_layout Standard
+Note that 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ipi
+\end_layout
+
+\end_inset
+
+ does not need to be compiled, it will run automatically as a script if
+ the appropriate libraries have been installed.
+\end_layout
+
+\begin_layout Standard
+Additionally, most client codes will have their own requirements.
+ Many of them, including the test client codes given in the 
+\begin_inset Quotes eld
+\end_inset
+
+forces
+\begin_inset Quotes erd
+\end_inset
+
+ directory, will need a suitable Fortran compiler.
+ Most will also need to be linked with some mathematical libraries, such
+ as BLAS, FFTW and LAPACK.
+ Installation instructions should be provided as part of the code distribution
+ and on the appropriate website.
+\end_layout
+
+\begin_layout Section
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ipi
+\end_layout
+
+\end_inset
+
+ download
+\end_layout
+
+\begin_layout Standard
+A tar file can be downloaded from the website [appropriate wrap-pi website].
+ To install this you need to input the following command:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+> tar xf [wrapper_tar_file.tar]
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+You can also download the git repository at [github repository name] using:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+> git clone [github repository name]
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+NumPy download
+\end_layout
+
+\begin_layout Standard
+NumPy is the standard Python mathematics library, and is used for most of
+ the array minipulation and linear algebra in the wrapper code.
+ How difficult it is to install NumPy depends on whether you have root access
+ or not, and on the version of Python you are using.
+\end_layout
+
+\begin_layout Standard
+In any case you must first obtain the NumPy code, which can be downloaded
+ as a tar file from 
+\begin_inset Flex URL
+status collapsed
+
+\begin_layout Plain Layout
+
+http://sourceforge.net/projects/numpy/files/NumPy/
+\end_layout
+
+\end_inset
+
+.
+ If the version of NumPy being installed is given by 
+\begin_inset Quotes eld
+\end_inset
+
+np_vers
+\begin_inset Quotes erd
+\end_inset
+
+, this can be extracted using:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+> tar czf np_vers.tar.gz
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Before installing this code it first needs to be configured correctly.
+ Note that this requires the distutils package that comes with the python-dev
+ package.
+ Assuming that the required software is installed, the NumPy package is
+ built using:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+> python setup.py build
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The next step is to install the package.
+ By default the download is to the directory /usr/local.
+ If you have root access, and so can write to /usr, then all that needs
+ to be done to finish the install is:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+> python setup.py install
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+If you do not have root access, then the next step depends on which version
+ of Python is beind used.
+ With versions 2.6 or later there is a simple command to automatically download
+ into the directory $HOME/local:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+> python setup.py install --user
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+With Python 2.4/2.5 the process is a little more involved.
+ First you must explicitly install the package in the directory of choice,
+ 
+\begin_inset Quotes eld
+\end_inset
+
+np_dir
+\begin_inset Quotes erd
+\end_inset
+
+ say, with the following command:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+> python setup.py install --prefix=np_dir
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Next, you must tell python where to find this library, by appending to the
+ Linux environment variable 
+\series bold
+PYTHONPATH
+\series default
+.
+ If you are using Python version 
+\begin_inset Quotes eld
+\end_inset
+
+py_vers
+\begin_inset Quotes erd
+\end_inset
+
+, then the NumPy libraries will have been installed in the directory 
+\begin_inset Quotes eld
+\end_inset
+
+np_dir/lib/py_vers/site-packages
+\begin_inset Quotes erd
+\end_inset
+
+, or a close analogue of this.
+ In the above case the following command will allow the Python interpreter
+ to find the NumPy libraries:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+> export PYTHONPATH=$PYTHONPATH:np_dir/lib/py_vers/site-packages
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Now Python scripts can import the NumPy libraries using:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+import numpy
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+PyFFTW
+\end_layout
+
+\begin_layout Standard
+Some of the steps in the dynamics algorithm involve a change of variables
+ from the bead coordinates to the normal modes of the ring polymers.
+ Currently, this transformation is, at least by default, computed using
+ a fast-Fourier transform (FFT) library within the NumPy distribution.
+ This however is not the only distribution that could be used, and indeed
+ faster stand-alone versions exist.
+ The gold-standard FFT library is the FFTW library, which is a set of C
+ libraries that have been heavily optimized for a wide range of applications.
+ There have been a number of Python wrappers around the FFTW library, one
+ of which is currently interfaced with 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ipi
+\end_layout
+
+\end_inset
+
+.
+ This code can be found at 
+\begin_inset Flex URL
+status collapsed
+
+\begin_layout Plain Layout
+
+https://github.com/hgomersall/pyFFTW
+\end_layout
+
+\end_inset
+
+, and has documentation at 
+\begin_inset Flex URL
+status collapsed
+
+\begin_layout Plain Layout
+
+http://hgomersall.github.io/pyFFTW/
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+This code has the following dependencies:
+\end_layout
+
+\begin_layout Itemize
+Python version 2.7 or greater
+\end_layout
+
+\begin_layout Itemize
+Numpy version 1.6 or greater
+\end_layout
+
+\begin_layout Itemize
+FFTW version 3.2 or greater
+\end_layout
+
+\begin_layout Standard
+This can be installed in the same way as NumPy, except using the code distributi
+on above, or using various installation packages as per the instructions
+ on the above documentation.
+ Note that no other options need to be specified in the input file, the
+ wrapper will check to see if this library is available, and if it is it
+ will be used by default.
+ Otherwise the slower NumPy version will be used.
+\end_layout
+
+\begin_layout Section
+Clients
+\end_layout
+
+\begin_layout Subsection
+Minimal client code
+\end_layout
+
+\begin_layout Subsection
+Patching CP2K
+\end_layout
+
+\begin_layout Subsection
+Patching Quantum-Espresso
+\end_layout
+
+\begin_layout Standard
+You can download the source code for Quantum Espresso at 
+\begin_inset Flex URL
+status collapsed
+
+\begin_layout Plain Layout
+
+www.quantum-espresso.org/
+\end_layout
+
+\end_inset
+
+.
+ The tar file can be extracted in the same way as the Python and NumPy libraries
+ above.
+ However, before this can run with 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ipi
+\end_layout
+
+\end_inset
+
+, the code must be adapted to use the socket interface.
+ For Quantum Espresso version 4.3.2, there is a patch file to allow it to
+ be used as a client code with 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ipi
+\end_layout
+
+\end_inset
+
+ in the directory 
+\begin_inset Quotes eld
+\end_inset
+
+patches/pwscf
+\begin_inset Quotes erd
+\end_inset
+
+.
+ If you are currently in the top level directory of the Quantum-Espresso
+ distribution, the patch can be applied to the source code using:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+> patch -p1 < i-pi/patches/pwscf/pw-driver.patch
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+After this, continue the compilation as per the instructions at 
+\begin_inset Flex URL
+status collapsed
+
+\begin_layout Plain Layout
+
+www.quantum-espress.org/
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Subsection
+Writing a patch
 \end_layout
 
 \begin_layout Chapter
@@ -491,135 +2072,4298 @@ Getting started
 \end_layout
 
 \begin_layout Standard
-Condense here the Installation and the Running chapters, but giving just
- a simple 
-\begin_inset Quotes eld
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+label{getstarted}
+\end_layout
+
 \end_inset
 
-hello world
-\begin_inset Quotes erd
-\end_inset
 
- kind of explanation of how to run, without entering into details on input
- and output.
-\end_layout
-
-\begin_layout Section
-Installation
-\end_layout
-
-\begin_layout Subsection
-Requirements
-\end_layout
-
-\begin_layout Subsubsection
-Installing Numpy
-\end_layout
-
-\begin_layout Subsubsection
-Installing PyFFTW
-\end_layout
-
-\begin_layout Subsection
-Drivers
-\end_layout
-
-\begin_layout Subsubsection
-Minimal driver code
-\end_layout
-
-\begin_layout Subsubsection
-Patching CP2K
-\end_layout
-
-\begin_layout Subsubsection
-Patching Quantum-Espresso
-\end_layout
-
-\begin_layout Subsubsection
-Writing a patch
 \end_layout
 
 \begin_layout Section
 A simple tutorial
 \end_layout
 
+\begin_layout Subsection
+Running the server code
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ipi
+\end_layout
+
+\end_inset
+
+ simulations are run using the i-pi Python script found in the 
+\begin_inset Quotes eld
+\end_inset
+
+i-pi
+\begin_inset Quotes erd
+\end_inset
+
+ directory.
+ This script takes an xml-formatted file as input, and automatically starts
+ a simulation as specified by the data held in it.
+ If the input file is called 
+\begin_inset Quotes eld
+\end_inset
+
+input_file.xml
+\begin_inset Quotes erd
+\end_inset
+
+, then the wrapper is run using:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+> python i-pi input_file.xml
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+This reads in the input data, initializes all the internally used objects,
+ and then creates the server socket.
+ The code will then wait until at least one client code has connected to
+ the server before running any dynamics.
+ Note that until this has happened the code is essentially idle, the only
+ process that it runs is to periodically poll for incoming connections.
+\end_layout
+
+\begin_layout Subsection
+Running the client code
+\end_layout
+
+\begin_layout Subsubsection
+CP2K
+\end_layout
+
+\begin_layout Standard
+To use CP2K as the client code, an additional file named 
+\begin_inset Quotes eld
+\end_inset
+
+serverfile
+\begin_inset Quotes erd
+\end_inset
+
+ must be kept in the same directory that CP2K is being run from.
+ It should contain a string a single line long, of the format 
+\begin_inset Quotes eld
+\end_inset
+
+mode:host:port_number
+\begin_inset Quotes erd
+\end_inset
+
+.
+ 
+\begin_inset Quotes eld
+\end_inset
+
+mode
+\begin_inset Quotes erd
+\end_inset
+
+ should either be 
+\begin_inset Quotes eld
+\end_inset
+
+INET
+\begin_inset Quotes erd
+\end_inset
+
+ or 
+\begin_inset Quotes eld
+\end_inset
+
+UNIX
+\begin_inset Quotes erd
+\end_inset
+
+, representing an internet or unix socket respectively.
+ The rest of the input file is the same as for a standard CP2K calculation.
+\end_layout
+
+\begin_layout Subsubsection
+Quantum-Espresso
+\end_layout
+
+\begin_layout Standard
+To use Quantum-Espresso as the client code using a socket on the host address
+ 
+\begin_inset Quotes eld
+\end_inset
+
+host_address
+\begin_inset Quotes erd
+\end_inset
+
+ and on the port number 
+\begin_inset Quotes eld
+\end_inset
+
+port
+\begin_inset Quotes erd
+\end_inset
+
+ we would add the following lines to the input file:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+&CONTROL
+\end_layout
+
+\begin_layout Plain Layout
+
+   ...
+\end_layout
+
+\begin_layout Plain Layout
+
+   calculation=`driver'
+\end_layout
+
+\begin_layout Plain Layout
+
+   srvaddress=`host_address:port'
+\end_layout
+
+\begin_layout Plain Layout
+
+   ...
+\end_layout
+
+\begin_layout Plain Layout
+
+/
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+If we wanted to run on a UNIX port instead of an INET port, we would instead
+ write:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+&CONTROL
+\end_layout
+
+\begin_layout Plain Layout
+
+   ...
+\end_layout
+
+\begin_layout Plain Layout
+
+   calculation=`driver'
+\end_layout
+
+\begin_layout Plain Layout
+
+   srvaddress=`UNIX:host_address:port'
+\end_layout
+
+\begin_layout Plain Layout
+
+   ...
+\end_layout
+
+\begin_layout Plain Layout
+
+/
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The rest of the input file should be the same as for a standard Quantum
+ Espresso calculation, as explained at 
+\begin_inset Flex URL
+status collapsed
+
+\begin_layout Plain Layout
+
+www.quantum-espress.org/
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Subsection
+Running simulations
+\end_layout
+
+\begin_layout Standard
+There are two parts to any 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ipi
+\end_layout
+
+\end_inset
+
+ simulation.
+ First the server code is run, which starts the dynamics loop until the
+ forces are required.
+ Once the server socket has been opened, it then waits for connections from
+ client codes.
+ 
+\end_layout
+
+\begin_layout Standard
+For a small simulation, with a simple classical potential, it may be preferable
+ to run both halves of the simulation on the same computer, especially as
+ this allows us to use the faster unix domain sockets.
+ This can be done using a single script, such as:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+#These are the parameters that need to be specified by
+\end_layout
+
+\begin_layout Plain Layout
+
+#the user.
+ The number of client codes is given by $nclients,
+\end_layout
+
+\begin_layout Plain Layout
+
+#the i-pi source directory containing the i-pi script
+\end_layout
+
+\begin_layout Plain Layout
+
+#is given by $src_dir, and the code that runs one of 
+\end_layout
+
+\begin_layout Plain Layout
+
+#the client codes is given by $client_comm
+\end_layout
+
+\begin_layout Plain Layout
+
+inputfile=...
+\end_layout
+
+\begin_layout Plain Layout
+
+hostname=...
+\end_layout
+
+\begin_layout Plain Layout
+
+port=...
+\end_layout
+
+\begin_layout Plain Layout
+
+nclients=...
+\end_layout
+
+\begin_layout Plain Layout
+
+src_dir=...
+\end_layout
+
+\begin_layout Plain Layout
+
+client_comm="..."
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+#This modifies the input file.
+ If necessary, the client code
+\end_layout
+
+\begin_layout Plain Layout
+
+#input file should be modified here too
+\end_layout
+
+\begin_layout Plain Layout
+
+sed -i "s/<address>[^<]*</<address>$hostname</" $inputfile
+\end_layout
+
+\begin_layout Plain Layout
+
+sed -i "s/<port>[^<]*</<port>$port</" $inputfile
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+if [ -e EXIT ]; then
+\end_layout
+
+\begin_layout Plain Layout
+
+   rm EXIT 
+\end_layout
+
+\begin_layout Plain Layout
+
+fi
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+#Runs the simulation, and redirects the server
+\end_layout
+
+\begin_layout Plain Layout
+
+#standard output to a file named 'log'.
+\end_layout
+
+\begin_layout Plain Layout
+
+bash -c "python $src_dir/i-pi $inputfile > log &"
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+sleep 20 #must wait for server to be initialized
+\end_layout
+
+\begin_layout Plain Layout
+
+for a in `seq 1 $nclients`; do
+\end_layout
+
+\begin_layout Plain Layout
+
+   bash -c "$client_comm"
+\end_layout
+
+\begin_layout Plain Layout
+
+done 
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+However, for most simulations, especially those running with expensive 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{ab initio}
+\end_layout
+
+\end_inset
+
+ forces and potentials, we will want to run the client codes on a computational
+ cluster.
+ Here we run the server code elsewhere, and use internet sockets for the
+ communication.
+\end_layout
+
+\begin_layout Standard
+To run the client on a cluster computer, two major changes must be implemented.
+ Firstly, the code required to run the client code should be separated from
+ that of the server code.
+ Secondly, the client script should be executed using a queueing program
+ such as qsub rather than the bash shell script as above, and so will need
+ to have the appropriate directive comment lines.
+ Depending on which cluster is used, additional commands to set parameters
+ such as the walltime, number of nodes and number of cores can be used.
+ Check the qsub man page for the cluster you are running the code on for
+ more details.
+\end_layout
+
+\begin_layout Standard
+One possible script layout to run the client codes would be:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+#!/bin/bash
+\end_layout
+
+\begin_layout Plain Layout
+
+#$ -S /bin/bash
+\end_layout
+
+\begin_layout Plain Layout
+
+#$ -N jobname
+\end_layout
+
+\begin_layout Plain Layout
+
+#$ ...
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+#use this if there are library files needed
+\end_layout
+
+\begin_layout Plain Layout
+
+#by the client code that are not on the default path
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+#export LD_LIBRARY_PATH=...
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+#use this if ssh tunnelling is required
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+#server_host=...
+ #the server host address
+\end_layout
+
+\begin_layout Plain Layout
+
+#server_port=...
+ #the server port number
+\end_layout
+
+\begin_layout Plain Layout
+
+#cluster_port=...
+ #the cluster port number
+\end_layout
+
+\begin_layout Plain Layout
+
+#ssh -f -N $server_host -L $cluster_port:$server_host:$server_port
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+inputfile=...
+\end_layout
+
+\begin_layout Plain Layout
+
+hostname=...
+\end_layout
+
+\begin_layout Plain Layout
+
+port=...
+\end_layout
+
+\begin_layout Plain Layout
+
+client_comm="..."
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+#Modify client input file if necessary
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+bash -c "client_comm"
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Note that it may be necessary to export libraries or modules if they are
+ not present by default, or to use an ssh tunnel if the cluster is not open
+ to the internet (see 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ref{ssh_sockets}
+\end_layout
+
+\end_inset
+
+).
+\end_layout
+
+\begin_layout Standard
+To set up multiple concurrent 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ipi
+\end_layout
+
+\end_inset
+
+ simulations each host socket has to be distinguishable, so that the client
+ codes appropriate to each simulation connect only to the correct server.
+ This can be done with internet sockets by adjusting the port number for
+ each simulation, which then acts as a unique identifier for each of the
+ server codes.
+ The above shell scripts can be easily modified to do this, for example
+ if we assume the simulations will be run in directories called sim_1, sim_2,
+ 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ldots
+\end_layout
+
+\end_inset
+
+, then we can write:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+first_port=...
+ #The value of the port of sim_1
+\end_layout
+
+\begin_layout Plain Layout
+
+i=0
+\end_layout
+
+\begin_layout Plain Layout
+
+for a in sim_*; do #finds all directories in which we wish to run simulations
+\end_layout
+
+\begin_layout Plain Layout
+
+   cd $a
+\end_layout
+
+\begin_layout Plain Layout
+
+   port=$((first_port+i))
+\end_layout
+
+\begin_layout Plain Layout
+
+   ((i++))
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+   #here we run the code for one simulation as before
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+   cd ..
+\end_layout
+
+\begin_layout Plain Layout
+
+done
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Testing the install
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+label{tests}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Several test cases are distributed with the code to ensure that your distributio
+n is working correctly.
+ There are also simple tests to see if the client codes are working correctly.
+\end_layout
+
+\begin_layout Standard
+All the input files are contained in the directory test, which is subdivided
+ into the following directories:
+\end_layout
+
+\begin_layout Description
+lj: This gives a simple classical Lennard-Jones simulation of Ne.
+ The state points are given by (N, 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+(
+\backslash
+rho
+\backslash
+)
+\end_layout
+
+\end_inset
+
+, T) = (864, 0.35, 1.62), (N, 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+(
+\backslash
+rho
+\backslash
+)
+\end_layout
+
+\end_inset
+
+, T) = (864, 0.75, 1.069) and (N, 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+(
+\backslash
+rho
+\backslash
+)
+\end_layout
+
+\end_inset
+
+, T) = (864, 0.88, 1.095) in reduced Lennard-Jones units, so that the results
+ can be compared to those in the paper 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+cite{lverlet67pr}
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Description
+ph2: This simulates para-hydrogen using the isotropic Silvera-Goldman pair
+ potential.
+ There are three directories, 
+\begin_inset Quotes eld
+\end_inset
+
+RPMD
+\begin_inset Quotes erd
+\end_inset
+
+, 
+\begin_inset Quotes eld
+\end_inset
+
+nvt
+\begin_inset Quotes erd
+\end_inset
+
+ and 
+\begin_inset Quotes eld
+\end_inset
+
+Tuckerman
+\begin_inset Quotes erd
+\end_inset
+
+.
+ 
+\begin_inset Quotes eld
+\end_inset
+
+RPMD
+\begin_inset Quotes erd
+\end_inset
+
+ and 
+\begin_inset Quotes eld
+\end_inset
+
+nvt
+\begin_inset Quotes erd
+\end_inset
+
+ have tests which can be compared to the results of 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+cite{mill-mano05jcp}
+\end_layout
+
+\end_inset
+
+, and 
+\begin_inset Quotes eld
+\end_inset
+
+Tuckerman
+\begin_inset Quotes erd
+\end_inset
+
+ has tests which can be compared to the results of 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+cite{mart+99jcp}
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Description
+pwscf: This has two simple examples to test to see if the Quantum-Espresso
+ client is functioning correctly.
+ There is one simple 4-atom lithium test, and a test using a single water
+ molecule.
+\end_layout
+
+\begin_layout Description
+harmonic: This has a simple example of a 1D harmonic oscillator.
+ This demonstrates the displaced path integral momentum distribution operator
+ as given in 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+cite{linlin+10prl}
+\end_layout
+
+\end_inset
+
+.
+ As the momentum distribution is known analytically for this simple system,
+ this provides an indication of how well the method is working.
+\end_layout
+
+\begin_layout Description
+lammps: This has a simple implementation of the q-TIP4P-F empirical water
+ model of 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+cite{habe+09jcp}
+\end_layout
+
+\end_inset
+
+ using the classical molecular dynamics code LAMMPS.
+ It demonstrates both the convergence of the PIGLET method 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+cite{ceri-mano12prl}
+\end_layout
+
+\end_inset
+
+, as well as the use of ring-polymer contraction methods 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+cite{mark-mano08jcp}
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
 \begin_layout Chapter
 User guide
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+label{user}
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Section
 Input files
 \end_layout
 
-\begin_layout Standard
-Just an overview of things that need being explained.
- The Input reference is there for the details.
+\begin_layout Subsection
+Input file format and structure
 \end_layout
 
-\begin_layout Subsection
-File format and general options
+\begin_layout Standard
+In order to give the clearest layout, xml formatting was chosen as the basis
+ for the for the main input file.
+ An xml file consists of a set of hierarchially nested tags.
+ There are three parts to an xml tag.
+ Each tag is identified by a tag name, which specifies the class or variable
+ that is being initialized.
+ Between the opening and closing tags there may be some data, which may
+ or may not contain other tags.
+ In the code this is used to specify the contents of a class object, or
+ the value of a variable.
+ Finally, any tag can have attributes, which in the code are used for variables
+ which specify the state or type of class that will be created.
+ A xml tag has the following syntax:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+<tag_name attribute_name=`attribute_data'>tag_data</tag_name>
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The syntax for the different types of tag data is given below:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Tabular
+<lyxtabular version="3" rows="7" columns="2">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="0">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Data type
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Syntax
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Boolean
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+<tag>True</tag> or <tag>False</tag>
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Float
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+<tag>11.111</tag> or <tag>1.1111e+1</tag>
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Integer
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+<tag>12345</tag>
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Dictionary
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+<tag>{name1: data1, name2: data2, 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ldots
+\end_layout
+
+\end_inset
+
+ }</tag>
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+String
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+<tag>string_data</tag>
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Tuple
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+<tag> (int1, int2, 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ldots
+\end_layout
+
+\end_inset
+
+ )</tag>
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Also, for arrays, which have the `shape' attribute, we have the syntax
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+<tag shape=`array_shape'>[entry1, entry2, ...
+ ]</tag>
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+where each entry has the same data type, which will be either float, int,
+ boolean or string, and `array_shape' is a tuple that gives the shape of
+ the generated array.
+ If the shape is not specified, then a 1D array will be assumed.
+\end_layout
+
+\begin_layout Standard
+The code uses this hierarchial structure to help read the data; if a particular
+ object is held within a parent object in the code, then the tag for that
+ object will be within the appropriate parent tags.
+ This is used to make the structure of the simulation clear.
+ For example, the system that is being studied is partly defined by the
+ thermodynamic ensemble that should be sampled, which in turn may be partly
+ defined by the pressure, and so on.
+ In the input file this would be specified by having a 
+\begin_inset Quotes eld
+\end_inset
+
+simulation
+\begin_inset Quotes erd
+\end_inset
+
+ tag, containing an 
+\begin_inset Quotes eld
+\end_inset
+
+ensemble
+\begin_inset Quotes erd
+\end_inset
+
+ tag, which itself contains a 
+\begin_inset Quotes eld
+\end_inset
+
+pressure
+\begin_inset Quotes erd
+\end_inset
+
+ tag, which will contain a float value corresponding to the external pressure.
+ In the code itself this will correspond to a simulation object, which will
+ contain an ensemble object, which will contain a pressure variable.
+ In this manner, the simulation class structure can be constructed iteratively.
+\end_layout
+
+\begin_layout Standard
+For example, suppose we want to generate a NPT ensemble at an external pressure
+ of 1e-7 atomic pressure units.
+ This would be specified by the following input file:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+<simulation>
+\end_layout
+
+\begin_layout Plain Layout
+
+	<ensemble mode='npt'>
+\end_layout
+
+\begin_layout Plain Layout
+
+		<pressure> 1e-7 </pressure>
+\end_layout
+
+\begin_layout Plain Layout
+
+		...
+\end_layout
+
+\begin_layout Plain Layout
+
+	</ensemble>
+\end_layout
+
+\begin_layout Plain Layout
+
+	...
+\end_layout
+
+\begin_layout Plain Layout
+
+</simulation>
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+To help detect any user error the recognized tag names, data types and acceptabl
+e options are all specified in the code in a specialized input class for
+ each class of object.
+ A full list of all the available tags and a brief description of their
+ function is given in chapter
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+~
+\backslash
+ref{hierarchy}
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Subsubsection
+Overwriting units
+\end_layout
+
+\begin_layout Standard
+Many of the input parameters, such as the pressure in the above example,
+ can be specified in more than one unit.
+ Indeed, often the atomic unit is inconvenient to use, and we would prefer
+ to something else.
+ Let us take the above example, but instead take an external pressure of
+ 3 MPa.
+ Instead of converting this to the atomic unit of pressure, it is possible
+ to use pascals directly using:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+<simulation>
+\end_layout
+
+\begin_layout Plain Layout
+
+   <ensemble mode=`npt'>
+\end_layout
+
+\begin_layout Plain Layout
+
+      <pressure units=`pascal'> 3e6 </pressure>
+\end_layout
+
+\begin_layout Plain Layout
+
+      ...
+\end_layout
+
+\begin_layout Plain Layout
+
+   </ensemble>
+\end_layout
+
+\begin_layout Plain Layout
+
+   ...
+\end_layout
+
+\begin_layout Plain Layout
+
+</simulation>
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The code can also understand S.I.
+ prefixes, so this can be simplified further using:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+<simulation>
+\end_layout
+
+\begin_layout Plain Layout
+
+   <ensemble mode='npt'>
+\end_layout
+
+\begin_layout Plain Layout
+
+      <pressure units=`megapascal'> 3 </pressure>
+\end_layout
+
+\begin_layout Plain Layout
+
+      ...
+\end_layout
+
+\begin_layout Plain Layout
+
+   </ensemble>
+\end_layout
+
+\begin_layout Plain Layout
+
+   ...
+\end_layout
+
+\begin_layout Plain Layout
+
+</simulation>
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Subsection
 Initialization section
 \end_layout
 
-\begin_layout Subsection
-Overriding units
+\begin_layout Subsubsection
+Configuration files
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+label{configfile}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Instead of initializing the atom positions manually, the starting configuration
+ can be specified through a separate data file.
+ The name of the configuration file is specified within the 
+\begin_inset Quotes eld
+\end_inset
+
+initialize
+\begin_inset Quotes erd
+\end_inset
+
+ tag name with the 
+\begin_inset Quotes eld
+\end_inset
+
+mode
+\begin_inset Quotes erd
+\end_inset
+
+ attribute given by the file format.
+ The currently accepted file formats are:
+\end_layout
+
+\begin_layout Itemize
+pdb
+\end_layout
+
+\begin_layout Itemize
+xyz
+\end_layout
+
+\begin_layout Standard
+This file can be used either to initialize one variable only, or instead
+ to initialize multiple attributes by using the 
+\begin_inset Quotes eld
+\end_inset
+
+file
+\begin_inset Quotes erd
+\end_inset
+
+ tag name.
+ This will initialize the atom positions, labels, masses and possibly the
+ cell parameters together.
+\end_layout
+
+\begin_layout Subsubsection
+Initialization from checkpoint files
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ipi
+\end_layout
+
+\end_inset
+
+ gives the option to output the entire state of the system at particular
+ timesteps as an xml input file, called a checkpoint file (see 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ref{checkpoint}
+\end_layout
+
+\end_inset
+
+ for details).
+ As well as being a valid input file, a checkpoint can also be used as an
+ input data file in the same way that the configuration files are.
+ This is specified in the input by using 
+\begin_inset Quotes eld
+\end_inset
+
+chk
+\begin_inset Quotes erd
+\end_inset
+
+ as the value of the 
+\begin_inset Quotes eld
+\end_inset
+
+mode
+\begin_inset Quotes erd
+\end_inset
+
+ attribute.
+ As for the configuration file, a checkpoint file can be used to initialize
+ either one or many variables depending on which tag name is used.
+\end_layout
+
+\begin_layout Standard
+There is also an ensemble type, 
+\begin_inset Quotes eld
+\end_inset
+
+replay_file
+\begin_inset Quotes erd
+\end_inset
+
+, which takes a configuration file with multiple frames or a checkpoint
+ file with one frame and reruns it without doing dynamics, by simply setting
+ the configuration to match that given by the input file at each frame.
+ This can then be used to calculate properties of interest along a trajectory
+ that has already been finished, if the user forgot to calculate them the
+ first time around.
 \end_layout
 
 \begin_layout Section
 Output files
 \end_layout
 
-\begin_layout Standard
-An explanation of the output section, and a list of the available properties
- and trajectories
-\end_layout
-
 \begin_layout Subsection
 Properties
 \end_layout
 
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+label{propertyfile}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+This is the output file for all the system and simulation level properties,
+ such as the total energy and the overall time taken.
+ The format of the file is given by a comment line per property giving the
+ name of the properties and which columns of the input file will be used
+ to print it, followed by their values in the appropriate units at regular
+ intervals given by the 
+\begin_inset Quotes eld
+\end_inset
+
+stride
+\begin_inset Quotes erd
+\end_inset
+
+ list of the input file.
+ The file is fixed formatted, with two blank characters at the start of
+ each row, then the data in the same order as the header row.
+ Each column is 16 characters wide and every float is written in exponential
+ format with 8 digits after the decimal point.
+\end_layout
+
+\begin_layout Standard
+The properties that are output are determined by the 
+\begin_inset Quotes eld
+\end_inset
+
+properties
+\begin_inset Quotes erd
+\end_inset
+
+ tag in the xml input file.
+ The format of this tag is:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}<properties stride=`' filename=`' flush=`' shape=`'>
+\end_layout
+
+\begin_layout Plain Layout
+
+   [ prop1name{units}(arg1; ...
+ ), prop2name{...}(...), ...
+  ]
+\end_layout
+
+\begin_layout Plain Layout
+
+</properties>
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The attributes have the following meanings:
+\end_layout
+
+\begin_layout Description
+stride The number of steps between each output to file
+\end_layout
+
+\begin_layout Description
+filename The name of the output file
+\end_layout
+
+\begin_layout Description
+flush The number of steps between flushing the buffer
+\end_layout
+
+\begin_layout Standard
+This tag data is an array of strings, each of which containing three different
+ parts:
+\end_layout
+
+\begin_layout Itemize
+The property name, which describes which type of property is to be output.
+ This is a mandatory part of the string.
+\end_layout
+
+\begin_layout Itemize
+The units that the property will be output in.
+ These are specified between curly brackets.
+ If this is not specified, then the property will be output in atomic units.
+\end_layout
+
+\begin_layout Itemize
+The arguments to be passed to the function.
+ These are specified between standard brackets, with each argument separated
+ by a semi-colon.
+ These may or may not be mandatory depending on the property.
+ The arguments can be specified by either of two different syntaxes, (name1=arg1
+; 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ldots
+\end_layout
+
+\end_inset
+
+ ) or (arg1; 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ldots
+\end_layout
+
+\end_inset
+
+ ).
+ The first explicitly assigns the argument with the name 
+\begin_inset Quotes eld
+\end_inset
+
+name1
+\begin_inset Quotes erd
+\end_inset
+
+ the value 
+\begin_inset Quotes eld
+\end_inset
+
+arg1
+\begin_inset Quotes erd
+\end_inset
+
+, whereas the second relies on the arguments being specified in the correct
+ order, as defined in the relevant function in the property.py module.
+ The two syntaxes may be mixed, but positional arguments must be specified
+ first otherwise undefined behaviour will result.
+ If no arguments are specified, then the defaults as defined in the properties.py
+ module will be used.
+\end_layout
+
+\begin_layout Standard
+The different available property names are:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+input{input_docs/property_list}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
 \begin_layout Subsection
-Trajectories
+Trajectory files
+\end_layout
+
+\begin_layout Standard
+These are the output file for atomic or bead level properties, such as the
+ bead positions.
+ Each trajectory that should be output is specified by the 
+\begin_inset Quotes eld
+\end_inset
+
+trajectory
+\begin_inset Quotes erd
+\end_inset
+
+ tag in the input file.
+ The allowable file formats for the trajectory output files are the same
+ as for the configuration input files, given in
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+~
+\backslash
+ref{configfile}
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+These tags have the format:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}<trajectory stride=`' filename=`' format=`' cell_units=`'
+ flush=`' bead=`'>
+\end_layout
+
+\begin_layout Plain Layout
+
+   traj_name{units}(arg1;...)
+\end_layout
+
+\begin_layout Plain Layout
+
+</trajectory>
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+This is very similar to the 
+\begin_inset Quotes eld
+\end_inset
+
+properties
+\begin_inset Quotes erd
+\end_inset
+
+ tag, but it has the additional tags 
+\begin_inset Quotes eld
+\end_inset
+
+format
+\begin_inset Quotes erd
+\end_inset
+
+ and 
+\begin_inset Quotes eld
+\end_inset
+
+cell_units
+\begin_inset Quotes erd
+\end_inset
+
+, and only one trajectory can be specified per file.
+ `format' specifies the format of the output file, and `cell_units' specifies
+ the units in which the cell dimensions are output.
+ Depending on the chosen trajectory to output, it will either print a file
+ per bead or per atom.
+ If the trajectory is output per bead then the output files will be 
+\begin_inset Quotes eld
+\end_inset
+
+filename
+\begin_inset Quotes erd
+\end_inset
+
+ with the bead index appended, so as to distinguish between the trajectories
+ of each bead.
+ In this case it is also possible to only output one trajectory by specifying
+ the 
+\begin_inset Quotes eld
+\end_inset
+
+bead
+\begin_inset Quotes erd
+\end_inset
+
+ attribute.
+ 
+\end_layout
+
+\begin_layout Standard
+The possible choices of output trajectories are:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+input{input_docs/trajectory_list}
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Subsection
 Checkpoint files
 \end_layout
 
-\begin_layout Subsection
-Overriding units
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+label{checkpoint}
 \end_layout
 
-\begin_layout Section
-Soft exit and restart
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+As well as the above output files, the state of the system at a particular
+ time step can also be saved to file.
+ These checkpoint files can be used as valid input files, with all the informati
+on required to restore the state of the system to the point at which the
+ file was created.
+ 
+\end_layout
+
+\begin_layout Standard
+The syntax for this tag is:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}<checkpoint stride=`' filename=`' overwrite=`'>
+\end_layout
+
+\begin_layout Plain Layout
+
+   step
+\end_layout
+
+\begin_layout Plain Layout
+
+</checkpoint>
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Again, this is similar to the 
+\begin_inset Quotes eld
+\end_inset
+
+trajectory
+\begin_inset Quotes erd
+\end_inset
+
+ and 
+\begin_inset Quotes eld
+\end_inset
+
+properties
+\begin_inset Quotes erd
+\end_inset
+
+ tags, but instead of having a value which specifies what to output, the
+ value simply gives a number to identify the current checkpoint file.
+ There is also one additional attribute, 
+\begin_inset Quotes eld
+\end_inset
+
+overwrite
+\begin_inset Quotes erd
+\end_inset
+
+, which specifies whether each new checkpoint file overwrites the old one,
+ or whether all checkpoint files are kept.
+ If they are kept, they will be written not to the file 
+\begin_inset Quotes eld
+\end_inset
+
+filename
+\begin_inset Quotes erd
+\end_inset
+
+, but instead an index based on the value of 
+\begin_inset Quotes eld
+\end_inset
+
+step
+\begin_inset Quotes erd
+\end_inset
+
+ will be appended to it to distinguish between different files.
+\end_layout
+
+\begin_layout Standard
+If the `step' parameter is not specified, the following syntax can also
+ be used:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}<checkpoint stride=`' filename=`' overwrite=`'/>
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection
+Soft exit and RESTART
+\end_layout
+
+\begin_layout Standard
+As well as checkpoint files during a simulation run, wrappi also creates
+ a checkpoint automatically at the end of the simulation, with file name
+ 
+\begin_inset Quotes eld
+\end_inset
+
+RESTART
+\begin_inset Quotes erd
+\end_inset
+
+.
+ In the same way as the checkpoint files generated above it contains the
+ state of the system as created by the wrapper, but it doesn't need to be
+ asked for by the user in the input file.
+ Its purpose is that if the user decides that insufficient steps were used
+ in an already completed simulation, then this file can be used to continue
+ from where it ended.
+\end_layout
+
+\begin_layout Standard
+To stop the program in such a way that it makes sure to save the data generated
+ in a restart file, simply create a file 
+\begin_inset Quotes eld
+\end_inset
+
+EXIT
+\begin_inset Quotes erd
+\end_inset
+
+ in the directory in which the code is running.
+ The thread handler will automatically detect this and safely shut down
+ the program, outputting the restart file as detailed above.
+ 
+\end_layout
+
+\begin_layout Standard
+An important point to note is that since each time step is split into several
+ parts, it is only at the beginning of each step that all the variables
+ are consistent with each other in such a way that the simulation can be
+ restarted from them without changing the dynamics.
+ Thus if a soft exit call is made during a step, then the restart file that
+ is created must correspond to the state of the system at the start of the
+ step.
+ To this end, the state of the system is saved at the start of every step.
 \end_layout
 
 \begin_layout Section
 Distributed execution
 \end_layout
 
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+label{distrib}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
 \begin_layout Subsection
 Sockets
 \end_layout
 
-\begin_layout Subsection
-SSH Tunnelling
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ipi
+\end_layout
+
+\end_inset
+
+ only creates a server, it must interface with a client code in order to
+ run any simulations.
+ The overarching design principle of 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ipi
+\end_layout
+
+\end_inset
+
+ is that these two codes should be as independent as possible, and so the
+ only communication between them is done through a socket.
+ A socket is a data transfer device that is designed for internet communication,
+ so supports both multiple client connections to the same server and two
+ way communication.
+ This makes sockets ideal for use in 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ipi
+\end_layout
+
+\end_inset
+
+, where each calculation may require multiple client codes.
+ 
+\end_layout
+
+\begin_layout Standard
+Sockets are described by an IP address and a port number, and can either
+ be an internet socket, capable of inter-computer communication, or a unix
+ socket, which is optimized for local communication.
+ The IP address is input by the user in the 
+\begin_inset Quotes eld
+\end_inset
+
+address
+\begin_inset Quotes erd
+\end_inset
+
+ tag, and can be specified in two ways.
+ Firstly, every network has a unique numeric code of the form 123.45.678.901.
+ Secondly, most networks are named, so the name of the network on which
+ the server code is running can be used as an alias for the IP address.
+ A specific case of this is 
+\begin_inset Quotes eld
+\end_inset
+
+localhost
+\begin_inset Quotes erd
+\end_inset
+
+, which is the generic name for the local network used by unix sockets.
+\end_layout
+
+\begin_layout Standard
+The port number is an integer between 1 and 65535 used to distinguish between
+ all the different sockets open on a particular computer.
+ As many of the lower numbers are protected for use in important system
+ processes or internet communication, it is generally advisable to only
+ use numbers in the range 1025-65535 for simulations.
+\end_layout
+
+\begin_layout Standard
+There are two modes of socket, internet and unix.
+ Unix sockets are optimized for local communication, whereas internet sockets
+ can be used to connect to one computer from another.
+ While they are faster than internet sockets, unix sockets should only be
+ used if a simple empirical potential is being run, since they are far less
+ flexible.
+ Also, if complicated empirical potentials or 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{ab initio}
+\end_layout
+
+\end_inset
+
+ potentials are used the force calculation becomes the bottleneck in the
+ code, so the advantage of using unix sockets is lost.
+ 
+\end_layout
+
+\begin_layout Standard
+Internet sockets have two main advantages that make them much more useful
+ in general.
+ Firstly, the client code does not need to be run on the same computer as
+ the server code.
+ In particular, if the client codes are being run on a cluster this means
+ that you do not need to waste computing resources running the server, which
+ is idle most of the time.
+ Secondly, the port number is not used for unix sockets, so if more than
+ one calculation is being run concurrently internet sockets must be used,
+ so that the client codes connect to the correct server code.
+\end_layout
+
+\begin_layout Standard
+There are a two other input parameters that may be used to specify how the
+ server socket looks for client codes to connect to.
+ 
+\begin_inset Quotes eld
+\end_inset
+
+latency
+\begin_inset Quotes erd
+\end_inset
+
+ specifies the length of time between each check to see if any new client
+ codes have connected, and 
+\begin_inset Quotes eld
+\end_inset
+
+slots
+\begin_inset Quotes erd
+\end_inset
+
+ specifies how many client codes can queue between checks.
+ Neither is likely to be important in getting the code to run, but may be
+ used to optimize the connection time if required.
+\end_layout
+
+\begin_layout Subsubsection
+Data transfer
+\end_layout
+
+\begin_layout Standard
+Once at least one client code has connected to the server socket, the force
+ calculation can start.
+ For this to happen the client code needs the system configuration, and
+ likewise the server needs the force and potential data to be returned so
+ that it can continue propagating the dynamics.
+\end_layout
+
+\begin_layout Standard
+To make sure that the connection is good, a simple query-response data transfer
+ protocol is used.
+ Before any data is sent through the socket a header string of 12 characters
+ is sent to verify which stage of the calculation the server is at.
+ Once the client sends the appropriate response header string, the data
+ is transferred.
+ If no response is given, the server will either wait and try again, or
+ disconnect the client code and reassign its job to another, depending on
+ the severity of the problem.
+ The server assumes that 4-bit integers, 8-bit floats and 1-bit characters
+ are used.
+ A typical step is of the form:
+\end_layout
+
+\begin_layout Enumerate
+A header string of 
+\begin_inset Quotes eld
+\end_inset
+
+
+\series bold
+STATUS
+\series default
+
+\begin_inset Quotes erd
+\end_inset
+
+ is sent by the server socket.
+\end_layout
+
+\begin_layout Enumerate
+A header string is then returned, giving the status of the client code.
+ Recognized options are:
+\end_layout
+
+\begin_deeper
+\begin_layout Description
+\begin_inset Quotes eld
+\end_inset
+
+NEEDINIT
+\begin_inset Quotes erd
+\end_inset
+
+: If the client code needs any initialising data, it can be sent here.
+ The server code will then send a header string 
+\begin_inset Quotes eld
+\end_inset
+
+INIT
+\begin_inset Quotes erd
+\end_inset
+
+, followed by an integer giving the number of bits in the initialization
+ string, then the initialization string itself.
+\end_layout
+
+\begin_layout Description
+\begin_inset Quotes eld
+\end_inset
+
+READY
+\begin_inset Quotes erd
+\end_inset
+
+: Sent if the client code is ready to calculate the forces.
+ The server socket will then send a string 
+\begin_inset Quotes eld
+\end_inset
+
+POSDATA
+\begin_inset Quotes erd
+\end_inset
+
+, then nine floats the cell vector matrix, then another nine floats for
+ the inverse matrix, (which need to be transposed if the client code is
+ written in fortran).
+ The server socket will then send one integer giving the number of atoms,
+ then the position data as 3 floats for each atom giving the 3 cartesian
+ components of the bead position.
+\end_layout
+
+\begin_layout Description
+\begin_inset Quotes eld
+\end_inset
+
+HAVEDATA
+\begin_inset Quotes erd
+\end_inset
+
+: This is sent if the client has calculated the potential and forces.
+ The server socket then sends a string 
+\begin_inset Quotes eld
+\end_inset
+
+GETFORCE
+\begin_inset Quotes erd
+\end_inset
+
+, and the client socket returns 
+\begin_inset Quotes eld
+\end_inset
+
+FORCEREADY
+\begin_inset Quotes erd
+\end_inset
+
+.
+ The potential is then returned as a float, the number of atoms as an integer,
+ then the force data as 3 floats per atom in the same way as the positions,
+ and the virial as 9 floats in the same way as the cell vector matrix.
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+The server socket waits until the force data for each replica of the system
+ has been calculated and returned, upon which the job is finished and the
+ molecular dynamics loop starts.
+\end_layout
+
+\begin_layout Subsubsection
+Parallelization
+\end_layout
+
+\begin_layout Standard
+As mentioned before, one of the primary advantages of using this type of
+ data transfer is that it allows multiple client codes to connect to one
+ server code, so that different replicas of the system can be assigned to
+ different client codes and their forces computed in parallel.
+ In fact it is trivially parallel, in the sense that no communication between
+ the client codes is necessary.
+\end_layout
+
+\begin_layout Standard
+In the case that there are as many client codes as replicas of the system
+ this is very simple, as each replica will be assigned its own client code.
+ In subsequent steps, the interface will attempt to assign a particular
+ replica of the system to the client code which calculated the forces for
+ it the last step.
+ This reduces the change in the particle positions between calculations
+ for a particular client code, so the next step is done more efficiently.
+ In the case where there are fewer client codes than beads, the socket interface
+ will assign spare jobs to the first client code that finishes running,
+ after matching all possible jobs to the same client code that calculated
+ it last time step.
+\end_layout
+
+\begin_layout Standard
+This flexibility is especially useful when the calculations are being run
+ on a cluster, as in this case the client codes will connect whenever they
+ reach the front of the queue.
+ More client codes can connect at any time, and if there is a problem and
+ any client code dies it is simply disconnected from the server socket and
+ any job it was running reassigned.
+\end_layout
+
+\begin_layout Standard
+Finally, note that many client codes can be parallelized themselves, using
+ MPI or other similar protocols.
+ This is fully compatible with 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ipi
+\end_layout
+
+\end_inset
+
+, as it does not matter how the client does the calculation since only the
+ forces, potential and virial are sent to the server.
+ Information on how to run MPI processes can usually be found on the website
+ of the code provider if the client can be parallelized in this way.
 \end_layout
 
 \begin_layout Subsection
-Execution models 
+ssh tunnelling
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+label{ssh_sockets}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+One problem that can often crop up when trying to run a 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ipi
+\end_layout
+
+\end_inset
+
+ calculation is that there is a firewall around the network, especially
+ when the server code is being run on a cluster.
+ This will often result in error messages such as 
+\begin_inset Quotes eld
+\end_inset
+
+Error connecting: Connection timed out
+\begin_inset Quotes erd
+\end_inset
+
+ or 
+\begin_inset Quotes eld
+\end_inset
+
+Error connecting: Connection refused
+\begin_inset Quotes erd
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+Let us suppose that the server code is running on a host network server.net,
+ and that you are using port 12345.
+ However, when you try to connect to this port from a computer, let us call
+ this client.net, then you get error messages like the ones above, due to
+ a firewall on server.net blocking port 12345.
+\end_layout
+
+\begin_layout Standard
+However, assuming that you can create an ssh connection between the two
+ computers, then you can use this to forward one of the ports on client.net
+ to connect to the necessary port on server.net.
+ This can be done with the following shell command:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+> ssh -f -N server.net -L 23451:server.net:12345
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The flags -f and -N just put the ssh process in the background.
+ Then comes the ssh server, which in this case is the computer on which
+ the server code is running.
+ The -L flag sets up the ssh tunnel itself.
+ The above code will forward the port 23451 on client.net to the port 12345
+ on server.net, as required.
+\end_layout
+
+\begin_layout Standard
+Once this is done, then any data sent to port on 23451 on client.net will
+ be forwarded through the ssh tunnel to port 12345 on server.net.
+ By connecting to port 23451 on client.net (or localhost, an alias for the
+ host the code is running on) with the client the code should now run.
+\end_layout
+
+\begin_layout Standard
+If the ssh connection fails, with an error message 
+\begin_inset Quotes eld
+\end_inset
+
+ssh: connect to host server.net port 22: Connection timed out
+\begin_inset Quotes erd
+\end_inset
+
+, then the server.net server has also been set up with a firewall around
+ the standard ssh port, port 22.
+ In this case you can change which port is used to one that is open using
+ the -p flag, for example:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+> ssh -f -N server.net -L 23451:server.net:12345 -p 99
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection
+Using a script to create a ssh connection
+\end_layout
+
+\begin_layout Standard
+Now let us suppose that client.net is a cluster, and we wish to submit the
+ client jobs to the queue.
+ The above code as it is will not work, since ssh requires a password.
+ However, you can set up ssh such that no password is needed.
+ 
+\end_layout
+
+\begin_layout Standard
+Firstly, on client.net, we need to set up an ssh key.
+ This can be done using the command:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+> ssh-keygen -t rsa
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+It will then prompt you for a passphrase twice.
+ Since we wish to have use this in a job script where we will not be able
+ to enter a password, just hit enter twice.
+ Note that this will mean that someone with temporary access to your account
+ could feasibly take a copy of the ssh key and then be able to use it, so
+ this should be used with caution.
+\end_layout
+
+\begin_layout Standard
+This should now have created two files in the directory ~/.ssh, id_rsa and
+ id_rsa.pub.
+ These should be readable only by you, so use the following code to set
+ up the correct file permissions:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+> chmod 600 ~/.ssh/id_rsa ~/.ssh/id_rsa.pub
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Finally, copy the contents of the file id_rsa.pub and append them to the
+ file authorized_keys in the directory ~/.ssh of server.net.
+ It should now be possible to ssh from client.net to server.net without using
+ a password.
+ We can now run the ssh command from a script, and so we can set up a ssh
+ tunnel from a cluster node.
+ Note that the cluster nodes will have a different IP address to the head
+ node, so use 
+\begin_inset Quotes eld
+\end_inset
+
+localhost
+\begin_inset Quotes erd
+\end_inset
+
+ rather than 
+\begin_inset Quotes eld
+\end_inset
+
+client.net
+\begin_inset Quotes erd
+\end_inset
+
+ in the input file of the client code.
 \end_layout
 
 \begin_layout Chapter
 Input reference
 \end_layout
 
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+label{hierarchy}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The following chapter gives a complete list of the tags that can be specified
+ in the xml input file, along with the hierarchy of objects.
+ Note that every xml input file must start with the root tag 
+\begin_inset Quotes eld
+\end_inset
+
+simulation
+\begin_inset Quotes erd
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Standard
+See the accompanying 
+\begin_inset Quotes eld
+\end_inset
+
+help.xml
+\begin_inset Quotes erd
+\end_inset
+
+ file in the 
+\begin_inset Quotes eld
+\end_inset
+
+doc
+\begin_inset Quotes erd
+\end_inset
+
+ directory to see the recommended input file structure.
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+input{input_docs/simulation}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+input{input_docs/initializer}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+input{input_docs/init_file}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+input{input_docs/init_pos}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+input{input_docs/init_mom}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+input{input_docs/init_vel}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+input{input_docs/init_lab}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+input{input_docs/init_mass}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+input{input_docs/init_cell}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+input{input_docs/init_therm}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+input{input_docs/ensembles}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+input{input_docs/forces}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+input{input_docs/socket}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+input{input_docs/cell}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+input{input_docs/beads}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+input{input_docs/atoms}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+input{input_docs/normal_modes}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+input{input_docs/barostats}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+input{input_docs/thermostats}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+input{input_docs/prng}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+input{input_docs/output}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+input{input_docs/checkpoint}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+input{input_docs/properties}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+input{input_docs/trajectory}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
 \begin_layout Chapter
 Troubleshooting
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+label{trouble}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Input errors
+\end_layout
+
+\begin_layout Itemize
+xml standard errors: You are being an idiot...
+\end_layout
+
+\begin_layout Itemize
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{Uninitialized value of type 
+\backslash
+_
+\backslash
+_
+\backslash
+_} or 
+\backslash
+emph{Attribute/Field name 
+\backslash
+_
+\backslash
+_
+\backslash
+_ is mandatory and was not found in the input for property 
+\backslash
+_
+\backslash
+_
+\backslash
+_}
+\end_layout
+
+\end_inset
+
+: The xml file is missing a mandatory tag, i.e.
+ one without which the simulation cannot be initialized.
+ Find which tag name is missing and add it.
+\end_layout
+
+\begin_layout Itemize
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{Attribute/tag name 
+\backslash
+_
+\backslash
+_
+\backslash
+_ is not a recognized property of 
+\backslash
+_
+\backslash
+_
+\backslash
+_ objects}
+\end_layout
+
+\end_inset
+
+: The first tag should not be found within the second set of tags.
+ Check that the first tag is spelt correctly, and that it has been put in
+ the right place.
+\end_layout
+
+\begin_layout Itemize
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{
+\backslash
+_
+\backslash
+_
+\backslash
+_ is not a valid option (
+\backslash
+_
+\backslash
+_
+\backslash
+_)}
+\end_layout
+
+\end_inset
+
+: This tag only allows a certain range of inputs.
+ Pick one of the items from the list given.
+\end_layout
+
+\begin_layout Itemize
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{
+\backslash
+_
+\backslash
+_
+\backslash
+_ is an undefined unit for kind 
+\backslash
+_
+\backslash
+_
+\backslash
+_} or 
+\backslash
+emph{
+\backslash
+_
+\backslash
+_
+\backslash
+_ is not a valid unit prefix} or 
+\backslash
+emph{Unit 
+\backslash
+_
+\backslash
+_
+\backslash
+_ is not structured with a prefix+base syntax}
+\end_layout
+
+\end_inset
+
+: The unit input by the user is not correct.
+ Make sure it corresponds to the correct dimensionality, and is spelt correctly.
+\end_layout
+
+\begin_layout Itemize
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{Invalid literal for int() with base 10: 
+\backslash
+_
+\backslash
+_
+\backslash
+_} or 
+\backslash
+emph{Invalid literal for float(): 
+\backslash
+_
+\backslash
+_
+\backslash
+_} or 
+\backslash
+emph{
+\backslash
+_
+\backslash
+_
+\backslash
+_ does not represent a bool value}
+\end_layout
+
+\end_inset
+
+: The data input by the user does not have the correct data type.
+\end_layout
+
+\begin_layout Itemize
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{Error in list syntax: could not locate delimiters}
+\end_layout
+
+\end_inset
+
+: The array input data did not have the required braces.
+ For a normal array use [], for a dictionary use {}, and for a tuple use
+ ().
+\end_layout
+
+\begin_layout Section
+Initialization errors
+\end_layout
+
+\begin_layout Itemize
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{If you are initializing cell from cell side lengths you must pass the
+ 'cell' tag an array of 3 floats}
+\end_layout
+
+\end_inset
+
+: If you are attempting to initialize a cell using the 
+\begin_inset Quotes eld
+\end_inset
+
+abc
+\begin_inset Quotes erd
+\end_inset
+
+ mode, the code expects three floats corresponding to the three side lengths.
+ 
+\end_layout
+
+\begin_layout Itemize
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{If you are initializing cell from cell side lengths and angles you
+ must pass the 'cell' tag an array of 6 floats}
+\end_layout
+
+\end_inset
+
+: If you are attempting to initialize a cell using the 
+\begin_inset Quotes eld
+\end_inset
+
+abcABC
+\begin_inset Quotes erd
+\end_inset
+
+ mode, the code expects six floats corresponding to the three side lengths,
+ followed by the three angles in degrees.
+\end_layout
+
+\begin_layout Itemize
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{Cell objects must contain a 3x3 matrix describing the cell vectors.}
+\end_layout
+
+\end_inset
+
+: If you are attempting to initialize a cell using the 
+\begin_inset Quotes eld
+\end_inset
+
+manual
+\begin_inset Quotes erd
+\end_inset
+
+ mode, the code expects nine floats corresponding to the cell vector matrix
+ side lengths.
+ Note that the values of the lower-diagonal elements will be set to zero.
+\end_layout
+
+\begin_layout Itemize
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{Array shape mismatch in q/p/m/names in beads input}
+\end_layout
+
+\end_inset
+
+: The size of the array in question does not have the correct number of
+ elements given the number of atoms and the number of beads used in the
+ rest of the input.
+ If the number of beads is nbeads and the number of atoms natoms, then q
+ and p should have shape (nbeads, 3*natoms) and m and names should have
+ shape (natoms,).
+\end_layout
+
+\begin_layout Itemize
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{No thermostat/barostat tag provided for NVT/NPT simulation}
+\end_layout
+
+\end_inset
+
+: Some ensembles can only be sampled if a thermostat and/or barostat have
+ been defined, and so for simulations at constant temperature and/or pressure
+ these tags are mandatory.
+ If you wish to not use a thermostat/barostat, but still want to keep the
+ ensemble the same, then use 
+\begin_inset Quotes eld
+\end_inset
+
+dummy
+\begin_inset Quotes erd
+\end_inset
+
+ mode thermostat/barostat, which simply does nothing.
+\end_layout
+
+\begin_layout Itemize
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{Pressure/Temperature should be supplied for constant pressure/temperature
+ simulation}
+\end_layout
+
+\end_inset
+
+: Since in this case the ensemble is defined by these parameters, these
+ must be input by the user.
+ Add the appropriate tags to the input file.
+\end_layout
+
+\begin_layout Itemize
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{Manual path mode requires (nbeads-1) frequencies, one for each internal
+ mode of the path.}
+\end_layout
+
+\end_inset
+
+: If the 
+\begin_inset Quotes eld
+\end_inset
+
+mode
+\begin_inset Quotes erd
+\end_inset
+
+ tag of 
+\begin_inset Quotes eld
+\end_inset
+
+normal_modes
+\begin_inset Quotes erd
+\end_inset
+
+ is set to 
+\begin_inset Quotes eld
+\end_inset
+
+manual
+\begin_inset Quotes erd
+\end_inset
+
+, it will expect an array of frequencies, one for each of the internal normal
+ modes of the ring polymers.
+ 
+\end_layout
+
+\begin_layout Itemize
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{PA-CMD mode requires the target frequency of all the internal modes.}
+\end_layout
+
+\end_inset
+
+: If the 
+\begin_inset Quotes eld
+\end_inset
+
+mode
+\begin_inset Quotes erd
+\end_inset
+
+ tag of 
+\begin_inset Quotes eld
+\end_inset
+
+normal_modes
+\begin_inset Quotes erd
+\end_inset
+
+ is set to 
+\begin_inset Quotes eld
+\end_inset
+
+pa-cmd
+\begin_inset Quotes erd
+\end_inset
+
+, it will expect an array of one frequency, to which all the internal modes
+ of the ring polymers will be set.
+ 
+\end_layout
+
+\begin_layout Itemize
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{WMAX-CMD mode requires [wmax, wtarget].
+ The normal modes will be scaled such that the first internal mode is at
+ frequency wtarget and all the normal modes coincide at frequency wmax.}
+\end_layout
+
+\end_inset
+
+: If the 
+\begin_inset Quotes eld
+\end_inset
+
+mode
+\begin_inset Quotes erd
+\end_inset
+
+ tag of 
+\begin_inset Quotes eld
+\end_inset
+
+normal_modes
+\begin_inset Quotes erd
+\end_inset
+
+ is set to 
+\begin_inset Quotes eld
+\end_inset
+
+wmax-cmd
+\begin_inset Quotes erd
+\end_inset
+
+, it will expect an array of two frequencies, one two set the lowest frequency
+ normal mode, and one for the other normal mode frequencies.
+\end_layout
+
+\begin_layout Itemize
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{Number of beads 
+\backslash
+_
+\backslash
+_
+\backslash
+_ doesn't match GLE parameter nb= 
+\backslash
+_
+\backslash
+_
+\backslash
+_}
+\end_layout
+
+\end_inset
+
+: The matrices used to define the generalized Langevin equations of motion
+ do not have the correct first dimension.
+ If matrices have been downloaded from 
+\begin_inset Flex URL
+status collapsed
+
+\begin_layout Plain Layout
+
+http://gle4md.berlios.de/ 
+\end_layout
+
+\end_inset
+
+ make sure that you have input the correct number of beads.
+\end_layout
+
+\begin_layout Itemize
+Setting nbeads/natoms = 0
+\end_layout
+
+\begin_layout Itemize
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{Initialization tries to match up structures with different atom numbers}
+\end_layout
+
+\end_inset
+
+: If in the initialization any of the matrices has an array shape which
+ do not correspond to the same number of atoms, then they cannot correspond
+ to the same system.
+ Check the size of the arrays specified if they have been input manually.
+\end_layout
+
+\begin_layout Itemize
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{Cannot initialize single atom/bead as atom/bead index 
+\backslash
+_
+\backslash
+_
+\backslash
+_ is larger than the number of atoms/beads}
+\end_layout
+
+\end_inset
+
+: Self-explanatory
+\end_layout
+
+\begin_layout Itemize
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{Cannot initialize the momenta/masses/labels/single atoms before the
+ size of the system is known.}
+\end_layout
+
+\end_inset
+
+: In the code, a beads object is created to hold all the information related
+ to the configuration of the system.
+ However, until a position vector has been defined, this object is not created.
+ Therefore, whichever arrays are being initialized individually, the position
+ vector must always be initialized first.
+\end_layout
+
+\begin_layout Itemize
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{Trying to resample velocities before having masses.}
+\end_layout
+
+\end_inset
+
+: A Maxwell-Boltzmann distribution is partly defined by the atom velocity,
+ and so the masses must be defined before the velocities can be resampled
+ from this distribution.
+\end_layout
+
+\begin_layout Itemize
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{Cannot thermalize a single bead}
+\end_layout
+
+\end_inset
+
+: It does not make sense to initialize the momenta of only one of the beads,
+ and so 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ipi
+\end_layout
+
+\end_inset
+
+ does not give this functionality.
+\end_layout
+
+\begin_layout Itemize
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{Initializer could not initialize 
+\backslash
+_
+\backslash
+_
+\backslash
+_}
+\end_layout
+
+\end_inset
+
+: A property of the system that is mandatory to properly run the simulation
+ has not been initialized in either the 
+\begin_inset Quotes eld
+\end_inset
+
+initialize
+\begin_inset Quotes erd
+\end_inset
+
+ section or the appropriate section in beads.
+\end_layout
+
+\begin_layout Itemize
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{Ensemble does not have a thermostat to initialize} or 
+\backslash
+emph{There is nothing to initialize in non-GLE thermostats} or 
+\backslash
+emph{Checkpoint file does not contain usable thermostat data}
+\end_layout
+
+\end_inset
+
+: These are raised if the user has tried to initialize the matrices for
+ the GLE thermostats with a checkpoint file that either does not have a
+ GLE thermostat or does not have a thermostat at all.
+\end_layout
+
+\begin_layout Itemize
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{Size mismatch in thermostat initialization data}
+\end_layout
+
+\end_inset
+
+: Called if the shape of the GLE matrices defined in the checkpoint file
+ is different from those defined in the new simulation.
+ 
+\end_layout
+
+\begin_layout Itemize
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{Replay can only read from PDB or XYZ files -- or a single frame from
+ a CHK file}
+\end_layout
+
+\end_inset
+
+: If the user specifies a replay ensemble, the state of the system must
+ be defined by either a configuration file or a checkpoint file, and cannot
+ be specified manually.
+\end_layout
+
+\begin_layout Section
+Output errors
+\end_layout
+
+\begin_layout Itemize
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{
+\backslash
+_
+\backslash
+_
+\backslash
+_ is not a recognized property/output trajectory}
+\end_layout
+
+\end_inset
+
+: The string as defined in the 
+\begin_inset Quotes eld
+\end_inset
+
+properties
+\begin_inset Quotes erd
+\end_inset
+
+/
+\begin_inset Quotes erd
+\end_inset
+
+trajectory
+\begin_inset Quotes erd
+\end_inset
+
+ tag does not correspond to one of the available trajectories.
+ Make sure that both the syntax is correct, and that the property has been
+ spelt correctly.
+\end_layout
+
+\begin_layout Itemize
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{Could not open file 
+\backslash
+_
+\backslash
+_
+\backslash
+_ for output}
+\end_layout
+
+\end_inset
+
+: Raised if there is a problem opening the file defined by the 
+\begin_inset Quotes eld
+\end_inset
+
+filename
+\begin_inset Quotes erd
+\end_inset
+
+ attribute.
+\end_layout
+
+\begin_layout Itemize
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{Selected bead index 
+\backslash
+_
+\backslash
+_
+\backslash
+_ does not exist for trajectory 
+\backslash
+_
+\backslash
+_
+\backslash
+_}
+\end_layout
+
+\end_inset
+
+: You have asked for the trajectory of a bead index greater than the number
+ of the replicas of the system.
+ Note that indices are counted from 0, so the first replica is defined by
+ an index 0, the second by an index 1, and so on.
+\end_layout
+
+\begin_layout Itemize
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{Incorrect format in unit specification 
+\backslash
+_
+\backslash
+_
+\backslash
+_}
+\end_layout
+
+\end_inset
+
+: Usually raised if one of the curly braces has been neglected.
+\end_layout
+
+\begin_layout Itemize
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{Incorrect format in argument list 
+\backslash
+_
+\backslash
+_
+\backslash
+_}
+\end_layout
+
+\end_inset
+
+: This will be raised either if one of the brackets has been neglected,
+ or if the delimiters between arguments, in this case 
+\begin_inset Quotes eld
+\end_inset
+
+;
+\begin_inset Quotes erd
+\end_inset
+
+, are not correct.
+ This is usually raised if, instead of separating the arguments using 
+\begin_inset Quotes eld
+\end_inset
+
+;
+\begin_inset Quotes erd
+\end_inset
+
+, they are instead separated by 
+\begin_inset Quotes eld
+\end_inset
+
+,
+\begin_inset Quotes erd
+\end_inset
+
+, since this causes the property array to be parsed incorrectly.
+\end_layout
+
+\begin_layout Itemize
+Incorrect name of argument passed to function...
+\end_layout
+
+\begin_layout Itemize
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{Must specify the index of atom_vec property}
+\end_layout
+
+\end_inset
+
+: Any property which prints out a vector corresponding to one atom needs
+ the index of that atom, as no default is specified.
+\end_layout
+
+\begin_layout Itemize
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{Cannot output 
+\backslash
+_
+\backslash
+_
+\backslash
+_ as atom/bead index 
+\backslash
+_
+\backslash
+_
+\backslash
+_ is larger than the number of atoms/beads}
+\end_layout
+
+\end_inset
+
+: Self-explanatory.
+\end_layout
+
+\begin_layout Itemize
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{Couldn't find an atom that matched the argument of 
+\backslash
+_
+\backslash
+_
+\backslash
+_}
+\end_layout
+
+\end_inset
+
+: For certain properties, you can specify an atom index or label, so that
+ the property is averaged only over the atoms that match it.
+ If however no atom labels match the argument given, then the average will
+ be undefined.
+ Note that for properties which are cumulatively counted rather than averaged,
+ this error is not raised, and if no atom matches the label given 0 will
+ be returned.
+\end_layout
+
+\begin_layout Section
+Socket errors
+\end_layout
+
+\begin_layout Itemize
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{Address already in use}
+\end_layout
+
+\end_inset
+
+: This is called if the server socket is already being used by the host
+ network.
+ There are several possible reasons for getting this error.
+ Firstly, it might simply be that two simulations are running concurrently
+ using the same host and port number.
+ In this case simply change the port number of one of the simulations.
+ Secondly, you can get this error if you try to rerun a simulation that
+ previously threw an exception, since it takes a minute or so before the
+ host will disconnect the server socket if it is not shut down cleanly.
+ In this case, simply wait for it to disconnect, and try again.
+ Finally, you will get this error if you try to use a restricted port number
+ (i.e.
+ below 1024) while not root.
+ You should always use a non-restricted port number for 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ipi
+\end_layout
+
+\end_inset
+
+ simulations.
+\end_layout
+
+\begin_layout Itemize
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{Error opening unix socket.
+ Check if a file /tmp/wrappi
+\backslash
+_
+\backslash
+_
+\backslash
+_ exists, and remove it if unused.}
+\end_layout
+
+\end_inset
+
+: Similar to the above error, but given if you are using a unix socket rather
+ than an internet socket.
+ Since this binds locally the socket can be removed by the user, which means
+ that it is not necessary to wait for the computer to automatically disconnect
+ an unused server socket.
+ 
+\end_layout
+
+\begin_layout Itemize
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{Port number 
+\backslash
+_
+\backslash
+_
+\backslash
+_ out of acceptable range}
+\end_layout
+
+\end_inset
+
+: The port number must be between 1 and 65535, and should be greater than
+ 1024.
+ Change the port number accordingly.
+\end_layout
+
+\begin_layout Itemize
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{Slot number 
+\backslash
+_
+\backslash
+_
+\backslash
+_ out of acceptable range}
+\end_layout
+
+\end_inset
+
+: The slot number must be between 1 and 5.
+ Change the slot number accordingly.
+\end_layout
+
+\begin_layout Section
+Mathematical errors
+\end_layout
+
+\begin_layout Itemize
+Errors in the creating cell matrix?
+\end_layout
+
+\begin_layout Itemize
+Math overflow in NPT
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset bibtex
+LatexCommand bibtex
+bibfiles "mybib"
+options "elsarticle-num-names"
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Part
@@ -628,7 +6372,7 @@ CURRENT MANUAL
 
 \begin_layout Standard
 \begin_inset Note Comment
-status collapsed
+status open
 
 \begin_layout Plain Layout
 This manual will be structured as follows: 
@@ -1072,7 +6816,7 @@ status open
 
 \begin_layout Plain Layout
 
-
+%
 \backslash
 label{commpro}
 \end_layout
@@ -1457,7 +7201,7 @@ status open
 
 \begin_layout Plain Layout
 
-
+%
 \backslash
 label{ssh_sockets}
 \end_layout
@@ -1743,7 +7487,7 @@ status open
 
 \begin_layout Plain Layout
 
-
+%
 \backslash
 label{install}
 \end_layout
@@ -2578,7 +8322,7 @@ status open
 
 \begin_layout Plain Layout
 
-
+%
 \backslash
 label{tests}
 \end_layout
@@ -2801,7 +8545,7 @@ status open
 
 \begin_layout Plain Layout
 
-
+%
 \backslash
 label{run}
 \end_layout
@@ -3937,7 +9681,7 @@ status open
 
 \begin_layout Plain Layout
 
-
+%
 \backslash
 label{configfile}
 \end_layout
@@ -4035,7 +9779,7 @@ status open
 
 \begin_layout Plain Layout
 
-
+%
 \backslash
 label{units}
 \end_layout
@@ -4341,7 +10085,7 @@ status open
 
 \begin_layout Plain Layout
 
-
+%
 \backslash
 label{propertyfile}
 \end_layout
@@ -4434,10 +10178,7 @@ Thirdly, the arguments to be passed to the function can be specified between
  standard brackets, with each argument separated by a semi-colon.
  These may or may not be mandatory depending on the property.
  The arguments can be specified by either of two different syntaxes, (name1=arg1
-;
- 
-\lang english
-
+; 
 \begin_inset ERT
 status open
 
@@ -4883,7 +10624,7 @@ status open
 
 \begin_layout Plain Layout
 
-
+%
 \backslash
 label{overview}
 \end_layout
@@ -5234,7 +10975,7 @@ status open
 
 ~
 \backslash
-cite{buss+09jcp}
+cite{buss+09jpc}
 \end_layout
 
 \end_inset
@@ -6864,7 +12605,7 @@ status open
 
 \begin_layout Plain Layout
 
-
+%
 \backslash
 label{hierarchy}
 \end_layout
@@ -6907,194 +12648,6 @@ doc
 \end_inset
 
  directory to see the recommended input file structure.
-\end_layout
-
-\begin_layout Standard
-\begin_inset ERT
-status open
-
-\begin_layout Plain Layout
-
-
-\backslash
-input{input_docs/simulation}
-\end_layout
-
-\begin_layout Plain Layout
-
-
-\backslash
-input{input_docs/initializer}
-\end_layout
-
-\begin_layout Plain Layout
-
-
-\backslash
-input{input_docs/init_file}
-\end_layout
-
-\begin_layout Plain Layout
-
-
-\backslash
-input{input_docs/init_pos}
-\end_layout
-
-\begin_layout Plain Layout
-
-
-\backslash
-input{input_docs/init_mom}
-\end_layout
-
-\begin_layout Plain Layout
-
-
-\backslash
-input{input_docs/init_vel}
-\end_layout
-
-\begin_layout Plain Layout
-
-
-\backslash
-input{input_docs/init_lab}
-\end_layout
-
-\begin_layout Plain Layout
-
-
-\backslash
-input{input_docs/init_mass}
-\end_layout
-
-\begin_layout Plain Layout
-
-
-\backslash
-input{input_docs/init_cell}
-\end_layout
-
-\begin_layout Plain Layout
-
-
-\backslash
-input{input_docs/init_therm}
-\end_layout
-
-\begin_layout Plain Layout
-
-
-\backslash
-input{input_docs/ensembles}
-\end_layout
-
-\begin_layout Plain Layout
-
-
-\backslash
-input{input_docs/forces}
-\end_layout
-
-\begin_layout Plain Layout
-
-
-\backslash
-input{input_docs/socket}
-\end_layout
-
-\begin_layout Plain Layout
-
-
-\backslash
-input{input_docs/cell}
-\end_layout
-
-\begin_layout Plain Layout
-
-
-\backslash
-input{input_docs/beads}
-\end_layout
-
-\begin_layout Plain Layout
-
-
-\backslash
-input{input_docs/atoms}
-\end_layout
-
-\begin_layout Plain Layout
-
-
-\backslash
-input{input_docs/normal_modes}
-\end_layout
-
-\begin_layout Plain Layout
-
-
-\backslash
-input{input_docs/barostats}
-\end_layout
-
-\begin_layout Plain Layout
-
-
-\backslash
-input{input_docs/thermostats}
-\end_layout
-
-\begin_layout Plain Layout
-
-
-\backslash
-input{input_docs/prng}
-\end_layout
-
-\begin_layout Plain Layout
-
-
-\backslash
-input{input_docs/output}
-\end_layout
-
-\begin_layout Plain Layout
-
-
-\backslash
-input{input_docs/checkpoint}
-\end_layout
-
-\begin_layout Plain Layout
-
-
-\backslash
-input{input_docs/properties}
-\end_layout
-
-\begin_layout Plain Layout
-
-
-\backslash
-input{input_docs/trajectory}
-\end_layout
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-\begin_inset CommandInset bibtex
-LatexCommand bibtex
-bibfiles "mybib"
-options "elsarticle-num-names"
-
-\end_inset
-
-
 \end_layout
 
 \end_body

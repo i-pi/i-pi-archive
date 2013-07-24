@@ -221,20 +221,21 @@ class BaroBZP(Barostat):
       # obtain the thermostat mass from the given time constant
       # note that the barostat temperature is nbeads times the physical T
       dset(self,"m", depend_array(name='m', value=np.atleast_1d(0.0),
-                        func=(lambda:np.asarray([self.tau**2*3*self.beads.natoms*Constants.kb*self.temp])),
-                        dependencies =  [ dget(self,"tau"), dget(self,"temp") ] ))
+         func=(lambda:np.asarray([self.tau**2*3*self.beads.natoms*Constants.kb*self.temp])),
+            dependencies=[ dget(self,"tau"), dget(self,"temp") ] ))
 
       # binds the thermostat to the piston degrees of freedom
       self.thermostat.bind(pm=[ self.p, self.m ], prng=prng)
 
-      dset(self,"kin",depend_value(name='kin', func=(lambda:0.5*self.p[0]**2/self.m[0]),
-                            dependencies= [dget(self,"p"), dget(self,"m")]   ) )
+      dset(self,"kin",depend_value(name='kin', 
+         func=(lambda:0.5*self.p[0]**2/self.m[0]),
+            dependencies= [dget(self,"p"), dget(self,"m")] ) )
 
       # the barostat energy must be computed from bits & pieces (overwrite the default)
       dset(self, "ebaro", depend_value(name='ebaro', func=self.get_ebaro,
-                     dependencies = [ dget(self, "kin"), dget(self, "pot"), dget(self.cell, "V"),
-                        dget(self, "temp"), dget(self.thermostat,"ethermo")]
-                        ))
+         dependencies=[ dget(self, "kin"), dget(self, "pot"), 
+            dget(self.cell, "V"), dget(self, "temp"), 
+               dget(self.thermostat,"ethermo")] ))
 
    def get_ebaro(self):
 
@@ -304,7 +305,6 @@ class BaroMHT(Barostat):
          thermostat: Optional thermostat object. Defaults to Thermostat().
       """
 
-
       super(BaroMHT, self).__init__(dt, temp, pext, tau, ebaro, thermostat)
 
       dset(self,"p", depend_array(name='p', value=np.atleast_1d(0.0)))
@@ -321,25 +321,25 @@ class BaroMHT(Barostat):
       # obtain the thermostat mass from the given time constant
       # note that the barostat temperature is nbeads times the physical T
       dset(self,"m", depend_array(name='m', value=np.atleast_1d(0.0),
-                        func=(lambda:np.asarray([self.tau**2*3*self.beads.natoms*Constants.kb*self.temp])),
-                        dependencies =  [ dget(self,"tau"), dget(self,"temp") ] ))
+         func=(lambda:np.asarray([self.tau**2*3*self.beads.natoms*Constants.kb*self.temp])),
+            dependencies=[ dget(self,"tau"), dget(self,"temp") ] ))
 
       # binds the thermostat to the piston degrees of freedom
       self.thermostat.bind(pm=[ self.p, self.m ], prng=prng)
 
-      dset(self,"kin",depend_value(name='kin', func=(lambda:0.5*self.p[0]**2/self.m[0]),
-                            dependencies= [dget(self,"p"), dget(self,"m")]   ) )
+      dset(self,"kin",depend_value(name='kin', 
+         func=(lambda:0.5*self.p[0]**2/self.m[0]), 
+            dependencies=[dget(self,"p"), dget(self,"m")] ) )
 
       # the barostat energy must be computed from bits & pieces (overwrite the default)
       dset(self, "ebaro", depend_value(name='ebaro', func=self.get_ebaro,
-                     dependencies = [ dget(self, "kin"), dget(self, "pot"), dget(self.cell, "V"),
-                        dget(self, "temp"), dget(self.thermostat,"ethermo")]
-                        ))
+         dependencies=[ dget(self, "kin"), dget(self, "pot"), 
+            dget(self.cell, "V"), dget(self, "temp"), 
+               dget(self.thermostat,"ethermo")]))
 
    def get_ebaro(self):
 
       return self.thermostat.ethermo + self.kin + self.pot
-
 
    def pstep(self):
       """Dummy momenta propagator step."""
@@ -357,12 +357,11 @@ class BaroMHT(Barostat):
 
       self.beads.p += depstrip(self.forces.f)*dthalf
 
-
    def qcstep(self):
       """Dummy centroid position propagator step."""
 
       v = self.p[0]/self.m[0]
-      adof = (1+3.0/self.mdof)
+      adof = (1 + 3.0/self.mdof)
       expq, expp = (np.exp(v*self.dt), np.exp( -v*self.dt * adof  ) )
 
       m = depstrip(self.beads.m3)[0]
