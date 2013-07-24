@@ -109,7 +109,7 @@ def init_xyz(filename):
    #so multiple beads can be initialized at once.
       try:
          myatoms = read_xyz(rfile)
-      except:
+      except EOFError:
          break
       ratoms.append(myatoms)
    return ratoms
@@ -132,7 +132,7 @@ def init_pdb(filename):
    #so multiple beads can be initialized at once.
       try:
          myatoms, rcell  = read_pdb(rfile)
-      except:
+      except EOFError:
          break
       ratoms.append(myatoms)
    return ( ratoms, rcell ) # if multiple frames, the last cell is returned

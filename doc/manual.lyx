@@ -3171,6 +3171,22 @@ Input file format and structure
 \end_layout
 
 \begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+label{ifilestructure}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
 In order to give the clearest layout, xml formatting was chosen as the basis
  for the for the main input file.
  An xml file consists of a set of hierarchially nested tags.
@@ -5246,7 +5262,45 @@ Input errors
 \end_layout
 
 \begin_layout Itemize
-xml standard errors: You are being an idiot...
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{not well-formed (invalid token)}
+\end_layout
+
+\end_inset
+
+: Seen if the input file does not have the correct xml syntax.
+ Should be accompanied by a line number giving the point in the file where
+ the syntax is incorrect.
+\end_layout
+
+\begin_layout Itemize
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{mismatched tag}
+\end_layout
+
+\end_inset
+
+: One of the closing tags does not have the same name as the corresponding
+ opening tag.
+ Could be caused either by a misspelling of one of the tags, or by having
+ the closing tag in the wrong place.
+ This last one is a standard part of the xml syntax, if the opening tag
+ of one item is after the opening tag of a second, then its closing tag
+ should be before the closing tag of the second.
+ Should be accompanied by a line number giving the position of the closing
+ tag.
 \end_layout
 
 \begin_layout Itemize
@@ -5427,6 +5481,20 @@ _ does not represent a bool value}
 \end_inset
 
 : The data input by the user does not have the correct data type.
+ See section 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ref{ifilestructure}
+\end_layout
+
+\end_inset
+
+ for what constitutes a valid integer/float/boolean value.
 \end_layout
 
 \begin_layout Itemize
@@ -5447,8 +5515,67 @@ emph{Error in list syntax: could not locate delimiters}
  ().
 \end_layout
 
+\begin_layout Itemize
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{The number of atom records does not match the header of xyz file}
+\end_layout
+
+\end_inset
+
+: Self-explanatory.
+\end_layout
+
+\begin_layout Itemize
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{list index out of range}
+\end_layout
+
+\end_inset
+
+: This will normally occur if the configuration is initialized from an invalid
+ input file.
+ This will either cause the code to try to read part of the input file that
+ does not exist, or to set the number of beads to zero which causes this
+ error in a different place.
+ Check that the input file has the correct syntax.
+\end_layout
+
 \begin_layout Section
 Initialization errors
+\end_layout
+
+\begin_layout Itemize
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{Negative 
+\backslash
+_
+\backslash
+_
+\backslash
+_ parameter specified.}
+\end_layout
+
+\end_inset
+
+: Self-explanatory.
 \end_layout
 
 \begin_layout Itemize
@@ -5767,10 +5894,6 @@ http://gle4md.berlios.de/
 \end_layout
 
 \begin_layout Itemize
-Setting nbeads/natoms = 0
-\end_layout
-
-\begin_layout Itemize
 \begin_inset ERT
 status open
 
@@ -5808,7 +5931,9 @@ _ is larger than the number of atoms/beads}
 
 \end_inset
 
-: Self-explanatory
+: Self-explanatory.
+ However, note that indices are counted from 0, so the first replica/atom
+ is defined by an index 0, the second by an index 1, and so on.
 \end_layout
 
 \begin_layout Itemize
@@ -5972,6 +6097,28 @@ emph{Replay can only read from PDB or XYZ files -- or a single frame from
 
 \begin_layout Section
 Output errors
+\end_layout
+
+\begin_layout Itemize
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{The stride length for the 
+\backslash
+_
+\backslash
+_
+\backslash
+_ file output must be positive.}
+\end_layout
+
+\end_inset
+
+: Self-explanatory
 \end_layout
 
 \begin_layout Itemize
@@ -6146,7 +6293,45 @@ _}
 \end_layout
 
 \begin_layout Itemize
-Incorrect name of argument passed to function...
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{
+\backslash
+_
+\backslash
+_
+\backslash
+_ got an unexpected keyword argument 
+\backslash
+_
+\backslash
+_
+\backslash
+_}
+\end_layout
+
+\end_inset
+
+: This will occur if one of the argument lists of one of the properties
+ specified by the user has a keyword argument that does not match any of
+ those in the function to calculate it.
+ Check the properties.py module to see which property this function is calculatin
+g, and what the correct keyword arguments are.
+ Then check the 
+\begin_inset Quotes eld
+\end_inset
+
+properties
+\begin_inset Quotes erd
+\end_inset
+
+ tag, and find which of the arguments has been misspelt.
+ 
 \end_layout
 
 \begin_layout Itemize
@@ -6157,7 +6342,9 @@ status open
 
 
 \backslash
-emph{Must specify the index of atom_vec property}
+emph{Must specify the index of atom
+\backslash
+_vec property}
 \end_layout
 
 \end_inset
@@ -6192,6 +6379,8 @@ _ is larger than the number of atoms/beads}
 \end_inset
 
 : Self-explanatory.
+ However, note that indices are counted from 0, so the first replica/atom
+ is defined by an index 0, the second by an index 1, and so on.
 \end_layout
 
 \begin_layout Itemize
@@ -6343,16 +6532,86 @@ _ out of acceptable range}
  Change the slot number accordingly.
 \end_layout
 
+\begin_layout Itemize
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{'NoneType' object has no attribute 'Up'}
+\end_layout
+
+\end_inset
+
+: This is called if an exception is raised during writing the data to output,
+ and so the thread that deals with the socket is terminated uncleanly.
+ Check the stack trace for the original exception, since this will be the
+ actual source of the problem.
+ Also note that, since the socket thread was not cleaned up correctly, the
+ server socket may not have been disconnected properly and you may have
+ to wait for a minute before you can restart a simulation using the same
+ host and port number.
+\end_layout
+
 \begin_layout Section
 Mathematical errors
 \end_layout
 
 \begin_layout Itemize
-Errors in the creating cell matrix?
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{math domain error}
+\end_layout
+
+\end_inset
+
+: If the cell parameters are defined using the side lengths and angles,
+ with either a pdb file or using the 
+\begin_inset Quotes eld
+\end_inset
+
+abcABC
+\begin_inset Quotes erd
+\end_inset
+
+ initialization mode, then for some value of the angles it is impossible
+ to construct a valid cell vector matrix.
+ This will cause the code to attempt to take the square root of a negative
+ number, which gives this exception.
 \end_layout
 
 \begin_layout Itemize
-Math overflow in NPT
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{overflow encountered in exp}
+\end_layout
+
+\end_inset
+
+: Sometimes occurs in NPT runs when the simulation box 
+\begin_inset Quotes eld
+\end_inset
+
+explodes
+\begin_inset Quotes erd
+\end_inset
+
+.
+ Make sure you have properly equilibrated the system before starting and
+ that the timestep is short enough to not introduce very large integration
+ errors.
 \end_layout
 
 \begin_layout Standard
