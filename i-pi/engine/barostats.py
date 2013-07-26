@@ -1,13 +1,15 @@
 """Contains the classes that deal with constant pressure dynamics.
 
 Contains the algorithms which propagate the position and momenta steps in the
-constant pressure and constant stress ensembles. Holds the properties directly
-related to these ensembles, such as the internal and external pressure and
-stress and the strain energy.
+constant pressure ensemble. Holds the properties directly related to 
+these ensembles, such as the internal and external pressure and stress.
 
 Classes:
    Barostat: Base barostat class with the generic methods and attributes.
-   BaroRigid: Deals with rigid cell dynamics. Used for NPT ensembles.
+   BaroBZP: Generates dynamics according to the method of G. Bussi, 
+      T. Zykova-Timan and M. Parinello, J. Phys. Chem., 130, 074101.
+   BaroMHT: Generates dynamics according to the method of G. Martyna, A.
+      Hughes and M. Tuckerman, J. Chem. Phys., 110, 3275.
 """
 
 __all__ = ['Barostat', 'BaroBZP', 'BaroMHT']
@@ -29,13 +31,22 @@ class Barostat(dobject):
       cell: A cell object giving the system box.
       forces: A forces object giving the virial and the forces acting on
          each bead.
+      nm: An object to do the normal mode transformation.
+      thermostat: A thermostat coupled to the barostat degrees of freedom.
+      mdof: The number of atomic degrees of freedom 
 
    Depend objects:
       dt: The time step used in the algorithms. Depends on the simulation dt.
       temp: The (classical) simulation temperature. Higher than the physical
          temperature by a factor of the number of beads.
-      m: The mass associated with the cell degrees of freedom
+      tau: The timescale associated with the piston
       pext: The external pressure
+      m: The mass associated with the cell degrees of freedom
+      ebaro: The conserved quantity associated with the barostat.
+      pot: The potential energy associated with the barostat.
+      kstress: The system kinetic stress tensor.
+      stress: The system stress tensor.
+      press: The system pressure.
    """
 
    def __init__(self, dt=None, temp=None, pext=None, tau=None, ebaro=None, thermostat=None):
@@ -46,12 +57,15 @@ class Barostat(dobject):
       must go in the other direction the stress is assumed to be isotropic.
 
       Args:
-         pext: Optional float giving the external pressure.
-         m: Optional float giving the piston mass.
          dt: Optional float giving the time step for the algorithms. Defaults
             to the simulation dt.
          temp: Optional float giving the temperature for the thermostat.
             Defaults to the simulation temp.
+         pext: Optional float giving the external pressure.
+         tau: Optional float giving the time scale associated with the barostat.
+         ebaro: Optional float giving the conserved quantity already stored
+            in the barostat initially. Used on restart.
+         thermostat: The thermostat connected to the barostat degree of freedom.
       """
 
       dset(self,"dt",depend_value(name='dt'))
@@ -103,7 +117,7 @@ class Barostat(dobject):
          forces: The forcefield object from which the force and virial are
             taken.
          prng: The parent PRNG to bind the thermostat to
-         fixdof: Whether the simulation has some blocked degrees of freedom.
+         fixdof: The number of blocked degrees of freedom.
       """
 
       self.beads = beads
@@ -126,8 +140,8 @@ class Barostat(dobject):
 
       if fixdof is None:
          self.mdof = float(self.beads.natoms)*3.0
-      else: self.mdof = float(self.beads.natoms)*3.0-float(fixdof)
-
+      else: 
+         self.mdof = float(self.beads.natoms)*3.0 - float(fixdof)
 
    def get_pot(self):
       """Calculates the elastic strain energy of the cell."""
@@ -188,20 +202,25 @@ class BaroBZP(Barostat):
    Just extends the standard class adding finite-dt propagators for the barostat
    velocities, positions, piston.
 
-   Attributes:
-   thermostat: A thermostat object used to keep the cell momenta at a
-         specified kinetic temperature.
-
+   Depend objects:
+      p: The momentum associated with the volume degree of freedom.
+      m: The mass associated with the volume degree of freedom.
    """
 
    def __init__(self, dt=None, temp=None, pext=None, tau=None, ebaro=None, thermostat=None, p=None):
       """Initializes BZP barostat.
 
-      Just calls the general initializer, and creates an eta object to store the
-      velocity of the piston.
-
       Args:
-         thermostat: Optional thermostat object. Defaults to Thermostat().
+         dt: Optional float giving the time step for the algorithms. Defaults
+            to the simulation dt.
+         temp: Optional float giving the temperature for the thermostat.
+            Defaults to the simulation temp.
+         pext: Optional float giving the external pressure.
+         tau: Optional float giving the time scale associated with the barostat.
+         ebaro: Optional float giving the conserved quantity already stored
+            in the barostat initially. Used on restart.
+         thermostat: The thermostat connected to the barostat degree of freedom.
+         p: Optional initial volume conjugate momentum. Defaults to 0.
       """
 
 
@@ -211,39 +230,56 @@ class BaroBZP(Barostat):
 
       if not p is None:
          self.p = np.asarray([p])
-      else: self.p = 0.0
-
+      else: 
+         self.p = 0.0
 
    def bind(self, beads, nm, cell, forces, prng=None, fixdof=None):
+      """Binds beads, cell and forces to the barostat.
+
+      This takes a beads object, a cell object and a forcefield object and
+      makes them members of the barostat. It also then creates the objects that
+      will hold the data needed in the barostat algorithms and the dependency
+      network.
+
+      Args:
+         beads: The beads object from which the bead positions are taken.
+         nm: The normal modes propagator object
+         cell: The cell object from which the system box is taken.
+         forces: The forcefield object from which the force and virial are
+            taken.
+         prng: The parent PRNG to bind the thermostat to
+         fixdof: The number of blocked degrees of freedom.
+      """
 
       super(BaroBZP, self).bind(beads, nm, cell, forces, prng, fixdof)
 
       # obtain the thermostat mass from the given time constant
       # note that the barostat temperature is nbeads times the physical T
       dset(self,"m", depend_array(name='m', value=np.atleast_1d(0.0),
-                        func=(lambda:np.asarray([self.tau**2*3*self.beads.natoms*Constants.kb*self.temp])),
-                        dependencies =  [ dget(self,"tau"), dget(self,"temp") ] ))
+         func=(lambda:np.asarray([self.tau**2*3*self.beads.natoms*Constants.kb*self.temp])),
+            dependencies=[ dget(self,"tau"), dget(self,"temp") ] ))
 
       # binds the thermostat to the piston degrees of freedom
       self.thermostat.bind(pm=[ self.p, self.m ], prng=prng)
 
-      dset(self,"kin",depend_value(name='kin', func=(lambda:0.5*self.p[0]**2/self.m[0]),
-                            dependencies= [dget(self,"p"), dget(self,"m")]   ) )
+      dset(self,"kin",depend_value(name='kin', 
+         func=(lambda:0.5*self.p[0]**2/self.m[0]),
+            dependencies= [dget(self,"p"), dget(self,"m")] ) )
 
       # the barostat energy must be computed from bits & pieces (overwrite the default)
       dset(self, "ebaro", depend_value(name='ebaro', func=self.get_ebaro,
-                     dependencies = [ dget(self, "kin"), dget(self, "pot"), dget(self.cell, "V"),
-                        dget(self, "temp"), dget(self.thermostat,"ethermo")]
-                        ))
+         dependencies=[ dget(self, "kin"), dget(self, "pot"), 
+            dget(self.cell, "V"), dget(self, "temp"), 
+               dget(self.thermostat,"ethermo")] ))
 
    def get_ebaro(self):
+      """Calculates the barostat conserved quantity."""
 
-      # Note to self: here there should be a term c*log(V)*kb*T*nbeads where c is the same as used in the propagator.
       return self.thermostat.ethermo + self.kin + self.pot - np.log(self.cell.V)*Constants.kb*self.temp
 
 
    def pstep(self):
-      """Dummy momenta propagator step."""
+      """Propagates the momenta for half a time step."""
 
       dthalf = self.dt*0.5
       dthalf2 = dthalf**2
@@ -266,9 +302,8 @@ class BaroBZP(Barostat):
 
       self.beads.p += depstrip(self.forces.f)*dthalf
 
-
    def qcstep(self):
-      """Dummy centroid position propagator step."""
+      """Propagates the centroid position and momentum and the volume."""
 
       v = self.p[0]/self.m[0]
       expq, expp = (np.exp(v*self.dt), np.exp(-v*self.dt))
@@ -288,22 +323,26 @@ class BaroMHT(Barostat):
    Just extends the standard class adding finite-dt propagators for the barostat
    velocities, positions, piston.
 
-   Attributes:
-   thermostat: A thermostat object used to keep the cell momenta at a
-         specified kinetic temperature.
-
+   Depend objects:
+      p: The momentum associated with the volume degree of freedom.
+      m: The mass associated with the volume degree of freedom.
    """
 
    def __init__(self, dt=None, temp=None, pext=None, tau=None, ebaro=None, thermostat=None, p=None):
-      """Initializes BZP barostat.
-
-      Just calls the general initializer, and creates an eta object to store the
-      velocity of the piston.
+      """Initializes MHT barostat.
 
       Args:
-         thermostat: Optional thermostat object. Defaults to Thermostat().
+         dt: Optional float giving the time step for the algorithms. Defaults
+            to the simulation dt.
+         temp: Optional float giving the temperature for the thermostat.
+            Defaults to the simulation temp.
+         pext: Optional float giving the external pressure.
+         tau: Optional float giving the time scale associated with the barostat.
+         ebaro: Optional float giving the conserved quantity already stored
+            in the barostat initially. Used on restart.
+         thermostat: The thermostat connected to the barostat degree of freedom.
+         p: Optional initial volume conjugate momentum. Defaults to 0.
       """
-
 
       super(BaroMHT, self).__init__(dt, temp, pext, tau, ebaro, thermostat)
 
@@ -311,38 +350,55 @@ class BaroMHT(Barostat):
 
       if not p is None:
          self.p = np.asarray([p])
-      else: self.p = 0.0
-
+      else: 
+         self.p = 0.0
 
    def bind(self, beads, nm, cell, forces, prng=None, fixdof=None):
+      """Binds beads, cell and forces to the barostat.
+
+      This takes a beads object, a cell object and a forcefield object and
+      makes them members of the barostat. It also then creates the objects that
+      will hold the data needed in the barostat algorithms and the dependency
+      network.
+
+      Args:
+         beads: The beads object from which the bead positions are taken.
+         nm: The normal modes propagator object
+         cell: The cell object from which the system box is taken.
+         forces: The forcefield object from which the force and virial are
+            taken.
+         prng: The parent PRNG to bind the thermostat to
+         fixdof: The number of blocked degrees of freedom.
+      """
 
       super(BaroMHT, self).bind(beads, nm, cell, forces, prng, fixdof)
 
       # obtain the thermostat mass from the given time constant
       # note that the barostat temperature is nbeads times the physical T
       dset(self,"m", depend_array(name='m', value=np.atleast_1d(0.0),
-                        func=(lambda:np.asarray([self.tau**2*3*self.beads.natoms*Constants.kb*self.temp])),
-                        dependencies =  [ dget(self,"tau"), dget(self,"temp") ] ))
+         func=(lambda:np.asarray([self.tau**2*3*self.beads.natoms*Constants.kb*self.temp])),
+            dependencies=[ dget(self,"tau"), dget(self,"temp") ] ))
 
       # binds the thermostat to the piston degrees of freedom
       self.thermostat.bind(pm=[ self.p, self.m ], prng=prng)
 
-      dset(self,"kin",depend_value(name='kin', func=(lambda:0.5*self.p[0]**2/self.m[0]),
-                            dependencies= [dget(self,"p"), dget(self,"m")]   ) )
+      dset(self,"kin",depend_value(name='kin', 
+         func=(lambda:0.5*self.p[0]**2/self.m[0]), 
+            dependencies=[dget(self,"p"), dget(self,"m")] ) )
 
       # the barostat energy must be computed from bits & pieces (overwrite the default)
       dset(self, "ebaro", depend_value(name='ebaro', func=self.get_ebaro,
-                     dependencies = [ dget(self, "kin"), dget(self, "pot"), dget(self.cell, "V"),
-                        dget(self, "temp"), dget(self.thermostat,"ethermo")]
-                        ))
+         dependencies=[ dget(self, "kin"), dget(self, "pot"), 
+            dget(self.cell, "V"), dget(self, "temp"), 
+               dget(self.thermostat,"ethermo")]))
 
    def get_ebaro(self):
+      """Calculates the barostat conserved quantity."""
 
       return self.thermostat.ethermo + self.kin + self.pot
 
-
    def pstep(self):
-      """Dummy momenta propagator step."""
+      """Propagates the momenta for half a time step."""
 
       dthalf = self.dt*0.5
       dthalf2 = dthalf**2
@@ -357,12 +413,11 @@ class BaroMHT(Barostat):
 
       self.beads.p += depstrip(self.forces.f)*dthalf
 
-
    def qcstep(self):
-      """Dummy centroid position propagator step."""
+      """Propagates the centroid position and momentum and the volume."""
 
       v = self.p[0]/self.m[0]
-      adof = (1+3.0/self.mdof)
+      adof = (1 + 3.0/self.mdof)
       expq, expp = (np.exp(v*self.dt), np.exp( -v*self.dt * adof  ) )
 
       m = depstrip(self.beads.m3)[0]

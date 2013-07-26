@@ -28,6 +28,8 @@ class InputEnsemble(Input):
    Attributes:
       mode: An optional string giving the mode of ensemble to be simulated.
          Defaults to 'unknown'.
+
+   Fields:
       thermostat: The thermostat to be used for constant temperature dynamics.
       barostat: The barostat to be used for constant pressure or stress
          dynamics.
@@ -39,7 +41,7 @@ class InputEnsemble(Input):
          Defaults to 1.0.
       fixcom: An optional boolean which decides whether the centre of mass
          motion will be constrained or not. Defaults to False.
-      trajectory: An optional string that gives an input file name to get
+      replay_file: An optional string that gives an input file name to get
          a trajectory to be re-run.
    """
 
@@ -162,3 +164,6 @@ class InputEnsemble(Input):
       if self.mode.fetch() == "npt":
          if not self.pressure._explicit:
             raise ValueError("Pressure should be supplied for constant pressure simulation")
+      if self.mode.fetch() == "npt" or self.mode.fetch() == "nvt":
+         if not self.temperature._explicit:
+            raise ValueError("Temperature should be supplied for constant temperature simulation")

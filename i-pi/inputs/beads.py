@@ -28,11 +28,7 @@ class InputBeads(Input):
       nbeads: An optional integer giving the number of beads. Defaults to 0.
       natoms: An optional integer giving the number of atoms. Defaults to 0.
 
-
    Fields:
-      start_centroid: An atoms object to initialize the centroid postions from.
-      start_beads: A beads object to initialize the normal mode
-         coordinates from.
       q: An optional array giving the bead positions. Defaults to an empty
          array with no elements.
       p: An optional array giving the bead momenta. Defaults to an empty
