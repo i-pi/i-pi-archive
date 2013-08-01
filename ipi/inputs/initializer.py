@@ -19,14 +19,14 @@ Classes:
 """
 
 import numpy as np
-from utils.inputvalue import *
+from ipi.utils.inputvalue import *
 from copy import copy, deepcopy
-from inputs.beads import InputBeads
-from inputs.cell import InputCell
-from utils.io import io_xml
-import utils.mathtools as mt
-import engine.initializer as ei
-from utils.messages import verbosity, warning
+from ipi.inputs.beads import InputBeads
+from ipi.inputs.cell import InputCell
+from ipi.utils.io import io_xml
+import ipi.utils.mathtools as mt
+import ipi.engine.initializer as ei
+from ipi.utils.messages import verbosity, warning
 
 __all__ = ['InputInitializer', 'InputInitFile', 'InputInitPositions', 'InputInitMomenta', 'InputInitVelocities', 'InputInitMasses', 'InputInitLabels', 'InputInitCell', 'InputInitThermo']
 

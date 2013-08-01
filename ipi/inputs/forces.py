@@ -8,9 +8,9 @@ Classes:
 
 __all__ = ['InputForces', 'InputForceBeads', "InputFBSocket"]
 
-from engine.forces import *
-from inputs.interface import InputInterfaceSocket
-from utils.inputvalue import *
+from ipi.engine.forces import *
+from ipi.inputs.interface import InputInterfaceSocket
+from ipi.utils.inputvalue import *
 from copy import copy
 
 class InputForceBeads(Input):

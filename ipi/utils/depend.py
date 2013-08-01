@@ -42,7 +42,7 @@ __all__ = ['depend_base', 'depend_value', 'depend_array', 'synchronizer',
            'dobject', 'dget', 'dset', 'depstrip', 'depcopy', 'deppipe']
 
 import numpy as np
-from utils.messages import verbosity, warning
+from ipi.utils.messages import verbosity, warning
 
 class synchronizer(object):
    """Class to implement synched objects.

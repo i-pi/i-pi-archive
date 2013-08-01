@@ -6,15 +6,15 @@ Classes:
 """
 
 import numpy as np
-from engine.ensembles import *
-import engine.thermostats
-import engine.initializer
-import engine.barostats
-from utils.inputvalue import *
-from inputs.barostats import *
-from inputs.thermostats import *
-from inputs.initializer import *
-from utils.units import *
+from ipi.engine.ensembles import *
+import ipi.engine.thermostats
+import ipi.engine.initializer
+import ipi.engine.barostats
+from ipi.utils.inputvalue import *
+from ipi.inputs.barostats import *
+from ipi.inputs.thermostats import *
+from ipi.inputs.initializer import *
+from ipi.utils.units import *
 
 __all__ = ['InputEnsemble']
 
@@ -48,9 +48,9 @@ class InputEnsemble(Input):
    attribs={"mode"  : (InputAttribute, {"dtype"   : str,
                                     "help"    : "The ensemble that will be sampled during the simulation. 'replay' means that a simulation is restarted from a previous simulation.",
                                     "options" : ['nve', 'nvt', 'npt', 'replay']}) }
-   fields={"thermostat" : (InputThermo, {"default"   : input_default(factory=engine.thermostats.Thermostat),
+   fields={"thermostat" : (InputThermo, {"default"   : input_default(factory=ipi.engine.thermostats.Thermostat),
                                          "help"      : "The thermostat for the atoms, keeps the atom velocity distribution at the correct temperature."} ),
-           "barostat" : (InputBaro, {"default"       : input_default(factory=engine.barostats.Barostat),
+           "barostat" : (InputBaro, {"default"       : input_default(factory=ipi.engine.barostats.Barostat),
                                      "help"          : InputBaro.default_help}),
            "timestep": (InputValue, {"dtype"         : float,
                                      "default"       : 1.0,
@@ -67,7 +67,7 @@ class InputEnsemble(Input):
            "fixcom": (InputValue, {"dtype"           : bool,
                                    "default"         : True,
                                    "help"            : "This describes whether the centre of mass of the particles is fixed."}),
-           "replay_file": (InputInitFile, {"default" : input_default(factory=engine.initializer.InitBase),
+           "replay_file": (InputInitFile, {"default" : input_default(factory=ipi.engine.initializer.InitBase),
                            "help"            : "This describes the location to read a trajectory file from."})
          }
 

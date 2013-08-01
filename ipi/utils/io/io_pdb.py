@@ -12,11 +12,11 @@ __all__ = ['print_pdb_path', 'print_pdb', 'read_pdb']
 
 import numpy as np
 import math, sys
-from utils.depend import depstrip
-import utils.mathtools as mt
-from engine.cell import Cell
-from engine.atoms import Atoms
-from utils.units import *
+from ipi.utils.depend import depstrip
+import ipi.utils.mathtools as mt
+from ipi.engine.cell import Cell
+from ipi.engine.atoms import Atoms
+from ipi.utils.units import *
 
 def print_pdb_path(beads, cell, filedesc = sys.stdout):
    """Prints all the bead configurations, into a pdb formatted file.

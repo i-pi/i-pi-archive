@@ -9,9 +9,9 @@ __all__ = [ 'InputInterfaceSocket' ]
 
 import socket, select, threading, signal, string, os, time
 import numpy as np
-from utils.inputvalue import *
-from interfaces.sockets import *
-from utils.messages import verbosity, warning
+from ipi.utils.inputvalue import *
+from ipi.interfaces.sockets import *
+from ipi.utils.messages import verbosity, warning
 
 class InputInterfaceSocket(Input):
    """Interface input class.

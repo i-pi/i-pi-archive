@@ -12,10 +12,10 @@ Classes:
 
 import numpy as np
 import math
-from utils.depend import *
-from utils import units
-from utils import nmtransform
-from utils.messages import verbosity, warning, info
+from ipi.utils.depend import *
+from ipi.utils import units
+from ipi.utils import nmtransform
+from ipi.utils.messages import verbosity, warning, info
 
 __all__ = [ "NormalModes" ]
 

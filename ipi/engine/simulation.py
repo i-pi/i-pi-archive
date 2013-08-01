@@ -15,13 +15,13 @@ __all__ = ['Simulation']
 import numpy as np
 import math
 import os.path, sys
-from utils.depend import *
-from utils.units  import *
-from utils.prng   import *
-from utils.io     import *
-from utils.io.io_xml import *
-from utils.messages import verbosity, info
-from utils.softexit import softexit
+from ipi.utils.depend import *
+from ipi.utils.units  import *
+from ipi.utils.prng   import *
+from ipi.utils.io     import *
+from ipi.utils.io.io_xml import *
+from ipi.utils.messages import verbosity, info
+from ipi.utils.softexit import softexit
 from atoms import *
 import time
 from cell import *
@@ -30,7 +30,6 @@ from beads import Beads
 from normalmodes import NormalModes
 from properties import Properties, Trajectories
 from outputs import CheckpointOutput
-import inputs.simulation
 
 
 class Simulation(dobject):

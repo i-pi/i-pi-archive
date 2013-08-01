@@ -11,8 +11,8 @@ Classes:
 __all__ = ['InputRandom']
 
 import numpy as np
-from utils.prng import *
-from utils.inputvalue import *
+from ipi.utils.prng import *
+from ipi.utils.inputvalue import *
 
 class InputRandom(Input):
    """Random input class.

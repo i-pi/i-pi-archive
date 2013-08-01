@@ -10,9 +10,9 @@ __all__ = ['Cell']
 
 import numpy as np
 import math
-from utils.depend import *
-from utils.mathtools import *
-from utils import units
+from ipi.utils.depend import *
+from ipi.utils.mathtools import *
+from ipi.utils import units
 
 
 class Cell(dobject):

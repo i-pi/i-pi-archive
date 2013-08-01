@@ -8,7 +8,7 @@ Classes:
 """
 
 import re
-from utils.messages import verbosity, info
+from ipi.utils.messages import verbosity, info
 
 __all__ = ['Constants', 'Elements', 'unit_to_internal', 'unit_to_user']
 

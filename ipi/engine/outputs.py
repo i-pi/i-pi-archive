@@ -11,10 +11,10 @@ Classes:
 
 import os
 import numpy as np
-import inputs.simulation
-from utils.depend import *
-from utils.io.io_xml import *
-from engine.properties import getkey
+import ipi.inputs.simulation
+from ipi.utils.depend import *
+from ipi.utils.io.io_xml import *
+from ipi.engine.properties import getkey
 
 __all__ = [ 'PropertyOutput', 'TrajectoryOutput', 'CheckpointOutput' ]
 
@@ -310,7 +310,7 @@ class CheckpointOutput(dobject):
       """
 
       self.simul = simul
-      self.status = inputs.simulation.InputSimulation()
+      self.status = ipi.inputs.simulation.InputSimulation()
       self.status.store(simul)
 
    def store(self):

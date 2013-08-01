@@ -10,7 +10,7 @@ __all__ = ['print_bin']
 import os
 import numpy as np
 import math, sys
-from utils.depend import depstrip
+from ipi.utils.depend import depstrip
 
 def print_bin(atoms, cell, filedesc = sys.stdout, title=""):
    """Prints the centroid configurations, into a binary file.

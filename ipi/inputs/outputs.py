@@ -7,12 +7,12 @@ Classes:
    InputCheckpoint: Deals with restart file output.
 """
 
-from utils.depend import *
-from utils.inputvalue import *
+from ipi.utils.depend import *
+from ipi.utils.inputvalue import *
 from copy import copy
-import engine.outputs
+import ipi.engine.outputs
 import numpy as np
-from engine.properties import getkey
+from ipi.engine.properties import getkey
 
 __all__=['InputOutputs', 'InputProperties', 'InputTrajectory',
          'InputCheckpoint']
@@ -53,7 +53,7 @@ class InputProperties(InputArray):
    def fetch(self):
       """Returns a PropertyOutput object."""
 
-      return engine.outputs.PropertyOutput(filename=self.filename.fetch(),
+      return ipi.engine.outputs.PropertyOutput(filename=self.filename.fetch(),
         stride=self.stride.fetch(), flush=self.flush.fetch(), outlist=super(InputProperties,self).fetch())
 
    def store(self, prop):

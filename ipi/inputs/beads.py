@@ -7,13 +7,12 @@ Classes:
 
 import numpy as np
 import math
-from engine.beads import *
-from engine.atoms import Atoms
-from utils.inputvalue import *
-import utils.io.io_pdb
-from utils.depend import *
-from utils.units import *
-from inputs.atoms import *
+from ipi.engine.beads import *
+from ipi.engine.atoms import Atoms
+from ipi.utils.inputvalue import *
+from ipi.utils.depend import *
+from ipi.utils.units import *
+from ipi.inputs.atoms import *
 
 __all__ = ['InputBeads']
 

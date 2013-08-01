@@ -15,11 +15,11 @@ Classes:
 __all__ = ['Barostat', 'BaroBZP', 'BaroMHT']
 
 import numpy as np
-from utils.depend import *
-from utils.units import *
-from utils.mathtools import eigensystem_ut3x3, invert_ut3x3, exp_ut3x3, det_ut3x3
-from engine.thermostats import Thermostat
-from inputs.thermostats import InputThermo
+from ipi.utils.depend import *
+from ipi.utils.units import *
+from ipi.utils.mathtools import eigensystem_ut3x3, invert_ut3x3, exp_ut3x3, det_ut3x3
+from ipi.engine.thermostats import Thermostat
+from ipi.inputs.thermostats import InputThermo
 
 class Barostat(dobject):
    """Base barostat class.
