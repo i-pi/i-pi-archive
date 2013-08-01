@@ -1,0 +1,7 @@
+ -- Nosetests directory --
+
+ * This is the directory containing the tests that can be run with nosetests.
+
+ * Files:
+   - common.py: Common helper funtions for use in the tests.
+   - test_*.py: The actual tests for at least some of the code basis.

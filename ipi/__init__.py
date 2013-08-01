@@ -6,7 +6,7 @@ Deals with creation of the simulation object, reading the input file and
 initialising the system.
 
 Run using:
-      python main.py input_file.xml
+      i-pi input_file.xml
 
 Where 'input_file.xml' should be replaced by the name of the xml input file from
 which the system data will be read. For a description of how the input file
@@ -16,7 +16,7 @@ Functions:
    main: Runs the simulation.
 """
 
-__all__ = ['main']
+__all__ = ["main", "engine",  "inputs",  "interfaces", "utils"]
 
 import sys
 from engine import simulation

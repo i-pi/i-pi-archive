@@ -58,7 +58,7 @@ verbosity = Verbosity()
 def help():
    """Prints out a help string."""
 
-   print """usage:  wrap-pi input """
+   print """usage:  %s input """%sys.argv[0]
 
 def banner():
    """Prints out a banner."""
