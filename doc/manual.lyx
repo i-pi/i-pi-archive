@@ -4588,9 +4588,13 @@ RESTART
 \end_inset
 
 .
- In the same way as the checkpoint files generated above it contains the
- state of the system as created by the wrapper, but it doesn't need to be
- asked for by the user in the input file.
+ In the same way as t
+\end_layout
+
+\begin_layout Standard
+he checkpoint files generated above it contains the state of the system
+ as created by the wrapper, but it doesn't need to be asked for by the user
+ in the input file.
  Its purpose is that if the user decides that insufficient steps were used
  in an already completed simulation, then this file can be used to continue
  from where it ended.
