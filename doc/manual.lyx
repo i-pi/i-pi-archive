@@ -3712,6 +3712,11 @@ end{verbatim}
 
 \end_layout
 
+\begin_layout Standard
+A full list of which units are defined for which dimensionalities can be
+ found in the units.py module.
+\end_layout
+
 \begin_layout Subsection
 Initialization section
 \end_layout
@@ -5396,7 +5401,7 @@ _)}
 
 \end_inset
 
-: This tag only allows a certain range of inputs.
+: This attribute/tag only allows a certain range of inputs.
  Pick one of the items from the list given.
 \end_layout
 
