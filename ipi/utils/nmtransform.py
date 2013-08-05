@@ -29,17 +29,16 @@ def mk_nm_matrix(nbeads):
    """
 
    b2nm = np.zeros((nbeads,nbeads))
-   b2nm[0,:] = np.sqrt(1.0/nbeads)
-   for i in range(1, nbeads/2+1):
-      for j in range(nbeads):
-         b2nm[i,j] = np.sqrt(2.0/nbeads)*np.cos(2*np.pi*j*i/float(nbeads))
+   b2nm[0,:] = np.sqrt(1.0)
+   for j in range(nbeads):
+      for i in range(1, nbeads/2+1):
+         b2nm[i,j] = np.sqrt(2.0)*np.cos(2*np.pi*j*i/float(nbeads))
+      for i in range(nbeads/2+1, nbeads):
+         b2nm[i,j] = np.sqrt(2.0)*np.sin(2*np.pi*j*i/float(nbeads))
    if (nbeads%2) == 0:
-      b2nm[nbeads/2,0:nbeads:2] = np.sqrt(1.0/nbeads)
-      b2nm[nbeads/2,1:nbeads:2] = -np.sqrt(1.0/nbeads)
-   for i in range(nbeads/2+1, nbeads):
-      for j in range(nbeads):
-         b2nm[i,j] = np.sqrt(2.0/nbeads)*np.sin(2*np.pi*j*i/float(nbeads))
-   return b2nm
+      b2nm[nbeads/2,0:nbeads:2] = 1.0
+      b2nm[nbeads/2,1:nbeads:2] = -1.0
+   return b2nm/np.sqrt(nbeads)
 
 def mk_rs_matrix(nb1, nb2):
    """Gets the matrix that transforms a path with nb1 beads into one with
