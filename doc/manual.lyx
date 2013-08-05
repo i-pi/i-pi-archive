@@ -406,8 +406,9 @@ ipi
 \end_inset
 
  acts as the server and deals with the propagation of the nuclear dynamics,
- whereas the calculation of the potential energy, forces and virial is delegated
- to one or more instances of an external code, acting as clients.
+ whereas the calculation of the potential energy, forces and the potential
+ energy part of the pressure virial is delegated to one or more instances
+ of an external code, acting as clients.
  Since the main focus is on performing 
 \begin_inset ERT
 status open
@@ -490,29 +491,13 @@ status open
 
  
 \backslash
-ref{install}
-\end_layout
-
-\end_inset
-
- we will discuss how to install the code and test that it is working.
-\end_layout
-
-\begin_layout Itemize
-In chapter
-\begin_inset ERT
-status open
-
-\begin_layout Plain Layout
-
- 
-\backslash
 ref{getstarted}
 \end_layout
 
 \end_inset
 
- we give a brief tutorial on running simulations with 
+ we will discuss how to install the code and test that it is working, and
+ give a brief tutorial on running simulations with 
 \begin_inset ERT
 status open
 
@@ -587,6 +572,33 @@ Path Integral Molecular Dynamics
 \end_layout
 
 \begin_layout Standard
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+Uhm...
+ this is not very accurate.
+ E.G.
+ for getting dynamical information you use RPMD/CMD not PIMD.
+ Could you please re-work this based on say the intro of David's RPMD review?
+ Also cite that, and some of the PIMD papers, perhaps the efficient stochastic
+ thermostatting which is a good 
+\begin_inset Quotes eld
+\end_inset
+
+implementation manual
+\begin_inset Quotes erd
+\end_inset
+
+.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
 Molecular dynamics (MD) is a technique used to study the properties of bulk
  materials, by applying Newton's equations to produce trajectories which
  can be used to efficiently explore the phase space of a system.
@@ -597,8 +609,8 @@ Molecular dynamics (MD) is a technique used to study the properties of bulk
 
 \begin_layout Standard
 However, while this technique has been very successful, in most implementations
- the assumption is made that the nucleii behave as classical particles,
- which for light nuclei such as hydrogen is often a very poor approximation.
+ the assumption is made that the nuclei behave as classical particles, which
+ for light nuclei such as hydrogen is often a very poor approximation.
  For example, even at room temperature the vibrational frequency of an OH
  stretch in water is about 5 times larger than the available thermal energy,
  and so this motion will be highly quantized.
@@ -676,8 +688,9 @@ ipi
 \end_inset
 
  uses a caching mechanism with automatic value updating to make the code
- used to propagate the dynamics as clear as possible.
- Every variable used in the code is created using a 
+ used to propagate the dynamics as simple and clear as possible.
+ Every physical quantity that is referenced in the code is created using
+ a 
 \begin_inset Quotes eld
 \end_inset
 
@@ -685,13 +698,21 @@ depend
 \begin_inset Quotes erd
 \end_inset
 
- object, which is given the parameters on which it depends and a function
+ object class, which is given the parameters on which it depends and a function
  used to calculate its value.
  
 \end_layout
 
 \begin_layout Standard
-This framework does two things.
+\begin_inset Quotes eld
+\end_inset
+
+Depend
+\begin_inset Quotes erd
+\end_inset
+
+ objects can be called to get the physical quantity they represent.
+ However, they have further functionality.
  Firstly, once the value of a 
 \begin_inset Quotes eld
 \end_inset
@@ -700,19 +721,25 @@ depend
 \begin_inset Quotes erd
 \end_inset
 
- object is calculated its value is cached, and so does not need to be recalculat
-ed every time that it is used.
- Secondly, the code keeps track of when any of the dependencies of the variable
- are updated, and automatically recalculates it the next time it is called.
+ object has been calculated, its value is cached, so further references
+ to that quantity will not need to evaluate the function that calculates
+ it.
+ does not need to be recalculated every time that it is used.
+ Furthermore, the code keeps track of when any of the dependencies of the
+ variable are updated, and makes sure that the quantity is automatically
+ recomputed when it is needed.
+ 
 \end_layout
 
 \begin_layout Standard
-This means that, while overall the code infrastructure is more complicated,
- the top level code that propagates the dynamics and calculates the output
- properties is easier to read and understand, since there is no need for
- an explicit function call whenever one of the variables is required.
- Also, when writing the code, there is no need to check when the variables
- used in the dynamics have to be updated.
+This choice makes implementation slightly more complex the definition of
+ physical observables when they are first introduced, as one has to take
+ care of stating their dependencies as well as the function that computes
+ them.
+ However, the advantage is that when the physical quantities are used, in
+ the integrator of the dynamics or in the evaluation of physical properties,
+ one does not need to take care of book-keeping and the code can be cleaner,
+ transparent and readable.
 \end_layout
 
 \begin_layout Subsection
@@ -733,21 +760,19 @@ ipi
 
 \end_inset
 
- is designed to be used with a wide range of codes, it needs to include
- a simple and general method for communicating between the server and client.
- Fortunately, there is a widely available communication technique that works
- on a client/server paradigm, internet sockets.
- These allow for communication between different machines, and are designed
- for many-to-one data transfer, so are well suited for distributed programming.
- 
-\end_layout
-
-\begin_layout Standard
-To make this as general as possible, only a minimal amount of information
- is transferred between the two codes; the position, and cell parameters
- in one direction, and the forces, virial and potential in the other.
- Also, a simple set of C functions used to set up and use the client server
- are provided as part of the 
+ is designed to be used with a wide range of codes and platforms, it has
+ to rely on a simple and robust method for communicating between the server
+ and client.
+ Even though other choices are possible, and it should be relatively simple
+ to implement other means of communication, the preferred approach relies
+ on sockets as the underlying infrastructure.
+ Both Internet and Unix domain sockets can be used: the latter allow for
+ fast communication on a single node, whereas the former makes it possible
+ to realize a distributed computing paradigm, with clients running on different
+ nodes or even on different HPC facilities.
+ In order to facilitate implementation of the sockets communication in client
+ codes, a simple set of C wrappers to the standard libraries socket implementati
+on is provided as part of the 
 \begin_inset ERT
 status open
 
@@ -760,12 +785,21 @@ ipi
 
 \end_inset
 
- distribution, so this can be interfaced with any code which is C-compatible.
+ distribution, that can be used in any programming language that can be
+ linked with C code
 \end_layout
 
 \begin_layout Standard
-For more details about how sockets work, and how they are used in the code,
- see 
+As far as the communication protocol is concerned, the guiding principle
+ has been keeping it to the least common denominator, and avoiding any feature
+ that may be code-specific.
+ Only minimal amount of information is transferred between the client and
+ the server; the position of the atoms and cell parameters in one direction,
+ and the forces, virial and potential in the other.
+\end_layout
+
+\begin_layout Standard
+For more details about sockets and communication, see 
 \begin_inset ERT
 status open
 
@@ -803,7 +837,7 @@ label{units}
 \end_layout
 
 \begin_layout Standard
-Internally 
+All the units used internally by 
 \begin_inset ERT
 status open
 
@@ -816,10 +850,14 @@ ipi
 
 \end_inset
 
- uses electronic units, as given below:
+ are atomic units, as given below.
+ By default, also input and output use atomic units, even though in most
+ cases the default units can be overridden if one wishes so.
+ 
 \end_layout
 
 \begin_layout Standard
+\align center
 \begin_inset Tabular
 <lyxtabular version="3" rows="7" columns="3">
 <features tabularvalignment="middle">
@@ -827,7 +865,7 @@ ipi
 <column alignment="left" valignment="top" width="0">
 <column alignment="left" valignment="top" width="0">
 <row>
-<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" bottomline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -836,7 +874,7 @@ Unit
 
 \end_inset
 </cell>
-<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" bottomline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -845,7 +883,7 @@ Name
 
 \end_inset
 </cell>
-<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" bottomline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -857,7 +895,7 @@ S.I.
 </cell>
 </row>
 <row>
-<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -866,7 +904,7 @@ Length
 
 \end_inset
 </cell>
-<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -875,7 +913,7 @@ Bohr radius
 
 \end_inset
 </cell>
-<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -886,7 +924,7 @@ Bohr radius
 </cell>
 </row>
 <row>
-<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -895,7 +933,7 @@ Time
 
 \end_inset
 </cell>
-<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -904,7 +942,7 @@ N.A.
 
 \end_inset
 </cell>
-<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+<cell alignment="left" valignment="top" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -915,7 +953,7 @@ N.A.
 </cell>
 </row>
 <row>
-<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -924,7 +962,7 @@ Mass
 
 \end_inset
 </cell>
-<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -933,7 +971,7 @@ Electron mass
 
 \end_inset
 </cell>
-<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+<cell alignment="left" valignment="top" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -944,7 +982,7 @@ Electron mass
 </cell>
 </row>
 <row>
-<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -953,16 +991,16 @@ Temperature
 
 \end_inset
 </cell>
-<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
-kelvin
+Kelvin
 \end_layout
 
 \end_inset
 </cell>
-<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+<cell alignment="left" valignment="top" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -973,7 +1011,7 @@ kelvin
 </cell>
 </row>
 <row>
-<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -982,7 +1020,7 @@ Energy
 
 \end_inset
 </cell>
-<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -991,7 +1029,7 @@ Hartree
 
 \end_inset
 </cell>
-<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+<cell alignment="left" valignment="top" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -1002,7 +1040,7 @@ Hartree
 </cell>
 </row>
 <row>
-<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" bottomline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -1011,7 +1049,7 @@ Pressure
 
 \end_inset
 </cell>
-<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" bottomline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -1020,7 +1058,7 @@ N.A.
 
 \end_inset
 </cell>
-<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+<cell alignment="left" valignment="top" bottomline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -1233,8 +1271,22 @@ Licence and credits
 Say it's GPL, who initially developed it, and how it should be cited
 \end_layout
 
+\begin_layout Standard
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+Yes, say it.
+ :-)
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
 \begin_layout Section
-Online resources
+On-line resources
 \end_layout
 
 \begin_layout Subsection
@@ -1299,24 +1351,32 @@ Client code resources
 \begin_layout Standard
 There are currently patches available for Quantum Espresso version 4.3.2 and
  CP2K version 2.2.
- The patch for Quantum Espresso also works with version 5.0 with minor modificati
-ons.
+ It should be possible to adapt these patches to other versions of the codes
+ with minor modifications.
  For more information about Quantum Espresso and CP2K, go to 
 \begin_inset Flex URL
-status collapsed
+status open
 
 \begin_layout Plain Layout
 
-www.quantum-espresso.org/
+www.quantum-espresso.org
 \end_layout
 
 \end_inset
 
- and ???????????????? respectively.
+ and 
+\begin_inset Flex URL
+status open
+
+\begin_layout Plain Layout
+
+cp2k.org
 \end_layout
 
-\begin_layout Standard
-These codes do not come as part of the 
+\end_inset
+
+ respectively.
+ These codes do not come as part of the 
 \begin_inset ERT
 status open
 
@@ -1372,36 +1432,78 @@ status open
 
 
 \backslash
-ipi
+ipi{}
 \end_layout
 
 \end_inset
 
- and to download the source code go to [appropriate wrappi website].
-\end_layout
-
-\begin_layout Standard
-Parameters to run Path Integral with Generalized Langevin Equation thermostat
- (PI+GLE) calculations can be found on the website 
+ and to download the source code go to 
 \begin_inset Flex URL
-status collapsed
+status open
 
 \begin_layout Plain Layout
 
-http://gle4md.berlios.de/ 
+gle4md.berlios.de 
 \end_layout
 
 \end_inset
 
-.
+, where one can also obtain colored-noise parameters to run Path Integral
+ with Generalized Langevin Equation thermostat (PI+GLE) calculations.
 \end_layout
 
 \begin_layout Section
 References
 \end_layout
 
+\begin_layout Standard
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+Perhaps we can just have a bibliography at the end
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
 \begin_layout Chapter
-Installation
+Getting started
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+label{getstarted}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Installing 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ipi
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -1420,7 +1522,7 @@ label{install}
 
 \end_layout
 
-\begin_layout Section
+\begin_layout Subsection
 Requirements
 \end_layout
 
@@ -1439,10 +1541,6 @@ ipi
 \end_inset
 
 , you will need to have:
-\end_layout
-
-\begin_layout Itemize
-A C compiler (for the sockets.c module)
 \end_layout
 
 \begin_layout Itemize
@@ -1482,13 +1580,28 @@ forces
 \end_inset
 
  directory, will need a suitable Fortran compiler.
- Most will also need to be linked with some mathematical libraries, such
- as BLAS, FFTW and LAPACK.
+ A C compiler is required for the sockets.c wrapper to the sockets standard
+ library.
+ Most electronic structure codes will also need to be linked with some mathemati
+cal libraries, such as BLAS, FFTW and LAPACK.
  Installation instructions should be provided as part of the code distribution
- and on the appropriate website.
+ and on the appropriate website: patching for use with 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ipi{}
 \end_layout
 
-\begin_layout Section
+\end_inset
+
+ should not introduce further dependencies.
+\end_layout
+
+\begin_layout Subsection
 \begin_inset ERT
 status open
 
@@ -1505,7 +1618,18 @@ ipi
 \end_layout
 
 \begin_layout Standard
-A tar file can be downloaded from the website [appropriate wrap-pi website].
+A tar file can be downloaded from the website 
+\begin_inset Flex URL
+status collapsed
+
+\begin_layout Plain Layout
+
+gle4md.berlios.de
+\end_layout
+
+\end_inset
+
+.
  To install this you need to input the following command:
 \end_layout
 
@@ -1538,7 +1662,18 @@ end{verbatim}
 \end_layout
 
 \begin_layout Standard
-You can also download the git repository at [github repository name] using:
+You can also obtain a local clone of the git repository on 
+\begin_inset Flex URL
+status open
+
+\begin_layout Plain Layout
+
+bitbucket.org
+\end_layout
+
+\end_inset
+
+ using:
 \end_layout
 
 \begin_layout Standard
@@ -1569,26 +1704,41 @@ end{verbatim}
 
 \end_layout
 
-\begin_layout Section
-NumPy download
+\begin_layout Subsection
+Installing NumPy
 \end_layout
 
 \begin_layout Standard
 NumPy is the standard Python mathematics library, and is used for most of
- the array minipulation and linear algebra in the wrapper code.
- How difficult it is to install NumPy depends on whether you have root access
- or not, and on the version of Python you are using.
+ the array manipulation and linear algebra in 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ipi
+\end_layout
+
+\end_inset
+
+.
+ It should be installed alongside most standard Python environments on HPC
+ facilities.
+ Otherwise, it is generally relatively straightforward to install it.
+ 
 \end_layout
 
 \begin_layout Standard
 In any case you must first obtain the NumPy code, which can be downloaded
  as a tar file from 
 \begin_inset Flex URL
-status collapsed
+status open
 
 \begin_layout Plain Layout
 
-http://sourceforge.net/projects/numpy/files/NumPy/
+http://www.numpy.org
 \end_layout
 
 \end_inset
@@ -1670,7 +1820,7 @@ end{verbatim}
 \end_layout
 
 \begin_layout Standard
-The next step is to install the package.
+The next step is to install NumPy.
  By default the download is to the directory /usr/local.
  If you have root access, and so can write to /usr, then all that needs
  to be done to finish the install is:
@@ -1869,7 +2019,7 @@ end{verbatim}
 
 \end_layout
 
-\begin_layout Section
+\begin_layout Subsection
 PyFFTW
 \end_layout
 
@@ -1950,6 +2100,19 @@ on above, or using various installation packages as per the instructions
 
 \begin_layout Section
 Clients
+\end_layout
+
+\begin_layout Standard
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+Here there should 
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Subsection
@@ -2067,11 +2230,8 @@ www.quantum-espress.org/
 Writing a patch
 \end_layout
 
-\begin_layout Chapter
-Getting started
-\end_layout
-
-\begin_layout Standard
+\begin_layout Section
+Running 
 \begin_inset ERT
 status open
 
@@ -2079,16 +2239,12 @@ status open
 
 
 \backslash
-label{getstarted}
+ipi
 \end_layout
 
 \end_inset
 
 
-\end_layout
-
-\begin_layout Section
-A simple tutorial
 \end_layout
 
 \begin_layout Subsection
@@ -2888,6 +3044,34 @@ end{verbatim}
 \end_layout
 
 \begin_layout Section
+A simple tutorial
+\end_layout
+
+\begin_layout Standard
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+Here there should be a step-by-step guide on how to run a specific example
+ (which we could have in the tests directory as 
+\begin_inset Quotes eld
+\end_inset
+
+tutorial
+\begin_inset Quotes erd
+\end_inset
+
+) with as many features as possible.
+ E.g.
+ PIMD (not piglet) of p-H2 with NPT.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
 Testing the install
 \end_layout
 
@@ -3189,7 +3373,7 @@ label{ifilestructure}
 \begin_layout Standard
 In order to give the clearest layout, xml formatting was chosen as the basis
  for the for the main input file.
- An xml file consists of a set of hierarchially nested tags.
+ An xml file consists of a set of hierarchically nested tags.
  There are three parts to an xml tag.
  Each tag is identified by a tag name, which specifies the class or variable
  that is being initialized.
@@ -3215,7 +3399,7 @@ begin{verbatim}
 
 \begin_layout Plain Layout
 
-<tag_name attribute_name=`attribute_data'>tag_data</tag_name>
+<tag_name attribute_name='attribute_data'>tag_data</tag_name>
 \end_layout
 
 \begin_layout Plain Layout
@@ -3231,17 +3415,27 @@ end{verbatim}
 \end_layout
 
 \begin_layout Standard
-The syntax for the different types of tag data is given below:
+The syntax for the different types of tag data is given below: 
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+Use verbatim for the syntax in the table
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
 \begin_inset Tabular
-<lyxtabular version="3" rows="7" columns="2">
+<lyxtabular version="3" rows="8" columns="2">
 <features tabularvalignment="middle">
 <column alignment="center" valignment="top" width="0">
 <column alignment="center" valignment="top" width="0">
 <row>
-<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+<cell alignment="center" valignment="top" topline="true" bottomline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -3250,7 +3444,7 @@ Data type
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+<cell alignment="center" valignment="top" topline="true" bottomline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -3261,7 +3455,7 @@ Syntax
 </cell>
 </row>
 <row>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="center" valignment="top" topline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -3270,7 +3464,7 @@ Boolean
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+<cell alignment="center" valignment="top" topline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -3281,7 +3475,7 @@ Boolean
 </cell>
 </row>
 <row>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="center" valignment="top" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -3290,7 +3484,7 @@ Float
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+<cell alignment="center" valignment="top" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -3301,7 +3495,7 @@ Float
 </cell>
 </row>
 <row>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="center" valignment="top" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -3310,7 +3504,7 @@ Integer
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+<cell alignment="center" valignment="top" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -3321,40 +3515,7 @@ Integer
 </cell>
 </row>
 <row>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\begin_layout Plain Layout
-Dictionary
-\end_layout
-
-\end_inset
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\begin_layout Plain Layout
-<tag>{name1: data1, name2: data2, 
-\begin_inset ERT
-status open
-
-\begin_layout Plain Layout
-
-
-\backslash
-ldots
-\end_layout
-
-\end_inset
-
- }</tag>
-\end_layout
-
-\end_inset
-</cell>
-</row>
-<row>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="center" valignment="top" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -3363,7 +3524,7 @@ String
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+<cell alignment="center" valignment="top" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -3374,7 +3535,7 @@ String
 </cell>
 </row>
 <row>
-<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+<cell alignment="center" valignment="top" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -3383,7 +3544,7 @@ Tuple
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+<cell alignment="center" valignment="top" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -3406,6 +3567,72 @@ ldots
 \end_inset
 </cell>
 </row>
+<row>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Vector
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+<tag> [ entry1, entry2, 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ldots
+\end_layout
+
+\end_inset
+
+ ] </tag>
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" bottomline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Dictionary
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" bottomline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+<tag>{name1: data1, name2: data2, 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ldots
+\end_layout
+
+\end_inset
+
+ }</tag>
+\end_layout
+
+\end_inset
+</cell>
+</row>
 </lyxtabular>
 
 \end_inset
@@ -3414,7 +3641,10 @@ ldots
 \end_layout
 
 \begin_layout Standard
-Also, for arrays, which have the `shape' attribute, we have the syntax
+Note that arrays are always given as one-dimensional lists.
+ In cases where a multi-dimensional array must be entered, one can use the
+ `shape' attribute, that determines how the list will be reshaped into a
+ multi-dimensional array; for instance
 \end_layout
 
 \begin_layout Standard
@@ -3430,8 +3660,7 @@ begin{verbatim}
 
 \begin_layout Plain Layout
 
-<tag shape=`array_shape'>[entry1, entry2, ...
- ]</tag>
+<tag shape=`(1,2,3)'>[ a111, a112, a113, a121, a122, a123 ]</tag>
 \end_layout
 
 \begin_layout Plain Layout
@@ -3443,18 +3672,11 @@ end{verbatim}
 
 \end_inset
 
-
+If `shape' is not specified, a 1D array will be assumed.
 \end_layout
 
 \begin_layout Standard
-where each entry has the same data type, which will be either float, int,
- boolean or string, and `array_shape' is a tuple that gives the shape of
- the generated array.
- If the shape is not specified, then a 1D array will be assumed.
-\end_layout
-
-\begin_layout Standard
-The code uses this hierarchial structure to help read the data; if a particular
+The code uses this hierarchical structure to help read the data; if a particular
  object is held within a parent object in the code, then the tag for that
  object will be within the appropriate parent tags.
  This is used to make the structure of the simulation clear.
@@ -3494,7 +3716,7 @@ pressure
 \begin_layout Standard
 For example, suppose we want to generate a NPT ensemble at an external pressure
  of 1e-7 atomic pressure units.
- This would be specified by the following input file:
+ This would be specified by the following input file: 
 \end_layout
 
 \begin_layout Standard
@@ -3552,10 +3774,6 @@ end{verbatim}
 
 \end_inset
 
-
-\end_layout
-
-\begin_layout Standard
 To help detect any user error the recognized tag names, data types and acceptabl
 e options are all specified in the code in a specialized input class for
  each class of object.
@@ -3847,7 +4065,7 @@ There is also an ensemble type,
 \begin_inset Quotes eld
 \end_inset
 
-replay_file
+replay
 \begin_inset Quotes erd
 \end_inset
 
@@ -3861,6 +4079,37 @@ replay_file
 
 \begin_layout Section
 Output files
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ipi
+\end_layout
+
+\end_inset
+
+ uses a very flexible mechanism to specify how and how often atomic configuratio
+ns and physical properties should be output....
+ 
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+START BY EXPLAINING THE GENERAL <OUTPUT> FRAMEWORK, THEN PROCEED TO EXPLAIN
+ THE INNER TAGS.
+ HERE PEOPLE DON'T UNDERSTAND THAT THEY CAN USE SEVERAL PROPERTY AND TRAJECTORY
+ TAGS 
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Subsection
@@ -3885,19 +4134,12 @@ label{propertyfile}
 
 \begin_layout Standard
 This is the output file for all the system and simulation level properties,
- such as the total energy and the overall time taken.
- The format of the file is given by a comment line per property giving the
- name of the properties and which columns of the input file will be used
- to print it, followed by their values in the appropriate units at regular
- intervals given by the 
-\begin_inset Quotes eld
-\end_inset
-
-stride
-\begin_inset Quotes erd
-\end_inset
-
- list of the input file.
+ such as the total energy and the time elapsed.
+ The file starts by a header, which describes the properties being written
+ on the different columns, and their units of measure.
+ This is followed by the actual data.
+ Each line corresponds to one instant of the simulation, and the different
+ columns match the description provided in the header.
  The file is fixed formatted, with two blank characters at the start of
  each row, then the data in the same order as the header row.
  Each column is 16 characters wide and every float is written in exponential
@@ -4328,9 +4570,21 @@ Soft exit and RESTART
 \end_layout
 
 \begin_layout Standard
-As well as checkpoint files during a simulation run, wrappi also creates
- a checkpoint automatically at the end of the simulation, with file name
- 
+As well as checkpoint files during a simulation run, 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ipi{}
+\end_layout
+
+\end_inset
+
+ also creates a checkpoint automatically at the end of the simulation, with
+ file name 
 \begin_inset Quotes eld
 \end_inset
 
@@ -4339,9 +4593,13 @@ RESTART
 \end_inset
 
 .
- In the same way as the checkpoint files generated above it contains the
- state of the system as created by the wrapper, but it doesn't need to be
- asked for by the user in the input file.
+ In the same way as t
+\end_layout
+
+\begin_layout Standard
+he checkpoint files generated above it contains the state of the system
+ as created by the wrapper, but it doesn't need to be asked for by the user
+ in the input file.
  Its purpose is that if the user decides that insufficient steps were used
  in an already completed simulation, then this file can be used to continue
  from where it ended.

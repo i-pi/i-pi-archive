@@ -1,57 +1,66 @@
-OLD:                                      NEW:                 
-   Chapter 1 - Introduction:                 Chapter 1 - Introduction:
-      Driver compatibility                      Brief introduction to PIMD 
-      Online resources                          Implementation
-      License and credits                       Core features
-   Chapter 2 - Communication protocol:          License and credits
-      Sockets                                   Online resources    
-      Data transfer                          Chapter 2 - Installation:       
-      Parallelization                           System requirements
-      SSH tunnelling                            Downloading I-PI (also explain the setup.py module)
-   Chapter 3 - Installation:                    Downloading NumPy
-      System requirements                       Downloading PyFFTW 
-      Downloading I-PI                          Downloading drivers
-      Downloading NumPy                            - QE etc.
-      Downloading PyFFTW                     Chapter 3 - Getting started: 
-      Downloading drivers                       A simple tutorial
-         - QE                                      - Running the wrapper
-         - CP2K                                    - Running the driver 
-         - CPMD                                       - QE            
-         - FHI-AIMS                                   etc.            
-         - LAMMPS?                                 - Running simulations
-         - DLPOLY?                                    - One           
-      Testing                                         - Many          
-   Chapter 4 - Running I-PI:                    Testing        
-      Running the wrapper                    Chapter 4 - User manual:
-      Running the driver                        Communication protocol (This still seems out of place...)
-         - QE                                      - Sockets          
-         etc.                                      - Data transfer    
-      Running simulations                          - Parallelization  
-         - One                                     - SSH tunnelling   
-         - Many                                  Input files             
-      Input files                                   - xml input          
-         - xml input                                - config files       
-         - config files                             - units              
-         - units                                 Output files            
-      Output files                                  - property           
-         - property                                 - trajectory         
-         - trajectory                            Restart mechanism       
-      Restart mechanism                             - checkpoint files   
-         - checkpoint files                         - RESTART            
-         - RESTART                                  - Soft exit          
-         - Soft exit                                - Initialization from checkpoint                
-         - Initialization from checkpoint        Chapter 6 - Input hierarchy: 
-   Chapter 5 - Feature Overview:                    SIMULATION                
-      RPC                                           etc.                      
-      NVT/NPT                                    Chapter 7 - Troubleshooting: 
-         - PILE                                     TBD                       
-         - GLE                                   
-      RPMD                                       
-      Output                                     
-         - Displaced path                        
-         - Scaled path                           
-         - Extras list                          
-   Chapter 6 - Input hierarchy:                 
-      SIMULATION                                
-      etc.                                      
-                                                
+OLD:                                      NEW (JM):                                       NEW (MC):
+   Chapter 1 - Introduction:                 Chapter 1 - Introduction:                        Chapter 1 - Introduction:           
+      Driver compatibility                      Brief introduction to PIMD                       Brief introduction to PIMD 
+      Online resources                          Implementation?                                  Implementation (philosophy)
+                                                   (Seems out of place to me...)                    - Automated evaluation (depends)
+                                                                                                    - Communication protocol
+                                                                                                    - Internal units   
+      License and credits                       Core features                                    Core features
+   Chapter 2 - Communication protocol:          License and credits                              License and credits
+      Sockets                                   Online resources                                 Online resources    
+      Data transfer                          Chapter 2 - Installation:                        Chapter 2 - Getting started:    
+      Parallelization                           System requirements                              Installation 
+                                                                                                     - System requirements
+                                                                                                       - Downloading I-PI + setup.py
+                                                                                                       - Installing numpy 
+                                                                                                       - Installing PyFFTW
+      SSH tunnelling                            Downloading I-PI                                 Drivers  
+                                                    (also explain the setup.py module)               - Minimal driver code  
+   Chapter 3 - Installation:                    Downloading NumPy                                    - Writing a patch
+      System requirements                       Downloading PyFFTW                                   - Patching CP2K & QE
+      Downloading I-PI                          Downloading drivers                              A simple tutorial  
+      Downloading NumPy                            - QE etc.                                        (just with the internal driver)
+      Downloading PyFFTW                     Chapter 3 - Getting started:                        Regtests & Examples       
+      Downloading drivers                       A simple tutorial                                                 
+         - QE                                      - Running the wrapper                                                 
+         - CP2K                                    - Running the driver                                                  
+         - CPMD                                       - QE                                                             
+         - FHI-AIMS                                   etc.                                                             
+         - LAMMPS?                                 - Running simulations                                                   
+         - DLPOLY?                                    - One                                                            
+      Testing                                         - Many                                                           
+   Chapter 4 - Running I-PI:                    Testing                                                         
+      Running the wrapper                    Chapter 4 - User manual:                         Chapter 4 - User guide:  
+      Running the driver                        Communication protocol                             Input files                  
+                                                   (This still seems out of place...)                 - xml input                    
+         - QE                                      - Sockets                                          - config files        
+         etc.                                      - Data transfer                                    - overriding units     
+      Running simulations                          - Parallelization                               Output files        
+         - One                                     - SSH tunnelling                                   - properties     
+         - Many                                  Input files                                          - trajectories (+extras)
+      Input files                                   - xml input                                       - checkpoints       
+         - xml input                                - config files                                 Soft exit & restart   
+         - config files                             - units                                        Distributed execution  
+         - units                                 Output files                                         - Sockets           
+      Output files                                  - property                                        - SSH tunnelling    
+         - property                                 - trajectory                                      - Execution models  
+         - trajectory                            Restart mechanism                                
+      Restart mechanism                             - checkpoint files                            
+         - checkpoint files                         - RESTART                                     
+         - RESTART                                  - Soft exit                                   
+         - Soft exit                                - Initialization from checkpoint              
+         - Initialization from checkpoint        Chapter 5 - Feature Overview:                    Doing this well (à la CPMD manual)
+   Chapter 5 - Feature Overview:                    RPC                                           will require a huge effort. So 
+      RPC                                           NVT/NPT                                       I'd rather just NOT do it and let
+      NVT/NPT                                          - PILE                                     people read the original papers.
+         - PILE                                        - GLE                                      
+         - GLE                                      RPMD                                          
+      RPMD                                          Output                                        
+      Output                                           - Displaced path                           
+         - Displaced path                              - Scaled path                              
+         - Scaled path                                 - Extras list                              
+         - Extras list                           Chapter 6 - Input hierarchy:                     Chapter 6 - Input hierarchy:
+   Chapter 6 - Input hierarchy:                     SIMULATION                                       SIMULATION              
+      SIMULATION                                    etc.                                             etc.                    
+      etc.                                       Chapter 7 - Troubleshooting:                     Chapter 7 - Troubleshooting:
+                                                    TBD                                              TBD                                
