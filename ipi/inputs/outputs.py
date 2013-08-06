@@ -120,7 +120,7 @@ class InputTrajectory(InputValue):
    def fetch(self):
       """Returns a TrajectoryOutput object."""
 
-      return ipi.engine.outputs.TrajectoryOutput(filename=self.filename.fetch(), stride=self.stride.fetch(),
+      return engine.outputs.TrajectoryOutput(filename=self.filename.fetch(), stride=self.stride.fetch(),
                flush=self.flush.fetch(), what=super(InputTrajectory,self).fetch(),
                format=self.format.fetch(), cell_units=self.cell_units.fetch(), ibead=self.bead.fetch())
 
@@ -179,7 +179,7 @@ class InputCheckpoint(InputValue):
       """Returns a CheckpointOutput object."""
 
       step = super(InputCheckpoint,self).fetch()
-      return ipi.engine.outputs.CheckpointOutput(self.filename.fetch(), self.stride.fetch(), self.overwrite.fetch(), step=step )
+      return engine.outputs.CheckpointOutput(self.filename.fetch(), self.stride.fetch(), self.overwrite.fetch(), step=step )
 
    def parse(self, xml=None, text=""):
       """Overwrites the standard parse function so that we can specify this tag
@@ -256,9 +256,9 @@ class InputOutputs(Input):
       use any mutable objects as arguments.
       """
 
-      return [ ipi.engine.outputs.PropertyOutput("i-pi.md", 10, [ "time", "step", "conserved", "temperature", "potential", "kinetic_cv" ] ),
-               ipi.engine.outputs.TrajectoryOutput("i-pi.pos", 100, "positions", "xyz"),
-               ipi.engine.outputs.CheckpointOutput("i-pi.checkpoint",1000,overwrite=True)]
+      return [ engine.outputs.PropertyOutput("i-pi.md", 10, [ "time", "step", "conserved", "temperature", "potential", "kinetic_cv" ] ),
+               engine.outputs.TrajectoryOutput("i-pi.pos", 100, "positions", "xyz"),
+               engine.outputs.CheckpointOutput("i-pi.checkpoint",1000,overwrite=True)]
 
    def fetch(self):
       """Returns a list of the output objects included in this dynamic
@@ -294,15 +294,15 @@ class InputOutputs(Input):
 
       self.prefix.store("")
       for el in plist:
-         if (isinstance(el, ipi.engine.outputs.PropertyOutput)):
+         if (isinstance(el, engine.outputs.PropertyOutput)):
             ip = InputProperties()
             ip.store(el)
             self.extra.append(("properties", ip))
-         elif (isinstance(el, ipi.engine.outputs.TrajectoryOutput)):
+         elif (isinstance(el, engine.outputs.TrajectoryOutput)):
             ip = InputTrajectory()
             ip.store(el)
             self.extra.append(("trajectory", ip))
-         elif (isinstance(el, ipi.engine.outputs.CheckpointOutput)):
+         elif (isinstance(el, engine.outputs.CheckpointOutput)):
             ip = InputCheckpoint()
             ip.store(el)
             self.extra.append(("checkpoint", ip))
