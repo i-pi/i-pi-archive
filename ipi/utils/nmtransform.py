@@ -65,11 +65,10 @@ def mk_rs_matrix(nb1, nb2):
          b1_b2[i,i] = 1.0
          b1_b2[nb2-i, nb1-i] = 1.0
       if (nb2 % 2 == 0):
-         #if the original number of beads is odd, and the new number is
-         #even then the non-degenerate mode's contribution needs to be split
-         #equally among the appropriate degenerate modes of the new ring polymer
-         b1_b2[nb2/2, nb2/2] = 0.5
-         b1_b2[nb2/2, nb1-nb2/2] = 0.5
+         #if we are contracting down to an even number of beads, then we have to
+         #pick just one of the last degenerate modes to match onto the single
+         #stiffest mode in the new path
+         b1_b2[nb2/2, nb1-nb2/2] = 0.0
 
       rs_b1_b2 = np.dot(nm_b2, np.dot(b1_b2, b1_nm))
       return rs_b1_b2*np.sqrt(float(nb2)/float(nb1))
@@ -162,9 +161,9 @@ class nm_fft:
       using Fast Fourier transforms.
 
    Attributes:
-      fft: The fast-Fourier transform function to transform between the 
+      fft: The fast-Fourier transform function to transform between the
          bead and normal mode representations.
-      ifft: The inverse fast-Fourier transform function to transform 
+      ifft: The inverse fast-Fourier transform function to transform
          between the normal mode and bead representations.
       qdummy: A matrix to hold a copy of the bead positions to transform
          them to the normal mode representation.
@@ -190,7 +189,7 @@ class nm_fft:
          self.qnmdummy = pyfftw.n_byte_align_empty((nbeads//2+1, 3*natoms), 16, 'complex64')
          self.fft = pyfftw.FFTW(self.qdummy, self.qnmdummy, axes=(0,), direction='FFTW_FORWARD')
          self.ifft = pyfftw.FFTW(self.qnmdummy, self.qdummy, axes=(0,), direction='FFTW_BACKWARD')
-      except ImportError: #Uses standard numpy fft library if nothing better 
+      except ImportError: #Uses standard numpy fft library if nothing better
                           #is available
          self.qdummy = np.zeros((nbeads,3*natoms), dtype='float32')
          self.qnmdummy = np.zeros((nbeads//2+1,3*natoms), dtype='complex64')
@@ -205,7 +204,7 @@ class nm_fft:
       """Transforms a matrix to the normal mode representation.
 
       Args:
-         q: A matrix with nbeads rows and 3*natoms columns, 
+         q: A matrix with nbeads rows and 3*natoms columns,
             in the bead representation.
       """
 
@@ -236,7 +235,7 @@ class nm_fft:
       """Transforms a matrix to the bead representation.
 
       Args:
-         qnm: A matrix with nbeads rows and 3*natoms columns, 
+         qnm: A matrix with nbeads rows and 3*natoms columns,
             in the normal mode representation.
       """
 
