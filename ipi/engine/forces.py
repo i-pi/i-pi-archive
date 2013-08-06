@@ -633,11 +633,10 @@ class Forces(dobject):
          newbeads = Beads(beads.natoms, newb)
          newrpc = nm_rescale(beads.nbeads, newb)
 
-         newf = make_rpc(newrpc, beads)
-         dget(newbeads,"q")._func = newf
+         dget(newbeads,"q")._func = make_rpc(newrpc, beads)
          for b in newbeads:
             # must update also indirect access to the beads coordinates
-            dget(b,"q")._func = newf
+            dget(b,"q")._func = dget(newbeads,"q")._func
 
          # makes newbeads.q depend from beads.q
          dget(beads,"q").add_dependant(dget(newbeads,"q"))
