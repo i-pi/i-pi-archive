@@ -9,7 +9,3 @@ bin/*
 *.o
 *.tex
 *.pdf
-*.swp
-
-.coverage
-nosetests.xml

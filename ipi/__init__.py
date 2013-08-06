@@ -20,9 +20,9 @@ __all__ = ["main", "engine",  "inputs",  "interfaces", "utils"]
 
 import sys
 from engine import simulation
-from ipi.inputs.simulation import InputSimulation
-from ipi.utils.io.io_xml import *
-from ipi.utils.messages import banner, help, verbosity
+from inputs.simulation import InputSimulation
+from utils.io.io_xml import *
+from utils.messages import banner, help, verbosity
 
 def main(file_name):
    """Runs the simulation.

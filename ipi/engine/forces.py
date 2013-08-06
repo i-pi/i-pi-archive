@@ -17,12 +17,12 @@ __all__ = ['ForceField', 'ForceBeads', 'Forces', 'FFSocket']
 
 import numpy as np
 import math, time
-from ipi.utils.depend import *
-from ipi.utils.nmtransform import nm_rescale
-from ipi.utils.softexit import softexit
-from ipi.interfaces.sockets import InterfaceSocket
+from utils.depend import *
+from utils.nmtransform import nm_rescale
+from utils.softexit import softexit
+from interfaces.sockets import InterfaceSocket
 from beads import Beads
-from ipi.utils.messages import Verbosity, warning
+from utils.messages import Verbosity, warning
 
 class ForceField(dobject):
    """Base forcefield class.

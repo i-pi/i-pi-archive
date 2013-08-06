@@ -7,10 +7,10 @@ import numpy as np
 from numpy.testing import assert_equal
 from common import local
 
-from ipi.engine.cell import Cell
+from engine.cell import Cell
 
-from ipi.utils.io import io_xyz
-from ipi.utils.io import io_pdb
+from utils.io import io_xyz
+from utils.io import io_pdb
 
 pos = np.array([i for i in range(3*3)])
 

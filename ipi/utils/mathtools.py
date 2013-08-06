@@ -30,7 +30,7 @@ __all__ = ['matrix_exp', 'stab_cholesky', 'h2abc', 'h2abc_deg', 'abc2h',
 
 import numpy as np
 import math
-from ipi.utils.messages import verbosity, warning
+from utils.messages import verbosity, warning
 
 def logsumlog(lasa, lbsb):
    """Computes log(|A+B|) and sign(A+B) given log(|A|), log(|B|), 

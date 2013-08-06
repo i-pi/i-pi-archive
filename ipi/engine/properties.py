@@ -21,15 +21,15 @@ __all__ = ['Properties', 'Trajectories', 'getkey', 'getall', 'help_latex']
 import os
 import numpy as np
 import math
-from ipi.utils.depend import *
-from ipi.utils.units import Constants, unit_to_internal, unit_to_user
-from ipi.utils.mathtools import logsumlog, h2abc_deg
-from ipi.utils.io import *
+from utils.depend import *
+from utils.units import Constants, unit_to_internal, unit_to_user
+from utils.mathtools import logsumlog, h2abc_deg
+from utils.io import *
 from atoms import *
 from cell import *
 from ensembles import *
 from forces import *
-from ipi.utils.messages import verbosity, info, warning
+from utils.messages import verbosity, info, warning
 
 def getkey(pstring):
    """Strips units and argument lists from a property/trajectory keyword.

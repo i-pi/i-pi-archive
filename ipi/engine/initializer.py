@@ -30,13 +30,13 @@ from cell import Cell
 from normalmodes import NormalModes
 from ensembles import Ensemble
 
-from ipi.utils.io.io_xyz import read_xyz
-from ipi.utils.io.io_pdb import read_pdb
-from ipi.utils.io.io_xml import xml_parse_file
-from ipi.utils.depend import dobject
-from ipi.utils.units import Constants, unit_to_internal
-from ipi.utils.nmtransform import nm_rescale
-from ipi.utils.messages import verbosity, warning, info
+from utils.io.io_xyz import read_xyz
+from utils.io.io_pdb import read_pdb
+from utils.io.io_xml import xml_parse_file
+from utils.depend import dobject
+from utils.units import Constants, unit_to_internal
+from utils.nmtransform import nm_rescale
+from utils.messages import verbosity, warning, info
 
 __all__ = ['Initializer', 'InitBase', 'InitIndexed']
 
@@ -152,7 +152,7 @@ def init_chk(filename):
    rfile = open(filename,"r")
    xmlchk = xml_parse_file(rfile) # Parses the file.
 
-   from ipi.inputs.simulation import InputSimulation
+   from inputs.simulation import InputSimulation
    simchk = InputSimulation()
    simchk.parse(xmlchk.fields[0][1])
    rcell = simchk.cell.fetch()

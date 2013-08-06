@@ -26,8 +26,8 @@ src_dir = "../i-pi/"
 
 sys.path.append(src_dir)
 
-from ipi.inputs import *
-from ipi.utils.io.io_xml import *
+from inputs import *
+from utils.io.io_xml import *
 from optparse import OptionParser
 
 __all__ = ['help', 'objects']

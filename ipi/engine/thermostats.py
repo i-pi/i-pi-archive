@@ -29,13 +29,13 @@ __all__ = ['Thermostat', 'ThermoLangevin', 'ThermoPILE_L', 'ThermoPILE_G',
 
 import numpy as np
 import math
-from ipi.utils.depend   import *
-from ipi.utils.units    import *
-from ipi.utils.mathtools import matrix_exp, stab_cholesky, root_herm
-from ipi.utils.prng import Random
+from utils.depend   import *
+from utils.units    import *
+from utils.mathtools import matrix_exp, stab_cholesky, root_herm
+from utils.prng import Random
 from beads import Beads
 from normalmodes import NormalModes
-from ipi.utils.messages import verbosity, warning, info
+from utils.messages import verbosity, warning, info
 
 class Thermostat(dobject):
    """Base thermostat class.

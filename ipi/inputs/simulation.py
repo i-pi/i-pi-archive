@@ -10,29 +10,29 @@ __all__ = ['InputSimulation']
 import numpy as np
 import math
 import os.path, sys
-from ipi.utils.depend import *
-from ipi.utils.inputvalue import *
-from ipi.utils.units  import *
-from ipi.utils.prng   import *
-from ipi.utils.io     import *
-from ipi.utils.io.io_xml import *
-from ipi.utils.messages import verbosity
-from ipi.inputs.forces import InputForces
-from ipi.inputs.prng import InputRandom
-from ipi.inputs.initializer import InputInitializer
-from ipi.inputs.beads import InputBeads
-from ipi.inputs.cell import InputCell
-from ipi.inputs.ensembles import InputEnsemble
-from ipi.inputs.outputs import InputOutputs
-from ipi.inputs.normalmodes import InputNormalModes
-from ipi.engine.normalmodes import NormalModes
-from ipi.engine.atoms import Atoms
-from ipi.engine.beads import Beads
-from ipi.engine.cell import Cell
-from ipi.engine.initializer import Initializer
+from utils.depend import *
+from utils.inputvalue import *
+from utils.units  import *
+from utils.prng   import *
+from utils.io     import *
+from utils.io.io_xml import *
+from utils.messages import verbosity
+from inputs.forces import InputForces
+from inputs.prng import InputRandom
+from inputs.initializer import InputInitializer
+from inputs.beads import InputBeads
+from inputs.cell import InputCell
+from inputs.ensembles import InputEnsemble
+from inputs.outputs import InputOutputs
+from inputs.normalmodes import InputNormalModes
+from engine.normalmodes import NormalModes
+from engine.atoms import Atoms
+from engine.beads import Beads
+from engine.cell import Cell
+from engine.initializer import Initializer
 
-import ipi.engine.outputs
-import ipi.engine.simulation
+import engine.outputs
+import engine.simulation
 
 class InputSimulation(Input):
    """Simulation input class.
@@ -151,7 +151,7 @@ class InputSimulation(Input):
 
       # this creates a simulation object which gathers all the little bits
       #TODO use named arguments since this list is a bit too long...
-      rsim = ipi.engine.simulation.Simulation(self.beads.fetch(), self.cell.fetch(),
+      rsim = engine.simulation.Simulation(self.beads.fetch(), self.cell.fetch(),
                self.forces.fetch(), self.ensemble.fetch(), self.prng.fetch(),
                   self.output.fetch(), self.normal_modes.fetch(),
                      self.initialize.fetch(), self.step.fetch(),

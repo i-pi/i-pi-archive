@@ -25,9 +25,9 @@ __all__ = ['InterfaceSocket']
 
 import sys, os
 import socket, select, threading, signal, string, time
-from ipi.utils.depend import depstrip
-from ipi.utils.messages import verbosity, warning, info
-from ipi.utils.softexit import softexit
+from utils.depend import depstrip
+from utils.messages import verbosity, warning, info
+from utils.softexit import softexit
 
 import numpy as np
 
