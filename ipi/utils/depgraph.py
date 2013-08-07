@@ -1,5 +1,5 @@
 import gc
-import depend as dp
+import ipi.utils.depend as dp
 import codecs
 
 import pdb

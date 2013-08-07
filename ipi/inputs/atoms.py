@@ -9,7 +9,6 @@ Classes:
 """
 
 import numpy as np
-import ipi.utils.io.io_pdb, ipi.utils.io.io_xyz
 from ipi.engine.atoms import *
 from ipi.utils.inputvalue import *
 from ipi.utils.depend import *

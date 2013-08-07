@@ -310,7 +310,7 @@ class CheckpointOutput(dobject):
       """
 
       self.simul = simul
-      self.status = inputs.simulation.InputSimulation()
+      self.status = ipi.inputs.simulation.InputSimulation()
       self.status.store(simul)
 
    def store(self):

@@ -6,7 +6,6 @@ Classes:
 """
 
 import numpy as np
-import ipi.utils.io.io_pdb
 from ipi.engine.beads import *
 from ipi.engine.atoms import Atoms
 from ipi.utils.inputvalue import *

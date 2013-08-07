@@ -9,7 +9,6 @@ Classes:
 
 import numpy as np
 from copy import copy
-import ipi.utils.io.io_pdb, ipi.utils.io.io_xyz
 from ipi.engine.cell import *
 from ipi.utils.inputvalue import *
 from ipi.utils.units import UnitMap

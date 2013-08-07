@@ -151,7 +151,7 @@ def init_chk(filename):
    rfile = open(filename,"r")
    xmlchk = xml_parse_file(rfile) # Parses the file.
 
-   from inputs.simulation import InputSimulation
+   from ipi.inputs.simulation import InputSimulation
    simchk = InputSimulation()
    simchk.parse(xmlchk.fields[0][1])
    rcell = simchk.cell.fetch()

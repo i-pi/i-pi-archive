@@ -9,6 +9,7 @@ __all__ = ['InputSimulation']
 
 import numpy as np
 import os.path, sys
+import ipi.engine.simulation
 from ipi.utils.depend import *
 from ipi.utils.inputvalue import *
 from ipi.utils.units  import *
@@ -29,9 +30,6 @@ from ipi.engine.atoms import Atoms
 from ipi.engine.beads import Beads
 from ipi.engine.cell import Cell
 from ipi.engine.initializer import Initializer
-
-import ipi.engine.outputs
-import ipi.engine.simulation
 
 class InputSimulation(Input):
    """Simulation input class.
@@ -150,7 +148,7 @@ class InputSimulation(Input):
 
       # this creates a simulation object which gathers all the little bits
       #TODO use named arguments since this list is a bit too long...
-      rsim = engine.simulation.Simulation(self.beads.fetch(), self.cell.fetch(),
+      rsim = ipi.engine.simulation.Simulation(self.beads.fetch(), self.cell.fetch(),
                self.forces.fetch(), self.ensemble.fetch(), self.prng.fetch(),
                   self.output.fetch(), self.normal_modes.fetch(),
                      self.initialize.fetch(), self.step.fetch(),

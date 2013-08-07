@@ -528,7 +528,7 @@ class ReplayEnsemble(Ensemble):
             # reads configuration from a checkpoint file
             xmlchk = xml_parse_file(self.rfile) # Parses the file.
 
-            from inputs.simulation import InputSimulation
+            from ipi.inputs.simulation import InputSimulation
             simchk = InputSimulation()
             simchk.parse(xmlchk.fields[0][1])
             mycell = simchk.cell.fetch()

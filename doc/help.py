@@ -22,12 +22,12 @@ Functions:
 
 import sys
 
-src_dir = "../i-pi/"
+src_dir = ".."
 
 sys.path.append(src_dir)
 
-from inputs import *
-from utils.io.io_xml import *
+from ipi.inputs import *
+from ipi.utils.io.io_xml import *
 from optparse import OptionParser
 
 __all__ = ['help', 'objects']

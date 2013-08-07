@@ -14,7 +14,6 @@ __all__ = ['Simulation']
 
 import numpy as np
 import os.path, sys, time
-import ipi.inputs.simulation
 from ipi.utils.depend import *
 from ipi.utils.units  import *
 from ipi.utils.prng   import *
@@ -29,7 +28,6 @@ from ipi.engine.beads import Beads
 from ipi.engine.normalmodes import NormalModes
 from ipi.engine.properties import Properties, Trajectories
 from ipi.engine.outputs import CheckpointOutput
-
 
 class Simulation(dobject):
    """Main simulation object.
