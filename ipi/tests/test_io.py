@@ -1,4 +1,19 @@
 """Deals with testing the io system.
+
+Copyright (C) 2013, Joshua More and Michele Ceriotti
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <http.//www.gnu.org/licenses/>.
 """
 
 import filecmp
@@ -20,13 +35,11 @@ def test_read_xyz():
         assert(len(atoms) == 3)
         assert_equal(pos, atoms.q)
 
-
 def test_iter_xyz():
     with open(local("test.pos_0.xyz"), "r") as f:
         for num, atoms in enumerate(io_xyz.iter_xyz(f)):
             assert(len(atoms) == 3)
             assert_equal(pos*(num+1), atoms.q)
-
 
 def test_read_pdb():
     with open(local("test.pos_0.pdb"), "r") as f:
@@ -35,13 +48,11 @@ def test_read_pdb():
         assert_equal(pos, atoms.q)
         # TODO: test cell
 
-
 def test_iter_pdb():
     with open(local("test.pos_0.pdb"), "r") as f:
         for num, (atoms, cell) in enumerate(io_pdb.iter_pdb(f)):
             assert(len(atoms) == 3)
             assert_equal(pos*(num+1), atoms.q)
-
 
 def test_print_pdb():
     with open(local("test.pos_0.pdb"), "r") as f:
@@ -52,7 +63,6 @@ def test_print_pdb():
                 io_xyz.print_xyz(atoms, Cell(h=np.identity(3, float)), filedesc=out)
     assert(filecmp.cmp(local("test.pos_0.xyz"), local("test.pos_1.xyz")))
     os.unlink(local("test.pos_1.xyz"))
-
 
 def test_print_xyz():
     with open(local("test.pos_0.pdb"), "r") as f:
