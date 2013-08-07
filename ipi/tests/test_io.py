@@ -7,8 +7,6 @@ import numpy as np
 from numpy.testing import assert_equal
 from common import local
 
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
-
 from ipi.engine.cell import Cell
 
 from ipi.utils.io import io_xyz
