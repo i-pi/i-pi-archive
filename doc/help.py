@@ -22,7 +22,7 @@ Functions:
 
 import sys
 
-src_dir = "../i-pi/"
+src_dir = ".."
 
 sys.path.append(src_dir)
 

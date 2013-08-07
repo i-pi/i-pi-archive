@@ -572,56 +572,34 @@ Path Integral Molecular Dynamics
 \end_layout
 
 \begin_layout Standard
-\begin_inset Note Note
-status open
-
-\begin_layout Plain Layout
-Uhm...
- this is not very accurate.
- E.G.
- for getting dynamical information you use RPMD/CMD not PIMD.
- Could you please re-work this based on say the intro of David's RPMD review?
- Also cite that, and some of the PIMD papers, perhaps the efficient stochastic
- thermostatting which is a good 
-\begin_inset Quotes eld
-\end_inset
-
-implementation manual
-\begin_inset Quotes erd
-\end_inset
-
-.
-\end_layout
-
-\end_inset
-
-
+Molecular dynamics (MD) is a technique used to study the properties of a
+ system of interacting particles by applying Newton's equations of motion
+ to produce trajectories which can be used to efficiently explore the phase
+ space.
+ This can be used to calculate many equilibrium and dynamical properties,
+ study systems from isolated gas molecules to condensed phase bulk materials,
+ and can be applied to systems from the atomistic scale to mesoscopic colloidal
+ particles.
 \end_layout
 
 \begin_layout Standard
-Molecular dynamics (MD) is a technique used to study the properties of bulk
- materials, by applying Newton's equations to produce trajectories which
- can be used to efficiently explore the phase space of a system.
- This has been used for a huge range of different problems, to calculate
- many equilibrium and dynamical properties, and can be used to study systems
- from the atomistic scale to mesoscopic colloidal particles.
-\end_layout
-
-\begin_layout Standard
-However, while this technique has been very successful, in most implementations
- the assumption is made that the nuclei behave as classical particles, which
- for light nuclei such as hydrogen is often a very poor approximation.
+However, while this technique has been very successful, in most MD implementatio
+ns the assumption is made that the nuclei behave as classical particles,
+ which for light nuclei such as hydrogen is often a very poor approximation
+ as the effect of zero-point energy (ZPE) and quantum tunnelling can be
+ large.
  For example, even at room temperature the vibrational frequency of an OH
- stretch in water is about 5 times larger than the available thermal energy,
+ stretch in water is over 15 times larger than the available thermal energy,
  and so this motion will be highly quantized.
- The current state-of-the-art method to include these nuclear quantum effects
- (NQE) is path integral molecular dynamics (PIMD).
+ The current state-of-the-art method to include nuclear quantum effects
+ (NQE) in the calculation of static properties of condensed phase systems
+ is path integral molecular dynamics (PIMD).
 \end_layout
 
 \begin_layout Standard
-PIMD generates the quantum-mechanical ensemble of a condensed phase system
- by using MD in an extended phase space.
- Derived from the path integral formalism of 
+PIMD generates the quantum-mechanical ensemble of a system of interacting
+ particles by using MD in an extended phase space.
+ This is derived from the path integral formalism of 
 \begin_inset ERT
 status open
 
@@ -634,23 +612,22 @@ cite{feyn-hibb65book}
 
 \end_inset
 
-, this relates the statistics of a system of quantum particles to those
- of an equivalent system of classical ring polymers, a ring polymer being
- a number of replicas of a particle coupled by harmonic springs.
+, which relates the statistics of a collection of quantum particles to those
+ of a set of classical ring polymers, a ring polymer being a number of replicas
+ of a particle coupled by harmonic springs.
  This so-called classical isomorphism is exact in the limit as the number
  of replicas goes to infinity, but in practice is converged numerically
  with only a finite number.
 \end_layout
 
 \begin_layout Standard
-PIMD can therefore generate phase space averages in the same way as standard
- MD while also including NQE, and with only linear scaling with respect
- to the number of replicas needed.
- Also, many of the techniques developed to improve the scope and efficiency
- of MD simulations can be applied straightforwardly to the equivalent PIMD
- calculations.
- Furthermore, PIMD can be used to generate approximate quantum dynamical
- information 
+This then allows quantum phase space averages to be calculated from classical
+ trajectories, with only about an order of magnitude more computing time
+ than would be required for standard MD.
+ Also, since PIMD is simply classical MD in an extended phase space many
+ of the techniques developed to improve the scope and efficiency of MD simulatio
+ns can be applied straightforwardly to the equivalent PIMD calculations
+ 
 \begin_inset ERT
 status open
 
@@ -658,12 +635,79 @@ status open
 
 
 \backslash
-cite{crai-mano04jcp}
+cite{ceri+10jcp,mart+99jcp}
+\end_layout
+
+\end_inset
+
+.
+ Finally, several techniques designed specifically for PIMD simulations
+ are now available to increase the rate of convergence with respect to the
+ number of replicas used 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+cite{mark-mano08jcp,ceri+11jcp}
+\end_layout
+
+\end_inset
+
+, so further reducing the computational overhead of the method.
+ All of these facts mean that it is now feasible to do PIMD simulations
+ with thousands of molecules, or even using 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{ab initio}
+\end_layout
+
+\end_inset
+
+ electronic structure calculations to propagate the dynamics for small systems.
+\end_layout
+
+\begin_layout Standard
+Furthermore, the framework used to run PIMD simulations can be adapted to
+ generate approximate quantum dynamical information 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+cite{crai-mano04jcp,hone+06jcp}
 \end_layout
 
 \end_inset
 
 , and so can also be used to calculate correlation functions.
+ While the dynamics is classical, and so real-time quantum coherences cannot
+ be captured, the correct capture of quantum statistical information and
+ the rapid decoherence observed in condensed phase systems mean that in
+ many cases very accurate results can be obtained from such approximate
+ treatments of quantum dynamics 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+cite{habe+13arpc}
+\end_layout
+
+\end_inset
+
+.
 \end_layout
 
 \begin_layout Section
@@ -724,7 +768,6 @@ depend
  object has been calculated, its value is cached, so further references
  to that quantity will not need to evaluate the function that calculates
  it.
- does not need to be recalculated every time that it is used.
  Furthermore, the code keeps track of when any of the dependencies of the
  variable are updated, and makes sure that the quantity is automatically
  recomputed when it is needed.
@@ -732,10 +775,9 @@ depend
 \end_layout
 
 \begin_layout Standard
-This choice makes implementation slightly more complex the definition of
- physical observables when they are first introduced, as one has to take
- care of stating their dependencies as well as the function that computes
- them.
+This choice makes implementation slightly more complex when the physical
+ observables are first introduced as variables, as one has to take care
+ of stating their dependencies as well as the function that computes them.
  However, the advantage is that when the physical quantities are used, in
  the integrator of the dynamics or in the evaluation of physical properties,
  one does not need to take care of book-keeping and the code can be cleaner,
@@ -851,9 +893,35 @@ ipi
 \end_inset
 
  are atomic units, as given below.
- By default, also input and output use atomic units, even though in most
- cases the default units can be overridden if one wishes so.
- 
+ By default, both input and output data are given in atomic units, but in
+ most cases the default units can be overridden if one wishes so.
+ For details on how to do this, see 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ref{inputunits}
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ref{propertyfile}
+\end_layout
+
+\end_inset
+
+.
 \end_layout
 
 \begin_layout Standard
@@ -1268,21 +1336,21 @@ Licence and credits
 \end_layout
 
 \begin_layout Standard
-Say it's GPL, who initially developed it, and how it should be cited
-\end_layout
-
-\begin_layout Standard
-\begin_inset Note Note
-status open
+This code is distributed under the GPL licence.
+ For more details see 
+\begin_inset Flex URL
+status collapsed
 
 \begin_layout Plain Layout
-Yes, say it.
- :-)
+
+www.gnu.org/licences/gpl.html
 \end_layout
 
 \end_inset
 
-
+.
+ If you use this code in any future publications, please cite this using
+ [cpc paper citation].
 \end_layout
 
 \begin_layout Section
@@ -1349,6 +1417,22 @@ Client code resources
 \end_layout
 
 \begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+label{librarywebsites}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
 There are currently patches available for Quantum Espresso version 4.3.2 and
  CP2K version 2.2.
  It should be possible to adapt these patches to other versions of the codes
@@ -1376,7 +1460,49 @@ cp2k.org
 \end_inset
 
  respectively.
- These codes do not come as part of the 
+\end_layout
+
+\begin_layout Standard
+There are several Fortran and C libraries that most client codes will probably
+ need to run, such as FFTW, BLAS and LAPACK.
+ These can be found at 
+\begin_inset Flex URL
+status open
+
+\begin_layout Plain Layout
+
+www.fftw.org
+\end_layout
+
+\end_inset
+
+, 
+\begin_inset Flex URL
+status collapsed
+
+\begin_layout Plain Layout
+
+www.netlib.org/blas
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset Flex URL
+status open
+
+\begin_layout Plain Layout
+
+www.netlib.org/lapack
+\end_layout
+
+\end_inset
+
+ respectively.
+\end_layout
+
+\begin_layout Standard
+These codes do not come as part of the 
 \begin_inset ERT
 status open
 
@@ -1450,23 +1576,6 @@ gle4md.berlios.de
 
 , where one can also obtain colored-noise parameters to run Path Integral
  with Generalized Langevin Equation thermostat (PI+GLE) calculations.
-\end_layout
-
-\begin_layout Section
-References
-\end_layout
-
-\begin_layout Standard
-\begin_inset Note Note
-status open
-
-\begin_layout Plain Layout
-Perhaps we can just have a bibliography at the end
-\end_layout
-
-\end_inset
-
-
 \end_layout
 
 \begin_layout Chapter
@@ -1565,8 +1674,8 @@ ipi
 
 \end_inset
 
- does not need to be compiled, it will run automatically as a script if
- the appropriate libraries have been installed.
+ does not need to be compiled, it can be run as a script as long as the
+ appropriate libraries have been installed.
 \end_layout
 
 \begin_layout Standard
@@ -1584,8 +1693,22 @@ forces
  library.
  Most electronic structure codes will also need to be linked with some mathemati
 cal libraries, such as BLAS, FFTW and LAPACK.
- Installation instructions should be provided as part of the code distribution
- and on the appropriate website: patching for use with 
+ Installation instructions for these codes should be provided as part of
+ the code distribution and on the appropriate website, as given in 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ref{librarywebsites}
+\end_layout
+
+\end_inset
+
+.
+ Patching for use with 
 \begin_inset ERT
 status open
 
@@ -3420,7 +3543,8 @@ The syntax for the different types of tag data is given below:
 status open
 
 \begin_layout Plain Layout
-Use verbatim for the syntax in the table
+Use verbatim for the syntax in the table - JM: If I do that it appears to
+ break the lyx table environment.
 \end_layout
 
 \end_inset
@@ -3799,10 +3923,26 @@ Overwriting units
 \end_layout
 
 \begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+label{inputunits}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
 Many of the input parameters, such as the pressure in the above example,
  can be specified in more than one unit.
  Indeed, often the atomic unit is inconvenient to use, and we would prefer
- to something else.
+ something else.
  Let us take the above example, but instead take an external pressure of
  3 MPa.
  Instead of converting this to the atomic unit of pressure, it is possible
@@ -4095,21 +4235,42 @@ ipi
 \end_inset
 
  uses a very flexible mechanism to specify how and how often atomic configuratio
-ns and physical properties should be output....
- 
-\begin_inset Note Note
-status open
-
-\begin_layout Plain Layout
-START BY EXPLAINING THE GENERAL <OUTPUT> FRAMEWORK, THEN PROCEED TO EXPLAIN
- THE INNER TAGS.
- HERE PEOPLE DON'T UNDERSTAND THAT THEY CAN USE SEVERAL PROPERTY AND TRAJECTORY
- TAGS 
-\end_layout
-
+ns and physical properties should be output.
+ Within the 
+\begin_inset Quotes eld
 \end_inset
 
+output
+\begin_inset Quotes erd
+\end_inset
 
+ tag of the xml input file the user can specify multiple tags, each one
+ of which will correspond to a particular output file.
+ Each file is managed separately by the code, so what is output to a particular
+ file and how often can be adjusted independently of the same parameters
+ for a different file.
+ It is also possible to have multiple instances of the same type of file.
+\end_layout
+
+\begin_layout Standard
+For example, some of the possible output properties require more than one
+ force evaluation per time step to calculate, and so can considerably increase
+ the computational cost of a simulation.
+ On the other hand, for properties such as the conserved energy quantity
+ it is easy, and often useful, to output them every time step as they are
+ simple to compute and do not take long to output to file.
+ In this case it is most efficient to only output the expensive property
+ rarely, which would be done by outputting this to a different file to the
+ ones that are being used to keep track of the conserved quantity, and use
+ a larger number of time steps between successive writes to this file.
+\end_layout
+
+\begin_layout Standard
+There are three types of output file that can be specified; property files
+ for system level properties, trajectory files for atom/bead level properties
+ and checkpoint files which save the state of the system and so can be used
+ to restart the simulation from a particular point.
+ These will now be considered in turn.
 \end_layout
 
 \begin_layout Subsection
