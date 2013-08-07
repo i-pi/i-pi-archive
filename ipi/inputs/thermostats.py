@@ -11,10 +11,9 @@ Classes:
 __all__ = ['InputThermo']
 
 import numpy as np
-import math
-from utils.depend   import *
-from utils.inputvalue  import *
-from engine.thermostats import *
+from ipi.utils.depend   import *
+from ipi.utils.inputvalue  import *
+from ipi.engine.thermostats import *
 
 class InputThermo(Input):
    """Thermostat input class.

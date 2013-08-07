@@ -23,9 +23,10 @@ Classes:
 __all__ = ['Input', 'InputValue', 'InputAttribute', 'InputArray', 'input_default']
 
 import numpy as np
-from io.io_xml import *
-from units import unit_to_internal, unit_to_user
 from copy import copy
+from ipi.utils.io.io_xml import *
+from ipi.utils.units import unit_to_internal, unit_to_user
+
 
 
 class input_default(object):

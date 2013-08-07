@@ -7,7 +7,7 @@ calculation.
 Classes:
    Status: Simple class to keep track of the status, uses bitwise or to give
       combinations of different status options.
-   DriverSocket: Class to deal with communication between a client and 
+   DriverSocket: Class to deal with communication between a client and
       the driver code.
    InterfaceSocket: Host server class. Deals with distribution of all the jobs
       between the different client servers.
@@ -23,13 +23,12 @@ Exceptions:
 
 __all__ = ['InterfaceSocket']
 
+import numpy as np
 import sys, os
 import socket, select, threading, signal, string, time
-from utils.depend import depstrip
-from utils.messages import verbosity, warning, info
-from utils.softexit import softexit
-
-import numpy as np
+from ipi.utils.depend import depstrip
+from ipi.utils.messages import verbosity, warning, info
+from ipi.utils.softexit import softexit
 
 
 HDRLEN = 12
@@ -380,7 +379,7 @@ class InterfaceSocket(object):
       self._poll_thread = None
       self._prev_kill = {}
       self._poll_true = False
-      self._poll_iter = 0 
+      self._poll_iter = 0
 
    def open(self):
       """Creates a new socket.
@@ -454,7 +453,7 @@ class InterfaceSocket(object):
       pbcpos = depstrip(atoms.q).copy()
       if self.dopbc:
          cell.array_pbc(pbcpos)
-         
+
 
       newreq = {"pos": pbcpos, "cell": cell, "pars": par_str,
                 "result": None, "status": "Queued", "id": reqid,
@@ -534,7 +533,7 @@ class InterfaceSocket(object):
             return
          if not c.status & ( Status.Ready | Status.NeedsInit ):
             c.poll()
-           
+
       for [r,c] in self.jobs[:]:
          if c.status & Status.HasData:
             try:

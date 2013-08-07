@@ -8,13 +8,12 @@ Classes:
 """
 
 import numpy as np
-import math
 from copy import copy
-import utils.io.io_pdb, utils.io.io_xyz
-from engine.cell import *
-from utils.inputvalue import *
-from utils.units import UnitMap
-from utils.messages import verbosity, warning
+import ipi.utils.io.io_pdb, ipi.utils.io.io_xyz
+from ipi.engine.cell import *
+from ipi.utils.inputvalue import *
+from ipi.utils.units import UnitMap
+from ipi.utils.messages import verbosity, warning
 
 __all__ = [ 'InputCell' ]
 

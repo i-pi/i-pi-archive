@@ -11,12 +11,12 @@ Functions:
 __all__ = ['print_pdb_path', 'print_pdb', 'read_pdb']
 
 import numpy as np
-import math, sys
-from utils.depend import depstrip
-import utils.mathtools as mt
-from engine.cell import Cell
-from engine.atoms import Atoms
-from utils.units import *
+import sys
+import ipi.utils.mathtools as mt
+from ipi.utils.depend  import depstrip
+from ipi.engine.cell   import Cell
+from ipi.engine.atoms  import Atoms
+from ipi.utils.units   import *
 
 def print_pdb_path(beads, cell, filedesc = sys.stdout):
    """Prints all the bead configurations, into a pdb formatted file.
@@ -106,9 +106,9 @@ def read_pdb(filedesc):
    alpha = float(header[33:40])
    beta = float(header[40:47])
    gamma = float(header[47:54])
-   alpha *= math.pi/180.0
-   beta *= math.pi/180.0
-   gamma *= math.pi/180.0
+   alpha *= np.pi/180.0
+   beta *= np.pi/180.0
+   gamma *= np.pi/180.0
    h = mt.abc2h(a, b, c, alpha, beta, gamma)
    cell = Cell(h)
 

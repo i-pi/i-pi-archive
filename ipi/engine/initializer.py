@@ -25,18 +25,17 @@ Functions:
 
 import numpy as np
 
-from beads import Beads
-from cell import Cell
-from normalmodes import NormalModes
-from ensembles import Ensemble
-
-from utils.io.io_xyz import read_xyz
-from utils.io.io_pdb import read_pdb
-from utils.io.io_xml import xml_parse_file
-from utils.depend import dobject
-from utils.units import Constants, unit_to_internal
-from utils.nmtransform import nm_rescale
-from utils.messages import verbosity, warning, info
+from ipi.engine.beads import Beads
+from ipi.engine.cell import Cell
+from ipi.engine.normalmodes import NormalModes
+from ipi.engine.ensembles import Ensemble
+from ipi.utils.io.io_xyz import read_xyz
+from ipi.utils.io.io_pdb import read_pdb
+from ipi.utils.io.io_xml import xml_parse_file
+from ipi.utils.depend import dobject
+from ipi.utils.units import Constants, unit_to_internal
+from ipi.utils.nmtransform import nm_rescale
+from ipi.utils.messages import verbosity, warning, info
 
 __all__ = ['Initializer', 'InitBase', 'InitIndexed']
 
@@ -144,7 +143,7 @@ def init_chk(filename):
       filename: A string giving the name of the checkpoint file to be read from.
 
    Returns:
-      A Beads object, Cell object and Thermostat object as read from the 
+      A Beads object, Cell object and Thermostat object as read from the
       checkpoint file.
    """
 

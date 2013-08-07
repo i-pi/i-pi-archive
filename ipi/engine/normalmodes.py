@@ -11,11 +11,10 @@ Classes:
 """
 
 import numpy as np
-import math
-from utils.depend import *
-from utils import units
-from utils import nmtransform
-from utils.messages import verbosity, warning, info
+from ipi.utils.depend import *
+from ipi.utils import units
+from ipi.utils import nmtransform
+from ipi.utils.messages import verbosity, warning, info
 
 __all__ = [ "NormalModes" ]
 
@@ -208,7 +207,7 @@ class NormalModes(dobject):
          The first element is the centroid frequency (0.0).
       """
 
-      return 2*self.omegan*np.array([math.sin(k*math.pi/self.nbeads) for k in range(self.nbeads)])
+      return 2*self.omegan*np.array([np.sin(k*np.pi/self.nbeads) for k in range(self.nbeads)])
 
    def get_dynwk(self):
       """Gets the dynamical normal mode frequencies.
@@ -242,8 +241,8 @@ class NormalModes(dobject):
          sk = np.sqrt(self.nm_factor[b]) # NOTE THAT THE PROPAGATOR USES MASS-SCALED MOMENTA!
 
          dtomegak = self.omegak[b]*dt/sk
-         c = math.cos(dtomegak)
-         s = math.sin(dtomegak)
+         c = np.cos(dtomegak)
+         s = np.sin(dtomegak)
          pqk[b,0,0] = c
          pqk[b,1,1] = c
          pqk[b,0,1] = -s*self.omegak[b]*sk

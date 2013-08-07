@@ -19,14 +19,14 @@ Classes:
 """
 
 import numpy as np
-from utils.inputvalue import *
 from copy import copy, deepcopy
-from inputs.beads import InputBeads
-from inputs.cell import InputCell
-from utils.io import io_xml
-import utils.mathtools as mt
-import engine.initializer as ei
-from utils.messages import verbosity, warning
+import ipi.utils.mathtools as mt
+import ipi.engine.initializer as ei
+from ipi.utils.inputvalue import *
+from ipi.inputs.beads import InputBeads
+from ipi.inputs.cell import InputCell
+from ipi.utils.io import io_xml
+from ipi.utils.messages import verbosity, warning
 
 __all__ = ['InputInitializer', 'InputInitFile', 'InputInitPositions', 'InputInitMomenta', 'InputInitVelocities', 'InputInitMasses', 'InputInitLabels', 'InputInitCell', 'InputInitThermo']
 
@@ -235,7 +235,7 @@ class InputInitCell(InputInitBase):
       """Creates a cell initializer object.
 
       Note that the cell can be initialized from the lengths of the sides and
-      the angles between them instead of by a vector, as specified by the 
+      the angles between them instead of by a vector, as specified by the
       'abc' or 'abcABC' modes.
       """
 

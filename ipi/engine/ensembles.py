@@ -21,17 +21,17 @@ __all__ = ['Ensemble', 'NVEEnsemble', 'NVTEnsemble', 'NPTEnsemble', 'ReplayEnsem
 import numpy as np
 import time
 
-from utils.depend import *
-from utils import units
-from thermostats import *
-from barostats import *
-from inputs.thermostats import InputThermo
-from inputs.barostats import InputBaro
-from utils.softexit import softexit
-from utils.io.io_xyz import read_xyz
-from utils.io.io_pdb import read_pdb
-from utils.io.io_xml import xml_parse_file
-from utils.units import Constants, unit_to_internal
+from ipi.utils.depend import *
+from ipi.utils import units
+from ipi.utils.softexit import softexit
+from ipi.utils.io.io_xyz import read_xyz
+from ipi.utils.io.io_pdb import read_pdb
+from ipi.utils.io.io_xml import xml_parse_file
+from ipi.utils.units import Constants, unit_to_internal
+from ipi.inputs.thermostats import InputThermo
+from ipi.inputs.barostats import InputBaro
+from ipi.engine.thermostats import *
+from ipi.engine.barostats import *
 
 
 class Ensemble(dobject):

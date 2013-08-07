@@ -6,10 +6,10 @@ Classes:
 """
 
 import numpy as np
-from engine.barostats import *
-import engine.thermostats
-from utils.inputvalue import *
-from inputs.thermostats import *
+import ipi.engine.thermostats
+from ipi.engine.barostats import *
+from ipi.utils.inputvalue import *
+from ipi.inputs.thermostats import *
 
 __all__ = ['InputBaro']
 
@@ -34,7 +34,7 @@ class InputBaro(Input):
                                    "default" : "dummy",
                                    "help"     : "The type of barostat. 'bzp' gives a Bussi-Zykova-Parrinello isotropic barostat. 'mht' gives a Martyna-Hughes-Tuckerman isotropic barostat.",
                                    "options"  : ["dummy", "bzp", "mht"]}) }
-   fields={ "thermostat": (InputThermo, {"default" : input_default(factory=engine.thermostats.Thermostat),
+   fields={ "thermostat": (InputThermo, {"default" : input_default(factory=ipi.engine.thermostats.Thermostat),
                                          "help"    : "The thermostat for the cell. Keeps the cell velocity distribution at the correct temperature."}),
             "tau": (InputValue, {"default" : 1.0,
                                   "dtype" : float,

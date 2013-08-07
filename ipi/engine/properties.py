@@ -20,16 +20,15 @@ __all__ = ['Properties', 'Trajectories', 'getkey', 'getall', 'help_latex']
 
 import os
 import numpy as np
-import math
-from utils.depend import *
-from utils.units import Constants, unit_to_internal, unit_to_user
-from utils.mathtools import logsumlog, h2abc_deg
-from utils.io import *
-from atoms import *
-from cell import *
-from ensembles import *
-from forces import *
-from utils.messages import verbosity, info, warning
+from ipi.utils.messages import verbosity, info, warning
+from ipi.utils.depend import *
+from ipi.utils.units import Constants, unit_to_internal, unit_to_user
+from ipi.utils.mathtools import logsumlog, h2abc_deg
+from ipi.utils.io import *
+from ipi.engine.atoms import *
+from ipi.engine.cell import *
+from ipi.engine.ensembles import *
+from ipi.engine.forces import *
 
 def getkey(pstring):
    """Strips units and argument lists from a property/trajectory keyword.
@@ -429,7 +428,7 @@ class Properties(dobject):
 
          ncount = 0
          for i in range(self.beads.natoms):
-            if (iatom == i or latom == self.beads.names[i]): 
+            if (iatom == i or latom == self.beads.names[i]):
                ncount += 1
 
          if ncount == 0:
@@ -634,7 +633,7 @@ class Properties(dobject):
             dq = q[j,3*i:3*(i+1)] - qc[3*i:3*(i+1)]
             rg_at += np.dot(dq, dq)
          ncount += 1
-         rg_tot += math.sqrt(rg_at/float(nb))
+         rg_tot += np.sqrt(rg_at/float(nb))
 
       if ncount == 0:
          raise IndexError("Couldn't find an atom which matched the argument of r_gyration")
@@ -672,7 +671,7 @@ class Properties(dobject):
       return kst
 
    def opening(self, bead):
-      """Path opening function, used in linlin momentum distribution 
+      """Path opening function, used in linlin momentum distribution
       estimator.
 
       Args:
@@ -723,8 +722,8 @@ class Properties(dobject):
             self.dbeads.q[b,3*i:3*(i+1)] += self.opening(b)*u
          dV = self.dforces.pot - self.forces.pot
 
-         n0 = math.exp(-mass*u_size/(2.0*beta*Constants.hbar**2))
-         nx_tot += n0*math.exp(-dV*beta/float(self.beads.nbeads))
+         n0 = np.exp(-mass*u_size/(2.0*beta*Constants.hbar**2))
+         nx_tot += n0*np.exp(-dV*beta/float(self.beads.nbeads))
          ncount += 1
 
       if ncount == 0:
@@ -756,8 +755,8 @@ class Properties(dobject):
       q = depstrip(self.beads.q)
       v0 = self.forces.pot/self.beads.nbeads
       while True:
-         splus = math.sqrt(1.0 + dbeta)
-         sminus = math.sqrt(1.0 - dbeta)
+         splus = np.sqrt(1.0 + dbeta)
+         sminus = np.sqrt(1.0 - dbeta)
 
          for b in range(self.beads.nbeads):
             self.dbeads[b].q = qc*(1.0 - splus) + splus*q[b,:]

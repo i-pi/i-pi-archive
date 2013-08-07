@@ -11,10 +11,10 @@ Classes:
 
 import os
 import numpy as np
-import inputs.simulation
-from utils.depend import *
-from utils.io.io_xml import *
-from engine.properties import getkey
+import ipi.inputs.simulation
+from ipi.utils.depend import *
+from ipi.utils.io.io_xml import *
+from ipi.engine.properties import getkey
 
 __all__ = [ 'PropertyOutput', 'TrajectoryOutput', 'CheckpointOutput' ]
 
@@ -27,9 +27,9 @@ class PropertyOutput(dobject):
    Attributes:
       filename: The name of the file to output to.
       outlist: A list of the properties to be output.
-      stride: The number of steps that should be taken between outputting the      
+      stride: The number of steps that should be taken between outputting the
          data to file.
-      flush: How often we should flush to disk.         
+      flush: How often we should flush to disk.
       out: The output stream on which to output the properties.
       simul: The simulation object to get the data to be output from.
    """
@@ -124,7 +124,7 @@ class PropertyOutput(dobject):
       self.out.write("  ")
       for what in self.outlist:
          try:
-            quantity = self.simul.properties[what]         
+            quantity = self.simul.properties[what]
          except KeyError:
             raise KeyError(what + " is not a recognized property")
          if not hasattr(quantity,"__len__") :
@@ -134,7 +134,7 @@ class PropertyOutput(dobject):
                self.out.write(write_type(float, el) + " ")
 
       self.out.write("\n")
-      
+
       self.nout += 1
       if self.flush > 0 and self.nout >= self.flush :
          self.out.flush()
@@ -221,7 +221,7 @@ class TrajectoryOutput(dobject):
                   else:
                      self.out.append(open(self.filename + "_" + padb + "." + self.format, "a"))
                else:
-                  self.out.append(None) # creates null outputs if a 
+                  self.out.append(None) # creates null outputs if a
                                         # single bead output is chosen
             except:
                raise ValueError("Could not open file " + self.filename + "_" + padb + "." + self.format + " for output")

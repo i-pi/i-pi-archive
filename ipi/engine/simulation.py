@@ -13,24 +13,22 @@ Classes:
 __all__ = ['Simulation']
 
 import numpy as np
-import math
-import os.path, sys
-from utils.depend import *
-from utils.units  import *
-from utils.prng   import *
-from utils.io     import *
-from utils.io.io_xml import *
-from utils.messages import verbosity, info
-from utils.softexit import softexit
-from atoms import *
-import time
-from cell import *
-from forces import Forces
-from beads import Beads
-from normalmodes import NormalModes
-from properties import Properties, Trajectories
-from outputs import CheckpointOutput
-import inputs.simulation
+import os.path, sys, time
+import ipi.inputs.simulation
+from ipi.utils.depend import *
+from ipi.utils.units  import *
+from ipi.utils.prng   import *
+from ipi.utils.io     import *
+from ipi.utils.io.io_xml import *
+from ipi.utils.messages import verbosity, info
+from ipi.utils.softexit import softexit
+from ipi.engine.atoms import *
+from ipi.engine.cell import *
+from ipi.engine.forces import Forces
+from ipi.engine.beads import Beads
+from ipi.engine.normalmodes import NormalModes
+from ipi.engine.properties import Properties, Trajectories
+from ipi.engine.outputs import CheckpointOutput
 
 
 class Simulation(dobject):

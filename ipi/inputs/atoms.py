@@ -1,6 +1,6 @@
 """Deals with creating the atoms class.
 
-Generates an atoms class either from a set of positions and momenta. 
+Generates an atoms class either from a set of positions and momenta.
 This class is only used if no beads tag is present in the xml file.
 
 Classes:
@@ -9,11 +9,11 @@ Classes:
 """
 
 import numpy as np
-from engine.atoms import *
-from utils.inputvalue import *
-import utils.io.io_pdb, utils.io.io_xyz
-from utils.depend import *
-from utils.units import unit_to_internal
+import ipi.utils.io.io_pdb, ipi.utils.io.io_xyz
+from ipi.engine.atoms import *
+from ipi.utils.inputvalue import *
+from ipi.utils.depend import *
+from ipi.utils.units import unit_to_internal
 
 __all__ = ['InputAtoms']
 

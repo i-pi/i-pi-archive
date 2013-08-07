@@ -10,7 +10,7 @@ __all__ = ['print_bin']
 import os
 import numpy as np
 import math, sys
-from utils.depend import depstrip
+from ipi.utils.depend import depstrip
 
 def print_bin(atoms, cell, filedesc = sys.stdout, title=""):
    """Prints the centroid configurations, into a binary file.
@@ -22,7 +22,7 @@ def print_bin(atoms, cell, filedesc = sys.stdout, title=""):
       title: This gives a string to be appended to the comment line.
    """
 
-   buff = filedesc # .buffer 
+   buff = filedesc # .buffer
    cell.h.tofile(buff)
    nat = np.asarray([atoms.natoms])
    nat.tofile(buff)

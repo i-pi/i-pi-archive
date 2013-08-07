@@ -5,10 +5,10 @@ Classes:
 """
 
 import numpy as np
-from engine.normalmodes import *
-from utils.inputvalue import *
-from utils.units import *
 from copy import copy
+from ipi.engine.normalmodes import *
+from ipi.utils.inputvalue import *
+from ipi.utils.units import *
 
 __all__ = ['InputNormalModes']
 

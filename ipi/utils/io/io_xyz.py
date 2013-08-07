@@ -11,10 +11,10 @@ __all__ = ['print_xyz_path', 'print_xyz', 'read_xyz', 'iter_xyz']
 
 import numpy as np
 import math, sys
-from utils.depend import depstrip
-import utils.mathtools as mt
-from engine.atoms import Atoms
-from utils.units import *
+import ipi.utils.mathtools as mt
+from ipi.utils.depend import depstrip
+from ipi.engine.atoms import Atoms
+from ipi.utils.units import *
 
 def print_xyz_path(beads, cell, filedesc = sys.stdout):
    """Prints all the bead configurations, into a xyz formatted file.
@@ -81,7 +81,7 @@ def read_xyz(filedesc):
    iat = 0
    while (iat < natoms):
       body = filedesc.readline()
-      if body.strip() == "": 
+      if body.strip() == "":
          break
       body = body.split()
       name = body[0]

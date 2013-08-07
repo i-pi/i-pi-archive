@@ -1,12 +1,12 @@
 """Contains the classes that deal with constant pressure dynamics.
 
 Contains the algorithms which propagate the position and momenta steps in the
-constant pressure ensemble. Holds the properties directly related to 
+constant pressure ensemble. Holds the properties directly related to
 these ensembles, such as the internal and external pressure and stress.
 
 Classes:
    Barostat: Base barostat class with the generic methods and attributes.
-   BaroBZP: Generates dynamics according to the method of G. Bussi, 
+   BaroBZP: Generates dynamics according to the method of G. Bussi,
       T. Zykova-Timan and M. Parinello, J. Phys. Chem., 130, 074101.
    BaroMHT: Generates dynamics according to the method of G. Martyna, A.
       Hughes and M. Tuckerman, J. Chem. Phys., 110, 3275.
@@ -15,11 +15,11 @@ Classes:
 __all__ = ['Barostat', 'BaroBZP', 'BaroMHT']
 
 import numpy as np
-from utils.depend import *
-from utils.units import *
-from utils.mathtools import eigensystem_ut3x3, invert_ut3x3, exp_ut3x3, det_ut3x3
-from engine.thermostats import Thermostat
-from inputs.thermostats import InputThermo
+from ipi.utils.depend import *
+from ipi.utils.units import *
+from ipi.utils.mathtools import eigensystem_ut3x3, invert_ut3x3, exp_ut3x3, det_ut3x3
+from ipi.inputs.thermostats import InputThermo
+from ipi.engine.thermostats import Thermostat
 
 class Barostat(dobject):
    """Base barostat class.
@@ -33,7 +33,7 @@ class Barostat(dobject):
          each bead.
       nm: An object to do the normal mode transformation.
       thermostat: A thermostat coupled to the barostat degrees of freedom.
-      mdof: The number of atomic degrees of freedom 
+      mdof: The number of atomic degrees of freedom
 
    Depend objects:
       dt: The time step used in the algorithms. Depends on the simulation dt.
@@ -140,7 +140,7 @@ class Barostat(dobject):
 
       if fixdof is None:
          self.mdof = float(self.beads.natoms)*3.0
-      else: 
+      else:
          self.mdof = float(self.beads.natoms)*3.0 - float(fixdof)
 
    def get_pot(self):
@@ -230,7 +230,7 @@ class BaroBZP(Barostat):
 
       if not p is None:
          self.p = np.asarray([p])
-      else: 
+      else:
          self.p = 0.0
 
    def bind(self, beads, nm, cell, forces, prng=None, fixdof=None):
@@ -262,14 +262,14 @@ class BaroBZP(Barostat):
       # binds the thermostat to the piston degrees of freedom
       self.thermostat.bind(pm=[ self.p, self.m ], prng=prng)
 
-      dset(self,"kin",depend_value(name='kin', 
+      dset(self,"kin",depend_value(name='kin',
          func=(lambda:0.5*self.p[0]**2/self.m[0]),
             dependencies= [dget(self,"p"), dget(self,"m")] ) )
 
       # the barostat energy must be computed from bits & pieces (overwrite the default)
       dset(self, "ebaro", depend_value(name='ebaro', func=self.get_ebaro,
-         dependencies=[ dget(self, "kin"), dget(self, "pot"), 
-            dget(self.cell, "V"), dget(self, "temp"), 
+         dependencies=[ dget(self, "kin"), dget(self, "pot"),
+            dget(self.cell, "V"), dget(self, "temp"),
                dget(self.thermostat,"ethermo")] ))
 
    def get_ebaro(self):
@@ -350,7 +350,7 @@ class BaroMHT(Barostat):
 
       if not p is None:
          self.p = np.asarray([p])
-      else: 
+      else:
          self.p = 0.0
 
    def bind(self, beads, nm, cell, forces, prng=None, fixdof=None):
@@ -382,14 +382,14 @@ class BaroMHT(Barostat):
       # binds the thermostat to the piston degrees of freedom
       self.thermostat.bind(pm=[ self.p, self.m ], prng=prng)
 
-      dset(self,"kin",depend_value(name='kin', 
-         func=(lambda:0.5*self.p[0]**2/self.m[0]), 
+      dset(self,"kin",depend_value(name='kin',
+         func=(lambda:0.5*self.p[0]**2/self.m[0]),
             dependencies=[dget(self,"p"), dget(self,"m")] ) )
 
       # the barostat energy must be computed from bits & pieces (overwrite the default)
       dset(self, "ebaro", depend_value(name='ebaro', func=self.get_ebaro,
-         dependencies=[ dget(self, "kin"), dget(self, "pot"), 
-            dget(self.cell, "V"), dget(self, "temp"), 
+         dependencies=[ dget(self, "kin"), dget(self, "pot"),
+            dget(self.cell, "V"), dget(self, "temp"),
                dget(self.thermostat,"ethermo")]))
 
    def get_ebaro(self):

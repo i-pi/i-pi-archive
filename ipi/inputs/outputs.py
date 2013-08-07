@@ -6,13 +6,12 @@ Classes:
    InputTrajectory: Deals with trajectory output.
    InputCheckpoint: Deals with restart file output.
 """
-
-from utils.depend import *
-from utils.inputvalue import *
-from copy import copy
-import engine.outputs
 import numpy as np
-from engine.properties import getkey
+from copy import copy
+import ipi.engine.outputs
+from ipi.utils.depend import *
+from ipi.utils.inputvalue import *
+from ipi.engine.properties import getkey
 
 __all__=['InputOutputs', 'InputProperties', 'InputTrajectory',
          'InputCheckpoint']
@@ -26,7 +25,7 @@ class InputProperties(InputArray):
       filename: The name of the file to output to.
       stride: The number of steps that should be taken between outputting the
          data to file.
-      flush: An integer describing how often the output streams are flushed, 
+      flush: An integer describing how often the output streams are flushed,
          so that it doesn't wait for the buffer to fill before outputting to
          file.
    """
@@ -40,7 +39,7 @@ class InputProperties(InputArray):
    attribs["stride"] = (InputAttribute,{ "dtype" : int, "default": 1,
                                          "help": "The number of steps between successive writes." } )
    attribs["flush"] = (InputAttribute, {"dtype"    : int,    "default"  : 1,
-                                   "help"     : "How often should streams be flushed. 1 means each time, zero means never." })                                  
+                                   "help"     : "How often should streams be flushed. 1 means each time, zero means never." })
 
    def __init__(self, help=None,  default=None, dtype=None, dimension=None):
       """Initializes InputProperties.
@@ -86,7 +85,7 @@ class InputTrajectory(InputValue):
       bead: If the trajectory is a per-bead property, this can be used to
          specify a single bead to output. If negative, it defaults to
          the centroid.
-      flush: An integer describing how often the output streams are flushed, 
+      flush: An integer describing how often the output streams are flushed,
          so that it doesn't wait for the buffer to fill before outputting to
          file.
    """
