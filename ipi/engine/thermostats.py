@@ -1,5 +1,21 @@
 """Contains the classes that deal with constant temperature dynamics.
 
+Copyright (C) 2013, Joshua More and Michele Ceriotti
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <http.//www.gnu.org/licenses/>.
+
+
 Contains the algorithms which propagate the thermostatting steps in the constant
 temperature ensembles. Includes the new GLE thermostat, which can be used to
 run PI+GLE dynamics, reducing the number of path integral beads required.
@@ -28,14 +44,13 @@ __all__ = ['Thermostat', 'ThermoLangevin', 'ThermoPILE_L', 'ThermoPILE_G',
            'ThermoSVR', 'ThermoGLE', 'ThermoNMGLE', 'ThermoNMGLEG']
 
 import numpy as np
-import math
 from ipi.utils.depend   import *
 from ipi.utils.units    import *
 from ipi.utils.mathtools import matrix_exp, stab_cholesky, root_herm
 from ipi.utils.prng import Random
-from beads import Beads
-from normalmodes import NormalModes
 from ipi.utils.messages import verbosity, warning, info
+from ipi.engine.beads import Beads
+from ipi.engine.normalmodes import NormalModes
 
 class Thermostat(dobject):
    """Base thermostat class.
@@ -157,12 +172,12 @@ class ThermoLangevin(Thermostat):
    def get_T(self):
       """Calculates the coefficient of the overall drift of the velocities."""
 
-      return math.exp(-0.5*self.dt/self.tau)
+      return np.exp(-0.5*self.dt/self.tau)
 
    def get_S(self):
       """Calculates the coefficient of the white noise."""
 
-      return math.sqrt(Constants.kb*self.temp*(1 - self.T**2))
+      return np.sqrt(Constants.kb*self.temp*(1 - self.T**2))
 
    def __init__(self, temp = 1.0, dt = 1.0, tau = 1.0, ethermo=0.0):
       """Initialises ThermoLangevin.
@@ -374,7 +389,7 @@ class ThermoSVR(Thermostat):
    def get_et(self):
       """Calculates the damping term in the propagator."""
 
-      return math.exp(-0.5*self.dt/self.tau)
+      return np.exp(-0.5*self.dt/self.tau)
 
    def get_K(self):
       """Calculates the average kinetic energy per degree of freedom."""
@@ -420,9 +435,9 @@ class ThermoSVR(Thermostat):
       else:
          rg = 2.0*self.prng.gamma((self.ndof-2)/2) + self.prng.g**2
 
-      alpha2 = self.et + self.K/K*(1 - self.et)*(r1**2 + rg) + 2.0*r1*math.sqrt(self.K/K*self.et*(1 - self.et))
-      alpha = math.sqrt(alpha2)
-      if (r1 + math.sqrt(2*K/self.K*self.et/(1 - self.et))) < 0:
+      alpha2 = self.et + self.K/K*(1 - self.et)*(r1**2 + rg) + 2.0*r1*np.sqrt(self.K/K*self.et*(1 - self.et))
+      alpha = np.sqrt(alpha2)
+      if (r1 + np.sqrt(2*K/self.K*self.et/(1 - self.et))) < 0:
          alpha *= -1
 
       self.ethermo += K*(1 - alpha2)

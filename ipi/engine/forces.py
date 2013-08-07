@@ -1,5 +1,21 @@
 """Contains the classes that connect the driver to the python code.
 
+Copyright (C) 2013, Joshua More and Michele Ceriotti
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <http.//www.gnu.org/licenses/>.
+
+
 Communicates with the driver code, obtaining the force, virial and potential.
 Deals with creating the jobs that will be sent to the driver, and
 returning the results to the python code.
@@ -16,13 +32,13 @@ Classes:
 __all__ = ['ForceField', 'ForceBeads', 'Forces', 'FFSocket']
 
 import numpy as np
-import math, time
+import time
+from ipi.utils.softexit import softexit
+from ipi.utils.messages import verbosity, warning
 from ipi.utils.depend import *
 from ipi.utils.nmtransform import nm_rescale
-from ipi.utils.softexit import softexit
 from ipi.interfaces.sockets import InterfaceSocket
-from beads import Beads
-from ipi.utils.messages import Verbosity, warning
+from ipi.engine.beads import Beads
 
 class ForceField(dobject):
    """Base forcefield class.
@@ -633,11 +649,10 @@ class Forces(dobject):
          newbeads = Beads(beads.natoms, newb)
          newrpc = nm_rescale(beads.nbeads, newb)
 
-         newf = make_rpc(newrpc, beads)
-         dget(newbeads,"q")._func = newf
+         dget(newbeads,"q")._func = make_rpc(newrpc, beads)
          for b in newbeads:
             # must update also indirect access to the beads coordinates
-            dget(b,"q")._func = newf
+            dget(b,"q")._func = dget(newbeads,"q")._func
 
          # makes newbeads.q depend from beads.q
          dget(beads,"q").add_dependant(dget(newbeads,"q"))

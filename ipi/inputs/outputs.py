@@ -1,17 +1,32 @@
 """Deals with creating the output objects.
 
+Copyright (C) 2013, Joshua More and Michele Ceriotti
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <http.//www.gnu.org/licenses/>.
+
+
 Classes:
    InputOutputs: Creates a list of all the output objects.
    InputProperties: Deals with property output.
    InputTrajectory: Deals with trajectory output.
    InputCheckpoint: Deals with restart file output.
 """
-
-from ipi.utils.depend import *
-from ipi.utils.inputvalue import *
+import numpy as np
 from copy import copy
 import ipi.engine.outputs
-import numpy as np
+from ipi.utils.depend import *
+from ipi.utils.inputvalue import *
 from ipi.engine.properties import getkey
 
 __all__=['InputOutputs', 'InputProperties', 'InputTrajectory',
@@ -26,7 +41,7 @@ class InputProperties(InputArray):
       filename: The name of the file to output to.
       stride: The number of steps that should be taken between outputting the
          data to file.
-      flush: An integer describing how often the output streams are flushed, 
+      flush: An integer describing how often the output streams are flushed,
          so that it doesn't wait for the buffer to fill before outputting to
          file.
    """
@@ -40,7 +55,7 @@ class InputProperties(InputArray):
    attribs["stride"] = (InputAttribute,{ "dtype" : int, "default": 1,
                                          "help": "The number of steps between successive writes." } )
    attribs["flush"] = (InputAttribute, {"dtype"    : int,    "default"  : 1,
-                                   "help"     : "How often should streams be flushed. 1 means each time, zero means never." })                                  
+                                   "help"     : "How often should streams be flushed. 1 means each time, zero means never." })
 
    def __init__(self, help=None,  default=None, dtype=None, dimension=None):
       """Initializes InputProperties.
@@ -86,7 +101,7 @@ class InputTrajectory(InputValue):
       bead: If the trajectory is a per-bead property, this can be used to
          specify a single bead to output. If negative, it defaults to
          the centroid.
-      flush: An integer describing how often the output streams are flushed, 
+      flush: An integer describing how often the output streams are flushed,
          so that it doesn't wait for the buffer to fill before outputting to
          file.
    """

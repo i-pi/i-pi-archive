@@ -1,5 +1,21 @@
 """Deals with creating the initiliazer class.
 
+Copyright (C) 2013, Joshua More and Michele Ceriotti
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <http.//www.gnu.org/licenses/>.
+
+
 Classes:
    InputInitializer: Initializes the classes that initialize the simulation
       data.
@@ -19,13 +35,13 @@ Classes:
 """
 
 import numpy as np
-from ipi.utils.inputvalue import *
 from copy import copy, deepcopy
+import ipi.utils.mathtools as mt
+import ipi.engine.initializer as ei
+from ipi.utils.inputvalue import *
 from ipi.inputs.beads import InputBeads
 from ipi.inputs.cell import InputCell
 from ipi.utils.io import io_xml
-import ipi.utils.mathtools as mt
-import ipi.engine.initializer as ei
 from ipi.utils.messages import verbosity, warning
 
 __all__ = ['InputInitializer', 'InputInitFile', 'InputInitPositions', 'InputInitMomenta', 'InputInitVelocities', 'InputInitMasses', 'InputInitLabels', 'InputInitCell', 'InputInitThermo']
@@ -235,7 +251,7 @@ class InputInitCell(InputInitBase):
       """Creates a cell initializer object.
 
       Note that the cell can be initialized from the lengths of the sides and
-      the angles between them instead of by a vector, as specified by the 
+      the angles between them instead of by a vector, as specified by the
       'abc' or 'abcABC' modes.
       """
 

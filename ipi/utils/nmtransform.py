@@ -1,5 +1,21 @@
 """Contains functions for doing the inverse and forward normal mode transforms.
 
+Copyright (C) 2013, Joshua More and Michele Ceriotti
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <http.//www.gnu.org/licenses/>.
+
+
 Classes:
    nm_trans: Uses matrix multiplication to do normal mode transformations.
    nm_rescale: Uses matrix multiplication to do ring polymer contraction
@@ -29,17 +45,16 @@ def mk_nm_matrix(nbeads):
    """
 
    b2nm = np.zeros((nbeads,nbeads))
-   b2nm[0,:] = np.sqrt(1.0/nbeads)
-   for i in range(1, nbeads/2+1):
-      for j in range(nbeads):
-         b2nm[i,j] = np.sqrt(2.0/nbeads)*np.cos(2*np.pi*j*i/float(nbeads))
+   b2nm[0,:] = np.sqrt(1.0)
+   for j in range(nbeads):
+      for i in range(1, nbeads/2+1):
+         b2nm[i,j] = np.sqrt(2.0)*np.cos(2*np.pi*j*i/float(nbeads))
+      for i in range(nbeads/2+1, nbeads):
+         b2nm[i,j] = np.sqrt(2.0)*np.sin(2*np.pi*j*i/float(nbeads))
    if (nbeads%2) == 0:
-      b2nm[nbeads/2,0:nbeads:2] = np.sqrt(1.0/nbeads)
-      b2nm[nbeads/2,1:nbeads:2] = -np.sqrt(1.0/nbeads)
-   for i in range(nbeads/2+1, nbeads):
-      for j in range(nbeads):
-         b2nm[i,j] = np.sqrt(2.0/nbeads)*np.sin(2*np.pi*j*i/float(nbeads))
-   return b2nm
+      b2nm[nbeads/2,0:nbeads:2] = 1.0
+      b2nm[nbeads/2,1:nbeads:2] = -1.0
+   return b2nm/np.sqrt(nbeads)
 
 def mk_rs_matrix(nb1, nb2):
    """Gets the matrix that transforms a path with nb1 beads into one with
@@ -66,11 +81,10 @@ def mk_rs_matrix(nb1, nb2):
          b1_b2[i,i] = 1.0
          b1_b2[nb2-i, nb1-i] = 1.0
       if (nb2 % 2 == 0):
-         #if the original number of beads is odd, and the new number is
-         #even then the non-degenerate mode's contribution needs to be split
-         #equally among the appropriate degenerate modes of the new ring polymer
-         b1_b2[nb2/2, nb2/2] = 0.5
-         b1_b2[nb2/2, nb1-nb2/2] = 0.5
+         #if we are contracting down to an even number of beads, then we have to
+         #pick just one of the last degenerate modes to match onto the single
+         #stiffest mode in the new path
+         b1_b2[nb2/2, nb1-nb2/2] = 0.0
 
       rs_b1_b2 = np.dot(nm_b2, np.dot(b1_b2, b1_nm))
       return rs_b1_b2*np.sqrt(float(nb2)/float(nb1))
@@ -163,9 +177,9 @@ class nm_fft:
       using Fast Fourier transforms.
 
    Attributes:
-      fft: The fast-Fourier transform function to transform between the 
+      fft: The fast-Fourier transform function to transform between the
          bead and normal mode representations.
-      ifft: The inverse fast-Fourier transform function to transform 
+      ifft: The inverse fast-Fourier transform function to transform
          between the normal mode and bead representations.
       qdummy: A matrix to hold a copy of the bead positions to transform
          them to the normal mode representation.
@@ -191,7 +205,7 @@ class nm_fft:
          self.qnmdummy = pyfftw.n_byte_align_empty((nbeads//2+1, 3*natoms), 16, 'complex64')
          self.fft = pyfftw.FFTW(self.qdummy, self.qnmdummy, axes=(0,), direction='FFTW_FORWARD')
          self.ifft = pyfftw.FFTW(self.qnmdummy, self.qdummy, axes=(0,), direction='FFTW_BACKWARD')
-      except ImportError: #Uses standard numpy fft library if nothing better 
+      except ImportError: #Uses standard numpy fft library if nothing better
                           #is available
          self.qdummy = np.zeros((nbeads,3*natoms), dtype='float32')
          self.qnmdummy = np.zeros((nbeads//2+1,3*natoms), dtype='complex64')
@@ -206,7 +220,7 @@ class nm_fft:
       """Transforms a matrix to the normal mode representation.
 
       Args:
-         q: A matrix with nbeads rows and 3*natoms columns, 
+         q: A matrix with nbeads rows and 3*natoms columns,
             in the bead representation.
       """
 
@@ -237,7 +251,7 @@ class nm_fft:
       """Transforms a matrix to the bead representation.
 
       Args:
-         qnm: A matrix with nbeads rows and 3*natoms columns, 
+         qnm: A matrix with nbeads rows and 3*natoms columns,
             in the normal mode representation.
       """
 

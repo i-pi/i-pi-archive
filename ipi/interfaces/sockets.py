@@ -1,5 +1,21 @@
 """Deals with the socket communication between the PIMD and driver code.
 
+Copyright (C) 2013, Joshua More and Michele Ceriotti
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <http.//www.gnu.org/licenses/>.
+
+
 Deals with creating the socket, transmitting and receiving data, accepting and
 removing different driver routines and the parallelization of the force
 calculation.
@@ -7,7 +23,7 @@ calculation.
 Classes:
    Status: Simple class to keep track of the status, uses bitwise or to give
       combinations of different status options.
-   DriverSocket: Class to deal with communication between a client and 
+   DriverSocket: Class to deal with communication between a client and
       the driver code.
    InterfaceSocket: Host server class. Deals with distribution of all the jobs
       between the different client servers.
@@ -23,13 +39,12 @@ Exceptions:
 
 __all__ = ['InterfaceSocket']
 
+import numpy as np
 import sys, os
 import socket, select, threading, signal, string, time
 from ipi.utils.depend import depstrip
 from ipi.utils.messages import verbosity, warning, info
 from ipi.utils.softexit import softexit
-
-import numpy as np
 
 
 HDRLEN = 12
@@ -380,7 +395,7 @@ class InterfaceSocket(object):
       self._poll_thread = None
       self._prev_kill = {}
       self._poll_true = False
-      self._poll_iter = 0 
+      self._poll_iter = 0
 
    def open(self):
       """Creates a new socket.
@@ -454,7 +469,7 @@ class InterfaceSocket(object):
       pbcpos = depstrip(atoms.q).copy()
       if self.dopbc:
          cell.array_pbc(pbcpos)
-         
+
 
       newreq = {"pos": pbcpos, "cell": cell, "pars": par_str,
                 "result": None, "status": "Queued", "id": reqid,
@@ -534,7 +549,7 @@ class InterfaceSocket(object):
             return
          if not c.status & ( Status.Ready | Status.NeedsInit ):
             c.poll()
-           
+
       for [r,c] in self.jobs[:]:
          if c.status & Status.HasData:
             try:

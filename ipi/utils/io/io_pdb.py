@@ -1,6 +1,22 @@
 """Contains the functions used to print the trajectories and read input
 configurations with pdb formatting.
 
+Copyright (C) 2013, Joshua More and Michele Ceriotti
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <http.//www.gnu.org/licenses/>.
+
+
 Functions:
    print_pdb_path: Prints all the bead configurations, and shows the ring
       polymer connectivity.
@@ -11,12 +27,12 @@ Functions:
 __all__ = ['print_pdb_path', 'print_pdb', 'read_pdb']
 
 import numpy as np
-import math, sys
-from ipi.utils.depend import depstrip
+import sys
 import ipi.utils.mathtools as mt
-from ipi.engine.cell import Cell
-from ipi.engine.atoms import Atoms
-from ipi.utils.units import *
+from ipi.utils.depend  import depstrip
+from ipi.engine.cell   import Cell
+from ipi.engine.atoms  import Atoms
+from ipi.utils.units   import *
 
 def print_pdb_path(beads, cell, filedesc = sys.stdout):
    """Prints all the bead configurations, into a pdb formatted file.
@@ -106,9 +122,9 @@ def read_pdb(filedesc):
    alpha = float(header[33:40])
    beta = float(header[40:47])
    gamma = float(header[47:54])
-   alpha *= math.pi/180.0
-   beta *= math.pi/180.0
-   gamma *= math.pi/180.0
+   alpha *= np.pi/180.0
+   beta *= np.pi/180.0
+   gamma *= np.pi/180.0
    h = mt.abc2h(a, b, c, alpha, beta, gamma)
    cell = Cell(h)
 

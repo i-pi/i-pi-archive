@@ -1,5 +1,21 @@
 """Contains the classes that deal with the normal mode representation.
 
+Copyright (C) 2013, Joshua More and Michele Ceriotti
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <http.//www.gnu.org/licenses/>.
+
+
 Deals with the normal mode transformation, including the complications
 introduced by PA-CMD when the bead masses are rescaled. Also deals with
 the change in the dynamics introduced by this mass-scaling, and has its
@@ -11,7 +27,6 @@ Classes:
 """
 
 import numpy as np
-import math
 from ipi.utils.depend import *
 from ipi.utils import units
 from ipi.utils import nmtransform
@@ -208,7 +223,7 @@ class NormalModes(dobject):
          The first element is the centroid frequency (0.0).
       """
 
-      return 2*self.omegan*np.array([math.sin(k*math.pi/self.nbeads) for k in range(self.nbeads)])
+      return 2*self.omegan*np.array([np.sin(k*np.pi/self.nbeads) for k in range(self.nbeads)])
 
    def get_dynwk(self):
       """Gets the dynamical normal mode frequencies.
@@ -242,8 +257,8 @@ class NormalModes(dobject):
          sk = np.sqrt(self.nm_factor[b]) # NOTE THAT THE PROPAGATOR USES MASS-SCALED MOMENTA!
 
          dtomegak = self.omegak[b]*dt/sk
-         c = math.cos(dtomegak)
-         s = math.sin(dtomegak)
+         c = np.cos(dtomegak)
+         s = np.sin(dtomegak)
          pqk[b,0,0] = c
          pqk[b,1,1] = c
          pqk[b,0,1] = -s*self.omegak[b]*sk

@@ -1,10 +1,26 @@
 """Deals with creating the random number generator.
 
-Generates a random number generator either from a seed number, or from a 
+Copyright (C) 2013, Joshua More and Michele Ceriotti
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <http.//www.gnu.org/licenses/>.
+
+
+Generates a random number generator either from a seed number, or from a
 state vector.
 
 Classes:
-   InputRandom: Deals with creating the Random object from a file, and 
+   InputRandom: Deals with creating the Random object from a file, and
       writing the checkpoints.
 """
 
@@ -17,8 +33,8 @@ from ipi.utils.inputvalue import *
 class InputRandom(Input):
    """Random input class.
 
-   Handles generating the appropriate random number class from the xml 
-   input file, and generating the xml checkpoint tags and data from an 
+   Handles generating the appropriate random number class from the xml
+   input file, and generating the xml checkpoint tags and data from an
    instance of the object.
 
    Attributes:
@@ -26,7 +42,7 @@ class InputRandom(Input):
          generator from. Defaults to 123456.
       state: An optional array giving the state of the random number generator.
          Defaults to an empty array.
-      has_gauss: An optional integer giving whether there is a stored 
+      has_gauss: An optional integer giving whether there is a stored
          Gaussian number or not. Defaults to 0.
       gauss: An optional float giving the stored Gaussian number. Defaults to
          0.0.
@@ -34,19 +50,19 @@ class InputRandom(Input):
          that is being read from. Defaults to 0.
    """
 
-   fields = {"seed"      : (InputValue, {"dtype"   : int, 
+   fields = {"seed"      : (InputValue, {"dtype"   : int,
                                          "default" : 123456,
-                                         "help"    : "This is the seed number used to generate the initial state of the random number generator."}), 
-             "state"     : (InputArray, {"dtype"   : np.uint, 
+                                         "help"    : "This is the seed number used to generate the initial state of the random number generator."}),
+             "state"     : (InputArray, {"dtype"   : np.uint,
                                          "default" : input_default(factory=np.zeros, kwargs={'shape': (0,), 'dtype': np.uint}),
                                          "help"    : "Gives the state vector for the random number generator. Avoid directly modifying this unless you are very familiar with the inner workings of the algorithm used."}),
-             "has_gauss" : (InputValue, {"dtype"   : int, 
+             "has_gauss" : (InputValue, {"dtype"   : int,
                                          "default" : 0,
                                          "help"    : "Determines whether there is a stored gaussian number or not. A value of 0 means there is none stored."}),
              "gauss"     : (InputValue, {"dtype"   : float,
                                          "default" : 0.00,
                                          "help"    : "The stored Gaussian number." }),
-             "set_pos"   : (InputValue, {"dtype"   : int, 
+             "set_pos"   : (InputValue, {"dtype"   : int,
                                          "default" : 0,
                                          "help"    : "Gives the position in the state array that the random number generator is reading from."})}
 
@@ -54,7 +70,7 @@ class InputRandom(Input):
    default_label = "RANDOM"
 
    def store(self, prng):
-      """Takes a random number instance and stores a minimal 
+      """Takes a random number instance and stores a minimal
       representation of it.
 
       Args:
@@ -73,7 +89,7 @@ class InputRandom(Input):
       """Creates a random number object.
 
       Returns:
-         An random number object of the appropriate type and with the 
+         An random number object of the appropriate type and with the
          appropriate properties given the attributes of the InputRandom
          object.
       """

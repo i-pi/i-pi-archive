@@ -1,5 +1,21 @@
 """Classes to deal with output of simulation data.
 
+Copyright (C) 2013, Joshua More and Michele Ceriotti
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <http.//www.gnu.org/licenses/>.
+
+
 Holds classes to deal with the output of different properties, trajectories
 and the restart files.
 
@@ -27,9 +43,9 @@ class PropertyOutput(dobject):
    Attributes:
       filename: The name of the file to output to.
       outlist: A list of the properties to be output.
-      stride: The number of steps that should be taken between outputting the      
+      stride: The number of steps that should be taken between outputting the
          data to file.
-      flush: How often we should flush to disk.         
+      flush: How often we should flush to disk.
       out: The output stream on which to output the properties.
       simul: The simulation object to get the data to be output from.
    """
@@ -124,7 +140,7 @@ class PropertyOutput(dobject):
       self.out.write("  ")
       for what in self.outlist:
          try:
-            quantity = self.simul.properties[what]         
+            quantity = self.simul.properties[what]
          except KeyError:
             raise KeyError(what + " is not a recognized property")
          if not hasattr(quantity,"__len__") :
@@ -134,7 +150,7 @@ class PropertyOutput(dobject):
                self.out.write(write_type(float, el) + " ")
 
       self.out.write("\n")
-      
+
       self.nout += 1
       if self.flush > 0 and self.nout >= self.flush :
          self.out.flush()
@@ -221,7 +237,7 @@ class TrajectoryOutput(dobject):
                   else:
                      self.out.append(open(self.filename + "_" + padb + "." + self.format, "a"))
                else:
-                  self.out.append(None) # creates null outputs if a 
+                  self.out.append(None) # creates null outputs if a
                                         # single bead output is chosen
             except:
                raise ValueError("Could not open file " + self.filename + "_" + padb + "." + self.format + " for output")

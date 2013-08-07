@@ -1,5 +1,21 @@
 """Deals with creating the interface between the wrapper and the socket.
 
+Copyright (C) 2013, Joshua More and Michele Ceriotti
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <http.//www.gnu.org/licenses/>.
+
+
 Classes:
    InputInterface: Deals with creating the Interface object from a file, and
       writing the checkpoints.
@@ -9,9 +25,10 @@ __all__ = [ 'InputInterfaceSocket' ]
 
 import socket, select, threading, signal, string, os, time
 import numpy as np
+from ipi.utils.messages import verbosity, warning
 from ipi.utils.inputvalue import *
 from ipi.interfaces.sockets import *
-from ipi.utils.messages import verbosity, warning
+
 
 class InputInterfaceSocket(Input):
    """Interface input class.
