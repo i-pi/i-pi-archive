@@ -683,9 +683,9 @@ done
 
 
 
-Here we will go through a simple step-by-step guide through an example
-simulation, starting from a minimal xml input file and then exploring
-some of the more generally useful options that \ipi offers, and making
+Here we give a simple step-by-step guide through an example
+simulation, exploring
+some of the more generally useful options that \ipi offers and making
 no assumptions of previous experience of this code or other MD codes.
 Exercepts from the relevant input files are reproduced here, for explanation
 purposes, but to get the most out of this tutorial the user is encouraged
@@ -693,14 +693,15 @@ to work through them themselves. For this purpose, the input files
 have been included with the \ipi distribution, in the {}``test/tutorial''
 directory.
 
-The example is a small NPT simulation of para-hydrogen, using the
-Silvera-Goldman potential \cite{???}. We will take (N,P,T) = (108,
-0, 25 K).
+The chosen problem is that of a small NPT simulation of para-hydrogen, 
+using the Silvera-Goldman potential \cite{???}. 
+We will take (N,P,T) = (108, 0, 25 K).
 
 Finally, note that this is designed to be a demonstration of some
 of the basic abilities of \ipi, and so the user is encouraged to
 play with some of the variables to get a feel for how the input file
-works.
+works. \textbf{We will put in bold variables that can be safely adjusted without
+changing the result of the simulation.}
 
 
 \subsection{Part 0 - a minimal input file}
@@ -708,7 +709,7 @@ works.
 
 \subsubsection{Client code}
 
-Let us now consider the problem of how to use \ipi to run an NPT
+Let us now consider the problem of how to use \ipi to run a NPT
 simulation of para-hydrogen. The first thing that is required is a
 client code that is capable of calculating the potential interactions
 of para-hydrogen molecules. Fortunately, one of the client codes distributed
@@ -717,10 +718,10 @@ into it (hence why this system was chosen for this tutorial), and
 so all that is required is to create the {}``driver.x'' file in
 the {}``drivers'' directory, using the UNIX utility make.
 
-This client code can be used for several different problems, which
+This client code can be used for several different problems, some of which
 are explored in the {}``tests'' directory, but for the current problem
-we need to use the Silvera-Goldman potential with a cut-off radius
-of 15 bohr radii. This is run using the following command:
+we will use the Silvera-Goldman potential with a cut-off radius
+of \textbf{15 bohr radii}. This is run using the following command:
 
 \begin{verbatim}
 > ./driver.x -m sg -u -h localhost -o 15
@@ -735,7 +736,7 @@ radii, as required.
 Note that usually this step will require setting up an the appropriate
 client code input files, possibly for an \emph{ab initio} electronic
 structure code, and so is generally a more involved process. Refer
-to \ref{runningclients}, or the documentation of the appropriate
+to \ref{runningclients}, and the documentation of the appropriate
 client code, for more details on how to do this step.
 
 
@@ -747,7 +748,8 @@ be initialized. Here, we will go step by step through the creation
 of a minimal input file for a simple NVT equilibration run. Note that
 the working final version is held within the {}``tutorial-0'' directory.
 
-Firstly, the \ipi xml reading functions first look for a {}``simulation''
+Firstly, when reading the input file the \ipi xml reading functions look
+for a {}``simulation''
 tag as a sign to start reading data. For those familiar with xml jargon,
 we have defined {}``simulation'' as the root tag, so all the input
 data read in must start and end with a {}``simulation'' tag, as
@@ -760,7 +762,7 @@ show below:
 \end{verbatim}
 
 xml syntax requires a set of hierarchially nested tags, each of which
-contain either data or more tags. Also, \ipi itself requires certain
+contain data and/or more tags. Also, \ipi itself requires certain
 tags to be present, and keeps track of which tags are supposed to
 be where. More information about which tags are available can be found
 in \ref{hierarchy}, more information on xml syntax can be found in
@@ -789,7 +791,7 @@ At this point then, the input file looks like:
 
 Now let us consider each of these tags in turn. Firstly, {}``initialize''.
 As the name suggests, this initializes the state of the system, so
-this is where we will specify the initial atom positions and the cell
+this is where we will specify the atom positions and the cell
 parameters. Firstly, this takes an attribute which specifies the number
 of replicas of the system, called {}``nbeads''. An attribute is
 a particular type of xml syntax designed to specify a single bit of
@@ -803,7 +805,7 @@ data, and has the following syntax:
 
 Note that an attribute forms part of the opening tag, and that the
 value being assigned to it is held within quotation marks. In this
-case, we have set the number of replicas, or beads, to 4.
+case, we have set the number of replicas, or beads, to \textbf{4}.
 
 Next, we must specify the atomic configuration. Rather than initialize
 the atom positions manually, we will assume that the user can create
@@ -903,7 +905,7 @@ specify a single {}``sockets'' tag to initialize it:
 A socket is specified with three parameters; the port number, the
 hostname and whether it is a unix or an internet socket. Here for
 simplicity (and to match up with the client socket specified above)
-we will take a unix socket, which uses the hostname localhost, and
+we will take a unix socket, which uses the hostname localhost and
 does not need a port number to be specified. This gives the final
 {}``forces'' section:
 
@@ -933,7 +935,7 @@ be. In general, the time step should be made as large as possible
 without there being a drift in the conserved quantity. Usually we
 would take a few short runs with different time steps to try and optimize
 this, but for the sake of this tutorial we will use a safe value of
-40 atomic time units, giving:
+\textbf{40 atomic time units}, giving:
 
 \begin{verbatim}
    <ensemble mode='nvt'>
@@ -949,11 +951,11 @@ for the constant temperature sampling algorithm. For simplicity we
 will take the path-integral Langevin equation (PILE) algorithm \cite{???},
 which is specifically designed for path integral simulations, and
 since we are trying to equilibrate local properties we will take the
-local version of this, {}``pile\_l''. This integrator also has to
+local version of this, \textbf{{}``pile\_l''}. This integrator also has to
 be initialized with a time scale parameter, {}``tau'', which determines
 how strong the thermostat is. Since we have a local thermostat the
 appropriate time scales will be fairly short, so we will take a short
-time scale of 1000 atomic time units. Putting all of this together,
+time scale of \textbf{1000 atomic time units}. Putting all of this together,
 we get the final input file:
 
 \begin{verbatim}
@@ -985,8 +987,8 @@ Now that we have a valid input file, we can run the test simulation.
 The {}``i-pi'' script in the root directory is used to create an
 \ipi simulation from a xml input file. More information on how to
 run this code can be found in \ref{runningsimulations}, but all that
-is required in this case is (if we assume that we are in the {}``tutorial-0''
-directory):
+is required in this case (if we assume that we are in the {}``tutorial-0''
+directory) is:
 
 \begin{verbatim}
 > python ../../../i-pi tutorial-0.xml
@@ -999,7 +1001,8 @@ messages that end with {}``starting the polling thread main loop'',
 which signifies that the server socket has been opened and is waiting
 for connections from client codes.
 
-At this point the driver code is run in a new terminal using the command
+At this point the driver code is run in a new terminal 
+from the {}``drivers'' directory using the command
 specified above:
 
 \begin{verbatim}
@@ -1027,27 +1030,61 @@ First, consider the file {}``i-pi.checkpoint''. As said above, this
 gives a snapshot of the state of the simulation. Since we didn't specify
 how often to print out this file the default value of once every 1000
 time steps was used, so in this case the last checkpoint was created
-at step 999. This type of file is designed restart the simulation
-from, by using it as an input file for a new \ipi simulation. In
-this case, it will re-run the last step if you use it as an input
-file for \ipi
+at step 999. This type of file is designed to be a way of restarting
+the simulation, by using it as an input file for a new \ipi simulation. 
+This is done in exactly the same way as before, i.e.:
 
-One test of whether the input file was specified correctly is to look
-at the trajectory files {}``i-pi.pos\_x.xyz'' using a visualization
-program such as VMD. If we do this, we see that the simulation started
+\begin{verbatim}
+> python ../../../i-pi i-pi.checkpoint
+\end{verbatim}
+
+The RESTART file is the same type of file, except this is automatically
+generated at the end of the simulation regardless of what is
+specified in the input file.
+
+The next set of files to consider are the trajectory files
+{}``i-pi.pos\_x.xyz''. Trajectory files are used to print out properties
+relevant to all the atoms individually, such as the velocities or forces.
+In this case, these give the positions of the 
+beads at various snapshots throughout the simulation. These can be useful
+for calculating correlation functions or radial distribution functions,
+but possibly their most useful feature is that visualization
+programs such as VMD can read them, and then use the data to show
+a movie of how the simulation is progressing. 
+
+If we do this with these files, we see that the simulation started
 from an essentially optimized configuration and then over the course
 of the simulation began to melt. Given that at the state point studied
 and with the potential given para-hydrogen is a liquid \cite{???},
-this seems reasonable. Note however that there is still a noticable
-amount of order, and so it is not certain whether the system has equilibrated
-yet.
+this is what we would expect.
 
-Another simple test is to check that the conserved quantity does not
-exhibit any long term drift.
+Finally, let us consider the {}``i-pi.md'' file. This is a print out
+of the system level properties, and by default we get one file which
+prints out the timestep, elapsed time, conserved quantity, temperature,
+potential energy and kinetic energy of the system.
 
-Since we are interested in using this simulation as an equilibration
-run, it makes sense to check whether 
+At this point there are two simple tests that should be done. Firstly,
+we should check that the conserved quantity does not exhibit any major
+drift, and second we should check to see if the properties of interest
+have converged yet. The file format has been chosen so that programs 
+such as awk and gnuplot can read the data easily. In this case, gnuplot
+can show how the conserved quantity, temperature, potential energy
+and kinetic energy change throughout the simulation using:
 
+\begin{verbatim}
+> gnuplot
+> p './i-pi.md' u 1:3 # Plots column 1, i.e. timestep, 
+> p './i-pi.md' u 1:4 # against columns 3, 4, 5 and 6,
+> p './i-pi.md' u 1:5 # i.e. conserved quantity, temperature,
+> p './i-pi.md' u 1:6 # kinetic energy and potential energy
+\end{verbatim}
+
+This will show that the conserved quantity has only a small drift upwards,
+so the time step is sufficiently small, and that the temperature has converged
+but the kinetic and potential energies have not.
+
+We therefore need to adjust the input parameters to converge these properties
+properly, as will be done in the next section.
 
 \subsection{Part 1 - Customizing and extending the input file}
 
@@ -1055,8 +1092,111 @@ In Part 0, we created a minimal input file which could be used to
 run a basic NVT simulation. However, this ignored several non-essential
 but very useful bits of functionality, and so we will now go through
 the process of improving this generic input file so that it is more
-suitable for an actual simulation.
+suitable for the task at hand, namely doing an equilibration run.
 
+\subsubsection{Improving convergence}
+
+We noted at the end of the last run that the simulation did not appear to have
+fully converged by the end of it. While we could try playing around with the
+time step parameter and the thermostat, there are a couple of much simpler ways to
+help improve the convergence.
+
+Firstly, we can simply run the simulation for longer. By default the number of
+time steps is 1000, so we will increase this to \textbf{5000} using the 
+{}``total\_steps'' tag:
+
+\begin{verbatim}
+   <total_steps> 5000 </total_steps>
+\end{verbatim} 
+
+Another thing we can do to increase the initial convergence of the energy 
+is to initialize the atom velocities. Rather than setting these manually,
+the simplest method is to sample these randomly from a Maxwell-Boltzmann
+distribution. This can be done in the {}``initialize'' tag using the
+{}``velocities'' tag:
+
+\begin{verbatim}
+   <initialize nbeads='4'>
+      <file mode='xyz'> our_ref.xyz </file>
+      <cell mode='abc'>
+         [33.72594, 33.72594, 33.72594]
+      </cell>
+      <velocities mode='thermal'> 50 </velocities>
+   </initialize>
+\end{verbatim}
+
+Note that we use \textbf{double the physical temperature} 
+here, since we are starting from essentially a zero-temperature optimized 
+configuration and so this choice ensures that the initial total energy 
+is roughly correct.
+
+\subsubsection{Simplifying the input file}
+
+Some of the functionality of \ipi is designed to make it easier to use rather
+than to improve the performance of the code. One example of this is the
+unit conversion routines. These have been interfaced with the xml reading code
+in such a way that the code automatically knows what dimensionality each
+input parameter is and so can automically convert between atomic units 
+and a user specified unit. For example, the time step we used in tutorial 0
+was 40 atomic time units, but we might instead want to express this in S.I.
+units for comparison with another paper. This happens to be approximately
+\textbf{1 femtosecond}, so we can instead use:
+
+\begin{verbatim}
+   <ensemble mode='nvt'>
+      <timestep units='femtosecond'> 1 </timestep>
+      ...
+   </ensemble>
+\end{verbatim}
+ 
+Similarly, we might want to specify the input configuration file in
+angstrom rather than bohr radii (in fact this is the standard unit for
+this file type). This can be done in the same way:
+
+\begin{verbatim}
+   <initialize nbeads='4'>
+      <file mode='xyz' units='angstrom'> our_ref.xyz </file>
+      <cell mode='abc' units='angstrom'>
+         [33.72594, 33.72594, 33.72594]
+      </cell>
+      <velocities mode='thermal'> 50 </velocities>
+   </initialize>
+\end{verbatim}
+
+This {}``initialize'' section can also be further simplified by changing the 
+configuration file type to one that can also be used to specify the cell
+parameters. Currently, the only file type which can do this that is 
+compatible with \ipi is the pdb file type, which has the following structure:
+
+\begin{verbatim}
+TITLE insert title here...
+CRYST1        a        b        c      A      B      C P 1           1
+ATOM      1   n1   1     1          x1      y1      z1  0.00  0.00             0
+ATOM      2   n2   1     1          x2      y2      z2  0.00  0.00             0
+...
+\end{verbatim}
+where a, b and c are the cell vector lengths, A, B and C are the angles between
+them, n1 and n2 are the labels for atoms 1 and 2, and (x1, y1, z1)
+and (x2, y2, z2) give the position vector of atoms 1 and 2. Note that this is
+fixed-formatted, so the number of spaces matters. For more information see
+\url{http://deposit.rcsb.org/adit/docs/pdb_atom_format.html}
+
+Using this, the initialize section is reduced to:
+
+\begin{verbatim}
+   <initialize nbeads='4'>
+      <file mode='pdb' units='angstrom'> our_ref.pdb </file>
+      <velocities mode='thermal'> 50 </velocities>
+   </initialize>
+\end{verbatim}
+
+Note that an appropriately formatted pdb file is included with the
+{}``tutorial 1'' directory as before.
+
+\subsubsection{Customizing the output}
+
+In the first tutorial, only the default output was generated, since 
+nothing had been specified by the user. However, \ipi has a large li
 
 \section{Testing the install}
 
@@ -1167,11 +1307,11 @@ the following input file:
 
 \begin{verbatim}
 <simulation>
-	<ensemble mode='npt'>
-		<pressure> 1e-7 </pressure>
-		...
-	</ensemble>
-	...
+   <ensemble mode='npt'>
+      <pressure> 1e-7 </pressure>
+      ...
+   </ensemble>
+   ...
 </simulation>
 \end{verbatim}To help detect any user error the recognized tag names, data types
 and acceptable options are all specified in the code in a specialized
