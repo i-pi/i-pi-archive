@@ -62,7 +62,7 @@ def mk_rs_matrix(nb1, nb2):
    nb2 beads.
 
    If we return from this function a matrix T, then we transform between the
-   bead and normal mode representation using q_2 = T . q_1
+   system with nb1 bead and the system of nb2 beads using q_2 = T . q_1
 
    Args:
       nb1: The initial number of beads.
