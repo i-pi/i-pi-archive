@@ -2450,6 +2450,22 @@ This reads in the input data, initializes all the internally used objects,
 Running the client code
 \end_layout
 
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+label{runningclients}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
 \begin_layout Subsubsection
 CP2K
 \end_layout
@@ -2655,6 +2671,22 @@ www.quantum-espress.org/
 
 \begin_layout Subsection
 Running simulations
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+label{runningsimulations}
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -3192,6 +3224,1753 @@ tutorial
 \end_inset
 
 
+\end_layout
+
+\begin_layout Standard
+Here we will go through a simple step-by-step guide through an example simulatio
+n, starting from a minimal xml input file and then exploring some of the
+ more generally useful options that 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ipi
+\end_layout
+
+\end_inset
+
+ offers, and making no assumptions of previous experience of this code or
+ other MD codes.
+ Exercepts from the relevant input files are reproduced here, for explanation
+ purposes, but to get the most out of this tutorial the user is encouraged
+ to work through them themselves.
+ For this purpose, the input files have been included with the 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ipi
+\end_layout
+
+\end_inset
+
+ distribution, in the 
+\begin_inset Quotes eld
+\end_inset
+
+test/tutorial
+\begin_inset Quotes erd
+\end_inset
+
+ directory.
+\end_layout
+
+\begin_layout Standard
+The example is a small NPT simulation of para-hydrogen, using the Silvera-Goldma
+n potential 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+cite{???}
+\end_layout
+
+\end_inset
+
+.
+ We will take (N,P,T) = (108, 0, 25 K).
+\end_layout
+
+\begin_layout Standard
+Finally, note that this is designed to be a demonstration of some of the
+ basic abilities of 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ipi
+\end_layout
+
+\end_inset
+
+, and so the user is encouraged to play with some of the variables to get
+ a feel for how the input file works.
+\end_layout
+
+\begin_layout Subsection
+Part 0 - a minimal input file
+\end_layout
+
+\begin_layout Subsubsection
+Client code
+\end_layout
+
+\begin_layout Standard
+Let us now consider the problem of how to use 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ipi
+\end_layout
+
+\end_inset
+
+ to run an NPT simulation of para-hydrogen.
+ The first thing that is required is a client code that is capable of calculatin
+g the potential interactions of para-hydrogen molecules.
+ Fortunately, one of the client codes distributed with 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ipi
+\end_layout
+
+\end_inset
+
+ has an appropriate empirical potential already hard-coded into it (hence
+ why this system was chosen for this tutorial), and so all that is required
+ is to create the 
+\begin_inset Quotes eld
+\end_inset
+
+driver.x
+\begin_inset Quotes erd
+\end_inset
+
+ file in the 
+\begin_inset Quotes eld
+\end_inset
+
+drivers
+\begin_inset Quotes erd
+\end_inset
+
+ directory, using the UNIX utility make.
+\end_layout
+
+\begin_layout Standard
+This client code can be used for several different problems, which are explored
+ in the 
+\begin_inset Quotes eld
+\end_inset
+
+tests
+\begin_inset Quotes erd
+\end_inset
+
+ directory, but for the current problem we need to use the Silvera-Goldman
+ potential with a cut-off radius of 15 bohr radii.
+ This is run using the following command:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+> ./driver.x -m sg -u -h localhost -o 15
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The option 
+\begin_inset Quotes eld
+\end_inset
+
+-m
+\begin_inset Quotes erd
+\end_inset
+
+ is followed by the empirical potential required, in this case we use 
+\begin_inset Quotes eld
+\end_inset
+
+sg
+\begin_inset Quotes erd
+\end_inset
+
+ for Silvera-Goldman, 
+\begin_inset Quotes eld
+\end_inset
+
+-u
+\begin_inset Quotes erd
+\end_inset
+
+ gives a unix domain socket, 
+\begin_inset Quotes eld
+\end_inset
+
+-h localhost
+\begin_inset Quotes erd
+\end_inset
+
+ sets up the client hostname as 
+\begin_inset Quotes eld
+\end_inset
+
+localhost
+\begin_inset Quotes erd
+\end_inset
+
+ and 
+\begin_inset Quotes eld
+\end_inset
+
+-o 15
+\begin_inset Quotes erd
+\end_inset
+
+ sets the cut-off to 15 bohr radii, as required.
+ 
+\end_layout
+
+\begin_layout Standard
+Note that usually this step will require setting up an the appropriate client
+ code input files, possibly for an 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+emph{ab initio}
+\end_layout
+
+\end_inset
+
+ electronic structure code, and so is generally a more involved process.
+ Refer to 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ref{runningclients}
+\end_layout
+
+\end_inset
+
+, or the documentation of the appropriate client code, for more details
+ on how to do this step.
+\end_layout
+
+\begin_layout Subsubsection
+Creating the xml input file
+\end_layout
+
+\begin_layout Standard
+Now that the client code is ready, an appropriate xml input file needs to
+ be created from which the host server and the simulation data can be initialize
+d.
+ Here, we will go step by step through the creation of a minimal input file
+ for a simple NVT equilibration run.
+ Note that the working final version is held within the 
+\begin_inset Quotes eld
+\end_inset
+
+tutorial-0
+\begin_inset Quotes erd
+\end_inset
+
+ directory.
+\end_layout
+
+\begin_layout Standard
+Firstly, the 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ipi
+\end_layout
+
+\end_inset
+
+ xml reading functions first look for a 
+\begin_inset Quotes eld
+\end_inset
+
+simulation
+\begin_inset Quotes erd
+\end_inset
+
+ tag as a sign to start reading data.
+ For those familiar with xml jargon, we have defined 
+\begin_inset Quotes eld
+\end_inset
+
+simulation
+\begin_inset Quotes erd
+\end_inset
+
+ as the root tag, so all the input data read in must start and end with
+ a 
+\begin_inset Quotes eld
+\end_inset
+
+simulation
+\begin_inset Quotes erd
+\end_inset
+
+ tag, as show below:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+<simulation>
+\end_layout
+
+\begin_layout Plain Layout
+
+   Input data here...
+\end_layout
+
+\begin_layout Plain Layout
+
+</simulation>
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+xml syntax requires a set of hierarchially nested tags, each of which contain
+ either data or more tags.
+ Also, 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ipi
+\end_layout
+
+\end_inset
+
+ itself requires certain tags to be present, and keeps track of which tags
+ are supposed to be where.
+ More information about which tags are available can be found in 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ref{hierarchy}
+\end_layout
+
+\end_inset
+
+, more information on xml syntax can be found in 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ref{ifilestructure}
+\end_layout
+
+\end_inset
+
+, and possible errors which can occur if the input file is not well formed
+ can be found in 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ref{trouble}
+\end_layout
+
+\end_inset
+
+.
+ For the sake of this first tutorial however, we will simply discuss the
+ mandatory tags: 
+\begin_inset Quotes eld
+\end_inset
+
+initialize
+\begin_inset Quotes erd
+\end_inset
+
+, 
+\begin_inset Quotes eld
+\end_inset
+
+forces
+\begin_inset Quotes erd
+\end_inset
+
+ and 
+\begin_inset Quotes eld
+\end_inset
+
+ensemble
+\begin_inset Quotes erd
+\end_inset
+
+.
+ These correspond to the tag to initialize the atom configurations, the
+ tag to specify the client code and the tag to define the appropriate ensemble
+ respectively.
+\end_layout
+
+\begin_layout Standard
+At this point then, the input file looks like:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+<simulation>
+\end_layout
+
+\begin_layout Plain Layout
+
+   <initialize>
+\end_layout
+
+\begin_layout Plain Layout
+
+      ...
+\end_layout
+
+\begin_layout Plain Layout
+
+   </initialize>
+\end_layout
+
+\begin_layout Plain Layout
+
+   <forces>
+\end_layout
+
+\begin_layout Plain Layout
+
+      ...
+\end_layout
+
+\begin_layout Plain Layout
+
+   </forces>
+\end_layout
+
+\begin_layout Plain Layout
+
+   <ensemble>
+\end_layout
+
+\begin_layout Plain Layout
+
+      ...
+\end_layout
+
+\begin_layout Plain Layout
+
+   </ensemble>
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Now let us consider each of these tags in turn.
+ Firstly, 
+\begin_inset Quotes eld
+\end_inset
+
+initialize
+\begin_inset Quotes erd
+\end_inset
+
+.
+ As the name suggests, this initializes the state of the system, so this
+ is where we will specify the initial atom positions and the cell parameters.
+ Firstly, this takes an attribute which specifies the number of replicas
+ of the system, called 
+\begin_inset Quotes eld
+\end_inset
+
+nbeads
+\begin_inset Quotes erd
+\end_inset
+
+.
+ An attribute is a particular type of xml syntax designed to specify a single
+ bit of data, and has the following syntax:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+   <initialize nbeads='4'>
+\end_layout
+
+\begin_layout Plain Layout
+
+      ...
+\end_layout
+
+\begin_layout Plain Layout
+
+   </initialize>
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Note that an attribute forms part of the opening tag, and that the value
+ being assigned to it is held within quotation marks.
+ In this case, we have set the number of replicas, or beads, to 4.
+\end_layout
+
+\begin_layout Standard
+Next, we must specify the atomic configuration.
+ Rather than initialize the atom positions manually, we will assume that
+ the user can create a xyz file with the appropriate data.
+ This is the simplest input format for a configuration file that 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ipi
+\end_layout
+
+\end_inset
+
+ accepts, and it has the following syntax:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+natoms
+\end_layout
+
+\begin_layout Plain Layout
+
+# COMMENT LINE: PUT TITLE OF FILE HERE
+\end_layout
+
+\begin_layout Plain Layout
+
+atom1   x1  y1  z1
+\end_layout
+
+\begin_layout Plain Layout
+
+atom2   x2  y2  z2
+\end_layout
+
+\begin_layout Plain Layout
+
+...
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Where 
+\begin_inset Quotes eld
+\end_inset
+
+natoms
+\begin_inset Quotes erd
+\end_inset
+
+ is replaced by an integer giving the total number of atoms, in this case
+ 108, atom1 is a label for atom 1, in this case H2 (since we are simulating
+ para-hydrogen), and (x1, y1, z1) are the x, y and z components of atom
+ 1 respectively.
+ Note that this file is free-formatted, and so the precision of each of
+ the position coordinates is arbitrary.
+ Also note that visualization software such as VMD will be able to read
+ this file format, and so it is generally advised to use such software to
+ make sure that the configuration is as expected.
+ For the sake of this tutorial, we have included a valid xyz input file
+ in the 
+\begin_inset Quotes eld
+\end_inset
+
+tutorial-0
+\begin_inset Quotes erd
+\end_inset
+
+ directory called 
+\begin_inset Quotes eld
+\end_inset
+
+our_ref.xyz
+\begin_inset Quotes erd
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+To use this reference file, we will use the 
+\begin_inset Quotes eld
+\end_inset
+
+file
+\begin_inset Quotes erd
+\end_inset
+
+ tag in initialize.
+ This will take an input file with a given name, and use it to initialize
+ all relevant data.
+ In this case, since the xyz file format has both positions and atom labels,
+ it will initialize the positions, labels and masses of all the particles
+ in the system, with the masses being implicitly set based on the atom label.
+ We must also tell it which file type is being used using the 
+\begin_inset Quotes eld
+\end_inset
+
+mode
+\begin_inset Quotes erd
+\end_inset
+
+ attribute.
+ Putting this together gives:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+   <initialize nbeads='4'>
+\end_layout
+
+\begin_layout Plain Layout
+
+      <file mode='xyz'> our_ref.xyz </file>
+\end_layout
+
+\begin_layout Plain Layout
+
+      ...
+\end_layout
+
+\begin_layout Plain Layout
+
+   </initialize>
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The only remaining mandatory parameters that have not been initialized are
+ the cell parameters.
+ These could in theory be set using a separate file, but here we will initialize
+ them manually.
+ Taking a cubic cell with cell parameter 33.72594 bohr radii, we can specify
+ this using the 
+\begin_inset Quotes eld
+\end_inset
+
+cell
+\begin_inset Quotes erd
+\end_inset
+
+ tag in three different ways:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+      <cell mode='manual'> 
+\end_layout
+
+\begin_layout Plain Layout
+
+         [33.72594, 0, 0, 0, 33.72594, 0, 0, 0, 33.72594] 
+\end_layout
+
+\begin_layout Plain Layout
+
+      </cell>
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+      <cell mode='abcABC'>
+\end_layout
+
+\begin_layout Plain Layout
+
+         [33.72594, 33.72594, 33.72594, 90, 90, 90]
+\end_layout
+
+\begin_layout Plain Layout
+
+      </cell>
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+      <cell mode='abc'>
+\end_layout
+
+\begin_layout Plain Layout
+
+         [33.72594, 33.72594, 33.72594]
+\end_layout
+
+\begin_layout Plain Layout
+
+      </cell>
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Note the use of the different 
+\begin_inset Quotes eld
+\end_inset
+
+mode
+\begin_inset Quotes erd
+\end_inset
+
+ attributes, 
+\begin_inset Quotes eld
+\end_inset
+
+manual
+\begin_inset Quotes erd
+\end_inset
+
+, 
+\begin_inset Quotes eld
+\end_inset
+
+abcABC
+\begin_inset Quotes erd
+\end_inset
+
+ and 
+\begin_inset Quotes eld
+\end_inset
+
+abc
+\begin_inset Quotes erd
+\end_inset
+
+.
+ The first creates the cell vector matrix manually, the second takes the
+ length of the three unit vectors and the angles between them in degrees,
+ and the last assumes an orthorhombic cell and so only takes the length
+ of the three unit vectors as arguments.
+ We will take the last version for brevity, giving as our final 
+\begin_inset Quotes eld
+\end_inset
+
+initialize
+\begin_inset Quotes erd
+\end_inset
+
+ section:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+   <initialize nbeads='4'>
+\end_layout
+
+\begin_layout Plain Layout
+
+      <file mode='xyz'> our_ref.xyz </file>
+\end_layout
+
+\begin_layout Plain Layout
+
+      <cell mode='abc'>
+\end_layout
+
+\begin_layout Plain Layout
+
+         [33.72594, 33.72594, 33.72594]
+\end_layout
+
+\begin_layout Plain Layout
+
+      </cell>
+\end_layout
+
+\begin_layout Plain Layout
+
+   </initialize>
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Next lets consider the 
+\begin_inset Quotes eld
+\end_inset
+
+forces
+\begin_inset Quotes erd
+\end_inset
+
+ section, which deals with communication with the client codes.
+ Since in this case we only have one type of client code which will be using
+ sockets for communication, we will specify a single 
+\begin_inset Quotes eld
+\end_inset
+
+sockets
+\begin_inset Quotes erd
+\end_inset
+
+ tag to initialize it:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+   <forces>
+\end_layout
+
+\begin_layout Plain Layout
+
+      <socket>
+\end_layout
+
+\begin_layout Plain Layout
+
+         ...
+\end_layout
+
+\begin_layout Plain Layout
+
+      </socket>
+\end_layout
+
+\begin_layout Plain Layout
+
+   </forces>
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+A socket is specified with three parameters; the port number, the hostname
+ and whether it is a unix or an internet socket.
+ Here for simplicity (and to match up with the client socket specified above)
+ we will take a unix socket, which uses the hostname localhost, and does
+ not need a port number to be specified.
+ This gives the final 
+\begin_inset Quotes eld
+\end_inset
+
+forces
+\begin_inset Quotes erd
+\end_inset
+
+ section:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+   <forces>
+\end_layout
+
+\begin_layout Plain Layout
+
+      <socket mode="unix">
+\end_layout
+
+\begin_layout Plain Layout
+
+         <hostname> localhost </hostname>
+\end_layout
+
+\begin_layout Plain Layout
+
+      </socket>
+\end_layout
+
+\begin_layout Plain Layout
+
+   </forces>
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The last section that we will need is the ensemble, which determines how
+ the dynamics integrator will be initialized.
+ Since we wish to do a NVT simulation, we set the 
+\begin_inset Quotes eld
+\end_inset
+
+mode
+\begin_inset Quotes erd
+\end_inset
+
+ attribute to 
+\begin_inset Quotes eld
+\end_inset
+
+nvt
+\begin_inset Quotes erd
+\end_inset
+
+, and must specify the temperature using the appropriate tag:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+   <ensemble mode='nvt'>
+\end_layout
+
+\begin_layout Plain Layout
+
+      <temperature> 25 </temperature>
+\end_layout
+
+\begin_layout Plain Layout
+
+      ...
+\end_layout
+
+\begin_layout Plain Layout
+
+   </ensemble>
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+This defines the ensemble that will be sampled.
+ We also must decide which integration algorithm to use, and how large the
+ time step should be.
+ In general, the time step should be made as large as possible without there
+ being a drift in the conserved quantity.
+ Usually we would take a few short runs with different time steps to try
+ and optimize this, but for the sake of this tutorial we will use a safe
+ value of 40 atomic time units, giving:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+   <ensemble mode='nvt'>
+\end_layout
+
+\begin_layout Plain Layout
+
+      <temperature> 25 </temperature>
+\end_layout
+
+\begin_layout Plain Layout
+
+      <timestep> 40 </timestep>
+\end_layout
+
+\begin_layout Plain Layout
+
+      ...
+\end_layout
+
+\begin_layout Plain Layout
+
+   </ensemble>
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Finally, while the free-particle evolution part of the integrator is initialized
+ automatically, there are several different options for the constant temperature
+ sampling algorithm.
+ For simplicity we will take the path-integral Langevin equation (PILE)
+ algorithm 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+cite{???}
+\end_layout
+
+\end_inset
+
+, which is specifically designed for path integral simulations, and since
+ we are trying to equilibrate local properties we will take the local version
+ of this, 
+\begin_inset Quotes eld
+\end_inset
+
+pile_l
+\begin_inset Quotes erd
+\end_inset
+
+.
+ This integrator also has to be initialized with a time scale parameter,
+ 
+\begin_inset Quotes eld
+\end_inset
+
+tau
+\begin_inset Quotes erd
+\end_inset
+
+, which determines how strong the thermostat is.
+ Since we have a local thermostat the appropriate time scales will be fairly
+ short, so we will take a short time scale of 1000 atomic time units.
+ Putting all of this together, we get the final input file:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+<simulation>
+\end_layout
+
+\begin_layout Plain Layout
+
+   <initialize nbeads='4'>
+\end_layout
+
+\begin_layout Plain Layout
+
+      <file mode='xyz'> our_ref.xyz </file>
+\end_layout
+
+\begin_layout Plain Layout
+
+      <cell mode='abc'>
+\end_layout
+
+\begin_layout Plain Layout
+
+         [33.72594, 33.72594, 33.72594]
+\end_layout
+
+\begin_layout Plain Layout
+
+      </cell>
+\end_layout
+
+\begin_layout Plain Layout
+
+   </initialize>
+\end_layout
+
+\begin_layout Plain Layout
+
+   <forces>
+\end_layout
+
+\begin_layout Plain Layout
+
+      <socket mode="unix">
+\end_layout
+
+\begin_layout Plain Layout
+
+         <hostname> localhost </hostname>
+\end_layout
+
+\begin_layout Plain Layout
+
+      </socket>
+\end_layout
+
+\begin_layout Plain Layout
+
+   </forces>
+\end_layout
+
+\begin_layout Plain Layout
+
+   <ensemble mode='nvt'>
+\end_layout
+
+\begin_layout Plain Layout
+
+      <temperature> 25 </temperature>
+\end_layout
+
+\begin_layout Plain Layout
+
+      <timestep> 40 </timestep>
+\end_layout
+
+\begin_layout Plain Layout
+
+      <thermostat mode='pile_l'>
+\end_layout
+
+\begin_layout Plain Layout
+
+         <tau> 1e3 </tau>
+\end_layout
+
+\begin_layout Plain Layout
+
+      </thermostat>
+\end_layout
+
+\begin_layout Plain Layout
+
+   </ensemble>
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection
+Running the simulation
+\end_layout
+
+\begin_layout Standard
+Now that we have a valid input file, we can run the test simulation.
+ The 
+\begin_inset Quotes eld
+\end_inset
+
+i-pi
+\begin_inset Quotes erd
+\end_inset
+
+ script in the root directory is used to create an 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ipi
+\end_layout
+
+\end_inset
+
+ simulation from a xml input file.
+ More information on how to run this code can be found in 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ref{runningsimulations}
+\end_layout
+
+\end_inset
+
+, but all that is required in this case is (if we assume that we are in
+ the 
+\begin_inset Quotes eld
+\end_inset
+
+tutorial-0
+\begin_inset Quotes erd
+\end_inset
+
+ directory):
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+> python ../../../i-pi tutorial-0.xml
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+This will start the 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ipi
+\end_layout
+
+\end_inset
+
+ simulation, creating the server socket and initializing the simulation
+ data.
+ This should at this point print out a header message to standard output,
+ followed by a few information messages that end with 
+\begin_inset Quotes eld
+\end_inset
+
+starting the polling thread main loop
+\begin_inset Quotes erd
+\end_inset
+
+, which signifies that the server socket has been opened and is waiting
+ for connections from client codes.
+\end_layout
+
+\begin_layout Standard
+At this point the driver code is run in a new terminal using the command
+ specified above:
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{verbatim}
+\end_layout
+
+\begin_layout Plain Layout
+
+> ./driver.x -m sg -u -h localhost -o 15
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{verbatim}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The wrapper code should now output a message saying that a new client code
+ has connected, and start running the simulation.
+\end_layout
+
+\begin_layout Subsubsection
+Output data
+\end_layout
+
+\begin_layout Standard
+Once the simulation is finished (which should take about a minute) it should
+ have output, by default, one file called 
+\begin_inset Quotes eld
+\end_inset
+
+i-pi.checkpoint
+\begin_inset Quotes erd
+\end_inset
+
+ and one called 
+\begin_inset Quotes eld
+\end_inset
+
+RESTART
+\begin_inset Quotes erd
+\end_inset
+
+ which have the state of the system saved as it was at the end of the calculatio
+n, one file called 
+\begin_inset Quotes eld
+\end_inset
+
+i-pi.md
+\begin_inset Quotes erd
+\end_inset
+
+ which contains a log of the values of some of the simple properties of
+ the system throughout the simulation, and a set of files 
+\begin_inset Quotes eld
+\end_inset
+
+i-pi.pos_x.xyz
+\begin_inset Quotes erd
+\end_inset
+
+ which give the positions of the different replicas of the system at regular
+ intervals.
+ For an in-depth discussion on these three types of output files see 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ref{outputfiles}
+\end_layout
+
+\end_inset
+
+, but for now let us look at each of these specific output files in turn.
+\end_layout
+
+\begin_layout Standard
+First, consider the file 
+\begin_inset Quotes eld
+\end_inset
+
+i-pi.checkpoint
+\begin_inset Quotes erd
+\end_inset
+
+.
+ As said above, this gives a snapshot of the state of the simulation.
+ Since we didn't specify how often to print out this file the default value
+ of once every 1000 time steps was used, so in this case the last checkpoint
+ was created at step 999.
+ This type of file is designed restart the simulation from, by using it
+ as an input file for a new 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ipi
+\end_layout
+
+\end_inset
+
+ simulation.
+ In this case, it will re-run the last step if you use it as an input file
+ for 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ipi
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+One test of whether the input file was specified correctly is to look at
+ the trajectory files 
+\begin_inset Quotes eld
+\end_inset
+
+i-pi.pos_x.xyz
+\begin_inset Quotes erd
+\end_inset
+
+ using a visualization program such as VMD.
+ If we do this, we see that the simulation started from an essentially optimized
+ configuration and then over the course of the simulation began to melt.
+ Given that at the state point studied and with the potential given para-hydroge
+n is a liquid 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+cite{???}
+\end_layout
+
+\end_inset
+
+, this seems reasonable.
+ Note however that there is still a noticable amount of order, and so it
+ is not certain whether the system has equilibrated yet.
+\end_layout
+
+\begin_layout Standard
+Another simple test is to check that the conserved quantity does not exhibit
+ any long term drift.
+\end_layout
+
+\begin_layout Standard
+Since we are interested in using this simulation as an equilibration run,
+ it makes sense to check whether 
+\end_layout
+
+\begin_layout Subsection
+Part 1 - Customizing and extending the input file
+\end_layout
+
+\begin_layout Standard
+In Part 0, we created a minimal input file which could be used to run a
+ basic NVT simulation.
+ However, this ignored several non-essential but very useful bits of functionali
+ty, and so we will now go through the process of improving this generic
+ input file so that it is more suitable for an actual simulation.
 \end_layout
 
 \begin_layout Section
@@ -4219,6 +5998,22 @@ replay
 
 \begin_layout Section
 Output files
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+label{outputfiles}
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard

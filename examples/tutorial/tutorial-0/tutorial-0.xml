@@ -1,0 +1,20 @@
+<simulation>
+   <initialize nbeads='4'>
+      <file mode='xyz'> our_ref.xyz </file>
+      <cell mode='abc'>
+         [33.72594, 33.72594, 33.72594]
+      </cell>
+   </initialize>
+   <forces>
+      <socket mode="unix">
+         <address>localhost</address>
+      </socket>
+   </forces>
+   <ensemble mode='nvt'>
+      <thermostat mode='pile_l'>
+         <tau>1e3</tau>
+      </thermostat>
+      <timestep>40.0</timestep>
+      <temperature>25</temperature>
+   </ensemble>
+</simulation>

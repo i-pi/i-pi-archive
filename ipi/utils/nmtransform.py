@@ -32,6 +32,7 @@ Functions:
 __all__ = ['nm_trans', 'nm_rescale', 'nm_fft']
 
 import numpy as np
+from ipi.utils.messages import verbosity, info
 
 def mk_nm_matrix(nbeads):
    """Gets the matrix that transforms from the bead representation
@@ -201,12 +202,14 @@ class nm_fft:
       self.natoms = natoms
       try:
          import pyfftw
+         info("Import of PyFFTW successful", verbosity.medium)
          self.qdummy = pyfftw.n_byte_align_empty((nbeads, 3*natoms), 16, 'float32')
          self.qnmdummy = pyfftw.n_byte_align_empty((nbeads//2+1, 3*natoms), 16, 'complex64')
          self.fft = pyfftw.FFTW(self.qdummy, self.qnmdummy, axes=(0,), direction='FFTW_FORWARD')
          self.ifft = pyfftw.FFTW(self.qnmdummy, self.qdummy, axes=(0,), direction='FFTW_BACKWARD')
       except ImportError: #Uses standard numpy fft library if nothing better
                           #is available
+         info("Import of PyFFTW unsuccessful, using NumPy library instead", verbosity.medium)
          self.qdummy = np.zeros((nbeads,3*natoms), dtype='float32')
          self.qnmdummy = np.zeros((nbeads//2+1,3*natoms), dtype='complex64')
          def dummy_fft(self):
