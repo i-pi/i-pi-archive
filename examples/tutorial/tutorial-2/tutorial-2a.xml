@@ -584,7 +584,7 @@
    </forces>
    <output prefix=''>
       <properties shape='(4)' filename='tut2.prop'> [ time{picosecond}, conserved{kelvin}, kinetic_cv{kelvin}, potential{kelvin}, pressure_cv{megapascal} ] </properties>
-      <trajectory filename='tut2.pos' stride='100'>positions{angstrom}</trajectory>
+      <trajectory filename='tut2.pos' stride='100' format='pdb' cell_units='angstrom'>positions{angstrom}</trajectory>
       <checkpoint stride='1000' filename='tut1.restart'>6</checkpoint>
    </output>
    <prng>
