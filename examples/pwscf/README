@@ -11,7 +11,7 @@ $ python path/src/i-pi lithium.xml
  
 $ cp -r pw_li pw-1
 $ cd pw-1
-$ pw-driver.x < driver.in
+$ $path_to_patched_qe/bin/pw.x < driver.in
  
  * Repeat several times to get multiple instances
  
@@ -24,7 +24,7 @@ $ pw-driver.x < driver.in
        selected is accessible from outside
     3. change the srvaddress input parameter in driver.in, making it point to 
        the same address and port
-    4. copy pwrun to the remote machine (do not forget the pseudo!) and launch 
+    4. copy pwrun to the remote machine (do not forget the pseudos!) and launch 
        n copies of pw-driver.x remotely
  
  * A similar example is provided in water.xml and pw_h2o

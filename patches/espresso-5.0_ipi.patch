@@ -1,7 +1,7 @@
-diff -rupN espresso//Modules/control_flags.f90 driver//Modules/control_flags.f90
---- espresso//Modules/control_flags.f90	2012-02-01 14:14:34.393359061 +0000
-+++ driver//Modules/control_flags.f90	2012-02-01 14:24:52.993358904 +0000
-@@ -178,6 +178,7 @@ MODULE control_flags
+diff -rupN espresso-5.0_ref/Modules/control_flags.f90 espresso-5.0/Modules/control_flags.f90
+--- espresso-5.0_ref/Modules/control_flags.f90	2013-08-12 08:06:40.567819139 +0100
++++ espresso-5.0/Modules/control_flags.f90	2013-08-12 08:18:18.763837015 +0100
+@@ -175,6 +175,7 @@ MODULE control_flags
      lscf    =.FALSE., &! if .TRUE. the calc. is selfconsistent
      lbfgs   =.FALSE., &! if .TRUE. the calc. is a relaxation based on BFGS
      lmd     =.FALSE., &! if .TRUE. the calc. is a dynamics
@@ -9,9 +9,9 @@ diff -rupN espresso//Modules/control_flags.f90 driver//Modules/control_flags.f90
      llang   =.FALSE., &! if .TRUE. the calc. is Langevin dynamics
      lpath   =.FALSE., &! if .TRUE. the calc. is a path optimizations
      lneb    =.FALSE., &! if .TRUE. the calc. is NEB dynamics
-diff -rupN espresso//Modules/input_parameters.f90 driver//Modules/input_parameters.f90
---- espresso//Modules/input_parameters.f90	2012-02-01 14:14:34.403359061 +0000
-+++ driver//Modules/input_parameters.f90	2012-02-01 14:42:37.013358634 +0000
+diff -rupN espresso-5.0_ref/Modules/input_parameters.f90 espresso-5.0/Modules/input_parameters.f90
+--- espresso-5.0_ref/Modules/input_parameters.f90	2013-08-12 08:06:40.567819139 +0100
++++ espresso-5.0/Modules/input_parameters.f90	2013-08-12 08:18:18.763837015 +0100
 @@ -96,9 +96,9 @@ MODULE input_parameters
          CHARACTER(len=80) :: calculation = 'none'
            ! Specify the type of the simulation
@@ -44,9 +44,9 @@ diff -rupN espresso//Modules/input_parameters.f90 driver//Modules/input_paramete
  
  
  #if defined ( __MS2)
-diff -rupN espresso//Modules/io_files.f90 driver//Modules/io_files.f90
---- espresso//Modules/io_files.f90	2012-02-01 14:14:34.393359061 +0000
-+++ driver//Modules/io_files.f90	2012-02-01 14:27:03.943358870 +0000
+diff -rupN espresso-5.0_ref/Modules/io_files.f90 espresso-5.0/Modules/io_files.f90
+--- espresso-5.0_ref/Modules/io_files.f90	2013-08-12 08:06:40.567819139 +0100
++++ espresso-5.0/Modules/io_files.f90	2013-08-12 08:18:18.779837016 +0100
 @@ -20,6 +20,8 @@ MODULE io_files
    CHARACTER(len=256) :: tmp_dir = './'            ! directory for temporary files
    CHARACTER(len=256) :: wfc_dir = 'undefined'     ! directory for large files on each node, should be kept 'undefined' if not known 
@@ -56,10 +56,10 @@ diff -rupN espresso//Modules/io_files.f90 driver//Modules/io_files.f90
    CHARACTER(len=6)   :: nd_nmbr = '000000'        ! node number (used only in parallel case)
    CHARACTER(len=256) :: pseudo_dir = './'    ! original location of PP files
    CHARACTER(len=256) :: pseudo_dir_cur = ' ' ! current location when restarting
-diff -rupN espresso//Modules/read_namelists.f90 driver//Modules/read_namelists.f90
---- espresso//Modules/read_namelists.f90	2012-02-01 14:14:34.393359061 +0000
-+++ driver//Modules/read_namelists.f90	2012-02-01 14:40:55.793358659 +0000
-@@ -741,6 +741,7 @@ MODULE read_namelists_module
+diff -rupN espresso-5.0_ref/Modules/read_namelists.f90 espresso-5.0/Modules/read_namelists.f90
+--- espresso-5.0_ref/Modules/read_namelists.f90	2013-08-12 08:06:40.551819138 +0100
++++ espresso-5.0/Modules/read_namelists.f90	2013-08-12 08:18:18.803837016 +0100
+@@ -751,6 +751,7 @@ MODULE read_namelists_module
         CALL mp_bcast( outdir,        ionode_id )
         CALL mp_bcast( wfcdir,        ionode_id )
         CALL mp_bcast( prefix,        ionode_id )
@@ -67,7 +67,7 @@ diff -rupN espresso//Modules/read_namelists.f90 driver//Modules/read_namelists.f
         CALL mp_bcast( max_seconds,   ionode_id )
         CALL mp_bcast( ekin_conv_thr, ionode_id )
         CALL mp_bcast( etot_conv_thr, ionode_id )
-@@ -1782,6 +1783,8 @@ MODULE read_namelists_module
+@@ -1793,6 +1794,8 @@ MODULE read_namelists_module
               ELSE IF( prog == 'PW' ) THEN
                  ion_dynamics = 'beeman'
               END IF
@@ -76,9 +76,9 @@ diff -rupN espresso//Modules/read_namelists.f90 driver//Modules/read_namelists.f
               !
            CASE DEFAULT
               !
-diff -rupN espresso//PW/src/driver.f90 driver//PW/src/driver.f90
---- espresso//PW/src/driver.f90	1970-01-01 01:00:00.000000000 +0102
-+++ driver//PW/src/driver.f90	2012-02-01 14:46:20.963358577 +0000
+diff -rupN espresso-5.0_ref/PW/src/driver.f90 espresso-5.0/PW/src/driver.f90
+--- espresso-5.0_ref/PW/src/driver.f90	1970-01-01 01:00:00.000000000 +0100
++++ espresso-5.0/PW/src/driver.f90	2013-08-12 08:18:18.803837016 +0100
 @@ -0,0 +1,100 @@
 +  SUBROUTINE driver()
 +    USE io_global,        ONLY : stdout, ionode, ionode_id
@@ -180,10 +180,10 @@ diff -rupN espresso//PW/src/driver.f90 driver//PW/src/driver.f90
 +    ENDDO driver_loop    
 +    
 +  END SUBROUTINE
-diff -rupN espresso//PW/src/input.f90 driver//PW/src/input.f90
---- espresso//PW/src/input.f90	2012-02-01 14:14:27.623359062 +0000
-+++ driver//PW/src/input.f90	2012-02-01 14:32:40.783358785 +0000
-@@ -79,7 +79,8 @@ SUBROUTINE iosys()
+diff -rupN espresso-5.0_ref/PW/src/input.f90 espresso-5.0/PW/src/input.f90
+--- espresso-5.0_ref/PW/src/input.f90	2013-08-12 08:06:40.583819139 +0100
++++ espresso-5.0/PW/src/input.f90	2013-08-12 08:18:18.803837016 +0100
+@@ -77,7 +77,8 @@ SUBROUTINE iosys()
    USE io_files,      ONLY : input_drho, output_drho, &
                              psfile, tmp_dir, wfc_dir, &
                              prefix_     => prefix, &
@@ -193,7 +193,7 @@ diff -rupN espresso//PW/src/input.f90 driver//PW/src/input.f90
    !
    USE force_mod,     ONLY : lforce, lstres, force
    !
-@@ -165,7 +166,7 @@ SUBROUTINE iosys()
+@@ -173,7 +174,7 @@ SUBROUTINE iosys()
                              lkpoint_dir_      => lkpoint_dir, &
                              tqr_              => tqr, &
                              io_level, ethr, lscf, lbfgs, lmd, &
@@ -202,7 +202,7 @@ diff -rupN espresso//PW/src/input.f90 driver//PW/src/input.f90
                              lconstrain, restart, twfcollect, &
                              llondon, do_makov_payne, &
                              lecrpa_           => lecrpa
-@@ -220,8 +221,8 @@ SUBROUTINE iosys()
+@@ -228,8 +229,8 @@ SUBROUTINE iosys()
                                 wfcdir, prefix, etot_conv_thr, forc_conv_thr,   &
                                 pseudo_dir, disk_io, tefield, dipfield, lberry, &
                                 gdir, nppstr, wf_collect,lelfield, efield,      &
@@ -213,7 +213,7 @@ diff -rupN espresso//PW/src/input.f90 driver//PW/src/input.f90
  
  #if defined __MS2
    USE input_parameters, ONLY : MS2_enabled, MS2_handler
-@@ -393,6 +394,12 @@ SUBROUTINE iosys()
+@@ -399,6 +400,12 @@ SUBROUTINE iosys()
                     & ' not supported', 1 )
       END SELECT
       !
@@ -226,7 +226,7 @@ diff -rupN espresso//PW/src/input.f90 driver//PW/src/input.f90
    CASE( 'vc-relax' )
       !
       lscf      = .true.
-@@ -482,7 +489,7 @@ SUBROUTINE iosys()
+@@ -488,7 +495,7 @@ SUBROUTINE iosys()
       !
    END SELECT
    !
@@ -235,7 +235,7 @@ diff -rupN espresso//PW/src/input.f90 driver//PW/src/input.f90
    !
    IF ( tefield .and. ( .not. nosym ) ) THEN
       nosym = .true.
-@@ -1098,6 +1105,7 @@ SUBROUTINE iosys()
+@@ -1099,6 +1106,7 @@ SUBROUTINE iosys()
    tefield_    = tefield
    dipfield_   = dipfield
    prefix_     = trim( prefix )
@@ -243,29 +243,21 @@ diff -rupN espresso//PW/src/input.f90 driver//PW/src/input.f90
    pseudo_dir_ = trimcheck( pseudo_dir )
    nstep_      = nstep
    iprint_     = iprint
-diff -rupN espresso//PW/src/Makefile driver//PW/src/Makefile
---- espresso//PW/src/Makefile	2012-02-01 14:14:27.633359062 +0000
-+++ driver//PW/src/Makefile	2012-02-01 14:33:57.173358766 +0000
-@@ -60,6 +60,7 @@ divide.o \
+diff -rupN espresso-5.0_ref/PW/src/Makefile espresso-5.0/PW/src/Makefile
+--- espresso-5.0_ref/PW/src/Makefile	2013-08-12 08:06:40.583819139 +0100
++++ espresso-5.0/PW/src/Makefile	2013-08-12 08:22:09.667842928 +0100
+@@ -61,6 +61,8 @@ divide.o \
  divide_et_impera.o \
  dqvan2.o \
  drhoc.o \
 +driver.o \
++sockets.o \
  dvloc_of_g.o \
  dynamics_module.o \
  efermig.o \
-@@ -235,7 +236,7 @@ LIBOBJS	= ../../flib/ptools.a ../../flib
- all : tldeps pw.x generate_vdW_kernel_table.x
- 
- pw.x : $(PWOBJS) libpw.a $(LIBOBJS) 
--	$(LD) $(LDFLAGS) -o $@ \
-+	$(LD) $(LDFLAGS) ./sockets.o -o $@ \
- 	   $(PWOBJS) libpw.a $(QEMODS) $(LIBOBJS) $(LIBS)
- 	- ( cd ../../bin; ln -fs ../PW/src/$@ . )
- 
-diff -rupN espresso//PW/src/pwscf.f90 driver//PW/src/pwscf.f90
---- espresso//PW/src/pwscf.f90	2012-02-01 14:14:27.613359062 +0000
-+++ driver//PW/src/pwscf.f90	2012-02-01 14:31:44.303358799 +0000
+diff -rupN espresso-5.0_ref/PW/src/pwscf.f90 espresso-5.0/PW/src/pwscf.f90
+--- espresso-5.0_ref/PW/src/pwscf.f90	2013-08-12 08:06:40.579819138 +0100
++++ espresso-5.0/PW/src/pwscf.f90	2013-08-12 08:18:18.803837016 +0100
 @@ -14,7 +14,7 @@ PROGRAM pwscf
    USE io_global,        ONLY : stdout, ionode, ionode_id
    USE parameters,       ONLY : ntypx, npk, lmaxx
@@ -275,7 +267,7 @@ diff -rupN espresso//PW/src/pwscf.f90 driver//PW/src/pwscf.f90
    USE control_flags,    ONLY : conv_ions, istep, nstep, restart, lmd, lbfgs
    USE force_mod,        ONLY : lforce, lstres, sigma
    USE environment,      ONLY : environment_start
-@@ -102,6 +102,11 @@ PROGRAM pwscf
+@@ -94,6 +94,11 @@ PROGRAM pwscf
    !
    CALL init_run()
    !
@@ -287,7 +279,7 @@ diff -rupN espresso//PW/src/pwscf.f90 driver//PW/src/pwscf.f90
    main_loop: DO
       !
       ! ... electronic self-consistentcy
-@@ -174,7 +179,7 @@ PROGRAM pwscf
+@@ -166,7 +171,7 @@ PROGRAM pwscf
    !
    ! ... save final data file
    !
@@ -296,3 +288,148 @@ diff -rupN espresso//PW/src/pwscf.f90 driver//PW/src/pwscf.f90
    CALL stop_run( conv_ions )
    !
    !  END IF      
+diff -rupN espresso-5.0_ref/PW/src/sockets.c espresso-5.0/PW/src/sockets.c
+--- espresso-5.0_ref/PW/src/sockets.c	1970-01-01 01:00:00.000000000 +0100
++++ espresso-5.0/PW/src/sockets.c	2013-08-12 08:19:42.407839158 +0100
+@@ -0,0 +1,141 @@
++/* A minimal wrapper for socket communication.
++
++Copyright (C) 2013, Joshua More and Michele Ceriotti
++
++This program is free software: you can redistribute it and/or modify
++it under the terms of the GNU General Public License as published by
++the Free Software Foundation, either version 3 of the License, or
++(at your option) any later version.
++
++This program is distributed in the hope that it will be useful,
++but WITHOUT ANY WARRANTY; without even the implied warranty of
++MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
++GNU General Public License for more details.
++
++You should have received a copy of the GNU General Public License
++along with this program. If not, see <http.//www.gnu.org/licenses/>.
++
++
++Contains both the functions that transmit data to the socket and read the data
++back out again once finished, and the function which opens the socket initially.
++Can be linked to a FORTRAN code that does not support sockets natively.
++
++Functions:
++   error: Prints an error message and then exits.
++   open_socket_: Opens a socket with the required host server, socket type and
++      port number.
++   write_buffer_: Writes a string to the socket.
++   read_buffer_: Reads data from the socket.
++*/
++
++#include <stdio.h>
++#include <stdlib.h>
++#include <unistd.h>
++#include <string.h>
++#include <sys/types.h>
++#include <sys/socket.h>
++#include <netinet/in.h>
++#include <sys/un.h>
++#include <netdb.h>
++
++void error(const char *msg)
++// Prints an error message and then exits.
++{   perror(msg);  exit(-1);   }
++
++void open_socket_(int *psockfd, int* inet, int* port, char* host)
++/* Opens a socket.
++
++Note that fortran passes an extra argument for the string length, but this is
++ignored here for C compatibility.
++
++Args:
++   psockfd: The id of the socket that will be created.
++   inet: An integer that determines whether the socket will be an inet or unix
++      domain socket. Gives unix if 0, inet otherwise.
++   port: The port number for the socket to be created. Low numbers are often
++      reserved for important channels, so use of numbers of 4 or more digits is
++      recommended.
++   host: The name of the host server.
++*/
++
++{
++   int sockfd, portno, n;
++   struct hostent *server;
++
++   struct sockaddr * psock; int ssock;
++
++   if (*inet>0)
++   {  // creates an internet socket
++      struct sockaddr_in serv_addr;      psock=(struct sockaddr *)&serv_addr;     ssock=sizeof(serv_addr);
++      sockfd = socket(AF_INET, SOCK_STREAM, 0);
++      if (sockfd < 0)  error("ERROR opening socket");
++
++      server = gethostbyname(host);
++      if (server == NULL)
++      {
++         fprintf(stderr, "ERROR, no such host %s \n", host);
++         exit(-1);
++      }
++
++      bzero((char *) &serv_addr, sizeof(serv_addr));
++      serv_addr.sin_family = AF_INET;
++      bcopy((char *)server->h_addr, (char *)&serv_addr.sin_addr.s_addr, server->h_length);
++      serv_addr.sin_port = htons(*port);
++   }
++   else
++   {  // creates a unix socket
++      struct sockaddr_un serv_addr;      psock=(struct sockaddr *)&serv_addr;     ssock=sizeof(serv_addr);
++      sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
++      bzero((char *) &serv_addr, sizeof(serv_addr));
++      serv_addr.sun_family = AF_UNIX;
++      strcpy(serv_addr.sun_path, "/tmp/wrappi_");
++      strcpy(serv_addr.sun_path+12, host);
++   }
++
++   if (connect(sockfd, psock, ssock) < 0) error("ERROR connecting");
++
++   *psockfd=sockfd;
++}
++
++void writebuffer_(int *psockfd, char *data, int* plen)
++/* Writes to a socket.
++
++Args:
++   psockfd: The id of the socket that will be written to.
++   data: The data to be written to the socket.
++   plen: The length of the data in bytes.
++*/
++
++{
++   int n;
++   int sockfd=*psockfd;
++   int len=*plen;
++
++   n = write(sockfd,data,len);
++   if (n < 0) error("ERROR writing to socket");
++}
++
++
++void readbuffer_(int *psockfd, char *data, int* plen)
++/* Reads from a socket.
++
++Args:
++   psockfd: The id of the socket that will be read from.
++   data: The storage array for data read from the socket.
++   plen: The length of the data in bytes.
++*/
++
++{
++   int n, nr;
++   int sockfd=*psockfd;
++   int len=*plen;
++
++   n = nr = read(sockfd,data,len);
++
++   while (nr>0 && n<len )
++   {  nr=read(sockfd,&data[n],len-n); n+=nr; }
++
++   if (n == 0) error("ERROR reading from socket");
++}
++
++

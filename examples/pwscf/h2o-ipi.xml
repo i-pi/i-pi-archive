@@ -1,9 +1,9 @@
 <simulation>
    <initialize nbeads='8'>
-      <file mode='pdb'> h2o.pdb </file>
+      <file mode='pdb'> h2o-init.pdb </file>
       <velocities mode='thermal'> 150 </velocities>
    </initialize>
-   <output prefix='water'>
+   <output prefix='h2o_output'>
       <properties stride='1' filename='out'>  [ time, conserved, temperature, kinetic_cv, potential, pressure_cv] </properties>
       <trajectory stride='1' filename='pos'>positions</trajectory>
       <checkpoint stride='20'/>
@@ -12,15 +12,14 @@
    <prng><seed>31416</seed></prng>
    <forces>
       <socket mode="inet">
-         <address>localhost</address>   <port>31416</port>    <slots>4</slots>   <latency> 0.01</latency>
+         <address>localhost</address>   <port>31416</port>   <timeout>100</timeout>   <latency> 0.01</latency>
       </socket>
    </forces>
    <ensemble mode='nvt'>
-      <thermostat mode='pile_g'>
-         <tau>1e2</tau>
-         <ethermo>0.0</ethermo>
+      <thermostat mode='pile_l'>
+         <tau units="femtosecond">100</tau>
       </thermostat>
-      <timestep>20</timestep>
+      <timestep units="femtosecond">0.5</timestep>
       <fixcom>True</fixcom>
       <temperature>150</temperature>
    </ensemble>
