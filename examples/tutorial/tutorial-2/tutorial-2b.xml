@@ -2,7 +2,7 @@
    <initialize nbeads='4'>
       <file mode='chk'> tutorial-1_RESTART </file>
    </initialize>
-   <output prefix='tut2'>
+   <output prefix='tut2b'>
       <properties filename='prop' stride='1'> [time{picosecond}, conserved{kelvin}, kinetic_cv{kelvin}, potential{kelvin}] </properties>
       <properties filename='force' stride='20'> [atom_f{piconewton}(atom=0;bead=0)] </properties>
       <trajectory filename='pos' stride='100' format='pdb' cell_units='angstrom'> positions{angstrom} </trajectory>
@@ -16,7 +16,7 @@
       </socket>
    </forces>
    <ensemble mode='npt'>
-      <barostat>
+      <barostat mode='bzp'>
          <thermostat mode='langevin'>
             <tau>1e2</tau>
          </thermostat>

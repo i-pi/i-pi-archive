@@ -583,9 +583,10 @@
       </socket>
    </forces>
    <output prefix=''>
-      <properties shape='(4)' filename='tut2.prop'> [ time{picosecond}, conserved{kelvin}, kinetic_cv{kelvin}, potential{kelvin}, pressure_cv{megapascal} ] </properties>
-      <trajectory filename='tut2.pos' stride='100' format='pdb' cell_units='angstrom'>positions{angstrom}</trajectory>
-      <checkpoint stride='1000' filename='tut1.restart'>6</checkpoint>
+      <properties shape='(7)' filename='tut2a.prop'> [ step, time{picosecond}, conserved{kelvin}, temperature, potential{kelvin}, kinetic_cv{kelvin}, pressure_cv{megapascal} ] </properties>
+      <properties stride='20' shape='(1)' filename='tut2a.force'> [ atom_f{piconewton}(atom=0;bead=0) ] </properties>
+      <trajectory filename='tut2a.pos' stride='100' format='pdb' cell_units='angstrom'>positions{angstrom}</trajectory>
+      <checkpoint stride='1000' filename='tut2a.restart'/>
    </output>
    <prng>
       <state shape='(624)'>
@@ -719,7 +720,7 @@
       <set_pos>436</set_pos>
    </prng>
    <ensemble mode='npt'>
-      <barostat>
+      <barostat mode='bzp'>
          <thermostat mode='langevin'>
             <tau>1e2</tau>
          </thermostat>

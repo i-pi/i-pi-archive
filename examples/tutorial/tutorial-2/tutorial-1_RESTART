@@ -584,7 +584,7 @@
       </socket>
    </forces>
    <output prefix=''>
-      <properties shape='(4)' filename='tut1.prop'> [ step, time{picosecond}, conserved{kelvin}, temperature, potential{kelvin}, kinetic_cv{kelvin} ] </properties>
+      <properties shape='(6)' filename='tut1.prop'> [ step, time{picosecond}, conserved{kelvin}, temperature, potential{kelvin}, kinetic_cv{kelvin} ] </properties>
       <properties stride='20' shape='(1)' filename='tut1.force'> [ atom_f{piconewton}(atom=0;bead=0) ] </properties>
       <trajectory filename='tut1.pos' stride='100' format='pdb' cell_units='angstrom'>positions{angstrom}</trajectory>
       <checkpoint stride='1000' filename='tut1.restart'>6</checkpoint>
