@@ -1392,10 +1392,154 @@ to start the NPT run.
 
 Now that we have converged NVT simulation data, we can use this to
 initialize a NPT simulation. There are two ways of doing this,
-both of which involve using the {}``RESTART'' file generated at
+both of which involve using the RESTART file generated at
 the end of the NVT run as a starting point.
 
-Firstly, you can use the 
+\subsubsection{Modifying the RESTART file}
+
+Firstly, you can use the RESTART file directly, modifying it
+so that instead of continuing with the original NVT simulation
+it will instead it will start a new NPT simulation. We have included
+in the {}``tutorial 2'' directory both a RESTART file from
+tutorial 1 and an adjusted file which will run NPT dynamics.
+
+These adjustments start with resetting the {}``step'' tag, so that
+it starts with the value 0. This can be done by simply removing the
+tag field altogether. Similarly, we can adjust the total number of
+steps for the actual run, in this case by setting the 
+{}``total\_steps'' tag to \textbf{20000}.
+
+We will also update the output files, first by setting the filenames
+to start with {}``tut2a'' rather than {}``tut1'', and secondly by adding
+the volume and pressure to the list of computed properties, so that
+we can check that the ensemble is being sampled correctly.
+Putting this together this gives:
+
+\begin{verbatim}
+<output prefix=''>
+   <properties shape='(8)' filename='tut2a.prop'>
+      [ step, time{picosecond}, conserved{kelvin}, 
+        temperature, potential{kelvin}, kinetic_cv{kelvin}, 
+        pressure_cv{megapascal}, volume ] 
+   </properties>
+   <properties stride='20' shape='(1)' filename='tut2a.force'> 
+      [ atom_f{piconewton}(atom=0;bead=0) ] 
+   </properties>
+   <trajectory filename='tut2a.pos' stride='100' format='pdb' cell_units='angstrom'>
+      positions{angstrom}
+   </trajectory>
+   <checkpoint stride='1000' filename='tut2a.restart'/>
+</output>
+\end{verbatim}
+
+Finally, we must change the {}``ensemble'' tag so that the correct
+ensemble is sampled. The first thing that must be done is that 
+the {}``mode'' tag must be changed from {}``nvt'' to {}``npt'',
+and add a {}``pressure'' tag:
+
+\begin{verbatim}
+<ensemble mode='npt'>
+   <pressure> 0 <pressure>
+   ...
+</ensemble>
+\end{verbatim}
+
+We must also specify which constant pressure algorithms are to be used.
+\ipi contains two barostats, labelled {}``mht'' and {}``bzp''. These are
+broadly similar, but use slightly different integration algorithms.
+In this case, we will use \textbf{{}``bzp''}. 
+This gives:
+
+\begin{verbatim}
+<ensemble mode='npt'>
+   <pressure> 0 <pressure>
+   <barostat mode='bzp'>
+      ...
+   </barostat>
+   ...
+</ensemble>
+\end{verbatim}
+
+This barostat also requires a 
+thermostat to deal with the volume degree of freedom, which we will take
+to be a simple \textbf{Langevin thermostat}.
+This thermostat is specified in the same way as the one which does the
+constant temperature algorithms for the atomic degrees of freedom, and
+we will take its time constant to be \textbf{100 atomic time units}:
+
+\begin{verbatim}
+<ensemble mode='npt'>
+   <pressure> 0 <pressure>
+   <barostat mode='bzp'>
+      <thermostat mode='langevin'>
+         <tau> 1e2 </tau>
+      </thermostat>
+      ...
+   </barostat>
+   ...
+</ensemble>
+\end{verbatim}
+
+Finally, we will take the barostat time scale to be \textbf{1e5 atomic time
+units}, giving:
+
+\begin{verbatim}
+<ensemble mode='npt'>
+   <pressure> 0 <pressure>
+   <barostat mode='bzp'>
+      <thermostat mode='langevin'>
+         <tau> 1e2 </tau>
+      </thermostat>
+      <tau> 1e5 </tau>
+   </barostat>
+   ...
+</ensemble>
+\end{verbatim}
+with the rest of the {}``ensemble'' tag being the same as before.
+
+\subsubsection{Initialization from RESTART}
+
+Another method that can be used is to use the RESTART file as a 
+configuration file within the {}``initialize'' tag.
+
+Firstly, the original input file {}``tutorial-1.xml'' needs to
+be modified so that
+it will do a NPT simulation instead of NVT. This involves modifying
+the {}``total\_steps'', {}``output'' and {}``ensemble'' tags as
+for when we modified the RESTART file directly. Next, we replace
+the {}``initialize'' tag section with:
+
+\begin{verbatim}
+<initialize nbeads='4'>
+   <file mode='chk'> tutorial-1_RESTART </file>
+</initialize>
+\end{verbatim}
+
+Note that the {}``mode'' attribute has been set to {}``chk''
+to specify that the file is a checkpoint file.
+This will then use the RESTART file to initialize the bead
+configurations and velocities and the cell parameters.
+
+\subsubsection{Running the simulation}
+
+Whichever method is used to create the input file, the simulation
+is run in the same way as before. 
+Note how the volume fluctuates with time, as it is no longer held
+constant in this ensemble.
+
+\subsection{Part 3 - A fully converged simulation}
+
+As a final example, we note that at this state point 16 replicas
+of the system are actually required to provide converged results.
+In the directory {}``tutorial 3'' then, there is simply a stub of
+a NVT input file, which can be used to do a fully converged
+NPT simulation.
+
+To check that the code is
+working correctly, at this state point \cite{That Tuckermann paper}
+the volume should be 31 \(\textrm{cm}^3\)/mol and the total energy
+should be -48 K.
+
 
 \section{Testing the install}
 
