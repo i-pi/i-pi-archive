@@ -1086,7 +1086,6 @@ and kinetic energy change throughout the simulation using:
 This will show that the conserved quantity has only a small drift upwards,
 so the time step is sufficiently small, and that the temperature has converged
 but the kinetic and potential energies have not.
-
 We therefore need to adjust the input parameters to converge these properties
 properly, as will be done in the next section.
 
@@ -1094,18 +1093,25 @@ properly, as will be done in the next section.
 
 In Part 0, we created a minimal input file which could be used to
 run a basic NVT simulation. However, this ignored several non-essential
-but very useful bits of functionality, and so we will now go through
-the process of improving this generic input file so that it is more
-suitable for the task at hand, namely doing an equilibration run.
+but very useful bits of functionality, which are likely to be 
+important for most problems users will face. With this in mind,
+we now present some impovements to the original input file. 
 
 \subsubsection{Improving convergence and simulation technicalities}
 
-We noted at the end of the last run that the simulation did not appear to have
-fully converged by the end of it. While we could try playing around with the
-time step parameter and the thermostat, there are a couple of much simpler ways to
-help improve the convergence.
+Firstly, we will discuss the input parameters that are necessary for
+the simulation to actually do what we originally intended it to
+correctly, namely equilibate a small system in the NVT ensemble.
 
-Firstly, we can simply run the simulation for longer. By default the number of
+We noted at the end of the last run that the simulation did not appear to have
+fully converged. Often in this case it will be necessary to adjust the parameters
+of the integrators, such as the time step and the thermostat timescale.
+However, in this case there are a couple of much simpler ways to
+help improve the convergence which were neglected previously, so we will now
+concentrate on these.
+
+The most obvious first step is to run the simulation for longer. 
+By default the number of
 time steps is 1000, so we will increase this to \textbf{5000} using the 
 {}``total\_steps'' tag:
 
@@ -1116,7 +1122,7 @@ time steps is 1000, so we will increase this to \textbf{5000} using the
 Another thing we can do to increase the initial convergence of the energy 
 is to initialize the atom velocities. Rather than setting these manually,
 the simplest method is to sample these randomly from a Maxwell-Boltzmann
-distribution. This can be done in the {}``initialize'' tag using the
+distribution. This can be done in the {}``initialize'' section using the
 {}``velocities'' tag:
 
 \begin{verbatim}
@@ -1134,9 +1140,10 @@ here, since we are starting from essentially a zero-temperature optimized
 configuration and so this choice ensures that the initial total energy 
 is roughly correct.
 
-One thing that we will need to do if we are going to run multiple similar
-simulations will be to initialize the random number generator with different
-seeds, so that they are independent. This is simply done using the
+One small technicality that can become important if multiple similar
+simulations are run is that, to ensure each run is independent, the 
+random number generator should be initialized with different
+seeds for each. This is simply done using the
 {}``prng'' tag, as follows:
 
 \begin{verbatim}
@@ -1151,12 +1158,15 @@ seeds, so that they are independent. This is simply done using the
 
 Some of the functionality of \ipi is designed to make it easier to use rather
 than to improve the performance of the code. One example of this is the
-unit conversion routines. These have been interfaced with the xml reading code
-in such a way that the code automatically knows what dimensionality each
-input parameter is and so can automically convert between atomic units 
-and a user specified unit. For example, the time step we used in tutorial 0
+unit conversion library. If appropriate, the input classes have a {}``dimension''
+parameter which is used to define their dimensionality.
+These variables can then be specified with a {}``units'' attribute
+in the input file, which
+the xml reading functions can use to automically convert between a 
+user specified unit and atomic units. 
+For example, the time step we used in tutorial 0
 was 40 atomic time units, but we might instead want to express this in S.I.
-units for comparison with another paper. This happens to be approximately
+units for comparison with another paper. Since this happens to be approximately
 \textbf{1 femtosecond}, so we can instead use:
 
 \begin{verbatim}
@@ -1185,16 +1195,17 @@ configuration file type to one that can also be used to specify the cell
 parameters. Currently, the only file type which can do this that is 
 compatible with \ipi is the pdb file type, which has the following structure:
 
+\footnotesize{
 \begin{verbatim}
 TITLE insert title here...
 CRYST1        a        b        c      A      B      C P 1           1
 ATOM      1   n1   1     1          x1      y1      z1  0.00  0.00             0
 ATOM      2   n2   1     1          x2      y2      z2  0.00  0.00             0
 ...
-\end{verbatim}
+\end{verbatim}}
 where a, b and c are the cell vector lengths, A, B and C are the angles between
 them, n1 and n2 are the labels for atoms 1 and 2, and (x1, y1, z1)
-and (x2, y2, z2) give the position vector of atoms 1 and 2. Note that this is
+and (x2, y2, z2) give the position vectors of atoms 1 and 2. Note that this is
 fixed-formatted, so the number of spaces matters. For more information see
 \url{http://deposit.rcsb.org/adit/docs/pdb_atom_format.html}
 
@@ -1237,14 +1248,13 @@ status of the socket communication.
 
 \textbf{PUT SOME MORE INFORMATION HERE!!!!!!!!!!!!!!!!!!!!!!}
 
-All output written to file is dealt with by the {}``output'' tag.
+What output gets written to file is specified by the {}``output'' tag.
 There are three types of files, as explained in tutorial 0, 
 properties files, trajectory files and checkpoint files, which 
 are specified with {}``properties'', {}``trajectory'' 
 and {}``checkpoint'' tags respectively.
-
-To get the same output as previously, we would use the following
-syntax:
+As a concrete example, the default output would be generated with
+the following {}``output'' section:
 
 \begin{verbatim}
 <output prefix='i-pi'>
@@ -1274,8 +1284,8 @@ The {}``format'' attribute sets the format of the trajectory files,
 and the {}``overwrite'' attribute sets whether each checkpoint file 
 overwrites the previous one or not.
 
-There are several options we can use to customize what data is
-output. Firstly, the {}``prefix'' attribute should be set to
+There are several options we can use to customize the
+output data. Firstly, the {}``prefix'' attribute should be set to
 something which can be used to distinguish the files from different
 simulation runs. In this case we can simply set it to \textbf{{}``tut1''}:
 
@@ -1286,7 +1296,8 @@ simulation runs. In this case we can simply set it to \textbf{{}``tut1''}:
 \end{verbatim}
 
 As for the input parameters, the \textbf{units the output is given in} can be
-set by the user. In this case this is done by specifying an
+set by the user. Unlike the input parameters however, 
+this is done by specifying an
 appropriate unit in curly braces after the name of the 
 property or trajectory of interest, as shown below:
 
@@ -1327,11 +1338,12 @@ to the {}``trajectory'' tag, so that the
 cell parameters are consistent with the position output.
 
 Finally, let us suppose that we wished to output another output property
-which was more expensive to calculate and so we don't want it to
-be output every time step like the basic properties given above.
+to a different file to the others. One example of when this 
+might be necessary if there
+is one output property which was more expensive to calculate than the
+others, and so it would be impractical to output it every time step.
 With \ipi this is easy to do, all that is required is to add another
-{}``properties'' tag with a different filename, and a larger
-{}``stride'' attribute.
+{}``properties'' tag with a different filename.
 
 For demonstration purposes, we will chose to print out \textbf{the forces
 acting on one tagged bead}, since this requires an argument to be
@@ -1339,7 +1351,7 @@ passed to the function. The \ipi syntax for doing this is to have
 the arguments to be passed to the function between standard braces,
 separated by semi-colons.
 
-To print out the forces of one atom, we will use the {}``atom\_f''
+To print out the forces acting on one bead we need the {}``atom\_f''
 property, which takes two arguments, {}``atom'' and {}``bead'',
 giving the index of the atom and bead tagged respectively. The
 appropriate syntax is then given below:
@@ -1350,9 +1362,10 @@ appropriate syntax is then given below:
 </properties>
 \end{verbatim}
 
-This will print out the force vector acting on bead 0 of atom 0.
-This also accepts positional arguments, and so this could also be
-written as:
+This will print out the force vector acting on \textbf{bead 0 of atom 0}.
+\ipi also accepts positional arguments
+(i.e. arguments not specified by a name, but just by their position
+in the list of arguments), and so this could also be written as:
 
 \begin{verbatim}
 <properties> 
@@ -1382,11 +1395,11 @@ of the parameters of the new file}, we get:
 \subsubsection{Equilibration run}
 
 Now that we have adjusted the input file to our satisfaction, we can
-re-run the simulation. Once the simulation has been run by 
-repeating the steps in \ref{run1}, the output of the 
+re-run the simulation by 
+repeating the steps in \ref{run1}. The output of the 
 {}``tut1.md'' file should show that all the properties of interest
-have converged by the end of the simulation. We are now ready
-to start the NPT run.
+have converged by the end of the simulation. If this
+is the case, then we are now ready to start the NPT run.
 
 \subsection{Part 2 - NPT simulation}
 
@@ -1405,13 +1418,14 @@ tutorial 1 and an adjusted file which will run NPT dynamics.
 
 These adjustments start with resetting the {}``step'' tag, so that
 it starts with the value 0. This can be done by simply removing the
-tag field altogether. Similarly, we can adjust the total number of
-steps for the actual run, in this case by setting the 
-{}``total\_steps'' tag to \textbf{20000}.
+tag. Similarly, we can increase the total number of
+steps so that it is more suitable for collecting the necessary
+amount of data, in this case we will set the 
+{}``total\_steps'' to \textbf{20000}.
 
 We will also update the output files, first by setting the filenames
 to start with {}``tut2a'' rather than {}``tut1'', and secondly by adding
-the volume and pressure to the list of computed properties, so that
+the volume and pressure to the list of computed propertie so that
 we can check that the ensemble is being sampled correctly.
 Putting this together this gives:
 
@@ -1433,9 +1447,9 @@ Putting this together this gives:
 \end{verbatim}
 
 Finally, we must change the {}``ensemble'' tag so that the correct
-ensemble is sampled. The first thing that must be done is that 
+ensemble is sampled. The first thing that must be done is  
 the {}``mode'' tag must be changed from {}``nvt'' to {}``npt'',
-and add a {}``pressure'' tag:
+and a {}``pressure'' tag must be added:
 
 \begin{verbatim}
 <ensemble mode='npt'>
@@ -1447,8 +1461,7 @@ and add a {}``pressure'' tag:
 We must also specify which constant pressure algorithms are to be used.
 \ipi contains two barostats, labelled {}``mht'' and {}``bzp''. These are
 broadly similar, but use slightly different integration algorithms.
-In this case, we will use \textbf{{}``bzp''}. 
-This gives:
+In this case, we will use \textbf{{}``bzp''}. This gives:
 
 \begin{verbatim}
 <ensemble mode='npt'>
@@ -1499,15 +1512,15 @@ with the rest of the {}``ensemble'' tag being the same as before.
 
 \subsubsection{Initialization from RESTART}
 
-Another method that can be used is to use the RESTART file as a 
-configuration file within the {}``initialize'' tag.
+A different way of initializing the simulation is to use the 
+RESTART file as a configuration file, in the same way that
+the xyz/pdb files were used previously.
 
 Firstly, the original input file {}``tutorial-1.xml'' needs to
 be modified so that
 it will do a NPT simulation instead of NVT. This involves modifying
 the {}``total\_steps'', {}``output'' and {}``ensemble'' tags as
-for when we modified the RESTART file directly. Next, we replace
-the {}``initialize'' tag section with:
+above. Next, we replace the {}``initialize'' tag section with:
 
 \begin{verbatim}
 <initialize nbeads='4'>
@@ -1530,14 +1543,15 @@ constant in this ensemble.
 \subsection{Part 3 - A fully converged simulation}
 
 As a final example, we note that at this state point 16 replicas
-of the system are actually required to provide converged results.
-In the directory {}``tutorial 3'' then, there is simply a stub of
+are actually required to provide converged results.
+As a last tutorial then, you should repeat tutorials 1 and 2 with
+this number of replicas. The directory {}``tutorial 3'' contains a stub of
 a NVT input file, which can be used to do a fully converged
 NPT simulation.
 
-To check that the code is
-working correctly, at this state point \cite{That Tuckermann paper}
-the volume should be 31 \(\textrm{cm}^3\)/mol and the total energy
+If the simulation is run correctly
+at this state point \cite{That Tuckermann paper}
+the volume will be 31 \(\textrm{cm}^3\)/mol and the total energy
 should be -48 K.
 
 
@@ -1656,7 +1670,9 @@ the following input file:
    </ensemble>
    ...
 </simulation>
-\end{verbatim}To help detect any user error the recognized tag names, data types
+\end{verbatim}
+
+To help detect any user error the recognized tag names, data types
 and acceptable options are all specified in the code in a specialized
 input class for each class of object. A full list of all the available
 tags and a brief description of their function is given in chapter~\ref{hierarchy}.
