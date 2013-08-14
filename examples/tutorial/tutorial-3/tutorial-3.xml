@@ -1,5 +1,5 @@
-<simulation verbosity='high'>
-   <initialize nbeads='1'>
+<simulation verbosity='medium'>
+   <initialize nbeads='16'>
       <file mode='pdb' units='angstrom'> our_ref.pdb </file>
       <velocities mode='thermal'> 50 </velocities>
    </initialize>

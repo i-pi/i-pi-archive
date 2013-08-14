@@ -3,12 +3,12 @@
       <file mode='chk'> tutorial-1_RESTART </file>
    </initialize>
    <output prefix='tut2b'>
-      <properties filename='prop' stride='1'> [time{picosecond}, conserved{kelvin}, kinetic_cv{kelvin}, potential{kelvin}, volume] </properties>
+      <properties filename='prop' stride='1'> [ step, time{picosecond}, conserved{kelvin}, temperature, potential{kelvin}, kinetic_cv{kelvin}, pressure_cv{megapascal}, volume ] </properties>
       <properties filename='force' stride='20'> [atom_f{piconewton}(atom=0;bead=0)] </properties>
       <trajectory filename='pos' stride='100' format='pdb' cell_units='angstrom'> positions{angstrom} </trajectory>
       <checkpoint filename='check' stride='1000' overwrite='True'/>
    </output>
-   <total_steps>20000</total_steps>
+   <total_steps>100000</total_steps>
    <prng> <seed> 31415 </seed> </prng>
    <forces>
       <socket mode="unix">
@@ -18,9 +18,9 @@
    <ensemble mode='npt'>
       <barostat mode='bzp'>
          <thermostat mode='langevin'>
-            <tau>1e2</tau>
+            <tau>1e4</tau>
          </thermostat>
-         <tau>1e5</tau>
+         <tau>1e4</tau>
       </barostat>
       <thermostat mode='pile_l'>
          <tau>1e3</tau>

@@ -1242,11 +1242,33 @@ with the {}``verbosity'' attribute of {}``simulation'':
 By default the verbosity is set to {}``low'', which only outputs
 important warning messages and information, and some statistical 
 information every 1000 time steps. Here we will set it to 
-\textbf{{}``high''}, which amongst other things 
-tells \ipi to output statistical data every time step and the
-status of the socket communication.
+\textbf{{}``high''}, which should give output of the type:
 
-\textbf{PUT SOME MORE INFORMATION HERE!!!!!!!!!!!!!!!!!!!!!!}
+\begin{verbatim}
+ # Average timings at MD step S. t/step: TOTAL [p: P q: Q t: T]
+ # MD diagnostics: V: POTENTIAL Kcv: KINETIC Ecns: CONSERVED
+ @SOCKET: Assigning [ X ] request id ID to client with last-id LID ( CID/ CTOT : )
+\end{verbatim}
+where the output values have been replaced with the following:
+\begin{description}
+\item [{S:}] This gives the current time step.
+\item[{TOTAL:}] This gives the amount of time the current time step took.
+\item [{P:}] This gives how long the momentum propagation step took.
+\item [{Q:}] This gives how long the free-ring polymer propagation step took.
+\item [{T:}] This gives how long the thermostat integration step took.
+\item [{POTENTIAL:}] This gives the current potential energy of the system.
+\item [{KINETIC:}] This gives the current kinetic energy of the system.
+\item [{CONSERVED:}] This gives the current conserved quantity.
+\item [{X:}] This says whether or not \ipi found a match for the replica calculation or not.
+If one of the connected client codes calculated the forces for this replica on the
+last time step, then X will be {}``match'', and \ipi will automatically assign
+this replica to the same client as before. 
+\item [{ID:}] The index of the replica currently being assigned to a client code.
+\item [{LID:}] The index of the replica which the client code last did a force calculation
+of.
+\item [{CID:}] The index of the client code in the list of all connected client codes.
+\item [{CTOT:}] The total number of connected client codes.
+\end{description}
 
 What output gets written to file is specified by the {}``output'' tag.
 There are three types of files, as explained in tutorial 0, 
@@ -1478,14 +1500,14 @@ thermostat to deal with the volume degree of freedom, which we will take
 to be a simple \textbf{Langevin thermostat}.
 This thermostat is specified in the same way as the one which does the
 constant temperature algorithms for the atomic degrees of freedom, and
-we will take its time constant to be \textbf{100 atomic time units}:
+we will take its time constant to be \textbf{10000 atomic time units}:
 
 \begin{verbatim}
 <ensemble mode='npt'>
    <pressure> 0 <pressure>
    <barostat mode='bzp'>
       <thermostat mode='langevin'>
-         <tau> 1e2 </tau>
+         <tau> 1e4 </tau>
       </thermostat>
       ...
    </barostat>
@@ -1493,7 +1515,7 @@ we will take its time constant to be \textbf{100 atomic time units}:
 </ensemble>
 \end{verbatim}
 
-Finally, we will take the barostat time scale to be \textbf{1e5 atomic time
+Finally, we will take the barostat time scale to be \textbf{10000 atomic time
 units}, giving:
 
 \begin{verbatim}
@@ -1501,9 +1523,9 @@ units}, giving:
    <pressure> 0 <pressure>
    <barostat mode='bzp'>
       <thermostat mode='langevin'>
-         <tau> 1e2 </tau>
+         <tau> 1e4 </tau>
       </thermostat>
-      <tau> 1e5 </tau>
+      <tau> 1e4 </tau>
    </barostat>
    ...
 </ensemble>
