@@ -214,7 +214,7 @@ UnitMap = {
    "temperature":   {
       ""             : 1.00,
       "atomic_unit"  : 1.00,
-      "kelvin"       : 1.00
+      "kelvin"       : 3.1668152e-06
       },
    "time":     {
       ""             : 1.00,
