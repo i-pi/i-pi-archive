@@ -694,7 +694,7 @@ have been included with the \ipi distribution, in the {}``test/tutorial''
 directory.
 
 The chosen problem is that of a small NPT simulation of para-hydrogen, 
-using the Silvera-Goldman potential \cite{???}. 
+using the Silvera-Goldman potential \cite{silv-gold78jcp}. 
 We will take (N,P,T) = (108, 0, 25 K).
 
 Finally, note that this is designed to be a demonstration of some
@@ -949,7 +949,7 @@ this, but for the sake of this tutorial we will use a safe value of
 Finally, while the free-particle evolution part of the integrator
 is initialized automatically, there are several different options
 for the constant temperature sampling algorithm. For simplicity we
-will take the path-integral Langevin equation (PILE) algorithm \cite{???},
+will take the path-integral Langevin equation (PILE) algorithm \cite{ceri+10jcp},
 which is specifically designed for path integral simulations, and
 since we are trying to equilibrate local properties we will take the
 local version of this, \textbf{{}``pile\_l''}. This integrator also has to
@@ -1059,7 +1059,7 @@ a movie of how the simulation is progressing.
 If we do this with these files, we see that the simulation started
 from an essentially optimized configuration and then over the course
 of the simulation began to melt. Given that at the state point studied
-and with the potential given para-hydrogen is a liquid \cite{???},
+and with the potential given para-hydrogen is a liquid \cite{silv-gold78jcp},
 this is what we would expect.
 
 Finally, let us consider the {}``i-pi.md'' file. This is a print out
@@ -1202,7 +1202,9 @@ CRYST1        a        b        c      A      B      C P 1           1
 ATOM      1   n1   1     1          x1      y1      z1  0.00  0.00             0
 ATOM      2   n2   1     1          x2      y2      z2  0.00  0.00             0
 ...
-\end{verbatim}}
+\end{verbatim}
+}
+\normalsize
 where a, b and c are the cell vector lengths, A, B and C are the angles between
 them, n1 and n2 are the labels for atoms 1 and 2, and (x1, y1, z1)
 and (x2, y2, z2) give the position vectors of atoms 1 and 2. Note that this is
@@ -1244,11 +1246,13 @@ important warning messages and information, and some statistical
 information every 1000 time steps. Here we will set it to 
 \textbf{{}``high''}, which should give output of the type:
 
+\small
 \begin{verbatim}
  # Average timings at MD step S. t/step: TOTAL [p: P q: Q t: T]
  # MD diagnostics: V: POTENTIAL Kcv: KINETIC Ecns: CONSERVED
  @SOCKET: Assigning [ X ] request id ID to client with last-id LID ( CID/ CTOT : )
 \end{verbatim}
+\normalsize
 where the output values have been replaced with the following:
 \begin{description}
 \item [{S:}] This gives the current time step.
@@ -1259,10 +1263,12 @@ where the output values have been replaced with the following:
 \item [{POTENTIAL:}] This gives the current potential energy of the system.
 \item [{KINETIC:}] This gives the current kinetic energy of the system.
 \item [{CONSERVED:}] This gives the current conserved quantity.
-\item [{X:}] This says whether or not \ipi found a match for the replica calculation or not.
+\item [{X:}] This says whether or not \ipi found a match for the calculation of 
+replica ID or not.
 If one of the connected client codes calculated the forces for this replica on the
 last time step, then X will be {}``match'', and \ipi will automatically assign
-this replica to the same client as before. 
+this replica to the same client as before. This should happen with all the replicas
+if CTOT is the same as the number of beads.
 \item [{ID:}] The index of the replica currently being assigned to a client code.
 \item [{LID:}] The index of the replica which the client code last did a force calculation
 of.
@@ -1275,7 +1281,7 @@ There are three types of files, as explained in tutorial 0,
 properties files, trajectory files and checkpoint files, which 
 are specified with {}``properties'', {}``trajectory'' 
 and {}``checkpoint'' tags respectively.
-As a concrete example, the default output would be generated with
+As an example, the default output would be generated with
 the following {}``output'' section:
 
 \begin{verbatim}
@@ -1342,6 +1348,7 @@ quantity jumps, and to output the the trajectory in \textbf{pdb format}.
 To do this we would set the {}``stride'' and {}``format'' tags,
 as shown below:
 
+\small
 \begin{verbatim}
 <output prefix='tut1'>
    <properties filename='md' stride='1'>
@@ -1354,6 +1361,7 @@ as shown below:
    <checkpoint filename='checkpoint' stride='1000' overwrite='True'/>
 </output>
 \end{verbatim}
+\normalsize
 
 Note that we have added a {}``cell\_units'' attribute
 to the {}``trajectory'' tag, so that the
@@ -1398,6 +1406,7 @@ in the list of arguments), and so this could also be written as:
 Finally, putting all this together, and \textbf{adjusting some
 of the parameters of the new file}, we get:
 
+\small
 \begin{verbatim}
 <output prefix='tut1'>
    <properties filename='md' stride='1'> 
@@ -1413,6 +1422,7 @@ of the parameters of the new file}, we get:
    <checkpoint filename='checkpoint' stride='1000' overwrite='True'/>
 </output>
 \end{verbatim}
+\normalsize
 
 \subsubsection{Equilibration run}
 
@@ -1451,6 +1461,7 @@ the volume and pressure to the list of computed propertie so that
 we can check that the ensemble is being sampled correctly.
 Putting this together this gives:
 
+\small
 \begin{verbatim}
 <output prefix=''>
    <properties shape='(8)' filename='tut2a.prop'>
@@ -1467,6 +1478,7 @@ Putting this together this gives:
    <checkpoint stride='1000' filename='tut2a.restart'/>
 </output>
 \end{verbatim}
+\normalsize
 
 Finally, we must change the {}``ensemble'' tag so that the correct
 ensemble is sampled. The first thing that must be done is  
@@ -1567,14 +1579,14 @@ constant in this ensemble.
 As a final example, we note that at this state point 16 replicas
 are actually required to provide converged results.
 As a last tutorial then, you should repeat tutorials 1 and 2 with
-this number of replicas. The directory {}``tutorial 3'' contains a stub of
-a NVT input file, which can be used to do a fully converged
-NPT simulation.
+this number of replicas. The directory {}``tutorial 3'' contains 
+NVT and NPT input files which can be used to do a fully converged
+NPT simulation from scratch, except that they are missing some
+of the necessary input parameters.
 
-If the simulation is run correctly
-at this state point \cite{That Tuckermann paper}
+If these are chosen correctly the simulation is run properly
 the volume will be 31 \(\textrm{cm}^3\)/mol and the total energy
-should be -48 K.
+should be -48 K \cite{mart+99jcp}.
 
 
 \section{Testing the install}
@@ -3459,7 +3471,9 @@ format:
 
 \begin{verbatim}<trajectory stride=`' filename=`' format=`' cell_units=`' flush=`' bead=`'>
    traj_name{units}(arg1;...)
-</trajectory>\end{verbatim}This is very similar to the {}``properties'' tag, but it has the
+</trajectory>\end{verbatim}
+
+This is very similar to the {}``properties'' tag, but it has the
 additional tags {}``format'' and {}``cell\_units'', and only one
 trajectory can be specified. `format' specifies the format of the
 output file, and `cell\_units' specifies the units in which the cell

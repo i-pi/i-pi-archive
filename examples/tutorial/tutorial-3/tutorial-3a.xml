@@ -1,25 +1,31 @@
 <simulation verbosity='medium'>
    <initialize nbeads='16'>
-      <file mode='pdb' units='angstrom'> our_ref.pdb </file>
-      <velocities mode='thermal'> </velocities>
+      <file mode='chk'> tutorial-3_RESTART </file>
    </initialize>
-   <output prefix='tut3'>
-      <properties filename='prop' stride='1'> [time{picosecond}, conserved{kelvin}, kinetic_cv{kelvin}, potential{kelvin}] </properties>
+   <output prefix='tut3a'>
+      <properties filename='prop' stride='1'> [ step, time{picosecond}, conserved{kelvin}, temperature, potential{kelvin}, kinetic_cv{kelvin}, pressure_cv{megapascal}, volume ] </properties>
       <trajectory filename='pos' stride='100' format='pdb' cell_units='angstrom'> positions{angstrom} </trajectory>
       <checkpoint filename='check' stride='1000' overwrite='True'/>
    </output>
-   <total_steps></total_steps>
-   <prng> <seed>  </seed> </prng>
+   <total_steps> </total_steps>
+   <prng> <seed> </seed> </prng>
    <forces>
       <socket mode="unix">
          <address>localhost</address>
       </socket>
    </forces>
-   <ensemble mode='nvt'>
+   <ensemble mode='npt'>
+      <barostat mode='???'>
+         <thermostat mode='???'>
+            <tau> </tau>
+         </thermostat>
+         <tau> </tau>
+      </barostat>
       <thermostat mode='???'>
          <tau> </tau>
       </thermostat>
       <timestep units='femtosecond'> </timestep>
       <temperature>25</temperature>
+      <pressure> 0 </pressure>
    </ensemble>
 </simulation>
