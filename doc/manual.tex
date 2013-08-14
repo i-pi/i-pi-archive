@@ -787,6 +787,7 @@ At this point then, the input file looks like:
    <ensemble>
       ...
    </ensemble>
+</simulation>
 \end{verbatim}
 
 Now let us consider each of these tags in turn. Firstly, {}``initialize''.
@@ -798,9 +799,9 @@ a particular type of xml syntax designed to specify a single bit of
 data, and has the following syntax:
 
 \begin{verbatim}
-   <initialize nbeads='4'>
-      ...
-   </initialize>
+<initialize nbeads='4'>
+   ...
+</initialize>
 \end{verbatim}
 
 Note that an attribute forms part of the opening tag, and that the
@@ -842,10 +843,10 @@ file type is being used using the {}``mode'' attribute. Putting
 this together gives:
 
 \begin{verbatim}
-   <initialize nbeads='4'>
-      <file mode='xyz'> our_ref.xyz </file>
-      ...
-   </initialize>
+<initialize nbeads='4'>
+   <file mode='xyz'> our_ref.xyz </file>
+   ...
+</initialize>
 \end{verbatim}
 
 The only remaining mandatory parameters that have not been initialized
@@ -855,21 +856,21 @@ with cell parameter 33.72594 bohr radii, we can specify this using
 the {}``cell'' tag in three different ways:
 
 \begin{verbatim}
-      <cell mode='manual'> 
-         [33.72594, 0, 0, 0, 33.72594, 0, 0, 0, 33.72594] 
-      </cell>
+<cell mode='manual'> 
+   [33.72594, 0, 0, 0, 33.72594, 0, 0, 0, 33.72594] 
+</cell>
 \end{verbatim}
 
 \begin{verbatim}
-      <cell mode='abcABC'>
-         [33.72594, 33.72594, 33.72594, 90, 90, 90]
-      </cell>
+<cell mode='abcABC'>
+   [33.72594, 33.72594, 33.72594, 90, 90, 90]
+</cell>
 \end{verbatim}
 
 \begin{verbatim}
-      <cell mode='abc'>
-         [33.72594, 33.72594, 33.72594]
-      </cell>
+<cell mode='abc'>
+   [33.72594, 33.72594, 33.72594]
+</cell>
 \end{verbatim}
 
 Note the use of the different {}``mode'' attributes, {}``manual'',
@@ -881,12 +882,12 @@ We will take the last version for brevity, giving as our final {}``initialize''
 section:
 
 \begin{verbatim}
-   <initialize nbeads='4'>
-      <file mode='xyz'> our_ref.xyz </file>
-      <cell mode='abc'>
-         [33.72594, 33.72594, 33.72594]
-      </cell>
-   </initialize>
+<initialize nbeads='4'>
+   <file mode='xyz'> our_ref.xyz </file>
+   <cell mode='abc'>
+      [33.72594, 33.72594, 33.72594]
+   </cell>
+</initialize>
 \end{verbatim}
 
 Next lets consider the {}``forces'' section, which deals with communication
@@ -895,11 +896,11 @@ client code which will be using sockets for communication, we will
 specify a single {}``sockets'' tag to initialize it:
 
 \begin{verbatim}
-   <forces>
-      <socket>
-         ...
-      </socket>
-   </forces>
+<forces>
+   <socket>
+      ...
+   </socket>
+</forces>
 \end{verbatim}
 
 A socket is specified with three parameters; the port number, the
@@ -910,11 +911,11 @@ does not need a port number to be specified. This gives the final
 {}``forces'' section:
 
 \begin{verbatim}
-   <forces>
-      <socket mode="unix">
-         <hostname> localhost </hostname>
-      </socket>
-   </forces>
+<forces>
+   <socket mode="unix">
+      <hostname> localhost </hostname>
+   </socket>
+</forces>
 \end{verbatim}
 
 The last section that we will need is the ensemble, which determines
@@ -923,10 +924,10 @@ do a NVT simulation, we set the {}``mode'' attribute to {}``nvt'',
 and must specify the temperature using the appropriate tag:
 
 \begin{verbatim}
-   <ensemble mode='nvt'>
-      <temperature> 25 </temperature>
-      ...
-   </ensemble>
+<ensemble mode='nvt'>
+   <temperature> 25 </temperature>
+   ...
+</ensemble>
 \end{verbatim}
 
 This defines the ensemble that will be sampled. We also must decide
@@ -938,11 +939,11 @@ this, but for the sake of this tutorial we will use a safe value of
 \textbf{40 atomic time units}, giving:
 
 \begin{verbatim}
-   <ensemble mode='nvt'>
-      <temperature> 25 </temperature>
-      <timestep> 40 </timestep>
-      ...
-   </ensemble>
+<ensemble mode='nvt'>
+   <temperature> 25 </temperature>
+   <timestep> 40 </timestep>
+   ...
+</ensemble>
 \end{verbatim}
 
 Finally, while the free-particle evolution part of the integrator
@@ -978,10 +979,13 @@ we get the final input file:
          <tau> 1e3 </tau>
       </thermostat>
    </ensemble>
+</simulation>
 \end{verbatim}
 
 
 \subsubsection{Running the simulation}
+
+\label{run1}
 
 Now that we have a valid input file, we can run the test simulation.
 The {}``i-pi'' script in the root directory is used to create an
@@ -1082,7 +1086,6 @@ and kinetic energy change throughout the simulation using:
 This will show that the conserved quantity has only a small drift upwards,
 so the time step is sufficiently small, and that the temperature has converged
 but the kinetic and potential energies have not.
-
 We therefore need to adjust the input parameters to converge these properties
 properly, as will be done in the next section.
 
@@ -1090,39 +1093,46 @@ properly, as will be done in the next section.
 
 In Part 0, we created a minimal input file which could be used to
 run a basic NVT simulation. However, this ignored several non-essential
-but very useful bits of functionality, and so we will now go through
-the process of improving this generic input file so that it is more
-suitable for the task at hand, namely doing an equilibration run.
+but very useful bits of functionality, which are likely to be 
+important for most problems users will face. With this in mind,
+we now present some impovements to the original input file. 
 
-\subsubsection{Improving convergence}
+\subsubsection{Improving convergence and simulation technicalities}
+
+Firstly, we will discuss the input parameters that are necessary for
+the simulation to actually do what we originally intended it to
+correctly, namely equilibate a small system in the NVT ensemble.
 
 We noted at the end of the last run that the simulation did not appear to have
-fully converged by the end of it. While we could try playing around with the
-time step parameter and the thermostat, there are a couple of much simpler ways to
-help improve the convergence.
+fully converged. Often in this case it will be necessary to adjust the parameters
+of the integrators, such as the time step and the thermostat timescale.
+However, in this case there are a couple of much simpler ways to
+help improve the convergence which were neglected previously, so we will now
+concentrate on these.
 
-Firstly, we can simply run the simulation for longer. By default the number of
+The most obvious first step is to run the simulation for longer. 
+By default the number of
 time steps is 1000, so we will increase this to \textbf{5000} using the 
 {}``total\_steps'' tag:
 
 \begin{verbatim}
-   <total_steps> 5000 </total_steps>
+<total_steps> 5000 </total_steps>
 \end{verbatim} 
 
 Another thing we can do to increase the initial convergence of the energy 
 is to initialize the atom velocities. Rather than setting these manually,
 the simplest method is to sample these randomly from a Maxwell-Boltzmann
-distribution. This can be done in the {}``initialize'' tag using the
+distribution. This can be done in the {}``initialize'' section using the
 {}``velocities'' tag:
 
 \begin{verbatim}
-   <initialize nbeads='4'>
-      <file mode='xyz'> our_ref.xyz </file>
-      <cell mode='abc'>
-         [33.72594, 33.72594, 33.72594]
-      </cell>
-      <velocities mode='thermal'> 50 </velocities>
-   </initialize>
+<initialize nbeads='4'>
+   <file mode='xyz'> our_ref.xyz </file>
+   <cell mode='abc'>
+      [33.72594, 33.72594, 33.72594]
+   </cell>
+   <velocities mode='thermal'> 50 </velocities>
+</initialize>
 \end{verbatim}
 
 Note that we use \textbf{double the physical temperature} 
@@ -1130,23 +1140,40 @@ here, since we are starting from essentially a zero-temperature optimized
 configuration and so this choice ensures that the initial total energy 
 is roughly correct.
 
+One small technicality that can become important if multiple similar
+simulations are run is that, to ensure each run is independent, the 
+random number generator should be initialized with different
+seeds for each. This is simply done using the
+{}``prng'' tag, as follows:
+
+\begin{verbatim}
+<prng>
+   <seed>
+      31415
+   </seed>
+</prng>
+\end{verbatim}
+
 \subsubsection{Simplifying the input file}
 
 Some of the functionality of \ipi is designed to make it easier to use rather
 than to improve the performance of the code. One example of this is the
-unit conversion routines. These have been interfaced with the xml reading code
-in such a way that the code automatically knows what dimensionality each
-input parameter is and so can automically convert between atomic units 
-and a user specified unit. For example, the time step we used in tutorial 0
+unit conversion library. If appropriate, the input classes have a {}``dimension''
+parameter which is used to define their dimensionality.
+These variables can then be specified with a {}``units'' attribute
+in the input file, which
+the xml reading functions can use to automically convert between a 
+user specified unit and atomic units. 
+For example, the time step we used in tutorial 0
 was 40 atomic time units, but we might instead want to express this in S.I.
-units for comparison with another paper. This happens to be approximately
+units for comparison with another paper. Since this happens to be approximately
 \textbf{1 femtosecond}, so we can instead use:
 
 \begin{verbatim}
-   <ensemble mode='nvt'>
-      <timestep units='femtosecond'> 1 </timestep>
-      ...
-   </ensemble>
+<ensemble mode='nvt'>
+   <timestep units='femtosecond'> 1 </timestep>
+   ...
+</ensemble>
 \end{verbatim}
  
 Similarly, we might want to specify the input configuration file in
@@ -1154,13 +1181,13 @@ angstrom rather than bohr radii (in fact this is the standard unit for
 this file type). This can be done in the same way:
 
 \begin{verbatim}
-   <initialize nbeads='4'>
-      <file mode='xyz' units='angstrom'> our_ref.xyz </file>
-      <cell mode='abc' units='angstrom'>
-         [33.72594, 33.72594, 33.72594]
-      </cell>
-      <velocities mode='thermal'> 50 </velocities>
-   </initialize>
+<initialize nbeads='4'>
+   <file mode='xyz' units='angstrom'> our_ref.xyz </file>
+   <cell mode='abc' units='angstrom'>
+      [33.72594, 33.72594, 33.72594]
+   </cell>
+   <velocities mode='thermal'> 50 </velocities>
+</initialize>
 \end{verbatim}
 
 This {}``initialize'' section can also be further simplified by changing the 
@@ -1168,26 +1195,27 @@ configuration file type to one that can also be used to specify the cell
 parameters. Currently, the only file type which can do this that is 
 compatible with \ipi is the pdb file type, which has the following structure:
 
+\footnotesize{
 \begin{verbatim}
 TITLE insert title here...
 CRYST1        a        b        c      A      B      C P 1           1
 ATOM      1   n1   1     1          x1      y1      z1  0.00  0.00             0
 ATOM      2   n2   1     1          x2      y2      z2  0.00  0.00             0
 ...
-\end{verbatim}
+\end{verbatim}}
 where a, b and c are the cell vector lengths, A, B and C are the angles between
 them, n1 and n2 are the labels for atoms 1 and 2, and (x1, y1, z1)
-and (x2, y2, z2) give the position vector of atoms 1 and 2. Note that this is
+and (x2, y2, z2) give the position vectors of atoms 1 and 2. Note that this is
 fixed-formatted, so the number of spaces matters. For more information see
 \url{http://deposit.rcsb.org/adit/docs/pdb_atom_format.html}
 
 Using this, the initialize section is reduced to:
 
 \begin{verbatim}
-   <initialize nbeads='4'>
-      <file mode='pdb' units='angstrom'> our_ref.pdb </file>
-      <velocities mode='thermal'> 50 </velocities>
-   </initialize>
+<initialize nbeads='4'>
+   <file mode='pdb' units='angstrom'> our_ref.pdb </file>
+   <velocities mode='thermal'> 50 </velocities>
+</initialize>
 \end{verbatim}
 
 Note that an appropriately formatted pdb file is included with the
@@ -1195,8 +1223,337 @@ Note that an appropriately formatted pdb file is included with the
 
 \subsubsection{Customizing the output}
 
-In the first tutorial, only the default output was generated, since 
-nothing had been specified by the user. However, \ipi has a large li
+In the first tutorial only the default output was generated since 
+nothing had been specified by the user. There are however a wide
+variety of properties of interest that \ipi can calculate 
+and a large number of different output
+options, so in most cases you will want to specify what is output
+manually.
+
+Firstly, the amount of data sent to standard output can be adjusted
+with the {}``verbosity'' attribute of {}``simulation'':
+
+\begin{verbatim}
+<simulation verbosity='high'>
+   ...
+</simulation>
+\end{verbatim}
+
+By default the verbosity is set to {}``low'', which only outputs
+important warning messages and information, and some statistical 
+information every 1000 time steps. Here we will set it to 
+\textbf{{}``high''}, which amongst other things 
+tells \ipi to output statistical data every time step and the
+status of the socket communication.
+
+\textbf{PUT SOME MORE INFORMATION HERE!!!!!!!!!!!!!!!!!!!!!!}
+
+What output gets written to file is specified by the {}``output'' tag.
+There are three types of files, as explained in tutorial 0, 
+properties files, trajectory files and checkpoint files, which 
+are specified with {}``properties'', {}``trajectory'' 
+and {}``checkpoint'' tags respectively.
+As a concrete example, the default output would be generated with
+the following {}``output'' section:
+
+\begin{verbatim}
+<output prefix='i-pi'>
+   <properties filename='md' stride='10'>
+      [time, step, conserved, temperature, potential, kinetic_cv]
+   </properties>
+   <trajectory filename='pos' stride='100' format='xyz'>
+      positions
+   </trajectory>
+   <checkpoint filename='checkpoint' stride='1000' overwrite='True'/>
+</output>
+\end{verbatim}
+
+As seen in tutorial 0, this creates 6 files: {}``i-pi.md'', {}``i-pi.pos\_0.xyz'',
+{}``i-pi.pos\_1.xyz'', {}``i-pi.pos\_2.xyz'', {}``i-pi.pos\_3.xyz''
+and {}``i-pi.checkpoint''. 
+The filenames are created using the syntax 
+{}``prefix''.{}``filename''[\_(file specifier)][.(file format)], where the file specifier is
+added to separate similar files. For example, in the above case the 
+different position trajectories for each bead are given a file specifier
+corresponding to the appropriate bead index.
+
+The {}``stride'' attributes set how often data is output to each file;
+so in the above case the properties are written out every 10 time steps,
+the trajectories every 100, and the checkpoints every 1000.
+The {}``format'' attribute sets the format of the trajectory files,
+and the {}``overwrite'' attribute sets whether each checkpoint file 
+overwrites the previous one or not.
+
+There are several options we can use to customize the
+output data. Firstly, the {}``prefix'' attribute should be set to
+something which can be used to distinguish the files from different
+simulation runs. In this case we can simply set it to \textbf{{}``tut1''}:
+
+\begin{verbatim}
+<output prefix='tut1'>
+   ...
+</output>
+\end{verbatim}
+
+As for the input parameters, the \textbf{units the output is given in} can be
+set by the user. Unlike the input parameters however, 
+this is done by specifying an
+appropriate unit in curly braces after the name of the 
+property or trajectory of interest, as shown below:
+
+\begin{verbatim}
+<output prefix='tut1'>
+   <properties filename='md' stride='10'>
+      [step, time{picosecond}, conserved{kelvin}, 
+       temperature, potential{kelvin}, kinetic_cv{kelvin}] 
+   </properties>
+   <trajectory filename='pos' stride='100' format='xyz'>
+      positions{angstrom} 
+   </trajectory>
+   <checkpoint filename='checkpoint' stride='1000' overwrite='True'/>
+</output>
+\end{verbatim}
+
+Next, let us adjust some of the attributes. Let us suppose that we
+wish to output the properties \textbf{every time step}, to check for conserved
+quantity jumps, and to output the the trajectory in \textbf{pdb format}.
+To do this we would set the {}``stride'' and {}``format'' tags,
+as shown below:
+
+\begin{verbatim}
+<output prefix='tut1'>
+   <properties filename='md' stride='1'>
+      [step, time{picosecond}, conserved{kelvin}, 
+       temperature, potential{kelvin}, kinetic_cv{kelvin}] 
+   </properties>
+   <trajectory filename='pos' stride='100' format='pdb' cell_units='angstrom'>
+      positions{angstrom} 
+   </trajectory>
+   <checkpoint filename='checkpoint' stride='1000' overwrite='True'/>
+</output>
+\end{verbatim}
+
+Note that we have added a {}``cell\_units'' attribute
+to the {}``trajectory'' tag, so that the
+cell parameters are consistent with the position output.
+
+Finally, let us suppose that we wished to output another output property
+to a different file to the others. One example of when this 
+might be necessary if there
+is one output property which was more expensive to calculate than the
+others, and so it would be impractical to output it every time step.
+With \ipi this is easy to do, all that is required is to add another
+{}``properties'' tag with a different filename.
+
+For demonstration purposes, we will chose to print out \textbf{the forces
+acting on one tagged bead}, since this requires an argument to be
+passed to the function. The \ipi syntax for doing this is to have
+the arguments to be passed to the function between standard braces,
+separated by semi-colons.
+
+To print out the forces acting on one bead we need the {}``atom\_f''
+property, which takes two arguments, {}``atom'' and {}``bead'',
+giving the index of the atom and bead tagged respectively. The
+appropriate syntax is then given below:
+
+\begin{verbatim}
+<properties> 
+   [atom_f(atom=0;bead=0)] 
+</properties>
+\end{verbatim}
+
+This will print out the force vector acting on \textbf{bead 0 of atom 0}.
+\ipi also accepts positional arguments
+(i.e. arguments not specified by a name, but just by their position
+in the list of arguments), and so this could also be written as:
+
+\begin{verbatim}
+<properties> 
+   [atom_f(0;0)] 
+</properties>
+\end{verbatim}
+
+Finally, putting all this together, and \textbf{adjusting some
+of the parameters of the new file}, we get:
+
+\begin{verbatim}
+<output prefix='tut1'>
+   <properties filename='md' stride='1'> 
+      [step, time{picosecond}, conserved{kelvin}, 
+       temperature, potential{kelvin}, kinetic_cv{kelvin}] 
+   </properties>
+   <properties filename='force' stride='20'> 
+      [atom_f{piconewton}(atom=0;bead=0)] 
+   </properties>
+   <trajectory filename='pos' stride='100' format='pdb' cell_units='angstrom'> 
+      positions{angstrom} 
+   </trajectory>
+   <checkpoint filename='checkpoint' stride='1000' overwrite='True'/>
+</output>
+\end{verbatim}
+
+\subsubsection{Equilibration run}
+
+Now that we have adjusted the input file to our satisfaction, we can
+re-run the simulation by 
+repeating the steps in \ref{run1}. The output of the 
+{}``tut1.md'' file should show that all the properties of interest
+have converged by the end of the simulation. If this
+is the case, then we are now ready to start the NPT run.
+
+\subsection{Part 2 - NPT simulation}
+
+Now that we have converged NVT simulation data, we can use this to
+initialize a NPT simulation. There are two ways of doing this,
+both of which involve using the RESTART file generated at
+the end of the NVT run as a starting point.
+
+\subsubsection{Modifying the RESTART file}
+
+Firstly, you can use the RESTART file directly, modifying it
+so that instead of continuing with the original NVT simulation
+it will instead it will start a new NPT simulation. We have included
+in the {}``tutorial 2'' directory both a RESTART file from
+tutorial 1 and an adjusted file which will run NPT dynamics.
+
+These adjustments start with resetting the {}``step'' tag, so that
+it starts with the value 0. This can be done by simply removing the
+tag. Similarly, we can increase the total number of
+steps so that it is more suitable for collecting the necessary
+amount of data, in this case we will set the 
+{}``total\_steps'' to \textbf{20000}.
+
+We will also update the output files, first by setting the filenames
+to start with {}``tut2a'' rather than {}``tut1'', and secondly by adding
+the volume and pressure to the list of computed propertie so that
+we can check that the ensemble is being sampled correctly.
+Putting this together this gives:
+
+\begin{verbatim}
+<output prefix=''>
+   <properties shape='(8)' filename='tut2a.prop'>
+      [ step, time{picosecond}, conserved{kelvin}, 
+        temperature, potential{kelvin}, kinetic_cv{kelvin}, 
+        pressure_cv{megapascal}, volume ] 
+   </properties>
+   <properties stride='20' shape='(1)' filename='tut2a.force'> 
+      [ atom_f{piconewton}(atom=0;bead=0) ] 
+   </properties>
+   <trajectory filename='tut2a.pos' stride='100' format='pdb' cell_units='angstrom'>
+      positions{angstrom}
+   </trajectory>
+   <checkpoint stride='1000' filename='tut2a.restart'/>
+</output>
+\end{verbatim}
+
+Finally, we must change the {}``ensemble'' tag so that the correct
+ensemble is sampled. The first thing that must be done is  
+the {}``mode'' tag must be changed from {}``nvt'' to {}``npt'',
+and a {}``pressure'' tag must be added:
+
+\begin{verbatim}
+<ensemble mode='npt'>
+   <pressure> 0 <pressure>
+   ...
+</ensemble>
+\end{verbatim}
+
+We must also specify which constant pressure algorithms are to be used.
+\ipi contains two barostats, labelled {}``mht'' and {}``bzp''. These are
+broadly similar, but use slightly different integration algorithms.
+In this case, we will use \textbf{{}``bzp''}. This gives:
+
+\begin{verbatim}
+<ensemble mode='npt'>
+   <pressure> 0 <pressure>
+   <barostat mode='bzp'>
+      ...
+   </barostat>
+   ...
+</ensemble>
+\end{verbatim}
+
+This barostat also requires a 
+thermostat to deal with the volume degree of freedom, which we will take
+to be a simple \textbf{Langevin thermostat}.
+This thermostat is specified in the same way as the one which does the
+constant temperature algorithms for the atomic degrees of freedom, and
+we will take its time constant to be \textbf{100 atomic time units}:
+
+\begin{verbatim}
+<ensemble mode='npt'>
+   <pressure> 0 <pressure>
+   <barostat mode='bzp'>
+      <thermostat mode='langevin'>
+         <tau> 1e2 </tau>
+      </thermostat>
+      ...
+   </barostat>
+   ...
+</ensemble>
+\end{verbatim}
+
+Finally, we will take the barostat time scale to be \textbf{1e5 atomic time
+units}, giving:
+
+\begin{verbatim}
+<ensemble mode='npt'>
+   <pressure> 0 <pressure>
+   <barostat mode='bzp'>
+      <thermostat mode='langevin'>
+         <tau> 1e2 </tau>
+      </thermostat>
+      <tau> 1e5 </tau>
+   </barostat>
+   ...
+</ensemble>
+\end{verbatim}
+with the rest of the {}``ensemble'' tag being the same as before.
+
+\subsubsection{Initialization from RESTART}
+
+A different way of initializing the simulation is to use the 
+RESTART file as a configuration file, in the same way that
+the xyz/pdb files were used previously.
+
+Firstly, the original input file {}``tutorial-1.xml'' needs to
+be modified so that
+it will do a NPT simulation instead of NVT. This involves modifying
+the {}``total\_steps'', {}``output'' and {}``ensemble'' tags as
+above. Next, we replace the {}``initialize'' tag section with:
+
+\begin{verbatim}
+<initialize nbeads='4'>
+   <file mode='chk'> tutorial-1_RESTART </file>
+</initialize>
+\end{verbatim}
+
+Note that the {}``mode'' attribute has been set to {}``chk''
+to specify that the file is a checkpoint file.
+This will then use the RESTART file to initialize the bead
+configurations and velocities and the cell parameters.
+
+\subsubsection{Running the simulation}
+
+Whichever method is used to create the input file, the simulation
+is run in the same way as before. 
+Note how the volume fluctuates with time, as it is no longer held
+constant in this ensemble.
+
+\subsection{Part 3 - A fully converged simulation}
+
+As a final example, we note that at this state point 16 replicas
+are actually required to provide converged results.
+As a last tutorial then, you should repeat tutorials 1 and 2 with
+this number of replicas. The directory {}``tutorial 3'' contains a stub of
+a NVT input file, which can be used to do a fully converged
+NPT simulation.
+
+If the simulation is run correctly
+at this state point \cite{That Tuckermann paper}
+the volume will be 31 \(\textrm{cm}^3\)/mol and the total energy
+should be -48 K.
+
 
 \section{Testing the install}
 
@@ -1313,7 +1670,9 @@ the following input file:
    </ensemble>
    ...
 </simulation>
-\end{verbatim}To help detect any user error the recognized tag names, data types
+\end{verbatim}
+
+To help detect any user error the recognized tag names, data types
 and acceptable options are all specified in the code in a specialized
 input class for each class of object. A full list of all the available
 tags and a brief description of their function is given in chapter~\ref{hierarchy}.

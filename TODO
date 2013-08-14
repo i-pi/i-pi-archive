@@ -106,3 +106,7 @@ from normalmodes.py) (JM) (JM)
 ** Implement a more robust walltime clock limit mechanism. (MC)
 
 ** Alternative communication mechanisms not relying on sockets (MC)
+
+*** Fix the 'dummy' thermostat/barostat options. At the moment, forgetting
+to set the barostat style doesn't give an error, and then you get a
+fairly unhelpful error message to go with it. (JM)
