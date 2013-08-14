@@ -10,7 +10,7 @@
     prefix='li.bcc'
     outdir='./'
     pseudo_dir='../'
-    max_seconds=3300
+    max_seconds=7200
 /
 &SYSTEM
     ibrav=0
