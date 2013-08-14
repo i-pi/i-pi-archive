@@ -1,15 +1,15 @@
 <simulation verbosity='medium'>
    <initialize nbeads='16'>
       <file mode='pdb' units='angstrom'> our_ref.pdb </file>
-      <velocities mode='thermal'> </velocities>
+      <velocities mode='thermal'> ??? </velocities>
    </initialize>
    <output prefix='tut3'>
       <properties filename='prop' stride='1'> [time{picosecond}, conserved{kelvin}, kinetic_cv{kelvin}, potential{kelvin}] </properties>
       <trajectory filename='pos' stride='100' format='pdb' cell_units='angstrom'> positions{angstrom} </trajectory>
       <checkpoint filename='check' stride='1000' overwrite='True'/>
    </output>
-   <total_steps></total_steps>
-   <prng> <seed>  </seed> </prng>
+   <total_steps> ??? </total_steps>
+   <prng> <seed> ???  </seed> </prng>
    <forces>
       <socket mode="unix">
          <address>localhost</address>
@@ -17,9 +17,9 @@
    </forces>
    <ensemble mode='nvt'>
       <thermostat mode='???'>
-         <tau> </tau>
+         <tau> ??? </tau>
       </thermostat>
-      <timestep units='femtosecond'> </timestep>
+      <timestep units='femtosecond'> ??? </timestep>
       <temperature>25</temperature>
    </ensemble>
 </simulation>

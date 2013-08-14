@@ -7,8 +7,8 @@
       <trajectory filename='pos' stride='100' format='pdb' cell_units='angstrom'> positions{angstrom} </trajectory>
       <checkpoint filename='check' stride='1000' overwrite='True'/>
    </output>
-   <total_steps> </total_steps>
-   <prng> <seed> </seed> </prng>
+   <total_steps> ??? </total_steps>
+   <prng> <seed> ??? </seed> </prng>
    <forces>
       <socket mode="unix">
          <address>localhost</address>
@@ -17,14 +17,14 @@
    <ensemble mode='npt'>
       <barostat mode='???'>
          <thermostat mode='???'>
-            <tau> </tau>
+            <tau> ??? </tau>
          </thermostat>
-         <tau> </tau>
+         <tau> ??? </tau>
       </barostat>
       <thermostat mode='???'>
-         <tau> </tau>
+         <tau> ??? </tau>
       </thermostat>
-      <timestep units='femtosecond'> </timestep>
+      <timestep units='femtosecond'> ??? </timestep>
       <temperature>25</temperature>
       <pressure> 0 </pressure>
    </ensemble>
