@@ -423,7 +423,7 @@ class Initializer(dobject):
                warning("Using the simulation temperature to resample velocities", verbosity.low)
                rtemp = simul.ensemble.temp
             else:
-               info(" # Resampling velocities at temperature %s" % rtemp, verbosity.low)
+               info(" # Resampling velocities at temperature %s %s" % (v.value, v.units), verbosity.low)
 
             # pull together a mock initialization to get NM masses right
             #without too much code duplication
