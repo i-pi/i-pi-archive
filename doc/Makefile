@@ -22,7 +22,10 @@ aux:
 	python create_man.py
 
 manual.pdf: aux
-	lyx --export pdf2 manual.lyx
+	pdflatex manual
+	bibtex manual
+	pdflatex manual
+	pdflatex manual
 	mv manual.pdf help_files	
 	
 clean: 

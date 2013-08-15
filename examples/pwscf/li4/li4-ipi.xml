@@ -1,10 +1,10 @@
-<simulation>
+<simulation verbosity="high">
    <initialize nbeads='8'>
-      <file mode='pdb'> li-4.pdb </file>
-      <velocities mode='thermal'> 150 </velocities>
+      <file mode='pdb'> li4-init.pdb </file>
+      <velocities mode='thermal' units='kelvin'> 100 </velocities>
    </initialize>
-   <output prefix='lithium'>
-      <properties stride='1' filename='out'>  [ time, conserved, temperature, kinetic_cv, potential, pressure_cv] </properties>
+   <output prefix='li4_output'>
+      <properties stride='1' filename='out'>  [ time{picosecond}, conserved, temperature{kelvin}, kinetic_cv, potential, pressure_cv] </properties>
       <trajectory stride='1' filename='pos'>positions</trajectory>
       <checkpoint stride='20'/>
    </output>
@@ -16,12 +16,12 @@
       </socket>
    </forces>
    <ensemble mode='nvt'>
-      <thermostat mode='pile_g'>
-         <tau>1e2</tau>
+      <thermostat mode='pile_l'>
+         <tau units="femtosecond">200</tau>
          <ethermo>0.0</ethermo>
       </thermostat>
-      <timestep>50</timestep>
+      <timestep units="femtosecond">1.5</timestep>
       <fixcom>True</fixcom>
-      <temperature>150</temperature>
+      <temperature units='kelvin'>100</temperature>
    </ensemble>
 </simulation>

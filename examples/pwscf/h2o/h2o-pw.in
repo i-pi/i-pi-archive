@@ -1,6 +1,6 @@
 &CONTROL
     calculation='driver'
-    srvaddress='localhost:31415'
+    srvaddress='localhost:3141'
     verbosity='low'
     restart_mode='from_scratch'
     tstress=.true.
@@ -10,7 +10,7 @@
     prefix='h2o'
     outdir='./'
     pseudo_dir='../'
-    max_seconds=3300
+    max_seconds=7200
 /
 &SYSTEM
     ibrav=0
