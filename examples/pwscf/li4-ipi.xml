@@ -1,10 +1,10 @@
 <simulation verbosity="high">
    <initialize nbeads='8'>
       <file mode='pdb'> li4-init.pdb </file>
-      <velocities mode='thermal'> 150 </velocities>
+      <velocities mode='thermal' units='kelvin'> 100 </velocities>
    </initialize>
    <output prefix='li4_output'>
-      <properties stride='1' filename='out'>  [ time, conserved, temperature, kinetic_cv, potential, pressure_cv] </properties>
+      <properties stride='1' filename='out'>  [ time{picosecond}, conserved, temperature{kelvin}, kinetic_cv, potential, pressure_cv] </properties>
       <trajectory stride='1' filename='pos'>positions</trajectory>
       <checkpoint stride='20'/>
    </output>
@@ -22,6 +22,6 @@
       </thermostat>
       <timestep units="femtosecond">1.5</timestep>
       <fixcom>True</fixcom>
-      <temperature>150</temperature>
+      <temperature units='kelvin'>100</temperature>
    </ensemble>
 </simulation>

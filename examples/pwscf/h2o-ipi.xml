@@ -1,10 +1,10 @@
 <simulation verbosity="high">
    <initialize nbeads='8'>
       <file mode='pdb'> h2o-init.pdb </file>
-      <velocities mode='thermal'> 150 </velocities>
+      <velocities mode='thermal' units="kelvin"> 150 </velocities>
    </initialize>
    <output prefix='h2o_output'>
-      <properties stride='1' filename='out'>  [ time{femtosecond}, conserved, temperature, kinetic_cv, potential, pressure_cv] </properties>
+      <properties stride='1' filename='out'>  [ time{femtosecond}, conserved, temperature{kelvin}, kinetic_cv, potential, pressure_cv{bar} ] </properties>
       <trajectory stride='1' filename='pos' cell_units="angstrom"> positions{angstrom} </trajectory>
       <checkpoint stride='20'/>
    </output>
@@ -21,6 +21,6 @@
       </thermostat>
       <timestep units="femtosecond">0.5</timestep>
       <fixcom>True</fixcom>
-      <temperature>150</temperature>
+      <temperature units="kelvin">150</temperature>
    </ensemble>
 </simulation>

@@ -9,7 +9,7 @@ the Free Software Foundation, either version 3 of the License, or
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
@@ -418,7 +418,7 @@ class Initializer(dobject):
             if not fmass:
                raise ValueError("Trying to resample velocities before having masses.")
 
-            rtemp = v.value
+            rtemp = v.value * unit_to_internal("temperature",v.units,1.0)
             if rtemp <= 0:
                warning("Using the simulation temperature to resample velocities", verbosity.low)
                rtemp = simul.ensemble.temp
