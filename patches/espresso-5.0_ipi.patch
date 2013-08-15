@@ -78,8 +78,8 @@ diff -rupN espresso-5.0_ref/Modules/read_namelists.f90 espresso-5.0/Modules/read
               !
 diff -rupN espresso-5.0_ref/PW/src/driver.f90 espresso-5.0/PW/src/driver.f90
 --- espresso-5.0_ref/PW/src/driver.f90	1970-01-01 01:00:00.000000000 +0100
-+++ espresso-5.0/PW/src/driver.f90	2013-08-12 08:18:18.803837016 +0100
-@@ -0,0 +1,100 @@
++++ espresso-5.0/PW/src/driver.f90	2013-08-15 10:28:50.667872744 +0100
+@@ -0,0 +1,114 @@
 +  SUBROUTINE driver()
 +    USE io_global,        ONLY : stdout, ionode, ionode_id
 +    USE io_files,         ONLY : srvaddress
@@ -95,32 +95,32 @@ diff -rupN espresso-5.0_ref/PW/src/driver.f90 espresso-5.0/PW/src/driver.f90
 +    INTEGER, PARAMETER :: MSGLEN=12
 +    LOGICAL :: isinit=.true., hasdata=.false.
 +    CHARACTER*12 :: header
-+    CHARACTER*1024 :: parbuffer
-+    INTEGER socket, nat
-+    INTEGER inet, port, ccmd, i
-+    CHARACTER*1024 :: host  
++    CHARACTER*1024 :: parbuffer, host
++    INTEGER socket, nat, inet, port, ccmd, i
++    REAL*8 :: sigma(3,3)
 +    REAL *8 :: cellh(3,3), cellih(3,3), vir(3,3), pot
 +    REAL*8, ALLOCATABLE :: combuf(:)
-+    REAL*8 :: sigma(3,3)
++
++    ! parses host name, port and socket type
 +    inet=1
 +    host=srvaddress(1:INDEX(srvaddress,':',back=.true.)-1)//achar(0)
 +    read(srvaddress(INDEX(srvaddress,':',back=.true.)+1:),*) port
-+    
-+    IF (ionode) write(*,*) " @ DRIVER MODE: Connecting to host:port ", trim(host), port
-+    
++        
 +    IF (srvaddress(1:INDEX(srvaddress,':')-1).eq.('UNIX')) THEN
 +      inet=0
 +      host=srvaddress(6:INDEX(srvaddress,':',back=.true.)-1)//achar(0)    
 +    ENDIF
 +
-+    IF (ionode) call open_socket(socket, inet, port, host)          
-+  
++    IF (ionode) write(*,*) " @ DRIVER MODE: Connecting to host:port ", trim(host), port
++
++    ! opens socket and starts main loop
++    IF (ionode) call open_socket(socket, inet, port, host)            
 +    driver_loop: DO
 +      ! do communication on master node only...
 +      if (ionode) call readbuffer(socket, header, MSGLEN)      
 +      call mp_bcast(header,ionode_id, intra_image_comm)
 +      
-+      if (ionode) write(*,*) " @ DRIVER MODE: Message from server: ", header
++      if (ionode) write(*,*) " @ DRIVER MODE: Message from server: ", trim(header)
 +      if (trim(header) == "STATUS") then
 +         if (ionode) then  ! does not  need init (well, maybe it should, just to check atom numbers and the like... )
 +            if (hasdata) then
@@ -129,25 +129,31 @@ diff -rupN espresso-5.0_ref/PW/src/driver.f90 espresso-5.0/PW/src/driver.f90
 +               call writebuffer(socket,"READY       ",MSGLEN)
 +            endif
 +         endif
-+      else if (trim(header) == "POSDATA") then              
-+         if (ionode) then        
++      else if (trim(header) == "POSDATA") then
++         ! receives the positions & the cell data
++         if (ionode) then    ! first the cell and the number of atoms
 +            call readbuffer(socket, cellh, 9*8)
 +            call readbuffer(socket, cellih, 9*8)
 +            call readbuffer(socket, nat, 4)
-+            cellh=transpose(cellh)
-+            cellih=transpose(cellih)
-+         endif
-+         call mp_bcast(cellh,ionode_id, intra_image_comm)
++         endif         
++         call mp_bcast(cellh,ionode_id, intra_image_comm)  ! must communicate to other nodes
 +         call mp_bcast(cellih,ionode_id, intra_image_comm)
 +         call mp_bcast(nat,ionode_id, intra_image_comm)
-+         if (.not.allocated(combuf)) allocate(combuf(3*nat))
-+         if (ionode) call readbuffer(socket, combuf, nat*3*8)
-+         call mp_bcast(combuf,ionode_id, intra_image_comm)
 +         
-+         tau = RESHAPE(combuf, (/ 3 , nat /) )/alat                  
-+         at = cellh / alat
++         ! then we can allocate the buffer for the positions, and receive them
++         if (.not.allocated(combuf)) allocate(combuf(3*nat))
++         if (ionode) call readbuffer(socket, combuf, nat*3*8)         
++         call mp_bcast(combuf,ionode_id, intra_image_comm) ! and broadcast them to all nodes
++         
++         ! convert the incoming configuration to the internal pwscf format
++         cellh=transpose(cellh)                       ! row-major to column-major 
++         cellih=transpose(cellih)         
++         tau = RESHAPE(combuf, (/ 3 , nat /) )/alat   ! internally positions are in alat 
++         at = cellh / alat                            ! and so the cell
 +                  
 +         if (ionode) write(*,*) " @ DRIVER MODE: Received positions "
++         
++         ! does SCF
 +         CALL hinit1()
 +         CALL electrons()
 +         IF ( .NOT. conv_elec ) THEN
@@ -157,12 +163,14 @@ diff -rupN espresso-5.0_ref/PW/src/driver.f90 espresso-5.0/PW/src/driver.f90
 +         CALL forces()
 +         CALL stress(sigma)
 +         
++         ! converts energy & forces to the format expected by i-pi (so go from Ry to Ha)
 +         combuf=RESHAPE(force, (/ 3 * nat /) ) * 0.5   ! return force in atomic units
-+         pot=etot * 0.5   ! return potential in atomic units
-+         vir=transpose(sigma)*omega*0.5   ! return virial in atomic units and without the volume scaling
++         pot=etot * 0.5                                ! return potential in atomic units
++         vir=transpose(sigma)*omega*0.5                ! return virial in atomic units and without the volume scaling
 +                  
 +         hasdata=.true.
 +      else if (trim(header)=="GETFORCE") then
++         ! communicates energy info back to i-pi
 +         if (ionode) write(*,*) " @ DRIVER MODE: Returning v,forces,stress "
 +         if (ionode) then      
 +            call writebuffer(socket,"FORCEREADY  ",MSGLEN)            
@@ -170,9 +178,15 @@ diff -rupN espresso-5.0_ref/PW/src/driver.f90 espresso-5.0/PW/src/driver.f90
 +            call writebuffer(socket,nat,4)            
 +            call writebuffer(socket,combuf,3*nat*8)
 +            call writebuffer(socket,vir,9*8)
++            
++            ! i-pi can also receive an arbitrary string, that will be printed out to the "extra" 
++            ! trajectory file. this is useful if you want to return additional information, e.g.
++            ! atomic charges, wannier centres, etc. one must return the number of characters, then
++            ! the string. here we just send back zero characters.
 +            nat = 0
 +            call writebuffer(socket,nat,4)
 +         endif
++         
 +         hasdata=.false.
 +         CALL punch( 'config' )
 +         CALL save_in_ions()
