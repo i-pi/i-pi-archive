@@ -9,7 +9,7 @@ the Free Software Foundation, either version 3 of the License, or
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
@@ -634,14 +634,14 @@ class ThermoGLE(Thermostat):
       # allocates, initializes or restarts an array of s's
       if self.s.shape != (self.ns + 1, len(dget(self,"m"))):
          if len(self.s) > 0:
-            warning("mismatch in GLE s array size on restart", verbosity.low)
+            warning("Mismatch in GLE s array size on restart, will reinitialise to free particle.", verbosity.low)
          self.s = np.zeros((self.ns + 1, len(dget(self,"m"))))
 
          # Initializes the s vector in the free-particle limit
          SC = stab_cholesky(self.C*Constants.kb)
          self.s[:] = np.dot(SC, self.prng.gvec(self.s.shape))
       else:
-         info("Inputing additional DOFs", verbosity.medium)
+         info("GLE additional DOFs initialised from input.", verbosity.medium)
 
    def step(self):
       """Updates the bound momentum vector with a GLE thermostat"""
@@ -752,12 +752,12 @@ class ThermoNMGLE(Thermostat):
          self.prng = prng
 
       if (nm.nbeads != self.nb):
-         raise IndexError("Number of beads " + str(nm.nbeads) + " doesn't match GLE parameters nb= " + str(self.nb) )
+         raise IndexError("The parameters in nm_gle options correspond to a bead number "+str(self.nb)+ " which does not match the number of beads in the path" + str(nm.nbeads) )
 
       # allocates, initializes or restarts an array of s's
       if self.s.shape != (self.nb, self.ns + 1, nm.natoms *3) :
          if len(self.s) > 0:
-            warning("mismatch in GLE s array size on restart", verbosity.low)
+            warning("Mismatch in GLE s array size on restart, will reinitialise to free particle.", verbosity.low)
          self.s = np.zeros((self.nb, self.ns + 1, nm.natoms*3))
 
          # Initializes the s vector in the free-particle limit
@@ -765,7 +765,7 @@ class ThermoNMGLE(Thermostat):
             SC = stab_cholesky(self.C[b]*Constants.kb)
             self.s[b] = np.dot(SC, self.prng.gvec(self.s[b].shape))
       else:
-         info("Inputing additional DOFs in GLE", verbosity.medium)
+         info("GLE additional DOFs initialised from input.", verbosity.medium)
 
       prev_ethermo = self.ethermo
 
