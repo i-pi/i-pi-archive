@@ -26,7 +26,7 @@
          <tau>1e3</tau>
       </thermostat>
       <timestep units='femtosecond'>1</timestep>
-      <temperature>25</temperature>
+      <temperature units='kelvin'>25</temperature>
       <pressure> 0 </pressure>
    </ensemble>
 </simulation>

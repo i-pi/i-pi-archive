@@ -2,12 +2,12 @@
    <initialize nbeads='8'>
       <file format='chk'> restart.chk  </file>
       <cell units="angstrom"> [ 51.8,0,0,0, 49.84,0,0,0, 200 ] </cell> 
-      <resample_v> 300 </resample_v>
+      <velocities mode='thermal' units='kelvin'> 300 </resample_v>
    </initialize>
    <output prefix='test'>
-      <properties stride='5' filename='out' flush="10" >  [ time{picosecond}, conserved, temperature, kinetic_cv, potential ] </properties>
+      <properties stride='5' filename='out' flush="10" >  [ step, time{picosecond}, conserved{kelvin}, temperature{kelvin}, kinetic_cv{kelvin}, potential{kelvin}, pressure_cv{megapascal}] </properties>
       <properties stride='5' filename='iso' flush="10" >  [ isotope_tdfep(1.167;C), isotope_scfep(1.167;0) ] </properties>
-      <properties stride='1' filename='kc'> [ kinetic_cv(C) ] </properties> 
+      <properties stride='1' filename='kc'> [ kinetic_cv{kelvin}(C) ] </properties> 
       <trajectory stride='5' filename='pos' flush="100">positions{angstrom}</trajectory>
       <trajectory stride='5' filename='kin' flush="100"> kinetic_cv </trajectory>
 <!--      <trajectory stride='5' filename='rg' flush="100"> gyration_r </trajectory> -->
@@ -18,7 +18,7 @@
    <prng><seed>8417</seed></prng>
    <forces>
       <socket mode="unix">
-         <address>rpmd</address>   <port>31415</port>    <slots>4</slots> <latency>0.0001</latency>
+         <address>localhost</address>
       </socket>
    </forces>
    <ensemble type='nvt'>
@@ -34,7 +34,6 @@
       </thermostat>
 -->
       <timestep units="femtosecond">1.0</timestep>
-      <fixcom>True</fixcom>
-      <temperature>300</temperature>
+      <temperature units='kelvin'>300</temperature>
    </ensemble>
 </simulation>

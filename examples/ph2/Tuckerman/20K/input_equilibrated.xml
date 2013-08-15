@@ -4367,8 +4367,7 @@
          <ethermo> -3.66978567e+00</ethermo>
       </thermostat>
       <timestep units='femtosecond'>  1</timestep>
-      <fixcom> True</fixcom>
-      <temperature>  2.00000000e+01</temperature>
+      <temperature units='kelvin'>  2.00000000e+01</temperature>
       <pressure>0</pressure>
    </ensemble>
 </simulation>

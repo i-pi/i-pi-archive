@@ -3318,8 +3318,6 @@
    </prng>
    <ensemble mode='nve'>
       <timestep>  2.00000000e+01</timestep>
-      <pressure>  1.00000000e+00</pressure>
-      <fixcom>True</fixcom>
-      <temperature>  2.50000000e+01</temperature>
+      <temperature units='kelvin'>  2.50000000e+01</temperature>
    </ensemble>
 </simulation>
