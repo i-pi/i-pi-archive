@@ -2,7 +2,7 @@
 #$ -S /bin/bash
 #$ -cwd
 #$ -pe  orte 4
-#$ -N lj-wrappi
+#$ -N lj-ipi
 
 # Script to run an individual RPMD run
 # 

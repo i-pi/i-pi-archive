@@ -2424,7 +2424,7 @@ down cleanly. In this case, simply wait for it to disconnect, and
 try again. Finally, you will get this error if you try to use a restricted
 port number (i.e. below 1024) while not root. You should always use
 a non-restricted port number for \ipi simulations.
-\item \emph{Error opening unix socket. Check if a file /tmp/wrappi\_\_\_ exists, and remove it if unused.}:
+\item \emph{Error opening unix socket. Check if a file /tmp/ipi\_\_\_ exists, and remove it if unused.}:
 Similar to the above error, but given if you are using a unix socket
 rather than an internet socket. Since this binds locally the socket
 can be removed by the user, which means that it is not necessary to
@@ -2524,7 +2524,7 @@ of how to do this.
 \section{Online resources}
 
 For more information about \ipi and to download the source code go
-to {[}appropriate wrappi website{]}.
+to {[}appropriate ipi website{]}.
 
 Parameters to run Path Integral with Generalized Langevin Equation
 thermostat (PI+GLE) calculations can be found on the website:
@@ -3524,7 +3524,7 @@ also be used:
 
 \subsection{Restart file}
 
-As well as checkpoint files during a simulation run, wrappi also creates
+As well as checkpoint files during a simulation run, ipi also creates
 a file to restart from automatically at the end of the simulation,
 with file name {}``RESTART''. In the same way as the checkpoint
 files generated above, it contains the state of the system is created
