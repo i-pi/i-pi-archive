@@ -1,10 +1,10 @@
 <simulation>
    <initialize nbeads='16'>
       <file mode='pdb'> our_ref.pdb </file>
-      <velocities mode='thermal'>3683.412077</velocities>
+      <velocities mode='thermal' units='kelvin'>3683.412077</velocities>
    </initialize>
    <output prefix='harm'>
-      <properties stride='5' filename='out'>  [ time, conserved, temperature, kinetic_md, potential, pressure_md] </properties>
+      <properties stride='5' filename='out'>  [ step, time{picosecond}, conserved{kelvin}, temperature{kelvin}, kinetic_cv{kelvin}, potential{kelvin}, pressure_cv{megapascal}] </properties>
       <properties stride='100' filename='mom'> [time, linlin(ux=0.2552), linlin(ux=0.1255)] </properties>
    </output>
    <total_steps>100000</total_steps>
@@ -16,11 +16,9 @@
    </forces>
    <ensemble mode='nvt'>
       <thermostat mode='langevin'>
-         <tau>1e2</tau>
-         <ethermo>0.0</ethermo>
+         <tau units='femtosecond'>25</tau>
       </thermostat>
       <timestep units='femtosecond'>0.003</timestep>
-      <fixcom>False</fixcom>
-      <temperature>3683.412077</temperature>
+      <temperature units='kelvin'>3683.412077</temperature>
    </ensemble>
 </simulation>

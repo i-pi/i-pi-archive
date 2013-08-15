@@ -240,7 +240,7 @@ Unit & Name & S.I. Value\tabularnewline
 Length & Bohr radius & 5.2917721e-11 m\tabularnewline
 Time & N.A. & 2.4188843e-17 s\tabularnewline
 Mass & Electron mass & 9.1093819e-31 kg\tabularnewline
-Temperature & Kelvin & 1 K\tabularnewline
+Temperature & Hartree & 315774.66 K\tabularnewline
 Energy & Hartree & 4.3597438e-18 J\tabularnewline
 Pressure & N.A. & 2.9421912e13 Pa\tabularnewline
 \hline 
@@ -1577,14 +1577,15 @@ constant in this ensemble.
 \subsection{Part 3 - A fully converged simulation}
 
 As a final example, we note that at this state point 16 replicas
-are actually required to provide converged results.
+and at least 172 particles are actually 
+required to provide converged results.
 As a last tutorial then, you should repeat tutorials 1 and 2 with
-this number of replicas. The directory {}``tutorial 3'' contains 
+this number of replicas and atoms. The directory {}``tutorial 3'' contains 
 NVT and NPT input files which can be used to do a fully converged
 NPT simulation from scratch, except that they are missing some
 of the necessary input parameters.
 
-If these are chosen correctly the simulation is run properly
+If these are chosen correctly and the simulation is run properly
 the volume will be 31 \(\textrm{cm}^3\)/mol and the total energy
 should be -48 K \cite{mart+99jcp}.
 

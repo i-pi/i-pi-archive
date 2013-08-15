@@ -1,12 +1,11 @@
 <simulation>
    <initialize nbeads='32'>
       <file mode='pdb'> our_ref.pdb </file>
-      <velocities mode='thermal'> 28 </velocities>
+      <velocities mode='thermal' units='kelvin'> 28 </velocities>
    </initialize>
    <output prefix=''>
       <properties shape='(7)' filename='ph2-p32-14K-0bar-mht.out'>
-       [ step, conserved, temperature, potential{kelvin}, kinetic_cv{kelvin}, 
-         volume, pressure_cv ]
+         [ step, time{picosecond}, conserved{kelvin}, temperature{kelvin}, kinetic_cv{kelvin}, potential{kelvin}, pressure_cv{megapascal}, volume]
       </properties>
       <trajectory format='pdb' filename='ph2-p32-14K-0bar-mht.traj' stride='100' cell_units='angstrom'>positions{angstrom}</trajectory>
    </output>
@@ -14,17 +13,15 @@
    <prng><seed>31418</seed></prng>
    <forces>
       <socket mode="unix">
-         <address>localhost</address>   <port>31418</port>    <slots>4</slots> <latency>0.001</latency>
+         <address>localhost</address>
       </socket>
    </forces>
    <ensemble mode='nvt'>
       <thermostat mode='pile_g'>
-         <tau>  4.13413730e+02</tau>
-         <ethermo> -4.67859114e+00</ethermo>
+         <tau units='femtosecond'> 10 </tau>
       </thermostat>
       <timestep units='femtosecond'>  1</timestep>
-      <fixcom> True</fixcom>
-      <temperature>  1.40000000e+01</temperature>
+      <temperature units='kelvin'>  1.40000000e+01</temperature>
       <pressure>0</pressure>
    </ensemble>
 </simulation>

@@ -1,7 +1,7 @@
 <simulation verbosity='medium'>
    <initialize nbeads='16'>
       <file mode='pdb' units='angstrom'> our_ref.pdb </file>
-      <velocities mode='thermal'> ??? </velocities>
+      <velocities mode='thermal' units='kelvin'> ??? </velocities>
    </initialize>
    <output prefix='tut3'>
       <properties filename='prop' stride='1'> [time{picosecond}, conserved{kelvin}, kinetic_cv{kelvin}, potential{kelvin}] </properties>
@@ -20,6 +20,6 @@
          <tau> ??? </tau>
       </thermostat>
       <timestep units='femtosecond'> ??? </timestep>
-      <temperature>25</temperature>
+      <temperature units='kelvin'>25</temperature>
    </ensemble>
 </simulation>

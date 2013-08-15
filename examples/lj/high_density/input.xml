@@ -1,10 +1,10 @@
 <simulation>
    <initialize nbeads='1'>
       <file mode='pdb'> our_ref.pdb </file>
-      <velocities mode='thermal'> 80 </velocities>
+      <velocities mode='thermal' units='kelvin'> 80 </velocities>
    </initialize>
    <output prefix='lj-high'>
-      <properties stride='5' filename='out'>  [ time, conserved, temperature, kinetic_md, potential, pressure_md ] </properties>
+      <properties stride='5' filename='out'>  [ step, time{picosecond}, conserved{kelvin}, temperature{kelvin}, kinetic_md{kelvin}, potential{kelvin}, pressure_md{megapascal}] </properties>
       <trajectory stride='100' filename='pos'>positions</trajectory>
       <checkpoint stride='2000'/>
    </output>
@@ -12,16 +12,15 @@
    <prng><seed>3848</seed></prng>
    <forces>
       <socket mode="unix">
-         <address>localhost</address>   <port>31415</port>    <slots>4</slots> <latency>0.001</latency>
+         <address>localhost</address>
       </socket>
    </forces>
    <ensemble mode='nvt'>
       <thermostat mode='pile_g'>
-         <tau>1e4</tau>
-         <ethermo>0.0</ethermo>
+         <tau units='femtosecond'>25</tau>
       </thermostat>
       <timestep units='femtosecond'>0.2</timestep>
-      <fixcom>True</fixcom>
-      <temperature>40.32753474</temperature>
+      <fixcom>False</fixcom>
+      <temperature units='kelvin'>40.32753474</temperature>
    </ensemble>
 </simulation>

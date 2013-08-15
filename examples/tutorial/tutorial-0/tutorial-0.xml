@@ -15,6 +15,6 @@
          <tau>1e3</tau>
       </thermostat>
       <timestep>40.0</timestep>
-      <temperature>25</temperature>
+      <temperature>7.917038e-05</temperature>
    </ensemble>
 </simulation>

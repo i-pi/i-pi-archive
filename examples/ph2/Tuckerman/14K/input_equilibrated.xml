@@ -6848,7 +6848,6 @@
       </thermostat>
       <timestep units='femtosecond'>  1</timestep>
       <pressure>0</pressure>
-      <fixcom>True</fixcom>
-      <temperature>  1.40000000e+01</temperature>
+      <temperature units='kelvin'>  1.40000000e+01</temperature>
    </ensemble>
 </simulation>

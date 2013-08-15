@@ -726,6 +726,6 @@
          <ethermo>  6.01356737e-02</ethermo>
       </thermostat>
       <timestep>  4.13413730e+01</timestep>
-      <temperature>  2.50000000e+01</temperature>
+      <temperature units='kelvin'>  2.50000000e+01</temperature>
    </ensemble>
 </simulation>
