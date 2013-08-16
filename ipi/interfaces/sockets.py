@@ -9,7 +9,7 @@ the Free Software Foundation, either version 3 of the License, or
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
@@ -242,7 +242,7 @@ class DriverSocket(socket.socket):
       else:
          return np.fromstring(self._buf[0:blen], dest.dtype).reshape(dest.shape)
 
-   def initialize(self, pars):
+   def initialize(self, rid, pars):
       """Sends the initialisation string to the driver.
 
       Args:
@@ -255,6 +255,7 @@ class DriverSocket(socket.socket):
       if self.status & Status.NeedsInit:
          try:
             self.sendall(Message("init"))
+            self.sendall(np.int32(rid))
             self.sendall(np.int32(len(pars)))
             self.sendall(pars)
          except:
@@ -631,7 +632,7 @@ class InterfaceSocket(object):
                while fc.status & Status.Busy:
                   fc.poll()
                if fc.status & Status.NeedsInit:
-                  fc.initialize(r["pars"])
+                  fc.initialize(r["id"], r["pars"])
                   fc.poll()
                   while fc.status & Status.Busy: # waits for initialization to finish. hopefully this is fast
                      fc.poll()
