@@ -1238,11 +1238,7 @@ seeds for each. This is simply done using the
 {}``prng'' tag, as follows:
 
 \begin{code}
-<prng>
-   <seed>
-      31415
-   </seed>
-</prng>
+<prng> <seed> 31415 </seed> </prng>
 \end{code}
 
 \subsubsection{Simplifying the input file}
@@ -1746,6 +1742,8 @@ type of class that will be created. A xml tag has the following syntax:
 
 The syntax for the different types of tag data is given below: 
 {\color{red}??? USE MONO FONTS IN THE TABLE, TO MATCH THE CODE ENVIRONMENT}
+
+\begin{center}
 \begin{tabular}{cc}
 \hline\hline
 Data type & Syntax\\
@@ -1759,6 +1757,7 @@ Vector & <tag> {[} entry1, entry2, \ldots {]} </tag>\\
 Dictionary & <tag>\{name1: data1, name2: data2, \ldots \}</tag>\\
 \hline\hline
 \end{tabular}
+\end{center}
 
 Note that arrays are always given as one-dimensional lists. In cases
 where a multi-dimensional array must be entered, one can use the `shape'
