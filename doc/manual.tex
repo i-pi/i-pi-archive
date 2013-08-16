@@ -72,7 +72,7 @@ A Python wrapper for Path Integral Molecular Dynamics
 \label{intro}
 
 \ipi is a Path Integral Molecular Dynamics (PIMD) wrapper code written
-in Python, designed to be used together with \emph{ab initio} evaluation
+in Python, designed to be used together with an \emph{ab initio} evaluation
 of the interactions between the atoms. The main goal is to decouple
 the problem of evolving the ionic positions to sample the appropriate
 thermodynamic ensemble and the problem of computing the inter-atomic
@@ -152,11 +152,12 @@ specifically for PIMD simulations are now available to increase the
 rate of convergence with respect to the number of replicas used \cite{mark-mano08jcp,ceri+11jcp},
 so further reducing the computational overhead of the method. All
 of these facts mean that it is now feasible to do PIMD simulations
-with thousands of molecules, or even using \emph{ab initio} electronic
+with thousands of molecules, or even to use \emph{ab initio} electronic
 structure calculations to propagate the dynamics for small systems.
 
 Furthermore, the framework used to run PIMD simulations can be adapted
-to generate approximate quantum dynamical information \cite{crai-mano04jcp,hone+06jcp},
+to generate approximate quantum dynamical information 
+\cite{cao-voth93jcp,cao-voth94jcp,crai-mano04jcp,braa-mano06jcp},
 and so can also be used to calculate correlation functions. While
 the dynamics is classical, and so real-time quantum coherences cannot
 be captured, the correct capture of quantum statistical information
@@ -191,7 +192,7 @@ care of stating their dependencies as well as the function that computes
 them. However, the advantage is that when the physical quantities
 are used, in the integrator of the dynamics or in the evaluation of
 physical properties, one does not need to take care of book-keeping
-and the code can be cleaner, transparent and readable.
+and the code can be clean, transparent and readable.
 
 
 \subsection{Communication protocol}
@@ -205,7 +206,7 @@ Both Internet and Unix domain sockets can be used: the latter allow
 for fast communication on a single node, whereas the former makes
 it possible to realize a distributed computing paradigm, with clients
 running on different nodes or even on different HPC facilities. In
-order to facilitate implementation of the sockets communication in
+order to facilitate implementation of the socket communication in
 client codes, a simple set of C wrappers to the standard libraries
 socket implementation is provided as part of the \ipi distribution,
 that can be used in any programming language that can be linked with
@@ -252,12 +253,15 @@ Pressure & N.A. & 2.9421912e13 Pa\tabularnewline
 
 The functionality of \ipi includes:
 \begin{itemize}
-\item Integrators for constant temperature ensembles, including: \begin{itemize}
-\item Local and global stochastic thermostats \cite{plangevin1908cras,buss-parr08cpc}, with optional optimized sampling over the normal mode coordinates \cite{ceri+10jcp}.
+\item Thermostats for constant temperature ensembles, including: \begin{itemize}
+\item Local and global stochastic thermostats \cite{plangevin1908cras,buss-parr08cpc}, with optional optimized sampling of the ring polymer normal mode coordinates \cite{ceri+10jcp}.
 \item Optimal sampling generalized Langevin equation (GLE) thermostats \cite{ceri+09jctc}.
-\item Path integral + GLE (PI+GLE) thermostats \cite{ceri+11jcp} for accelerating convergence of potential energy with respect to number of replicas, as well as the more recent PIGLET method \cite{ceri-mano12prl} which also converges kinetic energy quickly.
+\item Path integral + GLE (PI+GLE) thermostats \cite{ceri+11jcp} for accelerating the
+convergence of the potential energy with respect to the number of replicas, 
+as well as the more recent PIGLET method \cite{ceri-mano12prl}, which 
+accelerates the convergence of the kinetic energy.
 \end{itemize}
-\item Integrators for constant pressure ensembles \cite{mart+99jcp,buss+09jpc}.
+\item Barostats for constant pressure ensembles \cite{mart+99jcp,buss+09jpc}.
 \item Ring polymer contraction \cite{mark-mano08jcp}.
 \item Scaled path finite difference energy and heat capacity estimators
 \cite{tyamamoto05jcp}.
@@ -292,7 +296,7 @@ wrapper.
 
 \label{librarywebsites}
 
-There are currently patches available for Quantum Espresso version
+There are currently client patches available for Quantum Espresso version
 4.3.2 and CP2K version 2.2. It should be possible to adapt these patches
 to other versions of the codes with minor modifications. For more
 information about Quantum Espresso and CP2K, go to \url{www.quantum-espresso.org}
@@ -313,8 +317,9 @@ of how to do this.
 For more information about \ipi{} and to download the source code
 go to \url{gle4md.berlios.de }, where one can also obtain colored-noise
 parameters to run Path Integral with Generalized Langevin Equation
-thermostat (PI+GLE) calculations.
+thermostat (PI+GLE/PIGLET) calculations.
 
+%Mano's note: Allowed by CPC?
 
 \chapter{Getting started}
 
@@ -352,9 +357,13 @@ Patching for use with \ipi{} should not introduce further dependencies.
 A tar file can be downloaded from the website \url{gle4md.berlios.de}.
 To install this you need to input the following command:
 
+%Mano's note: Again, is this allowed?
+
 \begin{verbatim}
-> tar xf [wrapper_tar_file.tar]
+> tar -xf [wrapper_tar_file.tar]
 \end{verbatim}
+
+%Mano's note: Perhaps remove claim of Windows from prog. description?
 
 You can also obtain a local clone of the git repository on \url{bitbucket.org}
 using:
@@ -414,7 +423,7 @@ say, with the following command:
 \end{verbatim}
 
 Next, you must tell python where to find this library, by appending
-to the Linux environment variable \textbf{PYTHONPATH}. If you are
+to the Linux environment variable PYTHONPATH. If you are
 using Python version {}``py\_vers'', then the NumPy libraries will
 have been installed in the directory {}``np\_dir/lib/py\_vers/site-packages'',
 or a close analogue of this. In the above case the following command
@@ -441,7 +450,7 @@ This however is not the only distribution that could be used, and
 indeed faster stand-alone versions exist. The gold-standard FFT library
 is the FFTW library, which is a set of C libraries that have been
 heavily optimized for a wide range of applications. There have been
-a number of Python wrappers around the FFTW library, one of which
+a number of Python wrappers built around the FFTW library, one of which
 is currently interfaced with \ipi. This code can be found at \url{https://github.com/hgomersall/pyFFTW},
 and has documentation at \url{http://hgomersall.github.io/pyFFTW/}.
 
@@ -466,8 +475,11 @@ default. Otherwise the slower NumPy version will be used.
 
 \subsection{Minimal client code}
 
+%Mano's note: Missing section...
 
 \subsection{Patching CP2K}
+
+%Mano's note: Missing section...
 
 
 \subsection{Patching Quantum-Espresso}
@@ -490,11 +502,15 @@ After this, continue the compilation as per the instructions at \url{www.quantum
 
 \subsection{Writing a patch}
 
+%Mano's note: Missing section...
+
 
 \section{Running \ipi}
 
 
 \subsection{Running the server code}
+
+\label{runningsimulations}
 
 \ipi simulations are run using the i-pi Python script found in the
 {}``i-pi'' directory. This script takes an xml-formatted file as
@@ -521,19 +537,22 @@ poll for incoming connections.
 
 \subsubsection{CP2K}
 
-To use CP2K as the client code, an additional file named {}``serverfile''
-must be kept in the same directory that CP2K is being run from. It
-should contain a string a single line long, of the format {}``mode:host:port\_number''.
-{}``mode'' should either be {}``INET'' or {}``UNIX'', representing
-an internet or unix socket respectively. The rest of the input file
-is the same as for a standard CP2K calculation.
+%To use CP2K as the client code, an additional file named {}``serverfile''
+%must be kept in the same directory that CP2K is being run from. It
+%should contain a string a single line long, of the format {}``mode:host:port\_number''.
+%{}``mode'' should either be {}``INET'' or {}``UNIX'', representing
+%an internet or unix domain socket respectively. The rest of the input file
+%is the same as for a standard CP2K calculation.
+
+%Mano's note: This is now all wrong, as it has been updated to more closely resemble the QE input.
 
 
 \subsubsection{Quantum-Espresso}
 
-To use Quantum-Espresso as the client code using a socket on the host
+To use Quantum-Espresso as the client code using an 
+internet domain socket on the host
 address {}``host\_address'' and on the port number {}``port''
-we would add the following lines to the input file:
+the following lines must be added to the input file:
 
 \begin{verbatim}
 &CONTROL
@@ -544,8 +563,9 @@ we would add the following lines to the input file:
 /
 \end{verbatim}
 
-If we wanted to run on a UNIX port instead of an INET port, we would
-instead write:
+If instead a unix domain socket is required then the following
+modification is necessary:
+
 
 \begin{verbatim}
 &CONTROL
@@ -560,125 +580,6 @@ The rest of the input file should be the same as for a standard Quantum
 Espresso calculation, as explained at \url{www.quantum-espress.org/}.
 
 
-\subsection{Running simulations}
-
-\label{runningsimulations}
-
-There are two parts to any \ipi simulation. First the server code
-is run, which starts the dynamics loop until the forces are required.
-Once the server socket has been opened, it then waits for connections
-from client codes. 
-
-For a small simulation, with a simple classical potential, it may
-be preferable to run both halves of the simulation on the same computer,
-especially as this allows us to use the faster unix domain sockets.
-This can be done using a single script, such as:
-
-\begin{verbatim}
-#These are the parameters that need to be specified by
-#the user. The number of client codes is given by $nclients,
-#the i-pi source directory containing the i-pi script
-#is given by $src_dir, and the code that runs one of 
-#the client codes is given by $client_comm
-inputfile=...
-hostname=...
-port=...
-nclients=...
-src_dir=...
-client_comm="..."
-
-#This modifies the input file. If necessary, the client code
-#input file should be modified here too
-sed -i "s/<address>[^<]*</<address>$hostname</" $inputfile
-sed -i "s/<port>[^<]*</<port>$port</" $inputfile
-
-if [ -e EXIT ]; then
-   rm EXIT 
-fi
-
-#Runs the simulation, and redirects the server
-#standard output to a file named 'log'.
-bash -c "python $src_dir/i-pi $inputfile > log &"
-
-sleep 20 #must wait for server to be initialized
-for a in `seq 1 $nclients`; do
-   bash -c "$client_comm"
-done 
-\end{verbatim}
-
-However, for most simulations, especially those running with expensive
-\emph{ab initio} forces and potentials, we will want to run the client
-codes on a computational cluster. Here we run the server code elsewhere,
-and use internet sockets for the communication.
-
-To run the client on a cluster computer, two major changes must be
-implemented. Firstly, the code required to run the client code should
-be separated from that of the server code. Secondly, the client script
-should be executed using a queueing program such as qsub rather than
-the bash shell script as above, and so will need to have the appropriate
-directive comment lines. Depending on which cluster is used, additional
-commands to set parameters such as the walltime, number of nodes and
-number of cores can be used. Check the qsub man page for the cluster
-you are running the code on for more details.
-
-One possible script layout to run the client codes would be:
-
-\begin{verbatim}
-#!/bin/bash
-#$ -S /bin/bash
-#$ -N jobname
-#$ ...
-
-#use this if there are library files needed
-#by the client code that are not on the default path
-
-#export LD_LIBRARY_PATH=...
-
-#use this if ssh tunnelling is required
-
-#server_host=... #the server host address
-#server_port=... #the server port number
-#cluster_port=... #the cluster port number
-#ssh -f -N $server_host -L $cluster_port:$server_host:$server_port
-
-inputfile=...
-hostname=...
-port=...
-client_comm="..."
-
-#Modify client input file if necessary
-
-bash -c "client_comm"
-\end{verbatim}
-
-Note that it may be necessary to export libraries or modules if they
-are not present by default, or to use an ssh tunnel if the cluster
-is not open to the internet (see \ref{ssh_sockets}).
-
-To set up multiple concurrent \ipi simulations each host socket has
-to be distinguishable, so that the client codes appropriate to each
-simulation connect only to the correct server. This can be done with
-internet sockets by adjusting the port number for each simulation,
-which then acts as a unique identifier for each of the server codes.
-The above shell scripts can be easily modified to do this, for example
-if we assume the simulations will be run in directories called sim\_1,
-sim\_2, \ldots, then we can write:
-
-\begin{verbatim}
-first_port=... #The value of the port of sim_1
-i=0
-for a in sim_*; do #finds all directories in which we wish to run simulations
-   cd $a
-   port=$((first_port+i))
-   ((i++))
-
-   #here we run the code for one simulation as before
-
-   cd ..
-done
-\end{verbatim}
-
-
 \section{A simple tutorial}
 
 
@@ -687,53 +588,50 @@ Here we give a simple step-by-step guide through an example
 simulation, exploring
 some of the more generally useful options that \ipi offers and making
 no assumptions of previous experience of this code or other MD codes.
-Exercepts from the relevant input files are reproduced here, for explanation
+Excerpts from the relevant input files are reproduced here, for explanation
 purposes, but to get the most out of this tutorial the user is encouraged
-to work through them themselves. For this purpose, the input files
+to work through it themselves. For this purpose, the input files
 have been included with the \ipi distribution, in the {}``test/tutorial''
 directory.
 
-The chosen problem is that of a small NPT simulation of para-hydrogen, 
+The chosen problem is that of a small \emph{NPT} simulation of para-hydrogen, 
 using the Silvera-Goldman potential \cite{silv-gold78jcp}. 
-We will take (N,P,T) = (108, 0, 25 K).
+We will take (\(N\),\(P\),\(T\)) = (108, 0, 25 K).
 
 Finally, note that this is designed to be a demonstration of some
 of the basic abilities of \ipi, and so the user is encouraged to
 play with some of the variables to get a feel for how the input file
-works. \textbf{We will put in bold variables that can be safely adjusted without
-changing the result of the simulation.}
+works. 
 
-
-\subsection{Part 0 - a minimal input file}
+\subsection{Part 1 - \emph{NVT} Equilibration run}
 
 
 \subsubsection{Client code}
 
-Let us now consider the problem of how to use \ipi to run a NPT
+Let us now consider the problem of how to use \ipi to run a \emph{NPT}
 simulation of para-hydrogen. The first thing that is required is a
 client code that is capable of calculating the potential interactions
 of para-hydrogen molecules. Fortunately, one of the client codes distributed
 with \ipi has an appropriate empirical potential already hard-coded
-into it (hence why this system was chosen for this tutorial), and
+into it, and
 so all that is required is to create the {}``driver.x'' file in
 the {}``drivers'' directory, using the UNIX utility make.
 
 This client code can be used for several different problems, some of which
 are explored in the {}``tests'' directory, but for the current problem
 we will use the Silvera-Goldman potential with a cut-off radius
-of \textbf{15 bohr radii}. This is run using the following command:
+of 15 \(a_0\). This is run using the following command:
 
 \begin{verbatim}
-> ./driver.x -m sg -u -h localhost -o 15
+> ./driver.x -m sg -h localhost -o 15
 \end{verbatim}
 
 The option {}``-m'' is followed by the empirical potential required,
-in this case we use {}``sg'' for Silvera-Goldman, {}``-u'' gives
-a unix domain socket, {}``-h localhost'' sets up the client hostname
-as {}``localhost'' and {}``-o 15'' sets the cut-off to 15 bohr
-radii, as required. 
+in this case we use {}``sg'' for Silvera-Goldman, 
+{}``-h localhost'' sets up the client hostname
+as {}``localhost'' and {}``-o 15'' sets the cut-off to 15 \(a_0\), as required. 
 
-Note that usually this step will require setting up an the appropriate
+Note that usually this step will require setting up appropriate
 client code input files, possibly for an \emph{ab initio} electronic
 structure code, and so is generally a more involved process. Refer
 to \ref{runningclients}, and the documentation of the appropriate
@@ -745,7 +643,7 @@ client code, for more details on how to do this step.
 Now that the client code is ready, an appropriate xml input file needs
 to be created from which the host server and the simulation data can
 be initialized. Here, we will go step by step through the creation
-of a minimal input file for a simple NVT equilibration run. Note that
+of a minimal input file for a simple \emph{NVT} equilibration run. Note that
 the working final version is held within the {}``tutorial-0'' directory.
 
 Firstly, when reading the input file the \ipi xml reading functions look
@@ -806,7 +704,7 @@ data, and has the following syntax:
 
 Note that an attribute forms part of the opening tag, and that the
 value being assigned to it is held within quotation marks. In this
-case, we have set the number of replicas, or beads, to \textbf{4}.
+case, we have set the number of replicas, or beads, to 4.
 
 Next, we must specify the atomic configuration. Rather than initialize
 the atom positions manually, we will assume that the user can create
@@ -852,7 +750,7 @@ this together gives:
 The only remaining mandatory parameters that have not been initialized
 are the cell parameters. These could in theory be set using a separate
 file, but here we will initialize them manually. Taking a cubic cell
-with cell parameter 33.72594 bohr radii, we can specify this using
+with cell parameter 33.72594 \(a_0\), we can specify this using
 the {}``cell'' tag in three different ways:
 
 \begin{verbatim}
@@ -920,7 +818,7 @@ does not need a port number to be specified. This gives the final
 
 The last section that we will need is the ensemble, which determines
 how the dynamics integrator will be initialized. Since we wish to
-do a NVT simulation, we set the {}``mode'' attribute to {}``nvt'',
+do a \emph{NVT} simulation, we set the {}``mode'' attribute to {}``nvt'',
 and must specify the temperature using the appropriate tag:
 
 \begin{verbatim}
@@ -936,7 +834,7 @@ be. In general, the time step should be made as large as possible
 without there being a drift in the conserved quantity. Usually we
 would take a few short runs with different time steps to try and optimize
 this, but for the sake of this tutorial we will use a safe value of
-\textbf{40 atomic time units}, giving:
+40 atomic time units, giving:
 
 \begin{verbatim}
 <ensemble mode='nvt'>
@@ -952,11 +850,11 @@ for the constant temperature sampling algorithm. For simplicity we
 will take the path-integral Langevin equation (PILE) algorithm \cite{ceri+10jcp},
 which is specifically designed for path integral simulations, and
 since we are trying to equilibrate local properties we will take the
-local version of this, \textbf{{}``pile\_l''}. This integrator also has to
+local version of this, {}``pile\_l''. This integrator also has to
 be initialized with a time scale parameter, {}``tau'', which determines
 how strong the thermostat is. Since we have a local thermostat the
 appropriate time scales will be fairly short, so we will take a short
-time scale of \textbf{1000 atomic time units}. Putting all of this together,
+time scale of 1000 atomic time units. Putting all of this together,
 we get the final input file:
 
 \begin{verbatim}
@@ -989,10 +887,9 @@ we get the final input file:
 
 Now that we have a valid input file, we can run the test simulation.
 The {}``i-pi'' script in the root directory is used to create an
-\ipi simulation from a xml input file. More information on how to
-run this code can be found in \ref{runningsimulations}, but all that
-is required in this case (if we assume that we are in the {}``tutorial-0''
-directory) is:
+\ipi simulation from a xml input file. As explained in
+\ref{runningsimulations} (if we assume that we are in the {}``tutorial-0''
+directory) this script is run using:
 
 \begin{verbatim}
 > python ../../../i-pi tutorial-0.xml
@@ -1089,10 +986,9 @@ but the kinetic and potential energies have not.
 We therefore need to adjust the input parameters to converge these properties
 properly, as will be done in the next section.
 
-\subsection{Part 1 - Customizing and extending the input file}
 
 In Part 0, we created a minimal input file which could be used to
-run a basic NVT simulation. However, this ignored several non-essential
+run a basic \emph{NVT} simulation. However, this ignored several non-essential
 but very useful bits of functionality, which are likely to be 
 important for most problems users will face. With this in mind,
 we now present some impovements to the original input file. 
@@ -1101,7 +997,7 @@ we now present some impovements to the original input file.
 
 Firstly, we will discuss the input parameters that are necessary for
 the simulation to actually do what we originally intended it to
-correctly, namely equilibate a small system in the NVT ensemble.
+correctly, namely equilibate a small system in the \emph{NVT} ensemble.
 
 We noted at the end of the last run that the simulation did not appear to have
 fully converged. Often in this case it will be necessary to adjust the parameters
@@ -1112,7 +1008,7 @@ concentrate on these.
 
 The most obvious first step is to run the simulation for longer. 
 By default the number of
-time steps is 1000, so we will increase this to \textbf{5000} using the 
+time steps is 1000, so we will increase this to 5000 using the 
 {}``total\_steps'' tag:
 
 \begin{verbatim}
@@ -1135,7 +1031,7 @@ distribution. This can be done in the {}``initialize'' section using the
 </initialize>
 \end{verbatim}
 
-Note that we use \textbf{double the physical temperature} 
+Note that we use double the physical temperature 
 here, since we are starting from essentially a zero-temperature optimized 
 configuration and so this choice ensures that the initial total energy 
 is roughly correct.
@@ -1167,7 +1063,7 @@ user specified unit and atomic units.
 For example, the time step we used in tutorial 0
 was 40 atomic time units, but we might instead want to express this in S.I.
 units for comparison with another paper. Since this happens to be approximately
-\textbf{1 femtosecond}, so we can instead use:
+1 femtosecond, so we can instead use:
 
 \begin{verbatim}
 <ensemble mode='nvt'>
@@ -1177,7 +1073,7 @@ units for comparison with another paper. Since this happens to be approximately
 \end{verbatim}
  
 Similarly, we might want to specify the input configuration file in
-angstrom rather than bohr radii (in fact this is the standard unit for
+angstrom rather than \(a_0\) (in fact this is the standard unit for
 this file type). This can be done in the same way:
 
 \begin{verbatim}
@@ -1244,7 +1140,7 @@ with the {}``verbosity'' attribute of {}``simulation'':
 By default the verbosity is set to {}``low'', which only outputs
 important warning messages and information, and some statistical 
 information every 1000 time steps. Here we will set it to 
-\textbf{{}``high''}, which should give output of the type:
+{}``high'', which should give output of the type:
 
 \small
 \begin{verbatim}
@@ -1315,7 +1211,7 @@ overwrites the previous one or not.
 There are several options we can use to customize the
 output data. Firstly, the {}``prefix'' attribute should be set to
 something which can be used to distinguish the files from different
-simulation runs. In this case we can simply set it to \textbf{{}``tut1''}:
+simulation runs. In this case we can simply set it to {}``tut1'':
 
 \begin{verbatim}
 <output prefix='tut1'>
@@ -1323,7 +1219,7 @@ simulation runs. In this case we can simply set it to \textbf{{}``tut1''}:
 </output>
 \end{verbatim}
 
-As for the input parameters, the \textbf{units the output is given in} can be
+As for the input parameters, the units the output is given in can be
 set by the user. Unlike the input parameters however, 
 this is done by specifying an
 appropriate unit in curly braces after the name of the 
@@ -1343,8 +1239,8 @@ property or trajectory of interest, as shown below:
 \end{verbatim}
 
 Next, let us adjust some of the attributes. Let us suppose that we
-wish to output the properties \textbf{every time step}, to check for conserved
-quantity jumps, and to output the the trajectory in \textbf{pdb format}.
+wish to output the properties every time step, to check for conserved
+quantity jumps, and to output the the trajectory in pdb format.
 To do this we would set the {}``stride'' and {}``format'' tags,
 as shown below:
 
@@ -1375,8 +1271,8 @@ others, and so it would be impractical to output it every time step.
 With \ipi this is easy to do, all that is required is to add another
 {}``properties'' tag with a different filename.
 
-For demonstration purposes, we will chose to print out \textbf{the forces
-acting on one tagged bead}, since this requires an argument to be
+For demonstration purposes, we will chose to print out the forces
+acting on one tagged bead, since this requires an argument to be
 passed to the function. The \ipi syntax for doing this is to have
 the arguments to be passed to the function between standard braces,
 separated by semi-colons.
@@ -1392,7 +1288,7 @@ appropriate syntax is then given below:
 </properties>
 \end{verbatim}
 
-This will print out the force vector acting on \textbf{bead 0 of atom 0}.
+This will print out the force vector acting on bead 0 of atom 0.
 \ipi also accepts positional arguments
 (i.e. arguments not specified by a name, but just by their position
 in the list of arguments), and so this could also be written as:
@@ -1403,8 +1299,8 @@ in the list of arguments), and so this could also be written as:
 </properties>
 \end{verbatim}
 
-Finally, putting all this together, and \textbf{adjusting some
-of the parameters of the new file}, we get:
+Finally, putting all this together, and adjusting some
+of the parameters of the new file, we get:
 
 \small
 \begin{verbatim}
@@ -1431,29 +1327,29 @@ re-run the simulation by
 repeating the steps in \ref{run1}. The output of the 
 {}``tut1.md'' file should show that all the properties of interest
 have converged by the end of the simulation. If this
-is the case, then we are now ready to start the NPT run.
+is the case, then we are now ready to start the \emph{NPT} run.
 
-\subsection{Part 2 - NPT simulation}
+\subsection{Part 2 - \emph{NPT} simulation}
 
-Now that we have converged NVT simulation data, we can use this to
-initialize a NPT simulation. There are two ways of doing this,
+Now that we have converged \emph{NVT} simulation data, we can use this to
+initialize a \emph{NPT} simulation. There are two ways of doing this,
 both of which involve using the RESTART file generated at
-the end of the NVT run as a starting point.
+the end of the \emph{NVT} run as a starting point.
 
 \subsubsection{Modifying the RESTART file}
 
 Firstly, you can use the RESTART file directly, modifying it
-so that instead of continuing with the original NVT simulation
-it will instead it will start a new NPT simulation. We have included
+so that instead of continuing with the original \emph{NVT} simulation
+it will instead it will start a new \emph{NPT} simulation. We have included
 in the {}``tutorial 2'' directory both a RESTART file from
-tutorial 1 and an adjusted file which will run NPT dynamics.
+tutorial 1 and an adjusted file which will run \emph{NPT} dynamics.
 
 These adjustments start with resetting the {}``step'' tag, so that
 it starts with the value 0. This can be done by simply removing the
 tag. Similarly, we can increase the total number of
 steps so that it is more suitable for collecting the necessary
 amount of data, in this case we will set the 
-{}``total\_steps'' to \textbf{20000}.
+{}``total\_steps'' to 20000.
 
 We will also update the output files, first by setting the filenames
 to start with {}``tut2a'' rather than {}``tut1'', and secondly by adding
@@ -1495,7 +1391,7 @@ and a {}``pressure'' tag must be added:
 We must also specify which constant pressure algorithms are to be used.
 \ipi contains two barostats, labelled {}``mht'' and {}``bzp''. These are
 broadly similar, but use slightly different integration algorithms.
-In this case, we will use \textbf{{}``bzp''}. This gives:
+In this case, we will use {}``bzp''. This gives:
 
 \begin{verbatim}
 <ensemble mode='npt'>
@@ -1509,10 +1405,10 @@ In this case, we will use \textbf{{}``bzp''}. This gives:
 
 This barostat also requires a 
 thermostat to deal with the volume degree of freedom, which we will take
-to be a simple \textbf{Langevin thermostat}.
+to be a simple Langevin thermostat.
 This thermostat is specified in the same way as the one which does the
 constant temperature algorithms for the atomic degrees of freedom, and
-we will take its time constant to be \textbf{10000 atomic time units}:
+we will take its time constant to be 10000 atomic time units:
 
 \begin{verbatim}
 <ensemble mode='npt'>
@@ -1527,8 +1423,8 @@ we will take its time constant to be \textbf{10000 atomic time units}:
 </ensemble>
 \end{verbatim}
 
-Finally, we will take the barostat time scale to be \textbf{10000 atomic time
-units}, giving:
+Finally, we will take the barostat time scale to be 10000 atomic time
+units, giving:
 
 \begin{verbatim}
 <ensemble mode='npt'>
@@ -1552,7 +1448,7 @@ the xyz/pdb files were used previously.
 
 Firstly, the original input file {}``tutorial-1.xml'' needs to
 be modified so that
-it will do a NPT simulation instead of NVT. This involves modifying
+it will do a \emph{NPT} simulation instead of \emph{NVT}. This involves modifying
 the {}``total\_steps'', {}``output'' and {}``ensemble'' tags as
 above. Next, we replace the {}``initialize'' tag section with:
 
@@ -1581,8 +1477,8 @@ and at least 172 particles are actually
 required to provide converged results.
 As a last tutorial then, you should repeat tutorials 1 and 2 with
 this number of replicas and atoms. The directory {}``tutorial 3'' contains 
-NVT and NPT input files which can be used to do a fully converged
-NPT simulation from scratch, except that they are missing some
+\emph{NVT} and \emph{NPT} input files which can be used to do a fully converged
+\emph{NPT} simulation from scratch, except that they are missing some
 of the necessary input parameters.
 
 If these are chosen correctly and the simulation is run properly
@@ -1602,8 +1498,8 @@ All the input files are contained in the directory test, which is
 subdivided into the following directories:
 \begin{description}
 \item [{lj:}] This gives a simple classical Lennard-Jones simulation of
-Ne. The state points are given by (N, \(\rho\), T) = (864, 0.35,
-1.62), (N, \(\rho\), T) = (864, 0.75, 1.069) and (N, \(\rho\), T)
+Ne. The state points are given by (\(N\), \(\rho\), \(T\)) = (864, 0.35,
+1.62), (\(N\), \(\rho\), \(T\)) = (864, 0.75, 1.069) and (\(N\), \(\rho\), \(T\))
 = (864, 0.88, 1.095) in reduced Lennard-Jones units, so that the results
 can be compared to those in the paper \cite{lverlet67pr}.
 \item [{ph2:}] This simulates para-hydrogen using the isotropic Silvera-Goldman
@@ -1616,7 +1512,7 @@ client is functioning correctly. There is one simple 4-atom lithium
 test, and a test using a single water molecule.
 \item [{harmonic:}] This has a simple example of a 1D harmonic oscillator.
 This demonstrates the displaced path integral momentum distribution
-operator as given in \cite{linlin+10prl}. As the momentum distribution
+estimator as given in \cite{linlin+10prl}. As the momentum distribution
 is known analytically for this simple system, this provides an indication
 of how well the method is working.
 \item [{lammps:}] This has a simple implementation of the q-TIP4P-F empirical
@@ -1644,10 +1540,14 @@ a set of hierarchically nested tags. There are three parts to an xml
 tag. Each tag is identified by a tag name, which specifies the class
 or variable that is being initialized. Between the opening and closing
 tags there may be some data, which may or may not contain other tags.
-In the code this is used to specify the contents of a class object,
-or the value of a variable. Finally, any tag can have attributes,
-which in the code are used for variables which specify the state or
-type of class that will be created. A xml tag has the following syntax:
+This is used to specify the contents of a class object,
+or the value of a variable. Finally tags can have attributes,
+which are used for metadata, i.e. data used to specify
+how the tag should be interpreted. As an example, attributes
+are often used to choose between different classes which can
+be used for the same thing, such as the thermostat classes. 
+
+A xml tag has the following syntax:
 
 \begin{verbatim}
 <tag_name attribute_name='attribute_data'>tag_data</tag_name>
@@ -1665,7 +1565,7 @@ Float & <tag>11.111</tag> or <tag>1.1111e+1</tag>\tabularnewline
 Integer & <tag>12345</tag>\tabularnewline
 String & <tag>string\_data</tag>\tabularnewline
 Tuple & <tag> (int1, int2, \ldots )</tag>\tabularnewline
-Vector & <tag> {[} entry1, entry2, \ldots {]} </tag>\tabularnewline
+Array & <tag> {[} entry1, entry2, \ldots {]} </tag>\tabularnewline
 Dictionary & <tag>\{name1: data1, name2: data2, \ldots \}</tag>\tabularnewline
 \hline 
 \end{tabular}
@@ -1673,27 +1573,37 @@ Dictionary & <tag>\{name1: data1, name2: data2, \ldots \}</tag>\tabularnewline
 Note that arrays are always given as one-dimensional lists. In cases
 where a multi-dimensional array must be entered, one can use the `shape'
 attribute, that determines how the list will be reshaped into a multi-dimensional
-array; for instance
+array. For example, the bead positions are
+represented in the code as an array of shape 
+(number of beads, 3*number of atoms). If we take a system with 20 atoms
+and 8 beads, then this can be represented in the xml input file as:
 
 \begin{verbatim}
-<tag shape=`(1,2,3)'>[ a111, a112, a113, a121, a122, a123 ]</tag>
-\end{verbatim}If `shape' is not specified, a 1D array will be assumed.
+<beads natoms='20' nbeads='8'>
+   <q shape=`(8,60)'>[ q11x, q11y, q11z, q12x, q12y, ... ]</tag>
+\end{verbatim}
 
-The code uses this hierarchical structure to help read the data; if
+If `shape' is not specified, a 1D array will be assumed.
+
+The code uses the hierarchical nature of the xml format to help read the data; if
 a particular object is held within a parent object in the code, then
 the tag for that object will be within the appropriate parent tags.
-This is used to make the structure of the simulation clear. For example,
+This is used to make the structure of the simulation clear. 
+
+For example,
 the system that is being studied is partly defined by the thermodynamic
 ensemble that should be sampled, which in turn may be partly defined
-by the pressure, and so on. In the input file this would be specified
+by the pressure, and so on. To make this dependence clear in the code
+the global simulation object which holds all the data contains
+an ensemble object, which contains a pressure variable.
+ 
+Therefore the input file is specified
 by having a {}``simulation'' tag, containing an {}``ensemble''
 tag, which itself contains a {}``pressure'' tag, which will contain
-a float value corresponding to the external pressure. In the code
-itself this will correspond to a simulation object, which will contain
-an ensemble object, which will contain a pressure variable. In this
+a float value corresponding to the external pressure. In this
 manner, the simulation class structure can be constructed iteratively.
 
-For example, suppose we want to generate a NPT ensemble at an external
+As a specific example, suppose we want to generate a \emph{NPT} ensemble at an external
 pressure of 1e-7 atomic pressure units. This would be specified by
 the following input file: 
 
@@ -2299,7 +2209,7 @@ given the number of atoms and the number of beads used in the rest
 of the input. If the number of beads is nbeads and the number of atoms
 natoms, then q and p should have shape (nbeads, 3{*}natoms) and m
 and names should have shape (natoms,).
-\item \emph{No thermostat/barostat tag provided for NVT/NPT simulation}:
+\item \emph{No thermostat/barostat tag provided for \emph{NVT}/\emph{NPT} simulation}:
 Some ensembles can only be sampled if a thermostat and/or barostat
 have been defined, and so for simulations at constant temperature
 and/or pressure these tags are mandatory. If you wish to not use a
@@ -2453,1732 +2363,11 @@ initialization mode, then for some value of the angles it is impossible
 to construct a valid cell vector matrix. This will cause the code
 to attempt to take the square root of a negative number, which gives
 this exception.
-\item \emph{overflow encountered in exp}: Sometimes occurs in NPT runs
+\item \emph{overflow encountered in exp}: Sometimes occurs in \emph{NPT} runs
 when the simulation box {}``explodes''. Make sure you have properly
 equilibrated the system before starting and that the timestep is short
 enough to not introduce very large integration errors.
 \end{itemize}
 \bibliographystyle{elsarticle-num-names}
 \bibliography{mybib}
-
-
-
-\part{CURRENT MANUAL}
-
-\begin{comment}
-This manual will be structured as follows: 
-\begin{itemize}
-\item In chapter \ref{intro} we discuss some of the background information
-for the wrapper and define the terms to be used throughout the manual. 
-\item In chapter \ref{commpro} we will discuss how the communication between
-the driver and wrapper codes are implemented. 
-\item In chapter \ref{install} we will discuss how to install the code
-and test that it is working.
-\item In chapter \ref{run} we explain the procedure for running simulations,
-and the form of the input and output files. 
-\item In chapter \ref{overview} we explain some of the features of the
-wrapper code.
-\item In chapter \ref{hierarchy} a full list of the major classes used
-in the code is given, along with the appropriate tag names and a brief
-description of all the fields that can be specified in the xml input
-file.\end{itemize}
-\end{comment}
-\begin{comment}
-\begin{itemize}
-\item In chapter \ref{dev} we discuss what is needed to modify the code. \end{itemize}
-\end{comment}
-
-
-
-\section{Shell variables}
-
-In all that follows, we will make use of the following definitions
-of shell variables:
-
-\begin{tabular}{|l|p{10cm}|}
-\hline
-Name & Definition \\ \hline
-src\_dir & The directory in which the wrapper code has been installed \\ \hline
-np\_dir & The directory in which the NumPy code has been installed \\ \hline
-np\_dd\_dir & The directory in which the NumPy tar file has been downloaded \\ \hline
-driver\_dir & The directory in which the driver code has been downloaded \\ \hline
-np\_vers & The version of NumPy installed \\ \hline
-py\_vers & The version of Python installed \\ \hline
-esp\_dd\_dir & The directory in which the Quantum Espresso code has been downloaded \\ \hline
-esp\_vers & The version of Quantum Espresso installed \\
-\hline
-\end{tabular}
-
-
-\section{Driver compatibility}
-
-There are currently patches available for Quantum Espresso version
-4.3.2 and CP2K version 2.2. The patch for Quantum Espresso also works
-with version 5.0 with minor modifications.
-
-These codes do not come as part of the \ipi package, and must be
-downloaded separately. See chapter~\ref{install} for more details
-of how to do this. 
-
-
-\section{Online resources}
-
-For more information about \ipi and to download the source code go
-to {[}appropriate wrappi website{]}.
-
-Parameters to run Path Integral with Generalized Langevin Equation
-thermostat (PI+GLE) calculations can be found on the website:
-
-\url{http://gle4md.berlios.de/ }
-
-
-\section{Credits}
-
-\ipi has been developed by Michele Ceriotti and Joshua More. 
-
-
-\section{Citing \ipi}
-
-
-\section{License}
-
-
-\chapter{Communication protocol}
-
-%\label{commpro}
-
-
-\section{Sockets}
-
-\ipi is only a wrapper code, it must interface with a driver code
-in order to run any simulations. The overarching design principle
-of \ipi is that these two codes should be as independent as possible,
-and so the only communication between them is done through a socket.
-A socket is a data transfer device that is designed for internet communication,
-so supports both multiple client connections to the same server and
-two way communication. This makes sockets ideal for use in \ipi,
-where each calculation may require multiple driver codes. 
-
-Sockets are described by an IP address and a port number, and can
-either be an internet socket, capable of inter-computer communication,
-or a unix socket, which is optimized for local communication. The
-IP address is input by the user in the {}``address'' tag, and can
-be specified in two ways. Firstly, every network has a unique numeric
-code of the form 123.45.678.901. Secondly, most networks are named,
-so the name of the network on which the wrapper code is running can
-be used as an alias for the IP address. A specific case of this is
-{}``localhost'', which is the generic name for the local network
-used by unix sockets.
-
-The port number is specified in the code by the {}``port'' tag.
-It is an integer between 1 and 65535 used to distinguish between all
-the different communication processes a particular computer is running.
-As many of the lower numbers are protected for use in important system
-processes or internet communication, it is generally advisable to
-only use numbers in the range 1025-65535 for simulations.
-
-A unix or internet socket is specified by the {}``mode'' attribute
-of the {}``socket'' tag. While they are faster than internet sockets,
-unix sockets should only be used if a simple empirical potential is
-being run. If complicated empirical potentials or \emph{ab initio}
-potentials are used the force calculation becomes the bottleneck in
-the code, so the advantage of using unix sockets is lost. 
-
-Internet sockets have two main advantages that make them much more
-useful in general. Firstly, the driver code does not need to be run
-on the same computer as the wrapper code. In particular, if the driver
-codes are being run on a cluster this means that you do not need to
-waste computing resources running the wrapper, which is idle most
-of the time. Secondly, the port number is not used for unix sockets,
-so if more than one calculation is being run concurrently internet
-sockets must be used, so that the driver codes connect to the correct
-wrapper code.
-
-There are a two other input parameters that may be used to specify
-how the server socket looks for driver codes to connect to. {}``latency''
-specifies the length of time between each check to see if any new
-driver codes have connected, and {}``slots'' specifies how many
-driver codes can queue between checks. Neither is likely to be important
-in getting the code to run, but may be used to optimize the connection
-time if required.
-
-
-\section{Data transfer}
-
-Once at least one driver code has connected to the server socket,
-the force calculation can start. For this to happen the driver code
-needs the system configuration, and likewise the wrapper needs the
-force and potential data to be returned so that it can continue propagating
-the dynamics.
-
-To make sure that the connection is good, a simple query-response
-data transfer protocol is used. Before any data is sent through the
-socket a header string of 12 characters is sent to verify which stage
-of the calculation the wrapper is at. Once the driver sends the appropriate
-response header string, the data is transferred. If no response is
-given, the wrapper will either wait and try again, or disconnect the
-driver code and reassign its job to another, depending on the severity
-of the problem. The wrapper assumes that 4-bit integers, 8-bit floats
-and 1-bit characters are used. A typical step is of the form:
-\begin{enumerate}
-\item A header string of {}``\textbf{STATUS}'' is sent by the server socket.
-\item A header string is then returned, giving the status of the driver
-code. Recognized options are:
-
-\begin{description}
-\item [{{}``NEEDINIT'':}] If the driver code needs any initialising data,
-it can be sent here. The server code will then send a header string
-{}``INIT'', followed by an integer giving the number of bits in
-the initialization string, then the initialization string itself.
-\item [{{}``READY'':}] Sent if the driver code is ready to calculate
-the forces. The server socket will then send a string {}``POSDATA'',
-then nine floats the cell vector matrix, then another nine floats
-for the inverse matrix, (which need to be transposed if the driver
-code is written in fortran). The server socket will then send one
-integer giving the number of atoms, then the position data as 3 floats
-for each atom giving the 3 cartesian components of the bead position.
-\item [{{}``HAVEDATA'':}] This is sent if the driver has calculated the
-potential and forces. The server socket then sends a string {}``GETFORCE'',
-and the client socket returns {}``FORCEREADY''. The potential is
-then returned as a float, the number of atoms as an integer, then
-the force data as 3 floats per atom in the same way as the positions,
-and the virial as 9 floats in the same way as the cell vector matrix.
-\end{description}
-\item The server socket waits until the force data for each replica of the
-system has been calculated and returned, upon which the job is finished
-and the molecular dynamics loop starts.
-\end{enumerate}
-
-\section{Parallelization}
-
-As mentioned before, one of the primary advantages of using this type
-of data transfer is that it allows multiple driver codes to connect
-to one wrapper code, so that different replicas of the system can
-be assigned to different driver codes and their forces computed in
-parallel. In fact it is trivially parallel, in the sense that no communication
-between the driver codes is necessary.
-
-In the case that there are as many driver codes as replicas of the
-system this is very simple, as each replica will be assigned its own
-driver code. In subsequent steps, the interface will attempt to assign
-a particular replica of the system to the driver code which calculated
-the forces for it the last step. This reduces the change in the particle
-positions between calculations for a particular driver code, so the
-next step is done more efficiently. In the case where there are fewer
-driver codes than beads, the socket interface will assign spare jobs
-to the first driver code that finishes running, after matching all
-possible jobs to the same driver code that calculated it last time
-step.
-
-This flexibility is especially useful when the calculations are being
-run on a cluster, as in this case the driver codes will connect whenever
-they reach the front of the queue. More driver codes can connect at
-any time, and if there is a problem and any driver code dies it is
-simply disconnected from the server socket and any job it was running
-reassigned.
-
-Finally, note that many driver codes can be parallelized themselves,
-using MPI or other similar protocols. This is fully compatible with
-\ipi, as it does not matter how the driver does the calculation since
-only the forces, potential and virial are sent to the wrapper. Information
-on how to run MPI processes can usually be found on the website of
-the code provider if the driver can be parallelized in this way.
-
-
-\section{ssh tunnelling}
-
-%\label{ssh_sockets}
-
-One problem that can often crop up when trying to run a \ipi calculation
-is that there is a firewall around the network, especially when the
-wrapper code is being run on a cluster. This will often result in
-error messages such as {}``Error connecting: Connection timed out''
-or {}``Error connecting: Connection refused''.
-
-Let us suppose that the wrapper code is running on a host network
-wrapper.net, and that you are using port 12345. However, when you
-try to connect to this port from a computer, let us call this driver.net,
-then you get error messages like the ones above, due to a firewall
-on wrapper.net blocking port 12345.
-
-However, assuming that you can create an ssh connection between the
-two computers, then you can use this to forward one of the ports on
-driver.net to connect to the necessary port on wrapper.net. This can
-be done with the following shell command:
-
-\begin{verbatim}
-> ssh -f -N wrapper.net -L 23451:wrapper.net:12345
-\end{verbatim}
-
-The flags -f and -N just put the ssh process in the background. Then
-comes the ssh server, which in this case is the computer on which
-the wrapper code is running. The -L flag sets up the ssh tunnel itself.
-The above code will forward the port 23451 on driver.net to the port
-12345 on wrapper.net, as required.
-
-Once this is done, then any data sent to port on 23451 on driver.net
-will be forwarded through the ssh tunnel to port 12345 on wrapper.net.
-By connecting to port 23451 on driver.net (or localhost, an alias
-for the host the code is running on) with the driver the code should
-now run.
-
-If the ssh connection fails, with an error message {}``ssh: connect
-to host wrapper.net port 22: Connection timed out'', then the wrapper.net
-server has also been set up with a firewall around the standard ssh
-port, port 22. In this case you can change which port is used to one
-that is open using the -p flag, for example:
-
-\begin{verbatim}
-> ssh -f -N wrapper.net -L 23451:wrapper.net:12345 -p 99
-\end{verbatim}
-
-
-\subsection{Using a script to create a ssh connection}
-
-Now let us suppose that driver.net is a cluster, and we wish to submit
-the driver jobs to the queue. The above code as it is will not work,
-since ssh requires a password. However, you can set up ssh such that
-no password is needed. 
-
-Firstly, on driver.net, we need to set up an ssh key. This can be
-done using the command:
-
-\begin{verbatim}
-> ssh-keygen -t rsa
-\end{verbatim}
-
-It will then prompt you for a passphrase twice. Since we wish to have
-use this in a job script where we will not be able to enter a password,
-just hit enter twice. Note that this will mean that someone with temporary
-access to your account could feasibly take a copy of the ssh key and
-then be able to use it, so this should be used with caution.
-
-This should now have created two files in the directory \textasciitilde{}/.ssh,
-id\_rsa and id\_rsa.pub. These should be readable only by you, so
-use the following code to set up the correct file permissions:
-
-\begin{verbatim}
-> chmod 600 ~/.ssh/id_rsa ~/.ssh/id_rsa.pub
-\end{verbatim}
-
-Finally, copy the contents of the file id\_rsa.pub and append them
-to the file authorized\_keys in the directory \textasciitilde{}/.ssh
-of wrapper.net. It should now be possible to ssh from driver.net to
-wrapper.net without using a password. We can now run the ssh command
-from a script, and so we can set up a ssh tunnel from a cluster node.
-Note that the cluster nodes will have a different IP address to the
-head node, so use {}``localhost'' rather than {}``driver.net''
-in the input file of the driver code.
-
-
-\chapter{Installing \ipi}
-
-%\label{install}
-
-\begin{comment}
-
-\section{Background and nomenclature}
-
-
-\subsection{Molecular dynamics}
-
-Molecular dynamics is a way of sampling the possible states of a system
-by propagating the positions and momenta of the particles in the system
-in discrete time steps according to a set of physical rules.
-
-By choosing the algorithm used to propagate the momenta correctly,
-the probability of the system being in a particular state will be
-the same as that of a physically realistic system, such as a system
-in contact with an external heat bath.
-
-We will call the complete set of possible states of the system an
-ensemble of states. The relevant ensembles we will be interested in
-are: 
-\begin{description}
-\item [{NVE}] ensemble This gives constant particle number, volume and
-energy, and corresponds to an isolated physical system. 
-\item [{NVT}] ensemble This gives constant particle number, volume and
-temperature, and corresponds to a physical system in thermal equilibrium
-with a heat bath. 
-\item [{NPT}] ensemble This gives constant particle number, pressure and
-temperature, and corresponds to a physical system in thermal equilibrium
-with a heat bath and in equilibrium with a pressure bath. 
-\end{description}
-We will call the total number of possible states of a system for any
-given set of external variables the partition function of that system.
-
-In any practical simulation, the number of atoms has to be far fewer
-than the typical number present in the physical system of interest,
-for reasons of computational difficulty. This means that a high proportion
-of the particles in the simulation are likely to be on the edge of
-the simulation box. To prevent this having a large effect on the properties
-of the system, all of the driver codes implement what is known as
-periodic boundary conditions. This{*}{*}{*}{*}{*}{*}{*}{*}{*}{*}{*}{*}{*}{*}{*}{*}{*}{*}{*}{*}{*}{*}{*}{*}{*}{*}{*}{*}{*}{*}{*}{*}{*}{*}{*}{*}{*}{*}{*}{*}{*}{*}{*}{*}{*}{*}{*}88 
-
-
-\subsection{Path integral generalization}
-
-In the path integral generalization of classical mechanics, we use
-the following isomorphism between the quantum partition function of
-a system and a classical partition function in a higher phase space:
-\begin{equation}
-Q=\Tr(e^{-\hat{H}\beta})
-\end{equation}
- 
-\begin{align}
- & Q=\lim_{N\to\infty}\prod_{i=1}^{N}\left[\int_{-\infty}^{\infty}\left(\frac{2\pi m}{h^{2}\betan}\right)^{\frac{3}{2}}e^{-\hat{U}_{N}\betan}\dd\textbf{r}_{i}\right]\\
- & \hat{U}_{N}=\sum_{i=1}^{N}\left[\frac{m}{2\betan^{2}\hbar^{2}}(\textbf{r}_{i}-\textbf{r}_{i-1})^{2}+\hat{V}_{i}\right]\\
- & \betan=\frac{\beta}{N}\nonumber 
-\end{align}
- Where \ensuremath{\hat{H}}
- is the quantum Hamiltonian of the system, which is the operator corresponding
-to the observable energy, \ensuremath{\hat{V}_{i}}
- is the potential of the replica of the system corresponding to the
-label \ensuremath{i}
-, and \ensuremath{\hat{U}_{N}}
- is a classical configurational Hamiltonian in the extended phase
-space, which only depends on particle coordinates.
-
-In practice we do not need to go to the limit of infinite \ensuremath{N}
-, as convergence can often be achieved with a small increase of phase
-space. Note that this classical Hamiltonian is equivalent to that
-of a \ensuremath{N}
- replicas of the original system, with a harmonic potential between
-adjacent replicas. We will call this set of replicas of each atom
-a ring polymer, and the component particles of this ring polymer beads.
-
-The last thing we must do to make the connection with molecular dynamics
-is to add fictitious ring polymer momenta to allow us to sample the
-phase space more effectively. In our code we make the choice corresponding
-to assigning each bead the mass of the corresponding atom: 
-\begin{align}
- & Q=\lim_{N\to\infty}\prod_{i=1}^{N}\left[\int_{-\infty}^{\infty}\int_{-\infty}^{\infty}\left(\frac{1}{2\pi\hbar}\right)^{3}e^{-\hat{H}_{N}\betan}\dd\textbf{r}_{i}\dd\textbf{p}_{i}\right]\\
- & \hat{H}_{N}=\hat{U}_{N}+\sum_{i=1}^{N}\frac{\textbf{p}_{i}^{2}}{2m}
-\end{align}
-
-
-This is then the partition function corresponding to the NVE ensemble
-for the quantum system, and as it has a purely classical Hamiltonian
-the algorithms used in classical dynamics and the generalizations
-used to sample other ensembles can be applied to this system in exactly
-the same way as for a classical system. 
-
-
-\subsection{Ab initio potentials}
-
-An ab initio potential is one that does not require any experimentally
-derived parameters in its calculation. Under the strictest sense of
-the term many of the most popular DFT algorithms are not ab initio
-as they do use experimentally determined parameters, but as prior
-simulations are not necessary for the formulation of a DFT potential,
-we will define DFT as such for the purposes of this manual.
-
-DFT calculations are done by minimising an energy with respect to
-the one electron probability density, rather than the wavefunction
-as is common in most other ab initio potentials. The energy is given
-in terms of that of a fictitious system without electron interaction,
-for which the energy can be found exactly, plus an energy term due
-to electron correlation. This is the quantity of fundamental importance
-in DFT calculations, and while no analytic form for it exists several
-useful approximations to it have been created. We will call these
-correlation functionals.
-
-DFT calculations are done via an iterative procedure where a guess
-for the one electron wavefunctions are made so that the energy can
-be calculated, and a new set of one electron wavefunctions are then
-calculated by minimising this energy. The new wavefunctions are then
-put back into the first step and the procedure repeated until the
-initial and final density matrices are consistent.
-
-In what is known as Car-Parrinello molecular dynamics, the converged
-wavefunctions of one step are then used as the starting point for
-the next step, drastically accelerating the convergence.
-
-Another important consideration is the basis set used for the 
-\end{comment}
-
-
-
-\section{System requirements}
-
-To install and run \ipi, you will need to have:
-\begin{itemize}
-\item A modern C compiler (for the sockets.c module)
-\item Python version 2.4 or greater
-\item The Python numerical library NumPy
-\end{itemize}
-Note that \ipi does not need to be compiled, it will run automatically
-as a script if the appropriate libraries have been installed.
-
-Additionally, most driver codes will have their own requirements.
-Many of them, including the test driver codes given in the {}``forces''
-directory, will need a modern Fortran compiler. Most will also need
-to be linked with some mathematical libraries, such as BLAS, FFTW
-and LAPACK. Installation instructions should be provided as part of
-the code distribution and on the appropriate website.
-
-
-\section{\ipi download}
-
-A tar file can be downloaded from the website {[}appropriate wrap-pi
-website{]}. To install this you need to input the following commands:
-
-\begin{verbatim}
-> cd $src_dir
-> tar xf [wrapper_tar_file.tar]
-\end{verbatim}
-
-You can also download the git repository at {[}github repository name{]}
-using the commands:
-
-\begin{verbatim}
-> cd $src_dir
-> git clone [github repository name]
-\end{verbatim}
-
-
-\section{NumPy download}
-
-NumPy is the standard Python mathematics library, and is used for
-most of the array minipulation and linear algebra in the wrapper code.
-How difficult it is to install NumPy depends on whether you have root
-access or not, and on the version of Python you are using.
-
-In any case you must first obtain the NumPy code. The NumPy library
-can be downloaded as a tar file from \url{http://sourceforge.net/projects/numpy/files/NumPy/}
-This must then be extracted using the following commands:
-
-\begin{verbatim}
-> cd $np_dd_dir
-> tar czf $np_vers.tar.gz
-\end{verbatim}
-
-Before installing this code it first needs to be configured correctly.
-Note that this requires the distutils package that comes with the
-python-dev package. Assuming that the required software is installed,
-the NumPy package is built using:
-
-\begin{verbatim}
-> python setup.py build
-\end{verbatim}
-
-The next step is to install the package. By default the download is
-to the directory /usr/local. If you have root access, and so can write
-to /usr, then all that needs to be done to finish the install is:
-
-\begin{verbatim}
-> python setup.py install
-\end{verbatim}
-
-If you do not have root access, then the next step depends on which
-version of Python is beind used. With versions 2.6 or later there
-is a simple command to automatically download into the directory \$HOME/local:
-
-\begin{verbatim}
-> python setup.py install --user
-\end{verbatim}
-
-With Python 2.4/2.5 the process is a little more involved. First you
-must explicitly install the package in the directory of choice with
-the following command:
-
-\begin{verbatim}
-> python setup.py install --prefix=$np_dir
-\end{verbatim}
-
-Next, you must tell python where to find this library, by appending
-to the linux environment variable \textbf{PYTHONPATH}:
-
-\begin{verbatim}
-> export PYTHONPATH=$PYTHONPATH:$np_dir/lib64/$py_vers/site-packages
-\end{verbatim}
-
-You may have to replace lib64 with lib depending on whether you are
-installing to a 64-bit or 32-bit architecture.
-
-
-\section{PyFFTW}
-
-Currently, the normal mode transformation is, at least by default,
-computed using a fast-Fourier transform (FFT) library within the NumPy
-distribution. This however is not the only distribution that could
-be used, and indeed faster stand-alone versions exist. The gold-standard
-FFT library is the FFTW library, which is a set of C libraries that
-have been heavily optimized for a wide range of applications. There
-have been a number of Python wrappers around the FFTW library, of
-which currently one has been interfaced with \ipi. This code can
-be found at \url{https://github.com/hgomersall/pyFFTW}, and has documentation
-at \url{http://hgomersall.github.io/pyFFTW/}.
-
-This code has the following dependencies:
-\begin{itemize}
-\item Python version 2.7 or greater
-\item Numpy version 1.6 or greater
-\item FFTW version 3.2 or greater
-\end{itemize}
-This can be installed in the same way as NumPy, except using the code
-distribution above, or using various installation packages as per
-the instructions on the above documentation. Note that no other options
-need to be specified in the input file, the wrapper will check to
-see if this library can be installed, and if it can it will be used
-by default. Otherwise the slower NumPy version will be used.
-
-
-\section{Driver installation and compilation}
-
-
-\subsection{Quantum Espresso}
-
-You can download the source code for Quantum Espresso at:
-
-\url{www.quantum-espresso.org/}
-
-For Quantum Espresso version 4.3.2, there is a patch file to allow
-it to be used as a driver code with \ipi in the directory \$src\_dir/patches/pwscf.
-This can be applied to the Quantum Espresso source code using:
-
-\begin{verbatim}
-> cd $esp_dd_dir
-> tar zxvf $esp_vers.tar.gz
-> cd $esp_vers
-> patch -p1 < $src_dir/patches/pwscf/pw-driver.patch
-\end{verbatim}
-
-After this, continue the download as per the instructions at:
-
-\url{www.quantum-espress.org/}.
-
-
-\subsection{CP2K }
-
-%I still don't even have this code, so can't write this bit...
-
-
-\section{Testing}
-
-%\label{tests}
-
-Several test cases are distributed with the code to ensure that your
-distribution is working correctly. There are also simple tests to
-see if the driver codes are working correctly.
-
-All the input files are contained in the directory test, which is
-subdivided into the following directories:
-\begin{description}
-\item [{lj:}] This gives a simple classical Lennard-Jones simulation of
-Ne. The state points are given by (N, \(\rho\), T) = (864, 0.35,
-1.62), (N, \(\rho\), T) = (864, 0.75, 1.069) and (N, \(\rho\), T)
-= (864, 0.88, 1.095) in reduced Lennard-Jones units, so that the results
-can be compared to those in the paper \cite{lverlet67pr}.
-\item [{ph2:}] This simulates para-hydrogen using the isotropic Silvera-Goldman
-pair potential. There are three directories, {}``RPMD'', {}``nvt''
-and {}``Tuckerman''. {}``RPMD'' and {}``nvt'' have tests which
-can be compared to the results of \cite{mill-mano05jcp}, and {}``Tuckerman''
-has tests which can be compared to the results of \cite{mart+99jcp}.
-\item [{pwscf:}] This has two simple examples to test to see if the Quantum-Espresso
-driver is functioning correctly. There is one simple 4-atom lithium
-test, and a test using a single water molecule.
-\item [{harmonic:}] This has a simple example of a 1D harmonic oscillator.
-This demonstrates the displaced path integral momentum distribution
-operator as given in \cite{linlin+10prl}. As the momentum distribution
-is known analytically for this simple system, this provides an indication
-of how well the method is working.
-\end{description}
-
-\chapter{Running \ipi}
-
-%\label{run}
-
-
-\section{How to run the wrapper}
-
-\ipi simulations are run using the top level script found in the
-src directory. If the xml-formatted input file is called input\_file.xml,
-then the command to run a \ipi simulation is:
-
-\begin{verbatim}
-> python $src_dir/i-pi input_file.xml
-\end{verbatim}
-
-The code will then have to wait until at least one driver code has
-connected before running any dynamics. At this point the code is essentially
-idle, and the only process that it runs is to periodically poll the
-socket for connections.
-
-
-\section{How to run the driver}
-
-
-\subsection{CP2K}
-
-To run CP2K with the wrapper, an additional file named {}``serverfile''
-must be kept in the same directory that CP2K is being run from. It
-should contain a string a single line long, of the format {}``mode:host:port\_number''.
-{}``mode'' should either be {}``INET'' or {}``UNIX'', representing
-an internet or unix socket respectively. The rest of the input file
-is the same as for a standard CP2K calculation.
-
-
-\subsection{Quantum-Espresso}
-
-Suppose we want to run Quantum-Espresso as the driver code, and we
-have compiled it as given above, and have an input file which will
-give the correct forces and potential for the system of interest.
-If we want to connect to a socket on the host address host\_address
-and on the port number port, then we would add the following lines
-to the input file:
-
-\begin{verbatim}
-&CONTROL
-   ...
-   calculation=`driver'
-   srvaddress=`host_address:port'
-   ...
-/
-\end{verbatim}
-
-If we wanted to run on a UNIX port instead of an INET port, we would
-instead write:
-
-\begin{verbatim}
-&CONTROL
-   ...
-   calculation=`driver'
-   srvaddress=`UNIX:host_address:port'
-   ...
-/
-\end{verbatim}
-
-The rest of the input file should be the same as for a standard Quantum
-Espresso calculation.
-
-
-\section{Running simulations}
-
-
-\subsection{Running a simulation}
-
-There are two parts to any \ipi simulation. First the wrapper is
-run, which starts the dynamics loop until the forces are required.
-Once the server socket has been opened, it then waits for connections
-from driver codes. 
-
-For a small simulation, with a simple classical potential, it may
-be preferable to run both halves of the simulation on the same computer,
-especially as this allows us to use the faster unix domain sockets.
-This can be done using a single script, such as:
-
-\begin{verbatim}
-#These are the parameters that need to be specified by
-#the user. The number of driver codes is given by $ndrivers,
-#the i-pi source directory is given by $src_dir, and the code
-#that runs one of the driver codes is given by $driver_comm
-inputfile=...
-hostname=...
-port=...
-ndrivers=...
-src_dir=...
-driver_comm="..."
-
-#This modifies the input file. If necessary, the driver code
-#input file should be modified here too
-sed -i "s/<address>[^<]*</<address>$hostname</" $inputfile
-sed -i "s/<port>[^<]*</<port>$port</" $inputfile
-
-if [ -e EXIT ]; then
-   rm EXIT 
-fi
-
-#Runs the simulation, and redirects the wrapper
-#standard output to a file named 'log'.
-bash -c "python $src_dir/i-pi $inputfile > log &"
-
-sleep 20 #must wait for server to be initialized
-for a in `seq 1 $ndrivers`; do
-   bash -c "$driver_comm"
-done 
-\end{verbatim}
-
-However, for most simulations, especially those running with expensive
-\emph{ab initio} forces and potentials, we will want to run the driver
-codes on a computational cluster. Here we run the wrapper code elsewhere,
-and use internet sockets for the communication. For information on
-how to do this, see section \ref{ssh_sockets}.
-
-To run the driver on a cluster computer, two major changes must be
-implemented. Firstly, the code required to run the driver code should
-be separated from that of the wrapper code. Secondly, the driver script
-should be executed using a queueing program such as qsub rather than
-the bash shell script as above, and so will need to have the appropriate
-directive comment lines. Depending on which cluster is used, additional
-commands to set parameters such as the walltime, number of nodes and
-number of cores can be used. Check the qsub man page for the cluster
-you are running the code on for more details.
-
-One possible driver script layout would be:
-
-\begin{verbatim}
-#!/bin/bash
-#$ -S /bin/bash
-#$ -N jobname
-#$ ...
-
-#use this if there are library files needed
-#by the driver code that are not on the default path
-
-#export LD_LIBRARY_PATH=...
-
-#use this if ssh tunnelling is required
-
-#wrapper_host=... #the wrapper host address
-#wrapper_port=... #the wrapper port number
-#driver_port=... #the cluster port number
-#ssh -f -N $wrapper_host -L $driver_port:$wrapper_host:$wrapper_port
-
-inputfile=...
-hostname=...
-port=...
-driver_comm="..."
-
-#Modify driver input file if necessary
-
-bash -c "driver_comm"
-\end{verbatim}
-
-Note that it may be necessary to export libraries or modules if they
-are not present by default, or to use an ssh tunnel if the cluster
-is not open to the internet (see \ref{ssh_sockets}).
-
-
-\subsection{Running multiple simulations}
-
-To set up multiple concurrent \ipi simulations each host socket has
-to be distinguishable, so that the driver codes appropriate to each
-simulation connect only to the correct wrapper code. This can be done
-with internet sockets by adjusting the port number for each simulation,
-which then acts as a unique identifier for each server. The shell
-scripts from before can be easily modified to do this, for example
-if we assume the simulations will be run in directories called sim\_1,
-sim\_2, \ldots, then we can write:
-
-\begin{verbatim}
-first_port=... #The value of the port of sim_1
-i=0
-for a in sim_*; do 
-   cd $a
-   port=$((first_port+i))
-   ((i++))
-
-   #here we run the code for one simulation as before
-
-   cd ..
-done
-\end{verbatim}
-
-
-\section{Input files}
-
-
-\subsection{xml file}
-
-This is the main input file from which the simulation parameters are
-initialized. An xml file consists of a set of hierarchially nested
-tags. There are three parts to an xml tag. Each tag is identified
-by a tag name, which specifies the class or variable that is being
-initialized. Between the opening and closing tags there may be some
-data, which may or may not contain other tags. This will specify the
-contents of a class, or the value of a variable. Finally, any tag
-can have attributes, which in the code are used for variables which
-specify the state or type of class that will be created. A xml tag
-has the following syntax:
-
-\begin{verbatim}
-<tag_name attribute_name=`attribute_data'>tag_data</tag_name>
-\end{verbatim}
-
-The syntax for the different types of tag data is given below:
-
-\begin{tabular}{|c|c|}
-\hline 
-Data type & Syntax\tabularnewline
-\hline 
-\hline 
-Boolean & <tag>True</tag> or <tag>False</tag>\tabularnewline
-\hline 
-Float & <tag>11.111</tag> or <tag>1.1111e+1</tag>\tabularnewline
-\hline 
-Integer & <tag>12345</tag>\tabularnewline
-\hline 
-Dictionary & <tag>\{name1: data1, name2: data2, \ldots \}</tag>\tabularnewline
-\hline 
-String & <tag>string\_data</tag>\tabularnewline
-\hline 
-Tuple & <tag> (int1, int2, \ldots )</tag>\tabularnewline
-\hline 
-\end{tabular}
-
-Also, for arrays, which have the `shape' attribute, we have the syntax
-
-\begin{verbatim}
-<tag shape=`array_shape'>[entry1, entry2, ... ]</tag>
-\end{verbatim}
-
-where each entry has the same data type, which will be either float,
-int, boolean or string, and `array\_shape' is a tuple that gives the
-shape of the generated array. If the shape is not specified, then
-a 1D array will be assumed.
-
-The code uses this hierarchial structure to help read the data; if
-a particular object is held within a parent object in the code, then
-the tag for that object will be within the appropriate parent tags.
-This is used to make the structure of the simulation clear. For example
-the system that is being studied is partly defined by the thermodynamic
-ensemble that should be sampled, which in turn may be partly defined
-by the temperature, and so on. In the input file this would be specified
-by having a {}``simulation'' tag, containing an {}``ensemble''
-tag, which itself contains a {}``temperature'' tag, which will contain
-a float value corresponding to the temperature. In the code itself
-this will correspond to a simulation object, which will contain an
-ensemble object, which will contain a temperature variable. In this
-manner, the simulation class structure can be constructed iteratively.
-
-To help detect any user error the acceptable tag names, type of data
-and possible default values are all specified in the code, in a specialized
-input class for each class of object. A full list of all the available
-tags and a brief description of their function is given in chapter~\ref{hierarchy}.
-
-
-\subsection{Configuration file}
-
-%\label{configfile}
-
-The initial configuration data can be initialized both through the
-xml file, and through a separate configuration file. The configuration
-file is specified within the {}``initialize'' tag name in the xml
-file, with the {}``mode'' attribute as the file format. The currently
-accepted file formats are:
-\begin{itemize}
-\item pdb
-\item xyz
-\end{itemize}
-These files can be used to specify the initial atom positions, labels
-and masses (based on atomic symbol) and, depending on the format,
-the cell parameters as well. It can either be held within a {}``file''
-tag, in which case all applicable information will be initialized,
-or {}``positions''/''masses''/''labels''/''cell'', in which
-case only the specified property will be initialized.
-
-
-\subsection{Units}
-
-%\label{units}
-
-\ipi uses the following set of internal units:
-
-\begin{tabular}{|l|l|l|}
-\hline 
-Unit & Name & S.I. Value\tabularnewline
-\hline 
-\hline 
-Length & Bohr radius & 5.2917721e-11 m\tabularnewline
-\hline 
-Time & N.A. & 2.4188843e-17 s\tabularnewline
-\hline 
-Mass & Electron mass & 9.1093819e-31 kg\tabularnewline
-\hline 
-Temperature & kelvin & 1 K\tabularnewline
-\hline 
-Energy & Hartree & 4.3597438e-18 J\tabularnewline
-\hline 
-Pressure & N.A. & 2.9421912e13 Pa\tabularnewline
-\hline 
-\end{tabular}
-
-However, these units can be overriden in the input file by using the
-{}``units'' attribute. For example, if you wanted to specify the
-cell parameters in units of angstrom rather than bohr radii then in
-the input file you would specify:
-
-\begin{verbatim}<cell units=`angstrom'> ... </cell>\end{verbatim} 
-
-
-\section{Output files}
-
-All output files are specified within the tag name {}``output''
-in the xml file. Each tag held here specifies a particular output
-file, with data specifying the file name, the data to be output and
-the number of steps between each write, plus other relevant data.
-
-
-\subsection{Property file}
-
-%\label{propertyfile}
-
-This is the output file for for all the system and simulation level
-properties, such as the total energy and the overall time taken. The
-properties that are output are determined by the {}``properties''
-tag in the xml input file. The format of this tag is:
-
-\begin{verbatim}<properties stride=`' filename=`' flush=`' shape=`'>
-   [ prop1name{units}(arg1; ... ), prop2name{...}(...), ...  ]
-</properties>\end{verbatim}
-
-The attributes have the following meanings:
-\begin{description}
-\item [{stride}] The number of steps between each output to file
-\item [{filename}] The name of the output file
-\item [{flush}] The number of steps between flushing the buffer
-\end{description}
-This tag data is an array of strings, each of which containing three
-different parts:
-\begin{itemize}
-\item First, the property name, which describes which type of property is
-to be output. This is a mandatory part of the string.
-\item Secondly, you can specify the units that the property will be output
-in. This is specified between curly brackets, as shown above. If this
-is not specified, then the property will be output in atomic units.
-\item Thirdly, the arguments to be passed to the function can be specified
-between standard brackets, with each argument separated by a semi-colon.
-These may or may not be mandatory depending on the property. The arguments
-can be specified by either of two different syntaxes, (name1=arg1;
-\ldots ) or (arg1; \ldots ). The first explicitly assigns the argument
-with the name {}``name1'' the value {}``arg1'', whereas the second
-relies on the arguments being specified in the correct order. The
-two syntaxes may be mixed, but positional arguments must be specified
-first otherwise undefined behaviour will result. If no arguments are
-specified, then the defaults as defined in the properties.py module
-will be used.
-\end{itemize}
-The different available property names are:
-
-\input{input_docs/property_list}
-
-The format of the file is given by a comment line per property giving
-the name of the properties and which columns of the input file will
-be used to print it, followed by their values in the appropriate units
-at regular intervals given by the {}``stride'' list of the input
-file. The file is fixed formatted, with two blank characters at the
-start of each row, then the data in the same order as the header row.
-Each column is 16 characters wide and every float is written in exponential
-format with 8 digits after the decimal point.
-
-
-\subsection{Trajectory files}
-
-These are the output file for atomic or bead level properties, such
-as the bead positions. Each trajectory that should be output is specified
-by the {}``trajectory'' tag in the input file. These tags have the
-format:
-
-\begin{verbatim}<trajectory stride=`' filename=`' format=`' cell_units=`' flush=`' bead=`'>
-   traj_name{units}(arg1;...)
-</trajectory>\end{verbatim}
-
-This is very similar to the {}``properties'' tag, but it has the
-additional tags {}``format'' and {}``cell\_units'', and only one
-trajectory can be specified. `format' specifies the format of the
-output file, and `cell\_units' specifies the units in which the cell
-dimensions are output. Depending on the chosen trajectory to output,
-it will either print a file per bead or per atom. If the trajectory
-is output per bead then the output files will be {}``filename''
-with the bead index appended, so as to distinguish between the trajectories
-of each bead. In this case it is also possible to only output one
-trajectory by specifying the {}``bead'' attribute. The possible
-choices of output properties are:
-
-\input{input_docs/trajectory_list}
-
-The allowable file formats for the trajectory output files are the
-same as for the configuration input files, given in~\ref{configfile}.
-
-
-\section{Restart mechanism}
-
-
-\subsection{Checkpoint files}
-
-As well as the above output files, the state of the system at a particular
-time step can also be saved to file. These checkpoint files can be
-used as valid input files, with all the information required to restore
-the state of the system to the point at which the file was created.
-The syntax for this tag is:
-
-\begin{verbatim}<checkpoint stride=`' filename=`' overwrite=`'>
-   step
-</checkpoint>\end{verbatim}
-
-Again, this is similar to the {}``trajectory'' and {}``properties''
-tags, but instead of having a value which specifies what to output,
-the value simply gives a number to identify which checkpoint is which.
-There is also one additional attribute {}``overwrite'', which specifies
-whether each new checkpoint file overwrites the old one, or whether
-all checkpoint files are kept. If they are kept, they will be written
-not to the file {}``filename'', but instead an index will be appended
-to it to distinguish between different files.
-
-If the `step' parameter is not specified, the following syntax can
-also be used:
-
-\begin{verbatim}<checkpoint stride=`' filename=`' overwrite=`'/>\end{verbatim}
-
-
-\subsection{Restart file}
-
-As well as checkpoint files during a simulation run, wrappi also creates
-a file to restart from automatically at the end of the simulation,
-with file name {}``RESTART''. In the same way as the checkpoint
-files generated above, it contains the state of the system is created
-by the wrapper, but it doesn't need to be asked for by the user in
-the input file. Its purpose is that if the user decides that insufficient
-steps where used in an already completed simulation, then this file
-can be used to continue from where it ended.
-
-
-\subsection{Soft exit}
-
-To stop the program in such a way that it makes sure to save the data
-generated in a restart file, simply create a file {}``EXIT'' in
-the directory in which the code is running. The thread handler will
-automatically detect this and safely shut down the program, outputting
-the restart file as detailed above. 
-
-An important point to note is that since each time step is split into
-several parts, it is only at the beginning of each step that all the
-variables are consistent with each other in such a way that the simulation
-can be restarted from them without changing the dynamics. Thus if
-a soft exit call is made during a step, then the restart file that
-is created must correspond to the state of the system at the start
-of the step. To this end, the state of the system is saved at the
-start of every step.
-
-
-\subsection{Initialization from RESTART}
-
-As well as being a valid input file, the RESTART file can be used
-as a starting point for simulations in two other ways. Firstly, in
-the {}``initialize'' tag, there is a {}``chk'' option for the
-{}``mode'' attribute of all the initializable properties. This will
-use the restart file as a basis for initializing the specified bits
-of data.
-
-Secondly, there is a particular ensemble type, {}``replay\_file'',
-which takes a configuration file with multiple frames or a checkpoint
-file with one frame and reruns it without doing dynamics, by simply
-setting the configuration to match that given by the input file at
-each frame. 
-
-
-\chapter{Feature overview}
-
-%\label{overview}
-
-
-\section{Ring polymer contraction}
-
-Often, we will want to take a description of the system in terms of
-a certain number of beads and instead represent it with a different
-number of beads. In the wrapper this is done using a ring polymer
-contraction scheme~\cite{mark-mano08jcp}.
-
-This works by matching the normal mode amplitudes of the old ring
-polymer with those of the new ring polymer. The normal modes are matched
-in ascending frequency order, until either all the ring polymer normal
-modes of the new ring polymer have been assigned a frequency, or all
-the original ring polymer normal modes have been used. Any remaining
-normal mode amplitudes are set to zero.
-
-This is used in two different cases:
-\begin{itemize}
-\item Initializing a simulation from a previous one with a different number
-of beads.
-\item Calculating long range interactions with a reduced number of beads.
-\end{itemize}
-The first of these points is fairly self-explanatory. To specify the
-number of beads that the system should be initialized to, the {}``nbeads''
-attribute of the {}``initialize'' tag simply needs to be set to
-the appropriate value in the input file. This will take whatever configuration
-is specified in the initilialization and use the above transformation
-to give a new configuration with the correct number of beads. 
-
-The second of these uses is more complicated. To understand this,
-consider an empirical potential model that can be split into a short-ranged
-potential and a long-ranged potential, where the long-ranged part
-of the potential is slowly varying in space. This means that the long-ranged
-part of the potential will require fewer beads to converge the calculated
-potential energy than the short-ranged part, as it only varies slightly
-over the ring polymer length scale. 
-
-Also, let us suppose that the calculation of the long-range terms
-is the computational bottleneck, as they are more numerous than the
-short-range terms. In this case calculating the long-range part of
-the potential on a contracted ring polymer will have a large effect
-on the simulation time, even if the short-range part is calculated
-on the full ring polymer. Therefore this technique allows us to speed
-up the simulation without sacrificing accuracy.
-
-Once the force, potential and virial have been calculated using the
-reduced ring polymer, the resulting force and virial vectors are transformed
-back to the appropriate size for the full ring polymer phase space,
-before being used to propagate the trajectory.
-
-For a given {}``socket'' tag, this can be specified in the input
-file by setting the {}``nbeads'' attribute. This value will dictate
-how many beads will be used to calculate that part of the force, and
-if it is not equal to the number of beads in the system then ring
-polymer contraction will be used.
-
-
-\section{Constant temperature simulations}
-
-There are a variety of different stochastic thermostats implemented
-within the wrapper. All the algorithms that are used in the wrapper
-are based on either the Langevin equation~\cite{plangevin1908cras}%perhaps a more relevant citation required here as well?
-or stochastic velocity rescaling~\cite{buss-parr08cpc}. 
-
-The Langevin thermostat is a local thermostat, so couples to each
-degree of freedom, whereas the stochastic velocity rescaling is a
-global algorithm, so is only coupled to the total kinetic energy.
-Global thermostats are less disruptive to the dynamics, so are much
-better for calculation of properties that require reorganisation of
-the structure, such as dielectric constants~\cite{ceri+10jcp}. However,
-they tend be less efficient for local properties such as the total
-energy.
-
-The path integral Langevin equation (PILE) thermostat~\cite{ceri+10jcp}
-adapts these algorithms for PIMD simulations, and may be either local
-or global. It uses \emph{a priori} estimates for the friction coefficients
-of the thermostats coupled to the internal ring polymer normal modes,
-so this is much more effective for path integral calculations than
-standard stochastic thermostats.
-
-Constant temperature simulations can be run by setting the {}``type''
-attribute of the {}``ensemble'' tag to {}``nvt'', and the {}``thermostat''
-tag specifies how the thermostat is defined.
-
-
-\subsection{Generalized Langevin equation thermostats}
-
-The Langevin equation can be generalized to include non-Markovian
-effects, so that the stochastic step of the algorithm requires information
-from previous timesteps. This is however very difficult to implement
-in practice.
-
-However, this can be shown to be mathematically equivalent to a Markovian
-algorithm in an extended momentum phase space~\cite{ceri+09jctc}.
-This is much simpler to implement, but still maintains the increased
-power and flexibility of the non-Markovian formulation. In particular,
-this has two main advantages over standard Langevin equation dynamics.
-
-Firstly, there are a large number of adjustable parameters, so the
-thermostat can be fine-tuned to efficiently sample all the vibrational
-frequencies present in the system rather than just a small range of
-frequencies.
-
-Secondly, the algorithm does not need to obey the fluctuation-dissipation
-theorem, so the ensemble that is sampled can be adjusted manually.
-For example, using information from the harmonic limit this thermostat
-can attempt to enforce the appropriate quantum ensemble during a low
-bead PIMD simulation~\cite{ceri+11jcp}, increasing the rate of convergence
-with respect to the number of beads used.
-
-
-\section{Constant pressure simulations}
-
-Constant pressure simulations are also possible within the wrapper.
-There is one barostat currently implemented~\cite{buss+09jpc}, which
-is designed to be used in combination with stochastic thermostating,
-so is only suitable for simulations where both the pressure and temperature
-are held constant. Note that these algorithms allow the system box
-size to fluctuate, which can cause problems for some driver codes
-if variable cell dynamics have not been implemented.
-
-Constant pressure simulations can be run by setting the {}``mode''
-attribute of the {}``ensemble'' tag to {}``npt''. The {}``barostat''
-tag specifies how the barostat is defined.
-
-
-\section{Dynamical property calculations}
-
-As well as calculating the static properties shown in section~\ref{propertyfile},
-the wrapper code is capable of calculating approximations to dynamical
-properties such as correlation functions. Currently, two different
-techniques have been implemented for this, ring polymer molecular
-dynamics (RPMD)~\cite{crai-mano04jcp} and partially adiabatic centroid
-molecular dynamics (PA-CMD)~\cite{habe+08jcp}.
-
-RPMD uses the trajectories generated during a PIMD run to calculate
-correlation functions, so is straightforward to use. The largest difference
-between RPMD and PIMD is that local thermostats usually disrupt the
-particle motion too much to be used in the calculation of dynamical
-properties, so often a constant energy ensemble must be sampled instead.
-An example of one way to run an RPMD simulation is given in one of
-the test directories, as explained in section~\ref{tests}.
-
-PA-CMD uses different dynamics to calculate correlation functions.
-In particular, the ring polymer bead masses are scaled, shifting the
-ring polymer normal mode frequencies. This is particularly useful
-where non-zero frequency components of the correlation functions are
-important, as the ring polymer normal mode frequencies can contaminate
-the spectrum. PA-CMD avoids this by shifting these frequencies out
-of the frequency range of interest.
-
-PA-CMD dynamics can be used by adjusting the {}``mode'' attribute
-of the {}``normal\_modes'' tag. {}``normal modes'' takes an array
-argument, which can be used to specify how the ring polymer normal
-mode frequencies are defined.
-
-
-\section{Output properties}
-
-While most of the properties that can be output during a \ipi simulation
-are self-explanatory, there are some for which the algorithms used
-or the properties calculated are non-trivial and so deserve some comment.
-
-
-\subsection{Displaced path momentum distribution estimators}
-
-Momentum distributions are very difficult quantities to calculate,
-because they require knowledge of the off-diagonal elements of the
-density matrix. In a path-integral context, this means that the distribution
-of open paths, where two of the neighbouring beads in the ring polymer
-are not connected by springs, must be sampled. However, since the
-ensemble is defined by the distribution of closed paths, only one
-path can be opened in this way at a time without introducing sampling
-errors. 
-
-Multiple techniques have been proposed to try and alleviate the problems
-of poor statistical sampling that this causes, but in the wrapper
-only the displaced path estimator of \cite{linlin+10prl} has been
-implemented. This uses a closed path integral simulation to generate
-the dynamics, and only opens the paths when the estimator is to be
-calculated, so no sampling errors are introduced by calculating this
-property for multiple atoms during a particular timestep.
-
-This therefore gives better statistical sampling, as the property
-can be calculated for all identical atoms in a particular timestep
-without introducing errors. Also, since the vector that opens the
-path can be chosen by the user, this allows the phase space to be
-searched systematically. The main disadvantages of this method are
-first that every time the property is calculated a new force calculation
-must be done, and secondly that convergence is very poor for highly
-quantum systems. The latter problem can be circumvented by a thermodynamic
-integration scheme, although this reintroduces the sampling error
-problem that the open path simulations have. See \cite{linlin+10prl}
-for a more in depth discussion of the method.
-
-
-\subsection{Finite difference energy and heat capacity estimators}
-
-As the momenta associated with the beads in a PIMD simulation do not
-correspond to physical variables, they cannot be used to help calculate
-statistical averages. Momentum dependent properties are therefore
-usually calculated using identities derived from thermodynamics. For
-example, the kinetic energy is calculated by:
-
-\begin{align} \langle \hat{T} \rangle = \langle \hat{H} \rangle - \langle \hat{V} \rangle = - \frac{\partial \, \textrm{ln}(Z)}{\partial \beta} - \langle \hat{V} \rangle \end{align} 
-
-This can then be used to derive an estimator for the kinetic energy
-using the ring polymer Hamiltonian to calculate \(Z\). There are
-two possible ways of representing the result. If the result of the
-above calculation is used directly, then an estimator that only depends
-on the positions of the beads is derived, but it involves the difference
-of two large terms that scale with the number of beads and so has
-a variance that increases linearly with the number of beads used.
-The second result uses the virial theorem to derive another estimator
-with the same average value, but with better statistics. This method
-however involves the derivative of the potential with respect to the
-bead positions.
-
-For the kinetic energy, we use the virial form, since we already must
-have the first derivative of the potential (i.e. the forces). However,
-for other quantities such as the heat capacity, the virial estimator
-involves second or higher derivatives, and so is much more costly
-to evaluate.
-
-Instead of having to compromise between statistical sampling and computational
-expense, we take the approach of \cite{tyamamoto05jcp} and calculate
-the temperature derivative by finite differences. While this means
-that each step will require two extra force calculations it has the
-same statistical properties as the virial estimator without requiring
-potential derivatives to be calculated, so is often the most efficient
-method to calculate such properties.
-
-
-\subsection{Extras list}
-
-In many cases, the driver code calculation will derive important quantities
-other than the potential, forces and virial, which may be necessary
-to calculate properties of interest such as the charge distribution.
-It is therefore useful to have a mechanism by which such data can
-be passed back to the wrapper code, so that it does not have to be
-recalculated as a post-processing step. This is done in the code using
-an {}``extras'' string. This is passed at the end of the driver
-message, and read directly into a string by the wrapper. This can
-then be printed directly to file using the {}``extras'' trajectory
-output.
-
-\begin{comment}
-
-\chapter{Developer's tips}
-
-\label{dev}
-
-
-\section{Directory structure}
-
-The code is separated into the following directory structure: 
-\begin{description}
-\item [{forces:}] Contains a few short fortran driver files for running
-simple tests. 
-\item [{doc:}] Contains the documentation, including this manual. 
-\item [{src:}] Contains the source code for the wrapper. This is further
-subdivided into: 
-
-\begin{description}
-\item [{engine:}] Holds the modules containing the internally used objects
-and algorithms 
-\item [{driver:}] Holds the modules containing the objects that deal with
-the driver communication and data transfer. 
-\item [{utils:}] Holds the modules containing the utility functions used
-in the other modules. 
-\item [{inputs:}] Holds the modules containing the classes that read the
-input files.
-\end{description}
-\item [{patches:}] Contains the patch files that must be applied to allow
-the driver codes to interact with the wrapper. 
-\item [{test:}] Contains examples that can be used to make sure the build
-has been successful, show the correct form of the input files, and
-show some of the capabilities of the wrapper. 
-\end{description}
-
-\section{Dependency detection and automatic property caching}
-
-
-\subsection{Rationale}
-
-One of the utility classes that is defined in the code, from which
-most of the classes in the code inherit, is the dobject class. Similarly,
-many of the variables contained in these classes are depend objects.
-
-The depend object class has been designed so that every time it is
-accessed it checks all of the other depend objects on which it is
-dependent to see if they have changed, and if so recalculates its
-value. The dobject class overrides the mechanism by which you can
-access the members of an instance of it, so that they are accessed
-via the dependency detection functions.
-
-These classes have been defined so that, instead of cluttering up
-the code with functions to recalculate the various parameters of the
-simulation, we simply have to define the function by which to recalculate
-them and the other objects which they depend upon when they are created,
-and then they will automatically be updated when required.
-
-As an example, take the total kinetic energy for one replica of the
-system. This is a property of the total momentum vector and the mass
-vector of the different atoms. Therefore, we would create a {}``kin''
-object in the atoms class that has dependencies {}``mass'' and {}``momentum'',
-and a recalculation function that calculated \(\frac{\bf{p}^2}{2\bf{m}}\)
-
-Having done this, any time we access atoms.kin, the code will check
-to see if either the mass vector or momentum vector has changed. If
-it has will recalculate the kinetic energy before returning it, otherwise
-it will simply return the cached value.
-
-
-\subsection{Synchronized objects}
-
-As well as checking for dependencies, the same infrastructure can
-also be used to synchronize two objects which are different representations
-of the same data. A good example of this is the bead coordinates in
-the cartesian and normal mode representations. Both of these represent
-the same data, but have different numerical values.
-
-In this case we can use a synchronize object, which holds a dictionary
-of functions to transform one representation to another. In the case
-of the normal mode and cartesian representations of position, the
-transformation can be done either by multiplying the position vector
-by a transformation matrix, or via a Fourier transform.
-
-Using this class, whenever we make a change to one of the representations,
-the others are automatically recalculated by reapplying the transformation
-function the next time they are accessed.
-
-
-\section{Properties}
-
-While many of the simple properties of interest can be output directly
-to the properties output file, and many others can be obtained by
-post-processing the available data, it may be that some property you
-wish to calculate is not explicitly available for output.
-
-In this case, you may wish to modify the code so that this property
-can be output. All the code to do this is found in the {}``properties.py''
-module in the {}``engine'' directory. To add a new property to the
-existing list, you must first define a function that calculates this
-property.
-
-In standard Python notation, we must define a new function inside
-the {}``Properties'' class. This is written by:
-
-\begin{verbatim}
-def new_func(self):
-   ...code here...
-   return value
-\end{verbatim}
-
-We can now use this function to calculate the property of interest.
-If the name of this property is {}``new\_prop'', we can add this
-to the dictionary of named properties by:
-
-\begin{verbatim}
-self.property_dict["new_prop"] = new_func
-\end{verbatim}
-
-We now simply need to add the name {}``new\_prop'' in the {}``properties''
-list in the xml input file, and the property will be written to the
-properties output file when appropriate.
-
-If you need a function with arguments, then the code we need is given
-by:
-
-\begin{verbatim}
-self.property_dict["new_arg_prop"] = new_arg_func
-...code here...
-def new_arg_func(self, arg1, arg2, ... ):
-   ...more code here...
-   return value
-\end{verbatim}
-
-Now in the property list you must put:
-
-\begin{verbatim}
-<properties>
-   [ new_arg_prop(arg1; arg2; ... ), ... ]
-</properties>
-\end{verbatim}
-
-The code will now automatically call the function with the arguments
-defined in the properties list.
-
-
-\section{Creating a new class}
-
-While creating a new property may be possible by using existing objects,
-it may be that you wish to calculate something in a way that is not
-implemented by the code. In this case, it may be necessary to create
-a new class to do the calculation. To do this efficiently, you must
-be understand some of the more advanced features of the code.
-
-
-\subsection{Depend objects}
-
-Many of the new objects created inside a class may depend on other
-objects in the code for their value. As discussed in Chapter 3, the
-calculation of such variables is facilitated by the use of the {}``depend''
-classes defined in the {}``utils'' directory.
-
-Since the {}``dobject'' class overwrites the standard way of getting
-and setting functions, so there is a special syntax for creating them.
-To create a depend object {}``value'' with name {}``name'' inside
-an object {}``object'', you need to use the syntax: 
-
-\begin{verbatim}
-dset(object, name, value)
-\end{verbatim}
-
-The arguments that are important for creating {}``depend'' objects
-are:
-\begin{description}
-\item [{name:}] A string giving the name of the depend object.
-\item [{value:}] {}``depend\_array'' only. Defines the memory the object
-references.
-\item [{synchro:}] An optional {}``synchronizer'' object. This keeps
-track of different views on the same data.
-\item [{func:}] An optional function to recalculate the object when one
-of its dependencies are updated.
-\item [{dependencies:}] An optional list of the {}``depend'' objects
-which are required to recalculate the new {}``depend'' object. Essentially
-a list of all the {}``depend'' objects that appear in \textbf{func}.
-\end{description}
-There are two different classes of {}``depend'' objects, {}``depend\_value''
-and {}``depend\_array''. The {}``depend\_array'' class is a specialist
-class for NumPy arrays, to deal with the slicing mechanism. This means
-that for the {}``depend\_array'' class there is a second method
-of creating new {}``depend'' objects, you can take a slice of an
-old one. 
-
-This will return a slice with the same dependencies and synchro objects,
-and a reference to the correct slice of the base array of the parent
-{}``depend\_array'' object, so that the automatic updating keeps
-all the data consistent. Note that it is therefore incorrect to create
-a new {}``depend\_array'' object that is a slice of an old one using
-the \textbf{dset} function, as it will not copy the dependencies correctly.
-
-There is also a method for dealing with separate objects that are
-different views on the same data; the {}``synchronizer'' object.
-This object is shared with all of the different views to the same
-data, and deals with keeping all of them consistent with each other.
-
-Also, the \textbf{func} initialization argument must be a dictionary
-of functions that transform from the {}``depend'' object being created
-to the other synchronized objects, using the syntax:
-
-\begin{verbatim}
-func = {synchro1: func1, synchro2: func2, ... }
-\end{verbatim}
-
-Where {}``synchroN'' is the {}``name'' of the Nth synchro object,
-and {}``funcN'' transforms from the {}``synchroN'' object to the
-one being created. Note that we have to make sure that we do not mix
-the two forms of \textbf{func}, synchonized objects can only depend
-on the other synchronized objects, and not on any other depend objects.
-
-Finally, there are several utility functions that help to manipulate
-{}``depend'' objects:
-\begin{description}
-\item [{dget:}] Gets a specified {}``depend'' object inside a {}``dobject''
-class. Needed since the {}``dobject'' class overrides the standard
-Python method of getting attributes, so you need a way to get the
-{}``depend'' object and not just its value.
-\item [{dset:}] Creates a {}``depend'' object inside a {}``dobject''
-class. Needed for the same reason as \textbf{dget}.
-\item [{depstrip:}] Takes a {}``depend\_array'' object and returns the
-base array. Useful in algorithms where the array is used as a read-only
-variable, as it removes the dependancy network from the object, and
-so speeds up the calculation.
-\item [{depcopy:}] Copies the {}``dependencies'' and {}``synchronizer''
-objects from one {}``depend'' object to another.
-\item [{deppipe:}] Gives one {}``depend'' object the same value as another,
-and adds a dependency such that this remains the case.
-\end{description}
-
-\subsection{Input class}
-
-To be able to use the xml input file to create an instance of this
-new class, and to write the file to the restart file, you must create
-a new input class, or modify an old one to recognize the new class.
-
-Each input class must have the following class attributes:
-\begin{description}
-\item [{fields:}] This is a dictionary giving the tag names for the objects
-that can be specified in the xml input file within the tags of your
-class. Every object that can be given a value by the user should be
-a keyword of this dictionary, or of the \textbf{attributes }dictionary.
-Within the dictionary, you must specify the particular class of input
-object that will be created and arguments to initialize it. The format
-of the dictionary is: \begin{verbatim}
-{tag_name1 :
-   (InputClass, 
-      {default: default value,
-       help: help string, 
-       dtype: data type,
-       options: [option1, option2, ... ],
-       dimension: dimensionality of the data}), 
-tag_name2: ... }
-\end{verbatim}
-\item [{attribs:}] This is a dictionary of the same form as \textbf{fields},
-but for the tag attribute data instead. These should always be simple
-data classes InputValue or InputArray, as their value must be specified
-by the user.
-\item [{default\_help:}] This is the help string that will be given to
-help explain the new class to others if no other help string is given.
-It will also be the help string seen in the section in the latex file
-for the new class.
-\item [{default\_label:}] This is the label used to identify the appropriate
-section in the latex help file so that different sections can cross-reference
-with the others.
-\end{description}
-The class can have the following functions:
-\begin{description}
-\item [{fetch:}] This takes the InputClass object and creates a new object
-of your class from it. You must make sure to call the base class fetch
-function using the standard Python function super.
-\item [{store:}] This takes an object of your class, and stores the relevant
-information needed to reinitialize it in an InputClass object. You
-must make sure to call the base class store function using the standard
-Python function super.
-\item [{check:}] This is an optional function that will check to see if
-the data specified in the input file will create a valid instance
-of your class, and possibly raise an exception otherwise. You must
-make sure to call the base class check function using the standard
-Python function super.
-\item [{write:}] This is a function that you can use to override the base
-class write function, so that you can tailor what is printed to the
-restart file.
-\end{description}
-The last thing that you must do to be able to use your class is to
-create an appropriate fields tag in the parent input class where you
-want the instance of your class to be held, with InputClass set to
-the name of your input class, and alter the check, store and fetch
-functions of the input class of the parent class.
-
-
-\section{Submitting improvements}
-
-This code is still in developement, and any submissions to improve
-the code are welcome. However, to be considered as a candidate for
-inclusion in the main version of the code additions must adhere to
-the standards described in this section.
-
-
-\subsection{Testing}
-
-Any new code should be tested for bugs before being submitted. At
-the very least the modified code should reproduce the properties in
-the test directory, and be shown to give the expected new results.
-Preferably, new results found with wrap-PI should also be compared
-with other published results, and a suitable test case added to the
-test directory.
-
-It should also be tested for user input error, especially if a new
-input class has been created, so that such errors can be detected
-before the simulation is run. For example, if a parameter cannot be
-negative then this should be tested in the code, so that a sensible
-error message is given if the user inputs a negative value.
-
-
-\subsection{Documentation}
-
-We have taken great care to make sure that all the code is well documented,
-and as such any submissions should be documented to the same standard.
-We have used the Google Python Style Guide, \url{http://google-styleguide.googlecode.com/svn/trunk/pyguide.html},
-as a template for the documentation.
-
-For each module we require the following documentation:
-\begin{itemize}
-\item Each new module must be added to the \_\_init\_\_.py and README files
-of the directory in which it is found.
-\item At the head of each new module, you must give a string with a summary
-and a brief description of the module with all the classes and functions
-that it defines, and an \_\_all\_\_ object giving the same classes
-and functions as above.
-\item Each class must have a docstring giving a summary, a brief description
-of its purpose and the variables it contains, including a separate
-section for any depend objects defined, and what their dependencies
-are. Input classes must also have a help string defined for all its
-tags, and an appropriate default tag.
-\item Each function must have a docstring giving a summary, a brief description
-of its purpose, any arguments it uses, any exceptions it can raise
-and what is returned by the function, if not None. 
-\item Any new class must have its input class added to the create\_man.py
-and help.py files in the doc directory, so that the automatic manual
-creation will work correctly.
-\end{itemize}
-If new modules are being submitted, then all of the above documentation
-should be done. If only a new class or function is being added, then
-only parts of the above will be necessary.
-\end{comment}
-
-
-
-\chapter{Input class hierarchy}
-
-%\label{hierarchy}
-
-The following chapter gives a complete list of the tags that can be
-specified in the xml input file, along with the hierarchy of objects.
-Note that every xml input file must start with the root tag {}``simulation''. 
-
-See the accompanying {}``help.xml'' file in the {}``doc'' directory
-to see the recommended input file structure.
 \end{document}
