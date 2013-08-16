@@ -1,31 +1,111 @@
 %% LyX 2.0.0 created this file.  For more info, see http://www.lyx.org/.
 %% Do not edit unless you really know what you are doing.
-\documentclass[12pt,english,fleqn]{report}
+\documentclass[11pt,english,fleqn]{report}
+\usepackage{fourier}
+\usepackage{helvet}
 \usepackage[T1]{fontenc}
 \usepackage[latin9]{inputenc}
 \setcounter{secnumdepth}{3}
 \setcounter{tocdepth}{3}
 \usepackage{babel}
 \usepackage{verbatim}
+\usepackage{graphicx}
 \usepackage{url}
 \usepackage{amsmath}
 \usepackage{amssymb}
-\usepackage[unicode=true,pdfusetitle,
- bookmarks=true,bookmarksnumbered=false,bookmarksopen=false,
- breaklinks=false,pdfborder={0 0 1},backref=section,colorlinks=false]
- {hyperref}
+%\usepackage[unicode=true,pdfusetitle,
+% bookmarks=true,bookmarksnumbered=false,bookmarksopen=false,
+% breaklinks=true,pdfborder={0 0 1},backref=section,colorlinks=true]
+% {hyperref}
+
+% MC STYLE
+\usepackage[a4paper]{geometry}
+\geometry{verbose,tmargin=3cm,bmargin=3cm,lmargin=3.5cm,rmargin=3.0cm}
+\usepackage{ifthen}
+\usepackage[pagestyles]{titlesec}
+\usepackage[unicode,colorlinks,breaklinks]{hyperref}
+\usepackage{float}
+\usepackage{caption}
+\usepackage[sort&compress,numbers]{natbib}
+\usepackage{microtype}
+\setlength{\emergencystretch}{2em}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% page layout
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\widowpenalty=200
+\clubpenalty=200
+\setlength{\parskip}{0.0ex plus 0.5ex minus 0.0ex}
+% headings
+\renewpagestyle{headings}[\small]{
+\headrule \sethead{ %
+{\ifthenelse{\number\value{chapter}>0}{Chapter \thechapter}{\bf \chaptertitle}} %
+}{ %
+{   \ifthenelse{\number\value{chapter}>0}{\bf \chaptertitle}{}} %
+} %
+{ \usepage}
+}
+\pagestyle{headings}
+
+%empty page to pad chapters
+\makeatletter
+\def\cleardoublepage{\clearpage\if@twoside \ifodd\c@page\else
+\hbox{}
+\vspace*{\fill}
+\begin{center}
+\ 
+\end{center}
+\vspace{\fill}
+\thispagestyle{empty}
+\newpage
+\if@twocolumn\hbox{}\newpage\fi\fi\fi}
+\makeatother
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% spacings (use a lot of rubber lenghts)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\setlength{\floatsep}{2ex plus 5ex minus 1ex }
+\setlength{\textfloatsep}{3ex plus 3ex minus 1ex }
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% floats setup
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% positioning
+\renewcommand{\topfraction}{0.85}
+\renewcommand{\bottomfraction}{0.85}
+\renewcommand{\textfraction}{0.15}
+\renewcommand{\floatpagefraction}{0.65}
+\setcounter{topnumber}{2}
+\setcounter{bottomnumber}{2}
+%default placement
+\floatplacement{figure}{btp}
+% caption
+\captionsetup{margin=10pt,font=small,labelfont=bf}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% chapter headings
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\titleformat{\chapter}[display]{\normalfont\huge\bfseries}%
+{\vspace{1.5em}\raggedleft\large\chaptertitlename ~\thechapter\hrule\vspace{-0.5ex}}
+{-0.25ex}{\begin{minipage}{0.75\textwidth}\raggedright}[\end{minipage}]
+
 
 \makeatletter
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% LyX specific LaTeX commands.
-%% Because html converters don't know tabularnewline
-\providecommand{\tabularnewline}{\\}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% User specified LaTeX commands.
 \@ifundefined{definecolor} {\usepackage{color}}{}
 \usepackage{multicol}\makeindex
 \usepackage{xspace}
 \usepackage[numbers]{natbib}
+
+\newenvironment{code}{%
+\footnotesize 
+\verbatim
+}{
+\endverbatim
+\normalsize
+}
 
 \makeatother
 
@@ -38,30 +118,34 @@
 \newcommand{\logn}{\mathrm{ln}} 
 \newcommand{\expon}{\mathrm{exp}} 
 \newcommand{\Imag}{\mathrm{Im}}
-\newcommand{\ipi}{{\sc i-PI}\xspace}
+\newcommand{\ipi}{{i-PI}\xspace}
 \newcommand{\DFT}{Quantum Espresso, CP2K, CPMD and FHI-AIMS }
 \newcommand{\empirical}{LAMMPS}
 
 \begin{titlepage} 
 
 \begin{center}
-\vspace*{5.5cm}
+\vspace*{2.5cm}
 
 \par\end{center}
 
 \begin{center}
-{\LARGE \ipi}
-\par\end{center}{\LARGE \par}
+\includegraphics[width=0.6\textwidth]{ipi-logo.pdf}
+\par\end{center}
 
 \begin{center}
-A Python wrapper for Path Integral Molecular Dynamics
+{\Large\bf A Python wrapper for \\Path Integral Molecular Dynamics}
+\par\end{center}
+
+\begin{center}
+{\large v. 1.0}
 \par\end{center}
 
 \end{titlepage}
 
 \pagenumbering{roman}
 
-\tableofcontents{}\listoffigures
+\tableofcontents{}
 
 
 \newpage{}\pagenumbering{arabic}
@@ -77,6 +161,11 @@ of the interactions between the atoms. The main goal is to decouple
 the problem of evolving the ionic positions to sample the appropriate
 thermodynamic ensemble and the problem of computing the inter-atomic
 forces. 
+
+\begin{figure}[hb]
+\centering\includegraphics[width=0.9\textwidth]{ipi-scheme.pdf}
+\caption{\label{fig:scheme} Schematic representation of the functioning of \ipi{}.} 
+\end{figure}
 
 The implementation is based on a client-server paradigm, where \ipi
 acts as the server and deals with the propagation of the nuclear dynamics,
@@ -133,7 +222,7 @@ phase systems is path integral molecular dynamics (PIMD).
 
 PIMD generates the quantum-mechanical ensemble of a system of interacting
 particles by using MD in an extended phase space. This is derived
-from the path integral formalism of \cite{feyn-hibb65book}, which
+from the path integral formalism \cite{feyn-hibb65book}, which
 relates the statistics of a collection of quantum particles to those
 of a set of classical ring polymers, a ring polymer being a number
 of replicas of a particle coupled by harmonic springs. This so-called
@@ -144,13 +233,13 @@ a finite number.
 This then allows quantum phase space averages to be calculated from
 classical trajectories, with only about an order of magnitude more
 computing time than would be required for standard MD. Also, since
-PIMD is simply classical MD in an extended phase space many of the
+PIMD is simply classical MD in an extended phase space, many of the
 techniques developed to improve the scope and efficiency of MD simulations
 can be applied straightforwardly to the equivalent PIMD calculations
 \cite{ceri+10jcp,mart+99jcp}. Finally, several techniques designed
 specifically for PIMD simulations are now available to increase the
 rate of convergence with respect to the number of replicas used \cite{mark-mano08jcp,ceri+11jcp},
-so further reducing the computational overhead of the method. All
+further reducing the computational overhead of the method. All
 of these facts mean that it is now feasible to do PIMD simulations
 with thousands of molecules, or even to use \emph{ab initio} electronic
 structure calculations to propagate the dynamics for small systems.
@@ -159,8 +248,8 @@ Furthermore, the framework used to run PIMD simulations can be adapted
 to generate approximate quantum dynamical information 
 \cite{cao-voth93jcp,cao-voth94jcp,crai-mano04jcp,braa-mano06jcp},
 and so can also be used to calculate correlation functions. While
-the dynamics is classical, and so real-time quantum coherences cannot
-be captured, the correct capture of quantum statistical information
+real-time quantum coherences cannot be captured, the inclusion 
+of quantum statistical information
 and the rapid decoherence observed in condensed phase systems mean
 that in many cases very accurate results can be obtained from such
 approximate treatments of quantum dynamics \cite{habe+13arpc}.
@@ -203,18 +292,18 @@ between the server and client. Even though other choices are possible,
 and it should be relatively simple to implement other means of communication,
 the preferred approach relies on sockets as the underlying infrastructure.
 Both Internet and Unix domain sockets can be used: the latter allow
-for fast communication on a single node, whereas the former makes
-it possible to realize a distributed computing paradigm, with clients
+for fast communication on a single node, whereas the former make
+it possible to realise a distributed computing paradigm, with clients
 running on different nodes or even on different HPC facilities. In
 order to facilitate implementation of the socket communication in
 client codes, a simple set of C wrappers to the standard libraries
 socket implementation is provided as part of the \ipi distribution,
 that can be used in any programming language that can be linked with
-C code
+C code.
 
 As far as the communication protocol is concerned, the guiding principle
-has been keeping it to the least common denominator, and avoiding
-any feature that may be code-specific. Only minimal amount of information
+has been keeping it to the lowest common denominator, and avoiding
+any feature that may be code-specific. Only a minimal amount of information
 is transferred between the client and the server; the position of
 the atoms and cell parameters in one direction, and the forces, virial
 and potential in the other.
@@ -234,17 +323,16 @@ wishes so. For details on how to do this, see \ref{inputunits} and
 
 \begin{center}
 \begin{tabular}{lll}
+\hline\hline
+Unit & Name & S.I. Value\\
 \hline 
-Unit & Name & S.I. Value\tabularnewline
-\hline 
-\hline 
-Length & Bohr radius & 5.2917721e-11 m\tabularnewline
-Time & N.A. & 2.4188843e-17 s\tabularnewline
-Mass & Electron mass & 9.1093819e-31 kg\tabularnewline
-Temperature & Hartree & 315774.66 K\tabularnewline
-Energy & Hartree & 4.3597438e-18 J\tabularnewline
-Pressure & N.A. & 2.9421912e13 Pa\tabularnewline
-\hline 
+Length & Bohr radius & 5.2917721e-11 m\\
+Time & N.A. & 2.4188843e-17 s\\
+Mass & Electron mass & 9.1093819e-31 kg\\
+Temperature & Hartree & 315774.66 K\\
+Energy & Hartree & 4.3597438e-18 J\\
+Pressure & N.A. & 2.9421912e13 Pa\\
+\hline\hline
 \end{tabular}
 \par\end{center}
 
@@ -359,18 +447,18 @@ To install this you need to input the following command:
 
 %Mano's note: Again, is this allowed?
 
-\begin{verbatim}
-> tar -xf [wrapper_tar_file.tar]
-\end{verbatim}
+\begin{code}
+> tar xf [wrapper\_tar\_file.tar]
+\end{code}
 
 %Mano's note: Perhaps remove claim of Windows from prog. description?
 
 You can also obtain a local clone of the git repository on \url{bitbucket.org}
 using:
 
-\begin{verbatim}
+\begin{code}
 > git clone [github repository name]
-\end{verbatim}
+\end{code}
 
 
 \subsection{Installing NumPy}
@@ -385,42 +473,42 @@ as a tar file from \url{http://www.numpy.org}. If the version of
 NumPy being installed is given by {}``np\_vers'', this can be extracted
 using:
 
-\begin{verbatim}
+\begin{code}
 > tar czf np_vers.tar.gz
-\end{verbatim}
+\end{code}
 
 Before installing this code it first needs to be configured correctly.
 Note that this requires the distutils package that comes with the
 python-dev package. Assuming that the required software is installed,
 the NumPy package is built using:
 
-\begin{verbatim}
+\begin{code}
 > python setup.py build
-\end{verbatim}
+\end{code}
 
 The next step is to install NumPy. By default the download is to the
 directory /usr/local. If you have root access, and so can write to
 /usr, then all that needs to be done to finish the install is:
 
-\begin{verbatim}
+\begin{code}
 > python setup.py install
-\end{verbatim}
+\end{code}
 
 If you do not have root access, then the next step depends on which
 version of Python is beind used. With versions 2.6 or later there
 is a simple command to automatically download into the directory \$HOME/local:
 
-\begin{verbatim}
+\begin{code}
 > python setup.py install --user
-\end{verbatim}
+\end{code}
 
 With Python 2.4/2.5 the process is a little more involved. First you
 must explicitly install the package in the directory of choice, {}``np\_dir''
 say, with the following command:
 
-\begin{verbatim}
+\begin{code}
 > python setup.py install --prefix=np_dir
-\end{verbatim}
+\end{code}
 
 Next, you must tell python where to find this library, by appending
 to the Linux environment variable PYTHONPATH. If you are
@@ -429,15 +517,16 @@ have been installed in the directory {}``np\_dir/lib/py\_vers/site-packages'',
 or a close analogue of this. In the above case the following command
 will allow the Python interpreter to find the NumPy libraries:
 
-\begin{verbatim}
+\begin{code}
 > export PYTHONPATH=$PYTHONPATH:np_dir/lib/py_vers/site-packages
-\end{verbatim}
+\end{code}
+%$
 
 Now Python scripts can import the NumPy libraries using:
 
-\begin{verbatim}
+\begin{code}
 import numpy
-\end{verbatim}
+\end{code}
 
 
 \subsection{PyFFTW}
@@ -493,9 +582,9 @@ code with \ipi in the directory {}``patches/pwscf''. If you are
 currently in the top level directory of the Quantum-Espresso distribution,
 the patch can be applied to the source code using:
 
-\begin{verbatim}
+\begin{code}
 > patch -p1 < i-pi/patches/pwscf/pw-driver.patch
-\end{verbatim}
+\end{code}
 
 After this, continue the compilation as per the instructions at \url{www.quantum-espress.org/}.
 
@@ -518,9 +607,9 @@ input, and automatically starts a simulation as specified by the data
 held in it. If the input file is called {}``input\_file.xml'', then
 the wrapper is run using:
 
-\begin{verbatim}
+\begin{code}
 > python i-pi input_file.xml
-\end{verbatim}
+\end{code}
 
 This reads in the input data, initializes all the internally used
 objects, and then creates the server socket. The code will then wait
@@ -554,27 +643,27 @@ internet domain socket on the host
 address {}``host\_address'' and on the port number {}``port''
 the following lines must be added to the input file:
 
-\begin{verbatim}
+\begin{code}
 &CONTROL
    ...
    calculation=`driver'
    srvaddress=`host_address:port'
    ...
 /
-\end{verbatim}
+\end{code}
 
 If instead a unix domain socket is required then the following
 modification is necessary:
 
 
-\begin{verbatim}
+\begin{code}
 &CONTROL
    ...
    calculation=`driver'
    srvaddress=`UNIX:host_address:port'
    ...
 /
-\end{verbatim}
+\end{code}
 
 The rest of the input file should be the same as for a standard Quantum
 Espresso calculation, as explained at \url{www.quantum-espress.org/}.
@@ -622,9 +711,9 @@ are explored in the {}``tests'' directory, but for the current problem
 we will use the Silvera-Goldman potential with a cut-off radius
 of 15 \(a_0\). This is run using the following command:
 
-\begin{verbatim}
+\begin{code}
 > ./driver.x -m sg -h localhost -o 15
-\end{verbatim}
+\end{code}
 
 The option {}``-m'' is followed by the empirical potential required,
 in this case we use {}``sg'' for Silvera-Goldman, 
@@ -653,11 +742,11 @@ we have defined {}``simulation'' as the root tag, so all the input
 data read in must start and end with a {}``simulation'' tag, as
 show below:
 
-\begin{verbatim}
+\begin{code}
 <simulation>
    Input data here...
 </simulation>
-\end{verbatim}
+\end{code}
 
 xml syntax requires a set of hierarchially nested tags, each of which
 contain data and/or more tags. Also, \ipi itself requires certain
@@ -674,7 +763,7 @@ ensemble respectively.
 
 At this point then, the input file looks like:
 
-\begin{verbatim}
+\begin{code}
 <simulation>
    <initialize>
       ...
@@ -686,7 +775,7 @@ At this point then, the input file looks like:
       ...
    </ensemble>
 </simulation>
-\end{verbatim}
+\end{code}
 
 Now let us consider each of these tags in turn. Firstly, {}``initialize''.
 As the name suggests, this initializes the state of the system, so
@@ -696,11 +785,11 @@ of replicas of the system, called {}``nbeads''. An attribute is
 a particular type of xml syntax designed to specify a single bit of
 data, and has the following syntax:
 
-\begin{verbatim}
+\begin{code}
 <initialize nbeads='4'>
    ...
 </initialize>
-\end{verbatim}
+\end{code}
 
 Note that an attribute forms part of the opening tag, and that the
 value being assigned to it is held within quotation marks. In this
@@ -712,13 +801,13 @@ a xyz file with the appropriate data. This is the simplest input format
 for a configuration file that \ipi accepts, and it has the following
 syntax:
 
-\begin{verbatim}
+\begin{code}
 natoms
 # COMMENT LINE: PUT TITLE OF FILE HERE
 atom1   x1  y1  z1
 atom2   x2  y2  z2
 ...
-\end{verbatim}
+\end{code}
 
 Where {}``natoms'' is replaced by an integer giving the total number
 of atoms, in this case 108, atom1 is a label for atom 1, in this case
@@ -740,12 +829,12 @@ implicitly set based on the atom label. We must also tell it which
 file type is being used using the {}``mode'' attribute. Putting
 this together gives:
 
-\begin{verbatim}
+\begin{code}
 <initialize nbeads='4'>
    <file mode='xyz'> our_ref.xyz </file>
    ...
 </initialize>
-\end{verbatim}
+\end{code}
 
 The only remaining mandatory parameters that have not been initialized
 are the cell parameters. These could in theory be set using a separate
@@ -753,23 +842,23 @@ file, but here we will initialize them manually. Taking a cubic cell
 with cell parameter 33.72594 \(a_0\), we can specify this using
 the {}``cell'' tag in three different ways:
 
-\begin{verbatim}
+\begin{code}
 <cell mode='manual'> 
    [33.72594, 0, 0, 0, 33.72594, 0, 0, 0, 33.72594] 
 </cell>
-\end{verbatim}
+\end{code}
 
-\begin{verbatim}
+\begin{code}
 <cell mode='abcABC'>
    [33.72594, 33.72594, 33.72594, 90, 90, 90]
 </cell>
-\end{verbatim}
+\end{code}
 
-\begin{verbatim}
+\begin{code}
 <cell mode='abc'>
    [33.72594, 33.72594, 33.72594]
 </cell>
-\end{verbatim}
+\end{code}
 
 Note the use of the different {}``mode'' attributes, {}``manual'',
 {}``abcABC'' and {}``abc''. The first creates the cell vector
@@ -779,27 +868,27 @@ cell and so only takes the length of the three unit vectors as arguments.
 We will take the last version for brevity, giving as our final {}``initialize''
 section:
 
-\begin{verbatim}
+\begin{code}
 <initialize nbeads='4'>
    <file mode='xyz'> our_ref.xyz </file>
    <cell mode='abc'>
       [33.72594, 33.72594, 33.72594]
    </cell>
 </initialize>
-\end{verbatim}
+\end{code}
 
 Next lets consider the {}``forces'' section, which deals with communication
 with the client codes. Since in this case we only have one type of
 client code which will be using sockets for communication, we will
 specify a single {}``sockets'' tag to initialize it:
 
-\begin{verbatim}
+\begin{code}
 <forces>
    <socket>
       ...
    </socket>
 </forces>
-\end{verbatim}
+\end{code}
 
 A socket is specified with three parameters; the port number, the
 hostname and whether it is a unix or an internet socket. Here for
@@ -808,25 +897,25 @@ we will take a unix socket, which uses the hostname localhost and
 does not need a port number to be specified. This gives the final
 {}``forces'' section:
 
-\begin{verbatim}
+\begin{code}
 <forces>
    <socket mode="unix">
       <hostname> localhost </hostname>
    </socket>
 </forces>
-\end{verbatim}
+\end{code}
 
 The last section that we will need is the ensemble, which determines
 how the dynamics integrator will be initialized. Since we wish to
 do a \emph{NVT} simulation, we set the {}``mode'' attribute to {}``nvt'',
 and must specify the temperature using the appropriate tag:
 
-\begin{verbatim}
+\begin{code}
 <ensemble mode='nvt'>
    <temperature> 25 </temperature>
    ...
 </ensemble>
-\end{verbatim}
+\end{code}
 
 This defines the ensemble that will be sampled. We also must decide
 which integration algorithm to use, and how large the time step should
@@ -836,13 +925,13 @@ would take a few short runs with different time steps to try and optimize
 this, but for the sake of this tutorial we will use a safe value of
 40 atomic time units, giving:
 
-\begin{verbatim}
+\begin{code}
 <ensemble mode='nvt'>
    <temperature> 25 </temperature>
    <timestep> 40 </timestep>
    ...
 </ensemble>
-\end{verbatim}
+\end{code}
 
 Finally, while the free-particle evolution part of the integrator
 is initialized automatically, there are several different options
@@ -857,7 +946,7 @@ appropriate time scales will be fairly short, so we will take a short
 time scale of 1000 atomic time units. Putting all of this together,
 we get the final input file:
 
-\begin{verbatim}
+\begin{code}
 <simulation>
    <initialize nbeads='4'>
       <file mode='xyz'> our_ref.xyz </file>
@@ -878,7 +967,7 @@ we get the final input file:
       </thermostat>
    </ensemble>
 </simulation>
-\end{verbatim}
+\end{code}
 
 
 \subsubsection{Running the simulation}
@@ -891,9 +980,9 @@ The {}``i-pi'' script in the root directory is used to create an
 \ref{runningsimulations} (if we assume that we are in the {}``tutorial-0''
 directory) this script is run using:
 
-\begin{verbatim}
+\begin{code}
 > python ../../../i-pi tutorial-0.xml
-\end{verbatim}
+\end{code}
 
 This will start the \ipi simulation, creating the server socket and
 initializing the simulation data. This should at this point print
@@ -906,9 +995,9 @@ At this point the driver code is run in a new terminal
 from the {}``drivers'' directory using the command
 specified above:
 
-\begin{verbatim}
+\begin{code}
 > ./driver.x -m sg -u -h localhost -o 15
-\end{verbatim}
+\end{code}
 
 The wrapper code should now output a message saying that a new client
 code has connected, and start running the simulation.
@@ -935,9 +1024,9 @@ at step 999. This type of file is designed to be a way of restarting
 the simulation, by using it as an input file for a new \ipi simulation. 
 This is done in exactly the same way as before, i.e.:
 
-\begin{verbatim}
+\begin{code}
 > python ../../../i-pi i-pi.checkpoint
-\end{verbatim}
+\end{code}
 
 The RESTART file is the same type of file, except this is automatically
 generated at the end of the simulation regardless of what is
@@ -972,20 +1061,19 @@ such as awk and gnuplot can read the data easily. In this case, gnuplot
 can show how the conserved quantity, temperature, potential energy
 and kinetic energy change throughout the simulation using:
 
-\begin{verbatim}
+\begin{code}
 > gnuplot
 > p './i-pi.md' u 1:3 # Plots column 1, i.e. timestep, 
 > p './i-pi.md' u 1:4 # against columns 3, 4, 5 and 6,
 > p './i-pi.md' u 1:5 # i.e. conserved quantity, temperature,
 > p './i-pi.md' u 1:6 # kinetic energy and potential energy
-\end{verbatim}
+\end{code}
 
 This will show that the conserved quantity has only a small drift upwards,
 so the time step is sufficiently small, and that the temperature has converged
 but the kinetic and potential energies have not.
 We therefore need to adjust the input parameters to converge these properties
 properly, as will be done in the next section.
-
 
 In Part 0, we created a minimal input file which could be used to
 run a basic \emph{NVT} simulation. However, this ignored several non-essential
@@ -1011,9 +1099,9 @@ By default the number of
 time steps is 1000, so we will increase this to 5000 using the 
 {}``total\_steps'' tag:
 
-\begin{verbatim}
+\begin{code}
 <total_steps> 5000 </total_steps>
-\end{verbatim} 
+\end{code} 
 
 Another thing we can do to increase the initial convergence of the energy 
 is to initialize the atom velocities. Rather than setting these manually,
@@ -1021,15 +1109,15 @@ the simplest method is to sample these randomly from a Maxwell-Boltzmann
 distribution. This can be done in the {}``initialize'' section using the
 {}``velocities'' tag:
 
-\begin{verbatim}
+\begin{code}
 <initialize nbeads='4'>
    <file mode='xyz'> our_ref.xyz </file>
    <cell mode='abc'>
       [33.72594, 33.72594, 33.72594]
    </cell>
-   <velocities mode='thermal'> 50 </velocities>
+   <velocities mode='thermal' unist='kelvin'> 50 </velocities>
 </initialize>
-\end{verbatim}
+\end{code}
 
 Note that we use double the physical temperature 
 here, since we are starting from essentially a zero-temperature optimized 
@@ -1042,13 +1130,9 @@ random number generator should be initialized with different
 seeds for each. This is simply done using the
 {}``prng'' tag, as follows:
 
-\begin{verbatim}
-<prng>
-   <seed>
-      31415
-   </seed>
-</prng>
-\end{verbatim}
+\begin{code}
+<prng> <seed> 31415 </seed> </prng>
+\end{code}
 
 \subsubsection{Simplifying the input file}
 
@@ -1065,18 +1149,18 @@ was 40 atomic time units, but we might instead want to express this in S.I.
 units for comparison with another paper. Since this happens to be approximately
 1 femtosecond, so we can instead use:
 
-\begin{verbatim}
+\begin{code}
 <ensemble mode='nvt'>
    <timestep units='femtosecond'> 1 </timestep>
    ...
 </ensemble>
-\end{verbatim}
+\end{code}
  
 Similarly, we might want to specify the input configuration file in
 angstrom rather than \(a_0\) (in fact this is the standard unit for
 this file type). This can be done in the same way:
 
-\begin{verbatim}
+\begin{code}
 <initialize nbeads='4'>
    <file mode='xyz' units='angstrom'> our_ref.xyz </file>
    <cell mode='abc' units='angstrom'>
@@ -1084,7 +1168,7 @@ this file type). This can be done in the same way:
    </cell>
    <velocities mode='thermal'> 50 </velocities>
 </initialize>
-\end{verbatim}
+\end{code}
 
 This {}``initialize'' section can also be further simplified by changing the 
 configuration file type to one that can also be used to specify the cell
@@ -1092,13 +1176,13 @@ parameters. Currently, the only file type which can do this that is
 compatible with \ipi is the pdb file type, which has the following structure:
 
 \footnotesize{
-\begin{verbatim}
+\begin{code}
 TITLE insert title here...
 CRYST1        a        b        c      A      B      C P 1           1
 ATOM      1   n1   1     1          x1      y1      z1  0.00  0.00             0
 ATOM      2   n2   1     1          x2      y2      z2  0.00  0.00             0
 ...
-\end{verbatim}
+\end{code}
 }
 \normalsize
 where a, b and c are the cell vector lengths, A, B and C are the angles between
@@ -1109,12 +1193,12 @@ fixed-formatted, so the number of spaces matters. For more information see
 
 Using this, the initialize section is reduced to:
 
-\begin{verbatim}
+\begin{code}
 <initialize nbeads='4'>
    <file mode='pdb' units='angstrom'> our_ref.pdb </file>
    <velocities mode='thermal'> 50 </velocities>
 </initialize>
-\end{verbatim}
+\end{code}
 
 Note that an appropriately formatted pdb file is included with the
 {}``tutorial 1'' directory as before.
@@ -1131,11 +1215,11 @@ manually.
 Firstly, the amount of data sent to standard output can be adjusted
 with the {}``verbosity'' attribute of {}``simulation'':
 
-\begin{verbatim}
+\begin{code}
 <simulation verbosity='high'>
    ...
 </simulation>
-\end{verbatim}
+\end{code}
 
 By default the verbosity is set to {}``low'', which only outputs
 important warning messages and information, and some statistical 
@@ -1143,11 +1227,11 @@ information every 1000 time steps. Here we will set it to
 {}``high'', which should give output of the type:
 
 \small
-\begin{verbatim}
+\begin{code}
  # Average timings at MD step S. t/step: TOTAL [p: P q: Q t: T]
  # MD diagnostics: V: POTENTIAL Kcv: KINETIC Ecns: CONSERVED
  @SOCKET: Assigning [ X ] request id ID to client with last-id LID ( CID/ CTOT : )
-\end{verbatim}
+\end{code}
 \normalsize
 where the output values have been replaced with the following:
 \begin{description}
@@ -1180,7 +1264,7 @@ and {}``checkpoint'' tags respectively.
 As an example, the default output would be generated with
 the following {}``output'' section:
 
-\begin{verbatim}
+\begin{code}
 <output prefix='i-pi'>
    <properties filename='md' stride='10'>
       [time, step, conserved, temperature, potential, kinetic_cv]
@@ -1190,7 +1274,7 @@ the following {}``output'' section:
    </trajectory>
    <checkpoint filename='checkpoint' stride='1000' overwrite='True'/>
 </output>
-\end{verbatim}
+\end{code}
 
 As seen in tutorial 0, this creates 6 files: {}``i-pi.md'', {}``i-pi.pos\_0.xyz'',
 {}``i-pi.pos\_1.xyz'', {}``i-pi.pos\_2.xyz'', {}``i-pi.pos\_3.xyz''
@@ -1213,11 +1297,11 @@ output data. Firstly, the {}``prefix'' attribute should be set to
 something which can be used to distinguish the files from different
 simulation runs. In this case we can simply set it to {}``tut1'':
 
-\begin{verbatim}
+\begin{code}
 <output prefix='tut1'>
    ...
 </output>
-\end{verbatim}
+\end{code}
 
 As for the input parameters, the units the output is given in can be
 set by the user. Unlike the input parameters however, 
@@ -1225,7 +1309,7 @@ this is done by specifying an
 appropriate unit in curly braces after the name of the 
 property or trajectory of interest, as shown below:
 
-\begin{verbatim}
+\begin{code}
 <output prefix='tut1'>
    <properties filename='md' stride='10'>
       [step, time{picosecond}, conserved{kelvin}, 
@@ -1236,7 +1320,7 @@ property or trajectory of interest, as shown below:
    </trajectory>
    <checkpoint filename='checkpoint' stride='1000' overwrite='True'/>
 </output>
-\end{verbatim}
+\end{code}
 
 Next, let us adjust some of the attributes. Let us suppose that we
 wish to output the properties every time step, to check for conserved
@@ -1245,7 +1329,7 @@ To do this we would set the {}``stride'' and {}``format'' tags,
 as shown below:
 
 \small
-\begin{verbatim}
+\begin{code}
 <output prefix='tut1'>
    <properties filename='md' stride='1'>
       [step, time{picosecond}, conserved{kelvin}, 
@@ -1256,7 +1340,7 @@ as shown below:
    </trajectory>
    <checkpoint filename='checkpoint' stride='1000' overwrite='True'/>
 </output>
-\end{verbatim}
+\end{code}
 \normalsize
 
 Note that we have added a {}``cell\_units'' attribute
@@ -1282,28 +1366,28 @@ property, which takes two arguments, {}``atom'' and {}``bead'',
 giving the index of the atom and bead tagged respectively. The
 appropriate syntax is then given below:
 
-\begin{verbatim}
+\begin{code}
 <properties> 
    [atom_f(atom=0;bead=0)] 
 </properties>
-\end{verbatim}
+\end{code}
 
 This will print out the force vector acting on bead 0 of atom 0.
 \ipi also accepts positional arguments
 (i.e. arguments not specified by a name, but just by their position
 in the list of arguments), and so this could also be written as:
 
-\begin{verbatim}
+\begin{code}
 <properties> 
    [atom_f(0;0)] 
 </properties>
-\end{verbatim}
+\end{code}
 
 Finally, putting all this together, and adjusting some
 of the parameters of the new file, we get:
 
 \small
-\begin{verbatim}
+\begin{code}
 <output prefix='tut1'>
    <properties filename='md' stride='1'> 
       [step, time{picosecond}, conserved{kelvin}, 
@@ -1317,7 +1401,7 @@ of the parameters of the new file, we get:
    </trajectory>
    <checkpoint filename='checkpoint' stride='1000' overwrite='True'/>
 </output>
-\end{verbatim}
+\end{code}
 \normalsize
 
 \subsubsection{Equilibration run}
@@ -1358,7 +1442,7 @@ we can check that the ensemble is being sampled correctly.
 Putting this together this gives:
 
 \small
-\begin{verbatim}
+\begin{code}
 <output prefix=''>
    <properties shape='(8)' filename='tut2a.prop'>
       [ step, time{picosecond}, conserved{kelvin}, 
@@ -1373,7 +1457,7 @@ Putting this together this gives:
    </trajectory>
    <checkpoint stride='1000' filename='tut2a.restart'/>
 </output>
-\end{verbatim}
+\end{code}
 \normalsize
 
 Finally, we must change the {}``ensemble'' tag so that the correct
@@ -1381,19 +1465,19 @@ ensemble is sampled. The first thing that must be done is
 the {}``mode'' tag must be changed from {}``nvt'' to {}``npt'',
 and a {}``pressure'' tag must be added:
 
-\begin{verbatim}
+\begin{code}
 <ensemble mode='npt'>
    <pressure> 0 <pressure>
    ...
 </ensemble>
-\end{verbatim}
+\end{code}
 
 We must also specify which constant pressure algorithms are to be used.
 \ipi contains two barostats, labelled {}``mht'' and {}``bzp''. These are
 broadly similar, but use slightly different integration algorithms.
 In this case, we will use {}``bzp''. This gives:
 
-\begin{verbatim}
+\begin{code}
 <ensemble mode='npt'>
    <pressure> 0 <pressure>
    <barostat mode='bzp'>
@@ -1401,7 +1485,7 @@ In this case, we will use {}``bzp''. This gives:
    </barostat>
    ...
 </ensemble>
-\end{verbatim}
+\end{code}
 
 This barostat also requires a 
 thermostat to deal with the volume degree of freedom, which we will take
@@ -1410,7 +1494,7 @@ This thermostat is specified in the same way as the one which does the
 constant temperature algorithms for the atomic degrees of freedom, and
 we will take its time constant to be 10000 atomic time units:
 
-\begin{verbatim}
+\begin{code}
 <ensemble mode='npt'>
    <pressure> 0 <pressure>
    <barostat mode='bzp'>
@@ -1421,12 +1505,12 @@ we will take its time constant to be 10000 atomic time units:
    </barostat>
    ...
 </ensemble>
-\end{verbatim}
+\end{code}
 
 Finally, we will take the barostat time scale to be 10000 atomic time
 units, giving:
 
-\begin{verbatim}
+\begin{code}
 <ensemble mode='npt'>
    <pressure> 0 <pressure>
    <barostat mode='bzp'>
@@ -1437,7 +1521,7 @@ units, giving:
    </barostat>
    ...
 </ensemble>
-\end{verbatim}
+\end{code}
 with the rest of the {}``ensemble'' tag being the same as before.
 
 \subsubsection{Initialization from RESTART}
@@ -1452,11 +1536,11 @@ it will do a \emph{NPT} simulation instead of \emph{NVT}. This involves modifyin
 the {}``total\_steps'', {}``output'' and {}``ensemble'' tags as
 above. Next, we replace the {}``initialize'' tag section with:
 
-\begin{verbatim}
+\begin{code}
 <initialize nbeads='4'>
    <file mode='chk'> tutorial-1_RESTART </file>
 </initialize>
-\end{verbatim}
+\end{code}
 
 Note that the {}``mode'' attribute has been set to {}``chk''
 to specify that the file is a checkpoint file.
@@ -1549,26 +1633,28 @@ be used for the same thing, such as the thermostat classes.
 
 A xml tag has the following syntax:
 
-\begin{verbatim}
+\begin{code}
 <tag_name attribute_name='attribute_data'>tag_data</tag_name>
-\end{verbatim}
+\end{code}
 
 The syntax for the different types of tag data is given below: 
+{\color{red}??? USE MONO FONTS IN THE TABLE, TO MATCH THE CODE ENVIRONMENT}
 
+\begin{center}
 \begin{tabular}{cc}
+\hline\hline
+Data type & Syntax\\
 \hline 
-Data type & Syntax\tabularnewline
-\hline 
-\hline 
-Boolean & <tag>True</tag> or <tag>False</tag>\tabularnewline
-Float & <tag>11.111</tag> or <tag>1.1111e+1</tag>\tabularnewline
-Integer & <tag>12345</tag>\tabularnewline
-String & <tag>string\_data</tag>\tabularnewline
-Tuple & <tag> (int1, int2, \ldots )</tag>\tabularnewline
-Array & <tag> {[} entry1, entry2, \ldots {]} </tag>\tabularnewline
-Dictionary & <tag>\{name1: data1, name2: data2, \ldots \}</tag>\tabularnewline
-\hline 
+Boolean & <tag>True</tag> or <tag>False</tag>\\
+Float & <tag>11.111</tag> or <tag>1.1111e+1</tag>\\
+Integer & <tag>12345</tag>\\
+String & <tag>string\_data</tag>\\
+Tuple & <tag> (int1, int2, \ldots )</tag>\\
+Array & <tag> {[} entry1, entry2, \ldots {]} </tag>\\
+Dictionary & <tag>\{name1: data1, name2: data2, \ldots \}</tag>\\
+\hline\hline
 \end{tabular}
+\end{center}
 
 Note that arrays are always given as one-dimensional lists. In cases
 where a multi-dimensional array must be entered, one can use the `shape'
@@ -1578,10 +1664,11 @@ represented in the code as an array of shape
 (number of beads, 3*number of atoms). If we take a system with 20 atoms
 and 8 beads, then this can be represented in the xml input file as:
 
-\begin{verbatim}
+\begin{code}
 <beads natoms='20' nbeads='8'>
    <q shape=`(8,60)'>[ q11x, q11y, q11z, q12x, q12y, ... ]</tag>
-\end{verbatim}
+   ...
+\end{code}
 
 If `shape' is not specified, a 1D array will be assumed.
 
@@ -1607,7 +1694,7 @@ As a specific example, suppose we want to generate a \emph{NPT} ensemble at an e
 pressure of 1e-7 atomic pressure units. This would be specified by
 the following input file: 
 
-\begin{verbatim}
+\begin{code}
 <simulation>
    <ensemble mode='npt'>
       <pressure> 1e-7 </pressure>
@@ -1615,7 +1702,7 @@ the following input file:
    </ensemble>
    ...
 </simulation>
-\end{verbatim}
+\end{code}
 
 To help detect any user error the recognized tag names, data types
 and acceptable options are all specified in the code in a specialized
@@ -1634,7 +1721,7 @@ take the above example, but instead take an external pressure of 3
 MPa. Instead of converting this to the atomic unit of pressure, it
 is possible to use pascals directly using:
 
-\begin{verbatim}
+\begin{code}
 <simulation>
    <ensemble mode=`npt'>
       <pressure units=`pascal'> 3e6 </pressure>
@@ -1642,12 +1729,12 @@ is possible to use pascals directly using:
    </ensemble>
    ...
 </simulation>
-\end{verbatim}
+\end{code}
 
 The code can also understand S.I. prefixes, so this can be simplified
 further using:
 
-\begin{verbatim}
+\begin{code}
 <simulation>
    <ensemble mode='npt'>
       <pressure units=`megapascal'> 3 </pressure>
@@ -1655,7 +1742,7 @@ further using:
    </ensemble>
    ...
 </simulation>
-\end{verbatim}
+\end{code}
 
 A full list of which units are defined for which dimensionalities
 can be found in the units.py module.
@@ -1752,9 +1839,9 @@ format with 8 digits after the decimal point.
 The properties that are output are determined by the {}``properties''
 tag in the xml input file. The format of this tag is:
 
-\begin{verbatim}<properties stride=`' filename=`' flush=`' shape=`'>
+\begin{code}<properties stride=`' filename=`' flush=`' shape=`'>
    [ prop1name{units}(arg1; ... ), prop2name{...}(...), ...  ]
-</properties>\end{verbatim}
+</properties>\end{code}
 
 The attributes have the following meanings:
 \begin{description}
@@ -1797,9 +1884,9 @@ input files, given in~\ref{configfile}.
 
 These tags have the format:
 
-\begin{verbatim}<trajectory stride=`' filename=`' format=`' cell_units=`' flush=`' bead=`'>
+\begin{code}<trajectory stride=`' filename=`' format=`' cell_units=`' flush=`' bead=`'>
    traj_name{units}(arg1;...)
-</trajectory>\end{verbatim}This is very similar to the {}``properties'' tag, but it has the
+</trajectory>\end{code}This is very similar to the {}``properties'' tag, but it has the
 additional tags {}``format'' and {}``cell\_units'', and only one
 trajectory can be specified per file. `format' specifies the format
 of the output file, and `cell\_units' specifies the units in which
@@ -1826,9 +1913,9 @@ the state of the system to the point at which the file was created.
 
 The syntax for this tag is:
 
-\begin{verbatim}<checkpoint stride=`' filename=`' overwrite=`'>
+\begin{code}<checkpoint stride=`' filename=`' overwrite=`'>
    step
-</checkpoint>\end{verbatim}
+</checkpoint>\end{code}
 
 Again, this is similar to the {}``trajectory'' and {}``properties''
 tags, but instead of having a value which specifies what to output,
@@ -1843,7 +1930,7 @@ between different files.
 If the `step' parameter is not specified, the following syntax can
 also be used:
 
-\begin{verbatim}<checkpoint stride=`' filename=`' overwrite=`'/>\end{verbatim}
+\begin{code}<checkpoint stride=`' filename=`' overwrite=`'/>\end{code}
 
 
 \subsubsection{Soft exit and RESTART}
@@ -1960,8 +2047,9 @@ code. Recognized options are:
 \begin{description}
 \item [{{}``NEEDINIT'':}] If the client code needs any initialising data,
 it can be sent here. The server code will then send a header string
-{}``INIT'', followed by an integer giving the number of bits in
-the initialization string, then the initialization string itself.
+{}``INIT'', followed by an integer corresponding to the bead index,
+another integer giving the number of bits in
+the initialization string, and finally the initialization string itself.
 \item [{{}``READY'':}] Sent if the client code is ready to calculate
 the forces. The server socket will then send a string {}``POSDATA'',
 then nine floats the cell vector matrix, then another nine floats
@@ -2038,9 +2126,9 @@ two computers, then you can use this to forward one of the ports on
 client.net to connect to the necessary port on server.net. This can
 be done with the following shell command:
 
-\begin{verbatim}
+\begin{code}
 > ssh -f -N server.net -L 23451:server.net:12345
-\end{verbatim}
+\end{code}
 
 The flags -f and -N just put the ssh process in the background. Then
 comes the ssh server, which in this case is the computer on which
@@ -2060,9 +2148,9 @@ server has also been set up with a firewall around the standard ssh
 port, port 22. In this case you can change which port is used to one
 that is open using the -p flag, for example:
 
-\begin{verbatim}
+\begin{code}
 > ssh -f -N server.net -L 23451:server.net:12345 -p 99
-\end{verbatim}
+\end{code}
 
 
 \subsubsection{Using a script to create a ssh connection}
@@ -2075,9 +2163,9 @@ no password is needed.
 Firstly, on client.net, we need to set up an ssh key. This can be
 done using the command:
 
-\begin{verbatim}
+\begin{code}
 > ssh-keygen -t rsa
-\end{verbatim}
+\end{code}
 
 It will then prompt you for a passphrase twice. Since we wish to have
 use this in a job script where we will not be able to enter a password,
@@ -2089,9 +2177,9 @@ This should now have created two files in the directory \textasciitilde{}/.ssh,
 id\_rsa and id\_rsa.pub. These should be readable only by you, so
 use the following code to set up the correct file permissions:
 
-\begin{verbatim}
+\begin{code}
 > chmod 600 ~/.ssh/id_rsa ~/.ssh/id_rsa.pub
-\end{verbatim}
+\end{code}
 
 Finally, copy the contents of the file id\_rsa.pub and append them
 to the file authorized\_keys in the directory \textasciitilde{}/.ssh
@@ -2334,7 +2422,7 @@ down cleanly. In this case, simply wait for it to disconnect, and
 try again. Finally, you will get this error if you try to use a restricted
 port number (i.e. below 1024) while not root. You should always use
 a non-restricted port number for \ipi simulations.
-\item \emph{Error opening unix socket. Check if a file /tmp/wrappi\_\_\_ exists, and remove it if unused.}:
+\item \emph{Error opening unix socket. Check if a file /tmp/ipi\_\_\_ exists, and remove it if unused.}:
 Similar to the above error, but given if you are using a unix socket
 rather than an internet socket. Since this binds locally the socket
 can be removed by the user, which means that it is not necessary to

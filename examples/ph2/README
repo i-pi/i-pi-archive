@@ -18,7 +18,7 @@ $ make
 
 $ python path/i-pi input.xml
  
-   the wrapper will start and sit waiting on the UDS /tmp/wrappi
+   the wrapper will start and sit waiting on the UDS /tmp/ipi
  
  * Open a separate terminal and run the SG driver code 
  

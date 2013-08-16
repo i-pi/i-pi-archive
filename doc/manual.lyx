@@ -8685,7 +8685,7 @@ status open
 
 \backslash
 emph{Error opening unix socket.
- Check if a file /tmp/wrappi
+ Check if a file /tmp/ipi
 \backslash
 _
 \backslash
@@ -9220,7 +9220,7 @@ ipi
 
 \end_inset
 
- and to download the source code go to [appropriate wrappi website].
+ and to download the source code go to [appropriate ipi website].
 \end_layout
 
 \begin_layout Standard
@@ -12991,7 +12991,7 @@ Restart file
 \end_layout
 
 \begin_layout Standard
-As well as checkpoint files during a simulation run, wrappi also creates
+As well as checkpoint files during a simulation run, ipi also creates
  a file to restart from automatically at the end of the simulation, with
  file name 
 \begin_inset Quotes eld

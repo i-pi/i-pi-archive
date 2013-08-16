@@ -29,4 +29,4 @@ manual.pdf: aux
 	mv manual.pdf help_files	
 	
 clean: 
-	bash -c "rm -rf help_files input_docs"
+	bash -c "rm -rf help_files input_docs manual.{aux,bbl,blg,idx,log,lof,out,toc}"

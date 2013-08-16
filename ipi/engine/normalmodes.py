@@ -291,7 +291,7 @@ class NormalModes(dobject):
             raise ValueError("PA-CMD mode requires the target frequency of all the internal modes.")
          for b in range(1, self.nbeads):
             sk = self.omegak[b]/self.nm_freqs[0]
-            info("NM FACTOR " + str(b) + str(sk) + str(self.omegak[b]) + str(self.nm_freqs[0]), verbosity.medium)
+            info(" ".join(["NM FACTOR", str(b), str(sk), str(self.omegak[b]), str(self.nm_freqs[0])]), verbosity.medium)
             dmf[b] = sk**2
       elif self.mode == "wmax-cmd":
          if len(self.nm_freqs) > 2:

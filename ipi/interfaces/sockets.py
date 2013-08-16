@@ -9,7 +9,7 @@ the Free Software Foundation, either version 3 of the License, or
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
@@ -242,7 +242,7 @@ class DriverSocket(socket.socket):
       else:
          return np.fromstring(self._buf[0:blen], dest.dtype).reshape(dest.shape)
 
-   def initialize(self, pars):
+   def initialize(self, rid, pars):
       """Sends the initialisation string to the driver.
 
       Args:
@@ -255,6 +255,7 @@ class DriverSocket(socket.socket):
       if self.status & Status.NeedsInit:
          try:
             self.sendall(Message("init"))
+            self.sendall(np.int32(rid))
             self.sendall(np.int32(len(pars)))
             self.sendall(pars)
          except:
@@ -407,10 +408,10 @@ class InterfaceSocket(object):
       if self.mode == "unix":
          self.server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
          try:
-            self.server.bind("/tmp/wrappi_" + self.address)
+            self.server.bind("/tmp/ipi_" + self.address)
             info("Created unix socket with address " + self.address, verbosity.medium)
          except:
-            raise ValueError("Error opening unix socket. Check if a file " + ("/tmp/wrappi_" + self.address) + " exists, and remove it if unused.")
+            raise ValueError("Error opening unix socket. Check if a file " + ("/tmp/ipi_" + self.address) + " exists, and remove it if unused.")
 
       elif self.mode == "inet":
          self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -432,7 +433,7 @@ class InterfaceSocket(object):
       self.server.shutdown(socket.SHUT_RDWR)
       self.server.close()
       if self.mode == "unix":
-         os.unlink("/tmp/wrappi_" + self.address)
+         os.unlink("/tmp/ipi_" + self.address)
 
    def queue(self, atoms, cell, pars=None, reqid=0):
       """Adds a request.
@@ -631,7 +632,7 @@ class InterfaceSocket(object):
                while fc.status & Status.Busy:
                   fc.poll()
                if fc.status & Status.NeedsInit:
-                  fc.initialize(r["pars"])
+                  fc.initialize(r["id"], r["pars"])
                   fc.poll()
                   while fc.status & Status.Busy: # waits for initialization to finish. hopefully this is fast
                      fc.poll()
