@@ -1,6 +1,8 @@
 %% LyX 2.0.0 created this file.  For more info, see http://www.lyx.org/.
 %% Do not edit unless you really know what you are doing.
-\documentclass[12pt,english,fleqn]{report}
+\documentclass[11pt,english,fleqn]{report}
+\usepackage{fourier}
+\usepackage{helvet}
 \usepackage[T1]{fontenc}
 \usepackage[latin9]{inputenc}
 \setcounter{secnumdepth}{3}
@@ -11,10 +13,82 @@
 \usepackage{url}
 \usepackage{amsmath}
 \usepackage{amssymb}
-\usepackage[unicode=true,pdfusetitle,
- bookmarks=true,bookmarksnumbered=false,bookmarksopen=false,
- breaklinks=false,pdfborder={0 0 1},backref=section,colorlinks=false]
- {hyperref}
+%\usepackage[unicode=true,pdfusetitle,
+% bookmarks=true,bookmarksnumbered=false,bookmarksopen=false,
+% breaklinks=true,pdfborder={0 0 1},backref=section,colorlinks=true]
+% {hyperref}
+
+% MC STYLE
+\usepackage[a4paper]{geometry}
+\geometry{verbose,tmargin=3cm,bmargin=3cm,lmargin=3.5cm,rmargin=3.0cm}
+\usepackage{ifthen}
+\usepackage[pagestyles]{titlesec}
+\usepackage[unicode,colorlinks,breaklinks]{hyperref}
+\usepackage{float}
+\usepackage{caption}
+\usepackage[sort&compress,numbers]{natbib}
+\usepackage{microtype}
+\setlength{\emergencystretch}{2em}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% page layout
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\widowpenalty=200
+\clubpenalty=200
+\setlength{\parskip}{0.0ex plus 0.5ex minus 0.0ex}
+% headings
+\renewpagestyle{headings}[\small]{
+\headrule \sethead{ %
+{\ifthenelse{\number\value{chapter}>0}{Chapter \thechapter}{\bf \chaptertitle}} %
+}{ %
+{   \ifthenelse{\number\value{chapter}>0}{\bf \chaptertitle}{}} %
+} %
+{ \usepage}
+}
+\pagestyle{headings}
+
+%empty page to pad chapters
+\makeatletter
+\def\cleardoublepage{\clearpage\if@twoside \ifodd\c@page\else
+\hbox{}
+\vspace*{\fill}
+\begin{center}
+\ 
+\end{center}
+\vspace{\fill}
+\thispagestyle{empty}
+\newpage
+\if@twocolumn\hbox{}\newpage\fi\fi\fi}
+\makeatother
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% spacings (use a lot of rubber lenghts)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\setlength{\floatsep}{2ex plus 5ex minus 1ex }
+\setlength{\textfloatsep}{3ex plus 3ex minus 1ex }
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% floats setup
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% positioning
+\renewcommand{\topfraction}{0.85}
+\renewcommand{\bottomfraction}{0.85}
+\renewcommand{\textfraction}{0.15}
+\renewcommand{\floatpagefraction}{0.65}
+\setcounter{topnumber}{2}
+\setcounter{bottomnumber}{2}
+%default placement
+\floatplacement{figure}{btp}
+% caption
+\captionsetup{margin=10pt,font=small,labelfont=bf}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% chapter headings
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\titleformat{\chapter}[display]{\normalfont\huge\bfseries}%
+{\vspace{1.5em}\raggedleft\large\chaptertitlename ~\thechapter\hrule\vspace{-0.5ex}}
+{-0.25ex}{\begin{minipage}{0.75\textwidth}\raggedright}[\end{minipage}]
+
 
 \makeatletter
 
