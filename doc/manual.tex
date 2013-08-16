@@ -43,7 +43,7 @@
 \newcommand{\logn}{\mathrm{ln}} 
 \newcommand{\expon}{\mathrm{exp}} 
 \newcommand{\Imag}{\mathrm{Im}}
-\newcommand{\ipi}{{\sc i-PI}\xspace}
+\newcommand{\ipi}{{i-PI}\xspace}
 \newcommand{\DFT}{Quantum Espresso, CP2K, CPMD and FHI-AIMS }
 \newcommand{\empirical}{LAMMPS}
 
@@ -66,7 +66,7 @@ A Python wrapper for Path Integral Molecular Dynamics
 
 \pagenumbering{roman}
 
-\tableofcontents{}\listoffigures
+\tableofcontents{}
 
 
 \newpage{}\pagenumbering{arabic}
@@ -138,7 +138,7 @@ phase systems is path integral molecular dynamics (PIMD).
 
 PIMD generates the quantum-mechanical ensemble of a system of interacting
 particles by using MD in an extended phase space. This is derived
-from the path integral formalism of \cite{feyn-hibb65book}, which
+from the path integral formalism \cite{feyn-hibb65book}, which
 relates the statistics of a collection of quantum particles to those
 of a set of classical ring polymers, a ring polymer being a number
 of replicas of a particle coupled by harmonic springs. This so-called
@@ -149,22 +149,24 @@ a finite number.
 This then allows quantum phase space averages to be calculated from
 classical trajectories, with only about an order of magnitude more
 computing time than would be required for standard MD. Also, since
-PIMD is simply classical MD in an extended phase space many of the
+PIMD is simply classical MD in an extended phase space, many of the
 techniques developed to improve the scope and efficiency of MD simulations
 can be applied straightforwardly to the equivalent PIMD calculations
 \cite{ceri+10jcp,mart+99jcp}. Finally, several techniques designed
 specifically for PIMD simulations are now available to increase the
 rate of convergence with respect to the number of replicas used \cite{mark-mano08jcp,ceri+11jcp},
-so further reducing the computational overhead of the method. All
+further reducing the computational overhead of the method. All
 of these facts mean that it is now feasible to do PIMD simulations
 with thousands of molecules, or even using \emph{ab initio} electronic
 structure calculations to propagate the dynamics for small systems.
 
 Furthermore, the framework used to run PIMD simulations can be adapted
 to generate approximate quantum dynamical information \cite{crai-mano04jcp,hone+06jcp},
+{\color{red} ??? Have the two key CMD (Jang/Voth, Cao/Voth) and two key RPMD (Craig-Mano+Braams-Mano)
+IN CHRONOLOGICAL ORDER}
 and so can also be used to calculate correlation functions. While
-the dynamics is classical, and so real-time quantum coherences cannot
-be captured, the correct capture of quantum statistical information
+real-time quantum coherences cannot be captured, the inclusion 
+of quantum statistical information
 and the rapid decoherence observed in condensed phase systems mean
 that in many cases very accurate results can be obtained from such
 approximate treatments of quantum dynamics \cite{habe+13arpc}.
@@ -207,18 +209,18 @@ between the server and client. Even though other choices are possible,
 and it should be relatively simple to implement other means of communication,
 the preferred approach relies on sockets as the underlying infrastructure.
 Both Internet and Unix domain sockets can be used: the latter allow
-for fast communication on a single node, whereas the former makes
-it possible to realize a distributed computing paradigm, with clients
+for fast communication on a single node, whereas the former make
+it possible to realise a distributed computing paradigm, with clients
 running on different nodes or even on different HPC facilities. In
 order to facilitate implementation of the sockets communication in
 client codes, a simple set of C wrappers to the standard libraries
 socket implementation is provided as part of the \ipi distribution,
 that can be used in any programming language that can be linked with
-C code
+C code.
 
 As far as the communication protocol is concerned, the guiding principle
-has been keeping it to the least common denominator, and avoiding
-any feature that may be code-specific. Only minimal amount of information
+has been keeping it to the lowest common denominator, and avoiding
+any feature that may be code-specific. Only a minimal amount of information
 is transferred between the client and the server; the position of
 the atoms and cell parameters in one direction, and the forces, virial
 and potential in the other.
