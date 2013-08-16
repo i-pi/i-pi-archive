@@ -97,7 +97,7 @@ DONE ** Add read cell from (A, B, C) and (alpha, beta, gamma) (JM) (JM)
 DONE * In the manual, the attributes of the trajectory, properties and
 checkpoint tags in the code snippets of 4.5 and 4.6 are now out-of-date. (JM) (JM)
 
-** Write the paper (JM) 
+DONE ** Write the paper (JM) (MC)
 ** Finish writing the manual (JM) (JM)
 
 DONE ** Implement warning() and info() everywhere (For example, it is missing

@@ -17,15 +17,20 @@
 
 \makeatletter
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% LyX specific LaTeX commands.
-%% Because html converters don't know tabularnewline
-\providecommand{\tabularnewline}{\\}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% User specified LaTeX commands.
 \@ifundefined{definecolor} {\usepackage{color}}{}
 \usepackage{multicol}\makeindex
 \usepackage{xspace}
 \usepackage[numbers]{natbib}
+
+\newenvironment{code}{%
+\footnotesize 
+\verbatim
+}{
+\endverbatim
+\normalsize
+}
 
 \makeatother
 
@@ -234,15 +239,15 @@ wishes so. For details on how to do this, see \ref{inputunits} and
 \begin{center}
 \begin{tabular}{lll}
 \hline 
-Unit & Name & S.I. Value\tabularnewline
+Unit & Name & S.I. Value\\
 \hline 
 \hline 
-Length & Bohr radius & 5.2917721e-11 m\tabularnewline
-Time & N.A. & 2.4188843e-17 s\tabularnewline
-Mass & Electron mass & 9.1093819e-31 kg\tabularnewline
-Temperature & Hartree & 315774.66 K\tabularnewline
-Energy & Hartree & 4.3597438e-18 J\tabularnewline
-Pressure & N.A. & 2.9421912e13 Pa\tabularnewline
+Length & Bohr radius & 5.2917721e-11 m\\
+Time & N.A. & 2.4188843e-17 s\\
+Mass & Electron mass & 9.1093819e-31 kg\\
+Temperature & Hartree & 315774.66 K\\
+Energy & Hartree & 4.3597438e-18 J\\
+Pressure & N.A. & 2.9421912e13 Pa\\
 \hline 
 \end{tabular}
 \par\end{center}
@@ -352,16 +357,16 @@ Patching for use with \ipi{} should not introduce further dependencies.
 A tar file can be downloaded from the website \url{gle4md.berlios.de}.
 To install this you need to input the following command:
 
-\begin{verbatim}
+\begin{code}
 > tar xf [wrapper_tar_file.tar]
-\end{verbatim}
+\end{code}
 
 You can also obtain a local clone of the git repository on \url{bitbucket.org}
 using:
 
-\begin{verbatim}
+\begin{code}
 > git clone [github repository name]
-\end{verbatim}
+\end{code}
 
 
 \subsection{Installing NumPy}
@@ -376,42 +381,42 @@ as a tar file from \url{http://www.numpy.org}. If the version of
 NumPy being installed is given by {}``np\_vers'', this can be extracted
 using:
 
-\begin{verbatim}
+\begin{code}
 > tar czf np_vers.tar.gz
-\end{verbatim}
+\end{code}
 
 Before installing this code it first needs to be configured correctly.
 Note that this requires the distutils package that comes with the
 python-dev package. Assuming that the required software is installed,
 the NumPy package is built using:
 
-\begin{verbatim}
+\begin{code}
 > python setup.py build
-\end{verbatim}
+\end{code}
 
 The next step is to install NumPy. By default the download is to the
 directory /usr/local. If you have root access, and so can write to
 /usr, then all that needs to be done to finish the install is:
 
-\begin{verbatim}
+\begin{code}
 > python setup.py install
-\end{verbatim}
+\end{code}
 
 If you do not have root access, then the next step depends on which
 version of Python is beind used. With versions 2.6 or later there
 is a simple command to automatically download into the directory \$HOME/local:
 
-\begin{verbatim}
+\begin{code}
 > python setup.py install --user
-\end{verbatim}
+\end{code}
 
 With Python 2.4/2.5 the process is a little more involved. First you
 must explicitly install the package in the directory of choice, {}``np\_dir''
 say, with the following command:
 
-\begin{verbatim}
+\begin{code}
 > python setup.py install --prefix=np_dir
-\end{verbatim}
+\end{code}
 
 Next, you must tell python where to find this library, by appending
 to the Linux environment variable \textbf{PYTHONPATH}. If you are
@@ -420,15 +425,16 @@ have been installed in the directory {}``np\_dir/lib/py\_vers/site-packages'',
 or a close analogue of this. In the above case the following command
 will allow the Python interpreter to find the NumPy libraries:
 
-\begin{verbatim}
+\begin{code}
 > export PYTHONPATH=$PYTHONPATH:np_dir/lib/py_vers/site-packages
-\end{verbatim}
+\end{code}
+%$
 
 Now Python scripts can import the NumPy libraries using:
 
-\begin{verbatim}
+\begin{code}
 import numpy
-\end{verbatim}
+\end{code}
 
 
 \subsection{PyFFTW}
@@ -481,9 +487,9 @@ code with \ipi in the directory {}``patches/pwscf''. If you are
 currently in the top level directory of the Quantum-Espresso distribution,
 the patch can be applied to the source code using:
 
-\begin{verbatim}
+\begin{code}
 > patch -p1 < i-pi/patches/pwscf/pw-driver.patch
-\end{verbatim}
+\end{code}
 
 After this, continue the compilation as per the instructions at \url{www.quantum-espress.org/}.
 
@@ -502,9 +508,9 @@ input, and automatically starts a simulation as specified by the data
 held in it. If the input file is called {}``input\_file.xml'', then
 the wrapper is run using:
 
-\begin{verbatim}
+\begin{code}
 > python i-pi input_file.xml
-\end{verbatim}
+\end{code}
 
 This reads in the input data, initializes all the internally used
 objects, and then creates the server socket. The code will then wait
@@ -535,26 +541,26 @@ To use Quantum-Espresso as the client code using a socket on the host
 address {}``host\_address'' and on the port number {}``port''
 we would add the following lines to the input file:
 
-\begin{verbatim}
+\begin{code}
 &CONTROL
    ...
    calculation=`driver'
    srvaddress=`host_address:port'
    ...
 /
-\end{verbatim}
+\end{code}
 
 If we wanted to run on a UNIX port instead of an INET port, we would
 instead write:
 
-\begin{verbatim}
+\begin{code}
 &CONTROL
    ...
    calculation=`driver'
    srvaddress=`UNIX:host_address:port'
    ...
 /
-\end{verbatim}
+\end{code}
 
 The rest of the input file should be the same as for a standard Quantum
 Espresso calculation, as explained at \url{www.quantum-espress.org/}.
@@ -574,7 +580,7 @@ be preferable to run both halves of the simulation on the same computer,
 especially as this allows us to use the faster unix domain sockets.
 This can be done using a single script, such as:
 
-\begin{verbatim}
+\begin{code}
 #These are the parameters that need to be specified by
 #the user. The number of client codes is given by $nclients,
 #the i-pi source directory containing the i-pi script
@@ -604,7 +610,7 @@ sleep 20 #must wait for server to be initialized
 for a in `seq 1 $nclients`; do
    bash -c "$client_comm"
 done 
-\end{verbatim}
+\end{code}
 
 However, for most simulations, especially those running with expensive
 \emph{ab initio} forces and potentials, we will want to run the client
@@ -623,7 +629,7 @@ you are running the code on for more details.
 
 One possible script layout to run the client codes would be:
 
-\begin{verbatim}
+\begin{code}
 #!/bin/bash
 #$ -S /bin/bash
 #$ -N jobname
@@ -649,7 +655,7 @@ client_comm="..."
 #Modify client input file if necessary
 
 bash -c "client_comm"
-\end{verbatim}
+\end{code}
 
 Note that it may be necessary to export libraries or modules if they
 are not present by default, or to use an ssh tunnel if the cluster
@@ -664,7 +670,7 @@ The above shell scripts can be easily modified to do this, for example
 if we assume the simulations will be run in directories called sim\_1,
 sim\_2, \ldots, then we can write:
 
-\begin{verbatim}
+\begin{code}
 first_port=... #The value of the port of sim_1
 i=0
 for a in sim_*; do #finds all directories in which we wish to run simulations
@@ -676,7 +682,7 @@ for a in sim_*; do #finds all directories in which we wish to run simulations
 
    cd ..
 done
-\end{verbatim}
+\end{code}
 
 
 \section{A simple tutorial}
@@ -723,9 +729,9 @@ are explored in the {}``tests'' directory, but for the current problem
 we will use the Silvera-Goldman potential with a cut-off radius
 of \textbf{15 bohr radii}. This is run using the following command:
 
-\begin{verbatim}
+\begin{code}
 > ./driver.x -m sg -u -h localhost -o 15
-\end{verbatim}
+\end{code}
 
 The option {}``-m'' is followed by the empirical potential required,
 in this case we use {}``sg'' for Silvera-Goldman, {}``-u'' gives
@@ -755,11 +761,11 @@ we have defined {}``simulation'' as the root tag, so all the input
 data read in must start and end with a {}``simulation'' tag, as
 show below:
 
-\begin{verbatim}
+\begin{code}
 <simulation>
    Input data here...
 </simulation>
-\end{verbatim}
+\end{code}
 
 xml syntax requires a set of hierarchially nested tags, each of which
 contain data and/or more tags. Also, \ipi itself requires certain
@@ -776,7 +782,7 @@ ensemble respectively.
 
 At this point then, the input file looks like:
 
-\begin{verbatim}
+\begin{code}
 <simulation>
    <initialize>
       ...
@@ -788,7 +794,7 @@ At this point then, the input file looks like:
       ...
    </ensemble>
 </simulation>
-\end{verbatim}
+\end{code}
 
 Now let us consider each of these tags in turn. Firstly, {}``initialize''.
 As the name suggests, this initializes the state of the system, so
@@ -798,11 +804,11 @@ of replicas of the system, called {}``nbeads''. An attribute is
 a particular type of xml syntax designed to specify a single bit of
 data, and has the following syntax:
 
-\begin{verbatim}
+\begin{code}
 <initialize nbeads='4'>
    ...
 </initialize>
-\end{verbatim}
+\end{code}
 
 Note that an attribute forms part of the opening tag, and that the
 value being assigned to it is held within quotation marks. In this
@@ -814,13 +820,13 @@ a xyz file with the appropriate data. This is the simplest input format
 for a configuration file that \ipi accepts, and it has the following
 syntax:
 
-\begin{verbatim}
+\begin{code}
 natoms
 # COMMENT LINE: PUT TITLE OF FILE HERE
 atom1   x1  y1  z1
 atom2   x2  y2  z2
 ...
-\end{verbatim}
+\end{code}
 
 Where {}``natoms'' is replaced by an integer giving the total number
 of atoms, in this case 108, atom1 is a label for atom 1, in this case
@@ -842,12 +848,12 @@ implicitly set based on the atom label. We must also tell it which
 file type is being used using the {}``mode'' attribute. Putting
 this together gives:
 
-\begin{verbatim}
+\begin{code}
 <initialize nbeads='4'>
    <file mode='xyz'> our_ref.xyz </file>
    ...
 </initialize>
-\end{verbatim}
+\end{code}
 
 The only remaining mandatory parameters that have not been initialized
 are the cell parameters. These could in theory be set using a separate
@@ -855,23 +861,23 @@ file, but here we will initialize them manually. Taking a cubic cell
 with cell parameter 33.72594 bohr radii, we can specify this using
 the {}``cell'' tag in three different ways:
 
-\begin{verbatim}
+\begin{code}
 <cell mode='manual'> 
    [33.72594, 0, 0, 0, 33.72594, 0, 0, 0, 33.72594] 
 </cell>
-\end{verbatim}
+\end{code}
 
-\begin{verbatim}
+\begin{code}
 <cell mode='abcABC'>
    [33.72594, 33.72594, 33.72594, 90, 90, 90]
 </cell>
-\end{verbatim}
+\end{code}
 
-\begin{verbatim}
+\begin{code}
 <cell mode='abc'>
    [33.72594, 33.72594, 33.72594]
 </cell>
-\end{verbatim}
+\end{code}
 
 Note the use of the different {}``mode'' attributes, {}``manual'',
 {}``abcABC'' and {}``abc''. The first creates the cell vector
@@ -881,27 +887,27 @@ cell and so only takes the length of the three unit vectors as arguments.
 We will take the last version for brevity, giving as our final {}``initialize''
 section:
 
-\begin{verbatim}
+\begin{code}
 <initialize nbeads='4'>
    <file mode='xyz'> our_ref.xyz </file>
    <cell mode='abc'>
       [33.72594, 33.72594, 33.72594]
    </cell>
 </initialize>
-\end{verbatim}
+\end{code}
 
 Next lets consider the {}``forces'' section, which deals with communication
 with the client codes. Since in this case we only have one type of
 client code which will be using sockets for communication, we will
 specify a single {}``sockets'' tag to initialize it:
 
-\begin{verbatim}
+\begin{code}
 <forces>
    <socket>
       ...
    </socket>
 </forces>
-\end{verbatim}
+\end{code}
 
 A socket is specified with three parameters; the port number, the
 hostname and whether it is a unix or an internet socket. Here for
@@ -910,25 +916,25 @@ we will take a unix socket, which uses the hostname localhost and
 does not need a port number to be specified. This gives the final
 {}``forces'' section:
 
-\begin{verbatim}
+\begin{code}
 <forces>
    <socket mode="unix">
       <hostname> localhost </hostname>
    </socket>
 </forces>
-\end{verbatim}
+\end{code}
 
 The last section that we will need is the ensemble, which determines
 how the dynamics integrator will be initialized. Since we wish to
 do a NVT simulation, we set the {}``mode'' attribute to {}``nvt'',
 and must specify the temperature using the appropriate tag:
 
-\begin{verbatim}
+\begin{code}
 <ensemble mode='nvt'>
    <temperature> 25 </temperature>
    ...
 </ensemble>
-\end{verbatim}
+\end{code}
 
 This defines the ensemble that will be sampled. We also must decide
 which integration algorithm to use, and how large the time step should
@@ -938,13 +944,13 @@ would take a few short runs with different time steps to try and optimize
 this, but for the sake of this tutorial we will use a safe value of
 \textbf{40 atomic time units}, giving:
 
-\begin{verbatim}
+\begin{code}
 <ensemble mode='nvt'>
    <temperature> 25 </temperature>
    <timestep> 40 </timestep>
    ...
 </ensemble>
-\end{verbatim}
+\end{code}
 
 Finally, while the free-particle evolution part of the integrator
 is initialized automatically, there are several different options
@@ -959,7 +965,7 @@ appropriate time scales will be fairly short, so we will take a short
 time scale of \textbf{1000 atomic time units}. Putting all of this together,
 we get the final input file:
 
-\begin{verbatim}
+\begin{code}
 <simulation>
    <initialize nbeads='4'>
       <file mode='xyz'> our_ref.xyz </file>
@@ -980,7 +986,7 @@ we get the final input file:
       </thermostat>
    </ensemble>
 </simulation>
-\end{verbatim}
+\end{code}
 
 
 \subsubsection{Running the simulation}
@@ -994,9 +1000,9 @@ run this code can be found in \ref{runningsimulations}, but all that
 is required in this case (if we assume that we are in the {}``tutorial-0''
 directory) is:
 
-\begin{verbatim}
+\begin{code}
 > python ../../../i-pi tutorial-0.xml
-\end{verbatim}
+\end{code}
 
 This will start the \ipi simulation, creating the server socket and
 initializing the simulation data. This should at this point print
@@ -1009,9 +1015,9 @@ At this point the driver code is run in a new terminal
 from the {}``drivers'' directory using the command
 specified above:
 
-\begin{verbatim}
+\begin{code}
 > ./driver.x -m sg -u -h localhost -o 15
-\end{verbatim}
+\end{code}
 
 The wrapper code should now output a message saying that a new client
 code has connected, and start running the simulation.
@@ -1038,9 +1044,9 @@ at step 999. This type of file is designed to be a way of restarting
 the simulation, by using it as an input file for a new \ipi simulation. 
 This is done in exactly the same way as before, i.e.:
 
-\begin{verbatim}
+\begin{code}
 > python ../../../i-pi i-pi.checkpoint
-\end{verbatim}
+\end{code}
 
 The RESTART file is the same type of file, except this is automatically
 generated at the end of the simulation regardless of what is
@@ -1075,13 +1081,13 @@ such as awk and gnuplot can read the data easily. In this case, gnuplot
 can show how the conserved quantity, temperature, potential energy
 and kinetic energy change throughout the simulation using:
 
-\begin{verbatim}
+\begin{code}
 > gnuplot
 > p './i-pi.md' u 1:3 # Plots column 1, i.e. timestep, 
 > p './i-pi.md' u 1:4 # against columns 3, 4, 5 and 6,
 > p './i-pi.md' u 1:5 # i.e. conserved quantity, temperature,
 > p './i-pi.md' u 1:6 # kinetic energy and potential energy
-\end{verbatim}
+\end{code}
 
 This will show that the conserved quantity has only a small drift upwards,
 so the time step is sufficiently small, and that the temperature has converged
@@ -1090,7 +1096,7 @@ We therefore need to adjust the input parameters to converge these properties
 properly, as will be done in the next section.
 
 \subsection{Part 1 - Customizing and extending the input file}
-
+{\color{red} ??? USE EVERYWHERE 'kelvin' for the temperature, or give it in a.u.}
 In Part 0, we created a minimal input file which could be used to
 run a basic NVT simulation. However, this ignored several non-essential
 but very useful bits of functionality, which are likely to be 
@@ -1115,9 +1121,9 @@ By default the number of
 time steps is 1000, so we will increase this to \textbf{5000} using the 
 {}``total\_steps'' tag:
 
-\begin{verbatim}
+\begin{code}
 <total_steps> 5000 </total_steps>
-\end{verbatim} 
+\end{code} 
 
 Another thing we can do to increase the initial convergence of the energy 
 is to initialize the atom velocities. Rather than setting these manually,
@@ -1125,15 +1131,15 @@ the simplest method is to sample these randomly from a Maxwell-Boltzmann
 distribution. This can be done in the {}``initialize'' section using the
 {}``velocities'' tag:
 
-\begin{verbatim}
+\begin{code}
 <initialize nbeads='4'>
    <file mode='xyz'> our_ref.xyz </file>
    <cell mode='abc'>
       [33.72594, 33.72594, 33.72594]
    </cell>
-   <velocities mode='thermal'> 50 </velocities>
+   <velocities mode='thermal' unist='kelvin'> 50 </velocities>
 </initialize>
-\end{verbatim}
+\end{code}
 
 Note that we use \textbf{double the physical temperature} 
 here, since we are starting from essentially a zero-temperature optimized 
@@ -1146,13 +1152,13 @@ random number generator should be initialized with different
 seeds for each. This is simply done using the
 {}``prng'' tag, as follows:
 
-\begin{verbatim}
+\begin{code}
 <prng>
    <seed>
       31415
    </seed>
 </prng>
-\end{verbatim}
+\end{code}
 
 \subsubsection{Simplifying the input file}
 
@@ -1169,18 +1175,18 @@ was 40 atomic time units, but we might instead want to express this in S.I.
 units for comparison with another paper. Since this happens to be approximately
 \textbf{1 femtosecond}, so we can instead use:
 
-\begin{verbatim}
+\begin{code}
 <ensemble mode='nvt'>
    <timestep units='femtosecond'> 1 </timestep>
    ...
 </ensemble>
-\end{verbatim}
+\end{code}
  
 Similarly, we might want to specify the input configuration file in
 angstrom rather than bohr radii (in fact this is the standard unit for
 this file type). This can be done in the same way:
 
-\begin{verbatim}
+\begin{code}
 <initialize nbeads='4'>
    <file mode='xyz' units='angstrom'> our_ref.xyz </file>
    <cell mode='abc' units='angstrom'>
@@ -1188,7 +1194,7 @@ this file type). This can be done in the same way:
    </cell>
    <velocities mode='thermal'> 50 </velocities>
 </initialize>
-\end{verbatim}
+\end{code}
 
 This {}``initialize'' section can also be further simplified by changing the 
 configuration file type to one that can also be used to specify the cell
@@ -1196,13 +1202,13 @@ parameters. Currently, the only file type which can do this that is
 compatible with \ipi is the pdb file type, which has the following structure:
 
 \footnotesize{
-\begin{verbatim}
+\begin{code}
 TITLE insert title here...
 CRYST1        a        b        c      A      B      C P 1           1
 ATOM      1   n1   1     1          x1      y1      z1  0.00  0.00             0
 ATOM      2   n2   1     1          x2      y2      z2  0.00  0.00             0
 ...
-\end{verbatim}
+\end{code}
 }
 \normalsize
 where a, b and c are the cell vector lengths, A, B and C are the angles between
@@ -1213,12 +1219,12 @@ fixed-formatted, so the number of spaces matters. For more information see
 
 Using this, the initialize section is reduced to:
 
-\begin{verbatim}
+\begin{code}
 <initialize nbeads='4'>
    <file mode='pdb' units='angstrom'> our_ref.pdb </file>
    <velocities mode='thermal'> 50 </velocities>
 </initialize>
-\end{verbatim}
+\end{code}
 
 Note that an appropriately formatted pdb file is included with the
 {}``tutorial 1'' directory as before.
@@ -1235,11 +1241,11 @@ manually.
 Firstly, the amount of data sent to standard output can be adjusted
 with the {}``verbosity'' attribute of {}``simulation'':
 
-\begin{verbatim}
+\begin{code}
 <simulation verbosity='high'>
    ...
 </simulation>
-\end{verbatim}
+\end{code}
 
 By default the verbosity is set to {}``low'', which only outputs
 important warning messages and information, and some statistical 
@@ -1247,11 +1253,11 @@ information every 1000 time steps. Here we will set it to
 \textbf{{}``high''}, which should give output of the type:
 
 \small
-\begin{verbatim}
+\begin{code}
  # Average timings at MD step S. t/step: TOTAL [p: P q: Q t: T]
  # MD diagnostics: V: POTENTIAL Kcv: KINETIC Ecns: CONSERVED
  @SOCKET: Assigning [ X ] request id ID to client with last-id LID ( CID/ CTOT : )
-\end{verbatim}
+\end{code}
 \normalsize
 where the output values have been replaced with the following:
 \begin{description}
@@ -1284,7 +1290,7 @@ and {}``checkpoint'' tags respectively.
 As an example, the default output would be generated with
 the following {}``output'' section:
 
-\begin{verbatim}
+\begin{code}
 <output prefix='i-pi'>
    <properties filename='md' stride='10'>
       [time, step, conserved, temperature, potential, kinetic_cv]
@@ -1294,7 +1300,7 @@ the following {}``output'' section:
    </trajectory>
    <checkpoint filename='checkpoint' stride='1000' overwrite='True'/>
 </output>
-\end{verbatim}
+\end{code}
 
 As seen in tutorial 0, this creates 6 files: {}``i-pi.md'', {}``i-pi.pos\_0.xyz'',
 {}``i-pi.pos\_1.xyz'', {}``i-pi.pos\_2.xyz'', {}``i-pi.pos\_3.xyz''
@@ -1317,11 +1323,11 @@ output data. Firstly, the {}``prefix'' attribute should be set to
 something which can be used to distinguish the files from different
 simulation runs. In this case we can simply set it to \textbf{{}``tut1''}:
 
-\begin{verbatim}
+\begin{code}
 <output prefix='tut1'>
    ...
 </output>
-\end{verbatim}
+\end{code}
 
 As for the input parameters, the \textbf{units the output is given in} can be
 set by the user. Unlike the input parameters however, 
@@ -1329,7 +1335,7 @@ this is done by specifying an
 appropriate unit in curly braces after the name of the 
 property or trajectory of interest, as shown below:
 
-\begin{verbatim}
+\begin{code}
 <output prefix='tut1'>
    <properties filename='md' stride='10'>
       [step, time{picosecond}, conserved{kelvin}, 
@@ -1340,7 +1346,7 @@ property or trajectory of interest, as shown below:
    </trajectory>
    <checkpoint filename='checkpoint' stride='1000' overwrite='True'/>
 </output>
-\end{verbatim}
+\end{code}
 
 Next, let us adjust some of the attributes. Let us suppose that we
 wish to output the properties \textbf{every time step}, to check for conserved
@@ -1349,7 +1355,7 @@ To do this we would set the {}``stride'' and {}``format'' tags,
 as shown below:
 
 \small
-\begin{verbatim}
+\begin{code}
 <output prefix='tut1'>
    <properties filename='md' stride='1'>
       [step, time{picosecond}, conserved{kelvin}, 
@@ -1360,7 +1366,7 @@ as shown below:
    </trajectory>
    <checkpoint filename='checkpoint' stride='1000' overwrite='True'/>
 </output>
-\end{verbatim}
+\end{code}
 \normalsize
 
 Note that we have added a {}``cell\_units'' attribute
@@ -1386,28 +1392,28 @@ property, which takes two arguments, {}``atom'' and {}``bead'',
 giving the index of the atom and bead tagged respectively. The
 appropriate syntax is then given below:
 
-\begin{verbatim}
+\begin{code}
 <properties> 
    [atom_f(atom=0;bead=0)] 
 </properties>
-\end{verbatim}
+\end{code}
 
 This will print out the force vector acting on \textbf{bead 0 of atom 0}.
 \ipi also accepts positional arguments
 (i.e. arguments not specified by a name, but just by their position
 in the list of arguments), and so this could also be written as:
 
-\begin{verbatim}
+\begin{code}
 <properties> 
    [atom_f(0;0)] 
 </properties>
-\end{verbatim}
+\end{code}
 
 Finally, putting all this together, and \textbf{adjusting some
 of the parameters of the new file}, we get:
 
 \small
-\begin{verbatim}
+\begin{code}
 <output prefix='tut1'>
    <properties filename='md' stride='1'> 
       [step, time{picosecond}, conserved{kelvin}, 
@@ -1421,7 +1427,7 @@ of the parameters of the new file}, we get:
    </trajectory>
    <checkpoint filename='checkpoint' stride='1000' overwrite='True'/>
 </output>
-\end{verbatim}
+\end{code}
 \normalsize
 
 \subsubsection{Equilibration run}
@@ -1462,7 +1468,7 @@ we can check that the ensemble is being sampled correctly.
 Putting this together this gives:
 
 \small
-\begin{verbatim}
+\begin{code}
 <output prefix=''>
    <properties shape='(8)' filename='tut2a.prop'>
       [ step, time{picosecond}, conserved{kelvin}, 
@@ -1477,7 +1483,7 @@ Putting this together this gives:
    </trajectory>
    <checkpoint stride='1000' filename='tut2a.restart'/>
 </output>
-\end{verbatim}
+\end{code}
 \normalsize
 
 Finally, we must change the {}``ensemble'' tag so that the correct
@@ -1485,19 +1491,19 @@ ensemble is sampled. The first thing that must be done is
 the {}``mode'' tag must be changed from {}``nvt'' to {}``npt'',
 and a {}``pressure'' tag must be added:
 
-\begin{verbatim}
+\begin{code}
 <ensemble mode='npt'>
    <pressure> 0 <pressure>
    ...
 </ensemble>
-\end{verbatim}
+\end{code}
 
 We must also specify which constant pressure algorithms are to be used.
 \ipi contains two barostats, labelled {}``mht'' and {}``bzp''. These are
 broadly similar, but use slightly different integration algorithms.
 In this case, we will use \textbf{{}``bzp''}. This gives:
 
-\begin{verbatim}
+\begin{code}
 <ensemble mode='npt'>
    <pressure> 0 <pressure>
    <barostat mode='bzp'>
@@ -1505,7 +1511,7 @@ In this case, we will use \textbf{{}``bzp''}. This gives:
    </barostat>
    ...
 </ensemble>
-\end{verbatim}
+\end{code}
 
 This barostat also requires a 
 thermostat to deal with the volume degree of freedom, which we will take
@@ -1514,7 +1520,7 @@ This thermostat is specified in the same way as the one which does the
 constant temperature algorithms for the atomic degrees of freedom, and
 we will take its time constant to be \textbf{10000 atomic time units}:
 
-\begin{verbatim}
+\begin{code}
 <ensemble mode='npt'>
    <pressure> 0 <pressure>
    <barostat mode='bzp'>
@@ -1525,12 +1531,12 @@ we will take its time constant to be \textbf{10000 atomic time units}:
    </barostat>
    ...
 </ensemble>
-\end{verbatim}
+\end{code}
 
 Finally, we will take the barostat time scale to be \textbf{10000 atomic time
 units}, giving:
 
-\begin{verbatim}
+\begin{code}
 <ensemble mode='npt'>
    <pressure> 0 <pressure>
    <barostat mode='bzp'>
@@ -1541,7 +1547,7 @@ units}, giving:
    </barostat>
    ...
 </ensemble>
-\end{verbatim}
+\end{code}
 with the rest of the {}``ensemble'' tag being the same as before.
 
 \subsubsection{Initialization from RESTART}
@@ -1556,11 +1562,11 @@ it will do a NPT simulation instead of NVT. This involves modifying
 the {}``total\_steps'', {}``output'' and {}``ensemble'' tags as
 above. Next, we replace the {}``initialize'' tag section with:
 
-\begin{verbatim}
+\begin{code}
 <initialize nbeads='4'>
    <file mode='chk'> tutorial-1_RESTART </file>
 </initialize>
-\end{verbatim}
+\end{code}
 
 Note that the {}``mode'' attribute has been set to {}``chk''
 to specify that the file is a checkpoint file.
@@ -1649,24 +1655,24 @@ or the value of a variable. Finally, any tag can have attributes,
 which in the code are used for variables which specify the state or
 type of class that will be created. A xml tag has the following syntax:
 
-\begin{verbatim}
+\begin{code}
 <tag_name attribute_name='attribute_data'>tag_data</tag_name>
-\end{verbatim}
+\end{code}
 
 The syntax for the different types of tag data is given below: 
 
 \begin{tabular}{cc}
 \hline 
-Data type & Syntax\tabularnewline
+Data type & Syntax\\
 \hline 
 \hline 
-Boolean & <tag>True</tag> or <tag>False</tag>\tabularnewline
-Float & <tag>11.111</tag> or <tag>1.1111e+1</tag>\tabularnewline
-Integer & <tag>12345</tag>\tabularnewline
-String & <tag>string\_data</tag>\tabularnewline
-Tuple & <tag> (int1, int2, \ldots )</tag>\tabularnewline
-Vector & <tag> {[} entry1, entry2, \ldots {]} </tag>\tabularnewline
-Dictionary & <tag>\{name1: data1, name2: data2, \ldots \}</tag>\tabularnewline
+Boolean & <tag>True</tag> or <tag>False</tag>\\
+Float & <tag>11.111</tag> or <tag>1.1111e+1</tag>\\
+Integer & <tag>12345</tag>\\
+String & <tag>string\_data</tag>\\
+Tuple & <tag> (int1, int2, \ldots )</tag>\\
+Vector & <tag> {[} entry1, entry2, \ldots {]} </tag>\\
+Dictionary & <tag>\{name1: data1, name2: data2, \ldots \}</tag>\\
 \hline 
 \end{tabular}
 
@@ -1675,9 +1681,9 @@ where a multi-dimensional array must be entered, one can use the `shape'
 attribute, that determines how the list will be reshaped into a multi-dimensional
 array; for instance
 
-\begin{verbatim}
+\begin{code}
 <tag shape=`(1,2,3)'>[ a111, a112, a113, a121, a122, a123 ]</tag>
-\end{verbatim}If `shape' is not specified, a 1D array will be assumed.
+\end{code}If `shape' is not specified, a 1D array will be assumed.
 
 The code uses this hierarchical structure to help read the data; if
 a particular object is held within a parent object in the code, then
@@ -1697,7 +1703,7 @@ For example, suppose we want to generate a NPT ensemble at an external
 pressure of 1e-7 atomic pressure units. This would be specified by
 the following input file: 
 
-\begin{verbatim}
+\begin{code}
 <simulation>
    <ensemble mode='npt'>
       <pressure> 1e-7 </pressure>
@@ -1705,7 +1711,7 @@ the following input file:
    </ensemble>
    ...
 </simulation>
-\end{verbatim}
+\end{code}
 
 To help detect any user error the recognized tag names, data types
 and acceptable options are all specified in the code in a specialized
@@ -1724,7 +1730,7 @@ take the above example, but instead take an external pressure of 3
 MPa. Instead of converting this to the atomic unit of pressure, it
 is possible to use pascals directly using:
 
-\begin{verbatim}
+\begin{code}
 <simulation>
    <ensemble mode=`npt'>
       <pressure units=`pascal'> 3e6 </pressure>
@@ -1732,12 +1738,12 @@ is possible to use pascals directly using:
    </ensemble>
    ...
 </simulation>
-\end{verbatim}
+\end{code}
 
 The code can also understand S.I. prefixes, so this can be simplified
 further using:
 
-\begin{verbatim}
+\begin{code}
 <simulation>
    <ensemble mode='npt'>
       <pressure units=`megapascal'> 3 </pressure>
@@ -1745,7 +1751,7 @@ further using:
    </ensemble>
    ...
 </simulation>
-\end{verbatim}
+\end{code}
 
 A full list of which units are defined for which dimensionalities
 can be found in the units.py module.
@@ -1842,9 +1848,9 @@ format with 8 digits after the decimal point.
 The properties that are output are determined by the {}``properties''
 tag in the xml input file. The format of this tag is:
 
-\begin{verbatim}<properties stride=`' filename=`' flush=`' shape=`'>
+\begin{code}<properties stride=`' filename=`' flush=`' shape=`'>
    [ prop1name{units}(arg1; ... ), prop2name{...}(...), ...  ]
-</properties>\end{verbatim}
+</properties>\end{code}
 
 The attributes have the following meanings:
 \begin{description}
@@ -1887,9 +1893,9 @@ input files, given in~\ref{configfile}.
 
 These tags have the format:
 
-\begin{verbatim}<trajectory stride=`' filename=`' format=`' cell_units=`' flush=`' bead=`'>
+\begin{code}<trajectory stride=`' filename=`' format=`' cell_units=`' flush=`' bead=`'>
    traj_name{units}(arg1;...)
-</trajectory>\end{verbatim}This is very similar to the {}``properties'' tag, but it has the
+</trajectory>\end{code}This is very similar to the {}``properties'' tag, but it has the
 additional tags {}``format'' and {}``cell\_units'', and only one
 trajectory can be specified per file. `format' specifies the format
 of the output file, and `cell\_units' specifies the units in which
@@ -1916,9 +1922,9 @@ the state of the system to the point at which the file was created.
 
 The syntax for this tag is:
 
-\begin{verbatim}<checkpoint stride=`' filename=`' overwrite=`'>
+\begin{code}<checkpoint stride=`' filename=`' overwrite=`'>
    step
-</checkpoint>\end{verbatim}
+</checkpoint>\end{code}
 
 Again, this is similar to the {}``trajectory'' and {}``properties''
 tags, but instead of having a value which specifies what to output,
@@ -1933,7 +1939,7 @@ between different files.
 If the `step' parameter is not specified, the following syntax can
 also be used:
 
-\begin{verbatim}<checkpoint stride=`' filename=`' overwrite=`'/>\end{verbatim}
+\begin{code}<checkpoint stride=`' filename=`' overwrite=`'/>\end{code}
 
 
 \subsubsection{Soft exit and RESTART}
@@ -2128,9 +2134,9 @@ two computers, then you can use this to forward one of the ports on
 client.net to connect to the necessary port on server.net. This can
 be done with the following shell command:
 
-\begin{verbatim}
+\begin{code}
 > ssh -f -N server.net -L 23451:server.net:12345
-\end{verbatim}
+\end{code}
 
 The flags -f and -N just put the ssh process in the background. Then
 comes the ssh server, which in this case is the computer on which
@@ -2150,9 +2156,9 @@ server has also been set up with a firewall around the standard ssh
 port, port 22. In this case you can change which port is used to one
 that is open using the -p flag, for example:
 
-\begin{verbatim}
+\begin{code}
 > ssh -f -N server.net -L 23451:server.net:12345 -p 99
-\end{verbatim}
+\end{code}
 
 
 \subsubsection{Using a script to create a ssh connection}
@@ -2165,9 +2171,9 @@ no password is needed.
 Firstly, on client.net, we need to set up an ssh key. This can be
 done using the command:
 
-\begin{verbatim}
+\begin{code}
 > ssh-keygen -t rsa
-\end{verbatim}
+\end{code}
 
 It will then prompt you for a passphrase twice. Since we wish to have
 use this in a job script where we will not be able to enter a password,
@@ -2179,9 +2185,9 @@ This should now have created two files in the directory \textasciitilde{}/.ssh,
 id\_rsa and id\_rsa.pub. These should be readable only by you, so
 use the following code to set up the correct file permissions:
 
-\begin{verbatim}
+\begin{code}
 > chmod 600 ~/.ssh/id_rsa ~/.ssh/id_rsa.pub
-\end{verbatim}
+\end{code}
 
 Finally, copy the contents of the file id\_rsa.pub and append them
 to the file authorized\_keys in the directory \textasciitilde{}/.ssh
@@ -2706,9 +2712,9 @@ two computers, then you can use this to forward one of the ports on
 driver.net to connect to the necessary port on wrapper.net. This can
 be done with the following shell command:
 
-\begin{verbatim}
+\begin{code}
 > ssh -f -N wrapper.net -L 23451:wrapper.net:12345
-\end{verbatim}
+\end{code}
 
 The flags -f and -N just put the ssh process in the background. Then
 comes the ssh server, which in this case is the computer on which
@@ -2728,9 +2734,9 @@ server has also been set up with a firewall around the standard ssh
 port, port 22. In this case you can change which port is used to one
 that is open using the -p flag, for example:
 
-\begin{verbatim}
+\begin{code}
 > ssh -f -N wrapper.net -L 23451:wrapper.net:12345 -p 99
-\end{verbatim}
+\end{code}
 
 
 \subsection{Using a script to create a ssh connection}
@@ -2743,9 +2749,9 @@ no password is needed.
 Firstly, on driver.net, we need to set up an ssh key. This can be
 done using the command:
 
-\begin{verbatim}
+\begin{code}
 > ssh-keygen -t rsa
-\end{verbatim}
+\end{code}
 
 It will then prompt you for a passphrase twice. Since we wish to have
 use this in a job script where we will not be able to enter a password,
@@ -2757,9 +2763,9 @@ This should now have created two files in the directory \textasciitilde{}/.ssh,
 id\_rsa and id\_rsa.pub. These should be readable only by you, so
 use the following code to set up the correct file permissions:
 
-\begin{verbatim}
+\begin{code}
 > chmod 600 ~/.ssh/id_rsa ~/.ssh/id_rsa.pub
-\end{verbatim}
+\end{code}
 
 Finally, copy the contents of the file id\_rsa.pub and append them
 to the file authorized\_keys in the directory \textasciitilde{}/.ssh
@@ -2923,18 +2929,18 @@ the code distribution and on the appropriate website.
 A tar file can be downloaded from the website {[}appropriate wrap-pi
 website{]}. To install this you need to input the following commands:
 
-\begin{verbatim}
+\begin{code}
 > cd $src_dir
 > tar xf [wrapper_tar_file.tar]
-\end{verbatim}
+\end{code}
 
 You can also download the git repository at {[}github repository name{]}
 using the commands:
 
-\begin{verbatim}
+\begin{code}
 > cd $src_dir
 > git clone [github repository name]
-\end{verbatim}
+\end{code}
 
 
 \section{NumPy download}
@@ -2948,50 +2954,50 @@ In any case you must first obtain the NumPy code. The NumPy library
 can be downloaded as a tar file from \url{http://sourceforge.net/projects/numpy/files/NumPy/}
 This must then be extracted using the following commands:
 
-\begin{verbatim}
+\begin{code}
 > cd $np_dd_dir
 > tar czf $np_vers.tar.gz
-\end{verbatim}
+\end{code}
 
 Before installing this code it first needs to be configured correctly.
 Note that this requires the distutils package that comes with the
 python-dev package. Assuming that the required software is installed,
 the NumPy package is built using:
 
-\begin{verbatim}
+\begin{code}
 > python setup.py build
-\end{verbatim}
+\end{code}
 
 The next step is to install the package. By default the download is
 to the directory /usr/local. If you have root access, and so can write
 to /usr, then all that needs to be done to finish the install is:
 
-\begin{verbatim}
+\begin{code}
 > python setup.py install
-\end{verbatim}
+\end{code}
 
 If you do not have root access, then the next step depends on which
 version of Python is beind used. With versions 2.6 or later there
 is a simple command to automatically download into the directory \$HOME/local:
 
-\begin{verbatim}
+\begin{code}
 > python setup.py install --user
-\end{verbatim}
+\end{code}
 
 With Python 2.4/2.5 the process is a little more involved. First you
 must explicitly install the package in the directory of choice with
 the following command:
 
-\begin{verbatim}
+\begin{code}
 > python setup.py install --prefix=$np_dir
-\end{verbatim}
+\end{code}
 
 Next, you must tell python where to find this library, by appending
 to the linux environment variable \textbf{PYTHONPATH}:
 
-\begin{verbatim}
+\begin{code}
 > export PYTHONPATH=$PYTHONPATH:$np_dir/lib64/$py_vers/site-packages
-\end{verbatim}
+\end{code}
 
 You may have to replace lib64 with lib depending on whether you are
 installing to a 64-bit or 32-bit architecture.
@@ -3037,12 +3043,12 @@ For Quantum Espresso version 4.3.2, there is a patch file to allow
 it to be used as a driver code with \ipi in the directory \$src\_dir/patches/pwscf.
 This can be applied to the Quantum Espresso source code using:
 
-\begin{verbatim}
+\begin{code}
 > cd $esp_dd_dir
 > tar zxvf $esp_vers.tar.gz
 > cd $esp_vers
 > patch -p1 < $src_dir/patches/pwscf/pw-driver.patch
-\end{verbatim}
+\end{code}
 
 After this, continue the download as per the instructions at:
 
@@ -3096,9 +3102,9 @@ of how well the method is working.
 src directory. If the xml-formatted input file is called input\_file.xml,
 then the command to run a \ipi simulation is:
 
-\begin{verbatim}
+\begin{code}
 > python $src_dir/i-pi input_file.xml
-\end{verbatim}
+\end{code}%$
 
 The code will then have to wait until at least one driver code has
 connected before running any dynamics. At this point the code is essentially
@@ -3128,26 +3134,26 @@ If we want to connect to a socket on the host address host\_address
 and on the port number port, then we would add the following lines
 to the input file:
 
-\begin{verbatim}
+\begin{code}
 &CONTROL
    ...
    calculation=`driver'
    srvaddress=`host_address:port'
    ...
 /
-\end{verbatim}
+\end{code}
 
 If we wanted to run on a UNIX port instead of an INET port, we would
 instead write:
 
-\begin{verbatim}
+\begin{code}
 &CONTROL
    ...
    calculation=`driver'
    srvaddress=`UNIX:host_address:port'
    ...
 /
-\end{verbatim}
+\end{code}
 
 The rest of the input file should be the same as for a standard Quantum
 Espresso calculation.
@@ -3168,7 +3174,7 @@ be preferable to run both halves of the simulation on the same computer,
 especially as this allows us to use the faster unix domain sockets.
 This can be done using a single script, such as:
 
-\begin{verbatim}
+\begin{code}
 #These are the parameters that need to be specified by
 #the user. The number of driver codes is given by $ndrivers,
 #the i-pi source directory is given by $src_dir, and the code
@@ -3197,7 +3203,7 @@ sleep 20 #must wait for server to be initialized
 for a in `seq 1 $ndrivers`; do
    bash -c "$driver_comm"
 done 
-\end{verbatim}
+\end{code}%$
 
 However, for most simulations, especially those running with expensive
 \emph{ab initio} forces and potentials, we will want to run the driver
@@ -3217,7 +3223,7 @@ you are running the code on for more details.
 
 One possible driver script layout would be:
 
-\begin{verbatim}
+\begin{code}
 #!/bin/bash
 #$ -S /bin/bash
 #$ -N jobname
@@ -3243,7 +3249,7 @@ driver_comm="..."
 #Modify driver input file if necessary
 
 bash -c "driver_comm"
-\end{verbatim}
+\end{code}%$
 
 Note that it may be necessary to export libraries or modules if they
 are not present by default, or to use an ssh tunnel if the cluster
@@ -3261,7 +3267,7 @@ scripts from before can be easily modified to do this, for example
 if we assume the simulations will be run in directories called sim\_1,
 sim\_2, \ldots, then we can write:
 
-\begin{verbatim}
+\begin{code}
 first_port=... #The value of the port of sim_1
 i=0
 for a in sim_*; do 
@@ -3273,7 +3279,7 @@ for a in sim_*; do
 
    cd ..
 done
-\end{verbatim}
+\end{code}
 
 
 \section{Input files}
@@ -3292,36 +3298,36 @@ can have attributes, which in the code are used for variables which
 specify the state or type of class that will be created. A xml tag
 has the following syntax:
 
-\begin{verbatim}
+\begin{code}
 <tag_name attribute_name=`attribute_data'>tag_data</tag_name>
-\end{verbatim}
+\end{code}
 
 The syntax for the different types of tag data is given below:
 
 \begin{tabular}{|c|c|}
 \hline 
-Data type & Syntax\tabularnewline
+Data type & Syntax\\
 \hline 
 \hline 
-Boolean & <tag>True</tag> or <tag>False</tag>\tabularnewline
+Boolean & <tag>True</tag> or <tag>False</tag>\\
 \hline 
-Float & <tag>11.111</tag> or <tag>1.1111e+1</tag>\tabularnewline
+Float & <tag>11.111</tag> or <tag>1.1111e+1</tag>\\
 \hline 
-Integer & <tag>12345</tag>\tabularnewline
+Integer & <tag>12345</tag>\\
 \hline 
-Dictionary & <tag>\{name1: data1, name2: data2, \ldots \}</tag>\tabularnewline
+Dictionary & <tag>\{name1: data1, name2: data2, \ldots \}</tag>\\
 \hline 
-String & <tag>string\_data</tag>\tabularnewline
+String & <tag>string\_data</tag>\\
 \hline 
-Tuple & <tag> (int1, int2, \ldots )</tag>\tabularnewline
+Tuple & <tag> (int1, int2, \ldots )</tag>\\
 \hline 
 \end{tabular}
 
 Also, for arrays, which have the `shape' attribute, we have the syntax
 
-\begin{verbatim}
+\begin{code}
 <tag shape=`array_shape'>[entry1, entry2, ... ]</tag>
-\end{verbatim}
+\end{code}
 
 where each entry has the same data type, which will be either float,
 int, boolean or string, and `array\_shape' is a tuple that gives the
@@ -3377,20 +3383,20 @@ case only the specified property will be initialized.
 
 \begin{tabular}{|l|l|l|}
 \hline 
-Unit & Name & S.I. Value\tabularnewline
+Unit & Name & S.I. Value\\
 \hline 
 \hline 
-Length & Bohr radius & 5.2917721e-11 m\tabularnewline
+Length & Bohr radius & 5.2917721e-11 m\\
 \hline 
-Time & N.A. & 2.4188843e-17 s\tabularnewline
+Time & N.A. & 2.4188843e-17 s\\
 \hline 
-Mass & Electron mass & 9.1093819e-31 kg\tabularnewline
+Mass & Electron mass & 9.1093819e-31 kg\\
 \hline 
-Temperature & kelvin & 1 K\tabularnewline
+Temperature & kelvin & 1 K\\
 \hline 
-Energy & Hartree & 4.3597438e-18 J\tabularnewline
+Energy & Hartree & 4.3597438e-18 J\\
 \hline 
-Pressure & N.A. & 2.9421912e13 Pa\tabularnewline
+Pressure & N.A. & 2.9421912e13 Pa\\
 \hline 
 \end{tabular}
 
@@ -3399,7 +3405,7 @@ However, these units can be overriden in the input file by using the
 cell parameters in units of angstrom rather than bohr radii then in
 the input file you would specify:
 
-\begin{verbatim}<cell units=`angstrom'> ... </cell>\end{verbatim} 
+\begin{code}<cell units=`angstrom'> ... </cell>\end{code} 
 
 
 \section{Output files}
@@ -3419,9 +3425,9 @@ properties, such as the total energy and the overall time taken. The
 properties that are output are determined by the {}``properties''
 tag in the xml input file. The format of this tag is:
 
-\begin{verbatim}<properties stride=`' filename=`' flush=`' shape=`'>
+\begin{code}<properties stride=`' filename=`' flush=`' shape=`'>
    [ prop1name{units}(arg1; ... ), prop2name{...}(...), ...  ]
-</properties>\end{verbatim}
+</properties>\end{code}
 
 The attributes have the following meanings:
 \begin{description}
@@ -3470,9 +3476,9 @@ as the bead positions. Each trajectory that should be output is specified
 by the {}``trajectory'' tag in the input file. These tags have the
 format:
 
-\begin{verbatim}<trajectory stride=`' filename=`' format=`' cell_units=`' flush=`' bead=`'>
+\begin{code}<trajectory stride=`' filename=`' format=`' cell_units=`' flush=`' bead=`'>
    traj_name{units}(arg1;...)
-</trajectory>\end{verbatim}
+</trajectory>\end{code}
 
 This is very similar to the {}``properties'' tag, but it has the
 additional tags {}``format'' and {}``cell\_units'', and only one
@@ -3503,9 +3509,9 @@ used as valid input files, with all the information required to restore
 the state of the system to the point at which the file was created.
 The syntax for this tag is:
 
-\begin{verbatim}<checkpoint stride=`' filename=`' overwrite=`'>
+\begin{code}<checkpoint stride=`' filename=`' overwrite=`'>
    step
-</checkpoint>\end{verbatim}
+</checkpoint>\end{code}
 
 Again, this is similar to the {}``trajectory'' and {}``properties''
 tags, but instead of having a value which specifies what to output,
@@ -3519,7 +3525,7 @@ to it to distinguish between different files.
 If the `step' parameter is not specified, the following syntax can
 also be used:
 
-\begin{verbatim}<checkpoint stride=`' filename=`' overwrite=`'/>\end{verbatim}
+\begin{code}<checkpoint stride=`' filename=`' overwrite=`'/>\end{code}
 
 
 \subsection{Restart file}
@@ -3920,19 +3926,19 @@ property.
 In standard Python notation, we must define a new function inside
 the {}``Properties'' class. This is written by:
 
-\begin{verbatim}
+\begin{code}
 def new_func(self):
    ...code here...
    return value
-\end{verbatim}
+\end{code}
 
 We can now use this function to calculate the property of interest.
 If the name of this property is {}``new\_prop'', we can add this
 to the dictionary of named properties by:
 
-\begin{verbatim}
+\begin{code}
 self.property_dict["new_prop"] = new_func
-\end{verbatim}
+\end{code}
 
 We now simply need to add the name {}``new\_prop'' in the {}``properties''
 list in the xml input file, and the property will be written to the
@@ -3941,21 +3947,21 @@ properties output file when appropriate.
 If you need a function with arguments, then the code we need is given
 by:
 
-\begin{verbatim}
+\begin{code}
 self.property_dict["new_arg_prop"] = new_arg_func
 ...code here...
 def new_arg_func(self, arg1, arg2, ... ):
    ...more code here...
    return value
-\end{verbatim}
+\end{code}
 
 Now in the property list you must put:
 
-\begin{verbatim}
+\begin{code}
 <properties>
    [ new_arg_prop(arg1; arg2; ... ), ... ]
 </properties>
-\end{verbatim}
+\end{code}
 
 The code will now automatically call the function with the arguments
 defined in the properties list.
@@ -3982,9 +3988,9 @@ and setting functions, so there is a special syntax for creating them.
 To create a depend object {}``value'' with name {}``name'' inside
 an object {}``object'', you need to use the syntax: 
 
-\begin{verbatim}
+\begin{code}
 dset(object, name, value)
-\end{verbatim}
+\end{code}
 
 The arguments that are important for creating {}``depend'' objects
 are:
@@ -4023,9 +4029,9 @@ Also, the \textbf{func} initialization argument must be a dictionary
 of functions that transform from the {}``depend'' object being created
 to the other synchronized objects, using the syntax:
 
-\begin{verbatim}
+\begin{code}
 func = {synchro1: func1, synchro2: func2, ... }
-\end{verbatim}
+\end{code}
 
 Where {}``synchroN'' is the {}``name'' of the Nth synchro object,
 and {}``funcN'' transforms from the {}``synchroN'' object to the
@@ -4066,7 +4072,7 @@ class. Every object that can be given a value by the user should be
 a keyword of this dictionary, or of the \textbf{attributes }dictionary.
 Within the dictionary, you must specify the particular class of input
 object that will be created and arguments to initialize it. The format
-of the dictionary is: \begin{verbatim}
+of the dictionary is: \begin{code}
 {tag_name1 :
    (InputClass, 
       {default: default value,
@@ -4075,7 +4081,7 @@ of the dictionary is: \begin{verbatim}
        options: [option1, option2, ... ],
        dimension: dimensionality of the data}), 
 tag_name2: ... }
-\end{verbatim}
+\end{code}
 \item [{attribs:}] This is a dictionary of the same form as \textbf{fields},
 but for the tag attribute data instead. These should always be simple
 data classes InputValue or InputArray, as their value must be specified
