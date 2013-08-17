@@ -28,6 +28,8 @@
 \usepackage{caption}
 \usepackage[sort&compress,numbers]{natbib}
 \usepackage{microtype}
+\usepackage{etoolbox}
+\usepackage{suffix}
 \setlength{\emergencystretch}{2em}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -39,9 +41,9 @@
 % headings
 \renewpagestyle{headings}[\small]{
 \headrule \sethead{ %
-{\ifthenelse{\number\value{chapter}>0}{Chapter \thechapter}{\bf \chaptertitle}} %
+{\ifnumgreater{\value{chapter}}{0}{Chapter \thechapter}{\bf \chaptertitle}} %
 }{ %
-{   \ifthenelse{\number\value{chapter}>0}{\bf \chaptertitle}{}} %
+{   \ifnumgreater{\value{chapter}}{0}{\bf \chaptertitle}{}} %
 } %
 { \usepage}
 }
@@ -60,7 +62,6 @@
 \newpage
 \if@twocolumn\hbox{}\newpage\fi\fi\fi}
 \makeatother
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % spacings (use a lot of rubber lenghts)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -88,13 +89,46 @@
 \titleformat{\chapter}[display]{\normalfont\huge\bfseries}%
 {\vspace{1.5em}\raggedleft\large\chaptertitlename ~\thechapter\hrule\vspace{-0.5ex}}
 {-0.25ex}{\begin{minipage}{0.75\textwidth}\raggedright}[\end{minipage}]
-
-
 \makeatletter
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% properties and fields formatting
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand{\ipiitem}[3]{%
+\ifblank{#1}{}{\ifstrequal{#1}{\underline{}}{}{
+{\noindent\textbf{#1}:\rule{0.0pt}{1.05\baselineskip}\quad}}}% uses a strut to add a bit of vertical space
+{#2}\parskip=0pt\par
+\ifblank{#3}{}%
+{ {\hfill\raggedleft\textit{\small #3}\par} }
+}
+
+\makeatletter
+\newenvironment{ipifield}[4]{%
+               \ifblank{#1}{}{\vspace{2.0em}}
+               \ipiitem{\underline{#1}}{#2}{}
+               \ifblank{#4}{ %
+                  \ifblank{#3}{}{{\hfill\raggedleft\textit{\small #3}\par}} } %
+               {  \noindent\begin{tabular}{|p{1.0\linewidth}}
+                    \renewcommand*{\arraystretch}{1.4}
+                    \ifblank{#3}{}%
+                    {{\hfill\raggedleft\textit{\small #3}\par}}                    
+                   {#4}\vspace{-1em}\\\hline % negative vspace to undo the line break
+                   \end{tabular} }
+               \parskip=0pt\list{}{\listparindent 1.5em%
+                        \leftmargin    \listparindent
+                        \rightmargin   0pt
+                        \parsep        0pt
+                        \itemsep       0em
+                        \topsep        0pt
+                        }%
+                \item\relax
+                }
+               {\endlist}              
+\makeatother   
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% User specified LaTeX commands.
-\@ifundefined{definecolor} {\usepackage{color}}{}
+\usepackage{color}
 \usepackage{multicol}\makeindex
 \usepackage{xspace}
 \usepackage[numbers]{natbib}

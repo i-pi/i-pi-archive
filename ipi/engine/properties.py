@@ -10,7 +10,7 @@ the Free Software Foundation, either version 3 of the License, or
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
@@ -128,26 +128,65 @@ def help_latex(idict, ref=False):
       #assumes that it is a stand-alone document, so must have document
       #options.
       rstr += "\\documentclass[12pt,fleqn]{report}"
+      rstr += """
+\usepackage{etoolbox}
+\usepackage{suffix}
+
+\newcommand{\ipiitem}[3]{%
+\ifblank{#1}{}{\ifstrequal{#1}{\underline{}}{}{
+{\noindent\textbf{#1}:\rule{0.0pt}{1.05\baselineskip}\quad}}}% uses a strut to add a bit of vertical space
+{#2}\parskip=0pt\par
+\ifblank{#3}{}%
+{ {\hfill\raggedleft\textit{\small #3}\par} }
+}
+
+\makeatletter
+\newenvironment{ipifield}[4]{%
+               \ifblank{#1}{}{\vspace{2.0em}}
+               \ipiitem{\underline{#1}}{#2}{}
+               \ifblank{#4}{ %
+                  \ifblank{#3}{}{{\hfill\raggedleft\textit{\small #3}\par}} } %
+               {  \noindent\begin{tabular}{|p{1.0\linewidth}}
+                    \renewcommand*{\arraystretch}{1.4}
+                    \ifblank{#3}{}%
+                    {{\hfill\raggedleft\textit{\small #3}\par}}
+                   {#4}\vspace{-1em}\\\hline % negative vspace to undo the line break
+                   \end{tabular} }
+               \parskip=0pt\list{}{\listparindent 1.5em%
+                        \leftmargin    \listparindent
+                        \rightmargin   0pt
+                        \parsep        0pt
+                        \itemsep       0em
+                        \topsep        0pt
+                        }%
+                \item\relax
+                }
+               {\endlist}
+\makeatother
+"""
       rstr += "\n\\begin{document}\n"
       rstr += "The following are the different allowable ouputs:\n"
-   rstr += "\\begin{itemize}\n"
 
    for out in sorted(idict):
-      rstr += "\\item {\\bf " + out + "}:\\\\ " + idict[out]['help'] + "\n"
+      rstr += "\\ipiitem{" + out + "}"
+      if "longhelp" in idict[out]:
+         rstr += "{" + idict[out]['longhelp'] +"}"
+      else:
+         rstr += "{" + idict[out]['help'] +"}"
+
+      #see if there are additional attributes to print out
+      xstr = ""
       try:
          if idict[out]['dimension'] != "undefined":
             #doesn't print out dimension if not necessary.
-            dimstr = "\n {dimension}: " + idict[out]['dimension'] + '\n'
-            rstr += dimstr
+            xstr += "dimension: " + idict[out]['dimension'] + '; '
       except KeyError:
          pass
       try:
-         sizestr = "\n{size}: " + str(idict[out]['size']) + '\n'
-         rstr += sizestr
+         xstr += "size: " + str(idict[out]['size']) +";"
       except KeyError:
          pass
-
-   rstr += "\\end{itemize}\n"
+      rstr += "{" + xstr + "}"
 
    if not ref:
       #ends the created document if it is not part of a larger document
@@ -212,7 +251,11 @@ class Properties(dobject):
                       "help": "The elapsed simulation time.",
                       'func': (lambda: (1 + self.simul.step)*self.ensemble.dt)},
       "temperature": {"dimension": "temperature",
-                      "help": "The current physical temperature. Takes an argument 'atom', which can be either an atom label or index to specify which species to find the temperature of. If not specified, all atoms are used.",
+                      "help": "The current temperature, as obtained from the MD kinetic energy.",
+                      "longhelp" : """The current temperature, as obtained from the MD kinetic energy of the extended
+                                      ring polymer. Takes a single, optional argument 'atom', which can be either an
+                                      atom label or an index (zero-based) to specify which species or individual atom
+                                      to output the temperature of. If not specified, all atoms are used and averaged.""",
                       'func': self.get_temp },
       "density": {    "dimension": "density",
                       "help": "The physical system density.",
@@ -220,9 +263,6 @@ class Properties(dobject):
       "volume": {     "dimension": "volume",
                       "help": "The volume of the cell box.",
                       'func': (lambda: self.cell.V) },
-      "temperature": {"dimension": "temperature",
-                      "help": "The current physical temperature. Takes an argument 'atom', which can be either an atom label or index to specify which species to find the temperature of. If not specified, all atoms are used.",
-                      'func': self.get_temp },
       "cell_h": {    "dimension" : "length",
                       "help": "Gives cell vector matrix. Returns the 6 components in the form [xx, yy, zz, xy, xz, yz].",
                       "size": 6,
