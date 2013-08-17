@@ -86,7 +86,7 @@ parser.add_option("-r", action="store_true", dest = "ref", default=False, help="
 if options.opt not in objects:
    raise ValueError("Option " + options.opt + " is not a viable tag name")
 
-def help(latex=False, xml=False, levels = None, option='simulation', prefix="help", ref=False):
+def help(latex=False, xml=False, levels = None, option='simulation', prefix="help", standalone=True):
    """Writes the help file.
 
    Will write an xml file 'prefix.xml' if xml=True and a latex file 'prefix.tex'
@@ -106,7 +106,7 @@ def help(latex=False, xml=False, levels = None, option='simulation', prefix="hel
       option: A string specifying which object will be used as the root object
          for the latex and xml files. Defaults to 'simulation'.
       prefix: File prefix for the output files. Defaults to 'help'.
-      ref: Boolean specifying whether the latex file will be a stand-alone
+      standalone: Boolean specifying whether the latex file will be a stand-alone
          document, or will instead be intended to be used in a larger document
          with cross references between the different objects.
    """
@@ -118,7 +118,7 @@ def help(latex=False, xml=False, levels = None, option='simulation', prefix="hel
       xml_output.write(simrestart.help_xml(name=option, stop_level=levels))
    if latex:
       latex_output = open(prefix + ".tex","w")
-      latex_output.write(simrestart.help_latex(stop_level=levels, ref=ref))
+      latex_output.write(simrestart.help_latex(stop_level=levels, standalone=standalone))
 
 if __name__ == '__main__':
-   help(options.latex, options.xml, options.levels, options.opt, options.prefix, options.ref)
+   help(options.latex, options.xml, options.levels, options.opt, options.prefix, not options.ref)

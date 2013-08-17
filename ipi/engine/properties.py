@@ -139,30 +139,6 @@ def help_latex(idict, standalone=True):
 \ifblank{#3}{}%
 { {\hfill\raggedleft\textit{\small #3}\par} }
 }
-
-\makeatletter
-\newenvironment{ipifield}[4]{%
-               \ifblank{#1}{}{\vspace{2.0em}}
-               \ipiitem{\underline{#1}}{#2}{}
-               \ifblank{#4}{ %
-                  \ifblank{#3}{}{{\hfill\raggedleft\textit{\small #3}\par}} } %
-               {  \noindent\begin{tabular}{|p{1.0\linewidth}}
-                    \renewcommand*{\arraystretch}{1.4}
-                    \ifblank{#3}{}%
-                    {{\hfill\raggedleft\textit{\small #3}\par}}
-                   {#4}\vspace{-1em}\\\hline % negative vspace to undo the line break
-                   \end{tabular} }
-               \parskip=0pt\list{}{\listparindent 1.5em%
-                        \leftmargin    \listparindent
-                        \rightmargin   0pt
-                        \parsep        0pt
-                        \itemsep       0em
-                        \topsep        0pt
-                        }%
-                \item\relax
-                }
-               {\endlist}
-\makeatother
 """
       rstr += "\n\\begin{document}\n"
       rstr += "The following are the different allowable ouputs:\n\\par"
@@ -179,7 +155,7 @@ def help_latex(idict, standalone=True):
       if "dimension" in idict[out] and  idict[out]['dimension'] != "undefined": #doesn't print out dimension if not necessary.
          xstr += "dimension: " + idict[out]['dimension'] + '; '
       if "size" in idict[out]:
-         xstr += "size: " + str(idict[out]['size']) +";"
+         xstr += "size: " + str(idict[out]['size']) +"; "
       rstr += "{" + xstr + "}"
 
    if standalone:

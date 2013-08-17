@@ -40,6 +40,6 @@ if not os.path.exists("help_files"):
 
 help(xml=True, prefix="help_files/manual")
 for opt in objects:
-   help(latex=True, levels=1, option=opt, prefix=("input_docs/" + opt), ref=True)
+   help(latex=True, levels=1, option=opt, prefix=("input_docs/" + opt), standalone=False)
 for opt in list_objects:
-   help_list(option=opt, prefix=("input_docs/" + opt), ref=True)
+   help_list(option=opt, prefix=("input_docs/" + opt), standalone=False)

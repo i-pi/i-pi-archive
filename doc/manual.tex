@@ -96,7 +96,7 @@
 % properties and fields formatting
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
 \newcommand{\ipiitem}[3]{%
-\ifblank{#1}{}{\ifstrequal{#1}{\underline{}}{}{
+\ifblank{#1}{}{\ifstrequal{#1}{\underline{\smash{}}}{}{
 {\noindent\textbf{#1}:\rule{0.0pt}{1.05\baselineskip}\quad}}}% uses a strut to add a bit of vertical space
 {#2}\parskip=0pt\par
 \ifblank{#3}{}%
@@ -105,27 +105,29 @@
 
 \makeatletter
 \newenvironment{ipifield}[4]{%
-               \ifblank{#1}{}{\vspace{2.0em}}
-               \ipiitem{\underline{#1}}{#2}{}
+                \ifblank{#1}{}{\vspace{0.5em}}
+               \noindent\parskip=0pt\begin{tabular}[t]{|p{1.0\linewidth}}
+               %cell without border
+               \multicolumn{1}{@{}p{1.0\linewidth}}{
+               \ipiitem{\underline{\smash{#1}}}{#2}{}
                \ifblank{#4}{ %
-                  \ifblank{#3}{}{{\hfill\raggedleft\textit{\small #3}\par}} } %
-               {  \noindent\begin{tabular}{|p{1.0\linewidth}}
-                    \renewcommand*{\arraystretch}{1.4}
-                    \ifblank{#3}{}%
-                    {{\hfill\raggedleft\textit{\small #3}\par}}                    
-                   {#4}\vspace{-1em}\\\hline % negative vspace to undo the line break
-                   \end{tabular} }
+                  \ifblank{#3}{}{{\hfill\raggedleft\textit{\small #3}}\par}}{} } \vspace{-1em}\\ %
+               % cell with border
+               \ifblank{#4}{} %
+                 { \ifblank{#3}{}{\vspace{-1em}{\hfill\raggedleft\textit{\small #3}}\par} %
+                 {#4}\vspace{-1em}\\\hline } % negative vspace to undo the line break
+               \end{tabular}
                \parskip=0pt\list{}{\listparindent 1.5em%
                         \leftmargin    \listparindent
                         \rightmargin   0pt
                         \parsep        0pt
-                        \itemsep       0em
+                        \itemsep       0pt
                         \topsep        0pt
                         }%
                 \item\relax
                 }
-               {\endlist}              
-\makeatother   
+               {\endlist}
+\makeatother 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% User specified LaTeX commands.
 \usepackage{color}
