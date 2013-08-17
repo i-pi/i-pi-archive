@@ -52,10 +52,10 @@ parser.add_option("-r", action="store_true", dest = "ref", default=False, help="
 if options.opt not in list_objects:
    raise ValueError("Option " + options.opt + " is not a viable tag name")
 
-def help_list(option='property_list', prefix="help", ref=False):
+def help_list(option='property_list', prefix="help", standalone=True):
    """Writes the help file.
 
-   Will write a latex file 'prefix.tex' if latex=True. Can also print out 
+   Will write a latex file 'prefix.tex'. Can also print out 
    sections of latex documents rather than entire 
    documents, so that we can input them into other latex documents, such as
    the manual.
@@ -64,7 +64,7 @@ def help_list(option='property_list', prefix="help", ref=False):
       option: A string specifying which object will be used as the root object
          for the latex and xml files. Defaults to 'property_list'.
       prefix: File prefix for the output files. Defaults to 'help'.
-      ref: Boolean specifying whether the latex file will be a stand-alone
+      standalone: Boolean specifying whether the latex file will be a stand-alone
          document, or will instead be intended to be used in a larger document
          with cross references between the different objects.
    """
@@ -78,7 +78,7 @@ def help_list(option='property_list', prefix="help", ref=False):
       raise ValueError("Incorrect option specified.")
    
    latex_output = open(prefix + ".tex","w")
-   latex_output.write(help_latex(idict, ref=ref))
+   latex_output.write(help_latex(idict, standalone=standalone))
 
 if __name__ == '__main__':
-   help_list(options.opt, options.prefix, options.ref)
+   help_list(options.opt, options.prefix, not options.ref)

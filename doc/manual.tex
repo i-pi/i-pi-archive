@@ -3,6 +3,7 @@
 \documentclass[11pt,english,fleqn]{report}
 %\usepackage{fourier}
 \usepackage{helvet}
+%\usepackage{lmodern}
 \usepackage[T1]{fontenc}
 \usepackage[latin9]{inputenc}
 \setcounter{secnumdepth}{3}
@@ -29,7 +30,6 @@
 \usepackage[sort&compress,numbers]{natbib}
 \usepackage{microtype}
 \usepackage{etoolbox}
-\usepackage{suffix}
 \setlength{\emergencystretch}{2em}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -41,9 +41,9 @@
 % headings
 \renewpagestyle{headings}[\small]{
 \headrule \sethead{ %
-{\ifnumgreater{\value{chapter}}{0}{Chapter \thechapter}{\bf \chaptertitle}} %
+{\ifthenelse{\number\value{chapter}>0}{Chapter \thechapter}{\bf \chaptertitle}} %
 }{ %
-{   \ifnumgreater{\value{chapter}}{0}{\bf \chaptertitle}{}} %
+{\ifthenelse{\number\value{chapter}>0}{\bf \chaptertitle}{}} %
 } %
 { \usepage}
 }
@@ -95,37 +95,63 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
 % properties and fields formatting
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\newcommand{\ipiitem}[3]{%
+%  \ifthenelse{ \equal{#1}{} } %
+%             {} %
+%             { \ifthenelse{ \equal{#1}{\underline{\smash{}}} } %
+%                          {} %
+%                          {  %
+%      {\noindent\textbf{#1}:\rule{0.0pt}{1.05\baselineskip}\quad} % uses a strut to add a bit of vertical space
+%                          } %
+%             } %
+%   {#2}\parskip=0pt\par
+%   \ifthenelse{ \equal{#3}{} } %
+%              {} %
+%              { {\hfill\raggedleft\textit{\small #3}\par} }
+%}
+
 \newcommand{\ipiitem}[3]{%
-\ifblank{#1}{}{\ifstrequal{#1}{\underline{}}{}{
-{\noindent\textbf{#1}:\rule{0.0pt}{1.05\baselineskip}\quad}}}% uses a strut to add a bit of vertical space
-{#2}\parskip=0pt\par
-\ifblank{#3}{}%
-{ {\hfill\raggedleft\textit{\small #3}\par} }
+   \ifblank{#1} % if no name is specified just output nothing
+           {} %  
+           { \ifstrequal{#1}{\underline{\smash{}}} % also in this case
+             {} %
+             { % print out beautifully
+               {\noindent\textbf{#1}:\rule{0.0pt}{1.05\baselineskip}\quad} % uses a strut to add a bit of vertical space
+             } %
+           } %
+    {#2}\parskip=0pt\par % prints the help text
+   \ifblank{#3}{} %
+          { {\hfill\raggedleft\textit{\small #3}\par} } % details string
 }
 
 \makeatletter
-\newenvironment{ipifield}[4]{%
-               \ifblank{#1}{}{\vspace{2.0em}}
-               \ipiitem{\underline{#1}}{#2}{}
-               \ifblank{#4}{ %
-                  \ifblank{#3}{}{{\hfill\raggedleft\textit{\small #3}\par}} } %
-               {  \noindent\begin{tabular}{|p{1.0\linewidth}}
-                    \renewcommand*{\arraystretch}{1.4}
-                    \ifblank{#3}{}%
-                    {{\hfill\raggedleft\textit{\small #3}\par}}                    
-                   {#4}\vspace{-1em}\\\hline % negative vspace to undo the line break
-                   \end{tabular} }
-               \parskip=0pt\list{}{\listparindent 1.5em%
-                        \leftmargin    \listparindent
-                        \rightmargin   0pt
-                        \parsep        0pt
-                        \itemsep       0em
-                        \topsep        0pt
-                        }%
-                \item\relax
-                }
-               {\endlist}              
-\makeatother   
+\newenvironment{ipifield}[4]{ %
+   \ifblank{#1} {} {\vspace{0.5em}}  % some spacing between fields
+   \noindent\parskip=0pt\begin{tabular}[t]{|p{1.0\linewidth}}   % table filling the whole line -- fields cannot break
+      %cell without border
+      \multicolumn{1}{@{}p{1.0\linewidth}}{
+         \ipiitem{\underline{\smash{#1}}}{#2}{}  % name and help string
+         \ifblank{#4} % if there are no attributes, write here the details
+                 {  \ifblank{#3} {} % if there are any....
+                            {{\hfill\raggedleft\textit{\small #3}}\par}}
+                 {} %else do nothing here
+         } \vspace{-1em}\\ % close multicol, go down and back up
+      % cell with border (only if attributes are present)
+      \ifblank{#4} {} % do nothing if there are no attributes (the details may just have been printed above
+              { \ifblank{#3} {} { \vspace{-1em}{\hfill\raggedleft\textit{\small #3}}\par } % print the details
+                {#4} \vspace{-1em} \\\hline } % negative vspace to undo the line break
+   \end{tabular}
+   \parskip=0pt\list{}{\listparindent 1.5em % indent the body of the environment 
+         \leftmargin    \listparindent
+         \rightmargin   0pt
+         \parsep        0pt
+         \itemsep       0pt
+         \topsep        0pt
+          }%
+    \item\relax
+ }
+ {\endlist}
+\makeatother
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% User specified LaTeX commands.
 \usepackage{color}

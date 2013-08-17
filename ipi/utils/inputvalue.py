@@ -9,7 +9,7 @@ the Free Software Foundation, either version 3 of the License, or
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
@@ -354,14 +354,42 @@ class Input(object):
             if not (vf._explicit or vf._optional):
                raise ValueError("Field name '" + f + "' is mandatory and was not found in the input for the property " + xml.name)
 
-   def help_latex(self, level=0, stop_level=None, ref=False):
+   def detail_str(self):
+
+      xstr = ""
+      if hasattr(self, '_dimension') and self._dimension != "undefined": #gives dimension
+         xstr += "dimension: " + self._dimension + "; "
+
+      if self._default != None and issubclass(self.__class__, InputAttribute):
+         #We only print out the default if it has a well defined value.
+         #For classes such as InputCell, self._default is not the value,
+         #instead it is an object that is stored to give the default value in
+         #self.value. For this reason we print out self.value at this stage,
+         #and not self._default
+         xstr += "default: " + self.pprint(self.value) + "; "
+
+      if issubclass(self.__class__, InputAttribute):
+         #if possible, prints out the type of data that is being used
+         xstr += "data type: " + self.type_print(self.type) + "; "
+
+      if hasattr(self, "_valid"):
+         if self._valid is not None:
+            xstr += "options: " #prints out valid options, if
+            for option in self._valid:      #required.
+               xstr += "`" + str(option) + "', "
+            xstr = xstr.rstrip(", ")
+            xstr +=  "; "
+      return xstr
+
+   def help_latex(self, name="", level=0, stop_level=None, standalone=True):
       """Function to generate a LaTeX formatted help file.
 
       Args:
+         name: Name of the tag that has to be written out.
          level: Current level of the hierarchy being considered.
          stop_level: The depth to which information will be given. If not given,
             will give all information.
-         ref: A boolean giving whether the latex file produced will be a
+         standalone: A boolean giving whether the latex file produced will be a
             stand-alone document, or will be intended as a section of a larger
             document with cross-references between the different sections.
 
@@ -375,83 +403,92 @@ class Input(object):
 
       rstr = ""
       if level == 0:
-         if not ref:
+         if standalone:
             #assumes that it is a stand-alone document, so must have
             #document options.
-            rstr += "\\documentclass[12pt,fleqn]{report}"
+            rstr += r"\documentclass[12pt,fleqn]{report}"
+            rstr += r"""
+\usepackage{etoolbox}
+\usepackage{suffix}
+
+\newcommand{\ipiitem}[3]{%
+\setul{1pt}{.4pt}\ifblank{#1}{}{\ifstrequal{#1}{\underline{\smash{}}}{}{
+{\noindent\textbf{#1}:\rule{0.0pt}{1.05\baselineskip}\quad}}}% uses a strut to add a bit of vertical space
+{#2}\parskip=0pt\par
+\ifblank{#3}{}%
+{ {\hfill\raggedleft\textit{\small #3}\par} }
+}
+
+\makeatletter
+\newenvironment{ipifield}[4]{%
+                \ifblank{#1}{}{\vspace{0.5em}}
+               \noindent\parskip=0pt\begin{tabular}[t]{|p{1.0\linewidth}}
+               %cell without border
+               \multicolumn{1}{@{}p{1.0\linewidth}}{
+               \ipiitem{\underline{\smash{#1}}}{#2}{}
+               \ifblank{#4}{ %
+                  \ifblank{#3}{}{{\hfill\raggedleft\textit{\small #3}}\par}}{} } \vspace{-1em}\\ %
+               % cell with border
+               \ifblank{#4}{} %
+                 { \ifblank{#3}{}{\vspace{-1em}{\hfill\raggedleft\textit{\small #3}}\par} %
+                 {#4}\vspace{-1em}\\\hline } % negative vspace to undo the line break
+               \end{tabular}
+               \parskip=0pt\list{}{\listparindent 1.5em%
+                        \leftmargin    \listparindent
+                        \rightmargin   0pt
+                        \parsep        0pt
+                        \itemsep       0pt
+                        \topsep        0pt
+                        }%
+                \item\relax
+                }
+               {\endlist}
+\makeatother
+"""
             rstr += "\n\\begin{document}\n"
-         if self._label != "" and ref:
+         if self._label != "" and not standalone:
             #assumes that it is part of a cross-referenced document, so only
             #starts a new section.
             rstr += "\\section{" + self._label + "}\n"
             rstr += "\\label{" + self._label + "}\n"
 
-      rstr += self._help + "\\vspace{1mm} \\\\"  #help string
+         rstr += "\\begin{ipifield}{}%\n"
+      else:
+         if self._label != "" and not standalone:
+            rstr += "\\begin{ipifield}{\hyperref["+self._label+"]{"+name+"}}%\n"
+         else:
+            rstr += "\\begin{ipifield}{"+name+"}%\n"
 
-      if hasattr(self, '_dimension') and self._dimension != "undefined":
-         rstr += "{\\\\ dimension: }" + self._dimension + "\n"
-         #gives dimension
+      rstr += "{"+self._help+"}%\n"
 
-      if self._default != None and issubclass(self.__class__, InputAttribute):
-         #We only print out the default if it has a well defined value.
-         #For classes such as InputCell, self._default is not the value,
-         #instead it is an object that is stored to give the default value in
-         #self.value. For this reason we print out self.value at this stage,
-         #and not self._default
-         rstr += "{\\\\ default: }" + self.pprint(self.value) + "\n"
+      rstr += "{"+self.detail_str()+"}%\n"
 
-      if issubclass(self.__class__, InputAttribute):
-         rstr += "{\\\\ data type: }" + self.type_print(self.type) + "\n"
-         #if possible, prints out the type of data that is being used
-
-      if hasattr(self, "_valid"):
-         if self._valid is not None:
-            rstr += "{\\\\ options: }" #prints out valid options, if
-            for option in self._valid:      #required.
-               rstr += "`" + str(option) + "', "
-            rstr = rstr.rstrip(", ")
-            rstr +=  "\n"
-
-      #Repeats the above instructions for the attributes
+      rstr += "{"
+      # Prints out the attributes
       if len(self.attribs) != 0:
          #don't print out units if not necessary
          if len(self.attribs) == 1 and (("units" in self.attribs) and self._dimension == "undefined"):
             pass
          else:
-            rstr += "\\paragraph{Attributes}\n \\begin{itemize}\n"
             for a in self.attribs:
                #don't print out units if not necessary
                if not (a == "units" and self._dimension == "undefined"):
-                  rstr += "\\item {\\bf " + a + "}:\\\\\n " + self.__dict__[a].help_latex(level, stop_level, ref)
-            rstr += "\\end{itemize}\n \n"
+                  rstr += "\\ipiitem{" + a + "}%\n{" + self.__dict__[a]._help + "}%\n{"+self.__dict__[a].detail_str()+"}%\n"  #!!MUST ADD OTHER STUFF
+      rstr+="}\n"
 
       #As above, for the fields. Only prints out if we have not reached the
       #user-specified limit.
       if len(self.fields) != 0 and level != stop_level:
-         rstr += "\\paragraph{Fields}\n \\begin{itemize}\n"
          for f in self.fields:
-            if self.__dict__[f]._label == "" or not ref:
-               rstr += "\\item {\\bf " + f + "}:\\\\\n " + self.__dict__[f].help_latex(level+1, stop_level, ref)
-            else:
-            #adds a hyperlink to the section title if a label has been specified
-            #and the file is part of a larger document.
-               rstr += "\\item {\\bf \hyperref[" + self.__dict__[f]._label + "]{" + f + "} }:\\\\\n " + self.__dict__[f].help_latex(level+1, stop_level)
-         rstr += "\\end{itemize}\n \n"
+            rstr += self.__dict__[f].help_latex(name=f, level=level+1, stop_level=stop_level, standalone=standalone)
 
-      #Exactly the same as for the fields, except we must create the dynamic
-      #objects ourselves, as they are not automatically added to the __dict__
-      #object in __init__ like the objects in fields.
       if len(self.dynamic) != 0 and level != stop_level:
-         rstr += "\\paragraph{Dynamic attributes}\n \\begin{itemize}\n"
          for f, v in self.dynamic.iteritems():
             dummy_obj = v[0](**v[1])
-            if dummy_obj._label == "" or not ref:
-               rstr += "\\item {\\bf " + f + "}:\\\\\n " + dummy_obj.help_latex(level+1, stop_level, ref)
-            else:
-               rstr += "\\item {\\bf \hyperref[" + dummy_obj._label + "]{" + f + "} }:\\\\\n " + dummy_obj.help_latex(level+1, stop_level)
-         rstr += "\\end{itemize}\n \n"
+            rstr += dummy_obj.help_latex(name=f, level=level+1, stop_level=stop_level, standalone=standalone)
 
-      if level == 0 and not ref:
+      rstr += "\\end{ipifield}\n"
+      if level == 0 and standalone:
          #ends the created document if it is not part of a larger document
          rstr += "\\end{document}"
 
@@ -461,7 +498,6 @@ class Input(object):
       rstr = rstr.replace('...', '\\ldots ')
       rstr = rstr.replace('<', '$<$')
       rstr = rstr.replace('>', '$>$')
-      rstr = rstr.replace('|', '$|$')
 
       return rstr
 
