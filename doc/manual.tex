@@ -346,7 +346,7 @@ The functionality of \ipi includes:
 \item Optimal sampling generalized Langevin equation (GLE) thermostats \cite{ceri+09jctc}.
 \item Path integral + GLE (PI+GLE) thermostats \cite{ceri+11jcp} for accelerating the
 convergence of the potential energy with respect to the number of replicas, 
-as well as the more recent PIGLET method \cite{ceri-mano12prl}, which 
+as well as the more recent PIGLET method \cite{ceri-mano12prl}, which also
 accelerates the convergence of the kinetic energy.
 \end{itemize}
 \item Barostats for constant pressure ensembles \cite{mart+99jcp,buss+09jpc}.
@@ -1744,7 +1744,7 @@ further using:
 </simulation>
 \end{code}
 
-A full list of which units are defined for which dimensionalities
+A full list of which units are defined for which dimensions
 can be found in the units.py module.
 
 
@@ -1754,6 +1754,8 @@ can be found in the units.py module.
 \subsubsection{Configuration files}
 
 \label{configfile}
+
+%Mano's note: Add example from tutorial
 
 Instead of initializing the atom positions manually, the starting
 configuration can be specified through a separate data file. The name
@@ -1771,6 +1773,8 @@ the cell parameters together.
 
 
 \subsubsection{Initialization from checkpoint files}
+
+%Mano's note: Add example from tutorial
 
 \ipi gives the option to output the entire state of the system at
 particular timesteps as an xml input file, called a checkpoint file
@@ -1793,6 +1797,8 @@ first time around.
 \section{Output files}
 
 \label{outputfiles}
+
+%Mano's note: Add example from tutorial
 
 \ipi uses a very flexible mechanism to specify how and how often
 atomic configurations and physical properties should be output. Within
@@ -1826,15 +1832,17 @@ point. These will now be considered in turn.
 \label{propertyfile}
 
 This is the output file for all the system and simulation level properties,
-such as the total energy and the time elapsed. The file starts by
-a header, which describes the properties being written on the different
-columns, and their units of measure. This is followed by the actual
+such as the total energy and the time elapsed. The file starts with
+a header, which describes the properties being written in the different
+columns and their output units. This is followed by the actual
 data. Each line corresponds to one instant of the simulation, and
 the different columns match the description provided in the header.
 The file is fixed formatted, with two blank characters at the start
 of each row, then the data in the same order as the header row. Each
 column is 16 characters wide and every float is written in exponential
 format with 8 digits after the decimal point.
+
+%Mano's note: Add an example of a header file here...
 
 The properties that are output are determined by the {}``properties''
 tag in the xml input file. The format of this tag is:
@@ -1848,23 +1856,32 @@ The attributes have the following meanings:
 \item [{stride}] The number of steps between each output to file
 \item [{filename}] The name of the output file
 \item [{flush}] The number of steps between flushing the buffer
+\item [{shape}] The number of properties in the list.
 \end{description}
-This tag data is an array of strings, each of which containing three
+The tag data is an array of strings, each of which contains three
 different parts:
 \begin{itemize}
 \item The property name, which describes which type of property is to be
 output. This is a mandatory part of the string.
 \item The units that the property will be output in. These are specified
 between curly brackets. If this is not specified, then the property
-will be output in atomic units.
+will be output in atomic units. Note that some properties can only
+be output in atomic units.
 \item The arguments to be passed to the function. These are specified between
 standard brackets, with each argument separated by a semi-colon. These
-may or may not be mandatory depending on the property. The arguments
+may or may not be mandatory depending on the property, as some arguments
+have well defined default values. The arguments
 can be specified by either of two different syntaxes, (name1=arg1;
-\ldots ) or (arg1; \ldots ). The first explicitly assigns the argument
-with the name {}``name1'' the value {}``arg1'', whereas the second
+\ldots ) or (arg1; \ldots ). 
+
+The first syntax uses keyword arguments. The above example would set the variable
+with the name {}``name1'' the value {}``arg1''. 
+The second syntax uses positional arguments. This syntax
 relies on the arguments being specified in the correct order, as defined
-in the relevant function in the property.py module. The two syntaxes
+in the relevant function in the property.py module, since the user has
+not specified which variable to assign the value to. 
+
+The two syntaxes
 may be mixed, but positional arguments must be specified first otherwise
 undefined behaviour will result. If no arguments are specified, then
 the defaults as defined in the properties.py module will be used.
