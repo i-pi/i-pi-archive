@@ -109,13 +109,13 @@ def getall(pstring):
 
    return (pstring, unit, arglist, kwarglist)
 
-def help_latex(idict, ref=False):
+def help_latex(idict, standalone=True):
    """Function to generate a LaTeX formatted file.
 
    Args:
       idict: Either property_dict or traj_dict, to be used to
          generate the help file.
-      ref: A boolean giving whether the latex file produced will be a
+      standalone: A boolean giving whether the latex file produced will be a
          stand-alone document, or will be intended as a section of a larger
          document with cross-references between the different sections.
 
@@ -124,11 +124,11 @@ def help_latex(idict, ref=False):
    """
 
    rstr = ""
-   if not ref:
+   if standalone:
       #assumes that it is a stand-alone document, so must have document
       #options.
-      rstr += "\\documentclass[12pt,fleqn]{report}"
-      rstr += """
+      rstr += r"\documentclass[12pt,fleqn]{report}"
+      rstr += r"""
 \usepackage{etoolbox}
 \usepackage{suffix}
 
@@ -165,7 +165,7 @@ def help_latex(idict, ref=False):
 \makeatother
 """
       rstr += "\n\\begin{document}\n"
-      rstr += "The following are the different allowable ouputs:\n"
+      rstr += "The following are the different allowable ouputs:\n\\par"
 
    for out in sorted(idict):
       rstr += "\\ipiitem{" + out + "}"
@@ -176,19 +176,13 @@ def help_latex(idict, ref=False):
 
       #see if there are additional attributes to print out
       xstr = ""
-      try:
-         if idict[out]['dimension'] != "undefined":
-            #doesn't print out dimension if not necessary.
-            xstr += "dimension: " + idict[out]['dimension'] + '; '
-      except KeyError:
-         pass
-      try:
+      if "dimension" in idict[out] and  idict[out]['dimension'] != "undefined": #doesn't print out dimension if not necessary.
+         xstr += "dimension: " + idict[out]['dimension'] + '; '
+      if "size" in idict[out]:
          xstr += "size: " + str(idict[out]['size']) +";"
-      except KeyError:
-         pass
       rstr += "{" + xstr + "}"
 
-   if not ref:
+   if standalone:
       #ends the created document if it is not part of a larger document
       rstr += "\\end{document}"
 
