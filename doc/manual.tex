@@ -2,8 +2,8 @@
 %% Do not edit unless you really know what you are doing.
 \documentclass[11pt,english,fleqn]{report}
 %\usepackage{fourier}
-\usepackage{helvet}
-%\usepackage{lmodern}
+%\usepackage{helvet}
+\usepackage{lmodern}
 \usepackage[T1]{fontenc}
 \usepackage[latin9]{inputenc}
 \setcounter{secnumdepth}{3}
@@ -911,7 +911,6 @@ ATOM      1   n1   1     1          x1      y1      z1  0.00  0.00             0
 ATOM      2   n2   1     1          x2      y2      z2  0.00  0.00             0
 ...
 \end{code}
-}
 where a, b and c are the cell vector lengths, A, B and C are the angles between
 them, n1 and n2 are the labels for atoms 1 and 2, and (x1, y1, z1)
 and (x2, y2, z2) give the position vectors of atoms 1 and 2. 
@@ -927,6 +926,8 @@ with \ipi) see
 The main advantage of this format is that it simultaneously specifies
 the atom configurations and the cell parameters, so they do
 not have to be done separately.
+This also means that this format can be used to visualize both the
+atom configurations and the cell in which they are held.
 
 Here we will show how the to specify the xml input file
 in both of these cases, assuming that the user has already
@@ -935,17 +936,24 @@ Note that these file formats can be read by
 visualization programs such as VMD, and so it is generally advised to
 use such software to make sure that the configuration is as expected.
 
-For the sake of this tutorial, we have included a valid xyz input
-file in the {}``tutorial-0'' directory called {}``our\_ref.xyz''.
+For the sake of this tutorial, we have included valid xyz and pdb input
+files in the {}``tutorial-0'' directory called {}``our\_ref.xyz''
+and {}``our\_ref.pdb'' respectively.
 
-To use this reference file, we will use the {}``file'' tag in initialize.
+To use a reference file the {}``file'' tag in initialize should be used.
 This will take an input file with a given name, and use it to initialize
-all relevant data. In this case, since the xyz file format has both
-positions and atom labels, it will initialize the positions, labels
+all relevant data. Both of these formats have the atom
+positions and labels, so this will initialize the positions, labels
 and masses of all the particles in the system, with the masses being
-implicitly set based on the atom label. We must also tell it which
-file type is being used using the {}``mode'' attribute. Putting
-this together gives:
+implicitly set based on the atom label. A pdb configuration file
+can also be used to set the cell parameters.
+
+Let us take these two file types in turn, and form the appropriate
+input sections.
+There are two attributes which are relevant to the {}``file'' tag
+for our current problem, {}``mode'' and {}``units''.
+{}``mode'' is used to describe what kind of data is being used to
+initialize from. 
 
 \begin{code}
 <initialize nbeads='4'>
