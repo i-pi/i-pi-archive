@@ -12,7 +12,7 @@
    <total_steps>5000</total_steps>
    <prng> <seed> 31415 </seed> </prng>
    <forces>
-      <socket mode="unix">
+      <socket mode="inet">
          <address>localhost</address>
       </socket>
    </forces>

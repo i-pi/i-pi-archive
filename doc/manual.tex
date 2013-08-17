@@ -190,7 +190,7 @@
 \label{intro}
 
 \ipi is a Path Integral Molecular Dynamics (PIMD) wrapper code written
-in Python, designed to be used together with \emph{ab initio} evaluation
+in Python, designed to be used together with an \emph{ab initio} evaluation
 of the interactions between the atoms. The main goal is to decouple
 the problem of evolving the ionic positions to sample the appropriate
 thermodynamic ensemble and the problem of computing the inter-atomic
@@ -275,13 +275,12 @@ specifically for PIMD simulations are now available to increase the
 rate of convergence with respect to the number of replicas used \cite{mark-mano08jcp,ceri+11jcp},
 further reducing the computational overhead of the method. All
 of these facts mean that it is now feasible to do PIMD simulations
-with thousands of molecules, or even using \emph{ab initio} electronic
+with thousands of molecules, or even to use \emph{ab initio} electronic
 structure calculations to propagate the dynamics for small systems.
 
 Furthermore, the framework used to run PIMD simulations can be adapted
-to generate approximate quantum dynamical information \cite{crai-mano04jcp,hone+06jcp},
-{\color{red} ??? Have the two key CMD (Jang/Voth, Cao/Voth) and two key RPMD (Craig-Mano+Braams-Mano)
-IN CHRONOLOGICAL ORDER}
+to generate approximate quantum dynamical information 
+\cite{cao-voth93jcp,cao-voth94jcp,crai-mano04jcp,braa-mano06jcp},
 and so can also be used to calculate correlation functions. While
 real-time quantum coherences cannot be captured, the inclusion 
 of quantum statistical information
@@ -316,7 +315,7 @@ care of stating their dependencies as well as the function that computes
 them. However, the advantage is that when the physical quantities
 are used, in the integrator of the dynamics or in the evaluation of
 physical properties, one does not need to take care of book-keeping
-and the code can be cleaner, transparent and readable.
+and the code can be clean, transparent and readable.
 
 
 \subsection{Communication protocol}
@@ -330,7 +329,7 @@ Both Internet and Unix domain sockets can be used: the latter allow
 for fast communication on a single node, whereas the former make
 it possible to realise a distributed computing paradigm, with clients
 running on different nodes or even on different HPC facilities. In
-order to facilitate implementation of the sockets communication in
+order to facilitate implementation of the socket communication in
 client codes, a simple set of C wrappers to the standard libraries
 socket implementation is provided as part of the \ipi distribution,
 that can be used in any programming language that can be linked with
@@ -376,12 +375,15 @@ Pressure & N.A. & 2.9421912e13 Pa\\
 
 The functionality of \ipi includes:
 \begin{itemize}
-\item Integrators for constant temperature ensembles, including: \begin{itemize}
-\item Local and global stochastic thermostats \cite{plangevin1908cras,buss-parr08cpc}, with optional optimized sampling over the normal mode coordinates \cite{ceri+10jcp}.
+\item Thermostats for constant temperature ensembles, including: \begin{itemize}
+\item Local and global stochastic thermostats \cite{plangevin1908cras,buss-parr08cpc}, with optional optimized sampling of the ring polymer normal mode coordinates \cite{ceri+10jcp}.
 \item Optimal sampling generalized Langevin equation (GLE) thermostats \cite{ceri+09jctc}.
-\item Path integral + GLE (PI+GLE) thermostats \cite{ceri+11jcp} for accelerating convergence of potential energy with respect to number of replicas, as well as the more recent PIGLET method \cite{ceri-mano12prl} which also converges kinetic energy quickly.
+\item Path integral + GLE (PI+GLE) thermostats \cite{ceri+11jcp} for accelerating the
+convergence of the potential energy with respect to the number of replicas, 
+as well as the more recent PIGLET method \cite{ceri-mano12prl}, which 
+accelerates the convergence of the kinetic energy.
 \end{itemize}
-\item Integrators for constant pressure ensembles \cite{mart+99jcp,buss+09jpc}.
+\item Barostats for constant pressure ensembles \cite{mart+99jcp,buss+09jpc}.
 \item Ring polymer contraction \cite{mark-mano08jcp}.
 \item Scaled path finite difference energy and heat capacity estimators
 \cite{tyamamoto05jcp}.
@@ -416,7 +418,7 @@ wrapper.
 
 \label{librarywebsites}
 
-There are currently patches available for Quantum Espresso version
+There are currently client patches available for Quantum Espresso version
 4.3.2 and CP2K version 2.2. It should be possible to adapt these patches
 to other versions of the codes with minor modifications. For more
 information about Quantum Espresso and CP2K, go to \url{www.quantum-espresso.org}
@@ -437,8 +439,9 @@ of how to do this.
 For more information about \ipi{} and to download the source code
 go to \url{gle4md.berlios.de }, where one can also obtain colored-noise
 parameters to run Path Integral with Generalized Langevin Equation
-thermostat (PI+GLE) calculations.
+thermostat (PI+GLE/PIGLET) calculations.
 
+%Mano's note: Allowed by CPC?
 
 \chapter{Getting started}
 
@@ -476,9 +479,13 @@ Patching for use with \ipi{} should not introduce further dependencies.
 A tar file can be downloaded from the website \url{gle4md.berlios.de}.
 To install this you need to input the following command:
 
+%Mano's note: Again, is this allowed?
+
 \begin{code}
-> tar xf [wrapper_tar_file.tar]
+> tar xf [wrapper\_tar\_file.tar]
 \end{code}
+
+%Mano's note: Perhaps remove claim of Windows from prog. description?
 
 You can also obtain a local clone of the git repository on \url{bitbucket.org}
 using:
@@ -538,7 +545,7 @@ say, with the following command:
 \end{code}
 
 Next, you must tell python where to find this library, by appending
-to the Linux environment variable \textbf{PYTHONPATH}. If you are
+to the Linux environment variable PYTHONPATH. If you are
 using Python version {}``py\_vers'', then the NumPy libraries will
 have been installed in the directory {}``np\_dir/lib/py\_vers/site-packages'',
 or a close analogue of this. In the above case the following command
@@ -566,7 +573,7 @@ This however is not the only distribution that could be used, and
 indeed faster stand-alone versions exist. The gold-standard FFT library
 is the FFTW library, which is a set of C libraries that have been
 heavily optimized for a wide range of applications. There have been
-a number of Python wrappers around the FFTW library, one of which
+a number of Python wrappers built around the FFTW library, one of which
 is currently interfaced with \ipi. This code can be found at \url{https://github.com/hgomersall/pyFFTW},
 and has documentation at \url{http://hgomersall.github.io/pyFFTW/}.
 
@@ -591,8 +598,11 @@ default. Otherwise the slower NumPy version will be used.
 
 \subsection{Minimal client code}
 
+%Mano's note: Missing section...
 
 \subsection{Patching CP2K}
+
+%Mano's note: Missing section...
 
 
 \subsection{Patching Quantum-Espresso}
@@ -615,11 +625,15 @@ After this, continue the compilation as per the instructions at \url{www.quantum
 
 \subsection{Writing a patch}
 
+%Mano's note: Missing section...
+
 
 \section{Running \ipi}
 
 
 \subsection{Running the server code}
+
+\label{runningsimulations}
 
 \ipi simulations are run using the i-pi Python script found in the
 {}``i-pi'' directory. This script takes an xml-formatted file as
@@ -646,19 +660,22 @@ poll for incoming connections.
 
 \subsubsection{CP2K}
 
-To use CP2K as the client code, an additional file named {}``serverfile''
-must be kept in the same directory that CP2K is being run from. It
-should contain a string a single line long, of the format {}``mode:host:port\_number''.
-{}``mode'' should either be {}``INET'' or {}``UNIX'', representing
-an internet or unix socket respectively. The rest of the input file
-is the same as for a standard CP2K calculation.
+%To use CP2K as the client code, an additional file named {}``serverfile''
+%must be kept in the same directory that CP2K is being run from. It
+%should contain a string a single line long, of the format {}``mode:host:port\_number''.
+%{}``mode'' should either be {}``INET'' or {}``UNIX'', representing
+%an internet or unix domain socket respectively. The rest of the input file
+%is the same as for a standard CP2K calculation.
+
+%Mano's note: This is now all wrong, as it has been updated to more closely resemble the QE input.
 
 
 \subsubsection{Quantum-Espresso}
 
-To use Quantum-Espresso as the client code using a socket on the host
+To use Quantum-Espresso as the client code using an 
+internet domain socket on the host
 address {}``host\_address'' and on the port number {}``port''
-we would add the following lines to the input file:
+the following lines must be added to the input file:
 
 \begin{code}
 &CONTROL
@@ -669,8 +686,9 @@ we would add the following lines to the input file:
 /
 \end{code}
 
-If we wanted to run on a UNIX port instead of an INET port, we would
-instead write:
+If instead a unix domain socket is required then the following
+modification is necessary:
+
 
 \begin{code}
 &CONTROL
@@ -685,125 +703,6 @@ The rest of the input file should be the same as for a standard Quantum
 Espresso calculation, as explained at \url{www.quantum-espress.org/}.
 
 
-\subsection{Running simulations}
-
-\label{runningsimulations}
-
-There are two parts to any \ipi simulation. First the server code
-is run, which starts the dynamics loop until the forces are required.
-Once the server socket has been opened, it then waits for connections
-from client codes. 
-
-For a small simulation, with a simple classical potential, it may
-be preferable to run both halves of the simulation on the same computer,
-especially as this allows us to use the faster unix domain sockets.
-This can be done using a single script, such as:
-
-\begin{code}
-#These are the parameters that need to be specified by
-#the user. The number of client codes is given by $nclients,
-#the i-pi source directory containing the i-pi script
-#is given by $src_dir, and the code that runs one of 
-#the client codes is given by $client_comm
-inputfile=...
-hostname=...
-port=...
-nclients=...
-src_dir=...
-client_comm="..."
-
-#This modifies the input file. If necessary, the client code
-#input file should be modified here too
-sed -i "s/<address>[^<]*</<address>$hostname</" $inputfile
-sed -i "s/<port>[^<]*</<port>$port</" $inputfile
-
-if [ -e EXIT ]; then
-   rm EXIT 
-fi
-
-#Runs the simulation, and redirects the server
-#standard output to a file named 'log'.
-bash -c "python $src_dir/i-pi $inputfile > log &"
-
-sleep 20 #must wait for server to be initialized
-for a in `seq 1 $nclients`; do
-   bash -c "$client_comm"
-done 
-\end{code}
-
-However, for most simulations, especially those running with expensive
-\emph{ab initio} forces and potentials, we will want to run the client
-codes on a computational cluster. Here we run the server code elsewhere,
-and use internet sockets for the communication.
-
-To run the client on a cluster computer, two major changes must be
-implemented. Firstly, the code required to run the client code should
-be separated from that of the server code. Secondly, the client script
-should be executed using a queueing program such as qsub rather than
-the bash shell script as above, and so will need to have the appropriate
-directive comment lines. Depending on which cluster is used, additional
-commands to set parameters such as the walltime, number of nodes and
-number of cores can be used. Check the qsub man page for the cluster
-you are running the code on for more details.
-
-One possible script layout to run the client codes would be:
-
-\begin{code}
-#!/bin/bash
-#$ -S /bin/bash
-#$ -N jobname
-#$ ...
-
-#use this if there are library files needed
-#by the client code that are not on the default path
-
-#export LD_LIBRARY_PATH=...
-
-#use this if ssh tunnelling is required
-
-#server_host=... #the server host address
-#server_port=... #the server port number
-#cluster_port=... #the cluster port number
-#ssh -f -N $server_host -L $cluster_port:$server_host:$server_port
-
-inputfile=...
-hostname=...
-port=...
-client_comm="..."
-
-#Modify client input file if necessary
-
-bash -c "client_comm"
-\end{code}
-
-Note that it may be necessary to export libraries or modules if they
-are not present by default, or to use an ssh tunnel if the cluster
-is not open to the internet (see \ref{ssh_sockets}).
-
-To set up multiple concurrent \ipi simulations each host socket has
-to be distinguishable, so that the client codes appropriate to each
-simulation connect only to the correct server. This can be done with
-internet sockets by adjusting the port number for each simulation,
-which then acts as a unique identifier for each of the server codes.
-The above shell scripts can be easily modified to do this, for example
-if we assume the simulations will be run in directories called sim\_1,
-sim\_2, \ldots, then we can write:
-
-\begin{code}
-first_port=... #The value of the port of sim_1
-i=0
-for a in sim_*; do #finds all directories in which we wish to run simulations
-   cd $a
-   port=$((first_port+i))
-   ((i++))
-
-   #here we run the code for one simulation as before
-
-   cd ..
-done
-\end{code}
-
-
 \section{A simple tutorial}
 
 
@@ -812,53 +711,50 @@ Here we give a simple step-by-step guide through an example
 simulation, exploring
 some of the more generally useful options that \ipi offers and making
 no assumptions of previous experience of this code or other MD codes.
-Exercepts from the relevant input files are reproduced here, for explanation
+Excerpts from the relevant input files are reproduced here, for explanation
 purposes, but to get the most out of this tutorial the user is encouraged
-to work through them themselves. For this purpose, the input files
+to work through it themselves. For this purpose, the input files
 have been included with the \ipi distribution, in the {}``test/tutorial''
 directory.
 
-The chosen problem is that of a small NPT simulation of para-hydrogen, 
+The chosen problem is that of a small \emph{NPT} simulation of para-hydrogen, 
 using the Silvera-Goldman potential \cite{silv-gold78jcp}. 
-We will take (N,P,T) = (108, 0, 25 K).
+We will take (\(N\),\(P\),\(T\)) = (108, 0, 25 K).
 
 Finally, note that this is designed to be a demonstration of some
 of the basic abilities of \ipi, and so the user is encouraged to
 play with some of the variables to get a feel for how the input file
-works. \textbf{We will put in bold variables that can be safely adjusted without
-changing the result of the simulation.}
+works. 
 
-
-\subsection{Part 0 - a minimal input file}
+\subsection{Part 1 - \emph{NVT} Equilibration run}
 
 
 \subsubsection{Client code}
 
-Let us now consider the problem of how to use \ipi to run a NPT
+Let us now consider the problem of how to use \ipi to run a \emph{NPT}
 simulation of para-hydrogen. The first thing that is required is a
 client code that is capable of calculating the potential interactions
 of para-hydrogen molecules. Fortunately, one of the client codes distributed
 with \ipi has an appropriate empirical potential already hard-coded
-into it (hence why this system was chosen for this tutorial), and
+into it, and
 so all that is required is to create the {}``driver.x'' file in
 the {}``drivers'' directory, using the UNIX utility make.
 
 This client code can be used for several different problems, some of which
 are explored in the {}``tests'' directory, but for the current problem
 we will use the Silvera-Goldman potential with a cut-off radius
-of \textbf{15 bohr radii}. This is run using the following command:
+of 15 \(a_0\). This is run using the following command:
 
 \begin{code}
-> ./driver.x -m sg -u -h localhost -o 15
+> ./driver.x -m sg -h localhost -o 15
 \end{code}
 
 The option {}``-m'' is followed by the empirical potential required,
-in this case we use {}``sg'' for Silvera-Goldman, {}``-u'' gives
-a unix domain socket, {}``-h localhost'' sets up the client hostname
-as {}``localhost'' and {}``-o 15'' sets the cut-off to 15 bohr
-radii, as required. 
+in this case we use {}``sg'' for Silvera-Goldman, 
+{}``-h localhost'' sets up the client hostname
+as {}``localhost'' and {}``-o 15'' sets the cut-off to 15 \(a_0\), as required. 
 
-Note that usually this step will require setting up an the appropriate
+Note that usually this step will require setting up appropriate
 client code input files, possibly for an \emph{ab initio} electronic
 structure code, and so is generally a more involved process. Refer
 to \ref{runningclients}, and the documentation of the appropriate
@@ -870,7 +766,7 @@ client code, for more details on how to do this step.
 Now that the client code is ready, an appropriate xml input file needs
 to be created from which the host server and the simulation data can
 be initialized. Here, we will go step by step through the creation
-of a minimal input file for a simple NVT equilibration run. Note that
+of a minimal input file for a simple \emph{NVT} equilibration run. Note that
 the working final version is held within the {}``tutorial-0'' directory.
 
 Firstly, when reading the input file the \ipi xml reading functions look
@@ -931,7 +827,7 @@ data, and has the following syntax:
 
 Note that an attribute forms part of the opening tag, and that the
 value being assigned to it is held within quotation marks. In this
-case, we have set the number of replicas, or beads, to \textbf{4}.
+case, we have set the number of replicas, or beads, to 4.
 
 Next, we must specify the atomic configuration. Rather than initialize
 the atom positions manually, we will assume that the user can create
@@ -977,7 +873,7 @@ this together gives:
 The only remaining mandatory parameters that have not been initialized
 are the cell parameters. These could in theory be set using a separate
 file, but here we will initialize them manually. Taking a cubic cell
-with cell parameter 33.72594 bohr radii, we can specify this using
+with cell parameter 33.72594 \(a_0\), we can specify this using
 the {}``cell'' tag in three different ways:
 
 \begin{code}
@@ -1045,7 +941,7 @@ does not need a port number to be specified. This gives the final
 
 The last section that we will need is the ensemble, which determines
 how the dynamics integrator will be initialized. Since we wish to
-do a NVT simulation, we set the {}``mode'' attribute to {}``nvt'',
+do a \emph{NVT} simulation, we set the {}``mode'' attribute to {}``nvt'',
 and must specify the temperature using the appropriate tag:
 
 \begin{code}
@@ -1061,7 +957,7 @@ be. In general, the time step should be made as large as possible
 without there being a drift in the conserved quantity. Usually we
 would take a few short runs with different time steps to try and optimize
 this, but for the sake of this tutorial we will use a safe value of
-\textbf{40 atomic time units}, giving:
+40 atomic time units, giving:
 
 \begin{code}
 <ensemble mode='nvt'>
@@ -1077,11 +973,11 @@ for the constant temperature sampling algorithm. For simplicity we
 will take the path-integral Langevin equation (PILE) algorithm \cite{ceri+10jcp},
 which is specifically designed for path integral simulations, and
 since we are trying to equilibrate local properties we will take the
-local version of this, \textbf{{}``pile\_l''}. This integrator also has to
+local version of this, {}``pile\_l''. This integrator also has to
 be initialized with a time scale parameter, {}``tau'', which determines
 how strong the thermostat is. Since we have a local thermostat the
 appropriate time scales will be fairly short, so we will take a short
-time scale of \textbf{1000 atomic time units}. Putting all of this together,
+time scale of 1000 atomic time units. Putting all of this together,
 we get the final input file:
 
 \begin{code}
@@ -1114,10 +1010,9 @@ we get the final input file:
 
 Now that we have a valid input file, we can run the test simulation.
 The {}``i-pi'' script in the root directory is used to create an
-\ipi simulation from a xml input file. More information on how to
-run this code can be found in \ref{runningsimulations}, but all that
-is required in this case (if we assume that we are in the {}``tutorial-0''
-directory) is:
+\ipi simulation from a xml input file. As explained in
+\ref{runningsimulations} (if we assume that we are in the {}``tutorial-0''
+directory) this script is run using:
 
 \begin{code}
 > python ../../../i-pi tutorial-0.xml
@@ -1214,10 +1109,8 @@ but the kinetic and potential energies have not.
 We therefore need to adjust the input parameters to converge these properties
 properly, as will be done in the next section.
 
-\subsection{Part 1 - Customizing and extending the input file}
-{\color{red} ??? USE EVERYWHERE 'kelvin' for the temperature, or give it in a.u.}
 In Part 0, we created a minimal input file which could be used to
-run a basic NVT simulation. However, this ignored several non-essential
+run a basic \emph{NVT} simulation. However, this ignored several non-essential
 but very useful bits of functionality, which are likely to be 
 important for most problems users will face. With this in mind,
 we now present some impovements to the original input file. 
@@ -1226,7 +1119,7 @@ we now present some impovements to the original input file.
 
 Firstly, we will discuss the input parameters that are necessary for
 the simulation to actually do what we originally intended it to
-correctly, namely equilibate a small system in the NVT ensemble.
+correctly, namely equilibate a small system in the \emph{NVT} ensemble.
 
 We noted at the end of the last run that the simulation did not appear to have
 fully converged. Often in this case it will be necessary to adjust the parameters
@@ -1237,7 +1130,7 @@ concentrate on these.
 
 The most obvious first step is to run the simulation for longer. 
 By default the number of
-time steps is 1000, so we will increase this to \textbf{5000} using the 
+time steps is 1000, so we will increase this to 5000 using the 
 {}``total\_steps'' tag:
 
 \begin{code}
@@ -1260,7 +1153,7 @@ distribution. This can be done in the {}``initialize'' section using the
 </initialize>
 \end{code}
 
-Note that we use \textbf{double the physical temperature} 
+Note that we use double the physical temperature 
 here, since we are starting from essentially a zero-temperature optimized 
 configuration and so this choice ensures that the initial total energy 
 is roughly correct.
@@ -1288,7 +1181,7 @@ user specified unit and atomic units.
 For example, the time step we used in tutorial 0
 was 40 atomic time units, but we might instead want to express this in S.I.
 units for comparison with another paper. Since this happens to be approximately
-\textbf{1 femtosecond}, so we can instead use:
+1 femtosecond, so we can instead use:
 
 \begin{code}
 <ensemble mode='nvt'>
@@ -1298,7 +1191,7 @@ units for comparison with another paper. Since this happens to be approximately
 \end{code}
  
 Similarly, we might want to specify the input configuration file in
-angstrom rather than bohr radii (in fact this is the standard unit for
+angstrom rather than \(a_0\) (in fact this is the standard unit for
 this file type). This can be done in the same way:
 
 \begin{code}
@@ -1365,7 +1258,7 @@ with the {}``verbosity'' attribute of {}``simulation'':
 By default the verbosity is set to {}``low'', which only outputs
 important warning messages and information, and some statistical 
 information every 1000 time steps. Here we will set it to 
-\textbf{{}``high''}, which should give output of the type:
+{}``high'', which should give output of the type:
 
 \small
 \begin{code}
@@ -1436,7 +1329,7 @@ overwrites the previous one or not.
 There are several options we can use to customize the
 output data. Firstly, the {}``prefix'' attribute should be set to
 something which can be used to distinguish the files from different
-simulation runs. In this case we can simply set it to \textbf{{}``tut1''}:
+simulation runs. In this case we can simply set it to {}``tut1'':
 
 \begin{code}
 <output prefix='tut1'>
@@ -1444,7 +1337,7 @@ simulation runs. In this case we can simply set it to \textbf{{}``tut1''}:
 </output>
 \end{code}
 
-As for the input parameters, the \textbf{units the output is given in} can be
+As for the input parameters, the units the output is given in can be
 set by the user. Unlike the input parameters however, 
 this is done by specifying an
 appropriate unit in curly braces after the name of the 
@@ -1464,8 +1357,8 @@ property or trajectory of interest, as shown below:
 \end{code}
 
 Next, let us adjust some of the attributes. Let us suppose that we
-wish to output the properties \textbf{every time step}, to check for conserved
-quantity jumps, and to output the the trajectory in \textbf{pdb format}.
+wish to output the properties every time step, to check for conserved
+quantity jumps, and to output the the trajectory in pdb format.
 To do this we would set the {}``stride'' and {}``format'' tags,
 as shown below:
 
@@ -1496,8 +1389,8 @@ others, and so it would be impractical to output it every time step.
 With \ipi this is easy to do, all that is required is to add another
 {}``properties'' tag with a different filename.
 
-For demonstration purposes, we will chose to print out \textbf{the forces
-acting on one tagged bead}, since this requires an argument to be
+For demonstration purposes, we will chose to print out the forces
+acting on one tagged bead, since this requires an argument to be
 passed to the function. The \ipi syntax for doing this is to have
 the arguments to be passed to the function between standard braces,
 separated by semi-colons.
@@ -1513,7 +1406,7 @@ appropriate syntax is then given below:
 </properties>
 \end{code}
 
-This will print out the force vector acting on \textbf{bead 0 of atom 0}.
+This will print out the force vector acting on bead 0 of atom 0.
 \ipi also accepts positional arguments
 (i.e. arguments not specified by a name, but just by their position
 in the list of arguments), and so this could also be written as:
@@ -1524,8 +1417,8 @@ in the list of arguments), and so this could also be written as:
 </properties>
 \end{code}
 
-Finally, putting all this together, and \textbf{adjusting some
-of the parameters of the new file}, we get:
+Finally, putting all this together, and adjusting some
+of the parameters of the new file, we get:
 
 \small
 \begin{code}
@@ -1552,29 +1445,29 @@ re-run the simulation by
 repeating the steps in \ref{run1}. The output of the 
 {}``tut1.md'' file should show that all the properties of interest
 have converged by the end of the simulation. If this
-is the case, then we are now ready to start the NPT run.
+is the case, then we are now ready to start the \emph{NPT} run.
 
-\subsection{Part 2 - NPT simulation}
+\subsection{Part 2 - \emph{NPT} simulation}
 
-Now that we have converged NVT simulation data, we can use this to
-initialize a NPT simulation. There are two ways of doing this,
+Now that we have converged \emph{NVT} simulation data, we can use this to
+initialize a \emph{NPT} simulation. There are two ways of doing this,
 both of which involve using the RESTART file generated at
-the end of the NVT run as a starting point.
+the end of the \emph{NVT} run as a starting point.
 
 \subsubsection{Modifying the RESTART file}
 
 Firstly, you can use the RESTART file directly, modifying it
-so that instead of continuing with the original NVT simulation
-it will instead it will start a new NPT simulation. We have included
+so that instead of continuing with the original \emph{NVT} simulation
+it will instead it will start a new \emph{NPT} simulation. We have included
 in the {}``tutorial 2'' directory both a RESTART file from
-tutorial 1 and an adjusted file which will run NPT dynamics.
+tutorial 1 and an adjusted file which will run \emph{NPT} dynamics.
 
 These adjustments start with resetting the {}``step'' tag, so that
 it starts with the value 0. This can be done by simply removing the
 tag. Similarly, we can increase the total number of
 steps so that it is more suitable for collecting the necessary
 amount of data, in this case we will set the 
-{}``total\_steps'' to \textbf{20000}.
+{}``total\_steps'' to 20000.
 
 We will also update the output files, first by setting the filenames
 to start with {}``tut2a'' rather than {}``tut1'', and secondly by adding
@@ -1616,7 +1509,7 @@ and a {}``pressure'' tag must be added:
 We must also specify which constant pressure algorithms are to be used.
 \ipi contains two barostats, labelled {}``mht'' and {}``bzp''. These are
 broadly similar, but use slightly different integration algorithms.
-In this case, we will use \textbf{{}``bzp''}. This gives:
+In this case, we will use {}``bzp''. This gives:
 
 \begin{code}
 <ensemble mode='npt'>
@@ -1630,10 +1523,10 @@ In this case, we will use \textbf{{}``bzp''}. This gives:
 
 This barostat also requires a 
 thermostat to deal with the volume degree of freedom, which we will take
-to be a simple \textbf{Langevin thermostat}.
+to be a simple Langevin thermostat.
 This thermostat is specified in the same way as the one which does the
 constant temperature algorithms for the atomic degrees of freedom, and
-we will take its time constant to be \textbf{10000 atomic time units}:
+we will take its time constant to be 10000 atomic time units:
 
 \begin{code}
 <ensemble mode='npt'>
@@ -1648,8 +1541,8 @@ we will take its time constant to be \textbf{10000 atomic time units}:
 </ensemble>
 \end{code}
 
-Finally, we will take the barostat time scale to be \textbf{10000 atomic time
-units}, giving:
+Finally, we will take the barostat time scale to be 10000 atomic time
+units, giving:
 
 \begin{code}
 <ensemble mode='npt'>
@@ -1673,7 +1566,7 @@ the xyz/pdb files were used previously.
 
 Firstly, the original input file {}``tutorial-1.xml'' needs to
 be modified so that
-it will do a NPT simulation instead of NVT. This involves modifying
+it will do a \emph{NPT} simulation instead of \emph{NVT}. This involves modifying
 the {}``total\_steps'', {}``output'' and {}``ensemble'' tags as
 above. Next, we replace the {}``initialize'' tag section with:
 
@@ -1702,8 +1595,8 @@ and at least 172 particles are actually
 required to provide converged results.
 As a last tutorial then, you should repeat tutorials 1 and 2 with
 this number of replicas and atoms. The directory {}``tutorial 3'' contains 
-NVT and NPT input files which can be used to do a fully converged
-NPT simulation from scratch, except that they are missing some
+\emph{NVT} and \emph{NPT} input files which can be used to do a fully converged
+\emph{NPT} simulation from scratch, except that they are missing some
 of the necessary input parameters.
 
 If these are chosen correctly and the simulation is run properly
@@ -1723,8 +1616,8 @@ All the input files are contained in the directory test, which is
 subdivided into the following directories:
 \begin{description}
 \item [{lj:}] This gives a simple classical Lennard-Jones simulation of
-Ne. The state points are given by (N, \(\rho\), T) = (864, 0.35,
-1.62), (N, \(\rho\), T) = (864, 0.75, 1.069) and (N, \(\rho\), T)
+Ne. The state points are given by (\(N\), \(\rho\), \(T\)) = (864, 0.35,
+1.62), (\(N\), \(\rho\), \(T\)) = (864, 0.75, 1.069) and (\(N\), \(\rho\), \(T\))
 = (864, 0.88, 1.095) in reduced Lennard-Jones units, so that the results
 can be compared to those in the paper \cite{lverlet67pr}.
 \item [{ph2:}] This simulates para-hydrogen using the isotropic Silvera-Goldman
@@ -1737,7 +1630,7 @@ client is functioning correctly. There is one simple 4-atom lithium
 test, and a test using a single water molecule.
 \item [{harmonic:}] This has a simple example of a 1D harmonic oscillator.
 This demonstrates the displaced path integral momentum distribution
-operator as given in \cite{linlin+10prl}. As the momentum distribution
+estimator as given in \cite{linlin+10prl}. As the momentum distribution
 is known analytically for this simple system, this provides an indication
 of how well the method is working.
 \item [{lammps:}] This has a simple implementation of the q-TIP4P-F empirical
@@ -1765,10 +1658,14 @@ a set of hierarchically nested tags. There are three parts to an xml
 tag. Each tag is identified by a tag name, which specifies the class
 or variable that is being initialized. Between the opening and closing
 tags there may be some data, which may or may not contain other tags.
-In the code this is used to specify the contents of a class object,
-or the value of a variable. Finally, any tag can have attributes,
-which in the code are used for variables which specify the state or
-type of class that will be created. A xml tag has the following syntax:
+This is used to specify the contents of a class object,
+or the value of a variable. Finally tags can have attributes,
+which are used for metadata, i.e. data used to specify
+how the tag should be interpreted. As an example, attributes
+are often used to choose between different classes which can
+be used for the same thing, such as the thermostat classes. 
+
+A xml tag has the following syntax:
 
 \begin{code}
 <tag_name attribute_name='attribute_data'>tag_data</tag_name>
@@ -1787,7 +1684,7 @@ Float & <tag>11.111</tag> or <tag>1.1111e+1</tag>\\
 Integer & <tag>12345</tag>\\
 String & <tag>string\_data</tag>\\
 Tuple & <tag> (int1, int2, \ldots )</tag>\\
-Vector & <tag> {[} entry1, entry2, \ldots {]} </tag>\\
+Array & <tag> {[} entry1, entry2, \ldots {]} </tag>\\
 Dictionary & <tag>\{name1: data1, name2: data2, \ldots \}</tag>\\
 \hline\hline
 \end{tabular}
@@ -1796,27 +1693,38 @@ Dictionary & <tag>\{name1: data1, name2: data2, \ldots \}</tag>\\
 Note that arrays are always given as one-dimensional lists. In cases
 where a multi-dimensional array must be entered, one can use the `shape'
 attribute, that determines how the list will be reshaped into a multi-dimensional
-array; for instance
+array. For example, the bead positions are
+represented in the code as an array of shape 
+(number of beads, 3*number of atoms). If we take a system with 20 atoms
+and 8 beads, then this can be represented in the xml input file as:
 
 \begin{code}
-<tag shape=`(1,2,3)'>[ a111, a112, a113, a121, a122, a123 ]</tag>
-\end{code}If `shape' is not specified, a 1D array will be assumed.
+<beads natoms='20' nbeads='8'>
+   <q shape=`(8,60)'>[ q11x, q11y, q11z, q12x, q12y, ... ]</tag>
+   ...
+\end{code}
 
-The code uses this hierarchical structure to help read the data; if
+If `shape' is not specified, a 1D array will be assumed.
+
+The code uses the hierarchical nature of the xml format to help read the data; if
 a particular object is held within a parent object in the code, then
 the tag for that object will be within the appropriate parent tags.
-This is used to make the structure of the simulation clear. For example,
+This is used to make the structure of the simulation clear. 
+
+For example,
 the system that is being studied is partly defined by the thermodynamic
 ensemble that should be sampled, which in turn may be partly defined
-by the pressure, and so on. In the input file this would be specified
+by the pressure, and so on. To make this dependence clear in the code
+the global simulation object which holds all the data contains
+an ensemble object, which contains a pressure variable.
+ 
+Therefore the input file is specified
 by having a {}``simulation'' tag, containing an {}``ensemble''
 tag, which itself contains a {}``pressure'' tag, which will contain
-a float value corresponding to the external pressure. In the code
-itself this will correspond to a simulation object, which will contain
-an ensemble object, which will contain a pressure variable. In this
+a float value corresponding to the external pressure. In this
 manner, the simulation class structure can be constructed iteratively.
 
-For example, suppose we want to generate a NPT ensemble at an external
+As a specific example, suppose we want to generate a \emph{NPT} ensemble at an external
 pressure of 1e-7 atomic pressure units. This would be specified by
 the following input file: 
 
@@ -2423,7 +2331,7 @@ given the number of atoms and the number of beads used in the rest
 of the input. If the number of beads is nbeads and the number of atoms
 natoms, then q and p should have shape (nbeads, 3{*}natoms) and m
 and names should have shape (natoms,).
-\item \emph{No thermostat/barostat tag provided for NVT/NPT simulation}:
+\item \emph{No thermostat/barostat tag provided for \emph{NVT}/\emph{NPT} simulation}:
 Some ensembles can only be sampled if a thermostat and/or barostat
 have been defined, and so for simulations at constant temperature
 and/or pressure these tags are mandatory. If you wish to not use a
@@ -2577,12 +2485,11 @@ initialization mode, then for some value of the angles it is impossible
 to construct a valid cell vector matrix. This will cause the code
 to attempt to take the square root of a negative number, which gives
 this exception.
-\item \emph{overflow encountered in exp}: Sometimes occurs in NPT runs
+\item \emph{overflow encountered in exp}: Sometimes occurs in \emph{NPT} runs
 when the simulation box {}``explodes''. Make sure you have properly
 equilibrated the system before starting and that the timestep is short
 enough to not introduce very large integration errors.
 \end{itemize}
 \bibliographystyle{elsarticle-num-names}
 \bibliography{mybib}
-
 \end{document}

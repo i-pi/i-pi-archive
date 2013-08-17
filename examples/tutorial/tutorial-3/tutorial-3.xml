@@ -11,7 +11,7 @@
    <total_steps> ??? </total_steps>
    <prng> <seed> ???  </seed> </prng>
    <forces>
-      <socket mode="unix">
+      <socket mode="inet">
          <address>localhost</address>
       </socket>
    </forces>

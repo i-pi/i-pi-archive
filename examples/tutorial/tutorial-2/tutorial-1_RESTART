@@ -580,7 +580,7 @@
         2.06511833e-15,   0.00000000e+00,   0.00000000e+00,   3.37259417e+01 ]
    </cell>
    <forces>
-      <socket mode='unix'>
+      <socket mode='inet'>
       </socket>
    </forces>
    <output prefix=''>
