@@ -1866,7 +1866,12 @@ point. These will now be considered in turn.
 \label{propertyfile}
 
 This is the output file for all the system and simulation level properties,
-such as the total energy and the time elapsed. The file starts with
+such as the total energy and the time elapsed. It is designed to 
+track a small number of important properties throughout a
+simulation run, and as such has been formatted to be used as input
+for plotting programs such as gnuplot.
+
+The file starts with
 a header, which describes the properties being written in the different
 columns and their output units. This is followed by the actual
 data. Each line corresponds to one instant of the simulation, and
@@ -1924,20 +1929,29 @@ The different available property names are:
 
 \input{input_docs/property_list}
 
+%Mano's note: Fix help strings of isotope estimators.
 
 \subsection{Trajectory files}
 
-These are the output file for atomic or bead level properties, such
-as the bead positions. Each trajectory that should be output is specified
+These are the output files for atomic or bead level properties, such
+as the bead positions. This will output data for each degree of
+freedom, in a format that can be read by visualization packages
+such as VMD.
+
+Each trajectory that should be output is specified
 by the {}``trajectory'' tag in the input file. The allowable file
 formats for the trajectory output files are the same as for the configuration
 input files, given in~\ref{configfile}.
 
 These tags have the format:
 
-\begin{code}<trajectory stride=`' filename=`' format=`' cell_units=`' flush=`' bead=`'>
+\begin{code}
+<trajectory stride=`' filename=`' format=`' cell_units=`' flush=`' bead=`'>
    traj_name{units}(arg1;...)
-</trajectory>\end{code}This is very similar to the {}``properties'' tag, but it has the
+</trajectory>
+\end{code}
+
+This is very similar to the {}``properties'' tag, except that it has the
 additional tags {}``format'' and {}``cell\_units'', and only one
 trajectory can be specified per file. `format' specifies the format
 of the output file, and `cell\_units' specifies the units in which
@@ -1958,8 +1972,8 @@ The possible choices of output trajectories are:
 \label{checkpoint}
 
 As well as the above output files, the state of the system at a particular
-time step can also be saved to file. These checkpoint files can be
-used as valid input files, with all the information required to restore
+time step can also be saved to file. These checkpoint files can later be
+used as input files, with all the information required to restore
 the state of the system to the point at which the file was created. 
 
 The syntax for this tag is:
@@ -1988,10 +2002,9 @@ also be used:
 
 As well as checkpoint files during a simulation run, \ipi{} also
 creates a checkpoint automatically at the end of the simulation, with
-file name {}``RESTART''. In the same way as t
-
-he checkpoint files generated above it contains the state of the system
-as created by the wrapper, but it doesn't need to be asked for by
+file name {}``RESTART''. In the same way as the checkpoint files generated 
+above it contains the state of the system
+as created by the wrapper, but it does not need to be asked for by
 the user in the input file. Its purpose is that if the user decides
 that insufficient steps were used in an already completed simulation,
 then this file can be used to continue from where it ended.
@@ -2103,11 +2116,11 @@ another integer giving the number of bits in
 the initialization string, and finally the initialization string itself.
 \item [{{}``READY'':}] Sent if the client code is ready to calculate
 the forces. The server socket will then send a string {}``POSDATA'',
-then nine floats the cell vector matrix, then another nine floats
+then nine floats for the cell vector matrix, then another nine floats
 for the inverse matrix, (which need to be transposed if the client
 code is written in fortran). The server socket will then send one
 integer giving the number of atoms, then the position data as 3 floats
-for each atom giving the 3 cartesian components of the bead position.
+for each atom giving the 3 cartesian components of the atomic position.
 \item [{{}``HAVEDATA'':}] This is sent if the client has calculated the
 potential and forces. The server socket then sends a string {}``GETFORCE'',
 and the client socket returns {}``FORCEREADY''. The potential is
@@ -2116,8 +2129,8 @@ the force data as 3 floats per atom in the same way as the positions,
 and the virial as 9 floats in the same way as the cell vector matrix.
 \end{description}
 \item The server socket waits until the force data for each replica of the
-system has been calculated and returned, upon which the job is finished
-and the molecular dynamics loop starts.
+system has been calculated and returned, upon which the 
+molecular dynamics loop starts.
 \end{enumerate}
 
 \subsubsection{Parallelization}
@@ -2133,7 +2146,7 @@ In the case that there are as many client codes as replicas of the
 system this is very simple, as each replica will be assigned its own
 client code. In subsequent steps, the interface will attempt to assign
 a particular replica of the system to the client code which calculated
-the forces for it the last step. This reduces the change in the particle
+the forces for it in the last step. This reduces the change in the particle
 positions between calculations for a particular client code, so the
 next step is done more efficiently. In the case where there are fewer
 client codes than beads, the socket interface will assign spare jobs
@@ -2160,7 +2173,7 @@ the code provider if the client can be parallelized in this way.
 
 \label{ssh_sockets}
 
-One problem that can often crop up when trying to run a \ipi calculation
+One problem that can often crop up when trying to run an \ipi calculation
 is that there is a firewall around the network, especially when the
 server code is being run on a cluster. This will often result in error
 messages such as {}``Error connecting: Connection timed out'' or
