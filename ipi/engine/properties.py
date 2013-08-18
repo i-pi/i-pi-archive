@@ -168,7 +168,8 @@ def help_latex(idict, standalone=True):
    rstr = rstr.replace('...', '\\ldots ')
    rstr = rstr.replace('<', '$<$')
    rstr = rstr.replace('>', '$>$')
-   rstr = rstr.replace('|', '$|$')
+   rstr = rstr.replace('[', '$[$')
+   rstr = rstr.replace(']', '$]$')
 
    return rstr
 
@@ -222,7 +223,7 @@ class Properties(dobject):
                       'func': (lambda: (1 + self.simul.step)*self.ensemble.dt)},
       "temperature": {"dimension": "temperature",
                       "help": "The current temperature, as obtained from the MD kinetic energy.",
-                      "longhelp" : """The current temperature, as obtained from the MD kinetic energy of the extended
+                      "longhelp" : """The current temperature, as obtained from the MD kinetic energy of the (extended)
                                       ring polymer. Takes a single, optional argument 'atom', which can be either an
                                       atom label or an index (zero-based) to specify which species or individual atom
                                       to output the temperature of. If not specified, all atoms are used and averaged.""",
@@ -234,11 +235,14 @@ class Properties(dobject):
                       "help": "The volume of the cell box.",
                       'func': (lambda: self.cell.V) },
       "cell_h": {    "dimension" : "length",
-                      "help": "Gives cell vector matrix. Returns the 6 components in the form [xx, yy, zz, xy, xz, yz].",
+                      "help": "The simulation cell as a matrix. Returns the 6 non-zero components in the form [xx, yy, zz, xy, xz, yz].",
                       "size": 6,
                       "func": (lambda: self.tensor2vec(self.cell.h))},
       "cell_abcABC": {"dimension" : "undefined",
-                      "help": "Gives the lengths of the cell vectors and the angles between them in degrees as a list of the form [a, b, c, A, B, C], where A is the angle between the sides of length b and c in degrees, and B and C are defined similarly. Since there are a mixture of different units, a, b and c are output in bohr.",
+                      "help": "The lengths of the cell vectors and the angles between them in degrees as a list of the form [a, b, c, A, B, C]",
+                      "longhelp": """The lengths of the cell vectors and the angles between them in degrees as a list of the
+                      form [a, b, c, A, B, C], where A is the angle between the sides of length b and c in degrees, and B and C
+                      are defined similarly. Since the output mixes different units, a, b and c can only be output in bohr.""",
                       "size": 6,
                       'func': (lambda: np.asarray(h2abc_deg(self.cell.h)))},
       "conserved": {  "dimension": "energy",
@@ -251,86 +255,169 @@ class Properties(dobject):
                       "help": "The total spring potential energy between the beads of all the ring polymers in the system.",
                       'func': (lambda: self.beads.vpath*self.nm.omegan2)},
       "kinetic_md":  {"dimension" : "energy",
-                      "help": "The kinetic energy of the extended classical system. Takes an argument 'atom', which can be either an atom label or index (zero based) to specify which species to find the kinetic energy of. If not specified, all atoms are used.",
+                      "help": "The kinetic energy of the (extended) classical system.",
+                       "longhelp" : """The kinetic energy of the (extended) classical system. Takes an argument 'atom',
+                       which can be either an atom label or index (zero based) to specify which species to find the
+                       kinetic energy of. If not specified, all atoms are used.""",
                       'func': self.get_kinmd},
       "kinetic_cv":  {"dimension" : "energy",
-                      "help": "The quantum kinetic energy of the physical system . Takes an argument 'atom', which can be either an atom label or index (zero based) to specify which species to find the kinetic energy of. If not specified, all atoms are used.",
+                      "help": "The centroid-virial quantum kinetic energy of the physical system.",
+                      "longhelp": """The centroid-virial quantum kinetic energy of the physical system.
+                      Takes an argument 'atom', which can be either an atom label or index (zero based)
+                      to specify which species to find the kinetic energy of. If not specified, all atoms are used.""",
                       'func': self.get_kincv},
       "kinetic_tens":{"dimension" : "energy",
-                      "help" : "The quantum kinetic energy tensor of the physical system. Returns the 6 components in the form [xx, yy, zz, xy, xz, yz]. Takes an argument 'atom', which can be either an atom label or index (zero based) to specify which species to find the kinetic tensor components of. If not specified, all atoms are used.",
+                      "help" : "The centroid-virial quantum kinetic energy tensor of the physical system.",
+                      "longhelp" : """The centroid-virial quantum kinetic energy tensor of the physical system.
+                      Returns the 6 independent components in the form [xx, yy, zz, xy, xz, yz]. Takes an
+                      argument 'atom', which can be either an atom label or index (zero based) to specify
+                      which species to find the kinetic tensor components of. If not specified, all atoms are used.""",
                       "size" : 6,
                       "func" : self.get_ktens},
       "kinetic_ij":  {"dimension" : "energy",
-                      "help" : "The quantum kinetic energy tensor of the physical system, using the cross terms between the vectors of atom i and atom j. Equivalent to p_i*p_j/(2*sqrt(m_i*m_j)). Returns the 6 components in the form [xx, yy, zz, xy, xz, yz]. Takes arguments 'i' and 'j', which give the indices of the appropriate two atoms.",
+                      "help" : "The centroid-virial off-diagonal quantum kinetic energy tensor of the physical system.",
+                      "longhelp" : """The centroid-virial off-diagonal quantum kinetic energy tensor of the physical system.
+                      This computes the cross terms between atoms i and atom j, whose average is  <p_i*p_j/(2*sqrt(m_i*m_j))>.
+                      Returns the 6 independent components in the form [xx, yy, zz, xy, xz, yz]. Takes arguments 'i' and 'j',
+                       which give the indices of the two desired atoms.""",
                       "size" : 6,
                       "func" : self.get_kij},
       "r_gyration": { "dimension" : "length",
-                      "help" : "Gives the average radius of gyration of the selected ring polymers. Takes an argument 'atom', which can be either an atom label or index (zero based) to specify which species to find the radius of gyration of. If not specified, all atoms are used.",
+                      "help" : "The average radius of gyration of the selected ring polymers.",
+                      "longhelp" : """The average radius of gyration of the selected ring polymers. Takes an
+                      argument 'atom', which can be either an atom label or index (zero based) to specify which
+                      species to find the radius of gyration of. If not specified, all atoms are used and averaged.""",
                       "func": self.get_rg},
       "atom_x": {     "dimension" : "length",
-                      "help": "Prints to properties the position (x,y,z) of a particle given its index. Takes arguments index and bead (both zero based). If bead is not specified, refers to the centroid.",
+                      "help": "The position (x,y,z) of a particle given its index.",
+                      "longhelp" : """The position (x,y,z) of a particle given its index. Takes arguments index
+                       and bead (both zero based). If bead is not specified, refers to the centroid.""",
                       "size" : 3,
                       "func" : (lambda atom="", bead="-1": self.get_atom_vec(self.beads.q, atom=atom, bead=bead))},
       "atom_v": {     "dimension" : "velocity",
-                      "help": "Prints to properties the velocity (x,y,z) of a particle given its index. Takes arguments index and bead (both zero based). If bead is not specified, refers to the centroid.",
+                      "help": "The velocity (x,y,z) of a particle given its index.",
+                       "longhelp": """The velocity (x,y,z) of a particle given its index. Takes arguments index
+                       and bead (both zero based). If bead is not specified, refers to the centroid.""",
                       "size" : 3,
                       "func" : (lambda atom="", bead="-1": self.get_atom_vec(self.beads.p/self.beads.m3, atom=atom, bead=bead))},
       "atom_p": {     "dimension" : "momentum",
-                      "help": "Prints to properties the momentum (x,y,z) of a particle given its index. Takes arguments index and bead (both zero based). If bead is not specified, refers to the centroid.",
+                      "help": "The momentum (x,y,z) of a particle given its index.",
+                      "longhelp": """The momentum (x,y,z) of a particle given its index. Takes arguments index
+                      and bead (both zero based). If bead is not specified, refers to the centroid.""",
                       "size" : 3,
                       "func" : (lambda atom="", bead="-1": self.get_atom_vec(self.beads.p, atom=atom, bead=bead))},
       "atom_f": {     "dimension" : "force",
-                      "help": "Prints to properties the force (x,y,z) acting on a particle given its index. Takes arguments index and bead (both zero based). If bead is not specified, refers to the centroid.",
+                      "help": "The force (x,y,z) acting on a particle given its index.",
+                      "longhelp": """The force (x,y,z) acting on a particle given its index. Takes arguments index
+                      and bead (both zero based). If bead is not specified, refers to the centroid.""",
                       "size" : 3,
                       "func" : (lambda atom="", bead="-1": self.get_atom_vec(self.forces.f, atom=atom, bead=bead))},
       "stress_md": {  "dimension": "pressure",
                       "size" : 6,
-                      "help": "The total stress tensor of the extended classical system. Returns the 6 components in the form [xx, yy, zz, xy, xz, yz].",
+                      "help": "The total stress tensor of the (extended) classical system.",
+                      "longhelp": """The total stress tensor of the (extended) classical system. Returns the 6
+                      independent components in the form [xx, yy, zz, xy, xz, yz].""",
                       "func": (lambda: self.tensor2vec((self.forces.vir + self.nm.kstress)/self.cell.V))},
       "pressure_md": {"dimension": "pressure",
-                      "help": "The pressure of the extended classical system.",
+                      "help": "The pressure of the (extended) classical system.",
                       "func": (lambda: np.trace((self.forces.vir + self.nm.kstress)/(3.0*self.cell.V)))},
       "kstress_md":  {"dimension": "pressure",
                       "size" : 6,
-                      "help": "The kinetic stress tensor of the extended classical system. Returns the 6 components in the form [xx, yy, zz, xy, xz, yz].",
+                      "help": "The kinetic stress tensor of the (extended) classical system.",
+                      "longhelp": """The kinetic stress tensor of the (extended) classical system. Returns the 6
+                      independent components in the form [xx, yy, zz, xy, xz, yz].""",
                       "func": (lambda: self.tensor2vec(self.nm.kstress/self.cell.V))},
       "virial_md": {  "dimension": "pressure",
                       "size" : 6,
-                      "help": "The virial tensor of the extended classical system. Returns the 6 components in the form [xx, yy, zz, xy, xz, yz].",
+                      "help": "The virial tensor of the (extended) classical system.",
+                      "longhelp": """The virial tensor of the (extended) classical system. Returns the 6
+                      independent components in the form [xx, yy, zz, xy, xz, yz].""",
                       "func": (lambda: self.tensor2vec(self.forces.vir/self.cell.V))},
       "stress_cv": {  "dimension": "pressure",
                       "size" : 6,
-                      "help": "The total quantum stress tensor of the physical system.  Returns the 6 components in the form [xx, yy, zz, xy, xz, yz].",
+                      "help": "The total quantum estimator for the stress tensor of the physical system.",
+                      "longhelp": """The total quantum estimator for the stress tensor of the physical system. Returns the
+                      6 independent components in the form [xx, yy, zz, xy, xz, yz].""",
                       "func": (lambda: self.tensor2vec(self.forces.vir + self.kstress_cv())/(self.cell.V*self.beads.nbeads))},
       "pressure_cv": {"dimension": "pressure",
-                      "help": "The quantum pressure of the physical system.",
+                      "help": "The quantum estimator for pressure of the physical system.",
                       "func": (lambda: np.trace(self.forces.vir + self.kstress_cv())/(3.0*self.cell.V*self.beads.nbeads))},
       "kstress_cv":  {"dimension": "pressure",
                       "size" : 6,
-                      "help": "The quantum kinetic stress tensor of the physical system. Returns the 6 components in the form [xx, yy, zz, xy, xz, yz].",
+                      "help": "The quantum estimator for the kinetic stress tensor of the physical system.",
+                      "longhelp": """The quantum estimator for the kinetic stress tensor of the physical system.
+                      Returns the 6 independent components in the form [xx, yy, zz, xy, xz, yz].""",
                       "func": (lambda: self.tensor2vec(self.kstress_cv()/(self.cell.V*self.beads.nbeads)))},
       "virial_cv": {  "dimension": "pressure",
                       "size" : 6,
-                      "help": "The quantum virial stress tensor of the physical system. Returns the 6 components in the form [xx, yy, zz, xy, xz, yz].",
+                      "help": "The quantum estimator for the virial stress tensor of the physical system.",
+                      "longhelp": """The quantum estimator for the virial stress tensor of the physical system.
+                      Returns the 6 independent components in the form [xx, yy, zz, xy, xz, yz].""",
                       "func": (lambda: self.tensor2vec(self.forces.vir/(self.cell.V*self.beads.nbeads)))},
       "displacedpath": {  "dimension": "undefined",
                       "help": "The displaced path end-to-end distribution estimator",
-                      "longhelp": "This is the estimator for the end-to-end distribution for the sum over open paths, used to calculate the momentum distribution in L. Lin, J. A. Morrone, R. Car and M. Parrinello, 105, 110602 (2010), Phys. Rev. Lett. Takes arguments 'ux', 'uy' and 'uz', which are the components of the vector used to open the paths. Also takes an argument 'atom', which can be either an atom label or index (zero based) to specify which species to find the end-to-end distribution estimator for. If not specified, all atoms are used (one at a time, not all at once).",
+                      "longhelp": """This is the estimator for the end-to-end distribution, that can be used to calculate the
+                      particle momentum distribution as described in in L. Lin, J. A. Morrone, R. Car and M. Parrinello,
+                      105, 110602 (2010), Phys. Rev. Lett. Takes arguments 'ux', 'uy' and 'uz', which are the components of
+                      the path opening vector. Also takes an argument 'atom', which can be either an atom label or index
+                      (zero based) to specify which species to find the end-to-end distribution estimator for. If not
+                      specified, all atoms are used. Note that one atom is computed at a time, and that each path opening
+                      operation costs as much as a PIMD step. Returns the average over the selected atoms of the estimator of
+                      exp(-U(u)) for each frame.""",
                       "func": self.get_linlin},
-      "finitediff": {   "longhelp": "Gives the estimators required to calculate the Yamamoto finite difference approximation to the kinetic energy and constant volume heat capacity. Returns eps_v and eps_v', as defined in Takeshi M. Yamamoto, Journal of Chemical Physics, 104101, 123 (2005). As the two estimators have a different dimensions, this can only be output in atomic units. Takes one argument, 'fd_delta', which gives the value of the finite difference parameter used. It defaults to " + str(-self._DEFAULT_FINDIFF) + ". If the value of 'fd_delta' is negative, then its magnitude will be reduced automatically by the code if the finite difference error becomes too large.",
-                      "help":"The finite difference estimators used to calculate the total energy and the constant volume heat capacity.",
+      "scaledcoords": {   "dimension": "undefined",
+                      "help" : "The scaled coordinates estimators that can be used to compute energy and heat capacity",
+                       "longhelp": """Returns the estimators that are required to evaluate the scaled-coordinates estimators
+                       for total energy and heat capacity, as described in T. M. Yamamoto,
+                       J. Chem. Phys., 104101, 123 (2005). Returns eps_v and eps_v', as defined in that paper.
+                       As the two estimators have a different dimensions, this can only be output in atomic units.
+                       Takes one argument, 'fd_delta', which gives the value of the finite difference parameter used -
+                       which defaults to """+ str(-self._DEFAULT_FINDIFF) + """. If the value of 'fd_delta' is negative,
+                       then its magnitude will be reduced automatically by the code if the finite difference error
+                       becomes too large.""",
                       'func': self.get_yama_estimators,
                       "size": 2},
       "isotope_scfep":  {"dimension": "undefined",
                       "size": 7,
                       'func': self.get_isotope_yama,
-                      "help": "Scaled coordinates free energy perturbation scaled mass KE estimator. See manual for full details.",
-                      "longhelp" :  "Scaled coordinates free energy perturbation scaled mass KE estimator. Prints everything which is needed to compute the kinetic energy for a isotope-substituted system. The 7 elements are: <h> <h**2> <T_CV> <T_CV**2> ln(sum(e**(-h))) ln(|sum(T_CV e**(-h))|) sign(sum(T_CV e**(-h))). Mixed units, so outputs only in a.u. Takes two arguments, 'alpha' and 'atom', which give the scaled mass parameter and the atom of interest respectively, and default to '1.0' and ''. The 'atom' argument can either be the label of a particular kind of atom, or an index (zero based) of a specific atom." },
+                      "help": "The scaled-coordinates free energy perturbation scaled mass KE estimator.",
+                      "longhelp" : """Returns the (many) terms needed to compute the scaled-coordinates free energy
+                      perturbation scaled mass KE estimator (M. Ceriotti, T. Markland, J. Chem. Phys. 138, 014112 (2013)).
+                      Takes two arguments, 'alpha' and 'atom', which give the
+                      scaled mass parameter and the atom of interest respectively, and default to '1.0' and ''. The
+                      'atom' argument can either be the label of a particular kind of atom, or an index (zero based)
+                      of a specific atom. This property computes, for each atom in the selection, an estimator for
+                      the kinetic energy it would have had if it had the mass scaled by alpha. The 7 numbers output
+                      are the average over the selected atoms of the log of the weights <h>, the average of the
+                      squares <h**2>, the average of the un-weighted scaled-coordinates kinetic energies  <T_CV>
+                      and of the squares <T_CV**2>, the log sum of the weights LW=ln(sum(e**(-h))), the sum of the
+                      re-weighted kinetic energies, stored as a log modulus and sign, LTW=ln(abs(sum(T_CV e**(-h))))
+                      STW=sign(sum(T_CV e**(-h))). In practice, the best estimate of the estimator can be computed
+                      as [sum_i exp(LTW_i)*STW_i]/[sum_i exp(LW_i)]. The other terms can be used to compute diagnostics
+                      for the statistical accuracy of the re-weighting process. Note that evaluating this estimator costs
+                      as much as a PIMD step for each atom in the list. The elements that are output have different
+                      units, so the output can be only in atomic units.""" },
       "isotope_tdfep":  {"dimension" : "undefined",
                           "size" : 7,
                           'func': self.get_isotope_thermo,
-                          "help": "Thermodynamic free energy perturbation scaled mass KE estimator. See manual for full detail.",
-                          "help" : "Thermodynamic free energy perturbation scaled mass KE estimator. Prints everything which is needed to compute the kinetic energy for a isotope-substituted system. The 7 elements are: <h> <h**2> <T_CV> <T_CV**2> ln(sum(e**(-h))) ln(|sum(T_CV e**(-h))|) sign(sum(T_CV e**(-h))). Mixed units, so outputs only in a.u. Takes two arguments, 'alpha' and 'atom', which give the scaled mass parameter and the atom of interest respectively, and default to '1.0' and ''. The 'atom' argument can either be the label of a particular kind of atom, or an index (zero based) of a specific atom." }
+                          "help": "The thermodynamic free energy perturbation scaled mass KE estimator.",
+                          "longhelp" : """Returns the (many) terms needed to compute the thermodynamic free energy
+                      perturbation scaled mass KE estimator (M. Ceriotti, T. Markland, J. Chem. Phys. 138, 014112 (2013)).
+                      Takes two arguments, 'alpha' and 'atom', which give the
+                      scaled mass parameter and the atom of interest respectively, and default to '1.0' and ''. The
+                      'atom' argument can either be the label of a particular kind of atom, or an index (zero based)
+                      of a specific atom. This property computes, for each atom in the selection, an estimator for
+                      the kinetic energy it would have had if it had the mass scaled by alpha. The 7 numbers output
+                      are the average over the selected atoms of the log of the weights <h>, the average of the
+                      squares <h**2>, the average of the un-weighted scaled-coordinates kinetic energies  <T_CV>
+                      and of the squares <T_CV**2>, the log sum of the weights LW=ln(sum(e**(-h))), the sum of the
+                      re-weighted kinetic energies, stored as a log modulus and sign, LTW=ln(abs(sum(T_CV e**(-h))))
+                      STW=sign(sum(T_CV e**(-h))). In practice, the best estimate of the estimator can be computed
+                      as [sum_i exp(LTW_i)*STW_i]/[sum_i exp(LW_i)]. The other terms can be used to compute diagnostics
+                      for the statistical accuracy of the re-weighting process. Evaluating this estimator is inexpensive,
+                      but typically the statistical accuracy is worse than with the scaled coordinates estimator.
+                      The elements that are output have different
+                      units, so the output can be only in atomic units.""" }
       }
 
    def bind(self, simul):
@@ -1012,39 +1099,40 @@ class Trajectories(dobject):
       self.traj_dict = {
       # Note that here we want to return COPIES of the different arrays, so we make sure to make an operation in order not to return a reference.
       "positions": { "dimension" : "length",
-                     "help": "Prints the coordinate trajectories. Will print out one file per bead, unless the bead attribute is set by the user.",
+                     "help": "The atomic coordinate trajectories. Will print out one file per bead, unless the bead attribute is set by the user.",
                      'func': (lambda : 1.0*self.simul.beads.q)},
       "velocities": {"dimension" : "velocity",
-                     "help": "Prints the velocity trajectories. Will print out one file per bead, unless the bead attribute is set by the user.",
+                     "help": "The velocity trajectories. Will print out one file per bead, unless the bead attribute is set by the user.",
                      'func': (lambda : self.simul.beads.p/self.simul.beads.m3)},
       "momenta": {"dimension" : "momentum",
-                     "help": "Prints the momentum trajectories. Will print out one file per bead, unless the bead attribute is set by the user.",
+                     "help": "The momentum trajectories. Will print out one file per bead, unless the bead attribute is set by the user.",
                      'func': (lambda : 1.0*self.simul.beads.p)},
       "forces": {    "dimension" : "force",
-                     "help": "Prints the force trajectories. Will print out one file per bead, unless the bead attribute is set by the user.",
+                     "help": "The force trajectories. Will print out one file per bead, unless the bead attribute is set by the user.",
                      'func': (lambda : 1.0*self.simul.forces.f)},
       "x_centroid": {"dimension" : "length",
-                     "help": "Prints the centroid coordinates for each ring polymer.",
+                     "help": "The centroid coordinates.",
                      'func': (lambda : 1.0*self.simul.beads.qc)},
       "v_centroid": {"dimension" : "velocity",
-                     "help": "Prints the velocity centroid for each ring polymer.",
+                     "help": "The centroid velocity.",
                      'func': (lambda : self.simul.beads.pc/self.simul.beads.m3[0])},
       "p_centroid": {"dimension" : "momentum",
-                     "help": "Prints the momentum centroid for each ring polymer.",
+                     "help": "The centroid momentum.",
                      'func': (lambda : 1.0*self.simul.beads.pc)},
       "f_centroid": {"dimension" : "force",
-                     "help": "Prints the force centroid for each ring polymer.",
+                     "help": "The force acting on the centroid.",
                      'func': (lambda : np.sum(self.simul.forces.f,0)/float(self.simul.beads.nbeads))},
       "kinetic_cv": {"dimension" : "energy",
-                     "help": "Prints the quantum kinetic energy of the system, resolved into Cartesian components. Prints out a vector of the form [xx, yy, zz]",
+                     "help": "The centroid virial quantum kinetic energy estimator for each atom, resolved into Cartesian components [xx, yy, zz]",
                      'func': self.get_akcv},
       "kinetic_od": {"dimension" : "energy",
-                     "help": "Prints the off diagonal elements of the quantum kinetic energy tensor. Prints out a vector of the form [xy, xz, yz]",
+                     "help": "The off diagonal elements of the centroid virial quantum kinetic energy tensor [xy, xz, yz]",
                      'func': self.get_akcv_od},
       "r_gyration": {"dimension" : "length",
-                     "help": "Prints the radius of gyration for each atom, resolved into Cartesian components. Prints out a vector of the form [xx, yy, zz]",
+                     "help": "The radius of gyration of the ring polymer, for each atom and resolved into Cartesian components [xx, yy, zz]",
                      'func': self.get_rg},
-      "extras": {    "help": "Prints ad verbatim the extra data received from the client code.",
+      "extras": {    "help": """The additional data returned by the client code, printed verbatim. Will print
+                             out one file per bead, unless the bead attribute is set by the user.""",
                      'func': (lambda : self.simul.forces.extras)}
       }
 
