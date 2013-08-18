@@ -1638,7 +1638,9 @@ As a final example, we note that at this state point 16 replicas
 and at least 172 particles are actually 
 required to provide converged results.
 As a last tutorial then, you should repeat tutorials 1 and 2 with
-this number of replicas and atoms. The directory {}``tutorial-3'' contains 
+this number of replicas and atoms. 
+
+The directory {}``tutorial-3'' contains 
 \emph{NVT} and \emph{NPT} input files which can be used to do a fully converged
 \emph{NPT} simulation from scratch, except that they are missing some
 of the necessary input parameters.
@@ -1647,6 +1649,52 @@ If these are chosen correctly and the simulation is run properly
 the volume will be 31 \(\textrm{cm}^3\)/mol and the total energy
 should be -48 K \cite{mart+99jcp}.
 
+With this number of beads and atoms, the force calculation is likely
+to take much longer than it did in either tutorial 1 or 2.
+To help speed this up, we will now discuss how to parallelize the
+calculation over the sockets, and how to speed up the data transfer.
+
+Firstly, in this simple case where we are calculating an isotropic,
+pair-wise interaction, the data transfer time is likely to be a
+significant proportion of the total calculation time. To help speed this
+up, there is the option to use a unix domain socket rather than an
+internet socket. These are optimized for local communication within
+the same network, and so for the current problem they will be much
+faster than internet sockets.
+
+To specify this, we simply set the {}``mode'' attribute of the
+{}``socket'' tag to {}``unix'':
+
+\begin{code}
+<forces>
+   <socket mode='unix'>
+      ...
+   </socket>
+</forces>
+\end{code}
+
+We then specify that the client code should connect to a unix socket
+using the -u tag:
+
+\begin{code}
+> ./driver.x -u -m sg -h localhost -o 15 -p 31415
+\end{code}
+
+Parallelizing the force calculation over the different replicas of the system
+is similarly easy, all that is required is to run the above
+command multiple times. For example, if we wish to run
+4 client codes, we would use:
+
+\begin{code}
+> for a in 1 2 3 4; do
+>    ./driver.x -u -m sg -h localhost -o 15 -p 31415 &
+> done
+\end{code}
+
+Using these techniques should help speed up the calculation considerably,
+at least in this simple case. Note however, that using unix domain sockets
+would give a negligible gain in speed in most simulations, 
+since the force calculation usually takes much longer than the data transfer. 
 
 \section{Testing the install}
 

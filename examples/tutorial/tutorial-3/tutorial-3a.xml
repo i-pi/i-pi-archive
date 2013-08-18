@@ -9,7 +9,7 @@
    </output>
    <total_steps> ??? </total_steps>
    <forces>
-      <socket mode="inet">
+      <socket mode="???">
          <address>localhost</address>
          <port> 31415 </port>
       </socket>
