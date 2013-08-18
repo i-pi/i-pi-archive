@@ -1,5 +1,3 @@
-%% LyX 2.0.0 created this file.  For more info, see http://www.lyx.org/.
-%% Do not edit unless you really know what you are doing.
 \documentclass[11pt,english,fleqn]{report}
 \IfFileExists{t1futs.fd}{\usepackage{fourier, helvet}}{\usepackage{lmodern}}
 \usepackage[T1]{fontenc}
@@ -12,15 +10,10 @@
 \usepackage{url}
 \usepackage{amsmath}
 \usepackage{amssymb}
-%\usepackage[unicode=true,pdfusetitle,
-% bookmarks=true,bookmarksnumbered=false,bookmarksopen=false,
-% breaklinks=true,pdfborder={0 0 1},backref=section,colorlinks=true]
-% {hyperref}
 
 % MC STYLE
 \usepackage[a4paper]{geometry}
 \geometry{verbose,tmargin=3cm,bmargin=3cm,lmargin=3.5cm,rmargin=3.0cm}
-\usepackage{ifthen}
 \usepackage[pagestyles]{titlesec}
 \usepackage[unicode,colorlinks,breaklinks]{hyperref}
 \usepackage{float}
@@ -39,9 +32,9 @@
 % headings
 \renewpagestyle{headings}[\small]{
 \headrule \sethead{ %
-{\ifthenelse{\number\value{chapter}>0}{Chapter \thechapter}{\bf \chaptertitle}} %
+{\ifnumgreater{\value{chapter}}{0}{Chapter \thechapter}{\bf \chaptertitle}} %
 }{ %
-{\ifthenelse{\number\value{chapter}>0}{\bf \chaptertitle}{}} %
+{   \ifnumgreater{\value{chapter}}{0}{\bf \chaptertitle}{}} %
 } %
 { \usepage}
 }
@@ -93,7 +86,8 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
 % properties and fields formatting
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
-%\newcommand{\ipiitem}[3]{%
+% old version using ifthenelse
+%\newcommand{\ipiitem}[3]{%   
 %  \ifthenelse{ \equal{#1}{} } %
 %             {} %
 %             { \ifthenelse{ \equal{#1}{\underline{\smash{}}} } %
@@ -654,8 +648,15 @@ After this, continue the compilation as per the instructions at \url{www.quantum
 
 \section{Running \ipi}
 
+\ipi functions based on a client-server protocol, where the evolution of the nuclear dynamics
+is performed by the \ipi server, whereas the energy and forces evaluation is delegated to 
+one or more instances of an external program, that acts as a client. This design principle
+has several advantages, in particular the possibility of performing PIMD based on the forces
+produced by one's favourite electronic structure/empirical force field code. However, it 
+also makes it slightly more complicated running a simulation, since the two components
+must be set up and started independently.
 
-\subsection{Running the server code}
+\subsection{Running the \ipi server}
 
 \label{runningsimulations}
 
@@ -673,7 +674,7 @@ This reads in the input data, initializes all the internally used
 objects, and then creates the server socket. The code will then wait
 until at least one client code has connected to the server before
 running any dynamics. Note that until this has happened the code is
-essentially idle, the only process that it runs is to periodically
+essentially idle, the only action that it performs is to periodically
 poll for incoming connections.
 
 
@@ -681,6 +682,7 @@ poll for incoming connections.
 
 \label{runningclients}
 
+\subsection{Built-in, example client}
 
 \subsubsection{CP2K}
 
@@ -692,7 +694,6 @@ poll for incoming connections.
 %is the same as for a standard CP2K calculation.
 
 %Mano's note: This is now all wrong, as it has been updated to more closely resemble the QE input.
-
 
 \subsubsection{Quantum-Espresso}
 
@@ -726,10 +727,53 @@ modification is necessary:
 The rest of the input file should be the same as for a standard Quantum
 Espresso calculation, as explained at \url{www.quantum-espress.org/}.
 
+\subsection{Running on a HPC system}
+
+Running \ipi on a high-performance computing (HPC) system can be a bit more challenging
+than running it locally using UNIX-domain sockets or using the \emph{localhost} 
+network interface. 
+
+The main problem is related to the fact that different HPC systems adopt
+a variety of solutions to have the different nodes communicate with each other
+and with the login nodes, and to queue and manage computational jobs. 
+Typically, each node will have more than one network interface: a list
+can be obtained for instance with the command
+%
+\begin{code}
+> /sbin/ip addr
+\end{code}
+%
+that will return a list of interfaces of the form
+%
+\begin{code}
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 16436 qdisc noqueue 
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast qlen 1000
+    link/ether 00:25:b3:e7:a0:44 brd ff:ff:ff:ff:ff:ff
+    inet 192.168.1.254/16 brd 192.168.255.255 scope global eth0
+3: eth1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast qlen 1000
+    link/ether 00:25:b3:e7:a0:46 brd ff:ff:ff:ff:ff:ff
+    inet 129.67.106.153/22 brd 129.67.107.255 scope global eth1
+\end{code}
+%
+Each item corresponds to a network interface, identified by a number and a name (lo, eth0, eth1, \ldots).
+Most of the interfaces will have an associated IP address -- the four numbers separated by dots
+that are listed after ``inet'', e.g. 192.168.1.254 for the eth0 interface in the example above.
+
+\begin{figure}[hb]
+\centering\includegraphics[width=0.9\textwidth]{ipi-running.pdf}
+\caption{\label{fig:running} Different approaches to run \ipi{} and a number of 
+instances of the forces code on a HPC system: a) running \ipi and the clients in a single
+job; b) running \ipi and the clients on the same system, but using different jobs, or running
+\ipi interactively on the login node; c) running \ipi on a local workstation, communicating
+with the clients (that can run on one or multiple HPC systems) over the internet. } 
+\end{figure}
+
+These internet address should be specified in the address 
+
 
 \section{A simple tutorial}
-
-
 
 Here we give a simple step-by-step guide through an example
 simulation, exploring
@@ -1921,8 +1965,6 @@ The different available property names are:
 
 \input{input_docs/property_list}
 
-%Mano's note: Fix help strings of isotope estimators.
-
 \subsection{Trajectory files}
 
 These are the output files for atomic or bead level properties, such
@@ -2020,7 +2062,6 @@ start of every step.
 \section{Distributed execution}
 
 \label{distrib}
-
 
 \subsection{Sockets}
 
