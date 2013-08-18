@@ -1,5 +1,3 @@
-%% LyX 2.0.0 created this file.  For more info, see http://www.lyx.org/.
-%% Do not edit unless you really know what you are doing.
 \documentclass[11pt,english,fleqn]{report}
 \IfFileExists{t1futs.fd}{\usepackage{fourier, helvet}}{\usepackage{lmodern}}
 \usepackage[T1]{fontenc}
@@ -12,15 +10,10 @@
 \usepackage{url}
 \usepackage{amsmath}
 \usepackage{amssymb}
-%\usepackage[unicode=true,pdfusetitle,
-% bookmarks=true,bookmarksnumbered=false,bookmarksopen=false,
-% breaklinks=true,pdfborder={0 0 1},backref=section,colorlinks=true]
-% {hyperref}
 
 % MC STYLE
 \usepackage[a4paper]{geometry}
 \geometry{verbose,tmargin=3cm,bmargin=3cm,lmargin=3.5cm,rmargin=3.0cm}
-\usepackage{ifthen}
 \usepackage[pagestyles]{titlesec}
 \usepackage[unicode,colorlinks,breaklinks]{hyperref}
 \usepackage{float}
@@ -39,9 +32,9 @@
 % headings
 \renewpagestyle{headings}[\small]{
 \headrule \sethead{ %
-{\ifthenelse{\number\value{chapter}>0}{Chapter \thechapter}{\bf \chaptertitle}} %
+{\ifnumgreater{\value{chapter}}{0}{Chapter \thechapter}{\bf \chaptertitle}} %
 }{ %
-{\ifthenelse{\number\value{chapter}>0}{\bf \chaptertitle}{}} %
+{   \ifnumgreater{\value{chapter}}{0}{\bf \chaptertitle}{}} %
 } %
 { \usepage}
 }
@@ -93,7 +86,8 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
 % properties and fields formatting
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
-%\newcommand{\ipiitem}[3]{%
+% old version using ifthenelse
+%\newcommand{\ipiitem}[3]{%   
 %  \ifthenelse{ \equal{#1}{} } %
 %             {} %
 %             { \ifthenelse{ \equal{#1}{\underline{\smash{}}} } %
