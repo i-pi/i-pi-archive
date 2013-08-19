@@ -373,6 +373,7 @@ units, but in most cases the default units can be overridden if one
 wishes so. For details on how to do this, see \ref{inputunits} and
 \ref{propertyfile}.
 
+\texttt{
 \begin{center}
 \begin{tabular}{lll}
 \hline\hline
@@ -386,7 +387,9 @@ Energy & Hartree & 4.3597438e-18 J\\
 Pressure & N.A. & 2.9421912e13 Pa\\
 \hline\hline
 \end{tabular}
-\par\end{center}
+%\par\end{center}
+\end{center}
+}
 
 
 \section{Core features}
@@ -440,7 +443,7 @@ There are currently client patches available for Quantum Espresso version
 4.3.2 and CP2K version 2.2. It should be possible to adapt these patches
 to other versions of the codes with minor modifications. For more
 information about Quantum Espresso and CP2K, go to \url{www.quantum-espresso.org}
-and \url{cp2k.org} respectively.
+and \url{www.cp2k.org} respectively.
 
 There are several Fortran and C libraries that most client codes will
 probably need to run, such as FFTW, BLAS and LAPACK. These can be
@@ -448,7 +451,7 @@ found at \url{www.fftw.org}, \url{www.netlib.org/blas} and \url{www.netlib.org/l
 respectively.
 
 These codes do not come as part of the \ipi package, and must be
-downloaded separately. See chapter~\ref{install} for more details
+downloaded separately. See chapter~\ref{clientinstall} for more details
 of how to do this. 
 
 
@@ -609,18 +612,27 @@ see if this library is available, and if it is it will be used by
 default. Otherwise the slower NumPy version will be used.
 
 
-\section{Clients}
+\section{Installing clients}
 
-
-
-
-\subsection{Minimal client code}
-
-%Mano's note: Missing section...
+\label{clientinstall}
 
 \subsection{Patching CP2K}
 
-%Mano's note: Missing section...
+
+You can download the source code for CP2K at \url{www.cp2k.org/}.
+The tar file can be extracted in the same way as the Python and NumPy
+libraries above. However, before this can run with \ipi, the code
+must be adapted to use the socket interface. For CP2K
+version 2.4.0, there is a patch file to allow it to be used as a client
+code with \ipi in the directory {}``patches''. If you are
+currently in the top level directory of the CP2K distribution,
+the patch can be applied to the source code using:
+
+\begin{code}
+> patch -p1 < i-pi/patches/cp2k-2.4.0_ipi.patch
+\end{code}
+
+After this, continue the compilation as per the instructions at \url{www.cp2k.org/}.
 
 
 \subsection{Patching Quantum-Espresso}
@@ -629,22 +641,29 @@ You can download the source code for Quantum Espresso at \url{www.quantum-espres
 The tar file can be extracted in the same way as the Python and NumPy
 libraries above. However, before this can run with \ipi, the code
 must be adapted to use the socket interface. For Quantum Espresso
-version 4.3.2, there is a patch file to allow it to be used as a client
-code with \ipi in the directory {}``patches/pwscf''. If you are
+version 5.0, there is a patch file to allow it to be used as a client
+code with \ipi in the directory {}``patches''. If you are
 currently in the top level directory of the Quantum-Espresso distribution,
 the patch can be applied to the source code using:
 
 \begin{code}
-> patch -p1 < i-pi/patches/pwscf/pw-driver.patch
+> patch -p1 < i-pi/patches/espresso-5.0_ipi.patch
 \end{code}
 
-After this, continue the compilation as per the instructions at \url{www.quantum-espress.org/}.
+After this, continue the compilation as per the instructions at \url{www.quantum-espresso.org/}.
 
 
 \subsection{Writing a patch}
 
-%Mano's note: Missing section...
+If you have edited a client code, and wish to make a patch available
+for the new version, then this can be done very simply.
+If your edited code is in a directory {}``new'', and a clean
+distribution is held in a directory {}``old'', then a patch
+{}``changes.patch'' can be created using:
 
+\begin{code}
+> diff -rupN old/ new/ > changes.patch
+\end{code}
 
 \section{Running \ipi}
 
@@ -678,7 +697,7 @@ essentially idle, the only action that it performs is to periodically
 poll for incoming connections.
 
 
-\subsection{Running the client code}
+\section{Running the client code}
 
 \label{runningclients}
 
@@ -686,16 +705,95 @@ poll for incoming connections.
 
 \label{driver.x}
 
+While \ipi is designed with \emph{ab initio} electronic structure calculations
+in mind, it also includes a Fortran empirical potential client code to do 
+simple calculations and to run the examples.
+
+The source code for this is included in the directory {}``drivers'', and can
+be compiled into an executable {}``driver.x'' using the UNIX utility make.
+
+This code currently has four empirical potentials hardcoded into it, 
+a Lennard-Jones potential, the Silvera-Goldman potential \cite{silv-gold78jcp},
+a 1D harmonic oscillator potential, and the ideal gas (i.e. no potential
+interaction).
+
+How the code is run is based on what command line arguments are passed to it.
+The command line syntax, as given in the code itself, is:
+
+\begin{code}
+> driver.x [-u] -h hostname -p port -m [gas|lj|sg|harm] -o parameters [-v]
+\end{code}
+
+The flags do the following:
+
+\begin{description}
+\item[-u:] Optional parameter. If specified, the client will connect to
+a unix domain socket.
+\item[-h:] Is followed in the command line argument list by the hostname
+of the client socket.
+\item[-p:] Is followed in the command line argument list by the port number
+of the client socket.
+\item[-m:] Is followed in the command line argument list by a string
+specifying the type of potential to be used. {}``gas'' gives no potential,
+{}``lj'' gives a Lennard-Jones potential, {}``sg'' gives a Silvera-Goldman
+potential and {}``harm'' gives a 1D harmonic oscillator potential.
+\item[-o:] Is followed in the command line argument list by a string of
+comma separated values needed to initialize the potential parameters.
+{}``gas'' requires no parameters, {}``harm'' requires a spring constant,
+{}``sg'' requires a cut-off radius and {}``lj'' requires the length and
+energy scales and a cut-off radius to be specified. All of these must
+be given in atomic units.
+\item[-v:] Optional parameter. If given, the client will print out
+more information each time step.
+\end{description}
+
+This code should be fairly simple to extend to other pair-wise interaction
+potentials, and examples of its use can be seen in the {}``examples'' 
+directory, as explained in \ref{tests}.
+
+\subsection{DFT codes}
+
 \subsubsection{CP2K}
 
-%To use CP2K as the client code, an additional file named {}``serverfile''
-%must be kept in the same directory that CP2K is being run from. It
-%should contain a string a single line long, of the format {}``mode:host:port\_number''.
-%{}``mode'' should either be {}``INET'' or {}``UNIX'', representing
-%an internet or unix domain socket respectively. The rest of the input file
-%is the same as for a standard CP2K calculation.
+To use CP2K as the client code using an 
+internet domain socket on the host
+address {}``host\_address'' and on the port number {}``port''
+the following lines must be added to the input file:
 
-%Mano's note: This is now all wrong, as it has been updated to more closely resemble the QE input.
+\begin{code}
+&GLOBAL
+   ...
+   RUN_TYPE DRIVER
+   ...
+&END GLOBAL
+
+&MOTION
+   ...
+   &DRIVER
+      HOST host_address
+      PORT port
+   &END DRIVER
+   ...
+&END MOTION
+\end{code}
+
+If instead a unix domain socket is required then the following
+modification is necessary:
+
+\begin{code}
+&MOTION
+   ...
+   &DRIVER
+      HOST host_address
+      PORT port
+      UNIX
+   &END DRIVER
+   ...
+&END MOTION
+\end{code}
+
+The rest of the input file should be the same as for a standard CP2K 
+calculation, as explained at \url{www.cp2k.org/}.
 
 \subsubsection{Quantum-Espresso}
 
@@ -761,7 +859,7 @@ one or more independent instances of the client code. Note that not all
 queing systems allow launching several compute jobs from a single job.
 \item running \ipi{} and the clients on the HPC system, but in separate jobs.
 Since \ipi{} consumes very little resources, one should ideally launch it 
-interactively on a logine node 
+interactively on a login node 
 \begin{code}
 > nohup python i-pi input_file.xml < /dev/null &> log & 
 \end{code}
@@ -805,6 +903,7 @@ We will take (\(N\),\(P\),\(T\)) = (108, 0, 25 K).
 
 \subsection{Part 1 - \emph{NVT} Equilibration run}
 
+\label{part1}
 
 \subsubsection{Client code}
 
@@ -1083,7 +1182,9 @@ As well as initializing all the atom positions, this section
 can also be used to set the atom velocities. Rather than setting these manually,
 it is usually simpler to sample these randomly from a Maxwell-Boltzmann
 distribution. This can be done using the
-{}``velocities'' tag by setting the {}``mode'' attribute to {}``thermal'':
+{}``velocities'' tag by setting the {}``mode'' attribute to {}``thermal''.
+This then takes an argument specifying the temperature to initialize the
+velocities to. With this, the final initialize section is:
 
 \begin{code}
 <initialize nbeads='4'>
@@ -1092,7 +1193,7 @@ distribution. This can be done using the
 </initialize>
 \end{code}
 
-Next lets consider the {}``forces'' section, which deals with communication
+Next let us consider the {}``forces'' section, which deals with communication
 with the client codes. Since in this case we only have one type of
 client code which will be using sockets for communication, we will
 specify a single {}``socket'' tag to initialize it:
@@ -1179,7 +1280,7 @@ is likely to take around 5 picoseconds, so we will take 5000 time
 steps, using:
 
 \begin{code}
-<total\_steps> 5000 </total\_steps>
+<total_steps> 5000 </total_steps>
 \end{code}
 
 \subsubsection{Customizing the output}
@@ -1364,7 +1465,7 @@ others, and so it would be impractical to output it every time step.
 With \ipi this is easy to do, all that is required is to add another
 {}``properties'' tag with a different filename.
 
-For demonstration purposes, we will chose to print out the forces
+For demonstration purposes, we will choose to print out the forces
 acting on one tagged bead, since this requires an argument to be
 passed to the function that calculates it. The \ipi syntax for doing this is to have
 the arguments to be passed to the function between standard braces,
@@ -1468,7 +1569,7 @@ end of every \ipi run. This file then is what we will need to initialize the
 equilibration.
 
 Next, let us look at the trajectory files. Since we have printed out
-the positions, these should tell us how the spacial distribution
+the positions, these should tell us how the spatial distribution
 has equilibrated, and give us some insight into the atom dynamics.
 The easiest way to use these files, as discussed earlier, is to
 use the trajectory files as input to a visualization program such as VMD.
@@ -1504,6 +1605,8 @@ Therefore this step of the simulation is done, and we are ready
 to start the \emph{NPT} run.
 
 \subsection{Part 2 - \emph{NPT} simulation}
+
+\label{part2}
 
 Now that we have converged \emph{NVT} simulation data, we can use this to
 initialize a \emph{NPT} simulation. 
@@ -1783,8 +1886,8 @@ A xml tag has the following syntax:
 \end{code}
 
 The syntax for the different types of tag data is given below: 
-{\color{red}??? USE MONO FONTS IN THE TABLE, TO MATCH THE CODE ENVIRONMENT}
 
+\texttt{
 \begin{center}
 \begin{tabular}{cc}
 \hline\hline
@@ -1800,6 +1903,7 @@ Dictionary & <tag>\{name1: data1, name2: data2, \ldots \}</tag>\\
 \hline\hline
 \end{tabular}
 \end{center}
+}
 
 Note that arrays are always given as one-dimensional lists. In cases
 where a multi-dimensional array must be entered, one can use the `shape'
@@ -1811,8 +1915,9 @@ and 8 beads, then this can be represented in the xml input file as:
 
 \begin{code}
 <beads natoms='20' nbeads='8'>
-   <q shape=`(8,60)'>[ q11x, q11y, q11z, q12x, q12y, ... ]</tag>
+   <q shape=`(8,60)'>[ q11x, q11y, q11z, q12x, q12y, ... ]</q>
    ...
+</beads>
 \end{code}
 
 If `shape' is not specified, a 1D array will be assumed.
@@ -1900,8 +2005,6 @@ can be found in the units.py module.
 
 \label{configfile}
 
-%Mano's note: Add example from tutorial
-
 Instead of initializing the atom positions manually, the starting
 configuration can be specified through a separate data file. The name
 of the configuration file is specified within the {}``initialize''
@@ -1916,10 +2019,11 @@ to initialize multiple attributes by using the {}``file'' tag name.
 This will initialize the atom positions, labels, masses and possibly
 the cell parameters together.
 
+For an example of how each of these file formats are used, see
+\ref{part1}.
+
 
 \subsubsection{Initialization from checkpoint files}
-
-%Mano's note: Add example from tutorial
 
 \ipi gives the option to output the entire state of the system at
 particular timesteps as an xml input file, called a checkpoint file
@@ -1929,6 +2033,9 @@ way that the configuration files are. This is specified in the input
 by using {}``chk'' as the value of the {}``mode'' attribute. As
 for the configuration file, a checkpoint file can be used to initialize
 either one or many variables depending on which tag name is used.
+
+For an example of how to use this functionality, see
+\ref{part2}.
 
 There is also an ensemble type, {}``replay'', which takes a configuration
 file with multiple frames or a checkpoint file with one frame and
@@ -1942,8 +2049,6 @@ first time around.
 \section{Output files}
 
 \label{outputfiles}
-
-%Mano's note: Add example from tutorial
 
 \ipi uses a very flexible mechanism to specify how and how often
 atomic configurations and physical properties should be output. Within
@@ -1969,7 +2074,10 @@ There are three types of output file that can be specified; property
 files for system level properties, trajectory files for atom/bead
 level properties and checkpoint files which save the state of the
 system and so can be used to restart the simulation from a particular
-point. These will now be considered in turn.
+point. For a brief overview of the format of each of these types of
+files, and some of their more common uses, see \ref{part1}.
+To give a more in depth explanation of each of these files, 
+they will now be considered in turn.
 
 
 \subsection{Properties}
@@ -1992,7 +2100,18 @@ of each row, then the data in the same order as the header row. Each
 column is 16 characters wide and every float is written in exponential
 format with 8 digits after the decimal point.
 
-%Mano's note: Add an example of a header file here...
+For example, if we had asked for the current time step, the total
+simulation time in picoseconds, and the potential energy in kelvin,
+then the properties output file would look something like:
+
+\begin{code}
+# column   1     --> step : The current simulation time step.
+# column   2     --> time{picosecond} : The elapsed simulation time.
+# column   3     --> potential{kelvin} : The physical system potential energy.
+    0.00000000e+00     0.00000000e+00    -1.32860475e+04
+    1.00000000e+00     1.00000000e-03    -1.32865789e+04
+...
+\end{code}
 
 The properties that are output are determined by the {}``properties''
 tag in the xml input file. The format of this tag is:
