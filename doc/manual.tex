@@ -806,7 +806,7 @@ so all that is required is to create the {}``driver.x'' file in
 the {}``drivers'' directory, using the UNIX utility make.
 
 This client code can be used for several different problems
-\ref{driver.x}, some of which
+(see \ref{driver.x}), some of which
 are explored in the {}``tests'' directory, but for the current problem
 we will use the Silvera-Goldman potential with a cut-off radius
 of 15 \(a_0\). This is run using the following command:
@@ -974,7 +974,7 @@ The main advantage of this format is that it simultaneously specifies
 the atom configurations and the cell parameters, simplifying
 the input file.
 
-Here we will show how the to specify the xml input file
+Here we will show how to specify the xml input file
 in both of these cases, assuming that the user has already
 created the configuration file themselves.
 Note that these file formats can be read by
@@ -1162,9 +1162,9 @@ Putting all of this together, we get:
 \end{code}
 
 Now that we have decided on the time step, we will decide the total
-number of steps to run the simulation for. Taking an overall 
-simulation time of 5 picoseconds we therefore need 5000 time steps, 
-which is specified using:
+number of steps to run the simulation for. Equilibrating the system
+is likely to take around 5 picoseconds, so we will take 5000 time
+steps, using:
 
 \begin{code}
 <total\_steps> 5000 </total\_steps>
@@ -1233,23 +1233,24 @@ behind each of these output file types in turn.
 
 \begin{description}
 \item[checkpoint files:]
-These give a snapshot of the state of the simulation,
-and are designed to be a way of restarting
-the simulation, by using it as an input file for a new \ipi simulation. 
+These give a snapshot of the state of the simulation.
+If used as an input file for a new \ipi simulation,
+this simulation will start from the point where the
+checkpoint file was created in the old simulation.
 \item[trajectory files:] 
 These are used to print out properties
 relevant to all the atoms, such as the velocities or forces, for each degree of freedom.
 These can be useful
 for calculating correlation functions or radial distribution functions,
 but possibly their most useful feature is that visualization
-programs such as VMD can read them, and then use the data to show
+programs such as VMD can read them, and then use this data to show
 a movie of how the simulation is progressing. 
 \item[properties files:] 
 These are usually used to print out
 system level properties, such as the timestep, temperature,
 or kinetic energy. Essentially these are used to keep track of a small
 number of important properties, either to visualize the
-progression of the simulation, using plotting programs such as gnuplot, 
+progress of the simulation using plotting programs such as gnuplot, 
 or to be used to get ensemble averages.
 \end{description}
 
@@ -1301,7 +1302,7 @@ simulation runs. In this case we can simply set it to {}``tut1'':
 </output>
 \end{code}
 
-As for the input parameters, the units the output is given in can be
+As for the input parameters, the units the output data is given in can be
 set by the user. Unlike the input parameters however, 
 this is done by specifying an
 appropriate unit in curly braces after the name of the 
@@ -1481,10 +1482,12 @@ have converged. Using gnuplot, we can plot the relevant graphs using:
 > p './tut1.md' u 1:6 # potential energy and kinetic energy
 \end{code}
 
-This will show that the conserved quantity has only a small drift upwards
-so the time step is sufficiently small, the
-kinetic and potential energies have converged, and that the thermostat
+This will show that the conserved quantity has only a small drift upwards,
+the kinetic and potential energies have converged, and the thermostat
 is keeping the temperature at the specified value.
+We have therefore specified a sufficiently short time step, chosen the
+thermostat parameters sensibly, and have equilibrated the properties
+of interest.
 Therefore this step of the simulation is done, and we are ready
 to start the \emph{NPT} run.
 
@@ -1504,13 +1507,14 @@ Firstly, you can use the RESTART file directly, modifying it
 so that instead of continuing with the original \emph{NVT} simulation
 it will instead start a new \emph{NPT} simulation. We have included
 in the {}``tutorial-2'' directory both a RESTART file from
-tutorial 1 and an adjusted file which will run \emph{NPT} dynamics.
+tutorial 1 and an adjusted file which will run \emph{NPT} dynamics,
+{}``tutorial-2a.xml''
 
 These adjustments start with resetting the {}``step'' tag, so that
 it starts with the value 0. This can be done by simply removing the
 tag. Similarly, we can increase the total number of
 steps so that it is more suitable for collecting the necessary
-amount of data, in this case we will set the 
+amount of data, in this case we will set
 {}``total\_steps'' to 100000.
 
 We will also update the output files, first by setting the filenames
@@ -1570,7 +1574,7 @@ thermostat to deal with the volume degree of freedom, which we will take
 to be a simple Langevin thermostat.
 This thermostat is specified in the same way as the one which does the
 constant temperature algorithms for the atomic degrees of freedom, and
-we will take its time constant to be 250 femtoseconds:
+we will take its time scale to be 250 femtoseconds:
 
 \begin{code}
 <ensemble mode='npt'>
@@ -1624,11 +1628,14 @@ to specify that the file is a checkpoint file.
 This will then use the RESTART file to initialize the bead
 configurations and velocities and the cell parameters.
 
+Again, there is a file in the {}``tutorial-2'' directory
+for this purpose, {}``tutorial-2b.xml''.
+
 \subsubsection{Running the simulation}
 
 Whichever method is used to create the input file, the simulation
 is run in the same way as before, using either
-{}``tutorial-2a.xml'' or {}``tutorial-2a.xml'' as the input file. 
+{}``tutorial-2a.xml'' or {}``tutorial-2b.xml'' as the input file. 
 Note how the volume fluctuates with time, as it is no longer held
 constant in this ensemble.
 
@@ -1674,7 +1681,7 @@ To specify this, we simply set the {}``mode'' attribute of the
 \end{code}
 
 We then specify that the client code should connect to a unix socket
-using the -u tag:
+using the -u flag:
 
 \begin{code}
 > ./driver.x -u -m sg -h localhost -o 15 -p 31415
