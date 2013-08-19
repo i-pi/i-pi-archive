@@ -1564,24 +1564,11 @@ and a {}``pressure'' tag must be added:
 </ensemble>
 \end{code}
 
-We must also specify which constant pressure algorithms are to be used.
-\ipi contains two barostats, labelled {}``mht'' and {}``bzp''. These are
-broadly similar, but use slightly different integration algorithms.
-In this case, we will use {}``bzp''. This gives:
+At present, \ipi only contains a stochastic barostat to describe pressure in 
+a isotropic medium, that can be specified with the option ``isotropic''. 
+Anisotropic versions of the barostat may be added in future releases of \ipi. 
 
-%Mano's note: mht/bzp = ? I'm not adding this right now since I'm not sure these names will stay the same...
-
-\begin{code}
-<ensemble mode='npt'>
-   <pressure> 0 </pressure>
-   <barostat mode='bzp'>
-      ...
-   </barostat>
-   ...
-</ensemble>
-\end{code}
-
-This barostat also requires a 
+The isotropic barostat barostat also requires a 
 thermostat to deal with the volume degree of freedom, which we will take
 to be a simple Langevin thermostat.
 This thermostat is specified in the same way as the one which does the
@@ -1591,7 +1578,7 @@ we will take its time scale to be 250 femtoseconds:
 \begin{code}
 <ensemble mode='npt'>
    <pressure> 0 </pressure>
-   <barostat mode='bzp'>
+   <barostat mode='isotropic'>
       <thermostat mode='langevin'>
          <tau units='femtosecond'> 250 </tau>
       </thermostat>
@@ -1606,7 +1593,7 @@ Finally, we will take the barostat time scale to be 250 femtoseconds also, givin
 \begin{code}
 <ensemble mode='npt'>
    <pressure> 0 </pressure>
-   <barostat mode='bzp'>
+   <barostat mode='isotropic'>
       <thermostat mode='langevin'>
          <tau units='femtosecond'> 250 </tau>
       </thermostat>
