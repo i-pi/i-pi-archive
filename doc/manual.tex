@@ -727,51 +727,63 @@ modification is necessary:
 The rest of the input file should be the same as for a standard Quantum
 Espresso calculation, as explained at \url{www.quantum-espress.org/}.
 
-\subsection{Running on a HPC system}
+\subsection{Running on a HPC system}\label{hpc}
 
 Running \ipi on a high-performance computing (HPC) system can be a bit more challenging
 than running it locally using UNIX-domain sockets or using the \emph{localhost} 
-network interface. 
-
+network interface.
 The main problem is related to the fact that different HPC systems adopt
 a variety of solutions to have the different nodes communicate with each other
 and with the login nodes, and to queue and manage computational jobs. 
-Typically, each node will have more than one network interface: a list
-can be obtained for instance with the command
-%
-\begin{code}
-> /sbin/ip addr
-\end{code}
-%
-that will return a list of interfaces of the form
-%
-\begin{code}
-1: lo: <LOOPBACK,UP,LOWER_UP> mtu 16436 qdisc noqueue 
-    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
-    inet 127.0.0.1/8 scope host lo
-2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast qlen 1000
-    link/ether 00:25:b3:e7:a0:44 brd ff:ff:ff:ff:ff:ff
-    inet 192.168.1.254/16 brd 192.168.255.255 scope global eth0
-3: eth1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast qlen 1000
-    link/ether 00:25:b3:e7:a0:46 brd ff:ff:ff:ff:ff:ff
-    inet 129.67.106.153/22 brd 129.67.107.255 scope global eth1
-\end{code}
-%
-Each item corresponds to a network interface, identified by a number and a name (lo, eth0, eth1, \ldots).
-Most of the interfaces will have an associated IP address -- the four numbers separated by dots
-that are listed after ``inet'', e.g. 192.168.1.254 for the eth0 interface in the example above.
-
-\begin{figure}[hb]
+ 
+\begin{figure}[hbt]
 \centering\includegraphics[width=0.9\textwidth]{ipi-running.pdf}
-\caption{\label{fig:running} Different approaches to run \ipi{} and a number of 
+\caption{\label{fig:running} Different approaches to run \ipi and a number of 
 instances of the forces code on a HPC system: a) running \ipi and the clients in a single
 job; b) running \ipi and the clients on the same system, but using different jobs, or running
 \ipi interactively on the login node; c) running \ipi on a local workstation, communicating
 with the clients (that can run on one or multiple HPC systems) over the internet. } 
 \end{figure}
 
-These internet address should be specified in the address 
-
+Figure~\ref{fig:running} represents schematically three different approaches
+to run \ipi on a HPC system:
+\begin{enumerate}
+\item running both \ipi{} and multiple instances of the client as a single job on 
+the HPC system. The job submission script must launch \ipi{} first, as a serial
+background job, then wait a few seconds for it to load and create a socket
+\begin{code}
+> python i-pi input_file.xml &> log & wait 10
+\end{code}
+Then, one should launch with mpirun or any system-specific mechanism 
+one or more independent instances of the client code. Note that not all
+queing systems allow launching several compute jobs from a single job.
+\item running \ipi{} and the clients on the HPC system, but in separate jobs.
+Since \ipi{} consumes very little resources, one should ideally launch it 
+interactively on a logine node 
+\begin{code}
+> nohup python i-pi input_file.xml < /dev/null &> log & 
+\end{code}
+or alternative on a queue with a very long wall-clock time. 
+Then, multiple instances of the client can be run as independent jobs:
+as they start, they will connect to the server which will take care of
+adding them dynamically to the list of active clients,
+dispatching force calculations to them, and removing them from the list
+when their wall-clock time expires. This is perhaps the model
+that applies more easily to different HPC systems; however it requires
+having permission to run on the head node, or having access to a long
+wall-clock time queue that ensures that \ipi is always active. 
+\item running \ipi{} on a simple workstation, and performing 
+communication over the internet with the clients that run on one
+or more HPC systems. This model exploits in full the distributed-computing
+model that underlies the philosophy of \ipi and is very robust --
+as the server can be always on, and the output of the simulation is 
+generated locally. However, this is also the most complicated to set up,
+as the local workstation must accept in-coming connections 
+from the internet -- which is not always possible when behind a 
+corporate firewall -- and the compute nodes of the HPC centre must have
+an outgoing connection to the internet, which often requires ssh tunnelling
+through a login node (see section~\ref{ssh_sockets}). 
+\end{enumerate}
 
 \section{A simple tutorial}
 
@@ -2157,84 +2169,40 @@ start of every step.
 
 \label{distrib}
 
-\subsection{Sockets}
+\subsection{Communication protocol}
 
-\ipi only creates a server, it must interface with a client code
-in order to run any simulations. The overarching design principle
-of \ipi is that these two codes should be as independent as possible,
-and so the only communication between them is done through a socket.
-A socket is a data transfer device that is designed for internet communication,
-so supports both multiple client connections to the same server and
-two way communication. This makes sockets ideal for use in \ipi,
-where each calculation may require multiple client codes. 
+\ipi is based on a clear-cut separation between the 
+evolution of the nuclear coordinates and the evaluation of energy
+and forces, which is delegated to an external program.
+The two parts are kept as independent as possible, to minimize
+the client-side implementation burden, and to make sure that the 
+server will be compatible with any empirical or \emph{ab initio} code that 
+can compute inter-atomic forces for a given configuration.
 
-Sockets are described by an IP address and a port number, and can
-either be an internet socket, capable of inter-computer communication,
-or a unix socket, which is optimized for local communication. The
-IP address is input by the user in the {}``address'' tag, and can
-be specified in two ways. Firstly, every network has a unique numeric
-code of the form 123.45.678.901. Secondly, most networks are named,
-so the name of the network on which the server code is running can
-be used as an alias for the IP address. A specific case of this is
-{}``localhost'', which is the generic name for the local network
-used by unix sockets.
+Once a communication channel has been established between the 
+client and the server (see \ref{sockets}), the two parties
+exchange minimal information: \ipi{} sends the atomic positions
+and the cell parameters to the client, that computes energy, forces
+and virial and returns them to the server. 
 
-The port number is an integer between 1 and 65535 used to distinguish
-between all the different sockets open on a particular computer. As
-many of the lower numbers are protected for use in important system
-processes or internet communication, it is generally advisable to
-only use numbers in the range 1025-65535 for simulations.
-
-There are two modes of socket, internet and unix. Unix sockets are
-optimized for local communication, whereas internet sockets can be
-used to connect to one computer from another. While they are faster
-than internet sockets, unix sockets should only be used if a simple
-empirical potential is being run, since they are far less flexible.
-Also, if complicated empirical potentials or \emph{ab initio} potentials
-are used the force calculation becomes the bottleneck in the code,
-so the advantage of using unix sockets is lost. 
-
-Internet sockets have two main advantages that make them much more
-useful in general. Firstly, the client code does not need to be run
-on the same computer as the server code. In particular, if the client
-codes are being run on a cluster this means that you do not need to
-waste computing resources running the server, which is idle most of
-the time. Secondly, the port number is not used for unix sockets,
-so if more than one calculation is being run concurrently internet
-sockets must be used, so that the client codes connect to the correct
-server code.
-
-There are a two other input parameters that may be used to specify
-how the server socket looks for client codes to connect to. {}``latency''
-specifies the length of time between each check to see if any new
-client codes have connected, and {}``slots'' specifies how many
-client codes can queue between checks. Neither is likely to be important
-in getting the code to run, but may be used to optimize the connection
-time if required.
-
-
-\subsubsection{Data transfer}
-
-Once at least one client code has connected to the server socket,
-the force calculation can start. For this to happen the client code
-needs the system configuration, and likewise the server needs the
-force and potential data to be returned so that it can continue propagating
-the dynamics.
-
-To make sure that the connection is good, a simple query-response
-data transfer protocol is used. Before any data is sent through the
-socket a header string of 12 characters is sent to verify which stage
-of the calculation the server is at. Once the client sends the appropriate
-response header string, the data is transferred. If no response is
-given, the server will either wait and try again, or disconnect the
-client code and reassign its job to another, depending on the severity
-of the problem. The server assumes that 4-bit integers, 8-bit floats
-and 1-bit characters are used. A typical step is of the form:
+The exchange of information is regulated by an overly simple 
+communication protocol. The server polls the status of the client,
+and when the client signals that is ready to compute forces 
+sends it the atomic positions. When the client responds to the
+status query by signalling that the force evaluation is finished,
+\ipi will prepare to receive the results of the calculation.
+ If at any stage the client does not respond to a query, the server 
+will wait and try again until a prescribed timeout period has elapsed, 
+then consider the client to be stuck, disconnect from it 
+and reassign its force evaluation task job to another instance. 
+The server assumes that 4-bit integers, 8-bit floats
+and 1-bit characters are used. The typical communication flow is
+as follows:
+%
 \begin{enumerate}
 \item A header string of {}``\textbf{STATUS}'' is sent by the server socket.
 \item A header string is then returned, giving the status of the client
 code. Recognized options are:
-
 \begin{description}
 \item [{{}``NEEDINIT'':}] If the client code needs any initialising data,
 it can be sent here. The server code will then send a header string
@@ -2244,8 +2212,7 @@ the initialization string, and finally the initialization string itself.
 \item [{{}``READY'':}] Sent if the client code is ready to calculate
 the forces. The server socket will then send a string {}``POSDATA'',
 then nine floats for the cell vector matrix, then another nine floats
-for the inverse matrix, (which need to be transposed if the client
-code is written in fortran). The server socket will then send one
+for the inverse matrix. The server socket will then send one
 integer giving the number of atoms, then the position data as 3 floats
 for each atom giving the 3 cartesian components of the atomic position.
 \item [{{}``HAVEDATA'':}] This is sent if the client has calculated the
@@ -2256,47 +2223,145 @@ the force data as 3 floats per atom in the same way as the positions,
 and the virial as 9 floats in the same way as the cell vector matrix.
 \end{description}
 \item The server socket waits until the force data for each replica of the
-system has been calculated and returned, upon which the 
-molecular dynamics loop starts.
+system has been calculated and returned, then the MD can be propagated for
+one more time step, and new force requests will be dispatched.
 \end{enumerate}
 
-\subsubsection{Parallelization}
+\subsection{Parallelization}
 
 As mentioned before, one of the primary advantages of using this type
-of data transfer is that it allows multiple client codes to connect
-to one server code, so that different replicas of the system can be
+of data transfer is that it allows multiple clients to connect
+to a \ipi server, so that different replicas of the system can be
 assigned to different client codes and their forces computed in parallel.
-In fact it is trivially parallel, in the sense that no communication
-between the client codes is necessary.
+In the case of \emph{ab initio} force evaluation, this is a trivial
+level of parallelism, since the cost of the force calculation
+is overwhelming relative to the overhead involved in exchanging 
+coordinates and forces. Note that even if the parallelization over
+the replicas is trivial, often one does not obtain perfect scaling,
+due to the fact that some of the atomic configurations might require
+more steps to reach self-consistency, and the wall-clock time per step
+is determined by the slowest replica.
 
-In the case that there are as many client codes as replicas of the
-system this is very simple, as each replica will be assigned its own
-client code. In subsequent steps, the interface will attempt to assign
-a particular replica of the system to the client code which calculated
-the forces for it in the last step. This reduces the change in the particle
-positions between calculations for a particular client code, so the
-next step is done more efficiently. In the case where there are fewer
-client codes than beads, the socket interface will assign spare jobs
-to the first client code that finishes running, after matching all
-possible jobs to the same client code that calculated it last time
-step.
+\ipi maintains a list of active clients, and distributes the forces
+evaluations among those available. This means that, if desired, one 
+can run a $n$-beads calculation using only $m<n$ clients, as the 
+server takes care of sending multiple replicas to each client per 
+MD step. To avoid having clients idling for a substantial amount
+of time, $m$ should be a divisor of $n$; however the advantage of 
+this approach, compared to one that rigidly assign one instance of
+the client to one beads, is that if each client is run as an independent
+job in a queue (see~\ref{hpc}), \ipi can start performing PIMD
+as soon as a single job has started, and can carry on advancing the
+simulation even if one of the clients becomes unresponsive.
 
-This flexibility is especially useful when the calculations are being
-run on a cluster, as in this case the client codes will connect whenever
-they reach the front of the queue. More client codes can connect at
-any time, and if there is a problem and any client code dies it is
-simply disconnected from the server socket and any job it was running
-reassigned.
+Especially for \emph{ab initio} calculations, there is an advantage
+in running with $m=n$. \ipi will always try to send the coordinates for one
+path integral replica to the client that computed it at the previous 
+step: this reduces the change in the particle positions between 
+force evaluations, so that the charge density/wavefunction from the 
+previous step is a better starting guess and self-consistency can be 
+achieved faster. Also, receiving coordinates that represent a continuous
+trajectory makes it possible to use extrapolation
+strategies that might be available in the client code.
 
-Finally, note that many client codes can be parallelized themselves,
-using MPI or other similar protocols. This is fully compatible with
+Obviously, most electronic-structure client codes provide a further level
+of parallelisation, based on OpenMP and/or MPI. This is fully compatible with
 \ipi, as it does not matter how the client does the calculation since
-only the forces, potential and virial are sent to the server. Information
-on how to run MPI processes can usually be found on the website of
-the code provider if the client can be parallelized in this way.
+only the forces, potential and virial are sent to the server, and the communication
+is typically performed by the master process of the client. 
 
 
-\subsection{ssh tunnelling}
+\subsection{Sockets} \label{sockets}
+
+The communication between the \ipi server and the client code that
+evaluates forces is implemented through sockets. A socket is a 
+data transfer device that is designed for internet communication,
+so supports both multiple client connections to the same server and
+two way communication. This makes sockets ideal for use in \ipi,
+where each calculation may require multiple client codes. 
+
+A socket interface can actually function in two different modes.
+UNIX-domain sockets are a mechanism for local, inter-process
+communication. They are fast, and best suited when one wants
+to run \ipi  with empirical potentials, and the latency of the 
+communication with the client becomes a significant overhead
+for the calculation. UNIX-domain sockets create a special file
+in the local file system, that serves as a rendez-vous point
+between server and clients, and are uniquely identified by the
+name of this file, that can be specified in the `address'' tag of 
+the \href[SOCKET]{socket} object in the \ipi and client inputs.
+
+Unfortunately, UNIX sockets do not allow one to run \ipi{} and 
+the clients on different computers, which limits greatly their 
+utility when  one needs to run massively parallel calculations. 
+In these cases -- typically when performing \emph{ab initio} 
+simulations -- the force calculation becomes the bottleneck, so there is no
+need for fast communication with the server, and one can 
+use internet sockets, that instead are specifically designed
+for communication over a network.
+
+Internet sockets are described by an address and a port number.
+The address of the host -- given as the IP addres
+or as a hostname that is resolved to and IP address by a domain name server --
+in the {}``address'' tag of a \href[SOCKET]{socket} object. 
+The port number is an integer between 1 and 65535 used to distinguish
+between all the different sockets open on a particular host. As
+many of the lower numbers are protected for use in important system
+processes or internet communication, it is generally advisable to
+only use numbers in the range 1025-65535 for simulations.
+
+The \href[SOCKET]{socket} object has two more parameters.
+``latency'', specifies how often \ipi{} polls the list of 
+active clients to dispatch positions and collect results:
+setting it to a small value makes the program more responsive, 
+which is appropriate when the evaluation of the forces is very
+fast. In \emph{ab initio} simulations, it is best to set it to 
+a larger value, as higher latency will have no noticeable impact 
+on performance, but will reduce the cost of having \ipi run
+in the background to basically zero. 
+
+Normally, \ipi can detect when one of the client dies or disconnects,
+and can remove it from the active list and dispatch its force calculation
+to another instance. If however one of the client hangs without 
+closing the communication channel, \ipi has no way of determining that
+something is going wrong, and will just wait forever. One can 
+specify a parameter ``timeout'', that corresponds to the maximum time -- in 
+seconds -- that \ipi should wait before deciding that one of the clients
+has become unresponsive and should be discarded.
+
+\subsection{Running \ipi over the network}
+
+\subsubsection{Multiple network interfaces}
+
+
+Typically, each node will have more than one network interface: a list
+can be obtained for instance with the command
+%
+\begin{code}
+> /sbin/ip addr
+\end{code}
+%
+that will return a list of interfaces of the form
+%
+\begin{code}
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 16436 qdisc noqueue 
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast qlen 1000
+    link/ether 00:25:b3:e7:a0:44 brd ff:ff:ff:ff:ff:ff
+    inet 192.168.1.254/16 brd 192.168.255.255 scope global eth0
+3: eth1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast qlen 1000
+    link/ether 00:25:b3:e7:a0:46 brd ff:ff:ff:ff:ff:ff
+    inet 129.67.106.153/22 brd 129.67.107.255 scope global eth1
+\end{code}
+%
+Each item corresponds to a network interface, identified by a number and a name (lo, eth0, eth1, \ldots).
+Most of the interfaces will have an associated IP address -- the four numbers separated by dots
+that are listed after ``inet'', e.g. 192.168.1.254 for the eth0 interface in the example above.
+
+These internet address should be specified in the address 
+
+\subsubsection{ssh tunnelling}
 
 \label{ssh_sockets}
 
