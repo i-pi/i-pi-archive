@@ -4,7 +4,7 @@
    that they can be used with wrap-PI.
 
  * Files:
-   - driver.f90: Gives the module that replaces the internal MD loop of the 
-      Quantum-Espresso code such that it can be used as a driver.
-   - pw-driver.patch: A diff file that can be used to edit the Quantum-Espresso 
+   - espresso-5.0_ipi.patch: A diff file that can be used to edit the Quantum-Espresso 
+      code so that it can be used as a driver.
+   - cp2k-2.4.0_ipi.patch: A diff file that can be used to edit the CP2K
       code so that it can be used as a driver.
