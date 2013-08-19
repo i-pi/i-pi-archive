@@ -784,7 +784,7 @@ as the local workstation must accept in-coming connections
 from the internet -- which is not always possible when behind a 
 corporate firewall -- and the compute nodes of the HPC centre must have
 an outgoing connection to the internet, which often requires ssh tunnelling
-through a login node (see section~\ref{ssh_sockets}). 
+through a login node (see section~\ref{distrib} for more details). 
 \end{enumerate}
 
 \section{A simple tutorial}
@@ -2033,7 +2033,7 @@ The different available property names are:
 
 \input{input_docs/property_list}
 
-\subsection{Trajectory files}
+\subsection{Trajectory files} \label{trajectories}
 
 These are the output files for atomic or bead level properties, such
 as the bead positions. This will output data for each degree of
@@ -2150,39 +2150,47 @@ and virial and returns them to the server.
 The exchange of information is regulated by an overly simple 
 communication protocol. The server polls the status of the client,
 and when the client signals that is ready to compute forces 
-sends it the atomic positions. When the client responds to the
+\ipi sends the atomic positions to it. When the client responds to the
 status query by signalling that the force evaluation is finished,
 \ipi will prepare to receive the results of the calculation.
  If at any stage the client does not respond to a query, the server 
 will wait and try again until a prescribed timeout period has elapsed, 
 then consider the client to be stuck, disconnect from it 
-and reassign its force evaluation task job to another instance. 
-The server assumes that 4-bit integers, 8-bit floats
-and 1-bit characters are used. The typical communication flow is
+and reassign its force evaluation task to another active instance. 
+The server assumes that 4-byte integers, 8-byte floats
+and 1-byte characters are used. The typical communication flow is
 as follows:
 %
 \begin{enumerate}
-\item A header string of {}``\textbf{STATUS}'' is sent by the server socket.
-\item A header string is then returned, giving the status of the client
-code. Recognized options are:
+\item a header string {}``\textbf{STATUS}'' is sent by the server to 
+the client that has connected to it;
+\item a header string is then returned, giving the status of the client
+code. Recognized messages are:
 \begin{description}
-\item [{{}``NEEDINIT'':}] If the client code needs any initialising data,
+\item [{{}``NEEDINIT'':}] if the client code needs any initialising data,
 it can be sent here. The server code will then send a header string
 {}``INIT'', followed by an integer corresponding to the bead index,
 another integer giving the number of bits in
 the initialization string, and finally the initialization string itself.
-\item [{{}``READY'':}] Sent if the client code is ready to calculate
+\item [{{}``READY'':}] sent if the client code is ready to calculate
 the forces. The server socket will then send a string {}``POSDATA'',
 then nine floats for the cell vector matrix, then another nine floats
 for the inverse matrix. The server socket will then send one
 integer giving the number of atoms, then the position data as 3 floats
 for each atom giving the 3 cartesian components of the atomic position.
-\item [{{}``HAVEDATA'':}] This is sent if the client has calculated the
+\item [{{}``HAVEDATA'':}] is sent if the client has finished computing the
 potential and forces. The server socket then sends a string {}``GETFORCE'',
 and the client socket returns {}``FORCEREADY''. The potential is
 then returned as a float, the number of atoms as an integer, then
 the force data as 3 floats per atom in the same way as the positions,
-and the virial as 9 floats in the same way as the cell vector matrix.
+and the virial as 9 floats in the same way as the cell vector matrix. 
+Finally, the client may return an arbitrary string containing additional
+data that have been obtained by the electronic structure calculation 
+(atomic charges, dipole moment, \ldots). The client first returns
+an integer specifying the number of characters, and then the string,
+which will be output verbatim if the ``extra'' trajectory type is
+requested in the output section (see \ref{trajectories}).
+
 \end{description}
 \item The server socket waits until the force data for each replica of the
 system has been calculated and returned, then the MD can be propagated for
@@ -2209,9 +2217,9 @@ evaluations among those available. This means that, if desired, one
 can run a $n$-beads calculation using only $m<n$ clients, as the 
 server takes care of sending multiple replicas to each client per 
 MD step. To avoid having clients idling for a substantial amount
-of time, $m$ should be a divisor of $n$; however the advantage of 
+of time, $m$ should be a divisor of $n$. The main advantage of 
 this approach, compared to one that rigidly assign one instance of
-the client to one beads, is that if each client is run as an independent
+the client to each bead, is that if each client is run as an independent
 job in a queue (see~\ref{hpc}), \ipi can start performing PIMD
 as soon as a single job has started, and can carry on advancing the
 simulation even if one of the clients becomes unresponsive.
@@ -2239,7 +2247,7 @@ The communication between the \ipi server and the client code that
 evaluates forces is implemented through sockets. A socket is a 
 data transfer device that is designed for internet communication,
 so supports both multiple client connections to the same server and
-two way communication. This makes sockets ideal for use in \ipi,
+two-way communication. This makes sockets ideal for use in \ipi,
 where each calculation may require multiple client codes. 
 
 A socket interface can actually function in two different modes.
@@ -2250,8 +2258,9 @@ communication with the client becomes a significant overhead
 for the calculation. UNIX-domain sockets create a special file
 in the local file system, that serves as a rendez-vous point
 between server and clients, and are uniquely identified by the
-name of this file, that can be specified in the `address'' tag of 
-the \href[SOCKET]{socket} object in the \ipi and client inputs.
+name of the file itself, that can be specified in the ``address'' tag of 
+the \hyperref[SOCKET]{socket} object in the \ipi, and in 
+the input of th client.
 
 Unfortunately, UNIX sockets do not allow one to run \ipi{} and 
 the clients on different computers, which limits greatly their 
@@ -2265,22 +2274,22 @@ for communication over a network.
 Internet sockets are described by an address and a port number.
 The address of the host -- given as the IP addres
 or as a hostname that is resolved to and IP address by a domain name server --
-in the {}``address'' tag of a \href[SOCKET]{socket} object. 
+in the {}``address'' tag of a \hyperref[SOCKET]{socket} object. 
 The port number is an integer between 1 and 65535 used to distinguish
 between all the different sockets open on a particular host. As
 many of the lower numbers are protected for use in important system
 processes or internet communication, it is generally advisable to
 only use numbers in the range 1025-65535 for simulations.
 
-The \href[SOCKET]{socket} object has two more parameters.
-``latency'', specifies how often \ipi{} polls the list of 
+The \hyperref[SOCKET]{socket} object has two more parameters.
+The option ``latency'' specifies how often \ipi{} polls the list of 
 active clients to dispatch positions and collect results:
 setting it to a small value makes the program more responsive, 
 which is appropriate when the evaluation of the forces is very
 fast. In \emph{ab initio} simulations, it is best to set it to 
-a larger value, as higher latency will have no noticeable impact 
-on performance, but will reduce the cost of having \ipi run
-in the background to basically zero. 
+a larger value (of the order of 0.01 seconds), as higher latency 
+will have no noticeable impact on performance, but will reduce 
+the cost of having \ipi run in the background to basically zero. 
 
 Normally, \ipi can detect when one of the client dies or disconnects,
 and can remove it from the active list and dispatch its force calculation
@@ -2293,18 +2302,21 @@ has become unresponsive and should be discarded.
 
 \subsection{Running \ipi over the network}
 
-\subsubsection{Multiple network interfaces}
+\subsubsection{Understanding the network layout}
 
-
-Typically, each node will have more than one network interface: a list
+Running \ipi in any non-local configuration requires a basic understanding
+of the layout of the network one is dealing with. Each workstation, or node
+of a HPC system, may expose more than one network interface, some of which
+can be connected to the outside internet, and some of which may be only part
+of a local network. A list of the network interfaces available on a given host
 can be obtained for instance with the command
-%
+
 \begin{code}
 > /sbin/ip addr
 \end{code}
-%
+
 that will return a list of interfaces of the form
-%
+
 \begin{code}
 1: lo: <LOOPBACK,UP,LOWER_UP> mtu 16436 qdisc noqueue 
     link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
@@ -2316,80 +2328,99 @@ that will return a list of interfaces of the form
     link/ether 00:25:b3:e7:a0:46 brd ff:ff:ff:ff:ff:ff
     inet 129.67.106.153/22 brd 129.67.107.255 scope global eth1
 \end{code}
-%
+
 Each item corresponds to a network interface, identified by a number and a name (lo, eth0, eth1, \ldots).
 Most of the interfaces will have an associated IP address -- the four numbers separated by dots
 that are listed after ``inet'', e.g. 192.168.1.254 for the eth0 interface in the example above.
 
-These internet address should be specified in the address 
+\begin{figure}[hbt]
+\centering\includegraphics[width=0.9\textwidth]{ipi-network.pdf}
+\caption{\label{fig:network} A schematic representation of the network layout one 
+typically finds when running \ipi and the clients on a HPC system and/or on a local workstation. } 
+\end{figure}
+
+Figure~\ref{fig:network} represents schematically a typical network layout
+for a HPC system and a local workstation. When running \ipi locally on a 
+workstation, one can use the loopback interface (that can be referred to as 
+``localhost'' in the ``address'' field of both \ipi and the client) for communication.
+When running both \ipi and the clients on a HPC cluster, one should work out which of the
+the interfaces that are available on the node where the \ipi server runs is accessible from the
+compute nodes. This requires some trial and error, and possibly to set the 
+ ``address'' field dynamically from the job that launches \ipi. 
+ For instance,
+if one was running \ipi on the login node, and the clients on different compute nodes, as 
+in Figure~\ref{fig:running}b, then on the HPC system described in Figure~\ref{fig:network} 
+one should set the address to that of the \emph{ib1} interface -- $111.111.111.111$ in 
+the example above. If \ipi was launched in a job script, then the submission script would
+have to check for the IP address associated with the \emph{ib0} interface on the node
+the job has been dispatched to, and set that address ($111.111.111.200$) in the inputs
+of both \ipi and the clients that will be launched in the same (or separate) jobs.
+
+Running \ipi on a separate workstation (Figure~\ref{fig:running}c) gives 
+maximum flexibility, but is also trickier as one has to reach the 
+internet from the compute nodes, that are typically not directly connected to it. 
+We discuss this more advanced setup in the next paragraph.
 
 \subsubsection{ssh tunnelling}
 
 \label{ssh_sockets}
 
-One problem that can often crop up when trying to run an \ipi calculation
-is that there is a firewall around the network, especially when the
-server code is being run on a cluster. This will often result in error
-messages such as {}``Error connecting: Connection timed out'' or
-{}``Error connecting: Connection refused''.
+If \ipi is to be run in a distributed computing mode, then one should
+make sure that the work-station on which the server will run is accessible from
+the outside internet on the range of ports that one wants to use for
+\ipi. There are ways to circumvent a firewall, but we will not discuss them
+here, as the whole point of \ipi is that it can be run on a low-profile
+PC whose security does not need to be critical. Typically arrangements
+can be made to open up a range of ports for incoming connections. 
 
-Let us suppose that the server code is running on a host network server.net,
-and that you are using port 12345. However, when you try to connect
-to this port from a computer, let us call this client.net, then you
-get error messages like the ones above, due to a firewall on server.net
-blocking port 12345.
+A more substantial problem -- as it depends on the physical layout
+of the network rather than on software settings of the firewall --
+is how to access the workstation from the compute nodes, which in most
+cases do not have a network interface directly connected to the 
+outside internet.
 
-However, assuming that you can create an ssh connection between the
-two computers, then you can use this to forward one of the ports on
-client.net to connect to the necessary port on server.net. This can
-be done with the following shell command:
+The problem can be solved by creating a ssh tunnel, i.e. an instance of
+the ssh secure shell that will connect the compute node to the login node, 
+and then forward all traffic that is directed to a designated port
+on the compute node to the remote location that is running \ipi, passing
+through the outbound network interface of the login node. 
 
-\begin{code}
-> ssh -f -N server.net -L 23451:server.net:12345
-\end{code}
-
-The flags -f and -N just put the ssh process in the background. Then
-comes the ssh server, which in this case is the computer on which
-the server code is running. The -L flag sets up the ssh tunnel itself.
-The above code will forward the port 23451 on client.net to the port
-12345 on server.net, as required.
-
-Once this is done, then any data sent to port on 23451 on client.net
-will be forwarded through the ssh tunnel to port 12345 on server.net.
-By connecting to port 23451 on client.net (or localhost, an alias
-for the host the code is running on) with the client the code should
-now run.
-
-If the ssh connection fails, with an error message {}``ssh: connect
-to host server.net port 22: Connection timed out'', then the server.net
-server has also been set up with a firewall around the standard ssh
-port, port 22. In this case you can change which port is used to one
-that is open using the -p flag, for example:
+In the example above, if \ipi{} is running on a local workstation listening
+on port 12345 of the \emph{eth0} interface, one should run 
 
 \begin{code}
-> ssh -f -N server.net -L 23451:server.net:12345 -p 99
+> ssh -f -N -L local_port:worstation:remote_port -2 login_node
 \end{code}
 
+from the job script that launches the client. 
+For instance, with the network layout of Figure~\ref{fig:network}, the
+tunnel should be created as:
 
-\subsubsection{Using a script to create a ssh connection}
+\begin{code}
+> ssh -f -N -L 54321:123.123.123.123:12345 -2 111.111.111.111
+\end{code}
 
-Now let us suppose that client.net is a cluster, and we wish to submit
-the client jobs to the queue. The above code as it is will not work,
-since ssh requires a password. However, you can set up ssh such that
-no password is needed. 
+Then, the client should be configured to connect to \emph{localhost}
+on port 54321. The connection with \ipi will be established through the tunnel,
+and the data exchange can begin.
 
-Firstly, on client.net, we need to set up an ssh key. This can be
-done using the command:
+Note that, in order to be able to include the above commands in a script,
+the login node and the compute nodes should be configured to allow 
+password-less login within the HPC system. This can be achieved easily, and
+does not entail significant security risks, since it only allows one to 
+connect from one node to another within the local network.
+To do so, you should log onto the HPC system, and create a pair 
+of ssh keys (if this has not been done already, in which case an 
+id\_rsa.pub file should be present in the user's \textasciitilde{}/.ssh/ directory) 
+by issuing the command 
 
 \begin{code}
 > ssh-keygen -t rsa
 \end{code}
 
-It will then prompt you for a passphrase twice. Since we wish to have
+The program will then prompt for a passphrase twice. Since we wish to have
 use this in a job script where we will not be able to enter a password,
-just hit enter twice. Note that this will mean that someone with temporary
-access to your account could feasibly take a copy of the ssh key and
-then be able to use it, so this should be used with caution.
+just hit enter twice. 
 
 This should now have created two files in the directory \textasciitilde{}/.ssh,
 id\_rsa and id\_rsa.pub. These should be readable only by you, so
@@ -2401,12 +2432,9 @@ use the following code to set up the correct file permissions:
 
 Finally, copy the contents of the file id\_rsa.pub and append them
 to the file authorized\_keys in the directory \textasciitilde{}/.ssh
-of server.net. It should now be possible to ssh from client.net to
-server.net without using a password. We can now run the ssh command
-from a script, and so we can set up a ssh tunnel from a cluster node.
-Note that the cluster nodes will have a different IP address to the
-head node, so use {}``localhost'' rather than {}``client.net''
-in the input file of the client code.
+of the user on the login node, which is typically shared among all
+the nodes of a cluster and therefore allows password-less login 
+from all of the compute nodes.
 
 
 \chapter{Input reference}
