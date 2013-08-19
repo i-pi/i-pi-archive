@@ -9,7 +9,7 @@ the Free Software Foundation, either version 3 of the License, or
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
@@ -22,13 +22,20 @@ these ensembles, such as the internal and external pressure and stress.
 
 Classes:
    Barostat: Base barostat class with the generic methods and attributes.
-   BaroBZP: Generates dynamics according to the method of G. Bussi,
-      T. Zykova-Timan and M. Parinello, J. Phys. Chem., 130, 074101.
-   BaroMHT: Generates dynamics according to the method of G. Martyna, A.
-      Hughes and M. Tuckerman, J. Chem. Phys., 110, 3275.
+   BaroBZP: Generates dynamics with a stochastic barostat -- see
+            Ceriotti, More, Manolopoulos, Comp. Phys. Comm. 2013 for
+            implementation details.
+
+
 """
 
-__all__ = ['Barostat', 'BaroBZP', 'BaroMHT']
+# NB: this file also contains a 'BaroMHT' class, that follows more closely the
+# Martyna, Hughes, Tuckerman implementation of a PIMD barostat. However it is so
+# close to the BZP implementation that we disabled it for the sake of simplicity
+# BaroMHT: Generates dynamics according to the method of G. Martyna, A.
+# Hughes and M. Tuckerman, J. Chem. Phys., 110, 3275.
+
+__all__ = ['Barostat', 'BaroBZP']
 
 import numpy as np
 from ipi.utils.depend import *

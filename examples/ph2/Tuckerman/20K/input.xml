@@ -4,10 +4,10 @@
       <velocities mode='thermal' units='kelvin'> 40 </velocities>
    </initialize>
    <output prefix=''>
-      <properties shape='(7)' filename='ph2-p20-20K-0bar-mht.out'>
+      <properties shape='(7)' filename='ph2-p20-20K-0bar-isotropic.out'>
          [ step, time{picosecond}, conserved{kelvin}, temperature{kelvin}, kinetic_cv{kelvin}, potential{kelvin}, pressure_cv{megapascal}, volume]
       </properties>
-      <trajectory format='pdb' filename='ph2-p20-20K-0bar-mht.traj' stride='100' cell_units='angstrom'>positions{angstrom}</trajectory>
+      <trajectory format='pdb' filename='ph2-p20-20K-0bar-isotropic.traj' stride='100' cell_units='angstrom'>positions{angstrom}</trajectory>
    </output>
    <total_steps>20000</total_steps>
    <prng><seed>31416</seed></prng>

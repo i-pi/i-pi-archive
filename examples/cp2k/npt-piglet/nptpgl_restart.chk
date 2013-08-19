@@ -1169,7 +1169,7 @@
       <gauss>  1.23270919e-01</gauss>
    </prng>
    <ensemble mode='npt'>
-      <barostat mode='bzp'>
+      <barostat mode='isotropic'>
          <tau>  2.06706865e+04</tau>
          <thermostat mode='gle'>
             <A shape='(9, 9)'>

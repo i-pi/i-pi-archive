@@ -5044,11 +5044,11 @@
       </socket>
    </forces>
    <output prefix=''>
-      <properties shape='(7)' filename='ph2-p24-17K-0bar-mht.out'>
+      <properties shape='(7)' filename='ph2-p24-17K-0bar-isotropic.out'>
        [ step, conserved, temperature, potential{kelvin}, kinetic_cv{kelvin}, 
          volume, pressure_cv ]
       </properties>
-      <trajectory format='pdb' filename='ph2-p24-17K-0bar-mht.traj' stride='100' cell_units='angstrom'>positions{angstrom}</trajectory>
+      <trajectory format='pdb' filename='ph2-p24-17K-0bar-isotropic.traj' stride='100' cell_units='angstrom'>positions{angstrom}</trajectory>
    </output>
    <prng>
       <state shape='(624)'>
@@ -5182,7 +5182,7 @@
       <set_pos>444</set_pos>
    </prng>
    <ensemble mode='npt'>
-      <barostat mode='mht'>
+      <barostat mode='isotropic'>
         <thermostat mode='langevin'>
          <tau units="femtosecond"> 100 </tau>
         </thermostat>

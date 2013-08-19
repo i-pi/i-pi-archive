@@ -9,7 +9,7 @@ the Free Software Foundation, either version 3 of the License, or
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
@@ -48,8 +48,11 @@ class InputBaro(Input):
 
    attribs={ "mode": (InputAttribute, {"dtype"    : str,
                                    "default" : "dummy",
-                                   "help"     : "The type of barostat. 'bzp' gives a Bussi-Zykova-Parrinello isotropic barostat. 'mht' gives a Martyna-Hughes-Tuckerman isotropic barostat.",
-                                   "options"  : ["dummy", "bzp", "mht"]}) }
+                                   "help"     : """The type of barostat.  Currently, only a 'isotropic' barostat is implemented, that combines
+                                   ideas from the Bussi-Zykova-Parrinello barostat for classical MD with ideas from the
+                                   Martyna-Hughes-Tuckerman centroid barostat for PIMD; see Ceriotti, More, Manolopoulos, Comp. Phys. Comm. 2013 for
+                                   implementation details.""",
+                                   "options"  : ["dummy", "isotropic"]}) }
    fields={ "thermostat": (InputThermo, {"default" : input_default(factory=ipi.engine.thermostats.Thermostat),
                                          "help"    : "The thermostat for the cell. Keeps the cell velocity distribution at the correct temperature."}),
             "tau": (InputValue, {"default" : 1.0,
@@ -76,10 +79,7 @@ class InputBaro(Input):
       self.thermostat.store(baro.thermostat)
       self.tau.store(baro.tau)
       if type(baro) is BaroBZP:
-         self.mode.store("bzp")
-         self.p.store(baro.p)
-      elif type(baro) is BaroMHT:
-         self.mode.store("mht")
+         self.mode.store("isotropic")
          self.p.store(baro.p)
       elif type(baro) is Barostat:
          self.mode.store("dummy")
@@ -96,11 +96,8 @@ class InputBaro(Input):
       """
 
       super(InputBaro,self).fetch()
-      if self.mode.fetch() == "bzp":
+      if self.mode.fetch() == "isotropic":
          baro = BaroBZP(thermostat=self.thermostat.fetch(), tau=self.tau.fetch())
-         if self.p._explicit: baro.p = self.p.fetch()
-      elif self.mode.fetch() == "mht":
-         baro = BaroMHT(thermostat=self.thermostat.fetch(), tau=self.tau.fetch())
          if self.p._explicit: baro.p = self.p.fetch()
       elif self.mode.fetch() == "dummy":
          baro = Barostat(thermostat=self.thermostat.fetch(), tau=self.tau.fetch())
