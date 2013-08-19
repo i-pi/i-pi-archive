@@ -684,6 +684,8 @@ poll for incoming connections.
 
 \subsection{Built-in, example client}
 
+\label{driver.x}
+
 \subsubsection{CP2K}
 
 %To use CP2K as the client code, an additional file named {}``serverfile''
@@ -792,7 +794,7 @@ simulation, exploring
 some of the more generally useful options that \ipi offers and making
 no assumptions of previous experience of this code or other MD codes.
 Excerpts from the relevant input files are reproduced here, for explanation
-purposes, but to get the most out of this tutorial the user is encouraged
+purposes, but to get the most out of this tutorial the user is strongly encouraged
 to work through it themselves. For this purpose, the input files
 have been included with the \ipi distribution, in the {}``test/tutorial''
 directory.
@@ -800,11 +802,6 @@ directory.
 The chosen problem is that of a small \emph{NPT} simulation of para-hydrogen, 
 using the Silvera-Goldman potential \cite{silv-gold78jcp}. 
 We will take (\(N\),\(P\),\(T\)) = (108, 0, 25 K).
-
-Finally, note that this is designed to be a demonstration of some
-of the basic abilities of \ipi, and so the user is encouraged to
-play with some of the variables to get a feel for how the input file
-works. 
 
 \subsection{Part 1 - \emph{NVT} Equilibration run}
 
@@ -820,7 +817,8 @@ into it, and
 so all that is required is to create the {}``driver.x'' file in
 the {}``drivers'' directory, using the UNIX utility make.
 
-This client code can be used for several different problems, some of which
+This client code can be used for several different problems
+\ref{driver.x}, some of which
 are explored in the {}``tests'' directory, but for the current problem
 we will use the Silvera-Goldman potential with a cut-off radius
 of 15 \(a_0\). This is run using the following command:
@@ -848,7 +846,8 @@ Now that the client code is ready, an appropriate xml input file needs
 to be created from which the host server and the simulation data can
 be initialized. Here, we will go step by step through the creation
 of a minimal input file for a simple \emph{NVT} equilibration run. Note that
-the working final version is held within the {}``tutorial-0'' directory.
+the working final version is held within the {}``tutorial-1'' directory
+for reference.
 
 Firstly, when reading the input file the \ipi xml functions look
 for a {}``simulation''
@@ -928,8 +927,12 @@ file for this purpose.
 Here we will discuss two of the input formats that are compatible
 with \ipi, xyz files and pdb files.
 
+Note that, for the sake of this tutorial, we have included valid xyz and pdb input
+files in the {}``tutorial-1'' directory called {}``our\_ref.xyz''
+and {}``our\_ref.pdb'' respectively.
+
 The xyz format is the simplest input format
-for a configuration file that \ipi accepts, and it has the following
+for a configuration file that \ipi accepts, and has the following
 syntax:
 
 \begin{code}
@@ -987,12 +990,9 @@ Here we will show how the to specify the xml input file
 in both of these cases, assuming that the user has already
 created the configuration file themselves.
 Note that these file formats can be read by
-visualization programs such as VMD, and so it is generally advised to
+visualization programs such as VMD, and so it is generally advised 
+when making your own input files to
 use such software to make sure that the configuration is as expected.
-
-For the sake of this tutorial, we have included valid xyz and pdb input
-files in the {}``tutorial-1'' directory called {}``our\_ref.xyz''
-and {}``our\_ref.pdb'' respectively.
 
 To use a configuration file the {}``file'' tag in {}``initialize'' should be used.
 This will take an input file with a given name and use it to initialize
@@ -1011,6 +1011,7 @@ initialize from, and so in this case will be {}``xyz''.
 {}``units'' specifies which units the file is given in, and
 so in this case is given by {}``angstrom'', which are the
 standard units of both xyz and pdb files. 
+Note that if no units are specified then atomic units are assumed.
 For more information on the \ipi unit conversion libraries, 
 and the available units, see \ref{inputunits}.
 
@@ -1094,7 +1095,7 @@ distribution. This can be done using the
 Next lets consider the {}``forces'' section, which deals with communication
 with the client codes. Since in this case we only have one type of
 client code which will be using sockets for communication, we will
-specify a single {}``sockets'' tag to initialize it:
+specify a single {}``socket'' tag to initialize it:
 
 \begin{code}
 <forces>
@@ -1106,32 +1107,32 @@ specify a single {}``sockets'' tag to initialize it:
 
 A socket is specified with three parameters; the port number, the
 hostname and whether it is a unix or an internet socket. 
-These are specified by the {}``port'' and {}``hostname tags
+These are specified by the {}``port'' and {}``address'' tags
 and the {}``mode'' attribute respectively.
 To match up with the client socket specified above,
 we will take an internet socket on the hostname localhost and
-using port number 31415. 
+use port number 31415. 
 
 This gives the final {}``forces'' section:
 
 \begin{code}
 <forces>
    <socket mode="inet">
-      <hostname> localhost </hostname>
-      <port> 31415 <\port>
+      <address> localhost </address>
+      <port> 31415 </port>
    </socket>
 </forces>
 \end{code}
 
-The next section that we will need is the ensemble, which determines
+The next section that we will need is {}``ensemble'', which determines
 how the dynamics integrator will be initialized. Since we wish to
 do a \emph{NVT} simulation, we set the {}``mode'' attribute to {}``nvt'',
 and must specify the temperature using the appropriate tag:
 
 \begin{code}
 <ensemble mode='nvt'>
-   <temperature units='kelvin'> 25 </temperature>
    ...
+   <temperature units='kelvin'> 25 </temperature>
 </ensemble>
 \end{code}
 
@@ -1145,9 +1146,9 @@ this, but for the sake of this tutorial we will use a safe value of
 
 \begin{code}
 <ensemble mode='nvt'>
-   <temperature units='kelvin'> 25 </temperature>
-   <timestep units='femtosecond'> 1 </timestep>
    ...
+   <timestep units='femtosecond'> 1 </timestep>
+   <temperature units='kelvin'> 25 </temperature>
 </ensemble>
 \end{code}
 
@@ -1155,238 +1156,39 @@ Finally, while the free-particle evolution part of the integrator
 is initialized automatically, there are several different options
 for the constant temperature sampling algorithm. For simplicity we
 will take the path-integral Langevin equation (PILE) algorithm \cite{ceri+10jcp},
-which is specifically designed for path integral simulations, and
-since we are trying to equilibrate local properties we will take the
-local version of this, {}``pile\_l''. This integrator also has to
+which is specifically designed for path integral simulations. 
+This is specified by the {}``mode'' tag {}``pile\_l''. 
+This integrator also has to
 be initialized with a time scale parameter, {}``tau'', which determines
-how strong the thermostat is. Since we have a local thermostat the
-appropriate time scales will be fairly short, so we will take a short
-time scale of 1000 atomic time units. Putting all of this together,
-we get the final input file:
-
-\begin{code}
-<simulation>
-   <initialize nbeads='4'>
-      <file mode='xyz'> our_ref.xyz </file>
-      <cell mode='abc'>
-         [33.72594, 33.72594, 33.72594]
-      </cell>
-   </initialize>
-   <forces>
-      <socket mode="unix">
-         <hostname> localhost </hostname>
-      </socket>
-   </forces>
-   <ensemble mode='nvt'>
-      <temperature> 25 </temperature>
-      <timestep> 40 </timestep>
-      <thermostat mode='pile_l'>
-         <tau> 1e3 </tau>
-      </thermostat>
-   </ensemble>
-</simulation>
-\end{code}
-
-
-\subsubsection{Running the simulation}
-
-\label{run1}
-
-Now that we have a valid input file, we can run the test simulation.
-The {}``i-pi'' script in the root directory is used to create an
-\ipi simulation from a xml input file. As explained in
-\ref{runningsimulations} (if we assume that we are in the {}``tutorial-0''
-directory) this script is run using:
-
-\begin{code}
-> python ../../../i-pi tutorial-0.xml
-\end{code}
-
-This will start the \ipi simulation, creating the server socket and
-initializing the simulation data. This should at this point print
-out a header message to standard output, followed by a few information
-messages that end with {}``starting the polling thread main loop'',
-which signifies that the server socket has been opened and is waiting
-for connections from client codes.
-
-At this point the driver code is run in a new terminal 
-from the {}``drivers'' directory using the command
-specified above:
-
-\begin{code}
-> ./driver.x -m sg -u -h localhost -o 15
-\end{code}
-
-The wrapper code should now output a message saying that a new client
-code has connected, and start running the simulation.
-
-
-\subsubsection{Output data}
-
-Once the simulation is finished (which should take about a minute)
-it should have output, by default, one file called {}``i-pi.checkpoint''
-and one called {}``RESTART'' which have the state of the system
-saved as it was at the end of the calculation, one file called {}``i-pi.md''
-which contains a log of the values of some of the simple properties
-of the system throughout the simulation, and a set of files {}``i-pi.pos\_x.xyz''
-which give the positions of the different replicas of the system at
-regular intervals. For an in-depth discussion on these three types
-of output files see \ref{outputfiles}, but for now let us look at
-each of these specific output files in turn.
-
-First, consider the file {}``i-pi.checkpoint''. As said above, this
-gives a snapshot of the state of the simulation. Since we didn't specify
-how often to print out this file the default value of once every 1000
-time steps was used, so in this case the last checkpoint was created
-at step 999. This type of file is designed to be a way of restarting
-the simulation, by using it as an input file for a new \ipi simulation. 
-This is done in exactly the same way as before, i.e.:
-
-\begin{code}
-> python ../../../i-pi i-pi.checkpoint
-\end{code}
-
-The RESTART file is the same type of file, except this is automatically
-generated at the end of the simulation regardless of what is
-specified in the input file.
-
-The next set of files to consider are the trajectory files
-{}``i-pi.pos\_x.xyz''. Trajectory files are used to print out properties
-relevant to all the atoms individually, such as the velocities or forces.
-In this case, these give the positions of the 
-beads at various snapshots throughout the simulation. These can be useful
-for calculating correlation functions or radial distribution functions,
-but possibly their most useful feature is that visualization
-programs such as VMD can read them, and then use the data to show
-a movie of how the simulation is progressing. 
-
-If we do this with these files, we see that the simulation started
-from an essentially optimized configuration and then over the course
-of the simulation began to melt. Given that at the state point studied
-and with the potential given para-hydrogen is a liquid \cite{silv-gold78jcp},
-this is what we would expect.
-
-Finally, let us consider the {}``i-pi.md'' file. This is a print out
-of the system level properties, and by default we get one file which
-prints out the timestep, elapsed time, conserved quantity, temperature,
-potential energy and kinetic energy of the system.
-
-At this point there are two simple tests that should be done. Firstly,
-we should check that the conserved quantity does not exhibit any major
-drift, and second we should check to see if the properties of interest
-have converged yet. The file format has been chosen so that programs 
-such as awk and gnuplot can read the data easily. In this case, gnuplot
-can show how the conserved quantity, temperature, potential energy
-and kinetic energy change throughout the simulation using:
-
-\begin{code}
-> gnuplot
-> p './i-pi.md' u 1:3 # Plots column 1, i.e. timestep, 
-> p './i-pi.md' u 1:4 # against columns 3, 4, 5 and 6,
-> p './i-pi.md' u 1:5 # i.e. conserved quantity, temperature,
-> p './i-pi.md' u 1:6 # kinetic energy and potential energy
-\end{code}
-
-This will show that the conserved quantity has only a small drift upwards,
-so the time step is sufficiently small, and that the temperature has converged
-but the kinetic and potential energies have not.
-We therefore need to adjust the input parameters to converge these properties
-properly, as will be done in the next section.
-
-In Part 0, we created a minimal input file which could be used to
-run a basic \emph{NVT} simulation. However, this ignored several non-essential
-but very useful bits of functionality, which are likely to be 
-important for most problems users will face. With this in mind,
-we now present some impovements to the original input file. 
-
-\subsubsection{Improving convergence and simulation technicalities}
-
-Firstly, we will discuss the input parameters that are necessary for
-the simulation to actually do what we originally intended it to
-correctly, namely equilibate a small system in the \emph{NVT} ensemble.
-
-We noted at the end of the last run that the simulation did not appear to have
-fully converged. Often in this case it will be necessary to adjust the parameters
-of the integrators, such as the time step and the thermostat timescale.
-However, in this case there are a couple of much simpler ways to
-help improve the convergence which were neglected previously, so we will now
-concentrate on these.
-
-The most obvious first step is to run the simulation for longer. 
-By default the number of
-time steps is 1000, so we will increase this to 5000 using the 
-{}``total\_steps'' tag:
-
-\begin{code}
-<total_steps> 5000 </total_steps>
-\end{code} 
-
-One small technicality that can become important if multiple similar
-simulations are run is that, to ensure each run is independent, the 
-random number generator should be initialized with different
-seeds for each. This is simply done using the
-{}``prng'' tag, as follows:
-
-\begin{code}
-<prng> <seed> 31415 </seed> </prng>
-\end{code}
-
-\subsubsection{Simplifying the input file}
-
-Some of the functionality of \ipi is designed to make it easier to use rather
-than to improve the performance of the code. One example of this is the
-unit conversion library. If appropriate, the input classes have a {}``dimension''
-parameter which is used to define their dimensionality.
-These variables can then be specified with a {}``units'' attribute
-in the input file, which
-the xml reading functions can use to automically convert between a 
-user specified unit and atomic units. 
-For example, the time step we used in tutorial 0
-was 40 atomic time units, but we might instead want to express this in S.I.
-units for comparison with another paper. Since this happens to be approximately
-1 femtosecond, so we can instead use:
+how strong the thermostat is, which we will set to 25 femtoseconds. 
+Putting all of this together, we get:
 
 \begin{code}
 <ensemble mode='nvt'>
+   <thermostat mode='pile_l'>
+      <tau units='femtosecond'> 25 </tau>
+   </thermostat>
    <timestep units='femtosecond'> 1 </timestep>
-   ...
+   <temperature units='kelvin'> 25 </temperature>
 </ensemble>
 \end{code}
- 
-Similarly, we might want to specify the input configuration file in
-angstrom rather than \(a_0\) (in fact this is the standard unit for
-this file type). This can be done in the same way:
+
+Now that we have decided on the time step, we will decide the total
+number of steps to run the simulation for. Taking an overall 
+simulation time of 5 picoseconds we therefore need 5000 time steps, 
+which is specified using:
 
 \begin{code}
-<initialize nbeads='4'>
-   <file mode='xyz' units='angstrom'> our_ref.xyz </file>
-   <cell mode='abc' units='angstrom'>
-      [33.72594, 33.72594, 33.72594]
-   </cell>
-   <velocities mode='thermal'> 50 </velocities>
-</initialize>
+<total\_steps> 5000 </total\_steps>
 \end{code}
-
-Using this, the initialize section is reduced to:
-
-\begin{code}
-<initialize nbeads='4'>
-   <file mode='pdb' units='angstrom'> our_ref.pdb </file>
-   <velocities mode='thermal'> 50 </velocities>
-</initialize>
-\end{code}
-
-Note that an appropriately formatted pdb file is included with the
-{}``tutorial 1'' directory as before.
 
 \subsubsection{Customizing the output}
 
-In the first tutorial only the default output was generated since 
-nothing had been specified by the user. There are however a wide
+So far, we have only considered how to set up the simulation, and not
+the data we wish to obtain from it. However, there are a wide
 variety of properties of interest that \ipi can calculate 
 and a large number of different output
-options, so in most cases you will want to specify what is output
-manually.
+options, so to avoid confusion let us go through them one at a time.
 
 Firstly, the amount of data sent to standard output can be adjusted
 with the {}``verbosity'' attribute of {}``simulation'':
@@ -1400,15 +1202,14 @@ with the {}``verbosity'' attribute of {}``simulation'':
 By default the verbosity is set to {}``low'', which only outputs
 important warning messages and information, and some statistical 
 information every 1000 time steps. Here we will set it to 
-{}``high'', which should give output of the type:
+{}``high'', which will 
+tell \ipi to output the following data every time step:
 
-\small
 \begin{code}
  # Average timings at MD step S. t/step: TOTAL [p: P q: Q t: T]
  # MD diagnostics: V: POTENTIAL Kcv: KINETIC Ecns: CONSERVED
  @SOCKET: Assigning [ X ] request id ID to client with last-id LID ( CID/ CTOT : )
 \end{code}
-\normalsize
 where the output values have been replaced with the following:
 \begin{description}
 \item [{S:}] This gives the current time step.
@@ -1433,12 +1234,41 @@ of.
 \end{description}
 
 What output gets written to file is specified by the {}``output'' tag.
-There are three types of files, as explained in tutorial 0, 
+There are three types of files;
 properties files, trajectory files and checkpoint files, which 
 are specified with {}``properties'', {}``trajectory'' 
 and {}``checkpoint'' tags respectively.
-As an example, the default output would be generated with
-the following {}``output'' section:
+For an in-depth discussion on these three types
+of output files see \ref{outputfiles}, 
+but for now let us just explain the rationale
+behind each of these output file types in turn.
+
+\begin{description}
+\item[checkpoint files:]
+These give a snapshot of the state of the simulation,
+and are designed to be a way of restarting
+the simulation, by using it as an input file for a new \ipi simulation. 
+\item[trajectory files:] 
+These are used to print out properties
+relevant to all the atoms, such as the velocities or forces, for each degree of freedom.
+These can be useful
+for calculating correlation functions or radial distribution functions,
+but possibly their most useful feature is that visualization
+programs such as VMD can read them, and then use the data to show
+a movie of how the simulation is progressing. 
+\item[properties files:] 
+These are usually used to print out
+system level properties, such as the timestep, temperature,
+or kinetic energy. Essentially these are used to keep track of a small
+number of important properties, either to visualize the
+progression of the simulation, using plotting programs such as gnuplot, 
+or to be used to get ensemble averages.
+\end{description}
+
+Now that we know what each input file is used for, let us take an
+example of an output section and show how the xml input section works.
+The default output, i.e. what would be output if nothing was set by the user, 
+would be generated with the following {}``output'' section:
 
 \begin{code}
 <output prefix='i-pi'>
@@ -1452,9 +1282,13 @@ the following {}``output'' section:
 </output>
 \end{code}
 
-As seen in tutorial 0, this creates 6 files: {}``i-pi.md'', {}``i-pi.pos\_0.xyz'',
+This creates 6 files: {}``i-pi.md'', {}``i-pi.pos\_0.xyz'',
 {}``i-pi.pos\_1.xyz'', {}``i-pi.pos\_2.xyz'', {}``i-pi.pos\_3.xyz''
 and {}``i-pi.checkpoint''. 
+{}``i-pi.md'' is the properties file, {}``i-pi.pos\_x.xyz'' are the
+position trajectory files, and {}``i-pi.checkpoint'' is the
+checkpoint file.
+
 The filenames are created using the syntax 
 {}``prefix''.{}``filename''[\_(file specifier)][.(file format)], where the file specifier is
 added to separate similar files. For example, in the above case the 
@@ -1489,7 +1323,7 @@ property or trajectory of interest, as shown below:
 <output prefix='tut1'>
    <properties filename='md' stride='10'>
       [step, time{picosecond}, conserved{kelvin}, 
-       temperature, potential{kelvin}, kinetic_cv{kelvin}] 
+       temperature{kelvin}, potential{kelvin}, kinetic_cv{kelvin}] 
    </properties>
    <trajectory filename='pos' stride='100' format='xyz'>
       positions{angstrom} 
@@ -1504,12 +1338,11 @@ quantity jumps, and to output the the trajectory in pdb format.
 To do this we would set the {}``stride'' and {}``format'' tags,
 as shown below:
 
-\small
 \begin{code}
 <output prefix='tut1'>
    <properties filename='md' stride='1'>
       [step, time{picosecond}, conserved{kelvin}, 
-       temperature, potential{kelvin}, kinetic_cv{kelvin}] 
+       temperature{kelvin}, potential{kelvin}, kinetic_cv{kelvin}] 
    </properties>
    <trajectory filename='pos' stride='100' format='pdb' cell_units='angstrom'>
       positions{angstrom} 
@@ -1517,7 +1350,6 @@ as shown below:
    <checkpoint filename='checkpoint' stride='1000' overwrite='True'/>
 </output>
 \end{code}
-\normalsize
 
 Note that we have added a {}``cell\_units'' attribute
 to the {}``trajectory'' tag, so that the
@@ -1525,15 +1357,15 @@ cell parameters are consistent with the position output.
 
 Finally, let us suppose that we wished to output another output property
 to a different file to the others. One example of when this 
-might be necessary if there
-is one output property which was more expensive to calculate than the
+might be necessary is if there
+were an output property which was more expensive to calculate than the
 others, and so it would be impractical to output it every time step.
 With \ipi this is easy to do, all that is required is to add another
 {}``properties'' tag with a different filename.
 
 For demonstration purposes, we will chose to print out the forces
 acting on one tagged bead, since this requires an argument to be
-passed to the function. The \ipi syntax for doing this is to have
+passed to the function that calculates it. The \ipi syntax for doing this is to have
 the arguments to be passed to the function between standard braces,
 separated by semi-colons.
 
@@ -1562,12 +1394,11 @@ in the list of arguments), and so this could also be written as:
 Finally, putting all this together, and adjusting some
 of the parameters of the new file, we get:
 
-\small
 \begin{code}
 <output prefix='tut1'>
    <properties filename='md' stride='1'> 
       [step, time{picosecond}, conserved{kelvin}, 
-       temperature, potential{kelvin}, kinetic_cv{kelvin}] 
+       temperature{kelvin}, potential{kelvin}, kinetic_cv{kelvin}] 
    </properties>
    <properties filename='force' stride='20'> 
       [atom_f{piconewton}(atom=0;bead=0)] 
@@ -1578,30 +1409,113 @@ of the parameters of the new file, we get:
    <checkpoint filename='checkpoint' stride='1000' overwrite='True'/>
 </output>
 \end{code}
-\normalsize
 
-\subsubsection{Equilibration run}
+\subsubsection{Running the simulation}
 
-Now that we have adjusted the input file to our satisfaction, we can
-re-run the simulation by 
-repeating the steps in \ref{run1}. The output of the 
-{}``tut1.md'' file should show that all the properties of interest
-have converged by the end of the simulation. If this
-is the case, then we are now ready to start the \emph{NPT} run.
+\label{run1}
+
+Now that we have a valid input file, we can run the test simulation.
+The {}``i-pi'' script in the root directory is used to create an
+\ipi simulation from a xml input file. As explained in
+\ref{runningsimulations} this script is run 
+(if we assume that we are in the {}``tutorial-1'' directory) using:
+
+\begin{code}
+> python ../../../i-pi tutorial-1.xml
+\end{code}
+
+This will start the \ipi simulation, creating the server socket and
+initializing the simulation data. This should at this point print
+out a header message to standard output, followed by a few information
+messages that end with {}``starting the polling thread main loop'',
+which signifies that the server socket has been opened and is waiting
+for connections from client codes.
+
+At this point the driver code is run in a new terminal 
+from the {}``drivers'' directory using the command
+specified above:
+
+\begin{code}
+> ./driver.x -m sg -h localhost -o 15 -p 31415
+\end{code}
+
+The wrapper code should now output a message saying that a new client
+code has connected, and start running the simulation.
+
+\subsubsection{Output data}
+
+Once the simulation is finished (which should take about half an hour)
+it should have output {}``tut1.md'', {}``tut1.force'', {}``tut1.pos\_0.xyz'',
+{}``tut1.pos\_1.xyz'', {}``tut1.pos\_2.xyz'', {}``tut1.pos\_3.xyz'',
+{}``tut1.checkpoint'' and {}``RESTART''.
+
+Firstly, we consider the checkpoint files, 
+{}``tut1.checkpoint'' and {}``RESTART''.
+As mentioned before, these files can be used as a means of restarting
+the simulation from a previous point. As an example, the last
+checkpoint should have been at step 4999, and so we could rerun
+the last step using
+\begin{code}
+> ../../../i-pi tut1.checkpoint
+\end{code}
+followed by running {}``driver.x'' as before.
+
+The difference between these two files is that, while {}``tut1.checkpoint''
+was specified by the user, {}``RESTART'' is automatically generated at the
+end of every \ipi run. This file then is what we will need to initialize the
+\emph{NPT} run, since it contains the state of the system after
+equilibration.
+
+Next, let us look at the trajectory files. Since we have printed out
+the positions, these should tell us how the spacial distribution
+has equilibrated, and give us some insight into the atom dynamics.
+The easiest way to use these files, as discussed earlier, is to
+use the trajectory files as input to a visualization program such as VMD.
+
+If we do this with these files, we see that the simulation started
+from an energy minimized configuration and then over the course
+of the simulation began to melt. Since the state point studied
+and with the potential given para-hydrogen is a liquid \cite{silv-gold78jcp},
+this is what we would expect.
+
+Finally, let us check the {}``tut1.md'' file. For the current
+problem, i.e. checking that we have a suitably equilibrated system,
+we should do two tests. Firstly,
+we should check that the conserved quantity does not exhibit any major
+drift, and second we should check to see if the properties of interest
+have converged. Using gnuplot, we can plot the relevant graphs using:
+
+\begin{code}
+> gnuplot
+> p './tut1.md' u 1:3 # Plots column 1, i.e. current simulation step, 
+> p './tut1.md' u 1:4 # against columns 3, 4, 5 and 6,
+> p './tut1.md' u 1:5 # i.e. conserved quantity, temperature,
+> p './tut1.md' u 1:6 # potential energy and kinetic energy
+\end{code}
+
+This will show that the conserved quantity has only a small drift upwards
+so the time step is sufficiently small, the
+kinetic and potential energies have converged, and that the thermostat
+is keeping the temperature at the specified value.
+Therefore this step of the simulation is done, and we are ready
+to start the \emph{NPT} run.
 
 \subsection{Part 2 - \emph{NPT} simulation}
 
 Now that we have converged \emph{NVT} simulation data, we can use this to
-initialize a \emph{NPT} simulation. There are two ways of doing this,
+initialize a \emph{NPT} simulation. 
+There are two ways of doing this,
 both of which involve using the RESTART file generated at
 the end of the \emph{NVT} run as a starting point.
+Note that for simplicity we will again take \(N=108, T=25 K\), and use
+\(P=0\).
 
 \subsubsection{Modifying the RESTART file}
 
 Firstly, you can use the RESTART file directly, modifying it
 so that instead of continuing with the original \emph{NVT} simulation
-it will instead it will start a new \emph{NPT} simulation. We have included
-in the {}``tutorial 2'' directory both a RESTART file from
+it will instead start a new \emph{NPT} simulation. We have included
+in the {}``tutorial-2'' directory both a RESTART file from
 tutorial 1 and an adjusted file which will run \emph{NPT} dynamics.
 
 These adjustments start with resetting the {}``step'' tag, so that
@@ -1609,20 +1523,19 @@ it starts with the value 0. This can be done by simply removing the
 tag. Similarly, we can increase the total number of
 steps so that it is more suitable for collecting the necessary
 amount of data, in this case we will set the 
-{}``total\_steps'' to 20000.
+{}``total\_steps'' to 100000.
 
 We will also update the output files, first by setting the filenames
 to start with {}``tut2a'' rather than {}``tut1'', and secondly by adding
-the volume and pressure to the list of computed propertie so that
+the volume and pressure to the list of computed properties so that
 we can check that the ensemble is being sampled correctly.
 Putting this together this gives:
 
-\small
 \begin{code}
 <output prefix=''>
-   <properties shape='(8)' filename='tut2a.prop'>
+   <properties shape='(8)' filename='tut2a.md'>
       [ step, time{picosecond}, conserved{kelvin}, 
-        temperature, potential{kelvin}, kinetic_cv{kelvin}, 
+        temperature{kelvin}, potential{kelvin}, kinetic_cv{kelvin}, 
         pressure_cv{megapascal}, volume ] 
    </properties>
    <properties stride='20' shape='(1)' filename='tut2a.force'> 
@@ -1634,7 +1547,6 @@ Putting this together this gives:
    <checkpoint stride='1000' filename='tut2a.restart'/>
 </output>
 \end{code}
-\normalsize
 
 Finally, we must change the {}``ensemble'' tag so that the correct
 ensemble is sampled. The first thing that must be done is  
@@ -1643,7 +1555,7 @@ and a {}``pressure'' tag must be added:
 
 \begin{code}
 <ensemble mode='npt'>
-   <pressure> 0 <pressure>
+   <pressure> 0 </pressure>
    ...
 </ensemble>
 \end{code}
@@ -1653,9 +1565,11 @@ We must also specify which constant pressure algorithms are to be used.
 broadly similar, but use slightly different integration algorithms.
 In this case, we will use {}``bzp''. This gives:
 
+%Mano's note: mht/bzp = ? I'm not adding this right now since I'm not sure these names will stay the same...
+
 \begin{code}
 <ensemble mode='npt'>
-   <pressure> 0 <pressure>
+   <pressure> 0 </pressure>
    <barostat mode='bzp'>
       ...
    </barostat>
@@ -1668,14 +1582,14 @@ thermostat to deal with the volume degree of freedom, which we will take
 to be a simple Langevin thermostat.
 This thermostat is specified in the same way as the one which does the
 constant temperature algorithms for the atomic degrees of freedom, and
-we will take its time constant to be 10000 atomic time units:
+we will take its time constant to be 250 femtoseconds:
 
 \begin{code}
 <ensemble mode='npt'>
-   <pressure> 0 <pressure>
+   <pressure> 0 </pressure>
    <barostat mode='bzp'>
       <thermostat mode='langevin'>
-         <tau> 1e4 </tau>
+         <tau units='femtosecond'> 250 </tau>
       </thermostat>
       ...
    </barostat>
@@ -1683,17 +1597,16 @@ we will take its time constant to be 10000 atomic time units:
 </ensemble>
 \end{code}
 
-Finally, we will take the barostat time scale to be 10000 atomic time
-units, giving:
+Finally, we will take the barostat time scale to be 250 femtoseconds also, giving:
 
 \begin{code}
 <ensemble mode='npt'>
-   <pressure> 0 <pressure>
+   <pressure> 0 </pressure>
    <barostat mode='bzp'>
       <thermostat mode='langevin'>
-         <tau> 1e4 </tau>
+         <tau units='femtosecond'> 250 </tau>
       </thermostat>
-      <tau> 1e4 </tau>
+      <tau units='femtosecond'> 250 </tau>
    </barostat>
    ...
 </ensemble>
@@ -1726,7 +1639,8 @@ configurations and velocities and the cell parameters.
 \subsubsection{Running the simulation}
 
 Whichever method is used to create the input file, the simulation
-is run in the same way as before. 
+is run in the same way as before, using either
+{}``tutorial-2a.xml'' or {}``tutorial-2a.xml'' as the input file. 
 Note how the volume fluctuates with time, as it is no longer held
 constant in this ensemble.
 
@@ -1736,7 +1650,9 @@ As a final example, we note that at this state point 16 replicas
 and at least 172 particles are actually 
 required to provide converged results.
 As a last tutorial then, you should repeat tutorials 1 and 2 with
-this number of replicas and atoms. The directory {}``tutorial 3'' contains 
+this number of replicas and atoms. 
+
+The directory {}``tutorial-3'' contains 
 \emph{NVT} and \emph{NPT} input files which can be used to do a fully converged
 \emph{NPT} simulation from scratch, except that they are missing some
 of the necessary input parameters.
@@ -1745,6 +1661,52 @@ If these are chosen correctly and the simulation is run properly
 the volume will be 31 \(\textrm{cm}^3\)/mol and the total energy
 should be -48 K \cite{mart+99jcp}.
 
+With this number of beads and atoms, the force calculation is likely
+to take much longer than it did in either tutorial 1 or 2.
+To help speed this up, we will now discuss how to parallelize the
+calculation over the sockets, and how to speed up the data transfer.
+
+Firstly, in this simple case where we are calculating an isotropic,
+pair-wise interaction, the data transfer time is likely to be a
+significant proportion of the total calculation time. To help speed this
+up, there is the option to use a unix domain socket rather than an
+internet socket. These are optimized for local communication within
+the same network, and so for the current problem they will be much
+faster than internet sockets.
+
+To specify this, we simply set the {}``mode'' attribute of the
+{}``socket'' tag to {}``unix'':
+
+\begin{code}
+<forces>
+   <socket mode='unix'>
+      ...
+   </socket>
+</forces>
+\end{code}
+
+We then specify that the client code should connect to a unix socket
+using the -u tag:
+
+\begin{code}
+> ./driver.x -u -m sg -h localhost -o 15 -p 31415
+\end{code}
+
+Parallelizing the force calculation over the different replicas of the system
+is similarly easy, all that is required is to run the above
+command multiple times. For example, if we wish to run
+4 client codes, we would use:
+
+\begin{code}
+> for a in 1 2 3 4; do
+>    ./driver.x -u -m sg -h localhost -o 15 -p 31415 &
+> done
+\end{code}
+
+Using these techniques should help speed up the calculation considerably,
+at least in this simple case. Note however, that using unix domain sockets
+would give a negligible gain in speed in most simulations, 
+since the force calculation usually takes much longer than the data transfer. 
 
 \section{Testing the install}
 

@@ -4,20 +4,20 @@
       <velocities mode='thermal' units='kelvin'> ??? </velocities>
    </initialize>
    <output prefix='tut3'>
-      <properties filename='prop' stride='1'> [time{picosecond}, conserved{kelvin}, kinetic_cv{kelvin}, potential{kelvin}] </properties>
+      <properties filename='md' stride='1'> [ step, time{picosecond}, conserved{kelvin}, temperature{kelvin}, potential{kelvin}, kinetic_cv{kelvin} ] </properties>
       <trajectory filename='pos' stride='100' format='pdb' cell_units='angstrom'> positions{angstrom} </trajectory>
-      <checkpoint filename='check' stride='1000' overwrite='True'/>
+      <checkpoint filename='checkpoint' stride='1000' overwrite='True'/>
    </output>
    <total_steps> ??? </total_steps>
-   <prng> <seed> ???  </seed> </prng>
    <forces>
-      <socket mode="inet">
+      <socket mode="???">
          <address>localhost</address>
+         <port> 31415 </port>
       </socket>
    </forces>
    <ensemble mode='nvt'>
       <thermostat mode='???'>
-         <tau> ??? </tau>
+         <tau units='femtosecond'> ??? </tau>
       </thermostat>
       <timestep units='femtosecond'> ??? </timestep>
       <temperature units='kelvin'>25</temperature>

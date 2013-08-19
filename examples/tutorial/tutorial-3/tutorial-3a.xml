@@ -3,26 +3,26 @@
       <file mode='chk'> tutorial-3_RESTART </file>
    </initialize>
    <output prefix='tut3a'>
-      <properties filename='prop' stride='1'> [ step, time{picosecond}, conserved{kelvin}, temperature, potential{kelvin}, kinetic_cv{kelvin}, pressure_cv{megapascal}, volume ] </properties>
+      <properties filename='md' stride='1'> [ step, time{picosecond}, conserved{kelvin}, temperature{kelvin}, potential{kelvin}, kinetic_cv{kelvin}, pressure_cv{megapascal}, volume ] </properties>
       <trajectory filename='pos' stride='100' format='pdb' cell_units='angstrom'> positions{angstrom} </trajectory>
-      <checkpoint filename='check' stride='1000' overwrite='True'/>
+      <checkpoint filename='checkpoint' stride='1000' overwrite='True'/>
    </output>
    <total_steps> ??? </total_steps>
-   <prng> <seed> ??? </seed> </prng>
    <forces>
-      <socket mode="inet">
+      <socket mode="???">
          <address>localhost</address>
+         <port> 31415 </port>
       </socket>
    </forces>
    <ensemble mode='npt'>
       <barostat mode='???'>
          <thermostat mode='???'>
-            <tau> ??? </tau>
+            <tau units='femtosecond'> ??? </tau>
          </thermostat>
-         <tau> ??? </tau>
+         <tau units='femtosecond'> ??? </tau>
       </barostat>
       <thermostat mode='???'>
-         <tau> ??? </tau>
+         <tau units='femtosecond'> ??? </tau>
       </thermostat>
       <timestep units='femtosecond'> ??? </timestep>
       <temperature units='kelvin'>25</temperature>

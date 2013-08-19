@@ -4,23 +4,23 @@
       <velocities mode='thermal' units='kelvin'> 50 </velocities>
    </initialize>
    <output prefix='tut1'>
-      <properties filename='prop' stride='1'> [time{picosecond}, conserved{kelvin}, kinetic_cv{kelvin}, potential{kelvin}] </properties>
+      <properties filename='md' stride='1'> [step, time{picosecond}, conserved{kelvin}, temperature{kelvin}, potential{kelvin}, kinetic_cv{kelvin}] </properties>
       <properties filename='force' stride='20'> [atom_f{piconewton}(atom=0;bead=0)] </properties>
       <trajectory filename='pos' stride='100' format='pdb' cell_units='angstrom'> positions{angstrom} </trajectory>
-      <checkpoint filename='check' stride='1000' overwrite='True'/>
+      <checkpoint filename='checkpoint' stride='1000' overwrite='True'/>
    </output>
-   <total_steps>5000</total_steps>
-   <prng> <seed> 31415 </seed> </prng>
+   <total_steps> 5000 </total_steps>
    <forces>
       <socket mode="inet">
          <address>localhost</address>
+         <port> 31415 </port>
       </socket>
    </forces>
    <ensemble mode='nvt'>
       <thermostat mode='pile_l'>
-         <tau units='femtosecond'> 25</tau>
+         <tau units='femtosecond'> 25 </tau>
       </thermostat>
-      <timestep units='femtosecond'>1</timestep>
-      <temperature units='kelvin'>25</temperature>
+      <timestep units='femtosecond'> 1 </timestep>
+      <temperature units='kelvin'> 25 </temperature>
    </ensemble>
 </simulation>
