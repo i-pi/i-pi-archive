@@ -726,7 +726,7 @@
    </prng>
    <ensemble mode='npt'>
       <pressure> 0 </pressure>
-      <barostat mode='bzp'>
+      <barostat mode='isotropic'>
          <thermostat mode='langevin'>
             <tau units='femtosecond'> 250 </tau>
          </thermostat>

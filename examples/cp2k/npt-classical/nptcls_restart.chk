@@ -477,7 +477,7 @@
       <set_pos>364</set_pos>
    </prng>
    <ensemble mode='npt'>
-      <barostat mode='bzp'>
+      <barostat mode='isotropic'>
          <tau>  8.26827460e+03</tau>
          <thermostat mode='langevin'>
             <tau>  8.26827460e+03</tau>

@@ -17,7 +17,7 @@
       </socket>
    </forces>
    <ensemble mode='npt'>
-      <barostat mode='bzp'>
+      <barostat mode='isotropic'>
          <thermostat mode='langevin'>
             <tau units='femtosecond'> 250 </tau>
          </thermostat>
