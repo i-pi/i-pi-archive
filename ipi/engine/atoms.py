@@ -189,6 +189,18 @@ class Atoms(dobject):
 
       return self.natoms
 
+   def __iter__(self):
+      """Iterator.
+
+      This is called whenever one iterates over an Atoms object.
+
+      Returns:
+         Itertor over all atoms in this Atoms object.
+      """
+
+      for index in range(len(self)):
+         yield Atom(self, index)
+
    def __getitem__(self,index):
       """Overwrites standard getting function.
 
