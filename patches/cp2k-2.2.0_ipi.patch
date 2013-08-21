@@ -142,7 +142,7 @@ diff -rupN cp2k_old/src/driver.F cp2k/src/driver.F
 +    socket=0    
 +    inet=1
 +    if (ionode) then
-+       write(*,*) "@ d-PI DRIVER BEING LOADED"
++       write(*,*) "@ i-PI DRIVER BEING LOADED"
 +       write(*,*) "@ INPUT DATA: ", TRIM(drv_hostname), drv_port, drv_unix                          
 +       c_hostname=TRIM(drv_hostname)//achar(0)
 +       CALL open_socket(socket, .not. drv_unix, drv_port, c_hostname) 
@@ -301,7 +301,7 @@ diff -rupN cp2k_old/src/input_cp2k.F cp2k/src/input_cp2k.F
           "Real Time propagation run (fixed ionic positions)",&
           "Ehrenfest dynamics (using real time propagation of the wavefunction)",&
 -         "TAMC"),&
-+         "TAMC","d-PI driver mode"),&
++         "TAMC","i-PI driver mode"),&
           supported_feature=.TRUE.,error=error)
      CALL section_add_keyword(section,keyword,error=error)
      CALL keyword_release(keyword,error=error)
@@ -343,7 +343,7 @@ diff -rupN cp2k_old/src/input_cp2k_motion.F cp2k/src/input_cp2k_motion.F
 +    CPPrecondition(.NOT.ASSOCIATED(section),cp_failure_level,routineP,error,failure)
 +    IF (.NOT. failure) THEN
 +       CALL section_create(section,name="DRIVER",&
-+            description="This section defines the parameters needed to run in d-PI driver mode.",&
++            description="This section defines the parameters needed to run in i-PI driver mode.",&
 +            n_keywords=3, n_subsections=0, repeats=.FALSE., required=.TRUE.,&
 +            error=error)
 +
@@ -356,7 +356,7 @@ diff -rupN cp2k_old/src/input_cp2k_motion.F cp2k/src/input_cp2k_motion.F
 +       CALL keyword_release(keyword,error=error)
 +
 +       CALL keyword_create(keyword, name="port",&
-+            description="Port number for the d-PI server.",&
++            description="Port number for the i-PI server.",&
 +            usage="port <INTEGER>",&
 +            default_i_val=12345, error=error)
 +       CALL section_add_keyword(section,keyword,error=error)
@@ -364,7 +364,7 @@ diff -rupN cp2k_old/src/input_cp2k_motion.F cp2k/src/input_cp2k_motion.F
 +
 +
 +       CALL keyword_create(keyword, name="host",&
-+            description="Host name for the d-PI server.",&
++            description="Host name for the i-PI server.",&
 +            usage="host <HOSTNAME>",&
 +            default_c_val="localhost", error=error)
 +       CALL section_add_keyword(section,keyword,error=error)
