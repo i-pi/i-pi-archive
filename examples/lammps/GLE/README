@@ -1,0 +1,56 @@
+ -- Example with the q-TIP4P-F water potential --
+
+ * This gives three examples of water with the q-TIP4P-F potential
+   of Scott Habershon, Thomas E. Markland and David E. Manolopoulos,
+   J. Chem. Phys., 131, 024501, (2009).
+
+ * State point: (N, V, T) = (216 water molecules, 43737 a_0**3, 298 K)
+
+ * This demonstrates the convergence of the kinetic and potential energy
+   using the PIGLET method of Michele Ceriotti and 
+   David Manolopoulos, Phys. Rev. Lett., 109, 100604, (2012).
+
+ * This uses the LAMMPS empirical potential molecular dynamics
+   code as the client code, and so the input files for this have been
+   included in each of the three directories.
+
+
+** Run the examples automatically:
+ 
+ * These can be run automatically using the Makefile provided. The make 
+   targets are self-explanatory -- piglet_2, piglet_4, piglet_8. 
+   To run the piglet_2 example, for instance, just type:
+
+$ make piglet_2
+
+ * To clean up output files:
+
+$ make clean
+
+
+** Run the examples manually:
+
+ * Go back to the example directory and run
+
+$ python path/i-pi input.xml
+ 
+   the wrapper will start and sit waiting on the UDS /tmp/ipi.
+ 
+ * Open a separate terminal and run the LAMMPS driver code. Each of the tests
+   runs using a different server address, which are related to their
+   directory names. These are hard-coded into the LAMMPS input files, so
+   nothing else needs to be specified by the user. To run the piglet_2
+   example, the following should be run:
+ 
+$ path/lammps/src/lmp_serial < in.water
+
+   You can run multiple instances of the code; it is so fast that parallel 
+   scaling won't be appreciable.
+
+ * If your system does not support Unix domain sockets, just set in input.xml
+   <socket mode="inet"> <port> port_no </port>
+
+   To make the client socket connect, the in.water file should be changed
+   so that it has the line:
+
+   fix 1 all driver piglet_x port_no

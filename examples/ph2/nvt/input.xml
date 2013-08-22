@@ -13,7 +13,7 @@
    <prng><seed>31415</seed></prng>
    <forces>
       <socket nbeads='24' mode="unix">
-         <address>localhost</address>
+         <address>ph2_nvt</address>
       </socket>
    </forces>
    <ensemble mode='nvt'>

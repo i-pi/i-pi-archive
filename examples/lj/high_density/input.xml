@@ -12,7 +12,7 @@
    <prng><seed>3848</seed></prng>
    <forces>
       <socket mode="unix">
-         <address>localhost</address>
+         <address>high_density</address>
       </socket>
    </forces>
    <ensemble mode='nvt'>

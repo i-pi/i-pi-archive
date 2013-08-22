@@ -3181,7 +3181,7 @@
    </cell>
    <output prefix='test1'>
       <trajectory stride='1' filename='vel'> v_centroid </trajectory>
-      <properties stride='5'> [ time, conserved, temperature, kinetic_cv, potential, pressure_cv ] </properties>
+      <properties stride='1'> [ step, time{picosecond}, conserved{kelvin}, temperature{kelvin}, kinetic_cv{kelvin}, potential{kelvin}, pressure_cv{megapascal}] </properties>
    </output>
    <prng>
       <has_gauss>0</has_gauss>

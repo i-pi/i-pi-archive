@@ -18,27 +18,41 @@
  * For demonstration purposes, two values of u have been chosen such that 
    n(u1) = 0.8 and n(u2) = 0.4 using the formula above
 
- * To run, first compile the driver code in forces/. This should be as 
+ * To run, first compile the driver code in drivers/. This should be as 
    simple as: 
 
 $ make
 
+
+** Run the examples automatically:
+ 
+ * A Makefile is provided to run this example. To run simply use:
+
+$ make harmonic
+
+ * To clean up output files:
+
+$ make clean
+
+
+** Run the examples manually:
+
  * Go back to the example directory and run
 
-$ python path/i-pi input.xml
+$ python ../../i-pi input.xml
  
    the wrapper will start and sit waiting on the UDS /tmp/ipi
  
  * Open a separate terminal and run the harmonic oscillator driver code 
  
-$ path/drivers/driver.x -u -h localhost -m harm -o 1
+$ ../../drivers/driver.x -u -h harmonic -m harm -o 1
 
    You can run multiple instances of the code; it is so fast that parallel 
    scaling won't be appreciable.
 
  * If your system does not support Unix domain sockets, just set in input.xml
-   <socket mode="inet">
+   <socket mode="inet"> <port> port_no </port>
 
   then run the driver as:
 
-$ path/drivers/driver.x -h localhost -m harm -o 1
+$ path/drivers/driver.x -h harmonic -m harm -o 1 -p port_no
