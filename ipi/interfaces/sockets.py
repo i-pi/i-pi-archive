@@ -408,7 +408,8 @@ class InterfaceSocket(object):
       if self.mode == "unix":
          self.server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
          try:
-            self.server.bind("/tmp/ipi_" + self.address)
+            #self.server.bind("/tmp/ipi_" + self.address)
+            self.server.bind("/tmp/wrappi_" + self.address)
             info("Created unix socket with address " + self.address, verbosity.medium)
          except:
             raise ValueError("Error opening unix socket. Check if a file " + ("/tmp/ipi_" + self.address) + " exists, and remove it if unused.")
@@ -433,7 +434,8 @@ class InterfaceSocket(object):
       self.server.shutdown(socket.SHUT_RDWR)
       self.server.close()
       if self.mode == "unix":
-         os.unlink("/tmp/ipi_" + self.address)
+         os.unlink("/tmp/wrappi_" + self.address)
+         #os.unlink("/tmp/ipi_" + self.address)
 
    def queue(self, atoms, cell, pars=None, reqid=0):
       """Adds a request.

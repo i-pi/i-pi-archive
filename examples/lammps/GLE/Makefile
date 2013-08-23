@@ -21,4 +21,4 @@ piglet_8:
 	wait
 
 clean:
-	rm  */gle_lammps.* */RESTART */EXIT */log.lammps
+	rm -f */gle_lammps.* */RESTART */EXIT */log.lammps

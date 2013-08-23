@@ -29,7 +29,7 @@ vel_est: vel_est.f
 	gfortran -O3 -o vel_est vel_est.f
 	
 clean:
-	rm consolidate vel_est; bash mkclean.sh
+	rm -f consolidate vel_est; bash mkclean.sh
 
 run_1:
 	cd run_1; bash ../launch.sh 31415 & sleep 5; \

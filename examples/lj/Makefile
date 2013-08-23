@@ -20,4 +20,4 @@ low_density:
 	wait
 
 clean:
-	rm */lj-* */RESTART */EXIT
+	rm -f */lj-* */RESTART */EXIT

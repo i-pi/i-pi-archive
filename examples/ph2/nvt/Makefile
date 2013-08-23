@@ -10,4 +10,4 @@ nvt:
 	wait
 
 clean:
-	rm ph2.* RESTART EXIT
+	rm -f ph2.* RESTART EXIT

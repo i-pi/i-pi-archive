@@ -19,9 +19,9 @@
 nruns=99
 for i in `seq 1 5`; do 
    cd run_$i
-   rm log* test* EXIT RESTART
+   rm -f log* test* EXIT RESTART
    for j in `seq 1 $nruns`; do 
-      rm input$j
+      rm -f input$j
    done
    cd .. 
 done

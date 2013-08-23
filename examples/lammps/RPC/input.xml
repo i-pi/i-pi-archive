@@ -3,19 +3,18 @@
       <file mode='pdb'> water_298K.pdb </file>
       <velocities mode="thermal" units='kelvin'> 298 </velocities>
    </initialize>
-   <output prefix='test'>
+   <output prefix='rpc'>
       <properties stride='1' filename='out'>  [ step, time{picosecond}, conserved{kelvin}, temperature{kelvin}, kinetic_cv{kelvin}, potential{kelvin}, pressure_cv{megapascal}] </properties>
       <trajectory filename='pos' stride='20'> positions </trajectory>
    </output>
    <total_steps>500000</total_steps>
    <prng><seed>32346</seed></prng>
    <forces>
-      <socket mode='inet'>
-         <address>neptune.chem.ox.ac.uk</address>   <port>32346</port>    <slots>4</slots> <latency>0.001</latency>
+      <socket mode='unix'>
+         <address>rpc_short</address>
       </socket>
-      <socket mode='inet' nbeads='5'>
-         <address> neptune.chem.ox.ac.uk </address>
-         <port> 32347 </port>
+      <socket mode='unix' nbeads='5'>
+         <address> rpc_long </address>
       </socket>
    </forces>
    <ensemble mode='nvt'>

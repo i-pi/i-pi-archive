@@ -10,4 +10,4 @@ harmonic:
 	wait
 
 clean:
-	rm harm.* RESTART EXIT
+	rm -f harm.* RESTART EXIT
