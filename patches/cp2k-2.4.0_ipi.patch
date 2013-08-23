@@ -444,7 +444,7 @@ diff -rupN cp2k-2.4.0_ref/src/sockets.c cp2k-2.4.0/src/sockets.c
 +      bzero((char *) &serv_addr, sizeof(serv_addr));
 +      serv_addr.sun_family = AF_UNIX;
 +      strcpy(serv_addr.sun_path, "/tmp/ipi_");
-+      strcpy(serv_addr.sun_path+12, host);
++      strcpy(serv_addr.sun_path+9, host);
 +   }
 +   
 +   if (connect(sockfd, psock, ssock) < 0) error("ERROR connecting");

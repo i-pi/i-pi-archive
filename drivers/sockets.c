@@ -92,9 +92,8 @@ Args:
       sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
       bzero((char *) &serv_addr, sizeof(serv_addr));
       serv_addr.sun_family = AF_UNIX;
-      //strcpy(serv_addr.sun_path, "/tmp/ipi_");
-      strcpy(serv_addr.sun_path, "/tmp/wrappi_");
-      strcpy(serv_addr.sun_path+12, host);
+      strcpy(serv_addr.sun_path, "/tmp/ipi_");
+      strcpy(serv_addr.sun_path+9, host);
    }
 
    if (connect(sockfd, psock, ssock) < 0) error("ERROR connecting");
