@@ -4214,13 +4214,12 @@
    </cell>
    <forces>
       <socket mode="unix">
-         <address>localhost</address>   <port>31416</port>    <slots>4</slots> <latency>0.001</latency>
+         <address>T_20K</address>
       </socket>
    </forces>
    <output prefix=''>
-      <properties shape='(7)' filename='ph2-p20-20K-0bar-isotropic.out'>
-       [ step, conserved, temperature, potential{kelvin}, kinetic_cv{kelvin}, 
-         volume, pressure_cv ]
+      <properties shape='(8)' filename='ph2-p20-20K-0bar-isotropic.out'>
+         [ step, time{picosecond}, conserved{kelvin}, temperature{kelvin}, kinetic_cv{kelvin}, potential{kelvin}, pressure_cv{megapascal}, volume]
       </properties>
       <trajectory format='pdb' filename='ph2-p20-20K-0bar-isotropic.traj' stride='100' cell_units='angstrom'>positions{angstrom}</trajectory>
    </output>

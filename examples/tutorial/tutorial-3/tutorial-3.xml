@@ -1,10 +1,10 @@
 <simulation verbosity='medium'>
    <initialize nbeads='16'>
-      <file mode='pdb' units='angstrom'> our_ref.pdb </file>
+      <file mode='pdb'> our_ref.pdb </file>
       <velocities mode='thermal' units='kelvin'> ??? </velocities>
    </initialize>
    <output prefix='tut3'>
-      <properties filename='md' stride='1'> [ step, time{picosecond}, conserved{kelvin}, temperature{kelvin}, potential{kelvin}, kinetic_cv{kelvin} ] </properties>
+      <properties filename='md' stride='1'> [ step, time{picosecond}, conserved{kelvin}, temperature{kelvin}, potential{kelvin}, kinetic_cv{kelvin}, pressure_cv{megapascal} ] </properties>
       <trajectory filename='pos' stride='100' format='pdb' cell_units='angstrom'> positions{angstrom} </trajectory>
       <checkpoint filename='checkpoint' stride='1000' overwrite='True'/>
    </output>
