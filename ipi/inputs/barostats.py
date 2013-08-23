@@ -54,7 +54,7 @@ class InputBaro(Input):
                                    implementation details.""",
                                    "options"  : ["dummy", "isotropic"]}) }
    fields={ "thermostat": (InputThermo, {"default" : input_default(factory=ipi.engine.thermostats.Thermostat),
-                                         "help"    : "The thermostat for the cell. Keeps the cell velocity distribution at the correct temperature."}),
+                                         "help"    : "The thermostat for the cell. Keeps the cell velocity distribution at the correct temperature. Note that the 'pile_l', 'pile_g', 'nm_gle' and 'nm_gle_g' options will not work for this thermostat."}),
             "tau": (InputValue, {"default" : 1.0,
                                   "dtype" : float,
                                   "dimension" : "time",

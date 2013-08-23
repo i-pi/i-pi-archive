@@ -229,7 +229,7 @@ class Properties(dobject):
                                       to output the temperature of. If not specified, all atoms are used and averaged.""",
                       'func': self.get_temp },
       "density": {    "dimension": "density",
-                      "help": "The physical system density.",
+                      "help": "The mass density of the physical system.",
                       'func': (lambda: self.beads.m.sum()/self.cell.V)},
       "volume": {     "dimension": "volume",
                       "help": "The volume of the cell box.",

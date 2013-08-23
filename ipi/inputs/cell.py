@@ -42,7 +42,7 @@ class InputCell(InputArray):
 
    attribs = copy(InputArray.attribs)
 
-   default_help = "Deals with the cell parameters. Takes as arguments either the cell vector matrix as an array."
+   default_help = "Deals with the cell parameters. Takes as array which can be used to initialize the cell vector matrix."
    default_label = "CELL"
 
    def __init__(self, help=None, dimension=None, units=None, default=None, dtype=None):

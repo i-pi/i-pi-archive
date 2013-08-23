@@ -4,7 +4,9 @@
    that they can be used with wrap-PI.
 
  * Files:
-   - espresso-5.0_ipi.patch: A diff file that can be used to edit the Quantum-Espresso 
-      code so that it can be used as a driver.
-   - cp2k-2.4.0_ipi.patch: A diff file that can be used to edit the CP2K
-      code so that it can be used as a driver.
+   - espresso-x_ipi.patch: A diff file that can be used to edit the Quantum-Espresso 
+      code version x so that it can be used as a driver.
+   - cp2k-x_ipi.patch: A diff file that can be used to edit the CP2K
+      code version x so that it can be used as a driver.
+   - lammps-x_ipi.patch: A diff file that can be used to edit the LAMMPS
+      code version x so that it can be used as a driver.

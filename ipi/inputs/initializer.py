@@ -321,7 +321,7 @@ class InputInitializer(Input):
            "labels"     : (InputInitLabels,     { "help" : "Initializes atomic labels" }),
            "cell"       : (InputInitCell,       { "help" : "Initializes the configuration of the cell" }),
            "file"       : (InputInitFile,       { "help" : "Initializes everything possible for the given mode" }),
-           "gle"        : (InputInitThermo,     { "help" : "Initializes the additional momenta in a gle" })
+           "gle"        : (InputInitThermo,     { "help" : "Initializes the additional momenta in a GLE thermostat." })
             }
 
    default_help = "Specifies the number of beads, and how the system should be initialized."

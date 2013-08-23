@@ -446,6 +446,9 @@ to other versions of the codes with minor modifications. For more
 information about Quantum Espresso and CP2K, go to \url{www.quantum-espresso.org}
 and \url{www.cp2k.org} respectively.
 
+There is also a patch for the latest version of the LAMMPS empirical potential MD code.
+More information on this code can be found at \url{http://lammps.sandia.gov/index.html}.
+
 There are several Fortran and C libraries that most client codes will
 probably need to run, such as FFTW, BLAS and LAPACK. These can be
 found at \url{www.fftw.org}, \url{www.netlib.org/blas} and \url{www.netlib.org/lapack}
@@ -665,6 +668,27 @@ After this, continue the compilation as per the instructions at
 There are currently patches available for 
 Quantum Espresso versions 5.0, 4.3, 4.2 and 4.1.3.
 
+\subsection{Patching LAMMPS}
+
+You can download the source code for LAMMPS at \url{http://lammps.sandia.gov/index.html}.
+This can either be downloaded as a tar file, which
+can be extracted in the same way as the Python and NumPy
+libraries above, via a svn client or from a git repository. 
+
+As for CP2K above, we include patch files to
+adapt the LAMMPS source code so that it will work with \ipi.
+Currently we only provide a patch file for the most recent 
+version of LAMMPS, which can be applied to the source code using:
+
+\begin{code}
+> patch -p1 < ipidir/i-pi/patches/lammps-26Aug13_ipi.patch
+\end{code}
+
+After this, continue the compilation as per the instructions at 
+\url{http://lammps.sandia.gov/index.html} to complete the install.
+Note that the optional libraries CLASS2, KSPACE, MANYBODY and 
+MOLECULE will all need to be included to run the examples provided
+in the {}``examples'' directory.
 
 \subsection{Writing a patch}
 
@@ -685,7 +709,7 @@ is performed by the \ipi server, whereas the energy and forces evaluation is del
 one or more instances of an external program, that acts as a client. This design principle
 has several advantages, in particular the possibility of performing PIMD based on the forces
 produced by one's favourite electronic structure/empirical force field code. However, it 
-also makes it slightly more complicated running a simulation, since the two components
+also makes running a simulation slightly more complicated, since the two components
 must be set up and started independently.
 
 \subsection{Running the \ipi server}
@@ -833,7 +857,6 @@ the following lines must be added to the input file:
 If instead a unix domain socket is required then the following
 modification is necessary:
 
-
 \begin{code}
 &CONTROL
    ...
@@ -845,6 +868,29 @@ modification is necessary:
 
 The rest of the input file should be the same as for a standard Quantum
 Espresso calculation, as explained at \url{www.quantum-espress.org/}.
+
+\subsection{Empirical potential codes}
+
+\subsubsection{LAMMPS}
+
+To use LAMMPS as the client code using an 
+internet domain socket on the host
+address {}``host\_address'' and on the port number {}``port''
+the following lines must be added to the input file:
+
+\begin{code}
+fix 1  all driver host_address port
+\end{code}
+
+If instead a unix domain socket is required then the following
+modification is necessary:
+
+\begin{code}
+fix 1  all driver host_address port unix
+\end{code}
+
+The rest of the input file should be the same as for a standard LAMMPS 
+calculation, as explained at \url{http://lammps.sandia.gov/index.html}.
 
 \subsection{Running on a HPC system}\label{hpc}
 
@@ -1884,7 +1930,7 @@ presented in the Computer Physics Communications publication of \ipi.
 \label{ifilestructure}
 
 In order to give the clearest layout, xml formatting was chosen as
-the basis for the for the main input file. An xml file consists of
+the basis for the main input file. An xml file consists of
 a set of hierarchically nested tags. There are three parts to an xml
 tag. Each tag is identified by a tag name, which specifies the class
 or variable that is being initialized. Between the opening and closing
@@ -2290,7 +2336,7 @@ exchange minimal information: \ipi{} sends the atomic positions
 and the cell parameters to the client, that computes energy, forces
 and virial and returns them to the server. 
 
-The exchange of information is regulated by an overly simple 
+The exchange of information is regulated by a simple 
 communication protocol. The server polls the status of the client,
 and when the client signals that is ready to compute forces 
 \ipi sends the atomic positions to it. When the client responds to the
@@ -2399,7 +2445,7 @@ communication. They are fast, and best suited when one wants
 to run \ipi  with empirical potentials, and the latency of the 
 communication with the client becomes a significant overhead
 for the calculation. UNIX-domain sockets create a special file
-in the local file system, that serves as a rendez-vous point
+in the local file system, that serves as a rendezvous point
 between server and clients, and are uniquely identified by the
 name of the file itself, that can be specified in the ``address'' tag of 
 the \hyperref[SOCKET]{socket} object in the \ipi, and in 
@@ -2587,9 +2633,19 @@ from all of the compute nodes.
 The following chapter gives a complete list of the tags that can be
 specified in the xml input file, along with the hierarchy of objects.
 Note that every xml input file must start with the root tag {}``simulation''. 
-
-See the accompanying {}``help.xml'' file in the {}``doc'' directory
+See the accompanying {}``help.xml'' file in the {}``doc/help\_files'' directory
 to see the recommended input file structure.
+
+Each section of this chapter describes one of the major input classes
+used in the \ipi initialization. These sections will start with some normal
+text which describes the function of this class in detail.
+After this the attributes of the tag will be listed, enclosed within
+a frame for clarity.
+Finally, the fields contained within the tag will be listed in order,
+possibly followed by their attributes.
+\textbf{Attribute} names will be bold and 
+\textbf{\underline{field}} names both bold and underlined.
+\emph{\small Other supplementary information} will be in small font and italicized.
 
 \input{input_docs/simulation}
 \input{input_docs/initializer}
@@ -2729,7 +2785,7 @@ vector has been defined, this object is not created. Therefore, whichever
 arrays are being initialized individually, the position vector must
 always be initialized first.
 \item \emph{Trying to resample velocities before having masses.}: A Maxwell-Boltzmann
-distribution is partly defined by the atom velocity, and so the masses
+distribution is partly defined by the atomic masses, and so the masses
 must be defined before the velocities can be resampled from this distribution.
 \item \emph{Cannot thermalize a single bead}: It does not make sense to
 initialize the momenta of only one of the beads, and so \ipi does

@@ -1,7 +1,7 @@
 .PHONY: all clean rpc
 all: rpc
 
-LAMMPS:=~/local/dpi_lammps/lammps-gle/src/lmp_serial
+LAMMPS:=lmp_serial
 IPI:=../../../i-pi
 
 

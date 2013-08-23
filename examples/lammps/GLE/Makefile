@@ -1,7 +1,7 @@
 .PHONY: all clean piglet_2 piglet_4 piglet_8
 all: piglet_2 piglet_4 piglet_8
 
-LAMMPS:=~/local/dpi_lammps/lammps-gle/src/lmp_serial
+LAMMPS:=lmp_serial
 IPI:=../../../../i-pi
 
 
