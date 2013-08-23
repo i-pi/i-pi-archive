@@ -900,6 +900,8 @@ through a login node (see section~\ref{distrib} for more details).
 
 \section{A simple tutorial}
 
+\label{tutorial}
+
 Here we give a simple step-by-step guide through an example
 simulation, exploring
 some of the more generally useful options that \ipi offers and making
@@ -1829,6 +1831,8 @@ see if the client codes are working correctly.
 All the input files are contained in the directory test, which is
 subdivided into the following directories:
 \begin{description}
+\item[{tutorial:}] Contains the input files needed to run the
+tutorial in \ref{tutorial}.
 \item [{lj:}] This gives a simple classical Lennard-Jones simulation of
 Ne. The state points are given by (\(N\), \(\rho\), \(T\)) = (864, 0.35,
 1.62), (\(N\), \(\rho\), \(T\)) = (864, 0.75, 1.069) and (\(N\), \(\rho\), \(T\))
@@ -1839,7 +1843,7 @@ pair potential. There are three directories, {}``RPMD'', {}``nvt''
 and {}``Tuckerman''. {}``RPMD'' and {}``nvt'' have tests which
 can be compared to the results of \cite{mill-mano05jcp}, and {}``Tuckerman''
 has tests which can be compared to the results of \cite{mart+99jcp}.
-\item [{pwscf:}] This has two simple examples to test to see if the Quantum-Espresso
+\item [{qespresso:}] This has two simple examples to test to see if the Quantum-Espresso
 client is functioning correctly. There is one simple 4-atom lithium
 test, and a test using a single water molecule.
 \item [{harmonic:}] This has a simple example of a 1D harmonic oscillator.
@@ -1852,6 +1856,9 @@ water model of \cite{habe+09jcp} using the classical molecular dynamics
 code LAMMPS. It demonstrates both the convergence of the PIGLET method
 \cite{ceri-mano12prl}, as well as the use of ring-polymer contraction
 methods \cite{mark-mano08jcp}.
+\item [{cp2k:}] Contains the tests for the CP2K client code. Holds input files
+to run the high-pressure water calculations 
+presented in the Computer Physics Communications publication of \ipi.
 \end{description}
 
 \chapter{User guide}
