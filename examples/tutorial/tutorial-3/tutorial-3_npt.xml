@@ -2,7 +2,7 @@
    <initialize nbeads='16'>
       <file mode='chk'> tutorial-3_RESTART </file>
    </initialize>
-   <output prefix='tut3a'>
+   <output prefix='tut3_npt'>
       <properties filename='md' stride='1'> [ step, time{picosecond}, conserved{kelvin}, temperature{kelvin}, potential{kelvin}, kinetic_cv{kelvin}, pressure_cv{megapascal}, volume ] </properties>
       <trajectory filename='pos' stride='100' format='pdb' cell_units='angstrom'> positions{angstrom} </trajectory>
       <checkpoint filename='checkpoint' stride='1000' overwrite='True'/>

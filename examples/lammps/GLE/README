@@ -16,8 +16,14 @@
 
 
 ** Run the examples automatically:
+
+ * First, it is necessary to patch and compile LAMMPS, and create a make.in
+   file containing the path to the executable and i-pi, e.g.
+
+LAMMPS:=~/bin/lmp_serial
+IPI:=~/bin/i-pi
  
- * These can be run automatically using the Makefile provided. The make 
+ * The runs can be done automatically using the Makefile provided. The make 
    targets are self-explanatory -- piglet_2, piglet_4, piglet_8. 
    To run the piglet_2 example, for instance, just type:
 

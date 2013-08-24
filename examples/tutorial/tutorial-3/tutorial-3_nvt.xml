@@ -3,7 +3,7 @@
       <file mode='pdb'> our_ref.pdb </file>
       <velocities mode='thermal' units='kelvin'> ??? </velocities>
    </initialize>
-   <output prefix='tut3'>
+   <output prefix='tut3_nvt'>
       <properties filename='md' stride='1'> [ step, time{picosecond}, conserved{kelvin}, temperature{kelvin}, potential{kelvin}, kinetic_cv{kelvin}, pressure_cv{megapascal} ] </properties>
       <trajectory filename='pos' stride='100' format='pdb' cell_units='angstrom'> positions{angstrom} </trajectory>
       <checkpoint filename='checkpoint' stride='1000' overwrite='True'/>
