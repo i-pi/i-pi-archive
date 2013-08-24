@@ -4,11 +4,17 @@ all: graphene
 LAMMPS:=lmp_serial
 IPI:=../../../i-pi
 
+define run_lammps
+  for i in `seq 1 $1`; do \
+    $(LAMMPS) < $2 & \
+  done;
+endef
+-include make.in
 
 graphene:
 	nohup $(IPI) input.xml & \
 	sleep 25; \
-        $(LAMMPS) < in.kappa.Graphene; \
+        $(call run_lammps,4,in.kappa.Graphene) \
 	wait
 
 clean:

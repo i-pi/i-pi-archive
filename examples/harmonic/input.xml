@@ -1,5 +1,5 @@
 <simulation>
-   <initialize nbeads='16'>
+   <initialize nbeads='4'>
       <file mode='pdb'> our_ref.pdb </file>
       <velocities mode='thermal' units='kelvin'>3683.412077</velocities>
    </initialize>

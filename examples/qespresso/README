@@ -8,8 +8,8 @@
 
                   -- Running the q-Espresso example --
 
-First, it is necessary to patch and compile q-Espresso, and create a make.in
-file containing the path to pw.x and i-pi, e.g.
+ * First, it is necessary to patch and compile q-Espresso, and create a make.in
+   file containing the path to pw.x and i-pi, e.g.
 
 PW:=~/bin/pw.x
 IPI:=~/bin/i-pi

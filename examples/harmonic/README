@@ -23,6 +23,12 @@
 
 $ make
 
+ * Next, create a make.in
+   file containing the path to the driver.x executable and i-pi, e.g.
+
+driver:=~/bin/driver.x
+IPI:=~/bin/i-pi
+
 
 ** Run the examples automatically:
  
