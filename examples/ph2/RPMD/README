@@ -27,47 +27,12 @@
    technique.
 
 
-** Run the examples automatically:
- 
- * These can be run automatically using the Makefile provided. The make 
-   targets are self-explanatory -- run_1, run_2, run_3, run_4, run_5. 
-   To run the run_1 example, for instance, just type:
-
-$ make run_1
-
- * To clean up output files:
-
-$ make clean
-
-
-** Run the examples manually:
-
- * The first thing that must be done to run this is to change the hostname
-   in all the run_x/input.xml files to the name of your local network.
-
- * There is one shell script used for starting the runs: launch.sh
-   This will run from one of the run_x directories, and start each of the
-   trajectories once the previous one has finished.
-
- * For example, let us say that we wish to run run_3. The input file for run_3
-   uses port number 31413. Therefore to run this we change to the directory
-   run_3, and then input the following command:
-
-$ bash -c "bash ../launch.sh 31413 &"
-
- * To do all of the runs, you can use:
-
-$ for a in `seq 1 5`; do port=$((31416-$a)); cd run_$a; bash -c "bash ../launch.sh $port &"; cd .. ; done
-
- * Instructions on how to run the driver code is given in the 
-   drivers/ directory.
-
-
 ** Postprocessing data:
 
  * Once all the trajectories in all the run_x directories have been completed, 
    there are a couple of fortran files which can be used to generate the 
-   velocity-velocity autocorrelation function.
+   velocity-velocity autocorrelation function. These can be compiled using
+   the Makefile provided in the RPMD directory.
 
  * First, vel_est.f analyses a particular output trajectory file to generate
    the estimate from one of the individual trajectories. It is run in the
@@ -81,3 +46,4 @@ $ for a in `seq 1 5`; do port=$((31416-$a)); cd run_$a; bash -c "bash ../launch.
    a cluster using:
 
 $ qsub pproc.sh
+

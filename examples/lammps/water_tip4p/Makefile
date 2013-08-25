@@ -1,5 +1,5 @@
-.PHONY: all clean graphene
-all: graphene
+.PHONY: all clean gle-piglet_2 gle-piglet_4 gle-piglet_8 rpc no_rpc
+all: gle-piglet_2 gle-piglet_4 gle-piglet_8 rpc no_rpc
 
 LAMMPS:=lmp_serial
 IPI:=../../../i-pi
