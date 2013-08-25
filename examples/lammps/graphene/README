@@ -3,6 +3,10 @@
    Uses the Tersoff parameters of Lindsay and Broido PRB 81, 205441 (2010)
    to run a short simulation of graphene with the LAMMPS MD code.
 
+ * This uses the LAMMPS empirical potential molecular dynamics
+   code as the client code, and so the input files for this have been
+   included.
+
 
 ** Run the examples automatically:
 
