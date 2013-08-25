@@ -36,8 +36,7 @@ driver_dir:=~/bin/i-pi/drivers
  * These can be run automatically using the Makefile provided. The make 
    targets are self-explanatory -- tuckerman_25K, tuckerman_20K, 
    tuckerman_17K, tuckerman_14K, nvt, rpmd-run_1, rpmd-run_2, rpmd-run_3
-   rpmd-run_4 and rpmd-run_5. 
-   To run the NVT example, for instance, just type:
+   rpmd-run_4 and rpmd-run_5. To run the NVT example, for instance, just type:
 
 $ make nvt
 
@@ -116,4 +115,3 @@ $ for a in `seq 1 5`; do port=$((31416-$a)); cd run_$a; bash -c "bash ../launch.
 
  * Instructions on how to run the driver code is given in the 
    drivers/ directory.
-

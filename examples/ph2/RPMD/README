@@ -26,6 +26,9 @@
    of the velocity-velocity autocorrelation function using the RPMD 
    technique.
 
+ * For instructions on running this example, see the README file in the
+   directory above.
+
 
 ** Postprocessing data:
 

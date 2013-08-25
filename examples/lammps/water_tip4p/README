@@ -7,7 +7,7 @@
  * State point: (N, V, T) = (216 water molecules, 43737 a_0**3, 298 K)
 
  * This demonstrates the convergence of the kinetic and potential energy
-   using the ring polymer contraction method of Thomas E. Markland and
+   using the ring polymer contraction (RPC) method of Thomas E. Markland and
    David E. Manolopoulos, J. Chem. Phys. 129, 024105, (2008), and
    the PIGLET method of Michele Ceriotti and 
    David Manolopoulos, Phys. Rev. Lett., 109, 100604, (2012).
@@ -44,7 +44,7 @@ $ python path/i-pi input.xml
  
 $ path/lammps/src/lmp_serial < in.water
 
-   or for the RPC run, instead use:
+   For the RPC run, instead use:
 
 $ path/lammps/src/lmp_serial < in.water_longrange
 $ path/lammps/src/lmp_serial < in.water_shortrange
