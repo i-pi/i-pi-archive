@@ -25,8 +25,6 @@ Classes:
    BaroBZP: Generates dynamics with a stochastic barostat -- see
             Ceriotti, More, Manolopoulos, Comp. Phys. Comm. 2013 for
             implementation details.
-
-
 """
 
 # NB: this file also contains a 'BaroMHT' class, that follows more closely the
@@ -64,7 +62,6 @@ class Barostat(dobject):
          temperature by a factor of the number of beads.
       tau: The timescale associated with the piston
       pext: The external pressure
-      m: The mass associated with the cell degrees of freedom
       ebaro: The conserved quantity associated with the barostat.
       pot: The potential energy associated with the barostat.
       kstress: The system kinetic stress tensor.

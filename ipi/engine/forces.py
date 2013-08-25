@@ -196,6 +196,7 @@ class ForceField(dobject):
 
       return self.ufvx[3]
 
+
 class FFSocket(ForceField):
    """Interface between the PIMD code and the socket for a single replica.
 
@@ -244,8 +245,6 @@ class FFSocket(ForceField):
       Args:
          atoms: Atoms object from which the bead positions are taken.
          cell: Cell object from which the system box is taken.
-         softexit: A function to help make sure the printed restart file is
-            consistent.
       """
 
       super(FFSocket,self).bind(atoms, cell)
@@ -355,8 +354,8 @@ class ForceBeads(dobject):
          Depends on each replica's ufvx list.
       pot: The sum of the potential energy of the replicas.
       vir: The sum of the virial tensor of the replicas.
-      fnm: An array containing the components of the force in the normal mode
-         representation.
+      extras: Strings containing some formatted output returned by the client.
+         Depends on each replica's ufvx list.
    """
 
    def __init__(self, model, nbeads=0, weight=1.0):
@@ -402,11 +401,6 @@ class ForceBeads(dobject):
       Args:
          beads: Beads object from which the bead positions are taken.
          cell: Cell object from which the system box is taken.
-         force: Force object, to be bound to the forcefield. This
-            should be a FFSocket or equivalent, so that it can be copied for
-            each replica of the system.
-         softexit: A function to help make sure the printed restart file is
-            consistent.
       """
 
       # stores a copy of the number of atoms and of beads
@@ -593,6 +587,7 @@ class Forces(dobject):
    Attributes:
       natoms: An integer giving the number of atoms.
       nbeads: An integer giving the number of beads.
+      nforces: An integer giving the number of ForceBeads objects.
       mforces: A list of all the forcefield objects.
       mbeads: A list of all the beads objects. Some of these may be contracted
          ring polymers, with a smaller number of beads than of the simulation.
@@ -610,8 +605,6 @@ class Forces(dobject):
       extras: A list containing the "extra" strings for each replica.
       pot: The sum of the potential energy of the replicas.
       vir: The sum of the virial tensor of the replicas.
-      fnm: An array containing the components of the force in the normal mode
-         representation.
    """
 
    def bind(self, beads, cell, flist):

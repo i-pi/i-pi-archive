@@ -105,6 +105,7 @@ class Ensemble(dobject):
 
       Args:
          beads: The beads object from whcih the bead positions are taken.
+         nm: A normal modes object used to do the normal modes transformation.
          cell: The cell object from which the system box is taken.
          bforce: The forcefield object from which the force and virial are
             taken.
@@ -207,7 +208,7 @@ class NVEEnsemble(Ensemble):
          nb = self.beads.nbeads
          p = depstrip(self.beads.p)
          m = depstrip(self.beads.m3)[:,0:na3:3]
-         M=self.beads[0].M
+         M = self.beads[0].M
 
          for i in range(3):
             pcom[i] = p[:,i:na3:3].sum()
@@ -303,6 +304,7 @@ class NVTEnsemble(NVEEnsemble):
 
       Args:
          beads: The beads object from whcih the bead positions are taken.
+         nm: A normal modes object used to do the normal modes transformation.
          cell: The cell object from which the system box is taken.
          bforce: The forcefield object from which the force and virial are
             taken.
@@ -389,7 +391,7 @@ class NPTEnsemble(NVTEnsemble):
          pext: The external pressure.
          thermostat: A thermostat object to keep the temperature constant.
             Defaults to Thermostat().
-         barostat: A barostat object to keep the temperature constant.
+         barostat: A barostat object to keep the pressure constant.
             Defaults to Barostat().
          fixcom: An optional boolean which decides whether the centre of mass
             motion will be constrained or not. Defaults to False.
@@ -420,6 +422,7 @@ class NPTEnsemble(NVTEnsemble):
 
       Args:
          beads: The beads object from whcih the bead positions are taken.
+         nm: A normal modes object used to do the normal modes transformation.
          cell: The cell object from which the system box is taken.
          bforce: The forcefield object from which the force and virial are
             taken.
@@ -504,17 +507,19 @@ class ReplayEnsemble(Ensemble):
    """
 
    def __init__(self, dt, temp, fixcom=False, intraj=None):
-      """Initialises NVEEnsemble.
+      """Initialises ReplayEnsemble.
 
       Args:
          dt: The simulation timestep.
          temp: The system temperature.
          fixcom: An optional boolean which decides whether the centre of mass
             motion will be constrained or not. Defaults to False.
+         intraj: The input trajectory file.
       """
 
       super(ReplayEnsemble,self).__init__(dt=dt,temp=temp,fixcom=fixcom)
-      if intraj == None: raise ValueError("Must provide an initialized InitFile object to read trajectory from")
+      if intraj == None:
+         raise ValueError("Must provide an initialized InitFile object to read trajectory from")
       self.intraj = intraj
       if intraj.mode == "manual":
          raise ValueError("Replay can only read from PDB or XYZ files -- or a single frame from a CHK file")
@@ -523,23 +528,22 @@ class ReplayEnsemble(Ensemble):
    def step(self):
       """Does one simulation time step."""
 
-      self.ptime=self.ttime=0
+      self.ptime = self.ttime = 0
       self.qtime = -time.time()
 
       try:
-
          if (self.intraj.mode == "xyz"):
             for b in self.beads:
                myatoms = read_xyz(self.rfile)
                myatoms.q *= unit_to_internal("length",self.intraj.units,1.0)
-               b.q[:]=myatoms.q
+               b.q[:] = myatoms.q
          elif (self.intraj.mode == "pdb"):
             for b in self.beads:
                myatoms, mycell = read_pdb(self.rfile)
                myatoms.q *= unit_to_internal("length",self.intraj.units,1.0)
                mycell.h  *= unit_to_internal("length",self.intraj.units,1.0)
-               b.q[:]=myatoms.q
-            self.cell.h[:]=mycell.h
+               b.q[:] = myatoms.q
+            self.cell.h[:] = mycell.h
          elif (self.intraj.mode == "chk" or self.intraj.mode == "checkpoint"):
             # reads configuration from a checkpoint file
             xmlchk = xml_parse_file(self.rfile) # Parses the file.
@@ -549,8 +553,8 @@ class ReplayEnsemble(Ensemble):
             simchk.parse(xmlchk.fields[0][1])
             mycell = simchk.cell.fetch()
             mybeads = simchk.beads.fetch()
-            self.cell.h[:]=mycell.h
-            self.beads.q[:]=mybeads.q
+            self.cell.h[:] = mycell.h
+            self.beads.q[:] = mybeads.q
             softexit.trigger(" # Read single checkpoint")
       except EOFError:
          softexit.trigger(" # Finished reading re-run trajectory")

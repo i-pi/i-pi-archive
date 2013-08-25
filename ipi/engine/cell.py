@@ -49,7 +49,7 @@ class Cell(dobject):
       Args:
          h: Optional array giving the initial lattice vector matrix. The
             reference cell matrix is set equal to this. Must be an upper
-            triangular 3*3 matrix. Defaults to a 3*3 identity matrix.
+            triangular 3*3 matrix. Defaults to a 3*3 zeroes matrix.
       """
 
       if h is None:
