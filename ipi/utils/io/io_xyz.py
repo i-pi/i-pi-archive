@@ -59,7 +59,7 @@ def print_xyz(atoms, cell, filedesc = sys.stdout, title=""):
    """Prints the centroid configurations, into a xyz formatted file.
 
    Args:
-      beads: An atoms object giving the centroid positions.
+      atoms: An atoms object giving the centroid positions.
       cell: A cell object giving the system box.
       filedesc: An open writable file object. Defaults to standard output.
       title: This gives a string to be appended to the comment line.
@@ -136,6 +136,7 @@ def iter_xyz(filedesc):
       Generator over the xyz trajectory, that yields
       Atoms objects with the appropriate atom labels, masses and positions.
    """
+
    try:
       while 1:
          atoms = read_xyz(filedesc)

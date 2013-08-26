@@ -23,6 +23,7 @@ Classes:
    TestSimulation: Can be used to test that a particular simulation
       will run properly, given an input file and a driver code.
 """
+
 import glob
 import os
 import subprocess
@@ -41,33 +42,55 @@ def local(file=None):
         return os.sep.join(__file__.split(os.sep)[:-1])
 
 class TestSimulation(object):
-    def __init__(self, input, driver):
-        self.finput = input
-        self.folder_input = os.sep.join(input.split(os.sep)[:-1])
-        self.fdriver = driver
-        self.cwd = os.getcwd()
-        self.tmpdir = tempfile.mkdtemp()
+   """Simple class used to test various aspects of the simulation.
 
-        # Copy needed files to tmpdir
-        for src in glob.glob("%s/*"%self.folder_input):
-            shutil.copy(src, self.tmpdir)
+   Can be used to run an example given the location of an xml
+   input file and the location of a suitable driver code.
 
-        os.chdir(self.tmpdir)
+   Attributes:
+      finput: The name of the xml input file
+      folder_input: A string giving the directory the input file is held in.
+      fdriver: The location of a driver code.
+      cwd: Current working directory.
+      tmpdir: A temporary directory to run the simulation in.
+   """
 
+   def __init__(self, input, driver):
+      """Initializes TestSimulation.
 
-    def __del__(self):
-        os.chdir(self.cwd)
-        shutil.rmtree(self.tmpdir)
+      Args:
+         input: The name of the xml input file.
+         driver: The location of the driver code.
+      """
 
+      self.finput = input
+      self.folder_input = os.sep.join(input.split(os.sep)[:-1])
+      self.fdriver = driver
+      self.cwd = os.getcwd()
+      self.tmpdir = tempfile.mkdtemp()
 
-    def run(self):
-        # Run driver
-        p = subprocess.Popen("echo running %s"%self.fdriver, shell=True)
+      # Copy needed files to tmpdir
+      for src in glob.glob("%s/*"%self.folder_input):
+          shutil.copy(src, self.tmpdir)
 
-        # Start simulation
-        # TODO
-        print subprocess.check_output("ls", shell=True)
-        print subprocess.check_output("pwd", shell=True)
+      os.chdir(self.tmpdir)
 
-        # wait for driver to finish
-        p.wait()
+   def __del__(self):
+      """Cleans the temporary directory once the simulation is over."""
+
+      os.chdir(self.cwd)
+      shutil.rmtree(self.tmpdir)
+
+   def run(self):
+      """Runs the simulation."""
+
+      # Run driver
+      p = subprocess.Popen("echo running %s"%self.fdriver, shell=True)
+
+      # Start simulation
+      # TODO
+      print subprocess.check_output("ls", shell=True)
+      print subprocess.check_output("pwd", shell=True)
+
+      # wait for driver to finish
+      p.wait()

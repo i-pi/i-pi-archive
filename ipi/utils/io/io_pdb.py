@@ -76,7 +76,7 @@ def print_pdb(atoms, cell, filedesc = sys.stdout, title=""):
    that the angles are in degrees.
 
    Args:
-      beads: An atoms object giving the atom positions.
+      atoms: An atoms object giving the atom positions.
       cell: A cell object giving the system box.
       filedesc: An open writable file object. Defaults to standard output.
       title: An optional string of max. 70 characters.
@@ -164,6 +164,7 @@ def iter_pdb(filedesc):
       Generator over the pdb trajectory, that yields
       (Atoms, Cell) tuple with the appropriate atom labels, masses and positions.
    """
+
    try:
       while 1:
          atoms, cell = read_pdb(filedesc)

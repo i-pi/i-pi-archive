@@ -246,6 +246,8 @@ class DriverSocket(socket.socket):
       """Sends the initialisation string to the driver.
 
       Args:
+         rid: The index of the request, i.e. the replica that
+            the force calculation is for.
          pars: The parameter string to be sent to the driver.
 
       Raises:
@@ -359,6 +361,8 @@ class InterfaceSocket(object):
          before updating the client list.
       timeout: A float giving a timeout limit for considering a calculation dead
          and dropping the connection.
+      dopbc: A boolean which decides whether or not to fold the bead positions
+         back into the unit cell before passing them to the client code.
       server: The socket used for data transmition.
       clients: A list of the driver clients connected to the server.
       requests: A list of all the jobs required in the current PIMD step.
@@ -367,6 +371,10 @@ class InterfaceSocket(object):
       _prev_kill: Holds the signals to be sent to clean up the main thread
          when a kill signal is sent.
       _poll_true: A boolean giving whether the thread is alive.
+      _poll_iter: An integer used to decide whether or not to check for
+         client connections. It is used as a counter, once it becomes higher
+         than the pre-defined number of steps between checks the socket will
+         update the list of clients and then be reset to zero.
    """
 
    def __init__(self, address="localhost", port=31415, slots=4, mode="unix", latency=1e-3, timeout=1.0, dopbc=True):
@@ -381,6 +389,10 @@ class InterfaceSocket(object):
          mode: An optional string giving the type of socket. Defaults to 'unix'.
          latency: An optional float giving the time in seconds the socket will
             wait before updating the client list. Defaults to 1e-3.
+         timeout: Length of time waiting for data from a client before we assume
+            the connection is dead and disconnect the client.
+         dopbc: A boolean which decides whether or not to fold the bead positions
+            back into the unit cell before passing them to the client code.
 
       Raises:
          NameError: Raised if mode is not 'unix' or 'inet'.
@@ -392,7 +404,7 @@ class InterfaceSocket(object):
       self.mode = mode
       self.latency = latency
       self.timeout = timeout
-      self.dopbc=dopbc
+      self.dopbc = dopbc
       self._poll_thread = None
       self._prev_kill = {}
       self._poll_true = False
@@ -470,7 +482,6 @@ class InterfaceSocket(object):
       pbcpos = depstrip(atoms.q).copy()
       if self.dopbc:
          cell.array_pbc(pbcpos)
-
 
       newreq = {"pos": pbcpos, "cell": cell, "pars": par_str,
                 "result": None, "status": "Queued", "id": reqid,
@@ -571,8 +582,8 @@ class InterfaceSocket(object):
             c.poll()
             while c.status & Status.Busy: # waits, but check if we got stuck.
                if self.timeout > 0 and r["start"] > 0 and time.time() - r["start"] > self.timeout:
-                  warning(" @SOCKET:  Timeout! HASDATA for bead "+str( r["id"])+ " has been running for "+str( time.time() - r["start"])+" sec.", verbosity.low)
-                  warning(" @SOCKET:   Client " + str(c.peername) +" died or got unresponsive(A). Disconnecting.", verbosity.low)
+                  warning(" @SOCKET:  Timeout! HASDATA for bead " + str(r["id"]) + " has been running for " + str(time.time() - r["start"]) + " sec.", verbosity.low)
+                  warning(" @SOCKET:   Client " + str(c.peername) + " died or got unresponsive(A). Disconnecting.", verbosity.low)
                   try:
                      c.shutdown(socket.SHUT_RDWR)
                   except:
@@ -589,8 +600,8 @@ class InterfaceSocket(object):
             self.jobs = [ w for w in self.jobs if not ( w[0] is r and w[1] is c ) ] # removes pair in a robust way
 
          if self.timeout > 0 and c.status != Status.Disconnected and r["start"] > 0 and time.time() - r["start"] > self.timeout:
-            warning(" @SOCKET:  Timeout! Request for bead "+str( r["id"])+ " has been running for "+str( time.time() - r["start"])+" sec.", verbosity.low)
-            warning(" @SOCKET:   Client " + str(c.peername) +" died or got unresponsive(B). Disconnecting.",verbosity.low)
+            warning(" @SOCKET:  Timeout! Request for bead " + str( r["id"]) + " has been running for " + str(time.time() - r["start"]) + " sec.", verbosity.low)
+            warning(" @SOCKET:   Client " + str(c.peername) + " died or got unresponsive(B). Disconnecting.",verbosity.low)
             try:
                c.shutdown(socket.SHUT_RDWR)
             except socket.error:
@@ -616,7 +627,7 @@ class InterfaceSocket(object):
          if fc.status & Status.HasData:
             continue
          if not (fc.status & (Status.Ready | Status.NeedsInit | Status.Busy) ):
-            warning(" @SOCKET: Client "+str( fc.peername)+" is in an unexpected status "+str(fc.status)+ " at (1). Will try to keep calm and carry on.", verbosity.low)
+            warning(" @SOCKET: Client " + str(fc.peername) + " is in an unexpected status " + str(fc.status) + " at (1). Will try to keep calm and carry on.", verbosity.low)
             continue
          for match_ids in ( "match", "none", "free", "any" ):
             for r in pendr[:]:
@@ -648,7 +659,7 @@ class InterfaceSocket(object):
                   pendr = [nr for nr in pendr if (not nr is r)]
                   break
                else:
-                  warning(" @SOCKET: Client "+str( fc.peername)+" is in an unexpected status "+str(fc.status)+ " at (2). Will try to keep calm and carry on.", verbosity.low)
+                  warning(" @SOCKET: Client " + str(fc.peername) + " is in an unexpected status " + str(fc.status) + " at (2). Will try to keep calm and carry on.", verbosity.low)
             if matched:
                break # doesn't do a second (or third) round if it managed
                      # to assign the job
