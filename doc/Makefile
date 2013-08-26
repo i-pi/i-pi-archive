@@ -15,18 +15,21 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http.//www.gnu.org/licenses/>.
 
-.PHONY : all clean aux
+.PHONY : all distclean clean aux
 all : manual.pdf
 
 aux:
 	python create_man.py
+	rm -f *.pyc
 
 manual.pdf: aux
 	pdflatex manual
 	bibtex manual
 	pdflatex manual
 	pdflatex manual
-	mv manual.pdf help_files	
 	
 clean: 
-	bash -c "rm -rf help_files input_docs manual.{aux,bbl,blg,idx,log,lof,out,toc}"
+	bash -c "rm -rf input_docs manual.{aux,bbl,blg,idx,log,lof,out,toc}"
+
+distclean: clean
+	rm manual.pdf manual.xml
