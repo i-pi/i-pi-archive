@@ -291,7 +291,7 @@ can be applied straightforwardly to the equivalent PIMD calculations
 \cite{ceri+10jcp,mart+99jcp}. Finally, several techniques designed
 specifically for PIMD simulations are now available to increase the
 rate of convergence with respect to the number of replicas used 
-\cite{mark-mano08jcp,ceri+11jcp},
+\cite{mark-mano08jcp,ceri+11jcp,suzu95pla,chin97pla,pere-tuck11jcp},
 further reducing the computational overhead of the method. All
 of these facts mean that it is now feasible to do PIMD simulations
 with thousands of molecules, or even to use \emph{ab initio} electronic
@@ -522,7 +522,7 @@ To install this you need to input the following command:
 %Mano's note: Again, is this allowed?
 
 \begin{code}
-> tar xf [wrapper\_tar\_file.tar]
+> tar xf [wrapper_tar_file.tar]
 \end{code}
 
 %Mano's note: Perhaps remove claim of Windows from prog. description?
@@ -534,6 +534,9 @@ using:
 > git clone [github repository name]
 \end{code}
 
+The \ipi executable will run immediately, without needing to be installed
+or compiled, but we include a setup.py module in the main directory so it can
+be installed to the Python tree if so desired.
 
 \subsection{Installing NumPy}
 
@@ -548,7 +551,7 @@ NumPy being installed is given by {}``np\_vers'', this can be extracted
 using:
 
 \begin{code}
-> tar czf np_vers.tar.gz
+> tar xzf np_vers.tar.gz
 \end{code}
 
 Before installing this code it first needs to be configured correctly.
@@ -749,11 +752,11 @@ essentially idle, the only action that it performs is to periodically
 poll for incoming connections.
 
 
-\section{Running the client code}
+\subsection{Running the client code}
 
 \label{runningclients}
 
-\subsection{Built-in, example client}
+\subsubsection{Built-in, example client}
 
 \label{driver.x}
 
@@ -770,7 +773,7 @@ a 1D harmonic oscillator potential, and the ideal gas (i.e. no potential
 interaction).
 
 How the code is run is based on what command line arguments are passed to it.
-The command line syntax, as given in the code itself, is:
+The command line syntax is:
 
 \begin{code}
 > driver.x [-u] -h hostname -p port -m [gas|lj|sg|harm] -o parameters [-v]
@@ -782,9 +785,9 @@ The flags do the following:
 \item[-u:] Optional parameter. If specified, the client will connect to
 a unix domain socket.
 \item[-h:] Is followed in the command line argument list by the hostname
-of the client socket.
+of the server.
 \item[-p:] Is followed in the command line argument list by the port number
-of the client socket.
+of the server.
 \item[-m:] Is followed in the command line argument list by a string
 specifying the type of potential to be used. {}``gas'' gives no potential,
 {}``lj'' gives a Lennard-Jones potential, {}``sg'' gives a Silvera-Goldman
@@ -794,8 +797,11 @@ comma separated values needed to initialize the potential parameters.
 {}``gas'' requires no parameters, {}``harm'' requires a spring constant,
 {}``sg'' requires a cut-off radius and {}``lj'' requires the length and
 energy scales and a cut-off radius to be specified. All of these must
-be given in atomic units. For more information on the syntax of this
-command, run:
+be given in atomic units. 
+
+A help string further explaining the 
+syntax will be output if the executable is run with no command line
+arguments, i.e.:
 
 \begin{code}
 > ./driver.x
@@ -808,8 +814,6 @@ more information each time step.
 This code should be fairly simple to extend to other pair-wise interaction
 potentials, and examples of its use can be seen in the {}``examples'' 
 directory, as explained in \ref{tests}.
-
-\subsection{DFT codes}
 
 \subsubsection{CP2K}
 
@@ -882,9 +886,7 @@ modification is necessary:
 \end{code}
 
 The rest of the input file should be the same as for a standard Quantum
-Espresso calculation, as explained at \url{www.quantum-espress.org/}.
-
-\subsection{Empirical potential codes}
+Espresso calculation, as explained at \url{www.quantum-espresso.org/}.
 
 \subsubsection{LAMMPS}
 
