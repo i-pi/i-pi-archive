@@ -169,7 +169,7 @@ class InputSimulation(Input):
                   self.output.fetch(), self.normal_modes.fetch(),
                      self.initialize.fetch(), self.step.fetch(),
                         tsteps=self.total_steps.fetch(),
-                        ttime=self.total_time.fetch())
+                           ttime=self.total_time.fetch())
 
       # this does all of the piping between the components of the simulation
       rsim.bind()

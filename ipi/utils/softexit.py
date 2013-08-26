@@ -27,16 +27,45 @@ __all__ = ['Softexit', 'softexit']
 
 
 class Softexit(object):
+   """Class to deal with stopping a simulation half way through.
+
+   Holds the functions used to clean up a simulation that has been
+   stopped early, either because of a SIGTERM signal or because the
+   user has added an EXIT file to the directory in which it is 
+   running. This will then properly shut down the socket interface,
+   and print out a RESTART file for the appropriate time step.
+
+   Attributes:
+      flist: A list of functions used to close down the socket
+         interface.
+   """
+
    def __init__(self):
+      """Initializes SoftExit."""
+
       self.flist = []
 
    def register(self, func):
+      """Adds another function to flist.
+
+      Args:
+         func: The function to be added to flist.
+      """
+
       self.flist.append(func)
 
    def trigger(self, message=""):
+      """Halts the simulation.
+
+      Prints out a warning message, then runs all the exit functions in flist
+      before terminating the simulation.
+
+      Args:
+         message: The message to output to standard output.
+      """
 
       if message != "":
-         warning("Soft exit has been requested with message: '"+message+"'. Cleaning up.", verbosity.low)
+         warning("Soft exit has been requested with message: '" + message + "'. Cleaning up.", verbosity.low)
       for f in self.flist:
          f()
       sys.exit()

@@ -133,6 +133,9 @@ class Input(object):
       _optional: A bool giving whether the field is a required field.
       _explicit: A bool giving whether the field has been specified by the user.
       _text: All text written between the tags of the object.
+      _label: A label to be used to identify the class in the latex user manual.
+      _defwrite: The string which would be output if the class has its default
+         value.
    """
 
    fields = {}
@@ -355,6 +358,11 @@ class Input(object):
                raise ValueError("Field name '" + f + "' is mandatory and was not found in the input for the property " + xml.name)
 
    def detail_str(self):
+      """Prints out the supplementary information about a particular input class.
+
+      Used to print out the dimensions, default value, possible options and data
+      type of an input value to the LaTeX helf file.
+      """
 
       xstr = ""
       if hasattr(self, '_dimension') and self._dimension != "undefined": #gives dimension
