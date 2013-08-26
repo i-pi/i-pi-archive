@@ -318,6 +318,20 @@ Every physical quantity that is referenced in the code is created
 using a {}``depend'' object class, which is given the parameters
 on which it depends and a function used to calculate its value. 
 
+\begin{figure}[hpbt]
+\centering\includegraphics[width=0.9\textwidth]{ipi-depend.pdf}
+\caption{\label{fig:depend} Schematic overview of the functioning of the 
+\emph{depend} class used as the base for properties and physical quantities in \ipi{}. 
+A few ``primitive'' quantities -- such as atomic positions or momenta -- can be modified
+directly. For most properties, one defines a function that can compute based on the
+value of other properties. Whenever one property is modified, all the quantities that
+depend on it are marked as tainted, so that -- when the value of one of the properties
+is used, the function can be invoked and the updated value obtained. If a quantity
+is not marked as tainted, the cached value is returned instead. 
+}
+\end{figure}
+
+
 {}``Depend'' objects can be called to get the physical quantity
 they represent. However, they have further functionality. Firstly,
 once the value of a {}``depend'' object has been calculated, its
