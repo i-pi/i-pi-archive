@@ -4,7 +4,7 @@
       <velocities mode="thermal" units='kelvin'> 298 </velocities>
    </initialize>
    <output prefix='no_rpc'>
-      <properties stride='1' filename='out'>  [ step, time{picosecond}, conserved{kelvin}, temperature{kelvin}, kinetic_cv{kelvin}, potential{kelvin}, pressure_cv{megapascal}] </properties>
+      <properties stride='1' filename='out'>  [ step, time{picosecond}, conserved, temperature{kelvin}, kinetic_cv, potential, pressure_cv{megapascal}] </properties>
       <trajectory filename='pos' stride='20'> positions </trajectory>
    </output>
    <total_steps>500000</total_steps>
@@ -15,10 +15,10 @@
       </socket>
    </forces>
    <ensemble mode='nvt'>
-      <thermostat mode='langevin'>
+      <thermostat mode='svr'>
          <tau units='femtosecond'>25</tau>
       </thermostat>
-      <timestep units='femtosecond'> 0.1</timestep>
+      <timestep units='femtosecond'> 0.25</timestep>
       <temperature units='kelvin'>298</temperature>
    </ensemble>
 </simulation>
