@@ -59,8 +59,9 @@ class Thermostat(dobject):
    classes.
 
    Attributes:
-      prng:   A pseudo random number generator object.
-      fixdof: The number of degrees of freedom that will be constrained.
+      prng: A pseudo random number generator object.
+      ndof: The number of degrees of freedom that the thermostat will be
+         attached to.
 
    Depend objects:
       dt: The time step used in the algorithms. Depends on the simulation dt.
@@ -225,6 +226,9 @@ class ThermoPILE_L(Thermostat):
    Attributes:
       _thermos: The list of the different thermostats for all the ring polymer
          normal modes.
+      nm: A normal modes object to attach the thermostat to.
+      prng: Random number generator used in the stochastic integration
+         algorithms.
 
    Depend objects:
       tau: Centroid thermostat damping time scale. Larger values give a
@@ -232,11 +236,8 @@ class ThermoPILE_L(Thermostat):
       tauk: Thermostat damping time scale for the non-centroid normal modes.
          Depends on the ring polymer spring constant, and thus the simulation
          temperature.
-
-   Raises:
-      TypeError: Raised if the thermostat is used with any object other than
-         a beads object, so that we make sure that the objects needed for the
-         normal mode transformation exist.
+      pilescale: A float used to reduce the intensity of the PILE thermostat if
+         required.
    """
 
    def __init__(self, temp = 1.0, dt = 1.0, tau = 1.0, ethermo=0.0, scale=1.0):
@@ -248,6 +249,13 @@ class ThermoPILE_L(Thermostat):
          tau: The centroid thermostat damping timescale. Defaults to 1.0.
          ethermo: The initial conserved energy quantity. Defaults to 0.0. Will
             be non-zero if the thermostat is initialised from a checkpoint file.
+         scale: A float used to reduce the intensity of the PILE thermostat if
+            required.
+
+      Raises:
+         TypeError: Raised if the thermostat is used with any object other than
+            a beads object, so that we make sure that the objects needed for the
+            normal mode transformation exist.
       """
 
       super(ThermoPILE_L,self).__init__(temp,dt,ethermo)
@@ -276,7 +284,6 @@ class ThermoPILE_L(Thermostat):
             gives a thermostat bound to each centroid momentum.
          fixdof: An optional integer which can specify the number of constraints
             applied to the system. Defaults to zero.
-
 
       Raises:
          TypeError: Raised if no appropriate degree of freedom or object
@@ -460,6 +467,8 @@ class ThermoPILE_G(ThermoPILE_L):
          tau: The centroid thermostat damping timescale. Defaults to 1.0.
          ethermo: The initial conserved energy quantity. Defaults to 0.0. Will
             be non-zero if the thermostat is initialised from a checkpoint file.
+         scale: A float used to reduce the intensity of the PILE thermostat if
+            required.
       """
 
       super(ThermoPILE_G,self).__init__(temp,dt,tau,ethermo)
@@ -555,7 +564,7 @@ class ThermoGLE(Thermostat):
       return root_herm(SST)
 
    def get_C(self):
-      """Calculates C from temp (if C is not set explicitely)"""
+      """Calculates C from temp (if C is not set explicitly)"""
 
       rC = np.identity(self.ns + 1,float)*self.temp
       return rC[:]

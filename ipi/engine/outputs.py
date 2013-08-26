@@ -46,6 +46,7 @@ class PropertyOutput(dobject):
       stride: The number of steps that should be taken between outputting the
          data to file.
       flush: How often we should flush to disk.
+      nout: Number of steps since data was last flushed.
       out: The output stream on which to output the properties.
       simul: The simulation object to get the data to be output from.
    """
@@ -61,6 +62,7 @@ class PropertyOutput(dobject):
          filename: A string giving the name of the file to be output to.
          stride: An integer giving how many steps should be taken between
             outputting the data to file.
+         flush: Number of writes to file between flushing data.
          outlist: A list of all the properties that should be output.
       """
 
@@ -172,6 +174,9 @@ class TrajectoryOutput(dobject):
       stride: The number of steps that should be taken between outputting the
          data to file.
       out: The output stream on which to output the trajectories.
+      flush: How often we should flush to disk.
+      nout: Number of steps since data was last flushed.
+      ibead: Index of the replica to print the trajectory of.
       cell_units: The units that the cell parameters are given in.
       simul: The simulation object to get the data to be output from.
    """

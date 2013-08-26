@@ -193,7 +193,7 @@ def init_beads(iif, nbeads):
       if mode == "xyz": ratoms = init_xyz(value)
       if mode == "pdb": ratoms = init_pdb(value)[0]
       rbeads = Beads(ratoms[0].natoms,len(ratoms))
-      for i in range(len(ratoms)): rbeads[i]=ratoms[i]
+      for i in range(len(ratoms)): rbeads[i] = ratoms[i]
    elif mode == "chk":
       rbeads = init_chk(value)[0]
    elif mode == "manual":
@@ -245,8 +245,8 @@ def set_vector(iif, dq, rq):
       rq: The vector to initialize from.
    """
 
-   (nbeads, natoms) = rq.shape; natoms/=3
-   (dbeads, datoms) = dq.shape; datoms/=3
+   (nbeads, natoms) = rq.shape; natoms /= 3
+   (dbeads, datoms) = dq.shape; datoms /= 3
 
    # Check that indices make sense
    if iif.index < 0 and natoms != datoms:
@@ -363,13 +363,13 @@ class Initializer(dobject):
             if v.bead < 0:   # we are initializing the path
                if (fmom and fmass):
                   warning("Rescaling momenta to make up for changed mass", verbosity.medium)
-                  simul.beads.p/=simul.beads.sm3   # go to mass-scaled momenta, that are mass-invariant
+                  simul.beads.p /= simul.beads.sm3   # go to mass-scaled momenta, that are mass-invariant
                if v.index < 0:
                   simul.beads.m = rm
                else: # we are initializing a specific atom
                   simul.beads.m[v.index:v.index+1] = rm
                if (fmom and fmass):  # finishes correcting the momenta
-                  simul.beads.p*=simul.beads.sm3  # back to normal momenta
+                  simul.beads.p *= simul.beads.sm3  # back to normal momenta
             else:
                raise ValueError("Cannot change the mass of a single bead")
             fmass = True
@@ -399,7 +399,7 @@ class Initializer(dobject):
             # read the atomic positions as a vector
             rq = init_vector(v, self.nbeads)
             rq *= unit_to_internal("length",v.units,1.0)
-            (nbeads, natoms) = rq.shape;   natoms = natoms/3
+            (nbeads, natoms) = rq.shape;   natoms /= 3
 
             # check if we must initialize the simulation beads
             if simul.beads.nbeads == 0:
@@ -458,7 +458,7 @@ class Initializer(dobject):
             # read the atomic momenta as a vector
             rp = init_vector(v, self.nbeads, momenta = True)
             rp *= unit_to_internal("momentum",v.units,1.0)
-            (nbeads, natoms) = rp.shape;   natoms = natoms/3
+            (nbeads, natoms) = rp.shape;   natoms /= 3
 
             # checks if we must initialize the simulation beads
             if simul.beads.nbeads == 0:
@@ -476,7 +476,7 @@ class Initializer(dobject):
             # read the atomic velocities as a vector
             rv = init_vector(v, self.nbeads)
             rv *= unit_to_internal("velocity",v.units,1.0)
-            (nbeads, natoms) = rv.shape;   natoms = natoms/3
+            (nbeads, natoms) = rv.shape;   natoms /= 3
 
             # checks if we must initialize the simulation beads
             if simul.beads.nbeads == 0 or not fmass:
