@@ -114,7 +114,7 @@ class InputEnsemble(Input):
       self.timestep.store(ens.dt)
       self.temperature.store(ens.temp)
 
-      if tens==0:
+      if tens == 0:
          self.replay_file.store(ens.intraj)
       if tens > 1:
          self.thermostat.store(ens.thermostat)
@@ -149,7 +149,7 @@ class InputEnsemble(Input):
          ens = ReplayEnsemble(dt=self.timestep.fetch(),
             temp=self.temperature.fetch(),fixcom=False,intraj=self.replay_file.fetch() )
       else:
-         raise ValueError("'"+self.mode.fetch()+"' is not a supported ensemble mode.")
+         raise ValueError("'" + self.mode.fetch() + "' is not a supported ensemble mode.")
 
       return ens
 

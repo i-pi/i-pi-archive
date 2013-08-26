@@ -381,7 +381,6 @@ class NormalModes(dobject):
          The sum of the MD kinetic stress tensor contributions from each NM.
       """
 
-      #TODO MUST VERIFY THIS IS CORRECT
       kmd = np.zeros((3,3),float)
       sm = depstrip(self.beads.sm3[0])
       pnm = depstrip(self.pnm)
