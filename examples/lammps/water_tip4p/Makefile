@@ -2,7 +2,7 @@
 all: gle-piglet_2 gle-piglet_4 gle-piglet_8 rpc no_rpc
 
 LAMMPS:=lmp_serial
-IPI:=../../../i-pi
+IPI:=../../../../i-pi
 
 define run_lammps
   for i in `seq 1 $1`; do \
