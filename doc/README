@@ -1,0 +1,33 @@
+ -- Documentation directory --
+
+ * This gives all the documentation for the program.
+
+ * Files:
+   - create_man.py: python script which automatically generates latex help files
+      for all the classes, for use in the manual.
+   - help_list.py: python script which can generate custom help files for
+      the output classes, for use in the manual.
+   - help.py: python script which can generate custom help files for
+      each of the input classes, for use in the manual.
+   - Makefile: The makefile for the automatically generated manual.
+   - manual.lyx: lyx file giving the manual template.
+   - mybib.bib: Bibliography file for the manual.
+
+ * Some of the above files are used to automatically generate sections of the
+   user manual, and to create an xml showing the class hierarchy. These are
+   created in two directories, input_docs and help_files. File created in 
+   input_docs are used only to add sections to the manual itself. 
+   The useful files are put into help_files. These are:
+      - manual.pdf: The user manual file. Note that for this to be created, 
+         the system needs to have lyx installed.
+      - manual.xml: This is an xml file that contains all the input names
+         along with a description of their purpose and what values are
+         expected for each of them.
+
+ * To make the help files use:
+
+$ make
+
+ * To remove all the created files again, use:
+
+$ make clean

@@ -1,4 +1,10 @@
-# Makefile for the help files
+#!/bin/bash
+#$ -S /bin/bash
+#$ -cwd
+#$ -pe  orte 7
+#$ -N ph2-pproc
+
+# Script to run all the post-processing calculations
 # 
 # Copyright (C) 2013, Joshua More and Michele Ceriotti
 # 
@@ -15,21 +21,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http.//www.gnu.org/licenses/>.
 
-.PHONY : all distclean clean aux
-all : manual.pdf
 
-aux:
-	python create_man.py
-	rm -f *.pyc
+nruns=100
 
-manual.pdf: aux
-	pdflatex manual
-	bibtex manual
-	pdflatex manual
-	pdflatex manual
-	
-clean: 
-	bash -c "rm -rf input_docs manual.{aux,bbl,blg,idx,log,lof,out,toc}"
-
-distclean: clean
-	rm manual.pdf manual.xml
+for j in `seq 1 5`; do
+   cd run_$j
+   for i in `seq 1 $nruns`; do
+      ../vel_est $i &
+   done
+   wait
+   cd ..
+done
+wait
+./consolidate &

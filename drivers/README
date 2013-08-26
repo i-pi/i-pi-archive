@@ -1,0 +1,28 @@
+ -- Driver code directory --
+
+ * This gives simple test driver codes.
+
+ * Files:
+   - LJ.f90: Calculates the Lennard-Jones potential/forces/virial.
+   - SG.f90: Calculates the Silvera-Goldman potential/forces/virial.
+   - distance.f90: Deals with calculating the separation between atoms and
+      the neighbour list calculation.
+   - sockets.c: Contains the functions to create the client socket and read from
+      and write to it.
+   - driver.f90: Socket interface for the driver codes.
+   - Makefile: A makefile that which compiles all the fortran code as 
+      necessary.
+
+ * There are also two shell scripts for running the RPMD runs easily. These are:
+   - launch_multi.sh: This starts an entire run of 100 tests.
+   - launch.sh: This starts one of the runs. Note that you will have to replace
+      the host name to whatever the name of your local network is.
+
+ * Let us say that in the RPMD directory you have run run_3, which has an
+   initial port number of 31413. To start the driver codes then, you need do:
+
+$ qsub launch_multi.sh 31413
+
+ * To run all the RPMD driver codes, simply do: 
+
+$ for a in `seq 31411 31415`; do qsub launch_multi.sh $a; done

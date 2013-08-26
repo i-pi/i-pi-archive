@@ -1,0 +1,117 @@
+ -- Example with the rudimentary PH2 code --
+
+ * This gives examples of para-H2 with the isotropic Silvera-Goldman 
+   pair potential, as tested against Glenn J. Martyna, Adam Hughes and 
+   Mark E. Tuckerman, J. Chem. Phys. 110, 3275, (1999)
+   and Thomas F. Miller and David E. Manolopoulos,
+   J. Chem. Phys. 122, 184503, (2005). 
+   
+** Glenn J. Martyna, et. al. is the basis for the tests in the
+   directory Tuckerman.
+
+ * State points: (N, P, T) = (172, 0 MPa, 14/17/20/25 K)
+
+** Thomas F. Miller et. al. is the basis for the tests in the
+   directories nvt and RPMD
+
+ * State point: (N, V, T) = (108, 31.7 cm**3 mol**(-1), 25 K)
+
+
+** To run, first compile the driver code in drivers/. 
+   This should be as simple as: 
+
+$ make
+
+ * Next, create a make.in
+   file containing the path to the driver.x executable, the
+   drivers directory and i-pi, e.g.
+
+driver:=~/bin/driver.x
+IPI:=~/bin/i-pi/i-pi
+driver_dir:=~/bin/i-pi/drivers
+
+
+** Run the examples automatically:
+ 
+ * These can be run automatically using the Makefile provided. The make 
+   targets are self-explanatory -- tuckerman_25K, tuckerman_20K, 
+   tuckerman_17K, tuckerman_14K, nvt, rpmd-run_1, rpmd-run_2, rpmd-run_3
+   rpmd-run_4 and rpmd-run_5. To run the NVT example, for instance, just type:
+
+$ make nvt
+
+ * To clean up output files:
+
+$ make clean
+
+
+** Run the examples manually:
+
+
+** The Tuckerman directory:
+
+ * Go back to the example directory and run
+
+$ python path/i-pi input_equilibrated.xml
+ 
+   the wrapper will start and sit waiting on the UDS /tmp/ipi.
+ 
+ * Open a separate terminal and run the SG driver code. Each of the tests
+   runs using a different server address, which are related to their
+   directory names. For example, the 25K problem is run using:
+ 
+$ path/drivers/driver.x -u -h T_25K -m sg -o 15.0
+
+   You can run multiple instances of the code; it is so fast that parallel 
+   scaling won't be appreciable.
+
+ * If your system does not support Unix domain sockets, just set in 
+   input_equilibrated.xml
+   <socket mode="inet"> <port> port_no </port>
+
+  then run the driver as:
+
+$ path/drivers/driver.x -h T_25K -m sg -o 15.0 -p port_no
+
+
+** The nvt directory:
+
+ * Go back to the example directory and run
+
+$ python ../../../i-pi input.xml
+ 
+   the wrapper will start and sit waiting on the UDS /tmp/ipi
+ 
+ * Open a separate terminal and run the SG driver code 
+ 
+$ path/drivers/driver.x -u -h ph2_nvt -m sg -o 15.0
+
+   You can run multiple instances of the code; it is so fast that parallel 
+   scaling won't be appreciable.
+
+ * If your system does not support Unix domain sockets, just set in input.xml
+   <socket mode="inet"> <port> port_no </port>
+
+  then run the driver as:
+
+$ path/drivers/driver.x -h ph2_nvt -m sg -o 15.0 -p port_no
+
+
+** The RPMD directory:
+
+ * There is one shell script used for starting the runs: launch.sh
+   This will run from one of the run_x directories, and start each of the
+   trajectories once the previous one has finished.
+
+ * For example, let us say that we wish to run run_3. The input file for run_3
+   uses port number 31413. Therefore to run this we change to the directory
+   run_3, and then input the following command:
+
+$ bash -c "bash ../launch.sh 31413 &"
+
+ * To do all of the runs, you can use:
+
+$ for a in `seq 1 5`; do port=$((31416-$a)); cd run_$a; bash -c "bash ../launch.sh $port &"; cd .. ; done
+
+ * Instructions on how to run the driver code is given in the 
+   drivers/ directory.

@@ -1,4 +1,4 @@
-# Makefile for the help files
+# Script to run one of the directories of RPMD tests
 # 
 # Copyright (C) 2013, Joshua More and Michele Ceriotti
 # 
@@ -15,21 +15,20 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http.//www.gnu.org/licenses/>.
 
-.PHONY : all distclean clean aux
-all : manual.pdf
+nruns=99
+port=$1
 
-aux:
-	python create_man.py
-	rm -f *.pyc
+python ../../../../i-pi input.xml &> log1
+wait
+for i in `seq 1 $nruns`; do
+   newport=$((5+$port))
+   j=$(($i+1))
+   sed "s/<simulation>/<simulation> <initialize nbeads='24'> <velocities mode='thermal' units='kelvin'> 25 <%velocities> <%initialize>/" RESTART | tr "%" "/" > dummy
+   sed "s/<step>8000</<step>0</; s/<port>$port/<port>$newport/; s/filename='test$i/filename='test$j/" dummy > input$i
 
-manual.pdf: aux
-	pdflatex manual
-	bibtex manual
-	pdflatex manual
-	pdflatex manual
-	
-clean: 
-	bash -c "rm -rf input_docs manual.{aux,bbl,blg,idx,log,lof,out,toc}"
+   port=$(($newport)) 
 
-distclean: clean
-	rm manual.pdf manual.xml
+   rm dummy
+   python ../../../../i-pi input$i &> log$j
+   wait
+done

@@ -1,4 +1,5 @@
-# Makefile for the help files
+# Script to remove all the files created in the course of the 
+# RPMD simulations
 # 
 # Copyright (C) 2013, Joshua More and Michele Ceriotti
 # 
@@ -15,21 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http.//www.gnu.org/licenses/>.
 
-.PHONY : all distclean clean aux
-all : manual.pdf
-
-aux:
-	python create_man.py
-	rm -f *.pyc
-
-manual.pdf: aux
-	pdflatex manual
-	bibtex manual
-	pdflatex manual
-	pdflatex manual
-	
-clean: 
-	bash -c "rm -rf input_docs manual.{aux,bbl,blg,idx,log,lof,out,toc}"
-
-distclean: clean
-	rm manual.pdf manual.xml
+nruns=99
+for i in `seq 1 5`; do 
+   cd run_$i
+   rm -f log* test* EXIT RESTART
+   for j in `seq 1 $nruns`; do 
+      rm -f input$j
+   done
+   cd .. 
+done
