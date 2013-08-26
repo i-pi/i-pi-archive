@@ -314,13 +314,13 @@ class InputInitializer(Input):
             }
 
    dynamic = {
-           "positions"  : (InputInitPositions,  { "help" : "Initializes atomic positions"}),
-           "velocities" : (InputInitVelocities, { "help" : "Initializes atomic velocities" }),
-           "momenta"    : (InputInitMomenta,    { "help" : "Initializes atomic momenta" }),
-           "masses"     : (InputInitMasses,     { "help" : "Initializes atomic masses" }),
+           "positions"  : (InputInitPositions,  { "help" : "Initializes atomic positions. Will take a 'units' attribute of dimension 'length'"}),
+           "velocities" : (InputInitVelocities, { "help" : "Initializes atomic velocities. Will take a 'units' attribute of dimension 'velocity'" }),
+           "momenta"    : (InputInitMomenta,    { "help" : "Initializes atomic momenta. Will take a 'units' attribute of dimension 'momentum'" }),
+           "masses"     : (InputInitMasses,     { "help" : "Initializes atomic masses. Will take a 'units' attribute of dimension 'mass'" }),
            "labels"     : (InputInitLabels,     { "help" : "Initializes atomic labels" }),
-           "cell"       : (InputInitCell,       { "help" : "Initializes the configuration of the cell" }),
-           "file"       : (InputInitFile,       { "help" : "Initializes everything possible for the given mode" }),
+           "cell"       : (InputInitCell,       { "help" : "Initializes the configuration of the cell. Will take a 'units' attribute of dimension 'length'" }),
+           "file"       : (InputInitFile,       { "help" : "Initializes everything possible for the given mode. Will take a 'units' attribute of dimension 'length'. The unit conversion will only be applied to the positions and cell parameters." }),
            "gle"        : (InputInitThermo,     { "help" : "Initializes the additional momenta in a GLE thermostat." })
             }
 
@@ -383,6 +383,8 @@ class InputInitializer(Input):
 
       initlist = []
       for (k,v) in self.extra:
+         if v.mode.fetch() == "chk" and v.fetch(initclass=ei.InitIndexed).units != "":
+            raise ValueError("Cannot specify units for initialization from a checkpoint file - units should be defined _inside_ the file.")
          if k == "file":
             mode = v.mode.fetch()
             if mode == "xyz" or mode == "manual" or mode == "pdb" or mode == "chk":
