@@ -38,4 +38,4 @@ clean:
 	bash -c "rm -rf input_docs manual.{aux,bbl,blg,idx,log,lof,out,toc}"
 
 distclean: clean
-	rm manual.pdf manual.xml
+	rm -f manual.pdf manual.xml
