@@ -18,9 +18,9 @@
 .PHONY: all clean tuckerman_25K tuckerman_20K tuckerman_17K tuckerman_14K nvt rpmd-run_1 rpmd-run_2 rpmd-run_3 rpmd-run_4 rpmd-run_5
 all: tuckerman_25K tuckerman_20K tuckerman_17K tuckerman_14K nvt rpmd-run_1 rpmd-run_2 rpmd-run_3 rpmd-run_4 rpmd-run_5
 
-driver_dir:=../../../drivers/
-driver:=../../../../drivers/driver.x
-IPI:=../../../../i-pi
+driver_dir:=../../../../drivers/
+driver:=../../../drivers/driver.x
+IPI:=../../../i-pi
 
 define run_driver
   for i in `seq 1 $1`; do \
@@ -35,22 +35,22 @@ nvt:
 	wait
 
 tuckerman_25K:
-	cd Tuckerman/25K; $(IPI) input_equilibrated.xml & sleep 5; \
+	cd Tuckerman_25K; $(IPI) input_equilibrated.xml & sleep 5; \
 	$(call run_driver,4,T_25K) \
 	wait
 	
 tuckerman_20K:
-	cd Tuckerman/20K; $(IPI) input_equilibrated.xml & sleep 5; \
+	cd Tuckerman_20K; $(IPI) input_equilibrated.xml & sleep 5; \
 	$(call run_driver,4,T_20K) \
 	wait
 
 tuckerman_17K:
-	cd Tuckerman/17K; $(IPI) input_equilibrated.xml & sleep 5; \
+	cd Tuckerman_17K; $(IPI) input_equilibrated.xml & sleep 5; \
 	$(call run_driver,4,T_17K) \
 	wait
 
 tuckerman_14K:
-	cd Tuckerman/14K; $(IPI) input_equilibrated.xml & sleep 5; \
+	cd Tuckerman_14K; $(IPI) input_equilibrated.xml & sleep 5; \
 	$(call run_driver,4,T_14K) \
 	wait
 
@@ -80,6 +80,9 @@ rpmd-run_5:
 	wait
 
 clean:
-	cd Tuckerman; rm -f */ph2-* */RESTART */EXIT; cd ..; \
+	cd Tuckerman_14K; rm -f ph2-* RESTART EXIT; cd ..; \
+	cd Tuckerman_17K; rm -f ph2-* RESTART EXIT; cd ..; \
+	cd Tuckerman_20K; rm -f ph2-* RESTART EXIT; cd ..; \
+	cd Tuckerman_25K; rm -f ph2-* RESTART EXIT; cd ..; \
 	cd nvt ; rm -f ph2.* RESTART EXIT; cd ..; \
 	cd RPMD; bash mkclean.sh

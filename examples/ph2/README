@@ -7,7 +7,8 @@
    J. Chem. Phys. 122, 184503, (2005). 
    
 ** Glenn J. Martyna, et. al. is the basis for the tests in the
-   directory Tuckerman.
+   directories Tuckerman_14K, Tuckerman_17K, Tuckerman_20K
+   and Tuckerman_25K.
 
  * State points: (N, P, T) = (172, 0 MPa, 14/17/20/25 K)
 
