@@ -21,11 +21,11 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-.PHONY: all clean gle-piglet_2 gle-piglet_4 gle-piglet_8 rpc no_rpc
-all: gle-piglet_2 gle-piglet_4 gle-piglet_8 rpc no_rpc
+.PHONY: all clean graphene h2o-piglet_2 h2o-piglet_4 h2o-piglet_8 rpc h2o-rpc h2o-pimd
+all: graphene h2o-piglet_2 h2o-piglet_4 h2o-piglet_8 h2o-rpc h2o-pimd
 
 LAMMPS:=lmp_serial
-IPI:=../../../../i-pi
+IPI:=../../../i-pi
 
 define run_lammps
   for i in `seq 1 $1`; do \
@@ -34,36 +34,43 @@ define run_lammps
 endef
 -include make.in
 
-gle-piglet_2:
-	cd GLE/piglet_2; $(IPI) input.xml & sleep 5; \
+graphene:
+	cd graphene; $(IPI) input.xml & \
+	sleep 40; \
+        $(call run_lammps,4,in.kappa.Graphene) \
+	wait
+
+h2o-piglet_2:
+	cd h2o-piglet.2; $(IPI) input.xml & sleep 5; \
         $(call run_lammps,2,in.water) \
 	wait
 	
-gle-piglet_4:
-	cd GLE/piglet_4; $(IPI) input.xml & sleep 5; \
+h2o-piglet_4:
+	cd h2o-piglet.4; $(IPI) input.xml & sleep 5; \
         $(call run_lammps,4,in.water) \
 	wait
 
-gle-piglet_8:
-	cd GLE/piglet_8; $(IPI) input.xml & sleep 5; \
+h2o-piglet_8:
+	cd h2o-piglet.8; $(IPI) input.xml & sleep 5; \
         $(call run_lammps,4,in.water) \
 	wait
 
-no_rpc:
-	cd no_RPC; $(IPI) input.xml & sleep 5; \
+h2o-pimd:
+	cd h2o-pimd; $(IPI) input.xml & sleep 5; \
         $(call run_lammps,4,in.water) \
 	wait
 
-rpc:
-	cd RPC; $(IPI) input.xml & sleep 5; \
+h2o-rpc:
+	cd h2o-pimd-rpc; $(IPI) input.xml & sleep 5; \
         $(call run_lammps,4,in.water_shortrange) \
         $(call run_lammps,1,in.water_longrange) \
 	wait
 
 clean:
-	cd GLE; \
-	rm -f */gle_lammps.* */RESTART */EXIT */log.lammps; cd ..; \
-	cd no_RPC; \
+	rm -f */gle_lammps.* */RESTART */EXIT */log.lammps; \
+	cd h2o-pimd; \
 	rm -f RESTART EXIT log.lammps no_rpc.*; cd ..; \
-	cd RPC; \
-	rm -f RESTART EXIT log.lammps rpc.*; cd ..;
+	cd h2o-pimd-rpc; \
+	rm -f RESTART EXIT log.lammps rpc.*; cd ..; \
+	cd graphene; \
+	rm -f graph.* RESTART EXIT log.lammps graphene.lammpstraj nohup.out; cd ..
