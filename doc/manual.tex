@@ -647,7 +647,14 @@ This can either be downloaded as a tar file, which
 can be extracted in the same way as the Python and NumPy
 libraries above, or via a svn client. 
 
-Before this can run with \ipi, the code
+As an example of the latter, CP2K version 2.4 can be downloaded to
+a directory {}``cp2k-2.4'' using the command:
+
+\begin{code}
+svn checkout svn://svn.code.sf.net/p/cp2k/code/branches/cp2k-2_4-branch cp2k-2.4
+\end{code}
+
+Before CP2K can run with \ipi, the code
 must be adapted to use the socket interface. 
 For this purpose \ipi is distributed with patch files in the
 directory {}``patches''. When applied to a clean 
@@ -692,7 +699,9 @@ Quantum Espresso versions 5.0, 4.3, 4.2 and 4.1.3.
 You can download the source code for LAMMPS at \url{http://lammps.sandia.gov/index.html}.
 This can either be downloaded as a tar file, which
 can be extracted in the same way as the Python and NumPy
-libraries above, via a svn client or from a git repository. 
+libraries above, via a svn client, which can be run in the
+same way as for CP2K, or from a git repository, which can be downloaded
+in the same way as for \ipi. 
 
 As for CP2K above, we include patch files to
 adapt the LAMMPS source code so that it will work with \ipi.
