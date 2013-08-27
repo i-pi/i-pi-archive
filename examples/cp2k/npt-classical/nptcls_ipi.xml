@@ -12,7 +12,7 @@
       <checkpoint stride="100" overwrite="true" filename="chk"/>
       <checkpoint stride="5000" overwrite="false" filename="restart"/>
    </output>
-   <total_steps>100000</total_steps>
+   <total_steps>10</total_steps>
    <prng><seed>20222</seed></prng>
    <forces>
       <socket mode='inet'>
