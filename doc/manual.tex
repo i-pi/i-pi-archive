@@ -256,24 +256,24 @@ problems, and their solutions.
 
 Molecular dynamics (MD) is a technique used to study the properties
 of a system of interacting particles by applying Newton's equations
-of motion to produce trajectories which efficiently
+of motion to produce trajectories which can be used to efficiently
 explore the phase space. This can be used to calculate many equilibrium
-and dynamical properties and for systems ranging from isolated gas molecules
-to condensed phase bulk materials.
+and dynamical properties, study systems from isolated gas molecules
+to condensed phase bulk materials, and can be applied to systems from
+the atomistic scale to mesoscopic colloidal particles.
 
 However, while this technique has been very successful, in most MD
 implementations the assumption is made that the nuclei behave as classical
 particles, which for light nuclei such as hydrogen is often a very
 poor approximation as the effect of zero-point energy (ZPE) and quantum
 tunnelling can be large. For example, even at room temperature the
-vibrational frequency of an OH stretch in water is an order of magnitude larger
+vibrational frequency of an OH stretch in water is over 15 times larger
 than the available thermal energy, and so this motion will be highly
 quantized. The current state-of-the-art method to include nuclear
 quantum effects (NQE) in the calculation of static properties of condensed
 phase systems is path integral molecular dynamics (PIMD).
 
-PIMD generates the quantum-mechanical 
-ensemble of a system of distinguishable interacting
+PIMD generates the quantum-mechanical ensemble of a system of interacting
 particles by using MD in an extended phase space. This is derived
 from the path integral formalism \cite{feyn-hibb65book}, which
 relates the statistics of a collection of quantum particles to those
@@ -433,8 +433,8 @@ accelerates the convergence of the kinetic energy.
 
 \section{Licence and credits}
 
-This code is distributed under the MIT licence. For more details see
-\url{https://fedoraproject.org/wiki/Licensing:MIT}. If you use this code in any
+This code is distributed under the GPL licence. For more details see
+\url{www.gnu.org/licences/gpl.html}. If you use this code in any
 future publications, please cite this using {[}cpc paper citation{]}.
 
 
