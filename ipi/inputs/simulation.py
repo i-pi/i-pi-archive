@@ -74,7 +74,7 @@ class InputSimulation(Input):
 
    fields = { "forces" :   (InputForces,    { "help"  : InputForces.default_help }),
              "ensemble": (InputEnsemble, { "help"  : InputEnsemble.default_help } ),
-             "prng" :    (InputRandom,   { "help"  : InputRandom.default_help + " Optional.",
+             "prng" :    (InputRandom,   { "help"  : InputRandom.default_help,
                                          "default" : input_default(factory=Random)} ),
              "initialize" : (InputInitializer, { "help" : InputInitializer.default_help,
                                                 "default" : input_default(factory=Initializer) } ),
@@ -94,7 +94,7 @@ class InputSimulation(Input):
                                             "help"     : "The total number of steps that will be done. If 'step' is equal to or greater than 'total_steps', then the simulation will finish." }),
              "total_time" :       ( InputValue, { "dtype"    : float,
                                             "default"  : 0,
-                                            "help"     : "The wall clock time (in seconds)." }),
+                                            "help"     : "The maximum wall clock time (in seconds)." }),
                                              }
 
    attribs = { "verbosity" : (InputAttribute, { "dtype"   : str,

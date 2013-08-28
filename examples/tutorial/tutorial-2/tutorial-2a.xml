@@ -732,7 +732,7 @@
          </thermostat>
          <tau units='femtosecond'> 250 </tau>
       </barostat>
-      <thermostat mode='pile_l'>
+      <thermostat mode='pile_g'>
          <tau>  1.03353433e+03</tau>
          <ethermo>  2.24648494e-02</ethermo>
       </thermostat>

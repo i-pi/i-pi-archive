@@ -151,7 +151,6 @@
             INTEGER, DIMENSION(natoms*(natoms-1)/2), INTENT(OUT) :: n_list
 
             INTEGER :: i, j
-            DOUBLE PRECISION, DIMENSION(3) :: rij
             DOUBLE PRECISION r2
 
          index_list(1) = 0

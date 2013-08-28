@@ -258,9 +258,8 @@ Molecular dynamics (MD) is a technique used to study the properties
 of a system of interacting particles by applying Newton's equations
 of motion to produce trajectories which can be used to efficiently
 explore the phase space. This can be used to calculate many equilibrium
-and dynamical properties, study systems from isolated gas molecules
-to condensed phase bulk materials, and can be applied to systems from
-the atomistic scale to mesoscopic colloidal particles.
+and dynamical properties and to study systems from isolated gas molecules
+to condensed phase bulk materials.
 
 However, while this technique has been very successful, in most MD
 implementations the assumption is made that the nuclei behave as classical
@@ -433,9 +432,22 @@ accelerates the convergence of the kinetic energy.
 
 \section{Licence and credits}
 
-This code is distributed under the GPL licence. For more details see
-\url{www.gnu.org/licences/gpl.html}. If you use this code in any
+Most of this code is distributed under the GPL licence. For more details see
+\url{www.gnu.org/licences/gpl.html}. 
+So that they can easily be incorporated in other codes, the files
+in the directory {}``drivers'' are all held under the MIT licence.
+For more details see \url{https://fedoraproject.org/wiki/Licensing:MIT}.
+
+If you use this code in any
 future publications, please cite this using {[}cpc paper citation{]}.
+
+\subsection{Contributors}
+
+\ipi was originally written by M. Ceriotti and J. More. 
+T. Spura and M. Rossi contributed to the initial development of the code,
+R. Distasio and B. Santra for helped creating patches for
+Quantum Espresso.
+
 
 
 \section{On-line resources}

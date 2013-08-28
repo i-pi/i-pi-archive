@@ -195,7 +195,6 @@ class Input(object):
       if not self._default is None:
          self._defwrite = self.write(name="%%NAME%%")
 
-
    def set_default(self):
       """Sets the default value of the object."""
 

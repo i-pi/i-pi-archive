@@ -726,7 +726,7 @@
       <gauss> -8.30560467e-01</gauss>
    </prng>
    <ensemble mode='nvt'>
-      <thermostat mode='pile_l'>
+      <thermostat mode='pile_g'>
          <tau>  1.03353433e+03</tau>
          <ethermo>  2.24648494e-02</ethermo>
       </thermostat>

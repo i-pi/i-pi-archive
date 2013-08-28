@@ -2,29 +2,22 @@
 # 
 # Copyright (C) 2013, Joshua More and Michele Ceriotti
 # 
-# Permission is hereby granted, free of charge, to any person obtaining
-# a copy of this software and associated documentation files (the
-# "Software"), to deal in the Software without restriction, including
-# without limitation the rights to use, copy, modify, merge, publish,
-# distribute, sublicense, and/or sell copies of the Software, and to
-# permit persons to whom the Software is furnished to do so, subject to
-# the following conditions:
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 # 
-# The above copyright notice and this permission notice shall be included
-# in all copies or substantial portions of the Software.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+# GNU General Public License for more details.
 # 
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-# IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-# CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-# TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-# SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http.//www.gnu.org/licenses/>.
 
-.PHONY: all clean mht-25K mht-20K mht-17K mht-14K nvt rpmd-run_1 rpmd-run_2 rpmd-run_3 rpmd-run_4 rpmd-run_5
-all: mht-25K mht-20K mht-17K mht-14K nvt rpmd-run_1 rpmd-run_2 rpmd-run_3 rpmd-run_4 rpmd-run_5
+.PHONY: all clean mht-25K mht-20K mht-17K mht-14K nvt rpmd
+all: mht-25K mht-20K mht-17K mht-14K nvt rpmd
 
-driver_dir:=../../../../drivers/
 driver:=../../../drivers/driver.x
 IPI:=../../../i-pi
 
@@ -76,31 +69,6 @@ rpmd: RPMD/run_1/test16.out RPMD/run_2/test16.out RPMD/run_3/test16.out RPMD/run
 	make -C RPMD scripts; make -C RPMD postproc
 	
 	
-rpmd-run_1:
-	cd RPMD/run_1; bash ../launch.sh 31415 & sleep 5; \
-	cd $(driver_dir); bash launch_multi.sh 31415; \
-	wait
-
-rpmd-run_2:
-	cd RPMD/run_2; bash ../launch.sh 31414 & sleep 5; \
-	cd $(driver_dir); bash launch_multi.sh 31414; \
-	wait
-
-rpmd-run_3:
-	cd RPMD/run_3; bash ../launch.sh 31413 & sleep 5; \
-	cd $(driver_dir); bash launch_multi.sh 31413; \
-	wait
-
-rpmd-run_4:
-	cd RPMD/run_4; bash ../launch.sh 31412 & sleep 5; \
-	cd $(driver_dir); bash launch_multi.sh 31412; \
-	wait
-
-rpmd-run_5:
-	cd RPMD/run_5; bash ../launch.sh 31411 & sleep 5; \
-	cd $(driver_dir); bash launch_multi.sh 31411; \
-	wait
-
 clean:
 	rm -f */ph2-* */RESTART */EXIT; \
 	make -C RPMD clean; rm -rf RPMD/run_*
