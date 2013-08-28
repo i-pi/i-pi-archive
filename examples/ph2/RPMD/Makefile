@@ -21,6 +21,8 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+.PHONY: clean scripts postproc
+
 scripts: consolidate vel_est
 
 consolidate: consolidate.f
@@ -28,6 +30,11 @@ consolidate: consolidate.f
 	
 vel_est: vel_est.f
 	gfortran -O3 -o vel_est vel_est.f
-	
+
+postproc: consolidate vel_est
+	for r in `seq 1 2 3 4`; do cd run_$$r; for j in `seq 1 16`; do ../vel_est $$j &> /dev/null; done; cd ..; done; \
+	echo "4 16\n" | ./consolidate
+
 clean:
-	rm -f consolidate vel_est
+	rm -f consolidate vel_est vel_corr_tot.out */vel_corr*
+	

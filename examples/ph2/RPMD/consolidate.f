@@ -34,13 +34,13 @@
          real, parameter :: atomictime_to_ps = 41314.373
          real :: C(maxsteps)
          integer :: ndigits
-         integer, parameter :: nruns = 5
-         integer, parameter :: ncalcs = 100
+         integer, parameter :: nruns = 2
+         integer, parameter :: ncalcs = 10
          integer :: openfile, nfiles = nruns*ncalcs
          integer i, j, k
 
          C = 0.0
-
+         read(*,*) nruns, ncalcs
          write(output_file, '(A16)') "vel_corr_tot.out"
          open(unit=11, file=trim(output_file), action="WRITE")
          do i = 1, nruns

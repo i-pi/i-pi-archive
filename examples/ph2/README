@@ -7,7 +7,7 @@
    J. Chem. Phys. 122, 184503, (2005). 
    
 ** Glenn J. Martyna, et. al. is the basis for the tests in the
-   directory Tuckerman.
+   directories MHT-*.
 
  * State points: (N, P, T) = (172, 0 MPa, 14/17/20/25 K)
 
@@ -28,15 +28,12 @@ $ make
 
 driver:=~/bin/driver.x
 IPI:=~/bin/i-pi/i-pi
-driver_dir:=~/bin/i-pi/drivers
 
 
 ** Run the examples automatically:
  
  * These can be run automatically using the Makefile provided. The make 
-   targets are self-explanatory -- tuckerman_25K, tuckerman_20K, 
-   tuckerman_17K, tuckerman_14K, nvt, rpmd-run_1, rpmd-run_2, rpmd-run_3
-   rpmd-run_4 and rpmd-run_5. To run the NVT example, for instance, just type:
+   targets are self-explanatory. To run the NVT example, for instance, just type:
 
 $ make nvt
 
@@ -48,7 +45,7 @@ $ make clean
 ** Run the examples manually:
 
 
-** The Tuckerman directory:
+** The MHT directories:
 
  * Go back to the example directory and run
 
@@ -62,8 +59,9 @@ $ python path/i-pi input_equilibrated.xml
  
 $ path/drivers/driver.x -u -h T_25K -m sg -o 15.0
 
-   You can run multiple instances of the code; it is so fast that parallel 
-   scaling won't be appreciable.
+   You can run multiple instances of the code; evaluation of the forces is 
+   inexpensive relative to the communication and nuclear dynamics overhead, 
+   so that parallel scaling won't be appreciable.
 
  * If your system does not support Unix domain sockets, just set in 
    input_equilibrated.xml
@@ -99,19 +97,15 @@ $ path/drivers/driver.x -h ph2_nvt -m sg -o 15.0 -p port_no
 
 ** The RPMD directory:
 
- * There is one shell script used for starting the runs: launch.sh
-   This will run from one of the run_x directories, and start each of the
-   trajectories once the previous one has finished.
+  * The RPMD example requires one to create several run_** directories, in 
+    which a number of subsequent NVE runs are executed, with velocities being
+    randomized at the beginning of each run. Look at the RPMD/run_%/test16.out to
+    get an idea of how these runs should be performed.
 
- * For example, let us say that we wish to run run_3. The input file for run_3
-   uses port number 31413. Therefore to run this we change to the directory
-   run_3, and then input the following command:
+  * The RPMD directory also contains some post-processing code, that can be compiled by
 
-$ bash -c "bash ../launch.sh 31413 &"
+$ make scripts
+ 
+    and executed -- after the runs have been performed -- by
 
- * To do all of the runs, you can use:
-
-$ for a in `seq 1 5`; do port=$((31416-$a)); cd run_$a; bash -c "bash ../launch.sh $port &"; cd .. ; done
-
- * Instructions on how to run the driver code is given in the 
-   drivers/ directory.
+$ make postproc
