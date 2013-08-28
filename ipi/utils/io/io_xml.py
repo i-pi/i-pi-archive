@@ -112,7 +112,7 @@ class xml_handler(ContentHandler):
       #If level = 1, then buffer[0] holds all the data collected between the 
       #root tags, and buffer[1] holds all the data collected between the 
       #first child tag.
-      self.buffer = [""]
+      self.buffer = [[""]]
       
    def startElement(self, name, attrs): 
       """Reads an opening tag.
@@ -133,7 +133,7 @@ class xml_handler(ContentHandler):
       #adds it to the list of fields of the parent tag
       self.open[self.level].fields.append((name,newnode))
       #gets ready to read new data
-      self.buffer.append("")
+      self.buffer.append([""])
       self.level += 1      
 
    def characters(self, data):
@@ -147,8 +147,8 @@ class xml_handler(ContentHandler):
          data: The data to be read.
       """
 
-      self.buffer[self.level] = self.buffer[self.level] + data
-      
+      self.buffer[self.level].append(data)
+
    def endElement(self, name):
       """Reads a closing tag.
 
@@ -161,6 +161,7 @@ class xml_handler(ContentHandler):
 
       #all the text found between the tags stored in the appropriate xml_node
       #object
+      self.buffer[self.level] = ''.join(self.buffer[self.level])
       self.open[self.level].fields.append(("_text" , self.buffer[self.level]))
       #'closes' the xml_node object, as we are no longer within its tags, so
       #there is no more data to be added to it.
@@ -169,7 +170,6 @@ class xml_handler(ContentHandler):
       self.buffer.pop(self.level)
       self.open.pop(self.level)
       self.level -= 1
-
 
 def xml_parse_string(buf):
    """Parses a string made from a section of a xml input file.
@@ -221,9 +221,6 @@ def read_type(type, data):
 def read_float(data):
    """Reads a string and outputs a float.
 
-   Can also read from a fortran double precision format string of the form
-   1.0D0, by replacing the D with E to turn it into a python format float.
-
    Args:
       data: The string to be read in.
 
@@ -234,7 +231,7 @@ def read_float(data):
       A float.
    """
 
-   return float(data.replace("D","E"))
+   return float(data)
 
 def read_int(data):
    """Reads a string and outputs a integer.
