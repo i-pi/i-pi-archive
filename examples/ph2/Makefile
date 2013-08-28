@@ -70,5 +70,5 @@ rpmd: RPMD/run_1/test16.out RPMD/run_2/test16.out RPMD/run_3/test16.out RPMD/run
 	
 	
 clean:
-	rm -f */ph2-* */RESTART */EXIT; \
+	rm -f */ph2* */RESTART */EXIT; \
 	make -C RPMD clean; rm -rf RPMD/run_*
