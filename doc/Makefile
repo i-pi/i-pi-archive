@@ -29,7 +29,7 @@ manual.pdf: aux
 	pdflatex manual
 	
 clean: 
-	bash -c "rm -rf input_docs manual.{aux,bbl,blg,idx,log,lof,out,toc}"
+	bash -c "rm -rf input_docs manual.{aux,bbl,brf,blg,idx,log,lof,out,toc}"
 
 distclean: clean
 	rm -f manual.pdf manual.xml
