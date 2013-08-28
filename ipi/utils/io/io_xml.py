@@ -147,7 +147,7 @@ class xml_handler(ContentHandler):
          data: The data to be read.
       """
 
-      self.buffer[self.level] += data
+      self.buffer[self.level] = self.buffer[self.level] + data
       
    def endElement(self, name):
       """Reads a closing tag.
