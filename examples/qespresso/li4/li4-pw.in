@@ -32,6 +32,10 @@
     startingpot='file' 
     startingwfc='file'
 /
+&IONS
+    pot_extrapolation = 'second_order'
+    wfc_extrapolation = 'second_order'
+/
 ATOMIC_SPECIES   
     Li     6.941   Li.pbe-tm.UPF
 ATOMIC_POSITIONS (alat)
@@ -40,7 +44,7 @@ Li 0.5 0.5 0
 Li 0 0.5 0.5
 Li 0.5 0 0.5
 K_POINTS (automatic)
- 08 08 08 1 1 1
+ 04 04 04 1 1 1
 CELL_PARAMETERS
 1 0 0
 0 1 0
