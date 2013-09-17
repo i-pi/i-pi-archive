@@ -1,6 +1,6 @@
-# Makefile for the Quantum Espresso examples
+# Makefile for the FHI-AIMS examples
 # 
-# Copyright (C) 2013, Joshua More and Michele Ceriotti
+# Copyright (C) 2013, Mariana Rossi and Michele Ceriotti
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,44 +15,32 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http.//www.gnu.org/licenses/>.
 
-.PHONY: all water lithium clean
-all: water lithium zundel
+.PHONY: all zundel h2o-npt clean
+all: zundel h2o-npt
 
-PW:=pw.x
-CP:=cp.x
+AIMS:=aims.x
 IPI:=../../../i-pi
 
-define run_pw
+define run_aims
   for i in `seq 1 $1`; do \
-    mkdir -p run_$$i; cd run_$$i; \
-    $(PW) < ../$2 > qe.out & cd ..; \
-  done;
-endef
-
-define run_cp
-  for i in `seq 1 $1`; do \
-    mkdir -p run_$$i; cd run_$$i; \
-    $(CP) < ../$2 > qe.out & cd ..; \
+    mkdir -p run_$$i; cp $2_control.in run_$$i/control.in; cp $2_geometry.in run_$$i/geometry.in; cd run_$$i; \
+    $(AIMS) > aims.out & cd ..; \
   done;
 endef
 
 
 -include make.in
 
-water:
-	cd h2o; $(IPI) h2o-ipi.xml & sleep 3; \
-	$(call run_pw,4,h2o-pw.in) \
-	wait
-
-lithium:
-	cd li4; $(IPI) li4-ipi.xml & sleep 3; \
-	$(call run_pw,4,li4-pw.in) \
-	wait
-
 zundel:
-	cd zundel-cp; $(IPI) zundel-ipi.xml & sleep 3; \
-	$(call run_cp,4,zundel-cp.in) \
+	cd zundel; $(IPI) zundel-ipi.xml & sleep 3; \
+	$(call run_aims,3,zundel-aims) \
 	wait
+
+h2o-npt:
+	cd h2o-npt; $(IPI) h2o-ipi.xml & sleep 3; \
+	$(call run_aims,1,h2o-aims) \
+	wait	
 	
 clean:
 	rm -rf */*_output.* */*.log */run_* */RESTART */EXIT
+	
