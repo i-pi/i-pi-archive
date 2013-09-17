@@ -1,13 +1,12 @@
 <simulation verbosity="high">
    <initialize nbeads="1">
-    <file mode="xyz" units="angstrom">./h2o-cfg.xyz</file>
-    <cell> [ 23.47870, 0, 0,   0, 23.47870, 0,    0, 0, 23.47870 ] </cell> 
-    <velocities mode="thermal" units="kelvin"> 330 </velocities>
+    <file mode="pdb" units="angstrom">./h2o-cfg.pdb</file>
+    <velocities mode="thermal" units="kelvin"> 300 </velocities>
    </initialize>
    
    <forces>
      <socket mode='inet'>
-      <latency> 0.01 </latency>  <port>21012</port>  <timeout>2.0000000e+03</timeout>   <address> localhost </address>
+      <latency> 0.05 </latency>  <port>21012</port>  <timeout>2.0000000e+03</timeout>   <address> localhost </address>
      </socket>
    </forces>
    <total_steps>100000</total_steps>
@@ -30,12 +29,12 @@
         </thermostat>
         <tau units='femtosecond'> 100 </tau>
       </barostat>
-      <pressure units="bar"> 100 </pressure>
+      <pressure units="bar"> 1 </pressure>
       <thermostat mode='pile_g'>
          <tau units="femtosecond"> 10 </tau>
       </thermostat>
-      <timestep units="femtosecond"> 1 </timestep>
+      <timestep units="femtosecond"> 1.00 </timestep>
       <fixcom> False </fixcom>
-      <temperature units="kelvin"> 330 </temperature>
+      <temperature units="kelvin"> 300 </temperature>
    </ensemble>
 </simulation>   

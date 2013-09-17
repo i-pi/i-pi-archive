@@ -14,6 +14,7 @@ compute_analytical_stress .true.
   relativistic       none
   charge             0.0
   k_grid             1 1 1
+  vdw_correction_hirshfeld
 #
 #  SCF convergence
 # 
