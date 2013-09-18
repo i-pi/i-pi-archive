@@ -155,7 +155,7 @@ class DriverSocket(socket.socket):
             return Status.Disconnected
 
       try:
-         readable, writable, errored = select.select([self], [], [], 0.0)
+         readable, writable, errored = select.select([self], [], [])
       except:
          return Status.Disconnected
 
