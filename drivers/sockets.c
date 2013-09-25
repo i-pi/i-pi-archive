@@ -74,12 +74,12 @@ Args:
    {  // creates an internet socket
       struct sockaddr_in serv_addr;      psock=(struct sockaddr *)&serv_addr;     ssock=sizeof(serv_addr);
       sockfd = socket(AF_INET, SOCK_STREAM, 0);
-      if (sockfd < 0)  error("ERROR opening socket");
+      if (sockfd < 0)  error("Error opening socket");
 
       server = gethostbyname(host);
       if (server == NULL)
       {
-         fprintf(stderr, "ERROR, no such host %s \n", host);
+         fprintf(stderr, "Error opening socket: no such host %s \n", host);
          exit(-1);
       }
 
@@ -98,7 +98,7 @@ Args:
       strcpy(serv_addr.sun_path+9, host);
    }
 
-   if (connect(sockfd, psock, ssock) < 0) error("ERROR connecting");
+   if (connect(sockfd, psock, ssock) < 0) error("Error opening socket: wrong host address, or broken connection");
 
    *psockfd=sockfd;
 }
@@ -118,7 +118,7 @@ Args:
    int len=*plen;
 
    n = write(sockfd,data,len);
-   if (n < 0) error("ERROR writing to socket");
+   if (n < 0) error("Error writing to socket: server has quit or connection broke");
 }
 
 
@@ -141,7 +141,7 @@ Args:
    while (nr>0 && n<len )
    {  nr=read(sockfd,&data[n],len-n); n+=nr; }
 
-   if (n == 0) error("ERROR reading from socket");
+   if (n == 0) error("Error reading from socket: server has quit or connection broke");
 }
 
 
