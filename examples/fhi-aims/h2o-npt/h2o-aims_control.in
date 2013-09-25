@@ -4,7 +4,7 @@
 #
 #########################################################################################
 use_pimd_wrapper localhost 21012
-output_level MD_light
+#output_level MD_light
 compute_analytical_stress .true.
 #
 #  Physical model
@@ -18,6 +18,8 @@ compute_analytical_stress .true.
 #
 #  SCF convergence
 # 
+#  
+  wf_extrapolation   polynomial 3 2
   occupation_type    gaussian 0.05
   mixer              pulay
   n_max_pulay        10
