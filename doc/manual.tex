@@ -511,8 +511,10 @@ To install and run \ipi, you will need to have:
 \item Python version 2.4 or greater
 \item The Python numerical library NumPy
 \end{itemize}
-Note that \ipi does not need to be compiled, it can be run as a script
+Note that \ipi does not need to be compiled, the
+"i-pi" file in the root directory can be run as a script
 as long as the appropriate libraries have been installed.
+See \ref{runningsimulations} for more details.
 
 Additionally, most client codes will have their own requirements.
 Many of them, including the test client codes given in the {}``drivers''
@@ -524,6 +526,64 @@ instructions for these codes should be provided as part of the code
 distribution and on the appropriate website, as given in \ref{librarywebsites}.
 Patching for use with \ipi{} should not introduce further dependencies.
 
+\subsubsection{Using the setup.py module}
+
+While the "i-pi" file can be used to run any \ipi simulation, it
+is often more convenient to create an executable which can be run from
+anywhere, so that you do not always need to specify the path to the
+Python script.
+
+For this purpose we have included a module in the root directory of the \ipi
+distribution, "setup.py", which handles creating a package with the executable
+and all the modules which are necessary for it to run.
+The first step is to build the distribution using:
+
+\begin{code}
+> python setup.py build
+\end{code}
+Note that this requires the distutils package that comes with the
+python-dev package. 
+
+This creates a "build" directory containing only the files that
+are used to run an \ipi simulation, which can then be used to create the
+executable. This can be done in two ways,
+depending on whether or not the user has root access. If the user does
+have root access, then the following command will add the relevant source
+files to the standard Python library directory:
+
+\begin{code}
+> python setup.py install
+\end{code}
+This will install the package in the /usr/lib/py\_vers directory,
+where py\_vers is the version of Python that is being used.
+
+Otherwise, firstly the user must create directories for the package to
+go into, using:
+
+\begin{code}
+> mkdir ~/bin
+> mkdir ~/lib/py_vers
+> mkdir ~/lib/py_vers/site-packages
+\end{code}
+
+Next, you must tell Python where to find this library, by appending
+to the Linux environment variable PYTHONPATH, using:
+
+\begin{code}
+> export PYTHONPATH=$PYTHONPATH:~/lib/py_vers/site-packages/
+\end{code}
+
+Finally, the code can be installed using:
+
+\begin{code}
+> python setup.py install --prefix=~
+\end{code}
+
+Either way, it will now be possible to run the code automatically, using
+
+\begin{code}
+> i-pi input_file.xml
+\end{code}
 
 \subsection{\ipi download}
 
@@ -594,7 +654,7 @@ say, with the following command:
 > python setup.py install --prefix=np_dir
 \end{code}
 
-Next, you must tell python where to find this library, by appending
+Next, you must tell Python where to find this library, by appending
 to the Linux environment variable PYTHONPATH. If you are
 using Python version {}``py\_vers'', then the NumPy libraries will
 have been installed in the directory {}``np\_dir/lib/py\_vers/site-packages'',
@@ -657,7 +717,7 @@ As an example of the latter, CP2K version 2.4 can be downloaded to
 a directory {}``cp2k-2.4'' using the command:
 
 \begin{code}
-svn checkout svn://svn.code.sf.net/p/cp2k/code/branches/cp2k-2_4-branch cp2k-2.4
+> svn checkout svn://svn.code.sf.net/p/cp2k/code/branches/cp2k-2_4-branch cp2k-2.4
 \end{code}
 
 Before CP2K can run with \ipi, the code
@@ -1298,15 +1358,19 @@ The properties that are output are determined by the
 {}``\hyperref[PROPERTIES]{properties}''
 tag in the xml input file. The format of this tag is:
 
-\begin{code}<properties stride=`' filename=`' flush=`' shape=`'>
+\begin{code}
+<properties stride=`' filename=`' flush=`' shape=`'>
    [ prop1name{units}(arg1; ... ), prop2name{...}(...), ...  ]
-</properties>\end{code}
+</properties>
+\end{code}
 
 \noindent e.g.
 
-\begin{code}<properties stride=`100' filename=`output'>
+\begin{code}
+<properties stride=`100' filename=`output'>
    [ step, atom_x{angstrom}(index=2;bead=0) ]
-</properties>\end{code}
+</properties>
+\end{code}
 
 The attributes have the following meanings:
 \begin{description}
@@ -1399,9 +1463,11 @@ the state of the system to the point at which the file was created.
 This is specified by the {}``\hyperref[CHECKPOINT]{checkpoint}'' tag
 which has the syntax:
 
-\begin{code}<checkpoint stride=`' filename=`' overwrite=`'>
+\begin{code}
+<checkpoint stride=`' filename=`' overwrite=`'>
    step
-</checkpoint>\end{code}
+</checkpoint>
+\end{code}
 
 Again, this is similar to the {}``\hyperref[TRAJECTORY]{trajectory}'' and 
 {}``\hyperref[PROPERTIES]{properties}''
@@ -1417,7 +1483,9 @@ between different files.
 If the `step' parameter is not specified, the following syntax can
 also be used:
 
-\begin{code}<checkpoint stride=`' filename=`' overwrite=`'/>\end{code}
+\begin{code}
+<checkpoint stride=`' filename=`' overwrite=`'/>
+\end{code}
 
 
 \subsubsection{Soft exit and RESTART}
