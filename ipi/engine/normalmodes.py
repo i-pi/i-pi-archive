@@ -9,7 +9,7 @@ the Free Software Foundation, either version 3 of the License, or
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
@@ -353,9 +353,10 @@ class NormalModes(dobject):
       pnm = depstrip(self.pnm)
       nmf = depstrip(self.nm_factor)
 
+      # computes the MD ke in the normal modes representation, to properly account for CMD mass scaling
       for b in range(self.nbeads):
          sp = pnm[b]/sm                      # mass-scaled momentum of b-th NM
-         kmd[b] = np.dot(sp,sp)*0.5/nmf[b]   # also takes care of the possibility of having non-RPMD masses
+         kmd[b] = np.dot(sp,sp)*0.5/nmf[b]   # include the partially adiabatic CMD mass scaling
 
       return kmd
 
