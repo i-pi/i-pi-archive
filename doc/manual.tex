@@ -506,15 +506,16 @@ thermostat (PI+GLE/PIGLET) calculations.
 
 \subsection{Requirements}
 
-To install and run \ipi, you will need to have:
+\ipi is Python code, and as such strictly speaking does not 
+need to be compiled and installed. The {\tt i-pi} file in the
+root directory of the distribution is the main (executable) script, 
+and can be run as long as the system has installed:
 \begin{itemize}
 \item Python version 2.4 or greater
 \item The Python numerical library NumPy
 \end{itemize}
-Note that \ipi does not need to be compiled, the
-"i-pi" file in the root directory can be run as a script
-as long as the appropriate libraries have been installed.
-See \ref{runningsimulations} for more details.
+See \ref{runningsimulations} for more details on how to launch
+\ipi.
 
 Additionally, most client codes will have their own requirements.
 Many of them, including the test client codes given in the {}``drivers''
@@ -528,14 +529,14 @@ Patching for use with \ipi{} should not introduce further dependencies.
 
 \subsubsection{Using the setup.py module}
 
-While the "i-pi" file can be used to run any \ipi simulation, it
-is often more convenient to create an executable which can be run from
-anywhere, so that you do not always need to specify the path to the
-Python script.
+While the {\tt i-pi} file can be used to run any \ipi simulation, it
+is often more convenient to install the package to the system's 
+Python modules path, so that it is accessible by all users and can
+be run without specifying the path to the Python script.
 
 For this purpose we have included a module in the root directory of the \ipi
-distribution, "setup.py", which handles creating a package with the executable
-and all the modules which are necessary for it to run.
+distribution, {\tt setup.py}, which handles creating a package with the 
+executable and all the modules which are necessary for it to run.
 The first step is to build the distribution using:
 
 \begin{code}
@@ -556,8 +557,10 @@ files to the standard Python library directory:
 \end{code}
 This will install the package in the /usr/lib/py\_vers directory,
 where py\_vers is the version of Python that is being used.
+This requires administrator priviledges.
 
-Otherwise, firstly the user must create directories for the package to
+Otherwise, one can install \ipi in a local Python path. If such 
+path does not exist yet, one must create directories for the package to
 go into, using:
 
 \begin{code}
@@ -571,7 +574,7 @@ to the Linux environment variable PYTHONPATH, using:
 
 \begin{code}
 > export PYTHONPATH=$PYTHONPATH:~/lib/py_vers/site-packages/
-\end{code}
+\end{code} 
 
 Finally, the code can be installed using:
 
