@@ -32,7 +32,7 @@ Classes:
       scratch.
 """
 
-__all__ = ['Ensemble', 'NVEEnsemble', 'NVTEnsemble', 'NPTEnsemble', 'ReplayEnsemble']
+__all__ = ['Ensemble', 'NVEEnsemble', 'NVTEnsemble', 'NPTEnsemble', 'ReplayEnsemble', 'ParaTempEnsemble']
 
 import numpy as np
 import time
@@ -562,3 +562,127 @@ class ReplayEnsemble(Ensemble):
       self.qtime += time.time()
 
 
+
+class ParaTempEnsemble(Ensemble):
+   """Ensemble object for doing (classical) parallel tempering simulations.
+
+   Uses the path integral infrastructure but actually runs parallel tempering.
+   
+   Attributes:
+      ptime: The time taken in updating the velocities.
+      qtime: The time taken in updating the positions.
+      ttime: The time taken in applying the thermostat steps.
+
+   Depend objects:
+      econs: Conserved energy quantity. Depends on the bead kinetic and
+         potential energy, and the spring potential energy.
+   """
+
+   def __init__(self, dt, templist, temp=0.0, thermostat=None, fixcom=False, thermolist=None):
+      """Initialises ParaTemp ensemble
+
+      Args:
+         dt: The simulation timestep.
+         temp: The system temperature list,
+         fixcom: An optional boolean which decides whether the centre of mass
+            motion will be constrained or not. Defaults to False.
+         thermostat: A thermostat object to keep the temperature constant.
+            Defaults to Thermostat()         
+      """
+
+      super(ParaTempEnsemble,self).__init__(dt=dt,temp=temp, fixcom=fixcom)
+      
+      dset(self, "templist", depend_array(name='templist',  value=templist))
+      
+      if thermolist is None:               
+         if thermostat is None:
+            thermolist = [ Thermostat() for t in temp ]
+         else:
+            thermolist = [ deepcopy(thermostat) for t in temp ]         
+      
+      self.thermostat = thermolist[0]
+      self.thermolist = thermolist
+
+   def bind(self, beads, nm, cell, bforce, prng):
+      """Binds beads, cell, bforce and prng to the ensemble.
+
+      This takes a beads object, a cell object, a forcefield object and a
+      random number generator object and makes them members of the ensemble.
+      It also then creates the objects that will hold the data needed in the
+      ensemble algorithms and the dependency network. Also note that the
+      thermostat timestep and temperature are defined relative to the system
+      temperature, and the the thermostat temperature is held at the
+      higher simulation temperature, as is appropriate.
+
+      Args:
+         beads: The beads object from whcih the bead positions are taken.
+         nm: A normal modes object used to do the normal modes transformation.
+         cell: The cell object from which the system box is taken.
+         bforce: The forcefield object from which the force and virial are
+            taken.
+         prng: The random number generator object which controls random number
+            generation.
+      """
+
+      # store local references to the different bits of the simulation
+      self.beads = beads
+      self.cell = cell
+      self.forces = bforce
+      self.prng = prng
+      self.nm = nm
+      
+      # dependencies of the conserved quantity
+      dget(self,"econs").add_dependency(dget(self.beads, "kin"))
+      dget(self,"econs").add_dependency(dget(self.forces, "pot"))
+      dget(self,"econs").add_dependency(dget(self.beads, "vpath"))
+      
+      
+      fixdof = None
+      if self.fixcom:
+         fixdof = 3
+
+      #decides whether the thermostat will work in the normal mode or
+      #the bead representation.
+      
+      if len(self.templist) != self.beads.nbeads:
+         raise ValueError("Number of replicas is inconsistent with temperature array in ParaTemp") 
+         
+      def make_tempgetter(k):
+         return lambda: self.templist[k]
+         
+      for i in range(self.beads.nbeads):
+         t=self.thermolist[i]
+         t.bind(pm=[self.beads.p[i], self.beads.m3], prng=prng, fixdof=fixdof)
+         dget(t,"temp").add_dependency(dget(self,"templist"))
+         dget(t,"temp")._func = make_tempgetter(i)
+         deppipe(self,"dt", t, "dt")
+         dget(self,"econs").add_dependency(dget(t, "ethermo"))
+
+   def pstep(self):
+      """Velocity Verlet momenta propagator."""
+
+      self.beads.p += depstrip(self.forces.f)*(self.dt*0.5)
+
+   def qstep(self):
+      """Velocity Verlet centroid position propagator."""
+
+      self.beads.q += depstrip(self.beads.p)/depstrip(self.beads.m3)*self.dt
+
+   def step(self):
+      """Does one simulation time step."""
+
+      self.ptime = -time.time()
+      self.pstep()
+      self.ptime += time.time()
+
+      self.qtime = -time.time()
+      self.qstep()
+      self.qtime += time.time()
+
+      self.ptime -= time.time()
+      self.pstep()
+      self.ptime += time.time()
+#~ 
+      #~ self.ttime = -time.time()
+      #~ self.rmcom()
+      #~ self.ttime += time.time()

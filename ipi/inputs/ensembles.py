@@ -63,7 +63,7 @@ class InputEnsemble(Input):
 
    attribs={"mode"  : (InputAttribute, {"dtype"   : str,
                                     "help"    : "The ensemble that will be sampled during the simulation. 'replay' means that a simulation is restarted from a previous simulation.",
-                                    "options" : ['nve', 'nvt', 'npt', 'replay']}) }
+                                    "options" : ['nve', 'nvt', 'npt', 'replay', 'paratemp']}) }
    fields={"thermostat" : (InputThermo, {"default"   : input_default(factory=ipi.engine.thermostats.Thermostat),
                                          "help"      : "The thermostat for the atoms, keeps the atom velocity distribution at the correct temperature."} ),
            "barostat" : (InputBaro, {"default"       : input_default(factory=ipi.engine.barostats.Barostat),
@@ -84,8 +84,16 @@ class InputEnsemble(Input):
                                    "default"         : True,
                                    "help"            : "This describes whether the centre of mass of the particles is fixed."}),
            "replay_file": (InputInitFile, {"default" : input_default(factory=ipi.engine.initializer.InitBase),
-                           "help"            : "This describes the location to read a trajectory file from."})
+                           "help"            : "This describes the location to read a trajectory file from."}),
+                           
+           "pt_templist" : (InputArray, {"dtype"     : float,
+                                         "default"   : input_default(factory=np.zeros, args = (0,)),
+                                         "help"      : "List of temperatures for a parallel tempering simulation",
+                                         "dimension" : "temperature" })
          }
+   dynamic = { "pt_thermostat" : ( InputThermo, {"default"   : input_default(factory=ipi.engine.thermostats.Thermostat),
+                                         "help"      : "A list of thermostats of the different replicas in a parallel tempering run" } )
+          }
 
    default_help = "Holds all the information that is ensemble specific, such as the temperature and the external pressure, and the thermostats and barostats that control it."
    default_label = "ENSEMBLE"
@@ -110,6 +118,9 @@ class InputEnsemble(Input):
       elif type(ens) is NPTEnsemble:
          self.mode.store("npt")
          tens = 3
+      elif type(ens) is ParaTempEnsemble:
+         self.mode.store("paratemp")
+         tens = 4
 
       self.timestep.store(ens.dt)
       self.temperature.store(ens.temp)
@@ -119,10 +130,15 @@ class InputEnsemble(Input):
       if tens > 1:
          self.thermostat.store(ens.thermostat)
          self.fixcom.store(ens.fixcom)
-      if tens > 2:
-         self.barostat.store(ens.barostat)
       if tens == 3:
+         self.barostat.store(ens.barostat)
          self.pressure.store(ens.pext)
+      if tens == 4:
+         self.pt_templist.store(ens.templist)                  
+         for t in ens.thermolist:
+            it = InputThermo()
+            it.store(t)
+            self.extra.append(("thermo",it))
 
 
    def fetch(self):
@@ -148,6 +164,15 @@ class InputEnsemble(Input):
       elif self.mode.fetch() == "replay":
          ens = ReplayEnsemble(dt=self.timestep.fetch(),
             temp=self.temperature.fetch(),fixcom=False,intraj=self.replay_file.fetch() )
+      elif self.mode.fetch() == "paratemp":
+         thlist=[]
+         for (k,v) in self.extra:
+            thlist.append(v.fetch())
+         if thlist == []: thlist=None
+         ens = ParaTempEnsemble(dt=self.timestep.fetch(),
+            templist=self.pt_templist.fetch(),temp=self.temperature.fetch(),
+            thermolist=thlist,
+            thermostat=self.thermostat.fetch(), fixcom=False)            
       else:
          raise ValueError("'" + self.mode.fetch() + "' is not a supported ensemble mode.")
 
@@ -170,7 +195,7 @@ class InputEnsemble(Input):
          if self.barostat._explicit == False:
             raise ValueError("No barostat tag supplied for NPT simulation")
          if self.barostat.thermostat._explicit == False:
-            raise ValueError("No thermostat tag supplied in barostat for NPT simulation")
+            raise ValueError("No thermostat tag supplied in barostat for NPT simulation")      
 
       if self.timestep.fetch() <= 0:
          raise ValueError("Non-positive timestep specified.")
@@ -183,3 +208,7 @@ class InputEnsemble(Input):
       if self.mode.fetch() == "npt" or self.mode.fetch() == "nvt":
          if not self.temperature._explicit:
             raise ValueError("Temperature should be supplied for constant temperature simulation")
+
+      if self.mode.fetch() == "paratemp": 
+         if not self.pt_templist._explicit:
+            raise ValueError("List of temperatures should be supplied for parallel tempering simulation")

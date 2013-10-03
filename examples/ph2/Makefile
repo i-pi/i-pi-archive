@@ -15,8 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http.//www.gnu.org/licenses/>.
 
-.PHONY: all clean mht-25K mht-20K mht-17K mht-14K nvt rpmd
-all: mht-25K mht-20K mht-17K mht-14K nvt rpmd
+.PHONY: all clean mht-25K mht-20K mht-17K mht-14K nvt rpmd paratemp
+all: mht-25K mht-20K mht-17K mht-14K nvt rpmd paratemp
 
 driver:=../../../drivers/driver.x
 IPI:=../../../i-pi
@@ -31,6 +31,11 @@ endef
 nvt:
 	cd nvt; $(IPI) input.xml & sleep 5; \
 	$(call run_driver,4,ph2_nvt); \
+	wait
+
+paratemp: 
+	cd paratemp; $(IPI) input.xml & sleep 5; \
+	$(call run_driver,4,ph2_pt); \
 	wait
 
 mht-25K:
