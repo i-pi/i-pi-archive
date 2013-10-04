@@ -9,7 +9,7 @@ the Free Software Foundation, either version 3 of the License, or
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
@@ -33,18 +33,10 @@ from ipi.utils.prng   import *
 from ipi.utils.io     import *
 from ipi.utils.io.io_xml import *
 from ipi.utils.messages import verbosity
-from ipi.inputs.forces import InputForces
 from ipi.inputs.prng import InputRandom
-from ipi.inputs.initializer import InputInitializer
-from ipi.inputs.beads import InputBeads
-from ipi.inputs.cell import InputCell
-from ipi.inputs.ensembles import InputEnsemble
+from ipi.inputs.system import InputSystem
 from ipi.inputs.outputs import InputOutputs
-from ipi.inputs.normalmodes import InputNormalModes
-from ipi.engine.normalmodes import NormalModes
-from ipi.engine.atoms import Atoms
-from ipi.engine.beads import Beads
-from ipi.engine.cell import Cell
+from ipi.inputs.initializer import InputInitializer
 from ipi.engine.initializer import Initializer
 
 class InputSimulation(Input):
@@ -72,18 +64,11 @@ class InputSimulation(Input):
          be output.
    """
 
-   fields = { "forces" :   (InputForces,    { "help"  : InputForces.default_help }),
-             "ensemble": (InputEnsemble, { "help"  : InputEnsemble.default_help } ),
+   fields = {
              "prng" :    (InputRandom,   { "help"  : InputRandom.default_help,
                                          "default" : input_default(factory=Random)} ),
              "initialize" : (InputInitializer, { "help" : InputInitializer.default_help,
                                                 "default" : input_default(factory=Initializer) } ),
-             "beads" :   (InputBeads, { "help"     : InputBeads.default_help,
-                                        "default"  : input_default(factory=Beads, kwargs={'natoms': 0, 'nbeads': 0}) } ),
-             "normal_modes" :   (InputNormalModes, { "help"     : InputNormalModes.default_help,
-                                        "default"  : input_default(factory=NormalModes, kwargs={'mode': "rpmd"}) } ),
-             "cell" :    (InputCell,   { "help"    : InputCell.default_help,
-                                        "default"  : input_default(factory=Cell) }),
              "output" :  (InputOutputs, { "help"   : InputOutputs.default_help,
                                           "default": input_default(factory=InputOutputs.make_default)  }),
              "step" :       ( InputValue, { "dtype"    : int,
@@ -101,7 +86,15 @@ class InputSimulation(Input):
                                       "default" : "low",
                                       "options" : [ "quiet", "low", "medium", "high", "debug" ],
                                       "help"    : "The level of output on stdout."
-                                         })
+                                         }),
+               "mode"  : (InputAttribute, {"dtype"   : str,
+                                    "default" : "md",
+                                    "help"    : "What kind of simulation should be run.",
+                                    "options" : ['md', 'paratemp']})
+             }
+
+   dynamic = {
+             "system" :   (InputSystem,    { "help"  : InputSystem.default_help })
              }
 
    default_help = "This is the top level class that deals with the running of the simulation, including holding the simulation specific properties such as the time step and outputting the data."
@@ -115,18 +108,13 @@ class InputSimulation(Input):
       """
 
       super(InputSimulation,self).store()
-      self.forces.store(simul.flist)
-      self.ensemble.store(simul.ensemble)
 
-      self.beads.store(simul.beads)
 
-      self.normal_modes.store(simul.nm)
-      self.cell.store(simul.cell)
+      self.output.store(simul.outputs)
       self.prng.store(simul.prng)
       self.step.store(simul.step)
       self.total_steps.store(simul.tsteps)
       self.total_time.store(simul.ttime)
-      self.output.store(simul.outputs)
 
       # this we pick from the messages class. kind of a "global" but it seems to
       # be the best way to pass around the (global) information on the level of output.
@@ -142,6 +130,14 @@ class InputSimulation(Input):
          self.verbosity.store("quiet")
       else:
          raise ValueError("Invalid verbosity level")
+
+      self.extra = []
+
+      for s in simul.syslist:
+         isys = InputSystem()
+         isys.store(s)
+         self.extra.append(("system",isys))
+
 
    def fetch(self):
       """Creates a simulation object.
@@ -162,12 +158,18 @@ class InputSimulation(Input):
       # just one simulation object
       verbosity.level=self.verbosity.fetch()
 
+      syslist=[]
+      for (k,v) in self.extra:
+         syslist.append(v.fetch())
+
+
       # this creates a simulation object which gathers all the little bits
       #TODO use named arguments since this list is a bit too long...
-      rsim = ipi.engine.simulation.Simulation(self.beads.fetch(), self.cell.fetch(),
-               self.forces.fetch(), self.ensemble.fetch(), self.prng.fetch(),
-                  self.output.fetch(), self.normal_modes.fetch(),
-                     self.initialize.fetch(), self.step.fetch(),
+      rsim = ipi.engine.simulation.Simulation(
+                  syslist, self.initialize.fetch(),
+                  self.output.fetch(),
+                  self.prng.fetch(),
+                      self.step.fetch(),
                         tsteps=self.total_steps.fetch(),
                            ttime=self.total_time.fetch())
 

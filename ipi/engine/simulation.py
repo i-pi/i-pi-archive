@@ -10,7 +10,7 @@ the Free Software Foundation, either version 3 of the License, or
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
@@ -30,6 +30,7 @@ __all__ = ['Simulation']
 
 import numpy as np
 import os.path, sys, time
+from copy import deepcopy
 from ipi.utils.depend import *
 from ipi.utils.units  import *
 from ipi.utils.prng   import *
@@ -80,19 +81,13 @@ class Simulation(dobject):
       step: The current simulation step.
    """
 
-   def __init__(self, beads, cell, forces, ensemble, prng, outputs, nm, init, step=0, tsteps=1000, ttime=0):
+   def __init__(self, syslist, init, outputs, prng, step=0, tsteps=1000, ttime=0):
       """Initialises Simulation class.
 
       Args:
-         beads: A beads object giving the atom positions.
-         cell: A cell object giving the system box.
-         forces: A forcefield object giving the force calculator for each
-            replica of the system.
-         ensemble: An ensemble object giving the objects necessary for
-            producing the correct ensemble.
+         syslist: a list of system objects
          prng: A random number object.
          outputs: A list of output objects.
-         nm: A class dealing with path NM operations.
          init: A class to deal with initializing the simulation object.
          step: An optional integer giving the current simulation time step.
             Defaults to 0.
@@ -104,42 +99,49 @@ class Simulation(dobject):
 
       info(" # Initializing simulation object ", verbosity.low )
       self.prng = prng
-      self.ensemble = ensemble
-      self.beads = beads
-      self.cell = cell
-      self.nm = nm
 
       # initialize the configuration of the system
       self.init = init
-      init.init_stage1(self)
 
-      self.flist = forces
-      self.forces = Forces()
-      self.outputs = outputs
+      self.syslist = syslist
+      for s in syslist:
+         s.prng = self.prng # binds the system's prng to self prng
+         init.init_stage1(s)
+
+      self.outtemplate = outputs
 
       dset(self, "step", depend_value(name="step", value=step))
       self.tsteps = tsteps
       self.ttime = ttime
 
-      self.properties = Properties()
-      self.trajs = Trajectories()
       self.chk = None
       self.rollback = True
 
    def bind(self):
       """Calls the bind routines for all the objects in the simulation."""
 
-      # binds important computation engines
-      self.nm.bind(self.beads, self.ensemble)
-      self.forces.bind(self.beads, self.cell, self.flist)
-      self.ensemble.bind(self.beads, self.nm, self.cell, self.forces, self.prng)
-      self.init.init_stage2(self)
+      for s in self.syslist:
+         # binds important computation engines
+         s.bind(self)
+         self.init.init_stage2(s)
 
-      # binds output management objects
-      self.properties.bind(self)
-      self.trajs.bind(self)
-      for o in self.outputs:
-         o.bind(self)
+      self.outputs = []
+      for o in self.outtemplate:
+         if type(o) is CheckpointOutput:    # checkpoints are output per simulation
+            o.bind(self)
+            self.outputs.append(o)
+         else:   # properties and trajectories are output per system
+            isys=0
+            for s in self.syslist:   # create multiple copies
+               no = deepcopy(o)
+               if len(self.syslist) > 1:
+                  # zero-padded system number
+                  pads = ( ("S%0" + str(int(1 + np.floor(np.log(len(self.syslist))/np.log(10)))) + "d_") % (isys) )
+                  no.filename = pads+no.filename
+               no.bind(s)
+               self.outputs.append(no)
+               isys+=1
+
 
       self.chk = CheckpointOutput("RESTART", 1, True, 0)
       self.chk.bind(self)
@@ -158,9 +160,11 @@ class Simulation(dobject):
          self.step += 1
       if not self.rollback:
          self.chk.store()
+
       self.chk.write(store=False)
 
-      self.forces.stop()
+      for s in self.syslist:
+         s.forces.stop()
 
    def run(self):
       """Runs the simulation.
@@ -170,7 +174,8 @@ class Simulation(dobject):
       in the communication between the driver and the PIMD code.
       """
 
-      self.forces.run()
+      for s in self.syslist:
+         s.forces.run()
 
       # prints inital configuration -- only if we are not restarting
       if (self.step == 0):
@@ -196,7 +201,9 @@ class Simulation(dobject):
          steptime = -time.time()
          self.chk.store()
 
-         self.ensemble.step()
+         # steps through all the systems
+         for s in self.syslist:
+            s.ensemble.step()
 
          for o in self.outputs:
             o.write()
@@ -207,21 +214,15 @@ class Simulation(dobject):
 
          steptime += time.time()
          ttot += steptime
-         tptime += self.ensemble.ptime
-         tqtime += self.ensemble.qtime
-         tttime += self.ensemble.ttime
          cstep += 1
 
          if verbosity.high or (verbosity.medium and self.step%100 == 0) or (verbosity.low and self.step%1000 == 0):
-            info(" # Average timings at MD step % 7d. t/step: %10.5e [p: %10.5e  q: %10.5e  t: %10.5e]" %
-               ( self.step, ttot/cstep, tptime/cstep, tqtime/cstep, tttime/cstep ) )
+            info(" # Average timings at MD step % 7d. t/step: %10.5e" %
+               ( self.step, ttot/cstep ) )
             cstep = 0
-            tptime = 0.0
-            tqtime = 0.0
-            tttime = 0.0
             ttot = 0.0
-            info(" # MD diagnostics: V: %10.5e    Kcv: %10.5e   Ecns: %10.5e" %
-               (self.properties["potential"], self.properties["kinetic_cv"], self.properties["conserved"] ) )
+         #   info(" # MD diagnostics: V: %10.5e    Kcv: %10.5e   Ecns: %10.5e" %
+         #      (self.properties["potential"], self.properties["kinetic_cv"], self.properties["conserved"] ) )
 
          if (self.ttime > 0 and time.time() - simtime > self.ttime):
             info(" # Wall clock time expired! Bye bye!", verbosity.low )

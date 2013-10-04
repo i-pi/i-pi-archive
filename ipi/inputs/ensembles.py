@@ -138,7 +138,7 @@ class InputEnsemble(Input):
          for t in ens.thermolist:
             it = InputThermo()
             it.store(t)
-            self.extra.append(("thermo",it))
+            self.extra.append(("pt_thermostat",it))
 
 
    def fetch(self):

@@ -10,7 +10,7 @@ the Free Software Foundation, either version 3 of the License, or
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
@@ -36,6 +36,7 @@ __all__ = ['Ensemble', 'NVEEnsemble', 'NVTEnsemble', 'NPTEnsemble', 'ReplayEnsem
 
 import numpy as np
 import time
+from copy import deepcopy
 
 from ipi.utils.depend import *
 from ipi.utils import units
@@ -567,7 +568,7 @@ class ParaTempEnsemble(Ensemble):
    """Ensemble object for doing (classical) parallel tempering simulations.
 
    Uses the path integral infrastructure but actually runs parallel tempering.
-   
+
    Attributes:
       ptime: The time taken in updating the velocities.
       qtime: The time taken in updating the positions.
@@ -587,19 +588,20 @@ class ParaTempEnsemble(Ensemble):
          fixcom: An optional boolean which decides whether the centre of mass
             motion will be constrained or not. Defaults to False.
          thermostat: A thermostat object to keep the temperature constant.
-            Defaults to Thermostat()         
+            Defaults to Thermostat()
       """
 
       super(ParaTempEnsemble,self).__init__(dt=dt,temp=temp, fixcom=fixcom)
-      
+
+      self.temp = 1e-100
       dset(self, "templist", depend_array(name='templist',  value=templist))
-      
-      if thermolist is None:               
+
+      if thermolist is None:
          if thermostat is None:
-            thermolist = [ Thermostat() for t in temp ]
+            thermolist = [ Thermostat() for t in templist ]
          else:
-            thermolist = [ deepcopy(thermostat) for t in temp ]         
-      
+            thermolist = [ deepcopy(thermostat) for t in templist ]
+
       self.thermostat = thermolist[0]
       self.thermolist = thermolist
 
@@ -630,29 +632,29 @@ class ParaTempEnsemble(Ensemble):
       self.forces = bforce
       self.prng = prng
       self.nm = nm
-      
+
       # dependencies of the conserved quantity
       dget(self,"econs").add_dependency(dget(self.beads, "kin"))
       dget(self,"econs").add_dependency(dget(self.forces, "pot"))
       dget(self,"econs").add_dependency(dget(self.beads, "vpath"))
-      
-      
+
+
       fixdof = None
       if self.fixcom:
          fixdof = 3
 
       #decides whether the thermostat will work in the normal mode or
       #the bead representation.
-      
+
       if len(self.templist) != self.beads.nbeads:
-         raise ValueError("Number of replicas is inconsistent with temperature array in ParaTemp") 
-         
+         raise ValueError("Number of replicas is inconsistent with temperature array in ParaTemp")
+
       def make_tempgetter(k):
          return lambda: self.templist[k]
-         
+
       for i in range(self.beads.nbeads):
          t=self.thermolist[i]
-         t.bind(pm=[self.beads.p[i], self.beads.m3], prng=prng, fixdof=fixdof)
+         t.bind(pm=[self.beads.p[i], self.beads.m3[i]], prng=prng, fixdof=fixdof)
          dget(t,"temp").add_dependency(dget(self,"templist"))
          dget(t,"temp")._func = make_tempgetter(i)
          deppipe(self,"dt", t, "dt")
@@ -671,6 +673,11 @@ class ParaTempEnsemble(Ensemble):
    def step(self):
       """Does one simulation time step."""
 
+      self.ttime = -time.time()
+      for t in self.thermolist:
+         t.step()
+      self.ttime += time.time()
+
       self.ptime = -time.time()
       self.pstep()
       self.ptime += time.time()
@@ -682,7 +689,8 @@ class ParaTempEnsemble(Ensemble):
       self.ptime -= time.time()
       self.pstep()
       self.ptime += time.time()
-#~ 
-      #~ self.ttime = -time.time()
-      #~ self.rmcom()
-      #~ self.ttime += time.time()
+
+      self.ttime = -time.time()
+      for t in self.thermolist:
+         t.step()
+      self.ttime += time.time()

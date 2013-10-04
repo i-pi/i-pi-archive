@@ -4,35 +4,26 @@
       <velocities mode="thermal" units='kelvin'> 50 </velocities>
    </initialize>
    <output prefix='ph2'>
-      <properties stride='5' filename='out'>  [ step, time{picosecond}, conserved{kelvin}, temperature{kelvin}, kinetic_cv{kelvin}, potential{kelvin}, pressure_cv{megapascal}] </properties>
+      <properties stride='5' filename='out'>  [ step, time{picosecond}, conserved{kelvin}, temperature{kelvin}, kinetic_cv{kelvin}, potential{kelvin}, pressure_cv{megapascal},
+temperature{kelvin}(bead=0), temperature{kelvin}(bead=1), temperature{kelvin}(bead=2), temperature{kelvin}(bead=3)
+] </properties>
       <trajectory stride='100' filename='pos'>positions{angstrom}</trajectory>
       <checkpoint stride='2000'/>
    </output>
-   <total_steps>100000</total_steps>
    <prng><seed>31415</seed></prng>
-   <forces>
-      <socket mode="unix">
-         <address>ph2_pt</address>
-      </socket>
-   </forces>
-   <ensemble mode='paratemp'>
-      <thermostat mode='langevin'>
-         <tau units='femtosecond'>25</tau>
-      </thermostat>
-      <timestep units='femtosecond'> 1 </timestep>
-      <temperature units='kelvin'>25</temperature>
-      <pt_templist units='kelvin'> [ 15, 20, 25, 30 ] </pt_templist>
-      <pt_thermostat mode='langevin'>
-        <tau units='femtosecond'>501</tau>
-      </pt_thermostat>
-      <pt_thermostat mode='langevin'>
-        <tau units='femtosecond'>502</tau>
-      </pt_thermostat>
-      <pt_thermostat mode='langevin'>
-        <tau units='femtosecond'>503</tau>
-      </pt_thermostat>
-      <pt_thermostat mode='langevin'>
-        <tau units='femtosecond'>504</tau>
-      </pt_thermostat>      
-   </ensemble>
+   <total_steps>100000</total_steps>
+   <system>
+      <forces>
+         <socket mode="unix">
+            <address>ph2_pt</address>
+         </socket>
+      </forces>
+      <ensemble mode='nvt'>
+         <thermostat mode='langevin'>
+            <tau units='femtosecond'>25</tau>
+         </thermostat>
+         <timestep units='femtosecond'> 1 </timestep>
+         <temperature units='kelvin'>25</temperature>
+      </ensemble>
+   </system>
 </simulation>

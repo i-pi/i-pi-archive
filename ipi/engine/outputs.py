@@ -9,7 +9,7 @@ the Free Software Foundation, either version 3 of the License, or
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
@@ -48,7 +48,7 @@ class PropertyOutput(dobject):
       flush: How often we should flush to disk.
       nout: Number of steps since data was last flushed.
       out: The output stream on which to output the properties.
-      simul: The simulation object to get the data to be output from.
+      system: The system object to get the data to be output from.
    """
 
 
@@ -75,21 +75,21 @@ class PropertyOutput(dobject):
       self.nout = 0
       self.out = None
 
-   def bind(self, simul):
-      """Binds output proxy to simulation object.
+   def bind(self, system):
+      """Binds output proxy to System object.
 
       Args:
-         simul: A simulation object to be bound.
+         system: A System object to be bound.
       """
 
-      self.simul = simul
+      self.system = system
 
       # Checks as soon as possible if some asked-for properties are
       # missing or mispelled
       for what in self.outlist:
          key = getkey(what)
-         if not key in self.simul.properties.property_dict.keys():
-            print "Computable properties list: ", self.simul.properties.property_dict.keys()
+         if not key in self.system.properties.property_dict.keys():
+            print "Computable properties list: ", self.system.properties.property_dict.keys()
             raise KeyError(key + " is not a recognized property")
 
       self.open_stream()
@@ -103,12 +103,12 @@ class PropertyOutput(dobject):
          raise ValueError("Could not open file " + self.filename + " for output")
 
       # print nice header if information is available on the properties
-      if (self.simul.step == 0) :
+      if (self.system.simul.step == 0) :
          icol = 1
          for what in self.outlist:
             ohead = "# "
             key = getkey(what)
-            prop = self.simul.properties.property_dict[key]
+            prop = self.system.properties.property_dict[key]
 
             if "size" in prop and prop["size"] > 1:
                ohead += "cols.  %3d-%-3d" % ( icol, icol+prop["size"] - 1 )
@@ -137,12 +137,12 @@ class PropertyOutput(dobject):
             are not contained in the property_dict member of properties.
       """
 
-      if not (self.simul.step + 1) % self.stride == 0:
+      if not (self.system.simul.step + 1) % self.stride == 0:
          return
       self.out.write("  ")
       for what in self.outlist:
          try:
-            quantity = self.simul.properties[what]
+            quantity = self.system.properties[what]
          except KeyError:
             raise KeyError(what + " is not a recognized property")
          if not hasattr(quantity,"__len__") :
@@ -178,7 +178,7 @@ class TrajectoryOutput(dobject):
       nout: Number of steps since data was last flushed.
       ibead: Index of the replica to print the trajectory of.
       cell_units: The units that the cell parameters are given in.
-      simul: The simulation object to get the data to be output from.
+      system: The System object to get the data to be output from.
    """
 
    def __init__(self, filename="out", stride=1, flush=1, what="", format="xyz", cell_units="atomic_unit", ibead=-1):
@@ -209,19 +209,19 @@ class TrajectoryOutput(dobject):
       self.out = None
       self.nout = 0
 
-   def bind(self, simul):
-      """Binds output proxy to simulation object.
+   def bind(self, system):
+      """Binds output proxy to System object.
 
       Args:
-         simul: A simulation object to be bound.
+         system: A System object to be bound.
       """
 
-      self.simul = simul
+      self.system = system
 
       # Checks as soon as possible if some asked-for trajs are missing or mispelled
       key = getkey(self.what)
-      if not key in self.simul.trajs.traj_dict.keys():
-         print "Computable trajectories list: ", self.simul.trajs.traj_dict.keys()
+      if not key in self.system.trajs.traj_dict.keys():
+         print "Computable trajectories list: ", self.system.trajs.traj_dict.keys()
          raise KeyError(key + " is not a recognized output trajectory")
 
       self.open_stream()
@@ -232,9 +232,9 @@ class TrajectoryOutput(dobject):
       if getkey(self.what) in [ "positions", "velocities", "forces", "extras" ]:
          # must write out trajectories for each bead, so must create b streams
          self.out = []
-         for b in range(self.simul.beads.nbeads):
+         for b in range(self.system.beads.nbeads):
             # zero-padded bead number
-            padb = ( ("%0" + str(int(1 + np.floor(np.log(self.simul.beads.nbeads)/np.log(10)))) + "d") % (b) )
+            padb = ( ("%0" + str(int(1 + np.floor(np.log(self.system.beads.nbeads)/np.log(10)))) + "d") % (b) )
             try:
                if (self.ibead < 0 or self.ibead == b):
                   if getkey(self.what) == "extras":
@@ -264,7 +264,7 @@ class TrajectoryOutput(dobject):
    def write(self):
       """Writes out the required trajectories."""
 
-      if not (self.simul.step + 1) % self.stride == 0:
+      if not (self.system.simul.step + 1) % self.stride == 0:
          return
 
       doflush = False
@@ -278,13 +278,13 @@ class TrajectoryOutput(dobject):
       if hasattr(self.out, "__getitem__"):
          if self.ibead < 0:
             for b in range(len(self.out)):
-               self.simul.trajs.print_traj(self.what, self.out[b], b, format=self.format, cell_units=self.cell_units, flush=doflush)
+               self.system.trajs.print_traj(self.what, self.out[b], b, format=self.format, cell_units=self.cell_units, flush=doflush)
          elif self.ibead < len(self.out):
-            self.simul.trajs.print_traj(self.what, self.out[self.ibead], self.ibead, format=self.format, cell_units=self.cell_units, flush=doflush)
+            self.system.trajs.print_traj(self.what, self.out[self.ibead], self.ibead, format=self.format, cell_units=self.cell_units, flush=doflush)
          else:
             raise ValueError("Selected bead index " + str(self.ibead) + " does not exist for trajectory " + self.what)
       else:
-         self.simul.trajs.print_traj(self.what, self.out, b=0, format=self.format, cell_units=self.cell_units, flush=doflush)
+         self.system.trajs.print_traj(self.what, self.out, b=0, format=self.format, cell_units=self.cell_units, flush=doflush)
 
 
 class CheckpointOutput(dobject):

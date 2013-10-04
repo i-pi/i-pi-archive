@@ -34,7 +34,7 @@ nvt:
 	wait
 
 paratemp: 
-	cd paratemp; $(IPI) input.xml & sleep 5; \
+	cd paratemp; $(IPI) input.xml & sleep 2; \
 	$(call run_driver,4,ph2_pt); \
 	wait
 

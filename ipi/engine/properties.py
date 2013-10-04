@@ -195,7 +195,7 @@ class Properties(dobject):
          estimator.
       dforces: A dummy Forces object used in the Yamamoto kinetic energy
          estimator.
-      simul: The Simulation object containing the data to be output.
+      system: The System object containing the data to be output.
       ensemble: An ensemble object giving the objects necessary for producing
          the correct ensemble.
       beads: A beads object giving the atoms positions.
@@ -217,10 +217,10 @@ class Properties(dobject):
       self.property_dict = {
       "step": {       "dimension" : "number",
                       "help" : "The current simulation time step.",
-                      'func': (lambda: (1 + self.simul.step))},
+                      'func': (lambda: (1 + self.system.simul.step))},
       "time": {       "dimension": "time",
                       "help": "The elapsed simulation time.",
-                      'func': (lambda: (1 + self.simul.step)*self.ensemble.dt)},
+                      'func': (lambda: (1 + self.system.simul.step)*self.ensemble.dt)},
       "temperature": {"dimension": "temperature",
                       "help": "The current temperature, as obtained from the MD kinetic energy.",
                       "longhelp" : """The current temperature, as obtained from the MD kinetic energy of the (extended)
@@ -425,26 +425,27 @@ class Properties(dobject):
                       units, so the output can be only in atomic units.""" }
       }
 
-   def bind(self, simul):
-      """Binds the necessary objects from the simulation to calculate the
+   def bind(self, system):
+      """Binds the necessary objects from the system to calculate the
       required properties.
 
       Args:
-         simul: The Simulation object to be bound.
+         system: The System object to be bound.
       """
 
-      self.ensemble = simul.ensemble
-      self.beads = simul.beads
-      self.nm = simul.nm
-      self.cell = simul.cell
-      self.forces = simul.forces
-      self.simul = simul
+      self.ensemble = system.ensemble
+      self.beads = system.beads
+      self.nm = system.nm
+      self.cell = system.cell
+      self.forces = system.forces
+      self.simul = system.simul
+      self.system = system
       # dummy beads and forcefield objects so that we can use scaled and
       # displaced path estimators without changing the simulation bead
       # coordinates
-      self.dbeads = simul.beads.copy()
+      self.dbeads = system.beads.copy()
       self.dforces = Forces()
-      self.dforces.bind(self.dbeads, self.simul.cell,  self.simul.flist)
+      self.dforces.bind(self.dbeads, self.system.cell,  self.system.flist)
 
    def __getitem__(self, key):
       """Retrieves the item given by key.
@@ -997,9 +998,9 @@ class Properties(dobject):
             tcv += np.dot( (self.dbeads.q[b,3*i:3*(i+1)]-self.dbeads.qc[3*i:3*(i+1)]),
                           self.dforces.f[b,3*i:3*(i+1)] )
          tcv *= -0.5/self.beads.nbeads
-         tcv += 1.5*Constants.kb*self.simul.ensemble.temp
+         tcv += 1.5*Constants.kb*self.system.ensemble.temp
 
-         logr = (self.dforces.pot-self.forces.pot)/(Constants.kb*self.simul.ensemble.temp*self.beads.nbeads)
+         logr = (self.dforces.pot-self.forces.pot)/(Constants.kb*self.system.ensemble.temp*self.beads.nbeads)
 
          atcv += tcv
          atcv2 += tcv*tcv
@@ -1090,9 +1091,9 @@ class Properties(dobject):
          for b in range(self.beads.nbeads):
             tcv += np.dot( (q[b,3*i:3*(i+1)]-qc[3*i:3*(i+1)]), f[b,3*i:3*(i+1)])
          tcv *= -0.5/self.beads.nbeads
-         tcv += 1.5*Constants.kb*self.simul.ensemble.temp
+         tcv += 1.5*Constants.kb*self.system.ensemble.temp
 
-         logr = (alpha-1)*spr/(Constants.kb*self.simul.ensemble.temp*self.beads.nbeads)
+         logr = (alpha-1)*spr/(Constants.kb*self.system.ensemble.temp*self.beads.nbeads)
 
          atcv += tcv
          atcv2 += tcv*tcv
@@ -1123,7 +1124,7 @@ class Trajectories(dobject):
    """A simple class to take care of output of trajectory data.
 
    Attributes:
-      simul: The simulation object from which the position data will be
+      system: The system object from which the position data will be
          obtained.
       fatom: A dummy beads object used so that individual replica trajectories
          can be output.
@@ -1138,28 +1139,28 @@ class Trajectories(dobject):
       # Note that here we want to return COPIES of the different arrays, so we make sure to make an operation in order not to return a reference.
       "positions": { "dimension" : "length",
                      "help": "The atomic coordinate trajectories. Will print out one file per bead, unless the bead attribute is set by the user.",
-                     'func': (lambda : 1.0*self.simul.beads.q)},
+                     'func': (lambda : 1.0*self.system.beads.q)},
       "velocities": {"dimension" : "velocity",
                      "help": "The velocity trajectories. Will print out one file per bead, unless the bead attribute is set by the user.",
-                     'func': (lambda : self.simul.beads.p/self.simul.beads.m3)},
+                     'func': (lambda : self.system.beads.p/self.system.beads.m3)},
       "momenta": {"dimension" : "momentum",
                      "help": "The momentum trajectories. Will print out one file per bead, unless the bead attribute is set by the user.",
-                     'func': (lambda : 1.0*self.simul.beads.p)},
+                     'func': (lambda : 1.0*self.system.beads.p)},
       "forces": {    "dimension" : "force",
                      "help": "The force trajectories. Will print out one file per bead, unless the bead attribute is set by the user.",
-                     'func': (lambda : 1.0*self.simul.forces.f)},
+                     'func': (lambda : 1.0*self.system.forces.f)},
       "x_centroid": {"dimension" : "length",
                      "help": "The centroid coordinates.",
-                     'func': (lambda : 1.0*self.simul.beads.qc)},
+                     'func': (lambda : 1.0*self.system.beads.qc)},
       "v_centroid": {"dimension" : "velocity",
                      "help": "The centroid velocity.",
-                     'func': (lambda : self.simul.beads.pc/self.simul.beads.m3[0])},
+                     'func': (lambda : self.system.beads.pc/self.system.beads.m3[0])},
       "p_centroid": {"dimension" : "momentum",
                      "help": "The centroid momentum.",
-                     'func': (lambda : 1.0*self.simul.beads.pc)},
+                     'func': (lambda : 1.0*self.system.beads.pc)},
       "f_centroid": {"dimension" : "force",
                      "help": "The force acting on the centroid.",
-                     'func': (lambda : np.sum(self.simul.forces.f,0)/float(self.simul.beads.nbeads))},
+                     'func': (lambda : np.sum(self.system.forces.f,0)/float(self.system.beads.nbeads))},
       "kinetic_cv": {"dimension" : "energy",
                      "help": "The centroid virial quantum kinetic energy estimator for each atom, resolved into Cartesian components [xx, yy, zz]",
                      'func': self.get_akcv},
@@ -1171,30 +1172,30 @@ class Trajectories(dobject):
                      'func': self.get_rg},
       "extras": {    "help": """The additional data returned by the client code, printed verbatim. Will print
                              out one file per bead, unless the bead attribute is set by the user.""",
-                     'func': (lambda : self.simul.forces.extras)}
+                     'func': (lambda : self.system.forces.extras)}
       }
 
 
-   def bind(self, simul):
-      """ Binds to a simulation object to fetch atomic and force data.
+   def bind(self, system):
+      """ Binds to a system object to fetch atomic and force data.
 
       Args:
-         simul: The simulation object that will be managed by this Trajectories.
+         system: The system object that will be managed by this Trajectories.
       """
 
-      self.simul = simul
-      self.fatom = simul.beads[0].copy()
+      self.system = system
+      self.fatom = system.beads[0].copy()
 
    def get_akcv(self):
       """Calculates the contribution to the kinetic energy due to each degree
       of freedom.
       """
 
-      rv = np.zeros(self.simul.beads.natoms*3)
-      for b in range(self.simul.beads.nbeads):
-         rv[:] += (self.simul.beads.q[b]-self.simul.beads.qc)*self.simul.forces.f[b]
-      rv *= -0.5/self.simul.beads.nbeads
-      rv += 0.5*Constants.kb*self.simul.ensemble.temp
+      rv = np.zeros(self.system.beads.natoms*3)
+      for b in range(self.system.beads.nbeads):
+         rv[:] += (self.system.beads.q[b]-self.system.beads.qc)*self.system.forces.f[b]
+      rv *= -0.5/self.system.beads.nbeads
+      rv += 0.5*Constants.kb*self.system.ensemble.temp
       return rv
 
    def get_akcv_od(self):
@@ -1202,20 +1203,20 @@ class Trajectories(dobject):
       due to each atom.
       """
 
-      rv = np.zeros((self.simul.beads.natoms,3))
+      rv = np.zeros((self.system.beads.natoms,3))
       # helper arrays to make it more obvious what we are computing
-      dq = np.zeros((self.simul.beads.natoms,3))
-      f = np.zeros((self.simul.beads.natoms,3))
-      for b in range(self.simul.beads.nbeads):
-         dq[:] = (self.simul.beads.q[b]-self.simul.beads.qc).reshape((self.simul.beads.natoms,3))
-         f[:] = self.simul.forces.f[b].reshape((self.simul.beads.natoms,3))
+      dq = np.zeros((self.system.beads.natoms,3))
+      f = np.zeros((self.system.beads.natoms,3))
+      for b in range(self.system.beads.nbeads):
+         dq[:] = (self.system.beads.q[b]-self.system.beads.qc).reshape((self.system.beads.natoms,3))
+         f[:] = self.system.forces.f[b].reshape((self.system.beads.natoms,3))
          rv[:,0] += dq[:,0]*f[:,1] + dq[:,1]*f[:,0]
          rv[:,1] += dq[:,0]*f[:,2] + dq[:,2]*f[:,0]
          rv[:,2] += dq[:,1]*f[:,2] + dq[:,2]*f[:,1]
       rv *= 0.5
-      rv *= -0.5/self.simul.beads.nbeads
+      rv *= -0.5/self.system.beads.nbeads
 
-      return rv.reshape(self.simul.beads.natoms*3)
+      return rv.reshape(self.system.beads.natoms*3)
 
    def get_rg(self):
       """Calculates the radius of gyration of the ring polymers.
@@ -1224,10 +1225,10 @@ class Trajectories(dobject):
       gyration radius can be recovered as sqrt(rx^2+ry^2+rz^2).
       """
 
-      q = depstrip(self.simul.beads.q)
-      qc = depstrip(self.simul.beads.qc)
-      nat = self.simul.beads.natoms
-      nb = self.simul.beads.nbeads
+      q = depstrip(self.system.beads.q)
+      qc = depstrip(self.system.beads.qc)
+      nat = self.system.beads.natoms
+      nb = self.system.beads.nbeads
       rg = np.zeros(3*nat)
       for i in range(nb):
          for j in range(nat):
@@ -1285,7 +1286,7 @@ class Trajectories(dobject):
 
       cq = self[what]
       if getkey(what) in [ "extras" ] :
-         stream.write(" #*EXTRAS*# Step:  %10d  Bead:  %5d  \n" % (self.simul.step+1, b) )
+         stream.write(" #*EXTRAS*# Step:  %10d  Bead:  %5d  \n" % (self.system.simul.step+1, b) )
          stream.write(cq[b])
          stream.write("\n")
          return
@@ -1295,14 +1296,14 @@ class Trajectories(dobject):
          self.fatom.q[:] = cq
 
       fcell = Cell()
-      fcell.h = self.simul.cell.h*unit_to_user("length", cell_units, 1.0)
+      fcell.h = self.system.cell.h*unit_to_user("length", cell_units, 1.0)
 
       if format == "pdb":
-         io_pdb.print_pdb(self.fatom, fcell, stream, title=("Traj: %s Step:  %10d  Bead:   %5d " % (what, self.simul.step+1, b) ) )
+         io_pdb.print_pdb(self.fatom, fcell, stream, title=("Traj: %s Step:  %10d  Bead:   %5d " % (what, self.system.simul.step+1, b) ) )
       elif format == "xyz":
-         io_xyz.print_xyz(self.fatom, fcell, stream, title=("Traj: %s Step:  %10d  Bead:   %5d " % (what, self.simul.step+1, b) ) )
+         io_xyz.print_xyz(self.fatom, fcell, stream, title=("Traj: %s Step:  %10d  Bead:   %5d " % (what, self.system.simul.step+1, b) ) )
       elif format == "bin":
-         io_binary.print_bin(self.fatom, fcell, stream, title=("Traj: %s Step:  %10d  Bead:   %5d " % (what, self.simul.step+1, b) ) )
+         io_binary.print_bin(self.fatom, fcell, stream, title=("Traj: %s Step:  %10d  Bead:   %5d " % (what, self.system.simul.step+1, b) ) )
       if flush :
          stream.flush()
          os.fsync(stream)
