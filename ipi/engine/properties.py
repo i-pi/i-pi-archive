@@ -10,7 +10,7 @@ the Free Software Foundation, either version 3 of the License, or
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
@@ -224,9 +224,11 @@ class Properties(dobject):
       "temperature": {"dimension": "temperature",
                       "help": "The current temperature, as obtained from the MD kinetic energy.",
                       "longhelp" : """The current temperature, as obtained from the MD kinetic energy of the (extended)
-                                      ring polymer. Takes a single, optional argument 'atom', which can be either an
+                                      ring polymer. Takes optional arguments 'atom', 'bead' or 'nm'.  'atom' can be either an
                                       atom label or an index (zero-based) to specify which species or individual atom
-                                      to output the temperature of. If not specified, all atoms are used and averaged.""",
+                                      to output the temperature of. If not specified, all atoms are used and averaged.
+                                      'bead' or 'nm' specify whether the temperature should be computed for a single bead
+                                      or normal mode.""",
                       'func': self.get_temp },
       "density": {    "dimension": "density",
                       "help": "The mass density of the physical system.",
@@ -256,9 +258,12 @@ class Properties(dobject):
                       'func': (lambda: self.beads.vpath*self.nm.omegan2)},
       "kinetic_md":  {"dimension" : "energy",
                       "help": "The kinetic energy of the (extended) classical system.",
-                       "longhelp" : """The kinetic energy of the (extended) classical system. Takes an argument 'atom',
-                       which can be either an atom label or index (zero based) to specify which species to find the
-                       kinetic energy of. If not specified, all atoms are used.""",
+                       "longhelp" : """The kinetic energy of the (extended) classical system.
+                       Takes optional arguments 'atom', 'bead' or 'nm'.  'atom' can be either an
+                       atom label or an index (zero-based) to specify which species or individual atom
+                       to output the kinetic energy of. If not specified, all atoms are used and averaged.
+                       'bead' or 'nm' specify whether the kinetic energy should be computed for a single bead
+                       or normal mode. If not specified, all atoms/beads/nm are used.""",
                       'func': self.get_kinmd},
       "kinetic_cv":  {"dimension" : "energy",
                       "help": "The centroid-virial quantum kinetic energy of the physical system.",
@@ -511,7 +516,7 @@ class Properties(dobject):
       else:
          return prop_vec[bead,3*atom:3*(atom+1)]
 
-   def get_temp(self, atom=""):
+   def get_temp(self, atom="", bead="", nm=""):
       """Calculates the MD kinetic temperature.
 
       Note that in the case that the centre of mass constraint there will be
@@ -524,36 +529,21 @@ class Properties(dobject):
       """
 
       if self.ensemble.fixcom:
-         mdof = 3
+         if bead == "" and nm == "":
+            mdof = 3
+         elif nm != "" and nm == "0":   # the centroid has 100% of the COM removal
+            mdof = 3
+         elif nm != "" :
+            mdof = 0
+         else:
+            mdof = 3.0/ float(self.beads.nbeads)  # spreads COM removal over the beads
       else:
          mdof = 0
 
-      if atom == "":
-         # use the KE computed in the NM representation in order to avoid problems when mass scaling is used
-         kedof = self.get_kinmd()/(3*self.beads.natoms*self.beads.nbeads - mdof)
-      else:
-         try:
-            #iatom gives the index of the atom to be studied
-            iatom = int(atom)
-            latom = ""
-            if iatom >= self.beads.natoms:
-               raise IndexError("Cannot output temperature as atom index %d is larger than the number of atoms" % iatom)
-         except ValueError:
-            #here 'atom' is a label rather than an index which is stored in latom
-            iatom = -1
-            latom = atom
+      kemd, ncount = self.get_kinmd(atom, bead, nm, return_count=True)
 
-         ncount = 0
-         for i in range(self.beads.natoms):
-            if (iatom == i or latom == self.beads.names[i]):
-               ncount += 1
-
-         if ncount == 0:
-            raise IndexError("Couldn't find an atom which matched the argument of temperature")
-         # "spreads" the COM removal correction evenly over all the atoms...
-         kedof = self.get_kinmd(atom)/ncount*(self.beads.natoms/(3.0*self.beads.natoms*self.beads.nbeads - mdof))
-
-      return kedof/(0.5*Constants.kb)
+      # "spreads" the COM removal correction evenly over all the atoms if just a few atoms are selected
+      return kemd/(0.5*Constants.kb) * (float(self.beads.natoms)/float(ncount)) / (3.0*self.beads.natoms*self.beads.nbeads - mdof)
 
    def get_kincv(self, atom=""):
       """Calculates the quantum centroid virial kinetic energy estimator.
@@ -598,17 +588,19 @@ class Properties(dobject):
 
       return acv
 
-   def get_kinmd(self, atom=""):
+   def get_kinmd(self, atom="", bead="", nm="", return_count = False):
       """Calculates the classical kinetic energy of the simulation (p^2/2m)
 
       Args:
          atom: If given, specifies the atom to give the kinetic energy
             for. If not, the simulation kinetic energy is given.
+         bead: If given, compute the classical KE of a single bead.
+         nm: If given, compute the classical KE of a single normal mode.
       """
 
-      if atom == "":
-         return self.nm.kin/self.beads.nbeads
-      else:
+      if bead != "" and nm != "":
+         raise ValueError("Cannot specify both NM and bead for classical kinetic energy estimator")
+      if atom != "":
          try:
             #iatom gives the index of the atom to be studied
             iatom = int(atom)
@@ -620,22 +612,68 @@ class Properties(dobject):
             iatom = -1
             latom = atom
 
-         pnm = depstrip(self.nm.pnm)
-         dm3 = depstrip(self.nm.dynm3)
-         kmd = 0.0
-         ncount = 0
+      ibead =-1
+      if bead != "":
+         try:
+            #iatom gives the index of the atom to be studied
+            ibead = int(bead)
+            if ibead >= self.beads.nbeads:
+               raise IndexError("Bead index %d is larger than the number of beads" % ibead)
+         except: ValueError("Bead index is not a valid integer")
+
+      inm = -1
+      if nm != "":
+         try:
+            #iatom gives the index of the atom to be studied
+            inm = int(nm)
+            if inm >= self.beads.nbeads:
+               raise IndexError("Normal mode index %d is larger than the number of beads" % ibead)
+         except: ValueError("Normal mode index is not a valid integer")
+
+      pnm = depstrip(self.nm.pnm)
+      dm3 = depstrip(self.nm.dynm3)
+      p = depstrip(self.beads.p)
+      m3 = depstrip(self.beads.m3)
+      kmd = 0.0
+      ncount = 0
+
+      if ibead > -1:
+         nbeads = 1
          for i in range(self.beads.natoms):
             if (atom != "" and iatom != i and latom != self.beads.names[i]):
                continue
             k = 3*i
-            for b in range(self.beads.nbeads):
-               kmd += (pnm[b,k]**2 + pnm[b,k+1]**2 + pnm[b,k+2]**2)/(2.0*dm3[b,k])
+            kmd += (p[ibead,k]**2 + p[ibead,k+1]**2 + p[ibead,k+2]**2)/(2.0*m3[ibead,k])
             ncount += 1
+      elif inm > -1:
+         nbeads = 1
+         for i in range(self.beads.natoms):
+            if (atom != "" and iatom != i and latom != self.beads.names[i]):
+               continue
+            k = 3*i
+            kmd += (pnm[inm,k]**2 + pnm[inm,k+1]**2 + pnm[inm,k+2]**2)/(2.0*dm3[inm,k])
+            ncount += 1
+      else:
+         nbeads = self.beads.nbeads
+         ncount = self.beads.natoms
+         if atom == "":
+            kmd = self.nm.kin
+         else:
+            for i in range(self.beads.natoms):
+               if (atom != "" and iatom != i and latom != self.beads.names[i]):
+                  continue
+               k = 3*i
+               for b in range(self.beads.nbeads):
+                  kmd += (pnm[b,k]**2 + pnm[b,k+1]**2 + pnm[b,k+2]**2)/(2.0*dm3[b,k])
+               ncount += 1
 
-         if ncount == 0:
-            warning("Couldn't find an atom which matched the argument of kinetic energy, setting to zero.", verbosity.medium)
+      if ncount == 0:
+         warning("Couldn't find an atom which matched the argument of kinetic energy, setting to zero.", verbosity.medium)
 
-         return kmd/self.beads.nbeads
+      if return_count:
+         return kmd/nbeads, ncount
+      else:
+         return kmd/nbeads
 
    def get_ktens(self, atom=""):
       """Calculates the quantum centroid virial kinetic energy
