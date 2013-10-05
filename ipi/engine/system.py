@@ -67,7 +67,7 @@ class System(dobject):
       step: The current simulation step.
    """
 
-   def __init__(self, init, beads, cell, forces, ensemble, nm):
+   def __init__(self, init, beads, cell, forces, ensemble, nm, prefix=""):
       """Initialises System class.
 
       Args:
@@ -81,6 +81,7 @@ class System(dobject):
       """
 
       info(" # Initializing system object ", verbosity.low )
+      self.prefix = prefix
       self.init = init
       self.ensemble = ensemble
       self.beads = beads

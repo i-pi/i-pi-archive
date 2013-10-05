@@ -103,7 +103,7 @@ DONE ** Write the paper (JM) (MC)
 DONE ** Implement warning() and info() everywhere (For example, it is missing
 from normalmodes.py) (JM) (JM)
 
-** Implement a more robust walltime clock limit mechanism. (MC)
+DONE ** Implement a more robust walltime clock limit mechanism. (MC)
 
 ** Alternative communication mechanisms not relying on sockets (MC)
 

@@ -108,7 +108,7 @@ class InputSimulation(Input):
       super(InputSimulation,self).store()
 
 
-      self.output.store(simul.outputs)
+      self.output.store(simul.outtemplate)
       self.prng.store(simul.prng)
       self.step.store(simul.step)
       self.total_steps.store(simul.tsteps)
@@ -132,10 +132,8 @@ class InputSimulation(Input):
       self.extra = []
 
       for f in simul.fflist:
-         iff = InputFFSocket()
-         print "simul storing ff", f
+         iff = InputFFSocket()         
          iff.store(simul.fflist[f])
-         print "stored", iff.name.fetch()
          self.extra.append(("ffsocket",iff))
       for s in simul.syslist:
          isys = InputSystem()
@@ -166,8 +164,10 @@ class InputSimulation(Input):
       fflist=[]
       for (k,v) in self.extra:
          if k=="system" : 
-            for i in range(v.copies.fetch()): # creates multiple copies of system if desired
+            for isys in range(v.copies.fetch()): # creates multiple copies of system if desired               
                syslist.append(v.fetch())
+               if (v.copies.fetch() > 1):
+                  syslist[-1].prefix = syslist[-1].prefix+( ("%0" + str(int(1 + np.floor(np.log(v.copies.fetch())/np.log(10)))) + "d") % (isys) )
          elif k=="ffsocket": fflist.append(v.fetch())
 
 

@@ -105,7 +105,7 @@ class Simulation(dobject):
       for s in syslist:
          s.prng = self.prng # binds the system's prng to self prng         
       self.fflist = {}
-      print "MYFLIST",fflist
+      
       for f in fflist:
          self.fflist[f.name] = f
 
@@ -134,10 +134,8 @@ class Simulation(dobject):
             isys=0
             for s in self.syslist:   # create multiple copies
                no = deepcopy(o)
-               if len(self.syslist) > 1:
-                  # zero-padded system number
-                  pads = ( ("S%0" + str(int(1 + np.floor(np.log(len(self.syslist))/np.log(10)))) + "d_") % (isys) )
-                  no.filename = pads+no.filename
+               if s.prefix != "":
+                  no.filename = s.prefix+"_"+no.filename
                no.bind(s)
                self.outputs.append(no)
                isys+=1
@@ -146,8 +144,6 @@ class Simulation(dobject):
       self.chk = CheckpointOutput("RESTART", 1, True, 0)
       self.chk.bind(self)
 
-      # registers the softexit routine
-      softexit.register(self.softexit)
 
    def softexit(self):
       """Deals with a soft exit request.
@@ -161,10 +157,7 @@ class Simulation(dobject):
       if not self.rollback:
          self.chk.store()
 
-      self.chk.write(store=False)
-
-      for s in self.syslist:
-         s.forces.stop()
+      self.chk.write(store=False)      
 
    def run(self):
       """Runs the simulation.
@@ -185,7 +178,10 @@ class Simulation(dobject):
          self.step = 0
 
       steptime = 0.0
-      simtime =  time.time()
+      # registers the softexit routine      
+      softexit.register_function(self.softexit)
+      softexit.start(self.ttime)      
+      simtime =  time.time() 
 
       cstep = 0
       tptime = 0.0
@@ -204,13 +200,13 @@ class Simulation(dobject):
          # steps through all the systems
          for s in self.syslist:
             s.ensemble.step()
-
+            
+         if softexit.triggered: break # don't continue if we are about to exit!
+         
          for o in self.outputs:
             o.write()
-
-         if os.path.exists("EXIT"): # soft-exit
-            self.rollback = False
-            softexit.trigger()
+            
+         if softexit.triggered: break # don't write if we are about to exit!
 
          steptime += time.time()
          ttot += steptime
@@ -224,9 +220,14 @@ class Simulation(dobject):
          #   info(" # MD diagnostics: V: %10.5e    Kcv: %10.5e   Ecns: %10.5e" %
          #      (self.properties["potential"], self.properties["kinetic_cv"], self.properties["conserved"] ) )
 
+         if os.path.exists("EXIT"): # soft-exit
+            info(" # EXIT file detected! Bye bye!", verbosity.low )
+            break
+            
+         print "ttime check", time.time() - simtime , self.ttime
          if (self.ttime > 0 and time.time() - simtime > self.ttime):
             info(" # Wall clock time expired! Bye bye!", verbosity.low )
             break
 
       self.rollback = False
-      softexit.trigger()
+      softexit.trigger(" @ SIMULATION: Exiting cleanly.")

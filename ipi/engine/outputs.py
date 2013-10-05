@@ -28,6 +28,7 @@ Classes:
 import os
 import numpy as np
 import ipi.inputs.simulation
+from ipi.utils.softexit import softexit
 from ipi.utils.depend import *
 from ipi.utils.io.io_xml import *
 from ipi.engine.properties import getkey
@@ -93,6 +94,7 @@ class PropertyOutput(dobject):
             raise KeyError(key + " is not a recognized property")
 
       self.open_stream()
+      softexit.register_function(self.softexit)
 
    def open_stream(self):
       """Opens the output stream."""
@@ -121,7 +123,13 @@ class PropertyOutput(dobject):
                ohead += ": " + prop["help"]
             self.out.write(ohead + "\n")
 
-   def close_stream():
+   def softexit(self):
+      """Emergency call when i-pi must exit quickly"""
+      
+      self.close_stream()
+      
+      
+   def close_stream(self):
       """Closes the output stream."""
 
       self.out.close()
@@ -137,6 +145,8 @@ class PropertyOutput(dobject):
             are not contained in the property_dict member of properties.
       """
 
+      if softexit.triggered: return # don't write if we are about to exit!
+      
       if not (self.system.simul.step + 1) % self.stride == 0:
          return
       self.out.write("  ")
@@ -225,6 +235,7 @@ class TrajectoryOutput(dobject):
          raise KeyError(key + " is not a recognized output trajectory")
 
       self.open_stream()
+      softexit.register_function(self.softexit)
 
    def open_stream(self):
       """Opens the output stream(s)."""
@@ -252,7 +263,13 @@ class TrajectoryOutput(dobject):
          except:
             raise ValueError("Could not open file " + self.filename + "." + self.format + " for output")
 
-   def close_stream():
+
+   def softexit(self):
+      """Emergency cleanup if i-pi wants to exit"""
+            
+      self.close_stream()
+      
+   def close_stream(self):
       """Closes the output stream."""
 
       if hasattr(self.out, "__getitem__"):
@@ -264,6 +281,7 @@ class TrajectoryOutput(dobject):
    def write(self):
       """Writes out the required trajectories."""
 
+      if softexit.triggered: return # don't write if we are about to exit!
       if not (self.system.simul.step + 1) % self.stride == 0:
          return
 

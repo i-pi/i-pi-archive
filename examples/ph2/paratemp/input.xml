@@ -9,14 +9,15 @@
       <trajectory stride='100' filename='pos'>positions{angstrom}</trajectory>
       <checkpoint stride='2000'/>
    </output>
-
-   <ffsocket name="sg" mode="unix">
-      <latency>0.01</latency>  <address>ph2_pt</address>
-   </ffsocket>
-
+   
    <prng><seed>31415</seed></prng>
    <total_steps>100000</total_steps>
-   <system copies="1">
+  <total_time>11</total_time>
+  <ffsocket name="sg" mode="unix">
+      <latency>0.01</latency>  <address>ph2_pt</address>
+   </ffsocket>
+   
+   <system copies="2" prefix="ID">
       <initialize nbeads='4'>
          <file mode='pdb'> our_ref.pdb </file>
          <velocities mode="thermal" units='kelvin'> 50 </velocities>

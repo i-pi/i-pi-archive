@@ -750,7 +750,7 @@ class InputAttribute(Input):
       Returns:
          A string giving the stored value in the appropriate format.
       """
-      print "NAME OUT ", name, "VAL", self.value
+      
       return name + "='" + write_type(self.type, self.value) + "'"
 
 

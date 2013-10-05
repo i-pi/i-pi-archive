@@ -73,7 +73,9 @@ class InputSystem(Input):
              "cell" :    (InputCell,   { "help"    : InputCell.default_help,
                                         "default"  : input_default(factory=Cell) })
              }
-   attribs = { "copies": (InputAttribute, {"help" : "Create multiple copies of the system. This is handy for initialising simulations with multiple systems.", "default": 1, "dtype": int}) }
+   attribs = { "copies": (InputAttribute, {"help" : "Create multiple copies of the system. This is handy for initialising simulations with multiple systems.", "default": 1, "dtype": int}) ,
+               "prefix": (InputAttribute, {"help" : "Prepend this string to output files generated for this system. If 'copies' is greater than 1, a trailing number will be appended.", "default": "", "dtype": str}) 
+   }
 
    default_help = "This is the top level class that describes the physical system."
    default_label = "SYSTEM"
@@ -86,6 +88,8 @@ class InputSystem(Input):
       """
 
       super(InputSystem,self).store()
+      
+      self.prefix.store(psys.prefix) 
       self.forces.store(psys.flist)
       self.ensemble.store(psys.ensemble)
 
@@ -112,6 +116,6 @@ class InputSystem(Input):
       # this creates a simulation object which gathers all the little bits
       #TODO use named arguments since this list is a bit too long...
       rsys = ipi.engine.system.System(self.initialize.fetch(), self.beads.fetch(), self.cell.fetch(),
-               self.forces.fetch(), self.ensemble.fetch(), self.normal_modes.fetch())
+               self.forces.fetch(), self.ensemble.fetch(), self.normal_modes.fetch(), self.prefix.fetch())
 
       return rsys

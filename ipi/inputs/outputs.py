@@ -307,7 +307,7 @@ class InputOutputs(Input):
       super(InputOutputs, self).store()
       self.extra = []
 
-      self.prefix.store("")
+      self.prefix.store("") # do not store prefix, as on load it is added to the innermost output filenames
       for el in plist:
          if (isinstance(el, ipi.engine.outputs.PropertyOutput)):
             ip = InputProperties()

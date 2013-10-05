@@ -44,8 +44,6 @@ import sys, os
 import socket, select, string, time
 from ipi.utils.depend import depstrip
 from ipi.utils.messages import verbosity, warning, info
-from ipi.utils.softexit import softexit
-
 
 HDRLEN = 12
 UPDATEFREQ = 100
@@ -268,8 +266,7 @@ class DriverSocket(socket.socket):
 
       if (self.status & Status.Ready):
          try:
-            self.sendall(Message("posdata"))
-            print h_ih
+            self.sendall(Message("posdata"))            
             self.sendall(h_ih[0], 9*8)
             self.sendall(h_ih[1], 9*8)
             self.sendall(np.int32(len(pos)/3))
@@ -424,8 +421,9 @@ class InterfaceSocket(object):
 
    def close(self):
       """Closes down the socket."""
-
+      
       info(" @SOCKET: Shutting down the driver interface.", verbosity.low )
+            
       for c in self.clients:
          try:
             c.shutdown(socket.SHUT_RDWR)
@@ -440,6 +438,7 @@ class InterfaceSocket(object):
       self.server.close()
       if self.mode == "unix":
          os.unlink("/tmp/ipi_" + self.address)
+      
 
    def pool_update(self):
       """Deals with keeping the pool of client drivers up-to-date during a

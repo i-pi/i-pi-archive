@@ -32,7 +32,7 @@ Classes:
 __all__ = ['Forces', 'ForceComponent']
 
 import numpy as np
-import time
+import time, sys
 from ipi.utils.softexit import softexit
 from ipi.utils.messages import verbosity, warning
 from ipi.utils.depend import *
@@ -148,9 +148,16 @@ class ForceBead(dobject):
       if self.request is None:
          self.request = self.ff.queue(self.atoms, self.cell, reqid=-1)
       while self.request["status"] != "Done":
-         if self.request["status"] == "Exit":
-            softexit.trigger(" @Force: Requested returned a Exit status")
-            break
+         if self.request["status"] == "Exit" or softexit.triggered:
+            # now, this is tricky. we are stuck here and we cannot return meaningful results.
+            # if we return, we may as well output wrong numbers, or mess up things. 
+            # so we can only call soft-exit and wait until that is done. then kill the thread 
+            # we are in.
+            softexit.trigger(" @ FORCES : cannot return so will die off here")
+            while softexit.exiting: 
+               time.sleep(self.ff.latency)
+            sys.exit()
+            
          time.sleep(self.ff.latency)
 
       # data has been collected, so the request can be released and a slot
@@ -201,139 +208,6 @@ class ForceBead(dobject):
       """
 
       return self.ufvx[3]
-
-#~ 
-#~ class FFSocket(ForceField):
-   #~ """Interface between the PIMD code and the socket for a single replica.
-#~ 
-   #~ Deals with an individual replica of the system, obtaining the potential
-   #~ force and virial appropriate to this system. Deals with the distribution of
-   #~ jobs to the interface.
-#~ 
-   #~ Attributes:
-      #~ parameters: A dictionary of the parameters used by the driver. Of the
-         #~ form {'name': value}.
-      #~ socket: The interface object which contains the socket through which
-         #~ communication between the forcefield and the driver is done.
-      #~ request: During the force calculation step this holds a dictionary
-         #~ containing the relevant data for determining the progress of the step.
-         #~ Of the form {'atoms': atoms, 'cell': cell, 'pars': parameters,
-                      #~ 'status': status, 'result': result, 'id': bead id,
-                      #~ 'start': starting time}.
-   #~ """
-#~ 
-   #~ def __init__(self, pars=None, interface=None):
-      #~ """Initialises FFSocket.
-#~ 
-      #~ Args:
-         #~ pars: Optional dictionary, giving the parameters needed by the driver.
-         #~ interface: Optional Interface object, which contains the socket.
-      #~ """
-#~ 
-      #~ # a socket to the communication library is created or linked
-      #~ super(FFSocket,self).__init__()
-      #~ if interface is None:
-         #~ self.socket = InterfaceSocket()
-      #~ else:
-         #~ self.socket = interface
-#~ 
-      #~ if pars is None:
-         #~ self.pars = {}
-      #~ else:
-         #~ self.pars = pars
-      #~ self.request = None
-#~ 
-   #~ def bind(self, atoms, cell):
-      #~ """Pass on the binding request from ForceBeads.
-#~ 
-      #~ Also makes sure to set the socket's softexit.
-#~ 
-      #~ Args:
-         #~ atoms: Atoms object from which the bead positions are taken.
-         #~ cell: Cell object from which the system box is taken.
-      #~ """
-#~ 
-      #~ super(FFSocket,self).bind(atoms, cell)
-#~ 
-   #~ def copy(self):
-      #~ """Creates a deep copy without the bound objects.
-#~ 
-      #~ Used in ForceBeads to create a FFSocket for each replica of the system.
-#~ 
-      #~ Returns:
-         #~ A FFSocket object without atoms or cell attributes.
-      #~ """
-#~ 
-      #~ # does not copy the bound objects
-      #~ # (i.e., the returned forcefield must be bound before use)
-      #~ return type(self)(self.pars, self.socket)
-#~ 
-   #~ def get_all(self):
-      #~ """Driver routine.
-#~ 
-      #~ When one of the force, potential or virial are called, this sends the
-      #~ atoms and cell to the driver through the interface, requesting that the
-      #~ driver does the calculation. This then waits until the driver is finished,
-      #~ and then returns the ufvx list.
-#~ 
-      #~ Returns:
-         #~ A list of the form [potential, force, virial, extra].
-      #~ """
-#~ 
-      #~ # this is converting the distribution library requests into [ u, f, v ]  lists
-      #~ if self.request is None:
-         #~ self.request = self.socket.queue(self.atoms, self.cell, pars=self.pars, reqid=-1)
-      #~ while self.request["status"] != "Done":
-         #~ if self.request["status"] == "Exit":
-            #~ break
-         #~ time.sleep(self.socket.latency)
-      #~ if self.request["status"] == "Exit":
-         #~ softexit.trigger(" @Force: Requested returned a Exit status")
-#~ 
-      #~ # data has been collected, so the request can be released and a slot
-      #~ #freed up for new calculations
-      #~ self.socket.release(self.request)
-      #~ result = self.request["result"]
-      #~ self.request = None
-#~ 
-      #~ return result
-#~ 
-   #~ def queue(self, reqid=-1):
-      #~ """Sends the job to the interface queue directly.
-#~ 
-      #~ Allows the ForceBeads object to ask for the ufvx list of each replica
-      #~ directly without going through the get_all function. This allows
-      #~ all the jobs to be sent at once, allowing them to be parallelized.
-#~ 
-      #~ Args:
-         #~ reqid: An optional integer that indentifies requests of the same type,
-            #~ e.g. the bead index.
-      #~ """
-#~ 
-      #~ if self.request is None and dget(self,"ufvx").tainted():
-         #~ self.request = self.socket.queue(self.atoms, self.cell, pars=self.pars, reqid=reqid)
-#~ 
-   #~ def run(self):
-      #~ """Makes the socket start looking for driver codes.
-#~ 
-      #~ Tells the interface code to start the thread that looks for
-      #~ connection from the driver codes in a loop. Until this point no
-      #~ jobs can be queued.
-      #~ """
-#~ 
-      #~ if not self.socket.started():
-         #~ self.socket.start_thread()
-#~ 
-   #~ def stop(self):
-      #~ """Makes the socket stop looking for driver codes.
-#~ 
-      #~ Tells the interface code to stop the thread that looks for
-      #~ connection from the driver codes in a loop. After this point no
-      #~ jobs can be queued.
-      #~ """
-#~ 
-      #~ if self.socket.started():
-         #~ self.socket.end_thread()
 
 
 class ForceComponent(dobject):
@@ -401,7 +275,6 @@ class ForceComponent(dobject):
       if (self.nbeads != beads.nbeads):
          raise ValueError("Binding together a Beads and a ForceBeads objects with different numbers of beads")
 
-      print "FLIST", fflist
       # creates an array of force objects, which are bound to the beads
       #and the cell
       if not self.name in fflist:
