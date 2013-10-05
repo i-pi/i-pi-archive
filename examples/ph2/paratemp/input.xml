@@ -1,22 +1,28 @@
-<simulation>
-   <initialize nbeads='4'>
-      <file mode='pdb'> our_ref.pdb </file>
-      <velocities mode="thermal" units='kelvin'> 50 </velocities>
-   </initialize>
+<simulation verbosity='high'>
    <output prefix='ph2'>
-      <properties stride='5' filename='out'>  [ step, time{picosecond}, conserved{kelvin}, temperature{kelvin}, kinetic_cv{kelvin}, potential{kelvin}, pressure_cv{megapascal},
-temperature{kelvin}(bead=0), temperature{kelvin}(bead=1), temperature{kelvin}(bead=2), temperature{kelvin}(bead=3)
-] </properties>
+      <properties stride='5' filename='out'>  [ 
+             step, time{picosecond}, conserved{kelvin}, temperature{kelvin}, 
+             kinetic_cv{kelvin}, potential{kelvin}, pressure_cv{megapascal},
+             temperature{kelvin}(bead=0), temperature{kelvin}(bead=1), temperature{kelvin}(bead=2), temperature{kelvin}(bead=3)
+            ] 
+      </properties>
       <trajectory stride='100' filename='pos'>positions{angstrom}</trajectory>
       <checkpoint stride='2000'/>
    </output>
+
+   <ffsocket name="sg" mode="unix">
+      <latency>0.01</latency>  <address>ph2_pt</address>
+   </ffsocket>
+
    <prng><seed>31415</seed></prng>
    <total_steps>100000</total_steps>
-   <system>
+   <system copies="1">
+      <initialize nbeads='4'>
+         <file mode='pdb'> our_ref.pdb </file>
+         <velocities mode="thermal" units='kelvin'> 50 </velocities>
+      </initialize>      
       <forces>
-         <socket mode="unix">
-            <address>ph2_pt</address>
-         </socket>
+        <force nbeads="2"> sg </force>
       </forces>
       <ensemble mode='nvt'>
          <thermostat mode='langevin'>

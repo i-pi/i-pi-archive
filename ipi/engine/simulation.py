@@ -81,11 +81,12 @@ class Simulation(dobject):
       step: The current simulation step.
    """
 
-   def __init__(self, syslist, init, outputs, prng, step=0, tsteps=1000, ttime=0):
+   def __init__(self, syslist, fflist, outputs, prng, step=0, tsteps=1000, ttime=0):
       """Initialises Simulation class.
 
       Args:
          syslist: a list of system objects
+         fflist: a list of forcefield objects
          prng: A random number object.
          outputs: A list of output objects.
          init: A class to deal with initializing the simulation object.
@@ -100,13 +101,13 @@ class Simulation(dobject):
       info(" # Initializing simulation object ", verbosity.low )
       self.prng = prng
 
-      # initialize the configuration of the system
-      self.init = init
-
       self.syslist = syslist
       for s in syslist:
-         s.prng = self.prng # binds the system's prng to self prng
-         init.init_stage1(s)
+         s.prng = self.prng # binds the system's prng to self prng         
+      self.fflist = {}
+      print "MYFLIST",fflist
+      for f in fflist:
+         self.fflist[f.name] = f
 
       self.outtemplate = outputs
 
@@ -122,8 +123,7 @@ class Simulation(dobject):
 
       for s in self.syslist:
          # binds important computation engines
-         s.bind(self)
-         self.init.init_stage2(s)
+         s.bind(self)      
 
       self.outputs = []
       for o in self.outtemplate:
@@ -174,8 +174,8 @@ class Simulation(dobject):
       in the communication between the driver and the PIMD code.
       """
 
-      for s in self.syslist:
-         s.forces.run()
+      for (k,f) in self.fflist.iteritems():
+         f.run()
 
       # prints inital configuration -- only if we are not restarting
       if (self.step == 0):

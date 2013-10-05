@@ -67,7 +67,7 @@ class System(dobject):
       step: The current simulation step.
    """
 
-   def __init__(self, beads, cell, forces, ensemble, nm):
+   def __init__(self, init, beads, cell, forces, ensemble, nm):
       """Initialises System class.
 
       Args:
@@ -81,11 +81,12 @@ class System(dobject):
       """
 
       info(" # Initializing system object ", verbosity.low )
+      self.init = init
       self.ensemble = ensemble
       self.beads = beads
       self.cell = cell
       self.nm = nm
-
+            
       self.flist = forces
       self.forces = Forces()
 
@@ -97,11 +98,15 @@ class System(dobject):
 
       self.simul = simul # keeps a handle to the parent simulation object
 
+      self.init.init_stage1(self)
+      
       # binds important computation engines
       self.nm.bind(self.beads, self.ensemble)
-      self.forces.bind(self.beads, self.cell, self.flist)
+      self.forces.bind(self.beads, self.cell, self.flist, self.simul.fflist)
       self.ensemble.bind(self.beads, self.nm, self.cell, self.forces, self.prng)
 
+      self.init.init_stage2(self)
+      
       # binds output management objects
       self.properties.bind(self)
       self.trajs.bind(self)

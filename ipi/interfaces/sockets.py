@@ -41,7 +41,7 @@ __all__ = ['InterfaceSocket']
 
 import numpy as np
 import sys, os
-import socket, select, threading, signal, string, time
+import socket, select, string, time
 from ipi.utils.depend import depstrip
 from ipi.utils.messages import verbosity, warning, info
 from ipi.utils.softexit import softexit
@@ -255,7 +255,7 @@ class DriverSocket(socket.socket):
       else:
          raise InvalidStatus("Status in init was " + self.status)
 
-   def sendpos(self, pos, cell):
+   def sendpos(self, pos, h_ih):
       """Sends the position and cell data to the driver.
 
       Args:
@@ -269,8 +269,9 @@ class DriverSocket(socket.socket):
       if (self.status & Status.Ready):
          try:
             self.sendall(Message("posdata"))
-            self.sendall(cell.h, 9*8)
-            self.sendall(cell.ih, 9*8)
+            print h_ih
+            self.sendall(h_ih[0], 9*8)
+            self.sendall(h_ih[1], 9*8)
             self.sendall(np.int32(len(pos)/3))
             self.sendall(pos, len(pos)*8)
          except:
@@ -366,7 +367,7 @@ class InterfaceSocket(object):
          update the list of clients and then be reset to zero.
    """
 
-   def __init__(self, address="localhost", port=31415, slots=4, mode="unix", latency=1e-3, timeout=1.0, dopbc=True):
+   def __init__(self, address="localhost", port=31415, slots=4, mode="unix", timeout=1.0):
       """Initialises interface.
 
       Args:
@@ -391,13 +392,8 @@ class InterfaceSocket(object):
       self.port = port
       self.slots = slots
       self.mode = mode
-      self.latency = latency
       self.timeout = timeout
-      self.dopbc = dopbc
-      self._poll_thread = None
-      self._prev_kill = {}
-      self._poll_true = False
-      self._poll_iter = 0
+      self.poll_iter = UPDATEFREQ # triggers pool_update at first poll
 
    def open(self):
       """Creates a new socket.
@@ -424,70 +420,26 @@ class InterfaceSocket(object):
       self.server.listen(self.slots)
       self.server.settimeout(SERVERTIMEOUT)
       self.clients = []
-      self.requests = []
       self.jobs = []
 
    def close(self):
       """Closes down the socket."""
 
       info(" @SOCKET: Shutting down the driver interface.", verbosity.low )
+      for c in self.clients:
+         try:
+            c.shutdown(socket.SHUT_RDWR)
+            c.close()
+         except:
+            pass
+      # flush it all down the drain
+      self.clients = []
+      self.jobs = []
+
       self.server.shutdown(socket.SHUT_RDWR)
       self.server.close()
       if self.mode == "unix":
          os.unlink("/tmp/ipi_" + self.address)
-
-   def queue(self, atoms, cell, pars=None, reqid=0):
-      """Adds a request.
-
-      Note that the pars dictionary need to be sent as a string of a
-      standard format so that the initialisation of the driver can be done.
-
-      Args:
-         atoms: An Atoms object giving the atom positions.
-         cell: A Cell object giving the system box.
-         pars: An optional dictionary giving the parameters to be sent to the
-            driver for initialisation. Defaults to {}.
-         reqid: An optional integer that identifies requests of the same type,
-            e.g. the bead index
-
-      Returns:
-         A list giving the status of the request of the form {'atoms': Atoms
-         object giving the atom positions, 'cell': Cell object giving the
-         system box, 'pars': parameter string, 'result': holds the result as a
-         list once the computation is done, 'status': a string labelling the
-         status, 'id': the id of the request, usually the bead number, 'start':
-         the starting time for the calculation, used to check for timeouts.}.
-      """
-
-      par_str = " "
-
-      if not pars is None:
-         for k,v in pars.items():
-            par_str += k + " : " + str(v) + " , "
-      else:
-         par_str = " "
-
-      # APPLY PBC -- this is useful for codes such as LAMMPS that don't do full PBC when computing distances
-      pbcpos = depstrip(atoms.q).copy()
-      if self.dopbc:
-         cell.array_pbc(pbcpos)
-
-      newreq = {"pos": pbcpos, "cell": cell, "pars": par_str,
-                "result": None, "status": "Queued", "id": reqid,
-                "start": -1 }
-
-      self.requests.append(newreq)
-      return newreq
-
-   def release(self, request):
-      """Empties the list of requests once finished.
-
-      Args:
-         request: A list of requests that are done.
-      """
-
-      if request in self.requests:
-         self.requests.remove(request)
 
    def pool_update(self):
       """Deals with keeping the pool of client drivers up-to-date during a
@@ -653,33 +605,7 @@ class InterfaceSocket(object):
                break # doesn't do a second (or third) round if it managed
                      # to assign the job
 
-   def _kill_handler(self, signal, frame):
-      """Deals with handling a kill call gracefully.
-
-      Prevents any of the threads becoming zombies, by intercepting a
-      kill signal using the standard python function signal.signal() and
-      then closing the socket and the spawned threads before closing the main
-      thread. Called when signals SIG_INT and SIG_TERM are received.
-
-      Args:
-         signal: An integer giving the signal number of the signal received
-            from the socket.
-         frame: Current stack frame.
-      """
-
-      warning(" @SOCKET:   Kill signal. Trying to make a clean exit.", verbosity.low)
-      self.end_thread()
-
-      softexit.trigger(" @SOCKET: Kill signal received")
-
-      try:
-         self.__del__()
-      except:
-         pass
-      if signal in self._prev_kill:
-         self._prev_kill[signal](signal, frame)
-
-   def _poll_loop(self):
+   def poll(self):
       """The main thread loop.
 
       Runs until either the program finishes or a kill call is sent. Updates
@@ -687,71 +613,10 @@ class InterfaceSocket(object):
       seconds until _poll_true becomes false.
       """
 
-      info(" @SOCKET: Starting the polling thread main loop.", verbosity.low)
-      self._poll_iter = UPDATEFREQ
-      while self._poll_true:
-         time.sleep(self.latency)
-         # makes sure to remove the last dead client as soon as possible -- and to get clients if we are dry
-         if self._poll_iter >= UPDATEFREQ or len(self.clients)==0 or (len(self.clients) > 0 and not(self.clients[0].status & Status.Up)):
-            self.pool_update()
-            self._poll_iter = 0
-         self._poll_iter += 1
-         self.pool_distribute()
-
-         if os.path.exists("EXIT"): # softexit
-            info(" @SOCKET: Soft exit request from file EXIT. Flushing job queue.", verbosity.low)
-            # releases all pending requests
-            for r in self.requests:
-               r["status"] = "Exit"
-            for c in self.clients:
-               try:
-                  c.shutdown(socket.SHUT_RDWR)
-                  c.close()
-               except:
-                  pass
-            # flush it all down the drain
-            self.clients = []
-            self.jobs = []
-      self._poll_thread = None
-
-   def started(self):
-      """Returns a boolean specifying whether the thread has started yet."""
-
-      return (not self._poll_thread is None)
-
-   def start_thread(self):
-      """Spawns a new thread.
-
-      Splits the main program into two threads, one that runs the polling loop
-      which updates the client list, and one which gets the data. Also sets up
-      the machinery to deal with a kill call, in the case of a Ctrl-C or
-      similar signal the signal is intercepted by the _kill_handler function,
-      which cleans up the spawned thread before closing the main thread.
-
-      Raises:
-         NameError: Raised if the polling thread already exists.
-      """
-
-      self.open()
-      if not self._poll_thread is None:
-         raise NameError("Polling thread already started")
-      self._poll_thread = threading.Thread(target=self._poll_loop, name="poll_" + self.address)
-      self._poll_thread.daemon = True
-      self._prev_kill[signal.SIGINT] = signal.signal(signal.SIGINT, self._kill_handler)
-      self._prev_kill[signal.SIGTERM] = signal.signal(signal.SIGTERM, self._kill_handler)
-      self._poll_true = True
-      self._poll_thread.start()
-
-   def end_thread(self):
-      """Closes the spawned thread.
-
-      Deals with cleaning up the spawned thread cleanly. First sets
-      _poll_true to false to indicate that the poll_loop should be exited, then
-      closes the spawned thread and removes it.
-      """
-
-      self._poll_true = False
-      if not self._poll_thread is None:
-         self._poll_thread.join()
-      self._poll_thread = None
-      self.close()
+      # makes sure to remove the last dead client as soon as possible -- and to get clients if we are dry
+      if self.poll_iter >= UPDATEFREQ or len(self.clients)==0 or (len(self.clients) > 0 and not(self.clients[0].status & Status.Up)):
+         self.pool_update()
+         self.poll_iter = 0
+         
+      self.poll_iter += 1
+      self.pool_distribute()

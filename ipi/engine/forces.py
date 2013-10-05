@@ -29,7 +29,7 @@ Classes:
       different forcefields.
 """
 
-__all__ = ['ForceField', 'ForceBeads', 'Forces', 'FFSocket']
+__all__ = ['Forces', 'ForceComponent']
 
 import numpy as np
 import time
@@ -37,11 +37,10 @@ from ipi.utils.softexit import softexit
 from ipi.utils.messages import verbosity, warning
 from ipi.utils.depend import *
 from ipi.utils.nmtransform import nm_rescale
-from ipi.interfaces.sockets import InterfaceSocket
 from ipi.engine.beads import Beads
 
-class ForceField(dobject):
-   """Base forcefield class.
+class ForceBead(dobject):
+   """Base force class.
 
    Gives the standard methods and quantities needed in all the forcefield
    classes.
@@ -71,19 +70,9 @@ class ForceField(dobject):
       # ufvx is a list [ u, f, vir, extra ]  which stores the results of the force
       #calculation
       dset(self,"ufvx", depend_value(name="ufvx", func=self.get_all))
+      self.request = None
 
-   def copy(self):
-      """Creates a deep copy without the bound objects.
-
-      Used in ForceBeads to create a ForceField for each replica of the system.
-
-      Returns:
-         A ForceField object without atoms or cell attributes.
-      """
-
-      return type(self)(self.nbeads, self.weight)
-
-   def bind(self, atoms, cell):
+   def bind(self, atoms, cell, ff):
       """Binds atoms and cell to the forcefield.
 
       This takes an atoms object and a cell object and makes them members of
@@ -98,6 +87,7 @@ class ForceField(dobject):
       # stores a reference to the atoms and cell we are computing forces for
       self.atoms = atoms
       self.cell = cell
+      self.ff = ff
 
       # ufv depends on the atomic positions and on the cell
       dget(self,"ufvx").add_dependency(dget(self.atoms,"q"))
@@ -130,20 +120,20 @@ class ForceField(dobject):
       depcopy(self,"f", self,"fy")
       depcopy(self,"f", self,"fz")
 
-   def queue(self):
-      """Dummy queueing method."""
+   def queue(self, reqid=-1):
+      """Sends the job to the interface queue directly.
 
-      pass
+      Allows the ForceBeads object to ask for the ufvx list of each replica
+      directly without going through the get_all function. This allows
+      all the jobs to be sent at once, allowing them to be parallelized.
 
-   def stop(self):
-      """Dummy queueing method."""
+      Args:
+         reqid: An optional integer that indentifies requests of the same type,
+            e.g. the bead index.
+      """
 
-      pass
-
-   def run(self):
-      """Dummy queueing method."""
-
-      pass
+      if self.request is None and dget(self,"ufvx").tainted():
+         self.request = self.ff.queue(self.atoms, self.cell, reqid=reqid)
 
    def get_all(self):
       """Dummy driver routine.
@@ -153,7 +143,23 @@ class ForceField(dobject):
          and all components of the force and virial have been set to zero.
       """
 
-      return [0.0, np.zeros(3*self.atoms.natoms), np.zeros((3,3),float), ""]
+
+      # this is converting the distribution library requests into [ u, f, v ]  lists
+      if self.request is None:
+         self.request = self.ff.queue(self.atoms, self.cell, reqid=-1)
+      while self.request["status"] != "Done":
+         if self.request["status"] == "Exit":
+            softexit.trigger(" @Force: Requested returned a Exit status")
+            break
+         time.sleep(self.ff.latency)
+
+      # data has been collected, so the request can be released and a slot
+      #freed up for new calculations
+      self.ff.release(self.request)
+      result = self.request["result"]
+      self.request = None
+
+      return result
 
    def get_pot(self):
       """Calls get_all routine of forcefield to update potential.
@@ -196,141 +202,141 @@ class ForceField(dobject):
 
       return self.ufvx[3]
 
+#~ 
+#~ class FFSocket(ForceField):
+   #~ """Interface between the PIMD code and the socket for a single replica.
+#~ 
+   #~ Deals with an individual replica of the system, obtaining the potential
+   #~ force and virial appropriate to this system. Deals with the distribution of
+   #~ jobs to the interface.
+#~ 
+   #~ Attributes:
+      #~ parameters: A dictionary of the parameters used by the driver. Of the
+         #~ form {'name': value}.
+      #~ socket: The interface object which contains the socket through which
+         #~ communication between the forcefield and the driver is done.
+      #~ request: During the force calculation step this holds a dictionary
+         #~ containing the relevant data for determining the progress of the step.
+         #~ Of the form {'atoms': atoms, 'cell': cell, 'pars': parameters,
+                      #~ 'status': status, 'result': result, 'id': bead id,
+                      #~ 'start': starting time}.
+   #~ """
+#~ 
+   #~ def __init__(self, pars=None, interface=None):
+      #~ """Initialises FFSocket.
+#~ 
+      #~ Args:
+         #~ pars: Optional dictionary, giving the parameters needed by the driver.
+         #~ interface: Optional Interface object, which contains the socket.
+      #~ """
+#~ 
+      #~ # a socket to the communication library is created or linked
+      #~ super(FFSocket,self).__init__()
+      #~ if interface is None:
+         #~ self.socket = InterfaceSocket()
+      #~ else:
+         #~ self.socket = interface
+#~ 
+      #~ if pars is None:
+         #~ self.pars = {}
+      #~ else:
+         #~ self.pars = pars
+      #~ self.request = None
+#~ 
+   #~ def bind(self, atoms, cell):
+      #~ """Pass on the binding request from ForceBeads.
+#~ 
+      #~ Also makes sure to set the socket's softexit.
+#~ 
+      #~ Args:
+         #~ atoms: Atoms object from which the bead positions are taken.
+         #~ cell: Cell object from which the system box is taken.
+      #~ """
+#~ 
+      #~ super(FFSocket,self).bind(atoms, cell)
+#~ 
+   #~ def copy(self):
+      #~ """Creates a deep copy without the bound objects.
+#~ 
+      #~ Used in ForceBeads to create a FFSocket for each replica of the system.
+#~ 
+      #~ Returns:
+         #~ A FFSocket object without atoms or cell attributes.
+      #~ """
+#~ 
+      #~ # does not copy the bound objects
+      #~ # (i.e., the returned forcefield must be bound before use)
+      #~ return type(self)(self.pars, self.socket)
+#~ 
+   #~ def get_all(self):
+      #~ """Driver routine.
+#~ 
+      #~ When one of the force, potential or virial are called, this sends the
+      #~ atoms and cell to the driver through the interface, requesting that the
+      #~ driver does the calculation. This then waits until the driver is finished,
+      #~ and then returns the ufvx list.
+#~ 
+      #~ Returns:
+         #~ A list of the form [potential, force, virial, extra].
+      #~ """
+#~ 
+      #~ # this is converting the distribution library requests into [ u, f, v ]  lists
+      #~ if self.request is None:
+         #~ self.request = self.socket.queue(self.atoms, self.cell, pars=self.pars, reqid=-1)
+      #~ while self.request["status"] != "Done":
+         #~ if self.request["status"] == "Exit":
+            #~ break
+         #~ time.sleep(self.socket.latency)
+      #~ if self.request["status"] == "Exit":
+         #~ softexit.trigger(" @Force: Requested returned a Exit status")
+#~ 
+      #~ # data has been collected, so the request can be released and a slot
+      #~ #freed up for new calculations
+      #~ self.socket.release(self.request)
+      #~ result = self.request["result"]
+      #~ self.request = None
+#~ 
+      #~ return result
+#~ 
+   #~ def queue(self, reqid=-1):
+      #~ """Sends the job to the interface queue directly.
+#~ 
+      #~ Allows the ForceBeads object to ask for the ufvx list of each replica
+      #~ directly without going through the get_all function. This allows
+      #~ all the jobs to be sent at once, allowing them to be parallelized.
+#~ 
+      #~ Args:
+         #~ reqid: An optional integer that indentifies requests of the same type,
+            #~ e.g. the bead index.
+      #~ """
+#~ 
+      #~ if self.request is None and dget(self,"ufvx").tainted():
+         #~ self.request = self.socket.queue(self.atoms, self.cell, pars=self.pars, reqid=reqid)
+#~ 
+   #~ def run(self):
+      #~ """Makes the socket start looking for driver codes.
+#~ 
+      #~ Tells the interface code to start the thread that looks for
+      #~ connection from the driver codes in a loop. Until this point no
+      #~ jobs can be queued.
+      #~ """
+#~ 
+      #~ if not self.socket.started():
+         #~ self.socket.start_thread()
+#~ 
+   #~ def stop(self):
+      #~ """Makes the socket stop looking for driver codes.
+#~ 
+      #~ Tells the interface code to stop the thread that looks for
+      #~ connection from the driver codes in a loop. After this point no
+      #~ jobs can be queued.
+      #~ """
+#~ 
+      #~ if self.socket.started():
+         #~ self.socket.end_thread()
 
-class FFSocket(ForceField):
-   """Interface between the PIMD code and the socket for a single replica.
 
-   Deals with an individual replica of the system, obtaining the potential
-   force and virial appropriate to this system. Deals with the distribution of
-   jobs to the interface.
-
-   Attributes:
-      parameters: A dictionary of the parameters used by the driver. Of the
-         form {'name': value}.
-      socket: The interface object which contains the socket through which
-         communication between the forcefield and the driver is done.
-      request: During the force calculation step this holds a dictionary
-         containing the relevant data for determining the progress of the step.
-         Of the form {'atoms': atoms, 'cell': cell, 'pars': parameters,
-                      'status': status, 'result': result, 'id': bead id,
-                      'start': starting time}.
-   """
-
-   def __init__(self, pars=None, interface=None):
-      """Initialises FFSocket.
-
-      Args:
-         pars: Optional dictionary, giving the parameters needed by the driver.
-         interface: Optional Interface object, which contains the socket.
-      """
-
-      # a socket to the communication library is created or linked
-      super(FFSocket,self).__init__()
-      if interface is None:
-         self.socket = InterfaceSocket()
-      else:
-         self.socket = interface
-
-      if pars is None:
-         self.pars = {}
-      else:
-         self.pars = pars
-      self.request = None
-
-   def bind(self, atoms, cell):
-      """Pass on the binding request from ForceBeads.
-
-      Also makes sure to set the socket's softexit.
-
-      Args:
-         atoms: Atoms object from which the bead positions are taken.
-         cell: Cell object from which the system box is taken.
-      """
-
-      super(FFSocket,self).bind(atoms, cell)
-
-   def copy(self):
-      """Creates a deep copy without the bound objects.
-
-      Used in ForceBeads to create a FFSocket for each replica of the system.
-
-      Returns:
-         A FFSocket object without atoms or cell attributes.
-      """
-
-      # does not copy the bound objects
-      # (i.e., the returned forcefield must be bound before use)
-      return type(self)(self.pars, self.socket)
-
-   def get_all(self):
-      """Driver routine.
-
-      When one of the force, potential or virial are called, this sends the
-      atoms and cell to the driver through the interface, requesting that the
-      driver does the calculation. This then waits until the driver is finished,
-      and then returns the ufvx list.
-
-      Returns:
-         A list of the form [potential, force, virial, extra].
-      """
-
-      # this is converting the distribution library requests into [ u, f, v ]  lists
-      if self.request is None:
-         self.request = self.socket.queue(self.atoms, self.cell, pars=self.pars, reqid=-1)
-      while self.request["status"] != "Done":
-         if self.request["status"] == "Exit":
-            break
-         time.sleep(self.socket.latency)
-      if self.request["status"] == "Exit":
-         softexit.trigger(" @Force: Requested returned a Exit status")
-
-      # data has been collected, so the request can be released and a slot
-      #freed up for new calculations
-      self.socket.release(self.request)
-      result = self.request["result"]
-      self.request = None
-
-      return result
-
-   def queue(self, reqid=-1):
-      """Sends the job to the interface queue directly.
-
-      Allows the ForceBeads object to ask for the ufvx list of each replica
-      directly without going through the get_all function. This allows
-      all the jobs to be sent at once, allowing them to be parallelized.
-
-      Args:
-         reqid: An optional integer that indentifies requests of the same type,
-            e.g. the bead index.
-      """
-
-      if self.request is None and dget(self,"ufvx").tainted():
-         self.request = self.socket.queue(self.atoms, self.cell, pars=self.pars, reqid=reqid)
-
-   def run(self):
-      """Makes the socket start looking for driver codes.
-
-      Tells the interface code to start the thread that looks for
-      connection from the driver codes in a loop. Until this point no
-      jobs can be queued.
-      """
-
-      if not self.socket.started():
-         self.socket.start_thread()
-
-   def stop(self):
-      """Makes the socket stop looking for driver codes.
-
-      Tells the interface code to stop the thread that looks for
-      connection from the driver codes in a loop. After this point no
-      jobs can be queued.
-      """
-
-      if self.socket.started():
-         self.socket.end_thread()
-
-
-class ForceBeads(dobject):
+class ForceComponent(dobject):
    """Class that gathers the forces for each replica together.
 
    Deals with splitting the bead representation into
@@ -339,7 +345,7 @@ class ForceBeads(dobject):
    Attributes:
       natoms: An integer giving the number of atoms.
       nbeads: An integer giving the number of beads.
-      f_model: A model used to create the forcefield objects for each replica
+      name: A model used to create the forcefield objects for each replica
          of the system.
       _forces: A list of the forcefield objects for all the replicas.
       weight: A float that will be used to weight the contribution of this
@@ -358,11 +364,11 @@ class ForceBeads(dobject):
          Depends on each replica's ufvx list.
    """
 
-   def __init__(self, model, nbeads=0, weight=1.0):
+   def __init__(self, name="", nbeads=0, weight=1.0):
       """Initializes ForceBeads
 
       Args:
-         model: A model to be used to create the forcefield objects for all
+         ffield: A model to be used to create the forcefield objects for all
             the replicas of the system.
          nbeads: The number of replicas.
          weight: A relative weight to be given to the values obtained with this
@@ -370,26 +376,12 @@ class ForceBeads(dobject):
             combined to give a total force, the contribution of this forcefield
             will be weighted by this factor.
       """
-
-      self.f_model = model
+      
+      self.name = name
       self.nbeads = nbeads
       self.weight = weight
 
-   def copy(self):
-      """Creates a deep copy without the bound objects.
-
-      Used so that we can create multiple Forces objects from the same
-      Forcebeads model, without binding a particular ForceBeads object twice.
-
-      Returns:
-         A ForceBeads object without beads or cell attributes.
-      """
-
-      # does not copy the bound objects (i.e., the returned forcefield must be bound before use)
-      return type(self)(self.f_model, self.nbeads, self.weight)
-
-
-   def bind(self, beads, cell):
+   def bind(self, beads, cell, fflist):
       """Binds beads, cell and force to the forcefield.
 
       Takes the beads, cell objects and makes them members of the forcefield.
@@ -409,12 +401,19 @@ class ForceBeads(dobject):
       if (self.nbeads != beads.nbeads):
          raise ValueError("Binding together a Beads and a ForceBeads objects with different numbers of beads")
 
+      print "FLIST", fflist
       # creates an array of force objects, which are bound to the beads
       #and the cell
+      if not self.name in fflist:
+         raise ValueError("Force component name '"+self.name+"' is not in the forcefields list")
+         
+      self.ff = fflist[self.name]
+      
+      
       self._forces = [];
       for b in range(self.nbeads):
-         new_force = self.f_model.copy()
-         new_force.bind(beads[b], cell)
+         new_force = ForceBead()
+         new_force.bind(beads[b], cell, self.ff)
          self._forces.append(new_force)
 
       # f is a big array which assembles the forces on individual beads
@@ -444,28 +443,6 @@ class ForceBeads(dobject):
       dset(self,"vir",
          depend_array(name="vir", func=self.get_vir, value=np.zeros((3,3)),
             dependencies=[dget(self,"virs")]))
-
-   def run(self):
-      """Makes the socket start looking for driver codes.
-
-      Tells the interface code to start the thread that looks for
-      connection from the driver codes in a loop. Until this point no
-      jobs can be queued.
-      """
-
-      for b in range(self.nbeads):
-         self._forces[b].run()
-
-   def stop(self):
-      """Makes the socket stop looking for driver codes.
-
-      Tells the interface code to stop the thread that looks for
-      connection from the driver codes in a loop. After this point no
-      jobs can be queued.
-      """
-
-      for b in range(self.nbeads):
-         self._forces[b].stop()
 
    def queue(self):
       """Submits all the required force calculations to the interface."""
@@ -607,13 +584,13 @@ class Forces(dobject):
       vir: The sum of the virial tensor of the replicas.
    """
 
-   def bind(self, beads, cell, flist):
+   def bind(self, beads, cell, forces, fflist):
 
       self.natoms = beads.natoms
       self.nbeads = beads.nbeads
-      self.nforces = len(flist)
+      self.nforces = len(forces)
 
-      # flist should be a list of tuples containing ( "name", forcebeads)
+      # fflist should be a dictionary of forcefield objects
       self.mforces = []
       self.mbeads = []
       self.mweights = []
@@ -626,13 +603,13 @@ class Forces(dobject):
 
       # creates new force objects, possibly acting on contracted path
       #representations
-      for (ftype, fbeads) in flist:
+      for fc in forces:
 
          # creates an automatically-updated contracted beads object
-         newb = fbeads.nbeads
-         newforce = fbeads.copy()
-         newweight = fbeads.weight
-
+         newb = fc.nbeads
+         newforce = ForceComponent(name=fc.name, nbeads=fc.nbeads, weight=fc.weight)
+         newweight = fc.weight
+         
          # if the number of beads for this force component is unspecified,
          #assume full force evaluation
          if newb == 0:
@@ -651,7 +628,7 @@ class Forces(dobject):
          dget(beads,"q").add_dependant(dget(newbeads,"q"))
 
          #now we create a new forcebeads which is bound to newbeads!
-         newforce.bind(newbeads, cell)
+         newforce.bind(newbeads, cell, fflist)
 
          #adds information we will later need to the appropriate lists.
          self.mweights.append(newweight)

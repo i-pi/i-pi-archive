@@ -22,15 +22,15 @@ Classes:
    InputFBSocket: Deals with creating a forcefield using sockets.
 """
 
-__all__ = ['InputForces', 'InputForceBeads', "InputFBSocket"]
+__all__ = ['InputForces', 'InputForceComponent']
 
 from copy import copy
 from ipi.engine.forces import *
 from ipi.inputs.interface import InputInterfaceSocket
 from ipi.utils.inputvalue import *
 
-class InputForceBeads(Input):
-   """ForceBeads input class.
+class InputForceComponent(InputValue):
+   """ForceComponent input class.
 
    Handles generating one instance of a particular forcefield class from the xml
    input file, and generating the xml checkpoint tags and data from an
@@ -51,7 +51,15 @@ class InputForceBeads(Input):
 
    default_help = "Base class that deals with the assigning of force calculation jobs and collecting the data."
    default_label = "FORCEBEADS"
+   
+   def __init__(self, help=None, dimension=None, units=None, default=None, dtype=None):
+      """Initializes InputCell.
 
+      Just calls the parent initialization function with appropriate arguments.
+      """
+
+      super(InputForceComponent,self).__init__(dtype=str, dimension=dimension, default=default, help=help)
+      
    def store(self, forceb):
       """Takes a ForceBeads instance and stores a minimal representation of it.
 
@@ -59,7 +67,7 @@ class InputForceBeads(Input):
          forceb: A ForceBeads object.
       """
 
-      Input.store(self,forceb)
+      super(InputForceComponent,self).store(forceb.name)
       self.nbeads.store(forceb.nbeads)
       self.weight.store(forceb.weight)
 
@@ -70,60 +78,59 @@ class InputForceBeads(Input):
          A ForceBeads object.
       """
 
-      super(InputForceBeads,self).fetch()
-
-      return ForceBeads(model=ForceField(), nbeads=self.nbeads.fetch(), weight=self.weight.fetch())
+      val=super(InputForceComponent,self).fetch()      
+      return ForceComponent(name=val, nbeads=self.nbeads.fetch(), weight=self.weight.fetch())
 
    def check(self):
       """Checks for optional parameters."""
 
-      super(InputForceBeads,self).check()
+      super(InputForceComponent,self).check()
       if self.nbeads.fetch() < 0:
          raise ValueError("The forces must be evaluated over a positive number of beads.")
 
-
-class InputFBSocket(InputForceBeads, InputInterfaceSocket):
-   """Creates a ForceBeads object with a socket interface.
-
-   Handles generating one instance of a socket interface forcefield class.
-   Shares its attributes between InputForceBeads, which deals with creating the
-   forcefield, and InputInterfaceSocket, which deals with creating the socket
-   interface.
-   """
-
-   attribs = copy(InputInterfaceSocket.attribs)
-   attribs.update(InputForceBeads.attribs)
-
-   default_help = "Deals with the assigning of force calculation jobs to different driver codes, and collecting the data, using a socket for the data communication."
-   default_label = "SOCKET"
-
-   def store(self, forceb):
-      """Takes a ForceField instance and stores a minimal representation of it.
-
-      Args:
-         forceb: A ForceBeads object with a FFSocket forcemodel object.
-      """
-
-      if (not type(forceb.f_model) is FFSocket):
-         raise TypeError("The type " + type(forceb.f_model).__name__ + " is not a valid socket forcefield")
-
-      InputForceBeads.store(self,forceb)
-      InputInterfaceSocket.store(self,forceb.f_model.socket)
-
-   def fetch(self):
-      """Creates a ForceBeads object.
-
-      Returns:
-         A ForceBeads object with the correct socket parameters.
-      """
-
-      return ForceBeads(model=FFSocket( interface=InputInterfaceSocket.fetch(self) ),nbeads=self.nbeads.fetch(),weight=self.weight.fetch() )
-
-   def check(self):
-      """Deals with optional parameters."""
-
-      InputInterfaceSocket.check(self)
-      InputForceBeads.check(self)
+#~ 
+#~ class InputFBSocket(InputForceBeads, InputInterfaceSocket):
+   #~ """Creates a ForceBeads object with a socket interface.
+#~ 
+   #~ Handles generating one instance of a socket interface forcefield class.
+   #~ Shares its attributes between InputForceBeads, which deals with creating the
+   #~ forcefield, and InputInterfaceSocket, which deals with creating the socket
+   #~ interface.
+   #~ """
+#~ 
+   #~ attribs = copy(InputInterfaceSocket.attribs)
+   #~ attribs.update(InputForceBeads.attribs)
+#~ 
+   #~ default_help = "Deals with the assigning of force calculation jobs to different driver codes, and collecting the data, using a socket for the data communication."
+   #~ default_label = "SOCKET"
+#~ 
+   #~ def store(self, forceb):
+      #~ """Takes a ForceField instance and stores a minimal representation of it.
+#~ 
+      #~ Args:
+         #~ forceb: A ForceBeads object with a FFSocket forcemodel object.
+      #~ """
+#~ 
+      #~ if (not type(forceb.f_model) is FFSocket):
+         #~ raise TypeError("The type " + type(forceb.f_model).__name__ + " is not a valid socket forcefield")
+#~ 
+      #~ InputForceBeads.store(self,forceb)
+      #~ InputInterfaceSocket.store(self,forceb.f_model.socket)
+#~ 
+   #~ def fetch(self):
+      #~ """Creates a ForceBeads object.
+#~ 
+      #~ Returns:
+         #~ A ForceBeads object with the correct socket parameters.
+      #~ """
+#~ 
+      #~ return ForceBeads(model=FFSocket( interface=InputInterfaceSocket.fetch(self) ),nbeads=self.nbeads.fetch(),weight=self.weight.fetch() )
+#~ 
+   #~ def check(self):
+      #~ """Deals with optional parameters."""
+#~ 
+      #~ InputInterfaceSocket.check(self)
+      #~ InputForceBeads.check(self)
 
 
 class InputForces(Input):
@@ -136,7 +143,7 @@ class InputForces(Input):
 
    #At the moment only socket driver codes implemented, other types
    #could be used in principle
-   dynamic = {  "socket" : (InputFBSocket, { "help" : InputFBSocket.default_help } )
+   dynamic = {  "force" : (InputForceComponent, { "help" : InputForceComponent.default_help } )
             }
 
    default_help = "Deals with creating all the necessary forcefield objects."
@@ -151,9 +158,8 @@ class InputForces(Input):
          where 'type' is the type of forcefield, and 'object' is a
       """
 
-      super(InputForces, self).fetch()
-      flist = [ (n, f.fetch()) for (n, f) in self.extra ]
-
+      super(InputForces, self).fetch()   
+      flist = [ f.fetch() for (n, f) in self.extra ]      
       return flist
 
    def store(self, flist):
@@ -170,7 +176,6 @@ class InputForces(Input):
       self.extra = []
 
       for el in flist:
-         if el[0]=="socket":
-            iff = InputFBSocket()
-            iff.store(el[1])
-            self.extra.append(("socket", iff))
+         iff = InputForceComponent()
+         iff.store(el)
+         self.extra.append(("force", iff))

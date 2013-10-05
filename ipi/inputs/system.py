@@ -42,6 +42,8 @@ from ipi.engine.normalmodes import NormalModes
 from ipi.engine.atoms import Atoms
 from ipi.engine.beads import Beads
 from ipi.engine.cell import Cell
+from ipi.inputs.initializer import InputInitializer
+from ipi.engine.initializer import Initializer
 
 class InputSystem(Input):
    """System input class.
@@ -60,6 +62,8 @@ class InputSystem(Input):
    """
 
    fields = {
+             "initialize" : (InputInitializer, { "help" : InputInitializer.default_help,
+                                                "default" : input_default(factory=Initializer) } ),
              "forces" :   (InputForces,    { "help"  : InputForces.default_help }),
              "ensemble": (InputEnsemble, { "help"  : InputEnsemble.default_help } ),
              "beads" :   (InputBeads, { "help"     : InputBeads.default_help,
@@ -69,6 +73,7 @@ class InputSystem(Input):
              "cell" :    (InputCell,   { "help"    : InputCell.default_help,
                                         "default"  : input_default(factory=Cell) })
              }
+   attribs = { "copies": (InputAttribute, {"help" : "Create multiple copies of the system. This is handy for initialising simulations with multiple systems.", "default": 1, "dtype": int}) }
 
    default_help = "This is the top level class that describes the physical system."
    default_label = "SYSTEM"
@@ -106,7 +111,7 @@ class InputSystem(Input):
 
       # this creates a simulation object which gathers all the little bits
       #TODO use named arguments since this list is a bit too long...
-      rsys = ipi.engine.system.System(self.beads.fetch(), self.cell.fetch(),
+      rsys = ipi.engine.system.System(self.initialize.fetch(), self.beads.fetch(), self.cell.fetch(),
                self.forces.fetch(), self.ensemble.fetch(), self.normal_modes.fetch())
 
       return rsys

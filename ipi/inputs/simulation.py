@@ -35,9 +35,8 @@ from ipi.utils.io.io_xml import *
 from ipi.utils.messages import verbosity
 from ipi.inputs.prng import InputRandom
 from ipi.inputs.system import InputSystem
+from ipi.inputs.forcefields import InputFFSocket
 from ipi.inputs.outputs import InputOutputs
-from ipi.inputs.initializer import InputInitializer
-from ipi.engine.initializer import Initializer
 
 class InputSimulation(Input):
    """Simulation input class.
@@ -67,8 +66,6 @@ class InputSimulation(Input):
    fields = {
              "prng" :    (InputRandom,   { "help"  : InputRandom.default_help,
                                          "default" : input_default(factory=Random)} ),
-             "initialize" : (InputInitializer, { "help" : InputInitializer.default_help,
-                                                "default" : input_default(factory=Initializer) } ),
              "output" :  (InputOutputs, { "help"   : InputOutputs.default_help,
                                           "default": input_default(factory=InputOutputs.make_default)  }),
              "step" :       ( InputValue, { "dtype"    : int,
@@ -94,7 +91,8 @@ class InputSimulation(Input):
              }
 
    dynamic = {
-             "system" :   (InputSystem,    { "help"  : InputSystem.default_help })
+             "system" :   (InputSystem,    { "help"  : InputSystem.default_help }), 
+             "ffsocket": (InputFFSocket, { "help": InputFFSocket.default_help} )
              }
 
    default_help = "This is the top level class that deals with the running of the simulation, including holding the simulation specific properties such as the time step and outputting the data."
@@ -133,6 +131,12 @@ class InputSimulation(Input):
 
       self.extra = []
 
+      for f in simul.fflist:
+         iff = InputFFSocket()
+         print "simul storing ff", f
+         iff.store(simul.fflist[f])
+         print "stored", iff.name.fetch()
+         self.extra.append(("ffsocket",iff))
       for s in simul.syslist:
          isys = InputSystem()
          isys.store(s)
@@ -159,14 +163,18 @@ class InputSimulation(Input):
       verbosity.level=self.verbosity.fetch()
 
       syslist=[]
+      fflist=[]
       for (k,v) in self.extra:
-         syslist.append(v.fetch())
+         if k=="system" : 
+            for i in range(v.copies.fetch()): # creates multiple copies of system if desired
+               syslist.append(v.fetch())
+         elif k=="ffsocket": fflist.append(v.fetch())
 
 
       # this creates a simulation object which gathers all the little bits
       #TODO use named arguments since this list is a bit too long...
       rsim = ipi.engine.simulation.Simulation(
-                  syslist, self.initialize.fetch(),
+                  syslist, fflist,
                   self.output.fetch(),
                   self.prng.fetch(),
                       self.step.fetch(),

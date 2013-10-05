@@ -445,7 +445,7 @@ class Properties(dobject):
       # coordinates
       self.dbeads = system.beads.copy()
       self.dforces = Forces()
-      self.dforces.bind(self.dbeads, self.system.cell,  self.system.flist)
+      self.dforces.bind(self.dbeads, self.system.cell,  self.system.flist, self.system.simul.fflist)
 
    def __getitem__(self, key):
       """Retrieves the item given by key.

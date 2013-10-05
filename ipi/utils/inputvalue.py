@@ -337,7 +337,7 @@ class Input(object):
                raise NameError("Attribute name '" + a + "' is not a recognized property of '" + xml.name + "' objects")
 
          for (f, v) in xml.fields: #reads all field and dynamic data.
-            if f in self.fields:
+            if f in self.fields:               
                self.__dict__[f].parse(xml=v)
             elif f == "_text":
                self._text = v
@@ -750,7 +750,7 @@ class InputAttribute(Input):
       Returns:
          A string giving the stored value in the appropriate format.
       """
-
+      print "NAME OUT ", name, "VAL", self.value
       return name + "='" + write_type(self.type, self.value) + "'"
 
 
