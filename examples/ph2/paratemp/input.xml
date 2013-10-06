@@ -1,4 +1,4 @@
-<simulation verbosity='high' mode="paratemp">
+<simulation verbosity='low' mode="paratemp">
    <output prefix='ph2'>
       <properties stride='5' filename='out'>  [ 
              step, time{picosecond}, conserved{kelvin}, temperature{kelvin}, 
@@ -14,11 +14,10 @@
    
    <prng><seed>31415</seed></prng>
    <total_steps>100000</total_steps>
-   <total_time>120</total_time>
-  <ffsocket name="sg" mode="unix">
-      <latency>0.01</latency>  <address>ph2_pt</address>
-   </ffsocket>
-   
+   <total_time>1200</total_time>
+   <ffsocket name="sg" mode="unix">
+      <latency>0.001</latency>  <address>ph2_pt</address>
+   </ffsocket>   
    <paratemp>
       <temp_list units="kelvin"> [ 15, 20, 25, 30 ] </temp_list>
       <stride> 100 </stride>

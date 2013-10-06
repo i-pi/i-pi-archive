@@ -140,6 +140,8 @@ class Simulation(dobject):
       
       if self.mode == "paratemp":
           self.paratemp.bind(self.syslist, self.prng)
+          softexit.register_function(self.paratemp.softexit)
+          
       self.chk = CheckpointOutput("RESTART", 1, True, 0)
       self.chk.bind(self)
       
@@ -197,7 +199,7 @@ class Simulation(dobject):
          self.chk.store()
 
          if self.mode == "paratemp":
-            self.paratemp.swap()
+            self.paratemp.swap(self.step)
          
          stepthreads = []
          # steps through all the systems
