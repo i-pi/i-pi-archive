@@ -33,10 +33,12 @@ from ipi.utils.prng   import *
 from ipi.utils.io     import *
 from ipi.utils.io.io_xml import *
 from ipi.utils.messages import verbosity
+from ipi.engine.paratemp import ParaTemp
 from ipi.inputs.prng import InputRandom
 from ipi.inputs.system import InputSystem
 from ipi.inputs.forcefields import InputFFSocket
 from ipi.inputs.outputs import InputOutputs
+from ipi.inputs.paratemp import InputParaTemp
 
 class InputSimulation(Input):
    """Simulation input class.
@@ -77,7 +79,9 @@ class InputSimulation(Input):
              "total_time" :       ( InputValue, { "dtype"    : float,
                                             "default"  : 0,
                                             "help"     : "The maximum wall clock time (in seconds)." }),
-                                             }
+             "paratemp" : (InputParaTemp, {"default"   : input_default(factory=ParaTemp),
+                                         "help"      : "Options for a parallel tempering simulation"})
+            }
 
    attribs = { "verbosity" : (InputAttribute, { "dtype"   : str,
                                       "default" : "low",
@@ -113,6 +117,7 @@ class InputSimulation(Input):
       self.step.store(simul.step)
       self.total_steps.store(simul.tsteps)
       self.total_time.store(simul.ttime)
+      self.paratemp.store(simul.paratemp)
 
       # this we pick from the messages class. kind of a "global" but it seems to
       # be the best way to pass around the (global) information on the level of output.
@@ -129,6 +134,8 @@ class InputSimulation(Input):
       else:
          raise ValueError("Invalid verbosity level")
 
+      self.mode.store(simul.mode)
+      
       self.extra = []
 
       for f in simul.fflist:
@@ -174,9 +181,11 @@ class InputSimulation(Input):
       # this creates a simulation object which gathers all the little bits
       #TODO use named arguments since this list is a bit too long...
       rsim = ipi.engine.simulation.Simulation(
+                  self.mode.fetch(),
                   syslist, fflist,
                   self.output.fetch(),
                   self.prng.fetch(),
+                  self.paratemp.fetch(),
                       self.step.fetch(),
                         tsteps=self.total_steps.fetch(),
                            ttime=self.total_time.fetch())

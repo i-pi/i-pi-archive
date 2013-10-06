@@ -39,6 +39,8 @@ from ipi.utils.depend import *
 from ipi.utils.nmtransform import nm_rescale
 from ipi.engine.beads import Beads
 
+fbuid = 0
+
 class ForceBead(dobject):
    """Base force class.
 
@@ -71,7 +73,7 @@ class ForceBead(dobject):
       #calculation
       dset(self,"ufvx", depend_value(name="ufvx", func=self.get_all))
       self.request = None
-
+      
    def bind(self, atoms, cell, ff):
       """Binds atoms and cell to the forcefield.
 
@@ -83,6 +85,10 @@ class ForceBead(dobject):
          atoms: The Atoms object from which the atom positions are taken.
          cell: The Cell object from which the system box is taken.
       """
+
+      global fbuid      #assign a unique identifier to each forcebead object
+      self.uid = fbuid
+      fbuid+=1
 
       # stores a reference to the atoms and cell we are computing forces for
       self.atoms = atoms
@@ -120,20 +126,16 @@ class ForceBead(dobject):
       depcopy(self,"f", self,"fy")
       depcopy(self,"f", self,"fz")
 
-   def queue(self, reqid=-1):
+   def queue(self):
       """Sends the job to the interface queue directly.
 
       Allows the ForceBeads object to ask for the ufvx list of each replica
       directly without going through the get_all function. This allows
       all the jobs to be sent at once, allowing them to be parallelized.
-
-      Args:
-         reqid: An optional integer that indentifies requests of the same type,
-            e.g. the bead index.
       """
 
       if self.request is None and dget(self,"ufvx").tainted():
-         self.request = self.ff.queue(self.atoms, self.cell, reqid=reqid)
+         self.request = self.ff.queue(self.atoms, self.cell, reqid=self.uid)
 
    def get_all(self):
       """Dummy driver routine.
@@ -146,7 +148,7 @@ class ForceBead(dobject):
 
       # this is converting the distribution library requests into [ u, f, v ]  lists
       if self.request is None:
-         self.request = self.ff.queue(self.atoms, self.cell, reqid=-1)
+         self.request = self.ff.queue(self.atoms, self.cell)
       while self.request["status"] != "Done":
          if self.request["status"] == "Exit" or softexit.triggered:
             # now, this is tricky. we are stuck here and we cannot return meaningful results.
@@ -324,7 +326,7 @@ class ForceComponent(dobject):
       # before accessing them. it is basically pre-queueing so that the
       # distributed-computing magic can work
       for b in range(self.nbeads):
-         self._forces[b].queue(reqid=b)
+         self._forces[b].queue()
 
    def pot_gather(self):
       """Obtains the potential energy for each replica.

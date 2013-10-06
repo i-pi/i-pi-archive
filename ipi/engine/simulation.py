@@ -29,14 +29,14 @@ Classes:
 __all__ = ['Simulation']
 
 import numpy as np
-import os.path, sys, time
+import os.path, sys, time, threading
 from copy import deepcopy
 from ipi.utils.depend import *
 from ipi.utils.units  import *
 from ipi.utils.prng   import *
 from ipi.utils.io     import *
 from ipi.utils.io.io_xml import *
-from ipi.utils.messages import verbosity, info
+from ipi.utils.messages import verbosity, info, warning
 from ipi.utils.softexit import softexit
 from ipi.engine.atoms import *
 from ipi.engine.cell import *
@@ -53,24 +53,14 @@ class Simulation(dobject):
    initialisation and output.
 
    Attributes:
-      beads: A beads object giving the atom positions.
-      cell: A cell object giving the system box.
       prng: A random number generator object.
-      flist: A list of forcefield objects giving different ways to partially
-         calculate the forces.
-      forces: A Forces object for calculating the total force for all the
-         replicas.
-      ensemble: An ensemble object giving the objects necessary for producing
-         the correct ensemble.
+      fflist: A list of forcefield objects that can be called to compute energy and forces
+      syslist: A list of physical systems
       tsteps: The total number of steps.
       ttime: The wall clock time (in seconds).
-      format: A string specifying both the format and the extension of traj
-         output.
       outputs: A list of output objects that should be printed during the run
-      nm:  A helper object dealing with normal modes transformation
-      properties: A property object for dealing with property output.
-      trajs: A trajectory object for dealing with trajectory output.
-      chk: A checkpoint object for dealing with checkpoint output.
+      paratemp: A helper object for parallel tempering simulations
+      chk: A checkpoint object which is kept up-to-date in case of emergency exit
       rollback: If set to true, the state of the simulation at the start
          of the step will be output to a restart file rather than
          the current state of the simulation. This is because we cannot
@@ -81,13 +71,15 @@ class Simulation(dobject):
       step: The current simulation step.
    """
 
-   def __init__(self, syslist, fflist, outputs, prng, step=0, tsteps=1000, ttime=0):
+   def __init__(self, mode, syslist, fflist, outputs, prng, paratemp, step=0, tsteps=1000, ttime=0):
       """Initialises Simulation class.
 
       Args:
-         syslist: a list of system objects
-         fflist: a list of forcefield objects
+         mode: What kind of simulation is this
+         syslist: A list of system objects
+         fflist: A list of forcefield objects
          prng: A random number object.
+         paratemp: A parallel tempering helper class.
          outputs: A list of output objects.
          init: A class to deal with initializing the simulation object.
          step: An optional integer giving the current simulation time step.
@@ -100,12 +92,16 @@ class Simulation(dobject):
 
       info(" # Initializing simulation object ", verbosity.low )
       self.prng = prng
+      self.mode = mode
 
       self.syslist = syslist
       for s in syslist:
          s.prng = self.prng # binds the system's prng to self prng         
-      self.fflist = {}
-      
+
+      if self.mode == "md" and len(syslist)>1:
+         warning("Multiple systems will evolve independently in a '"+self.mode+"' simulation.")
+
+      self.fflist = {}      
       for f in fflist:
          self.fflist[f.name] = f
 
@@ -114,13 +110,14 @@ class Simulation(dobject):
       dset(self, "step", depend_value(name="step", value=step))
       self.tsteps = tsteps
       self.ttime = ttime
+      self.paratemp = paratemp
 
       self.chk = None
       self.rollback = True
 
    def bind(self):
       """Calls the bind routines for all the objects in the simulation."""
-
+      
       for s in self.syslist:
          # binds important computation engines
          s.bind(self)      
@@ -140,10 +137,12 @@ class Simulation(dobject):
                self.outputs.append(no)
                isys+=1
 
-
+      
+      if self.mode == "paratemp":
+          self.paratemp.bind(self.syslist, self.prng)
       self.chk = CheckpointOutput("RESTART", 1, True, 0)
       self.chk.bind(self)
-
+      
 
    def softexit(self):
       """Deals with a soft exit request.
@@ -181,8 +180,8 @@ class Simulation(dobject):
       # registers the softexit routine      
       softexit.register_function(self.softexit)
       softexit.start(self.ttime)      
-      simtime =  time.time() 
-
+      simtime =  time.time()      
+      
       cstep = 0
       tptime = 0.0
       tqtime = 0.0
@@ -197,10 +196,21 @@ class Simulation(dobject):
          steptime = -time.time()
          self.chk.store()
 
+         if self.mode == "paratemp":
+            self.paratemp.swap()
+         
+         stepthreads = []
          # steps through all the systems
          for s in self.syslist:
-            s.ensemble.step()
-            
+            # creates separate threads for the different systems
+            st = threading.Thread(target=s.ensemble.step, name=s.prefix)            
+            st.daemon = True
+            st.start()            
+            stepthreads.append(st)
+         
+         for st in stepthreads:
+            st.join()
+         
          if softexit.triggered: break # don't continue if we are about to exit!
          
          for o in self.outputs:
@@ -224,7 +234,6 @@ class Simulation(dobject):
             info(" # EXIT file detected! Bye bye!", verbosity.low )
             break
             
-         print "ttime check", time.time() - simtime , self.ttime
          if (self.ttime > 0 and time.time() - simtime > self.ttime):
             info(" # Wall clock time expired! Bye bye!", verbosity.low )
             break

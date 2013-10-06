@@ -84,12 +84,7 @@ class InputEnsemble(Input):
                                    "default"         : True,
                                    "help"            : "This describes whether the centre of mass of the particles is fixed."}),
            "replay_file": (InputInitFile, {"default" : input_default(factory=ipi.engine.initializer.InitBase),
-                           "help"            : "This describes the location to read a trajectory file from."}),
-                           
-           "pt_templist" : (InputArray, {"dtype"     : float,
-                                         "default"   : input_default(factory=np.zeros, args = (0,)),
-                                         "help"      : "List of temperatures for a parallel tempering simulation",
-                                         "dimension" : "temperature" })
+                           "help"            : "This describes the location to read a trajectory file from."})
          }
    dynamic = { "pt_thermostat" : ( InputThermo, {"default"   : input_default(factory=ipi.engine.thermostats.Thermostat),
                                          "help"      : "A list of thermostats of the different replicas in a parallel tempering run" } )
