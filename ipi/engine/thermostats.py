@@ -647,6 +647,7 @@ class ThermoGLE(Thermostat):
          self.s = np.zeros((self.ns + 1, len(dget(self,"m"))))
 
          # Initializes the s vector in the free-particle limit
+         info(" GLE additional DOFs initialised to the free-particle limit.", verbosity.low)
          SC = stab_cholesky(self.C*Constants.kb)
          self.s[:] = np.dot(SC, self.prng.gvec(self.s.shape))
       else:
@@ -770,6 +771,7 @@ class ThermoNMGLE(Thermostat):
          self.s = np.zeros((self.nb, self.ns + 1, nm.natoms*3))
 
          # Initializes the s vector in the free-particle limit
+         info(" GLE additional DOFs initialised to the free-particle limit.", verbosity.low)
          for b in range(self.nb):
             SC = stab_cholesky(self.C[b]*Constants.kb)
             self.s[b] = np.dot(SC, self.prng.gvec(self.s[b].shape))

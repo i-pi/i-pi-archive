@@ -10,7 +10,7 @@ the Free Software Foundation, either version 3 of the License, or
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
@@ -317,15 +317,16 @@ class NVTEnsemble(NVEEnsemble):
       if self.fixcom:
          fixdof = 3
 
+      # first makes sure that the thermostat has the correct temperature, then proceed with binding it.
+      deppipe(self,"ntemp", self.thermostat,"temp")
+      deppipe(self,"dt", self.thermostat, "dt")
+
       #decides whether the thermostat will work in the normal mode or
       #the bead representation.
       if isinstance(self.thermostat,ThermoNMGLE) or isinstance(self.thermostat,ThermoNMGLEG) or isinstance(self.thermostat,ThermoPILE_L) or isinstance(self.thermostat,ThermoPILE_G):
          self.thermostat.bind(nm=self.nm,prng=prng,fixdof=fixdof )
       else:
          self.thermostat.bind(beads=self.beads,prng=prng, fixdof=fixdof)
-
-      deppipe(self,"ntemp", self.thermostat,"temp")
-      deppipe(self,"dt", self.thermostat, "dt")
 
       dget(self,"econs").add_dependency(dget(self.thermostat, "ethermo"))
 
