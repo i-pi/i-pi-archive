@@ -58,6 +58,7 @@ __all__ = ['depend_base', 'depend_value', 'depend_array', 'synchronizer',
            'dobject', 'dget', 'dset', 'depstrip', 'depcopy', 'deppipe']
 
 import numpy as np
+import weakref
 from ipi.utils.messages import verbosity, warning
 
 class synchronizer(object):
@@ -157,7 +158,9 @@ class depend_base(object):
       for item in dependencies:
          item.add_dependant(self, tainted)
 
-      self._dependants = dependants
+      for item in dependants:
+         self.add_dependant(item)
+      #self._dependants = dependants
 
       # Don't taint self if the object is a primitive one. However, do propagate tainting to dependants if required.
       if (tainted):
@@ -184,10 +187,15 @@ class depend_base(object):
          tainted: A boolean that decides whether newdep should be tainted.
             True by default.
       """
-
-      self._dependants.append(newdep)
-      if tainted:
-         newdep.taint(taintme=True)
+      
+      if type(newdep) is weakref.ref:
+         self._dependants.append(newdep)
+         if tainted:
+            newdep().taint(taintme=True)
+      else:
+         self._dependants.append(weakref.ref(newdep))
+         if tainted:
+            newdep.taint(taintme=True)
 
    def add_dependency(self, newdep, tainted=True):
       """Adds a dependency.
@@ -198,7 +206,7 @@ class depend_base(object):
             be tainted. True by default.
       """
 
-      newdep._dependants.append(self)
+      newdep._dependants.append(weakref.ref(self))
       if tainted:
          self.taint(taintme=True)
 
@@ -221,8 +229,8 @@ class depend_base(object):
 
       self._tainted[:] = True
       for item in self._dependants:
-         if (not item._tainted[0]):
-            item.taint()
+         if (not item()._tainted[0]):
+            item().taint()
       if not self._synchro is None:
          for v in self._synchro.synced.values():
             if (not v._tainted[0]) and (not v is self):
