@@ -127,7 +127,7 @@ class Beads(dobject):
             func=self.get_pc, dependencies=[dget(self,"p")] ) )
 
       # create proxies to access the centroid and the individual beads as Atoms objects
-      self.centroid = Atoms(natoms, _prebind=(self.qc, self.pc, self.m, self.names))
+      #self.centroid = Atoms(natoms, _prebind=(self.qc, self.pc, self.m, self.names))
       self._blist = [Atoms(natoms, _prebind=( self.q[i,:], self.p[i,:], self.m,  self.names )) for i in range(nbeads) ]
 
       # path springs potential and force

@@ -19,8 +19,8 @@
       <latency>0.001</latency>  <address>ph2_pt</address>
    </ffsocket>
    <paratemp>
-      <temp_list units="kelvin"> [ 25, 30, 35 ] </temp_list>
-      <stride> 1000000 </stride>
+      <temp_list units="kelvin"> [ 30, 35, 40 ] </temp_list>
+      <stride> 10 </stride>
    </paratemp>
    <system copies="3" prefix="ID">
       <initialize nbeads='1'>
@@ -42,7 +42,7 @@
             <tau units="femtosecond"> 100 </tau>
          </thermostat>
          -->
-         <timestep units='femtosecond'> 4 </timestep>
+         <timestep units='femtosecond'> 5 </timestep>
          <temperature units='kelvin'>25</temperature>
       </ensemble>
    </system>

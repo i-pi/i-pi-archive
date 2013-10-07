@@ -39,7 +39,7 @@ from ipi.inputs.system import InputSystem
 from ipi.inputs.forcefields import InputFFSocket
 from ipi.inputs.outputs import InputOutputs
 from ipi.inputs.paratemp import InputParaTemp
-
+import objgraph
 class InputSimulation(Input):
    """Simulation input class.
 
@@ -137,11 +137,12 @@ class InputSimulation(Input):
       self.mode.store(simul.mode)
 
       self.extra = []
-
+      
       for f in simul.fflist:
          iff = InputFFSocket()
          iff.store(simul.fflist[f])
          self.extra.append(("ffsocket",iff))
+      
       for s in simul.syslist:
          isys = InputSystem()
          isys.store(s)

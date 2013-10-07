@@ -9,7 +9,7 @@ the Free Software Foundation, either version 3 of the License, or
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
@@ -73,7 +73,7 @@ class ForceBead(dobject):
       #calculation
       dset(self,"ufvx", depend_value(name="ufvx", func=self.get_all))
       self.request = None
-      
+
    def bind(self, atoms, cell, ff):
       """Binds atoms and cell to the forcefield.
 
@@ -152,14 +152,14 @@ class ForceBead(dobject):
       while self.request["status"] != "Done":
          if self.request["status"] == "Exit" or softexit.triggered:
             # now, this is tricky. we are stuck here and we cannot return meaningful results.
-            # if we return, we may as well output wrong numbers, or mess up things. 
-            # so we can only call soft-exit and wait until that is done. then kill the thread 
+            # if we return, we may as well output wrong numbers, or mess up things.
+            # so we can only call soft-exit and wait until that is done. then kill the thread
             # we are in.
             softexit.trigger(" @ FORCES : cannot return so will die off here")
-            while softexit.exiting: 
+            while softexit.exiting:
                time.sleep(self.ff.latency)
             sys.exit()
-            
+
          time.sleep(self.ff.latency)
 
       # data has been collected, so the request can be released and a slot
@@ -252,7 +252,7 @@ class ForceComponent(dobject):
             combined to give a total force, the contribution of this forcefield
             will be weighted by this factor.
       """
-      
+
       self.name = name
       self.nbeads = nbeads
       self.weight = weight
@@ -281,10 +281,10 @@ class ForceComponent(dobject):
       #and the cell
       if not self.name in fflist:
          raise ValueError("Force component name '"+self.name+"' is not in the forcefields list")
-         
+
       self.ff = fflist[self.name]
-      
-      
+
+
       self._forces = [];
       for b in range(self.nbeads):
          new_force = ForceBead()
@@ -484,7 +484,7 @@ class Forces(dobject):
          newb = fc.nbeads
          newforce = ForceComponent(name=fc.name, nbeads=fc.nbeads, weight=fc.weight)
          newweight = fc.weight
-         
+
          # if the number of beads for this force component is unspecified,
          #assume full force evaluation
          if newb == 0:

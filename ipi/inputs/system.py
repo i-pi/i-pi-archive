@@ -44,6 +44,7 @@ from ipi.engine.beads import Beads
 from ipi.engine.cell import Cell
 from ipi.inputs.initializer import InputInitializer
 from ipi.engine.initializer import Initializer
+import objgraph
 
 class InputSystem(Input):
    """System input class.
@@ -73,8 +74,9 @@ class InputSystem(Input):
              "cell" :    (InputCell,   { "help"    : InputCell.default_help,
                                         "default"  : input_default(factory=Cell) })
              }
-   attribs = { "copies": (InputAttribute, {"help" : "Create multiple copies of the system. This is handy for initialising simulations with multiple systems.", "default": 1, "dtype": int}) ,
-               "prefix": (InputAttribute, {"help" : "Prepend this string to output files generated for this system. If 'copies' is greater than 1, a trailing number will be appended.", "default": "", "dtype": str}) 
+   attribs = {
+    "copies": (InputAttribute, {"help" : "Create multiple copies of the system. This is handy for initialising simulations with multiple systems.", "default": 1, "dtype": int}) ,
+    "prefix": (InputAttribute, {"help" : "Prepend this string to output files generated for this system. If 'copies' is greater than 1, a trailing number will be appended.", "default": "", "dtype": str})
    }
 
    default_help = "This is the top level class that describes the physical system."
@@ -88,13 +90,12 @@ class InputSystem(Input):
       """
 
       super(InputSystem,self).store()
-      
-      self.prefix.store(psys.prefix) 
+
+
+      self.prefix.store(psys.prefix)
       self.forces.store(psys.flist)
       self.ensemble.store(psys.ensemble)
-
       self.beads.store(psys.beads)
-
       self.normal_modes.store(psys.nm)
       self.cell.store(psys.cell)
 
