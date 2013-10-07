@@ -1,40 +1,53 @@
-<simulation verbosity='low' mode="paratemp">
+<simulation verbosity='low' mode="md">
    <output prefix='ph2'>
-      <properties stride='5' filename='out'>  [ 
-             step, time{picosecond}, conserved{kelvin}, temperature{kelvin}, 
+      <properties stride='5' filename='out'>  [
+             step, time{picosecond}, conserved{kelvin}, temperature{kelvin},
              kinetic_cv{kelvin}, potential{kelvin}, pressure_cv{megapascal}
-             ] 
+             ]
       </properties>
    <!--          temperature{kelvin}(bead=0), temperature{kelvin}(bead=1), temperature{kelvin}(bead=2), temperature{kelvin}(bead=3)
-            ] 
+            ]
       </properties> -->
-      <trajectory stride='100' filename='pos'>positions{angstrom}</trajectory>
+      <trajectory stride='100' filename='pos' format='pdb'>positions{angstrom}</trajectory>
       <checkpoint stride='2000'/>
    </output>
-   
+
    <prng><seed>31415</seed></prng>
    <total_steps>100000</total_steps>
-   <total_time>1200</total_time>
+   <total_time>3600</total_time>
    <ffsocket name="sg" mode="unix">
       <latency>0.001</latency>  <address>ph2_pt</address>
-   </ffsocket>   
+   </ffsocket>
    <paratemp>
       <temp_list units="kelvin"> [ 15, 20, 25, 30 ] </temp_list>
-      <stride> 100 </stride>
+      <stride> 1000000 </stride>
    </paratemp>
-   <system copies="4" prefix="ID">
+   <system copies="1" prefix="ID">
       <initialize nbeads='1'>
          <file mode='pdb'> our_ref.pdb </file>
          <velocities mode="thermal" units='kelvin'> 50 </velocities>
-      </initialize>      
+      </initialize>
       <forces>
         <force nbeads="1"> sg </force>
       </forces>
       <ensemble mode='nvt'>
-         <thermostat mode='langevin'>
-            <tau units='femtosecond'>25</tau>
+  <thermostat mode='gle'>
+    <A shape='(5,5)'>
+      [   4.498098855452e-3,     6.594810718477e-6,     2.788030342989e-4,    -8.808265165053e-4,     5.605371493938e-3,    -6.726802271646e-6,     2.079069559861e-9,     1.746169548818e-5,    -4.800164465960e-6,     1.025830873432e-5,    -3.586191452340e-4,    -1.746169548818e-5,     3.287481976399e-5,     1.245698716799e-4,    -2.417657162526e-4,    -2.508912543565e-4,     4.800164465960e-6,    -1.245698716799e-4,     6.449207766266e-4,     2.783583234046e-4,     5.273493443008e-3,    -1.025830873432e-5,     2.417657162526e-4,    -2.783583234046e-4,     7.488477456790e-3]
+    </A>
+  </thermostat>
+
+<!--
+ <thermostat mode='gle'>
+    <A shape='(7,7)'>
+      [   9.193134986729e-5,     1.174780322376e-3,     1.190198807257e-4,     1.724176290968e-4,     5.849031045098e-5,    -2.280972944017e-6,    -3.630181533099e-5,     3.551922233520e-5,     4.841221168983e-3,    -3.517233737543e-3,     5.519312748100e-4,     4.028947772634e-4,    -9.511566671813e-5,     1.799511515025e-4,     1.723897316130e-4,     3.517233737543e-3,     1.618919294035e-3,     1.523182542235e-3,    -5.459507193983e-5,     3.470133861849e-4,    -7.193352682150e-4,    -1.763588005247e-4,    -5.519312748100e-4,    -1.523182542235e-3,     1.595889361843e-5,    -4.533833246336e-6,     4.137179115591e-5,     5.568090152975e-5,    -5.852496520775e-5,    -4.028947772634e-4,     5.459507193983e-5,     4.533833246336e-6,     8.409584290282e-8,    -1.370000361470e-5,    -4.744807165337e-6,     2.278254647630e-6,     9.511566671813e-5,    -3.470133861849e-4,    -4.137179115591e-5,     1.370000361470e-5,     2.684180837194e-8,     3.142732727406e-5,     3.630329460901e-5,    -1.799511515025e-4,     7.193352682150e-4,    -5.568090152975e-5,     4.744807165337e-6,    -3.142732727406e-5,    1.894660174713e-12]
+    </A>
+  </thermostat>
+        <thermostat mode="langevin">
+            <tau units="femtosecond"> 100 </tau>
          </thermostat>
-         <timestep units='femtosecond'> 1 </timestep>
+         -->
+         <timestep units='femtosecond'> 4 </timestep>
          <temperature units='kelvin'>25</temperature>
       </ensemble>
    </system>
