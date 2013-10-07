@@ -96,12 +96,12 @@ class Simulation(dobject):
 
       self.syslist = syslist
       for s in syslist:
-         s.prng = self.prng # binds the system's prng to self prng         
+         s.prng = self.prng # binds the system's prng to self prng
 
       if self.mode == "md" and len(syslist)>1:
          warning("Multiple systems will evolve independently in a '"+self.mode+"' simulation.")
 
-      self.fflist = {}      
+      self.fflist = {}
       for f in fflist:
          self.fflist[f.name] = f
 
@@ -117,10 +117,14 @@ class Simulation(dobject):
 
    def bind(self):
       """Calls the bind routines for all the objects in the simulation."""
-      
+
+      if self.mode == "paratemp":
+          self.paratemp.bind(self.syslist, self.prng)
+          softexit.register_function(self.paratemp.softexit)
+
       for s in self.syslist:
          # binds important computation engines
-         s.bind(self)      
+         s.bind(self)
 
       self.outputs = []
       for o in self.outtemplate:
@@ -137,14 +141,9 @@ class Simulation(dobject):
                self.outputs.append(no)
                isys+=1
 
-      
-      if self.mode == "paratemp":
-          self.paratemp.bind(self.syslist, self.prng)
-          softexit.register_function(self.paratemp.softexit)
-          
       self.chk = CheckpointOutput("RESTART", 1, True, 0)
       self.chk.bind(self)
-      
+
 
    def softexit(self):
       """Deals with a soft exit request.
@@ -158,7 +157,8 @@ class Simulation(dobject):
       if not self.rollback:
          self.chk.store()
 
-      self.chk.write(store=False)      
+      print "WRITING CHECKPOINT", self.chk.status.extra
+      self.chk.write(store=False)
 
    def run(self):
       """Runs the simulation.
@@ -167,6 +167,10 @@ class Simulation(dobject):
       when necessary. Also deals with starting and cleaning up the threads used
       in the communication between the driver and the PIMD code.
       """
+
+      # registers the softexit routine
+      softexit.register_function(self.softexit)
+      softexit.start(self.ttime)
 
       for (k,f) in self.fflist.iteritems():
          f.run()
@@ -179,11 +183,8 @@ class Simulation(dobject):
          self.step = 0
 
       steptime = 0.0
-      # registers the softexit routine      
-      softexit.register_function(self.softexit)
-      softexit.start(self.ttime)      
-      simtime =  time.time()      
-      
+      simtime =  time.time()
+
       cstep = 0
       tptime = 0.0
       tqtime = 0.0
@@ -196,28 +197,30 @@ class Simulation(dobject):
          # exit requests without screwing the trajectory
 
          steptime = -time.time()
+         if softexit.triggered: break
+
          self.chk.store()
 
          if self.mode == "paratemp":
             self.paratemp.swap(self.step)
-         
+
          stepthreads = []
          # steps through all the systems
          for s in self.syslist:
             # creates separate threads for the different systems
-            st = threading.Thread(target=s.ensemble.step, name=s.prefix)            
+            st = threading.Thread(target=s.ensemble.step, name=s.prefix)
             st.daemon = True
-            st.start()            
+            st.start()
             stepthreads.append(st)
-         
+
          for st in stepthreads:
             st.join()
-         
+
          if softexit.triggered: break # don't continue if we are about to exit!
-         
+
          for o in self.outputs:
             o.write()
-            
+
          if softexit.triggered: break # don't write if we are about to exit!
 
          steptime += time.time()
@@ -235,7 +238,7 @@ class Simulation(dobject):
          if os.path.exists("EXIT"): # soft-exit
             info(" # EXIT file detected! Bye bye!", verbosity.low )
             break
-            
+
          if (self.ttime > 0 and time.time() - simtime > self.ttime):
             info(" # Wall clock time expired! Bye bye!", verbosity.low )
             break

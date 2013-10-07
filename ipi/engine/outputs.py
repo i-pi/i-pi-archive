@@ -25,15 +25,18 @@ Classes:
    CheckpointOutput: Deals with outputting restart files.
 """
 
-import os
+import os, time
 import numpy as np
 import ipi.inputs.simulation
+from ipi.utils.messages import verbosity, info
 from ipi.utils.softexit import softexit
 from ipi.utils.depend import *
 from ipi.utils.io.io_xml import *
 from ipi.engine.properties import getkey
 
 __all__ = [ 'PropertyOutput', 'TrajectoryOutput', 'CheckpointOutput' ]
+
+CHKSLEEP = 1.0
 
 class PropertyOutput(dobject):
    """Class dealing with outputting a set of properties to file.
@@ -125,10 +128,10 @@ class PropertyOutput(dobject):
 
    def softexit(self):
       """Emergency call when i-pi must exit quickly"""
-      
+
       self.close_stream()
-      
-      
+
+
    def close_stream(self):
       """Closes the output stream."""
 
@@ -146,7 +149,7 @@ class PropertyOutput(dobject):
       """
 
       if softexit.triggered: return # don't write if we are about to exit!
-      
+
       if not (self.system.simul.step + 1) % self.stride == 0:
          return
       self.out.write("  ")
@@ -266,9 +269,9 @@ class TrajectoryOutput(dobject):
 
    def softexit(self):
       """Emergency cleanup if i-pi wants to exit"""
-            
+
       self.close_stream()
-      
+
    def close_stream(self):
       """Closes the output stream."""
 
@@ -340,6 +343,7 @@ class CheckpointOutput(dobject):
       self.step = step
       self.stride = stride
       self.overwrite = overwrite
+      self._storing = False
 
    def bind(self, simul):
       """Binds output proxy to simulation object.
@@ -361,7 +365,10 @@ class CheckpointOutput(dobject):
       positions would have been consistent.
       """
 
+      self._storing = True
       self.status.store(self.simul)
+      self._storing = False
+
 
    def write(self, store=True):
       """Writes out the required trajectories.
@@ -379,6 +386,11 @@ class CheckpointOutput(dobject):
          store: A boolean saying whether the state of the system should be
             stored before writing the checkpoint file.
       """
+
+      if self._storing:
+         info("@ CHECKPOINT: Write called while storing. Force re-storing", verbosity.low)
+         self.store()
+
 
       if not (self.simul.step + 1) % self.stride == 0:
          return

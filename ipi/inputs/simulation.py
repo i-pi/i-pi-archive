@@ -24,7 +24,7 @@ Classes:
 __all__ = ['InputSimulation']
 
 import numpy as np
-import os.path, sys
+import os.path, sys, time
 import ipi.engine.simulation
 from ipi.utils.depend import *
 from ipi.utils.inputvalue import *
@@ -95,7 +95,7 @@ class InputSimulation(Input):
              }
 
    dynamic = {
-             "system" :   (InputSystem,    { "help"  : InputSystem.default_help }), 
+             "system" :   (InputSystem,    { "help"  : InputSystem.default_help }),
              "ffsocket": (InputFFSocket, { "help": InputFFSocket.default_help} )
              }
 
@@ -135,11 +135,11 @@ class InputSimulation(Input):
          raise ValueError("Invalid verbosity level")
 
       self.mode.store(simul.mode)
-      
+
       self.extra = []
 
       for f in simul.fflist:
-         iff = InputFFSocket()         
+         iff = InputFFSocket()
          iff.store(simul.fflist[f])
          self.extra.append(("ffsocket",iff))
       for s in simul.syslist:
@@ -170,8 +170,8 @@ class InputSimulation(Input):
       syslist=[]
       fflist=[]
       for (k,v) in self.extra:
-         if k=="system" : 
-            for isys in range(v.copies.fetch()): # creates multiple copies of system if desired               
+         if k=="system" :
+            for isys in range(v.copies.fetch()): # creates multiple copies of system if desired
                syslist.append(v.fetch())
                if (v.copies.fetch() > 1):
                   syslist[-1].prefix = syslist[-1].prefix+( ("%0" + str(int(1 + np.floor(np.log(v.copies.fetch())/np.log(10)))) + "d") % (isys) )
