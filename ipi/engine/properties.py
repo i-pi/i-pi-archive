@@ -907,7 +907,7 @@ class Properties(dobject):
       dbeta = abs(float(fd_delta))
       beta = 1.0/(Constants.kb*self.ensemble.temp)
 
-      qc = depstrip(self.beads.centroid.q)
+      qc = depstrip(self.beads.qc)
       q = depstrip(self.beads.q)
       v0 = self.forces.pot/self.beads.nbeads
       while True:
