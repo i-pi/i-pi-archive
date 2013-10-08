@@ -182,6 +182,11 @@ class Simulation(dobject):
          self.step = -1
          for o in self.outputs:
             o.write()
+         if self.mode == "paratemp":
+            self.paratemp.parafile.write("%10d" % self.step+1)
+            for i in self.paratemp.temp_index:
+               self.paratemp.parafile.write(" %5d" %i)
+            self.paratemp.parafile.write("\n")
          self.step = 0
 
       steptime = 0.0
@@ -203,9 +208,6 @@ class Simulation(dobject):
 
          self.chk.store()
 
-         if self.mode == "paratemp":
-            self.paratemp.swap(self.step)
-
          stepthreads = []
          # steps through all the systems
          for s in self.syslist:
@@ -223,6 +225,9 @@ class Simulation(dobject):
          for o in self.outputs:
             o.write()
 
+         if self.mode == "paratemp":
+            self.paratemp.swap(self.step)
+            
          if softexit.triggered: break # don't write if we are about to exit!
 
          steptime += time.time()
