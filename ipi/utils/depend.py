@@ -159,7 +159,7 @@ class depend_base(object):
          item.add_dependant(self, tainted)
 
       for item in dependants:
-         if not type(item) is weakref.ref:
+         if not type(item) is weakref.ref:  # use weakreferences consistently in dependants
             dependants.remove(item)
             dependants.append(weakref.ref(item))
       self._dependants = dependants
