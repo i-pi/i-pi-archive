@@ -108,19 +108,23 @@ class ParaTemp(dobject):
       
       sysham = [ s.forces.pot for s in self.slist ] #TODO: must check how to do with PIMD (I guess just add the springs)
 
-      # tries exchanges
-      for i in range(len(self.slist)-1):
-         if (1.0/float(self.stride) < self.prng.u) : continue  # tries a swap with probability 1/stride
-         pxc = np.exp(
-           (1.0/(Constants.kb*self.temp_list[self.temp_index[i+1]]) -
-           1/(Constants.kb*self.temp_list[self.temp_index[i]]) ) *
-           (sysham[i+1]-sysham[i]))
-         if (pxc > self.prng.u): # really does the exchange
-            info(" @ PT:  SWAPPING replicas % 5d and % 5d." % (i,i+1), verbosity.medium)
-            self.slist[i].beads.p *= np.sqrt(self.temp_replicas[i+1]/self.temp_replicas[i])
-            self.slist[i+1].beads.p *= np.sqrt(self.temp_replicas[i]/self.temp_replicas[i+1])
-            swp=self.temp_index[i+1];  self.temp_index[i+1]=self.temp_index[i];  self.temp_index[i]=swp;
-            swp=self.temp_replicas[i+1];  self.temp_replicas[i+1]=self.temp_replicas[i];  self.temp_replicas[i]=swp;
+      # tries exchanges. note that we don't just exchange neighbouring replicas but try all pairs
+      # 1. since this can in principle speed up diffusion by allowing "double jumps"
+      # 2. since temp_list is NOT sorted, and so neighbouring temp_list could be actually far off
+      #    and re-sorting would be more bookkeeping I can stand.
+      for i in range(len(self.slist)):
+         for j in range(i-1):
+            if (1.0/float(self.stride) < self.prng.u) : continue  # tries a swap with probability 1/stride
+            pxc = np.exp(
+              (1.0/(Constants.kb*self.temp_list[self.temp_index[j]]) -
+              1/(Constants.kb*self.temp_list[self.temp_index[i]]) ) *
+              (sysham[j]-sysham[i]))
+            if (pxc > self.prng.u): # really does the exchange
+               info(" @ PT:  SWAPPING replicas % 5d and % 5d." % (i,j), verbosity.medium)
+               self.slist[i].beads.p *= np.sqrt(self.temp_replicas[j]/self.temp_replicas[i])
+               self.slist[j].beads.p *= np.sqrt(self.temp_replicas[i]/self.temp_replicas[j])
+               swp=self.temp_index[j];  self.temp_index[j]=self.temp_index[i];  self.temp_index[i]=swp;
+               swp=self.temp_replicas[j];  self.temp_replicas[j]=self.temp_replicas[i];  self.temp_replicas[i]=swp;
 
    def softexit(self):
       if not self.parafile is None:
