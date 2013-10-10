@@ -1,6 +1,10 @@
 #!/usr/bin/python
 """ parasort.py 
 
+Relies on the infrastructure of i-pi, so the ipi package should
+be installed in the Python module directory, or the i-pi
+main directory must be added to the PYTHONPATH environment variable.
+
 Post-processes the output of a parallel-tempering simulation and 
 re-orders the outputs so that they correspond to the different 
 temperatures ensembles rather than to the time series of one of 
@@ -24,7 +28,8 @@ from ipi.inputs.simulation import InputSimulation
 from ipi.utils.io.io_xml import *
 
 
-def main(inputfile):
+def main(inputfile, prefix="PT"):
+   
    
    # opens & parses the input file 
    ifile = open(inputfile,"r")
@@ -54,7 +59,7 @@ def main(inputfile):
             if s.prefix != "":
                filename = s.prefix+"_"+o.filename
             else: filename=o.filename
-            ofilename = "PT"+str(isys)+"_"+o.filename
+            ofilename = prefix+str(isys)+"_"+o.filename
             nprop.append( { "filename" : filename, "ofilename" : ofilename, "stride": o.stride, 
                            "ifile" : open(filename, "r"), "ofile" : open(ofilename, "w")
              } )
@@ -73,7 +78,7 @@ def main(inputfile):
                   if s.prefix != "":
                      filename = s.prefix+"_"+o.filename
                   else: filename=o.filename
-                  ofilename = "PT"+str(isys)+"_"+o.filename
+                  ofilename = prefix+str(isys)+"_"+o.filename
                   if (o.ibead < 0 or o.ibead == b):
                      if getkey(o.what) == "extras":
                         filename = filename+"_" + padb
@@ -96,7 +101,7 @@ def main(inputfile):
                   filename = s.prefix+"_"+o.filename
                else: filename=o.filename
                filename=filename+"."+o.format
-               ofilename = "PT"+str(isys)+"_"+o.filename+"."+o.format
+               ofilename = prefix+str(isys)+"_"+o.filename+"."+o.format
                ntraj.append( { "filename" : filename, "format" : o.format,
                       "ofilename" : ofilename, "stride": o.stride, 
                       "ifile" : open(filename, "r"), "ofile" : open(ofilename, "w")
@@ -106,8 +111,6 @@ def main(inputfile):
             ltraj.append(ntraj)
             
    ptfile=open("PARATEMP", "r")
-   print lprop
-   print ltraj
 
    # now reads files one frame at a time, and re-direct output to the appropriate location
       
@@ -116,41 +119,46 @@ def main(inputfile):
       # reads one line from PARATEMP index file
       line=ptfile.readline()
       line = line.split()
+      if len(line) == 0: break
+
       step = int(line[0])
       irep[:] = line[1:]      
       
-      for prop in lprop:
-         for isys in range(nsys):
-            sprop = prop[isys]
-            if step % sprop["stride"] == 0: # property transfer
-               iline = sprop["ifile"].readline()
-               while iline[0] == "#":  # fast forward if line is a comment
-                  prop[irep[isys]]["ofile"].write(iline)
+      try:
+         
+         for prop in lprop:
+            for isys in range(nsys):
+               sprop = prop[isys]
+               if step % sprop["stride"] == 0: # property transfer
                   iline = sprop["ifile"].readline()
-               prop[irep[isys]]["ofile"].write(iline)
-      
-      for traj in ltraj:
-         for isys in range(nsys):
-            straj = traj[isys]
-            if step % straj["stride"] == 0: # property transfer
-               # reads one frame from the input file
-               ibuffer = []
-               if straj["format"] == "xyz":
-                  iline = straj["ifile"].readline()
-                  nat = int(iline)
-                  ibuffer.append(iline)
-                  ibuffer.append(straj["ifile"].readline())
-                  for i in range(nat):
-                     ibuffer.append(straj["ifile"].readline())
-                  traj[irep[isys]]["ofile"].write(''.join(ibuffer))
-               elif straj["format"] == "pdb":
-                  iline = straj["ifile"].readline()
-                  while (iline.strip()!="" and iline.strip()!= "END"):
-                     ibuffer.append(iline)
+                  while iline[0] == "#":  # fast forward if line is a comment
+                     prop[irep[isys]]["ofile"].write(iline)
+                     iline = sprop["ifile"].readline()
+                  prop[irep[isys]]["ofile"].write(iline)
+         
+         for traj in ltraj:
+            for isys in range(nsys):
+               straj = traj[isys]
+               if step % straj["stride"] == 0: # property transfer
+                  # reads one frame from the input file
+                  ibuffer = []
+                  if straj["format"] == "xyz":
                      iline = straj["ifile"].readline()
-                  ibuffer.append(iline)
-                  traj[irep[isys]]["ofile"].write(''.join(ibuffer))
-      
+                     nat = int(iline)
+                     ibuffer.append(iline)
+                     ibuffer.append(straj["ifile"].readline())
+                     for i in range(nat):
+                        ibuffer.append(straj["ifile"].readline())
+                     traj[irep[isys]]["ofile"].write(''.join(ibuffer))
+                  elif straj["format"] == "pdb":
+                     iline = straj["ifile"].readline()
+                     while (iline.strip()!="" and iline.strip()!= "END"):
+                        ibuffer.append(iline)
+                        iline = straj["ifile"].readline()
+                     ibuffer.append(iline)
+                     traj[irep[isys]]["ofile"].write(''.join(ibuffer))
+      except EOFError:
+         break
    
 
 

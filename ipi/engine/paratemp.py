@@ -28,6 +28,7 @@ import numpy as np
 from ipi.utils.depend import *
 from ipi.utils.messages import info, verbosity
 from ipi.utils.units import Constants
+from ipi.engine.thermostats import *
 
 class ParaTemp(dobject):
    """Helper class for parallel tempering simulations.
@@ -120,9 +121,14 @@ class ParaTemp(dobject):
               1/(Constants.kb*self.temp_list[self.temp_index[i]]) ) *
               (sysham[j]-sysham[i]))
             if (pxc > self.prng.u): # really does the exchange
-               info(" @ PT:  SWAPPING replicas % 5d and % 5d." % (i,j), verbosity.medium)
+               info(" @ PT:  SWAPPING replicas % 5d and % 5d." % (i,j), verbosity.medium)               
                self.slist[i].beads.p *= np.sqrt(self.temp_replicas[j]/self.temp_replicas[i])
                self.slist[j].beads.p *= np.sqrt(self.temp_replicas[i]/self.temp_replicas[j])
+               # if there are GLE thermostats around, we must also rescale the s momenta!
+               # should also check the barostat thermostat, but we don't do NPT replica exchange yet so whatever.
+               if hasattr(self.slist[i].ensemble.thermostat,"s"):
+                  self.slist[i].ensemble.thermostat.s *= np.sqrt(self.temp_replicas[j]/self.temp_replicas[i])
+                  self.slist[j].ensemble.thermostat.s *= np.sqrt(self.temp_replicas[i]/self.temp_replicas[j])
                swp=self.temp_index[j];  self.temp_index[j]=self.temp_index[i];  self.temp_index[i]=swp;
                swp=self.temp_replicas[j];  self.temp_replicas[j]=self.temp_replicas[i];  self.temp_replicas[i]=swp;
 

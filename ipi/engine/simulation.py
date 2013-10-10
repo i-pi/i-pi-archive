@@ -183,7 +183,7 @@ class Simulation(dobject):
          for o in self.outputs:
             o.write()
          if self.mode == "paratemp":
-            self.paratemp.parafile.write("%10d" % self.step+1)
+            self.paratemp.parafile.write("%10d" % (self.step+1))
             for i in self.paratemp.temp_index:
                self.paratemp.parafile.write(" %5d" %i)
             self.paratemp.parafile.write("\n")
