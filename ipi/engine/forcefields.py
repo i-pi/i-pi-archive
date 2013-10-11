@@ -46,7 +46,7 @@ from ipi.engine.beads import Beads
 class ForceRequest(dict):
    def __eq__(self, y):
       return self is y
-
+      
 class ForceField(dobject):
    """Base forcefield class.
 
@@ -68,6 +68,7 @@ class ForceField(dobject):
       self.dopbc = dopbc
       self._thread = None
       self._doloop = [ False ]
+      self._threadlock = threading.Lock()
 
 
    def queue(self, atoms, cell, reqid=-1):
@@ -128,8 +129,13 @@ class ForceField(dobject):
 
    def release(self, request):
 
-      if request in self.requests:
-         self.requests.remove(request)
+     with self._threadlock: 
+      if request in self.requests:   
+         try:
+            self.requests.remove(request)
+         except:
+            print "failed removing request", id(request), [id(r) for r in self.requests], "@", threading.currentThread()
+            raise
 
    def stop(self):
       """Dummy stop method."""
