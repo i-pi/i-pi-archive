@@ -107,7 +107,7 @@ class ParaTemp(dobject):
          self.parafile.write(" %5d" %i)
       self.parafile.write("\n")
       
-      sysham = [ s.forces.pot for s in self.slist ] #TODO: must check how to do with PIMD (I guess just add the springs)
+      sysham = [ ( s.forces.pot + s.beads.vpath*s.nm.omegan2 ) for s in self.slist ] 
 
       # tries exchanges. note that we don't just exchange neighbouring replicas but try all pairs
       # 1. since this can in principle speed up diffusion by allowing "double jumps"
