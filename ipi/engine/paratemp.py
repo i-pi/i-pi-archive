@@ -107,8 +107,9 @@ class ParaTemp(dobject):
          self.parafile.write(" %5d" %i)
       self.parafile.write("\n")
       
-      sysham = [ ( s.forces.pot + s.beads.vpath*s.nm.omegan2 ) for s in self.slist ] 
-
+      syspot  = [ s.forces.pot/s.beads.nbeads for s in self.slist ] 
+      syspath = [ s.beads.vpath*s.nm.omegan2/s.beads.nbeads for s in self.slist ] 
+      
       # tries exchanges. note that we don't just exchange neighbouring replicas but try all pairs
       # 1. since this can in principle speed up diffusion by allowing "double jumps"
       # 2. since temp_list is NOT sorted, and so neighbouring temp_list could be actually far off
@@ -119,7 +120,15 @@ class ParaTemp(dobject):
             pxc = np.exp(
               (1.0/(Constants.kb*self.temp_list[self.temp_index[j]]) -
               1/(Constants.kb*self.temp_list[self.temp_index[i]]) ) *
-              (sysham[j]-sysham[i]))
+              (syspot[j]-syspot[i]) +  
+              (1.0/(Constants.kb*self.temp_list[self.temp_index[j]]) -
+              1/(Constants.kb*self.temp_list[self.temp_index[i]] ) ) *
+              (syspath[j]-syspath[i]) -
+              syspath[j]*(Constants.kb*self.temp_list[self.temp_index[i]])/
+              (Constants.kb*self.temp_list[self.temp_index[j]] )**2
+              +  syspath[i] *(Constants.kb*self.temp_list[self.temp_index[j]])/
+              (Constants.kb*self.temp_list[self.temp_index[i]] )**2              
+              )
             if (pxc > self.prng.u): # really does the exchange
                info(" @ PT:  SWAPPING replicas % 5d and % 5d." % (i,j), verbosity.medium)               
                self.slist[i].beads.p *= np.sqrt(self.temp_replicas[j]/self.temp_replicas[i])
