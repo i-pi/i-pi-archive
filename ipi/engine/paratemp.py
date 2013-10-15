@@ -107,8 +107,9 @@ class ParaTemp(dobject):
          self.parafile.write(" %5d" %i)
       self.parafile.write("\n")
       
-      syspot  = [ s.forces.pot/s.beads.nbeads for s in self.slist ] 
-      syspath = [ s.beads.vpath*s.nm.omegan2/s.beads.nbeads for s in self.slist ] 
+      syspot  = [ s.forces.pot for s in self.slist ]
+      # spring potential in a form that can be easily used further down (no temperature included!)
+      syspath = [ s.beads.vpath/Constants.hbar**2 for s in self.slist ] 
       
       # tries exchanges. note that we don't just exchange neighbouring replicas but try all pairs
       # 1. since this can in principle speed up diffusion by allowing "double jumps"
@@ -116,18 +117,12 @@ class ParaTemp(dobject):
       #    and re-sorting would be more bookkeeping I can stand.
       for i in range(len(self.slist)):
          for j in range(i-1):
+            betai = 1.0/(Constants.kb*self.temp_list[self.temp_index[i]]*self.slist[i].beads.nbeads); # exchanges are being done, so it is better to re-compute betai in the inner loop
+            betaj = 1.0/(Constants.kb*self.temp_list[self.temp_index[j]]*self.slist[j].beads.nbeads);
             if (1.0/float(self.stride) < self.prng.u) : continue  # tries a swap with probability 1/stride
             pxc = np.exp(
-              (1.0/(Constants.kb*self.temp_list[self.temp_index[j]]) -
-              1/(Constants.kb*self.temp_list[self.temp_index[i]]) ) *
-              (syspot[j]-syspot[i]) +  
-              (1.0/(Constants.kb*self.temp_list[self.temp_index[j]]) -
-              1/(Constants.kb*self.temp_list[self.temp_index[i]] ) ) *
-              (syspath[j]-syspath[i]) -
-              syspath[j]*(Constants.kb*self.temp_list[self.temp_index[i]])/
-              (Constants.kb*self.temp_list[self.temp_index[j]] )**2
-              +  syspath[i] *(Constants.kb*self.temp_list[self.temp_index[j]])/
-              (Constants.kb*self.temp_list[self.temp_index[i]] )**2              
+              (betaj - betai) * (syspot[j]-syspot[i]) +  
+              (1.0/betaj - 1.0/betai) * (syspath[j]-syspath[i])
               )
             if (pxc > self.prng.u): # really does the exchange
                info(" @ PT:  SWAPPING replicas % 5d and % 5d." % (i,j), verbosity.medium)               
