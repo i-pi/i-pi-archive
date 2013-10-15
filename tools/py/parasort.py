@@ -66,14 +66,13 @@ def main(inputfile, prefix="PT"):
             isys+=1
          lprop.append(nprop)
       elif type(o) is TrajectoryOutput:   # trajectories are more complex, as some have per-bead output
-         isys=0         
          if getkey(o.what) in [ "positions", "velocities", "forces", "extras" ]:   # multiple beads
             nbeads = simul.syslist[0].beads.nbeads
             for b in range(nbeads):
                ntraj = []
                # zero-padded bead number               
                padb = ( ("%0" + str(int(1 + np.floor(np.log(nbeads)/np.log(10)))) + "d") % (b) )
-               
+               isys = 0
                for s in simul.syslist:
                   if s.prefix != "":
                      filename = s.prefix+"_"+o.filename
@@ -95,7 +94,8 @@ def main(inputfile, prefix="PT"):
                   ltraj.append(ntraj)
 
          else:
-            ntraj=[]          
+            ntraj=[]   
+            isys = 0       
             for s in simul.syslist:   # create multiple copies        
                if s.prefix != "":
                   filename = s.prefix+"_"+o.filename
@@ -113,7 +113,6 @@ def main(inputfile, prefix="PT"):
    ptfile=open("PARATEMP", "r")
 
    # now reads files one frame at a time, and re-direct output to the appropriate location
-      
    irep = np.zeros(nsys,int)
    while True:
       # reads one line from PARATEMP index file
@@ -160,23 +159,5 @@ def main(inputfile, prefix="PT"):
       except EOFError:
          break
    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 if __name__ == '__main__':
    main(*sys.argv[1:])
