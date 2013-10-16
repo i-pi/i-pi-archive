@@ -1,5 +1,6 @@
 \documentclass[11pt,english,fleqn]{report}
-\IfFileExists{t1futs.fd}{\usepackage{fourier, helvet}}{\usepackage{lmodern}}
+\IfFileExists{t1futs.fd}{\usepackage{fourier}}{}
+\IfFileExists{putb8a.pfb}{\usepackage{helvet}}{\usepackage{lmodern}}
 \usepackage[T1]{fontenc}
 \usepackage[latin9]{inputenc}
 \setcounter{secnumdepth}{3}
