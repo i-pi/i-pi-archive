@@ -106,7 +106,7 @@ class PropertyOutput(dobject):
          self.out = open(self.filename, "a")
       except:
          raise ValueError("Could not open file " + self.filename + " for output")
-
+      
       # print nice header if information is available on the properties
       if (self.system.simul.step == 0) :
          icol = 1

@@ -66,14 +66,13 @@ def main(inputfile, prefix="PT"):
             isys+=1
          lprop.append(nprop)
       elif type(o) is TrajectoryOutput:   # trajectories are more complex, as some have per-bead output
-         isys=0         
          if getkey(o.what) in [ "positions", "velocities", "forces", "extras" ]:   # multiple beads
             nbeads = simul.syslist[0].beads.nbeads
             for b in range(nbeads):
                ntraj = []
+               isys=0
                # zero-padded bead number               
-               padb = ( ("%0" + str(int(1 + np.floor(np.log(nbeads)/np.log(10)))) + "d") % (b) )
-               
+               padb = ( ("%0" + str(int(1 + np.floor(np.log(nbeads)/np.log(10)))) + "d") % (b) )               
                for s in simul.syslist:
                   if s.prefix != "":
                      filename = s.prefix+"_"+o.filename
@@ -95,7 +94,8 @@ def main(inputfile, prefix="PT"):
                   ltraj.append(ntraj)
 
          else:
-            ntraj=[]          
+            ntraj=[]
+            isys=0
             for s in simul.syslist:   # create multiple copies        
                if s.prefix != "":
                   filename = s.prefix+"_"+o.filename

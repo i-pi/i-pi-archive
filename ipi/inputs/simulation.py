@@ -191,9 +191,6 @@ class InputSimulation(Input):
                         tsteps=self.total_steps.fetch(),
                            ttime=self.total_time.fetch())
 
-      # this does all of the piping between the components of the simulation
-      rsim.bind()
-
       return rsim
 
    def check(self):
