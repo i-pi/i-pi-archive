@@ -94,8 +94,8 @@ def main(inputfile, prefix="PT"):
                   ltraj.append(ntraj)
 
          else:
-            ntraj=[]
-            isys=0
+            ntraj=[]   
+            isys = 0       
             for s in simul.syslist:   # create multiple copies        
                if s.prefix != "":
                   filename = s.prefix+"_"+o.filename
@@ -159,23 +159,5 @@ def main(inputfile, prefix="PT"):
       except EOFError:
          break
    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 if __name__ == '__main__':
    main(*sys.argv[1:])
