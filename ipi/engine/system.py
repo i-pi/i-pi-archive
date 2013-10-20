@@ -98,8 +98,6 @@ class System(dobject):
       """Calls the bind routines for all the objects in the system."""
 
       self.simul = simul # keeps a handle to the parent simulation object
-
-      self.init.init_stage1(self)
       
       # binds important computation engines
       self.nm.bind(self.beads, self.ensemble)

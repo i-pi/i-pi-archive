@@ -99,6 +99,7 @@ class Simulation(dobject):
       self.syslist = syslist
       for s in syslist:
          s.prng = self.prng # binds the system's prng to self prng
+         s.init.init_stage1(s)         
 
       if self.mode == "md" and len(syslist)>1:
          warning("Multiple systems will evolve independently in a '"+self.mode+"' simulation.")
