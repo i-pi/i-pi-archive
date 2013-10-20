@@ -113,7 +113,6 @@ def main(inputfile, prefix="PT"):
    ptfile=open("PARATEMP", "r")
 
    # now reads files one frame at a time, and re-direct output to the appropriate location
-   print ltraj
    irep = np.zeros(nsys,int)
    while True:
       # reads one line from PARATEMP index file
