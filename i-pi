@@ -48,6 +48,8 @@ def main(file_name):
       print " ---  end input file content  --- "
 
    simul = simrestart.fetch() # Creates the appropriate simulation object.
+   # this does all of the piping between the components of the simulation
+   simul.bind()
    simul.run()
 
    del simul

@@ -117,24 +117,26 @@ class ParaTemp(dobject):
       #    and re-sorting would be more bookkeeping I can stand.
       for i in range(len(self.slist)):
          for j in range(i-1):
+            if (1.0/float(self.stride) < self.prng.u) : continue  # tries a swap with probability 1/stride            
             betai = 1.0/(Constants.kb*self.temp_list[self.temp_index[i]]*self.slist[i].beads.nbeads); # exchanges are being done, so it is better to re-compute betai in the inner loop
             betaj = 1.0/(Constants.kb*self.temp_list[self.temp_index[j]]*self.slist[j].beads.nbeads);
-            if (1.0/float(self.stride) < self.prng.u) : continue  # tries a swap with probability 1/stride
             pxc = np.exp(
               (betaj - betai) * (syspot[j]-syspot[i]) +  
               (1.0/betaj - 1.0/betai) * (syspath[j]-syspath[i])
               )
             if (pxc > self.prng.u): # really does the exchange
                info(" @ PT:  SWAPPING replicas % 5d and % 5d." % (i,j), verbosity.medium)               
-               self.slist[i].beads.p *= np.sqrt(self.temp_replicas[j]/self.temp_replicas[i])
-               self.slist[j].beads.p *= np.sqrt(self.temp_replicas[i]/self.temp_replicas[j])
+               self.slist[i].beads.p *= np.sqrt(betai/betaj)
+               self.slist[j].beads.p *= np.sqrt(betaj/betai)
                # if there are GLE thermostats around, we must also rescale the s momenta!
                # should also check the barostat thermostat, but we don't do NPT replica exchange yet so whatever.
                if hasattr(self.slist[i].ensemble.thermostat,"s"):
-                  self.slist[i].ensemble.thermostat.s *= np.sqrt(self.temp_replicas[j]/self.temp_replicas[i])
-                  self.slist[j].ensemble.thermostat.s *= np.sqrt(self.temp_replicas[i]/self.temp_replicas[j])
-               swp=self.temp_index[j];  self.temp_index[j]=self.temp_index[i];  self.temp_index[i]=swp;
+                  self.slist[i].ensemble.thermostat.s *= np.sqrt(betai/betaj)
+                  self.slist[j].ensemble.thermostat.s *= np.sqrt(betaj/betai)
+               swp=self.temp_index[j];  self.temp_index[j]=self.temp_index[i];  self.temp_index[i]=swp
+               print "pre-swap", self.slist[i].nm.omegan2, self.slist[j].nm.omegan2
                swp=self.temp_replicas[j];  self.temp_replicas[j]=self.temp_replicas[i];  self.temp_replicas[i]=swp;
+               print "post-swap", self.slist[i].nm.omegan2, self.slist[j].nm.omegan2
 
    def softexit(self):
       if not self.parafile is None:

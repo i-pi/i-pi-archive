@@ -70,9 +70,9 @@ def main(inputfile, prefix="PT"):
             nbeads = simul.syslist[0].beads.nbeads
             for b in range(nbeads):
                ntraj = []
+               isys=0
                # zero-padded bead number               
-               padb = ( ("%0" + str(int(1 + np.floor(np.log(nbeads)/np.log(10)))) + "d") % (b) )
-               isys = 0
+               padb = ( ("%0" + str(int(1 + np.floor(np.log(nbeads)/np.log(10)))) + "d") % (b) )               
                for s in simul.syslist:
                   if s.prefix != "":
                      filename = s.prefix+"_"+o.filename
