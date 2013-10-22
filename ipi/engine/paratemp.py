@@ -50,7 +50,7 @@ class ParaTemp(dobject):
       temp_replicas: The temperatures of the various replicas
    """
 
-   def __init__(self, tlist=None, ilist=None, stride=1):
+   def __init__(self, tlist=None, ilist=None, stride=0.0, wteml=None, wtesl=None, wtegl=None):
       """Initializes ParaTemp object.
 
       Parameters:
@@ -67,16 +67,26 @@ class ParaTemp(dobject):
       if len(ilist)!= len(tlist):
          raise ValueError("Temperature list and index list have mismatching sizes.")
 
+      dset(self, "temp_index",depend_array(name="temp_index", value=np.asarray(ilist, int).copy()) )
       self.temp_list = np.asarray(tlist, float).copy()
-      self.temp_index = np.asarray(ilist, int).copy()
 
-      dset(self,"temp_replicas",depend_array(name="temp_tlist", value=np.asarray(tlist).copy()))
+      if wteml is None:  wteml = []
+      if wtesl is None:  wtesl = []
+      if wtegl is None:  wtegl = []
+      if len(wteml)> 0 and (len(wtegl)!= len(wteml) or len(wtesl)!=len(wteml) or len(wteml)!=len(tlist)):
+         raise ValueError("WTE parameters list must all be provided, and match temperature list size.")
+      self.wte_means = np.asarray(wteml,float).copy()
+      self.wte_sigmas = np.asarray(wtesl,float).copy()
+      self.wte_gammas = np.asarray(wtegl,float).copy()
+
+      dset(self,"temp_replicas",depend_array(name="temp_replicas", value=np.asarray(tlist).copy()))
+      
       for i in range(len(tlist)):
          self.temp_replicas[i] = self.temp_list[self.temp_index[i]]
       self.parafile = None
 
    def bind(self, slist, prng):
-      """Wirhttp://home.web.cern.ch/about/updates/2013/10/cern-host-advanced-materials-and-surfaces-workshopes up the PT setup, by connecting the replicas to the temperature list.
+      """Wires up the PT setup, by connecting the replicas to the temperature list.
 
       """
 
@@ -96,36 +106,86 @@ class ParaTemp(dobject):
          dget(s.ensemble,"temp")._func = make_tempgetter(isys)
          isys+=1
 
+      if (len(self.wte_means)>0):
+         dset(self,"wte_vf",depend_array(name="wte_vf", value=np.zeros((len(self.wte_means),2), float)
+               ) )
+         self.wte_v = self.wte_vf[:,0]
+         self.wte_f = self.wte_vf[:,1]
+         for s in self.slist:
+            dget(s.forces, "pot").add_dependant(dget(self,"wte_vf"))
+         dget(self,"temp_index").add_dependant(dget(self,"wte_vf"))
+         dget(self,"wte_vf")._func=self.get_wtevf
+         dget(self,"wte_f")._func=self.get_wtevf
+         dget(self,"wte_v")._func=self.get_wtevf
+      else:
+         dset(self,"wte_vf",depend_array(name="wte_vf", value=np.zeros((len(self.wte_means),2), float)) )
+
+      
       self.parafile=open("PARATEMP", "a")
+      self.wtefile=None
+      if len(self.wte_means)>0:
+         self.wtefile=open("PARAWTE", "a")
+
+   def wtevf(self, i, j):
+      betai=1.0/(Constants.kb*self.temp_list[self.temp_index[i]])
+      s = self.slist[self.temp_index[j]]
+      uj = s.forces.pot         
+      vij = (1-1.0/self.wte_gammas[i])*self.wte_gammas[i]/betai * np.exp(
+          -0.5/(self.wte_gammas[i])*
+            ((uj/s.beads.nbeads-self.wte_means[i])/self.wte_sigmas[i])**2
+          )
+      fij = vij*((uj/s.beads.nbeads-self.wte_means[i])/
+             (self.wte_sigmas[i]**2*self.wte_gammas[i]*s.beads.nbeads))
+      return (vij, fij)
+      
+   def get_wtevf(self):
+   
+      vlist=np.zeros((len(self.temp_list),2), float)
+      for i in range(len(self.temp_list)):
+         vlist[i] = self.wtevf(i, i)
+      return vlist
+
+   def wtestep(self, step=-1):
+
+      if len(self.wte_means) == 0 or  len(self.wte_sigmas) == 0: return
+      
+      # note that this loops over the TEMPERATURES, not over the SYSTEMS
+      for i in range(len(self.temp_list)):
+         s = self.slist[self.temp_index[i]]
+         ui = s.forces.pot
+         f = depstrip(s.forces.f)*self.wte_v[i]*-(
+             (ui/s.beads.nbeads-self.wte_means[i])/
+             (self.wte_sigmas[i]**2*self.wte_gammas[i]*s.beads.nbeads) )
+         s.beads.p += f*s.ensemble.dt*0.5
+
+
 
    def swap(self, step=-1):
       """ Tries a PT swap move. """
 
-      # because of where this is in the loop, we must write out BEFORE doing the swaps.
-      self.parafile.write("%10d" % (step+1))
-      for i in self.temp_index:
-         self.parafile.write(" %5d" %i)
-      self.parafile.write("\n")
-      
+      if self.stride <= 0.0: return       
+
       syspot  = [ s.forces.pot for s in self.slist ]
       # spring potential in a form that can be easily used further down (no temperature included!)
-      syspath = [ s.beads.vpath/Constants.hbar**2 for s in self.slist ] 
-      
+      syspath = [ s.beads.vpath/Constants.hbar**2 for s in self.slist ]
+
       # tries exchanges. note that we don't just exchange neighbouring replicas but try all pairs
       # 1. since this can in principle speed up diffusion by allowing "double jumps"
       # 2. since temp_list is NOT sorted, and so neighbouring temp_list could be actually far off
       #    and re-sorting would be more bookkeeping I can stand.
       for i in range(len(self.slist)):
-         for j in range(i-1):
-            if (1.0/float(self.stride) < self.prng.u) : continue  # tries a swap with probability 1/stride            
-            betai = 1.0/(Constants.kb*self.temp_list[self.temp_index[i]]*self.slist[i].beads.nbeads); # exchanges are being done, so it is better to re-compute betai in the inner loop
-            betaj = 1.0/(Constants.kb*self.temp_list[self.temp_index[j]]*self.slist[j].beads.nbeads);
+         for j in range(i):
+            if (1.0/self.stride < self.prng.u) : continue  # tries a swap with probability 1/stride
+            # ALL SYSTEMS ARE EXPECTED TO HAVE SAME N OF BEADS!
+            betai = 1.0/(Constants.kb*self.temp_list[self.temp_index[i]]*self.slist[self.temp_index[i]].beads.nbeads); # exchanges are being done, so it is better to re-compute betai in the inner loop
+            betaj = 1.0/(Constants.kb*self.temp_list[self.temp_index[j]]*self.slist[self.temp_index[j]].beads.nbeads);
             pxc = np.exp(
-              (betaj - betai) * (syspot[j]-syspot[i]) +  
+              (betaj - betai) * (syspot[j]-syspot[i]) +
               (1.0/betaj - 1.0/betai) * (syspath[j]-syspath[i])
               )
+            print i, j, pxc
             if (pxc > self.prng.u): # really does the exchange
-               info(" @ PT:  SWAPPING replicas % 5d and % 5d." % (i,j), verbosity.medium)               
+               info(" @ PT:  SWAPPING replicas % 5d and % 5d." % (i,j), verbosity.low)
                self.slist[i].beads.p *= np.sqrt(betai/betaj)
                self.slist[j].beads.p *= np.sqrt(betaj/betai)
                # if there are GLE thermostats around, we must also rescale the s momenta!
@@ -134,9 +194,7 @@ class ParaTemp(dobject):
                   self.slist[i].ensemble.thermostat.s *= np.sqrt(betai/betaj)
                   self.slist[j].ensemble.thermostat.s *= np.sqrt(betaj/betai)
                swp=self.temp_index[j];  self.temp_index[j]=self.temp_index[i];  self.temp_index[i]=swp
-               print "pre-swap", self.slist[i].nm.omegan2, self.slist[j].nm.omegan2
-               swp=self.temp_replicas[j];  self.temp_replicas[j]=self.temp_replicas[i];  self.temp_replicas[i]=swp;
-               print "post-swap", self.slist[i].nm.omegan2, self.slist[j].nm.omegan2
+               swp=self.temp_replicas[j];  self.temp_replicas[j]=self.temp_replicas[i];  self.temp_replicas[i]=swp; 
 
    def softexit(self):
       if not self.parafile is None:

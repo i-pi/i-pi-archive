@@ -9,7 +9,7 @@ the Free Software Foundation, either version 3 of the License, or
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
@@ -27,26 +27,37 @@ from ipi.engine.paratemp import ParaTemp
 
 class InputParaTemp(Input):
    """Input class for the ParaTemp object.
-   
+
    Contains all the options for a parallel tempering simulation.
-   
+
    Fields:
       temp_list: The list of temperatures for the replicas. Must match
           the size of the system list.
       stride: How often -- on average -- an exchange should be made.
    """
-   
-   
-   fields={"temp_list" : (InputArray, {"dtype": float, 
+
+
+   fields={"temp_list" : (InputArray, {"dtype": float,
                                        "default"   : input_default(factory=np.zeros, args = (0,)),
                                          "help"      : "List of temperatures for a parallel tempering simulation",
                                          "dimension" : "temperature" }),
-           "temp_index" : (InputArray, {"dtype": int, 
+           "wte_means" : (InputArray, {"dtype": float,
+                                       "default"   : input_default(factory=np.zeros, args = (0,)),
+                                         "help"      : "List of mean potential energy for WTE",
+                                         "dimension" : "energy" }),
+           "wte_sigmas" : (InputArray, {"dtype": float,
+                                       "default"   : input_default(factory=np.zeros, args = (0,)),
+                                         "help"      : "List of potential energy fluctuations for WTE",
+                                         "dimension" : "energy" }),
+           "wte_gammas" : (InputArray, {"dtype": float,
+                                       "default"   : input_default(factory=np.zeros, args = (0,)),
+                                         "help"      : "List of gamma parameters for WTE" }),
+           "temp_index" : (InputArray, {"dtype": int,
                                        "default"   : input_default(factory=np.zeros, args = (0,int)),
                                          "help"      : "Maps the temperatures to the list of systems."
-                                         }),                              
-           "stride" : (InputValue, {"dtype"        : int,
-                                      "default"      : 1,
+                                         }),
+           "stride" : (InputValue, {"dtype"        : float,
+                                      "default"      : 0.0,
                                       "help"         : "Every how often to try exchanges (on average)."
                                       }),
          }
@@ -64,15 +75,19 @@ class InputParaTemp(Input):
 
    def store(self, pt):
       """Stores a ParaTemp object."""
-      
+
       self.temp_list.store(pt.temp_list)
       self.temp_index.store(pt.temp_index)
+      self.wte_means.store(pt.wte_means)
+      self.wte_sigmas.store(pt.wte_sigmas)
+      self.wte_gammas.store(pt.wte_gammas)
       self.stride.store(pt.stride)
-      
-      
+
+
    def fetch(self):
       """Creates a ParaTemp object based on the input parameters."""
-      
-      return ParaTemp(self.temp_list.fetch(), self.temp_index.fetch(), self.stride.fetch())
-      
-      
+
+      return ParaTemp(self.temp_list.fetch(), self.temp_index.fetch(), self.stride.fetch(),
+           self.wte_means.fetch(), self.wte_sigmas.fetch(), self.wte_gammas.fetch())
+
+

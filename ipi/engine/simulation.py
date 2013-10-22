@@ -99,7 +99,7 @@ class Simulation(dobject):
       self.syslist = syslist
       for s in syslist:
          s.prng = self.prng # binds the system's prng to self prng
-         s.init.init_stage1(s)         
+         s.init.init_stage1(s)
 
       if self.mode == "md" and len(syslist)>1:
          warning("Multiple systems will evolve independently in a '"+self.mode+"' simulation.")
@@ -121,14 +121,10 @@ class Simulation(dobject):
    def bind(self):
       """Calls the bind routines for all the objects in the simulation."""
 
-      if self.mode == "paratemp":
-          self.paratemp.bind(self.syslist, self.prng)
-          softexit.register_function(self.paratemp.softexit)
-
       for s in self.syslist:
          # binds important computation engines
          s.bind(self)
-
+      
       self.outputs = []
       for o in self.outtemplate:
          if type(o) is CheckpointOutput:    # checkpoints are output per simulation
@@ -147,6 +143,9 @@ class Simulation(dobject):
       self.chk = CheckpointOutput("RESTART", 1, True, 0)
       self.chk.bind(self)
 
+      if self.mode == "paratemp":
+          self.paratemp.bind(self.syslist, self.prng)
+          softexit.register_function(self.paratemp.softexit)
 
    def softexit(self):
       """Deals with a soft exit request.
@@ -177,7 +176,7 @@ class Simulation(dobject):
 
       for (k,f) in self.fflist.iteritems():
          f.run()
-
+      
       # prints inital configuration -- only if we are not restarting
       if (self.step == 0):
          self.step = -1
@@ -188,6 +187,13 @@ class Simulation(dobject):
             for i in self.paratemp.temp_index:
                self.paratemp.parafile.write(" %5d" %i)
             self.paratemp.parafile.write("\n")
+            if self.paratemp.wtefile != None:
+               self.paratemp.wtefile.write("%10d" % (self.step+1))
+               for v in self.paratemp.wte_v:
+                  self.paratemp.wtefile.write(" %12.7e" % v)
+               self.paratemp.wtefile.write("\n")
+
+
          self.step = 0
 
       steptime = 0.0
@@ -226,9 +232,29 @@ class Simulation(dobject):
          for o in self.outputs:
             o.write()
 
-         if self.mode == "paratemp":
+         if self.mode == "paratemp": # does parallel tempering and/or WTE
+
+            self.paratemp.wtestep(self.step)
+
+            # because of where this is in the loop, we must write out BEFORE doing the swaps.
+            self.paratemp.parafile.write("%10d" % (self.step+1))
+            for i in self.paratemp.temp_index:
+               self.paratemp.parafile.write(" %5d" %i)
+            self.paratemp.parafile.write("\n")
+
+            # applies the WTE forces, if they are defined.
+            if self.paratemp.wtefile != None:
+               self.paratemp.wtefile.write("%10d" % (self.step+1))
+               for v in self.paratemp.wte_v:
+                  self.paratemp.wtefile.write(" %12.7e" % v)
+               self.paratemp.wtefile.write("\n")
+
+
+
             self.paratemp.swap(self.step)
+            self.paratemp.wtestep(self.step)
             
+
          if softexit.triggered: break # don't write if we are about to exit!
 
          steptime += time.time()

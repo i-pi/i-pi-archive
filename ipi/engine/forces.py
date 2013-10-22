@@ -240,7 +240,7 @@ class ForceComponent(dobject):
          Depends on each replica's ufvx list.
    """
 
-   def __init__(self, name="", nbeads=0, weight=1.0):
+   def __init__(self, ffield="", nbeads=0, weight=1.0, name=""):
       """Initializes ForceBeads
 
       Args:
@@ -253,6 +253,7 @@ class ForceComponent(dobject):
             will be weighted by this factor.
       """
 
+      self.ffield = ffield
       self.name = name
       self.nbeads = nbeads
       self.weight = weight
@@ -279,10 +280,10 @@ class ForceComponent(dobject):
 
       # creates an array of force objects, which are bound to the beads
       #and the cell
-      if not self.name in fflist:
-         raise ValueError("Force component name '"+self.name+"' is not in the forcefields list")
+      if not self.ffield in fflist:
+         raise ValueError("Force component name '"+self.ffield+"' is not in the forcefields list")
 
-      self.ff = fflist[self.name]
+      self.ff = fflist[self.ffield]
 
 
       self._forces = [];
@@ -482,7 +483,7 @@ class Forces(dobject):
 
          # creates an automatically-updated contracted beads object
          newb = fc.nbeads
-         newforce = ForceComponent(name=fc.name, nbeads=fc.nbeads, weight=fc.weight)
+         newforce = ForceComponent(ffield=fc.ffield, name=fc.name, nbeads=fc.nbeads, weight=fc.weight)
          newweight = fc.weight
 
          # if the number of beads for this force component is unspecified,

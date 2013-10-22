@@ -15,15 +15,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http.//www.gnu.org/licenses/>.
 
-.PHONY: all clean mht-25K mht-20K mht-17K mht-14K nvt rpmd paratemp
-all: mht-25K mht-20K mht-17K mht-14K nvt rpmd paratemp
+.PHONY: all clean mht-25K mht-20K mht-17K mht-14K nvt rpmd paratemp parawte paraptwte
+all: mht-25K mht-20K mht-17K mht-14K nvt rpmd paratemp parawte paraptwte
 
 driver:=../../../drivers/driver.x
 IPI:=../../../i-pi
 
 define run_driver
   for i in `seq 1 $1`; do \
-    $(driver) -u -h $2 -m sg -o 15.0 & \
+    $(driver) -u -h $2 -m sg -o 30.0 & \
   done
 endef
 -include make.in
@@ -35,7 +35,17 @@ nvt:
 
 paratemp: 
 	cd paratemp; $(IPI) input.xml & sleep 2; \
-	$(call run_driver,4,ph2_pt); \
+	$(call run_driver,3,ph2_pt); \
+	wait
+
+parawte:
+	cd parawte; $(IPI) input.xml & sleep 3; \
+	$(call run_driver,3,ph2_wte); \
+	wait
+
+paraptwte:
+	cd paraptwte; $(IPI) input.xml & sleep 3; \
+	$(call run_driver,3,ph2_ptwte); \
 	wait
 
 mht-25K:
@@ -76,4 +86,5 @@ rpmd: RPMD/run_1/test16.out RPMD/run_2/test16.out RPMD/run_3/test16.out RPMD/run
 	
 clean:
 	rm -f */ph2* */RESTART */EXIT; \
+	rm -f para*/*_*ph2* para*/PARA*; \
 	make -C RPMD clean; rm -rf RPMD/run_*

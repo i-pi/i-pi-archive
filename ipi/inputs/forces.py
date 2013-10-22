@@ -46,7 +46,10 @@ class InputForceComponent(InputValue):
                                          "help"    : "If the forcefield is to be evaluated on a contracted ring polymer, this gives the number of beads that are used. If not specified, the forcefield will be evaluated on the full ring polymer." } ),
                "weight" : ( InputAttribute, { "dtype"   : float,
                                          "default" : 1.0,
-                                         "help"    : "A scaling factor for this forcefield, to be applied before adding the force calculated by this forcefield to the total force." } )
+                                         "help"    : "A scaling factor for this forcefield, to be applied before adding the force calculated by this forcefield to the total force." } ),
+               "name" : ( InputAttribute, { "dtype" : str,
+                                          "default" : "",
+                                          "help" : "An optional name to refer to this force component." } )
             }
 
    default_help = "Base class that deals with the assigning of force calculation jobs and collecting the data."
@@ -67,9 +70,10 @@ class InputForceComponent(InputValue):
          forceb: A ForceBeads object.
       """
 
-      super(InputForceComponent,self).store(forceb.name)
+      super(InputForceComponent,self).store(forceb.ffield)
       self.nbeads.store(forceb.nbeads)
       self.weight.store(forceb.weight)
+      self.name.store(forceb.name)
 
    def fetch(self):
       """Creates a ForceBeads object.
@@ -79,7 +83,7 @@ class InputForceComponent(InputValue):
       """
 
       val=super(InputForceComponent,self).fetch()      
-      return ForceComponent(name=val, nbeads=self.nbeads.fetch(), weight=self.weight.fetch())
+      return ForceComponent(ffield=val, nbeads=self.nbeads.fetch(), weight=self.weight.fetch(), name=self.name.fetch())
 
    def check(self):
       """Checks for optional parameters."""
