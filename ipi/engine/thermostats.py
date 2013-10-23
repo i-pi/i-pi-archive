@@ -41,7 +41,7 @@ Classes:
 """
 
 __all__ = ['Thermostat', 'ThermoLangevin', 'ThermoPILE_L', 'ThermoPILE_G',
-           'ThermoSVR', 'ThermoGLE', 'ThermoNMGLE', 'ThermoNMGLEG']
+           'ThermoSVR', 'ThermoGLE', 'ThermoNMGLE', 'ThermoNMGLEG', 'MultiThermo']
 
 import numpy as np
 from ipi.utils.depend   import *
@@ -881,3 +881,46 @@ class ThermoNMGLEG(ThermoNMGLE):
       dget(self,"ethermo").add_dependency(dget(t,"ethermo"))
       self._thermos.append(t)
 
+class MultiThermo(Thermostat):
+
+   def __init__(self, temp=1.0, dt=1.0, ethermo=0.0, thermolist=None):
+      """Initialises Thermostat.
+
+      Args:
+         temp: The simulation temperature. Defaults to 1.0.
+         dt: The simulation time step. Defaults to 1.0.
+         ethermo: The initial heat energy transferred to the bath.
+            Defaults to 0.0. Will be non-zero if the thermostat is
+            initialised from a checkpoint file.
+      """
+
+      self.tlist = thermolist
+      dset(self,"temp",   depend_value(name='temp', value=temp))
+      dset(self,"dt",     depend_value(name='dt', value=dt))
+      dset(self,"ethermo",depend_value(name='ethermo', value=ethermo))
+      for t in self.tlist:
+         deppipe(self,"dt", t, "dt")
+         deppipe(self,"temp", t, "temp")
+
+   def get_ethermo(self):
+      et=0.0
+      for t in self.tlist:
+         et+=t.ethermo
+      return et
+
+   def bind(self, beads=None, atoms=None, pm=None, prng=None, fixdof=None):
+      """Binds the appropriate degrees of freedom to the thermostat."""
+
+      # just binds all the sub-thermostats
+      for t in self.tlist:
+         t.bind(beads=beads, atoms=atoms, pm=pm, prng=prng, fixdof=fixdof)
+         dget(self,"ethermo").add_dependency(dget(t, "ethermo"))
+
+      dget(self,"ethermo")._func=self.get_ethermo
+
+   def step(self):
+      """Steps through all sub-thermostats."""
+
+      for t in self.tlist:
+         t.step()
+      pass

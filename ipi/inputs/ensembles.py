@@ -9,7 +9,7 @@ the Free Software Foundation, either version 3 of the License, or
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
@@ -63,7 +63,7 @@ class InputEnsemble(Input):
 
    attribs={"mode"  : (InputAttribute, {"dtype"   : str,
                                     "help"    : "The ensemble that will be sampled during the simulation. 'replay' means that a simulation is restarted from a previous simulation.",
-                                    "options" : ['nve', 'nvt', 'npt', 'replay', 'paratemp']}) }
+                                    "options" : ['nve', 'nvt', 'npt', 'replay']}) }
    fields={"thermostat" : (InputThermo, {"default"   : input_default(factory=ipi.engine.thermostats.Thermostat),
                                          "help"      : "The thermostat for the atoms, keeps the atom velocity distribution at the correct temperature."} ),
            "barostat" : (InputBaro, {"default"       : input_default(factory=ipi.engine.barostats.Barostat),
@@ -80,6 +80,10 @@ class InputEnsemble(Input):
                                       "default"      : 1.0,
                                       "help"         : "The external pressure.",
                                       "dimension"    : "pressure"}),
+           "eens" : (InputValue, {"dtype"     : float,
+                                         "default"   : 0.0,
+                                         "help"      : "The ensemble contribution to the conserved quantity.",
+                                         "dimension" : "energy"}),
            "fixcom": (InputValue, {"dtype"           : bool,
                                    "default"         : True,
                                    "help"            : "This describes whether the centre of mass of the particles is fixed."}),
@@ -125,11 +129,12 @@ class InputEnsemble(Input):
       if tens > 1:
          self.thermostat.store(ens.thermostat)
          self.fixcom.store(ens.fixcom)
+         self.eens.store(ens.eens)
       if tens == 3:
          self.barostat.store(ens.barostat)
          self.pressure.store(ens.pext)
       if tens == 4:
-         self.pt_templist.store(ens.templist)                  
+         self.pt_templist.store(ens.templist)
          for t in ens.thermolist:
             it = InputThermo()
             it.store(t)
@@ -148,26 +153,17 @@ class InputEnsemble(Input):
 
       if self.mode.fetch() == "nve" :
          ens = NVEEnsemble(dt=self.timestep.fetch(),
-            temp=self.temperature.fetch(), fixcom=self.fixcom.fetch())
+            temp=self.temperature.fetch(), fixcom=self.fixcom.fetch(), eens=self.eens.fetch())
       elif self.mode.fetch() == "nvt" :
          ens = NVTEnsemble(dt=self.timestep.fetch(),
-            temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), fixcom=self.fixcom.fetch())
+            temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), fixcom=self.fixcom.fetch(), eens=self.eens.fetch())
       elif self.mode.fetch() == "npt" :
          ens = NPTEnsemble(dt=self.timestep.fetch(),
-            temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), fixcom=self.fixcom.fetch(),
+            temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), fixcom=self.fixcom.fetch(), eens=self.eens.fetch(),
                   pext=self.pressure.fetch(), barostat=self.barostat.fetch() )
       elif self.mode.fetch() == "replay":
          ens = ReplayEnsemble(dt=self.timestep.fetch(),
-            temp=self.temperature.fetch(),fixcom=False,intraj=self.replay_file.fetch() )
-      elif self.mode.fetch() == "paratemp":
-         thlist=[]
-         for (k,v) in self.extra:
-            thlist.append(v.fetch())
-         if thlist == []: thlist=None
-         ens = ParaTempEnsemble(dt=self.timestep.fetch(),
-            templist=self.pt_templist.fetch(),temp=self.temperature.fetch(),
-            thermolist=thlist,
-            thermostat=self.thermostat.fetch(), fixcom=False)            
+            temp=self.temperature.fetch(),fixcom=False, eens=self.eens.fetch() ,intraj=self.replay_file.fetch() )
       else:
          raise ValueError("'" + self.mode.fetch() + "' is not a supported ensemble mode.")
 
@@ -190,7 +186,7 @@ class InputEnsemble(Input):
          if self.barostat._explicit == False:
             raise ValueError("No barostat tag supplied for NPT simulation")
          if self.barostat.thermostat._explicit == False:
-            raise ValueError("No thermostat tag supplied in barostat for NPT simulation")      
+            raise ValueError("No thermostat tag supplied in barostat for NPT simulation")
 
       if self.timestep.fetch() <= 0:
          raise ValueError("Non-positive timestep specified.")
@@ -204,6 +200,3 @@ class InputEnsemble(Input):
          if not self.temperature._explicit:
             raise ValueError("Temperature should be supplied for constant temperature simulation")
 
-      if self.mode.fetch() == "paratemp": 
-         if not self.pt_templist._explicit:
-            raise ValueError("List of temperatures should be supplied for parallel tempering simulation")

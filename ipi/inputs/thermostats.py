@@ -9,7 +9,7 @@ the Free Software Foundation, either version 3 of the License, or
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
@@ -27,9 +27,9 @@ Classes:
 __all__ = ['InputThermo']
 
 import numpy as np
+import ipi.engine.thermostats as iet
 from ipi.utils.depend   import *
 from ipi.utils.inputvalue  import *
-from ipi.engine.thermostats import *
 
 class InputThermo(Input):
    """Thermostat input class.
@@ -55,8 +55,8 @@ class InputThermo(Input):
    """
 
    attribs = { "mode": (InputAttribute, { "dtype"   : str,
-                                      "options" : [ "", "langevin", "svr", "pile_l", "pile_g", "gle", "nm_gle", "nm_gle_g" ],
-                                      "help"    : "The style of thermostatting. 'langevin' specifies a white noise langevin equation to be attached to the cartesian representation of the momenta. 'svr' attaches a velocity rescaling thermostat to the cartesian representation of the momenta. Both 'pile_l' and 'pile_g' attaches a white noise langevin thermostat to the normal mode representation, with 'pile_l' attaching a local langevin thermostat to the centroid mode and 'pile_g' instead attaching a global velocity rescaling thermostat. 'gle' attaches a coloured noise langevin thermostat to the cartesian representation of the momenta, 'nm_gle' attaches a coloured noise langevin thermostat to the normal mode representation of the momenta and a langevin thermostat to the centroid and 'nm_gle_g' attaches a gle thermostat to the normal modes and a svr thermostat to the centroid."
+                                      "options" : [ "", "langevin", "svr", "pile_l", "pile_g", "gle", "nm_gle", "nm_gle_g", "multi" ],
+                                      "help"    : "The style of thermostatting. 'langevin' specifies a white noise langevin equation to be attached to the cartesian representation of the momenta. 'svr' attaches a velocity rescaling thermostat to the cartesian representation of the momenta. Both 'pile_l' and 'pile_g' attaches a white noise langevin thermostat to the normal mode representation, with 'pile_l' attaching a local langevin thermostat to the centroid mode and 'pile_g' instead attaching a global velocity rescaling thermostat. 'gle' attaches a coloured noise langevin thermostat to the cartesian representation of the momenta, 'nm_gle' attaches a coloured noise langevin thermostat to the normal mode representation of the momenta and a langevin thermostat to the centroid and 'nm_gle_g' attaches a gle thermostat to the normal modes and a svr thermostat to the centroid.  'multiple' is a special thermostat mode, in which one can define multiple thermostats _inside_ the thermostat tag."
                                          }) }
    fields = { "ethermo" : (InputValue, {  "dtype"     : float,
                                           "default"   : 0.0,
@@ -83,6 +83,8 @@ class InputThermo(Input):
                                     "dimension" : "ms-momentum" })
              }
 
+   dynamic = {}
+
    default_help = "Simulates an external heat bath to keep the velocity distribution at the correct temperature."
    default_label = "THERMOSTATS"
 
@@ -97,40 +99,46 @@ class InputThermo(Input):
       """
 
       super(InputThermo,self).store(thermo)
-      if type(thermo) is ThermoLangevin:
+      if type(thermo) is iet.ThermoLangevin:
          self.mode.store("langevin")
          self.tau.store(thermo.tau)
-      elif type(thermo) is ThermoSVR:
+      elif type(thermo) is iet.ThermoSVR:
          self.mode.store("svr")
          self.tau.store(thermo.tau)
-      elif type(thermo) is ThermoPILE_L:
+      elif type(thermo) is iet.ThermoPILE_L:
          self.mode.store("pile_l")
          self.tau.store(thermo.tau)
          self.pile_scale.store(thermo.pilescale)
-      elif type(thermo) is ThermoPILE_G:
+      elif type(thermo) is iet.ThermoPILE_G:
          self.mode.store("pile_g")
          self.tau.store(thermo.tau)
          self.pile_scale.store(thermo.pilescale)
-      elif type(thermo) is ThermoGLE:
+      elif type(thermo) is iet.ThermoGLE:
          self.mode.store("gle")
          self.A.store(thermo.A)
          if dget(thermo,"C")._func is None:
             self.C.store(thermo.C)
          self.s.store(thermo.s)
-      elif type(thermo) is ThermoNMGLE:
+      elif type(thermo) is iet.ThermoNMGLE:
          self.mode.store("nm_gle")
          self.A.store(thermo.A)
          if dget(thermo,"C")._func is None:
             self.C.store(thermo.C)
          self.s.store(thermo.s)
-      elif type(thermo) is ThermoNMGLEG:
+      elif type(thermo) is iet.ThermoNMGLEG:
          self.mode.store("nm_gle_g")
          self.A.store(thermo.A)
          self.tau.store(thermo.tau)
          if dget(thermo,"C")._func is None:
             self.C.store(thermo.C)
          self.s.store(thermo.s)
-      elif type(thermo) is Thermostat:
+      elif type(thermo) is iet.MultiThermo:
+         self.mode.store("multi" )
+         for t in thermo.tlist:
+            it=InputThermo()
+            it.store(t)
+            self.extra.append(("thermostat",it))
+      elif type(thermo) is iet.Thermostat:
          self.mode.store("")
       else:
          raise TypeError("Unknown thermostat mode " + type(thermo).__name__)
@@ -149,33 +157,38 @@ class InputThermo(Input):
 
       super(InputThermo,self).fetch()
       if self.mode.fetch() == "langevin":
-         thermo = ThermoLangevin(tau=self.tau.fetch())
+         thermo = iet.ThermoLangevin(tau=self.tau.fetch())
       elif self.mode.fetch() == "svr":
-         thermo = ThermoSVR(tau=self.tau.fetch())
+         thermo = iet.ThermoSVR(tau=self.tau.fetch())
       elif self.mode.fetch() == "pile_l":
-         thermo = ThermoPILE_L(tau=self.tau.fetch(), scale=self.pile_scale.fetch())
+         thermo = iet.ThermoPILE_L(tau=self.tau.fetch(), scale=self.pile_scale.fetch())
       elif self.mode.fetch() == "pile_g":
-         thermo = ThermoPILE_G(tau=self.tau.fetch(), scale=self.pile_scale.fetch())
+         thermo = iet.ThermoPILE_G(tau=self.tau.fetch(), scale=self.pile_scale.fetch())
       elif self.mode.fetch() == "gle":
          rC = self.C.fetch()
          if len(rC) == 0:
             rC = None
-         thermo = ThermoGLE(A=self.A.fetch(),C=rC)
+         thermo = iet.ThermoGLE(A=self.A.fetch(),C=rC)
          thermo.s = self.s.fetch()
       elif self.mode.fetch() == "nm_gle":
          rC = self.C.fetch()
          if len(rC) == 0:
             rC = None
-         thermo = ThermoNMGLE(A=self.A.fetch(),C=rC)
+         thermo = iet.ThermoNMGLE(A=self.A.fetch(),C=rC)
          thermo.s = self.s.fetch()
       elif self.mode.fetch() == "nm_gle_g":
          rC = self.C.fetch()
          if len(rC) == 0:
             rC = None
-         thermo = ThermoNMGLEG(A=self.A.fetch(),C=rC, tau=self.tau.fetch())
+         thermo = iet.ThermoNMGLEG(A=self.A.fetch(),C=rC, tau=self.tau.fetch())
          thermo.s = self.s.fetch()
+      elif self.mode.fetch() == "multi" :
+         tlist = []
+         for (k, t) in self.extra:
+            tlist.append(t.fetch())
+         thermo=iet.MultiThermo(thermolist=tlist)
       elif self.mode.fetch() == "" :
-         thermo=Thermostat()
+         thermo=iet.Thermostat()
       else:
          raise TypeError("Invalid thermostat mode " + self.mode.fetch())
 
@@ -193,3 +206,7 @@ class InputThermo(Input):
             raise ValueError("The thermostat friction coefficient must be set to a positive value")
       if self.mode.fetch() in ["gle", "nm_gle", "nm_gle_g"]:
          pass  # PERHAPS DO CHECKS THAT MATRICES SATISFY REASONABLE CONDITIONS (POSITIVE-DEFINITENESS, ETC)
+
+
+InputThermo.dynamic["thermostat"] = (InputThermo, {"default"   : input_default(factory=iet.Thermostat),
+                                         "help"      : "The thermostat for the atoms, keeps the atom velocity distribution at the correct temperature."} )
