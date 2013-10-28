@@ -2,7 +2,8 @@
    <output prefix='ph2'>
       <properties stride='1' filename='out'>  [
              step, time{picosecond}, conserved{kelvin}, temperature{kelvin},
-             kinetic_cv{kelvin}, potential{kelvin}, pressure_cv{megapascal}
+             kinetic_cv{kelvin}, potential{kelvin}, pressure_cv{megapascal},
+             ensemble_temperature{kelvin}, ensemble_bias{kelvin}
              ]
       </properties>
    <!--          temperature{kelvin}(bead=0), temperature{kelvin}(bead=1), temperature{kelvin}(bead=2), temperature{kelvin}(bead=3)

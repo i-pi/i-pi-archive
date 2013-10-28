@@ -47,7 +47,10 @@ class ParaTemp(dobject):
       slist: List of systems corresponding to the various replicas
 
    Depend objects:
-      temp_replicas: The temperatures of the various replicas
+      system_temp: The actual temperatures of the various systems
+      system_vf: The bias and force scaling of the various system
+      system_v: The bias of the various system
+      system_f: The force of the various systems
    """
 
    def __init__(self, tlist=None, ilist=None, stride=0.0, wteml=None, wtesl=None, wtegl=None):
@@ -79,11 +82,11 @@ class ParaTemp(dobject):
       self.wte_sigmas = np.asarray(wtesl,float).copy()
       self.wte_gammas = np.asarray(wtegl,float).copy()
 
-      dset(self,"temp_replicas",depend_array(name="temp_replicas", value=np.asarray(tlist).copy()))
-      
-      for i in range(len(tlist)):
-         self.temp_replicas[i] = self.temp_list[self.temp_index[i]]
+      dset(self,"system_temp",depend_array(name="system_temp", value=np.asarray(tlist).copy(), func=self.get_stemp,
+                  dependencies=[dget(self,"temp_index")]))
+
       self.parafile = None
+      self.wtefile = None
 
    def bind(self, slist, prng):
       """Wires up the PT setup, by connecting the replicas to the temperature list.
@@ -98,64 +101,75 @@ class ParaTemp(dobject):
       # now makes sure that the temperatures of the ensembles of the systems are
       # piped to temp_list
       def make_tempgetter(k):
-         return lambda: self.temp_replicas[k]
+         return lambda: self.system_temp[k]
+
+      def make_biasgetter(k):
+         return lambda: self.system_v[k]
+
+      if (len(self.wte_means)>0):
+         dset(self,"system_vf",depend_array(name="system_vf", value=np.zeros((len(self.wte_means),2), float)
+               ) )
+         self.system_v = self.system_vf[:,0]
+         self.system_f = self.system_vf[:,1]
+         for s in self.slist:
+            dget(s.forces, "pot").add_dependant(dget(self,"system_vf"))
+         dget(self,"temp_index").add_dependant(dget(self,"system_vf"))
+         dget(self,"system_vf")._func=self.get_wtevf
+         dget(self,"system_f")._func=self.get_wtevf
+         dget(self,"system_v")._func=self.get_wtevf
+      else:
+         dset(self,"system_vf",depend_array(name="system_vf", value=np.zeros((len(self.temp_list),2), float)) )
+         self.system_v = self.system_vf[:,0]
+         self.system_f = self.system_vf[:,1]
 
       isys=0
       for s in self.slist:
-         dget(s.ensemble,"temp").add_dependency(dget(self,"temp_replicas"))
+         dget(s.ensemble,"bias").add_dependency(dget(self,"system_v"))
+         dget(s.ensemble,"bias")._func = make_biasgetter(isys)
+         dget(s.ensemble,"temp").add_dependency(dget(self,"system_temp"))
          dget(s.ensemble,"temp")._func = make_tempgetter(isys)
          isys+=1
 
-      if (len(self.wte_means)>0):
-         dset(self,"wte_vf",depend_array(name="wte_vf", value=np.zeros((len(self.wte_means),2), float)
-               ) )
-         self.wte_v = self.wte_vf[:,0]
-         self.wte_f = self.wte_vf[:,1]
-         for s in self.slist:
-            dget(s.forces, "pot").add_dependant(dget(self,"wte_vf"))
-         dget(self,"temp_index").add_dependant(dget(self,"wte_vf"))
-         dget(self,"wte_vf")._func=self.get_wtevf
-         dget(self,"wte_f")._func=self.get_wtevf
-         dget(self,"wte_v")._func=self.get_wtevf
-      else:
-         dset(self,"wte_vf",depend_array(name="wte_vf", value=np.zeros((len(self.wte_means),2), float)) )
-
-      
       self.parafile=open("PARATEMP", "a")
       self.wtefile=None
       if len(self.wte_means)>0:
          self.wtefile=open("PARAWTE", "a")
 
+   def get_stemp(self):
+      """ Returns the temperatures of the various systems. """
+
+      return np.asarray([ self.temp_list[self.temp_index[i]] for i in range(len(self.temp_list))])
+
    def wtevf(self, i, j):
-      betai=1.0/(Constants.kb*self.temp_list[self.temp_index[i]])
-      s = self.slist[self.temp_index[j]]
-      uj = s.forces.pot         
-      vij = (1-1.0/self.wte_gammas[i])*self.wte_gammas[i]/betai * np.exp(
-          -0.5/(self.wte_gammas[i])*
-            ((uj/s.beads.nbeads-self.wte_means[i])/self.wte_sigmas[i])**2
+      """ Gets the actual bias of system i subject to the j-th WTE bias. """
+
+      betaj=1.0/(Constants.kb*self.temp_list[j])
+      s = self.slist[i]
+      ui = s.forces.pot
+      vij = (1-1.0/self.wte_gammas[j])*self.wte_gammas[j]/betaj * np.exp(
+          -0.5/(self.wte_gammas[j])*
+            ((ui/s.beads.nbeads-self.wte_means[j])/self.wte_sigmas[j])**2
           )
-      fij = vij*((uj/s.beads.nbeads-self.wte_means[i])/
-             (self.wte_sigmas[i]**2*self.wte_gammas[i]*s.beads.nbeads))
+      fij = vij*((ui/s.beads.nbeads-self.wte_means[j])/
+             (self.wte_sigmas[j]**2*self.wte_gammas[j]*s.beads.nbeads))
       return (vij, fij)
-      
+
    def get_wtevf(self):
-   
+
       vlist=np.zeros((len(self.temp_list),2), float)
       for i in range(len(self.temp_list)):
-         vlist[i] = self.wtevf(i, i)
+         vlist[i] = self.wtevf(i, self.temp_index[i])
       return vlist
 
    def wtestep(self, step=-1):
 
       if len(self.wte_means) == 0 or  len(self.wte_sigmas) == 0: return
-      
+
       # note that this loops over the TEMPERATURES, not over the SYSTEMS
       for i in range(len(self.temp_list)):
-         s = self.slist[self.temp_index[i]]
+         s = self.slist[i]
          ui = s.forces.pot
-         f = depstrip(s.forces.f)*self.wte_v[i]*-(
-             (ui/s.beads.nbeads-self.wte_means[i])/
-             (self.wte_sigmas[i]**2*self.wte_gammas[i]*s.beads.nbeads) )
+         f = depstrip(s.forces.f)*self.system_f[i]
          s.beads.p += f*s.ensemble.dt*0.5
 
 
@@ -163,7 +177,7 @@ class ParaTemp(dobject):
    def swap(self, step=-1):
       """ Tries a PT swap move. """
 
-      if self.stride <= 0.0: return       
+      if self.stride <= 0.0: return
 
       syspot  = [ s.forces.pot for s in self.slist ]
       # spring potential in a form that can be easily used further down (no temperature included!)
@@ -177,8 +191,14 @@ class ParaTemp(dobject):
          for j in range(i):
             if (1.0/self.stride < self.prng.u) : continue  # tries a swap with probability 1/stride
             # ALL SYSTEMS ARE EXPECTED TO HAVE SAME N OF BEADS!
-            betai = 1.0/(Constants.kb*self.temp_list[self.temp_index[i]]*self.slist[self.temp_index[i]].beads.nbeads); # exchanges are being done, so it is better to re-compute betai in the inner loop
-            betaj = 1.0/(Constants.kb*self.temp_list[self.temp_index[j]]*self.slist[self.temp_index[j]].beads.nbeads);
+            betai = 1.0/(Constants.kb*self.system_temp[i]*self.slist[i].beads.nbeads); # exchanges are being done, so it is better to re-compute betai in the inner loop
+            betaj = 1.0/(Constants.kb*self.system_temp[j]*self.slist[j].beads.nbeads);
+
+            vii, dummy = self.wtevf(i, self.temp_index[i])
+            vij, dummy = self.wtevf(i, self.temp_index[j])
+            vjj, dummy = self.wtevf(j, self.temp_index[j])
+            vji, dummy = self.wtevf(j, self.temp_index[i])
+
             pxc = np.exp(
               (betaj - betai) * (syspot[j]-syspot[i]) +
               (1.0/betaj - 1.0/betai) * (syspath[j]-syspath[i])
@@ -186,6 +206,11 @@ class ParaTemp(dobject):
             print i, j, pxc
             if (pxc > self.prng.u): # really does the exchange
                info(" @ PT:  SWAPPING replicas % 5d and % 5d." % (i,j), verbosity.low)
+               # adjusts the conserved quantities
+               self.slist[i].ensemble.eens += self.slist[i].nm.kin *(1.0- (betai/betaj))
+               self.slist[j].ensemble.eens += self.slist[j].nm.kin *(1.0- (betaj/betai))
+
+               # adjusts the momenta
                self.slist[i].beads.p *= np.sqrt(betai/betaj)
                self.slist[j].beads.p *= np.sqrt(betaj/betai)
                # if there are GLE thermostats around, we must also rescale the s momenta!
@@ -193,8 +218,13 @@ class ParaTemp(dobject):
                if hasattr(self.slist[i].ensemble.thermostat,"s"):
                   self.slist[i].ensemble.thermostat.s *= np.sqrt(betai/betaj)
                   self.slist[j].ensemble.thermostat.s *= np.sqrt(betaj/betai)
+
+               # adjusts the contribution from the WTE bias
+               self.slist[i].ensemble.eens -= vii-vij
+               self.slist[j].ensemble.eens -= vjj-vji
+
                swp=self.temp_index[j];  self.temp_index[j]=self.temp_index[i];  self.temp_index[i]=swp
-               swp=self.temp_replicas[j];  self.temp_replicas[j]=self.temp_replicas[i];  self.temp_replicas[i]=swp; 
+
 
    def softexit(self):
       if not self.parafile is None:

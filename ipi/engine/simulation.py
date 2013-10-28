@@ -124,7 +124,7 @@ class Simulation(dobject):
       for s in self.syslist:
          # binds important computation engines
          s.bind(self)
-      
+
       self.outputs = []
       for o in self.outtemplate:
          if type(o) is CheckpointOutput:    # checkpoints are output per simulation
@@ -176,7 +176,7 @@ class Simulation(dobject):
 
       for (k,f) in self.fflist.iteritems():
          f.run()
-      
+
       # prints inital configuration -- only if we are not restarting
       if (self.step == 0):
          self.step = -1
@@ -189,7 +189,7 @@ class Simulation(dobject):
             self.paratemp.parafile.write("\n")
             if self.paratemp.wtefile != None:
                self.paratemp.wtefile.write("%10d" % (self.step+1))
-               for v in self.paratemp.wte_v:
+               for v in self.paratemp.system_v:
                   self.paratemp.wtefile.write(" %12.7e" % v)
                self.paratemp.wtefile.write("\n")
 
@@ -245,15 +245,13 @@ class Simulation(dobject):
             # applies the WTE forces, if they are defined.
             if self.paratemp.wtefile != None:
                self.paratemp.wtefile.write("%10d" % (self.step+1))
-               for v in self.paratemp.wte_v:
+               for v in self.paratemp.system_v:
                   self.paratemp.wtefile.write(" %12.7e" % v)
                self.paratemp.wtefile.write("\n")
 
-
-
             self.paratemp.swap(self.step)
             self.paratemp.wtestep(self.step)
-            
+
 
          if softexit.triggered: break # don't write if we are about to exit!
 

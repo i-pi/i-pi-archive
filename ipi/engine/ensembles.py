@@ -92,6 +92,7 @@ class Ensemble(dobject):
       dset(self, "temp",  depend_value(name='temp',  value=temp))
       dset(self, "dt",    depend_value(name='dt',    value=dt))
       dset(self, "eens", depend_value(name='eens', value=eens))
+      dset(self, "bias", depend_value(name='bias', value=0.0))
       self.fixcom = fixcom
 
 
@@ -132,6 +133,7 @@ class Ensemble(dobject):
       dget(self,"econs").add_dependency(dget(self.forces, "pot"))
       dget(self,"econs").add_dependency(dget(self.beads, "vpath"))
       dget(self,"econs").add_dependency(dget(self, "eens"))
+      dget(self,"econs").add_dependency(dget(self, "bias"))
 
 
    def get_ntemp(self):
@@ -160,7 +162,7 @@ class Ensemble(dobject):
       ensembles.
       """
 
-      return self.eens+self.beads.vpath*self.nm.omegan2 + self.nm.kin + self.forces.pot
+      return -self.bias + self.eens + self.beads.vpath*self.nm.omegan2 + self.nm.kin + self.forces.pot
 
 
 class NVEEnsemble(Ensemble):
