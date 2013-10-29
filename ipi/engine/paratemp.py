@@ -150,7 +150,7 @@ class ParaTemp(dobject):
           -0.5/(self.wte_gammas[j])*
             ((ui/s.beads.nbeads-self.wte_means[j])/self.wte_sigmas[j])**2
           )
-      fij = vij*((ui/s.beads.nbeads-self.wte_means[j])/
+      fij = -vij*((ui/s.beads.nbeads-self.wte_means[j])/
              (self.wte_sigmas[j]**2*self.wte_gammas[j]*s.beads.nbeads))
       return (vij, fij)
 
@@ -194,14 +194,19 @@ class ParaTemp(dobject):
             betai = 1.0/(Constants.kb*self.system_temp[i]*self.slist[i].beads.nbeads); # exchanges are being done, so it is better to re-compute betai in the inner loop
             betaj = 1.0/(Constants.kb*self.system_temp[j]*self.slist[j].beads.nbeads);
 
-            vii, dummy = self.wtevf(i, self.temp_index[i])
-            vij, dummy = self.wtevf(i, self.temp_index[j])
-            vjj, dummy = self.wtevf(j, self.temp_index[j])
-            vji, dummy = self.wtevf(j, self.temp_index[i])
-
+            if len(self.wte_gammas)>0:
+               vii, dummy = self.wtevf(i, self.temp_index[i])
+               vij, dummy = self.wtevf(i, self.temp_index[j])
+               vjj, dummy = self.wtevf(j, self.temp_index[j])
+               vji, dummy = self.wtevf(j, self.temp_index[i])
+            else:
+               vii = vij = vji = vjj = 0
+               
             pxc = np.exp(
-              (betaj - betai) * (syspot[j]-syspot[i]) +
-              (1.0/betaj - 1.0/betai) * (syspath[j]-syspath[i])
+              (betai * syspot[i] + syspath[i]/betai + betai * vii +
+               betaj * syspot[j] + syspath[j]/betaj + betaj * vjj) -
+              (betai * syspot[j] + syspath[j]/betai + betai * vji +
+               betaj * syspot[i] + syspath[i]/betaj + betaj * vij)
               )
             print i, j, pxc
             if (pxc > self.prng.u): # really does the exchange
@@ -220,8 +225,8 @@ class ParaTemp(dobject):
                   self.slist[j].ensemble.thermostat.s *= np.sqrt(betaj/betai)
 
                # adjusts the contribution from the WTE bias
-               self.slist[i].ensemble.eens -= vii-vij
-               self.slist[j].ensemble.eens -= vjj-vji
+               self.slist[i].ensemble.eens += vii-vij
+               self.slist[j].ensemble.eens += vjj-vji
 
                swp=self.temp_index[j];  self.temp_index[j]=self.temp_index[i];  self.temp_index[i]=swp
 

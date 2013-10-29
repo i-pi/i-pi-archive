@@ -23,7 +23,7 @@
       <temp_list units="kelvin"> [ 30, 40, 50 ] </temp_list>
       <wte_means units="kelvin">  [ -1.30385e+04, -1.22969e+04, -1.17848e+04 ] </wte_means>
       <wte_sigmas units="kelvin"> [ 3.02109e+02, 2.94790e+02, 3.43593e+02 ] </wte_sigmas>
-      <wte_gammas> [ 5, 5, 5 ] </wte_gammas>
+      <wte_gammas> [ 10, 10, 10 ] </wte_gammas>
       <stride> 1e10 </stride>
    </paratemp>
    <system copies="3" prefix="ID">

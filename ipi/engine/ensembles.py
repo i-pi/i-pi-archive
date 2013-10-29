@@ -162,7 +162,7 @@ class Ensemble(dobject):
       ensembles.
       """
 
-      return -self.bias + self.eens + self.beads.vpath*self.nm.omegan2 + self.nm.kin + self.forces.pot
+      return self.bias + self.eens + self.beads.vpath*self.nm.omegan2 + self.nm.kin + self.forces.pot
 
 
 class NVEEnsemble(Ensemble):

@@ -223,9 +223,12 @@ class Simulation(dobject):
             st.daemon = True
             st.start()
             stepthreads.append(st)
-
+         
          for st in stepthreads:
             st.join()
+
+         if self.mode == "paratemp": # apply the WTE bias forces
+            self.paratemp.wtestep(self.step)
 
          if softexit.triggered: break # don't continue if we are about to exit!
 
@@ -233,9 +236,7 @@ class Simulation(dobject):
             o.write()
 
          if self.mode == "paratemp": # does parallel tempering and/or WTE
-
-            self.paratemp.wtestep(self.step)
-
+               
             # because of where this is in the loop, we must write out BEFORE doing the swaps.
             self.paratemp.parafile.write("%10d" % (self.step+1))
             for i in self.paratemp.temp_index:
