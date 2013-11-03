@@ -46,7 +46,7 @@ from ipi.engine.normalmodes import NormalModes
 from ipi.engine.properties import Properties, Trajectories
 from ipi.engine.outputs import CheckpointOutput
 
-import objgraph
+#import objgraph
 
 class Simulation(dobject):
    """Main simulation object.
@@ -276,7 +276,7 @@ class Simulation(dobject):
             info(" # Wall clock time expired! Bye bye!", verbosity.low )
             break
 
-         objgraph.show_growth(limit=3)
+#         objgraph.show_growth(limit=3)
 
       self.rollback = False
       softexit.trigger(" @ SIMULATION: Exiting cleanly.")

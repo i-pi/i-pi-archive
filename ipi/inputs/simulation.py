@@ -39,7 +39,7 @@ from ipi.inputs.system import InputSystem
 from ipi.inputs.forcefields import InputFFSocket
 from ipi.inputs.outputs import InputOutputs
 from ipi.inputs.paratemp import InputParaTemp
-import objgraph
+
 class InputSimulation(Input):
    """Simulation input class.
 

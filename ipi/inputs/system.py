@@ -44,7 +44,6 @@ from ipi.engine.beads import Beads
 from ipi.engine.cell import Cell
 from ipi.inputs.initializer import InputInitializer
 from ipi.engine.initializer import Initializer
-import objgraph
 
 class InputSystem(Input):
    """System input class.
