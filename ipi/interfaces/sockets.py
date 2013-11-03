@@ -111,6 +111,7 @@ class DriverSocket(socket.socket):
 
    Attributes:
       _buf: A string buffer to hold the reply from the driver.
+      busyonstatus: Boolean giving whether the driver is busy.
       status: Keeps track of the status of the driver.
       lastreq: The ID of the last request processed by the client.
       locked: Flag to mark if the client has been working consistently on one image.
@@ -126,6 +127,7 @@ class DriverSocket(socket.socket):
       super(DriverSocket,self).__init__(_sock=socket)
       self._buf = np.zeros(0,np.byte)
       self.peername = self.getpeername()
+      self.busyonstatus = False
       self.status = Status.Up
       self.lastreq = None
       self.locked = False
@@ -144,13 +146,22 @@ class DriverSocket(socket.socket):
          of Status.
       """
 
-      try:
-         readable, writable, errored = select.select([], [self], [])
-         if self in writable:
+      if not self.busyonstatus:
+         try:
             self.sendall(Message("status"))
+         except:
+            return Status.Disconnected
+
+      try:
+         readable, writable, errored = select.select([self], [], [])
       except:
          return Status.Disconnected
 
+      if not self in readable:
+         self.busyonstatus = True
+         return Status.Up | Status.Busy
+
+      self.busyonstatus = False
       try:
          reply = self.recv(HDRLEN)
       except socket.timeout:
