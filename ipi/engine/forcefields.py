@@ -129,13 +129,16 @@ class ForceField(dobject):
 
    def release(self, request):
 
-     with self._threadlock: 
-      if request in self.requests:   
-         try:
-            self.requests.remove(request)
-         except:
-            print "failed removing request", id(request), [id(r) for r in self.requests], "@", threading.currentThread()
-            raise
+      self._threadlock.acquire()
+      try: 
+         if request in self.requests:   
+            try:
+               self.requests.remove(request)
+            except:
+               print "failed removing request", id(request), [id(r) for r in self.requests], "@", threading.currentThread()
+               raise
+      finally:
+         self._threadlock.release()
 
    def stop(self):
       """Dummy stop method."""
