@@ -153,7 +153,7 @@ class DriverSocket(socket.socket):
             return Status.Disconnected
 
       try:
-         readable, writable, errored = select.select([self], [], [])
+         readable, writable, errored = select.select([self], [], [], 0.0)
       except:
          return Status.Disconnected
 
@@ -566,29 +566,51 @@ class InterfaceSocket(object):
       for [r2, c] in self.jobs:
          freec.remove(c)
 
-      pendr = self.requests[:]
       pendr = [ r for r in self.requests if r["status"] == "Queued" ]
+      
+      if (len(freec)>0 and len(pendr)>0) :
+         print "Clients previous requests: ",
+         for fc in freec[:]:
+            print fc.lastreq,
+         print ""
+         print "Requests on hold: ",
+         for r in pendr[:]:
+            print r["id"],
+         print ""
 
-      for fc in freec[:]:
-         matched = False
-         # first, makes sure that the client is REALLY free
-         if not (fc.status & Status.Up):
-            self.clients.remove(fc)   # if fc is in freec it can't be associated with a job (we just checked for that above)
-            continue
-         if fc.status & Status.HasData:
-            continue
-         if not (fc.status & (Status.Ready | Status.NeedsInit | Status.Busy) ):
-            warning(" @SOCKET: Client " + str(fc.peername) + " is in an unexpected status " + str(fc.status) + " at (1). Will try to keep calm and carry on.", verbosity.low)
-            continue
-         for match_ids in ( "match", "none", "free", "any" ):
+      for match_ids in ( "match", "none", "free", "any" ):
+         # get clients that are still free
+         freec = self.clients[:]
+         for [r2, c] in self.jobs:
+            freec.remove(c)
+         # ... but don't update the pending requests list!
+
+         # get requests that are still not cleared
+         # pendr = [ r for r in self.requests if r["status"] == "Queued" ]
+
+
+         for fc in freec[:]:
+#            matched = False
+            # first, makes sure that the client is REALLY free
+            if not (fc.status & Status.Up):
+               self.clients.remove(fc)   # if fc is in freec it can't be associated with a job (we just checked for that above)
+               continue
+            if fc.status & Status.HasData:
+               continue
+            if not (fc.status & (Status.Ready | Status.NeedsInit | Status.Busy) ):
+               warning(" @SOCKET: Client " + str(fc.peername) + " is in an unexpected status " + str(fc.status) + " at (1). Will try to keep calm and carry on.", verbosity.low)
+               continue
+ #       for match_ids in ( "match", "none", "free", "any" ):
             for r in pendr[:]:
+               print match_ids, r["id"], fc.lastreq
+
                if match_ids == "match" and not fc.lastreq is r["id"]:
                   continue
                elif match_ids == "none" and not fc.lastreq is None:
                   continue
                elif match_ids == "free" and fc.locked:
                   continue
-
+               print "Got past checks"
                info(" @SOCKET: Assigning [%5s] request id %4s to client with last-id %4s (% 3d/% 3d : %s)" % (match_ids,  str(r["id"]),  str(fc.lastreq), self.clients.index(fc), len(self.clients), str(fc.peername) ), verbosity.high )
 
                while fc.status & Status.Busy:
@@ -605,14 +627,14 @@ class InterfaceSocket(object):
                   fc.poll()
                   self.jobs.append([r,fc])
                   fc.locked =  (fc.lastreq is r["id"])
-                  matched = True
+ #                 matched = True
                   # removes r from the list of pending jobs
                   pendr = [nr for nr in pendr if (not nr is r)]
                   break
                else:
                   warning(" @SOCKET: Client " + str(fc.peername) + " is in an unexpected status " + str(fc.status) + " at (2). Will try to keep calm and carry on.", verbosity.low)
-            if matched:
-               break # doesn't do a second (or third) round if it managed
+#            if matched:
+#               break # doesn't do a second (or third) round if it managed
                      # to assign the job
 
    def poll(self):

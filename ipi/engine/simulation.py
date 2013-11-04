@@ -180,8 +180,17 @@ class Simulation(dobject):
       # prints inital configuration -- only if we are not restarting
       if (self.step == 0):
          self.step = -1
+         # must use multi-threading to avoid blocking in multi-system runs
+         stepthreads = []
          for o in self.outputs:
-            o.write()
+            print "submitting write thread"
+            st = threading.Thread(target=o.write, name="write thread")
+            st.daemon = True
+            st.start()
+            stepthreads.append(st)
+         for st in stepthreads:
+            st.join()
+
          if self.mode == "paratemp":
             self.paratemp.parafile.write("%10d" % (self.step+1))
             for i in self.paratemp.temp_index:
@@ -219,11 +228,12 @@ class Simulation(dobject):
          # steps through all the systems
          for s in self.syslist:
             # creates separate threads for the different systems
+            print "submitting a system thread"
             st = threading.Thread(target=s.ensemble.step, name=s.prefix)
             st.daemon = True
             st.start()
             stepthreads.append(st)
-         
+
          for st in stepthreads:
             st.join()
 
