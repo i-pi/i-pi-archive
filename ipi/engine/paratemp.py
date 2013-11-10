@@ -208,7 +208,6 @@ class ParaTemp(dobject):
               (betai * syspot[j] + syspath[j]/betai + betai * vji +
                betaj * syspot[i] + syspath[i]/betaj + betaj * vij)
               )
-            print i, j, pxc
             if (pxc > self.prng.u): # really does the exchange
                info(" @ PT:  SWAPPING replicas % 5d and % 5d." % (i,j), verbosity.low)
                # adjusts the conserved quantities

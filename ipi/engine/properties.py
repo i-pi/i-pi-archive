@@ -217,10 +217,10 @@ class Properties(dobject):
       self.property_dict = {
       "step": {       "dimension" : "number",
                       "help" : "The current simulation time step.",
-                      'func': (lambda: (1 + self.system.simul.step))},
+                      'func': (lambda: (1 + self.simul.step))},
       "time": {       "dimension": "time",
                       "help": "The elapsed simulation time.",
-                      'func': (lambda: (1 + self.system.simul.step)*self.ensemble.dt)},
+                      'func': (lambda: (1 + self.simul.step)*self.ensemble.dt)},
       "temperature": {"dimension": "temperature",
                       "help": "The current temperature, as obtained from the MD kinetic energy.",
                       "longhelp" : """The current temperature, as obtained from the MD kinetic energy of the (extended)
@@ -448,13 +448,12 @@ class Properties(dobject):
       self.cell = system.cell
       self.forces = system.forces
       self.simul = system.simul
-      self.system = system
       # dummy beads and forcefield objects so that we can use scaled and
       # displaced path estimators without changing the simulation bead
       # coordinates
       self.dbeads = system.beads.copy()
       self.dforces = Forces()
-      self.dforces.bind(self.dbeads, self.system.cell,  self.system.flist, self.system.simul.fflist)
+      self.dforces.bind(self.dbeads, self.cell,  system.flist, self.simul.fflist)
 
    def __getitem__(self, key):
       """Retrieves the item given by key.
@@ -1007,9 +1006,9 @@ class Properties(dobject):
             tcv += np.dot( (self.dbeads.q[b,3*i:3*(i+1)]-self.dbeads.qc[3*i:3*(i+1)]),
                           self.dforces.f[b,3*i:3*(i+1)] )
          tcv *= -0.5/self.beads.nbeads
-         tcv += 1.5*Constants.kb*self.system.ensemble.temp
+         tcv += 1.5*Constants.kb*self.ensemble.temp
 
-         logr = (self.dforces.pot-self.forces.pot)/(Constants.kb*self.system.ensemble.temp*self.beads.nbeads)
+         logr = (self.dforces.pot-self.forces.pot)/(Constants.kb*self.ensemble.temp*self.beads.nbeads)
 
          atcv += tcv
          atcv2 += tcv*tcv
@@ -1100,9 +1099,9 @@ class Properties(dobject):
          for b in range(self.beads.nbeads):
             tcv += np.dot( (q[b,3*i:3*(i+1)]-qc[3*i:3*(i+1)]), f[b,3*i:3*(i+1)])
          tcv *= -0.5/self.beads.nbeads
-         tcv += 1.5*Constants.kb*self.system.ensemble.temp
+         tcv += 1.5*Constants.kb*self.ensemble.temp
 
-         logr = (alpha-1)*spr/(Constants.kb*self.system.ensemble.temp*self.beads.nbeads)
+         logr = (alpha-1)*spr/(Constants.kb*self.ensemble.temp*self.beads.nbeads)
 
          atcv += tcv
          atcv2 += tcv*tcv

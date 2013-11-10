@@ -113,7 +113,6 @@ class ForceField(dobject):
 
       self._threadlock.acquire()
       try:
-         print "appending", reqid
          self.requests.append(newreq)
       finally:
          self._threadlock.release()
@@ -136,7 +135,6 @@ class ForceField(dobject):
 
       self._threadlock.acquire()
       try:
-         print "removing", request["id"] 
          if request in self.requests:   
             try:
                self.requests.remove(request)

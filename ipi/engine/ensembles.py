@@ -161,8 +161,10 @@ class Ensemble(dobject):
       """Calculates the conserved energy quantity for constant energy
       ensembles.
       """
-
-      return self.bias + self.eens + self.beads.vpath*self.nm.omegan2 + self.nm.kin + self.forces.pot
+      
+      # computes in two steps as bias depends on pot in WTE simulations
+      eham = self.beads.vpath*self.nm.omegan2 + self.nm.kin + self.forces.pot
+      return eham + self.eens + self.bias
 
 
 class NVEEnsemble(Ensemble):

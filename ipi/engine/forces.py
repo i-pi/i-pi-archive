@@ -32,7 +32,7 @@ Classes:
 __all__ = ['Forces', 'ForceComponent']
 
 import numpy as np
-import time, sys
+import time, sys, threading
 from ipi.utils.softexit import softexit
 from ipi.utils.messages import verbosity, warning
 from ipi.utils.depend import *
@@ -40,7 +40,6 @@ from ipi.utils.nmtransform import nm_rescale
 from ipi.engine.beads import Beads
 
 fbuid = 0
-
 class ForceBead(dobject):
    """Base force class.
 
@@ -73,6 +72,8 @@ class ForceBead(dobject):
       #calculation
       dset(self,"ufvx", depend_value(name="ufvx", func=self.get_all))
       self.request = None
+      self._threadlock = threading.Lock()
+      self._getallcount = 0
 
    def bind(self, atoms, cell, ff):
       """Binds atoms and cell to the forcefield.
@@ -133,7 +134,6 @@ class ForceBead(dobject):
       directly without going through the get_all function. This allows
       all the jobs to be sent at once, allowing them to be parallelized.
       """
-
       if self.request is None and dget(self,"ufvx").tainted():
          self.request = self.ff.queue(self.atoms, self.cell, reqid=self.uid)
 
@@ -145,10 +145,17 @@ class ForceBead(dobject):
          and all components of the force and virial have been set to zero.
       """
 
+      # keep track of how many times we are called until we release
+      self._threadlock.acquire()
+      try:
+         self._getallcount+=1
+      finally:
+         self._threadlock.release()
 
       # this is converting the distribution library requests into [ u, f, v ]  lists
       if self.request is None:
          self.request = self.ff.queue(self.atoms, self.cell)
+ 
       while self.request["status"] != "Done":
          if self.request["status"] == "Exit" or softexit.triggered:
             # now, this is tricky. we are stuck here and we cannot return meaningful results.
@@ -161,12 +168,24 @@ class ForceBead(dobject):
             sys.exit()
 
          time.sleep(self.ff.latency)
-
       # data has been collected, so the request can be released and a slot
       #freed up for new calculations
-      self.ff.release(self.request)
       result = self.request["result"]
-      self.request = None
+
+      # reduce the reservation count
+      self._threadlock.acquire()
+      try:
+        self._getallcount -= 1
+      finally:
+        self._threadlock.release()
+
+      # releases just once, wait for all requests to be complete otherwise
+      if self._getallcount == 0:
+        self.ff.release(self.request)  
+        self.request = None
+      else:
+        while self._getallcount > 0 :
+           time.sleep(self.ff.latency)
 
       return result
 
@@ -368,7 +387,6 @@ class ForceComponent(dobject):
       """
 
       newf = np.zeros((self.nbeads,3*self.natoms),float)
-
       self.queue()
       for b in range(self.nbeads):
          newf[b] = depstrip(self._forces[b].f)
