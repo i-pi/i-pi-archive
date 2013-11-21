@@ -81,7 +81,7 @@ def check_centroid_pos(n, q):
 
 numbers_to_check = range(10, 56, 9)
 def test_1_to_n():
-   """One bead tests."""
+   """Contraction with one bead."""
 
    for n in numbers_to_check:
       q = np.array([[0.0,0.0,0.0, 1.0,0.0,0.0]])
@@ -90,7 +90,7 @@ def test_1_to_n():
       yield check_centroid_pos, n, q
 
 def test_2_to_n():
-   """Two bead tests."""
+   """Contraction with two beads."""
 
    for n in numbers_to_check:
       q = np.array([[0.0,0.0,0.0, 1.0,0.0,0.0],
@@ -100,7 +100,7 @@ def test_2_to_n():
       yield check_centroid_pos, n, q
 
 def test_3_to_n():
-   """Three bead tests."""
+   """Contraction with tree beads."""
 
    for n in numbers_to_check:
       q = np.array([[0.0, 0.0,0.0, 1.0, 0.0,0.0],
@@ -111,7 +111,7 @@ def test_3_to_n():
       yield check_centroid_pos, n, q
 
 def test_4_to_n():
-   """Four bead tests."""
+   """Contraction with four beads."""
 
    for n in numbers_to_check:
       q = np.array([[0.0, 0.0,0.0, 1.0, 0.0,0.0],
