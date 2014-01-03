@@ -46,7 +46,7 @@ from ipi.engine.normalmodes import NormalModes
 from ipi.engine.properties import Properties, Trajectories
 from ipi.engine.outputs import CheckpointOutput
 
-import objgraph
+#import objgraph
 
 class Simulation(dobject):
    """Main simulation object.
@@ -180,8 +180,15 @@ class Simulation(dobject):
       # prints inital configuration -- only if we are not restarting
       if (self.step == 0):
          self.step = -1
+         # must use multi-threading to avoid blocking in multi-system runs
+         stepthreads = []
          for o in self.outputs:
-            o.write()
+            st = threading.Thread(target=o.write, name=o.filename)
+            st.daemon = True
+            st.start()
+            stepthreads.append(st)
+         for st in stepthreads:
+            st.join()
          if self.mode == "paratemp":
             self.paratemp.parafile.write("%10d" % (self.step+1))
             for i in self.paratemp.temp_index:
@@ -223,7 +230,7 @@ class Simulation(dobject):
             st.daemon = True
             st.start()
             stepthreads.append(st)
-         
+
          for st in stepthreads:
             st.join()
 
@@ -276,7 +283,7 @@ class Simulation(dobject):
             info(" # Wall clock time expired! Bye bye!", verbosity.low )
             break
 
-         objgraph.show_growth(limit=3)
+#         objgraph.show_growth(limit=3)
 
       self.rollback = False
       softexit.trigger(" @ SIMULATION: Exiting cleanly.")
