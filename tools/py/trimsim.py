@@ -1,25 +1,24 @@
 #!/usr/bin/python
-""" parasort.py
+""" trimsim.py
 
 Relies on the infrastructure of i-pi, so the ipi package should
 be installed in the Python module directory, or the i-pi
 main directory must be added to the PYTHONPATH environment variable.
 
-Post-processes the output of a parallel-tempering simulation and
-re-orders the outputs so that they correspond to the different
-temperatures ensembles rather than to the time series of one of
-the replicas exchanging temperature over time.
+Cuts short the output of a previous i-pi simulation, up to the
+step indicated in the <step> field of the input file.
+This is useful to restart a simulation that crashed.
 
 It should be run in the same dyrectory as where i-pi was (or is being)
 run, and simply fetches all information from the simulation input file.
-Will create a series of PTindex_* files, each corresponding to the
-data for replica 'index'.
+One should also specify a directory name in which the trimmed files
+will be output.
 
 Syntax:
-   parasort.py inputfile.xml
+   trimsim.py inputfile.xml
 """
 
-import sys
+import sys, os
 import numpy as np
 from ipi.engine.simulation import Simulation
 from ipi.engine.outputs import *
@@ -28,7 +27,7 @@ from ipi.inputs.simulation import InputSimulation
 from ipi.utils.io.io_xml import *
 
 
-def main(inputfile, prefix="PT"):
+def main(inputfile, outdir="trim"):
 
 
    # opens & parses the input file
@@ -40,9 +39,9 @@ def main(inputfile, prefix="PT"):
    isimul.parse(xmlrestart.fields[0][1])
 
    simul = isimul.fetch()
+   trimstep = isimul.step.fetch()
 
-   if simul.mode != "paratemp":
-      raise ValueError("Simulation does not look like a parallel tempering one.")
+   os.makedirs(outdir)
 
    # reconstructs the list of the property and trajectory files that have been output
    # and that should be re-ordered
@@ -59,7 +58,7 @@ def main(inputfile, prefix="PT"):
             if s.prefix != "":
                filename = s.prefix+"_"+o.filename
             else: filename=o.filename
-            ofilename = prefix+str(isys)+"_"+o.filename
+            ofilename = outdir+"/"+filename
             nprop.append( { "filename" : filename, "ofilename" : ofilename, "stride": o.stride,
                            "ifile" : open(filename, "r"), "ofile" : open(ofilename, "w")
              } )
@@ -77,7 +76,7 @@ def main(inputfile, prefix="PT"):
                   if s.prefix != "":
                      filename = s.prefix+"_"+o.filename
                   else: filename=o.filename
-                  ofilename = prefix+str(isys)+"_"+o.filename
+                  ofilename = outdir+"/"+filename
                   if (o.ibead < 0 or o.ibead == b):
                      if getkey(o.what) == "extras":
                         filename = filename+"_" + padb
@@ -101,7 +100,7 @@ def main(inputfile, prefix="PT"):
                   filename = s.prefix+"_"+o.filename
                else: filename=o.filename
                filename=filename+"."+o.format
-               ofilename = prefix+str(isys)+"_"+o.filename+"."+o.format
+               ofilename = outdir+"/"+filename
                ntraj.append( { "filename" : filename, "format" : o.format,
                       "ofilename" : ofilename, "stride": o.stride,
                       "ifile" : open(filename, "r"), "ofile" : open(ofilename, "w")
@@ -110,18 +109,26 @@ def main(inputfile, prefix="PT"):
                isys+=1
             ltraj.append(ntraj)
 
-   ptfile=open("PARATEMP", "r")
+   ptfile=None
+   wtefile=None
+   if os.path.isfile("PARATEMP"):
+     ptfile=open("PARATEMP", "r")
+     optfile=open(outdir+"/PARATEMP", "w")
+   if os.path.isfile("PARAWTE"):
+     wtefile=open("PARAWTE","r")
+     owtefile=open(outdir+"/PARAWTE","w")
+
 
    # now reads files one frame at a time, and re-direct output to the appropriate location
-   irep = np.zeros(nsys,int)
-   while True:
+   for step in range(trimstep+1):
       # reads one line from PARATEMP index file
-      line=ptfile.readline()
-      line = line.split()
-      if len(line) == 0: break
+      if not ptfile is None:
+        line=ptfile.readline()
+        optfile.write(line)
 
-      step = int(line[0])
-      irep[:] = line[1:]
+      if not wtefile is None:
+        line=wtefile.readline()
+        owtefile.write(line)
 
       try:
 
@@ -131,9 +138,9 @@ def main(inputfile, prefix="PT"):
                if step % sprop["stride"] == 0: # property transfer
                   iline = sprop["ifile"].readline()
                   while iline[0] == "#":  # fast forward if line is a comment
-                     prop[irep[isys]]["ofile"].write(iline)
+                     prop[isys]["ofile"].write(iline)
                      iline = sprop["ifile"].readline()
-                  prop[irep[isys]]["ofile"].write(iline)
+                  prop[isys]["ofile"].write(iline)
 
          for traj in ltraj:
             for isys in range(nsys):
@@ -148,14 +155,14 @@ def main(inputfile, prefix="PT"):
                      ibuffer.append(straj["ifile"].readline())
                      for i in range(nat):
                         ibuffer.append(straj["ifile"].readline())
-                     traj[irep[isys]]["ofile"].write(''.join(ibuffer))
+                     traj[isys]["ofile"].write(''.join(ibuffer))
                   elif straj["format"] == "pdb":
                      iline = straj["ifile"].readline()
                      while (iline.strip()!="" and iline.strip()!= "END"):
                         ibuffer.append(iline)
                         iline = straj["ifile"].readline()
                      ibuffer.append(iline)
-                     traj[irep[isys]]["ofile"].write(''.join(ibuffer))
+                     traj[isys]["ofile"].write(''.join(ibuffer))
       except EOFError:
          break
 
