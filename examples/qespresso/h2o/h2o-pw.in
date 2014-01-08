@@ -30,6 +30,8 @@
     startingpot='file' 
     startingwfc='file'
 /
+&IONS
+/
 ATOMIC_SPECIES   
     H  1.008 H.pbe-rrkjus.UPF
     O  1.008 O.pbe-rrkjus.UPF
