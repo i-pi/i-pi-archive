@@ -11,7 +11,7 @@ Assumes the input files are in xyz format and atomic units,
 with prefix.pos_*.xyz and prefix.for_*.xyz naming scheme.
 
 Syntax:
-   trimsim.py prefix
+   posforce2kinetic.py prefix temperature[K]
 """
 
 import numpy as np
@@ -19,9 +19,12 @@ import sys, glob
 from ipi.utils.io.io_xyz import *
 from ipi.engine.beads import Beads
 from ipi.utils.depend import *
+from ipi.utils.units import *
 
-def main(prefix):
+def main(prefix, temp):
 
+   temp = unit_to_internal("energy","kelvin",float(temp))
+   
    ipos=[]
    for filename in glob.glob(prefix+".pos*"):
       ipos.append(open(filename,"r"))
@@ -36,7 +39,7 @@ def main(prefix):
    nbeads = len(ipos)
    if (nbeads!=len(ifor)): raise ValueError("Mismatch between number of output files for forces and positions")
    natoms = 0
-   ifr = 1
+   ifr = 0
    while True:
       try:
          for i in range(nbeads):
@@ -49,8 +52,7 @@ def main(prefix):
                kcv = np.zeros((natoms,6),float)
             beads[i].q = pos.q
             forces[i].q = force.q
-      except:
-         raise
+      except EOFError: # finished reading files         
          sys.exit(0)
 
       q = depstrip(beads.q)
@@ -62,12 +64,20 @@ def main(prefix):
             kcv[i,0] -= (q[j,i*3+0]-qc[i*3+0])*f[j,i*3+0]
             kcv[i,1] -= (q[j,i*3+1]-qc[i*3+1])*f[j,i*3+1]
             kcv[i,2] -= (q[j,i*3+2]-qc[i*3+2])*f[j,i*3+2]
-            kcv[i,3] -= (q[j,i*3+0]-qc[i*3+0])*f[j,i*3+1]
-            kcv[i,4] -= (q[j,i*3+0]-qc[i*3+0])*f[j,i*3+2]
-            kcv[i,5] -= (q[j,i*3+1]-qc[i*3+1])*f[j,i*3+2]
+            kcv[i,3] -= (q[j,i*3+0]-qc[i*3+0])*f[j,i*3+1] + (q[j,i*3+1]-qc[i*3+1])*f[j,i*3+0]
+            kcv[i,4] -= (q[j,i*3+0]-qc[i*3+0])*f[j,i*3+2] + (q[j,i*3+2]-qc[i*3+2])*f[j,i*3+0]
+            kcv[i,5] -= (q[j,i*3+1]-qc[i*3+1])*f[j,i*3+2] + (q[j,i*3+2]-qc[i*3+2])*f[j,i*3+1]
+      kcv*=0.5/nbeads
+      kcv[:,0:3]+=0.5*Constants.kb*temp
+      kcv[:,3:6]*=0.5
+      
+      ikin.write("%d\n# Centroid-virial kinetic energy estimator [a.u.] - diagonal terms: xx yy zz\n" % (natoms))
+      ikod.write("%d\n# Centroid-virial kinetic energy estimator [a.u.] - off-diag terms: xy xz yz\n" % (natoms))
+      for i in range(natoms):
+         ikin.write("%8s %12.5e %12.5e %12.5e\n" % (pos.names[i], kcv[i,0], kcv[i,1], kcv[i,2]))
+         ikod.write("%8s %12.5e %12.5e %12.5e\n" % (pos.names[i], kcv[i,3], kcv[i,4], kcv[i,5]))
 
       ifr+=1
-      print "frame", ifr
 
 
 if __name__ == '__main__':
