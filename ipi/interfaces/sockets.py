@@ -160,7 +160,7 @@ class DriverSocket(socket.socket):
          reply = self.recv(HDRLEN)
          self.waitstatus = False # got status reply         
       except socket.timeout:
-         warning(" @SOCKET:   Timeout in status recv!", verbosity.high )
+         warning(" @SOCKET:   Timeout in status recv!", verbosity.debug )
          return Status.Up | Status.Busy | Status.Timeout
       except:
          return Status.Disconnected
