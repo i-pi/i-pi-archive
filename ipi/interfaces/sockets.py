@@ -48,7 +48,7 @@ from ipi.utils.softexit import softexit
 
 
 HDRLEN = 12
-UPDATEFREQ = 100
+UPDATEFREQ = 10
 TIMEOUT = 5.0
 SERVERTIMEOUT = 2.0*TIMEOUT
 NTIMEOUT = 10
