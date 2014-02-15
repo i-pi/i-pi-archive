@@ -29,7 +29,7 @@ Classes:
 __all__ = ['Simulation']
 
 import numpy as np
-import os.path, sys, time, threading
+import os.path, sys, time, threading, os
 from copy import deepcopy
 from ipi.utils.depend import *
 from ipi.utils.units  import *
@@ -194,11 +194,13 @@ class Simulation(dobject):
             for i in self.paratemp.temp_index:
                self.paratemp.parafile.write(" %5d" %i)
             self.paratemp.parafile.write("\n")
+            self.parafile.flush(); os.fsync(self.parafile)
             if self.paratemp.wtefile != None:
                self.paratemp.wtefile.write("%10d" % (self.step+1))
                for v in self.paratemp.system_v:
                   self.paratemp.wtefile.write(" %12.7e" % v)
                self.paratemp.wtefile.write("\n")
+               self.parawte.flush();  os.fsync(self.parawte)
 
 
          self.step = 0
@@ -249,13 +251,15 @@ class Simulation(dobject):
             for i in self.paratemp.temp_index:
                self.paratemp.parafile.write(" %5d" %i)
             self.paratemp.parafile.write("\n")
+            self.parafile.flush(); os.fsync(self.parafile)
 
             # applies the WTE forces, if they are defined.
             if self.paratemp.wtefile != None:
                self.paratemp.wtefile.write("%10d" % (self.step+1))
                for v in self.paratemp.system_v:
                   self.paratemp.wtefile.write(" %12.7e" % v)
-               self.paratemp.wtefile.write("\n")
+               self.paratemp.wtefile.write("\n")          
+               self.parawte.flush(); os.fsync(self.parawte)
 
             self.paratemp.swap(self.step)
             self.paratemp.wtestep(self.step)
