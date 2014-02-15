@@ -46,8 +46,8 @@ from ipi.utils.depend import depstrip
 from ipi.utils.messages import verbosity, warning, info
 
 HDRLEN = 12
-UPDATEFREQ = 10
-TIMEOUT = 5.0
+UPDATEFREQ = 100
+TIMEOUT = 1.0
 SERVERTIMEOUT = 2.0*TIMEOUT
 NTIMEOUT = 10
 
@@ -111,7 +111,7 @@ class DriverSocket(socket.socket):
 
    Attributes:
       _buf: A string buffer to hold the reply from the driver.
-      busyonstatus: Boolean giving whether the driver is busy.
+      waitstatus: Boolean giving whether the driver is waiting to get a status answer.
       status: Keeps track of the status of the driver.
       lastreq: The ID of the last request processed by the client.
       locked: Flag to mark if the client has been working consistently on one image.
@@ -127,9 +127,8 @@ class DriverSocket(socket.socket):
       super(DriverSocket,self).__init__(_sock=socket)
       self._buf = np.zeros(0,np.byte)
       self.peername = self.getpeername()
-      self.busyonstatus = False
-      self.status = Status.Up
       self.waitstatus = False
+      self.status = Status.Up
       self.lastreq = None
       self.locked = False
 
@@ -147,6 +146,7 @@ class DriverSocket(socket.socket):
          of Status.
       """
 
+
       if not self.waitstatus:
          try:
             readable, writable, errored = select.select([], [self], [])
@@ -156,20 +156,15 @@ class DriverSocket(socket.socket):
          except:
             return Status.Disconnected
 
-      if not self in readable:
-         self.busyonstatus = True
-         return Status.Up | Status.Busy
-
-      self.busyonstatus = False
       try:
          reply = self.recv(HDRLEN)
-         self.waitstatus = False # got status reply         
+         self.waitstatus = False # got some kind of reply
       except socket.timeout:
          warning(" @SOCKET:   Timeout in status recv!", verbosity.debug )
          return Status.Up | Status.Busy | Status.Timeout
       except:
          return Status.Disconnected
-      
+
       if not len(reply) == HDRLEN:
          return Status.Disconnected
       elif reply == Message("ready"):
@@ -206,9 +201,9 @@ class DriverSocket(socket.socket):
 
 #   pre-2.5 version.
          try:
-            bpart = ""            
+            bpart = ""
             bpart = self.recv(blen - bpos)
-            if len(bpart) == 0: raise socket.timeout  # There is a problem if this returns no data
+            if len(bpart) == 0: raise socket.timeoout    # if this keeps returning no data, we are in trouble....
             self._buf[bpos:bpos + len(bpart)] = np.fromstring(bpart, np.byte)
          except socket.timeout:
             warning(" @SOCKET:   Timeout in status recvall, trying again!", verbosity.low)
@@ -278,7 +273,7 @@ class DriverSocket(socket.socket):
 
       if (self.status & Status.Ready):
          try:
-            self.sendall(Message("posdata"))            
+            self.sendall(Message("posdata"))
             self.sendall(h_ih[0], 9*8)
             self.sendall(h_ih[1], 9*8)
             self.sendall(np.int32(len(pos)/3))
@@ -302,8 +297,8 @@ class DriverSocket(socket.socket):
 
       if (self.status & Status.HasData):
          self.sendall(Message("getforce"));
-         reply = ""         
-         while True:            
+         reply = ""
+         while True:
             try:
                reply = self.recv(HDRLEN)
             except socket.timeout:
@@ -317,7 +312,7 @@ class DriverSocket(socket.socket):
                raise Disconnected()
       else:
          raise InvalidStatus("Status in getforce was " + self.status)
-      
+
       mu = np.float64()
       mu = self.recvall(mu)
 
@@ -328,7 +323,7 @@ class DriverSocket(socket.socket):
 
       mvir = np.zeros((3,3),np.float64)
       mvir = self.recvall(mvir)
-      
+
       #! Machinery to return a string as an "extra" field. Comment if you are using a old patched driver that does not return anything!
       mlen = np.int32()
       mlen = self.recvall(mlen)
@@ -433,9 +428,9 @@ class InterfaceSocket(object):
 
    def close(self):
       """Closes down the socket."""
-      
+
       info(" @SOCKET: Shutting down the driver interface.", verbosity.low )
-            
+
       for c in self.clients:
          try:
             c.shutdown(socket.SHUT_RDWR)
@@ -450,7 +445,7 @@ class InterfaceSocket(object):
       self.server.close()
       if self.mode == "unix":
          os.unlink("/tmp/ipi_" + self.address)
-      
+
 
    def pool_update(self):
       """Deals with keeping the pool of client drivers up-to-date during a
@@ -566,10 +561,10 @@ class InterfaceSocket(object):
  #     freec = self.clients[:]
  #     for [r2, c] in self.jobs:
  #        freec.remove(c)
-      
+
       # gets list of pending requests
       pendr = [ r for r in self.requests if r["status"] == "Queued" ]
-      
+
 #      if (len(freec)>0 and len(pendr)>0) :
 #         print "Clients previous requests: ",
 #         for fc in freec[:]:
@@ -642,6 +637,6 @@ class InterfaceSocket(object):
       if self.poll_iter >= UPDATEFREQ or len(self.clients)==0 or (len(self.clients) > 0 and not(self.clients[0].status & Status.Up)):
          self.pool_update()
          self.poll_iter = 0
-         
+
       self.poll_iter += 1
       self.pool_distribute()
