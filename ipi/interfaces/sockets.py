@@ -46,7 +46,7 @@ from ipi.utils.depend import depstrip
 from ipi.utils.messages import verbosity, warning, info
 
 HDRLEN = 12
-UPDATEFREQ = 100
+UPDATEFREQ = 10
 TIMEOUT = 5.0
 SERVERTIMEOUT = 2.0*TIMEOUT
 NTIMEOUT = 10
@@ -129,6 +129,7 @@ class DriverSocket(socket.socket):
       self.peername = self.getpeername()
       self.busyonstatus = False
       self.status = Status.Up
+      self.waitstatus = False
       self.lastreq = None
       self.locked = False
 
@@ -146,16 +147,14 @@ class DriverSocket(socket.socket):
          of Status.
       """
 
-      if not self.busyonstatus:
+      if not self.waitstatus:
          try:
-            self.sendall(Message("status"))
+            readable, writable, errored = select.select([], [self], [])
+            if self in writable:
+               self.sendall(Message("status"))
+               self.waitstatus = True
          except:
             return Status.Disconnected
-
-      try:
-         readable, writable, errored = select.select([self], [], [], 0.0)
-      except:
-         return Status.Disconnected
 
       if not self in readable:
          self.busyonstatus = True
@@ -164,12 +163,13 @@ class DriverSocket(socket.socket):
       self.busyonstatus = False
       try:
          reply = self.recv(HDRLEN)
+         self.waitstatus = False # got status reply         
       except socket.timeout:
-         warning(" @SOCKET:   Timeout in status recv!", verbosity.low )
+         warning(" @SOCKET:   Timeout in status recv!", verbosity.debug )
          return Status.Up | Status.Busy | Status.Timeout
       except:
          return Status.Disconnected
-
+      
       if not len(reply) == HDRLEN:
          return Status.Disconnected
       elif reply == Message("ready"):
@@ -206,8 +206,9 @@ class DriverSocket(socket.socket):
 
 #   pre-2.5 version.
          try:
-            bpart = ""
+            bpart = ""            
             bpart = self.recv(blen - bpos)
+            if len(bpart) == 0: raise socket.timeout  # There is a problem if this returns no data
             self._buf[bpos:bpos + len(bpart)] = np.fromstring(bpart, np.byte)
          except socket.timeout:
             warning(" @SOCKET:   Timeout in status recvall, trying again!", verbosity.low)
@@ -301,8 +302,8 @@ class DriverSocket(socket.socket):
 
       if (self.status & Status.HasData):
          self.sendall(Message("getforce"));
-         reply = ""
-         while True:
+         reply = ""         
+         while True:            
             try:
                reply = self.recv(HDRLEN)
             except socket.timeout:
@@ -316,7 +317,7 @@ class DriverSocket(socket.socket):
                raise Disconnected()
       else:
          raise InvalidStatus("Status in getforce was " + self.status)
-
+      
       mu = np.float64()
       mu = self.recvall(mu)
 
@@ -327,7 +328,7 @@ class DriverSocket(socket.socket):
 
       mvir = np.zeros((3,3),np.float64)
       mvir = self.recvall(mvir)
-
+      
       #! Machinery to return a string as an "extra" field. Comment if you are using a old patched driver that does not return anything!
       mlen = np.int32()
       mlen = self.recvall(mlen)

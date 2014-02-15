@@ -1,4 +1,4 @@
-i-PI
+i-PI V1.0
 --------
 
 A Python interface for ab initio path integral molecular dynamics simulations. 
