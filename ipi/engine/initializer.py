@@ -170,11 +170,12 @@ def init_chk(filename):
    from ipi.inputs.simulation import InputSimulation
    simchk = InputSimulation()
    simchk.parse(xmlchk.fields[0][1])
-   if len(simchk.syslist)>1:
-      warning("Restart from checkpoint with "+str(len(simchk.syslist))+" systems will fetch data from the first system.")
-   rcell = simchk.syslist[0].cell.fetch()
-   rbeads = simchk.syslist[0].beads.fetch()
-   rthermo = simchk.syslist[0].ensemble.thermostat.fetch()
+   sim = simchk.fetch()
+   if len(sim.syslist)>1:
+      warning("Restart from checkpoint with "+str(len(sim.syslist))+" systems will fetch data from the first system.")
+   rcell = sim.syslist[0].cell
+   rbeads = sim.syslist[0].beads
+   rthermo = sim.syslist[0].ensemble.thermostat
 
    return (rbeads, rcell, rthermo)
 

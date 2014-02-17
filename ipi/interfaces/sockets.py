@@ -46,7 +46,7 @@ from ipi.utils.depend import depstrip
 from ipi.utils.messages import verbosity, warning, info
 
 HDRLEN = 12
-UPDATEFREQ = 100
+UPDATEFREQ = 10
 TIMEOUT = 1.0
 SERVERTIMEOUT = 2.0*TIMEOUT
 NTIMEOUT = 10
