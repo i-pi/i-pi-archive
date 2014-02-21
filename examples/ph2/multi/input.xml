@@ -1,0 +1,32 @@
+<simulation>
+   <output prefix='ph2'>
+      <properties stride='5' filename='out'>  [ step, time{picosecond}, conserved{kelvin}, temperature{kelvin}, kinetic_cv{kelvin}, potential{kelvin}, pressure_cv{megapascal}] </properties>
+      <trajectory stride='100' filename='pos'>positions</trajectory>
+      <trajectory stride='10' filename='xtra'>extras</trajectory>
+      <checkpoint stride='2000' overwrite='false'/>
+   </output>
+   <total_steps>100000</total_steps>
+   <prng><seed>31415</seed></prng>
+   <ffsocket name="sgdriver" mode="unix">
+      <address>ph2_multi</address>
+   </ffsocket>
+   <system>
+      <initialize nbeads='24'>
+         <file mode='pdb'> our_ref.pdb </file>
+         <velocities mode="thermal" units='kelvin'> 50 </velocities>
+      </initialize>   
+      <forces><force> sgdriver </force></forces>
+      <ensemble mode='nvt'>
+         <thermostat mode='multi'>
+           <thermostat mode='pile_l'>
+              <tau units='femtosecond'>25</tau>
+           </thermostat>
+           <thermostat mode='svr'>
+              <tau units='femtosecond'>5</tau>
+           </thermostat>
+         </thermostat>
+         <timestep units='femtosecond'> 1 </timestep>
+         <temperature units='kelvin'>25</temperature>
+      </ensemble>
+   </system>
+</simulation>

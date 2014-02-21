@@ -27,11 +27,11 @@ Classes:
 __all__ = ['InputThermo']
 
 import numpy as np
-import ipi.engine.thermostats as iet
+import ipi.engine.thermostats as ethermostats
 from ipi.utils.depend   import *
 from ipi.utils.inputvalue  import *
 
-class InputThermo(Input):
+class InputThermoBase(Input):
    """Thermostat input class.
 
    Handles generating the appropriate thermostat class from the xml input file,
@@ -98,47 +98,47 @@ class InputThermo(Input):
          TypeError: Raised if the thermostat is not a recognized type.
       """
 
-      super(InputThermo,self).store(thermo)
-      if type(thermo) is iet.ThermoLangevin:
+      super(InputThermoBase,self).store(thermo)
+      if type(thermo) is ethermostats.ThermoLangevin:
          self.mode.store("langevin")
          self.tau.store(thermo.tau)
-      elif type(thermo) is iet.ThermoSVR:
+      elif type(thermo) is ethermostats.ThermoSVR:
          self.mode.store("svr")
          self.tau.store(thermo.tau)
-      elif type(thermo) is iet.ThermoPILE_L:
+      elif type(thermo) is ethermostats.ThermoPILE_L:
          self.mode.store("pile_l")
          self.tau.store(thermo.tau)
          self.pile_scale.store(thermo.pilescale)
-      elif type(thermo) is iet.ThermoPILE_G:
+      elif type(thermo) is ethermostats.ThermoPILE_G:
          self.mode.store("pile_g")
          self.tau.store(thermo.tau)
          self.pile_scale.store(thermo.pilescale)
-      elif type(thermo) is iet.ThermoGLE:
+      elif type(thermo) is ethermostats.ThermoGLE:
          self.mode.store("gle")
          self.A.store(thermo.A)
          if dget(thermo,"C")._func is None:
             self.C.store(thermo.C)
          self.s.store(thermo.s)
-      elif type(thermo) is iet.ThermoNMGLE:
+      elif type(thermo) is ethermostats.ThermoNMGLE:
          self.mode.store("nm_gle")
          self.A.store(thermo.A)
          if dget(thermo,"C")._func is None:
             self.C.store(thermo.C)
          self.s.store(thermo.s)
-      elif type(thermo) is iet.ThermoNMGLEG:
+      elif type(thermo) is ethermostats.ThermoNMGLEG:
          self.mode.store("nm_gle_g")
          self.A.store(thermo.A)
          self.tau.store(thermo.tau)
          if dget(thermo,"C")._func is None:
             self.C.store(thermo.C)
          self.s.store(thermo.s)
-      elif type(thermo) is iet.MultiThermo:
+      elif type(thermo) is ethermostats.MultiThermo:
          self.mode.store("multi" )
          for t in thermo.tlist:
             it=InputThermo()
             it.store(t)
             self.extra.append(("thermostat",it))
-      elif type(thermo) is iet.Thermostat:
+      elif type(thermo) is ethermostats.Thermostat:
          self.mode.store("")
       else:
          raise TypeError("Unknown thermostat mode " + type(thermo).__name__)
@@ -155,40 +155,40 @@ class InputThermo(Input):
          TypeError: Raised if the thermostat type is not a recognized option.
       """
 
-      super(InputThermo,self).fetch()
+      super(InputThermoBase,self).fetch()
       if self.mode.fetch() == "langevin":
-         thermo = iet.ThermoLangevin(tau=self.tau.fetch())
+         thermo = ethermostats.ThermoLangevin(tau=self.tau.fetch())
       elif self.mode.fetch() == "svr":
-         thermo = iet.ThermoSVR(tau=self.tau.fetch())
+         thermo = ethermostats.ThermoSVR(tau=self.tau.fetch())
       elif self.mode.fetch() == "pile_l":
-         thermo = iet.ThermoPILE_L(tau=self.tau.fetch(), scale=self.pile_scale.fetch())
+         thermo = ethermostats.ThermoPILE_L(tau=self.tau.fetch(), scale=self.pile_scale.fetch())
       elif self.mode.fetch() == "pile_g":
-         thermo = iet.ThermoPILE_G(tau=self.tau.fetch(), scale=self.pile_scale.fetch())
+         thermo = ethermostats.ThermoPILE_G(tau=self.tau.fetch(), scale=self.pile_scale.fetch())
       elif self.mode.fetch() == "gle":
          rC = self.C.fetch()
          if len(rC) == 0:
             rC = None
-         thermo = iet.ThermoGLE(A=self.A.fetch(),C=rC)
+         thermo = ethermostats.ThermoGLE(A=self.A.fetch(),C=rC)
          thermo.s = self.s.fetch()
       elif self.mode.fetch() == "nm_gle":
          rC = self.C.fetch()
          if len(rC) == 0:
             rC = None
-         thermo = iet.ThermoNMGLE(A=self.A.fetch(),C=rC)
+         thermo = ethermostats.ThermoNMGLE(A=self.A.fetch(),C=rC)
          thermo.s = self.s.fetch()
       elif self.mode.fetch() == "nm_gle_g":
          rC = self.C.fetch()
          if len(rC) == 0:
             rC = None
-         thermo = iet.ThermoNMGLEG(A=self.A.fetch(),C=rC, tau=self.tau.fetch())
+         thermo = ethermostats.ThermoNMGLEG(A=self.A.fetch(),C=rC, tau=self.tau.fetch())
          thermo.s = self.s.fetch()
       elif self.mode.fetch() == "multi" :
          tlist = []
          for (k, t) in self.extra:
             tlist.append(t.fetch())
-         thermo=iet.MultiThermo(thermolist=tlist)
+         thermo=ethermostats.MultiThermo(thermolist=tlist)
       elif self.mode.fetch() == "" :
-         thermo=iet.Thermostat()
+         thermo=ethermostats.Thermostat()
       else:
          raise TypeError("Invalid thermostat mode " + self.mode.fetch())
 
@@ -199,7 +199,7 @@ class InputThermo(Input):
    def check(self):
       """Checks that the parameter arrays represents a valid thermostat."""
 
-      super(InputThermo,self).check()
+      super(InputThermoBase,self).check()
 
       if self.mode.fetch() in ["langevin", "svr", "pile_l", "pile_g", "nm_gle_g"]:
          if self.tau.fetch() <= 0:
@@ -208,5 +208,8 @@ class InputThermo(Input):
          pass  # PERHAPS DO CHECKS THAT MATRICES SATISFY REASONABLE CONDITIONS (POSITIVE-DEFINITENESS, ETC)
 
 
-InputThermo.dynamic["thermostat"] = (InputThermo, {"default"   : input_default(factory=iet.Thermostat),
+class InputThermo(InputThermoBase):
+
+   dynamic = { "thermostat" : (InputThermoBase, {"default"   : input_default(factory=ethermostats.Thermostat),
                                          "help"      : "The thermostat for the atoms, keeps the atom velocity distribution at the correct temperature."} )
+             }

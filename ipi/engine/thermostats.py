@@ -84,12 +84,12 @@ class Thermostat(dobject):
             Defaults to 0.0. Will be non-zero if the thermostat is
             initialised from a checkpoint file.
       """
-
+      
       dset(self,"temp",   depend_value(name='temp', value=temp))
       dset(self,"dt",     depend_value(name='dt', value=dt))
       dset(self,"ethermo",depend_value(name='ethermo',value=ethermo))
 
-   def bind(self, beads=None, atoms=None, pm=None, prng=None, fixdof=None):
+   def bind(self, beads=None, atoms=None, pm=None, nm=None, prng=None, fixdof=None):
       """Binds the appropriate degrees of freedom to the thermostat.
 
       This takes an object with degrees of freedom, and makes their momentum
@@ -262,7 +262,7 @@ class ThermoPILE_L(Thermostat):
       dset(self,"tau",depend_value(value=tau,name='tau'))
       dset(self,"pilescale",depend_value(value=scale,name='pilescale'))
 
-   def bind(self, nm=None, prng=None, bindcentroid=True, fixdof=None):
+   def bind(self, beads=None, atoms=None, pm=None, nm=None, prng=None, bindcentroid=True, fixdof=None):
       """Binds the appropriate degrees of freedom to the thermostat.
 
       This takes a beads object with degrees of freedom, and makes its momentum
@@ -474,7 +474,7 @@ class ThermoPILE_G(ThermoPILE_L):
       super(ThermoPILE_G,self).__init__(temp,dt,tau,ethermo)
       dset(self,"pilescale",depend_value(value=scale,name='pilescale'))
 
-   def bind(self, nm=None, prng=None, fixdof=None):
+   def bind(self, beads=None, atoms=None, pm=None, nm=None, prng=None, fixdof=None):
       """Binds the appropriate degrees of freedom to the thermostat.
 
       This takes a beads object with degrees of freedom, and makes its momentum
@@ -611,7 +611,7 @@ class ThermoGLE(Thermostat):
 
       self.s = np.zeros(0)
 
-   def bind(self, beads=None, atoms=None, pm=None, prng=None, fixdof=None):
+   def bind(self, beads=None, atoms=None, pm=None, nm=None,  prng=None, fixdof=None):
       """Binds the appropriate degrees of freedom to the thermostat.
 
       This takes an object with degrees of freedom, and makes their momentum
@@ -730,7 +730,7 @@ class ThermoNMGLE(Thermostat):
       else:
          dset(self,"C",depend_value(value=C.copy(),name='C'))
 
-   def bind(self, nm=None, prng=None, fixdof=None):
+   def bind(self, beads=None, atoms=None, pm=None, nm=None, prng=None, fixdof=None):
       """Binds the appropriate degrees of freedom to the thermostat.
 
       This takes an object with degrees of freedom, and makes their momentum
@@ -849,7 +849,7 @@ class ThermoNMGLEG(ThermoNMGLE):
       super(ThermoNMGLEG,self).__init__(temp, dt, A, C, ethermo)
       dset(self,"tau",depend_value(value=tau,name='tau'))
 
-   def bind(self, nm=None, prng=None, fixdof=None):
+   def bind(self, beads=None, atoms=None, pm=None, nm=None, prng=None, fixdof=None):
       """Binds the appropriate degrees of freedom to the thermostat.
 
       This takes an object with degrees of freedom, and makes their momentum
@@ -908,12 +908,12 @@ class MultiThermo(Thermostat):
          et+=t.ethermo
       return et
 
-   def bind(self, beads=None, atoms=None, pm=None, prng=None, fixdof=None):
+   def bind(self, beads=None, atoms=None, pm=None, nm=None, prng=None, fixdof=None):
       """Binds the appropriate degrees of freedom to the thermostat."""
 
       # just binds all the sub-thermostats
       for t in self.tlist:
-         t.bind(beads=beads, atoms=atoms, pm=pm, prng=prng, fixdof=fixdof)
+         t.bind(beads=beads, atoms=atoms, pm=pm, nm=nm, prng=prng, fixdof=fixdof)
          dget(self,"ethermo").add_dependency(dget(t, "ethermo"))
 
       dget(self,"ethermo")._func=self.get_ethermo
