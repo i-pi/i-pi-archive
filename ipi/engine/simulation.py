@@ -44,7 +44,6 @@ from ipi.engine.forces import Forces
 from ipi.engine.beads import Beads
 from ipi.engine.normalmodes import NormalModes
 from ipi.engine.properties import Properties, Trajectories
-from ipi.engine.outputs import CheckpointOutput
 
 #import objgraph
 
@@ -121,13 +120,15 @@ class Simulation(dobject):
    def bind(self):
       """Calls the bind routines for all the objects in the simulation."""
 
+
       for s in self.syslist:
          # binds important computation engines
          s.bind(self)
 
+      import ipi.engine.outputs as eoutputs
       self.outputs = []
       for o in self.outtemplate:
-         if type(o) is CheckpointOutput:    # checkpoints are output per simulation
+         if type(o) is eoutputs.CheckpointOutput:    # checkpoints are output per simulation
             o.bind(self)
             self.outputs.append(o)
          else:   # properties and trajectories are output per system
@@ -140,7 +141,7 @@ class Simulation(dobject):
                self.outputs.append(no)
                isys+=1
 
-      self.chk = CheckpointOutput("RESTART", 1, True, 0)
+      self.chk = eoutputs.CheckpointOutput("RESTART", 1, True, 0)
       self.chk.bind(self)
 
       if self.mode == "paratemp":
@@ -245,7 +246,7 @@ class Simulation(dobject):
             o.write()
 
          if self.mode == "paratemp": # does parallel tempering and/or WTE
-               
+
             # because of where this is in the loop, we must write out BEFORE doing the swaps.
             self.paratemp.parafile.write("%10d" % (self.step+1))
             for i in self.paratemp.temp_index:
@@ -258,7 +259,7 @@ class Simulation(dobject):
                self.paratemp.wtefile.write("%10d" % (self.step+1))
                for v in self.paratemp.system_v:
                   self.paratemp.wtefile.write(" %12.7e" % v)
-               self.paratemp.wtefile.write("\n")          
+               self.paratemp.wtefile.write("\n")
                self.parawte.flush(); os.fsync(self.parawte)
 
             self.paratemp.swap(self.step)

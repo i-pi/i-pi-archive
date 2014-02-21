@@ -9,7 +9,7 @@ the Free Software Foundation, either version 3 of the License, or
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
@@ -24,10 +24,10 @@ Classes:
 """
 import numpy as np
 from copy import copy
-import ipi.engine.outputs
 from ipi.utils.depend import *
 from ipi.utils.inputvalue import *
 from ipi.engine.properties import getkey
+import ipi.engine.outputs as eoutputs
 
 __all__=['InputOutputs', 'InputProperties', 'InputTrajectory',
          'InputCheckpoint']
@@ -68,7 +68,7 @@ class InputProperties(InputArray):
    def fetch(self):
       """Returns a PropertyOutput object."""
 
-      return ipi.engine.outputs.PropertyOutput(filename=self.filename.fetch(),
+      return eoutputs.PropertyOutput(filename=self.filename.fetch(),
         stride=self.stride.fetch(), flush=self.flush.fetch(), outlist=super(InputProperties,self).fetch())
 
    def store(self, prop):
@@ -135,7 +135,7 @@ class InputTrajectory(InputValue):
    def fetch(self):
       """Returns a TrajectoryOutput object."""
 
-      return ipi.engine.outputs.TrajectoryOutput(filename=self.filename.fetch(), stride=self.stride.fetch(),
+      return eoutputs.TrajectoryOutput(filename=self.filename.fetch(), stride=self.stride.fetch(),
                flush=self.flush.fetch(), what=super(InputTrajectory,self).fetch(),
                format=self.format.fetch(), cell_units=self.cell_units.fetch(), ibead=self.bead.fetch())
 
@@ -194,7 +194,7 @@ class InputCheckpoint(InputValue):
       """Returns a CheckpointOutput object."""
 
       step = super(InputCheckpoint,self).fetch()
-      return ipi.engine.outputs.CheckpointOutput(self.filename.fetch(), self.stride.fetch(), self.overwrite.fetch(), step=step )
+      return eoutputs.CheckpointOutput(self.filename.fetch(), self.stride.fetch(), self.overwrite.fetch(), step=step )
 
    def parse(self, xml=None, text=""):
       """Overwrites the standard parse function so that we can specify this tag
@@ -271,9 +271,9 @@ class InputOutputs(Input):
       use any mutable objects as arguments.
       """
 
-      return [ ipi.engine.outputs.PropertyOutput(filename="i-pi.md", stride=10, outlist=[ "time", "step", "conserved", "temperature", "potential", "kinetic_cv" ] ),
-               ipi.engine.outputs.TrajectoryOutput(filename="i-pi.pos", stride=100, what="positions", format="xyz"),
-               ipi.engine.outputs.CheckpointOutput(filename="i-pi.checkpoint", stride=1000, overwrite=True)]
+      return [ eoutputs.PropertyOutput(filename="i-pi.md", stride=10, outlist=[ "time", "step", "conserved", "temperature", "potential", "kinetic_cv" ] ),
+               eoutputs.TrajectoryOutput(filename="i-pi.pos", stride=100, what="positions", format="xyz"),
+               eoutputs.CheckpointOutput(filename="i-pi.checkpoint", stride=1000, overwrite=True)]
 
    def fetch(self):
       """Returns a list of the output objects included in this dynamic
@@ -309,15 +309,15 @@ class InputOutputs(Input):
 
       self.prefix.store("") # do not store prefix, as on load it is added to the innermost output filenames
       for el in plist:
-         if (isinstance(el, ipi.engine.outputs.PropertyOutput)):
+         if (isinstance(el, eoutputs.PropertyOutput)):
             ip = InputProperties()
             ip.store(el)
             self.extra.append(("properties", ip))
-         elif (isinstance(el, ipi.engine.outputs.TrajectoryOutput)):
+         elif (isinstance(el, eoutputs.TrajectoryOutput)):
             ip = InputTrajectory()
             ip.store(el)
             self.extra.append(("trajectory", ip))
-         elif (isinstance(el, ipi.engine.outputs.CheckpointOutput)):
+         elif (isinstance(el, eoutputs.CheckpointOutput)):
             ip = InputCheckpoint()
             ip.store(el)
             self.extra.append(("checkpoint", ip))

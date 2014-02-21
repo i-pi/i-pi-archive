@@ -9,7 +9,7 @@ the Free Software Foundation, either version 3 of the License, or
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
@@ -26,8 +26,8 @@ hierarchy that will be output, the output format and the output file name.
 A full help message can be found by running 'python help.py -h' or
 'python help.py --help'.
 
-Note that any new input class type must be added to the objects 
-dictionary and the latex help file must be added to the end of 
+Note that any new input class type must be added to the objects
+dictionary and the latex help file must be added to the end of
 the manual.lyx file for it to be included in the automatic help generation.
 If you do create a new input class type, please include this in the help string
 for the -i option.
@@ -42,36 +42,39 @@ src_dir = ".."
 
 sys.path.append(src_dir)
 
-from ipi.inputs import *
+import ipi.inputs as inputs
 from ipi.utils.io.io_xml import *
 from optparse import OptionParser
 
 __all__ = ['help', 'objects']
 
-objects = { 'barostats': barostats.InputBaro(), 
-            'cell': cell.InputCell(),
-            'simulation': simulation.InputSimulation(),
-            'ensembles': ensembles.InputEnsemble(),
-            'thermostats': thermostats.InputThermo(),
-            'socket': forces.InputFBSocket(),
-            'forces': forces.InputForces(),
-            'atoms': atoms.InputAtoms(),
-            'beads': beads.InputBeads(),
-            'prng': prng.InputRandom(),
-            'init_file': initializer.InputInitFile(),
-            'init_pos': initializer.InputInitPositions(),
-            'init_mom': initializer.InputInitMomenta(),
-            'init_lab': initializer.InputInitLabels(),
-            'init_mass': initializer.InputInitMasses(),
-            'init_vel': initializer.InputInitVelocities(),
-            'init_cell': initializer.InputInitCell(),
-            'init_therm': initializer.InputInitThermo(),
-            'initializer': initializer.InputInitializer(),
-            'normal_modes': normalmodes.InputNormalModes(),
-            'output': outputs.InputOutputs(),
-            'properties': outputs.InputProperties(),
-            'checkpoint': outputs.InputCheckpoint(),
-            'trajectory': outputs.InputTrajectory() }
+objects = { 'barostats': inputs.barostats.InputBaro(),
+            'cell': inputs.cell.InputCell(),
+            'simulation': inputs.simulation.InputSimulation(),
+            'paratemp': inputs.paratemp.InputParaTemp(),
+            'system': inputs.system.InputSystem(),
+            'ensembles': inputs.ensembles.InputEnsemble(),
+            'thermostats': inputs.thermostats.InputThermo(),
+            'socket': inputs.forcefields.InputFFSocket(),
+            'forcefields' : inputs.forcefields.InputForceField(),
+            'forces': inputs.forces.InputForces(),
+            'atoms': inputs.atoms.InputAtoms(),
+            'beads': inputs.beads.InputBeads(),
+            'prng': inputs.prng.InputRandom(),
+            'init_file': inputs.initializer.InputInitFile(),
+            'init_pos': inputs.initializer.InputInitPositions(),
+            'init_mom': inputs.initializer.InputInitMomenta(),
+            'init_lab': inputs.initializer.InputInitLabels(),
+            'init_mass': inputs.initializer.InputInitMasses(),
+            'init_vel': inputs.initializer.InputInitVelocities(),
+            'init_cell': inputs.initializer.InputInitCell(),
+            'init_therm': inputs.initializer.InputInitThermo(),
+            'initializer': inputs.initializer.InputInitializer(),
+            'normal_modes': inputs.normalmodes.InputNormalModes(),
+            'output': inputs.outputs.InputOutputs(),
+            'properties': inputs.outputs.InputProperties(),
+            'checkpoint': inputs.outputs.InputCheckpoint(),
+            'trajectory': inputs.outputs.InputTrajectory() }
 
 usage = "usage: python %prog [options]"
 parser = OptionParser(usage=usage)
@@ -90,18 +93,18 @@ def help(latex=False, xml=False, levels = None, option='simulation', prefix="hel
    """Writes the help file.
 
    Will write an xml file 'prefix.xml' if xml=True and a latex file 'prefix.tex'
-   if latex=True. Will write out tags to a depth equal to the value of levels, 
-   if it is specified, and will print using a root tag as specified by 
-   the value of option. The output will be given by prefix.tex and/or 
-   prefix.xml, if latex and/or xml is True respectively. Can also print out 
-   sections of latex documents with cross-references rather than entire 
+   if latex=True. Will write out tags to a depth equal to the value of levels,
+   if it is specified, and will print using a root tag as specified by
+   the value of option. The output will be given by prefix.tex and/or
+   prefix.xml, if latex and/or xml is True respectively. Can also print out
+   sections of latex documents with cross-references rather than entire
    documents, so that we can input them into other latex documents, such as
    the manual.
 
    Args:
       latex: Boolean specifying whether a latex file will be printed.
       xml: Boolean specifying whether an xml file will be printed.
-      levels: An integer specifying how many layers of the hierarchy will be 
+      levels: An integer specifying how many layers of the hierarchy will be
          printed. If not given, all layers will be printed.
       option: A string specifying which object will be used as the root object
          for the latex and xml files. Defaults to 'simulation'.
@@ -112,7 +115,7 @@ def help(latex=False, xml=False, levels = None, option='simulation', prefix="hel
    """
 
    simrestart = objects[option]
-   
+
    if xml:
       xml_output = open(prefix + ".xml","w")
       xml_output.write(simrestart.help_xml(name=option, stop_level=levels))

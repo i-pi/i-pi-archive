@@ -49,22 +49,22 @@ paraptwte:
 	wait
 
 mht-25K:
-	cd MHT-25K; $(IPI) input_equilibrated.xml & sleep 5; \
+	cd MHT-25K; $(IPI) input.xml & sleep 5; \
 	$(call run_driver,4,T_25K); \
 	wait
 	
 mht-20K:
-	cd MHT-20K; $(IPI) input_equilibrated.xml & sleep 5; \
+	cd MHT-20K; $(IPI) input.xml & sleep 5; \
 	$(call run_driver,4,T_20K); \
 	wait
 
 mht-17K:
-	cd MHT-17K; $(IPI) input_equilibrated.xml & sleep 5; \
+	cd MHT-17K; $(IPI) input.xml & sleep 5; \
 	$(call run_driver,4,T_17K); \
 	wait
 
 mht-14K:
-	cd MHT-14K; $(IPI) input_equilibrated.xml & sleep 5; \
+	cd MHT-14K; $(IPI) input.xml & sleep 5; \
 	$(call run_driver,4,T_14K); \
 	wait
 

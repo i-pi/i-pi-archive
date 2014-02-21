@@ -25,7 +25,7 @@ __all__ = ['InputSimulation']
 
 import numpy as np
 import os.path, sys, time
-import ipi.engine.simulation
+print "importing engine. simulation from input.simulation"
 from ipi.utils.depend import *
 from ipi.utils.inputvalue import *
 from ipi.utils.units  import *
@@ -37,7 +37,7 @@ from ipi.engine.paratemp import ParaTemp
 from ipi.inputs.prng import InputRandom
 from ipi.inputs.system import InputSystem
 from ipi.inputs.forcefields import InputFFSocket
-from ipi.inputs.outputs import InputOutputs
+import ipi.inputs.outputs as ioutputs
 from ipi.inputs.paratemp import InputParaTemp
 
 class InputSimulation(Input):
@@ -68,8 +68,8 @@ class InputSimulation(Input):
    fields = {
              "prng" :    (InputRandom,   { "help"  : InputRandom.default_help,
                                          "default" : input_default(factory=Random)} ),
-             "output" :  (InputOutputs, { "help"   : InputOutputs.default_help,
-                                          "default": input_default(factory=InputOutputs.make_default)  }),
+             "output" :  (ioutputs.InputOutputs, { "help"   : ioutputs.InputOutputs.default_help,
+                                          "default": input_default(factory=ioutputs.InputOutputs.make_default)  }),
              "step" :       ( InputValue, { "dtype"    : int,
                                             "default"  : 0,
                                             "help"     : "The current simulation time step." }),
@@ -137,12 +137,12 @@ class InputSimulation(Input):
       self.mode.store(simul.mode)
 
       self.extra = []
-      
+
       for f in simul.fflist:
          iff = InputFFSocket()
          iff.store(simul.fflist[f])
          self.extra.append(("ffsocket",iff))
-      
+
       for s in simul.syslist:
          isys = InputSystem()
          isys.store(s)
@@ -181,15 +181,16 @@ class InputSimulation(Input):
 
       # this creates a simulation object which gathers all the little bits
       #TODO use named arguments since this list is a bit too long...
-      rsim = ipi.engine.simulation.Simulation(
+      import ipi.engine.simulation as esimulation   # import here as otherwise this is the mother of all circular imports...
+      rsim = esimulation.Simulation(
                   self.mode.fetch(),
                   syslist, fflist,
                   self.output.fetch(),
                   self.prng.fetch(),
                   self.paratemp.fetch(),
-                      self.step.fetch(),
-                        tsteps=self.total_steps.fetch(),
-                           ttime=self.total_time.fetch())
+                  self.step.fetch(),
+                  tsteps=self.total_steps.fetch(),
+                  ttime=self.total_time.fetch())
 
       return rsim
 

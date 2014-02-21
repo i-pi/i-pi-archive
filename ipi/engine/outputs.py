@@ -27,7 +27,6 @@ Classes:
 
 import os, time
 import numpy as np
-import ipi.inputs.simulation
 from ipi.utils.messages import verbosity, info
 from ipi.utils.softexit import softexit
 from ipi.utils.depend import *
@@ -106,7 +105,7 @@ class PropertyOutput(dobject):
          self.out = open(self.filename, "a")
       except:
          raise ValueError("Could not open file " + self.filename + " for output")
-      
+
       # print nice header if information is available on the properties
       if (self.system.simul.step == 0) :
          icol = 1
@@ -353,7 +352,8 @@ class CheckpointOutput(dobject):
       """
 
       self.simul = simul
-      self.status = ipi.inputs.simulation.InputSimulation()
+      import ipi.inputs.simulation as isimulation
+      self.status = isimulation.InputSimulation()
       self.status.store(simul)
 
    def store(self):

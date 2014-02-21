@@ -1,3 +1,3 @@
-__all__ = [ 'barostats', 'cell', 'simulation', 'ensembles', 'thermostats',
+__all__ = [ 'barostats', 'cell', 'ensembles', 'thermostats',
             'interface', 'forces', 'atoms', 'beads', 'prng', 'outputs',
-            'normalmodes', 'initializer', 'system', 'paratemp']
+            'normalmodes', 'initializer', 'system', 'paratemp', 'simulation']
