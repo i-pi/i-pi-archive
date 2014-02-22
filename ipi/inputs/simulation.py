@@ -202,10 +202,7 @@ class InputSimulation(Input):
       the necklace being fixed at the atom position. Similarly, if no nbeads
       argument is specified a classical simulation is done.
 
-      Raises:
-         TypeError: Raised if no beads or atoms attribute is defined.
       """
 
       super(InputSimulation,self).check()
-      if self.total_steps.fetch() <= self.step.fetch():
-         raise ValueError("Current step greater than total steps, no dynamics will be done.")
+    

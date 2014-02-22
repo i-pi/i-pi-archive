@@ -120,7 +120,9 @@ class Simulation(dobject):
    def bind(self):
       """Calls the bind routines for all the objects in the simulation."""
 
-
+      if self.tsteps <= self.step:
+         raise ValueError("Simulation has already run for total_steps, will not even start. Modify total_steps or step counter to continue.")
+         
       for s in self.syslist:
          # binds important computation engines
          s.bind(self)
