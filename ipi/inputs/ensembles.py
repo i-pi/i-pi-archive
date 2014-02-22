@@ -90,9 +90,7 @@ class InputEnsemble(Input):
            "replay_file": (InputInitFile, {"default" : input_default(factory=ipi.engine.initializer.InitBase),
                            "help"            : "This describes the location to read a trajectory file from."})
          }
-   dynamic = { "pt_thermostat" : ( InputThermo, {"default"   : input_default(factory=ipi.engine.thermostats.Thermostat),
-                                         "help"      : "A list of thermostats of the different replicas in a parallel tempering run" } )
-          }
+   dynamic = {  }
 
    default_help = "Holds all the information that is ensemble specific, such as the temperature and the external pressure, and the thermostats and barostats that control it."
    default_label = "ENSEMBLE"
@@ -117,9 +115,6 @@ class InputEnsemble(Input):
       elif type(ens) is NPTEnsemble:
          self.mode.store("npt")
          tens = 3
-      elif type(ens) is ParaTempEnsemble:
-         self.mode.store("paratemp")
-         tens = 4
 
       self.timestep.store(ens.dt)
       self.temperature.store(ens.temp)
@@ -133,12 +128,6 @@ class InputEnsemble(Input):
       if tens == 3:
          self.barostat.store(ens.barostat)
          self.pressure.store(ens.pext)
-      if tens == 4:
-         self.pt_templist.store(ens.templist)
-         for t in ens.thermolist:
-            it = InputThermo()
-            it.store(t)
-            self.extra.append(("pt_thermostat",it))
 
 
    def fetch(self):

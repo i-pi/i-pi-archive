@@ -325,13 +325,9 @@ class NVTEnsemble(NVEEnsemble):
       deppipe(self,"ntemp", self.thermostat,"temp")
       deppipe(self,"dt", self.thermostat, "dt")
 
-      #decides whether the thermostat will work in the normal mode or
-      #the bead representation.
-      if isinstance(self.thermostat,ThermoNMGLE) or isinstance(self.thermostat,ThermoNMGLEG) or isinstance(self.thermostat,ThermoPILE_L) or isinstance(self.thermostat,ThermoPILE_G):
-         self.thermostat.bind(nm=self.nm,prng=prng,fixdof=fixdof )
-      else:
-         self.thermostat.bind(beads=self.beads,prng=prng, fixdof=fixdof)
-
+      #depending on the kind, the thermostat might work in the normal mode or the bead representation.
+      self.thermostat.bind(beads=self.beads, nm=self.nm,prng=prng,fixdof=fixdof )
+      
       dget(self,"econs").add_dependency(dget(self.thermostat, "ethermo"))
 
    def step(self):

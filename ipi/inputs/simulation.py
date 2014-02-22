@@ -25,7 +25,7 @@ __all__ = ['InputSimulation']
 
 import numpy as np
 import os.path, sys, time
-print "importing engine. simulation from input.simulation"
+
 from ipi.utils.depend import *
 from ipi.utils.inputvalue import *
 from ipi.utils.units  import *

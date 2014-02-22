@@ -1650,7 +1650,7 @@ for the calculation. UNIX-domain sockets create a special file
 in the local file system, that serves as a rendezvous point
 between server and clients, and are uniquely identified by the
 name of the file itself, that can be specified in the ``address'' tag of 
-``\hyperref[SOCKET]{socket}'' in the xml input file and in 
+``\hyperref[FFSOCKET]{socket}'' in the xml input file and in 
 the input of the client.
 
 Unfortunately, UNIX sockets do not allow one to run \ipi{} and 
@@ -1666,14 +1666,14 @@ Internet sockets are described by an address and a port number.
 The address of the host is given as the IP address,
 or as a hostname that is resolved to an IP address by a domain name server,
 and is specified by the {}``address'' variable of a 
-\hyperref[SOCKET]{socket} object. 
+\hyperref[FFSOCKET]{socket} object. 
 The port number is an integer between 1 and 65535 used to distinguish
 between all the different sockets open on a particular host. As
 many of the lower numbers are protected for use in important system
 processes or internet communication, it is generally advisable to
 only use numbers in the range 1025-65535 for simulations.
 
-The \hyperref[SOCKET]{socket} object has two more parameters.
+The \hyperref[FFSOCKET]{socket} object has two more parameters.
 The option ``latency'' specifies how often \ipi{} polls the list of 
 active clients to dispatch positions and collect results:
 setting it to a small value makes the program more responsive, 
@@ -1852,6 +1852,9 @@ possibly followed by their attributes.
 \emph{\small Other supplementary information} will be in small font and italicized.
 
 \input{input_docs/simulation}
+\input{input_docs/paratemp}
+\input{input_docs/forcefields}
+\input{input_docs/system}
 \input{input_docs/initializer}
 \input{input_docs/init_file}
 \input{input_docs/init_pos}
@@ -2199,7 +2202,7 @@ velocities to. With this, the final
 Next let us consider the 
 {}``\hyperref[FORCES]{forces}'' section, which deals with communication
 with the client codes. Since in this example we do not use ring-polymer contraction,
-we only need to specify a single {}``\hyperref[SOCKET]{socket}'' tag:
+we only need to specify a single {}``\hyperref[FFSOCKET]{socket}'' tag:
 
 \begin{code}
 <forces>
@@ -2788,7 +2791,7 @@ processes on a single computer, and so for the current problem they will be much
 faster than internet sockets.
 
 To specify this, we simply set the {}``mode'' attribute of the
-{}``\hyperref[SOCKET]{socket}'' tag to {}``unix'':
+{}``\hyperref[FFSOCKET]{socket}'' tag to {}``unix'':
 
 \begin{code}
 <forces>

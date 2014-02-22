@@ -42,39 +42,41 @@ src_dir = ".."
 
 sys.path.append(src_dir)
 
-import ipi.inputs as inputs
+from ipi.inputs import *
+import ipi.inputs.barostats as barostats
 from ipi.utils.io.io_xml import *
 from optparse import OptionParser
 
+
 __all__ = ['help', 'objects']
 
-objects = { 'barostats': inputs.barostats.InputBaro(),
-            'cell': inputs.cell.InputCell(),
-            'simulation': inputs.simulation.InputSimulation(),
-            'paratemp': inputs.paratemp.InputParaTemp(),
-            'system': inputs.system.InputSystem(),
-            'ensembles': inputs.ensembles.InputEnsemble(),
-            'thermostats': inputs.thermostats.InputThermo(),
-            'socket': inputs.forcefields.InputFFSocket(),
-            'forcefields' : inputs.forcefields.InputForceField(),
-            'forces': inputs.forces.InputForces(),
-            'atoms': inputs.atoms.InputAtoms(),
-            'beads': inputs.beads.InputBeads(),
-            'prng': inputs.prng.InputRandom(),
-            'init_file': inputs.initializer.InputInitFile(),
-            'init_pos': inputs.initializer.InputInitPositions(),
-            'init_mom': inputs.initializer.InputInitMomenta(),
-            'init_lab': inputs.initializer.InputInitLabels(),
-            'init_mass': inputs.initializer.InputInitMasses(),
-            'init_vel': inputs.initializer.InputInitVelocities(),
-            'init_cell': inputs.initializer.InputInitCell(),
-            'init_therm': inputs.initializer.InputInitThermo(),
-            'initializer': inputs.initializer.InputInitializer(),
-            'normal_modes': inputs.normalmodes.InputNormalModes(),
-            'output': inputs.outputs.InputOutputs(),
-            'properties': inputs.outputs.InputProperties(),
-            'checkpoint': inputs.outputs.InputCheckpoint(),
-            'trajectory': inputs.outputs.InputTrajectory() }
+objects = { 'barostats': barostats.InputBaro(),
+            'cell': cell.InputCell(),
+            'simulation': simulation.InputSimulation(),
+            'paratemp': paratemp.InputParaTemp(),
+            'system': system.InputSystem(),
+            'ensembles': ensembles.InputEnsemble(),
+            'thermostats': thermostats.InputThermo(),
+            'socket': forcefields.InputFFSocket(),
+            'forcefields' : forcefields.InputForceField(),
+            'forces': forces.InputForces(),
+            'atoms': atoms.InputAtoms(),
+            'beads': beads.InputBeads(),
+            'prng': prng.InputRandom(),
+            'init_file': initializer.InputInitFile(),
+            'init_pos': initializer.InputInitPositions(),
+            'init_mom': initializer.InputInitMomenta(),
+            'init_lab': initializer.InputInitLabels(),
+            'init_mass': initializer.InputInitMasses(),
+            'init_vel': initializer.InputInitVelocities(),
+            'init_cell': initializer.InputInitCell(),
+            'init_therm': initializer.InputInitThermo(),
+            'initializer': initializer.InputInitializer(),
+            'normal_modes': normalmodes.InputNormalModes(),
+            'output': outputs.InputOutputs(),
+            'properties': outputs.InputProperties(),
+            'checkpoint': outputs.InputCheckpoint(),
+            'trajectory': outputs.InputTrajectory() }
 
 usage = "usage: python %prog [options]"
 parser = OptionParser(usage=usage)

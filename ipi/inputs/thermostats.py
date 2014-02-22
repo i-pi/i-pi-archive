@@ -27,6 +27,7 @@ Classes:
 __all__ = ['InputThermo']
 
 import numpy as np
+from copy import copy
 import ipi.engine.thermostats as ethermostats
 from ipi.utils.depend   import *
 from ipi.utils.inputvalue  import *
@@ -55,7 +56,7 @@ class InputThermoBase(Input):
    """
 
    attribs = { "mode": (InputAttribute, { "dtype"   : str,
-                                      "options" : [ "", "langevin", "svr", "pile_l", "pile_g", "gle", "nm_gle", "nm_gle_g", "multi" ],
+                                      "options" : [ "", "langevin", "svr", "pile_l", "pile_g", "gle", "nm_gle", "nm_gle_g" ],
                                       "help"    : "The style of thermostatting. 'langevin' specifies a white noise langevin equation to be attached to the cartesian representation of the momenta. 'svr' attaches a velocity rescaling thermostat to the cartesian representation of the momenta. Both 'pile_l' and 'pile_g' attaches a white noise langevin thermostat to the normal mode representation, with 'pile_l' attaching a local langevin thermostat to the centroid mode and 'pile_g' instead attaching a global velocity rescaling thermostat. 'gle' attaches a coloured noise langevin thermostat to the cartesian representation of the momenta, 'nm_gle' attaches a coloured noise langevin thermostat to the normal mode representation of the momenta and a langevin thermostat to the centroid and 'nm_gle_g' attaches a gle thermostat to the normal modes and a svr thermostat to the centroid.  'multiple' is a special thermostat mode, in which one can define multiple thermostats _inside_ the thermostat tag."
                                          }) }
    fields = { "ethermo" : (InputValue, {  "dtype"     : float,
@@ -132,12 +133,6 @@ class InputThermoBase(Input):
          if dget(thermo,"C")._func is None:
             self.C.store(thermo.C)
          self.s.store(thermo.s)
-      elif type(thermo) is ethermostats.MultiThermo:
-         self.mode.store("multi" )
-         for t in thermo.tlist:
-            it=InputThermo()
-            it.store(t)
-            self.extra.append(("thermostat",it))
       elif type(thermo) is ethermostats.Thermostat:
          self.mode.store("")
       else:
@@ -181,17 +176,12 @@ class InputThermoBase(Input):
          if len(rC) == 0:
             rC = None
          thermo = ethermostats.ThermoNMGLEG(A=self.A.fetch(),C=rC, tau=self.tau.fetch())
-         thermo.s = self.s.fetch()
-      elif self.mode.fetch() == "multi" :
-         tlist = []
-         for (k, t) in self.extra:
-            tlist.append(t.fetch())
-         thermo=ethermostats.MultiThermo(thermolist=tlist)
+         thermo.s = self.s.fetch()      
       elif self.mode.fetch() == "" :
          thermo=ethermostats.Thermostat()
       else:
          raise TypeError("Invalid thermostat mode " + self.mode.fetch())
-
+      
       thermo.ethermo = self.ethermo.fetch()
 
       return thermo
@@ -209,7 +199,37 @@ class InputThermoBase(Input):
 
 
 class InputThermo(InputThermoBase):
-
+   """ Extends InputThermoBase to allow the definition of a multithermo """
+   
+   attribs = copy(InputThermoBase.attribs)
+   
+   attribs["mode"][1]["options"].append("multi")
+   
    dynamic = { "thermostat" : (InputThermoBase, {"default"   : input_default(factory=ethermostats.Thermostat),
                                          "help"      : "The thermostat for the atoms, keeps the atom velocity distribution at the correct temperature."} )
              }
+
+   def store(self, thermo):
+       
+      if type(thermo) is ethermostats.MultiThermo:
+         self.mode.store("multi" )
+         for t in thermo.tlist:
+            it=InputThermo()
+            it.store(t)
+            self.extra.append(("thermostat",it))
+         self.ethermo.store(thermo.ethermo)
+      else:
+          super(InputThermo,self).store(thermo) 
+          
+   def fetch(self):
+      
+      if self.mode.fetch() == "multi" :
+         tlist = []
+         for (k, t) in self.extra:
+            tlist.append(t.fetch())
+         thermo=ethermostats.MultiThermo(thermolist=tlist)
+         thermo.ethermo = self.ethermo.fetch()
+      else:
+         thermo=super(InputThermo,self).fetch()
+      
+      return thermo
