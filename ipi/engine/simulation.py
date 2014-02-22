@@ -189,7 +189,8 @@ class Simulation(dobject):
             st.start()
             stepthreads.append(st)
          for st in stepthreads:
-            st.join()
+            while st.isAlive(): st.join(2.0)   # this is necessary as join() without timeout prevents main from receiving signals
+
          if self.mode == "paratemp":
             self.paratemp.parafile.write("%10d" % (self.step+1))
             for i in self.paratemp.temp_index:
@@ -235,7 +236,7 @@ class Simulation(dobject):
             stepthreads.append(st)
 
          for st in stepthreads:
-            st.join()
+            while st.isAlive(): st.join(2.0)   # this is necessary as join() without timeout prevents main from receiving signals
 
          if self.mode == "paratemp": # apply the WTE bias forces
             self.paratemp.wtestep(self.step)
