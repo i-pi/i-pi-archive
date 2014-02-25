@@ -15,18 +15,13 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <http.//www.gnu.org/licenses/>.
 
+ForceField objects are force providers, i.e. they are the abstraction
+layer for a driver that gets positions and returns forces (and energy).
 
-Communicates with the driver code, obtaining the force, virial and potential.
-Deals with creating the jobs that will be sent to the driver, and
-returning the results to the python code.
 
 Classes:
    ForceField: Base forcefield class with the generic methods and attributes.
    FFSocket: Deals with a single replica of the system
-   ForceBeads: Deals with the parallelization of the force calculation over
-      different beads.
-   Forces: Deals with the parallelizatoin of the force calculation over
-      different forcefields.
 """
 
 __all__ = ['ForceField', 'FFSocket']
@@ -46,7 +41,7 @@ from ipi.engine.beads import Beads
 class ForceRequest(dict):
    def __eq__(self, y):
       return self is y
-      
+
 class ForceField(dobject):
    """Base forcefield class.
 
@@ -135,7 +130,7 @@ class ForceField(dobject):
 
       self._threadlock.acquire()
       try:
-         if request in self.requests:   
+         if request in self.requests:
             try:
                self.requests.remove(request)
             except:

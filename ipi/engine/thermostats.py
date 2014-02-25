@@ -84,7 +84,7 @@ class Thermostat(dobject):
             Defaults to 0.0. Will be non-zero if the thermostat is
             initialised from a checkpoint file.
       """
-      
+
       dset(self,"temp",   depend_value(name='temp', value=temp))
       dset(self,"dt",     depend_value(name='dt', value=dt))
       dset(self,"ethermo",depend_value(name='ethermo',value=ethermo))
@@ -637,7 +637,7 @@ class ThermoGLE(Thermostat):
             the thermostat to couple to.
       """
 
-      super(ThermoGLE,self).bind(beads,atoms,pm,prng,fixdof)
+      super(ThermoGLE,self).bind(beads=beads,atoms=atoms,pm=pm,prng=prng,fixdof=fixdof)
 
       # allocates, initializes or restarts an array of s's
       if self.s.shape != (self.ns + 1, len(dget(self,"m"))):
@@ -867,7 +867,7 @@ class ThermoNMGLEG(ThermoNMGLE):
             applied to the system. Defaults to zero.
       """
 
-      super(ThermoNMGLEG,self).bind(nm, prng, fixdof)
+      super(ThermoNMGLEG,self).bind(nm=nm, prng=prng, fixdof=fixdof)
 
       t = ThermoSVR(self.temp, self.dt, self.tau)
 

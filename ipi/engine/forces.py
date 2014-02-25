@@ -1,4 +1,4 @@
-"""Contains the classes that connect the driver to the python code.
+"""Contains the classes that evaluate forces on PI beads.
 
 Copyright (C) 2013, Joshua More and Michele Ceriotti
 
@@ -15,14 +15,14 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <http.//www.gnu.org/licenses/>.
 
+This contains both the class that gets the force acting on the beads,
+and the class to compute individual components -- in case one wants to
+use multiple force providers to get e.g. bonded and non-bonded interactions.
+It is an extra layer between the dynamics (that only cares about TOTAL force)
+and the driver (that only cares about a single bead).
 
-Communicates with the driver code, obtaining the force, virial and potential.
-Deals with creating the jobs that will be sent to the driver, and
-returning the results to the python code.
 
 Classes:
-   ForceField: Base forcefield class with the generic methods and attributes.
-   FFSocket: Deals with a single replica of the system
    ForceBeads: Deals with the parallelization of the force calculation over
       different beads.
    Forces: Deals with the parallelizatoin of the force calculation over
@@ -155,7 +155,7 @@ class ForceBead(dobject):
       # this is converting the distribution library requests into [ u, f, v ]  lists
       if self.request is None:
          self.request = self.ff.queue(self.atoms, self.cell)
- 
+
       while self.request["status"] != "Done":
          if self.request["status"] == "Exit" or softexit.triggered:
             # now, this is tricky. we are stuck here and we cannot return meaningful results.
@@ -166,8 +166,8 @@ class ForceBead(dobject):
             while softexit.exiting:
                time.sleep(self.ff.latency)
             sys.exit()
-
          time.sleep(self.ff.latency)
+
       # data has been collected, so the request can be released and a slot
       #freed up for new calculations
       result = self.request["result"]
@@ -181,7 +181,7 @@ class ForceBead(dobject):
 
       # releases just once, wait for all requests to be complete otherwise
       if self._getallcount == 0:
-        self.ff.release(self.request)  
+        self.ff.release(self.request)
         self.request = None
       else:
         while self._getallcount > 0 :
@@ -232,7 +232,7 @@ class ForceBead(dobject):
 
 
 class ForceComponent(dobject):
-   """Class that gathers the forces for each replica together.
+   """Computes one component (e.g. bonded interactions) of the force.
 
    Deals with splitting the bead representation into
    separate replicas, and collecting the data from each replica.

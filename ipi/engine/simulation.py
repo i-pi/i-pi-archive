@@ -122,7 +122,7 @@ class Simulation(dobject):
 
       if self.tsteps <= self.step:
          raise ValueError("Simulation has already run for total_steps, will not even start. Modify total_steps or step counter to continue.")
-         
+
       for s in self.syslist:
          # binds important computation engines
          s.bind(self)
@@ -198,13 +198,13 @@ class Simulation(dobject):
             for i in self.paratemp.temp_index:
                self.paratemp.parafile.write(" %5d" %i)
             self.paratemp.parafile.write("\n")
-            self.parafile.flush(); os.fsync(self.parafile)
+            self.paratemp.parafile.flush(); os.fsync(self.paratemp.parafile)
             if self.paratemp.wtefile != None:
                self.paratemp.wtefile.write("%10d" % (self.step+1))
                for v in self.paratemp.system_v:
                   self.paratemp.wtefile.write(" %12.7e" % v)
                self.paratemp.wtefile.write("\n")
-               self.parawte.flush();  os.fsync(self.parawte)
+               self.paratemp.parawte.flush();  os.fsync(self.paratemp.parawte)
 
 
          self.step = 0
@@ -255,7 +255,7 @@ class Simulation(dobject):
             for i in self.paratemp.temp_index:
                self.paratemp.parafile.write(" %5d" %i)
             self.paratemp.parafile.write("\n")
-            self.parafile.flush(); os.fsync(self.parafile)
+            self.paratemp.parafile.flush(); os.fsync(self.paratemp.parafile)
 
             # applies the WTE forces, if they are defined.
             if self.paratemp.wtefile != None:
@@ -263,7 +263,7 @@ class Simulation(dobject):
                for v in self.paratemp.system_v:
                   self.paratemp.wtefile.write(" %12.7e" % v)
                self.paratemp.wtefile.write("\n")
-               self.parawte.flush(); os.fsync(self.parawte)
+               self.paratemp.parawte.flush(); os.fsync(self.paratemp.parawte)
 
             self.paratemp.swap(self.step)
             self.paratemp.wtestep(self.step)
