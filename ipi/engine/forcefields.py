@@ -20,6 +20,8 @@ layer for a driver that gets positions and returns forces (and energy).
 
 
 Classes:
+   ForceRequest: An extension of the dict class which only has a == b if
+      a is b == True, rather than if the elements of a and b are identical.
    ForceField: Base forcefield class with the generic methods and attributes.
    FFSocket: Deals with a single replica of the system
 """
@@ -39,7 +41,11 @@ from ipi.engine.beads import Beads
 # standard dicts are checked for equality if elements have the same value.
 # here I only care if requests are instances of the very same object
 class ForceRequest(dict):
+   """An extension of the standard Python dict class which only has a == b
+   if a is b == True."""
+
    def __eq__(self, y):
+      """Overwrites the standard equals function."""
       return self is y
 
 class ForceField(dobject):
@@ -47,10 +53,34 @@ class ForceField(dobject):
 
    Gives the standard methods and quantities needed in all the forcefield
    classes.
+
+   Attributes:
+      pars: A dictionary of the parameters needed to initialize the forcefield.
+         Of the form {'name1': value1, 'name2': value2, ... }.
+      name: The name of the forcefield.
+      latency: A float giving the number of seconds the socket will wait
+         before updating the client list.
+      requests: A list of all the jobs to be given to the client codes.
+      dopbc: A boolean giving whether or not to apply the periodic boundary
+        conditions before sending the positions to the client code.
+      _thread: The thread on which the socket polling loop is being run.
+      _doloop: A list of booleans. Used to decide when to stop running the
+         polling loop.
+      _threadlock: Python handle used to lock the thread held in _thread.
    """
 
    def __init__(self, latency = 1.0, name = "", pars = None, dopbc = True):
-      """Initialises ForceField."""
+      """Initialises ForceField.
+
+      Args:
+         latency: The number of seconds the socket will wait before updating
+            the client list.
+         name: The name of the forcefield.
+         pars: A dictionary used to initialize the forcefield, if required.
+            Of the form {'name1': value1, 'name2': value2, ... }.
+         dopbc: Decides whether or not to apply the periodic boundary conditions
+            before sending the positions to the client code.
+      """
 
       if pars is None:
          self.pars = {}
@@ -81,11 +111,12 @@ class ForceField(dobject):
             e.g. the bead index
 
       Returns:
-         A list giving the status of the request of the form {'atoms': Atoms
-         object giving the atom positions, 'cell': Cell object giving the
-         system box, 'pars': parameter string, 'result': holds the result as a
-         list once the computation is done, 'status': a string labelling the
-         status, 'id': the id of the request, usually the bead number, 'start':
+         A list giving the status of the request of the form {'pos': An array
+         giving the atom positions folded back into the unit cell, 
+         'cell': Cell object giving the system box, 'pars': parameter string, 
+         'result': holds the result as a list once the computation is done, 
+         'status': a string labelling the status of the calculation, 
+         'id': the id of the request, usually the bead number, 'start':
          the starting time for the calculation, used to check for timeouts.}.
       """
 
@@ -115,18 +146,31 @@ class ForceField(dobject):
       return newreq
 
    def poll(self):
+      """Dummy function to check job status."""
+
       for r in self.requests:
          if r["status"] == "Queued":
             r["result"] = [ 0.0, np.zeros(len(r["pos"]),float), np.zeros((3,3),float), ""]
             r["status"] = "Done"
 
    def _poll_loop(self):
+      """Polling loop.
+
+      Loops over the different requests, checking to see when they have
+      finished.
+      """
+
       info(" @ForceField: Starting the polling thread main loop.", verbosity.low)
       while self._doloop[0]:
          time.sleep(self.latency)
          self.poll()
 
    def release(self, request):
+      """Shuts down the client code interface thread.
+
+      Args:
+         request: The id of the job to release.
+      """
 
       self._threadlock.acquire()
       try:
@@ -172,30 +216,30 @@ class ForceField(dobject):
       self.stop()
 
 class FFSocket(ForceField):
-   """Interface between the PIMD code and the socket for a single replica.
+   """Interface between the PIMD code and a socket for a single replica.
 
    Deals with an individual replica of the system, obtaining the potential
    force and virial appropriate to this system. Deals with the distribution of
    jobs to the interface.
 
    Attributes:
-      parameters: A dictionary of the parameters used by the driver. Of the
-         form {'name': value}.
       socket: The interface object which contains the socket through which
          communication between the forcefield and the driver is done.
-      requests: During the force calculation step this holds a dictionary
-         containing the relevant data for determining the progress of the step.
-         Of the form {'atoms': atoms, 'cell': cell, 'pars': parameters,
-                      'status': status, 'result': result, 'id': bead id,
-                      'start': starting time}.
    """
 
-   def __init__(self, latency = 1.0, name = "",  pars=None, dopbc = True, interface=None):
+   def __init__(self, latency = 1.0, name = "",  pars = None, dopbc = True, interface = None):
       """Initialises FFSocket.
 
       Args:
-         pars: Optional dictionary, giving the parameters needed by the driver.
-         interface: Optional Interface object, which contains the socket.
+         latency: The number of seconds the socket will wait before updating
+            the client list.
+         name: The name of the forcefield.
+         pars: A dictionary used to initialize the forcefield, if required.
+            Of the form {'name1': value1, 'name2': value2, ... }.
+         dopbc: Decides whether or not to apply the periodic boundary conditions
+            before sending the positions to the client code.
+         interface: The object used to create the socket used to interact
+            with the client codes.
       """
 
       # a socket to the communication library is created or linked
@@ -207,13 +251,19 @@ class FFSocket(ForceField):
       self.socket.requests = self.requests
 
    def poll(self):
+      """Function to check the status of the client calculations."""
+
       self.socket.poll()
 
    def run(self):
+      """Spawns a new thread."""
+
       self.socket.open()
       super(FFSocket,self).run()
 
    def stop(self):
+      """Closes the socket and the thread."""
+
       super(FFSocket,self).stop()
       if not self._thread is None:   # must wait until loop has ended before closing the socket
          self._thread.join()

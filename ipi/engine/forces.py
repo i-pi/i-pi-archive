@@ -23,8 +23,10 @@ and the driver (that only cares about a single bead).
 
 
 Classes:
-   ForceBeads: Deals with the parallelization of the force calculation over
-      different beads.
+   ForceBead: Deals with the potential and force calculation for a particular
+      replica of the system.
+   ForceComponent: Deals with the parallelization of the force calculation over
+      different beads for a particular forcefield type.
    Forces: Deals with the parallelizatoin of the force calculation over
       different forcefields.
 """
@@ -49,6 +51,17 @@ class ForceBead(dobject):
    Attributes:
       atoms: An Atoms object containing all the atom positions.
       cell: A Cell object containing the system box.
+      ff: A forcefield object which can calculate the potential, virial
+         and forces given an unit cell and atom positions of one replica
+         of the system.
+      uid: A unique id number identifying each of the different bead's
+         forcefields.
+      request: A dictionary containing information about the currently
+         running job.
+      _threadlock: Python handle used to lock the thread used to run the
+         communication with the client code.
+      _getallcount: An integer giving how many times the getall function has
+         been called.
 
    Depend objects:
       ufvx: A list of the form [pot, f, vir]. These quantities are calculated
@@ -66,9 +79,9 @@ class ForceBead(dobject):
    """
 
    def __init__(self):
-      """Initialises ForceField."""
+      """Initialises ForceBead."""
 
-      # ufvx is a list [ u, f, vir, extra ]  which stores the results of the force
+      #ufvx is a list [ u, f, vir, extra ] which stores the results of the force
       #calculation
       dset(self,"ufvx", depend_value(name="ufvx", func=self.get_all))
       self.request = None
@@ -76,20 +89,19 @@ class ForceBead(dobject):
       self._getallcount = 0
 
    def bind(self, atoms, cell, ff):
-      """Binds atoms and cell to the forcefield.
-
-      This takes an atoms object and a cell object and makes them members of
-      the forcefield. It also then creates the objects that will hold the data
-      that the driver returns and the dependency network.
+      """Binds atoms, cell and a forcefield template to the ForceBead object.
 
       Args:
          atoms: The Atoms object from which the atom positions are taken.
          cell: The Cell object from which the system box is taken.
+         ff: A forcefield object which can calculate the potential, virial
+            and forces given an unit cell and atom positions of one replica
+            of the system.
       """
 
       global fbuid      #assign a unique identifier to each forcebead object
       self.uid = fbuid
-      fbuid+=1
+      fbuid += 1
 
       # stores a reference to the atoms and cell we are computing forces for
       self.atoms = atoms
@@ -130,25 +142,30 @@ class ForceBead(dobject):
    def queue(self):
       """Sends the job to the interface queue directly.
 
-      Allows the ForceBeads object to ask for the ufvx list of each replica
+      Allows the ForceBead object to ask for the ufvx list of each replica
       directly without going through the get_all function. This allows
       all the jobs to be sent at once, allowing them to be parallelized.
       """
+
       if self.request is None and dget(self,"ufvx").tainted():
          self.request = self.ff.queue(self.atoms, self.cell, reqid=self.uid)
 
    def get_all(self):
-      """Dummy driver routine.
+      """Driver routine.
+
+      When one of the force, potential or virial are called, this sends the 
+      atoms and cell to the client code, requesting that it calculates the
+      potential, forces and virial tensor. This then waits until the
+      driver is finished, and then returns the ufvx list.
 
       Returns:
-         A list of the form [potential, force, virial] where the potential
-         and all components of the force and virial have been set to zero.
+         A list of the form [potential, force, virial, extra].
       """
 
       # keep track of how many times we are called until we release
       self._threadlock.acquire()
       try:
-         self._getallcount+=1
+         self._getallcount += 1
       finally:
          self._threadlock.release()
 
@@ -190,7 +207,7 @@ class ForceBead(dobject):
       return result
 
    def get_pot(self):
-      """Calls get_all routine of forcefield to update potential.
+      """Calls get_all routine of forcefield to update the potential.
 
       Returns:
          Potential energy.
@@ -199,7 +216,7 @@ class ForceBead(dobject):
       return self.ufvx[0]
 
    def get_f(self):
-      """Calls get_all routine of forcefield to update force.
+      """Calls get_all routine of forcefield to update the force.
 
       Returns:
          An array containing all the components of the force.
@@ -208,7 +225,7 @@ class ForceBead(dobject):
       return depstrip(self.ufvx[1])
 
    def get_vir(self):
-      """Calls get_all routine of forcefield to update virial.
+      """Calls get_all routine of forcefield to update the virial.
 
       Returns:
          An array containing the virial in upper triangular form, not divided
@@ -221,7 +238,7 @@ class ForceBead(dobject):
       return vir
 
    def get_extra(self):
-      """Calls get_all routine of forcefield to update potential.
+      """Calls get_all routine of forcefield to update the extras string.
 
       Returns:
          A string containing all formatted additional output that the
@@ -240,11 +257,12 @@ class ForceComponent(dobject):
    Attributes:
       natoms: An integer giving the number of atoms.
       nbeads: An integer giving the number of beads.
-      name: A model used to create the forcefield objects for each replica
-         of the system.
+      name: The name of the forcefield.
       _forces: A list of the forcefield objects for all the replicas.
       weight: A float that will be used to weight the contribution of this
          forcefield to the total force.
+      ffield: A model to be used to create the forcefield objects for all
+         the replicas of the system.
 
    Depend objects:
       f: An array containing the components of the force. Depends on each
@@ -260,7 +278,7 @@ class ForceComponent(dobject):
    """
 
    def __init__(self, ffield="", nbeads=0, weight=1.0, name=""):
-      """Initializes ForceBeads
+      """Initializes ForceComponent
 
       Args:
          ffield: A model to be used to create the forcefield objects for all
@@ -270,6 +288,7 @@ class ForceComponent(dobject):
             forcefield. When the contribution of all the forcefields is
             combined to give a total force, the contribution of this forcefield
             will be weighted by this factor.
+         name: The name of the forcefield.
       """
 
       self.ffield = ffield
@@ -289,6 +308,8 @@ class ForceComponent(dobject):
       Args:
          beads: Beads object from which the bead positions are taken.
          cell: Cell object from which the system box is taken.
+         fflist: A list of forcefield objects to use to calculate the potential,
+            forces and virial for each replica.
       """
 
       # stores a copy of the number of atoms and of beads
@@ -300,10 +321,9 @@ class ForceComponent(dobject):
       # creates an array of force objects, which are bound to the beads
       #and the cell
       if not self.ffield in fflist:
-         raise ValueError("Force component name '"+self.ffield+"' is not in the forcefields list")
+         raise ValueError("Force component name '" + self.ffield + "' is not in the forcefields list")
 
       self.ff = fflist[self.ffield]
-
 
       self._forces = [];
       for b in range(self.nbeads):
@@ -479,6 +499,19 @@ class Forces(dobject):
    """
 
    def bind(self, beads, cell, forces, fflist):
+      """Binds beads, cell and forces to the forcefield.
+
+
+      Args:
+         beads: Beads object from which the bead positions are taken.
+         cell: Cell object from which the system box is taken.
+         forces: A list of different objects for each force type. 
+            For example, if ring polymer contraction is being used, 
+            then there may be separate forces for the long and short 
+            range part of the potential.
+         fflist: A list of forcefield objects to use to calculate the potential,
+            forces and virial for each force type.
+      """
 
       self.natoms = beads.natoms
       self.nbeads = beads.nbeads
