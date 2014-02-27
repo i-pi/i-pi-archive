@@ -24,7 +24,7 @@ Classes:
    FFSocket: Deals with a single replica of the system
 """
 
-__all__ = ['ForceField', 'FFSocket']
+__all__ = ['ForceField', 'FFSocket', 'FFLennardJones']
 
 import numpy as np
 import sys, os
@@ -115,6 +115,8 @@ class ForceField(dobject):
       return newreq
 
    def poll(self):
+      """ Polls the forcefield object to check if it has finished. """
+
       for r in self.requests:
          if r["status"] == "Queued":
             r["result"] = [ 0.0, np.zeros(len(r["pos"]),float), np.zeros((3,3),float), ""]
@@ -127,6 +129,8 @@ class ForceField(dobject):
          self.poll()
 
    def release(self, request):
+
+      """ Frees up a request. """
 
       self._threadlock.acquire()
       try:
@@ -219,3 +223,81 @@ class FFSocket(ForceField):
          self._thread.join()
       self.socket.close()
 
+class FFLennardJones(ForceField):
+   """Basic fully pythonic force provider.
+
+   Computes LJ interactions without minimum image convention, cutoffs or
+   neighbour lists. Parallel evaluation with threads.
+
+   Attributes:
+      parameters: A dictionary of the parameters used by the driver. Of the
+         form {'name': value}.
+      requests: During the force calculation step this holds a dictionary
+         containing the relevant data for determining the progress of the step.
+         Of the form {'atoms': atoms, 'cell': cell, 'pars': parameters,
+                      'status': status, 'result': result, 'id': bead id,
+                      'start': starting time}.
+   """
+
+   def __init__(self, latency = 1.0, name = "",  pars=None, dopbc = False, threaded=True):
+      """Initialises FFLennardJones.
+
+      Args:
+         pars: Optional dictionary, giving the parameters needed by the driver.
+      """
+
+      # a socket to the communication library is created or linked
+      # NEVER DO PBC -- forces here are computed without.
+      super(FFLennardJones,self).__init__(latency, name, pars, dopbc=False)
+      self.epsfour=float(self.pars["eps"])*4
+      self.sixepsfour=6*self.epsfour
+      self.sigma2=float(self.pars["sigma"])*float(self.pars["sigma"])
+      self.threaded = threaded
+
+   def poll(self):
+      """ Polls the forcefield checking if there are requests that should
+      be answered, and if necessary evaluates the associated forces and energy. """
+
+      # we have to be thread-safe, as in multi-system mode this might get called by many threads at once
+      self._threadlock.acquire()
+      try:
+         for r in self.requests:
+            if r["status"] == "Queued":
+               r["status"] = "Running"
+
+               # An extra layer of threading, if wanted
+               if self.threaded:
+                  newthread = threading.Thread(target=self.evaluate, args=[r])
+                  newthread.daemon = True
+                  newthread.start()
+               else:
+                  self.evaluate(r)
+      finally:
+         self._threadlock.release()
+
+   def evaluate(self, r):
+      """ Just a silly function evaluating a non-cutoffed, non-pbc and non-neighbour list
+          LJ potential """
+
+      q = r["pos"].reshape((len(r["pos"])/3,3))
+      f = np.zeros(q.shape)
+      dij=np.zeros(3,float)
+      nat = len(q)
+      v = 0; f[:] = 0
+      for i in range(nat):
+         for j in range(i):
+            dij[:] = q[i] - q[j]
+            rij2 = dij[0]*dij[0]+dij[1]*dij[1]+dij[2]*dij[2]
+
+            x2=self.sigma2/rij2
+            x6=x2*x2*x2; x12=x6*x6
+
+            v += ( x12 - x6 )
+            dij *= self.sixepsfour*( x12 + x12 - x6) / rij2
+            f[i] += dij
+            f[j] -= dij
+
+      v*=self.epsfour;
+
+      r["result"] = [ v, f.reshape(nat*3), np.zeros((3,3),float), ""]
+      r["status"] = "Done"

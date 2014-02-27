@@ -32,9 +32,10 @@ from ipi.utils.inputvalue import *
 class InputForceComponent(InputValue):
    """ForceComponent input class.
 
-   Handles generating one instance of a particular forcefield class from the xml
-   input file, and generating the xml checkpoint tags and data from an
-   instance of the object.
+   Uses the forcefield object whose name is specified as the value of the 
+   field (matching one of the forcefields defined in the simulation tag)
+   to compute one component of the force acting on the ring polymer.
+      
 
    Attributes:
       nbeads: The number of beads that the forcefield will be evaluated on.
@@ -53,7 +54,7 @@ class InputForceComponent(InputValue):
             }
 
    default_help = "Base class that deals with the assigning of force calculation jobs and collecting the data."
-   default_label = "FORCEBEADS"
+   default_label = "FORCECOMPONENT"
    
    def __init__(self, help=None, dimension=None, units=None, default=None, dtype=None):
       """Initializes InputCell.
