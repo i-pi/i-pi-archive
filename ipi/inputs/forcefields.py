@@ -18,7 +18,7 @@ along with this program. If not, see <http.//www.gnu.org/licenses/>.
 
 Classes:
    InputForces: Deals with creating all the forcefield objects.
-   InputForceBeads: Base class to deal with one particular forcefield object.
+   InputForceField: Base class to deal with one particular forcefield object.
    InputFBSocket: Deals with creating a forcefield using sockets.
 """
 
@@ -39,8 +39,12 @@ class InputForceField(Input):
    Attributes:
       name: The number of beads that the forcefield will be evaluated on.
       latency: The number of seconds to sleep between looping over the requests.
+
    Fields:
       pars: A dictionary containing the forcefield parameters.
+      pbc: A boolean describing whether periodic boundary conditions will
+         be applied to the atom positions before they are sent to the driver
+         code.
    """
 
    attribs = { "name" : ( InputAttribute, { "dtype"   : str,
@@ -63,10 +67,10 @@ class InputForceField(Input):
    default_label = "FORCEFIELD"
 
    def store(self, ff):
-      """Takes a ForceBeads instance and stores a minimal representation of it.
+      """Takes a ForceField instance and stores a minimal representation of it.
 
       Args:
-         forceb: A ForceBeads object.
+         forceb: A ForceField object.
       """
 
       Input.store(self,ff)
@@ -76,10 +80,10 @@ class InputForceField(Input):
       self.pbc.store(ff.dopbc)
 
    def fetch(self):
-      """Creates a ForceBeads object.
+      """Creates a ForceField object.
 
       Returns:
-         A ForceBeads object.
+         A ForceField object.
       """
 
       super(InputForceField,self).fetch()
@@ -91,7 +95,19 @@ class InputFFSocket(InputForceField):
    """Creates a ForceField object with a socket interface.
 
    Handles generating one instance of a socket interface forcefield class.
+
+   Attributes:
+      mode: Describes whether the socket will be a unix or an internet socket.
+
+   Fields:
+      address: The server socket binding address.
+      port: The port number for the socket.
+      slots: The number of clients that can queue for connections at any one
+         time.
+      timeout: The number of seconds that the socket will wait before assuming
+         that the client code has died. If 0 there is no timeout.
    """
+
    fields = {"address": (InputValue, {"dtype"   : str,
                                       "default" : "localhost",
                                       "help"    : "This gives the server address that the socket will run on." } ),
@@ -122,7 +138,7 @@ class InputFFSocket(InputForceField):
       """Takes a ForceField instance and stores a minimal representation of it.
 
       Args:
-         forceb: A ForceBeads object with a FFSocket forcemodel object.
+         ff: A ForceField object with a FFSocket forcemodel object.
       """
 
       if (not type(ff) is FFSocket):
@@ -138,10 +154,10 @@ class InputFFSocket(InputForceField):
       self.mode.store(ff.socket.mode)
 
    def fetch(self):
-      """Creates a ForceBeads object.
+      """Creates a ForceSocket object.
 
       Returns:
-         A ForceBeads object with the correct socket parameters.
+         A ForceSocket object with the correct socket parameters.
       """
 
       return FFSocket(pars = self.pars.fetch(), name = self.name.fetch(), latency = self.latency.fetch(), dopbc = self.pbc.fetch(),

@@ -40,6 +40,7 @@ class InputForceComponent(InputValue):
    Attributes:
       nbeads: The number of beads that the forcefield will be evaluated on.
       weight: A scaling factor for the contribution from this forcefield.
+      name: The name of the forcefield.
    """
 
    attribs = { "nbeads" : ( InputAttribute, { "dtype"   : int,
@@ -57,7 +58,7 @@ class InputForceComponent(InputValue):
    default_label = "FORCECOMPONENT"
    
    def __init__(self, help=None, dimension=None, units=None, default=None, dtype=None):
-      """Initializes InputCell.
+      """Initializes InputForceComponent.
 
       Just calls the parent initialization function with appropriate arguments.
       """
@@ -65,10 +66,11 @@ class InputForceComponent(InputValue):
       super(InputForceComponent,self).__init__(dtype=str, dimension=dimension, default=default, help=help)
       
    def store(self, forceb):
-      """Takes a ForceBeads instance and stores a minimal representation of it.
+      """Takes a ForceComponent instance and stores a minimal 
+      representation of it.
 
       Args:
-         forceb: A ForceBeads object.
+         forceb: A ForceComponent object.
       """
 
       super(InputForceComponent,self).store(forceb.ffield)
@@ -77,10 +79,10 @@ class InputForceComponent(InputValue):
       self.name.store(forceb.name)
 
    def fetch(self):
-      """Creates a ForceBeads object.
+      """Creates a ForceComponent object.
 
       Returns:
-         A ForceBeads object.
+         A ForceComponent object.
       """
 
       val=super(InputForceComponent,self).fetch()      
