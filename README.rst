@@ -9,16 +9,16 @@ code that acts as client and computes the electronic energy and forces.
 
 This is typically a patched version of an electronic structure code, but a 
 simple self-contained Fortran driver that implements Lennard-Jones and 
-Silveira-Goldman potentials is included for test purposes.
+Silvera-Goldman potentials is included for test purposes.
 
 
 Quick Installation and Test 
 ---------------------------
 
-Follow these instruction to test i-PI. These assume to be run from a Linux 
-environment, with a recent version of Python, Numpy and gfortran, and that 
-the terminal is initially in the i-pi package directory (the directory 
-containing this file).
+Follow these instructions to test i-PI. It is assumed that i-PI will be
+run from a Linux environment, with a recent version of Python, Numpy 
+and gfortran, and that the terminal is initially in the i-pi package 
+directory (the directory containing this file).
 
 * Generate the driver code
 
@@ -28,9 +28,10 @@ $ cd ..
 
 * Run one of the examples
 
-This will first start the wrapper in the background, redirecting the output on 
-a log file, then run a couple of instances of the driver code and then follow
-the progress of the wrapper by monitoring the log file
+This will first start the wrapper in the background, redirecting the output to
+a log file, and then run a couple of instances of the driver code. The
+progress of the wrapper is followed by monitoring the log file with the tail
+Linux command.
 
 $ cd examples/tutorial/tutorial-1/
 $ ../../../i-pi tutorial-1.xml > log &
