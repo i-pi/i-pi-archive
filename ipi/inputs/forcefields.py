@@ -21,10 +21,10 @@ Classes:
    InputFFSocket: Deals with creating a forcefield using sockets.
 """
 
-__all__ = ["InputFFSocket"]
+__all__ = ["InputFFSocket", 'InputFFLennardJones']
 
 from copy import copy
-from ipi.engine.forcefields import *
+from ipi.engine.forcefields import ForceField, FFSocket, FFLennardJones
 from ipi.interfaces.sockets import InterfaceSocket
 from ipi.utils.inputvalue import *
 
@@ -51,13 +51,13 @@ class InputForceField(Input):
                "pbc":  ( InputAttribute, { "dtype"   : bool,
                                          "default" : True,
                                          "help"    : "Applies periodic boundary conditions to the atoms coordinates before passing them on to the driver code." })
-                                         
+
             }
    fields = {
             "latency" : ( InputValue, { "dtype"   : float,
                                          "default" : 0.01,
                                          "help"    : "The number of seconds the polling thread will wait between exhamining the list of requests." } ),
-            "pars" : (InputValue, { "dtype" : dict,
+            "parameters" : (InputValue, { "dtype" : dict,
                                      "default" : {},
                                      "help" : "The parameters of the force field"} )
    }
@@ -75,7 +75,7 @@ class InputForceField(Input):
       Input.store(self,ff)
       self.name.store(ff.name)
       self.latency.store(ff.latency)
-      self.pars.store(ff.pars)
+      self.parameters.store(ff.pars)
       self.pbc.store(ff.dopbc)
 
    def fetch(self):
@@ -87,8 +87,8 @@ class InputForceField(Input):
 
       super(InputForceField,self).fetch()
 
-      return ForceField(pars = self.pars.fetch(), name = self.name.fetch(), latency = self.latency.fetch(), dopbc = self.pbc.fetch())
-      
+      return ForceField(pars = self.parameters.fetch(), name = self.name.fetch(), latency = self.latency.fetch(), dopbc = self.pbc.fetch())
+
 
 class InputFFSocket(InputForceField):
    """Creates a ForceField object with a socket interface.
@@ -115,16 +115,16 @@ class InputFFSocket(InputForceField):
                                       "help"    : "This gives the port number that defines the socket."} ),
              "slots":   (InputValue, {"dtype"   : int,
                                       "default" : 4,
-                                      "help"    : "This gives the number of client codes that can queue at any one time."} ),            
+                                      "help"    : "This gives the number of client codes that can queue at any one time."} ),
              "timeout": (InputValue, {"dtype"   : float,
                                       "default" : 0.0,
                                       "help"    : "This gives the number of seconds before assuming a calculation has died. If 0 there is no timeout." } )}
-   attribs = { 
+   attribs = {
                "mode": (InputAttribute, {"dtype"    : str,
                                      "options"  : [ "unix", "inet" ],
                                      "default"  : "inet",
                                      "help"     : "Specifies whether the driver interface will listen onto a internet socket [inet] or onto a unix socket [unix]." } ),
-   
+
               }
 
    attribs.update(InputForceField.attribs)
@@ -143,9 +143,9 @@ class InputFFSocket(InputForceField):
       if (not type(ff) is FFSocket):
          raise TypeError("The type " + type(ff).__name__ + " is not a valid socket forcefield")
 
-      
+
       super(InputFFSocket,self).store(ff)
-      
+
       self.address.store(ff.socket.address)
       self.port.store(ff.socket.port)
       self.timeout.store(ff.socket.timeout)
@@ -179,3 +179,25 @@ class InputFFSocket(InputForceField):
          raise ValueError("Negative latency parameter specified.")
       if self.timeout.fetch() < 0.0:
          raise ValueError("Negative timeout parameter specified.")
+
+
+class InputFFLennardJones(InputForceField):
+
+   attribs = { "threaded" : (InputAttribute, {"dtype": bool,
+                                              "default": True,
+                                              "help": "Specifies if force evaluations should be performed in parallel"} ) }
+   attribs.update(InputForceField.attribs)
+
+   default_help = """Simple, internal LJ evaluator without cutoff, neighbour lists or minimal image convention.
+                   Expects standard LJ parameters, e.g. { eps: 0.1, sigma: 1.0 }. """
+   default_label = "FFLJ"
+
+   def store(self, ff):
+      super(InputFFLennardJones,self).store(ff)
+      self.threaded.store(ff.threaded)
+
+   def fetch(self):
+      super(InputFFLennardJones,self).fetch()
+
+      return FFLennardJones(pars = self.parameters.fetch(), name = self.name.fetch(),
+               latency = self.latency.fetch(), dopbc = self.pbc.fetch(), threaded=self.threaded.fetch() )

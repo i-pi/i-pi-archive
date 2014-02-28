@@ -18,8 +18,10 @@ Functions:
 
 import sys
 import ipi.inputs.simulation as isimulation
+from ipi.utils.softexit import softexit
 from ipi.utils.io.io_xml import *
 from ipi.utils.messages import banner, help, verbosity
+# import yappi, time
 
 def main(file_name):
    """Runs the simulation.
@@ -49,7 +51,21 @@ def main(file_name):
    simul = simrestart.fetch() # Creates the appropriate simulation object.
    # this does all of the piping between the components of the simulation
    simul.bind()
+
+#   yappi.start(builtins=True,profile_threads=True)
+#   start=time.time()
+
    simul.run()
+
+ #  yappi.stop()
+ #  yappi.get_thread_stats().print_all()
+ #  yfs=yappi.get_func_stats()
+ #  yfs.save("profile.kgrind", type="callgrind")
+ #  ypo=open("profile.yappi","w")
+ #  yfs.print_all(out=ypo)
+ #  print "Total elapsed time: ", time.time()-start
+
+   softexit.trigger(" @ SIMULATION: Exiting cleanly.")
 
    del simul
 
