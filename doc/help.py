@@ -36,18 +36,19 @@ Functions:
    help: Writes the help file.
 """
 
-import sys
+import sys, time
 
-src_dir = ".."
+src_dir = "../"
 
 sys.path.append(src_dir)
 
-from ipi.inputs import *
-import ipi.inputs.barostats as barostats
+from ipi.inputs import barostats, cell, simulation, paratemp, system, \
+             ensembles, thermostats, forcefields, forces, atoms, beads, \
+             prng, initializer, normalmodes, outputs
 from ipi.utils.io.io_xml import *
 from optparse import OptionParser
 
-
+time.sleep(1)
 __all__ = ['help', 'objects']
 
 objects = { 'barostats': barostats.InputBaro(),
@@ -57,12 +58,15 @@ objects = { 'barostats': barostats.InputBaro(),
             'system': system.InputSystem(),
             'ensembles': ensembles.InputEnsemble(),
             'thermostats': thermostats.InputThermo(),
-            'socket': forcefields.InputFFSocket(),
-            'forcefields' : forcefields.InputForceField(),
+            'forcefield' : forcefields.InputForceField(),
+            'ffsocket': forcefields.InputFFSocket(),
+            'fflj': forcefields.InputFFLennardJones(),
+            'forcecomponent' : forces.InputForceComponent(),
             'forces': forces.InputForces(),
             'atoms': atoms.InputAtoms(),
             'beads': beads.InputBeads(),
             'prng': prng.InputRandom(),
+            'normal_modes': normalmodes.InputNormalModes(),
             'init_file': initializer.InputInitFile(),
             'init_pos': initializer.InputInitPositions(),
             'init_mom': initializer.InputInitMomenta(),
@@ -72,7 +76,6 @@ objects = { 'barostats': barostats.InputBaro(),
             'init_cell': initializer.InputInitCell(),
             'init_therm': initializer.InputInitThermo(),
             'initializer': initializer.InputInitializer(),
-            'normal_modes': normalmodes.InputNormalModes(),
             'output': outputs.InputOutputs(),
             'properties': outputs.InputProperties(),
             'checkpoint': outputs.InputCheckpoint(),

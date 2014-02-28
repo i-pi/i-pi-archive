@@ -43,10 +43,10 @@ from ipi.engine.beads import Beads
 
 fbuid = 0
 class ForceBead(dobject):
-   """Base force class.
+   """Base force helper class.
 
-   Gives the standard methods and quantities needed in all the forcefield
-   classes.
+   This is the object that computes forces for a single bead. This is the last
+   layer before calling a forcefield object.
 
    Attributes:
       atoms: An Atoms object containing all the atom positions.
@@ -76,16 +76,16 @@ class ForceBead(dobject):
       fz: A slice of f containing only the z components of the forces.
       vir: An array containing the components of the virial tensor in upper
          triangular form, not divided by the volume. Depends on ufvx.
+      request: a handle to the request that has been filed by the FF object
    """
 
    def __init__(self):
       """Initialises ForceBead."""
 
-      #ufvx is a list [ u, f, vir, extra ] which stores the results of the force
-      #calculation
+      # ufvx is a list [ u, f, vir, extra ]  which stores the results of the force calculation
       dset(self,"ufvx", depend_value(name="ufvx", func=self.get_all))
-      self.request = None
       self._threadlock = threading.Lock()
+      self.request = None
       self._getallcount = 0
 
    def bind(self, atoms, cell, ff):
@@ -100,8 +100,12 @@ class ForceBead(dobject):
       """
 
       global fbuid      #assign a unique identifier to each forcebead object
-      self.uid = fbuid
-      fbuid += 1
+      self._threadlock.acquire()
+      try:
+         self.uid = fbuid
+         fbuid+=1
+      finally:
+         self._threadlock.release()
 
       # stores a reference to the atoms and cell we are computing forces for
       self.atoms = atoms
@@ -147,8 +151,12 @@ class ForceBead(dobject):
       all the jobs to be sent at once, allowing them to be parallelized.
       """
 
-      if self.request is None and dget(self,"ufvx").tainted():
-         self.request = self.ff.queue(self.atoms, self.cell, reqid=self.uid)
+      self._threadlock.acquire()
+      try:
+          if self.request is None and dget(self,"ufvx").tainted():
+             self.request = self.ff.queue(self.atoms, self.cell, reqid=self.uid)
+      finally:
+         self._threadlock.release()
 
    def get_all(self):
       """Driver routine.
@@ -162,7 +170,9 @@ class ForceBead(dobject):
          A list of the form [potential, force, virial, extra].
       """
 
-      # keep track of how many times we are called until we release
+      # because we thread over many systems and outputs, we might get called
+      # more than once. keep track of how many times we are called so we
+      # can make sure to wait until the last call has returned before we release
       self._threadlock.acquire()
       try:
          self._getallcount += 1
@@ -173,6 +183,7 @@ class ForceBead(dobject):
       if self.request is None:
          self.request = self.ff.queue(self.atoms, self.cell)
 
+      # sleeps until the request has been evaluated
       while self.request["status"] != "Done":
          if self.request["status"] == "Exit" or softexit.triggered:
             # now, this is tricky. we are stuck here and we cannot return meaningful results.
@@ -181,22 +192,22 @@ class ForceBead(dobject):
             # we are in.
             softexit.trigger(" @ FORCES : cannot return so will die off here")
             while softexit.exiting:
-               time.sleep(self.ff.latency)
+               time.sleep(self.ff.latencyt)
             sys.exit()
          time.sleep(self.ff.latency)
 
       # data has been collected, so the request can be released and a slot
-      #freed up for new calculations
+      # freed up for new calculations
       result = self.request["result"]
 
-      # reduce the reservation count
+      # reduce the reservation count (and wait for all calls to return)
       self._threadlock.acquire()
       try:
         self._getallcount -= 1
       finally:
         self._threadlock.release()
 
-      # releases just once, wait for all requests to be complete otherwise
+      # releases just once, but wait for all requests to be complete
       if self._getallcount == 0:
         self.ff.release(self.request)
         self.request = None
@@ -313,7 +324,6 @@ class ForceComponent(dobject):
       """
 
       # stores a copy of the number of atoms and of beads
-      #!TODO! make them read-only properties
       self.natoms = beads.natoms
       if (self.nbeads != beads.nbeads):
          raise ValueError("Binding together a Beads and a ForceBeads objects with different numbers of beads")
@@ -413,20 +423,6 @@ class ForceComponent(dobject):
 
       return newf
 
-      #serial
-#      for b in range(self.nbeads): newf[b]=self._forces[b].f
-      # threaded
-#      bthreads=[]
-#      print "starting threads"
-#      for b in range(self.nbeads):
-#         thread=threading.Thread(target=self._getbead, args=(b,newf,))
-#         thread.start()
-#         bthreads.append(thread)
-
-#      print "waiting threads"
-#      for b in range(self.nbeads): bthreads[b].join()
-#      print "threads joined in"
-
    def get_vir(self):
       """Sums the virial of each replica.
 
@@ -442,32 +438,6 @@ class ForceComponent(dobject):
          vir += v
       return vir
 
-   def __len__(self):
-      """Length function.
-
-      This is called whenever the standard function len(forcebeads) is used.
-
-      Returns:
-         The number of beads.
-      """
-
-      return self.nbeads
-
-   def __getitem__(self,index):
-      """Overwrites standard getting function.
-
-      This is called whenever the standard function forcebeads[index] is used.
-      Returns the force on bead index.
-
-      Args:
-         index: The index of the replica of the system to be accessed.
-
-      Returns:
-         The forces acting on the replica of the system given by the index.
-      """
-
-      return self._forces[index]
-
 
 class Forces(dobject):
    """Class that gathers all the forces together.
@@ -482,7 +452,6 @@ class Forces(dobject):
       mforces: A list of all the forcefield objects.
       mbeads: A list of all the beads objects. Some of these may be contracted
          ring polymers, with a smaller number of beads than of the simulation.
-      mweights: A list of the weights of all the forcefields.
       mrpc: A list of the objects containing the functions required to
          contract the ring polymers of the different forcefields.
 
@@ -498,7 +467,7 @@ class Forces(dobject):
       vir: The sum of the virial tensor of the replicas.
    """
 
-   def bind(self, beads, cell, forces, fflist):
+   def bind(self, beads, cell, force_proto, fflist):
       """Binds beads, cell and forces to the forcefield.
 
 
@@ -515,12 +484,11 @@ class Forces(dobject):
 
       self.natoms = beads.natoms
       self.nbeads = beads.nbeads
-      self.nforces = len(forces)
+      self.nforces = len(force_proto)
 
       # fflist should be a dictionary of forcefield objects
       self.mforces = []
       self.mbeads = []
-      self.mweights = []
       self.mrpc = []
 
       # a "function factory" to generate functions to automatically update
@@ -530,22 +498,19 @@ class Forces(dobject):
 
       # creates new force objects, possibly acting on contracted path
       #representations
-      for fc in forces:
+      for fc in force_proto:
 
          # creates an automatically-updated contracted beads object
          newb = fc.nbeads
-         newforce = ForceComponent(ffield=fc.ffield, name=fc.name, nbeads=fc.nbeads, weight=fc.weight)
-         newweight = fc.weight
-
          # if the number of beads for this force component is unspecified,
-         #assume full force evaluation
-         if newb == 0:
-            newb = beads.nbeads
-            newforce.nbeads = newb
-
+         # assume full force evaluation
+         if newb == 0: newb = beads.nbeads
+         newforce = ForceComponent(ffield=fc.ffield, name=fc.name, nbeads=newb, weight=fc.weight)
          newbeads = Beads(beads.natoms, newb)
          newrpc = nm_rescale(beads.nbeads, newb)
 
+         # the beads positions for this force components are obtained
+         # automatically, when needed, as a contraction of the full beads
          dget(newbeads,"q")._func = make_rpc(newrpc, beads)
          for b in newbeads:
             # must update also indirect access to the beads coordinates
@@ -554,11 +519,10 @@ class Forces(dobject):
          # makes newbeads.q depend from beads.q
          dget(beads,"q").add_dependant(dget(newbeads,"q"))
 
-         #now we create a new forcebeads which is bound to newbeads!
+         #now we create a new forcecomponent which is bound to newbeads!
          newforce.bind(newbeads, cell, fflist)
 
          #adds information we will later need to the appropriate lists.
-         self.mweights.append(newweight)
          self.mbeads.append(newbeads)
          self.mforces.append(newforce)
          self.mrpc.append(newrpc)
@@ -644,7 +608,7 @@ class Forces(dobject):
       for k in range(self.nforces):
          # "expand" to the total number of beads the forces from the
          #contracted one
-         rf += self.mweights[k]*self.mrpc[k].b2tob1(depstrip(self.mforces[k].f))
+         rf += self.mforces[k].weight*self.mrpc[k].b2tob1(depstrip(self.mforces[k].f))
       return rf
 
    def pot_combine(self):
@@ -655,7 +619,7 @@ class Forces(dobject):
       for k in range(self.nforces):
          # "expand" to the total number of beads the potentials from the
          #contracted one
-         rp += self.mweights[k]*self.mrpc[k].b2tob1(self.mforces[k].pots)
+         rp += self.mforces[k].weight*self.mrpc[k].b2tob1(self.mforces[k].pots)
       return rp
 
    def extra_combine(self):
@@ -681,5 +645,5 @@ class Forces(dobject):
          #contracted one, element by element
          for i in range(3):
             for j in range(3):
-               rp[:,i,j] += self.mweights[k]*self.mrpc[k].b2tob1(virs[:,i,j])
+               rp[:,i,j] += self.mforces[k].weight*self.mrpc[k].b2tob1(virs[:,i,j])
       return rp

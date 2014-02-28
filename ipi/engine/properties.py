@@ -258,7 +258,7 @@ class Properties(dobject):
                        "func": (lambda: self.ensemble.bias) },
       "ensemble_logweight":  {  "dimension": "",
                        "help" : "The (log) weight of the configuration in the biassed ensemble",
-                       "func": (lambda: self.ensemble.bias/(Constants.kb*self.ensemble.temp)) },                       
+                       "func": (lambda: self.ensemble.bias/(Constants.kb*self.ensemble.temp)) },
       "potential": {  "dimension" : "energy",
                       "help": "The physical system potential energy.",
                       'func': (lambda: self.forces.pot/self.beads.nbeads)},
@@ -453,7 +453,7 @@ class Properties(dobject):
       # coordinates
       self.dbeads = system.beads.copy()
       self.dforces = Forces()
-      self.dforces.bind(self.dbeads, self.cell,  system.flist, self.simul.fflist)
+      self.dforces.bind(self.dbeads, self.cell,  system.fproto, self.simul.fflist)
 
    def __getitem__(self, key):
       """Retrieves the item given by key.

@@ -230,6 +230,8 @@ class Simulation(dobject):
 
          stepthreads = []
          # steps through all the systems
+         #for s in self.syslist:
+         #   s.ensemble.step()
          for s in self.syslist:
             # creates separate threads for the different systems
             st = threading.Thread(target=s.ensemble.step, name=s.prefix)
@@ -291,7 +293,5 @@ class Simulation(dobject):
             info(" # Wall clock time expired! Bye bye!", verbosity.low )
             break
 
-#         objgraph.show_growth(limit=3)
-
       self.rollback = False
-      softexit.trigger(" @ SIMULATION: Exiting cleanly.")
+

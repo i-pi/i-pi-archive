@@ -92,7 +92,7 @@ class InputSystem(Input):
 
 
       self.prefix.store(psys.prefix)
-      self.forces.store(psys.flist)
+      self.forces.store(psys.fproto)
       self.ensemble.store(psys.ensemble)
       self.beads.store(psys.beads)
       self.normal_modes.store(psys.nm)
