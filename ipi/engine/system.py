@@ -52,7 +52,7 @@ class System(dobject):
       cell: A cell object giving the system box.
       flist: A list of forcefield objects giving different ways to partially
          calculate the forces.
-      forces: A Forces object for calculating the total force for all the
+      fproto: A Forces object for calculating the total force for all the
          replicas.
       ensemble: An ensemble object giving the objects necessary for producing
          the correct ensemble.
@@ -71,7 +71,7 @@ class System(dobject):
          init: A class to deal with initializing the system.
          beads: A beads object giving the atom positions.
          cell: A cell object giving the system box.
-         forces: A forcefield object giving the force calculator for each
+         force_proto: A forcefield object giving the force calculator for each
             replica of the system.
          ensemble: An ensemble object giving the objects necessary for
             producing the correct ensemble.

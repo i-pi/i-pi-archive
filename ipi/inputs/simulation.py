@@ -58,11 +58,14 @@ class InputSimulation(Input):
       step: An integer giving the current simulation step. Defaults to 0.
       total_steps: The total number of steps. Defaults to 1000
       total_time:  The wall clock time limit. Defaults to 0 (no limit).
-      paratemp:
+      paratemp: A helper object for parallel tempering simulations
 
    Dynamic fields:
-      system:
-      ffsocket: 
+      system: Holds the data needed to specify the state of a single system.
+      ffsocket: Gives a forcefield which will use a socket interface to
+         communicate with the driver code.
+      fflj: Gives a forcefield which uses the internal Python Lennard-Jones
+         script to calculate the potential and forces.
    """
 
    fields = {
@@ -184,9 +187,9 @@ class InputSimulation(Input):
                syslist.append(v.fetch())
                if (v.copies.fetch() > 1):
                   syslist[-1].prefix = syslist[-1].prefix + ( ("%0" + str(int(1 + np.floor(np.log(v.copies.fetch())/np.log(10)))) + "d") % (isys) )
-         elif k=="ffsocket": 
+         elif k == "ffsocket": 
             fflist.append(v.fetch())
-         elif k=="fflj": 
+         elif k == "fflj": 
             fflist.append(v.fetch())
 
 
