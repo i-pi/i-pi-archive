@@ -49,20 +49,19 @@ class InputSimulation(Input):
 
    Attributes:
       verbosity: A string saying how much should be output to standard output.
+      mode: A string which determines what type of simulation will be run.
 
    Fields:
-      force: A restart force instance. Used as a model for all the replicas.
-      ensemble: A restart ensemble instance.
-      beads: A restart beads instance.
-      normal_modes: Setup of normal mode integrator.
-      cell: A restart cell instance.
       output: A list of the required outputs.
       prng: A random number generator object.
       step: An integer giving the current simulation step. Defaults to 0.
       total_steps: The total number of steps. Defaults to 1000
       total_time:  The wall clock time limit. Defaults to 0 (no limit).
-      initialize: An array of strings giving all the quantities that should
-         be output.
+      paratemp:
+
+   Dynamic fields:
+      system:
+      ffsocket: 
    """
 
    fields = {
@@ -171,12 +170,13 @@ class InputSimulation(Input):
       syslist=[]
       fflist=[]
       for (k,v) in self.extra:
-         if k=="system" :
+         if k == "system":
             for isys in range(v.copies.fetch()): # creates multiple copies of system if desired
                syslist.append(v.fetch())
                if (v.copies.fetch() > 1):
-                  syslist[-1].prefix = syslist[-1].prefix+( ("%0" + str(int(1 + np.floor(np.log(v.copies.fetch())/np.log(10)))) + "d") % (isys) )
-         elif k=="ffsocket": fflist.append(v.fetch())
+                  syslist[-1].prefix = syslist[-1].prefix + ( ("%0" + str(int(1 + np.floor(np.log(v.copies.fetch())/np.log(10)))) + "d") % (isys) )
+         elif k == "ffsocket": 
+            fflist.append(v.fetch())
 
 
       # this creates a simulation object which gathers all the little bits
@@ -193,16 +193,3 @@ class InputSimulation(Input):
                   ttime=self.total_time.fetch())
 
       return rsim
-
-   def check(self):
-      """Function that deals with optional arguments.
-
-      Deals with the difference between classical and PI dynamics. If there is
-      no beads argument, the bead positions are generated from the atoms, with
-      the necklace being fixed at the atom position. Similarly, if no nbeads
-      argument is specified a classical simulation is done.
-
-      """
-
-      super(InputSimulation,self).check()
-    

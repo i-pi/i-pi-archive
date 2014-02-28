@@ -55,10 +55,14 @@ class Simulation(dobject):
 
    Attributes:
       prng: A random number generator object.
+      mode: A string specifying what kind of simulation will be run.
       fflist: A list of forcefield objects that can be called to compute energy and forces
       syslist: A list of physical systems
+      prng: A random number generator.
       tsteps: The total number of steps.
       ttime: The wall clock time (in seconds).
+      outtemplate: A template output object to be used to generate the outputs
+         list. This will be used for each of the systems.
       outputs: A list of output objects that should be printed during the run
       paratemp: A helper object for parallel tempering simulations
       chk: A checkpoint object which is kept up-to-date in case of emergency exit
@@ -82,7 +86,6 @@ class Simulation(dobject):
          prng: A random number object.
          paratemp: A parallel tempering helper class.
          outputs: A list of output objects.
-         init: A class to deal with initializing the simulation object.
          step: An optional integer giving the current simulation time step.
             Defaults to 0.
          tsteps: An optional integer giving the total number of steps. Defaults
@@ -100,8 +103,8 @@ class Simulation(dobject):
          s.prng = self.prng # binds the system's prng to self prng
          s.init.init_stage1(s)
 
-      if self.mode == "md" and len(syslist)>1:
-         warning("Multiple systems will evolve independently in a '"+self.mode+"' simulation.")
+      if self.mode == "md" and len(syslist) > 1:
+         warning("Multiple systems will evolve independently in a '" + self.mode + "' simulation.")
 
       self.fflist = {}
       for f in fflist:
@@ -134,14 +137,14 @@ class Simulation(dobject):
             o.bind(self)
             self.outputs.append(o)
          else:   # properties and trajectories are output per system
-            isys=0
+            isys = 0
             for s in self.syslist:   # create multiple copies
                no = deepcopy(o)
                if s.prefix != "":
-                  no.filename = s.prefix+"_"+no.filename
+                  no.filename = s.prefix + "_" + no.filename
                no.bind(s)
                self.outputs.append(no)
-               isys+=1
+               isys += 1
 
       self.chk = eoutputs.CheckpointOutput("RESTART", 1, True, 0)
       self.chk.bind(self)

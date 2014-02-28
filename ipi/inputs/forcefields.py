@@ -17,12 +17,11 @@ along with this program. If not, see <http.//www.gnu.org/licenses/>.
 
 
 Classes:
-   InputForces: Deals with creating all the forcefield objects.
    InputForceField: Base class to deal with one particular forcefield object.
-   InputFBSocket: Deals with creating a forcefield using sockets.
+   InputFFSocket: Deals with creating a forcefield using sockets.
 """
 
-__all__ = ['InputForces', "InputFFSocket"]
+__all__ = ["InputFFSocket"]
 
 from copy import copy
 from ipi.engine.forcefields import *
@@ -38,13 +37,13 @@ class InputForceField(Input):
 
    Attributes:
       name: The number of beads that the forcefield will be evaluated on.
-      latency: The number of seconds to sleep between looping over the requests.
-
-   Fields:
-      pars: A dictionary containing the forcefield parameters.
       pbc: A boolean describing whether periodic boundary conditions will
          be applied to the atom positions before they are sent to the driver
          code.
+
+   Fields:
+      latency: The number of seconds to sleep between looping over the requests.
+      pars: A dictionary containing the forcefield parameters.
    """
 
    attribs = { "name" : ( InputAttribute, { "dtype"   : str,
@@ -63,7 +62,7 @@ class InputForceField(Input):
                                      "help" : "The parameters of the force field"} )
    }
 
-   default_help = "Base class that deals with the assigning of force calculation jobs and collecting the data."
+   default_help = "Base forcefield class that deals with the assigning of force calculation jobs and collecting the data."
    default_label = "FORCEFIELD"
 
    def store(self, ff):

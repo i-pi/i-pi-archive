@@ -1,4 +1,4 @@
-"""Deals with creating the forcefield class.
+"""Deals with creating all the forcefields needed for the simulation.
 
 Copyright (C) 2013, Joshua More and Michele Ceriotti
 
@@ -18,15 +18,14 @@ along with this program. If not, see <http.//www.gnu.org/licenses/>.
 
 Classes:
    InputForces: Deals with creating all the forcefield objects.
-   InputForceBeads: Base class to deal with one particular forcefield object.
-   InputFBSocket: Deals with creating a forcefield using sockets.
+   InputForceComponent: Base class to deal with one particular 
+      forcefield object.
 """
 
 __all__ = ['InputForces', 'InputForceComponent']
 
 from copy import copy
 from ipi.engine.forces import *
-from ipi.inputs.interface import InputInterfaceSocket
 from ipi.utils.inputvalue import *
 
 class InputForceComponent(InputValue):
@@ -53,8 +52,8 @@ class InputForceComponent(InputValue):
                                           "help" : "An optional name to refer to this force component." } )
             }
 
-   default_help = "Base class that deals with the assigning of force calculation jobs and collecting the data."
-   default_label = "FORCEBEADS"
+   default_help = "The class that deals with how each forcefield contributes to the overall potential, force and virial calculation."
+   default_label = "FORCECOMPONENT"
    
    def __init__(self, help=None, dimension=None, units=None, default=None, dtype=None):
       """Initializes InputForceComponent.
