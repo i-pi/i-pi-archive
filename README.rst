@@ -1,6 +1,6 @@
-=========
-i-PI v1.0
-=========
+====
+i-PI
+====
 
 A Python interface for ab initio path integral molecular dynamics simulations.
 i-PI is composed of a Python server (i-pi itself, that does not need to be
