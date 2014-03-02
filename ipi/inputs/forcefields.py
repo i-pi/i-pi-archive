@@ -43,7 +43,7 @@ class InputForceField(Input):
 
    Fields:
       latency: The number of seconds to sleep between looping over the requests.
-      pars: A dictionary containing the forcefield parameters.
+      parameters: A dictionary containing the forcefield parameters.
    """
 
    attribs = { "name" : ( InputAttribute, { "dtype"   : str,
@@ -159,7 +159,7 @@ class InputFFSocket(InputForceField):
          A ForceSocket object with the correct socket parameters.
       """
 
-      return FFSocket(pars = self.pars.fetch(), name = self.name.fetch(), latency = self.latency.fetch(), dopbc = self.pbc.fetch(),
+      return FFSocket(pars = self.parameters.fetch(), name = self.name.fetch(), latency = self.latency.fetch(), dopbc = self.pbc.fetch(),
               interface=InterfaceSocket(address=self.address.fetch(), port=self.port.fetch(),
             slots=self.slots.fetch(), mode=self.mode.fetch(), timeout=self.timeout.fetch() ) )
 
