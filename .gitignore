@@ -9,4 +9,10 @@ bin/*
 *.o
 *.tex
 *.pdf
+*.aux
+*.bbl
+*.blg
+*.idx
+*log
+*.toc
 *~
