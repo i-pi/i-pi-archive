@@ -16,7 +16,7 @@
 # along with this program. If not, see <http.//www.gnu.org/licenses/>.
 
 .PHONY: all water lithium clean
-all: water lithium zundel
+all: water lithium
 
 PW:=pw.x
 CP:=cp.x
@@ -47,11 +47,6 @@ water:
 lithium:
 	cd li4; $(IPI) li4-ipi.xml & sleep 3; \
 	$(call run_pw,4,li4-pw.in) \
-	wait
-
-zundel:
-	cd zundel-cp; $(IPI) zundel-ipi.xml & sleep 3; \
-	$(call run_cp,4,zundel-cp.in) \
 	wait
 	
 clean:

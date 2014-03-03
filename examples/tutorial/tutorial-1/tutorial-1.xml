@@ -15,7 +15,7 @@
          <file mode='pdb' units='angstrom'> our_ref.pdb </file>
          <velocities mode='thermal' units='kelvin'> 25 </velocities>
       </initialize>
-      <forces><force>driver</force></forces>
+      <forces> <force> driver </force> </forces>
       <ensemble mode='nvt'>
          <thermostat mode='pile_g'>
             <tau units='femtosecond'> 25 </tau>
