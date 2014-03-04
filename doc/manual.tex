@@ -2053,7 +2053,7 @@ by the {}``\hyperref[FFSOCKET]{ffsocket}'' tag, and the output data is
 specified by the {}``\hyperref[OUTPUTS]{output}'' tag. Finally, the total
 number of steps is given by {}``total\_steps''.
 
-At this point then, the input file looks like:
+This then gives us the following template for a standard \ipi simulation:
 
 \begin{code}
 <simulation>
@@ -2104,12 +2104,12 @@ with the client codes: {}``\hyperref[FFSOCKET]{ffsocket}'' and
 interface with a client code. In theory, other communication types could be
 used (for example there is a Python only Lennard-Jones implementation included
 with \ipi which is specified by the {}``\hyperref[FFLJ]{fflj}'' tag), but for
-this tutorial we will use only sockets.
+this tutorial we will only use sockets.
 
 A socket is specified by three parameters; the port number, the hostname, 
 and whether it is a unix or an internet socket. 
 These are specified by the {}``port'' and {}``address'' tags
-and and {}``mode'' attributes respectively.
+and {}``mode'' attributes respectively.
 To match up with the client socket specified above,
 we will take an internet socket on the hostname localhost and
 use port number 31415. 
@@ -2154,7 +2154,7 @@ The latter has the options which determine how a particular forcefield is used;
 its attributes {}``nbeads'' and {}``weight'' determining how many replicas
 should be used to evaluate the forces and a multiplicative constant to
 be used to weight the output respectively. For the sake of simplicity, and
-since neither is needed, the defaults (i.e. nbeads \(=n\) and weight \(=1\))
+since neither is needed here, the defaults (i.e. nbeads \(=n\) and weight \(=1\))
 are used.
 
 \subsubsection{Initializing the configurations}
@@ -2237,9 +2237,9 @@ Here we will show how to specify the xml input file
 in both of these cases, assuming that the user has already
 created the configuration file themselves.
 Note that these file formats can be read by
-visualization programs such as VMD, and so it is generally advised 
-when making your own input files to
-use such software to make sure that the configuration is as expected.
+visualization programs such as VMD, and so it is recommended that
+such software is always used to make sure that the syntax and input data are
+correct.
 
 To use a configuration file the {}``\hyperref[INITFILE]{file}'' tag in 
 {}``\hyperref[INITIALIZER]{initialize}'' should be used.
@@ -2263,7 +2263,7 @@ Note that if no units are specified then atomic units are assumed.
 For more information on the \ipi unit conversion libraries, 
 and the available units, see \ref{inputunits}.
 
-This then gives:
+At this point we have the following input section:
 
 \begin{code}
 <initialize nbeads='4'>
@@ -2272,13 +2272,11 @@ This then gives:
 </initialize>
 \end{code}
 
-In this case, since the cell parameters are not specified in the
-configuration file we must specify them separately. 
-To initialize just the cell parameters, 
-we use the tag {}``\hyperref[INITCELL]{cell}''.
-These could in theory be set using a separate
-file, but here we will initialize them manually. Taking a cubic cell
-with cell parameter 17.847 angstroms, we can specify this using
+Since the cell parameters are not specified in the xyz file format
+we must specify them separately, using the {}``\hyperref[INITCELL]{cell}'' tag.
+In theory a separate file could be used just for the cell parameters, 
+but here we will initialize them manually. Here we want a cubic cell
+with cell parameter 17.847 angstroms, which can be specified using
 the {}``\hyperref[INITCELL]{cell}'' tag in three different ways:
 
 \begin{code}
@@ -2304,7 +2302,7 @@ Note the use of the different {}``mode'' attributes, {}``manual'',
 matrix manually, the second takes the length of the three unit vectors
 and the angles between them in degrees, and the last assumes an orthorhombic
 cell and so only takes the length of the three unit vectors as arguments.
-We will take the last version for brevity, giving as our final 
+We will take the last version for brevity, giving the following
 {}``\hyperref[INITIALIZER]{initialize}'' section:
 
 \begin{code}
@@ -2330,9 +2328,9 @@ set to {}``pdb'':
 \end{code}
 
 As well as initializing all the atom positions, this section
-can also be used to set the atom velocities. Rather than setting these manually,
-it is simpler to sample these randomly from a Maxwell-Boltzmann
-distribution. This can be done using the 
+can also be used to set the atom velocities. Rather than setting these manually
+or via a file, it is simpler to generate these automatically by sampling from a 
+Maxwell-Boltzmann distribution. This can be done using the 
 {}``\hyperref[INITVELOCITIES]{velocities}'' 
 tag by setting the {}``mode'' attribute to {}``thermal'', and giving it
 an argument specifying the temperature to initialize the
@@ -2385,13 +2383,12 @@ Finally, while the microcanonical part of the integrator
 is initialized automatically, there are several different options
 for the constant temperature sampling algorithm,
 specified by {}``\hyperref[THERMOSTATS]{thermostat}''. For simplicity we
-will use (the global version of) the path-integral Langevin equation (PILE) algorithm \cite{ceri+10jcp},
-which is specifically designed for path integral simulations. 
-This is specified by the {}``mode'' tag {}``pile\_g''. 
-This integrator also has to
-be initialized with a time scale parameter, {}``tau'', which determines
-how strong the thermostat is, which we will set to 25 femtoseconds. 
-Putting all of this together, we get:
+will use (the global version of) the path integral Langevin equation (PILE) 
+algorithm \cite{ceri+10jcp}, which is specifically designed for path integral 
+simulations. This is specified by the {}``mode'' tag {}``pile\_g''. This 
+integrator also has to be initialized with a time scale parameter, {}``tau'', 
+which determines how strong the thermostat is, which we will set to 25 
+femtoseconds. Putting all of this together, we get:
 
 \begin{code}
 <ensemble mode='nvt'>
@@ -2467,10 +2464,9 @@ trajectory files and checkpoint files, which are specified with
 {}``\hyperref[PROPERTIES]{properties}'', 
 {}``\hyperref[TRAJECTORY]{trajectory}'' 
 and {}``\hyperref[CHECKPOINT]{checkpoint}'' tags respectively.
-For an in-depth discussion on these three types
-of output files see \ref{outputfiles}, 
-but for now let us just explain the rationale
-behind each of these output file types in turn.
+For an in-depth discussion on these three types of output files see 
+\ref{outputfiles}, but for now let us just explain the rationale
+behind each of them in turn.
 
 \begin{description}
 \item[checkpoint files:]
@@ -2663,9 +2659,9 @@ messages that end with
 which signifies that the server socket has been opened and is waiting
 for connections from client codes.
 
-At this point the driver code is run in a new terminal 
-from the {}``drivers'' directory using the command
-specified above:
+At this point the driver code should be run in a new terminal 
+from the {}``drivers'' directory using the command specified at the start
+of the tutorial:
 
 \begin{code}
 > ./driver.x -m sg -h localhost -o 15 -p 31415
@@ -2673,16 +2669,20 @@ specified above:
 
 The \ipi code should now output a message saying that a new client
 code has connected, and start running the simulation.
+Once 1000 steps have been completed, (which should take about half an hour) 
+the simulation will end and automatically shut down the server and client 
+sockets. However, before moving on to the next step, we should verify that this 
+simulation has produced sensible results by looking at the output files.
 
 \subsection{Output data}
 
-Once the simulation is finished (which should take about half an hour)
-it should have output {}``tut1.md'', {}``tut1.force'', {}``tut1.pos\_0.xyz'',
+Once the simulation is finished you should have the output files
+{}``tut1.md'', {}``tut1.force'', {}``tut1.pos\_0.xyz'',
 {}``tut1.pos\_1.xyz'', {}``tut1.pos\_2.xyz'', {}``tut1.pos\_3.xyz'',
-{}``tut1.checkpoint'' and {}``RESTART''.
+{}``tut1.checkpoint'' and {}``RESTART''. Let us now study each of these in turn,
+to see if we have successfully generated a properly equilibrated system.
 
-Firstly, we consider the checkpoint files, 
-{}``tut1.checkpoint'' and {}``RESTART''.
+Firstly, consider the checkpoint files {}``tut1.checkpoint'' and {}``RESTART''.
 As mentioned before, these files can be used as a means of restarting
 the simulation from a previous point. As an example, the last
 checkpoint should have been at step 4999, and so we could rerun
@@ -2706,7 +2706,7 @@ use the trajectory files as input to a visualization program such as VMD.
 
 In this case, we see that the simulation started
 from a crystalline configuration and then over the course
-of the simulation melted. Since the state point studied
+of the simulation melted. Since at the state point studied
 and with the potential given para-hydrogen is a liquid \cite{silv-gold78jcp},
 this is what we would expect.
 
@@ -2738,7 +2738,7 @@ to start the \emph{NPT} run.
 \label{part2}
 
 Now that we have converged \emph{NVT} simulation data, we can use this to
-initialize a \emph{NPT} simulation. There are two ways of doing this,
+initialize the \emph{NPT} simulation. There are two ways of doing this,
 both of which involve using the RESTART file generated at
 the end of the \emph{NVT} run as a starting point.
 Note that for simplicity we will again take \(N=108, T=25 K\), and use \(P=0\).
@@ -2885,33 +2885,29 @@ The directory {}``tutorial-3'' contains
 \emph{NVT} and \emph{NPT} input files which can be used to do a fully converged
 \emph{NPT} simulation from scratch, except that they are missing some
 of the necessary input parameters.
+If these are chosen correctly the volume will be 31 \(\textrm{cm}^3\)/mol 
+and the total energy will be -48 K \cite{mart+99jcp}.
 
-If these are chosen correctly and the simulation is run properly
-the volume will be 31 \(\textrm{cm}^3\)/mol and the total energy
-should be -48 K \cite{mart+99jcp}.
-
-With this number of beads and atoms, the force calculation is likely
+With this number of beads and atoms, the simulation is likely
 to take much longer than it did in either tutorial 1 or 2.
 To help speed this up, we will now discuss how to parallelize the
 calculation over the sockets, and how to speed up the data transfer.
 
 Firstly, in this simple case where we are calculating an isotropic,
 pair-wise interaction, the data transfer time is likely to be a
-significant proportion of the total calculation time. To remove this bottleneck,
-there is the option to use a unix domain socket rather than an
+significant proportion of the total calculation time. To help 
+remove this bottleneck, we can use a unix domain socket rather than an
 internet socket. These are optimized for local communication between 
 processes on a single computer, and so for the current problem they will be much
 faster than internet sockets.
 
 To change the type of socket we simply set the {}``mode'' attribute of the
-{}``\hyperref[FFSOCKET]{socket}'' tag to {}``unix'':
+{}``\hyperref[FFSOCKET]{ffsocket}'' tag to {}``unix'':
 
 \begin{code}
-<forces>
-   <socket mode='unix'>
-      ...
-   </socket>
-</forces>
+<ffsocket mode='unix'>
+   ...
+</ffsocket>
 \end{code}
 
 Similarly, the client code can be told to connect via a unix socket
