@@ -3,7 +3,6 @@
 bin/*
 *.pyc
 *.pyo
-*.x
 *.mod
 *.out
 *.o
