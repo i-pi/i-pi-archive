@@ -2738,18 +2738,17 @@ to start the \emph{NPT} run.
 \label{part2}
 
 Now that we have converged \emph{NVT} simulation data, we can use this to
-initialize a \emph{NPT} simulation. 
-There are two ways of doing this,
+initialize a \emph{NPT} simulation. There are two ways of doing this,
 both of which involve using the RESTART file generated at
 the end of the \emph{NVT} run as a starting point.
-Note that for simplicity we will again take \(N=108, T=25 K\), and use
-\(P=0\).
+Note that for simplicity we will again take \(N=108, T=25 K\), and use \(P=0\).
 
 \subsection{Modifying the RESTART file}
 
 Firstly, you can use the RESTART file directly, modifying it
 so that instead of continuing with the original \emph{NVT} simulation
-it will instead start a new \emph{NPT} simulation. We have included
+it will instead start a new \emph{NPT} simulation. 
+For reference, we have included
 in the {}``tutorial-2'' directory both a RESTART file from
 tutorial 1 and an adjusted file which will run \emph{NPT} dynamics,
 {}``tutorial-2a.xml''
@@ -2799,16 +2798,15 @@ and a {}``pressure'' tag must be added:
 
 We must also specify the constant pressure algorithm,
 using the tag {}``\hyperref[BAROSTAT]{barostat}''.
-At present, \ipi only contains a stochastic barostat to apply pressure
-to an isotropic system, which can be specified with the option ``isotropic''. 
-Anisotropic versions of the barostat may be added in future releases of \ipi. 
+Since we are only interested in constant pressure dynamics, we will use the
+isotropic barostat, which can be specified with the option ``isotropic''. 
+%Anisotropic versions of the barostat may be added in future releases of \ipi. 
 
-The isotropic barostat also requires a thermostat
-to deal with the volume degree of freedom, which we will take
-to be a simple Langevin thermostat.
-This thermostat is specified in the same way as the one which does the
-constant temperature algorithms for the atomic degrees of freedom, and
-we will take its time scale to be 250 femtoseconds:
+The isotropic barostat also requires a thermostat to deal with the volume 
+degree of freedom, for which we will use a simple Langevin thermostat.
+This is specified in the same way as the one which does the
+constant temperature algorithms for the atomic degrees of freedom, so choosing
+a time scale of 250 femtoseconds we get:
 
 \begin{code}
 <ensemble mode='npt'>
@@ -2823,7 +2821,7 @@ we will take its time scale to be 250 femtoseconds:
 </ensemble>
 \end{code}
 
-Finally, we will take the barostat time scale to be 250 femtoseconds also, giving:
+Finally, we will take the barostat time scale to be 250 femtoseconds, giving:
 
 \begin{code}
 <ensemble mode='npt'>
@@ -2899,13 +2897,13 @@ calculation over the sockets, and how to speed up the data transfer.
 
 Firstly, in this simple case where we are calculating an isotropic,
 pair-wise interaction, the data transfer time is likely to be a
-significant proportion of the total calculation time. To help speed this
-up, there is the option to use a unix domain socket rather than an
+significant proportion of the total calculation time. To remove this bottleneck,
+there is the option to use a unix domain socket rather than an
 internet socket. These are optimized for local communication between 
 processes on a single computer, and so for the current problem they will be much
 faster than internet sockets.
 
-To specify this, we simply set the {}``mode'' attribute of the
+To change the type of socket we simply set the {}``mode'' attribute of the
 {}``\hyperref[FFSOCKET]{socket}'' tag to {}``unix'':
 
 \begin{code}
@@ -2916,7 +2914,7 @@ To specify this, we simply set the {}``mode'' attribute of the
 </forces>
 \end{code}
 
-We then specify that the client code should connect to a unix socket
+Similarly, the client code can be told to connect via a unix socket
 using the -u flag:
 
 \begin{code}
