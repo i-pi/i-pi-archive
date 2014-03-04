@@ -15,4 +15,5 @@ bin/*
 *.idx
 *log
 *.toc
+*.swp
 *~

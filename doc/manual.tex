@@ -1176,7 +1176,7 @@ specifying how the options of the thermostat class should be interpreted.
 A xml tag has the following syntax:
 
 \begin{code}
-<tag_name attribute_name='attribute_data'>tag_data</tag_name>
+<tag_name attribute_name=`attribute_data'>tag_data</tag_name>
 \end{code}
 
 The syntax for the different types of tag data is given below: 
@@ -1208,7 +1208,7 @@ represented in the code as an array of shape
 and 8 beads, then this can be represented in the xml input file as:
 
 \begin{code}
-<beads nbeads='8' natoms='20'>
+<beads nbeads=`8' natoms=`20'>
    <q shape=`(8,60)'>[ q11x, q11y, q11z, q12x, q12y, ... ]</q>
    ...
 </beads>
@@ -1222,15 +1222,14 @@ the tag for that object will be within the appropriate parent tags.
 This is used to make the structure of the simulation clear. 
 
 For example,
-%TODO This example is now deprecated, pick another
 the system that is being studied is partly defined by the thermodynamic
 ensemble that should be sampled, which in turn may be partly defined
 by the pressure, and so on. To make this dependence clear in the code
-the global simulation object which holds all the data contains
-an ensemble object, which contains a pressure variable.
+the system object which holds all the configuration and algorithmic
+data contains an ensemble object, which contains a pressure variable.
  
 Therefore the input file is specified
-by having a {}``\hyperref[SIMULATION]{simulation}'' tag, containing an 
+by having a {}``\hyperref[SYSTEM]{system}'' tag, containing an 
 {}``\hyperref[ENSEMBLE]{ensemble}''
 tag, which itself contains a {}``pressure'' tag, which will contain
 a float value corresponding to the external pressure. In this
@@ -1241,13 +1240,13 @@ pressure of 1e-7 atomic pressure units. This would be specified by
 the following input file: 
 
 \begin{code}
-<simulation>
-   <ensemble mode='npt'>
+<system>
+   <ensemble mode=`npt'>
       <pressure> 1e-7 </pressure>
       ...
    </ensemble>
    ...
-</simulation>
+</system>
 \end{code}
 
 To help detect any user error the recognized tag names, data types
@@ -1268,26 +1267,26 @@ MPa. Instead of converting this to the atomic unit of pressure, it
 is possible to use pascals directly using:
 
 \begin{code}
-<simulation>
+<system>
    <ensemble mode=`npt'>
       <pressure units=`pascal'> 3e6 </pressure>
       ...
    </ensemble>
    ...
-</simulation>
+</system>
 \end{code}
 
 The code can also understand S.I. prefixes, so this can be simplified
 further using:
 
 \begin{code}
-<simulation>
-   <ensemble mode='npt'>
+<system>
+   <ensemble mode=`npt'>
       <pressure units=`megapascal'> 3 </pressure>
       ...
    </ensemble>
    ...
-</simulation>
+</system>
 \end{code}
 
 A full list of which units are defined for which dimensions
@@ -1329,19 +1328,19 @@ to initialize the atom positions, labels, masses and possibly
 the cell parameters at the same time. For instance, 
 
 \begin{code}
-<initialize nbeads="8">
-   <file mode="pdb"> init.pdb </file>
+<initialize nbeads=`8'>
+   <file mode=`pdb'> init.pdb </file>
 </initialize>
 \end{code}
 
 \noindent is equivalent to
 
 \begin{code}
-<initialize nbeads="8">
-   <positions mode="pdb"> init.pdb </positions>
-   <labels mode="pdb"> init.pdb </labels>
-   <masses mode="pdb"> init.pdb </masses>
-   <cell mode="pdb"> init.pdb </cell>
+<initialize nbeads=`8'>
+   <positions mode=`pdb'> init.pdb </positions>
+   <labels mode=`pdb'> init.pdb </labels>
+   <masses mode=`pdb'> init.pdb </masses>
+   <cell mode=`pdb'> init.pdb </cell>
 </initialize>
 \end{code}
 
@@ -2127,7 +2126,7 @@ using the {}``name'' attribute, which in this case we will assign the value
 is then:
 
 \begin{code}
-<ffsocket mode="inet" name="driver">
+<ffsocket mode=`inet' name=`driver'>
    <address> localhost </address>
    <port> 31415 </port>
 </ffsocket>
@@ -2175,7 +2174,7 @@ of replicas of the system, called {}``nbeads'':
 
 \begin{code}
 <system>
-   <initialize nbeads='4'>
+   <initialize nbeads=`4'>
       ...
    </initialize>
    ...
@@ -2273,8 +2272,8 @@ and the available units, see \ref{inputunits}.
 At this point we have the following input section:
 
 \begin{code}
-<initialize nbeads='4'>
-   <file mode='xyz' units='angstrom'> our_ref.xyz </file>
+<initialize nbeads=`4'>
+   <file mode=`xyz' units=`angstrom'> our_ref.xyz </file>
    ...
 </initialize>
 \end{code}
@@ -2287,19 +2286,19 @@ with cell parameter 17.847 angstroms, which can be specified using
 the {}``\hyperref[INITCELL]{cell}'' tag in three different ways:
 
 \begin{code}
-<cell mode='manual' units='angstrom'> 
+<cell mode=`manual' units=`angstrom'> 
    [17.847, 0, 0, 0, 17.847, 0, 0, 0, 17.847] 
 </cell>
 \end{code}
 
 \begin{code}
-<cell mode='abcABC' units='angstrom'>
+<cell mode=`abcABC' units=`angstrom'>
    [17.847, 17.847, 17.847, 90, 90, 90]
 </cell>
 \end{code}
 
 \begin{code}
-<cell mode='abc' units='angstrom'>
+<cell mode=`abc' units=`angstrom'>
    [17.847, 17.847, 17.847]
 </cell>
 \end{code}
@@ -2313,9 +2312,9 @@ We will take the last version for brevity, giving the following
 {}``\hyperref[INITIALIZER]{initialize}'' section:
 
 \begin{code}
-<initialize nbeads='4'>
-   <file mode='xyz' units='angstrom'> our_ref.xyz </file>
-   <cell mode='abc' units='angstrom'>
+<initialize nbeads=`4'>
+   <file mode=`xyz' units=`angstrom'> our_ref.xyz </file>
+   <cell mode=`abc' units=`angstrom'>
       [17.847, 17.847, 17.847]
    </cell>
    ...
@@ -2328,8 +2327,8 @@ tag needs be specified and the {}``mode'' tag should be
 set to {}``pdb'':
 
 \begin{code}
-<initialize nbeads='4'>
-   <file mode='pdb' units='angstrom'> our_ref.pdb </file>
+<initialize nbeads=`4'>
+   <file mode=`pdb' units=`angstrom'> our_ref.pdb </file>
    ...
 </initialize>
 \end{code}
@@ -2345,9 +2344,9 @@ velocities to. As we want \(T = 25\) K, the final
 {}``\hyperref[INITIALIZER]{initialize}'' section is:
 
 \begin{code}
-<initialize nbeads='4'>
-   <file mode='pdb' units='angstrom'> our_ref.pdb </file>
-   <velocities mode='thermal' units='kelvin'> 25 </velocities>
+<initialize nbeads=`4'>
+   <file mode=`pdb' units=`angstrom'> our_ref.pdb </file>
+   <velocities mode=`thermal' units=`kelvin'> 25 </velocities>
 </initialize>
 \end{code}
 
@@ -2362,9 +2361,9 @@ and must specify the temperature using the appropriate tag:
 
 \begin{code}
 <system>
-   <ensemble mode='nvt'>
+   <ensemble mode=`nvt'>
       ...
-      <temperature units='kelvin'> 25 </temperature>
+      <temperature units=`kelvin'> 25 </temperature>
    </ensemble>
    ...
 </system>
@@ -2379,10 +2378,10 @@ this, but for the sake of this tutorial we will use a safe value of
 1 femtosecond, giving:
 
 \begin{code}
-<ensemble mode='nvt'>
+<ensemble mode=`nvt'>
    ...
-   <timestep units='femtosecond'> 1 </timestep>
-   <temperature units='kelvin'> 25 </temperature>
+   <timestep units=`femtosecond'> 1 </timestep>
+   <temperature units=`kelvin'> 25 </temperature>
 </ensemble>
 \end{code}
 
@@ -2398,12 +2397,12 @@ which determines how strong the thermostat is, which we will set to 25
 femtoseconds. Putting all of this together, we get:
 
 \begin{code}
-<ensemble mode='nvt'>
-   <thermostat mode='pile_g'>
-      <tau units='femtosecond'> 25 </tau>
+<ensemble mode=`nvt'>
+   <thermostat mode=`pile_g'>
+      <tau units=`femtosecond'> 25 </tau>
    </thermostat>
-   <timestep units='femtosecond'> 1 </timestep>
-   <temperature units='kelvin'> 25 </temperature>
+   <timestep units=`femtosecond'> 1 </timestep>
+   <temperature units=`kelvin'> 25 </temperature>
 </ensemble>
 \end{code}
 
@@ -2429,7 +2428,7 @@ with the {}``verbosity'' attribute of
 {}``\hyperref[SIMULATION]{simulation}'':
 
 \begin{code}
-<simulation verbosity='high'>
+<simulation verbosity=`high'>
    ...
 </simulation>
 \end{code}
@@ -2504,14 +2503,14 @@ The default output, i.e. what would be output if nothing was set by the user,
 would be generated with the following {}``\hyperref[OUTPUTS]{output}'' section:
 
 \begin{code}
-<output prefix='i-pi'>
-   <properties filename='md' stride='10'>
+<output prefix=`i-pi'>
+   <properties filename=`md' stride=`10'>
       [time, step, conserved, temperature, potential, kinetic_cv]
    </properties>
-   <trajectory filename='pos' stride='100' format='xyz'>
+   <trajectory filename=`pos' stride=`100' format=`xyz'>
       positions
    </trajectory>
-   <checkpoint filename='checkpoint' stride='1000' overwrite='True'/>
+   <checkpoint filename=`checkpoint' stride=`1000' overwrite=`True'/>
 </output>
 \end{code}
 
@@ -2542,7 +2541,7 @@ something which can be used to distinguish the files from different
 simulation runs. In this case we can simply set it to {}``tut1'':
 
 \begin{code}
-<output prefix='tut1'>
+<output prefix=`tut1'>
    ...
 </output>
 \end{code}
@@ -2554,15 +2553,15 @@ appropriate unit in curly braces after the name of the
 property or trajectory of interest, as shown below:
 
 \begin{code}
-<output prefix='tut1'>
-   <properties filename='md' stride='10'>
+<output prefix=`tut1'>
+   <properties filename=`md' stride=`10'>
       [step, time{picosecond}, conserved{kelvin}, 
        temperature{kelvin}, potential{kelvin}, kinetic_cv{kelvin}] 
    </properties>
-   <trajectory filename='pos' stride='100' format='xyz'>
+   <trajectory filename=`pos' stride=`100' format=`xyz'>
       positions{angstrom} 
    </trajectory>
-   <checkpoint filename='checkpoint' stride='1000' overwrite='True'/>
+   <checkpoint filename=`checkpoint' stride=`1000' overwrite=`True'/>
 </output>
 \end{code}
 
@@ -2573,15 +2572,15 @@ To do this we would set the {}``stride'' and {}``format'' tags,
 as shown below:
 
 \begin{code}
-<output prefix='tut1'>
-   <properties filename='md' stride='1'>
+<output prefix=`tut1'>
+   <properties filename=`md' stride=`1'>
       [step, time{picosecond}, conserved{kelvin}, 
        temperature{kelvin}, potential{kelvin}, kinetic_cv{kelvin}] 
    </properties>
-   <trajectory filename='pos' stride='100' format='pdb' cell_units='angstrom'>
+   <trajectory filename=`pos' stride=`100' format=`pdb' cell_units=`angstrom'>
       positions{angstrom} 
    </trajectory>
-   <checkpoint filename='checkpoint' stride='1000' overwrite='True'/>
+   <checkpoint filename=`checkpoint' stride=`1000' overwrite=`True'/>
 </output>
 \end{code}
 
@@ -2629,18 +2628,18 @@ Finally, putting all this together, and adjusting some
 of the parameters of the new file, we get:
 
 \begin{code}
-<output prefix='tut1'>
-   <properties filename='md' stride='1'> 
+<output prefix=`tut1'>
+   <properties filename=`md' stride=`1'> 
       [step, time{picosecond}, conserved{kelvin}, 
        temperature{kelvin}, potential{kelvin}, kinetic_cv{kelvin}] 
    </properties>
-   <properties filename='force' stride='20'> 
+   <properties filename=`force' stride=`20'> 
       [atom_f{piconewton}(atom=0;bead=0)] 
    </properties>
-   <trajectory filename='pos' stride='100' format='pdb' cell_units='angstrom'> 
+   <trajectory filename=`pos' stride=`100' format=`pdb' cell_units=`angstrom'> 
       positions{angstrom} 
    </trajectory>
-   <checkpoint filename='checkpoint' stride='1000' overwrite='True'/>
+   <checkpoint filename=`checkpoint' stride=`1000' overwrite=`True'/>
 </output>
 \end{code}
 
@@ -2726,10 +2725,10 @@ have converged. Using gnuplot, we can plot the relevant graphs using:
 
 \begin{code}
 > gnuplot
-> p './tut1.md' u 1:3 # Plots column 1, i.e. current simulation step, 
-> p './tut1.md' u 1:4 # against columns 3, 4, 5 and 6,
-> p './tut1.md' u 1:5 # i.e. conserved quantity, temperature,
-> p './tut1.md' u 1:6 # potential energy and kinetic energy
+> p `./tut1.md' u 1:3 # Plots column 1, i.e. current simulation step, 
+> p `./tut1.md' u 1:4 # against columns 3, 4, 5 and 6,
+> p `./tut1.md' u 1:5 # i.e. conserved quantity, temperature,
+> p `./tut1.md' u 1:6 # potential energy and kinetic energy
 \end{code}
 
 This will show that the conserved quantity has only a small drift upwards,
@@ -2774,19 +2773,19 @@ we can check that the ensemble is being sampled correctly.
 Putting this together this gives:
 
 \begin{code}
-<output prefix=''>
-   <properties shape='(8)' filename='tut2a.md'>
+<output prefix=`'>
+   <properties shape=`(8)' filename=`tut2a.md'>
       [ step, time{picosecond}, conserved{kelvin}, 
         temperature{kelvin}, potential{kelvin}, kinetic_cv{kelvin}, 
         pressure_cv{megapascal}, volume ] 
    </properties>
-   <properties stride='20' shape='(1)' filename='tut2a.force'> 
+   <properties stride=`20' shape=`(1)' filename=`tut2a.force'> 
       [ atom_f{piconewton}(atom=0;bead=0) ] 
    </properties>
-   <trajectory filename='tut2a.pos' stride='100' format='pdb' cell_units='angstrom'>
+   <trajectory filename=`tut2a.pos' stride=`100' format=`pdb' cell_units=`angstrom'>
       positions{angstrom}
    </trajectory>
-   <checkpoint stride='1000' filename='tut2a.restart'/>
+   <checkpoint stride=`1000' filename=`tut2a.restart'/>
 </output>
 \end{code}
 
@@ -2797,7 +2796,7 @@ the {}``mode'' tag must be changed from {}``nvt'' to {}``npt'',
 and a {}``pressure'' tag must be added:
 
 \begin{code}
-<ensemble mode='npt'>
+<ensemble mode=`npt'>
    <pressure> 0 </pressure>
    ...
 </ensemble>
@@ -2816,11 +2815,11 @@ constant temperature algorithms for the atomic degrees of freedom, so choosing
 a time scale of 250 femtoseconds we get:
 
 \begin{code}
-<ensemble mode='npt'>
+<ensemble mode=`npt'>
    <pressure> 0 </pressure>
-   <barostat mode='isotropic'>
-      <thermostat mode='langevin'>
-         <tau units='femtosecond'> 250 </tau>
+   <barostat mode=`isotropic'>
+      <thermostat mode=`langevin'>
+         <tau units=`femtosecond'> 250 </tau>
       </thermostat>
       ...
    </barostat>
@@ -2831,13 +2830,13 @@ a time scale of 250 femtoseconds we get:
 Finally, we will take the barostat time scale to be 250 femtoseconds, giving:
 
 \begin{code}
-<ensemble mode='npt'>
+<ensemble mode=`npt'>
    <pressure> 0 </pressure>
-   <barostat mode='isotropic'>
-      <thermostat mode='langevin'>
-         <tau units='femtosecond'> 250 </tau>
+   <barostat mode=`isotropic'>
+      <thermostat mode=`langevin'>
+         <tau units=`femtosecond'> 250 </tau>
       </thermostat>
-      <tau units='femtosecond'> 250 </tau>
+      <tau units=`femtosecond'> 250 </tau>
    </barostat>
    ...
 </ensemble>
@@ -2859,8 +2858,8 @@ the {}``total\_steps'', {}``\hyperref[OUTPUTS]{output}'' and
 {}``\hyperref[INITIALIZER]{initialize}'' tag section with:
 
 \begin{code}
-<initialize nbeads='4'>
-   <file mode='chk'> tutorial-1_RESTART </file>
+<initialize nbeads=`4'>
+   <file mode=`chk'> tutorial-1_RESTART </file>
 </initialize>
 \end{code}
 
@@ -2912,7 +2911,7 @@ To change the type of socket we simply set the {}``mode'' attribute of the
 {}``\hyperref[FFSOCKET]{ffsocket}'' tag to {}``unix'':
 
 \begin{code}
-<ffsocket mode='unix'>
+<ffsocket mode=`unix'>
    ...
 </ffsocket>
 \end{code}
