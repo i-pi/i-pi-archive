@@ -19,24 +19,28 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  
+FC=gfortran
+FFLAGS=-O3 -J build
+CC=gcc
+
+SRC_F=build/distance.f90 build/LJ.f90 build/SG.f90 build/driver.f90
+OBJECTS=$(SRC_F:.f90=.o) build/sockets.o
+
 .PHONY: all
 
-SOURCES=$(shell ls *.f90)
-MODULES=distance.f90 LJ.f90 SG.f90
-OBJECTS=$(SOURCES:.f90=.o) sockets.o
-all: modules sockets.o driver.x
+all: build_dir $(OBJECTS) ../bin/i-pi-driver
 
-modules: $(MODULES)
-	gfortran -O3 -c $(MODULES)
+build_dir:
+	@mkdir -p build
 
-sockets.o: sockets.c
-	gcc -c -o sockets.o sockets.c
+build/sockets.o: sockets.c
+	$(CC) -c $< -o $@
 
-driver.x: $(OBJECTS)
-	gfortran -O3 -o driver.x $(OBJECTS)
+../bin/i-pi-driver: $(OBJECTS)
+	$(FC) $(FFLAGS) -o $@ $(OBJECTS)
 
-%.o: %.f90
-	gfortran -O3 -c $<
+build/%.o: %.f90
+	$(FC) $(FFLAGS) -c $< -o $@
 
 clean:
-	rm *.o *.mod *.x
+	rm -rf build ../bin/i-pi-driver
