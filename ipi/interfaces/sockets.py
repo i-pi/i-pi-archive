@@ -47,9 +47,9 @@ from ipi.utils.messages import verbosity, warning, info
 
 HDRLEN = 12
 UPDATEFREQ = 10
-TIMEOUT = 1.0
-SERVERTIMEOUT = 2.0*TIMEOUT
-NTIMEOUT = 10
+TIMEOUT = 0.2
+SERVERTIMEOUT = 5.0*TIMEOUT
+NTIMEOUT = 20
 
 def Message(mystr):
    """Returns a header of standard length HDRLEN."""
@@ -473,9 +473,14 @@ class InterfaceSocket(object):
                   k["status"] = "Queued"
                   k["start"] = -1
 
+      if len(self.clients) == 0:
+         searchtimeout = SERVERTIMEOUT
+      else:
+         searchtimeout = 0.0
+
       keepsearch = True
       while keepsearch:
-         readable, writable, errored = select.select([self.server], [], [], 0.0)
+         readable, writable, errored = select.select([self.server], [], [], searchtimeout)
          if self.server in readable:
             client, address = self.server.accept()
             client.settimeout(TIMEOUT)
@@ -485,12 +490,15 @@ class InterfaceSocket(object):
             if (driver.status | Status.Up):
                self.clients.append(driver)
                info(" @SOCKET:   Handshaking was successful. Added to the client list.", verbosity.low)
+               self.poll_iter = UPDATEFREQ   # if a new client was found, will try again a harder next time
+               searchtimeout = SERVERTIMEOUT
             else:
                warning(" @SOCKET:   Handshaking failed. Dropping connection.", verbosity.low)
                client.shutdown(socket.SHUT_RDWR)
                client.close()
          else:
             keepsearch = False
+
 
    def pool_distribute(self):
       """Deals with keeping the list of jobs up-to-date during a force
@@ -502,13 +510,73 @@ class InterfaceSocket(object):
       clients.
       """
 
+      # gets list of pending requests
+      pendr = [ r for r in self.requests if r["status"] == "Queued" ]
+
+      # first: dispatches jobs to free clients (if any!)
+      # tries first to match previous replica<>driver association, then to get new clients, and only finally send the a new replica to old drivers
+      if len(pendr)>0 :
+       for match_ids in ( "match", "none", "free", "any" ):
+         # get clients that are still free
+         freec = self.clients[:]
+         for [r2, c] in self.jobs:
+            freec.remove(c)
+         # ... but don't update the pending requests list!
+
+         for fc in freec[:]:
+            # first, makes sure that the client is REALLY free
+            if not (fc.status & Status.Up):
+               self.clients.remove(fc)   # if fc is in freec it can't be associated with a job (we just checked for that above)
+               continue
+            if fc.status & Status.HasData:
+               continue
+            if not (fc.status & (Status.Ready | Status.NeedsInit | Status.Busy) ):
+               warning(" @SOCKET: Client " + str(fc.peername) + " is in an unexpected status " + str(fc.status) + " at (1). Will try to keep calm and carry on.", verbosity.low)
+               continue
+
+            for r in pendr[:]:
+               if match_ids == "match" and not fc.lastreq is r["id"]:
+                  continue
+               elif match_ids == "none" and not fc.lastreq is None:
+                  continue
+               elif match_ids == "free" and fc.locked:
+                  continue
+               info(" @SOCKET: Assigning [%5s] request id %4s to client with last-id %4s (% 3d/% 3d : %s)" % (match_ids,  str(r["id"]),  str(fc.lastreq), self.clients.index(fc), len(self.clients), str(fc.peername) ), verbosity.high )
+
+               while fc.status & Status.Busy:
+                  fc.poll()
+               if fc.status & Status.NeedsInit:
+                  fc.initialize(r["id"], r["pars"])
+                  fc.poll()
+                  while fc.status & Status.Busy: # waits for initialization to finish. hopefully this is fast
+                     fc.poll()
+               if fc.status & Status.Ready:
+                  fc.sendpos(r["pos"], r["cell"])
+                  r["status"] = "Running"
+                  r["start"] = time.time() # sets start time for the request
+                  #fc.poll()
+                  fc.status = Status.Up | Status.Busy   # we know that the client is busy at this stage!
+                  self.jobs.append([r,fc])
+                  fc.locked =  (fc.lastreq is r["id"])
+                  # removes r from the list of pending jobs
+                  pendr = [nr for nr in pendr if (not nr is r)]
+                  break
+               else:
+                  warning(" @SOCKET: Client " + str(fc.peername) + " is in an unexpected status " + str(fc.status) + " at (2). Will try to keep calm and carry on.", verbosity.low)
+
+      # force a pool_update if there are requests pending
+      #if len(pendr)>0:
+      #   self.poll_iter = UPDATEFREQ
+
+      # now check for client status
       for c in self.clients:
          if c.status == Status.Disconnected : # client disconnected. force a pool_update
-            self._poll_iter = UPDATEFREQ
+            self.poll_iter = UPDATEFREQ
             return
          if not c.status & ( Status.Ready | Status.NeedsInit ):
             c.poll()
 
+      # check for finished jobs
       for [r,c] in self.jobs[:]:
          if c.status & Status.HasData:
             try:
@@ -526,6 +594,7 @@ class InterfaceSocket(object):
               warning(" @SOCKET:   Client got in a awkward state during getforce. Will mark as disconnected and try to carry on.", verbosity.low)
               c.status = Status.Disconnected
               continue
+
             c.poll()
             while c.status & Status.Busy: # waits, but check if we got stuck.
                if self.timeout > 0 and r["start"] > 0 and time.time() - r["start"] > self.timeout:
@@ -558,73 +627,6 @@ class InterfaceSocket(object):
             c.poll()
             c.status = Status.Disconnected
 
- #     freec = self.clients[:]
- #     for [r2, c] in self.jobs:
- #        freec.remove(c)
-
-      # gets list of pending requests
-      pendr = [ r for r in self.requests if r["status"] == "Queued" ]
-
-#      if (len(freec)>0 and len(pendr)>0) :
-#         print "Clients previous requests: ",
-#         for fc in freec[:]:
-#            print fc.lastreq,
-#         print ""
-#         print "Requests on hold: ",
-#         for r in pendr[:]:
-#            print r["id"],
-#         print ""
-
-      # tries first to match previous replica<>driver association, then to get new clients, and only finally send the a new replica to old drivers
-      for match_ids in ( "match", "none", "free", "any" ):
-         # get clients that are still free
-         freec = self.clients[:]
-         for [r2, c] in self.jobs:
-            freec.remove(c)
-         # ... but don't update the pending requests list!
-
-
-         for fc in freec[:]:
-#            matched = False
-            # first, makes sure that the client is REALLY free
-            if not (fc.status & Status.Up):
-               self.clients.remove(fc)   # if fc is in freec it can't be associated with a job (we just checked for that above)
-               continue
-            if fc.status & Status.HasData:
-               continue
-            if not (fc.status & (Status.Ready | Status.NeedsInit | Status.Busy) ):
-               warning(" @SOCKET: Client " + str(fc.peername) + " is in an unexpected status " + str(fc.status) + " at (1). Will try to keep calm and carry on.", verbosity.low)
-               continue
- #       for match_ids in ( "match", "none", "free", "any" ):
-            for r in pendr[:]:
-               if match_ids == "match" and not fc.lastreq is r["id"]:
-                  continue
-               elif match_ids == "none" and not fc.lastreq is None:
-                  continue
-               elif match_ids == "free" and fc.locked:
-                  continue
-               info(" @SOCKET: Assigning [%5s] request id %4s to client with last-id %4s (% 3d/% 3d : %s)" % (match_ids,  str(r["id"]),  str(fc.lastreq), self.clients.index(fc), len(self.clients), str(fc.peername) ), verbosity.high )
-
-               while fc.status & Status.Busy:
-                  fc.poll()
-               if fc.status & Status.NeedsInit:
-                  fc.initialize(r["id"], r["pars"])
-                  fc.poll()
-                  while fc.status & Status.Busy: # waits for initialization to finish. hopefully this is fast
-                     fc.poll()
-               if fc.status & Status.Ready:
-                  fc.sendpos(r["pos"], r["cell"])
-                  r["status"] = "Running"
-                  r["start"] = time.time() # sets start time for the request
-                  fc.poll()
-                  self.jobs.append([r,fc])
-                  fc.locked =  (fc.lastreq is r["id"])
-                  # removes r from the list of pending jobs
-                  pendr = [nr for nr in pendr if (not nr is r)]
-                  break
-               else:
-                  warning(" @SOCKET: Client " + str(fc.peername) + " is in an unexpected status " + str(fc.status) + " at (2). Will try to keep calm and carry on.", verbosity.low)
-
    def poll(self):
       """The main thread loop.
 
@@ -635,8 +637,8 @@ class InterfaceSocket(object):
 
       # makes sure to remove the last dead client as soon as possible -- and to get clients if we are dry
       if self.poll_iter >= UPDATEFREQ or len(self.clients)==0 or (len(self.clients) > 0 and not(self.clients[0].status & Status.Up)):
-         self.pool_update()
          self.poll_iter = 0
+         self.pool_update()
 
       self.poll_iter += 1
       self.pool_distribute()
