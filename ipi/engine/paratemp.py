@@ -59,6 +59,10 @@ class ParaTemp(dobject):
       Parameters:
          tlist: List of temperatures to be copied in temp_list
          stride: Exchange stride, to be copied in stride
+         ilist: List of indices (that associate replicas to temperatures)
+         wteml: List of average energies for WTE
+         wtesl: List of estimated energy fluctuations for WTE
+         wtegl: List of gamma parameters for WTE
       """
 
       self.stride = stride
@@ -155,6 +159,7 @@ class ParaTemp(dobject):
       return (vij, fij)
 
    def get_wtevf(self):
+      """ Gets the wte bias and force """
 
       vlist=np.zeros((len(self.temp_list),2), float)
       for i in range(len(self.temp_list)):
@@ -162,6 +167,7 @@ class ParaTemp(dobject):
       return vlist
 
    def wtestep(self, step=-1):
+      """ Applies the WTE force (effectively a scaling of the physical force. """
 
       if len(self.wte_means) == 0 or  len(self.wte_sigmas) == 0: return
 
@@ -171,7 +177,6 @@ class ParaTemp(dobject):
          ui = s.forces.pot
          f = depstrip(s.forces.f)*self.system_f[i]
          s.beads.p += f*s.ensemble.dt*0.5
-
 
 
    def swap(self, step=-1):
@@ -201,7 +206,7 @@ class ParaTemp(dobject):
                vji, dummy = self.wtevf(j, self.temp_index[i])
             else:
                vii = vij = vji = vjj = 0
-               
+
             pxc = np.exp(
               (betai * syspot[i] + syspath[i]/betai + betai * vii +
                betaj * syspot[j] + syspath[j]/betaj + betaj * vjj) -
@@ -231,8 +236,14 @@ class ParaTemp(dobject):
 
 
    def softexit(self):
+      """ A hook for softexit """
+
       if not self.parafile is None:
          self.parafile.close()
       self.parafile = None
+      if not self.wtefile is None:
+         self.wtefile.close()
+      self.wtefile = None
+
 
 

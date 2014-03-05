@@ -34,12 +34,14 @@ class InputParaTemp(Input):
       temp_list: The list of temperatures for the replicas. Must match
           the size of the system list.
       stride: How often -- on average -- an exchange should be made.
+      temp_index: Connection between systems and ensemble temperatures.
+      wte_*: Parameters for well-tempered ensemble simulations
    """
 
 
    fields={"temp_list" : (InputArray, {"dtype": float,
                                        "default"   : input_default(factory=np.zeros, args = (0,)),
-                                         "help"      : "List of temperatures for a parallel tempering simulation",
+                                         "help"      : "List of temperatures of different replicas in a parallel tempering simulation. ",
                                          "dimension" : "temperature" }),
            "wte_means" : (InputArray, {"dtype": float,
                                        "default"   : input_default(factory=np.zeros, args = (0,)),
@@ -58,11 +60,16 @@ class InputParaTemp(Input):
                                          }),
            "stride" : (InputValue, {"dtype"        : float,
                                       "default"      : 0.0,
-                                      "help"         : "Every how often to try exchanges (on average)."
+                                      "help"         : "Every how often to try exchanges (on average) -- in number of time steps."
                                       }),
          }
 
-   default_help = "Contains all the options for a parallel tempering simulation."
+   default_help = """Contains all the options for a parallel tempering simulation.
+               Requires multiple systems to be present. Optionally, can add a
+               potential energy-dependent bias to the simulation to perform
+               well-tempered ensemble runs -- that combine with PT to enhance the
+               probability of exchanges. """
+
    default_label = "PARATEMP"
 
    def __init__(self, help=None,  default=None):
