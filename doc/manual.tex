@@ -496,7 +496,6 @@ accelerates the convergence of the kinetic energy.
     with parallel tempering
 \end{itemize}
 \end{itemize}
-%TODO add parallel tempering and NST when they've been developed
 
 \section{Licence and credits}
 
@@ -1117,25 +1116,38 @@ All the input files are contained in the directory {}``examples'', which is
 subdivided into the following directories:
 \begin{description}
 \item[{tutorial:}] Contains the input files needed to run the
-tutorial in \ref{tutorial}.
+tutorial in chapter \ref{tutorial}.
 \item [{lj:}] This gives a simple classical Lennard-Jones simulation of
 Ne. The state points are given by (\(N\), \(\rho\), \(T\)) = (864, 0.35,
 1.62), (\(N\), \(\rho\), \(T\)) = (864, 0.75, 1.069) and (\(N\), \(\rho\), \(T\))
 = (864, 0.88, 1.095) in reduced Lennard-Jones units, so that the results
 can be compared to those in \cite{verl67pr}.
 \item [{ph2:}] This simulates para-hydrogen using the isotropic Silvera-Goldman
-pair potential \cite{silv-gold78jcp}. There are three directories, {}``RPMD'', {}``nvt''
-and {}``Tuckerman''. {}``RPMD'' and {}``nvt'' have tests which
-can be compared to the results of \cite{mill-mano05jcp}, and {}``Tuckerman''
-has tests which can be compared to the results of \cite{mart+99jcp}.
-\item [{qespresso:}] This has two simple examples to test to see if the Quantum-Espresso
-client is functioning correctly. There is one simple 4-atom lithium
-test, and a test using a single water molecule.
+pair potential \cite{silv-gold78jcp}. The {}``RPMD'' and {}``nvt'' 
+sub-directories have tests which
+can be compared to the results of \cite{mill-mano05jcp}, whereas the
+{}``MHT-*'' directories
+have tests which can be compared to the results of \cite{mart+99jcp}.
+
+There is also a parallel tempering \cite{earl-deem05pccp} test, 
+in the directory {}``paratemp'',
+a test of the well-tempered ensemble \cite{bono-parr10prl}, in the directory
+{}``parawte'',
+and a test for the use of multiple thermostats, in the directory {}``multi''.
+\item [{pylj:}] This gives a simple 38 particle Lennard-Jones example to 
+demonstrate how the parallel tempering \cite{earl-deem05pccp} 
+functionality works. It is also the
+only example which uses the built in {}``fflj'' tag, which applies the internal
+Python Lennard-Jones script rather than using a socket interface to talk to
+the client code.
 \item [{harmonic:}] This has a simple example of a 1D harmonic oscillator.
 This demonstrates the displaced path integral momentum distribution
 estimator as given in \cite{lin+10prl}. As the momentum distribution
 is known analytically for this simple system, this provides an indication
 of how well the method is working.
+\item [{qespresso:}] This has two simple examples to test to see if the Quantum-Espresso
+client is functioning correctly. There is one simple 4-atom lithium
+test, and a test using a single water molecule.
 \item [{lammps:}] This has a simple implementation of the q-TIP4P-F empirical
 water model of \cite{habe+09jcp} using the classical molecular dynamics
 code LAMMPS. It demonstrates both the convergence of the PIGLET method
@@ -1147,9 +1159,11 @@ between carbon atoms in graphene. This uses the optimized Tersoff
 parameters for carbon given in \cite{lind-broi10prb}.
 \item [{cp2k:}] Contains the tests for the CP2K client code. Holds input files
 to run the high-pressure water calculations
-presented in [cpc publication citation].
+presented in \cite{ceri+14cpc}.
+\item [{fhi-aims}] Contains the tests for the FHI-AIMS client code. Holds
+input files to run a classical simulation of water, and a quantum simulation
+of the Zundel cation.
 \end{description}
-%TODO These are now completely wrong, again (sigh...)
 
 \chapter{User guide}
 

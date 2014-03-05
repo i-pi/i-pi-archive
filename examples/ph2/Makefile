@@ -15,8 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http.//www.gnu.org/licenses/>.
 
-.PHONY: all clean mht-25K mht-20K mht-17K mht-14K nvt multi rpmd paratemp parawte paraptwte
-all: mht-25K mht-20K mht-17K mht-14K nvt multi rpmd paratemp parawte paraptwte
+.PHONY: all clean mht-25K mht-20K mht-17K mht-14K nvt multi rpmd paratemp parawte
+all: mht-25K mht-20K mht-17K mht-14K nvt multi rpmd paratemp parawte
 
 driver:=../../../drivers/driver.x
 IPI:=../../../i-pi
@@ -46,11 +46,6 @@ paratemp:
 parawte:
 	cd parawte; $(IPI) input.xml & sleep 3; \
 	$(call run_driver,3,ph2_wte); \
-	wait
-
-paraptwte:
-	cd paraptwte; $(IPI) input.xml & sleep 3; \
-	$(call run_driver,3,ph2_ptwte); \
 	wait
 
 mht-25K:
