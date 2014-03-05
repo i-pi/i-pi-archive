@@ -1,5 +1,5 @@
 <simulation verbosity='low' mode="paratemp">
-   <output prefix='ph2'>
+   <output prefix='paratemp'>
       <properties stride='10' filename='out'>  [
              step, time{picosecond}, conserved{kelvin}, temperature{kelvin},
              kinetic_cv{kelvin}, potential{kelvin}, pressure_cv{megapascal},
