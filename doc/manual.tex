@@ -399,10 +399,11 @@ multiple requests in parallel.
 On the force evaluation side, the task of splitting the request of a
 force evaluation into individual components and individual beads is
 accomplished by a chain of three objects, Forces, ForceComponent and ForceBead.
-is the main force Forces evaluator, that is built from the prototypes
-listed within the \hyperref[FORCES]{forces} field of \hyperref[SYSTEM]{system}.
-Each \hyperref[FORCECOMPONENT]{force} item within the
-\hyperref[FORCES]{forces} tag describe one component of the force --
+Forces is the main force evaluator, that is built from the prototypes
+listed within the ``\hyperref[FORCES]{forces}'' field of
+``\hyperref[SYSTEM]{system}''.
+Each ``\hyperref[FORCECOMPONENT]{force}'' item within the
+``\hyperref[FORCES]{forces}'' tag describe one component of the force --
 in our example one ForceComponent bound to a forcefield of type A,
 evaluated on 32 beads, and one ForceComponent bound to type B, evaluated
 on 8 beads. Forces contains the machinery that automatically contracts the
@@ -495,6 +496,7 @@ accelerates the convergence of the kinetic energy.
     with parallel tempering
 \end{itemize}
 \end{itemize}
+%TODO add parallel tempering and NST when they've been developed
 
 \section{Licence and credits}
 
@@ -656,18 +658,18 @@ Either way, it will now be possible to run the code automatically, using
 
 \subsection{\ipi download}
 
-A tar file can be downloaded from the website \url{gle4md.berlios.de}.
+A zip file can be downloaded from the website \url{gle4md.berlios.de}.
 To install this you need to input the following command:
 
 \begin{code}
-> tar xf [ipi_tar_file.tar]
+> unzip i-pi_1.0.zip
 \end{code}
 
 
 You can also obtain a local clone of the git repository (listed on \url{gle4md.berlios.de}) using:
 
 \begin{code}
-> git clone [repository name]
+> git clone https://github.com/i-pi/i-pi.git
 \end{code}
 
 The \ipi executable will run immediately, without needing to be installed
@@ -1102,6 +1104,7 @@ from the internet -- which is not always possible when behind a
 an outgoing connection to the internet, which often requires ssh tunnelling
 through a login node (see section~\ref{distrib} for more details).
 \end{enumerate}
+
 \section{Testing the install}
 
 \label{tests}
@@ -1146,6 +1149,7 @@ parameters for carbon given in \cite{lind-broi10prb}.
 to run the high-pressure water calculations
 presented in [cpc publication citation].
 \end{description}
+%TODO These are now completely wrong, again (sigh...)
 
 \chapter{User guide}
 
@@ -1175,7 +1179,7 @@ specifying how the options of the thermostat class should be interpreted.
 A xml tag has the following syntax:
 
 \begin{code}
-<tag_name attribute_name='attribute_data'>tag_data</tag_name>
+<tag_name attribute_name=`attribute_data'>tag_data</tag_name>
 \end{code}
 
 The syntax for the different types of tag data is given below:
@@ -1207,7 +1211,7 @@ represented in the code as an array of shape
 and 8 beads, then this can be represented in the xml input file as:
 
 \begin{code}
-<beads nbeads='8' natoms='20'>
+<beads nbeads=`8' natoms=`20'>
    <q shape=`(8,60)'>[ q11x, q11y, q11z, q12x, q12y, ... ]</q>
    ...
 </beads>
@@ -1224,11 +1228,11 @@ For example,
 the system that is being studied is partly defined by the thermodynamic
 ensemble that should be sampled, which in turn may be partly defined
 by the pressure, and so on. To make this dependence clear in the code
-the global simulation object which holds all the data contains
-an ensemble object, which contains a pressure variable.
+the system object which holds all the configuration and algorithmic
+data contains an ensemble object, which contains a pressure variable.
 
 Therefore the input file is specified
-by having a {}``\hyperref[SIMULATION]{simulation}'' tag, containing an
+by having a {}``\hyperref[SYSTEM]{system}'' tag, containing an
 {}``\hyperref[ENSEMBLE]{ensemble}''
 tag, which itself contains a {}``pressure'' tag, which will contain
 a float value corresponding to the external pressure. In this
@@ -1239,13 +1243,13 @@ pressure of 1e-7 atomic pressure units. This would be specified by
 the following input file:
 
 \begin{code}
-<simulation>
-   <ensemble mode='npt'>
+<system>
+   <ensemble mode=`npt'>
       <pressure> 1e-7 </pressure>
       ...
    </ensemble>
    ...
-</simulation>
+</system>
 \end{code}
 
 To help detect any user error the recognized tag names, data types
@@ -1266,26 +1270,26 @@ MPa. Instead of converting this to the atomic unit of pressure, it
 is possible to use pascals directly using:
 
 \begin{code}
-<simulation>
+<system>
    <ensemble mode=`npt'>
       <pressure units=`pascal'> 3e6 </pressure>
       ...
    </ensemble>
    ...
-</simulation>
+</system>
 \end{code}
 
 The code can also understand S.I. prefixes, so this can be simplified
 further using:
 
 \begin{code}
-<simulation>
-   <ensemble mode='npt'>
+<system>
+   <ensemble mode=`npt'>
       <pressure units=`megapascal'> 3 </pressure>
       ...
    </ensemble>
    ...
-</simulation>
+</system>
 \end{code}
 
 A full list of which units are defined for which dimensions
@@ -1297,10 +1301,11 @@ can be found in the units.py module.
 The input file can contain a {}``\hyperref[INITIALIZER]{initialize}'' tag, which
 contains a number of fields that determine the starting values of the various
 quantities that define the state of the simulation -- atomic positions, cell parameters, velocities, \ldots.
-These fields (\hyperref[INITPOSITIONS]{positions},  \hyperref[INITVELOCITIES]{velocities},
-\hyperref[INITCELL]{cell},  \hyperref[INITMASSES]{masses},  \hyperref[INITLABELS]{labels},
-\hyperref[INITFILE]{file}) specify how the values should be obtained:
+These fields (``\hyperref[INITPOSITIONS]{positions}'', ``\hyperref[INITVELOCITIES]{velocities}'',
+``\hyperref[INITCELL]{cell}'',  ``\hyperref[INITMASSES]{masses}'',  ``\hyperref[INITLABELS]{labels}'',
+``\hyperref[INITFILE]{file}'') specify how the values should be obtained:
 either from a manually-input list or from an external file.
+
 
 \subsubsection{Configuration files}
 
@@ -1319,31 +1324,34 @@ The currently accepted file formats are:
 \end{itemize}
 the last of which will be described in the next section.
 
+
 Depending on the field name, the values read from the external file will
-be used to initialize one component of the simulation or another (e.g. the positions
-or the velocities). The \hyperref[INITFILE]{file} tag can be used as a shortcut
+be used to initialize one component of the simulation or another
+(e.g. the positions or the velocities).
+The ``\hyperref[INITFILE]{file}'' tag can be used as a shortcut
 to initialize the atom positions, labels, masses and possibly
 the cell parameters at the same time. For instance,
 
 \begin{code}
-<initialize nbeads="8">
-   <file mode="pdb"> init.pdb </file>
+<initialize nbeads=`8'>
+   <file mode=`pdb'> init.pdb </file>
 </initialize>
 \end{code}
 
 \noindent is equivalent to
 
 \begin{code}
-<initialize nbeads="8">
-   <positions mode="pdb"> init.pdb </positions>
-   <labels mode="pdb"> init.pdb </labels>
-   <masses mode="pdb"> init.pdb </masses>
-   <cell mode="pdb"> init.pdb </cell>
+<initialize nbeads=`8'>
+   <positions mode=`pdb'> init.pdb </positions>
+   <labels mode=`pdb'> init.pdb </labels>
+   <masses mode=`pdb'> init.pdb </masses>
+   <cell mode=`pdb'> init.pdb </cell>
 </initialize>
 \end{code}
 
-In practice, the using the \hyperref[INITFILE]{file} tag will only read the information that
-can be inferred from the given file type, so for an `xyz' file, the cell
+In practice, the using the ``\hyperref[INITFILE]{file}'' tag will only
+read the information that
+can be inferred from the given file type, so for an xyz file the cell
 parameters will not be initialized.
 
 
@@ -1504,7 +1512,7 @@ These tags have the format:
 This is very similar to the
 {}``\hyperref[PROPERTIES]{properties}'' tag, except that it has the
 additional tags {}``format'' and {}``cell\_units'', and only one
-\emph{traj\_name} quantity can be specified per file. `format' specifies the format
+``traj\_name'' quantity can be specified per file. `format' specifies the format
 of the output file, and `cell\_units' specifies the units in which
 the cell dimensions are output.
 Depending on the quantity being output, the trajectory may consist of just
@@ -1568,7 +1576,7 @@ that a longer run is needed to gather sufficient statistics, or if \ipi{} is ter
 before the desired number of steps have been completed.
 
 \ipi will try to generate a RESTART file when it terminates, either because
-\emph{total\_time} has elapsed, or because it received a (soft) kill signal
+``total\_time'' has elapsed, or because it received a (soft) kill signal
 by the operating system. A soft exit can also be forced by creating
 an empty file named ``EXIT'' in
 the directory in which \ipi is running.
@@ -1681,7 +1689,7 @@ as soon as a single job has started, and can carry on advancing the
 simulation even if one of the clients becomes unresponsive.
 
 Especially for \emph{ab initio} calculations, there is an advantage
-in running with $m=n$. \ipi will always try to send the coordinates for one
+to running with $m=n$. \ipi will always try to send the coordinates for one
 path integral replica to the client that computed it at the previous
 step: this reduces the change in the particle positions between
 force evaluations, so that the charge density/wavefunction from the
@@ -1715,7 +1723,7 @@ for the calculation. UNIX-domain sockets create a special file
 in the local file system, that serves as a rendezvous point
 between server and clients, and are uniquely identified by the
 name of the file itself, that can be specified in the ``address'' tag of
-``\hyperref[FFSOCKET]{socket}'' in the xml input file and in
+``\hyperref[FFSOCKET]{ffsocket}'' in the xml input file and in
 the input of the client.
 
 Unfortunately, UNIX sockets do not allow one to run \ipi{} and
@@ -1953,11 +1961,12 @@ possibly followed by their attributes.
 Here we give a simple step-by-step guide through an example
 simulation, exploring
 some of the more generally useful options that \ipi offers and making
-no assumptions of previous experience of this code or other MD codes.
+no assumptions of previous experience of this or other MD codes.
 Excerpts from the relevant input files are reproduced here, for explanation
-purposes, but to get the most out of this tutorial the user is strongly encouraged
+purposes, but to get the most out of this
+tutorial the user is strongly encouraged
 to work through it themselves. For this purpose, the input files
-have been included with the \ipi distribution, in the {}``test/tutorial''
+have been included with the \ipi distribution, in the {}``examples/tutorial''
 directory.
 
 The chosen problem is that of a small \emph{NPT} simulation of para-hydrogen,
@@ -1970,8 +1979,7 @@ We will take (\(N\),\(P\),\(T\)) = (108, 0, 25 K).
 
 \subsection{Client code}
 
-Let us now consider the problem of how to use \ipi to run a \emph{NPT}
-simulation of para-hydrogen. The first thing that is required is a
+The first thing that will be required is a
 client code that is capable of calculating the potential interactions
 of para-hydrogen molecules. Fortunately, one of the client codes distributed
 with \ipi has an appropriate empirical potential already hard-coded
@@ -1997,7 +2005,7 @@ and {}``-p 31415'' sets the port number to 31415.
 
 Note that usually this step will require setting up appropriate
 client code input files, possibly for an \emph{ab initio} electronic
-structure code, and so is generally a more involved process. Refer
+structure calculation, and so is generally more difficult than this. Refer
 to \ref{runningclients}, and the documentation of the appropriate
 client code, for more details on how to do this step.
 
@@ -2007,16 +2015,15 @@ client code, for more details on how to do this step.
 Now that the client code is ready, an appropriate xml input file needs
 to be created from which the host server and the simulation data can
 be initialized. Here, we will go step by step through the creation
-of a minimal input file for a simple \emph{NVT} equilibration run. Note that
-the working final version is held within the {}``tutorial-1'' directory
+of a minimal input file for a simple \emph{NVT} equilibration run.
+The working final version is held within the {}``tutorial-1'' directory
 for reference.
 
 Firstly, when reading the input file the \ipi xml functions look
-for a {}``simulation''
+for a {}``\hyperref[SIMULATION]{simulation}''
 tag as a sign to start reading data. For those familiar with xml jargon,
-we have defined {}``\hyperref[SIMULATION]{simulation}'' as the
-root tag, so all the input data read in must start and end with a
-{}``\hyperref[SIMULATION]{simulation}'' tag, as show below:
+we have defined {}``\hyperref[SIMULATION]{simulation}'' as the root tag
+so all the input data read in must start and end with it, as show below:
 
 \begin{code}
 <simulation>
@@ -2028,76 +2035,147 @@ xml syntax requires a set of hierarchially nested tags, each of which
 contain data and/or more tags. Also, \ipi itself requires certain
 tags to be present, and keeps track of which tags are supposed to
 be where. More information about which tags are available can be found
-in \ref{hierarchy}, more information on xml syntax can be found in
-\ref{ifilestructure}, and possible errors which can occur if the
-input file is not well formed can be found in \ref{trouble}.
 
-For the sake of this first tutorial however, we will simply discuss the
-those tags which are needed for a single \emph{NVT} equilibration run.
-The most important tags are {}``\hyperref[INITIALIZER]{initialize}'',
-{}``\hyperref[ENSEMBLE]{ensemble}'',
-{}``total\_steps'' and {}``\hyperref[FORCES]{forces}''.
-These correspond to the tag to initialize the atom configurations,
-the tag to define the appropriate ensemble,
-the tag to set the length of the simulation and the tag to specify the
-client code respectively.
-We will also discuss {}``\hyperref[OUTPUTS]{output}'',
-which is used to define what output data
-is generated by the code.
+To begin with, we will only consider the fundamental tags which will be used
+in every simulation. Firstly, the data that defines the system that is being
+studied is given by the {}``\hyperref[SYSTEM]{system}'' tag. This has three
+major components, {}``\hyperref[INITIALIZER]{initialize}'',
+{}``\hyperref[ENSEMBLE]{ensemble}''
+and {}``\hyperref[FORCES]{forces}'', which specify how to initialize the
+system, which dynamics algorithms are used and the choice of client codes
+respectively. Similarly, the data used to initialize the client codes are given
+by the {}``\hyperref[FFSOCKET]{ffsocket}'' tag, and the output data is
+specified by the {}``\hyperref[OUTPUTS]{output}'' tag. Finally, the total
+number of steps is given by {}``total\_steps''.
 
-At this point then, the input file looks like:
+This then gives us the following template for a standard \ipi simulation:
 
 \begin{code}
 <simulation>
    <total_steps>
       ...
    </total_steps>
-   <initialize>
+   <ffsocket>
       ...
-   </initialize>
-   <forces>
-      ...
-   </forces>
-   <ensemble>
-      ...
-   </ensemble>
+   </ffsocket>
+   <system>
+      <initialize>
+         ...
+      </initialize>
+      <forces>
+         ...
+      </forces>
+      <ensemble>
+         ...
+      </ensemble>
+   </system>
    <output>
       ...
    </output>
 </simulation>
 \end{code}
 
-\subsubsection{Initializing the configurations}
+\subsubsection{Creating the server socket}
 
-Now let us consider each of these tags in turn. Firstly,
-{}``\hyperref[INITIALIZER]{initialize}''.
-As the name suggests, this initializes the state of the system, so
-this is where we will specify the atom positions and the cell
-parameters. Firstly, this takes an attribute which specifies the number
-of replicas of the system, called {}``nbeads''. An attribute is
-a particular type of xml syntax designed to specify a single bit of
-data, and has the following syntax:
+%Now let us consider each of these tags in turn. Firstly, let us consider the
+%{}``\hyperref[FORCES]{forces}'' section, which deals with communication
+%with the client codes. Since in this example we do not use ring-polymer contraction,
+%we only need to specify a single {}``\hyperref[FFSOCKET]{socket}'' tag:
+%
+%\begin{code}
+%<forces>
+%   <socket>
+%      ...
+%   </socket>
+%</forces>
+%\end{code}
+
+Now let us consider how each of these tags are used to initialize the
+simulation. Firstly, there are two tags that deal with setting up communication
+with the client codes: {}``\hyperref[FFSOCKET]{ffsocket}'' and
+{}``\hyperref[FORCES]{forces}''.
+
+{}``\hyperref[FFSOCKET]{ffsocket}'' gives all the data needed to create a socket
+interface with a client code. In theory, other communication types could be
+used (for example there is a Python only Lennard-Jones implementation included
+with \ipi which is specified by the {}``\hyperref[FFLJ]{fflj}'' tag), but for
+this tutorial we will only use sockets.
+
+A socket is specified by three parameters; the port number, the hostname,
+and whether it is a unix or an internet socket.
+These are specified by the {}``port'' and {}``address'' tags
+and {}``mode'' attributes respectively.
+To match up with the client socket specified above,
+we will take an internet socket on the hostname localhost and
+use port number 31415.
+
+Also, every forcefield must be given a unique identifier
+using the {}``name'' attribute, which in this case we will assign the value
+{}``driver''. The resulting {}``\hyperref[FFSOCKET]{ffsocket}'' section
+is then:
 
 \begin{code}
-<initialize nbeads='4'>
-   ...
-</initialize>
+<ffsocket mode=`inet' name=`driver'>
+   <address> localhost </address>
+   <port> 31415 </port>
+</ffsocket>
 \end{code}
 
 Note that an attribute forms part of the opening tag, and that the
-value being assigned to it is held within quotation marks. In this
-case, we have set the number of replicas, or beads, to 4.
+value being assigned to it is held within quotation marks. In the above
+example, the {}``mode'' attribute is being given the value {}``inet''
+and the {}``name'' attribute the value {}``driver''.
 
-Next, we must specify the atomic configuration. Rather than initialize
-the atom positions manually, we will instead use a separate configuration
-file for this purpose.
-Here we will discuss two of the input formats that are compatible
-with \ipi, xyz files and pdb files.
+More than one socket interface may be specified by using multiple
+{}``\hyperref[FFSOCKET]{ffsocket}'' tags, which may
+be useful if more than one system is being simulated at once, or
+if different parts of the potential are being calculated with different
+client codes. To use a particular socket interface for a system, the
+{}``\hyperref[FORCES]{forces}'' section must be modified to include its
+identification string. In this example this is done by:
 
-Note that, for the sake of this tutorial, we have
-included valid xyz and pdb input
-files in the {}``tutorial-1'' directory called {}``our\_ref.xyz''
-and {}``our\_ref.pdb'' respectively.
+\begin{code}
+<system>
+   <forces>
+      <force> driver </force>
+   </forces>
+   ...
+</system>
+\end{code}
+
+See how the {}``name'' tag of {}``\hyperref[FFSOCKET]{ffsocket}'' is
+used as input for the {}``\hyperref[FORCECOMPONENT]{force}'' tag.
+The latter has the options which determine how a particular forcefield is used;
+its attributes {}``nbeads'' and {}``weight'' determining how many replicas
+should be used to evaluate the forces and a multiplicative constant to
+be used to weight the output respectively. For the sake of simplicity, and
+since neither is needed here, the defaults (i.e. nbeads \(=n\) and weight \(=1\))
+are used.
+
+\subsubsection{Initializing the configurations}
+
+The initial state of the system is defined by
+the {}``\hyperref[INITIALIZER]{initialize}'' tag data.
+As the name suggests, this initializes the state of the system, so
+this is where we will specify the atom positions and the cell
+parameters. Firstly, this takes an attribute which specifies the number
+of replicas of the system, called {}``nbeads'':
+
+\begin{code}
+<system>
+   <initialize nbeads=`4'>
+      ...
+   </initialize>
+   ...
+</system>
+\end{code}
+
+Rather than initialize the atom positions manually, we will instead
+use a separate configuration file for this purpose.
+Two types of input formats are compatible with \ipi, xyz files and pdb files.
+For reference, valid xyz and pdb input files have been included in the
+{}``tutorial-1'' directory called {}``our\_ref.xyz'' and {}``our\_ref.pdb''
+respectively.
 
 The xyz format is the simplest input format
 for a configuration file that \ipi accepts, and has the following
@@ -2128,8 +2206,7 @@ is that it is free-formatted, and so there is no set precision
 to which each value must be written. This greatly simplifies
 both reading and writing these files.
 
-The other file format that we can use is the pdb format. This
-has the following structure:
+The pdb format is more complicated, and has the following structure:
 
 \begin{code}
 TITLE insert title here...
@@ -2137,6 +2214,7 @@ CRYST1        a        b        c      A      B      C P 1           1
 ATOM      1   n1   1     1          x1      y1      z1  0.00  0.00             0
 ATOM      2   n2   1     1          x2      y2      z2  0.00  0.00             0
 ...
+END
 \end{code}
 where a, b and c are the cell vector lengths, A, B and C are the angles between
 them, n1 and n2 are the labels for atoms 1 and 2, and (x1, y1, z1)
@@ -2154,9 +2232,9 @@ Here we will show how to specify the xml input file
 in both of these cases, assuming that the user has already
 created the configuration file themselves.
 Note that these file formats can be read by
-visualization programs such as VMD, and so it is generally advised
-when making your own input files to
-use such software to make sure that the configuration is as expected.
+visualization programs such as VMD, and so it is recommended that
+such software is always used to make sure that the syntax and input data are
+correct.
 
 To use a configuration file the {}``\hyperref[INITFILE]{file}'' tag in
 {}``\hyperref[INITIALIZER]{initialize}'' should be used.
@@ -2168,8 +2246,7 @@ implicitly set based on the atom label. The pdb configuration file
 will also be used to set the cell parameters.
 
 Let us take these two file types in turn, and form the appropriate
-input sections. First, the xyz file.
-There are two attributes which are
+input sections. First, the xyz file. There are two attributes which are
 relevant to the {}``\hyperref[INITFILE]{file}'' tag
 for our current problem, {}``mode'' and {}``units''.
 {}``mode'' is used to describe what kind of data is being used to
@@ -2181,38 +2258,36 @@ Note that if no units are specified then atomic units are assumed.
 For more information on the \ipi unit conversion libraries,
 and the available units, see \ref{inputunits}.
 
-This then gives:
+At this point we have the following input section:
 
 \begin{code}
-<initialize nbeads='4'>
-   <file mode='xyz' units='angstrom'> our_ref.xyz </file>
+<initialize nbeads=`4'>
+   <file mode=`xyz' units=`angstrom'> our_ref.xyz </file>
    ...
 </initialize>
 \end{code}
 
-In this case, since the cell parameters are not specified in the
-configuration file we must specify them separately.
-To initialize just the cell parameters,
-we use the tag {}``\hyperref[INITCELL]{cell}''.
-These could in theory be set using a separate
-file, but here we will initialize them manually. Taking a cubic cell
-with cell parameter 17.847 angstroms, we can specify this using
+Since the cell parameters are not specified in the xyz file format
+we must specify them separately, using the {}``\hyperref[INITCELL]{cell}'' tag.
+In theory a separate file could be used just for the cell parameters,
+but here we will initialize them manually. Here we want a cubic cell
+with cell parameter 17.847 angstroms, which can be specified using
 the {}``\hyperref[INITCELL]{cell}'' tag in three different ways:
 
 \begin{code}
-<cell mode='manual' units='angstrom'>
+<cell mode=`manual' units=`angstrom'>
    [17.847, 0, 0, 0, 17.847, 0, 0, 0, 17.847]
 </cell>
 \end{code}
 
 \begin{code}
-<cell mode='abcABC' units='angstrom'>
+<cell mode=`abcABC' units=`angstrom'>
    [17.847, 17.847, 17.847, 90, 90, 90]
 </cell>
 \end{code}
 
 \begin{code}
-<cell mode='abc' units='angstrom'>
+<cell mode=`abc' units=`angstrom'>
    [17.847, 17.847, 17.847]
 </cell>
 \end{code}
@@ -2222,13 +2297,13 @@ Note the use of the different {}``mode'' attributes, {}``manual'',
 matrix manually, the second takes the length of the three unit vectors
 and the angles between them in degrees, and the last assumes an orthorhombic
 cell and so only takes the length of the three unit vectors as arguments.
-We will take the last version for brevity, giving as our final
+We will take the last version for brevity, giving the following
 {}``\hyperref[INITIALIZER]{initialize}'' section:
 
 \begin{code}
-<initialize nbeads='4'>
-   <file mode='xyz' units='angstrom'> our_ref.xyz </file>
-   <cell mode='abc' units='angstrom'>
+<initialize nbeads=`4'>
+   <file mode=`xyz' units=`angstrom'> our_ref.xyz </file>
+   <cell mode=`abc' units=`angstrom'>
       [17.847, 17.847, 17.847]
    </cell>
    ...
@@ -2241,61 +2316,27 @@ tag needs be specified and the {}``mode'' tag should be
 set to {}``pdb'':
 
 \begin{code}
-<initialize nbeads='4'>
-   <file mode='pdb' units='angstrom'> our_ref.pdb </file>
+<initialize nbeads=`4'>
+   <file mode=`pdb' units=`angstrom'> our_ref.pdb </file>
    ...
 </initialize>
 \end{code}
 
 As well as initializing all the atom positions, this section
-can also be used to set the atom velocities. Rather than setting these manually,
-it is usually simpler to sample these randomly from a Maxwell-Boltzmann
-distribution. This can be done using the
+can also be used to set the atom velocities. Rather than setting these manually
+or via a file, it is simpler to generate these automatically by sampling from a
+Maxwell-Boltzmann distribution. This can be done using the
 {}``\hyperref[INITVELOCITIES]{velocities}''
-tag by setting the {}``mode'' attribute to {}``thermal''.
-This then takes an argument specifying the temperature to initialize the
-velocities to. With this, the final
+tag by setting the {}``mode'' attribute to {}``thermal'', and giving it
+an argument specifying the temperature to initialize the
+velocities to. As we want \(T = 25\) K, the final
 {}``\hyperref[INITIALIZER]{initialize}'' section is:
 
 \begin{code}
-<initialize nbeads='4'>
-   <file mode='pdb' units='angstrom'> our_ref.pdb </file>
-   <velocities mode='thermal' units='kelvin'> 25 </velocities>
+<initialize nbeads=`4'>
+   <file mode=`pdb' units=`angstrom'> our_ref.pdb </file>
+   <velocities mode=`thermal' units=`kelvin'> 25 </velocities>
 </initialize>
-\end{code}
-
-\subsubsection{Creating the server socket}
-
-Next let us consider the
-{}``\hyperref[FORCES]{forces}'' section, which deals with communication
-with the client codes. Since in this example we do not use ring-polymer contraction,
-we only need to specify a single {}``\hyperref[FFSOCKET]{socket}'' tag:
-
-\begin{code}
-<forces>
-   <socket>
-      ...
-   </socket>
-</forces>
-\end{code}
-
-A socket is specified with three parameters; the port number, the
-hostname and whether it is a unix or an internet socket.
-These are specified by the {}``port'' and {}``address'' tags
-and the {}``mode'' attribute respectively.
-To match up with the client socket specified above,
-we will take an internet socket on the hostname localhost and
-use port number 31415.
-
-This gives the final {}``\hyperref[FORCES]{forces}'' section:
-
-\begin{code}
-<forces>
-   <socket mode="inet">
-      <address> localhost </address>
-      <port> 31415 </port>
-   </socket>
-</forces>
 \end{code}
 
 \subsubsection{Generating the correct ensemble}
@@ -2308,13 +2349,16 @@ do a \emph{NVT} simulation, we set the {}``mode'' attribute to {}``nvt''
 and must specify the temperature using the appropriate tag:
 
 \begin{code}
-<ensemble mode='nvt'>
+<system>
+   <ensemble mode=`nvt'>
+      ...
+      <temperature units=`kelvin'> 25 </temperature>
+   </ensemble>
    ...
-   <temperature units='kelvin'> 25 </temperature>
-</ensemble>
+</system>
 \end{code}
 
-This defines the ensemble that will be sampled. We also must decide
+This defines the ensemble that will be sampled. We must also decide
 which integration algorithm to use, and how large the time step should
 be. In general, the time step should be made as large as possible
 without there being a drift in the conserved quantity. Usually we
@@ -2323,10 +2367,10 @@ this, but for the sake of this tutorial we will use a safe value of
 1 femtosecond, giving:
 
 \begin{code}
-<ensemble mode='nvt'>
+<ensemble mode=`nvt'>
    ...
-   <timestep units='femtosecond'> 1 </timestep>
-   <temperature units='kelvin'> 25 </temperature>
+   <timestep units=`femtosecond'> 1 </timestep>
+   <temperature units=`kelvin'> 25 </temperature>
 </ensemble>
 \end{code}
 
@@ -2334,21 +2378,20 @@ Finally, while the microcanonical part of the integrator
 is initialized automatically, there are several different options
 for the constant temperature sampling algorithm,
 specified by {}``\hyperref[THERMOSTATS]{thermostat}''. For simplicity we
-will use (the global version of) the path-integral Langevin equation (PILE) algorithm \cite{ceri+10jcp},
-which is specifically designed for path integral simulations.
-This is specified by the {}``mode'' tag {}``pile\_g''.
-This integrator also has to
-be initialized with a time scale parameter, {}``tau'', which determines
-how strong the thermostat is, which we will set to 25 femtoseconds.
-Putting all of this together, we get:
+will use (the global version of) the path integral Langevin equation (PILE)
+algorithm \cite{ceri+10jcp}, which is specifically designed for path integral
+simulations. This is specified by the {}``mode'' tag {}``pile\_g''. This
+integrator also has to be initialized with a time scale parameter, {}``tau'',
+which determines how strong the thermostat is, which we will set to 25
+femtoseconds. Putting all of this together, we get:
 
 \begin{code}
-<ensemble mode='nvt'>
-   <thermostat mode='pile_g'>
-      <tau units='femtosecond'> 25 </tau>
+<ensemble mode=`nvt'>
+   <thermostat mode=`pile_g'>
+      <tau units=`femtosecond'> 25 </tau>
    </thermostat>
-   <timestep units='femtosecond'> 1 </timestep>
-   <temperature units='kelvin'> 25 </temperature>
+   <timestep units=`femtosecond'> 1 </timestep>
+   <temperature units=`kelvin'> 25 </temperature>
 </ensemble>
 \end{code}
 
@@ -2374,7 +2417,7 @@ with the {}``verbosity'' attribute of
 {}``\hyperref[SIMULATION]{simulation}'':
 
 \begin{code}
-<simulation verbosity='high'>
+<simulation verbosity=`high'>
    ...
 </simulation>
 \end{code}
@@ -2386,20 +2429,13 @@ information every 1000 time steps. Here we will set it to
 tell \ipi to output the following data every time step:
 
 \begin{code}
- # Average timings at MD step S. t/step: TOTAL [p: P q: Q t: T]
- # MD diagnostics: V: POTENTIAL Kcv: KINETIC Ecns: CONSERVED
- @SOCKET: Assigning [ X ] request id ID to client with last-id LID ( CID/ CTOT : )
+ # Average timings at MD step S. t/step: TOTAL
+ @SOCKET: Assigning [ X ] request id ID to client with last-id LID ( CID/ CTOT : IP)
+ @SOCKET: ...
 \end{code}
 where the output values have been replaced with the following:
 \begin{description}
-\item [{S:}] This gives the current time step.
-\item[{TOTAL:}] This gives the amount of time the current time step took.
-\item [{P:}] This gives how long the momentum propagation step took.
-\item [{Q:}] This gives how long the free-ring polymer propagation step took.
-\item [{T:}] This gives how long the thermostat integration step took.
-\item [{POTENTIAL:}] This gives the current potential energy of the system.
-\item [{KINETIC:}] This gives the current kinetic energy of the system.
-\item [{CONSERVED:}] This gives the current conserved quantity.
+\item [{TOTAL:}] This gives the amount of time the current time step took.
 \item [{X:}] This says whether or not \ipi found a match for the calculation of
 replica ID or not.
 If one of the connected client codes calculated the forces for this replica on the
@@ -2411,6 +2447,8 @@ if CTOT is the same as the number of beads.
 of.
 \item [{CID:}] The index of the client code in the list of all connected client codes.
 \item [{CTOT:}] The total number of connected client codes.
+\item [{IP:}] A tuple giving the IP address of the client socket and its port
+number.
 \end{description}
 
 What output gets written to file is specified by the
@@ -2420,10 +2458,9 @@ trajectory files and checkpoint files, which are specified with
 {}``\hyperref[PROPERTIES]{properties}'',
 {}``\hyperref[TRAJECTORY]{trajectory}''
 and {}``\hyperref[CHECKPOINT]{checkpoint}'' tags respectively.
-For an in-depth discussion on these three types
-of output files see \ref{outputfiles},
-but for now let us just explain the rationale
-behind each of these output file types in turn.
+For an in-depth discussion on these three types of output files see
+\ref{outputfiles}, but for now let us just explain the rationale
+behind each of them in turn.
 
 \begin{description}
 \item[checkpoint files:]
@@ -2433,8 +2470,8 @@ this simulation will start from the point where the
 checkpoint file was created in the old simulation.
 \item[trajectory files:]
 These are used to print out properties
-relevant to all the atoms, such as the velocities or forces, for each degree of freedom.
-These can be useful
+relevant to all the atoms, such as the velocities or forces,
+for each degree of freedom. These can be useful
 for calculating correlation functions or radial distribution functions,
 but possibly their most useful feature is that visualization
 programs such as VMD can read them, and then use this data to show
@@ -2448,20 +2485,20 @@ progress of the simulation using plotting programs such as gnuplot,
 or to be used to get ensemble averages.
 \end{description}
 
-Now that we know what each input file is used for, let us take an
+Now that we know what each output file is used for, let us take an
 example of an output section and show how the xml input section works.
 The default output, i.e. what would be output if nothing was set by the user,
 would be generated with the following {}``\hyperref[OUTPUTS]{output}'' section:
 
 \begin{code}
-<output prefix='i-pi'>
-   <properties filename='md' stride='10'>
+<output prefix=`i-pi'>
+   <properties filename=`md' stride=`10'>
       [time, step, conserved, temperature, potential, kinetic_cv]
    </properties>
-   <trajectory filename='pos' stride='100' format='xyz'>
+   <trajectory filename=`pos' stride=`100' format=`xyz'>
       positions
    </trajectory>
-   <checkpoint filename='checkpoint' stride='1000' overwrite='True'/>
+   <checkpoint filename=`checkpoint' stride=`1000' overwrite=`True'/>
 </output>
 \end{code}
 
@@ -2473,7 +2510,8 @@ position trajectory files, and {}``i-pi.checkpoint'' is the
 checkpoint file.
 
 The filenames are created using the syntax
-{}``prefix''.{}``filename''[\_(file specifier)][.(file format)], where the file specifier is
+{}``prefix''.{}``filename''[\_(file specifier)][.(file format)],
+where the file specifier is
 added to separate similar files. For example, in the above case the
 different position trajectories for each bead are given a file specifier
 corresponding to the appropriate bead index.
@@ -2491,7 +2529,7 @@ something which can be used to distinguish the files from different
 simulation runs. In this case we can simply set it to {}``tut1'':
 
 \begin{code}
-<output prefix='tut1'>
+<output prefix=`tut1'>
    ...
 </output>
 \end{code}
@@ -2503,15 +2541,15 @@ appropriate unit in curly braces after the name of the
 property or trajectory of interest, as shown below:
 
 \begin{code}
-<output prefix='tut1'>
-   <properties filename='md' stride='10'>
+<output prefix=`tut1'>
+   <properties filename=`md' stride=`10'>
       [step, time{picosecond}, conserved{kelvin},
        temperature{kelvin}, potential{kelvin}, kinetic_cv{kelvin}]
    </properties>
-   <trajectory filename='pos' stride='100' format='xyz'>
+   <trajectory filename=`pos' stride=`100' format=`xyz'>
       positions{angstrom}
    </trajectory>
-   <checkpoint filename='checkpoint' stride='1000' overwrite='True'/>
+   <checkpoint filename=`checkpoint' stride=`1000' overwrite=`True'/>
 </output>
 \end{code}
 
@@ -2522,15 +2560,15 @@ To do this we would set the {}``stride'' and {}``format'' tags,
 as shown below:
 
 \begin{code}
-<output prefix='tut1'>
-   <properties filename='md' stride='1'>
+<output prefix=`tut1'>
+   <properties filename=`md' stride=`1'>
       [step, time{picosecond}, conserved{kelvin},
        temperature{kelvin}, potential{kelvin}, kinetic_cv{kelvin}]
    </properties>
-   <trajectory filename='pos' stride='100' format='pdb' cell_units='angstrom'>
+   <trajectory filename=`pos' stride=`100' format=`pdb' cell_units=`angstrom'>
       positions{angstrom}
    </trajectory>
-   <checkpoint filename='checkpoint' stride='1000' overwrite='True'/>
+   <checkpoint filename=`checkpoint' stride=`1000' overwrite=`True'/>
 </output>
 \end{code}
 
@@ -2548,8 +2586,8 @@ With \ipi this is easy to do, all that is required is to add another
 
 For demonstration purposes, we will choose to print out the forces
 acting on one tagged bead, since this requires an argument to be
-passed to the function that calculates it. The \ipi syntax for doing this is to have
-the arguments to be passed to the function between standard braces,
+passed to the function that calculates it. The \ipi syntax for doing this is
+to have the arguments to be passed to the function between standard braces,
 separated by semi-colons.
 
 To print out the forces acting on one bead we need the {}``atom\_f''
@@ -2578,18 +2616,18 @@ Finally, putting all this together, and adjusting some
 of the parameters of the new file, we get:
 
 \begin{code}
-<output prefix='tut1'>
-   <properties filename='md' stride='1'>
+<output prefix=`tut1'>
+   <properties filename=`md' stride=`1'>
       [step, time{picosecond}, conserved{kelvin},
        temperature{kelvin}, potential{kelvin}, kinetic_cv{kelvin}]
    </properties>
-   <properties filename='force' stride='20'>
+   <properties filename=`force' stride=`20'>
       [atom_f{piconewton}(atom=0;bead=0)]
    </properties>
-   <trajectory filename='pos' stride='100' format='pdb' cell_units='angstrom'>
+   <trajectory filename=`pos' stride=`100' format=`pdb' cell_units=`angstrom'>
       positions{angstrom}
    </trajectory>
-   <checkpoint filename='checkpoint' stride='1000' overwrite='True'/>
+   <checkpoint filename=`checkpoint' stride=`1000' overwrite=`True'/>
 </output>
 \end{code}
 
@@ -2610,13 +2648,14 @@ The {}``i-pi'' script in the root directory is used to create an
 This will start the \ipi simulation, creating the server socket and
 initializing the simulation data. This should at this point print
 out a header message to standard output, followed by a few information
-messages that end with {}``starting the polling thread main loop'',
+messages that end with
+{}``@ForceField: Starting the polling thread main loop.'',
 which signifies that the server socket has been opened and is waiting
 for connections from client codes.
 
-At this point the driver code is run in a new terminal
-from the {}``drivers'' directory using the command
-specified above:
+At this point the driver code should be run in a new terminal
+from the {}``drivers'' directory using the command specified at the start
+of the tutorial:
 
 \begin{code}
 > ./driver.x -m sg -h localhost -o 15 -p 31415
@@ -2624,16 +2663,20 @@ specified above:
 
 The \ipi code should now output a message saying that a new client
 code has connected, and start running the simulation.
+Once 1000 steps have been completed, (which should take about half an hour)
+the simulation will end and automatically shut down the server and client
+sockets. However, before moving on to the next step, we should verify that this
+simulation has produced sensible results by looking at the output files.
 
 \subsection{Output data}
 
-Once the simulation is finished (which should take about half an hour)
-it should have output {}``tut1.md'', {}``tut1.force'', {}``tut1.pos\_0.xyz'',
+Once the simulation is finished you should have the output files
+{}``tut1.md'', {}``tut1.force'', {}``tut1.pos\_0.xyz'',
 {}``tut1.pos\_1.xyz'', {}``tut1.pos\_2.xyz'', {}``tut1.pos\_3.xyz'',
-{}``tut1.checkpoint'' and {}``RESTART''.
+{}``tut1.checkpoint'' and {}``RESTART''. Let us now study each of these in turn,
+to see if we have successfully generated a properly equilibrated system.
 
-Firstly, we consider the checkpoint files,
-{}``tut1.checkpoint'' and {}``RESTART''.
+Firstly, consider the checkpoint files {}``tut1.checkpoint'' and {}``RESTART''.
 As mentioned before, these files can be used as a means of restarting
 the simulation from a previous point. As an example, the last
 checkpoint should have been at step 4999, and so we could rerun
@@ -2645,8 +2688,8 @@ followed by running {}``driver.x'' as before.
 
 The difference between these two files is that, while {}``tut1.checkpoint''
 was specified by the user, {}``RESTART'' is automatically generated at the
-end of every \ipi run. This file then is what we will need to initialize the
-\emph{NPT} run, since it contains the state of the system after
+end of every \ipi run. Therefore the latter is what we will need to initialize
+the \emph{NPT} simulation, since it contains the state of the system after
 equilibration.
 
 Next, let us look at the trajectory files. Since we have printed out
@@ -2655,9 +2698,9 @@ has equilibrated, and give us some insight into the atom dynamics.
 The easiest way to use these files, as discussed earlier, is to
 use the trajectory files as input to a visualization program such as VMD.
 
-If we do this with these files, we see that the simulation started
+In this case, we see that the simulation started
 from a crystalline configuration and then over the course
-of the simulation began to melt. Since the state point studied
+of the simulation melted. Since at the state point studied
 and with the potential given para-hydrogen is a liquid \cite{silv-gold78jcp},
 this is what we would expect.
 
@@ -2670,10 +2713,10 @@ have converged. Using gnuplot, we can plot the relevant graphs using:
 
 \begin{code}
 > gnuplot
-> p './tut1.md' u 1:3 # Plots column 1, i.e. current simulation step,
-> p './tut1.md' u 1:4 # against columns 3, 4, 5 and 6,
-> p './tut1.md' u 1:5 # i.e. conserved quantity, temperature,
-> p './tut1.md' u 1:6 # potential energy and kinetic energy
+> p `./tut1.md' u 1:3 # Plots column 1, i.e. current simulation step,
+> p `./tut1.md' u 1:4 # against columns 3, 4, 5 and 6,
+> p `./tut1.md' u 1:5 # i.e. conserved quantity, temperature,
+> p `./tut1.md' u 1:6 # potential energy and kinetic energy
 \end{code}
 
 This will show that the conserved quantity has only a small drift upwards,
@@ -2681,8 +2724,7 @@ the kinetic and potential energies have equilibrated, and the thermostat
 is keeping the temperature at the specified value.
 We have therefore specified a sufficiently short time step, chosen the
 thermostat parameters sensibly, and have equilibrated the properties
-of interest.
-Therefore this stage of the simulation is done, and we are ready
+of interest. Therefore this stage of the simulation is done, and we are ready
 to start the \emph{NPT} run.
 
 \section{Part 2 - \emph{NPT} simulation}
@@ -2690,18 +2732,17 @@ to start the \emph{NPT} run.
 \label{part2}
 
 Now that we have converged \emph{NVT} simulation data, we can use this to
-initialize a \emph{NPT} simulation.
-There are two ways of doing this,
+initialize the \emph{NPT} simulation. There are two ways of doing this,
 both of which involve using the RESTART file generated at
 the end of the \emph{NVT} run as a starting point.
-Note that for simplicity we will again take \(N=108, T=25 K\), and use
-\(P=0\).
+Note that for simplicity we will again take \(N=108, T=25 K\), and use \(P=0\).
 
 \subsection{Modifying the RESTART file}
 
 Firstly, you can use the RESTART file directly, modifying it
 so that instead of continuing with the original \emph{NVT} simulation
-it will instead start a new \emph{NPT} simulation. We have included
+it will instead start a new \emph{NPT} simulation.
+For reference, we have included
 in the {}``tutorial-2'' directory both a RESTART file from
 tutorial 1 and an adjusted file which will run \emph{NPT} dynamics,
 {}``tutorial-2a.xml''
@@ -2720,19 +2761,19 @@ we can check that the ensemble is being sampled correctly.
 Putting this together this gives:
 
 \begin{code}
-<output prefix=''>
-   <properties shape='(8)' filename='tut2a.md'>
+<output prefix=`'>
+   <properties shape=`(8)' filename=`tut2a.md'>
       [ step, time{picosecond}, conserved{kelvin},
         temperature{kelvin}, potential{kelvin}, kinetic_cv{kelvin},
         pressure_cv{megapascal}, volume ]
    </properties>
-   <properties stride='20' shape='(1)' filename='tut2a.force'>
+   <properties stride=`20' shape=`(1)' filename=`tut2a.force'>
       [ atom_f{piconewton}(atom=0;bead=0) ]
    </properties>
-   <trajectory filename='tut2a.pos' stride='100' format='pdb' cell_units='angstrom'>
+   <trajectory filename=`tut2a.pos' stride=`100' format=`pdb' cell_units=`angstrom'>
       positions{angstrom}
    </trajectory>
-   <checkpoint stride='1000' filename='tut2a.restart'/>
+   <checkpoint stride=`1000' filename=`tut2a.restart'/>
 </output>
 \end{code}
 
@@ -2743,7 +2784,7 @@ the {}``mode'' tag must be changed from {}``nvt'' to {}``npt'',
 and a {}``pressure'' tag must be added:
 
 \begin{code}
-<ensemble mode='npt'>
+<ensemble mode=`npt'>
    <pressure> 0 </pressure>
    ...
 </ensemble>
@@ -2751,23 +2792,22 @@ and a {}``pressure'' tag must be added:
 
 We must also specify the constant pressure algorithm,
 using the tag {}``\hyperref[BAROSTAT]{barostat}''.
-At present, \ipi only contains a stochastic barostat to apply pressure
-to an isotropic system, which can be specified with the option ``isotropic''.
-Anisotropic versions of the barostat may be added in future releases of \ipi.
+Since we are only interested in constant pressure dynamics, we will use the
+isotropic barostat, which can be specified with the option ``isotropic''.
+%Anisotropic versions of the barostat may be added in future releases of \ipi.
 
-The isotropic barostat also requires a thermostat
-to deal with the volume degree of freedom, which we will take
-to be a simple Langevin thermostat.
-This thermostat is specified in the same way as the one which does the
-constant temperature algorithms for the atomic degrees of freedom, and
-we will take its time scale to be 250 femtoseconds:
+The isotropic barostat also requires a thermostat to deal with the volume
+degree of freedom, for which we will use a simple Langevin thermostat.
+This is specified in the same way as the one which does the
+constant temperature algorithms for the atomic degrees of freedom, so choosing
+a time scale of 250 femtoseconds we get:
 
 \begin{code}
-<ensemble mode='npt'>
+<ensemble mode=`npt'>
    <pressure> 0 </pressure>
-   <barostat mode='isotropic'>
-      <thermostat mode='langevin'>
-         <tau units='femtosecond'> 250 </tau>
+   <barostat mode=`isotropic'>
+      <thermostat mode=`langevin'>
+         <tau units=`femtosecond'> 250 </tau>
       </thermostat>
       ...
    </barostat>
@@ -2775,16 +2815,16 @@ we will take its time scale to be 250 femtoseconds:
 </ensemble>
 \end{code}
 
-Finally, we will take the barostat time scale to be 250 femtoseconds also, giving:
+Finally, we will take the barostat time scale to be 250 femtoseconds, giving:
 
 \begin{code}
-<ensemble mode='npt'>
+<ensemble mode=`npt'>
    <pressure> 0 </pressure>
-   <barostat mode='isotropic'>
-      <thermostat mode='langevin'>
-         <tau units='femtosecond'> 250 </tau>
+   <barostat mode=`isotropic'>
+      <thermostat mode=`langevin'>
+         <tau units=`femtosecond'> 250 </tau>
       </thermostat>
-      <tau units='femtosecond'> 250 </tau>
+      <tau units=`femtosecond'> 250 </tau>
    </barostat>
    ...
 </ensemble>
@@ -2806,8 +2846,8 @@ the {}``total\_steps'', {}``\hyperref[OUTPUTS]{output}'' and
 {}``\hyperref[INITIALIZER]{initialize}'' tag section with:
 
 \begin{code}
-<initialize nbeads='4'>
-   <file mode='chk'> tutorial-1_RESTART </file>
+<initialize nbeads=`4'>
+   <file mode=`chk'> tutorial-1_RESTART </file>
 </initialize>
 \end{code}
 
@@ -2839,36 +2879,32 @@ The directory {}``tutorial-3'' contains
 \emph{NVT} and \emph{NPT} input files which can be used to do a fully converged
 \emph{NPT} simulation from scratch, except that they are missing some
 of the necessary input parameters.
+If these are chosen correctly the volume will be 31 \(\textrm{cm}^3\)/mol
+and the total energy will be -48 K \cite{mart+99jcp}.
 
-If these are chosen correctly and the simulation is run properly
-the volume will be 31 \(\textrm{cm}^3\)/mol and the total energy
-should be -48 K \cite{mart+99jcp}.
-
-With this number of beads and atoms, the force calculation is likely
+With this number of beads and atoms, the simulation is likely
 to take much longer than it did in either tutorial 1 or 2.
 To help speed this up, we will now discuss how to parallelize the
 calculation over the sockets, and how to speed up the data transfer.
 
 Firstly, in this simple case where we are calculating an isotropic,
 pair-wise interaction, the data transfer time is likely to be a
-significant proportion of the total calculation time. To help speed this
-up, there is the option to use a unix domain socket rather than an
+significant proportion of the total calculation time. To help
+remove this bottleneck, we can use a unix domain socket rather than an
 internet socket. These are optimized for local communication between
 processes on a single computer, and so for the current problem they will be much
 faster than internet sockets.
 
-To specify this, we simply set the {}``mode'' attribute of the
-{}``\hyperref[FFSOCKET]{socket}'' tag to {}``unix'':
+To change the type of socket we simply set the {}``mode'' attribute of the
+{}``\hyperref[FFSOCKET]{ffsocket}'' tag to {}``unix'':
 
 \begin{code}
-<forces>
-   <socket mode='unix'>
-      ...
-   </socket>
-</forces>
+<ffsocket mode=`unix'>
+   ...
+</ffsocket>
 \end{code}
 
-We then specify that the client code should connect to a unix socket
+Similarly, the client code can be told to connect via a unix socket
 using the -u flag:
 
 \begin{code}
