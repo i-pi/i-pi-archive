@@ -1,4 +1,4 @@
-# Makefile for the driver
+# Makefile for the driver tests
 #
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
@@ -19,28 +19,24 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  
-FC=gfortran
-FFLAGS=-O3 -J build
-CC=gcc
-
-SRC_F=build/distance.f90 build/LJ.f90 build/SG.f90 build/driver.f90
-OBJECTS=$(SRC_F:.f90=.o) build/sockets.o
-
 .PHONY: all
 
-all: build_dir $(OBJECTS) ../bin/i-pi-driver
+SOURCES=$(shell ls *.f90)
+MODULES=distance.f90 LJ.f90 SG.f90
+OBJECTS=$(SOURCES:.f90=.o) sockets.o
+all: modules sockets.o driver.x
 
-build_dir:
-	@mkdir -p build
+modules: $(MODULES)
+	gfortran -O3 -c $(MODULES)
 
-build/sockets.o: sockets.c
-	$(CC) -c $< -o $@
+sockets.o: sockets.c
+	gcc -c -o sockets.o sockets.c
 
-../bin/i-pi-driver: $(OBJECTS)
-	$(FC) $(FFLAGS) -o $@ $(OBJECTS)
+driver.x: $(OBJECTS)
+	gfortran -O3 -o driver.x $(OBJECTS)
 
-build/%.o: %.f90
-	$(FC) $(FFLAGS) -c $< -o $@
+%.o: %.f90
+	gfortran -O3 -c $<
 
 clean:
-	rm -rf build ../bin/i-pi-driver
+	rm *.o *.mod *.x
