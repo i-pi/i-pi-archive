@@ -1,5 +1,4 @@
 <simulation verbosity='high'>
-   <total_steps> 100000 </total_steps>
    <output prefix=''>
       <properties shape='(8)' filename='tut2a.md'>
        [ step, time{picosecond}, conserved{kelvin}, temperature{kelvin}, potential{kelvin}, 
