@@ -250,7 +250,7 @@ class DriverSocket(socket.socket):
 
       if self.status & Status.NeedsInit:
          try:
-            self.sendall(Message("init"))
+            self.sendall(Message("init")) 
             self.sendall(np.int32(rid))
             self.sendall(np.int32(len(pars)))
             self.sendall(pars)
