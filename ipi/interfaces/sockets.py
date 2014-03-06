@@ -274,10 +274,10 @@ class DriverSocket(socket.socket):
       if (self.status & Status.Ready):
          try:
             self.sendall(Message("posdata"))
-            self.sendall(h_ih[0]) 
-            self.sendall(h_ih[1]) 
+            self.sendall(h_ih[0], 9*8)
+            self.sendall(h_ih[1], 9*8)
             self.sendall(np.int32(len(pos)/3))
-            self.sendall(pos)
+            self.sendall(pos, len(pos)*8)
          except:
             self.poll()
             return
