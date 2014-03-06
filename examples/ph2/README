@@ -109,3 +109,21 @@ $ make scripts
     and executed -- after the runs have been performed -- by
 
 $ make postproc
+
+** Multiple thermostats
+
+  * Provides an example of thermostat mode multi, that can be used to apply
+    simultaneously multiple thermostatting strategies (e.g. local and global)
+
+$ make multi
+
+** The parallel tempering examples:
+
+  * Examples are given to run parallel tempering, WTE and PT+WTE simulations.
+    These are still experimental features, so be careful with what you do. The
+    three examples can be run with
+
+$ make paratemp
+$ make parawte
+$ make paraptwte
+

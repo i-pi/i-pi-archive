@@ -18,12 +18,12 @@
       <forces><force> sgdriver </force></forces>
       <ensemble mode='nvt'>
          <thermostat mode='multi'>
-           <thermostat mode='pile_l'>
-              <tau units='femtosecond'>25</tau>
-           </thermostat>
-           <thermostat mode='svr'>
-              <tau units='femtosecond'>5</tau>
-           </thermostat>
+            <thermostat mode='pile_l'>
+               <tau units='femtosecond'>25</tau>
+            </thermostat>
+            <thermostat mode='svr'>
+               <tau units='femtosecond'>5</tau>
+            </thermostat>
          </thermostat>
          <timestep units='femtosecond'> 1 </timestep>
          <temperature units='kelvin'>25</temperature>

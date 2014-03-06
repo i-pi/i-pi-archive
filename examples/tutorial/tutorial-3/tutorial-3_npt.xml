@@ -13,7 +13,7 @@
       <initialize nbeads='16'>
          <file mode='chk'> tutorial-3_RESTART </file>
       </initialize>
-      <forces><force> driver </force></forces>
+      <forces> <force> driver </force> </forces>
       <ensemble mode='npt'>
          <barostat mode='???'>
             <thermostat mode='???'>

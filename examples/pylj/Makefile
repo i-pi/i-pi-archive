@@ -1,4 +1,4 @@
-# Makefile for the Quantum Espresso examples
+# Makefile for the Lennard-Jones Neon examples
 # 
 # Copyright (C) 2013, Joshua More and Michele Ceriotti
 # 
@@ -15,39 +15,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http.//www.gnu.org/licenses/>.
 
-.PHONY: all water lithium clean
-all: water lithium
+.PHONY: all clean paratemp
+all: paratemp
 
-PW:=pw.x
-CP:=cp.x
 IPI:=../../../i-pi
-
-define run_pw
-  for i in `seq 1 $1`; do \
-    mkdir -p run_$$i; cd run_$$i; \
-    $(PW) < ../$2 > qe.out & cd ..; \
-  done;
-endef
-
-define run_cp
-  for i in `seq 1 $1`; do \
-    mkdir -p run_$$i; cd run_$$i; \
-    $(CP) < ../$2 > qe.out & cd ..; \
-  done;
-endef
-
 
 -include make.in
 
-water:
-	cd h2o; $(IPI) h2o-ipi.xml & sleep 3; \
-	$(call run_pw,4,h2o-pw.in) \
+paratemp:
+	cd paratemp; $(IPI) input.xml; \
 	wait
 
-lithium:
-	cd li4; $(IPI) li4-ipi.xml & sleep 3; \
-	$(call run_pw,4,li4-pw.in) \
-	wait
-	
 clean:
-	rm -rf */*_output.* */*.log */run_* */RESTART */EXIT
+	rm -f */*paratemp* */RESTART */EXIT */PARATEMP

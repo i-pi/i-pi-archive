@@ -14,7 +14,7 @@
       <initialize nbeads='4'>
          <file mode='chk'> tutorial-1_RESTART </file>
       </initialize>
-      <forces><force>driver</force></forces>
+      <forces> <force> driver </force> </forces>
       <ensemble mode='npt'>
          <barostat mode='isotropic'>
             <thermostat mode='langevin'>
