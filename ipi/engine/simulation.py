@@ -189,6 +189,7 @@ class Simulation(dobject):
             st.daemon = True
             st.start()
             stepthreads.append(st)
+            
          for st in stepthreads:
             while st.isAlive(): st.join(2.0)   # this is necessary as join() without timeout prevents main from receiving signals
 
