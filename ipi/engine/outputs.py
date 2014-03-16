@@ -297,7 +297,7 @@ class TrajectoryOutput(dobject):
       # Checks to see if there is a list of files or just a single file.
       if hasattr(self.out, "__getitem__"):
          if self.ibead < 0:
-            for b in range(len(self.out)):
+            for b in range(len(self.out)):               
                self.system.trajs.print_traj(self.what, self.out[b], b, format=self.format, cell_units=self.cell_units, flush=doflush)
          elif self.ibead < len(self.out):
             self.system.trajs.print_traj(self.what, self.out[self.ibead], self.ibead, format=self.format, cell_units=self.cell_units, flush=doflush)
