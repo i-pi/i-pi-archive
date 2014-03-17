@@ -70,7 +70,7 @@ class Barostat(dobject):
       press: The system pressure.
    """
 
-   def __init__(self, dt=None, temp=None, pext=None, stressext=None, tau=None, ebaro=None, thermostat=None):
+   def __init__(self, dt=None, temp=None, pext=None, tau=None, ebaro=None, thermostat=None, stressext=None):
       """Initialises base barostat class.
 
       Note that the external stress and the external pressure are synchronized.
@@ -109,11 +109,6 @@ class Barostat(dobject):
          self.pext = pext
       else: self.pext = 0.0
       
-      dset(self,"stressext",depend_value(name='stressext'))
-      if not stressext is None:
-         self.stressext = stressext
-      else: self.stressext = np.zeros(6)
-
       dset(self,"ebaro",depend_value(name='ebaro'))
       if not ebaro is None:
          self.ebaro = ebaro
@@ -122,6 +117,11 @@ class Barostat(dobject):
       if thermostat is None:
          thermostat = Thermostat()
       self.thermostat = thermostat
+
+      dset(self,"stressext",depend_value(name='stressext'))
+      if not stressext is None:
+         self.stressext = stressext
+      else: self.stressext = np.zeros(6)
 
       # pipes timestep and temperature to the thermostat
       deppipe(self,"dt", self.thermostat, "dt")
