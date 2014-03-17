@@ -63,7 +63,7 @@ class InputEnsemble(Input):
 
    attribs={"mode"  : (InputAttribute, {"dtype"   : str,
                                     "help"    : "The ensemble that will be sampled during the simulation. 'replay' means that a simulation is restarted from a previous simulation.",
-                                    "options" : ['nve', 'nvt', 'npt', 'replay']}) }
+                                    "options" : ['nve', 'nvt', 'npt', 'nst', 'replay']}) }
    fields={"thermostat" : (InputThermo, {"default"   : input_default(factory=ipi.engine.thermostats.Thermostat),
                                          "help"      : "The thermostat for the atoms, keeps the atom velocity distribution at the correct temperature."} ),
            "barostat" : (InputBaro, {"default"       : input_default(factory=ipi.engine.barostats.Barostat),
@@ -80,6 +80,10 @@ class InputEnsemble(Input):
                                       "default"      : 1.0,
                                       "help"         : "The external pressure.",
                                       "dimension"    : "pressure"}),
+           "stress" : (InputArray, {"dtype"        : float,
+                                    "default"      : np.zeros(6),
+                                    "help"         : "The external stress.",
+                                    "dimension"    : "pressure"}),
            "eens" : (InputValue, {"dtype"     : float,
                                          "default"   : 0.0,
                                          "help"      : "The ensemble contribution to the conserved quantity.",
@@ -115,6 +119,9 @@ class InputEnsemble(Input):
       elif type(ens) is NPTEnsemble:
          self.mode.store("npt")
          tens = 3
+      elif type(ens) is NSTEnsemble:
+         self.mode.store("nst")
+         tens = 4
 
       self.timestep.store(ens.dt)
       self.temperature.store(ens.temp)
@@ -128,7 +135,10 @@ class InputEnsemble(Input):
       if tens == 3:
          self.barostat.store(ens.barostat)
          self.pressure.store(ens.pext)
-
+      if tens == 4:
+         self.barostat.store(ens.barostat)
+         self.pressure.store(ens.pext) # MR: must take this line out later - only stress is important
+         self.stress.store(ens.stressext)
 
    def fetch(self):
       """Creates an ensemble object.
@@ -150,6 +160,10 @@ class InputEnsemble(Input):
          ens = NPTEnsemble(dt=self.timestep.fetch(),
             temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), fixcom=self.fixcom.fetch(), eens=self.eens.fetch(),
                   pext=self.pressure.fetch(), barostat=self.barostat.fetch() )
+      elif self.mode.fetch() == "nst" :
+         ens = NSTEnsemble(dt=self.timestep.fetch(),
+                           temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), fixcom=self.fixcom.fetch(), eens=self.eens.fetch(),
+                           pext=self.pressure.fetch(), stresspext=self.stress.fetch(), barostat=self.barostat.fetch() ) #MR: here must also take out pressure
       elif self.mode.fetch() == "replay":
          ens = ReplayEnsemble(dt=self.timestep.fetch(),
             temp=self.temperature.fetch(),fixcom=False, eens=self.eens.fetch() ,intraj=self.replay_file.fetch() )
@@ -176,6 +190,13 @@ class InputEnsemble(Input):
             raise ValueError("No barostat tag supplied for NPT simulation")
          if self.barostat.thermostat._explicit == False:
             raise ValueError("No thermostat tag supplied in barostat for NPT simulation")
+      if self.mode.fetch() == "nst":
+         if self.thermostat._explicit == False:
+            raise ValueError("No thermostat tag supplied for NST simulation")
+         if self.barostat._explicit == False:
+            raise ValueError("No barostat tag supplied for NST simulation")
+         if self.barostat.thermostat._explicit == False:
+            raise ValueError("No thermostat tag supplied in barostat for NST simulation")
 
       if self.timestep.fetch() <= 0:
          raise ValueError("Non-positive timestep specified.")
@@ -185,6 +206,11 @@ class InputEnsemble(Input):
       if self.mode.fetch() == "npt":
          if not self.pressure._explicit:
             raise ValueError("Pressure should be supplied for constant pressure simulation")
+
+      if self.mode.fetch() == "nst":
+         if not self.pressure._explicit:
+            raise ValueError("Pressure should be supplied for constant pressure simulation") #MR: also here change for stress!!!!
+
       if self.mode.fetch() == "npt" or self.mode.fetch() == "nvt":
          if not self.temperature._explicit:
             raise ValueError("Temperature should be supplied for constant temperature simulation")

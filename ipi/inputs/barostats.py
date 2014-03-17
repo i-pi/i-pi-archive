@@ -52,7 +52,7 @@ class InputBaro(Input):
                                    ideas from the Bussi-Zykova-Parrinello barostat for classical MD with ideas from the
                                    Martyna-Hughes-Tuckerman centroid barostat for PIMD; see Ceriotti, More, Manolopoulos, Comp. Phys. Comm. 2013 for
                                    implementation details.""",
-                                   "options"  : ["dummy", "isotropic"]}) }
+                      "options"  : ["dummy", "isotropic", "anisotropic"]}) } # MR: ADD 'ANISOTROPIC'
    fields={ "thermostat": (InputThermo, {"default" : input_default(factory=ipi.engine.thermostats.Thermostat),
                                          "help"    : "The thermostat for the cell. Keeps the cell velocity distribution at the correct temperature. Note that the 'pile_l', 'pile_g', 'nm_gle' and 'nm_gle_g' options will not work for this thermostat."}),
             "tau": (InputValue, {"default" : 1.0,
@@ -81,6 +81,9 @@ class InputBaro(Input):
       if type(baro) is BaroBZP:
          self.mode.store("isotropic")
          self.p.store(baro.p)
+      elif type(baro) is BaroRGB:
+         self.mode.store("anisotropic")
+         self.p.store(baro.p) # MR: CHANGE THIS LINE TO STORE EXTERNAL STRESS
       elif type(baro) is Barostat:
          self.mode.store("dummy")
       else:
@@ -98,6 +101,9 @@ class InputBaro(Input):
       super(InputBaro,self).fetch()
       if self.mode.fetch() == "isotropic":
          baro = BaroBZP(thermostat=self.thermostat.fetch(), tau=self.tau.fetch())
+         if self.p._explicit: baro.p = self.p.fetch()
+      elif self.mode.fetch() == "anisotropic":
+         baro = BaroRGB(thermostat=self.thermostat.fetch(), tau=self.tau.fetch()) # MR: CHANGE THESE LINES FOR STRESS
          if self.p._explicit: baro.p = self.p.fetch()
       elif self.mode.fetch() == "dummy":
          baro = Barostat(thermostat=self.thermostat.fetch(), tau=self.tau.fetch())
