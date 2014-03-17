@@ -1191,8 +1191,7 @@ class Trajectories(dobject):
          system: The system object that will be managed by this Trajectories.
       """
 
-      self.system = system
-      self.fatom = system.beads[0].copy()
+      self.system = system      
 
    def get_akcv(self):
       """Calculates the contribution to the kinetic energy due to each degree
@@ -1302,19 +1301,21 @@ class Trajectories(dobject):
 			os.fsync(stream)
          return
       elif getkey(what) in [ "positions", "velocities", "forces" ] :
-         self.fatom.q[:] = cq[b]
+         fatom = Atoms(self.system.beads.natoms)
+         fatom.q[:] = cq[b]
       else:
-         self.fatom.q[:] = cq
+         fatom = Atoms(self.system.beads.natoms)
+         fatom.q = cq
 
       fcell = Cell()
       fcell.h = self.system.cell.h*unit_to_user("length", cell_units, 1.0)
 
       if format == "pdb":
-         io_pdb.print_pdb(self.fatom, fcell, stream, title=("Traj: %s Step:  %10d  Bead:   %5d " % (what, self.system.simul.step+1, b) ) )
+         io_pdb.print_pdb(fatom, fcell, stream, title=("Traj: %s Step:  %10d  Bead:   %5d " % (what, self.system.simul.step+1, b) ) )
       elif format == "xyz":
-         io_xyz.print_xyz(self.fatom, fcell, stream, title=("Traj: %s Step:  %10d  Bead:   %5d " % (what, self.system.simul.step+1, b) ) )
+         io_xyz.print_xyz(fatom, fcell, stream, title=("Traj: %s Step:  %10d  Bead:   %5d " % (what, self.system.simul.step+1, b) ) )
       elif format == "bin":
-         io_binary.print_bin(self.fatom, fcell, stream, title=("Traj: %s Step:  %10d  Bead:   %5d " % (what, self.system.simul.step+1, b) ) )
+         io_binary.print_bin(fatom, fcell, stream, title=("Traj: %s Step:  %10d  Bead:   %5d " % (what, self.system.simul.step+1, b) ) )
       if flush :
          stream.flush()
          os.fsync(stream)

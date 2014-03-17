@@ -41,7 +41,7 @@ from ipi.utils.softexit import softexit
 from ipi.engine.atoms import *
 from ipi.engine.cell import *
 
-#import objgraph
+# import objgraph
 
 class Simulation(dobject):
    """Main simulation object.
@@ -189,6 +189,7 @@ class Simulation(dobject):
             st.daemon = True
             st.start()
             stepthreads.append(st)
+            
          for st in stepthreads:
             while st.isAlive(): st.join(2.0)   # this is necessary as join() without timeout prevents main from receiving signals
 
@@ -204,7 +205,6 @@ class Simulation(dobject):
                   self.paratemp.wtefile.write(" %12.7e" % v)
                self.paratemp.wtefile.write("\n")
                self.paratemp.parawte.flush();  os.fsync(self.paratemp.parawte)
-
 
          self.step = 0
 
@@ -284,6 +284,9 @@ class Simulation(dobject):
          #   info(" # MD diagnostics: V: %10.5e    Kcv: %10.5e   Ecns: %10.5e" %
          #      (self.properties["potential"], self.properties["kinetic_cv"], self.properties["conserved"] ) )
 
+         #objgraph.show_growth() 
+
+         
          if os.path.exists("EXIT"): # soft-exit
             info(" # EXIT file detected! Bye bye!", verbosity.low )
             break
