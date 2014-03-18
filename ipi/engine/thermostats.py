@@ -128,8 +128,8 @@ class Thermostat(dobject):
          dset(self,"p",dget(atoms, "p"))
          dset(self,"m",dget(atoms, "m3"))
       elif not pm is None:
-         dset(self,"p",pm[0])
-         dset(self,"m",pm[1])
+         dset(self,"p",pm[0].flatten())  # MR this should allow to simply pass the cell momenta in the anisotropic barostat
+         dset(self,"m",pm[1].flatten())
       else:
          raise TypeError("Thermostat.bind expects either Beads, Atoms, NormalModes, or a (p,m) tuple to bind to")
 
