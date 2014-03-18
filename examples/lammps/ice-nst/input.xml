@@ -1,0 +1,37 @@
+<simulation verbosity='high'>
+   <output prefix='d_ice'>
+      <properties stride='1' filename='out'>  [ step, time{picosecond}, conserved, temperature{kelvin}, kinetic_cv, potential, pressure_cv{megapascal}] </properties>
+      <trajectory filename='pos' stride='1'> positions </trajectory>
+   </output>
+   <total_steps>500000</total_steps>
+   <prng><seed>32345</seed></prng>
+   <ffsocket mode='unix' name='lammps'>
+        <address>d_ice</address>
+    </ffsocket>
+   <system>      
+     <initialize nbeads='16'>
+       <file mode='xyz'> ice.xyz </file>
+       <velocities mode="thermal" units='kelvin'> 273 </velocities>
+     </initialize>
+     <forces> <force> lammps </force>
+     </forces>
+     <cell shape='(3, 3)'>
+         [   25.6156, 0, 0, 0, 29.5783, 0, 0, 0, 27.8867 ]
+     </cell>
+     <ensemble mode='npt'>
+       <barostat mode='isotropic'>
+          <thermostat mode='langevin'>
+            <tau units='femtosecond'> 250 </tau>
+          </thermostat>
+          <tau units='femtosecond'> 250 </tau>
+       </barostat>
+       <thermostat mode='pile_g'>
+         <tau units='femtosecond'> 25 </tau>
+       </thermostat>
+       <timestep units='femtosecond'> 0.5 </timestep>
+       <temperature units='kelvin'> 273 </temperature>
+       <pressure units='pascal'> 1e5 </pressure>
+       <stress units='pascal'> [1.e5, 0., 0., 0., 1.e5, 0., 0., 0., 1.e5 ]</stress>
+    </ensemble>
+  </system>
+</simulation>
