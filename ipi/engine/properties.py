@@ -1191,7 +1191,7 @@ class Trajectories(dobject):
          system: The system object that will be managed by this Trajectories.
       """
 
-      self.system = system      
+      self.system = system
 
    def get_akcv(self):
       """Calculates the contribution to the kinetic energy due to each degree
@@ -1302,9 +1302,11 @@ class Trajectories(dobject):
          return
       elif getkey(what) in [ "positions", "velocities", "forces" ] :
          fatom = Atoms(self.system.beads.natoms)
+         fatom.names[:] = self.system.beads.names
          fatom.q[:] = cq[b]
       else:
          fatom = Atoms(self.system.beads.natoms)
+         fatom.names[:] = self.system.beads.names
          fatom.q = cq
 
       fcell = Cell()
