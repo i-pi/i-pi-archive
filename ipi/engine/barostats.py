@@ -121,7 +121,7 @@ class Barostat(dobject):
       dset(self,"stressext",depend_value(name='stressext'))
       if not stressext is None:
          self.stressext = stressext
-      else: self.stressext = np.zeros(6)
+      else: self.stressext = np.zeros(9)
 
       # pipes timestep and temperature to the thermostat
       deppipe(self,"dt", self.thermostat, "dt")

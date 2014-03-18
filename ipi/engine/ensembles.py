@@ -508,13 +508,13 @@ class NSTEnsemble(NVTEnsemble):
         pext: External pressure.
         """
     
-    def __init__(self, dt, temp, pext, stressext, thermostat=None, barostat=None, fixcom=False, eens=0.0):
+    def __init__(self, dt, temp, stressext, thermostat=None, barostat=None, fixcom=False, eens=0.0):
         """Initialises NPTEnsemble.
             
             Args:
             dt: The simulation timestep.
             temp: The system temperature.
-            pext: The external pressure.
+            stressext: The external stress.
             thermostat: A thermostat object to keep the temperature constant.
             Defaults to Thermostat().
             barostat: A barostat object to keep the pressure constant.
@@ -529,10 +529,10 @@ class NSTEnsemble(NVTEnsemble):
         else:
             self.barostat = barostat
         
-        dset(self,"pext",depend_value(name='pext'))
-        if not pext is None:
-            self.pext = pext
-        else: self.pext = 0.0
+        dset(self,"stressext",depend_value(name='stressext'))
+        if not stressext is None:
+	    self.stressext[:] = stressext[:]
+        else: self.stressext = 0.0
     
     
     def bind(self, beads, nm, cell, bforce, prng):
