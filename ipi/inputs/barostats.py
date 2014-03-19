@@ -9,7 +9,7 @@ the Free Software Foundation, either version 3 of the License, or
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
@@ -54,7 +54,7 @@ class InputBaro(Input):
                                    ideas from the Bussi-Zykova-Parrinello barostat for classical MD with ideas from the
                                    Martyna-Hughes-Tuckerman centroid barostat for PIMD; see Ceriotti, More, Manolopoulos, Comp. Phys. Comm. 2013 for
                                    implementation details.""",
-                      "options"  : ["dummy", "isotropic", "anisotropic"]}) } # MR: ADD 'ANISOTROPIC'
+                      "options"  : ["dummy", "isotropic", "anisotropic"]}) }
    fields={ "thermostat": (InputThermo, {"default" : input_default(factory=ipi.engine.thermostats.Thermostat),
                                          "help"    : "The thermostat for the cell. Keeps the cell velocity distribution at the correct temperature. Note that the 'pile_l', 'pile_g', 'nm_gle' and 'nm_gle_g' options will not work for this thermostat."}),
             "tau": (InputValue, {"default" : 1.0,
@@ -68,7 +68,7 @@ class InputBaro(Input):
             "h0": (InputCell, {  "dtype"     : float,
                                  "default"   : input_default(factory=Cell) ,
                                  "help"      : "Reference cell for Parrinello-Rahman-like barostats.",
-                                 "dimension" : "length" })                                 
+                                 "dimension" : "length" })
            }
 
    default_help = "Simulates an external pressure bath."
@@ -89,7 +89,7 @@ class InputBaro(Input):
          self.p.store(baro.p)
       elif type(baro) is BaroRGB:
          self.mode.store("anisotropic")
-         self.p.store(baro.p) 
+         self.p.store(baro.p)
          self.h0.store(baro.h0)
       elif type(baro) is Barostat:
          self.mode.store("dummy")
@@ -110,9 +110,9 @@ class InputBaro(Input):
          baro = BaroBZP(thermostat=self.thermostat.fetch(), tau=self.tau.fetch())
          if self.p._explicit: baro.p = self.p.fetch()
       elif self.mode.fetch() == "anisotropic":
-         baro = BaroRGB(thermostat=self.thermostat.fetch(), tau=self.tau.fetch()) # MR: CHANGE THESE LINES FOR STRESS
+         baro = BaroRGB(thermostat=self.thermostat.fetch(), tau=self.tau.fetch())
          if self.p._explicit: baro.p = self.p.fetch()
-         if self.h0._explicit: baro.h0 = self.h0.fetch()         
+         if self.h0._explicit: baro.h0 = self.h0.fetch()
       elif self.mode.fetch() == "dummy":
          baro = Barostat(thermostat=self.thermostat.fetch(), tau=self.tau.fetch())
       else:

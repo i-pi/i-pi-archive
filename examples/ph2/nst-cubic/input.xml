@@ -17,19 +17,19 @@
       <forces><force> sgdriver </force></forces>
       <ensemble mode='nst'>
          <barostat mode="anisotropic">
-            <tau units='femtosecond'>25</tau>
+            <tau units='femtosecond'>100</tau>
             <thermostat mode='langevin'>
-               <tau units='femtosecond'>10</tau>
+               <tau units='femtosecond'>50</tau>
             </thermostat>
             <h0> [ 29.865, 0, 0, 0,   29.865, 0, 0, 0,   29.865 ]</h0>
          </barostat>
          <thermostat mode='pile_l'>
-            <tau units='femtosecond'>100 </tau>
+            <tau units='femtosecond'> 100 </tau>
          </thermostat>
-         <timestep units='femtosecond'> 0.1 </timestep>
+         <timestep units='femtosecond'> 2 </timestep>
          <temperature units='kelvin'> 10 </temperature>
-         <stress units='megapascal'>  [ 2, 0, 0, 0, 2, 0, 0, 0, 2 ] </stress>         
-         <!-- <pressure units='megapascal'> 2 </pressure> -->
+         <stress units='megapascal'>  [ 100, 10, 1, 0, 50, 1, 0, 0, 2 ] </stress>        
+        <!-- <pressure units='megapascal'> 2 </pressure> -->
       </ensemble>
    </system>
 </simulation>
