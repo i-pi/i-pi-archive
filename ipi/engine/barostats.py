@@ -41,6 +41,7 @@ from ipi.utils.units import *
 from ipi.utils.mathtools import eigensystem_ut3x3, invert_ut3x3, exp_ut3x3, det_ut3x3
 from ipi.inputs.thermostats import InputThermo
 from ipi.engine.thermostats import Thermostat
+from ipi.engine.cell import Cell
 
 class Barostat(dobject):
    """Base barostat class.
@@ -344,118 +345,6 @@ class BaroBZP(Barostat):
       self.cell.h *= expq
 
 
-class BaroMHT(Barostat):
-   """Martyna-Hughes-Tuckerman barostat class.
-
-   Just extends the standard class adding finite-dt propagators for the barostat
-   velocities, positions, piston.
-
-   Depend objects:
-      p: The momentum associated with the volume degree of freedom.
-      m: The mass associated with the volume degree of freedom.
-   """
-
-   def __init__(self, dt=None, temp=None, pext=None, tau=None, ebaro=None, thermostat=None, p=None):
-      """Initializes MHT barostat.
-
-      Args:
-         dt: Optional float giving the time step for the algorithms. Defaults
-            to the simulation dt.
-         temp: Optional float giving the temperature for the thermostat.
-            Defaults to the simulation temp.
-         pext: Optional float giving the external pressure.
-         tau: Optional float giving the time scale associated with the barostat.
-         ebaro: Optional float giving the conserved quantity already stored
-            in the barostat initially. Used on restart.
-         thermostat: The thermostat connected to the barostat degree of freedom.
-         p: Optional initial volume conjugate momentum. Defaults to 0.
-      """
-
-      super(BaroMHT, self).__init__(dt, temp, pext, tau, ebaro, thermostat)
-
-      dset(self,"p", depend_array(name='p', value=np.atleast_1d(0.0)))
-
-      if not p is None:
-         self.p = np.asarray([p])
-      else:
-         self.p = 0.0
-
-   def bind(self, beads, nm, cell, forces, prng=None, fixdof=None):
-      """Binds beads, cell and forces to the barostat.
-
-      This takes a beads object, a cell object and a forcefield object and
-      makes them members of the barostat. It also then creates the objects that
-      will hold the data needed in the barostat algorithms and the dependency
-      network.
-
-      Args:
-         beads: The beads object from which the bead positions are taken.
-         nm: The normal modes propagator object
-         cell: The cell object from which the system box is taken.
-         forces: The forcefield object from which the force and virial are
-            taken.
-         prng: The parent PRNG to bind the thermostat to
-         fixdof: The number of blocked degrees of freedom.
-      """
-
-      super(BaroMHT, self).bind(beads, nm, cell, forces, prng, fixdof)
-
-      # obtain the thermostat mass from the given time constant
-      # note that the barostat temperature is nbeads times the physical T
-      dset(self,"m", depend_array(name='m', value=np.atleast_1d(0.0),
-         func=(lambda:np.asarray([self.tau**2*3*self.beads.natoms*Constants.kb*self.temp])),
-            dependencies=[ dget(self,"tau"), dget(self,"temp") ] ))
-
-      # binds the thermostat to the piston degrees of freedom
-      self.thermostat.bind(pm=[ self.p, self.m ], prng=prng)
-
-      dset(self,"kin",depend_value(name='kin',
-         func=(lambda:0.5*self.p[0]**2/self.m[0]),
-            dependencies=[dget(self,"p"), dget(self,"m")] ) )
-
-      # the barostat energy must be computed from bits & pieces (overwrite the default)
-      dset(self, "ebaro", depend_value(name='ebaro', func=self.get_ebaro,
-         dependencies=[ dget(self, "kin"), dget(self, "pot"),
-            dget(self.cell, "V"), dget(self, "temp"),
-               dget(self.thermostat,"ethermo")]))
-
-   def get_ebaro(self):
-      """Calculates the barostat conserved quantity."""
-
-      return self.thermostat.ethermo + self.kin + self.pot
-
-   def pstep(self):
-      """Propagates the momenta for half a time step."""
-
-      dthalf = self.dt*0.5
-      dthalf2 = dthalf**2
-      dthalf3 = dthalf**3/3.0
-
-      fc = np.sum(depstrip(self.forces.f),0)/float(self.beads.nbeads)
-      m = depstrip(self.beads.m3)[0]
-      pc = depstrip(self.beads.pc)
-
-      self.p += dthalf*3.0*( self.cell.V* ( self.press - self.beads.nbeads*self.pext ) +
-                float(self.beads.nbeads)/self.mdof*np.dot(pc,pc/m) )
-
-      self.beads.p += depstrip(self.forces.f)*dthalf
-
-   def qcstep(self):
-      """Propagates the centroid position and momentum and the volume."""
-
-      v = self.p[0]/self.m[0]
-      adof = (1 + 3.0/self.mdof)
-      expq, expp = (np.exp(v*self.dt), np.exp( -v*self.dt * adof  ) )
-
-      m = depstrip(self.beads.m3)[0]
-
-      self.nm.qnm[0,:] *= expq
-      self.nm.qnm[0,:] += ((expq-expp)/(v*(1+adof)) *
-                    (depstrip(self.nm.pnm)[0,:])/m)
-      self.nm.pnm[0,:] *= expp
-
-      self.cell.h *= expq
-
 class BaroRGB(Barostat):
    """Raiteri-Gale-Bussi constant stress barostat class (JPCM 23, 334213, 2011).
       
@@ -467,7 +356,7 @@ class BaroRGB(Barostat):
       m: The mass associated with the cell degree of freedom.
       """
    
-   def __init__(self, dt=None, temp=None, pext=None, tau=None, ebaro=None, thermostat=None, p=None, stressext=None):
+   def __init__(self, dt=None, temp=None, pext=None, tau=None, ebaro=None, thermostat=None, p=None, stressext=None, h0=None):
       """Initializes BZP barostat.
          
          Args:
@@ -486,14 +375,17 @@ class BaroRGB(Barostat):
       
       super(BaroRGB, self).__init__(dt, temp, pext, tau, ebaro, thermostat, stressext)
       
-      dset(self,"p", depend_array(name='p', value=np.atleast_1d(0.0)))
-      
+      dset(self,"p", depend_array(name='p', value=np.zeros((3,3),float)))
+            
       if not p is None:
-         self.p = np.asarray([p])
-         self.p.reshape(3,3)
+         self.p = p
       else:
          self.p = 0.0
-         self.p.reshape(3,3)
+         
+      if not h0 is None:
+         self.h0 = h0
+      else:
+         self.h0 = Cell()
    
    def bind(self, beads, nm, cell, forces, prng=None, fixdof=None):
       """Binds beads, cell and forces to the barostat.

@@ -508,8 +508,8 @@ class NSTEnsemble(NVTEnsemble):
       pext: External pressure.
       """
    
-   def __init__(self, dt, temp, stressext, thermostat=None, barostat=None, fixcom=False, eens=0.0):
-      """Initialises NPTEnsemble.
+   def __init__(self, dt, temp, stressext=None, thermostat=None, barostat=None, fixcom=False, eens=0.0):
+      """Initialises NSTEnsemble.
          
          Args:
          dt: The simulation timestep.
@@ -531,7 +531,7 @@ class NSTEnsemble(NVTEnsemble):
       
       dset(self,"stressext",depend_value(name='stressext'))
       if not stressext is None:
-         self.stressext[:] = stressext[:]
+         self.stressext = stressext
       else: self.stressext = 0.0
    
    
@@ -567,7 +567,7 @@ class NSTEnsemble(NVTEnsemble):
       
       deppipe(self,"ntemp", self.barostat, "temp")
       deppipe(self,"dt", self.barostat, "dt")
-      deppipe(self,"pext", self.barostat, "pext")
+      deppipe(self,"stressext", self.barostat, "stressext")
       dget(self,"econs").add_dependency(dget(self.barostat, "ebaro"))
    
    def get_econs(self):

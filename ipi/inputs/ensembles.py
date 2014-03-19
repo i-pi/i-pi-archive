@@ -137,7 +137,6 @@ class InputEnsemble(Input):
          self.pressure.store(ens.pext)
       if tens == 4:
          self.barostat.store(ens.barostat)
-         self.pressure.store(ens.pext) # MR: must take this line out later - only stress is important
          self.stress.store(ens.stressext)
 
    def fetch(self):
@@ -163,7 +162,7 @@ class InputEnsemble(Input):
       elif self.mode.fetch() == "nst" :
          ens = NSTEnsemble(dt=self.timestep.fetch(),
                            temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), fixcom=self.fixcom.fetch(), eens=self.eens.fetch(),
-                           pext=self.pressure.fetch(), stresspext=self.stress.fetch(), barostat=self.barostat.fetch() ) #MR: here must also take out pressure
+                           stressext=self.stress.fetch(), barostat=self.barostat.fetch() )
       elif self.mode.fetch() == "replay":
          ens = ReplayEnsemble(dt=self.timestep.fetch(),
             temp=self.temperature.fetch(),fixcom=False, eens=self.eens.fetch() ,intraj=self.replay_file.fetch() )
@@ -208,8 +207,8 @@ class InputEnsemble(Input):
             raise ValueError("Pressure should be supplied for constant pressure simulation")
 
       if self.mode.fetch() == "nst":
-         if not self.pressure._explicit:
-            raise ValueError("Pressure should be supplied for constant pressure simulation") #MR: also here change for stress!!!!
+         if not self.stress._explicit:
+            raise ValueError("Stress tensor should be supplied for NST simulation")
 
       if self.mode.fetch() == "npt" or self.mode.fetch() == "nvt":
          if not self.temperature._explicit:
