@@ -1,6 +1,6 @@
 <simulation>
    <output prefix='ph2'>
-      <properties stride='5' filename='out'>  [ step, time{picosecond}, conserved{kelvin}, temperature{kelvin}, kinetic_cv{kelvin}, potential{kelvin}, pressure_cv{megapascal}, volume, cell_h] </properties>
+      <properties stride='1' filename='out'>  [ step, time{picosecond}, conserved{kelvin}, temperature{kelvin}, kinetic_cv{kelvin}, potential{kelvin}, pressure_cv{megapascal}, volume, cell_h] </properties>
       <trajectory stride='1' filename='pos' format='pdb'> x_centroid</trajectory>
       <checkpoint stride='2000'/>
    </output>
@@ -26,9 +26,10 @@
          <thermostat mode='pile_l'>
             <tau units='femtosecond'>100 </tau>
          </thermostat>
-         <timestep units='femtosecond'> 1 </timestep>
+         <timestep units='femtosecond'> 0.1 </timestep>
          <temperature units='kelvin'> 10 </temperature>
-         <stress units='megapascal'>  [ 10, 1, 1, 1, 5, 2, 1, 2, 2 ] </stress>         
+         <stress units='megapascal'>  [ 2, 0, 0, 0, 2, 0, 0, 0, 2 ] </stress>         
+         <!-- <pressure units='megapascal'> 2 </pressure> -->
       </ensemble>
    </system>
 </simulation>

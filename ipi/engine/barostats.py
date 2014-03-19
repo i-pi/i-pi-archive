@@ -23,7 +23,7 @@ these ensembles, such as the internal and external pressure and stress.
 Classes:
    Barostat: Base barostat class with the generic methods and attributes.
    BaroBZP: Generates dynamics with a stochastic barostat -- see
-            Ceriotti, More, Manolopoulos, Comp. Phys. Comm. 185, 1019, (2013) 
+            Ceriotti, More, Manolopoulos, Comp. Phys. Comm. 185, 1019, (2013)
             for implementation details.
 """
 
@@ -109,7 +109,7 @@ class Barostat(dobject):
       if not pext is None:
          self.pext = pext
       else: self.pext = 0.0
-      
+
       dset(self,"ebaro",depend_value(name='ebaro'))
       if not ebaro is None:
          self.ebaro = ebaro
@@ -347,18 +347,18 @@ class BaroBZP(Barostat):
 
 class BaroRGB(Barostat):
    """Raiteri-Gale-Bussi constant stress barostat class (JPCM 23, 334213, 2011).
-      
+
       Just extends the standard class adding finite-dt propagators for the barostat
       velocities, positions, piston.
-      
+
       Depend objects:
       p: The momentum matrix associated with the cell degrees of freedom.
       m: The mass associated with the cell degree of freedom.
       """
-   
+
    def __init__(self, dt=None, temp=None, pext=None, tau=None, ebaro=None, thermostat=None, p=None, stressext=None, h0=None):
       """Initializes BZP barostat.
-         
+
          Args:
          dt: Optional float giving the time step for the algorithms. Defaults
          to the simulation dt.
@@ -371,18 +371,18 @@ class BaroRGB(Barostat):
          thermostat: The thermostat connected to the barostat degree of freedom.
          p: Optional initial volume conjugate momentum. Defaults to 0.
          """
-      
-      
+
+
       super(BaroRGB, self).__init__(dt, temp, pext, tau, ebaro, thermostat, stressext)
-      
+
       # p is a 3x3 array (although here it really is upper triangular)
-      dset(self,"p", depend_array(name='p', value=np.zeros((3,3),float)))   
-            
+      dset(self,"p", depend_array(name='p', value=np.zeros((3,3),float)))
+
       if not p is None:
          self.p = p
       else:
          self.p = 0.0
-         
+
       if not h0 is None:
          self.h0 = h0
       else:
@@ -390,21 +390,21 @@ class BaroRGB(Barostat):
 
    def get_potS(self):
       """Calculates the elastic strain energy of the cell."""
-      
+
       # NOTE: since there are nbeads replicas of the unit cell, the enthalpy contains a nbeads factor
       eps=np.dot(self.cell.h, self.h0.ih)
       eps=np.dot(eps.T, eps)
-      eps=0.5*(eps - np.identity(3))      
+      eps=0.5*(eps - np.identity(3))
       return self.h0.V*np.trace(np.dot(self.stressext,eps))*self.beads.nbeads
-   
+
    def bind(self, beads, nm, cell, forces, prng=None, fixdof=None):
       """Binds beads, cell and forces to the barostat.
-         
+
          This takes a beads object, a cell object and a forcefield object and
          makes them members of the barostat. It also then creates the objects that
          will hold the data needed in the barostat algorithms and the dependency
          network.
-         
+
          Args:
          beads: The beads object from which the bead positions are taken.
          nm: The normal modes propagator object
@@ -414,101 +414,118 @@ class BaroRGB(Barostat):
          prng: The parent PRNG to bind the thermostat to
          fixdof: The number of blocked degrees of freedom.
          """
-      
+
       super(BaroRGB, self).bind(beads, nm, cell, forces, prng, fixdof)
-      
-      # obtain the thermostat mass from the given time constant
+
+      # obtain the thermostat mass from the given time constant (1/3 of what used for the corresponding NPT case)
       # note that the barostat temperature is nbeads times the physical T
       dset(self,"m", depend_array(name='m', value=np.atleast_1d(0.0),
-                                 func=(lambda:np.asarray([self.tau**2*3*self.beads.natoms*Constants.kb*self.temp])),
+                                 func=(lambda:np.asarray([self.tau**2*self.beads.natoms*Constants.kb*self.temp])),
                                  dependencies=[ dget(self,"tau"), dget(self,"temp") ] ))
 
       # overrides definition of pot to depend on the many things it depends on for anisotropic cell
-      dset(self,"potS",   
+      dset(self,"potS",
          depend_value(name='potS', func=self.get_potS,
-            dependencies=[ dget(self.cell,"h"), dget(self.h0,"h"), 
+            dependencies=[ dget(self.cell,"h"), dget(self.h0,"h"),
                dget(self.h0,"V"), dget(self.h0,"ih"), dget(self,"stressext") ]))
-               
+
       # binds the thermostat to the piston degrees of freedom
       self.thermostat.bind(pm=[ self.p, self.m ], prng=prng)
       dset(self,"kin",depend_value(name='kin',
-            func=(lambda:0.5*np.trace(np.dot(self.p.T,self.p))/self.m[0]), 
-            dependencies= [dget(self,"p"), dget(self,"m")] ) ) 
-                                                
+            func=(lambda:0.5*np.trace(np.dot(self.p.T,self.p))/self.m[0]),
+            dependencies= [dget(self,"p"), dget(self,"m")] ) )
+
       # the barostat energy must be computed from bits & pieces (overwrite the default)
       dset(self, "ebaro", depend_value(name='ebaro', func=self.get_ebaro,
                            dependencies=[ dget(self, "kin"), dget(self, "potS"),
                            dget(self.cell, "h"), dget(self, "temp"),
-                           dget(self.thermostat,"ethermo")] )) 
-   
+                           dget(self.thermostat,"ethermo")] ))
+
    def get_ebaro(self):
       """Calculates the barostat conserved quantity."""
 
       lastterm=np.sum([(3-i)*np.log(self.cell.h[i][i]) for i in range(3)])
       lastterm = 2.*Constants.kb*self.temp*lastterm
       return self.thermostat.ethermo + self.kin + self.potS - lastterm
-   
-   
+
+
    def pstep(self):
       """Propagates the momenta for half a time step."""
-      
+
       dthalf = self.dt*0.5
       dthalf2 = dthalf**2
       dthalf3 = dthalf**3/3.0
 
+      self.p = np.triu(self.p)  # zeroes out elements
+
       hh0=np.dot(self.cell.h, self.h0.ih)
       pi_ext=np.dot(hh0, np.dot(self.stressext, hh0.T))*self.h0.V/self.cell.V
+
+      print "check hh0", hh0
+      print "check piext", self.stressext - pi_ext
 
       # MR: enforcing upper triangle...
       pi_ext=np.triu(pi_ext)
 
       L=np.diag([3,2,1])
 
-      # Must set to zero lower triangle of internal stress 
+      # Must set to zero lower triangle of internal stress
       stup=np.triu(self.stress)
 
       # This differs from the BZP thermostat in that it uses just one kT in the propagator.
       # This leads to an ensemble equaivalent to Martyna-Hughes-Tuckermann for both fixed and moving COM
       # Anyway, it is a small correction so whatever.
+
+      print "check-small", pi_ext, stup
+      #dthalf*3.0*( self.cell.V* ( self.press - self.beads.nbeads*self.pext ) +
+      #          Constants.kb*self.temp )
+
       self.p += dthalf*( self.cell.V* ( stup - self.beads.nbeads*pi_ext ) +
-                           2.0*Constants.kb*self.temp*L)
+                           Constants.kb*self.temp*L)
 
       print 'pafterfirstterm', stup, pi_ext, L, self.p
-      
-      fc = np.sum(depstrip(self.forces.f),0).reshape(3,self.beads.natoms)/self.beads.nbeads
-      fcTonm = (fc/depstrip(self.beads.m3)[0].reshape(3,self.beads.natoms)).T
-      pc = depstrip(self.beads.pc).reshape(3,self.beads.natoms)
 
-      
+      fc = np.sum(depstrip(self.forces.f),0).reshape(self.beads.natoms,3)/self.beads.nbeads
+      fcTonm = (fc/depstrip(self.beads.m3)[0].reshape(self.beads.natoms,3)).T
+      pc = depstrip(self.beads.pc).reshape(self.beads.natoms,3)
+
+
       nat = self.beads.natoms
       # I am not 100% sure, but these higher-order terms come from integrating the pressure virial term,
       # so they should need to be multiplied by nbeads to be consistent with the equations of motion in the PI context
       # again, these are tiny tiny terms so whatever.
-      
-      self.p += (dthalf2*np.dot(pc,fcTonm) + dthalf3*np.dot(fc,fcTonm)) * self.beads.nbeads
-                              
+
+      deltap = (dthalf2*np.dot(fcTonm,pc) + dthalf3*np.dot(fcTonm,fc)) * self.beads.nbeads
+
+      self.p += np.triu(deltap)
+
+
       self.beads.p += depstrip(self.forces.f)*dthalf
-   
+
    def qcstep(self):
       """Propagates the centroid position and momentum and the volume."""
-      
+
       v = self.p/self.m[0] # MR: why was p[0] here?
       expq, expp = (matrix_exp(v*self.dt), matrix_exp(-v*self.dt))
-      
+
       print 'v', v
       print 'expq', expq
       print 'expp', expp
       print 'pnm',  self.nm.pnm.shape
-      
+
       m = depstrip(self.beads.m)
       print 'm', m.shape
       print 'pistonmass', self.m
       print 'pistonmom', self.p
-      
+
       nat = self.beads.natoms
+
+      saveq=self.nm.qnm[0].copy()
+      savep=self.nm.pnm[0].copy()
       for i in range(nat):
          self.nm.qnm[0,3*i:3*(i+1)] = np.dot(expq, self.nm.qnm[0,3*i:3*(i+1)])
          self.nm.qnm[0,3*i:3*(i+1)] += np.dot(np.dot(invert_ut3x3(v),(expq-expp)/(2.0)),depstrip(self.nm.pnm)[0,3*i:3*(i+1)]/m[i])
-         self.nm.pnm[0,3*i:3*(i+1)] = np.dot(expp, self.nm.qnm[0,3*i:3*(i+1)])
-      
+         self.nm.pnm[0,3*i:3*(i+1)] = np.dot(expp, self.nm.pnm[0,3*i:3*(i+1)])
+
+      print "STICAZZIIIII!!!! ", np.linalg.norm(saveq-self.nm.qnm[0])/np.linalg.norm(saveq), np.linalg.norm(savep-self.nm.pnm[0])/np.linalg.norm(savep)
       self.cell.h = np.dot(expq,self.cell.h)
