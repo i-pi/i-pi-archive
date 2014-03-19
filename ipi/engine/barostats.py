@@ -487,13 +487,22 @@ class BaroRGB(Barostat):
       super(BaroRGB, self).__init__(dt, temp, pext, tau, ebaro, thermostat, stressext)
       
       dset(self,"p", depend_array(name='p', value=np.atleast_1d(0.0)))
+      dset(self,"pot",
+         depend_value(name='pot', func=self.get_pot,
+                     dependencies=[ dget(cell,"h"), dget(self,"stressext") ]))
+      def get_pot(self):
+         """Calculates the elastic strain energy of the cell."""
+         
+         # NOTE: since there are nbeads replicas of the unit cell, the enthalpy contains a nbeads factor
+         eps=np.dot(self.cell.h, self.cell.ih0)
+         eps=np.dot(self.cell.h.transpose, eps)
+         eps=0.5*(np.dot(self.cell.ih0.transpose(), eps) - np.identity(3))
+         return self.cell.V0*np.trace(np.dot(self.stressext, eps))*self.beads.nbeads
       
       if not p is None:
-         self.p = np.asarray([p])
-         self.p.reshape(3,3)
+         self.p = np.asarray([p]).reshape(3,3)
       else:
-         self.p = 0.0
-         self.p.reshape(3,3)
+         self.p = np.zeros(9).reshape(3,3) 
    
    def bind(self, beads, nm, cell, forces, prng=None, fixdof=None):
       """Binds beads, cell and forces to the barostat.
@@ -529,7 +538,7 @@ class BaroRGB(Barostat):
       # the barostat energy must be computed from bits & pieces (overwrite the default)
       dset(self, "ebaro", depend_value(name='ebaro', func=self.get_ebaro,
                            dependencies=[ dget(self, "kin"), dget(self, "pot"),
-                           dget(self.cell, "V"), dget(self, "temp"),
+                           dget(self.cell, "h"), dget(self, "temp"),
                            dget(self.thermostat,"ethermo")] )) # MR: POT needs to be calculated correctly...
    
    def get_ebaro(self):
