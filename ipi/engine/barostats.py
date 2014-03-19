@@ -175,6 +175,7 @@ class Barostat(dobject):
       # NOTE: since there are nbeads replicas of the unit cell, the enthalpy contains a nbeads factor
       return self.cell.V*self.pext*self.beads.nbeads
 
+
    def get_kstress(self):
       """Calculates the quantum centroid virial kinetic stress tensor
       estimator.
@@ -462,11 +463,11 @@ class BaroRGB(Barostat):
       velocities, positions, piston.
       
       Depend objects:
-      p: The momentum associated with the volume degree of freedom.
-      m: The mass associated with the volume degree of freedom.
+      p: The momentum matrix associated with the cell degrees of freedom.
+      m: The mass associated with the cell degree of freedom.
       """
    
-   def __init__(self, dt=None, temp=None, pext=None, tau=None, ebaro=None, thermostat=None, p=None):
+   def __init__(self, dt=None, temp=None, pext=None, tau=None, ebaro=None, thermostat=None, p=None, stressext=None):
       """Initializes BZP barostat.
          
          Args:
@@ -474,7 +475,7 @@ class BaroRGB(Barostat):
          to the simulation dt.
          temp: Optional float giving the temperature for the thermostat.
          Defaults to the simulation temp.
-         pext: Optional float giving the external pressure.
+         stressext: Optional float giving the external pressure.
          tau: Optional float giving the time scale associated with the barostat.
          ebaro: Optional float giving the conserved quantity already stored
          in the barostat initially. Used on restart.
@@ -483,14 +484,16 @@ class BaroRGB(Barostat):
          """
       
       
-      super(BaroRGB, self).__init__(dt, temp, pext, tau, ebaro, thermostat)
+      super(BaroRGB, self).__init__(dt, temp, pext, tau, ebaro, thermostat, stressext)
       
       dset(self,"p", depend_array(name='p', value=np.atleast_1d(0.0)))
       
       if not p is None:
          self.p = np.asarray([p])
+         self.p.reshape(3,3)
       else:
          self.p = 0.0
+         self.p.reshape(3,3)
    
    def bind(self, beads, nm, cell, forces, prng=None, fixdof=None):
       """Binds beads, cell and forces to the barostat.
@@ -520,19 +523,21 @@ class BaroRGB(Barostat):
       # binds the thermostat to the piston degrees of freedom
       self.thermostat.bind(pm=[ self.p, self.m ], prng=prng)
       dset(self,"kin",depend_value(name='kin',
-            func=(lambda:0.5*self.p[0]**2/self.m[0]),
-            dependencies= [dget(self,"p"), dget(self,"m")] ) )
+            func=(lambda:0.5*np.trace(np.square(self.p))/self.m[0]), 
+            dependencies= [dget(self,"p"), dget(self,"m")] ) ) #MR: changed here...
                                                 
       # the barostat energy must be computed from bits & pieces (overwrite the default)
       dset(self, "ebaro", depend_value(name='ebaro', func=self.get_ebaro,
                            dependencies=[ dget(self, "kin"), dget(self, "pot"),
                            dget(self.cell, "V"), dget(self, "temp"),
-                           dget(self.thermostat,"ethermo")] ))
+                           dget(self.thermostat,"ethermo")] )) # MR: POT needs to be calculated correctly...
    
    def get_ebaro(self):
       """Calculates the barostat conserved quantity."""
-      
-      return self.thermostat.ethermo + self.kin + self.pot - np.log(self.cell.V)*Constants.kb*self.temp
+
+      lastterm=np.sum([(3-i)*np.log(self.cell.h[i][i]) for i in range(3)])
+      lastterm = 2.*Constants.kb*self.temp*lastterm
+      return self.thermostat.ethermo + self.kin + self.pot - lastterm
    
    
    def pstep(self):
