@@ -1,6 +1,6 @@
 <simulation>
    <output prefix='ph2'>
-      <properties stride='5' filename='out'>  [ step, time{picosecond}, conserved{kelvin}, temperature{kelvin}, kinetic_cv{kelvin}, potential{kelvin}, pressure_cv{megapascal}] </properties>
+      <properties stride='5' filename='out'>  [ step, time{picosecond}, conserved{kelvin}, temperature{kelvin}, kinetic_cv{kelvin}, potential{kelvin}, pressure_cv{megapascal}, volume, cell_h] </properties>
       <trajectory stride='1' filename='pos' format='pdb'> x_centroid</trajectory>
       <checkpoint stride='2000'/>
    </output>
