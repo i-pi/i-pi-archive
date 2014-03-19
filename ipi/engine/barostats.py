@@ -356,6 +356,18 @@ class BaroRGB(Barostat):
       m: The mass associated with the cell degree of freedom.
       """
 
+   def get_3x3to6(self):
+      rp=np.zeros(6,float)
+      rp[0]=self.p[0,0]; rp[1]=self.p[1,1]; rp[2]=self.p[2,2];
+      rp[3]=self.p[0,1]; rp[4]=self.p[0,2]; rp[5]=self.p[1,2];
+      return rp
+
+   def get_6to3x3(self):
+      rp=np.zeros((3,3),float)
+      rp[0,0]=self.p6[0]; rp[1,1]=self.p6[1]; rp[2,2]=self.p6[2];
+      rp[0,1]=self.p6[3]; rp[0,2]=self.p6[4]; rp[1,2]=self.p6[5];
+      return rp
+
    def __init__(self, dt=None, temp=None, pext=None, tau=None, ebaro=None, thermostat=None, p=None, stressext=None, h0=None):
       """Initializes BZP barostat.
 
@@ -375,8 +387,18 @@ class BaroRGB(Barostat):
 
       super(BaroRGB, self).__init__(dt, temp, pext, tau, ebaro, thermostat, stressext)
 
-      # p is a 3x3 array (although here it really is upper triangular)
-      dset(self,"p", depend_array(name='p', value=np.zeros((3,3),float)))
+      # non-zero elements of the cell momentum are only
+      # pxx pyy pzz pxy pxz pyz, but we want to access it either as a
+      # 6-vector or as a 3x3 upper triangular tensor.
+      # we use a synchronizer to achieve that
+
+      sync_baro = synchronizer()
+      dset(self,"p6", depend_array(name='p6', value=np.zeros(6,float),
+          synchro=sync_baro, func={"p" : self.get_3x3to6}
+         ))
+      dset(self,"p", depend_array(name='p', value=np.zeros((3,3),float),
+            synchro=sync_baro, func={"p6" : self.get_6to3x3}
+         ))
 
       if not p is None:
          self.p = p
@@ -430,7 +452,7 @@ class BaroRGB(Barostat):
                dget(self.h0,"V"), dget(self.h0,"ih"), dget(self,"stressext") ]))
 
       # binds the thermostat to the piston degrees of freedom
-      self.thermostat.bind(pm=[ self.p, self.m ], prng=prng)
+      self.thermostat.bind(pm=[ self.p6, self.m ], prng=prng)
       dset(self,"kin",depend_value(name='kin',
             func=(lambda:0.5*np.trace(np.dot(self.p.T,self.p))/self.m[0]),
             dependencies= [dget(self,"p"), dget(self,"m")] ) )
@@ -445,7 +467,7 @@ class BaroRGB(Barostat):
       """Calculates the barostat conserved quantity."""
 
       lastterm=np.sum([(3-i)*np.log(self.cell.h[i][i]) for i in range(3)])
-      lastterm = 2.*Constants.kb*self.temp*lastterm
+      lastterm = Constants.kb*self.temp*lastterm
       return self.thermostat.ethermo + self.kin + self.potS - lastterm
 
 
@@ -456,49 +478,25 @@ class BaroRGB(Barostat):
       dthalf2 = dthalf**2
       dthalf3 = dthalf**3/3.0
 
-      self.p = np.triu(self.p)  # zeroes out elements
-
       hh0=np.dot(self.cell.h, self.h0.ih)
       pi_ext=np.dot(hh0, np.dot(self.stressext, hh0.T))*self.h0.V/self.cell.V
-
-      print "check hh0", hh0
-      print "check piext", self.stressext - pi_ext
-
-      # MR: enforcing upper triangle...
-      pi_ext=np.triu(pi_ext)
-
       L=np.diag([3,2,1])
-
-      # Must set to zero lower triangle of internal stress
-      stup=np.triu(self.stress)
 
       # This differs from the BZP thermostat in that it uses just one kT in the propagator.
       # This leads to an ensemble equaivalent to Martyna-Hughes-Tuckermann for both fixed and moving COM
       # Anyway, it is a small correction so whatever.
 
-      print "check-small", pi_ext, stup
-      #dthalf*3.0*( self.cell.V* ( self.press - self.beads.nbeads*self.pext ) +
-      #          Constants.kb*self.temp )
-
-      self.p += dthalf*( self.cell.V* ( stup - self.beads.nbeads*pi_ext ) +
+      self.p += dthalf*( self.cell.V* np.triu( self.stress - self.beads.nbeads*pi_ext ) +
                            Constants.kb*self.temp*L)
-
-      print 'pafterfirstterm', stup, pi_ext, L, self.p
 
       fc = np.sum(depstrip(self.forces.f),0).reshape(self.beads.natoms,3)/self.beads.nbeads
       fcTonm = (fc/depstrip(self.beads.m3)[0].reshape(self.beads.natoms,3)).T
       pc = depstrip(self.beads.pc).reshape(self.beads.natoms,3)
 
-
-      nat = self.beads.natoms
       # I am not 100% sure, but these higher-order terms come from integrating the pressure virial term,
       # so they should need to be multiplied by nbeads to be consistent with the equations of motion in the PI context
       # again, these are tiny tiny terms so whatever.
-
-      deltap = (dthalf2*np.dot(fcTonm,pc) + dthalf3*np.dot(fcTonm,fc)) * self.beads.nbeads
-
-      self.p += np.triu(deltap)
-
+      self.p += np.triu(dthalf2*np.dot(fcTonm,pc) + dthalf3*np.dot(fcTonm,fc)) * self.beads.nbeads
 
       self.beads.p += depstrip(self.forces.f)*dthalf
 
@@ -508,14 +506,8 @@ class BaroRGB(Barostat):
       v = self.p/self.m[0] # MR: why was p[0] here?
       expq, expp = (matrix_exp(v*self.dt), matrix_exp(-v*self.dt))
 
-      print 'v', v
-      print 'expq', expq
-      print 'expp', expp
-      print 'pnm',  self.nm.pnm.shape
-
       m = depstrip(self.beads.m)
-      print 'm', m.shape
-      print 'pistonmass', self.m
+
       print 'pistonmom', self.p
 
       nat = self.beads.natoms
@@ -527,5 +519,4 @@ class BaroRGB(Barostat):
          self.nm.qnm[0,3*i:3*(i+1)] += np.dot(np.dot(invert_ut3x3(v),(expq-expp)/(2.0)),depstrip(self.nm.pnm)[0,3*i:3*(i+1)]/m[i])
          self.nm.pnm[0,3*i:3*(i+1)] = np.dot(expp, self.nm.pnm[0,3*i:3*(i+1)])
 
-      print "STICAZZIIIII!!!! ", np.linalg.norm(saveq-self.nm.qnm[0])/np.linalg.norm(saveq), np.linalg.norm(savep-self.nm.pnm[0])/np.linalg.norm(savep)
       self.cell.h = np.dot(expq,self.cell.h)
