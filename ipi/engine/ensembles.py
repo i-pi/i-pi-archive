@@ -567,13 +567,8 @@ class NSTEnsemble(NVTEnsemble):
       
       deppipe(self,"ntemp", self.barostat, "temp")
       deppipe(self,"dt", self.barostat, "dt")
-      print "init  NST stressext"
-      self.stressext[:]=1.0
-      print "ensemble", self.stressext
-      print "barostat", self.barostat.stressext
             
       deppipe(self,"stressext", self.barostat, "stressext")
-      print "piped", self.barostat.stressext
       dget(self,"econs").add_dependency(dget(self.barostat, "ebaro"))
    
    def get_econs(self):

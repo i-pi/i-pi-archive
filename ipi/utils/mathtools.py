@@ -161,6 +161,10 @@ def h2abc(h):
       A list containing the lattice vector lengths and the angles between them.
    """
 
+   print 'h', h
+   print 'shape', h.shape
+   print 'dotp',  np.dot(h[:,1], h[:,2])
+
    a = float(h[0,0])
    b = math.sqrt(h[0,1]**2 + h[1,1]**2)
    c = math.sqrt(h[0,2]**2 + h[1,2]**2 + h[2,2]**2)
