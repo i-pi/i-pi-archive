@@ -21,6 +21,7 @@
             <thermostat mode='langevin'>
                <tau units='femtosecond'>10</tau>
             </thermostat>
+            <h0> [ 29.865, 0, 0, 0,   29.865, 0, 0, 0,   29.865 ]</h0>
          </barostat>
          <thermostat mode='pile_l'>
             <tau units='femtosecond'>100 </tau>

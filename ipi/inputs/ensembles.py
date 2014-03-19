@@ -81,7 +81,7 @@ class InputEnsemble(Input):
                                       "help"         : "The external pressure.",
                                       "dimension"    : "pressure"}),
            "stress" : (InputArray, {"dtype"        : float,
-                                    "default"      : np.zeros(6),
+                                    "default"      : np.zeros((3,3),float),
                                     "help"         : "The external stress.",
                                     "dimension"    : "pressure"}),
            "eens" : (InputValue, {"dtype"     : float,
@@ -162,7 +162,8 @@ class InputEnsemble(Input):
       elif self.mode.fetch() == "nst" :
          ens = NSTEnsemble(dt=self.timestep.fetch(),
                            temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), fixcom=self.fixcom.fetch(), eens=self.eens.fetch(),
-                           stressext=self.stress.fetch(), barostat=self.barostat.fetch() )
+                           stressext=self.stress.fetch().reshape((3,3)), # casts into a 3x3 tensor
+                           barostat=self.barostat.fetch() )
       elif self.mode.fetch() == "replay":
          ens = ReplayEnsemble(dt=self.timestep.fetch(),
             temp=self.temperature.fetch(),fixcom=False, eens=self.eens.fetch() ,intraj=self.replay_file.fetch() )

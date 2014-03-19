@@ -119,10 +119,10 @@ class Barostat(dobject):
          thermostat = Thermostat()
       self.thermostat = thermostat
 
-      dset(self,"stressext",depend_value(name='stressext'))
+      dset(self,"stressext",depend_array(name='stressext', value=np.zeros((3,3), float)))
       if not stressext is None:
          self.stressext = stressext
-      else: self.stressext = np.zeros(9)
+      else: self.stressext = 0.0
 
       # pipes timestep and temperature to the thermostat
       deppipe(self,"dt", self.thermostat, "dt")
@@ -375,7 +375,8 @@ class BaroRGB(Barostat):
       
       super(BaroRGB, self).__init__(dt, temp, pext, tau, ebaro, thermostat, stressext)
       
-      dset(self,"p", depend_array(name='p', value=np.zeros((3,3),float)))
+      # p is a 3x3 array (although here it really is upper triangular)
+      dset(self,"p", depend_array(name='p', value=np.zeros((3,3),float)))   
             
       if not p is None:
          self.p = p
@@ -386,6 +387,18 @@ class BaroRGB(Barostat):
          self.h0 = h0
       else:
          self.h0 = Cell()
+
+   def get_pot(self):
+      """Calculates the elastic strain energy of the cell."""
+      
+      # NOTE: since there are nbeads replicas of the unit cell, the enthalpy contains a nbeads factor
+      eps=np.dot(self.cell.h, self.h0.ih)
+      eps=np.dot(eps.T, eps)
+      eps=0.5*(eps - np.identity(3))
+      print self.h0.V
+      print eps
+      print self.stressext
+      return self.h0.V*np.trace(np.dot(self.stressext,eps))*self.beads.nbeads
    
    def bind(self, beads, nm, cell, forces, prng=None, fixdof=None):
       """Binds beads, cell and forces to the barostat.
@@ -412,17 +425,24 @@ class BaroRGB(Barostat):
       dset(self,"m", depend_array(name='m', value=np.atleast_1d(0.0),
                                  func=(lambda:np.asarray([self.tau**2*3*self.beads.natoms*Constants.kb*self.temp])),
                                  dependencies=[ dget(self,"tau"), dget(self,"temp") ] ))
+
+      # overrides definition of pot to depend on the many things it depends on for anisotropic cell
+      dset(self,"pot",   
+         depend_value(name='pot', func=self.get_pot,
+            dependencies=[ dget(self.cell,"h"), dget(self.h0,"h"), 
+               dget(self.h0,"V"), dget(self.h0,"ih"), dget(self,"stressext") ]))
+               
       # binds the thermostat to the piston degrees of freedom
       self.thermostat.bind(pm=[ self.p, self.m ], prng=prng)
       dset(self,"kin",depend_value(name='kin',
-            func=(lambda:0.5*np.trace(np.square(self.p))/self.m[0]), 
-            dependencies= [dget(self,"p"), dget(self,"m")] ) ) #MR: changed here...
+            func=(lambda:0.5*np.trace(np.dot(self.p.T,self.p))/self.m[0]), 
+            dependencies= [dget(self,"p"), dget(self,"m")] ) ) 
                                                 
       # the barostat energy must be computed from bits & pieces (overwrite the default)
       dset(self, "ebaro", depend_value(name='ebaro', func=self.get_ebaro,
                            dependencies=[ dget(self, "kin"), dget(self, "pot"),
-                           dget(self.cell, "V"), dget(self, "temp"),
-                           dget(self.thermostat,"ethermo")] )) # MR: POT needs to be calculated correctly...
+                           dget(self.cell, "h"), dget(self, "temp"),
+                           dget(self.thermostat,"ethermo")] )) 
    
    def get_ebaro(self):
       """Calculates the barostat conserved quantity."""
@@ -435,6 +455,7 @@ class BaroRGB(Barostat):
    def pstep(self):
       """Propagates the momenta for half a time step."""
       
+      return
       dthalf = self.dt*0.5
       dthalf2 = dthalf**2
       dthalf3 = dthalf**3/3.0
@@ -459,6 +480,7 @@ class BaroRGB(Barostat):
    def qcstep(self):
       """Propagates the centroid position and momentum and the volume."""
       
+      return
       v = self.p[0]/self.m[0]
       expq, expp = (np.exp(v*self.dt), np.exp(-v*self.dt))
       

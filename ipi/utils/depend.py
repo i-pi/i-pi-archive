@@ -570,7 +570,7 @@ class depend_array(np.ndarray, depend_base):
    def get(self):
       """Alternative to standard get function."""
 
-      return self.__get__(slice(None,None,None))
+      return self.__getitem__(slice(None,None,None))
 
    def __get__(self, instance, owner):
       """Overwrites standard get function."""
