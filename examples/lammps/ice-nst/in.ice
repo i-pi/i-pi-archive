@@ -1,13 +1,12 @@
 units		electron
 atom_style	full
 
-#pair_style	lj/cut/coul/long 17.01
-pair_style      lj/cut/tip4p/long 1 2 1 1 0.278072379 17.007
+pair_style	lj/cut/coul/long 17.01
+#pair_style      lj/cut/tip4p/long 1 2 1 1 0.278072379 17.
 #bond_style      harmonic
 bond_style      class2 
 angle_style     harmonic
-#kspace_style	pppm 0.0001
-kspace_style	pppm/tip4p 0.0001
+kspace_style	ewald 0.0001
 
 read_data	data.ice
 pair_coeff  * * 0 0
