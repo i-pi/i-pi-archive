@@ -28,7 +28,7 @@
          </thermostat>
          <timestep units='femtosecond'> 0.5 </timestep>
          <temperature units='kelvin'> 59.6646 </temperature>
-         <stress units='bar'>  [ 1 , 0.000, 0.000, 0.000, 1, 0.000, 0, 0, 1 ] </stress>
+         <stress units='bar'>  [ 1 , 0.1, 0.000, 0.000, 1, 0.000, 0, 0, 1 ] </stress>
   <!--        <pressure units='megapascal'> 1 </pressure>  -->
          <fixcom>False</fixcom>
       </ensemble>
