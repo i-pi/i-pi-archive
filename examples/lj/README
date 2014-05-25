@@ -3,11 +3,11 @@
  * This gives an example of Neon with a Lennard-Jones potential 
    pair potential, which can be compared to the following data:
 
-   - low_density: Loup Verlet, Phys. Rev. 159, 1, (1967)
+   - low_density: Loup Verlet, Phys. Rev. 159, 98, (1967)
            State point (N, rho, T) = (864, 0.35, 1.620)
-   - mid_density: Loup Verlet, Phys. Rev. 159, 1, (1967)
+   - mid_density: Loup Verlet, Phys. Rev. 159, 98, (1967)
            State point (N, rho, T) = (864, 0.75, 1.069)
-   - high_density: Loup Verlet, Phys. Rev. 159, 1, (1967)
+   - high_density: Loup Verlet, Phys. Rev. 159, 98, (1967)
            State point (N, rho, T) = (864, 0.88, 1.095)
 
    Note that the last one appears to illustrate a typo in the paper, since
