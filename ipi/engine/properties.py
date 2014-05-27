@@ -36,6 +36,7 @@ __all__ = ['Properties', 'Trajectories', 'getkey', 'getall', 'help_latex']
 
 import os
 import numpy as np
+import math
 from ipi.utils.messages import verbosity, info, warning
 from ipi.utils.depend import *
 from ipi.utils.units import Constants, unit_to_internal, unit_to_user
@@ -411,7 +412,7 @@ class Properties(dobject):
                       for the statistical accuracy of the re-weighting process. Note that evaluating this estimator costs
                       as much as a PIMD step for each atom in the list. The elements that are output have different
                       units, so the output can be only in atomic units.""" },
-      "isotope_tdfep":  {"dimension" : "undefined",
+       "isotope_tdfep":  {"dimension" : "undefined",
                           "size" : 7,
                           'func': self.get_isotope_thermo,
                           "help": "The thermodynamic free energy perturbation scaled mass KE estimator.",
@@ -431,7 +432,17 @@ class Properties(dobject):
                       for the statistical accuracy of the re-weighting process. Evaluating this estimator is inexpensive,
                       but typically the statistical accuracy is worse than with the scaled coordinates estimator.
                       The elements that are output have different
-                      units, so the output can be only in atomic units.""" }
+                      units, so the output can be only in atomic units.""" },
+       "isotope_ensembleave":  {"dimension" : "undefined",
+                          "size" : 3,
+                          'func': self.get_isotope_ensembleaverage,
+                          "help": "Isotope fractionation estimator in the form of ensemble average.",
+                          "longhelp" : """Returns the (many) terms needed to directly compute the relative probablity of 
+                      isotope substitution in two different systems/phases. Takes two arguments, 'alpha' , which gives the
+                      scaled mass parameter and default to '1.0', and 'atom', which is the label or index of a type of atoms. 
+                      The 3 numbers output are 1) the average over the excess spring energy for an isotope atom substitution <spr>,
+                      2) the average of the squares of the excess spring energy <spr**2>, and 3) the average of the exponential 
+                      of excess spring energy <exp(-beta*spr)>""" }
       }
 
    def bind(self, system):
@@ -1128,6 +1139,76 @@ class Properties(dobject):
       return np.asarray([alogr/ni, alogr2/ni, atcv/ni, atcv2/ni, law, lawke, sawke])
 
 
+   def get_isotope_ensembleaverage (self, alpha="1.0", atom=""):
+      """Gives the components  to directly compute the relative probablity of 
+         isotope substitution in two different systems/phases.
+
+      Args:
+         alpha: m'/m the mass ratio
+         atom: the label or index of the atom to compute the isotope fractionation pair for
+
+      Returns:
+         a tuple from which one can reconstruct all that is needed to
+         compute the relative probability of isotope substitution:
+         (spraverage, spr2average, sprexpaverage)
+      """
+
+      try:
+         #iatom gives the index of the atom to be studied
+         iatom = int(atom)
+         latom = ""
+         if iatom >= self.beads.natoms:
+            raise IndexError("Cannot output scaled-mass kinetic energy estimator as atom index %d is larger than the number of atoms" % iatom)
+      except ValueError:
+         #here 'atom' is a label rather than an index which is stored in latom
+         iatom = -1
+         latom = atom
+
+      alpha = float(alpha)
+
+      sprsum = 0.0
+      sprexpsum = 0.0
+      spr2sum = 0.0
+      ni = 0
+
+      # strips dependency control since we are not gonna change the true beads in what follows
+      q = depstrip(self.beads.q)
+
+
+      for i in range(self.beads.natoms):
+         # selects only the atoms we care about
+         if (atom != "" and iatom != i and latom != self.beads.names[i]):
+            continue
+
+         ni += 1
+
+         spr = 0.0
+         for b in range(1,self.beads.nbeads):
+            for j in range(3*i,3*(i+1)):
+               spr += (q[b,j]-q[b-1,j])**2
+         for j in range(3*i,3*(i+1)):
+            spr += (q[self.beads.nbeads-1,j]-q[0,j])**2
+          
+         # spr = 0.5*(alpha-1)*m_H*omegan2*sum {(q_i+1 - q_i)**2} 
+         spr *= 0.5*(alpha-1.0)*self.beads.m[i]*self.nm.omegan2
+         
+         spr2 = spr*spr
+         # sprexp = exp(-Belta*spr/P)
+         sprexp = math.exp(-1.0*spr/(Constants.kb*self.ensemble.temp*self.beads.nbeads))
+         
+         sprsum += spr
+         spr2sum += spr2
+         sprexpsum += sprexp
+
+      if ni == 0:
+         raise IndexError("Couldn't find an atom which matched the argument of isotope_y")
+      
+      spraverage = sprsum/ni
+      spr2average = spr2sum/ni
+      sprexpaverage = sprexpsum/ni
+      
+      return np.asarray([spraverage, spr2average, sprexpaverage])
+      
 class Trajectories(dobject):
    """A simple class to take care of output of trajectory data.
 
