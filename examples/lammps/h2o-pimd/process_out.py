@@ -26,7 +26,7 @@ count = 0
 for a in range(asize):
 	
 	if a >= equilibriumstep:
-		out[count][0] = table[a][0]
+		out[count][0] = table[a][1]
 		out[count][1] = table[a][9]
 		if count == 0:
 			out[count][2] = table[a][9]
