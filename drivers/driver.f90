@@ -37,7 +37,7 @@
       CHARACTER*1024 :: host
 
       ! COMMAND LINE PARSING
-      CHARACTER*1024 :: cmdbuffer, vops
+      CHARACTER*1024 :: cmdbuffer
       INTEGER ccmd, vstyle
       LOGICAL verbose
       INTEGER commas(4), par_count      ! stores the index of commas in the parameter string
@@ -75,6 +75,10 @@
       verbose = .false.
       par_count = 0
       vstyle = -1
+      rc = 0.0d0
+      init_rc = 0.0d0
+      volume = 0.0d0
+      init_volume = 0.0d0
 
       DO i = 1, IARGC()
          CALL GETARG(i, cmdbuffer)
@@ -231,6 +235,9 @@
                ALLOCATE(msgbuffer(3*nat))
                ALLOCATE(atoms(nat,3))
                ALLOCATE(forces(nat,3))
+               atoms = 0.0d0
+               forces = 0.0d0
+               msgbuffer = 0.0d0
             ENDIF
 
             CALL readbuffer(socket, msgbuffer, nat*3*8)
@@ -240,8 +247,8 @@
 
             IF (vstyle == 0) THEN   ! ideal gas, so no calculation done
                pot = 0
-               forces = 0
-               virial = 0
+               forces = 0.0d0
+               virial = 0.0d0
             ELSEIF (vstyle == 3) THEN ! 1D harmonic potential, so only uses the first position variable
                pot = 0.5*ks*atoms(1,1)**2
                forces = 0
@@ -254,6 +261,7 @@
                   ALLOCATE(n_list(nat*(nat-1)/2))
                   ALLOCATE(index_list(nat))
                   ALLOCATE(last_atoms(nat,3))
+                  last_atoms = 0.0d0
                   CALL nearest_neighbours(rn, nat, atoms, cell_h, cell_ih, index_list, n_list)
                   last_atoms = atoms
                   init_volume = volume

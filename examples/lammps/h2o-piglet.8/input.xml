@@ -1,18 +1,20 @@
 <simulation>
-   <initialize nbeads='8'> 
-      <file mode='pdb'> water_298K.pdb </file>
-      <velocities mode="thermal" units='kelvin'> 298 </velocities>
-   </initialize>
    <output prefix='gle_lammps'>
       <properties stride='1' filename='out'>  [ step, time{picosecond}, conserved{kelvin}, temperature{kelvin}, kinetic_cv{kelvin}, potential{kelvin}, pressure_cv{megapascal}] </properties>
       <trajectory filename='pos' stride='20'> positions </trajectory>
    </output>
    <total_steps>500000</total_steps>
    <prng><seed>32342</seed></prng>
+   <ffsocket name="lmpserial" mode="unix">
+   <address>piglet_8</address>
+   </ffsocket>
+   <system>
+   <initialize nbeads='8'> 
+      <file mode='pdb'> water_298K.pdb </file>
+      <velocities mode="thermal" units='kelvin'> 298 </velocities>
+   </initialize>
    <forces>
-      <socket mode='unix'>
-         <address>piglet_8</address>
-      </socket>
+   <force> lmpserial </force>
    </forces>
    <ensemble mode='nvt'>
   <thermostat mode='nm_gle'>
@@ -46,4 +48,5 @@
       <timestep units='femtosecond'> 0.1</timestep>
       <temperature units='kelvin'>298</temperature>
    </ensemble>
+</system>
 </simulation>
