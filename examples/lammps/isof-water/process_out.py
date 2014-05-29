@@ -15,7 +15,7 @@ from math import log
 
 # the number of steps that allows the system to equilibrate
 # for water liquid with pile_g thermostat, equilibration time ~ 0.1 ps
-equilibriumstep = 400  
+equilibriumstep = 4000  
  
 table = np.loadtxt('water.out')
  
