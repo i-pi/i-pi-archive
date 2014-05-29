@@ -433,10 +433,10 @@ class Properties(dobject):
                       but typically the statistical accuracy is worse than with the scaled coordinates estimator.
                       The elements that are output have different
                       units, so the output can be only in atomic units.""" },
-       "isotope_ensembleave":  {"dimension" : "undefined",
+       "isotope_zeta":  {"dimension" : "undefined",
                           "size" : 3,
-                          'func': self.get_isotope_ensembleaverage,
-                          "help": "Isotope fractionation estimator in the form of ensemble average.",
+                          'func': self.get_isotope_zeta,
+                          "help": "Isotope fractionation estimator in the form of ratios of partition functions.",
                           "longhelp" : """Returns the (many) terms needed to directly compute the relative probablity of 
                       isotope substitution in two different systems/phases. Takes two arguments, 'alpha' , which gives the
                       scaled mass parameter and default to '1.0', and 'atom', which is the label or index of a type of atoms. 
@@ -1139,7 +1139,7 @@ class Properties(dobject):
       return np.asarray([alogr/ni, alogr2/ni, atcv/ni, atcv2/ni, law, lawke, sawke])
 
 
-   def get_isotope_ensembleaverage (self, alpha="1.0", atom=""):
+   def get_isotope_zeta (self, alpha="1.0", atom=""):
       """Gives the components  to directly compute the relative probablity of 
          isotope substitution in two different systems/phases.
 
@@ -1201,7 +1201,7 @@ class Properties(dobject):
          sprexpsum += sprexp
 
       if ni == 0:
-         raise IndexError("Couldn't find an atom which matched the argument of isotope_y")
+         raise IndexError("Couldn't find an atom which matched the argument of isotope_zeta")
       
       spraverage = sprsum/ni
       spr2average = spr2sum/ni
