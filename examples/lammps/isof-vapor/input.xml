@@ -1,16 +1,13 @@
 <simulation>
    <output prefix='vapor'>
       <properties stride='1' filename='out'>  [ step, time{picosecond}, conserved, temperature{kelvin}, kinetic_cv, potential, 
-      pressure_cv{megapascal},isotope_ensembleave(1.998) (H), isotope_ensembleave_two(1.1253) (O)] </properties>
+      pressure_cv{megapascal},isotope_ensembleave(1.998;H), isotope_ensembleave(1.1253;O)] </properties>
       <trajectory filename='pos' stride='1000'> positions </trajectory>
    </output>
    <total_steps>500000</total_steps>
    <prng><seed>32346</seed></prng>
    <ffsocket name="lmpserial1" mode="unix">
-   <address>rpc_short</address>
-   </ffsocket>
-   <ffsocket name="lmpserial2" mode="unix">
-   <address>rpc_long</address>
+   <address>vapor</address>
    </ffsocket>
    <system>
    <initialize nbeads='32'> 
@@ -19,11 +16,10 @@
    </initialize>
    <forces>
    <force> lmpserial1 </force>
-   <force> lmpserial2 </force>
    </forces>
    <ensemble mode='nvt'>
       <thermostat mode='pile_l'>
-         <tau units='femtosecond'>25</tau>
+         <tau units='femtosecond'>100</tau>
       </thermostat>
       <timestep units='femtosecond'> 0.25</timestep>
       <temperature units='kelvin'>298</temperature>

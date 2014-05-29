@@ -442,17 +442,7 @@ class Properties(dobject):
                       scaled mass parameter and default to '1.0', and 'atom', which is the label or index of a type of atoms. 
                       The 3 numbers output are 1) the average over the excess spring energy for an isotope atom substitution <spr>,
                       2) the average of the squares of the excess spring energy <spr**2>, and 3) the average of the exponential 
-                      of excess spring energy <exp(-beta*spr)>""" },
-       "isotope_ensembleave_two":  {"dimension" : "undefined",
-                          "size" : 3,
-                          'func': self.get_isotope_ensembleaverage,
-                          "help": "Same as isotope_ensembleave. To compute isotope subtitution for the second kind of atoms",
-                          "longhelp" : """Returns the (many) terms needed to directly compute the relative probablity of 
-                      isotope substitution in two different systems/phases. Takes two arguments, 'alpha' , which gives the
-                      scaled mass parameter and default to '1.0', and 'atom', which is the label or index of a type of atoms. 
-                      The 3 numbers output are 1) the average over the excess spring energy for an isotope atom substitution <spr>,
-                      2) the average of the squares of the excess spring energy <spr**2>, and 3) the average of the exponential 
-                      of excess spring energy <exp(-beta*spr)>""" }                      
+                      of excess spring energy <exp(-beta*spr)>""" }                  
       }
 
    def bind(self, system):

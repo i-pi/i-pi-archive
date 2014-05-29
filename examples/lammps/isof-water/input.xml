@@ -1,7 +1,7 @@
 <simulation>
   <output prefix="water">
     <properties stride="1" filename="out"> [ step, time{picosecond}, conserved, temperature{kelvin}, kinetic_cv, potential, 
-    pressure_cv{megapascal},isotope_ensembleave(1.998) (H), isotope_ensembleave_two(1.1253) (O)] </properties>
+    pressure_cv{megapascal},isotope_ensembleave(1.998;H), isotope_ensembleave(1.1253;O)] </properties>
     <trajectory filename="pos" stride="1000"> positions </trajectory>
   </output>
   <total_steps>500000</total_steps>
@@ -9,7 +9,7 @@
 	  <seed>32345</seed>
   </prng>
   <ffsocket name="lmpserial" mode="unix">
-    <address>no_rpc</address>
+    <address>water</address>
   </ffsocket>
   <system>
     <initialize nbeads="32">
