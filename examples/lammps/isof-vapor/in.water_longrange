@@ -1,0 +1,23 @@
+units		electron
+atom_style	full
+
+# no inter-molecular interaction
+pair_style      lj/cut 0.1
+bond_style      harmonic
+angle_style     harmonic
+
+
+read_data	data.water_longrange
+pair_coeff  * * 0 0.1
+
+neighbor	0.1 bin
+neigh_modify once yes
+
+timestep	0.00025
+
+fix 1 all driver rpc_long 32347 unix
+
+#dump		1 all xyz 25 dump.xyz
+
+run		100000000
+
