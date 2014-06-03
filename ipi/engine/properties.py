@@ -433,7 +433,7 @@ class Properties(dobject):
                       but typically the statistical accuracy is worse than with the scaled coordinates estimator.
                       The elements that are output have different
                       units, so the output can be only in atomic units.""" },
-       "isotope_zeta":  {"dimension" : "undefined",
+      "isotope_zeta":  {"dimension" : "undefined",
                           "size" : 3,
                           'func': self.get_isotope_zeta,
                           "help": "Isotope fractionation estimator in the form of ratios of partition functions.",
@@ -442,7 +442,18 @@ class Properties(dobject):
                       scaled mass parameter and default to '1.0', and 'atom', which is the label or index of a type of atoms. 
                       The 3 numbers output are 1) the average over the excess spring energy for an isotope atom substitution <spr>,
                       2) the average of the squares of the excess spring energy <spr**2>, and 3) the average of the exponential 
-                      of excess spring energy <exp(-beta*spr)>""" }                  
+                      of excess spring energy <exp(-beta*spr)>""" },
+       "isotope_zetasc":  {"dimension" : "undefined",
+                          "size" : 3,
+                          'func': self.get_isotope_zetasc,
+                          "help": "Isotope fractionation estimator in the form of ratios of partition functions.",
+                          "longhelp" : """Returns the (many) terms needed to directly compute the relative probablity of 
+                      isotope substitution in two different systems/phases. Takes four arguments, 'alpha' , which gives the
+                      scaled mass parameter and default to '1.0', and 'atom', which is the label or index of a type of atoms. 
+                      The other two arguments control the starting point and the frequency of the data taking.
+                      The 3 numbers output are 1) the average over the excess potential energy for scaled coordinates <yama>,
+                      2) the average of the squares of the excess spring energy <yama**2>, and 3) the average of the exponential 
+                      of excess spring energy <exp(-beta*yama)>""" }                  
       }
 
    def bind(self, system):
@@ -1208,7 +1219,87 @@ class Properties(dobject):
       sprexpaverage = sprexpsum/ni
       
       return np.asarray([spraverage, spr2average, sprexpaverage])
+
+   def get_isotope_zetasc (self, alpha="1.0", atom="", equilstep="4000", decorrelate="20"):
+      """Gives the components  to directly compute the relative probablity of 
+         isotope substitution in two different systems/phases.
+
+      Args:
+         alpha: m'/m the mass ratio
+         atom: the label or index of the atom to compute the isotope fractionation pair for
+         equilstep: the number of equilibration steps needed before taking data
+         decorrelate: the number of time steps between two data points
+
+      Returns:
+         a tuple from which one can reconstruct all that is needed to
+         compute the relative probability of isotope substitution using
+         scaled coordinates:
+         (yamaaverage, yama2average, yamaexpaverage)
+      """
       
+      equilstep = int(equilstep)
+      decorrelate = int (decorrelate)
+      if self.simul.step < equilstep:
+		  return np.asarray([0.0, 0.0, 0.0])
+      if (self.simul.step % decorrelate) > 0:
+		  return np.asarray([0.0, 0.0, 0.0])
+
+      try:
+         #iatom gives the index of the atom to be studied
+         iatom = int(atom)
+         latom = ""
+         if iatom >= self.beads.natoms:
+            raise IndexError("Cannot output scaled-mass kinetic energy estimator as atom index %d is larger than the number of atoms" % iatom)
+      except ValueError:
+         #here 'atom' is a label rather than an index which is stored in latom
+         iatom = -1
+         latom = atom
+
+      alpha = float(alpha)
+      scalefactor = 1.0/np.sqrt(alpha)
+      beta = 1.0/(Constants.kb*self.ensemble.temp)
+
+      yamasum = 0.0
+      yamaexpsum = 0.0
+      yama2sum = 0.0
+      ni = 0
+           
+      qc = depstrip(self.beads.qc)
+      q = depstrip(self.beads.q)
+      v0 = self.forces.pot/self.beads.nbeads
+      self.dbeads.q = q
+      
+      for i in range(self.beads.natoms):
+         # selects only the atoms we care about
+         if (atom != "" and iatom != i and latom != self.beads.names[i]):
+            continue
+
+         ni += 1
+
+         for b in range(1,self.beads.nbeads):
+			 for j in range(3*i,3*(i+1)):
+				 self.dbeads.q[b,j] = qc[j]*(1.0 - scalefactor) + scalefactor*q[b,j]             
+         yama = self.dforces.pot/self.beads.nbeads - v0
+         
+         yama2 = yama*yama
+         # yamaexp = exp(-Beta*yama)
+         yamaexp = exp(-1.0*beta*yama)
+         
+         yamasum += yama
+         yama2sum += yama2
+         yamaexpsum += yamaexp
+         
+         self.dbeads.q = q
+
+      if ni == 0:
+         raise IndexError("Couldn't find an atom which matched the argument of isotope_zeta")
+      
+      yamaaverage = yamasum/ni
+      yama2average = yama2sum/ni
+      yamaexpaverage = yamaexpsum/ni
+      
+      return np.asarray([yamaaverage, yama2average, yamaexpaverage])
+            
 class Trajectories(dobject):
    """A simple class to take care of output of trajectory data.
 
