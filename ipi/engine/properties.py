@@ -433,9 +433,9 @@ class Properties(dobject):
                       but typically the statistical accuracy is worse than with the scaled coordinates estimator.
                       The elements that are output have different
                       units, so the output can be only in atomic units.""" },
-      "isotope_zeta":  {"dimension" : "undefined",
+      "isotope_zetatd":  {"dimension" : "undefined",
                           "size" : 3,
-                          'func': self.get_isotope_zeta,
+                          'func': self.get_isotope_zetatd,
                           "help": "Isotope fractionation estimator in the form of ratios of partition functions.",
                           "longhelp" : """Returns the (many) terms needed to directly compute the relative probablity of 
                       isotope substitution in two different systems/phases. Takes two arguments, 'alpha' , which gives the
@@ -1150,7 +1150,7 @@ class Properties(dobject):
       return np.asarray([alogr/ni, alogr2/ni, atcv/ni, atcv2/ni, law, lawke, sawke])
 
 
-   def get_isotope_zeta (self, alpha="1.0", atom=""):
+   def get_isotope_zetatd (self, alpha="1.0", atom=""):
       """Gives the components  to directly compute the relative probablity of 
          isotope substitution in two different systems/phases.
 
@@ -1212,7 +1212,7 @@ class Properties(dobject):
          sprexpsum += sprexp
 
       if ni == 0:
-         raise IndexError("Couldn't find an atom which matched the argument of isotope_zeta")
+         raise IndexError("Couldn't find an atom which matched the argument of isotope_zetatd")
       
       spraverage = sprsum/ni
       spr2average = spr2sum/ni
@@ -1292,7 +1292,7 @@ class Properties(dobject):
          self.dbeads.q = q
 
       if ni == 0:
-         raise IndexError("Couldn't find an atom which matched the argument of isotope_zeta")
+         raise IndexError("Couldn't find an atom which matched the argument of isotope_zetasc")
       
       yamaaverage = yamasum/ni
       yama2average = yama2sum/ni
