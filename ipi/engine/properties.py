@@ -1220,15 +1220,13 @@ class Properties(dobject):
       
       return np.asarray([spraverage, spr2average, sprexpaverage])
 
-   def get_isotope_zetasc (self, alpha="1.0", atom="", equilstep="4000", decorrelate="20"):
+   def get_isotope_zetasc (self, alpha="1.0", atom=""):
       """Gives the components  to directly compute the relative probablity of 
          isotope substitution in two different systems/phases.
 
       Args:
          alpha: m'/m the mass ratio
          atom: the label or index of the atom to compute the isotope fractionation pair for
-         equilstep: the number of equilibration steps needed before taking data
-         decorrelate: the number of time steps between two data points
 
       Returns:
          a tuple from which one can reconstruct all that is needed to
@@ -1237,13 +1235,6 @@ class Properties(dobject):
          (yamaaverage, yama2average, yamaexpaverage)
       """
       
-      equilstep = int(equilstep)
-      decorrelate = int (decorrelate)
-      if self.simul.step < equilstep:
-		  return np.asarray([0.0, 0.0, 0.0])
-      if (self.simul.step % decorrelate) > 0:
-		  return np.asarray([0.0, 0.0, 0.0])
-
       try:
          #iatom gives the index of the atom to be studied
          iatom = int(atom)
