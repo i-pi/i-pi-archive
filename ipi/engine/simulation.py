@@ -199,12 +199,6 @@ class Simulation(dobject):
                self.paratemp.parafile.write(" %5d" %i)
             self.paratemp.parafile.write("\n")
             self.paratemp.parafile.flush(); os.fsync(self.paratemp.parafile)
-            if self.paratemp.wtefile != None:
-               self.paratemp.wtefile.write("%10d" % (self.step+1))
-               for v in self.paratemp.system_v:
-                  self.paratemp.wtefile.write(" %12.7e" % v)
-               self.paratemp.wtefile.write("\n")
-               self.paratemp.parawte.flush();  os.fsync(self.paratemp.parawte)
 
          self.step = 0
 
@@ -241,15 +235,12 @@ class Simulation(dobject):
          for st in stepthreads:
             while st.isAlive(): st.join(2.0)   # this is necessary as join() without timeout prevents main from receiving signals
 
-         if self.mode == "paratemp": # apply the WTE bias forces
-            self.paratemp.wtestep(self.step)
-
          if softexit.triggered: break # don't continue if we are about to exit!
 
          for o in self.outputs:
             o.write()
 
-         if self.mode == "paratemp": # does parallel tempering and/or WTE
+         if self.mode == "paratemp": # does parallel tempering
 
             # because of where this is in the loop, we must write out BEFORE doing the swaps.
             self.paratemp.parafile.write("%10d" % (self.step+1))
@@ -258,16 +249,7 @@ class Simulation(dobject):
             self.paratemp.parafile.write("\n")
             self.paratemp.parafile.flush(); os.fsync(self.paratemp.parafile)
 
-            # applies the WTE forces, if they are defined.
-            if self.paratemp.wtefile != None:
-               self.paratemp.wtefile.write("%10d" % (self.step+1))
-               for v in self.paratemp.system_v:
-                  self.paratemp.wtefile.write(" %12.7e" % v)
-               self.paratemp.wtefile.write("\n")
-               self.paratemp.parawte.flush(); os.fsync(self.paratemp.parawte)
-
             self.paratemp.swap(self.step)
-            self.paratemp.wtestep(self.step)
 
 
          if softexit.triggered: break # don't write if we are about to exit!
