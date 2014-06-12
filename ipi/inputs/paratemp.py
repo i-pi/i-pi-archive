@@ -41,17 +41,6 @@ class InputParaTemp(Input):
                                        "default"   : input_default(factory=np.zeros, args = (0,)),
                                          "help"      : "List of temperatures for a parallel tempering simulation",
                                          "dimension" : "temperature" }),
-           "wte_means" : (InputArray, {"dtype": float,
-                                       "default"   : input_default(factory=np.zeros, args = (0,)),
-                                         "help"      : "List of mean potential energy for WTE",
-                                         "dimension" : "energy" }),
-           "wte_sigmas" : (InputArray, {"dtype": float,
-                                       "default"   : input_default(factory=np.zeros, args = (0,)),
-                                         "help"      : "List of potential energy fluctuations for WTE",
-                                         "dimension" : "energy" }),
-           "wte_gammas" : (InputArray, {"dtype": float,
-                                       "default"   : input_default(factory=np.zeros, args = (0,)),
-                                         "help"      : "List of gamma parameters for WTE" }),
            "temp_index" : (InputArray, {"dtype": int,
                                        "default"   : input_default(factory=np.zeros, args = (0,int)),
                                          "help"      : "Maps the temperatures to the list of systems."
@@ -78,16 +67,12 @@ class InputParaTemp(Input):
 
       self.temp_list.store(pt.temp_list)
       self.temp_index.store(pt.temp_index)
-      self.wte_means.store(pt.wte_means)
-      self.wte_sigmas.store(pt.wte_sigmas)
-      self.wte_gammas.store(pt.wte_gammas)
       self.stride.store(pt.stride)
 
 
    def fetch(self):
       """Creates a ParaTemp object based on the input parameters."""
 
-      return ParaTemp(self.temp_list.fetch(), self.temp_index.fetch(), self.stride.fetch(),
-           self.wte_means.fetch(), self.wte_sigmas.fetch(), self.wte_gammas.fetch())
+      return ParaTemp(self.temp_list.fetch(), self.temp_index.fetch(), self.stride.fetch())
 
 
