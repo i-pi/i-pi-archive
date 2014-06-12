@@ -1,4 +1,4 @@
-<simulation mode="paratemp">
+<simulation mode="paratemp" verbosity="high">
    <output prefix="C6H6">
       <properties stride='1' filename='out'>  [ step, time{picosecond}, temperature{kelvin}, conserved{electronvolt}, potential{electronvolt}, spring{electronvolt}, kinetic_cv{electronvolt}] </properties>
       <trajectory stride='200' filename='xc'>x_centroid{angstrom}</trajectory>

@@ -227,10 +227,11 @@ class Simulation(dobject):
          #   s.ensemble.step()
          for s in self.syslist:
             # creates separate threads for the different systems
-            st = threading.Thread(target=s.ensemble.step, name=s.prefix)
-            st.daemon = True
-            st.start()
-            stepthreads.append(st)
+            #st = threading.Thread(target=s.ensemble.step, name=s.prefix)
+            #st.daemon = True
+            s.ensemble.step()
+            #st.start()
+            #stepthreads.append(st)
 
          for st in stepthreads:
             while st.isAlive(): st.join(2.0)   # this is necessary as join() without timeout prevents main from receiving signals
@@ -250,7 +251,6 @@ class Simulation(dobject):
             self.paratemp.parafile.flush(); os.fsync(self.paratemp.parafile)
 
             self.paratemp.swap(self.step)
-
 
          if softexit.triggered: break # don't write if we are about to exit!
 

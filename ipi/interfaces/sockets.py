@@ -334,7 +334,6 @@ class DriverSocket(socket.socket):
       else:
          mxtra = ""
 
-      #!TODO must set up a machinery to intercept the "extra" return field
       return [mu, mf, mvir, mxtra]
 
 
