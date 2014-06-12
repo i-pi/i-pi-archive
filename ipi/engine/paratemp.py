@@ -134,8 +134,12 @@ class ParaTemp(dobject):
             if (pxc > self.prng.u): # really does the exchange
                info(" @ PT:  SWAPPING replicas % 5d and % 5d." % (i,j), verbosity.low)
                # adjusts the conserved quantities
-               self.slist[i].ensemble.eens += self.slist[i].nm.kin *(1.0- (betai/betaj))
+               # change in kinetic energy
+               self.slist[i].ensemble.eens += self.slist[i].nm.kin *(1.0- (betai/betaj)) 
                self.slist[j].ensemble.eens += self.slist[j].nm.kin *(1.0- (betaj/betai))
+               # change in spring energy
+               self.slist[i].ensemble.eens += syspath[i]*(1.0/betaj**2- 1.0/betai**2) 
+               self.slist[j].ensemble.eens += syspath[j]*(1.0/betaj**2- 1.0/betai**2)
 
                # adjusts the momenta
                self.slist[i].beads.p *= np.sqrt(betai/betaj)
