@@ -138,7 +138,7 @@ class ParaTemp(dobject):
                self.slist[i].ensemble.eens += self.slist[i].nm.kin *(1.0- (betai/betaj)) 
                self.slist[j].ensemble.eens += self.slist[j].nm.kin *(1.0- (betaj/betai))
                # change in spring energy
-               self.slist[i].ensemble.eens += syspath[i]*(1.0/betaj**2- 1.0/betai**2) 
+               self.slist[i].ensemble.eens += syspath[i]*(1.0/betai**2- 1.0/betaj**2) 
                self.slist[j].ensemble.eens += syspath[j]*(1.0/betaj**2- 1.0/betai**2)
 
                # adjusts the momenta
