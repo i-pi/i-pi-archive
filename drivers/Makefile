@@ -21,20 +21,21 @@
  
 .PHONY: all
 
-SOURCES=$(shell ls *.f90)
-FLAGS=-O3 -Wall
+FLAGS=-g -O3 -Wall
 MODULES=distance.f90 LJ.f90 SG.f90
-OBJECTS=$(SOURCES:.f90=.o) sockets.o
-all: modules sockets.o driver.x
+all: modules driver-c.x driver.x
 
 modules: $(MODULES)
 	gfortran $(FLAGS) -c $(MODULES)
 
-sockets.o: sockets.c
-	gcc $(FLAGS) -c -o sockets.o sockets.c
+csockets.o: csockets.c
+	gcc $(FLAGS) -c -o csockets.o csockets.c
 
-driver.x: $(OBJECTS)
-	gfortran $(FLAGS) -o driver.x $(OBJECTS)
+driver-c.x: $(MODULES) csockets.o driver-c.o
+	gfortran $(FLAGS) -o driver-c.x $^
+	
+driver.x: $(MODULES) fsockets.o driver.o 
+	gfortran $(FLAGS) -o driver.x $^
 
 %.o: %.f90
 	gfortran $(FLAGS) -c $<

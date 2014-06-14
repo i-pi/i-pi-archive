@@ -29,7 +29,6 @@
       PROGRAM DRIVER
          USE LJ
          USE SG
-         USE F90SOCKETS
       IMPLICIT NONE
 
       ! SOCKET VARIABLES
@@ -56,7 +55,7 @@
       INTEGER nat
       DOUBLE PRECISION pot
       DOUBLE PRECISION, ALLOCATABLE :: atoms(:,:), forces(:,:)
-      DOUBLE PRECISION cell_h(3,3), cell_ih(3,3), virial(3,3), mtxbuf(9)
+      DOUBLE PRECISION cell_h(3,3), cell_ih(3,3), virial(3,3)
       DOUBLE PRECISION volume
 
       ! NEIGHBOUR LIST ARRAYS
@@ -193,8 +192,7 @@
       ENDIF
 
       ! Calls the interface to the C sockets to open a communication channel
-      CALL open_socketf(socket, inet, port, host)
-      !CALL open_socket(socket, inet, port, host)
+      CALL open_socket(socket, inet, port, host)
       nat = -1
       DO WHILE (.true.) ! Loops forever (or until the wrapper ends!)
 
@@ -212,18 +210,16 @@
                CALL writebuffer(socket,"READY       ",MSGLEN)  ! We are idling and eager to compute something
             ENDIF
          ELSEIF (trim(header) == "INIT") THEN     ! The driver is kindly providing a string for initialization
-            CALL readbuffer(socket, cbuf)
+            CALL readbuffer(socket, cbuf, 4)
             CALL readbuffer(socket, initbuffer, cbuf)
             IF (verbose) WRITE(*,*) " Initializing system from wrapper, using ", trim(initbuffer)
             isinit=.true. ! We actually do nothing with this string, thanks anyway. Could be used to pass some information (e.g. the input parameters, or the index of the replica, from the driver
          ELSEIF (trim(header) == "POSDATA") THEN  ! The driver is sending the positions of the atoms. Here is where we do the calculation!
 
             ! Parses the flow of data from the socket
-            CALL readbuffer(socket, mtxbuf, 9)  ! Cell matrix
-            cell_h = RESHAPE(mtxbuf, (/3,3/))
-            CALL readbuffer(socket, mtxbuf, 9)  ! Inverse of the cell matrix (so we don't have to invert it every time here)
-            cell_ih = RESHAPE(mtxbuf, (/3,3/))
-            
+            CALL readbuffer(socket, cell_h,  9*8)  ! Cell matrix
+            CALL readbuffer(socket, cell_ih, 9*8)  ! Inverse of the cell matrix (so we don't have to invert it every time here)
+
             ! The wrapper uses atomic units for everything, and row major storage.
             ! At this stage one should take care that everything is converted in the
             ! units and storage mode used in the driver.
@@ -232,7 +228,7 @@
             ! We assume an upper triangular cell-vector matrix
             volume = cell_h(1,1)*cell_h(2,2)*cell_h(3,3)
 
-            CALL readbuffer(socket, cbuf)       ! The number of atoms in the cell
+            CALL readbuffer(socket, cbuf, 4)       ! The number of atoms in the cell
             IF (nat < 0) THEN  ! Assumes that the number of atoms does not change throughout a simulation, so only does this once
                nat = cbuf
                IF (verbose) WRITE(*,*) " Allocating buffer and data arrays, with ", nat, " atoms"
@@ -244,7 +240,7 @@
                msgbuffer = 0.0d0
             ENDIF
 
-            CALL readbuffer(socket, msgbuffer, nat*3)
+            CALL readbuffer(socket, msgbuffer, nat*3*8)
             DO i = 1, nat
                atoms(i,:) = msgbuffer(3*(i-1)+1:3*i)
             ENDDO
@@ -303,12 +299,12 @@
             virial = transpose(virial)
 
             CALL writebuffer(socket,"FORCEREADY  ",MSGLEN)
-            CALL writebuffer(socket,pot)  ! Writing the potential
-            CALL writebuffer(socket,nat)  ! Writing the number of atoms
-            CALL writebuffer(socket,msgbuffer,3*nat) ! Writing the forces
-            CALL writebuffer(socket,reshape(virial,(/9/)),9)  ! Writing the virial tensor, NOT divided by the volume
+            CALL writebuffer(socket,pot,8)  ! Writing the potential
+            CALL writebuffer(socket,nat,4)  ! Writing the number of atoms
+            CALL writebuffer(socket,msgbuffer,3*nat*8) ! Writing the forces
+            CALL writebuffer(socket,virial,9*8)  ! Writing the virial tensor, NOT divided by the volume
             cbuf = 7 ! Size of the "extras" string
-            CALL writebuffer(socket,cbuf) ! This would write out the "extras" string, but in this case we only use a dummy string.
+            CALL writebuffer(socket,cbuf,4) ! This would write out the "extras" string, but in this case we only use a dummy string.
             CALL writebuffer(socket,"nothing",7)
 
             hasdata = .false.
