@@ -35,20 +35,20 @@
       ! SOCKET VARIABLES
       INTEGER, PARAMETER :: MSGLEN=12   ! length of the headers of the driver/wrapper communication protocol
       INTEGER socket, inet, port        ! socket ID & address of the server
-      CHARACTER*1024 :: host
+      CHARACTER(LEN=1024) :: host
 
       ! COMMAND LINE PARSING
-      CHARACTER*1024 :: cmdbuffer
+      CHARACTER(LEN=1024) :: cmdbuffer
       INTEGER ccmd, vstyle
       LOGICAL verbose
       INTEGER commas(4), par_count      ! stores the index of commas in the parameter string
       DOUBLE PRECISION vpars(4)         ! array to store the parameters of the potential
 
       ! SOCKET COMMUNICATION BUFFERS
-      CHARACTER*12 :: header
+      CHARACTER(LEN=12) :: header
       LOGICAL :: isinit=.false., hasdata=.false.
       INTEGER cbuf
-      CHARACTER*2048 :: initbuffer      ! it's unlikely a string this large will ever be passed...
+      CHARACTER(LEN=2048) :: initbuffer      ! it's unlikely a string this large will ever be passed...
       DOUBLE PRECISION, ALLOCATABLE :: msgbuffer(:)
 
       ! PARAMETERS OF THE SYSTEM (CELL, ATOM POSITIONS, ...)
@@ -105,7 +105,7 @@
                WRITE(*,*) " For SG potential use -o cutoff "
                WRITE(*,*) " For 1D harmonic oscillator use -o k "
                WRITE(*,*) " For the ideal gas, no options needed! "
-               CALL EXIT(-1)
+               STOP -1
             ENDIF
             IF (ccmd == 1) THEN
                host = trim(cmdbuffer)//achar(0)
@@ -123,7 +123,7 @@
                ELSE
                   WRITE(*,*) " Unrecognized potential type ", trim(cmdbuffer)
                   WRITE(*,*) " Use -m [gas|lj|sg|harm] "
-                  CALL EXIT(-1)
+                  STOP -1
                ENDIF
             ELSEIF (ccmd == 4) THEN
                par_count = 1
@@ -146,18 +146,18 @@
          WRITE(*,*) " For LJ potential use -o sigma,epsilon,cutoff "
          WRITE(*,*) " For SG potential use -o cutoff "
          WRITE(*,*) " For the ideal gas, no options needed! "
-         CALL EXIT(-1)
+         STOP -1
       ELSEIF (vstyle == 0) THEN
          IF (par_count /= 0) THEN
             WRITE(*,*) "Error: no initialization string needed for ideal gas."
-            CALL EXIT(-1) 
+            STOP -1 
          ENDIF   
          isinit = .true.
       ELSEIF (vstyle == 1) THEN
          IF (par_count /= 3) THEN
             WRITE(*,*) "Error: parameters not initialized correctly."
             WRITE(*,*) "For LJ potential use -o sigma,epsilon,cutoff "
-            CALL EXIT(-1) ! Note that if initialization from the wrapper is implemented this exit should be removed.
+            STOP -1 ! Note that if initialization from the wrapper is implemented this exit should be removed.
          ENDIF   
          sigma = vpars(1)
          eps = vpars(2)
@@ -168,7 +168,7 @@
          IF (par_count /= 1) THEN
             WRITE(*,*) "Error: parameters not initialized correctly."
             WRITE(*,*) "For SG potential use -o cutoff "
-            CALL EXIT(-1) ! Note that if initialization from the wrapper is implemented this exit should be removed.
+            STOP -1 ! Note that if initialization from the wrapper is implemented this exit should be removed.
          ENDIF
          rc = vpars(1)
          rn = rc*1.2
@@ -177,7 +177,7 @@
          IF (par_count /= 1) THEN
             WRITE(*,*) "Error: parameters not initialized correctly."
             WRITE(*,*) "For 1D harmonic potential use -o k "
-            CALL EXIT(-1) ! Note that if initialization from the wrapper is implemented this exit should be removed.
+            STOP -1 ! Note that if initialization from the wrapper is implemented this exit should be removed.
          ENDIF
          ks = vpars(1)
          isinit = .true.
@@ -314,7 +314,7 @@
             hasdata = .false.
          ELSE
             WRITE(*,*) " Unexpected header ", header
-            CALL EXIT(-1)
+            STOP -1
          ENDIF
       ENDDO
       IF (nat > 0) DEALLOCATE(atoms, forces, msgbuffer)

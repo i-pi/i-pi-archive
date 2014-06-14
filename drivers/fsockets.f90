@@ -167,10 +167,10 @@
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: inet, port
       INTEGER, INTENT(OUT) :: psockfd
-      CHARACTER*1024, INTENT(IN) :: host
+      CHARACTER(LEN=1024), INTENT(IN) :: host
 
       INTEGER :: ai_err
-      CHARACTER*256 :: service
+      CHARACTER(LEN=256) :: service
       CHARACTER(LEN=1,KIND=C_CHAR), TARGET :: cservice(256)
       CHARACTER(LEN=1,KIND=C_CHAR), TARGET :: chost(1024)
       
@@ -198,7 +198,7 @@
                     c_loc(hints), ptr)                    
          IF (ai_err < 0) THEN
             WRITE(6,*) "Error fetching host data. Wrong host name?"
-            CALL exit(-1)
+            STOP -1
          ENDIF            
          
          CALL memcpy(c_loc(res), ptr, sizeof(res))
@@ -206,13 +206,13 @@
          psockfd = socket_make(res%ai_family, res%ai_socktype, res%ai_protocol)
          IF (psockfd < 0)  THEN 
             WRITE(6,*) "Error opening socket"
-            CALL exit(-1)
+            STOP -1
          ENDIF    
          
          ai_err = socket_connect(psockfd, res%ai_addr, res%ai_addrlen)
          IF (ai_err < 0) THEN
             WRITE(6,*) "Error opening INET socket: wrong port or server unreachable"
-            CALL exit(-1)
+            STOP -1
          ENDIF
          
          CALL freeaddrinfo(ptr)
@@ -228,7 +228,7 @@
          ai_err = socket_connect(psockfd, c_loc(addrun), sizeof(addrun))         
          IF (ai_err < 0) THEN
             WRITE(6,*) "Could not open UNIX socket. Non-existing path?"
-            CALL exit(-1)
+            STOP -1
          ENDIF 
       END IF
    END SUBROUTINE
@@ -257,7 +257,7 @@
       nwrite = socket_write(psockfd, c_loc(cstring(1)), nlen)
       IF (nwrite/=nlen) THEN
          WRITE(6,*) "Error in writing to socket buffer"
-         CALL exit(-1)
+         STOP -1
       ENDIF         
    END SUBROUTINE
 
@@ -271,7 +271,7 @@
       nwrite = socket_write(psockfd, c_loc(fdata), nlen)
       IF (nwrite/=nlen) THEN
          WRITE(6,*) "Error in writing to socket buffer"
-         CALL exit(-1)
+         STOP -1
       ENDIF         
    END SUBROUTINE
       
@@ -285,7 +285,7 @@
       nwrite = socket_write(psockfd, c_loc(fdata), nlen)
       IF (nwrite/=nlen) THEN
          WRITE(6,*) "Error in writing to socket buffer"
-         CALL exit(-1)
+         STOP -1
       ENDIF      
    END SUBROUTINE
    
@@ -299,7 +299,7 @@
       nwrite = socket_write(psockfd, c_loc(fdata(1)), nlen)
       IF (nwrite/=nlen) THEN
          WRITE(6,*) "Error in writing to socket buffer"
-         CALL exit(-1)
+         STOP -1
       ENDIF      
    END SUBROUTINE
    
@@ -331,7 +331,7 @@
       
       IF (n<nlen) THEN
          WRITE(6,*) "Error in reading from socket"
-         CALL exit(-1)
+         STOP -1
       ENDIF               
    END SUBROUTINE
 
