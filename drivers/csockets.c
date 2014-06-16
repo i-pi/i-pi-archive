@@ -44,10 +44,6 @@ Functions:
 #include <sys/un.h>
 #include <netdb.h>
 
-void error(const char *msg)
-// Prints an error message and then exits.
-{   perror(msg);  exit(-1);   }
-
 void open_socket_(int *psockfd, int* inet, int* port, char* host)
 /* Opens a socket.
 
