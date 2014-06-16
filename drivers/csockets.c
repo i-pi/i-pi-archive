@@ -81,14 +81,14 @@ Args:
 
       sprintf(service,"%d",*port); // convert the port number to a string
       ai_err = getaddrinfo(host, service, &hints, &res); 
-      if (ai_err!=0) error("Error fetching host data. Wrong host name?");
+      if (ai_err!=0) { perror("Error fetching host data. Wrong host name?"); exit(-1); }
 
       // creates socket
       sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-      if (sockfd < 0)  error("Error opening socket");
+      if (sockfd < 0) { perror("Error opening socket"); exit(-1); }
     
       // makes connection
-      if (connect(sockfd, res->ai_addr, res->ai_addrlen) < 0) error("Error opening INET socket: wrong port or server unreachable");
+      if (connect(sockfd, res->ai_addr, res->ai_addrlen) < 0) { perror("Error opening INET socket: wrong port or server unreachable"); exit(-1); }
       freeaddrinfo(res);
    }
    else
@@ -105,7 +105,7 @@ Args:
       sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
 
       // connects
-      if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) error("Error opening UNIX socket: path unavailable, or already existing");
+      if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) { perror("Error opening UNIX socket: path unavailable, or already existing"); exit(-1); }
    }
 
 
@@ -127,7 +127,7 @@ Args:
    int len=*plen;
 
    n = write(sockfd,data,len);
-   if (n < 0) error("Error writing to socket: server has quit or connection broke");
+   if (n < 0) { perror("Error writing to socket: server has quit or connection broke"); exit(-1); }
 }
 
 
@@ -150,7 +150,7 @@ Args:
    while (nr>0 && n<len )
    {  nr=read(sockfd,&data[n],len-n); n+=nr; }
 
-   if (n == 0) error("Error reading from socket: server has quit or connection broke");
+   if (n == 0) { perror("Error reading from socket: server has quit or connection broke"); exit(-1); }
 }
 
 
