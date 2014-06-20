@@ -245,7 +245,7 @@
       INTEGER, INTENT(IN) :: psockfd
       INTEGER, INTENT(IN) ::  plen
       CHARACTER(LEN=*), TARGET, INTENT(IN)  :: fstring
-      INTEGER*8 :: nwrite, nlen
+      INTEGER(8) :: nwrite, nlen
       CHARACTER(LEN=1,KIND=C_CHAR), TARGET :: cstring(plen)
       INTEGER i,n
       
@@ -264,8 +264,8 @@
    SUBROUTINE writebuffer_d(psockfd, fdata)   
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: psockfd      
-      REAL*8, TARGET, INTENT(IN)  :: fdata
-      INTEGER*8 :: nwrite, nlen
+      DOUBLE PRECISION, TARGET, INTENT(IN)  :: fdata
+      INTEGER(8) :: nwrite, nlen
       
       nlen = 8
       nwrite = socket_write(psockfd, c_loc(fdata), nlen)
@@ -279,7 +279,7 @@
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: psockfd      
       INTEGER, TARGET, INTENT(IN)  :: fdata
-      INTEGER*8 :: nwrite, nlen
+      INTEGER(8) :: nwrite, nlen
       
       nlen = 4
       nwrite = socket_write(psockfd, c_loc(fdata), nlen)
@@ -292,8 +292,8 @@
    SUBROUTINE writebuffer_dv(psockfd, fdata, plen)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: psockfd, plen
-      REAL*8, TARGET, INTENT(IN)  :: fdata(plen)
-      INTEGER*8 :: nwrite, nlen
+      DOUBLE PRECISION, TARGET, INTENT(IN)  :: fdata(plen)
+      INTEGER(8) :: nwrite, nlen
       
       nlen = 8*plen
       nwrite = socket_write(psockfd, c_loc(fdata(1)), nlen)
@@ -318,7 +318,7 @@
       INTEGER, INTENT(IN) :: psockfd
       INTEGER, INTENT(IN) ::  plen
       CHARACTER(LEN=1,KIND=C_CHAR), INTENT(OUT), TARGET :: cstring(plen)
-      INTEGER*8 :: nread, nlen, n
+      INTEGER(8) :: nread, nlen, n
       
       nlen = plen
       
@@ -340,7 +340,7 @@
       INTEGER, INTENT(IN) :: psockfd
       INTEGER, INTENT(IN) ::  plen
       CHARACTER(LEN=*), TARGET, INTENT(OUT)  :: fstring
-      INTEGER*8 :: n, i
+      INTEGER(8) :: n, i
       CHARACTER(LEN=1,KIND=C_CHAR), TARGET :: cstring(plen)
       
       CALL readbuffer_cstr(psockfd, cstring, plen)
@@ -354,8 +354,8 @@
    SUBROUTINE readbuffer_dv(psockfd, fdata, plen)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: psockfd, plen
-      REAL*8, TARGET, INTENT(OUT)  :: fdata(plen)
-      INTEGER*8 :: n
+      DOUBLE PRECISION, TARGET, INTENT(OUT)  :: fdata(plen)
+      INTEGER(8) :: n
       CHARACTER(LEN=1,KIND=C_CHAR), TARGET :: cstring(plen*8)
       
       CALL readbuffer_cstr(psockfd, cstring, plen*8)
@@ -366,8 +366,8 @@
    SUBROUTINE readbuffer_d(psockfd, fdata)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: psockfd
-      REAL*8, TARGET, INTENT(OUT)  :: fdata
-      INTEGER*8 :: n
+      DOUBLE PRECISION, TARGET, INTENT(OUT)  :: fdata
+      INTEGER(8) :: n
       CHARACTER(LEN=1,KIND=C_CHAR), TARGET :: cstring(8)
       
       CALL readbuffer_cstr(psockfd, cstring, 8)
@@ -379,7 +379,7 @@
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: psockfd
       INTEGER, TARGET, INTENT(OUT)  :: fdata
-      INTEGER*8 :: n
+      INTEGER(8) :: n
       CHARACTER(LEN=1,KIND=C_CHAR), TARGET :: cstring(4)
       
       CALL readbuffer_cstr(psockfd, cstring, 4)
