@@ -21,22 +21,22 @@
  
 .PHONY: all modules clean
 
-FLAGS=-g -O3 -Wall
+FLAGS=-g -O3 -Wall -Wno-maybe-uninitialized
 MODULES=distance.f90 LJ.f90 SG.f90
-all: modules driver-c.x driver.x
+all: modules driver.x driver_pure.x
 
 modules: $(MODULES)
 	gfortran $(FLAGS) -c $(MODULES)
 
-csockets.o: csockets.c
-	gcc $(FLAGS) -c -o csockets.o csockets.c
+sockets.o: sockets.c
+	gcc $(FLAGS) -c -o sockets.o sockets.c
 
-driver-c.x: $(MODULES) csockets.o driver-c.o
-	gfortran $(FLAGS) -o driver-c.x $^
-	
-driver.x: $(MODULES) fsockets.o driver.o 
+driver.x: $(MODULES) sockets.o fsockets.o driver.o
 	gfortran $(FLAGS) -o driver.x $^
 
+driver_pure.x: $(MODULES) fsockets_pure.o driver.o 
+	gfortran $(FLAGS) -o driver_pure.x $^
+	
 %.o: %.f90
 	gfortran $(FLAGS) -c $<
 

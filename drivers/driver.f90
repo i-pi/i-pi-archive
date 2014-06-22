@@ -29,7 +29,7 @@
       PROGRAM DRIVER
          USE LJ
          USE SG
-         USE F90SOCKETS
+         USE F90SOCKETS, ONLY : open_socket, writebuffer, readbuffer
       IMPLICIT NONE
 
       ! SOCKET VARIABLES
@@ -193,7 +193,7 @@
       ENDIF
 
       ! Calls the interface to the C sockets to open a communication channel
-      CALL open_socketf(socket, inet, port, host)
+      CALL open_socket(socket, inet, port, host)
       !CALL open_socket(socket, inet, port, host)
       nat = -1
       DO WHILE (.true.) ! Loops forever (or until the wrapper ends!)

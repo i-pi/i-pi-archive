@@ -44,7 +44,7 @@ Functions:
 #include <sys/un.h>
 #include <netdb.h>
 
-void open_socket_(int *psockfd, int* inet, int* port, char* host)
+void open_socket(int *psockfd, int* inet, int* port, char* host)
 /* Opens a socket.
 
 Note that fortran passes an extra argument for the string length, but this is
@@ -108,7 +108,7 @@ Args:
    *psockfd=sockfd;
 }
 
-void writebuffer_(int *psockfd, char *data, int* plen)
+void writebuffer(int *psockfd, char *data, int* plen)
 /* Writes to a socket.
 
 Args:
@@ -127,7 +127,7 @@ Args:
 }
 
 
-void readbuffer_(int *psockfd, char *data, int* plen)
+void readbuffer(int *psockfd, char *data, int* plen)
 /* Reads from a socket.
 
 Args:
