@@ -157,6 +157,17 @@
          CALL prezundelpot()
          CALL prezundeldip()
          isinit = .true.
+      ELSEIF (4 == vstyle ) THEN
+         IF (par_count == 0) THEN ! defaults (OH stretch)
+            vpars(1) = 1.8323926 ! r0
+            vpars(2) = 0.18748511263179304 ! D
+            vpars(3) = 1.1562696428501682 ! a
+         ELSEIF ( 2/= par_count) THEN
+            WRITE(*,*) "Error: parameters not initialized correctly."
+            WRITE(*,*) "For morse potential use -o r0,D,a (in a.u.) "
+            STOP -1 
+         ENDIF 
+         isinit = .true.
       ELSEIF (vstyle == 1) THEN
          IF (par_count /= 3) THEN
             WRITE(*,*) "Error: parameters not initialized correctly."
@@ -196,9 +207,8 @@
          ENDIF
       ENDIF
 
-      ! Calls the interface to the C sockets to open a communication channel
+      ! Calls the interface to the POSIX sockets library to open a communication channel
       CALL open_socket(socket, inet, port, host)
-      !CALL open_socket(socket, inet, port, host)
       nat = -1
       DO WHILE (.true.) ! Loops forever (or until the wrapper ends!)
 
@@ -264,6 +274,12 @@
                forces(1,1) = -ks*atoms(1,1)
                virial = 0
                virial(1,1) = forces(1,1)*atoms(1,1)
+            ELSEIF (vstyle == 4) THEN ! Morse potential. 
+               IF (nat/=1) THEN
+                  WRITE(*,*) "Expecting 1 atom for 3D Morse (use the effective mass for the atom mass to get proper frequency!) "
+                  STOP -1
+               ENDIF
+               CALL getmorse(vpars(1), vpars(2), vpars(3), atoms, pot, forces)               
             ELSEIF (vstyle == 5) THEN ! Zundel potential. 
                IF (nat/=7) THEN
                   WRITE(*,*) "Expecting 7 atoms for Zundel potential, O O H H H H H "
