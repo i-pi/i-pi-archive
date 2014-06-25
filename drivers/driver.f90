@@ -118,11 +118,13 @@
                   vstyle = 4
                ELSEIF (trim(cmdbuffer) == "zundel") THEN
                   vstyle = 5
+               ELSEIF (trim(cmdbuffer) == "qtip4pf") THEN
+                  vstyle = 6
                ELSEIF (trim(cmdbuffer) == "gas") THEN
                   vstyle = 0  ! ideal gas
                ELSE
                   WRITE(*,*) " Unrecognized potential type ", trim(cmdbuffer)
-                  WRITE(*,*) " Use -m [gas|lj|sg|harm|morse|zundel] "
+                  WRITE(*,*) " Use -m [gas|lj|sg|harm|morse|zundel|qtip4pf] "
                   STOP -1
                ENDIF
             ELSEIF (ccmd == 4) THEN
@@ -148,6 +150,12 @@
             WRITE(*,*) "Error: no initialization string needed for ideal gas."
             STOP -1 
          ENDIF   
+         isinit = .true.
+      ELSEIF (6 == vstyle ) THEN
+         IF (par_count /= 0) THEN
+            WRITE(*,*) "Error:  no initialization string needed for qtip4pf."
+            STOP -1 
+         ENDIF 
          isinit = .true.
       ELSEIF (5 == vstyle ) THEN
          IF (par_count /= 0) THEN
@@ -301,6 +309,20 @@
                   ENDDO
                ENDDO
                ! do not compute the virial term
+            ELSEIF (vstyle == 6) THEN ! qtip4pf potential.             
+               IF (mod(nat,3)/=0) THEN
+                  WRITE(*,*) " Expecting water molecules O H H O H H O H H but got ", nat, "atoms"
+                  STOP -1
+               ENDIF
+               vpars(1) = cell_h(1,1)
+               vpars(2) = cell_h(2,2)
+               vpars(3) = cell_h(3,3)
+               IF (cell_h(1,2).gt.1d-10 .or. cell_h(1,3).gt.1d-12  .or. cell_h(2,3).gt.1d-12) THEN
+                  WRITE(*,*) " qtip4pf PES only works with orthorhombic cells"
+                  STOP -1 
+               ENDIF
+               CALL qtip4pf(vpars(1:3),atoms,nat,forces,pot)
+               ! do not compute the virial term
             ELSE
                IF ((allocated(n_list) .neqv. .true.)) THEN
                   IF (verbose) WRITE(*,*) " Allocating neighbour lists."
@@ -371,14 +393,14 @@
       CONTAINS
       SUBROUTINE helpmessage
          ! Help banner
-         WRITE(*,*) " SYNTAX: driver.x [-u] -h hostname -p port -m [gas|lj|sg|harm|morse|zundel] "
+         WRITE(*,*) " SYNTAX: driver.x [-u] -h hostname -p port -m [gas|lj|sg|harm|morse|zundel|qtip4pf] "
          WRITE(*,*) "         -o 'comma_separated_parameters' [-v] "
          WRITE(*,*) ""
          WRITE(*,*) " For LJ potential use -o sigma,epsilon,cutoff "
          WRITE(*,*) " For SG potential use -o cutoff "
          WRITE(*,*) " For 1D harmonic oscillator use -o k "
-         WRITE(*,*) " For 1D morse oscillator use ??????????????? "
-         WRITE(*,*) " For the ideal gas or zundel, no options needed! "
+         WRITE(*,*) " For 1D morse oscillator use -o r0,D,a"         
+         WRITE(*,*) " For the ideal gas, qtip4pf or zundel no options needed! "
       END SUBROUTINE
    END PROGRAM
 

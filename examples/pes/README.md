@@ -1,7 +1,10 @@
 Using driver.x with (high quality) potential energy surfaces
 ============================================================
 
-This folder contains a simple example of how to run driver.x
+Zundel cation
+-------------
+
+The `zundel/` folder contains a simple example of how to run driver.x
 together with a potential fit for the Zundel cation in the gas
 phase based on high-end quantum chemistry methods. 
 
@@ -20,4 +23,18 @@ one wants to run the driver code.
 
 ```bash
 ../../../drivers/driver.x -u -h zundel -m zundel
+```
+
+
+qTIP4P/f water model
+--------------------
+
+The `qtip4pf/` folder contains an example of how to run driver.x
+with a simplistic implementation of the qtip4pf/ water model. 
+
+One as usual runs i-PI, followed by one or more instances of the driver:
+
+```bash
+../../../i-pi input.xml &
+../../../drivers/driver.x -u -h driver -m qtip4pf
 ```
