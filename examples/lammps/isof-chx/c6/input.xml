@@ -2,8 +2,8 @@
   
    <output prefix="C6">
       <properties stride='4' filename='out'>  [ step, time{picosecond}, temperature{kelvin}, conserved{electronvolt}, potential{electronvolt}, spring{electronvolt}, kinetic_cv{electronvolt}] </properties>
-      <properties stride='4' filename='isotd'>  [ step, isotope_zetatd(1.0836;C) ] </properties>
-      <properties stride='10' filename='isosc'> [ step, isotope_zetasc(1.0836;C) ] </properties> 
+      <trajectory stride='4' filename='Czetatd'>isotope_zetatd(1.0836;C)</trajectory>
+      <trajectory stride='10' filename='Czetasc'>isotope_zetasc(1.0836;C)</trajectory>
       <trajectory stride='200' filename='xc'>x_centroid{angstrom}</trajectory>
       <checkpoint stride='20000' />
    </output>

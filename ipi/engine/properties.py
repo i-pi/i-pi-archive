@@ -36,7 +36,6 @@ __all__ = ['Properties', 'Trajectories', 'getkey', 'getall', 'help_latex']
 
 import os
 import numpy as np
-from math import exp
 from ipi.utils.messages import verbosity, info, warning
 from ipi.utils.depend import *
 from ipi.utils.units import Constants, unit_to_internal, unit_to_user
@@ -1205,7 +1204,7 @@ class Properties(dobject):
          
          spr2 = spr*spr
          # sprexp = exp(-Belta*spr/P)
-         sprexp = exp(-1.0*spr/(Constants.kb*self.ensemble.temp*self.beads.nbeads))
+         sprexp = np.exp(-1.0*spr/(Constants.kb*self.ensemble.temp*self.beads.nbeads))
          
          sprsum += spr
          spr2sum += spr2
@@ -1274,7 +1273,7 @@ class Properties(dobject):
          
          yama2 = yama*yama
          # yamaexp = exp(-Beta*yama)
-         yamaexp = exp(-1.0*beta*yama)
+         yamaexp = np.exp(-1.0*beta*yama)
          
          yamasum += yama
          yama2sum += yama2
@@ -1343,7 +1342,13 @@ class Trajectories(dobject):
                      'func': self.get_rg},
       "extras": {    "help": """The additional data returned by the client code, printed verbatim. Will print
                              out one file per bead, unless the bead attribute is set by the user.""",
-                     'func': (lambda : self.system.forces.extras)}
+                     'func': (lambda : self.system.forces.extras)},
+      "isotope_zetatd":  {"dimension" : "undefined",
+                          "help": "Isotope fractionation estimator in the form of ratios of partition functions.",      					
+                          'func': self.get_isotope_zetatd},
+      "isotope_zetasc":  {"dimension" : "undefined",
+                          "help": "Isotope fractionation estimator in the form of ratios of partition functions.",
+                          'func': self.get_isotope_zetasc}  
       }
 
 
@@ -1355,6 +1360,12 @@ class Trajectories(dobject):
       """
 
       self.system = system
+      # dummy beads and forcefield objects so that we can use scaled and
+      # displaced path estimators without changing the simulation bead
+      # coordinates
+      self.dbeads = system.beads.copy()
+      self.dforces = Forces()
+      self.dforces.bind(self.dbeads, self.system.cell,  system.fproto, self.system.simul.fflist)
 
    def get_akcv(self):
       """Calculates the contribution to the kinetic energy due to each degree
@@ -1405,7 +1416,97 @@ class Trajectories(dobject):
             dq = q[i,3*j:3*(j+1)] - qc[3*j:3*(j+1)]
             rg[3*j:3*(j+1)] += dq*dq
       return np.sqrt(rg/float(nb))
+      
+   def get_isotope_zetatd (self, alpha="1.0", atom=""):
+      """Get the zeta-TD estimator for each atom 
+      for each degree of freesdom.
 
+      Args:
+         alpha: m'/m the mass ratio
+      """
+      try:
+         #iatom gives the index of the atom to be studied
+         iatom = int(atom)
+         latom = ""
+         if iatom >= self.system.beads.natoms:
+            raise IndexError("Cannot output scaled-mass kinetic energy estimator as atom index %d is larger than the number of atoms" % iatom)
+      except ValueError:
+         #here 'atom' is a label rather than an index which is stored in latom
+         iatom = -1
+         latom = atom
+
+      alpha = float(alpha)
+
+      nat = self.system.beads.natoms
+      nb = self.system.beads.nbeads
+      zetatd = np.zeros(nat*3)
+      # strips dependency control since we are not gonna change the true beads in what follows
+      q = depstrip(self.system.beads.q)
+
+      for i in range(nat):
+         # selects only the atoms we care about
+         if (atom != "" and iatom != i and latom != self.system.beads.names[i]):
+            continue
+            		  
+         for b in range(1,nb):
+            for j in range(3*i,3*(i+1)):
+               zetatd[j] += (q[b,j]-q[b-1,j])**2
+         for j in range(3*i,3*(i+1)):
+            zetatd[j] += (q[nb-1,j]-q[0,j])**2
+          
+         # spr = 0.5*(alpha-1)*m_H*omegan2*sum {(q_i+1 - q_i)**2} 
+         zetatd[3*i:3*(i+1)] *= 0.5*(alpha-1.0)*self.system.beads.m[i]*self.system.nm.omegan2
+         
+      zetatd = np.exp(-1.0/(Constants.kb*self.system.ensemble.temp*nb)*zetatd)
+      
+      return zetatd
+
+   def get_isotope_zetasc (self, alpha="1.0", atom=""):
+      """Get the zeta-SC estimator for each atom.
+
+      Args:
+         alpha: m'/m the mass ratio
+      """
+      try:
+         #iatom gives the index of the atom to be studied
+         iatom = int(atom)
+         latom = ""
+         if iatom >= self.system.beads.natoms:
+            raise IndexError("Cannot output scaled-mass kinetic energy estimator as atom index %d is larger than the number of atoms" % iatom)
+      except ValueError:
+         #here 'atom' is a label rather than an index which is stored in latom
+         iatom = -1
+         latom = atom
+             
+      alpha = float(alpha)
+      scalefactor = 1.0/np.sqrt(alpha)
+      beta = 1.0/(Constants.kb*self.system.ensemble.temp)
+
+      nat = self.system.beads.natoms
+      nb = self.system.beads.nbeads
+      zetasc = np.zeros(nat*3)
+           
+      qc = depstrip(self.system.beads.qc)
+      q = depstrip(self.system.beads.q)
+      v0 = self.system.forces.pot/nb
+      self.dbeads.q = q
+      
+      for i in range(nat):
+         # selects only the atoms we care about
+         if (atom != "" and iatom != i and latom != self.system.beads.names[i]):
+            continue		  
+		  
+         for b in range(1,nb):
+			 for j in range(3*i,3*(i+1)):
+				 self.dbeads.q[b,j] = qc[j]*(1.0 - scalefactor) + scalefactor*q[b,j]             
+         zetasc[3*i:3*(i+1)] = self.dforces.pot/nb - v0
+         
+         self.dbeads.q = q
+         
+      zetasc = np.exp(-1.0*beta*zetasc)
+      
+      return zetasc
+      
    def __getitem__(self, key):
       """Retrieves the item given by key.
 
