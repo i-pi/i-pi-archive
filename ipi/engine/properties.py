@@ -1267,13 +1267,12 @@ class Properties(dobject):
 
          ni += 1
 
-         for b in range(1,self.beads.nbeads):
-			 for j in range(3*i,3*(i+1)):
-				 self.dbeads.q[b,j] = qc[j]*(1.0 - scalefactor) + scalefactor*q[b,j]             
+         for b in range(self.beads.nbeads):
+            for j in range(3*i,3*(i+1)):
+               self.dbeads.q[b,j] = qc[j]*(1.0 - scalefactor) + scalefactor*q[b,j]             
          yama = self.dforces.pot/self.beads.nbeads - v0
          
          yama2 = yama*yama
-         # yamaexp = exp(-Beta*yama)
          yamaexp = exp(-1.0*beta*yama)
          
          yamasum += yama
