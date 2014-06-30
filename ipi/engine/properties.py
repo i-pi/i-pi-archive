@@ -1266,7 +1266,7 @@ class Properties(dobject):
 
          ni += 1
 
-         for b in range(1,self.beads.nbeads):
+         for b in range(self.beads.nbeads):
 			 for j in range(3*i,3*(i+1)):
 				 self.dbeads.q[b,j] = qc[j]*(1.0 - scalefactor) + scalefactor*q[b,j]             
          yama = self.dforces.pot/self.beads.nbeads - v0
@@ -1418,8 +1418,11 @@ class Trajectories(dobject):
       return np.sqrt(rg/float(nb))
       
    def get_isotope_zetatd (self, alpha="1.0", atom=""):
-      """Get the zeta-TD estimator for each atom 
-      for each degree of freesdom.
+      """Get the zeta-TD estimator for each atom. 
+      output format:
+      column 1: h
+      column 2: h**2
+      column 3: zetatd
 
       Args:
          alpha: m'/m the mass ratio
@@ -1439,7 +1442,7 @@ class Trajectories(dobject):
 
       nat = self.system.beads.natoms
       nb = self.system.beads.nbeads
-      zetatd = np.zeros(nat*3)
+      zetatd = np.zeros((nat,3))
       # strips dependency control since we are not gonna change the true beads in what follows
       q = depstrip(self.system.beads.q)
 
@@ -1450,16 +1453,17 @@ class Trajectories(dobject):
             		  
          for b in range(1,nb):
             for j in range(3*i,3*(i+1)):
-               zetatd[j] += (q[b,j]-q[b-1,j])**2
+               zetatd[i,0] += (q[b,j]-q[b-1,j])**2
          for j in range(3*i,3*(i+1)):
-            zetatd[j] += (q[nb-1,j]-q[0,j])**2
+            zetatd[i,0] += (q[nb-1,j]-q[0,j])**2
           
          # spr = 0.5*(alpha-1)*m_H*omegan2*sum {(q_i+1 - q_i)**2} 
-         zetatd[3*i:3*(i+1)] *= 0.5*(alpha-1.0)*self.system.beads.m[i]*self.system.nm.omegan2
+         zetatd[i,0] *= 0.5*(alpha-1.0)*self.system.beads.m[i]*self.system.nm.omegan2
          
-      zetatd = np.exp(-1.0/(Constants.kb*self.system.ensemble.temp*nb)*zetatd)
+      zetatd[:,1] = np.square(zetatd[:,0])
+      zetatd[:,2] = np.exp(-1.0/(Constants.kb*self.system.ensemble.temp*nb)*zetatd[:,0])
       
-      return zetatd
+      return zetatd.reshape(nat*3)
 
    def get_isotope_zetasc (self, alpha="1.0", atom=""):
       """Get the zeta-SC estimator for each atom.
@@ -1484,7 +1488,7 @@ class Trajectories(dobject):
 
       nat = self.system.beads.natoms
       nb = self.system.beads.nbeads
-      zetasc = np.zeros(nat*3)
+      zetasc = np.zeros((nat,3))
            
       qc = depstrip(self.system.beads.qc)
       q = depstrip(self.system.beads.q)
@@ -1496,16 +1500,17 @@ class Trajectories(dobject):
          if (atom != "" and iatom != i and latom != self.system.beads.names[i]):
             continue		  
 		  
-         for b in range(1,nb):
+         for b in range(nb):
 			 for j in range(3*i,3*(i+1)):
 				 self.dbeads.q[b,j] = qc[j]*(1.0 - scalefactor) + scalefactor*q[b,j]             
-         zetasc[3*i:3*(i+1)] = self.dforces.pot/nb - v0
+         zetasc[i,0] = self.dforces.pot/nb - v0
          
          self.dbeads.q = q
          
-      zetasc = np.exp(-1.0*beta*zetasc)
+      zetasc[:,1] = np.square(zetasc[:,0])
+      zetasc[:,2] = np.exp(-1.0*beta*zetasc[:,0])
       
-      return zetasc
+      return zetasc.reshape(nat*3)
       
    def __getitem__(self, key):
       """Retrieves the item given by key.
