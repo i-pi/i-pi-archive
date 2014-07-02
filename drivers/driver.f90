@@ -54,10 +54,11 @@
       ! PARAMETERS OF THE SYSTEM (CELL, ATOM POSITIONS, ...)
       DOUBLE PRECISION sigma, eps, rc, rn, ks ! potential parameters
       INTEGER nat
-      DOUBLE PRECISION pot
-      DOUBLE PRECISION, ALLOCATABLE :: atoms(:,:), forces(:,:)
-      DOUBLE PRECISION cell_h(3,3), cell_ih(3,3), virial(3,3), mtxbuf(9)
+      DOUBLE PRECISION pot, dpot
+      DOUBLE PRECISION, ALLOCATABLE :: atoms(:,:), forces(:,:), datoms(:,:)
+      DOUBLE PRECISION cell_h(3,3), cell_ih(3,3), virial(3,3), mtxbuf(9), dip(3)
       DOUBLE PRECISION volume
+      DOUBLE PRECISION, PARAMETER :: fddx = 1.0d-5
 
       ! NEIGHBOUR LIST ARRAYS
       INTEGER, DIMENSION(:), ALLOCATABLE :: n_list, index_list
@@ -65,7 +66,7 @@
       DOUBLE PRECISION, ALLOCATABLE :: last_atoms(:,:) ! Holds the positions when the neighbour list is created
       DOUBLE PRECISION displacement ! Tracks how far each atom has moved since the last call of nearest_neighbours
 
-      INTEGER i
+      INTEGER i, j 
 
       ! parse the command line parameters
       ! intialize defaults
@@ -99,12 +100,7 @@
          ELSE
             IF (ccmd == 0) THEN
                WRITE(*,*) " Unrecognized command line argument", ccmd
-               WRITE(*,*) " SYNTAX: driver.x [-u] -h hostname -p port -m [gas|lj|sg|harm] -o 'comma_separated_parameters' [-v] "
-               WRITE(*,*) ""
-               WRITE(*,*) " For LJ potential use -o sigma,epsilon,cutoff "
-               WRITE(*,*) " For SG potential use -o cutoff "
-               WRITE(*,*) " For 1D harmonic oscillator use -o k "
-               WRITE(*,*) " For the ideal gas, no options needed! "
+               CALL helpmessage
                STOP -1
             ENDIF
             IF (ccmd == 1) THEN
@@ -118,11 +114,17 @@
                   vstyle = 2
                ELSEIF (trim(cmdbuffer) == "harm") THEN
                   vstyle = 3
+               ELSEIF (trim(cmdbuffer) == "morse") THEN
+                  vstyle = 4
+               ELSEIF (trim(cmdbuffer) == "zundel") THEN
+                  vstyle = 5
+               ELSEIF (trim(cmdbuffer) == "qtip4pf") THEN
+                  vstyle = 6
                ELSEIF (trim(cmdbuffer) == "gas") THEN
                   vstyle = 0  ! ideal gas
                ELSE
                   WRITE(*,*) " Unrecognized potential type ", trim(cmdbuffer)
-                  WRITE(*,*) " Use -m [gas|lj|sg|harm] "
+                  WRITE(*,*) " Use -m [gas|lj|sg|harm|morse|zundel|qtip4pf] "
                   STOP -1
                ENDIF
             ELSEIF (ccmd == 4) THEN
@@ -141,17 +143,38 @@
 
       IF (vstyle == -1) THEN
          WRITE(*,*) " Error, type of potential not specified."
-         WRITE(*,*) " SYNTAX: driver.x [-u] -h hostname -p port -m [gas|lj|sg|harm] -o 'comma_separated_parameters' [-v] "
-         WRITE(*,*) ""
-         WRITE(*,*) " For LJ potential use -o sigma,epsilon,cutoff "
-         WRITE(*,*) " For SG potential use -o cutoff "
-         WRITE(*,*) " For the ideal gas, no options needed! "
+         CALL helpmessage
          STOP -1
-      ELSEIF (vstyle == 0) THEN
+      ELSEIF (0 == vstyle ) THEN
          IF (par_count /= 0) THEN
             WRITE(*,*) "Error: no initialization string needed for ideal gas."
             STOP -1 
          ENDIF   
+         isinit = .true.
+      ELSEIF (6 == vstyle ) THEN
+         IF (par_count /= 0) THEN
+            WRITE(*,*) "Error:  no initialization string needed for qtip4pf."
+            STOP -1 
+         ENDIF 
+         isinit = .true.
+      ELSEIF (5 == vstyle ) THEN
+         IF (par_count /= 0) THEN
+            WRITE(*,*) "Error: no initialization string needed for zundel."
+            STOP -1 
+         ENDIF   
+         CALL prezundelpot()
+         CALL prezundeldip()
+         isinit = .true.
+      ELSEIF (4 == vstyle ) THEN
+         IF (par_count == 0) THEN ! defaults (OH stretch)
+            vpars(1) = 1.8323926 ! r0
+            vpars(2) = 0.18748511263179304 ! D
+            vpars(3) = 1.1562696428501682 ! a
+         ELSEIF ( 2/= par_count) THEN
+            WRITE(*,*) "Error: parameters not initialized correctly."
+            WRITE(*,*) "For morse potential use -o r0,D,a (in a.u.) "
+            STOP -1 
+         ENDIF 
          isinit = .true.
       ELSEIF (vstyle == 1) THEN
          IF (par_count /= 3) THEN
@@ -192,9 +215,8 @@
          ENDIF
       ENDIF
 
-      ! Calls the interface to the C sockets to open a communication channel
+      ! Calls the interface to the POSIX sockets library to open a communication channel
       CALL open_socket(socket, inet, port, host)
-      !CALL open_socket(socket, inet, port, host)
       nat = -1
       DO WHILE (.true.) ! Loops forever (or until the wrapper ends!)
 
@@ -237,9 +259,10 @@
                nat = cbuf
                IF (verbose) WRITE(*,*) " Allocating buffer and data arrays, with ", nat, " atoms"
                ALLOCATE(msgbuffer(3*nat))
-               ALLOCATE(atoms(nat,3))
+               ALLOCATE(atoms(nat,3), datoms(nat,3))
                ALLOCATE(forces(nat,3))
                atoms = 0.0d0
+               datoms = 0.0d0
                forces = 0.0d0
                msgbuffer = 0.0d0
             ENDIF
@@ -259,6 +282,47 @@
                forces(1,1) = -ks*atoms(1,1)
                virial = 0
                virial(1,1) = forces(1,1)*atoms(1,1)
+            ELSEIF (vstyle == 4) THEN ! Morse potential. 
+               IF (nat/=1) THEN
+                  WRITE(*,*) "Expecting 1 atom for 3D Morse (use the effective mass for the atom mass to get proper frequency!) "
+                  STOP -1
+               ENDIF
+               CALL getmorse(vpars(1), vpars(2), vpars(3), atoms, pot, forces)               
+            ELSEIF (vstyle == 5) THEN ! Zundel potential. 
+               IF (nat/=7) THEN
+                  WRITE(*,*) "Expecting 7 atoms for Zundel potential, O O H H H H H "
+                  STOP -1
+               ENDIF
+               
+               CALL zundelpot(pot,atoms)
+               CALL zundeldip(dip,atoms)
+
+               datoms=atoms
+               DO i=1,7  ! forces by finite differences
+                  DO j=1,3                     
+                     datoms(i,j)=atoms(i,j)+fddx
+                     CALL zundelpot(dpot, datoms)
+                     datoms(i,j)=atoms(i,j)-fddx                     
+                     CALL zundelpot(forces(i,j), datoms)
+                     datoms(i,j)=atoms(i,j)
+                     forces(i,j)=(forces(i,j)-dpot)/(2*fddx)
+                  ENDDO
+               ENDDO
+               ! do not compute the virial term
+            ELSEIF (vstyle == 6) THEN ! qtip4pf potential.             
+               IF (mod(nat,3)/=0) THEN
+                  WRITE(*,*) " Expecting water molecules O H H O H H O H H but got ", nat, "atoms"
+                  STOP -1
+               ENDIF
+               vpars(1) = cell_h(1,1)
+               vpars(2) = cell_h(2,2)
+               vpars(3) = cell_h(3,3)
+               IF (cell_h(1,2).gt.1d-10 .or. cell_h(1,3).gt.1d-12  .or. cell_h(2,3).gt.1d-12) THEN
+                  WRITE(*,*) " qtip4pf PES only works with orthorhombic cells"
+                  STOP -1 
+               ENDIF
+               CALL qtip4pf(vpars(1:3),atoms,nat,forces,pot)
+               ! do not compute the virial term
             ELSE
                IF ((allocated(n_list) .neqv. .true.)) THEN
                   IF (verbose) WRITE(*,*) " Allocating neighbour lists."
@@ -307,10 +371,17 @@
             CALL writebuffer(socket,nat)  ! Writing the number of atoms
             CALL writebuffer(socket,msgbuffer,3*nat) ! Writing the forces
             CALL writebuffer(socket,reshape(virial,(/9/)),9)  ! Writing the virial tensor, NOT divided by the volume
-            cbuf = 7 ! Size of the "extras" string
-            CALL writebuffer(socket,cbuf) ! This would write out the "extras" string, but in this case we only use a dummy string.
-            CALL writebuffer(socket,"nothing",7)
-
+            IF (vstyle==5) THEN ! returns the dipole 
+               initbuffer = " "
+               WRITE(initbuffer,*) dip(1:3)
+               cbuf = LEN_TRIM(initbuffer)
+               CALL writebuffer(socket,cbuf) ! Writes back the molecular dipole 
+               CALL writebuffer(socket,initbuffer,cbuf)
+            ELSE
+               cbuf = 7 ! Size of the "extras" string
+               CALL writebuffer(socket,cbuf) ! This would write out the "extras" string, but in this case we only use a dummy string.
+               CALL writebuffer(socket,"nothing",7)
+            ENDIF
             hasdata = .false.
          ELSE
             WRITE(*,*) " Unexpected header ", header
@@ -318,4 +389,19 @@
          ENDIF
       ENDDO
       IF (nat > 0) DEALLOCATE(atoms, forces, msgbuffer)
-      END PROGRAM
+ 
+      CONTAINS
+      SUBROUTINE helpmessage
+         ! Help banner
+         WRITE(*,*) " SYNTAX: driver.x [-u] -h hostname -p port -m [gas|lj|sg|harm|morse|zundel|qtip4pf] "
+         WRITE(*,*) "         -o 'comma_separated_parameters' [-v] "
+         WRITE(*,*) ""
+         WRITE(*,*) " For LJ potential use -o sigma,epsilon,cutoff "
+         WRITE(*,*) " For SG potential use -o cutoff "
+         WRITE(*,*) " For 1D harmonic oscillator use -o k "
+         WRITE(*,*) " For 1D morse oscillator use -o r0,D,a"         
+         WRITE(*,*) " For the ideal gas, qtip4pf or zundel no options needed! "
+      END SUBROUTINE
+   END PROGRAM
+
+    

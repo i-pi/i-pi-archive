@@ -22,23 +22,27 @@
 .PHONY: all modules clean
 
 FLAGS=-g -O3 -Wall -Wno-maybe-uninitialized
-MODULES=distance.f90 LJ.f90 SG.f90
-all: modules driver.x driver_pure.x
-
-modules: $(MODULES)
-	gfortran $(FLAGS) -c $(MODULES)
+MODULES=distance.f90 LJ.f90 SG.f90 
+PES=pes/zundel.f pes/morse.f pes/qtip4pf.f
+OBJECTS=$(MODULES:%.f90=%.o) $(PES:%.f=%.o)
+FC=gfortran
+CC=gcc
+all: driver.x driver_pure.x
 
 sockets.o: sockets.c
-	gcc $(FLAGS) -c -o sockets.o sockets.c
+	$(CC) $(FLAGS) -c -o sockets.o sockets.c
 
-driver.x: $(MODULES) sockets.o fsockets.o driver.o
-	gfortran $(FLAGS) -o driver.x $^
+driver.x: $(OBJECTS) sockets.o fsockets.o driver.o | $(OBJECTS)
+	$(FC) $(FLAGS) -o driver.x $^
 
-driver_pure.x: $(MODULES) fsockets_pure.o driver.o 
-	gfortran $(FLAGS) -o driver_pure.x $^
+driver_pure.x: $(OBJECTS) fsockets_pure.o driver.o | $(OBJECTS)
+	$(FC) $(FLAGS) -o driver_pure.x $^
 	
 %.o: %.f90
-	gfortran $(FLAGS) -c $<
+	$(FC) $(FLAGS) -c $< -o $@
 
+%.o: %.f
+	$(FC) $(FLAGS) -c $< -o $@
+	
 clean:
 	rm *.o *.mod *.x
