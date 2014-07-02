@@ -1272,7 +1272,7 @@ class Properties(dobject):
          yama = self.dforces.pot/self.beads.nbeads - v0
          
          yama2 = yama*yama
-         yamaexp = exp(-1.0*beta*yama)
+         yamaexp = np.exp(-1.0*beta*yama)
          
          yamasum += yama
          yama2sum += yama2
