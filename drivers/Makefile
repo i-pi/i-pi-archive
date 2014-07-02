@@ -19,13 +19,11 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  
-.PHONY: all
+.PHONY: all modules clean
 
-SOURCES=$(shell ls *.f90)
-FLAGS=-O3 -Wall
+FLAGS=-g -O3 -Wall -Wno-maybe-uninitialized
 MODULES=distance.f90 LJ.f90 SG.f90
-OBJECTS=$(SOURCES:.f90=.o) sockets.o
-all: modules sockets.o driver.x
+all: modules driver.x driver_pure.x
 
 modules: $(MODULES)
 	gfortran $(FLAGS) -c $(MODULES)
@@ -33,9 +31,12 @@ modules: $(MODULES)
 sockets.o: sockets.c
 	gcc $(FLAGS) -c -o sockets.o sockets.c
 
-driver.x: $(OBJECTS)
-	gfortran $(FLAGS) -o driver.x $(OBJECTS)
+driver.x: $(MODULES) sockets.o fsockets.o driver.o
+	gfortran $(FLAGS) -o driver.x $^
 
+driver_pure.x: $(MODULES) fsockets_pure.o driver.o 
+	gfortran $(FLAGS) -o driver_pure.x $^
+	
 %.o: %.f90
 	gfortran $(FLAGS) -c $<
 

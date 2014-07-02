@@ -29,25 +29,26 @@
       PROGRAM DRIVER
          USE LJ
          USE SG
+         USE F90SOCKETS, ONLY : open_socket, writebuffer, readbuffer
       IMPLICIT NONE
 
       ! SOCKET VARIABLES
       INTEGER, PARAMETER :: MSGLEN=12   ! length of the headers of the driver/wrapper communication protocol
       INTEGER socket, inet, port        ! socket ID & address of the server
-      CHARACTER*1024 :: host
+      CHARACTER(LEN=1024) :: host
 
       ! COMMAND LINE PARSING
-      CHARACTER*1024 :: cmdbuffer
+      CHARACTER(LEN=1024) :: cmdbuffer
       INTEGER ccmd, vstyle
       LOGICAL verbose
       INTEGER commas(4), par_count      ! stores the index of commas in the parameter string
       DOUBLE PRECISION vpars(4)         ! array to store the parameters of the potential
 
       ! SOCKET COMMUNICATION BUFFERS
-      CHARACTER*12 :: header
+      CHARACTER(LEN=12) :: header
       LOGICAL :: isinit=.false., hasdata=.false.
       INTEGER cbuf
-      CHARACTER*2048 :: initbuffer      ! it's unlikely a string this large will ever be passed...
+      CHARACTER(LEN=2048) :: initbuffer      ! it's unlikely a string this large will ever be passed...
       DOUBLE PRECISION, ALLOCATABLE :: msgbuffer(:)
 
       ! PARAMETERS OF THE SYSTEM (CELL, ATOM POSITIONS, ...)
@@ -55,7 +56,7 @@
       INTEGER nat
       DOUBLE PRECISION pot
       DOUBLE PRECISION, ALLOCATABLE :: atoms(:,:), forces(:,:)
-      DOUBLE PRECISION cell_h(3,3), cell_ih(3,3), virial(3,3)
+      DOUBLE PRECISION cell_h(3,3), cell_ih(3,3), virial(3,3), mtxbuf(9)
       DOUBLE PRECISION volume
 
       ! NEIGHBOUR LIST ARRAYS
@@ -104,7 +105,7 @@
                WRITE(*,*) " For SG potential use -o cutoff "
                WRITE(*,*) " For 1D harmonic oscillator use -o k "
                WRITE(*,*) " For the ideal gas, no options needed! "
-               CALL EXIT(-1)
+               STOP -1
             ENDIF
             IF (ccmd == 1) THEN
                host = trim(cmdbuffer)//achar(0)
@@ -122,7 +123,7 @@
                ELSE
                   WRITE(*,*) " Unrecognized potential type ", trim(cmdbuffer)
                   WRITE(*,*) " Use -m [gas|lj|sg|harm] "
-                  CALL EXIT(-1)
+                  STOP -1
                ENDIF
             ELSEIF (ccmd == 4) THEN
                par_count = 1
@@ -145,18 +146,18 @@
          WRITE(*,*) " For LJ potential use -o sigma,epsilon,cutoff "
          WRITE(*,*) " For SG potential use -o cutoff "
          WRITE(*,*) " For the ideal gas, no options needed! "
-         CALL EXIT(-1)
+         STOP -1
       ELSEIF (vstyle == 0) THEN
          IF (par_count /= 0) THEN
             WRITE(*,*) "Error: no initialization string needed for ideal gas."
-            CALL EXIT(-1) 
+            STOP -1 
          ENDIF   
          isinit = .true.
       ELSEIF (vstyle == 1) THEN
          IF (par_count /= 3) THEN
             WRITE(*,*) "Error: parameters not initialized correctly."
             WRITE(*,*) "For LJ potential use -o sigma,epsilon,cutoff "
-            CALL EXIT(-1) ! Note that if initialization from the wrapper is implemented this exit should be removed.
+            STOP -1 ! Note that if initialization from the wrapper is implemented this exit should be removed.
          ENDIF   
          sigma = vpars(1)
          eps = vpars(2)
@@ -167,7 +168,7 @@
          IF (par_count /= 1) THEN
             WRITE(*,*) "Error: parameters not initialized correctly."
             WRITE(*,*) "For SG potential use -o cutoff "
-            CALL EXIT(-1) ! Note that if initialization from the wrapper is implemented this exit should be removed.
+            STOP -1 ! Note that if initialization from the wrapper is implemented this exit should be removed.
          ENDIF
          rc = vpars(1)
          rn = rc*1.2
@@ -176,7 +177,7 @@
          IF (par_count /= 1) THEN
             WRITE(*,*) "Error: parameters not initialized correctly."
             WRITE(*,*) "For 1D harmonic potential use -o k "
-            CALL EXIT(-1) ! Note that if initialization from the wrapper is implemented this exit should be removed.
+            STOP -1 ! Note that if initialization from the wrapper is implemented this exit should be removed.
          ENDIF
          ks = vpars(1)
          isinit = .true.
@@ -193,6 +194,7 @@
 
       ! Calls the interface to the C sockets to open a communication channel
       CALL open_socket(socket, inet, port, host)
+      !CALL open_socket(socket, inet, port, host)
       nat = -1
       DO WHILE (.true.) ! Loops forever (or until the wrapper ends!)
 
@@ -210,16 +212,18 @@
                CALL writebuffer(socket,"READY       ",MSGLEN)  ! We are idling and eager to compute something
             ENDIF
          ELSEIF (trim(header) == "INIT") THEN     ! The driver is kindly providing a string for initialization
-            CALL readbuffer(socket, cbuf, 4)
+            CALL readbuffer(socket, cbuf)
             CALL readbuffer(socket, initbuffer, cbuf)
             IF (verbose) WRITE(*,*) " Initializing system from wrapper, using ", trim(initbuffer)
             isinit=.true. ! We actually do nothing with this string, thanks anyway. Could be used to pass some information (e.g. the input parameters, or the index of the replica, from the driver
          ELSEIF (trim(header) == "POSDATA") THEN  ! The driver is sending the positions of the atoms. Here is where we do the calculation!
 
             ! Parses the flow of data from the socket
-            CALL readbuffer(socket, cell_h,  9*8)  ! Cell matrix
-            CALL readbuffer(socket, cell_ih, 9*8)  ! Inverse of the cell matrix (so we don't have to invert it every time here)
-
+            CALL readbuffer(socket, mtxbuf, 9)  ! Cell matrix
+            cell_h = RESHAPE(mtxbuf, (/3,3/))
+            CALL readbuffer(socket, mtxbuf, 9)  ! Inverse of the cell matrix (so we don't have to invert it every time here)
+            cell_ih = RESHAPE(mtxbuf, (/3,3/))
+            
             ! The wrapper uses atomic units for everything, and row major storage.
             ! At this stage one should take care that everything is converted in the
             ! units and storage mode used in the driver.
@@ -228,7 +232,7 @@
             ! We assume an upper triangular cell-vector matrix
             volume = cell_h(1,1)*cell_h(2,2)*cell_h(3,3)
 
-            CALL readbuffer(socket, cbuf, 4)       ! The number of atoms in the cell
+            CALL readbuffer(socket, cbuf)       ! The number of atoms in the cell
             IF (nat < 0) THEN  ! Assumes that the number of atoms does not change throughout a simulation, so only does this once
                nat = cbuf
                IF (verbose) WRITE(*,*) " Allocating buffer and data arrays, with ", nat, " atoms"
@@ -240,7 +244,7 @@
                msgbuffer = 0.0d0
             ENDIF
 
-            CALL readbuffer(socket, msgbuffer, nat*3*8)
+            CALL readbuffer(socket, msgbuffer, nat*3)
             DO i = 1, nat
                atoms(i,:) = msgbuffer(3*(i-1)+1:3*i)
             ENDDO
@@ -299,18 +303,18 @@
             virial = transpose(virial)
 
             CALL writebuffer(socket,"FORCEREADY  ",MSGLEN)
-            CALL writebuffer(socket,pot,8)  ! Writing the potential
-            CALL writebuffer(socket,nat,4)  ! Writing the number of atoms
-            CALL writebuffer(socket,msgbuffer,3*nat*8) ! Writing the forces
-            CALL writebuffer(socket,virial,9*8)  ! Writing the virial tensor, NOT divided by the volume
+            CALL writebuffer(socket,pot)  ! Writing the potential
+            CALL writebuffer(socket,nat)  ! Writing the number of atoms
+            CALL writebuffer(socket,msgbuffer,3*nat) ! Writing the forces
+            CALL writebuffer(socket,reshape(virial,(/9/)),9)  ! Writing the virial tensor, NOT divided by the volume
             cbuf = 7 ! Size of the "extras" string
-            CALL writebuffer(socket,cbuf,4) ! This would write out the "extras" string, but in this case we only use a dummy string.
+            CALL writebuffer(socket,cbuf) ! This would write out the "extras" string, but in this case we only use a dummy string.
             CALL writebuffer(socket,"nothing",7)
 
             hasdata = .false.
          ELSE
             WRITE(*,*) " Unexpected header ", header
-            CALL EXIT(-1)
+            STOP -1
          ENDIF
       ENDDO
       IF (nat > 0) DEALLOCATE(atoms, forces, msgbuffer)
