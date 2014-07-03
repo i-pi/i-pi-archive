@@ -1272,7 +1272,7 @@ class Properties(dobject):
          yama = self.dforces.pot/self.beads.nbeads - v0
          
          yama2 = yama*yama
-         yamaexp = exp(-1.0*beta*yama)
+         yamaexp = np.exp(-1.0*beta*yama)
          
          yamasum += yama
          yama2sum += yama2
@@ -1343,14 +1343,14 @@ class Trajectories(dobject):
                              out one file per bead, unless the bead attribute is set by the user.""",
                      'func': (lambda : self.system.forces.extras)},
       "isotope_zetatd":  {"dimension" : "undefined",
-                          "help": "Isotope fractionation estimator in the form of ratios of partition functions. Takes two arguments, 'alpha' , which gives the
+                          "help": """Isotope fractionation estimator in the form of ratios of partition functions. Takes two arguments, 'alpha' , which gives the
                       scaled mass parameter and default to '1.0', and 'atom', which is the label or index of a type of atoms. All the atoms but the selected ones
-                      will have zero output",      					
+                      will have zero output""",      					
                           'func': self.get_isotope_zetatd},
       "isotope_zetasc":  {"dimension" : "undefined",
-                          "help": "Isotope fractionation estimator in the form of ratios of partition functions. Takes two arguments, 'alpha' , which gives the
+                          "help": """Isotope fractionation estimator in the form of ratios of partition functions. Takes two arguments, 'alpha' , which gives the
                       scaled mass parameter and default to '1.0', and 'atom', which is the label or index of a type of atoms. All the atoms but the selected ones
-                      will have zero output",
+                      will have zero output""",
                           'func': self.get_isotope_zetasc}  
       }
 
