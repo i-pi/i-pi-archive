@@ -361,7 +361,7 @@ class ThermoPILE_L(Thermostat):
       """
 
       # Also include an optional scaling factor to reduce the intensity of NM thermostats
-      return  np.array([ self.pilescale/(2*self.nm.dynomegak[k])  for k in range(1,len(self._thermos)) ])
+      return  np.array([ 1.0/(2*self.pilescale*self.nm.dynomegak[k])  for k in range(1,len(self._thermos)) ])
 
    def get_ethermo(self):
       """Computes the total energy transferred to the heat bath for all the

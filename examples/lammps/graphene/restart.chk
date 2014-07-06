@@ -1,4 +1,6 @@
 <simulation>
+   <system>
+   <forces><force> graphene </force></forces>
    <cell shape='(3, 3)'>
     [   9.78878120e+01,   0.00000000e+00,   0.00000000e+00,   0.00000000e+00,   9.41839488e+01, 
         0.00000000e+00,   0.00000000e+00,   0.00000000e+00,   3.77945220e+02 ]
@@ -9613,13 +9615,17 @@
          C, C, C, C, C ]
       </names>
    </beads>
+<ensemble mode='nvt'>
+      <thermostat mode='pile_g'>
+         <tau>  4.13413730e+04</tau>
+         <ethermo>  1.46956448e+00</ethermo>
+      </thermostat>
+      <timestep>  4.13413730e+01</timestep>
+      <temperature units='kelvin'>  3.00000000e+02</temperature>
+   </ensemble>
+
+   </system>
    <step>19999</step>
-   <forces>
-      <socket mode='unix'>
-         <latency>  1.00000000e-04</latency>
-         <address>graphene</address>
-      </socket>
-   </forces>
    <output prefix=''>
       <properties stride='100' shape='(5)' flush='100' filename='test.out'> [ time{picosecond}, conserved, temperature, kinetic_cv, potential ] </properties>
       <trajectory filename='test.pos' stride='10' flush='100'>positions{angstrom}</trajectory>
@@ -9757,13 +9763,5 @@
       <set_pos>208</set_pos>
       <gauss>  1.25240223e+00</gauss>
    </prng>
-   <ensemble mode='nvt'>
-      <thermostat mode='pile_g'>
-         <tau>  4.13413730e+04</tau>
-         <ethermo>  1.46956448e+00</ethermo>
-      </thermostat>
-      <timestep>  4.13413730e+01</timestep>
-      <temperature units='kelvin'>  3.00000000e+02</temperature>
-   </ensemble>
-   <total_steps>20000</total_steps>
+      <total_steps>20000</total_steps>
 </simulation>

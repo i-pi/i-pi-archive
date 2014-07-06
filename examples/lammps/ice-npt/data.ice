@@ -7,16 +7,23 @@ LAMMPS Description
            2  atom types
            1  bond types
            1  angle types
-         0 13.55 xlo xhi
-         0 15.652 ylo yhi
-         0 14.75 zlo zhi
+         0 25.62 xlo xhi
+         0 29.58 ylo yhi
+         0 27.88 zlo zhi
          0.1 0.1 0.1 xy xz yz 
-
 Masses
  
   1 15.9994
   2  1.0080
  
+Bond Coeffs
+ 
+  1    1.78    0.2708585 -0.327738785 0.231328959
+ 
+Angle Coeffs
+ 
+  1    0.0700  107.400000
+
 Atoms
  
  1 1 1 -1.1128       3.84600000       5.67200001       1.32300000
