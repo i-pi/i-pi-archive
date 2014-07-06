@@ -58,6 +58,7 @@
       INTEGER nat
       DOUBLE PRECISION pot, dpot
       DOUBLE PRECISION, ALLOCATABLE :: atoms(:,:), forces(:,:), datoms(:,:)
+      DOUBLE PRECISION, ALLOCATABLE :: dfp(:,:), dfm(:,:)
       DOUBLE PRECISION cell_h(3,3), cell_ih(3,3), virial(3,3), mtxbuf(9), dip(3)
       DOUBLE PRECISION volume
       DOUBLE PRECISION, PARAMETER :: fddx = 1.0d-5
@@ -191,9 +192,9 @@
             WRITE(*,*) " For pamm potential use -o cutoff,alpha,beta -gf file.pamm "
             STOP -1  ! Note that if initialization from the wrapper is implemented this exit should be removed.
          ENDIF
-         mucutoff  = vpars(1)
-         alphapamm = vpars(2)
-         betapamm  = vpars(3)
+         mucutoff  = vpars(1) ! cutoff in mu
+         alphapamm = vpars(2) ! smearing in mixuture
+         betapamm  = vpars(3) ! smearing in the bias
          ! Read gaussian parameters from the gaussian file
          OPEN(UNIT=12,FILE=clusterfile,STATUS='OLD',ACTION='READ')
          ! read the gaussian model informations from a file.
@@ -303,7 +304,11 @@
                IF (verbose) WRITE(*,*) " Allocating buffer and data arrays, with ", nat, " atoms"
                ALLOCATE(msgbuffer(3*nat))
                ALLOCATE(atoms(nat,3), datoms(nat,3))
-               ALLOCATE(forces(nat,3))
+               ALLOCATE(forces(nat,3),dfm(nat,3),dfp(nat,3))
+               ! finite difference test PAMM
+               dfp=0.0d0
+               dfm=0.0d0
+               !!!!!!!!!!!!! PAMM
                atoms = 0.0d0
                datoms = 0.0d0
                forces = 0.0d0
@@ -398,8 +403,23 @@
                ELSEIF (vstyle == 2) THEN
                   CALL SG_getall(rc, nat, atoms, cell_h, cell_ih, index_list, n_list, pot, forces, virial)
                ELSEIF (vstyle == 7) THEN
+                  ! real call, with analytical derivatives
                   CALL hbpammbias(cell_h, cell_ih, nat, atoms, mucutoff, alphapamm, & 
                                   betapamm, nk, clusters, pot, forces, virial)
+                  ! finite difference test
+                  datoms=atoms+fddx
+                  CALL hbpammbias(cell_h, cell_ih, nat, datoms, mucutoff, alphapamm, & 
+                                  betapamm, nk, clusters, pot, dfp, virial)
+                  datoms=atoms-fddx
+                  CALL hbpammbias(cell_h, cell_ih, nat, datoms, mucutoff, alphapamm, & 
+                                  betapamm, nk, clusters, pot, dfm, virial)
+                  DO i=1,nat
+                     write(*,*) "Atom ", i
+                     write(*,*) "F analyt : ", forces(i,:)
+                     write(*,*) "F analyt : ", (dfm(i,:)-dfp(i,:))/(2.0d0*fddx)
+                     write(*,*) "-----------------------------------------"
+                  ENDDO
+                           
                ENDIF
                IF (verbose) WRITE(*,*) " Calculated energy is ", pot
             ENDIF
@@ -434,7 +454,7 @@
             STOP -1
          ENDIF
       ENDDO
-      IF (nat > 0) DEALLOCATE(atoms, forces, msgbuffer)
+      IF (nat > 0) DEALLOCATE(atoms, forces, msgbuffer,datoms,dfp,dfm)
  
       CONTAINS
       SUBROUTINE helpmessage
