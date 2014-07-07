@@ -12,7 +12,8 @@
    <system>
       <initialize nbeads='1'>
          <file mode='pdb'> start.pdb </file>
-         <velocities mode='thermal' units='kelvin'> 40 </velocities>
+         <cell mode='manual'> [ 56, 28, 28, 0, 48.497, 16.1658, 0,0, 45.724] </cell>
+         <velocities mode='thermal' units='kelvin'> 20 </velocities>
       </initialize>
       <forces><force> lj </force></forces>
       <ensemble mode='nst'>
@@ -21,14 +22,14 @@
             <thermostat mode='langevin'>
                <tau units='femtosecond'> 100 </tau>
             </thermostat>
-            <h0> [ 52.383, 0, 0, 0, 52.383, 52.383, 0, 0, 52.383 ]</h0>
+            <h0> [ 56, 28, 28, 0, 48.497, 16.1658, 0,0, 45.724 ] </h0>
          </barostat>
          <thermostat mode='pile_g'>
             <tau units='femtosecond'> 25 </tau>
          </thermostat>
          <timestep units='femtosecond'> 1 </timestep>
-         <temperature units='kelvin'> 40.32753474 </temperature>
-         <stress units='megapascal'>  [75.6, 0.0, 10.0, 0.0, 75.6, 0.0, 0.0, 0.0, 75.6] </stress>
+         <temperature units='kelvin'> 20 </temperature>
+         <stress units='megapascal'>  [75.6, 0.0, 0.0, 0.0, 75.6, 0.0, 0.0, 0.0, 75.6] </stress>
   <!--        <pressure units='megapascal'> 1 </pressure>  -->
          <fixcom>True</fixcom>
       </ensemble>
