@@ -533,35 +533,33 @@ class ReplayEnsemble(Ensemble):
       self.ptime = self.ttime = 0
       self.qtime = -time.time()
 
-      
-      while (step!=None and step<=self.rstep):
-         try:
-            self.rstep += 1
-            if (self.intraj.mode == "xyz"):            
-               for b in self.beads:
-                  myatoms = read_xyz(self.rfile)
-                  myatoms.q *= unit_to_internal("length",self.intraj.units,1.0)
-                  b.q[:] = myatoms.q
-            elif (self.intraj.mode == "pdb"):
-               for b in self.beads:
-                  myatoms, mycell = read_pdb(self.rfile)
-                  myatoms.q *= unit_to_internal("length",self.intraj.units,1.0)
-                  mycell.h  *= unit_to_internal("length",self.intraj.units,1.0)
-                  b.q[:] = myatoms.q
-               self.cell.h[:] = mycell.h
-            elif (self.intraj.mode == "chk" or self.intraj.mode == "checkpoint"):
-               # reads configuration from a checkpoint file
-               xmlchk = xml_parse_file(self.rfile) # Parses the file.
+      try:         
+         self.rstep += 1
+         if (self.intraj.mode == "xyz"):            
+            for b in self.beads:
+               myatoms = read_xyz(self.rfile)
+               myatoms.q *= unit_to_internal("length",self.intraj.units,1.0)
+               b.q[:] = myatoms.q
+         elif (self.intraj.mode == "pdb"):
+            for b in self.beads:
+               myatoms, mycell = read_pdb(self.rfile)
+               myatoms.q *= unit_to_internal("length",self.intraj.units,1.0)
+               mycell.h  *= unit_to_internal("length",self.intraj.units,1.0)
+               b.q[:] = myatoms.q
+            self.cell.h[:] = mycell.h
+         elif (self.intraj.mode == "chk" or self.intraj.mode == "checkpoint"):
+            # reads configuration from a checkpoint file
+            xmlchk = xml_parse_file(self.rfile) # Parses the file.
 
-               from ipi.inputs.simulation import InputSimulation
-               simchk = InputSimulation()
-               simchk.parse(xmlchk.fields[0][1])
-               mycell = simchk.cell.fetch()
-               mybeads = simchk.beads.fetch()
-               self.cell.h[:] = mycell.h
-               self.beads.q[:] = mybeads.q
-               softexit.trigger(" # Read single checkpoint")
-         except EOFError:
-            softexit.trigger(" # Finished reading re-run trajectory")
-
+            from ipi.inputs.simulation import InputSimulation
+            simchk = InputSimulation()
+            simchk.parse(xmlchk.fields[0][1])
+            mycell = simchk.cell.fetch()
+            mybeads = simchk.beads.fetch()
+            self.cell.h[:] = mycell.h
+            self.beads.q[:] = mybeads.q
+            softexit.trigger(" # Read single checkpoint")
+      except EOFError:
+         softexit.trigger(" # Finished reading re-run trajectory")
+      if (step!=None and self.rstep<=step): self.step(step) 
       self.qtime += time.time()
