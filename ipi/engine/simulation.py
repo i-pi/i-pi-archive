@@ -233,7 +233,7 @@ class Simulation(dobject):
          #   s.ensemble.step()
          for s in self.syslist:
             # creates separate threads for the different systems
-            st = threading.Thread(target=s.ensemble.step, name=s.prefix)
+            st = threading.Thread(target=s.ensemble.step, name=s.prefix, args=(self.step))
             st.daemon = True
             st.start()
             stepthreads.append(st)
