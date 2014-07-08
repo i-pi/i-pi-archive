@@ -40,11 +40,11 @@
       CHARACTER(LEN=1024) :: host
 
       ! COMMAND LINE PARSING
-      CHARACTER(LEN=1024) :: cmdbuffer
+      CHARACTER(LEN=1024) :: cmdbuffer,biasvalue
       INTEGER ccmd, vstyle
       LOGICAL verbose
       INTEGER commas(4), par_count      ! stores the index of commas in the parameter string
-      DOUBLE PRECISION vpars(4)         ! array to store the parameters of the potential
+      DOUBLE PRECISION vpars(5)         ! array to store the parameters of the potential
 
       ! SOCKET COMMUNICATION BUFFERS
       CHARACTER(LEN=12) :: header
@@ -56,9 +56,8 @@
       ! PARAMETERS OF THE SYSTEM (CELL, ATOM POSITIONS, ...)
       DOUBLE PRECISION sigma, eps, rc, rn, ks ! potential parameters
       INTEGER nat
-      DOUBLE PRECISION pot, dpot
+      DOUBLE PRECISION pot, dpot !, potp, potm
       DOUBLE PRECISION, ALLOCATABLE :: atoms(:,:), forces(:,:), datoms(:,:)
-      DOUBLE PRECISION, ALLOCATABLE :: dfp(:,:), dfm(:,:)
       DOUBLE PRECISION cell_h(3,3), cell_ih(3,3), virial(3,3), mtxbuf(9), dip(3)
       DOUBLE PRECISION volume
       DOUBLE PRECISION, PARAMETER :: fddx = 1.0d-5
@@ -73,7 +72,7 @@
       CHARACTER(LEN=1024) :: clusterfile  ! pamm file containing the clusters paramters
       DOUBLE PRECISION mucutoff           ! cutoff in mu
       DOUBLE PRECISION alphapamm          ! smearing in the gaussian mixture
-      DOUBLE PRECISION betapamm           ! smearing in the bias
+      DOUBLE PRECISION sbias, cbias, hbias  ! bias parameters
       ! Paramater for the pammm gaussian-mixture model
       INTEGER nk ! number of gaussians in the mixture
       TYPE(GAUSS_TYPE), ALLOCATABLE, DIMENSION(:) :: clusters ! gaussians
@@ -96,7 +95,6 @@
       ! pamm defaults
       clusterfile=''
       alphapamm=1.0d0
-      betapamm=1.0d0
 
       DO i = 1, IARGC()
          CALL GETARG(i, cmdbuffer)
@@ -157,7 +155,7 @@
                ENDDO
                READ(cmdbuffer(commas(par_count)+1:),*) vpars(par_count)
             ELSEIF (ccmd == 5) THEN
-               IF (vstyle == 4) THEN
+               IF (vstyle == 7) THEN
                   ! read the pamm filename (the file containing the gaussians)
                   ! tipically it is something like 'file.pamm'
                   clusterfile = trim(cmdbuffer)
@@ -187,14 +185,16 @@
          ENDIF 
          isinit = .true.
       ELSEIF (7 == vstyle) THEN
-         IF ((par_count /= 3) .OR. (clusterfile=='')) THEN
+         IF ((par_count /= 5) .OR. (clusterfile=='')) THEN
             WRITE(*,*) " Error: parameters not initialized correctly."
-            WRITE(*,*) " For pamm potential use -o cutoff,alpha,beta -gf file.pamm "
+            WRITE(*,*) " For pamm potential use -o cutoff,alpha,sbias,cbias,hbias -gf file.pamm "
             STOP -1  ! Note that if initialization from the wrapper is implemented this exit should be removed.
          ENDIF
          mucutoff  = vpars(1) ! cutoff in mu
          alphapamm = vpars(2) ! smearing in mixuture
-         betapamm  = vpars(3) ! smearing in the bias
+         sbias = vpars(3) ! spread in the fermi function
+         cbias = vpars(4) ! center
+         hbias = vpars(5) ! height
          ! Read gaussian parameters from the gaussian file
          OPEN(UNIT=12,FILE=clusterfile,STATUS='OLD',ACTION='READ')
          ! read the gaussian model informations from a file.
@@ -304,10 +304,8 @@
                IF (verbose) WRITE(*,*) " Allocating buffer and data arrays, with ", nat, " atoms"
                ALLOCATE(msgbuffer(3*nat))
                ALLOCATE(atoms(nat,3), datoms(nat,3))
-               ALLOCATE(forces(nat,3),dfm(nat,3),dfp(nat,3))
+               ALLOCATE(forces(nat,3))
                ! finite difference test PAMM
-               dfp=0.0d0
-               dfm=0.0d0
                !!!!!!!!!!!!! PAMM
                atoms = 0.0d0
                datoms = 0.0d0
@@ -405,21 +403,29 @@
                ELSEIF (vstyle == 7) THEN
                   ! real call, with analytical derivatives
                   CALL hbpammbias(cell_h, cell_ih, nat, atoms, mucutoff, alphapamm, & 
-                                  betapamm, nk, clusters, pot, forces, virial)
-                  ! finite difference test
-                  datoms=atoms+fddx
-                  CALL hbpammbias(cell_h, cell_ih, nat, datoms, mucutoff, alphapamm, & 
-                                  betapamm, nk, clusters, pot, dfp, virial)
-                  datoms=atoms-fddx
-                  CALL hbpammbias(cell_h, cell_ih, nat, datoms, mucutoff, alphapamm, & 
-                                  betapamm, nk, clusters, pot, dfm, virial)
-                  DO i=1,nat
-                     write(*,*) "Atom ", i
-                     write(*,*) "F analyt : ", forces(i,:)
-                     write(*,*) "F analyt : ", (dfm(i,:)-dfp(i,:))/(2.0d0*fddx)
-                     write(*,*) "-----------------------------------------"
-                  ENDDO
-                           
+                                  sbias, cbias, hbias, nk, clusters, pot, forces, virial)
+                                  
+                  biasvalue=''
+                  write(biasvalue,*) pot
+                  cbuf = len(ADJUSTL(trim(biasvalue)))
+                  CALL writebuffer(socket,cbuf)
+                  CALL writebuffer(socket,ADJUSTL(trim(biasvalue)),cbuf)
+                  
+                  !write(*,*) "PAMM bias", pot
+                  !write(*,*) "Analytical force", forces(1,1)
+                  !! finite difference test
+                  !datoms=atoms
+                  !datoms(1,1)=atoms(1,1)+fddx
+                  !CALL hbpammbias(cell_h, cell_ih, nat, datoms, mucutoff, alphapamm, & 
+                  !                sbias, cbias, hbias, nk, clusters, potp, forces, virial)
+                  !
+                  !datoms=atoms
+                  !datoms(1,1)=atoms(1,1)-fddx
+                  !CALL hbpammbias(cell_h, cell_ih, nat, datoms, mucutoff, alphapamm, & 
+                  !                sbias, cbias, hbias, nk, clusters, potm, forces, virial)
+                  !
+                  !write(*,*) "Numerical force", -(potp-potm)/(2.0d0*fddx)
+                  virial = 0.0d0 
                ENDIF
                IF (verbose) WRITE(*,*) " Calculated energy is ", pot
             ENDIF
@@ -454,7 +460,7 @@
             STOP -1
          ENDIF
       ENDDO
-      IF (nat > 0) DEALLOCATE(atoms, forces, msgbuffer,datoms,dfp,dfm)
+      IF (nat > 0) DEALLOCATE(atoms, forces, msgbuffer,datoms)
  
       CONTAINS
       SUBROUTINE helpmessage
@@ -466,7 +472,7 @@
          WRITE(*,*) " For SG potential use -o cutoff "
          WRITE(*,*) " For 1D harmonic oscillator use -o k "
          WRITE(*,*) " For 1D morse oscillator use -o r0,D,a"
-         WRITE(*,*) " For pamm potential use -o cutoff,alpha,beta -gf file.pamm "
+         WRITE(*,*) " For pamm potential use -o cutoff,alpha,sbias,cbias,hbias -gf file.pamm "
          WRITE(*,*) " For the ideal gas, qtip4pf or zundel no options needed! "
       END SUBROUTINE
    END PROGRAM
