@@ -1,4 +1,4 @@
-"""Deals with creating the simulation class.
+"""Deals with creating a representation of a system.
 
 Copyright (C) 2013, Joshua More and Michele Ceriotti
 
@@ -17,8 +17,8 @@ along with this program. If not, see <http.//www.gnu.org/licenses/>.
 
 
 Classes:
-   InputSimulation: Deals with creating the Simulation object from a file, and
-      writing the checkpoints.
+   InputSystem: Deals with the information necessary to specify the state
+      of a system.
 """
 
 __all__ = ['InputSystem']
@@ -46,19 +46,24 @@ from ipi.inputs.initializer import InputInitializer
 from ipi.engine.initializer import Initializer
 
 class InputSystem(Input):
-   """System input class.
+   """Physical system input class.
 
    Handles generating the appropriate forcefield class from the xml input file,
    and generating the xml checkpoint tags and data from an instance of the
    object.
 
+   Attributes:
+      copies: Decides how many of each system to create.
+      prefix: A string to prepend to the output file names for this system.
+
    Fields:
-      force: A restart force instance. Used as a model for all the replicas.
+      forces: A restart force instance. Used as a model for all the replicas.
       ensemble: A restart ensemble instance.
       beads: A restart beads instance.
       normal_modes: Setup of normal mode integrator.
       cell: A restart cell instance.
-      output: A list of the required outputs.
+      initialize: An array of strings giving all the quantities that should
+         be output.
    """
 
    fields = {
@@ -78,33 +83,33 @@ class InputSystem(Input):
     "prefix": (InputAttribute, {"help" : "Prepend this string to output files generated for this system. If 'copies' is greater than 1, a trailing number will be appended.", "default": "", "dtype": str})
    }
 
-   default_help = "This is the top level class that describes the physical system."
+   default_help = "This is the class which holds all the data which represents a single state of the system."
    default_label = "SYSTEM"
 
    def store(self, psys):
-      """Takes a simulation instance and stores a minimal representation of it.
+      """Takes a System instance and stores a minimal representation of it.
 
       Args:
-         simul: A simulation object.
+         psys: A physical system object.
       """
 
       super(InputSystem,self).store()
 
 
       self.prefix.store(psys.prefix)
-      self.forces.store(psys.flist)
+      self.forces.store(psys.fproto)
       self.ensemble.store(psys.ensemble)
       self.beads.store(psys.beads)
       self.normal_modes.store(psys.nm)
       self.cell.store(psys.cell)
 
    def fetch(self):
-      """Creates a simulation object.
+      """Creates a physical system object.
 
       Returns:
-         A simulation object of the appropriate type and with the appropriate
+         A System object of the appropriate type and with the appropriate
          properties and other objects given the attributes of the
-         InputSimulation object.
+         InputSystem object.
 
       Raises:
          TypeError: Raised if one of the file types in the stride keyword

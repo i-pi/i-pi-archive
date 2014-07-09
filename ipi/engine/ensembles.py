@@ -152,7 +152,7 @@ class Ensemble(dobject):
 
       pass
 
-   def step(self):
+   def step(self, step=None):
       """Dummy simulation time step which does nothing."""
 
       pass
@@ -238,7 +238,7 @@ class NVEEnsemble(Ensemble):
 
       self.nm.qnm[0,:] += depstrip(self.nm.pnm)[0,:]/depstrip(self.beads.m3)[0]*self.dt
 
-   def step(self):
+   def step(self, step=None):
       """Does one simulation time step."""
 
       self.ptime = -time.time()
@@ -330,7 +330,7 @@ class NVTEnsemble(NVEEnsemble):
       
       dget(self,"econs").add_dependency(dget(self.thermostat, "ethermo"))
 
-   def step(self):
+   def step(self, step=None):
       """Does one simulation time step."""
 
       self.ttime = -time.time()
@@ -452,7 +452,7 @@ class NPTEnsemble(NVTEnsemble):
 
       return NVTEnsemble.get_econs(self) + self.barostat.ebaro
 
-   def step(self):
+   def step(self, step=None):
       """NPT time step.
 
       Note that the barostat only propagates the centroid coordinates. If this
@@ -525,15 +525,17 @@ class ReplayEnsemble(Ensemble):
       if intraj.mode == "manual":
          raise ValueError("Replay can only read from PDB or XYZ files -- or a single frame from a CHK file")
       self.rfile = open(self.intraj.value,"r")
+      self.rstep = 0
 
-   def step(self):
+   def step(self, step=None):
       """Does one simulation time step."""
 
       self.ptime = self.ttime = 0
       self.qtime = -time.time()
 
-      try:
-         if (self.intraj.mode == "xyz"):
+      try:         
+         self.rstep += 1
+         if (self.intraj.mode == "xyz"):            
             for b in self.beads:
                myatoms = read_xyz(self.rfile)
                myatoms.q *= unit_to_internal("length",self.intraj.units,1.0)
@@ -559,5 +561,5 @@ class ReplayEnsemble(Ensemble):
             softexit.trigger(" # Read single checkpoint")
       except EOFError:
          softexit.trigger(" # Finished reading re-run trajectory")
-
+      if (step!=None and self.rstep<=step): self.step(step) 
       self.qtime += time.time()

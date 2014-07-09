@@ -16,10 +16,9 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <http.//www.gnu.org/licenses/>.
 
 
-The root class for the whole simulation. Contains references to all the top
-level objects used in the simulation, and controls all the steps that are
-not inherently system dependent, like the running of each time step,
-choosing which properties to initialise, and which properties to output.
+Contains code used to hold the information which represents the state of
+a system, including the particle positions and momenta, and the
+forcefields which govern the interaction potential.
 
 Classes:
    System: Deals with storing and outputting information on a physical system.
@@ -39,8 +38,6 @@ from ipi.utils.softexit import softexit
 from ipi.engine.atoms import *
 from ipi.engine.cell import *
 from ipi.engine.forces import Forces
-from ipi.engine.beads import Beads
-from ipi.engine.normalmodes import NormalModes
 from ipi.engine.properties import Properties, Trajectories
 
 class System(dobject):
@@ -51,10 +48,9 @@ class System(dobject):
    Attributes:
       beads: A beads object giving the atom positions.
       cell: A cell object giving the system box.
-      prng: A random number generator object.
       flist: A list of forcefield objects giving different ways to partially
          calculate the forces.
-      forces: A Forces object for calculating the total force for all the
+      fproto: A Forces object for calculating the total force for all the
          replicas.
       ensemble: An ensemble object giving the objects necessary for producing
          the correct ensemble.
@@ -62,22 +58,24 @@ class System(dobject):
       nm:  A helper object dealing with normal modes transformation
       properties: A property object for dealing with property output.
       trajs: A trajectory object for dealing with trajectory output.
-
-   Depend objects:
-      step: The current simulation step.
+      init: A class to deal with initializing the system.
+      simul: The parent simulation object.
    """
 
-   def __init__(self, init, beads, cell, forces, ensemble, nm, prefix=""):
+   def __init__(self, init, beads, cell, force_proto, ensemble, nm, prefix=""):
       """Initialises System class.
 
       Args:
+         init: A class to deal with initializing the system.
          beads: A beads object giving the atom positions.
          cell: A cell object giving the system box.
-         forces: A forcefield object giving the force calculator for each
+         force_proto: A forcefield object giving the force calculator for each
             replica of the system.
          ensemble: An ensemble object giving the objects necessary for
             producing the correct ensemble.
          nm: A class dealing with path NM operations.
+         prefix: A string used to differentiate the output files of different
+            systems.
       """
 
       info(" # Initializing system object ", verbosity.low )
@@ -87,8 +85,8 @@ class System(dobject):
       self.beads = beads
       self.cell = cell
       self.nm = nm
-            
-      self.flist = forces
+
+      self.fproto = force_proto
       self.forces = Forces()
 
       self.properties = Properties()
@@ -98,14 +96,14 @@ class System(dobject):
       """Calls the bind routines for all the objects in the system."""
 
       self.simul = simul # keeps a handle to the parent simulation object
-      
+
       # binds important computation engines
       self.nm.bind(self.beads, self.ensemble)
-      self.forces.bind(self.beads, self.cell, self.flist, self.simul.fflist)
+      self.forces.bind(self.beads, self.cell, self.fproto, self.simul.fflist)
       self.ensemble.bind(self.beads, self.nm, self.cell, self.forces, self.prng)
 
       self.init.init_stage2(self)
-      
+
       # binds output management objects
       self.properties.bind(self)
       self.trajs.bind(self)

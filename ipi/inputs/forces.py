@@ -1,4 +1,4 @@
-"""Deals with creating the forcefield class.
+"""Deals with creating all the forcefields needed for the simulation.
 
 Copyright (C) 2013, Joshua More and Michele Ceriotti
 
@@ -18,27 +18,28 @@ along with this program. If not, see <http.//www.gnu.org/licenses/>.
 
 Classes:
    InputForces: Deals with creating all the forcefield objects.
-   InputForceBeads: Base class to deal with one particular forcefield object.
-   InputFBSocket: Deals with creating a forcefield using sockets.
+   InputForceComponent: Base class to deal with one particular 
+      forcefield object.
 """
 
 __all__ = ['InputForces', 'InputForceComponent']
 
 from copy import copy
 from ipi.engine.forces import *
-from ipi.inputs.interface import InputInterfaceSocket
 from ipi.utils.inputvalue import *
 
 class InputForceComponent(InputValue):
    """ForceComponent input class.
 
-   Handles generating one instance of a particular forcefield class from the xml
-   input file, and generating the xml checkpoint tags and data from an
-   instance of the object.
+   Uses the forcefield object whose name is specified as the value of the 
+   field (matching one of the forcefields defined in the simulation tag)
+   to compute one component of the force acting on the ring polymer.
+      
 
    Attributes:
       nbeads: The number of beads that the forcefield will be evaluated on.
       weight: A scaling factor for the contribution from this forcefield.
+      name: The name of the forcefield.
    """
 
    attribs = { "nbeads" : ( InputAttribute, { "dtype"   : int,
@@ -52,11 +53,11 @@ class InputForceComponent(InputValue):
                                           "help" : "An optional name to refer to this force component." } )
             }
 
-   default_help = "Base class that deals with the assigning of force calculation jobs and collecting the data."
-   default_label = "FORCEBEADS"
+   default_help = "The class that deals with how each forcefield contributes to the overall potential, force and virial calculation."
+   default_label = "FORCECOMPONENT"
    
    def __init__(self, help=None, dimension=None, units=None, default=None, dtype=None):
-      """Initializes InputCell.
+      """Initializes InputForceComponent.
 
       Just calls the parent initialization function with appropriate arguments.
       """
@@ -64,10 +65,11 @@ class InputForceComponent(InputValue):
       super(InputForceComponent,self).__init__(dtype=str, dimension=dimension, default=default, help=help)
       
    def store(self, forceb):
-      """Takes a ForceBeads instance and stores a minimal representation of it.
+      """Takes a ForceComponent instance and stores a minimal 
+      representation of it.
 
       Args:
-         forceb: A ForceBeads object.
+         forceb: A ForceComponent object.
       """
 
       super(InputForceComponent,self).store(forceb.ffield)
@@ -76,10 +78,10 @@ class InputForceComponent(InputValue):
       self.name.store(forceb.name)
 
    def fetch(self):
-      """Creates a ForceBeads object.
+      """Creates a ForceComponent object.
 
       Returns:
-         A ForceBeads object.
+         A ForceComponent object.
       """
 
       val=super(InputForceComponent,self).fetch()      

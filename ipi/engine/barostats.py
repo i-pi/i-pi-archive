@@ -23,8 +23,8 @@ these ensembles, such as the internal and external pressure and stress.
 Classes:
    Barostat: Base barostat class with the generic methods and attributes.
    BaroBZP: Generates dynamics with a stochastic barostat -- see
-            Ceriotti, More, Manolopoulos, Comp. Phys. Comm. 2013 for
-            implementation details.
+            Ceriotti, More, Manolopoulos, Comp. Phys. Comm. 185, 1019, (2013) 
+            for implementation details.
 """
 
 # NB: this file also contains a 'BaroMHT' class, that follows more closely the

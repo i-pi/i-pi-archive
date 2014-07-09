@@ -258,7 +258,7 @@ class Properties(dobject):
                        "func": (lambda: self.ensemble.bias) },
       "ensemble_logweight":  {  "dimension": "",
                        "help" : "The (log) weight of the configuration in the biassed ensemble",
-                       "func": (lambda: self.ensemble.bias/(Constants.kb*self.ensemble.temp)) },                       
+                       "func": (lambda: self.ensemble.bias/(Constants.kb*self.ensemble.temp)) },
       "potential": {  "dimension" : "energy",
                       "help": "The physical system potential energy.",
                       'func': (lambda: self.forces.pot/self.beads.nbeads)},
@@ -453,7 +453,7 @@ class Properties(dobject):
       # coordinates
       self.dbeads = system.beads.copy()
       self.dforces = Forces()
-      self.dforces.bind(self.dbeads, self.cell,  system.flist, self.simul.fflist)
+      self.dforces.bind(self.dbeads, self.cell,  system.fproto, self.simul.fflist)
 
    def __getitem__(self, key):
       """Retrieves the item given by key.
@@ -1192,7 +1192,6 @@ class Trajectories(dobject):
       """
 
       self.system = system
-      self.fatom = system.beads[0].copy()
 
    def get_akcv(self):
       """Calculates the contribution to the kinetic energy due to each degree
@@ -1302,19 +1301,23 @@ class Trajectories(dobject):
 			os.fsync(stream)
          return
       elif getkey(what) in [ "positions", "velocities", "forces" ] :
-         self.fatom.q[:] = cq[b]
+         fatom = Atoms(self.system.beads.natoms)
+         fatom.names[:] = self.system.beads.names
+         fatom.q[:] = cq[b]
       else:
-         self.fatom.q[:] = cq
+         fatom = Atoms(self.system.beads.natoms)
+         fatom.names[:] = self.system.beads.names
+         fatom.q = cq
 
       fcell = Cell()
       fcell.h = self.system.cell.h*unit_to_user("length", cell_units, 1.0)
 
       if format == "pdb":
-         io_pdb.print_pdb(self.fatom, fcell, stream, title=("Traj: %s Step:  %10d  Bead:   %5d " % (what, self.system.simul.step+1, b) ) )
+         io_pdb.print_pdb(fatom, fcell, stream, title=("Traj: %s Step:  %10d  Bead:   %5d " % (what, self.system.simul.step+1, b) ) )
       elif format == "xyz":
-         io_xyz.print_xyz(self.fatom, fcell, stream, title=("Traj: %s Step:  %10d  Bead:   %5d " % (what, self.system.simul.step+1, b) ) )
+         io_xyz.print_xyz(fatom, fcell, stream, title=("Traj: %s Step:  %10d  Bead:   %5d " % (what, self.system.simul.step+1, b) ) )
       elif format == "bin":
-         io_binary.print_bin(self.fatom, fcell, stream, title=("Traj: %s Step:  %10d  Bead:   %5d " % (what, self.system.simul.step+1, b) ) )
+         io_binary.print_bin(fatom, fcell, stream, title=("Traj: %s Step:  %10d  Bead:   %5d " % (what, self.system.simul.step+1, b) ) )
       if flush :
          stream.flush()
          os.fsync(stream)

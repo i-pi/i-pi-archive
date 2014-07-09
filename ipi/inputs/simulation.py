@@ -36,7 +36,8 @@ from ipi.utils.messages import verbosity
 from ipi.engine.paratemp import ParaTemp
 from ipi.inputs.prng import InputRandom
 from ipi.inputs.system import InputSystem
-from ipi.inputs.forcefields import InputFFSocket
+import ipi.inputs.forcefields as iforcefields
+import ipi.engine.forcefields as eforcefields
 import ipi.inputs.outputs as ioutputs
 from ipi.inputs.paratemp import InputParaTemp
 
@@ -49,20 +50,22 @@ class InputSimulation(Input):
 
    Attributes:
       verbosity: A string saying how much should be output to standard output.
+      mode: A string which determines what type of simulation will be run.
 
    Fields:
-      force: A restart force instance. Used as a model for all the replicas.
-      ensemble: A restart ensemble instance.
-      beads: A restart beads instance.
-      normal_modes: Setup of normal mode integrator.
-      cell: A restart cell instance.
       output: A list of the required outputs.
       prng: A random number generator object.
       step: An integer giving the current simulation step. Defaults to 0.
       total_steps: The total number of steps. Defaults to 1000
       total_time:  The wall clock time limit. Defaults to 0 (no limit).
-      initialize: An array of strings giving all the quantities that should
-         be output.
+      paratemp: A helper object for parallel tempering simulations
+
+   Dynamic fields:
+      system: Holds the data needed to specify the state of a single system.
+      ffsocket: Gives a forcefield which will use a socket interface to
+         communicate with the driver code.
+      fflj: Gives a forcefield which uses the internal Python Lennard-Jones
+         script to calculate the potential and forces.
    """
 
    fields = {
@@ -96,7 +99,8 @@ class InputSimulation(Input):
 
    dynamic = {
              "system" :   (InputSystem,    { "help"  : InputSystem.default_help }),
-             "ffsocket": (InputFFSocket, { "help": InputFFSocket.default_help} )
+             "ffsocket": (iforcefields.InputFFSocket, { "help": iforcefields.InputFFSocket.default_help} ),
+             "fflj": (iforcefields.InputFFLennardJones, { "help": iforcefields.InputFFLennardJones.default_help} )
              }
 
    default_help = "This is the top level class that deals with the running of the simulation, including holding the simulation specific properties such as the time step and outputting the data."
@@ -138,10 +142,17 @@ class InputSimulation(Input):
 
       self.extra = []
 
-      for f in simul.fflist:
-         iff = InputFFSocket()
-         iff.store(simul.fflist[f])
-         self.extra.append(("ffsocket",iff))
+      for fname in simul.fflist:
+         ff=simul.fflist[fname]
+         if type(ff) is eforcefields.FFSocket:
+            iff = iforcefields.InputFFSocket()
+            iff.store(ff)
+            self.extra.append(("ffsocket",iff))
+         elif type(ff) is eforcefields.FFLennardJones:
+            iff = iforcefields.InputFFLennardJones()
+            iff.store(ff)
+            self.extra.append(("fflj",iff))
+
 
       for s in simul.syslist:
          isys = InputSystem()
@@ -171,12 +182,15 @@ class InputSimulation(Input):
       syslist=[]
       fflist=[]
       for (k,v) in self.extra:
-         if k=="system" :
+         if k == "system":
             for isys in range(v.copies.fetch()): # creates multiple copies of system if desired
                syslist.append(v.fetch())
                if (v.copies.fetch() > 1):
-                  syslist[-1].prefix = syslist[-1].prefix+( ("%0" + str(int(1 + np.floor(np.log(v.copies.fetch())/np.log(10)))) + "d") % (isys) )
-         elif k=="ffsocket": fflist.append(v.fetch())
+                  syslist[-1].prefix = syslist[-1].prefix + ( ("%0" + str(int(1 + np.floor(np.log(v.copies.fetch())/np.log(10)))) + "d") % (isys) )
+         elif k == "ffsocket": 
+            fflist.append(v.fetch())
+         elif k == "fflj": 
+            fflist.append(v.fetch())
 
 
       # this creates a simulation object which gathers all the little bits
@@ -193,16 +207,3 @@ class InputSimulation(Input):
                   ttime=self.total_time.fetch())
 
       return rsim
-
-   def check(self):
-      """Function that deals with optional arguments.
-
-      Deals with the difference between classical and PI dynamics. If there is
-      no beads argument, the bead positions are generated from the atoms, with
-      the necklace being fixed at the atom position. Similarly, if no nbeads
-      argument is specified a classical simulation is done.
-
-      """
-
-      super(InputSimulation,self).check()
-    

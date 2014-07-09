@@ -17,15 +17,14 @@ along with this program. If not, see <http.//www.gnu.org/licenses/>.
 
 
 Classes:
-   InputForces: Deals with creating all the forcefield objects.
-   InputForceBeads: Base class to deal with one particular forcefield object.
-   InputFBSocket: Deals with creating a forcefield using sockets.
+   InputForceField: Base class to deal with one particular forcefield object.
+   InputFFSocket: Deals with creating a forcefield using sockets.
 """
 
-__all__ = ['InputForces', "InputFFSocket"]
+__all__ = ["InputFFSocket", 'InputFFLennardJones']
 
 from copy import copy
-from ipi.engine.forcefields import *
+from ipi.engine.forcefields import ForceField, FFSocket, FFLennardJones
 from ipi.interfaces.sockets import InterfaceSocket
 from ipi.utils.inputvalue import *
 
@@ -38,9 +37,13 @@ class InputForceField(Input):
 
    Attributes:
       name: The number of beads that the forcefield will be evaluated on.
-      latency: The number of seconds to sleep between looping over the requests.
+      pbc: A boolean describing whether periodic boundary conditions will
+         be applied to the atom positions before they are sent to the driver
+         code.
+
    Fields:
-      pars: A dictionary containing the forcefield parameters.
+      latency: The number of seconds to sleep between looping over the requests.
+      parameters: A dictionary containing the forcefield parameters.
    """
 
    attribs = { "name" : ( InputAttribute, { "dtype"   : str,
@@ -48,50 +51,62 @@ class InputForceField(Input):
                "pbc":  ( InputAttribute, { "dtype"   : bool,
                                          "default" : True,
                                          "help"    : "Applies periodic boundary conditions to the atoms coordinates before passing them on to the driver code." })
-                                         
+
             }
    fields = {
             "latency" : ( InputValue, { "dtype"   : float,
                                          "default" : 0.01,
                                          "help"    : "The number of seconds the polling thread will wait between exhamining the list of requests." } ),
-            "pars" : (InputValue, { "dtype" : dict,
+            "parameters" : (InputValue, { "dtype" : dict,
                                      "default" : {},
                                      "help" : "The parameters of the force field"} )
    }
 
-   default_help = "Base class that deals with the assigning of force calculation jobs and collecting the data."
+   default_help = "Base forcefield class that deals with the assigning of force calculation jobs and collecting the data."
    default_label = "FORCEFIELD"
 
    def store(self, ff):
-      """Takes a ForceBeads instance and stores a minimal representation of it.
+      """Takes a ForceField instance and stores a minimal representation of it.
 
       Args:
-         forceb: A ForceBeads object.
+         forceb: A ForceField object.
       """
 
       Input.store(self,ff)
       self.name.store(ff.name)
       self.latency.store(ff.latency)
-      self.pars.store(ff.pars)
+      self.parameters.store(ff.pars)
       self.pbc.store(ff.dopbc)
 
    def fetch(self):
-      """Creates a ForceBeads object.
+      """Creates a ForceField object.
 
       Returns:
-         A ForceBeads object.
+         A ForceField object.
       """
 
       super(InputForceField,self).fetch()
 
-      return ForceField(pars = self.pars.fetch(), name = self.name.fetch(), latency = self.latency.fetch(), dopbc = self.pbc.fetch())
-      
+      return ForceField(pars = self.parameters.fetch(), name = self.name.fetch(), latency = self.latency.fetch(), dopbc = self.pbc.fetch())
+
 
 class InputFFSocket(InputForceField):
    """Creates a ForceField object with a socket interface.
 
    Handles generating one instance of a socket interface forcefield class.
+
+   Attributes:
+      mode: Describes whether the socket will be a unix or an internet socket.
+
+   Fields:
+      address: The server socket binding address.
+      port: The port number for the socket.
+      slots: The number of clients that can queue for connections at any one
+         time.
+      timeout: The number of seconds that the socket will wait before assuming
+         that the client code has died. If 0 there is no timeout.
    """
+
    fields = {"address": (InputValue, {"dtype"   : str,
                                       "default" : "localhost",
                                       "help"    : "This gives the server address that the socket will run on." } ),
@@ -100,16 +115,16 @@ class InputFFSocket(InputForceField):
                                       "help"    : "This gives the port number that defines the socket."} ),
              "slots":   (InputValue, {"dtype"   : int,
                                       "default" : 4,
-                                      "help"    : "This gives the number of client codes that can queue at any one time."} ),            
+                                      "help"    : "This gives the number of client codes that can queue at any one time."} ),
              "timeout": (InputValue, {"dtype"   : float,
                                       "default" : 0.0,
                                       "help"    : "This gives the number of seconds before assuming a calculation has died. If 0 there is no timeout." } )}
-   attribs = { 
+   attribs = {
                "mode": (InputAttribute, {"dtype"    : str,
                                      "options"  : [ "unix", "inet" ],
                                      "default"  : "inet",
                                      "help"     : "Specifies whether the driver interface will listen onto a internet socket [inet] or onto a unix socket [unix]." } ),
-   
+
               }
 
    attribs.update(InputForceField.attribs)
@@ -122,15 +137,15 @@ class InputFFSocket(InputForceField):
       """Takes a ForceField instance and stores a minimal representation of it.
 
       Args:
-         forceb: A ForceBeads object with a FFSocket forcemodel object.
+         ff: A ForceField object with a FFSocket forcemodel object.
       """
 
       if (not type(ff) is FFSocket):
          raise TypeError("The type " + type(ff).__name__ + " is not a valid socket forcefield")
 
-      
+
       super(InputFFSocket,self).store(ff)
-      
+
       self.address.store(ff.socket.address)
       self.port.store(ff.socket.port)
       self.timeout.store(ff.socket.timeout)
@@ -138,13 +153,13 @@ class InputFFSocket(InputForceField):
       self.mode.store(ff.socket.mode)
 
    def fetch(self):
-      """Creates a ForceBeads object.
+      """Creates a ForceSocket object.
 
       Returns:
-         A ForceBeads object with the correct socket parameters.
+         A ForceSocket object with the correct socket parameters.
       """
 
-      return FFSocket(pars = self.pars.fetch(), name = self.name.fetch(), latency = self.latency.fetch(), dopbc = self.pbc.fetch(),
+      return FFSocket(pars = self.parameters.fetch(), name = self.name.fetch(), latency = self.latency.fetch(), dopbc = self.pbc.fetch(),
               interface=InterfaceSocket(address=self.address.fetch(), port=self.port.fetch(),
             slots=self.slots.fetch(), mode=self.mode.fetch(), timeout=self.timeout.fetch() ) )
 
@@ -164,3 +179,25 @@ class InputFFSocket(InputForceField):
          raise ValueError("Negative latency parameter specified.")
       if self.timeout.fetch() < 0.0:
          raise ValueError("Negative timeout parameter specified.")
+
+
+class InputFFLennardJones(InputForceField):
+
+   attribs = { "threaded" : (InputAttribute, {"dtype": bool,
+                                              "default": True,
+                                              "help": "Specifies if force evaluations should be performed in parallel"} ) }
+   attribs.update(InputForceField.attribs)
+
+   default_help = """Simple, internal LJ evaluator without cutoff, neighbour lists or minimal image convention.
+                   Expects standard LJ parameters, e.g. { eps: 0.1, sigma: 1.0 }. """
+   default_label = "FFLJ"
+
+   def store(self, ff):
+      super(InputFFLennardJones,self).store(ff)
+      self.threaded.store(ff.threaded)
+
+   def fetch(self):
+      super(InputFFLennardJones,self).fetch()
+
+      return FFLennardJones(pars = self.parameters.fetch(), name = self.name.fetch(),
+               latency = self.latency.fetch(), dopbc = self.pbc.fetch(), threaded=self.threaded.fetch() )
