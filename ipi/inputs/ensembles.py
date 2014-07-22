@@ -108,7 +108,7 @@ class InputEnsemble(Input):
 
       super(InputEnsemble,self).store(ens)
       if type(ens) is ReplayEnsemble:
-         self.mode.store("rerun")
+         self.mode.store("replay")
          tens = 0
       elif type(ens) is NVEEnsemble:
          self.mode.store("nve")
