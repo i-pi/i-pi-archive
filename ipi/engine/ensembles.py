@@ -577,7 +577,7 @@ class NSTEnsemble(NVTEnsemble):
 
       return NVTEnsemble.get_econs(self) + self.barostat.ebaro
 
-   def step(self):
+   def step(self, step=None):
       """NST time step (dummy for now).
 
          Note that the barostat only propagates the centroid coordinates. If this

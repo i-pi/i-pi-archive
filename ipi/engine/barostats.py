@@ -454,6 +454,7 @@ class BaroRGB(Barostat):
       eps=np.dot(self.cell.h, self.h0.ih)
       eps=np.dot(eps.T, eps)
       eps=0.5*(eps - np.identity(3))
+      
       return self.h0.V*np.trace(np.dot(self.stressext,eps))*self.beads.nbeads
 
    def get_ebaro(self):

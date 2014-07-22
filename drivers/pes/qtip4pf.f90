@@ -36,7 +36,7 @@
 !====================================================================================
 !
 
-subroutine qtip4pf(box,rt,na,dvdrt,v)
+subroutine qtip4pf(box,rt,na,dvdrt,v, vir)
   implicit none  
   integer :: i,j,na,nm,ic,njump
   real(8) :: r(3,na), dvdr(3,na), box(3), rt(na,3), dvdrt(na,3)
@@ -45,7 +45,7 @@ subroutine qtip4pf(box,rt,na,dvdrt,v)
   real(8) :: qo,qh,theta,reoh,vir(3,3), virlj(3,3), virint(3,3)
   real(8), allocatable :: ro(:,:), dvdrlj(:,:), z(:)
 
-  
+  write (*,*) "box, ", box
   ! Set and check number of molecules.
   ! 
   nm = na/3
@@ -127,6 +127,7 @@ subroutine qtip4pf(box,rt,na,dvdrt,v)
   enddo  
   deallocate (ro, z)
 
+  write(*,*) "VIRIAL EW", vir 
 
   !
   ! *** LJ CALCULATION ***
@@ -141,6 +142,7 @@ subroutine qtip4pf(box,rt,na,dvdrt,v)
   dvdr(:,:) = dvdr(:,:) + dvdrlj(:,:)
   v = v + vlj
   vir = vir + virlj
+  write(*,*) "VIRIAL LJ", virlj
   deallocate ( dvdrlj )
 
   !
@@ -149,15 +151,16 @@ subroutine qtip4pf(box,rt,na,dvdrt,v)
   Call intra_morse_harm(r,dvdr,na,vint,virint,theta,reoh,apot,bpot,alp)  
   v = v + vint
   vir = vir + virint
+  write(*,*) "VIRIAL INT", virint
 
   ! ....and we're done...
   !
-
+  vir = -1.0d0 *vir
+  write(*,*) "VIRIAL", vir
   do i=1, na 
     dvdrt(i,:) = -dvdr(:,i)
   enddo
   return
-
 end Subroutine qtip4pf
 
 
@@ -173,7 +176,7 @@ Subroutine lj_basic(box,r,dvdr,v,vir,na,njump,oo_eps,oo_sig,rcut)
   implicit none
   integer :: na,i,j,njump
   real(8) :: r(3,na),dvdr(3,na),v,box(3),vir(3,3)
-  real(8) :: oo_eps,oo_sig,rcut
+  real(8) :: oo_eps,oo_sig,rcut,ptail
   real(8) :: sigsq,rcutsq,vij
   real(8) :: drsq,onr2,fij,dfx,dfy,dfz,sr2,sr6,wij
   real(8) :: dx,dy,dz,vscale,dscale
@@ -228,16 +231,39 @@ Subroutine lj_basic(box,r,dvdr,v,vir,na,njump,oo_eps,oo_sig,rcut)
   dscale = 48.d0*oo_eps
 
   v = vscale * v
-  vir(:,:) = dscale * vir(:,:)
   do i = 1,na,njump
      dvdr(1,i) = dscale*dvdr(1,i)
      dvdr(2,i) = dscale*dvdr(2,i)
      dvdr(3,i) = dscale*dvdr(3,i)
   enddo
-
+  call pres_lj_tail(oo_eps,oo_sig,rcut,ptail,box,na)
+  vir(:,:) = dscale * vir(:,:)
+  vir(1,1) = vir(1,1)-ptail
+  vir(2,3) = vir(2,2)-ptail
+  vir(3,3) = vir(3,3)-ptail
+ 
   return
 end subroutine lj_basic
 
+subroutine pres_lj_tail(oo_eps, oo_sig,rcut, ptail,boxlxyz,na)
+  implicit none
+  ! ------------------------------------------------------------------
+  ! LJ tail correction to pressure
+  ! ------------------------------------------------------------------
+  integer na,nm
+  real(8) ptail,boxlxyz(3),vol,pi,rho,prefac
+  real(8) oo_eps,oo_sig,rcut
+  
+  nm = na/3
+  pi = dacos(-1.d0)
+  vol = boxlxyz(1)*boxlxyz(2)*boxlxyz(3)
+  rho = dble(nm) / vol
+  prefac = vol*(16.d0*pi*(rho**2)*oo_eps*(oo_sig**3)) / (3.d0)
+  ptail  = prefac*( (2.d0/3.d0)*(oo_sig/rcut)**9 &
+       - (oo_sig/rcut)**3)
+  
+  return
+end subroutine pres_lj_tail
 
 !
 !======================================================================
@@ -252,7 +278,7 @@ end subroutine lj_basic
 Subroutine intra_morse_harm(r,dvdr,na,v,vir,theta,reoh,apot,bpot,alp)
   implicit none
   integer :: na,j
-  real(8) :: r(3,na),dvdr(3,na), vir(3,3)
+  real(8) :: r(3,na), dvdr(3,na), vir(3,3)
   real(8) :: dr1,dr2,dr3,theta,reoh
   real(8) :: dx1,dy1,dz1,v,dx2,dy2,dz2,dr1sq,dr2sq,dr3dx3
   real(8) :: dx3,dy3,dz3,dr3sq,dr1dx1,dr1dy1,dr1dz1
@@ -274,7 +300,7 @@ Subroutine intra_morse_harm(r,dvdr,na,v,vir,theta,reoh,apot,bpot,alp)
   f2 = 7.d0 / 3.d0
 
   v = 0.d0
-
+  vir = 0.0d0
   ! Loop over molecules
 
   do j = 1,na,3
@@ -377,6 +403,7 @@ Subroutine intra_morse_harm(r,dvdr,na,v,vir,theta,reoh,apot,bpot,alp)
      vir(3,2) = vir(3,2) + yz
      vir(3,3) = vir(3,3) + zz
   enddo
+  write (*,*) "VIRMORSE", vir
   
   return 
 end subroutine intra_morse_harm
