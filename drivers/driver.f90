@@ -322,8 +322,6 @@
                   STOP -1 
                ENDIF
                CALL qtip4pf(vpars(1:3),atoms,nat,forces,pot,virial)
-               write(*,*) "viral ", virial
-               write(*,*) "forces ", forces(1,:)
                
                ! do not compute the virial term
             ELSE

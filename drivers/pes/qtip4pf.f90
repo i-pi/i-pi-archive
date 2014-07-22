@@ -45,7 +45,6 @@ subroutine qtip4pf(box,rt,na,dvdrt,v, vir)
   real(8) :: qo,qh,theta,reoh,vir(3,3), virlj(3,3), virint(3,3)
   real(8), allocatable :: ro(:,:), dvdrlj(:,:), z(:)
 
-  write (*,*) "box, ", box
   ! Set and check number of molecules.
   ! 
   nm = na/3
@@ -126,9 +125,7 @@ subroutine qtip4pf(box,rt,na,dvdrt,v, vir)
      enddo
   enddo  
   deallocate (ro, z)
-
-  write(*,*) "VIRIAL EW", vir 
-
+  
   !
   ! *** LJ CALCULATION ***
   !
@@ -142,7 +139,6 @@ subroutine qtip4pf(box,rt,na,dvdrt,v, vir)
   dvdr(:,:) = dvdr(:,:) + dvdrlj(:,:)
   v = v + vlj
   vir = vir + virlj
-  write(*,*) "VIRIAL LJ", virlj
   deallocate ( dvdrlj )
 
   !
@@ -151,12 +147,10 @@ subroutine qtip4pf(box,rt,na,dvdrt,v, vir)
   Call intra_morse_harm(r,dvdr,na,vint,virint,theta,reoh,apot,bpot,alp)  
   v = v + vint
   vir = vir + virint
-  write(*,*) "VIRIAL INT", virint
 
   ! ....and we're done...
   !
   vir = -1.0d0 *vir
-  write(*,*) "VIRIAL", vir
   do i=1, na 
     dvdrt(i,:) = -dvdr(:,i)
   enddo
@@ -403,7 +397,6 @@ Subroutine intra_morse_harm(r,dvdr,na,v,vir,theta,reoh,apot,bpot,alp)
      vir(3,2) = vir(3,2) + yz
      vir(3,3) = vir(3,3) + zz
   enddo
-  write (*,*) "VIRMORSE", vir
   
   return 
 end subroutine intra_morse_harm
