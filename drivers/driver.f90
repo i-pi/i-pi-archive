@@ -321,7 +321,8 @@
                   WRITE(*,*) " qtip4pf PES only works with orthorhombic cells"
                   STOP -1 
                ENDIF
-               CALL qtip4pf(vpars(1:3),atoms,nat,forces,pot)
+               CALL qtip4pf(vpars(1:3),atoms,nat,forces,pot,virial)
+               
                ! do not compute the virial term
             ELSE
                IF ((allocated(n_list) .neqv. .true.)) THEN

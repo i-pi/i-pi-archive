@@ -32,7 +32,7 @@ thermo_style    custom step temp pe etotal press pxx pyy pzz
 dump            snapxyz all atom 100000 graphene.lammpstraj
 
 # --------------- Equilibration in NVE -----------------
-fix		1  all driver graphene 31415 unix
+fix		1  all ipi graphene 31415 unix
 run		5000000
 write_restart   restart.*
 

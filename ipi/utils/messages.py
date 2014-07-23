@@ -113,7 +113,7 @@ def banner():
 |  #################################  | 
 \__#_/     \____/     \____/     \_#__/     
    #    _        _______  _____    #                 
-   #   (_)      |_   __ \|_   _|   #       v. 1.0                       
+   #   (_)      |_   __ \|_   _|   #      -*-     Development version    -*-                      
    #   __  ______ | |__) | | |     #                                         
    Y  [  ||______||  ___/  | |     #      A Python interface for (ab initio)  
   0 0  | |       _| |_    _| |_    #      (path integral) molecular dynamics. 
