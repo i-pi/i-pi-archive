@@ -7,5 +7,6 @@ bin/*
 *.mod
 *.out
 *.o
+*.tex
 *.pdf
 *~
