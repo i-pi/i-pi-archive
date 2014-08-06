@@ -1,5 +1,5 @@
 i-PI V1.0
---------
+---------
 
 A Python interface for ab initio path integral molecular dynamics simulations. 
 i-PI is composed of a Python server (i-pi itself, that does not need to be 
@@ -22,6 +22,8 @@ containing this file).
 
 * Generate the driver code
 
+::
+
 $ cd driver
 $ make
 $ cd ..
@@ -30,7 +32,7 @@ $ cd ..
 
 This will first start the wrapper in the background, redirecting the output on 
 a log file, then run a couple of instances of the driver code and then follow
-the progress of the wrapper by monitoring the log file
+the progress of the wrapper by monitoring the log file::
 
 $ cd examples/tutorial/tutorial-1/
 $ ../../../i-pi tutorial-1.xml > log &
@@ -38,5 +40,5 @@ $ ../../../drivers/driver.x -h localhost -p 31415 -m sg -o 15 &
 $ ../../../drivers/driver.x -h localhost -p 31415 -m sg -o 15 &
 $ tail -f log
 
-The monitoring can be interrupted with CTRL+C when the run has finished (5000 steps)
+The monitoring can be interrupted with ``CTRL+C`` when the run has finished (5000 steps)
 
