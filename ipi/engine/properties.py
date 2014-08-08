@@ -452,7 +452,13 @@ class Properties(dobject):
                       The other two arguments control the starting point and the frequency of the data taking.
                       The 3 numbers output are 1) the average over the excess potential energy for scaled coordinates <yama>,
                       2) the average of the squares of the excess spring energy <yama**2>, and 3) the average of the exponential 
-                      of excess spring energy <exp(-beta*yama)>""" }                  
+                      of excess spring energy <exp(-beta*yama)>""" },
+       "chin_correction":  {"dimension" : "undefined",
+                          "size" : 3,
+                          'func': self.get_chin_correction,
+                          "help": "The weighting factor in Chin expansion.",
+                          "longhelp" : """The 3 numbers output are 1) the exponential of the weighting factor -\beta_P \delta H,
+                      2) the square of the exponential, and 3) the weighting factor""" }                   
       }
 
    def bind(self, system):
@@ -1288,7 +1294,31 @@ class Properties(dobject):
       yamaexpaverage = yamaexpsum/ni
       
       return np.asarray([yamaaverage, yama2average, yamaexpaverage])
+      
+   def get_chin_correction (self):
+      
+      f = depstrip(self.forces.f)
+      m3 = depstrip(self.beads.m3)
+      pots = self.forces.pots
+      betaP = 1.0/(self.beads.nbeads*Constants.kb*self.ensemble.temp)
+      
+      chin = 0.0
+       
+      for j in range(self.beads.natoms*3):
+         for b in range(1,self.beads.nbeads,2):
+             if (b%2==1): 
+				 chin += (f[b,j]**2)*(4.0/3.0)*(1.0/12.0)/m3[b,j]
+      
+      chin = -chin*betaP/self.nm.omegan2
+      
+      for b in range(0,self.beads.nbeads,2):
+		  chin += -betaP*(-pots[b]+pots[b+1])/3.0
+		  
+      chin2 = chin**2
+      chinexp = np.exp(chin)
             
+      return np.asarray([chin, chin2, chinexp])     
+                  
 class Trajectories(dobject):
    """A simple class to take care of output of trajectory data.
 
