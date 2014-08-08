@@ -453,12 +453,22 @@ class Properties(dobject):
                       The 3 numbers output are 1) the average over the excess potential energy for scaled coordinates <yama>,
                       2) the average of the squares of the excess spring energy <yama**2>, and 3) the average of the exponential 
                       of excess spring energy <exp(-beta*yama)>""" },
-       "chin_correction":  {"dimension" : "undefined",
+       "suzukichin_weight":  {"dimension" : "undefined",
                           "size" : 3,
                           'func': self.get_chin_correction,
-                          "help": "The weighting factor in Chin expansion.",
-                          "longhelp" : """The 3 numbers output are 1) the exponential of the weighting factor -\beta_P \delta H,
-                      2) the square of the exponential, and 3) the weighting factor""" }                   
+                          "help": "The weighting factor in Suzuki-Chin high-order PI expansion.",
+                          "longhelp" : """The 3 numbers output are 1) the logarithm of the weighting factor -\beta_P \delta H,
+                      2) the square of the logarithm, and 3) the weighting factor""" } ,
+       "isotope_zetatd_chin":  {"dimension" : "undefined",
+                          "size" : 3,
+                          'func': self.get_isotope_zetatd_chin,
+                          "help": "Isotope fractionation estimator in the form of ratios of partition functions.",
+                          "longhelp" : """Returns the (many) terms needed to directly compute the relative probablity of 
+                      isotope substitution in two different systems/phases. Takes two arguments, 'alpha' , which gives the
+                      scaled mass parameter and default to '1.0', and 'atom', which is the label or index of a type of atoms. 
+                      The 3 numbers output are 1) the average over the excess spring energy for an isotope atom substitution <spr>,
+                      2) the average of the squares of the excess spring energy <spr**2>, and 3) the average of the exponential 
+                      of excess spring energy <exp(-beta*spr)>""" }
       }
 
    def bind(self, system):
@@ -1154,6 +1164,79 @@ class Properties(dobject):
 
       return np.asarray([alogr/ni, alogr2/ni, atcv/ni, atcv2/ni, law, lawke, sawke])
 
+   def get_isotope_zetatd_chin (self, alpha="1.0", atom=""):
+      """Gives the components  to directly compute the relative probablity of 
+         isotope substitution in two different systems/phases.
+
+      Args:
+         alpha: m'/m the mass ratio
+         atom: the label or index of the atom to compute the isotope fractionation pair for
+
+      Returns:
+         a tuple from which one can reconstruct all that is needed to
+         compute the relative probability of isotope substitution:
+         (spraverage, spr2average, sprexpaverage)
+      """
+
+      try:
+         #iatom gives the index of the atom to be studied
+         iatom = int(atom)
+         latom = ""
+         if iatom >= self.beads.natoms:
+            raise IndexError("Cannot output scaled-mass kinetic energy estimator as atom index %d is larger than the number of atoms" % iatom)
+      except ValueError:
+         #here 'atom' is a label rather than an index which is stored in latom
+         iatom = -1
+         latom = atom
+
+      alpha = float(alpha)
+
+      tdsum = 0.0
+      tdexpsum = 0.0
+      td2sum = 0.0
+      ni = 0
+
+      # strips dependency control since we are not gonna change the true beads in what follows
+      q = depstrip(self.beads.q)
+      f = depstrip(self.forces.f)
+      m3 = depstrip(self.beads.m3)
+      pots = self.forces.pots
+      betaP = 1.0/(self.beads.nbeads*Constants.kb*self.ensemble.temp)
+
+      for i in range(self.beads.natoms):
+         # selects only the atoms we care about
+         if (atom != "" and iatom != i and latom != self.beads.names[i]):
+            continue
+
+         ni += 1
+
+         spr = 0.0
+         for b in range(1,self.beads.nbeads):
+            for j in range(3*i,3*(i+1)):
+               spr += (q[b,j]-q[b-1,j])**2
+         for j in range(3*i,3*(i+1)):
+            spr += (q[self.beads.nbeads-1,j]-q[0,j])**2
+         spr *= 0.5*(alpha-1.0)*self.beads.m[i]*self.nm.omegan2
+            
+         chin=0.0
+         for b in range(1,self.beads.nbeads,2):
+             for j in range(3*i,3*(i+1)):
+				    chin += (f[b,j]**2)
+         chin*=(1.0/alpha  - 1.0) *1.0/self.beads.m[i] *(4.0/3.0)*(1.0/12.0)/self.nm.omegan2
+         
+         td = spr+chin
+         
+         td2 = td*td
+         tdexp = np.exp(-betaP*td)
+         
+         tdsum += td
+         td2sum += td2
+         tdexpsum += tdexp
+
+      if ni == 0:
+         raise IndexError("Couldn't find an atom which matched the argument of isotope_zetatd")
+      
+      return np.asarray([tdsum/ni, td2sum/ni, tdexpsum/ni])
 
    def get_isotope_zetatd (self, alpha="1.0", atom=""):
       """Gives the components  to directly compute the relative probablity of 
@@ -1305,15 +1388,15 @@ class Properties(dobject):
       chin = 0.0
        
       for j in range(self.beads.natoms*3):
-         for b in range(1,self.beads.nbeads,2):
-             if (b%2==1): 
-				 chin += (f[b,j]**2)*(4.0/3.0)*(1.0/12.0)/m3[b,j]
+         for b in range(1,self.beads.nbeads,2): # only loops on odd beads
+             chin += (f[b,j]**2)/m3[b,j]
       
-      chin = -chin*betaP/self.nm.omegan2
+      chin *= (4.0/3.0)*(1.0/12.0)/self.nm.omegan2
       
       for b in range(0,self.beads.nbeads,2):
-		  chin += -betaP*(-pots[b]+pots[b+1])/3.0
-		  
+		   chin += (-pots[b]+pots[b+1])/3.0
+        
+      chin*=-betaP        
       chin2 = chin**2
       chinexp = np.exp(chin)
             
