@@ -185,10 +185,11 @@ class Simulation(dobject):
          # must use multi-threading to avoid blocking in multi-system runs
          stepthreads = []
          for o in self.outputs:
-            st = threading.Thread(target=o.write, name=o.filename)
-            st.daemon = True
-            st.start()
-            stepthreads.append(st)
+            # st = threading.Thread(target=o.write, name=o.filename)
+            #st.daemon = True
+            #st.start()
+            #stepthreads.append(st)
+            o.write()
             
          for st in stepthreads:
             while st.isAlive(): st.join(2.0)   # this is necessary as join() without timeout prevents main from receiving signals
