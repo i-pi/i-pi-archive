@@ -274,11 +274,14 @@ class TrajectoryOutput(dobject):
    def close_stream(self):
       """Closes the output stream."""
 
-      if hasattr(self.out, "__getitem__"):
-         for o in self.out:
-            o.close()
-      else:
-         self.out.close()
+      try:
+         if hasattr(self.out, "__getitem__"):
+            for o in self.out:
+               o.close()
+         else:
+            self.out.close()
+      except:
+          print "Exception while closing output stream ", self.out
 
    def write(self):
       """Writes out the required trajectories."""

@@ -459,9 +459,15 @@ class Properties(dobject):
                           "help": "The weighting factor in Suzuki-Chin high-order PI expansion.",
                           "longhelp" : """The 3 numbers output are 1) the logarithm of the weighting factor -\beta_P \delta H,
                       2) the square of the logarithm, and 3) the weighting factor""" } ,
-       "isotope_zetatd_chin":  {"dimension" : "undefined",
+       "ti_weight":  {"dimension" : "undefined",
                           "size" : 3,
-                          'func': self.get_isotope_zetatd_chin,
+                          'func': self.get_ti_correction,
+                          "help": "The weighting factor in Takaeshi-Imagda high-order PI expansion.",
+                          "longhelp" : """The 3 numbers output are 1) the logarithm of the weighting factor -\beta_P \delta H,
+                      2) the square of the logarithm, and 3) the weighting factor""" } ,
+       "isotope_zetatd_4th":  {"dimension" : "undefined",
+                          "size" : 5,
+                          'func': self.get_isotope_zetatd_4th,
                           "help": "Isotope fractionation estimator in the form of ratios of partition functions.",
                           "longhelp" : """XXXX MUST UPDATE XXXX Returns the (many) terms needed to directly compute the relative probablity of 
                       isotope substitution in two different systems/phases. Takes two arguments, 'alpha' , which gives the
@@ -469,9 +475,9 @@ class Properties(dobject):
                       The 3 numbers output are 1) the average over the excess spring energy for an isotope atom substitution <spr>,
                       2) the average of the squares of the excess spring energy <spr**2>, and 3) the average of the exponential 
                       of excess spring energy <exp(-beta*spr)>""" },
-       "isotope_zetasc_chin":  {"dimension" : "undefined",
-                          "size" : 3,
-                          'func': self.get_isotope_zetasc_chin,
+       "isotope_zetasc_4th":  {"dimension" : "undefined",
+                          "size" : 5,
+                          'func': self.get_isotope_zetasc_4th,
                           "help": "Isotope fractionation estimator in the form of ratios of partition functions.",
                           "longhelp" : """XXXX MUST UPDATE XXXX Returns the (many) terms needed to directly compute the relative probablity of 
                       isotope substitution in two different systems/phases. Takes four arguments, 'alpha' , which gives the
@@ -480,6 +486,7 @@ class Properties(dobject):
                       The 3 numbers output are 1) the average over the excess potential energy for scaled coordinates <sc>,
                       2) the average of the squares of the excess spring energy <sc**2>, and 3) the average of the exponential 
                       of excess spring energy <exp(-beta*sc)>""" }
+       
       }
 
    def bind(self, system):
@@ -1308,7 +1315,7 @@ class Properties(dobject):
          raise IndexError("Couldn't find an atom which matched the argument of isotope_zetasc")      
       return np.asarray([scsum/ni, sc2sum/ni, scexpsum/ni])
       
-   def get_isotope_zetatd_chin (self, alpha="1.0", atom=""):
+   def get_isotope_zetatd_4th (self, alpha="1.0", atom=""):
       """Gives the components  to directly compute the relative probablity of 
          isotope substitution in two different systems/phases.
 
@@ -1338,6 +1345,8 @@ class Properties(dobject):
       tdsum = 0.0
       tdexpsum = 0.0
       td2sum = 0.0
+      chinexpsum = 0.0
+      tiexpsum = 0.0
       ni = 0
 
       # strips dependency control since we are not gonna change the true beads in what follows
@@ -1362,27 +1371,38 @@ class Properties(dobject):
             spr += (q[self.beads.nbeads-1,j]-q[0,j])**2
          spr *= 0.5*(alpha-1.0)*self.beads.m[i]*self.nm.omegan2
             
+         # Suzuki-Chin correction
          chin=0.0
          for b in range(1,self.beads.nbeads,2):
              for j in range(3*i,3*(i+1)):
-				    chin += (f[b,j]**2)
-         chin*=(1.0/alpha  - 1.0) *1.0/self.beads.m[i] *(4.0/3.0)*(1.0/12.0)/self.nm.omegan2
+				    chin += (f[b,j]**2)               
+         chin *=(1.0/alpha  - 1.0) *1.0/self.beads.m[i] *(4.0/3.0)*(1.0/12.0)/self.nm.omegan2
          
-         td = spr+chin
+         # Takahashi-Imada correction
+         ti = 0.0
+         for b in range(1,self.beads.nbeads,1):
+             for j in range(3*i,3*(i+1)):
+				    ti += (f[b,j]**2)               
+         ti *= (1.0/alpha  - 1.0) *1.0/self.beads.m[i] *(1.0/24.0)/self.nm.omegan2               
          
+         td = spr         
          td2 = td*td
          tdexp = np.exp(-betaP*td)
+         chinexp = np.exp(-betaP*(spr+chin))
+         tiexp = np.exp(-betaP*(spr+ti))
          
          tdsum += td
          td2sum += td2
          tdexpsum += tdexp
+         chinexpsum += chinexp
+         tiexpsum += tiexp
 
       if ni == 0:
          raise IndexError("Couldn't find an atom which matched the argument of isotope_zetatd")
       
-      return np.asarray([tdsum/ni, td2sum/ni, tdexpsum/ni])
+      return np.asarray([ tdsum/ni, td2sum/ni, tdexpsum/ni, tiexpsum/ni, chinexpsum/ni ])
       
-   def get_isotope_zetasc_chin (self, alpha="1.0", atom=""):
+   def get_isotope_zetasc_4th (self, alpha="1.0", atom=""):
       """Gives the components  to directly compute the relative probablity of 
          isotope substitution in two different systems/phases. 
          Includes extra terms needed for Suzuki-Chin high-order reweighing.
@@ -1416,6 +1436,9 @@ class Properties(dobject):
       scsum = 0.0
       scexpsum = 0.0
       sc2sum = 0.0
+      chinexpsum = 0.0
+      tiexpsum = 0.0
+      
       ni = 0
            
       qc = depstrip(self.beads.qc)
@@ -1446,34 +1469,42 @@ class Properties(dobject):
          df = depstrip(self.dforces.f)
          dpots = self.dforces.pots
          
+         # Suzuki-Chin correction
          chin=0.0
          for b in range(1,self.beads.nbeads,2):
              for j in range(3*i,3*(i+1)):
-				    chin += (df[b,j]**2/alpha - f[b,j]**2)
-         
+				    chin += (df[b,j]**2/alpha - f[b,j]**2)         
          chin*= 1.0/self.beads.m[i] *(4.0/3.0)*(1.0/12.0)/self.nm.omegan2
          
          # then, this is the odd/even correction term to the potential. 
-         # here there is just the mass-scaling 
+         # here there is just the mass-scaling that enters, as there is no explicit mass
          for b in range(0,self.beads.nbeads,2):
 		      chin +=  ((-dpots[b]+dpots[b+1]) - (-pots[b]+pots[b+1]) )/3.0
          
+         ti=0.0
+         for b in range(1,self.beads.nbeads,1):
+             for j in range(3*i,3*(i+1)):
+				    ti += (df[b,j]**2/alpha - f[b,j]**2)         
+         ti *= 1.0/self.beads.m[i] *(1.0/24.0)/self.nm.omegan2
+                           
          #print "potentials", v0, self.dforces.pot
          #print i, -betaP*sc, -betaP*chin
-         sc += chin
-         
          sc2 = sc*sc
          scexp = np.exp(-betaP*sc) # 
+         chinexp = np.exp(-betaP*(sc+chin))
+         tiexp = np.exp(-betaP*(sc+ti))
          
          scsum += sc
          sc2sum += sc2
          scexpsum += scexp
+         chinexpsum += chinexp
+         tiexpsum += tiexp
          
       self.dbeads.q[:] = q[:]      
       if ni == 0:
          raise IndexError("Couldn't find an atom which matched the argument of isotope_zetasc")
       
-      return np.asarray([scsum/ni, sc2sum/ni, scexpsum/ni])
+      return np.asarray([scsum/ni, sc2sum/ni, scexpsum/ni, tiexpsum/ni, chinexpsum/ni])
                   
    def get_chin_correction (self):
       
@@ -1498,7 +1529,29 @@ class Properties(dobject):
       chinexp = np.exp(chin)
             
       return np.asarray([chin, chin2, chinexp])     
-                  
+
+   def get_ti_correction (self):
+      
+      f = depstrip(self.forces.f)
+      m3 = depstrip(self.beads.m3)
+      pots = self.forces.pots
+      betaP = 1.0/(self.beads.nbeads*Constants.kb*self.ensemble.temp)
+      
+      ti = 0.0
+       
+      for j in range(self.beads.natoms*3):
+         for b in range(1,self.beads.nbeads,1): # only loops on odd beads
+             ti += (f[b,j]**2)/m3[b,j]
+      
+      ti *= (1.0/24.0)/self.nm.omegan2
+      
+        
+      ti*=-betaP        
+      ti2 = ti**2
+      tiexp = np.exp(ti)
+            
+      return np.asarray([ti, ti2, tiexp])  
+                        
 class Trajectories(dobject):
    """A simple class to take care of output of trajectory data.
 
