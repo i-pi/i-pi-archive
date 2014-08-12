@@ -136,7 +136,6 @@ class DriverSocket(socket.socket):
    def shutdown(self, how=socket.SHUT_RDWR):
       
       self.sendall(Message("exit"))
-      print "TRYING TO CLEANLY EXIT"
       self.status = Status.Disconnected
       super(DriverSocket,self).shutdown(how)
    
