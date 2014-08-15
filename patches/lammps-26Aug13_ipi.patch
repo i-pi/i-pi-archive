@@ -115,11 +115,11 @@ index 95a66af..6bede15 100644
  
    double t;
    if (keflag) {
-diff --git a/src/fix_driver.cpp b/src/fix_driver.cpp
+diff --git a/src/fix_ipi.cpp b/src/fix_ipi.cpp
 new file mode 100644
 index 0000000..c6dd138
 --- /dev/null
-+++ b/src/fix_driver.cpp
++++ b/src/fix_ipi.cpp
 @@ -0,0 +1,381 @@
 +/* ----------------------------------------------------------------------
 +   LAMMPS - Large-scale Atomic/Molecular Massively Parallel Simulator
@@ -137,7 +137,7 @@ index 0000000..c6dd138
 +#include "mpi.h"
 +#include "stdio.h"
 +#include "string.h"
-+#include "fix_driver.h"
++#include "fix_ipi.h"
 +#include "atom.h"
 +#include "force.h"
 +#include "update.h"
@@ -269,14 +269,14 @@ index 0000000..c6dd138
 +
 +/* ---------------------------------------------------------------------- */
 +
-+FixDriver::FixDriver(LAMMPS *lmp, int narg, char **arg) :
++FixIPI::FixIPI(LAMMPS *lmp, int narg, char **arg) :
 +  Fix(lmp, narg, arg)
 +{
 +  /* format for fix:
-+   *  fix  num  group_id  driver  host port [unix]
++   *  fix  num  group_id  ipi  host port [unix]
 +   */
-+  if (strcmp(style,"driver") != 0 && narg < 5)
-+    error->all(FLERR,"Illegal fix driver command");
++  if (strcmp(style,"ipi") != 0 && narg < 5)
++    error->all(FLERR,"Illegal fix ipi command");
 +
 +  //box_change = 1;
 +  //box_change_size = 1;
@@ -314,7 +314,7 @@ index 0000000..c6dd138
 +
 +/* ---------------------------------------------------------------------- */
 +
-+int FixDriver::setmask()
++int FixIPI::setmask()
 +{
 +  int mask = 0;
 +  mask |= INITIAL_INTEGRATE;
@@ -324,7 +324,7 @@ index 0000000..c6dd138
 +
 +/* ---------------------------------------------------------------------- */
 +
-+void FixDriver::init()
++void FixIPI::init()
 +{
 +  if (master) sockets::open_socket(&ipisock, &inet, &port, host);
 +  else ipisock=0;
@@ -342,7 +342,7 @@ index 0000000..c6dd138
 +  neighbor->every = 1;
 +}
 +
-+void FixDriver::initial_integrate(int vflag)
++void FixIPI::initial_integrate(int vflag)
 +{
 +  char header[MSGLEN+1];
 +
@@ -427,7 +427,7 @@ index 0000000..c6dd138
 +
 +/* ---------------------------------------------------------------------- */
 +
-+void FixDriver::final_integrate()
++void FixIPI::final_integrate()
 +{
 +  char header[MSGLEN+1];
 +  double vir[9], pot=0.0;
@@ -502,11 +502,11 @@ index 0000000..c6dd138
 +}
 +
 +
-diff --git a/src/fix_driver.h b/src/fix_driver.h
+diff --git a/src/fix_ipi.h b/src/fix_ipi.h
 new file mode 100644
 index 0000000..9ea064d
 --- /dev/null
-+++ b/src/fix_driver.h
++++ b/src/fix_ipi.h
 @@ -0,0 +1,55 @@
 +/* ----------------------------------------------------------------------
 +   LAMMPS - Large-scale Atomic/Molecular Massively Parallel Simulator
@@ -523,21 +523,21 @@ index 0000000..9ea064d
 +
 +#ifdef FIX_CLASS
 +
-+FixStyle(driver,FixDriver)
++FixStyle(ipi,FixIPI)
 +
 +#else
 +
-+#ifndef LMP_FIX_DRIVER_H
-+#define LMP_FIX_DRIVER_H
++#ifndef LMP_FIX_IPI_H
++#define LMP_FIX_IPI_H
 +
 +#include "fix.h"
 +
 +namespace LAMMPS_NS {
 +
-+class FixDriver : public Fix {
++class FixIPI : public Fix {
 + public:
-+  FixDriver(class LAMMPS *, int, char **);
-+  virtual ~FixDriver() {}
++  FixIPI(class LAMMPS *, int, char **);
++  virtual ~FixIPI() {}
 +  int setmask();
 +  virtual void init();
 +  virtual void initial_integrate(int);
