@@ -1380,7 +1380,7 @@ class Properties(dobject):
          
          # Takahashi-Imada correction
          ti = 0.0
-         for b in range(1,self.beads.nbeads,1):
+         for b in range(self.beads.nbeads):
              for j in range(3*i,3*(i+1)):
 				    ti += (f[b,j]**2)               
          ti *= (1.0/alpha  - 1.0) *1.0/self.beads.m[i] *(1.0/24.0)/self.nm.omegan2               
@@ -1482,7 +1482,7 @@ class Properties(dobject):
 		      chin +=  ((-dpots[b]+dpots[b+1]) - (-pots[b]+pots[b+1]) )/3.0
          
          ti=0.0
-         for b in range(1,self.beads.nbeads,1):
+         for b in range(self.beads.nbeads):
              for j in range(3*i,3*(i+1)):
 				    ti += (df[b,j]**2/alpha - f[b,j]**2)         
          ti *= 1.0/self.beads.m[i] *(1.0/24.0)/self.nm.omegan2
@@ -1540,7 +1540,7 @@ class Properties(dobject):
       ti = 0.0
        
       for j in range(self.beads.natoms*3):
-         for b in range(1,self.beads.nbeads,1): # only loops on odd beads
+         for b in range(self.beads.nbeads):
              ti += (f[b,j]**2)/m3[b,j]
       
       ti *= (1.0/24.0)/self.nm.omegan2
