@@ -122,7 +122,10 @@ class DriverSocket(socket.socket):
 
       super(DriverSocket,self).__init__(_sock=socket)
       self._buf = np.zeros(0,np.byte)
-      self.peername = self.getpeername()
+      if socket:
+         self.peername = self.getpeername()
+      else:
+         self.peername = "no_socket"
 
    def send_msg(self, msg):
       """Send the next message through the socket.
@@ -198,6 +201,97 @@ class DriverSocket(socket.socket):
          return np.fromstring(self._buf[0:blen], dest.dtype)[0]
       else:
          return np.fromstring(self._buf[0:blen], dest.dtype).reshape(dest.shape)
+
+
+class Client(DriverSocket):
+   """Deals as starting point for implementing a clien in python.
+
+   Deals with sending and receiving the data from the client code.
+
+   Attributes:
+      havedata: Boolean giving whether the client calculated the forces.
+   """
+
+   def __init__(self, address="localhost", port=31415, mode="unix", _socket=True):
+      """Initialises Driver.
+
+      Args:
+         - socket: If a socket should be opened. Can be False for testing purposes.
+         - address: A string giving the name of the host network.
+         - port: An integer giving the port the socket will be using.
+         - mode: A string giving the type of socket used.
+      """
+      if _socket:
+         # open client socket
+         if mode == "inet":
+            _socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            _socket.connect((address, int(port)))
+         elif mode == "unix":
+            _socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            _socket.connect("/tmp/ipi_" + address)
+         else:
+               raise NameError("Interface mode " + mode + " is not implemented (should be unix/inet)")
+         super(Client,self).__init__(socket=_socket)
+      else:
+         super(Client,self).__init__(socket=None)
+      self.havedata = False
+      self.vir = np.zeros((3,3),np.float64)
+      self.cellh = np.zeros((3,3),np.float64)
+      self.cellih = np.zeros((3,3),np.float64)
+      self.nat = np.int32()
+      self.callback = None
+
+
+   def _getforce(self):
+      """Dummy _getforce routine.
+
+      This function must be implemented by subclassing or providing a callback function.
+      This function is assumed to calculate the following:
+         - self._force: The force of the current positions at self._positions.
+         - self._potential: The potential of the current positions at self._positions.
+      """
+      if self.callback is not None:
+         self._force, self._potential = self.callback(self._positions)
+      else:
+         raise NotImplementedError("_getforce must be implemented by providing a self.callback function or overwritten.")
+
+
+   def run(self):
+      """Serve forces until asked to finish.
+
+      Serve force and potential, that are calculated in the user provided
+      routine _getforce.
+      """
+      while 1:
+         msg = self.recv_msg()
+         if msg == "":
+            if self.verb > verbosity.Quiet:
+               print " @CLIENT: Shutting down."
+            break
+         elif msg == Message("status"):
+            if self.havedata:
+               self.send_msg("havedata")
+            else:
+               self.send_msg("ready")
+         elif msg == Message("posdata"):
+            self.cellh = self.recvall(self.cellh)
+            self.cellih = self.recvall(self.cellih)
+            self.nat = self.recvall(self.nat)
+            self._positions = np.zeros((self.nat,3),np.float64)
+            self._positions = self.recvall(self._positions)
+            self._getforce()
+            self.havedata = True
+         elif msg == Message("getforce"):
+            self.sendall(Message("forceready"))
+            self.sendall(self._potential, 8)
+            self.sendall(self.nat, 4)
+            self.sendall(self._force, len(self._force)*8)
+            self.sendall(self.vir, 9*8)
+            self.sendall(np.int32(0), 4)
+            self.havedata=False
+         else:
+            print >>sys.stderr, " @CLIENT: Couldn't understand command:", msg
+            break
 
 
 class Driver(DriverSocket):
