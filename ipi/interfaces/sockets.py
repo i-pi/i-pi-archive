@@ -105,16 +105,12 @@ class Status:
 class DriverSocket(socket.socket):
    """Deals with communication between the client and driver code.
 
-   Deals with sending and receiving the data from the driver code. Keeps track
-   of the status of the driver. Initialises the driver forcefield, sends the
-   position and cell data, and receives the force data.
+   Deals with sending and receiving the data between the client and the driver
+   code. This class holds common functions which are used in the driver code,
+   but can also be used to directly implement a python client.
 
    Attributes:
-      _buf: A string buffer to hold the reply from the driver.
-      waitstatus: Boolean giving whether the driver is waiting to get a status answer.
-      status: Keeps track of the status of the driver.
-      lastreq: The ID of the last request processed by the client.
-      locked: Flag to mark if the client has been working consistently on one image.
+      _buf: A string buffer to hold the reply from the other connection.
    """
 
    def __init__(self, socket):
@@ -127,55 +123,22 @@ class DriverSocket(socket.socket):
       super(DriverSocket,self).__init__(_sock=socket)
       self._buf = np.zeros(0,np.byte)
       self.peername = self.getpeername()
-      self.waitstatus = False
-      self.status = Status.Up
-      self.lastreq = None
-      self.locked = False
 
-   def poll(self):
-      """Waits for driver status."""
+   def send_msg(self, msg):
+      """Send the next message through the socket.
 
-      self.status = Status.Disconnected  # sets disconnected as failsafe status, in case _getstatus fails and exceptions are ignored upstream
-      self.status = self._getstatus()
-
-   def _getstatus(self):
-      """Gets driver status.
-
-      Returns:
-         An integer labelling the status via bitwise or of the relevant members
-         of Status.
+      Args:
+         msg: The message to send through the socket.
       """
+      return self.sendall(Message(msg))
 
+   def recv_msg(self, l=HDRLEN):
+      """Get the next message send through the socket.
 
-      if not self.waitstatus:
-         try:
-            readable, writable, errored = select.select([], [self], [])
-            if self in writable:
-               self.sendall(Message("status"))
-               self.waitstatus = True
-         except:
-            return Status.Disconnected
-
-      try:
-         reply = self.recv(HDRLEN)
-         self.waitstatus = False # got some kind of reply
-      except socket.timeout:
-         warning(" @SOCKET:   Timeout in status recv!", verbosity.debug )
-         return Status.Up | Status.Busy | Status.Timeout
-      except:
-         return Status.Disconnected
-
-      if not len(reply) == HDRLEN:
-         return Status.Disconnected
-      elif reply == Message("ready"):
-         return Status.Up | Status.Ready
-      elif reply == Message("needinit"):
-         return Status.Up | Status.NeedsInit
-      elif reply == Message("havedata"):
-         return Status.Up | Status.HasData
-      else:
-         warning(" @SOCKET:    Unrecognized reply: " + str(reply), verbosity.low )
-         return Status.Up
+      Args:
+         l: Length of the accepted message. Defaults to HDRLEN.
+      """
+      return self.recv(l)
 
    def recvall(self, dest):
       """Gets the potential energy, force and virial from the driver.
@@ -235,6 +198,79 @@ class DriverSocket(socket.socket):
          return np.fromstring(self._buf[0:blen], dest.dtype)[0]
       else:
          return np.fromstring(self._buf[0:blen], dest.dtype).reshape(dest.shape)
+
+
+class Driver(DriverSocket):
+   """Deals with communication between the client and driver code.
+
+   Deals with sending and receiving the data from the driver code. Keeps track
+   of the status of the driver. Initialises the driver forcefield, sends the
+   position and cell data, and receives the force data.
+
+   Attributes:
+      waitstatus: Boolean giving whether the driver is waiting to get a status answer.
+      status: Keeps track of the status of the driver.
+      lastreq: The ID of the last request processed by the client.
+      locked: Flag to mark if the client has been working consistently on one image.
+   """
+
+   def __init__(self, socket):
+      """Initialises Driver.
+
+      Args:
+         socket: A socket through which the communication should be done.
+      """
+
+      super(Driver,self).__init__(socket=socket)
+      self.waitstatus = False
+      self.status = Status.Up
+      self.lastreq = None
+      self.locked = False
+
+   def poll(self):
+      """Waits for driver status."""
+
+      self.status = Status.Disconnected  # sets disconnected as failsafe status, in case _getstatus fails and exceptions are ignored upstream
+      self.status = self._getstatus()
+
+   def _getstatus(self):
+      """Gets driver status.
+
+      Returns:
+         An integer labelling the status via bitwise or of the relevant members
+         of Status.
+      """
+
+
+      if not self.waitstatus:
+         try:
+            readable, writable, errored = select.select([], [self], [])
+            if self in writable:
+               self.sendall(Message("status"))
+               self.waitstatus = True
+         except:
+            return Status.Disconnected
+
+      try:
+         reply = self.recv(HDRLEN)
+         self.waitstatus = False # got some kind of reply
+      except socket.timeout:
+         warning(" @SOCKET:   Timeout in status recv!", verbosity.debug )
+         return Status.Up | Status.Busy | Status.Timeout
+      except:
+         return Status.Disconnected
+
+      if not len(reply) == HDRLEN:
+         return Status.Disconnected
+      elif reply == Message("ready"):
+         return Status.Up | Status.Ready
+      elif reply == Message("needinit"):
+         return Status.Up | Status.NeedsInit
+      elif reply == Message("havedata"):
+         return Status.Up | Status.HasData
+      else:
+         warning(" @SOCKET:    Unrecognized reply: " + str(reply), verbosity.low )
+         return Status.Up
 
    def initialize(self, rid, pars):
       """Sends the initialisation string to the driver.
@@ -300,7 +336,7 @@ class DriverSocket(socket.socket):
          reply = ""
          while True:
             try:
-               reply = self.recv(HDRLEN)
+               reply = self.recv_msg()
             except socket.timeout:
                warning(" @SOCKET:   Timeout in getforce, trying again!", verbosity.low)
                continue
@@ -484,7 +520,7 @@ class InterfaceSocket(object):
          if self.server in readable:
             client, address = self.server.accept()
             client.settimeout(TIMEOUT)
-            driver = DriverSocket(client)
+            driver = Driver(client)
             info(" @SOCKET:   Client asked for connection from "+ str( address ) +". Now hand-shaking.", verbosity.low)
             driver.poll()
             if (driver.status | Status.Up):
