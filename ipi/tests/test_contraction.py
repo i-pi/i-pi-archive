@@ -16,10 +16,6 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <http.//www.gnu.org/licenses/>.
 """
 
-import sys
-sys.path.append("../")
-sys.path.append("../../")
-
 from ipi.utils import nmtransform
 import numpy as np
 from numpy.testing import assert_almost_equal as assert_equals
