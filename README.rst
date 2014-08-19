@@ -47,3 +47,13 @@ command.
   $ tail -f log
 
 The monitoring can be interrupted with CTRL+C when the run has finished (5000 steps).
+
+Run the automatic test suite
+----------------------------
+
+The automatic test suite can be run with the python package `nose` from the
+root directory of the i-pi package.
+
+::
+
+  $ nosetests -v
