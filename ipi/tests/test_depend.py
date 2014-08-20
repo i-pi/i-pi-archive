@@ -55,7 +55,8 @@ def test_dotf():
    rdot = np.dot
    def fdot(a,b):
       return rdot(a,b).view(np.ndarray)
-   #np.dot=fdot
+   np.dot=fdot
 
    c = np.dot(a,b)
-   assert(type(c) == dp.depend_array)
+   assert(type(c) == np.ndarray)
+   np.dot = rdot
