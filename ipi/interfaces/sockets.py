@@ -132,7 +132,13 @@ class DriverSocket(socket.socket):
       self.waitstatus = False
       self.lastreq = None
       self.locked = False
-
+      
+   def shutdown(self, how=socket.SHUT_RDWR):
+      
+      self.sendall(Message("exit"))
+      self.status = Status.Disconnected
+      super(DriverSocket,self).shutdown(how)
+   
    def poll(self):
       """Waits for driver status."""
 
@@ -436,6 +442,11 @@ class InterfaceSocket(object):
       """Closes down the socket."""
 
       info(" @SOCKET: Shutting down the driver interface.", verbosity.low )
+      
+      for c in self.clients[:]:
+         if (c.status & Status.Up):
+            c.shutdown(socket.SHUT_RDWR)
+            
       self.server.shutdown(socket.SHUT_RDWR)
       self.server.close()
       if self.mode == "unix":
