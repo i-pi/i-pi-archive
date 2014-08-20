@@ -37,6 +37,19 @@ io_map = {
          "iter"         :  "iter_%s",
       }
 
+def cached(f):
+    """Cache decorator.
+    """
+    _cache = {}
+    def func(*args):
+        if args in _cache:
+            return _cache[args]
+        res = f(*args)
+        _cache[args] = res
+        return res
+    return func
+
+@cached
 def _get_io_function(mode, io):
    """Returns io function with specified mode.
 
