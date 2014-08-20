@@ -17,30 +17,32 @@ Functions:
 """
 
 import sys
-import ipi.inputs.simulation as isimulation
+import time
+
 from ipi.utils.softexit import softexit
-from ipi.utils.io.io_xml import *
-from ipi.utils.messages import banner, help, verbosity
-# import yappi, time
+from ipi.utils.messages import banner, verbosity
+from ipi.utils.load_simulation import load_simulation
+from ipi.utils.messages import help
 
-def main(file_name):
-   """Runs the simulation.
 
-   Will run automatically when the module is used as a script.
-   """
+def main(file_name, do_yappi):
+   """Loads and runs the simulation."""
 
-   ifile = open(file_name,"r")
-   xmlrestart = xml_parse_file(ifile) # Parses the file.
-   ifile.close()
+   # construct simulation based on input file
+   simulation = load_simulation(file_name)
 
-   simrestart = isimulation.InputSimulation()
-   # Checks the input and partitions it appropriately.
-   simrestart.parse(xmlrestart.fields[0][1])
-   # Here we must do this manually; from here on everything should be automated by the messages classes
-   if simrestart.verbosity.fetch() != "quiet" :
+   # Here we must do this manually
+   # From here on everything should be automated by the messages classes.
+   # TODO:
+   # This is now in the wrong order - if there is output from the
+   # simulation construction, it comes before the banner :-/
+   # Solution: handle verbosity globally only and do this printing in
+   # load_simulation, with the option to supress it by first decreasing
+   # verbosity.
+   if verbosity > 0:
       banner()
       print " # i-pi starting from input file: ", file_name
-   if simrestart.verbosity.fetch() != "quiet" and simrestart.verbosity.fetch() != "low" :
+   if verbosity > 1:
       print " --- begin input file content --- "
       ifile = open(file_name,"r")
       for line in ifile.readlines():
@@ -48,30 +50,41 @@ def main(file_name):
       ifile.close()
       print " ---  end input file content  --- "
 
-   simul = simrestart.fetch() # Creates the appropriate simulation object.
-   # this does all of the piping between the components of the simulation
-   simul.bind()
+   # optionally profile this run
+   if do_yappi:
+      import yappi
+      yappi.start(builtins=True, profile_threads=True)
 
-#   yappi.start(builtins=True,profile_threads=True)
-#   start=time.time()
+   # run the simulation
+   start = time.time()
+   simulation.run()
+   if verbosity > 0:
+      print "Total elapsed time: ", time.time() - start
 
-   simul.run()
-
- #  yappi.stop()
- #  yappi.get_thread_stats().print_all()
- #  yfs=yappi.get_func_stats()
- #  yfs.save("profile.kgrind", type="callgrind")
- #  ypo=open("profile.yappi","w")
- #  yfs.print_all(out=ypo)
- #  print "Total elapsed time: ", time.time()-start
+   # optionally profile this run
+   if do_yappi:
+      yappi.stop()
+      yappi.get_thread_stats().print_all()
+      yfs = yappi.get_func_stats()
+      yfs.save("profile.kgrind", type="callgrind")
+      ypo = open("profile.yappi", "w")
+      yfs.print_all(out=ypo)
 
    softexit.trigger(" @ SIMULATION: Exiting cleanly.")
 
-   del simul
+   # TODO: Is there any point doing this, especially after soft exit?
+   del simulation
 
-#This is what is run if the file is run as a script.
+
 if __name__ == '__main__':
+
+   # TODO
+   # use argparse instead of argv, will also handle help text
+   # read yappi preference from arguments
+   # Or do we want to support Python < 2.7?
+
    if (len(sys.argv) != 2):
       help()
    else:
-      main(sys.argv[1])
+      do_yappi = False
+      main(sys.argv[1], do_yappi)

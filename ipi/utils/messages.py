@@ -9,7 +9,7 @@ the Free Software Foundation, either version 3 of the License, or
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
@@ -92,7 +92,7 @@ class Verbosity(object):
             level = VERB_HIGH
          elif value == "debug":
             level = VERB_DEBUG
-         else: 
+         else:
             raise ValueError("Invalid verbosity level " + str(value) + " specified.")
          super(Verbosity,self).__setattr__("level", level)
 
@@ -108,25 +108,25 @@ def banner():
    """Prints out a banner."""
 
    print """
- ____       ____       ____       ____  
-/    \     /    \     /    \     /    \  
-|  #################################  | 
-\__#_/     \____/     \____/     \_#__/     
-   #    _        _______  _____    #                 
-   #   (_)      |_   __ \|_   _|   #      -*-     Development version    -*-                      
-   #   __  ______ | |__) | | |     #                                         
-   Y  [  ||______||  ___/  | |     #      A Python interface for (ab initio)  
-  0 0  | |       _| |_    _| |_    #      (path integral) molecular dynamics. 
+ ____       ____       ____       ____
+/    \     /    \     /    \     /    \\
+|  #################################  |
+\__#_/     \____/     \____/     \_#__/
+   #    _        _______  _____    #
+   #   (_)      |_   __ \|_   _|   #      -*-     Development version    -*-
+   #   __  ______ | |__) | | |     #
+   Y  [  ||______||  ___/  | |     #      A Python interface for (ab initio)
+  0 0  | |       _| |_    _| |_    #      (path integral) molecular dynamics.
    #  [___]     |_____|  |_____|   #
- __#_       ____       ____       _#__                
-/  # \     /    \     /    \     / #  \                                      
-|  #################################  |                                      
-\____/     \____/     \____/     \____/        
+ __#_       ____       ____       _#__
+/  # \     /    \     /    \     / #  \\
+|  #################################  |
+\____/     \____/     \____/     \____/
 
    """
 
 
-def info(text="", show=True ):
+def info(text="", show=True):
    """Prints a warning message.
 
    Args:
