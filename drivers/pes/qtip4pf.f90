@@ -36,16 +36,15 @@
 !====================================================================================
 !
 
-subroutine qtip4pf(box,rt,na,dvdrt,v)
+subroutine qtip4pf(box,rt,na,dvdrt,v, vir)
   implicit none  
   integer :: i,j,na,nm,ic,njump
   real(8) :: r(3,na), dvdr(3,na), box(3), rt(na,3), dvdrt(na,3)
   real(8) :: oo_eps, oo_sig, rcut,v,vlj,vint
   real(8) :: apot, bpot, alp, alpha, alpha2
-  real(8) :: qo,qh,theta,reoh
+  real(8) :: qo,qh,theta,reoh,vir(3,3), virlj(3,3), virint(3,3)
   real(8), allocatable :: ro(:,:), dvdrlj(:,:), z(:)
 
-  
   ! Set and check number of molecules.
   ! 
   nm = na/3
@@ -72,6 +71,7 @@ subroutine qtip4pf(box,rt,na,dvdrt,v)
   ! Zero-out potential and derivatives.
   !
   v = 0.d0
+  vir = 0.d0
   dvdr(:,:) = 0.d0
 
   do i=1, na 
@@ -108,7 +108,7 @@ subroutine qtip4pf(box,rt,na,dvdrt,v)
      z(i+2) = qh
    enddo
 
-  call ewald_nc(box,r,dvdr,v,na,z)
+  call ewald_nc(box,r,dvdr,v,vir,na,z)
  
   !
   ! Use the chain rule to calculate the correct forces on the atoms. 
@@ -125,8 +125,7 @@ subroutine qtip4pf(box,rt,na,dvdrt,v)
      enddo
   enddo  
   deallocate (ro, z)
-
-
+  
   !
   ! *** LJ CALCULATION ***
   !
@@ -136,25 +135,26 @@ subroutine qtip4pf(box,rt,na,dvdrt,v)
   !
   allocate (dvdrlj(3,na))
   njump = 3
-  Call lj_basic(box,r,dvdrlj,vlj,na,njump,oo_eps,oo_sig,rcut)
+  Call lj_basic(box,r,dvdrlj,vlj,virlj,na,njump,oo_eps,oo_sig,rcut)
   dvdr(:,:) = dvdr(:,:) + dvdrlj(:,:)
   v = v + vlj
+  vir = vir + virlj
   deallocate ( dvdrlj )
 
   !
   ! *** INTRAMOLECULAR CALCULATION ***
   !
-  Call intra_morse_harm(r,dvdr,na,vint,theta,reoh,apot,bpot,alp)  
+  Call intra_morse_harm(r,dvdr,na,vint,virint,theta,reoh,apot,bpot,alp)  
   v = v + vint
+  vir = vir + virint
 
   ! ....and we're done...
   !
-
+  vir = -1.0d0 *vir
   do i=1, na 
     dvdrt(i,:) = -dvdr(:,i)
   enddo
   return
-
 end Subroutine qtip4pf
 
 
@@ -166,11 +166,11 @@ end Subroutine qtip4pf
 !
 !==============================================================================
 !
-Subroutine lj_basic(box,r,dvdr,v,na,njump,oo_eps,oo_sig,rcut)
+Subroutine lj_basic(box,r,dvdr,v,vir,na,njump,oo_eps,oo_sig,rcut)
   implicit none
   integer :: na,i,j,njump
-  real(8) :: r(3,na),dvdr(3,na),v,box(3)
-  real(8) :: oo_eps,oo_sig,rcut
+  real(8) :: r(3,na),dvdr(3,na),v,box(3),vir(3,3)
+  real(8) :: oo_eps,oo_sig,rcut,ptail
   real(8) :: sigsq,rcutsq,vij
   real(8) :: drsq,onr2,fij,dfx,dfy,dfz,sr2,sr6,wij
   real(8) :: dx,dy,dz,vscale,dscale
@@ -180,6 +180,7 @@ Subroutine lj_basic(box,r,dvdr,v,na,njump,oo_eps,oo_sig,rcut)
   
   v = 0.d0
   dvdr(:,:) = 0.d0
+  vir = 0.d0
 
   do j = 1+njump,na,njump
      do i = 1,j-njump,njump
@@ -207,6 +208,15 @@ Subroutine lj_basic(box,r,dvdr,v,na,njump,oo_eps,oo_sig,rcut)
            dvdr(1,j) = dvdr(1,j) + dfx
            dvdr(2,j) = dvdr(2,j) + dfy
            dvdr(3,j) = dvdr(3,j) + dfz
+           vir(1,1) = vir(1,1) - dx * dfx
+           vir(2,2) = vir(2,2) - dy * dfy
+           vir(3,3) = vir(3,3) - dz * dfz
+           vir(1,2) = vir(1,2) - dx * dfy
+           vir(1,3) = vir(1,3) - dx * dfz
+           vir(2,1) = vir(2,1) - dy * dfx
+           vir(2,3) = vir(2,3) - dy * dfz
+           vir(3,1) = vir(3,1) - dz * dfx
+           vir(3,2) = vir(3,2) - dz * dfy
         endif
      enddo
   enddo
@@ -220,10 +230,34 @@ Subroutine lj_basic(box,r,dvdr,v,na,njump,oo_eps,oo_sig,rcut)
      dvdr(2,i) = dscale*dvdr(2,i)
      dvdr(3,i) = dscale*dvdr(3,i)
   enddo
-
+  call pres_lj_tail(oo_eps,oo_sig,rcut,ptail,box,na)
+  vir(:,:) = dscale * vir(:,:)
+  vir(1,1) = vir(1,1)-ptail
+  vir(2,3) = vir(2,2)-ptail
+  vir(3,3) = vir(3,3)-ptail
+ 
   return
 end subroutine lj_basic
 
+subroutine pres_lj_tail(oo_eps, oo_sig,rcut, ptail,boxlxyz,na)
+  implicit none
+  ! ------------------------------------------------------------------
+  ! LJ tail correction to pressure
+  ! ------------------------------------------------------------------
+  integer na,nm
+  real(8) ptail,boxlxyz(3),vol,pi,rho,prefac
+  real(8) oo_eps,oo_sig,rcut
+  
+  nm = na/3
+  pi = dacos(-1.d0)
+  vol = boxlxyz(1)*boxlxyz(2)*boxlxyz(3)
+  rho = dble(nm) / vol
+  prefac = vol*(16.d0*pi*(rho**2)*oo_eps*(oo_sig**3)) / (3.d0)
+  ptail  = prefac*( (2.d0/3.d0)*(oo_sig/rcut)**9 &
+       - (oo_sig/rcut)**3)
+  
+  return
+end subroutine pres_lj_tail
 
 !
 !======================================================================
@@ -235,10 +269,10 @@ end subroutine lj_basic
 !
 !======================================================================
 !
-Subroutine intra_morse_harm(r,dvdr,na,v,theta,reoh,apot,bpot,alp)
+Subroutine intra_morse_harm(r,dvdr,na,v,vir,theta,reoh,apot,bpot,alp)
   implicit none
   integer :: na,j
-  real(8) :: r(3,na),dvdr(3,na)
+  real(8) :: r(3,na), dvdr(3,na), vir(3,3)
   real(8) :: dr1,dr2,dr3,theta,reoh
   real(8) :: dx1,dy1,dz1,v,dx2,dy2,dz2,dr1sq,dr2sq,dr3dx3
   real(8) :: dx3,dy3,dz3,dr3sq,dr1dx1,dr1dy1,dr1dz1
@@ -249,7 +283,7 @@ Subroutine intra_morse_harm(r,dvdr,na,v,theta,reoh,apot,bpot,alp)
   real(8) :: dthetadr1,dthetadr2,dthetadr3
   real(8) :: darg,dr1a,dr2a,dr3a,apot,bpot
   real(8) :: de,alp,alp2,alp3,alp4,drasq,drbsq
-  real(8) :: f1,f2,deb,a1,a2,a3
+  real(8) :: f1,f2,deb,a1,a2,a3,xx,yy,zz,xy,xz,yz
 
   de = apot
   deb = bpot
@@ -260,7 +294,7 @@ Subroutine intra_morse_harm(r,dvdr,na,v,theta,reoh,apot,bpot,alp)
   f2 = 7.d0 / 3.d0
 
   v = 0.d0
-
+  vir = 0.0d0
   ! Loop over molecules
 
   do j = 1,na,3
@@ -347,13 +381,28 @@ Subroutine intra_morse_harm(r,dvdr,na,v,theta,reoh,apot,bpot,alp)
      dvdr(2,j+2) = dvdr(2,j+2) + dvdy2 + dvdy3
      dvdr(3,j+2) = dvdr(3,j+2) + dvdz2 + dvdz3
 
+     xx = dx1*dvdx1 + dx2*dvdx2 + dx3*dvdx3
+     xy = dx1*dvdy1 + dx2*dvdy2 + dx3*dvdy3
+     xz = dx1*dvdz1 + dx2*dvdz2 + dx3*dvdz3
+     yy = dy1*dvdy1 + dy2*dvdy2 + dy3*dvdy3
+     yz = dy1*dvdz1 + dy2*dvdz2 + dy3*dvdz3
+     zz = dz1*dvdz1 + dz2*dvdz2 + dz3*dvdz3
+     vir(1,1) = vir(1,1) + xx
+     vir(1,2) = vir(1,2) + xy
+     vir(1,3) = vir(1,3) + xz
+     vir(2,1) = vir(2,1) + xy
+     vir(2,2) = vir(2,2) + yy
+     vir(2,3) = vir(2,3) + yz
+     vir(3,1) = vir(3,1) + xz
+     vir(3,2) = vir(3,2) + yz
+     vir(3,3) = vir(3,3) + zz
   enddo
   
   return 
 end subroutine intra_morse_harm
 
 
-subroutine ewald_nc(box,r,dvdr,v,n,q)
+subroutine ewald_nc(box,r,dvdr,v,vir,n,q)
   implicit none
   ! ------------------------------------------------------------------
   ! Non-Cubic Ewald sum
@@ -385,24 +434,24 @@ subroutine ewald_nc(box,r,dvdr,v,n,q)
 
   ! Point Charge Ewald sum
 
-  call rwald_basic(box,r,dvdr,v,n,q,wrcut,walpha)
+  call rwald_basic(box,r,dvdr,v,vir,n,q,wrcut,walpha)
   
   ! Reciprocal Space Ewald Sum
 
   rkmax2 = rkmax*rkmax
-  call kwald_nc(box,r,dvdr,v,n,q,walpha,rkmax2,kmax)
+  call kwald_nc(box,r,dvdr,v,vir,n,q,walpha,rkmax2,kmax)
 
   return
 end subroutine ewald_nc
 
-subroutine rwald_basic(box,r,dvdr,v,n,q,rcut,alpha) !(n,mol,q,r,v,vir,dvdr,rcut,alpha,boxlxyz)
+subroutine rwald_basic(box,r,dvdr,v,vir,n,q,rcut,alpha) !(n,mol,q,r,v,vir,dvdr,rcut,alpha,boxlxyz)
   implicit none
   ! ------------------------------------------------------------------
   ! Real space part of the Ewald sum for non-cubic systems
   ! Low precision version with an approximation to erfc(x)
   ! ------------------------------------------------------------------
   integer n,i,j
-  real(8) q(n),r(3,n),dvdr(3,n),box(3)
+  real(8) q(n),r(3,n),dvdr(3,n),box(3), vir(3,3)
   real(8) pi,rfac,sfac,rcut,rcutsq,alpha,dx,dy,dz,drsq,dr
   real(8) x,e,t,erfc,du,dur,qij,dv,dvr,dvx,dvy,dvz,v
   real(8) p,a1,a2,a3,a4,a5
@@ -456,26 +505,35 @@ subroutine rwald_basic(box,r,dvdr,v,n,q,rcut,alpha) !(n,mol,q,r,v,vir,dvdr,rcut,
            dvdr(1,j) = dvdr(1,j)-dvx
            dvdr(2,j) = dvdr(2,j)-dvy
            dvdr(3,j) = dvdr(3,j)-dvz
+           vir(1,1) = vir(1,1) + dx * dvx
+           vir(1,2) = vir(1,2) + dx * dvy
+           vir(1,3) = vir(1,3) + dx * dvz
+           vir(2,1) = vir(2,1) + dy * dvx
+           vir(2,2) = vir(2,2) + dy * dvy
+           vir(2,3) = vir(2,3) + dy * dvz
+           vir(3,1) = vir(3,1) + dz * dvx
+           vir(3,2) = vir(3,2) + dz * dvy
+           vir(3,3) = vir(3,3) + dz * dvz
         endif
      enddo
   enddo  
   return
 end subroutine rwald_basic
 
-subroutine kwald_nc(box,r,dvdr,v,n,q,alpha,rkmax2,kmax) !(r,z,n,v,vir,dvdr,alpha,rkmax2,kmax,box)
+subroutine kwald_nc(box,r,dvdr,v,vir,n,q,alpha,rkmax2,kmax) !(r,z,n,v,vir,dvdr,alpha,rkmax2,kmax,box)
   implicit none
   ! ------------------------------------------------------------------
   ! Reciprocal space part of the Ewald sum for non-cubic systems
   ! ------------------------------------------------------------------
   integer n,kmax,i,kx,ky,kz
-  real(8) r(3,n),q(n),dvdr(3,n),box(3)
+  real(8) r(3,n),q(n),dvdr(3,n),box(3), vir(3,3)
   real(8) ckx(n,0:kmax),skx(n,0:kmax)
   real(8) cky(n,-kmax:kmax),sky(n,-kmax:kmax)
   real(8) ckz(n,-kmax:kmax),skz(n,-kmax:kmax)
   real(8) cxy(n),sxy(n),dsdr(6,n)
   real(8) v,alpha,rkmax2,pi,rfac,twopi,xbox,ybox,zbox
   real(8) xlat,ylat,zlat,xi,yi,zi,b,f,rkx,rky,rkz,vs
-  real(8) c,s,rk2,sr,si,tr,ti,w,et
+  real(8) c,s,rk2,sr,si,tr,ti,w,et,xx,yy,zz,xy,xz,yz,term
 
   pi = dacos(-1.d0)
   rfac = alpha/dsqrt(pi)
@@ -570,7 +628,24 @@ subroutine kwald_nc(box,r,dvdr,v,n,q,alpha,rkmax2,kmax) !(r,z,n,v,vir,dvdr,alpha
                  dvdr(1,i) = dvdr(1,i) + sr*dsdr(1,i) + si*dsdr(2,i)
                  dvdr(2,i) = dvdr(2,i) + sr*dsdr(3,i) + si*dsdr(4,i)
                  dvdr(3,i) = dvdr(3,i) + sr*dsdr(5,i) + si*dsdr(6,i)
-              enddo              
+              enddo    
+
+              term = 2.d0*(1.d0/rk2 + b)
+              xx = et * (term*rkx*rkx-1.d0)
+              xy = et * (term*rkx*rky)
+              xz = et * (term*rkx*rkz)
+              yy = et * (term*rky*rky-1.d0)
+              yz = et * (term*rky*rkz)
+              zz = et * (term*rkz*rkz-1.d0)
+              vir(1,1) = vir(1,1) + xx
+              vir(1,2) = vir(1,2) + xy
+              vir(1,3) = vir(1,3) + xz
+              vir(2,1) = vir(2,1) + xy
+              vir(2,2) = vir(2,2) + yy
+              vir(2,3) = vir(2,3) + yz
+              vir(3,1) = vir(3,1) + xz
+              vir(3,2) = vir(3,2) + yz
+              vir(3,3) = vir(3,3) + zz          
            endif
         enddo
      enddo
