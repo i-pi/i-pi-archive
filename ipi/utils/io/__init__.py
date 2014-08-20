@@ -26,6 +26,10 @@ import sys
 
 __all__ = [ "io_xml", "io_pdb" , "io_xyz", "io_binary" ]
 
+mode_map = {
+         "bin"   :  "binary",
+      }
+
 io_map = {
          "print_path"   :  "print_%s_path",
          "print"        :  "print_%s",
@@ -47,6 +51,8 @@ def _get_io_function(mode, io):
 
    try:
       mode = mode[mode.find(".")+1:]
+      if mode in mode_map:
+         mode = mode_map[mode]
       module = importlib.import_module("ipi.utils.io.io_%s"%mode)
    except ImportError:
       print "Error: mode %s is not supported."% mode
