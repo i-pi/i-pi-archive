@@ -132,6 +132,13 @@ class DriverSocket(socket.socket):
       self.lastreq = None
       self.locked = False
 
+   def shutdown(self, how=socket.SHUT_RDWR):
+      """Tries to send an exit message to clients to let them exit gracefully."""
+               
+      self.sendall(Message("exit"))
+      self.status = Status.Disconnected
+      super(DriverSocket,self).shutdown(how)
+
    def poll(self):
       """Waits for driver status."""
 
@@ -437,6 +444,7 @@ class InterfaceSocket(object):
             c.close()
          except:
             pass
+
       # flush it all down the drain
       self.clients = []
       self.jobs = []

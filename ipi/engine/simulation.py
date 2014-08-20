@@ -295,5 +295,9 @@ class Simulation(dobject):
             info(" # Wall clock time expired! Bye bye!", verbosity.low )
             break
 
+      if self.step >= self.tsteps:
+         info(" # Simulation ran successfully for the prescribed total_step! Bye bye!", verbosity.low )
+
       self.rollback = False
+      if not softexit.triggered: softexit.trigger()
 
