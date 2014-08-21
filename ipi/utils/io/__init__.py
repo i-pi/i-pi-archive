@@ -24,6 +24,12 @@ Functions:
 """
 import sys
 
+from ipi.utils.decorators import cached
+
+# For backwards compatibility import old known functions from backend and inputs.
+from ipi.utils.io.backends import io_pdb, io_xyz, io_binary
+from ipi.utils.io.inputs import io_xml
+
 __all__ = [ "io_xml", "io_pdb" , "io_xyz", "io_binary" ]
 
 mode_map = {
@@ -37,24 +43,12 @@ io_map = {
          "iter"         :  "iter_%s",
       }
 
-def cached(f):
-    """Cache decorator.
-    """
-    _cache = {}
-    def func(*args):
-        if args in _cache:
-            return _cache[args]
-        res = f(*args)
-        _cache[args] = res
-        return res
-    return func
-
 @cached
 def _get_io_function(mode, io):
    """Returns io function with specified mode.
 
    This will be determined on the fly based on file name extension and
-   available ipi/utils/io/io_*.py backends.
+   available ipi/utils/io/backends/io_*.py backends.
 
    Args:
       mode: Which format has the file? e.g. "pdb", "xml" or "xyz"
@@ -66,7 +60,7 @@ def _get_io_function(mode, io):
       mode = mode[mode.find(".")+1:]
       if mode in mode_map:
          mode = mode_map[mode]
-      module = importlib.import_module("ipi.utils.io.io_%s"%mode)
+      module = importlib.import_module("ipi.utils.io.backends.io_%s"%mode)
    except ImportError:
       print "Error: mode %s is not supported."% mode
       sys.exit()
