@@ -68,7 +68,7 @@ def _get_io_function(mode, io):
    try:
       func = getattr(module, io_map[io]%mode)
    except KeyError:
-      print "Error: io %s is not supported."% io
+      print "Error: io %s is not supported with mode %s."% (io,mode)
       sys.exit()
 
    return func
