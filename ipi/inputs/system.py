@@ -31,7 +31,7 @@ from ipi.utils.inputvalue import *
 from ipi.utils.units  import *
 from ipi.utils.prng   import *
 from ipi.utils.io     import *
-from ipi.utils.io.io_xml import *
+from ipi.utils.io.inputs.io_xml import *
 from ipi.utils.messages import verbosity
 from ipi.inputs.forces import InputForces
 from ipi.inputs.beads import InputBeads

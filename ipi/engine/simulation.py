@@ -35,7 +35,7 @@ from ipi.utils.depend import *
 from ipi.utils.units  import *
 from ipi.utils.prng   import *
 from ipi.utils.io     import *
-from ipi.utils.io.io_xml import *
+from ipi.utils.io.inputs.io_xml import *
 from ipi.utils.messages import verbosity, info, warning
 from ipi.utils.softexit import softexit
 from ipi.engine.atoms import *

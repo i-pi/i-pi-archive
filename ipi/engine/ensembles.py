@@ -41,9 +41,9 @@ from copy import deepcopy
 from ipi.utils.depend import *
 from ipi.utils import units
 from ipi.utils.softexit import softexit
-from ipi.utils.io.io_xyz import read_xyz
-from ipi.utils.io.io_pdb import read_pdb
-from ipi.utils.io.io_xml import xml_parse_file
+from ipi.utils.io.backends.io_xyz import read_xyz
+from ipi.utils.io.backends.io_pdb import read_pdb
+from ipi.utils.io.inputs.io_xml import xml_parse_file
 from ipi.utils.units import Constants, unit_to_internal
 from ipi.inputs.thermostats import InputThermo
 from ipi.inputs.barostats import InputBaro
