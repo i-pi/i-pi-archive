@@ -280,6 +280,12 @@ class Properties(dobject):
                       Takes an argument 'atom', which can be either an atom label or index (zero based)
                       to specify which species to find the kinetic energy of. If not specified, all atoms are used.""",
                       'func': self.get_kincv},
+      "kinetic_td":  {"dimension" : "energy",
+                      "help": "The primitive quantum kinetic energy of the physical system.",
+                      "longhelp": """The primitive quantum kinetic energy of the physical system.
+                      Takes an argument 'atom', which can be either an atom label or index (zero based)
+                      to specify which species to find the kinetic energy of. If not specified, all atoms are used.""",
+                      'func': self.get_kintd},
       "kinetic_tens":{"dimension" : "energy",
                       "help" : "The centroid-virial quantum kinetic energy tensor of the physical system.",
                       "longhelp" : """The centroid-virial quantum kinetic energy tensor of the physical system.
@@ -651,6 +657,52 @@ class Properties(dobject):
          warning("Couldn't find an atom which matched the argument of kinetic energy, setting to zero.", verbosity.medium)
 
       return acv
+   def get_kintd(self, atom=""):
+      """Calculates the quantum centroid virial kinetic energy estimator.
+
+      Args:
+         atom: If given, specifies the atom to give the kinetic energy
+            for. If not, the system kinetic energy is given.
+      """
+
+      try:
+         #iatom gives the index of the atom to be studied
+         iatom = int(atom)
+         latom = ""
+         if iatom >= self.beads.natoms:
+            raise IndexError("Cannot output kinetic energy as atom index %d is larger than the number of atoms" % iatom)
+      except ValueError:
+         #here 'atom' is a label rather than an index which is stored in latom
+         iatom = -1
+         latom = atom
+
+      q = depstrip(self.beads.q)
+      m = depstrip(self.beads.m)
+      PkT32 = 1.5* Constants.kb*self.ensemble.temp*self.beads.nbeads
+
+      atd = 0.0
+      ncount = 0
+      for i in range(self.beads.natoms):
+         if (atom != "" and iatom != i and latom != self.beads.names[i]):
+            continue
+
+         ktd = 0.0
+         for b in range(1,self.beads.nbeads):
+            for j in range(3*i,3*(i+1)):
+               ktd += (q[b,j]-q[b-1,j])**2
+         for j in range(3*i,3*(i+1)):
+            ktd += (q[self.beads.nbeads-1,j]-q[0,j])**2
+         
+         ktd *= -0.5*m[i]*self.nm.omegan2/self.beads.nbeads
+          
+         ktd += PkT32
+         atd += ktd
+         ncount += 1
+
+      if ncount == 0:
+         warning("Couldn't find an atom which matched the argument of kinetic energy, setting to zero.", verbosity.medium)
+
+      return atd
 
    def get_kinmd(self, atom="", bead="", nm="", return_count = False):
       """Calculates the classical kinetic energy of the simulation (p^2/2m)
