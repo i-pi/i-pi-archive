@@ -1607,7 +1607,7 @@ class Properties(dobject):
       ti *= (1.0/24.0)/self.nm.omegan2
       
         
-      ti*=-betaP        
+      ti*=-betaP     
       ti2 = ti**2
       tiexp = np.exp(ti)
             
