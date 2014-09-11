@@ -471,6 +471,14 @@ class Properties(dobject):
                           "help": "The weighting factor in Takaeshi-Imagda high-order PI expansion.",
                           "longhelp" : """The 3 numbers output are 1) the logarithm of the weighting factor -\beta_P \delta H,
                       2) the square of the logarithm, and 3) the weighting factor""" } ,
+       "ti_pot":  {"dimension" : "undefined",
+                          "size" : 3,
+                          "dimension": "energy",
+                          'func': self.get_ti_term,
+                          "help": "The correction potential in Takaeshi-Imagda high-order PI expansion.",
+                          "longhelp" : """The correction potential in Takaeshi-Imagda high-order PI expansion.
+                             Takes an argument 'atom', which can be either an atom label or index (zero based)
+                             to specify which species to find the correction term for. If not specified, all atoms are used.""" } ,
        "isotope_zetatd_4th":  {"dimension" : "undefined",
                           "size" : 5,
                           'func': self.get_isotope_zetatd_4th,
@@ -657,6 +665,7 @@ class Properties(dobject):
          warning("Couldn't find an atom which matched the argument of kinetic energy, setting to zero.", verbosity.medium)
 
       return acv
+            
    def get_kintd(self, atom=""):
       """Calculates the quantum centroid virial kinetic energy estimator.
 
@@ -1602,7 +1611,51 @@ class Properties(dobject):
       ti2 = ti**2
       tiexp = np.exp(ti)
             
-      return np.asarray([ti, ti2, tiexp])  
+      return np.asarray([ti, ti2, tiexp]) 
+       
+   def get_ti_term(self, atom=""):
+      """Calculates the quantum centroid virial kinetic energy estimator.
+
+      Args:
+         atom: If given, specifies the atom to give the kinetic energy
+            for. If not, the system kinetic energy is given.
+      """
+
+      try:
+         #iatom gives the index of the atom to be studied
+         iatom = int(atom)
+         latom = ""
+         if iatom >= self.beads.natoms:
+            raise IndexError("Cannot output kinetic energy as atom index %d is larger than the number of atoms" % iatom)
+      except ValueError:
+         #here 'atom' is a label rather than an index which is stored in latom
+         iatom = -1
+         latom = atom
+
+      f = depstrip(self.forces.f)
+      m3 = depstrip(self.beads.m3)
+      pots = self.forces.pots
+      betaP = 1.0/(self.beads.nbeads*Constants.kb*self.ensemble.temp)
+      
+      ti = 0.0
+      
+      ncount = 0
+      for i in range(self.beads.natoms):
+         if (atom != "" and iatom != i and latom != self.beads.names[i]):
+            continue
+
+         for j in range(3*i,3*(i+1)):
+            for b in range(self.beads.nbeads):
+               ti += (f[b,j]**2)/m3[b,j]
+      
+         ncount += 1
+         
+      ti *= (1.0/24.0)/self.nm.omegan2/self.beads.nbeads
+      if ncount == 0:
+         warning("Couldn't find an atom which matched the argument of TI potential, setting to zero.", verbosity.medium)
+
+      return ti
+
                         
 class Trajectories(dobject):
    """A simple class to take care of output of trajectory data.
