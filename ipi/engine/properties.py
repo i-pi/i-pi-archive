@@ -472,7 +472,7 @@ class Properties(dobject):
                           "longhelp" : """The 3 numbers output are 1) the logarithm of the weighting factor -\beta_P \delta H,
                       2) the square of the logarithm, and 3) the weighting factor""" } ,
        "ti_pot":  {"dimension" : "undefined",
-                          "size" : 3,
+                          "size" : 1,
                           "dimension": "energy",
                           'func': self.get_ti_term,
                           "help": "The correction potential in Takaeshi-Imagda high-order PI expansion.",
