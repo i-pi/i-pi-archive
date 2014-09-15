@@ -462,21 +462,21 @@ class Properties(dobject):
        "chin_weight":  {"dimension" : "undefined",
                           "size" : 3,
                           'func': self.get_chin_correction,
-                          "help": "The weighting factor in Suzuki-Chin high-order PI expansion.",
+                          "help": "The weighting factor in Suzuki-Chin 4th-order PI expansion.",
                           "longhelp" : """The 3 numbers output are 1) the logarithm of the weighting factor -\beta_P \delta H,
                       2) the square of the logarithm, and 3) the weighting factor""" } ,
        "ti_weight":  {"dimension" : "undefined",
                           "size" : 3,
                           'func': self.get_ti_correction,
-                          "help": "The weighting factor in Takaeshi-Imagda high-order PI expansion.",
+                          "help": "The weighting factor in Takahashi-Imagda 4th-order PI expansion.",
                           "longhelp" : """The 3 numbers output are 1) the logarithm of the weighting factor -\beta_P \delta H,
                       2) the square of the logarithm, and 3) the weighting factor""" } ,
        "ti_pot":  {"dimension" : "undefined",
                           "size" : 1,
                           "dimension": "energy",
                           'func': self.get_ti_term,
-                          "help": "The correction potential in Takaeshi-Imagda high-order PI expansion.",
-                          "longhelp" : """The correction potential in Takaeshi-Imagda high-order PI expansion.
+                          "help": "The correction potential in Takahashi-Imagda 4th-order PI expansion.",
+                          "longhelp" : """The correction potential in Takahashi-Imagda 4th-order PI expansion.
                              Takes an argument 'atom', which can be either an atom label or index (zero based)
                              to specify which species to find the correction term for. If not specified, all atoms are used.""" } ,
        "isotope_zetatd_4th":  {"dimension" : "undefined",
@@ -1466,7 +1466,7 @@ class Properties(dobject):
    def get_isotope_zetasc_4th (self, alpha="1.0", atom=""):
       """Gives the components  to directly compute the relative probablity of 
          isotope substitution in two different systems/phases. 
-         Includes extra terms needed for Suzuki-Chin high-order reweighing.
+         Includes extra terms needed for Suzuki-Chin 4th-order reweighing.
 
       Args:
          alpha: m'/m the mass ratio
@@ -1614,10 +1614,10 @@ class Properties(dobject):
       return np.asarray([ti, ti2, tiexp]) 
        
    def get_ti_term(self, atom=""):
-      """Calculates the quantum centroid virial kinetic energy estimator.
+      """Calculates the TI correction potential.
 
       Args:
-         atom: If given, specifies the atom to give the kinetic energy
+         atom: If given, specifies the atom to give the TI correction
             for. If not, the system kinetic energy is given.
       """
 
