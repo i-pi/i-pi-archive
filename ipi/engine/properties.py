@@ -468,15 +468,15 @@ class Properties(dobject):
        "ti_weight":  {"dimension" : "undefined",
                           "size" : 3,
                           'func': self.get_ti_correction,
-                          "help": "The weighting factor in Takahashi-Imagda 4th-order PI expansion.",
+                          "help": "The weighting factor in Takahashi-Imada 4th-order PI expansion.",
                           "longhelp" : """The 3 numbers output are 1) the logarithm of the weighting factor -\beta_P \delta H,
                       2) the square of the logarithm, and 3) the weighting factor""" } ,
        "ti_pot":  {"dimension" : "undefined",
                           "size" : 1,
                           "dimension": "energy",
                           'func': self.get_ti_term,
-                          "help": "The correction potential in Takahashi-Imagda 4th-order PI expansion.",
-                          "longhelp" : """The correction potential in Takahashi-Imagda 4th-order PI expansion.
+                          "help": "The correction potential in Takahashi-Imada 4th-order PI expansion.",
+                          "longhelp" : """The correction potential in Takahashi-Imada 4th-order PI expansion.
                              Takes an argument 'atom', which can be either an atom label or index (zero based)
                              to specify which species to find the correction term for. If not specified, all atoms are used.""" } ,
        "isotope_zetatd_4th":  {"dimension" : "undefined",
