@@ -194,16 +194,16 @@ class InputSimulation(Input):
 
 
       # this creates a simulation object which gathers all the little bits
-      #TODO use named arguments since this list is a bit too long...
       import ipi.engine.simulation as esimulation   # import here as otherwise this is the mother of all circular imports...
       rsim = esimulation.Simulation(
-                  self.mode.fetch(),
-                  syslist, fflist,
-                  self.output.fetch(),
-                  self.prng.fetch(),
-                  self.paratemp.fetch(),
-                  self.step.fetch(),
-                  tsteps=self.total_steps.fetch(),
-                  ttime=self.total_time.fetch())
+                  mode = self.mode.fetch(),
+                  syslist = syslist,
+                  fflist = fflist,
+                  outputs = self.output.fetch(),
+                  prng = self.prng.fetch(),
+                  paratemp = self.paratemp.fetch(),
+                  step = self.step.fetch(),
+                  tsteps = self.total_steps.fetch(),
+                  ttime = self.total_time.fetch())
 
       return rsim
