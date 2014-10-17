@@ -537,17 +537,19 @@ class Properties(dobject):
             for. If not, then the simulation temperature.
       """
 
+      if len(self.ensemble.fixatoms)>0:
+         mdof = len(self.ensemble.fixatoms)*3
+         if bead == "" and nm == "":
+            mdof*=self.beads.nbeads            
       if self.ensemble.fixcom:
          if bead == "" and nm == "":
-            mdof = 3
+            mdof += 3
          elif nm != "" and nm == "0":   # the centroid has 100% of the COM removal
-            mdof = 3
+            mdof += 3
          elif nm != "" :
-            mdof = 0
+            mdof += 0
          else:
-            mdof = 3.0/ float(self.beads.nbeads)  # spreads COM removal over the beads
-      else:
-         mdof = 0
+            mdof += 3.0/ float(self.beads.nbeads)  # spreads COM removal over the beads
 
       kemd, ncount = self.get_kinmd(atom, bead, nm, return_count=True)
 
