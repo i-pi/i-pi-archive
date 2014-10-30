@@ -540,7 +540,10 @@ class Properties(dobject):
       if len(self.ensemble.fixatoms)>0:
          mdof = len(self.ensemble.fixatoms)*3
          if bead == "" and nm == "":
-            mdof*=self.beads.nbeads            
+            mdof*=self.beads.nbeads
+      else:
+         mdof = 0
+
       if self.ensemble.fixcom:
          if bead == "" and nm == "":
             mdof += 3
