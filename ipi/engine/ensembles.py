@@ -78,7 +78,7 @@ class Ensemble(dobject):
          effective classical temperature.
    """
 
-   def __init__(self, dt, temp, fixcom=False, eens=0.0):
+   def __init__(self, dt, temp, fixcom=False, eens=0.0, fixatoms=None):
       """Initialises Ensemble.
 
       Args:
@@ -93,6 +93,10 @@ class Ensemble(dobject):
       dset(self, "dt",    depend_value(name='dt',    value=dt))
       dset(self, "eens", depend_value(name='eens', value=eens))
       self.fixcom = fixcom
+      if fixatoms is None: 
+         self.fixatoms = np.zeros(0,int)
+      else:
+         self.fixatoms = fixatoms
 
 
    def bind(self, beads, nm, cell, bforce, prng):
@@ -132,6 +136,7 @@ class Ensemble(dobject):
       dget(self,"econs").add_dependency(dget(self.forces, "pot"))
       dget(self,"econs").add_dependency(dget(self.beads, "vpath"))
       dget(self,"econs").add_dependency(dget(self, "eens"))
+      self.pconstraints() # applies momentum constraints to initial configurations
 
 
    def get_ntemp(self):
@@ -161,6 +166,9 @@ class Ensemble(dobject):
       """
       eham = self.beads.vpath*self.nm.omegan2 + self.nm.kin + self.forces.pot
       return eham + self.eens
+
+   def pconstraints(self):
+      pass      
       
 
 
@@ -181,7 +189,7 @@ class NVEEnsemble(Ensemble):
          potential energy, and the spring potential energy.
    """
 
-   def __init__(self, dt, temp, fixcom=False, eens=0.0):
+   def __init__(self, dt, temp, fixcom=False, eens=0.0, fixatoms=None):
       """Initialises NVEEnsemble.
 
       Args:
@@ -191,9 +199,9 @@ class NVEEnsemble(Ensemble):
             motion will be constrained or not. Defaults to False.
       """
 
-      super(NVEEnsemble,self).__init__(dt=dt,temp=temp, fixcom=fixcom, eens=eens)
+      super(NVEEnsemble,self).__init__(dt=dt,temp=temp, fixcom=fixcom, eens=eens, fixatoms=fixatoms)
 
-   def rmcom(self):
+   def pconstraints(self):
       """This removes the centre of mass contribution to the kinetic energy.
 
       Calculates the centre of mass momenta, then removes the mass weighted
@@ -224,7 +232,16 @@ class NVEEnsemble(Ensemble):
          pcom *= 1.0/(nb*M)
          for i in range(3):
             self.beads.p[:,i:na3:3] -= m*pcom[i]
-
+      if (len(self.fixatoms)>0):
+         for bp in self.beads.p:
+            m = depstrip(self.beads.m)
+            self.eens += 0.5*np.dot(bp[self.fixatoms*3],bp[self.fixatoms*3]/m[self.fixatoms])
+            self.eens += 0.5*np.dot(bp[self.fixatoms*3+1],bp[self.fixatoms*3+1]/m[self.fixatoms])
+            self.eens += 0.5*np.dot(bp[self.fixatoms*3+2],bp[self.fixatoms*3+2]/m[self.fixatoms])
+            bp[self.fixatoms*3]=0.0
+            bp[self.fixatoms*3+1]=0.0
+            bp[self.fixatoms*3+2]=0.0
+               
    def pstep(self):
       """Velocity Verlet momenta propagator."""
 
@@ -240,6 +257,7 @@ class NVEEnsemble(Ensemble):
 
       self.ptime = -time.time()
       self.pstep()
+      self.pconstraints()
       self.ptime += time.time()
 
       self.qtime = -time.time()
@@ -250,12 +268,8 @@ class NVEEnsemble(Ensemble):
 
       self.ptime -= time.time()
       self.pstep()
+      self.pconstraints()
       self.ptime += time.time()
-
-      self.ttime = -time.time()
-      self.rmcom()
-      self.ttime += time.time()
-
 
 class NVTEnsemble(NVEEnsemble):
    """Ensemble object for constant temperature simulations.
@@ -273,7 +287,7 @@ class NVTEnsemble(NVEEnsemble):
          transferred to the thermostat.
    """
 
-   def __init__(self, dt, temp, thermostat=None, fixcom=False, eens=0.0):
+   def __init__(self, dt, temp, thermostat=None, fixcom=False, eens=0.0, fixatoms=None):
       """Initialises NVTEnsemble.
 
       Args:
@@ -285,7 +299,7 @@ class NVTEnsemble(NVEEnsemble):
             motion will be constrained or not. Defaults to False.
       """
 
-      super(NVTEnsemble,self).__init__(dt=dt,temp=temp, fixcom=fixcom, eens=eens)
+      super(NVTEnsemble,self).__init__(dt=dt,temp=temp, fixcom=fixcom, eens=eens, fixatoms=fixatoms)
 
       if thermostat is None:
          self.thermostat = Thermostat()
@@ -314,9 +328,11 @@ class NVTEnsemble(NVEEnsemble):
       """
 
       super(NVTEnsemble,self).bind(beads, nm, cell, bforce, prng)
-      fixdof = None
+      
+      fixdof = len(self.fixatoms)*3*self.beads.nbeads
       if self.fixcom:
-         fixdof = 3
+         fixdof += 3
+      
 
       # first makes sure that the thermostat has the correct temperature, then proceed with binding it.
       deppipe(self,"ntemp", self.thermostat,"temp")
@@ -332,11 +348,12 @@ class NVTEnsemble(NVEEnsemble):
 
       self.ttime = -time.time()
       self.thermostat.step()
-      self.rmcom()
+      self.pconstraints() 
       self.ttime += time.time()
 
       self.ptime = -time.time()
       self.pstep()
+      self.pconstraints()
       self.ptime += time.time()
 
       self.qtime = -time.time()
@@ -346,11 +363,12 @@ class NVTEnsemble(NVEEnsemble):
 
       self.ptime -= time.time()
       self.pstep()
+      self.pconstraints()
       self.ptime += time.time()
 
       self.ttime -= time.time()
       self.thermostat.step()
-      self.rmcom()
+      self.pconstraints()
       self.ttime += time.time()
 
    def get_econs(self):
@@ -380,7 +398,7 @@ class NPTEnsemble(NVTEnsemble):
       pext: External pressure.
    """
 
-   def __init__(self, dt, temp, pext, thermostat=None, barostat=None, fixcom=False, eens=0.0):
+   def __init__(self, dt, temp, pext, thermostat=None, barostat=None, fixcom=False, eens=0.0, fixatoms=None):
       """Initialises NPTEnsemble.
 
       Args:
@@ -395,7 +413,7 @@ class NPTEnsemble(NVTEnsemble):
             motion will be constrained or not. Defaults to False.
       """
 
-      super(NPTEnsemble,self).__init__(dt, temp, thermostat, fixcom=fixcom, eens=eens)
+      super(NPTEnsemble,self).__init__(dt, temp, thermostat, fixcom=fixcom, eens=eens, fixatoms=fixatoms)
       if barostat == None:
          self.barostat = Barostat()
       else:
@@ -439,7 +457,7 @@ class NPTEnsemble(NVTEnsemble):
       deppipe(self,"ntemp", self.barostat, "temp")
       deppipe(self,"dt", self.barostat, "dt")
       deppipe(self,"pext", self.barostat, "pext")
-      dget(self,"econs").add_dependency(dget(self.barostat, "ebaro"))
+      dget(self,"econs").add_dependency(dget(self.barostat, "ebaro"))      
 
    def get_econs(self):
       """Calculates the conserved energy quantity for the constant pressure
@@ -461,12 +479,13 @@ class NPTEnsemble(NVTEnsemble):
 
       self.ttime = -time.time()
       self.thermostat.step()
-      self.barostat.thermostat.step()
-      self.rmcom()
+      self.barostat.thermostat.step()  
+      self.pconstraints()    
       self.ttime += time.time()
 
       self.ptime = -time.time()
       self.barostat.pstep()
+      self.pconstraints()
       self.ptime += time.time()
 
       self.qtime = -time.time()
@@ -476,12 +495,13 @@ class NPTEnsemble(NVTEnsemble):
 
       self.ptime -= time.time()
       self.barostat.pstep()
+      self.pconstraints()
       self.ptime += time.time()
 
       self.ttime -= time.time()
       self.barostat.thermostat.step()
       self.thermostat.step()
-      self.rmcom()
+      self.pconstraints()
       self.ttime += time.time()
 
 
@@ -504,7 +524,7 @@ class NSTEnsemble(NVTEnsemble):
       pext: External pressure.
       """
 
-   def __init__(self, dt, temp, stressext=None, thermostat=None, barostat=None, fixcom=False, eens=0.0):
+   def __init__(self, dt, temp, stressext=None, thermostat=None, barostat=None, fixcom=False, eens=0.0, fixatoms=None):
       """Initialises NSTEnsemble.
 
          Args:
@@ -519,7 +539,7 @@ class NSTEnsemble(NVTEnsemble):
          motion will be constrained or not. Defaults to False.
          """
 
-      super(NSTEnsemble,self).__init__(dt, temp, thermostat, fixcom=fixcom, eens=eens)
+      super(NSTEnsemble,self).__init__(dt, temp, thermostat, fixcom=fixcom, eens=eens, fixatoms=fixatoms)
       if barostat == None:
          self.barostat = Barostat()
       else:
@@ -587,12 +607,13 @@ class NSTEnsemble(NVTEnsemble):
 
       self.ttime = -time.time()
       self.thermostat.step()
-      self.barostat.thermostat.step()
-      self.rmcom()
+      self.barostat.thermostat.step()     
+      self.pconstraints() 
       self.ttime += time.time()
 
       self.ptime = -time.time()
       self.barostat.pstep()
+      self.pconstraints()
       self.ptime += time.time()
 
       self.qtime = -time.time()
@@ -602,12 +623,13 @@ class NSTEnsemble(NVTEnsemble):
 
       self.ptime -= time.time()
       self.barostat.pstep()
+      self.pconstraints()
       self.ptime += time.time()
 
       self.ttime -= time.time()
       self.barostat.thermostat.step()
       self.thermostat.step()
-      self.rmcom()
+      self.pconstraints()
       self.ttime += time.time()
 
 class ReplayEnsemble(Ensemble):
@@ -628,7 +650,7 @@ class ReplayEnsemble(Ensemble):
          potential energy, and the spring potential energy.
    """
 
-   def __init__(self, dt, temp, fixcom=False, eens=0.0, intraj=None):
+   def __init__(self, dt, temp, fixcom=False, eens=0.0, intraj=None, fixatoms=None):
       """Initialises ReplayEnsemble.
 
       Args:
@@ -639,7 +661,7 @@ class ReplayEnsemble(Ensemble):
          intraj: The input trajectory file.
       """
 
-      super(ReplayEnsemble,self).__init__(dt=dt,temp=temp,fixcom=fixcom, eens=eens)
+      super(ReplayEnsemble,self).__init__(dt=dt,temp=temp,fixcom=fixcom, eens=eens, fixatoms=fixatoms)
       if intraj == None:
          raise ValueError("Must provide an initialized InitFile object to read trajectory from")
       self.intraj = intraj
