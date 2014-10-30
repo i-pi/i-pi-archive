@@ -354,8 +354,6 @@ class InterfaceSocket(object):
          before updating the client list.
       timeout: A float giving a timeout limit for considering a calculation dead
          and dropping the connection.
-      dopbc: A boolean which decides whether or not to fold the bead positions
-         back into the unit cell before passing them to the client code.
       server: The socket used for data transmition.
       clients: A list of the driver clients connected to the server.
       requests: A list of all the jobs required in the current PIMD step.
@@ -384,8 +382,6 @@ class InterfaceSocket(object):
             wait before updating the client list. Defaults to 1e-3.
          timeout: Length of time waiting for data from a client before we assume
             the connection is dead and disconnect the client.
-         dopbc: A boolean which decides whether or not to fold the bead positions
-            back into the unit cell before passing them to the client code.
 
       Raises:
          NameError: Raised if mode is not 'unix' or 'inet'.
