@@ -565,9 +565,12 @@ class InterfaceSocket(object):
       # flush it all down the drain
       self.clients = []
       self.jobs = []
-
-      self.server.shutdown(socket.SHUT_RDWR)
-      self.server.close()
+ 
+      try:
+         self.server.shutdown(socket.SHUT_RDWR)
+         self.server.close()
+      except:
+         info(" @SOCKET: Problem shutting down the server socket. Will just continue and hope for the best.", verbosity.low)
       if self.mode == "unix":
          os.unlink("/tmp/ipi_" + self.address)
 
