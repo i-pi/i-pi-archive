@@ -1,9 +1,4 @@
 <simulation>
-   <initialize nbeads='8'>
-      <file mode='chk'> restart.chk  </file>
-      <cell mode='manual' units="angstrom"> [ 51.8,0,0,0, 49.84,0,0,0, 200 ] </cell> 
-      <velocities mode='thermal' units='kelvin'> 300 </velocities>
-   </initialize>
    <output prefix='graph'>
       <properties stride='5' filename='out' flush="10" >  [ step, time{picosecond}, conserved{kelvin}, temperature{kelvin}, kinetic_cv{kelvin}, potential{kelvin}, pressure_cv{megapascal}] </properties>
       <properties stride='5' filename='iso' flush="10" >  [ isotope_tdfep(1.167;C), isotope_scfep(1.167;0) ] </properties>
@@ -16,11 +11,16 @@
    <total_steps>1000000</total_steps>
    <total_time>128000</total_time>
    <prng><seed>8417</seed></prng>
-   <forces>
-      <socket mode="unix">
+      <ffsocket mode="unix" name="graphene">
          <address>graphene</address>
-      </socket>
-   </forces>
+      </ffsocket>
+<system>
+   <initialize nbeads='8'>
+      <file mode='chk'> restart.chk  </file>
+      <cell mode='manual' units="angstrom"> [ 51.8,0,0,0, 49.84,0,0,0, 200 ] </cell>
+      <velocities mode='thermal' units='kelvin'> 300 </velocities>
+   </initialize>
+   <forces><force> graphene </force></forces>
    <ensemble mode='nvt'>
   <thermostat mode='gle'>
     <A shape='(5,5)'>
@@ -36,4 +36,5 @@
       <timestep units="femtosecond">1.0</timestep>
       <temperature units='kelvin'>300</temperature>
    </ensemble>
+</system>
 </simulation>

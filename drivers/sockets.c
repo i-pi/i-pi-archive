@@ -44,11 +44,7 @@ Functions:
 #include <sys/un.h>
 #include <netdb.h>
 
-void error(const char *msg)
-// Prints an error message and then exits.
-{   perror(msg);  exit(-1);   }
-
-void open_socket_(int *psockfd, int* inet, int* port, char* host)
+void open_socket(int *psockfd, int* inet, int* port, const char* host)
 /* Opens a socket.
 
 Note that fortran passes an extra argument for the string length, but this is
@@ -66,10 +62,10 @@ Args:
 
 {
    int sockfd, ai_err;
-   
+
    if (*inet>0)
    {  // creates an internet socket
-
+      
       // fetches information on the host      
       struct addrinfo hints, *res;  
       char service[256];
@@ -81,38 +77,41 @@ Args:
 
       sprintf(service,"%d",*port); // convert the port number to a string
       ai_err = getaddrinfo(host, service, &hints, &res); 
-      if (ai_err!=0) error("Error fetching host data. Wrong host name?");
+      if (ai_err!=0) { perror("Error fetching host data. Wrong host name?"); exit(-1); }
 
       // creates socket
       sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-      if (sockfd < 0)  error("Error opening socket");
+      if (sockfd < 0) { perror("Error opening socket"); exit(-1); }
     
       // makes connection
-      if (connect(sockfd, res->ai_addr, res->ai_addrlen) < 0) error("Error opening INET socket: wrong port or server unreachable");
+      if (connect(sockfd, res->ai_addr, res->ai_addrlen) < 0) 
+      { perror("Error opening INET socket: wrong port or server unreachable"); exit(-1); }
       freeaddrinfo(res);
    }
    else
-   {  // creates a unix socket
-      struct sockaddr_un serv_addr;    
+   {  
+      struct sockaddr_un serv_addr;
 
       // fills up details of the socket addres
       memset(&serv_addr, 0, sizeof(serv_addr));
       serv_addr.sun_family = AF_UNIX;
       strcpy(serv_addr.sun_path, "/tmp/ipi_");
       strcpy(serv_addr.sun_path+9, host);
+      // creates a unix socket
   
       // creates the socket
       sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
 
       // connects
-      if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) error("Error opening UNIX socket: path unavailable, or already existing");
+      if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) 
+      { perror("Error opening UNIX socket: path unavailable, or already existing"); exit(-1); }
    }
 
 
    *psockfd=sockfd;
 }
 
-void writebuffer_(int *psockfd, char *data, int* plen)
+void writebuffer(int *psockfd, const char *data, int* plen)
 /* Writes to a socket.
 
 Args:
@@ -127,11 +126,11 @@ Args:
    int len=*plen;
 
    n = write(sockfd,data,len);
-   if (n < 0) error("Error writing to socket: server has quit or connection broke");
+   if (n < 0) { perror("Error writing to socket: server has quit or connection broke"); exit(-1); }
 }
 
 
-void readbuffer_(int *psockfd, char *data, int* plen)
+void readbuffer(int *psockfd, char *data, int* plen)
 /* Reads from a socket.
 
 Args:
@@ -150,7 +149,7 @@ Args:
    while (nr>0 && n<len )
    {  nr=read(sockfd,&data[n],len-n); n+=nr; }
 
-   if (n == 0) error("Error reading from socket: server has quit or connection broke");
+   if (n == 0) { perror("Error reading from socket: server has quit or connection broke"); exit(-1); }
 }
 
 

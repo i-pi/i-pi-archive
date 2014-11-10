@@ -3,14 +3,18 @@
  * This gives an example of Neon with a Lennard-Jones potential 
    pair potential, which can be compared to the following data:
 
-   - low_density: Loup Verlet, Phys. Rev. 159, 1, (1967)
+   - low_density: Loup Verlet, Phys. Rev. 159, 98, (1967)
            State point (N, rho, T) = (864, 0.35, 1.620)
-   - mid_density: Loup Verlet, Phys. Rev. 159, 1, (1967)
+   - mid_density: Loup Verlet, Phys. Rev. 159, 98, (1967)
            State point (N, rho, T) = (864, 0.75, 1.069)
-   - high_density: Loup Verlet, Phys. Rev. 159, 1, (1967)
+   - high_density: Loup Verlet, Phys. Rev. 159, 98, (1967)
            State point (N, rho, T) = (864, 0.88, 1.095)
+   - nst: Constant stress example for high density 
+          (rho=0.88) and low temperature (T=0.54305 in reduced units
+          or 20K) - produces a solid, in agreement with Verlet, 
+          PR 159, 98 (1967)
 
-   Note that the last one appears to illustrate a typo in the paper, since
+   Note that the "high_density" case appears to illustrate a typo in the paper, since
    the potental energy as found by this wrapper and by the LAMMPS MD code
    are both -5.86 rather than -5.66 as reported in the original paper.
 

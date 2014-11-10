@@ -105,16 +105,12 @@ class Status:
 class DriverSocket(socket.socket):
    """Deals with communication between the client and driver code.
 
-   Deals with sending and receiving the data from the driver code. Keeps track
-   of the status of the driver. Initialises the driver forcefield, sends the
-   position and cell data, and receives the force data.
+   Deals with sending and receiving the data between the client and the driver
+   code. This class holds common functions which are used in the driver code,
+   but can also be used to directly implement a python client.
 
    Attributes:
-      _buf: A string buffer to hold the reply from the driver.
-      waitstatus: Boolean giving whether the driver is waiting to get a status answer.
-      status: Keeps track of the status of the driver.
-      lastreq: The ID of the last request processed by the client.
-      locked: Flag to mark if the client has been working consistently on one image.
+      _buf: A string buffer to hold the reply from the other connection.
    """
 
    def __init__(self, socket):
@@ -126,56 +122,26 @@ class DriverSocket(socket.socket):
 
       super(DriverSocket,self).__init__(_sock=socket)
       self._buf = np.zeros(0,np.byte)
-      self.peername = self.getpeername()
-      self.waitstatus = False
-      self.status = Status.Up
-      self.lastreq = None
-      self.locked = False
-
-   def poll(self):
-      """Waits for driver status."""
-
-      self.status = Status.Disconnected  # sets disconnected as failsafe status, in case _getstatus fails and exceptions are ignored upstream
-      self.status = self._getstatus()
-
-   def _getstatus(self):
-      """Gets driver status.
-
-      Returns:
-         An integer labelling the status via bitwise or of the relevant members
-         of Status.
-      """
-
-
-      if not self.waitstatus:
-         try:
-            readable, writable, errored = select.select([], [self], [])
-            if self in writable:
-               self.sendall(Message("status"))
-               self.waitstatus = True
-         except:
-            return Status.Disconnected
-
-      try:
-         reply = self.recv(HDRLEN)
-         self.waitstatus = False # got some kind of reply
-      except socket.timeout:
-         warning(" @SOCKET:   Timeout in status recv!", verbosity.debug )
-         return Status.Up | Status.Busy | Status.Timeout
-      except:
-         return Status.Disconnected
-
-      if not len(reply) == HDRLEN:
-         return Status.Disconnected
-      elif reply == Message("ready"):
-         return Status.Up | Status.Ready
-      elif reply == Message("needinit"):
-         return Status.Up | Status.NeedsInit
-      elif reply == Message("havedata"):
-         return Status.Up | Status.HasData
+      if socket:
+         self.peername = self.getpeername()
       else:
-         warning(" @SOCKET:    Unrecognized reply: " + str(reply), verbosity.low )
-         return Status.Up
+         self.peername = "no_socket"
+
+   def send_msg(self, msg):
+      """Send the next message through the socket.
+
+      Args:
+         msg: The message to send through the socket.
+      """
+      return self.sendall(Message(msg))
+
+   def recv_msg(self, l=HDRLEN):
+      """Get the next message send through the socket.
+
+      Args:
+         l: Length of the accepted message. Defaults to HDRLEN.
+      """
+      return self.recv(l)
 
    def recvall(self, dest):
       """Gets the potential energy, force and virial from the driver.
@@ -235,6 +201,170 @@ class DriverSocket(socket.socket):
          return np.fromstring(self._buf[0:blen], dest.dtype)[0]
       else:
          return np.fromstring(self._buf[0:blen], dest.dtype).reshape(dest.shape)
+
+
+class Client(DriverSocket):
+   """Deals as starting point for implementing a clien in python.
+
+   Deals with sending and receiving the data from the client code.
+
+   Attributes:
+      havedata: Boolean giving whether the client calculated the forces.
+   """
+
+   def __init__(self, address="localhost", port=31415, mode="unix", _socket=True):
+      """Initialises Driver.
+
+      Args:
+         - socket: If a socket should be opened. Can be False for testing purposes.
+         - address: A string giving the name of the host network.
+         - port: An integer giving the port the socket will be using.
+         - mode: A string giving the type of socket used.
+      """
+      if _socket:
+         # open client socket
+         if mode == "inet":
+            _socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            _socket.connect((address, int(port)))
+         elif mode == "unix":
+            _socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            _socket.connect("/tmp/ipi_" + address)
+         else:
+               raise NameError("Interface mode " + mode + " is not implemented (should be unix/inet)")
+         super(Client,self).__init__(socket=_socket)
+      else:
+         super(Client,self).__init__(socket=None)
+      self.havedata = False
+      self.vir = np.zeros((3,3),np.float64)
+      self.cellh = np.zeros((3,3),np.float64)
+      self.cellih = np.zeros((3,3),np.float64)
+      self.nat = np.int32()
+      self.callback = None
+
+
+   def _getforce(self):
+      """Dummy _getforce routine.
+
+      This function must be implemented by subclassing or providing a callback function.
+      This function is assumed to calculate the following:
+         - self._force: The force of the current positions at self._positions.
+         - self._potential: The potential of the current positions at self._positions.
+      """
+      if self.callback is not None:
+         self._force, self._potential = self.callback(self._positions)
+      else:
+         raise NotImplementedError("_getforce must be implemented by providing a self.callback function or overwritten.")
+
+
+   def run(self):
+      """Serve forces until asked to finish.
+
+      Serve force and potential, that are calculated in the user provided
+      routine _getforce.
+      """
+      while 1:
+         msg = self.recv_msg()
+         if msg == "":
+            if self.verb > verbosity.Quiet:
+               print " @CLIENT: Shutting down."
+            break
+         elif msg == Message("status"):
+            if self.havedata:
+               self.send_msg("havedata")
+            else:
+               self.send_msg("ready")
+         elif msg == Message("posdata"):
+            self.cellh = self.recvall(self.cellh)
+            self.cellih = self.recvall(self.cellih)
+            self.nat = self.recvall(self.nat)
+            self._positions = np.zeros((self.nat,3),np.float64)
+            self._positions = self.recvall(self._positions)
+            self._getforce()
+            self.havedata = True
+         elif msg == Message("getforce"):
+            self.sendall(Message("forceready"))
+            self.sendall(self._potential, 8)
+            self.sendall(self.nat, 4)
+            self.sendall(self._force, len(self._force)*8)
+            self.sendall(self.vir, 9*8)
+            self.sendall(np.int32(0), 4)
+            self.havedata=False
+         else:
+            print >>sys.stderr, " @CLIENT: Couldn't understand command:", msg
+            break
+
+
+class Driver(DriverSocket):
+   """Deals with communication between the client and driver code.
+
+   Deals with sending and receiving the data from the driver code. Keeps track
+   of the status of the driver. Initialises the driver forcefield, sends the
+   position and cell data, and receives the force data.
+
+   Attributes:
+      waitstatus: Boolean giving whether the driver is waiting to get a status answer.
+      status: Keeps track of the status of the driver.
+      lastreq: The ID of the last request processed by the client.
+      locked: Flag to mark if the client has been working consistently on one image.
+   """
+
+   def __init__(self, socket):
+      """Initialises Driver.
+
+      Args:
+         socket: A socket through which the communication should be done.
+      """
+
+      super(Driver,self).__init__(socket=socket)
+      self.waitstatus = False
+      self.status = Status.Up
+      self.lastreq = None
+      self.locked = False
+
+   def poll(self):
+      """Waits for driver status."""
+
+      self.status = Status.Disconnected  # sets disconnected as failsafe status, in case _getstatus fails and exceptions are ignored upstream
+      self.status = self._getstatus()
+
+   def _getstatus(self):
+      """Gets driver status.
+
+      Returns:
+         An integer labelling the status via bitwise or of the relevant members
+         of Status.
+      """
+
+
+      if not self.waitstatus:
+         try:
+            readable, writable, errored = select.select([], [self], [])
+            if self in writable:
+               self.sendall(Message("status"))
+               self.waitstatus = True
+         except:
+            return Status.Disconnected
+
+      try:
+         reply = self.recv(HDRLEN)
+         self.waitstatus = False # got some kind of reply
+      except socket.timeout:
+         warning(" @SOCKET:   Timeout in status recv!", verbosity.debug )
+         return Status.Up | Status.Busy | Status.Timeout
+      except:
+         return Status.Disconnected
+
+      if not len(reply) == HDRLEN:
+         return Status.Disconnected
+      elif reply == Message("ready"):
+         return Status.Up | Status.Ready
+      elif reply == Message("needinit"):
+         return Status.Up | Status.NeedsInit
+      elif reply == Message("havedata"):
+         return Status.Up | Status.HasData
+      else:
+         warning(" @SOCKET:    Unrecognized reply: " + str(reply), verbosity.low )
+         return Status.Up
 
    def initialize(self, rid, pars):
       """Sends the initialisation string to the driver.
@@ -300,7 +430,7 @@ class DriverSocket(socket.socket):
          reply = ""
          while True:
             try:
-               reply = self.recv(HDRLEN)
+               reply = self.recv_msg()
             except socket.timeout:
                warning(" @SOCKET:   Timeout in getforce, trying again!", verbosity.low)
                continue
@@ -354,8 +484,6 @@ class InterfaceSocket(object):
          before updating the client list.
       timeout: A float giving a timeout limit for considering a calculation dead
          and dropping the connection.
-      dopbc: A boolean which decides whether or not to fold the bead positions
-         back into the unit cell before passing them to the client code.
       server: The socket used for data transmition.
       clients: A list of the driver clients connected to the server.
       requests: A list of all the jobs required in the current PIMD step.
@@ -384,8 +512,6 @@ class InterfaceSocket(object):
             wait before updating the client list. Defaults to 1e-3.
          timeout: Length of time waiting for data from a client before we assume
             the connection is dead and disconnect the client.
-         dopbc: A boolean which decides whether or not to fold the bead positions
-            back into the unit cell before passing them to the client code.
 
       Raises:
          NameError: Raised if mode is not 'unix' or 'inet'.
@@ -439,9 +565,12 @@ class InterfaceSocket(object):
       # flush it all down the drain
       self.clients = []
       self.jobs = []
-
-      self.server.shutdown(socket.SHUT_RDWR)
-      self.server.close()
+ 
+      try:
+         self.server.shutdown(socket.SHUT_RDWR)
+         self.server.close()
+      except:
+         info(" @SOCKET: Problem shutting down the server socket. Will just continue and hope for the best.", verbosity.low)
       if self.mode == "unix":
          os.unlink("/tmp/ipi_" + self.address)
 
@@ -483,7 +612,7 @@ class InterfaceSocket(object):
          if self.server in readable:
             client, address = self.server.accept()
             client.settimeout(TIMEOUT)
-            driver = DriverSocket(client)
+            driver = Driver(client)
             info(" @SOCKET:   Client asked for connection from "+ str( address ) +". Now hand-shaking.", verbosity.low)
             driver.poll()
             if (driver.status | Status.Up):
