@@ -441,7 +441,7 @@ class Properties(dobject):
       "isotope_zetatd":  {"dimension" : "undefined",
                           "size" : 3,
                           'func': self.get_isotope_zetatd,
-                          "help": "Isotope fractionation estimator in the form of ratios of partition functions.",
+                          "help": "Thermodynamic isotope fractionation direct estimator in the form of ratios of partition functions.",
                           "longhelp" : """Returns the (many) terms needed to directly compute the relative probablity of 
                       isotope substitution in two different systems/phases. Takes two arguments, 'alpha' , which gives the
                       scaled mass parameter and default to '1.0', and 'atom', which is the label or index of a type of atoms. 
@@ -451,14 +451,13 @@ class Properties(dobject):
        "isotope_zetasc":  {"dimension" : "undefined",
                           "size" : 3,
                           'func': self.get_isotope_zetasc,
-                          "help": "Isotope fractionation estimator in the form of ratios of partition functions.",
+                          "help": "Scaled-coordinates isotope fractionation direct estimator in the form of ratios of partition functions.",
                           "longhelp" : """Returns the (many) terms needed to directly compute the relative probablity of 
                       isotope substitution in two different systems/phases. Takes four arguments, 'alpha' , which gives the
                       scaled mass parameter and default to '1.0', and 'atom', which is the label or index of a type of atoms. 
-                      The other two arguments control the starting point and the frequency of the data taking.
                       The 3 numbers output are 1) the average over the excess potential energy for scaled coordinates <sc>,
-                      2) the average of the squares of the excess spring energy <sc**2>, and 3) the average of the exponential 
-                      of excess spring energy <exp(-beta*sc)>""" },
+                      2) the average of the squares of the excess potential energy <sc**2>, and 3) the average of the exponential 
+                      of excess potential energy <exp(-beta*sc)>""" },
        "chin_weight":  {"dimension" : "undefined",
                           "size" : 3,
                           'func': self.get_chin_correction,
@@ -482,24 +481,23 @@ class Properties(dobject):
        "isotope_zetatd_4th":  {"dimension" : "undefined",
                           "size" : 5,
                           'func': self.get_isotope_zetatd_4th,
-                          "help": "Isotope fractionation estimator in the form of ratios of partition functions.",
-                          "longhelp" : """XXXX MUST UPDATE XXXX Returns the (many) terms needed to directly compute the relative probablity of 
-                      isotope substitution in two different systems/phases. Takes two arguments, 'alpha' , which gives the
-                      scaled mass parameter and default to '1.0', and 'atom', which is the label or index of a type of atoms. 
-                      The 3 numbers output are 1) the average over the excess spring energy for an isotope atom substitution <spr>,
+                          "help": "4th order thermodynamic isotope fractionation direct estimator in the form of ratios of partition functions.",
+                          "longhelp" : """Returns the (many) terms needed to compute the thermodynamic fourth-order direct estimator. 
+					  Takes two arguments, 'alpha' , which gives the scaled mass parameter and default to '1.0', and 'atom', 
+					  which is the label or index of a type of atoms. 
+                      The 5 numbers output are 1) the average over the excess spring energy for an isotope atom substitution <spr>,
                       2) the average of the squares of the excess spring energy <spr**2>, and 3) the average of the exponential 
-                      of excess spring energy <exp(-beta*spr)>""" },
+                      of excess spring energy <exp(-beta*spr)>, and 4-5) Suzuki-Chin and Takahashi-Imada 4th-order reweighing term""" },
        "isotope_zetasc_4th":  {"dimension" : "undefined",
                           "size" : 5,
                           'func': self.get_isotope_zetasc_4th,
-                          "help": "Isotope fractionation estimator in the form of ratios of partition functions.",
-                          "longhelp" : """XXXX MUST UPDATE XXXX Returns the (many) terms needed to directly compute the relative probablity of 
-                      isotope substitution in two different systems/phases. Takes four arguments, 'alpha' , which gives the
-                      scaled mass parameter and default to '1.0', and 'atom', which is the label or index of a type of atoms. 
-                      The other two arguments control the starting point and the frequency of the data taking.
-                      The 3 numbers output are 1) the average over the excess potential energy for scaled coordinates <sc>,
-                      2) the average of the squares of the excess spring energy <sc**2>, and 3) the average of the exponential 
-                      of excess spring energy <exp(-beta*sc)>""" }
+                          "help": "4th order scaled-coordinates isotope fractionation direct estimator in the form of ratios of partition functions.",
+                          "longhelp" : """Returns the (many) terms needed to compute the scaled-coordinates fourth-order direct estimator. 
+					  Takes two arguments, 'alpha' , which gives the scaled mass parameter and default to '1.0', and 'atom', 
+					  which is the label or index of a type of atoms. 
+                      The 5 numbers output are 1) the average over the excess potential energy for an isotope atom substitution <sc>,
+                      2) the average of the squares of the excess potential energy <sc**2>, and 3) the average of the exponential 
+                      of excess potential energy <exp(-beta*sc)>, and 4-5) Suzuki-Chin and Takahashi-Imada 4th-order reweighing term""" }
        
       }
 
@@ -1369,7 +1367,7 @@ class Properties(dobject):
                       
          sc = self.dforces.pot - v0         
          sc2 = sc*sc
-         scexp = np.exp(-betaP*sc) # 
+         scexp = np.exp(-betaP*sc) 
          
          scsum += sc
          sc2sum += sc2
@@ -1382,17 +1380,20 @@ class Properties(dobject):
       return np.asarray([scsum/ni, sc2sum/ni, scexpsum/ni])
       
    def get_isotope_zetatd_4th (self, alpha="1.0", atom=""):
-      """Gives the components  to directly compute the relative probablity of 
-         isotope substitution in two different systems/phases.
+      """Gives the components to directly compute the relative probablity of 
+         isotope substitution in two different systems/phases. 
+         Includes extra terms needed for Suzuki-Chin and Takahashi-Imada
+         4th-order reweighing.
 
       Args:
          alpha: m'/m the mass ratio
          atom: the label or index of the atom to compute the isotope fractionation pair for
 
       Returns:
-         a tuple from which one can reconstruct all that is needed to
-         compute the relative probability of isotope substitution:
+         a tuple that contains terms for the computation of isotope fractionation:
          (spraverage, spr2average, sprexpaverage)
+         and re-weighting terms for higher-order correction
+          (ti_weight, chin_weight)
       """
 
       try:
@@ -1471,17 +1472,18 @@ class Properties(dobject):
    def get_isotope_zetasc_4th (self, alpha="1.0", atom=""):
       """Gives the components  to directly compute the relative probablity of 
          isotope substitution in two different systems/phases. 
-         Includes extra terms needed for Suzuki-Chin 4th-order reweighing.
+         Includes extra terms needed for Suzuki-Chin and Takahashi-Imada
+         4th-order reweighing.
 
       Args:
          alpha: m'/m the mass ratio
          atom: the label or index of the atom to compute the isotope fractionation pair for
 
       Returns:
-         a tuple from which one can reconstruct all that is needed to
-         compute the relative probability of isotope substitution using
-         scaled coordinates:
-         (yamaaverage, yama2average, yamaexpaverage)
+         a tuple that contains terms for the computation of isotope fractionation:
+         (scaverage, sc2average, scexpaverage)
+         and re-weighting terms for higher-order correction
+         (ti_weight, chin_weight)
       """
       
       try:
@@ -1547,16 +1549,15 @@ class Properties(dobject):
          for b in range(0,self.beads.nbeads,2):
 		      chin +=  ((-dpots[b]+dpots[b+1]) - (-pots[b]+pots[b+1]) )/3.0
          
+         # Takahashi-Imada correction
          ti=0.0
          for b in range(self.beads.nbeads):
              for j in range(3*i,3*(i+1)):
 				    ti += (df[b,j]**2/alpha - f[b,j]**2)         
          ti *= 1.0/self.beads.m[i] *(1.0/24.0)/self.nm.omegan2
                            
-         #print "potentials", v0, self.dforces.pot
-         #print i, -betaP*sc, -betaP*chin
          sc2 = sc*sc
-         scexp = np.exp(-betaP*sc) # 
+         scexp = np.exp(-betaP*sc) 
          chinexp = np.exp(-betaP*(sc+chin))
          tiexp = np.exp(-betaP*(sc+ti))
          
@@ -1716,12 +1717,12 @@ class Trajectories(dobject):
                              out one file per bead, unless the bead attribute is set by the user.""",
                      'func': (lambda : self.system.forces.extras)},
       "isotope_zetatd":  {"dimension" : "undefined",
-                          "help": """Isotope fractionation estimator in the form of ratios of partition functions. Takes two arguments, 'alpha' , which gives the
+                          "help": """Thermodynamic isotope fractionation direct estimator in the form of ratios of partition functions. Takes two arguments, 'alpha' , which gives the
                       scaled mass parameter and default to '1.0', and 'atom', which is the label or index of a type of atoms. All the atoms but the selected ones
                       will have zero output""",      					
                           'func': self.get_isotope_zetatd},
       "isotope_zetasc":  {"dimension" : "undefined",
-                          "help": """Isotope fractionation estimator in the form of ratios of partition functions. Takes two arguments, 'alpha' , which gives the
+                          "help": """Scaled-coordinates isotope fractionation direct estimator in the form of ratios of partition functions. Takes two arguments, 'alpha' , which gives the
                       scaled mass parameter and default to '1.0', and 'atom', which is the label or index of a type of atoms. All the atoms but the selected ones
                       will have zero output""",
                           'func': self.get_isotope_zetasc}  
@@ -1794,11 +1795,11 @@ class Trajectories(dobject):
       return np.sqrt(rg/float(nb))
       
    def get_isotope_zetatd (self, alpha="1.0", atom=""):
-      """Get the zeta-TD estimator for each atom. 
+      """Get the thermodynamic isotope ratio direct estimator for each atom. 
       output format:
-      column 1: h
-      column 2: h**2
-      column 3: zetatd
+      column 1: exponent of the direct estimator
+      column 2: square of the exponent
+      column 3: td estimator
 
       Args:
          alpha: m'/m the mass ratio
@@ -1841,8 +1842,13 @@ class Trajectories(dobject):
       return zetatd.reshape(nat*3)
 
    def get_isotope_zetasc (self, alpha="1.0", atom=""):
-      """Get the zeta-SC estimator for each atom.
-
+      """Get the scaled-coordinates isotope ratio direct estimator for each atom.
+      
+      output format:
+      column 1: exponent of the direct estimator
+      column 2: square of the exponent
+      column 3: sc estimator
+      
       Args:
          alpha: m'/m the mass ratio
       """
