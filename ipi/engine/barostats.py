@@ -417,6 +417,10 @@ class BaroRGB(Barostat):
                                  func=(lambda:np.asarray([self.tau**2*self.beads.natoms*Constants.kb*self.temp])),
                                  dependencies=[ dget(self,"tau"), dget(self,"temp") ] ))
 
+      dset(self,"m6", depend_array(name='m6', value=np.zeros(6,float),
+                                 func=(lambda:np.asarray([1,1,1,1,1,1])*self.m[0]),
+                                 dependencies=[ dget(self,"m")] ))
+                                 
       # overrides definition of pot to depend on the many things it depends on for anisotropic cell
       dset(self,"pot",
          depend_value(name='pot', func=self.get_pot,
@@ -424,7 +428,8 @@ class BaroRGB(Barostat):
                dget(self.h0,"V"), dget(self.h0,"ih"), dget(self,"stressext") ]))
 
       # binds the thermostat to the piston degrees of freedom
-      self.thermostat.bind(pm=[ self.p6, self.m ], prng=prng)
+      self.thermostat.bind(pm=[ self.p6, self.m6], prng=prng)
+      
       dset(self,"kin",depend_value(name='kin',
             func=(lambda:0.5*np.trace(np.dot(self.p.T,self.p))/self.m[0]),
             dependencies= [dget(self,"p"), dget(self,"m")] ) )

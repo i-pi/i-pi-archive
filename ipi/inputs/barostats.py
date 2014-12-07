@@ -112,7 +112,10 @@ class InputBaro(Input):
       elif self.mode.fetch() == "anisotropic":
          baro = BaroRGB(thermostat=self.thermostat.fetch(), tau=self.tau.fetch())
          if self.p._explicit: baro.p = self.p.fetch()
-         if self.h0._explicit: baro.h0 = self.h0.fetch()
+         if self.h0._explicit: 
+            baro.h0 = self.h0.fetch()
+         else:
+            raise ValueError("Reference cell MUST be specified for an anisotropic barostat")
       elif self.mode.fetch() == "dummy":
          baro = Barostat(thermostat=self.thermostat.fetch(), tau=self.tau.fetch())
       else:

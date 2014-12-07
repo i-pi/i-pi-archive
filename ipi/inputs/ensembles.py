@@ -91,6 +91,9 @@ class InputEnsemble(Input):
            "fixcom": (InputValue, {"dtype"           : bool,
                                    "default"         : True,
                                    "help"            : "This describes whether the centre of mass of the particles is fixed."}),
+           "fixatoms" : (InputArray, {"dtype"        : int,
+                                    "default"      : np.zeros(0,int),
+                                    "help"         : "Indices of the atmoms that should be held fixed."}),
            "replay_file": (InputInitFile, {"default" : input_default(factory=ipi.engine.initializer.InitBase),
                            "help"            : "This describes the location to read a trajectory file from."})
          }
@@ -131,6 +134,7 @@ class InputEnsemble(Input):
       if tens > 1:
          self.thermostat.store(ens.thermostat)
          self.fixcom.store(ens.fixcom)
+         self.fixatoms.store(ens.fixatoms)
          self.eens.store(ens.eens)
       if tens == 3:
          self.barostat.store(ens.barostat)
@@ -151,22 +155,22 @@ class InputEnsemble(Input):
 
       if self.mode.fetch() == "nve" :
          ens = NVEEnsemble(dt=self.timestep.fetch(),
-            temp=self.temperature.fetch(), fixcom=self.fixcom.fetch(), eens=self.eens.fetch())
+            temp=self.temperature.fetch(), fixcom=self.fixcom.fetch(), eens=self.eens.fetch(), fixatoms=self.fixatoms.fetch())
       elif self.mode.fetch() == "nvt" :
          ens = NVTEnsemble(dt=self.timestep.fetch(),
-            temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), fixcom=self.fixcom.fetch(), eens=self.eens.fetch())
+            temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), fixcom=self.fixcom.fetch(), eens=self.eens.fetch(), fixatoms=self.fixatoms.fetch())
       elif self.mode.fetch() == "npt" :
          ens = NPTEnsemble(dt=self.timestep.fetch(),
-            temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), fixcom=self.fixcom.fetch(), eens=self.eens.fetch(),
+            temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), fixcom=self.fixcom.fetch(), eens=self.eens.fetch(), fixatoms=self.fixatoms.fetch(),
                   pext=self.pressure.fetch(), barostat=self.barostat.fetch() )
       elif self.mode.fetch() == "nst" :
          ens = NSTEnsemble(dt=self.timestep.fetch(),
-                           temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), fixcom=self.fixcom.fetch(), eens=self.eens.fetch(),
+                           temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), fixcom=self.fixcom.fetch(), eens=self.eens.fetch(), fixatoms=self.fixatoms.fetch(),
                            stressext=self.stress.fetch().reshape((3,3)), # casts into a 3x3 tensor
                            barostat=self.barostat.fetch() )
       elif self.mode.fetch() == "replay":
          ens = ReplayEnsemble(dt=self.timestep.fetch(),
-            temp=self.temperature.fetch(),fixcom=False, eens=self.eens.fetch() ,intraj=self.replay_file.fetch() )
+            temp=self.temperature.fetch(),fixcom=False, eens=self.eens.fetch(), fixatoms=None, intraj=self.replay_file.fetch() )
       else:
          raise ValueError("'" + self.mode.fetch() + "' is not a supported ensemble mode.")
 

@@ -19,10 +19,6 @@ Note that this will only run if you have Python version 2.5 or later.
 Otherwise, replace all the with statements with f = filestream.
 """
 
-import sys
-sys.path.append("../")
-sys.path.append("../../")
-
 import filecmp
 import os, sys
 import numpy as np

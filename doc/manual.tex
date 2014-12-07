@@ -1103,6 +1103,17 @@ through a login node (see section~\ref{distrib} for more details).
 
 \label{tests}
 
+\subsection{test the installation with `nose`}
+
+There are several test cases included, that can be run automatically with
+`nosetests` from the root directory.
+
+\begin{code}
+> nosetests -v
+\end{code}
+
+\subsection{test cases with input files}
+
 Several test cases are distributed with the code to ensure that your
 distribution is working correctly. There are also simple tests to
 see if the client codes are working correctly.
