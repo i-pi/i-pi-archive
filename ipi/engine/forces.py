@@ -613,7 +613,7 @@ class Forces(dobject):
 
    def pot_combine(self):
       """Obtains the potential energy for each forcefield."""
-      
+
       self.queue()
       rp = np.zeros(self.nbeads,float)
       for k in range(self.nforces):
