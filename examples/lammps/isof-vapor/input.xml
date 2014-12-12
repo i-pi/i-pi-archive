@@ -1,7 +1,7 @@
 <simulation>
    <output prefix='vapor'>
-      <properties stride='1' filename='out'>  [ step, time{picosecond}, conserved, temperature{kelvin}, kinetic_cv, potential, 
-      pressure_cv{megapascal},isotope_zeta(1.998;H), isotope_zeta(1.1253;O)] </properties>
+      <properties stride='5' filename='out'>  [ step, time{picosecond}, conserved, temperature{kelvin}, kinetic_cv, potential, 
+      pressure_cv{megapascal},isotope_zetasc(1.998;H), isotope_zetasc(1.1253;O)] </properties>
       <trajectory filename='pos' stride='1000'> positions </trajectory>
    </output>
    <total_steps>500000</total_steps>

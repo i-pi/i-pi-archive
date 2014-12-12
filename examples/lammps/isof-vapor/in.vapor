@@ -19,9 +19,7 @@ timestep	0.00025
 #thermo_style	multi
 #thermo		1
 
-#fix		1 all nvt temp 298.0 298.0 30.0 tchain 1
-#fix 1 all nve
-fix 1 all driver vapor 32346 unix
+fix 1 all ipi vapor 32346 unix
 
 #dump		1 all xyz 25 dump.xyz
 
