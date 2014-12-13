@@ -633,7 +633,7 @@ class Properties(dobject):
             ibead = int(bead)
             if ibead >= self.beads.nbeads:
                raise IndexError("Bead index %d is larger than the number of beads" % ibead)
-         except: ValueError("Bead index is not a valid integer")
+         except ValueError: raise ValueError("Bead index is not a valid integer")
 
       inm = -1
       if nm != "":
@@ -642,7 +642,7 @@ class Properties(dobject):
             inm = int(nm)
             if inm >= self.beads.nbeads:
                raise IndexError("Normal mode index %d is larger than the number of beads" % ibead)
-         except: ValueError("Normal mode index is not a valid integer")
+         except ValueError: raise ValueError("Normal mode index is not a valid integer")
 
       pnm = depstrip(self.nm.pnm)
       dm3 = depstrip(self.nm.dynm3)
