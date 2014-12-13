@@ -641,7 +641,7 @@ class Properties(dobject):
             #iatom gives the index of the atom to be studied
             inm = int(nm)
             if inm >= self.beads.nbeads:
-               raise IndexError("Normal mode index %d is larger than the number of beads" % ibead)
+               raise IndexError("Normal mode index %d is larger than the number of beads" % inm)
          except ValueError: raise ValueError("Normal mode index is not a valid integer")
 
       pnm = depstrip(self.nm.pnm)
