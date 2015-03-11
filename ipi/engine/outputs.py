@@ -27,7 +27,7 @@ Classes:
 
 import os, time
 import numpy as np
-from ipi.utils.messages import verbosity, info
+from ipi.utils.messages import verbosity, info, warning
 from ipi.utils.softexit import softexit
 from ipi.utils.depend import *
 from ipi.utils.io.io_xml import *
@@ -274,11 +274,15 @@ class TrajectoryOutput(dobject):
    def close_stream(self):
       """Closes the output stream."""
 
-      if hasattr(self.out, "__getitem__"):
-         for o in self.out:
-            o.close()
-      else:
-         self.out.close()
+      try:
+         if hasattr(self.out, "__getitem__"):
+            for o in self.out:
+               o.close()
+         else:
+            self.out.close()
+      except IOError: 
+		  # This gets called on softexit. We want to carry on to shut down as cleanly as possible
+          warning("Exception while closing output stream " + str(self.out), verbosity.low)
 
    def write(self):
       """Writes out the required trajectories."""
