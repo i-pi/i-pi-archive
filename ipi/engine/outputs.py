@@ -280,7 +280,7 @@ class TrajectoryOutput(dobject):
                o.close()
          else:
             self.out.close()
-      except IOError: 
+      except AttributeError: 
 		  # This gets called on softexit. We want to carry on to shut down as cleanly as possible
           warning("Exception while closing output stream " + str(self.out), verbosity.low)
 
