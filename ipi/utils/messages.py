@@ -44,6 +44,7 @@ class Verbosity(object):
       level: Determines what level of output to print.
    """
 
+   lock = False
    level = "low"
 
    def __getattr__(self, name):
@@ -68,6 +69,7 @@ class Verbosity(object):
          return self.level >= VERB_HIGH
       elif name is "debug":
          return self.level >= VERB_DEBUG
+      else: return super(Verbosity,self).__getattr__(name)
 
    def __setattr__(self, name, value):
       """Sets the verbosity level
@@ -80,8 +82,9 @@ class Verbosity(object):
          ValueError: Raised if either the name or the level is not
             a valid option.
       """
-
+      
       if name == "level":
+         if self.lock : return # do not set the verbosity level if this is locked
          if value == "quiet":
             level = VERB_QUIET
          elif value == "low":
@@ -95,6 +98,7 @@ class Verbosity(object):
          else: 
             raise ValueError("Invalid verbosity level " + str(value) + " specified.")
          super(Verbosity,self).__setattr__("level", level)
+      else: super(Verbosity,self).__setattr__(name, value)
 
 
 verbosity = Verbosity()
