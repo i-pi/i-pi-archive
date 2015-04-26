@@ -26,10 +26,11 @@ Functions:
 __all__ = ['print_xyz_path', 'print_xyz', 'read_xyz', 'iter_xyz']
 
 import numpy as np
-import math, sys
+import math, sys, re
 import ipi.utils.mathtools as mt
 from ipi.utils.depend import depstrip
 from ipi.engine.atoms import Atoms
+from ipi.engine.cell import Cell
 from ipi.utils.units import *
 
 def print_xyz_path(beads, cell, filedesc = sys.stdout):
@@ -75,21 +76,36 @@ def print_xyz(atoms, cell, filedesc = sys.stdout, title=""):
    for i in range(natoms):
       filedesc.write("%8s %12.5e %12.5e %12.5e\n" % (lab[i], qs[3*i], qs[3*i+1], qs[3*i+2]))
 
-def read_xyz(filedesc):
-   """Takes a xyz-style file and creates an Atoms object.
+def read_xyz(filedesc, readcell=False):
+   """Takes a xyz-style file with i-pi style comments and creates an Atoms and Cell object
 
    Args:
-      filedesc: An open readable file object from a xyz formatted file.
+      filedesc: An open readable file object from a xyz formatted file with i-PI header comments.
 
    Returns:
       An Atoms object with the appropriate atom labels, masses and positions.
+      A Cell object.
    """
 
    natoms = filedesc.readline()
    if natoms == "":
       raise EOFError("The file descriptor hit EOF.")
    natoms = int(natoms)
-   comment = filedesc.readline()
+   comment = filedesc.readline()   
+   recell = re.compile('# CELL.abcABC.: (.*) Traj')
+   reres = recell.search(comment)
+   if (reres is None):  # defaults to unit box 
+      h = mt.abc2h(1., 1., 1., np.pi/2, np.pi/2, np.pi/2)
+   else:
+      (a,b,c,alpha,beta,gamma) = reres.group(1).split()
+      a = float(a)
+      b = float(b)
+      c = float(c)
+      alpha =  float(alpha) * np.pi/180
+      beta =  float(beta) * np.pi/180
+      gamma =  float(gamma) * np.pi/180
+      h = mt.abc2h(a, b, c, alpha, beta, gamma)
+   cell = Cell(h)
 
    qatoms = []
    names = []
@@ -115,17 +131,13 @@ def read_xyz(filedesc):
       raise ValueError("The number of atom records does not match the header of the xyz file.")
 
    atoms = Atoms(natoms)
-#   for i in range(natoms):
-#      nat = atoms[i]
-#      nat.q = qatoms[i]
-#      nat.name = names[i]
-#      nat.m = Elements.mass(names[i])
    atoms.q = np.asarray(qatoms)
    atoms.names = np.asarray(names, dtype='|S4')
    atoms.m = np.asarray(masses)
 
-   return atoms
-
+   if readcell: return atoms, cell
+   else: return atoms
+   
 def iter_xyz(filedesc):
    """Takes a xyz-style file and yields one Atoms object after another.
 

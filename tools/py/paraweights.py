@@ -105,10 +105,14 @@ def main(inputfile, prefix="PTW-", ttemp="300.0", skip="2000"):
       # reads one line from PARATEMP index file
       line=ptfile.readline()
       line = line.split()
+<<<<<<< HEAD
       if len(line) == 0: break
 
       step = int(line[0])
       irep[:] = line[1:]
+=======
+
+>>>>>>> 0f162fb... Changes to dftb
 
       try:
          wk = 0
