@@ -676,8 +676,10 @@ class ReplayEnsemble(Ensemble):
       self.ptime = self.ttime = 0
       self.qtime = -time.time()
 
-      try:         
-         self.rstep += 1
+      
+      while True:
+       self.rstep += 1
+       try:         
          if (self.intraj.mode == "xyz"):            
             for b in self.beads:
                myatoms = read_xyz(self.rfile)
@@ -702,7 +704,7 @@ class ReplayEnsemble(Ensemble):
             self.cell.h[:] = mycell.h
             self.beads.q[:] = mybeads.q
             softexit.trigger(" # Read single checkpoint")
-      except EOFError:
+       except EOFError:
          softexit.trigger(" # Finished reading re-run trajectory")
-      if (step!=None and self.rstep<=step): self.step(step) 
+       if (step==None or self.rstep>step): break 
       self.qtime += time.time()
