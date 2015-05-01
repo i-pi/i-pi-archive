@@ -52,6 +52,8 @@ class System(dobject):
          calculate the forces.
       fproto: A Forces object for calculating the total force for all the
          replicas.
+      bproto: A Forces object for calculating the total bias for all the
+         replicas.
       ensemble: An ensemble object giving the objects necessary for producing
          the correct ensemble.
       outputs: A list of output objects that should be printed during the run
@@ -62,7 +64,7 @@ class System(dobject):
       simul: The parent simulation object.
    """
 
-   def __init__(self, init, beads, cell, force_proto, ensemble, nm, prefix=""):
+   def __init__(self, init, beads, cell, force_proto, ensemble, nm, prefix="", bias_proto=[]):
       """Initialises System class.
 
       Args:
@@ -70,6 +72,8 @@ class System(dobject):
          beads: A beads object giving the atom positions.
          cell: A cell object giving the system box.
          force_proto: A forcefield object giving the force calculator for each
+            replica of the system.
+         bias_proto: A forcefield object giving the bias calculator for each
             replica of the system.
          ensemble: An ensemble object giving the objects necessary for
             producing the correct ensemble.
@@ -89,6 +93,10 @@ class System(dobject):
       self.fproto = force_proto
       self.forces = Forces()
 
+      self.bproto = bias_proto
+      self.bias = Forces()
+
+
       self.properties = Properties()
       self.trajs = Trajectories()
 
@@ -100,7 +108,10 @@ class System(dobject):
       # binds important computation engines
       self.nm.bind(self.beads, self.ensemble)
       self.forces.bind(self.beads, self.cell, self.fproto, self.simul.fflist)
-      self.ensemble.bind(self.beads, self.nm, self.cell, self.forces, self.prng)
+      
+      self.bias.bind(self.beads, self.cell, self.bproto, self.simul.fflist)
+      
+      self.ensemble.bind(self.beads, self.nm, self.cell, self.forces, self.bias, self.prng)
 
       self.init.init_stage2(self)
 

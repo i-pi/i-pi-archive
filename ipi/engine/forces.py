@@ -487,7 +487,7 @@ class Forces(dobject):
       self.nforces = len(force_proto)
 
       # fflist should be a dictionary of forcefield objects
-      self.mforces = []
+      self.mforces = []      
       self.mbeads = []
       self.mrpc = []
 
@@ -554,6 +554,7 @@ class Forces(dobject):
       dset(self,"pot",
          depend_value(name="pot", func=(lambda: self.pots.sum()),
             dependencies=[dget(self,"pots")]))
+            
       dset(self,"vir",
          depend_array(name="vir", func=self.get_vir, value=np.zeros((3,3)),
             dependencies=[dget(self,"virs")]))
@@ -600,6 +601,12 @@ class Forces(dobject):
          vir += v
       return vir
 
+   def pots_component(self, index):
+      return self.mforces[index].weight*self.mrpc[index].b2tob1(self.mforces[index].pots)
+   
+   def forces_component(self, index):
+      return self.mforces[index].weight*self.mrpc[index].b2tob1(depstrip(self.mforces[index].f))      
+      
    def f_combine(self):
       """Obtains the total force vector."""
 

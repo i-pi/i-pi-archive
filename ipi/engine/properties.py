@@ -260,9 +260,9 @@ class Properties(dobject):
 #                       "help" : "The (log) weight of the configuration in the biassed ensemble",
 #                       "func": (lambda: self.ensemble.bias/(Constants.kb*self.ensemble.temp)) },
       "potential": {  "dimension" : "energy",
-                      "help": """The physical system potential energy. With the optional argument 'bead'
-                         will print the potential associated with the specified bead. 
-                         """,
+                      "help" : "The physical system potential energy.",
+                      "longhelp": """The physical system potential energy. With the optional argument 'bead'
+                         will print the potential associated with the specified bead.""",
                       'func': (lambda bead="-1": self.forces.pot/self.beads.nbeads if int(bead)<0 else self.forces.pots[int(bead)])},
       "spring": {     "dimension" : "energy",
                       "help": "The total spring potential energy between the beads of all the ring polymers in the system.",
