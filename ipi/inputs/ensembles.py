@@ -63,7 +63,7 @@ class InputEnsemble(Input):
 
    attribs={"mode"  : (InputAttribute, {"dtype"   : str,
                                     "help"    : "The ensemble that will be sampled during the simulation. 'replay' means that a simulation is restarted from a previous simulation.",
-                                    "options" : ['nve', 'nvt', 'npt', 'nst', 'replay']}) }
+                                    "options" : ['nve', 'nvt', 'npt', 'nst', 'replay', 'minimize']}) }
    fields={"thermostat" : (InputThermo, {"default"   : input_default(factory=ipi.engine.thermostats.Thermostat),
                                          "help"      : "The thermostat for the atoms, keeps the atom velocity distribution at the correct temperature."} ),
            "barostat" : (InputBaro, {"default"       : input_default(factory=ipi.engine.barostats.Barostat),
@@ -125,13 +125,17 @@ class InputEnsemble(Input):
       elif type(ens) is NSTEnsemble:
          self.mode.store("nst")
          tens = 4
+      elif type(ens) is GEOPEnsemble:
+         self.mode.store("minimize")
+         tens = 5
+      
 
       self.timestep.store(ens.dt)
       self.temperature.store(ens.temp)
 
       if tens == 0:
          self.replay_file.store(ens.intraj)
-      if tens > 1:
+      if tens > 1 and tens <5:
          self.thermostat.store(ens.thermostat)
          self.fixcom.store(ens.fixcom)
          self.fixatoms.store(ens.fixatoms)
@@ -171,6 +175,9 @@ class InputEnsemble(Input):
       elif self.mode.fetch() == "replay":
          ens = ReplayEnsemble(dt=self.timestep.fetch(),
             temp=self.temperature.fetch(),fixcom=False, eens=self.eens.fetch(), fixatoms=None, intraj=self.replay_file.fetch() )
+      elif self.mode.fetch() == "minimize":
+         ens = GEOPEnsemble(dt=self.timestep.fetch(),
+            temp=self.temperature.fetch(),fixcom=False, eens=self.eens.fetch(), fixatoms=None )
       else:
          raise ValueError("'" + self.mode.fetch() + "' is not a supported ensemble mode.")
 
@@ -201,7 +208,6 @@ class InputEnsemble(Input):
             raise ValueError("No barostat tag supplied for NST simulation")
          if self.barostat.thermostat._explicit == False:
             raise ValueError("No thermostat tag supplied in barostat for NST simulation")
-
       if self.timestep.fetch() <= 0:
          raise ValueError("Non-positive timestep specified.")
       if self.temperature.fetch() <= 0:

@@ -32,7 +32,7 @@ Classes:
       scratch.
 """
 
-__all__ = ['Ensemble', 'NVEEnsemble', 'NVTEnsemble', 'NPTEnsemble', 'NSTEnsemble','ReplayEnsemble']
+__all__ = ['Ensemble', 'NVEEnsemble', 'NVTEnsemble', 'NPTEnsemble', 'NSTEnsemble','ReplayEnsemble', 'GEOPEnsemble']
 
 import numpy as np
 import time
@@ -235,6 +235,7 @@ class NVEEnsemble(Ensemble):
          pcom *= 1.0/(nb*M)
          for i in range(3):
             self.beads.p[:,i:na3:3] -= m*pcom[i]
+            
       if (len(self.fixatoms)>0):
          for bp in self.beads.p:
             m = depstrip(self.beads.m)
@@ -652,8 +653,7 @@ class ReplayEnsemble(Ensemble):
       ttime: The time taken in applying the thermostat steps.
 
    Depend objects:
-      econs: Conserved energy quantity. Depends on the bead kinetic and
-         potential energy, and the spring potential energy.
+      None really meaningful.
    """
 
    def __init__(self, dt, temp, fixcom=False, eens=0.0, intraj=None, fixatoms=None):
@@ -713,4 +713,48 @@ class ReplayEnsemble(Ensemble):
        except EOFError:
          softexit.trigger(" # Finished reading re-run trajectory")
        if (step==None or self.rstep>step): break 
+      self.qtime += time.time()
+
+
+class GEOPEnsemble(Ensemble):
+   """Geometry optimization routine. Will start with a dumb steepest descent,
+   and then see to include more and more features - getting at least to BFGS.
+
+   Attributes:
+
+   Depend objects:
+      econs: Conserved energy quantity. Depends on the bead kinetic and
+         potential energy, and the spring potential energy.
+   """
+
+   def __init__(self, dt, temp, fixcom=False, eens=0.0, intraj=None, fixatoms=None):
+      """Initialises GEOPEnsemble.
+
+      Args:
+         dt: The simulation timestep.
+         temp: The system temperature.
+         fixcom: An optional boolean which decides whether the centre of mass
+            motion will be constrained or not. Defaults to False.
+         intraj: The input trajectory file.
+      """
+
+      super(GEOPEnsemble,self).__init__(dt=dt,temp=temp,fixcom=fixcom, eens=eens, fixatoms=fixatoms)
+      
+   def step(self, step=None):
+      """Does one simulation time step."""
+
+      self.ptime = self.ttime = 0
+      self.qtime = -time.time()
+
+      # chooses the step size based on an acceleration model (really the *dumbest* steepest descent option
+      # also divides by the mass for dimensional consistency and as a sort of silly preconditioner
+      dq = depstrip(self.forces.f)/depstrip(self.beads.m3)*0.5*self.dt*self.dt
+      
+      if (len(self.fixatoms)>0):
+         for dqb in dq:
+            dqb[self.fixatoms*3]=0.0
+            dqb[self.fixatoms*3+1]=0.0
+            dqb[self.fixatoms*3+2]=0.0
+      
+      self.beads.q += dq
       self.qtime += time.time()
