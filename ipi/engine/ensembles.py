@@ -49,6 +49,7 @@ from ipi.inputs.thermostats import InputThermo
 from ipi.inputs.barostats import InputBaro
 from ipi.engine.thermostats import *
 from ipi.engine.barostats import *
+from ipi.utils.mintools import min_brent
 
 
 class Ensemble(dobject):
@@ -716,6 +717,23 @@ class ReplayEnsemble(Ensemble):
       self.qtime += time.time()
 
 
+class GEOMover:
+   def __init__(self, ens, mdir):
+      
+      self.ens = ens
+      self.x0 = depstrip(ens.beads.q).copy()
+      self.d = mdir.copy()/mdir.norm()
+      
+      if self.x0.shape != self.d.shape: raise ValueError("Incompatible shape of initial value and displacement direction")
+      
+      
+   def __call__(self, x):
+            
+      self.ens.beads.q = self.x0 + self.d * x
+      e = self.ens.forces.pot
+      g = - np.dot(depstrip(self.ens.forces.f).flatten(),self.d.flatten())
+      return e, g
+
 class GEOPEnsemble(Ensemble):
    """Geometry optimization routine. Will start with a dumb steepest descent,
    and then see to include more and more features - getting at least to BFGS.
@@ -748,13 +766,15 @@ class GEOPEnsemble(Ensemble):
 
       # chooses the step size based on an acceleration model (really the *dumbest* steepest descent option
       # also divides by the mass for dimensional consistency and as a sort of silly preconditioner
-      dq = depstrip(self.forces.f)/depstrip(self.beads.m3)*0.5*self.dt*self.dt
+      dq = depstrip(self.forces.f)
       
       if (len(self.fixatoms)>0):
          for dqb in dq:
             dqb[self.fixatoms*3]=0.0
             dqb[self.fixatoms*3+1]=0.0
             dqb[self.fixatoms*3+2]=0.0
+      
+      gm = GEOMover(self, dq)
       
       self.beads.q += dq
       self.qtime += time.time()
