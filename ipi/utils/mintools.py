@@ -60,8 +60,8 @@ def min_brent(gdg, tol=1e-5, itmax=100, gdg0=None):
   # dg(x) is the evaluation of the derivative of g(x)
   x = w = v = bx
   if gdg0 is None: gdg0 = gdg(x)
-  fw = fv = fx = gdg[0]
-  dw = dv = dx = gdg[1]
+  fw = fv = fx = gdg0[0]
+  dw = dv = dx = gdg0[1]
   
   # Main loop
   iter = 1
@@ -178,5 +178,5 @@ def min_brent(gdg, tol=1e-5, itmax=100, gdg0=None):
   # Exit if maximum number of iterations exceeded
   print "Error: Maximum iterations exceeded"
   xmin = x
-  results = [xmin, fx]
+  results = (xmin, fx)
   return results

@@ -722,7 +722,7 @@ class GEOMover:
       
       self.ens = ens
       self.x0 = depstrip(ens.beads.q).copy()
-      self.d = mdir.copy()/mdir.norm()
+      self.d = mdir.copy()/np.sqrt(np.dot(mdir.flatten(),mdir.flatten()))
       
       if self.x0.shape != self.d.shape: raise ValueError("Incompatible shape of initial value and displacement direction")
       
@@ -774,7 +774,8 @@ class GEOPEnsemble(Ensemble):
             dqb[self.fixatoms*3+1]=0.0
             dqb[self.fixatoms*3+2]=0.0
       
+      # NB this is WAAAAY far from ideal as we taint the main force evaluator. shall discuss how to do this better.
       gm = GEOMover(self, dq)
-      
-      self.beads.q += dq
+      (x,fx) = min_brent(gm, 1e-5, 100, (self.forces.pot, np.dot(depstrip(self.forces.f.flatten()), dq.flatten()) ) )
+      self.beads.q += gm.x0 + dq * x
       self.qtime += time.time()
