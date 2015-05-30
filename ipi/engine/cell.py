@@ -65,7 +65,7 @@ class Cell(dobject):
             dependencies=[dget(self,"h")]) )
 
    def copy(self):
-      return Cell(self.h)
+      return Cell(depstrip(self.h).copy())
 
    def get_ih(self):
       """Inverts the lattice vector matrix."""
