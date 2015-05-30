@@ -731,7 +731,6 @@ class GEOMover:
       
       self.x0 = x0.copy()
       self.d = mdir.copy()/np.sqrt(np.dot(mdir.flatten(),mdir.flatten()))
-      print mdir
       if self.x0.shape != self.d.shape: raise ValueError("Incompatible shape of initial value and displacement direction")
       
    def __call__(self, x):
@@ -787,8 +786,9 @@ class GEOPEnsemble(Ensemble):
             dqb[self.fixatoms*3+1]=0.0
             dqb[self.fixatoms*3+2]=0.0
          
-      print dq
       self.gm.set_dir(depstrip(self.beads.q),dq)
-      (x,fx) = min_brent(self.gm, 1e-5, 100, (self.forces.pot, np.dot(depstrip(self.forces.f.flatten()), dq.flatten())/np.sqrt(np.dot(dq.flatten(),dq.flatten())) ) )
+      # reuse initial value since we have energy and forces already
+      u0, du0 = (self.forces.pot, np.dot(depstrip(self.forces.f.flatten()), dq.flatten())/np.sqrt(np.dot(dq.flatten(),dq.flatten())) )
+      (x,fx) = min_brent(self.gm, 1e-5, 100, (u0, du0) )
       self.beads.q += dq * x
       self.qtime += time.time()

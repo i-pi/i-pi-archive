@@ -74,9 +74,7 @@ def min_brent(gdg, tol=1e-5, itmax=100, gdg0=None):
 
     # Test for satisfactory completion
     if abs(x - xm) <= (tol2 - 0.5 * (b - a)):
-      xmin = x
-      results = [xmin, fx]
-      return results
+      return (x,fx)
 
     # Initialize d values to outside of bracket
     if abs(e) > tol1:
@@ -140,8 +138,7 @@ def min_brent(gdg, tol=1e-5, itmax=100, gdg0=None):
      
       # If minimum step goes uphill, minimum has been found
       if fu > fx:
-        xmin = x
-        return fx
+        return (x,fx)
         
     if fu <= fx:
       if u >= x:
@@ -177,6 +174,4 @@ def min_brent(gdg, tol=1e-5, itmax=100, gdg0=None):
   
   # Exit if maximum number of iterations exceeded
   print "Error: Maximum iterations exceeded"
-  xmin = x
-  results = (xmin, fx)
-  return results
+  return (x, fx)
