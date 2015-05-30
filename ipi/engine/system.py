@@ -105,7 +105,7 @@ class System(dobject):
 
       # binds important computation engines
       self.nm.bind(self.beads, self.ensemble)
-      self.forces.bind(self.beads, self.cell, self.bcomp, self.simul.fflist)
+      self.forces.bind(self.beads, self.cell, self.fcomp, self.simul.fflist)
       
       self.bias.bind(self.beads, self.cell, self.bcomp, self.simul.fflist)
       
