@@ -790,5 +790,7 @@ class GEOPEnsemble(Ensemble):
       # reuse initial value since we have energy and forces already
       u0, du0 = (self.forces.pot, np.dot(depstrip(self.forces.f.flatten()), dq.flatten())/np.sqrt(np.dot(dq.flatten(),dq.flatten())) )
       (x,fx) = min_brent(self.gm, 1e-5, 100, (u0, du0) )
+      
+      
       self.beads.q += dq * x
       self.qtime += time.time()
