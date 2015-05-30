@@ -717,21 +717,28 @@ class ReplayEnsemble(Ensemble):
       self.qtime += time.time()
 
 
-class GEOMover:
-   def __init__(self, ens, mdir):
+class GEOMover: 
+        
+   def __init__(self):      
+      self.x0 = self.d = None
       
-      self.ens = ens
-      self.x0 = depstrip(ens.beads.q).copy()
+   def bind(self, ens):
+      self.dbeads = ens.beads.copy()
+      self.dcell = ens.cell.copy()
+      self.dforces = ens.forces.copy(self.dbeads, self.dcell)      
+      
+   def set_dir(self, x0, mdir):
+      
+      self.x0 = x0.copy()
       self.d = mdir.copy()/np.sqrt(np.dot(mdir.flatten(),mdir.flatten()))
-      
+      print mdir
       if self.x0.shape != self.d.shape: raise ValueError("Incompatible shape of initial value and displacement direction")
-      
       
    def __call__(self, x):
             
-      self.ens.beads.q = self.x0 + self.d * x
-      e = self.ens.forces.pot
-      g = - np.dot(depstrip(self.ens.forces.f).flatten(),self.d.flatten())
+      self.dbeads.q = self.x0 + self.d * x
+      e = self.dforces.pot
+      g = - np.dot(depstrip(self.dforces.f).flatten(),self.d.flatten())
       return e, g
 
 class GEOPEnsemble(Ensemble):
@@ -745,7 +752,7 @@ class GEOPEnsemble(Ensemble):
          potential energy, and the spring potential energy.
    """
 
-   def __init__(self, dt, temp, fixcom=False, eens=0.0, intraj=None, fixatoms=None):
+   def __init__(self, dt, temp, fixcom=False, eens=0.0, intraj=None, fixatoms=None):      
       """Initialises GEOPEnsemble.
 
       Args:
@@ -757,6 +764,12 @@ class GEOPEnsemble(Ensemble):
       """
 
       super(GEOPEnsemble,self).__init__(dt=dt,temp=temp,fixcom=fixcom, eens=eens, fixatoms=fixatoms)
+      self.gm = GEOMover()
+   
+   def bind(self, beads, nm, cell, bforce, bbias, prng):
+      
+      super(GEOPEnsemble,self).bind(beads, nm, cell, bforce, bbias, prng)
+      self.gm.bind(self)
       
    def step(self, step=None):
       """Does one simulation time step."""
@@ -767,15 +780,15 @@ class GEOPEnsemble(Ensemble):
       # chooses the step size based on an acceleration model (really the *dumbest* steepest descent option
       # also divides by the mass for dimensional consistency and as a sort of silly preconditioner
       dq = depstrip(self.forces.f)
-      
+   
       if (len(self.fixatoms)>0):
          for dqb in dq:
             dqb[self.fixatoms*3]=0.0
             dqb[self.fixatoms*3+1]=0.0
             dqb[self.fixatoms*3+2]=0.0
-      
-      # NB this is WAAAAY far from ideal as we taint the main force evaluator. shall discuss how to do this better.
-      gm = GEOMover(self, dq)
-      (x,fx) = min_brent(gm, 1e-5, 100, (self.forces.pot, np.dot(depstrip(self.forces.f.flatten()), dq.flatten()) ) )
-      self.beads.q += gm.x0 + dq * x
+         
+      print dq
+      self.gm.set_dir(depstrip(self.beads.q),dq)
+      (x,fx) = min_brent(self.gm, 1e-5, 100, (self.forces.pot, np.dot(depstrip(self.forces.f.flatten()), dq.flatten())/np.sqrt(np.dot(dq.flatten(),dq.flatten())) ) )
+      self.beads.q += dq * x
       self.qtime += time.time()
