@@ -18,7 +18,6 @@ along with this program. If not, see <http.//www.gnu.org/licenses/>.
 ForceField objects are force providers, i.e. they are the abstraction
 layer for a driver that gets positions and returns forces (and energy).
 
-
 Classes:
    ForceRequest: An extension of the dict class which only has a == b if
       a is b == True, rather than if the elements of a and b are identical.
@@ -217,59 +216,6 @@ class ForceField(dobject):
 
       self.stop()
 
-class FFSocket(ForceField):
-   """Interface between the PIMD code and a socket for a single replica.
-
-   Deals with an individual replica of the system, obtaining the potential
-   force and virial appropriate to this system. Deals with the distribution of
-   jobs to the interface.
-
-   Attributes:
-      socket: The interface object which contains the socket through which
-         communication between the forcefield and the driver is done.
-   """
-
-   def __init__(self, latency = 1.0, name = "",  pars = None, dopbc = True, interface = None):
-      """Initialises FFSocket.
-
-      Args:
-         latency: The number of seconds the socket will wait before updating
-            the client list.
-         name: The name of the forcefield.
-         pars: A dictionary used to initialize the forcefield, if required.
-            Of the form {'name1': value1, 'name2': value2, ... }.
-         dopbc: Decides whether or not to apply the periodic boundary conditions
-            before sending the positions to the client code.
-         interface: The object used to create the socket used to interact
-            with the client codes.
-      """
-
-      # a socket to the communication library is created or linked
-      super(FFSocket,self).__init__(latency, name, pars, dopbc)
-      if interface is None:
-         self.socket = InterfaceSocket()
-      else:
-         self.socket = interface
-      self.socket.requests = self.requests
-
-   def poll(self):
-      """Function to check the status of the client calculations."""
-
-      self.socket.poll()
-
-   def run(self):
-      """Spawns a new thread."""
-
-      self.socket.open()
-      super(FFSocket,self).run()
-
-   def stop(self):
-      """Closes the socket and the thread."""
-
-      super(FFSocket,self).stop()
-      if not self._thread is None:   # must wait until loop has ended before closing the socket
-         self._thread.join()
-      self.socket.close()
 
 class FFLennardJones(ForceField):
    """Basic fully pythonic force provider.
@@ -349,3 +295,57 @@ class FFLennardJones(ForceField):
 
       r["result"] = [ v, f.reshape(nat*3), np.zeros((3,3),float), ""]
       r["status"] = "Done"
+
+class FFSocket(ForceField):
+   """Interface between the PIMD code and a socket for a single replica.
+
+   Deals with an individual replica of the system, obtaining the potential
+   force and virial appropriate to this system. Deals with the distribution of
+   jobs to the interface.
+
+   Attributes:
+      socket: The interface object which contains the socket through which
+         communication between the forcefield and the driver is done.
+   """
+
+   def __init__(self, latency = 1.0, name = "",  pars = None, dopbc = True, interface = None):
+      """Initialises FFSocket.
+
+      Args:
+         latency: The number of seconds the socket will wait before updating
+            the client list.
+         name: The name of the forcefield.
+         pars: A dictionary used to initialize the forcefield, if required.
+            Of the form {'name1': value1, 'name2': value2, ... }.
+         dopbc: Decides whether or not to apply the periodic boundary conditions
+            before sending the positions to the client code.
+         interface: The object used to create the socket used to interact
+            with the client codes.
+      """
+
+      # a socket to the communication library is created or linked
+      super(FFSocket,self).__init__(latency, name, pars, dopbc)
+      if interface is None:
+         self.socket = InterfaceSocket()
+      else:
+         self.socket = interface
+      self.socket.requests = self.requests
+
+   def poll(self):
+      """Function to check the status of the client calculations."""
+
+      self.socket.poll()
+
+   def run(self):
+      """Spawns a new thread."""
+
+      self.socket.open()
+      super(FFSocket,self).run()
+
+   def stop(self):
+      """Closes the socket and the thread."""
+
+      super(FFSocket,self).stop()
+      if not self._thread is None:   # must wait until loop has ended before closing the socket
+         self._thread.join()
+      self.socket.close()

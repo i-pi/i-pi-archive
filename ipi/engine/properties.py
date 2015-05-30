@@ -521,9 +521,9 @@ class Properties(dobject):
       # displaced path estimators without changing the simulation bead
       # coordinates
       self.dbeads = system.beads.copy()
-      self.dforces = Forces()
-      self.dforces.bind(self.dbeads, self.cell,  system.fproto, self.simul.fflist)
-
+      self.dcell = system.cell.copy()
+      self.dforces = system.forces.copy(self.dbeads, self.dcell)
+      
    def __getitem__(self, key):
       """Retrieves the item given by key.
 
@@ -1743,8 +1743,8 @@ class Trajectories(dobject):
       # displaced path estimators without changing the simulation bead
       # coordinates
       self.dbeads = system.beads.copy()
-      self.dforces = Forces()
-      self.dforces.bind(self.dbeads, self.system.cell,  system.fproto, self.system.simul.fflist)
+      self.dcell = system.cell.copy()
+      self.dforces = self.system.forces.copy(self.dbeads, self.dcell)
 
    def get_akcv(self):
       """Calculates the contribution to the kinetic energy due to each degree

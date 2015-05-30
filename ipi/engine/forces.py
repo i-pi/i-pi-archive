@@ -467,24 +467,35 @@ class Forces(dobject):
       vir: The sum of the virial tensor of the replicas.
    """
 
-   def bind(self, beads, cell, force_proto, fflist):
+   def __init__(self):
+      self.bound = False
+      
+   def bind(self, beads, cell, fcomponents, fflist):
       """Binds beads, cell and forces to the forcefield.
 
 
       Args:
          beads: Beads object from which the bead positions are taken.
          cell: Cell object from which the system box is taken.
-         forces: A list of different objects for each force type. 
+         fcomponents: A list of different objects for each force type. 
             For example, if ring polymer contraction is being used, 
             then there may be separate forces for the long and short 
             range part of the potential.
          fflist: A list of forcefield objects to use to calculate the potential,
-            forces and virial for each force type.
+            forces and virial for each force type. To clarify: fcomponents are the
+            names and parameters of forcefields that are active for a certain 
+            system. fflist contains the overall list of force providers,
+            and one typically has just one per force kind.
       """
 
       self.natoms = beads.natoms
       self.nbeads = beads.nbeads
-      self.nforces = len(force_proto)
+      self.beads = beads
+      self.cell = cell
+      self.bound = True
+      self.nforces = len(fcomponents)
+      self.fcomp = fcomponents
+      self.ff = fflist
 
       # fflist should be a dictionary of forcefield objects
       self.mforces = []      
@@ -498,7 +509,7 @@ class Forces(dobject):
 
       # creates new force objects, possibly acting on contracted path
       #representations
-      for fc in force_proto:
+      for fc in self.fcomp:
 
          # creates an automatically-updated contracted beads object
          newb = fc.nbeads
@@ -558,6 +569,28 @@ class Forces(dobject):
       dset(self,"vir",
          depend_array(name="vir", func=self.get_vir, value=np.zeros((3,3)),
             dependencies=[dget(self,"virs")]))
+
+   def copy(self, beads=None, cell = None):
+      """ Returns a copy of this force object that can be used to compute forces,
+      e.g. for use in internal loops of geometry optimizers, or for property 
+      calculation.
+      
+      Args: 
+         beads: Optionally, bind this to a different beads object than the one 
+            this Forces is currently bound
+         cell: Optionally, bind this to a different cell object
+         
+      Returns: The copy of the Forces object
+      """
+      
+      if not self.bound: raise ValueError("Cannot copy a forces object that has not yet been bound.")
+      nforce = Forces()
+      nbeads = beads
+      if nbeads is None: nbeads=self.beads
+      ncell = cell
+      if cell is None: ncell=self.cell      
+      nforce.bind(nbeads, ncell, self.fcomp, self.ff)
+      return nforce
 
    def run(self):
       """Makes the socket start looking for driver codes.

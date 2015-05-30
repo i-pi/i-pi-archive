@@ -64,6 +64,9 @@ class Cell(dobject):
          depend_value(name = 'V', func=self.get_volume,
             dependencies=[dget(self,"h")]) )
 
+   def copy(self):
+      return Cell(self.h)
+
    def get_ih(self):
       """Inverts the lattice vector matrix."""
 

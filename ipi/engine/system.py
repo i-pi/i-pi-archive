@@ -48,12 +48,10 @@ class System(dobject):
    Attributes:
       beads: A beads object giving the atom positions.
       cell: A cell object giving the system box.
-      flist: A list of forcefield objects giving different ways to partially
-         calculate the forces.
-      fproto: A Forces object for calculating the total force for all the
-         replicas.
-      bproto: A Forces object for calculating the total bias for all the
-         replicas.
+      fcomp: A list of force components that must act on each replica
+      bcomp: A list of bias components that must act on each replica
+      forces: A Forces object that actually compute energy and forces
+      bias: A Forces object that compute the bias components
       ensemble: An ensemble object giving the objects necessary for producing
          the correct ensemble.
       outputs: A list of output objects that should be printed during the run
@@ -64,16 +62,16 @@ class System(dobject):
       simul: The parent simulation object.
    """
 
-   def __init__(self, init, beads, cell, force_proto, ensemble, nm, prefix="", bias_proto=[]):
+   def __init__(self, init, beads, cell, fcomponents, ensemble, nm, prefix="", bcomponents=[]):
       """Initialises System class.
 
       Args:
          init: A class to deal with initializing the system.
          beads: A beads object giving the atom positions.
          cell: A cell object giving the system box.
-         force_proto: A forcefield object giving the force calculator for each
+         fcomponents: A list of force components that are active for each
             replica of the system.
-         bias_proto: A forcefield object giving the bias calculator for each
+         bcomponents: A list of force components that are considered as bias, and act on each 
             replica of the system.
          ensemble: An ensemble object giving the objects necessary for
             producing the correct ensemble.
@@ -90,10 +88,10 @@ class System(dobject):
       self.cell = cell
       self.nm = nm
 
-      self.fproto = force_proto
+      self.fcomp = fcomponents
       self.forces = Forces()
 
-      self.bproto = bias_proto
+      self.bcomp = bcomponents
       self.bias = Forces()
 
 
@@ -107,9 +105,9 @@ class System(dobject):
 
       # binds important computation engines
       self.nm.bind(self.beads, self.ensemble)
-      self.forces.bind(self.beads, self.cell, self.fproto, self.simul.fflist)
+      self.forces.bind(self.beads, self.cell, self.bcomp, self.simul.fflist)
       
-      self.bias.bind(self.beads, self.cell, self.bproto, self.simul.fflist)
+      self.bias.bind(self.beads, self.cell, self.bcomp, self.simul.fflist)
       
       self.ensemble.bind(self.beads, self.nm, self.cell, self.forces, self.bias, self.prng)
 
