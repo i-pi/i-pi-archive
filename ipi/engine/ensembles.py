@@ -79,6 +79,8 @@ class Ensemble(dobject):
          self.fixatoms = np.zeros(0,int)
       else:
          self.fixatoms = fixatoms
+         
+      self.beads = self.cell = self.forces = self.bias = self.prng = self.nm = None
 
 
    def bind(self, beads, nm, cell, bforce, bbias, prng):

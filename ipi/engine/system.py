@@ -97,11 +97,11 @@ class System(dobject):
       self.simul = simul # keeps a handle to the parent simulation object
 
       # binds important computation engines
-      self.nm.bind(self.beads, self.ensemble)
       self.forces.bind(self.beads, self.cell, self.fcomp, self.simul.fflist)
       
       self.bias.bind(self.beads, self.cell, self.bcomp, self.simul.fflist)
       
+      self.nm.bind(self.ensemble, self.beads, self.forces)
       self.ensemble.bind(self.beads, self.nm, self.cell, self.forces, self.bias, self.prng)
       self.mover.bind(self.beads, self.nm, self.cell, self.forces, self.bias, self.prng)
 
