@@ -489,10 +489,9 @@ class Initializer(dobject):
             warning("Initializing from velocities uses the previously defined masses -- not the masses inferred from the file -- to build momenta", verbosity.low)
             if v.index >= 0:
                rv *= simul.beads.m[v.index]
-            elif v.bead >= 0:
-               rv *= simul.beads.m3[0]
-            else:
-               rv *= simul.beads.m3
+            else: 
+               for ev in rv:
+                  ev *= simul.beads.m3[0]
             rv *= np.sqrt(self.nbeads/nbeads)
             set_vector(v, simul.beads.p, rv)
             fmom = True
