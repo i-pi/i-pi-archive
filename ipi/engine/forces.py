@@ -565,10 +565,13 @@ class Forces(dobject):
             
       # SC forces and potential  
       dset(self, "alpha", depend_value(name="alpha", value=0.5))
+      
+      # this will be piped from normalmodes
+      dset(self, "omegan2", depend_value(name="alpha", value=0))
             
       dset(self, "SCCALC", 
            depend_value(name="SCCALC", func=self.sccalc, value = [None,None],
-                 dependencies=[dget(self, "f"), dget(self,"pots"), dget(self,"alpha")] ) )
+                 dependencies=[dget(self, "f"), dget(self,"pots"), dget(self,"alpha"),  dget(self,"omegan2")] ) )
                  
       dset(self, "fsc", depend_array(name="fsc",value=np.zeros((self.nbeads,3*self.natoms)),
             dependencies=[dget(self,"SCCALC")],

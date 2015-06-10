@@ -102,6 +102,7 @@ class System(dobject):
       self.bias.bind(self.beads, self.cell, self.bcomp, self.simul.fflist)
       
       self.nm.bind(self.ensemble, self.beads, self.forces)
+      deppipe(self.nm, "omegan2", self.forces, "omegan2")
       self.ensemble.bind(self.beads, self.nm, self.cell, self.forces, self.bias, self.prng)
       self.mover.bind(self.beads, self.nm, self.cell, self.forces, self.bias, self.prng)
 

@@ -178,6 +178,7 @@ class NormalModes(dobject):
             func=self.get_omegak, dependencies=[dget(self,"omegan")]) )
 
       # sets up "dynamical" masses -- mass-scalings to give the correct RPMD/CMD dynamics
+      # TODO: Do we really need different names and variable names? Seems confusing.
       dset(self,"nm_factor", depend_array(name="nmm",
          value=np.zeros(self.nbeads, float), func=self.get_nmm,
             dependencies=[dget(self,"nm_freqs"), dget(self,"mode") ]) )
@@ -208,22 +209,39 @@ class NormalModes(dobject):
          depend_array(name="kstress",value=np.zeros((3,3), float),
             func=self.get_kstress,
                dependencies=[dget(self,"pnm"), dget(self.beads,"sm3"), dget(self, "nm_factor") ] ))
-  
-      # set up interface to get spring force (and possibly MTS++ second derivative correction)
-      dset(self,"fspringnm", depend_array(name="fsnm",
-         value=np.zeros((self.nbeads,3*self.natoms), float),func=self.get_fspringnm,      
-            dependencies=[dget(self,"qnm"), dget(self, "omegak")] ) )
-      dset(self,"fspring", depend_array(name="fs",
-         value=np.zeros((self.nbeads,3*self.natoms), float),
-         func=(lambda : self.transform.nm2b(depstrip(self.fspringnm)) ),
-         dependencies = [dget(self,"fspringnm")]) )
-         
-         
-      
+
+      # spring energy, calculated in normal modes
+      dset(self, "vspring",
+         depend_value(name="vspring",
+            value=0.0,
+            func=self.get_vspring,
+            dependencies=[dget(self, "qnm"), dget(self, "omegak"), dget(self.beads, "m3")]))
+
+      # spring forces on normal modes
+      dset(self, "fspringnm",
+         depend_array(name="fspringnm",
+            value=np.zeros((self.nbeads, 3*self.natoms), float),
+            func=self.get_fspringnm,
+            dependencies=[dget(self, "qnm"), dget(self, "omegak"), dget(self.beads, "m3")]))
+
+      # spring forces on beads, transformed from normal modes
+      dset(self,"fspring",
+         depend_array(name="fs",
+            value=np.zeros((self.nbeads,3*self.natoms), float),
+            func=(lambda: self.transform.nm2b(depstrip(self.fspringnm))),
+            dependencies = [dget(self, "fspringnm")]))
+
+
    def get_fspringnm(self):
-      """ TODO: COMPUTE ACTUALLY SOMETHING! """
-      return np.zeros((self.nbeads, self.natoms*3))
-      
+      """Returns the spring force calculated in NM representation."""
+
+      return - self.beads.m3 * self.omegak[:,np.newaxis]**2 * self.qnm
+
+   def get_vspring(self):
+      """Returns the spring energy calculated in NM representation."""
+
+      return 0.5 * (self.beads.m3 * self.omegak[:,np.newaxis]**2 * self.qnm**2).sum()
+
    def get_omegan(self):
       """Returns the effective vibrational frequency for the interaction
       between replicas.
@@ -274,8 +292,9 @@ class NormalModes(dobject):
       pqk = np.zeros((self.nbeads,2,2), float)
       pqk[0] = np.array([[1,0], [dt,1]])
 
+      # Note that the propagator uses mass-scaled momenta.
       for b in range(1, self.nbeads):
-         sk = np.sqrt(self.nm_factor[b]) # NOTE THAT THE PROPAGATOR USES MASS-SCALED MOMENTA!
+         sk = np.sqrt(self.nm_factor[b])
 
          dtomegak = self.omegak[b]*dt/sk
          c = np.cos(dtomegak)
@@ -294,8 +313,7 @@ class NormalModes(dobject):
       # also checks that the frequencies and the mode given in init are
       # consistent with the beads and ensemble
 
-      dmf = np.zeros(self.nbeads,float)
-      dmf[:] = 1.0
+      dmf = np.ones(self.nbeads, float)
       if self.mode == "rpmd":
          if len(self.nm_freqs) > 0:
             warning("nm.frequencies will be ignored for RPMD mode.", verbosity.low)

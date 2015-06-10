@@ -28,10 +28,7 @@ from ipi.inputs.barostats import InputBaro
 from ipi.engine.thermostats import *
 from ipi.engine.barostats import *
 
-#venkat.hack
-#Added another class called MTSEnsemble
 __all__ = ['Ensemble', 'NVEEnsemble', 'NVTEnsemble', 'NPTEnsemble', 'NSTEnsemble','ReplayEnsemble', 'MTSEnsemble']
-#venkat.hack
 
 class Ensemble(dobject):
    """Base ensemble class.
@@ -124,8 +121,7 @@ class Ensemble(dobject):
       dget(self,"econs").add_dependency(dget(self.beads, "vpath"))
       dget(self,"econs").add_dependency(dget(self, "eens"))
       self.pconstraints() # applies momentum constraints to initial configurations
-
-
+      
    def get_ntemp(self):
       """Returns the PI simulation temperature (P times the physical T)."""
 
@@ -157,7 +153,6 @@ class Ensemble(dobject):
 
    def pconstraints(self):
       pass
-
 
 
 class NVEEnsemble(Ensemble):
@@ -262,7 +257,6 @@ class NVEEnsemble(Ensemble):
       self.ptime += time.time()
 
 
-#venkat.hack
 #Changed the name of the class.
 class MTSEnsemble(NVEEnsemble):
    """Ensemble object for constant temperature simulations.
@@ -413,6 +407,7 @@ class MTSEnsemble(NVEEnsemble):
       """
 
       return NVEEnsemble.get_econs(self) + self.thermostat.ethermo
+
 
 class NVTEnsemble(NVEEnsemble):
    """Ensemble object for constant temperature simulations.
@@ -822,7 +817,6 @@ class ReplayEnsemble(Ensemble):
 
       self.ptime = self.ttime = 0
       self.qtime = -time.time()
-
 
       while True:
        self.rstep += 1
