@@ -20,30 +20,148 @@ Functions:
     
 """
 
-__all__ = [ "min_brent" ]
+__all__ = [ "min_brent", "MinOptions" ]
 
 import numpy as np
 import math
 from ipi.utils.messages import verbosity, warning
 
+class MinOptions:
+  def __init__(self):
+    self.tolerance = 1.0e-5
+    self.itmax = 1000
+    self.init_step = 0.001
+    self.glimit = 100.0
 
-def min_brent(gdg, tol=1e-5, itmax=100, gdg0=None):
+def bracket(fdf, fdf0=None, x0=0.0, minopts=MinOptions()): #TODO: ALSO ADD OPTION FOR glimit?
+
+  """Given an initial point, determines the initial bracket for the minimum
+   Arguments:
+      fdf = function to minimize [0], derivative of function to minimize [1] (not used)
+      x0 = initial point
+      fdf0 = value of function and its derivative at x0
+  """
+
+  # Constants
+  gold = 1.618034 # Golden ratio
+  glimit = minopts.glimit # Limit for magnification of parabolic fit step
+  tiny = 1.0e-20 # Prevent division by zero
+
+  # x0: initial point of evaluation (e.g. initial atomic position)
+  # ax, bx, cx: bracketing points with ax < bx < cx
+  # fa, fb, fc: value of function at ax, bx, cx
+  if fdf0 is None: fdf0 = fdf(x0)
+  ax = x0 
+  fa, dfa = fdf0 
+  bx = x0 + minopts.init_step
+  fb, dfb = fdf(bx)
+
+  # Switch direction to move downhill, if necessary
+  if fb > fa:
+    tmp = ax
+    ax = bx
+    bx = tmp
+    tmp = fb
+    fb = fa
+    fa = tmp
+    tmp = dfb
+    dfb = dfa
+    dfa = tmp
+
+  # Initial guess for third bracketing point
+  cx = bx + gold * (bx - ax)
+  fc, dfc = fdf(cx)
+
+  # Loop until acceptable bracketing condition is achieved
+  # u is a point between two of the bracketing points
+  # Use parabolic extrapolation to find u. "tiny" prevents possible div$
+  while fb > fc:
+    r = (bx - ax) * (fb - fc)
+    q = (bx - cx) * (fb - fa)
+    u = bx - ((bx - cx) * q - (bx - ax) * r) / (2.0 * math.copysign(max(abs(q - r), tiny), (q - r))) # Point from parabolic fit
+
+    ulim = bx + glimit * (cx - bx) # Limit for parabolic fit point; *Can test various possibilities*
+
+    # Find minimums between b and c or a and u
+    # If parabolic fit unsuccessful, use default step magnification
+    # Otherwise:
+    # - Parabolic fit between c and its allowed limit
+    # - Limit u to maximum allowed value
+    # - Use default magnification
+    if ((bx - u) * (u - cx)) > 0.0:
+      fu, dfu = fdf(u)
+      if fu < fc:
+        ax = bx
+        bx = u
+        fa = fb
+        fb = fu
+        dfa = dfb
+        dfb = dfu
+        return (ax, bx, cx, fb, dfb)
+
+      elif fu > fb:
+        cx = u
+        fc = fu
+        dfc = dfu
+        return (ax, bx, cx, fb, dfb)
+
+      u = cx + gold * (cx - bx)
+      fu, dfu = fdf(u)
+    elif ((cx - u) * (u - ulim)) > 0.0:
+      fu, dfu = fdf(u)
+      if fu < fc:
+        bx = cx
+        cx = u
+        u = cx + gold * (cx - bx)
+        fb = fc
+        fc = fu
+        dfb = dfc
+        dfc = dfu
+        fu, dfu = fdf(u)
+    elif ((u - ulim) * (ulim - cx)) >= 0.0:
+      u = ulim
+      fu, dfu = fdf(u)
+    else:
+      u = cx + gold * (cx - bx)
+      fu, dfu = fdf(u)
+
+    # Shift points
+    ax = bx
+    bx = cx
+    cx = u
+    fa = fb
+    fb = fc
+    fc = fu
+    dfa = dfb
+    dfb = dfc
+    dfc = dfu
+  return (ax, bx, cx, fb, dfb)
+
+# One dimensional minimization function using function derivatives
+# and Brent's method
+def min_brent(fdf, fdf0=None, x0=0.0, minopts=MinOptions()):
+
+  """Given a maximum number of iterations and a convergence tolerance,
+   minimizes the specified function 
+   Arguments:
+      x0 = initial x-value
+      fdf = function to minimize
+      fdf0 = initial function value
+      tol = convergence tolerance
+      itmax = maximum allowed iterations
+  """
 
   # Initializations and constants
-  gold = 0.3819660
-  zeps = 1e-10  
-  e = 0.0
+  gold = 0.3819660 # Golden ratio
+  zeps = 1.0e-10 # Safeguard against trying to find fractional precision for min that is exactly zero
+  e = 0.0 # Size of step before last
+  tol = minopts.tolerance
+  itmax = minopts.itmax
+  init_step = minopts.init_step
 
-# MC this is all very confused, you should consider that you are given a starting point
-# and find yourself the bracket
-  # Requirement that :
-  # ax < bx < cx
-  # f(bx) < f(ax) and f(bx) < f(cx)
-  # near the local minimum
-  #!TODO! should find the brackets!
-  ax = -1.0
-  bx = 0.0
-  cx = 1.0
+  # Call initial bracketing routine; takes arguments function and initial x-value
+  (ax, bx, cx, fb, dfb) = bracket(fdf, fdf0, x0, minopts)
+  minopts.init_step = abs(cx - bx) # Simple option that will give order of magnitude estimate for next iteration
 
   # Set bracket points
   if ax < cx:
@@ -59,9 +177,8 @@ def min_brent(gdg, tol=1e-5, itmax=100, gdg0=None):
   # g(x) is evaluation of arbitrary function
   # dg(x) is the evaluation of the derivative of g(x)
   x = w = v = bx
-  if gdg0 is None: gdg0 = gdg(x)
-  fw = fv = fx = gdg0[0]
-  dw = dv = dx = gdg0[1]
+  fw = fv = fx = fb # Function
+  dfw = dfv = dfx = dfb # Function derivative
   
   # Main loop
   iter = 1
@@ -74,7 +191,7 @@ def min_brent(gdg, tol=1e-5, itmax=100, gdg0=None):
 
     # Test for satisfactory completion
     if abs(x - xm) <= (tol2 - 0.5 * (b - a)):
-      return (x,fx)
+      return (x, fx)
 
     # Initialize d values to outside of bracket
     if abs(e) > tol1:
@@ -82,17 +199,17 @@ def min_brent(gdg, tol=1e-5, itmax=100, gdg0=None):
       d2 = d1
 
       # Secant method with both d points
-      if dw != dx:
-        d1 = (w - x) * dx / (dx - dw)
-      if dv != dx:
-        d2 = (v - x) * dx / (dx - dv)
+      if dfw != dfx:
+        d1 = (w - x) * dfx / (dfx - dfw)
+      if dfv != dfx:
+        d2 = (v - x) * dfx / (dfx - dfv)
 
       # Choose estimate based on derivative at x and move on step
       # before last
       u1 = x + d1
       u2 = x + d2
-      ok1 = ((a - u1) * (u1 - b) > 0.0) and (dx * d1 <= 0.0)
-      ok2 = ((a - u2) * (u2 - b) > 0.0) and (dx * d2 <= 0.0)
+      ok1 = ((a - u1) * (u1 - b) > 0.0) and (dfx * d1 <= 0.0)
+      ok2 = ((a - u2) * (u2 - b) > 0.0) and (dfx * d2 <= 0.0)
       olde = e
       e = d
 
@@ -110,35 +227,35 @@ def min_brent(gdg, tol=1e-5, itmax=100, gdg0=None):
         if abs (d) <= abs (0.5 * olde):
           u = x + d
           if ((u - a) < tol2) or ((b - u) < tol2):
-             d = abs(tol1) * (xm - x) / abs(xm - x)
+             d = math.copysign(tol1, (xm - x))
           else:
-            if dx >= 0.0:
+            if dfx >= 0.0:
               e = a - x
             else:
               e = b - x
             d = 0.5 * e
       else:
-        if dx >= 0.0:
+        if dfx >= 0.0:
           e = a - x
         else:
           e = b - x
         d = 0.5 * e
     else:
-      if dx >= 0.0:
+      if dfx >= 0.0:
         e = a - x
       else:
         e = b - x
       d = 0.5 * e
     if abs(d) >= tol1:
       u = x + d
-      fu, du = gdg(u)
+      fu, dfu = fdf(u)
     else:
-      u = x + abs(tol1) * d / abs(d)
-      fu, du = gdg(u)
+      u = x + math.copysign(tol1, d)
+      fu, dfu = fdf(u)
      
       # If minimum step goes uphill, minimum has been found
       if fu > fx:
-        return (x,fx)
+        return (x, fx)
         
     if fu <= fx:
       if u >= x:
@@ -147,13 +264,13 @@ def min_brent(gdg, tol=1e-5, itmax=100, gdg0=None):
         b = x
       v = w
       fv = fw
-      dv = dw
+      dfv = dfw
       w = x
       fw = fx
-      dw = dx
+      dfw = dfx
       x = u
       fx = fu
-      dx = du
+      dfx = dfu
     else:
       if u < x:
         a = u
@@ -162,16 +279,17 @@ def min_brent(gdg, tol=1e-5, itmax=100, gdg0=None):
       if (fu <= fw) or (w == x):
         v = w
         fv = fw
-        dv = dw
+        dfv = dfw
         w = u
         fw = fu
-        dw = du
+        dfw = dfu
       elif (fu < fv) or (v == x) or (v == w):
         v = u
         fv = fu
-        dv = du
+        dfv = dfu
     iter += 1
   
   # Exit if maximum number of iterations exceeded
   print "Error: Maximum iterations exceeded"
   return (x, fx)
+
