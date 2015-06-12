@@ -32,8 +32,43 @@ from ipi.inputs.thermostats import *
 from ipi.inputs.initializer import *
 from ipi.utils.units import *
 
-__all__ = ['InputEnsemble']
+__all__ = ['InputEnsemble', 'InputGEOP']
 
+class InputGEOP(Input):
+	"""Geometry optimization options.
+	
+	Contains options related with geometry optimization, such as method, 
+	thresholds, linear search strategy, etc. 
+	
+	"""
+	
+	attribs={"mode"  : (InputAttribute, {"dtype"   : str,
+                                    "help"    : "The geometry optimization algorithm to be used",
+                                    "options" : ['steepest']}) }
+   
+	fields = { "line_tolerance": (InputValue, {"dtype"         : float,
+                                     "default"       : 1.0e-5,
+                                     "help"          : "The tolerance for line search procedures."})
+              }
+    dynamic = {  }
+
+	default_help = "TODO EXPLAIN WHAT THIS IS"
+	default_label = "GEOP"   
+
+	def store(self, geop):
+		self.line_tolerance.store(geop.tol) # todo set the proper parameter
+		self.mode.store(geop.mode)
+		
+		pass
+		
+	def fetch(self):
+		
+		ngeo = Ensemble() # this should be a geop object we don't have here
+		ngeo.tol = self.line_tolerance.fetch()
+		pass
+
+
+		
 class InputEnsemble(Input):
    """Ensemble input class.
 
