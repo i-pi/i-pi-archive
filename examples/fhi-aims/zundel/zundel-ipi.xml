@@ -1,20 +1,11 @@
 <simulation verbosity="high">
-   <initialize nbeads="6">
-    <file mode="pdb">./zundel-cfg.pdb</file>
-    <cell mode="abc">
-       [   15., 15.0, 15.0 ]
-    </cell>
-    <velocities mode="thermal" units='kelvin'> 300 </velocities>
-   </initialize>
-   <forces>
-      <socket mode='inet'>
+      <ffsocket mode='inet' name="aims">
          <latency>  1.00000000e-02</latency>
          <slots>4</slots>
          <port>40050</port>
          <timeout>  6.00000000e+02</timeout>
          <address>localhost</address>
-      </socket>
-   </forces>
+      </ffsocket>
    <total_steps>400</total_steps>
    <output prefix="zundel_output">
       <trajectory stride="2" filename="pos" cell_units="angstrom">positions</trajectory>
@@ -28,6 +19,16 @@
    <prng>
       <seed>18885</seed>
    </prng>
+  <system>
+   <forces><force> aims</force></forces>
+   <initialize nbeads="6">
+    <file mode="pdb">./zundel-cfg.pdb</file>
+    <cell mode="abc">
+       [   15., 15.0, 15.0 ]
+    </cell>
+    <velocities mode="thermal" units='kelvin'> 300 </velocities>
+   </initialize>
+ 
    <ensemble mode='nvt'>
   <timestep units="femtosecond"> 0.5 </timestep>
   <thermostat mode='nm_gle'>
@@ -54,4 +55,5 @@
   </thermostat>
     <temperature units='kelvin'> 300.0 </temperature>
    </ensemble>
+ </system>
 </simulation>

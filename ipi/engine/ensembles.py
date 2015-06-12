@@ -99,8 +99,8 @@ class Ensemble(dobject):
          self.fixatoms = fixatoms
 
 
-   def bind(self, beads, nm, cell, bforce, prng):
-      """Binds beads, cell, bforce and prng to the ensemble.
+   def bind(self, beads, nm, cell, bforce, bbias, prng):
+      """Binds beads, cell, bforce, bbias and prng to the ensemble.
 
       This takes a beads object, a cell object, a forcefield object and a
       random number generator object and makes them members of the ensemble.
@@ -123,6 +123,7 @@ class Ensemble(dobject):
       self.beads = beads
       self.cell = cell
       self.forces = bforce
+      self.bias = bbias
       self.prng = prng
       self.nm = nm
 
@@ -134,6 +135,7 @@ class Ensemble(dobject):
 
       dget(self,"econs").add_dependency(dget(self.beads, "kin"))
       dget(self,"econs").add_dependency(dget(self.forces, "pot"))
+      dget(self,"econs").add_dependency(dget(self.bias, "pot"))
       dget(self,"econs").add_dependency(dget(self.beads, "vpath"))
       dget(self,"econs").add_dependency(dget(self, "eens"))
       self.pconstraints() # applies momentum constraints to initial configurations
@@ -165,6 +167,7 @@ class Ensemble(dobject):
       ensembles.
       """
       eham = self.beads.vpath*self.nm.omegan2 + self.nm.kin + self.forces.pot
+      eham += self.bias.pot # bias
       return eham + self.eens
 
    def pconstraints(self):
@@ -246,6 +249,8 @@ class NVEEnsemble(Ensemble):
       """Velocity Verlet momenta propagator."""
 
       self.beads.p += depstrip(self.forces.f)*(self.dt*0.5)
+      # also adds the bias force
+      self.beads.p += depstrip(self.bias.f)*(self.dt*0.5)
 
    def qcstep(self):
       """Velocity Verlet centroid position propagator."""
@@ -306,7 +311,7 @@ class NVTEnsemble(NVEEnsemble):
       else:
          self.thermostat = thermostat
 
-   def bind(self, beads, nm, cell, bforce, prng):
+   def bind(self, beads, nm, cell, bforce, bbias, prng):
       """Binds beads, cell, bforce and prng to the ensemble.
 
       This takes a beads object, a cell object, a forcefield object and a
@@ -327,7 +332,7 @@ class NVTEnsemble(NVEEnsemble):
             generation.
       """
 
-      super(NVTEnsemble,self).bind(beads, nm, cell, bforce, prng)
+      super(NVTEnsemble,self).bind(beads, nm, cell, bforce, bbias, prng)
       
       fixdof = len(self.fixatoms)*3*self.beads.nbeads
       if self.fixcom:
@@ -424,7 +429,8 @@ class NPTEnsemble(NVTEnsemble):
          self.pext = pext
       else: self.pext = 0.0
 
-   def bind(self, beads, nm, cell, bforce, prng):
+
+   def bind(self, beads, nm, cell, bforce, bbias, prng):
       """Binds beads, cell, bforce and prng to the ensemble.
 
       This takes a beads object, a cell object, a forcefield object and a
@@ -450,7 +456,7 @@ class NPTEnsemble(NVTEnsemble):
       if self.fixcom:
          fixdof = 3
 
-      super(NPTEnsemble,self).bind(beads, nm, cell, bforce, prng)
+      super(NPTEnsemble,self).bind(beads, nm, cell, bforce, bbias, prng)
       self.barostat.bind(beads, nm, cell, bforce, prng=prng, fixdof=fixdof)
 
 
@@ -551,7 +557,7 @@ class NSTEnsemble(NVTEnsemble):
       else: self.stressext = 0.0
 
 
-   def bind(self, beads, nm, cell, bforce, prng):
+   def bind(self, beads, nm, cell, bforce, bbias, prng):
       """Binds beads, cell, bforce and prng to the ensemble.
 
          This takes a beads object, a cell object, a forcefield object and a
@@ -577,8 +583,8 @@ class NSTEnsemble(NVTEnsemble):
       if self.fixcom:
          fixdof = 3
 
-      super(NSTEnsemble,self).bind(beads, nm, cell, bforce, prng)
-      self.barostat.bind(beads, nm, cell, bforce, prng=prng, fixdof=fixdof)
+      super(NSTEnsemble,self).bind(beads, nm, cell, bforce, bbias, prng)
+      self.barostat.bind(beads, nm, cell, bforce, bbias, prng=prng, fixdof=fixdof)
 
 
       deppipe(self,"ntemp", self.barostat, "temp")
@@ -676,8 +682,10 @@ class ReplayEnsemble(Ensemble):
       self.ptime = self.ttime = 0
       self.qtime = -time.time()
 
-      try:         
-         self.rstep += 1
+      
+      while True:
+       self.rstep += 1
+       try:         
          if (self.intraj.mode == "xyz"):            
             for b in self.beads:
                myatoms = read_xyz(self.rfile)
@@ -702,7 +710,7 @@ class ReplayEnsemble(Ensemble):
             self.cell.h[:] = mycell.h
             self.beads.q[:] = mybeads.q
             softexit.trigger(" # Read single checkpoint")
-      except EOFError:
+       except EOFError:
          softexit.trigger(" # Finished reading re-run trajectory")
-      if (step!=None and self.rstep<=step): self.step(step) 
+       if (step==None or self.rstep>step): break 
       self.qtime += time.time()
