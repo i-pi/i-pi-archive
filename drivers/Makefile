@@ -21,7 +21,7 @@
  
 .PHONY: all modules clean
 
-FLAGS=-g -O3 -Wall -Wno-maybe-uninitialized
+FLAGS=-g -O3 -Wall -ffree-line-length-none -ffixed-line-length-none 
 MODULES=distance.f90 LJ.f90 SG.f90 
 PES=pes/zundel.f pes/morse.f pes/qtip4pf.f
 OBJECTS=$(MODULES:%.f90=%.o) $(PES:%.f=%.o)

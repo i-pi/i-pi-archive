@@ -76,7 +76,7 @@
       port = 31415
       verbose = .false.
       par_count = 0
-      vstyle = -1
+      vstyle = -1 
       rc = 0.0d0
       init_rc = 0.0d0
       volume = 0.0d0
@@ -101,7 +101,7 @@
             IF (ccmd == 0) THEN
                WRITE(*,*) " Unrecognized command line argument", ccmd
                CALL helpmessage
-               STOP -1
+               STOP "ENDED"
             ENDIF
             IF (ccmd == 1) THEN
                host = trim(cmdbuffer)//achar(0)
@@ -125,7 +125,7 @@
                ELSE
                   WRITE(*,*) " Unrecognized potential type ", trim(cmdbuffer)
                   WRITE(*,*) " Use -m [gas|lj|sg|harm|morse|zundel|qtip4pf] "
-                  STOP -1
+                  STOP "ENDED"
                ENDIF
             ELSEIF (ccmd == 4) THEN
                par_count = 1
@@ -144,23 +144,23 @@
       IF (vstyle == -1) THEN
          WRITE(*,*) " Error, type of potential not specified."
          CALL helpmessage
-         STOP -1
+         STOP "ENDED"
       ELSEIF (0 == vstyle ) THEN
          IF (par_count /= 0) THEN
             WRITE(*,*) "Error: no initialization string needed for ideal gas."
-            STOP -1 
+            STOP "ENDED" 
          ENDIF   
          isinit = .true.
       ELSEIF (6 == vstyle ) THEN
          IF (par_count /= 0) THEN
             WRITE(*,*) "Error:  no initialization string needed for qtip4pf."
-            STOP -1 
+            STOP "ENDED" 
          ENDIF 
          isinit = .true.
       ELSEIF (5 == vstyle ) THEN
          IF (par_count /= 0) THEN
             WRITE(*,*) "Error: no initialization string needed for zundel."
-            STOP -1 
+            STOP "ENDED" 
          ENDIF   
          CALL prezundelpot()
          CALL prezundeldip()
@@ -173,14 +173,14 @@
          ELSEIF ( 2/= par_count) THEN
             WRITE(*,*) "Error: parameters not initialized correctly."
             WRITE(*,*) "For morse potential use -o r0,D,a (in a.u.) "
-            STOP -1 
+            STOP "ENDED" 
          ENDIF 
          isinit = .true.
       ELSEIF (vstyle == 1) THEN
          IF (par_count /= 3) THEN
             WRITE(*,*) "Error: parameters not initialized correctly."
             WRITE(*,*) "For LJ potential use -o sigma,epsilon,cutoff "
-            STOP -1 ! Note that if initialization from the wrapper is implemented this exit should be removed.
+            STOP "ENDED" ! Note that if initialization from the wrapper is implemented this exit should be removed.
          ENDIF   
          sigma = vpars(1)
          eps = vpars(2)
@@ -191,7 +191,7 @@
          IF (par_count /= 1) THEN
             WRITE(*,*) "Error: parameters not initialized correctly."
             WRITE(*,*) "For SG potential use -o cutoff "
-            STOP -1 ! Note that if initialization from the wrapper is implemented this exit should be removed.
+            STOP "ENDED" ! Note that if initialization from the wrapper is implemented this exit should be removed.
          ENDIF
          rc = vpars(1)
          rn = rc*1.2
@@ -200,7 +200,7 @@
          IF (par_count /= 1) THEN
             WRITE(*,*) "Error: parameters not initialized correctly."
             WRITE(*,*) "For 1D harmonic potential use -o k "
-            STOP -1 ! Note that if initialization from the wrapper is implemented this exit should be removed.
+            STOP "ENDED" ! Note that if initialization from the wrapper is implemented this exit should be removed.
          ENDIF
          ks = vpars(1)
          isinit = .true.
@@ -217,7 +217,7 @@
 
       ! Calls the interface to the POSIX sockets library to open a communication channel
       CALL open_socket(socket, inet, port, host)
-      nat = -1
+      nat = -1 
       DO WHILE (.true.) ! Loops forever (or until the wrapper ends!)
 
          ! Reads from the socket one message header
@@ -285,13 +285,13 @@
             ELSEIF (vstyle == 4) THEN ! Morse potential. 
                IF (nat/=1) THEN
                   WRITE(*,*) "Expecting 1 atom for 3D Morse (use the effective mass for the atom mass to get proper frequency!) "
-                  STOP -1
+                  STOP "ENDED"
                ENDIF
                CALL getmorse(vpars(1), vpars(2), vpars(3), atoms, pot, forces)               
             ELSEIF (vstyle == 5) THEN ! Zundel potential. 
                IF (nat/=7) THEN
                   WRITE(*,*) "Expecting 7 atoms for Zundel potential, O O H H H H H "
-                  STOP -1
+                  STOP "ENDED"
                ENDIF
                
                CALL zundelpot(pot,atoms)
@@ -312,14 +312,14 @@
             ELSEIF (vstyle == 6) THEN ! qtip4pf potential.             
                IF (mod(nat,3)/=0) THEN
                   WRITE(*,*) " Expecting water molecules O H H O H H O H H but got ", nat, "atoms"
-                  STOP -1
+                  STOP "ENDED"
                ENDIF
                vpars(1) = cell_h(1,1)
                vpars(2) = cell_h(2,2)
                vpars(3) = cell_h(3,3)
                IF (cell_h(1,2).gt.1d-10 .or. cell_h(1,3).gt.1d-12  .or. cell_h(2,3).gt.1d-12) THEN
                   WRITE(*,*) " qtip4pf PES only works with orthorhombic cells"
-                  STOP -1 
+                  STOP "ENDED" 
                ENDIF
                CALL qtip4pf(vpars(1:3),atoms,nat,forces,pot,virial)
                
@@ -386,7 +386,7 @@
             hasdata = .false.
          ELSE
             WRITE(*,*) " Unexpected header ", header
-            STOP -1
+            STOP "ENDED"
          ENDIF
       ENDDO
       IF (nat > 0) DEALLOCATE(atoms, forces, msgbuffer)
