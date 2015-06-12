@@ -791,6 +791,7 @@ class GEOPEnsemble(Ensemble):
       self.gm.set_dir(depstrip(self.beads.q), dq)
 
       # reuse initial value since we have energy and forces already
+
       u0, du0 = (self.forces.pot, np.dot(depstrip(self.forces.f.flatten()), dq.flatten()))
       (x, fx) = min_brent(self.gm, fdf0=(u0, du0), x0=0.0, minopts=self.mo) 
 
