@@ -49,7 +49,7 @@ from ipi.inputs.thermostats import InputThermo
 from ipi.inputs.barostats import InputBaro
 from ipi.engine.thermostats import *
 from ipi.engine.barostats import *
-from ipi.utils.mintools import min_brent
+from ipi.utils.mintools import min_brent, MinOptions
 
 
 class Ensemble(dobject):
@@ -764,6 +764,7 @@ class GEOPEnsemble(Ensemble):
 
       super(GEOPEnsemble,self).__init__(dt=dt,temp=temp,fixcom=fixcom, eens=eens, fixatoms=fixatoms)
       self.gm = GEOMover()
+      self.mo = MinOptions()
    
    def bind(self, beads, nm, cell, bforce, bbias, prng):
       
@@ -779,6 +780,7 @@ class GEOPEnsemble(Ensemble):
       # chooses the step size based on an acceleration model (really the *dumbest* steepest descent option
       # also divides by the mass for dimensional consistency and as a sort of silly preconditioner
       dq = depstrip(self.forces.f)
+      dq *= 1.0 / np.sqrt(np.dot(dq.flatten(), dq.flatten()))
    
       if (len(self.fixatoms)>0):
          for dqb in dq:
@@ -786,11 +788,12 @@ class GEOPEnsemble(Ensemble):
             dqb[self.fixatoms*3+1]=0.0
             dqb[self.fixatoms*3+2]=0.0
          
-      self.gm.set_dir(depstrip(self.beads.q),dq)
+      self.gm.set_dir(depstrip(self.beads.q), dq)
+
       # reuse initial value since we have energy and forces already
-      u0, du0 = (self.forces.pot, np.dot(depstrip(self.forces.f.flatten()), dq.flatten())/np.sqrt(np.dot(dq.flatten(),dq.flatten())) )
-      (x,fx) = min_brent(self.gm, 1e-5, 100, (u0, du0) )
-      
-      
+
+      u0, du0 = (self.forces.pot, np.dot(depstrip(self.forces.f.flatten()), dq.flatten()))
+      (x, fx) = min_brent(self.gm, fdf0=(u0, du0), x0=0.0, minopts=self.mo) 
+
       self.beads.q += dq * x
       self.qtime += time.time()
