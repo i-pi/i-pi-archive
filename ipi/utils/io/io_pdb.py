@@ -1,5 +1,5 @@
-"""Contains the functions used to print the trajectories and read input
-configurations with pdb formatting.
+"""Functions used to read input configurations and print trajectories
+in the PDB format.
 
 Copyright (C) 2013, Joshua More and Michele Ceriotti
 

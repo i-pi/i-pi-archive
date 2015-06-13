@@ -1,4 +1,4 @@
-"""Deals with creating the initiliazer class.
+"""Creates objects that initialize the simulation.
 
 Copyright (C) 2013, Joshua More and Michele Ceriotti
 

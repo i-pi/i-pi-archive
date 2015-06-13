@@ -1,4 +1,4 @@
-"""Contains the classes that are used to write to and read from restart files.
+"""Classes used to read and write XML input and restart files.
 
 Copyright (C) 2013, Joshua More and Michele Ceriotti
 
@@ -337,7 +337,7 @@ class Input(object):
                raise NameError("Attribute name '" + a + "' is not a recognized property of '" + xml.name + "' objects")
 
          for (f, v) in xml.fields: #reads all field and dynamic data.
-            if f in self.fields:               
+            if f in self.fields:
                self.__dict__[f].parse(xml=v)
             elif f == "_text":
                self._text = v
@@ -644,7 +644,7 @@ class Input(object):
          for a in self.attribs:
             if not (a == "units" and self._dimension == "undefined"):
                rstr += indent + "   <" + a + "_dtype> " + self.type_print(self.__dict__[a].type) + " </" + a + "_dtype>\n"
-      
+
       #repeats the above instructions for any fields or dynamic tags.
       #these will only be printed if their level in the hierarchy is not above
       #the user specified limit.
@@ -654,7 +654,7 @@ class Input(object):
          for f, v in self.dynamic.iteritems():
             #we must create the object manually, as dynamic objects are
             #not automatically added to the input object's dictionary
-            dummy_obj = v[0](**v[1])             
+            dummy_obj = v[0](**v[1])
             rstr += dummy_obj.help_xml(f, "   " + indent, level+1, stop_level)
 
       rstr += indent + "</" + name + ">\n"
@@ -750,7 +750,7 @@ class InputAttribute(Input):
       Returns:
          A string giving the stored value in the appropriate format.
       """
-      
+
       return name + "='" + write_type(self.type, self.value) + "'"
 
 

@@ -1,5 +1,5 @@
-"""Contains the functions used to print the trajectories and read input
-configurations with xyz formatting.
+"""Functions used to read input configurations and print trajectories
+in the XYZ format.
 
 Copyright (C) 2013, Joshua More and Michele Ceriotti
 
@@ -10,7 +10,7 @@ the Free Software Foundation, either version 3 of the License, or
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
@@ -91,10 +91,10 @@ def read_xyz(filedesc, readcell=False):
    if natoms == "":
       raise EOFError("The file descriptor hit EOF.")
    natoms = int(natoms)
-   comment = filedesc.readline()   
+   comment = filedesc.readline()
    recell = re.compile('# CELL.abcABC.: (.*) Traj')
    reres = recell.search(comment)
-   if (reres is None):  # defaults to unit box 
+   if (reres is None):  # defaults to unit box
       h = mt.abc2h(1., 1., 1., np.pi/2, np.pi/2, np.pi/2)
    else:
       (a,b,c,alpha,beta,gamma) = reres.group(1).split()
@@ -137,7 +137,7 @@ def read_xyz(filedesc, readcell=False):
 
    if readcell: return atoms, cell
    else: return atoms
-   
+
 def iter_xyz(filedesc):
    """Takes a xyz-style file and yields one Atoms object after another.
 

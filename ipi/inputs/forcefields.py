@@ -1,4 +1,4 @@
-"""Deals with creating the forcefield class.
+"""Creates objects that deal with the evaluation of interactions.
 
 Copyright (C) 2013, Joshua More and Michele Ceriotti
 

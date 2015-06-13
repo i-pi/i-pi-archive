@@ -1,4 +1,4 @@
-"""Deals with the socket communication between the PIMD and driver code.
+"""Deals with the socket communication between the i-PI and drivers.
 
 Copyright (C) 2013, Joshua More and Michele Ceriotti
 
@@ -380,7 +380,7 @@ class Driver(DriverSocket):
 
       if self.status & Status.NeedsInit:
          try:
-            self.sendall(Message("init")) 
+            self.sendall(Message("init"))
             self.sendall(np.int32(rid))
             self.sendall(np.int32(len(pars)))
             self.sendall(pars)
@@ -565,7 +565,7 @@ class InterfaceSocket(object):
       # flush it all down the drain
       self.clients = []
       self.jobs = []
- 
+
       try:
          self.server.shutdown(socket.SHUT_RDWR)
          self.server.close()

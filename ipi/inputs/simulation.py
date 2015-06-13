@@ -1,4 +1,4 @@
-"""Deals with creating the simulation class.
+"""Creates objects that hold the whole simulation.
 
 Copyright (C) 2013, Joshua More and Michele Ceriotti
 
@@ -187,9 +187,9 @@ class InputSimulation(Input):
                syslist.append(v.fetch())
                if (v.copies.fetch() > 1):
                   syslist[-1].prefix = syslist[-1].prefix + ( ("%0" + str(int(1 + np.floor(np.log(v.copies.fetch())/np.log(10)))) + "d") % (isys) )
-         elif k == "ffsocket": 
+         elif k == "ffsocket":
             fflist.append(v.fetch())
-         elif k == "fflj": 
+         elif k == "fflj":
             fflist.append(v.fetch())
 
 

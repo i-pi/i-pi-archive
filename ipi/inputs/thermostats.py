@@ -1,4 +1,4 @@
-"""Deals with creating the thermostats class.
+"""Creates objects that deal with constant temperature simulations.
 
 Copyright (C) 2013, Joshua More and Michele Ceriotti
 
@@ -176,12 +176,12 @@ class InputThermoBase(Input):
          if len(rC) == 0:
             rC = None
          thermo = ethermostats.ThermoNMGLEG(A=self.A.fetch(),C=rC, tau=self.tau.fetch())
-         thermo.s = self.s.fetch()      
+         thermo.s = self.s.fetch()
       elif self.mode.fetch() == "" :
          thermo=ethermostats.Thermostat()
       else:
          raise TypeError("Invalid thermostat mode " + self.mode.fetch())
-      
+
       thermo.ethermo = self.ethermo.fetch()
 
       return thermo
@@ -200,17 +200,17 @@ class InputThermoBase(Input):
 
 class InputThermo(InputThermoBase):
    """ Extends InputThermoBase to allow the definition of a multithermo """
-   
+
    attribs = copy(InputThermoBase.attribs)
-   
+
    attribs["mode"][1]["options"].append("multi")
-   
+
    dynamic = { "thermostat" : (InputThermoBase, {"default"   : input_default(factory=ethermostats.Thermostat),
                                          "help"      : "The thermostat for the atoms, keeps the atom velocity distribution at the correct temperature."} )
              }
 
    def store(self, thermo):
-       
+
       if type(thermo) is ethermostats.MultiThermo:
          self.mode.store("multi" )
          for t in thermo.tlist:
@@ -219,10 +219,10 @@ class InputThermo(InputThermoBase):
             self.extra.append(("thermostat",it))
          self.ethermo.store(thermo.ethermo)
       else:
-          super(InputThermo,self).store(thermo) 
-          
+          super(InputThermo,self).store(thermo)
+
    def fetch(self):
-      
+
       if self.mode.fetch() == "multi" :
          tlist = []
          for (k, t) in self.extra:
@@ -231,5 +231,5 @@ class InputThermo(InputThermoBase):
          thermo.ethermo = self.ethermo.fetch()
       else:
          thermo=super(InputThermo,self).fetch()
-      
+
       return thermo

@@ -1,4 +1,4 @@
-"""Deals with creating the ensembles class.
+"""Creates objects that deal with the different ensembles.
 
 Copyright (C) 2013, Joshua More and Michele Ceriotti
 

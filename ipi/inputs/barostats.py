@@ -1,4 +1,4 @@
-"""Deals with creating the barostat class.
+"""Creates objects that deal with constant pressure and stress simulations.
 
 Copyright (C) 2013, Joshua More and Michele Ceriotti
 
@@ -112,7 +112,7 @@ class InputBaro(Input):
       elif self.mode.fetch() == "anisotropic":
          baro = BaroRGB(thermostat=self.thermostat.fetch(), tau=self.tau.fetch())
          if self.p._explicit: baro.p = self.p.fetch()
-         if self.h0._explicit: 
+         if self.h0._explicit:
             baro.h0 = self.h0.fetch()
          else:
             raise ValueError("Reference cell MUST be specified for an anisotropic barostat")

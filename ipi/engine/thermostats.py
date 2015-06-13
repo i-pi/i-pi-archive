@@ -1,4 +1,4 @@
-"""Contains the classes that deal with constant temperature dynamics.
+"""Classes that deal with constant temperature simulations.
 
 Copyright (C) 2013, Joshua More and Michele Ceriotti
 

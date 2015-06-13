@@ -1,5 +1,4 @@
-"""Contains the class that deals with the running of the simulation and
-outputting the results.
+"""A class that runs the simulation and outputs results.
 
 Copyright (C) 2013, Joshua More and Michele Ceriotti
 
@@ -190,7 +189,7 @@ class Simulation(dobject):
             #st.start()
             #stepthreads.append(st)
             o.write()
-            
+
          for st in stepthreads:
             while st.isAlive(): st.join(2.0)   # this is necessary as join() without timeout prevents main from receiving signals
 
@@ -267,9 +266,9 @@ class Simulation(dobject):
          #   info(" # MD diagnostics: V: %10.5e    Kcv: %10.5e   Ecns: %10.5e" %
          #      (self.properties["potential"], self.properties["kinetic_cv"], self.properties["conserved"] ) )
 
-         #objgraph.show_growth() 
+         #objgraph.show_growth()
 
-         
+
          if os.path.exists("EXIT"): # soft-exit
             info(" # EXIT file detected! Bye bye!", verbosity.low )
             break

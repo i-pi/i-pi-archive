@@ -1,4 +1,4 @@
-"""Contains the classes that deal with constant pressure dynamics.
+"""Classes that deal with constant pressure simulations.
 
 Copyright (C) 2013, Joshua More and Michele Ceriotti
 
@@ -141,7 +141,7 @@ class Barostat(dobject):
       self.forces = forces
       self.bias = bias
       self.nm = nm
-    
+
       dset(self,"kstress",
          depend_value(name='kstress', func=self.get_kstress,
             dependencies=[ dget(beads,"q"), dget(beads,"qc"), dget(beads,"pc"), dget(forces,"f") ]))
@@ -188,7 +188,7 @@ class Barostat(dobject):
 
    def get_stress(self):
       """Calculates the internal stress tensor."""
-      
+
       bvir = np.zeros((3,3),float)
       if self.bias != None: bvir[:]=self.bias.vir
       return (self.kstress + self.forces.vir + bvir)/self.cell.V
@@ -315,7 +315,7 @@ class BaroBZP(Barostat):
       self.p += dthalf*3.0*( self.cell.V* ( press - self.beads.nbeads*self.pext ) +
                 Constants.kb*self.temp )
 
-      fc = np.sum(depstrip(self.forces.f),0)/self.beads.nbeads  
+      fc = np.sum(depstrip(self.forces.f),0)/self.beads.nbeads
       if self.bias != None: fc += np.sum(depstrip(self.bias.f),0)/self.beads.nbeads
       m = depstrip(self.beads.m3)[0]
       pc = depstrip(self.beads.pc)
@@ -325,7 +325,7 @@ class BaroBZP(Barostat):
       # again, these are tiny tiny terms so whatever.
       self.p += (dthalf2*np.dot(pc,fc/m) + dthalf3*np.dot(fc,fc/m)) * self.beads.nbeads
 
-      self.beads.p += depstrip(self.forces.f)*dthalf 
+      self.beads.p += depstrip(self.forces.f)*dthalf
       if self.bias != None: self.beads.p +=depstrip(self.bias.f)*dthalf
 
    def qcstep(self):
@@ -400,7 +400,7 @@ class BaroRGB(Barostat):
       if not stressext is None:
          self.stressext = stressext
       else: self.stressext = 0.0
-            
+
    def bind(self, beads, nm, cell, forces, bias=None, prng=None, fixdof=None):
       """Binds beads, cell and forces to the barostat.
 
@@ -430,7 +430,7 @@ class BaroRGB(Barostat):
       dset(self,"m6", depend_array(name='m6', value=np.zeros(6,float),
                                  func=(lambda:np.asarray([1,1,1,1,1,1])*self.m[0]),
                                  dependencies=[ dget(self,"m")] ))
-                                 
+
       # overrides definition of pot to depend on the many things it depends on for anisotropic cell
       dset(self,"pot",
          depend_value(name='pot', func=self.get_pot,
@@ -439,7 +439,7 @@ class BaroRGB(Barostat):
 
       # binds the thermostat to the piston degrees of freedom
       self.thermostat.bind(pm=[ self.p6, self.m6], prng=prng)
-      
+
       dset(self,"kin",depend_value(name='kin',
             func=(lambda:0.5*np.trace(np.dot(self.p.T,self.p))/self.m[0]),
             dependencies= [dget(self,"p"), dget(self,"m")] ) )
@@ -469,7 +469,7 @@ class BaroRGB(Barostat):
       eps=np.dot(self.cell.h, self.h0.ih)
       eps=np.dot(eps.T, eps)
       eps=0.5*(eps - np.identity(3))
-      
+
       return self.h0.V*np.trace(np.dot(self.stressext,eps))*self.beads.nbeads
 
    def get_ebaro(self):
@@ -497,8 +497,8 @@ class BaroRGB(Barostat):
       self.p += dthalf*( self.cell.V* np.triu( self.stress - self.beads.nbeads*pi_ext ) +
                            Constants.kb*self.temp*L)
 
-      fc = np.sum(depstrip(self.forces.f),0).reshape(self.beads.natoms,3)/self.beads.nbeads  
-      if self.bias != None: fc+= np.sum(depstrip(self.bias.f),0).reshape(self.beads.natoms,3)/self.beads.nbeads 
+      fc = np.sum(depstrip(self.forces.f),0).reshape(self.beads.natoms,3)/self.beads.nbeads
+      if self.bias != None: fc+= np.sum(depstrip(self.bias.f),0).reshape(self.beads.natoms,3)/self.beads.nbeads
       fcTonm = (fc/depstrip(self.beads.m3)[0].reshape(self.beads.natoms,3)).T
       pc = depstrip(self.beads.pc).reshape(self.beads.natoms,3)
 
@@ -507,7 +507,7 @@ class BaroRGB(Barostat):
       # again, these are tiny tiny terms so whatever.
       self.p += np.triu(dthalf2*np.dot(fcTonm,pc) + dthalf3*np.dot(fcTonm,fc)) * self.beads.nbeads
 
-      self.beads.p += depstrip(self.forces.f)*dthalf 
+      self.beads.p += depstrip(self.forces.f)*dthalf
       if self.bias != None:  self.beads.p += depstrip(self.bias.f)*dthalf
 
    def qcstep(self):

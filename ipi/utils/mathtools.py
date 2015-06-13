@@ -1,4 +1,4 @@
-"""Contains simple algorithms.
+"""Mathematical tools used in various parts of the code.
 
 Copyright (C) 2013, Joshua More and Michele Ceriotti
 

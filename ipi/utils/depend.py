@@ -1,4 +1,5 @@
-"""Contains the classes that are used to define the dependency network.
+"""Tools that deal with the dependency detection, value caching and automatic
+updating of variables.
 
 Copyright (C) 2013, Joshua More and Michele Ceriotti
 
