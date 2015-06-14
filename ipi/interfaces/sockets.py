@@ -59,7 +59,7 @@ class InvalidStatus(Exception):
 
    pass
 
-class Status:
+class Status(object):
    """Simple class used to keep track of the status of the client.
 
    Uses bitwise or to give combinations of different status options.

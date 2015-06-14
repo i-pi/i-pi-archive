@@ -23,7 +23,7 @@ from ipi.utils.messages import verbosity, info
 __all__ = ['Constants', 'Elements', 'unit_to_internal', 'unit_to_user']
 
 
-class Constants:
+class Constants(object):
    """Class whose members are fundamental constants.
 
    Attributes:

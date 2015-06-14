@@ -79,8 +79,13 @@ def mk_rs_matrix(nb1, nb2):
       return mk_rs_matrix(nb2, nb1).T*(float(nb2)/float(nb1))
 
 
+<<<<<<< HEAD
 class nm_trans:
    """Uses matrix multiplication to do normal mode transformations.
+=======
+class nm_trans(object):
+   """Helper class to perform beads <--> normal modes transformation.
+>>>>>>> master
 
    Attributes:
       _b2nm: The matrix to transform between the bead and normal mode
@@ -118,7 +123,7 @@ class nm_trans:
       return np.dot(self._nm2b,q)
 
 
-class nm_rescale:
+class nm_rescale(object):
    """Uses matrix multiplication to do ring polymer contraction or expansion
    between different numbers of beads.
 
@@ -159,8 +164,7 @@ class nm_rescale:
       return np.dot(self._b2tob1,q)
 
 
-
-class nm_fft:
+class nm_fft(object):
    """Uses Fast Fourier transforms to do normal mode transformations.
 
    Attributes:
