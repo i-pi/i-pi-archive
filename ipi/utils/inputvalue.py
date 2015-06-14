@@ -27,13 +27,6 @@ are then output to the checkpoint file when a restart file is required.
 
 Also deals with checking for user input errors, of the form of misspelt tags,
 bad data types, and failure to input required fields.
-
-Classes:
-   Input: Base input class.
-   InputAttribute: Input class for attribute data.
-   InputValue: Input class for scalar objects.
-   InputArray: Input class for arrays.
-   input_default: Class used to create mutable objects dynamically.
 """
 
 __all__ = ['Input', 'InputValue', 'InputAttribute', 'InputArray', 'input_default']
@@ -46,7 +39,7 @@ from ipi.utils.units import unit_to_internal, unit_to_user
 
 
 class input_default(object):
-   """Contains information required to dynamically create objects
+   """Contains information required to dynamically create objects.
 
    Used so that we can define mutable default input values to various tags
    without the usual trouble with having a class object that is also mutable,
@@ -755,7 +748,7 @@ class InputAttribute(Input):
 
 
 class InputValue(InputAttribute):
-   """Scalar class for input handling.
+   """Class for handling scalar input.
 
    Has the methods for dealing with simple data tags of the form:
    <tag_name> data </tag_name>, where data is just a value. Takes the data and
@@ -855,7 +848,7 @@ class InputValue(InputAttribute):
 
 ELPERLINE = 5
 class InputArray(InputValue):
-   """Array class for input handling.
+   """Class for handling array input.
 
    Has the methods for dealing with simple data tags of the form:
    <tag_name shape="(shape)"> data </tag_name>, where data is an array

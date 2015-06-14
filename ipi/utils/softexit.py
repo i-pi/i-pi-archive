@@ -14,10 +14,6 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <http.//www.gnu.org/licenses/>.
-
-
-Classes:
-   Softexit: Concise class to manage cleaning up in case of an emergency exit.
 """
 
 import traceback, sys, os, time, threading, signal

@@ -15,13 +15,6 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <http.//www.gnu.org/licenses/>.
-
-
-Functions:
-   print_pdb_path: Prints all the bead configurations, and shows the ring
-      polymer connectivity.
-   print_pdb: Prints the centroid configurations.
-   read_pdb: Reads the cell parameters and atom configurations from a pdb file.
 """
 
 __all__ = ['print_pdb_path', 'print_pdb', 'read_pdb']
@@ -70,7 +63,7 @@ def print_pdb_path(beads, cell, filedesc = sys.stdout):
    filedesc.write("END\n")
 
 def print_pdb(atoms, cell, filedesc = sys.stdout, title=""):
-   """Prints the atom configurations, into a pdb formatted file.
+   """Prints an atomic configuration into a pdb formatted file.
 
    Also prints the cell parameters in standard pdb form. Note
    that the angles are in degrees.
@@ -100,7 +93,7 @@ def print_pdb(atoms, cell, filedesc = sys.stdout, title=""):
    filedesc.write("END\n")
 
 def read_pdb(filedesc):
-   """Takes a pdb-style file and creates an Atoms and Cell object.
+   """Reads a PDB-style file and creates an Atoms and Cell object.
 
    Args:
       filedesc: An open readable file object from a pdb formatted file.

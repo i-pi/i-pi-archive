@@ -14,11 +14,6 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <http.//www.gnu.org/licenses/>.
-
-
-Classes:
-   InputInterface: Deals with creating the Interface object from a file, and
-      writing the checkpoints.
 """
 
 __all__ = [ 'InputInterfaceSocket' ]
@@ -34,7 +29,7 @@ class InputInterfaceSocket(Input):
    """Interface input class.
 
    Handles generating the apporopriate interface class from the xml
-   input file, and generating the xml checkpoin tags and data from an
+   input file, and generating the xml checkpoint tags and data from an
    instance of the object.
 
    Attributes:

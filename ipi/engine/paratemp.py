@@ -17,9 +17,6 @@ along with this program. If not, see <http.//www.gnu.org/licenses/>.
 
 Manages options, restarts and the actual exchange process for parallel
 tempering simulations.
-
-Classes:
-   ParaTemp: Contains all parallel-tempering related functionalities
 """
 
 __all__ = ['ParaTemp']
@@ -123,28 +120,28 @@ class ParaTemp(dobject):
             betai = 1.0/(Constants.kb*self.system_temp[i]*self.slist[i].beads.nbeads); # exchanges are being done, so it is better to re-compute betai in the inner loop
             betaj = 1.0/(Constants.kb*self.system_temp[j]*self.slist[j].beads.nbeads);
 
-               
+
             pxc = np.exp(
               (betai * syspot[i] + syspath[i]/betai +
                betaj * syspot[j] + syspath[j]/betaj) -
               (betai * syspot[j] + syspath[j]/betai +
                betaj * syspot[i] + syspath[i]/betaj)
               )
-              
+
             if (pxc > self.prng.u): # really does the exchange
                info(" @ PT:  SWAPPING replicas % 5d and % 5d." % (i,j), verbosity.low)
                # adjusts the conserved quantities
                # change in kinetic energy
-               self.slist[i].ensemble.eens += self.slist[i].nm.kin *(1.0- (betai/betaj)) 
+               self.slist[i].ensemble.eens += self.slist[i].nm.kin *(1.0- (betai/betaj))
                self.slist[j].ensemble.eens += self.slist[j].nm.kin *(1.0- (betaj/betai))
                # change in spring energy
-               self.slist[i].ensemble.eens += syspath[i]*(1.0/betai**2- 1.0/betaj**2) 
+               self.slist[i].ensemble.eens += syspath[i]*(1.0/betai**2- 1.0/betaj**2)
                self.slist[j].ensemble.eens += syspath[j]*(1.0/betaj**2- 1.0/betai**2)
 
                # adjusts the momenta
                self.slist[i].beads.p *= np.sqrt(betai/betaj)
                self.slist[j].beads.p *= np.sqrt(betaj/betai)
-               
+
                # if there are GLE thermostats around, we must also rescale the s momenta!
                # should also check the barostat thermostat, but we don't do NPT replica exchange yet so whatever.
                if hasattr(self.slist[i].ensemble.thermostat,"s"):

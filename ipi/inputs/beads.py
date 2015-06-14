@@ -14,11 +14,6 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <http.//www.gnu.org/licenses/>.
-
-
-Classes:
-   InputBeads: Deals with creating the Beads object from a file, and
-      writing the checkpoints.
 """
 
 import numpy as np

@@ -20,18 +20,12 @@ Contains the algorithms which propagate the position and momenta steps in the
 constant pressure ensemble. Holds the properties directly related to
 these ensembles, such as the internal and external pressure and stress.
 
-Classes:
-   Barostat: Base barostat class with the generic methods and attributes.
-   BaroBZP: Generates dynamics with a stochastic barostat -- see
-            Ceriotti, More, Manolopoulos, Comp. Phys. Comm. 185, 1019, (2013)
-            for implementation details.
+Note that this file also contains a 'BaroMHT' class, that follows more closely the
+Martyna, Hughes, Tuckerman implementation of a PIMD barostat. However it is so
+close to the BZP implementation that we disabled it for the sake of simplicity.
+The original reference is:
+G. Martyna, A. Hughes and M. Tuckerman, J. Chem. Phys., 110, 3275.
 """
-
-# NB: this file also contains a 'BaroMHT' class, that follows more closely the
-# Martyna, Hughes, Tuckerman implementation of a PIMD barostat. However it is so
-# close to the BZP implementation that we disabled it for the sake of simplicity
-# BaroMHT: Generates dynamics according to the method of G. Martyna, A.
-# Hughes and M. Tuckerman, J. Chem. Phys., 110, 3275.
 
 __all__ = ['Barostat', 'BaroBZP', 'BaroRGB']
 
@@ -207,8 +201,11 @@ class Barostat(dobject):
 class BaroBZP(Barostat):
    """Bussi-Zykova-Parrinello barostat class.
 
-   Just extends the standard class adding finite-dt propagators for the barostat
-   velocities, positions, piston.
+   Just extends the standard class adding finite-dt propagators for the
+   barostat velocities, positions, piston.
+
+   Generates dynamics with a stochastic barostat. Implementation details:
+   Ceriotti, More, Manolopoulos, Comp. Phys. Comm. 185, 1019, (2013)
 
    Depend objects:
       p: The momentum associated with the volume degree of freedom.

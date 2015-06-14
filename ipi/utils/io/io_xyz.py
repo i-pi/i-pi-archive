@@ -15,12 +15,6 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <http.//www.gnu.org/licenses/>.
-
-
-Functions:
-   print_xyz_path: Prints all the bead configurations.
-   print_xyz: Prints the centroid configurations.
-   read_xyz: Reads the cell parameters and atom configurations from a xyz file.
 """
 
 __all__ = ['print_xyz_path', 'print_xyz', 'read_xyz', 'iter_xyz']
@@ -34,7 +28,7 @@ from ipi.engine.cell import Cell
 from ipi.utils.units import *
 
 def print_xyz_path(beads, cell, filedesc = sys.stdout):
-   """Prints all the bead configurations, into a xyz formatted file.
+   """Prints all the bead configurations into a XYZ formatted file.
 
    Prints all the replicas for each time step separately, rather than all at
    once.
@@ -57,7 +51,7 @@ def print_xyz_path(beads, cell, filedesc = sys.stdout):
          filedesc.write("%8s %12.5e %12.5e %12.5e\n" % (lab[i], qs[j][3*i], qs[j][3*i+1], qs[j][3*i+2]))
 
 def print_xyz(atoms, cell, filedesc = sys.stdout, title=""):
-   """Prints the centroid configurations, into a xyz formatted file.
+   """Prints an atomic configuration into an XYZ formatted file.
 
    Args:
       atoms: An atoms object giving the centroid positions.
@@ -77,7 +71,7 @@ def print_xyz(atoms, cell, filedesc = sys.stdout, title=""):
       filedesc.write("%8s %12.5e %12.5e %12.5e\n" % (lab[i], qs[3*i], qs[3*i+1], qs[3*i+2]))
 
 def read_xyz(filedesc, readcell=False):
-   """Takes a xyz-style file with i-pi style comments and creates an Atoms and Cell object
+   """Readss an XYZ-style file with i-pi style comments and creates an Atoms and Cell object
 
    Args:
       filedesc: An open readable file object from a xyz formatted file with i-PI header comments.

@@ -14,30 +14,6 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <http.//www.gnu.org/licenses/>.
-
-
-Functions:
-   matrix_exp: Computes the exponential of a square matrix via a Taylor series.
-   stab_cholesky: A numerically stable version of the Cholesky decomposition.
-   h2abc: Takes the representation of the system box in terms of an upper
-      triangular matrix of column vectors, and returns the representation in
-      terms of the lattice vector lengths and the angles between them
-      in radians.
-   h2abc_deg: Takes the representation of the system box in terms of an upper
-      triangular matrix of column vectors, and returns the representation in
-      terms of the lattice vector lengths and the angles between them in
-      degrees.
-   abc2h: Takes the representation of the system box in terms of the lattice
-      vector lengths and the angles between them, and returns the
-      representation in terms of an upper triangular lattice vector matrix.
-   invert_ut3x3: Inverts a 3*3 upper triangular matrix.
-   det_ut3x3(h): Finds the determinant of a 3*3 upper triangular matrix.
-   eigensystem_ut3x3: Finds the eigenvector matrix and eigenvalues of a 3*3
-      upper triangular matrix
-   exp_ut3x3: Computes the exponential of a 3*3 upper triangular matrix.
-   root_herm: Computes the square root of a positive-definite hermitian
-      matrix.
-   logsumlog: Routine to accumulate the logarithm of a sum
 """
 
 __all__ = ['matrix_exp', 'stab_cholesky', 'h2abc', 'h2abc_deg', 'abc2h',
@@ -154,6 +130,10 @@ def h2abc(h):
    """Returns a description of the cell in terms of the length of the
       lattice vectors and the angles between them in radians.
 
+   Takes the representation of the system box in terms of an upper triangular
+   matrix of column vectors, and returns the representation in terms of the
+   lattice vector lengths and the angles between them in radians.
+
    Args:
       h: Cell matrix in upper triangular column vector form.
 
@@ -173,6 +153,10 @@ def h2abc(h):
 def h2abc_deg(h):
    """Returns a description of the cell in terms of the length of the
       lattice vectors and the angles between them in degrees.
+
+   Takes the representation of the system box in terms of an upper triangular
+   matrix of column vectors, and returns the representation in terms of the
+   lattice vector lengths and the angles between them in degrees.
 
    Args:
       h: Cell matrix in upper triangular column vector form.
@@ -318,7 +302,7 @@ def exp_ut3x3(h):
    return eh
 
 def root_herm(A):
-   """Gives the square root of a hermitian matrix with real eigenvalues.
+   """Computes the square root of a positive-definite hermitian matrix.
 
    Args:
       A: A Hermitian matrix.

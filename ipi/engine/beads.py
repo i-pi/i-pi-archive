@@ -20,9 +20,6 @@ Used for holding information about the beads, including their positions, masses
 momenta and kinetic energy. Has different objects for the position and normal
 mode representations, and has a special centroid atoms object for when the
 centroid coordinate is required.
-
-Classes:
-   Beads: Class with methods dealing with all the beads.
 """
 
 __all__ = ['Beads']

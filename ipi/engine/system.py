@@ -19,9 +19,6 @@ along with this program. If not, see <http.//www.gnu.org/licenses/>.
 Contains code used to hold the information which represents the state of
 a system, including the particle positions and momenta, and the
 forcefields which govern the interaction potential.
-
-Classes:
-   System: Deals with storing and outputting information on a physical system.
 """
 
 __all__ = ['System']
@@ -108,9 +105,9 @@ class System(dobject):
       # binds important computation engines
       self.nm.bind(self.beads, self.ensemble)
       self.forces.bind(self.beads, self.cell, self.fproto, self.simul.fflist)
-      
+
       self.bias.bind(self.beads, self.cell, self.bproto, self.simul.fflist)
-      
+
       self.ensemble.bind(self.beads, self.nm, self.cell, self.forces, self.bias, self.prng)
 
       self.init.init_stage2(self)

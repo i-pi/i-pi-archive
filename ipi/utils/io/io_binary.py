@@ -15,10 +15,6 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <http.//www.gnu.org/licenses/>.
-
-
-Functions:
-   print_bin: Prints an atomic configuration.
 """
 
 __all__ = ['print_bin']
@@ -29,7 +25,7 @@ import math, sys
 from ipi.utils.depend import depstrip
 
 def print_bin(atoms, cell, filedesc = sys.stdout, title=""):
-   """Prints the centroid configurations, into a binary file.
+   """Prints an atomic configuration into a binary file.
 
    Args:
       beads: An atoms object giving the centroid positions.

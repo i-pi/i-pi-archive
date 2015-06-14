@@ -18,11 +18,6 @@ along with this program. If not, see <http.//www.gnu.org/licenses/>.
 
 Holds classes to deal with the output of different properties, trajectories
 and the restart files.
-
-Classes:
-   PropertyOutput: Deals with outputting properties.
-   TrajectoryOutput: Deals with outputting trajectories.
-   CheckpointOutput: Deals with outputting restart files.
 """
 
 import os, time

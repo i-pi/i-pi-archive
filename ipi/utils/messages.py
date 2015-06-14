@@ -14,16 +14,6 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <http.//www.gnu.org/licenses/>.
-
-
-Classes:
-   Verbosity: Concise class to check the selected level of output
-
-Functions:
-   banner:    Prints the program welcome "screen"
-   help:      Prints the input syntax help
-   info:      Prints some information to standard output, depending on the level of verbosity
-   warning:   Same as info, but with a "!W!" prefix and optionally printing a stack trace
 """
 
 import traceback, sys
@@ -130,8 +120,8 @@ def banner():
    """
 
 
-def info(text="", show=True ):
-   """Prints a warning message.
+def info(text="", show=True):
+   """Prints a message.
 
    Args:
       text: The text of the information message.
@@ -145,6 +135,8 @@ def info(text="", show=True ):
 
 def warning(text="", show=True):
    """Prints a warning message.
+
+   Same as info, but with a "!W!" prefix and optionally printing a stack trace.
 
    Args:
       text: The text of the information message.

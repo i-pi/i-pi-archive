@@ -18,10 +18,6 @@ along with this program. If not, see <http.//www.gnu.org/licenses/>.
 
 Generates an atoms class either from a set of positions and momenta.
 This class is only used if no beads tag is present in the xml file.
-
-Classes:
-   InputAtoms: Deals with creating the Atoms object from a file, and
-      writing the checkpoints.
 """
 
 import numpy as np

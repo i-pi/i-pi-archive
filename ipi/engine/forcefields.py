@@ -17,13 +17,6 @@ along with this program. If not, see <http.//www.gnu.org/licenses/>.
 
 ForceField objects are force providers, i.e. they are the abstraction
 layer for a driver that gets positions and returns forces (and energy).
-
-
-Classes:
-   ForceRequest: An extension of the dict class which only has a == b if
-      a is b == True, rather than if the elements of a and b are identical.
-   ForceField: Base forcefield class with the generic methods and attributes.
-   FFSocket: Deals with a single replica of the system
 """
 
 __all__ = ['ForceField', 'FFSocket', 'FFLennardJones']
@@ -38,11 +31,13 @@ from ipi.utils.nmtransform import nm_rescale
 from ipi.interfaces.sockets import InterfaceSocket
 from ipi.engine.beads import Beads
 
-# standard dicts are checked for equality if elements have the same value.
-# here I only care if requests are instances of the very same object
 class ForceRequest(dict):
    """An extension of the standard Python dict class which only has a == b
-   if a is b == True."""
+   if a is b == True, rather than if the elements of a and b are identical.
+
+   Standard dicts are checked for equality if elements have the same value.
+   Here I only care if requests are instances of the very same object.
+   """
 
    def __eq__(self, y):
       """Overwrites the standard equals function."""
@@ -112,10 +107,10 @@ class ForceField(dobject):
 
       Returns:
          A list giving the status of the request of the form {'pos': An array
-         giving the atom positions folded back into the unit cell, 
-         'cell': Cell object giving the system box, 'pars': parameter string, 
-         'result': holds the result as a list once the computation is done, 
-         'status': a string labelling the status of the calculation, 
+         giving the atom positions folded back into the unit cell,
+         'cell': Cell object giving the system box, 'pars': parameter string,
+         'result': holds the result as a list once the computation is done,
+         'status': a string labelling the status of the calculation,
          'id': the id of the request, usually the bead number, 'start':
          the starting time for the calculation, used to check for timeouts.}.
       """

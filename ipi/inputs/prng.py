@@ -18,10 +18,6 @@ along with this program. If not, see <http.//www.gnu.org/licenses/>.
 
 Generates a random number generator either from a seed number, or from a
 state vector.
-
-Classes:
-   InputRandom: Deals with creating the Random object from a file, and
-      writing the checkpoints.
 """
 
 __all__ = ['InputRandom']

@@ -21,9 +21,6 @@ introduced by PA-CMD when the bead masses are rescaled. Also deals with
 the change in the dynamics introduced by this mass-scaling, and has its
 own functions to calculate the kinetic energy, and the exact propagator
 in the normal mode representation under the ring polymer Hamiltonian.
-
-Classes:
-   NormalModes: Deals with the normal mode transformation in RPMD and PA-CMD.
 """
 
 import numpy as np
@@ -35,7 +32,7 @@ from ipi.utils.messages import verbosity, warning, info
 __all__ = [ "NormalModes" ]
 
 class NormalModes(dobject):
-   """ A helper class to manipulate the path NM.
+   """Handles the path normal modes.
 
    Normal-modes transformation, determination of path frequencies,
    dynamical mass matrix change, etc.

@@ -19,10 +19,6 @@ along with this program. If not, see <http.//www.gnu.org/licenses/>.
 Used for holding information about the atoms, including their positions, masses
 momenta and kinetic energy. Has separate classes for accessing the global
 arrays of atoms and for individual atoms.
-
-Classes:
-   Atom: Class with methods dealing with individual atoms.
-   Atoms: Class with methods dealing with all the atoms.
 """
 
 __all__ = ['Atoms', 'Atom']

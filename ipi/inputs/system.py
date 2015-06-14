@@ -14,11 +14,6 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <http.//www.gnu.org/licenses/>.
-
-
-Classes:
-   InputSystem: Deals with the information necessary to specify the state
-      of a system.
 """
 
 __all__ = ['InputSystem']
@@ -71,7 +66,7 @@ class InputSystem(Input):
              "initialize" : (InputInitializer, { "help" : InputInitializer.default_help,
                                                 "default" : input_default(factory=Initializer) } ),
              "forces" :   (InputForces,    { "help"  : InputForces.default_help }),
-             "bias" :   (InputForces,    { "help"  : InputForces.default_help, 
+             "bias" :   (InputForces,    { "help"  : InputForces.default_help,
                                            "default" : [] }),
              "ensemble": (InputEnsemble, { "help"  : InputEnsemble.default_help } ),
              "beads" :   (InputBeads, { "help"     : InputBeads.default_help,

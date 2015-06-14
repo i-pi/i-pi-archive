@@ -1,22 +1,6 @@
 """Tools that deal with the dependency detection, value caching and automatic
 updating of variables.
 
-Copyright (C) 2013, Joshua More and Michele Ceriotti
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <http.//www.gnu.org/licenses/>.
-
-
 The classes defined in this module overload the standard __get__ and __set__
 routines of the numpy ndarray class and standard library object class so that
 they automatically keep track of whether anything they depend on has been
@@ -33,27 +17,24 @@ the representations can be set manually, and all the other representations
 must keep in step.
 
 For a more detailed discussion, see the reference manual.
-
-Classes:
-    depend_base: Base depend class with the generic methods and attributes.
-    depend_value: Depend class for scalar objects.
-    depend_array: Depend class for arrays.
-    synchronizer: Class that holds the different objects that are related to each
-        other and keeps track of which property has been set manually.
-    dobject: An extension of the standard library object that overloads
-        __getattribute__ and __setattribute__, so that we can use the
-        standard syntax for setting and getting the depend object,
-        i.e. foo = value, not foo.set(value).
-
-Functions:
-    dget: Gets the dependencies of a depend object.
-    dset: Sets the dependencies of a depend object.
-    depstrip: Used on a depend_array object, to access its value without
-        needing the depend machinery, and so much more quickly. Must not be used
-        if the value of the array is to be changed.
-    depcopy: Copies the dependencies from one object to another
-    deppipe: Used to make two objects be synchronized to the same value.
 """
+
+# i-PI Copyright (C) 2013-2015 i-PI developers
+#
+# This file is part of i-PI.
+#
+# i-PI is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# i-PI is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http.//www.gnu.org/licenses/>.
 
 
 __all__ = ['depend_base', 'depend_value', 'depend_array', 'synchronizer',
@@ -297,7 +278,7 @@ class depend_base(object):
 
 
 class depend_value(depend_base):
-    """Scalar class for dependency handling.
+    """Depend class for scalar values.
 
     Attributes:
         _value: The value associated with self.
@@ -362,7 +343,7 @@ class depend_value(depend_base):
 
 
 class depend_array(np.ndarray, depend_base):
-    """Array class for dependency handling.
+    """Depend class for arrays.
 
     Differs from depend_value as arrays handle getting items in a different
     way to scalar quantities, and as there needs to be support for slicing an
@@ -760,7 +741,12 @@ def depcopy(objfrom, memberfrom, objto, memberto):
 
 
 class dobject(object):
-    """Class that allows standard notation to be used for depend objects."""
+    """Class that allows standard notation to be used for depend objects.
+
+    An extension of the standard library object that overloads __getattribute__
+    and __setattribute__, so that we can use the standard syntax for setting
+    and getting the depend object, i.e. foo = value, not foo.set(value).
+    """
 
     def __getattribute__(self, name):
         """Overwrites standard __getattribute__().

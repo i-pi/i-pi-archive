@@ -14,12 +14,6 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <http.//www.gnu.org/licenses/>.
-
-
-Classes:
-   InputForces: Deals with creating all the forcefield objects.
-   InputForceComponent: Base class to deal with one particular
-      forcefield object.
 """
 
 __all__ = ['InputForces', 'InputForceComponent']

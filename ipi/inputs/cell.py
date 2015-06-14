@@ -14,13 +14,6 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <http.//www.gnu.org/licenses/>.
-
-
-Generates an cell class from a cell vector.
-
-Classes:
-   InputCell: Deals with creating the Cell object from a file, and
-      writing the checkpoints.
 """
 
 import numpy as np

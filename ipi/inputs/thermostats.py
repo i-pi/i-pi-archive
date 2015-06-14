@@ -18,10 +18,6 @@ along with this program. If not, see <http.//www.gnu.org/licenses/>.
 
 Chooses between the different possible thermostat options and creates the
 appropriate thermostat object, with suitable parameters.
-
-Classes:
-   InputThermo: Deals with creating the thermostat object from a file, and
-      writing the checkpoints.
 """
 
 __all__ = ['InputThermo']

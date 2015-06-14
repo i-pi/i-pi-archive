@@ -14,9 +14,6 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <http.//www.gnu.org/licenses/>.
-
-Classes:
-   InputParaTemp: Defines all the input parameters for a ParaTemp object.
 """
 
 __all__=[ "InputParaTemp" ]

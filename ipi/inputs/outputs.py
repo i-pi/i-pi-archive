@@ -14,14 +14,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <http.//www.gnu.org/licenses/>.
-
-
-Classes:
-   InputOutputs: Creates a list of all the output objects.
-   InputProperties: Deals with property output.
-   InputTrajectory: Deals with trajectory output.
-   InputCheckpoint: Deals with restart file output.
 """
+
 import numpy as np
 from copy import copy
 from ipi.utils.depend import *

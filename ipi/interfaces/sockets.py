@@ -19,22 +19,6 @@ along with this program. If not, see <http.//www.gnu.org/licenses/>.
 Deals with creating the socket, transmitting and receiving data, accepting and
 removing different driver routines and the parallelization of the force
 calculation.
-
-Classes:
-   Status: Simple class to keep track of the status, uses bitwise or to give
-      combinations of different status options.
-   DriverSocket: Class to deal with communication between a client and
-      the driver code.
-   InterfaceSocket: Host server class. Deals with distribution of all the jobs
-      between the different client servers.
-
-Functions:
-   Message: Sends a header string through the socket.
-
-Exceptions:
-   Disconnected: Raised if client has been disconnected.
-   InvalidStatus: Raised if client has the wrong status. Shouldn't have to be
-      used if the structure of the program is correct.
 """
 
 __all__ = ['InterfaceSocket']
@@ -204,7 +188,7 @@ class DriverSocket(socket.socket):
 
 
 class Client(DriverSocket):
-   """Deals as starting point for implementing a clien in python.
+   """Serves as a starting point for implementing a client in Python.
 
    Deals with sending and receiving the data from the client code.
 

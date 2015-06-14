@@ -15,13 +15,6 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <http.//www.gnu.org/licenses/>.
-
-
-Classes:
-   Constants: Class whose members are fundamental constants.
-   Elements: Class which contains the mass of different elements
-   Units: Class which contains the methods needed to transform
-      between different systems of units.
 """
 
 import re

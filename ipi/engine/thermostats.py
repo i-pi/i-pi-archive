@@ -19,25 +19,6 @@ along with this program. If not, see <http.//www.gnu.org/licenses/>.
 Contains the algorithms which propagate the thermostatting steps in the constant
 temperature ensembles. Includes the new GLE thermostat, which can be used to
 run PI+GLE dynamics, reducing the number of path integral beads required.
-
-Classes:
-   Thermostat: Base thermostat class with the generic methods and attributes.
-   ThermoLangevin: Holds the algorithms for a langevin thermostat.
-   ThermoPILE_L: Holds the algorithms for a path-integral langevin equation
-      thermostat, with a thermostat coupled directly to the
-      centroid coordinate of each bead.
-   ThermoPILE_G: Holds the algorithms for a path-integral langevin equation
-      thermostat, with a thermostat coupled to the kinetic energy for
-      the entire system.
-   ThermoSVR: Holds the algorithms for a stochastic velocity rescaling
-      thermostat.
-   ThermoGLE: Holds the algorithms for a generalised langevin equation
-      thermostat.
-   ThermoNMGLE: Holds the algorithms for a generalised langevin equation
-      thermostat in the normal mode representation.
-   ThermoNMGLEG: Holds the algorithms for a generalised langevin equation
-      thermostat in the normal mode representation, with kinetic energy as
-      well as potential energy sampling optimization.
 """
 
 __all__ = ['Thermostat', 'ThermoLangevin', 'ThermoPILE_L', 'ThermoPILE_G',
@@ -517,13 +498,13 @@ class ThermoPILE_G(ThermoPILE_L):
 
 
 class ThermoGLE(Thermostat):
-   """Represents a GLE thermostat.
+   """Represents a generalized Langevin equation thermostat.
 
    This is similar to a langevin thermostat, in that it uses Gaussian random
    numbers to simulate a heat bath acting on the system, but simulates a
    non-Markovian system by using a Markovian formulation in an extended phase
    space. This allows for a much greater degree of flexibility, and this
-   thermostat, properly fitted, can give the an approximation to the correct
+   thermostat, properly fitted, can give an approximation to the correct
    quantum ensemble even for a classical, 1-bead simulation. More reasonably,
    using this thermostat allows for a far smaller number of replicas of the
    system to be used, as the convergence of the properties
@@ -667,7 +648,7 @@ class ThermoGLE(Thermostat):
 
 
 class ThermoNMGLE(Thermostat):
-   """Represents a 'normal-modes' GLE thermostat.
+   """Represents a 'normal-modes' generalized Langevin equation thermostat.
 
    An extension to the GLE thermostat which is applied in the
    normal modes representation, and which allows to use a different
@@ -834,10 +815,11 @@ class ThermoNMGLE(Thermostat):
 
 
 class ThermoNMGLEG(ThermoNMGLE):
-   """Represents a 'normal-modes' GLE thermostat + SVR.
+   """Represents a 'normal-modes' generalized Langevin equation thermostat + SVR.
 
-   An extension to the above NMGLE thermostat which also adds a stochastic velocity
-   rescaling to the centroid.
+   An extension to the above NMGLE thermostat which also adds a stochastic
+   velocity rescaling to the centroid. Allows kinetic energy as well as
+   potential energy sampling optimization.
 
    Depend objects:
       tau: Thermostat damping time scale. Larger values give a less strongly

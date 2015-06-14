@@ -17,9 +17,6 @@ along with this program. If not, see <http.//www.gnu.org/licenses/>.
 
 
 Used for implementing the minimum image convention.
-
-Classes:
-   Cell: Base cell class with the generic methods and attributes.
 """
 
 __all__ = ['Cell']

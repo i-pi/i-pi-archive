@@ -14,24 +14,6 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <http.//www.gnu.org/licenses/>.
-
-
-Classes:
-   InputInitializer: Initializes the classes that initialize the simulation
-      data.
-   InputInitFile: Initializes the classes that initialize the simulation data
-      from a file. Rather than initializing one piece of data, everything that
-      can be initialized from that file will be.
-   InputInitPositions: Initializes the positions.
-   InputInitMomenta: Initializes the momenta.
-   InputInitVelocities: Initializes the velocities.
-   InputInitMasses: Initializes the masses.
-   InputInitLabels: Initializes the atom labels.
-   InputInitCell: Initializes the cell.
-   InputInitThermo: Initializes the thermostat.
-   InputInitBase: The base class for all Initializer objects.
-   InputInitIndexed: The class for all Initializer objects which can be called
-      to initialize data for a particular atom or bead.
 """
 
 import numpy as np

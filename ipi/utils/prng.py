@@ -21,9 +21,6 @@ These are used in initialising the velocities and in stochastic thermostats.
 The state of the random number generator is kept track of, so that the if the
 simulation is restarted from a checkpoint, we will see the same dynamics as if
 it had not been stopped.
-
-Classes:
-   Random: An interface between the numpy.random module and the user.
 """
 
 __all__ = ['Random']
