@@ -79,13 +79,8 @@ def mk_rs_matrix(nb1, nb2):
       return mk_rs_matrix(nb2, nb1).T*(float(nb2)/float(nb1))
 
 
-<<<<<<< HEAD
-class nm_trans:
-   """Uses matrix multiplication to do normal mode transformations.
-=======
 class nm_trans(object):
-   """Helper class to perform beads <--> normal modes transformation.
->>>>>>> master
+   """Uses matrix multiplication to do normal mode transformations.
 
    Attributes:
       _b2nm: The matrix to transform between the bead and normal mode
