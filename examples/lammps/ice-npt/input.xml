@@ -1,4 +1,4 @@
-<simulation>
+<simulation verbosity="high">
    <output prefix='npt-ice'>
       <properties stride='10' filename='out'>  [ step, time{picosecond}, conserved{electronvolt}, temperature{kelvin}, kinetic_cv{electronvolt}, potential{electronvolt}, pressure_cv{megapascal}, volume, cell_h] </properties>
       <trajectory stride='100' filename='xc' format='pdb' cell_units='angstrom'> x_centroid{angstrom}</trajectory>

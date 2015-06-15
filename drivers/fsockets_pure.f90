@@ -198,7 +198,7 @@
                     c_loc(hints), ptr)                    
          IF (ai_err < 0) THEN
             WRITE(6,*) "Error fetching host data. Wrong host name?"
-            STOP -1
+            STOP " ENDED "
          ENDIF            
          
          CALL memcpy(c_loc(res), ptr, sizeof(res))
@@ -206,13 +206,13 @@
          psockfd = socket_make(res%ai_family, res%ai_socktype, res%ai_protocol)
          IF (psockfd < 0)  THEN 
             WRITE(6,*) "Error opening socket"
-            STOP -1
+            STOP " ENDED "
          ENDIF    
          
          ai_err = socket_connect(psockfd, res%ai_addr, res%ai_addrlen)
          IF (ai_err < 0) THEN
             WRITE(6,*) "Error opening INET socket: wrong port or server unreachable"
-            STOP -1
+            STOP " ENDED "
          ENDIF
          
          CALL freeaddrinfo(ptr)
@@ -228,7 +228,7 @@
          ai_err = socket_connect(psockfd, c_loc(addrun), sizeof(addrun))         
          IF (ai_err < 0) THEN
             WRITE(6,*) "Could not open UNIX socket. Non-existing path?"
-            STOP -1
+            STOP " ENDED "
          ENDIF 
       END IF
    END SUBROUTINE
@@ -257,7 +257,7 @@
       nwrite = socket_write(psockfd, c_loc(cstring(1)), nlen)
       IF (nwrite/=nlen) THEN
          WRITE(6,*) "Error in writing to socket buffer"
-         STOP -1
+         STOP " ENDED "
       ENDIF         
    END SUBROUTINE
 
@@ -271,7 +271,7 @@
       nwrite = socket_write(psockfd, c_loc(fdata), nlen)
       IF (nwrite/=nlen) THEN
          WRITE(6,*) "Error in writing to socket buffer"
-         STOP -1
+         STOP " ENDED "
       ENDIF         
    END SUBROUTINE
       
@@ -285,7 +285,7 @@
       nwrite = socket_write(psockfd, c_loc(fdata), nlen)
       IF (nwrite/=nlen) THEN
          WRITE(6,*) "Error in writing to socket buffer"
-         STOP -1
+         STOP " ENDED "
       ENDIF      
    END SUBROUTINE
    
@@ -299,7 +299,7 @@
       nwrite = socket_write(psockfd, c_loc(fdata(1)), nlen)
       IF (nwrite/=nlen) THEN
          WRITE(6,*) "Error in writing to socket buffer"
-         STOP -1
+         STOP " ENDED "
       ENDIF      
    END SUBROUTINE
    
@@ -331,7 +331,7 @@
       
       IF (n<nlen) THEN
          WRITE(6,*) "Error in reading from socket"
-         STOP -1
+         STOP " ENDED "
       ENDIF               
    END SUBROUTINE
 

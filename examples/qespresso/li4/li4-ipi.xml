@@ -6,10 +6,11 @@
    </output>
    <total_steps>100</total_steps>
    <prng><seed>31415</seed></prng>
-   <ffsocket mode="inet">
+   <ffsocket mode="inet" name="pw">
       <address>localhost</address>   <port>31415</port>    <slots>4</slots>   <latency> 0.01</latency>
    </ffsocket>
    <system>
+   <forces><force>pw</force></forces>
    <initialize nbeads='8'>
       <file mode='pdb'> li4-init.pdb </file>
       <velocities mode='thermal' units='kelvin'> 100 </velocities>

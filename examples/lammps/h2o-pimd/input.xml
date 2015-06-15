@@ -1,13 +1,15 @@
 <simulation>
   <output prefix="no_rpc">
-    <properties stride="1" filename="out"> [ step, time{picosecond}, conserved, temperature{kelvin}, kinetic_cv, potential, pressure_cv{megapascal}] </properties>
+    <properties stride="1" filename="out"> [ step, time{picosecond}, conserved, temperature{kelvin}, kinetic_cv, potential, 
+    pressure_cv{megapascal},isotope_ensembleave(1.998) (H)] </properties>
     <trajectory filename="pos" stride="20"> positions </trajectory>
   </output>
   <total_steps>500000</total_steps>
-
+  <prng>
+	  <seed>32345</seed>
+  </prng>
   <ffsocket name="lmpserial" mode="unix">
     <address>no_rpc</address>
-    <port> 32345 </port>
   </ffsocket>
   <system>
     <initialize nbeads="32">

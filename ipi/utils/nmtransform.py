@@ -9,7 +9,7 @@ the Free Software Foundation, either version 3 of the License, or
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
@@ -93,7 +93,7 @@ def mk_rs_matrix(nb1, nb2):
       return mk_rs_matrix(nb2, nb1).T*(float(nb2)/float(nb1))
 
 
-class nm_trans:
+class nm_trans(object):
    """Helper class to perform beads <--> normal modes transformation.
 
    Attributes:
@@ -132,7 +132,7 @@ class nm_trans:
       return np.dot(self._nm2b,q)
 
 
-class nm_rescale:
+class nm_rescale(object):
    """Helper class to rescale a ring polymer between different number of beads.
 
    Attributes:
@@ -173,7 +173,7 @@ class nm_rescale:
 
 
 
-class nm_fft:
+class nm_fft(object):
    """Helper class to perform beads <--> normal modes transformation
       using Fast Fourier transforms.
 
