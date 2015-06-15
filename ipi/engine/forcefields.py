@@ -112,10 +112,10 @@ class ForceField(dobject):
 
       Returns:
          A list giving the status of the request of the form {'pos': An array
-         giving the atom positions folded back into the unit cell, 
-         'cell': Cell object giving the system box, 'pars': parameter string, 
-         'result': holds the result as a list once the computation is done, 
-         'status': a string labelling the status of the calculation, 
+         giving the atom positions folded back into the unit cell,
+         'cell': Cell object giving the system box, 'pars': parameter string,
+         'result': holds the result as a list once the computation is done,
+         'status': a string labelling the status of the calculation,
          'id': the id of the request, usually the bead number, 'start':
          the starting time for the calculation, used to check for timeouts.}.
       """
@@ -179,7 +179,7 @@ class ForceField(dobject):
          if request in self.requests:
             try:
                self.requests.remove(request)
-            except:
+            except ValueError:
                print "failed removing request", id(request), [id(r) for r in self.requests], "@", threading.currentThread()
                raise
       finally:
