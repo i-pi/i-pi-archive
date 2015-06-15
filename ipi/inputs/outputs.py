@@ -109,7 +109,7 @@ class InputTrajectory(InputValue):
    default_help = """This class defines how one trajectory file should be output. Between each trajectory tag one string should be given, which specifies what data is to be output."""
    default_label = "TRAJECTORY"
 
-   attribs = {} 
+   attribs = {}
    attribs["filename"] = (InputAttribute,{ "dtype" : str, "default": "traj",
                                            "help": "A string to specify the name of the file that is output. The file name is given by 'prefix'.'filename' + format_specifier. The format specifier may also include a number if multiple similar files are output."} )
    attribs["stride"] = (InputAttribute,{ "dtype" : int, "default": 1,
@@ -174,7 +174,7 @@ class InputCheckpoint(InputValue):
    default_help = """This class defines how a checkpoint file should be output. Optionally, between the checkpoint tags, you can specify one integer giving the current step of the simulation. By default this integer will be zero."""
    default_label = "CHECKPOINT"
 
-   attribs={} 
+   attribs={}
    attribs["filename"] = (InputAttribute,{ "dtype" : str, "default": "restart",
                                            "help": "A string to specify the name of the file that is output. The file name is given by 'prefix'.'filename' + format_specifier. The format specifier may also include a number if multiple similar files are output."} )
    attribs["stride"] = (InputAttribute,{ "dtype" : int, "default": 1,
@@ -211,8 +211,9 @@ class InputCheckpoint(InputValue):
       # just a quick hack to allow an empty element
       try:
          super(InputCheckpoint,self).parse(xml,text)
-      except: #TODO make this except a specific exception, not every one
-         self.value = 0  #This could hide actual errors, at least in theory.
+      except ValueError:
+         # This could hide actual errors, at least in theory.
+         self.value = 0
 
    def store(self, chk):
       """Stores a CheckpointOutput object."""
