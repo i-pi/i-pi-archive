@@ -103,8 +103,8 @@ class PropertyOutput(dobject):
 
       try:
          self.out = open(self.filename, "a")
-      except:
-         raise ValueError("Could not open file " + self.filename + " for output")
+      except IOError:
+         raise IOError("Could not open file " + self.filename + " for output")
 
       # print nice header if information is available on the properties
       if (self.system.simul.step == 0) :
@@ -257,13 +257,13 @@ class TrajectoryOutput(dobject):
                else:
                   self.out.append(None) # creates null outputs if a
                                         # single bead output is chosen
-            except:
-               raise ValueError("Could not open file " + self.filename + "_" + padb + "." + self.format + " for output")
+            except IOError:
+               raise IOError("Could not open file " + self.filename + "_" + padb + "." + self.format + " for output")
       else:
          try:
             self.out = ( open(self.filename + "." + self.format, "a") )
-         except:
-            raise ValueError("Could not open file " + self.filename + "." + self.format + " for output")
+         except IOError:
+            raise IOError("Could not open file " + self.filename + "." + self.format + " for output")
 
 
    def softexit(self):
@@ -280,7 +280,7 @@ class TrajectoryOutput(dobject):
                o.close()
          else:
             self.out.close()
-      except AttributeError: 
+      except AttributeError:
 		  # This gets called on softexit. We want to carry on to shut down as cleanly as possible
           warning("Exception while closing output stream " + str(self.out), verbosity.low)
 
@@ -301,7 +301,7 @@ class TrajectoryOutput(dobject):
       # Checks to see if there is a list of files or just a single file.
       if hasattr(self.out, "__getitem__"):
          if self.ibead < 0:
-            for b in range(len(self.out)):               
+            for b in range(len(self.out)):
                self.system.trajs.print_traj(self.what, self.out[b], b, format=self.format, cell_units=self.cell_units, flush=doflush)
          elif self.ibead < len(self.out):
             self.system.trajs.print_traj(self.what, self.out[self.ibead], self.ibead, format=self.format, cell_units=self.cell_units, flush=doflush)
