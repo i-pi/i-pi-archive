@@ -37,12 +37,15 @@ from ipi.inputs.forces import InputForces
 from ipi.inputs.beads import InputBeads
 from ipi.inputs.cell import InputCell
 from ipi.inputs.ensembles import InputEnsemble
+from ipi.inputs.mover import InputMover
 from ipi.inputs.normalmodes import InputNormalModes
 from ipi.engine.normalmodes import NormalModes
 from ipi.engine.atoms import Atoms
 from ipi.engine.beads import Beads
 from ipi.engine.cell import Cell
 from ipi.engine.forces import Forces
+from ipi.engine.ensembles import Ensemble
+from ipi.engine.mover import Mover
 from ipi.inputs.initializer import InputInitializer
 from ipi.engine.initializer import Initializer
 
@@ -73,7 +76,8 @@ class InputSystem(Input):
              "forces" :   (InputForces,    { "help"  : InputForces.default_help }),
              "bias" :   (InputForces,    { "help"  : InputForces.default_help, 
                                            "default" : [] }),
-             "ensemble": (InputEnsemble, { "help"  : InputEnsemble.default_help } ),
+             "ensemble": (InputEnsemble, { "help"  : InputEnsemble.default_help , "default" : input_default(factory=Ensemble, kwargs={'dt':1.0, 'temp':1.0})} ),
+             "mover": (InputMover, { "help"  : InputMover.default_help, "default" : input_default(factory=Mover) } ),
              "beads" :   (InputBeads, { "help"     : InputBeads.default_help,
                                         "default"  : input_default(factory=Beads, kwargs={'natoms': 0, 'nbeads': 0}) } ),
              "normal_modes" :   (InputNormalModes, { "help"     : InputNormalModes.default_help,
@@ -81,6 +85,7 @@ class InputSystem(Input):
              "cell" :    (InputCell,   { "help"    : InputCell.default_help,
                                         "default"  : input_default(factory=Cell) })
              }
+             
    attribs = {
     "copies": (InputAttribute, {"help" : "Create multiple copies of the system. This is handy for initialising simulations with multiple systems.", "default": 1, "dtype": int}) ,
     "prefix": (InputAttribute, {"help" : "Prepend this string to output files generated for this system. If 'copies' is greater than 1, a trailing number will be appended.", "default": "", "dtype": str})
@@ -98,11 +103,11 @@ class InputSystem(Input):
 
       super(InputSystem,self).store()
 
-
       self.prefix.store(psys.prefix)
       self.forces.store(psys.fcomp)
       self.bias.store(psys.bcomp)
       self.ensemble.store(psys.ensemble)
+      self.mover.store(psys.mover)
       self.beads.store(psys.beads)
       self.normal_modes.store(psys.nm)
       self.cell.store(psys.cell)
@@ -124,7 +129,15 @@ class InputSystem(Input):
 
       # this creates a simulation object which gathers all the little bits
       #TODO use named arguments since this list is a bit too long...
-      rsys = ipi.engine.system.System(self.initialize.fetch(), self.beads.fetch(), self.cell.fetch(),
-               self.forces.fetch(), self.ensemble.fetch(), self.normal_modes.fetch(), self.prefix.fetch(), self.bias.fetch())
+      rsys = ipi.engine.system.System( init = self.initialize.fetch(), 
+                                       beads = self.beads.fetch(), 
+                                       nm = self.normal_modes.fetch(),
+                                       cell = self.cell.fetch(),                                       
+                                       fcomponents = self.forces.fetch(),
+                                       bcomponents = self.bias.fetch(),
+                                       ensemble = self.ensemble.fetch(),  
+                                       mover = self.mover.fetch(),
+                                       prefix = self.prefix.fetch()
+                                       )
 
       return rsys

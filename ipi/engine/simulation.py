@@ -222,20 +222,23 @@ class Simulation(dobject):
 
          self.chk.store()
 
-         stepthreads = []
-         # steps through all the systems
-         #for s in self.syslist:
-         #   s.ensemble.step()
-         for s in self.syslist:
-            # creates separate threads for the different systems
-            #st = threading.Thread(target=s.ensemble.step, name=s.prefix, kwargs={"step":self.step})
-            #st.daemon = True
-            s.ensemble.step(step=self.step)
-            #st.start()
-            #stepthreads.append(st)
+         
+         
+         if self.mode == "static":
+            for s in self.syslist:
+               s.static.step(step=self.step)
+            pass
+         elif self.mode == "md" or self.mode == "paratemp":            
+            for s in self.syslist:
+               # creates separate threads for the different systems
+               #st = threading.Thread(target=s.ensemble.step, name=s.prefix, kwargs={"step":self.step})
+               #st.daemon = True
+               s.ensemble.step(step=self.step)
+               #st.start()
+               #stepthreads.append(st)
 
-         for st in stepthreads:
-            while st.isAlive(): st.join(2.0)   # this is necessary as join() without timeout prevents main from receiving signals
+            for st in stepthreads:
+               while st.isAlive(): st.join(2.0)   # this is necessary as join() without timeout prevents main from receiving signals
 
          if softexit.triggered: break # don't continue if we are about to exit!
 
@@ -243,7 +246,6 @@ class Simulation(dobject):
             o.write()
 
          if self.mode == "paratemp": # does parallel tempering
-
             # because of where this is in the loop, we must write out BEFORE doing the swaps.
             self.paratemp.parafile.write("%10d" % (self.step+1))
             for i in self.paratemp.temp_index:

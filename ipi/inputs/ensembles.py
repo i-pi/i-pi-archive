@@ -32,43 +32,8 @@ from ipi.inputs.thermostats import *
 from ipi.inputs.initializer import *
 from ipi.utils.units import *
 
-__all__ = ['InputEnsemble', 'InputGEOP']
-
-class InputGEOP(Input):
-	"""Geometry optimization options.
+__all__ = ['InputEnsemble']
 	
-	Contains options related with geometry optimization, such as method, 
-	thresholds, linear search strategy, etc. 
-	
-	"""
-	
-	attribs={"mode"  : (InputAttribute, {"dtype"   : str,
-                                    "help"    : "The geometry optimization algorithm to be used",
-                                    "options" : ['steepest']}) }
-   
-	fields = { "line_tolerance": (InputValue, {"dtype"         : float,
-                                     "default"       : 1.0e-5,
-                                     "help"          : "The tolerance for line search procedures."})
-              }
-    dynamic = {  }
-
-	default_help = "TODO EXPLAIN WHAT THIS IS"
-	default_label = "GEOP"   
-
-	def store(self, geop):
-		self.line_tolerance.store(geop.tol) # todo set the proper parameter
-		self.mode.store(geop.mode)
-		
-		pass
-		
-	def fetch(self):
-		
-		ngeo = Ensemble() # this should be a geop object we don't have here
-		ngeo.tol = self.line_tolerance.fetch()
-		pass
-
-
-		
 class InputEnsemble(Input):
    """Ensemble input class.
 
@@ -98,7 +63,7 @@ class InputEnsemble(Input):
 
    attribs={"mode"  : (InputAttribute, {"dtype"   : str,
                                     "help"    : "The ensemble that will be sampled during the simulation. 'replay' means that a simulation is restarted from a previous simulation.",
-                                    "options" : ['nve', 'nvt', 'npt', 'nst', 'replay', 'minimize']}) }
+                                    "options" : ['nve', 'nvt', 'npt', 'nst', 'dummy']}) }
    fields={"thermostat" : (InputThermo, {"default"   : input_default(factory=ipi.engine.thermostats.Thermostat),
                                          "help"      : "The thermostat for the atoms, keeps the atom velocity distribution at the correct temperature."} ),
            "barostat" : (InputBaro, {"default"       : input_default(factory=ipi.engine.barostats.Barostat),
@@ -128,9 +93,7 @@ class InputEnsemble(Input):
                                    "help"            : "This describes whether the centre of mass of the particles is fixed."}),
            "fixatoms" : (InputArray, {"dtype"        : int,
                                     "default"      : np.zeros(0,int),
-                                    "help"         : "Indices of the atmoms that should be held fixed."}),
-           "replay_file": (InputInitFile, {"default" : input_default(factory=ipi.engine.initializer.InitBase),
-                           "help"            : "This describes the location to read a trajectory file from."})
+                                    "help"         : "Indices of the atmoms that should be held fixed."})
          }
    dynamic = {  }
 
@@ -145,10 +108,7 @@ class InputEnsemble(Input):
       """
 
       super(InputEnsemble,self).store(ens)
-      if type(ens) is ReplayEnsemble:
-         self.mode.store("replay")
-         tens = 0
-      elif type(ens) is NVEEnsemble:
+      if type(ens) is NVEEnsemble:
          self.mode.store("nve")
          tens = 1
       elif type(ens) is NVTEnsemble:
@@ -160,16 +120,13 @@ class InputEnsemble(Input):
       elif type(ens) is NSTEnsemble:
          self.mode.store("nst")
          tens = 4
-      elif type(ens) is GEOPEnsemble:
-         self.mode.store("minimize")
-         tens = 5
-      
+      elif type(ens) is Ensemble:
+          self.mode.store("dummy")
+          tens = -1
 
       self.timestep.store(ens.dt)
       self.temperature.store(ens.temp)
 
-      if tens == 0:
-         self.replay_file.store(ens.intraj)
       if tens > 1 and tens <5:
          self.thermostat.store(ens.thermostat)
          self.fixcom.store(ens.fixcom)
@@ -207,12 +164,7 @@ class InputEnsemble(Input):
                            temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), fixcom=self.fixcom.fetch(), eens=self.eens.fetch(), fixatoms=self.fixatoms.fetch(),
                            stressext=self.stress.fetch().reshape((3,3)), # casts into a 3x3 tensor
                            barostat=self.barostat.fetch() )
-      elif self.mode.fetch() == "replay":
-         ens = ReplayEnsemble(dt=self.timestep.fetch(),
-            temp=self.temperature.fetch(),fixcom=False, eens=self.eens.fetch(), fixatoms=None, intraj=self.replay_file.fetch() )
-      elif self.mode.fetch() == "minimize":
-         ens = GEOPEnsemble(dt=self.timestep.fetch(),
-            temp=self.temperature.fetch(),fixcom=False, eens=self.eens.fetch(), fixatoms=None )
+      elif self.mode.fetch() == "dummy": ens=Ensemble(dt=self.timestep.fetch(),  temp=self.temperature.fetch())
       else:
          raise ValueError("'" + self.mode.fetch() + "' is not a supported ensemble mode.")
 

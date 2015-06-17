@@ -62,7 +62,7 @@ class System(dobject):
       simul: The parent simulation object.
    """
 
-   def __init__(self, init, beads, cell, fcomponents, ensemble, nm, prefix="", bcomponents=[]):
+   def __init__(self, init, beads, nm, cell, fcomponents, bcomponents=[], ensemble=None, mover=None, prefix=""):
       """Initialises System class.
 
       Args:
@@ -82,8 +82,9 @@ class System(dobject):
 
       info(" # Initializing system object ", verbosity.low )
       self.prefix = prefix
-      self.init = init
+      self.init = init      
       self.ensemble = ensemble
+      self.mover = mover
       self.beads = beads
       self.cell = cell
       self.nm = nm

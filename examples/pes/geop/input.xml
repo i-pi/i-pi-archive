@@ -15,8 +15,7 @@
    <forces>
    <force> qtip4pf </force>
    </forces>
-   <ensemble mode='minimize'>
-      <timestep units='femtosecond'> 0.5</timestep>
-   </ensemble>
+   <mover mode='minimize'>
+   </mover>
 </system>
 </simulation>
