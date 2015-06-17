@@ -784,8 +784,8 @@ class GEOPEnsemble(Ensemble):
           # Steepest descent minimization
           # gradf1 = force at current atom position
           # dq1 = direction of steepest descent
-          gradf1 = depstrip(self.forces.f)
-          dq1 = gradf1 / np.sqrt(np.dot(gradf1.flatten(), gradf1.flatten())) # move direction for steepest descent and 1st conjugate gradient step
+          gradf1 = dq1 = depstrip(self.forces.f)
+          dq1_unit = dq1 / np.sqrt(np.dot(gradf1.flatten(), gradf1.flatten())) # move direction for steepest descent and 1st conjugate gradient step
       
       else:
           
@@ -797,13 +797,15 @@ class GEOPEnsemble(Ensemble):
           gradf0 = self.gradf0
           dq0 = self.dq0
           gradf1 = depstrip(self.forces.f)
-          dq1 = gradf1 + (np.dot((gradf1.flatten() - gradf0.flatten()), gradf1.flatten())) / (np.dot(gradf0.flatten(), gradf0.flatten())) * dq0
+          beta = np.dot((gradf1.flatten() - gradf0.flatten()), gradf1.flatten()) / (np.dot(gradf0.flatten(), gradf0.flatten()))
+          dq1 = gradf1 + max(0.0, beta) * dq0
+          dq1_unit = dq1 / np.sqrt(np.dot(dq1.flatten(), dq1.flatten()))
 
       self.dq0 = dq1
-      self.gradf0 = gradf1
+      self.gradf0 = gradf1.copy()
    
       if (len(self.fixatoms)>0):
-         for dqb in dq:
+         for dqb in dq1_unit:
             dqb[self.fixatoms*3]=0.0
             dqb[self.fixatoms*3+1]=0.0
             dqb[self.fixatoms*3+2]=0.0
@@ -814,5 +816,5 @@ class GEOPEnsemble(Ensemble):
       u0, du0 = (self.forces.pot, np.dot(depstrip(self.forces.f.flatten()), dq1.flatten()))
       (x, fx) = min_brent(self.gm, fdf0=(u0, du0), x0=0.0, minopts=self.mo) 
 
-      self.beads.q += dq1 * x
+      self.beads.q += dq1_unit * x
       self.qtime += time.time()
