@@ -759,10 +759,27 @@ def depcopy(objfrom, memberfrom, objto, memberto):
 
 
 class dobject(object):
-    """Class that allows standard notation to be used for depend objects."""
+    """Class that allows to access the value of member depend objects directly, without
+       calling getter and setter functions explicitly.
+       Use .dsetup() to switch off the direct access feature, and modify the internals
+       of depend member objects, and .daccess() to switch it on again."""
 
+    def __new__(cls, *args, **kwds):
+        """ Initialize the object using __new__, because we do not want 
+        to impose to derived classes to call the super __init__ """ 
+               
+        obj = object.__new__(cls)
+        obj._dsetup = False
+        return obj
+        
+    def dsetup(self):
+        self._dsetup = True
+    
+    def daccess(self):
+        self._dsetup = False
+    
     def __getattribute__(self, name):
-        """Overwrites standard __getattribute__().
+        """Overrides standard __getattribute__().
 
         This changes the standard __getattribute__() function of any class that
         subclasses dobject such that depend objects are called with their own
@@ -770,12 +787,12 @@ class dobject(object):
         """
 
         value = object.__getattribute__(self, name)
-        if hasattr(value, '__get__'):
+        if (not object.__getattribute__(self,"_dsetup")) and hasattr(value, '__get__'):
             value = value.__get__(self, self.__class__)
         return value
 
     def __setattr__(self, name, value):
-        """Overwrites standard __setattribute__().
+        """Overrides standard __setattribute__().
 
         This changes the standard __setattribute__() function of any class that
         subclasses dobject such that depend objects are called with their own
@@ -787,6 +804,6 @@ class dobject(object):
         except AttributeError:
             pass
         else:
-            if hasattr(obj, '__set__'):
+            if (not object.__getattribute__(self,"_dsetup")) and hasattr(obj, '__set__'):
                 return obj.__set__(self, value)
         return object.__setattr__(self, name, value)
