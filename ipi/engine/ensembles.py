@@ -721,7 +721,7 @@ class GEOMover:
         
    def __init__(self):      
       self.x0 = self.d = None
-      
+
    def bind(self, ens):
       self.dbeads = ens.beads.copy()
       self.dcell = ens.cell.copy()
@@ -765,6 +765,8 @@ class GEOPEnsemble(Ensemble):
       super(GEOPEnsemble,self).__init__(dt=dt,temp=temp,fixcom=fixcom, eens=eens, fixatoms=fixatoms)
       self.gm = GEOMover()
       self.mo = MinOptions()
+      self.gradf0 = None # Previous force evaluation
+      self.dq0 = None # Previous direction
    
    def bind(self, beads, nm, cell, bforce, bbias, prng):
       
@@ -777,23 +779,40 @@ class GEOPEnsemble(Ensemble):
       self.ptime = self.ttime = 0
       self.qtime = -time.time()
 
-      # chooses the step size based on an acceleration model (really the *dumbest* steepest descent option
-      # also divides by the mass for dimensional consistency and as a sort of silly preconditioner
-      dq = depstrip(self.forces.f)
-      dq *= 1.0 / np.sqrt(np.dot(dq.flatten(), dq.flatten()))
+      if (step == 0): #if (mode == "SD") or (step == 0):
+          
+          # Steepest descent minimization
+          # gradf1 = force at current atom position
+          # dq1 = direction of steepest descent
+          gradf1 = depstrip(self.forces.f)
+          dq1 = gradf1 / np.sqrt(np.dot(gradf1.flatten(), gradf1.flatten())) # move direction for steepest descent and 1st conjugate gradient step
+      
+      else:
+          
+          # Conjugate gradient, Polak-Ribiere
+          # gradf1: force at current atom position
+          # gradf0: force at previous atom position
+          # df1 = direction to move
+          # df0 = previous direction
+          gradf0 = self.gradf0
+          dq0 = self.dq0
+          gradf1 = depstrip(self.forces.f)
+          dq1 = gradf1 + (np.dot((gradf1.flatten() - gradf0.flatten()), gradf1.flatten())) / (np.dot(gradf0.flatten(), gradf0.flatten())) * dq0
+
+      self.dq0 = dq1
+      self.gradf0 = gradf1
    
       if (len(self.fixatoms)>0):
          for dqb in dq:
             dqb[self.fixatoms*3]=0.0
             dqb[self.fixatoms*3+1]=0.0
             dqb[self.fixatoms*3+2]=0.0
-         
-      self.gm.set_dir(depstrip(self.beads.q), dq)
+      
+      self.gm.set_dir(depstrip(self.beads.q), dq1)
 
       # reuse initial value since we have energy and forces already
-
-      u0, du0 = (self.forces.pot, np.dot(depstrip(self.forces.f.flatten()), dq.flatten()))
+      u0, du0 = (self.forces.pot, np.dot(depstrip(self.forces.f.flatten()), dq1.flatten()))
       (x, fx) = min_brent(self.gm, fdf0=(u0, du0), x0=0.0, minopts=self.mo) 
 
-      self.beads.q += dq * x
+      self.beads.q += dq1 * x
       self.qtime += time.time()
