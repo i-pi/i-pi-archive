@@ -536,8 +536,8 @@ class InterfaceSocket(object):
          try:
             self.server.bind("/tmp/ipi_" + self.address)
             info("Created unix socket with address " + self.address, verbosity.medium)
-         except:
-            raise ValueError("Error opening unix socket. Check if a file " + ("/tmp/ipi_" + self.address) + " exists, and remove it if unused.")
+         except socket.error:
+            raise RuntimeError("Error opening unix socket. Check if a file " + ("/tmp/ipi_" + self.address) + " exists, and remove it if unused.")
 
       elif self.mode == "inet":
          self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
