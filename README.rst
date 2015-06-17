@@ -1,10 +1,3 @@
-===========
-Branch info [delete when done]
-===========
-
-Here we remove all blanket except clauses and uses of try...except for non-error situations. Contributions welcome, commit directly to this branch.
-
-
 ====
 i-PI
 ====
