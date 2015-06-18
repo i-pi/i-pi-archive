@@ -205,8 +205,9 @@ class InputCheckpoint(InputValue):
       # just a quick hack to allow an empty element
       try:
          super(InputCheckpoint,self).parse(xml,text)
-      except: #TODO make this except a specific exception, not every one
-         self.value = 0  #This could hide actual errors, at least in theory.
+      except ValueError:
+         # This could hide actual errors, at least in theory.
+         self.value = 0
 
    def store(self, chk):
       """Stores a CheckpointOutput object."""

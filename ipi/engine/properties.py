@@ -719,33 +719,35 @@ class Properties(dobject):
          raise ValueError("Cannot specify both NM and bead for classical kinetic energy estimator")
       if atom != "":
          try:
-            #iatom gives the index of the atom to be studied
+            # iatom gives the index of the atom to be studied
             iatom = int(atom)
             latom = ""
             if iatom >= self.beads.natoms:
                raise IndexError("Cannot output kinetic energy as atom index %d is larger than the number of atoms" % iatom)
          except ValueError:
-            #here 'atom' is a label rather than an index which is stored in latom
+            # here 'atom' is a label rather than an index which is stored in latom
             iatom = -1
             latom = atom
 
       ibead =-1
       if bead != "":
          try:
-            #iatom gives the index of the atom to be studied
+            # iatom gives the index of the atom to be studied
             ibead = int(bead)
             if ibead >= self.beads.nbeads:
                raise IndexError("Bead index %d is larger than the number of beads" % ibead)
-         except: ValueError("Bead index is not a valid integer")
+         except ValueError:
+            raise ValueError("Bead index is not a valid integer")
 
       inm = -1
       if nm != "":
          try:
-            #iatom gives the index of the atom to be studied
+            # iatom gives the index of the atom to be studied
             inm = int(nm)
             if inm >= self.beads.nbeads:
-               raise IndexError("Normal mode index %d is larger than the number of beads" % ibead)
-         except: ValueError("Normal mode index is not a valid integer")
+               raise IndexError("Normal mode index %d is larger than the number of beads" % inm)
+         except ValueError:
+            raise ValueError("Normal mode index is not a valid integer")
 
       pnm = depstrip(self.nm.pnm)
       dm3 = depstrip(self.nm.dynm3)

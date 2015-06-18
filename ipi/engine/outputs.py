@@ -98,8 +98,8 @@ class PropertyOutput(dobject):
 
       try:
          self.out = open(self.filename, "a")
-      except:
-         raise ValueError("Could not open file " + self.filename + " for output")
+      except IOError:
+         raise IOError("Could not open file " + self.filename + " for output")
 
       # print nice header if information is available on the properties
       if (self.system.simul.step == 0) :
@@ -252,13 +252,13 @@ class TrajectoryOutput(dobject):
                else:
                   self.out.append(None) # creates null outputs if a
                                         # single bead output is chosen
-            except:
-               raise ValueError("Could not open file " + self.filename + "_" + padb + "." + self.format + " for output")
+            except IOError:
+               raise IOError("Could not open file " + self.filename + "_" + padb + "." + self.format + " for output")
       else:
          try:
             self.out = ( open(self.filename + "." + self.format, "a") )
-         except:
-            raise ValueError("Could not open file " + self.filename + "." + self.format + " for output")
+         except IOError:
+            raise IOError("Could not open file " + self.filename + "." + self.format + " for output")
 
 
    def softexit(self):

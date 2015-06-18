@@ -174,7 +174,7 @@ class ForceField(dobject):
          if request in self.requests:
             try:
                self.requests.remove(request)
-            except:
+            except ValueError:
                print "failed removing request", id(request), [id(r) for r in self.requests], "@", threading.currentThread()
                raise
       finally:
