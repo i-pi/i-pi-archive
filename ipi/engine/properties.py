@@ -40,7 +40,8 @@ from ipi.utils.messages import verbosity, info, warning
 from ipi.utils.depend import *
 from ipi.utils.units import Constants, unit_to_internal, unit_to_user
 from ipi.utils.mathtools import logsumlog, h2abc_deg
-from ipi.utils.io import *
+import ipi.utils.io as io
+from ipi.utils.io import io_xml
 from ipi.engine.atoms import *
 from ipi.engine.cell import *
 from ipi.engine.ensembles import *
@@ -1966,12 +1967,7 @@ class Trajectories(dobject):
       fcell = Cell()
       fcell.h = self.system.cell.h*unit_to_user("length", cell_units, 1.0)
 
-      if format == "pdb":
-         io_pdb.print_pdb(fatom, fcell, stream, title=("Traj: %s Step:  %10d  Bead:   %5d " % (what, self.system.simul.step+1, b) ) )
-      elif format == "xyz":
-         io_xyz.print_xyz(fatom, fcell, stream, title=("Traj: %s Step:  %10d  Bead:   %5d " % (what, self.system.simul.step+1, b) ) )
-      elif format == "bin":
-         io_binary.print_bin(fatom, fcell, stream, title=("Traj: %s Step:  %10d  Bead:   %5d " % (what, self.system.simul.step+1, b) ) )
+      io.print_file(format, fatom, fcell, stream, title=("Traj: %s Step:  %10d  Bead:   %5d " % (what, self.system.simul.step+1, b) ) )
       if flush :
          stream.flush()
          os.fsync(stream)

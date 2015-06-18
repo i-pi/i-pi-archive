@@ -35,7 +35,7 @@ from ipi.utils.depend import *
 from ipi.utils.units  import *
 from ipi.utils.prng   import *
 from ipi.utils.io     import *
-from ipi.utils.io.io_xml import *
+from ipi.utils.io.inputs.io_xml import *
 from ipi.utils.messages import verbosity, info, warning
 from ipi.utils.softexit import softexit
 from ipi.engine.atoms import *
@@ -182,14 +182,14 @@ class Simulation(dobject):
       # prints inital configuration -- only if we are not restarting
       if (self.step == 0):
          self.step = -1
-         # must use multi-threading to avoid blocking in multi-system runs
+         # must use multi-threading to avoid blocking in multi-system runs with WTE
          stepthreads = []
          for o in self.outputs:
-            # st = threading.Thread(target=o.write, name=o.filename)
+            o.write()  # threaded output seems to cause random hang-ups. should make things properly thread-safe
+            #st = threading.Thread(target=o.write, name=o.filename)
             #st.daemon = True
             #st.start()
             #stepthreads.append(st)
-            o.write()
             
          for st in stepthreads:
             while st.isAlive(): st.join(2.0)   # this is necessary as join() without timeout prevents main from receiving signals

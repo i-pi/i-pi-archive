@@ -45,9 +45,9 @@ from ipi.engine.beads import Beads
 from ipi.engine.cell import Cell
 from ipi.engine.normalmodes import NormalModes
 from ipi.engine.ensembles import Ensemble
-from ipi.utils.io.io_xyz import read_xyz
-from ipi.utils.io.io_pdb import read_pdb
-from ipi.utils.io.io_xml import xml_parse_file
+from ipi.utils.io.backends.io_xyz import read_xyz
+from ipi.utils.io.backends.io_pdb import read_pdb
+from ipi.utils.io.inputs.io_xml import xml_parse_file
 from ipi.utils.depend import dobject
 from ipi.utils.units import Constants, unit_to_internal
 from ipi.utils.nmtransform import nm_rescale

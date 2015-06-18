@@ -26,7 +26,7 @@ a = dp.depend_array(name="a",value=np.zeros((2,2),float))
 b = dp.depend_array(name="b",value=np.zeros((2,2),float))
 
 def test_slicing():
-   "depend: Slicing test"""
+   """Depend: Slicing test"""
    c = a[0]
    print type(c)
    assert(type(c) == dp.depend_array)
@@ -45,7 +45,7 @@ def test_increment():
    assert(type(c) == np.ndarray)
 
 def test_dot():
-   "Depend: Dot test"""
+   """Depend: Dot test"""
    c = np.dot(a,b)
    print type(c)
    assert(type(c) == dp.depend_array)

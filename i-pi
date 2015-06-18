@@ -19,7 +19,7 @@ Functions:
 import sys
 import ipi.inputs.simulation as isimulation
 from ipi.utils.softexit import softexit
-from ipi.utils.io.io_xml import *
+from ipi.utils.io.inputs.io_xml import *
 from ipi.utils.messages import banner, help, verbosity
 # import yappi, time
 

@@ -40,7 +40,7 @@ __all__ = ['Input', 'InputValue', 'InputAttribute', 'InputArray', 'input_default
 
 import numpy as np
 from copy import copy
-from ipi.utils.io.io_xml import *
+from ipi.utils.io.inputs.io_xml import *
 from ipi.utils.units import unit_to_internal, unit_to_user
 
 
