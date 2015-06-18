@@ -644,7 +644,7 @@ def dep_dot(da, db):
     a = depstrip(da)
     b = depstrip(db)
 
-    return __dp_dot(da, db)
+    return __dp_dot(a, b)
 
 np.dot = dep_dot
 
