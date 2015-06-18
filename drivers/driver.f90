@@ -76,7 +76,7 @@
       port = 31415
       verbose = .false.
       par_count = 0
-      vstyle = -1 
+      vstyle = -1
       rc = 0.0d0
       init_rc = 0.0d0
       volume = 0.0d0
@@ -120,6 +120,8 @@
                   vstyle = 5
                ELSEIF (trim(cmdbuffer) == "qtip4pf") THEN
                   vstyle = 6
+               ELSEIF (trim(cmdbuffer) == "linear") THEN
+                  vstyle = 7
                ELSEIF (trim(cmdbuffer) == "gas") THEN
                   vstyle = 0  ! ideal gas
                ELSE
@@ -145,19 +147,19 @@
          WRITE(*,*) " Error, type of potential not specified."
          CALL helpmessage
          STOP "ENDED"
-      ELSEIF (0 == vstyle ) THEN
+      ELSEIF (0 == vstyle) THEN
          IF (par_count /= 0) THEN
             WRITE(*,*) "Error: no initialization string needed for ideal gas."
             STOP "ENDED" 
          ENDIF   
          isinit = .true.
-      ELSEIF (6 == vstyle ) THEN
+      ELSEIF (6 == vstyle) THEN
          IF (par_count /= 0) THEN
             WRITE(*,*) "Error:  no initialization string needed for qtip4pf."
             STOP "ENDED" 
          ENDIF 
          isinit = .true.
-      ELSEIF (5 == vstyle ) THEN
+      ELSEIF (5 == vstyle) THEN
          IF (par_count /= 0) THEN
             WRITE(*,*) "Error: no initialization string needed for zundel."
             STOP "ENDED" 
@@ -165,7 +167,7 @@
          CALL prezundelpot()
          CALL prezundeldip()
          isinit = .true.
-      ELSEIF (4 == vstyle ) THEN
+      ELSEIF (4 == vstyle) THEN
          IF (par_count == 0) THEN ! defaults (OH stretch)
             vpars(1) = 1.8323926 ! r0
             vpars(2) = 0.18748511263179304 ! D
@@ -200,6 +202,14 @@
          IF (par_count /= 1) THEN
             WRITE(*,*) "Error: parameters not initialized correctly."
             WRITE(*,*) "For 1D harmonic potential use -o k "
+            STOP "ENDED" ! Note that if initialization from the wrapper is implemented this exit should be removed.
+         ENDIF
+         ks = vpars(1)
+         isinit = .true.
+      ELSEIF (vstyle == 7) THEN
+         IF (par_count /= 1) THEN
+            WRITE(*,*) "Error: parameters not initialized correctly."
+            WRITE(*,*) "For a linear potential use -o k "
             STOP "ENDED" ! Note that if initialization from the wrapper is implemented this exit should be removed.
          ENDIF
          ks = vpars(1)
@@ -278,9 +288,15 @@
                virial = 0.0d0
             ELSEIF (vstyle == 3) THEN ! 1D harmonic potential, so only uses the first position variable
                pot = 0.5*ks*atoms(1,1)**2
-               forces = 0
+               forces = 0.0d0
                forces(1,1) = -ks*atoms(1,1)
-               virial = 0
+               virial = 0.0d0
+               virial(1,1) = forces(1,1)*atoms(1,1)
+            ELSEIF (vstyle == 7) THEN ! linear potential in x position of the 1st atom
+               pot = ks*atoms(1,1)
+               forces = 0.0d0
+               virial = 0.0d0
+               forces(1,1) = -ks
                virial(1,1) = forces(1,1)*atoms(1,1)
             ELSEIF (vstyle == 4) THEN ! Morse potential. 
                IF (nat/=1) THEN
@@ -302,7 +318,7 @@
                   DO j=1,3                     
                      datoms(i,j)=atoms(i,j)+fddx
                      CALL zundelpot(dpot, datoms)
-                     datoms(i,j)=atoms(i,j)-fddx                     
+                     datoms(i,j)=atoms(i,j)-fddx
                      CALL zundelpot(forces(i,j), datoms)
                      datoms(i,j)=atoms(i,j)
                      forces(i,j)=(forces(i,j)-dpot)/(2*fddx)
