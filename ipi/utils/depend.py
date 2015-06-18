@@ -762,7 +762,8 @@ class dobject(object):
     """Class that allows to access the value of member depend objects directly, without
        calling getter and setter functions explicitly."""
 
-
+    def dsetup(self):
+        return dsetup(self)
     
     def __getattribute__(self, name):
         """Overrides standard __getattribute__().

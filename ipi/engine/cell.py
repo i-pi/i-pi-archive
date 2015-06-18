@@ -55,7 +55,7 @@ class Cell(dobject):
       if h is None:
          h = np.zeros((3,3), float)
          
-      sself = dsetup(self)   
+      sself = self.dsetup()   
       
       sself.h = depend_array(name = 'h', value = h)
       sself.ih = depend_array(name = "ih", value = np.zeros((3,3),float),
