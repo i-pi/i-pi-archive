@@ -226,7 +226,7 @@ class Simulation(dobject):
          
          if self.mode == "static":
             for s in self.syslist:
-               s.static.step(step=self.step)
+               s.mover.step(step=self.step)
             pass
          elif self.mode == "md" or self.mode == "paratemp":            
             for s in self.syslist:
