@@ -22,46 +22,34 @@ import time
 from ipi.utils.softexit import softexit
 from ipi.utils.messages import banner, verbosity
 from ipi.utils.load_simulation import load_simulation
-from ipi.utils.messages import help
 
 
-def main(file_name, do_yappi):
-   """Loads and runs the simulation."""
+def main(file_name, do_yappi, print_banner):
+   """Loads and runs the simulation stored in `file_name`."""
+
+    # print the banner if requested
+   if print_banner:
+      banner()
+
+   # optionally profile this run - set up
+   if do_yappi:
+      try:
+         import yappi
+         yappi.start(builtins=True, profile_threads=True)
+      except ImportError:
+         # TODO: print a warning message
+         do_yappi = False
 
    # construct simulation based on input file
    simulation = load_simulation(file_name)
 
-   # Here we must do this manually
-   # From here on everything should be automated by the messages classes.
-   # TODO:
-   # This is now in the wrong order - if there is output from the
-   # simulation construction, it comes before the banner :-/
-   # Solution: handle verbosity globally only and do this printing in
-   # load_simulation, with the option to supress it by first decreasing
-   # verbosity.
-   if verbosity > 0:
-      banner()
-      print " # i-pi starting from input file: ", file_name
-   if verbosity > 1:
-      print " --- begin input file content --- "
-      ifile = open(file_name,"r")
-      for line in ifile.readlines():
-         print line,
-      ifile.close()
-      print " ---  end input file content  --- "
-
-   # optionally profile this run
-   if do_yappi:
-      import yappi
-      yappi.start(builtins=True, profile_threads=True)
-
    # run the simulation
-   start = time.time()
    simulation.run()
-   if verbosity > 0:
-      print "Total elapsed time: ", time.time() - start
 
-   # optionally profile this run
+   # optionally profile this run - wrap up
+   # TODO
+   # We do not get to this if the run is ctrl interrupted and exits cleanly.
+   # Maybe the profiler should be global and cleaned up on exit?
    if do_yappi:
       yappi.stop()
       yappi.get_thread_stats().print_all()
@@ -70,9 +58,13 @@ def main(file_name, do_yappi):
       ypo = open("profile.yappi", "w")
       yfs.print_all(out=ypo)
 
+   # TODO
+   # Is there any point in doing either of these?
+   # The simulation run finished cleanly.
+   # Does softexit.trigger have side effects that we want?
+   # If so, it should probably be done differently.
+   # It seems that checkpoints are written there - do this differently.
    softexit.trigger(" @ SIMULATION: Exiting cleanly.")
-
-   # TODO: Is there any point doing this, especially after soft exit?
    del simulation
 
 
@@ -80,11 +72,13 @@ if __name__ == '__main__':
 
    # TODO
    # use argparse instead of argv, will also handle help text
-   # read yappi preference from arguments
+   # read yappi and banner preference from arguments
    # Or do we want to support Python < 2.7?
 
    if (len(sys.argv) != 2):
-      help()
+      print """usage: %s <input file>""" % sys.argv[0]
    else:
-      do_yappi = False
-      main(sys.argv[1], do_yappi)
+      #do_yappi = False
+      do_yappi = True
+      print_banner = True
+      main(sys.argv[1], do_yappi, print_banner)
