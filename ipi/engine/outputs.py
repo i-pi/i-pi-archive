@@ -27,10 +27,10 @@ Classes:
 
 import os, time
 import numpy as np
-from ipi.utils.messages import verbosity, info
+from ipi.utils.messages import verbosity, info, warning
 from ipi.utils.softexit import softexit
 from ipi.utils.depend import *
-from ipi.utils.io.io_xml import *
+from ipi.utils.io.inputs.io_xml import *
 from ipi.engine.properties import getkey
 
 __all__ = [ 'PropertyOutput', 'TrajectoryOutput', 'CheckpointOutput' ]
@@ -103,8 +103,8 @@ class PropertyOutput(dobject):
 
       try:
          self.out = open(self.filename, "a")
-      except:
-         raise ValueError("Could not open file " + self.filename + " for output")
+      except IOError:
+         raise IOError("Could not open file " + self.filename + " for output")
 
       # print nice header if information is available on the properties
       if (self.system.simul.step == 0) :
@@ -257,13 +257,13 @@ class TrajectoryOutput(dobject):
                else:
                   self.out.append(None) # creates null outputs if a
                                         # single bead output is chosen
-            except:
-               raise ValueError("Could not open file " + self.filename + "_" + padb + "." + self.format + " for output")
+            except IOError:
+               raise IOError("Could not open file " + self.filename + "_" + padb + "." + self.format + " for output")
       else:
          try:
             self.out = ( open(self.filename + "." + self.format, "a") )
-         except:
-            raise ValueError("Could not open file " + self.filename + "." + self.format + " for output")
+         except IOError:
+            raise IOError("Could not open file " + self.filename + "." + self.format + " for output")
 
 
    def softexit(self):
@@ -274,11 +274,15 @@ class TrajectoryOutput(dobject):
    def close_stream(self):
       """Closes the output stream."""
 
-      if hasattr(self.out, "__getitem__"):
-         for o in self.out:
-            o.close()
-      else:
-         self.out.close()
+      try:
+         if hasattr(self.out, "__getitem__"):
+            for o in self.out:
+               o.close()
+         else:
+            self.out.close()
+      except AttributeError:
+		  # This gets called on softexit. We want to carry on to shut down as cleanly as possible
+          warning("Exception while closing output stream " + str(self.out), verbosity.low)
 
    def write(self):
       """Writes out the required trajectories."""
@@ -297,7 +301,7 @@ class TrajectoryOutput(dobject):
       # Checks to see if there is a list of files or just a single file.
       if hasattr(self.out, "__getitem__"):
          if self.ibead < 0:
-            for b in range(len(self.out)):               
+            for b in range(len(self.out)):
                self.system.trajs.print_traj(self.what, self.out[b], b, format=self.format, cell_units=self.cell_units, flush=doflush)
          elif self.ibead < len(self.out):
             self.system.trajs.print_traj(self.what, self.out[self.ibead], self.ibead, format=self.format, cell_units=self.cell_units, flush=doflush)

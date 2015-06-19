@@ -118,7 +118,7 @@ class Barostat(dobject):
       deppipe(self, "temp", self.thermostat,"temp")
 
 
-   def bind(self, beads, nm, cell, forces, prng=None, fixdof=None):
+   def bind(self, beads, nm, cell, forces, bias=None, prng=None, fixdof=None):
       """Binds beads, cell and forces to the barostat.
 
       This takes a beads object, a cell object and a forcefield object and
@@ -139,14 +139,18 @@ class Barostat(dobject):
       self.beads = beads
       self.cell = cell
       self.forces = forces
+      self.bias = bias
       self.nm = nm
-
+    
       dset(self,"kstress",
          depend_value(name='kstress', func=self.get_kstress,
             dependencies=[ dget(beads,"q"), dget(beads,"qc"), dget(beads,"pc"), dget(forces,"f") ]))
       dset(self,"stress",
          depend_value(name='stress', func=self.get_stress,
             dependencies=[ dget(self,"kstress"), dget(cell,"V"), dget(forces,"vir") ]))
+      if bias != None:
+         dget(self,"kstress").add_dependency(dget(bias,"f"))
+         dget(self,"stress").add_dependency(dget(bias,"vir"))
 
       if fixdof is None:
          self.mdof = float(self.beads.natoms)*3.0
@@ -166,12 +170,14 @@ class Barostat(dobject):
       m = depstrip(self.beads.m)
       na3 = 3*self.beads.natoms
       fall = depstrip(self.forces.f)
+      if self.bias == None: ball=fall*0.00
+      else: ball = depstrip(self.bias.f)
 
       for b in range(self.beads.nbeads):
          for i in range(3):
             for j in range(i,3):
                kst[i,j] -= np.dot(q[b,i:na3:3] - qc[i:na3:3],
-                  fall[b,j:na3:3])
+                  fall[b,j:na3:3]+ball[b,j:na3:3])
 
       # NOTE: In order to have a well-defined conserved quantity, the Nf kT term in the
       # diagonal stress estimator must be taken from the centroid kinetic energy.
@@ -182,8 +188,10 @@ class Barostat(dobject):
 
    def get_stress(self):
       """Calculates the internal stress tensor."""
-
-      return (self.kstress + self.forces.vir)/self.cell.V
+      
+      bvir = np.zeros((3,3),float)
+      if self.bias != None: bvir[:]=self.bias.vir
+      return (self.kstress + self.forces.vir + bvir)/self.cell.V
 
    def pstep(self):
       """Dummy momenta propagator step."""
@@ -238,7 +246,7 @@ class BaroBZP(Barostat):
          self.pext = pext
       else: self.pext = 0.0
 
-   def bind(self, beads, nm, cell, forces, prng=None, fixdof=None):
+   def bind(self, beads, nm, cell, forces, bias=None, prng=None, fixdof=None):
       """Binds beads, cell and forces to the barostat.
 
       This takes a beads object, a cell object and a forcefield object and
@@ -256,7 +264,7 @@ class BaroBZP(Barostat):
          fixdof: The number of blocked degrees of freedom.
       """
 
-      super(BaroBZP, self).bind(beads, nm, cell, forces, prng, fixdof)
+      super(BaroBZP, self).bind(beads, nm, cell, forces, bias, prng, fixdof)
 
       # obtain the thermostat mass from the given time constant
       # note that the barostat temperature is nbeads times the physical T
@@ -307,7 +315,8 @@ class BaroBZP(Barostat):
       self.p += dthalf*3.0*( self.cell.V* ( press - self.beads.nbeads*self.pext ) +
                 Constants.kb*self.temp )
 
-      fc = np.sum(depstrip(self.forces.f),0)/self.beads.nbeads
+      fc = np.sum(depstrip(self.forces.f),0)/self.beads.nbeads  
+      if self.bias != None: fc += np.sum(depstrip(self.bias.f),0)/self.beads.nbeads
       m = depstrip(self.beads.m3)[0]
       pc = depstrip(self.beads.pc)
 
@@ -316,7 +325,8 @@ class BaroBZP(Barostat):
       # again, these are tiny tiny terms so whatever.
       self.p += (dthalf2*np.dot(pc,fc/m) + dthalf3*np.dot(fc,fc/m)) * self.beads.nbeads
 
-      self.beads.p += depstrip(self.forces.f)*dthalf
+      self.beads.p += depstrip(self.forces.f)*dthalf 
+      if self.bias != None: self.beads.p +=depstrip(self.bias.f)*dthalf
 
    def qcstep(self):
       """Propagates the centroid position and momentum and the volume."""
@@ -390,8 +400,8 @@ class BaroRGB(Barostat):
       if not stressext is None:
          self.stressext = stressext
       else: self.stressext = 0.0
-
-   def bind(self, beads, nm, cell, forces, prng=None, fixdof=None):
+            
+   def bind(self, beads, nm, cell, forces, bias=None, prng=None, fixdof=None):
       """Binds beads, cell and forces to the barostat.
 
          This takes a beads object, a cell object and a forcefield object and
@@ -409,7 +419,7 @@ class BaroRGB(Barostat):
          fixdof: The number of blocked degrees of freedom.
          """
 
-      super(BaroRGB, self).bind(beads, nm, cell, forces, prng, fixdof)
+      super(BaroRGB, self).bind(beads, nm, cell, forces, bias, prng, fixdof)
 
       # obtain the thermostat mass from the given time constant (1/3 of what used for the corresponding NPT case)
       # note that the barostat temperature is nbeads times the physical T
@@ -487,7 +497,8 @@ class BaroRGB(Barostat):
       self.p += dthalf*( self.cell.V* np.triu( self.stress - self.beads.nbeads*pi_ext ) +
                            Constants.kb*self.temp*L)
 
-      fc = np.sum(depstrip(self.forces.f),0).reshape(self.beads.natoms,3)/self.beads.nbeads
+      fc = np.sum(depstrip(self.forces.f),0).reshape(self.beads.natoms,3)/self.beads.nbeads  
+      if self.bias != None: fc+= np.sum(depstrip(self.bias.f),0).reshape(self.beads.natoms,3)/self.beads.nbeads 
       fcTonm = (fc/depstrip(self.beads.m3)[0].reshape(self.beads.natoms,3)).T
       pc = depstrip(self.beads.pc).reshape(self.beads.natoms,3)
 
@@ -496,7 +507,8 @@ class BaroRGB(Barostat):
       # again, these are tiny tiny terms so whatever.
       self.p += np.triu(dthalf2*np.dot(fcTonm,pc) + dthalf3*np.dot(fcTonm,fc)) * self.beads.nbeads
 
-      self.beads.p += depstrip(self.forces.f)*dthalf
+      self.beads.p += depstrip(self.forces.f)*dthalf 
+      if self.bias != None:  self.beads.p += depstrip(self.bias.f)*dthalf
 
    def qcstep(self):
       """Propagates the centroid position and momentum and the volume."""

@@ -45,9 +45,9 @@ from ipi.engine.beads import Beads
 from ipi.engine.cell import Cell
 from ipi.engine.normalmodes import NormalModes
 from ipi.engine.ensembles import Ensemble
-from ipi.utils.io.io_xyz import read_xyz
-from ipi.utils.io.io_pdb import read_pdb
-from ipi.utils.io.io_xml import xml_parse_file
+from ipi.utils.io.backends.io_xyz import read_xyz
+from ipi.utils.io.backends.io_pdb import read_pdb
+from ipi.utils.io.inputs.io_xml import xml_parse_file
 from ipi.utils.depend import dobject
 from ipi.utils.units import Constants, unit_to_internal
 from ipi.utils.nmtransform import nm_rescale
@@ -489,14 +489,13 @@ class Initializer(dobject):
             warning("Initializing from velocities uses the previously defined masses -- not the masses inferred from the file -- to build momenta", verbosity.low)
             if v.index >= 0:
                rv *= simul.beads.m[v.index]
-            elif v.bead >= 0:
-               rv *= simul.beads.m3[0]
-            else:
-               rv *= simul.beads.m3
+            else: 
+               for ev in rv:
+                  ev *= simul.beads.m3[0]
             rv *= np.sqrt(self.nbeads/nbeads)
             set_vector(v, simul.beads.p, rv)
             fmom = True
-         elif k == "thermostat": pass   # thermostats must be initialised in a second stage
+         elif k == "gle": pass   # thermostats must be initialised in a second stage
 
       if simul.beads.natoms == 0:
          raise ValueError("Initializer could not initialize the atomic positions")

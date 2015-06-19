@@ -75,7 +75,7 @@ class InvalidStatus(Exception):
 
    pass
 
-class Status:
+class Status(object):
    """Simple class used to keep track of the status of the client.
 
    Uses bitwise or to give combinations of different status options.
@@ -380,7 +380,7 @@ class Driver(DriverSocket):
 
       if self.status & Status.NeedsInit:
          try:
-            self.sendall(Message("init")) 
+            self.sendall(Message("init"))
             self.sendall(np.int32(rid))
             self.sendall(np.int32(len(pars)))
             self.sendall(pars)
@@ -536,8 +536,8 @@ class InterfaceSocket(object):
          try:
             self.server.bind("/tmp/ipi_" + self.address)
             info("Created unix socket with address " + self.address, verbosity.medium)
-         except:
-            raise ValueError("Error opening unix socket. Check if a file " + ("/tmp/ipi_" + self.address) + " exists, and remove it if unused.")
+         except socket.error:
+            raise RuntimeError("Error opening unix socket. Check if a file " + ("/tmp/ipi_" + self.address) + " exists, and remove it if unused.")
 
       elif self.mode == "inet":
          self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -565,7 +565,7 @@ class InterfaceSocket(object):
       # flush it all down the drain
       self.clients = []
       self.jobs = []
- 
+
       try:
          self.server.shutdown(socket.SHUT_RDWR)
          self.server.close()
