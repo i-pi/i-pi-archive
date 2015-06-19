@@ -186,7 +186,8 @@ class ReplayMover(Mover):
       self.qtime += time.time()
 
 
-class GEOMover: 
+class GEOMover:
+   """Creation of the one-dimensional function that will be minimized"""
         
    def __init__(self):      
       self.x0 = self.d = None
@@ -247,6 +248,7 @@ class GeopMover(Mover):
           # Steepest descent minimization
           # gradf1 = force at current atom position
           # dq1 = direction of steepest descent
+          # dq1_unit = unit vector of dq1
           gradf1 = dq1 = depstrip(self.forces.f)
           dq1_unit = dq1 / np.sqrt(np.dot(gradf1.flatten(), gradf1.flatten())) # move direction for steepest descent and 1st conjugate gradient step
       
@@ -255,8 +257,9 @@ class GeopMover(Mover):
           # Conjugate gradient, Polak-Ribiere
           # gradf1: force at current atom position
           # gradf0: force at previous atom position
-          # df1 = direction to move
-          # df0 = previous direction
+          # dq1 = direction to move
+          # dq0 = previous direction
+          # dq1_unit = unit vector of dq1
           gradf0 = self.gradf0
           dq0 = self.dq0
           gradf1 = depstrip(self.forces.f)
@@ -264,7 +267,7 @@ class GeopMover(Mover):
           dq1 = gradf1 + max(0.0, beta) * dq0
           dq1_unit = dq1 / np.sqrt(np.dot(dq1.flatten(), dq1.flatten()))
 
-      self.dq0 = dq1
+      self.dq0 = dq1.copy()
       self.gradf0 = gradf1.copy()
    
       if (len(self.fixatoms)>0):
@@ -273,10 +276,10 @@ class GeopMover(Mover):
             dqb[self.fixatoms*3+1]=0.0
             dqb[self.fixatoms*3+2]=0.0
       
-      self.gm.set_dir(depstrip(self.beads.q), dq1)
+      self.gm.set_dir(depstrip(self.beads.q), dq1_unit)
 
       # reuse initial value since we have energy and forces already
-      u0, du0 = (self.forces.pot, np.dot(depstrip(self.forces.f.flatten()), dq1.flatten()))
+      u0, du0 = (self.forces.pot, np.dot(depstrip(self.forces.f.flatten()), dq1_unit.flatten()))
       (x, fx) = min_brent(self.gm, fdf0=(u0, du0), x0=0.0, minopts=self.mo) 
 
       self.beads.q += dq1_unit * x
