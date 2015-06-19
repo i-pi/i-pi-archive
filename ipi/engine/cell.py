@@ -53,16 +53,15 @@ class Cell(dobject):
       """
 
       if h is None:
-         #h = np.identity(3,float)
          h = np.zeros((3,3), float)
-      dset(self,"h",depend_array(name = 'h', value = h) )
-
-      dset(self,"ih",
-         depend_array(name = "ih", value = np.zeros((3,3),float),
-            func=self.get_ih, dependencies=[dget(self,"h")]) )
-      dset(self,"V",
-         depend_value(name = 'V', func=self.get_volume,
-            dependencies=[dget(self,"h")]) )
+         
+      dself = self.dd
+      
+      dself.h = depend_array(name = 'h', value = h)
+      dself.ih = depend_array(name = "ih", value = np.zeros((3,3),float),
+            func=self.get_ih, dependencies=[dself.h])
+      dself.V = depend_value(name = 'V', func=self.get_volume,
+            dependencies=[dself.h])      
 
    def copy(self):
       return Cell(depstrip(self.h).copy())
