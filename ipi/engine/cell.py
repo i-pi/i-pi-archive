@@ -55,13 +55,13 @@ class Cell(dobject):
       if h is None:
          h = np.zeros((3,3), float)
          
-      sself = self.dsetup()   
+      dself = self.dd
       
-      sself.h = depend_array(name = 'h', value = h)
-      sself.ih = depend_array(name = "ih", value = np.zeros((3,3),float),
-            func=self.get_ih, dependencies=[sself.h])
-      sself.V = depend_value(name = 'V', func=self.get_volume,
-            dependencies=[sself.h])      
+      dself.h = depend_array(name = 'h', value = h)
+      dself.ih = depend_array(name = "ih", value = np.zeros((3,3),float),
+            func=self.get_ih, dependencies=[dself.h])
+      dself.V = depend_value(name = 'V', func=self.get_volume,
+            dependencies=[dself.h])      
 
    def get_ih(self):
       """Inverts the lattice vector matrix."""

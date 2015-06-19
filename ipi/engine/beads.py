@@ -100,46 +100,46 @@ class Beads(dobject):
       self.natoms = natoms
       self.nbeads = nbeads
 
-      sself = dsetup(self)
+      dself = self.dd
       
-      sself.names = depend_array(name="names",value=np.zeros(natoms, np.dtype('|S6')))
+      dself.names = depend_array(name="names",value=np.zeros(natoms, np.dtype('|S6')))
 
       # atom masses, and mass-related arrays
-      sself.m = depend_array(name="m",value=np.zeros(natoms, float))   # this is the prototype mass array (just one independent of bead n)
-      sself.m3 = depend_array(name="m3",value=np.zeros((nbeads,3*natoms), float),    # this is m conveniently replicated to be (nb,3*nat)
-            func=self.mtom3, dependencies=[sself.m]) 
-      sself.sm3 = depend_array(name="sm3",value=np.zeros((nbeads,3*natoms), float),   # this is just the square root of m3
-            func=self.m3tosm3, dependencies=[sself.m3])
+      dself.m = depend_array(name="m",value=np.zeros(natoms, float))   # this is the prototype mass array (just one independent of bead n)
+      dself.m3 = depend_array(name="m3",value=np.zeros((nbeads,3*natoms), float),    # this is m conveniently replicated to be (nb,3*nat)
+            func=self.mtom3, dependencies=[dself.m]) 
+      dself.sm3 = depend_array(name="sm3",value=np.zeros((nbeads,3*natoms), float),   # this is just the square root of m3
+            func=self.m3tosm3, dependencies=[dself.m3])
 
       # positions and momenta. bead representation, base storage used everywhere
-      sself.q = depend_array(name="q",value=np.zeros((nbeads,3*natoms), float))
-      sself.p = depend_array(name="p",value=np.zeros((nbeads,3*natoms), float))
+      dself.q = depend_array(name="q",value=np.zeros((nbeads,3*natoms), float))
+      dself.p = depend_array(name="p",value=np.zeros((nbeads,3*natoms), float))
 
       # position and momentum of the centroid
-      sself.qc = depend_array(name="qc",value=np.zeros(3*natoms, float),
-            func=self.get_qc, dependencies=[sself.q] )
-      sself.pc = depend_array(name="pc",value=np.zeros(3*natoms, float),
-            func=self.get_pc, dependencies=[sself.p] )
+      dself.qc = depend_array(name="qc",value=np.zeros(3*natoms, float),
+            func=self.get_qc, dependencies=[dself.q] )
+      dself.pc = depend_array(name="pc",value=np.zeros(3*natoms, float),
+            func=self.get_pc, dependencies=[dself.p] )
       
       # path springs potential and force
-      sself.vpath = depend_value(name="vpath", func=self.get_vpath,
-            dependencies=[sself.q])
-      sself.fpath = depend_array(name="fpath", value=np.zeros((nbeads,3*natoms), float),
-            func=self.get_fpath, dependencies=[sself.q])
+      dself.vpath = depend_value(name="vpath", func=self.get_vpath,
+            dependencies=[dself.q])
+      dself.fpath = depend_array(name="fpath", value=np.zeros((nbeads,3*natoms), float),
+            func=self.get_fpath, dependencies=[dself.q])
 
       # create proxies to access the individual beads as Atoms objects
       # ACTUALLY THIS IS ONLY USED HERE METHINK, SO PERHAPS WE COULD REMOVE IT TO DECLUTTER THE CODE.
       self._blist = [Atoms(natoms, _prebind=( self.q[i,:], self.p[i,:], self.m,  self.names )) for i in range(nbeads) ]      
             
       # kinetic energies of thhe beads, and total (classical) kinetic stress tensor
-      sself.kins = depend_array(name="kins",value=np.zeros(nbeads, float),
+      dself.kins = depend_array(name="kins",value=np.zeros(nbeads, float),
             func=self.kin_gather,
-               dependencies=[dsetup(b).kin for b in self._blist])
-      sself.kin = depend_value(name="kin", func=self.get_kin,
-            dependencies=[sself.kins])
-      sself.kstress = depend_array(name="kstress",value=np.zeros((3,3), float),
+               dependencies=[b.dd.kin for b in self._blist])
+      dself.kin = depend_value(name="kin", func=self.get_kin,
+            dependencies=[dself.kins])
+      dself.kstress = depend_array(name="kstress",value=np.zeros((3,3), float),
             func=self.get_kstress,
-               dependencies=[dsetup(b).kstress for b in self._blist])               
+               dependencies=[b.dd.kstress for b in self._blist])               
             
 
    def copy(self):

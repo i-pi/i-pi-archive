@@ -56,7 +56,7 @@ Functions:
 
 
 __all__ = ['depend_base', 'depend_value', 'depend_array', 'synchronizer',
-           'dobject', 'dsetup', 'dget', 'dset', 'depstrip', 'depcopy', 'deppipe']
+           'dobject', 'dget', 'dset', 'depstrip', 'depcopy', 'deppipe']
 
 
 import numpy as np
@@ -758,13 +758,40 @@ def depcopy(objfrom, memberfrom, objto, memberto):
         dto._bval = dfrom._bval
 
 
+class ddirect(object):
+    """ Gives a "view" of a depend object where one can directly access its 
+    depend_base members. """
+    
+    def __init__(self, dobj):
+        """ Just stores a reference to the dobject we want to access """
+        
+        object.__setattr__(self, "dobj", dobj)
+    
+    def __getattribute__(self, name):
+        """ Overrides the dobject value access mechanism and returns the actual 
+        member objects. """
+        
+        return object.__getattribute__(self, "dobj").__dict__[name]
+        
+    def __setattr__(self, name, value):
+        """ Overrides the dobject value access mechanism and returns the actual 
+        member objects. """
+        
+        return object.__setattr__(object.__getattribute__(self,"dobj"), name, value)
+
+
 class dobject(object):
     """Class that allows to access the value of member depend objects directly, without
        calling getter and setter functions explicitly."""
 
-    def dsetup(self):
-        return dsetup(self)
-    
+    def __new__(cls,  *args, **kwds):
+         """ Initialize the object using __new__, because we do not want 
+         to impose to derived classes to call the super __init__ """ 
+         
+         obj = object.__new__(cls)
+         obj.dd = ddirect(obj)
+         return obj
+         
     def __getattribute__(self, name):
         """Overrides standard __getattribute__().
 
@@ -795,23 +822,3 @@ class dobject(object):
                 return obj.__set__(self, value)
         return object.__setattr__(self, name, value)
         
-class dsetup(object):
-    """ Gives a "view" of a depend object where one can directly access its 
-    depend_base members. """
-    
-    def __init__(self, dobj):
-        """ Just stores a reference to the dobject we want to access """
-        
-        object.__setattr__(self,"dobj",dobj)
-    
-    def __getattribute__(self, name):
-        """ Overrides the dobject value access mechanism and returns the actual 
-        member objects. """
-        
-        return object.__getattribute__(self, "dobj").__dict__[name]
-        
-    def __setattr__(self, name, value):
-        """ Overrides the dobject value access mechanism and returns the actual 
-        member objects. """
-        
-        return object.__setattr__(object.__getattribute__(self,"dobj"), name, value)
