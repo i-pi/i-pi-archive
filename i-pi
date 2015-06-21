@@ -13,12 +13,18 @@ which the system data will be read. For a description of how the input file
 should be formatted, see the reference manual.
 """
 
+# This file is part of i-PI.
+# i-PI Copyright (C) 2014-2015 i-PI developers
+# See the "licenses" directory for full license information.
+
+
 import sys
 import ipi.inputs.simulation as isimulation
 from ipi.utils.softexit import softexit
 from ipi.utils.io.inputs.io_xml import *
 from ipi.utils.messages import banner, help, verbosity
 # import yappi, time
+
 
 def main(file_name):
    """Runs the simulation.
@@ -65,6 +71,7 @@ def main(file_name):
    softexit.trigger(" @ SIMULATION: Exiting cleanly.")
 
    del simul
+
 
 #This is what is run if the file is run as a script.
 if __name__ == '__main__':
