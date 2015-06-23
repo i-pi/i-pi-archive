@@ -20,20 +20,13 @@ Functions:
     
 """
 
-__all__ = [ "min_brent", "MinOptions" ]
+__all__ = [ "min_brent" ]
 
 import numpy as np
 import math
 from ipi.utils.messages import verbosity, warning
 
-class MinOptions:
-  def __init__(self):
-    self.tolerance = 1.0e-5
-    self.itmax = 1000
-    self.init_step = 0.001
-    self.glimit = 100.0
-
-def bracket(fdf, fdf0=None, x0=0.0, minopts=MinOptions()): #TODO: ALSO ADD OPTION FOR glimit?
+def bracket(fdf, fdf0=None, x0=0.0, init_step=1e-3): #TODO: ALSO ADD OPTION FOR glimit?
 
   """Given an initial point, determines the initial bracket for the minimum
    Arguments:
@@ -44,7 +37,7 @@ def bracket(fdf, fdf0=None, x0=0.0, minopts=MinOptions()): #TODO: ALSO ADD OPTIO
 
   # Constants
   gold = 1.618034 # Golden ratio
-  glimit = minopts.glimit # Limit for magnification of parabolic fit step
+  glimit = 100.0 # Limit for magnification of parabolic fit step
   tiny = 1.0e-20 # Prevent division by zero
 
   # x0: initial point of evaluation (e.g. initial atomic position)
@@ -53,7 +46,7 @@ def bracket(fdf, fdf0=None, x0=0.0, minopts=MinOptions()): #TODO: ALSO ADD OPTIO
   if fdf0 is None: fdf0 = fdf(x0)
   ax = x0 
   fa, dfa = fdf0 
-  bx = x0 + minopts.init_step
+  bx = x0 + init_step
   fb, dfb = fdf(bx)
 
   # Switch direction to move downhill, if necessary
@@ -139,7 +132,7 @@ def bracket(fdf, fdf0=None, x0=0.0, minopts=MinOptions()): #TODO: ALSO ADD OPTIO
 
 # One dimensional minimization function using function derivatives
 # and Brent's method
-def min_brent(fdf, fdf0=None, x0=0.0, minopts=MinOptions()):
+def min_brent(fdf, fdf0=None, x0=0.0, tol = 1e-6, itmax = 100, init_step = 1e-3):
 
   """Given a maximum number of iterations and a convergence tolerance,
    minimizes the specified function 
@@ -155,14 +148,10 @@ def min_brent(fdf, fdf0=None, x0=0.0, minopts=MinOptions()):
   gold = 0.3819660 # Golden ratio
   zeps = 1.0e-10 # Safeguard against trying to find fractional precision for min that is exactly zero
   e = 0.0 # Size of step before last
-  tol = minopts.tolerance
-  itmax = minopts.itmax
-  init_step = minopts.init_step
 
   # Call initial bracketing routine; takes arguments function and initial x-value
-  (ax, bx, cx, fb, dfb) = bracket(fdf, fdf0, x0, minopts)
-  minopts.init_step = gold * min(abs(cx - bx), abs(bx - ax)) # Simple option that will give order of magnitude estimate for next iteration
-
+  (ax, bx, cx, fb, dfb) = bracket(fdf, fdf0, x0, init_step)
+  
   # Set bracket points
   if ax < cx:
     a = ax

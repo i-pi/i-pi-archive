@@ -48,7 +48,6 @@ from ipi.inputs.thermostats import InputThermo
 from ipi.inputs.barostats import InputBaro
 from ipi.engine.thermostats import *
 from ipi.engine.barostats import *
-from ipi.utils.mintools import min_brent, MinOptions
 
 
 class Ensemble(dobject):

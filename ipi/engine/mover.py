@@ -23,7 +23,7 @@ appropriate conserved energy quantity for the ensemble of choice.
 
 """
 
-__all__=['Mover', 'ReplayMover', 'GeopMover']
+__all__=['Mover', 'ReplayMover', 'GeopMover', 'GeoMin']
 
 import numpy as np
 import time
@@ -35,7 +35,7 @@ from ipi.utils.io.io_xyz import read_xyz
 from ipi.utils.io.io_pdb import read_pdb
 from ipi.utils.io.io_xml import xml_parse_file
 from ipi.utils.units import Constants, unit_to_internal
-from ipi.utils.mintools import min_brent, MinOptions
+from ipi.utils.mintools import min_brent
 
 
 class Mover(dobject):
@@ -186,10 +186,10 @@ class ReplayMover(Mover):
       self.qtime += time.time()
 
 
-class GEOMover:
+class LineMover(object):
    """Creation of the one-dimensional function that will be minimized"""
-        
-   def __init__(self):      
+   
+   def __init__(self):
       self.x0 = self.d = None
 
    def bind(self, ens):
@@ -197,18 +197,29 @@ class GEOMover:
       self.dcell = ens.cell.copy()
       self.dforces = ens.forces.copy(self.dbeads, self.dcell)      
       
-   def set_dir(self, x0, mdir):
-      
+   def set_dir(self, x0, mdir):      
       self.x0 = x0.copy()
       self.d = mdir.copy()/np.sqrt(np.dot(mdir.flatten(),mdir.flatten()))
-      if self.x0.shape != self.d.shape: raise ValueError("Incompatible shape of initial value and displacement direction")
-      
+      if self.x0.shape != self.d.shape: raise ValueError("Incompatible shape of initial value and displacement direction")      
+   
    def __call__(self, x):
             
       self.dbeads.q = self.x0 + self.d * x
       e = self.dforces.pot
       g = - np.dot(depstrip(self.dforces.f).flatten(),self.d.flatten())
       return e, g
+   
+
+class GeoMin(object):
+    """ Stores options and utilities for geometry optimization. """
+    
+    def __init__(self, mode="sd", lin_iter=1000, lin_step=1e-3, lin_tol=1.0e-6, lin_auto=True):
+        self.mode=mode
+        self.lin_tol = lin_tol
+        self.lin_iter = lin_iter
+        self.lin_step = lin_step
+        self.lin_auto = lin_auto
+        
 
 class GeopMover(Mover):
    """Geometry optimization routine. Will start with a dumb steepest descent,
@@ -218,7 +229,7 @@ class GeopMover(Mover):
 
    """
 
-   def __init__(self, fixcom=False, fixatoms=None):      
+   def __init__(self, fixcom=False, fixatoms=None, geop = None):      
       """Initialises GeopMover.
 
       Args:
@@ -227,15 +238,16 @@ class GeopMover(Mover):
       """
 
       super(GeopMover,self).__init__(fixcom=fixcom, fixatoms=fixatoms)
-      self.gm = GEOMover()
-      self.mo = MinOptions()
+      self.lm = LineMover()
+      if geop is None: geop = GeoMin()
+      self.mo = geop
       self.gradf0 = None # Previous force evaluation
       self.dq0 = None # Previous direction
    
    def bind(self, beads, nm, cell, bforce, bbias, prng):
       
       super(GeopMover,self).bind(beads, nm, cell, bforce, bbias, prng)
-      self.gm.bind(self)
+      self.lm.bind(self)
       
    def step(self, step=None):
       """Does one simulation time step."""
@@ -243,7 +255,7 @@ class GeopMover(Mover):
       self.ptime = self.ttime = 0
       self.qtime = -time.time()
 
-      if (step == 0): #if (mode == "SD") or (step == 0):
+      if (self.mo.mode == "sd" or step == 0): #if (mode == "SD") or (step == 0):
           
           # Steepest descent minimization
           # gradf1 = force at current atom position
@@ -276,11 +288,14 @@ class GeopMover(Mover):
             dqb[self.fixatoms*3+1]=0.0
             dqb[self.fixatoms*3+2]=0.0
       
-      self.gm.set_dir(depstrip(self.beads.q), dq1_unit)
+      self.lm.set_dir(depstrip(self.beads.q), dq1_unit)
 
       # reuse initial value since we have energy and forces already
       u0, du0 = (self.forces.pot, np.dot(depstrip(self.forces.f.flatten()), dq1_unit.flatten()))
-      (x, fx) = min_brent(self.gm, fdf0=(u0, du0), x0=0.0, minopts=self.mo) 
 
+      (x, fx) = min_brent(self.lm, fdf0=(u0, du0), x0=0.0, tol = self.mo.lin_tol, itmax = self.mo.lin_iter, init_step = self.mo.lin_step) 
+
+      if self.mo.lin_auto: self.mo.lin_step = x # automatically adapt the search step for the next iteration
+      
       self.beads.q += dq1_unit * x
       self.qtime += time.time()

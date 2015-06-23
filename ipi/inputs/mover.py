@@ -29,9 +29,9 @@ from ipi.inputs.thermostats import *
 from ipi.inputs.initializer import *
 from ipi.utils.units import *
 
-__all__ = ['InputMover', 'InputGEOP']
+__all__ = ['InputMover', 'InputGeop']
 
-class InputGEOP(Input):
+class InputGeop(Input):
     """Geometry optimization options.
     
     Contains options related with geometry optimization, such as method, 
@@ -41,11 +41,22 @@ class InputGEOP(Input):
 
     attribs={"mode"  : (InputAttribute, {"dtype"   : str,
                                     "help"    : "The geometry optimization algorithm to be used",
-                                    "options" : ['steepest']}) }
+                                    "options" : ['sd', 'cg']}) }
    
     fields = { "line_tolerance": (InputValue, {"dtype"         : float,
-                                     "default"       : 1.0e-5,
-                                     "help"          : "The tolerance for line search procedures."})  }
+                   "default"       : 1.0e-5,
+                   "help"          : "The tolerance for line search procedures."}),
+               "line_iter": (InputValue, {"dtype"         : float,
+                   "default"       : 100,
+                   "help"          : "Maximum iteration number for line search procedures."}),
+               "line_step": (InputValue, {"dtype"         : float,
+                   "default"       : 1e-3,
+                   "help"          : "The initial step for line search procedures."}),
+                "line_adaptive": (InputValue, {"dtype"         : bool,
+                   "default"       : True,
+                   "help"          : "Wheter to automatically adjust step size for line search procedures."})                                   
+                     }
+                   
               
     dynamic = {  }
 
@@ -53,12 +64,20 @@ class InputGEOP(Input):
     default_label = "GEOP"   
 
     def store(self, geop):
-        self.line_tolerance.store(geop.tol) # todo set the proper parameter
+        self.line_tolerance.store(geop.lin_tol) 
         self.mode.store(geop.mode)
+        self.line_iter.store(geop.lin_iter)
+        self.line_step.store(geop.lin_step)
+        self.line_adaptive.store(geop.lin_auto)
+        
 		
     def fetch(self):		
-        ngeo = Ensemble() # this should be a geop object we don't have here
-        ngeo.tol = self.line_tolerance.fetch()
+        ngeo = GeoMin(mode=self.mode.fetch(), 
+            lin_tol = self.line_tolerance.fetch(),
+            lin_step = self.line_step.fetch(),
+            lin_iter = self.line_iter.fetch(),
+            lin_auto = self.line_adaptive.fetch())
+        return ngeo
 
 
 		
@@ -86,6 +105,8 @@ class InputMover(Input):
            "fixatoms" : (InputArray, {"dtype"        : int,
                                     "default"      : np.zeros(0,int),
                                     "help"         : "Indices of the atmoms that should be held fixed."}),
+           "geometry" : ( InputGeop, { "default" : input_default(factory=ipi.engine.mover.GeoMin), 
+                                     "help":  "Option for geometry optimization" } ),
            "replay_file": (InputInitFile, {"default" : input_default(factory=ipi.engine.initializer.InitBase),
                            "help"            : "This describes the location to read a trajectory file from."})
          }
