@@ -37,7 +37,7 @@ def bracket(fdf, fdf0=None, x0=0.0, minopts=MinOptions()): #TODO: ALSO ADD OPTIO
 
   """Given an initial point, determines the initial bracket for the minimum
    Arguments:
-      fdf = function to minimize [0], derivative of function to minimize [1] (not used)
+      fdf = function to minimize [0], derivative of function to minimize [1]
       x0 = initial point
       fdf0 = value of function and its derivative at x0
   """
@@ -161,7 +161,7 @@ def min_brent(fdf, fdf0=None, x0=0.0, minopts=MinOptions()):
 
   # Call initial bracketing routine; takes arguments function and initial x-value
   (ax, bx, cx, fb, dfb) = bracket(fdf, fdf0, x0, minopts)
-  minopts.init_step = abs(cx - bx) # Simple option that will give order of magnitude estimate for next iteration
+  minopts.init_step = gold * min(abs(cx - bx), abs(bx - ax)) # Simple option that will give order of magnitude estimate for next iteration
 
   # Set bracket points
   if ax < cx:
@@ -181,8 +181,8 @@ def min_brent(fdf, fdf0=None, x0=0.0, minopts=MinOptions()):
   dfw = dfv = dfx = dfb # Function derivative
   
   # Main loop
-  iter = 1
-  while iter <= itmax:
+  j = 1
+  while j <= itmax:
 
     # Determine tolerance
     xm = 0.5 * (a + b)
@@ -287,9 +287,9 @@ def min_brent(fdf, fdf0=None, x0=0.0, minopts=MinOptions()):
         v = u
         fv = fu
         dfv = dfu
-    iter += 1
+    j += 1
   
   # Exit if maximum number of iterations exceeded
-  print "Error: Maximum iterations exceeded"
+  print "Error: Maximum iterations exceeded:", itmax
   return (x, fx)
 
