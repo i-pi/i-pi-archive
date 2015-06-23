@@ -54,7 +54,14 @@ class InputGeop(Input):
                    "help"          : "The initial step for line search procedures."}),
                 "line_adaptive": (InputValue, {"dtype"         : bool,
                    "default"       : True,
-                   "help"          : "Wheter to automatically adjust step size for line search procedures."})                                   
+                   "help"          : "Wheter to automatically adjust step size for line search procedures."}),
+                "cg_old_force": (InputArray, {"dtype" : float,
+                   "default"   : input_default(factory=np.zeros, args = (0,)),
+                   "help"      : "The previous force in a CG optimization.",
+                   "dimension" : "force"}),
+                "cg_old_direction": (InputArray, {"dtype" : float,
+                   "default"   : input_default(factory=np.zeros, args = (0,)),
+                   "help"      : "The previous direction in a CG optimization."})
                      }
                    
               
@@ -69,6 +76,8 @@ class InputGeop(Input):
         self.line_iter.store(geop.lin_iter)
         self.line_step.store(geop.lin_step)
         self.line_adaptive.store(geop.lin_auto)
+        self.cg_old_force.store(geop.cg_old_f)
+        self.cg_old_direction.store(geop.cg_old_d)
         
 		
     def fetch(self):		
@@ -76,12 +85,14 @@ class InputGeop(Input):
             lin_tol = self.line_tolerance.fetch(),
             lin_step = self.line_step.fetch(),
             lin_iter = self.line_iter.fetch(),
-            lin_auto = self.line_adaptive.fetch())
+            lin_auto = self.line_adaptive.fetch(),
+            cg_old_f = self.cg_old_force.fetch(),
+            cg_old_d = self.cg_old_direction.fetch())
         return ngeo
 
 
 		
-class InputMover(Input):
+class InputMover(Input):    
    """Mover calculation input class.
 
    A class to encompass the different "mover" (non-MD) calculations. 
@@ -132,6 +143,7 @@ class InputMover(Input):
          tsc = 0
       elif type(sc) is GeopMover:
          self.mode.store("minimize")
+         self.geometry.store(sc.mo)
          tsc = 1
       else: 
          raise ValueError("Cannot store Mover calculator of type "+str(type(sc)))
@@ -155,7 +167,7 @@ class InputMover(Input):
       if self.mode.fetch() == "replay" :
          sc = ReplayMover(fixcom=False, fixatoms=None, intraj=self.replay_file.fetch() )
       elif self.mode.fetch() == "minimize":
-         sc = GeopMover(fixcom=False, fixatoms=None )
+         sc = GeopMover(fixcom=False, fixatoms=None, geop = self.geometry.fetch() )
       else:
          raise ValueError("'" + self.mode.fetch() + "' is not a supported mover calculation mode.")
 

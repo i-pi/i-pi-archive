@@ -213,13 +213,16 @@ class LineMover(object):
 class GeoMin(object):
     """ Stores options and utilities for geometry optimization. """
     
-    def __init__(self, mode="sd", lin_iter=1000, lin_step=1e-3, lin_tol=1.0e-6, lin_auto=True):
+    def __init__(self, mode="sd", lin_iter=1000, lin_step=1e-3, lin_tol=1.0e-6, lin_auto=True, 
+             cg_old_f = np.zeros(0, float),
+             cg_old_d = np.zeros(0, float) ):
         self.mode=mode
         self.lin_tol = lin_tol
         self.lin_iter = lin_iter
         self.lin_step = lin_step
         self.lin_auto = lin_auto
-        
+        self.cg_old_f = cg_old_f
+        self.cg_old_d = cg_old_d
 
 class GeopMover(Mover):
    """Geometry optimization routine. Will start with a dumb steepest descent,
@@ -241,12 +244,21 @@ class GeopMover(Mover):
       self.lm = LineMover()
       if geop is None: geop = GeoMin()
       self.mo = geop
-      self.gradf0 = None # Previous force evaluation
-      self.dq0 = None # Previous direction
    
    def bind(self, beads, nm, cell, bforce, bbias, prng):
       
       super(GeopMover,self).bind(beads, nm, cell, bforce, bbias, prng)
+      if self.mo.cg_old_f.size != beads.q.size :
+         if self.mo.cg_old_f.size == 0: 
+            self.mo.cg_old_f = np.zeros(beads.q.size, float)
+         else: 
+            raise ValueError("Conjugate gradient force size does not match system size")
+      if self.mo.cg_old_d.size != beads.q.size :
+         if self.mo.cg_old_d.size == 0: 
+            self.mo.cg_old_d = np.zeros(beads.q.size, float)
+         else: 
+            raise ValueError("Conjugate gradient direction size does not match system size")
+            
       self.lm.bind(self)
       
    def step(self, step=None):
@@ -272,15 +284,15 @@ class GeopMover(Mover):
           # dq1 = direction to move
           # dq0 = previous direction
           # dq1_unit = unit vector of dq1
-          gradf0 = self.gradf0
-          dq0 = self.dq0
+          gradf0 = self.mo.cg_old_f
+          dq0 = self.mo.cg_old_d
           gradf1 = depstrip(self.forces.f)
           beta = np.dot((gradf1.flatten() - gradf0.flatten()), gradf1.flatten()) / (np.dot(gradf0.flatten(), gradf0.flatten()))
           dq1 = gradf1 + max(0.0, beta) * dq0
           dq1_unit = dq1 / np.sqrt(np.dot(dq1.flatten(), dq1.flatten()))
 
-      self.dq0 = dq1.copy()
-      self.gradf0 = gradf1.copy()
+      self.mo.cg_old_d[:] = dq1    # store force and direction for next CG step
+      self.mo.cg_old_f[:] = gradf1
    
       if (len(self.fixatoms)>0):
          for dqb in dq1_unit:
