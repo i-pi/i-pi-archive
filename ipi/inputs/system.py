@@ -1,25 +1,15 @@
-"""Deals with creating a representation of a system.
+"""Deals with creating a representation of a system."""
 
-Copyright (C) 2013, Joshua More and Michele Ceriotti
+# This file is part of i-PI.
+# i-PI Copyright (C) 2014-2015 i-PI developers
+# See the "licenses" directory for full license information.
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <http.//www.gnu.org/licenses/>.
-"""
-
-__all__ = ['InputSystem']
+import os.path
+import sys
 
 import numpy as np
-import os.path, sys
+
 import ipi.engine.system
 from ipi.utils.depend import *
 from ipi.utils.inputvalue import *
@@ -40,6 +30,10 @@ from ipi.engine.cell import Cell
 from ipi.engine.forces import Forces
 from ipi.inputs.initializer import InputInitializer
 from ipi.engine.initializer import Initializer
+
+
+__all__ = ['InputSystem']
+
 
 class InputSystem(Input):
    """Physical system input class.

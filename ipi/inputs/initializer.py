@@ -1,23 +1,14 @@
-"""Creates objects that initialize the simulation.
+"""Creates objects that initialize the simulation."""
 
-Copyright (C) 2013, Joshua More and Michele Ceriotti
+# This file is part of i-PI.
+# i-PI Copyright (C) 2014-2015 i-PI developers
+# See the "licenses" directory for full license information.
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <http.//www.gnu.org/licenses/>.
-"""
+from copy import copy, deepcopy
 
 import numpy as np
-from copy import copy, deepcopy
+
 import ipi.utils.mathtools as mt
 import ipi.engine.initializer as ei
 from ipi.utils.inputvalue import *
@@ -26,7 +17,9 @@ from ipi.inputs.cell import InputCell
 from ipi.utils.io import io_xml
 from ipi.utils.messages import verbosity, warning
 
+
 __all__ = ['InputInitializer', 'InputInitFile', 'InputInitPositions', 'InputInitMomenta', 'InputInitVelocities', 'InputInitMasses', 'InputInitLabels', 'InputInitCell', 'InputInitThermo']
+
 
 class InputInitBase(InputValue):
    """Base class to handle initialization.
