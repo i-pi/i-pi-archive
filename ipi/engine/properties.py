@@ -1,26 +1,16 @@
 """Holds the class which computes important properties of the system, and
 prepares them for output.
-
-Copyright (C) 2013, Joshua More and Michele Ceriotti
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <http.//www.gnu.org/licenses/>.
 """
 
-__all__ = ['Properties', 'Trajectories', 'getkey', 'getall', 'help_latex']
+# This file is part of i-PI.
+# i-PI Copyright (C) 2014-2015 i-PI developers
+# See the "licenses" directory for full license information.
+
 
 import os
+
 import numpy as np
+
 from ipi.utils.messages import verbosity, info, warning
 from ipi.utils.depend import *
 from ipi.utils.units import Constants, unit_to_internal, unit_to_user
@@ -31,6 +21,10 @@ from ipi.engine.atoms import *
 from ipi.engine.cell import *
 from ipi.engine.ensembles import *
 from ipi.engine.forces import *
+
+
+__all__ = ['Properties', 'Trajectories', 'getkey', 'getall', 'help_latex']
+
 
 def getkey(pstring):
    """Strips units and argument lists from a property/trajectory keyword.

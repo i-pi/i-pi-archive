@@ -1,32 +1,25 @@
 """A class that runs the simulation and outputs results.
 
-Copyright (C) 2013, Joshua More and Michele Ceriotti
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <http.//www.gnu.org/licenses/>.
-
-
 The root class for the whole simulation. Contains references to all the top
 level objects used in the simulation, and controls all the steps that are
 not inherently system dependent, like the running of each time step,
 choosing which properties to initialise, and which properties to output.
 """
 
-__all__ = ['Simulation']
+# This file is part of i-PI.
+# i-PI Copyright (C) 2014-2015 i-PI developers
+# See the "licenses" directory for full license information.
+
+
+import os.path
+import sys
+import time
+import threading
+import os
+from copy import deepcopy
 
 import numpy as np
-import os.path, sys, time, threading, os
-from copy import deepcopy
+
 from ipi.utils.depend import *
 from ipi.utils.units  import *
 from ipi.utils.prng   import *
@@ -38,6 +31,10 @@ from ipi.engine.atoms import *
 from ipi.engine.cell import *
 
 # import objgraph
+
+
+__all__ = ['Simulation']
+
 
 class Simulation(dobject):
    """Main simulation object.
@@ -275,4 +272,3 @@ class Simulation(dobject):
             break
 
       self.rollback = False
-

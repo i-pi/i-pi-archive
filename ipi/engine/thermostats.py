@@ -1,30 +1,17 @@
 """Classes that deal with constant temperature simulations.
 
-Copyright (C) 2013, Joshua More and Michele Ceriotti
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <http.//www.gnu.org/licenses/>.
-
-
 Contains the algorithms which propagate the thermostatting steps in the constant
 temperature ensembles. Includes the new GLE thermostat, which can be used to
 run PI+GLE dynamics, reducing the number of path integral beads required.
 """
 
-__all__ = ['Thermostat', 'ThermoLangevin', 'ThermoPILE_L', 'ThermoPILE_G',
-           'ThermoSVR', 'ThermoGLE', 'ThermoNMGLE', 'ThermoNMGLEG', 'MultiThermo']
+# This file is part of i-PI.
+# i-PI Copyright (C) 2014-2015 i-PI developers
+# See the "licenses" directory for full license information.
+
 
 import numpy as np
+
 from ipi.utils.depend   import *
 from ipi.utils.units    import *
 from ipi.utils.mathtools import matrix_exp, stab_cholesky, root_herm
@@ -32,6 +19,11 @@ from ipi.utils.prng import Random
 from ipi.utils.messages import verbosity, warning, info
 from ipi.engine.beads import Beads
 from ipi.engine.normalmodes import NormalModes
+
+
+__all__ = ['Thermostat', 'ThermoLangevin', 'ThermoPILE_L', 'ThermoPILE_G',
+           'ThermoSVR', 'ThermoGLE', 'ThermoNMGLE', 'ThermoNMGLEG', 'MultiThermo']
+
 
 class Thermostat(dobject):
    """Base thermostat class.

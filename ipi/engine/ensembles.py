@@ -1,32 +1,20 @@
 """Contains the classes that deal with the different dynamics required in
 different types of ensembles.
 
-Copyright (C) 2013, Joshua More and Michele Ceriotti
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <http.//www.gnu.org/licenses/>.
-
-
 Holds the algorithms required for normal mode propagators, and the objects to
 do the constant temperature and pressure algorithms. Also calculates the
 appropriate conserved energy quantity for the ensemble of choice.
 """
 
-__all__ = ['Ensemble', 'NVEEnsemble', 'NVTEnsemble', 'NPTEnsemble', 'NSTEnsemble','ReplayEnsemble']
+# This file is part of i-PI.
+# i-PI Copyright (C) 2014-2015 i-PI developers
+# See the "licenses" directory for full license information.
 
-import numpy as np
+
 import time
 from copy import deepcopy
+
+import numpy as np
 
 from ipi.utils.depend import *
 from ipi.utils import units
@@ -39,6 +27,9 @@ from ipi.inputs.thermostats import InputThermo
 from ipi.inputs.barostats import InputBaro
 from ipi.engine.thermostats import *
 from ipi.engine.barostats import *
+
+
+__all__ = ['Ensemble', 'NVEEnsemble', 'NVTEnsemble', 'NPTEnsemble', 'NSTEnsemble','ReplayEnsemble']
 
 
 class Ensemble(dobject):

@@ -1,36 +1,31 @@
 """Classes that deal with output of simulation data.
 
-Copyright (C) 2013, Joshua More and Michele Ceriotti
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <http.//www.gnu.org/licenses/>.
-
-
 Holds classes to deal with the output of different properties, trajectories
 and the restart files.
 """
 
-import os, time
+# This file is part of i-PI.
+# i-PI Copyright (C) 2014-2015 i-PI developers
+# See the "licenses" directory for full license information.
+
+
+import os
+import time
+
 import numpy as np
+
 from ipi.utils.messages import verbosity, info, warning
 from ipi.utils.softexit import softexit
 from ipi.utils.depend import *
 from ipi.utils.io.inputs.io_xml import *
 from ipi.engine.properties import getkey
 
+
 __all__ = [ 'PropertyOutput', 'TrajectoryOutput', 'CheckpointOutput' ]
 
+
 CHKSLEEP = 1.0
+
 
 class PropertyOutput(dobject):
    """Class dealing with outputting a set of properties to file.

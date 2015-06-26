@@ -1,21 +1,5 @@
 """Classes that deal with constant pressure simulations.
 
-Copyright (C) 2013, Joshua More and Michele Ceriotti
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <http.//www.gnu.org/licenses/>.
-
-
 Contains the algorithms which propagate the position and momenta steps in the
 constant pressure ensemble. Holds the properties directly related to
 these ensembles, such as the internal and external pressure and stress.
@@ -27,15 +11,23 @@ The original reference is:
 G. Martyna, A. Hughes and M. Tuckerman, J. Chem. Phys., 110, 3275.
 """
 
-__all__ = ['Barostat', 'BaroBZP', 'BaroRGB']
+# This file is part of i-PI.
+# i-PI Copyright (C) 2014-2015 i-PI developers
+# See the "licenses" directory for full license information.
+
 
 import numpy as np
+
 from ipi.utils.depend import *
 from ipi.utils.units import *
 from ipi.utils.mathtools import eigensystem_ut3x3, invert_ut3x3, exp_ut3x3, det_ut3x3, matrix_exp
 from ipi.inputs.thermostats import InputThermo
 from ipi.engine.thermostats import Thermostat
 from ipi.engine.cell import Cell
+
+
+__all__ = ['Barostat', 'BaroBZP', 'BaroRGB']
+
 
 class Barostat(dobject):
    """Base barostat class.
