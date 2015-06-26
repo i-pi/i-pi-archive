@@ -1,28 +1,21 @@
-"""Mathematical tools used in various parts of the code.
+"""Mathematical tools used in various parts of the code."""
 
-Copyright (C) 2013, Joshua More and Michele Ceriotti
+# This file is part of i-PI.
+# i-PI Copyright (C) 2014-2015 i-PI developers
+# See the "licenses" directory for full license information.
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
+import math
 
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <http.//www.gnu.org/licenses/>.
-"""
+import numpy as np
+
+from ipi.utils.messages import verbosity, warning
+
 
 __all__ = ['matrix_exp', 'stab_cholesky', 'h2abc', 'h2abc_deg', 'abc2h',
            'invert_ut3x3', 'det_ut3x3', 'eigensystem_ut3x3', 'exp_ut3x3',
             'root_herm', 'logsumlog' ]
 
-import numpy as np
-import math
-from ipi.utils.messages import verbosity, warning
 
 def logsumlog(lasa, lbsb):
    """Computes log(|A+B|) and sign(A+B) given log(|A|), log(|B|),
@@ -324,4 +317,3 @@ def root_herm(A):
          warning("Zeroing negative element in matrix square root: " + str(eigvals[i]), verbosity.low)
          diag[i,i] = 0
    return np.dot(eigvecs, np.dot(diag, eigvecs.T))
-

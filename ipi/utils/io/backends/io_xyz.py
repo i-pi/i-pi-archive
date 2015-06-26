@@ -1,31 +1,27 @@
 """Functions used to read input configurations and print trajectories
 in the XYZ format.
-
-Copyright (C) 2013, Joshua More and Michele Ceriotti
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <http.//www.gnu.org/licenses/>.
 """
 
-__all__ = ['print_xyz_path', 'print_xyz', 'read_xyz', 'iter_xyz']
+# This file is part of i-PI.
+# i-PI Copyright (C) 2014-2015 i-PI developers
+# See the "licenses" directory for full license information.
+
+
+import math
+import sys
+import re
 
 import numpy as np
-import math, sys, re
+
 import ipi.utils.mathtools as mt
 from ipi.utils.depend import depstrip
 from ipi.engine.atoms import Atoms
 from ipi.engine.cell import Cell
 from ipi.utils.units import *
+
+
+__all__ = ['print_xyz_path', 'print_xyz', 'read_xyz', 'iter_xyz']
+
 
 def print_xyz_path(beads, cell, filedesc = sys.stdout):
    """Prints all the bead configurations into a XYZ formatted file.

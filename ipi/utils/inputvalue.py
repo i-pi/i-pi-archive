@@ -1,21 +1,5 @@
 """Classes used to read and write XML input and restart files.
 
-Copyright (C) 2013, Joshua More and Michele Ceriotti
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <http.//www.gnu.org/licenses/>.
-
-
 The classes defined in this module define the base functions which parse the
 data in the restart files. Each restart object defined has a fields and an
 attributes dictionary, which are filled with the tags and attributes that
@@ -29,13 +13,20 @@ Also deals with checking for user input errors, of the form of misspelt tags,
 bad data types, and failure to input required fields.
 """
 
-__all__ = ['Input', 'InputValue', 'InputAttribute', 'InputArray', 'input_default']
+# This file is part of i-PI.
+# i-PI Copyright (C) 2014-2015 i-PI developers
+# See the "licenses" directory for full license information.
+
+
+from copy import copy
 
 import numpy as np
-from copy import copy
+
 from ipi.utils.io.inputs.io_xml import *
 from ipi.utils.units import unit_to_internal, unit_to_user
 
+
+__all__ = ['Input', 'InputValue', 'InputAttribute', 'InputArray', 'input_default']
 
 
 class input_default(object):

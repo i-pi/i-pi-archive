@@ -1,31 +1,24 @@
 """Functions used to read the input file and print checkpoint
 files with in the XML format.
-
-Copyright (C) 2013, Joshua More and Michele Ceriotti
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <http.//www.gnu.org/licenses/>.
 """
+
+# This file is part of i-PI.
+# i-PI Copyright (C) 2014-2015 i-PI developers
+# See the "licenses" directory for full license information.
+
+
+from xml.sax import parseString, parse
+from xml.sax.handler import ContentHandler
+import string
+
+import numpy as np
+
 
 __all__ = ['xml_node', 'xml_handler', 'xml_parse_string', 'xml_parse_file',
            'read_type', 'read_float', 'read_int', 'read_bool', 'read_list',
            'read_array', 'read_tuple', 'read_dict', 'write_type', 'write_list',
            'write_tuple', 'write_float', 'write_bool', 'write_dict']
 
-from xml.sax import parseString, parse
-from xml.sax.handler import ContentHandler
-import numpy as np
-import string
 
 class xml_node(object):
    """Class to handle a particular xml tag.

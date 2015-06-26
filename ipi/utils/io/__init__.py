@@ -1,22 +1,13 @@
 """Package with functions for reading and writing files.
 
-Copyright (C) 2014, i-PI Developer Team
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <http.//www.gnu.org/licenses/>.
-
 This module has machinery for abstract I/O handling.
 """
+
+# This file is part of i-PI.
+# i-PI Copyright (C) 2014-2015 i-PI developers
+# See the "licenses" directory for full license information.
+
+
 import sys
 
 from ipi.utils.decorators import cached
@@ -25,7 +16,9 @@ from ipi.utils.decorators import cached
 from ipi.utils.io.backends import io_pdb, io_xyz, io_binary
 from ipi.utils.io.inputs import io_xml
 
+
 __all__ = [ "io_xml", "io_pdb" , "io_xyz", "io_binary" ]
+
 
 mode_map = {
          "bin"   :  "binary",

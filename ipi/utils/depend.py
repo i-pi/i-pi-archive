@@ -24,13 +24,15 @@ For a more detailed discussion, see the reference manual.
 # See the "licenses" directory for full license information.
 
 
-__all__ = ['depend_base', 'depend_value', 'depend_array', 'synchronizer',
-           'dobject', 'dget', 'dset', 'depstrip', 'depcopy', 'deppipe']
-
+import weakref
 
 import numpy as np
-import weakref
+
 from ipi.utils.messages import verbosity, warning
+
+
+__all__ = ['depend_base', 'depend_value', 'depend_array', 'synchronizer',
+           'dobject', 'dget', 'dset', 'depstrip', 'depcopy', 'deppipe']
 
 
 class synchronizer(object):
