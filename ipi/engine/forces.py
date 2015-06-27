@@ -1,45 +1,32 @@
 """Contains the classes that evaluate forces on PI beads.
 
-Copyright (C) 2013, Joshua More and Michele Ceriotti
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <http.//www.gnu.org/licenses/>.
-
 This contains both the class that gets the force acting on the beads,
 and the class to compute individual components -- in case one wants to
 use multiple force providers to get e.g. bonded and non-bonded interactions.
 It is an extra layer between the dynamics (that only cares about TOTAL force)
 and the driver (that only cares about a single bead).
-
-
-Classes:
-   ForceBead: Deals with the potential and force calculation for a particular
-      replica of the system.
-   ForceComponent: Deals with the parallelization of the force calculation over
-      different beads for a particular forcefield type.
-   Forces: Deals with the parallelizatoin of the force calculation over
-      different forcefields.
 """
 
-__all__ = ['Forces', 'ForceComponent']
+# This file is part of i-PI.
+# i-PI Copyright (C) 2014-2015 i-PI developers
+# See the "licenses" directory for full license information.
+
+
+import time
+import sys
+import threading
 
 import numpy as np
-import time, sys, threading
+
 from ipi.utils.softexit import softexit
 from ipi.utils.messages import verbosity, warning
 from ipi.utils.depend import *
 from ipi.utils.nmtransform import nm_rescale
 from ipi.engine.beads import Beads
+
+
+__all__ = ['Forces', 'ForceComponent']
+
 
 fbuid = 0
 class ForceBead(dobject):
@@ -161,7 +148,7 @@ class ForceBead(dobject):
    def get_all(self):
       """Driver routine.
 
-      When one of the force, potential or virial are called, this sends the 
+      When one of the force, potential or virial are called, this sends the
       atoms and cell to the client code, requesting that it calculates the
       potential, forces and virial tensor. This then waits until the
       driver is finished, and then returns the ufvx list.
@@ -474,9 +461,9 @@ class Forces(dobject):
       Args:
          beads: Beads object from which the bead positions are taken.
          cell: Cell object from which the system box is taken.
-         forces: A list of different objects for each force type. 
-            For example, if ring polymer contraction is being used, 
-            then there may be separate forces for the long and short 
+         forces: A list of different objects for each force type.
+            For example, if ring polymer contraction is being used,
+            then there may be separate forces for the long and short
             range part of the potential.
          fflist: A list of forcefield objects to use to calculate the potential,
             forces and virial for each force type.
@@ -487,7 +474,7 @@ class Forces(dobject):
       self.nforces = len(force_proto)
 
       # fflist should be a dictionary of forcefield objects
-      self.mforces = []      
+      self.mforces = []
       self.mbeads = []
       self.mrpc = []
 
@@ -554,7 +541,7 @@ class Forces(dobject):
       dset(self,"pot",
          depend_value(name="pot", func=(lambda: self.pots.sum()),
             dependencies=[dget(self,"pots")]))
-            
+
       dset(self,"vir",
          depend_array(name="vir", func=self.get_vir, value=np.zeros((3,3)),
             dependencies=[dget(self,"virs")]))
@@ -603,10 +590,10 @@ class Forces(dobject):
 
    def pots_component(self, index):
       return self.mforces[index].weight*self.mrpc[index].b2tob1(self.mforces[index].pots)
-   
+
    def forces_component(self, index):
-      return self.mforces[index].weight*self.mrpc[index].b2tob1(depstrip(self.mforces[index].f))      
-      
+      return self.mforces[index].weight*self.mrpc[index].b2tob1(depstrip(self.mforces[index].f))
+
    def f_combine(self):
       """Obtains the total force vector."""
 
