@@ -1,43 +1,14 @@
 """Contains the classes that are used to initialize data in the simulation.
 
-Copyright (C) 2013, Joshua More and Michele Ceriotti
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <http.//www.gnu.org/licenses/>.
-
-
 These classes can either be used to restart a simulation with some different
 data or used to start a calculation. Any data given in these classes will
 overwrite data given elsewhere.
-
-Classes:
-   Initializer: Holds the functions that are required to initialize objects in
-      the code. Data can be initialized from a file, or according to a
-      particular parameter. An example of the former would be initializing
-      the configurations from a xyz file, an example of the latter would be
-      initializing the velocities according to the physical temperature.
-   InitBase: Simple class that reads data from a string or file.
-   InitIndexed: The same as init base, but can also optionally hold
-      information about which atom or bead to initialize from.
-
-Functions:
-   init_xyz: Reads beads data from a xyz file.
-   init_pdb: Reads beads and cell data from a pdb file.
-   init_chk: Reads beads, cell and thermostat data from a checkpoint file.
-   init_beads: Initializes a beads object from an Initializer object.
-   init_vector: Initializes a vector from an Initializer object.
-   set_vector: Initializes a vector from another vector.
 """
+
+# This file is part of i-PI.
+# i-PI Copyright (C) 2014-2015 i-PI developers
+# See the "licenses" directory for full license information.
+
 
 import numpy as np
 
@@ -45,18 +16,22 @@ from ipi.engine.beads import Beads
 from ipi.engine.cell import Cell
 from ipi.engine.normalmodes import NormalModes
 from ipi.engine.ensembles import Ensemble
-from ipi.utils.io.io_xyz import read_xyz
-from ipi.utils.io.io_pdb import read_pdb
-from ipi.utils.io.io_xml import xml_parse_file
+from ipi.utils.io.backends.io_xyz import read_xyz
+from ipi.utils.io.backends.io_pdb import read_pdb
+from ipi.utils.io.inputs.io_xml import xml_parse_file
 from ipi.utils.depend import dobject
 from ipi.utils.units import Constants, unit_to_internal
 from ipi.utils.nmtransform import nm_rescale
 from ipi.utils.messages import verbosity, warning, info
 
+
 __all__ = ['Initializer', 'InitBase', 'InitIndexed']
+
 
 class InitBase(dobject):
    """Base class for initializer objects.
+
+   Reads data from a string or file.
 
    Attributes:
       value: A duck-typed stored value.
@@ -85,6 +60,9 @@ class InitBase(dobject):
 
 class InitIndexed(InitBase):
    """Class to initialize objects which can be set for a particular bead.
+
+   The same as init base, but can also optionally hold information about which
+   atom or bead to initialize from.
 
    Attributes:
       index: Which atom to initialize the value of.
@@ -153,7 +131,7 @@ def init_pdb(filename):
    return ( ratoms, rcell ) # if multiple frames, the last cell is returned
 
 def init_chk(filename):
-   """Reads an checkpoint file and returns the data contained in it.
+   """Reads a checkpoint file and returns the data contained in it.
 
    Args:
       filename: A string giving the name of the checkpoint file to be read from.
@@ -180,8 +158,7 @@ def init_chk(filename):
    return (rbeads, rcell, rthermo)
 
 def init_beads(iif, nbeads):
-   """A file to initialize a beads object from an appropriate initializer
-   object.
+   """Initializes a beads object from an appropriate initializer object.
 
    Args:
       iif: An Initializer object which has information on the bead positions.
@@ -205,8 +182,7 @@ def init_beads(iif, nbeads):
    return rbeads
 
 def init_vector(iif, nbeads, momenta=False):
-   """A file to initialize a vector from an appropriate initializer
-   object.
+   """Initializes a vector from an appropriate initializer object.
 
    Args:
       iif: An Initializer object specifying the value of a vector.
@@ -234,7 +210,7 @@ def init_vector(iif, nbeads, momenta=False):
    return rq
 
 def set_vector(iif, dq, rq):
-   """A file to initialize a vector from an another vector.
+   """Initializes a vector from an another vector.
 
    If the first dimension is different, i.e. the two vectors correspond
    to a different number of beads, then the ring polymer contraction/expansion
@@ -275,6 +251,12 @@ def set_vector(iif, dq, rq):
 
 class Initializer(dobject):
    """Class that deals with the initialization of data.
+
+   Holds functions that are required to initialize objects in the code.  Data
+   can be initialized from a file, or according to a particular parameter. An
+   example of the former would be initializing the configurations from a xyz
+   file, an example of the latter would be initializing the velocities
+   according to the physical temperature.
 
    This can either be used to initialize the atom positions and the cell data
    from a file, or to initialize them from a beads, atoms or cell object.
@@ -489,7 +471,7 @@ class Initializer(dobject):
             warning("Initializing from velocities uses the previously defined masses -- not the masses inferred from the file -- to build momenta", verbosity.low)
             if v.index >= 0:
                rv *= simul.beads.m[v.index]
-            else: 
+            else:
                for ev in rv:
                   ev *= simul.beads.m3[0]
             rv *= np.sqrt(self.nbeads/nbeads)

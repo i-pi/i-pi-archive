@@ -1,37 +1,22 @@
-"""Deals with creating the simulation class.
+"""Creates objects that hold the whole simulation."""
 
-Copyright (C) 2013, Joshua More and Michele Ceriotti
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <http.//www.gnu.org/licenses/>.
+# This file is part of i-PI.
+# i-PI Copyright (C) 2014-2015 i-PI developers
+# See the "licenses" directory for full license information.
 
 
-Classes:
-   InputSimulation: Deals with creating the Simulation object from a file, and
-      writing the checkpoints.
-"""
-
-__all__ = ['InputSimulation']
+import os.path
+import sys
+import time
 
 import numpy as np
-import os.path, sys, time
 
 from ipi.utils.depend import *
 from ipi.utils.inputvalue import *
 from ipi.utils.units  import *
 from ipi.utils.prng   import *
 from ipi.utils.io     import *
-from ipi.utils.io.io_xml import *
+from ipi.utils.io.inputs.io_xml import *
 from ipi.utils.messages import verbosity
 from ipi.engine.paratemp import ParaTemp
 from ipi.inputs.prng import InputRandom
@@ -40,6 +25,10 @@ import ipi.inputs.forcefields as iforcefields
 import ipi.engine.forcefields as eforcefields
 import ipi.inputs.outputs as ioutputs
 from ipi.inputs.paratemp import InputParaTemp
+
+
+__all__ = ['InputSimulation']
+
 
 class InputSimulation(Input):
    """Simulation input class.
@@ -187,9 +176,9 @@ class InputSimulation(Input):
                syslist.append(v.fetch())
                if (v.copies.fetch() > 1):
                   syslist[-1].prefix = syslist[-1].prefix + ( ("%0" + str(int(1 + np.floor(np.log(v.copies.fetch())/np.log(10)))) + "d") % (isys) )
-         elif k == "ffsocket": 
+         elif k == "ffsocket":
             fflist.append(v.fetch())
-         elif k == "fflj": 
+         elif k == "fflj":
             fflist.append(v.fetch())
 
 

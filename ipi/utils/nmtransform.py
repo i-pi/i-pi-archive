@@ -1,42 +1,21 @@
-"""Contains functions for doing the inverse and forward normal mode transforms.
+"""Algorithms that deal with normal mode transformations and ring polymer contraction."""
 
-Copyright (C) 2013, Joshua More and Michele Ceriotti
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <http.//www.gnu.org/licenses/>.
+# This file is part of i-PI.
+# i-PI Copyright (C) 2014-2015 i-PI developers
+# See the "licenses" directory for full license information.
 
 
-Classes:
-   nm_trans: Uses matrix multiplication to do normal mode transformations.
-   nm_rescale: Uses matrix multiplication to do ring polymer contraction
-      or expansion.
-   nm_fft: Uses fast-Fourier transforms to do normal modes transformations.
+import numpy as np
 
-Functions:
-   mk_nm_matrix: Makes a matrix to transform between the normal mode and bead
-      representations.
-   mk_rs_matrix: Makes a matrix to transform between one number of beads and
-      another. Higher normal modes in the case of an expansion are set to zero.
-"""
+from ipi.utils.messages import verbosity, info
+
 
 __all__ = ['nm_trans', 'nm_rescale', 'nm_fft']
 
-import numpy as np
-from ipi.utils.messages import verbosity, info
 
 def mk_nm_matrix(nbeads):
-   """Gets the matrix that transforms from the bead representation
-   to the normal mode representation.
+   """Makes a matrix that transforms between the bead and normal mode
+   representations.
 
    If we return from this function a matrix C, then we transform between the
    bead and normal mode representation using q_nm = C . q_b, q_b = C.T . q_nm
@@ -58,8 +37,7 @@ def mk_nm_matrix(nbeads):
    return b2nm/np.sqrt(nbeads)
 
 def mk_rs_matrix(nb1, nb2):
-   """Gets the matrix that transforms a path with nb1 beads into one with
-   nb2 beads.
+   """Makes a matrix that transforms a path with `nb1` beads to one with `nb2` beads.
 
    If we return from this function a matrix T, then we transform between the
    system with nb1 bead and the system of nb2 beads using q_2 = T . q_1
@@ -93,8 +71,8 @@ def mk_rs_matrix(nb1, nb2):
       return mk_rs_matrix(nb2, nb1).T*(float(nb2)/float(nb1))
 
 
-class nm_trans:
-   """Helper class to perform beads <--> normal modes transformation.
+class nm_trans(object):
+   """Uses matrix multiplication to do normal mode transformations.
 
    Attributes:
       _b2nm: The matrix to transform between the bead and normal mode
@@ -132,8 +110,9 @@ class nm_trans:
       return np.dot(self._nm2b,q)
 
 
-class nm_rescale:
-   """Helper class to rescale a ring polymer between different number of beads.
+class nm_rescale(object):
+   """Uses matrix multiplication to do ring polymer contraction or expansion
+   between different numbers of beads.
 
    Attributes:
       _b1tob2: The matrix to transform between a ring polymer with 'nbeads1'
@@ -172,10 +151,8 @@ class nm_rescale:
       return np.dot(self._b2tob1,q)
 
 
-
-class nm_fft:
-   """Helper class to perform beads <--> normal modes transformation
-      using Fast Fourier transforms.
+class nm_fft(object):
+   """Uses Fast Fourier transforms to do normal mode transformations.
 
    Attributes:
       fft: The fast-Fourier transform function to transform between the

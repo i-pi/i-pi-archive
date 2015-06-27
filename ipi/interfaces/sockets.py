@@ -1,55 +1,37 @@
-"""Deals with the socket communication between the PIMD and driver code.
-
-Copyright (C) 2013, Joshua More and Michele Ceriotti
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <http.//www.gnu.org/licenses/>.
-
+"""Deals with the socket communication between the i-PI and drivers.
 
 Deals with creating the socket, transmitting and receiving data, accepting and
 removing different driver routines and the parallelization of the force
 calculation.
-
-Classes:
-   Status: Simple class to keep track of the status, uses bitwise or to give
-      combinations of different status options.
-   DriverSocket: Class to deal with communication between a client and
-      the driver code.
-   InterfaceSocket: Host server class. Deals with distribution of all the jobs
-      between the different client servers.
-
-Functions:
-   Message: Sends a header string through the socket.
-
-Exceptions:
-   Disconnected: Raised if client has been disconnected.
-   InvalidStatus: Raised if client has the wrong status. Shouldn't have to be
-      used if the structure of the program is correct.
 """
+
+# This file is part of i-PI.
+# i-PI Copyright (C) 2014-2015 i-PI developers
+# See the "licenses" directory for full license information.
+
+
+import sys
+import os
+import socket
+import select
+import string
+import time
+
+import numpy as np
+
+from ipi.utils.depend import depstrip
+from ipi.utils.messages import verbosity, warning, info
+
 
 __all__ = ['InterfaceSocket']
 
-import numpy as np
-import sys, os
-import socket, select, string, time
-from ipi.utils.depend import depstrip
-from ipi.utils.messages import verbosity, warning, info
 
 HDRLEN = 12
 UPDATEFREQ = 10
 TIMEOUT = 0.2
 SERVERTIMEOUT = 5.0*TIMEOUT
 NTIMEOUT = 20
+
 
 def Message(mystr):
    """Returns a header of standard length HDRLEN."""
@@ -75,7 +57,7 @@ class InvalidStatus(Exception):
 
    pass
 
-class Status:
+class Status(object):
    """Simple class used to keep track of the status of the client.
 
    Uses bitwise or to give combinations of different status options.
@@ -204,7 +186,7 @@ class DriverSocket(socket.socket):
 
 
 class Client(DriverSocket):
-   """Deals as starting point for implementing a clien in python.
+   """Serves as a starting point for implementing a client in Python.
 
    Deals with sending and receiving the data from the client code.
 
@@ -380,7 +362,7 @@ class Driver(DriverSocket):
 
       if self.status & Status.NeedsInit:
          try:
-            self.sendall(Message("init")) 
+            self.sendall(Message("init"))
             self.sendall(np.int32(rid))
             self.sendall(np.int32(len(pars)))
             self.sendall(pars)
@@ -536,8 +518,8 @@ class InterfaceSocket(object):
          try:
             self.server.bind("/tmp/ipi_" + self.address)
             info("Created unix socket with address " + self.address, verbosity.medium)
-         except:
-            raise ValueError("Error opening unix socket. Check if a file " + ("/tmp/ipi_" + self.address) + " exists, and remove it if unused.")
+         except socket.error:
+            raise RuntimeError("Error opening unix socket. Check if a file " + ("/tmp/ipi_" + self.address) + " exists, and remove it if unused.")
 
       elif self.mode == "inet":
          self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -565,7 +547,7 @@ class InterfaceSocket(object):
       # flush it all down the drain
       self.clients = []
       self.jobs = []
- 
+
       try:
          self.server.shutdown(socket.SHUT_RDWR)
          self.server.close()
