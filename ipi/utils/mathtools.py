@@ -139,15 +139,21 @@ def stab_cholesky(M):
       for k in range(i):
          D[i] -= L[i,k]*L[i,k]*D[k]
 
+   negev = False
    S = np.zeros(M.shape,float)
    for i in range(n):
       if (D[i]>0):
          D[i] = math.sqrt(D[i])
       else:
          warning("Zeroing negative element in stab-cholesky decomposition: " + str(D[i]), verbosity.low)
+         negev = True
          D[i] = 0
       for j in range(i+1):
          S[i,j] += L[i,j]*D[j]
+   
+   if negev: 
+      warning("Checking decomposition after negative eigenvalue: \n" +str(M-np.dot(S,S.T)) , verbosity.low)
+   
    return S
 
 def h2abc(h):
@@ -333,11 +339,17 @@ def root_herm(A):
    eigvals, eigvecs = np.linalg.eigh(A)
    ndgrs = len(eigvals)
    diag = np.zeros((ndgrs,ndgrs))
+   negev = False
    for i in range(ndgrs):
       if eigvals[i] >= 0:
          diag[i,i] = math.sqrt(eigvals[i])
       else:
-         warning("Zeroing negative element in matrix square root: " + str(eigvals[i]), verbosity.low)
+         warning("Zeroing negative %d-th element in matrix square root: %e" %(i, eigvals[i]), verbosity.low)
          diag[i,i] = 0
-   return np.dot(eigvecs, np.dot(diag, eigvecs.T))
+         negev = True
+   rv = np.dot(eigvecs, np.dot(diag, eigvecs.T))
+   if negev: 
+      warning("Checking decomposition after negative eigenvalue: \n" +str(A-np.dot(rv,rv.T)) , verbosity.low)
+      
+   return rv
 
