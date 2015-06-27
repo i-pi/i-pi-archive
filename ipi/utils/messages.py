@@ -1,32 +1,13 @@
-"""Utility functions for outputting messages, diagnostics and errors'
+"""Classes to print info, warnings and errors to standard output during the simulation."""
 
-Copyright (C) 2013, Joshua More and Michele Ceriotti
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <http.//www.gnu.org/licenses/>.
+# This file is part of i-PI.
+# i-PI Copyright (C) 2014-2015 i-PI developers
+# See the "licenses" directory for full license information.
 
 
-Classes:
-   Verbosity: Concise class to check the selected level of output
+import traceback
+import sys
 
-Functions:
-   banner:    Prints the program welcome "screen"
-   help:      Prints the input syntax help
-   info:      Prints some information to standard output, depending on the level of verbosity
-   warning:   Same as info, but with a "!W!" prefix and optionally printing a stack trace
-"""
-
-import traceback, sys
 
 __all__ = ['Verbosity', 'verbosity',' help', 'banner', 'info', 'warning']
 
@@ -82,7 +63,7 @@ class Verbosity(object):
          ValueError: Raised if either the name or the level is not
             a valid option.
       """
-      
+
       if name == "level":
          if self.lock : return # do not set the verbosity level if this is locked
          if value == "quiet":
@@ -95,7 +76,7 @@ class Verbosity(object):
             level = VERB_HIGH
          elif value == "debug":
             level = VERB_DEBUG
-         else: 
+         else:
             raise ValueError("Invalid verbosity level " + str(value) + " specified.")
          super(Verbosity,self).__setattr__("level", level)
       else: super(Verbosity,self).__setattr__(name, value)
@@ -112,26 +93,26 @@ def banner():
    """Prints out a banner."""
 
    print """
- ____       ____       ____       ____  
-/    \     /    \     /    \     /    \  
-|  #################################  | 
-\__#_/     \____/     \____/     \_#__/     
-   #    _        _______  _____    #                 
-   #   (_)      |_   __ \|_   _|   #      -*-     Development version    -*-                      
-   #   __  ______ | |__) | | |     #                                         
-   Y  [  ||______||  ___/  | |     #      A Python interface for (ab initio)  
-  0 0  | |       _| |_    _| |_    #      (path integral) molecular dynamics. 
+ ____       ____       ____       ____
+/    \     /    \     /    \     /    \\
+|  #################################  |
+\__#_/     \____/     \____/     \_#__/
+   #    _        _______  _____    #
+   #   (_)      |_   __ \|_   _|   #      -*-     Development version    -*-
+   #   __  ______ | |__) | | |     #
+   Y  [  ||______||  ___/  | |     #      A Python interface for (ab initio)
+  0 0  | |       _| |_    _| |_    #      (path integral) molecular dynamics.
    #  [___]     |_____|  |_____|   #
- __#_       ____       ____       _#__                
-/  # \     /    \     /    \     / #  \                                      
-|  #################################  |                                      
-\____/     \____/     \____/     \____/        
+ __#_       ____       ____       _#__
+/  # \     /    \     /    \     / #  \\
+|  #################################  |
+\____/     \____/     \____/     \____/
 
    """
 
 
-def info(text="", show=True ):
-   """Prints a warning message.
+def info(text="", show=True):
+   """Prints a message.
 
    Args:
       text: The text of the information message.
@@ -145,6 +126,8 @@ def info(text="", show=True ):
 
 def warning(text="", show=True):
    """Prints a warning message.
+
+   Same as info, but with a "!W!" prefix and optionally printing a stack trace.
 
    Args:
       text: The text of the information message.
