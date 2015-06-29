@@ -12,7 +12,7 @@ Syntax:
 
 import numpy as np
 import sys, glob
-from ipi.utils.io.io_pdb import *
+from ipi.utils.io import io_pdb
 from ipi.engine.beads import Beads
 from ipi.utils.depend import *
 from ipi.utils.units import *
@@ -29,7 +29,7 @@ def main(prefix):
    while True:
       try:
          for i in range(nbeads):
-            pos, cell = read_pdb(ipos[i])
+            pos, cell = io_pdb.read_pdb(ipos[i])
             if natoms == 0:
                natoms = pos.natoms
                beads = Beads(natoms,nbeads)
@@ -37,7 +37,7 @@ def main(prefix):
       except EOFError: # finished reading files
          sys.exit(0)
 
-      print_pdb_path(beads, cell)
+      io_pdb.print_pdb_path(beads, cell)
       ifr+=1
 
 

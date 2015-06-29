@@ -16,7 +16,7 @@ Syntax:
 
 import numpy as np
 import sys, glob
-from ipi.utils.io.io_xyz import *
+from ipi.utils.io import io_xyz
 from ipi.engine.beads import Beads
 from ipi.utils.depend import *
 from ipi.utils.units import *
@@ -36,7 +36,7 @@ def main(prefix, lag):
       try:
          tk=read_xyz(ikin)
          kin = depstrip(tk.q)
-         kod = depstrip(read_xyz(ikod).q)
+         kod = depstrip(io_xyz.read_xyz(ikod).q)
          if natoms == 0:  # initializes vectors
             natoms = len(kin)/3
             ktbuf = np.zeros((cbuf,natoms,3,3),float)   # implement the buffer as a circular one so one doesn't need to re-allocate and storage is continuous
