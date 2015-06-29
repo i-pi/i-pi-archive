@@ -86,7 +86,7 @@ def print_pdb(atoms, cell, filedesc = sys.stdout, title=""):
 
    filedesc.write("END\n")
 
-def read_pdb(filedesc):
+def read_pdb(filedesc, readcell=False):
    """Reads a PDB-style file and creates an Atoms and Cell object.
 
    Args:
