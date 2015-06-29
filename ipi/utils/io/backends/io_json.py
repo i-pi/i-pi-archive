@@ -86,7 +86,10 @@ def read_json(filedesc, readcell=False):
    h = mt.abc2h(a, b, c, alpha, beta, gamma)
    cell = Cell(h)
 
-   return atoms, cell
+   if readcell:
+      return atoms, cell
+   else:
+      return atoms
 
 def iter_json(filedesc):
    """Takes a json-style file and yields one Atoms object after another.
