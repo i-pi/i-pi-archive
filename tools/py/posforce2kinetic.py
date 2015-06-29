@@ -16,7 +16,7 @@ Syntax:
 
 import numpy as np
 import sys, glob
-from ipi.utils.io.io_xyz import *
+from ipi.utils.io import io_xyz
 from ipi.engine.beads import Beads
 from ipi.utils.depend import *
 from ipi.utils.units import *
@@ -43,8 +43,8 @@ def main(prefix, temp):
    while True:
       try:
          for i in range(nbeads):
-            pos = read_xyz(ipos[i])
-            force = read_xyz(ifor[i])
+            pos = io_xyz.read_xyz(ipos[i])
+            force = io_xyz.read_xyz(ifor[i])
             if natoms == 0:
                natoms = pos.natoms
                beads = Beads(natoms,nbeads)

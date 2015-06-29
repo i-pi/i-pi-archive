@@ -34,7 +34,7 @@ from ipi.engine.simulation import Simulation
 from ipi.engine.outputs import *
 from ipi.engine.properties import getkey
 from ipi.inputs.simulation import InputSimulation
-from ipi.utils.io.io_xml import *
+from ipi.utils.io import io_xml
 from ipi.utils.units import unit_to_internal
 from ipi.utils.mathtools import logsumlog
 
@@ -48,7 +48,7 @@ def main(inputfile, prefix="PTW-", ttemp="300.0", skip="2000"):
    ifile = open(inputfile,"r")
    verbosity.level="quiet"
    verbosity.lock = True
-   xmlrestart = xml_parse_file(ifile) # Parses the file.
+   xmlrestart = io_xml.xml_parse_file(ifile) # Parses the file.
    ifile.close()
 
    isimul = InputSimulation()

@@ -31,7 +31,7 @@ def main(filename):
       except EOFError: # finished reading files
          sys.exit(0)
 
-      print_pdb(pos, cell)
+      io_pdb.print_pdb(pos, cell)
       ifr+=1
 
 
