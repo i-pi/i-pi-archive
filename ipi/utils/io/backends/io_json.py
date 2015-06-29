@@ -57,7 +57,7 @@ def print_json(atoms, cell, filedesc = sys.stdout, title=""):
        qs.tolist(), lab.tolist()]))
    filedesc.write("\n")
 
-def read_json(filedesc, readcell=False):
+def read_json(filedesc, **kwargs):
    """Readss an JSON-style file with i-pi style comments and creates an Atoms and Cell object
 
    Args:
@@ -86,7 +86,10 @@ def read_json(filedesc, readcell=False):
    h = mt.abc2h(a, b, c, alpha, beta, gamma)
    cell = Cell(h)
 
-   return atoms, cell
+   if "readcell" in kwargs:
+      return atoms, cell
+   else:
+      return atoms
 
 def iter_json(filedesc):
    """Takes a json-style file and yields one Atoms object after another.
