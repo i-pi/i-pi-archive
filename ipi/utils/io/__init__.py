@@ -85,16 +85,17 @@ def print_file(mode, atoms, cell, filedesc=sys.stdout, title=""):
    """
    return _get_io_function(mode, "print")(atoms=atoms, cell=cell, filedesc=filedesc, title=title)
 
-def read_file(mode, filedesc):
+def read_file(mode, filedesc, **kwargs):
    """Takes a `mode`-style file and creates an Atoms object.
 
    Args:
       filedesc: An open readable file object from a `mode` formatted file.
+      All other args are passed directly to the responsible io function.
 
    Returns:
       An Atoms object with the appropriate atom labels, masses and positions.
    """
-   return _get_io_function(mode, "read")(filedesc=filedesc)
+   return _get_io_function(mode, "read")(filedesc=filedesc, **kwargs)
 
 def iter_file(mode, filedesc):
    """Takes a `mode`-style file and yields one Atoms object after another.
