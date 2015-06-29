@@ -82,12 +82,11 @@ def read_xyz(filedesc, readcell=False):
       raise EOFError("The file descriptor hit EOF.")
    natoms = int(natoms)
    comment = filedesc.readline()
-   recell = re.compile('# CELL.abcABC.: (.*) Traj')
-   reres = recell.search(comment)
-   if (reres is None):  # defaults to unit box
-      h = mt.abc2h(1., 1., 1., np.pi/2, np.pi/2, np.pi/2)
-   else:
-      (a,b,c,alpha,beta,gamma) = reres.group(1).split()
+   reabc = re.compile('# CELL.abcABC.: (.*) Traj').search(comment)
+   reh = re.compile('# CELL.H.: (.*) Traj').search(comment)
+   
+   if not (reabc is None):  
+      (a,b,c,alpha,beta,gamma) = reabc.group(1).split()
       a = float(a)
       b = float(b)
       c = float(c)
@@ -95,6 +94,11 @@ def read_xyz(filedesc, readcell=False):
       beta =  float(beta) * np.pi/180
       gamma =  float(gamma) * np.pi/180
       h = mt.abc2h(a, b, c, alpha, beta, gamma)
+   elif not (reh is None):
+      h = np.array(reh.group(1).split(),float)
+      h.resize((3,3))
+   else: # defaults to unit box
+      h = mt.abc2h(1., 1., 1., np.pi/2, np.pi/2, np.pi/2)
    cell = Cell(h)
 
    qatoms = []
