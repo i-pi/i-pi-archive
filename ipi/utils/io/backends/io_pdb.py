@@ -1,38 +1,25 @@
-"""Contains the functions used to print the trajectories and read input
-configurations with pdb formatting.
-
-Copyright (C) 2013, Joshua More and Michele Ceriotti
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <http.//www.gnu.org/licenses/>.
-
-
-Functions:
-   print_pdb_path: Prints all the bead configurations, and shows the ring
-      polymer connectivity.
-   print_pdb: Prints the centroid configurations.
-   read_pdb: Reads the cell parameters and atom configurations from a pdb file.
+"""Functions used to read input configurations and print trajectories
+in the PDB format.
 """
 
-__all__ = ['print_pdb_path', 'print_pdb', 'read_pdb']
+# This file is part of i-PI.
+# i-PI Copyright (C) 2014-2015 i-PI developers
+# See the "licenses" directory for full license information.
+
+
+import sys
 
 import numpy as np
-import sys
+
 import ipi.utils.mathtools as mt
 from ipi.utils.depend  import depstrip
 from ipi.engine.cell   import Cell
 from ipi.engine.atoms  import Atoms
 from ipi.utils.units   import *
+
+
+__all__ = ['print_pdb_path', 'print_pdb', 'read_pdb']
+
 
 def print_pdb_path(beads, cell, filedesc = sys.stdout):
    """Prints all the bead configurations, into a pdb formatted file.
@@ -70,7 +57,7 @@ def print_pdb_path(beads, cell, filedesc = sys.stdout):
    filedesc.write("END\n")
 
 def print_pdb(atoms, cell, filedesc = sys.stdout, title=""):
-   """Prints the atom configurations, into a pdb formatted file.
+   """Prints an atomic configuration into a pdb formatted file.
 
    Also prints the cell parameters in standard pdb form. Note
    that the angles are in degrees.
@@ -100,7 +87,7 @@ def print_pdb(atoms, cell, filedesc = sys.stdout, title=""):
    filedesc.write("END\n")
 
 def read_pdb(filedesc):
-   """Takes a pdb-style file and creates an Atoms and Cell object.
+   """Reads a PDB-style file and creates an Atoms and Cell object.
 
    Args:
       filedesc: An open readable file object from a pdb formatted file.

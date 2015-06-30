@@ -1,40 +1,30 @@
-"""Contains the functions used to print the trajectories and read input
-configurations with xyz formatting.
-
-Copyright (C) 2013, Joshua More and Michele Ceriotti
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <http.//www.gnu.org/licenses/>.
-
-
-Functions:
-   print_xyz_path: Prints all the bead configurations.
-   print_xyz: Prints the centroid configurations.
-   read_xyz: Reads the cell parameters and atom configurations from a xyz file.
+"""Functions used to read input configurations and print trajectories
+in the XYZ format.
 """
 
-__all__ = ['print_xyz_path', 'print_xyz', 'read_xyz', 'iter_xyz']
+# This file is part of i-PI.
+# i-PI Copyright (C) 2014-2015 i-PI developers
+# See the "licenses" directory for full license information.
+
+
+import math
+import sys
+import re
 
 import numpy as np
-import math, sys, re
+
 import ipi.utils.mathtools as mt
 from ipi.utils.depend import depstrip
 from ipi.engine.atoms import Atoms
 from ipi.engine.cell import Cell
 from ipi.utils.units import *
 
+
+__all__ = ['print_xyz_path', 'print_xyz', 'read_xyz', 'iter_xyz']
+
+
 def print_xyz_path(beads, cell, filedesc = sys.stdout):
-   """Prints all the bead configurations, into a xyz formatted file.
+   """Prints all the bead configurations into a XYZ formatted file.
 
    Prints all the replicas for each time step separately, rather than all at
    once.
@@ -57,7 +47,7 @@ def print_xyz_path(beads, cell, filedesc = sys.stdout):
          filedesc.write("%8s %12.5e %12.5e %12.5e\n" % (lab[i], qs[j][3*i], qs[j][3*i+1], qs[j][3*i+2]))
 
 def print_xyz(atoms, cell, filedesc = sys.stdout, title=""):
-   """Prints the centroid configurations, into a xyz formatted file.
+   """Prints an atomic configuration into an XYZ formatted file.
 
    Args:
       atoms: An atoms object giving the centroid positions.
@@ -77,7 +67,7 @@ def print_xyz(atoms, cell, filedesc = sys.stdout, title=""):
       filedesc.write("%8s %12.5e %12.5e %12.5e\n" % (lab[i], qs[3*i], qs[3*i+1], qs[3*i+2]))
 
 def read_xyz(filedesc, readcell=False):
-   """Takes a xyz-style file with i-pi style comments and creates an Atoms and Cell object
+   """Readss an XYZ-style file with i-pi style comments and creates an Atoms and Cell object
 
    Args:
       filedesc: An open readable file object from a xyz formatted file with i-PI header comments.
@@ -91,10 +81,10 @@ def read_xyz(filedesc, readcell=False):
    if natoms == "":
       raise EOFError("The file descriptor hit EOF.")
    natoms = int(natoms)
-   comment = filedesc.readline()   
+   comment = filedesc.readline()
    recell = re.compile('# CELL.abcABC.: (.*) Traj')
    reres = recell.search(comment)
-   if (reres is None):  # defaults to unit box 
+   if (reres is None):  # defaults to unit box
       h = mt.abc2h(1., 1., 1., np.pi/2, np.pi/2, np.pi/2)
    else:
       (a,b,c,alpha,beta,gamma) = reres.group(1).split()
@@ -137,7 +127,7 @@ def read_xyz(filedesc, readcell=False):
 
    if readcell: return atoms, cell
    else: return atoms
-   
+
 def iter_xyz(filedesc):
    """Takes a xyz-style file and yields one Atoms object after another.
 

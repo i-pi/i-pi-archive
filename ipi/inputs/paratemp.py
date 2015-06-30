@@ -1,29 +1,18 @@
-"""Deals with creating the ParaTemp class.
+"""Deals with creating the ParaTemp class."""
 
-Copyright (C) 2013, Michele Ceriotti
+# This file is part of i-PI.
+# i-PI Copyright (C) 2014-2015 i-PI developers
+# See the "licenses" directory for full license information.
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
+import numpy as np
 
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <http.//www.gnu.org/licenses/>.
+from ipi.utils.inputvalue import *
+from ipi.engine.paratemp import ParaTemp
 
-Classes:
-   InputParaTemp: Defines all the input parameters for a ParaTemp object.
-"""
 
 __all__=[ "InputParaTemp" ]
 
-import numpy as np
-from ipi.utils.inputvalue import *
-from ipi.engine.paratemp import ParaTemp
 
 class InputParaTemp(Input):
    """Input class for the ParaTemp object.
@@ -74,5 +63,3 @@ class InputParaTemp(Input):
       """Creates a ParaTemp object based on the input parameters."""
 
       return ParaTemp(self.temp_list.fetch(), self.temp_index.fetch(), self.stride.fetch())
-
-

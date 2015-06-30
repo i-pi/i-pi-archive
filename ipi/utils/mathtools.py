@@ -1,52 +1,21 @@
-"""Contains simple algorithms.
+"""Mathematical tools used in various parts of the code."""
 
-Copyright (C) 2013, Joshua More and Michele Ceriotti
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <http.//www.gnu.org/licenses/>.
+# This file is part of i-PI.
+# i-PI Copyright (C) 2014-2015 i-PI developers
+# See the "licenses" directory for full license information.
 
 
-Functions:
-   matrix_exp: Computes the exponential of a square matrix via a Taylor series.
-   stab_cholesky: A numerically stable version of the Cholesky decomposition.
-   h2abc: Takes the representation of the system box in terms of an upper
-      triangular matrix of column vectors, and returns the representation in
-      terms of the lattice vector lengths and the angles between them
-      in radians.
-   h2abc_deg: Takes the representation of the system box in terms of an upper
-      triangular matrix of column vectors, and returns the representation in
-      terms of the lattice vector lengths and the angles between them in
-      degrees.
-   abc2h: Takes the representation of the system box in terms of the lattice
-      vector lengths and the angles between them, and returns the
-      representation in terms of an upper triangular lattice vector matrix.
-   invert_ut3x3: Inverts a 3*3 upper triangular matrix.
-   det_ut3x3(h): Finds the determinant of a 3*3 upper triangular matrix.
-   eigensystem_ut3x3: Finds the eigenvector matrix and eigenvalues of a 3*3
-      upper triangular matrix
-   exp_ut3x3: Computes the exponential of a 3*3 upper triangular matrix.
-   root_herm: Computes the square root of a positive-definite hermitian
-      matrix.
-   logsumlog: Routine to accumulate the logarithm of a sum
-"""
+import math
+
+import numpy as np
+
+from ipi.utils.messages import verbosity, warning
+
 
 __all__ = ['matrix_exp', 'stab_cholesky', 'h2abc', 'h2abc_deg', 'abc2h',
            'invert_ut3x3', 'det_ut3x3', 'eigensystem_ut3x3', 'exp_ut3x3',
             'root_herm', 'logsumlog' ]
 
-import numpy as np
-import math
-from ipi.utils.messages import verbosity, warning
 
 def logsumlog(lasa, lbsb):
    """Computes log(|A+B|) and sign(A+B) given log(|A|), log(|B|),
@@ -139,20 +108,30 @@ def stab_cholesky(M):
       for k in range(i):
          D[i] -= L[i,k]*L[i,k]*D[k]
 
+   negev = False
    S = np.zeros(M.shape,float)
    for i in range(n):
       if (D[i]>0):
          D[i] = math.sqrt(D[i])
       else:
          warning("Zeroing negative element in stab-cholesky decomposition: " + str(D[i]), verbosity.low)
+         negev = True
          D[i] = 0
       for j in range(i+1):
          S[i,j] += L[i,j]*D[j]
+   
+   if negev: 
+      warning("Checking decomposition after negative eigenvalue: \n" +str(M-np.dot(S,S.T)) , verbosity.low)
+   
    return S
 
 def h2abc(h):
    """Returns a description of the cell in terms of the length of the
       lattice vectors and the angles between them in radians.
+
+   Takes the representation of the system box in terms of an upper triangular
+   matrix of column vectors, and returns the representation in terms of the
+   lattice vector lengths and the angles between them in radians.
 
    Args:
       h: Cell matrix in upper triangular column vector form.
@@ -173,6 +152,10 @@ def h2abc(h):
 def h2abc_deg(h):
    """Returns a description of the cell in terms of the length of the
       lattice vectors and the angles between them in degrees.
+
+   Takes the representation of the system box in terms of an upper triangular
+   matrix of column vectors, and returns the representation in terms of the
+   lattice vector lengths and the angles between them in degrees.
 
    Args:
       h: Cell matrix in upper triangular column vector form.
@@ -318,7 +301,7 @@ def exp_ut3x3(h):
    return eh
 
 def root_herm(A):
-   """Gives the square root of a hermitian matrix with real eigenvalues.
+   """Computes the square root of a positive-definite hermitian matrix.
 
    Args:
       A: A Hermitian matrix.
@@ -333,11 +316,16 @@ def root_herm(A):
    eigvals, eigvecs = np.linalg.eigh(A)
    ndgrs = len(eigvals)
    diag = np.zeros((ndgrs,ndgrs))
+   negev = False
    for i in range(ndgrs):
       if eigvals[i] >= 0:
          diag[i,i] = math.sqrt(eigvals[i])
       else:
-         warning("Zeroing negative element in matrix square root: " + str(eigvals[i]), verbosity.low)
+         warning("Zeroing negative %d-th element in matrix square root: %e" %(i, eigvals[i]), verbosity.low)
          diag[i,i] = 0
-   return np.dot(eigvecs, np.dot(diag, eigvecs.T))
-
+         negev = True
+   rv = np.dot(eigvecs, np.dot(diag, eigvecs.T))
+   if negev: 
+      warning("Checking decomposition after negative eigenvalue: \n" +str(A-np.dot(rv,rv.T)) , verbosity.low)
+      
+   return rv
