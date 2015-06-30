@@ -16,6 +16,8 @@
    <force> qtip4pf </force>
    </forces>
    <mover mode='minimize'>
+     <optimizer mode="sd">
+     </optimizer>
    </mover>
 </system>
 </simulation>

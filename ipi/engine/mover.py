@@ -23,7 +23,7 @@ appropriate conserved energy quantity for the ensemble of choice.
 
 """
 
-__all__=['Mover', 'ReplayMover', 'GeopMover', 'GeoMin']
+__all__=['Mover', 'ReplayMover', 'GeopMover']
 
 import numpy as np
 import time
@@ -31,9 +31,8 @@ import time
 from ipi.utils.depend import *
 from ipi.utils import units
 from ipi.utils.softexit import softexit
-from ipi.utils.io.io_xyz import read_xyz
-from ipi.utils.io.io_pdb import read_pdb
-from ipi.utils.io.io_xml import xml_parse_file
+from ipi.utils.io import read_file
+from ipi.utils.io.inputs.io_xml import xml_parse_file
 from ipi.utils.units import Constants, unit_to_internal
 from ipi.utils.mintools import min_brent, min_approx, BFGS
 
@@ -158,12 +157,12 @@ class ReplayMover(Mover):
        try:         
          if (self.intraj.mode == "xyz"):            
             for b in self.beads:
-               myatoms = read_xyz(self.rfile)
+               myatoms = read_file("xyz", self.rfile)
                myatoms.q *= unit_to_internal("length",self.intraj.units,1.0)
                b.q[:] = myatoms.q
          elif (self.intraj.mode == "pdb"):
             for b in self.beads:
-               myatoms, mycell = read_pdb(self.rfile)
+               myatoms, mycell = read_file("pdb", self.rfile)
                myatoms.q *= unit_to_internal("length",self.intraj.units,1.0)
                mycell.h  *= unit_to_internal("length",self.intraj.units,1.0)
                b.q[:] = myatoms.q
@@ -224,25 +223,7 @@ class BFGSMover(object):
       self.dbeads.q = x
       e = self.dforces.pot
       g = - self.dforces.f
-      return e, g
-
-class GeoMin(object):
-    """ Stores options and utilities for geometry optimization. """
-    
-    def __init__(self, mode="sd", lin_iter=1000, lin_step=1.0e-3, lin_tol=1.0e-6, grad_tol=1.0e-6, lin_auto=True, max_step=100.0,
-             cg_old_f=np.zeros(0, float),
-             cg_old_d=np.zeros(0, float),
-             invhessian=np.eye(0)):
-        self.mode=mode
-        self.lin_tol = lin_tol
-        self.grad_tol = grad_tol
-        self.lin_iter = lin_iter
-        self.max_step = max_step
-        self.lin_step = lin_step
-        self.lin_auto = lin_auto
-        self.cg_old_f = cg_old_f
-        self.cg_old_d = cg_old_d
-        self.invhessian = invhessian
+      return e, g        
 
 class GeopMover(Mover):
    """Geometry optimization routine. Will start with a dumb steepest descent,
@@ -252,7 +233,13 @@ class GeopMover(Mover):
 
    """
 
-   def __init__(self, fixcom=False, fixatoms=None, geop = None):      
+   def __init__(self, fixcom=False, fixatoms=None,
+             mode="sd", 
+             lin_iter=100, lin_step=1.0e-3, lin_tol=1.0e-6, lin_auto=True, 
+             grad_tol=1.0e-6, max_step=100.0,
+             cg_old_f=np.zeros(0, float),
+             cg_old_d=np.zeros(0, float),
+             invhessian=np.eye(0) ) :   
       """Initialises GeopMover.
 
       Args:
@@ -261,22 +248,33 @@ class GeopMover(Mover):
       """
 
       super(GeopMover,self).__init__(fixcom=fixcom, fixatoms=fixatoms)
+      
+      # optimization options
+      self.mode=mode
+      self.lin_tol = lin_tol
+      self.grad_tol = grad_tol
+      self.lin_iter = lin_iter
+      self.max_step = max_step
+      self.lin_step = lin_step
+      self.lin_auto = lin_auto
+      self.cg_old_f = cg_old_f
+      self.cg_old_d = cg_old_d
+      self.invhessian = invhessian
+        
       self.lm = LineMover()
-      self.bfgsm = BFGSMover()
-      if geop is None: geop = GeoMin()
-      self.mo = geop
+      self.bfgsm = BFGSMover()      
    
    def bind(self, beads, nm, cell, bforce, bbias, prng):
       
       super(GeopMover,self).bind(beads, nm, cell, bforce, bbias, prng)
-      if self.mo.cg_old_f.size != beads.q.size :
-         if self.mo.cg_old_f.size == 0: 
-            self.mo.cg_old_f = np.zeros(beads.q.size, float)
+      if self.cg_old_f.size != beads.q.size :
+         if self.cg_old_f.size == 0: 
+            self.cg_old_f = np.zeros(beads.q.size, float)
          else: 
             raise ValueError("Conjugate gradient force size does not match system size")
-      if self.mo.cg_old_d.size != beads.q.size :
-         if self.mo.cg_old_d.size == 0: 
-            self.mo.cg_old_d = np.zeros(beads.q.size, float)
+      if self.cg_old_d.size != beads.q.size :
+         if self.cg_old_d.size == 0: 
+            self.cg_old_d = np.zeros(beads.q.size, float)
          else: 
             raise ValueError("Conjugate gradient direction size does not match system size")
             
@@ -291,15 +289,15 @@ class GeopMover(Mover):
 
       print "\nMD STEP %d\n" % step
 
-      if (self.mo.mode == "bfgs"):
+      if (self.mode == "bfgs"):
 
           # BFGS Minimization
           # Initialize approximate Hessian inverse and direction
           # to the steepest descent direction
           if step == 0:# or np.sqrt(np.dot(self.bfgsm.d, self.bfgsm.d)) == 0.0:
               self.bfgsm.d = depstrip(self.forces.f) / np.sqrt(np.dot(self.forces.f.flatten(), self.forces.f.flatten()))
-              self.mo.invhessian = np.eye(len(self.beads.q.flatten()))
-              print "invhessian:", self.mo.invhessian
+              self.invhessian = np.eye(len(self.beads.q.flatten()))
+              print "invhessian:", self.invhessian
               #invhessian = np.eye(n)
 
           # Current energy, forces, and function definitions
@@ -315,16 +313,16 @@ class GeopMover(Mover):
           print "BEFORE"
           print "self.beads.q:", self.beads.q
           print "self.bfgsm.d:", self.bfgsm.d
-          print "invhessian:", self.mo.invhessian
-          self.beads.q, fx, self.bfgsm.d, self.mo.invhessian = BFGS(self.beads.q, self.bfgsm.d, self.bfgsm, fdf0=(u0, du0), invhessian=self.mo.invhessian, max_step=self.mo.max_step, tol=self.mo.lin_tol, grad_tol=self.mo.grad_tol, itmax=self.mo.lin_iter)  #TODO: make object for inverse hessian and direction if necessary
+          print "invhessian:", self.invhessian
+          self.beads.q, fx, self.bfgsm.d, self.invhessian = BFGS(self.beads.q, self.bfgsm.d, self.bfgsm, fdf0=(u0, du0), invhessian=self.invhessian, max_step=self.max_step, tol=self.lin_tol, grad_tol=self.grad_tol, itmax=self.lin_iter)  #TODO: make object for inverse hessian and direction if necessary
           print "AFTER"
           print "self.beads.q", self.beads.q
           print "self.bfgsm.d", self.bfgsm.d
-          print "invhessian", self.mo.invhessian
+          print "invhessian", self.invhessian
 
       # Routine for steepest descent and conjugate gradient
       else:
-          if (self.mo.mode == "sd" or step == 0): 
+          if (self.mode == "sd" or step == 0): 
           
               # Steepest descent minimization
               # gradf1 = force at current atom position
@@ -343,15 +341,15 @@ class GeopMover(Mover):
               # dq1 = direction to move
               # dq0 = previous direction
               # dq1_unit = unit vector of dq1
-              gradf0 = self.mo.cg_old_f
-              dq0 = self.mo.cg_old_d
+              gradf0 = self.cg_old_f
+              dq0 = self.cg_old_d
               gradf1 = depstrip(self.forces.f)
               beta = np.dot((gradf1.flatten() - gradf0.flatten()), gradf1.flatten()) / (np.dot(gradf0.flatten(), gradf0.flatten()))
               dq1 = gradf1 + max(0.0, beta) * dq0
               dq1_unit = dq1 / np.sqrt(np.dot(dq1.flatten(), dq1.flatten()))
 
-          self.mo.cg_old_d[:] = dq1    # store force and direction for next CG step
-          self.mo.cg_old_f[:] = gradf1
+          self.cg_old_d[:] = dq1    # store force and direction for next CG step
+          self.cg_old_f[:] = gradf1
    
           if (len(self.fixatoms)>0):
               for dqb in dq1_unit:
@@ -364,9 +362,9 @@ class GeopMover(Mover):
           # reuse initial value since we have energy and forces already
           u0, du0 = (self.forces.pot, np.dot(depstrip(self.forces.f.flatten()), dq1_unit.flatten()))
 
-          (x, fx) = min_brent(self.lm, fdf0=(u0, du0), x0=0.0, tol=self.mo.lin_tol, itmax=self.mo.lin_iter, init_step=self.mo.lin_step) 
+          (x, fx) = min_brent(self.lm, fdf0=(u0, du0), x0=0.0, tol=self.lin_tol, itmax=self.lin_iter, init_step=self.lin_step) 
 
-          if self.mo.lin_auto: self.mo.lin_step = x # automatically adapt the search step for the next iteration
+          if self.lin_auto: self.lin_step = x # automatically adapt the search step for the next iteration
       
           self.beads.q += dq1_unit * x
 

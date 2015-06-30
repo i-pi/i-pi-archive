@@ -214,8 +214,6 @@ class Simulation(dobject):
          if softexit.triggered: break
 
          self.chk.store()
-
-         
          
          if self.mode == "static":
             for s in self.syslist:

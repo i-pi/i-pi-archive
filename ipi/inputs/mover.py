@@ -39,7 +39,7 @@ class InputGeop(Input):
 
     """
 
-    attribs={"mode"  : (InputAttribute, {"dtype"   : str,
+    attribs={"mode"  : (InputAttribute, {"dtype"   : str, "default": "cg", 
                                     "help"    : "The geometry optimization algorithm to be used",
                                     "options" : ['sd', 'cg', 'bfgs']}) }
    
@@ -77,6 +77,7 @@ class InputGeop(Input):
     default_label = "GEOP"   
 
     def store(self, geop):
+        if geop == {}: return self.fetch()
         self.line_tolerance.store(geop.lin_tol) 
         self.mode.store(geop.mode)
         self.line_iter.store(geop.lin_iter)
@@ -89,16 +90,16 @@ class InputGeop(Input):
         
 		
     def fetch(self):		
-        ngeo = GeoMin(mode=self.mode.fetch(), 
-            lin_tol = self.line_tolerance.fetch(),
-            lin_step = self.line_step.fetch(),
-            lin_iter = self.line_iter.fetch(),
-            lin_auto = self.line_adaptive.fetch(),
-            cg_old_f = self.cg_old_force.fetch(),
-            cg_old_d = self.cg_old_direction.fetch(),
-            grad_tol = self.grad_tolerance.fetch(),
-            max_step = self.maximum_step.fetch())
-        return ngeo
+        return { "mode" : self.mode.fetch(),
+            "lin_tol" : self.line_tolerance.fetch(),
+            "lin_step" : self.line_step.fetch(),
+            "lin_iter" : self.line_iter.fetch(),
+            "lin_auto" : self.line_adaptive.fetch(),
+            "cg_old_f" : self.cg_old_force.fetch(),
+            "cg_old_d" : self.cg_old_direction.fetch(),
+            "grad_tol" : self.grad_tolerance.fetch(),
+            "max_step" : self.maximum_step.fetch() }
+        
 
 
 		
@@ -126,9 +127,9 @@ class InputMover(Input):
            "fixatoms" : (InputArray, {"dtype"        : int,
                                     "default"      : np.zeros(0,int),
                                     "help"         : "Indices of the atmoms that should be held fixed."}),
-           "geometry" : ( InputGeop, { "default" : input_default(factory=ipi.engine.mover.GeoMin), 
+           "optimizer" : ( InputGeop, { "default" : {}, 
                                      "help":  "Option for geometry optimization" } ),
-           "replay_file": (InputInitFile, {"default" : input_default(factory=ipi.engine.initializer.InitBase),
+           "file": (InputInitFile, {"default" : input_default(factory=ipi.engine.initializer.InitBase),
                            "help"            : "This describes the location to read a trajectory file from."})
          }
          
@@ -153,13 +154,13 @@ class InputMover(Input):
          tsc = 0
       elif type(sc) is GeopMover:
          self.mode.store("minimize")
-         self.geometry.store(sc.mo)
+         self.optimizer.store(sc)
          tsc = 1
       else: 
          raise ValueError("Cannot store Mover calculator of type "+str(type(sc)))
       
       if tsc == 0:
-         self.replay_file.store(sc.intraj)
+         self.file.store(sc.intraj)
       if tsc > 0:
          self.fixcom.store(sc.fixcom)
          self.fixatoms.store(sc.fixatoms)
@@ -175,9 +176,9 @@ class InputMover(Input):
       super(InputMover,self).fetch()
 
       if self.mode.fetch() == "replay" :
-         sc = ReplayMover(fixcom=False, fixatoms=None, intraj=self.replay_file.fetch() )
+         sc = ReplayMover(fixcom=False, fixatoms=None, intraj=self.file.fetch() )
       elif self.mode.fetch() == "minimize":
-         sc = GeopMover(fixcom=False, fixatoms=None, geop = self.geometry.fetch() )
+         sc = GeopMover(fixcom=False, fixatoms=None, **self.optimizer.fetch() )
       else:
          raise ValueError("'" + self.mode.fetch() + "' is not a supported mover calculation mode.")
 
