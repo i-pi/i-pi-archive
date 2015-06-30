@@ -26,7 +26,7 @@ from ipi.utils.io.inputs.io_xml import *
 from ipi.utils.units import unit_to_internal, unit_to_user
 
 
-__all__ = ['Input', 'InputValue', 'InputAttribute', 'InputArray', 'input_default']
+__all__ = ['Input', 'InputDictionary', 'InputValue', 'InputAttribute', 'InputArray', 'input_default']
 
 
 class input_default(object):
@@ -191,13 +191,13 @@ class Input(object):
       self._explicit = False #Since the value was not set by the user
 
    def store(self, value=None):
-      """Dummy function for storing data."""
+      """Base function for storing data passed as a dictionary"""
 
-      self._explicit = True
+      self._explicit = True      
       pass
 
    def fetch(self):
-      """Dummy function to retrieve data."""
+      """Dummy function to retrieve data that returns all fields as a dictionary."""
 
       self.check()
       pass
@@ -644,6 +644,26 @@ class Input(object):
       rstr += indent + "</" + name + ">\n"
       return rstr
 
+class InputDictionary(Input):
+   """Class that returns the value of all the fields as a dictionary.
+   """
+    
+   def store(self, value={}):
+      """Base function for storing data passed as a dictionary"""
+
+      self._explicit = True   
+      for f, v in value:
+          self.__dict__[f].store(value[f])
+      pass
+
+   def fetch(self):
+      """Dummy function to retrieve data that returns all fields as a dictionary."""
+
+      self.check()
+      rdic = {}
+      for f, v in self.fields.iteritems():
+         rdic[f]=self.__dict__[f].fetch()
+      return rdic
 
 class InputAttribute(Input):
    """Class for handling attribute data.
