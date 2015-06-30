@@ -83,7 +83,9 @@ def read_xyz(filedesc, readcell=False):
    natoms = int(natoms)
    comment = filedesc.readline()
    reabc = re.compile('# CELL.abcABC.: (.*) Traj').search(comment)
+   regenh = re.compile('# CELL.GENH.: (.*) Traj').search(comment)
    reh = re.compile('# CELL.H.: (.*) Traj').search(comment)
+   usegenh = False 
    
    if not (reabc is None):  
       (a,b,c,alpha,beta,gamma) = reabc.group(1).split()
@@ -97,6 +99,12 @@ def read_xyz(filedesc, readcell=False):
    elif not (reh is None):
       h = np.array(reh.group(1).split(),float)
       h.resize((3,3))
+   elif not (regenh is None):
+      genh = np.array(regenh.group(1).split(),float)
+      genh.resize((3,3))
+      invgenh =  np.linalg.inv(genh)
+      h = mt.abc2h(* mt.genh2abc(genh))  # converts back & forth from abcABC representation to get an upper triangular h
+      usegenh = True
    else: # defaults to unit box
       h = mt.abc2h(1., 1., 1., np.pi/2, np.pi/2, np.pi/2)
    cell = Cell(h)
@@ -116,9 +124,15 @@ def read_xyz(filedesc, readcell=False):
       x = float(body[1])
       y = float(body[2])
       z = float(body[3])
+          
+      if usegenh: # must convert from the input cell parameters to the internal convention
+         u = np.array([x,y,z])
+         us = np.dot(u,invgenh)
+         u = np.dot(h,us)
+         x, y, z = u
       qatoms.append(x)
       qatoms.append(y)
-      qatoms.append(z)
+      qatoms.append(z)  
       iat += 1
 
    if natoms != len(names):

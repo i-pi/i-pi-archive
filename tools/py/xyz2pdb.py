@@ -27,6 +27,7 @@ def main(filename):
    while True:
       try:
          pos, cell = read_xyz(ipos, readcell=True)
+         cell.array_pbc(pos.q)
       except EOFError: # finished reading files
          sys.exit(0)
 
