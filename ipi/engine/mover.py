@@ -35,7 +35,7 @@ from ipi.utils.io.io_xyz import read_xyz
 from ipi.utils.io.io_pdb import read_pdb
 from ipi.utils.io.io_xml import xml_parse_file
 from ipi.utils.units import Constants, unit_to_internal
-from ipi.utils.mintools import min_brent
+from ipi.utils.mintools import min_brent, min_approx, BFGS
 
 
 class Mover(dobject):
@@ -209,20 +209,40 @@ class LineMover(object):
       g = - np.dot(depstrip(self.dforces.f).flatten(),self.d.flatten())
       return e, g
    
+class BFGSMover(object):
+   """ Creation of the multi-dimensional function that will be minimized"""
+
+   def __init__(self):
+      self.x0 = self.d = None
+
+   def bind(self, ens):
+      self.dbeads = ens.beads.copy()
+      self.dcell = ens.cell.copy()
+      self.dforces = ens.forces.copy(self.dbeads, self.dcell)
+
+   def __call__(self, x):
+      self.dbeads.q = x
+      e = self.dforces.pot
+      g = - self.dforces.f
+      return e, g
 
 class GeoMin(object):
     """ Stores options and utilities for geometry optimization. """
     
-    def __init__(self, mode="sd", lin_iter=1000, lin_step=1e-3, lin_tol=1.0e-6, lin_auto=True, 
-             cg_old_f = np.zeros(0, float),
-             cg_old_d = np.zeros(0, float) ):
+    def __init__(self, mode="sd", lin_iter=1000, lin_step=1.0e-3, lin_tol=1.0e-6, grad_tol=1.0e-6, lin_auto=True, max_step=100.0,
+             cg_old_f=np.zeros(0, float),
+             cg_old_d=np.zeros(0, float),
+             invhessian=np.eye(0)):
         self.mode=mode
         self.lin_tol = lin_tol
+        self.grad_tol = grad_tol
         self.lin_iter = lin_iter
+        self.max_step = max_step
         self.lin_step = lin_step
         self.lin_auto = lin_auto
         self.cg_old_f = cg_old_f
         self.cg_old_d = cg_old_d
+        self.invhessian = invhessian
 
 class GeopMover(Mover):
    """Geometry optimization routine. Will start with a dumb steepest descent,
@@ -242,6 +262,7 @@ class GeopMover(Mover):
 
       super(GeopMover,self).__init__(fixcom=fixcom, fixatoms=fixatoms)
       self.lm = LineMover()
+      self.bfgsm = BFGSMover()
       if geop is None: geop = GeoMin()
       self.mo = geop
    
@@ -260,6 +281,7 @@ class GeopMover(Mover):
             raise ValueError("Conjugate gradient direction size does not match system size")
             
       self.lm.bind(self)
+      self.bfgsm.bind(self)
       
    def step(self, step=None):
       """Does one simulation time step."""
@@ -267,47 +289,86 @@ class GeopMover(Mover):
       self.ptime = self.ttime = 0
       self.qtime = -time.time()
 
-      if (self.mo.mode == "sd" or step == 0): #if (mode == "SD") or (step == 0):
+      print "\nMD STEP %d\n" % step
+
+      if (self.mo.mode == "bfgs"):
+
+          # BFGS Minimization
+          # Initialize approximate Hessian inverse and direction
+          # to the steepest descent direction
+          if step == 0:# or np.sqrt(np.dot(self.bfgsm.d, self.bfgsm.d)) == 0.0:
+              self.bfgsm.d = depstrip(self.forces.f) / np.sqrt(np.dot(self.forces.f.flatten(), self.forces.f.flatten()))
+              self.mo.invhessian = np.eye(len(self.beads.q.flatten()))
+              print "invhessian:", self.mo.invhessian
+              #invhessian = np.eye(n)
+
+          # Current energy, forces, and function definitions
+          # for use in BFGS algorithm
+
+          u0, du0 = (self.forces.pot, - self.forces.f)
+          print "u0:", u0
+          print "du0:", du0
           
-          # Steepest descent minimization
-          # gradf1 = force at current atom position
-          # dq1 = direction of steepest descent
-          # dq1_unit = unit vector of dq1
-          gradf1 = dq1 = depstrip(self.forces.f)
-          dq1_unit = dq1 / np.sqrt(np.dot(gradf1.flatten(), gradf1.flatten())) # move direction for steepest descent and 1st conjugate gradient step
-      
+          # Do one iteration of BFGS, return new point, function value,
+          # derivative value, and current Hessian to build upon
+          # next iteration
+          print "BEFORE"
+          print "self.beads.q:", self.beads.q
+          print "self.bfgsm.d:", self.bfgsm.d
+          print "invhessian:", self.mo.invhessian
+          self.beads.q, fx, self.bfgsm.d, self.mo.invhessian = BFGS(self.beads.q, self.bfgsm.d, self.bfgsm, fdf0=(u0, du0), invhessian=self.mo.invhessian, max_step=self.mo.max_step, tol=self.mo.lin_tol, grad_tol=self.mo.grad_tol, itmax=self.mo.lin_iter)  #TODO: make object for inverse hessian and direction if necessary
+          print "AFTER"
+          print "self.beads.q", self.beads.q
+          print "self.bfgsm.d", self.bfgsm.d
+          print "invhessian", self.mo.invhessian
+
+      # Routine for steepest descent and conjugate gradient
       else:
+          if (self.mo.mode == "sd" or step == 0): 
           
-          # Conjugate gradient, Polak-Ribiere
-          # gradf1: force at current atom position
-          # gradf0: force at previous atom position
-          # dq1 = direction to move
-          # dq0 = previous direction
-          # dq1_unit = unit vector of dq1
-          gradf0 = self.mo.cg_old_f
-          dq0 = self.mo.cg_old_d
-          gradf1 = depstrip(self.forces.f)
-          beta = np.dot((gradf1.flatten() - gradf0.flatten()), gradf1.flatten()) / (np.dot(gradf0.flatten(), gradf0.flatten()))
-          dq1 = gradf1 + max(0.0, beta) * dq0
-          dq1_unit = dq1 / np.sqrt(np.dot(dq1.flatten(), dq1.flatten()))
+              # Steepest descent minimization
+              # gradf1 = force at current atom position
+              # dq1 = direction of steepest descent
+              # dq1_unit = unit vector of dq1
+              gradf1 = dq1 = depstrip(self.forces.f)
 
-      self.mo.cg_old_d[:] = dq1    # store force and direction for next CG step
-      self.mo.cg_old_f[:] = gradf1
+              # move direction for steepest descent and 1st conjugate gradient step
+              dq1_unit = dq1 / np.sqrt(np.dot(gradf1.flatten(), gradf1.flatten())) 
+      
+          else:
+          
+              # Conjugate gradient, Polak-Ribiere
+              # gradf1: force at current atom position
+              # gradf0: force at previous atom position
+              # dq1 = direction to move
+              # dq0 = previous direction
+              # dq1_unit = unit vector of dq1
+              gradf0 = self.mo.cg_old_f
+              dq0 = self.mo.cg_old_d
+              gradf1 = depstrip(self.forces.f)
+              beta = np.dot((gradf1.flatten() - gradf0.flatten()), gradf1.flatten()) / (np.dot(gradf0.flatten(), gradf0.flatten()))
+              dq1 = gradf1 + max(0.0, beta) * dq0
+              dq1_unit = dq1 / np.sqrt(np.dot(dq1.flatten(), dq1.flatten()))
+
+          self.mo.cg_old_d[:] = dq1    # store force and direction for next CG step
+          self.mo.cg_old_f[:] = gradf1
    
-      if (len(self.fixatoms)>0):
-         for dqb in dq1_unit:
-            dqb[self.fixatoms*3]=0.0
-            dqb[self.fixatoms*3+1]=0.0
-            dqb[self.fixatoms*3+2]=0.0
+          if (len(self.fixatoms)>0):
+              for dqb in dq1_unit:
+                  dqb[self.fixatoms*3] = 0.0
+                  dqb[self.fixatoms*3+1] = 0.0
+                  dqb[self.fixatoms*3+2] = 0.0
       
-      self.lm.set_dir(depstrip(self.beads.q), dq1_unit)
+          self.lm.set_dir(depstrip(self.beads.q), dq1_unit)
 
-      # reuse initial value since we have energy and forces already
-      u0, du0 = (self.forces.pot, np.dot(depstrip(self.forces.f.flatten()), dq1_unit.flatten()))
+          # reuse initial value since we have energy and forces already
+          u0, du0 = (self.forces.pot, np.dot(depstrip(self.forces.f.flatten()), dq1_unit.flatten()))
 
-      (x, fx) = min_brent(self.lm, fdf0=(u0, du0), x0=0.0, tol = self.mo.lin_tol, itmax = self.mo.lin_iter, init_step = self.mo.lin_step) 
+          (x, fx) = min_brent(self.lm, fdf0=(u0, du0), x0=0.0, tol=self.mo.lin_tol, itmax=self.mo.lin_iter, init_step=self.mo.lin_step) 
 
-      if self.mo.lin_auto: self.mo.lin_step = x # automatically adapt the search step for the next iteration
+          if self.mo.lin_auto: self.mo.lin_step = x # automatically adapt the search step for the next iteration
       
-      self.beads.q += dq1_unit * x
+          self.beads.q += dq1_unit * x
+
+
       self.qtime += time.time()

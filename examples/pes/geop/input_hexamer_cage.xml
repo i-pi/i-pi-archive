@@ -1,5 +1,5 @@
 <simulation mode="static" verbosity="medium">
-   <output prefix='hexamer_cage'>
+   <output prefix='hexamer_cage_bfgs'>
       <properties stride='1' filename='out'>  [ step, time{picosecond}, conserved{electronvolt}, temperature{kelvin}, kinetic_cv{electronvolt}, potential{electronvolt}, pressure_cv{megapascal}] </properties>
       <trajectory filename='pos' stride='20'> positions{angstrom} </trajectory>
    </output>
@@ -17,6 +17,9 @@
    <force> qtip4pf </force>
    </forces>
    <mover mode='minimize'>
+      <geometry mode="bfgs">
+         <line_adaptive> True </line_adaptive>
+      </geometry>
    </mover>
 </system>
 </simulation>

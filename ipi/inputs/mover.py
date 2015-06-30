@@ -41,7 +41,7 @@ class InputGeop(Input):
 
     attribs={"mode"  : (InputAttribute, {"dtype"   : str,
                                     "help"    : "The geometry optimization algorithm to be used",
-                                    "options" : ['sd', 'cg']}) }
+                                    "options" : ['sd', 'cg', 'bfgs']}) }
    
     fields = { "line_tolerance": (InputValue, {"dtype"         : float,
                    "default"       : 1.0e-5,
@@ -61,7 +61,13 @@ class InputGeop(Input):
                    "dimension" : "force"}),
                 "cg_old_direction": (InputArray, {"dtype" : float,
                    "default"   : input_default(factory=np.zeros, args = (0,)),
-                   "help"      : "The previous direction in a CG optimization."})
+                   "help"      : "The previous direction in a CG optimization."}),
+                "grad_tolerance": (InputValue, {"dtype" : float, 
+                    "default"  : 1.0e-6,
+                    "help"     : "The tolerance on the zero gradient requirement of BFGS minimization."}),
+                "maximum_step": (InputValue, {"dtype" : float,
+                    "default" : 100.0,
+                    "help"    : "The maximum step size for BFGS line minimizations."})
                      }
                    
               
@@ -78,6 +84,8 @@ class InputGeop(Input):
         self.line_adaptive.store(geop.lin_auto)
         self.cg_old_force.store(geop.cg_old_f)
         self.cg_old_direction.store(geop.cg_old_d)
+        self.grad_tolerance.store(geop.grad_tol)
+        self.maximum_step.store(geop.max_step)
         
 		
     def fetch(self):		
@@ -87,7 +95,9 @@ class InputGeop(Input):
             lin_iter = self.line_iter.fetch(),
             lin_auto = self.line_adaptive.fetch(),
             cg_old_f = self.cg_old_force.fetch(),
-            cg_old_d = self.cg_old_direction.fetch())
+            cg_old_d = self.cg_old_direction.fetch(),
+            grad_tol = self.grad_tolerance.fetch(),
+            max_step = self.maximum_step.fetch())
         return ngeo
 
 
