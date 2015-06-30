@@ -149,6 +149,30 @@ def h2abc(h):
 
    return a, b, c, alpha, beta, gamma
 
+def genh2abc(h):
+   """ Returns a description of the cell in terms of the length of the
+      lattice vectors and the angles between them in radians.
+
+   Takes the representation of the system box in terms of a full matrix
+   of row vectors, and returns the representation in terms of the
+   lattice vector lengths and the angles between them in radians.
+   
+   Args:
+      h: Cell matrix in upper triangular column vector form.
+
+   Returns:
+      A list containing the lattice vector lengths and the angles between them.
+   """
+   
+   a = math.sqrt(np.dot(h[0],h[0]))
+   b = math.sqrt(np.dot(h[1],h[1]))
+   c = math.sqrt(np.dot(h[2],h[2]))
+   gamma = math.acos(np.dot(h[0],h[1])/(a*b))
+   beta  =  math.acos(np.dot(h[0],h[2])/(a*c))
+   alpha = math.acos(np.dot(h[2],h[1])/(b*c))
+   
+   return a, b, c, alpha, beta, gamma
+   
 def h2abc_deg(h):
    """Returns a description of the cell in terms of the length of the
       lattice vectors and the angles between them in degrees.
@@ -210,6 +234,7 @@ def invert_ut3x3(h):
    ih[1,2] = -ih[1,1]*h[1,2]*ih[2,2]
    ih[0,2] = -ih[1,2]*h[0,1]*ih[0,0] - ih[0,0]*h[0,2]*ih[2,2]
    return ih
+   
 
 def eigensystem_ut3x3(p):
    """Finds the eigenvector matrix of a 3*3 upper-triangular matrix.
