@@ -31,7 +31,7 @@ from ipi.utils.units import *
 
 __all__ = ['InputMover', 'InputGeop']
 
-class InputGeop(Input):
+class InputGeop(InputDictionary):
     """Geometry optimization options.
     
     Contains options related with geometry optimization, such as method, 
@@ -43,18 +43,15 @@ class InputGeop(Input):
                                     "help"    : "The geometry optimization algorithm to be used",
                                     "options" : ['sd', 'cg', 'bfgs']}) }
    
-    fields = { "line_tolerance": (InputValue, {"dtype"         : float,
-                   "default"       : 1.0e-5,
-                   "help"          : "The tolerance for line search procedures."}),
-               "line_iter": (InputValue, {"dtype"         : float,
-                   "default"       : 100,
-                   "help"          : "Maximum iteration number for line search procedures."}),
-               "line_step": (InputValue, {"dtype"         : float,
-                   "default"       : 1e-3,
-                   "help"          : "The initial step for line search procedures."}),
-                "line_adaptive": (InputValue, {"dtype"         : bool,
-                   "default"       : True,
-                   "help"          : "Wheter to automatically adjust step size for line search procedures."}),
+    fields = { "line_search" : ( InputDictionary, {"dtype" : float, 
+                               "help" : """"Options for line search methods. Includes: 
+                                   tolerance: stopping tolerance for the search,
+                                   iter: the maximum number of iterations,
+                                   step: initial step for bracketing,
+                                   adaptive: whether to update line_step.
+                                   """, 
+                                   "options" : ["tolerance",  "iter", "step", "adaptive"],
+                                   "default" : [1e-5, 100, 1e-3, True] }),
                 "cg_old_force": (InputArray, {"dtype" : float,
                    "default"   : input_default(factory=np.zeros, args = (0,)),
                    "help"      : "The previous force in a CG optimization.",
@@ -77,12 +74,9 @@ class InputGeop(Input):
     default_label = "GEOP"   
 
     def store(self, geop):
-        if geop == {}: return self.fetch()
-        self.line_tolerance.store(geop.lin_tol) 
+        if geop == {}: return
+        self.line_search.store(geop.line_search)
         self.mode.store(geop.mode)
-        self.line_iter.store(geop.lin_iter)
-        self.line_step.store(geop.lin_step)
-        self.line_adaptive.store(geop.lin_auto)
         self.cg_old_force.store(geop.cg_old_f)
         self.cg_old_direction.store(geop.cg_old_d)
         self.grad_tolerance.store(geop.grad_tol)
@@ -90,18 +84,9 @@ class InputGeop(Input):
         
 		
     def fetch(self):		
-        return { "mode" : self.mode.fetch(),
-            "lin_tol" : self.line_tolerance.fetch(),
-            "lin_step" : self.line_step.fetch(),
-            "lin_iter" : self.line_iter.fetch(),
-            "lin_auto" : self.line_adaptive.fetch(),
-            "cg_old_f" : self.cg_old_force.fetch(),
-            "cg_old_d" : self.cg_old_direction.fetch(),
-            "grad_tol" : self.grad_tolerance.fetch(),
-            "max_step" : self.maximum_step.fetch() }
-        
-
-
+        rv = super(InputGeop,self).fetch()
+        rv["mode"] = self.mode.fetch()        
+        return rv
 		
 class InputMover(Input):    
    """Mover calculation input class.
@@ -129,7 +114,7 @@ class InputMover(Input):
                                     "help"         : "Indices of the atmoms that should be held fixed."}),
            "optimizer" : ( InputGeop, { "default" : {}, 
                                      "help":  "Option for geometry optimization" } ),
-           "file": (InputInitFile, {"default" : input_default(factory=ipi.engine.initializer.InitBase),
+           "file": (InputInitFile, {"default" : input_default(factory=ipi.engine.initializer.InitBase,kwargs={"mode":"xyz"}),
                            "help"            : "This describes the location to read a trajectory file from."})
          }
          
@@ -180,6 +165,7 @@ class InputMover(Input):
       elif self.mode.fetch() == "minimize":
          sc = GeopMover(fixcom=False, fixatoms=None, **self.optimizer.fetch() )
       else:
-         raise ValueError("'" + self.mode.fetch() + "' is not a supported mover calculation mode.")
+         sc = Mover()
+         #raise ValueError("'" + self.mode.fetch() + "' is not a supported mover calculation mode.")
 
       return sc

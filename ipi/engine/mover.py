@@ -235,11 +235,11 @@ class GeopMover(Mover):
 
    def __init__(self, fixcom=False, fixatoms=None,
              mode="sd", 
-             lin_iter=100, lin_step=1.0e-3, lin_tol=1.0e-6, lin_auto=True, 
-             grad_tol=1.0e-6, max_step=100.0,
-             cg_old_f=np.zeros(0, float),
-             cg_old_d=np.zeros(0, float),
-             invhessian=np.eye(0) ) :   
+             grad_tolerance=1.0e-6, maximum_step=100.0,
+             cg_old_force=np.zeros(0, float),
+             cg_old_direction=np.zeros(0, float),
+             invhessian=np.eye(0), line_search={ "tolerance": 1e-5,  "iter": 100.0 , "step": 1e-3, "adaptive":1.0 } ) :   
+                 
       """Initialises GeopMover.
 
       Args:
@@ -250,15 +250,12 @@ class GeopMover(Mover):
       super(GeopMover,self).__init__(fixcom=fixcom, fixatoms=fixatoms)
       
       # optimization options
+      self.line_search = line_search
       self.mode=mode
-      self.lin_tol = lin_tol
-      self.grad_tol = grad_tol
-      self.lin_iter = lin_iter
-      self.max_step = max_step
-      self.lin_step = lin_step
-      self.lin_auto = lin_auto
-      self.cg_old_f = cg_old_f
-      self.cg_old_d = cg_old_d
+      self.grad_tol = grad_tolerance
+      self.max_step = maximum_step
+      self.cg_old_f = cg_old_force
+      self.cg_old_d = cg_old_direction
       self.invhessian = invhessian
         
       self.lm = LineMover()
@@ -314,7 +311,8 @@ class GeopMover(Mover):
           print "self.beads.q:", self.beads.q
           print "self.bfgsm.d:", self.bfgsm.d
           print "invhessian:", self.invhessian
-          self.beads.q, fx, self.bfgsm.d, self.invhessian = BFGS(self.beads.q, self.bfgsm.d, self.bfgsm, fdf0=(u0, du0), invhessian=self.invhessian, max_step=self.max_step, tol=self.lin_tol, grad_tol=self.grad_tol, itmax=self.lin_iter)  #TODO: make object for inverse hessian and direction if necessary
+          self.beads.q, fx, self.bfgsm.d, self.invhessian = BFGS(self.beads.q, self.bfgsm.d, self.bfgsm, fdf0=(u0, du0), 
+              invhessian=self.invhessian, max_step=self.max_step, tol=self.line_search["tolerance"], grad_tol=self.grad_tol, itmax=self.line_search["iter"])  #TODO: make object for inverse hessian and direction if necessary
           print "AFTER"
           print "self.beads.q", self.beads.q
           print "self.bfgsm.d", self.bfgsm.d
@@ -362,9 +360,9 @@ class GeopMover(Mover):
           # reuse initial value since we have energy and forces already
           u0, du0 = (self.forces.pot, np.dot(depstrip(self.forces.f.flatten()), dq1_unit.flatten()))
 
-          (x, fx) = min_brent(self.lm, fdf0=(u0, du0), x0=0.0, tol=self.lin_tol, itmax=self.lin_iter, init_step=self.lin_step) 
+          (x, fx) = min_brent(self.lm, fdf0=(u0, du0), x0=0.0, tol=self.line_search["tolerance"], itmax=self.lin_iter, init_step=self.line_search["step"]) 
 
-          if self.lin_auto: self.lin_step = x # automatically adapt the search step for the next iteration
+          self.line_search["step"] = x * self.line_search["adaptive"] + (1-self.line_search["adaptive"]) * self.line_search["step"] # automatically adapt the search step for the next iteration
       
           self.beads.q += dq1_unit * x
 
