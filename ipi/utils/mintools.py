@@ -24,7 +24,7 @@ __all__ = [ "min_brent" ]
 
 import numpy as np
 import math
-from ipi.utils.messages import verbosity, warning
+from ipi.utils.messages import verbosity, warning, info
 
 def bracket(fdf, fdf0=None, x0=0.0, init_step=1.0e-3): 
 
@@ -48,6 +48,7 @@ def bracket(fdf, fdf0=None, x0=0.0, init_step=1.0e-3):
   fa, dfa = fdf0 
   bx = x0 + init_step
   fb, dfb = fdf(bx)
+  info(" @BRACKET: Evaluated first step", verbosity.debug)
 
   # Switch direction to move downhill, if necessary
   if fb > fa:
@@ -64,6 +65,7 @@ def bracket(fdf, fdf0=None, x0=0.0, init_step=1.0e-3):
   # Initial guess for third bracketing point
   cx = bx + gold * (bx - ax)
   fc, dfc = fdf(cx)
+  info(" @BRACKET: Evaluated initial bracket: (%f:%f, %f:%f, %f:%f)" % (ax, fa, bx, fb, cx, fc), verbosity.debug) 
 
   # Loop until acceptable bracketing condition is achieved
   # u is a point between two of the bracketing points
@@ -83,6 +85,7 @@ def bracket(fdf, fdf0=None, x0=0.0, init_step=1.0e-3):
     # - Use default magnification
     if ((bx - u) * (u - cx)) > 0.0:
       fu, dfu = fdf(u)
+      info(" @BRACKET: Evaluated new bracket point", verbosity.debug) 
       if fu < fc:
         ax = bx
         bx = u
@@ -100,8 +103,10 @@ def bracket(fdf, fdf0=None, x0=0.0, init_step=1.0e-3):
 
       u = cx + gold * (cx - bx)
       fu, dfu = fdf(u)
+      info(" @BRACKET: Evaluated new bracket point", verbosity.debug) 
     elif ((cx - u) * (u - ulim)) > 0.0:
       fu, dfu = fdf(u)
+      info(" @BRACKET: Evaluated new bracket point", verbosity.debug) 
       if fu < fc:
         bx = cx
         cx = u
@@ -111,12 +116,15 @@ def bracket(fdf, fdf0=None, x0=0.0, init_step=1.0e-3):
         dfb = dfc
         dfc = dfu
         fu, dfu = fdf(u)
+        info(" @BRACKET: Evaluated new bracket point", verbosity.debug) 
     elif ((u - ulim) * (ulim - cx)) >= 0.0:
       u = ulim
       fu, dfu = fdf(u)
+      info(" @BRACKET: Evaluated new bracket point", verbosity.debug) 
     else:
       u = cx + gold * (cx - bx)
       fu, dfu = fdf(u)
+      info(" @BRACKET: Evaluated new bracket point", verbosity.debug) 
 
     # Shift points
     ax = bx

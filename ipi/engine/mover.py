@@ -364,7 +364,7 @@ class GeopMover(Mover):
           # reuse initial value since we have energy and forces already
           u0, du0 = (self.forces.pot, np.dot(depstrip(self.forces.f.flatten()), dq1_unit.flatten()))
 
-          (x, fx) = min_brent(self.lm, fdf0=(u0, du0), x0=0.0, tol=self.ls_options["tolerance"], itmax=self.lin_iter, init_step=self.ls_options["step"]) 
+          (x, fx) = min_brent(self.lm, fdf0=(u0, du0), x0=0.0, tol=self.ls_options["tolerance"], itmax=self.ls_options["iter"], init_step=self.ls_options["step"]) 
 
           self.ls_options["step"] = x * self.ls_options["adaptive"] + (1-self.ls_options["adaptive"]) * self.ls_options["step"] # automatically adapt the search step for the next iteration
       
