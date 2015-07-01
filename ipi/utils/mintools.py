@@ -598,7 +598,7 @@ def BFGS(x0, d0, fdf, fdf0=None, invhessian=None, max_step=100, tol=1.0e-6, grad
 
 #    print "updating hessian"
 #    for j in range(0, n):
-#      for k in range(0, j):
+#      for k in range(j, n):
 #        invhessian[j,k] += fac * xi[j] * xi[k] - fad * hdg[j] * hdg[k] + fae * dg[j] * dg[k]
 #        invhessian[k,j] = invhessian[j,k]
     invhessian = invhessian + np.outer(xi, xi) * fac - np.outer(hdg, hdg) * fad + np.outer(dg, dg) * fae    
