@@ -37,6 +37,7 @@ from ipi.utils.io import read_file
 from ipi.utils.io.inputs.io_xml import xml_parse_file
 from ipi.utils.units import Constants, unit_to_internal
 from ipi.utils.mintools import min_brent, min_approx, BFGS
+from ipi.utils.messages import verbosity, warning, info
 
 class LineMover(object):
    """Creation of the one-dimensional function that will be minimized"""
@@ -113,6 +114,8 @@ class GeopMover(Mover):
       self.max_step = maximum_step
       self.cg_old_f = cg_old_force
       self.cg_old_d = cg_old_direction
+
+      # holds the hessian for BFGS
       self.invhessian = invhessian
         
       self.lm = LineMover()
@@ -141,43 +144,36 @@ class GeopMover(Mover):
       self.ptime = self.ttime = 0
       self.qtime = -time.time()
 
-      print "\nMD STEP %d\n" % step
+      info("\nMD STEP %d" % step, verbosity.debug)
 
       if (self.mode == "bfgs"):
 
           # BFGS Minimization
-          # Initialize approximate Hessian inverse and direction
+          # Initialize approximate Hessian inverse to the identity and direction
           # to the steepest descent direction
-          if step == 0:# or np.sqrt(np.dot(self.bfgsm.d, self.bfgsm.d)) == 0.0:
+          if step == 0: # or np.sqrt(np.dot(self.bfgsm.d, self.bfgsm.d)) == 0.0:
+              info(" @GEOP: Initializing BFGS", verbosity.debug)
               self.bfgsm.d = depstrip(self.forces.f) / np.sqrt(np.dot(self.forces.f.flatten(), self.forces.f.flatten()))
               self.invhessian = np.eye(len(self.beads.q.flatten()))
-              print "invhessian:", self.invhessian
               #invhessian = np.eye(n)
 
           # Current energy, forces, and function definitions
           # for use in BFGS algorithm
 
           u0, du0 = (self.forces.pot, - self.forces.f)
-          print "u0:", u0
-          print "du0:", du0
           
           # Do one iteration of BFGS, return new point, function value,
-          # derivative value, and current Hessian to build upon
+          # derivative value, and current Hessian to use for
           # next iteration
-          print "BEFORE"
-          print "self.beads.q:", self.beads.q
-          print "self.bfgsm.d:", self.bfgsm.d
-          print "invhessian:", self.invhessian
           self.beads.q, fx, self.bfgsm.d, self.invhessian = BFGS(self.beads.q, self.bfgsm.d, self.bfgsm, fdf0=(u0, du0), 
-              invhessian=self.invhessian, max_step=self.max_step, tol=self.ls_options["tolerance"], grad_tol=self.grad_tol, itmax=self.ls_options["iter"])  #TODO: make object for inverse hessian and direction if necessary
-          print "AFTER"
-          print "self.beads.q", self.beads.q
-          print "self.bfgsm.d", self.bfgsm.d
-          print "invhessian", self.invhessian
+              invhessian=self.invhessian, max_step=self.max_step, tol=self.ls_options["tolerance"], grad_tol=self.grad_tol, itmax=self.ls_options["iter"])  
+
+          info(" @GEOP: Updating bead positions", verbosity.debug)
 
       # Routine for steepest descent and conjugate gradient
       else:
           if (self.mode == "sd" or step == 0): 
+              info(" @GEOP: Determining search direction", verbosity.debug)
           
               # Steepest descent minimization
               # gradf1 = force at current atom position
@@ -189,6 +185,7 @@ class GeopMover(Mover):
               dq1_unit = dq1 / np.sqrt(np.dot(gradf1.flatten(), gradf1.flatten())) 
       
           else:
+              info(" @GEOP: Determining CG direction", verbosity.debug)
           
               # Conjugate gradient, Polak-Ribiere
               # gradf1: force at current atom position
@@ -222,6 +219,6 @@ class GeopMover(Mover):
           self.ls_options["step"] = x * self.ls_options["adaptive"] + (1-self.ls_options["adaptive"]) * self.ls_options["step"] # automatically adapt the search step for the next iteration
       
           self.beads.q += dq1_unit * x
-
+          info(" @GEOP: Updating bead positions", verbosity.debug)
 
       self.qtime += time.time()

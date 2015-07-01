@@ -16,7 +16,10 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <http.//www.gnu.org/licenses/>.
 
 Functions: 
-    min_brent:  Applies one-d minimization based on bisection method with derivatives.
+    bracket: Determines the 3 points that bracket the function minimum
+    min_brent:  Does one-D minimization (line search) based on bisection method with derivatives. Uses 'bracket' function.
+    min_approx: Does approximate n-D minimization (line search) based on sufficient function decrease in the search direction
+    BFGS: Constructs an approximate inverse Hessian to determine new search directions. Minimizes the function using 'min_approx' function.
     
 """
 
@@ -48,6 +51,7 @@ def bracket(fdf, fdf0=None, x0=0.0, init_step=1.0e-3):
   fa, dfa = fdf0 
   bx = x0 + init_step
   fb, dfb = fdf(bx)
+  info(" @BRACKET: Started bracketing", verbosity.debug)
   info(" @BRACKET: Evaluated first step", verbosity.debug)
 
   # Switch direction to move downhill, if necessary
@@ -69,12 +73,11 @@ def bracket(fdf, fdf0=None, x0=0.0, init_step=1.0e-3):
 
   # Loop until acceptable bracketing condition is achieved
   # u is a point between two of the bracketing points
-  # Use parabolic extrapolation to find u. "tiny" prevents possible div$
+  # Use parabolic extrapolation to find u. "tiny" prevents possible division by zero
   while fb > fc:
     r = (bx - ax) * (fb - fc)
     q = (bx - cx) * (fb - fa)
     u = bx - ((bx - cx) * q - (bx - ax) * r) / (2.0 * math.copysign(max(abs(q - r), tiny), (q - r))) # Point from parabolic fit
-
     ulim = bx + glimit * (cx - bx) # Limit for parabolic fit point; *Can test various possibilities*
 
     # Find minimums between b and c or a and u
@@ -93,12 +96,14 @@ def bracket(fdf, fdf0=None, x0=0.0, init_step=1.0e-3):
         fb = fu
         dfa = dfb
         dfb = dfu
+        info(" @BRACKET: Bracketing completed: (%f:%f, %f:%f, %f:%f)" % (ax, fa, bx, fb, cx, fc), verbosity.debug)
         return (ax, bx, cx, fb, dfb)
 
       elif fu > fb:
         cx = u
         fc = fu
         dfc = dfu
+        info(" @BRACKET: Bracketing completed", verbosity.debug)
         return (ax, bx, cx, fb, dfb)
 
       u = cx + gold * (cx - bx)
@@ -136,6 +141,8 @@ def bracket(fdf, fdf0=None, x0=0.0, init_step=1.0e-3):
     dfa = dfb
     dfb = dfc
     dfc = dfu
+
+  info(" @BRACKET: Bracketing completed: (%f:%f, %f:%f, %f:%f)" % (ax, fa, bx, fb, cx, fc), verbosity.debug)
   return (ax, bx, cx, fb, dfb)
 
 # One dimensional minimization function using function derivatives
@@ -179,6 +186,7 @@ def min_brent(fdf, fdf0=None, x0=0.0, tol=1.0e-6, itmax=100, init_step=1.0e-3):
   
   # Main loop
   j = 1
+  info(" @MINIMIZE: Started 1D minimization", verbosity.debug)
   while j <= itmax:
 
     # Determine tolerance
@@ -188,6 +196,7 @@ def min_brent(fdf, fdf0=None, x0=0.0, tol=1.0e-6, itmax=100, init_step=1.0e-3):
 
     # Test for satisfactory completion
     if abs(x - xm) <= (tol2 - 0.5 * (b - a)):
+      info(" @MINIMIZE: Finished minimization, energy = %f" % fx, verbosity.debug)
       return (x, fx)
 
     # Initialize d values to outside of bracket
@@ -252,6 +261,7 @@ def min_brent(fdf, fdf0=None, x0=0.0, tol=1.0e-6, itmax=100, init_step=1.0e-3):
      
       # If minimum step goes uphill, minimum has been found
       if fu > fx:
+        info(" @MINIMIZE: Finished minimization, energy = %f" % fx, verbosity.debug)
         return (x, fx)
         
     if fu <= fx:
@@ -287,7 +297,8 @@ def min_brent(fdf, fdf0=None, x0=0.0, tol=1.0e-6, itmax=100, init_step=1.0e-3):
     j += 1
   
   # Exit if maximum number of iterations exceeded
-  print "Error: Maximum iterations exceeded:", itmax
+  info(" @MINIMIZE: Error -- maximum iterations for minimization (%d) exceeded, exiting minimization" % itmax, verbosity.low)
+  info(" @MINIMIZE: Finished minimization, energy = %f" % fx, verbosity.debug)
   return (x, fx)
 
 def min_approx(fdf, x0, fdf0=None, d0=None, max_step=100.0, tol=1.0e-6, itmax=100):
@@ -302,21 +313,19 @@ def min_approx(fdf, x0, fdf0=None, d0=None, max_step=100.0, tol=1.0e-6, itmax=10
       d0 = n-dimensional initial direction
       p0 = n-dimensional initial point
       max_step = maximum step size
+    NOTE: commented loops (for j in range ...) are alternative constructions
+    to using NumPy for vector/matrix manipulation
   """
   
-  print "\n-----in min_approx-----"
-
   # Initializations and constants
+  info(" @MINIMIZE: Started approx. line search for BFGS", verbosity.debug) 
   stepsum = 0.0
   n = len(x0.flatten())
-  print "n:", n
   if fdf0 is None: fdf0 = fdf(x0)
   f0, df0 = fdf0
   if d0 is None: d0 = -df0 / np.sqrt(np.dot(df0.flatten(), df0.flatten()))
   x = np.zeros(n)
   alf = 1.0e-4
-  print "f0:", f0
-  print "d0:", d0
 
   stepsum = np.sqrt(np.dot(d0.flatten(), d0.flatten()))
 #  for j in range(0, n):
@@ -326,7 +335,7 @@ def min_approx(fdf, x0, fdf0=None, d0=None, max_step=100.0, tol=1.0e-6, itmax=10
 
   # Scale if attempted step is too large
   if stepsum > max_step:
-    print "stepsum > max_step"
+    info(" @MINIMIZE: Scaled step size for line search", verbosity.debug)
     d0 = np.multiply(d0, max_step / stepsum)
 #    for j in range(0, n):
 #      d0[j] *= max_step / stepsum
@@ -334,18 +343,16 @@ def min_approx(fdf, x0, fdf0=None, d0=None, max_step=100.0, tol=1.0e-6, itmax=10
 #  slope = 0.0
 
   slope = np.dot(df0.flatten(), d0.flatten())
-  print "slope:", slope
 #  for j in range(0, n):
 #    slope += df0[j] * d0[j]
 
   if slope >= 0.0:
-    print "Roundoff error in min_approx"
+    info(" @MINIMIZE: Warning -- gradient is >= 0 (%f)" % slope, verbosity.low)
 
   # Compute coefficient for Newton step
 #  test = 0.0
 
   test = np.amax(np.divide(np.absolute(d0), np.maximum(np.absolute(x0), np.ones(n))))
-  print "test:", test
 #  for j in range (0, n):
 #    tmp = abs(d0[j]) / max(abs(x0[j]), 1.0)
 #    if tmp > test:
@@ -353,19 +360,14 @@ def min_approx(fdf, x0, fdf0=None, d0=None, max_step=100.0, tol=1.0e-6, itmax=10
 
   # Setup to try Newton step first
   alamin = tol / test
-  print "alamin:", alamin
   alam = 1.0
 
   # Minimization Loop
   i = 1
   while i < itmax:
-
-    print "min iter:", i
-
     x = np.add(x0, (alam * d0))
     fx, dfx = fdf(x)
-    print "fx:", fx
-    print "x:", x
+    info(" @MINIMIZE: Calculated energy", verbosity.debug)
 #    for j in range(0, n):
 #      x[j] = x0[j] + alam * d0[j]
 #      fx, dfx = fdf(x)
@@ -373,85 +375,58 @@ def min_approx(fdf, x0, fdf0=None, d0=None, max_step=100.0, tol=1.0e-6, itmax=10
     # Check for convergence on change in x; exit
     if alam < alamin:
       x = x0
-      print "alam < alamin; convergence in x"
+      info(" @MINIMIZE: Convergence in position, exited line search", verbosity.debug)
 #      for j in range(0, n):
 #        x[j] = x0[j]
-      print "x:", x
-      print "fx:", fx
       return (x, fx)
 
     # Sufficient function decrease; exit
     elif fx <= (f0 + alf * alam * slope):
-      print "fx <= (f0 + alf ...); sufficient decrease"
-      print "x:", x
-      print "fx:", fx
+      info(" @MINIMIZE: Sufficient function decrease, exited line search", verbosity.debug)
       return (x, fx)
 
     # No convergence; backtrack
     else:
-      print "alam > alamin, fx > (f0 + alf ...); backtrack"
+      info(" @MINIMIZE: No convergence on step; backtrack to find point", verbosity.debug)
 
       # First backtrack
       if alam == 1.0:
-        print "first backtrack"
         tmplam = -slope / (2.0 * (fx - f0 - slope))
-        print "tmplam:", tmplam
       
       # Subsequent backtracks
       else:
-        print "other backtrack"
         rhs1 = fx - f0 - alam * slope
         rhs2 = f2 - f0 - alam2 * slope
         a = (rhs1 / (alam * alam) - rhs2 / (alam2 * alam2)) / (alam - alam2)
         b = (-alam2 * rhs1 / (alam * alam) + alam * rhs2 / (alam2 * alam2)) / (alam - alam2)
-        print "rhs1:", rhs1
-        print "rhs2:", rhs2
-        print "a:", a
-        print "b:", b
         if a == 0.0:
-          print "a == 0.0"
           tmplam = -slope / (2.0 * b)
-          print "tmplam:", tmplam
         
         else:
-          print "find coefficient"
           disc = b * b - 3.0 * a * slope
-          print "disc:", disc
           if disc < 0.0:
-            print "disc < 0"
             tmplam = 0.5 * alam
-            print "tmplam:", tmplam
 
           elif b <= 0.0:
-            print "b <= 0.0"
             tmplam = (-b + np.sqrt(disc)) / (3.0 * a)
-            print "tmplam", tmplam
 
           else:
-            print "disc > 0, b > 0"
             tmplam = -slope / (b + np.sqrt(disc))
-            print "tmplam:", tmplam
 
           # Coefficient less than 0.5 * lambda_1
           if tmplam > (0.5 * alam):
-            print "tmplam > (0.5 * alam)"
             tmplam = 0.5 * alam
-            print "tmplam:", tmplam
 
     alam2 = alam
     f2 = fx
-    print "alam2:", alam2
-    print "f2:", f2
 
     # Coefficient greater than 0.1 * lambda_1
     alam = max(tmplam, 0.1 * alam)
-    print "alam:", alam
 
     i += 1
 
-  print "Maximum iterations exceeded in line minimization"
-  print "x:", x
-  print "fx:", fx
+  info(" @MINIMIZE: Error - maximum iterations for line search (%d) exceeded, exiting search" % itmax, verbosity.low)
+  info(" @MINIMIZE: Finished minimization, energy = %f" % fx, verbosity.debug)
   return (x, fx)
     
 def BFGS(x0, d0, fdf, fdf0=None, invhessian=None, max_step=100, tol=1.0e-6, grad_tol=1.0e-6, itmax=100):
@@ -466,10 +441,10 @@ def BFGS(x0, d0, fdf, fdf0=None, invhessian=None, max_step=100, tol=1.0e-6, grad
       max_step = limit on step length
       tol = convergence tolerance
       itmax = maximum number of allowed iterations
+    NOTE: commented loops (for j in range ...) are alternative constructions
+    to using NumPy for vector/matrix manipulation
   """
   
-  print "\n-----in BFGS-----"
-
   # Original function value, gradient, other initializations
   zeps = 1.0e-10
   if fdf0 is None: fdf0 = fdf(x0)
@@ -480,16 +455,10 @@ def BFGS(x0, d0, fdf, fdf0=None, invhessian=None, max_step=100, tol=1.0e-6, grad
   g = df0.flatten()
   hdg = np.zeros(n)
   x = np.zeros(n)
-  print "n:", n
-  print "g:", g
-  #xi = -g
-  #invhessian = np.eye(n)
   linesum = np.dot(x0.flatten(), x0.flatten())
-  #invhessian = np.zeros((n, n))
   
   # Initial line direction
   xi = d0
-  print "xi:", xi
 
 #  for j in range(0, n):
 #    for k in range(0, n):
@@ -499,7 +468,6 @@ def BFGS(x0, d0, fdf, fdf0=None, invhessian=None, max_step=100, tol=1.0e-6, grad
 
   # Maximum step size
   max_step = max_step * max(np.sqrt(linesum), n)
-  print "max_step:", max_step
 
  # i = 0 
   #while i <= itmax:
@@ -507,11 +475,11 @@ def BFGS(x0, d0, fdf, fdf0=None, invhessian=None, max_step=100, tol=1.0e-6, grad
   # Perform approximate line minimization in direction d0
   x, fx = min_approx(fdf, x0, fdf0, xi, max_step, tol, itmax) # must return vectors
 
+  info(" @MINIMIZE: Started BFGS", verbosity.debug)
+
   # Update line direction (xi) and current point (x0)
   xi = np.subtract(x, x0).flatten()
   x0 = x
-  print "xi:", xi
-  print "x0:", x0
 
     #for j in range(0, n):
      # xi[j] = x[j] - x0[j]
@@ -520,34 +488,29 @@ def BFGS(x0, d0, fdf, fdf0=None, invhessian=None, max_step=100, tol=1.0e-6, grad
   # Test for convergence on step size
 #  test = 0.0
   test = np.amax(np.divide(np.absolute(xi), np.maximum(np.absolute(x0), np.ones(n))))
-  print "test:", test
 #    for j in range(0, n):
 #      tmp = abs(xi[j]) / max(abs(x0[j]), 1.0))
 #      if tmp > test:
 #        test = tmp
 
   if test < tol:
-    print "test < tol; tolerance convergence"
-    print "invhessian:", invhessian
+    info(" @MINIMIZE: Convergence on tolerance, exited BFGS, energy = %f" % fx, verbosity.debug)
     return (x, fx, xi, invhessian)
 
   # Store old gradient
   dg = g
-  print "dg:", dg
 
 #    for j in range(0, n):
 #      dg[j] = g[j]
       
   # Get new gradient    
   unused, g = fdf(x0)
-  print "g:", g
+  info(" @MINIMIZE: Updated gradient", verbosity.debug)
   g = g.flatten()
   test = 0.0
   den = max(fx, 1.0)
-  print "den:", den
 
   test = np.amax(np.divide(np.multiply(np.absolute(g), np.maximum(np.absolute(x0), np.ones(n))), den))
-  print "test:", test
 #    for j in range(0, n):
 #      tmp = abs(g[j]) * max(abs(x0[j]), 1.0)) / den
 #      if tmp > test:
@@ -555,13 +518,11 @@ def BFGS(x0, d0, fdf, fdf0=None, invhessian=None, max_step=100, tol=1.0e-6, grad
 
   # Test for convergence on zero gradient
   if test < grad_tol:
-    print "test < grad_tol; tolerance on zero gradient"
-    print "invhessian:", invhessian
+    info(" @MINIMIZE: Convergence on zero gradient, exited BFGS, energy = %f" % fx, verbosity.debug)
     return (x, fx, xi, invhessian)
 
   # Compute difference of gradients
   dg = np.subtract(g, dg)
-  print "dg:", dg
 
 #    for j in range(0, n):
 #      dg[j] = g[j] - dg[j]
@@ -573,17 +534,11 @@ def BFGS(x0, d0, fdf, fdf0=None, invhessian=None, max_step=100, tol=1.0e-6, grad
 #      hdg[j] += invhessian[j][k] * dg[k]
   hdg = np.dot(invhessian, dg)
   
-  print "hdg:", hdg
-
 #    fac = fae = sumdg = sumxi = 0.0
   fac = np.dot(dg.flatten(), xi.flatten())
   fae = np.dot(dg.flatten(), hdg.flatten())
   sumdg = np.dot(dg.flatten(), dg.flatten())
   sumxi = np.dot(xi.flatten(), xi.flatten())
-  print "fac:", fac
-  print "fae:", fae
-  print "sumdg:", sumdg
-  print "sumxi:", sumxi
 #    for j in range(0, n):
 #      fac += dg[j] * xi[j]
 #      fae += dg[j] * hdg[j]
@@ -592,15 +547,12 @@ def BFGS(x0, d0, fdf, fdf0=None, invhessian=None, max_step=100, tol=1.0e-6, grad
 
   # Skip update if not 'fac' sufficiently positive
   if fac > np.sqrt(zeps * sumdg * sumxi):
-    print "fac > sqrt(zeps * sumdg * sumxi)"
+    info(" @MINIMIZE: Skipped hessian update; direction x gradient insufficient", verbosity.debug)
     fac = 1.0 / fac
     fad = 1.0 / fae
-    print "fac:", fac
-    print "fad:", fad
 
     # Compute BFGS term
     dg = np.subtract(fac * xi, fad * hdg)
-    print "dg:", dg
 #      for j in range(0, n):
 #        dg[j] = fac * xi[j] - fad * hdg[j]
 
@@ -610,17 +562,15 @@ def BFGS(x0, d0, fdf, fdf0=None, invhessian=None, max_step=100, tol=1.0e-6, grad
 #        invhessian[j,k] += fac * xi[j] * xi[k] - fad * hdg[j] * hdg[k] + fae * dg[j] * dg[k]
 #        invhessian[k,j] = invhessian[j,k]
     invhessian = invhessian + np.outer(xi, xi) * fac - np.outer(hdg, hdg) * fad + np.outer(dg, dg) * fae    
+    info(" @MINIMIZE: Updated hessian", verbosity.debug)
 
   # Update direction
-  print "updating direction"
 #  for j in range(0, n):
 #    xi[j] = 0.0
 #    for k in range(0, n):
 #      xi[j] -= invhessian[j][k] * g[k]
   xi = np.dot(invhessian, -g)
-  print "xi:", xi
-  print "invhessian:", invhessian
-
+  info(" @MINIMIZE: Updated search direction", verbosity.debug)
   return (x, fx, xi, invhessian)
 
 
