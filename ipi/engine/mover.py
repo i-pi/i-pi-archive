@@ -238,7 +238,10 @@ class GeopMover(Mover):
              grad_tolerance=1.0e-6, maximum_step=100.0,
              cg_old_force=np.zeros(0, float),
              cg_old_direction=np.zeros(0, float),
-             invhessian=np.eye(0), line_search={ "tolerance": 1e-5,  "iter": 100.0 , "step": 1e-3, "adaptive":1.0 } ) :   
+             invhessian=np.eye(0), 
+             ls_options={ "tolerance": 1e-5,  "iter": 100.0 , "step": 1e-3, "adaptive":1.0 } ,
+             tolerances = {"energy" : 1e-5, "force": 1e-5, "position": 1e-5}
+             ) :   
                  
       """Initialises GeopMover.
 
@@ -250,7 +253,8 @@ class GeopMover(Mover):
       super(GeopMover,self).__init__(fixcom=fixcom, fixatoms=fixatoms)
       
       # optimization options
-      self.line_search = line_search
+      self.ls_options = ls_options
+      self.tolerances = tolerances
       self.mode=mode
       self.grad_tol = grad_tolerance
       self.max_step = maximum_step
@@ -312,7 +316,7 @@ class GeopMover(Mover):
           print "self.bfgsm.d:", self.bfgsm.d
           print "invhessian:", self.invhessian
           self.beads.q, fx, self.bfgsm.d, self.invhessian = BFGS(self.beads.q, self.bfgsm.d, self.bfgsm, fdf0=(u0, du0), 
-              invhessian=self.invhessian, max_step=self.max_step, tol=self.line_search["tolerance"], grad_tol=self.grad_tol, itmax=self.line_search["iter"])  #TODO: make object for inverse hessian and direction if necessary
+              invhessian=self.invhessian, max_step=self.max_step, tol=self.ls_options["tolerance"], grad_tol=self.grad_tol, itmax=self.ls_options["iter"])  #TODO: make object for inverse hessian and direction if necessary
           print "AFTER"
           print "self.beads.q", self.beads.q
           print "self.bfgsm.d", self.bfgsm.d
@@ -360,9 +364,9 @@ class GeopMover(Mover):
           # reuse initial value since we have energy and forces already
           u0, du0 = (self.forces.pot, np.dot(depstrip(self.forces.f.flatten()), dq1_unit.flatten()))
 
-          (x, fx) = min_brent(self.lm, fdf0=(u0, du0), x0=0.0, tol=self.line_search["tolerance"], itmax=self.lin_iter, init_step=self.line_search["step"]) 
+          (x, fx) = min_brent(self.lm, fdf0=(u0, du0), x0=0.0, tol=self.ls_options["tolerance"], itmax=self.lin_iter, init_step=self.ls_options["step"]) 
 
-          self.line_search["step"] = x * self.line_search["adaptive"] + (1-self.line_search["adaptive"]) * self.line_search["step"] # automatically adapt the search step for the next iteration
+          self.ls_options["step"] = x * self.ls_options["adaptive"] + (1-self.ls_options["adaptive"]) * self.ls_options["step"] # automatically adapt the search step for the next iteration
       
           self.beads.q += dq1_unit * x
 

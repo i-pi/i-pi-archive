@@ -43,7 +43,7 @@ class InputGeop(InputDictionary):
                                     "help"    : "The geometry optimization algorithm to be used",
                                     "options" : ['sd', 'cg', 'bfgs']}) }
    
-    fields = { "line_search" : ( InputDictionary, {"dtype" : float, 
+    fields = { "ls_options" : ( InputDictionary, {"dtype" : float, 
                                "help" : """"Options for line search methods. Includes: 
                                    tolerance: stopping tolerance for the search,
                                    iter: the maximum number of iterations,
@@ -51,7 +51,10 @@ class InputGeop(InputDictionary):
                                    adaptive: whether to update line_step.
                                    """, 
                                    "options" : ["tolerance",  "iter", "step", "adaptive"],
-                                   "default" : [1e-5, 100, 1e-3, True] }),
+                                   "default" : [1e-5, 100, 1e-3, True] }),       
+                "tolerances" : ( InputDictionary, {"dtype" : float, 
+                               "options" : [ "energy", "gradient", "position" ],
+                               "default" : [ 1e-8, 1e-8, 1e-8 ] }),
                 "cg_old_force": (InputArray, {"dtype" : float,
                    "default"   : input_default(factory=np.zeros, args = (0,)),
                    "help"      : "The previous force in a CG optimization.",
@@ -75,7 +78,8 @@ class InputGeop(InputDictionary):
 
     def store(self, geop):
         if geop == {}: return
-        self.line_search.store(geop.line_search)
+        self.ls_options.store(geop.ls_options)
+        self.tolerances.store(geop.tolerances)
         self.mode.store(geop.mode)
         self.cg_old_force.store(geop.cg_old_f)
         self.cg_old_direction.store(geop.cg_old_d)
@@ -130,7 +134,7 @@ class InputMover(Input):
          sc: A mover calculation class.
       """
 
-      super(InputMover,self).store(sc)    
+      super(InputMover,self).store(sc)
       tsc = -1
       if type(sc) is Mover:
           self.mode.store("dummy")

@@ -17,7 +17,7 @@
    </forces>
    <mover mode='minimize'>
      <optimizer mode="sd">
-        <line_search> <step> 1.e-2 </step> <adaptive> 0 </adaptive> </line_search>
+        <ls_options> <step> 1.e-2 </step> <adaptive> 0 </adaptive> </ls_options>
      </optimizer>
    </mover>
 </system>
