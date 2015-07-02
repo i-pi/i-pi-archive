@@ -17,7 +17,7 @@
    </forces>
    <mover mode='minimize'>
      <optimizer mode="sd">
-        <ls_options> <step> 1.e-2 </step> <adaptive> 1 </adaptive> </ls_options>
+        <ls_options> <step> 1.e-2 </step> <adaptive> True </adaptive> </ls_options>
      </optimizer>
    </mover>
 </system>

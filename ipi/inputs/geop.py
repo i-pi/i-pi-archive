@@ -43,7 +43,7 @@ class InputGeop(InputDictionary):
                                     "help"    : "The geometry optimization algorithm to be used",
                                     "options" : ['sd', 'cg', 'bfgs']}) }
    
-    fields = { "ls_options" : ( InputDictionary, {"dtype" : float, 
+    fields = { "ls_options" : ( InputDictionary, {"dtype" : [ float, int, float, bool ], 
                                "help" : """"Options for line search methods. Includes: 
                                    tolerance: stopping tolerance for the search,
                                    iter: the maximum number of iterations,
@@ -51,10 +51,12 @@ class InputGeop(InputDictionary):
                                    adaptive: whether to update line_step.
                                    """, 
                                    "options" : ["tolerance",  "iter", "step", "adaptive"],
-                                   "default" : [1e-5, 100, 1e-3, True] }),       
+                                   "default" : [1e-5, 100, 1e-3, True],
+                                   "dimension": ["energy", "undefined", "length", "undefined" ] }),       
                 "tolerances" : ( InputDictionary, {"dtype" : float, 
                                "options" : [ "energy", "gradient", "position" ],
-                               "default" : [ 1e-8, 1e-8, 1e-8 ] }),
+                               "default" : [ 1e-8, 1e-8, 1e-8 ],
+                               "dimension": [ "energy", "force", "length" ] }),
                 "cg_old_force": (InputArray, {"dtype" : float,
                    "default"   : input_default(factory=np.zeros, args = (0,)),
                    "help"      : "The previous force in a CG optimization.",
