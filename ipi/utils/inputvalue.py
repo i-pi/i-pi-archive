@@ -197,7 +197,7 @@ class Input(object):
       self._explicit = False #Since the value was not set by the user
 
    def store(self, value=None):
-      """Base function for storing data passed as a dictionary"""
+      """Base function for storing data"""
 
       self._explicit = True      
       pass
@@ -659,31 +659,40 @@ class InputDictionary(Input):
       
       
       if hasattr(options,"__len__"):
-         if hasattr(default,"__len__"):        
-            if len(options)!=len(default): 
-               raise ValueError("Default values list does not match dictionay options length")
-            defop = dict(zip(options, map(dtype, default)))                        
-         else:
-            default = np.zeros(len(options),dtype)
-            defop = None
-         
-         
-         # adds new fields built from the options list
          self.instancefields = {}
-         for o, d in zip(options, default):
-             self.instancefields[o] = ( InputValue, { "dtype": dtype, "dimension" : dimension, "default": d} )
-                 
-         super(InputDictionary,self).__init__(help=help, default = defop) # deferred initialization
+         opdef = {}
+         for i in range(len(options)): 
+            nfield = {}
+            if hasattr(default,"__len__"):        
+               if len(options)!=len(default): 
+                  raise ValueError("Default values list does not match dictionay options length")
+               nfield["default"] = default[i]
+            else: nfield["default"] = default            
+            if hasattr(dtype,"__len__"):        
+               if len(options)!=len(dtype): 
+                  raise ValueError("Type list does not match dictionay options length")
+               nfield["dtype"] = dtype[i]
+            else: nfield["dtype"] = dtype
+            if hasattr(dimension,"__len__"):        
+               if len(options)!=len(dimension): 
+                  raise ValueError("Type list does not match dictionay options length")
+               nfield["dimension"] = dimension[i]
+            else: nfield["dimension"] = dimension
+            
+            opdef[options[i]] = nfield["default"]
+            
+            self.instancefields[options[i]] = ( InputValue, nfield )
+         super(InputDictionary,self).__init__(help=help, default=opdef) # deferred initialization         
       else:
          super(InputDictionary,self).__init__(help=help, default=default)
       
     
    def store(self, value={}):
       """Base function for storing data passed as a dictionary"""
-
+      
       self._explicit = True       
       for f, v in value.iteritems():
-          self.__dict__[f].store(value[f])
+          self.__dict__[f].store(value[f])      
       pass
 
    def fetch(self):
