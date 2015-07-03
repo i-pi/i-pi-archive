@@ -66,7 +66,7 @@ class BFGSMover(object):
    """ Creation of the multi-dimensional function that will be minimized"""
 
    def __init__(self):
-      self.x0 = self.d = None
+      self.x0 = self.d = self.xold = None
 
    def bind(self, ens):
       self.dbeads = ens.beads.copy()
@@ -88,13 +88,13 @@ class GeopMover(Mover):
    """
 
    def __init__(self, fixcom=False, fixatoms=None,
-             mode="sd", 
-             grad_tolerance=1.0e-6, maximum_step=100.0,
-             cg_old_force=np.zeros(0, float),
-             cg_old_direction=np.zeros(0, float),
-             invhessian=np.eye(0), 
-             ls_options={ "tolerance": 1e-5,  "iter": 100.0 , "step": 1e-3, "adaptive":1.0 } ,
-             tolerances = {"energy" : 1e-5, "force": 1e-5, "position": 1e-5}
+             mode = "sd", 
+             maximum_step = 100.0,
+             cg_old_force = np.zeros(0, float),
+             cg_old_direction = np.zeros(0, float),
+             invhessian = np.eye(0, 0, 0, float), 
+             ls_options = { "tolerance": 1e-6, "gradtolerance": 1e-6, "iter": 100.0 , "step": 1e-3, "adaptive":1.0 } ,
+             tolerances = {"energy" : 1e-8, "force": 1e-8, "position": 1e-8}
              ) :   
                  
       """Initialises GeopMover.
@@ -109,13 +109,10 @@ class GeopMover(Mover):
       # optimization options
       self.ls_options = ls_options
       self.tolerances = tolerances
-      self.mode=mode
-      self.grad_tol = grad_tolerance
+      self.mode = mode
       self.max_step = maximum_step
       self.cg_old_f = cg_old_force
       self.cg_old_d = cg_old_direction
-
-      # holds the hessian for BFGS
       self.invhessian = invhessian
         
       self.lm = LineMover()
@@ -134,6 +131,11 @@ class GeopMover(Mover):
             self.cg_old_d = np.zeros(beads.q.size, float)
          else: 
             raise ValueError("Conjugate gradient direction size does not match system size")
+      if self.invhessian.size != (beads.q.size * beads.q.size):
+          if self.invhessian.size == 0:
+              self.invhessian = np.eye(beads.q.size, beads.q.size, 0, float)
+          else:
+            raise ValueError("Inverse Hessian size does not match system size")
             
       self.lm.bind(self)
       self.bfgsm.bind(self)
@@ -151,22 +153,30 @@ class GeopMover(Mover):
           # BFGS Minimization
           # Initialize approximate Hessian inverse to the identity and direction
           # to the steepest descent direction
-          if step == 0: # or np.sqrt(np.dot(self.bfgsm.d, self.bfgsm.d)) == 0.0:
+          if step == 0: # or np.sqrt(np.dot(self.bfgsm.d, self.bfgsm.d)) == 0.0: <-- this part for restarting at claimed minimum
               info(" @GEOP: Initializing BFGS", verbosity.debug)
               self.bfgsm.d = depstrip(self.forces.f) / np.sqrt(np.dot(self.forces.f.flatten(), self.forces.f.flatten()))
-              self.invhessian = np.eye(len(self.beads.q.flatten()))
-              #invhessian = np.eye(n)
+              #self.invhessian = np.eye(len(self.beads.q.flatten()))
+              self.xold = self.beads.q.copy()
 
           # Current energy, forces, and function definitions
           # for use in BFGS algorithm
 
-          u0, du0 = (self.forces.pot, - self.forces.f)
+          u0, du0 = (self.forces.pot.copy(), - self.forces.f)
+          self.cg_old_f[:] = self.forces.f
           
           # Do one iteration of BFGS, return new point, function value,
           # derivative value, and current Hessian to use for
           # next iteration
-          self.beads.q, fx, self.bfgsm.d, self.invhessian = BFGS(self.beads.q, self.bfgsm.d, self.bfgsm, fdf0=(u0, du0), 
-              invhessian=self.invhessian, max_step=self.max_step, tol=self.ls_options["tolerance"], grad_tol=self.grad_tol, itmax=self.ls_options["iter"])  
+          self.beads.q, fx, self.bfgsm.d, self.invhessian = BFGS(self.beads.q, 
+              self.bfgsm.d, self.bfgsm, fdf0=(u0, du0), invhessian=self.invhessian, 
+              max_step=self.max_step, tol=self.ls_options["tolerance"], 
+              grad_tol=self.ls_options["gradtolerance"], itmax=self.ls_options["iter"])  
+
+          deltax = self.beads.q - self.xold
+          #x = np.sqrt(np.dot(deltax.flatten(), deltax.flatten()))
+          x = np.amax(np.absolute(np.subtract(self.beads.q, self.xold)))
+          self.xold = self.beads.q.copy()
 
           info(" @GEOP: Updating bead positions", verbosity.debug)
 
@@ -212,13 +222,23 @@ class GeopMover(Mover):
           self.lm.set_dir(depstrip(self.beads.q), dq1_unit)
 
           # reuse initial value since we have energy and forces already
-          u0, du0 = (self.forces.pot, np.dot(depstrip(self.forces.f.flatten()), dq1_unit.flatten()))
+          u0, du0 = (self.forces.pot.copy(), np.dot(depstrip(self.forces.f.flatten()), dq1_unit.flatten()))
 
-          (x, fx) = min_brent(self.lm, fdf0=(u0, du0), x0=0.0, tol=self.ls_options["tolerance"], itmax=self.ls_options["iter"], init_step=self.ls_options["step"]) 
+          (x, fx) = min_brent(self.lm, fdf0=(u0, du0), x0=0.0, 
+                  tol=self.ls_options["tolerance"], 
+                  itmax=self.ls_options["iter"], init_step=self.ls_options["step"]) 
 
-          self.ls_options["step"] = x * self.ls_options["adaptive"] + (1-self.ls_options["adaptive"]) * self.ls_options["step"] # automatically adapt the search step for the next iteration
+          self.ls_options["step"] = 0.1 * x * self.ls_options["adaptive"] + (1 - self.ls_options["adaptive"]) * self.ls_options["step"] # automatically adapt the search step for the next iteration. Relaxes better with very small step --> multiply by factor of 0.1 or 0.01
       
           self.beads.q += dq1_unit * x
           info(" @GEOP: Updating bead positions", verbosity.debug)
 
       self.qtime += time.time()
+      
+      # Determine conditions for converged relaxation
+      if ((fx - u0) / self.beads.natoms <= self.tolerances["energy"])\
+          and ((np.amax(np.absolute(self.forces.f)) <= self.tolerances["force"])\
+              or (np.sqrt(np.dot(self.forces.f.flatten() - self.cg_old_f.flatten(),\
+                  self.forces.f.flatten() - self.cg_old_f.flatten())) == 0.0))\
+          and (x <= self.tolerances["position"]):
+          softexit.trigger("Geometry optimization converged. Exiting simulation")

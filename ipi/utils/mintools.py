@@ -447,6 +447,7 @@ def BFGS(x0, d0, fdf, fdf0=None, invhessian=None, max_step=100, tol=1.0e-6, grad
   
   # Original function value, gradient, other initializations
   zeps = 1.0e-10
+  #if grad_tol is None: grad_tol = tol
   if fdf0 is None: fdf0 = fdf(x0)
   f0, df0 = fdf0
   n = len(x0.flatten())
@@ -533,7 +534,7 @@ def BFGS(x0, d0, fdf, fdf0=None, invhessian=None, max_step=100, tol=1.0e-6, grad
 #    for k in range(0, n):
 #      hdg[j] += invhessian[j][k] * dg[k]
   hdg = np.dot(invhessian, dg)
-  
+
 #    fac = fae = sumdg = sumxi = 0.0
   fac = np.dot(dg.flatten(), xi.flatten())
   fae = np.dot(dg.flatten(), hdg.flatten())
@@ -547,7 +548,6 @@ def BFGS(x0, d0, fdf, fdf0=None, invhessian=None, max_step=100, tol=1.0e-6, grad
 
   # Skip update if not 'fac' sufficiently positive
   if fac > np.sqrt(zeps * sumdg * sumxi):
-    info(" @MINIMIZE: Skipped hessian update; direction x gradient insufficient", verbosity.debug)
     fac = 1.0 / fac
     fad = 1.0 / fae
 
@@ -563,7 +563,9 @@ def BFGS(x0, d0, fdf, fdf0=None, invhessian=None, max_step=100, tol=1.0e-6, grad
 #        invhessian[k,j] = invhessian[j,k]
     invhessian = invhessian + np.outer(xi, xi) * fac - np.outer(hdg, hdg) * fad + np.outer(dg, dg) * fae    
     info(" @MINIMIZE: Updated hessian", verbosity.debug)
-
+  else:
+    info(" @MINIMIZE: Skipped hessian update; direction x gradient insufficient", verbosity.debug)
+  
   # Update direction
 #  for j in range(0, n):
 #    xi[j] = 0.0

@@ -44,33 +44,35 @@ class InputGeop(InputDictionary):
                                     "options" : ['sd', 'cg', 'bfgs']}) }
    
     fields = { "ls_options" : ( InputDictionary, {"dtype" : float, 
-                               "help" : """"Options for line search methods. Includes: 
-                                   tolerance: stopping tolerance for the search,
-                                   iter: the maximum number of iterations,
-                                   step: initial step for bracketing,
-                                   adaptive: whether to update line_step.
-                                   """, 
-                                   "options" : ["tolerance",  "iter", "step", "adaptive"],
-                                   "default" : [1e-5, 100, 1e-3, True] }),       
+                              "help" : """Options for line search methods. Includes: 
+                              tolerance: stopping tolerance (for position) for the search,
+                              grad_tolerance: stopping tolerance on gradient for 
+                              BFGS line search,
+                              iter: the maximum number of iterations,
+                              step: initial step for bracketing,
+                              adaptive: whether to update line_step.
+                              """, 
+                              "options" : ["tolerance", "gradtolerance",  "iter", "step", "adaptive"],
+                              "default" : [1e-6, 1e-6, 100, 1e-3, True] }),       
                 "tolerances" : ( InputDictionary, {"dtype" : float, 
-                               "options" : [ "energy", "gradient", "position" ],
-                               "default" : [ 1e-8, 1e-8, 1e-8 ] }),
+                              "help"    : """Requirements for converged relaxation""",
+                              "options" : [ "energy", "force", "position" ],
+                              "default" : [ 1e-8, 1e-8, 1e-8 ] }),
                 "cg_old_force": (InputArray, {"dtype" : float,
-                   "default"   : input_default(factory=np.zeros, args = (0,)),
-                   "help"      : "The previous force in a CG optimization.",
-                   "dimension" : "force"}),
+                              "default"   : input_default(factory=np.zeros, args = (0,)),
+                              "help"      : "The previous force in a CG optimization.",
+                              "dimension" : "force"}),
                 "cg_old_direction": (InputArray, {"dtype" : float,
-                   "default"   : input_default(factory=np.zeros, args = (0,)),
-                   "help"      : "The previous direction in a CG optimization."}),
-                "grad_tolerance": (InputValue, {"dtype" : float, 
-                    "default"  : 1.0e-6,
-                    "help"     : "The tolerance on the zero gradient requirement of BFGS minimization."}),
+                              "default" : input_default(factory=np.zeros, args = (0,)),
+                              "help"    : "The previous direction in a CG optimization."}),
                 "maximum_step": (InputValue, {"dtype" : float,
-                    "default" : 100.0,
-                    "help"    : "The maximum step size for BFGS line minimizations."})
+                              "default" : 100.0,
+                              "help"    : "The maximum step size for BFGS line minimizations."}),
+                "invhessian" : (InputArray, {"dtype" : float, 
+                              "default" : input_default(factory=np.eye, args = (0,)),
+                              "help"    : "Approximate inverse Hessian for BFGS, if known."})
                      }
                    
-              
     dynamic = {  }
 
     default_help = "TODO EXPLAIN WHAT THIS IS"
@@ -83,10 +85,8 @@ class InputGeop(InputDictionary):
         self.mode.store(geop.mode)
         self.cg_old_force.store(geop.cg_old_f)
         self.cg_old_direction.store(geop.cg_old_d)
-        self.grad_tolerance.store(geop.grad_tol)
         self.maximum_step.store(geop.max_step)
         
-		
     def fetch(self):		
         rv = super(InputGeop,self).fetch()
         rv["mode"] = self.mode.fetch()        
