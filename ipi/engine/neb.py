@@ -62,7 +62,7 @@ class NEBMover(Mover):
             motion will be constrained or not. Defaults to False.         
       """
 
-      super(GeopMover,self).__init__(fixcom=fixcom, fixatoms=fixatoms)
+      super(NEBMover,self).__init__(fixcom=fixcom, fixatoms=fixatoms)
       
       # optimization options
       self.ls_options = ls_options
@@ -73,13 +73,12 @@ class NEBMover(Mover):
       self.cg_old_f = cg_old_force
       self.cg_old_d = cg_old_direction
       self.invhessian = invhessian
-        
-      self.lm = LineMover()
-      self.bfgsm = BFGSMover()      
+      self.neb_kappa = 1e0 # TODO make this a parameter!
+         
    
    def bind(self, beads, nm, cell, bforce, bbias, prng):
       
-      super(GeopMover,self).bind(beads, nm, cell, bforce, bbias, prng)
+      super(NEBMover,self).bind(beads, nm, cell, bforce, bbias, prng)
       if self.cg_old_f.size != beads.q.size :
          if self.cg_old_f.size == 0: 
             self.cg_old_f = np.zeros(beads.q.size, float)
@@ -91,8 +90,6 @@ class NEBMover(Mover):
          else: 
             raise ValueError("Conjugate gradient direction size does not match system size")
             
-      self.lm.bind(self)
-      self.bfgsm.bind(self)
       
    def step(self, step=None):
       """Does one simulation time step."""
@@ -100,87 +97,30 @@ class NEBMover(Mover):
       self.ptime = self.ttime = 0
       self.qtime = -time.time()
 
-      print "\nMD STEP %d\n" % step
-
-      if (self.mode == "bfgs"):
-
-          # BFGS Minimization
-          # Initialize approximate Hessian inverse and direction
-          # to the steepest descent direction
-          if step == 0:# or np.sqrt(np.dot(self.bfgsm.d, self.bfgsm.d)) == 0.0:
-              self.bfgsm.d = depstrip(self.forces.f) / np.sqrt(np.dot(self.forces.f.flatten(), self.forces.f.flatten()))
-              self.invhessian = np.eye(len(self.beads.q.flatten()))
-              print "invhessian:", self.invhessian
-              #invhessian = np.eye(n)
-
-          # Current energy, forces, and function definitions
-          # for use in BFGS algorithm
-
-          u0, du0 = (self.forces.pot, - self.forces.f)
-          print "u0:", u0
-          print "du0:", du0
-          
-          # Do one iteration of BFGS, return new point, function value,
-          # derivative value, and current Hessian to build upon
-          # next iteration
-          print "BEFORE"
-          print "self.beads.q:", self.beads.q
-          print "self.bfgsm.d:", self.bfgsm.d
-          print "invhessian:", self.invhessian
-          self.beads.q, fx, self.bfgsm.d, self.invhessian = BFGS(self.beads.q, self.bfgsm.d, self.bfgsm, fdf0=(u0, du0), 
-              invhessian=self.invhessian, max_step=self.max_step, tol=self.ls_options["tolerance"], grad_tol=self.grad_tol, itmax=self.ls_options["iter"])  #TODO: make object for inverse hessian and direction if necessary
-          print "AFTER"
-          print "self.beads.q", self.beads.q
-          print "self.bfgsm.d", self.bfgsm.d
-          print "invhessian", self.invhessian
-
-      # Routine for steepest descent and conjugate gradient
-      else:
-          if (self.mode == "sd" or step == 0): 
-          
-              # Steepest descent minimization
-              # gradf1 = force at current atom position
-              # dq1 = direction of steepest descent
-              # dq1_unit = unit vector of dq1
-              gradf1 = dq1 = depstrip(self.forces.f)
-
-              # move direction for steepest descent and 1st conjugate gradient step
-              dq1_unit = dq1 / np.sqrt(np.dot(gradf1.flatten(), gradf1.flatten())) 
+      bq = depstrip(self.beads.q).copy()
+      bf = depstrip(self.forces.f).copy()
       
-          else:
+      nimg = self.beads.nbeads
+      nat = self.beads.natoms
+      
+      # get tangents
+      btau = np.zeros((nimg, 3*nat), float)
+      for ii in range(1,nimg-1):
+          d1 = bq[ii]-bq[ii-1]
+          d2 = bq[ii+1]-bq[ii]
+          btau[ii]= d1/np.linalg.norm(d1)+d2/np.linalg.norm(d2)
+          btau[ii] *= 1.0/np.linalg.norm(btau)
+        
+      # get perpendicular forces 
+      for ii in range(1,nimg-1):
+          bf[ii] = bf[ii] - np.dot(bf[ii],btau[ii]) * btau[ii]
+          print np.linalg.norm(bf[ii])
           
-              # Conjugate gradient, Polak-Ribiere
-              # gradf1: force at current atom position
-              # gradf0: force at previous atom position
-              # dq1 = direction to move
-              # dq0 = previous direction
-              # dq1_unit = unit vector of dq1
-              gradf0 = self.cg_old_f
-              dq0 = self.cg_old_d
-              gradf1 = depstrip(self.forces.f)
-              beta = np.dot((gradf1.flatten() - gradf0.flatten()), gradf1.flatten()) / (np.dot(gradf0.flatten(), gradf0.flatten()))
-              dq1 = gradf1 + max(0.0, beta) * dq0
-              dq1_unit = dq1 / np.sqrt(np.dot(dq1.flatten(), dq1.flatten()))
+      # adds the spring forces           
+      for ii in range(1,nimg-1):
+          print np.dot( btau[ii], ( bq[ii+1]+bq[ii-1]-2*bq[ii] )  ) 
+          bf[ii] += self.neb_kappa * btau[ii]*np.dot( btau[ii], ( bq[ii+1]+bq[ii-1]-2*bq[ii] )  ) 
 
-          self.cg_old_d[:] = dq1    # store force and direction for next CG step
-          self.cg_old_f[:] = gradf1
-   
-          if (len(self.fixatoms)>0):
-              for dqb in dq1_unit:
-                  dqb[self.fixatoms*3] = 0.0
-                  dqb[self.fixatoms*3+1] = 0.0
-                  dqb[self.fixatoms*3+2] = 0.0
+      self.beads.q += bf *0.05
       
-          self.lm.set_dir(depstrip(self.beads.q), dq1_unit)
-
-          # reuse initial value since we have energy and forces already
-          u0, du0 = (self.forces.pot, np.dot(depstrip(self.forces.f.flatten()), dq1_unit.flatten()))
-
-          (x, fx) = min_brent(self.lm, fdf0=(u0, du0), x0=0.0, tol=self.ls_options["tolerance"], itmax=self.ls_options["iter"], init_step=self.ls_options["step"]) 
-
-          self.ls_options["step"] = x * self.ls_options["adaptive"] + (1-self.ls_options["adaptive"]) * self.ls_options["step"] # automatically adapt the search step for the next iteration
-      
-          self.beads.q += dq1_unit * x
-
-
       self.qtime += time.time()

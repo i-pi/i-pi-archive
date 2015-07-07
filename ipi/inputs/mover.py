@@ -24,11 +24,13 @@ Classes:
 import numpy as np
 import ipi.engine.initializer
 from ipi.engine.geop import GeopMover
+from ipi.engine.neb import NEBMover
 from ipi.engine.mover import *
 from ipi.utils.inputvalue import *
 from ipi.inputs.thermostats import *
 from ipi.inputs.initializer import *
 from ipi.inputs.geop import InputGeop
+from ipi.inputs.neb import InputNEB
 from ipi.utils.units import *
 
 __all__ = ['InputMover']
@@ -50,7 +52,7 @@ class InputMover(Input):
 
    attribs={"mode"  : (InputAttribute, {"dtype"   : str,
                                     "help"    : "The ensemble hat will be sampled during the simulation. 'replay' means that a simulation is restarted from a previous simulation.",
-                                    "options" : ['minimize', 'replay', 'dummy']}) }
+                                    "options" : ['minimize', 'replay', 'neb', 'dummy']}) }
    fields={"fixcom": (InputValue, {"dtype"           : bool,
                                    "default"         : True,
                                    "help"            : "This describes whether the centre of mass of the particles is fixed."}),
@@ -58,6 +60,8 @@ class InputMover(Input):
                                     "default"      : np.zeros(0,int),
                                     "help"         : "Indices of the atmoms that should be held fixed."}),
            "optimizer" : ( InputGeop, { "default" : {}, 
+                                     "help":  "Option for geometry optimization" } ),
+           "neb_optimizer" : ( InputGeop, { "default" : {}, 
                                      "help":  "Option for geometry optimization" } ),
            "file": (InputInitFile, {"default" : input_default(factory=ipi.engine.initializer.InitBase,kwargs={"mode":"xyz"}),
                            "help"            : "This describes the location to read a trajectory file from."})
@@ -86,6 +90,10 @@ class InputMover(Input):
          self.mode.store("minimize")
          self.optimizer.store(sc)
          tsc = 1
+      elif type(sc) is NEBMover:
+         self.mode.store("neb")
+         self.neb_optimizer.store(sc)
+         tsc = 1
       else: 
          raise ValueError("Cannot store Mover calculator of type "+str(type(sc)))
       
@@ -109,6 +117,8 @@ class InputMover(Input):
          sc = ReplayMover(fixcom=False, fixatoms=None, intraj=self.file.fetch() )
       elif self.mode.fetch() == "minimize":
          sc = GeopMover(fixcom=False, fixatoms=None, **self.optimizer.fetch() )
+      elif self.mode.fetch() == "neb":
+         sc = NEBMover(fixcom=False, fixatoms=None, **self.neb_optimizer.fetch() )
       else:
          sc = Mover()
          #raise ValueError("'" + self.mode.fetch() + "' is not a supported mover calculation mode.")
