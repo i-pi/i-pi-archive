@@ -36,7 +36,7 @@ from ipi.utils.softexit import softexit
 from ipi.utils.io import read_file
 from ipi.utils.io.inputs.io_xml import xml_parse_file
 from ipi.utils.units import Constants, unit_to_internal
-from ipi.utils.mintools import min_brent, min_approx, BFGS
+from ipi.utils.mintools import min_brent, min_approx, BFGS, L_BFGS
 from ipi.utils.messages import verbosity, warning, info
 
 class LineMover(object):
@@ -93,8 +93,11 @@ class GeopMover(Mover):
              cg_old_force = np.zeros(0, float),
              cg_old_direction = np.zeros(0, float),
              invhessian = np.eye(0, 0, 0, float), 
-             ls_options = { "tolerance": 1e-6, "gradtolerance": 1e-6, "iter": 100.0 , "step": 1e-3, "adaptive":1.0 } ,
-             tolerances = {"energy" : 1e-8, "force": 1e-8, "position": 1e-8}
+             ls_options = { "tolerance": 1e-6, "gradtolerance": 1e-6, "iter": 100.0 , "step": 1e-3, "adaptive":1.0 },
+             tolerances = {"energy" : 1e-8, "force": 1e-8, "position": 1e-8},
+             corrections = 5,
+             qlist = np.zeros(0, float),
+             glist = np.zeros(0, float)
              ) :   
                  
       """Initialises GeopMover.
@@ -114,6 +117,9 @@ class GeopMover(Mover):
       self.cg_old_f = cg_old_force
       self.cg_old_d = cg_old_direction
       self.invhessian = invhessian
+      self.corrections = corrections
+      self.qlist = qlist
+      self.glist = glist
         
       self.lm = LineMover()
       self.bfgsm = BFGSMover()      
@@ -156,11 +162,10 @@ class GeopMover(Mover):
           if step == 0: # or np.sqrt(np.dot(self.bfgsm.d, self.bfgsm.d)) == 0.0: <-- this part for restarting at claimed minimum
               info(" @GEOP: Initializing BFGS", verbosity.debug)
               self.bfgsm.d = depstrip(self.forces.f) / np.sqrt(np.dot(self.forces.f.flatten(), self.forces.f.flatten()))
-              #self.invhessian = np.eye(len(self.beads.q.flatten()))
-              self.xold = self.beads.q.copy()
+              self.bfgsm.xold = self.beads.q.copy()
 
           # Current energy, forces, and function definitions
-          # for use in BFGS algorithm
+          # for use in finding converged minimization
 
           u0, du0 = (self.forces.pot.copy(), - self.forces.f)
           self.cg_old_f[:] = self.forces.f
@@ -168,22 +173,57 @@ class GeopMover(Mover):
           # Do one iteration of BFGS, return new point, function value,
           # derivative value, and current Hessian to use for
           # next iteration
+          # Dump the previous positions and gradient that are
+          # required only for L-BFGS ('unused' and 'unused2')
           self.beads.q, fx, self.bfgsm.d, self.invhessian = BFGS(self.beads.q, 
               self.bfgsm.d, self.bfgsm, fdf0=(u0, du0), invhessian=self.invhessian, 
               max_step=self.max_step, tol=self.ls_options["tolerance"], 
               grad_tol=self.ls_options["gradtolerance"], itmax=self.ls_options["iter"])  
 
-          deltax = self.beads.q - self.xold
-          #x = np.sqrt(np.dot(deltax.flatten(), deltax.flatten()))
-          x = np.amax(np.absolute(np.subtract(self.beads.q, self.xold)))
-          self.xold = self.beads.q.copy()
+          x = np.amax(np.absolute(np.subtract(self.beads.q, self.bfgsm.xold)))
+          self.bfgsm.xold[:] = self.beads.q
 
           info(" @GEOP: Updating bead positions", verbosity.debug)
+
+      elif self.mode == "lbfgs":
+
+          # L-BFGS Minimization
+          # Initialize approximate Hessian inverse to the identity and direction
+          # to the steepest descent direction
+          # Initialize lists of previous positions and gradients
+          
+          if step == 0: # or np.sqrt(np.dot(self.bfgsm.d, self.bfgsm.d)) == 0.0: <-- this part for restarting at claimed minimum
+              info(" @GEOP: Initializing L-BFGS", verbosity.debug)
+              self.bfgsm.d = depstrip(self.forces.f) / np.sqrt(np.dot(self.forces.f.flatten(), self.forces.f.flatten()))
+              self.bfgsm.xold = self.beads.q.copy()
+              self.qlist = np.zeros((self.corrections, len(self.beads.q.flatten())))
+              self.glist = np.zeros((self.corrections, len(self.beads.q.flatten())))
+
+          # Current energy, forces, and function definitions
+          # for use in finding converged minimization
+
+          u0, du0 = (self.forces.pot.copy(), - self.forces.f)
+          self.cg_old_f[:] = self.forces.f
+          
+          # If we have not yet stored all requested corrections, do normal BFGS and store
+          # the corrections
+          self.beads.q, fx, self.bfgsm.d, self.qlist, self.glist = L_BFGS(self.beads.q, 
+                self.bfgsm.d, self.bfgsm, self.qlist, self.glist, 
+                fdf0=(u0, du0), max_step=self.max_step, tol=self.ls_options["tolerance"], 
+                grad_tol=self.ls_options["gradtolerance"], itmax=self.ls_options["iter"], 
+                m=self.corrections, k=step)
+
+          info(" @GEOP: Updated position list", verbosity.debug)
+          info(" @GEOP: Updated gradient list", verbosity.debug)
+
+          x = np.amax(np.absolute(np.subtract(self.beads.q, self.bfgsm.xold)))
+          self.bfgsm.xold[:] = self.beads.q
+
+          info(" @GEOP: Updated bead positions", verbosity.debug)
 
       # Routine for steepest descent and conjugate gradient
       else:
           if (self.mode == "sd" or step == 0): 
-              info(" @GEOP: Determining search direction", verbosity.debug)
           
               # Steepest descent minimization
               # gradf1 = force at current atom position
@@ -193,9 +233,9 @@ class GeopMover(Mover):
 
               # move direction for steepest descent and 1st conjugate gradient step
               dq1_unit = dq1 / np.sqrt(np.dot(gradf1.flatten(), gradf1.flatten())) 
+              info(" @GEOP: Determined SD direction", verbosity.debug)
       
           else:
-              info(" @GEOP: Determining CG direction", verbosity.debug)
           
               # Conjugate gradient, Polak-Ribiere
               # gradf1: force at current atom position
@@ -209,6 +249,7 @@ class GeopMover(Mover):
               beta = np.dot((gradf1.flatten() - gradf0.flatten()), gradf1.flatten()) / (np.dot(gradf0.flatten(), gradf0.flatten()))
               dq1 = gradf1 + max(0.0, beta) * dq0
               dq1_unit = dq1 / np.sqrt(np.dot(dq1.flatten(), dq1.flatten()))
+              info(" @GEOP: Determined CG direction", verbosity.debug)
 
           self.cg_old_d[:] = dq1    # store force and direction for next CG step
           self.cg_old_f[:] = gradf1
@@ -228,10 +269,12 @@ class GeopMover(Mover):
                   tol=self.ls_options["tolerance"], 
                   itmax=self.ls_options["iter"], init_step=self.ls_options["step"]) 
 
-          self.ls_options["step"] = 0.1 * x * self.ls_options["adaptive"] + (1 - self.ls_options["adaptive"]) * self.ls_options["step"] # automatically adapt the search step for the next iteration. Relaxes better with very small step --> multiply by factor of 0.1 or 0.01
+          # automatically adapt the search step for the next iteration. 
+          # relaxes better with very small step --> multiply by factor of 0.1 or 0.01
+          self.ls_options["step"] = 0.1 * x * self.ls_options["adaptive"] + (1 - self.ls_options["adaptive"]) * self.ls_options["step"] 
       
           self.beads.q += dq1_unit * x
-          info(" @GEOP: Updating bead positions", verbosity.debug)
+          info(" @GEOP: Updated bead positions", verbosity.debug)
 
       self.qtime += time.time()
       
