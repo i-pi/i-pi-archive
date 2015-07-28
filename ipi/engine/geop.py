@@ -33,9 +33,6 @@ from ipi.engine.mover import Mover
 from ipi.utils.depend import *
 from ipi.utils import units
 from ipi.utils.softexit import softexit
-from ipi.utils.io import read_file
-from ipi.utils.io.inputs.io_xml import xml_parse_file
-from ipi.utils.units import Constants, unit_to_internal
 from ipi.utils.mintools import min_brent, min_approx, BFGS
 from ipi.utils.messages import verbosity, warning, info
 

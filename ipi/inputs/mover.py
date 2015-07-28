@@ -63,6 +63,8 @@ class InputMover(Input):
                                      "help":  "Option for geometry optimization" } ),
            "neb_optimizer" : ( InputGeop, { "default" : {}, 
                                      "help":  "Option for geometry optimization" } ),
+           "dynamics" : ( InputGeop, { "default" : {}, 
+                                     "help":  "Option for (path integral) molecular dynamics" } ),                          
            "file": (InputInitFile, {"default" : input_default(factory=ipi.engine.initializer.InitBase,kwargs={"mode":"xyz"}),
                            "help"            : "This describes the location to read a trajectory file from."})
          }
@@ -70,7 +72,7 @@ class InputMover(Input):
    dynamic = {  }
 
    default_help = "Holds all the information that is calculation specific, such as geometry optimization parameters, etc."
-   default_label = "STATIC"
+   default_label = "MOVER"
 
    def store(self, sc):
       """Takes a mover calculation instance and stores a minimal representation of it.
@@ -85,7 +87,7 @@ class InputMover(Input):
           self.mode.store("dummy")
       elif type(sc) is ReplayMover:
          self.mode.store("replay")
-         tsc = 0
+         tsc = 0    
       elif type(sc) is GeopMover:
          self.mode.store("minimize")
          self.optimizer.store(sc)
@@ -94,6 +96,10 @@ class InputMover(Input):
          self.mode.store("neb")
          self.neb_optimizer.store(sc)
          tsc = 1
+      elif type(sc) is DynMover:
+         self.mode.store("dynamics")
+         self.dynamics.store(sc)
+         tsc = 1   
       else: 
          raise ValueError("Cannot store Mover calculator of type "+str(type(sc)))
       
@@ -119,6 +125,8 @@ class InputMover(Input):
          sc = GeopMover(fixcom=False, fixatoms=None, **self.optimizer.fetch() )
       elif self.mode.fetch() == "neb":
          sc = NEBMover(fixcom=False, fixatoms=None, **self.neb_optimizer.fetch() )
+      elif self.mode.fetch() == "dynamics":
+         sc = DynMover(fixcom=False, fixatoms=None, **self.neb_optimizer.fetch() )
       else:
          sc = Mover()
          #raise ValueError("'" + self.mode.fetch() + "' is not a supported mover calculation mode.")
