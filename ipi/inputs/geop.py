@@ -41,7 +41,7 @@ class InputGeop(InputDictionary):
 
     attribs={"mode"  : (InputAttribute, {"dtype"   : str, "default": "cg", 
                                     "help"    : "The geometry optimization algorithm to be used",
-                                    "options" : ['sd', 'cg', 'bfgs']}) }
+                                    "options" : ['sd', 'cg', 'bfgs', 'lbfgs']}) }
    
     fields = { "ls_options" : ( InputDictionary, {"dtype" : [ float, float, int, float, bool ], 
                               "help" : """"Options for line search methods. Includes: 
@@ -71,7 +71,16 @@ class InputGeop(InputDictionary):
                               "help"    : "The maximum step size for BFGS line minimizations."}),
                 "invhessian" : (InputArray, {"dtype" : float, 
                               "default" : input_default(factory=np.eye, args = (0,)),
-                              "help"    : "Approximate inverse Hessian for BFGS, if known."})
+                              "help"    : "Approximate inverse Hessian for BFGS, if known."}),
+                "qlist" : (InputArray, {"dtype" : float,
+                              "default" : input_default(factory=np.zeros, args = (0,)),
+                              "help"    : "List of previous position differences for L-BFGS, if known."}),
+                "glist" : (InputArray, {"dtype" : float,
+                              "default" : input_default(factory=np.zeros, args = (0,)),
+                              "help"    : "List of previous gradient differences for L-BFGS, if known."}),
+                "corrections" : (InputValue, {"dtype" : int,
+                              "default" : 5,
+                              "help"    : "The number of past vectors to store for L-BFGS."})
                      }
                    
     dynamic = {  }
@@ -87,6 +96,10 @@ class InputGeop(InputDictionary):
         self.cg_old_force.store(geop.cg_old_f)
         self.cg_old_direction.store(geop.cg_old_d)
         self.maximum_step.store(geop.max_step)
+        self.invhessian.store(geop.invhessian)
+        self.qlist.store(geop.qlist)
+        self.glist.store(geop.glist)
+        self.corrections.store(geop.corrections)
         
     def fetch(self):		
         rv = super(InputGeop,self).fetch()
