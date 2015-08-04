@@ -33,7 +33,7 @@ from ipi.engine.mover import Mover
 from ipi.utils.depend import *
 from ipi.utils import units
 from ipi.utils.softexit import softexit
-from ipi.utils.mintools import min_brent, min_approx, BFGS, L_BFGS
+from ipi.utils.mintools import min_brent, min_approx, BFGS, L_BFGS, L_BFGS_nls
 from ipi.utils.messages import verbosity, warning, info
 
 class LineMover(object):
@@ -204,10 +204,11 @@ class GeopMover(Mover):
           
           # If we have not yet stored all requested corrections, do normal BFGS and store
           # the corrections
-          self.beads.q, fx, self.bfgsm.d, self.qlist, self.glist = L_BFGS(self.beads.q, 
+          self.beads.q, fx, self.bfgsm.d, self.qlist, self.glist = L_BFGS_nls(self.beads.q, 
                 self.bfgsm.d, self.bfgsm, self.qlist, self.glist, 
                 fdf0=(u0, du0), max_step=self.max_step, tol=self.ls_options["tolerance"], 
-                grad_tol=self.ls_options["gradtolerance"], itmax=self.ls_options["iter"], 
+                grad_tol=self.ls_options["gradtolerance"], itmax=self.ls_options["iter"],
+                init_step=self.ls_options["step"],
                 m=self.corrections, k=step)
 
           info(" @GEOP: Updated position list", verbosity.debug)
@@ -277,8 +278,8 @@ class GeopMover(Mover):
       
       # Determine conditions for converged relaxation
       if ((fx - u0) / self.beads.natoms <= self.tolerances["energy"])\
-          and ((np.amax(np.absolute(self.forces.f)) <= self.tolerances["force"])\
-              or (np.sqrt(np.dot(self.forces.f.flatten() - self.cg_old_f.flatten(),\
-                  self.forces.f.flatten() - self.cg_old_f.flatten())) == 0.0))\
-          and (x <= self.tolerances["position"]):
+              and ((np.amax(np.absolute(self.forces.f)) <= self.tolerances["force"])\
+                  or (np.sqrt(np.dot(self.forces.f.flatten() - self.cg_old_f.flatten(),\
+                      self.forces.f.flatten() - self.cg_old_f.flatten())) == 0.0))\
+              and (x <= self.tolerances["position"]):
           softexit.trigger("Geometry optimization converged. Exiting simulation")

@@ -32,6 +32,7 @@ from ipi.utils.units import *
 __all__ = ['InputNEB']
 
 # TODO SANITIZE THIS IN TERMS OF AVAILABLE OPTIONS AND DOCSTRINGS
+# TODO RECONCILE LS_OPTIONS AND INTERIOR/ENDPOINTS
 
 class InputNEB(InputDictionary):
     """Geometry optimization options.
@@ -43,10 +44,10 @@ class InputNEB(InputDictionary):
 
     attribs={"mode"  : (InputAttribute, {"dtype"   : str, "default": "cg", 
                                     "help"    : "The geometry optimization algorithm to be used",
-                                    "options" : ['sd', 'cg', 'bfgs']}) }
+                                    "options" : ['sd', 'cg', 'bfgs', 'lbfgs']}) }
    
     fields = { "ls_options" : ( InputDictionary, {"dtype" : [ float, float, int, float, bool ], 
-                              "help" : """"Options for line search methods. Includes: 
+                              "help" : """Options for line search methods. Includes: 
                               tolerance: stopping tolerance for the search,
                               grad_tolerance: stopping tolerance on gradient for 
                               BFGS line search,
@@ -73,8 +74,32 @@ class InputNEB(InputDictionary):
                               "help"    : "The maximum step size for BFGS line minimizations."}),
                 "invhessian" : (InputArray, {"dtype" : float, 
                               "default" : input_default(factory=np.eye, args = (0,)),
-                              "help"    : "Approximate inverse Hessian for BFGS, if known."})
-                     }
+                              "help"    : "Approximate inverse Hessian for BFGS, if known."}),
+		"qlist"      : (InputArray, {"dtype" : float,
+                              "default" : input_default(factory=np.zeros, args = (0,)),
+                              "help"    : "List of previous position differences for L-BFGS, if known."}),
+                "glist"      : (InputArray, {"dtype" : float,
+                              "default" : input_default(factory=np.zeros, args = (0,)),
+                              "help"    : "List of previous gradient differences for L-BFGS, if known."}),
+                "corrections" : (InputValue, {"dtype" : int,
+                              "default" : 5,
+                              "help"    : "The number of past vectors to store for L-BFGS."}),
+                "endpoints"  : (InputDictionary, {"dtype" : [bool, str], 
+                              "options" : ['optimize', 'algorithm'],
+                              "default" : [True, "bfgs"], 
+                              "help"    : "Geometry optimization of endpoints"}),
+                "interior"   : (InputDictionary, {"dtype" : [bool, str],
+                              "options" : ['optimize', 'algorithm'],
+                              "default" : [False, "bfgs"],
+                              "help"    : "Geometry optimization of interior beads"}),
+                "spring"     : (InputDictionary, {"dtype" : [bool, float, float, float],
+                              "options" : ["varsprings", "kappa", "kappamax", "kappamin"],
+                              "default" : [False, 1.0, 1.5, 0.5],
+                              "help"    : "Uniform or variable spring constants along the elastic band"}),
+                "climb"      : (InputDictionary, {"dtype" : bool,
+                              "default" : False,
+                              "help"    : "Use climbing image NEB"})
+       }
                    
     dynamic = {  }
 
@@ -89,6 +114,13 @@ class InputNEB(InputDictionary):
         self.cg_old_force.store(neb.cg_old_f)
         self.cg_old_direction.store(neb.cg_old_d)
         self.maximum_step.store(neb.max_step)
+        self.invhessian.store(neb.invhessian)
+        self.qlist.store(neb.qlist)
+        self.glist.store(neb.glist)
+        self.endpoints.store(neb.endpoints)
+        self.interior.store(neb.interior)
+        self.spring.store(neb.spring)
+        self.climb.store(neb.climb)
         
     def fetch(self):		
         rv = super(InputN,self).fetch()
