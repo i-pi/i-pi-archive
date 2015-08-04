@@ -17,12 +17,23 @@ along with this program. If not, see <http.//www.gnu.org/licenses/>.
 
 Functions: 
         bracket: Determines the 3 points that bracket the function minimum
-        min_brent:  Does one-D minimization (line search) based on bisection method with derivatives. Uses 'bracket' function.
-        min_approx: Does approximate n-D minimization (line search) based on sufficient function decrease in the search direction
-        BFGS: Constructs an approximate inverse Hessian to determine new search directions. Minimizes the function using 'min_approx' function.
-        L-BFGS: Uses the limited memory BFGS algorithm (L-BFGS) to compute new search directions. Minimizes using 'min_approx'
-        bracket_neb: Modified 'bracket' routine to make compatible with functions with unknown gradient
-        min_brent_neb: Modified 'min_brent' routine to make compatible with functions with unknown gradient
+        min_brent:  Does one-D minimization (line search) based on bisection 
+            method with derivatives. Uses 'bracket' function.
+        min_approx: Does approximate n-D minimization (line search) based 
+            on sufficient function decrease in the search direction
+        BFGS: Constructs an approximate inverse Hessian to determine 
+            new search directions. Minimizes the function using 'min_approx' function.
+        L-BFGS: Uses the limited memory BFGS algorithm (L-BFGS) to 
+            compute new search directions. Minimizes using 'min_approx'
+        bracket_neb: Modified 'bracket' routine to make 
+            compatible with functions with unknown gradient
+        min_brent_neb: Modified 'min_brent' routine to make 
+            compatible with functions with unknown gradient
+
+        bracket, bracket_neb, min_brent, min_brent_neb,and BFGS subroutines adapted from: 
+        Press, W. H., Teukolsky, S. A., Vetterling, W. T., and Flannery, B. P. (1992). 
+        Numerical Recipes in C: The Art of Scientific Computing. 
+        Cambridge: Cambridge University Press
         
 """
 
@@ -38,7 +49,7 @@ def bracket(fdf, fdf0=None, x0=0.0, init_step=1.0e-3):
 
     """Given an initial point, determines the initial bracket for the minimum
      Arguments:
-            fdf = function to minimize [0], derivative of function to minimize [1]
+            fdf = function to minimize, derivative of function to minimize
             x0 = initial point
             fdf0 = value of function and its derivative at x0
     """
@@ -183,8 +194,12 @@ def min_brent(fdf, fdf0=None, x0=0.0, tol=1.0e-6, itmax=100, init_step=1.0e-3):
         b = cx
 
     # Initial points to evaluate
-    # g(x) is evaluation of arbitrary function
-    # dg(x) is the evaluation of the derivative of g(x)
+    # f* is evaluation of function
+    # df* is the evaluation of the derivative
+    # x = point with least function value so far
+    # w = point with 2nd least function value
+    # v = previous value of w
+    # u = point at which function was evaluated most recently
     x = w = v = bx
     fw = fv = fx = fb # Function
     dfw = dfv = dfx = dfb # Function derivative
@@ -204,7 +219,7 @@ def min_brent(fdf, fdf0=None, x0=0.0, tol=1.0e-6, itmax=100, init_step=1.0e-3):
             info(" @MINIMIZE: Finished minimization, energy = %f" % fx, verbosity.debug)
             return (x, fx)
 
-        # Initialize d values to outside of bracket
+        # Initialize d values (used to determine step size) to outside of bracket
         if abs(e) > tol1:
             d1 = 2.0 * (b - a)
             d2 = d1
@@ -215,7 +230,7 @@ def min_brent(fdf, fdf0=None, x0=0.0, tol=1.0e-6, itmax=100, init_step=1.0e-3):
             if dfv != dfx:
                 d2 = (v - x) * dfx / (dfx - dfv)
 
-            # Choose estimate based on derivative at x and move on step
+            # Choose estimate based on derivative at x and move distance on step
             # before last
             u1 = x + d1
             u2 = x + d2
@@ -663,7 +678,7 @@ def bracket_neb(fdf, fdf0=None, x0=0.0, init_step=1.0e-3):
     ax = x0 
     fa = fdf0 
     bx = x0 + init_step
-    fb = fdf(bx)
+    fb = fdf(bx)[1]
     info(" @BRACKET: Started bracketing", verbosity.debug)
     info(" @BRACKET: Evaluated first step", verbosity.debug)
 
@@ -678,7 +693,7 @@ def bracket_neb(fdf, fdf0=None, x0=0.0, init_step=1.0e-3):
 
     # Initial guess for third bracketing point
     cx = bx + gold * (bx - ax)
-    fc = fdf(cx)
+    fc = fdf(cx)[1]
     info(" @BRACKET: Evaluated initial bracket: (%f:%f, %f:%f, %f:%f)" % (ax, fa, bx, fb, cx, fc), verbosity.debug) 
 
     # Loop until acceptable bracketing condition is achieved
@@ -697,7 +712,7 @@ def bracket_neb(fdf, fdf0=None, x0=0.0, init_step=1.0e-3):
         # - Limit u to maximum allowed value
         # - Use default magnification
         if ((bx - u) * (u - cx)) > 0.0:
-            fu = fdf(u)
+            fu = fdf(u)[1]
             info(" @BRACKET: Evaluated new bracket point", verbosity.debug) 
             if fu < fc:
                 ax = bx
@@ -714,10 +729,10 @@ def bracket_neb(fdf, fdf0=None, x0=0.0, init_step=1.0e-3):
                 return (ax, bx, cx, fb)
 
             u = cx + gold * (cx - bx)
-            fu = fdf(u)
+            fu = fdf(u)[1]
             info(" @BRACKET: Evaluated new bracket point", verbosity.debug) 
         elif ((cx - u) * (u - ulim)) > 0.0:
-            fu = fdf(u)
+            fu = fdf(u)[1]
             info(" @BRACKET: Evaluated new bracket point", verbosity.debug) 
             if fu < fc:
                 bx = cx
@@ -725,15 +740,15 @@ def bracket_neb(fdf, fdf0=None, x0=0.0, init_step=1.0e-3):
                 u = cx + gold * (cx - bx)
                 fb = fc
                 fc = fu
-                fu = fdf(u)
+                fu = fdf(u)[1]
                 info(" @BRACKET: Evaluated new bracket point", verbosity.debug) 
         elif ((u - ulim) * (ulim - cx)) >= 0.0:
             u = ulim
-            fu = fdf(u)
+            fu = fdf(u)[1]
             info(" @BRACKET: Evaluated new bracket point", verbosity.debug) 
         else:
             u = cx + gold * (cx - bx)
-            fu = fdf(u)
+            fu = fdf(u)[1]
             info(" @BRACKET: Evaluated new bracket point", verbosity.debug) 
 
         # Shift points
@@ -764,7 +779,7 @@ def min_brent_neb(fdf, fdf0=None, x0=0.0, tol=1.0e-6, itmax=100, init_step=1.0e-
     # Initializations and constants
     gold = 0.3819660
     zeps = 1e-10    
-    e = 0.0
+    e = 0.0 # Step size for step before last
 
     (ax, bx, cx, fb) = bracket_neb(fdf, fdf0, x0, init_step)
     
@@ -779,7 +794,12 @@ def min_brent_neb(fdf, fdf0=None, x0=0.0, tol=1.0e-6, itmax=100, init_step=1.0e-
         b = cx
 
     # Initial points to evaluate
-    # g(x) is evaluation of arbitrary function
+    # f* is evaluation of arbitrary function
+    # x = point with least function value so far
+    # w = point with 2nd least function value
+    # v = previous value of w
+    # u = point at which function was evaluated most recently
+    # d = used to determine step size
     x = w = v = bx
     fw = fv = fx = fb 
 
@@ -834,7 +854,9 @@ def min_brent_neb(fdf, fdf0=None, x0=0.0, tol=1.0e-6, itmax=100, init_step=1.0e-
             u = x + d
         else:
             u = x + abs(tol1) * d / abs(d)
-        fu = g(u)
+
+        fu = fdf(u)[1]
+
         if fu <= fx:
             if (u >= x):
                 a = x
@@ -892,7 +914,7 @@ def L_BFGS_nls(x0, d0, fdf, qlist, glist, fdf0=None, max_step=100, tol=1.0e-6, g
     f0, df0 = fdf0
     n = len(x0.flatten())
     dg = np.zeros(n)
-    g = df0.flatten()
+    g = df0 #df0.flatten()
     x = np.zeros(n)
     linesum = np.dot(x0.flatten(), x0.flatten())
     alpha = np.zeros(m)
@@ -912,14 +934,14 @@ def L_BFGS_nls(x0, d0, fdf, qlist, glist, fdf0=None, max_step=100, tol=1.0e-6, g
         #scale = 0.1
         scale = 1.0
         #fx, g = fdf(x)
-        while np.sqrt(np.dot(g, g)) >= np.sqrt(np.dot(df0.flatten(), df0.flatten()))\
-                or np.isnan(np.sqrt(np.dot(g, g))) == True\
-                or np.isinf(np.sqrt(np.dot(g, g))) == True:
+        while np.sqrt(np.dot(g.flatten(), g.flatten())) >= np.sqrt(np.dot(df0.flatten(), df0.flatten()))\
+                or np.isnan(np.sqrt(np.dot(g.flatten(), g.flatten()))) == True\
+                or np.isinf(np.sqrt(np.dot(g.flatten(), g.flatten()))) == True:
         #while fx >= f0 or np.isnan(fx) == True or np.isinf(fx) == True:
             x = np.add(x0, (scale * init_step * d0 / np.sqrt(np.dot(d0.flatten(), d0.flatten()))))
             scale *= 0.1
             fx, g = fdf(x)
-            g = g.flatten()
+            #g = g.flatten()
     else:
         x = np.add(x0, d0)       
         fx, g = fdf(x) 
@@ -927,19 +949,19 @@ def L_BFGS_nls(x0, d0, fdf, qlist, glist, fdf0=None, max_step=100, tol=1.0e-6, g
     info(" @MINIMIZE: Started L-BFGS", verbosity.debug)
 
     # Update line direction (xi) and current point (x0)
-    xi = np.subtract(x, x0).flatten()
+    xi = np.subtract(x, x0) #.flatten()
 
     # Build list of previous positions
     if k < m:
-        qlist[k] = xi
+        qlist[k] = xi.flatten()
     else:
         qlist = np.roll(qlist, -1, axis=0)
-        qlist[m - 1] = xi
+        qlist[m - 1] = xi.flatten()
     
     x0 = x
 
     # Test for convergence on step size
-    test = np.amax(np.divide(np.absolute(xi), np.maximum(np.absolute(x0), np.ones(n))))
+    test = np.amax(np.divide(np.absolute(xi), np.maximum(np.absolute(x0), np.ones(x0.shape))))
 
     if test < tol:
         info(" @MINIMIZE: Convergence on tolerance, exited L-BFGS, energy = %f" % fx, verbosity.debug)
@@ -951,11 +973,11 @@ def L_BFGS_nls(x0, d0, fdf, qlist, glist, fdf0=None, max_step=100, tol=1.0e-6, g
     # Get new gradient      
     #unused, g = fdf(x0)
     info(" @MINIMIZE: Updated gradient", verbosity.debug)
-    g = g.flatten()
+    #g = g.flatten()
     test = 0.0
     den = max(fx, 1.0)
 
-    test = np.amax(np.divide(np.multiply(np.absolute(g), np.maximum(np.absolute(x0), np.ones(n))), den))
+    test = np.amax(np.divide(np.multiply(np.absolute(g), np.maximum(np.absolute(x0), np.ones(x0.shape))), den))
 
     # Test for convergence on zero gradient
     if test < grad_tol:
@@ -968,10 +990,10 @@ def L_BFGS_nls(x0, d0, fdf, qlist, glist, fdf0=None, max_step=100, tol=1.0e-6, g
 
     # Build list of previous gradients
     if k < m:
-        glist[k] = dg
+        glist[k] = dg.flatten()
     else:
         glist = np.roll(glist, -1, axis=0)
-        glist[m - 1] = dg
+        glist[m - 1] = dg.flatten()
 
     fac = np.dot(dg.flatten(), xi.flatten())
     sumdg = np.dot(dg.flatten(), dg.flatten())
@@ -992,8 +1014,8 @@ def L_BFGS_nls(x0, d0, fdf, qlist, glist, fdf0=None, max_step=100, tol=1.0e-6, g
         # First loop
         for j in range(bound1, -1,  -1):
             rho[j] = 1.0 / np.dot(glist[j], qlist[j])
-            alpha[j] = rho[j] * np.dot(qlist[j], q)
-            q = q - alpha[j] * glist[j]
+            alpha[j] = rho[j] * np.dot(qlist[j], q.flatten())
+            q = q.flatten() - alpha[j] * glist[j]
 
         info(" @MINIMIZE: First L-BFGS loop recursion completed", verbosity.debug)
 
@@ -1009,7 +1031,8 @@ def L_BFGS_nls(x0, d0, fdf, qlist, glist, fdf0=None, max_step=100, tol=1.0e-6, g
             xi = xi + qlist[j] * (alpha[j] - beta[j])
 
         # Update direction xi
-        xi *= -1.0
+        #xi *= -1.0
+        xi = -xi.reshape(d0.shape)
 
         info(" @MINIMIZE: Second L-BFGS loop recursion completed", verbosity.debug)
         info(" @MINIMIZE: Updated search direction", verbosity.debug)
