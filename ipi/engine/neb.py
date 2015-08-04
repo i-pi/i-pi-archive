@@ -262,49 +262,6 @@ class NEBBFGSMover(object):
       g = -bf
       return e, g        
 
-class NEBBFGSMover(object):
-   """ Creation of the multi-dimensional function that will be minimized"""
-
-   def __init__(self):
-      self.x0 = self.d = self.xold = None
-
-   def bind(self, ens):
-      self.dbeads = ens.beads.copy()
-      self.dcell = ens.cell.copy()
-      self.dforces = ens.forces.copy(self.dbeads, self.dcell)
-
-   def __call__(self, x):
-       
-      self.dbeads.q = x
-      bq = depstrip(self.dbeads.q).copy()
-      bf = depstrip(self.dforces.f).copy()
-      
-      nimg = self.dbeads.nbeads
-      nat = self.dbeads.natoms
-      
-      # get tangents
-      btau = np.zeros((nimg, 3*nat), float)
-      for ii in range(1,nimg-1):
-          d1 = bq[ii]-bq[ii-1]
-          d2 = bq[ii+1]-bq[ii]
-          btau[ii]= d1/np.linalg.norm(d1)+d2/np.linalg.norm(d2)
-          btau[ii] *= 1.0/np.linalg.norm(btau)
-        
-      # get perpendicular forces 
-      for ii in range(1,nimg-1):
-          bf[ii] = bf[ii] - np.dot(bf[ii],btau[ii]) * btau[ii]
-          print np.linalg.norm(bf[ii])
-          
-      # adds the spring forces           
-      for ii in range(1,nimg-1):
-          print np.dot( btau[ii], ( bq[ii+1]+bq[ii-1]-2*bq[ii] )  ) 
-          bf[ii] += self.neb_kappa * btau[ii]*np.dot( btau[ii], ( bq[ii+1]+bq[ii-1]-2*bq[ii] )  ) 
-
- 
-      e = 0.0
-      g = -bf
-      return e, g  
-      
 class NEBMover(Mover):
    """Nudged elastic band routine.
 

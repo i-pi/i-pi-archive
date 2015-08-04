@@ -9,7 +9,7 @@
         <total_steps> 4000 </total_steps>
         <output prefix="neb_lbfgs">
                 <trajectory stride="2" filename="pos" cell_units="angstrom"> positions{angstrom} </trajectory>
-                <properties stride="1"> [step, time, potential] </properties>
+                <properties stride="1"> [step, time, potential, forcemod] </properties>
                 <properties stride="1" filename="neb"> [step, potential(0), potential(1), potential(2), potential(3), potential(4), potential(5), potential(6), potential(7), potential(8)] </properties>
         </output>
         <prng> <seed> 18885 </seed> </prng>

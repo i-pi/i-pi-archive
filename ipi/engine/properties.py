@@ -252,6 +252,11 @@ class Properties(dobject):
                          argument index (zero-based) that indicates which component of the potential must be returned. The optional argument 'bead'
                          will print the potential associated with the specified bead. """,
                       'func': (lambda index, bead="-1": self.forces.pots_component(int(index)).sum()/self.beads.nbeads if int(bead)<0 else self.forces.pots_component(int(index))[int(bead)] ) },
+      "forcemod": {  "dimension" : "force",
+                      "help" : "The modulus of the force.",
+                      "longhelp": """The modulus of the force. With the optional argument 'bead'
+                         will print the force associated with the specified bead.""",
+                      'func': (lambda bead="-1": np.linalg.norm(self.forces.f)/self.beads.nbeads if int(bead)<0 else np.linalg.norm(self.forces.f[int(bead)]))},                      
       "spring": {     "dimension" : "energy",
                       "help": "The total spring potential energy between the beads of all the ring polymers in the system.",
                       'func': (lambda: self.beads.vpath*self.nm.omegan2/self.beads.nbeads)},
