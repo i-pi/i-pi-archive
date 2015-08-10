@@ -126,7 +126,7 @@ class InputMover(Input):
       elif self.mode.fetch() == "neb":
          sc = NEBMover(fixcom=False, fixatoms=None, **self.neb_optimizer.fetch() )
       elif self.mode.fetch() == "dynamics":
-         sc = DynMover(fixcom=False, fixatoms=None, **self.neb_optimizer.fetch() )
+         sc = DynMover(fixcom=False, fixatoms=None, **self.dynamics.fetch() )
       else:
          sc = Mover()
          #raise ValueError("'" + self.mode.fetch() + "' is not a supported mover calculation mode.")
