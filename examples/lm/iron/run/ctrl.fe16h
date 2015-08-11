@@ -1,7 +1,7 @@
 HEADER  Fe_16 bcc, plus H in tetrahedral site
 % const fp=0 cpl=1 xcf=4 gga=3
 % const pureFe=0 PRBmodel=0 CModel2=0 scale=0
-% const nbas=18 nspec=3
+% const nbas=17 nspec=2
 % const sd=1 ovlp=sd ul=1 u1=0 tbu=0 io=1 nitq=500
 % const verb=31 so=0 nsp=2 tetra=0 metal={fp?3:1} width=0.02 N=1
 % const au=0.529177 NdFe=6.8
@@ -46,15 +46,14 @@ SITE
         ATOM=Fe POS= 1 1 1
         ATOM=Fe POS= 3/2 3/2 3/2
         ATOM=H  POS= 1 3/4 1/2
-        ATOM=C  POS= 1/2 1/2 0
 SYMGRP  I*I
 BZ      NKABC=nk TETRA={tetra} METAL={metal}
         EFMAX=2 EF0=ef0 DELEF=0.01 N={N} W={width}
         NPTS=5001 BZJOB=bzj SAVDOS=T NOINV=F
         INVIT=F MULL=mull DOS=-4.5 1 EFMAX=2
-% include SPEC
+% include SPECH
 ME
-% include ME
+% include MEH
 TB      FORCES=force EVDISC=T RMAXH=rmaxh TRH=T RHO=T 3PV=pv
         MOL=mol GAMMA=F PAIR=pair SCALE={scale}
         UL={ul} IODEL={io} OVLP={ovlp} TBU={tbu} NOUAVG={nav} U1={u1}
