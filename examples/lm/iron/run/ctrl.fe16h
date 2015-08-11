@@ -11,7 +11,7 @@ HEADER  Fe_16 bcc, plus H in tetrahedral site
 % const fs=0.048377 K=1/0.6333328d-5 amass=1.09716d-3
 VERS    TB=10 LM=7 FP=7 ASA=7
 IO      SHOW=0 HELP=F VERBOS={verb} WKP=F
-CONST   nit=100 conv=1d-4 qtol=2d-5 pair=F
+CONST   nit=100 conv=1d-4 qtol=5d-5 pair=F
         abcc=2.87 alat=abcc/{au}
         nk=3 mull=-1 bzj=1 ewtol=1d-6 ef0=0.643
         R=2.2 RC=0.8 RH=0.5
