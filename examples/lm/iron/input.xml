@@ -1,6 +1,6 @@
 <simulation verbosity="high">
    <output prefix='hinfe'>
-      <properties stride='1' filename='out' flush="1" >  [ step, time{picosecond}, conserved{kelvin}, temperature{kelvin}, kinetic_cv{kelvin}, potential{kelvin}, pressure_cv{megapascal}] </properties>
+      <properties stride='1' filename='out' flush="1" >  [ step, time{picosecond}, conserved, temperature{kelvin}, kinetic_cv, potential, pressure_cv{megapascal}] </properties>
       <trajectory stride='1' filename='pos' flush="1">positions{angstrom}</trajectory>
       <checkpoint stride='20000' />
    </output>
