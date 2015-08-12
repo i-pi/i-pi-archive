@@ -1,8 +1,9 @@
 <simulation verbosity="high">
-   <output prefix='hinfe'>
-      <properties stride='1' filename='out' flush="1" >  [ step, time{picosecond}, conserved, temperature{kelvin}, kinetic_cv, potential, pressure_cv{megapascal}] </properties>
+   <output prefix='hinfe-gle'>
+      <properties stride='1' filename='out' flush="1" >  [ step, time{picosecond}, conserved, temperature{kelvin}, kinetic_cv, potential, kinetic_cv(H), kinetic_cv(Fe), pressure_cv{megapascal}] </properties>
       <trajectory stride='1' filename='pos' flush="1">positions{angstrom}</trajectory>
-      <checkpoint stride='20000' />
+      <trajectory stride='1' filename='for' flush="1">forces</trajectory>
+      <checkpoint stride='1000' overwrite="false" />
    </output>
    <total_steps>100000</total_steps>
    <prng><seed>8417</seed></prng>
@@ -114,7 +115,7 @@
 ]
     </C>
   </thermostat>
-      <timestep units="femtosecond">0.5</timestep>
+      <timestep units="femtosecond">1.0</timestep>
       <temperature units='kelvin'>300</temperature>
    </ensemble>
 </system>
