@@ -31,9 +31,6 @@ from ipi.utils.units import *
 
 __all__ = ['InputNEB']
 
-# TODO SANITIZE THIS IN TERMS OF AVAILABLE OPTIONS AND DOCSTRINGS
-# TODO RECONCILE LS_OPTIONS AND INTERIOR/ENDPOINTS
-
 class InputNEB(InputDictionary):
     """Geometry optimization options.
     
@@ -42,22 +39,22 @@ class InputNEB(InputDictionary):
 
     """
 
-    attribs={"mode"  : (InputAttribute, {"dtype"   : str, "default": "cg", 
+    attribs={"mode"  : (InputAttribute, {"dtype"   : str, "default": "lbfgs", 
                                     "help"    : "The geometry optimization algorithm to be used",
                                     "options" : ['sd', 'cg', 'bfgs', 'lbfgs']}) }
    
-    fields = { "ls_options" : ( InputDictionary, {"dtype" : [ float, float, int, float, bool ], 
+    fields = { "ls_options" : ( InputDictionary, {"dtype" : [ float, int, float, float ], 
                               "help" : """Options for line search methods. Includes: 
                               tolerance: stopping tolerance for the search,
                               grad_tolerance: stopping tolerance on gradient for 
                               BFGS line search,
                               iter: the maximum number of iterations,
                               step: initial step for bracketing,
-                              adaptive: whether to update line_step.
+                              adaptive: whether to update initial step.
                               """, 
-                              "options" : ["tolerance", "gradtolerance", "iter", "step", "adaptive"],
-                              "default" : [1e-6, 1e-6, 100, 1e-3, True],
-                              "dimension": ["energy", "force", "undefined", "length", "undefined" ] }),       
+                              "options" : ["tolerance", "iter", "step", "adaptive"],
+                              "default" : [1e-6, 100, 1e-3, 1.0],
+                              "dimension": ["energy", "undefined", "length", "undefined" ] }),       
                 "tolerances" : ( InputDictionary, {"dtype" : float, 
                               "options" : [ "energy", "force", "position" ],
                               "default" : [ 1e-8, 1e-8, 1e-8 ],
@@ -88,10 +85,6 @@ class InputNEB(InputDictionary):
                               "options" : ['optimize', 'algorithm'],
                               "default" : [True, "bfgs"], 
                               "help"    : "Geometry optimization of endpoints"}),
-                "interior"   : (InputDictionary, {"dtype" : [bool, str],
-                              "options" : ['optimize', 'algorithm'],
-                              "default" : [False, "bfgs"],
-                              "help"    : "Geometry optimization of interior beads"}),
                 "spring"     : (InputDictionary, {"dtype" : [bool, float, float, float],
                               "options" : ["varsprings", "kappa", "kappamax", "kappamin"],
                               "default" : [False, 1.0, 1.5, 0.5],
@@ -118,7 +111,6 @@ class InputNEB(InputDictionary):
         self.qlist.store(neb.qlist)
         self.glist.store(neb.glist)
         self.endpoints.store(neb.endpoints)
-        self.interior.store(neb.interior)
         self.spring.store(neb.spring)
         self.climb.store(neb.climb)
         
