@@ -12,6 +12,7 @@ appropriate conserved energy quantity for the ensemble of choice.
 
 
 import time
+from copy import deepcopy
 
 import numpy as np
 
@@ -27,9 +28,10 @@ from ipi.inputs.barostats import InputBaro
 from ipi.engine.thermostats import *
 from ipi.engine.barostats import *
 
-
-__all__ = ['Ensemble', 'NVEEnsemble', 'NVTEnsemble', 'NPTEnsemble', 'NSTEnsemble']
-
+#venkat.hack
+#Added another class called MTSEnsemble
+__all__ = ['Ensemble', 'NVEEnsemble', 'NVTEnsemble', 'NPTEnsemble', 'NSTEnsemble','ReplayEnsemble', 'MTSEnsemble']
+#venkat.hack
 
 class Ensemble(dobject):
    """Base ensemble class.
@@ -57,7 +59,6 @@ class Ensemble(dobject):
          the system temperature as PIMD calculations are done at this
          effective classical temperature.
    """
-
    def __init__(self, dt, temp, fixcom=False, eens=0.0, fixatoms=None):
       """Initialises Ensemble.
 
@@ -72,6 +73,7 @@ class Ensemble(dobject):
       dset(self, "temp",  depend_value(name='temp',  value=temp))
       dset(self, "dt",    depend_value(name='dt',    value=dt))
       dset(self, "eens", depend_value(name='eens', value=eens))
+
       self.fixcom = fixcom
       if fixatoms is None:
          self.fixatoms = np.zeros(0,int)
@@ -106,6 +108,7 @@ class Ensemble(dobject):
       self.bias = bbias
       self.prng = prng
       self.nm = nm
+
 
       # n times the temperature
       dset(self,"ntemp", depend_value(name='ntemp',func=self.get_ntemp,
@@ -215,7 +218,6 @@ class NVEEnsemble(Ensemble):
          pcom *= 1.0/(nb*M)
          for i in range(3):
             self.beads.p[:,i:na3:3] -= m*pcom[i]
-            
       if (len(self.fixatoms)>0):
          for bp in self.beads.p:
             m = depstrip(self.beads.m)
@@ -256,6 +258,154 @@ class NVEEnsemble(Ensemble):
       self.pstep()
       self.pconstraints()
       self.ptime += time.time()
+
+
+#venkat.hack
+#Changed the name of the class.
+class MTSEnsemble(NVEEnsemble):
+   """Ensemble object for constant temperature simulations.
+
+   Has the relevant conserved quantity and normal mode propagator for the
+   constant temperature ensemble. Contains a thermostat object containing the
+   algorithms to keep the temperature constant.
+
+   Attributes:
+      thermostat: A thermostat object to keep the temperature constant.
+
+   Depend objects:
+      econs: Conserved energy quantity. Depends on the bead kinetic and
+         potential energy, the spring potential energy and the heat
+         transferred to the thermostat.
+   """
+
+   def __init__(self, dt, temp, thermostat=None, fixcom=False, eens=0.0, fixatoms=None):
+      """Initialises NVTEnsemble.
+
+      Args:
+         dt: The simulation timestep.
+         temp: The system temperature.
+         thermostat: A thermostat object to keep the temperature constant.
+            Defaults to Thermostat()
+         fixcom: An optional boolean which decides whether the centre of mass
+            motion will be constrained or not. Defaults to False.
+      """
+
+      super(MTSEnsemble,self).__init__(dt=dt,temp=temp, fixcom=fixcom, eens=eens, fixatoms=fixatoms)
+
+      if thermostat is None:
+         self.thermostat = Thermostat()
+      else:
+         self.thermostat = thermostat
+
+   def bind(self, beads, nm, cell, bforce, bbias, prng):
+      """Binds beads, cell, bforce and prng to the ensemble.
+
+      This takes a beads object, a cell object, a forcefield object and a
+      random number generator object and makes them members of the ensemble.
+      It also then creates the objects that will hold the data needed in the
+      ensemble algorithms and the dependency network. Also note that the
+      thermostat timestep and temperature are defined relative to the system
+      temperature, and the the thermostat temperature is held at the
+      higher simulation temperature, as is appropriate.
+
+      Args:
+         beads: The beads object from whcih the bead positions are taken.
+         nm: A normal modes object used to do the normal modes transformation.
+         cell: The cell object from which the system box is taken.
+         bforce: The forcefield object from which the force and virial are
+            taken.
+         prng: The random number generator object which controls random number
+            generation.
+      """
+
+      super(MTSEnsemble,self).bind(beads, nm, cell, bforce, bbias, prng)
+
+      fixdof = len(self.fixatoms)*3*self.beads.nbeads
+      if self.fixcom:
+         fixdof += 3
+
+
+      # first makes sure that the thermostat has the correct temperature, then proceed with binding it.
+      deppipe(self,"ntemp", self.thermostat,"temp")
+      deppipe(self,"dt", self.thermostat, "dt")
+
+      #depending on the kind, the thermostat might work in the normal mode or the bead representation.
+      self.thermostat.bind(beads=self.beads, nm=self.nm,prng=prng,fixdof=fixdof )
+
+      dget(self,"econs").add_dependency(dget(self.thermostat, "ethermo"))
+
+   def pstep(self, index=None, nmts=1):
+      if index is None:    # just add the total force if called without options
+          self.beads.p += depstrip(self.forces.f)*(self.dt*0.5)
+      else: 
+          self.beads.p += self.forces.forces_component(index)*(self.dt*0.5/nmts)
+
+
+   def qcstep(self, nmts=1):
+      """Velocity Verlet centroid position propagator."""
+
+      self.nm.qnm[0,:] += depstrip(self.nm.pnm)[0,:]/depstrip(self.beads.m3)[0]*self.dt/nmts
+
+   def step(self, step=None):
+      """Does one simulation time step."""
+
+
+      self.ttime = -time.time()
+      self.thermostat.step()
+      self.pconstraints()
+      self.ttime += time.time()
+
+      # also adds the bias force (outer loop)
+      self.beads.p += depstrip(self.bias.f)*(self.dt*0.5)
+
+
+#computes contribution of long distance force on momenta.
+      self.ptime = -time.time()
+      self.pstep(0, 1.0)
+      self.pconstraints()
+      self.ptime += time.time()
+
+#loop.
+#computes contribution of short distance force on momenta.
+
+      for iteration in range(4): 
+        self.ptime = -time.time()
+        self.pstep(1, 4.0)
+        self.pconstraints()
+        self.ptime += time.time()
+
+        self.qtime = -time.time()
+        self.qcstep(4.0)
+        self.nm.free_qstep()
+        self.qtime += time.time()
+
+        self.ptime -= time.time()
+        self.pstep(1,4.0)
+        self.pconstraints()
+        self.ptime += time.time()
+
+#loop.
+#computes contribution of long distance force on momenta.
+
+
+      self.ptime = -time.time()
+      self.pstep(0, 1.0)
+      self.pconstraints()
+      self.ptime += time.time()
+
+
+      self.ttime -= time.time()
+      self.thermostat.step()
+      self.pconstraints()
+      self.ttime += time.time()
+
+   def get_econs(self):
+      """Calculates the conserved energy quantity for constant temperature
+      ensemble.
+      """
+
+      return NVEEnsemble.get_econs(self) + self.thermostat.ethermo
+#venkat.hack
 
 class NVTEnsemble(NVEEnsemble):
    """Ensemble object for constant temperature simulations.
@@ -363,7 +513,6 @@ class NVTEnsemble(NVEEnsemble):
       """
 
       return NVEEnsemble.get_econs(self) + self.thermostat.ethermo
-
 
 class NPTEnsemble(NVTEnsemble):
    """Ensemble object for constant pressure simulations.
@@ -618,3 +767,84 @@ class NSTEnsemble(NVTEnsemble):
       self.thermostat.step()
       self.pconstraints()
       self.ttime += time.time()
+
+class ReplayEnsemble(Ensemble):
+   """Ensemble object that just loads snapshots from an external file in sequence.
+
+   Takes a trajectory, and simply sets the atom positions to match it, rather
+   than doing dynamics. In this way new properties can be calculated on an old
+   simulation, without having to rerun it from scratch.
+
+   Has the relevant conserved quantity and normal mode propagator for the
+   constant energy ensemble. Note that a temperature of some kind must be
+   defined so that the spring potential can be calculated.
+
+   Attributes:
+      intraj: The input trajectory file.
+      ptime: The time taken in updating the velocities.
+      qtime: The time taken in updating the positions.
+      ttime: The time taken in applying the thermostat steps.
+
+   Depend objects:
+      econs: Conserved energy quantity. Depends on the bead kinetic and
+         potential energy, and the spring potential energy.
+   """
+
+   def __init__(self, dt, temp, fixcom=False, eens=0.0, intraj=None, fixatoms=None):
+      """Initialises ReplayEnsemble.
+
+      Args:
+         dt: The simulation timestep.
+         temp: The system temperature.
+         fixcom: An optional boolean which decides whether the centre of mass
+            motion will be constrained or not. Defaults to False.
+         intraj: The input trajectory file.
+      """
+
+      super(ReplayEnsemble,self).__init__(dt=dt,temp=temp,fixcom=fixcom, eens=eens, fixatoms=fixatoms)
+      if intraj == None:
+         raise ValueError("Must provide an initialized InitFile object to read trajectory from")
+      self.intraj = intraj
+      if intraj.mode == "manual":
+         raise ValueError("Replay can only read from PDB or XYZ files -- or a single frame from a CHK file")
+      self.rfile = open(self.intraj.value,"r")
+      self.rstep = 0
+
+   def step(self, step=None):
+      """Does one simulation time step."""
+
+      self.ptime = self.ttime = 0
+      self.qtime = -time.time()
+
+
+      while True:
+       self.rstep += 1
+       try:
+         if (self.intraj.mode == "xyz"):
+            for b in self.beads:
+               myatoms = read_xyz(self.rfile)
+               myatoms.q *= unit_to_internal("length",self.intraj.units,1.0)
+               b.q[:] = myatoms.q
+         elif (self.intraj.mode == "pdb"):
+            for b in self.beads:
+               myatoms, mycell = read_pdb(self.rfile)
+               myatoms.q *= unit_to_internal("length",self.intraj.units,1.0)
+               mycell.h  *= unit_to_internal("length",self.intraj.units,1.0)
+               b.q[:] = myatoms.q
+            self.cell.h[:] = mycell.h
+         elif (self.intraj.mode == "chk" or self.intraj.mode == "checkpoint"):
+            # reads configuration from a checkpoint file
+            xmlchk = xml_parse_file(self.rfile) # Parses the file.
+
+            from ipi.inputs.simulation import InputSimulation
+            simchk = InputSimulation()
+            simchk.parse(xmlchk.fields[0][1])
+            mycell = simchk.cell.fetch()
+            mybeads = simchk.beads.fetch()
+            self.cell.h[:] = mycell.h
+            self.beads.q[:] = mybeads.q
+            softexit.trigger(" # Read single checkpoint")
+       except EOFError:
+         softexit.trigger(" # Finished reading re-run trajectory")
+       if (step==None or self.rstep>step): break
+      self.qtime += time.time()
