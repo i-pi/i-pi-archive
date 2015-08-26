@@ -15,9 +15,10 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <http.//www.gnu.org/licenses/>.
 
+Inputs created by Michele Ceriotti and Benjamin Helfrecht, 2015
 
 Classes:
-   InputEnsemble: Deals with creating the Ensemble object from a file, and
+   InputGeop: Deals with creating the Geop object from a file, and
       writing the checkpoints.
 """
 
@@ -40,22 +41,20 @@ class InputGeop(InputDictionary):
     """
 
     #TODO: RENAME BFGS/L-BFGS ONLY OPTIONS TO INDICATE SPECIFIC TO BFGS/L-BFGS
-    attribs={"mode"  : (InputAttribute, {"dtype"   : str, "default": "cg", 
+    attribs={"mode"  : (InputAttribute, {"dtype"   : str, "default": "lbfgs", 
                                     "help"    : "The geometry optimization algorithm to be used",
                                     "options" : ['sd', 'cg', 'bfgs', 'lbfgs']}) }
    
-    fields = { "ls_options" : ( InputDictionary, {"dtype" : [ float, float, int, float, bool ], 
+    fields = { "ls_options" : ( InputDictionary, {"dtype" : [float, int, float, float], 
                               "help" : """"Options for line search methods. Includes: 
                               tolerance: stopping tolerance for the search,
-                              grad_tolerance: stopping tolerance on gradient for 
-                              BFGS line search,
                               iter: the maximum number of iterations,
                               step: initial step for bracketing,
-                              adaptive: whether to update line_step.
+                              adaptive: whether to update initial step.
                               """, 
-                              "options" : ["tolerance", "gradtolerance", "iter", "step", "adaptive"],
-                              "default" : [1e-6, 1e-6, 100, 1e-3, True],
-                              "dimension": ["energy", "force", "undefined", "length", "undefined" ] }),       
+                              "options" : ["tolerance", "iter", "step", "adaptive"],
+                              "default" : [1e-6, 100, 1e-3, 1.0],
+                              "dimension": ["energy", "undefined", "length", "undefined" ] }),       
                 "tolerances" : ( InputDictionary, {"dtype" : float, 
                               "options" : [ "energy", "force", "position" ],
                               "default" : [ 1e-8, 1e-8, 1e-8 ],

@@ -15,6 +15,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <http.//www.gnu.org/licenses/>.
 
+Algorithms implemented by Michele Ceriotti and Benjamin Helfrecht, 2015
+
 Functions: 
         bracket: Determines the 3 points that bracket the function minimum
         min_brent:  Does one-D minimization (line search) based on bisection 
@@ -25,19 +27,25 @@ Functions:
             new search directions. Minimizes the function using 'min_approx' function.
         L-BFGS: Uses the limited memory BFGS algorithm (L-BFGS) to 
             compute new search directions. Minimizes using 'min_approx'
+        L-BFGS_nls: L-BFGS algorithm without line search
+            *** This function is less stable than L-BFGS and not any more efficient ***
         bracket_neb: Modified 'bracket' routine to make 
             compatible with functions with unknown gradient
         min_brent_neb: Modified 'min_brent' routine to make 
             compatible with functions with unknown gradient
 
         bracket, bracket_neb, min_brent, min_brent_neb,and BFGS subroutines adapted from: 
-        Press, W. H., Teukolsky, S. A., Vetterling, W. T., and Flannery, B. P. (1992). 
-        Numerical Recipes in C: The Art of Scientific Computing. 
-        Cambridge: Cambridge University Press
-        
+            Press, W. H., Teukolsky, S. A., Vetterling, W. T., and Flannery, B. P. (1992). 
+            Numerical Recipes in C: The Art of Scientific Computing. 
+            Cambridge: Cambridge University Press
+
+        LBFGS subroutine adapted from:
+            Nocedal, J. (1980). Updating Quasi-Newton Matrices with
+            Limited Storage. Mathematics of Computation, 35, 773-782.
+            DOI: http://dx.doi.org/10.1090/S0025-5718-1980-0572855-7
 """
 
-#TODO: CHANGE 1D MINIMIZERS TO TAKE THE 0.0 ENERGY IN THE NEW NEBBFGS AND NEBCG (TO BE CREATED) MOVERS
+#TODO: CLEAN UP BFGS, L-BFGS, L-BFGS_nls TO NOT EXIT WITHIN MINTOOLS.PY BUT USE UNIVERSAL SOFTEXIT
 
 __all__ = [ "min_brent" ]
 
@@ -45,13 +53,15 @@ import numpy as np
 import math
 from ipi.utils.messages import verbosity, warning, info
 
+# Bracketing function
 def bracket(fdf, fdf0=None, x0=0.0, init_step=1.0e-3): 
 
     """Given an initial point, determines the initial bracket for the minimum
      Arguments:
-            fdf = function to minimize, derivative of function to minimize
-            x0 = initial point
-            fdf0 = value of function and its derivative at x0
+            fdf: function to minimize, derivative of function to minimize
+            x0: initial point
+            fdf0: value of function and its derivative at x0
+            init_step: intial step size
     """
 
     # Constants
@@ -70,7 +80,7 @@ def bracket(fdf, fdf0=None, x0=0.0, init_step=1.0e-3):
     info(" @BRACKET: Started bracketing", verbosity.debug)
     info(" @BRACKET: Evaluated first step", verbosity.debug)
 
-    # Switch direction to move downhill, if necessary
+    # Switch direction to move downhill, if necessary, and rearrange
     if fb > fa:
         tmp = ax
         ax = bx
@@ -168,11 +178,12 @@ def min_brent(fdf, fdf0=None, x0=0.0, tol=1.0e-6, itmax=100, init_step=1.0e-3):
     """Given a maximum number of iterations and a convergence tolerance,
      minimizes the specified function 
      Arguments:
-            x0 = initial x-value
-            fdf = function to minimize
-            fdf0 = initial function value
-            tol = convergence tolerance
-            itmax = maximum allowed iterations
+            x0: initial x-value
+            fdf: function to minimize
+            fdf0: initial function value
+            tol: convergence tolerance
+            itmax: maximum allowed iterations
+            init_step: initial step size
     """
 
     # Initializations and constants
@@ -180,7 +191,7 @@ def min_brent(fdf, fdf0=None, x0=0.0, tol=1.0e-6, itmax=100, init_step=1.0e-3):
     zeps = 1.0e-10 # Safeguard against trying to find fractional precision for min that is exactly zero
     e = 0.0 # Size of step before last
 
-    # Call initial bracketing routine; takes arguments function and initial x-value
+    # Call initial bracketing routine
     (ax, bx, cx, fb, dfb) = bracket(fdf, fdf0, x0, init_step)
     
     # Set bracket points
@@ -321,6 +332,7 @@ def min_brent(fdf, fdf0=None, x0=0.0, tol=1.0e-6, itmax=100, init_step=1.0e-3):
     info(" @MINIMIZE: Finished minimization, energy = %f" % fx, verbosity.debug)
     return (x, fx)
 
+# Approximate line search
 def min_approx(fdf, x0, fdf0=None, d0=None, max_step=100.0, tol=1.0e-6, itmax=100):
     
     """Given an n-dimensional function and its gradient, and an 
@@ -328,16 +340,17 @@ def min_approx(fdf, x0, fdf0=None, d0=None, max_step=100.0, tol=1.0e-6, itmax=10
     is thought to be 'sufficiently' minimized, i.e. carries out an 
     approximate minimization. 
         Arguments:
-            fdf = function and its gradient
-            fdf0 = initial function and gradient value
-            d0 = n-dimensional initial direction
-            p0 = n-dimensional initial point
-            max_step = maximum step size
+            fdf: function and its gradient
+            fdf0: initial function and gradient value
+            d0: n-dimensional initial direction
+            x0: n-dimensional initial point
+            max_step: maximum step size
+            tol: tolerance for exiting line search
+            itmax: maximum number of iterations for the line search
     """
     
     # Initializations and constants
     info(" @MINIMIZE: Started approx. line search", verbosity.debug) 
-    stepsum = 0.0
     n = len(x0.flatten())
     if fdf0 is None: fdf0 = fdf(x0)
     f0, df0 = fdf0
@@ -345,6 +358,7 @@ def min_approx(fdf, x0, fdf0=None, d0=None, max_step=100.0, tol=1.0e-6, itmax=10
     x = np.zeros(n)
     alf = 1.0e-4
 
+    # Step size
     stepsum = np.sqrt(np.dot(d0.flatten(), d0.flatten()))
 
     # Scale if attempted step is too large
@@ -357,7 +371,7 @@ def min_approx(fdf, x0, fdf0=None, d0=None, max_step=100.0, tol=1.0e-6, itmax=10
     if slope >= 0.0:
         info(" @MINIMIZE: Warning -- gradient is >= 0 (%f)" % slope, verbosity.low)
 
-    test = np.amax(np.divide(np.absolute(d0), np.maximum(np.absolute(x0), np.ones(n))))
+    test = np.amax(np.divide(np.absolute(d0.flatten()), np.maximum(np.absolute(x0.flatten()), np.ones(n))))
 
     # Setup to try Newton step first
     alamin = tol / test
@@ -370,16 +384,16 @@ def min_approx(fdf, x0, fdf0=None, d0=None, max_step=100.0, tol=1.0e-6, itmax=10
         fx, dfx = fdf(x)
         info(" @MINIMIZE: Calculated energy", verbosity.debug)
         
-        # Check for convergence on change in x; exit
+        # Check for convergence on change in x
         if alam < alamin:
             x = x0
             info(" @MINIMIZE: Convergence in position, exited line search", verbosity.debug)
-            return (x, fx)
+            return (x, fx, dfx)
 
-        # Sufficient function decrease; exit
+        # Sufficient function decrease
         elif fx <= (f0 + alf * alam * slope):
             info(" @MINIMIZE: Sufficient function decrease, exited line search", verbosity.debug)
-            return (x, fx)
+            return (x, fx, dfx)
 
         # No convergence; backtrack
         else:
@@ -423,20 +437,21 @@ def min_approx(fdf, x0, fdf0=None, d0=None, max_step=100.0, tol=1.0e-6, itmax=10
 
     info(" @MINIMIZE: Error - maximum iterations for line search (%d) exceeded, exiting search" % itmax, verbosity.low)
     info(" @MINIMIZE: Finished minimization, energy = %f" % fx, verbosity.debug)
-    return (x, fx)
+    return (x, fx, dfx)
         
-def BFGS(x0, d0, fdf, fdf0=None, invhessian=None, max_step=100, tol=1.0e-6, grad_tol=1.0e-6, itmax=100):
+# BFGS algorithm with approximate line search
+def BFGS(x0, d0, fdf, fdf0=None, invhessian=None, max_step=100, tol=1.0e-6, itmax=100):
     
     """BFGS minimization. Uses approximate line minimizations.
     Does one step.
         Arguments:
-            fdf = function and gradient
-            fdf0 = initial function and gradient value
-            d0 = initial direction for line minimization
-            x0 = initial point
-            max_step = limit on step length
-            tol = convergence tolerance
-            itmax = maximum number of allowed iterations
+            fdf: function and gradient
+            fdf0: initial function and gradient value
+            d0: initial direction for line minimization
+            x0: initial point
+            max_step: limit on step length
+            tol: convergence tolerance
+            itmax: maximum number of allowed iterations
     """
     
     # Original function value, gradient, other initializations
@@ -458,7 +473,7 @@ def BFGS(x0, d0, fdf, fdf0=None, invhessian=None, max_step=100, tol=1.0e-6, grad
     max_step = max_step * max(np.sqrt(linesum), n)
 
     # Perform approximate line minimization in direction d0
-    x, fx = min_approx(fdf, x0, fdf0, xi, max_step, tol, itmax) # must return vectors
+    x, fx, dfx = min_approx(fdf, x0, fdf0, xi, max_step, tol, itmax) 
 
     info(" @MINIMIZE: Started BFGS", verbosity.debug)
 
@@ -466,29 +481,13 @@ def BFGS(x0, d0, fdf, fdf0=None, invhessian=None, max_step=100, tol=1.0e-6, grad
     xi = np.subtract(x, x0).flatten()
     x0 = x
 
-    # Test for convergence on step size
-    test = np.amax(np.divide(np.absolute(xi), np.maximum(np.absolute(x0), np.ones(n))))
-
-    if test < tol:
-        info(" @MINIMIZE: Convergence on tolerance, exited BFGS, energy = %f" % fx, verbosity.debug)
-        return (x, fx, xi, invhessian)
-
     # Store old gradient
     dg = g
 
     # Get new gradient      
-    unused, g = fdf(x0)
+    g = dfx
     info(" @MINIMIZE: Updated gradient", verbosity.debug)
     g = g.flatten()
-    test = 0.0
-    den = max(fx, 1.0)
-
-    test = np.amax(np.divide(np.multiply(np.absolute(g), np.maximum(np.absolute(x0), np.ones(n))), den))
-
-    # Test for convergence on zero gradient
-    if test < grad_tol:
-        info(" @MINIMIZE: Convergence on zero gradient, exited BFGS, energy = %f" % fx, verbosity.debug)
-        return (x, fx, xi, invhessian)
 
     # Compute difference of gradients
     dg = np.subtract(g, dg)
@@ -519,8 +518,8 @@ def BFGS(x0, d0, fdf, fdf0=None, invhessian=None, max_step=100, tol=1.0e-6, grad
     info(" @MINIMIZE: Updated search direction", verbosity.debug)
     return (x, fx, xi, invhessian)
 
-
-def L_BFGS(x0, d0, fdf, qlist, glist, fdf0=None, max_step=100, tol=1.0e-6, grad_tol=1.0e-6, itmax=100, m=0, k=0):
+# L-BFGS algorithm with approximate line search
+def L_BFGS(x0, d0, fdf, qlist, glist, fdf0=None, max_step=100, tol=1.0e-6, itmax=100, m=0, k=0):
     
     """L-BFGS minimization. Uses approximate line minimizations.
     Does one step.
@@ -544,7 +543,7 @@ def L_BFGS(x0, d0, fdf, qlist, glist, fdf0=None, max_step=100, tol=1.0e-6, grad_
     f0, df0 = fdf0
     n = len(x0.flatten())
     dg = np.zeros(n)
-    g = df0.flatten()
+    g = df0
     x = np.zeros(n)
     linesum = np.dot(x0.flatten(), x0.flatten())
     alpha = np.zeros(m)
@@ -559,56 +558,40 @@ def L_BFGS(x0, d0, fdf, qlist, glist, fdf0=None, max_step=100, tol=1.0e-6, grad_
     max_step = max_step * max(np.sqrt(linesum), n)
 
     # Perform approximate line minimization in direction d0
-    x, fx = min_approx(fdf, x0, fdf0, xi, max_step, tol, itmax) # must return vectors
+    x, fx, dfx = min_approx(fdf, x0, fdf0, xi, max_step, tol, itmax)
 
     info(" @MINIMIZE: Started L-BFGS", verbosity.debug)
 
     # Update line direction (xi) and current point (x0)
-    xi = np.subtract(x, x0).flatten()
+    xi = np.subtract(x, x0)
 
     # Build list of previous positions
     if k < m:
-        qlist[k] = xi
+        qlist[k] = xi.flatten()
     else:
         qlist = np.roll(qlist, -1, axis=0)
-        qlist[m - 1] = xi
+        qlist[m - 1] = xi.flatten()
     
+    # Update current point
     x0 = x
-
-    # Test for convergence on step size
-    test = np.amax(np.divide(np.absolute(xi), np.maximum(np.absolute(x0), np.ones(n))))
-
-    if test < tol:
-        info(" @MINIMIZE: Convergence on tolerance, exited L-BFGS, energy = %f" % fx, verbosity.debug)
-        return (x, fx, xi, qlist, glist)
 
     # Store old gradient
     dg = g
 
     # Get new gradient      
-    unused, g = fdf(x0)
+    g = dfx
     info(" @MINIMIZE: Updated gradient", verbosity.debug)
-    g = g.flatten()
-    test = 0.0
-    den = max(fx, 1.0)
-
-    test = np.amax(np.divide(np.multiply(np.absolute(g), np.maximum(np.absolute(x0), np.ones(n))), den))
-
-    # Test for convergence on zero gradient
-    if test < grad_tol:
-        info(" @MINIMIZE: Convergence on zero gradient, exited L-BFGS, energy = %f" % fx, verbosity.debug)
-        return (x, fx, xi, qlist, glist)
 
     # Compute difference of gradients
-    q = g
+    q = g.flatten()
     dg = np.subtract(g, dg)
 
     # Build list of previous gradients
     if k < m:
-        glist[k] = dg
+        glist[k] = dg.flatten()
     else:
         glist = np.roll(glist, -1, axis=0)
-        glist[m - 1] = dg
+        glist[m - 1] = dg.flatten()
 
     fac = np.dot(dg.flatten(), xi.flatten())
     sumdg = np.dot(dg.flatten(), dg.flatten())
@@ -645,25 +628,25 @@ def L_BFGS(x0, d0, fdf, qlist, glist, fdf0=None, max_step=100, tol=1.0e-6, grad_
             beta[j] = rho[j] * np.dot(glist[j], xi)
             xi = xi + qlist[j] * (alpha[j] - beta[j])
 
-        # Update direction xi
-        xi *= -1.0
-
         info(" @MINIMIZE: Second L-BFGS loop recursion completed", verbosity.debug)
-        info(" @MINIMIZE: Updated search direction", verbosity.debug)
 
     else:
         info(" @MINIMIZE: Skipped direction update; direction * gradient insufficient", verbosity.debug)
 
+    # Update direction xi #TODO: MOVE THIS TO OUTSIDE OF IF/ELSE SO RUNS EVERY TIME
+    xi = -1.0 * xi.reshape(d0.shape)
+    info(" @MINIMIZE: Updated search direction", verbosity.debug)
     return (x, fx, xi, qlist, glist)
 
-# Bracketing for NEB
+# Bracketing for NEB, TODO: DEBUG THIS IF USING SD OR CG OPTIONS FOR NEB
 def bracket_neb(fdf, fdf0=None, x0=0.0, init_step=1.0e-3): 
 
     """Given an initial point, determines the initial bracket for the minimum
      Arguments:
-            fdf = function to minimize 
-            x0 = initial point
-            fdf0 = value of function at x0
+            fdf: function to minimize 
+            x0: initial point
+            fdf0: value of function at x0
+            init_step: initial step size
     """
 
     # Constants
@@ -769,11 +752,12 @@ def min_brent_neb(fdf, fdf0=None, x0=0.0, tol=1.0e-6, itmax=100, init_step=1.0e-
     """Given a maximum number of iterations and a convergence tolerance,
      minimizes the specified function 
      Arguments:
-            x0 = initial x-value
-            fdf = function to minimize
-            fdf0 = initial function value
-            tol = convergence tolerance
-            itmax = maximum allowed iterations
+            x0: initial x-value
+            fdf: function to minimize
+            fdf0: initial function value
+            tol: convergence tolerance
+            itmax: maximum allowed iterations
+            init_step: initial step size
     """
 
     # Initializations and constants
@@ -889,23 +873,24 @@ def min_brent_neb(fdf, fdf0=None, x0=0.0, tol=1.0e-6, itmax=100, init_step=1.0e-
     xmin = x
     return xmin, fx 
 
-# L-BFGS without line search
-def L_BFGS_nls(x0, d0, fdf, qlist, glist, fdf0=None, max_step=100, tol=1.0e-6, grad_tol=1.0e-6, itmax=100, init_step=1.0e-3, m=0, k=0):
+# L-BFGS without line search; WARNING: UNSTABLE
+def L_BFGS_nls(x0, d0, fdf, qlist, glist, fdf0=None, max_step=100, tol=1.0e-6, itmax=100, init_step=1.0e-3, m=0, k=0):
     
     """L-BFGS minimization without line search
     Does one step.
         Arguments:
-            fdf = function and gradient
-            fdf0 = initial function and gradient value
-            d0 = initial direction for line minimization
-            x0 = initial point
-            qlist = list of previous positions used for reduced inverse Hessian construction
-            glist = list of previous gradients used for reduced inverse Hessian construction
-            m = number of corrections to store and use
-            k = iteration (MD step) number
-            max_step = limit on step length
-            tol = convergence tolerance
-            itmax = maximum number of allowed iterations
+            fdf: function and gradient
+            fdf0: initial function and gradient value
+            d0: initial direction for line minimization
+            x0: initial point
+            qlist: list of previous positions used for reduced inverse Hessian construction
+            glist: list of previous gradients used for reduced inverse Hessian construction
+            m: number of corrections to store and use
+            k: iteration (MD step) number
+            max_step: limit on step length
+            tol: convergence tolerance
+            itmax: maximum number of allowed iterations
+            init_step: initial step size
     """
     
     # Original function value, gradient, other initializations
@@ -914,7 +899,7 @@ def L_BFGS_nls(x0, d0, fdf, qlist, glist, fdf0=None, max_step=100, tol=1.0e-6, g
     f0, df0 = fdf0
     n = len(x0.flatten())
     dg = np.zeros(n)
-    g = df0 #df0.flatten()
+    g = df0 
     x = np.zeros(n)
     linesum = np.dot(x0.flatten(), x0.flatten())
     alpha = np.zeros(m)
@@ -924,32 +909,36 @@ def L_BFGS_nls(x0, d0, fdf, qlist, glist, fdf0=None, max_step=100, tol=1.0e-6, g
     
     # Initial line direction
     xi = d0
-    dg = g
+    dg = df0 
 
-    # Maximum step size
-    max_step = max_step * max(np.sqrt(linesum), n)
+    # Step size
+    stepsize = np.sqrt(np.dot(d0.flatten(), d0.flatten()))
 
     # First iteration; use initial step
     if k == 0:
-        #scale = 0.1
         scale = 1.0
-        #fx, g = fdf(x)
         while np.sqrt(np.dot(g.flatten(), g.flatten())) >= np.sqrt(np.dot(df0.flatten(), df0.flatten()))\
                 or np.isnan(np.sqrt(np.dot(g.flatten(), g.flatten()))) == True\
                 or np.isinf(np.sqrt(np.dot(g.flatten(), g.flatten()))) == True:
-        #while fx >= f0 or np.isnan(fx) == True or np.isinf(fx) == True:
             x = np.add(x0, (scale * init_step * d0 / np.sqrt(np.dot(d0.flatten(), d0.flatten()))))
             scale *= 0.1
             fx, g = fdf(x)
-            #g = g.flatten()
     else:
+
+        # Scale if attempted step is too large
+        if stepsize > max_step:
+            d0 = max_step * d0 / np.sqrt(np.dot(d0.flatten(), d0.flatten()))
+            info(" @MINIMIZE: Scaled step size", verbosity.debug)
+
         x = np.add(x0, d0)       
-        fx, g = fdf(x) 
+        print "step size:", np.sqrt(np.dot(d0.flatten(), d0.flatten()))
+        fx, g = fdf(x)
 
     info(" @MINIMIZE: Started L-BFGS", verbosity.debug)
+    info(" @MINIMIZE: Updated gradient", verbosity.debug)
 
     # Update line direction (xi) and current point (x0)
-    xi = np.subtract(x, x0) #.flatten()
+    xi = np.subtract(x, x0)
 
     # Build list of previous positions
     if k < m:
@@ -958,34 +947,11 @@ def L_BFGS_nls(x0, d0, fdf, qlist, glist, fdf0=None, max_step=100, tol=1.0e-6, g
         qlist = np.roll(qlist, -1, axis=0)
         qlist[m - 1] = xi.flatten()
     
+    # Update current point
     x0 = x
 
-    # Test for convergence on step size
-    test = np.amax(np.divide(np.absolute(xi), np.maximum(np.absolute(x0), np.ones(x0.shape))))
-
-    if test < tol:
-        info(" @MINIMIZE: Convergence on tolerance, exited L-BFGS, energy = %f" % fx, verbosity.debug)
-        return (x, fx, xi, qlist, glist)
-
-    # Store old gradient
-    #dg = g
-
-    # Get new gradient      
-    #unused, g = fdf(x0)
-    info(" @MINIMIZE: Updated gradient", verbosity.debug)
-    #g = g.flatten()
-    test = 0.0
-    den = max(fx, 1.0)
-
-    test = np.amax(np.divide(np.multiply(np.absolute(g), np.maximum(np.absolute(x0), np.ones(x0.shape))), den))
-
-    # Test for convergence on zero gradient
-    if test < grad_tol:
-        info(" @MINIMIZE: Convergence on zero gradient, exited L-BFGS, energy = %f" % fx, verbosity.debug)
-        return (x, fx, xi, qlist, glist)
-
     # Compute difference of gradients
-    q = g
+    q = g.flatten()
     dg = np.subtract(g, dg)
 
     # Build list of previous gradients
@@ -995,10 +961,6 @@ def L_BFGS_nls(x0, d0, fdf, qlist, glist, fdf0=None, max_step=100, tol=1.0e-6, g
         glist = np.roll(glist, -1, axis=0)
         glist[m - 1] = dg.flatten()
 
-    fac = np.dot(dg.flatten(), xi.flatten())
-    sumdg = np.dot(dg.flatten(), dg.flatten())
-    sumxi = np.dot(xi.flatten(), xi.flatten())
-
     # Determine bounds for L-BFGS 'two loop recursion'
     if k < (m - 1):
         bound1 = k
@@ -1007,38 +969,31 @@ def L_BFGS_nls(x0, d0, fdf, qlist, glist, fdf0=None, max_step=100, tol=1.0e-6, g
         bound1 = m - 1
         bound2 = m
         
-    # Skip update if not 'fac' sufficiently positive
-    if fac > np.sqrt(zeps * sumdg * sumxi):
-        
-        # Begin two loop recursion:
-        # First loop
-        for j in range(bound1, -1,  -1):
-            rho[j] = 1.0 / np.dot(glist[j], qlist[j])
-            alpha[j] = rho[j] * np.dot(qlist[j], q.flatten())
-            q = q.flatten() - alpha[j] * glist[j]
+    # Begin two loop recursion:
+    # First loop
+    for j in range(bound1, -1,  -1):
+        rho[j] = 1.0 / np.dot(glist[j], qlist[j])
+        alpha[j] = rho[j] * np.dot(qlist[j], q)
+        q = q - alpha[j] * glist[j]
 
-        info(" @MINIMIZE: First L-BFGS loop recursion completed", verbosity.debug)
+    info(" @MINIMIZE: First L-BFGS loop recursion completed", verbosity.debug)
 
-        # Two possiblities for scaling: using first or most recent 
-        # members of the gradient and position lists
-        hk = np.dot(glist[bound1], qlist[bound1]) / np.dot(glist[bound1], glist[bound1])
-        #hk = np.dot(glist[0], qlist[0]) / np.dot(glist[0], glist[0])
-        xi = hk * q
+    # Two possiblities for scaling: using first or most recent 
+    # members of the gradient and position lists
+    hk = np.dot(glist[bound1], qlist[bound1]) / np.dot(glist[bound1], glist[bound1])
+    #hk = np.dot(glist[0], qlist[0]) / np.dot(glist[0], glist[0])
+    xi = hk * q
 
-        # Second loop
-        for j in range(0, bound2, 1):
-            beta[j] = rho[j] * np.dot(glist[j], xi)
-            xi = xi + qlist[j] * (alpha[j] - beta[j])
+    # Second loop
+    for j in range(0, bound2, 1):
+        beta[j] = rho[j] * np.dot(glist[j], xi)
+        xi = xi + qlist[j] * (alpha[j] - beta[j])
 
-        # Update direction xi
-        #xi *= -1.0
-        xi = -xi.reshape(d0.shape)
+    # Update direction xi
+    xi = -xi.reshape(d0.shape)
 
-        info(" @MINIMIZE: Second L-BFGS loop recursion completed", verbosity.debug)
-        info(" @MINIMIZE: Updated search direction", verbosity.debug)
-
-    else:
-        info(" @MINIMIZE: Skipped direction update; direction * gradient insufficient", verbosity.debug)
+    info(" @MINIMIZE: Second L-BFGS loop recursion completed", verbosity.debug)
+    info(" @MINIMIZE: Updated search direction", verbosity.debug)
 
     return (x, fx, xi, qlist, glist)
 

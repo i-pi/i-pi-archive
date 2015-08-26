@@ -10,13 +10,13 @@
         <output prefix="neb_lbfgs">
                 <trajectory stride="2" filename="pos" cell_units="angstrom"> positions{angstrom} </trajectory>
                 <properties stride="1"> [step, time, potential, forcemod] </properties>
-                <properties stride="1" filename="neb"> [step, potential(0), potential(1), potential(2), potential(3), potential(4), potential(5), potential(6), potential(7), potential(8)] </properties>
+                <properties stride="1" filename="neb"> [step, potential(0), potential(1), potential(2), potential(3), potential(4), potential(5), potential(6), potential(7), potential(8), potential(9), potential(10), potential(11), potential(12), potential(13), potential(14), potential(15), potential(16)] </properties>
         </output>
         <prng> <seed> 18885 </seed> </prng>
         <system>
         <forces> <force> zundel </force> </forces>
-	<initialize nbeads="9">
-                <file mode="xyz" units="angstrom"> ./start.xyz </file>
+	<initialize nbeads="17">
+                <file mode="xyz" units="angstrom"> ./start17.xyz </file>
 	        <cell> [25.29166, 0, 0, 0, 25.29166, 0, 0, 0, 25.29166] </cell>
         </initialize>
         <mover mode='neb'>
@@ -24,7 +24,6 @@
 		        <ls_options>
 			        <step> 1.0e-3 </step>
 			        <tolerance> 1.0e-5 </tolerance>
-			        <gradtolerance> 1.0e-5 </gradtolerance>
 			        <iter> 150 </iter>
 		        </ls_options>
 		        <tolerances>
@@ -32,7 +31,7 @@
 			        <force> 1.0e-2 </force>
 			        <position> 1.0e-7 </position>
 		        </tolerances>
-		        <maximum_step> 150.0 </maximum_step>
+		        <maximum_step> 2.0 </maximum_step>
 	        </neb_optimizer>
         </mover>
         </system>
