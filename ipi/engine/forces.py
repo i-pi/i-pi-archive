@@ -275,7 +275,7 @@ class ForceComponent(dobject):
          Depends on each replica's ufvx list.
    """
 
-   def __init__(self, ffield="", nbeads=0, weight=1.0, name=""):
+   def __init__(self, ffield="", nbeads=0, weight=1.0, name="", lmts=0):
       """Initializes ForceComponent
 
       Args:
@@ -287,12 +287,14 @@ class ForceComponent(dobject):
             combined to give a total force, the contribution of this forcefield
             will be weighted by this factor.
          name: The name of the forcefield.
+         lmts: The MTS level at which this should be computed
       """
 
       self.ffield = ffield
       self.name = name
       self.nbeads = nbeads
       self.weight = weight
+      self.lmts = lmts
 
    def bind(self, beads, cell, fflist):
       """Binds beads, cell and force to the forcefield.
@@ -456,6 +458,9 @@ class Forces(dobject):
 
    def __init__(self):
       self.bound = False
+      self.dforces = None
+      self.dbeads = None
+      self.dcell = None
       
    def bind(self, beads, cell, fcomponents, fflist):
       """Binds beads, cell and forces to the forcefield.
@@ -556,6 +561,22 @@ class Forces(dobject):
       dset(self,"vir",
          depend_array(name="vir", func=self.get_vir, value=np.zeros((3,3)),
             dependencies=[dget(self,"virs")]))
+            
+            
+      # SC forces and potential  
+      dset(self, "alpha", depend_value(name="alpha", value=0.5))
+            
+      dset(self, "SCCALC", 
+           depend_value(name="SCCALC", func=self.sccalc, value = [None,None],
+                 dependencies=[dget(self, "f"), dget(self,"pots"), dget(self,"alpha")] ) )
+                 
+      dset(self, "fsc", depend_array(name="fsc",value=np.zeros((self.nbeads,3*self.natoms)),
+            dependencies=[dget(self,"SCCALC")],
+            func=(lambda: self.SCCALC[1] ) ) )
+       
+      dset(self, "potsc", depend_value(name="potsc",
+            dependencies=[dget(self,"SCCALC") ],
+            func=(lambda: self.SCCALC[0] ) ) ) 
 
    def copy(self, beads=None, cell = None):
       """ Returns a copy of this force object that can be used to compute forces,
@@ -627,6 +648,15 @@ class Forces(dobject):
    def forces_component(self, index):
       return self.mforces[index].weight*self.mrpc[index].b2tob1(depstrip(self.mforces[index].f))
 
+   def forces_mts(self, level):
+      # fetches ONLY the forces associated with a given MTS level
+      fk = np.zeros((self.nbeads,3*self.natoms))
+      for index in range(len(self.mforces)):
+         if level == mforces[index].lmts:
+            fk += self.mforces[index].weight*self.mrpc[index].b2tob1(depstrip(self.mforces[index].f))
+      return fk
+
+
    def f_combine(self):
       """Obtains the total force vector."""
 
@@ -674,3 +704,27 @@ class Forces(dobject):
             for j in range(3):
                rp[:,i,j] += self.mforces[k].weight*self.mrpc[k].b2tob1(virs[:,i,j])
       return rp
+      
+   def sccalc(self):
+      """ Obtains Suzuki-Chin energy and forces by finite differences """
+      
+      # This computes the difference between the Trotter and Suzuki-Chin Hamiltonian,
+      # and the associated forces.
+      
+      # We need to compute FW and BW finite differences, so first we initialize an
+      # auxiliary force evaluator
+      
+      if (self.dforces is None) : 
+         self.dbeads = self.beads.copy()
+         self.dcell = self.cell.copy()
+         self.dforces = self.copy(self.dbeads, self.dcell) 
+      
+      fbase = depstrip(self.f)
+      scpot = self.pots[0] + np.dot(fbase,fbase)  # this should get the potential
+      
+      self.dbeads.q = self.beads.q + fbase # move forward (should hardcode or input displacement)
+      fplus = depstrip(self.dforces.f).copy()
+      self.dbeads.q = self.beads.q - fbase # move forward (should hardcode or input displacement)
+      fminus = depstrip(self.dforces.f).copy()
+      
+      # etcetera

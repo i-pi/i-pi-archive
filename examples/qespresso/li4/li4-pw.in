@@ -36,6 +36,8 @@
     pot_extrapolation = 'second_order'
     wfc_extrapolation = 'second_order'
 /
+&CELL
+/
 ATOMIC_SPECIES   
     Li     6.941   Li.pbe-tm.UPF
 ATOMIC_POSITIONS (alat)

@@ -1,7 +1,7 @@
 <simulation>
    <output prefix='gle_lammps'>
       <properties stride='1' filename='out'>  [ step, time{picosecond}, conserved{kelvin}, temperature{kelvin}, kinetic_cv{kelvin}, potential{kelvin}, pressure_cv{megapascal}] </properties>
-      <trajectory filename='pos' stride='20'> positions </trajectory>
+      <trajectory filename='pos' stride='20'> positions{angstrom} </trajectory>
    </output>
    <total_steps>500000</total_steps>
    <prng><seed>32343</seed></prng>

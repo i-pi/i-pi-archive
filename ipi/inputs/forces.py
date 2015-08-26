@@ -34,6 +34,9 @@ class InputForceComponent(InputValue):
                "weight" : ( InputAttribute, { "dtype"   : float,
                                          "default" : 1.0,
                                          "help"    : "A scaling factor for this forcefield, to be applied before adding the force calculated by this forcefield to the total force." } ),
+               "mts_level" : ( InputAttribute, { "dtype"   : int,
+                                         "default" : 0,
+                                         "help"    : "The depth in a MTS splitting at which this component should be applied" } ),
                "name" : ( InputAttribute, { "dtype" : str,
                                           "default" : "",
                                           "help" : "An optional name to refer to this force component." } )
@@ -61,6 +64,7 @@ class InputForceComponent(InputValue):
       super(InputForceComponent,self).store(forceb.ffield)
       self.nbeads.store(forceb.nbeads)
       self.weight.store(forceb.weight)
+      self.mts_level.store(forceb.lmts)
       self.name.store(forceb.name)
 
    def fetch(self):
@@ -71,7 +75,7 @@ class InputForceComponent(InputValue):
       """
 
       val=super(InputForceComponent,self).fetch()
-      return ForceComponent(ffield=val, nbeads=self.nbeads.fetch(), weight=self.weight.fetch(), name=self.name.fetch())
+      return ForceComponent(ffield=val, nbeads=self.nbeads.fetch(), weight=self.weight.fetch(), name=self.name.fetch(), lmts=self.mts_level.fetch())
 
    def check(self):
       """Checks for optional parameters."""
