@@ -334,18 +334,26 @@ class MTSEnsemble(NVEEnsemble):
 
       dget(self,"econs").add_dependency(dget(self.thermostat, "ethermo"))
 
-   def pstep(self, index=None, nmts=1):
-      if index is None:    # just add the total force if called without options
-          self.beads.p += depstrip(self.forces.f)*(self.dt*0.5)
-      else: 
-          self.beads.p += self.forces.forces_component(index)*(self.dt*0.5/nmts)
+#venkat.hack
+#momentum integerator for mts.
+   def pstep(self, level=0, nmts=1.0, alpha=1.0):
+      """Velocity Verlet monemtum propagator."""
 
+      #if level is None:    # just add the total force if called without options
+      #    self.beads.p += depstrip(self.forces.f)*(self.dt*0.5)
+      #else: 
+      self.beads.p += self.forces.forces_mts(level)*(self.dt*0.5/nmts/alpha)
+      print level, self.dt/nmts/alpha
 
-   def qcstep(self, nmts=1):
+#venkat.hack
+#position integerator for mts.
+   def qcstep(self, nmts=1.0):
       """Velocity Verlet centroid position propagator."""
 
       self.nm.qnm[0,:] += depstrip(self.nm.pnm)[0,:]/depstrip(self.beads.m3)[0]*self.dt/nmts
 
+#venkat.hack
+#integerator for mts.
    def step(self, step=None):
       """Does one simulation time step."""
 
@@ -355,22 +363,25 @@ class MTSEnsemble(NVEEnsemble):
       self.pconstraints()
       self.ttime += time.time()
 
-      # also adds the bias force (outer loop)
+#venkat.hack
+#also adds the bias force (outer loop)
       self.beads.p += depstrip(self.bias.f)*(self.dt*0.5)
 
 
+#venkat.hack
 #computes contribution of long distance force on momenta.
       self.ptime = -time.time()
-      self.pstep(0, 1.0)
+      self.pstep(0, 1.0, 1.0)
       self.pconstraints()
       self.ptime += time.time()
 
+#venkat.hack
 #loop.
 #computes contribution of short distance force on momenta.
 
       for iteration in range(4): 
         self.ptime = -time.time()
-        self.pstep(1, 4.0)
+        self.pstep(1, 4.0, 1.0)
         self.pconstraints()
         self.ptime += time.time()
 
@@ -380,16 +391,17 @@ class MTSEnsemble(NVEEnsemble):
         self.qtime += time.time()
 
         self.ptime -= time.time()
-        self.pstep(1,4.0)
+        self.pstep(1, 4.0, 1.0)
         self.pconstraints()
         self.ptime += time.time()
 
+#venkat.hack
 #loop.
 #computes contribution of long distance force on momenta.
 
 
       self.ptime = -time.time()
-      self.pstep(0, 1.0)
+      self.pstep(0, 1.0, 1.0)
       self.pconstraints()
       self.ptime += time.time()
 
@@ -398,6 +410,11 @@ class MTSEnsemble(NVEEnsemble):
       self.thermostat.step()
       self.pconstraints()
       self.ttime += time.time()
+
+#venkat.hack
+#also adds the bias force (outer loop)
+      self.beads.p += depstrip(self.bias.f)*(self.dt*0.5)
+#venkat.hack
 
    def get_econs(self):
       """Calculates the conserved energy quantity for constant temperature
