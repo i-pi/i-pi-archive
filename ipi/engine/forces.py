@@ -649,13 +649,21 @@ class Forces(dobject):
       return self.mforces[index].weight*self.mrpc[index].b2tob1(depstrip(self.mforces[index].f))
 
    def forces_mts(self, level):
-      # fetches ONLY the forces associated with a given MTS level
+      """ Fetches ONLY the forces associated with a given MTS level."""
+
       fk = np.zeros((self.nbeads,3*self.natoms))
       for index in range(len(self.mforces)):
-         if level == mforces[index].lmts:
+         if level == self.mforces[index].lmts:
             fk += self.mforces[index].weight*self.mrpc[index].b2tob1(depstrip(self.mforces[index].f))
       return fk
 
+   def nmtslevels(self, level):
+      """ Returns the total number of mts levels."""
+       
+       big = 0
+       for index in range(len(self.mforces)):
+          big = max(big, self.mforces[index].lmts)
+       return big + 1
 
    def f_combine(self):
       """Obtains the total force vector."""
