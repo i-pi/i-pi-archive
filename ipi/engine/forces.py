@@ -287,7 +287,7 @@ class ForceComponent(dobject):
             combined to give a total force, the contribution of this forcefield
             will be weighted by this factor.
          name: The name of the forcefield.
-         lmts: The MTS level at which this should be computed
+         lmts: The MTS level at which this should be computed.
       """
 
       self.ffield = ffield
@@ -657,13 +657,13 @@ class Forces(dobject):
             fk += self.mforces[index].weight*self.mrpc[index].b2tob1(depstrip(self.mforces[index].f))
       return fk
 
-   def nmtslevels(self, level):
+   def nmtslevels(self):
       """ Returns the total number of mts levels."""
        
-       big = 0
-       for index in range(len(self.mforces)):
-          big = max(big, self.mforces[index].lmts)
-       return big + 1
+      big = 0
+      for index in range(len(self.mforces)):
+         big = max(big, self.mforces[index].lmts)
+      return big + 1
 
    def f_combine(self):
       """Obtains the total force vector."""

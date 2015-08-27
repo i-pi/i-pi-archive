@@ -278,7 +278,7 @@ class MTSEnsemble(NVEEnsemble):
          transferred to the thermostat.
    """
 
-   def __init__(self, dt, temp, thermostat=None, fixcom=False, eens=0.0, fixatoms=None):
+   def __init__(self, dt, temp, thermostat=None, fixcom=False, eens=0.0, fixatoms=None, mtsintegfactors=None):
       """Initialises NVTEnsemble.
 
       Args:
@@ -290,12 +290,18 @@ class MTSEnsemble(NVEEnsemble):
             motion will be constrained or not. Defaults to False.
       """
 
+
       super(MTSEnsemble,self).__init__(dt=dt,temp=temp, fixcom=fixcom, eens=eens, fixatoms=fixatoms)
 
       if thermostat is None:
          self.thermostat = Thermostat()
       else:
          self.thermostat = thermostat
+
+      #dset(self,"mtsintegfactors",depend_array(name='mtsintegfactors',value=np.zeros(0,int) + 1))
+      if not mtsintegfactors is None:
+         self.mtsintegfactors= mtsintegfactors
+      else: self.mtsintegfactors = [1]
 
    def bind(self, beads, nm, cell, bforce, bbias, prng):
       """Binds beads, cell, bforce and prng to the ensemble.
@@ -334,18 +340,18 @@ class MTSEnsemble(NVEEnsemble):
 
       dget(self,"econs").add_dependency(dget(self.thermostat, "ethermo"))
 
-   mtsintegfactor = [1, 4]
 
    def pstep(self, level=0, alpha=1.0):
       """Velocity Verlet monemtum propagator."""
-  
-      nmts = mtsintegfactor[level] 
+      nmts = float(self.mtsintegfactors[level]) 
       self.beads.p += self.forces.forces_mts(level)*(self.dt/nmts/alpha)
 
    def qcstep(self):
       """Velocity Verlet centroid position propagator."""
 
-      nmts = mtsintegfactor[nmtslevels - 1] 
+      nmtslevels = self.forces.nmtslevels()
+
+      nmts = float(self.mtsintegfactors[nmtslevels - 1])
       self.nm.qnm[0,:] += depstrip(self.nm.pnm)[0,:]/depstrip(self.beads.m3)[0]*self.dt/nmts
 
    def singleprop(self, index, alpha):
@@ -353,10 +359,11 @@ class MTSEnsemble(NVEEnsemble):
 
       nmtslevels = self.forces.nmtslevels()
  
-      if index = 1:
+      if index == 1:
+        nmts = self.mtsintegfactors[nmtslevels-1] 
         for iteration in range(nmts):
           self.ptime = -time.time()
-          self.pstep(nmtslevels - 1, alpha)
+          self.pstep(nmtslevels - 1, 2.0)
           self.pconstraints()
           self.ptime += time.time()
 
@@ -366,30 +373,30 @@ class MTSEnsemble(NVEEnsemble):
           self.qtime += time.time()
 
           self.ptime -= time.time()
-          self.pstep(nmtslevels - 1, alpha)
+          self.pstep(nmtslevels - 1, 2.0)
           self.pconstraints()
           self.ptime += time.time()
 
-     else:
+      else:
+        nmts = self.mtsintegfactors[nmtslevels - index] 
         for iteration in range(nmts):
           self.ptime = -time.time()
           self.pstep(nmtslevels - index, alpha)
           self.pconstraints()
           self.ptime += time.time()
 
-   def multiprop(self, index, nmts, alpha):
+   def multiprop(self, index, alpha):
       """Louiville state propagator for multiple mts levels. 
-         Integrates forces of mts levels starting from index to largest mts levels."""
+         Integrates forces associated with last 'index' mts levels over time step/alpha."""
 
       nmtslevels = self.forces.nmtslevels()
-
-      if index = nforces:
-         self.singleprop(self, index, alpha * 2.0**(nmtslevels - index))
+      if index == 1:
+         self.singleprop(nmtslevels, alpha)
 
       else:
-         self.multiprop(self, index - 1, alpha * 2.0**(nmtslevels - index + 1))
-         self.singleprop(self, nmtslevels - index + 1, alpha * 2.0**(nmtslevels - index))
-         self.multiprop(self, index - 1, alpha * 2.0**(nmtslevels - index + 1))
+         self.multiprop(index - 1, alpha * 2.0**(nmtslevels - index + 1))
+         self.singleprop(nmtslevels - index + 1, alpha * 2.0**(nmtslevels - index))
+         self.multiprop(index - 1, alpha * 2.0**(nmtslevels - index + 1))
       
    def step(self, step=None):
       """Does one simulation time step."""

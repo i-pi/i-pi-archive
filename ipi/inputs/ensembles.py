@@ -50,10 +50,7 @@ class InputEnsemble(Input):
 
    attribs={"mode"  : (InputAttribute, {"dtype"   : str,
                                     "help"    : "The ensemble that will be sampled during the simulation. 'replay' means that a simulation is restarted from a previous simulation.",
-#venkat.hack
-#Added another ens type.
                                     "options" : ['nve', 'nvt', 'npt', 'nst', 'dummy','mts']}) }
-#venkat.hack
    fields={"thermostat" : (InputThermo, {"default"   : input_default(factory=ipi.engine.thermostats.Thermostat),
                                          "help"      : "The thermostat for the atoms, keeps the atom velocity distribution at the correct temperature."} ),
            "barostat" : (InputBaro, {"default"       : input_default(factory=ipi.engine.barostats.Barostat),
@@ -83,7 +80,10 @@ class InputEnsemble(Input):
                                    "help"            : "This describes whether the centre of mass of the particles is fixed."}),
            "fixatoms" : (InputArray, {"dtype"        : int,
                                     "default"      : np.zeros(0,int),
-                                    "help"         : "Indices of the atmoms that should be held fixed."})
+                                    "help"         : "Indices of the atmoms that should be held fixed."}),
+           "mtsintegfactors" : (InputArray, {"dtype" : int,
+                                            "default" : np.zeros(0,int),
+                                            "help"    : "Integrating factors for timesteps for various mts levels."})
          }
    dynamic = {  }
 
@@ -136,6 +136,8 @@ class InputEnsemble(Input):
       if tens == 4:
          self.barostat.store(ens.barostat)
          self.stress.store(ens.stressext)
+      if tens == 5:
+         self.mtsintegfactors.store(ens.mtsintegfactors)
 
    def fetch(self):
       """Creates an ensemble object.
@@ -156,7 +158,8 @@ class InputEnsemble(Input):
 #venkat.hack
       elif self.mode.fetch() == "mts" :
          ens = MTSEnsemble(dt=self.timestep.fetch(),
-            temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), fixcom=self.fixcom.fetch(), eens=self.eens.fetch(), fixatoms=self.fixatoms.fetch())
+            temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), fixcom=self.fixcom.fetch(), eens=self.eens.fetch(), fixatoms=self.fixatoms.fetch(),
+            mtsintegfactors=self.mtsintegfactors.fetch())
 #venkat.hack
       elif self.mode.fetch() == "npt" :
          ens = NPTEnsemble(dt=self.timestep.fetch(),
