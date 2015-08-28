@@ -17,8 +17,8 @@
       <velocities mode="thermal" units='kelvin'> 298 </velocities>
    </initialize>
    <forces>
-   <force mts_level="1"> lmpserial2 </force>
-   <force nbeads='1'> lmpserial1 </force>
+   <force mts_level="1"> lmpserial1 </force>
+   <force mts_level='0'> lmpserial2 </force>
    </forces>
    <ensemble mode='mts'>
       <thermostat mode='svr'>
@@ -26,6 +26,7 @@
       </thermostat>
       <timestep units='femtosecond'> 1.50</timestep>
       <temperature units='kelvin'>298</temperature>
+      <mtsintegfactors>[1,4]</mtsintegfactors>
    </ensemble>
 </system>
 </simulation>
