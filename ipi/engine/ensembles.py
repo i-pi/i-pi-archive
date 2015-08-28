@@ -334,6 +334,12 @@ class MTSEnsemble(NVEEnsemble):
       # first makes sure that the thermostat has the correct temperature, then proceed with binding it.
       deppipe(self,"ntemp", self.thermostat,"temp")
       deppipe(self,"dt", self.thermostat, "dt")
+  
+      # the free ring polymer propagator is called in the inner loop, so propagation time should be redefined accordingly    
+      self.inmts = 1
+      for nmts in self.mtsintegfactors: self.inmts*=nmts
+      dset(self,"deltat", depend_value(name="deltat", func=(lambda : self.dt/self.inmts) , dependencies=[dget(self,"dt")]) )
+      deppipe(self,"deltat", self.nm, "dt")
 
       #depending on the kind, the thermostat might work in the normal mode or the bead representation.
       self.thermostat.bind(beads=self.beads, nm=self.nm,prng=prng,fixdof=fixdof )
@@ -343,16 +349,16 @@ class MTSEnsemble(NVEEnsemble):
 
    def pstep(self, level=0, alpha=1.0):
       """Velocity Verlet monemtum propagator."""
-      nmts = float(self.mtsintegfactors[level]) 
-      self.beads.p += self.forces.forces_mts(level)*(self.dt/nmts/alpha)
+      #nmts = float(self.mtsintegfactors[level]) 
+      self.beads.p += self.forces.forces_mts(level)*(self.dt/alpha)
+      #/nmts)
 
-   def qcstep(self):
+   def qcstep(self, alpha=1.0):
       """Velocity Verlet centroid position propagator."""
-
-      nmtslevels = self.forces.nmtslevels()
-
-      nmts = float(self.mtsintegfactors[nmtslevels - 1])
-      self.nm.qnm[0,:] += depstrip(self.nm.pnm)[0,:]/depstrip(self.beads.m3)[0]*self.dt/nmts
+      #nmtslevels = self.forces.nmtslevels()
+      #nmts = float(self.mtsintegfactors[nmtslevels - 1])
+      self.nm.qnm[0,:] += depstrip(self.nm.pnm)[0,:]/depstrip(self.beads.m3)[0]*self.dt/alpha
+      #/nmts
 
    def singleprop(self, index, alpha):
       """Louiville state propagator for single mts level."""
@@ -394,10 +400,40 @@ class MTSEnsemble(NVEEnsemble):
          self.singleprop(nmtslevels, alpha)
 
       else:
-         self.multiprop(index - 1, alpha * 2.0**(nmtslevels - index + 1))
-         self.singleprop(nmtslevels - index + 1, alpha * 2.0**(nmtslevels - index))
-         self.multiprop(index - 1, alpha * 2.0**(nmtslevels - index + 1))
-      
+         self.multiprop(index - 1, alpha * 2.0)
+         self.singleprop(nmtslevels - index + 1, alpha)
+         self.multiprop(index - 1, alpha * 2.0)
+         #self.multiprop(index - 1, alpha * 2.0**(nmtslevels - index + 1))
+         #self.singleprop(nmtslevels - index + 1, alpha * 2.0**(nmtslevels - index))
+         #self.multiprop(index - 1, alpha * 2.0**(nmtslevels - index + 1))
+
+   def mtsprop(self, index, alpha):
+
+      nmtslevels = self.forces.nmtslevels()
+      nmts = self.mtsintegfactors[index]  # mtslevels starts at level zero, where nmts is always 1
+      alpha *= nmts
+      for i in range(nmts):  
+      # propagate p for dt/2alpha wit force at level index
+       self.ptime = -time.time()
+       self.pstep(index, 2.0*alpha)
+       self.pconstraints()
+       self.ptime += time.time()
+
+       if index == nmtslevels-1:
+      # call Q propagation for dt/alpha
+         self.qtime = -time.time()
+         self.qcstep(alpha)
+         self.nm.free_qstep()
+         self.qtime += time.time()
+       else:
+         self.mtsprop(index+1, alpha)
+
+      # propagate p for dt/2alpha
+       self.ptime = -time.time()
+       self.pstep(index, 2.0*alpha)
+       self.pconstraints()
+       self.ptime += time.time()
+       
    def step(self, step=None):
       """Does one simulation time step."""
 
@@ -410,7 +446,8 @@ class MTSEnsemble(NVEEnsemble):
 
       self.beads.p += depstrip(self.bias.f)*(self.dt*0.5)
 
-      self.multiprop(nmtslevels, 1.0)
+      #self.multiprop(nmtslevels, 1.0)
+      self.mtsprop(0,1.0)
 
       self.beads.p += depstrip(self.bias.f)*(self.dt*0.5)
 

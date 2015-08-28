@@ -173,10 +173,12 @@ class NormalModes(dobject):
          value=np.zeros(self.nbeads, float), func=self.get_dynwk,
             dependencies=[dget(self,"nm_factor"), dget(self,"omegak") ]) )
 
+      dset(self, "dt", depend_value(name="dt", value = 1.0) )
+      deppipe(self.ensemble,"dt", self, "dt") # now self.dt is automatycally synced to ensemble.dt
       dset(self,"prop_pq",
          depend_array(name='prop_pq',value=np.zeros((self.beads.nbeads,2,2)),
             func=self.get_prop_pq,
-               dependencies=[dget(self,"omegak"), dget(self,"nm_factor"), dget(self.ensemble,"dt")]) )
+               dependencies=[dget(self,"omegak"), dget(self,"nm_factor"), dget(self,"dt")]) )
 
       # if the mass matrix is not the RPMD one, the MD kinetic energy can't be
       # obtained in the bead representation because the masses are all mixed up
@@ -238,7 +240,7 @@ class NormalModes(dobject):
          ring polymer.
       """
 
-      dt = self.ensemble.dt
+      dt = self.dt
       pqk = np.zeros((self.nbeads,2,2), float)
       pqk[0] = np.array([[1,0], [dt,1]])
 
