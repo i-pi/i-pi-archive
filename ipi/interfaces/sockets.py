@@ -147,11 +147,12 @@ class DriverSocket(socket.socket):
       while bpos < blen:
          timeout = False
 
-#   pre-2.5 version.
+         # pre-2.5 version.
          try:
             bpart = ""
             bpart = self.recv(blen - bpos)
-            if len(bpart) == 0: raise socket.timeoout    # if this keeps returning no data, we are in trouble....
+            if len(bpart) == 0:
+               raise socket.timeoout    # if this keeps returning no data, we are in trouble....
             self._buf[bpos:bpos + len(bpart)] = np.fromstring(bpart, np.byte)
          except socket.timeout:
             warning(" @SOCKET:   Timeout in status recvall, trying again!", verbosity.low)
@@ -165,19 +166,19 @@ class DriverSocket(socket.socket):
             raise Disconnected()
          bpos += len(bpart)
 
-#   post-2.5 version: slightly more compact for modern python versions
-#         try:
-#            bpart = 1
-#            bpart = self.recv_into(self._buf[bpos:], blen-bpos)
-#         except socket.timeout:
-#            print " @SOCKET:   Timeout in status recvall, trying again!"
-#            timeout = True
-#            pass
-#         if (not timeout and bpart == 0):
-#            raise Disconnected()
-#         bpos += bpart
-#TODO this Disconnected() exception currently just causes the program to hang.
-#This should do something more graceful
+         # post-2.5 version: slightly more compact for modern python versions
+         #try:
+         #   bpart = 1
+         #   bpart = self.recv_into(self._buf[bpos:], blen-bpos)
+         #except socket.timeout:
+         #   print " @SOCKET:   Timeout in status recvall, trying again!"
+         #   timeout = True
+         #   pass
+         #if (not timeout and bpart == 0):
+         #   raise Disconnected()
+         #bpos += bpart
+         # TODO this Disconnected() exception currently just causes the program to hang.
+         # This should do something more graceful
 
       if np.isscalar(dest):
          return np.fromstring(self._buf[0:blen], dest.dtype)[0]
@@ -186,43 +187,51 @@ class DriverSocket(socket.socket):
 
 
 class Client(DriverSocket):
-   """Serves as a starting point for implementing a client in Python.
+   """Base class for the implementation of a client in Python.
 
-   Deals with sending and receiving the data from the client code.
+   Handles sending and receiving data from the client code.
 
    Attributes:
       havedata: Boolean giving whether the client calculated the forces.
    """
 
-   def __init__(self, address="localhost", port=31415, mode="unix", _socket=True):
-      """Initialises Driver.
+   def __init__(self, address="localhost", port=31415, mode="unix", verbose=False, _socket=True):
+      """Initialise Client.
 
       Args:
-         - socket: If a socket should be opened. Can be False for testing purposes.
          - address: A string giving the name of the host network.
          - port: An integer giving the port the socket will be using.
-         - mode: A string giving the type of socket used.
+         - mode: A string giving the type of socket used - 'inet' or 'unix'.
+         - _socket: If a socket should be opened. Can be False for testing purposes.
       """
+
       if _socket:
          # open client socket
          if mode == "inet":
             _socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             _socket.connect((address, int(port)))
          elif mode == "unix":
-            _socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-            _socket.connect("/tmp/ipi_" + address)
+            try:
+               _socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+               _socket.connect("/tmp/ipi_" + address)
+            except socket.error:
+               print 'Could not connect to UNIX socket: %s' % ("/tmp/ipi_" + address)
+               sys.exit(1)
          else:
-               raise NameError("Interface mode " + mode + " is not implemented (should be unix/inet)")
+            raise NameError("Interface mode " + mode + " is not implemented (should be unix/inet)")
          super(Client,self).__init__(socket=_socket)
       else:
          super(Client,self).__init__(socket=None)
-      self.havedata = False
-      self.vir = np.zeros((3,3),np.float64)
-      self.cellh = np.zeros((3,3),np.float64)
-      self.cellih = np.zeros((3,3),np.float64)
-      self.nat = np.int32()
-      self.callback = None
 
+      self.verbose = verbose
+
+      # allocate data
+      self.havedata = False
+      self._vir = np.zeros((3,3),np.float64)
+      self._cellh = np.zeros((3,3),np.float64)
+      self._cellih = np.zeros((3,3),np.float64)
+      self._nat = np.int32()
+      self._callback = None
 
    def _getforce(self):
       """Dummy _getforce routine.
@@ -232,48 +241,60 @@ class Client(DriverSocket):
          - self._force: The force of the current positions at self._positions.
          - self._potential: The potential of the current positions at self._positions.
       """
-      if self.callback is not None:
-         self._force, self._potential = self.callback(self._positions)
+      if self._callback is not None:
+         self._force, self._potential = self._callback(self._positions)
       else:
          raise NotImplementedError("_getforce must be implemented by providing a self.callback function or overwritten.")
 
-
    def run(self):
-      """Serve forces until asked to finish.
+      """Serve forces until asked to finish or socket disconnects.
 
       Serve force and potential, that are calculated in the user provided
       routine _getforce.
       """
-      while 1:
-         msg = self.recv_msg()
-         if msg == "":
-            if self.verb > verbosity.Quiet:
-               print " @CLIENT: Shutting down."
-            break
-         elif msg == Message("status"):
-            if self.havedata:
-               self.send_msg("havedata")
+
+      if self.verbose:
+         print 'Starting communication loop.'
+
+      try:
+         while True:
+            msg = self.recv_msg()
+            if msg == "":
+               print "Server shut down."
+               break
+            elif msg == Message("status"):
+               if self.havedata:
+                  self.send_msg("havedata")
+               else:
+                  self.send_msg("ready")
+            elif msg == Message("posdata"):
+               self._cellh = self.recvall(self._cellh)
+               self._cellih = self.recvall(self._cellih)
+               self._nat = self.recvall(self._nat)
+               self._positions = self.recvall(self._positions)
+               t0 = time.time()
+               self._getforce()
+               if self.verbose:
+                  print 'Calculation time: {:7.3f} s'.format(time.time() - t0)
+               self.havedata = True
+            elif msg == Message("getforce"):
+               self.sendall(Message("forceready"))
+               self.sendall(self._potential, 8)
+               self.sendall(self._nat, 4)
+               self.sendall(self._force, 8*self._force.size)
+               self.sendall(self._vir, 9*8)
+               self.sendall(np.int32(0), 4)
+               self.havedata=False
             else:
-               self.send_msg("ready")
-         elif msg == Message("posdata"):
-            self.cellh = self.recvall(self.cellh)
-            self.cellih = self.recvall(self.cellih)
-            self.nat = self.recvall(self.nat)
-            self._positions = np.zeros((self.nat,3),np.float64)
-            self._positions = self.recvall(self._positions)
-            self._getforce()
-            self.havedata = True
-         elif msg == Message("getforce"):
-            self.sendall(Message("forceready"))
-            self.sendall(self._potential, 8)
-            self.sendall(self.nat, 4)
-            self.sendall(self._force, len(self._force)*8)
-            self.sendall(self.vir, 9*8)
-            self.sendall(np.int32(0), 4)
-            self.havedata=False
-         else:
-            print >>sys.stderr, " @CLIENT: Couldn't understand command:", msg
-            break
+               print >> sys.stderr, "Client could not understand command:", msg
+               break
+      except socket.error as e:
+         print 'Error communicating through socket: [{}] {}'.format(e.errno, e.strerror)
+      except KeyboardInterrupt:
+         print ' Keyboard interrupt.'
+
+      if self.verbose:
+         print 'Communication loop finished.'
 
 
 class Driver(DriverSocket):
