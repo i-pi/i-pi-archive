@@ -1,5 +1,5 @@
 <simulation verbosity='high'>
-   <output prefix='rpc'>
+   <output prefix='mts'>
       <properties stride='1' filename='out'>  [ step, time{picosecond}, conserved, temperature{kelvin}, kinetic_cv, potential, pressure_cv{megapascal}] </properties>
       <trajectory filename='pos' stride='20'> positions </trajectory>
    </output>
@@ -26,7 +26,7 @@
       </thermostat>
       <timestep units='femtosecond'> 1.50</timestep>
       <temperature units='kelvin'>298</temperature>
-      <mtsintegfactors>[1,4]</mtsintegfactors>
+      <nmts>[4]</nmts>
    </ensemble>
 </system>
 </simulation>

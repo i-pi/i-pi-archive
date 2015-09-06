@@ -81,9 +81,9 @@ class InputEnsemble(Input):
            "fixatoms" : (InputArray, {"dtype"        : int,
                                     "default"      : np.zeros(0,int),
                                     "help"         : "Indices of the atmoms that should be held fixed."}),
-           "mtsintegfactors" : (InputArray, {"dtype" : int,
+           "nmts" : (InputArray, {"dtype" : int,
                                             "default" : np.zeros(0,int),
-                                            "help"    : "Integrating factors for timesteps for various mts levels."})
+                                            "help"    : "Number of iterations for each MTS level (starting from the first loop)."})
          }
    dynamic = {  }
 
@@ -137,7 +137,7 @@ class InputEnsemble(Input):
          self.barostat.store(ens.barostat)
          self.stress.store(ens.stressext)
       if tens == 5:
-         self.mtsintegfactors.store(ens.mtsintegfactors)
+         self.nmts.store(ens.nmts[1:]) # first element is always 1 so no point in storing it
 
    def fetch(self):
       """Creates an ensemble object.
@@ -159,7 +159,7 @@ class InputEnsemble(Input):
       elif self.mode.fetch() == "mts" :
          ens = MTSEnsemble(dt=self.timestep.fetch(),
             temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), fixcom=self.fixcom.fetch(), eens=self.eens.fetch(), fixatoms=self.fixatoms.fetch(),
-            mtsintegfactors=self.mtsintegfactors.fetch())
+            nmts=self.nmts.fetch())
 #venkat.hack
       elif self.mode.fetch() == "npt" :
          ens = NPTEnsemble(dt=self.timestep.fetch(),
