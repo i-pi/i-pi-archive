@@ -204,6 +204,7 @@ class Simulation(dobject):
       tqtime = 0.0
       tttime = 0.0
       ttot = 0.0
+      stepthreads = []
       # main MD loop
       for self.step in range(self.step,self.tsteps):
          # stores the state before doing a step.
