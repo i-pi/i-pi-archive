@@ -50,7 +50,7 @@ class InputEnsemble(Input):
 
    attribs={"mode"  : (InputAttribute, {"dtype"   : str,
                                     "help"    : "The ensemble that will be sampled during the simulation. 'replay' means that a simulation is restarted from a previous simulation.",
-                                    "options" : ['nve', 'nvt', 'npt', 'nst', 'dummy','mts', 'sc']}) }
+                                    "options" : ['nve', 'nvt', 'npt', 'nst', 'dummy','mts']}) }
    fields={"thermostat" : (InputThermo, {"default"   : input_default(factory=ipi.engine.thermostats.Thermostat),
                                          "help"      : "The thermostat for the atoms, keeps the atom velocity distribution at the correct temperature."} ),
            "barostat" : (InputBaro, {"default"       : input_default(factory=ipi.engine.barostats.Barostat),
@@ -113,16 +113,19 @@ class InputEnsemble(Input):
       elif type(ens) is Ensemble:
           self.mode.store("dummy")
           tens = -1
+#venkat.hack
+#added minimal representation for mts ensemble.
       elif type(ens) is MTSEnsemble:
           self.mode.store("mts")
           tens = 5
-      elif type(ens) is SCEnsemble:
-          self.mode.store("sc")
-          tens = 6
+#venkat.hack
       self.timestep.store(ens.dt)
       self.temperature.store(ens.temp)
 
-      if tens > 1 and tens <7:
+#venkat.hack
+      if tens > 1 and tens <6:
+#      if tens > 1 and tens <5:
+#venkat.hack
          self.thermostat.store(ens.thermostat)
          self.fixcom.store(ens.fixcom)
          self.fixatoms.store(ens.fixatoms)
@@ -152,13 +155,12 @@ class InputEnsemble(Input):
       elif self.mode.fetch() == "nvt" :
          ens = NVTEnsemble(dt=self.timestep.fetch(),
             temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), fixcom=self.fixcom.fetch(), eens=self.eens.fetch(), fixatoms=self.fixatoms.fetch())
-      elif self.mode.fetch() == "sc" :
-         ens = NVTEnsemble(dt=self.timestep.fetch(),
-            temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), fixcom=self.fixcom.fetch(), eens=self.eens.fetch(), fixatoms=self.fixatoms.fetch())
+#venkat.hack
       elif self.mode.fetch() == "mts" :
          ens = MTSEnsemble(dt=self.timestep.fetch(),
             temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), fixcom=self.fixcom.fetch(), eens=self.eens.fetch(), fixatoms=self.fixatoms.fetch(),
             nmts=self.nmts.fetch())
+#venkat.hack
       elif self.mode.fetch() == "npt" :
          ens = NPTEnsemble(dt=self.timestep.fetch(),
             temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), fixcom=self.fixcom.fetch(), eens=self.eens.fetch(), fixatoms=self.fixatoms.fetch(),
