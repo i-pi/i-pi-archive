@@ -19,6 +19,13 @@ should be formatted, see the reference manual.
 
 
 import sys
+import os
+
+# Check that we have the import path for this i-PI set and if not, add it.
+dir_root = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
+if not dir_root in sys.path:
+    sys.path.insert(0, dir_root)
+
 import ipi.inputs.simulation as isimulation
 from ipi.utils.softexit import softexit
 from ipi.utils.io.inputs.io_xml import *
@@ -32,7 +39,7 @@ def main(file_name):
    Will run automatically when the module is used as a script.
    """
 
-   ifile = open(file_name,"r")
+   ifile = open(file_name, "r")
    xmlrestart = xml_parse_file(ifile) # Parses the file.
    ifile.close()
 
@@ -45,7 +52,7 @@ def main(file_name):
       print " # i-pi starting from input file: ", file_name
    if simrestart.verbosity.fetch() != "quiet" and simrestart.verbosity.fetch() != "low" :
       print " --- begin input file content --- "
-      ifile = open(file_name,"r")
+      ifile = open(file_name, "r")
       for line in ifile.readlines():
          print line,
       ifile.close()
