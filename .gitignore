@@ -1,5 +1,6 @@
 #ignored patterns
 
+bin/i-pi-driver
 *.pyc
 *.pyo
 *.x
