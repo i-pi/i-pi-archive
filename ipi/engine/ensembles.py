@@ -408,6 +408,7 @@ class MTSEnsemble(NVEEnsemble):
 
       return NVEEnsemble.get_econs(self) + self.thermostat.ethermo
 
+
 class SCEnsemble(NVEEnsemble):
    """Ensemble object for constant temperature simulations.
 

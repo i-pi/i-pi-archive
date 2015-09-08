@@ -573,13 +573,18 @@ class Forces(dobject):
            depend_value(name="SCCALC", func=self.sccalc, value = [None,None],
                  dependencies=[dget(self, "f"), dget(self,"pots"), dget(self,"alpha"),  dget(self,"omegan2")] ) )
                  
-      dset(self, "fsc", depend_array(name="fsc",value=np.zeros((self.nbeads,3*self.natoms)),
+      dset(self, "fsc", depend_array(name="fsc",value=np.zeros((self.nbeads,3*self.natoms),float),
             dependencies=[dget(self,"SCCALC")],
             func=(lambda: self.SCCALC[1] ) ) )
        
-      dset(self, "potsc", depend_value(name="potsc",
-            dependencies=[dget(self,"SCCALC") ],
-            func=(lambda: self.SCCALC[0] ) ) ) 
+      dset(self, "potsc", depend_array(name="potsc",value=np.zeros(self.nbeads,float),
+            dependencies=[dget(self,"SCCALC")],
+            func=(lambda: self.SCCALC[0] ) ) )
+
+#      potsc should be an array.        
+#      dset(self, "potsc", depend_value(name="potsc",
+#            dependencies=[dget(self,"SCCALC") ],
+#            func=(lambda: self.SCCALC[0] ) ) ) 
 
    def copy(self, beads=None, cell = None):
       """ Returns a copy of this force object that can be used to compute forces,
@@ -725,17 +730,30 @@ class Forces(dobject):
       # We need to compute FW and BW finite differences, so first we initialize an
       # auxiliary force evaluator
       
+      rc = []
       if (self.dforces is None) : 
          self.dbeads = self.beads.copy()
          self.dcell = self.cell.copy()
          self.dforces = self.copy(self.dbeads, self.dcell) 
       
+      # this should get the potential
       fbase = depstrip(self.f)
-      scpot = self.pots[0] + np.dot(fbase,fbase)  # this should get the potential
-      
-      self.dbeads.q = self.beads.q + fbase # move forward (should hardcode or input displacement)
+      for k in range(self.nbeads):
+         if k%2:
+           potsc[k] = -self.pots[k]/3.0 + (self.alpha/self.omegan2/9.0)*np.dot(fbase[k],fbase[k])  
+         else:
+           potsc[k] = self.pots[k]/3.0 + ((1.0-self.alpha)/self.omegan2/9.0)*np.dot(fbase[k],fbase[k])  
+      rc.append(potsc)
+       
+      # this should get the forces
+      epsilon = 1.0
+      self.dbeads.q = self.beads.q + epsilon*fbase # move forward (should hardcode or input displacement)
       fplus = depstrip(self.dforces.f).copy()
-      self.dbeads.q = self.beads.q - fbase # move forward (should hardcode or input displacement)
+      self.dbeads.q = self.beads.q - epsilon*fbase # move forward (should hardcode or input displacement)
       fminus = depstrip(self.dforces.f).copy()
+      fsc = (fplus - fminus)/2/epsilon
+      rc.append(fsc)
+
+      return rc
       
       # etcetera
