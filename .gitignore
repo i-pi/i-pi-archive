@@ -1,6 +1,5 @@
 #ignored patterns
 
-bin/*
 *.pyc
 *.pyo
 *.x
