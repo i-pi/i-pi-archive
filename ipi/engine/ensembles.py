@@ -257,7 +257,6 @@ class NVEEnsemble(Ensemble):
       self.ptime += time.time()
 
 
-#Changed the name of the class.
 class MTSEnsemble(NVEEnsemble):
    """Ensemble object for constant temperature simulations.
 
@@ -294,7 +293,6 @@ class MTSEnsemble(NVEEnsemble):
       else:
          self.thermostat = thermostat
 
-      #dset(self,"mtsintegfactors",depend_array(name='mtsintegfactors',value=np.zeros(0,int) + 1))
       self.nmts = np.asarray([1],int)      
       if not nmts is None:
          self.nmts=np.concatenate((self.nmts,nmts))
@@ -381,7 +379,6 @@ class MTSEnsemble(NVEEnsemble):
    def step(self, step=None):
       """Does one simulation time step."""
 
-      
       # thermostat is applied at the outer loop
       self.ttime = -time.time()
       self.thermostat.step()
@@ -400,6 +397,114 @@ class MTSEnsemble(NVEEnsemble):
       self.pconstraints()
       self.ttime += time.time()
 
+
+   def get_econs(self):
+      """Calculates the conserved energy quantity for constant temperature
+      ensemble.
+      """
+
+      return NVEEnsemble.get_econs(self) + self.thermostat.ethermo
+
+
+class SCEnsemble(NVEEnsemble):
+   """Ensemble object for constant temperature simulations.
+
+   Has the relevant conserved quantity and normal mode propagator for the
+   constant temperature ensemble. Contains a thermostat object containing the
+   algorithms to keep the temperature constant.
+
+   Attributes:
+      thermostat: A thermostat object to keep the temperature constant.
+
+   Depend objects:
+      econs: Conserved energy quantity. Depends on the bead kinetic and
+         potential energy, the spring potential energy and the heat
+         transferred to the thermostat.
+   """
+
+   def __init__(self, dt, temp, thermostat=None, fixcom=False, eens=0.0, fixatoms=None):
+      """Initialises SCEnsemble.
+
+      Args:
+         dt: The simulation timestep.
+         temp: The system temperature.
+         thermostat: A thermostat object to keep the temperature constant.
+            Defaults to Thermostat()
+	fixcom: An optional boolean which decides whether the centre of mass
+            motion will be constrained or not. Defaults to False.
+      """
+
+      super(SCEnsemble,self).__init__(dt=dt,temp=temp, fixcom=fixcom, eens=eens, fixatoms=fixatoms)
+
+      if thermostat is None:
+         self.thermostat = Thermostat()
+      else:
+         self.thermostat = thermostat
+
+   def bind(self, beads, nm, cell, bforce, bbias, prng):
+      """Binds beads, cell, bforce and prng to the ensemble.
+
+      This takes a beads object, a cell object, a forcefield object and a
+      random number generator object and makes them members of the ensemble.
+      It also then creates the objects that will hold the data needed in the
+      ensemble algorithms and the dependency network. Also note that the
+      thermostat timestep and temperature are defined relative to the system
+      temperature, and the the thermostat temperature is held at the
+      higher simulation temperature, as is appropriate.
+
+      Args:
+         beads: The beads object from whcih the bead positions are taken.
+         nm: A normal modes object used to do the normal modes transformation.
+         cell: The cell object from which the system box is taken.
+         bforce: The forcefield object from which the force and virial are
+            taken.
+         prng: The random number generator object which controls random number
+            generation.
+      """
+
+      super(SCTEnsemble,self).bind(beads, nm, cell, bforce, bbias, prng)
+
+      fixdof = len(self.fixatoms)*3*self.beads.nbeads
+      if self.fixcom:
+         fixdof += 3
+
+
+      # first makes sure that the thermostat has the correct temperature, then proceed with binding it.
+      deppipe(self,"ntemp", self.thermostat,"temp")
+      deppipe(self,"dt", self.thermostat, "dt")
+
+      #depending on the kind, the thermostat might work in the normal mode or the bead representation.
+      self.thermostat.bind(beads=self.beads, nm=self.nm,prng=prng,fixdof=fixdof )
+
+      dget(self,"econs").add_dependency(dget(self.thermostat, "ethermo"))
+
+   def step(self, step=None):
+      """Does one simulation time step."""
+
+      self.ttime = -time.time()
+      self.thermostat.step()
+      self.pconstraints()
+      self.ttime += time.time()
+
+      self.ptime = -time.time()
+      self.pstep()
+      self.pconstraints()
+      self.ptime += time.time()
+
+      self.qtime = -time.time()
+      self.qcstep()
+      self.nm.free_qstep()
+      self.qtime += time.time()
+
+      self.ptime -= time.time()
+      self.pstep()
+      self.pconstraints()
+      self.ptime += time.time()
+
+      self.ttime -= time.time()
+      self.thermostat.step()
+      self.pconstraints()
+      self.ttime += time.time()
 
    def get_econs(self):
       """Calculates the conserved energy quantity for constant temperature
@@ -515,6 +620,7 @@ class NVTEnsemble(NVEEnsemble):
       """
 
       return NVEEnsemble.get_econs(self) + self.thermostat.ethermo
+
 
 class NPTEnsemble(NVTEnsemble):
    """Ensemble object for constant pressure simulations.
