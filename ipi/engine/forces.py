@@ -737,6 +737,7 @@ class Forces(dobject):
       
       # this should get the potential
       fbase = depstrip(self.f)
+      potsc = np.zeros(self.nbeads)
       for k in range(self.nbeads):
          if k%2:
            potsc[k] = -self.pots[k]/3.0 + (self.alpha/self.omegan2/9.0)*np.dot(fbase[k],fbase[k])  
@@ -750,12 +751,12 @@ class Forces(dobject):
       fplus = depstrip(self.dforces.f).copy()
       self.dbeads.q = self.beads.q - epsilon*fbase # move forward (should hardcode or input displacement)
       fminus = depstrip(self.dforces.f).copy()
-      fsc = (fminus - fplus)/2/epsilon
+      fsc = (fminus - fplus)/2/epsilon      
       for k in range(self.nbeads):
          if k%2:
-           fsc[k] = -self.f[k]/3.0 + (self.alpha/self.omegan2/9.0)*fsc[k]
+           fsc[k] = -self.f[k]/3.0 + (self.alpha/self.omegan2/9.0)*fsc[k]/self.beads.m3[k]
          else:
-           fsc[k] = self.f[k]/3.0 + ((1-self.alpha)/self.omegan2/9.0)*fsc[k]
+           fsc[k] = self.f[k]/3.0 + ((1-self.alpha)/self.omegan2/9.0)*fsc[k]/self.beads.m3[k]
       rc.append(fsc)
 
       return rc

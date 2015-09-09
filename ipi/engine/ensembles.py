@@ -528,7 +528,7 @@ class SCEnsemble(NVEEnsemble):
       ensemble. Also add the S-C term. 
       """
 
-      return NVEEnsemble.get_econs(self) + self.thermostat.ethermo + self.forces.postsc
+      return NVEEnsemble.get_econs(self) + self.thermostat.ethermo + self.forces.potsc
 
 
 class NVTEnsemble(NVEEnsemble):

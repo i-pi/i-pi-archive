@@ -160,7 +160,7 @@ class InputEnsemble(Input):
             temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), fixcom=self.fixcom.fetch(), eens=self.eens.fetch(), fixatoms=self.fixatoms.fetch())
 #venkat.hack
       elif self.mode.fetch() == "sc" :
-         ens = NVTEnsemble(dt=self.timestep.fetch(),
+         ens = SCEnsemble(dt=self.timestep.fetch(),
             temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), fixcom=self.fixcom.fetch(), eens=self.eens.fetch(), fixatoms=self.fixatoms.fetch())
       elif self.mode.fetch() == "mts" :
          ens = MTSEnsemble(dt=self.timestep.fetch(),
