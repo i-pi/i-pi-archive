@@ -13,14 +13,18 @@ Syntax:
 import numpy as np
 import sys, glob
 from ipi.utils.io import io_pdb
+from ipi.utils.io import io_xyz
 from ipi.engine.beads import Beads
+from ipi.engine.cell import Cell
 from ipi.utils.depend import *
 from ipi.utils.units import *
 
 def main(prefix):
 
    ipos=[]
+   imode=[]
    for filename in sorted(glob.glob(prefix+".pos*")):
+      imode.append(filename.split(".")[-1])
       ipos.append(open(filename,"r"))
 
    nbeads = len(ipos)   
@@ -29,11 +33,16 @@ def main(prefix):
    while True:
       try:
          for i in range(nbeads):
-            pos, cell = io_pdb.read_pdb(ipos[i])
+            if (imode[i]=="xyz"):
+               pos=io_pdb.read_pdb(imode[i],ipos[i])
+               cell = Cell()
+            else:
+               pos, cell = read_file(imode[i],ipos[i])
             if natoms == 0:
                natoms = pos.natoms
                beads = Beads(natoms,nbeads)
             beads[i].q = pos.q
+            beads.names = pos.names
       except EOFError: # finished reading files
          sys.exit(0)
 
