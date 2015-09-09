@@ -42,7 +42,7 @@ def _get_io_function(mode, io):
       mode: Which format has the file? e.g. "pdb", "xml" or "xyz"
       io: One of "print_path", "print", "read" or "iter"
    """
-   import importlib
+   from ipi.external import importlib
 
    try:
       mode = mode[mode.find(".")+1:]
