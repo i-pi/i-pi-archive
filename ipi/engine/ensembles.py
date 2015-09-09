@@ -28,7 +28,7 @@ from ipi.inputs.barostats import InputBaro
 from ipi.engine.thermostats import *
 from ipi.engine.barostats import *
 
-__all__ = ['Ensemble', 'NVEEnsemble', 'NVTEnsemble', 'NPTEnsemble', 'NSTEnsemble','ReplayEnsemble', 'MTSEnsemble']
+__all__ = ['Ensemble', 'NVEEnsemble', 'NVTEnsemble', 'NPTEnsemble', 'NSTEnsemble','ReplayEnsemble', 'MTSEnsemble', 'SCEnsemble']
 
 class Ensemble(dobject):
    """Base ensemble class.
@@ -525,10 +525,10 @@ class SCEnsemble(NVEEnsemble):
 
    def get_econs(self):
       """Calculates the conserved energy quantity for constant temperature
-      ensemble.
+      ensemble. Also add the S-C term. 
       """
 
-      return NVEEnsemble.get_econs(self) + self.thermostat.ethermo
+      return NVEEnsemble.get_econs(self) + self.thermostat.ethermo + self.forces.postsc
 
 
 class NVTEnsemble(NVEEnsemble):

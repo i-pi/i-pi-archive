@@ -577,14 +577,13 @@ class Forces(dobject):
             dependencies=[dget(self,"SCCALC")],
             func=(lambda: self.SCCALC[1] ) ) )
        
-      dset(self, "potsc", depend_array(name="potsc",value=np.zeros(self.nbeads,float),
+      dset(self, "potssc", depend_array(name="potssc",value=np.zeros(self.nbeads,float),
             dependencies=[dget(self,"SCCALC")],
             func=(lambda: self.SCCALC[0] ) ) )
 
-#      potsc should be an array.        
-#      dset(self, "potsc", depend_value(name="potsc",
-#            dependencies=[dget(self,"SCCALC") ],
-#            func=(lambda: self.SCCALC[0] ) ) ) 
+      dset(self, "potsc", depend_array(name="potsc",value=depend_value(name="potsc",
+            dependencies=[dget(self,"potssc")],
+            func=(lambda: self.potssc.sum() ) ) )
 
    def copy(self, beads=None, cell = None):
       """ Returns a copy of this force object that can be used to compute forces,
@@ -746,7 +745,7 @@ class Forces(dobject):
       rc.append(potsc)
        
       # this should get the forces
-      epsilon = 1.0
+      epsilon = 1.0e-2
       self.dbeads.q = self.beads.q + epsilon*fbase # move forward (should hardcode or input displacement)
       fplus = depstrip(self.dforces.f).copy()
       self.dbeads.q = self.beads.q - epsilon*fbase # move forward (should hardcode or input displacement)
