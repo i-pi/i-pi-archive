@@ -6,7 +6,7 @@ import sys
 import ase.io
 from ase.calculators.gaussian import Gaussian
 
-from ipi.clients.ase import ClientASE
+from ipi.interfaces.clients import ClientASE
 
 
 # get command-line arguments
