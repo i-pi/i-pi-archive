@@ -5,7 +5,8 @@
 # See the "licenses" directory for full license information.
 
 
-from ipi.interfaces.sockets import Client, Driver, InterfaceSocket
+from ipi.interfaces.sockets import Driver, InterfaceSocket
+from ipi.interfaces.clients import Client
 
 
 def test_client():
