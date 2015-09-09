@@ -751,7 +751,12 @@ class Forces(dobject):
       fplus = depstrip(self.dforces.f).copy()
       self.dbeads.q = self.beads.q - epsilon*fbase # move forward (should hardcode or input displacement)
       fminus = depstrip(self.dforces.f).copy()
-      fsc = (fplus - fminus)/2/epsilon
+      fsc = (fminus - fplus)/2/epsilon
+      for k in range(self.nbeads):
+         if k%2:
+           fsc[k] = -self.f[k]/3.0 + (self.alpha/self.omegan2/9.0)*fsc[k]
+         else:
+           fsc[k] = self.f[k]/3.0 + ((1-self.alpha)/self.omegan2/9.0)*fsc[k]
       rc.append(fsc)
 
       return rc

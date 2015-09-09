@@ -481,6 +481,20 @@ class SCEnsemble(NVEEnsemble):
 
       dget(self,"econs").add_dependency(dget(self.thermostat, "ethermo"))
 
+   def pstep(self):                                                                     
+      """Velocity Verlet momenta propagator."""
+                                                                                        
+      self.beads.p += depstrip(self.forces.f)*(self.dt*0.5)
+      # also adds the bias force
+      self.beads.p += depstrip(self.bias.f)*(self.dt*0.5)
+      # also adds the force assiciated with SuzukiChin correction
+      self.beads.p += depstrip(self.forces.fsc)*(self.dt*0.5)
+                                                                                        
+   def qcstep(self):
+      """Velocity Verlet centroid position propagator."""
+                                                                                        
+      self.nm.qnm[0,:] += depstrip(self.nm.pnm)[0,:]/depstrip(self.beads.m3)[0]*self.dt
+
    def step(self, step=None):
       """Does one simulation time step."""
 
