@@ -40,7 +40,7 @@ def test_dot():
     """Depend: Dot test"""
     c = np.dot(a, b)
     print type(c)
-    assert type(c) == dp.depend_array
+    assert type(c) == np.ndarray
 
 
 def test_dotf():
