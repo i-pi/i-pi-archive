@@ -581,9 +581,9 @@ class Forces(dobject):
             dependencies=[dget(self,"SCCALC")],
             func=(lambda: self.SCCALC[0] ) ) )
 
-      dset(self, "potsc", depend_array(name="potsc",value=depend_value(name="potsc",
+      dset(self, "potsc", value=depend_value(name="potsc",
             dependencies=[dget(self,"potssc")],
-            func=(lambda: self.potssc.sum() ) ) )
+            func=(lambda: self.potssc.sum()) ) ) 
 
    def copy(self, beads=None, cell = None):
       """ Returns a copy of this force object that can be used to compute forces,
