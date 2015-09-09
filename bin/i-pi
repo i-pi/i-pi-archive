@@ -22,7 +22,8 @@ import sys
 import os
 
 # Check that we have the import path for this i-PI set and if not, add it.
-dir_root = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
+dir_root = os.path.realpath(
+               os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
 if not dir_root in sys.path:
     sys.path.insert(0, dir_root)
 
