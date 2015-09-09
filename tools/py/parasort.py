@@ -21,11 +21,10 @@ Syntax:
 
 import sys
 import numpy as np
-from ipi.engine.simulation import Simulation
 from ipi.engine.outputs import *
 from ipi.engine.properties import getkey
 from ipi.inputs.simulation import InputSimulation
-from ipi.utils.io import io_xml
+from ipi.utils.io.inputs import io_xml
 
 
 def main(inputfile, prefix="PT"):

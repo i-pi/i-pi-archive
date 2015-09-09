@@ -12,12 +12,8 @@ import sys
 
 from ipi.utils.decorators import cached
 
-# For backwards compatibility import old known functions from backend and inputs.
-from ipi.utils.io.backends import io_pdb, io_xyz, io_binary
-from ipi.utils.io.inputs import io_xml
 
-
-__all__ = [ "io_xml", "io_pdb" , "io_xyz", "io_binary", "print_file_path", "read_file", "print_file" ]
+__all__ = [ "iter_file", "print_file_path", "print_file", "read_file" ]
 
 
 mode_map = {

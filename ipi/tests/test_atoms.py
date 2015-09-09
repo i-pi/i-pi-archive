@@ -7,14 +7,14 @@
 
 from common import local
 
-from ipi.utils.io import io_xyz
+from ipi.utils.io import read_file
 
 
 def get_atoms(fin):
    """Reads atoms object from file @fin."""
 
    with open(local(fin), "r") as f:
-      atoms = io_xyz.read_xyz(f)
+      atoms = read_file("xyz", f)
    return atoms
 
 def test_names():

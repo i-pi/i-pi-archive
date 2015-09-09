@@ -12,19 +12,14 @@ appropriate conserved energy quantity for the ensemble of choice.
 
 
 import time
-from copy import deepcopy
 
 import numpy as np
 
 from ipi.utils.depend import *
-from ipi.utils import units
 from ipi.utils.softexit import softexit
-from ipi.utils.io.backends.io_xyz import read_xyz
-from ipi.utils.io.backends.io_pdb import read_pdb
+from ipi.utils.io import read_file
 from ipi.utils.io.inputs.io_xml import xml_parse_file
-from ipi.utils.units import Constants, unit_to_internal
-from ipi.inputs.thermostats import InputThermo
-from ipi.inputs.barostats import InputBaro
+from ipi.utils.units import unit_to_internal
 from ipi.engine.thermostats import *
 from ipi.engine.barostats import *
 
@@ -673,12 +668,12 @@ class ReplayEnsemble(Ensemble):
        try:
          if (self.intraj.mode == "xyz"):
             for b in self.beads:
-               myatoms = read_xyz(self.rfile)
+               myatoms = read_file("xyz", self.rfile)
                myatoms.q *= unit_to_internal("length",self.intraj.units,1.0)
                b.q[:] = myatoms.q
          elif (self.intraj.mode == "pdb"):
             for b in self.beads:
-               myatoms, mycell = read_pdb(self.rfile)
+               myatoms, mycell = read_file("pdb", self.rfile)
                myatoms.q *= unit_to_internal("length",self.intraj.units,1.0)
                mycell.h  *= unit_to_internal("length",self.intraj.units,1.0)
                b.q[:] = myatoms.q
