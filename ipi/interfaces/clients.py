@@ -9,6 +9,7 @@ programs and serve them back to i-PI.
 # See the "licenses" directory for full license information.
 
 
+import sys
 import socket
 import time
 
@@ -136,10 +137,13 @@ class ClientASE(Client):
     https://wiki.fysik.dtu.dk/ase/
     """
 
-    def __init__(self, atoms, address='localhost', port=31415, mode='unix', verbose=False):
+    def __init__(self, atoms, verbose=False, address='localhost', port=31415, mode='unix', _socket=True):
         """Store provided data and initialize the base class.
 
-        `atoms` is an ASE `Atoms` object, the rest gets passed to `Client`.
+        Arguments:
+            - `atoms`: an ASE `Atoms` object
+            - `verbose`: enable priting of wall clock time per step
+            - the rest gets passed to the `Client` base class
         """
 
         # store the provided data
@@ -156,7 +160,7 @@ class ClientASE(Client):
         self._potential = np.zeros(1)
 
         # call base class constructor
-        super(ClientASE, self).__init__(address, port, mode, verbose)
+        super(ClientASE, self).__init__(address, port, mode, verbose, _socket)
 
     def _getforce(self):
         """Update stored potential energy and forces using ASE."""
