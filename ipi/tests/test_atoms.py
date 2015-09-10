@@ -14,8 +14,8 @@ def get_atoms(fin):
    """Reads atoms object from file @fin."""
 
    with open(local(fin), "r") as f:
-      atoms = read_file("xyz", f)
-   return atoms
+      ret = read_file("xyz", f)
+   return ret["atoms"]
 
 def test_names():
    """Tests names of Atoms object."""

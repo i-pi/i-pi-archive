@@ -139,7 +139,11 @@ def read_pdb(filedesc):
    atoms.names = np.asarray(names,dtype='|S4')
    atoms.m = np.asarray(masses)
 
-   return atoms, cell
+   return {
+            "atoms": atoms,
+            "cell": cell,
+          }
+
 
 def iter_pdb(filedesc):
    """Takes a pdb-style file and yields one Atoms, Cell tuple after another.
@@ -154,7 +158,6 @@ def iter_pdb(filedesc):
 
    try:
       while 1:
-         atoms, cell = read_pdb(filedesc)
-         yield atoms, cell
+         yield read_pdb(filedesc)
    except EOFError:
       pass

@@ -24,7 +24,7 @@ from ipi.utils.units import *
 __all__ = ['print_json_path', 'print_json', 'read_json', 'iter_json']
 
 
-def print_json_path(beads, cell, filedesc = sys.stdout):
+def print_json_path(beads, cell, filedesc=sys.stdout):
    """Prints all the bead configurations into a JSON formatted file.
 
    Prints all the replicas for each time step separately, rather than all at
@@ -37,7 +37,7 @@ def print_json_path(beads, cell, filedesc = sys.stdout):
    """
    raise NotImplementedError("print_json_path is not implemented yet.")
 
-def print_json(atoms, cell, filedesc = sys.stdout, title=""):
+def print_json(atoms, cell, filedesc=sys.stdout, title=""):
    """Prints an atomic configuration into an XYZ formatted file.
 
    Args:
@@ -86,10 +86,10 @@ def read_json(filedesc, **kwargs):
    h = mt.abc2h(a, b, c, alpha, beta, gamma)
    cell = Cell(h)
 
-   if "readcell" in kwargs:
-      return atoms, cell
-   else:
-      return atoms
+   return {
+            "atoms": atoms,
+            "cell": cell,
+          }
 
 def iter_json(filedesc):
    """Takes a json-style file and yields one Atoms object after another.
@@ -104,7 +104,6 @@ def iter_json(filedesc):
 
    try:
       while 1:
-         atoms = read_json(filedesc)
-         yield atoms
+         yield read_json(filedesc)
    except EOFError:
       pass

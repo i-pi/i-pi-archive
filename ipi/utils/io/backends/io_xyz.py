@@ -143,8 +143,10 @@ def read_xyz(filedesc, **kwargs):
    atoms.names = np.asarray(names, dtype='|S4')
    atoms.m = np.asarray(masses)
 
-   if "readcell" in kwargs: return atoms, cell
-   else: return atoms
+   return {
+            "atoms": atoms,
+            "cell": cell,
+          }
 
 def iter_xyz(filedesc):
    """Takes a xyz-style file and yields one Atoms object after another.
@@ -159,7 +161,6 @@ def iter_xyz(filedesc):
 
    try:
       while 1:
-         atoms = read_xyz(filedesc)
-         yield atoms
+         yield read_xyz(filedesc)
    except EOFError:
       pass

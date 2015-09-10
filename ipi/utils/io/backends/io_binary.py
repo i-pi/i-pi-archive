@@ -7,31 +7,26 @@
 # See the "licenses" directory for full license information.
 
 
-import os
-import math
 import sys
-
 import numpy as np
-
-from ipi.utils.depend import depstrip
 
 
 __all__ = ['print_bin']
 
 
-def print_bin(atoms, cell, filedesc = sys.stdout, title=""):
-   """Prints an atomic configuration into a binary file.
+def print_bin(atoms, cell, filedesc=sys.stdout, title=""):
+    """Prints an atomic configuration into a binary file.
 
-   Args:
+    Args:
       beads: An atoms object giving the centroid positions.
       cell: A cell object giving the system box.
       filedesc: An open writable file object. Defaults to standard output.
       title: This gives a string to be appended to the comment line.
-   """
+    """
 
-   buff = filedesc # .buffer
-   cell.h.tofile(buff)
-   nat = np.asarray([atoms.natoms])
-   nat.tofile(buff)
-   atoms.names.tofile(buff)
-   atoms.q.tofile(buff)
+    buff = filedesc  # .buffer
+    cell.h.tofile(buff)
+    nat = np.asarray([atoms.natoms])
+    nat.tofile(buff)
+    atoms.names.tofile(buff)
+    atoms.q.tofile(buff)
