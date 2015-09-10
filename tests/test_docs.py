@@ -8,10 +8,22 @@ import os
 import subprocess
 
 
-def test_make():
-    """doc: run make"""
+def run_command(cmd):
+    """Runs @cmd in doc directory."""
     cwd = os.getcwd()
     os.chdir(os.sep.join(__file__.split(os.sep)[:-1] + ["..", "doc"]))
-    ret = subprocess.call("make")
+    ret = subprocess.call(cmd)
     os.chdir(cwd)
+    return ret
+
+
+def test_make():
+    """doc: run make"""
+    ret = run_command("make")
+    assert ret == 0
+
+
+def test_make_aux():
+    """doc: run make aux"""
+    ret = run_command(["make", "aux"])
     assert ret == 0
