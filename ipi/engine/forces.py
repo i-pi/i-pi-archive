@@ -740,22 +740,23 @@ class Forces(dobject):
       fbase = depstrip(self.f)
       potssc = np.zeros(self.nbeads)
       for k in range(self.nbeads):
-         if k%2 == 1:
-           potssc[k] = -self.pots[k]/3.0 + (self.alpha/self.omegan2/9.0)*np.dot(fbase[k]/self.beads.sm3[k],fbase[k]/self.beads.sm3[k])  
+         if k%2 == 0:
+           potssc[k] = -self.pots[k]/3.0 + (self.alpha/self.omegan2/9.0)*np.dot(fbase[k],fbase[k]/self.beads.m3[k])  
          else:
-           potssc[k] = self.pots[k]/3.0 + ((1.0-self.alpha)/self.omegan2/9.0)*np.dot(fbase[k]/self.beads.sm3[k],fbase[k]/self.beads.sm3[k])
+           potssc[k] = self.pots[k]/3.0 + ((1.0-self.alpha)/self.omegan2/9.0)*np.dot(fbase[k],fbase[k]/self.beads.m3[k])
       rc.append(potssc)
       print np.sqrt(np.linalg.norm(potssc))
        
       # this should get the forces
-      epsilon = 1.0e-2
+      fac = np.sqrt((fbase/self.beads.m3*fbase/self.beads.m3).sum()/(self.nbeads*self.natoms))
+      epsilon = 1.0e-3/fac
       self.dbeads.q = self.beads.q + epsilon*fbase/self.beads.m3 # move forward (should hardcode or input displacement)
       fplus = depstrip(self.dforces.f).copy()
       self.dbeads.q = self.beads.q - epsilon*fbase/self.beads.m3 # move forward (should hardcode or input displacement)
       fminus = depstrip(self.dforces.f).copy()
-      fsc = (fminus - fplus)/2.0/epsilon      
+      fsc = 2*(fminus - fplus)/2.0/epsilon      
       for k in range(self.nbeads):
-         if k%2 == 1:
+         if k%2 == 0:
            fsc[k] = -self.f[k]/3.0 + (self.alpha/self.omegan2/9.0)*fsc[k]
          else:
            fsc[k] = self.f[k]/3.0 + ((1-self.alpha)/self.omegan2/9.0)*fsc[k]
