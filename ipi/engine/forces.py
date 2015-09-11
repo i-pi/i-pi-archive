@@ -735,28 +735,30 @@ class Forces(dobject):
          self.dcell = self.cell.copy()
          self.dforces = self.copy(self.dbeads, self.dcell) 
       
+
       # this should get the potential
       fbase = depstrip(self.f)
-      potsc = np.zeros(self.nbeads)
+      potssc = np.zeros(self.nbeads)
       for k in range(self.nbeads):
-         if k%2:
-           potsc[k] = -self.pots[k]/3.0 + (self.alpha/self.omegan2/9.0)*np.dot(fbase[k],fbase[k])  
+         if k%2 == 1:
+           potssc[k] = -self.pots[k]/3.0 + (self.alpha/self.omegan2/9.0)*np.dot(fbase[k]/self.beads.sm3[k],fbase[k]/self.beads.sm3[k])  
          else:
-           potsc[k] = self.pots[k]/3.0 + ((1.0-self.alpha)/self.omegan2/9.0)*np.dot(fbase[k],fbase[k])  
-      rc.append(potsc)
+           potssc[k] = self.pots[k]/3.0 + ((1.0-self.alpha)/self.omegan2/9.0)*np.dot(fbase[k]/self.beads.sm3[k],fbase[k]/self.beads.sm3[k])
+      rc.append(potssc)
+      print np.sqrt(np.linalg.norm(potssc))
        
       # this should get the forces
       epsilon = 1.0e-2
-      self.dbeads.q = self.beads.q + epsilon*fbase # move forward (should hardcode or input displacement)
+      self.dbeads.q = self.beads.q + epsilon*fbase/self.beads.m3 # move forward (should hardcode or input displacement)
       fplus = depstrip(self.dforces.f).copy()
-      self.dbeads.q = self.beads.q - epsilon*fbase # move forward (should hardcode or input displacement)
+      self.dbeads.q = self.beads.q - epsilon*fbase/self.beads.m3 # move forward (should hardcode or input displacement)
       fminus = depstrip(self.dforces.f).copy()
-      fsc = (fminus - fplus)/2/epsilon      
+      fsc = (fminus - fplus)/2.0/epsilon      
       for k in range(self.nbeads):
-         if k%2:
-           fsc[k] = -self.f[k]/3.0 + (self.alpha/self.omegan2/9.0)*fsc[k]/self.beads.m3[k]
+         if k%2 == 1:
+           fsc[k] = -self.f[k]/3.0 + (self.alpha/self.omegan2/9.0)*fsc[k]
          else:
-           fsc[k] = self.f[k]/3.0 + ((1-self.alpha)/self.omegan2/9.0)*fsc[k]/self.beads.m3[k]
+           fsc[k] = self.f[k]/3.0 + ((1-self.alpha)/self.omegan2/9.0)*fsc[k]
       rc.append(fsc)
 
       return rc

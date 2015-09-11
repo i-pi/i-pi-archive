@@ -527,7 +527,6 @@ class SCEnsemble(NVEEnsemble):
       """Calculates the conserved energy quantity for constant temperature
       ensemble. Also add the S-C term. 
       """
-
       return NVEEnsemble.get_econs(self) + self.thermostat.ethermo + self.forces.potsc
 
 
