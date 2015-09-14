@@ -246,6 +246,16 @@ class Properties(dobject):
                       "longhelp": """The physical system potential energy. With the optional argument 'bead'
                          will print the potential associated with the specified bead.""",
                       'func': (lambda bead="-1": self.forces.pot/self.beads.nbeads if int(bead)<0 else self.forces.pots[int(bead)])},
+      "potential_scop": {  "dimension" : "energy",
+                      "help" : "The physical system potential energy.",
+                      "longhelp": """The physical system potential energy. With the optional argument 'bead'
+                         will print the potential associated with the specified bead.""",
+                      'func': (lambda bead="-1": 2.0/self.beads.nbeads*sum(self.forces.pots[int(k)] for k in range(0,self.beads.nbeads,2)) if int(bead)<0 else self.forces.pots[int(bead)])},
+      "potential_scth": {  "dimension" : "energy",
+                      "help" : "The physical system potential energy.",
+                      "longhelp": """The physical system potential energy. With the optional argument 'bead'
+                         will print the potential associated with the specified bead.""",
+                      'func': (lambda bead="-1": 1.0/self.beads.nbeads*(sum(self.forces.pots[int(k)]  + 2.0*self.forces.potssc[int(k)]  + (-1)**(k+1)/3.0*self.forces.pots[int(k)] for k in range(0,self.beads.nbeads))) if int(bead)<0 else self.forces.pots[int(bead)])},
       "pot_component": {  "dimension" : "energy",
                       "help": "The contribution to the system potential from one of the force components. ",
                        "longhelp":  """The contribution to the system potential from one of the force components. Takes one mandatory 
