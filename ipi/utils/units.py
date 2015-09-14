@@ -324,10 +324,10 @@ def unit_to_internal(family, unit, number):
 
    if not prefix in UnitPrefix:
       raise TypeError(prefix + " is not a valid unit prefix.")
-   if not base in UnitMap[family]:
+   if not base.lower() in UnitMap[family]:
       raise TypeError(base + " is an undefined unit for kind " + family + ".")
 
-   return number*UnitMap[family][base]*UnitPrefix[prefix]
+   return number*UnitMap[family][base.lower()]*UnitPrefix[prefix]
 
 def unit_to_user(family, unit, number):
    """Converts a number of given dimensions from internal to user units.
