@@ -16,7 +16,7 @@ from ipi.utils.depend import *
 from ipi.utils.units import Constants, unit_to_internal, unit_to_user
 from ipi.utils.mathtools import logsumlog, h2abc_deg
 import ipi.utils.io as io
-from ipi.utils.io import io_xml
+from ipi.utils.io.inputs import io_xml
 from ipi.engine.atoms import *
 from ipi.engine.cell import *
 from ipi.engine.ensembles import *

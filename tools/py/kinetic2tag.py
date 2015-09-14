@@ -15,9 +15,9 @@ Syntax:
 """
 
 import numpy as np
-import sys, glob
-from ipi.utils.io import io_xyz
-from ipi.engine.beads import Beads
+
+import sys
+from ipi.utils.io import read_file
 from ipi.utils.depend import *
 from ipi.utils.units import *
 
@@ -36,7 +36,7 @@ def main(prefix, lag):
       try:
          tk=read_xyz(ikin)
          kin = depstrip(tk.q)
-         kod = depstrip(io_xyz.read_xyz(ikod).q)
+         kod = depstrip(read_file("xyz", ikod).q)
          if natoms == 0:  # initializes vectors
             natoms = len(kin)/3
             ktbuf = np.zeros((cbuf,natoms,3,3),float)   # implement the buffer as a circular one so one doesn't need to re-allocate and storage is continuous
@@ -45,7 +45,7 @@ def main(prefix, lag):
             akt = np.zeros((natoms,3),float)
             mea = np.zeros((natoms,3),float)
             mev = np.zeros((natoms,3,3),float)
-           
+
          nkt[:,0,0] = kin[0:natoms*3:3]
          nkt[:,1,1] = kin[1:natoms*3:3]
          nkt[:,2,2] = kin[2:natoms*3:3]
@@ -69,7 +69,7 @@ def main(prefix, lag):
          for i in range(natoms):
             [ mea[i], mev[i] ] = np.linalg.eigh(mkt[i])
 
-         
+
 
          otag.write("%d\n# TAG eigenvalues e1 e2 e3 with lag %d. Frame: %d\n" %(natoms, lag, ifr-lag))
          for i in range(natoms):

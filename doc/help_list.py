@@ -20,8 +20,7 @@ src_dir = ".."
 
 sys.path.append(src_dir)
 
-from ipi.engine.properties import *
-from ipi.utils.io.io_xml import *
+from ipi.engine.properties import Properties, Trajectories, help_latex
 
 
 __all__ = ['help_list', 'list_objects']

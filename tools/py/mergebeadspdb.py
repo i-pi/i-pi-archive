@@ -12,8 +12,7 @@ Syntax:
 
 import numpy as np
 import sys, glob
-from ipi.utils.io import io_pdb
-from ipi.utils.io import io_xyz
+from ipi.utils.io import read_file, print_file
 from ipi.engine.beads import Beads
 from ipi.engine.cell import Cell
 from ipi.utils.depend import *
@@ -33,11 +32,7 @@ def main(prefix):
    while True:
       try:
          for i in range(nbeads):
-            if (imode[i]=="xyz"):
-               pos=io_pdb.read_pdb(imode[i],ipos[i])
-               cell = Cell()
-            else:
-               pos, cell = read_file(imode[i],ipos[i])
+            pos, cell = read_file(imode[i], ipos[i], readcell="true")
             if natoms == 0:
                natoms = pos.natoms
                beads = Beads(natoms,nbeads)
