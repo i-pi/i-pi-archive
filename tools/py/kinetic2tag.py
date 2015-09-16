@@ -34,9 +34,11 @@ def main(prefix, lag):
    cbuf = 2*lag+1
    while True:
       try:
-         tk=read_xyz(ikin)
+         ret = read_file("xyz", ikin)
+         tk = ret["atoms"]
          kin = depstrip(tk.q)
-         kod = depstrip(read_file("xyz", ikod).q)
+         ret = depstrip(read_file("xyz", ikod).q)
+         kod = ret["atoms"]
          if natoms == 0:  # initializes vectors
             natoms = len(kin)/3
             ktbuf = np.zeros((cbuf,natoms,3,3),float)   # implement the buffer as a circular one so one doesn't need to re-allocate and storage is continuous

@@ -25,7 +25,9 @@ def main(filename):
    ifr = 0
    while True:
       try:
-         pos, cell = read_file("xyz", ipos, readcell=True)
+         ret = read_file("xyz", ipos, readcell=True)
+         pos = ret["atoms"]
+         cell = ret["cell"]
          cell.array_pbc(pos.q)
       except EOFError: # finished reading files
          sys.exit(0)

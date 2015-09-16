@@ -26,13 +26,15 @@ def main(prefix):
       imode.append(filename.split(".")[-1])
       ipos.append(open(filename,"r"))
 
-   nbeads = len(ipos)   
+   nbeads = len(ipos)
    natoms = 0
    ifr = 0
    while True:
       try:
          for i in range(nbeads):
-            pos, cell = read_file(imode[i], ipos[i], readcell="true")
+            ret = read_file(imode[i], ipos[i], readcell="true")
+            pos = ret["atoms"]
+            cell = ret["cell"]
             if natoms == 0:
                natoms = pos.natoms
                beads = Beads(natoms,nbeads)

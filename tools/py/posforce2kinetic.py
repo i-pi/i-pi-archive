@@ -44,8 +44,10 @@ def main(prefix, temp):
    while True:
       try:
          for i in range(nbeads):
-            pos = read_file("xyz", ipos[i])
-            force = read_file("xyz", ifor[i])
+            ret = read_file("xyz", ipos[i])
+            pos = ret["atoms"]
+            ret = read_file("xyz", ifor[i])
+            forces = ret["atoms"]
             if natoms == 0:
                natoms = pos.natoms
                beads = Beads(natoms,nbeads)
