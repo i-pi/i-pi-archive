@@ -12,7 +12,7 @@ Syntax:
 
 import numpy as np
 import sys, glob
-from ipi.utils.io import read_file, print_file
+from ipi.utils.io import read_file, print_file_path
 from ipi.engine.beads import Beads
 from ipi.engine.cell import Cell
 from ipi.utils.depend import *
@@ -43,7 +43,7 @@ def main(prefix):
       except EOFError: # finished reading files
          sys.exit(0)
 
-      io_pdb.print_pdb_path(beads, cell)
+      print_file_path("pdb", beads, cell)
       ifr+=1
 
 
