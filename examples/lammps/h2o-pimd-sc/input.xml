@@ -14,7 +14,7 @@
   <system>
     <initialize nbeads="16">
       <file mode="pdb"> water_298K.pdb </file>
-      <velocities mode="thermal" units="kelvin"> 596 </velocities>
+      <velocities mode="thermal" units="kelvin"> 298 </velocities>
     </initialize>
     <forces>
       <force> lmpserial </force>

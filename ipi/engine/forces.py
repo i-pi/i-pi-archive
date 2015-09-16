@@ -564,7 +564,7 @@ class Forces(dobject):
             
             
       # SC forces and potential  
-      dset(self, "alpha", depend_value(name="alpha", value=0.5))
+      dset(self, "alpha", depend_value(name="alpha", value=0.1))
       
       # this will be piped from normalmodes
       dset(self, "omegan2", depend_value(name="alpha", value=0))
