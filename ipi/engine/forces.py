@@ -564,7 +564,7 @@ class Forces(dobject):
             
             
       # SC forces and potential  
-      dset(self, "alpha", depend_value(name="alpha", value=0.1))
+      dset(self, "alpha", depend_value(name="alpha", value=0.0))
       
       # this will be piped from normalmodes
       dset(self, "omegan2", depend_value(name="alpha", value=0))
@@ -735,8 +735,11 @@ class Forces(dobject):
          self.dcell = self.cell.copy()
          self.dforces = self.copy(self.dbeads, self.dcell) 
       
-
+      if self.nbeads % 2 != 0:
+         warning("ERROR: Suzuki-Chin factorization requires even number of beads!")
+         exit()
       # this should get the potential
+      
       fbase = depstrip(self.f)
       potssc = np.zeros(self.nbeads)
       for k in range(self.nbeads):
@@ -744,17 +747,29 @@ class Forces(dobject):
            potssc[k] = -self.pots[k]/3.0 + (self.alpha/self.omegan2/9.0)*np.dot(fbase[k],fbase[k]/self.beads.m3[k])  
          else:
            potssc[k] = self.pots[k]/3.0 + ((1.0-self.alpha)/self.omegan2/9.0)*np.dot(fbase[k],fbase[k]/self.beads.m3[k])
-      rc.append(potssc)
-      print np.sqrt(np.linalg.norm(potssc))
+      rc.append(potssc)      
        
       # this should get the forces
       fac = np.sqrt((fbase/self.beads.m3*fbase/self.beads.m3).sum()/(self.nbeads*self.natoms))
       epsilon = 1.0e-3/fac
-      self.dbeads.q = self.beads.q + epsilon*fbase/self.beads.m3 # move forward (should hardcode or input displacement)
-      fplus = depstrip(self.dforces.f).copy()
-      self.dbeads.q = self.beads.q - epsilon*fbase/self.beads.m3 # move forward (should hardcode or input displacement)
-      fminus = depstrip(self.dforces.f).copy()
-      fsc = 2*(fminus - fplus)/2.0/epsilon      
+      
+      if self.alpha==0:
+         # special case! half of the S-C forces are zero so we can compute forward-backward finite differences in one go!
+         fsc = fbase*0.0
+         for k in range(self.nbeads/2): # forward and backward go in the two halves of the q vector
+            self.dbeads.q[k]=self.beads.q[2*k+1] + epsilon * fbase[2*k+1]/self.beads.m3[2*k+1]
+            self.dbeads.q[self.nbeads/2+k]=self.beads.q[2*k+1] - epsilon * fbase[2*k+1]/self.beads.m3[2*k+1]
+         fplusminus = depstrip(self.dforces.f).copy()
+         for k in range(self.nbeads/2): # only compute the elements that will not be set to zero when multiplying by alpha
+            fsc[2*k+1] = 2*(fplusminus[self.nbeads/2+k]-fplusminus[k])/2.0/epsilon
+      else: 
+         # standard, more expensive version (alpha=1 could also be accelerated but is not used in practice so laziness prevails)
+         self.dbeads.q = self.beads.q + epsilon*fbase/self.beads.m3 # move forward (should hardcode or input displacement)
+         fplus = depstrip(self.dforces.f).copy()
+         self.dbeads.q = self.beads.q - epsilon*fbase/self.beads.m3 # move forward (should hardcode or input displacement)
+         fminus = depstrip(self.dforces.f).copy()
+         fsc = 2*(fminus - fplus)/2.0/epsilon      
+         
       for k in range(self.nbeads):
          if k%2 == 0:
            fsc[k] = -self.f[k]/3.0 + (self.alpha/self.omegan2/9.0)*fsc[k]
