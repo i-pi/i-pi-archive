@@ -5,7 +5,9 @@
 # See the "licenses" directory for full license information.
 
 
-from ipi.interfaces.sockets import Client, Driver, InterfaceSocket
+import nose
+from ipi.interfaces.sockets import Driver, InterfaceSocket
+from ipi.interfaces.clients import Client, ClientASE
 
 
 def test_client():
@@ -21,3 +23,25 @@ def test_driver():
 def test_interface():
    """InterfaceSocket: startup."""
    i = InterfaceSocket()
+
+
+def test_ASE():
+    """Socket client for ASE."""
+
+    try:
+        from ase import lattice
+        from ase import units
+        from ase.calculators.lj import LennardJones
+    except ImportError:
+        raise nose.SkipTest
+
+    # create ASE atoms and calculator
+    atoms = lattice.bulk('Ar', cubic=True)
+    calculator = LennardJones(epsilon=0.997*units.kJ/units.mol, sigma=3.4, rc=10.0)
+    atoms.set_calculator(calculator)
+
+    # try to get potential energy
+    atoms.get_potential_energy()
+
+    # create the socket client
+    client = ClientASE(atoms, verbose=True, address='ase', _socket=False)
