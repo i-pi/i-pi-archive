@@ -67,22 +67,16 @@ def main(fn_input, do_yappi, print_banner):
       yfs.print_all(out=ypo)
       ypo.close()
 
-   # TODO
-   # Is there any point in doing either of these?
-   # The simulation run finished cleanly.
-   # Does softexit.trigger have side effects that we want?
-   # If so, it should probably be done differently.
-   # It seems that checkpoints are written there - do this differently.
+   # It seems that checkpoints are written by the following.
+   # TODO: Do this differently, so they are written when simulation.run() finishes.
    softexit.trigger(" @ SIMULATION: Exiting cleanly.")
-   del simulation
 
 
 if __name__ == '__main__':
 
    # TODO
-   # use argparse instead of argv, will also handle help text
-   # read yappi and banner preference from arguments
-   # Or do we want to support Python < 2.7?
+   # Read yappi and banner preference from arguments.
+   # Use optparse, as argparse requires >=2.7.
 
    if (len(sys.argv) != 2):
       print """usage: %s <input file>""" % sys.argv[0]
