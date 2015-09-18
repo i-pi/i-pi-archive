@@ -12,15 +12,18 @@ Syntax:
 
 import numpy as np
 import sys, glob
-from ipi.utils.io.io_pdb import *
+from ipi.utils.io import *
 from ipi.engine.beads import Beads
+from ipi.engine.cell import Cell
 from ipi.utils.depend import *
 from ipi.utils.units import *
 
 def main(prefix):
 
    ipos=[]
+   imode=[]
    for filename in sorted(glob.glob(prefix+".pos*")):
+      imode.append(filename.split(".")[-1])
       ipos.append(open(filename,"r"))
 
    nbeads = len(ipos)   
@@ -29,15 +32,20 @@ def main(prefix):
    while True:
       try:
          for i in range(nbeads):
-            pos, cell = read_pdb(ipos[i])
+            if (imode[i]=="xyz"):
+               pos=read_file(imode[i],ipos[i])
+               cell = Cell()
+            else:
+               pos, cell = read_file(imode[i],ipos[i])
             if natoms == 0:
                natoms = pos.natoms
                beads = Beads(natoms,nbeads)
             beads[i].q = pos.q
+            beads.names = pos.names
       except EOFError: # finished reading files
          sys.exit(0)
 
-      print_pdb_path(beads, cell)
+      print_file_path("pdb",beads, cell)
       ifr+=1
 
 

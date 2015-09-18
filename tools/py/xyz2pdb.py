@@ -12,8 +12,8 @@ Syntax:
 
 import numpy as np
 import sys, glob
-from ipi.utils.io.io_pdb import *
-from ipi.utils.io.io_xyz import *
+from ipi.utils.io.backends.io_xyz import read_xyz
+from ipi.utils.io.backends.io_pdb import print_pdb
 from ipi.engine.beads import Beads
 from ipi.utils.depend import *
 from ipi.utils.units import *
@@ -27,6 +27,7 @@ def main(filename):
    while True:
       try:
          pos, cell = read_xyz(ipos, readcell=True)
+         cell.array_pbc(pos.q)
       except EOFError: # finished reading files
          sys.exit(0)
 

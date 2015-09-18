@@ -1,31 +1,12 @@
-"""Utility functions for outputting messages, diagnostics and errors'
+"""Classes to print info, warnings and errors to standard output during the simulation."""
 
-Copyright (C) 2013, Joshua More and Michele Ceriotti
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <http.//www.gnu.org/licenses/>.
+# This file is part of i-PI.
+# i-PI Copyright (C) 2014-2015 i-PI developers
+# See the "licenses" directory for full license information.
 
 
-Classes:
-   Verbosity: Concise class to check the selected level of output
-
-Functions:
-   banner:    Prints the program welcome "screen"
-   info:      Prints some information to standard output, depending on the level of verbosity
-   warning:   Same as info, but with a "!W!" prefix and optionally printing a stack trace
-"""
-
-import traceback, sys
+import traceback
+import sys
 
 
 __all__ = ['Verbosity', 'verbosity', 'banner', 'info', 'warning']
@@ -83,7 +64,7 @@ class Verbosity(object):
          ValueError: Raised if either the name or the level is not
             a valid option.
       """
-      
+
       if name == "level":
          if self.lock : return # do not set the verbosity level if this is locked
          if value == "quiet":
@@ -128,7 +109,7 @@ def banner():
 
 
 def info(text="", show=True):
-   """Prints a warning message.
+   """Prints a message.
 
    Args:
       text: The text of the information message.
@@ -143,6 +124,8 @@ def info(text="", show=True):
 
 def warning(text="", show=True):
    """Prints a warning message.
+
+   Same as info, but with a "!W!" prefix and optionally printing a stack trace.
 
    Args:
       text: The text of the information message.

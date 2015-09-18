@@ -1,41 +1,14 @@
-"""Deals with creating the initiliazer class.
+"""Creates objects that initialize the simulation."""
 
-Copyright (C) 2013, Joshua More and Michele Ceriotti
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <http.//www.gnu.org/licenses/>.
+# This file is part of i-PI.
+# i-PI Copyright (C) 2014-2015 i-PI developers
+# See the "licenses" directory for full license information.
 
 
-Classes:
-   InputInitializer: Initializes the classes that initialize the simulation
-      data.
-   InputInitFile: Initializes the classes that initialize the simulation data
-      from a file. Rather than initializing one piece of data, everything that
-      can be initialized from that file will be.
-   InputInitPositions: Initializes the positions.
-   InputInitMomenta: Initializes the momenta.
-   InputInitVelocities: Initializes the velocities.
-   InputInitMasses: Initializes the masses.
-   InputInitLabels: Initializes the atom labels.
-   InputInitCell: Initializes the cell.
-   InputInitThermo: Initializes the thermostat.
-   InputInitBase: The base class for all Initializer objects.
-   InputInitIndexed: The class for all Initializer objects which can be called
-      to initialize data for a particular atom or bead.
-"""
+from copy import copy, deepcopy
 
 import numpy as np
-from copy import copy, deepcopy
+
 import ipi.utils.mathtools as mt
 import ipi.engine.initializer as ei
 from ipi.utils.inputvalue import *
@@ -44,7 +17,9 @@ from ipi.inputs.cell import InputCell
 from ipi.utils.io import io_xml
 from ipi.utils.messages import verbosity, warning
 
+
 __all__ = ['InputInitializer', 'InputInitFile', 'InputInitPositions', 'InputInitMomenta', 'InputInitVelocities', 'InputInitMasses', 'InputInitLabels', 'InputInitCell', 'InputInitThermo']
+
 
 class InputInitBase(InputValue):
    """Base class to handle initialization.
