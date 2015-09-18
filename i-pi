@@ -20,11 +20,11 @@ import sys
 
 from ipi.utils.softexit import softexit
 from ipi.utils.messages import banner, verbosity
-from ipi.utils.load_simulation import load_simulation
+from ipi.engine.simulation import Simulation
 
 
-def main(file_name, do_yappi, print_banner):
-   """Loads and runs the simulation stored in `file_name`."""
+def main(fn_input, do_yappi, print_banner):
+   """Loads and runs the simulation stored in `fn_input`."""
 
     # print the banner if requested
    if print_banner:
@@ -36,11 +36,11 @@ def main(file_name, do_yappi, print_banner):
          import yappi
          yappi.start(builtins=True, profile_threads=True)
       except ImportError:
-         # TODO: print a warning message
-         do_yappi = False
+         print 'Profiling with yappi was enabled but could not be imported.'
+         sys.exit(1)
 
    # construct simulation based on input file
-   simulation = load_simulation(file_name)
+   simulation = Simulation.load_from_xml(fn_input)
 
    # run the simulation
    simulation.run()
@@ -56,6 +56,7 @@ def main(file_name, do_yappi, print_banner):
       yfs.save("profile.kgrind", type="callgrind")
       ypo = open("profile.yappi", "w")
       yfs.print_all(out=ypo)
+      ypo.close()
 
    # TODO
    # Is there any point in doing either of these?
@@ -77,7 +78,7 @@ if __name__ == '__main__':
    if (len(sys.argv) != 2):
       print """usage: %s <input file>""" % sys.argv[0]
    else:
-      #do_yappi = False
-      do_yappi = True
+      do_yappi = False
+      #do_yappi = True
       print_banner = True
       main(sys.argv[1], do_yappi, print_banner)

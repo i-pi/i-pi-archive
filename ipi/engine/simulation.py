@@ -40,8 +40,11 @@ from ipi.utils.messages import verbosity, info, warning
 from ipi.utils.softexit import softexit
 from ipi.engine.atoms import *
 from ipi.engine.cell import *
+import ipi.inputs.simulation as isimulation
 
 # import objgraph
+
+
 
 class Simulation(dobject):
    """Main simulation object.
@@ -71,6 +74,41 @@ class Simulation(dobject):
    Depend objects:
       step: The current simulation step.
    """
+
+   @staticmethod
+   def load_from_xml(fn_input, print_input=False):
+
+      # TODO: Would this be better as a class method of Simulation?
+
+      # TODO: `print_input` vs `verbosity`
+
+      # parse the file
+      xmlrestart = xml_parse_file(open(fn_input))
+
+      # prepare the simulation input object
+      input_simulation = isimulation.InputSimulation()
+
+      # check the input and partitions it appropriately
+      input_simulation.parse(xmlrestart.fields[0][1])
+
+      # create the simulation object
+      simulation = input_simulation.fetch()
+
+      # pipe between the components of the simulation
+      simulation.bind()
+
+      # echo the input file if verbose enough
+      if verbosity.level > 0:
+         print " # i-PI loaded input file: ", fn_input
+      if verbosity.level > 1:
+         print " --- begin input file content ---"
+         ifile = open(fn_input, "r")
+         for line in ifile.readlines():
+            print line,
+         print " ---  end input file content  ---"
+         ifile.close()
+
+      return simulation
 
    def __init__(self, mode, syslist, fflist, outputs, prng, paratemp, step=0, tsteps=1000, ttime=0):
       """Initialises Simulation class.
@@ -190,7 +228,7 @@ class Simulation(dobject):
             #st.daemon = True
             #st.start()
             #stepthreads.append(st)
-            
+
          for st in stepthreads:
             while st.isAlive(): st.join(2.0)   # this is necessary as join() without timeout prevents main from receiving signals
 
@@ -267,9 +305,9 @@ class Simulation(dobject):
          #   info(" # MD diagnostics: V: %10.5e    Kcv: %10.5e   Ecns: %10.5e" %
          #      (self.properties["potential"], self.properties["kinetic_cv"], self.properties["conserved"] ) )
 
-         #objgraph.show_growth() 
+         #objgraph.show_growth()
 
-         
+
          if os.path.exists("EXIT"): # soft-exit
             info(" # EXIT file detected! Bye bye!", verbosity.low )
             break
