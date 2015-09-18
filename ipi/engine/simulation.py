@@ -68,8 +68,14 @@ class Simulation(dobject):
 
    @staticmethod
    def load_from_xml(fn_input, custom_verbosity=None, request_banner=False):
-      """
-      TODO: docstring
+      """Load an XML input file and return a `Simulation` object.
+
+      Arguments:
+          fn_input (str): Name of the input file.
+          custom_verbosity (str): If not `None`, overrides the verbosity
+              specified by the input file.
+          request_banner (bool): Whether to print the i-PI banner,
+              if verbosity is higher than 'quiet'.
       """
 
       # parse the file
