@@ -69,8 +69,6 @@ class Simulation(dobject):
    @staticmethod
    def load_from_xml(fn_input, print_input=False):
 
-      # TODO: Would this be better as a class method of Simulation?
-
       # TODO: `print_input` vs `verbosity`
 
       # parse the file

@@ -68,21 +68,36 @@ def main(fn_input, do_yappi, print_banner):
         ypo.close()
 
     # It seems that checkpoints are written by the following.
-    # TODO
-    # Do this differently, so they are written when simulation.run() finishes.
+    # TODO: Have them written when simulation.run() finishes instead.
     softexit.trigger(" @ SIMULATION: Exiting cleanly.")
 
 
 if __name__ == '__main__':
 
-    # TODO
-    # Read yappi and banner preference from arguments.
-    # Use optparse, as argparse requires >=2.7.
+    # TODO: Use argparse once we move to Python 2.7.
 
-    if (len(sys.argv) != 2):
-        print """usage: %s <input file>""" % sys.argv[0]
+    from optparse import OptionParser
+
+    parser = OptionParser(usage='%prog [options] <input file>',
+                          description='The main i-PI executable used to run '
+                                      'a simulation, given an XML input file.'
+                         )
+
+    parser.add_option('-p', '--profile',
+                      action='store_true', dest='do_yappi', default=False,
+                      help='Profile this run using Yappi.')
+
+    options, args = parser.parse_args()
+
+    # make sure that we have exactly one input file and it exists
+    if len(args) == 0:
+        parser.error('No input file name provided.')
+    elif len(args) > 1:
+        parser.error('Provide only one input file name.')
     else:
-        do_yappi = False
-        #do_yappi = True
-        print_banner = True
-        main(sys.argv[1], do_yappi, print_banner)
+        fn_in = args[0]
+        if not os.path.exists(fn_in):
+            parser.error('Input file not found: {:s}'.format(fn_in))
+
+    # Everything is ready. Go!
+    main(args[0], options.do_yappi, print_banner=True)
