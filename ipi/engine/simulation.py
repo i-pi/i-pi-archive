@@ -25,7 +25,7 @@ from ipi.utils.units  import *
 from ipi.utils.prng   import *
 from ipi.utils.io     import *
 from ipi.utils.io.inputs.io_xml import *
-from ipi.utils.messages import verbosity, info, warning
+from ipi.utils.messages import verbosity, info, warning, banner
 from ipi.utils.softexit import softexit
 from ipi.engine.atoms import *
 from ipi.engine.cell import *
@@ -67,9 +67,10 @@ class Simulation(dobject):
    """
 
    @staticmethod
-   def load_from_xml(fn_input, print_input=False):
-
-      # TODO: `print_input` vs `verbosity`
+   def load_from_xml(fn_input, custom_verbosity=None, request_banner=False):
+      """
+      TODO: docstring
+      """
 
       # parse the file
       xmlrestart = xml_parse_file(open(fn_input))
@@ -77,8 +78,16 @@ class Simulation(dobject):
       # prepare the simulation input object
       input_simulation = isimulation.InputSimulation()
 
-      # check the input and partitions it appropriately
+      # check the input and partition it appropriately
       input_simulation.parse(xmlrestart.fields[0][1])
+
+      # override verbosity if requested
+      if custom_verbosity is not None:
+          input_simulation.verbosity.value = custom_verbosity
+
+      # print banner if not suppressed and simulation verbose enough
+      if request_banner and input_simulation.verbosity.fetch() != 'quiet':
+         banner()
 
       # create the simulation object
       simulation = input_simulation.fetch()

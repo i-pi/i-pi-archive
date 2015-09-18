@@ -28,16 +28,11 @@ if not dir_root in sys.path:
     sys.path.insert(0, dir_root)
 
 from ipi.utils.softexit import softexit
-from ipi.utils.messages import banner
 from ipi.engine.simulation import Simulation
 
 
-def main(fn_input, do_yappi, print_banner):
+def main(fn_input, do_yappi):
     """Loads and runs the simulation stored in `fn_input`."""
-
-     # print the banner if requested
-    if print_banner:
-        banner()
 
     # optionally profile this run - set up
     if do_yappi:
@@ -49,7 +44,7 @@ def main(fn_input, do_yappi, print_banner):
             sys.exit(1)
 
     # construct simulation based on input file
-    simulation = Simulation.load_from_xml(fn_input)
+    simulation = Simulation.load_from_xml(fn_input, request_banner=True)
 
     # run the simulation
     simulation.run()
@@ -69,6 +64,8 @@ def main(fn_input, do_yappi, print_banner):
 
     # It seems that checkpoints are written by the following.
     # TODO: Have them written when simulation.run() finishes instead.
+    # It should be sufficient to run `self.softexit() at the end of
+    # `Simulation.run()`. Anything else missing?
     softexit.trigger(" @ SIMULATION: Exiting cleanly.")
 
 
@@ -100,4 +97,4 @@ if __name__ == '__main__':
             parser.error('Input file not found: {:s}'.format(fn_in))
 
     # Everything is ready. Go!
-    main(args[0], options.do_yappi, print_banner=True)
+    main(args[0], options.do_yappi)
