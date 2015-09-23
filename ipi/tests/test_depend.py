@@ -1,32 +1,21 @@
-"""Short test scripts.
+"""Used to test the depend array view mechanism."""
 
-Copyright (C) 2013, Joshua More and Michele Ceriotti
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <http.//www.gnu.org/licenses/>.
+# This file is part of i-PI.
+# i-PI Copyright (C) 2014-2015 i-PI developers
+# See the "licenses" directory for full license information.
 
 
-Used to test the depend array view mechanism.
-"""
+import numpy as np
 
 import ipi.utils.depend as dp
-import numpy as np
+
 
 a = dp.depend_array(name="a",value=np.zeros((2,2),float))
 b = dp.depend_array(name="b",value=np.zeros((2,2),float))
 
+
 def test_slicing():
-   "depend: Slicing test"""
+   """Depend: Slicing test"""
    c = a[0]
    print type(c)
    assert(type(c) == dp.depend_array)
@@ -45,7 +34,7 @@ def test_increment():
    assert(type(c) == np.ndarray)
 
 def test_dot():
-   "Depend: Dot test"""
+   """Depend: Dot test"""
    c = np.dot(a,b)
    print type(c)
    assert(type(c) == dp.depend_array)
