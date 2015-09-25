@@ -11,22 +11,23 @@ from ipi.utils.io import read_file
 
 
 def get_atoms(fin):
-   """Reads atoms object from file @fin."""
+    """Reads atoms object from file @fin."""
 
-   with open(local(fin), "r") as f:
-      ret = read_file("xyz", f)
-   return ret["atoms"]
+    with open(local(fin), "r") as f:
+        ret = read_file("xyz", f)
+    return ret["atoms"]
+
 
 def test_names():
-   """Tests names of Atoms object."""
-   atoms = get_atoms("test.pos_0.xyz")
-   expected = ["O", "H", "H"]
-   assert(len(atoms.names) == 3)
-   for i, name in enumerate(atoms.names):
-      assert(name == expected[i])
-      assert(name == atoms[i].name)
+    """Tests names of Atoms object."""
+    atoms = get_atoms("test.pos_0.xyz")
+    expected = ["O", "H", "H"]
+    assert(len(atoms.names) == 3)
+    for i, name in enumerate(atoms.names):
+        assert(name == expected[i])
+        assert(name == atoms[i].name)
 
-   # Same test with iterator instead
-   for i, atom in enumerate(atoms):
-      assert(atom.name == expected[i])
-      assert(atom.name == atoms.names[i])
+    # Same test with iterator instead
+    for i, atom in enumerate(atoms):
+        assert(atom.name == expected[i])
+        assert(atom.name == atoms.names[i])

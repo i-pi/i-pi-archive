@@ -23,131 +23,142 @@ pos = np.array([i for i in range(3*3)])
 
 
 def test_read_xyz():
-   """Tests that xyz files are read correctly."""
+    """Tests that xyz files are read correctly."""
 
-   with open(local("test.pos_0.xyz"), "r") as f:
-      ret = read_file("xyz", f)
-      atoms = ret["atoms"]
-      assert(len(atoms) == 3)
-      assert_equal(pos, atoms.q)
+    with open(local("test.pos_0.xyz"), "r") as f:
+        ret = read_file("xyz", f)
+        atoms = ret["atoms"]
+        assert(len(atoms) == 3)
+        assert_equal(pos, atoms.q)
+
 
 def test_iter_xyz():
-   """Tests that xyz files with multiple frames are read correctly."""
+    """Tests that xyz files with multiple frames are read correctly."""
 
-   with open(local("test.pos_0.xyz"), "r") as f:
-      for num, ret in enumerate(iter_file("xyz", f)):
-         atoms = ret["atoms"]
-         assert(len(atoms) == 3)
-         assert_equal(pos*(num+1), atoms.q)
+    with open(local("test.pos_0.xyz"), "r") as f:
+        for num, ret in enumerate(iter_file("xyz", f)):
+            atoms = ret["atoms"]
+            assert(len(atoms) == 3)
+            assert_equal(pos*(num+1), atoms.q)
+
 
 def test_read_pdb():
-   """Tests that pdb files are read correctly."""
+    """Tests that pdb files are read correctly."""
 
-   with open(local("test.pos_0.pdb"), "r") as f:
-      ret = read_file("pdb", f)
-      atoms = ret["atoms"]
-      assert(len(atoms) == 3)
-      assert_equal(pos, atoms.q)
-      # TODO: test cell
+    with open(local("test.pos_0.pdb"), "r") as f:
+        ret = read_file("pdb", f)
+        atoms = ret["atoms"]
+        assert(len(atoms) == 3)
+        assert_equal(pos, atoms.q)
+        # TODO: test cell
+
 
 def test_iter_pdb():
-   """Tests that pdb files with multiple frames are read correctly."""
+    """Tests that pdb files with multiple frames are read correctly."""
 
-   with open(local("test.pos_0.pdb"), "r") as f:
-      for num, ret in enumerate(iter_file("pdb", f)):
-         atoms = ret["atoms"]
-         assert(len(atoms) == 3)
-         assert_equal(pos*(num+1), atoms.q)
+    with open(local("test.pos_0.pdb"), "r") as f:
+        for num, ret in enumerate(iter_file("pdb", f)):
+            atoms = ret["atoms"]
+            assert(len(atoms) == 3)
+            assert_equal(pos*(num+1), atoms.q)
+
 
 def test_print_pdb():
-   """Tests that pdb files are printed correctly."""
+    """Tests that pdb files are printed correctly."""
 
-   with open(local("test.pos_0.pdb"), "r") as f:
-      with open(local("test.pos_1.xyz"), "w") as out:
-         for num, ret in enumerate(iter_file("pdb", f)):
-            atoms = ret["atoms"]
-            assert(len(atoms) == 3)
-            assert_equal(pos*(num+1), atoms.q)
-            print_file("xyz", atoms, ret["cell"], filedesc=out)
+    with open(local("test.pos_0.pdb"), "r") as f:
+        with open(local("test.pos_1.xyz"), "w") as out:
+            for num, ret in enumerate(iter_file("pdb", f)):
+                atoms = ret["atoms"]
+                assert(len(atoms) == 3)
+                assert_equal(pos*(num+1), atoms.q)
+                print_file("xyz", atoms, ret["cell"], filedesc=out)
 
-   assert(filecmp.cmp(local("test.pos_0.xyz"), local("test.pos_1.xyz")))
-   os.unlink(local("test.pos_1.xyz"))
+    assert(filecmp.cmp(local("test.pos_0.xyz"), local("test.pos_1.xyz")))
+    os.unlink(local("test.pos_1.xyz"))
+
 
 def test_print_xyz():
-   """Tests that xyz files are printed correctly."""
+    """Tests that xyz files are printed correctly."""
 
-   with open(local("test.pos_0.pdb"), "r") as f:
-      with open(local("test.pos_1.pdb"), "w") as out:
-         for num, ret in enumerate(iter_file("pdb", f)):
-            atoms = ret["atoms"]
-            assert(len(atoms) == 3)
-            assert_equal(pos*(num+1), atoms.q)
-            print_file("pdb", atoms, ret["cell"], filedesc=out)
+    with open(local("test.pos_0.pdb"), "r") as f:
+        with open(local("test.pos_1.pdb"), "w") as out:
+            for num, ret in enumerate(iter_file("pdb", f)):
+                atoms = ret["atoms"]
+                assert(len(atoms) == 3)
+                assert_equal(pos*(num+1), atoms.q)
+                print_file("pdb", atoms, ret["cell"], filedesc=out)
 
-   assert(filecmp.cmp(local("test.pos_0.pdb"), local("test.pos_1.pdb")))
-   os.unlink(local("test.pos_1.pdb"))
+    assert(filecmp.cmp(local("test.pos_0.pdb"), local("test.pos_1.pdb")))
+    os.unlink(local("test.pos_1.pdb"))
+
 
 def test_read_xyz2():
-   """Tests that mode/xyz files are read correctly."""
+    """Tests that mode/xyz files are read correctly."""
 
-   with open(local("test.pos_0.xyz"), "r") as f:
-      ret = read_file("xyz", f)
-      atoms = ret["atoms"]
-      assert(len(atoms) == 3)
-      assert_equal(pos, atoms.q)
+    with open(local("test.pos_0.xyz"), "r") as f:
+        ret = read_file("xyz", f)
+        atoms = ret["atoms"]
+        assert(len(atoms) == 3)
+        assert_equal(pos, atoms.q)
+
 
 def test_iter_xyz2():
-   """Tests that mode/xyz files with multiple frames are read correctly."""
+    """Tests that mode/xyz files with multiple frames are read correctly."""
 
-   with open(local("test.pos_0.xyz"), "r") as f:
-      for num, ret in enumerate(iter_file("xyz", f)):
-         atoms = ret["atoms"]
-         assert(len(atoms) == 3)
-         assert_equal(pos*(num+1), atoms.q)
+    with open(local("test.pos_0.xyz"), "r") as f:
+        for num, ret in enumerate(iter_file("xyz", f)):
+            atoms = ret["atoms"]
+            assert(len(atoms) == 3)
+            assert_equal(pos*(num+1), atoms.q)
+
 
 def test_read_pdb2():
-   """Tests that mode/pdb files are read correctly."""
+    """Tests that mode/pdb files are read correctly."""
 
-   with open(local("test.pos_0.pdb"), "r") as f:
-      ret = read_file("pdb", f)
-      atoms = ret["atoms"]
-      assert(len(atoms) == 3)
-      assert_equal(pos, atoms.q)
-      # TODO: test cell
+    with open(local("test.pos_0.pdb"), "r") as f:
+        ret = read_file("pdb", f)
+        atoms = ret["atoms"]
+        assert(len(atoms) == 3)
+        assert_equal(pos, atoms.q)
+        # TODO: test cell
+
 
 def test_iter_pdb2():
-   """Tests that mode/pdb files with multiple frames are read correctly."""
+    """Tests that mode/pdb files with multiple frames are read correctly."""
 
-   with open(local("test.pos_0.pdb"), "r") as f:
-      for num, ret in enumerate(iter_file("pdb", f)):
-         atoms = ret["atoms"]
-         assert(len(atoms) == 3)
-         assert_equal(pos*(num+1), atoms.q)
+    with open(local("test.pos_0.pdb"), "r") as f:
+        for num, ret in enumerate(iter_file("pdb", f)):
+            atoms = ret["atoms"]
+            assert(len(atoms) == 3)
+            assert_equal(pos*(num+1), atoms.q)
+
 
 def test_print_pdb2():
-   """Tests that mode/pdb files are printed correctly."""
+    """Tests that mode/pdb files are printed correctly."""
 
-   with open(local("test.pos_0.pdb"), "r") as f:
-      with open(local("test.pos_1.xyz"), "w") as out:
-         for num, ret in enumerate(iter_file("pdb", f)):
-            atoms = ret["atoms"]
-            assert(len(atoms) == 3)
-            assert_equal(pos*(num+1), atoms.q)
-            print_file("xyz", atoms, ret["cell"], filedesc=out)
+    with open(local("test.pos_0.pdb"), "r") as f:
+        with open(local("test.pos_1.xyz"), "w") as out:
+            for num, ret in enumerate(iter_file("pdb", f)):
+                atoms = ret["atoms"]
+                assert(len(atoms) == 3)
+                assert_equal(pos*(num+1), atoms.q)
+                print_file("xyz", atoms, ret["cell"], filedesc=out)
 
-   assert(filecmp.cmp(local("test.pos_0.xyz"), local("test.pos_1.xyz")))
-   os.unlink(local("test.pos_1.xyz"))
+    assert(filecmp.cmp(local("test.pos_0.xyz"), local("test.pos_1.xyz")))
+    os.unlink(local("test.pos_1.xyz"))
+
 
 def test_print_xyz2():
-   """Tests that mode/xyz files are printed correctly."""
+    """Tests that mode/xyz files are printed correctly."""
 
-   with open(local("test.pos_0.pdb"), "r") as f:
-      with open(local("test.pos_1.pdb"), "w") as out:
-         for num, ret in enumerate(iter_file("pdb", f)):
-            atoms = ret["atoms"]
-            assert(len(atoms) == 3)
-            assert_equal(pos*(num+1), atoms.q)
-            print_file("pdb", atoms, ret["cell"], filedesc=out)
+    with open(local("test.pos_0.pdb"), "r") as f:
+        with open(local("test.pos_1.pdb"), "w") as out:
+            for num, ret in enumerate(iter_file("pdb", f)):
+                atoms = ret["atoms"]
+                assert(len(atoms) == 3)
+                assert_equal(pos*(num+1), atoms.q)
+                print_file("pdb", atoms, ret["cell"], filedesc=out)
 
-   assert(filecmp.cmp(local("test.pos_0.pdb"), local("test.pos_1.pdb")))
-   os.unlink(local("test.pos_1.pdb"))
+    assert(filecmp.cmp(local("test.pos_0.pdb"), local("test.pos_1.pdb")))
+    os.unlink(local("test.pos_1.pdb"))
