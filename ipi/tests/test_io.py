@@ -28,7 +28,7 @@ def test_read_xyz():
     with open(local("test.pos_0.xyz"), "r") as f:
         ret = read_file("xyz", f)
         atoms = ret["atoms"]
-        assert(len(atoms) == 3)
+        assert len(atoms) == 3
         assert_equal(pos, atoms.q)
 
 
@@ -38,7 +38,7 @@ def test_iter_xyz():
     with open(local("test.pos_0.xyz"), "r") as f:
         for num, ret in enumerate(iter_file("xyz", f)):
             atoms = ret["atoms"]
-            assert(len(atoms) == 3)
+            assert len(atoms) == 3
             assert_equal(pos*(num+1), atoms.q)
 
 
@@ -48,7 +48,7 @@ def test_read_pdb():
     with open(local("test.pos_0.pdb"), "r") as f:
         ret = read_file("pdb", f)
         atoms = ret["atoms"]
-        assert(len(atoms) == 3)
+        assert len(atoms) == 3
         assert_equal(pos, atoms.q)
         # TODO: test cell
 
@@ -59,7 +59,7 @@ def test_iter_pdb():
     with open(local("test.pos_0.pdb"), "r") as f:
         for num, ret in enumerate(iter_file("pdb", f)):
             atoms = ret["atoms"]
-            assert(len(atoms) == 3)
+            assert len(atoms) == 3
             assert_equal(pos*(num+1), atoms.q)
 
 
@@ -70,11 +70,11 @@ def test_print_pdb():
         with open(local("test.pos_1.xyz"), "w") as out:
             for num, ret in enumerate(iter_file("pdb", f)):
                 atoms = ret["atoms"]
-                assert(len(atoms) == 3)
+                assert len(atoms) == 3
                 assert_equal(pos*(num+1), atoms.q)
                 print_file("xyz", atoms, ret["cell"], filedesc=out)
 
-    assert(filecmp.cmp(local("test.pos_0.xyz"), local("test.pos_1.xyz")))
+    assert filecmp.cmp(local("test.pos_0.xyz"), local("test.pos_1.xyz"))
     os.unlink(local("test.pos_1.xyz"))
 
 
@@ -85,11 +85,11 @@ def test_print_xyz():
         with open(local("test.pos_1.pdb"), "w") as out:
             for num, ret in enumerate(iter_file("pdb", f)):
                 atoms = ret["atoms"]
-                assert(len(atoms) == 3)
+                assert len(atoms) == 3
                 assert_equal(pos*(num+1), atoms.q)
                 print_file("pdb", atoms, ret["cell"], filedesc=out)
 
-    assert(filecmp.cmp(local("test.pos_0.pdb"), local("test.pos_1.pdb")))
+    assert filecmp.cmp(local("test.pos_0.pdb"), local("test.pos_1.pdb"))
     os.unlink(local("test.pos_1.pdb"))
 
 
@@ -99,7 +99,7 @@ def test_read_xyz2():
     with open(local("test.pos_0.xyz"), "r") as f:
         ret = read_file("xyz", f)
         atoms = ret["atoms"]
-        assert(len(atoms) == 3)
+        assert len(atoms) == 3
         assert_equal(pos, atoms.q)
 
 
@@ -109,7 +109,7 @@ def test_iter_xyz2():
     with open(local("test.pos_0.xyz"), "r") as f:
         for num, ret in enumerate(iter_file("xyz", f)):
             atoms = ret["atoms"]
-            assert(len(atoms) == 3)
+            assert len(atoms) == 3
             assert_equal(pos*(num+1), atoms.q)
 
 
@@ -119,7 +119,7 @@ def test_read_pdb2():
     with open(local("test.pos_0.pdb"), "r") as f:
         ret = read_file("pdb", f)
         atoms = ret["atoms"]
-        assert(len(atoms) == 3)
+        assert len(atoms) == 3
         assert_equal(pos, atoms.q)
         # TODO: test cell
 
@@ -130,7 +130,7 @@ def test_iter_pdb2():
     with open(local("test.pos_0.pdb"), "r") as f:
         for num, ret in enumerate(iter_file("pdb", f)):
             atoms = ret["atoms"]
-            assert(len(atoms) == 3)
+            assert len(atoms) == 3
             assert_equal(pos*(num+1), atoms.q)
 
 
@@ -141,11 +141,11 @@ def test_print_pdb2():
         with open(local("test.pos_1.xyz"), "w") as out:
             for num, ret in enumerate(iter_file("pdb", f)):
                 atoms = ret["atoms"]
-                assert(len(atoms) == 3)
+                assert len(atoms) == 3
                 assert_equal(pos*(num+1), atoms.q)
                 print_file("xyz", atoms, ret["cell"], filedesc=out)
 
-    assert(filecmp.cmp(local("test.pos_0.xyz"), local("test.pos_1.xyz")))
+    assert filecmp.cmp(local("test.pos_0.xyz"), local("test.pos_1.xyz"))
     os.unlink(local("test.pos_1.xyz"))
 
 
@@ -156,9 +156,9 @@ def test_print_xyz2():
         with open(local("test.pos_1.pdb"), "w") as out:
             for num, ret in enumerate(iter_file("pdb", f)):
                 atoms = ret["atoms"]
-                assert(len(atoms) == 3)
+                assert len(atoms) == 3
                 assert_equal(pos*(num+1), atoms.q)
                 print_file("pdb", atoms, ret["cell"], filedesc=out)
 
-    assert(filecmp.cmp(local("test.pos_0.pdb"), local("test.pos_1.pdb")))
+    assert filecmp.cmp(local("test.pos_0.pdb"), local("test.pos_1.pdb"))
     os.unlink(local("test.pos_1.pdb"))
