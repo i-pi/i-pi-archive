@@ -574,7 +574,7 @@ class depend_array(np.ndarray, depend_base):
 
         self.taint(taintme=False)
         if manual:
-            depstrip(self)[index] = value
+            self.view(np.ndarray)[index] = value
             self.update_man()
         elif index == slice(None, None, None):
             self._bval[index] = value
@@ -681,10 +681,10 @@ def depstrip(da):
 
     # DEBUG code
     # TODO: remove when done
-    import traceback
-    print 'depstrip called'
-    traceback.print_stack()
-    print
+    #import traceback
+    #print 'depstrip called'
+    #traceback.print_stack()
+    #print
 
     # only bother to strip dependencies if the array actually IS a depend_array
     if isinstance(da, depend_array):
