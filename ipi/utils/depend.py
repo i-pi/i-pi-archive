@@ -686,7 +686,9 @@ def depstrip(da):
         # I think we can safely assume that when we call depstrip the array has
         # been cleared already but I am not 100% sure so better check - and in
         # case raise the update
-        return da.view(np.ndarray)
+        result = da.view(np.ndarray)
+        result.flags.writeable = False
+        return result
     else:
         return da
 
@@ -737,8 +739,16 @@ class dobject(object):
     and getting the depend object, i.e. foo = value, not foo.set(value).
     """
 
+    def __new__(cls,  *args, **kwds):
+        """ Initialize the object using __new__, because we do not want
+        to impose to derived classes to call the super __init__ """
+
+        obj = object.__new__(cls)
+        obj.dd = ddirect(obj)
+        return obj
+
     def __getattribute__(self, name):
-        """Overwrites standard __getattribute__().
+        """Overrides standard __getattribute__().
 
         This changes the standard __getattribute__() function of any class that
         subclasses dobject such that depend objects are called with their own
@@ -751,7 +761,7 @@ class dobject(object):
         return value
 
     def __setattr__(self, name, value):
-        """Overwrites standard __setattribute__().
+        """Overrides standard __setattribute__().
 
         This changes the standard __setattribute__() function of any class that
         subclasses dobject such that depend objects are called with their own
@@ -766,3 +776,25 @@ class dobject(object):
             if hasattr(obj, '__set__'):
                 return obj.__set__(self, value)
         return object.__setattr__(self, name, value)
+
+
+class ddirect(object):
+    """Gives a "view" of a depend object where one can directly access its
+    depend_base members."""
+
+    def __init__(self, dobj):
+        """ Just stores a reference to the dobject we want to access """
+
+        object.__setattr__(self, "dobj", dobj)
+
+    def __getattribute__(self, name):
+        """Overrides the dobject value access mechanism and returns the actual
+        member objects."""
+
+        return object.__getattribute__(object.__getattribute__(self, "dobj"),name)
+
+    def __setattr__(self, name, value):
+        """Overrides the dobject value access mechanism and returns the actual
+        member objects."""
+
+        return object.__setattr__(object.__getattribute__(self,"dobj"), name, value)
