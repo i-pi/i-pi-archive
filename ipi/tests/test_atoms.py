@@ -22,12 +22,12 @@ def test_names():
     """Tests names of Atoms object."""
     atoms = get_atoms("test.pos_0.xyz")
     expected = ["O", "H", "H"]
-    assert(len(atoms.names) == 3)
+    assert len(atoms.names) == 3
     for i, name in enumerate(atoms.names):
-        assert(name == expected[i])
-        assert(name == atoms[i].name)
+        assert name == expected[i]
+        assert name == atoms[i].name
 
     # Same test with iterator instead
     for i, atom in enumerate(atoms):
-        assert(atom.name == expected[i])
-        assert(atom.name == atoms.names[i])
+        assert atom.name == expected[i]
+        assert atom.name == atoms.names[i]
