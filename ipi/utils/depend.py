@@ -679,13 +679,6 @@ def depstrip(da):
         A ndarray with the same value as deparray.
     """
 
-    # DEBUG code
-    # TODO: remove when done
-    #import traceback
-    #print 'depstrip called'
-    #traceback.print_stack()
-    #print
-
     # only bother to strip dependencies if the array actually IS a depend_array
     if isinstance(da, depend_array):
         #if da._tainted[0]:
