@@ -61,5 +61,5 @@ def test_dotf():
 
 def test_readonly():
     """Depend: read-only flag"""
-    atoms = ipi.engine.atoms.Atoms()
+    atoms = ipi.engine.atoms.Atoms(2)
     atoms.q = np.zeros((2,3))
