@@ -7,6 +7,7 @@
 
 import numpy as np
 
+import ipi.engine.atoms
 import ipi.utils.depend as dp
 
 
@@ -56,3 +57,9 @@ def test_dotf():
     c = np.dot(a, b)
     assert type(c) == np.ndarray
     np.dot = rdot
+
+
+def test_readonly():
+    """Depend: read-only flag"""
+    atoms = ipi.engine.atoms.Atoms()
+    atoms.q = np.zeros((2,3))
