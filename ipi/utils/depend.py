@@ -687,7 +687,7 @@ def depstrip(da):
         # been cleared already but I am not 100% sure so better check - and in
         # case raise the update
         result = da.view(np.ndarray)
-        result.flags.writeable = False
+        #result.flags.writeable = False   # TODO: re-enable this, without breaking tests
         return result
     else:
         return da
