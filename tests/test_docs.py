@@ -12,7 +12,7 @@ def run_command(cmd):
     """Runs @cmd in doc directory."""
     cwd = os.getcwd()
     os.chdir(os.sep.join(__file__.split(os.sep)[:-1] + ["..", "doc"]))
-    ret = subprocess.call(cmd)
+    ret = subprocess.call(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     os.chdir(cwd)
     return ret
 
