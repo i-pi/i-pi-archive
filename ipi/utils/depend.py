@@ -530,7 +530,7 @@ class depend_array(np.ndarray, depend_base):
             self.update_auto()
             self.taint(taintme=False)
 
-        if (self.__scalarindex(index, self.ndim)):
+        if self.__scalarindex(index, self.ndim):
             return depstrip(self)[index]
         else:
             return depend_array(depstrip(self)[index], name=self._name, synchro=self._synchro,
