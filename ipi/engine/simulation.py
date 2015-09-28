@@ -1,47 +1,40 @@
-"""Contains the class that deals with the running of the simulation and
-outputting the results.
-
-Copyright (C) 2013, Joshua More and Michele Ceriotti
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <http.//www.gnu.org/licenses/>.
-
+"""A class that runs the simulation and outputs results.
 
 The root class for the whole simulation. Contains references to all the top
 level objects used in the simulation, and controls all the steps that are
 not inherently system dependent, like the running of each time step,
 choosing which properties to initialise, and which properties to output.
-
-Classes:
-   Simulation: Deals with running the simulation and outputting the results.
 """
 
-__all__ = ['Simulation']
+# This file is part of i-PI.
+# i-PI Copyright (C) 2014-2015 i-PI developers
+# See the "licenses" directory for full license information.
+
+
+import os.path
+import sys
+import time
+import threading
+import os
+from copy import deepcopy
 
 import numpy as np
-import os.path, sys, time, threading, os
-from copy import deepcopy
+
 from ipi.utils.depend import *
 from ipi.utils.units  import *
 from ipi.utils.prng   import *
 from ipi.utils.io     import *
-from ipi.utils.io.io_xml import *
+from ipi.utils.io.inputs.io_xml import *
 from ipi.utils.messages import verbosity, info, warning
 from ipi.utils.softexit import softexit
 from ipi.engine.atoms import *
 from ipi.engine.cell import *
 
-#import objgraph
+# import objgraph
+
+
+__all__ = ['Simulation']
+
 
 class Simulation(dobject):
    """Main simulation object.
@@ -182,13 +175,15 @@ class Simulation(dobject):
       # prints inital configuration -- only if we are not restarting
       if (self.step == 0):
          self.step = -1
-         # must use multi-threading to avoid blocking in multi-system runs
+         # must use multi-threading to avoid blocking in multi-system runs with WTE
          stepthreads = []
          for o in self.outputs:
-            st = threading.Thread(target=o.write, name=o.filename)
-            st.daemon = True
-            st.start()
-            stepthreads.append(st)
+            o.write()  # threaded output seems to cause random hang-ups. should make things properly thread-safe
+            #st = threading.Thread(target=o.write, name=o.filename)
+            #st.daemon = True
+            #st.start()
+            #stepthreads.append(st)
+
          for st in stepthreads:
             while st.isAlive(): st.join(2.0)   # this is necessary as join() without timeout prevents main from receiving signals
 
@@ -198,13 +193,6 @@ class Simulation(dobject):
                self.paratemp.parafile.write(" %5d" %i)
             self.paratemp.parafile.write("\n")
             self.paratemp.parafile.flush(); os.fsync(self.paratemp.parafile)
-            if self.paratemp.wtefile != None:
-               self.paratemp.wtefile.write("%10d" % (self.step+1))
-               for v in self.paratemp.system_v:
-                  self.paratemp.wtefile.write(" %12.7e" % v)
-               self.paratemp.wtefile.write("\n")
-               self.paratemp.parawte.flush();  os.fsync(self.paratemp.parawte)
-
 
          self.step = 0
 
@@ -233,23 +221,21 @@ class Simulation(dobject):
          #   s.ensemble.step()
          for s in self.syslist:
             # creates separate threads for the different systems
-            st = threading.Thread(target=s.ensemble.step, name=s.prefix)
-            st.daemon = True
-            st.start()
-            stepthreads.append(st)
+            #st = threading.Thread(target=s.ensemble.step, name=s.prefix, kwargs={"step":self.step})
+            #st.daemon = True
+            s.ensemble.step(step=self.step)
+            #st.start()
+            #stepthreads.append(st)
 
          for st in stepthreads:
             while st.isAlive(): st.join(2.0)   # this is necessary as join() without timeout prevents main from receiving signals
-
-         if self.mode == "paratemp": # apply the WTE bias forces
-            self.paratemp.wtestep(self.step)
 
          if softexit.triggered: break # don't continue if we are about to exit!
 
          for o in self.outputs:
             o.write()
 
-         if self.mode == "paratemp": # does parallel tempering and/or WTE
+         if self.mode == "paratemp": # does parallel tempering
 
             # because of where this is in the loop, we must write out BEFORE doing the swaps.
             self.paratemp.parafile.write("%10d" % (self.step+1))
@@ -258,17 +244,7 @@ class Simulation(dobject):
             self.paratemp.parafile.write("\n")
             self.paratemp.parafile.flush(); os.fsync(self.paratemp.parafile)
 
-            # applies the WTE forces, if they are defined.
-            if self.paratemp.wtefile != None:
-               self.paratemp.wtefile.write("%10d" % (self.step+1))
-               for v in self.paratemp.system_v:
-                  self.paratemp.wtefile.write(" %12.7e" % v)
-               self.paratemp.wtefile.write("\n")
-               self.paratemp.parawte.flush(); os.fsync(self.paratemp.parawte)
-
             self.paratemp.swap(self.step)
-            self.paratemp.wtestep(self.step)
-
 
          if softexit.triggered: break # don't write if we are about to exit!
 
@@ -284,6 +260,9 @@ class Simulation(dobject):
          #   info(" # MD diagnostics: V: %10.5e    Kcv: %10.5e   Ecns: %10.5e" %
          #      (self.properties["potential"], self.properties["kinetic_cv"], self.properties["conserved"] ) )
 
+         #objgraph.show_growth()
+
+
          if os.path.exists("EXIT"): # soft-exit
             info(" # EXIT file detected! Bye bye!", verbosity.low )
             break
@@ -293,4 +272,3 @@ class Simulation(dobject):
             break
 
       self.rollback = False
-

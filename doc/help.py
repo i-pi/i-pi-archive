@@ -1,21 +1,5 @@
 """Help script which automatically generates help files.
 
-Copyright (C) 2013, Joshua More and Michele Ceriotti
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <http.//www.gnu.org/licenses/>.
-
-
 This takes an input class specified by the user, and then uses the
 automatic help generation functions to generate appropriate help files for this
 class, giving information about the tags and the attributes of this class.
@@ -31,12 +15,16 @@ dictionary and the latex help file must be added to the end of
 the manual.lyx file for it to be included in the automatic help generation.
 If you do create a new input class type, please include this in the help string
 for the -i option.
-
-Functions:
-   help: Writes the help file.
 """
 
-import sys, time
+# This file is part of i-PI.
+# i-PI Copyright (C) 2014-2015 i-PI developers
+# See the "licenses" directory for full license information.
+
+
+import sys
+import time
+from optparse import OptionParser
 
 src_dir = "../"
 
@@ -46,41 +34,40 @@ from ipi.inputs import barostats, cell, simulation, paratemp, system, \
              ensembles, thermostats, forcefields, forces, atoms, beads, \
              prng, initializer, normalmodes, outputs
 from ipi.utils.io.io_xml import *
-from optparse import OptionParser
+
 
 time.sleep(1)
 __all__ = ['help', 'objects']
 
-objects = { 'atoms': atoms.InputAtoms(),
-            'barostats': barostats.InputBaro(), 
-            'beads': beads.InputBeads(),
+objects = { 'barostats': barostats.InputBaro(),
             'cell': cell.InputCell(),
+            'simulation': simulation.InputSimulation(),
+            'paratemp': paratemp.InputParaTemp(),
+            'system': system.InputSystem(),
             'ensembles': ensembles.InputEnsemble(),
-            'forcefield': forcefields.InputForceField(),
+            'thermostats': thermostats.InputThermo(),
+            'forcefield' : forcefields.InputForceField(),
             'ffsocket': forcefields.InputFFSocket(),
             'fflj': forcefields.InputFFLennardJones(),
             'forcecomponent' : forces.InputForceComponent(),
             'forces': forces.InputForces(),
+            'atoms': atoms.InputAtoms(),
+            'beads': beads.InputBeads(),
+            'prng': prng.InputRandom(),
+            'normal_modes': normalmodes.InputNormalModes(),
             'init_file': initializer.InputInitFile(),
-            'init_therm': initializer.InputInitThermo(),
             'init_pos': initializer.InputInitPositions(),
             'init_mom': initializer.InputInitMomenta(),
-            'init_vel': initializer.InputInitVelocities(),
-            'init_mass': initializer.InputInitMasses(),
             'init_lab': initializer.InputInitLabels(),
+            'init_mass': initializer.InputInitMasses(),
+            'init_vel': initializer.InputInitVelocities(),
             'init_cell': initializer.InputInitCell(),
+            'init_therm': initializer.InputInitThermo(),
             'initializer': initializer.InputInitializer(),
-            'normal_modes': normalmodes.InputNormalModes(),
-            'properties': outputs.InputProperties(),
-            'trajectory': outputs.InputTrajectory(), 
-            'checkpoint': outputs.InputCheckpoint(),
             'output': outputs.InputOutputs(),
-            'paratemp': paratemp.InputParaTemp(),
-            'prng': prng.InputRandom(),
-            'simulation': simulation.InputSimulation(),
-            'system': system.InputSystem(),
-            'thermostats': thermostats.InputThermo(),
-            }
+            'properties': outputs.InputProperties(),
+            'checkpoint': outputs.InputCheckpoint(),
+            'trajectory': outputs.InputTrajectory() }
 
 usage = "usage: python %prog [options]"
 parser = OptionParser(usage=usage)

@@ -6,23 +6,23 @@
    </output>
    <total_steps>100</total_steps>
    <prng><seed>31415</seed></prng>
-   <ffsocket mode="inet" name='driver'>
+   <ffsocket mode="inet" name="pw">
       <address>localhost</address>   <port>31415</port>    <slots>4</slots>   <latency> 0.01</latency>
    </ffsocket>
    <system>
-      <initialize nbeads='8'>
-         <file mode='pdb'> li4-init.pdb </file>
-         <velocities mode='thermal' units='kelvin'> 100 </velocities>
-      </initialize>
-      <forces> <force> driver </force> </forces>
-      <ensemble mode='nvt'>
-         <thermostat mode='pile_l'>
-            <tau units="femtosecond">200</tau>
-            <ethermo>0.0</ethermo>
-         </thermostat>
-         <timestep units="femtosecond">1.5</timestep>
-         <fixcom>True</fixcom>
-         <temperature units='kelvin'>100</temperature>
-      </ensemble>
+   <forces><force>pw</force></forces>
+   <initialize nbeads='8'>
+      <file mode='pdb'> li4-init.pdb </file>
+      <velocities mode='thermal' units='kelvin'> 100 </velocities>
+   </initialize>
+   <ensemble mode='nvt'>
+      <thermostat mode='pile_l'>
+         <tau units="femtosecond">200</tau>
+         <ethermo>0.0</ethermo>
+      </thermostat>
+      <timestep units="femtosecond">1.5</timestep>
+      <fixcom>True</fixcom>
+      <temperature units='kelvin'>100</temperature>
+   </ensemble>
    </system>
 </simulation>

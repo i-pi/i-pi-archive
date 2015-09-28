@@ -1,27 +1,12 @@
-"""Deals with creating the ensembles class.
+"""Creates objects that deal with the different ensembles."""
 
-Copyright (C) 2013, Joshua More and Michele Ceriotti
+# This file is part of i-PI.
+# i-PI Copyright (C) 2014-2015 i-PI developers
+# See the "licenses" directory for full license information.
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <http.//www.gnu.org/licenses/>.
-
-
-Classes:
-   InputEnsemble: Deals with creating the Ensemble object from a file, and
-      writing the checkpoints.
-"""
 
 import numpy as np
+
 import ipi.engine.thermostats
 import ipi.engine.initializer
 import ipi.engine.barostats
@@ -32,7 +17,9 @@ from ipi.inputs.thermostats import *
 from ipi.inputs.initializer import *
 from ipi.utils.units import *
 
+
 __all__ = ['InputEnsemble']
+
 
 class InputEnsemble(Input):
    """Ensemble input class.
@@ -63,7 +50,7 @@ class InputEnsemble(Input):
 
    attribs={"mode"  : (InputAttribute, {"dtype"   : str,
                                     "help"    : "The ensemble that will be sampled during the simulation. 'replay' means that a simulation is restarted from a previous simulation.",
-                                    "options" : ['nve', 'nvt', 'npt', 'replay']}) }
+                                    "options" : ['nve', 'nvt', 'npt', 'nst', 'replay']}) }
    fields={"thermostat" : (InputThermo, {"default"   : input_default(factory=ipi.engine.thermostats.Thermostat),
                                          "help"      : "The thermostat for the atoms, keeps the atom velocity distribution at the correct temperature."} ),
            "barostat" : (InputBaro, {"default"       : input_default(factory=ipi.engine.barostats.Barostat),
@@ -80,6 +67,10 @@ class InputEnsemble(Input):
                                       "default"      : 1.0,
                                       "help"         : "The external pressure.",
                                       "dimension"    : "pressure"}),
+           "stress" : (InputArray, {"dtype"        : float,
+                                    "default"      : np.zeros((3,3),float),
+                                    "help"         : "The external stress.",
+                                    "dimension"    : "pressure"}),
            "eens" : (InputValue, {"dtype"     : float,
                                          "default"   : 0.0,
                                          "help"      : "The ensemble contribution to the conserved quantity.",
@@ -87,6 +78,9 @@ class InputEnsemble(Input):
            "fixcom": (InputValue, {"dtype"           : bool,
                                    "default"         : True,
                                    "help"            : "This describes whether the centre of mass of the particles is fixed."}),
+           "fixatoms" : (InputArray, {"dtype"        : int,
+                                    "default"      : np.zeros(0,int),
+                                    "help"         : "Indices of the atmoms that should be held fixed."}),
            "replay_file": (InputInitFile, {"default" : input_default(factory=ipi.engine.initializer.InitBase),
                            "help"            : "This describes the location to read a trajectory file from."})
          }
@@ -104,7 +98,7 @@ class InputEnsemble(Input):
 
       super(InputEnsemble,self).store(ens)
       if type(ens) is ReplayEnsemble:
-         self.mode.store("rerun")
+         self.mode.store("replay")
          tens = 0
       elif type(ens) is NVEEnsemble:
          self.mode.store("nve")
@@ -115,6 +109,9 @@ class InputEnsemble(Input):
       elif type(ens) is NPTEnsemble:
          self.mode.store("npt")
          tens = 3
+      elif type(ens) is NSTEnsemble:
+         self.mode.store("nst")
+         tens = 4
 
       self.timestep.store(ens.dt)
       self.temperature.store(ens.temp)
@@ -124,11 +121,14 @@ class InputEnsemble(Input):
       if tens > 1:
          self.thermostat.store(ens.thermostat)
          self.fixcom.store(ens.fixcom)
+         self.fixatoms.store(ens.fixatoms)
          self.eens.store(ens.eens)
       if tens == 3:
          self.barostat.store(ens.barostat)
          self.pressure.store(ens.pext)
-
+      if tens == 4:
+         self.barostat.store(ens.barostat)
+         self.stress.store(ens.stressext)
 
    def fetch(self):
       """Creates an ensemble object.
@@ -142,17 +142,22 @@ class InputEnsemble(Input):
 
       if self.mode.fetch() == "nve" :
          ens = NVEEnsemble(dt=self.timestep.fetch(),
-            temp=self.temperature.fetch(), fixcom=self.fixcom.fetch(), eens=self.eens.fetch())
+            temp=self.temperature.fetch(), fixcom=self.fixcom.fetch(), eens=self.eens.fetch(), fixatoms=self.fixatoms.fetch())
       elif self.mode.fetch() == "nvt" :
          ens = NVTEnsemble(dt=self.timestep.fetch(),
-            temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), fixcom=self.fixcom.fetch(), eens=self.eens.fetch())
+            temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), fixcom=self.fixcom.fetch(), eens=self.eens.fetch(), fixatoms=self.fixatoms.fetch())
       elif self.mode.fetch() == "npt" :
          ens = NPTEnsemble(dt=self.timestep.fetch(),
-            temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), fixcom=self.fixcom.fetch(), eens=self.eens.fetch(),
+            temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), fixcom=self.fixcom.fetch(), eens=self.eens.fetch(), fixatoms=self.fixatoms.fetch(),
                   pext=self.pressure.fetch(), barostat=self.barostat.fetch() )
+      elif self.mode.fetch() == "nst" :
+         ens = NSTEnsemble(dt=self.timestep.fetch(),
+                           temp=self.temperature.fetch(), thermostat=self.thermostat.fetch(), fixcom=self.fixcom.fetch(), eens=self.eens.fetch(), fixatoms=self.fixatoms.fetch(),
+                           stressext=self.stress.fetch().reshape((3,3)), # casts into a 3x3 tensor
+                           barostat=self.barostat.fetch() )
       elif self.mode.fetch() == "replay":
          ens = ReplayEnsemble(dt=self.timestep.fetch(),
-            temp=self.temperature.fetch(),fixcom=False, eens=self.eens.fetch() ,intraj=self.replay_file.fetch() )
+            temp=self.temperature.fetch(),fixcom=False, eens=self.eens.fetch(), fixatoms=None, intraj=self.replay_file.fetch() )
       else:
          raise ValueError("'" + self.mode.fetch() + "' is not a supported ensemble mode.")
 
@@ -176,6 +181,13 @@ class InputEnsemble(Input):
             raise ValueError("No barostat tag supplied for NPT simulation")
          if self.barostat.thermostat._explicit == False:
             raise ValueError("No thermostat tag supplied in barostat for NPT simulation")
+      if self.mode.fetch() == "nst":
+         if self.thermostat._explicit == False:
+            raise ValueError("No thermostat tag supplied for NST simulation")
+         if self.barostat._explicit == False:
+            raise ValueError("No barostat tag supplied for NST simulation")
+         if self.barostat.thermostat._explicit == False:
+            raise ValueError("No thermostat tag supplied in barostat for NST simulation")
 
       if self.timestep.fetch() <= 0:
          raise ValueError("Non-positive timestep specified.")
@@ -185,7 +197,11 @@ class InputEnsemble(Input):
       if self.mode.fetch() == "npt":
          if not self.pressure._explicit:
             raise ValueError("Pressure should be supplied for constant pressure simulation")
+
+      if self.mode.fetch() == "nst":
+         if not self.stress._explicit:
+            raise ValueError("Stress tensor should be supplied for NST simulation")
+
       if self.mode.fetch() == "npt" or self.mode.fetch() == "nvt":
          if not self.temperature._explicit:
             raise ValueError("Temperature should be supplied for constant temperature simulation")
-

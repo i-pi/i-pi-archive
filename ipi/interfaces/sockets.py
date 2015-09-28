@@ -1,55 +1,37 @@
-"""Deals with the socket communication between the PIMD and driver code.
-
-Copyright (C) 2013, Joshua More and Michele Ceriotti
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <http.//www.gnu.org/licenses/>.
-
+"""Deals with the socket communication between the i-PI and drivers.
 
 Deals with creating the socket, transmitting and receiving data, accepting and
 removing different driver routines and the parallelization of the force
 calculation.
-
-Classes:
-   Status: Simple class to keep track of the status, uses bitwise or to give
-      combinations of different status options.
-   DriverSocket: Class to deal with communication between a client and
-      the driver code.
-   InterfaceSocket: Host server class. Deals with distribution of all the jobs
-      between the different client servers.
-
-Functions:
-   Message: Sends a header string through the socket.
-
-Exceptions:
-   Disconnected: Raised if client has been disconnected.
-   InvalidStatus: Raised if client has the wrong status. Shouldn't have to be
-      used if the structure of the program is correct.
 """
+
+# This file is part of i-PI.
+# i-PI Copyright (C) 2014-2015 i-PI developers
+# See the "licenses" directory for full license information.
+
+
+import sys
+import os
+import socket
+import select
+import string
+import time
+
+import numpy as np
+
+from ipi.utils.depend import depstrip
+from ipi.utils.messages import verbosity, warning, info
+
 
 __all__ = ['InterfaceSocket']
 
-import numpy as np
-import sys, os
-import socket, select, string, time
-from ipi.utils.depend import depstrip
-from ipi.utils.messages import verbosity, warning, info
 
 HDRLEN = 12
 UPDATEFREQ = 10
 TIMEOUT = 0.2
 SERVERTIMEOUT = 5.0*TIMEOUT
 NTIMEOUT = 20
+
 
 def Message(mystr):
    """Returns a header of standard length HDRLEN."""
@@ -75,7 +57,7 @@ class InvalidStatus(Exception):
 
    pass
 
-class Status:
+class Status(object):
    """Simple class used to keep track of the status of the client.
 
    Uses bitwise or to give combinations of different status options.
@@ -105,16 +87,12 @@ class Status:
 class DriverSocket(socket.socket):
    """Deals with communication between the client and driver code.
 
-   Deals with sending and receiving the data from the driver code. Keeps track
-   of the status of the driver. Initialises the driver forcefield, sends the
-   position and cell data, and receives the force data.
+   Deals with sending and receiving the data between the client and the driver
+   code. This class holds common functions which are used in the driver code,
+   but can also be used to directly implement a python client.
 
    Attributes:
-      _buf: A string buffer to hold the reply from the driver.
-      waitstatus: Boolean giving whether the driver is waiting to get a status answer.
-      status: Keeps track of the status of the driver.
-      lastreq: The ID of the last request processed by the client.
-      locked: Flag to mark if the client has been working consistently on one image.
+      _buf: A string buffer to hold the reply from the other connection.
    """
 
    def __init__(self, socket):
@@ -126,7 +104,110 @@ class DriverSocket(socket.socket):
 
       super(DriverSocket,self).__init__(_sock=socket)
       self._buf = np.zeros(0,np.byte)
-      self.peername = self.getpeername()
+      if socket:
+         self.peername = self.getpeername()
+      else:
+         self.peername = "no_socket"
+
+   def send_msg(self, msg):
+      """Send the next message through the socket.
+
+      Args:
+         msg: The message to send through the socket.
+      """
+      return self.sendall(Message(msg))
+
+   def recv_msg(self, l=HDRLEN):
+      """Get the next message send through the socket.
+
+      Args:
+         l: Length of the accepted message. Defaults to HDRLEN.
+      """
+      return self.recv(l)
+
+   def recvall(self, dest):
+      """Gets the potential energy, force and virial from the driver.
+
+      Args:
+         dest: Object to be read into.
+
+      Raises:
+         Disconnected: Raised if client is disconnected.
+
+      Returns:
+         The data read from the socket to be read into dest.
+      """
+
+      blen = dest.itemsize*dest.size
+      if (blen > len(self._buf)):
+         self._buf.resize(blen)
+      bpos = 0
+      ntimeout = 0
+
+      while bpos < blen:
+         timeout = False
+
+         # pre-2.5 version.
+         try:
+            bpart = ""
+            bpart = self.recv(blen - bpos)
+            if len(bpart) == 0:
+               raise socket.timeoout    # if this keeps returning no data, we are in trouble....
+            self._buf[bpos:bpos + len(bpart)] = np.fromstring(bpart, np.byte)
+         except socket.timeout:
+            warning(" @SOCKET:   Timeout in status recvall, trying again!", verbosity.low)
+            timeout = True
+            ntimeout += 1
+            if ntimeout > NTIMEOUT:
+               warning(" @SOCKET:  Couldn't receive within %5d attempts. Time to give up!" % (NTIMEOUT), verbosity.low)
+               raise Disconnected()
+            pass
+         if (not timeout and bpart == 0):
+            raise Disconnected()
+         bpos += len(bpart)
+
+         # post-2.5 version: slightly more compact for modern python versions
+         #try:
+         #   bpart = 1
+         #   bpart = self.recv_into(self._buf[bpos:], blen-bpos)
+         #except socket.timeout:
+         #   print " @SOCKET:   Timeout in status recvall, trying again!"
+         #   timeout = True
+         #   pass
+         #if (not timeout and bpart == 0):
+         #   raise Disconnected()
+         #bpos += bpart
+         # TODO this Disconnected() exception currently just causes the program to hang.
+         # This should do something more graceful
+
+      if np.isscalar(dest):
+         return np.fromstring(self._buf[0:blen], dest.dtype)[0]
+      else:
+         return np.fromstring(self._buf[0:blen], dest.dtype).reshape(dest.shape)
+
+
+class Driver(DriverSocket):
+   """Deals with communication between the client and driver code.
+
+   Deals with sending and receiving the data from the driver code. Keeps track
+   of the status of the driver. Initialises the driver forcefield, sends the
+   position and cell data, and receives the force data.
+
+   Attributes:
+      waitstatus: Boolean giving whether the driver is waiting to get a status answer.
+      status: Keeps track of the status of the driver.
+      lastreq: The ID of the last request processed by the client.
+      locked: Flag to mark if the client has been working consistently on one image.
+   """
+
+   def __init__(self, socket):
+      """Initialises Driver.
+
+      Args:
+         socket: A socket through which the communication should be done.
+      """
+
+      super(Driver,self).__init__(socket=socket)
       self.waitstatus = False
       self.status = Status.Up
       self.lastreq = None
@@ -177,65 +258,6 @@ class DriverSocket(socket.socket):
          warning(" @SOCKET:    Unrecognized reply: " + str(reply), verbosity.low )
          return Status.Up
 
-   def recvall(self, dest):
-      """Gets the potential energy, force and virial from the driver.
-
-      Args:
-         dest: Object to be read into.
-
-      Raises:
-         Disconnected: Raised if client is disconnected.
-
-      Returns:
-         The data read from the socket to be read into dest.
-      """
-
-      blen = dest.itemsize*dest.size
-      if (blen > len(self._buf)):
-         self._buf.resize(blen)
-      bpos = 0
-      ntimeout = 0
-
-      while bpos < blen:
-         timeout = False
-
-#   pre-2.5 version.
-         try:
-            bpart = ""
-            bpart = self.recv(blen - bpos)
-            if len(bpart) == 0: raise socket.timeoout    # if this keeps returning no data, we are in trouble....
-            self._buf[bpos:bpos + len(bpart)] = np.fromstring(bpart, np.byte)
-         except socket.timeout:
-            warning(" @SOCKET:   Timeout in status recvall, trying again!", verbosity.low)
-            timeout = True
-            ntimeout += 1
-            if ntimeout > NTIMEOUT:
-               warning(" @SOCKET:  Couldn't receive within %5d attempts. Time to give up!" % (NTIMEOUT), verbosity.low)
-               raise Disconnected()
-            pass
-         if (not timeout and bpart == 0):
-            raise Disconnected()
-         bpos += len(bpart)
-
-#   post-2.5 version: slightly more compact for modern python versions
-#         try:
-#            bpart = 1
-#            bpart = self.recv_into(self._buf[bpos:], blen-bpos)
-#         except socket.timeout:
-#            print " @SOCKET:   Timeout in status recvall, trying again!"
-#            timeout = True
-#            pass
-#         if (not timeout and bpart == 0):
-#            raise Disconnected()
-#         bpos += bpart
-#TODO this Disconnected() exception currently just causes the program to hang.
-#This should do something more graceful
-
-      if np.isscalar(dest):
-         return np.fromstring(self._buf[0:blen], dest.dtype)[0]
-      else:
-         return np.fromstring(self._buf[0:blen], dest.dtype).reshape(dest.shape)
-
    def initialize(self, rid, pars):
       """Sends the initialisation string to the driver.
 
@@ -274,10 +296,10 @@ class DriverSocket(socket.socket):
       if (self.status & Status.Ready):
          try:
             self.sendall(Message("posdata"))
-            self.sendall(h_ih[0], 9*8)
-            self.sendall(h_ih[1], 9*8)
+            self.sendall(h_ih[0])
+            self.sendall(h_ih[1])
             self.sendall(np.int32(len(pos)/3))
-            self.sendall(pos, len(pos)*8)
+            self.sendall(pos)
          except:
             self.poll()
             return
@@ -300,7 +322,7 @@ class DriverSocket(socket.socket):
          reply = ""
          while True:
             try:
-               reply = self.recv(HDRLEN)
+               reply = self.recv_msg()
             except socket.timeout:
                warning(" @SOCKET:   Timeout in getforce, trying again!", verbosity.low)
                continue
@@ -334,7 +356,6 @@ class DriverSocket(socket.socket):
       else:
          mxtra = ""
 
-      #!TODO must set up a machinery to intercept the "extra" return field
       return [mu, mf, mvir, mxtra]
 
 
@@ -355,8 +376,6 @@ class InterfaceSocket(object):
          before updating the client list.
       timeout: A float giving a timeout limit for considering a calculation dead
          and dropping the connection.
-      dopbc: A boolean which decides whether or not to fold the bead positions
-         back into the unit cell before passing them to the client code.
       server: The socket used for data transmition.
       clients: A list of the driver clients connected to the server.
       requests: A list of all the jobs required in the current PIMD step.
@@ -385,8 +404,6 @@ class InterfaceSocket(object):
             wait before updating the client list. Defaults to 1e-3.
          timeout: Length of time waiting for data from a client before we assume
             the connection is dead and disconnect the client.
-         dopbc: A boolean which decides whether or not to fold the bead positions
-            back into the unit cell before passing them to the client code.
 
       Raises:
          NameError: Raised if mode is not 'unix' or 'inet'.
@@ -411,8 +428,8 @@ class InterfaceSocket(object):
          try:
             self.server.bind("/tmp/ipi_" + self.address)
             info("Created unix socket with address " + self.address, verbosity.medium)
-         except:
-            raise ValueError("Error opening unix socket. Check if a file " + ("/tmp/ipi_" + self.address) + " exists, and remove it if unused.")
+         except socket.error:
+            raise RuntimeError("Error opening unix socket. Check if a file " + ("/tmp/ipi_" + self.address) + " exists, and remove it if unused.")
 
       elif self.mode == "inet":
          self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -441,8 +458,11 @@ class InterfaceSocket(object):
       self.clients = []
       self.jobs = []
 
-      self.server.shutdown(socket.SHUT_RDWR)
-      self.server.close()
+      try:
+         self.server.shutdown(socket.SHUT_RDWR)
+         self.server.close()
+      except:
+         info(" @SOCKET: Problem shutting down the server socket. Will just continue and hope for the best.", verbosity.low)
       if self.mode == "unix":
          os.unlink("/tmp/ipi_" + self.address)
 
@@ -484,7 +504,7 @@ class InterfaceSocket(object):
          if self.server in readable:
             client, address = self.server.accept()
             client.settimeout(TIMEOUT)
-            driver = DriverSocket(client)
+            driver = Driver(client)
             info(" @SOCKET:   Client asked for connection from "+ str( address ) +". Now hand-shaking.", verbosity.low)
             driver.poll()
             if (driver.status | Status.Up):

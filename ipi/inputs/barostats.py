@@ -1,33 +1,22 @@
-"""Deals with creating the barostat class.
+"""Creates objects that deal with constant pressure and stress simulations."""
 
-Copyright (C) 2013, Joshua More and Michele Ceriotti
+# This file is part of i-PI.
+# i-PI Copyright (C) 2014-2015 i-PI developers
+# See the "licenses" directory for full license information.
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <http.//www.gnu.org/licenses/>.
-
-
-Classes:
-   InputBaro: Deals with creating the Barostat object from a file, and
-      writing the checkpoints.
-"""
 
 import numpy as np
+
 import ipi.engine.thermostats
 from ipi.engine.barostats import *
 from ipi.utils.inputvalue import *
 from ipi.inputs.thermostats import *
+from ipi.engine.cell import Cell
+from ipi.inputs.cell import *
+
 
 __all__ = ['InputBaro']
+
 
 class InputBaro(Input):
    """Barostat input class.
@@ -52,7 +41,7 @@ class InputBaro(Input):
                                    ideas from the Bussi-Zykova-Parrinello barostat for classical MD with ideas from the
                                    Martyna-Hughes-Tuckerman centroid barostat for PIMD; see Ceriotti, More, Manolopoulos, Comp. Phys. Comm. 2013 for
                                    implementation details.""",
-                                   "options"  : ["dummy", "isotropic"]}) }
+                      "options"  : ["dummy", "isotropic", "anisotropic"]}) }
    fields={ "thermostat": (InputThermo, {"default" : input_default(factory=ipi.engine.thermostats.Thermostat),
                                          "help"    : "The thermostat for the cell. Keeps the cell velocity distribution at the correct temperature. Note that the 'pile_l', 'pile_g', 'nm_gle' and 'nm_gle_g' options will not work for this thermostat."}),
             "tau": (InputValue, {"default" : 1.0,
@@ -62,7 +51,11 @@ class InputBaro(Input):
             "p": (InputArray, {  "dtype"     : float,
                                  "default"   : input_default(factory=np.zeros, args = (0,)),
                                  "help"      : "Momentum (or momenta) of the piston.",
-                                 "dimension" : "momentum" })
+                                 "dimension" : "momentum" }),
+            "h0": (InputCell, {  "dtype"     : float,
+                                 "default"   : input_default(factory=Cell) ,
+                                 "help"      : "Reference cell for Parrinello-Rahman-like barostats.",
+                                 "dimension" : "length" })
            }
 
    default_help = "Simulates an external pressure bath."
@@ -81,6 +74,10 @@ class InputBaro(Input):
       if type(baro) is BaroBZP:
          self.mode.store("isotropic")
          self.p.store(baro.p)
+      elif type(baro) is BaroRGB:
+         self.mode.store("anisotropic")
+         self.p.store(baro.p)
+         self.h0.store(baro.h0)
       elif type(baro) is Barostat:
          self.mode.store("dummy")
       else:
@@ -99,6 +96,13 @@ class InputBaro(Input):
       if self.mode.fetch() == "isotropic":
          baro = BaroBZP(thermostat=self.thermostat.fetch(), tau=self.tau.fetch())
          if self.p._explicit: baro.p = self.p.fetch()
+      elif self.mode.fetch() == "anisotropic":
+         baro = BaroRGB(thermostat=self.thermostat.fetch(), tau=self.tau.fetch())
+         if self.p._explicit: baro.p = self.p.fetch()
+         if self.h0._explicit:
+            baro.h0 = self.h0.fetch()
+         else:
+            raise ValueError("Reference cell MUST be specified for an anisotropic barostat")
       elif self.mode.fetch() == "dummy":
          baro = Barostat(thermostat=self.thermostat.fetch(), tau=self.tau.fetch())
       else:

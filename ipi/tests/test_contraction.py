@@ -1,28 +1,15 @@
-"""Tests ring polymer contraction.
+"""Tests ring polymer contraction."""
 
-Copyright (C) 2013, Joshua More and Michele Ceriotti
+# This file is part of i-PI.
+# i-PI Copyright (C) 2014-2015 i-PI developers
+# See the "licenses" directory for full license information.
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <http.//www.gnu.org/licenses/>.
-"""
-
-import sys
-sys.path.append("../")
-sys.path.append("../../")
-
-from ipi.utils import nmtransform
 import numpy as np
 from numpy.testing import assert_almost_equal as assert_equals
+
+from ipi.utils import nmtransform
+
 
 def check_up_and_down_scaling(n, q):
     """Check if q expanding and then contracting a ring polymer is a no-op.
@@ -85,7 +72,7 @@ def check_centroid_pos(n, q):
 
 numbers_to_check = range(10, 56, 9)
 def test_1_to_n():
-   """One bead tests."""
+   """Contraction with one bead."""
 
    for n in numbers_to_check:
       q = np.array([[0.0,0.0,0.0, 1.0,0.0,0.0]])
@@ -94,7 +81,7 @@ def test_1_to_n():
       yield check_centroid_pos, n, q
 
 def test_2_to_n():
-   """Two bead tests."""
+   """Contraction with two beads."""
 
    for n in numbers_to_check:
       q = np.array([[0.0,0.0,0.0, 1.0,0.0,0.0],
@@ -104,7 +91,7 @@ def test_2_to_n():
       yield check_centroid_pos, n, q
 
 def test_3_to_n():
-   """Three bead tests."""
+   """Contraction with tree beads."""
 
    for n in numbers_to_check:
       q = np.array([[0.0, 0.0,0.0, 1.0, 0.0,0.0],
@@ -115,7 +102,7 @@ def test_3_to_n():
       yield check_centroid_pos, n, q
 
 def test_4_to_n():
-   """Four bead tests."""
+   """Contraction with four beads."""
 
    for n in numbers_to_check:
       q = np.array([[0.0, 0.0,0.0, 1.0, 0.0,0.0],

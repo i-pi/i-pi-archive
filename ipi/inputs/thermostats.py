@@ -1,36 +1,25 @@
-"""Deals with creating the thermostats class.
-
-Copyright (C) 2013, Joshua More and Michele Ceriotti
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <http.//www.gnu.org/licenses/>.
-
+"""Creates objects that deal with constant temperature simulations.
 
 Chooses between the different possible thermostat options and creates the
 appropriate thermostat object, with suitable parameters.
-
-Classes:
-   InputThermo: Deals with creating the thermostat object from a file, and
-      writing the checkpoints.
 """
 
-__all__ = ['InputThermo']
+# This file is part of i-PI.
+# i-PI Copyright (C) 2014-2015 i-PI developers
+# See the "licenses" directory for full license information.
+
+
+from copy import copy
 
 import numpy as np
-from copy import copy
+
 import ipi.engine.thermostats as ethermostats
 from ipi.utils.depend   import *
 from ipi.utils.inputvalue  import *
+
+
+__all__ = ['InputThermo']
+
 
 class InputThermoBase(Input):
    """Thermostat input class.
@@ -47,7 +36,7 @@ class InputThermoBase(Input):
       ethermo: An optional float giving the amount of heat energy transferred
          to the bath. Defaults to 0.0.
       tau: An optional float giving the damping time scale. Defaults to 1.0.
-      pile_scale: Scaling for the PILE damping relative to the critical damping.
+      pile_lambda: Scaling for the PILE damping relative to the critical damping.
       A: An optional array of floats giving the drift matrix. Defaults to 0.0.
       C: An optional array of floats giving the static covariance matrix.
          Defaults to 0.0.
@@ -67,9 +56,9 @@ class InputThermoBase(Input):
                                     "default"   : 0.0,
                                     "help"      : "The friction coefficient for white noise thermostats.",
                                     "dimension" : "time" }),
-            "pile_scale" : (InputValue, { "dtype" : float,
+            "pile_lambda" : (InputValue, { "dtype" : float,
                                     "default"   : 1.0,
-                                    "help"      : "Scaling for the PILE damping relative to the critical damping."} ),
+                                    "help"      : "Scaling for the PILE damping relative to the critical damping. (gamma_k=2*lambda*omega_k"} ),
             "A" : (InputArray, {    "dtype"     : float,
                                     "default"   : input_default(factory=np.zeros, args = (0,)),
                                     "help"      : "The friction matrix for GLE thermostats.",
@@ -109,11 +98,11 @@ class InputThermoBase(Input):
       elif type(thermo) is ethermostats.ThermoPILE_L:
          self.mode.store("pile_l")
          self.tau.store(thermo.tau)
-         self.pile_scale.store(thermo.pilescale)
+         self.pile_lambda.store(thermo.pilescale)
       elif type(thermo) is ethermostats.ThermoPILE_G:
          self.mode.store("pile_g")
          self.tau.store(thermo.tau)
-         self.pile_scale.store(thermo.pilescale)
+         self.pile_lambda.store(thermo.pilescale)
       elif type(thermo) is ethermostats.ThermoGLE:
          self.mode.store("gle")
          self.A.store(thermo.A)
@@ -156,9 +145,9 @@ class InputThermoBase(Input):
       elif self.mode.fetch() == "svr":
          thermo = ethermostats.ThermoSVR(tau=self.tau.fetch())
       elif self.mode.fetch() == "pile_l":
-         thermo = ethermostats.ThermoPILE_L(tau=self.tau.fetch(), scale=self.pile_scale.fetch())
+         thermo = ethermostats.ThermoPILE_L(tau=self.tau.fetch(), scale=self.pile_lambda.fetch())
       elif self.mode.fetch() == "pile_g":
-         thermo = ethermostats.ThermoPILE_G(tau=self.tau.fetch(), scale=self.pile_scale.fetch())
+         thermo = ethermostats.ThermoPILE_G(tau=self.tau.fetch(), scale=self.pile_lambda.fetch())
       elif self.mode.fetch() == "gle":
          rC = self.C.fetch()
          if len(rC) == 0:
@@ -176,12 +165,12 @@ class InputThermoBase(Input):
          if len(rC) == 0:
             rC = None
          thermo = ethermostats.ThermoNMGLEG(A=self.A.fetch(),C=rC, tau=self.tau.fetch())
-         thermo.s = self.s.fetch()      
+         thermo.s = self.s.fetch()
       elif self.mode.fetch() == "" :
          thermo=ethermostats.Thermostat()
       else:
          raise TypeError("Invalid thermostat mode " + self.mode.fetch())
-      
+
       thermo.ethermo = self.ethermo.fetch()
 
       return thermo
@@ -200,17 +189,17 @@ class InputThermoBase(Input):
 
 class InputThermo(InputThermoBase):
    """ Extends InputThermoBase to allow the definition of a multithermo """
-   
+
    attribs = copy(InputThermoBase.attribs)
-   
+
    attribs["mode"][1]["options"].append("multi")
-   
+
    dynamic = { "thermostat" : (InputThermoBase, {"default"   : input_default(factory=ethermostats.Thermostat),
                                          "help"      : "The thermostat for the atoms, keeps the atom velocity distribution at the correct temperature."} )
              }
 
    def store(self, thermo):
-       
+
       if type(thermo) is ethermostats.MultiThermo:
          self.mode.store("multi" )
          for t in thermo.tlist:
@@ -219,10 +208,10 @@ class InputThermo(InputThermoBase):
             self.extra.append(("thermostat",it))
          self.ethermo.store(thermo.ethermo)
       else:
-          super(InputThermo,self).store(thermo) 
-          
+          super(InputThermo,self).store(thermo)
+
    def fetch(self):
-      
+
       if self.mode.fetch() == "multi" :
          tlist = []
          for (k, t) in self.extra:
@@ -231,5 +220,5 @@ class InputThermo(InputThermoBase):
          thermo.ethermo = self.ethermo.fetch()
       else:
          thermo=super(InputThermo,self).fetch()
-      
+
       return thermo

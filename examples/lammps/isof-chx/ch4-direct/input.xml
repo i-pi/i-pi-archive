@@ -1,0 +1,40 @@
+<simulation verbosity="medium"><!-- mode="paratemp">-->
+   <output prefix="CH4">
+      <properties stride='4' filename='out'>  [ step, time{picosecond}, temperature{kelvin}, conserved, potential, spring, kinetic_cv(4)] </properties>
+      <trajectory stride='200' filename='xc'>x_centroid{angstrom}</trajectory>
+      <checkpoint stride='20000' />
+   </output>
+<!--   <paratemp>
+      <temp_list units="kelvin"> [ 300,  350 , 420 ] </temp_list>
+      <stride> 10.0 </stride>
+   </paratemp> -->
+   <total_steps>200000</total_steps>
+   <total_time>128000</total_time>
+   <prng><seed>8417</seed></prng>
+   <ffsocket mode="unix" name="airebo-ch4">
+      <address>airebo-ch4</address>
+   </ffsocket>   
+   <system><!-- copies="3" prefix="REP">-->
+      <forces><force>airebo-ch4</force></forces>
+      <initialize nbeads='16'>
+        <file mode='xyz' units="angstrom"> ch4.xyz  </file>
+        <cell mode='abc' units="angstrom"> [ 100, 100, 100 ] </cell> 
+        <velocities mode='thermal' units='kelvin'> 300 </velocities>
+        <masses mode='manual' units='dalton'> [12.00, 1.00782504, 1.00782504,  1.00782504, 100 ] </masses>
+      </initialize>
+      <ensemble mode='nvt'>
+        <thermostat mode='multi'>
+          <thermostat mode='pile_l'>
+             <tau units="femtosecond">1000</tau>
+             <pile_lambda> 0.5 </pile_lambda>
+          </thermostat>
+          <thermostat mode="svr">
+             <tau units="femtosecond"> 2.0 </tau>
+          </thermostat>
+        </thermostat>
+        <timestep units="femtosecond">0.5</timestep>
+        <temperature units='kelvin'>300</temperature>
+        <fixcom>False</fixcom>      
+      </ensemble>
+   </system>
+</simulation>

@@ -1,0 +1,36 @@
+<simulation>
+   <output prefix='nst-ice'>
+      <properties stride='10' filename='out'>  [ step, time{picosecond}, conserved{electronvolt}, temperature{kelvin}, kinetic_cv{electronvolt}, potential{electronvolt}, pressure_cv{megapascal}, volume, cell_h, virial_cv ] </properties>
+      <trajectory stride='100' filename='xc' format='pdb' cell_units='angstrom'> x_centroid{angstrom}</trajectory>
+      <checkpoint stride='2000'/>
+   </output>
+   <total_steps>100000</total_steps>
+   <prng><seed>31415</seed></prng>
+   <ffsocket name="lammps" mode="unix">
+      <address>lammps_ice</address>
+   </ffsocket>
+   <system>
+      <initialize nbeads='4'>
+         <file mode='xyz'> ice.xyz </file>
+         <velocities mode="thermal" units='kelvin'> 200 </velocities>
+         <cell>  [   25.6156, 0, 0, 0, 29.5783, 0, 0, 0, 27.8867 ]  </cell>
+      </initialize>   
+      <forces><force> lammps </force></forces>
+      <ensemble mode='nst'>
+         <barostat mode="anisotropic">
+            <tau units='femtosecond'> 200</tau>
+            <thermostat mode='langevin'>
+               <tau units='femtosecond'> 50</tau>
+            </thermostat>
+            <h0> [ 25.6156, 0, 0, 0, 29.5783, 0, 0, 0, 27.8867 ]</h0>
+         </barostat>
+         <thermostat mode='pile_l'>
+            <tau units='femtosecond'> 100 </tau>
+            <pile_lambda> 0.2 </pile_lambda>
+         </thermostat>
+         <timestep units='femtosecond'> 0.25 </timestep>
+         <temperature units='kelvin'> 200 </temperature>
+         <stress units='megapascal'> [ 5, 2, 0.1, 0, 2, 0.5, 0, 0, 1 ] </stress> 
+      </ensemble>
+   </system>
+</simulation>
