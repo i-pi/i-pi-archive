@@ -17,7 +17,7 @@ from ipi.utils.io.backends import io_pdb, io_xyz, io_binary
 from ipi.utils.io.inputs import io_xml
 
 
-__all__ = [ "io_xml", "io_pdb" , "io_xyz", "io_binary" ]
+__all__ = [ "io_xml", "io_pdb" , "io_xyz", "io_binary", "print_file_path", "read_file", "print_file" ]
 
 
 mode_map = {

@@ -36,6 +36,7 @@ sockets.o: sockets.c
 
 driver.x: $(OBJECTS) sockets.o fsockets.o driver.o | $(OBJECTS)
 	$(FC) $(FFLAGS) -o driver.x $^
+	ln -s ../drivers/driver.x ../bin/i-pi-driver
 
 driver_pure.x: $(OBJECTS) fsockets_pure.o driver.o | $(OBJECTS)
 	$(FC) $(FFLAGS) -o driver_pure.x $^
@@ -47,4 +48,4 @@ driver_pure.x: $(OBJECTS) fsockets_pure.o driver.o | $(OBJECTS)
 	$(FC) $(FFLAGS) -c $< -o $@
 	
 clean:
-	rm *.o *.mod *.x
+	rm -f *.o *.mod *.x ../bin/i-pi-driver
