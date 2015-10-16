@@ -202,7 +202,7 @@ class Properties(dobject):
                       'func': (lambda: (1 + self.simul.step))},
       "time": {       "dimension": "time",
                       "help": "The elapsed simulation time.",
-                      'func': (lambda: (1 + self.simul.step)*self.ensemble.dt)},
+                      'func': (lambda: (1 + self.simul.step)*self.mover.dt)},
       "temperature": {"dimension": "temperature",
                       "help": "The current temperature, as obtained from the MD kinetic energy.",
                       "longhelp" : """The current temperature, as obtained from the MD kinetic energy of the (extended)
@@ -231,7 +231,7 @@ class Properties(dobject):
                       'func': (lambda: np.asarray(h2abc_deg(self.cell.h)))},
       "conserved": {  "dimension": "energy",
                       "help": "The value of the conserved energy quantity per bead.",
-                      'func': (lambda: self.ensemble.econs/float(self.beads.nbeads))},
+                      'func': (lambda: self.mover.econs/float(self.beads.nbeads))},
       "ensemble_temperature":  {  "dimension": "temperature",
                        "help" : "The target temperature for the current ensemble",
                        "func": (lambda: self.ensemble.temp) },
@@ -505,6 +505,7 @@ class Properties(dobject):
       """
 
       self.ensemble = system.ensemble
+      self.mover = system.mover
       self.beads = system.beads
       self.nm = system.nm
       self.cell = system.cell
@@ -599,14 +600,14 @@ class Properties(dobject):
             for. If not, then the simulation temperature.
       """
 
-      if len(self.ensemble.fixatoms)>0:
-         mdof = len(self.ensemble.fixatoms)*3
+      if len(self.mover.fixatoms)>0:
+         mdof = len(self.mover.fixatoms)*3
          if bead == "" and nm == "":
             mdof*=self.beads.nbeads
       else:
          mdof = 0
 
-      if self.ensemble.fixcom:
+      if self.mover.fixcom:
          if bead == "" and nm == "":
             mdof += 3
          elif nm != "" and nm == "0":   # the centroid has 100% of the COM removal
@@ -1320,7 +1321,7 @@ class Properties(dobject):
          atom: the label or index of the atom to compute the isotope fractionation pair for
 
       Returns:
-         a tuple from which one can reconstruct all that is needed to
+         a tuple from which one can recons truct all that is needed to
          compute the relative probability of isotope substitution using
          scaled coordinates:
          (yamaaverage, yama2average, yamaexpaverage)

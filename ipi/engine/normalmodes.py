@@ -75,7 +75,7 @@ class NormalModes(dobject):
          beads.sm3, beads.p and nm_factor.
    """
 
-   def __init__(self, mode="rpmd", transform_method="fft", freqs=None):
+   def __init__(self, mode="rpmd", transform_method="fft", freqs=None, dt=1.0):
       """Initializes NormalModes.
 
       Sets the options for the normal mode transform.
@@ -89,6 +89,7 @@ class NormalModes(dobject):
 
       if freqs is None:
          freqs = []
+      dset(self,"dt",   depend_value(name='dt', value=dt))
       dset(self,"mode",   depend_value(name='mode', value=mode))
       dset(self,"transform_method",
          depend_value(name='transform_method', value=transform_method))
@@ -176,7 +177,7 @@ class NormalModes(dobject):
       dset(self,"prop_pq",
          depend_array(name='prop_pq',value=np.zeros((self.beads.nbeads,2,2)),
             func=self.get_prop_pq,
-               dependencies=[dget(self,"omegak"), dget(self,"nm_factor"), dget(self.ensemble,"dt")]) )
+               dependencies=[dget(self,"omegak"), dget(self,"nm_factor"), dget(self,"dt")]) )
 
       # if the mass matrix is not the RPMD one, the MD kinetic energy can't be
       # obtained in the bead representation because the masses are all mixed up

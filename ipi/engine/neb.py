@@ -385,9 +385,9 @@ class NEBMover(Mover):
       self.neblm = NEBLineMover()
       self.nebbfgsm = NEBBFGSMover()
    
-   def bind(self, beads, nm, cell, bforce, bbias, prng):
+   def bind(self, ens, beads, nm, cell, bforce, bbias, prng):
       
-      super(NEBMover,self).bind(beads, nm, cell, bforce, bbias, prng)
+      super(NEBMover,self).bind(ens, beads, nm, cell, bforce, bbias, prng)
       if self.cg_old_f.shape != beads.q.shape :
          if self.cg_old_f.shape == (0,): 
             self.cg_old_f = np.zeros(beads.q.shape, float)

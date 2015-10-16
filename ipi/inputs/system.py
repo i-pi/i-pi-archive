@@ -65,7 +65,8 @@ class InputSystem(Input):
              "forces" :   (InputForces,    { "help"  : InputForces.default_help }),
              "bias" :   (InputForces,    { "help"  : InputForces.default_help,
                                            "default" : [] }),
-             "ensemble": (InputEnsemble, { "help"  : InputEnsemble.default_help , "default" : input_default(factory=Ensemble, kwargs={'dt':1.0, 'temp':1.0})} ),
+             "ensemble": (InputEnsemble, { "help"  : InputEnsemble.default_help , 
+                             "default" : input_default(factory=Ensemble, kwargs={'temp':1.0})} ),
              "mover": (InputMover, { "help"  : InputMover.default_help, "default" : input_default(factory=Mover) } ),
              "beads" :   (InputBeads, { "help"     : InputBeads.default_help,
                                         "default"  : input_default(factory=Beads, kwargs={'natoms': 0, 'nbeads': 0}) } ),
@@ -96,7 +97,9 @@ class InputSystem(Input):
       self.forces.store(psys.fcomp)
       self.bias.store(psys.bcomp)
       self.ensemble.store(psys.ensemble)
+      print "storing mover"
       self.mover.store(psys.mover)
+      print "storing beads"
       self.beads.store(psys.beads)
       self.normal_modes.store(psys.nm)
       self.cell.store(psys.cell)

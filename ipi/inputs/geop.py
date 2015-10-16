@@ -86,7 +86,7 @@ class InputGeop(InputDictionary):
     dynamic = {  }
 
     default_help = "TODO EXPLAIN WHAT THIS IS"
-    default_label = "GEOP"   
+    default_label = "GEOP"
 
     def store(self, geop):
         if geop == {}: return
