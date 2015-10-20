@@ -12,19 +12,14 @@ appropriate conserved energy quantity for the ensemble of choice.
 
 
 import time
-from copy import deepcopy
 
 import numpy as np
 
 from ipi.utils.depend import *
-from ipi.utils import units
 from ipi.utils.softexit import softexit
-from ipi.utils.io.backends.io_xyz import read_xyz
-from ipi.utils.io.backends.io_pdb import read_pdb
+from ipi.utils.io import read_file
 from ipi.utils.io.inputs.io_xml import xml_parse_file
-from ipi.utils.units import Constants, unit_to_internal
-from ipi.inputs.thermostats import InputThermo
-from ipi.inputs.barostats import InputBaro
+from ipi.utils.units import unit_to_internal
 from ipi.engine.thermostats import *
 from ipi.engine.barostats import *
 
@@ -821,19 +816,7 @@ class ReplayEnsemble(Ensemble):
       while True:
        self.rstep += 1
        try:
-         if (self.intraj.mode == "xyz"):
-            for b in self.beads:
-               myatoms = read_xyz(self.rfile)
-               myatoms.q *= unit_to_internal("length",self.intraj.units,1.0)
-               b.q[:] = myatoms.q
-         elif (self.intraj.mode == "pdb"):
-            for b in self.beads:
-               myatoms, mycell = read_pdb(self.rfile)
-               myatoms.q *= unit_to_internal("length",self.intraj.units,1.0)
-               mycell.h  *= unit_to_internal("length",self.intraj.units,1.0)
-               b.q[:] = myatoms.q
-            self.cell.h[:] = mycell.h
-         elif (self.intraj.mode == "chk" or self.intraj.mode == "checkpoint"):
+         if (self.intraj.mode == "chk" or self.intraj.mode == "checkpoint"):
             # reads configuration from a checkpoint file
             xmlchk = xml_parse_file(self.rfile) # Parses the file.
 
@@ -845,6 +828,17 @@ class ReplayEnsemble(Ensemble):
             self.cell.h[:] = mycell.h
             self.beads.q[:] = mybeads.q
             softexit.trigger(" # Read single checkpoint")
+         else:
+            # TODO: exit with a proper exit message when the backend does not
+            # support self.intraj.mode
+            for b in self.beads:
+               ret = read_file(self.intraj.mode, self.rfile)
+               myatoms = ret["atoms"]
+               mycell = ret["cell"]
+               myatoms.q *= unit_to_internal("length",self.intraj.units,1.0)
+               mycell.h  *= unit_to_internal("length",self.intraj.units,1.0)
+               b.q[:] = myatoms.q
+            self.cell.h[:] = mycell.h
        except EOFError:
          softexit.trigger(" # Finished reading re-run trajectory")
        if (step==None or self.rstep>step): break

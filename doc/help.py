@@ -33,7 +33,6 @@ sys.path.append(src_dir)
 from ipi.inputs import barostats, cell, simulation, paratemp, system, \
              ensembles, thermostats, forcefields, forces, atoms, beads, \
              prng, initializer, normalmodes, outputs
-from ipi.utils.io.io_xml import *
 
 
 time.sleep(1)
