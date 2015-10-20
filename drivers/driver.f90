@@ -47,7 +47,7 @@
       ! SOCKET COMMUNICATION BUFFERS
       CHARACTER(LEN=12) :: header
       LOGICAL :: isinit=.false., hasdata=.false.
-      INTEGER cbuf
+      INTEGER cbuf, rid
       CHARACTER(LEN=2048) :: initbuffer      ! it's unlikely a string this large will ever be passed...
       DOUBLE PRECISION, ALLOCATABLE :: msgbuffer(:)
 
@@ -244,6 +244,7 @@
                CALL writebuffer(socket,"READY       ",MSGLEN)  ! We are idling and eager to compute something
             ENDIF
          ELSEIF (trim(header) == "INIT") THEN     ! The driver is kindly providing a string for initialization
+            CALL readbuffer(socket, rid)
             CALL readbuffer(socket, cbuf)
             CALL readbuffer(socket, initbuffer, cbuf)
             IF (verbose) WRITE(*,*) " Initializing system from wrapper, using ", trim(initbuffer)

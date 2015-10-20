@@ -18,13 +18,13 @@ Syntax:
    trimsim.py inputfile.xml
 """
 
-import sys, os
+import sys
+import os
 import numpy as np
-from ipi.engine.simulation import Simulation
 from ipi.engine.outputs import *
 from ipi.engine.properties import getkey
 from ipi.inputs.simulation import InputSimulation
-from ipi.utils.io.io_xml import *
+from ipi.utils.io.inputs import io_xml
 
 
 def main(inputfile, outdir="trim"):
@@ -32,7 +32,7 @@ def main(inputfile, outdir="trim"):
 
    # opens & parses the input file
    ifile = open(inputfile,"r")
-   xmlrestart = xml_parse_file(ifile) # Parses the file.
+   xmlrestart = io_xml.xml_parse_file(ifile) # Parses the file.
    ifile.close()
 
    isimul = InputSimulation()

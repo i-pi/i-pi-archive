@@ -1,0 +1,37 @@
+        2
+        Fe Fe MEMODE=2 PPMODE=10 POLY=5 CUTMOD=cutmod CUTPP=r1pp rcpp
+            | fss fsp fpp -fpp/2 fsd fpd -fpd/sqrt(3) 
+                                                 fdds fddp fddd
+        DECAY=qss qsp qpp qpp    qsd qpd  qpd    qdds qddp qddd
+        CUT=r1ss rcss 0 0 0 0 0 0 r1sd rcsd 0 0 0 0 r1dd rcdd r1dd rcdd r1dd rcdd
+            @ oss osp opp -opp/2 osd opd -opd/sqrt(3) 
+                                                 odds oddp oddd
+        DECAY=qoss qsp qpp qpp    qosd qpd  qpd    qdds qddp qddd
+        CUT=r1ss rcss 0 0 0 0 0 0 r1sd rcsd 0 0 0 0 r1dd rcdd r1dd rcdd r1dd rcdd
+            ! b0 m0 p0   b1 m1 p1   0 0 0
+        Fe H MEMODE=2 PPMODE=10 POLY=5 CUTMOD=cutmod CUTPP=r1HFpp rcHFpp
+            | fHFss fHFsp  0  0 fHFsd 0 0 0 0 0
+        DECAY=qHFss qHFsp  0  0 qHFsd 0 0 0 0 0
+        CUT= r1HF rcHF r1HF rcHF 0 0 0 0 r1HF rcHF 0 0 0 0 0 0 0 0 0 0
+            @ oHFss oHFsp  0  0 oHFsd 0 0 0 0 0
+        DECAY=qoHFss qoHFsp  0  0 qoHFsd 0 0 0 0 0
+        CUT= r1HF rcHF r1HF rcHF 0 0 0 0 r1HF rcHF 0 0 0 0 0 0 0 0 0 0
+            ! bHF nHF qHF  0 0 0   0 0 0
+        H Fe MEMODE=2 PPMODE=10 POLY=5 CUTMOD=cutmod CUTPP=r1HFpp rcHFpp
+            | fHFss fHFsp  0  0 fHFsd 0 0 0 0 0
+        DECAY=qHFss qHFsp  0  0 qHFsd 0 0 0 0 0
+        CUT= r1HF rcHF r1HF rcHF 0 0 0 0 r1HF rcHF 0 0 0 0 0 0 0 0 0 0
+            @ oHFss oHFsp  0  0 oHFsd 0 0 0 0 0
+        DECAY=qoHFss qoHFsp  0  0 qoHFsd 0 0 0 0 0
+        CUT= r1HF rcHF r1HF rcHF 0 0 0 0 r1HF rcHF 0 0 0 0 0 0 0 0 0 0
+            ! bHF nHF qHF  0 0 0  0 0 0
+        H H MEMODE=2 PPMODE=0
+            | 0 0 0 0 0 0 0 0 0 0 
+        DECAY=0 0 0 0 0 0 0 0 0 0
+        CUT=  0 0  0 0  0 0  0 0  0 0  0 0  
+              0 0  0 0  0 0  0 0  0 0  0 0  
+            @ 0 0 0 0 0 0 0 0 0 0
+        DECAY=0 0 0 0 0 0 0 0 0 0
+        CUT=  0 0  0 0  0 0  0 0  0 0  0 0  
+              0 0  0 0  0 0  0 0  0 0  0 0  
+            ! 0 0 0  0 0 0    0 0 0
