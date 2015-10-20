@@ -19,11 +19,17 @@ def run_command(cmd):
     return ret
 
 
+def distclean():
+    """Prepare for documentation build testing."""
+    run_command("make distclean")
+
+
 def clean():
     """Clean up the documentation build after testing."""
     run_command("make clean")
 
 
+@with_setup(distclean, None)
 def test_make_aux():
     """doc: run make aux"""
     ret = run_command("make aux")
