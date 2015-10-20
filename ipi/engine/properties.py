@@ -16,7 +16,7 @@ from ipi.utils.depend import *
 from ipi.utils.units import Constants, unit_to_internal, unit_to_user
 from ipi.utils.mathtools import logsumlog, h2abc_deg
 import ipi.utils.io as io
-from ipi.utils.io import io_xml
+from ipi.utils.io.inputs import io_xml
 from ipi.engine.atoms import *
 from ipi.engine.cell import *
 from ipi.engine.ensembles import *
@@ -446,13 +446,13 @@ class Properties(dobject):
                           "size" : 3,
                           'func': self.get_chin_correction,
                           "help": "The weighting factor in Suzuki-Chin 4th-order PI expansion.",
-                          "longhelp" : """The 3 numbers output are 1) the logarithm of the weighting factor -\beta_P \delta H,
+                          "longhelp" : """The 3 numbers output are 1) the logarithm of the weighting factor -beta_P delta H,
                       2) the square of the logarithm, and 3) the weighting factor""" } ,
        "ti_weight":  {"dimension" : "undefined",
                           "size" : 3,
                           'func': self.get_ti_correction,
                           "help": "The weighting factor in Takahashi-Imada 4th-order PI expansion.",
-                          "longhelp" : """The 3 numbers output are 1) the logarithm of the weighting factor -\beta_P \delta H,
+                          "longhelp" : """The 3 numbers output are 1) the logarithm of the weighting factor -beta_P delta H,
                       2) the square of the logarithm, and 3) the weighting factor""" } ,
        "ti_pot":  {"dimension" : "undefined",
                           "size" : 1,

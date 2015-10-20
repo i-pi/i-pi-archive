@@ -25,10 +25,11 @@ from ipi.utils.units  import *
 from ipi.utils.prng   import *
 from ipi.utils.io     import *
 from ipi.utils.io.inputs.io_xml import *
-from ipi.utils.messages import verbosity, info, warning
+from ipi.utils.messages import verbosity, info, warning, banner
 from ipi.utils.softexit import softexit
 from ipi.engine.atoms import *
 from ipi.engine.cell import *
+import ipi.inputs.simulation as isimulation
 
 # import objgraph
 
@@ -64,6 +65,54 @@ class Simulation(dobject):
    Depend objects:
       step: The current simulation step.
    """
+
+   @staticmethod
+   def load_from_xml(fn_input, custom_verbosity=None, request_banner=False):
+      """Load an XML input file and return a `Simulation` object.
+
+      Arguments:
+          fn_input (str): Name of the input file.
+          custom_verbosity (str): If not `None`, overrides the verbosity
+              specified by the input file.
+          request_banner (bool): Whether to print the i-PI banner,
+              if verbosity is higher than 'quiet'.
+      """
+
+      # parse the file
+      xmlrestart = xml_parse_file(open(fn_input))
+
+      # prepare the simulation input object
+      input_simulation = isimulation.InputSimulation()
+
+      # check the input and partition it appropriately
+      input_simulation.parse(xmlrestart.fields[0][1])
+
+      # override verbosity if requested
+      if custom_verbosity is not None:
+          input_simulation.verbosity.value = custom_verbosity
+
+      # print banner if not suppressed and simulation verbose enough
+      if request_banner and input_simulation.verbosity.fetch() != 'quiet':
+         banner()
+
+      # create the simulation object
+      simulation = input_simulation.fetch()
+
+      # pipe between the components of the simulation
+      simulation.bind()
+
+      # echo the input file if verbose enough
+      if verbosity.level > 0:
+         print " # i-PI loaded input file: ", fn_input
+      if verbosity.level > 1:
+         print " --- begin input file content ---"
+         ifile = open(fn_input, "r")
+         for line in ifile.readlines():
+            print line,
+         print " ---  end input file content  ---"
+         ifile.close()
+
+      return simulation
 
    def __init__(self, mode, syslist, fflist, outputs, prng, paratemp, step=0, tsteps=1000, ttime=0):
       """Initialises Simulation class.

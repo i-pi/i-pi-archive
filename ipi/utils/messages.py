@@ -9,7 +9,7 @@ import traceback
 import sys
 
 
-__all__ = ['Verbosity', 'verbosity',' help', 'banner', 'info', 'warning']
+__all__ = ['Verbosity', 'verbosity', 'banner', 'info', 'warning']
 
 
 VERB_QUIET  = 0
@@ -17,6 +17,7 @@ VERB_LOW    = 1
 VERB_MEDIUM = 2
 VERB_HIGH   = 3
 VERB_DEBUG  = 4
+
 
 class Verbosity(object):
    """Class used to determine what to print to standard output.
@@ -84,10 +85,6 @@ class Verbosity(object):
 
 verbosity = Verbosity()
 
-def help():
-   """Prints out a help string."""
-
-   print """usage:  %s input """%sys.argv[0]
 
 def banner():
    """Prints out a banner."""
@@ -123,6 +120,7 @@ def info(text="", show=True):
    if not show:
       return
    print text
+
 
 def warning(text="", show=True):
    """Prints a warning message.
