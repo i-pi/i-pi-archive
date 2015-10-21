@@ -9,6 +9,7 @@ This module has machinery for abstract I/O handling.
 
 
 import sys
+import os
 
 from ipi.utils.decorators import cached
 
@@ -104,3 +105,44 @@ def iter_file(mode, filedesc):
       Atoms objects with the appropriate atom labels, masses and positions.
    """
    return _get_io_function(mode, "iter")(filedesc=filedesc)
+
+
+def iter_file_guess(filename):
+    """Open a trajectory file, guessing its format from the extension.
+
+    Args:
+        filename: Filename of a trajectory file.
+
+    Returns:
+        Generator of frames from the trajectory in `filename`.
+    """
+
+    return iter_file(os.path.splitext(filename)[1], open(filename))
+
+
+def safe_open(filename, mode='r', buffering=-1):
+    """A wrapper around `open` which saves backup files."""
+
+    if mode == 'w':
+        # if writing, make sure file is not overwritten
+
+        i = 0
+        fn_backup = filename
+        while os.path.isfile(fn_backup):
+            fn_backup = '#' + filename + '#%i#' % i
+            i += 1
+
+        if fn_backup != filename:
+            os.rename(filename, fn_backup)
+            print 'Backup performed: %s -> %s' % (filename, fn_backup)
+            print
+
+    elif (mode == 'r') or (mode == 'a'):
+        # read or append, no danger of overwritten files
+        pass
+
+    else:
+        # well, this is unexpected, complain
+        raise NotImplementedError('Unsupported file open mode: %s.' % mode)
+
+    return open(filename, mode, buffering)
