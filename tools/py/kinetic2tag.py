@@ -1,4 +1,5 @@
-#!/usr/bin/python
+#!/usr/bin/env python
+
 """ kinetic2tag.py
 
 Computes the Transient Anisotropic Gaussian (TAG) approximation
@@ -14,12 +15,14 @@ Syntax:
    kinetic2tag.py prefix lag
 """
 
+
 import numpy as np
 
 import sys
 from ipi.utils.io import read_file
 from ipi.utils.depend import *
 from ipi.utils.units import *
+
 
 def main(prefix, lag):
 
@@ -63,7 +66,7 @@ def main(prefix, lag):
          mkt[:]=0.0; tw=0.0
          for j in range(cbuf):
             w=1.0-np.abs(j-lag)*1.0/lag;
-            mkt+=w*ktbuf[(ifr-j)%cbuf]; 
+            mkt+=w*ktbuf[(ifr-j)%cbuf];
             tw+=w;
          mkt*=1.0/tw
 
@@ -78,6 +81,7 @@ def main(prefix, lag):
             otag.write("%6s  %15.7e  %15.7e  %15.7e\n" % (tk.names[i], mea[i,0], mea[i,1],mea[i,2]))
 
       ifr+=1
+
 
 if __name__ == '__main__':
    main(*sys.argv[1:])
