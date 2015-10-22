@@ -1,4 +1,5 @@
-#!/usr/bin/python
+#!/usr/bin/env python
+
 """ trimsim.py
 
 Relies on the infrastructure of i-pi, so the ipi package should
@@ -17,6 +18,7 @@ will be output.
 Syntax:
    trimsim.py inputfile.xml
 """
+
 
 import sys
 import os
@@ -165,6 +167,7 @@ def main(inputfile, outdir="trim"):
                      traj[isys]["ofile"].write(''.join(ibuffer))
       except EOFError:
          break
+
 
 if __name__ == '__main__':
    main(*sys.argv[1:])

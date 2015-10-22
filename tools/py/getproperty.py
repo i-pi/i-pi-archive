@@ -1,4 +1,5 @@
-#!/usr/bin/python
+#!/usr/bin/env python
+
 """ getproperty.py
 
 Parses a property output file and - if present - outputs the column(s)
@@ -10,10 +11,12 @@ Syntax:
    geproperty.py propertyfile propertyname [skip]
 """
 
+
 import sys
 import re
 from ipi.utils.messages import warning
 from ipi.engine.outputs import *
+
 
 def main(inputfile, propertyname="potential", skip="0"):
    skip = int(skip)
@@ -49,6 +52,7 @@ def main(inputfile, propertyname="potential", skip="0"):
          step+=1
       except EOFError:
          break
+
 
 if __name__ == '__main__':
    main(*sys.argv[1:])

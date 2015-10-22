@@ -1,4 +1,5 @@
-#!/usr/bin/python
+#!/usr/bin/env python
+
 """ posforce2kinetic.py
 
 Reads positions and forces from an i-PI run and computes the
@@ -14,6 +15,7 @@ Syntax:
    posforce2kinetic.py prefix temperature[K]
 """
 
+
 import numpy as np
 import sys
 import glob
@@ -21,6 +23,7 @@ from ipi.utils.io import read_file
 from ipi.engine.beads import Beads
 from ipi.utils.depend import *
 from ipi.utils.units import *
+
 
 def main(prefix, temp):
 

@@ -1,7 +1,8 @@
-#!/usr/bin/python
+#!/usr/bin/env python
+
 """ pos2centroid.py
 
-Reads positions of individual beads from an i-PI run and 
+Reads positions of individual beads from an i-PI run and
 assemles them in a pdb describing the ring polymer connectivity.
 
 Assumes the input files are in pdb format names prefix.pos_*.pdb.
@@ -9,6 +10,7 @@ Assumes the input files are in pdb format names prefix.pos_*.pdb.
 Syntax:
    mergebeadspdb.py prefix
 """
+
 
 import numpy as np
 import sys, glob
@@ -19,6 +21,7 @@ from ipi.engine.cell import Cell
 from ipi.utils.depend import *
 from ipi.utils.units import *
 
+
 def main(prefix):
 
    ipos=[]
@@ -27,12 +30,12 @@ def main(prefix):
       imode.append(filename.split(".")[-1])
       ipos.append(open(filename,"r"))
 
-   nbeads = len(ipos)   
+   nbeads = len(ipos)
    natoms = 0
    ifr = 0
    while True:
       try:
-         
+
          for i in range(nbeads):
             if (imode[i]=="xyz"):
                pos=read_file(imode[i],ipos[i])
@@ -42,7 +45,7 @@ def main(prefix):
             if natoms == 0:
                natoms = pos.natoms
                atoms = Atoms(natoms)
-            
+
             atoms.q += pos.q
             atoms.names = pos.names
       except EOFError: # finished reading files
