@@ -6,13 +6,15 @@
 
 
 def cached(f):
-   """Cache decorator."""
+    """Cache decorator."""
 
-   _cache = {}
-   def func(*args):
-      if args in _cache:
-         return _cache[args]
-      res = f(*args)
-      _cache[args] = res
-      return res
-   return func
+    _cache = {}
+
+    def func(*args):
+        if args in _cache:
+            return _cache[args]
+        res = f(*args)
+        _cache[args] = res
+        return res
+
+    return func

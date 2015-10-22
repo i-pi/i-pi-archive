@@ -18,13 +18,13 @@ def print_bin(atoms, cell, filedesc=sys.stdout, title=""):
     """Prints an atomic configuration into a binary file.
 
     Args:
-      beads: An atoms object giving the centroid positions.
-      cell: A cell object giving the system box.
-      filedesc: An open writable file object. Defaults to standard output.
-      title: This gives a string to be appended to the comment line.
+        beads: An atoms object giving the centroid positions.
+        cell: A cell object giving the system box.
+        filedesc: An open writable file object. Defaults to standard output.
+        title: This gives a string to be appended to the comment line.
     """
 
-    buff = filedesc  # .buffer
+    buff = filedesc
     cell.h.tofile(buff)
     nat = np.asarray([atoms.natoms])
     nat.tofile(buff)

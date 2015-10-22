@@ -1,4 +1,5 @@
-#!/usr/bin/python
+#!/usr/bin/env python
+
 """ parasort.py
 
 Relies on the infrastructure of i-pi, so the ipi package should
@@ -18,6 +19,7 @@ data for replica 'index'.
 Syntax:
    parasort.py inputfile.xml
 """
+
 
 import sys
 import numpy as np
@@ -157,6 +159,7 @@ def main(inputfile, prefix="PT"):
                      traj[irep[isys]]["ofile"].write(''.join(ibuffer))
       except EOFError:
          break
+
 
 if __name__ == '__main__':
    main(*sys.argv[1:])

@@ -7,4 +7,4 @@ simulation. For now only xml, but in future possibly also yml/json.
 # See the "licenses" directory for full license information.
 
 
-__all__ = [ "io_xml" ]
+__all__ = ["io_xml"]
