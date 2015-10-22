@@ -530,7 +530,7 @@ class depend_array(np.ndarray, depend_base):
             self.update_auto()
             self.taint(taintme=False)
 
-        if (self.__scalarindex(index, self.ndim)):
+        if self.__scalarindex(index, self.ndim):
             return depstrip(self)[index]
         else:
             return depend_array(depstrip(self)[index], name=self._name, synchro=self._synchro,
@@ -574,7 +574,7 @@ class depend_array(np.ndarray, depend_base):
 
         self.taint(taintme=False)
         if manual:
-            depstrip(self)[index] = value
+            self.view(np.ndarray)[index] = value
             self.update_man()
         elif index == slice(None, None, None):
             self._bval[index] = value
@@ -687,7 +687,7 @@ def depstrip(da):
         # been cleared already but I am not 100% sure so better check - and in
         # case raise the update
         result = da.view(np.ndarray)
-        #result.flags.writeable = False   # TODO: re-enable this, without breaking tests
+        result.flags.writeable = False
         return result
     else:
         return da
