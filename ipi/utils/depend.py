@@ -573,7 +573,7 @@ class depend_array(np.ndarray, depend_base):
         """
 
         self.taint(taintme=False)
-        if manual:
+        if manual:            
             self.view(np.ndarray)[index] = value
             self.update_man()
         elif index == slice(None, None, None):
@@ -687,7 +687,7 @@ def depstrip(da):
         # been cleared already but I am not 100% sure so better check - and in
         # case raise the update
         result = da.view(np.ndarray)
-        result.flags.writeable = False
+        #result.flags.writeable = False
         return result
     else:
         return da
