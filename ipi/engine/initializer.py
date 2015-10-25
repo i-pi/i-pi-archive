@@ -305,12 +305,12 @@ class Initializer(dobject):
          if k == "cell":
             if fcell :
                warning("Overwriting previous cell parameters", verbosity.medium)
-            if v.mode == "pdb":
-               rh = init_pdb(v.value)[1].h
+            if v.mode == "manual":
+                rh = v.value.reshape((3,3))
             elif v.mode == "chk":
                rh = init_chk(v.value)[1].h
-            else:
-               rh = v.value.reshape((3,3))
+            else: 
+               rh = init_file(v.mode,v.value)[1].h
             rh *= unit_to_internal("length",v.units,1.0)
 
             simul.cell.h = rh
