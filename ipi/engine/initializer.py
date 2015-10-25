@@ -148,7 +148,8 @@ def init_beads(iif, nbeads):
       ValueError: If called using an Initializer object with a 'manual' mode.
    """
 
-   mode = iif.mode; value = iif.value
+   mode = iif.mode
+   value = iif.value
    if mode == "chk":
       rbeads = init_chk(value)[0]
    elif mode == "manual":
@@ -156,9 +157,9 @@ def init_beads(iif, nbeads):
    else:
       ret = init_file(mode, value)
       ratoms = ret[0]
-      print ratoms, ratoms[0]
       rbeads = Beads(ratoms[0].natoms,len(ratoms))
-      for i in range(len(ratoms)): rbeads[i] = ratoms[i]
+      for i in range(len(ratoms)):
+         rbeads[i] = ratoms[i]
 
    return rbeads
 
@@ -309,7 +310,7 @@ class Initializer(dobject):
                 rh = v.value.reshape((3,3))
             elif v.mode == "chk":
                rh = init_chk(v.value)[1].h
-            else: 
+            else:
                rh = init_file(v.mode,v.value)[1].h
             rh *= unit_to_internal("length",v.units,1.0)
 
