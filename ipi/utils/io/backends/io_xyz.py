@@ -66,7 +66,7 @@ def print_xyz(atoms, cell, filedesc = sys.stdout, title=""):
    for i in range(natoms):
       filedesc.write("%8s %12.5e %12.5e %12.5e\n" % (lab[i], qs[3*i], qs[3*i+1], qs[3*i+2]))
 
-def read_xyz(filedesc, readcell=False):
+def read_xyz(filedesc, **kwargs):
    """Readss an XYZ-style file with i-pi style comments and creates an Atoms and Cell object
 
    Args:
@@ -143,8 +143,10 @@ def read_xyz(filedesc, readcell=False):
    atoms.names = np.asarray(names, dtype='|S4')
    atoms.m = np.asarray(masses)
 
-   if readcell: return atoms, cell
-   else: return atoms
+   return {
+            "atoms": atoms,
+            "cell": cell,
+          }
 
 def iter_xyz(filedesc):
    """Takes a xyz-style file and yields one Atoms object after another.
@@ -159,7 +161,6 @@ def iter_xyz(filedesc):
 
    try:
       while 1:
-         atoms = read_xyz(filedesc)
-         yield atoms
+         yield read_xyz(filedesc)
    except EOFError:
       pass

@@ -12,12 +12,8 @@ import sys
 
 from ipi.utils.decorators import cached
 
-# For backwards compatibility import old known functions from backend and inputs.
-from ipi.utils.io.backends import io_pdb, io_xyz, io_binary
-from ipi.utils.io.inputs import io_xml
 
-
-__all__ = [ "io_xml", "io_pdb" , "io_xyz", "io_binary" ]
+__all__ = [ "iter_file", "print_file_path", "print_file", "read_file" ]
 
 
 mode_map = {
@@ -42,7 +38,7 @@ def _get_io_function(mode, io):
       mode: Which format has the file? e.g. "pdb", "xml" or "xyz"
       io: One of "print_path", "print", "read" or "iter"
    """
-   import importlib
+   from ipi.external import importlib
 
    try:
       mode = mode[mode.find(".")+1:]
@@ -85,16 +81,17 @@ def print_file(mode, atoms, cell, filedesc=sys.stdout, title=""):
    """
    return _get_io_function(mode, "print")(atoms=atoms, cell=cell, filedesc=filedesc, title=title)
 
-def read_file(mode, filedesc):
+def read_file(mode, filedesc, **kwargs):
    """Takes a `mode`-style file and creates an Atoms object.
 
    Args:
       filedesc: An open readable file object from a `mode` formatted file.
+      All other args are passed directly to the responsible io function.
 
    Returns:
       An Atoms object with the appropriate atom labels, masses and positions.
    """
-   return _get_io_function(mode, "read")(filedesc=filedesc)
+   return _get_io_function(mode, "read")(filedesc=filedesc, **kwargs)
 
 def iter_file(mode, filedesc):
    """Takes a `mode`-style file and yields one Atoms object after another.

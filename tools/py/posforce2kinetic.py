@@ -15,8 +15,9 @@ Syntax:
 """
 
 import numpy as np
-import sys, glob
-from ipi.utils.io.io_xyz import *
+import sys
+import glob
+from ipi.utils.io import read_file
 from ipi.engine.beads import Beads
 from ipi.utils.depend import *
 from ipi.utils.units import *
@@ -43,8 +44,10 @@ def main(prefix, temp):
    while True:
       try:
          for i in range(nbeads):
-            pos = read_xyz(ipos[i])
-            force = read_xyz(ifor[i])
+            ret = read_file("xyz", ipos[i])
+            pos = ret["atoms"]
+            ret = read_file("xyz", ifor[i])
+            forces = ret["atoms"]
             if natoms == 0:
                natoms = pos.natoms
                beads = Beads(natoms,nbeads)
