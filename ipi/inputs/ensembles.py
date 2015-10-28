@@ -83,7 +83,7 @@ class InputEnsemble(Input):
                                     "help"         : "Indices of the atmoms that should be held fixed."}),
            "nmts" : (InputArray, {"dtype" : int,
                                             "default" : np.zeros(0,int),
-                                            "help"    : "Number of iterations for each MTS level (starting from the first loop)."})
+                                            "help"    : "Number of iterations for each MTS level (including the outer loop, that should in most cases have just one iteration)."})
          }
    dynamic = {  }
 
@@ -137,7 +137,7 @@ class InputEnsemble(Input):
          self.barostat.store(ens.barostat)
          self.stress.store(ens.stressext)
       if tens == 5:
-         self.nmts.store(ens.nmts[1:]) # first element is always 1 so no point in storing it
+         self.nmts.store(ens.nmts) 
 
    def fetch(self):
       """Creates an ensemble object.

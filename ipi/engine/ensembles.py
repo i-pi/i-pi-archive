@@ -289,10 +289,11 @@ class MTSEnsemble(NVEEnsemble):
       else:
          self.thermostat = thermostat
 
-      #dset(self,"mtsintegfactors",depend_array(name='mtsintegfactors',value=np.zeros(0,int) + 1))
-      self.nmts = np.asarray([1],int)      
-      if not nmts is None:
-         self.nmts=np.concatenate((self.nmts,nmts))
+      #dset(self,"mtsintegfactors",depend_array(name='mtsintegfactors',value=np.zeros(0,int) + 1))      
+      if nmts is None:
+         self.nmts = np.asarray([1],int)      
+      else:
+         self.nmts=np.asarray(nmts)
 
    def bind(self, beads, nm, cell, bforce, bbias, prng):
       """Binds beads, cell, bforce and prng to the ensemble.
@@ -349,7 +350,7 @@ class MTSEnsemble(NVEEnsemble):
    def mtsprop(self, index, alpha):
       """ Recursive MTS step """
       nmtslevels = len(self.nmts)
-      mk = self.nmts[index]  # mtslevels starts at level zero, where nmts is always 1
+      mk = self.nmts[index]  # mtslevels starts at level zero, where nmts should be 1 in most cases
       alpha *= mk
       for i in range(mk):  
       # propagate p for dt/2alpha with force at level index
