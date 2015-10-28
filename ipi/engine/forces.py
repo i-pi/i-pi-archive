@@ -259,6 +259,8 @@ class ForceComponent(dobject):
       _forces: A list of the forcefield objects for all the replicas.
       weight: A float that will be used to weight the contribution of this
          forcefield to the total force.
+      mts_weight: A float that will be used to weight the contribution of this
+         forcefield to the total force.
       ffield: A model to be used to create the forcefield objects for all
          the replicas of the system.
 
@@ -275,7 +277,7 @@ class ForceComponent(dobject):
          Depends on each replica's ufvx list.
    """
 
-   def __init__(self, ffield="", nbeads=0, weight=1.0, name="", lmts=0):
+   def __init__(self, ffield="", nbeads=0, weight=1.0, name="", lmts=0, mts_weight):
       """Initializes ForceComponent
 
       Args:
@@ -294,6 +296,7 @@ class ForceComponent(dobject):
       self.name = name
       self.nbeads = nbeads
       self.weight = weight
+      self.mts_weight = mts_weight
       self.lmts = lmts
 
    def bind(self, beads, cell, fflist):
@@ -508,7 +511,7 @@ class Forces(dobject):
          # if the number of beads for this force component is unspecified,
          # assume full force evaluation
          if newb == 0: newb = beads.nbeads
-         newforce = ForceComponent(ffield=fc.ffield, name=fc.name, nbeads=newb, weight=fc.weight, lmts=fc.lmts)
+         newforce = ForceComponent(ffield=fc.ffield, name=fc.name, nbeads=newb, weight=fc.weight, mts_weight=fc.mts_weight, lmts=fc.lmts)
          newbeads = Beads(beads.natoms, newb)
          newrpc = nm_rescale(beads.nbeads, newb)
 
@@ -656,8 +659,8 @@ class Forces(dobject):
 
       fk = np.zeros((self.nbeads,3*self.natoms))
       for index in range(len(self.mforces)):
-         if level == self.mforces[index].lmts:
-            fk += self.mforces[index].weight*self.mrpc[index].b2tob1(depstrip(self.mforces[index].f))
+            if(self.mforces[index].mts_weight[level] != 0):
+              fk += self.mforces[index].weight*mforces[index].mts_weight[index]*self.mrpc[index].b2tob1(depstrip(self.mforces[index].f))
       return fk
 
    def nmtslevels(self):
