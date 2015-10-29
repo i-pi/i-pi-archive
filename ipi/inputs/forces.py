@@ -38,11 +38,12 @@ class InputForceComponent(Input):
                                           "default" : "",
                                           "help" : "An optional name to refer to this force component." } ),
 
-               "forcefield" : ( InputAttribute, { "dtype" : str,
+               "forcefield" : ( InputAttribute, { "dtype" : str, 
+                                          "default": "",
                                           "help" : "An optional name to refer to this force component." } )
             }
 
-   fields={ "mts_weight" : (InputArray, {"dtype"        : float,
+   fields={ "mts_weights" : (InputArray, {"dtype"        : float,
                                     "default"      : np.zeros(1,float)+1.,
                                     "help"         : "The weight of force in each mts level startiong from outer.",
                                     "dimension"    : "force"})
@@ -70,10 +71,9 @@ class InputForceComponent(Input):
          forceb: A ForceComponent object.
       """
 
-      super(InputForceComponent,self).store(forceb.ffield)
       self.nbeads.store(forceb.nbeads)
       self.weight.store(forceb.weight)
-      self.mts_weight.store(forceb.mts_weight)
+      self.mts_weights.store(forceb.mts_weights)
       self.name.store(forceb.name)
 
    def fetch(self):
@@ -84,7 +84,7 @@ class InputForceComponent(Input):
       """
 
       super(InputForceComponent,self).fetch()
-      return ForceComponent(ffield=self.forcefield.fetch(), nbeads=self.nbeads.fetch(), weight=self.weight.fetch(), name=self.name.fetch(), mts_weight=self.mts_weight.fetch())
+      return ForceComponent(ffield=self.forcefield.fetch(), nbeads=self.nbeads.fetch(), weight=self.weight.fetch(), name=self.name.fetch(), mts_weights=self.mts_weights.fetch())
 
    def check(self):
       """Checks for optional parameters."""
@@ -138,5 +138,6 @@ class InputForces(Input):
 
       for el in flist:
          iff = InputForceComponent()
+         print "storing el in InputForces"
          iff.store(el)
          self.extra.append(("force", iff))
