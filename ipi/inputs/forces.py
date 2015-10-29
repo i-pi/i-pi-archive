@@ -51,14 +51,16 @@ class InputForceComponent(Input):
    default_help = "The class that deals with how each forcefield contributes to the overall potential, force and virial calculation."
    default_label = "FORCECOMPONENT"
 
-   def __init__(self, help=None, default=None):
+#   def __init__(self, help=None, default=None):
 #   def __init__(self, help=None, dimension=None, units=None, default=None, dtype=None):
-      """Initializes InputForceComponent.
+#      """Initializes InputForceComponent.
 
-      Just calls the parent initialization function with appropriate arguments.
-      """
 
-      super(InputForceComponent,self).__init__(default=default, help=help)
+
+##      Just calls the parent initialization function with appropriate arguments.
+#      """
+
+#     super(InputForceComponent,self).__init__(default=default, help=help)
 
    def store(self, forceb):
       """Takes a ForceComponent instance and stores a minimal
@@ -82,7 +84,7 @@ class InputForceComponent(Input):
       """
 
       super(InputForceComponent,self).fetch()
-      return ForceComponent(ffield=self.forcefield.fetch, nbeads=self.nbeads.fetch(), weight=self.weight.fetch(), name=self.name.fetch(), mts_weight=self.mts_weight.fetch())
+      return ForceComponent(ffield=self.forcefield.fetch(), nbeads=self.nbeads.fetch(), weight=self.weight.fetch(), name=self.name.fetch(), mts_weight=self.mts_weight.fetch())
 
    def check(self):
       """Checks for optional parameters."""

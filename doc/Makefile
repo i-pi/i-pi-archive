@@ -5,8 +5,8 @@
 # See the "licenses" directory for full license information.
 
 
-.PHONY : all distclean clean aux
-all : manual.pdf
+.PHONY: all distclean clean aux
+all: manual.pdf
 
 aux:
 	PYTHONPATH=.. python create_man.py
