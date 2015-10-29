@@ -277,7 +277,7 @@ class ForceComponent(dobject):
          Depends on each replica's ufvx list.
    """
 
-   def __init__(self, ffield="", nbeads=0, weight=1.0, name="", lmts=0, mts_weight):
+   def __init__(self, ffield, nbeads=0, weight=1.0, name="", mts_weight=0):
       """Initializes ForceComponent
 
       Args:
@@ -289,7 +289,7 @@ class ForceComponent(dobject):
             combined to give a total force, the contribution of this forcefield
             will be weighted by this factor.
          name: The name of the forcefield.
-         lmts: The MTS level at which this should be computed.
+         mts_weight: Weight of forcefield at each mts level.
       """
 
       self.ffield = ffield
@@ -297,7 +297,6 @@ class ForceComponent(dobject):
       self.nbeads = nbeads
       self.weight = weight
       self.mts_weight = mts_weight
-      self.lmts = lmts
 
    def bind(self, beads, cell, fflist):
       """Binds beads, cell and force to the forcefield.
@@ -511,7 +510,7 @@ class Forces(dobject):
          # if the number of beads for this force component is unspecified,
          # assume full force evaluation
          if newb == 0: newb = beads.nbeads
-         newforce = ForceComponent(ffield=fc.ffield, name=fc.name, nbeads=newb, weight=fc.weight, mts_weight=fc.mts_weight, lmts=fc.lmts)
+         newforce = ForceComponent(ffield=fc.ffield, name=fc.name, nbeads=newb, weight=fc.weight, mts_weight=fc.mts_weight)
          newbeads = Beads(beads.natoms, newb)
          newrpc = nm_rescale(beads.nbeads, newb)
 
@@ -665,11 +664,7 @@ class Forces(dobject):
 
    def nmtslevels(self):
       """ Returns the total number of mts levels."""
-       
-      big = 0
-      for index in range(len(self.mforces)):
-         big = max(big, self.mforces[index].lmts)
-      return big + 1
+      return len(self.mforces[0].mts_weight)
 
    def f_combine(self):
       """Obtains the total force vector."""

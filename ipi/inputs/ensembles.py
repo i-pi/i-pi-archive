@@ -84,7 +84,7 @@ class InputEnsemble(Input):
            "nmts" : (InputArray, {"dtype" : int,
                                             "default" : np.zeros(0,int),
                                             "help"    : "Number of iterations for each MTS level (including the outer loop, that should in most cases have just one iteration)."})
-         }
+          }
    dynamic = {  }
 
    default_help = "Holds all the information that is ensemble specific, such as the temperature and the external pressure, and the thermostats and barostats that control it."

@@ -17,8 +17,8 @@
       <velocities mode="thermal" units='kelvin'> 298 </velocities>
    </initialize>
    <forces>
-   <force mts_level="1"> lmpserial1 </force>
-   <force mts_level='0'> lmpserial2 </force>
+   <force forcefield ="lmpserial1" > [0,1]</force>
+   <force forcefield ="lmpserial2" > [1,0]</force>
    </forces>
    <ensemble mode='mts'>
       <thermostat mode='svr'>
