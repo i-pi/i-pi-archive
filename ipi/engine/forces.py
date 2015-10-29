@@ -650,10 +650,10 @@ class Forces(dobject):
       return vir
 
    def pots_component(self, index):
-      return self.mforces[index].weight*self.mforces[index].mts_weights.sum()*self.mrpc[index].b2tob1(self.mforces[index].pots)
+      return self.mforces[index].weight*self.mrpc[index].b2tob1(self.mforces[index].pots)
 
    def forces_component(self, index):
-      return self.mforces[index].weight*self.mforces[index].mts_weights.sum()*self.mrpc[index].b2tob1(depstrip(self.mforces[index].f))
+      return self.mforces[index].weight*self.mrpc[index].b2tob1(depstrip(self.mforces[index].f))
 
    def forces_mts(self, level):
       """ Fetches ONLY the forces associated with a given MTS level."""

@@ -17,8 +17,7 @@
       <velocities mode="thermal" units='kelvin'> 298 </velocities>
    </initialize>
    <forces>
-   <force forcefield ="lmpserial1" > <mts_weights>[0,2]</mts_weights></force>
-   <force forcefield ="lmpserial1" > <mts_weights>[0,-1]</mts_weights></force>
+   <force forcefield ="lmpserial1" > <mts_weights>[0,1]</mts_weights></force>
    <force forcefield ="lmpserial2" > <mts_weights>[1,0]</mts_weights></force>
    </forces>
    <ensemble mode='mts'>
