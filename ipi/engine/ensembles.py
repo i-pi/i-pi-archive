@@ -352,7 +352,6 @@ class MTSEnsemble(NVEEnsemble):
       nmtslevels = len(self.nmts)
       mk = self.nmts[index]  # mtslevels starts at level zero, where nmts should be 1 in most cases
       alpha *= mk
-      print "MTSLEVEL ", index, " NMTS ", mk, " alpha ", alpha
       for i in range(mk):  
       # propagate p for dt/2alpha with force at level index      
        self.ptime = -time.time()
@@ -378,7 +377,6 @@ class MTSEnsemble(NVEEnsemble):
    def step(self, step=None):
       """Does one simulation time step."""
 
-      print "STARTING A TIMESTEP" 
       # thermostat is applied at the outer loop
       self.ttime = -time.time()
       self.thermostat.step()
