@@ -50,7 +50,7 @@ def main(prefix, temp):
             ret = read_file("xyz", ipos[i])
             pos = ret["atoms"]
             ret = read_file("xyz", ifor[i])
-            forces = ret["atoms"]
+            force = ret["atoms"]
             if natoms == 0:
                natoms = pos.natoms
                beads = Beads(natoms,nbeads)
