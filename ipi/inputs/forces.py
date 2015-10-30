@@ -75,6 +75,7 @@ class InputForceComponent(Input):
       self.weight.store(forceb.weight)
       self.mts_weights.store(forceb.mts_weights)
       self.name.store(forceb.name)
+      self.forcefield.store(forceb.ffield)
 
    def fetch(self):
       """Creates a ForceComponent object.
