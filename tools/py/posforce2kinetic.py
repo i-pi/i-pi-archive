@@ -60,7 +60,7 @@ def main(prefix, temp):
                 forces[i].q = force.q
         except EOFError:
             # finished reading files
-            sys.exit(0)
+            break
 
         q = depstrip(beads.q)
         f = depstrip(forces.q)
@@ -85,6 +85,9 @@ def main(prefix, temp):
             ikod.write("%8s %12.5e %12.5e %12.5e\n" % (pos.names[i], kcv[i,3], kcv[i,4], kcv[i,5]))
 
         ifr += 1
+
+    ikin.close()
+    ikod.close()
 
 
 if __name__ == '__main__':
