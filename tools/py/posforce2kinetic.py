@@ -26,25 +26,51 @@ from ipi.utils.units import unit_to_internal, Constants
 
 def main(prefix, temp):
 
-    temp = unit_to_internal("energy", "kelvin", float(temp))
+    T = float(temp)
+    fns_pos = sorted(glob.glob(prefix + ".pos*"))
+    fns_for = sorted(glob.glob(prefix + ".for*"))
+    fn_out_kin = prefix + ".kin.xyz"
+    fn_out_kod = prefix + ".kod.xyz"
 
-    ipos = []
-    for filename in sorted(glob.glob(prefix + ".pos*")):
-        ipos.append(open(filename, "r"))
+    # check that we found the same number of positions and forces files
+    nbeads = len(fns_pos)
+    if nbeads != len(fns_for):
+        print fns_pos
+        print fns_for
+        raise ValueError("Mismatch between number of input files for forces and positions.")
 
-    ifor = []
-    for filename in sorted(glob.glob(prefix + ".for*")):
-        ifor.append(open(filename, "r"))
+    # print some information
+    print 'temperature = {:f} K'.format(T)
+    print
+    print 'number of beads = {:d}'.format(nbeads)
+    print
+    print 'positions and forces file names:'
+    for fn_pos, fn_for in zip(fns_pos, fns_for):
+        print '{:s}   {:s}'.format(fn_pos, fn_for)
+    print
+    print 'output file names:'
+    print fn_out_kin
+    print fn_out_kod
+    print
 
-    ikin = open(prefix + ".kin.xyz", "w")
-    ikod = open(prefix + ".kod.xyz", "w")
+    temp = unit_to_internal("energy", "kelvin", T)
 
-    nbeads = len(ipos)
-    if nbeads != len(ifor):
-        raise ValueError("Mismatch between number of output files for forces and positions")
+    # open input and output files
+    ipos = [open(fn, "r") for fn in fns_pos]
+    ifor = [open(fn, "r") for fn in fns_for]
+    ikin = open(fn_out_kin, "w")
+    ikod = open(fn_out_kod, "w")
+
     natoms = 0
     ifr = 0
     while True:
+
+        # print progress
+        if ifr % 100 == 0:
+            print '\rProcessing frame {:d}'.format(ifr),
+            sys.stdout.flush()
+
+        # load one frame
         try:
             for i in range(nbeads):
                 ret = read_file("xyz", ipos[i])
@@ -62,6 +88,7 @@ def main(prefix, temp):
             # finished reading files
             break
 
+        # calculate kinetic energies
         q = depstrip(beads.q)
         f = depstrip(forces.q)
         qc = depstrip(beads.qc)
@@ -78,6 +105,7 @@ def main(prefix, temp):
         kcv[:,0:3] += 0.5 * Constants.kb * temp
         kcv[:,3:6] *= 0.5
 
+        # write output
         ikin.write("%d\n# Centroid-virial kinetic energy estimator [a.u.] - diagonal terms: xx yy zz\n" % natoms)
         ikod.write("%d\n# Centroid-virial kinetic energy estimator [a.u.] - off-diag terms: xy xz yz\n" % natoms)
         for i in range(natoms):
@@ -85,6 +113,8 @@ def main(prefix, temp):
             ikod.write("%8s %12.5e %12.5e %12.5e\n" % (pos.names[i], kcv[i,3], kcv[i,4], kcv[i,5]))
 
         ifr += 1
+
+    print '\rProcessed {:d} frames.'.format(ifr)
 
     ikin.close()
     ikod.close()
