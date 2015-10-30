@@ -258,6 +258,7 @@ class Simulation(dobject):
 
             self.chk.store()
 
+            stepthreads = []
             if self.mode == "static":
                 for s in self.syslist:
                     s.mover.step(step=self.step)
