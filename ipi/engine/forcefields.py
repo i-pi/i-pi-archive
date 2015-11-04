@@ -284,7 +284,7 @@ class FFLennardJones(ForceField):
                          'start': starting time}.
     """
 
-    def __init__(self, latency=1.0, name="", pars=None, dopbc=False):
+    def __init__(self, latency=1.0e-3, name="", pars=None, dopbc=False):
         """Initialises FFLennardJones.
 
         Args:
@@ -320,25 +320,22 @@ class FFLennardJones(ForceField):
         """Just a silly function evaluating a non-cutoffed, non-pbc and
         non-neighbour list LJ potential."""
 
-        q = r["pos"].reshape((len(r["pos"])/3, 3))
-        f = np.zeros(q.shape)
-        dij = np.zeros(3, float)
+        q = r["pos"].reshape((-1, 3))
         nat = len(q)
-        v = 0
-        f[:] = 0
-        for i in range(nat):
-            for j in range(i):
-                dij[:] = q[i] - q[j]
-                rij2 = dij[0]*dij[0] + dij[1]*dij[1] + dij[2]*dij[2]
 
-                x2 = self.sigma2 / rij2
-                x6 = x2 * x2 * x2
-                x12 = x6 * x6
+        v = 0.0
+        f = np.zeros(q.shape)
+        for i in range(1, nat):
+            dij = q[i] - q[:i]
+            rij2 = (dij**2).sum(axis=1)
 
-                v += x12 - x6
-                dij *= self.sixepsfour * (x12 + x12 - x6) / rij2
-                f[i] += dij
-                f[j] -= dij
+            x6 = (self.sigma2 / rij2)**3
+            x12 = x6**2
+
+            v += (x12 - x6).sum()
+            dij *= (self.sixepsfour * (2.0*x12 - x6) / rij2)[:,np.newaxis]
+            f[i] += dij.sum(axis=0)
+            f[:i] -= dij
 
         v *= self.epsfour
 
