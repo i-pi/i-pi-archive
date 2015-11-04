@@ -284,20 +284,22 @@ class FFLennardJones(ForceField):
                          'start': starting time}.
     """
 
-    def __init__(self, latency=1.0, name="", pars=None, dopbc=False, threaded=True):
+    def __init__(self, latency=1.0, name="", pars=None, dopbc=False):
         """Initialises FFLennardJones.
 
         Args:
            pars: Optional dictionary, giving the parameters needed by the driver.
         """
 
+        # check input - PBCs are not implemented here
+        if dopbc:
+            raise ValueError("Periodic boundary conditions are not supported by FFLennardJones.")
+
         # a socket to the communication library is created or linked
-        # NEVER DO PBC -- forces here are computed without.
         super(FFLennardJones, self).__init__(latency, name, pars, dopbc=False)
         self.epsfour = float(self.pars["eps"]) * 4
         self.sixepsfour = 6 * self.epsfour
         self.sigma2 = float(self.pars["sigma"]) * float(self.pars["sigma"])
-        self.threaded = threaded
 
     def poll(self):
         """Polls the forcefield checking if there are requests that should
@@ -310,14 +312,7 @@ class FFLennardJones(ForceField):
             for r in self.requests:
                 if r["status"] == "Queued":
                     r["status"] = "Running"
-
-                    # An extra layer of threading, if wanted
-                    if self.threaded:
-                        newthread = threading.Thread(target=self.evaluate, args=[r])
-                        newthread.daemon = True
-                        newthread.start()
-                    else:
-                        self.evaluate(r)
+                    self.evaluate(r)
         finally:
             self._threadlock.release()
 
