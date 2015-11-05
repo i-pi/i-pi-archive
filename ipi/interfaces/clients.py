@@ -92,14 +92,24 @@ class Client(DriverSocket):
 
         t0 = time.time()
 
+        fmt_header = '{:>6s} {:>10s} {:>10s} {:>10s}'
+        fmt_step = '{:6d} {:10.3f} {:10.3f} {:10.1f}'
+
+        if t_max is None:
+            print 'Starting communication loop with no maximum run time.'
+        else:
+            print 'Starting communication loop with a maximum run time of {:d} seconds.'.format(t_max)
+
         if verbose:
-            if t_max is None:
-                print 'Starting communication loop with no maximum run time.'
-            else:
-                print 'Starting communication loop with a maximum run time of {:d} seconds.'.format(t_max)
+            header = fmt_header.format('step', 'time', 'avg time', 'remaining')
+            print
+            print header
+            print len(header) * '-'
+
+        i_step = 0
+        t_step_tot = 0.0
 
         try:
-            i_step = 0
             while True:
 
                 # receive message
@@ -124,9 +134,10 @@ class Client(DriverSocket):
                     if verbose:
                         t_now = time.time()
                         t_step = t_now - t0_step
+                        t_step_tot += t_step
+                        t_step_avg = t_step_tot / (i_step + 1)
                         t_remain = t_max - (t_now - t0)
-                        print 'Step time: {:7.3f} s'.format(t_step)
-                        # TODO: also print step number, total run time, remaining, average per step
+                        print fmt_step.format(i_step, t_step, t_step_avg, t_remain)
                     self.havedata = True
                     i_step += 1
                 elif msg == Message("getforce"):
