@@ -43,7 +43,10 @@ atoms.set_calculator(
     )
 )
 
-# create the socket client and run it
+# create the socket client...
 client = ClientASE(atoms, address='ase')
 #client = ClientASE(atoms, mode='inet', address='localhost', port=12345)
-client.run(t_max=35, fn_exit='EXIT_ASE')
+
+# ... and run it
+client.run(t_max=35, fn_exit='EXIT_ASE')   # test max run time feature
+client.run(fn_exit='EXIT_ASE')

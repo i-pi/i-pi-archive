@@ -85,20 +85,22 @@ class Client(DriverSocket):
         routine _getforce.
 
         Arguments:
-            - verbose: enable priting of timing and other information
+            - verbose: enable priting of step timing information
             - t_max: optional maximum wall clock run time in seconds
             - fn_exit: name of an exit file - will terminate if found
         """
 
         t0 = time.time()
 
-        fmt_header = '{:>6s} {:>10s} {:>10s} {:>10s}'
-        fmt_step = '{:6d} {:10.3f} {:10.3f} {:10.1f}'
+        fmt_header = '{:>6s} {:>10s} {:>10s}'
+        fmt_step = '{:6d} {:10.3f} {:10.3f}'
 
         if t_max is None:
             print 'Starting communication loop with no maximum run time.'
         else:
             print 'Starting communication loop with a maximum run time of {:d} seconds.'.format(t_max)
+            fmt_header += ' {:>10s}'
+            fmt_step += ' {:10.1f}'
 
         if verbose:
             header = fmt_header.format('step', 'time', 'avg time', 'remaining')
@@ -108,6 +110,7 @@ class Client(DriverSocket):
 
         i_step = 0
         t_step_tot = 0.0
+        t_remain = None
 
         try:
             while True:
@@ -136,7 +139,8 @@ class Client(DriverSocket):
                         t_step = t_now - t0_step
                         t_step_tot += t_step
                         t_step_avg = t_step_tot / (i_step + 1)
-                        t_remain = t_max - (t_now - t0)
+                        if t_max is not None:
+                            t_remain = t_max - (t_now - t0)
                         print fmt_step.format(i_step, t_step, t_step_avg, t_remain)
                     self.havedata = True
                     i_step += 1
@@ -154,12 +158,10 @@ class Client(DriverSocket):
 
                 # check exit conditions - run time or exit file
                 if t_max is not None and time.time() - t0 > t_max:
-                        if verbose:
-                            print 'Maximum run time of {:d} seconds exceeded.'.format(t_max)
+                        print 'Maximum run time of {:d} seconds exceeded.'.format(t_max)
                         break
                 if fn_exit is not None and os.path.exists(fn_exit):
-                        if verbose:
-                            print 'Exit file "{:s}" found. Removing file.'.format(fn_exit)
+                        print 'Exit file "{:s}" found. Removing file.'.format(fn_exit)
                         os.remove(fn_exit)
                         break
 
@@ -168,8 +170,8 @@ class Client(DriverSocket):
         except KeyboardInterrupt:
             print ' Keyboard interrupt.'
 
-        if verbose:
-            print 'Communication loop finished.'
+        print 'Communication loop finished.'
+        print
 
 
 class ClientASE(Client):
