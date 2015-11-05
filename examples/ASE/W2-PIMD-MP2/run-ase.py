@@ -46,4 +46,4 @@ atoms.set_calculator(
 # create the socket client and run it
 client = ClientASE(atoms, address='ase')
 #client = ClientASE(atoms, mode='inet', address='localhost', port=12345)
-client.run(verbose=True, t_max=35, fn_exit='EXIT_ASE')
+client.run(t_max=35, fn_exit='EXIT_ASE')
