@@ -33,7 +33,7 @@ os.environ['GAUSS_SCRDIR'] = '/dev/shm'
 atoms = ase.io.read('W2-MP2-6311ppGss.xyz')
 atoms.set_calculator(
     Gaussian(
-        xc = 'MP2',
+        method = 'MP2',
         # Note that 6-31G is for faster testing only, not a good basis set
         # for gas-phase W2. Use the bigger one instead.
         basis = '6-31G',
