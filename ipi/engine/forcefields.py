@@ -31,6 +31,7 @@ class ForceRequest(dict):
 
     Standard dicts are checked for equality if elements have the same value.
     Here I only care if requests are instances of the very same object.
+    This is useful for the `in` operator, which uses equality to test membership.
     """
 
     def __eq__(self, y):
