@@ -162,7 +162,7 @@ class DriverSocket(socket.socket):
                warning(" @SOCKET:  Couldn't receive within %5d attempts. Time to give up!" % (NTIMEOUT), verbosity.low)
                raise Disconnected()
             pass
-         if (not timeout and bpart == 0):
+         if not timeout and len(bpart) == 0:
             raise Disconnected()
          bpos += len(bpart)
 
@@ -230,6 +230,7 @@ class Driver(DriverSocket):
 
       if not self.waitstatus:
          try:
+            # TODO: this can sometimes hang, needs suitable timeout
             readable, writable, errored = select.select([], [self], [])
             if self in writable:
                self.sendall(Message("status"))
