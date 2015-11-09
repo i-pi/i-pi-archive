@@ -161,7 +161,7 @@ class DriverSocket(socket.socket):
                warning(" @SOCKET:  Couldn't receive within %5d attempts. Time to give up!" % (NTIMEOUT), verbosity.low)
                raise Disconnected()
             pass
-         if (not timeout and bpart == 0):
+         if (not timeout and len(bpart) == 0):
             raise Disconnected()
          bpos += len(bpart)
 
