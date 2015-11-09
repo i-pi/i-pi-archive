@@ -88,27 +88,39 @@ def print_file(mode, atoms, cell, filedesc=sys.stdout, title=""):
 
 
 def read_file(mode, filedesc, **kwargs):
-    """Takes a `mode`-style file and creates an Atoms object.
+    """Reads one frame from an open `mode`-style file.
 
     Args:
         filedesc: An open readable file object from a `mode` formatted file.
         All other args are passed directly to the responsible io function.
 
     Returns:
-        An Atoms object with the appropriate atom labels, masses and positions.
+        A dictionary with 'atoms', 'cell' and 'comment'.
     """
     return _get_io_function(mode, "read")(filedesc=filedesc, **kwargs)
 
 
+def read_file_name(filename):
+    """Read one frame from file, guessing its format from the extension.
+
+    Args:
+        filename: Name of input file.
+
+    Returns:
+        A dictionary with 'atoms', 'cell' and 'comment'.
+    """
+
+    return read_file(os.path.splitext(filename)[1], open(filename))
+
+
 def iter_file(mode, filedesc):
-    """Takes a `mode`-style file and yields one Atoms object after another.
+    """Takes an open `mode`-style file and yields one Atoms object after another.
 
     Args:
         filedesc: An open readable file object from a `mode` formatted file.
 
     Returns:
-        Generator over the xyz trajectory, that yields
-        Atoms objects with the appropriate atom labels, masses and positions.
+        Generator of frames (dictionary with 'atoms', 'cell' and 'comment') from the trajectory.
     """
     return _get_io_function(mode, "iter")(filedesc=filedesc)
 
@@ -120,7 +132,7 @@ def iter_file_name(filename):
         filename: Filename of a trajectory file.
 
     Returns:
-        Generator of frames from the trajectory in `filename`.
+        Generator of frames (dictionary with 'atoms', 'cell' and 'comment') from the trajectory in `filename`.
     """
 
     return iter_file(os.path.splitext(filename)[1], open(filename))
@@ -140,7 +152,6 @@ def open_backup(filename, mode='r', buffering=-1, verbose=True):
 
     Returns:
         An open file as returned by `open`.
-
     """
 
     if mode.startswith('w'):
