@@ -113,7 +113,7 @@ def iter_file(mode, filedesc):
     return _get_io_function(mode, "iter")(filedesc=filedesc)
 
 
-def iter_file_guess(filename):
+def iter_file_name(filename):
     """Open a trajectory file, guessing its format from the extension.
 
     Args:
@@ -126,11 +126,25 @@ def iter_file_guess(filename):
     return iter_file(os.path.splitext(filename)[1], open(filename))
 
 
-def safe_open(filename, mode='r', buffering=-1):
-    """A wrapper around `open` which saves backup files."""
+def open_backup(filename, mode='r', buffering=-1, verbose=True):
+    """A wrapper around `open` which saves backup files.
 
-    if mode == 'w':
-        # if writing, make sure file is not overwritten
+    If the file is opened in write mode and already exists, it is first
+    backed up under a new file name, keeping all previous backups. Then,
+    a new file is opened for writing.
+
+    For reference: https://docs.python.org/2/library/functions.html#open
+
+    Args:
+        The same as for `open`.
+
+    Returns:
+        An open file as returned by `open`.
+
+    """
+
+    if mode.startswith('w'):
+        # If writing, make sure nothing is not overwritten.
 
         i = 0
         fn_backup = filename
@@ -140,15 +154,14 @@ def safe_open(filename, mode='r', buffering=-1):
 
         if fn_backup != filename:
             os.rename(filename, fn_backup)
-            print 'Backup performed: %s -> %s' % (filename, fn_backup)
-            print
-
-    elif (mode == 'r') or (mode == 'a'):
-        # read or append, no danger of overwritten files
-        pass
+            if verbose:
+                print 'Backup performed: %s -> %s' % (filename, fn_backup)
+                print
 
     else:
-        # well, this is unexpected, complain
-        raise NotImplementedError('Unsupported file open mode: %s.' % mode)
+        # There is no need to back up.
+        # `open` will sort out whether `mode` is valid.
+        pass
 
     return open(filename, mode, buffering)
+
