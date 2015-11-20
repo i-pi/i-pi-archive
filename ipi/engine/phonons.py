@@ -38,98 +38,16 @@ from ipi.utils.softexit import softexit
 from ipi.utils.mintools import min_brent, min_approx, BFGS, L_BFGS, L_BFGS_nls
 from ipi.utils.messages import verbosity, warning, info
 
-class LineMover(object):
-   """Creation of the one-dimensional function that will be minimized.
-   Used in steepest descent and conjugate gradient minimizers
-   
-   Attributes:
-       x0: initial position
-       d: move direction
-   """
-   
-   def __init__(self):
-      self.x0 = self.d = None
-
-   def bind(self, ens):
-      self.dbeads = ens.beads.copy()
-      self.dcell = ens.cell.copy()
-      self.dforces = ens.forces.copy(self.dbeads, self.dcell)      
-      
-   def set_dir(self, x0, mdir):      
-      self.x0 = x0.copy()
-      self.d = mdir.copy()/np.sqrt(np.dot(mdir.flatten(),mdir.flatten()))
-      if self.x0.shape != self.d.shape: raise ValueError("Incompatible shape of initial value and displacement direction")      
-   
-   def __call__(self, x):
-            
-      self.dbeads.q = self.x0 + self.d * x
-      e = self.dforces.pot # Energy
-      g = - np.dot(depstrip(self.dforces.f).flatten(),self.d.flatten()) # Gradient
-      return e, g
-   
-class BFGSMover(object):
-   """ Creation of the multi-dimensional function that will be minimized.
-   Used in the BFGS and L-BFGS minimizers
-   
-   Attributes:
-       x0: initial position
-       d: move direction
-       xold: previous position
-   """
-
-   def __init__(self):
-      self.x0 = self.d = self.xold = None
-
-   def bind(self, ens):
-      self.dbeads = ens.beads.copy()
-      self.dcell = ens.cell.copy()
-      self.dforces = ens.forces.copy(self.dbeads, self.dcell)
-
-   def __call__(self, x):
-      self.dbeads.q = x
-      e = self.dforces.pot # Energy
-      g = - self.dforces.f # Gradient
-      return e, g        
-
-class GeopMover(Mover):
-   """Geometry optimization routine. Controls direction choice for 
-   steepest descent and conjugate gradient. Checks for satisfaction of 
-   tolerances to exit minimization. 
+class Dynmatrix(Mover):
+   """Dynamic matrix calculation routine. Computes the force constant matrix and then discrete Fourier 
+      interpolation.
 
    Attributes:
-      mode: minimization algorithm to use
-      maximum_step: max allowed step size for BFGS/L-BFGS
-      cg_old_force: force on previous step
-      cg_old_direction: move direction on previous step
-      invhessian: stored inverse Hessian matrix for BFGS
-      ls_options: 
-         tolerance: energy tolerance for exiting minimization algorithm
-         iter: maximum number of allowed iterations for minimization algorithm for each MD step
-         step: initial step size for steepest descent and conjugate gradient
-         adaptive: T/F adaptive step size for steepest descent and conjugate 
-            gradient
-      tolerances:
-         energy: change in energy tolerance for ending minimization
-         force: force/change in force tolerance foe ending minimization
-         position: change in position tolerance for ending minimization
-      corrections: number of corrections to be stored for L-BFGS
-      qlist: list of previous positions (x_n+1 - x_n) for L-BFGS. Number of entries = corrections
-      glist: list of previous gradients (g_n+1 - g_n) for L-BFGS. Number of entries = corrections      
+      epsilon: list of previous gradients (g_n+1 - g_n) for L-BFGS. Number of entries = corrections      
 
    """
 
-   def __init__(self, fixcom=False, fixatoms=None,
-             mode = "sd", 
-             maximum_step = 100.0,
-             cg_old_force = np.zeros(0, float),
-             cg_old_direction = np.zeros(0, float),
-             invhessian = np.eye(0, 0, 0, float), 
-             ls_options = { "tolerance": 1e-6, "iter": 100.0 , "step": 1e-3, "adaptive": 1.0 },
-             tolerances = {"energy" : 1e-8, "force": 1e-8, "position": 1e-8},
-             corrections = 5,
-             qlist = np.zeros(0, float),
-             glist = np.zeros(0, float)
-             ) :   
+   def __init__(self, fixcom=False, fixatoms=None, epsilon=0.01) :   
                  
       """Initialises GeopMover.
 
@@ -140,52 +58,46 @@ class GeopMover(Mover):
 
       super(GeopMover,self).__init__(fixcom=fixcom, fixatoms=fixatoms)
       
-      # optimization options
-      self.ls_options = ls_options
-      self.tolerances = tolerances
-      self.mode = mode
-      self.max_step = maximum_step
-      self.cg_old_f = cg_old_force
-      self.cg_old_d = cg_old_direction
-      self.invhessian = invhessian
-      self.corrections = corrections
-      self.qlist = qlist
-      self.glist = glist
-        
-      self.lm = LineMover()
-      self.bfgsm = BFGSMover()      
+      #Finite difference option.
+      self.epsilon = epsilon
    
    def bind(self, ens, beads, nm, cell, bforce, bbias, prng):
       
       super(GeopMover,self).bind(ens, beads, nm, cell, bforce, bbias, prng)
-      if self.cg_old_f.shape != beads.q.size :
-         if self.cg_old_f.size == 0: 
-            self.cg_old_f = np.zeros(beads.q.size, float)
-         else: 
-            raise ValueError("Conjugate gradient force size does not match system size")
-      if self.cg_old_d.size != beads.q.size :
-         if self.cg_old_d.size == 0: 
-            self.cg_old_d = np.zeros(beads.q.size, float)
-         else: 
-            raise ValueError("Conjugate gradient direction size does not match system size")
-      if self.invhessian.size != (beads.q.size * beads.q.size):
-          if self.invhessian.size == 0:
-              self.invhessian = np.eye(beads.q.size, beads.q.size, 0, float)
-          else:
-            raise ValueError("Inverse Hessian size does not match system size")
+      #if self.cg_old_f.shape != beads.q.size :
+      #   if self.cg_old_f.size == 0: 
+      #      self.cg_old_f = np.zeros(beads.q.size, float)
+      #   else: 
+      #      raise ValueError("Conjugate gradient force size does not match system size")
+      #if self.cg_old_d.size != beads.q.size :
+      #   if self.cg_old_d.size == 0: 
+      #      self.cg_old_d = np.zeros(beads.q.size, float)
+      #   else: 
+      #      raise ValueError("Conjugate gradient direction size does not match system size")
             
-      self.lm.bind(self)
-      self.bfgsm.bind(self)
-      
    def step(self, step=None):
-      """Does one simulation time step."""
+      """Calculates one derivative of force."""
 
       self.ptime = self.ttime = 0
       self.qtime = -time.time()
 
       info("\nMD STEP %d" % step, verbosity.debug)
 
-      if (self.mode == "bfgs"):
+       if (self.dforces is None) :
+         self.dbeads = self.beads.copy()
+         self.dcell = self.cell.copy()
+         self.dforces = self.copy(self.dbeads, self.dcell 
+
+
+
+
+
+
+
+
+
+
+     if (self.mode == "bfgs"):
 
           # BFGS Minimization
           # Initialize approximate Hessian inverse to the identity and direction
