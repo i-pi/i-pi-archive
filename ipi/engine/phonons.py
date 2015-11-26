@@ -49,7 +49,6 @@ class Dynmatrix(Mover):
    """
 
    def __init__(self, fixcom=False, fixatoms=None, epsilon=0.01,oldj=0,oldk=0,oldhessian=np.zeros(0,float) :   
-                 
       """Initialises GeopMover.
 
       Args:
@@ -59,12 +58,6 @@ class Dynmatrix(Mover):
 
       super(GeopMover,self).__init__(fixcom=fixcom, fixatoms=fixatoms)
       
-      #Finite difference option.
-      self.epsilon = epsilon
-      self.oldj = oldj
-      self.oldk = oldk
-      self.hessian = oldhessian
-   
    def bind(self, ens, beads, nm, cell, bforce, bbias, prng):
       
       super(GeopMover,self).bind(ens, beads, nm, cell, bforce, bbias, prng)
@@ -79,10 +72,9 @@ class Dynmatrix(Mover):
       #   else: 
       #      raise ValueError("Conjugate gradient direction size does not match system size")
             
-   def step(self, j, k, step=None):
-      """Calculates the jth derivative of force on the kth atom."""
+   def step(self, step=None):
+      """Does one simulation time step."""
 
-      
       self.ptime = self.ttime = 0
       self.qtime = -time.time()
 
@@ -103,6 +95,4 @@ class Dynmatrix(Mover):
       #hessian = 2*(fminus - fplus)/2.0/epsilon
 
       #append it to self.Hessian
-
-
 
