@@ -39,7 +39,7 @@ class Dynmatrix(Mover):
       oldk   : value of k in previous step.
    """
 
-   def __init__(self, fixcom=False, fixatoms=None, epsilon=0.001,oldj=0,oldk=0,noldbead=0,oldhessian=np.zeros(0, float)) :   
+   def __init__(self, fixcom=False, fixatoms=None, epsilon=0.001,oldk=0,noldbead=0,oldhessian=np.zeros(0, float)) :   
                  
       """Initialises Dynmatrix.
       Args:
@@ -52,7 +52,6 @@ class Dynmatrix(Mover):
       
       #Finite difference option.
       self.epsilon = epsilon
-      self.oldj = oldj
       self.oldk = oldk
       self.hessian = oldhessian
       self.noldbead =noldbead
@@ -85,31 +84,28 @@ class Dynmatrix(Mover):
 			self.dbeads = self.beads.copy()
 			self.dcell = self.cell.copy()
 			self.dforces = self.bforce.copy(self.dbeads, self.dcell) 
+			
+	#initialze the vector if doesn't exit or reinitialyze to zero all components a 3N vector
+		self.delta = np.zeros(self.beads.nbeads * 3 * self.dbeads.natoms, float)	   
+		self.delta[k]=self.epsilon
 	#delta = an array with all ements equal to 0 except that kth element is epsilon.
     #displaces kth d.o.f by epsilon.	  	  			  
-		self.dbeads.q = self.beads.q + gen_delta(k)  #making it one raw 3N long
-		fplus = - destrip(self.dforces.f)[k]
+		self.dbeads.q = self.beads.q + self.delta  #making it one raw 3N long
+		fplus = - destrip(self.dforces.f)
+		m_plus = destrip(self.beads.sm3[-1][k])
 	# displaces kth d.o.f by -epsilon.	  
-		self.dbeads.q = self.beads.q - gen_delta(k) 
-		fminus =  - destrip(self.dforces.f)[k]
-	# computes the derivative			  
-		forces_raw = (fplus-fminus)/(2*self.epsilon)
-	#change the array value or add the array if does not exit
-		if self.hessian.size < k:
-			self.hessian = np.column_stack([sef.hessian, forces_raw])
+		self.dbeads.q = self.beads.q - self.delta 
+	#force of the displaced force divided by the 
+		fminus =  - destrip(self.dforces.f)
+		m_minus = destrip(self.beads.sm3[-1][k])
+	# computes the derivative with each component divided by the mass matrix
+		forces_raw = (fplus-fminus)/(2*self.epsilon*m_plus*m_minus)
+	#change the line value or add the line if does not exit to the matrix
+		if self.hessian.shape[0] - 1 < k: #because k going from 0 to (3N-1)
+			self.hessian = np.vstack([self.hessian, forces_raw])
         else:
-			self.hessian[:,k] = forces_raw
-		  
-	#update the row k per bead
-	   
-	def gen_delta(self, k):
-		"""Change the delta which becomes an array with 1 to the kth index
-		and zero elsewhere 3N long
-		"""
-	#initialze the vector if doesn't exit or reinitialyze to zero all components a 3N vector
-	#self.delta = np.zeros(beads.q.size, float)
-		self.delta = np.zeros(self.dbeads.nbeads * 3 * self.dbeads.natoms, float)	   
-		self.delta[k]=self.epsilon
+	#update the hessian on the kth line if existing
+			self.hessian[k,:] = forces_raw
 		
 	
 		
