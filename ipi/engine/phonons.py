@@ -87,7 +87,7 @@ class Dynmatrix(Mover):
 			self.dforces = self.bforce.copy(self.dbeads, self.dcell) 
 	#delta = an array with all ements equal to 0 except that kth element is epsilon.
     #displaces kth d.o.f by epsilon.	  	  			  
-		self.dbeads.q = self.beads.q + gen_delta(k)  
+		self.dbeads.q = self.beads.q + gen_delta(k)  #making it one raw 3N long
 		fplus = - destrip(self.dforces.f)[k]
 	# displaces kth d.o.f by -epsilon.	  
 		self.dbeads.q = self.beads.q - gen_delta(k) 
@@ -104,10 +104,10 @@ class Dynmatrix(Mover):
 	   
 	def gen_delta(self, k):
 		"""Change the delta which becomes an array with 1 to the kth index
-		and zero elsewhere
+		and zero elsewhere 3N long
 		"""
 	#initialze the vector if doesn't exit or reinitialyze to zero all components a 3N vector
-		#self.delta = np.zeros(beads.q.size, float)
+	#self.delta = np.zeros(beads.q.size, float)
 		self.delta = np.zeros(self.dbeads.nbeads * 3 * self.dbeads.natoms, float)	   
 		self.delta[k]=self.epsilon
 		
