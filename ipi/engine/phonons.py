@@ -31,13 +31,9 @@ from ipi.utils.mintools import min_brent, min_approx, BFGS, L_BFGS, L_BFGS_nls
 from ipi.utils.messages import verbosity, warning, info
 
 class Dynmatrix(Mover):
-   """Dynamic matrix calculation routine. Computes the force constant matrix and then discrete Fourier 
-      interpolation.
-
-   Attributes:
-      oldj   : value of j in previous step.
-      oldk   : value of k in previous step.
-   """
+    """Dynamic matrix calculation routine. Computes the force constant matrix and then discrete Fourier 
+          interpolation.
+    """
 
     def __init__(self, fixcom=False, fixatoms=None, epsilon=0.001,oldk=0,noldbead=0,oldhessian=np.zeros(0, float)) :   
                  
@@ -56,40 +52,40 @@ class Dynmatrix(Mover):
         self.hessian = oldhessian
         self.noldbead =noldbead
    
-	def bind(self, ens, beads, nm, cell, bforce, bbias, prng):
+    def bind(self, ens, beads, nm, cell, bforce, bbias, prng):
       
-		super(Dynmatrix,self).bind(ens, beads, nm, cell, bforce, bbias, prng)
+        super(Dynmatrix,self).bind(ens, beads, nm, cell, bforce, bbias, prng)
             
-	def step(self, k, step=None):
+    def step(self, k, step=None):
       """Calculates the kth derivative of force by finite differences.            
       """
       
-		self.ptime = self.ttime = 0
-		self.qtime = -time.time()
+        self.ptime = self.ttime = 0
+        self.qtime = -time.time()
 
-		info("\nDynmtarix STEP %d" % step, verbosity.debug)
-	
-	    #initialise des donnes du system compris par IPI
-		if(self.dforces is None) :#formations of duplicates
-			self.dbeads = self.beads.copy()
-			self.dcell = self.cell.copy()
-			self.dforces = self.bforce.copy(self.dbeads, self.dcell) 
-			
-	    #initialze the vector if doesn't exit or reinitialyze to zero all components a 3N vector
-		self.delta = np.zeros(self.beads.nbeads * 3 * self.dbeads.natoms, float)	   
-	    #delta = an array with all ements equal to 0 except that kth element is epsilon.
-        #displaces kth d.o.f by epsilon.	  	  			  
-		self.dbeads.q = self.beads.q + self.delta  #making it one raw 3N long
-		fplus = - destrip(self.dforces.f)
-	    #displaces kth d.o.f by -epsilon.	  
-		self.dbeads.q = self.beads.q - self.delta 
-		fminus =  - destrip(self.dforces.f)
-	    #computes a row of force-constant matrix
-		forces_raw = (fplus-fminus)/(2*self.epsilon*destrip(self.beads.sm3[-1][k]))/destrip(self.beads.sm3[-1])
-	    #change the line value or add the line if does not exit to the matrix
-		if self.hessian.shape[0] - 1 < k: #because k going from 0 to (3N-1)
-			self.hessian = np.vstack([self.hessian, forces_raw])
+        info("\nDynmtarix STEP %d" % step, verbosity.debug)
+    
+        #initialise des donnes du system compris par IPI
+        if(self.dforces is None) :#formations of duplicates
+            self.dbeads = self.beads.copy()
+            self.dcell = self.cell.copy()
+            self.dforces = self.bforce.copy(self.dbeads, self.dcell) 
+            
+        #initialze the vector if doesn't exit or reinitialyze to zero all components a 3N vector
+        self.delta = np.zeros(self.beads.nbeads * 3 * self.dbeads.natoms, float)       
+        #delta = an array with all ements equal to 0 except that kth element is epsilon.
+        #displaces kth d.o.f by epsilon.                          
+        self.dbeads.q = self.beads.q + self.delta  #making it one raw 3N long
+        fplus = - destrip(self.dforces.f)
+        #displaces kth d.o.f by -epsilon.      
+        self.dbeads.q = self.beads.q - self.delta 
+        fminus =  - destrip(self.dforces.f)
+        #computes a row of force-constant matrix
+        forces_raw = (fplus-fminus)/(2*self.epsilon*destrip(self.beads.sm3[-1][k]))/destrip(self.beads.sm3[-1])
+        #change the line value or add the line if does not exit to the matrix
+        if self.hessian.shape[0] - 1 < k: #because k going from 0 to (3N-1)
+            self.hessian = np.vstack([self.hessian, forces_raw])
         else:
-	    #update the hessian on the kth line if existing
-			self.hessian[k,:] = forces_raw
+        #update the hessian on the kth line if existing
+            self.hessian[k,:] = forces_raw
 
