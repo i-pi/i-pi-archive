@@ -17,7 +17,7 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <http.//www.gnu.org/licenses/>.
 """
 
-__all__=['Dynmatrix']
+__all__=['ForceConstMover']
 
 import numpy as np
 import time
@@ -30,31 +30,30 @@ from ipi.utils.softexit import softexit
 from ipi.utils.mintools import min_brent, min_approx, BFGS, L_BFGS, L_BFGS_nls
 from ipi.utils.messages import verbosity, warning, info
 
-class Dynmatrix(Mover):
+class ForceConstMover(Mover):
     """Dynamic matrix calculation routine. Computes the force constant matrix and then discrete Fourier 
           interpolation.
     """
 
-    def __init__(self, fixcom=False, fixatoms=None, epsilon=0.001,oldk=0,noldbead=0,oldhessian=np.zeros(0, float)) :   
+    def __init__(self, fixcom=False, fixatoms=None, epsilon=0.001, oldk=0, oldhessian=np.zeros(0, float)):   
                  
-        """Initialises Dynmatrix.
+        """Initialises ForceConstMover.
         Args:
         fixcom: An optional boolean which decides whether the centre of mass
                 motion will be constrained or not. Defaults to False. 
                 THe Hessian is an array of matrix for each beads.        
         """
 
-        super(Dynmatrix,self).__init__(fixcom=fixcom, fixatoms=fixatoms)
+        super(ForceConstMover,self).__init__(fixcom=fixcom, fixatoms=fixatoms)
       
         #Finite difference option.
         self.epsilon = epsilon
         self.oldk = oldk
         self.hessian = oldhessian
-        self.noldbead =noldbead
    
     def bind(self, ens, beads, nm, cell, bforce, bbias, prng):
       
-        super(Dynmatrix,self).bind(ens, beads, nm, cell, bforce, bbias, prng)
+        super(ForceConstMover,self).bind(ens, beads, nm, cell, bforce, bbias, prng)
             
     def step(self, k, step=None):
       """Calculates the kth derivative of force by finite differences.            

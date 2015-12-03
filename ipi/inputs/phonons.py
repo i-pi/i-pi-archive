@@ -32,7 +32,7 @@ from ipi.utils.units import *
 
 __all__ = ['InputGeop']
 
-class InputPhonons(InputDictionary):
+class InputForceConst(InputDictionary):
     """Dynamic matrix calculation options.
     
        Contains options related with finite difference computation of force constats. 
@@ -44,20 +44,14 @@ class InputPhonons(InputDictionary):
                                     "help"    : "The finite deviation used to compute deribvative of force."
                                     }) }
    
-#    fields = { 
-#                "tolerances" : ( InputDictionary, {"dtype" : float, 
-#                              "options" : [ "energy", "force", "position" ],
-#                              "default" : [ 1e-8, 1e-8, 1e-8 ],
-#                              "dimension": [ "energy", "force", "length" ] }),
-#                "cg_old_force": (InputArray, {"dtype" : float,
-#                              "default"   : input_default(factory=np.zeros, args = (0,)),
-#                              "help"      : "The previous force in a CG optimization.",
-#                              "dimension" : "force"}),
-#                              "help"    : "The maximum step size for BFGS line minimizations."}),
-#                "invhessian" : (InputArray, {"dtype" : float, 
-#                              "default" : input_default(factory=np.eye, args = (0,)),
-#                              "help"    : "Approximate inverse Hessian for BFGS, if known."})
-#                     }
+    fields = { 
+                "oldk" : ( InputDictionary, {"dtype" : int, 
+                              "default" : 0.01,
+                              "help"    : "Number of rows of the Hessian calculated until previous step."
+                "oldhessian" : (InputArray, {"dtype" : float, 
+                              "default" :  np.zeros(0, float),
+                              "help"    : "Hessian known until previous step."})
+             }
                    
     dynamic = {  }
 
@@ -67,8 +61,12 @@ class InputPhonons(InputDictionary):
     def store(self, geop):
         if geop == {}: return
         self.epsilon.store(phonons.epsilon)
+        self.oldk.store(phonons.oldk)
+        self.oldhessian.store(phonons.oldhessian)
         
     def fetch(self):		
         rv = super(phonons,self).fetch()
         rv.epsilon = self.epsilon.fetch()        
+        rv.epsilon = self.oldk.fetch()        
+        rv.epsilon = self.oldhessian.fetch()        
         return rv

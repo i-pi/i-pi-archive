@@ -26,6 +26,7 @@ import ipi.engine.initializer
 from ipi.engine.geop import GeopMover
 from ipi.engine.neb import NEBMover
 from ipi.engine.dynamics import DynMover
+from ipi.engine.phonons import ForceConstMover
 from ipi.engine.mover import *
 from ipi.utils.inputvalue import *
 from ipi.inputs.thermostats import *
@@ -33,6 +34,7 @@ from ipi.inputs.initializer import *
 from ipi.inputs.geop import InputGeop
 from ipi.inputs.neb import InputNEB
 from ipi.inputs.dynamics import InputDynamics
+from ipi.inputs.phonons import InputForceConst
 from ipi.utils.units import *
 
 __all__ = ['InputMover']
@@ -54,7 +56,7 @@ class InputMover(Input):
 
    attribs={"mode"  : (InputAttribute, {"dtype"   : str,
                                     "help"    : "How atoms should be moved at each step in the simulatio. 'replay' means that a simulation is restarted from a previous simulation.",
-                                    "options" : ['minimize', 'replay', 'neb', 'dynamics',  'dummy']}) }
+                                    "options" : ['calcphonons', 'minimize', 'replay', 'neb', 'dynamics',  'dummy']}) }
    fields={"fixcom": (InputValue, {"dtype"           : bool,
                                    "default"         : True,
                                    "help"            : "This describes whether the centre of mass of the particles is fixed."}),
@@ -63,6 +65,8 @@ class InputMover(Input):
                                     "help"         : "Indices of the atmoms that should be held fixed."}),
            "optimizer" : ( InputGeop, { "default" : {}, 
                                      "help":  "Option for geometry optimization" } ),
+           "calculator" : ( InputForceConst, { "default" : {}, 
+                                     "help":  "Option for calculating force constant matrix" } ),
            "neb_optimizer" : ( InputGeop, { "default" : {}, 
                                      "help":  "Option for geometry optimization" } ),
            "dynamics" : ( InputDynamics, { "default" : {}, 
@@ -103,12 +107,17 @@ class InputMover(Input):
          self.mode.store("dynamics")
          self.dynamics.store(sc)
          tsc = 1   
+      elif type(sc) is ForceConstMover:
+         print "MCMC STORING"
+         self.mode.store("calcphonons")
+         self.calculator.store(sc)
+         tsc = 1   
       else: 
          raise ValueError("Cannot store Mover calculator of type "+str(type(sc)))
       
       if tsc == 0:
          self.file.store(sc.intraj)
-      if tsc > 0:
+      elif tsc > 1:
          self.fixcom.store(sc.fixcom)
          self.fixatoms.store(sc.fixatoms)
 
@@ -131,6 +140,8 @@ class InputMover(Input):
          sc = NEBMover(fixcom=False, fixatoms=None, **self.neb_optimizer.fetch() )
       elif self.mode.fetch() == "dynamics":
          sc = DynMover(fixcom=False, fixatoms=None, **self.dynamics.fetch() )
+      elif self.mode.fetch() == "calcphonons":
+         sc = ForceConstMover(fixcom=False, fixatoms=None, **self.calculator.fetch() )
       else:
          sc = Mover()
          #raise ValueError("'" + self.mode.fetch() + "' is not a supported mover calculation mode.")
