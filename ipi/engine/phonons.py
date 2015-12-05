@@ -55,10 +55,15 @@ class ForceConstMover(Mover):
       
         super(ForceConstMover,self).bind(ens, beads, nm, cell, bforce, bbias, prng)
             
-    def step(self, k, step=None):
-      """Calculates the kth derivative of force by finite differences.            
-      """
-      
+    def step(self, step=None):
+        """Calculates the kth derivative of force by finite differences.            
+        """
+     
+        if(step==None):
+            k=0
+        else:
+            k=step
+
         self.ptime = self.ttime = 0
         self.qtime = -time.time()
 

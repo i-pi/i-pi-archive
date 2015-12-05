@@ -47,8 +47,8 @@ class InputForceConst(InputDictionary):
     fields = { 
                 "oldk" : ( InputDictionary, {"dtype" : int, 
                               "default" : 0.01,
-                              "help"    : "Number of rows of the Hessian calculated until previous step."
-                "oldhessian" : (InputArray, {"dtype" : float, 
+                              "help"    : "Number of rows of the Hessian calculated until previous step."}),
+                "oldhessian" : ( InputArray, {"dtype" : float, 
                               "default" :  np.zeros(0, float),
                               "help"    : "Hessian known until previous step."})
              }
