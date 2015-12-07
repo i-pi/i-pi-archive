@@ -120,7 +120,7 @@ class InputMover(Input):
       print "finished storing mover"
       if tsc == 0:
          self.file.store(sc.intraj)
-      elif tsc > 1:
+      elif tsc > 0:
          self.fixcom.store(sc.fixcom)
          self.fixatoms.store(sc.fixatoms)
 
