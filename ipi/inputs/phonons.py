@@ -40,16 +40,15 @@ class InputForceConst(InputDictionary):
     """
 
     #TODO: RENAME BFGS/L-BFGS ONLY OPTIONS TO INDICATE SPECIFIC TO BFGS/L-BFGS
-    attribs={"epsilon"  : (InputAttribute, {"dtype"   : float, "default": 0.01, 
-                                    "help"    : "The finite deviation used to compute deribvative of force."
-                                    }) }
-   
     fields = { 
-                "oldk" : ( InputDictionary, {"dtype" : int, 
-                              "default" : 0.01,
+                "oldk" : ( InputValue, {"dtype" : int, 
+                              "default" : 0,
                               "help"    : "Number of rows of the Hessian calculated until previous step."}),
+                "epsilon"  : (InputValue, {"dtype"   : float, "default": 0.01, 
+                                    "help"    : "The finite deviation used to compute deribvative of force."
+                                    }), 
                 "oldhessian" : ( InputArray, {"dtype" : float, 
-                              "default" :  np.zeros(0, float),
+                              "default" :  np.zeros(0., float),
                               "help"    : "Hessian known until previous step."})
              }
                    
@@ -66,8 +65,5 @@ class InputForceConst(InputDictionary):
         self.oldhessian.store(phonons.oldhessian)
         
     def fetch(self):		
-        rv = super(phonons,self).fetch()
-        rv.epsilon = self.epsilon.fetch()        
-        rv.oldk = self.oldk.fetch()        
-        rv.oldhessian = self.oldhessian.fetch()        
+        rv = super(InputForceConst,self).fetch()
         return rv

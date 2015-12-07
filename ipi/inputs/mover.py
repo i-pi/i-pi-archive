@@ -65,14 +65,14 @@ class InputMover(Input):
                                     "help"         : "Indices of the atmoms that should be held fixed."}),
            "optimizer" : ( InputGeop, { "default" : { }, 
                                      "help":  "Option for geometry optimization" } ),
-           "calculator" : ( InputForceConst, { "default" : {}, 
-                                     "help":  "Option for calculating force constant matrix" } ),
            "neb_optimizer" : ( InputGeop, { "default" : {}, 
                                      "help":  "Option for geometry optimization" } ),
            "dynamics" : ( InputDynamics, { "default" : {}, 
                                      "help":  "Option for (path integral) molecular dynamics" } ),                          
            "file": (InputInitFile, {"default" : input_default(factory=ipi.engine.initializer.InitBase,kwargs={"mode":"xyz"}),
-                           "help"            : "This describes the location to read a trajectory file from."})
+                           "help"            : "This describes the location to read a trajectory file from."}),
+           "calculator" : ( InputForceConst, { "default" : {}, 
+                                     "help":  "Option for calculating force constant matrix" } )
          }
          
    dynamic = {  }

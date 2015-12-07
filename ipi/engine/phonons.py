@@ -49,7 +49,8 @@ class ForceConstMover(Mover):
         #Finite difference option.
         self.epsilon = epsilon
         self.oldk = oldk
-        self.hessian = oldhessian
+        self.oldhessian = oldhessian
+	self.hessian = oldhessian
    
     def bind(self, ens, beads, nm, cell, bforce, bbias, prng):
       
@@ -70,10 +71,10 @@ class ForceConstMover(Mover):
         info("\nDynmtarix STEP %d" % step, verbosity.debug)
     
         #initialise des donnes du system compris par IPI
-        if(self.dforces is None) :#formations of duplicates
-            self.dbeads = self.beads.copy()
-            self.dcell = self.cell.copy()
-            self.dforces = self.bforce.copy(self.dbeads, self.dcell) 
+        #if(self.dforces is None):#formations of duplicates
+        self.dbeads = self.beads.copy()
+        self.dcell = self.cell.copy()
+        self.dforces = self.forces.copy(self.dbeads, self.dcell) 
             
         #initialze the vector if doesn't exit or reinitialyze to zero all components a 3N vector
         self.delta = np.zeros(self.beads.nbeads * 3 * self.dbeads.natoms, float)       
@@ -81,19 +82,22 @@ class ForceConstMover(Mover):
         self.delta[k] = self.epsilon
         #displaces kth d.o.f by epsilon.                          
         self.dbeads.q = self.beads.q + self.delta  #making it one raw 3N long
-        fplus = - destrip(self.dforces.f).copy()
+        fplus = - depstrip(self.dforces.f).copy()
         #displaces kth d.o.f by -epsilon.      
         self.dbeads.q = self.beads.q - self.delta 
-        fminus =  - destrip(self.dforces.f).copy()
+        fminus =  - depstrip(self.dforces.f).copy()
         #computes a row of force-constant matrix
-        forces_raw = (fplus-fminus)/(2*self.epsilon * destrip(self.beads.sm3[-1][k]) * destrip(self.beads.sm3[-1]) )
+        forces_raw = (fplus-fminus)/(2*self.epsilon * depstrip(self.beads.sm3[-1][k]) * depstrip(self.beads.sm3[-1]) )
         #change the line value or add the line if does not exit to the matrix
         if self.hessian.shape[0] - 1 < k: #because k going from 0 to (3N-1)
             self.hessian = np.vstack([self.hessian, forces_raw])
         else:
         #update the hessian on the kth line if existing
             self.hessian[k,:] = forces_raw
-        #if k == 3 * self.dbeads.natoms -1:
+        if k == 3 * self.dbeads.natoms -1:
+            outfile = open('hessianfile', 'w')
+            outfile.write(self.hessian)
+	    outfile.close	
 	# we are done
 	# print out to a standard-named file (for now!)
 	# trigger soft-exit the same way it is done in geop.py
