@@ -89,10 +89,14 @@ class InputGeop(InputDictionary):
     default_label = "GEOP"
 
     def store(self, geop):
+        print "INSIDE GEOP STORE"   
         if geop == {}: return
+        print "storing lsoptions" 
         self.ls_options.store(geop.ls_options)
         self.tolerances.store(geop.tolerances)
+        print "storing mode"
         self.mode.store(geop.mode)
+        print "got here"
         self.cg_old_force.store(geop.cg_old_f)
         self.cg_old_direction.store(geop.cg_old_d)
         self.maximum_step.store(geop.max_step)
@@ -100,6 +104,7 @@ class InputGeop(InputDictionary):
         self.qlist.store(geop.qlist)
         self.glist.store(geop.glist)
         self.corrections.store(geop.corrections)
+        print "done"
         
     def fetch(self):		
         rv = super(InputGeop,self).fetch()

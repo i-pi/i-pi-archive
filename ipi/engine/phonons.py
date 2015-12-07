@@ -93,10 +93,7 @@ class ForceConstMover(Mover):
         else:
         #update the hessian on the kth line if existing
             self.hessian[k,:] = forces_raw
-        if k == 3 * self.dbeads.natoms -1:
-			# we are done
-			# print out to a standard-named file (for now!)
-			# trigger soft-exit the same way it is done in geop.py
-			
-			
-
+        #if k == 3 * self.dbeads.natoms -1:
+	# we are done
+	# print out to a standard-named file (for now!)
+	# trigger soft-exit the same way it is done in geop.py

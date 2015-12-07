@@ -59,6 +59,7 @@ class InputForceConst(InputDictionary):
     default_label = "PHONONS"
 
     def store(self, geop):
+        print "INTO PHONONS"
         if geop == {}: return
         self.epsilon.store(phonons.epsilon)
         self.oldk.store(phonons.oldk)

@@ -63,7 +63,7 @@ class InputMover(Input):
            "fixatoms" : (InputArray, {"dtype"        : int,
                                     "default"      : np.zeros(0,int),
                                     "help"         : "Indices of the atmoms that should be held fixed."}),
-           "optimizer" : ( InputGeop, { "default" : {}, 
+           "optimizer" : ( InputGeop, { "default" : { }, 
                                      "help":  "Option for geometry optimization" } ),
            "calculator" : ( InputForceConst, { "default" : {}, 
                                      "help":  "Option for calculating force constant matrix" } ),
@@ -87,6 +87,7 @@ class InputMover(Input):
          sc: A mover calculation class.
       """
 
+      print "Storing generic mover object"   
       super(InputMover,self).store(sc)
       tsc = -1
       if type(sc) is Mover:
@@ -95,8 +96,10 @@ class InputMover(Input):
          self.mode.store("replay")
          tsc = 0    
       elif type(sc) is GeopMover:
-         self.mode.store("minimize")
+         print "storing geopmover"
+         self.mode.store("minimize") 
          self.optimizer.store(sc)
+         print "all is fine"
          tsc = 1
       elif type(sc) is NEBMover:
          self.mode.store("neb")
@@ -114,7 +117,7 @@ class InputMover(Input):
          tsc = 1   
       else: 
          raise ValueError("Cannot store Mover calculator of type "+str(type(sc)))
-      
+      print "finished storing mover"
       if tsc == 0:
          self.file.store(sc.intraj)
       elif tsc > 1:
