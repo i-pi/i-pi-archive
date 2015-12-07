@@ -215,7 +215,7 @@ class Simulation(dobject):
 
          self.chk.store()
          
-         if self.mode == "static":#hack here!
+         if self.mode == "static": #hack here!
             for s in self.syslist:
                s.mover.step(step=self.step)
             pass

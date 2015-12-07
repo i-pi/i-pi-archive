@@ -78,18 +78,25 @@ class ForceConstMover(Mover):
         #initialze the vector if doesn't exit or reinitialyze to zero all components a 3N vector
         self.delta = np.zeros(self.beads.nbeads * 3 * self.dbeads.natoms, float)       
         #delta = an array with all ements equal to 0 except that kth element is epsilon.
+        self.delta[k] = self.epsilon
         #displaces kth d.o.f by epsilon.                          
         self.dbeads.q = self.beads.q + self.delta  #making it one raw 3N long
-        fplus = - destrip(self.dforces.f)
+        fplus = - destrip(self.dforces.f).copy()
         #displaces kth d.o.f by -epsilon.      
         self.dbeads.q = self.beads.q - self.delta 
-        fminus =  - destrip(self.dforces.f)
+        fminus =  - destrip(self.dforces.f).copy()
         #computes a row of force-constant matrix
-        forces_raw = (fplus-fminus)/(2*self.epsilon*destrip(self.beads.sm3[-1][k]))/destrip(self.beads.sm3[-1])
+        forces_raw = (fplus-fminus)/(2*self.epsilon * destrip(self.beads.sm3[-1][k]) * destrip(self.beads.sm3[-1]) )
         #change the line value or add the line if does not exit to the matrix
         if self.hessian.shape[0] - 1 < k: #because k going from 0 to (3N-1)
             self.hessian = np.vstack([self.hessian, forces_raw])
         else:
         #update the hessian on the kth line if existing
             self.hessian[k,:] = forces_raw
+        if k == 3 * self.dbeads.natoms -1:
+			# we are done
+			# print out to a standard-named file (for now!)
+			# trigger soft-exit the same way it is done in geop.py
+			
+			
 
