@@ -111,7 +111,6 @@ class InputMover(Input):
          self.dynamics.store(sc)
          tsc = 1   
       elif type(sc) is ForceConstMover:
-         print "MCMC STORING"
          self.mode.store("calcphonons")
          self.calculator.store(sc)
          tsc = 1   
