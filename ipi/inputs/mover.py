@@ -86,8 +86,7 @@ class InputMover(Input):
       Args:
          sc: A mover calculation class.
       """
-
-      print "Storing generic mover object"   
+      print "INSIDE MOVER STORE"
       super(InputMover,self).store(sc)
       tsc = -1
       if type(sc) is Mover:
@@ -96,17 +95,14 @@ class InputMover(Input):
          self.mode.store("replay")
          tsc = 0    
       elif type(sc) is GeopMover:
-         print "storing geopmover"
          self.mode.store("minimize") 
          self.optimizer.store(sc)
-         print "all is fine"
          tsc = 1
       elif type(sc) is NEBMover:
          self.mode.store("neb")
          self.neb_optimizer.store(sc)
          tsc = 1
       elif type(sc) is DynMover:
-         print "MCMC STORING"
          self.mode.store("dynamics")
          self.dynamics.store(sc)
          tsc = 1   
@@ -117,6 +113,7 @@ class InputMover(Input):
       else: 
          raise ValueError("Cannot store Mover calculator of type "+str(type(sc)))
       print "finished storing mover"
+      print str(type(sc) )
       if tsc == 0:
          self.file.store(sc.intraj)
       elif tsc > 0:

@@ -30,7 +30,7 @@ from ipi.inputs.thermostats import *
 from ipi.inputs.initializer import *
 from ipi.utils.units import *
 
-__all__ = ['InputGeop']
+__all__ = ['InputForceConst']
 
 class InputForceConst(InputDictionary):
     """Dynamic matrix calculation options.
@@ -58,9 +58,9 @@ class InputForceConst(InputDictionary):
     default_help = "Fill in."
     default_label = "PHONONS"
 
-    def store(self, geop):
-        print "INTO PHONONS"
-        if geop == {}: return
+    def store(self, phonons):
+        print "inside phonons"
+        if phonons  == {}: return
         self.epsilon.store(phonons.epsilon)
         self.oldk.store(phonons.oldk)
         self.oldhessian.store(phonons.oldhessian)
@@ -68,6 +68,6 @@ class InputForceConst(InputDictionary):
     def fetch(self):		
         rv = super(phonons,self).fetch()
         rv.epsilon = self.epsilon.fetch()        
-        rv.epsilon = self.oldk.fetch()        
-        rv.epsilon = self.oldhessian.fetch()        
+        rv.oldk = self.oldk.fetch()        
+        rv.oldhessian = self.oldhessian.fetch()        
         return rv
