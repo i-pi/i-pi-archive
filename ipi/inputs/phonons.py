@@ -47,7 +47,7 @@ class InputForceConst(InputDictionary):
                 "epsilon"  : (InputValue, {"dtype"   : float, "default": 0.01, 
                                     "help"    : "The finite deviation used to compute deribvative of force."
                                     }), 
-                "oldhessian" : ( InputArray, {"dtype" : float, 
+                "matrix" : ( InputArray, {"dtype" : float, 
                               "default" :  np.zeros(0., float),
                               "help"    : "Hessian known until previous step."})
              }
@@ -58,11 +58,10 @@ class InputForceConst(InputDictionary):
     default_label = "PHONONS"
 
     def store(self, phonons):
-        print "inside phonons"
         if phonons  == {}: return
         self.epsilon.store(phonons.epsilon)
         self.oldk.store(phonons.oldk)
-        self.oldhessian.store(phonons.oldhessian)
+        self.matrix.store(phonons.matrix)
         
     def fetch(self):		
         rv = super(InputForceConst,self).fetch()

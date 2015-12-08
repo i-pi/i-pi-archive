@@ -35,7 +35,7 @@ class ForceConstMover(Mover):
           interpolation.
     """
 
-    def __init__(self, fixcom=False, fixatoms=None, epsilon=0.001, oldk=0, oldhessian=np.zeros(0, float)):   
+    def __init__(self, fixcom=False, fixatoms=None, epsilon=0.001, oldk=0, matrix=np.zeros(0, float)):   
                  
         """Initialises ForceConstMover.
         Args:
@@ -49,12 +49,19 @@ class ForceConstMover(Mover):
         #Finite difference option.
         self.epsilon = epsilon
         self.oldk = oldk
-        self.oldhessian = oldhessian
-	self.hessian = oldhessian
+	self.matrix = matrix
    
     def bind(self, ens, beads, nm, cell, bforce, bbias, prng):
       
         super(ForceConstMover,self).bind(ens, beads, nm, cell, bforce, bbias, prng)
+        if(self.beads.nbeads > 1):
+            raise ValueError("Incorrect entry for calculation of force constant matrix")
+
+	if(self.matrix.size  != (beads.q.size * beads.q.size)):
+            if(self.matrix.size == 0):
+                self.matrix=np.eye(beads.q.size, beads.q.size, 0, float)
+            else:
+                raise ValueError("Force constant matrix size does not match system size")
             
     def step(self, step=None):
         """Calculates the kth derivative of force by finite differences.            
@@ -63,7 +70,7 @@ class ForceConstMover(Mover):
         if(step==None):
             k=0
         else:
-            k=step
+            k=step-1
 
         self.ptime = self.ttime = 0
         self.qtime = -time.time()
@@ -89,15 +96,9 @@ class ForceConstMover(Mover):
         #computes a row of force-constant matrix
         forces_raw = (fplus-fminus)/(2*self.epsilon * depstrip(self.beads.sm3[-1][k]) * depstrip(self.beads.sm3[-1]) )
         #change the line value or add the line if does not exit to the matrix
-        if self.hessian.shape[0] - 1 < k: #because k going from 0 to (3N-1)
-            self.hessian = np.vstack([self.hessian, forces_raw])
-        else:
-        #update the hessian on the kth line if existing
-            self.hessian[k,:] = forces_raw
-        if k == 3 * self.dbeads.natoms -1:
-            outfile = open('hessianfile', 'w')
-            outfile.write(self.hessian)
-	    outfile.close	
-	# we are done
-	# print out to a standard-named file (for now!)
-	# trigger soft-exit the same way it is done in geop.py
+        self.matrix[k] = forces_raw
+        if (k == 3 * self.dbeads.natoms -1):
+            outfile=open('./ForceConstantMatrix.out', 'w+')
+            for j in range(0,3 * self.dbeads.natoms):
+                print >> outfile, ' '.join(map(str, self.matrix[j]))
+            softexit.trigger("Force constant matrix is calculated. Exiting simulation")

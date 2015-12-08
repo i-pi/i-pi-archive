@@ -86,7 +86,6 @@ class InputMover(Input):
       Args:
          sc: A mover calculation class.
       """
-      print "INSIDE MOVER STORE"
       super(InputMover,self).store(sc)
       tsc = -1
       if type(sc) is Mover:
@@ -112,8 +111,6 @@ class InputMover(Input):
          tsc = 1   
       else: 
          raise ValueError("Cannot store Mover calculator of type "+str(type(sc)))
-      print "finished storing mover"
-      print str(type(sc) )
       if tsc == 0:
          self.file.store(sc.intraj)
       elif tsc > 0:
@@ -130,7 +127,6 @@ class InputMover(Input):
 
       super(InputMover,self).fetch()
 
-      print "MCMC Sticazzissimi "
       if self.mode.fetch() == "replay" :
          sc = ReplayMover(fixcom=False, fixatoms=None, intraj=self.file.fetch() )
       elif self.mode.fetch() == "minimize":
