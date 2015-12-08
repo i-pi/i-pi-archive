@@ -48,7 +48,7 @@ class InputForceConst(InputDictionary):
                                     "help"    : "The finite deviation used to compute deribvative of force."
                                     }), 
                 "matrix" : ( InputArray, {"dtype" : float, 
-                              "default" :  np.zeros(0., float),
+                              "default" :  np.zeros(0, float),
                               "help"    : "Hessian known until previous step."})
              }
                    
