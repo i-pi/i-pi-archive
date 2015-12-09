@@ -17,7 +17,7 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <http.//www.gnu.org/licenses/>.
 """
 
-__all__=['ForceConstMover']
+__all__=['DynMatrixMover']
 
 import numpy as np
 import time
@@ -30,21 +30,22 @@ from ipi.utils.softexit import softexit
 from ipi.utils.mintools import min_brent, min_approx, BFGS, L_BFGS, L_BFGS_nls
 from ipi.utils.messages import verbosity, warning, info
 
-class ForceConstMover(Mover):
-    """Dynamic matrix calculation routine. Computes the force constant matrix and then discrete Fourier 
-          interpolation.
+class DynMatrixMover(Mover):
+    """Dynamic matrix calculation routine by finite difference.
     """
 
     def __init__(self, fixcom=False, fixatoms=None, epsilon=0.001, oldk=0, matrix=np.zeros(0, float)):   
                  
-        """Initialises ForceConstMover.
+        """Initialises DynMatrixMover.
         Args:
-        fixcom: An optional boolean which decides whether the centre of mass
-                motion will be constrained or not. Defaults to False. 
-                THe Hessian is an array of matrix for each beads.        
+        fixcom	: An optional boolean which decides whether the centre of mass
+             	  motion will be constrained or not. Defaults to False. 
+        matrix	: A 3Nx3N array that stores the dynamic matrix.
+        oldk	: An integr that stores the number of rows calculated.
+        epsilon: A 3Nx3N array that stores the dynamic matrix.
         """
 
-        super(ForceConstMover,self).__init__(fixcom=fixcom, fixatoms=fixatoms)
+        super(DynMatrixMover,self).__init__(fixcom=fixcom, fixatoms=fixatoms)
       
         #Finite difference option.
         self.epsilon = epsilon
@@ -52,16 +53,22 @@ class ForceConstMover(Mover):
 	self.matrix = matrix
    
     def bind(self, ens, beads, nm, cell, bforce, bbias, prng):
-      
-        super(ForceConstMover,self).bind(ens, beads, nm, cell, bforce, bbias, prng)
-        if(self.beads.nbeads > 1):
-            raise ValueError("Incorrect entry for calculation of force constant matrix")
 
+        #Raises error for nbeads not equal to 1.      
+        super(DynMatrixMover,self).bind(ens, beads, nm, cell, bforce, bbias, prng)
+        if(self.beads.nbeads > 1):
+            raise ValueError("Calculation not possible for number of beads greater than one")
+
+        #Initialises a 3*number of atoms X 3*number of atoms dynamic matrix.
 	if(self.matrix.size  != (beads.q.size * beads.q.size)):
             if(self.matrix.size == 0):
                 self.matrix=np.eye(beads.q.size, beads.q.size, 0, float)
             else:
                 raise ValueError("Force constant matrix size does not match system size")
+
+        self.dbeads = self.beads.copy()
+        self.dcell = self.cell.copy()
+        self.dforces = self.forces.copy(self.dbeads, self.dcell) 
             
     def step(self, step=None):
         """Calculates the kth derivative of force by finite differences.            
@@ -75,30 +82,26 @@ class ForceConstMover(Mover):
         self.ptime = self.ttime = 0
         self.qtime = -time.time()
 
-        info("\nDynmtarix STEP %d" % step, verbosity.debug)
+        info("\nDynMatrix STEP %d" % step, verbosity.debug)
     
         #initialise des donnes du system compris par IPI
-        #if(self.dforces is None):#formations of duplicates
-        self.dbeads = self.beads.copy()
-        self.dcell = self.cell.copy()
-        self.dforces = self.forces.copy(self.dbeads, self.dcell) 
             
-        #initialze the vector if doesn't exit or reinitialyze to zero all components a 3N vector
-        self.delta = np.zeros(self.beads.nbeads * 3 * self.dbeads.natoms, float)       
-        #delta = an array with all ements equal to 0 except that kth element is epsilon.
+        #initializes the finite deviation
+        self.delta = np.zeros(3 * self.beads.natoms, float)       
         self.delta[k] = self.epsilon
         #displaces kth d.o.f by epsilon.                          
-        self.dbeads.q = self.beads.q + self.delta  #making it one raw 3N long
-        fplus = - depstrip(self.dforces.f).copy()
+        self.dbeads.q = self.beads.q + self.delta  
+        plus = - depstrip(self.dforces.f).copy()
         #displaces kth d.o.f by -epsilon.      
         self.dbeads.q = self.beads.q - self.delta 
-        fminus =  - depstrip(self.dforces.f).copy()
+        minus =  - depstrip(self.dforces.f).copy()
         #computes a row of force-constant matrix
-        forces_raw = (fplus-fminus)/(2*self.epsilon * depstrip(self.beads.sm3[-1][k]) * depstrip(self.beads.sm3[-1]) )
+        DynMatrixElement = (plus-minus)/(2*self.epsilon*depstrip(self.beads.sm3[-1][k])*depstrip(self.beads.sm3[-1]))
         #change the line value or add the line if does not exit to the matrix
-        self.matrix[k] = forces_raw
-        if (k == 3 * self.dbeads.natoms -1):
-            outfile=open('./ForceConstantMatrix.out', 'w+')
+        self.matrix[k] = DynMatrixElement
+        if (k == 3*self.beads.natoms -1):
+            outfile=open('./DynMatrix.out', 'w+')
             for j in range(0,3 * self.dbeads.natoms):
                 print >> outfile, ' '.join(map(str, self.matrix[j]))
-            softexit.trigger("Force constant matrix is calculated. Exiting simulation")
+            outfile.close
+            softexit.trigger("Dynamic matrix is calculated. Exiting simulation")

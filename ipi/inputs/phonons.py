@@ -30,9 +30,9 @@ from ipi.inputs.thermostats import *
 from ipi.inputs.initializer import *
 from ipi.utils.units import *
 
-__all__ = ['InputForceConst']
+__all__ = ['InputDynMatrix']
 
-class InputForceConst(InputDictionary):
+class InputDynMatrix(InputDictionary):
     """Dynamic matrix calculation options.
     
        Contains options related with finite difference computation of force constats. 
@@ -64,5 +64,5 @@ class InputForceConst(InputDictionary):
         self.matrix.store(phonons.matrix)
         
     def fetch(self):		
-        rv = super(InputForceConst,self).fetch()
+        rv = super(InputDynMatrix,self).fetch()
         return rv

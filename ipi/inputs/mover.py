@@ -26,7 +26,7 @@ import ipi.engine.initializer
 from ipi.engine.geop import GeopMover
 from ipi.engine.neb import NEBMover
 from ipi.engine.dynamics import DynMover
-from ipi.engine.phonons import ForceConstMover
+from ipi.engine.phonons import DynMatrixMover
 from ipi.engine.mover import *
 from ipi.utils.inputvalue import *
 from ipi.inputs.thermostats import *
@@ -34,7 +34,7 @@ from ipi.inputs.initializer import *
 from ipi.inputs.geop import InputGeop
 from ipi.inputs.neb import InputNEB
 from ipi.inputs.dynamics import InputDynamics
-from ipi.inputs.phonons import InputForceConst
+from ipi.inputs.phonons import InputDynMatrix
 from ipi.utils.units import *
 
 __all__ = ['InputMover']
@@ -71,7 +71,7 @@ class InputMover(Input):
                                      "help":  "Option for (path integral) molecular dynamics" } ),                          
            "file": (InputInitFile, {"default" : input_default(factory=ipi.engine.initializer.InitBase,kwargs={"mode":"xyz"}),
                            "help"            : "This describes the location to read a trajectory file from."}),
-           "calculator" : ( InputForceConst, { "default" : {}, 
+           "calculator" : ( InputDynMatrix, { "default" : {}, 
                                      "help":  "Option for calculating force constant matrix" } )
          }
          
@@ -105,7 +105,7 @@ class InputMover(Input):
          self.mode.store("dynamics")
          self.dynamics.store(sc)
          tsc = 1   
-      elif type(sc) is ForceConstMover:
+      elif type(sc) is DynMatrixMover:
          self.mode.store("calcphonons")
          self.calculator.store(sc)
          tsc = 1   
@@ -136,7 +136,7 @@ class InputMover(Input):
       elif self.mode.fetch() == "dynamics":
          sc = DynMover(fixcom=False, fixatoms=None, **self.dynamics.fetch() )
       elif self.mode.fetch() == "calcphonons":
-         sc = ForceConstMover(fixcom=False, fixatoms=None, **self.calculator.fetch() )
+         sc = DynMatrixMover(fixcom=False, fixatoms=None, **self.calculator.fetch() )
       else:
          sc = Mover()
          #raise ValueError("'" + self.mode.fetch() + "' is not a supported mover calculation mode.")
