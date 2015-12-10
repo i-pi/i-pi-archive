@@ -100,8 +100,15 @@ class DynMatrixMover(Mover):
         #change the line value or add the line if does not exit to the matrix
         self.matrix[k] = DynMatrixElement
         if (k == 3*self.beads.natoms -1):
-            outfile=open('./DynMatrix.out', 'w+')
+            eigsys=np.linalg.eig(self.matrix)
+            outfile01=open('./DynMatrix.matrix.out', 'w+')
+            outfile02=open('./DynMatrix.eigenvalues.out', 'w+')
+            outfile03=open('./DynMatrix.eigenvectors.out', 'w+')
+            print >> outfile02, ' '.join(map(str, eigsys[0]))
             for j in range(0,3 * self.dbeads.natoms):
-                print >> outfile, ' '.join(map(str, self.matrix[j]))
-            outfile.close
+                print >> outfile01, ' '.join(map(str, self.matrix[j]))
+                print >> outfile03, ' '.join(map(str, eigsys[1][j]))
+            outfile01.close
+            outfile02.close
+            outfile03.close
             softexit.trigger("Dynamic matrix is calculated. Exiting simulation")
