@@ -230,12 +230,12 @@ class Driver(DriverSocket):
 
       if not self.waitstatus:
          try:
-            # TODO: this can sometimes hang, needs suitable timeout
-            readable, writable, errored = select.select([], [self], [])
+            # TODO: this can sometimes hang, needs suitable timeout -- CHECKING OUT WITH 60
+            readable, writable, errored = select.select([], [self], [], 60)
             if self in writable:
                self.sendall(Message("status"))
                self.waitstatus = True
-         except:
+         except socket.error:            
             return Status.Disconnected
 
       try:
@@ -483,7 +483,7 @@ class InterfaceSocket(object):
                warning(" @SOCKET:   Client " + str(c.peername) +" died or got unresponsive(C). Removing from the list.", verbosity.low)
                c.shutdown(socket.SHUT_RDWR)
                c.close()
-            except:
+            except socket.error:
                pass
             c.status = Status.Disconnected
             self.clients.remove(c)
@@ -623,7 +623,7 @@ class InterfaceSocket(object):
                   warning(" @SOCKET:   Client " + str(c.peername) + " died or got unresponsive(A). Disconnecting.", verbosity.low)
                   try:
                      c.shutdown(socket.SHUT_RDWR)
-                  except:
+                  except socket.error:
                      pass
                   c.close()
                   c.status = Status.Disconnected
