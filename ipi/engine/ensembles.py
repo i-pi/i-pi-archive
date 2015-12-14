@@ -28,42 +28,78 @@ __all__ = ['Ensemble']
 
 
 class Ensemble(dobject):
-   """Base ensemble class.
+    """Base ensemble class.
 
-   Defines the thermodynamic state of the system.   
+    Defines the thermodynamic state of the system.   
 
-   Depend objects:
-      temp: The system's temperature.
-      pext: The systems's pressure
-      stressext: The system's stress tensor
-   """
+    Depend objects:
+        temp: The system's temperature.
+        pext: The systems's pressure
+        stressext: The system's stress tensor   
+    """
 
-   def __init__(self, eens = 0.0, temp = None, pext = None, stressext = None):
-      """Initialises Ensemble.
+    def __init__(self, eens = 0.0, econs=0.0, temp = None, pext = None, stressext = None):
+        """Initialises Ensemble.
 
-      Args:
-         dt: The timestep of the simulation algorithms.
-         temp: The temperature.
-         fixcom: An optional boolean which decides whether the centre of mass
-            motion will be constrained or not. Defaults to False.
-      """
+        Args:
+            dt: The timestep of the simulation algorithms.
+            temp: The temperature.
+            fixcom: An optional boolean which decides whether the centre of mass
+                motion will be constrained or not. Defaults to False.
+        """
       
-      dset(self, "temp",  depend_value(name='temp'))
-      if not temp is None:
-         self.temp = temp
-      else: self.temp =0.0
+        dset(self, "temp",  depend_value(name='temp'))
+        if not temp is None:
+            self.temp = temp
+        else: self.temp =-1.0
       
-      dset(self,"stressext",depend_array(name='stressext',value=np.zeros((3,3),float)))
-      if not stressext is None:
-         self.stressext = stressext
-      else: self.stressext = 0.0
+        dset(self,"stressext",depend_array(name='stressext',value=np.zeros((3,3),float)))
+        if not stressext is None:
+            self.stressext = stressext
+        else: self.stressext = -1.0
 
-      dset(self,"pext",depend_value(name='pext'))
-      if not pext is None:
-         self.pext = pext
-      else: self.pext = 0.0
+        dset(self,"pext",depend_value(name='pext'))
+        if not pext is None:
+            self.pext = pext
+        else: self.pext = -1.0
       
-      dset(self, "eens",  depend_value(name='eens'))
-      if not eens is None:
-         self.eens = eens
-      else: self.eens =0.0
+        dset(self, "eens",  depend_value(name='eens'))
+        if not eens is None:
+            self.eens = eens
+        else: self.eens =0.0
+      
+              
+    def bind(self, beads, nm, cell, bforce, bbias, elist=[]):
+        self.beads = beads
+        self.cell = cell
+        self.forces = bforce  
+        self.bias = bbias
+        self.nm = nm
+        dset(self, "econs",  depend_value(name='econs', func = self.get_econs))
+        
+        # dependencies of the conserved quantity
+        dget(self,"econs").add_dependency(dget(self.nm, "kin"))
+        dget(self,"econs").add_dependency(dget(self.forces, "pot"))
+        dget(self,"econs").add_dependency(dget(self.bias, "pot"))
+        dget(self,"econs").add_dependency(dget(self.beads, "vpath"))
+        dget(self,"econs").add_dependency(dget(self, "eens"))  
+        
+        self._elist = []
+        
+        for e in elist:
+            self.add_econs(e)
+        
+    def add_econs(self, e):
+        self._elist.append(e)
+        dget(self,"econs").add_dependency(e)
+          
+    def get_econs(self):
+        """Calculates the conserved energy quantity for constant energy
+        ensembles.  
+        """
+        eham = self.beads.vpath*self.nm.omegan2 + self.nm.kin + self.forces.pot
+        eham += self.bias.pot # bias
+        for e in self._elist:
+            eham += e.get()
+            
+        return eham + self.eens

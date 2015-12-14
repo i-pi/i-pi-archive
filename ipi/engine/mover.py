@@ -68,7 +68,6 @@ class Mover(dobject):
       """
       
       dset(self, "dt", depend_value(name="dt", value=0.0) )      
-      dset(self, "econs", depend_value(name="econs", value=0.0) )
       self.fixcom = fixcom
       if fixatoms is None: 
          self.fixatoms = np.zeros(0,int)
@@ -76,8 +75,8 @@ class Mover(dobject):
          self.fixatoms = fixatoms
 
 
-   def bind(self, ens, beads, nm, cell, bforce, bbias, prng):
-      """Binds beads, cell, bforce, bbias and prng to the calculator.
+   def bind(self, ens, beads, nm, cell, bforce, prng):
+      """Binds beads, cell, bforce, and prng to the calculator.
 
       This takes a beads object, a cell object, a forcefield object and a
       random number generator object and makes them members of the atom mover caclulator.
@@ -100,10 +99,10 @@ class Mover(dobject):
       self.beads = beads
       self.cell = cell
       self.forces = bforce
-      self.bias = bbias
       self.prng = prng
       self.nm = nm
       self.ensemble = ens
+      self.bias = self.ensemble.bias
     
 
    def step(self, step=None):

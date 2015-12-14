@@ -98,8 +98,7 @@ class InputMover(Input):
          self.mode.store("neb")
          self.neb_optimizer.store(sc)
          tsc = 1
-      elif type(sc) is DynMover:
-         print "MCMC STORING"
+      elif type(sc) is DynMover:         
          self.mode.store("dynamics")
          self.dynamics.store(sc)
          tsc = 1   
@@ -122,7 +121,6 @@ class InputMover(Input):
 
       super(InputMover,self).fetch()
 
-      print "MCMC Sticazzissimi "
       if self.mode.fetch() == "replay" :
          sc = ReplayMover(fixcom=False, fixatoms=None, intraj=self.file.fetch() )
       elif self.mode.fetch() == "minimize":

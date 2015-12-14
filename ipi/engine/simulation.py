@@ -204,7 +204,7 @@ class Simulation(dobject):
       tqtime = 0.0
       tttime = 0.0
       ttot = 0.0
-      # main MD loop
+      # main loop
       for self.step in range(self.step,self.tsteps):
          # stores the state before doing a step.
          # this is a bit time-consuming but makes sure that we can honor soft
@@ -215,21 +215,18 @@ class Simulation(dobject):
 
          self.chk.store()
          
-         if self.mode == "static":
-            for s in self.syslist:
-               s.mover.step(step=self.step)
-            pass
-         elif self.mode == "md" or self.mode == "paratemp":            
-            for s in self.syslist:
-               # creates separate threads for the different systems
-               #st = threading.Thread(target=s.ensemble.step, name=s.prefix, kwargs={"step":self.step})
-               #st.daemon = True
-               s.ensemble.step(step=self.step)
-               #st.start()
-               #stepthreads.append(st)
-
-            for st in stepthreads:
-               while st.isAlive(): st.join(2.0)   # this is necessary as join() without timeout prevents main from receiving signals
+         stepthreads = []
+         for s in self.syslist:
+            # creates separate threads for the different systems
+            #st = threading.Thread(target=s.mover.step, name=s.prefix, kwargs={"step":self.step})
+            #st.daemon = True
+            #st.start()
+            #stepthreads.append(st)
+            s.mover.step(step=self.step)
+         for st in stepthreads:
+            while st.isAlive(): st.join(2.0)   # this is necessary as join() without timeout prevents main from receiving signals
+         pass         
+            
 
          if softexit.triggered: break # don't continue if we are about to exit!
 

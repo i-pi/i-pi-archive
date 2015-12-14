@@ -97,9 +97,7 @@ class InputSystem(Input):
       self.forces.store(psys.fcomp)
       self.bias.store(psys.bcomp)
       self.ensemble.store(psys.ensemble)
-      print "storing mover"
       self.mover.store(psys.mover)
-      print "storing beads"
       self.beads.store(psys.beads)
       self.normal_modes.store(psys.nm)
       self.cell.store(psys.cell)

@@ -16,6 +16,7 @@ from ipi.engine.beads import Beads
 from ipi.engine.cell import Cell
 from ipi.engine.normalmodes import NormalModes
 from ipi.engine.ensembles import Ensemble
+from ipi.engine.mover import Mover
 from ipi.utils.io import read_file
 from ipi.utils.io.inputs.io_xml import xml_parse_file
 from ipi.utils.depend import dobject
@@ -156,7 +157,6 @@ def init_beads(iif, nbeads):
    else:
       ret = init_file(mode, value)
       ratoms = ret[0]
-      print ratoms, ratoms[0]
       rbeads = Beads(ratoms[0].natoms,len(ratoms))
       for i in range(len(ratoms)): rbeads[i] = ratoms[i]
 
@@ -409,7 +409,8 @@ class Initializer(dobject):
                rbeads.m[:] = simul.beads.m[v.index]
             rnm = NormalModes(mode=simul.nm.mode, transform_method=simul.nm.transform_method, freqs=simul.nm.nm_freqs)
             rens = Ensemble(temp=simul.ensemble.temp)
-            rnm.bind(rbeads,rens)
+            rmv = Mover()
+            rnm.bind(rbeads,rens, rmv)
             # then we exploit the sync magic to do a complicated initialization
             # in the NM representation
             # with (possibly) shifted-frequencies NM

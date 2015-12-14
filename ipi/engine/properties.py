@@ -231,7 +231,7 @@ class Properties(dobject):
                       'func': (lambda: np.asarray(h2abc_deg(self.cell.h)))},
       "conserved": {  "dimension": "energy",
                       "help": "The value of the conserved energy quantity per bead.",
-                      'func': (lambda: self.mover.econs/float(self.beads.nbeads))},
+                      'func': (lambda: self.ensemble.econs/float(self.beads.nbeads))},
       "ensemble_temperature":  {  "dimension": "temperature",
                        "help" : "The target temperature for the current ensemble",
                        "func": (lambda: self.ensemble.temp) },

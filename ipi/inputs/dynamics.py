@@ -52,11 +52,7 @@ class InputDynamics(InputDictionary):
            "timestep": (InputValue, {"dtype"         : float,
                                      "default"       : 1.0,
                                      "help"          : "The time step.",
-                                     "dimension"     : "time"}),
-           "edyn":  (InputValue, {"dtype"     : float,
-                                         "default"   : 0.0,
-                                         "help"      : "The contribution to the conserved quantity from the integrator.",
-                                         "dimension" : "energy"})
+                                     "dimension"     : "time"})
          }
          
    dynamic = {  }
@@ -68,7 +64,7 @@ class InputDynamics(InputDictionary):
       """Takes an ensemble instance and stores a minimal representation of it.
 
       Args:
-         ens: An ensemble object.
+         dyn: An integrator object.
       """
       
       if dyn == {}: return
@@ -76,7 +72,6 @@ class InputDynamics(InputDictionary):
       self.mode.store(dyn.enstype)
       self.timestep.store(dyn.dt)
       self.thermostat.store(dyn.thermostat)
-      self.edyn.store(dyn.edyn)
       self.barostat.store(dyn.barostat)
       
    def fetch(self):
