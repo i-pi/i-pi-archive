@@ -148,8 +148,8 @@ class DynMover(Mover):
       
       #!TODO THOROUGH CLEAN-UP AND CHECK      
       if self.enstype == "nvt" or self.enstype == "npt" or self.enstype == "nst":
-            if self.ensemble.temp<0: 
-                raise ValueError("Negative or unspecified temperature for a constant-T integrator")
+          if self.ensemble.temp<0: 
+              raise ValueError("Negative or unspecified temperature for a constant-T integrator")
       
       
     def get_ntemp(self):
