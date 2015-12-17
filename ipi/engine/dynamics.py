@@ -78,6 +78,12 @@ class DynMover(Mover):
         else:
             self.barostat = barostat
          
+        dset(self,"stressext",depend_array(name='stressext',value=np.zeros((3,3),float)))
+        if not stressext is None:
+            self.stressext = stressext
+        else:
+            self.stressext = 0.0
+
         self.enstype = mode
         if self.enstype == "nve":
             self.integrator = NVEIntegrator()
@@ -85,6 +91,8 @@ class DynMover(Mover):
             self.integrator = NVTIntegrator()
         elif self.enstype == "npt":
             self.integrator = NPTIntegrator()
+        elif self.enstype == "nst":
+            self.integrator = NSTIntegrator()
         else:
             self.integrator = DummyIntegrator()
           
@@ -136,10 +144,10 @@ class DynMover(Mover):
       #depending on the kind, the thermostat might work in the normal mode or the bead representation.
       self.thermostat.bind(beads=self.beads, nm=self.nm, prng=prng,fixdof=fixdof )
 
-
       deppipe(self,"ntemp", self.barostat, "temp")
       deppipe(self,"dt", self.barostat, "dt")
       deppipe(self.ensemble,"pext", self.barostat, "pext")
+      deppipe(self,"stressext", self.barostat, "stressext")
       
       self.barostat.bind(beads, nm, cell, bforce, prng=prng, fixdof=fixdof)
         
@@ -150,8 +158,7 @@ class DynMover(Mover):
       if self.enstype == "nvt" or self.enstype == "npt" or self.enstype == "nst":
           if self.ensemble.temp<0: 
               raise ValueError("Negative or unspecified temperature for a constant-T integrator")
-      
-      
+
     def get_ntemp(self):
         """Returns the PI simulation temperature (P times the physical T)."""
 
@@ -376,131 +383,61 @@ class NPTIntegrator(NVTIntegrator):
         self.thermostat.step()
         self.pconstraints()
         self.ttime += time.time()
-#~ 
-#~ 
-#~ class NSTEnsemble(NVTEnsemble):
-   #~ """Ensemble object for constant pressure simulations.
-#~ 
-      #~ Has the relevant conserved quantity and normal mode propagator for the
-      #~ constant pressure ensemble. Contains a thermostat object containing the
-      #~ algorithms to keep the temperature constant, and a barostat to keep the
-      #~ pressure constant.
-#~ 
-      #~ Attributes:
-      #~ barostat: A barostat object to keep the pressure constant.
-#~ 
-      #~ Depend objects:
-      #~ econs: Conserved energy quantity. Depends on the bead and cell kinetic
-      #~ and potential energy, the spring potential energy, the heat
-      #~ transferred to the beads and cell thermostat, the temperature and
-      #~ the cell volume.
-      #~ pext: External pressure.
-      #~ """
-#~ 
-   #~ def __init__(self, dt, temp, stressext=None, thermostat=None, barostat=None, fixcom=False, eens=0.0, fixatoms=None):
-      #~ """Initialises NSTEnsemble.
-#~ 
-         #~ Args:
-         #~ dt: The simulation timestep.
-         #~ temp: The system temperature.
-         #~ stressext: The external stress.
-         #~ thermostat: A thermostat object to keep the temperature constant.
-         #~ Defaults to Thermostat().
-         #~ barostat: A barostat object to keep the pressure constant.
-         #~ Defaults to Barostat().
-         #~ fixcom: An optional boolean which decides whether the centre of mass
-         #~ motion will be constrained or not. Defaults to False.
-         #~ """
-#~ 
-      #~ super(NSTEnsemble,self).__init__(dt, temp, thermostat, fixcom=fixcom, eens=eens, fixatoms=fixatoms)
-      #~ if barostat == None:
-         #~ self.barostat = Barostat()
-      #~ else:
-         #~ self.barostat = barostat
-#~ 
-      #~ dset(self,"stressext",depend_array(name='stressext',value=np.zeros((3,3),float)))
-      #~ if not stressext is None:
-         #~ self.stressext = stressext
-      #~ else: self.stressext = 0.0
-#~ 
-#~ 
-   #~ def bind(self, beads, nm, cell, bforce, bbias, prng):
-      #~ """Binds beads, cell, bforce and prng to the ensemble.
-#~ 
-         #~ This takes a beads object, a cell object, a forcefield object and a
-         #~ random number generator object and makes them members of the ensemble.
-         #~ It also then creates the objects that will hold the data needed in the
-         #~ ensemble algorithms and the dependency network. Also note that the cell
-         #~ thermostat timesteps and temperatures are defined relative to the system
-         #~ temperature, and the the thermostat temperatures are held at the
-         #~ higher simulation temperature, as is appropriate.
-#~ 
-         #~ Args:
-         #~ beads: The beads object from whcih the bead positions are taken.
-         #~ nm: A normal modes object used to do the normal modes transformation.
-         #~ cell: The cell object from which the system box is taken.
-         #~ bforce: The forcefield object from which the force and virial are
-         #~ taken.
-         #~ prng: The random number generator object which controls random number
-         #~ generation.
-         #~ """
-#~ 
-#~ 
-      #~ fixdof = None
-      #~ if self.fixcom:
-         #~ fixdof = 3
-#~ 
-      #~ super(NSTEnsemble,self).bind(beads, nm, cell, bforce, bbias, prng)
-      #~ self.barostat.bind(beads, nm, cell, bforce, bbias, prng=prng, fixdof=fixdof)
-#~ 
-#~ 
-      #~ deppipe(self,"ntemp", self.barostat, "temp")
-      #~ deppipe(self,"dt", self.barostat, "dt")
-#~ 
-      #~ deppipe(self,"stressext", self.barostat, "stressext")
-      #~ dget(self,"econs").add_dependency(dget(self.barostat, "ebaro"))
-#~ 
-   #~ def get_econs(self):
-      #~ """Calculates the conserved energy quantity for the constant pressure
-         #~ ensemble.
-         #~ """
-#~ 
-      #~ return NVTEnsemble.get_econs(self) + self.barostat.ebaro
-#~ 
-   #~ def step(self, step=None):
-      #~ """NST time step (dummy for now).
-#~ 
-         #~ Note that the barostat only propagates the centroid coordinates. If this
-         #~ approximation is made a centroid virial pressure and stress estimator can
-         #~ be defined, so this gives the best statistical convergence. This is
-         #~ allowed as the normal mode propagation is approximately unaffected
-         #~ by volume fluctuations as long as the system box is much larger than
-         #~ the radius of gyration of the ring polymers.
-         #~ """
-#~ 
-      #~ self.ttime = -time.time()
-      #~ self.thermostat.step()
-      #~ self.barostat.thermostat.step()
-      #~ self.pconstraints()
-      #~ self.ttime += time.time()
-#~ 
-      #~ self.ptime = -time.time()
-      #~ self.barostat.pstep()
-      #~ self.pconstraints()
-      #~ self.ptime += time.time()
-#~ 
-      #~ self.qtime = -time.time()
-      #~ self.barostat.qcstep()
-      #~ self.nm.free_qstep()
-      #~ self.qtime += time.time()
-#~ 
-      #~ self.ptime -= time.time()
-      #~ self.barostat.pstep()
-      #~ self.pconstraints()
-      #~ self.ptime += time.time()
-#~ 
-      #~ self.ttime -= time.time()
-      #~ self.barostat.thermostat.step()
-      #~ self.thermostat.step()
-      #~ self.pconstraints()
-      #~ self.ttime += time.time()
+ 
+ 
+ class NSTEnsemble(NVTEnsemble):
+     """Ensemble object for constant pressure simulations.
+
+     Has the relevant conserved quantity and normal mode propagator for the
+     constant pressure ensemble. Contains a thermostat object containing the
+     algorithms to keep the temperature constant, and a barostat to keep the
+     pressure constant.
+ 
+     Attributes:
+     barostat: A barostat object to keep the pressure constant.
+
+     Depend objects:
+     econs: Conserved energy quantity. Depends on the bead and cell kinetic
+     and potential energy, the spring potential energy, the heat
+     transferred to the beads and cell thermostat, the temperature and
+     the cell volume.
+     pext: External pressure.
+     """
+
+     def step(self, step=None):
+         """NST time step (dummy for now).
+
+           Note that the barostat only propagates the centroid coordinates. If this
+           approximation is made a centroid virial pressure and stress estimator can
+           be defined, so this gives the best statistical convergence. This is
+           allowed as the normal mode propagation is approximately unaffected
+           by volume fluctuations as long as the system box is much larger than
+           the radius of gyration of the ring polymers.
+         """
+ 
+         self.ttime = -time.time()
+         self.thermostat.step()
+         self.barostat.thermostat.step()
+         self.pconstraints()
+         self.ttime += time.time()
+ 
+         self.ptime = -time.time()
+         self.barostat.pstep()
+         self.pconstraints()
+         self.ptime += time.time()
+
+         self.qtime = -time.time()
+         self.barostat.qcstep()
+         self.nm.free_qstep()
+         self.qtime += time.time()
+
+         self.ptime -= time.time()
+         self.barostat.pstep()
+         self.pconstraints()
+         self.ptime += time.time()
+
+         self.ttime -= time.time()
+         self.barostat.thermostat.step()
+         self.thermostat.step()
+         self.pconstraints()
+         self.ttime += time.time()
