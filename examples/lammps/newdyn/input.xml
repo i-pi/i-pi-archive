@@ -17,7 +17,7 @@
       </initialize>   
       <forces><force> lammps </force></forces>
       <mover mode='dynamics'>
-         <dynamics mode='npt'>
+         <dynamics mode='nst'>
             <timestep units='femtosecond'> 0.25 </timestep>
             <thermostat mode='langevin'>
                 <tau units='femtosecond'> 100 </tau>

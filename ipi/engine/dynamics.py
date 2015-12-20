@@ -57,7 +57,7 @@ class DynMover(Mover):
          effective classical temperature.
     """
 
-    def __init__(self, timestep, mode="nve", thermostat=None, barostat = None, fixcom=False, fixatoms=None):
+    def __init__(self, timestep, mode="nve", thermostat=None, barostat = None, fixcom=False, fixatoms=None, stressext=None):
         """Initialises a "dynamics" mover.
 
         Args:
@@ -147,7 +147,7 @@ class DynMover(Mover):
       deppipe(self,"ntemp", self.barostat, "temp")
       deppipe(self,"dt", self.barostat, "dt")
       deppipe(self.ensemble,"pext", self.barostat, "pext")
-      deppipe(self,"stressext", self.barostat, "stressext")
+      #deppipe(self,"stressext", self.barostat, "stressext")
       
       self.barostat.bind(beads, nm, cell, bforce, prng=prng, fixdof=fixdof)
         
@@ -385,7 +385,7 @@ class NPTIntegrator(NVTIntegrator):
         self.ttime += time.time()
  
  
- class NSTEnsemble(NVTEnsemble):
+class NSTIntegrator(NVTIntegrator):
      """Ensemble object for constant pressure simulations.
 
      Has the relevant conserved quantity and normal mode propagator for the
