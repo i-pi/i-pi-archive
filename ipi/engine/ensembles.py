@@ -55,7 +55,7 @@ class Ensemble(dobject):
       
         dset(self,"stressext",depend_array(name='stressext',value=np.zeros((3,3),float)))
         if not stressext is None:
-            self.stressext = stressext
+            self.stressext =  np.reshape(np.asarray(stressext),(3,3))       
         else: self.stressext = -1.0
 
         dset(self,"pext",depend_value(name='pext'))

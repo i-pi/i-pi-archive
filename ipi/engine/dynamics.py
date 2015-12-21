@@ -78,11 +78,11 @@ class DynMover(Mover):
         else:
             self.barostat = barostat
          
-        dset(self,"stressext",depend_array(name='stressext',value=np.zeros((3,3),float)))
-        if not stressext is None:
-            self.stressext = stressext
-        else:
-            self.stressext = 0.0
+        #dset(self,"stressext",depend_array(name='stressext',value=np.zeros((3,3),float)))
+        #if not stressext is None:
+        #    self.stressext = stressext
+        #else:
+        #    self.stressext = 0.0
 
         self.enstype = mode
         if self.enstype == "nve":
@@ -146,8 +146,8 @@ class DynMover(Mover):
 
       deppipe(self,"ntemp", self.barostat, "temp")
       deppipe(self,"dt", self.barostat, "dt")
+      deppipe(self,"stressext", self.barostat, "stressext")
       deppipe(self.ensemble,"pext", self.barostat, "pext")
-      #deppipe(self,"stressext", self.barostat, "stressext")
       
       self.barostat.bind(beads, nm, cell, bforce, prng=prng, fixdof=fixdof)
         
