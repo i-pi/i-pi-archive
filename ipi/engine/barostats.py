@@ -100,8 +100,8 @@ class Barostat(dobject):
       self.thermostat = thermostat
 
       # pipes timestep and temperature to the thermostat
-      deppipe(self,"dt", self.thermostat, "dt")
-      deppipe(self, "temp", self.thermostat,"temp")
+      deppipe(self, "dt", self.thermostat, "dt")
+      deppipe(self, "temp", self.thermostat, "temp")
 
 
    def bind(self, beads, nm, cell, forces, bias=None, prng=None, fixdof=None):
