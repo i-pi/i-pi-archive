@@ -189,7 +189,6 @@ class DummyIntegrator(dobject):
         self.fixatoms = mover.fixatoms
         dset(self, "dt", dget(mover, "dt"))
         deppipe(mover.ensemble,"stressext", self.barostat, "stressext")
-        deppipe(mover.ensemble,"pext", self.barostat, "pext")
         
     def pstep(self):
         """Dummy momenta propagator which does nothing."""
