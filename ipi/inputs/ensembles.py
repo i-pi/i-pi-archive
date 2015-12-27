@@ -42,15 +42,15 @@ class InputEnsemble(Input):
 
    fields={
            "temperature" : (InputValue, {"dtype"     : float,
-                                         "default"   : 1.0,
+                                         "default"   : -1.0,
                                          "help"      : "The temperature of the system.",
                                          "dimension" : "temperature"}),
            "pressure" : (InputValue, {"dtype"        : float,
-                                      "default"      : 1.0,
+                                      "default"      : -1.0,
                                       "help"         : "The external pressure.",
                                       "dimension"    : "pressure"}),
            "stress" : (InputArray, {"dtype"        : float,
-                                    "default"      : np.identity(3,float),
+                                    "default"      : -np.identity(3,float),
                                     "help"         : "The external stress.",
                                     "dimension"    : "pressure"}),
            "eens" : (InputValue, {"dtype"     : float,

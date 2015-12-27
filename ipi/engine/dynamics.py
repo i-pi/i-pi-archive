@@ -78,11 +78,6 @@ class DynMover(Mover):
         else:
             self.barostat = barostat
          
-        #dset(self,"stressext",depend_array(name='stressext',value=np.zeros((3,3),float)))
-        #if not stressext is None:
-        #    self.stressext = stressext
-        #else:
-        #    self.stressext = 0.0
 
         self.enstype = mode
         if self.enstype == "nve":
@@ -146,8 +141,8 @@ class DynMover(Mover):
 
       deppipe(self,"ntemp", self.barostat, "temp")
       deppipe(self,"dt", self.barostat, "dt")
-      #deppipe(mover.ensemble,"stressext", self.barostat, "stressext")
-      #deppipe(mover.ensemble,"pext", self.barostat, "pext")
+      deppipe(self.ensemble,"pext", self.barostat, "pext")
+      deppipe(self.ensemble,"stressext", self.barostat, "stressext")      
       
       self.barostat.bind(beads, nm, cell, bforce, prng=prng, fixdof=fixdof)
         
@@ -158,6 +153,13 @@ class DynMover(Mover):
       if self.enstype == "nvt" or self.enstype == "npt" or self.enstype == "nst":
           if self.ensemble.temp<0: 
               raise ValueError("Negative or unspecified temperature for a constant-T integrator")
+          if self.enstype == "npt":
+              if self.ensemble.pext<0:
+                  raise ValueError("Negative or unspecified pressure for a constant-p integrator")
+          elif self.enstype == "nst":
+              print "STRESS:", np.trace(self.ensemble.stressext)
+              if np.trace(self.ensemble.stressext)<0:
+                  raise ValueError("Negative or unspecified stress for a constant-s integrator")
 
     def get_ntemp(self):
         """Returns the PI simulation temperature (P times the physical T)."""
@@ -188,7 +190,6 @@ class DummyIntegrator(dobject):
         self.fixcom = mover.fixcom
         self.fixatoms = mover.fixatoms
         dset(self, "dt", dget(mover, "dt"))
-        deppipe(mover.ensemble,"stressext", self.barostat, "stressext")
         
     def pstep(self):
         """Dummy momenta propagator which does nothing."""
