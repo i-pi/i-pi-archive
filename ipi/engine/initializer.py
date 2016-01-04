@@ -16,8 +16,8 @@ from ipi.engine.beads import Beads
 from ipi.engine.cell import Cell
 from ipi.engine.normalmodes import NormalModes
 from ipi.engine.ensembles import Ensemble
-from ipi.utils.io.backends.io_xyz import read_xyz
-from ipi.utils.io.backends.io_pdb import read_pdb
+from ipi.engine.mover import Mover
+from ipi.utils.io import read_file
 from ipi.utils.io.inputs.io_xml import xml_parse_file
 from ipi.utils.depend import dobject
 from ipi.utils.units import Constants, unit_to_internal
@@ -85,32 +85,11 @@ class InitIndexed(InitBase):
       super(InitIndexed,self).__init__(value=value, mode=mode, units=units, index=index, bead=bead)
 
 
-def init_xyz(filename):
-   """Reads an xyz file and returns the data contained in it.
+def init_file(mode, filename):
+   """Reads a @mode file and returns the data contained in it.
 
    Args:
-      filename: A string giving the name of the xyz file to be read from.
-
-   Returns:
-      A list of Atoms objects as read from each frame of the xyz file.
-   """
-
-   rfile = open(filename,"r")
-   ratoms = []
-   while True:
-   #while loop, so that more than one configuration can be given
-   #so multiple beads can be initialized at once.
-      try:
-         myatoms = read_xyz(rfile)
-      except EOFError:
-         break
-      ratoms.append(myatoms)
-   return ratoms
-
-def init_pdb(filename):
-   """Reads an pdb file and returns the data contained in it.
-
-   Args:
+      mode: Type of file that should be read.
       filename: A string giving the name of the pdb file to be read from.
 
    Returns:
@@ -118,17 +97,18 @@ def init_pdb(filename):
       a Cell object as read from the final pdb frame.
    """
 
-   rfile = open(filename,"r")
+   rfile = open(filename, "r")
    ratoms = []
    while True:
    #while loop, so that more than one configuration can be given
    #so multiple beads can be initialized at once.
       try:
-         myatoms, rcell  = read_pdb(rfile)
+         ret = read_file(mode, rfile)
       except EOFError:
          break
-      ratoms.append(myatoms)
-   return ( ratoms, rcell ) # if multiple frames, the last cell is returned
+      ratoms.append(ret["atoms"])
+   return ratoms, ret["cell"]  # if multiple frames, the last cell is returned
+
 
 def init_chk(filename):
    """Reads a checkpoint file and returns the data contained in it.
@@ -157,6 +137,7 @@ def init_chk(filename):
 
    return (rbeads, rcell, rthermo)
 
+
 def init_beads(iif, nbeads):
    """Initializes a beads object from an appropriate initializer object.
 
@@ -169,17 +150,18 @@ def init_beads(iif, nbeads):
    """
 
    mode = iif.mode; value = iif.value
-   if mode == "xyz" or mode == "pdb":
-      if mode == "xyz": ratoms = init_xyz(value)
-      if mode == "pdb": ratoms = init_pdb(value)[0]
-      rbeads = Beads(ratoms[0].natoms,len(ratoms))
-      for i in range(len(ratoms)): rbeads[i] = ratoms[i]
-   elif mode == "chk":
+   if mode == "chk":
       rbeads = init_chk(value)[0]
    elif mode == "manual":
       raise ValueError("Cannot initialize manually a whole beads object.")
+   else:
+      ret = init_file(mode, value)
+      ratoms = ret[0]
+      rbeads = Beads(ratoms[0].natoms,len(ratoms))
+      for i in range(len(ratoms)): rbeads[i] = ratoms[i]
 
    return rbeads
+
 
 def init_vector(iif, nbeads, momenta=False):
    """Initializes a vector from an appropriate initializer object.
@@ -208,6 +190,7 @@ def init_vector(iif, nbeads, momenta=False):
       rq.shape = (nbeads,3*natoms)
 
    return rq
+
 
 def set_vector(iif, dq, rq):
    """Initializes a vector from an another vector.
@@ -248,6 +231,7 @@ def set_vector(iif, dq, rq):
          dq[iif.bead] = rq
       else:
          dq[iif.bead,3*iif.index:3*(iif.index+1)] = rq
+
 
 class Initializer(dobject):
    """Class that deals with the initialization of data.
@@ -424,8 +408,9 @@ class Initializer(dobject):
             else:
                rbeads.m[:] = simul.beads.m[v.index]
             rnm = NormalModes(mode=simul.nm.mode, transform_method=simul.nm.transform_method, freqs=simul.nm.nm_freqs)
-            rens = Ensemble(dt=simul.ensemble.dt, temp=simul.ensemble.temp)
-            rnm.bind(rens,rbeads)
+            rens = Ensemble(temp=simul.ensemble.temp)
+            rmv = Mover()
+            rnm.bind(rbeads,rens, rmv)
             # then we exploit the sync magic to do a complicated initialization
             # in the NM representation
             # with (possibly) shifted-frequencies NM

@@ -12,7 +12,7 @@ Syntax:
 
 import numpy as np
 import sys, glob
-from ipi.utils.io import *
+from ipi.utils.io import read_file, print_file_path
 from ipi.engine.beads import Beads
 from ipi.engine.cell import Cell
 from ipi.utils.depend import *
@@ -26,17 +26,15 @@ def main(prefix):
       imode.append(filename.split(".")[-1])
       ipos.append(open(filename,"r"))
 
-   nbeads = len(ipos)   
+   nbeads = len(ipos)
    natoms = 0
    ifr = 0
    while True:
       try:
          for i in range(nbeads):
-            if (imode[i]=="xyz"):
-               pos=read_file(imode[i],ipos[i])
-               cell = Cell()
-            else:
-               pos, cell = read_file(imode[i],ipos[i])
+            ret = read_file(imode[i], ipos[i], readcell="true")
+            pos = ret["atoms"]
+            cell = ret["cell"]
             if natoms == 0:
                natoms = pos.natoms
                beads = Beads(natoms,nbeads)
@@ -45,7 +43,7 @@ def main(prefix):
       except EOFError: # finished reading files
          sys.exit(0)
 
-      print_file_path("pdb",beads, cell)
+      print_file_path("pdb", beads, cell)
       ifr+=1
 
 

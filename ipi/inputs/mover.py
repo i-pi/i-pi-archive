@@ -25,12 +25,14 @@ import numpy as np
 import ipi.engine.initializer
 from ipi.engine.geop import GeopMover
 from ipi.engine.neb import NEBMover
+from ipi.engine.dynamics import DynMover
 from ipi.engine.mover import *
 from ipi.utils.inputvalue import *
 from ipi.inputs.thermostats import *
 from ipi.inputs.initializer import *
 from ipi.inputs.geop import InputGeop
 from ipi.inputs.neb import InputNEB
+from ipi.inputs.dynamics import InputDynamics
 from ipi.utils.units import *
 
 __all__ = ['InputMover']
@@ -51,8 +53,8 @@ class InputMover(Input):
    """
 
    attribs={"mode"  : (InputAttribute, {"dtype"   : str,
-                                    "help"    : "The ensemble hat will be sampled during the simulation. 'replay' means that a simulation is restarted from a previous simulation.",
-                                    "options" : ['minimize', 'replay', 'neb', 'dummy']}) }
+                                    "help"    : "How atoms should be moved at each step in the simulatio. 'replay' means that a simulation is restarted from a previous simulation.",
+                                    "options" : ['minimize', 'replay', 'neb', 'dynamics',  'dummy']}) }
    fields={"fixcom": (InputValue, {"dtype"           : bool,
                                    "default"         : True,
                                    "help"            : "This describes whether the centre of mass of the particles is fixed."}),
@@ -63,7 +65,7 @@ class InputMover(Input):
                                      "help":  "Option for geometry optimization" } ),
            "neb_optimizer" : ( InputGeop, { "default" : {}, 
                                      "help":  "Option for geometry optimization" } ),
-           "dynamics" : ( InputGeop, { "default" : {}, 
+           "dynamics" : ( InputDynamics, { "default" : {}, 
                                      "help":  "Option for (path integral) molecular dynamics" } ),                          
            "file": (InputInitFile, {"default" : input_default(factory=ipi.engine.initializer.InitBase,kwargs={"mode":"xyz"}),
                            "help"            : "This describes the location to read a trajectory file from."})
@@ -96,7 +98,7 @@ class InputMover(Input):
          self.mode.store("neb")
          self.neb_optimizer.store(sc)
          tsc = 1
-      elif type(sc) is DynMover:
+      elif type(sc) is DynMover:         
          self.mode.store("dynamics")
          self.dynamics.store(sc)
          tsc = 1   

@@ -36,6 +36,7 @@ class NormalModes(dobject):
          be done.
       ensemble: The ensemble object, specifying the temperature to hold the
          system to.
+      mover: The mover object that will need normal-mode transformation and propagator
       transform: A nm_trans object that contains the functions that are
          required for the normal mode transformation.
 
@@ -75,7 +76,7 @@ class NormalModes(dobject):
          beads.sm3, beads.p and nm_factor.
    """
 
-   def __init__(self, mode="rpmd", transform_method="fft", freqs=None):
+   def __init__(self, mode="rpmd", transform_method="fft", freqs=None, dt=1.0):
       """Initializes NormalModes.
 
       Sets the options for the normal mode transform.
@@ -89,13 +90,14 @@ class NormalModes(dobject):
 
       if freqs is None:
          freqs = []
+      dset(self,"dt",   depend_value(name='dt', value=dt))
       dset(self,"mode",   depend_value(name='mode', value=mode))
       dset(self,"transform_method",
          depend_value(name='transform_method', value=transform_method))
       dset(self,"nm_freqs",
          depend_array(name="nm_freqs",value=np.asarray(freqs, float) ) )
 
-   def bind(self, ensemble, beads=None, forces=None):
+   def bind(self, beads, ensemble, mover):
       """ Initializes the normal modes object and binds to beads and ensemble.
 
       Do all the work down here as we need a full-formed necklace and ensemble
@@ -116,6 +118,7 @@ class NormalModes(dobject):
       self.beads = beads
       self.forces = forces
       self.ensemble = ensemble
+      deppipe(mover, "dt", self, "dt")
 
       # sets up what's necessary to perform nm transformation.
       if self.transform_method == "fft":

@@ -16,7 +16,7 @@ from ipi.utils.depend import *
 from ipi.utils.units import Constants, unit_to_internal, unit_to_user
 from ipi.utils.mathtools import logsumlog, h2abc_deg
 import ipi.utils.io as io
-from ipi.utils.io import io_xml
+from ipi.utils.io.inputs import io_xml
 from ipi.engine.atoms import *
 from ipi.engine.cell import *
 from ipi.engine.ensembles import *
@@ -202,7 +202,7 @@ class Properties(dobject):
                       'func': (lambda: (1 + self.simul.step))},
       "time": {       "dimension": "time",
                       "help": "The elapsed simulation time.",
-                      'func': (lambda: (1 + self.simul.step)*self.ensemble.dt)},
+                      'func': (lambda: (1 + self.simul.step)*self.mover.dt)},
       "temperature": {"dimension": "temperature",
                       "help": "The current temperature, as obtained from the MD kinetic energy.",
                       "longhelp" : """The current temperature, as obtained from the MD kinetic energy of the (extended)
@@ -474,13 +474,13 @@ class Properties(dobject):
                           "size" : 3,
                           'func': self.get_chin_correction,
                           "help": "The weighting factor in Suzuki-Chin 4th-order PI expansion.",
-                          "longhelp" : """The 3 numbers output are 1) the logarithm of the weighting factor -\beta_P \delta H,
+                          "longhelp" : """The 3 numbers output are 1) the logarithm of the weighting factor -beta_P delta H,
                       2) the square of the logarithm, and 3) the weighting factor""" } ,
        "ti_weight":  {"dimension" : "undefined",
                           "size" : 3,
                           'func': self.get_ti_correction,
                           "help": "The weighting factor in Takahashi-Imada 4th-order PI expansion.",
-                          "longhelp" : """The 3 numbers output are 1) the logarithm of the weighting factor -\beta_P \delta H,
+                          "longhelp" : """The 3 numbers output are 1) the logarithm of the weighting factor -beta_P delta H,
                       2) the square of the logarithm, and 3) the weighting factor""" } ,
        "ti_pot":  {"dimension" : "undefined",
                           "size" : 1,
@@ -522,6 +522,7 @@ class Properties(dobject):
       """
 
       self.ensemble = system.ensemble
+      self.mover = system.mover
       self.beads = system.beads
       self.nm = system.nm
       self.cell = system.cell
@@ -616,14 +617,14 @@ class Properties(dobject):
             for. If not, then the simulation temperature.
       """
 
-      if len(self.ensemble.fixatoms)>0:
-         mdof = len(self.ensemble.fixatoms)*3
+      if len(self.mover.fixatoms)>0:
+         mdof = len(self.mover.fixatoms)*3
          if bead == "" and nm == "":
             mdof*=self.beads.nbeads
       else:
          mdof = 0
 
-      if self.ensemble.fixcom:
+      if self.mover.fixcom:
          if bead == "" and nm == "":
             mdof += 3
          elif nm != "" and nm == "0":   # the centroid has 100% of the COM removal
@@ -1387,7 +1388,7 @@ class Properties(dobject):
          atom: the label or index of the atom to compute the isotope fractionation pair for
 
       Returns:
-         a tuple from which one can reconstruct all that is needed to
+         a tuple from which one can recons truct all that is needed to
          compute the relative probability of isotope substitution using
          scaled coordinates:
          (yamaaverage, yama2average, yamaexpaverage)
