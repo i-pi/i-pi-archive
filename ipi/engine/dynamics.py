@@ -445,7 +445,7 @@ class NSTIntegrator(NVTIntegrator):
          self.ttime += time.time()
 
 
-class SCEnsemble(NVEEnsemble):
+class SCIntegrator(NVEIntegrator):
    """Ensemble object for constant temperature simulations.
 
    Has the relevant conserved quantity and normal mode propagator for the
@@ -460,62 +460,6 @@ class SCEnsemble(NVEEnsemble):
          potential energy, the spring potential energy and the heat
          transferred to the thermostat.
    """
-
-   def __init__(self, dt, temp, thermostat=None, fixcom=False, eens=0.0, fixatoms=None):
-      """Initialises SCEnsemble.
-
-      Args:
-         dt: The simulation timestep.
-         temp: The system temperature.
-         thermostat: A thermostat object to keep the temperature constant.
-            Defaults to Thermostat()
-         fixcom: An optional boolean which decides whether the centre of mass
-            motion will be constrained or not. Defaults to False.
-      """
-
-      super(SCEnsemble,self).__init__(dt=dt,temp=temp, fixcom=fixcom, eens=eens, fixatoms=fixatoms)
-
-      if thermostat is None:
-         self.thermostat = Thermostat()
-      else:
-         self.thermostat = thermostat
-
-   def bind(self, beads, nm, cell, bforce, bbias, prng):
-      """Binds beads, cell, bforce and prng to the ensemble.
-
-      This takes a beads object, a cell object, a forcefield object and a
-      random number generator object and makes them members of the ensemble.
-      It also then creates the objects that will hold the data needed in the
-      ensemble algorithms and the dependency network. Also note that the
-      thermostat timestep and temperature are defined relative to the system
-      temperature, and the the thermostat temperature is held at the
-      higher simulation temperature, as is appropriate.
-
-      Args:
-         beads: The beads object from whcih the bead positions are taken.
-         nm: A normal modes object used to do the normal modes transformation.
-         cell: The cell object from which the system box is taken.
-         bforce: The forcefield object from which the force and virial are
-            taken.
-         prng: The random number generator object which controls random number
-            generation.
-      """
-
-      super(SCEnsemble,self).bind(beads, nm, cell, bforce, bbias, prng)
-
-      fixdof = len(self.fixatoms)*3*self.beads.nbeads
-      if self.fixcom:
-         fixdof += 3
-
-
-      # first makes sure that the thermostat has the correct temperature, then proceed with binding it.
-      deppipe(self,"ntemp", self.thermostat,"temp")
-      deppipe(self,"dt", self.thermostat, "dt")
-
-      #depending on the kind, the thermostat might work in the normal mode or the bead representation.
-      self.thermostat.bind(beads=self.beads, nm=self.nm,prng=prng,fixdof=fixdof )
-
-      dget(self,"econs").add_dependency(dget(self.thermostat, "ethermo"))
 
    def pstep(self):                                                                     
       """Velocity Verlet momenta propagator."""
@@ -559,9 +503,9 @@ class SCEnsemble(NVEEnsemble):
       self.pconstraints()
       self.ttime += time.time()
 
-   def get_econs(self):
-      """Calculates the conserved energy quantity for constant temperature
-      ensemble. Also add the S-C term. 
-      """
-      return NVEEnsemble.get_econs(self) + self.thermostat.ethermo + self.forces.potsc
+#   def get_econs(self):
+#      """Calculates the conserved energy quantity for constant temperature
+#      ensemble. Also add the S-C term. 
+#      """
+#      return NVEEnsemble.get_econs(self) + self.thermostat.ethermo + self.forces.potsc
 
