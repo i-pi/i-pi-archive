@@ -73,6 +73,8 @@ class Mover(dobject):
          self.fixatoms = np.zeros(0,int)
       else:
          self.fixatoms = fixatoms
+         
+      self.beads = self.cell = self.forces = self.prng = self.nm = None
 
 
    def bind(self, ens, beads, nm, cell, bforce, prng):

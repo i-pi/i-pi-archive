@@ -43,7 +43,7 @@ class InputDynamics(InputDictionary):
    attribs={"mode"  : (InputAttribute, {"dtype"   : str,
                                     "default" : 'nve',
                                     "help"    : "The ensemble that will be sampled during the simulation. ",
-                                    "options" : ['nve', 'nvt', 'npt', 'nst']}) }
+                                    "options" : ['nve', 'nvt', 'npt', 'nst', 'sc']}) }
    fields={
            "thermostat" : (InputThermo, {"default"   : input_default(factory=ipi.engine.thermostats.Thermostat),
                                          "help"      : "The thermostat for the atoms, keeps the atom velocity distribution at the correct temperature."} ),

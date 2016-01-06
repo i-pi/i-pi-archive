@@ -97,7 +97,7 @@ class NormalModes(dobject):
       dset(self,"nm_freqs",
          depend_array(name="nm_freqs",value=np.asarray(freqs, float) ) )
 
-   def bind(self, beads, ensemble, mover):
+   def bind(self, ensemble, mover, beads=None, forces=None):
       """ Initializes the normal modes object and binds to beads and ensemble.
 
       Do all the work down here as we need a full-formed necklace and ensemble
@@ -108,8 +108,8 @@ class NormalModes(dobject):
          ensemble: An ensemble object to be bound.
       """
 
-      if beads is None: beads = ensemble.beads
-      if forces is None: forces = ensemble.forces
+      if beads is None: beads = mover.beads
+      if forces is None: forces = mover.forces
       
       self.nbeads = beads.nbeads
       self.natoms = beads.natoms
@@ -118,7 +118,7 @@ class NormalModes(dobject):
       self.beads = beads
       self.forces = forces
       self.ensemble = ensemble
-      deppipe(mover, "dt", self, "dt")
+      self.mover = mover      
 
       # sets up what's necessary to perform nm transformation.
       if self.transform_method == "fft":
@@ -193,7 +193,7 @@ class NormalModes(dobject):
             dependencies=[dget(self,"nm_factor"), dget(self,"omegak") ]) )
 
       dset(self, "dt", depend_value(name="dt", value = 1.0) )
-      deppipe(self.ensemble,"dt", self, "dt") # now self.dt is automatycally synced to ensemble.dt
+      deppipe(self.mover, "dt", self, "dt")
       dset(self,"prop_pq",
          depend_array(name='prop_pq',value=np.zeros((self.beads.nbeads,2,2)),
             func=self.get_prop_pq,

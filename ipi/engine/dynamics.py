@@ -88,6 +88,8 @@ class DynMover(Mover):
             self.integrator = NPTIntegrator()
         elif self.enstype == "nst":
             self.integrator = NSTIntegrator()
+        elif self.enstype == "sc":
+            self.integrator = SCIntegrator()
         else:
             self.integrator = DummyIntegrator()
           
@@ -460,6 +462,29 @@ class SCIntegrator(NVEIntegrator):
          potential energy, the spring potential energy and the heat
          transferred to the thermostat.
    """
+
+   def bind(self, mover):
+      """Binds ensemble beads, cell, bforce, bbias and prng to the dynamics.
+
+      This takes a beads object, a cell object, a forcefield object and a
+      random number generator object and makes them members of the ensemble.
+      It also then creates the objects that will hold the data needed in the
+      ensemble algorithms and the dependency network. Note that the conserved
+      quantity is defined in the init, but as each ensemble has a different
+      conserved quantity the dependencies are defined in bind.
+
+      Args:
+         beads: The beads object from whcih the bead positions are taken.
+         nm: A normal modes object used to do the normal modes transformation.
+         cell: The cell object from which the system box is taken.
+         bforce: The forcefield object from which the force and virial are
+            taken.
+         prng: The random number generator object which controls random number
+            generation.
+      """
+      
+      super(SCIntegrator,self).bind(mover)
+      self.ensemble.add_econs(dget(self.forces, "potsc"))
 
    def pstep(self):                                                                     
       """Velocity Verlet momenta propagator."""
