@@ -688,7 +688,7 @@ class Properties(dobject):
 
       return acv
 
-def get_sckinop(self, atom=""):
+   def get_sckinop(self, atom=""):
       """Calculates the Suzuki-Chin quantum centroid virial kinetic energy estimator.
 
       Args:
@@ -721,7 +721,7 @@ def get_sckinop(self, atom=""):
          k = 3*i
          for b in range(0,self.beads.nbeads,2):
             kcv += (q[b,k] - qc[k])* f[b,k] + (q[b,k+1] - qc[k+1])* f[b,k+1] + (q[b,k+2] - qc[k+2])* f[b,k+2]
-         kcv *= -0.5/self.beads.nbeads
+         kcv *= -0.5/self.beads.nbeads*2.0
          kcv += 1.5*Constants.kb*self.ensemble.temp
          acv += kcv
          ncount += 1
