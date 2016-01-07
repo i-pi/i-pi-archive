@@ -7,23 +7,37 @@
 import os
 import subprocess
 
+from nose import with_setup
+
 
 def run_command(cmd):
-    """Runs @cmd in doc directory."""
+    """Runs `cmd` in doc directory."""
     cwd = os.getcwd()
-    os.chdir(os.sep.join(__file__.split(os.sep)[:-1] + ["..", "doc"]))
-    ret = subprocess.call(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    os.chdir(os.path.join(os.path.split(__file__)[0], "..", "doc"))
+    ret = subprocess.call(cmd.split(' '), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     os.chdir(cwd)
     return ret
 
 
-def test_make():
-    """doc: run make"""
-    ret = run_command("make")
+def distclean():
+    """Prepare for documentation build testing."""
+    run_command("make distclean")
+
+
+def clean():
+    """Clean up the documentation build after testing."""
+    run_command("make clean")
+
+
+@with_setup(distclean, None)
+def test_make_aux():
+    """doc: run make aux"""
+    ret = run_command("make aux")
     assert ret == 0
 
 
-def test_make_aux():
-    """doc: run make aux"""
-    ret = run_command(["make", "aux"])
+@with_setup(None, clean)
+def test_make():
+    """doc: run make"""
+    ret = run_command("make")
     assert ret == 0

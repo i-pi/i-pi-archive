@@ -170,9 +170,7 @@ class InputFFSocket(InputForceField):
 
 class InputFFLennardJones(InputForceField):
 
-   attribs = { "threaded" : (InputAttribute, {"dtype": bool,
-                                              "default": True,
-                                              "help": "Specifies if force evaluations should be performed in parallel"} ) }
+   attribs = {}
    attribs.update(InputForceField.attribs)
 
    default_help = """Simple, internal LJ evaluator without cutoff, neighbour lists or minimal image convention.
@@ -181,10 +179,9 @@ class InputFFLennardJones(InputForceField):
 
    def store(self, ff):
       super(InputFFLennardJones,self).store(ff)
-      self.threaded.store(ff.threaded)
 
    def fetch(self):
       super(InputFFLennardJones,self).fetch()
 
       return FFLennardJones(pars = self.parameters.fetch(), name = self.name.fetch(),
-               latency = self.latency.fetch(), dopbc = self.pbc.fetch(), threaded=self.threaded.fetch() )
+               latency = self.latency.fetch(), dopbc = self.pbc.fetch())
