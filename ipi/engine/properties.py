@@ -246,12 +246,12 @@ class Properties(dobject):
                       "longhelp": """The physical system potential energy. With the optional argument 'bead'
                          will print the potential associated with the specified bead.""",
                       'func': (lambda bead="-1": self.forces.pot/self.beads.nbeads if int(bead)<0 else self.forces.pots[int(bead)])},
-      "potential_scop": {  "dimension" : "energy",
+      "potential_opsc": {  "dimension" : "energy",
                       "help" : "The physical system potential energy for suzuki-chin propogator calculated by operator mothod.",
                       "longhelp": """The physical system potential energy. With the optional argument 'bead'
                          will print the potential associated with the specified bead.""",
                       'func': (lambda: 2.0/self.beads.nbeads*sum(self.forces.pots[int(k)] for k in range(0,self.beads.nbeads,2)) )},
-      "potential_scth": {  "dimension" : "energy",
+      "potential_tdsc": {  "dimension" : "energy",
                       "help" : "The physical system potential energy for suzuki-chin propogator calculated by thermodynamic method.",
                       "longhelp": """The physical system potential energy. With the optional argument 'bead'
                          will print the potential associated with the specified bead.""",
@@ -292,12 +292,18 @@ class Properties(dobject):
                       Takes an argument 'atom', which can be either an atom label or index (zero based)
                       to specify which species to find the kinetic energy of. If not specified, all atoms are used.""",
                       'func': self.get_kintd},
-      "kinetic_cvsc":  {"dimension" : "energy",
+      "kinetic_tdsc":  {"dimension" : "energy",
                       "help": "The centroid-virial quantum kinetic energy of the physical system for suzuki-chin propagator.",
                       "longhelp": """The centroid-virial quantum kinetic energy of the physical system.
                       Takes an argument 'atom', which can be either an atom label or index (zero based)
                       to specify which species to find the kinetic energy of. If not specified, all atoms are used.""",
-                      'func': self.get_sckincv},
+                      'func': self.get_sckintd},
+      "kinetic_opsc":  {"dimension" : "energy",
+                      "help": "The centroid-virial quantum kinetic energy of the physical system for suzuki-chin propagator.",
+                      "longhelp": """The centroid-virial quantum kinetic energy of the physical system.
+                      Takes an argument 'atom', which can be either an atom label or index (zero based)
+                      to specify which species to find the kinetic energy of. If not specified, all atoms are used.""",
+                      'func': self.get_sckinop},
       "kinetic_tens":{"dimension" : "energy",
                       "help" : "The centroid-virial quantum kinetic energy tensor of the physical system.",
                       "longhelp" : """The centroid-virial quantum kinetic energy tensor of the physical system.
@@ -682,8 +688,51 @@ class Properties(dobject):
 
       return acv
 
-   def get_sckincv(self, atom=""):
-      """Calculates the quantum centroid virial kinetic energy estimator.
+def get_sckinop(self, atom=""):
+      """Calculates the Suzuki-Chin quantum centroid virial kinetic energy estimator.
+
+      Args:
+         atom: If given, specifies the atom to give the kinetic energy
+            for. If not, the system kinetic energy is given.
+      """
+
+      try:
+         #iatom gives the index of the atom to be studied
+         iatom = int(atom)
+         latom = ""
+         if iatom >= self.beads.natoms:
+            raise IndexError("Cannot output kinetic energy as atom index %d is larger than the number of atoms" % iatom)
+      except ValueError:
+         #here 'atom' is a label rather than an index which is stored in latom
+         iatom = -1
+         latom = atom
+
+      q = depstrip(self.beads.q)
+      qc = depstrip(self.beads.qc)
+      f = depstrip(self.forces.f)
+
+      acv = 0.0
+      ncount = 0
+      for i in range(self.beads.natoms):
+         if (atom != "" and iatom != i and latom != self.beads.names[i]):
+            continue
+
+         kcv = 0.0
+         k = 3*i
+         for b in range(0,self.beads.nbeads,2):
+            kcv += (q[b,k] - qc[k])* f[b,k] + (q[b,k+1] - qc[k+1])* f[b,k+1] + (q[b,k+2] - qc[k+2])* f[b,k+2]
+         kcv *= -0.5/self.beads.nbeads
+         kcv += 1.5*Constants.kb*self.ensemble.temp
+         acv += kcv
+         ncount += 1
+
+      if ncount == 0:
+         warning("Couldn't find an atom which matched the argument of kinetic energy, setting to zero.", verbosity.medium)
+
+      return acv
+
+   def get_sckintd(self, atom=""):
+      """Calculates the Suzuki-Chin thermodynamic quantum centroid virial kinetic energy estimator.
 
       Args:
          atom: If given, specifies the atom to give the kinetic energy
