@@ -17,7 +17,7 @@ from ipi.utils.io.inputs.io_xml import xml_parse_file
 from ipi.utils.units import unit_to_internal
 
 
-__all__ = ['Motion', 'ReplayMover']
+__all__ = ['Motion', 'Replay']
 
 
 class Motion(dobject):
@@ -93,7 +93,7 @@ class Motion(dobject):
 
 
 # TODO: Put it in a separate file like the other "movers"?
-class ReplayMover(Motion):
+class Replay(Motion):
     """Calculator object that just loads snapshots from an external file in sequence.
 
     Has the relevant conserved quantity and normal mode propagator for the
@@ -111,7 +111,7 @@ class ReplayMover(Motion):
     """
 
     def __init__(self, fixcom=False, fixatoms=None, intraj=None):
-        """Initialises ReplayMover.
+        """Initialises Replay.
 
         Args:
            dt: The simulation timestep.
@@ -121,7 +121,7 @@ class ReplayMover(Motion):
            intraj: The input trajectory file.
         """
 
-        super(ReplayMover, self).__init__(fixcom=fixcom, fixatoms=fixatoms)
+        super(Replay, self).__init__(fixcom=fixcom, fixatoms=fixatoms)
         if intraj is None:
             raise ValueError("Must provide an initialized InitFile object to read trajectory from")
         self.intraj = intraj

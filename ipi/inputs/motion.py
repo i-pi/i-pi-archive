@@ -87,7 +87,7 @@ class InputMotion(Input):
       tsc = -1
       if type(sc) is Motion:
           self.mode.store("dummy")
-      elif type(sc) is ReplayMover:
+      elif type(sc) is Replay:
          self.mode.store("replay")
          tsc = 0
       elif type(sc) is GeopMover:
@@ -122,7 +122,7 @@ class InputMotion(Input):
       super(InputMotion, self).fetch()
 
       if self.mode.fetch() == "replay":
-         sc = ReplayMover(fixcom=False, fixatoms=None, intraj=self.file.fetch())
+         sc = Replay(fixcom=False, fixatoms=None, intraj=self.file.fetch())
       elif self.mode.fetch() == "minimize":
          sc = GeopMover(fixcom=False, fixatoms=None, **self.optimizer.fetch())
       elif self.mode.fetch() == "neb":
