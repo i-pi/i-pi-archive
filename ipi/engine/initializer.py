@@ -159,7 +159,8 @@ def init_beads(iif, nbeads):
       ret = init_file(mode, value)
       ratoms = ret[0]
       rbeads = Beads(ratoms[0].natoms,len(ratoms))
-      for i in range(len(ratoms)): rbeads[i] = ratoms[i]
+      for i in range(len(ratoms)):
+         rbeads[i] = ratoms[i]
 
    return rbeads
 
@@ -309,12 +310,12 @@ class Initializer(dobject):
          if k == "cell":
             if fcell :
                warning("Overwriting previous cell parameters", verbosity.medium)
-            if v.mode == "pdb":
-               rh = init_pdb(v.value)[1].h
+            if v.mode == "manual":
+                rh = v.value.reshape((3,3))
             elif v.mode == "chk":
                rh = init_chk(v.value)[1].h
             else:
-               rh = v.value.reshape((3,3))
+               rh = init_file(v.mode,v.value)[1].h
             rh *= unit_to_internal("length",v.units,1.0)
 
             simul.cell.h = rh
