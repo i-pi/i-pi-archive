@@ -1321,7 +1321,7 @@ class Properties(dobject):
          atom: the label or index of the atom to compute the isotope fractionation pair for
 
       Returns:
-         a tuple from which one can recons truct all that is needed to
+         a tuple from which one can reconstruct all that is needed to
          compute the relative probability of isotope substitution using
          scaled coordinates:
          (yamaaverage, yama2average, yamaexpaverage)

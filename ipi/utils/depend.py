@@ -740,7 +740,6 @@ class dobject(object):
     """
 
     def __new__(cls,  *args, **kwds):
-
         """ Initialize the object using __new__, because we do not want
         to impose to derived classes to call the super __init__ """
 

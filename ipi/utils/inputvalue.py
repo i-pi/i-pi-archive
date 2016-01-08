@@ -172,7 +172,7 @@ class Input(object):
       
       for f, v in self.instancefields.iteritems():
          self.__dict__[f] = v[0](**v[1])
-    
+
       for a, v in self.attribs.iteritems():
          self.__dict__[a] = v[0](**v[1])
 
@@ -199,7 +199,7 @@ class Input(object):
    def store(self, value=None):
       """Base function for storing data"""
 
-      self._explicit = True      
+      self._explicit = True
       pass
 
    def fetch(self):
