@@ -25,7 +25,7 @@ import numpy as np
 import ipi.engine.initializer
 from ipi.engine.geop import GeopMover
 from ipi.engine.neb import NEBMover
-from ipi.engine.dynamics import DynMover
+from ipi.engine.dynamics import Dynamics
 from ipi.engine.motion import *
 from ipi.utils.inputvalue import *
 from ipi.inputs.thermostats import *
@@ -98,7 +98,7 @@ class InputMotion(Input):
          self.mode.store("neb")
          self.neb_optimizer.store(sc)
          tsc = 1
-      elif type(sc) is DynMover:
+      elif type(sc) is Dynamics:
          self.mode.store("dynamics")
          self.dynamics.store(sc)
          tsc = 1
@@ -122,13 +122,13 @@ class InputMotion(Input):
       super(InputMotion, self).fetch()
 
       if self.mode.fetch() == "replay":
-         sc = ReplayMover(fixcom=False, fixatoms=None, intraj=self.file.fetch() )
+         sc = ReplayMover(fixcom=False, fixatoms=None, intraj=self.file.fetch())
       elif self.mode.fetch() == "minimize":
-         sc = GeopMover(fixcom=False, fixatoms=None, **self.optimizer.fetch() )
+         sc = GeopMover(fixcom=False, fixatoms=None, **self.optimizer.fetch())
       elif self.mode.fetch() == "neb":
-         sc = NEBMover(fixcom=False, fixatoms=None, **self.neb_optimizer.fetch() )
+         sc = NEBMover(fixcom=False, fixatoms=None, **self.neb_optimizer.fetch())
       elif self.mode.fetch() == "dynamics":
-         sc = DynMover(fixcom=False, fixatoms=None, **self.dynamics.fetch() )
+         sc = Dynamics(fixcom=False, fixatoms=None, **self.dynamics.fetch())
       else:
          sc = Motion()
          #raise ValueError("'" + self.mode.fetch() + "' is not a supported motion calculation mode.")

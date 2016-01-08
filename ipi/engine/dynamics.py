@@ -21,11 +21,10 @@ from ipi.engine.thermostats import Thermostat
 from ipi.engine.barostats import Barostat
 
 
-__all__ = ['DynMover', 'NVEEnsemble', 'NVTEnsemble', 'NPTEnsemble', 'NSTEnsemble']
+__all__ = ['Dynamics', 'NVEEnsemble', 'NVTEnsemble', 'NPTEnsemble', 'NSTEnsemble']
 
 
-# TODO: rename `DynMover` to simply `Dynamics`?
-class DynMover(Motion):
+class Dynamics(Motion):
     """self (path integral) molecular dynamics class.
 
     Gives the standard methods and attributes needed in all the
@@ -59,7 +58,7 @@ class DynMover(Motion):
                 motion will be constrained or not. Defaults to False.
         """
 
-        super(DynMover, self).__init__(fixcom=fixcom, fixatoms=fixatoms)
+        super(Dynamics, self).__init__(fixcom=fixcom, fixatoms=fixatoms)
         dset(self, "dt", depend_value(name='dt', value=timestep))
         if thermostat is None:
             self.thermostat = Thermostat()
@@ -109,7 +108,7 @@ class DynMover(Motion):
                 generation.
         """
 
-        super(DynMover, self).bind(ens, beads, nm, cell, bforce, prng)
+        super(Dynamics, self).bind(ens, beads, nm, cell, bforce, prng)
 
         # Binds integrators
         self.integrator.bind(self)
