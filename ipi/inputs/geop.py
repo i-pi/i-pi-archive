@@ -24,7 +24,7 @@ Classes:
 
 import numpy as np
 import ipi.engine.initializer
-from ipi.engine.mover import *
+from ipi.engine.motion import *
 from ipi.utils.inputvalue import *
 from ipi.inputs.thermostats import *
 from ipi.inputs.initializer import *
@@ -34,28 +34,28 @@ __all__ = ['InputGeop']
 
 class InputGeop(InputDictionary):
     """Geometry optimization options.
-    
-    Contains options related with geometry optimization, such as method, 
-    thresholds, linear search strategy, etc. 
+
+    Contains options related with geometry optimization, such as method,
+    thresholds, linear search strategy, etc.
 
     """
 
     #TODO: RENAME BFGS/L-BFGS ONLY OPTIONS TO INDICATE SPECIFIC TO BFGS/L-BFGS
-    attribs={"mode"  : (InputAttribute, {"dtype"   : str, "default": "lbfgs", 
+    attribs={"mode"  : (InputAttribute, {"dtype"   : str, "default": "lbfgs",
                                     "help"    : "The geometry optimization algorithm to be used",
                                     "options" : ['sd', 'cg', 'bfgs', 'lbfgs']}) }
-   
-    fields = { "ls_options" : ( InputDictionary, {"dtype" : [float, int, float, float], 
-                              "help" : """"Options for line search methods. Includes: 
+
+    fields = { "ls_options" : ( InputDictionary, {"dtype" : [float, int, float, float],
+                              "help" : """"Options for line search methods. Includes:
                               tolerance: stopping tolerance for the search,
                               iter: the maximum number of iterations,
                               step: initial step for bracketing,
                               adaptive: whether to update initial step.
-                              """, 
+                              """,
                               "options" : ["tolerance", "iter", "step", "adaptive"],
                               "default" : [1e-6, 100, 1e-3, 1.0],
-                              "dimension": ["energy", "undefined", "length", "undefined" ] }),       
-                "tolerances" : ( InputDictionary, {"dtype" : float, 
+                              "dimension": ["energy", "undefined", "length", "undefined" ] }),
+                "tolerances" : ( InputDictionary, {"dtype" : float,
                               "options" : [ "energy", "force", "position" ],
                               "default" : [ 1e-8, 1e-8, 1e-8 ],
                               "dimension": [ "energy", "force", "length" ] }),
@@ -69,7 +69,7 @@ class InputGeop(InputDictionary):
                 "maximum_step": (InputValue, {"dtype" : float,
                               "default" : 100.0,
                               "help"    : "The maximum step size for BFGS line minimizations."}),
-                "invhessian" : (InputArray, {"dtype" : float, 
+                "invhessian" : (InputArray, {"dtype" : float,
                               "default" : input_default(factory=np.eye, args = (0,)),
                               "help"    : "Approximate inverse Hessian for BFGS, if known."}),
                 "qlist" : (InputArray, {"dtype" : float,
@@ -82,7 +82,7 @@ class InputGeop(InputDictionary):
                               "default" : 5,
                               "help"    : "The number of past vectors to store for L-BFGS."})
                      }
-                   
+
     dynamic = {  }
 
     default_help = "TODO EXPLAIN WHAT THIS IS"
@@ -100,8 +100,8 @@ class InputGeop(InputDictionary):
         self.qlist.store(geop.qlist)
         self.glist.store(geop.glist)
         self.corrections.store(geop.corrections)
-        
-    def fetch(self):		
+
+    def fetch(self):
         rv = super(InputGeop,self).fetch()
-        rv["mode"] = self.mode.fetch()        
+        rv["mode"] = self.mode.fetch()
         return rv

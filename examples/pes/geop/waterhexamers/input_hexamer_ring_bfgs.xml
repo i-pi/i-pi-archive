@@ -16,7 +16,7 @@
    <forces>
    <force> qtip4pf </force>
    </forces>
-   <mover mode='minimize'>
+   <motion mode='minimize'>
       <optimizer mode="bfgs">
          <ls_options> 
             <step> 1.0e-2 </step>
@@ -30,6 +30,6 @@
 	 </tolerances>
 	 <maximum_step> 150.0 </maximum_step>
       </optimizer>
-   </mover>
+   </motion>
 </system>
 </simulation>

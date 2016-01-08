@@ -27,7 +27,7 @@ __all__=['NEBMover']
 import numpy as np
 import time
 
-from ipi.engine.mover import Mover
+from ipi.engine.motion import Motion
 from ipi.utils.depend import *
 from ipi.utils import units
 from ipi.utils.softexit import softexit
@@ -38,8 +38,8 @@ from ipi.utils.mintools import min_brent, min_approx, BFGS, L_BFGS, L_BFGS_nls, 
 from ipi.utils.messages import verbosity, warning, info
 
 # NOTE: CURRENTLY, NEB ONLY WORKS FOR L-BFGS MINIMIZATION.
-#       IF SD, CG, OR BFGS OPTIONS ARE NOT DESIRED, CONSIDER ELIMINATING 
-#       NEBLineMover AND THE RELEVANT BLOCKS IN NEBMover. IF THESE OPTIONS ARE DESIRED, 
+#       IF SD, CG, OR BFGS OPTIONS ARE NOT DESIRED, CONSIDER ELIMINATING
+#       NEBLineMover AND THE RELEVANT BLOCKS IN NEBMover. IF THESE OPTIONS ARE DESIRED,
 #       THE INFRASTRUCTURE IS PRESENT BUT MUST BE DEBUGGED AND MADE CONSISTENT WITH
 #       THAT PRESENT IN NEBBFGSMover (TO REMOVE REMAINING ERRORS IN COMPUTATION).
 #       CLIMBING IMAGE AND VARIABLE SPRING CONSTANTS HAVE NOT YET BEEN IMPLEMENTED, BUT
@@ -56,7 +56,7 @@ class NEBLineMover(object):
        kappa: spring constants
        first: flag indicating first iteration of simulation
    """
-   
+
    def __init__(self):
       self.x0 = self.d = None
       self.kappa = None
@@ -65,18 +65,18 @@ class NEBLineMover(object):
    def bind(self, ens):
       self.dbeads = ens.beads.copy()
       self.dcell = ens.cell.copy()
-      self.dforces = ens.forces.copy(self.dbeads, self.dcell)      
-      
-   def set_dir(self, x0, mdir):      
+      self.dforces = ens.forces.copy(self.dbeads, self.dcell)
+
+   def set_dir(self, x0, mdir):
       self.x0 = x0.copy()
       self.d = mdir.copy()/np.sqrt(np.dot(mdir.flatten(),mdir.flatten()))
-      if self.x0.shape != self.d.shape: raise ValueError("Incompatible shape of initial value and displacement direction")      
-   
+      if self.x0.shape != self.d.shape: raise ValueError("Incompatible shape of initial value and displacement direction")
+
    def __call__(self, x):
       if self.first is True:
           self.dbeads.q = x
       else:
-          self.dbeads.q = self.x0 + self.d * x 
+          self.dbeads.q = self.x0 + self.d * x
 
       # List of atom/bead positions
       bq = depstrip(self.dbeads.q).copy()
@@ -94,17 +94,17 @@ class NEBLineMover(object):
       nat = self.dbeads.natoms
 
       kappa = np.zeros(nimg)
-      
+
       # Get tangents, end images are distinct, fixed, pre-relaxed configurations
       btau = np.zeros((nimg, 3 * nat), float)
       for ii in range(1, nimg - 1):
           d1 = bq[ii] - bq[ii - 1] #tau mius
           d2 = bq[ii + 1] - bq[ii] #tau plus
-          
+
           # "Old" implementation of NEB
           btau[ii] = d1 / np.linalg.norm(d1) + d2 / np.linalg.norm(d2)
           btau[ii] *= 1.0 / np.linalg.norm(btau)
-          
+
 #          # Energy of images: (ii+1) < (ii) < (ii-1)
 #          if (be[ii + 1] < be[ii]) and (be[ii] < be[ii - 1]):
 #              btau[ii] = d2
@@ -112,12 +112,12 @@ class NEBLineMover(object):
 #          # Energy of images (ii-1) < (ii) < (ii+1)
 #          elif (be[ii - 1] < be[ii]) and (be[ii] < be[ii + 1]):
 #              btau[ii] = d1
-#          
+#
 #          # Energy of image (ii) is a minimum or maximum
 #          else:
 #              maxpot = max(be[ii + 1] - be[ii], be[ii - 1], be[ii])
 #              minpot = min(be[ii + 1] - be[ii], be[ii - 1], be[ii])
-#              
+#
 #              if be[ii + 1] < be[ii - 1]:
 #                  btau[ii] = d1 * minpot + d2 * maxpot
 #
@@ -126,20 +126,20 @@ class NEBLineMover(object):
 #
 #              else:
 #                  print "Error in NEB tangents: Energy of images are equal"
-#          
-#          btau[ii] *= 1.0 / np.linalg.norm(btau) 
+#
+#          btau[ii] *= 1.0 / np.linalg.norm(btau)
 
 
       #if mode == "variablesprings": #TODO: input option for variable spring mode
-      
-          
+
+
 #      if mode == "ci":
 #
 #      # Climbing NEB term. Choose highest energy bead after 5 (arbitrary) iterations
 #          if step >= 5:
 #              imax = np.argmax(be)
-#              bf[imax] = bf[imax] - 2 * np.dot(bf[imax], btau[imax]) * btau[imax] 
-#          
+#              bf[imax] = bf[imax] - 2 * np.dot(bf[imax], btau[imax]) * btau[imax]
+#
 #              # Determine variable spring constants
 #              #kappa = np.zeros(nimg)
 #              #ei = np.zeros(nimg)
@@ -151,31 +151,31 @@ class NEBLineMover(object):
 #              #for ii in range(1, nimg - 1):
 #              #    ei[ii] = max(be[ii], be[ii - 1])
 #              #    if ei[j] > eref:
-#              #        kappa[ii] = kappamax - deltakappa * ((emax - ei[ii]) / (emax - eref)) 
+#              #        kappa[ii] = kappamax - deltakappa * ((emax - ei[ii]) / (emax - eref))
 #              #    else:
 #              #        kappa[ii] = kappamin
-#              
-#      else:    
+#
+#      else:
 #          kappa.fill(self.kappa)
-#      
-#       
-#          # get perpendicular forces 
+#
+#
+#          # get perpendicular forces
 #          for ii in range(1, nimg - 1):
 #              bf[ii] = bf[ii] - np.dot(bf[ii], btau[ii]) * btau[ii]
-#          
-#          # adds the spring forces           
+#
+#          # adds the spring forces
 #          for ii in range(1, nimg - 1):
-#              bf[ii] += kappa[ii] * btau[ii] * np.dot(btau[ii], (bq[ii + 1] + bq[ii - 1] - 2 * bq[ii])) 
+#              bf[ii] += kappa[ii] * btau[ii] * np.dot(btau[ii], (bq[ii + 1] + bq[ii - 1] - 2 * bq[ii]))
 
       kappa.fill(self.kappa)
-       
-      # get perpendicular forces 
+
+      # get perpendicular forces
       for ii in range(1, nimg - 1):
           bf[ii] = bf[ii] - np.dot(bf[ii], btau[ii]) * btau[ii]
-          
-      # adds the spring forces           
+
+      # adds the spring forces
       for ii in range(1, nimg - 1):
-          bf[ii] += kappa[ii] * btau[ii] * np.dot(btau[ii], (bq[ii + 1] + bq[ii - 1] - 2 * bq[ii])) 
+          bf[ii] += kappa[ii] * btau[ii] * np.dot(btau[ii], (bq[ii + 1] + bq[ii - 1] - 2 * bq[ii]))
 
       # For first iteration, move in direction of the force
       if self.first is True:
@@ -184,11 +184,11 @@ class NEBLineMover(object):
 
       force = bf
       g = -np.dot(bf.flatten(), self.d.flatten())
-      g = abs(g) 
+      g = abs(g)
 
       # Return NEB forces and gradient modulus
       linefunc = (force, g)
-      return linefunc       
+      return linefunc
 
 
 class NEBBFGSMover(object):
@@ -236,9 +236,9 @@ class NEBBFGSMover(object):
           d2 = bq[ii + 1] - bq[ii] #tau plus
 
           # Old implementation of NEB tangents
-          #btau[ii] = d1 / np.linalg.norm(d1) + d2 / np.linalg.norm(d2) 
+          #btau[ii] = d1 / np.linalg.norm(d1) + d2 / np.linalg.norm(d2)
           #btau[ii] *= 1.0 / np.linalg.norm(btau)
-          
+
           # Energy of images: (ii+1) < (ii) < (ii-1)
           if (be[ii + 1] < be[ii]) and (be[ii] < be[ii - 1]):
               btau[ii] = d1
@@ -246,12 +246,12 @@ class NEBBFGSMover(object):
           # Energy of images (ii-1) < (ii) < (ii+1)
           elif (be[ii - 1] < be[ii]) and (be[ii] < be[ii + 1]):
               btau[ii] = d2
-          
+
           # Energy of image (ii) is a minimum or maximum
           else:
               maxpot = max(abs(be[ii + 1] - be[ii]), abs(be[ii - 1] - be[ii]))
               minpot = min(abs(be[ii + 1] - be[ii]), abs(be[ii - 1] - be[ii]))
-              
+
               if be[ii + 1] < be[ii - 1]:
                   btau[ii] = d2 * minpot + d1 * maxpot
 
@@ -260,58 +260,58 @@ class NEBBFGSMover(object):
 
               else:
                   print "Error in NEB tangents: Energy of images are equal"
-          
-          btau[ii] *= 1.0 / np.linalg.norm(btau) 
+
+          btau[ii] *= 1.0 / np.linalg.norm(btau)
 
 
-      #if mode == "variablesprings": 
-      
-          
+      #if mode == "variablesprings":
+
+
 #      if mode == "ci":
 #
 #      # Climbing NEB term. Choose highest energy bead after 5 (arbitrary) iterations
 #          if step >= 5:
 #              imax = np.argmax(be)
-#              bf[imax] = bf[imax] - 2 * np.dot(bf[imax], btau[imax]) * btau[imax] 
-#          
+#              bf[imax] = bf[imax] - 2 * np.dot(bf[imax], btau[imax]) * btau[imax]
+#
 #              # Determine variable spring constants
 #              #kappa = np.zeros(nimg)
 #              #ei = np.zeros(nimg)
 #              #emax = np.amax(be)
 #              #eref = max(be[0], be[nimg])
 #              #kappamax = self.spring["kappa_max"]
-#              #kappamin = self.spring["kappa_min"] 
+#              #kappamin = self.spring["kappa_min"]
 #              #deltakappa = kappamax - kappamin
 #              #for ii in range(1, nimg - 1):
 #              #    ei[ii] = max(be[ii], be[ii - 1])
 #              #    if ei[j] > eref:
-#              #        kappa[ii] = kappamax - deltakappa * ((emax - ei[ii]) / (emax - eref)) 
+#              #        kappa[ii] = kappamax - deltakappa * ((emax - ei[ii]) / (emax - eref))
 #              #    else:
 #              #        kappa[ii] = kappamin
-#              
-#      else:    
+#
+#      else:
 #          kappa.fill(self.kappa)
-#      
+#
       # Array of spring constants; all are equal
       kappa.fill(self.kappa)
 
-      # Get perpendicular forces 
+      # Get perpendicular forces
       for ii in range(1, nimg - 1):
           bf[ii] = bf[ii] - np.dot(bf[ii], btau[ii]) * btau[ii]
-          
-      # Adds the spring forces           
+
+      # Adds the spring forces
       for ii in range(1, nimg - 1):
-          
+
           # Old implementation
-          #bf[ii] += kappa[ii] * btau[ii] * np.dot(btau[ii], (bq[ii + 1] + bq[ii - 1] - 2 * bq[ii])) 
-          bf[ii] += kappa[ii] * (np.linalg.norm(bq[ii + 1] - bq[ii]) - np.linalg.norm(bq[ii] - bq[ii - 1])) * btau[ii] 
+          #bf[ii] += kappa[ii] * btau[ii] * np.dot(btau[ii], (bq[ii + 1] + bq[ii - 1] - 2 * bq[ii]))
+          bf[ii] += kappa[ii] * (np.linalg.norm(bq[ii + 1] - bq[ii]) - np.linalg.norm(bq[ii] - bq[ii - 1])) * btau[ii]
 
       # Return forces and modulus of gradient
       g = -bf
       e = np.linalg.norm(g) #self.dforces.pot #0.0
-      return e, g        
+      return e, g
 
-class NEBMover(Mover):
+class NEBMover(Motion):
    """Nudged elastic band routine.
 
    Attributes:
@@ -337,17 +337,17 @@ class NEBMover(Mover):
          varsprings: T/F for variable spring constants
          kappa: single spring constant if varsprings is F
          kappamax: max spring constant if varsprings is T *** NOT YET IMPLEMENTED ***
-         kappamin: min spring constant if varsprings is T *** NOT YET IMPLEMENTED *** 
+         kappamin: min spring constant if varsprings is T *** NOT YET IMPLEMENTED ***
       climb: flag for climbing image NEB *** NOT YET IMPLEMENTED ***
    """
 
    def __init__(self, fixcom=False, fixatoms=None,
 
-             mode="sd", 
+             mode="sd",
              maximum_step=100.0,
              cg_old_force=np.zeros(0, float),
              cg_old_direction=np.zeros(0, float),
-             invhessian=np.eye(0), 
+             invhessian=np.eye(0),
              ls_options={ "tolerance": 1e-5, "iter": 100.0 , "step": 1e-3, "adaptive": 1.0 } ,
              tolerances={"energy" : 1e-5, "force": 1e-5, "position": 1e-5},
              corrections = 5,
@@ -356,17 +356,17 @@ class NEBMover(Mover):
              endpoints = True,
              spring = {"varsprings": False, "kappa": 1.0, "kappamax": 1.5, "kappamin": 0.5},
              climb = False
-             ):   
-                 
+             ):
+
       """Initialises NEBMover.
 
       Args:
          fixcom: An optional boolean which decides whether the centre of mass
-            motion will be constrained or not. Defaults to False.         
+            motion will be constrained or not. Defaults to False.
       """
 
       super(NEBMover,self).__init__(fixcom=fixcom, fixatoms=fixatoms)
-      
+
       # Optimization options
       self.ls_options = ls_options
       self.tolerances = tolerances
@@ -379,24 +379,24 @@ class NEBMover(Mover):
       self.qlist = qlist
       self.glist = glist
       self.endpoints = endpoints
-      self.spring = spring 
+      self.spring = spring
       self.climb = climb
 
       self.neblm = NEBLineMover()
       self.nebbfgsm = NEBBFGSMover()
-   
+
    def bind(self, ens, beads, nm, cell, bforce, bbias, prng):
-      
+
       super(NEBMover,self).bind(ens, beads, nm, cell, bforce, bbias, prng)
       if self.cg_old_f.shape != beads.q.shape :
-         if self.cg_old_f.shape == (0,): 
+         if self.cg_old_f.shape == (0,):
             self.cg_old_f = np.zeros(beads.q.shape, float)
-         else: 
+         else:
             raise ValueError("Conjugate gradient force size does not match system size")
       if self.cg_old_d.shape != beads.q.shape :
-         if self.cg_old_d.shape == (0,): 
+         if self.cg_old_d.shape == (0,):
             self.cg_old_d = np.zeros(beads.q.shape, float)
-         else: 
+         else:
             raise ValueError("Conjugate gradient direction size does not match system size")
       if self.invhessian.size != (beads.q.size * beads.q.size):
           if self.invhessian.size == 0:
@@ -406,7 +406,7 @@ class NEBMover(Mover):
 
       self.neblm.bind(self)
       self.nebbfgsm.bind(self)
-            
+
    def step(self, step=None):
       """Does one simulation time step."""
 
@@ -425,10 +425,10 @@ class NEBMover(Mover):
           # Initialize direction to the steepest descent direction
           if step == 0: # or np.sqrt(np.dot(self.bfgsm.d, self.bfgsm.d)) == 0.0: <-- this part for restarting at claimed minimum
               info(" @GEOP: Initializing L-BFGS", verbosity.debug)
-              fx, nebgrad = self.nebbfgsm(self.beads.q) 
+              fx, nebgrad = self.nebbfgsm(self.beads.q)
 
               # Set direction to direction of NEB forces
-              self.nebbfgsm.d = -nebgrad 
+              self.nebbfgsm.d = -nebgrad
               self.nebbfgsm.xold = self.beads.q.copy()
 
               # Initialize lists of previous positions and gradients
@@ -444,13 +444,13 @@ class NEBMover(Mover):
 
           # Store old force
           self.cg_old_f[:] = -nebgrad
-          
+
           # Do one iteration of L-BFGS and return positions, gradient modulus,
           # direction, list of positions, list of gradients
-          self.beads.q, fx, self.nebbfgsm.d, self.qlist, self.glist = L_BFGS(self.beads.q, 
-                self.nebbfgsm.d, self.nebbfgsm, self.qlist, self.glist, 
-                fdf0=(u0, du0), max_step=self.max_step, tol=self.ls_options["tolerance"], 
-                itmax=self.ls_options["iter"], 
+          self.beads.q, fx, self.nebbfgsm.d, self.qlist, self.glist = L_BFGS(self.beads.q,
+                self.nebbfgsm.d, self.nebbfgsm, self.qlist, self.glist,
+                fdf0=(u0, du0), max_step=self.max_step, tol=self.ls_options["tolerance"],
+                itmax=self.ls_options["iter"],
                 m=self.corrections, k=step)
 
           info(" @GEOP: Updated position list", verbosity.debug)
@@ -467,8 +467,8 @@ class NEBMover(Mover):
       # Routine for steepest descent and conjugate gradient
       # TODO: CURRENTLY DOES NOT WORK. MUST BE ELIMINATED OR DEBUGGED
       else:
-          if (self.mode == "sd" or step == 0): 
-          
+          if (self.mode == "sd" or step == 0):
+
               # Steepest descent minimization
               # gradf1 = force at current atom position
               # dq1 = direction of steepest descent
@@ -477,11 +477,11 @@ class NEBMover(Mover):
               gradf1 = dq1 = -nebgrad
 
               # Move direction for steepest descent and 1st conjugate gradient step
-              dq1_unit = dq1 / np.sqrt(np.dot(gradf1.flatten(), gradf1.flatten())) 
+              dq1_unit = dq1 / np.sqrt(np.dot(gradf1.flatten(), gradf1.flatten()))
               info(" @GEOP: Determined SD direction", verbosity.debug)
-      
+
           else:
-          
+
               # Conjugate gradient, Polak-Ribiere
               # gradf1: force at current atom position
               # gradf0: force at previous atom position
@@ -491,7 +491,7 @@ class NEBMover(Mover):
               gradf0 = self.cg_old_f
               dq0 = self.cg_old_d
               nebgrad = self.neblm(self.beads.q)[0]
-              gradf1 = -nebgrad 
+              gradf1 = -nebgrad
               beta = np.dot((gradf1.flatten() - gradf0.flatten()), gradf1.flatten()) / (np.dot(gradf0.flatten(), gradf0.flatten()))
               dq1 = gradf1 + max(0.0, beta) * dq0
               dq1_unit = dq1 / np.sqrt(np.dot(dq1.flatten(), dq1.flatten()))
@@ -500,32 +500,32 @@ class NEBMover(Mover):
           # Store force and direction for next CG step
           self.cg_old_d[:] = dq1
           self.cg_old_f[:] = gradf1
-   
+
           if (len(self.fixatoms)>0):
               for dqb in dq1_unit:
                   dqb[self.fixatoms*3] = 0.0
                   dqb[self.fixatoms*3+1] = 0.0
                   dqb[self.fixatoms*3+2] = 0.0
-      
+
           self.neblm.set_dir(depstrip(self.beads.q), dq1_unit)
 
           # Reuse initial value since we have energy and forces already
           u0 = np.dot(-nebgrad.flatten(), dq1_unit.flatten())
           u0 = np.sqrt(np.dot(u0, u0))
 
-          (x, fx) = min_brent_neb(self.neblm, fdf0=u0, x0=0.0, 
-                  tol=self.ls_options["tolerance"], 
-                  itmax=self.ls_options["iter"], init_step=self.ls_options["step"]) 
+          (x, fx) = min_brent_neb(self.neblm, fdf0=u0, x0=0.0,
+                  tol=self.ls_options["tolerance"],
+                  itmax=self.ls_options["iter"], init_step=self.ls_options["step"])
 
-          # Automatically adapt the search step for the next iteration. 
+          # Automatically adapt the search step for the next iteration.
           # Relaxes better with very small step --> multiply by factor of 0.1 or 0.01
-          self.ls_options["step"] = 0.1 * x * self.ls_options["adaptive"] + (1 - self.ls_options["adaptive"]) * self.ls_options["step"] 
-      
+          self.ls_options["step"] = 0.1 * x * self.ls_options["adaptive"] + (1 - self.ls_options["adaptive"]) * self.ls_options["step"]
+
           self.beads.q += dq1_unit * x
           info(" @GEOP: Updated bead positions", verbosity.debug)
 
       self.qtime += time.time()
-      
+
       # Determine conditions for converged relaxation
       if ((fx - u0) / self.beads.natoms <= self.tolerances["energy"])\
           and ((np.amax(np.absolute(self.forces.f)) <= self.tolerances["force"])\

@@ -23,7 +23,7 @@ appropriate conserved energy quantity for the ensemble of choice.
 
 """
 
-__all__=['Mover', 'ReplayMover']
+__all__=['Motion', 'ReplayMover']
 
 import numpy as np
 import time
@@ -37,20 +37,20 @@ from ipi.utils.units import Constants, unit_to_internal
 from ipi.utils.mintools import min_brent, min_approx, BFGS
 
 
-class Mover(dobject):
-   """Base mover calculation class.
+class Motion(dobject):
+   """Base motion calculation class.
 
    Gives the standard methods and attributes needed in all the
-   mover calculation classes.
+   motion calculation classes.
 
    Attributes:
       beads: A beads object giving the atoms positions.
       cell: A cell object giving the system box.
       forces: A forces object giving the virial and the forces acting on
-         each bead.      
+         each bead.
       fixcom: A boolean which decides whether the centre of mass
          motion will be constrained or not.
-      fixatoms: A list of atoms that should be held fixed to their 
+      fixatoms: A list of atoms that should be held fixed to their
          initial positions.
 
    Depend objects:
@@ -58,18 +58,18 @@ class Mover(dobject):
    """
 
    def __init__(self, fixcom=False, fixatoms=None):
-      """Initialises Mover object.
+      """Initialises Motion object.
 
       Args:
          fixcom: An optional boolean which decides whether the centre of mass
             motion will be constrained or not. Defaults to False.
-         fixatoms: A list of atoms that should be held fixed to their 
+         fixatoms: A list of atoms that should be held fixed to their
            initial positions.
       """
-      
-      dset(self, "dt", depend_value(name="dt", value=0.0) )      
+
+      dset(self, "dt", depend_value(name="dt", value=0.0) )
       self.fixcom = fixcom
-      if fixatoms is None: 
+      if fixatoms is None:
          self.fixatoms = np.zeros(0,int)
       else:
          self.fixatoms = fixatoms
@@ -79,7 +79,7 @@ class Mover(dobject):
       """Binds beads, cell, bforce, and prng to the calculator.
 
       This takes a beads object, a cell object, a forcefield object and a
-      random number generator object and makes them members of the atom mover caclulator.
+      random number generator object and makes them members of the atom motion caclulator.
       It also then creates the objects that will hold the data needed in the
       ensemble algorithms and the dependency network. Note that the conserved
       quantity is defined in the init, but as each ensemble has a different
@@ -90,7 +90,7 @@ class Mover(dobject):
          nm: A normal modes object used to do the normal modes transformation.
          cell: The cell object from which the system box is taken.
          bforce: The forcefield object from which the force and virial are taken.
-         bbias: The forcefield object from which the bias forces are obtained            
+         bbias: The forcefield object from which the bias forces are obtained
          prng: The random number generator object which controls random number
             generation.
       """
@@ -103,14 +103,14 @@ class Mover(dobject):
       self.nm = nm
       self.ensemble = ens
       self.bias = self.ensemble.bias
-    
+
 
    def step(self, step=None):
       """Dummy simulation time step which does nothing."""
 
-      pass      
+      pass
 
-class ReplayMover(Mover):
+class ReplayMover(Motion):
    """Calculator object that just loads snapshots from an external file in sequence.
 
    Has the relevant conserved quantity and normal mode propagator for the
@@ -153,11 +153,11 @@ class ReplayMover(Mover):
       self.ptime = self.ttime = 0
       self.qtime = -time.time()
 
-      
+
       while True:
        self.rstep += 1
-       try:         
-         if (self.intraj.mode == "xyz"):            
+       try:
+         if (self.intraj.mode == "xyz"):
             for b in self.beads:
                myatoms = read_file("xyz", self.rfile)
                myatoms.q *= unit_to_internal("length",self.intraj.units,1.0)
@@ -183,5 +183,5 @@ class ReplayMover(Mover):
             softexit.trigger(" # Read single checkpoint")
        except EOFError:
          softexit.trigger(" # Finished reading re-run trajectory")
-       if (step==None or self.rstep>step): break 
+       if (step==None or self.rstep>step): break
       self.qtime += time.time()

@@ -19,7 +19,7 @@
                 <file mode="xyz" units="angstrom"> ./start17.xyz </file>
 	        <cell> [25.29166, 0, 0, 0, 25.29166, 0, 0, 0, 25.29166] </cell>
         </initialize>
-        <mover mode='neb'>
+        <motion mode='neb'>
                 <neb_optimizer mode='lbfgs'>
 		        <ls_options>
 			        <step> 1.0e-3 </step>
@@ -33,6 +33,6 @@
 		        </tolerances>
 		        <maximum_step> 2.0 </maximum_step>
 	        </neb_optimizer>
-        </mover>
+        </motion>
         </system>
 </simulation>

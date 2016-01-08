@@ -54,7 +54,7 @@ class System(dobject):
       simul: The parent simulation object.
    """
 
-   def __init__(self, init, beads, nm, cell, fcomponents, bcomponents=[], ensemble=None, mover=None, prefix=""):
+   def __init__(self, init, beads, nm, cell, fcomponents, bcomponents=[], ensemble=None, motion=None, prefix=""):
       """Initialises System class.
 
       Args:
@@ -63,7 +63,7 @@ class System(dobject):
          cell: A cell object giving the system box.
          fcomponents: A list of force components that are active for each
             replica of the system.
-         bcomponents: A list of force components that are considered as bias, and act on each 
+         bcomponents: A list of force components that are considered as bias, and act on each
             replica of the system.
          ensemble: An ensemble object giving the objects necessary for
             producing the correct ensemble.
@@ -74,9 +74,9 @@ class System(dobject):
 
       info(" # Initializing system object ", verbosity.low )
       self.prefix = prefix
-      self.init = init      
+      self.init = init
       self.ensemble = ensemble
-      self.mover = mover
+      self.motion = motion
       self.beads = beads
       self.cell = cell
       self.nm = nm
@@ -97,13 +97,13 @@ class System(dobject):
       self.simul = simul # keeps a handle to the parent simulation object
 
       # binds important computation engines
-      self.nm.bind(self.beads, self.ensemble, self.mover)
+      self.nm.bind(self.beads, self.ensemble, self.motion)
       self.forces.bind(self.beads, self.cell, self.fcomp, self.simul.fflist)
-      
+
       self.bias.bind(self.beads, self.cell, self.bcomp, self.simul.fflist)
 
-      self.ensemble.bind(self.beads, self.nm, self.cell, self.forces, self.bias)   
-      self.mover.bind(self.ensemble, self.beads, self.nm, self.cell, self.forces, self.prng)
+      self.ensemble.bind(self.beads, self.nm, self.cell, self.forces, self.bias)
+      self.motion.bind(self.ensemble, self.beads, self.nm, self.cell, self.forces, self.prng)
 
       self.init.init_stage2(self)
 

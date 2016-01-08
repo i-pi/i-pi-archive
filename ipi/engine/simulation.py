@@ -214,19 +214,19 @@ class Simulation(dobject):
          if softexit.triggered: break
 
          self.chk.store()
-         
+
          stepthreads = []
          for s in self.syslist:
             # creates separate threads for the different systems
-            #st = threading.Thread(target=s.mover.step, name=s.prefix, kwargs={"step":self.step})
+            #st = threading.Thread(target=s.motion.step, name=s.prefix, kwargs={"step":self.step})
             #st.daemon = True
             #st.start()
             #stepthreads.append(st)
-            s.mover.step(step=self.step)
+            s.motion.step(step=self.step)
          for st in stepthreads:
             while st.isAlive(): st.join(2.0)   # this is necessary as join() without timeout prevents main from receiving signals
-         pass         
-            
+         pass
+
 
          if softexit.triggered: break # don't continue if we are about to exit!
 
