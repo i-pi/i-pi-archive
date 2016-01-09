@@ -26,6 +26,7 @@ import ipi.engine.initializer
 from ipi.engine.geop import GeopMover
 from ipi.engine.neb import NEBMover
 from ipi.engine.dynamics import Dynamics
+from ipi.engine.replay import Replay
 from ipi.engine.motion import *
 from ipi.utils.inputvalue import *
 from ipi.inputs.thermostats import *
