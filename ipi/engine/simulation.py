@@ -151,7 +151,8 @@ class Simulation(dobject):
         """Calls the bind routines for all the objects in the simulation."""
 
         if self.tsteps <= self.step:
-            raise ValueError("Simulation has already run for total_steps, will not even start. Modify total_steps or step counter to continue.")
+            raise ValueError("Simulation has already run for total_steps, will not even start. "
+                             "Modify total_steps or step counter to continue.")
 
         for s in self.syslist:
             # binds important computation engines
@@ -258,13 +259,16 @@ class Simulation(dobject):
             self.chk.store()
 
             stepthreads = []
+            # steps through all the systems
+            #for s in self.syslist:
+            #   s.ensemble.step()
             for s in self.syslist:
                 # creates separate threads for the different systems
-                #st = threading.Thread(target=s.mover.step, name=s.prefix, kwargs={"step":self.step})
+                #st = threading.Thread(target=s.motion.step, name=s.prefix, kwargs={"step":self.step})
                 #st.daemon = True
+                s.motion.step(step=self.step)
                 #st.start()
                 #stepthreads.append(st)
-                s.mover.step(step=self.step)
 
             for st in stepthreads:
                 while st.isAlive():

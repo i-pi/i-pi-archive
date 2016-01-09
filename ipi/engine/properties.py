@@ -202,7 +202,7 @@ class Properties(dobject):
                       'func': (lambda: (1 + self.simul.step))},
       "time": {       "dimension": "time",
                       "help": "The elapsed simulation time.",
-                      'func': (lambda: (1 + self.simul.step)*self.mover.dt)},
+                      'func': (lambda: (1 + self.simul.step)*self.motion.dt)},
       "temperature": {"dimension": "temperature",
                       "help": "The current temperature, as obtained from the MD kinetic energy.",
                       "longhelp" : """The current temperature, as obtained from the MD kinetic energy of the (extended)
@@ -259,7 +259,7 @@ class Properties(dobject):
                                      (-1)**(k+1)/3.0*self.forces.pots[int(k)] for k in range(0,self.beads.nbeads))) )},                     
       "pot_component": {  "dimension" : "energy",
                       "help": "The contribution to the system potential from one of the force components. ",
-                       "longhelp":  """The contribution to the system potential from one of the force components. Takes one mandatory 
+                       "longhelp":  """The contribution to the system potential from one of the force components. Takes one mandatory
                          argument index (zero-based) that indicates which component of the potential must be returned. The optional argument 'bead'
                          will print the potential associated with the specified bead. """,
                       'func': (lambda index, bead="-1": self.forces.pots_component(int(index)).sum()/self.beads.nbeads if int(bead)<0 else self.forces.pots_component(int(index))[int(bead)] ) },
@@ -267,7 +267,7 @@ class Properties(dobject):
                       "help" : "The modulus of the force.",
                       "longhelp": """The modulus of the force. With the optional argument 'bead'
                          will print the force associated with the specified bead.""",
-                      'func': (lambda bead="-1": np.linalg.norm(self.forces.f)/self.beads.nbeads if int(bead)<0 else np.linalg.norm(self.forces.f[int(bead)]))},                      
+                      'func': (lambda bead="-1": np.linalg.norm(self.forces.f)/self.beads.nbeads if int(bead)<0 else np.linalg.norm(self.forces.f[int(bead)]))},
       "spring": {     "dimension" : "energy",
                       "help": "The total spring potential energy between the beads of all the ring polymers in the system.",
                       'func': (lambda: self.beads.vpath*self.nm.omegan2/self.beads.nbeads)},
@@ -528,7 +528,7 @@ class Properties(dobject):
       """
 
       self.ensemble = system.ensemble
-      self.mover = system.mover
+      self.motion = system.motion
       self.beads = system.beads
       self.nm = system.nm
       self.cell = system.cell
@@ -540,7 +540,7 @@ class Properties(dobject):
       self.dbeads = system.beads.copy()
       self.dcell = system.cell.copy()
       self.dforces = system.forces.copy(self.dbeads, self.dcell)
-      
+
    def __getitem__(self, key):
       """Retrieves the item given by key.
 
@@ -623,14 +623,14 @@ class Properties(dobject):
             for. If not, then the simulation temperature.
       """
 
-      if len(self.mover.fixatoms)>0:
-         mdof = len(self.mover.fixatoms)*3
+      if len(self.motion.fixatoms)>0:
+         mdof = len(self.motion.fixatoms)*3
          if bead == "" and nm == "":
             mdof*=self.beads.nbeads
       else:
          mdof = 0
 
-      if self.mover.fixcom:
+      if self.motion.fixcom:
          if bead == "" and nm == "":
             mdof += 3
          elif nm != "" and nm == "0":   # the centroid has 100% of the COM removal
@@ -1437,7 +1437,7 @@ class Properties(dobject):
          atom: the label or index of the atom to compute the isotope fractionation pair for
 
       Returns:
-         a tuple from which one can recons truct all that is needed to
+         a tuple from which one can reconstruct all that is needed to
          compute the relative probability of isotope substitution using
          scaled coordinates:
          (yamaaverage, yama2average, yamaexpaverage)

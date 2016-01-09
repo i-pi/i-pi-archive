@@ -36,7 +36,7 @@ class NormalModes(dobject):
          be done.
       ensemble: The ensemble object, specifying the temperature to hold the
          system to.
-      mover: The mover object that will need normal-mode transformation and propagator
+      motion: The motion object that will need normal-mode transformation and propagator
       transform: A nm_trans object that contains the functions that are
          required for the normal mode transformation.
 
@@ -90,14 +90,14 @@ class NormalModes(dobject):
 
       if freqs is None:
          freqs = []
-      dset(self,"dt",   depend_value(name='dt', value=dt))
+      dset(self,"dt", depend_value(name='dt', value=dt))
       dset(self,"mode",   depend_value(name='mode', value=mode))
       dset(self,"transform_method",
          depend_value(name='transform_method', value=transform_method))
       dset(self,"nm_freqs",
          depend_array(name="nm_freqs",value=np.asarray(freqs, float) ) )
 
-   def bind(self, ensemble, mover, beads=None, forces=None):
+   def bind(self, ensemble, motion, beads=None, forces=None):
       """ Initializes the normal modes object and binds to beads and ensemble.
 
       Do all the work down here as we need a full-formed necklace and ensemble
@@ -108,17 +108,17 @@ class NormalModes(dobject):
          ensemble: An ensemble object to be bound.
       """
 
-      if beads is None: beads = mover.beads
-      if forces is None: forces = mover.forces
+      if beads is None: beads = motion.beads
+      if forces is None: forces = motion.forces
       
       self.nbeads = beads.nbeads
-      self.natoms = beads.natoms
+      self.natoms = beads.natoms      
 
       # stores a reference to the bound beads and ensemble objects
       self.beads = beads
       self.forces = forces
       self.ensemble = ensemble
-      self.mover = mover      
+      self.motion = motion      
 
       # sets up what's necessary to perform nm transformation.
       if self.transform_method == "fft":
@@ -181,7 +181,6 @@ class NormalModes(dobject):
             func=self.get_omegak, dependencies=[dget(self,"omegan")]) )
 
       # sets up "dynamical" masses -- mass-scalings to give the correct RPMD/CMD dynamics
-      # TODO: Do we really need different names and variable names? Seems confusing.
       dset(self,"nm_factor", depend_array(name="nmm",
          value=np.zeros(self.nbeads, float), func=self.get_nmm,
             dependencies=[dget(self,"nm_freqs"), dget(self,"mode") ]) )
@@ -193,7 +192,7 @@ class NormalModes(dobject):
             dependencies=[dget(self,"nm_factor"), dget(self,"omegak") ]) )
 
       dset(self, "dt", depend_value(name="dt", value = 1.0) )
-      deppipe(self.mover, "dt", self, "dt")
+      deppipe(self.motion, "dt", self, "dt")
       dset(self,"prop_pq",
          depend_array(name='prop_pq',value=np.zeros((self.beads.nbeads,2,2)),
             func=self.get_prop_pq,

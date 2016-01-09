@@ -102,8 +102,8 @@ class Barostat(dobject):
       # pipes timestep and temperature to the thermostat
       deppipe(self, "dt", self.thermostat, "dt")
       deppipe(self, "temp", self.thermostat, "temp")
-      dset(self,"pext",depend_value(name='pext', value=-1.0))
-      dset(self,"stressext",depend_array(name='stressext', value=-np.ones((3,3), float)))
+      dset(self, "pext", depend_value(name='pext', value=-1.0))
+      dset(self, "stressext", depend_array(name='stressext', value=-np.ones((3,3), float)))
 
 
    def bind(self, beads, nm, cell, forces, bias=None, prng=None, fixdof=None):
@@ -234,7 +234,8 @@ class BaroBZP(Barostat):
       
       if not pext is None:
          self.pext = pext
-      else: self.pext = -1.0
+      else:
+         self.pext = -1.0
 
    def bind(self, beads, nm, cell, forces, bias=None, prng=None, fixdof=None):
       """Binds beads, cell and forces to the barostat.
@@ -388,7 +389,8 @@ class BaroRGB(Barostat):
 
       if not stressext is None:
          self.stressext = stressext
-      else: self.stressext[:] = -1.0
+      else:
+         self.stressext[:] = -1.0
 
    def bind(self, beads, nm, cell, forces, bias=None, prng=None, fixdof=None):
       """Binds beads, cell and forces to the barostat.

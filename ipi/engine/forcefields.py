@@ -9,7 +9,6 @@ layer for a driver that gets positions and returns forces (and energy).
 # See the "licenses" directory for full license information.
 
 
-
 import time
 import threading
 
@@ -212,7 +211,6 @@ class ForceField(dobject):
         """ Takes care of cleaning up upon softexit """
 
         self.stop()
-
 
 
 class FFSocket(ForceField):
