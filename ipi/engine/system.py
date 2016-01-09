@@ -35,7 +35,7 @@ __all__ = ['System']
 class System(dobject):
    """Physical system object.
 
-   Contains all the phsyical information. Also handles stepping and output.
+   Contains all the physical information. Also handles stepping and output.
 
    Attributes:
       beads: A beads object giving the atom positions.
