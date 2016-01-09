@@ -230,12 +230,13 @@ class Driver(DriverSocket):
 
       if not self.waitstatus:
          try:
-            # TODO: this can sometimes hang, needs suitable timeout -- CHECKING OUT WITH 60
+            # This can sometimes hang with no timeout.
+            # Using the recommended 60 s.
             readable, writable, errored = select.select([], [self], [], 60)
             if self in writable:
                self.sendall(Message("status"))
                self.waitstatus = True
-         except socket.error:            
+         except socket.error:
             return Status.Disconnected
 
       try:
