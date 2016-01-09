@@ -650,6 +650,7 @@ class Input(object):
       rstr += indent + "</" + name + ">\n"
       return rstr
 
+
 class InputDictionary(Input):
    """Class that returns the value of all the fields as a dictionary.
    """
@@ -703,6 +704,7 @@ class InputDictionary(Input):
       for f, v in self.instancefields.iteritems():
          rdic[f]=self.__dict__[f].fetch()
       return rdic
+
 
 class InputAttribute(Input):
    """Class for handling attribute data.
@@ -835,6 +837,7 @@ class InputValue(InputAttribute):
          self._dimension = self.default_dimension
       else:
          self._dimension = dimension
+
       super(InputValue,self).__init__(help, default, dtype, options)
 
    def store(self, value, units=""):

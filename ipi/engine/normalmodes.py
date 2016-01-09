@@ -90,7 +90,7 @@ class NormalModes(dobject):
 
       if freqs is None:
          freqs = []
-      dset(self,"dt",   depend_value(name='dt', value=dt))
+      dset(self,"dt", depend_value(name='dt', value=dt))
       dset(self,"mode",   depend_value(name='mode', value=mode))
       dset(self,"transform_method",
          depend_value(name='transform_method', value=transform_method))
