@@ -16,14 +16,14 @@
          <cell>  [   35.233, 0, 0, 0, 35.233, 0, 0, 0, 35.233 ]  </cell>
       </initialize>   
       <forces><force> lammps </force></forces>
-      <mover mode='dynamics'>
+      <motion mode='dynamics'>
          <dynamics mode='sc'>
             <timestep units='femtosecond'> 0.25 </timestep>
             <thermostat mode='langevin'>
                 <tau units='femtosecond'> 100 </tau>
             </thermostat>
          </dynamics>           
-      </mover>
+      </motion>
       <ensemble>
          <temperature units='kelvin'> 300 </temperature>
       </ensemble>

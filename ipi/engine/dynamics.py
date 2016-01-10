@@ -21,7 +21,7 @@ from ipi.engine.thermostats import Thermostat
 from ipi.engine.barostats import Barostat
 
 
-__all__ = ['Dynamics', 'NVEEnsemble', 'NVTEnsemble', 'NPTEnsemble', 'NSTEnsemble']
+__all__ = ['Dynamics', 'NVEIntegrator', 'NVTIntegrator', 'NPTIntegrator', 'NSTIntegrator', 'SCIntegrator`']
 
 
 class Dynamics(Motion):
@@ -381,7 +381,7 @@ class NPTIntegrator(NVTIntegrator):
 
 
 class NSTIntegrator(NVTIntegrator):
-    """Ensemble object for constant pressure simulations.
+    """Integrator object for constant pressure simulations.
 
     Has the relevant conserved quantity and normal mode propagator for the
     constant pressure ensemble. Contains a thermostat object containing the
@@ -438,7 +438,7 @@ class NSTIntegrator(NVTIntegrator):
         self.ttime += time.time()
 
 class SCIntegrator(NVEIntegrator):
-   """Ensemble object for constant temperature simulations.
+   """Integrator object for constant temperature simulations.
 
    Has the relevant conserved quantity and normal mode propagator for the
    constant temperature ensemble. Contains a thermostat object containing the
@@ -522,5 +522,5 @@ class SCIntegrator(NVEIntegrator):
 #      """Calculates the conserved energy quantity for constant temperature
 #      ensemble. Also add the S-C term. 
 #      """
-#      return NVEEnsemble.get_econs(self) + self.thermostat.ethermo + self.forces.potsc
+#      return NVEIntegrator.get_econs(self) + self.thermostat.ethermo + self.forces.potsc
 

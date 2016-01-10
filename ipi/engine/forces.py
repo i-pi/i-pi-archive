@@ -744,6 +744,8 @@ class Forces(dobject):
       potssc = np.zeros(self.nbeads)
       for k in range(self.nbeads):
          if k%2 == 0:
+           print 'omegan2', self.omegan2 
+           print 'm3', self.beads.m3 
            potssc[k] = -self.pots[k]/3.0 + (self.alpha/self.omegan2/9.0)*np.dot(fbase[k],fbase[k]/self.beads.m3[k])  
          else:
            potssc[k] = self.pots[k]/3.0 + ((1.0-self.alpha)/self.omegan2/9.0)*np.dot(fbase[k],fbase[k]/self.beads.m3[k])

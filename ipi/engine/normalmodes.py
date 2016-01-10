@@ -112,7 +112,7 @@ class NormalModes(dobject):
       if forces is None: forces = motion.forces
       
       self.nbeads = beads.nbeads
-      self.natoms = beads.natoms      
+      self.natoms = beads.natoms
 
       # stores a reference to the bound beads and ensemble objects
       self.beads = beads
