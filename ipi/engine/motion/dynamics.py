@@ -21,9 +21,6 @@ from ipi.engine.thermostats import Thermostat
 from ipi.engine.barostats import Barostat
 
 
-__all__ = ['Dynamics', 'NVEEnsemble', 'NVTEnsemble', 'NPTEnsemble', 'NSTEnsemble']
-
-
 class Dynamics(Motion):
     """self (path integral) molecular dynamics class.
 
@@ -140,6 +137,7 @@ class Dynamics(Motion):
         self.ensemble.add_econs(dget(self.barostat, "ebaro"))
 
         #!TODO THOROUGH CLEAN-UP AND CHECK
+        #if self.enstype in ["nvt", "npt", "nst"]:
         if self.enstype == "nvt" or self.enstype == "npt" or self.enstype == "nst":
             if self.ensemble.temp < 0:
                 raise ValueError("Negative or unspecified temperature for a constant-T integrator")
