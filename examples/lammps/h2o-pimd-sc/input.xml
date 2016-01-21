@@ -11,11 +11,11 @@
    </ffsocket>
    <system>
       <initialize nbeads='4'>
-         <file mode='xyz'> water.xyz </file>
+         <file mode='pdb'> water_298K.pdb </file>
          <velocities mode="thermal" units='kelvin'> 300 </velocities>
          <cell>  [   35.233, 0, 0, 0, 35.233, 0, 0, 0, 35.233 ]  </cell>
       </initialize>   
-      <forces><force> lammps </force></forces>
+      <forces><force finite_dev="0.1"> lammps </force></forces>
       <motion mode='dynamics'>
          <dynamics mode='sc'>
             <timestep units='femtosecond'> 0.25 </timestep>
