@@ -8,7 +8,7 @@ assemles them in a pdb describing the ring polymer connectivity.
 Assumes the input files are in pdb format names prefix.pos_*.pdb.
 
 Syntax:
-   mergebeadspdb.py prefix
+   pos2centroid.py prefix [suffix]
 """
 
 
