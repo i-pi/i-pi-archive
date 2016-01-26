@@ -10,6 +10,7 @@ programs and serve them back to i-PI.
 
 
 import sys
+import os
 import socket
 import time
 
@@ -28,7 +29,7 @@ class Client(DriverSocket):
         havedata: Boolean giving whether the client calculated the forces.
     """
 
-    def __init__(self, address="localhost", port=31415, mode="unix", verbose=False, _socket=True):
+    def __init__(self, address="localhost", port=31415, mode="unix", _socket=True):
         """Initialise Client.
 
         Args:
@@ -56,8 +57,6 @@ class Client(DriverSocket):
         else:
             super(Client, self).__init__(socket=None)
 
-        self.verbose = verbose
-
         # allocate data
         self.havedata = False
         self._vir = np.zeros((3,3), np.float64)
@@ -79,19 +78,47 @@ class Client(DriverSocket):
         else:
             raise NotImplementedError("_getforce must be implemented by providing a self.callback function or overwritten.")
 
-    def run(self):
+    def run(self, verbose=True, t_max=None, fn_exit='EXIT'):
         """Serve forces until asked to finish or socket disconnects.
 
-        Serve force and potential, that are calculated in the user provided
+        Serve forces and potential that are calculated in the user provided
         routine _getforce.
+
+        Arguments:
+            - verbose: enable priting of step timing information
+            - t_max: optional maximum wall clock run time in seconds
+            - fn_exit: name of an exit file - will terminate if found
         """
 
-        if self.verbose:
-            print 'Starting communication loop.'
+        t0 = time.time()
+
+        fmt_header = '{:>6s} {:>10s} {:>10s}'
+        fmt_step = '{:6d} {:10.3f} {:10.3f}'
+
+        if t_max is None:
+            print 'Starting communication loop with no maximum run time.'
+        else:
+            print 'Starting communication loop with a maximum run time of {:d} seconds.'.format(t_max)
+            fmt_header += ' {:>10s}'
+            fmt_step += ' {:10.1f}'
+
+        if verbose:
+            header = fmt_header.format('step', 'time', 'avg time', 'remaining')
+            print
+            print header
+            print len(header) * '-'
+
+        i_step = 0
+        t_step_tot = 0.0
+        t_remain = None
 
         try:
             while True:
+
+                # receive message
                 msg = self.recv_msg()
+
+                # process message and respond
                 if msg == "":
                     print "Server shut down."
                     break
@@ -105,11 +132,18 @@ class Client(DriverSocket):
                     self._cellih = self.recvall(self._cellih)
                     self._nat = self.recvall(self._nat)
                     self._positions = self.recvall(self._positions)
-                    t0 = time.time()
+                    t0_step = time.time()
                     self._getforce()
-                    if self.verbose:
-                        print 'Calculation time: {:7.3f} s'.format(time.time() - t0)
+                    if verbose:
+                        t_now = time.time()
+                        t_step = t_now - t0_step
+                        t_step_tot += t_step
+                        t_step_avg = t_step_tot / (i_step + 1)
+                        if t_max is not None:
+                            t_remain = t_max - (t_now - t0)
+                        print fmt_step.format(i_step, t_step, t_step_avg, t_remain)
                     self.havedata = True
+                    i_step += 1
                 elif msg == Message("getforce"):
                     self.sendall(Message("forceready"))
                     self.sendall(self._potential, 8)
@@ -121,13 +155,23 @@ class Client(DriverSocket):
                 else:
                     print >> sys.stderr, "Client could not understand command:", msg
                     break
+
+                # check exit conditions - run time or exit file
+                if t_max is not None and time.time() - t0 > t_max:
+                        print 'Maximum run time of {:d} seconds exceeded.'.format(t_max)
+                        break
+                if fn_exit is not None and os.path.exists(fn_exit):
+                        print 'Exit file "{:s}" found. Removing file.'.format(fn_exit)
+                        os.remove(fn_exit)
+                        break
+
         except socket.error as e:
             print 'Error communicating through socket: [{}] {}'.format(e.errno, e.strerror)
         except KeyboardInterrupt:
             print ' Keyboard interrupt.'
 
-        if self.verbose:
-            print 'Communication loop finished.'
+        print 'Communication loop finished.'
+        print
 
 
 class ClientASE(Client):
@@ -137,12 +181,11 @@ class ClientASE(Client):
     https://wiki.fysik.dtu.dk/ase/
     """
 
-    def __init__(self, atoms, verbose=False, address='localhost', port=31415, mode='unix', _socket=True):
+    def __init__(self, atoms, address='localhost', port=31415, mode='unix', _socket=True):
         """Store provided data and initialize the base class.
 
         Arguments:
             - `atoms`: an ASE `Atoms` object
-            - `verbose`: enable priting of wall clock time per step
             - the rest gets passed to the `Client` base class
         """
 
@@ -160,7 +203,7 @@ class ClientASE(Client):
         self._potential = np.zeros(1)
 
         # call base class constructor
-        super(ClientASE, self).__init__(address, port, mode, verbose, _socket)
+        super(ClientASE, self).__init__(address, port, mode, _socket)
 
     def _getforce(self):
         """Update stored potential energy and forces using ASE."""
