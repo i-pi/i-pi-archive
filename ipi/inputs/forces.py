@@ -34,7 +34,7 @@ class InputForceComponent(InputValue):
                "weight" : ( InputAttribute, { "dtype"   : float,
                                          "default" : 1.0,
                                          "help"    : "A scaling factor for this forcefield, to be applied before adding the force calculated by this forcefield to the total force." } ),
-               "finite_dev" : ( InputAttribute, { "dtype"   : float,
+               "finite_dev" : ( InputAttribute, { "dtype"   : float, "dimension" : "length",
                                          "default" : 0.001,
                                          "help"    : "The finite deviation to be used for calculaing the Suzuki-Chin contribution of the force." } ),
                "mts_level" : ( InputAttribute, { "dtype"   : int,
