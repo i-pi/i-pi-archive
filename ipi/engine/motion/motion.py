@@ -12,9 +12,6 @@ import numpy as np
 from ipi.utils.depend import depend_value, dset, dobject
 
 
-__all__ = ['Motion']
-
-
 class Motion(dobject):
     """Base motion calculation class.
 

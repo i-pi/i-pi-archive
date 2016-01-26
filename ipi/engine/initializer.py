@@ -133,9 +133,9 @@ def init_chk(filename):
       warning("Restart from checkpoint with "+str(len(sim.syslist))+" systems will fetch data from the first system.")
    rcell = sim.syslist[0].cell
    rbeads = sim.syslist[0].beads
-   rthermo = sim.syslist[0].ensemble.thermostat
+   rmotion = sim.syslist[0].motion
 
-   return (rbeads, rcell, rthermo)
+   return (rbeads, rcell, rmotion)
 
 
 def init_beads(iif, nbeads):
@@ -515,10 +515,10 @@ class Initializer(dobject):
                   raise ValueError("Size mismatch in thermostat initialization data")
                sinput.shape = ssimul.shape
             elif v.mode == "chk":
-               rthermo = init_chk(v.value)[2]
-               if not hasattr(rthermo,"s"):
+               rmotion = init_chk(v.value)[2]
+               if not hasattr(rmotion,"thermostat") or not hasattr(rmotion.thermostat,"s") :
                   raise ValueError("Checkpoint file does not contain usable thermostat data")
-               sinput = rthermo.s.copy()
+               sinput = rmotion.thermostat.s.copy()
                if sinput.shape != ssimul.shape :
                   raise ValueError("Shape mismatch in thermostat initialization data")
 
