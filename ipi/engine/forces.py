@@ -275,7 +275,7 @@ class ForceComponent(dobject):
          Depends on each replica's ufvx list.
    """
 
-   def __init__(self, ffield="", nbeads=0, weight=1.0, name="", lmts=0):
+   def __init__(self, ffield="", nbeads=0, weight=1.0, name="", lmts=0, epsilon=0.001):
       """Initializes ForceComponent
 
       Args:
@@ -295,6 +295,7 @@ class ForceComponent(dobject):
       self.nbeads = nbeads
       self.weight = weight
       self.lmts = lmts
+      self.epsilon = epsilon
 
    def bind(self, beads, cell, fflist):
       """Binds beads, cell and force to the forcefield.
@@ -508,7 +509,7 @@ class Forces(dobject):
          # if the number of beads for this force component is unspecified,
          # assume full force evaluation
          if newb == 0: newb = beads.nbeads
-         newforce = ForceComponent(ffield=fc.ffield, name=fc.name, nbeads=newb, weight=fc.weight, lmts=fc.lmts)
+         newforce = ForceComponent(ffield=fc.ffield, name=fc.name, nbeads=newb, weight=fc.weight, lmts=fc.lmts, epsilon=fc.epsilon)
          newbeads = Beads(beads.natoms, newb)
          newrpc = nm_rescale(beads.nbeads, newb)
 
@@ -744,8 +745,6 @@ class Forces(dobject):
       potssc = np.zeros(self.nbeads)
       for k in range(self.nbeads):
          if k%2 == 0:
-           print 'omegan2', self.omegan2 
-           print 'm3', self.beads.m3 
            potssc[k] = -self.pots[k]/3.0 + (self.alpha/self.omegan2/9.0)*np.dot(fbase[k],fbase[k]/self.beads.m3[k])  
          else:
            potssc[k] = self.pots[k]/3.0 + ((1.0-self.alpha)/self.omegan2/9.0)*np.dot(fbase[k],fbase[k]/self.beads.m3[k])
@@ -753,24 +752,24 @@ class Forces(dobject):
        
       # this should get the forces
       fac = np.sqrt((fbase/self.beads.m3*fbase/self.beads.m3).sum()/(self.nbeads*self.natoms))
-      epsilon = 1.0e-3/fac
-      
+      delta = self.mforces[-1].epsilon/fac
+      print self.mforces[-1].epsilon, delta 
       if self.alpha==0:
          # special case! half of the S-C forces are zero so we can compute forward-backward finite differences in one go!
          fsc = fbase*0.0
          for k in range(self.nbeads/2): # forward and backward go in the two halves of the q vector
-            self.dbeads.q[k]=self.beads.q[2*k+1] + epsilon * fbase[2*k+1]/self.beads.m3[2*k+1]
-            self.dbeads.q[self.nbeads/2+k]=self.beads.q[2*k+1] - epsilon * fbase[2*k+1]/self.beads.m3[2*k+1]
+            self.dbeads.q[k]=self.beads.q[2*k+1] + delta * fbase[2*k+1]/self.beads.m3[2*k+1]
+            self.dbeads.q[self.nbeads/2+k]=self.beads.q[2*k+1] - delta * fbase[2*k+1]/self.beads.m3[2*k+1]
          fplusminus = depstrip(self.dforces.f).copy()
          for k in range(self.nbeads/2): # only compute the elements that will not be set to zero when multiplying by alpha
-            fsc[2*k+1] = 2*(fplusminus[self.nbeads/2+k]-fplusminus[k])/2.0/epsilon
+            fsc[2*k+1] = 2*(fplusminus[self.nbeads/2+k]-fplusminus[k])/2.0/delta
       else: 
          # standard, more expensive version (alpha=1 could also be accelerated but is not used in practice so laziness prevails)
-         self.dbeads.q = self.beads.q + epsilon*fbase/self.beads.m3 # move forward (should hardcode or input displacement)
+         self.dbeads.q = self.beads.q + delta*fbase/self.beads.m3 # move forward (should hardcode or input displacement)
          fplus = depstrip(self.dforces.f).copy()
-         self.dbeads.q = self.beads.q - epsilon*fbase/self.beads.m3 # move forward (should hardcode or input displacement)
+         self.dbeads.q = self.beads.q - delta*fbase/self.beads.m3 # move forward (should hardcode or input displacement)
          fminus = depstrip(self.dforces.f).copy()
-         fsc = 2*(fminus - fplus)/2.0/epsilon      
+         fsc = 2*(fminus - fplus)/2.0/delta      
          
       for k in range(self.nbeads):
          if k%2 == 0:
