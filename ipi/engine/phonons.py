@@ -70,7 +70,7 @@ class DynMatrixMover(Mover):
         #Creates square root mass matrix.
 	if(self.sm.size  != (beads.q.size * beads.q.size)):
             if(self.sm.size == 0):
-                self.sm=np.diag(beads.m)
+                self.sm=np.diag(beads.m3[-1])
             else:
                 raise ValueError("Force constant matrix size does not match system size")
 
