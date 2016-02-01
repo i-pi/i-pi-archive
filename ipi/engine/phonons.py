@@ -51,6 +51,7 @@ class DynMatrixMover(Mover):
         self.epsilon = epsilon
         self.oldk = oldk
 	self.matrix = matrix
+        self.sm=np.zeros(0,float)
    
     def bind(self, ens, beads, nm, cell, bforce, bbias, prng):
 
@@ -63,6 +64,13 @@ class DynMatrixMover(Mover):
 	if(self.matrix.size  != (beads.q.size * beads.q.size)):
             if(self.matrix.size == 0):
                 self.matrix=np.eye(beads.q.size, beads.q.size, 0, float)
+            else:
+                raise ValueError("Force constant matrix size does not match system size")
+
+        #Creates square root mass matrix.
+	if(self.sm.size  != (beads.q.size * beads.q.size)):
+            if(self.sm.size == 0):
+                self.sm=np.diag(beads.m)
             else:
                 raise ValueError("Force constant matrix size does not match system size")
 
@@ -99,8 +107,12 @@ class DynMatrixMover(Mover):
         DynMatrixElement = (plus-minus)/(2*self.epsilon*depstrip(self.beads.sm3[-1][k])*depstrip(self.beads.sm3[-1]))
         #change the line value or add the line if does not exit to the matrix
         self.matrix[k] = DynMatrixElement
+
+
         if (k == 3*self.beads.natoms -1):
-            eigsys=np.linalg.eig(self.matrix)
+            eigsys=np.linalg.eig((self.matrix + np.transpose(self.matrix))/2)
+            self.q2u=eigsys[0]*self.sm
+            self.u2q=np.linalg.inv(self.q2u)
             outfile01=open('./DynMatrix.matrix.out', 'w+')
             outfile02=open('./DynMatrix.eigenvalues.out', 'w+')
             outfile03=open('./DynMatrix.eigenvectors.out', 'w+')
