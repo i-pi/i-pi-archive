@@ -70,6 +70,7 @@ class DynMatrixMover(Mover):
         self.dcell = self.cell.copy()
         self.dforces = self.forces.copy(self.dbeads, self.dcell) 
         self.ism=1/np.sqrt(beads.m3[-1])
+        self.epsilon=self.epsilon/10
             
     def step(self, step=None):
         """Calculates the kth derivative of force by finite differences.            
@@ -84,7 +85,7 @@ class DynMatrixMover(Mover):
         self.qtime = -time.time()
 
         info("\nDynMatrix STEP %d" % step, verbosity.debug)
-    
+        global DynMatrixElement
         if(k <= 3*self.beads.natoms -1):
             #initializes the finite deviation
             self.delta = np.zeros(3 * self.beads.natoms, float)       
@@ -109,31 +110,31 @@ class DynMatrixMover(Mover):
                 for j in range(0,3 * self.dbeads.natoms):
                     print >> outfile01, ' '.join(map(str, self.matrix[j]))
                     print >> outfile03, ' '.join(map(str, self.eigsys[1][j]))
-                    print np.linalg.norm(self.eigsys[1][j])
                     self.eigsys[1][j]=self.eigsys[1][j]*self.ism
                 outfile01.close
                 outfile02.close
                 outfile03.close
-                self.epsilon=self.epsilon/np.mean(self.ism)
 
         else:
+            DynMatrixElement=None
+            DynMatrixElement=np.zeros(3*self.beads.natoms,float)
             j=k-3*self.beads.natoms
             #initializes the finite deviation
-            self.delta = np.real(self.epsilon*(self.eigsys[1][j]))
+            self.delta = np.real(self.epsilon*self.eigsys[1][j]/np.linalg.norm(self.eigsys[1][j]))
             #displaces by -epsilon along jth normal mode.
             self.dbeads.q = self.beads.q + self.delta
             plus = - depstrip(self.dforces.f).copy()
             #displaces by -epsilon along jth normal mode.
             self.dbeads.q = self.beads.q - self.delta
             minus =  - depstrip(self.dforces.f).copy()
-            #computes a row of force-constant matrix
-            DynMatrixElement = (plus-minus)/(2*self.epsilon)
+            #computes a row of force-constant matrixm
+            for i in range(0,3 * self.dbeads.natoms):
+                DynMatrixElement[i] = np.inner(self.eigsys[1][i],((plus-minus)/(2*self.epsilon)*(np.linalg.norm(self.eigsys[1][j])))[-1])
             #DynMatrixElement = (plus-minus)/(2*self.epsilon)
             #change the line value or add the line if does not exit to the matrix
             self.matrix[j] = DynMatrixElement
             
             if (j == 3*self.beads.natoms -1):
-	        self.matrix=np.dot(np.transpose(self.eigsys[1]),self.matrix)
                 self.eigsys=np.linalg.eig((self.matrix + np.transpose(self.matrix))/2)
                 outfile01=open('./RefinedDynMatrix.matrix.out', 'w+')
                 outfile02=open('./RefinedDynMatrix.eigenvalues.out', 'w+')
