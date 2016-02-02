@@ -51,7 +51,6 @@ class DynMatrixMover(Mover):
         self.epsilon = epsilon
         self.oldk = oldk
 	self.matrix = matrix
-        self.sm=np.zeros(0,float)
    
     def bind(self, ens, beads, nm, cell, bforce, bbias, prng):
 
@@ -67,16 +66,10 @@ class DynMatrixMover(Mover):
             else:
                 raise ValueError("Force constant matrix size does not match system size")
 
-        #Creates square root mass matrix.
-	if(self.sm.size  != (beads.q.size * beads.q.size)):
-            if(self.sm.size == 0):
-                self.sm=np.diag(beads.m3[-1])
-            else:
-                raise ValueError("Force constant matrix size does not match system size")
-
         self.dbeads = self.beads.copy()
         self.dcell = self.cell.copy()
         self.dforces = self.forces.copy(self.dbeads, self.dcell) 
+        self.ism=1/np.sqrt(beads.m3[-1])
             
     def step(self, step=None):
         """Calculates the kth derivative of force by finite differences.            
@@ -92,35 +85,64 @@ class DynMatrixMover(Mover):
 
         info("\nDynMatrix STEP %d" % step, verbosity.debug)
     
-        #initialise des donnes du system compris par IPI
+        if(k <= 3*self.beads.natoms -1):
+            #initializes the finite deviation
+            self.delta = np.zeros(3 * self.beads.natoms, float)       
+            self.delta[k] = self.epsilon
+            #displaces kth d.o.f by epsilon.                          
+            self.dbeads.q = self.beads.q + self.delta  
+            plus = - depstrip(self.dforces.f).copy()
+            #displaces kth d.o.f by -epsilon.      
+            self.dbeads.q = self.beads.q - self.delta 
+            minus =  - depstrip(self.dforces.f).copy()
+            #computes a row of force-constant matrix
+            DynMatrixElement = (plus-minus)/(2*self.epsilon*depstrip(self.beads.sm3[-1][k])*depstrip(self.beads.sm3[-1]))
+            #change the line value or add the line if does not exit to the matrix
+            self.matrix[k] = DynMatrixElement
+
+            if (k == 3*self.beads.natoms -1):
+                self.eigsys=np.linalg.eig((self.matrix + np.transpose(self.matrix))/2)
+                outfile01=open('./DynMatrix.matrix.out', 'w+')
+                outfile02=open('./DynMatrix.eigenvalues.out', 'w+')
+                outfile03=open('./DynMatrix.eigenvectors.out', 'w+')
+                print >> outfile02, ' '.join(map(str, self.eigsys[0]))
+                for j in range(0,3 * self.dbeads.natoms):
+                    print >> outfile01, ' '.join(map(str, self.matrix[j]))
+                    print >> outfile03, ' '.join(map(str, self.eigsys[1][j]))
+                    print np.linalg.norm(self.eigsys[1][j])
+                    self.eigsys[1][j]=self.eigsys[1][j]*self.ism
+                outfile01.close
+                outfile02.close
+                outfile03.close
+                self.epsilon=self.epsilon/np.mean(self.ism)
+
+        else:
+            j=k-3*self.beads.natoms
+            #initializes the finite deviation
+            self.delta = np.real(self.epsilon*(self.eigsys[1][j]))
+            #displaces by -epsilon along jth normal mode.
+            self.dbeads.q = self.beads.q + self.delta
+            plus = - depstrip(self.dforces.f).copy()
+            #displaces by -epsilon along jth normal mode.
+            self.dbeads.q = self.beads.q - self.delta
+            minus =  - depstrip(self.dforces.f).copy()
+            #computes a row of force-constant matrix
+            DynMatrixElement = (plus-minus)/(2*self.epsilon)
+            #DynMatrixElement = (plus-minus)/(2*self.epsilon)
+            #change the line value or add the line if does not exit to the matrix
+            self.matrix[j] = DynMatrixElement
             
-        #initializes the finite deviation
-        self.delta = np.zeros(3 * self.beads.natoms, float)       
-        self.delta[k] = self.epsilon
-        #displaces kth d.o.f by epsilon.                          
-        self.dbeads.q = self.beads.q + self.delta  
-        plus = - depstrip(self.dforces.f).copy()
-        #displaces kth d.o.f by -epsilon.      
-        self.dbeads.q = self.beads.q - self.delta 
-        minus =  - depstrip(self.dforces.f).copy()
-        #computes a row of force-constant matrix
-        DynMatrixElement = (plus-minus)/(2*self.epsilon*depstrip(self.beads.sm3[-1][k])*depstrip(self.beads.sm3[-1]))
-        #change the line value or add the line if does not exit to the matrix
-        self.matrix[k] = DynMatrixElement
-
-
-        if (k == 3*self.beads.natoms -1):
-            eigsys=np.linalg.eig((self.matrix + np.transpose(self.matrix))/2)
-            self.q2u=eigsys[0]*self.sm
-            self.u2q=np.linalg.inv(self.q2u)
-            outfile01=open('./DynMatrix.matrix.out', 'w+')
-            outfile02=open('./DynMatrix.eigenvalues.out', 'w+')
-            outfile03=open('./DynMatrix.eigenvectors.out', 'w+')
-            print >> outfile02, ' '.join(map(str, eigsys[0]))
-            for j in range(0,3 * self.dbeads.natoms):
-                print >> outfile01, ' '.join(map(str, self.matrix[j]))
-                print >> outfile03, ' '.join(map(str, eigsys[1][j]))
-            outfile01.close
-            outfile02.close
-            outfile03.close
-            softexit.trigger("Dynamic matrix is calculated. Exiting simulation")
+            if (j == 3*self.beads.natoms -1):
+	        self.matrix=np.dot(np.transpose(self.eigsys[1]),self.matrix)
+                self.eigsys=np.linalg.eig((self.matrix + np.transpose(self.matrix))/2)
+                outfile01=open('./RefinedDynMatrix.matrix.out', 'w+')
+                outfile02=open('./RefinedDynMatrix.eigenvalues.out', 'w+')
+                outfile03=open('./RefinedDynMatrix.eigenvectors.out', 'w+')
+                print >> outfile02, ' '.join(map(str, self.eigsys[0]))
+                for i in range(0,3 * self.dbeads.natoms):
+                    print >> outfile01, ' '.join(map(str, self.matrix[i]))
+                    print >> outfile03, ' '.join(map(str, self.eigsys[1][i]))
+                outfile01.close
+                outfile02.close
+                outfile03.close
+                softexit.trigger("Dynamic matrix is calculated. Exiting simulation")
