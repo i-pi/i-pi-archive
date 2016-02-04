@@ -34,7 +34,7 @@ class DynMatrixMover(Mover):
     """Dynamic matrix calculation routine by finite difference.
     """
 
-    def __init__(self, fixcom=False, fixatoms=None, epsilon=0.001, oldk=0, matrix=np.zeros(0, float)):   
+    def __init__(self, fixcom=False, fixatoms=None, mode='std', energy_shift=1.0, pos_shift=0.001, oldk=0, matrix=np.zeros(0, float)):   
                  
         """Initialises DynMatrixMover.
         Args:
@@ -42,13 +42,15 @@ class DynMatrixMover(Mover):
              	  motion will be constrained or not. Defaults to False. 
         matrix	: A 3Nx3N array that stores the dynamic matrix.
         oldk	: An integr that stores the number of rows calculated.
-        epsilon: A 3Nx3N array that stores the dynamic matrix.
+        delta: A 3Nx3N array that stores the dynamic matrix.
         """
 
         super(DynMatrixMover,self).__init__(fixcom=fixcom, fixatoms=fixatoms)
       
         #Finite difference option.
-        self.epsilon = epsilon
+        self.mode=mode
+        self.delta = pos_shift
+        self.epsilon = energy_shift
         self.oldk = oldk
 	self.matrix = matrix
    
@@ -69,81 +71,123 @@ class DynMatrixMover(Mover):
         self.dbeads = self.beads.copy()
         self.dcell = self.cell.copy()
         self.dforces = self.forces.copy(self.dbeads, self.dcell) 
-        self.ism=1/np.sqrt(beads.m3[-1])
-        self.epsilon=self.epsilon/10
+        self.ism = 1/np.sqrt(beads.m3[-1])
+        self.nvec = np.eye(beads.q.size, beads.q.size, 0, float)
+        self.U = np.eye(beads.q.size, beads.q.size, 0, float)
+        self.carvec = np.eye(beads.q.size, beads.q.size, 0, float)
+        self.isrm = np.zeros(beads.q.size, float)
             
     def step(self, step=None):
         """Calculates the kth derivative of force by finite differences.            
         """
      
-        if(step==None):
+        if(step == None):
             k=0
+        elif(step <= 3*self.beads.natoms):
+            k = step-1
+            j = -1
         else:
-            k=step-1
+            k = step-1
+            j = step-3*self.beads.natoms-1
 
-        self.ptime = self.ttime = 0
-        self.qtime = -time.time()
+        print self.mode
+        if(self.mode == 'std'):
+ 
+            self.ptime = self.ttime = 0
+            self.qtime = -time.time()
+            info("\nDynMatrix STEP %d" % step, verbosity.debug)
 
-        info("\nDynMatrix STEP %d" % step, verbosity.debug)
-        global DynMatrixElement
-        if(k <= 3*self.beads.natoms -1):
-            #initializes the finite deviation
-            self.delta = np.zeros(3 * self.beads.natoms, float)       
-            self.delta[k] = self.epsilon
-            #displaces kth d.o.f by epsilon.                          
-            self.dbeads.q = self.beads.q + self.delta  
-            plus = - depstrip(self.dforces.f).copy()
-            #displaces kth d.o.f by -epsilon.      
-            self.dbeads.q = self.beads.q - self.delta 
-            minus =  - depstrip(self.dforces.f).copy()
-            #computes a row of force-constant matrix
-            DynMatrixElement = (plus-minus)/(2*self.epsilon*depstrip(self.beads.sm3[-1][k])*depstrip(self.beads.sm3[-1]))
-            #change the line value or add the line if does not exit to the matrix
-            self.matrix[k] = DynMatrixElement
-
-            if (k == 3*self.beads.natoms -1):
-                self.eigsys=np.linalg.eig((self.matrix + np.transpose(self.matrix))/2)
-                outfile01=open('./DynMatrix.matrix.out', 'w+')
-                outfile02=open('./DynMatrix.eigenvalues.out', 'w+')
-                outfile03=open('./DynMatrix.eigenvectors.out', 'w+')
-                print >> outfile02, ' '.join(map(str, self.eigsys[0]))
-                for j in range(0,3 * self.dbeads.natoms):
-                    print >> outfile01, ' '.join(map(str, self.matrix[j]))
-                    print >> outfile03, ' '.join(map(str, self.eigsys[1][j]))
-                    self.eigsys[1][j]=self.eigsys[1][j]*self.ism
-                outfile01.close
-                outfile02.close
-                outfile03.close
-
-        else:
-            DynMatrixElement=None
-            DynMatrixElement=np.zeros(3*self.beads.natoms,float)
-            j=k-3*self.beads.natoms
-            #initializes the finite deviation
-            self.delta = np.real(self.epsilon*self.eigsys[1][j]/np.linalg.norm(self.eigsys[1][j]))
-            #displaces by -epsilon along jth normal mode.
-            self.dbeads.q = self.beads.q + self.delta
-            plus = - depstrip(self.dforces.f).copy()
-            #displaces by -epsilon along jth normal mode.
-            self.dbeads.q = self.beads.q - self.delta
-            minus =  - depstrip(self.dforces.f).copy()
-            #computes a row of force-constant matrixm
-            for i in range(0,3 * self.dbeads.natoms):
-                DynMatrixElement[i] = np.inner(self.eigsys[1][i],((plus-minus)/(2*self.epsilon)*(np.linalg.norm(self.eigsys[1][j])))[-1])
-            #DynMatrixElement = (plus-minus)/(2*self.epsilon)
-            #change the line value or add the line if does not exit to the matrix
-            self.matrix[j] = DynMatrixElement
-            
-            if (j == 3*self.beads.natoms -1):
-                self.eigsys=np.linalg.eig((self.matrix + np.transpose(self.matrix))/2)
-                outfile01=open('./RefinedDynMatrix.matrix.out', 'w+')
-                outfile02=open('./RefinedDynMatrix.eigenvalues.out', 'w+')
-                outfile03=open('./RefinedDynMatrix.eigenvectors.out', 'w+')
-                print >> outfile02, ' '.join(map(str, self.eigsys[0]))
+            if(k <= 3*self.beads.natoms -1):
+                #initializes the finite deviation
+                self.dev = np.zeros(3 * self.beads.natoms, float)       
+                self.dev[k] = self.delta
+                #displaces kth d.o.f by delta.                          
+                self.dbeads.q = self.beads.q + self.dev  
+                plus = - depstrip(self.dforces.f).copy()
+                #displaces kth d.o.f by -delta.      
+                self.dbeads.q = self.beads.q - self.dev 
+                minus =  - depstrip(self.dforces.f).copy()
+                #computes a row of force-constant matrix
+                DynMatrixElement = (plus-minus)/(2*self.delta*depstrip(self.beads.sm3[-1][k])*depstrip(self.beads.sm3[-1]))
+                #change the line value or add the line if does not exit to the matrix
+                self.matrix[k] = DynMatrixElement
+     
+                if (k == 3*self.beads.natoms -1):
+                    self.eigsys=np.linalg.eig((self.matrix + np.transpose(self.matrix))/2)
+                    outfile01=open('./DynMatrix.matrix.out', 'w+')
+                    outfile02=open('./DynMatrix.eigenvalues.out', 'w+')
+                    outfile03=open('./DynMatrix.eigenvectors.out', 'w+')
+                    print >> outfile02, '\n'.join(map(str, self.eigsys[0]))
+                    for i in range(0,3 * self.dbeads.natoms):
+                        print >> outfile01, ' '.join(map(str, self.matrix[i]))
+                        print >> outfile03, ' '.join(map(str, self.eigsys[1][i]))
+                    outfile01.close
+                    outfile02.close
+                    outfile03.close
+                    softexit.trigger("Dynamic matrix is calculated. Exiting simulation")
+     
+        elif(self.mode == 'ref'):
+ 
+            self.ptime = self.ttime = 0
+            self.qtime = -time.time()
+     
+            info("\nDynMatrix STEP %d" % step, verbosity.debug)
+            if(k <= 3*self.beads.natoms -1):
+                #initializes the finite deviation
+                self.dev = np.zeros(3 * self.beads.natoms, float)       
+                self.dev[k] = self.delta
+                #displaces kth d.o.f by delta.                          
+                self.dbeads.q = self.beads.q + self.dev  
+                plus = - depstrip(self.dforces.f).copy()
+                #displaces kth d.o.f by -delta.      
+                self.dbeads.q = self.beads.q - self.dev 
+                minus =  - depstrip(self.dforces.f).copy()
+                #computes a row of force-constant matrix
+                DynMatrixElement = (plus-minus)/(2*self.delta*depstrip(self.beads.sm3[-1][k])*depstrip(self.beads.sm3[-1]))
+                #change the line value or add the line if does not exit to the matrix
+                self.matrix[k] = DynMatrixElement
+     
+                if (k == 3*self.beads.natoms -1):
+                    self.eigsys = np.linalg.eig((self.matrix + np.transpose(self.matrix))/2)
+                    outfile01 = open('./DynMatrix.matrix.out', 'w+')
+                    outfile02 = open('./DynMatrix.eigenvalues.out', 'w+')
+                    outfile03 = open('./DynMatrix.eigenvectors.out', 'w+')
+                    print >> outfile02, '\n'.join(map(str, self.eigsys[0]))
+                    for i in range(0,3 * self.dbeads.natoms):
+                        print >> outfile01, ' '.join(map(str, self.matrix[i]))
+                        print >> outfile03, ' '.join(map(str, self.eigsys[1][i]))
+                        self.nvec[i] = self.eigsys[1][i]*self.ism
+                        self.isrm[i] = np.linalg.norm(self.nvec[i])
+                        self.U[i] = self.nvec[i]/self.isrm[i]
+                    outfile01.close
+                    outfile02.close
+                    outfile03.close
+            else:
+                DynMatrixElement=None
+                DynMatrixElement=np.zeros(3*self.beads.natoms,float)
+                #initializes the finite deviation
+                self.dev = np.real(self.delta*self.nvec[j]/self.isrm[j])
+                #displaces by -delta along jth normal mode.
+                self.dbeads.q = self.beads.q + self.dev
+                plus = - depstrip(self.dforces.f).copy()
+                #displaces by -delta along jth normal mode.
+                self.dbeads.q = self.beads.q - self.dev
+                minus =  - depstrip(self.dforces.f).copy()
+                #computes a row of force-constant matrix.
                 for i in range(0,3 * self.dbeads.natoms):
-                    print >> outfile01, ' '.join(map(str, self.matrix[i]))
-                    print >> outfile03, ' '.join(map(str, self.eigsys[1][i]))
-                outfile01.close
-                outfile02.close
-                outfile03.close
-                softexit.trigger("Dynamic matrix is calculated. Exiting simulation")
+                    DynMatrixElement[i] = np.inner(self.nvec[i],((plus-minus)/(2*self.delta/self.isrm[j]))[-1])
+                self.matrix[j] = DynMatrixElement
+                
+                if (j == 3*self.beads.natoms -1):
+                    self.eigsys = np.linalg.eig((self.matrix + np.transpose(self.matrix))/2)
+                    outfile01 = open('./RefinedDynMatrix.matrix.out', 'w+')
+                    outfile02 = open('./RefinedDynMatrix.eigenvalues.out', 'w+')
+                    outfile03 = open('./RefinedDynMatrix.eigenvectors.out', 'w+')
+                    print >> outfile02, '\n'.join(map(str, self.eigsys[0]))
+                    for i in range(0,3 * self.dbeads.natoms):
+                        print >> outfile01, ' '.join(map(str, self.matrix[i]))
+                        print >> outfile03, ' '.join(map(str, self.carvec[i]))
+                    outfile01.close
+                    outfile02.close
+                    outfile03.close
+                    softexit.trigger("Dynamic matrix is calculated. Exiting simulation")

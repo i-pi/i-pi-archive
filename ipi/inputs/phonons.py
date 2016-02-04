@@ -39,17 +39,22 @@ class InputDynMatrix(InputDictionary):
 
     """
 
-    #TODO: RENAME BFGS/L-BFGS ONLY OPTIONS TO INDICATE SPECIFIC TO BFGS/L-BFGS
+    attribs={"mode"  : (InputAttribute, {"dtype"   : str, "default": "std",
+                                    "help"    : "The algorithm to be used",
+                                    "options" : ['std', 'ref', 'sc']}) }
     fields = { 
                 "oldk" : ( InputValue, {"dtype" : int, 
                               "default" : 0,
-                              "help"    : "Number of rows of the Hessian calculated until previous step."}),
-                "epsilon"  : (InputValue, {"dtype"   : float, "default": 0.01, 
-                                    "help"    : "The finite deviation used to compute deribvative of force."
+                              "help"    : "Number of rows of the dynamic matrix calculated until previous step."}),
+                "pos_shift"  : (InputValue, {"dtype"   : float, "default": 0.01, 
+                                    "help"    : "The finite deviation in position used to compute deribvative of force."
+                                    }), 
+                "energy_shift"  : (InputValue, {"dtype"   : float, "default": 0.001, 
+                                    "help"    : "The finite deviation in energy used to compute deribvative of force."
                                     }), 
                 "matrix" : ( InputArray, {"dtype" : float, 
                               "default" :  np.zeros(0, float),
-                              "help"    : "Hessian known until previous step."})
+                              "help"    : "dynamic matrix known until previous step."})
              }
                    
     dynamic = {  }
@@ -59,10 +64,14 @@ class InputDynMatrix(InputDictionary):
 
     def store(self, phonons):
         if phonons  == {}: return
-        self.epsilon.store(phonons.epsilon)
+        self.mode.store(phonons.mode)
+        self.pos_shift.store(phonons.delta)
+        self.energy_shift.store(phonons.epsilon)
         self.oldk.store(phonons.oldk)
         self.matrix.store(phonons.matrix)
         
     def fetch(self):		
         rv = super(InputDynMatrix,self).fetch()
+        rv["mode"] = self.mode.fetch()        
+        return rv
         return rv
