@@ -158,7 +158,7 @@ class DynMatrixMover(Mover):
                         print >> outfile03, ' '.join(map(str, self.eigsys[1][i]))
                         self.nvec[i] = self.eigsys[1][i]*self.ism
                         self.isrm[i] = np.linalg.norm(self.nvec[i])
-                        self.U[i] = self.nvec[i]/self.isrm[i]
+                        self.U[i] = self.eigsys[1][i]
                     outfile01.close
                     outfile02.close
                     outfile03.close
@@ -180,6 +180,7 @@ class DynMatrixMover(Mover):
                 
                 if (j == 3*self.beads.natoms -1):
                     self.eigsys = np.linalg.eig((self.matrix + np.transpose(self.matrix))/2)
+                    self.carvec = np.transpose(self.U)*self.matrix*(self.U)
                     outfile01 = open('./RefinedDynMatrix.matrix.out', 'w+')
                     outfile02 = open('./RefinedDynMatrix.eigenvalues.out', 'w+')
                     outfile03 = open('./RefinedDynMatrix.eigenvectors.out', 'w+')
