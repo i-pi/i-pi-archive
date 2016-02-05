@@ -52,7 +52,7 @@ class DynMatrixMover(Mover):
         self.delta = pos_shift
         self.epsilon = energy_shift
         self.oldk = oldk
-	self.matrix = matrix
+        self.matrix = matrix
    
     def bind(self, ens, beads, nm, cell, bforce, bbias, prng):
 
@@ -180,7 +180,7 @@ class DynMatrixMover(Mover):
                 
                 if (j == 3*self.beads.natoms -1):
                     self.eigsys = np.linalg.eig((self.matrix + np.transpose(self.matrix))/2)
-                    self.carvec = np.transpose(self.U)*self.matrix*(self.U)
+                    self.carvec = np.dot(np.transpose(self.U),np.dot(self.matrix + np.transpose(self.matrix),(self.U)))/2
                     outfile01 = open('./RefinedDynMatrix.matrix.out', 'w+')
                     outfile02 = open('./RefinedDynMatrix.eigenvalues.out', 'w+')
                     outfile03 = open('./RefinedDynMatrix.eigenvectors.out', 'w+')
