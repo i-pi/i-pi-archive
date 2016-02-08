@@ -166,7 +166,13 @@ class DynMatrixMover(Mover):
                 DynMatrixElement=None
                 DynMatrixElement=np.zeros(3*self.beads.natoms,float)
                 #initializes the finite deviation
-                self.dev = np.real(self.delta*self.nvec[j]/self.isrm[j])
+                self.dev = np.real(self.nvec[j]/self.isrm[j])
+                edelta = 0
+                if self.epsilon>0 :
+                   edelta = self.isrm[j]*np.sqrt(self.epsilon*2.0/abs(self.eigsys[0][j]))
+               
+                print np.linalg.norm(self.dev), "energy-scaled displacement: ", edelta
+                self.dev *= min(self.delta, edelta)   
                 #displaces by -delta along jth normal mode.
                 self.dbeads.q = self.beads.q + self.dev
                 plus = - depstrip(self.dforces.f).copy()
@@ -178,16 +184,17 @@ class DynMatrixMover(Mover):
                     DynMatrixElement[i] = np.inner(self.nvec[i],((plus-minus)/(2*self.delta/self.isrm[j]))[-1])
                 self.matrix[j] = DynMatrixElement
                 
+                
                 if (j == 3*self.beads.natoms -1):
+                    self.matrix = np.dot(np.transpose(self.U),np.dot(self.matrix + np.transpose(self.matrix),(self.U)))/2                    
                     self.eigsys = np.linalg.eig((self.matrix + np.transpose(self.matrix))/2)
-                    self.carvec = np.dot(np.transpose(self.U),np.dot(self.matrix + np.transpose(self.matrix),(self.U)))/2
                     outfile01 = open('./RefinedDynMatrix.matrix.out', 'w+')
                     outfile02 = open('./RefinedDynMatrix.eigenvalues.out', 'w+')
                     outfile03 = open('./RefinedDynMatrix.eigenvectors.out', 'w+')
                     print >> outfile02, '\n'.join(map(str, self.eigsys[0]))
                     for i in range(0,3 * self.dbeads.natoms):
                         print >> outfile01, ' '.join(map(str, self.matrix[i]))
-                        print >> outfile03, ' '.join(map(str, self.carvec[i]))
+                        print >> outfile03, ' '.join(map(str, self.eigsys[1][i]))
                     outfile01.close
                     outfile02.close
                     outfile03.close

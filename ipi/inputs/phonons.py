@@ -47,9 +47,9 @@ class InputDynMatrix(InputDictionary):
                               "default" : 0,
                               "help"    : "Number of rows of the dynamic matrix calculated until previous step."}),
                 "pos_shift"  : (InputValue, {"dtype"   : float, "default": 0.01, 
-                                    "help"    : "The finite deviation in position used to compute deribvative of force."
+                                    "help"    : "The finite deviation in position used to compute derivative of force."
                                     }), 
-                "energy_shift"  : (InputValue, {"dtype"   : float, "default": 0.001, 
+                "energy_shift"  : (InputValue, {"dtype"   : float, "default": 0.000, 
                                     "help"    : "The finite deviation in energy used to compute deribvative of force."
                                     }), 
                 "matrix" : ( InputArray, {"dtype" : float, 
