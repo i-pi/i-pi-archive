@@ -247,12 +247,12 @@ class Properties(dobject):
                          will print the potential associated with the specified bead.""",
                       'func': (lambda bead="-1": self.forces.pot/self.beads.nbeads if int(bead)<0 else self.forces.pots[int(bead)])},
       "potential_opsc": {  "dimension" : "energy",
-                      "help" : "The physical system potential energy for suzuki-chin propogator calculated by operator mothod.",
+                      "help" : "The physical system potential energy calculated by operator method for suzuki-chin propagator.",
                       "longhelp": """The physical system potential energy. With the optional argument 'bead'
                          will print the potential associated with the specified bead.""",
                       'func': (lambda: 2.0/self.beads.nbeads*sum(self.forces.pots[int(k)] for k in range(0,self.beads.nbeads,2)) )},
       "potential_tdsc": {  "dimension" : "energy",
-                      "help" : "The physical system potential energy for suzuki-chin propogator calculated by thermodynamic method.",
+                      "help" : "The physical system potential energy calculated by thermodynamic method calculated for suzuki-chin propagator.",
                       "longhelp": """The physical system potential energy. With the optional argument 'bead'
                          will print the potential associated with the specified bead.""",
                       'func': (lambda: 1.0/self.beads.nbeads*(sum(self.forces.pots[int(k)]  + 2.0*self.forces.potssc[int(k)]  + 
@@ -752,14 +752,8 @@ class Properties(dobject):
 
       q = depstrip(self.beads.q)
       qc = depstrip(self.beads.qc)
-      #adds force contributed by suzuki-chin correction potential
-      f = depstrip(self.forces.f) + depstrip(self.forces.fsc)
-      pots = depstrip(self.forces.pots) 
-      potssc = depstrip(self.forces.potssc)
-
-      signsc = np.zeros(self.beads.nbeads) + 1.0
-      for k in range(0,self.beads.nbeads,2):
-          signsc[k] = -1.0
+      f = depstrip(self.forces.f)
+      fsc = depstrip(self.forces.fsc)
 
       acv = 0.0
       ncount = 0
@@ -770,13 +764,16 @@ class Properties(dobject):
          kcv = 0.0
          k = 3*i
          for b in range(self.beads.nbeads):
-            kcv += (q[b,k] - qc[k])* f[b,k] + (q[b,k+1] - qc[k+1])* f[b,k+1] + (q[b,k+2] - qc[k+2])* f[b,k+2] 
+            kcv += (q[b,k] - qc[k])* (f+fsc)[b,k] + (q[b,k+1] - qc[k+1])* (f+fsc)[b,k+1] + (q[b,k+2] - qc[k+2])* (f+fsc)[b,k+2]
+            if k%2 == 0:
+               kcv += (f.alpha/f.omegan2/9.0)*(f[b,k]*f[b,k]/f.beads.m3[b,k] + f[b,k+1]*f[b,k+1]/f.beads.m3[b,k+1] + f[b,k+2]*f[b,k+2]/f.beads.m3[b,k+2])
+            else:
+               kcv += ((1.0-f.alpha)/f.omegan2/9.0)*(f[b,k]*f[b,k]/f.beads.m3[b,k] + f[b,k+1]*f[b,k+1]/f.beads.m3[b,k+1] + f[b,k+2]*f[b,k+2]/f.beads.m3[b,k+2])
          kcv *= -0.5/self.beads.nbeads
          kcv += 1.5*Constants.kb*self.ensemble.temp
          acv += kcv
          ncount += 1
 
-      acv += np.sum((-signsc*pots/3.0 +  potssc))/self.beads.nbeads
       if ncount == 0:
          warning("Couldn't find an atom which matched the argument of kinetic energy, setting to zero.", verbosity.medium)
 
