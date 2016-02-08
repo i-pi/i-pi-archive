@@ -577,7 +577,7 @@ class ThermoGLE(Thermostat):
             depend_value(name='C', func=self.get_C,
                dependencies=[dget(self,"temp")]))
       else:
-         dset(self,"C",depend_value(value=0.5*C.copy(),name='C'))
+         dset(self,"C",depend_value(value=C.copy(),name='C'))
 
       dset(self,"T",
          depend_value(name="T",func=self.get_T,
