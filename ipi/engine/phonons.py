@@ -170,7 +170,6 @@ class DynMatrixMover(Mover):
                 edelta = 0
                 if self.epsilon>0 :
                    edelta = self.isrm[j]*np.sqrt(self.epsilon*2.0/abs(self.eigsys[0][j]))
-               
                 print np.linalg.norm(self.dev), "energy-scaled displacement: ", edelta
                 self.dev *= min(self.delta, edelta)   
                 #displaces by -delta along jth normal mode.
