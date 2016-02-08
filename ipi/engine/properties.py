@@ -766,9 +766,9 @@ class Properties(dobject):
          for b in range(self.beads.nbeads):
             kcv += (q[b,k] - qc[k])* (f+fsc)[b,k] + (q[b,k+1] - qc[k+1])* (f+fsc)[b,k+1] + (q[b,k+2] - qc[k+2])* (f+fsc)[b,k+2]
             if k%2 == 0:
-               kcv += (f.alpha/f.omegan2/9.0)*(f[b,k]*f[b,k]/f.beads.m3[b,k] + f[b,k+1]*f[b,k+1]/f.beads.m3[b,k+1] + f[b,k+2]*f[b,k+2]/f.beads.m3[b,k+2])
+               kcv += 2*(f.alpha/f.omegan2/9.0)*(f[b,k]*f[b,k]/f.beads.m3[b,k] + f[b,k+1]*f[b,k+1]/f.beads.m3[b,k+1] + f[b,k+2]*f[b,k+2]/f.beads.m3[b,k+2])
             else:
-               kcv += ((1.0-f.alpha)/f.omegan2/9.0)*(f[b,k]*f[b,k]/f.beads.m3[b,k] + f[b,k+1]*f[b,k+1]/f.beads.m3[b,k+1] + f[b,k+2]*f[b,k+2]/f.beads.m3[b,k+2])
+               kcv += 2*((1.0-f.alpha)/f.omegan2/9.0)*(f[b,k]*f[b,k]/f.beads.m3[b,k] + f[b,k+1]*f[b,k+1]/f.beads.m3[b,k+1] + f[b,k+2]*f[b,k+2]/f.beads.m3[b,k+2])
          kcv *= -0.5/self.beads.nbeads
          kcv += 1.5*Constants.kb*self.ensemble.temp
          acv += kcv
