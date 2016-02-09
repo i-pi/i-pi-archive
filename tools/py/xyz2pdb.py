@@ -1,4 +1,5 @@
-#!/usr/bin/python
+#!/usr/bin/env python
+
 """ mergebeadspdb.py
 
 Reads positions of individual beads from an i-PI run and
@@ -31,7 +32,7 @@ def main(filename):
          cell.array_pbc(pos.q)
       except EOFError: # finished reading files
          sys.exit(0)
-      
+
       print_file("pdb", pos, cell)
       ifr+=1
 

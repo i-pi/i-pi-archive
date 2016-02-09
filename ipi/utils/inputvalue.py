@@ -172,7 +172,7 @@ class Input(object):
       
       for f, v in self.instancefields.iteritems():
          self.__dict__[f] = v[0](**v[1])
-    
+
       for a, v in self.attribs.iteritems():
          self.__dict__[a] = v[0](**v[1])
 
@@ -199,7 +199,7 @@ class Input(object):
    def store(self, value=None):
       """Base function for storing data"""
 
-      self._explicit = True      
+      self._explicit = True
       pass
 
    def fetch(self):
@@ -650,6 +650,7 @@ class Input(object):
       rstr += indent + "</" + name + ">\n"
       return rstr
 
+
 class InputDictionary(Input):
    """Class that returns the value of all the fields as a dictionary.
    """
@@ -703,6 +704,7 @@ class InputDictionary(Input):
       for f, v in self.instancefields.iteritems():
          rdic[f]=self.__dict__[f].fetch()
       return rdic
+
 
 class InputAttribute(Input):
    """Class for handling attribute data.
@@ -835,6 +837,7 @@ class InputValue(InputAttribute):
          self._dimension = self.default_dimension
       else:
          self._dimension = dimension
+
       super(InputValue,self).__init__(help, default, dtype, options)
 
    def store(self, value, units=""):

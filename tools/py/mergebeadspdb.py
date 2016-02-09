@@ -1,7 +1,8 @@
-#!/usr/bin/python
+#!/usr/bin/env python
+
 """ mergebeadspdb.py
 
-Reads positions of individual beads from an i-PI run and 
+Reads positions of individual beads from an i-PI run and
 assemles them in a pdb describing the ring polymer connectivity.
 
 Assumes the input files are in pdb format names prefix.pos_*.pdb.
@@ -10,6 +11,7 @@ Syntax:
    mergebeadspdb.py prefix
 """
 
+
 import numpy as np
 import sys, glob
 from ipi.utils.io import read_file, print_file_path
@@ -17,6 +19,7 @@ from ipi.engine.beads import Beads
 from ipi.engine.cell import Cell
 from ipi.utils.depend import *
 from ipi.utils.units import *
+
 
 def main(prefix):
 
