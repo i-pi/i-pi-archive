@@ -126,15 +126,15 @@ class InputMotion(Input):
       super(InputMotion, self).fetch()
 
       if self.mode.fetch() == "replay":
-         sc = Replay(fixcom=False, fixatoms=None, intraj=self.file.fetch())
+         sc = Replay(fixcom=self.fixcom.fetch(), fixatoms=self.fixatoms.fetch(), intraj=self.file.fetch())
       elif self.mode.fetch() == "minimize":
-         sc = GeopMover(fixcom=False, fixatoms=None, **self.optimizer.fetch())
+         sc = GeopMover(fixcom=self.fixcom.fetch(), fixatoms=self.fixatoms.fetch(), **self.optimizer.fetch())
       elif self.mode.fetch() == "neb":
-         sc = NEBMover(fixcom=False, fixatoms=None, **self.neb_optimizer.fetch())
+         sc = NEBMover(fixcom=self.fixcom.fetch(), fixatoms=self.fixatoms.fetch(), **self.neb_optimizer.fetch())
       elif self.mode.fetch() == "dynamics":
-         sc = Dynamics(fixcom=False, fixatoms=None, **self.dynamics.fetch())
+         sc = Dynamics(fixcom=self.fixcom.fetch(), fixatoms=self.fixatoms.fetch(), **self.dynamics.fetch())
       elif self.mode.fetch() == "calcphonons":
-         sc = DynMatrixMover(fixcom=False, fixatoms=None, **self.calculator.fetch() )
+         sc = DynMatrixMover(fixcom=self.fixcom.fetch(), fixatoms=self.fixatoms.fetch(), **self.calculator.fetch() )
       else:
          sc = Motion()
          #raise ValueError("'" + self.mode.fetch() + "' is not a supported motion calculation mode.")
