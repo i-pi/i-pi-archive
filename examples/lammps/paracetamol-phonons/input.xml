@@ -16,7 +16,7 @@
    <force> lmp </force>
    </forces>
    <mover mode='calcphonons'>
-     <calculator mode='ref'>
+     <calculator>
          <pos_shift>0.01</pos_shift>
          <energy_shift> 0.0001 </energy_shift>
      </calculator>

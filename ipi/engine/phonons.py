@@ -108,17 +108,24 @@ class DynMatrixMover(Mover):
                 self.dbeads.q = self.beads.q - self.dev 
                 minus =  - depstrip(self.dforces.f).copy()
                 #computes a row of force-constant matrix
-                DynMatrixElement = (plus-minus)/(2*self.delta*depstrip(self.beads.sm3[-1][k])*depstrip(self.beads.sm3[-1]))
+                DynMatrixElement = (plus-minus)/(2*self.delta*self.beads.sm3[-1][k]*self.beads.sm3[-1])
                 #change the line value or add the line if does not exit to the matrix
                 self.matrix[k] = DynMatrixElement
      
                 if (k == 3*self.beads.natoms -1):
+                    hessian = self.matrix.copy()
+                    sm3 = depstrip(self.beads.sm3[-1])
+                    for i in xrange(3*self.beads.natoms):
+                        for j in xrange(3*self.beads.natoms):
+                            hessian[i,j] *= sm3[i]*sm3[j]
                     self.eigsys=np.linalg.eig((self.matrix + np.transpose(self.matrix))/2)
-                    outfile01=open('./DynMatrix.matrix.out', 'w+')
+                    outfile01=open('./DynMatrix.matrix.out', 'w+')                    
+                    outfile04=open('./DynMatrix.hessian.out', 'w+')
                     outfile02=open('./DynMatrix.eigenvalues.out', 'w+')
                     outfile03=open('./DynMatrix.eigenvectors.out', 'w+')
                     print >> outfile02, '\n'.join(map(str, self.eigsys[0]))
                     for i in range(0,3 * self.dbeads.natoms):
+                        print >> outfile04, ' '.join(map(str, hessian[i]))
                         print >> outfile01, ' '.join(map(str, self.matrix[i]))
                         print >> outfile03, ' '.join(map(str, self.eigsys[1][i]))
                     outfile01.close
