@@ -31,6 +31,7 @@ from .geop import InputGeop
 from .neb import InputNEB
 from .dynamics import InputDynamics
 from ipi.inputs.phonons import InputDynMatrix
+from ipi.engine.phonons import  DynMatrixMover
 from ipi.utils.units import *
 
 __all__ = ['InputMotion']

@@ -23,14 +23,14 @@ import numpy as np
 import time
 
 
-from ipi.engine.mover import Mover
+from ipi.engine.motion.motion import Motion
 from ipi.utils.depend import *
 from ipi.utils import units
 from ipi.utils.softexit import softexit
 from ipi.utils.mintools import min_brent, min_approx, BFGS, L_BFGS, L_BFGS_nls
 from ipi.utils.messages import verbosity, warning, info
 
-class DynMatrixMover(Mover):
+class DynMatrixMover(Motion):
     """Dynamic matrix calculation routine by finite difference.
     """
 
@@ -54,10 +54,11 @@ class DynMatrixMover(Mover):
         self.oldk = oldk
         self.matrix = matrix
    
-    def bind(self, ens, beads, nm, cell, bforce, bbias, prng):
-
-        #Raises error for nbeads not equal to 1.      
-        super(DynMatrixMover,self).bind(ens, beads, nm, cell, bforce, bbias, prng)
+#    def bind(self, ens, beads, nm, cell, bforce, bbias, prng):
+    def bind(self, ens, beads, nm, cell, bforce, prng):
+        #Raises error for nbeads not equal to 1.    
+#        super(DynMatrixMover,self).bind(ens, beads, nm, cell, bforce, bbias, prng)  
+        super(DynMatrixMover,self).bind(ens, beads, nm, cell, bforce, prng)
         if(self.beads.nbeads > 1):
             raise ValueError("Calculation not possible for number of beads greater than one")
 
