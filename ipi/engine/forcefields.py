@@ -402,7 +402,7 @@ class FFEinstein(ForceField):
       if self.xref.shape != (n3,): 
           raise ValueError("Reference structure size mismatch")
       
-      d = q-xref
+      d = q-self.xref
       mf = np.dot(self.H, d)
             
       r["result"] = [ 0.5*np.dot(d,mf), -mf, np.zeros((3,3),float), ""]
