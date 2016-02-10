@@ -381,8 +381,10 @@ class FFEinstein(ForceField):
 
       if (self.shifth==True):
          eigsys=np.linalg.eigh(self.H)        
-         self.eig = eigsys[0]
-         print 'These are the eigenvalues', self.eig           
+         self.eig = eigsys[0].min()
+         info(" @ForceField: Shifting Hamiltonian by minimum eigenvalue: %f" % (self.eig), verbosity.low)     
+      else: 
+         self.eig=0.0
 
    def poll(self):
       """ Polls the forcefield checking if there are requests that should
@@ -411,7 +413,7 @@ class FFEinstein(ForceField):
           raise ValueError("Reference structure size mismatch")
       
       d = q-self.xref
-      mf = np.dot(self.H, d)
+      mf = np.dot(self.H, d) - d * self.eig
             
-      r["result"] = [ self.vref + 0.5*np.dot(d,mf), -mf, np.zeros((3,3),float), ""]
+      r["result"] = [ self.vref + 0.5*np.dot(d,mf) - 0.5*self.eig*np.dot(d,d), -mf, np.zeros((3,3),float), ""]
       r["status"] = "Done"
