@@ -107,6 +107,19 @@ class DynMatrixMover(Motion):
         for i in range(0,3 * self.dbeads.natoms):
             print >> outfile, ' '.join(map(str, eigsys[1][i]))
         outfile.close()
+        
+        eigmode = 1.0*eigsys[1]
+        for i in range(0,3 * self.dbeads.natoms):
+            eigmode[i] *= self.ism[i]
+        for i in range(0,3 * self.dbeads.natoms):
+            eigmode[:,i]/=np.sqrt(np.dot(eigmode[:,i],eigmode[:,i]))
+        outfile=open(prefix+'.mode', 'w')        
+        print >> outfile, "# Phonon modes (mass-scaled)"
+        for i in range(0,3 * self.dbeads.natoms):
+            print >> outfile, ' '.join(map(str, eigmode[i]))
+        outfile.close()
+        
+        
                     
             
         
