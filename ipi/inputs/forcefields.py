@@ -193,7 +193,8 @@ class InputFFEinstein(InputForceField):
    fields = { 
    "hessian" : (InputArray, {"dtype": float, "default"      : input_default(factory=np.zeros, args=(0,)), "help": "Specifies the Hessian of the harmonic potential (atomic units!)"} ), 
    "x_reference" : (InputArray, {"dtype": float, "default"  : input_default(factory=np.zeros, args=(0,)), "help": "Minimum-energy configuration for the harmonic potential", "dimension" : "length"} ),
-   "v_reference" : (InputValue, {"dtype": float, "default"  : 0.0, "help": "Zero-value of energy for the harmonic potential", "dimension":"energy"} )
+   "v_reference" : (InputValue, {"dtype": float, "default"  : 0.0, "help": "Zero-value of energy for the harmonic potential", "dimension":"energy"}),
+   "apply_shift" : (InputValue, {"dtype": bool, "default"  : False, "help": "Forces eigenvalues of the Hession to be either zero or positive"} )
    }
    
    fields.update(InputForceField.fields)
@@ -209,9 +210,10 @@ class InputFFEinstein(InputForceField):
       self.hessian.store(ff.H)
       self.x_reference.store(ff.xref)
       self.v_reference.store(ff.vref)
+      self.apply_shift.store(ff.shifth)
 
    def fetch(self):
       super(InputFFEinstein,self).fetch()
 
-      return FFEinstein(H=self.hessian.fetch(), xref=self.x_reference.fetch(), vref=self.v_reference.fetch(), name = self.name.fetch(),
+      return FFEinstein(H=self.hessian.fetch(), xref=self.x_reference.fetch(), vref=self.v_reference.fetch(), shifth=self.apply_shift.fetch(), name = self.name.fetch(),
                latency = self.latency.fetch(), dopbc = self.pbc.fetch() )

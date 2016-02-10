@@ -358,8 +358,8 @@ class FFEinstein(ForceField):
                       'start': starting time}.
    """
    
-   def __init__(self, latency = 1.0, name = "",  H=None, xref=None, vref=0.0, pars=None, dopbc = False, threaded=True):
-      """Initialises FFLennardJones.
+   def __init__(self, latency = 1.0, name = "",  H=None, xref=None, vref=0.0, shifth=False, pars=None, dopbc = False, threaded=True):
+      """Initialises FFEinstein.
 
       Args:
          pars: Optional dictionary, giving the parameters needed by the driver.
@@ -377,6 +377,12 @@ class FFEinstein(ForceField):
       self.H = H
       self.xref = xref
       self.vref = vref
+      self.shifth=shifth
+
+      if (self.shifth==True):
+         eigsys=np.linalg.eigh(self.H)        
+         self.eig = eigsys[0]
+         print 'These are the eigenvalues', self.eig           
 
    def poll(self):
       """ Polls the forcefield checking if there are requests that should
