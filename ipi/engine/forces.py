@@ -753,7 +753,6 @@ class Forces(dobject):
       # this should get the forces
       fac = np.sqrt((fbase/self.beads.m3*fbase/self.beads.m3).sum()/(self.nbeads*self.natoms))
       delta = self.mforces[-1].epsilon/fac
-      print self.mforces[-1].epsilon, delta 
       if self.alpha==0:
          # special case! half of the S-C forces are zero so we can compute forward-backward finite differences in one go!
          fsc = fbase*0.0

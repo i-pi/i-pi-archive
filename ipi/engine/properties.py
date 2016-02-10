@@ -255,8 +255,7 @@ class Properties(dobject):
                       "help" : "The physical system potential energy calculated by thermodynamic method calculated for suzuki-chin propagator.",
                       "longhelp": """The physical system potential energy. With the optional argument 'bead'
                          will print the potential associated with the specified bead.""",
-                      'func': (lambda: 1.0/self.beads.nbeads*(sum(self.forces.pots[int(k)]  + 2.0*self.forces.potssc[int(k)]  + 
-                                     (-1)**(k+1)/3.0*self.forces.pots[int(k)] for k in range(0,self.beads.nbeads))) )},                     
+                      'func': self.get_scpottd},
       "pot_component": {  "dimension" : "energy",
                       "help": "The contribution to the system potential from one of the force components. ",
                        "longhelp":  """The contribution to the system potential from one of the force components. Takes one mandatory
@@ -687,6 +686,20 @@ class Properties(dobject):
          warning("Couldn't find an atom which matched the argument of kinetic energy, setting to zero.", verbosity.medium)
 
       return acv
+
+   def get_scpottd(self):
+      """Calculates the Suzuki-Chin thermodynamic potential energy estimator."""
+      v = 0.0
+      pots = depstrip(self.forces.pots)
+      potssc = depstrip(self.forces.potssc)
+      print "pots ->", pots, "potssc->", potssc
+      for k in range(self.beads.nbeads):
+          if k%2 == 0:
+              v += 2*pots[k]/3  + 2*(potssc[k]+pots[k]/3)
+          else:
+              v += 4*pots[k]/3  + 2*(potssc[k]-pots[k]/3)
+      print v/(k+1)
+      return v/(k+1) 
 
    def get_sckinop(self, atom=""):
       """Calculates the Suzuki-Chin quantum centroid virial kinetic energy estimator.
