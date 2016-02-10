@@ -15,11 +15,11 @@
    <forces>
    <force> lmp </force>
    </forces>
-   <mover mode='calcphonons'>
-     <calculator>
+   <motion mode='calcphonons'>
+     <calculator mode='nrg'>
          <pos_shift>0.01</pos_shift>
-         <energy_shift> 0.0001 </energy_shift>
+         <energy_shift> 0.0009500 </energy_shift>
      </calculator>
-   </mover>
+   </motion>
  </system>
 </simulation>

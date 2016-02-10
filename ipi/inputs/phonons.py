@@ -41,20 +41,20 @@ class InputDynMatrix(InputDictionary):
 
     attribs={"mode"  : (InputAttribute, {"dtype"   : str, "default": "std",
                                     "help"    : "The algorithm to be used",
-                                    "options" : ['std', 'ref', 'sc']}) }
+                                    "options" : ['std', 'nrg', 'ref']}) }
     fields = { 
-                "oldk" : ( InputValue, {"dtype" : int, 
-                              "default" : 0,
-                              "help"    : "Number of rows of the dynamic matrix calculated until previous step."}),
                 "pos_shift"  : (InputValue, {"dtype"   : float, "default": 0.01, 
                                     "help"    : "The finite deviation in position used to compute derivative of force."
                                     }), 
                 "energy_shift"  : (InputValue, {"dtype"   : float, "default": 0.000, 
                                     "help"    : "The finite deviation in energy used to compute deribvative of force."
                                     }), 
-                "matrix" : ( InputArray, {"dtype" : float, 
+                "dynmat" : ( InputArray, {"dtype" : float, 
                               "default" :  np.zeros(0, float),
-                              "help"    : "dynamic matrix known until previous step."})
+                              "help"    : "Portion of the dynamical matrix known up to now."}),
+                "dynmat_r" : ( InputArray, {"dtype" : float, 
+                              "default" :  np.zeros(0, float),
+                              "help"    : "Portion of the dynamical matrix known up to now (refining)."})              
              }
                    
     dynamic = {  }
@@ -65,13 +65,12 @@ class InputDynMatrix(InputDictionary):
     def store(self, phonons):
         if phonons  == {}: return
         self.mode.store(phonons.mode)
-        self.pos_shift.store(phonons.delta)
-        self.energy_shift.store(phonons.epsilon)
-        self.oldk.store(phonons.oldk)
-        self.matrix.store(phonons.matrix)
+        self.pos_shift.store(phonons.deltax)
+        self.energy_shift.store(phonons.deltae)        
+        self.dynmat.store(phonons.dynmatrix)
+        self.dynmat_r.store(phonons.dynmatrix_r)
         
     def fetch(self):		
         rv = super(InputDynMatrix,self).fetch()
         rv["mode"] = self.mode.fetch()        
-        return rv
         return rv
