@@ -23,7 +23,6 @@ For a more detailed discussion, see the reference manual.
 # i-PI Copyright (C) 2014-2015 i-PI developers
 # See the "licenses" directory for full license information.
 
-
 import weakref
 
 import numpy as np
@@ -32,7 +31,7 @@ from ipi.utils.messages import verbosity, warning
 
 
 __all__ = ['depend_base', 'depend_value', 'depend_array', 'synchronizer',
-           'dobject', 'dget', 'dset', 'depstrip', 'depcopy', 'deppipe']
+           'dobject', 'dget', 'dset', 'depstrip', 'depcopy', 'deppipe', 'depraise']
 
 
 class synchronizer(object):
@@ -730,6 +729,8 @@ def depcopy(objfrom, memberfrom, objto, memberto):
     if hasattr(dfrom, "_bval"):
         dto._bval = dfrom._bval
 
+def depraise(exception): 
+    raise exception
 
 class dobject(object):
     """Class that allows standard notation to be used for depend objects.

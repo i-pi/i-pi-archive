@@ -416,7 +416,7 @@ class Initializer(dobject):
             rnm = NormalModes(mode=simul.nm.mode, transform_method=simul.nm.transform_method, freqs=simul.nm.nm_freqs)
             rens = Ensemble(temp=simul.ensemble.temp)
             rmv = Motion()
-            rnm.bind(rbeads,rens, rmv)
+            rnm.bind(rens, rmv, rbeads)
             # then we exploit the sync magic to do a complicated initialization
             # in the NM representation
             # with (possibly) shifted-frequencies NM

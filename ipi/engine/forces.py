@@ -259,6 +259,8 @@ class ForceComponent(dobject):
       _forces: A list of the forcefield objects for all the replicas.
       weight: A float that will be used to weight the contribution of this
          forcefield to the total force.
+      mts_weights: A float that will be used to weight the contribution of this
+         forcefield to the total force.
       ffield: A model to be used to create the forcefield objects for all
          the replicas of the system.
 
@@ -275,7 +277,7 @@ class ForceComponent(dobject):
          Depends on each replica's ufvx list.
    """
 
-   def __init__(self, ffield="", nbeads=0, weight=1.0, name="", lmts=0):
+   def __init__(self, ffield, nbeads=0, weight=1.0, name="", mts_weights=None):
       """Initializes ForceComponent
 
       Args:
@@ -287,14 +289,17 @@ class ForceComponent(dobject):
             combined to give a total force, the contribution of this forcefield
             will be weighted by this factor.
          name: The name of the forcefield.
-         lmts: The MTS level at which this should be computed
+         mts_weights: Weight of forcefield at each mts level.
       """
 
       self.ffield = ffield
       self.name = name
       self.nbeads = nbeads
       self.weight = weight
-      self.lmts = lmts
+      if mts_weights is None:
+          self.mts_weights = np.asarray([])
+      else:
+          self.mts_weights = np.asarray(mts_weights)
 
    def bind(self, beads, cell, fflist):
       """Binds beads, cell and force to the forcefield.
@@ -311,7 +316,6 @@ class ForceComponent(dobject):
          fflist: A list of forcefield objects to use to calculate the potential,
             forces and virial for each replica.
       """
-
       # stores a copy of the number of atoms and of beads
       self.natoms = beads.natoms
       if (self.nbeads != beads.nbeads):
@@ -508,7 +512,7 @@ class Forces(dobject):
          # if the number of beads for this force component is unspecified,
          # assume full force evaluation
          if newb == 0: newb = beads.nbeads
-         newforce = ForceComponent(ffield=fc.ffield, name=fc.name, nbeads=newb, weight=fc.weight)
+         newforce = ForceComponent(ffield=fc.ffield, name=fc.name, nbeads=newb, weight=fc.weight, mts_weights=fc.mts_weights)
          newbeads = Beads(beads.natoms, newb)
          newrpc = nm_rescale(beads.nbeads, newb)
 
@@ -565,10 +569,13 @@ class Forces(dobject):
             
       # SC forces and potential  
       dset(self, "alpha", depend_value(name="alpha", value=0.5))
+      
+      # this will be piped from normalmodes
+      dset(self, "omegan2", depend_value(name="alpha", value=0))
             
       dset(self, "SCCALC", 
            depend_value(name="SCCALC", func=self.sccalc, value = [None,None],
-                 dependencies=[dget(self, "f"), dget(self,"pots"), dget(self,"alpha")] ) )
+                 dependencies=[dget(self, "f"), dget(self,"pots"), dget(self,"alpha"),  dget(self,"omegan2")] ) )
                  
       dset(self, "fsc", depend_array(name="fsc",value=np.zeros((self.nbeads,3*self.natoms)),
             dependencies=[dget(self,"SCCALC")],
@@ -649,13 +656,13 @@ class Forces(dobject):
       return self.mforces[index].weight*self.mrpc[index].b2tob1(depstrip(self.mforces[index].f))
 
    def forces_mts(self, level):
-      # fetches ONLY the forces associated with a given MTS level
+      """ Fetches ONLY the forces associated with a given MTS level."""
+
       fk = np.zeros((self.nbeads,3*self.natoms))
       for index in range(len(self.mforces)):
-         if level == mforces[index].lmts:
-            fk += self.mforces[index].weight*self.mrpc[index].b2tob1(depstrip(self.mforces[index].f))
+          if len(self.mforces[index].mts_weights) > level and self.mforces[index].mts_weights[level] != 0:
+              fk += self.mforces[index].weight*self.mforces[index].mts_weights[level]*self.mrpc[index].b2tob1(depstrip(self.mforces[index].f))
       return fk
-
 
    def f_combine(self):
       """Obtains the total force vector."""
@@ -665,7 +672,7 @@ class Forces(dobject):
       for k in range(self.nforces):
          # "expand" to the total number of beads the forces from the
          #contracted one
-         rf += self.mforces[k].weight*self.mrpc[k].b2tob1(depstrip(self.mforces[k].f))
+         rf += self.mforces[k].weight*self.mforces[k].mts_weights.sum()*self.mrpc[k].b2tob1(depstrip(self.mforces[k].f))
       return rf
 
    def pot_combine(self):
@@ -676,7 +683,7 @@ class Forces(dobject):
       for k in range(self.nforces):
          # "expand" to the total number of beads the potentials from the
          #contracted one
-         rp += self.mforces[k].weight*self.mrpc[k].b2tob1(self.mforces[k].pots)
+         rp += self.mforces[k].weight*self.mforces[k].mts_weights.sum()*self.mrpc[k].b2tob1(self.mforces[k].pots)
       return rp
 
    def extra_combine(self):
@@ -702,7 +709,7 @@ class Forces(dobject):
          #contracted one, element by element
          for i in range(3):
             for j in range(3):
-               rp[:,i,j] += self.mforces[k].weight*self.mrpc[k].b2tob1(virs[:,i,j])
+               rp[:,i,j] += self.mforces[k].weight*self.mforces[k].mts_weights.sum()*self.mrpc[k].b2tob1(virs[:,i,j])
       return rp
       
    def sccalc(self):
