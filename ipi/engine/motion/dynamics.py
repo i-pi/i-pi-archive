@@ -451,73 +451,65 @@ class NSTIntegrator(NVTIntegrator):
         self.ttime += time.time()
 
 class MTSIntegrator(NVEIntegrator):
-   """Integrator object for constant temperature simulations.
-
-   Has the relevant conserved quantity and normal mode propagator for the
-   constant temperature ensemble. Contains a thermostat object containing the
-   algorithms to keep the temperature constant.
-
-   Attributes:
-      thermostat: A thermostat object to keep the temperature constant.
-
-   Depend objects:
-      econs: Conserved energy quantity. Depends on the bead kinetic and
-         potential energy, the spring potential energy and the heat
-         transferred to the thermostat.
-   """
-
-   def pstep(self, level=0, alpha=1.0):
-      """Velocity Verlet monemtum propagator."""
-      self.beads.p += self.forces.forces_mts(level)*0.5*(self.dt/alpha)
-      
-   def qcstep(self, alpha=1.0):
-      """Velocity Verlet centroid position propagator."""
-      self.nm.qnm[0,:] += depstrip(self.nm.pnm)[0,:]/depstrip(self.beads.m3)[0]*self.dt/alpha
-      
-   def mtsprop(self, index, alpha):
-      """ Recursive MTS step """
-      nmtslevels = len(self.nmts)
-      mk = self.nmts[index]  # mtslevels starts at level zero, where nmts should be 1 in most cases
-      alpha *= mk
-      for i in range(mk):  
-      # propagate p for dt/2alpha with force at level index      
-       self.ptime = -time.time()
-       self.pstep(index, alpha)
-       self.pconstraints()
-       self.ptime += time.time()
-
-       if index == nmtslevels-1:
-         # call Q propagation for dt/alpha at the inner step
-         self.qtime = -time.time()
-         self.qcstep(alpha)
-         self.nm.free_qstep() # this has been hard-wired to use the appropriate time step with depend magic
-         self.qtime += time.time()
-       else:
-         self.mtsprop(index+1, alpha)
-
-       # propagate p for dt/2alpha
-       self.ptime = -time.time()
-       self.pstep(index, alpha)
-       self.pconstraints()
-       self.ptime += time.time()
+    """Integrator object for constant temperature simulations.
+ 
+    Has the relevant conserved quantity and normal mode propagator for the
+    constant temperature ensemble. Contains a thermostat object containing the
+    algorithms to keep the temperature constant.
+    """
+ 
+    def pstep(self, level=0, alpha=1.0):
+        """Velocity Verlet monemtum propagator."""
+        self.beads.p += self.forces.forces_mts(level)*0.5*(self.dt/alpha)
        
-   def step(self, step=None):
-      """Does one simulation time step."""
-
-      # thermostat is applied at the outer loop
-      self.ttime = -time.time()
-      self.thermostat.step()
-      self.pconstraints()
-      self.ttime += time.time()
-
-      # bias is applied at the outer loop too
-      self.beads.p += depstrip(self.bias.f)*(self.dt*0.5)
-
-      self.mtsprop(0,1.0)
-
-      self.beads.p += depstrip(self.bias.f)*(self.dt*0.5)
-
-      self.ttime -= time.time()
-      self.thermostat.step()
-      self.pconstraints()
-      self.ttime += time.time()
+    def qcstep(self, alpha=1.0):
+        """Velocity Verlet centroid position propagator."""
+        self.nm.qnm[0,:] += depstrip(self.nm.pnm)[0,:]/depstrip(self.beads.m3)[0]*self.dt/alpha
+       
+    def mtsprop(self, index, alpha):
+        """ Recursive MTS step """
+        nmtslevels = len(self.nmts)
+        mk = self.nmts[index]  # mtslevels starts at level zero, where nmts should be 1 in most cases
+        alpha *= mk
+        for i in range(mk):  
+            # propagate p for dt/2alpha with force at level index      
+            self.ptime = -time.time()
+            self.pstep(index, alpha)
+            self.pconstraints()
+            self.ptime += time.time()
+ 
+            if index == nmtslevels-1:
+            # call Q propagation for dt/alpha at the inner step
+                self.qtime = -time.time()
+                self.qcstep(alpha)
+                self.nm.free_qstep() # this has been hard-wired to use the appropriate time step with depend magic
+                self.qtime += time.time()
+            else:
+                self.mtsprop(index+1, alpha)
+ 
+            # propagate p for dt/2alpha
+            self.ptime = -time.time()
+            self.pstep(index, alpha)
+            self.pconstraints()
+            self.ptime += time.time()
+        
+    def step(self, step=None):
+       """Does one simulation time step."""
+ 
+        # thermostat is applied at the outer loop
+        self.ttime = -time.time()
+        self.thermostat.step()
+        self.pconstraints()
+        self.ttime += time.time()
+ 
+        # bias is applied at the outer loop too
+        self.beads.p += depstrip(self.bias.f)*(self.dt*0.5)
+ 
+        self.mtsprop(0,1.0)
+ 
+        self.beads.p += depstrip(self.bias.f)*(self.dt*0.5)
+ 
+        self.ttime -= time.time()
+        self.thermostat.step()
+        self.pconstraints()
+        self.ttime += time.time()
