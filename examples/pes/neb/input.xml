@@ -23,9 +23,9 @@
          [25.29166, 0, 0, 0, 25.29166, 0, 0, 0, 25.29166]
         </cell>
       </initialize>
-      <mover mode='neb'>
+      <motion mode='neb'>
         <neb_optimizer mode='lbfgs'>
 	</neb_optimizer> 
-      </mover>
+      </motion>
   </system>
 </simulation>

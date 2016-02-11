@@ -259,23 +259,26 @@ class Simulation(dobject):
             self.chk.store()
 
             stepthreads = []
-            if self.mode == "static":
-                for s in self.syslist:
-                    s.mover.step(step=self.step)
-                pass
-            elif self.mode == "md" or self.mode == "paratemp":            
-                for s in self.syslist:
-                    # creates separate threads for the different systems
-                    #st = threading.Thread(target=s.ensemble.step, name=s.prefix, kwargs={"step":self.step})
-                    #st.daemon = True
-                    s.ensemble.step(step=self.step)
-                    #st.start()
-                    #stepthreads.append(st)
+            # steps through all the systems
+            #for s in self.syslist:
+            #   s.motion.step()
+            for s in self.syslist:
+                # creates separate threads for the different systems
+                #st = threading.Thread(target=s.motion.step, name=s.prefix, kwargs={"step":self.step})
+                #st.daemon = True
+                s.motion.step(step=self.step)
+                #st.start()
+                #stepthreads.append(st)
 
-                for st in stepthreads:
-                    while st.isAlive(): st.join(2.0)   # this is necessary as join() without timeout prevents main from receiving signals
+            for st in stepthreads:
+                while st.isAlive():
+                    # This is necessary as join() without timeout prevents main
+                    # from receiving signals.
+                    st.join(2.0)
 
-            if softexit.triggered: break # don't continue if we are about to exit!
+            if softexit.triggered:
+                # Don't continue if we are about to exit.
+                break
 
             for o in self.outputs:
                 o.write()

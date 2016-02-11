@@ -15,47 +15,47 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <http.//www.gnu.org/licenses/>.
 
+Inputs created by Michele Ceriotti and Benjamin Helfrecht, 2015
 
 Classes:
-   InputEnsemble: Deals with creating the Ensemble object from a file, and
+   InputGeop: Deals with creating the Geop object from a file, and
       writing the checkpoints.
 """
 
 import numpy as np
 import ipi.engine.initializer
-from ipi.engine.mover import *
+from ipi.engine.motion import *
 from ipi.utils.inputvalue import *
 from ipi.inputs.thermostats import *
 from ipi.inputs.initializer import *
 from ipi.utils.units import *
 
-__all__ = ['InputNEB']
+__all__ = ['InputGeop']
 
-class InputNEB(InputDictionary):
+class InputGeop(InputDictionary):
     """Geometry optimization options.
-    
-    Contains options related with geometry optimization, such as method, 
-    thresholds, linear search strategy, etc. 
+
+    Contains options related with geometry optimization, such as method,
+    thresholds, linear search strategy, etc.
 
     """
 
-    attribs={"mode"  : (InputAttribute, {"dtype"   : str, "default": "lbfgs", 
+    #TODO: RENAME BFGS/L-BFGS ONLY OPTIONS TO INDICATE SPECIFIC TO BFGS/L-BFGS
+    attribs={"mode"  : (InputAttribute, {"dtype"   : str, "default": "lbfgs",
                                     "help"    : "The geometry optimization algorithm to be used",
                                     "options" : ['sd', 'cg', 'bfgs', 'lbfgs']}) }
-   
-    fields = { "ls_options" : ( InputDictionary, {"dtype" : [ float, int, float, float ], 
-                              "help" : """Options for line search methods. Includes: 
+
+    fields = { "ls_options" : ( InputDictionary, {"dtype" : [float, int, float, float],
+                              "help" : """"Options for line search methods. Includes:
                               tolerance: stopping tolerance for the search,
-                              grad_tolerance: stopping tolerance on gradient for 
-                              BFGS line search,
                               iter: the maximum number of iterations,
                               step: initial step for bracketing,
                               adaptive: whether to update initial step.
-                              """, 
+                              """,
                               "options" : ["tolerance", "iter", "step", "adaptive"],
                               "default" : [1e-6, 100, 1e-3, 1.0],
-                              "dimension": ["energy", "undefined", "length", "undefined" ] }),       
-                "tolerances" : ( InputDictionary, {"dtype" : float, 
+                              "dimension": ["energy", "undefined", "length", "undefined" ] }),
+                "tolerances" : ( InputDictionary, {"dtype" : float,
                               "options" : [ "energy", "force", "position" ],
                               "default" : [ 1e-8, 1e-8, 1e-8 ],
                               "dimension": [ "energy", "force", "length" ] }),
@@ -69,52 +69,39 @@ class InputNEB(InputDictionary):
                 "maximum_step": (InputValue, {"dtype" : float,
                               "default" : 100.0,
                               "help"    : "The maximum step size for BFGS line minimizations."}),
-                "invhessian" : (InputArray, {"dtype" : float, 
+                "invhessian" : (InputArray, {"dtype" : float,
                               "default" : input_default(factory=np.eye, args = (0,)),
                               "help"    : "Approximate inverse Hessian for BFGS, if known."}),
-		"qlist"      : (InputArray, {"dtype" : float,
+                "qlist" : (InputArray, {"dtype" : float,
                               "default" : input_default(factory=np.zeros, args = (0,)),
                               "help"    : "List of previous position differences for L-BFGS, if known."}),
-                "glist"      : (InputArray, {"dtype" : float,
+                "glist" : (InputArray, {"dtype" : float,
                               "default" : input_default(factory=np.zeros, args = (0,)),
                               "help"    : "List of previous gradient differences for L-BFGS, if known."}),
                 "corrections" : (InputValue, {"dtype" : int,
                               "default" : 5,
-                              "help"    : "The number of past vectors to store for L-BFGS."}),
-                "endpoints"  : (InputDictionary, {"dtype" : [bool, str], 
-                              "options" : ['optimize', 'algorithm'],
-                              "default" : [True, "bfgs"], 
-                              "help"    : "Geometry optimization of endpoints"}),
-                "spring"     : (InputDictionary, {"dtype" : [bool, float, float, float],
-                              "options" : ["varsprings", "kappa", "kappamax", "kappamin"],
-                              "default" : [False, 1.0, 1.5, 0.5],
-                              "help"    : "Uniform or variable spring constants along the elastic band"}),
-                "climb"      : (InputDictionary, {"dtype" : bool,
-                              "default" : False,
-                              "help"    : "Use climbing image NEB"})
-       }
-                   
+                              "help"    : "The number of past vectors to store for L-BFGS."})
+                     }
+
     dynamic = {  }
 
     default_help = "TODO EXPLAIN WHAT THIS IS"
-    default_label = "NEB"   
+    default_label = "GEOP"
 
-    def store(self, neb):
-        if neb == {}: return
-        self.ls_options.store(neb.ls_options)
-        self.tolerances.store(neb.tolerances)
-        self.mode.store(neb.mode)
-        self.cg_old_force.store(neb.cg_old_f)
-        self.cg_old_direction.store(neb.cg_old_d)
-        self.maximum_step.store(neb.max_step)
-        self.invhessian.store(neb.invhessian)
-        self.qlist.store(neb.qlist)
-        self.glist.store(neb.glist)
-        self.endpoints.store(neb.endpoints)
-        self.spring.store(neb.spring)
-        self.climb.store(neb.climb)
-        
-    def fetch(self):		
-        rv = super(InputN,self).fetch()
-        rv["mode"] = self.mode.fetch()        
+    def store(self, geop):
+        if geop == {}: return
+        self.ls_options.store(geop.ls_options)
+        self.tolerances.store(geop.tolerances)
+        self.mode.store(geop.mode)
+        self.cg_old_force.store(geop.cg_old_f)
+        self.cg_old_direction.store(geop.cg_old_d)
+        self.maximum_step.store(geop.max_step)
+        self.invhessian.store(geop.invhessian)
+        self.qlist.store(geop.qlist)
+        self.glist.store(geop.glist)
+        self.corrections.store(geop.corrections)
+
+    def fetch(self):
+        rv = super(InputGeop,self).fetch()
+        rv["mode"] = self.mode.fetch()
         return rv
