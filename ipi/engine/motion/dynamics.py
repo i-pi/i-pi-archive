@@ -132,10 +132,11 @@ class Dynamics(Motion):
         deppipe(self, "dt", self.thermostat, "dt")
   
         # the free ring polymer propagator is called in the inner loop, so propagation time should be redefined accordingly. 
-        self.inmts = 1
-        for mk in self.nmts: self.inmts*=mk
-        dset(self,"deltat", depend_value(name="deltat", func=(lambda : self.dt/self.inmts) , dependencies=[dget(self,"dt")]) )
-        deppipe(self,"deltat", self.nm, "dt")
+        if self.enstype == "mts":
+            self.inmts = 1
+            for mk in self.nmts: self.inmts*=mk
+            dset(self,"deltat", depend_value(name="deltat", func=(lambda : self.dt/self.inmts) , dependencies=[dget(self,"dt")]) )
+            deppipe(self,"deltat", self.nm, "dt")
 
         # depending on the kind, the thermostat might work in the normal mode or the bead representation.
         self.thermostat.bind(beads=self.beads, nm=self.nm, prng=prng, fixdof=fixdof)
