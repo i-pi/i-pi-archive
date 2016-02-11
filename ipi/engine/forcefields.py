@@ -378,10 +378,11 @@ class FFEinstein(ForceField):
       self.xref = xref
       self.vref = vref
       self.shifth=shifth
-
-      if (self.shifth==True):
+      
+      if self.shifth :
          eigsys=np.linalg.eigh(self.H)        
          self.eig = eigsys[0].min()
+         info(" @ForceField: Hamiltonian eigenvalues: " + ' '.join(map(str, eigsys[0])), verbosity.high)     
          info(" @ForceField: Shifting Hamiltonian by minimum eigenvalue: %f" % (self.eig), verbosity.low)     
       else: 
          self.eig=0.0
