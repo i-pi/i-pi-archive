@@ -90,7 +90,7 @@ class Dynamics(Motion):
             self.fixatoms = fixatoms
 
     def bind(self, ens, beads, nm, cell, bforce, prng):
-        """Binds ensemble beads, cell, bforce, bbias and prng to the dynamics.
+        """Binds ensemble beads, cell, bforce, and prng to the dynamics.
 
         This takes a beads object, a cell object, a forcefield object and a
         random number generator object and makes them members of the ensemble.

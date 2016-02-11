@@ -141,9 +141,9 @@ class GeopMover(Motion):
         self.lm = LineMover()
         self.bfgsm = BFGSMover()
 
-    def bind(self, ens, beads, nm, cell, bforce, bbias, prng):
+    def bind(self, ens, beads, nm, cell, bforce, prng):
 
-        super(GeopMover, self).bind(ens, beads, nm, cell, bforce, bbias, prng)
+        super(GeopMover, self).bind(ens, beads, nm, cell, bforce, prng)
         if self.cg_old_f.shape != beads.q.size:
             if self.cg_old_f.size == 0:
                 self.cg_old_f = np.zeros(beads.q.size, float)
