@@ -97,7 +97,7 @@ class NormalModes(dobject):
       dset(self,"nm_freqs",
          depend_array(name="nm_freqs",value=np.asarray(freqs, float) ) )
 
-   def bind(self, beads, ensemble, motion):
+   def bind(self, ensemble, motion, beads=None, forces=None):
       """ Initializes the normal modes object and binds to beads and ensemble.
 
       Do all the work down here as we need a full-formed necklace and ensemble
@@ -108,13 +108,17 @@ class NormalModes(dobject):
          ensemble: An ensemble object to be bound.
       """
 
+      self.ensemble = ensemble
+      self.motion = motion      
+      if beads is None: 
+        self.beads = motion.beads
+      else:
+        self.beads = beads
+      self.forces = forces
       self.nbeads = beads.nbeads
       self.natoms = beads.natoms
 
       # stores a reference to the bound beads and ensemble objects
-      self.beads = beads
-      self.ensemble = ensemble
-      deppipe(motion, "dt", self, "dt")
 
       # sets up what's necessary to perform nm transformation.
       if self.transform_method == "fft":
@@ -187,6 +191,8 @@ class NormalModes(dobject):
          value=np.zeros(self.nbeads, float), func=self.get_dynwk,
             dependencies=[dget(self,"nm_factor"), dget(self,"omegak") ]) )
 
+      dset(self, "dt", depend_value(name="dt", value = 1.0) )
+      deppipe(self.motion, "dt", self, "dt")
       dset(self,"prop_pq",
          depend_array(name='prop_pq',value=np.zeros((self.beads.nbeads,2,2)),
             func=self.get_prop_pq,
@@ -284,12 +290,13 @@ class NormalModes(dobject):
          ring polymer.
       """
 
-      dt = self.ensemble.dt
+      dt = self.dt
       pqk = np.zeros((self.nbeads,2,2), float)
       pqk[0] = np.array([[1,0], [dt,1]])
 
+      # Note that the propagator uses mass-scaled momenta.
       for b in range(1, self.nbeads):
-         sk = np.sqrt(self.nm_factor[b]) # NOTE THAT THE PROPAGATOR USES MASS-SCALED MOMENTA!
+         sk = np.sqrt(self.nm_factor[b])
 
          dtomegak = self.omegak[b]*dt/sk
          c = np.cos(dtomegak)
