@@ -1018,7 +1018,7 @@ class InputArray(InputValue):
       if mode == "manual":
          self.value = read_array(self.type, self._text)
       elif mode == "file":
-         self.value = np.loadtxt(self._text.strip(), comments="#", delimiter=" ", dtype=self.type).flatten()         
+         self.value = np.loadtxt(self._text.strip(), comments="#", dtype=self.type).flatten()         
       else:
          raise ValueError("Unsupported array reading mode")
 
