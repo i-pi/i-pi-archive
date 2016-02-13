@@ -156,10 +156,10 @@ class ForceBead(dobject):
       Returns:
          A list of the form [potential, force, virial, extra].
       """
-
+      
       # because we thread over many systems and outputs, we might get called
       # more than once. keep track of how many times we are called so we
-      # can make sure to wait until the last call has returned before we release
+      # can make sure to wait until the last call has returned before we release      
       self._threadlock.acquire()
       try:
          self._getallcount += 1
@@ -373,7 +373,7 @@ class ForceComponent(dobject):
       Returns:
          A list of the potential energy of each replica of the system.
       """
-
+      
       self.queue()
       return np.array([b.pot for b in self._forces], float)
 
@@ -600,33 +600,13 @@ class Forces(dobject):
       nforce.bind(nbeads, ncell, self.fcomp, self.ff)
       return nforce
 
-   def run(self):
-      """Makes the socket start looking for driver codes.
-
-      Tells the interface code to start the thread that looks for
-      connection from the driver codes in a loop. Until this point no
-      jobs can be queued.
-      """
-
-      for ff in self.mforces:
-         ff.run()
-
-   def stop(self):
-      """Makes the socket stop looking for driver codes.
-
-      Tells the interface code to stop the thread that looks for
-      connection from the driver codes in a loop. After this point no
-      jobs can be queued.
-      """
-
-      for ff in self.mforces:
-         ff.stop()
 
    def queue(self):
       """Submits all the required force calculations to the forcefields."""
 
       for ff in self.mforces:
-         ff.queue()
+         if ff.weight > 0: # do not compute forces which have zero weight 
+            ff.queue()
 
    def get_vir(self):
       """Sums the virial of each forcefield.
@@ -642,26 +622,28 @@ class Forces(dobject):
          vir += v
       return vir
 
-   def pots_component(self, index, weights=True):
-      if weights:
+   def pots_component(self, index, weighted=True):   
+      # fetches just one of the potential components
+      if weighted:
          if self.mforces[index].weight > 0:
             return self.mforces[index].weight*self.mrpc[index].b2tob1(self.mforces[index].pots)
          else:
             return 0
       else:
          return self.mrpc[index].b2tob1(self.mforces[index].pots)
-
-   def forces_component(self, index, weights=True):
-      if weights:
+         
+   def forces_component(self, index, weighted=True):
+      # fetches just one of the potential components
+      if weighted:
          if self.mforces[index].weight > 0:
             return self.mforces[index].weight*self.mrpc[index].b2tob1(depstrip(self.mforces[index].f))
          else:
             return np.zeros((self.nbeads,self.natoms*3),float)
-
       else:
          return self.mrpc[index].b2tob1(depstrip(self.mforces[index].f))
          
    def forces_mts(self, level):
+      
       # fetches ONLY the forces associated with a given MTS level
       fk = np.zeros((self.nbeads,3*self.natoms))
       for index in range(len(self.mforces)):
@@ -684,7 +666,7 @@ class Forces(dobject):
 
    def pot_combine(self):
       """Obtains the potential energy for each forcefield."""
-
+ 
       self.queue()
       rp = np.zeros(self.nbeads,float)
       for k in range(self.nforces):

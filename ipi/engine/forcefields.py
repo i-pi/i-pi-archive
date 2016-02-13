@@ -403,8 +403,7 @@ class FFEinstein(ForceField):
          self._threadlock.release()
 
    def evaluate(self, r):
-      """ Just a silly function evaluating a non-cutoffed, non-pbc and non-neighbour list
-          LJ potential """
+      """ A simple evaluator for a harmonic Einstein crystal potential. """
 
       q = r["pos"]
       n3 = len(q)
