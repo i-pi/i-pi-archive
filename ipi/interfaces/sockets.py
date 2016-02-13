@@ -280,16 +280,10 @@ class DriverSocket(socket.socket):
       if (self.status & Status.Ready):
          try:
             self.sendall(Message("posdata"))
-            if sys.platform == 'darwin':
-               self.sendall(cell.h)
-               self.sendall(cell.ih)
-               self.sendall(np.int32(len(pos)/3))
-               self.sendall(pos)
-            else:
-               self.sendall(cell.h, 9*8)
-               self.sendall(cell.ih, 9*8)
-               self.sendall(np.int32(len(pos)/3))
-               self.sendall(pos, len(pos)*8)
+            self.sendall(cell.h)
+            self.sendall(cell.ih)
+            self.sendall(np.int32(len(pos)/3))
+            self.sendall(pos)
          except:
             self.poll()
             return
