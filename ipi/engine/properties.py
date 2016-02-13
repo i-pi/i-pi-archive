@@ -250,8 +250,14 @@ class Properties(dobject):
                       "help": "The contribution to the system potential from one of the force components. ",
                        "longhelp":  """The contribution to the system potential from one of the force components. Takes one mandatory
                          argument index (zero-based) that indicates which component of the potential must be returned. The optional argument 'bead'
-                         will print the potential associated with the specified bead. """,
+                         will print the potential associated with the specified bead. If the potential is weighed, the weight will be applied. """,
                       'func': (lambda index, bead="-1": self.forces.pots_component(int(index)).sum()/self.beads.nbeads if int(bead)<0 else self.forces.pots_component(int(index))[int(bead)] ) },
+      "pot_component_raw": {  "dimension" : "energy",
+                      "help": "The contribution to the system potential from one of the force components. ",
+                       "longhelp":  """The contribution to the system potential from one of the force components. Takes one mandatory
+                         argument index (zero-based) that indicates which component of the potential must be returned. The optional argument 'bead'
+                         will print the potential associated with the specified bead. Potential weights will not be applied. """,
+                      'func': (lambda index, bead="-1": self.forces.pots_component(int(index),False).sum()/self.beads.nbeads if int(bead)<0 else self.forces.pots_component(int(index),False)[int(bead)] ) },            
       "forcemod": {  "dimension" : "force",
                       "help" : "The modulus of the force.",
                       "longhelp": """The modulus of the force. With the optional argument 'bead'
