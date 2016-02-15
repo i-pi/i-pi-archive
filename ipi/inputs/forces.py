@@ -139,6 +139,5 @@ class InputForces(Input):
 
       for el in flist:
          iff = InputForceComponent()
-         print "storing el in InputForces"
          iff.store(el)
          self.extra.append(("force", iff))
