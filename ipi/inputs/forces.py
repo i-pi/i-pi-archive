@@ -9,12 +9,12 @@ from copy import copy
 
 from ipi.engine.forces import *
 from ipi.utils.inputvalue import *
-
+import numpy as np
 
 __all__ = ['InputForces', 'InputForceComponent']
 
 
-class InputForceComponent(InputValue):
+class InputForceComponent(Input):
    """ForceComponent input class.
 
    Uses the forcefield object whose name is specified as the value of the
@@ -34,24 +34,34 @@ class InputForceComponent(InputValue):
                "weight" : ( InputAttribute, { "dtype"   : float,
                                          "default" : 1.0,
                                          "help"    : "A scaling factor for this forcefield, to be applied before adding the force calculated by this forcefield to the total force." } ),
-               "mts_level" : ( InputAttribute, { "dtype"   : int,
-                                         "default" : 0,
-                                         "help"    : "The depth in a MTS splitting at which this component should be applied" } ),
                "name" : ( InputAttribute, { "dtype" : str,
                                           "default" : "",
+                                          "help" : "An optional name to refer to this force component." } ),
+
+               "forcefield" : ( InputAttribute, { "dtype" : str, 
+                                          "default": "",
                                           "help" : "An optional name to refer to this force component." } )
             }
+
+   fields={ "mts_weights" : (InputArray, {"dtype"        : float,
+                                    "default"      : np.zeros(1,float)+1.,
+                                    "help"         : "The weight of force in each mts level startiong from outer.",
+                                    "dimension"    : "force"})
+          }
 
    default_help = "The class that deals with how each forcefield contributes to the overall potential, force and virial calculation."
    default_label = "FORCECOMPONENT"
 
-   def __init__(self, help=None, dimension=None, units=None, default=None, dtype=None):
-      """Initializes InputForceComponent.
+#   def __init__(self, help=None, default=None):
+#   def __init__(self, help=None, dimension=None, units=None, default=None, dtype=None):
+#      """Initializes InputForceComponent.
 
-      Just calls the parent initialization function with appropriate arguments.
-      """
 
-      super(InputForceComponent,self).__init__(dtype=str, dimension=dimension, default=default, help=help)
+
+##      Just calls the parent initialization function with appropriate arguments.
+#      """
+
+#     super(InputForceComponent,self).__init__(default=default, help=help)
 
    def store(self, forceb):
       """Takes a ForceComponent instance and stores a minimal
@@ -61,11 +71,11 @@ class InputForceComponent(InputValue):
          forceb: A ForceComponent object.
       """
 
-      super(InputForceComponent,self).store(forceb.ffield)
       self.nbeads.store(forceb.nbeads)
       self.weight.store(forceb.weight)
-      self.mts_level.store(forceb.lmts)
+      self.mts_weights.store(forceb.mts_weights)
       self.name.store(forceb.name)
+      self.forcefield.store(forceb.ffield)
 
    def fetch(self):
       """Creates a ForceComponent object.
@@ -74,8 +84,8 @@ class InputForceComponent(InputValue):
          A ForceComponent object.
       """
 
-      val=super(InputForceComponent,self).fetch()
-      return ForceComponent(ffield=val, nbeads=self.nbeads.fetch(), weight=self.weight.fetch(), name=self.name.fetch(), lmts=self.mts_level.fetch())
+      super(InputForceComponent,self).fetch()
+      return ForceComponent(ffield=self.forcefield.fetch(), nbeads=self.nbeads.fetch(), weight=self.weight.fetch(), name=self.name.fetch(), mts_weights=self.mts_weights.fetch())
 
    def check(self):
       """Checks for optional parameters."""
@@ -129,5 +139,6 @@ class InputForces(Input):
 
       for el in flist:
          iff = InputForceComponent()
+         print "storing el in InputForces"
          iff.store(el)
          self.extra.append(("force", iff))

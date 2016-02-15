@@ -156,10 +156,10 @@ class ForceBead(dobject):
       Returns:
          A list of the form [potential, force, virial, extra].
       """
-      
+
       # because we thread over many systems and outputs, we might get called
       # more than once. keep track of how many times we are called so we
-      # can make sure to wait until the last call has returned before we release      
+      # can make sure to wait until the last call has returned before we release
       self._threadlock.acquire()
       try:
          self._getallcount += 1
@@ -373,7 +373,7 @@ class ForceComponent(dobject):
       Returns:
          A list of the potential energy of each replica of the system.
       """
-      
+
       self.queue()
       return np.array([b.pot for b in self._forces], float)
 
@@ -508,7 +508,7 @@ class Forces(dobject):
          # if the number of beads for this force component is unspecified,
          # assume full force evaluation
          if newb == 0: newb = beads.nbeads
-         newforce = ForceComponent(ffield=fc.ffield, name=fc.name, nbeads=newb, weight=fc.weight)
+         newforce = ForceComponent(ffield=fc.ffield, name=fc.name, nbeads=newb, weight=fc.weight, mts_weights=fc.mts_weights)
          newbeads = Beads(beads.natoms, newb)
          newrpc = nm_rescale(beads.nbeads, newb)
 
@@ -565,10 +565,13 @@ class Forces(dobject):
             
       # SC forces and potential  
       dset(self, "alpha", depend_value(name="alpha", value=0.5))
+      
+      # this will be piped from normalmodes
+      dset(self, "omegan2", depend_value(name="alpha", value=0))
             
       dset(self, "SCCALC", 
            depend_value(name="SCCALC", func=self.sccalc, value = [None,None],
-                 dependencies=[dget(self, "f"), dget(self,"pots"), dget(self,"alpha")] ) )
+                 dependencies=[dget(self, "f"), dget(self,"pots"), dget(self,"alpha"),  dget(self,"omegan2")] ) )
                  
       dset(self, "fsc", depend_array(name="fsc",value=np.zeros((self.nbeads,3*self.natoms)),
             dependencies=[dget(self,"SCCALC")],
@@ -643,14 +646,13 @@ class Forces(dobject):
          return self.mrpc[index].b2tob1(depstrip(self.mforces[index].f))
          
    def forces_mts(self, level):
-      
-      # fetches ONLY the forces associated with a given MTS level
+      """ Fetches ONLY the forces associated with a given MTS level."""
+
       fk = np.zeros((self.nbeads,3*self.natoms))
       for index in range(len(self.mforces)):
-         if level == mforces[index].lmts and self.mforces[index].weight > 0:
+         if len(self.mforces[index].mts_weights) > level level == mforces[index].lmts and self.mforces[index].weight > 0:
             fk += self.mforces[index].weight*self.mrpc[index].b2tob1(depstrip(self.mforces[index].f))
       return fk
-
 
    def f_combine(self):
       """Obtains the total force vector."""
@@ -666,7 +668,7 @@ class Forces(dobject):
 
    def pot_combine(self):
       """Obtains the potential energy for each forcefield."""
- 
+
       self.queue()
       rp = np.zeros(self.nbeads,float)
       for k in range(self.nforces):
