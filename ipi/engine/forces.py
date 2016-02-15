@@ -650,7 +650,7 @@ class Forces(dobject):
 
       fk = np.zeros((self.nbeads,3*self.natoms))
       for index in range(len(self.mforces)):
-         if len(self.mforces[index].mts_weights) > level level == mforces[index].lmts and self.mforces[index].weight > 0:
+         if len(self.mforces[index].mts_weights) > level and level == mforces[index].lmts and self.mforces[index].weight > 0:
             fk += self.mforces[index].weight*self.mrpc[index].b2tob1(depstrip(self.mforces[index].f))
       return fk
 
