@@ -495,6 +495,7 @@ class MTSIntegrator(NVEIntegrator):
         
     def step(self, step=None):
         """Does one simulation time step."""
+ 
         # thermostat is applied at the outer loop
         self.ttime = -time.time()
         self.thermostat.step()

@@ -275,7 +275,7 @@ class ForceComponent(dobject):
          Depends on each replica's ufvx list.
    """
 
-   def __init__(self, ffield="", nbeads=0, weight=1.0, name="", lmts=0):
+   def __init__(self, ffield, nbeads=0, weight=1.0, name="", mts_weights=None):
       """Initializes ForceComponent
 
       Args:
@@ -287,14 +287,17 @@ class ForceComponent(dobject):
             combined to give a total force, the contribution of this forcefield
             will be weighted by this factor.
          name: The name of the forcefield.
-         lmts: The MTS level at which this should be computed
+         mts_weights: Weight of forcefield at each mts level.
       """
 
       self.ffield = ffield
       self.name = name
       self.nbeads = nbeads
       self.weight = weight
-      self.lmts = lmts
+      if mts_weights is None:
+          self.mts_weights = np.asarray([])
+      else:
+          self.mts_weights = np.asarray(mts_weights)
 
    def bind(self, beads, cell, fflist):
       """Binds beads, cell and force to the forcefield.
@@ -650,8 +653,8 @@ class Forces(dobject):
 
       fk = np.zeros((self.nbeads,3*self.natoms))
       for index in range(len(self.mforces)):
-         if len(self.mforces[index].mts_weights) > level and level == mforces[index].lmts and self.mforces[index].weight > 0:
-            fk += self.mforces[index].weight*self.mrpc[index].b2tob1(depstrip(self.mforces[index].f))
+         if len(self.mforces[index].mts_weights) > level and self.mforces[index].mts_weights[level] != 0  and self.mforces[index].weight > 0:
+              fk += self.mforces[index].weight*self.mforces[index].mts_weights[level]*self.mrpc[index].b2tob1(depstrip(self.mforces[index].f))
       return fk
 
    def f_combine(self):
