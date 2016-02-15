@@ -66,7 +66,6 @@ class Motion(dobject):
             nm: A normal modes object used to do the normal modes transformation.
             cell: The cell object from which the system box is taken.
             bforce: The forcefield object from which the force and virial are taken.
-            bbias: The forcefield object from which the bias forces are obtained
             prng: The random number generator object which controls random number
                 generation.
         """
