@@ -172,7 +172,8 @@ class DynMatrixMover(Motion):
             dev = np.real(self.V[:,k]/vknorm)
             
             if self.mode=="nrg":
-                edelta = vknorm*np.sqrt(self.deltae*2.0/abs(self.w2[k]))                
+                edelta = vknorm*np.sqrt(self.deltae*2.0/abs(self.w2[k]))     
+                if edelta > 100*self.deltax:  edelta= 100*self.deltax          
             else:
                 edelta = self.deltax
             dev *= edelta
