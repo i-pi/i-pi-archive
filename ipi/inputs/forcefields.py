@@ -194,7 +194,7 @@ class InputFFEinstein(InputForceField):
    "hessian" : (InputArray, {"dtype": float, "default"      : input_default(factory=np.zeros, args=(0,)), "help": "Specifies the Hessian of the harmonic potential (atomic units!)"} ), 
    "x_reference" : (InputArray, {"dtype": float, "default"  : input_default(factory=np.zeros, args=(0,)), "help": "Minimum-energy configuration for the harmonic potential", "dimension" : "length"} ),
    "v_reference" : (InputValue, {"dtype": float, "default"  : 0.0, "help": "Zero-value of energy for the harmonic potential", "dimension":"energy"}),
-   "apply_shift" : (InputValue, {"dtype": bool, "default"  : False, "help": "Forces eigenvalues of the Hession to be either zero or positive"} )
+   "apply_shift" : (InputValue, {"dtype": float, "default"  : 0.0, "help": "Applies a shift to all eigenvalues of the Hessian. Use negative numbers for using automatically the smallest eigenvalue of the Hessian. Units: atomic energy/atomic distance**2"} )
    }
    
    fields.update(InputForceField.fields)

@@ -358,7 +358,7 @@ class FFEinstein(ForceField):
                       'start': starting time}.
    """
    
-   def __init__(self, latency = 1.0, name = "",  H=None, xref=None, vref=0.0, shifth=False, pars=None, dopbc = False, threaded=True):
+   def __init__(self, latency = 1.0, name = "",  H=None, xref=None, vref=0.0, shifth=0.0, pars=None, dopbc = False, threaded=True):
       """Initialises FFEinstein.
 
       Args:
@@ -378,14 +378,16 @@ class FFEinstein(ForceField):
       self.xref = xref
       self.vref = vref
       self.shifth=shifth
+
+      eigsys=np.linalg.eigh(self.H) 
+      info(" @ForceField: Hamiltonian eigenvalues: " + ' '.join(map(str, eigsys[0])), verbosity.medium)           
       
-      if self.shifth :
-         eigsys=np.linalg.eigh(self.H)        
-         self.eig = eigsys[0].min()
-         info(" @ForceField: Hamiltonian eigenvalues: " + ' '.join(map(str, eigsys[0])), verbosity.high)     
-         info(" @ForceField: Shifting Hamiltonian by minimum eigenvalue: %f" % (self.eig), verbosity.low)     
+      if self.shifth<0:        
+         self.eig = -eigsys[0].min()
       else: 
-         self.eig=0.0
+         self.eig = self.shifth
+         
+      info(" @ForceField: Shifting Hamiltonian by : %e" % (self.eig), verbosity.low)
 
    def poll(self):
       """ Polls the forcefield checking if there are requests that should
@@ -413,7 +415,7 @@ class FFEinstein(ForceField):
           raise ValueError("Reference structure size mismatch")
       
       d = q-self.xref
-      mf = np.dot(self.H, d) - d * self.eig
+      mf = np.dot(self.H, d) + d * self.eig
             
-      r["result"] = [ self.vref + 0.5*np.dot(d,mf) - 0.5*self.eig*np.dot(d,d), -mf, np.zeros((3,3),float), ""]
+      r["result"] = [ self.vref + 0.5*np.dot(d,mf) + 0.5*self.eig*np.dot(d,d), -mf, np.zeros((3,3),float), ""]
       r["status"] = "Done"
