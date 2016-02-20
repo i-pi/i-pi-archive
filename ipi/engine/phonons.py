@@ -34,8 +34,8 @@ class DynMatrixMover(Motion):
     """Dynamic matrix calculation routine by finite difference.
     """
 
-    def __init__(self, fixcom=False, fixatoms=None, mode='std', energy_shift=1.0, pos_shift=0.001, 
-                 dynmat=np.zeros(0, float), dynmat_r=np.zeros(0, float)):   
+    def __init__(self, fixcom=False, fixatoms=None, mode='std', energy_shift=0.0, pos_shift=0.001, output_shift=0.000,
+                 dynmat=np.zeros(0, float), dynmat_r=np.zeros(0, float), prefix="", asr="none"):   
                  
         """Initialises DynMatrixMover.
         Args:
@@ -50,6 +50,7 @@ class DynMatrixMover(Motion):
       
         #Finite difference option.
         self.mode = mode
+        self.deltaw = output_shift
         self.deltax = pos_shift
         self.deltae = energy_shift        
         self.dynmatrix = dynmat
@@ -57,6 +58,10 @@ class DynMatrixMover(Motion):
         self.frefine = False
         self.U = None
         self.V = None
+        self.prefix = prefix
+        if self.prefix == "":
+            self.prefix = "PHONONS"
+        self.asr = asr
    
     def bind(self, ens, beads, nm, cell, bforce, prng):
 
@@ -79,19 +84,24 @@ class DynMatrixMover(Motion):
         self.dforces = self.forces.copy(self.dbeads, self.dcell)         
         self.ism = 1/np.sqrt(depstrip(beads.m3[-1]))        
     
-    def printall(self, prefix, dmatx):
+    def printall(self, prefix, dmatx, deltaw=0.0):
         """ Prints out diagnostics for a given dynamical matrix. """
 
+        dmatx = dmatx + np.eye(len(dmatx))*deltaw
+        if deltaw != 0.0 :
+            wstr = " !! Shifted by %e !!" % (deltaw)
+        else:
+            wstr = ""
         # prints out the dynamical matrix
         outfile=open(prefix+'.dynmat', 'w')
-        print >> outfile, "# Dynamical matrix (atomic units)"
+        print >> outfile, "# Dynamical matrix (atomic units)"+wstr
         for i in range(3 * self.dbeads.natoms):
             print >> outfile, ' '.join(map(str, dmatx[i]))
         outfile.close()
         
         # also prints out the Hessian
         outfile=open(prefix+'.hess', 'w')
-        print >> outfile, "# Hessian matrix (atomic units)"
+        print >> outfile, "# Hessian matrix (atomic units)"+wstr
         for i in range(3 * self.dbeads.natoms):
             print >> outfile, ' '.join(map(str, dmatx[i]/(self.ism[i]*self.ism)))
         outfile.close()
@@ -99,7 +109,7 @@ class DynMatrixMover(Motion):
         eigsys=np.linalg.eigh(dmatx)        
         # prints eigenvalues & eigenvectors
         outfile=open(prefix+'.eigval', 'w') 
-        print >> outfile, "# Eigenvalues (atomic units)"
+        print >> outfile, "# Eigenvalues (atomic units)"+wstr
         print >> outfile, '\n'.join(map(str, eigsys[0]))
         outfile.close()
         outfile=open(prefix+'.eigvec', 'w')        
@@ -118,11 +128,44 @@ class DynMatrixMover(Motion):
         for i in range(0,3 * self.dbeads.natoms):
             print >> outfile, ' '.join(map(str, eigmode[i]))
         outfile.close()
-        
-        
-                    
             
-        
+    def asr_apply(self, dmatx):
+        # Always symmetrize
+        dmatx = (np.transpose(dmatx) + dmatx) * 0.5
+        if self.asr == "none":
+            pass
+        elif self.asr == "simple":
+          for k in xrange(100):  
+            for i in xrange(0,len(dmatx),3):
+                for a in xrange(3):
+                    for b in xrange(3):
+                        dval =0.0
+                        for j in xrange(0,len(dmatx),3):
+                            if j==i: continue
+                            dval += dmatx[i+a,j+b] * self.ism[i]/self.ism[j]                        
+                        info("Applying ASR for %d, %d, %d, changing %e to %e" % (i/3, a, b, dmatx[i+a,i+b], -dval), verbosity.low)
+                        dmatx[i+a,i+b] = -dval
+            # re-symmetrize
+            dmatx = (np.transpose(dmatx) + dmatx) * 0.5
+        elif self.asr == "balanced":
+          for k in xrange(100):  # iterates to convergence
+            for i in xrange(0,len(dmatx),3):
+                for a in xrange(3):
+                    for b in xrange(3):
+                        hval = dmatx[i+a,i+b] / (self.ism[i]*self.ism[i])
+                        for j in xrange(0,len(dmatx),3):
+                            if j==i: continue
+                            hval += dmatx[i+a,j+b] /(self.ism[i]*self.ism[j])                        
+                        info("Applying ASR for %d, %d, %d, distributing error of %e" % (i/3, a, b, hval), verbosity.low)
+                        hval /= len(dmatx)/3
+                        for j in xrange(0,len(dmatx),3):
+                            dmatx[i+a,j+b] -= hval * (self.ism[i]*self.ism[j])                   
+            # re-symmetrize
+            dmatx = (np.transpose(dmatx) + dmatx) * 0.5
+        else:
+            raise ValueError("Unsupported ASR mode: " + self.asr)
+        return dmatx
+    
     def step(self, step=None):
         """Calculates the kth derivative of force by finite differences.            
         """
@@ -185,25 +228,26 @@ class DynMatrixMover(Motion):
             #displaces by -delta along kth normal mode.
             self.dbeads.q = self.beads.q - dev
             minus =  - depstrip(self.dforces.f).copy().flatten()
-            #computes a row of the refin    ed dynmatrix, in the basis of the eigenvectors of the first dynmatrix            
+            #computes a row of the refined dynmatrix, in the basis of the eigenvectors of the first dynmatrix            
             
             dmrowk = (plus-minus)/(2*edelta/vknorm)
             
             self.dynmatrix_r[k] = np.dot(self.V.T, dmrowk)
                         
         if k >= 3*self.beads.natoms-1:
-            # symmetrize
-            self.dynmatrix = 0.5*(self.dynmatrix+np.transpose(self.dynmatrix))
+            # symmetrize and apply chosen Acoustic Sum Rule
+            rdyn = self.asr_apply(self.dynmatrix)
             
             if not self.frefine:            
-                self.printall("PHONONS", self.dynmatrix)
+                self.printall(self.prefix, rdyn, self.deltaw)
                 if self.mode=="std":
                     softexit.trigger("Dynamic matrix is calculated. Exiting simulation")                    
             else:
-                self.dynmatrix_r = 0.5*(self.dynmatrix_r+np.transpose(self.dynmatrix_r))
-                self.printall("PHONONS-R", self.dynmatrix_r)
+                rdyn = self.asr_apply(self.dynmatrix_r)
+                
+                self.printall(self.prefix + "-R", rdyn, self.deltaw)
                 # transform in Cartesian basis
-                self.dynmatrix_r = np.dot(self.U,np.dot(self.dynmatrix_r,np.transpose(self.U)))
-                self.printall("PHONONS-RC", self.dynmatrix_r)
+                rdyn = np.dot(self.U,np.dot(rdyn,np.transpose(self.U)))
+                self.printall(self.prefix + "-RC", rdyn, self.deltaw)
                 softexit.trigger("Dynamic matrix is calculated. Exiting simulation")                    
                 

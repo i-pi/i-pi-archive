@@ -49,6 +49,15 @@ class InputDynMatrix(InputDictionary):
                 "energy_shift"  : (InputValue, {"dtype"   : float, "default": 0.000, 
                                     "help"    : "The finite deviation in energy used to compute deribvative of force."
                                     }), 
+                "output_shift"  : (InputValue, {"dtype"   : float, "default": 0.000, 
+                                    "help"    : "Shift by the dynamical matrix diagonally before outputting."
+                                    }),
+                "prefix"  : (InputValue, {"dtype"   : str, "default": "PHONONS", 
+                                    "help"    : "Shift by this much the dynamical matrix in the output."
+                                    }),  
+                "asr"  : (InputValue, {"dtype"   : str, "default": "none", "options" : ["none", "simple", "balanced" ],
+                                    "help"    : "Shift by this much the dynamical matrix in the output."
+                                    }),   
                 "dynmat" : ( InputArray, {"dtype" : float, 
                               "default" :  np.zeros(0, float),
                               "help"    : "Portion of the dynamical matrix known up to now."}),
@@ -67,6 +76,9 @@ class InputDynMatrix(InputDictionary):
         self.mode.store(phonons.mode)
         self.pos_shift.store(phonons.deltax)
         self.energy_shift.store(phonons.deltae)        
+        self.output_shift.store(phonons.deltaw)     
+        self.prefix.store(phonons.prefix)
+        self.asr.store(phonons.asr)
         self.dynmat.store(phonons.dynmatrix)
         self.dynmat_r.store(phonons.dynmatrix_r)
         
