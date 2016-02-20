@@ -55,7 +55,7 @@ class InputDynMatrix(InputDictionary):
                 "prefix"  : (InputValue, {"dtype"   : str, "default": "PHONONS", 
                                     "help"    : "Shift by this much the dynamical matrix in the output."
                                     }),  
-                "asr"  : (InputValue, {"dtype"   : str, "default": "none", "options" : ["none", "simple", "balanced" ],
+                "asr"  : (InputValue, {"dtype"   : str, "default": "none", "options" : ["none", "simple", "balanced", "crystal" ],
                                     "help"    : "Shift by this much the dynamical matrix in the output."
                                     }),   
                 "dynmat" : ( InputArray, {"dtype" : float, 

@@ -78,10 +78,11 @@ class DynMatrixMover(Motion):
                 self.dynmatrix_r=np.zeros((beads.q.size, beads.q.size), float)
             else:
                 raise ValueError("Force constant matrix size does not match system size")
-
+ 
         self.dbeads = self.beads.copy()
         self.dcell = self.cell.copy()
-        self.dforces = self.forces.copy(self.dbeads, self.dcell)         
+        self.dforces = self.forces.copy(self.dbeads, self.dcell)
+        #  TODO this should probably be made into a depend object, or taken from beads that have a sm3 object
         self.ism = 1/np.sqrt(depstrip(beads.m3[-1]))        
     
     def printall(self, prefix, dmatx, deltaw=0.0):
@@ -135,6 +136,7 @@ class DynMatrixMover(Motion):
         if self.asr == "none":
             pass
         elif self.asr == "simple":
+          # only changes the diagonal part of the dynamical matrix. cannot really be iterated to convergence, but we try...
           for k in xrange(100):  
             for i in xrange(0,len(dmatx),3):
                 for a in xrange(3):
@@ -143,12 +145,14 @@ class DynMatrixMover(Motion):
                         for j in xrange(0,len(dmatx),3):
                             if j==i: continue
                             dval += dmatx[i+a,j+b] * self.ism[i]/self.ism[j]                        
-                        info("Applying ASR for %d, %d, %d, changing %e to %e" % (i/3, a, b, dmatx[i+a,i+b], -dval), verbosity.low)
+                        info("Applying ASR for %d, %d, %d, changing %e to %e" % (i/3, a, b, dmatx[i+a,i+b], -dval), verbosity.high)
                         dmatx[i+a,i+b] = -dval
             # re-symmetrize
             dmatx = (np.transpose(dmatx) + dmatx) * 0.5
         elif self.asr == "balanced":
-          for k in xrange(100):  # iterates to convergence
+          # shifts the entire row by a constant, and symmetrizes. repeats to convergence.
+          # I believe this is actually precisely the same as crystal but leave it for the sake of completeness
+          for k in xrange(100):  
             for i in xrange(0,len(dmatx),3):
                 for a in xrange(3):
                     for b in xrange(3):
@@ -156,12 +160,28 @@ class DynMatrixMover(Motion):
                         for j in xrange(0,len(dmatx),3):
                             if j==i: continue
                             hval += dmatx[i+a,j+b] /(self.ism[i]*self.ism[j])                        
-                        info("Applying ASR for %d, %d, %d, distributing error of %e" % (i/3, a, b, hval), verbosity.low)
+                        info("Applying ASR for %d, %d, %d, distributing error of %e" % (i/3, a, b, hval), verbosity.high)
                         hval /= len(dmatx)/3
                         for j in xrange(0,len(dmatx),3):
                             dmatx[i+a,j+b] -= hval * (self.ism[i]*self.ism[j])                   
             # re-symmetrize
             dmatx = (np.transpose(dmatx) + dmatx) * 0.5
+        elif self.asr == "crystal":
+          for k in xrange(100):
+            # projects out the subspace of Cartesian displacements
+            v = np.zeros(len(dmatx), float)
+            
+            for a in xrange(3):
+                v[:] = 0.0
+                for i in xrange(0,len(dmatx),3):
+                    v[i+a] = 1/self.ism[i]
+                v*=1.0/np.sqrt(np.dot(v,v))
+                w = np.dot(dmatx,v)
+                info("Error in ASR for Cartesian component %d: %e" %(a, np.dot(w,v)), verbosity.low)
+                # we keep the updates symmetric, even though this means we have to iterate 
+                for i in xrange(len(dmatx)):
+                    for j in xrange(len(dmatx)):
+                        dmatx[i,j] -= 0.5*(w[i]*v[j]+w[j]*v[i])            
         else:
             raise ValueError("Unsupported ASR mode: " + self.asr)
         return dmatx
