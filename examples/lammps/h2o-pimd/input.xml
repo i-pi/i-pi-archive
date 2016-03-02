@@ -1,7 +1,8 @@
 <simulation>
   <output prefix="no_rpc">
-    <properties stride="1" filename="out"> [ step, time{picosecond}, conserved, temperature{kelvin}, kinetic_cv, potential, 
-    pressure_cv{megapascal},isotope_ensembleave(1.998) (H)] </properties>
+    <properties stride="1" filename="out">
+      [step, time{picosecond}, conserved, temperature{kelvin}, kinetic_cv, potential, pressure_cv{megapascal}]
+    </properties>
     <trajectory filename="pos" stride="20"> positions </trajectory>
   </output>
   <total_steps>500000</total_steps>
