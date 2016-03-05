@@ -697,8 +697,7 @@ class Properties(dobject):
               v += 2*pots[k]/3  + 2*(potssc[k]+pots[k]/3)
           else:
               v += 4*pots[k]/3  + 2*(potssc[k]-pots[k]/3)
-      print v/(k+1)
-      return v/(k+1) 
+      return v/self.beads.nbeads 
 
    def get_sckinop(self, atom=""):
       """Calculates the Suzuki-Chin quantum centroid virial kinetic energy estimator.
