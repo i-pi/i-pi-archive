@@ -698,13 +698,11 @@ class Properties(dobject):
       v = 0.0
       pots = depstrip(self.forces.pots)
       potssc = depstrip(self.forces.potssc)
-      print "pots ->", pots, "potssc->", potssc
       for k in range(self.beads.nbeads):
           if k%2 == 0:
               v += 2.0*pots[k]/3.0  + 2.0*(potssc[k]+pots[k]/3.0)
           else:
               v += 4.0*pots[k]/3.0  + 2.0*(potssc[k]-pots[k]/3.0)
-      print v/(k+1)
       return v/(k+1) 
 
    def get_sckinop(self, atom=""):
