@@ -15,308 +15,195 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <http.//www.gnu.org/licenses/>.
-
-
-Holds the algorithms required for normal mode propagators, and the objects to
-do the constant temperature and pressure algorithms. Also calculates the
-appropriate conserved energy quantity for the ensemble of choice.
-
-Algorithms implemented by Michele Ceriotti and Benjamin Helfrecht, 2015
-
 """
 
-__all__=['GeopMover']
+__all__=['DynMatrixMover']
 
 import numpy as np
 import time
 
 
-from ipi.engine.mover import Mover
+from ipi.engine.motion.motion import Motion
 from ipi.utils.depend import *
 from ipi.utils import units
 from ipi.utils.softexit import softexit
 from ipi.utils.mintools import min_brent, min_approx, BFGS, L_BFGS, L_BFGS_nls
 from ipi.utils.messages import verbosity, warning, info
 
-class LineMover(object):
-   """Creation of the one-dimensional function that will be minimized.
-   Used in steepest descent and conjugate gradient minimizers
-   
-   Attributes:
-       x0: initial position
-       d: move direction
-   """
-   
-   def __init__(self):
-      self.x0 = self.d = None
+class DynMatrixMover(Motion):
+    """Dynamic matrix calculation routine by finite difference.
+    """
 
-   def bind(self, ens):
-      self.dbeads = ens.beads.copy()
-      self.dcell = ens.cell.copy()
-      self.dforces = ens.forces.copy(self.dbeads, self.dcell)      
-      
-   def set_dir(self, x0, mdir):      
-      self.x0 = x0.copy()
-      self.d = mdir.copy()/np.sqrt(np.dot(mdir.flatten(),mdir.flatten()))
-      if self.x0.shape != self.d.shape: raise ValueError("Incompatible shape of initial value and displacement direction")      
-   
-   def __call__(self, x):
-            
-      self.dbeads.q = self.x0 + self.d * x
-      e = self.dforces.pot # Energy
-      g = - np.dot(depstrip(self.dforces.f).flatten(),self.d.flatten()) # Gradient
-      return e, g
-   
-class BFGSMover(object):
-   """ Creation of the multi-dimensional function that will be minimized.
-   Used in the BFGS and L-BFGS minimizers
-   
-   Attributes:
-       x0: initial position
-       d: move direction
-       xold: previous position
-   """
-
-   def __init__(self):
-      self.x0 = self.d = self.xold = None
-
-   def bind(self, ens):
-      self.dbeads = ens.beads.copy()
-      self.dcell = ens.cell.copy()
-      self.dforces = ens.forces.copy(self.dbeads, self.dcell)
-
-   def __call__(self, x):
-      self.dbeads.q = x
-      e = self.dforces.pot # Energy
-      g = - self.dforces.f # Gradient
-      return e, g        
-
-class GeopMover(Mover):
-   """Geometry optimization routine. Controls direction choice for 
-   steepest descent and conjugate gradient. Checks for satisfaction of 
-   tolerances to exit minimization. 
-
-   Attributes:
-      mode: minimization algorithm to use
-      maximum_step: max allowed step size for BFGS/L-BFGS
-      cg_old_force: force on previous step
-      cg_old_direction: move direction on previous step
-      invhessian: stored inverse Hessian matrix for BFGS
-      ls_options: 
-         tolerance: energy tolerance for exiting minimization algorithm
-         iter: maximum number of allowed iterations for minimization algorithm for each MD step
-         step: initial step size for steepest descent and conjugate gradient
-         adaptive: T/F adaptive step size for steepest descent and conjugate 
-            gradient
-      tolerances:
-         energy: change in energy tolerance for ending minimization
-         force: force/change in force tolerance foe ending minimization
-         position: change in position tolerance for ending minimization
-      corrections: number of corrections to be stored for L-BFGS
-      qlist: list of previous positions (x_n+1 - x_n) for L-BFGS. Number of entries = corrections
-      glist: list of previous gradients (g_n+1 - g_n) for L-BFGS. Number of entries = corrections      
-
-   """
-
-   def __init__(self, fixcom=False, fixatoms=None,
-             mode = "sd", 
-             maximum_step = 100.0,
-             cg_old_force = np.zeros(0, float),
-             cg_old_direction = np.zeros(0, float),
-             invhessian = np.eye(0, 0, 0, float), 
-             ls_options = { "tolerance": 1e-6, "iter": 100.0 , "step": 1e-3, "adaptive": 1.0 },
-             tolerances = {"energy" : 1e-8, "force": 1e-8, "position": 1e-8},
-             corrections = 5,
-             qlist = np.zeros(0, float),
-             glist = np.zeros(0, float)
-             ) :   
+    def __init__(self, fixcom=False, fixatoms=None, mode='std', energy_shift=1.0, pos_shift=0.001, 
+                 dynmat=np.zeros(0, float), dynmat_r=np.zeros(0, float)):   
                  
-      """Initialises GeopMover.
+        """Initialises DynMatrixMover.
+        Args:
+        fixcom	: An optional boolean which decides whether the centre of mass
+             	  motion will be constrained or not. Defaults to False. 
+        matrix	: A 3Nx3N array that stores the dynamic matrix.
+        oldk	: An integr that stores the number of rows calculated.
+        delta: A 3Nx3N array that stores the dynamic matrix.
+        """
 
-      Args:
-         fixcom: An optional boolean which decides whether the centre of mass
-            motion will be constrained or not. Defaults to False.         
-      """
-
-      super(GeopMover,self).__init__(fixcom=fixcom, fixatoms=fixatoms)
+        super(DynMatrixMover,self).__init__(fixcom=fixcom, fixatoms=fixatoms)
       
-      # optimization options
-      self.ls_options = ls_options
-      self.tolerances = tolerances
-      self.mode = mode
-      self.max_step = maximum_step
-      self.cg_old_f = cg_old_force
-      self.cg_old_d = cg_old_direction
-      self.invhessian = invhessian
-      self.corrections = corrections
-      self.qlist = qlist
-      self.glist = glist
+        #Finite difference option.
+        self.mode = mode
+        self.deltax = pos_shift
+        self.deltae = energy_shift        
+        self.dynmatrix = dynmat
+        self.dynmatrix_r = dynmat_r
+        self.frefine = False
+        self.U = None
+        self.V = None
+   
+    def bind(self, ens, beads, nm, cell, bforce, prng):
+
+        super(DynMatrixMover,self).bind(ens, beads, nm, cell, bforce, prng)
+
+        #Raises error for nbeads not equal to 1.    
+        if(self.beads.nbeads > 1):
+            raise ValueError("Calculation not possible for number of beads greater than one")
+
+        #Initialises a 3*number of atoms X 3*number of atoms dynamic matrix.
+        if(self.dynmatrix.size  != (beads.q.size * beads.q.size)):
+            if(self.dynmatrix.size == 0):
+                self.dynmatrix=np.zeros((beads.q.size, beads.q.size), float)
+                self.dynmatrix_r=np.zeros((beads.q.size, beads.q.size), float)
+            else:
+                raise ValueError("Force constant matrix size does not match system size")
+
+        self.dbeads = self.beads.copy()
+        self.dcell = self.cell.copy()
+        self.dforces = self.forces.copy(self.dbeads, self.dcell)         
+        self.ism = 1/np.sqrt(depstrip(beads.m3[-1]))        
+    
+    def printall(self, prefix, dmatx):
+        """ Prints out diagnostics for a given dynamical matrix. """
+
+        # prints out the dynamical matrix
+        outfile=open(prefix+'.dynmat', 'w')
+        print >> outfile, "# Dynamical matrix (atomic units)"
+        for i in range(3 * self.dbeads.natoms):
+            print >> outfile, ' '.join(map(str, dmatx[i]))
+        outfile.close()
         
-      self.lm = LineMover()
-      self.bfgsm = BFGSMover()      
-   
-   def bind(self, ens, beads, nm, cell, bforce, bbias, prng):
-      
-      super(GeopMover,self).bind(ens, beads, nm, cell, bforce, bbias, prng)
-      if self.cg_old_f.shape != beads.q.size :
-         if self.cg_old_f.size == 0: 
-            self.cg_old_f = np.zeros(beads.q.size, float)
-         else: 
-            raise ValueError("Conjugate gradient force size does not match system size")
-      if self.cg_old_d.size != beads.q.size :
-         if self.cg_old_d.size == 0: 
-            self.cg_old_d = np.zeros(beads.q.size, float)
-         else: 
-            raise ValueError("Conjugate gradient direction size does not match system size")
-      if self.invhessian.size != (beads.q.size * beads.q.size):
-          if self.invhessian.size == 0:
-              self.invhessian = np.eye(beads.q.size, beads.q.size, 0, float)
-          else:
-            raise ValueError("Inverse Hessian size does not match system size")
+        # also prints out the Hessian
+        outfile=open(prefix+'.hess', 'w')
+        print >> outfile, "# Hessian matrix (atomic units)"
+        for i in range(3 * self.dbeads.natoms):
+            print >> outfile, ' '.join(map(str, dmatx[i]/(self.ism[i]*self.ism)))
+        outfile.close()
+        
+        eigsys=np.linalg.eigh(dmatx)        
+        # prints eigenvalues & eigenvectors
+        outfile=open(prefix+'.eigval', 'w') 
+        print >> outfile, "# Eigenvalues (atomic units)"
+        print >> outfile, '\n'.join(map(str, eigsys[0]))
+        outfile.close()
+        outfile=open(prefix+'.eigvec', 'w')        
+        print >> outfile, "# Eigenvector  matrix (normalized)"
+        for i in range(0,3 * self.dbeads.natoms):
+            print >> outfile, ' '.join(map(str, eigsys[1][i]))
+        outfile.close()
+        
+        eigmode = 1.0*eigsys[1]
+        for i in range(0,3 * self.dbeads.natoms):
+            eigmode[i] *= self.ism[i]
+        for i in range(0,3 * self.dbeads.natoms):
+            eigmode[:,i]/=np.sqrt(np.dot(eigmode[:,i],eigmode[:,i]))
+        outfile=open(prefix+'.mode', 'w')        
+        print >> outfile, "# Phonon modes (mass-scaled)"
+        for i in range(0,3 * self.dbeads.natoms):
+            print >> outfile, ' '.join(map(str, eigmode[i]))
+        outfile.close()
+        
+        
+                    
             
-      self.lm.bind(self)
-      self.bfgsm.bind(self)
-      
-   def step(self, step=None):
-      """Does one simulation time step."""
+        
+    def step(self, step=None):
+        """Calculates the kth derivative of force by finite differences.            
+        """
+     
+        if(step == None):
+            k = 0
+        elif(step < 3*self.beads.natoms): # round one
+            k = step            
+        else: # round two
+            k = step-3*self.beads.natoms
+            self.frefine = True
+        print "K ", k
+        self.ptime = self.ttime = 0
+        self.qtime = -time.time()
+        info("\nDynMatrix STEP %d" % step, verbosity.debug)
+        
+        dev = np.zeros(3 * self.beads.natoms, float)       
+        if not self.frefine: # fill up the density matrix
+            #initializes the finite deviation
+            dev[:] = 0
+            dev[k] = self.deltax
 
-      self.ptime = self.ttime = 0
-      self.qtime = -time.time()
+            #displaces kth d.o.f by delta.                          
+            self.dbeads.q = self.beads.q + dev  
+            plus = - depstrip(self.dforces.f).copy()
 
-      info("\nMD STEP %d" % step, verbosity.debug)
+            #displaces kth d.o.f by -delta.      
+            self.dbeads.q = self.beads.q - dev 
+            minus =  - depstrip(self.dforces.f).copy()
 
-      if (self.mode == "bfgs"):
+            #computes a row of force-constant matrix
+            dmrow = (plus-minus)/(2*self.deltax)*self.ism[k]*self.ism
+            self.dynmatrix[k] = dmrow
+        else:
+            # if needed, computes the eigenvalues of the base matrix
+            if self.U is None:
+                eigsys=np.linalg.eigh(self.dynmatrix)        
+                self.w2 = eigsys[0]
+                self.U = eigsys[1]
+                self.V = eigsys[1].copy()
+                for i in xrange(len(self.V)): self.V[:,i]*=self.ism
+                print "U", self.U
+                print "V", self.V
 
-          # BFGS Minimization
-          # Initialize approximate Hessian inverse to the identity and direction
-          # to the steepest descent direction
-          if step == 0: # or np.sqrt(np.dot(self.bfgsm.d, self.bfgsm.d)) == 0.0: <-- this part for restarting at claimed minimum (optional)
-              info(" @GEOP: Initializing BFGS", verbosity.debug)
-              self.bfgsm.d = depstrip(self.forces.f) / np.sqrt(np.dot(self.forces.f.flatten(), self.forces.f.flatten()))
-              self.bfgsm.xold = self.beads.q.copy()
+            #initializes the finite deviation along one of the (mass-scaled) eigenvectors
+            vknorm = np.sqrt(np.dot(self.V[:,k],self.V[:,k]))
+            dev = np.real(self.V[:,k]/vknorm)
+            
+            if self.mode=="nrg":
+                edelta = vknorm*np.sqrt(self.deltae*2.0/abs(self.w2[k]))     
+                if edelta > 100*self.deltax:  edelta= 100*self.deltax          
+            else:
+                edelta = self.deltax
+            dev *= edelta
+            print "displace by", edelta
 
-          # Current energy and forces
-          u0, du0 = (self.forces.pot.copy(), - self.forces.f)
-
-          # Store previous forces
-          self.cg_old_f[:] = self.forces.f
-          
-          # Do one iteration of BFGS, return new point, function value,
-          # move direction, and current Hessian to use for next iteration
-          self.beads.q, fx, self.bfgsm.d, self.invhessian = BFGS(self.beads.q, 
-              self.bfgsm.d, self.bfgsm, fdf0=(u0, du0), invhessian=self.invhessian, 
-              max_step=self.max_step, tol=self.ls_options["tolerance"], 
-              itmax=self.ls_options["iter"])  
-
-          # x = current position - previous position; use for exit tolerance
-          x = np.amax(np.absolute(np.subtract(self.beads.q, self.bfgsm.xold)))
-          
-          # Store old position
-          self.bfgsm.xold[:] = self.beads.q
-
-          info(" @GEOP: Updating bead positions", verbosity.debug)
-
-      elif self.mode == "lbfgs":
-
-          # L-BFGS Minimization
-          # Initialize approximate Hessian inverse to the identity and direction
-          # to the steepest descent direction
-          # Initialize lists of previous positions and gradient
-          if step == 0: # or np.sqrt(np.dot(self.bfgsm.d, self.bfgsm.d)) == 0.0: <-- this part for restarting at claimed minimum (optional)
-              info(" @GEOP: Initializing L-BFGS", verbosity.debug)
-              self.bfgsm.d = depstrip(self.forces.f) / np.sqrt(np.dot(self.forces.f.flatten(), self.forces.f.flatten()))
-              self.bfgsm.xold = self.beads.q.copy()
-              self.qlist = np.zeros((self.corrections, len(self.beads.q.flatten())))
-              self.glist = np.zeros((self.corrections, len(self.beads.q.flatten())))
-
-          # Current energy and force
-          u0, du0 = (self.forces.pot.copy(), - self.forces.f)
-
-          # Store previous forces
-          self.cg_old_f[:] = self.forces.f
-          
-          # Do one iteration of L-BFGS, return new point, function value,
-          # move direction, and current Hessian to use for next iteration
-          self.beads.q, fx, self.bfgsm.d, self.qlist, self.glist = L_BFGS(self.beads.q, 
-                self.bfgsm.d, self.bfgsm, self.qlist, self.glist, 
-                fdf0=(u0, du0), max_step=self.max_step, tol=self.ls_options["tolerance"], 
-                itmax=self.ls_options["iter"],
-                m=self.corrections, k=step)
-
-          info(" @GEOP: Updated position list", verbosity.debug)
-          info(" @GEOP: Updated gradient list", verbosity.debug)
-
-          # x = current position - old position. Used for convergence tolerance
-          x = np.amax(np.absolute(np.subtract(self.beads.q, self.bfgsm.xold)))
-
-          # Store old position
-          self.bfgsm.xold[:] = self.beads.q
-
-          info(" @GEOP: Updated bead positions", verbosity.debug)
-
-      # Routine for steepest descent and conjugate gradient
-      else:
-          if (self.mode == "sd" or step == 0): 
-          
-              # Steepest descent minimization
-              # gradf1 = force at current atom position
-              # dq1 = direction of steepest descent
-              # dq1_unit = unit vector of dq1
-              gradf1 = dq1 = depstrip(self.forces.f)
-
-              # Move direction for steepest descent and 1st conjugate gradient step
-              dq1_unit = dq1 / np.sqrt(np.dot(gradf1.flatten(), gradf1.flatten())) 
-              info(" @GEOP: Determined SD direction", verbosity.debug)
-      
-          else:
-          
-              # Conjugate gradient, Polak-Ribiere
-              # gradf1: force at current atom position
-              # gradf0: force at previous atom position
-              # dq1 = direction to move
-              # dq0 = previous direction
-              # dq1_unit = unit vector of dq1
-              gradf0 = self.cg_old_f
-              dq0 = self.cg_old_d
-              gradf1 = depstrip(self.forces.f)
-              beta = np.dot((gradf1.flatten() - gradf0.flatten()), gradf1.flatten()) / (np.dot(gradf0.flatten(), gradf0.flatten()))
-              dq1 = gradf1 + max(0.0, beta) * dq0
-              dq1_unit = dq1 / np.sqrt(np.dot(dq1.flatten(), dq1.flatten()))
-              info(" @GEOP: Determined CG direction", verbosity.debug)
-
-          # Store force and direction for next CG step
-          self.cg_old_d[:] = dq1
-          self.cg_old_f[:] = gradf1
-   
-          if (len(self.fixatoms)>0):
-              for dqb in dq1_unit:
-                  dqb[self.fixatoms*3] = 0.0
-                  dqb[self.fixatoms*3+1] = 0.0
-                  dqb[self.fixatoms*3+2] = 0.0
-      
-          self.lm.set_dir(depstrip(self.beads.q), dq1_unit)
-
-          # Reuse initial value since we have energy and forces already
-          u0, du0 = (self.forces.pot.copy(), np.dot(depstrip(self.forces.f.flatten()), dq1_unit.flatten()))
-
-          # Do one SD/CG iteration; return positions and energy
-          (x, fx) = min_brent(self.lm, fdf0=(u0, du0), x0=0.0, 
-                  tol=self.ls_options["tolerance"], 
-                  itmax=self.ls_options["iter"], init_step=self.ls_options["step"]) 
-
-          # Automatically adapt the search step for the next iteration. 
-          # Relaxes better with very small step --> multiply by factor of 0.1 or 0.01
-          self.ls_options["step"] = 0.1 * x * self.ls_options["adaptive"] + (1 - self.ls_options["adaptive"]) * self.ls_options["step"] 
-      
-          self.beads.q += dq1_unit * x
-          info(" @GEOP: Updated bead positions", verbosity.debug)
-
-      self.qtime += time.time()
-      
-      # Determine conditions for converged relaxation
-      if ((fx - u0) / self.beads.natoms <= self.tolerances["energy"])\
-              and ((np.amax(np.absolute(self.forces.f)) <= self.tolerances["force"])\
-                  or (np.sqrt(np.dot(self.forces.f.flatten() - self.cg_old_f.flatten(),\
-                      self.forces.f.flatten() - self.cg_old_f.flatten())) == 0.0))\
-              and (x <= self.tolerances["position"]):
-          softexit.trigger("Geometry optimization converged. Exiting simulation")
+            #displaces by -delta along kth normal mode.
+            self.dbeads.q = self.beads.q + dev
+            plus = - depstrip(self.dforces.f).copy().flatten()
+            #displaces by -delta along kth normal mode.
+            self.dbeads.q = self.beads.q - dev
+            minus =  - depstrip(self.dforces.f).copy().flatten()
+            #computes a row of the refin    ed dynmatrix, in the basis of the eigenvectors of the first dynmatrix            
+            
+            dmrowk = (plus-minus)/(2*edelta/vknorm)
+            
+            self.dynmatrix_r[k] = np.dot(self.V.T, dmrowk)
+                        
+        if k >= 3*self.beads.natoms-1:
+            # symmetrize
+            self.dynmatrix = 0.5*(self.dynmatrix+np.transpose(self.dynmatrix))
+            
+            if not self.frefine:            
+                self.printall("PHONONS", self.dynmatrix)
+                if self.mode=="std":
+                    softexit.trigger("Dynamic matrix is calculated. Exiting simulation")                    
+            else:
+                self.dynmatrix_r = 0.5*(self.dynmatrix_r+np.transpose(self.dynmatrix_r))
+                self.printall("PHONONS-R", self.dynmatrix_r)
+                # transform in Cartesian basis
+                self.dynmatrix_r = np.dot(self.U,np.dot(self.dynmatrix_r,np.transpose(self.U)))
+                self.printall("PHONONS-RC", self.dynmatrix_r)
+                softexit.trigger("Dynamic matrix is calculated. Exiting simulation")                    
+                

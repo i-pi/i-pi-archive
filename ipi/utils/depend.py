@@ -138,7 +138,7 @@ class depend_base(object):
         self._dependants = dependants
 
         # Don't taint self if the object is a primitive one. However, do propagate tainting to dependants if required.
-        if tainted:
+        if tainted[0]:
             if self._func is None:
                 self.taint(taintme=False)
             else:

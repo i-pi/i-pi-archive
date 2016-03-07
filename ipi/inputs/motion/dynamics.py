@@ -4,10 +4,10 @@
 # i-PI Copyright (C) 2014-2015 i-PI developers
 # See the "licenses" directory for full license information.
 
-
+import numpy as np
 import ipi.engine.thermostats
 import ipi.engine.barostats
-from ipi.utils.inputvalue import InputDictionary, InputAttribute, InputValue, input_default
+from ipi.utils.inputvalue import InputDictionary, InputAttribute, InputValue, InputArray, input_default
 from ipi.inputs.barostats import InputBaro
 from ipi.inputs.thermostats import InputThermo
 
@@ -40,8 +40,8 @@ class InputDynamics(InputDictionary):
         "mode": (InputAttribute, {"dtype":   str,
                                   "default": 'nve',
                                   "help":    "The ensemble that will be sampled during the simulation. ",
-                                  "options": ['nve', 'nvt', 'npt', 'nst', 'sc']})
-    }
+                                  "options": ['nve', 'nvt', 'npt', 'nst', 'mts', 'sc']})
+              }
 
     fields = {
         "thermostat": (InputThermo, {"default": input_default(factory=ipi.engine.thermostats.Thermostat),
@@ -51,8 +51,11 @@ class InputDynamics(InputDictionary):
         "timestep": (InputValue, {"dtype":     float,
                                   "default":   1.0,
                                   "help":      "The time step.",
-                                  "dimension": "time"})
-    }
+                                  "dimension": "time"}),
+        "nmts" : (InputArray, {"dtype" : int,
+                               "default" : np.zeros(0,int),
+                               "help"    : "Number of iterations for each MTS level (including the outer loop, that should in most cases have just one iteration)."})
+             }
 
     dynamic = {}
 
@@ -73,6 +76,7 @@ class InputDynamics(InputDictionary):
         self.timestep.store(dyn.dt)
         self.thermostat.store(dyn.thermostat)
         self.barostat.store(dyn.barostat)
+        self.nmts.store(dyn.nmts) 
 
     def fetch(self):
         """Creates an ensemble object.

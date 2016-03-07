@@ -12,7 +12,6 @@ appropriate conserved energy quantity for the ensemble of choice.
 
 
 import time
-from copy import deepcopy
 
 import numpy as np
 

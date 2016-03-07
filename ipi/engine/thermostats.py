@@ -532,9 +532,6 @@ class ThermoGLE(Thermostat):
       """Calculates the matrix for the coloured noise."""
 
       SST = Constants.kb*(self.C - np.dot(self.T,np.dot(self.C,self.T.T)))
-      print self.A
-      print self.T
-      print SST
       # Uses a symetric decomposition rather than Cholesky, since it is more stable
       return root_herm(SST)
       #return stab_cholesky(SST)

@@ -108,17 +108,19 @@ class NormalModes(dobject):
          ensemble: An ensemble object to be bound.
       """
 
-      if beads is None: beads = motion.beads
-      if forces is None: forces = motion.forces
-      
+      self.ensemble = ensemble
+      self.motion = motion      
+      if beads is None: 
+        self.beads = motion.beads
+      else:
+        self.beads = beads
+      self.forces = forces
       self.nbeads = beads.nbeads
       self.natoms = beads.natoms
 
       # stores a reference to the bound beads and ensemble objects
-      self.beads = beads
-      self.forces = forces
       self.ensemble = ensemble
-      self.motion = motion      
+      deppipe(motion, "dt", self, "dt")
 
       # sets up what's necessary to perform nm transformation.
       if self.transform_method == "fft":
@@ -181,6 +183,7 @@ class NormalModes(dobject):
             func=self.get_omegak, dependencies=[dget(self,"omegan")]) )
 
       # sets up "dynamical" masses -- mass-scalings to give the correct RPMD/CMD dynamics
+      # TODO: Do we really need different names and variable names? Seems confusing.
       dset(self,"nm_factor", depend_array(name="nmm",
          value=np.zeros(self.nbeads, float), func=self.get_nmm,
             dependencies=[dget(self,"nm_freqs"), dget(self,"mode") ]) )
