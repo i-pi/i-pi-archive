@@ -1828,7 +1828,7 @@ class Trajectories(dobject):
                      'func': (lambda : self.system.beads.pc/self.system.beads.m3[0])},
       "x_centroid_sc": {"dimension" : "length",
                      "help": "The suzuki-chin centroid coordinates.",
-                     'func': (lambda : 2*np.sum(self.beads.q[::2,:],axis=0)/self.system.beads.nbeads)},
+                     'func': (lambda : 2*np.sum(self.system.beads.q[::2,:],axis=0)/self.system.beads.nbeads)},
       "v_centroid_sc": {"dimension" : "velocity",
                      "help": "The suzuki-chin centroid velocity.",
                      'func': (lambda : 2*np.sum((self.system.beads.p/self.system.beads.m3)[::2,:],axis=0)/self.system.beads.nbeads)},
