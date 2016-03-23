@@ -14,8 +14,8 @@
       <cell mode='abc'> [35.233, 35.233, 35.233] </cell>
    </initialize>
    <forces>
-   <force> qtip4pf </force>
+   <force forcefield="qtip4pf"> </force>
    </forces>
-   <mover mode='calcphonons'><calculator><epsilon>0.001</epsilon></calculator>   </mover>
+   <motion mode='calcphonons'><calculator><pos_shift>0.001</pos_shift></calculator>   </motion>
  </system>
 </simulation>
