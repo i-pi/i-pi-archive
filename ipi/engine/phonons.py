@@ -136,10 +136,10 @@ class DynMatrixMover(Motion):
         m=depstrip(self.beads.m)
         natoms=depstrip(self.beads.natoms)
         
-        D=np.zeros((3*natoms,6))  #translation matrix
+        D=np.zeros((6,3*natoms))  #translation matrix
         P=np.zeros((3*natoms))    #calcultor of rtation matrix
         qcom=np.zeros(natoms,3)  #coordinate centered in the center of mass
-        com=np.dot(np.reshape(q,(natoms,3)),m) /m.sum()    #center of mass
+        com=np.dot(np.transpose(reshape(q,(natoms,3))),m) /m.sum()    #center of mass
         qcom= np.reshape(q,(natoms,3))-com
         n=0
         while n<natoms:
