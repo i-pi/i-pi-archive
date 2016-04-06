@@ -130,6 +130,39 @@ class DynMatrixMover(Motion):
             print >> outfile, ' '.join(map(str, eigmode[i]))
         outfile.close()
             
+    def get_moi(self, dmat):
+        #yuggl
+        q=depstrip(self.beads.q)
+        m=depstrip(self.beads.m)
+        natoms=depstrip(self.beads.natoms)
+        
+        D=np.zeros((3*natoms,6))  #translation matrix
+        P=np.zeros((3*natoms))    #calcultor of rtation matrix
+        qcom=np.zeros(natoms,3)  #coordinate centered in the center of mass
+        com=np.dot(np.reshape(q,(natoms,3)),m) /m.sum()    #center of mass
+        qcom= np.reshape(q,(natoms,3))-com
+        n=0
+        while n<natoms:
+            I=I+np.dot(-np.cross(qcom[n],np.identity(3)),np.cross(qcom[n],np.identity(3)))*m[n]   #moment of inertia
+            n=n+1
+        X=np.linalg.eig(I)[1]       #matrix used to diaganolise the moment of inertia
+        D[0]=np.tile([1,0,0],natoms)/self.ism
+        D[1]=np.tile([0,1,0],natoms)/self.ism
+        D[2]=np.tile([0,0,1],natoms)/self.ism
+        
+        
+        P=np.dot(X,qcom) 
+        j=0
+        #D[3:5]=np.cross(np.ndarray.flatten(P),D[0:2])
+        while j<natoms:
+             D[j:j+3,3]=(P[1]*X[:,2]-P[2]*X[:,1])/(np.sqrt(self.m3[j]))
+             D[j:j+3,4]=(P[2]*X[:,0]-P[0]*X[:,2])/(np.sqrt(self.m3[j]))
+             D[j:j+3,5]=(P[0]*X[:,1]-P[1]*X[:,0])/(np.sqrt(self.m3[j]))
+             j=j+1
+
+
+         return D
+
     def asr_apply(self, dmatx):
         # Always symmetrize
         dmatx = (np.transpose(dmatx) + dmatx) * 0.5
