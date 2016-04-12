@@ -15,8 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http.//www.gnu.org/licenses/>.
 
-.PHONY: all clean graphene h2o-piglet_2 h2o-piglet_4 h2o-piglet_8 h2o-rpc h2o-pimd ice-npt h2o-mts
-all: graphene h2o-piglet_2 h2o-piglet_4 h2o-piglet_8 h2o-rpc h2o-pimd ice-npt h2o-mts
+.PHONY: all clean graphene h2o-piglet_2 h2o-piglet_4 h2o-piglet_8 h2o-pimd-rpc h2o-pimd ice-npt h2o-mts ice-nst isof-vapor isof-water isofsc-vapor isofsc-water 
+all: graphene h2o-piglet_2 h2o-piglet_4 h2o-piglet_8 h2o-pimd-rpc h2o-pimd ice-npt h2o-mts ice-nst isof-vapor isof-water isofsc-vapor isofsc-water 
 
 LAMMPS:=lmp_serial
 IPI:=../../../i-pi
@@ -59,13 +59,38 @@ ice-npt:
         $(call run_lammps,4,in.ice) \
 	wait
 
+ice-nst:
+	cd ice-npt; $(IPI) input.xml & sleep 5; \
+        $(call run_lammps,4,in.ice) \
+	wait
+
+isof-vapor:
+	cd isof-vapor; $(IPI) input.xml & sleep 5; \
+        $(call run_lammps,4,in.vapor) \
+	wait
+
+isof-water:
+	cd isof-water; $(IPI) input.xml & sleep 5; \
+        $(call run_lammps,4,in.water) \
+	wait
+
+isofsc-vapor:
+	cd isofsc-vapor; $(IPI) input.xml & sleep 5; \
+        $(call run_lammps,4,in.vapor) \
+	wait
+
+isofsc-water:
+	cd isofsc-water; $(IPI) input.xml & sleep 5; \
+        $(call run_lammps,4,in.water) \
+	wait
+
 h2o-mts:
 	cd h2o-mts; $(IPI) input.xml & sleep 5; \
         $(call run_lammps,4,in.water_longrange) \
         $(call run_lammps,4,in.water_shortrange) \
 	wait
 
-h2o-rpc:
+h2o-pimd-rpc:
 	cd h2o-pimd-rpc; $(IPI) input.xml & sleep 5; \
         $(call run_lammps,4,in.water_shortrange) \
         $(call run_lammps,1,in.water_longrange) \
@@ -78,4 +103,6 @@ clean:
 	cd h2o-pimd-rpc; \
 	rm -f RESTART EXIT log.lammps rpc.*; cd ..; \
 	cd graphene; \
-	rm -f graph.* RESTART EXIT log.lammps graphene.lammpstraj nohup.out; cd ..
+	rm -f graph.* RESTART EXIT log.lammps graphene.lammpstraj nohup.out; cd ..; \
+	cd h2o-mts; \
+	rm -f simulation.pos_?.xyz simulation.restart; cd ..
