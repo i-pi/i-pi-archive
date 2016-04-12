@@ -15,8 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http.//www.gnu.org/licenses/>.
 
-.PHONY: all clean graphene h2o-piglet_2 h2o-piglet_4 h2o-piglet_8 h2o-rpc h2o-pimd
-all: graphene h2o-piglet_2 h2o-piglet_4 h2o-piglet_8 h2o-rpc h2o-pimd
+.PHONY: all clean graphene h2o-piglet_2 h2o-piglet_4 h2o-piglet_8 h2o-rpc h2o-pimd ice-npt
+all: graphene h2o-piglet_2 h2o-piglet_4 h2o-piglet_8 h2o-rpc h2o-pimd ice-npt
 
 LAMMPS:=lmp_serial
 IPI:=../../../i-pi
@@ -38,7 +38,7 @@ h2o-piglet_2:
 	cd h2o-piglet.2; $(IPI) input.xml & sleep 5; \
         $(call run_lammps,2,in.water) \
 	wait
-	
+
 h2o-piglet_4:
 	cd h2o-piglet.4; $(IPI) input.xml & sleep 5; \
         $(call run_lammps,4,in.water) \
@@ -52,6 +52,11 @@ h2o-piglet_8:
 h2o-pimd:
 	cd h2o-pimd; $(IPI) input.xml & sleep 5; \
         $(call run_lammps,4,in.water) \
+	wait
+
+ice-npt:
+	cd ice-npt; $(IPI) input.xml & sleep 5; \
+        $(call run_lammps,4,in.ice) \
 	wait
 
 h2o-rpc:
