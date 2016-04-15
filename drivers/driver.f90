@@ -358,26 +358,10 @@
 
                
                atoms = atoms*0.52917721d0    ! pot_nasa wants angstrom
-               write(10,*) atoms
-
                call pot_nasa(atoms,forces,pot)
                pot = pot*0.0015946679     ! pot_nasa gives kcal/mol
                forces = forces * (-0.00084386191) ! pot_nasa gives V in kcal/mol/angstrom
 
-               write(*,*) "POT", pot
-               ! vir = 0.0d0 ! no virial computed
-
-               ! datoms=atoms
-               ! DO i=1,7  ! forces by finite differences
-               !    DO j=1,3                     
-               !       datoms(i,j)=atoms(i,j)+fddx
-               !       CALL zundelpot(dpot, datoms)
-               !       datoms(i,j)=atoms(i,j)-fddx
-               !       CALL zundelpot(forces(i,j), datoms)
-               !       datoms(i,j)=atoms(i,j)
-               !       forces(i,j)=(forces(i,j)-dpot)/(2*fddx)
-               !    ENDDO
-               ! ENDDO
                ! do not compute the virial term
             ELSE
                IF ((allocated(n_list) .neqv. .true.)) THEN
