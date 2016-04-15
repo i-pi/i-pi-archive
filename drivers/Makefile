@@ -24,7 +24,8 @@
 FLAGS=-g -O3 -Wall
 CFLAGS=$(FLAGS)
 FFLAGS=$(FLAGS) -ffree-line-length-none -ffixed-line-length-none -Wno-maybe-uninitialized
-MODULES=distance.f90 LJ.f90 SG.f90 nasa.f90 
+
+MODULES=distance.f90 LJ.f90 SG.f90 pes/nasa.f90 
 PES=pes/zundel.f pes/morse.f pes/qtip4pf.f
 OBJECTS=$(MODULES:%.f90=%.o) $(PES:%.f=%.o)
 FC=gfortran
@@ -36,7 +37,7 @@ sockets.o: sockets.c
 
 driver.x: $(OBJECTS) sockets.o fsockets.o driver.o | $(OBJECTS)
 	$(FC) $(FFLAGS) -o driver.x $^
-	ln -s ../drivers/driver.x ../bin/i-pi-driver
+	ln -fs ../drivers/driver.x ../bin/i-pi-driver
 
 driver_pure.x: $(OBJECTS) fsockets_pure.o driver.o | $(OBJECTS)
 	$(FC) $(FFLAGS) -o driver_pure.x $^
@@ -48,4 +49,4 @@ driver_pure.x: $(OBJECTS) fsockets_pure.o driver.o | $(OBJECTS)
 	$(FC) $(FFLAGS) -c $< -o $@
 
 clean:
-	rm -f *.o *.mod *.x ../bin/i-pi-driver
+	rm -f *.o *.mod *.x */*.mod */*.o ../bin/i-pi-driver

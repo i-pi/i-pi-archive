@@ -494,15 +494,11 @@ double precision :: dVa1,dVa2,dVb, dVcdr1, dVcdr2, dVcdcth, sum0,sum1,sum2,sum3
 double precision :: x1, x2, x3
 double precision :: costhe, costh
 double precision :: efac
-integer          :: i, j, inI, inJ, inK, ix, iy
+integer          :: j, inI, inJ, inK
 double precision :: deoh, phh1
 double precision, dimension(245) :: c5z
-double precision :: P1, P2, PL1, PL2, PC0, exp1, exp2
+double precision :: exp1, exp2
 
-! ROH1(:) = r1(1:3, 2) - r1(1:3,1)            ! vector(OH1)
-! write(11,*) r1(2,:), '-----', r1(1,:)
-! ROH2(:) = r1(1:3, 3) - r1(1:3,1)            ! vector(OH2)
-! RHH(:)  = r1(1:3, 2) - r1(1:3,3)            ! vector(H1H2)
 ROH1(:) = r1(2,:) - r1(1,:)            ! vector(OH1)
 ROH2(:) = r1(3,:) - r1(1,:)            ! vector(OH2)
 RHH(:)  = r1(2,:) - r1(3,:)            ! vector(H1H2)
@@ -591,8 +587,8 @@ double precision, dimension(0:15,3) :: fmat
 double precision :: dROH1, dROH2, dRHH
 double precision :: x1, x2, x3
 double precision :: costhe, costh
-double precision :: exp1, exp2, efac
-integer          :: i, j, inI, inJ, inK, ix, iy
+double precision :: efac
+integer          :: j, inI, inJ, inK
 double precision :: deoh, phh1
 double precision :: p1, p2, pl1, pl2, pc0
 double precision :: dp1dr1, dp1dr2, dp1dcabc, dp2dr1, dp2dr2, dp2dcabc
@@ -600,7 +596,6 @@ double precision :: defacdr1, defacdr2, dpc0dr1, dpc0dr2, dpc0dcabc
 double precision :: f1q1r13, f1q1r23, f2q1r23, f2q1r13
 double precision :: f1q2r13, f1q2r23, f2q2r23, f2q2r13
 double precision :: bfac
-integer :: ll1, ll2
 double precision :: ath0, ang, dAxB, sinth
 double precision, dimension(3) :: AxB
 
