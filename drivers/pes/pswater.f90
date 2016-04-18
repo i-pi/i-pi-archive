@@ -1,7 +1,7 @@
 !*** Parameters used for the calculation of the potential energy and the
 !*** Dipole moment of the water monomer. Taken from:
 !*** "H. Partridge and D. W. Schwenke, J. Chem. Phys. 106, 4618 (1997)"
-module NASA
+module PSWATER
 implicit none
 double precision :: dms_param1, dms_param2, dms_param3
 integer, dimension(245,3) :: idx
@@ -752,4 +752,4 @@ gradq(3,3,3)=-(gradq(3,1,3)+gradq(3,2,3))
     
 end subroutine dms_nasa
 
-end module NASA
+end module PSWATER

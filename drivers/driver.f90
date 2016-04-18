@@ -29,7 +29,7 @@
       PROGRAM DRIVER
          USE LJ
          USE SG
-         USE NASA
+         USE PSWATER
          USE F90SOCKETS, ONLY : open_socket, writebuffer, readbuffer
       IMPLICIT NONE
 
@@ -123,7 +123,7 @@
                   vstyle = 6
                ELSEIF (trim(cmdbuffer) == "linear") THEN
                   vstyle = 7
-               ELSEIF (trim(cmdbuffer) == "nasa") THEN
+               ELSEIF (trim(cmdbuffer) == "pswater") THEN
                   vstyle = 8
                ELSEIF (trim(cmdbuffer) == "gas") THEN
                   vstyle = 0  ! ideal gas
@@ -183,7 +183,7 @@
          isinit = .true.
       ELSEIF (vstyle == 8) THEN
          IF (par_count /= 0) THEN
-            WRITE(*,*) "Error: no initialization string needed for Nasa."
+            WRITE(*,*) "Error: no initialization string needed for Partridge-Schwenke H2O potential."
             STOP "ENDED" 
          ENDIF   
          isinit = .true.
@@ -350,9 +350,9 @@
                CALL qtip4pf(vpars(1:3),atoms,nat,forces,pot,virial)
                
                ! do not compute the virial term
-            ELSEIF (vstyle == 8) THEN ! Nasa potential. 
+            ELSEIF (vstyle == 8) THEN ! PS water potential. 
                IF (nat/=3) THEN
-                  WRITE(*,*) "Expecting 3 atoms for Nasa potential, O H H "
+                  WRITE(*,*) "Expecting 3 atoms for P-S water potential, O H H "
                   STOP "ENDED"
                ENDIF
 
@@ -362,7 +362,7 @@
                pot = pot*0.0015946679     ! pot_nasa gives kcal/mol
                forces = forces * (-0.00084386191) ! pot_nasa gives V in kcal/mol/angstrom
 
-               ! do not compute the virial term
+               ! does not compute the virial term
             ELSE
                IF ((allocated(n_list) .neqv. .true.)) THEN
                   IF (verbose) WRITE(*,*) " Allocating neighbour lists."

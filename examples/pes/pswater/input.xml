@@ -8,7 +8,7 @@
     <checkpoint stride='100' filename='chk' overwrite='true'/>
     <checkpoint stride='2000' filename='restart' overwrite='false'/>
   </output>
-  <total_steps>1</total_steps>
+  <total_steps>1000</total_steps>
   <prng><seed>23658</seed></prng>
   <ffsocket mode='unix' pbc='false' name='driver'>
     <!--<address>localhost</address>   -->
