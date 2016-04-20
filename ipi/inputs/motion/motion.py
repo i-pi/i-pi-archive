@@ -125,7 +125,7 @@ class InputMotion(Input):
       elif self.mode.fetch() == "neb":
          sc = NEBMover(fixcom=False, fixatoms=None, **self.neb_optimizer.fetch())
       elif self.mode.fetch() == "dynamics":
-         sc = Dynamics(fixcom=False, fixatoms=None, **self.dynamics.fetch())
+         sc = Dynamics(fixcom=self.fixcom.fetch(), fixatoms=self.fixatoms.fetch(), **self.dynamics.fetch())
       else:
          sc = Motion()
          #raise ValueError("'" + self.mode.fetch() + "' is not a supported motion calculation mode.")
