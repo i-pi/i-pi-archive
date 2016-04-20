@@ -360,9 +360,9 @@
                atoms = atoms*0.52917721d0    ! pot_nasa wants angstrom
                call pot_nasa(atoms,forces,pot)
                pot = pot*0.0015946679     ! pot_nasa gives kcal/mol
-               forces = forces * (-0.00084386191) ! pot_nasa gives V in kcal/mol/angstrom
+               forces = forces * (-0.00084329756) ! pot_nasa gives V in kcal/mol/angstrom
 
-               ! does not compute the virial term
+               ! do not compute the virial term
             ELSE
                IF ((allocated(n_list) .neqv. .true.)) THEN
                   IF (verbose) WRITE(*,*) " Allocating neighbour lists."

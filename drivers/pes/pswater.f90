@@ -565,6 +565,7 @@ dr1(:,3) = dVa2*ROH2-dVb*RHH +dVcdr2*ROH2  + &
        dVcdcth*(ROH1(:)/(dROH1*dROH2)-costh*ROH2(:)/(dROH2*dROH2))
 dr1(:,1) = -(dr1(:,2)+dr1(:,3))
 dr1 = dr1*0.00285914375100642899d0
+dr1 = transpose(dr1)
 
 end subroutine pot_nasa
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
