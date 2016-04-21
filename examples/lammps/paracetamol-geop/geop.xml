@@ -9,7 +9,7 @@
    </ffsocket>
    <system>
     <initialize nbeads='1'> 
-      <file mode='xyz' units="angstrom">  ../geop.xyz </file>
+      <file mode='xyz' units="angstrom">  geop.xyz </file>
       <cell mode='abcABC'> [13.18034026,  17.29206049,  24.21758034, 90.0, 66.14, 90.0] </cell>
     </initialize>
     <forces>
