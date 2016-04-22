@@ -19,7 +19,7 @@
 all: graphene h2o-piglet_2 h2o-piglet_4 h2o-piglet_8 h2o-pimd-rpc h2o-pimd ice-npt h2o-mts ice-nst isof-vapor isof-water isofsc-vapor isofsc-water 
 
 LAMMPS:=lmp_serial
-IPI:=../../../i-pi
+IPI:=../../../bin/i-pi
 
 define run_lammps
   for i in `seq 1 $1`; do \
@@ -92,8 +92,8 @@ h2o-mts:
 
 h2o-pimd-rpc:
 	cd h2o-pimd-rpc; $(IPI) input.xml & sleep 5; \
-        $(call run_lammps,4,in.water_shortrange) \
-        $(call run_lammps,1,in.water_longrange) \
+	$(call run_lammps,4,in.water_shortrange) \
+	$(call run_lammps,1,in.water_longrange) \
 	wait
 
 clean:
