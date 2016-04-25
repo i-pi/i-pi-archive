@@ -1,3 +1,6 @@
+A test and example for the Partridge-Schwenke water 
+monomer potential
+
 To run the example:
 -------------------
 
