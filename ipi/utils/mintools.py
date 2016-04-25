@@ -71,7 +71,9 @@ def bracket(fdf, fdf0=None, x0=0.0, init_step=1.0e-3):
 
     # x0: initial point of evaluation (e.g. initial atomic position)
     # ax, bx, cx: bracketing points with ax < bx < cx
+    # bracketing finished if an ax, bx, cx with ax < bx < cx is found
     # fa, fb, fc: value of function at ax, bx, cx
+    
     if fdf0 is None: fdf0 = fdf(x0)
     ax = x0 
     fa, dfa = fdf0 
@@ -98,7 +100,7 @@ def bracket(fdf, fdf0=None, x0=0.0, init_step=1.0e-3):
     info(" @BRACKET: Evaluated initial bracket: (%f:%f, %f:%f, %f:%f)" % (ax, fa, bx, fb, cx, fc), verbosity.debug) 
 
     # Loop until acceptable bracketing condition is achieved
-    # u is a point between two of the bracketing points
+    # u is a point between two of the bracketing points, 
     # Use parabolic extrapolation to find u. "tiny" prevents possible division by zero
     while fb > fc:
         r = (bx - ax) * (fb - fc)
@@ -115,6 +117,9 @@ def bracket(fdf, fdf0=None, x0=0.0, init_step=1.0e-3):
         if ((bx - u) * (u - cx)) > 0.0:
             fu, dfu = fdf(u)
             info(" @BRACKET: Evaluated new bracket point", verbosity.debug) 
+            #Found minimum between b and c?
+            #-b------u-----c shift:
+            #-a------b-----c
             if fu < fc:
                 ax = bx
                 bx = u
@@ -124,20 +129,26 @@ def bracket(fdf, fdf0=None, x0=0.0, init_step=1.0e-3):
                 dfb = dfu
                 info(" @BRACKET: Bracketing completed: (%f:%f, %f:%f, %f:%f)" % (ax, fa, bx, fb, cx, fc), verbosity.debug)
                 return (ax, bx, cx, fb, dfb)
-
+			#minimum between a and u?
+			#-a-----b-----u-----c shift:
+			#-a-----b-----c
             elif fu > fb:
                 cx = u
                 fc = fu
                 dfc = dfu
                 info(" @BRACKET: Bracketing completed", verbosity.debug)
                 return (ax, bx, cx, fb, dfb)
-
+			#parabolic extrapolation was not successful. Use golden value (initial guess, default magnification).  
             u = cx + gold * (cx - bx)
             fu, dfu = fdf(u)
             info(" @BRACKET: Evaluated new bracket point", verbosity.debug) 
+        # c < u (parabolic fit) < ulim?
         elif ((cx - u) * (u - ulim)) > 0.0:
             fu, dfu = fdf(u)
             info(" @BRACKET: Evaluated new bracket point", verbosity.debug) 
+            #minimum between c and u+gold(u-cx)?
+            #-c----u----u+gold(u-cx) shift:
+            #-b----c----u
             if fu < fc:
                 bx = cx
                 cx = u
@@ -147,17 +158,19 @@ def bracket(fdf, fdf0=None, x0=0.0, init_step=1.0e-3):
                 dfb = dfc
                 dfc = dfu
                 fu, dfu = fdf(u)
-                info(" @BRACKET: Evaluated new bracket point", verbosity.debug) 
+                info(" @BRACKET: Evaluated new bracket point", verbosity.debug)
+        # u >= ulim? limit u. 
         elif ((u - ulim) * (ulim - cx)) >= 0.0:
             u = ulim
             fu, dfu = fdf(u)
             info(" @BRACKET: Evaluated new bracket point", verbosity.debug) 
+        # reject parabolic u, use golden value (default magnification)
         else:
             u = cx + gold * (cx - bx)
             fu, dfu = fdf(u)
             info(" @BRACKET: Evaluated new bracket point", verbosity.debug) 
 
-        # Shift points
+        # Shift points, so that points to continue are ax, bx, cx
         ax = bx
         bx = cx
         cx = u
@@ -195,6 +208,7 @@ def min_brent(fdf, fdf0=None, x0=0.0, tol=1.0e-6, itmax=100, init_step=1.0e-3):
     (ax, bx, cx, fb, dfb) = bracket(fdf, fdf0, x0, init_step)
     
     # Set bracket points
+    #is that necessary? output of bracket should provide it...
     if ax < cx:
         a = ax
     else:
@@ -225,7 +239,7 @@ def min_brent(fdf, fdf0=None, x0=0.0, tol=1.0e-6, itmax=100, init_step=1.0e-3):
         tol1 = tol * abs(x) + zeps
         tol2 = 2.0 * tol1
 
-        # Test for satisfactory completion
+        # Test for satisfactory completion: |b-a|<=tol*abs(x)
         if abs(x - xm) <= (tol2 - 0.5 * (b - a)):
             info(" @MINIMIZE: Finished minimization, energy = %f" % fx, verbosity.debug)
             return (x, fx)
@@ -235,7 +249,7 @@ def min_brent(fdf, fdf0=None, x0=0.0, tol=1.0e-6, itmax=100, init_step=1.0e-3):
             d1 = 2.0 * (b - a)
             d2 = d1
 
-            # Secant method with both d points
+            # Secant method with both d points (find zero point of derivative)
             if dfw != dfx:
                 d1 = (w - x) * dfx / (dfx - dfw)
             if dfv != dfx:
@@ -243,6 +257,7 @@ def min_brent(fdf, fdf0=None, x0=0.0, tol=1.0e-6, itmax=100, init_step=1.0e-3):
 
             # Choose estimate based on derivative at x and move distance on step
             # before last
+            # estimates should be within the bracket
             u1 = x + d1
             u2 = x + d2
             ok1 = ((a - u1) * (u1 - b) > 0.0) and (dfx * d1 <= 0.0)
@@ -250,7 +265,8 @@ def min_brent(fdf, fdf0=None, x0=0.0, tol=1.0e-6, itmax=100, init_step=1.0e-3):
             olde = e
             e = d
 
-            # Take an acceptable d; if both are acceptable, choose smallest
+            # Take an acceptable d (x+d1 and x+d2 within bracket and d1,d2 have different sign from dfx); 
+            #if both are acceptable, choose smallest
             if ok1 or ok2:
                 if ok1 and ok2:
                     if abs(d1) < abs(d2):
@@ -261,16 +277,22 @@ def min_brent(fdf, fdf0=None, x0=0.0, tol=1.0e-6, itmax=100, init_step=1.0e-3):
                     d = d1
                 else:
                     d = d2
+                # movement must be less than half of the movement of the step before last 
+                #(better not to punish algorithm for one bad step)
+                #(e: last step, olde: step before last)
                 if abs (d) <= abs (0.5 * olde):
                     u = x + d
                     if ((u - a) < tol2) or ((b - u) < tol2):
                          d = math.copysign(tol1, (xm - x))
                     else:
+                    # new d with d = 0.5*e
+                    # which segment is decided by sign of derivative
                         if dfx >= 0.0:
                             e = a - x
                         else:
                             e = b - x
                         d = 0.5 * e
+            #conditions for d1,d2 not fulfilled, new d = 0.5*e
             else:
                 if dfx >= 0.0:
                     e = a - x
@@ -283,6 +305,8 @@ def min_brent(fdf, fdf0=None, x0=0.0, tol=1.0e-6, itmax=100, init_step=1.0e-3):
             else:
                 e = b - x
             d = 0.5 * e
+        # one function evaluation per iteration
+        # COUNT...
         if abs(d) >= tol1:
             u = x + d
             fu, dfu = fdf(u)
@@ -290,16 +314,17 @@ def min_brent(fdf, fdf0=None, x0=0.0, tol=1.0e-6, itmax=100, init_step=1.0e-3):
             u = x + math.copysign(tol1, d)
             fu, dfu = fdf(u)
          
-            # If minimum step goes uphill, minimum has been found
+            # If minimum step in downhill direction goes uphill, minimum has been found
             if fu > fx:
                 info(" @MINIMIZE: Finished minimization, energy = %f" % fx, verbosity.debug)
                 return (x, fx)
-                
+        # order for next step: a < u (later x) < b
         if fu <= fx:
             if u >= x:
                 a = x
             else:
                 b = x
+            # shift for next step
             v = w
             fv = fw
             dfv = dfw
