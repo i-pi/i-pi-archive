@@ -23,7 +23,7 @@ Classes:
 
 import numpy as np
 import ipi.engine.initializer
-from ipi.engine.motion import Motion, Dynamics, Replay, GeopMover, NEBMover
+from ipi.engine.motion import Motion, Dynamics, Replay, GeopMotion, NEBMover
 from ipi.utils.inputvalue import *
 from ipi.inputs.thermostats import *
 from ipi.inputs.initializer import *
@@ -87,7 +87,7 @@ class InputMotion(Input):
       elif type(sc) is Replay:
          self.mode.store("replay")
          tsc = 0
-      elif type(sc) is GeopMover:
+      elif type(sc) is GeopMotion:
          self.mode.store("minimize")
          self.optimizer.store(sc)
          tsc = 1
@@ -121,7 +121,7 @@ class InputMotion(Input):
       if self.mode.fetch() == "replay":
          sc = Replay(fixcom=False, fixatoms=None, intraj=self.file.fetch())
       elif self.mode.fetch() == "minimize":
-         sc = GeopMover(fixcom=False, fixatoms=None, **self.optimizer.fetch())
+         sc = GeopMotion(fixcom=False, fixatoms=None, **self.optimizer.fetch())
       elif self.mode.fetch() == "neb":
          sc = NEBMover(fixcom=False, fixatoms=None, **self.neb_optimizer.fetch())
       elif self.mode.fetch() == "dynamics":

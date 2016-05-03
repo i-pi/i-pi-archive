@@ -18,9 +18,9 @@ from ipi.utils.softexit import softexit
 from ipi.utils.mintools import min_brent, BFGS, L_BFGS
 from ipi.utils.messages import verbosity, info
 
-__all__ = ['GeopMover']
+__all__ = ['GeopMotion']
 
-class GeopMover(Motion):
+class GeopMotion(Motion):
     """Geometry optimization routine. Controls direction choice for
     steepest descent and conjugate gradient. Checks for satisfaction of
     tolerances to exit minimization.
@@ -57,14 +57,14 @@ class GeopMover(Motion):
                  corrections=5,
                  qlist=np.zeros(0, float),
                  glist=np.zeros(0, float)):
-        """Initialises GeopMover.
+        """Initialises GeopMotion.
 
         Args:
            fixcom: An optional boolean which decides whether the centre of mass
               motion will be constrained or not. Defaults to False.
         """
 
-        super(GeopMover, self).__init__(fixcom=fixcom, fixatoms=fixatoms)
+        super(GeopMotion, self).__init__(fixcom=fixcom, fixatoms=fixatoms)
         
         # optimization options
 
@@ -99,7 +99,7 @@ class GeopMover(Motion):
         
     def bind(self, ens, beads, nm, cell, bforce, prng):
         
-        super(GeopMover,self).bind(ens, beads, nm, cell, bforce, prng)
+        super(GeopMotion,self).bind(ens, beads, nm, cell, bforce, prng)
         
         self.optimizer.bind(self)
        
@@ -120,10 +120,10 @@ class LineMapper(object):
     def __init(self):
         self.x0 = self.d = None
         
-    def bind(self, ens):
-        self.dbeads = ens.beads.copy()
-        self.dcell = ens.cell.copy()
-        self.dforces = ens.forces.copy(self.dbeads, self.dcell)
+    def bind(self, dumop):
+        self.dbeads = dumop.beads.copy()
+        self.dcell = dumop.cell.copy()
+        self.dforces = dumop.forces.copy(self.dbeads, self.dcell)
     
     def set_dir(self, x0, mdir):
         self.x0 = x0.copy()
@@ -154,10 +154,10 @@ class GradientMapper(object):
         self.d = None
         self.xold = None
         
-    def bind(self, ens):
-        self.dbeads = ens.beads.copy()
-        self.dcell = ens.cell.copy()
-        self.dforces = ens.forces.copy(self.dbeads, self.dcell)
+    def bind(self, dumop):
+        self.dbeads = dumop.beads.copy()
+        self.dcell = dumop.cell.copy()
+        self.dforces = dumop.forces.copy(self.dbeads, self.dcell)
         
     def __call__(self,x):
         self.dbeads.q = x
@@ -193,11 +193,6 @@ class DummyOptimizer(dobject):
         self.forces = geop.forces
         self.fixcom = geop.fixcom
         self.fixatoms = geop.fixatoms
-#, nm, cell, bforce, prng) 
-
-
-
-
         
         self.lm.bind(self)
         self.gm.bind(self)
