@@ -47,7 +47,7 @@ class GeopMotion(Motion):
     """
 
     def __init__(self, fixcom=False, fixatoms=None,
-                 mode="sd",
+                 mode="lbfgs",
                  maximum_step=100.0,
                  cg_old_force=np.zeros(0, float),
                  cg_old_direction=np.zeros(0, float),
