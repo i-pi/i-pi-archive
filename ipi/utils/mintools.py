@@ -429,6 +429,8 @@ def min_approx(fdf, x0, fdf0=None, d0=None, max_step=100.0, tol=1.0e-6, itmax=10
                 tmplam = -slope / (2.0 * (fx - f0 - slope))
             
             # Subsequent backtracks
+            # coefficient should lie between 0.1*alam and 0.5*alam (= 0.1*lambda_1 and 0.5*lambda_1),
+            # otherwise step lengths are too small
             else:
                 rhs1 = fx - f0 - alam * slope
                 rhs2 = f2 - f0 - alam2 * slope
@@ -480,6 +482,7 @@ def BFGS(x0, d0, fdf, fdf0=None, invhessian=None, max_step=100, tol=1.0e-6, itma
     """
     
     # Original function value, gradient, other initializations
+    # initial guess of inverse Hessian matrix is unit matrix
     zeps = 1.0e-10
     if fdf0 is None: fdf0 = fdf(x0)
     f0, df0 = fdf0
@@ -491,7 +494,7 @@ def BFGS(x0, d0, fdf, fdf0=None, invhessian=None, max_step=100, tol=1.0e-6, itma
     x = np.zeros(n)
     linesum = np.dot(x0.flatten(), x0.flatten())
     
-    # Initial line direction
+    # Initial line direction (negative gradient at x0)
     xi = d0
 
     # Maximum step size
@@ -517,7 +520,7 @@ def BFGS(x0, d0, fdf, fdf0=None, invhessian=None, max_step=100, tol=1.0e-6, itma
     # Compute difference of gradients
     dg = np.subtract(g, dg)
 
-    # Difference of gradients times current matrix
+    # Difference of gradients times current matrix 
     hdg = np.dot(invhessian, dg)
 
     fac = np.dot(dg.flatten(), xi.flatten())
@@ -690,7 +693,7 @@ def bracket_neb(fdf, fdf0=None, x0=0.0, init_step=1.0e-3):
     info(" @BRACKET: Started bracketing", verbosity.debug)
     info(" @BRACKET: Evaluated first step", verbosity.debug)
 
-    # Switch direction to move downhill, if necessary
+    # Switch direction to move downhill, if necessary, and rearrange
     if fb > fa:
         tmp = ax
         ax = bx
@@ -722,6 +725,9 @@ def bracket_neb(fdf, fdf0=None, x0=0.0, init_step=1.0e-3):
         if ((bx - u) * (u - cx)) > 0.0:
             fu = fdf(u)[1]
             info(" @BRACKET: Evaluated new bracket point", verbosity.debug) 
+            #Found minimum between b and c?
+            #-b------u-----c shift:
+            #-a------b-----c
             if fu < fc:
                 ax = bx
                 bx = u
@@ -729,19 +735,25 @@ def bracket_neb(fdf, fdf0=None, x0=0.0, init_step=1.0e-3):
                 fb = fu
                 info(" @BRACKET: Bracketing completed: (%f:%f, %f:%f, %f:%f)" % (ax, fa, bx, fb, cx, fc), verbosity.debug)
                 return (ax, bx, cx, fb)
-
+			#minimum between a and u?
+            #-a-----b-----u-----c shift:
+            #-a-----b-----c
             elif fu > fb:
                 cx = u
                 fc = fu
                 info(" @BRACKET: Bracketing completed", verbosity.debug)
                 return (ax, bx, cx, fb)
-
+			#parabolic extrapolation was not successful. Use golden value (initial guess, default magnification).
             u = cx + gold * (cx - bx)
             fu = fdf(u)[1]
-            info(" @BRACKET: Evaluated new bracket point", verbosity.debug) 
+            info(" @BRACKET: Evaluated new bracket point", verbosity.debug)
+        # c < u (parabolic fit) < ulim?
         elif ((cx - u) * (u - ulim)) > 0.0:
             fu = fdf(u)[1]
             info(" @BRACKET: Evaluated new bracket point", verbosity.debug) 
+            #minimum between c and u+gold(u-cx)?
+            #-c----u----u+gold(u-cx) shift:
+            #-b----c----u
             if fu < fc:
                 bx = cx
                 cx = u
@@ -750,16 +762,18 @@ def bracket_neb(fdf, fdf0=None, x0=0.0, init_step=1.0e-3):
                 fc = fu
                 fu = fdf(u)[1]
                 info(" @BRACKET: Evaluated new bracket point", verbosity.debug) 
+        # u >= ulim? limit u. 
         elif ((u - ulim) * (ulim - cx)) >= 0.0:
             u = ulim
             fu = fdf(u)[1]
-            info(" @BRACKET: Evaluated new bracket point", verbosity.debug) 
+            info(" @BRACKET: Evaluated new bracket point", verbosity.debug)
+        # reject parabolic u, use golden value (default magnification)
         else:
             u = cx + gold * (cx - bx)
             fu = fdf(u)[1]
             info(" @BRACKET: Evaluated new bracket point", verbosity.debug) 
 
-        # Shift points
+        # Shift points, so that points to continue are ax, bx, cx
         ax = bx
         bx = cx
         cx = u
@@ -821,18 +835,21 @@ def min_brent_neb(fdf, fdf0=None, x0=0.0, tol=1.0e-6, itmax=100, init_step=1.0e-
         tol1 = tol * abs(x) + zeps
         tol2 = 2.0 * tol1
 
-        # Test for satisfactory completion
+        # Test for satisfactory completion: |b-a|<=tol*abs(x)
         if abs(x - xm) <= (tol2 - 0.5 * (b - a)):
             xmin = x
             return xmin, fx
 
         # Complete an iteration if error is greater than tolerance
         # and construct parabolic fit from parameters
+        # assumption: function given at points x,w,v is approximately parabolic near the minimum
+        # x-p/q is point, where derivative of fitted parabola is zero 
         if abs(e) > tol1:
             r = (x - w) * (fx - fv)
             q = (x - v) * (fx - fw)
             p = (x - v) * q - (x - w) * r
             q = 2.0 * (q - r)
+            
             if q > 0.0:
                 p = -p
             q = abs(q)
@@ -840,20 +857,26 @@ def min_brent_neb(fdf, fdf0=None, x0=0.0, tol=1.0e-6, itmax=100, init_step=1.0e-
             e = d
 
             # Determine acceptability of parabolic fit
+            # movement must be less than half of the movement of the step before last: |p/q| <= |0.5*etmp| (old e)
             if (abs(p) >= abs(0.5 * q * etmp)) or (p <= (q * (a-x))) or (p >= (q * (b-x))):
+            # step into larger of the two segments 
                 if x >= xm:
                     e = a - x
                 else:
-                    e = b - x 
+                    e = b - x
+                #conditions for parabolic fit not fulfilled, new d: golden section
                 d = gold * e
 
-            # Take parabolic step
+            # Take parabolic step (conditions fulfilled)
+            # minimum of fitted parabola at point u
             else:
                 d = p / q
                 u = x + d
                 if ((u - a) < tol2) or ((b - u) < tol2):
                     d = abs(tol1) * (xm - x) / abs(xm - x)
+        # if abs(e) <= tol1 (first step in any case)
         else:
+        	# step into larger of the two segments 
             if x < xm:
                 e = a - x
             else:
@@ -863,9 +886,10 @@ def min_brent_neb(fdf, fdf0=None, x0=0.0, tol=1.0e-6, itmax=100, init_step=1.0e-
             u = x + d
         else:
             u = x + abs(tol1) * d / abs(d)
-
+		# one function evaluation per iteration, derivative is computed, too?? 
+		# include count...
         fu = fdf(u)[1]
-
+ 		# order for next step: a < u (later x) < b
         if fu <= fx:
             if (u >= x):
                 a = x
