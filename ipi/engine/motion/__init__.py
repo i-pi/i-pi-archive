@@ -10,5 +10,5 @@
 from .motion import Motion
 from .dynamics import Dynamics
 from .replay import Replay
-from .geop import GeopMover
+from .geop import GeopMotion
 from .neb import NEBMover
