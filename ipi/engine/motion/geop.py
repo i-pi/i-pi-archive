@@ -1,4 +1,6 @@
 """
+Contains classes for different geometry optimization algorithms 
+
 TODO
 
 Algorithms implemented by Michele Ceriotti and Benjamin Helfrecht, 2015
@@ -32,15 +34,15 @@ class GeopMotion(Motion):
         cg_old_direction: move direction on previous step
         invhessian: stored inverse Hessian matrix for BFGS
         ls_options:
-            tolerance: energy tolerance for exiting minimization algorithm
-            iter: maximum number of allowed iterations for minimization algorithm for each MD step
-            step: initial step size for steepest descent and conjugate gradient
-            adaptive: T/F adaptive step size for steepest descent and conjugate
-                gradient
+        {tolerance: energy tolerance for exiting minimization algorithm
+        iter: maximum number of allowed iterations for minimization algorithm for each MD step
+        step: initial step size for steepest descent and conjugate gradient
+        adaptive: T/F adaptive step size for steepest descent and conjugate
+                gradient}
         tolerances:
-            energy: change in energy tolerance for ending minimization
-            force: force/change in force tolerance foe ending minimization
-            position: change in position tolerance for ending minimization
+        {energy: change in energy tolerance for ending minimization
+        force: force/change in force tolerance foe ending minimization
+        position: change in position tolerance for ending minimization}
         corrections: number of corrections to be stored for L-BFGS
         qlist: list of previous positions (x_n+1 - x_n) for L-BFGS. Number of entries = corrections
         glist: list of previous gradients (g_n+1 - g_n) for L-BFGS. Number of entries = corrections
@@ -52,7 +54,7 @@ class GeopMotion(Motion):
                  cg_old_force=np.zeros(0, float),
                  cg_old_direction=np.zeros(0, float),
                  invhessian=np.eye(0, 0, 0, float),
-                 ls_options={"tolerance": 1e-6, "iter": 100.0, "step": 1e-3, "adaptive": 1.0},
+                 ls_options={"tolerance": 1e-6, "iter": 100, "step": 1e-3, "adaptive": 1.0},
                  tolerances={"energy": 1e-8, "force": 1e-8, "position": 1e-8},
                  corrections=5,
                  qlist=np.zeros(0, float),
@@ -66,24 +68,22 @@ class GeopMotion(Motion):
 
         super(GeopMotion, self).__init__(fixcom=fixcom, fixatoms=fixatoms)
         
-        # optimization options
+        # Optimization Options
 
         self.mode = mode
-        
-        # do i need that (everything except mode)??
+        self.max_step = maximum_step
         self.cg_old_f = cg_old_force
         self.cg_old_d = cg_old_direction
         self.invhessian = invhessian
         self.ls_options = ls_options
         self.tolerances = tolerances
-        self.max_step = maximum_step
         self.invhessian = invhessian
         self.corrections = corrections
         self.qlist = qlist
         self.glist = glist
         
         
-        # Classes for options
+        # Classes for minimization routines
         self.optype = mode
         if self.optype == "bfgs":
             self.optimizer = BFGSOptimizer()
@@ -98,9 +98,19 @@ class GeopMotion(Motion):
         
         
     def bind(self, ens, beads, nm, cell, bforce, prng):
+        """Binds beads, cell, bforce and prng to GeopMotion
         
+            Args:
+            beads: The beads object from whcih the bead positions are taken.
+            nm: A normal modes object used to do the normal modes transformation.
+            cell: The cell object from which the system box is taken.
+            bforce: The forcefield object from which the force and virial are taken.
+            prng: The random number generator object which controls random number generation.
+        """
+
         super(GeopMotion,self).bind(ens, beads, nm, cell, bforce, prng)
         
+        # Binds optimizer
         self.optimizer.bind(self)
        
         
@@ -126,12 +136,16 @@ class LineMapper(object):
         self.dforces = dumop.forces.copy(self.dbeads, self.dcell)
     
     def set_dir(self, x0, mdir):
+        # 
         self.x0 = x0.copy()
         self.d = mdir.copy() / np.sqrt(np.dot(mdir.flatten(), mdir.flatten()))
         if self.x0.shape != self.d.shape:
             raise ValueError("Incompatible shape of initial value and displacement direction")
             
     def __call__(self, x):
+        """ computes energy and gradient for optimization step
+            determines new position (x0+d*x)"""
+        
         self.dbeads.q = self.x0 + self.d * x
         e = self.dforces.pot   # Energy
         g = - np.dot(depstrip(self.dforces.f).flatten(), self.d.flatten())   # Gradient
@@ -155,11 +169,14 @@ class GradientMapper(object):
         self.xold = None
         
     def bind(self, dumop):
+        #
         self.dbeads = dumop.beads.copy()
         self.dcell = dumop.cell.copy()
         self.dforces = dumop.forces.copy(self.dbeads, self.dcell)
         
     def __call__(self,x):
+        """computes energy and gradient for optimization step"""
+        
         self.dbeads.q = x
         e = self.dforces.pot   # Energy
         g = - self.dforces.f   # Gradient
@@ -168,16 +185,24 @@ class GradientMapper(object):
             
             
 class DummyOptimizer(dobject):
-
+    """ Dummy class for all optimization classes """
+    
     def __init__(self):
+        """initialises object for LineMapper (1-d function) and for GradientMapper (multi-dimensional function) """
+        
         self.lm = LineMapper()
         self.gm = GradientMapper()
         
     def step(self, step=None):
+        """Dummy simulation time step which does nothing."""
         pass
         
     def bind(self, geop):
-        # Optimization options
+        """ 
+        bind optimization options and call bind function of LineMapper and GradientMapper (get beads, cell,forces)
+        check whether force size, direction size and inverse Hessian size from previous step match system size
+        """
+        
         self.ls_options = geop.ls_options   
         self.tolerances = geop.tolerances   
         self.mode = geop.mode               
@@ -220,7 +245,7 @@ class BFGSOptimizer(DummyOptimizer):
     """ BFGS Minimization """
 
     def step(self, step=None):
-        
+        """ Does one simulation time step."""
         
         self.ptime = 0.0
         self.ttime = 0.0
@@ -231,9 +256,10 @@ class BFGSOptimizer(DummyOptimizer):
         # Initialize approximate Hessian inverse to the identity and direction
         # to the steepest descent direction
          
-        if step == 0:   # or np.sqrt(np.dot(self.bfgsm.d, self.bfgsm.d)) == 0.0: this part for restarting at claimed minimum (optional)
+        if step == 0:   # or np.sqrt(np.dot(self.gm.d, self.gm.d)) == 0.0: this part for restarting at claimed minimum (optional)
             info(" @GEOP: Initializing BFGS", verbosity.debug)
             self.gm.d = depstrip(self.forces.f) / np.sqrt(np.dot(self.forces.f.flatten(), self.forces.f.flatten()))
+            # store actual position to previous position
             self.gm.xold = self.beads.q.copy()
         
         # Current energy and forces
@@ -271,24 +297,25 @@ class BFGSOptimizer(DummyOptimizer):
 
 
 class LBFGSOptimizer(DummyOptimizer):
-
+    """ L-BFGS Minimization """
+    
     def step(self, step=None):
-
+        """ Does one simulation time step """
+        
         self.ptime = 0.0
         self.ttime = 0.0
         self.qtime = -time.time()
 
         info("\nMD STEP %d" % step, verbosity.debug)
         
-        
-            # L-BFGS Minimization
-            # Initialize approximate Hessian inverse to the identity and direction
-            # to the steepest descent direction
-            # Initialize lists of previous positions and gradient
-        if step == 0:   # or np.sqrt(np.dot(self.bfgsm.d, self.bfgsm.d)) == 0.0: <-- this part for restarting at claimed minimum (optional)
+        # Initialize approximate Hessian inverse to the identity and direction
+        # to the steepest descent direction
+        if step == 0:   # or np.sqrt(np.dot(self.gm.d, self.gm.d)) == 0.0: <-- this part for restarting at claimed minimum (optional)
             info(" @GEOP: Initializing L-BFGS", verbosity.debug)
             self.gm.d = depstrip(self.forces.f) / np.sqrt(np.dot(self.forces.f.flatten(), self.forces.f.flatten()))
+            # store actual position to previous position
             self.gm.xold = self.beads.q.copy()
+            # Initialize lists of previous positions and gradient
             self.qlist = np.zeros((self.corrections, len(self.beads.q.flatten())))
             self.glist = np.zeros((self.corrections, len(self.beads.q.flatten())))
 
@@ -339,7 +366,8 @@ class SDOptimizer(DummyOptimizer):
     """
 
     def step(self, step=None):
-
+        """ Does one simulation time step """
+        
         self.ptime = 0.0
         self.ttime = 0.0
         self.qtime = -time.time()
@@ -348,13 +376,11 @@ class SDOptimizer(DummyOptimizer):
 
         gradf1 = dq1 = depstrip(self.forces.f)
 
-        # Move direction for steepest descent and 1st conjugate gradient step
+        # Move direction for steepest descent
         dq1_unit = dq1 / np.sqrt(np.dot(gradf1.flatten(), gradf1.flatten()))
         info(" @GEOP: Determined SD direction", verbosity.debug)
        
-       
-       
-        # Store force and direction for next CG step
+        # Store force and direction for next CG step????????????
         self.cg_old_d[:] = dq1
         self.cg_old_f[:] = gradf1
         
@@ -402,6 +428,7 @@ class CGOptimizer(DummyOptimizer):
     """
 
     def step(self, step=None):
+        """Does one simulation time step """
         
         self.ptime = 0.0
         self.ttime = 0.0
@@ -410,13 +437,9 @@ class CGOptimizer(DummyOptimizer):
         info("\nMD STEP %d" % step, verbosity.debug)
 
         if step == 0:
-            # Steepest descent minimization
-            # gradf1 = force at current atom position
-            # dq1 = direction of steepest descent
-            # dq1_unit = unit vector of dq1
             gradf1 = dq1 = depstrip(self.forces.f)
 
-            # Move direction for steepest descent and 1st conjugate gradient step
+            # Move direction for 1st conjugate gradient step
             dq1_unit = dq1 / np.sqrt(np.dot(gradf1.flatten(), gradf1.flatten()))
             info(" @GEOP: Determined SD direction", verbosity.debug)
     
@@ -445,7 +468,7 @@ class CGOptimizer(DummyOptimizer):
         # Reuse initial value since we have energy and forces already
         u0, du0 = (self.forces.pot.copy(), np.dot(depstrip(self.forces.f.flatten()), dq1_unit.flatten()))
 
-        # Do one SD/CG iteration; return positions and energy
+        # Do one CG iteration; return positions and energy
         (x, fx) = min_brent(self.lm, fdf0=(u0, du0), x0=0.0,
                     tol=self.ls_options["tolerance"],
                     itmax=self.ls_options["iter"], init_step=self.ls_options["step"])
