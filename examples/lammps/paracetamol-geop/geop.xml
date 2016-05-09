@@ -16,13 +16,17 @@
      <force forcefield="lmp"> </force>
     </forces>
     <motion mode='minimize'>
-      <optimizer mode='sd'>
+      <optimizer mode='lbfgs'>
+<!--      <ls_options>
+      {"tolerance": 1e-10, "iter": 100, "step": 1e-3, "adaptive": 1.0}
+      </ls_options> -->
 	<tolerances>
-	  [1e-12, 1e-12, 1e-12]
+	[energy: 1, force: 1, position: 1}
 	</tolerances>
-	<maximum_step>100.0</maximum_step>
-	<ls_options> [1e-12, 1000, 1e-3, 1.0]</ls_options>
-      </optimizer>
+	<maximum_step>
+	1
+	</maximum_step>
+	</optimizer>
     </motion>
    </system>
 </simulation>

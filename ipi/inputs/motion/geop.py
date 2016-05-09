@@ -58,7 +58,7 @@ class InputGeop(InputDictionary):
                 "tolerances" : ( InputDictionary, {"dtype" : float,
                               "options" : [ "energy", "force", "position" ],
                               "default" : [ 1e-8, 1e-8, 1e-8 ],
-                              "dimension": [ "energy", "force", "length" ] }),
+                              "dimension": [ "energy", "force", "length" ] }),          
                 "cg_old_force": (InputArray, {"dtype" : float,
                               "default"   : input_default(factory=np.zeros, args = (0,)),
                               "help"      : "The previous force in a CG optimization.",
