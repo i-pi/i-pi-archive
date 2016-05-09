@@ -23,9 +23,7 @@ from ipi.utils.messages import verbosity, info
 __all__ = ['GeopMotion']
 
 class GeopMotion(Motion):
-    """Geometry optimization routine. Controls direction choice for
-    steepest descent and conjugate gradient. Checks for satisfaction of
-    tolerances to exit minimization.
+    """Geometry optimization class.
 
     Attributes:
         mode: minimization algorithm to use
@@ -55,7 +53,7 @@ class GeopMotion(Motion):
                  cg_old_direction=np.zeros(0, float),
                  invhessian=np.eye(0, 0, 0, float),
                  ls_options={"tolerance": 1e-6, "iter": 100, "step": 1e-3, "adaptive": 1.0},
-                 tolerances={"energy": 1e-8, "force": 1e-8, "position": 1e-8},
+                 tolerances={"energy": 1e-1, "force": 1e-8, "position": 1e-8},
                  corrections=5,
                  qlist=np.zeros(0, float),
                  glist=np.zeros(0, float)):
@@ -110,7 +108,7 @@ class GeopMotion(Motion):
 
         super(GeopMotion,self).bind(ens, beads, nm, cell, bforce, prng)
         
-        # Binds optimizer
+        # Binds optimizer (call bind function from DummyOptimizer)
         self.optimizer.bind(self)
        
         
@@ -204,7 +202,8 @@ class DummyOptimizer(dobject):
         """
         
         self.ls_options = geop.ls_options   
-        self.tolerances = geop.tolerances   
+        self.tolerances = geop.tolerances
+        #print "CCCCCCCCCCCCCCCCCC", geop.tolerances
         self.mode = geop.mode               
         self.max_step = geop.max_step       
         self.cg_old_f = geop.cg_old_f
@@ -285,7 +284,6 @@ class BFGSOptimizer(DummyOptimizer):
         info(" @GEOP: Updating bead positions", verbosity.debug)
         
         self.qtime += time.time()
-        
         # Determine conditions for converged relaxation
         if ((fx - u0) / self.beads.natoms <= self.tolerances["energy"])\
                 and ((np.amax(np.absolute(self.forces.f)) <= self.tolerances["force"])
@@ -327,6 +325,7 @@ class LBFGSOptimizer(DummyOptimizer):
 
         # Do one iteration of L-BFGS, return new point, function value,
         # move direction, and current Hessian to use for next iteration
+        print "GGGGGGGGGGGGGGGGGGGGGGGGGG", self.max_step
         self.beads.q, fx, self.gm.d, self.qlist, self.glist = L_BFGS(self.beads.q,
                 self.gm.d, self.gm, self.qlist, self.glist,
                 fdf0=(u0, du0), max_step=self.max_step, tol=self.ls_options["tolerance"],
@@ -346,7 +345,7 @@ class LBFGSOptimizer(DummyOptimizer):
         
         
         self.qtime += time.time()
-        
+        print "AAAAAAAAAAAAAAAAAAAAAAAAAAAAa",self.tolerances["energy"]
         # Determine conditions for converged relaxation
         if ((fx - u0) / self.beads.natoms <= self.tolerances["energy"])\
                 and ((np.amax(np.absolute(self.forces.f)) <= self.tolerances["force"])
