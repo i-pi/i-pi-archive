@@ -15,7 +15,10 @@
    </ffsocket>
    <system>
      <initialize nbeads='1'> 
-       <file mode='chk'> ./nptcls_restart.chk</file>
+       <file mode='xyz' units='angstrom'>water_box.xyz</file>
+       <cell mode='manual'>
+	 [   1.96756644e+01,   0.00000000e+00,   0.00000000e+00,   0.00000000e+00,   1.96756644e+01, 0.00000000e+00,   0.00000000e+00,   0.00000000e+00,   1.96756644e+01 ]
+       </cell>
        <momenta mode="thermal" units="kelvin"> 750 </momenta>
      </initialize>
      <forces><force forcefield='driver'/></forces>

@@ -19,7 +19,7 @@
 all: npt-classical npt-piglet nvt-classical nvt-piglet
 
 CP2K:=cp2k.x
-IPI:=../../../i-pi
+IPI:=../../../bin/i-pi
 
 define run_cp2k
   for i in `seq 1 $1`; do \
