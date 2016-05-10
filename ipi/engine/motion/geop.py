@@ -27,10 +27,10 @@ class GeopMotion(Motion):
 
     Attributes:
         mode: minimization algorithm to use
-        maximum_step: max allowed step size for BFGS/L-BFGS
-        cg_old_force: force on previous step
-        cg_old_direction: move direction on previous step
-        invhessian: stored inverse Hessian matrix for BFGS
+        biggest_step: max allowed step size for BFGS/L-BFGS
+        old_force: force on previous step
+        old_direction_cgsd: move direction on previous step in CG/SD
+        invhessian_bfgs: stored inverse Hessian matrix for BFGS
         ls_options:
         {tolerance: energy tolerance for exiting minimization algorithm
         iter: maximum number of allowed iterations for minimization algorithm for each MD step
@@ -41,22 +41,22 @@ class GeopMotion(Motion):
         {energy: change in energy tolerance for ending minimization
         force: force/change in force tolerance foe ending minimization
         position: change in position tolerance for ending minimization}
-        corrections: number of corrections to be stored for L-BFGS
-        qlist: list of previous positions (x_n+1 - x_n) for L-BFGS. Number of entries = corrections
-        glist: list of previous gradients (g_n+1 - g_n) for L-BFGS. Number of entries = corrections
+        corrections_lbfgs: number of corrections to be stored for L-BFGS
+        qlist_lbfgs: list of previous positions (x_n+1 - x_n) for L-BFGS. Number of entries = corrections_lbfgs
+        glist_lbfgs: list of previous gradients (g_n+1 - g_n) for L-BFGS. Number of entries = corrections_lbfgs
     """
 
     def __init__(self, fixcom=False, fixatoms=None,
                  mode="lbfgs",
-                 maximum_step=100.0,
-                 cg_old_force=np.zeros(0, float),
-                 cg_old_direction=np.zeros(0, float),
-                 invhessian=np.eye(0, 0, 0, float),
+                 biggest_step=100.0,
+                 old_force=np.zeros(0, float),
+                 old_direction_cgsd=np.zeros(0, float),
+                 invhessian_bfgs=np.eye(0, 0, 0, float),
                  ls_options={"tolerance": 1e-6, "iter": 100, "step": 1e-3, "adaptive": 1.0},
                  tolerances={"energy": 1e-1, "force": 1e-8, "position": 1e-8},
-                 corrections=5,
-                 qlist=np.zeros(0, float),
-                 glist=np.zeros(0, float)):
+                 corrections_lbfgs=5,
+                 qlist_lbfgs=np.zeros(0, float),
+                 glist_lbfgs=np.zeros(0, float)):
         """Initialises GeopMotion.
 
         Args:
@@ -69,16 +69,15 @@ class GeopMotion(Motion):
         # Optimization Options
 
         self.mode = mode
-        self.max_step = maximum_step
-        self.cg_old_f = cg_old_force
-        self.cg_old_d = cg_old_direction
-        self.invhessian = invhessian
+        self.big_step = biggest_step
+        self.old_f = old_force
+        self.old_d = old_direction_cgsd
+        self.invhessian = invhessian_bfgs
         self.ls_options = ls_options
         self.tolerances = tolerances
-        self.invhessian = invhessian
-        self.corrections = corrections
-        self.qlist = qlist
-        self.glist = glist
+        self.corrections = corrections_lbfgs
+        self.qlist = qlist_lbfgs
+        self.glist = glist_lbfgs
         
         
         # Classes for minimization routines
@@ -134,7 +133,6 @@ class LineMapper(object):
         self.dforces = dumop.forces.copy(self.dbeads, self.dcell)
     
     def set_dir(self, x0, mdir):
-        # 
         self.x0 = x0.copy()
         self.d = mdir.copy() / np.sqrt(np.dot(mdir.flatten(), mdir.flatten()))
         if self.x0.shape != self.d.shape:
@@ -203,11 +201,10 @@ class DummyOptimizer(dobject):
         
         self.ls_options = geop.ls_options   
         self.tolerances = geop.tolerances
-        #print "CCCCCCCCCCCCCCCCCC", geop.tolerances
         self.mode = geop.mode               
-        self.max_step = geop.max_step       
-        self.cg_old_f = geop.cg_old_f
-        self.cg_old_d = geop.cg_old_d
+        self.big_step = geop.big_step       
+        self.old_f = geop.old_f
+        self.old_d = geop.old_d
         self.invhessian = geop.invhessian   
         self.corrections = geop.corrections 
         self.qlist = geop.qlist             
@@ -222,14 +219,14 @@ class DummyOptimizer(dobject):
         self.gm.bind(self)
         
             
-        if self.cg_old_f.shape != self.beads.q.size:
-            if self.cg_old_f.size == 0:
-                self.cg_old_f = np.zeros(self.beads.q.size, float)
+        if self.old_f.shape != self.beads.q.size:
+            if self.old_f.size == 0:
+                self.old_f = np.zeros(self.beads.q.size, float)
             else:
                 raise ValueError("Conjugate gradient force size does not match system size")
-        if self.cg_old_d.size != self.beads.q.size:
-            if self.cg_old_d.size == 0:
-                self.cg_old_d = np.zeros(self.beads.q.size, float)
+        if self.old_d.size != self.beads.q.size:
+            if self.old_d.size == 0:
+                self.old_d = np.zeros(self.beads.q.size, float)
             else:
                 raise ValueError("Conjugate gradient direction size does not match system size")
         if self.invhessian.size != (self.beads.q.size * self.beads.q.size):
@@ -244,7 +241,12 @@ class BFGSOptimizer(DummyOptimizer):
     """ BFGS Minimization """
 
     def step(self, step=None):
-        """ Does one simulation time step."""
+        """ Does one simulation time step.
+            Attributes:
+            ptime: The time taken in updating the velocities.
+            qtime: The time taken in updating the positions.
+            ttime: The time taken in applying the thermostat steps.
+        """
         
         self.ptime = 0.0
         self.ttime = 0.0
@@ -266,13 +268,13 @@ class BFGSOptimizer(DummyOptimizer):
         du0 = - self.forces.f
 
         # Store previous forces
-        self.cg_old_f[:] = self.forces.f
+        self.old_f[:] = self.forces.f
 
         # Do one iteration of BFGS, return new point, function value,
         # move direction, and current Hessian to use for next iteration
         self.beads.q, fx, self.gm.d, self.invhessian = BFGS(self.beads.q,
                 self.gm.d, self.gm, fdf0=(u0, du0), invhessian=self.invhessian,
-                max_step=self.max_step, tol=self.ls_options["tolerance"],
+                big_step=self.big_step, tol=self.ls_options["tolerance"],
                 itmax=self.ls_options["iter"])
                 
         # x = current position - previous position; use for exit tolerance
@@ -287,8 +289,8 @@ class BFGSOptimizer(DummyOptimizer):
         # Determine conditions for converged relaxation
         if ((fx - u0) / self.beads.natoms <= self.tolerances["energy"])\
                 and ((np.amax(np.absolute(self.forces.f)) <= self.tolerances["force"])
-                    or (np.sqrt(np.dot(self.forces.f.flatten() - self.cg_old_f.flatten(),
-                        self.forces.f.flatten() - self.cg_old_f.flatten())) == 0.0))\
+                    or (np.sqrt(np.dot(self.forces.f.flatten() - self.old_f.flatten(),
+                        self.forces.f.flatten() - self.old_f.flatten())) == 0.0))\
                 and (x <= self.tolerances["position"]):
 
             softexit.trigger("Geometry optimization converged. Exiting simulation")
@@ -298,7 +300,12 @@ class LBFGSOptimizer(DummyOptimizer):
     """ L-BFGS Minimization """
     
     def step(self, step=None):
-        """ Does one simulation time step """
+        """ Does one simulation time step 
+            Attributes:
+            ptime: The time taken in updating the velocities.
+            qtime: The time taken in updating the positions.
+            ttime: The time taken in applying the thermostat steps.
+        """
         
         self.ptime = 0.0
         self.ttime = 0.0
@@ -321,14 +328,13 @@ class LBFGSOptimizer(DummyOptimizer):
         u0, du0 = (self.forces.pot.copy(), - self.forces.f)
 
         # Store previous forces
-        self.cg_old_f[:] = self.forces.f
+        self.old_f[:] = self.forces.f
 
         # Do one iteration of L-BFGS, return new point, function value,
         # move direction, and current Hessian to use for next iteration
-        print "GGGGGGGGGGGGGGGGGGGGGGGGGG", self.max_step
         self.beads.q, fx, self.gm.d, self.qlist, self.glist = L_BFGS(self.beads.q,
                 self.gm.d, self.gm, self.qlist, self.glist,
-                fdf0=(u0, du0), max_step=self.max_step, tol=self.ls_options["tolerance"],
+                fdf0=(u0, du0), big_step=self.big_step, tol=self.ls_options["tolerance"],
                 itmax=self.ls_options["iter"],
                 m=self.corrections, k=step)
 
@@ -343,14 +349,12 @@ class LBFGSOptimizer(DummyOptimizer):
 
         info(" @GEOP: Updated bead positions", verbosity.debug)
         
-        
         self.qtime += time.time()
-        print "AAAAAAAAAAAAAAAAAAAAAAAAAAAAa",self.tolerances["energy"]
         # Determine conditions for converged relaxation
         if ((fx - u0) / self.beads.natoms <= self.tolerances["energy"])\
                 and ((np.amax(np.absolute(self.forces.f)) <= self.tolerances["force"])
-                    or (np.sqrt(np.dot(self.forces.f.flatten() - self.cg_old_f.flatten(),
-                        self.forces.f.flatten() - self.cg_old_f.flatten())) == 0.0))\
+                    or (np.sqrt(np.dot(self.forces.f.flatten() - self.old_f.flatten(),
+                        self.forces.f.flatten() - self.old_f.flatten())) == 0.0))\
                 and (x <= self.tolerances["position"]):
          
             softexit.trigger("Geometry optimization converged. Exiting simulation")
@@ -365,7 +369,12 @@ class SDOptimizer(DummyOptimizer):
     """
 
     def step(self, step=None):
-        """ Does one simulation time step """
+        """ Does one simulation time step 
+            Attributes:
+            ptime: The time taken in updating the velocities.
+            qtime: The time taken in updating the positions.
+            ttime: The time taken in applying the thermostat steps.
+        """
         
         self.ptime = 0.0
         self.ttime = 0.0
@@ -379,9 +388,9 @@ class SDOptimizer(DummyOptimizer):
         dq1_unit = dq1 / np.sqrt(np.dot(gradf1.flatten(), gradf1.flatten()))
         info(" @GEOP: Determined SD direction", verbosity.debug)
        
-        # Store force and direction for next CG step????????????
-        self.cg_old_d[:] = dq1
-        self.cg_old_f[:] = gradf1
+        # Store force and direction for next CG step
+        self.old_d[:] = dq1
+        self.old_f[:] = gradf1
         
         if len(self.fixatoms) > 0:
             for dqb in dq1_unit:
@@ -411,8 +420,8 @@ class SDOptimizer(DummyOptimizer):
         # Determine conditions for converged relaxation
         if ((fx - u0) / self.beads.natoms <= self.tolerances["energy"])\
                 and ((np.amax(np.absolute(self.forces.f)) <= self.tolerances["force"])
-                    or (np.sqrt(np.dot(self.forces.f.flatten() - self.cg_old_f.flatten(),
-                        self.forces.f.flatten() - self.cg_old_f.flatten())) == 0.0))\
+                    or (np.sqrt(np.dot(self.forces.f.flatten() - self.old_f.flatten(),
+                        self.forces.f.flatten() - self.old_f.flatten())) == 0.0))\
                 and (x <= self.tolerances["position"]):
             softexit.trigger("Geometry optimization converged. Exiting simulation")
 
@@ -427,7 +436,12 @@ class CGOptimizer(DummyOptimizer):
     """
 
     def step(self, step=None):
-        """Does one simulation time step """
+        """Does one simulation time step 
+           Attributes:
+           ptime: The time taken in updating the velocities.
+           qtime: The time taken in updating the positions.
+           ttime: The time taken in applying the thermostat steps.
+        """
         
         self.ptime = 0.0
         self.ttime = 0.0
@@ -444,8 +458,8 @@ class CGOptimizer(DummyOptimizer):
     
         else:
         
-            gradf0 = self.cg_old_f
-            dq0 = self.cg_old_d
+            gradf0 = self.old_f
+            dq0 = self.old_d
             gradf1 = depstrip(self.forces.f)
             beta = np.dot((gradf1.flatten() - gradf0.flatten()), gradf1.flatten()) / (np.dot(gradf0.flatten(), gradf0.flatten()))
             dq1 = gradf1 + max(0.0, beta) * dq0
@@ -453,8 +467,8 @@ class CGOptimizer(DummyOptimizer):
             info(" @GEOP: Determined CG direction", verbosity.debug)
 
         # Store force and direction for next CG step
-        self.cg_old_d[:] = dq1
-        self.cg_old_f[:] = gradf1
+        self.old_d[:] = dq1
+        self.old_f[:] = gradf1
 
         if len(self.fixatoms) > 0:
             for dqb in dq1_unit:
@@ -483,7 +497,7 @@ class CGOptimizer(DummyOptimizer):
         # Determine conditions for converged relaxation
         if ((fx - u0) / self.beads.natoms <= self.tolerances["energy"])\
                 and ((np.amax(np.absolute(self.forces.f)) <= self.tolerances["force"])
-                    or (np.sqrt(np.dot(self.forces.f.flatten() - self.cg_old_f.flatten(),
-                        self.forces.f.flatten() - self.cg_old_f.flatten())) == 0.0))\
+                    or (np.sqrt(np.dot(self.forces.f.flatten() - self.old_f.flatten(),
+                        self.forces.f.flatten() - self.old_f.flatten())) == 0.0))\
                 and (x <= self.tolerances["position"]):
             softexit.trigger("Geometry optimization converged. Exiting simulation")
