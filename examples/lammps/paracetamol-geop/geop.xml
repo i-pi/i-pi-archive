@@ -3,7 +3,7 @@
       <properties stride='1' filename='out'>  [ step, potential{electronvolt}] </properties>
       <trajectory stride='1' filename='pos'>  positions{angstrom}  </trajectory>
    </output>
-   <total_steps> 2000000 </total_steps>
+   <total_steps> 10000 </total_steps>
    <ffsocket name="lmp" mode="unix" pbc="true">
       <address> driver </address>  <latency> 1e-4</latency>
    </ffsocket>
@@ -17,15 +17,14 @@
     </forces>
     <motion mode='minimize'>
       <optimizer mode='lbfgs'>
-<!--      <ls_options>
-      {"tolerance": 1e-10, "iter": 100, "step": 1e-3, "adaptive": 1.0}
-      </ls_options> -->
 	<tolerances>
-	[energy: 1, force: 1, position: 1}
-	</tolerances>
-	<maximum_step>
-	1
-	</maximum_step>
+	  <energy> 1e-8 </energy>
+	  <force> 1e-8 </force>
+	  <position> 1e-8 </position>
+	  	</tolerances>
+	<biggest_step>
+	100.0
+	</biggest_step>
 	</optimizer>
     </motion>
    </system>

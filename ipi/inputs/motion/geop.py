@@ -52,35 +52,36 @@ class InputGeop(InputDictionary):
                               step: initial step for bracketing,
                               adaptive: whether to update initial step.
                               """,
-                              "options" : ["tolerance", "iter", "step", "adaptive"],
-                              "default" : [1e-6, 100, 1e-3, 1.0],
+                              "options"  : ["tolerance", "iter", "step", "adaptive"],
+                              "default"  : [1e-6, 100, 1e-3, 1.0],
                               "dimension": ["energy", "undefined", "length", "undefined" ] }),
                 "tolerances" : ( InputDictionary, {"dtype" : float,
-                              "options" : [ "energy", "force", "position" ],
-                              "default" : [ 1e-8, 1e-8, 1e-8 ],
-                              "dimension": [ "energy", "force", "length" ] }),          
-                "cg_old_force": (InputArray, {"dtype" : float,
-                              "default"   : input_default(factory=np.zeros, args = (0,)),
-                              "help"      : "The previous force in a CG optimization.",
-                              "dimension" : "force"}),
-                "cg_old_direction": (InputArray, {"dtype" : float,
-                              "default" : input_default(factory=np.zeros, args = (0,)),
-                              "help"    : "The previous direction in a CG optimization."}),
-                "maximum_step": (InputValue, {"dtype" : float,
-                              "default" : 100.0,
-                              "help"    : "The maximum step size for BFGS line minimizations."}),
-                "invhessian" : (InputArray, {"dtype" : float,
-                              "default" : input_default(factory=np.eye, args = (0,)),
-                              "help"    : "Approximate inverse Hessian for BFGS, if known."}),
-                "qlist" : (InputArray, {"dtype" : float,
-                              "default" : input_default(factory=np.zeros, args = (0,)),
-                              "help"    : "List of previous position differences for L-BFGS, if known."}),
-                "glist" : (InputArray, {"dtype" : float,
-                              "default" : input_default(factory=np.zeros, args = (0,)),
-                              "help"    : "List of previous gradient differences for L-BFGS, if known."}),
-                "corrections" : (InputValue, {"dtype" : int,
-                              "default" : 5,
-                              "help"    : "The number of past vectors to store for L-BFGS."})
+                              "options"  : [ "energy", "force", "position" ],
+                              "default"  : [ 1e-8, 1e-8, 1e-8 ],
+                              "help"     : "Convergence criteria for optimization.",
+                              "dimension": [ "energy", "force", "length" ] }),      
+                "old_force": (InputArray, {"dtype" : float,
+                              "default"  : input_default(factory=np.zeros, args = (0,)),
+                              "help"     : "The previous force in an optimization step.",
+                              "dimension": "force"}),
+                "old_direction_cgsd": (InputArray, {"dtype" : float,
+                              "default"  : input_default(factory=np.zeros, args = (0,)),
+                              "help"     : "The previous direction in a CG or SD optimization."}),
+                "biggest_step": (InputValue, {"dtype" : float,
+                              "default"  : 100.0,
+                              "help"     : "The maximum step size for (L)-BFGS line minimizations."}),
+                "invhessian_bfgs" : (InputArray, {"dtype" : float,
+                              "default"  : input_default(factory=np.eye, args = (0,)),
+                              "help"     : "Approximate inverse Hessian for BFGS, if known."}),
+                "qlist_lbfgs" : (InputArray, {"dtype" : float,
+                              "default"  : input_default(factory=np.zeros, args = (0,)),
+                              "help"     : "List of previous position differences for L-BFGS, if known."}),
+                "glist_lbfgs" : (InputArray, {"dtype" : float,
+                              "default"  : input_default(factory=np.zeros, args = (0,)),
+                              "help"     : "List of previous gradient differences for L-BFGS, if known."}),
+                "corrections_lbfgs" : (InputValue, {"dtype" : int,
+                              "default"  : 5,
+                              "help"     : "The number of past vectors to store for L-BFGS."})
                      }
 
     dynamic = {  }
@@ -93,13 +94,13 @@ class InputGeop(InputDictionary):
         self.ls_options.store(geop.ls_options)
         self.tolerances.store(geop.tolerances)
         self.mode.store(geop.mode)
-        self.cg_old_force.store(geop.cg_old_f)
-        self.cg_old_direction.store(geop.cg_old_d)
-        self.maximum_step.store(geop.max_step)
-        self.invhessian.store(geop.invhessian)
-        self.qlist.store(geop.qlist)
-        self.glist.store(geop.glist)
-        self.corrections.store(geop.corrections)
+        self.old_force.store(geop.old_f)
+        self.old_direction_cgsd.store(geop.old_d)
+        self.biggest_step.store(geop.big_step)
+        self.invhessian_bfgs.store(geop.invhessian)
+        self.qlist_lbfgs.store(geop.qlist)
+        self.glist_lbfgs.store(geop.glist)
+        self.corrections_lbfgs.store(geop.corrections)
 
     def fetch(self):
         rv = super(InputGeop,self).fetch()

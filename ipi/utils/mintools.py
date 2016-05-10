@@ -357,7 +357,7 @@ def min_brent(fdf, fdf0=None, x0=0.0, tol=1.0e-6, itmax=100, init_step=1.0e-3):
     return (x, fx)
 
 # Approximate line search
-def min_approx(fdf, x0, fdf0=None, d0=None, max_step=100.0, tol=1.0e-6, itmax=100):
+def min_approx(fdf, x0, fdf0=None, d0=None, big_step=100.0, tol=1.0e-6, itmax=100):
     
     """Given an n-dimensional function and its gradient, and an 
     initial point and a direction, finds a new point where the function
@@ -368,7 +368,7 @@ def min_approx(fdf, x0, fdf0=None, d0=None, max_step=100.0, tol=1.0e-6, itmax=10
             fdf0: initial function and gradient value
             d0: n-dimensional initial direction
             x0: n-dimensional initial point
-            max_step: maximum step size
+            big_step: maximum step size
             tol: tolerance for exiting line search
             itmax: maximum number of iterations for the line search
     """
@@ -386,9 +386,9 @@ def min_approx(fdf, x0, fdf0=None, d0=None, max_step=100.0, tol=1.0e-6, itmax=10
     stepsum = np.sqrt(np.dot(d0.flatten(), d0.flatten()))
 
     # Scale if attempted step is too large
-    if stepsum > max_step:
+    if stepsum > big_step:
         info(" @MINIMIZE: Scaled step size for line search", verbosity.debug)
-        d0 = np.multiply(d0, max_step / stepsum)
+        d0 = np.multiply(d0, big_step / stepsum)
 
     slope = np.dot(df0.flatten(), d0.flatten())
 
@@ -466,7 +466,7 @@ def min_approx(fdf, x0, fdf0=None, d0=None, max_step=100.0, tol=1.0e-6, itmax=10
     return (x, fx, dfx)
         
 # BFGS algorithm with approximate line search
-def BFGS(x0, d0, fdf, fdf0=None, invhessian=None, max_step=100, tol=1.0e-6, itmax=100):
+def BFGS(x0, d0, fdf, fdf0=None, invhessian=None, big_step=100, tol=1.0e-6, itmax=100):
     
     """BFGS minimization. Uses approximate line minimizations.
     Does one step.
@@ -475,7 +475,7 @@ def BFGS(x0, d0, fdf, fdf0=None, invhessian=None, max_step=100, tol=1.0e-6, itma
             fdf0: initial function and gradient value
             d0: initial direction for line minimization
             x0: initial point
-            max_step: limit on step length
+            big_step: limit on step length
             tol: convergence tolerance
             itmax: maximum number of allowed iterations
     """
@@ -497,10 +497,10 @@ def BFGS(x0, d0, fdf, fdf0=None, invhessian=None, max_step=100, tol=1.0e-6, itma
     xi = d0
 
     # Maximum step size
-    max_step = max_step * max(np.sqrt(linesum), n)
+    big_step = big_step * max(np.sqrt(linesum), n)
 
     # Perform approximate line minimization in direction d0
-    x, fx, dfx = min_approx(fdf, x0, fdf0, xi, max_step, tol, itmax) 
+    x, fx, dfx = min_approx(fdf, x0, fdf0, xi, big_step, tol, itmax) 
 
     info(" @MINIMIZE: Started BFGS", verbosity.debug)
 
@@ -546,7 +546,7 @@ def BFGS(x0, d0, fdf, fdf0=None, invhessian=None, max_step=100, tol=1.0e-6, itma
     return (x, fx, xi, invhessian)
 
 # L-BFGS algorithm with approximate line search
-def L_BFGS(x0, d0, fdf, qlist, glist, fdf0=None, max_step=100, tol=1.0e-6, itmax=100, m=0, k=0):
+def L_BFGS(x0, d0, fdf, qlist, glist, fdf0=None, big_step=100, tol=1.0e-6, itmax=100, m=0, k=0):
     
     """L-BFGS minimization. Uses approximate line minimizations.
     Does one step.
@@ -559,7 +559,7 @@ def L_BFGS(x0, d0, fdf, qlist, glist, fdf0=None, max_step=100, tol=1.0e-6, itmax
             glist = list of previous gradients used for reduced inverse Hessian construction
             m = number of corrections to store and use
             k = iteration (MD step) number
-            max_step = limit on step length
+            big_step = limit on step length
             tol = convergence tolerance
             itmax = maximum number of allowed iterations
     """
@@ -582,10 +582,10 @@ def L_BFGS(x0, d0, fdf, qlist, glist, fdf0=None, max_step=100, tol=1.0e-6, itmax
     xi = d0
 
     # Maximum step size
-    max_step = max_step * max(np.sqrt(linesum), n)
+    big_step = big_step * max(np.sqrt(linesum), n)
 
     # Perform approximate line minimization in direction d0
-    x, fx, dfx = min_approx(fdf, x0, fdf0, xi, max_step, tol, itmax)
+    x, fx, dfx = min_approx(fdf, x0, fdf0, xi, big_step, tol, itmax)
 
     info(" @MINIMIZE: Started L-BFGS", verbosity.debug)
 
@@ -922,7 +922,7 @@ def min_brent_neb(fdf, fdf0=None, x0=0.0, tol=1.0e-6, itmax=100, init_step=1.0e-
     return xmin, fx 
 
 # L-BFGS without line search; WARNING: UNSTABLE
-def L_BFGS_nls(x0, d0, fdf, qlist, glist, fdf0=None, max_step=100, tol=1.0e-6, itmax=100, init_step=1.0e-3, m=0, k=0):
+def L_BFGS_nls(x0, d0, fdf, qlist, glist, fdf0=None, big_step=100, tol=1.0e-6, itmax=100, init_step=1.0e-3, m=0, k=0):
     
     """L-BFGS minimization without line search
     Does one step.
@@ -935,7 +935,7 @@ def L_BFGS_nls(x0, d0, fdf, qlist, glist, fdf0=None, max_step=100, tol=1.0e-6, i
             glist: list of previous gradients used for reduced inverse Hessian construction
             m: number of corrections to store and use
             k: iteration (MD step) number
-            max_step: limit on step length
+            big_step: limit on step length
             tol: convergence tolerance
             itmax: maximum number of allowed iterations
             init_step: initial step size
@@ -974,8 +974,8 @@ def L_BFGS_nls(x0, d0, fdf, qlist, glist, fdf0=None, max_step=100, tol=1.0e-6, i
     else:
 
         # Scale if attempted step is too large
-        if stepsize > max_step:
-            d0 = max_step * d0 / np.sqrt(np.dot(d0.flatten(), d0.flatten()))
+        if stepsize > big_step:
+            d0 = big_step * d0 / np.sqrt(np.dot(d0.flatten(), d0.flatten()))
             info(" @MINIMIZE: Scaled step size", verbosity.debug)
 
         x = np.add(x0, d0)       

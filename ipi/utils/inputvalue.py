@@ -328,8 +328,7 @@ class Input(object):
 
          for (f, v) in xml.fields: #reads all field and dynamic data.
             if f in self.instancefields:
-               self.__dict__[f].parse(xml=v)
-               print "XMLXMLXMLXMLXMLXMLXMLXMLXMLXML", f,self.__dict__[f]               
+               self.__dict__[f].parse(xml=v)       
             elif f == "_text":
                self._text = v
             elif f in self.dynamic:
@@ -683,10 +682,7 @@ class InputDictionary(Input):
             
             opdef[options[i]] = nfield["default"]
             
-            print "DDDDDDDDDDDDDDDDDDD", nfield
-            
             self.instancefields[options[i]] = ( InputValue, nfield )
-            print "JJJJJJJJJJJJJJJJJJJJ", self.instancefields[options[i]]
          super(InputDictionary,self).__init__(help=help, default=opdef) # deferred initialization         
       else:
          super(InputDictionary,self).__init__(help=help, default=default)
@@ -695,7 +691,6 @@ class InputDictionary(Input):
    def store(self, value={}):
       """Base function for storing data passed as a dictionary"""
       
-      print "WITHIN!!!!!!!!!!!!!!!!!!!!!!!!!!", value
       self._explicit = True       
       for f, v in value.iteritems():
           self.__dict__[f].store(value[f])      

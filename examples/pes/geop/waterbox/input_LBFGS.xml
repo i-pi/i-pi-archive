@@ -27,8 +27,8 @@
 	    <force> 1.0e-3 </force>
 	    <position> 1.0e-7 </position>
 	 </tolerances>
-	 <maximum_step> 150.0 </maximum_step>
-	 <corrections> 5 </corrections>
+	 <biggest_step> 150.0 </biggest_step>
+	 <corrections_lbfgs> 5 </corrections_lbfgs>
       </optimizer>
    </motion>
 </system>

@@ -31,7 +31,7 @@
 			        <force> 1.0e-2 </force>
 			        <position> 1.0e-7 </position>
 		        </tolerances>
-		        <maximum_step> 2.0 </maximum_step>
+		        <biggest_step> 2.0 </biggest_step>
 	        </neb_optimizer>
         </motion>
         </system>
