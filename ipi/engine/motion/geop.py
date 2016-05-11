@@ -19,6 +19,7 @@ from ipi.utils.depend import depstrip, dobject
 from ipi.utils.softexit import softexit
 from ipi.utils.mintools import min_brent, BFGS, L_BFGS
 from ipi.utils.messages import verbosity, info
+from ipi.utils.counter import counter
 
 __all__ = ['GeopMotion']
 
@@ -53,7 +54,7 @@ class GeopMotion(Motion):
                  old_direction_cgsd=np.zeros(0, float),
                  invhessian_bfgs=np.eye(0, 0, 0, float),
                  ls_options={"tolerance": 1e-6, "iter": 100, "step": 1e-3, "adaptive": 1.0},
-                 tolerances={"energy": 1e-1, "force": 1e-8, "position": 1e-8},
+                 tolerances={"energy": 1e-8, "force": 1e-8, "position": 1e-8},
                  corrections_lbfgs=5,
                  qlist_lbfgs=np.zeros(0, float),
                  glist_lbfgs=np.zeros(0, float)):
@@ -145,6 +146,7 @@ class LineMapper(object):
         self.dbeads.q = self.x0 + self.d * x
         e = self.dforces.pot   # Energy
         g = - np.dot(depstrip(self.dforces.f).flatten(), self.d.flatten())   # Gradient
+        counter.count()      # counts number of function evaluations
         return e, g
         
         
@@ -165,7 +167,6 @@ class GradientMapper(object):
         self.xold = None
         
     def bind(self, dumop):
-        #
         self.dbeads = dumop.beads.copy()
         self.dcell = dumop.cell.copy()
         self.dforces = dumop.forces.copy(self.dbeads, self.dcell)
@@ -176,6 +177,7 @@ class GradientMapper(object):
         self.dbeads.q = x
         e = self.dforces.pot   # Energy
         g = - self.dforces.f   # Gradient
+        counter.count()        # counts number of function evaluations
         return e, g
                     
             
@@ -235,7 +237,22 @@ class DummyOptimizer(dobject):
             else:
                 raise ValueError("Inverse Hessian size does not match system size")
                 
-
+    def exitstep(self, fx, u0, x):
+        """ Exits the simulation step. Computes time, checks for convergence. """
+        
+        info(" @GEOP: Updating bead positions", verbosity.debug)
+        
+        self.qtime += time.time()
+        
+        # Determine conditions for converged relaxation
+        if ((fx - u0) / self.beads.natoms <= self.tolerances["energy"])\
+                and ((np.amax(np.absolute(self.forces.f)) <= self.tolerances["force"])
+                    or (np.sqrt(np.dot(self.forces.f.flatten() - self.old_f.flatten(),
+                        self.forces.f.flatten() - self.old_f.flatten())) == 0.0))\
+                and (x <= self.tolerances["position"]):
+            info("Total number of function evaluations: %d" % counter.func_eval, verbosity.debug)
+            softexit.trigger("Geometry optimization converged. Exiting simulation")
+        
         
 class BFGSOptimizer(DummyOptimizer):
     """ BFGS Minimization """
@@ -279,22 +296,13 @@ class BFGSOptimizer(DummyOptimizer):
                 
         # x = current position - previous position; use for exit tolerance
         x = np.amax(np.absolute(np.subtract(self.beads.q, self.gm.xold)))
-
+        
+        
         # Store old position
         self.gm.xold[:] = self.beads.q
-
-        info(" @GEOP: Updating bead positions", verbosity.debug)
         
-        self.qtime += time.time()
-        # Determine conditions for converged relaxation
-        if ((fx - u0) / self.beads.natoms <= self.tolerances["energy"])\
-                and ((np.amax(np.absolute(self.forces.f)) <= self.tolerances["force"])
-                    or (np.sqrt(np.dot(self.forces.f.flatten() - self.old_f.flatten(),
-                        self.forces.f.flatten() - self.old_f.flatten())) == 0.0))\
-                and (x <= self.tolerances["position"]):
-
-            softexit.trigger("Geometry optimization converged. Exiting simulation")
-
+        # Exit simulation step
+        self.exitstep(fx, u0, x)
 
 class LBFGSOptimizer(DummyOptimizer):
     """ L-BFGS Minimization """
@@ -343,23 +351,13 @@ class LBFGSOptimizer(DummyOptimizer):
 
         # x = current position - old position. Used for convergence tolerance
         x = np.amax(np.absolute(np.subtract(self.beads.q, self.gm.xold)))
-
+        
         # Store old position
         self.gm.xold[:] = self.beads.q
-
-        info(" @GEOP: Updated bead positions", verbosity.debug)
         
-        self.qtime += time.time()
-        # Determine conditions for converged relaxation
-        if ((fx - u0) / self.beads.natoms <= self.tolerances["energy"])\
-                and ((np.amax(np.absolute(self.forces.f)) <= self.tolerances["force"])
-                    or (np.sqrt(np.dot(self.forces.f.flatten() - self.old_f.flatten(),
-                        self.forces.f.flatten() - self.old_f.flatten())) == 0.0))\
-                and (x <= self.tolerances["position"]):
+        # Exit simulation step
+        self.exitstep(fx, u0, x)
          
-            softexit.trigger("Geometry optimization converged. Exiting simulation")
-
-
 class SDOptimizer(DummyOptimizer):
     """
     Steepest descent minimization
@@ -413,17 +411,9 @@ class SDOptimizer(DummyOptimizer):
         self.ls_options["step"] = 0.1 * x * self.ls_options["adaptive"] + (1 - self.ls_options["adaptive"]) * self.ls_options["step"]
 
         self.beads.q += dq1_unit * x
-        info(" @GEOP: Updated bead positions", verbosity.debug)
         
-        self.qtime += time.time()
-        
-        # Determine conditions for converged relaxation
-        if ((fx - u0) / self.beads.natoms <= self.tolerances["energy"])\
-                and ((np.amax(np.absolute(self.forces.f)) <= self.tolerances["force"])
-                    or (np.sqrt(np.dot(self.forces.f.flatten() - self.old_f.flatten(),
-                        self.forces.f.flatten() - self.old_f.flatten())) == 0.0))\
-                and (x <= self.tolerances["position"]):
-            softexit.trigger("Geometry optimization converged. Exiting simulation")
+        # Exit simulation step
+        self.exitstep(fx, u0, x)
 
 class CGOptimizer(DummyOptimizer):
     """
@@ -491,13 +481,6 @@ class CGOptimizer(DummyOptimizer):
         self.ls_options["step"] = 0.1 * x * self.ls_options["adaptive"] + (1 -     self.ls_options["adaptive"]) * self.ls_options["step"]
 
         self.beads.q += dq1_unit * x
-        info(" @GEOP: Updated bead positions", verbosity.debug)
         
-        self.qtime += time.time()
-        # Determine conditions for converged relaxation
-        if ((fx - u0) / self.beads.natoms <= self.tolerances["energy"])\
-                and ((np.amax(np.absolute(self.forces.f)) <= self.tolerances["force"])
-                    or (np.sqrt(np.dot(self.forces.f.flatten() - self.old_f.flatten(),
-                        self.forces.f.flatten() - self.old_f.flatten())) == 0.0))\
-                and (x <= self.tolerances["position"]):
-            softexit.trigger("Geometry optimization converged. Exiting simulation")
+        # Exit simulation step
+        self.exitstep(fx, u0, x)

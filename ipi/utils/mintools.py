@@ -305,7 +305,6 @@ def min_brent(fdf, fdf0=None, x0=0.0, tol=1.0e-6, itmax=100, init_step=1.0e-3):
                 e = b - x
             d = 0.5 * e
         # one function evaluation per iteration
-        # COUNT...
         if abs(d) >= tol1:
             u = x + d
             fu, dfu = fdf(u)
@@ -885,7 +884,7 @@ def min_brent_neb(fdf, fdf0=None, x0=0.0, tol=1.0e-6, itmax=100, init_step=1.0e-
             u = x + d
         else:
             u = x + abs(tol1) * d / abs(d)
-		# one function evaluation per iteration, derivative is computed, too?? 
+		# one function evaluation per iteration, derivative is computed, too..
 		# include count...
         fu = fdf(u)[1]
  		# order for next step: a < u (later x) < b
