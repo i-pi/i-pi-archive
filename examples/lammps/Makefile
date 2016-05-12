@@ -19,7 +19,7 @@
 all: graphene h2o-piglet_2 h2o-piglet_4 h2o-piglet_8 h2o-pimd-rpc h2o-pimd ice-npt h2o-mts ice-nst isof-vapor isof-water isofsc-vapor isofsc-water 
 
 LAMMPS:=lmp_serial
-IPI:=../../../bin/i-pi
+IPI:=i-pi
 
 define run_lammps
   for i in `seq 1 $1`; do \
