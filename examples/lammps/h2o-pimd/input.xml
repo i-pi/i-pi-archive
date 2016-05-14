@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <simulation mode="md">
    <output prefix='simulation'>
       <properties stride='1' filename='out'>  [ step, time{picosecond}, conserved{electronvolt}, temperature{kelvin}, kinetic_cv{electronvolt}, potential, pressure_cv{megapascal} ] </properties>
@@ -27,4 +28,4 @@
          <temperature units='kelvin'> 300 </temperature>
       </ensemble>
    </system>
-</simulation>
+<simulation>
