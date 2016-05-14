@@ -339,7 +339,10 @@
                   STOP "ENDED" 
                ENDIF
                CALL qtip4pf(vpars(1:3),atoms,nat,forces,pot,virial)
-               
+               dip(:) = 0.0
+               DO i=1, nat, 3
+                  dip = dip -1.1128d0 * atoms(i,:) + 0.5564d0 * (atoms(i+1,:) + atoms(i+2,:))
+               ENDDO
                ! do not compute the virial term
             ELSE
                IF ((allocated(n_list) .neqv. .true.)) THEN
@@ -389,12 +392,12 @@
             CALL writebuffer(socket,nat)  ! Writing the number of atoms
             CALL writebuffer(socket,msgbuffer,3*nat) ! Writing the forces
             CALL writebuffer(socket,reshape(virial,(/9/)),9)  ! Writing the virial tensor, NOT divided by the volume
-            IF (vstyle==5) THEN ! returns the dipole 
+            IF (vstyle==5 .or. vstyle==6) THEN ! returns the dipole 
                initbuffer = " "
                WRITE(initbuffer,*) dip(1:3)
                cbuf = LEN_TRIM(initbuffer)
                CALL writebuffer(socket,cbuf) ! Writes back the molecular dipole 
-               CALL writebuffer(socket,initbuffer,cbuf)
+               CALL writebuffer(socket,initbuffer,cbuf)            
             ELSE
                cbuf = 7 ! Size of the "extras" string
                CALL writebuffer(socket,cbuf) ! This would write out the "extras" string, but in this case we only use a dummy string.
