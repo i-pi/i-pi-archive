@@ -20,7 +20,6 @@ from ipi.utils.depend import depstrip, depend_value, dget, dset, dobject, deppip
 from ipi.engine.thermostats import Thermostat
 from ipi.engine.barostats import Barostat
 
-
 #__all__ = ['Dynamics', 'NVEIntegrator', 'NVTIntegrator', 'NPTIntegrator', 'NSTIntegrator', 'SCIntegrator`']
 
 class Dynamics(Motion):
@@ -48,7 +47,7 @@ class Dynamics(Motion):
             effective classical temperature.
     """
 
-    def __init__(self, timestep, mode="nve", thermostat=None, barostat=None, fixcom=False, fixatoms=None, nmts=None):
+    def __init__(self, timestep, mode="nve", splitting="obabo", thermostat=None, barostat=None, fixcom=False, fixatoms=None, nmts=None):
         """Initialises a "dynamics" motion object.
 
         Args:
@@ -59,7 +58,10 @@ class Dynamics(Motion):
 
         super(Dynamics, self).__init__(fixcom=fixcom, fixatoms=fixatoms)
 
+        self.splitting = splitting
+        
         dset(self, "dt", depend_value(name='dt', value=timestep))
+                
         if thermostat is None:
             self.thermostat = Thermostat()
         else:
@@ -132,6 +134,8 @@ class Dynamics(Motion):
         if self.fixcom:
             fixdof += 3
 
+        dset(self, "halfdt", depend_value(name='dt', func=(lambda : self.dt*0.5), dependencies=[dget(self,"dt")]) )
+        
         # first makes sure that the thermostat has the correct temperature, then proceed with binding it.
         deppipe(self, "ntemp", self.thermostat, "temp")
         deppipe(self, "dt", self.thermostat, "dt")
@@ -142,7 +146,9 @@ class Dynamics(Motion):
             for mk in self.nmts: self.inmts*=mk
             dset(self,"deltat", depend_value(name="deltat", func=(lambda : self.dt/self.inmts) , dependencies=[dget(self,"dt")]) )
             deppipe(self,"deltat", self.nm, "dt")
-
+        else:
+            deppipe(self,"dt", self.nm, "dt")
+        
         # depending on the kind, the thermostat might work in the normal mode or the bead representation.
         self.thermostat.bind(beads=self.beads, nm=self.nm, prng=prng, fixdof=fixdof)
 
@@ -282,9 +288,9 @@ class NVEIntegrator(DummyIntegrator):
     def pstep(self):
         """Velocity Verlet momenta propagator."""
 
-        self.beads.p += depstrip(self.forces.f)*(self.dt*0.5)
+        self.beads.p += depstrip(self.forces.f)*(self.dthalf)
         # also adds the bias force
-        self.beads.p += depstrip(self.bias.f)*(self.dt*0.5)
+        self.beads.p += depstrip(self.bias.f)*(self.dthalf)
 
     def qcstep(self):
         """Velocity Verlet centroid position propagator."""
@@ -378,7 +384,7 @@ class NPTIntegrator(NVTIntegrator):
         self.ttime += time.time()
 
         self.ptime = -time.time()
-        self.barostat.pstep()
+        self.barostat.pstep(dtscale=0.5)
         self.pconstraints()
         self.ptime += time.time()
 
@@ -388,7 +394,7 @@ class NPTIntegrator(NVTIntegrator):
         self.qtime += time.time()
 
         self.ptime -= time.time()
-        self.barostat.pstep()
+        self.barostat.pstep(dtscale=0.5)
         self.pconstraints()
         self.ptime += time.time()
 
@@ -436,7 +442,7 @@ class NSTIntegrator(NVTIntegrator):
         self.ttime += time.time()
 
         self.ptime = -time.time()
-        self.barostat.pstep()
+        self.barostat.pstep(dtscale=0.5)
         self.pconstraints()
         self.ptime += time.time()
 
@@ -446,7 +452,7 @@ class NSTIntegrator(NVTIntegrator):
         self.qtime += time.time()
 
         self.ptime -= time.time()
-        self.barostat.pstep()
+        self.barostat.pstep(dtscale=0.5)
         self.pconstraints()
         self.ptime += time.time()
 
@@ -498,11 +504,11 @@ class SCIntegrator(NVEIntegrator):
    def pstep(self):                                                                     
       """Velocity Verlet momenta propagator."""
                                                                                         
-      self.beads.p += depstrip(self.forces.f)*(self.dt*0.5)
+      self.beads.p += depstrip(self.forces.f)*(self.dthalf)
       # also adds the bias force
-      self.beads.p += depstrip(self.bias.f)*(self.dt*0.5)
+      self.beads.p += depstrip(self.bias.f)*(self.dthalf)
       # also adds the force assiciated with SuzukiChin correction
-      self.beads.p += depstrip(self.forces.fsc)*(self.dt*0.5)
+      self.beads.p += depstrip(self.forces.fsc)*(self.dthalf)
                                                                                         
    def qcstep(self):
       """Velocity Verlet centroid position propagator."""
@@ -553,7 +559,7 @@ class MTSIntegrator(NVEIntegrator):
  
     def pstep(self, level=0, alpha=1.0):
         """Velocity Verlet monemtum propagator."""
-        self.beads.p += self.forces.forces_mts(level)*0.5*(self.dt/alpha)
+        self.beads.p += self.forces.forces_mts(level)*(self.dthalf/alpha)
        
     def qcstep(self, alpha=1.0):
         """Velocity Verlet centroid position propagator."""
@@ -596,11 +602,11 @@ class MTSIntegrator(NVEIntegrator):
         self.ttime += time.time()
  
         # bias is applied at the outer loop too
-        self.beads.p += depstrip(self.bias.f)*(self.dt*0.5)
+        self.beads.p += depstrip(self.bias.f)*(self.dthalf)
  
         self.mtsprop(0,1.0)
  
-        self.beads.p += depstrip(self.bias.f)*(self.dt*0.5)
+        self.beads.p += depstrip(self.bias.f)*(self.dthalf)
  
         self.ttime -= time.time()
         self.thermostat.step()

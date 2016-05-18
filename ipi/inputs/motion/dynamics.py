@@ -40,7 +40,11 @@ class InputDynamics(InputDictionary):
         "mode": (InputAttribute, {"dtype":   str,
                                   "default": 'nve',
                                   "help":    "The ensemble that will be sampled during the simulation. ",
-                                  "options": ['nve', 'nvt', 'npt', 'nst', 'mts', 'sc']})
+                                  "options": ['nve', 'nvt', 'npt', 'nst', 'mts', 'sc']}),
+        "splitting": (InputAttribute, {"dtype":   str,
+                                  "default": 'obabo',
+                                  "help":    "The ensemble that will be sampled during the simulation. ",
+                                  "options": ['obabo', 'baoab']})        
               }
 
     fields = {
@@ -77,15 +81,17 @@ class InputDynamics(InputDictionary):
         self.thermostat.store(dyn.thermostat)
         self.barostat.store(dyn.barostat)
         self.nmts.store(dyn.nmts) 
+        self.splitting.store(dyn.splitting)
 
     def fetch(self):
-        """Creates an ensemble object.
+        """Creates a dynamics object.
 
         Returns:
-            An ensemble object of the appropriate mode and with the appropriate
-            objects given the attributes of the InputEnsemble object.
+            A dynamics object of the appropriate mode and with the appropriate
+            objects given the attributes of the InputDynamics object.
         """
 
         rv = super(InputDynamics, self).fetch()
         rv["mode"] = self.mode.fetch()
+        rv["splitting"] = self.splitting.fetch()
         return rv
