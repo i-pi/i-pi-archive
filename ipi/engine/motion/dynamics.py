@@ -138,7 +138,7 @@ class Dynamics(Motion):
         
         # first makes sure that the thermostat has the correct temperature, then proceed with binding it.
         deppipe(self, "ntemp", self.thermostat, "temp")
-        deppipe(self, "dt", self.thermostat, "dt")
+        deppipe(self, "halfdt", self.thermostat, "dt")
   
         # the free ring polymer propagator is called in the inner loop, so propagation time should be redefined accordingly. 
         if self.enstype == "mts":
@@ -153,7 +153,7 @@ class Dynamics(Motion):
         self.thermostat.bind(beads=self.beads, nm=self.nm, prng=prng, fixdof=fixdof)
 
         deppipe(self, "ntemp", self.barostat, "temp")
-        deppipe(self, "dt", self.barostat, "dt")
+        deppipe(self, "halfdt", self.barostat, "dt")
         deppipe(self.ensemble, "pext", self.barostat, "pext")
         deppipe(self.ensemble, "stressext", self.barostat, "stressext")
         
@@ -384,17 +384,17 @@ class NPTIntegrator(NVTIntegrator):
         self.ttime += time.time()
 
         self.ptime = -time.time()
-        self.barostat.pstep(dtscale=0.5)
+        self.barostat.pstep()
         self.pconstraints()
         self.ptime += time.time()
 
         self.qtime = -time.time()
-        self.barostat.qcstep()
+        self.barostat.qcstep(dtscale=2.0)
         self.nm.free_qstep()
         self.qtime += time.time()
 
         self.ptime -= time.time()
-        self.barostat.pstep(dtscale=0.5)
+        self.barostat.pstep()
         self.pconstraints()
         self.ptime += time.time()
 
@@ -442,17 +442,17 @@ class NSTIntegrator(NVTIntegrator):
         self.ttime += time.time()
 
         self.ptime = -time.time()
-        self.barostat.pstep(dtscale=0.5)
+        self.barostat.pstep()
         self.pconstraints()
         self.ptime += time.time()
 
         self.qtime = -time.time()
-        self.barostat.qcstep()
+        self.barostat.qcstep(dtscale=2.0)
         self.nm.free_qstep()
         self.qtime += time.time()
 
         self.ptime -= time.time()
-        self.barostat.pstep(dtscale=0.5)
+        self.barostat.pstep()
         self.pconstraints()
         self.ptime += time.time()
 

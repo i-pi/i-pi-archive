@@ -37,7 +37,8 @@ class Thermostat(dobject):
          attached to.
 
    Depend objects:
-      dt: The time step used in the algorithms. Depends on the simulation dt.
+      dt: The time interval for a thermostat step. Can be different from 
+          the total integrator timestep, but that has to be set up externally.
       temp: The simulation temperature. Higher than the system temperature by
          a factor of the number of beads. Depends on the simulation temp.
       ethermo: The total energy exchanged with the bath due to the thermostat.
@@ -146,7 +147,7 @@ class ThermoLangevin(Thermostat):
    def get_T(self):
       """Calculates the coefficient of the overall drift of the velocities."""
 
-      return np.exp(-0.5*self.dt/self.tau)
+      return np.exp(-self.dt/self.tau)
 
    def get_S(self):
       """Calculates the coefficient of the white noise."""
@@ -369,7 +370,7 @@ class ThermoSVR(Thermostat):
    def get_et(self):
       """Calculates the damping term in the propagator."""
 
-      return np.exp(-0.5*self.dt/self.tau)
+      return np.exp(-self.dt/self.tau)
 
    def get_K(self):
       """Calculates the average kinetic energy per degree of freedom."""
@@ -526,7 +527,7 @@ class ThermoGLE(Thermostat):
    def get_T(self):
       """Calculates the matrix for the overall drift of the velocities."""
 
-      return matrix_exp(-0.5*self.dt*self.A)
+      return matrix_exp(-self.dt*self.A)
 
    def get_S(self):
       """Calculates the matrix for the coloured noise."""
