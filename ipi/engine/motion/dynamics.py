@@ -156,7 +156,7 @@ class Dynamics(Motion):
         deppipe(self, "dt", self.barostat, "dt")
         deppipe(self.ensemble, "pext", self.barostat, "pext")
         deppipe(self.ensemble, "stressext", self.barostat, "stressext")
-
+        
         self.barostat.bind(beads, nm, cell, bforce, prng=prng, fixdof=fixdof)
 
         self.ensemble.add_econs(dget(self.thermostat, "ethermo"))
