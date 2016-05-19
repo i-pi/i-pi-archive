@@ -19,7 +19,7 @@ import threading
 import numpy as np
 
 from ipi.utils.softexit import softexit
-from ipi.utils.messages import verbosity, warning
+from ipi.utils.messages import verbosity, warning, info
 from ipi.utils.depend import *
 from ipi.utils.nmtransform import nm_rescale
 from ipi.engine.beads import Beads
@@ -183,6 +183,9 @@ class ForceBead(dobject):
             sys.exit()
          time.sleep(self.ff.latency)
 
+      # print diagnostics about the elapsed time
+      info("# forcefield %s evaluated in %f (queue) and %f (dispatched) sec." % (self.ff.name, self.request["t_finished"]-self.request["t_queued"], self.request["t_finished"]-self.request["t_dispatched"]), verbosity.debug )
+		   
       # data has been collected, so the request can be released and a slot
       # freed up for new calculations
       result = self.request["result"]

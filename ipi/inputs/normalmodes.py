@@ -24,13 +24,14 @@ class InputNormalModes(InputArray):
    performed.
 
    Attributes:
-      mode: Specifies the method by which the dynamical masses are created.
+      frequencies: Specifies how the frequencies given should be interpreted
+         when creating the mass matrix.
       transform: Specifies whether the normal mode calculation will be
          done using a FFT transform or a matrix multiplication.
    """
 
    attribs = copy(InputArray.attribs)
-   attribs["mode"] = (InputAttribute, {"dtype"   : str,
+   attribs["frequencies"] = (InputAttribute, {"dtype"   : str,
                                        "default" : "rpmd",
                                        "help"    : "Specifies the technique to be used to calculate the dynamical masses. 'rpmd' simply assigns the bead masses the physical mass. 'manual' sets all the normal mode frequencies except the centroid normal mode manually. 'pa-cmd' takes an argument giving the frequency to set all the non-centroid normal modes to. 'wmax-cmd' is similar to 'pa-cmd', except instead of taking one argument it takes two ([wmax,wtarget]). The lowest-lying normal mode will be set to wtarget for a free particle, and all the normal modes will coincide at frequency wmax. ",
                                        "options" : ['pa-cmd', 'wmax-cmd', 'manual', 'rpmd']})
@@ -59,7 +60,7 @@ class InputNormalModes(InputArray):
       """
 
       super(InputNormalModes,self).store(nm.nm_freqs)
-      self.mode.store(nm.mode)
+      self.frequencies.store(nm.mode)
       self.transform.store(nm.transform_method)
 
    def fetch(self):
@@ -70,4 +71,4 @@ class InputNormalModes(InputArray):
       """
 
       super(InputNormalModes,self).check()
-      return NormalModes(self.mode.fetch(), self.transform.fetch(), super(InputNormalModes,self).fetch() )
+      return NormalModes(self.frequencies.fetch(), self.transform.fetch(), super(InputNormalModes,self).fetch() )

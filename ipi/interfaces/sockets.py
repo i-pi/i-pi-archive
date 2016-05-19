@@ -492,7 +492,7 @@ class InterfaceSocket(object):
                if j is c:
                   self.jobs = [ w for w in self.jobs if not ( w[0] is k and w[1] is j ) ] # removes pair in a robust way
                   #self.jobs.remove([k,j])
-                  k["status"] = "Queued"
+                  k["status"] = "Queued"                  
                   k["start"] = -1
 
       if len(self.clients) == 0:
@@ -575,6 +575,7 @@ class InterfaceSocket(object):
                if fc.status & Status.Ready:
                   fc.sendpos(r["pos"], r["cell"])
                   r["status"] = "Running"
+                  r["t_dispatched"] = time.time()
                   r["start"] = time.time() # sets start time for the request
                   #fc.poll()
                   fc.status = Status.Up | Status.Busy   # we know that the client is busy at this stage!
@@ -634,6 +635,7 @@ class InterfaceSocket(object):
                warning(" @SOCKET:   Client died a horrible death while getting forces. Will try to cleanup.", verbosity.low)
                continue
             r["status"] = "Done"
+            r["t_finished"] = time.time()
             c.lastreq = r["id"] # saves the ID of the request that the client has just processed
             self.jobs = [ w for w in self.jobs if not ( w[0] is r and w[1] is c ) ] # removes pair in a robust way
 
