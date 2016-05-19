@@ -1227,13 +1227,7 @@ class Properties(dobject):
       qc = depstrip(self.beads.qc)
       q = depstrip(self.beads.q)
       v0 = (self.forces.pot+self.forces.potsc)/self.beads.nbeads
-
-      w=np.zeros(self.brads.nbeads,float)
-      for k in range(self.beads.nbeads):
-         if np.mod(k,2)==0:
-            w[k]=2./3.
-         else:
-            e[k]=4./3.
+      self.dforces.omegan2=self.forces.omegan2
 
       while True:
          splus = np.sqrt(1.0 + dbeta)
