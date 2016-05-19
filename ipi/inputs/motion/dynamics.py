@@ -44,7 +44,7 @@ class InputDynamics(InputDictionary):
         "splitting": (InputAttribute, {"dtype":   str,
                                   "default": 'obabo',
                                   "help":    "The ensemble that will be sampled during the simulation. ",
-                                  "options": ['obabo', 'baoab']})        
+                                  "options": ['obabo', 'aboba']})        
               }
 
     fields = {

@@ -21,7 +21,7 @@
          <pressure units='megapascal'> 10 </pressure> 
       </ensemble>
       <motion mode='dynamics'>
-	<dynamics mode='npt'>
+	<dynamics mode='npt' splitting='aboba'>
 	  <barostat mode='isotropic'>
             <tau units='femtosecond'> 200</tau>
             <thermostat mode='langevin'>

@@ -504,11 +504,11 @@ class Initializer(dobject):
 
          if k == "gle":
             # read thermostat parameters from file
-            if not ( hasattr(simul.ensemble, "thermostat") ):
+            if not ( hasattr(simul.motion, "thermostat") ):
                raise ValueError("Ensemble does not have a thermostat to initialize")
-            if not ( hasattr(simul.ensemble.thermostat, "s") ):
+            if not ( hasattr(simul.motion.thermostat, "s") ):
                raise ValueError("There is nothing to initialize in non-GLE thermostats")
-            ssimul = simul.ensemble.thermostat.s
+            ssimul = simul.motion.thermostat.s
             if v.mode == "manual":
                sinput = v.value.copy()
                if (sinput.size() != ssimul.size() ):
@@ -524,3 +524,9 @@ class Initializer(dobject):
 
             # if all the preliminary checks are good, we can initialize the s's
             ssimul[:] = sinput
+         elif (k == "velocities" or k == "momenta") and v.mode == "thermal" : # initialize barostat if present
+            rtemp = v.value * unit_to_internal("temperature",v.units,1.0)
+            if hasattr(simul.motion, "barostat"):
+                simul.motion.barostat.p[:] = simul.prng.gvec(simul.motion.barostat.p.shape)*np.sqrt(simul.motion.barostat.m)*np.sqrt(rtemp*Constants.kb)
+
+                        

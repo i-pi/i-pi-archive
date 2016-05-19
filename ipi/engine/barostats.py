@@ -323,6 +323,7 @@ class BaroBZP(Barostat):
       """Propagates the centroid position and momentum and the volume."""
 
       v = self.p[0]/self.m[0]
+      print "barostat velocity", v, self.dt
       expq, expp = (np.exp(v*self.dt*dtscale), np.exp(-v*self.dt*dtscale))
 
       m = depstrip(self.beads.m3)[0]
