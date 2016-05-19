@@ -310,9 +310,12 @@ class NVEIntegrator(DummyIntegrator):
     def pstep(self):
         """Velocity Verlet momenta propagator."""
 
-        self.beads.p += depstrip(self.forces.f)*(self.halfdt)
+        if self.splitting == "obabo": dt = self.halfdt
+        elif self.splitting == "aboba": dt = self.dt
+        
+        self.beads.p += depstrip(self.forces.f)*dt
         # also adds the bias force
-        self.beads.p += depstrip(self.bias.f)*(self.halfdt)
+        self.beads.p += depstrip(self.bias.f)*dt
 
     def qcstep(self):
         """Velocity Verlet centroid position propagator."""
@@ -325,21 +328,27 @@ class NVEIntegrator(DummyIntegrator):
     def step(self, step=None):
         """Does one simulation time step."""
 
-        self.ptime = -time.time()
-        self.pstep()
-        self.pconstraints()
-        self.ptime += time.time()
+        self.ttime = -time.time()
+        if self.splitting == "obabo":
+            self.pstep()
+            self.pconstraints()
+            
+            self.qcstep()
+            self.nm.free_qstep()
+            
+            self.pstep()
+            self.pconstraints()
+        elif self.splitting == "aboba":
+            self.qcstep()
+            self.nm.free_qstep()
+            
+            self.pstep()
+            self.pconstraints()
+            
+            self.qcstep()
+            self.nm.free_qstep()
 
-        self.qtime = -time.time()
-        self.qcstep()
-
-        self.nm.free_qstep()
-        self.qtime += time.time()
-
-        self.ptime -= time.time()
-        self.pstep()
-        self.pconstraints()
-        self.ptime += time.time()
+        self.ttime += time.time()
 
 
 class NVTIntegrator(NVEIntegrator):
@@ -352,6 +361,17 @@ class NVTIntegrator(NVEIntegrator):
     Attributes:
         thermostat: A thermostat object to keep the temperature constant.
     """
+
+    def pstep(self):
+        """Velocity Verlet momenta propagator."""
+
+        # pstep is called for 1/2 dt for both OBABO and ABOBA
+        if self.splitting == "obabo": dt = self.halfdt
+        elif self.splitting == "aboba": dt = self.halfdt
+        
+        self.beads.p += depstrip(self.forces.f)*dt
+        # also adds the bias force
+        self.beads.p += depstrip(self.bias.f)*dt
 
     def step(self, step=None):
         """Does one simulation time step."""
