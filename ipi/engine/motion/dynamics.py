@@ -125,13 +125,9 @@ class Dynamics(Motion):
 
         super(Dynamics, self).bind(ens, beads, nm, cell, bforce, prng)
 
-        # Binds integrators
-        self.integrator.bind(self)
-
         # n times the temperature (for path integral partition function)
         dset(self, "ntemp", depend_value(name='ntemp', func=self.get_ntemp,
-             dependencies=[dget(self.ensemble, "temp")]))
-        self.integrator.pconstraints()
+             dependencies=[dget(self.ensemble, "temp")]))        
 
         fixdof = len(self.fixatoms) * 3 * self.beads.nbeads
         if self.fixcom:
@@ -193,6 +189,11 @@ class Dynamics(Motion):
             elif self.enstype == "nst":
                 if np.trace(self.ensemble.stressext) < 0:
                     raise ValueError("Negative or unspecified stress for a constant-s integrator")
+                    
+                    
+        # Binds integrators
+        self.integrator.bind(self)
+        self.integrator.pconstraints()
 
     def get_ntemp(self):
         """Returns the PI simulation temperature (P times the physical T)."""
@@ -225,6 +226,7 @@ class DummyIntegrator(dobject):
         self.fixatoms = motion.fixatoms
         self.splitting = motion.splitting
         dset(self, "dt", dget(motion, "dt"))
+        dset(self, "halfdt", dget(motion, "halfdt"))
         if motion.enstype == "mts": self.nmts=motion.nmts
 
 
@@ -308,14 +310,17 @@ class NVEIntegrator(DummyIntegrator):
     def pstep(self):
         """Velocity Verlet momenta propagator."""
 
-        self.beads.p += depstrip(self.forces.f)*(self.halftd)
+        self.beads.p += depstrip(self.forces.f)*(self.halfdt)
         # also adds the bias force
-        self.beads.p += depstrip(self.bias.f)*(self.halftd)
+        self.beads.p += depstrip(self.bias.f)*(self.halfdt)
 
     def qcstep(self):
         """Velocity Verlet centroid position propagator."""
 
-        self.nm.qnm[0,:] += depstrip(self.nm.pnm)[0,:] / depstrip(self.beads.m3)[0] * self.dt
+        if self.splitting == "obabo": dt = self.dt
+        elif self.splitting == "aboba": dt = self.halfdt
+        
+        self.nm.qnm[0,:] += depstrip(self.nm.pnm)[0,:] / depstrip(self.beads.m3)[0] * dt
 
     def step(self, step=None):
         """Does one simulation time step."""
@@ -351,31 +356,42 @@ class NVTIntegrator(NVEIntegrator):
     def step(self, step=None):
         """Does one simulation time step."""
 
+
         self.ttime = -time.time()
-        self.thermostat.step()
-        self.pconstraints()
+        if self.splitting == "obabo":
+            self.thermostat.step()
+            self.pconstraints()
+        
+            self.pstep()
+            self.pconstraints()
+            
+            self.qcstep()
+            self.nm.free_qstep()
+            
+            self.pstep()
+            self.pconstraints()
+
+            self.thermostat.step()
+            self.pconstraints()
+        elif self.splitting == "aboba":
+            
+            self.qcstep()
+            self.nm.free_qstep()
+            
+            self.pstep()
+            self.pconstraints()
+
+            self.thermostat.step()
+            self.pconstraints()
+        
+            self.pstep()
+            self.pconstraints()
+            
+            self.qcstep()
+            self.nm.free_qstep()
+
         self.ttime += time.time()
-
-        self.ptime = -time.time()
-        self.pstep()
-        self.pconstraints()
-        self.ptime += time.time()
-
-        self.qtime = -time.time()
-        self.qcstep()
-        self.nm.free_qstep()
-        self.qtime += time.time()
-
-        self.ptime -= time.time()
-        self.pstep()
-        self.pconstraints()
-        self.ptime += time.time()
-
-        self.ttime -= time.time()
-        self.thermostat.step()
-        self.pconstraints()
-        self.ttime += time.time()
-
+        
 
 class NPTIntegrator(NVTIntegrator):
     """Integrator object for constant pressure simulations.

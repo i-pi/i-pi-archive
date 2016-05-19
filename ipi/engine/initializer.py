@@ -526,7 +526,7 @@ class Initializer(dobject):
             ssimul[:] = sinput
          elif (k == "velocities" or k == "momenta") and v.mode == "thermal" : # initialize barostat if present
             rtemp = v.value * unit_to_internal("temperature",v.units,1.0)
-            if hasattr(simul.motion, "barostat"):
+            if hasattr(simul.motion.barostat, "p"):
                 simul.motion.barostat.p[:] = simul.prng.gvec(simul.motion.barostat.p.shape)*np.sqrt(simul.motion.barostat.m)*np.sqrt(rtemp*Constants.kb)
 
                         

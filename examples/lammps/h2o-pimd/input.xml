@@ -1,6 +1,6 @@
 <simulation>
    <output prefix='simulation'>
-      <properties stride='1' filename='out'>  [ step, time{picosecond}, conserved{electronvolt}, temperature{kelvin}, kinetic_cv{electronvolt}, potential, pressure_cv{megapascal} ] </properties>
+      <properties stride='1' filename='out'>  [ step, time{picosecond}, conserved{electronvolt}, temperature{kelvin}, kinetic_cv{electronvolt}, potential{electronvolt}, pressure_cv{megapascal} ] </properties>
       <trajectory filename='pos' stride='20'> positions </trajectory>
       <checkpoint stride='200'/>
    </output>
@@ -10,14 +10,14 @@
       <address>no_rpc</address>
    </ffsocket>
    <system>
-      <initialize nbeads='1'>
+      <initialize nbeads='8'>
          <file mode='pdb'> water_298K.pdb </file>
          <velocities mode="thermal" units='kelvin'> 300 </velocities>
       </initialize>
-      <forces><force> lammps </force></forces>
+      <forces><force forcefield="lammps"> </force></forces>
       <motion mode='dynamics'>
-         <dynamics mode='nvt'>
-            <timestep units='femtosecond'> 0.25 </timestep>
+         <dynamics mode='nvt' splitting="aboba">
+            <timestep units='femtosecond'> 0.5 </timestep>
             <thermostat mode='langevin'>
                 <tau units='femtosecond'> 100 </tau>
             </thermostat>
@@ -27,4 +27,4 @@
          <temperature units='kelvin'> 300 </temperature>
       </ensemble>
    </system>
-<simulation>
+</simulation>
