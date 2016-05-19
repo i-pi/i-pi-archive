@@ -189,7 +189,7 @@ class Properties(dobject):
          output.
    """
 
-   _DEFAULT_FINDIFF = 1e-5
+   _DEFAULT_FINDIFF = 1e-4
    _DEFAULT_FDERROR = 1e-9
    _DEFAULT_MINFID = 1e-12
 
@@ -1223,11 +1223,19 @@ class Properties(dobject):
 
       dbeta = abs(float(fd_delta))
       beta = 1.0/(Constants.kb*self.ensemble.temp)
-
+      self.dforces.omegan2=self.forces.omegan2
+      self.dforces.alpha=self.forces.alpha
+      
       qc = depstrip(self.beads.qc)
       q = depstrip(self.beads.q)
-      v0 = (self.forces.pot+self.forces.potsc)/self.beads.nbeads
-      self.dforces.omegan2=self.forces.omegan2
+      v0 = 0      
+      fbase = depstrip(self.forces.f)   
+      for k in range(self.beads.nbeads):
+         if k%2 == 0:
+            v0 += self.forces.pots[k]*2.0/3.0 + (self.forces.alpha/self.forces.omegan2/9.0)*np.dot(fbase[k],fbase[k]/self.beads.m3[k])
+         else:
+            v0 += self.forces.pots[k]*4.0/3.0 + ((1.0-self.forces.alpha)/self.forces.omegan2/9.0)*np.dot(fbase[k],fbase[k]/self.beads.m3[k])
+      v0/=self.beads.nbeads
 
       while True:
          splus = np.sqrt(1.0 + dbeta)
@@ -1235,12 +1243,27 @@ class Properties(dobject):
 
          for b in range(self.beads.nbeads):
             self.dbeads[b].q = qc*(1.0 - splus) + splus*q[b,:]
-         vplus = (self.dforces.pot + self.dforces.potsc)/self.beads.nbeads
-
+                              
+         vplus = 0; 
+         fbase = depstrip(self.dforces.f)   
+         for k in range(self.beads.nbeads):
+            if k%2 == 0:
+                vplus += self.dforces.pots[k]*2.0/3.0 + (self.dforces.alpha/self.dforces.omegan2/9.0)*np.dot(fbase[k],fbase[k]/self.beads.m3[k])
+            else:
+                vplus += self.dforces.pots[k]*4.0/3.0 + ((1.0-self.dforces.alpha)/self.dforces.omegan2/9.0)*np.dot(fbase[k],fbase[k]/self.beads.m3[k])
+         vplus/=self.beads.nbeads
+         
          for b in range(self.beads.nbeads):
             self.dbeads[b].q = qc*(1.0 - sminus) + sminus*q[b,:]
-         vminus = (self.dforces.pot + self.dforces.potsc)/self.beads.nbeads
-
+         vminus = 0
+         fbase = depstrip(self.dforces.f)   
+         for k in range(self.beads.nbeads):
+            if k%2 == 0:
+                vminus += self.dforces.pots[k]*2.0/3.0 + (self.dforces.alpha/self.dforces.omegan2/9.0)*np.dot(fbase[k],fbase[k]/self.beads.m3[k])
+            else:
+                vminus += self.dforces.pots[k]*4.0/3.0 + ((1.0-self.dforces.alpha)/self.dforces.omegan2/9.0)*np.dot(fbase[k],fbase[k]/self.beads.m3[k])
+         vminus/=self.beads.nbeads
+                  
          if (fd_delta < 0 and abs((vplus + vminus)/(v0*2) - 1.0) > self._DEFAULT_FDERROR and dbeta > self._DEFAULT_MINFID):
             dbeta *= 0.5
             info("Reducing displacement in Yamamoto kinetic estimator", verbosity.low)
