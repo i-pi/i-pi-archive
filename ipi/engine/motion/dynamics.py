@@ -320,6 +320,10 @@ class NVTIntegrator(NVEIntegrator):
     def step(self, step=None):
         """Does one simulation time step."""
 
+        self.ptime = 0
+        self.ttime = 0
+        self.qtime = 0
+        
         self.ttime = -time.time()
         self.thermostat.step()
         self.pconstraints()
@@ -344,6 +348,7 @@ class NVTIntegrator(NVEIntegrator):
         self.thermostat.step()
         self.pconstraints()
         self.ttime += time.time()
+        print "PTIME: ", self.ptime, "  TTIME: ", self.ttime, "  QTIME: ", self.qtime
 
 
 class NPTIntegrator(NVTIntegrator):
