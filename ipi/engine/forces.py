@@ -576,22 +576,18 @@ class Forces(dobject):
       # this will be piped from normalmodes
       dset(self, "omegan2", depend_value(name="alpha", value=0))
             
-      dset(self, "SCCALC", 
-           depend_value(name="SCCALC", func=self.sccalc, value = [None,None],
-                 dependencies=[dget(self, "f"), dget(self,"pots"), dget(self,"alpha"),  dget(self,"omegan2")] ) )
-                 
-      dset(self, "fsc", depend_array(name="fsc",value=np.zeros((self.nbeads,3*self.natoms),float),
-            dependencies=[dget(self,"SCCALC")],
-            func=(lambda: self.SCCALC[1] ) ) )
-       
       dset(self, "potssc", depend_array(name="potssc",value=np.zeros(self.nbeads,float),
-            dependencies=[dget(self,"SCCALC")],
-            func=(lambda: self.SCCALC[0] ) ) )
+            dependencies=[dget(self, "f"), dget(self,"pots"), dget(self,"alpha"),  dget(self,"omegan2")],
+            func=self.get_potssc ) )
+                                         
+      dset(self, "fsc", depend_array(name="fsc",value=np.zeros((self.nbeads,3*self.natoms),float),
+            dependencies=[dget(self, "f"), dget(self,"pots"), dget(self,"alpha"),  dget(self,"omegan2")],
+            func=self.get_scforce ) )
 
       dset(self, "potsc", value=depend_value(name="potsc",
             dependencies=[dget(self,"potssc")],
             func=(lambda: self.potssc.sum()) ) ) 
-
+      
    def copy(self, beads=None, cell = None):
       """ Returns a copy of this force object that can be used to compute forces,
       e.g. for use in internal loops of geometry optimizers, or for property 
@@ -745,25 +741,13 @@ class Forces(dobject):
                   rp[:,i,j] += self.mforces[k].weight*self.mrpc[k].b2tob1(virs[:,i,j])
       return rp
       
-   def sccalc(self):
-      """ Obtains Suzuki-Chin energy and forces by finite differences """
-      
-      # This computes the difference between the Trotter and Suzuki-Chin Hamiltonian,
-      # and the associated forces.
-      
-      # We need to compute FW and BW finite differences, so first we initialize an
-      # auxiliary force evaluator
-      
-      rc = []
-      if (self.dforces is None) : 
-         self.dbeads = self.beads.copy()
-         self.dcell = self.cell.copy()
-         self.dforces = self.copy(self.dbeads, self.dcell) 
-      
+   def get_potssc(self):
+      """ Obtains Suzuki-Chin contribution to the potential """
       if self.nbeads % 2 != 0:
          warning("ERROR: Suzuki-Chin factorization requires even number of beads!")
          exit()
-      # this should get the potential
+       
+      # this evaluates the square forces contribution to the SC potential (only the difference with the Trotter potential is returned)
       
       fbase = depstrip(self.f)
       potssc = np.zeros(self.nbeads)
@@ -772,9 +756,29 @@ class Forces(dobject):
            potssc[k] = -self.pots[k]/3.0 + (self.alpha/self.omegan2/9.0)*np.dot(fbase[k],fbase[k]/self.beads.m3[k])
          else:
            potssc[k] = self.pots[k]/3.0 + ((1.0-self.alpha)/self.omegan2/9.0)*np.dot(fbase[k],fbase[k]/self.beads.m3[k])
-      rc.append(potssc)      
-       
+      
+      return potssc
+      
+   def get_scforce(self):
+      """ Obtains Suzuki-Chin forces by finite differences """
+      
+      # This computes the difference between the Trotter and Suzuki-Chin Hamiltonian,
+      # and the associated forces.
+      
+      # We need to compute FW and BW finite differences, so first we initialize an
+      # auxiliary force evaluator
+      
+      if (self.dforces is None) : 
+         self.dbeads = self.beads.copy()
+         self.dcell = self.cell.copy()
+         self.dforces = self.copy(self.dbeads, self.dcell) 
+      
+      if self.nbeads % 2 != 0:
+         warning("ERROR: Suzuki-Chin factorization requires even number of beads!")
+         exit()
+      
       # this should get the forces
+      fbase = depstrip(self.f)
       fac = np.sqrt((fbase/self.beads.m3*fbase/self.beads.m3).sum()/(self.nbeads*self.natoms))
       delta = self.mforces[-1].epsilon/fac
       if self.alpha==0:
@@ -788,9 +792,9 @@ class Forces(dobject):
             fsc[2*k+1] = 2*(fplusminus[self.nbeads/2+k]-fplusminus[k])/2.0/delta
       else: 
          # standard, more expensive version (alpha=1 could also be accelerated but is not used in practice so laziness prevails)
-         self.dbeads.q = self.beads.q + delta*fbase/self.beads.m3 # move forward (should hardcode or input displacement)
+         self.dbeads.q = self.beads.q + delta*fbase/self.beads.m3 # move forward
          fplus = depstrip(self.dforces.f).copy()
-         self.dbeads.q = self.beads.q - delta*fbase/self.beads.m3 # move forward (should hardcode or input displacement)
+         self.dbeads.q = self.beads.q - delta*fbase/self.beads.m3 # move backwards
          fminus = depstrip(self.dforces.f).copy()
          fsc = 2*(fminus - fplus)/2.0/delta      
          
@@ -799,8 +803,6 @@ class Forces(dobject):
            fsc[k] = -self.f[k]/3.0 + (self.alpha/self.omegan2/9.0)*fsc[k]
          else:
            fsc[k] = self.f[k]/3.0 + ((1-self.alpha)/self.omegan2/9.0)*fsc[k]
-      rc.append(fsc)
-
-      return rc
       
-      # etcetera
+      return fsc
+      
