@@ -641,6 +641,7 @@ class Properties(dobject):
          iatom = -1
          latom = atom
 
+      f = depstrip(self.forces.f)      
       # subtracts centroid
       q = depstrip(self.beads.q).copy()      
       qc = depstrip(self.beads.qc)
@@ -648,11 +649,10 @@ class Properties(dobject):
           q[b]-=qc
           
       # zeroes components that are not requested
-      f = depstrip(self.forces.f).copy()
       ncount=0
       for i in range(self.beads.natoms):
          if (atom != "" and iatom != i and latom != self.beads.names[i]):
-             f[:,3*i:3*i+3]=0.0
+             q[:,3*i:3*i+3]=0.0
          else: ncount += 1
 
       acv = np.dot(q.flatten(), f.flatten()) 
