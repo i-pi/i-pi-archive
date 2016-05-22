@@ -190,8 +190,8 @@ class Properties(dobject):
    """
 
    _DEFAULT_FINDIFF = 1e-4
-   _DEFAULT_FDERROR = 1e-9
-   _DEFAULT_MINFID = 1e-12
+   _DEFAULT_FDERROR = 1e-6
+   _DEFAULT_MINFID = 1e-7
 
    def __init__(self):
       """Initialises Properties."""
@@ -1189,10 +1189,18 @@ class Properties(dobject):
             self.dbeads[b].q = qc*(1.0 - sminus) + sminus*q[b,:]
          vminus = self.dforces.pot/self.beads.nbeads
 
-         if (fd_delta < 0 and abs((vplus + vminus)/(v0*2) - 1.0) > self._DEFAULT_FDERROR and dbeta > self._DEFAULT_MINFID):
-            dbeta *= 0.5
-            info("Reducing displacement in Yamamoto kinetic estimator", verbosity.low)
-            continue
+         #print "DISPLACEMENT CHECK YAMA db: %e, d+: %e, d-: %e, dd: %e" %(dbeta, (vplus-v0)*dbeta, (v0-vminus)*dbeta, abs((vplus+vminus-2*v0)/(vplus-vminus)))
+         
+         if (fd_delta < 0 and abs((vplus+vminus-2*v0)/(vplus-vminus)) > self._DEFAULT_FDERROR and dbeta > self._DEFAULT_MINFID):
+             if  dbeta > self._DEFAULT_MINFID : 
+                dbeta *= 0.5
+                info("Reducing displacement in scaled coordinates estimator", verbosity.low)
+                continue
+             else:
+                warning("Could not converge displacement for scaled coordinate estimators", verbosity.low)
+                eps = 0.0
+                eps_prime = 0.0
+                break
          else:
             eps = ((1.0 + dbeta)*vplus - (1.0 - dbeta)*vminus)/(2*dbeta)
             eps += 0.5*(3*self.beads.natoms)/beta
@@ -1243,11 +1251,21 @@ class Properties(dobject):
          for b in range(self.beads.nbeads):
             self.dbeads[b].q = qc*(1.0 - sminus) + sminus*q[b,:]
          vminus=(self.dforces.pot+self.dforces.potsc)/self.beads.nbeads
-                  
-         if (fd_delta < 0 and abs((vplus + vminus)/(v0*2) - 1.0) > self._DEFAULT_FDERROR and dbeta > self._DEFAULT_MINFID):
-            dbeta *= 0.5
-            info("Reducing displacement in Yamamoto kinetic estimator", verbosity.low)
-            continue
+         
+         #print "DISPLACEMENT CHECK SC db: %e, d+: %e, d-: %e, dd: %e" %(dbeta, (vplus-v0), (v0-vminus), abs((vplus+vminus-2*v0)/(vplus-vminus)) )
+         #print "DISPLACEMENT CHECK SC(2) db: %e, d+: %e, d-: %e, dd: %e" %(dbeta, (vplus*(1.0+dbeta)-v0), ((1.0 - dbeta)*vminus-v0), abs((vplus*(1.0 + dbeta)+vminus*(1.0 - dbeta)-2*v0)/((1.0 + dbeta)*vplus-(1.0 - dbeta)*vminus)) )
+         #print "RESULT EXPECTED: e: %e  e1: %e" % (((1.0 + dbeta)*vplus - (1.0 - dbeta)*vminus)/(2*dbeta) + 0.5*(3*self.beads.natoms)/beta, ((1.0 + dbeta)*vplus + (1.0 - dbeta)*vminus - 2*v0)/(dbeta**2*beta) -0.5*(3*self.beads.natoms)/beta**2 )
+         #rvv =((1.0 + dbeta)*vplus + (1.0 - dbeta)*vminus - 2*v0)/(dbeta**2*beta) -0.5*(3*self.beads.natoms)/beta**2
+         if (fd_delta < 0 and abs((vplus+vminus-2*v0)/(vplus-vminus)) > self._DEFAULT_FDERROR):
+             if  dbeta > self._DEFAULT_MINFID : 
+                dbeta *= 0.5
+                info("Reducing displacement in scaled coordinates estimator", verbosity.low)
+                continue
+             else:
+                warning("Could not converge displacement for scaled coordinate estimators", verbosity.low)
+                eps = 0.0
+                eps_prime = 0.0
+                break
          else:
             eps = ((1.0 + dbeta)*vplus - (1.0 - dbeta)*vminus)/(2*dbeta)
             eps += 0.5*(3*self.beads.natoms)/beta
