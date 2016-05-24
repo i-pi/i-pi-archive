@@ -1,5 +1,5 @@
 """
-Contains classes for different geometry optimization algorithms.
+Contains classes for different geometry optimization algorithms 
 
 TODO
 
@@ -20,7 +20,7 @@ from ipi.utils.softexit import softexit
 from ipi.utils.mintools import min_brent, BFGS, L_BFGS
 from ipi.utils.messages import verbosity, info
 from ipi.utils.counter import counter
-
+from ipi.engine.barostats import get_stress
 
 __all__ = ['GeopMotion']
 
@@ -107,6 +107,7 @@ class GeopMotion(Motion):
         """
 
         super(GeopMotion,self).bind(ens, beads, nm, cell, bforce, prng)
+        
         # Binds optimizer (call bind function from DummyOptimizer)
         self.optimizer.bind(self)
        
@@ -142,12 +143,19 @@ class LineMapper(object):
         """ computes energy and gradient for optimization step
             determines new position (x0+d*x)"""
         
+        #cell: self.dcell.h
+        #volume of cell: self.dcell.V
+        #inverse of lattice matrix: self.dcell.ih
+        #kstress(000,000,000): self.dbeads.kstress
+        #stressext (-1-1-1,-1-1-1,-1-1-1,):ens.stressext(not for this class)
+        self.stress = bar
         self.dbeads.q = self.x0 + self.d * x
         e = self.dforces.pot   # Energy
         g = - np.dot(depstrip(self.dforces.f).flatten(), self.d.flatten())   # Gradient
         counter.count()      # counts number of function evaluations
         return e, g
-    
+        
+        
 class GradientMapper(object):
        
     """Creation of the multi-dimensional function that will be minimized.
@@ -172,12 +180,41 @@ class GradientMapper(object):
     def __call__(self,x):
         """computes energy and gradient for optimization step"""
         
+        #cell: self.dcell.h
+        #volume of cell: self.dcell.V
+        #inverse of lattice matrix: self.dcell.ih
+        #number of atoms: self.dbeads.natoms
+        #kstress(000,000,000): self.dbeads.kstress
+        #stressext (-1-1-1,-1-1-1,-1-1-1,):ens.stressext(not for this class)
+        #include by binding to DummyOptimizer: self.ens = geop.ensemble
+        #and binding to GradientMapper: self.dens = dumop.ens
+        norm_strain = self.dcell.V**(1/3)*self.dbeads.natoms**(1/6)
+        norm_stress = self.dcell.V/norm_strain
+        
+        
         self.dbeads.q = x
         e = self.dforces.pot   # Energy
         g = - self.dforces.f   # Gradient
         counter.count()        # counts number of function evaluations
         return e, g
+        
+    #def transform(self):
+        #norm_strain = self.dcell.V**(1/3)*self.dbeads.natoms**(1/6)
+        #norm_stress = self.dcell.V/norm_strain
+       # x_all = np.zeros(natoms + (2,3), np.float)
+      #  x_all[0:natoms,:] = self.dbeads.q
+     #   x_all[natoms:,:] = self.strain....*norm_strain
+        
 
+    	
+    	
+#class Transformation(object):
+ #   """
+  #  Transforms the calculated stress and strain tensor to make sure that 
+   # they have the same units as the atomic positions and the forces and can be minimized on equal footing...
+    #"""
+    
+            
 class DummyOptimizer(dobject):
     """ Dummy class for all optimization classes """
     
@@ -193,7 +230,7 @@ class DummyOptimizer(dobject):
         
     def bind(self, geop):
         """ 
-        bind optimization options and call bind function of LineMapper and GradientMapper (get beads, cell,forces)
+        bind optimization options and call bind function of LineMapper and GradientMapper (get beads, cell, forces)
         check whether force size, direction size and inverse Hessian size from previous step match system size
         """
         
@@ -212,10 +249,11 @@ class DummyOptimizer(dobject):
         self.forces = geop.forces
         self.fixcom = geop.fixcom
         self.fixatoms = geop.fixatoms
-
+        
         self.lm.bind(self)
         self.gm.bind(self)
-
+        
+            
         if self.old_f.shape != self.beads.q.size:
             if self.old_f.size == 0:
                 self.old_f = np.zeros(self.beads.q.size, float)
@@ -247,9 +285,15 @@ class DummyOptimizer(dobject):
                 and (x <= self.tolerances["position"]):
             info("Total number of function evaluations: %d" % counter.func_eval, verbosity.debug)
             softexit.trigger("Geometry optimization converged. Exiting simulation")
-
+        
+        
 class BFGSOptimizer(DummyOptimizer):
     """ BFGS Minimization """
+
+#   def __init__(self)
+     #self.lm = LineMapper()
+     #self.gm = GradientMapper.functionthattransforms()
+        
 
     def step(self, step=None):
         """ Does one simulation time step.
@@ -264,7 +308,7 @@ class BFGSOptimizer(DummyOptimizer):
         self.qtime = -time.time()
 
         info("\nMD STEP %d" % step, verbosity.debug)
-
+        
         # Initialize approximate Hessian inverse to the identity and direction
         # to the steepest descent direction
          
@@ -297,6 +341,62 @@ class BFGSOptimizer(DummyOptimizer):
         
         # Exit simulation step
         self.exitstep(fx, u0, x)
+
+class CellBFGSOptimizer(DummyOptimizer):
+    """ BFGS Minimization """
+
+#   def __init__(self)
+     #self.lm = LineMapper()
+     #self.gm = GradientMapper.functionthattransforms()
+        
+
+    def step(self, step=None):
+        """ Does one simulation time step.
+            Attributes:
+            ptime: The time taken in updating the velocities.
+            qtime: The time taken in updating the positions.
+            ttime: The time taken in applying the thermostat steps.
+        """
+
+        self.ptime = 0.0
+        self.ttime = 0.0
+        self.qtime = -time.time()
+
+        info("\nMD STEP %d" % step, verbosity.debug)
+        
+        # Initialize approximate Hessian inverse to the identity and direction
+        # to the steepest descent direction
+         
+        if step == 0:   # or np.sqrt(np.dot(self.gm.d, self.gm.d)) == 0.0: this part for restarting at claimed minimum (optional)
+            info(" @GEOP: Initializing BFGS", verbosity.debug)
+            self.gm.d = depstrip(self.forces.f) / np.sqrt(np.dot(self.forces.f.flatten(), self.forces.f.flatten()))
+            # store actual position to previous position
+            self.gm.xold = self.beads.q.copy()
+        
+        # Current energy and forces
+        u0 = self.forces.pot.copy()
+        du0 = - self.forces.f
+
+        # Store previous forces
+        self.old_f[:] = self.forces.f
+
+        # Do one iteration of BFGS, return new point, function value,
+        # move direction, and current Hessian to use for next iteration
+        self.beads.q, fx, self.gm.d, self.invhessian = BFGS(self.beads.q,
+                self.gm.d, self.gm, fdf0=(u0, du0), invhessian=self.invhessian,
+                big_step=self.big_step, tol=self.ls_options["tolerance"],
+                itmax=self.ls_options["iter"])
+                
+        # x = current position - previous position; use for exit tolerance
+        x = np.amax(np.absolute(np.subtract(self.beads.q, self.gm.xold)))
+        
+        
+        # Store old position
+        self.gm.xold[:] = self.beads.q
+        
+        # Exit simulation step
+        self.exitstep(fx, u0, x)
+
 
 class LBFGSOptimizer(DummyOptimizer):
     """ L-BFGS Minimization """
