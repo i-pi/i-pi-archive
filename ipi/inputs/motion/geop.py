@@ -44,7 +44,8 @@ class InputGeop(InputDictionary):
     attribs={"mode"  : (InputAttribute, {"dtype"   : str, "default": "lbfgs",
                                     "help"    : "The geometry optimization algorithm to be used",
                                     "options" : ['sd', 'cg', 'bfgs', 'lbfgs']}) }
-
+    
+    # options of the method (mostly tolerances)
     fields = { "ls_options" : ( InputDictionary, {"dtype" : [float, int, float, float],
                               "help" : """"Options for line search methods. Includes:
                               tolerance: stopping tolerance for the search,
@@ -59,7 +60,14 @@ class InputGeop(InputDictionary):
                               "options"  : [ "energy", "force", "position" ],
                               "default"  : [ 1e-8, 1e-8, 1e-8 ],
                               "help"     : "Convergence criteria for optimization.",
-                              "dimension": [ "energy", "force", "length" ] }),      
+                              "dimension": [ "energy", "force", "length" ] }),     
+                "biggest_step": (InputValue, {"dtype" : float,
+                              "default"  : 100.0,
+                              "help"     : "The maximum step size for (L)-BFGS line minimizations."}),
+                "corrections_lbfgs" : (InputValue, {"dtype" : int,
+                              "default"  : 5,
+                              "help"     : "The number of past vectors to store for L-BFGS."}),
+                # re-start parameters, estimate hessian, etc.
                 "old_force": (InputArray, {"dtype" : float,
                               "default"  : input_default(factory=np.zeros, args = (0,)),
                               "help"     : "The previous force in an optimization step.",
@@ -67,9 +75,6 @@ class InputGeop(InputDictionary):
                 "old_direction_cgsd": (InputArray, {"dtype" : float,
                               "default"  : input_default(factory=np.zeros, args = (0,)),
                               "help"     : "The previous direction in a CG or SD optimization."}),
-                "biggest_step": (InputValue, {"dtype" : float,
-                              "default"  : 100.0,
-                              "help"     : "The maximum step size for (L)-BFGS line minimizations."}),
                 "invhessian_bfgs" : (InputArray, {"dtype" : float,
                               "default"  : input_default(factory=np.eye, args = (0,)),
                               "help"     : "Approximate inverse Hessian for BFGS, if known."}),
@@ -78,11 +83,8 @@ class InputGeop(InputDictionary):
                               "help"     : "List of previous position differences for L-BFGS, if known."}),
                 "glist_lbfgs" : (InputArray, {"dtype" : float,
                               "default"  : input_default(factory=np.zeros, args = (0,)),
-                              "help"     : "List of previous gradient differences for L-BFGS, if known."}),
-                "corrections_lbfgs" : (InputValue, {"dtype" : int,
-                              "default"  : 5,
-                              "help"     : "The number of past vectors to store for L-BFGS."})
-                     }
+                              "help"     : "List of previous gradient differences for L-BFGS, if known."})
+                }
 
     dynamic = {  }
 
