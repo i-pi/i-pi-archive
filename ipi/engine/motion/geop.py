@@ -1,5 +1,5 @@
 """
-Contains classes for different geometry optimization algorithms 
+Contains classes for different geometry optimization algorithms.
 
 TODO
 
@@ -20,7 +20,6 @@ from ipi.utils.softexit import softexit
 from ipi.utils.mintools import min_brent, BFGS, L_BFGS
 from ipi.utils.messages import verbosity, info
 from ipi.utils.counter import counter
-from ipi.engine.barostats import Barostat
 
 
 __all__ = ['GeopMotion']
@@ -147,8 +146,7 @@ class LineMapper(object):
         g = - np.dot(depstrip(self.dforces.f).flatten(), self.d.flatten())   # Gradient
         counter.count()      # counts number of function evaluations
         return e, g
-        
-        
+    
 class GradientMapper(object):
        
     """Creation of the multi-dimensional function that will be minimized.
@@ -179,49 +177,6 @@ class GradientMapper(object):
         counter.count()        # counts number of function evaluations
         return e, g
 
-class GradientCellMapper(object):
-       
-    """Creation of the multi-dimensional function that will be minimized.
-    Used in the BFGS and L-BFGS minimizers.
-
-    Attributes:
-        x0: initial position
-        d: move direction
-        xold: previous position
-    """
-    
-    def __init__(self):
-        self.x0 = None
-        self.d = None
-        self.xold = None
-        
-    def bind(self, dumop):
-        self.dbeads = dumop.beads.copy()
-        self.dcell = dumop.cell.copy()
-        self.dforces = dumop.forces.copy(self.dbeads, self.dcell)
-        
-    def __call__(self,x):
-        """computes energy and gradient for optimization step"""
-        
-        norm_strain = self.dcell.V**(1.0/3.0)*self.dbeads.natoms**(1.0/6.0)
-        norm_stress = self.dcell.V/norm_strain
-        print norm_strain, norm_stress
-        self.dbeads.q = x
-        #self.dbeads.q = x[0:natoms,:]
-        #self.dcell.h = x[natoms:,:]/norm_strain
-        
-        e = self.dforces.pot   # Energy
-        
-        #g = np.zeros(natoms + (2,3), np.float)
-        #g[0:natoms,:] = - self.dforces.f
-        #g[natoms:,:] = - self.dstress*norm_stress
-        g = -self.dforces.f
-        counter.count()        # counts number of function evaluations
-        return e, g      
-
-
-    
-            
 class DummyOptimizer(dobject):
     """ Dummy class for all optimization classes """
     
@@ -229,7 +184,7 @@ class DummyOptimizer(dobject):
         """initialises object for LineMapper (1-d function) and for GradientMapper (multi-dimensional function) """
         
         self.lm = LineMapper()
-        self.gm = GradientCellMapper()
+        self.gm = GradientMapper()
         
     def step(self, step=None):
         """Dummy simulation time step which does nothing."""
@@ -256,18 +211,10 @@ class DummyOptimizer(dobject):
         self.forces = geop.forces
         self.fixcom = geop.fixcom
         self.fixatoms = geop.fixatoms
-        
-        self.ensemble = geop.ensemble
-        self.nm = geop.nm
-        self.barostat = Barostat()
-        self.barostat.bind(self.beads, self.nm, self.cell, self.forces, self.ensemble.bias)
-        
+
         self.lm.bind(self)
         self.gm.bind(self)
-        
-       
-        
-            
+
         if self.old_f.shape != self.beads.q.size:
             if self.old_f.size == 0:
                 self.old_f = np.zeros(self.beads.q.size, float)
@@ -299,8 +246,7 @@ class DummyOptimizer(dobject):
                 and (x <= self.tolerances["position"]):
             info("Total number of function evaluations: %d" % counter.func_eval, verbosity.debug)
             softexit.trigger("Geometry optimization converged. Exiting simulation")
-        
-        
+
 class BFGSOptimizer(DummyOptimizer):
     """ BFGS Minimization """
 
@@ -317,10 +263,7 @@ class BFGSOptimizer(DummyOptimizer):
         self.qtime = -time.time()
 
         info("\nMD STEP %d" % step, verbosity.debug)
-        
-        #stress = self.barostat.get_stress()
-        #print stress
-        
+
         # Initialize approximate Hessian inverse to the identity and direction
         # to the steepest descent direction
          
