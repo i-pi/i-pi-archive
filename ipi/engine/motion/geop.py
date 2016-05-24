@@ -110,7 +110,6 @@ class GeopMotion(Motion):
         # Binds optimizer (call bind function from DummyOptimizer)
         self.optimizer.bind(self)
        
-        
     def step(self, step=None):
         self.optimizer.step(step)
         
