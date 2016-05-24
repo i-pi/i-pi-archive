@@ -20,6 +20,8 @@ from ipi.utils.softexit import softexit
 from ipi.utils.mintools import min_brent, BFGS, L_BFGS
 from ipi.utils.messages import verbosity, info
 from ipi.utils.counter import counter
+from ipi.engine.barostats import Barostat
+
 
 __all__ = ['GeopMotion']
 
@@ -80,7 +82,6 @@ class GeopMotion(Motion):
         self.qlist = qlist_lbfgs
         self.glist = glist_lbfgs
         
-        
         # Classes for minimization routines
         self.optype = mode
         if self.optype == "bfgs":
@@ -107,7 +108,6 @@ class GeopMotion(Motion):
         """
 
         super(GeopMotion,self).bind(ens, beads, nm, cell, bforce, prng)
-        
         # Binds optimizer (call bind function from DummyOptimizer)
         self.optimizer.bind(self)
        
@@ -179,8 +179,49 @@ class GradientMapper(object):
         g = - self.dforces.f   # Gradient
         counter.count()        # counts number of function evaluations
         return e, g
-                    
-            
+
+class GradientCellMapper(object):
+       
+    """Creation of the multi-dimensional function that will be minimized.
+    Used in the BFGS and L-BFGS minimizers.
+
+    Attributes:
+        x0: initial position
+        d: move direction
+        xold: previous position
+    """
+    
+    def __init__(self):
+        self.x0 = None
+        self.d = None
+        self.xold = None
+        
+    def bind(self, dumop):
+        self.dbeads = dumop.beads.copy()
+        self.dcell = dumop.cell.copy()
+        self.dforces = dumop.forces.copy(self.dbeads, self.dcell)
+        
+    def __call__(self,x):
+        """computes energy and gradient for optimization step"""
+        
+        norm_strain = self.dcell.V**(1.0/3.0)*self.dbeads.natoms**(1.0/6.0)
+        norm_stress = self.dcell.V/norm_strain
+        print norm_strain, norm_stress
+        self.dbeads.q = x
+        #self.dbeads.q = x[0:natoms,:]
+        #self.dcell.h = x[natoms:,:]/norm_strain
+        
+        e = self.dforces.pot   # Energy
+        
+        #g = np.zeros(natoms + (2,3), np.float)
+        #g[0:natoms,:] = - self.dforces.f
+        #g[natoms:,:] = - self.dstress*norm_stress
+        g = -self.dforces.f
+        counter.count()        # counts number of function evaluations
+        return e, g      
+
+
+    
             
 class DummyOptimizer(dobject):
     """ Dummy class for all optimization classes """
@@ -189,7 +230,7 @@ class DummyOptimizer(dobject):
         """initialises object for LineMapper (1-d function) and for GradientMapper (multi-dimensional function) """
         
         self.lm = LineMapper()
-        self.gm = GradientMapper()
+        self.gm = GradientCellMapper()
         
     def step(self, step=None):
         """Dummy simulation time step which does nothing."""
@@ -217,8 +258,15 @@ class DummyOptimizer(dobject):
         self.fixcom = geop.fixcom
         self.fixatoms = geop.fixatoms
         
+        self.ensemble = geop.ensemble
+        self.nm = geop.nm
+        self.barostat = Barostat()
+        self.barostat.bind(self.beads, self.nm, self.cell, self.forces, self.ensemble.bias)
+        
         self.lm.bind(self)
         self.gm.bind(self)
+        
+       
         
             
         if self.old_f.shape != self.beads.q.size:
@@ -264,12 +312,15 @@ class BFGSOptimizer(DummyOptimizer):
             qtime: The time taken in updating the positions.
             ttime: The time taken in applying the thermostat steps.
         """
-        
+
         self.ptime = 0.0
         self.ttime = 0.0
         self.qtime = -time.time()
 
         info("\nMD STEP %d" % step, verbosity.debug)
+        
+        #stress = self.barostat.get_stress()
+        #print stress
         
         # Initialize approximate Hessian inverse to the identity and direction
         # to the steepest descent direction
@@ -400,12 +451,11 @@ class SDOptimizer(DummyOptimizer):
         
         # Reuse initial value since we have energy and forces already
         u0, du0 = (self.forces.pot.copy(), np.dot(depstrip(self.forces.f.flatten()), dq1_unit.flatten()))
-        
+
         # Do one SD iteration; return positions and energy
         (x, fx) = min_brent(self.lm, fdf0=(u0, du0), x0=0.0,
                     tol=self.ls_options["tolerance"],
                     itmax=self.ls_options["iter"], init_step=self.ls_options["step"])
-        
         # Automatically adapt the search step for the next iteration.
         # Relaxes better with very small step --> multiply by factor of 0.1 or 0.01
         self.ls_options["step"] = 0.1 * x * self.ls_options["adaptive"] + (1 - self.ls_options["adaptive"]) * self.ls_options["step"]

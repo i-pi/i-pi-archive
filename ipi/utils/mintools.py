@@ -206,7 +206,7 @@ def min_brent(fdf, fdf0=None, x0=0.0, tol=1.0e-6, itmax=100, init_step=1.0e-3):
 
     # Call initial bracketing routine
     (ax, bx, cx, fb, dfb) = bracket(fdf, fdf0, x0, init_step)
-    
+
     # Set bracket points
     if ax < cx:
         a = ax
