@@ -4,3 +4,10 @@
    pair potential, as discussed in the tutorial section of the user manual.
    Please refer to this section for more detailed instructions
    on how to run this example.
+
+
+Notes
+-----
+To run Tutorial_1:
+
+```./driver.x -m sg -h localhost -o 15 -p 31415```
