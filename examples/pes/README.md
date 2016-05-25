@@ -11,7 +11,7 @@ phase based on high-end quantum chemistry methods.
 One simply needs to run i-pi with
 
 ```bash
-../../../i-pi input.xml
+../../../bin/i-pi input.xml
 ```
 
 and then run one or more instances of the driver code, that 
@@ -22,7 +22,7 @@ and `h5o2.dms4B.coeff.com.dat` should be present in the folder
 one wants to run the driver code. 
 
 ```bash
-../../../drivers/driver.x -u -h zundel -m zundel
+../../../bin/driver.x -u -h zundel -m zundel
 ```
 
 
@@ -35,6 +35,6 @@ with a simplistic implementation of the qtip4pf/ water model.
 One as usual runs i-PI, followed by one or more instances of the driver:
 
 ```bash
-../../../i-pi input.xml &
-../../../drivers/driver.x -u -h driver -m qtip4pf
+../../../bin/i-pi input.xml &
+../../../bin/driver.x -u -h driver -m qtip4pf
 ```

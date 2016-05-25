@@ -40,12 +40,12 @@ driver.x: $(OBJECTS) sockets.o fsockets.o driver.o | $(OBJECTS)
 
 driver_pure.x: $(OBJECTS) fsockets_pure.o driver.o | $(OBJECTS)
 	$(FC) $(FFLAGS) -o driver_pure.x $^
-	
+
 %.o: %.f90
 	$(FC) $(FFLAGS) -c $< -o $@
 
 %.o: %.f
 	$(FC) $(FFLAGS) -c $< -o $@
-	
+
 clean:
 	rm -f *.o *.mod *.x ../bin/i-pi-driver

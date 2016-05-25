@@ -20,7 +20,7 @@ all: water lithium #zundel
 
 PW:=pw.x
 CP:=cp.x
-IPI:=../../../bin/i-pi
+IPI:=i-pi
 
 define run_pw
   for i in `seq 1 $1`; do \
@@ -53,6 +53,6 @@ lithium:
 #	cd zundel-cp; $(IPI) zundel-ipi.xml & sleep 3; \
 #	$(call run_cp,4,zundel-cp.in) \
 #	wait
-	
+
 clean:
 	rm -rf */*_output.* */*.log */run_* */RESTART */EXIT

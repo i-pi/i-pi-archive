@@ -9,10 +9,9 @@
                   -- Running the CP2K example --
 
  * First, it is necessary to patch and compile CP2K, and create a make.in
-   file containing the path to the cp2k executable and i-pi, e.g.
+   file containing the path to the cp2k executable, e.g.
 
 CP2K:=~/bin/cp2k.popt
-IPI:=~/bin/i-pi
 
 
 ** Run the examples automatically:

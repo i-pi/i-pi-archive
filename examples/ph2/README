@@ -22,12 +22,9 @@
 
 $ make
 
- * Next, create a make.in
-   file containing the path to the driver.x executable, the
-   drivers directory and i-pi, e.g.
+ * Next, source the env.sh file in the i-pi root.
 
-driver:=~/bin/driver.x
-IPI:=~/bin/i-pi/i-pi
+$ source i-pi-root/env.sh
 
 
 ** Run the examples automatically:
