@@ -15,8 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http.//www.gnu.org/licenses/>.
 
-.PHONY: all clean mht-25K mht-20K mht-17K mht-14K nvt multi rpmd paratemp parawte paraptwte
-all: mht-25K mht-20K mht-17K mht-14K nvt multi rpmd paratemp parawte paraptwte
+.PHONY: all clean mht-25K mht-20K mht-17K mht-14K nvt multi rpmd 
+all: mht-25K mht-20K mht-17K mht-14K nvt multi rpmd 
 
 driver:=driver.x
 IPI:=i-pi
