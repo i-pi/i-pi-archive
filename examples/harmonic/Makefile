@@ -18,7 +18,7 @@
 .PHONY: all clean harmonic
 all: harmonic
 
-driver:=driver.x
+driver:=i-pi-driver
 IPI:=i-pi
 
 define run_driver

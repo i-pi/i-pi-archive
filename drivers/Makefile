@@ -29,14 +29,14 @@ PES=pes/zundel.f pes/morse.f pes/qtip4pf.f
 OBJECTS=$(MODULES:%.f90=%.o) $(PES:%.f=%.o)
 FC=gfortran
 CC=gcc
-all: driver.x driver_pure.x
+all: driver.x #driver_pure.x
 
 sockets.o: sockets.c
 	$(CC) $(CFLAGS) -c -o sockets.o sockets.c
 
 driver.x: $(OBJECTS) sockets.o fsockets.o driver.o | $(OBJECTS)
 	$(FC) $(FFLAGS) -o driver.x $^
-	ln -s ../drivers/driver.x ../bin/i-pi-driver
+	ln -sf ../drivers/driver.x ../bin/i-pi-driver
 
 driver_pure.x: $(OBJECTS) fsockets_pure.o driver.o | $(OBJECTS)
 	$(FC) $(FFLAGS) -o driver_pure.x $^

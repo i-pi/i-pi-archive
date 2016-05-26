@@ -18,7 +18,7 @@
 .PHONY: all clean mht-25K mht-20K mht-17K mht-14K nvt multi rpmd 
 all: mht-25K mht-20K mht-17K mht-14K nvt multi rpmd 
 
-driver:=driver.x
+driver:=i-pi-driver
 IPI:=i-pi
 
 define run_driver

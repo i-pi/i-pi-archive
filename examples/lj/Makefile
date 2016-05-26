@@ -18,7 +18,7 @@
 .PHONY: all clean high_density mid_density low_density nst
 all: high_density mid_density low_density nst
 
-driver:=driver.x
+driver:=i-pi-driver
 IPI:=i-pi
 
 define run_driver
