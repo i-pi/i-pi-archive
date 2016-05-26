@@ -18,14 +18,15 @@
 # CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- 
+
 .PHONY: all modules clean
 
 FLAGS=-g -O3 -Wall
 CFLAGS=$(FLAGS)
 FFLAGS=$(FLAGS) -ffree-line-length-none -ffixed-line-length-none -Wno-maybe-uninitialized
-MODULES=distance.f90 LJ.f90 SG.f90 
-PES=pes/zundel.f pes/morse.f pes/qtip4pf.f
+
+MODULES=distance.f90 LJ.f90 SG.f90 pes/pswater.f90
+PES=pes/zundel.f pes/morse.f pes/qtip4pf.f 
 OBJECTS=$(MODULES:%.f90=%.o) $(PES:%.f=%.o)
 FC=gfortran
 CC=gcc
@@ -36,7 +37,7 @@ sockets.o: sockets.c
 
 driver.x: $(OBJECTS) sockets.o fsockets.o driver.o | $(OBJECTS)
 	$(FC) $(FFLAGS) -o driver.x $^
-	ln -sf ../drivers/driver.x ../bin/i-pi-driver
+	ln -fs ../drivers/driver.x ../bin/i-pi-driver
 
 driver_pure.x: $(OBJECTS) fsockets_pure.o driver.o | $(OBJECTS)
 	$(FC) $(FFLAGS) -o driver_pure.x $^
@@ -48,4 +49,4 @@ driver_pure.x: $(OBJECTS) fsockets_pure.o driver.o | $(OBJECTS)
 	$(FC) $(FFLAGS) -c $< -o $@
 
 clean:
-	rm -f *.o *.mod *.x ../bin/i-pi-driver
+	rm -f *.o *.mod *.x */*.mod */*.o ../bin/i-pi-driver
