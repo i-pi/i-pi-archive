@@ -15,11 +15,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http.//www.gnu.org/licenses/>.
 
-.PHONY: all clean mht-25K mht-20K mht-17K mht-14K nvt multi rpmd paratemp parawte paraptwte
-all: mht-25K mht-20K mht-17K mht-14K nvt multi rpmd paratemp parawte paraptwte
+.PHONY: all clean mht-25K mht-20K mht-17K mht-14K nvt multi rpmd 
+all: mht-25K mht-20K mht-17K mht-14K nvt multi rpmd 
 
-driver:=../../../drivers/driver.x
-IPI:=../../../i-pi
+driver:=i-pi-driver
+IPI:=i-pi
 
 define run_driver
   for i in `seq 1 $1`; do \
@@ -57,7 +57,7 @@ mht-25K:
 	cd MHT-25K; $(IPI) input.xml & sleep 5; \
 	$(call run_driver,4,T_25K); \
 	wait
-	
+
 mht-20K:
 	cd MHT-20K; $(IPI) input.xml & sleep 5; \
 	$(call run_driver,4,T_20K); \
@@ -83,12 +83,12 @@ RPMD/run_%/test16.out:
 	  $(call run_driver,8,run-$*-$$x); wait; \
 	  mv RESTART run_$*/; \
 	done  
-	
+
 
 rpmd: RPMD/run_1/test16.out RPMD/run_2/test16.out RPMD/run_3/test16.out RPMD/run_4/test16.out
 	make -C RPMD scripts; make -C RPMD postproc
-	
-	
+
+
 clean:
 	rm -f */ph2* */RESTART */EXIT; \
 	rm -f para*/*_*ph2* para*/PARA*; \

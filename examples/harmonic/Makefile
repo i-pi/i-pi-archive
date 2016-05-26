@@ -18,8 +18,8 @@
 .PHONY: all clean harmonic
 all: harmonic
 
-driver:=../../drivers/driver.x
-IPI:=../../i-pi
+driver:=i-pi-driver
+IPI:=i-pi
 
 define run_driver
   for i in `seq 1 $1`; do \

@@ -16,11 +16,11 @@
 # along with this program. If not, see <http.//www.gnu.org/licenses/>.
 
 .PHONY: all water lithium clean
-all: water lithium zundel
+all: water lithium #zundel
 
 PW:=pw.x
 CP:=cp.x
-IPI:=../../../i-pi
+IPI:=i-pi
 
 define run_pw
   for i in `seq 1 $1`; do \
@@ -49,10 +49,10 @@ lithium:
 	$(call run_pw,4,li4-pw.in) \
 	wait
 
-zundel:
-	cd zundel-cp; $(IPI) zundel-ipi.xml & sleep 3; \
-	$(call run_cp,4,zundel-cp.in) \
-	wait
-	
+#zundel:
+#	cd zundel-cp; $(IPI) zundel-ipi.xml & sleep 3; \
+#	$(call run_cp,4,zundel-cp.in) \
+#	wait
+
 clean:
 	rm -rf */*_output.* */*.log */run_* */RESTART */EXIT

@@ -18,8 +18,8 @@
 .PHONY: all clean high_density mid_density low_density nst
 all: high_density mid_density low_density nst
 
-driver:=../../../drivers/driver.x
-IPI:=../../../i-pi
+driver:=i-pi-driver
+IPI:=i-pi
 
 define run_driver
   for i in `seq 1 $1`; do \
@@ -32,7 +32,7 @@ high_density:
 	cd high_density; $(IPI) input.xml & sleep 5; \
 	$(call run_driver,1,high_density) \
 	wait
-	
+
 mid_density:
 	cd mid_density; $(IPI) input.xml & sleep 5; \
 	$(call run_driver,1,mid_density) \
