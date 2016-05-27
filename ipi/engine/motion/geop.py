@@ -269,7 +269,7 @@ class BFGSOptimizer(DummyOptimizer):
          
         if step == 0:   # or np.sqrt(np.dot(self.gm.d, self.gm.d)) == 0.0: this part for restarting at claimed minimum (optional)
             info(" @GEOP: Initializing BFGS", verbosity.debug)
-            self.gm.d = -depstrip(self.forces.f) / np.sqrt(np.dot(self.forces.f.flatten(), self.forces.f.flatten()))
+            self.gm.d = depstrip(self.forces.f) / np.sqrt(np.dot(self.forces.f.flatten(), self.forces.f.flatten()))
             # store actual position to previous position
             self.gm.xold = self.beads.q.copy()
         
