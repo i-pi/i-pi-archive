@@ -244,7 +244,7 @@ class DummyOptimizer(dobject):
                     or (np.sqrt(np.dot(self.forces.f.flatten() - self.old_f.flatten(),
                         self.forces.f.flatten() - self.old_f.flatten())) == 0.0))\
                 and (x <= self.tolerances["position"]):
-            info("Total number of function evaluations: %d" % counter.func_eval, verbosity.low)
+            info("Total number of function evaluations: %d" % counter.func_eval, verbosity.debug)
             softexit.trigger("Geometry optimization converged. Exiting simulation")
 
 class BFGSOptimizer(DummyOptimizer):
