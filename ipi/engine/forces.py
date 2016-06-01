@@ -262,6 +262,8 @@ class ForceComponent(dobject):
       _forces: A list of the forcefield objects for all the replicas.
       weight: A float that will be used to weight the contribution of this
          forcefield to the total force.
+      mts_weights: A float that will be used to weight the contribution of this
+         forcefield to the total force.
       ffield: A model to be used to create the forcefield objects for all
          the replicas of the system.
 
@@ -664,7 +666,7 @@ class Forces(dobject):
          return self.mrpc[index].b2tob1(self.mforces[index].pots)
          
    def forces_component(self, index, weighted=True):
-      # fetches just one of the potential components
+      # fetches just one of the force components
       if weighted:
          if self.mforces[index].weight > 0:
             return self.mforces[index].weight*self.mrpc[index].b2tob1(depstrip(self.mforces[index].f))
@@ -699,7 +701,7 @@ class Forces(dobject):
          # "expand" to the total number of beads the forces from the
          #contracted one
          if self.mforces[k].weight > 0:
-            rf += self.mforces[k].weight*self.mrpc[k].b2tob1(depstrip(self.mforces[k].f))
+            rf += self.mforces[k].weight*self.mforces[k].mts_weights.sum()*self.mrpc[k].b2tob1(depstrip(self.mforces[k].f))
       return rf
 
    def pot_combine(self):
@@ -711,7 +713,7 @@ class Forces(dobject):
          # "expand" to the total number of beads the potentials from the
          #contracted one
          if self.mforces[k].weight > 0:
-            rp += self.mforces[k].weight*self.mrpc[k].b2tob1(self.mforces[k].pots)
+            rp += self.mforces[k].weight*self.mforces[k].mts_weights.sum()*self.mrpc[k].b2tob1(self.mforces[k].pots)
       return rp
 
    def extra_combine(self):
@@ -738,7 +740,7 @@ class Forces(dobject):
             #contracted one, element by element
             for i in range(3):
                for j in range(3):
-                  rp[:,i,j] += self.mforces[k].weight*self.mrpc[k].b2tob1(virs[:,i,j])
+                  rp[:,i,j] += self.mforces[k].weight*self.mforces[k].mts_weights.sum()*self.mrpc[k].b2tob1(virs[:,i,j])
       return rp
       
    def get_potssc(self):
