@@ -421,7 +421,7 @@ class Properties(dobject):
                       'func': self.get_yama_estimators,
                       "size": 2},
       "sc_scaledcoords": {   "dimension": "undefined",
-                      "help" : "The scaled coordinates estimators that can be used to compute energy and heat capacity",
+                      "help" : "The scaled coordinates estimators that can be used to compute energy and heat capacity for the Suzuki-Chin propagator",
                        "longhelp": """Returns the estimators that are required to evaluate the scaled-coordinates estimators
                        for total energy and heat capacity, as described in T. M. Yamamoto,
                        J. Chem. Phys., 104101, 123 (2005). Returns eps_v and eps_v', as defined in that paper.
@@ -1213,7 +1213,7 @@ class Properties(dobject):
       return np.asarray([eps, eps_prime])
 
    def get_scyama_estimators(self, fd_delta= - _DEFAULT_FINDIFF):
-      """Calculates the quantum scaled coordinate suzuki-chin kinetic energy estimator.
+      """Calculates the quantum scaled coordinate suzuki-chin kinetic energy estimator for the Suzuki-Chin propagator.
 
       Uses a finite difference method to calculate the estimators
       needed to calculate the energy and heat capacity of the system, as
@@ -1245,17 +1245,12 @@ class Properties(dobject):
 
          for b in range(self.beads.nbeads):
             self.dbeads[b].q = qc*(1.0 - splus) + splus*q[b,:]
-                              
          vplus=(self.dforces.pot+self.dforces.potsc)/self.beads.nbeads
          
          for b in range(self.beads.nbeads):
             self.dbeads[b].q = qc*(1.0 - sminus) + sminus*q[b,:]
          vminus=(self.dforces.pot+self.dforces.potsc)/self.beads.nbeads
          
-         #print "DISPLACEMENT CHECK SC db: %e, d+: %e, d-: %e, dd: %e" %(dbeta, (vplus-v0), (v0-vminus), abs((vplus+vminus-2*v0)/(vplus-vminus)) )
-         #print "DISPLACEMENT CHECK SC(2) db: %e, d+: %e, d-: %e, dd: %e" %(dbeta, (vplus*(1.0+dbeta)-v0), ((1.0 - dbeta)*vminus-v0), abs((vplus*(1.0 + dbeta)+vminus*(1.0 - dbeta)-2*v0)/((1.0 + dbeta)*vplus-(1.0 - dbeta)*vminus)) )
-         #print "RESULT EXPECTED: e: %e  e1: %e" % (((1.0 + dbeta)*vplus - (1.0 - dbeta)*vminus)/(2*dbeta) + 0.5*(3*self.beads.natoms)/beta, ((1.0 + dbeta)*vplus + (1.0 - dbeta)*vminus - 2*v0)/(dbeta**2*beta) -0.5*(3*self.beads.natoms)/beta**2 )
-         #rvv =((1.0 + dbeta)*vplus + (1.0 - dbeta)*vminus - 2*v0)/(dbeta**2*beta) -0.5*(3*self.beads.natoms)/beta**2
          if (fd_delta < 0 and abs((vplus+vminus-2*v0)/(vplus-vminus)) > self._DEFAULT_FDERROR):
              if  dbeta > self._DEFAULT_MINFID : 
                 dbeta *= 0.5
