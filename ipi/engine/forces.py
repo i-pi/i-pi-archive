@@ -684,51 +684,6 @@ class Forces(dobject):
               fk += self.mforces[index].weight*self.mforces[index].mts_weights[level]*self.mrpc[index].b2tob1(depstrip(self.mforces[index].f))
       return fk
 
-   def forces_scmts(self, level):
-      """ Fetches ONLY the sc forces associated with a given MTS level."""
-
-      fk = np.zeros((self.nbeads,3*self.natoms))
-      for index in range(len(self.mforces)):
-         if len(self.mforces[index].mts_weights) > level and self.mforces[index].mts_weights[level] != 0  and self.mforces[index].weight > 0:
-            if (self.dforces is None) :
-               self.dbeads = self.beads.copy()
-               self.dcell = self.cell.copy()
-               self.dforces = self.copy(self.dbeads, self.dcell)
-
-            if self.nbeads % 2 != 0:
-               warning("ERROR: Suzuki-Chin factorization requires even number of beads!")
-               exit()
-
-            # this should get the forces
-            fbase = depstrip(self.mforces[index].f)
-            fac = np.sqrt((fbase/self.beads.m3*fbase/self.beads.m3).sum()/(self.nbeads*self.natoms))
-            delta = self.mforces[index].epsilon/fac
-            if self.alpha==0:
-               # special case! half of the S-C forces are zero so we can compute forward-backward finite differences in one go!
-               fsc = fbase*0.0
-               for k in range(self.nbeads/2): # forward and backward go in the two halves of the q vector
-                  self.dbeads.q[k]=self.beads.q[2*k+1] + delta * fbase[2*k+1]/self.beads.m3[2*k+1]
-                  self.dbeads.q[self.nbeads/2+k]=self.beads.q[2*k+1] - delta * fbase[2*k+1]/self.beads.m3[2*k+1]
-               fplusminus = depstrip(self.dforces.mforces[index].f).copy()
-               for k in range(self.nbeads/2): # only compute the elements that will not be set to zero when multiplying by alpha
-                  fsc[2*k+1] = 2*(fplusminus[self.nbeads/2+k]-fplusminus[k])/2.0/delta
-            else:
-               # standard, more expensive version (alpha=1 could also be accelerated but is not used in practice so laziness prevails)
-               self.dbeads.q = self.beads.q + delta*fbase/self.beads.m3 # move forward
-               fplus = depstrip(self.dforces.mforces[index].f).copy()
-               self.dbeads.q = self.beads.q - delta*fbase/self.beads.m3 # move backwards
-               fminus = depstrip(self.dforces.mforces[index].f).copy()
-               fsc = 2*(fminus - fplus)/2.0/delta
- 
-            for k in range(self.nbeads):
-               if k%2 == 0:
-                 fsc[k] = 2.0*self.mforces[index].f[k]/3.0 + (self.alpha/self.omegan2/9.0)*fsc[k]
-               else:
-                 fsc[k] = 4.0*self.mforces[index].f[k]/3.0 + ((1-self.alpha)/self.omegan2/9.0)*fsc[k]
-
-            fk += self.mforces[index].weight*self.mforces[index].mts_weights[level]*self.mrpc[index].b2tob1(fsc)
-      return fk
-
    def nmtslevels(self):
       """ Returns the total number of mts levels."""
        

@@ -21,7 +21,7 @@ from ipi.engine.thermostats import Thermostat
 from ipi.engine.barostats import Barostat
 
 
-#__all__ = ['Dynamics', 'NVEIntegrator', 'NVTIntegrator', 'NPTIntegrator', 'NSTIntegrator', 'SCIntegrator', 'MTSIntegrator', 'SCMTSIntegrator']
+#__all__ = ['Dynamics', 'NVEIntegrator', 'NVTIntegrator', 'NPTIntegrator', 'NSTIntegrator', 'SCIntegrator`']
 
 class Dynamics(Motion):
     """self (path integral) molecular dynamics class.
@@ -88,8 +88,6 @@ class Dynamics(Motion):
             self.integrator = MTSIntegrator()
         elif self.enstype == "sc":
             self.integrator = SCIntegrator()
-        elif self.enstype == "scmts":
-            self.integrator = SCMTSIntegrator()
         
         else:
             self.integrator = DummyIntegrator()
@@ -139,7 +137,7 @@ class Dynamics(Motion):
         deppipe(self, "dt", self.thermostat, "dt")
   
         # the free ring polymer propagator is called in the inner loop, so propagation time should be redefined accordingly. 
-        if self.enstype == "mts" or self.enstype == 'scmts':
+        if self.enstype == "mts":
             self.inmts = 1
             for mk in self.nmts: self.inmts*=mk
             dset(self,"deltat", depend_value(name="deltat", func=(lambda : self.dt/self.inmts) , dependencies=[dget(self,"dt")]) )
@@ -203,7 +201,7 @@ class DummyIntegrator(dobject):
         self.fixcom = motion.fixcom
         self.fixatoms = motion.fixatoms
         dset(self, "dt", dget(motion, "dt"))
-        if motion.enstype == "mts" or motion.enstype == "scmts" : self.nmts=motion.nmts
+        if motion.enstype == "mts": self.nmts=motion.nmts
 
 
     def pstep(self):
@@ -610,68 +608,3 @@ class MTSIntegrator(NVEIntegrator):
         self.thermostat.step()
         self.pconstraints()
         self.ttime += time.time()
-
-class SCMTSIntegrator(NVEIntegrator):
-    """Integrator object for constant temperature simulations.
- 
-    Has the relevant conserved quantity and normal mode propagator for the
-    constant temperature ensemble. Contains a thermostat object containing the
-    algorithms to keep the temperature constant.
-    """
- 
-    def pstep(self, level=0, alpha=1.0):
-        """Velocity Verlet monemtum propagator."""
-        self.beads.p += self.forces.forces_scmts(level)*0.5*(self.dt/alpha)
-       
-    def qcstep(self, alpha=1.0):
-        """Velocity Verlet centroid position propagator."""
-        self.nm.qnm[0,:] += depstrip(self.nm.pnm)[0,:]/depstrip(self.beads.m3)[0]*self.dt/alpha
-       
-    def mtsprop(self, index, alpha):
-        """ Recursive MTS step """
-        nmtslevels = len(self.nmts)
-        mk = self.nmts[index]  # mtslevels starts at level zero, where nmts should be 1 in most cases
-        alpha *= mk
-        for i in range(mk):  
-            # propagate p for dt/2alpha with force at level index      
-            self.ptime = -time.time()
-            self.pstep(index, alpha)
-            self.pconstraints()
-            self.ptime += time.time()
- 
-            if index == nmtslevels-1:
-            # call Q propagation for dt/alpha at the inner step
-                self.qtime = -time.time()
-                self.qcstep(alpha)
-                self.nm.free_qstep() # this has been hard-wired to use the appropriate time step with depend magic
-                self.qtime += time.time()
-            else:
-                self.mtsprop(index+1, alpha)
- 
-            # propagate p for dt/2alpha
-            self.ptime = -time.time()
-            self.pstep(index, alpha)
-            self.pconstraints()
-            self.ptime += time.time()
-        
-    def step(self, step=None):
-        """Does one simulation time step."""
- 
-        # thermostat is applied at the outer loop
-        self.ttime = -time.time()
-        self.thermostat.step()
-        self.pconstraints()
-        self.ttime += time.time()
- 
-        # bias is applied at the outer loop too
-        self.beads.p += depstrip(self.bias.f)*(self.dt*0.5)
- 
-        self.mtsprop(0,1.0)
- 
-        self.beads.p += depstrip(self.bias.f)*(self.dt*0.5)
- 
-        self.ttime -= time.time()
-        self.thermostat.step()
-        self.pconstraints()
-        self.ttime += time.time()
-
