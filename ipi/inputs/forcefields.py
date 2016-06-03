@@ -34,7 +34,7 @@ class InputForceField(Input):
    """
 
    attribs = { "name" : ( InputAttribute, { "dtype"   : str,
-                                         "help"    : "The name by which the forcefield will be identified in the System forces section." } ),
+                                         "help"    : "Mandatory. The name by which the forcefield will be identified in the System forces section." } ),
                "pbc":  ( InputAttribute, { "dtype"   : bool,
                                          "default" : True,
                                          "help"    : "Applies periodic boundary conditions to the atoms coordinates before passing them on to the driver code." })

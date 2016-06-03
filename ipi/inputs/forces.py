@@ -40,12 +40,12 @@ class InputForceComponent(Input):
 
                "forcefield" : ( InputAttribute, { "dtype" : str, 
                                           "default": "",
-                                          "help" : "An optional name to refer to this force component." } )
+                                          "help" : "Mandatory. The name of the ffsocket this force is referring to." } )
             }
 
    fields={ "mts_weights" : (InputArray, {"dtype"        : float,
                                     "default"      : np.zeros(1,float)+1.,
-                                    "help"         : "The weight of force in each mts level startiong from outer.",
+                                    "help"         : "The weight of force in each mts level starting from outer.",
                                     "dimension"    : "force"})
           }
 
