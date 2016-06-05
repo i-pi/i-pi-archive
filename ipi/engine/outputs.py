@@ -101,10 +101,6 @@ class PropertyOutput(dobject):
       else:
          mode = "a"
 
-      # TODO
-      # Possibly also check that the file we want to append to actually
-      # exists. If not, something is off.
-
       self.out = open_backup(self.filename, mode)
 
       # print nice header if information is available on the properties
