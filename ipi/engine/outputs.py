@@ -105,12 +105,7 @@ class PropertyOutput(dobject):
       # Possibly also check that the file we want to append to actually
       # exists. If not, something is off.
 
-      # TODO: This seems superfluous and also masks the actual I/O error number
-      # reported in the original exception.
-      try:
-         self.out = open_backup(self.filename, mode)
-      except IOError:
-         raise IOError("Could not open file " + self.filename + " for output")
+      self.out = open_backup(self.filename, mode)
 
       # print nice header if information is available on the properties
       if is_start:
@@ -273,25 +268,17 @@ class TrajectoryOutput(dobject):
          # open all files
          self.out = []
          for b in range(self.system.beads.nbeads):
-            try:
-               if (self.ibead < 0) or (self.ibead == b):
-                  self.out.append(open_backup(fmt_fn.format(b), mode))
-               else:
-                  # Create null outputs if a single bead output is chosen.
-                  self.out.append(None)
-            except IOError:
-               # TODO
-               raise IOError("Could not open file " + fmt_fn.format(b) + " for output")
+            if (self.ibead < 0) or (self.ibead == b):
+               self.out.append(open_backup(fmt_fn.format(b), mode))
+            else:
+               # Create null outputs if a single bead output is chosen.
+               self.out.append(None)
 
       else:
 
          # open one file
          filename = self.filename + "." + self.format
-         try:
-            self.out = open_backup(filename, mode)
-         except IOError:
-            # TODO
-            raise IOError("Could not open file " + filename + " for output")
+         self.out = open_backup(filename, mode)
 
    def softexit(self):
       """Emergency cleanup if i-pi wants to exit"""
