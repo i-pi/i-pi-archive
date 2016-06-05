@@ -18,6 +18,7 @@ from ipi.utils.messages import verbosity, info, warning
 from ipi.utils.softexit import softexit
 from ipi.utils.depend import *
 from ipi.utils.io.inputs.io_xml import *
+from ipi.utils.io import open_backup
 from ipi.engine.properties import getkey
 
 
@@ -91,13 +92,28 @@ class PropertyOutput(dobject):
    def open_stream(self):
       """Opens the output stream."""
 
+      # Is this the start of the simulation?
+      is_start = self.system.simul.step == 0
+
+      # Only open a new file if this is a new run, otherwise append.
+      if is_start:
+         mode = "w"
+      else:
+         mode = "a"
+
+      # TODO
+      # Possibly also check that the file we want to append to actually
+      # exists. If not, something is off.
+
+      # TODO: This seems superfluous and also masks the actual I/O error number
+      # reported in the original exception.
       try:
-         self.out = open(self.filename, "a")
+         self.out = open_backup(self.filename, mode)
       except IOError:
          raise IOError("Could not open file " + self.filename + " for output")
 
       # print nice header if information is available on the properties
-      if (self.system.simul.step == 0) :
+      if is_start:
          icol = 1
          for what in self.outlist:
             ohead = "# "
@@ -119,7 +135,6 @@ class PropertyOutput(dobject):
       """Emergency call when i-pi must exit quickly"""
 
       self.close_stream()
-
 
    def close_stream(self):
       """Closes the output stream."""
@@ -232,29 +247,51 @@ class TrajectoryOutput(dobject):
    def open_stream(self):
       """Opens the output stream(s)."""
 
-      if getkey(self.what) in [ "positions", "velocities", "forces", "extras" ]:
+      # Is this the start of the simulation?
+      is_start = self.system.simul.step == 0
+
+      # Only open a new file if this is a new run, otherwise append.
+      if is_start:
+         mode = "w"
+      else:
+         mode = "a"
+
+      # prepare format string for zero-padded number of beads,
+      # including underscpre
+      fmt_bead = "{:0" + str(int(1 + np.floor(np.log(self.system.beads.nbeads)/np.log(10)))) + "d}"
+
+      if getkey(self.what) in ["positions", "velocities", "forces", "extras"]:
+
          # must write out trajectories for each bead, so must create b streams
+
+         # prepare format string for file name
+         if getkey(self.what) == "extras":
+            fmt_fn = self.filename + "_" + fmt_bead
+         else:
+            fmt_fn = self.filename + "_" + fmt_bead + "." + self.format
+
+         # open all files
          self.out = []
          for b in range(self.system.beads.nbeads):
-            # zero-padded bead number
-            padb = ( ("%0" + str(int(1 + np.floor(np.log(self.system.beads.nbeads)/np.log(10)))) + "d") % (b) )
             try:
-               if (self.ibead < 0 or self.ibead == b):
-                  if getkey(self.what) == "extras":
-                     self.out.append(open(self.filename + "_" + padb, "a"))
-                  else:
-                     self.out.append(open(self.filename + "_" + padb + "." + self.format, "a"))
+               if (self.ibead < 0) or (self.ibead == b):
+                  self.out.append(open_backup(fmt_fn.format(b), mode))
                else:
-                  self.out.append(None) # creates null outputs if a
-                                        # single bead output is chosen
+                  # Create null outputs if a single bead output is chosen.
+                  self.out.append(None)
             except IOError:
-               raise IOError("Could not open file " + self.filename + "_" + padb + "." + self.format + " for output")
-      else:
-         try:
-            self.out = ( open(self.filename + "." + self.format, "a") )
-         except IOError:
-            raise IOError("Could not open file " + self.filename + "." + self.format + " for output")
+               # TODO
+               raise IOError("Could not open file " + fmt_fn.format(b) + " for output")
 
+      else:
+
+         # open one file
+         filename = self.filename + "." + self.format
+         try:
+            self.out = open_backup(filename, mode)
+         except IOError:
+            # TODO
+            raise IOError("Could not open file " + filename + " for output")
 
    def softexit(self):
       """Emergency cleanup if i-pi wants to exit"""
@@ -397,6 +434,6 @@ class CheckpointOutput(dobject):
       if store:
          self.step += 1    # advances the step counter before saving, so next time the correct index will be loaded.
          self.store()
-      check_file = open(filename, "w")
+      check_file = open_backup(filename, "w")
       check_file.write(self.status.write(name="simulation"))
       check_file.close()
