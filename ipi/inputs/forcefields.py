@@ -23,7 +23,7 @@ class InputForceField(Input):
    instance of the object.
 
    Attributes:
-      name: The number of beads that the forcefield will be evaluated on.
+      name: The name by which the forcefield will be identified in the System forces section.
       pbc: A boolean describing whether periodic boundary conditions will
          be applied to the atom positions before they are sent to the driver
          code.
@@ -34,7 +34,7 @@ class InputForceField(Input):
    """
 
    attribs = { "name" : ( InputAttribute, { "dtype"   : str,
-                                         "help"    : "The name by which the forcefienld will be identified in the System forces section." } ),
+                                         "help"    : "Mandatory. The name by which the forcefield will be identified in the System forces section." } ),
                "pbc":  ( InputAttribute, { "dtype"   : bool,
                                          "default" : True,
                                          "help"    : "Applies periodic boundary conditions to the atoms coordinates before passing them on to the driver code." })
