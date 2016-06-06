@@ -19,7 +19,7 @@
 all: zundel h2o-npt
 
 AIMS:=aims.x
-IPI:=../../../i-pi
+IPI:=i-pi
 
 define run_aims
   for i in `seq 1 $1`; do \
@@ -40,7 +40,7 @@ h2o-npt:
 	cd h2o-npt; $(IPI) h2o-ipi.xml & sleep 3; \
 	$(call run_aims,1,h2o-aims) \
 	wait	
-	
+
 clean:
 	rm -rf */*_output.* */*.log */run_* */RESTART */EXIT
-	
+
