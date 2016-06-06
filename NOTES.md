@@ -11,3 +11,8 @@ inputs/ensemble.py
 * Is the stress tensor a 9-length array?
 
 
+Suggestions:
+------------
+* Never write a tag without the parent in an example. In this way it
+  will always be clear where the tag must appear in the input.
+
