@@ -40,7 +40,7 @@ class InputForceComponent(Input):
 
                "forcefield" : ( InputAttribute, { "dtype" : str, 
                                           "default": "",
-                                          "help" : "Mandatory. The name of the ffsocket this force is referring to." } )
+                                          "help" : "Mandatory. The name of the forcefield this force is referring to." } )
             }
 
    fields={ "mts_weights" : (InputArray, {"dtype"        : float,
