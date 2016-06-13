@@ -21,6 +21,8 @@ from ipi.engine.thermostats import Thermostat
 from ipi.engine.barostats import Barostat
 
 
+#__all__ = ['Dynamics', 'NVEIntegrator', 'NVTIntegrator', 'NPTIntegrator', 'NSTIntegrator', 'SCIntegrator`']
+
 class Dynamics(Motion):
     """self (path integral) molecular dynamics class.
 
@@ -84,6 +86,9 @@ class Dynamics(Motion):
             self.integrator = NSTIntegrator()
         elif self.enstype == "mts":
             self.integrator = MTSIntegrator()
+        elif self.enstype == "sc":
+            self.integrator = SCIntegrator()
+        
         else:
             self.integrator = DummyIntegrator()
 
@@ -400,8 +405,9 @@ class NPTIntegrator(NVTIntegrator):
         self.pconstraints()
         self.ttime += time.time()
 
+
 class NSTIntegrator(NVTIntegrator):
-    """Integrator object for constant pressure simulations.
+    """Ensemble object for constant pressure simulations.
 
     Has the relevant conserved quantity and normal mode propagator for the
     constant pressure ensemble. Contains a thermostat object containing the
@@ -456,6 +462,93 @@ class NSTIntegrator(NVTIntegrator):
         self.thermostat.step()
         self.pconstraints()
         self.ttime += time.time()
+
+class SCIntegrator(NVEIntegrator):
+   """Integrator object for constant temperature simulations.
+
+   Has the relevant conserved quantity and normal mode propagator for the
+   constant temperature ensemble. Contains a thermostat object containing the
+   algorithms to keep the temperature constant.
+
+   Attributes:
+      thermostat: A thermostat object to keep the temperature constant.
+
+   Depend objects:
+      econs: Conserved energy quantity. Depends on the bead kinetic and
+         potential energy, the spring potential energy and the heat
+         transferred to the thermostat.
+   """
+
+   def bind(self, mover):
+      """Binds ensemble beads, cell, bforce, bbias and prng to the dynamics.
+
+      This takes a beads object, a cell object, a forcefield object and a
+      random number generator object and makes them members of the ensemble.
+      It also then creates the objects that will hold the data needed in the
+      ensemble algorithms and the dependency network. Note that the conserved
+      quantity is defined in the init, but as each ensemble has a different
+      conserved quantity the dependencies are defined in bind.
+
+      Args:
+         beads: The beads object from whcih the bead positions are taken.
+         nm: A normal modes object used to do the normal modes transformation.
+         cell: The cell object from which the system box is taken.
+         bforce: The forcefield object from which the force and virial are
+            taken.
+         prng: The random number generator object which controls random number
+            generation.
+      """
+      
+      super(SCIntegrator,self).bind(mover)
+      self.ensemble.add_econs(dget(self.forces, "potsc"))
+
+   def pstep(self):                                                                     
+      """Velocity Verlet momenta propagator."""
+                                                                                        
+      self.beads.p += depstrip(self.forces.f)*(self.dt*0.5)
+      # also adds the bias force
+      self.beads.p += depstrip(self.bias.f)*(self.dt*0.5)
+      # also adds the force assiciated with SuzukiChin correction
+      self.beads.p += depstrip(self.forces.fsc)*(self.dt*0.5)
+                                                                                        
+   def qcstep(self):
+      """Velocity Verlet centroid position propagator."""
+                                                                                        
+      self.nm.qnm[0,:] += depstrip(self.nm.pnm)[0,:]/depstrip(self.beads.m3)[0]*self.dt
+
+   def step(self, step=None):
+      """Does one simulation time step."""
+
+      self.ttime = -time.time()
+      self.thermostat.step()
+      self.pconstraints()
+      self.ttime += time.time()
+
+      self.ptime = -time.time()
+      self.pstep()
+      self.pconstraints()
+      self.ptime += time.time()
+
+      self.qtime = -time.time()
+      self.qcstep()
+      self.nm.free_qstep()
+      self.qtime += time.time()
+
+      self.ptime -= time.time()
+      self.pstep()
+      self.pconstraints()
+      self.ptime += time.time()
+
+      self.ttime -= time.time()
+      self.thermostat.step()
+      self.pconstraints()
+      self.ttime += time.time()
+
+#   def get_econs(self):
+#      """Calculates the conserved energy quantity for constant temperature
+#      ensemble. Also add the S-C term. 
+#      """
+#      return NVEIntegrator.get_econs(self) + self.thermostat.ethermo + self.forces.potsc
 
 class MTSIntegrator(NVEIntegrator):
     """Integrator object for constant temperature simulations.

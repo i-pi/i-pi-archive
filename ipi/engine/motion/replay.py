@@ -68,12 +68,15 @@ class Replay(Motion):
             try:
                 if self.intraj.mode == "xyz":
                     for b in self.beads:
-                        myatoms = read_file("xyz", self.rfile)
+                        ret = read_file("xyz", self.rfile)
+                        myatoms = ret["atoms"]
                         myatoms.q *= unit_to_internal("length", self.intraj.units, 1.0)
                         b.q[:] = myatoms.q
                 elif self.intraj.mode == "pdb":
                     for b in self.beads:
-                        myatoms, mycell = read_file("pdb", self.rfile)
+                        ret = read_file("pdb", self.rfile)
+                        myatoms = ret["atoms"]
+			mycell = ret["cell"] 
                         myatoms.q *= unit_to_internal("length", self.intraj.units, 1.0)
                         mycell.h *= unit_to_internal("length", self.intraj.units, 1.0)
                         b.q[:] = myatoms.q

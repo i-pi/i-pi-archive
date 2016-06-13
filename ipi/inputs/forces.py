@@ -34,6 +34,12 @@ class InputForceComponent(Input):
                "weight" : ( InputAttribute, { "dtype"   : float,
                                          "default" : 1.0,
                                          "help"    : "A scaling factor for this forcefield, to be applied before adding the force calculated by this forcefield to the total force." } ),
+               "finite_dev" : ( InputAttribute, { "dtype"   : float, 
+                                         "default" : 0.001,
+                                         "help"    : "The finite displacement to be used for calculaing the Suzuki-Chin contribution of the force. [in bohr]" } ),
+               "mts_level" : ( InputAttribute, { "dtype"   : int,
+                                         "default" : 0,
+                                         "help"    : "The depth in a MTS splitting at which this component should be applied" } ),
                "name" : ( InputAttribute, { "dtype" : str,
                                           "default" : "",
                                           "help" : "An optional name to refer to this force component." } ),
@@ -52,17 +58,6 @@ class InputForceComponent(Input):
    default_help = "The class that deals with how each forcefield contributes to the overall potential, force and virial calculation."
    default_label = "FORCECOMPONENT"
 
-#   def __init__(self, help=None, default=None):
-#   def __init__(self, help=None, dimension=None, units=None, default=None, dtype=None):
-#      """Initializes InputForceComponent.
-
-
-
-##      Just calls the parent initialization function with appropriate arguments.
-#      """
-
-#     super(InputForceComponent,self).__init__(default=default, help=help)
-
    def store(self, forceb):
       """Takes a ForceComponent instance and stores a minimal
       representation of it.
@@ -71,9 +66,11 @@ class InputForceComponent(Input):
          forceb: A ForceComponent object.
       """
 
+      super(InputForceComponent,self).store(forceb.ffield)
       self.nbeads.store(forceb.nbeads)
       self.weight.store(forceb.weight)
       self.mts_weights.store(forceb.mts_weights)
+      self.finite_dev.store(forceb.epsilon)
       self.name.store(forceb.name)
       self.forcefield.store(forceb.ffield)
 
