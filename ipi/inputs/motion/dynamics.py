@@ -32,8 +32,6 @@ class InputDynamics(InputDictionary):
             dynamics.
         timestep: An optional float giving the size of the timestep in atomic
             units. Defaults to 1.0.
-        fixcom: An optional boolean which decides whether the centre of mass
-            motion will be constrained or not. Defaults to False.
     """
 
     attribs = {

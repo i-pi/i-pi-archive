@@ -42,7 +42,6 @@ class Ensemble(dobject):
         """Initialises Ensemble.
 
         Args:
-            dt: The timestep of the simulation algorithms.
             temp: The temperature.
             fixcom: An optional boolean which decides whether the centre of mass
                 motion will be constrained or not. Defaults to False.

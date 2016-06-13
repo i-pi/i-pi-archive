@@ -32,7 +32,8 @@ sys.path.append(src_dir)
 
 from ipi.inputs import barostats, cell, simulation, paratemp, system, \
              ensembles, thermostats, forcefields, forces, atoms, beads, \
-             prng, initializer, normalmodes, outputs
+             prng, initializer, normalmodes, outputs, motion
+
 
 
 time.sleep(1)
@@ -41,9 +42,11 @@ __all__ = ['help', 'objects']
 objects = { 'barostats': barostats.InputBaro(),
             'cell': cell.InputCell(),
             'simulation': simulation.InputSimulation(),
-            'paratemp': paratemp.InputParaTemp(),
+            # 'paratemp': paratemp.InputParaTemp(),
             'system': system.InputSystem(),
             'ensembles': ensembles.InputEnsemble(),
+            'motion': motion.motion.InputMotion(),
+            'dynamics': motion.dynamics.InputDynamics(),
             'thermostats': thermostats.InputThermo(),
             'forcefield' : forcefields.InputForceField(),
             'ffsocket': forcefields.InputFFSocket(),

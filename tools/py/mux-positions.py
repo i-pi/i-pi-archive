@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 
 description = """
 Read positions of individual beads from a set of trajectory files and

@@ -263,7 +263,7 @@ class BaroBZP(Barostat):
          func=(lambda:np.asarray([self.tau**2*3*self.beads.natoms*Constants.kb*self.temp])),
             dependencies=[ dget(self,"tau"), dget(self,"temp") ] ))
 
-      # binds the thermostat to the piston degrees of freedom
+      # binds the thermostat to the piston degrees of freedom      
       self.thermostat.bind(pm=[ self.p, self.m ], prng=prng)
 
       # barostat elastic energy
