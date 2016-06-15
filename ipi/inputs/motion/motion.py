@@ -39,21 +39,26 @@ __all__ = ['InputMotion']
 class InputMotion(Input):
    """Motion calculation input class.
 
-   A class to encompass the different "motion" (non-MD) calculations.
+   A class to encompass the different "motion" calculations.
 
    Attributes:
       mode: An optional string giving the kind of motion calculation to be performed.
 
    Fields:
       fixcom: An optional boolean which decides whether the centre of mass
-         motion will be constrained or not. Defaults to False.
+         motion will be constrained or not.
       fixatoms: A list of the indices of atoms that should not be moved.
 
    """
 
    attribs={"mode"  : (InputAttribute, {"dtype"   : str,
+<<<<<<< HEAD
                                     "help"    : "How atoms should be moved at each step in the simulatio. 'replay' means that a simulation is restarted from a previous simulation.",
                                     "options" : ['calcphonons', 'minimize', 'replay', 'neb', 'dynamics',  'dummy']}) }
+=======
+                                    "help"    : "How atoms should be moved at each step in the simulation. 'replay' means that a simulation is restarted from a previous simulation.",
+                                    "options" : ['minimize', 'replay', 'neb', 'dynamics',  'dummy']}) }
+>>>>>>> clean-up
    fields={"fixcom": (InputValue, {"dtype"           : bool,
                                    "default"         : True,
                                    "help"            : "This describes whether the centre of mass of the particles is fixed."}),
@@ -74,7 +79,7 @@ class InputMotion(Input):
 
    dynamic = {  }
 
-   default_help = "Holds all the information that is calculation specific, such as geometry optimization parameters, etc."
+   default_help = "Allow chosing the type of calculation to be performed. Holds all the information that is calculation specific, such as geometry optimization parameters, etc."
    default_label = "MOTION"
 
    def store(self, sc):

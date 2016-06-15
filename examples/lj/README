@@ -22,11 +22,9 @@
 
 $ make
 
- * Next, create a make.in
-   file containing the path to the driver.x executable and i-pi, e.g.
+ * Next, source the env.sh file in the i-pi root.
 
-driver:=~/bin/driver.x
-IPI:=~/bin/i-pi
+$ source i-pi-root/env.sh
 
 
 ** Run the examples automatically:
@@ -44,9 +42,13 @@ $ make clean
 
 ** Run the examples manually:
 
+ * Go to the i-pi root directory and from there
+
+$ source env.sh
+
  * Go back to the example directory and run
 
-$ python path/i-pi input.xml
+$ i-pi input.xml
  
    the wrapper will start and sit waiting on the UDS /tmp/ipi.
  
@@ -54,7 +56,7 @@ $ python path/i-pi input.xml
    runs using a different server address, which are indentical to their
    directory names. For example, the high density problem is run using:
  
-$ path/drivers/driver.x -u -h high_density -m lj -o 5.270446,1.1663e-4,13.176115
+$ i-pi-driver -u -h high_density -m lj -o 5.270446,1.1663e-4,13.176115
 
    You can run multiple instances of the code; it is so fast that parallel 
    scaling won't be appreciable.
@@ -64,5 +66,4 @@ $ path/drivers/driver.x -u -h high_density -m lj -o 5.270446,1.1663e-4,13.176115
 
   then run the driver as:
 
-$ path/drivers/driver.x -h high_density -m lj 
-  -o 5.270446,1.1663e-4,13.176115 -p port_no
+$ i-pi-driver -h high_density -m lj -o 5.270446,1.1663e-4,13.176115 -p port_no

@@ -19,7 +19,7 @@
 all: npt-classical npt-piglet nvt-classical nvt-piglet
 
 CP2K:=cp2k.x
-IPI:=../../../i-pi
+IPI:=i-pi
 
 define run_cp2k
   for i in `seq 1 $1`; do \
@@ -33,7 +33,7 @@ npt-classical:
 	cd npt-classical; $(IPI) nptcls_ipi.xml & sleep 5; \
 	$(call run_cp2k,1,nptcls_cp2k.in) \
 	wait
-	
+
 nvt-classical:
 	cd nvt-classical; $(IPI) nvtcls_ipi.xml & sleep 5; \
 	$(call run_cp2k,1,nvtcls_cp2k.in) \

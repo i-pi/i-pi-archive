@@ -184,6 +184,8 @@ class Dynamics(Motion):
             if self.ensemble.temp < 0:
                 raise ValueError("Negative or unspecified temperature for a constant-T integrator")
             if self.enstype == "npt":
+                if type(self.barostat) is Barostat:
+                    raise ValueError("The barostat and its mode have to be specified for constant-p integrators")
                 if self.ensemble.pext < 0:
                     raise ValueError("Negative or unspecified pressure for a constant-p integrator")
             elif self.enstype == "nst":
