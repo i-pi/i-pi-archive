@@ -331,7 +331,7 @@ class NVEIntegrator(DummyIntegrator):
         """Does one simulation time step."""
 
         self.ttime = -time.time()
-        if self.splitting == "obabo":
+        if self.splitting == "obabo" or self.splitting == "baoab":
             self.pstep()
             self.pconstraints()
             
@@ -396,7 +396,6 @@ class NVTIntegrator(NVEIntegrator):
             self.thermostat.step()
             self.pconstraints()
         elif self.splitting == "aboba":
-            
             self.qcstep()
             self.nm.free_qstep()
             
@@ -411,7 +410,22 @@ class NVTIntegrator(NVEIntegrator):
             
             self.qcstep()
             self.nm.free_qstep()
+        elif self.splitting == "baoab":
+            self.pstep()
+            self.pconstraints()
+            
+            self.qcstep()
+            self.nm.free_qstep()
 
+            self.thermostat.step()
+            self.pconstraints()
+            
+            self.qcstep()
+            self.nm.free_qstep()
+        
+            self.pstep()
+            self.pconstraints()
+            
         self.ttime += time.time()
         
 
@@ -467,6 +481,21 @@ class NPTIntegrator(NVTIntegrator):
                         
             self.nm.free_qstep()
             self.barostat.qcstep()
+        elif self.splitting == "baoab":
+            self.barostat.pstep()
+            self.pconstraints()
+            
+            self.barostat.qcstep()
+            self.nm.free_qstep()
+
+            self.thermostat.step()
+            self.pconstraints()
+            
+            self.barostat.qcstep()
+            self.nm.free_qstep()
+        
+            self.barostat.pstep()
+            self.pconstraints()
             
         self.ttime += time.time()
 
@@ -533,6 +562,21 @@ class NSTIntegrator(NVTIntegrator):
             
             self.barostat.qcstep()
             self.nm.free_qstep()
+        elif self.splitting == "baoab":
+            self.barostat.pstep()
+            self.pconstraints()
+            
+            self.barostat.qcstep()
+            self.nm.free_qstep()
+
+            self.thermostat.step()
+            self.pconstraints()
+            
+            self.barostat.qcstep()
+            self.nm.free_qstep()
+        
+            self.barostat.pstep()
+            self.pconstraints()
             
         self.ttime += time.time()
 
