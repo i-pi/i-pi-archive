@@ -212,6 +212,7 @@ class DummyIntegrator(dobject):
                 self.coeffsc[::2] /= -3.
                 self.coeffsc[1::2] /= 3.
                 self.nmts=motion.nmts[-1]
+                self.ensemble.add_econs(dget(self.forces, "potsc"))
         # coefficients to get the (baseline) trotter to sc conversion
         self.coeffsc = np.ones((self.beads.nbeads,3*self.beads.natoms), float)
         self.coeffsc[::2] /= -3.
