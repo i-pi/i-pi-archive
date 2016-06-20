@@ -511,7 +511,7 @@ class SCIntegrator(NVEIntegrator):
       """Velocity Verlet momenta propagator."""
                                               
       # also include the baseline Tr2SC correction (the 2/3 & 4/3 V bit)
-      self.beads.p += depstrip(self.forces.f + self.forces.coeffsc*self.forces.f)*self.dt*0.5/self.nmts
+      self.beads.p += depstrip(self.forces.f + self.coeffsc*self.forces.f)*self.dt*0.5/self.nmts
       # also adds the bias force (TODO!!!)
       # self.beads.p += depstrip(self.bias.f)*(self.dt*0.5)
                                                                                         
@@ -519,7 +519,7 @@ class SCIntegrator(NVEIntegrator):
       """Velocity Verlet Suzuki-Chin momenta propagator."""
 
       # also adds the force assiciated with SuzukiChin correction (only the |f^2| term, so we remove the Tr2SC correction)
-      self.beads.p += depstrip(self.forces.fsc - self.forces.coeffsc*self.forces.f)*self.dt*0.5
+      self.beads.p += depstrip(self.forces.fsc - self.coeffsc*self.forces.f)*self.dt*0.5
 
    def qcstep(self):
       """Velocity Verlet centroid position propagator."""
