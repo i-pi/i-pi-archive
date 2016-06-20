@@ -9,11 +9,15 @@
                   -- Running the q-Espresso example --
 
  * First, it is necessary to patch and compile q-Espresso, and create a make.in
-   file containing the path to pw.x and i-pi, e.g.
+   file containing the path to pw.x, e.g.
 
 PW:=~/bin/pw.x
-IPI:=~/bin/i-pi
 
+ * Next, source the env.sh file in the i-pi root.
+
+```bash
+$ source i-pi-root/env.sh
+```
 
 
 ** Run the examples automatically:

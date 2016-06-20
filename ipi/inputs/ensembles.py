@@ -27,17 +27,14 @@ class InputEnsemble(Input):
          Defaults to 'unknown'.
 
    Fields:
-      thermostat: The thermostat to be used for constant temperature dynamics.
-      barostat: The barostat to be used for constant pressure or stress
-         dynamics.
-      timestep: An optional float giving the size of the timestep in atomic
-         units. Defaults to 1.0.
-      temperature: An optional float giving the temperature in Kelvin. Defaults
-         to 1.0.
+      temperature: An optional float giving the temperature in atomic units.
+         Defaults to 1.0.
       pressure: An optional float giving the external pressure in atomic units.
          Defaults to 1.0.
-      fixcom: An optional boolean which decides whether the centre of mass
-         motion will be constrained or not. Defaults to False.
+      eens: An optional float giving the ensemble contribution to the conserved
+         quantity.
+      stress: An optional array containing the terms of the stress tensor as 
+         [pxx, pxy, pxz, pyx, pyy .. pzy, pzz]. 
    """
 
    fields={

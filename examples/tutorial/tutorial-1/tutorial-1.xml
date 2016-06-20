@@ -15,13 +15,17 @@
          <file mode='pdb' units='angstrom'> our_ref.pdb </file>
          <velocities mode='thermal' units='kelvin'> 25 </velocities>
       </initialize>
-      <forces><force>driver</force></forces>
-      <ensemble mode='nvt'>
-         <thermostat mode='pile_g'>
-            <tau units='femtosecond'> 25 </tau>
-         </thermostat>
-         <timestep units='femtosecond'> 1 </timestep>
+      <forces><force forcefield='driver'></force></forces>
+      <ensemble>
          <temperature units='kelvin'> 25 </temperature>
       </ensemble>
+      <motion mode='dynamics'>
+	<dynamics mode='nvt'>
+	  <thermostat mode='pile_g'>
+            <tau units='femtosecond'> 25 </tau>
+          </thermostat>
+          <timestep units='femtosecond'> 1 </timestep>
+	</dynamics>
+      </motion>
    </system>
 </simulation>

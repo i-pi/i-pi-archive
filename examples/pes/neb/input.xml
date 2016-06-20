@@ -16,7 +16,7 @@
       <seed> 18885 </seed>
    </prng>
    <system>
-      <forces> <force> zundel </force> </forces>
+      <forces> <force forcefield='zundel'> </force> </forces>
       <initialize nbeads="9">
         <file mode="xyz" units="angstrom"> ./start.xyz </file>
         <cell>
