@@ -174,6 +174,15 @@ class Dynamics(Motion):
                 raise ValueError("MTS is not implemented with ABOBA integrator")
             else:
                 deppipe(self,"halfdt", self.nm, "dt")
+        elif self.splitting == "baoab" :            
+            deppipe(self, "dt", self.thermostat, "dt")
+            deppipe(self, "halfdt", self.barostat, "dt")
+                
+            # the free ring polymer propagator is called in the inner loop, so propagation time should be redefined accordingly. 
+            if self.enstype == "mts":
+                raise ValueError("MTS is not implemented with BAOBA integrator")
+            else:
+                deppipe(self,"halfdt", self.nm, "dt")
 
         self.ensemble.add_econs(dget(self.thermostat, "ethermo"))
         self.ensemble.add_econs(dget(self.barostat, "ebaro"))
@@ -312,7 +321,7 @@ class NVEIntegrator(DummyIntegrator):
     def pstep(self):
         """Velocity Verlet momenta propagator."""
 
-        if self.splitting == "obabo": dt = self.halfdt
+        if self.splitting == "obabo" or self.splitting == "baoab": dt = self.halfdt
         elif self.splitting == "aboba": dt = self.dt
         
         self.beads.p += depstrip(self.forces.f)*dt
@@ -323,7 +332,7 @@ class NVEIntegrator(DummyIntegrator):
         """Velocity Verlet centroid position propagator."""
 
         if self.splitting == "obabo": dt = self.dt
-        elif self.splitting == "aboba": dt = self.halfdt
+        elif self.splitting == "aboba" or self.splitting == "baoab": dt = self.halfdt
         
         self.nm.qnm[0,:] += depstrip(self.nm.pnm)[0,:] / depstrip(self.beads.m3)[0] * dt
 
@@ -331,10 +340,21 @@ class NVEIntegrator(DummyIntegrator):
         """Does one simulation time step."""
 
         self.ttime = -time.time()
-        if self.splitting == "obabo" or self.splitting == "baoab":
+        if self.splitting == "obabo":
             self.pstep()
             self.pconstraints()
             
+            self.qcstep()
+            self.nm.free_qstep()
+            
+            self.pstep()
+            self.pconstraints()
+        elif self.splitting == "baoab":
+            self.pstep()
+            self.pconstraints()
+            
+            self.qcstep()
+            self.nm.free_qstep()
             self.qcstep()
             self.nm.free_qstep()
             
@@ -367,13 +387,10 @@ class NVTIntegrator(NVEIntegrator):
     def pstep(self):
         """Velocity Verlet momenta propagator."""
 
-        # pstep is called for 1/2 dt for both OBABO and ABOBA
-        if self.splitting == "obabo": dt = self.halfdt
-        elif self.splitting == "aboba": dt = self.halfdt
-        
-        self.beads.p += depstrip(self.forces.f)*dt
+        # pstep is called for 1/2 dt for all methods
+        self.beads.p += depstrip(self.forces.f)*self.halfdt
         # also adds the bias force
-        self.beads.p += depstrip(self.bias.f)*dt
+        self.beads.p += depstrip(self.bias.f)*self.halfdt
 
     def step(self, step=None):
         """Does one simulation time step."""
