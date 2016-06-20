@@ -155,6 +155,11 @@ class Dynamics(Motion):
         self.ensemble.add_econs(dget(self.thermostat, "ethermo"))
         self.ensemble.add_econs(dget(self.barostat, "ebaro"))
 
+        # coefficients to get the (baseline) trotter to sc conversion
+        self.coeffsc = np.ones((self.beads.nbeads,3*self.beads.natoms), float)
+        self.coeffsc[::2] /= -3.
+        self.coeffsc[1::2] /= 3.
+
         #!TODO THOROUGH CLEAN-UP AND CHECK
         #if self.enstype in ["nvt", "npt", "nst"]:
         if self.enstype == "nvt" or self.enstype == "npt" or self.enstype == "nst":
@@ -204,7 +209,7 @@ class DummyIntegrator(dobject):
         #mts on sc force in suzuki-chin
         if motion.enstype == "sc":
             if(motion.nmts.size > 1):
-                softexit
+                raise ValueError("MTS for SC is not implemented yet....")
             else:
                 self.nmts=motion.nmts[-1]
 
@@ -504,16 +509,17 @@ class SCIntegrator(NVEIntegrator):
 
    def pstep(self):                                                                     
       """Velocity Verlet momenta propagator."""
-                                                                                        
-      self.beads.p += depstrip(self.forces.f - self.forces.coeffsc*self.forces.f/3.0)*self.dt*0.5/self.nmts
-      # also adds the bias force
-      self.beads.p += depstrip(self.bias.f)*(self.dt*0.5)
+                                              
+      # also include the baseline Tr2SC correction (the 2/3 & 4/3 V bit)
+      self.beads.p += depstrip(self.forces.f + self.forces.coeffsc*self.forces.f)*self.dt*0.5/self.nmts
+      # also adds the bias force (TODO!!!)
+      # self.beads.p += depstrip(self.bias.f)*(self.dt*0.5)
                                                                                         
    def pscstep(self):                                                                     
       """Velocity Verlet Suzuki-Chin momenta propagator."""
 
-      # also adds the force assiciated with SuzukiChin correction
-      self.beads.p += depstrip(self.forces.fsc + self.forces.coeffsc*self.forces.f/3.0)*self.dt*0.5
+      # also adds the force assiciated with SuzukiChin correction (only the |f^2| term, so we remove the Tr2SC correction)
+      self.beads.p += depstrip(self.forces.fsc - self.forces.coeffsc*self.forces.f)*self.dt*0.5
 
    def qcstep(self):
       """Velocity Verlet centroid position propagator."""
@@ -543,10 +549,10 @@ class SCIntegrator(NVEIntegrator):
  
           self.ptime -= time.time()
           self.pstep()
-          self.pconstraints()
           self.ptime += time.time()
 
       self.pscstep()
+      self.pconstraints()
 
       self.ttime -= time.time()
       self.thermostat.step()
