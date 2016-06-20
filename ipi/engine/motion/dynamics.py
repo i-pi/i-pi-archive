@@ -207,6 +207,7 @@ class DummyIntegrator(dobject):
             if(motion.nmts.size > 1):
                 raise ValueError("MTS for SC is not implemented yet....")
             else:
+                self.coeffsc=motion.coeffsc
                 self.nmts=motion.nmts[-1]
         # coefficients to get the (baseline) trotter to sc conversion
         self.coeffsc = np.ones((self.beads.nbeads,3*self.beads.natoms), float)
