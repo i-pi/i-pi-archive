@@ -155,10 +155,6 @@ class Dynamics(Motion):
         self.ensemble.add_econs(dget(self.thermostat, "ethermo"))
         self.ensemble.add_econs(dget(self.barostat, "ebaro"))
 
-        # coefficients to get the (baseline) trotter to sc conversion
-        self.coeffsc = np.ones((self.beads.nbeads,3*self.beads.natoms), float)
-        self.coeffsc[::2] /= -3.
-        self.coeffsc[1::2] /= 3.
 
         #!TODO THOROUGH CLEAN-UP AND CHECK
         #if self.enstype in ["nvt", "npt", "nst"]:
@@ -211,7 +207,10 @@ class DummyIntegrator(dobject):
             if(motion.nmts.size > 1):
                 raise ValueError("MTS for SC is not implemented yet....")
             else:
-                self.coeffsc=motion.coeffsc
+                # coefficients to get the (baseline) trotter to sc conversion
+                self.coeffsc = np.ones((self.beads.nbeads,3*self.beads.natoms), float)
+                self.coeffsc[::2] /= -3.
+                self.coeffsc[1::2] /= 3.
                 self.nmts=motion.nmts[-1]
 
 
