@@ -137,11 +137,10 @@ class Dynamics(Motion):
         deppipe(self, "dt", self.thermostat, "dt")
   
         # the free ring polymer propagator is called in the inner loop, so propagation time should be redefined accordingly. 
-        if self.enstype == "mts":
-            self.inmts = 1
-            for mk in self.nmts: self.inmts*=mk
-            dset(self,"deltat", depend_value(name="deltat", func=(lambda : self.dt/self.inmts) , dependencies=[dget(self,"dt")]) )
-            deppipe(self,"deltat", self.nm, "dt")
+        self.inmts = 1
+        for mk in self.nmts: self.inmts*=mk
+        dset(self,"deltat", depend_value(name="deltat", func=(lambda : self.dt/self.inmts) , dependencies=[dget(self,"dt")]) )
+        deppipe(self,"deltat", self.nm, "dt")
 
         # depending on the kind, the thermostat might work in the normal mode or the bead representation.
         self.thermostat.bind(beads=self.beads, nm=self.nm, prng=prng, fixdof=fixdof)
@@ -202,6 +201,12 @@ class DummyIntegrator(dobject):
         self.fixatoms = motion.fixatoms
         dset(self, "dt", dget(motion, "dt"))
         if motion.enstype == "mts": self.nmts=motion.nmts
+        #mts on sc force in suzuki-chin
+        if motion.enstype == "sc":
+            if(motion.nmts.size > 1):
+                softexit
+            else:
+                self.nmts=motion.nmts[-1]
 
 
     def pstep(self):
@@ -500,16 +505,20 @@ class SCIntegrator(NVEIntegrator):
    def pstep(self):                                                                     
       """Velocity Verlet momenta propagator."""
                                                                                         
-      self.beads.p += depstrip(self.forces.f)*(self.dt*0.5)
+      self.beads.p += depstrip(self.forces.f - self.forces.coeffsc*self.forces.f/3.0)*self.dt*0.5/self.nmts
       # also adds the bias force
       self.beads.p += depstrip(self.bias.f)*(self.dt*0.5)
-      # also adds the force assiciated with SuzukiChin correction
-      self.beads.p += depstrip(self.forces.fsc)*(self.dt*0.5)
                                                                                         
+   def pscstep(self):                                                                     
+      """Velocity Verlet Suzuki-Chin momenta propagator."""
+
+      # also adds the force assiciated with SuzukiChin correction
+      self.beads.p += depstrip(self.forces.fsc + self.forces.coeffsc*self.forces.f/3.0)*self.dt*0.5
+
    def qcstep(self):
       """Velocity Verlet centroid position propagator."""
                                                                                         
-      self.nm.qnm[0,:] += depstrip(self.nm.pnm)[0,:]/depstrip(self.beads.m3)[0]*self.dt
+      self.nm.qnm[0,:] += depstrip(self.nm.pnm)[0,:]/depstrip(self.beads.m3)[0]*self.dt/self.nmts
 
    def step(self, step=None):
       """Does one simulation time step."""
@@ -519,20 +528,25 @@ class SCIntegrator(NVEIntegrator):
       self.pconstraints()
       self.ttime += time.time()
 
-      self.ptime = -time.time()
-      self.pstep()
-      self.pconstraints()
-      self.ptime += time.time()
+      self.pscstep()
 
-      self.qtime = -time.time()
-      self.qcstep()
-      self.nm.free_qstep()
-      self.qtime += time.time()
+      for i in range(self.nmts):
+          self.ptime = -time.time()
+          self.pstep()
+          self.pconstraints()
+          self.ptime += time.time()
+ 
+          self.qtime = -time.time()
+          self.qcstep()
+          self.nm.free_qstep()
+          self.qtime += time.time()
+ 
+          self.ptime -= time.time()
+          self.pstep()
+          self.pconstraints()
+          self.ptime += time.time()
 
-      self.ptime -= time.time()
-      self.pstep()
-      self.pconstraints()
-      self.ptime += time.time()
+      self.pscstep()
 
       self.ttime -= time.time()
       self.thermostat.step()

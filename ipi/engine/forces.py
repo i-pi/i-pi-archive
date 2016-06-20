@@ -589,7 +589,11 @@ class Forces(dobject):
       dset(self, "potsc", value=depend_value(name="potsc",
             dependencies=[dget(self,"potssc")],
             func=(lambda: self.potssc.sum()) ) ) 
-      
+
+      self.coeffsc = np.zeros((self.beads.nbeads,3*self.beads.natoms), float) + 1.0
+      self.coeffsc[::2] = self.coeffsc[::2]*(1./3.)
+      self.coeffsc[1::2]= self.coeffsc[1::2]*(-1./3.)
+
    def copy(self, beads=None, cell = None):
       """ Returns a copy of this force object that can be used to compute forces,
       e.g. for use in internal loops of geometry optimizers, or for property 
@@ -761,6 +765,7 @@ class Forces(dobject):
       
       return potssc
       
+
    def get_scforce(self):
       """ Obtains Suzuki-Chin forces by finite differences """
       
