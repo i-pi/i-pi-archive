@@ -1,0 +1,4 @@
+Examples here demonstrate how one can use improved PPI estimators [1] to compute different thermodynamic properties using conventional second-order 
+PIMD trajectories. 
+
+1) I. Poltavsky and A. Tkatchenko, Chem. Sci. 7, 1368-1372 (2016)
