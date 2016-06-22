@@ -1,0 +1,38 @@
+<simulation verbosity='medium' mode='static'>
+   <step>25</step>
+   <output prefix=''>
+      <properties shape='(2)' filename='opgeo.out'> [ step, potential{electronvolt} ] </properties>
+      <trajectory filename='opgeo.pos'>positions{angstrom}</trajectory>
+   </output>
+   <ffsocket mode='unix' name='lmp'>
+      <latency>  1.00000000e-04</latency>
+      <address>driver</address>
+   </ffsocket>
+   <system>
+      <cell shape='(3, 3)'>
+       [   1.00000000e+00,   1.22464680e-16,   1.83697020e-16,   0.00000000e+00,   2.00000000e+00, 
+           1.83697020e-16,   0.00000000e+00,   0.00000000e+00,   3.00000000e+00 ]
+      </cell>
+      <beads natoms='2' nbeads='1'>
+         <q shape='(1, 6)'>
+          [   1.32500007e+01,  -5.00000466e-01,   4.30400324e-01,  -1.32500007e+01,   5.00000466e-01, 
+              1.93039968e+00 ]
+         </q>
+         <p shape='(1, 6)'>
+          [   0.00000000e+00,   0.00000000e+00,   0.00000000e+00,   0.00000000e+00,   0.00000000e+00, 
+              0.00000000e+00 ]
+         </p>
+         <m shape='(2)'> [   4.19077874e+04,   6.46263191e+04 ] </m>
+         <names shape='(2)'> [ Na, Cl ] </names>
+      </beads>
+      <motion mode='minimize'>
+         <optimizer mode='bfgs'>
+         </optimizer>
+         <fixcom>False</fixcom>
+      </motion>
+      <forces>
+         <force forcefield='lmp'>
+         </force>
+      </forces>
+   </system>
+</simulation>
