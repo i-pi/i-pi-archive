@@ -6,7 +6,7 @@ __version__ = '1.0'
 """ energy_ppi.py
 Reads simulation time, potential energy, positions and forces from
 an i-PI run and computes a virial total energy estimator and a ppi correction
-for each time frame. The output is saved to 'prefix.ppi' file which is created in the
+for each time frame. The output is saved to 'prefix.energy.dat' file which is created in the
 folder which contains the input files. The results are printed out in the format: "time
 frame", "virial total energy estimator", and "ppi correction".
 
@@ -24,11 +24,9 @@ Syntax:
 """
 
 import numpy as np
-import sys, glob, copy
+import sys, glob
 
 from ipi.utils.io import read_file
-from ipi.engine.beads import Beads
-from ipi.utils.depend import depstrip
 from ipi.utils.units import unit_to_internal, unit_to_user, Constants
 
 time_index, potentialEnergy_index = 0, 0 # global variables for time step and potential energy units
@@ -62,10 +60,11 @@ def totalEnergy(prefix, temp, ss=0):
    for filename in sorted(glob.glob(prefix+".out")):
       iU = open(filename,"r")
 
+
    global potentialEnergyUnit, timeUnit
    timeUnit, potentialEnergyUnit = extractUnits(iU) # extracting simulation time and potential energy units
 
-   iE=open(prefix+".ppi","w")
+   iE=open(prefix+".energy"+".dat","w")
    iE.write("# Simulation time (in %s), virial total energy and PPI energy correction (in %s)\n" %
             (timeUnit, potentialEnergyUnit))
 
@@ -73,20 +72,22 @@ def totalEnergy(prefix, temp, ss=0):
    if (nbeads!=len(ifor)): raise ValueError("Mismatch between number of output files for forces and positions")
    natoms = 0
    ifr = 0
+   time0 = 0
+   q, f, m = None, None, None
    while True:  # Reading input files and calculating PPI correction
       try:
         for i in range(nbeads):
-          ret = read_file("xyz", ipos[i])  
-          pos = ret["atoms"]
+          ret = read_file("xyz", ipos[i])
+          m, n = ret["masses"], ret["atoms"].natoms
+          pos = unit_to_internal(ret["units"][0], ret["units"][1], ret["atoms"].q)
           ret = read_file("xyz", ifor[i])
-          force = ret["atoms"]
+          force = unit_to_internal(ret["units"][0], ret["units"][1], ret["atoms"].q)
           if natoms == 0:
-            natoms = pos.natoms
-            beads = Beads(natoms,nbeads)
-            forces = Beads(natoms,nbeads)
-          beads[i].q = pos.q
-          beads[i].m = pos.m
-          forces[i].q = force.q
+            natoms = n
+            q = np.zeros((nbeads, 3*natoms))
+            f = np.zeros((nbeads, 3*natoms))
+          q[i,:] = pos
+          f[i,:] = force
         time, U = read_U(iU)
       except EOFError: # finished reading files
         sys.exit(0)
@@ -96,9 +97,6 @@ def totalEnergy(prefix, temp, ss=0):
 
       if ifr >= skipSteps:  # PPI correction
         time -= time0
-        q = depstrip(beads.q)
-        f = depstrip(forces.q)
-        m = depstrip(beads.m)
 
         ePA, f2, f2ePA = 0.0, 0.0, 0.0
         eVir, rc = 0.0, np.zeros(3)

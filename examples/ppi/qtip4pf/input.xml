@@ -4,13 +4,13 @@
         <trajectory filename='pos' stride='1' format='xyz' cell_units='angstrom'> positions{angstrom} </trajectory>
         <trajectory filename='force' stride='1' format='xyz' cell_units='angstrom'> forces{piconewton} </trajectory>
     </output>
-    <total_steps>500000</total_steps>
+    <total_steps>5000</total_steps>
     <prng><seed>32342</seed></prng>
     <ffsocket name="qtip4pf" mode="unix" pbc="false">
         <address>driver</address>
     </ffsocket>
     <system>
-        <initialize nbeads='12'>
+        <initialize nbeads='8'>
             <file mode='pdb'> water_298K.pdb </file>
             <velocities mode="thermal" units='kelvin'> 298 </velocities>
         </initialize>
