@@ -131,13 +131,6 @@ class Atoms(dobject):
          dset(self,"m",_prebind[2])
          dset(self,"names",_prebind[3])
 
-      self.px = self.p[0:3*natoms:3]
-      self.py = self.p[1:3*natoms:3]
-      self.pz = self.p[2:3*natoms:3]
-      self.qx = self.q[0:3*natoms:3]
-      self.qy = self.q[1:3*natoms:3]
-      self.qz = self.q[2:3*natoms:3]
-
       dset(self,"m3",
          depend_array(name="m3",value=np.zeros(3*natoms, float),func=self.mtom3,
             dependencies=[dget(self,"m")]))
@@ -150,7 +143,7 @@ class Atoms(dobject):
             dependencies=[dget(self,"p"),dget(self,"m3")]) )
       dset(self,"kstress",
          depend_value(name="kstress",func=self.get_kstress,
-            dependencies=[dget(self,"px"),dget(self,"py"),dget(self,"pz"),dget(self,"m")]) )
+            dependencies=[dget(self,"p"),dget(self,"m")]) )
 
    def copy(self):
       """Creates a new Atoms object.
@@ -259,11 +252,17 @@ class Atoms(dobject):
       tensor -- not volume-scaled
       """
 
+      p = depstrip(self.p)
+      m = depstrip(self.m)
+      px = p[0:3*natoms:3]
+      py = p[1:3*natoms:3]
+      pz = p[2:3*natoms:3]
+
       ks = np.zeros((3,3),float)
-      ks[0,0] = np.dot(self.px,self.px/self.m)
-      ks[1,1] = np.dot(self.py,self.py/self.m)
-      ks[2,2] = np.dot(self.pz,self.pz/self.m)
-      ks[0,1] = np.dot(self.px,self.py/self.m)
-      ks[0,2] = np.dot(self.px,self.pz/self.m)
-      ks[1,2] = np.dot(self.py,self.pz/self.m)
+      ks[0,0] = np.dot(px,px/m)
+      ks[1,1] = np.dot(py,py/m)
+      ks[2,2] = np.dot(pz,pz/m)
+      ks[0,1] = np.dot(px,py/m)
+      ks[0,2] = np.dot(px,pz/m)
+      ks[1,2] = np.dot(py,pz/m)
       return ks
