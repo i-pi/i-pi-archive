@@ -113,9 +113,9 @@ def read_xyz(filedesc, **kwargs):
         h = mt.abc2h(1.0, 1.0, 1.0, np.pi/2, np.pi/2, np.pi/2)
     cell = Cell(h)
 
-    qatoms = []
-    names = []
-    masses = []
+    qatoms = np.zeros(3*natoms)
+    names = np.zeros(natoms,dtype='|S4')
+    masses = np.zeros(natoms)
     iat = 0
     while (iat < natoms):
         body = filedesc.readline()
@@ -123,8 +123,8 @@ def read_xyz(filedesc, **kwargs):
             break
         body = body.split()
         name = body[0]
-        names.append(name)
-        masses.append(Elements.mass(name))
+        names[iat]=name
+        masses[iat]=Elements.mass(name)
         x = float(body[1])
         y = float(body[2])
         z = float(body[3])
@@ -136,18 +136,18 @@ def read_xyz(filedesc, **kwargs):
             u = np.dot(h, us)
             x, y, z = u
 
-        qatoms.append(x)
-        qatoms.append(y)
-        qatoms.append(z)
+        qatoms[3*iat]=x
+        qatoms[3*iat+1]=y
+        qatoms[3*iat+2]=z
         iat += 1
 
     if natoms != len(names):
         raise ValueError("The number of atom records does not match the header of the xyz file.")
 
     atoms = Atoms(natoms)
-    atoms.q = np.asarray(qatoms)
-    atoms.names = np.asarray(names, dtype='|S4')
-    atoms.m = np.asarray(masses)
+    atoms.q[:] = qatoms
+    atoms.names[:] = names
+    atoms.m[:] = masses
 
     return {
         "atoms": atoms,
