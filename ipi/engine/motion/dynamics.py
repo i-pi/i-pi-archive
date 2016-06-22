@@ -155,7 +155,6 @@ class Dynamics(Motion):
         self.ensemble.add_econs(dget(self.thermostat, "ethermo"))
         self.ensemble.add_econs(dget(self.barostat, "ebaro"))
 
-
         #!TODO THOROUGH CLEAN-UP AND CHECK
         #if self.enstype in ["nvt", "npt", "nst"]:
         if self.enstype == "nvt" or self.enstype == "npt" or self.enstype == "nst":
@@ -211,8 +210,9 @@ class DummyIntegrator(dobject):
                 self.coeffsc = np.ones((self.beads.nbeads,3*self.beads.natoms), float)
                 self.coeffsc[::2] /= -3.
                 self.coeffsc[1::2] /= 3.
-                self.nmts=motion.nmts[-1]        
-
+                print self.coeffsc[:,0]
+                print self.coeffsc[:,-1]                
+                self.nmts=motion.nmts[-1]                 
 
     def pstep(self):
         """Dummy momenta propagator which does nothing."""
@@ -559,11 +559,6 @@ class SCIntegrator(NVEIntegrator):
       self.pconstraints()
       self.ttime += time.time()
 
-#   def get_econs(self):
-#      """Calculates the conserved energy quantity for constant temperature
-#      ensemble. Also add the S-C term. 
-#      """
-#      return NVEIntegrator.get_econs(self) + self.thermostat.ethermo + self.forces.potsc
 
 class MTSIntegrator(NVEIntegrator):
     """Integrator object for constant temperature simulations.
