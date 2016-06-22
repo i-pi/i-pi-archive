@@ -1,4 +1,5 @@
-#!/usr/bin/python
+#!/usr/bin/env python2
+
 __author__ = 'Igor Poltavsky'
 __version__ = '1.0'
 
@@ -24,12 +25,11 @@ Syntax:
 
 import numpy as np
 import sys, glob, copy
-sys.path.append("../../") # pathway to i-PI folder
-from ipi.utils.io.backends.io_xyz import *
+
+from ipi.utils.io import read_file
 from ipi.engine.beads import Beads
-from ipi.utils.depend import *
-from ipi.utils.units import *
-from ipi.engine.atoms import Atoms
+from ipi.utils.depend import depstrip
+from ipi.utils.units import unit_to_internal, unit_to_user, Constants
 
 time_index, potentialEnergy_index = 0, 0 # global variables for time step and potential energy units
 potentialEnergyUnit = None               # potential energy unit in input file prefix.out
@@ -76,8 +76,10 @@ def totalEnergy(prefix, temp, ss=0):
    while True:  # Reading input files and calculating PPI correction
       try:
         for i in range(nbeads):
-          pos = read_xyz(ipos[i])
-          force = read_xyz(ifor[i])
+          ret = read_file("xyz", ipos[i])  
+          pos = ret["atoms"]
+          ret = read_file("xyz", ifor[i])
+          force = ret["atoms"]
           if natoms == 0:
             natoms = pos.natoms
             beads = Beads(natoms,nbeads)
@@ -206,76 +208,7 @@ def extractUnits(filedescU):
      sys.exit(1)
 
    return timeUnit, potentialEnergyUnit
-
-
-def read_xyz(filedesc):
-   """Takes a xyz-style file and creates an Atoms object.
-   Positions and forces in the output are in the internal units.
-
-   Args:
-      filedesc: An open readable file object from a xyz formatted file.
-
-   Returns:
-      An Atoms object with the appropriate atom labels, masses and positions.
-   """
-
-   natoms = filedesc.readline()
-   if natoms == "":
-      raise EOFError("The file descriptor hit EOF.")
-   natoms = int(natoms)
-   comment = filedesc.readline()
-
-   unit, type = None, None
-
-   try:
-     ind = comment.find('forces{')
-     if ind != -1:
-       comment = comment[ind+7:]
-       ind = comment.find('}')
-       unit = comment[:ind]
-       type = 'force'
-   except:
-     pass
-   try:
-     ind = comment.find('positions{')
-     if ind != -1:
-       comment = comment[ind+10:]
-       ind = comment.find('}')
-       unit = comment[:ind]
-       type = 'length'
-   except:
-     pass
-
-   qatoms = []
-   names = []
-   masses = []
-   iat = 0
-   while (iat < natoms):
-      body = filedesc.readline()
-      if body.strip() == "":
-         break
-      body = body.split()
-      name = body[0]
-      names.append(name)
-      masses.append(Elements.mass(name))
-      x = unit_to_internal(type, unit, float(body[1]))
-      y = unit_to_internal(type, unit, float(body[2]))
-      z = unit_to_internal(type, unit, float(body[3]))
-      qatoms.append(x)
-      qatoms.append(y)
-      qatoms.append(z)
-      iat += 1
-
-   if natoms != len(names):
-      raise ValueError("The number of atom records does not match the header of the xyz file.")
-
-   atoms = Atoms(natoms)
-   atoms.q = np.asarray(qatoms)
-   atoms.names = np.asarray(names, dtype='|S4')
-   atoms.m = np.asarray(masses)
-
-   return atoms
-
+   
 
 def read_U(filedesc):
    """Takes a file which contains simulation time and potential energy information and
