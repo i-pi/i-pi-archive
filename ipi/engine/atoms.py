@@ -66,7 +66,7 @@ class Atom(dobject):
       """
 
       p = depstrip(self.p)
-      ks = numpy.zeros((3,3),float)
+      ks = np.zeros((3,3),float)
       for i in range(3):
          for j in range(i,3):
             ks[i,j] = p[i]*p[j]
@@ -254,9 +254,9 @@ class Atoms(dobject):
 
       p = depstrip(self.p)
       m = depstrip(self.m)
-      px = p[0:3*natoms:3]
-      py = p[1:3*natoms:3]
-      pz = p[2:3*natoms:3]
+      px = p[0:3*self.natoms:3]
+      py = p[1:3*self.natoms:3]
+      pz = p[2:3*self.natoms:3]
 
       ks = np.zeros((3,3),float)
       ks[0,0] = np.dot(px,px/m)
