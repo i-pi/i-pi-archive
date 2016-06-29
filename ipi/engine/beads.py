@@ -1,36 +1,25 @@
-"""Contains the classes which deal with all the beads.
-
-Copyright (C) 2013, Joshua More and Michele Ceriotti
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <http.//www.gnu.org/licenses/>.
-
+"""Classes which deal with all the PI beads.
 
 Used for holding information about the beads, including their positions, masses
 momenta and kinetic energy. Has different objects for the position and normal
 mode representations, and has a special centroid atoms object for when the
 centroid coordinate is required.
-
-Classes:
-   Beads: Class with methods dealing with all the beads.
 """
 
-__all__ = ['Beads']
+# This file is part of i-PI.
+# i-PI Copyright (C) 2014-2015 i-PI developers
+# See the "licenses" directory for full license information.
+
 
 import numpy as np
+
 from ipi.utils.depend import *
 from ipi.engine.atoms import Atoms
 from ipi.utils import units
+
+
+__all__ = ['Beads']
+
 
 class Beads(dobject):
    """Storage for the beads positions and velocities.
@@ -100,56 +89,46 @@ class Beads(dobject):
       self.natoms = natoms
       self.nbeads = nbeads
 
-      dset(self,"names",
-         depend_array(name="names",value=np.zeros(natoms, np.dtype('|S6'))) )
+      dself = self.dd
+      
+      dself.names = depend_array(name="names", value=np.zeros(natoms, np.dtype('|S6')))
 
       # atom masses, and mass-related arrays
-      dset(self,"m",depend_array(name="m",value=np.zeros(natoms, float)) )   # this is the prototype mass array (just one independent of bead n)
-      dset(self,"m3",
-         depend_array(name="m3",value=np.zeros((nbeads,3*natoms), float),    # this is m conveniently replicated to be (nb,3*nat)
-            func=self.mtom3, dependencies=[dget(self,"m")]))
-      dset(self,"sm3",
-         depend_array(name="sm3",value=np.zeros((nbeads,3*natoms), float),   # this is just the square root of m3
-            func=self.m3tosm3, dependencies=[dget(self,"m3")]))
+      dself.m = depend_array(name="m", value=np.zeros(natoms, float))   # this is the prototype mass array (just one independent of bead n)
+      dself.m3 = depend_array(name="m3", value=np.zeros((nbeads,3*natoms), float),    # this is m conveniently replicated to be (nb,3*nat)
+            func=self.mtom3, dependencies=[dself.m]) 
+      dself.sm3 = depend_array(name="sm3", value=np.zeros((nbeads,3*natoms), float),   # this is just the square root of m3
+            func=self.m3tosm3, dependencies=[dself.m3])
 
       # positions and momenta. bead representation, base storage used everywhere
-      dset(self,"q",
-         depend_array(name="q",value=np.zeros((nbeads,3*natoms), float)) )
-      dset(self,"p",
-         depend_array(name="p",value=np.zeros((nbeads,3*natoms), float)) )
+      dself.q = depend_array(name="q", value=np.zeros((nbeads,3*natoms), float))
+      dself.p = depend_array(name="p", value=np.zeros((nbeads,3*natoms), float))
 
       # position and momentum of the centroid
-      dset(self,"qc",
-         depend_array(name="qc",value=np.zeros(3*natoms, float),
-            func=self.get_qc, dependencies=[dget(self,"q")] ) )
-      dset(self,"pc",
-         depend_array(name="pc",value=np.zeros(3*natoms, float),
-            func=self.get_pc, dependencies=[dget(self,"p")] ) )
-
-      # create proxies to access the centroid and the individual beads as Atoms objects
-      #self.centroid = Atoms(natoms, _prebind=(self.qc, self.pc, self.m, self.names)) # BEWARE THIS CREATES A MEMORY LEAK!
-      self._blist = [Atoms(natoms, _prebind=( self.q[i,:], self.p[i,:], self.m,  self.names )) for i in range(nbeads) ]
-
+      dself.qc = depend_array(name="qc", value=np.zeros(3*natoms, float),
+            func=self.get_qc, dependencies=[dself.q])
+      dself.pc = depend_array(name="pc", value=np.zeros(3*natoms, float),
+            func=self.get_pc, dependencies=[dself.p])
+      
       # path springs potential and force
-      dset(self,"vpath",
-         depend_value(name="vpath", func=self.get_vpath,
-            dependencies=[dget(self,"q")]))
-      dset(self,"fpath",
-         depend_array(name="fpath", value=np.zeros((nbeads,3*natoms), float),
-            func=self.get_fpath, dependencies=[dget(self,"q")]))
+      dself.vpath = depend_value(name="vpath", func=self.get_vpath,
+            dependencies=[dself.q])
+      dself.fpath = depend_array(name="fpath", value=np.zeros((nbeads,3*natoms), float),
+            func=self.get_fpath, dependencies=[dself.q])
 
+      # create proxies to access the individual beads as Atoms objects
+      # TODO: ACTUALLY THIS IS ONLY USED HERE METHINK, SO PERHAPS WE COULD REMOVE IT TO DECLUTTER THE CODE.
+      self._blist = [Atoms(natoms, _prebind=( self.q[i,:], self.p[i,:], self.m,  self.names )) for i in range(nbeads) ]      
+            
       # kinetic energies of thhe beads, and total (classical) kinetic stress tensor
-      dset(self,"kins",
-         depend_array(name="kins",value=np.zeros(nbeads, float),
+      dself.kins = depend_array(name="kins", value=np.zeros(nbeads, float),
             func=self.kin_gather,
-               dependencies=[dget(b,"kin") for b in self._blist]))
-      dset(self,"kin",
-         depend_value(name="kin", func=self.get_kin,
-            dependencies=[dget(self,"kins")]))
-      dset(self,"kstress",
-         depend_array(name="kstress",value=np.zeros((3,3), float),
+               dependencies=[b.dd.kin for b in self._blist])
+      dself.kin = depend_value(name="kin", func=self.get_kin,
+            dependencies=[dself.kins])
+      dself.kstress = depend_array(name="kstress",value=np.zeros((3,3), float),
             func=self.get_kstress,
-               dependencies=[dget(b,"kstress") for b in self._blist]))
+               dependencies=[b.dd.kstress for b in self._blist])
 
    def copy(self):
       """Creates a new beads object from the original.

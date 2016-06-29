@@ -15,8 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http.//www.gnu.org/licenses/>.
 
-.PHONY: all clean high_density mid_density low_density
-all: high_density mid_density low_density
+.PHONY: all clean high_density mid_density low_density nst
+all: high_density mid_density low_density nst
 
 driver:=../../../drivers/driver.x
 IPI:=../../../i-pi
@@ -41,6 +41,11 @@ mid_density:
 low_density:
 	cd low_density; $(IPI) input.xml & sleep 5; \
 	$(call run_driver,1,low_density) \
+	wait
+
+nst:
+	cd nst; $(IPI) input.xml & sleep 5; \
+	$(call run_driver,1,lj_nst) \
 	wait
 
 clean:

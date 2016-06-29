@@ -1,8 +1,4 @@
 <simulation verbosity="high">
-   <initialize nbeads='8'>
-      <file mode='pdb'> li4-init.pdb </file>
-      <velocities mode='thermal' units='kelvin'> 100 </velocities>
-   </initialize>
    <output prefix='li4_output'>
       <properties stride='1' filename='out'>  [ time{picosecond}, conserved, temperature{kelvin}, kinetic_cv, potential, pressure_cv] </properties>
       <trajectory stride='1' filename='pos'>positions</trajectory>
@@ -10,11 +6,15 @@
    </output>
    <total_steps>100</total_steps>
    <prng><seed>31415</seed></prng>
-   <forces>
-      <socket mode="inet">
-         <address>localhost</address>   <port>31415</port>    <slots>4</slots>   <latency> 0.01</latency>
-      </socket>
-   </forces>
+   <ffsocket mode="inet" name="pw">
+      <address>localhost</address>   <port>31415</port>    <slots>4</slots>   <latency> 0.01</latency>
+   </ffsocket>
+   <system>
+   <forces><force>pw</force></forces>
+   <initialize nbeads='8'>
+      <file mode='pdb'> li4-init.pdb </file>
+      <velocities mode='thermal' units='kelvin'> 100 </velocities>
+   </initialize>
    <ensemble mode='nvt'>
       <thermostat mode='pile_l'>
          <tau units="femtosecond">200</tau>
@@ -24,4 +24,5 @@
       <fixcom>True</fixcom>
       <temperature units='kelvin'>100</temperature>
    </ensemble>
+   </system>
 </simulation>
