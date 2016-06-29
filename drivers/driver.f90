@@ -29,6 +29,7 @@
       PROGRAM DRIVER
          USE LJ
          USE SG
+         USE PSWATER
          USE F90SOCKETS, ONLY : open_socket, writebuffer, readbuffer
       IMPLICIT NONE
 
@@ -122,6 +123,8 @@
                   vstyle = 6
                ELSEIF (trim(cmdbuffer) == "linear") THEN
                   vstyle = 7
+               ELSEIF (trim(cmdbuffer) == "pswater") THEN
+                  vstyle = 8
                ELSEIF (trim(cmdbuffer) == "gas") THEN
                   vstyle = 0  ! ideal gas
                ELSE
@@ -177,6 +180,12 @@
             WRITE(*,*) "For morse potential use -o r0,D,a (in a.u.) "
             STOP "ENDED" 
          ENDIF 
+         isinit = .true.
+      ELSEIF (vstyle == 8) THEN
+         IF (par_count /= 0) THEN
+            WRITE(*,*) "Error: no initialization string needed for Partridge-Schwenke H2O potential."
+            STOP "ENDED" 
+         ENDIF   
          isinit = .true.
       ELSEIF (vstyle == 1) THEN
          IF (par_count /= 3) THEN
@@ -344,6 +353,19 @@
                   dip = dip -1.1128d0 * atoms(i,:) + 0.5564d0 * (atoms(i+1,:) + atoms(i+2,:))
                ENDDO
                ! do not compute the virial term
+            ELSEIF (vstyle == 8) THEN ! PS water potential. 
+               IF (nat/=3) THEN
+                  WRITE(*,*) "Expecting 3 atoms for P-S water potential, O H H "
+                  STOP "ENDED"
+               ENDIF
+
+               
+               atoms = atoms*0.52917721d0    ! pot_nasa wants angstrom
+               call pot_nasa(atoms,forces,pot)
+               pot = pot*0.0015946679     ! pot_nasa gives kcal/mol
+               forces = forces * (-0.00084329756) ! pot_nasa gives V in kcal/mol/angstrom
+
+               ! do not compute the virial term
             ELSE
                IF ((allocated(n_list) .neqv. .true.)) THEN
                   IF (verbose) WRITE(*,*) " Allocating neighbour lists."
@@ -414,14 +436,14 @@
       CONTAINS
       SUBROUTINE helpmessage
          ! Help banner
-         WRITE(*,*) " SYNTAX: driver.x [-u] -h hostname -p port -m [gas|lj|sg|harm|morse|zundel|qtip4pf] "
+         WRITE(*,*) " SYNTAX: driver.x [-u] -h hostname -p port -m [gas|lj|sg|harm|morse|zundel|qtip4pf|pswater] "
          WRITE(*,*) "         -o 'comma_separated_parameters' [-v] "
          WRITE(*,*) ""
          WRITE(*,*) " For LJ potential use -o sigma,epsilon,cutoff "
          WRITE(*,*) " For SG potential use -o cutoff "
          WRITE(*,*) " For 1D harmonic oscillator use -o k "
          WRITE(*,*) " For 1D morse oscillator use -o r0,D,a"         
-         WRITE(*,*) " For the ideal gas, qtip4pf or zundel no options needed! "
+         WRITE(*,*) " For the ideal gas, qtip4pf, zundel or nasa no options needed! "
       END SUBROUTINE
    END PROGRAM
 

@@ -100,8 +100,10 @@ class Barostat(dobject):
       self.thermostat = thermostat
 
       # pipes timestep and temperature to the thermostat
-      deppipe(self,"dt", self.thermostat, "dt")
-      deppipe(self, "temp", self.thermostat,"temp")
+      deppipe(self, "dt", self.thermostat, "dt")
+      deppipe(self, "temp", self.thermostat, "temp")
+      dset(self, "pext", depend_value(name='pext', value=-1.0))
+      dset(self, "stressext", depend_array(name='stressext', value=-np.ones((3,3), float)))
 
 
    def bind(self, beads, nm, cell, forces, bias=None, prng=None, fixdof=None):
@@ -229,11 +231,11 @@ class BaroBZP(Barostat):
          self.p = np.asarray([p])
       else:
          self.p = 0.0
-
-      dset(self,"pext",depend_value(name='pext'))
+      
       if not pext is None:
          self.pext = pext
-      else: self.pext = 0.0
+      else:
+         self.pext = -1.0
 
    def bind(self, beads, nm, cell, forces, bias=None, prng=None, fixdof=None):
       """Binds beads, cell and forces to the barostat.
@@ -261,7 +263,7 @@ class BaroBZP(Barostat):
          func=(lambda:np.asarray([self.tau**2*3*self.beads.natoms*Constants.kb*self.temp])),
             dependencies=[ dget(self,"tau"), dget(self,"temp") ] ))
 
-      # binds the thermostat to the piston degrees of freedom
+      # binds the thermostat to the piston degrees of freedom      
       self.thermostat.bind(pm=[ self.p, self.m ], prng=prng)
 
       # barostat elastic energy
@@ -385,10 +387,10 @@ class BaroRGB(Barostat):
       else:
          self.h0 = Cell()
 
-      dset(self,"stressext",depend_array(name='stressext', value=np.zeros((3,3), float)))
       if not stressext is None:
          self.stressext = stressext
-      else: self.stressext = 0.0
+      else:
+         self.stressext[:] = -1.0
 
    def bind(self, beads, nm, cell, forces, bias=None, prng=None, fixdof=None):
       """Binds beads, cell and forces to the barostat.
