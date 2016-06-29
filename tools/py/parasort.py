@@ -1,4 +1,5 @@
-#!/usr/bin/python
+#!/usr/bin/env python
+
 """ parasort.py
 
 Relies on the infrastructure of i-pi, so the ipi package should
@@ -19,13 +20,13 @@ Syntax:
    parasort.py inputfile.xml
 """
 
+
 import sys
 import numpy as np
-from ipi.engine.simulation import Simulation
 from ipi.engine.outputs import *
 from ipi.engine.properties import getkey
 from ipi.inputs.simulation import InputSimulation
-from ipi.utils.io.io_xml import *
+from ipi.utils.io.inputs import io_xml
 
 
 def main(inputfile, prefix="PT"):
@@ -33,7 +34,7 @@ def main(inputfile, prefix="PT"):
 
    # opens & parses the input file
    ifile = open(inputfile,"r")
-   xmlrestart = xml_parse_file(ifile) # Parses the file.
+   xmlrestart = io_xml.xml_parse_file(ifile) # Parses the file.
    ifile.close()
 
    isimul = InputSimulation()
@@ -158,6 +159,7 @@ def main(inputfile, prefix="PT"):
                      traj[irep[isys]]["ofile"].write(''.join(ibuffer))
       except EOFError:
          break
+
 
 if __name__ == '__main__':
    main(*sys.argv[1:])

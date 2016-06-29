@@ -1,33 +1,21 @@
-"""Contains the classes which deal with the system box.
-
-Copyright (C) 2013, Joshua More and Michele Ceriotti
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <http.//www.gnu.org/licenses/>.
-
+"""Classes which deal with the system box.
 
 Used for implementing the minimum image convention.
-
-Classes:
-   Cell: Base cell class with the generic methods and attributes.
 """
 
-__all__ = ['Cell']
+# This file is part of i-PI.
+# i-PI Copyright (C) 2014-2015 i-PI developers
+# See the "licenses" directory for full license information.
+
 
 import numpy as np
+
 from ipi.utils.depend import *
 from ipi.utils.mathtools import *
 from ipi.utils import units
+
+
+__all__ = ['Cell']
 
 
 class Cell(dobject):
@@ -53,16 +41,15 @@ class Cell(dobject):
       """
 
       if h is None:
-         #h = np.identity(3,float)
          h = np.zeros((3,3), float)
-      dset(self,"h",depend_array(name = 'h', value = h) )
+         
+      dself = self.dd
 
-      dset(self,"ih",
-         depend_array(name = "ih", value = np.zeros((3,3),float),
-            func=self.get_ih, dependencies=[dget(self,"h")]) )
-      dset(self,"V",
-         depend_value(name = 'V', func=self.get_volume,
-            dependencies=[dget(self,"h")]) )
+      dself.h = depend_array(name='h', value=h)
+      dself.ih = depend_array(name="ih", value=np.zeros((3,3),float),
+            func=self.get_ih, dependencies=[dself.h])
+      dself.V = depend_value(name='V', func=self.get_volume,
+            dependencies=[dself.h])
 
    def get_ih(self):
       """Inverts the lattice vector matrix."""

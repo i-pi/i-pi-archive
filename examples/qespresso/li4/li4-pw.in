@@ -14,7 +14,7 @@
 /
 &SYSTEM
     ibrav=0
-    celldm(1)=      6.57
+    celldm(1)= 6.57
     NAT=4
     NTYP=1
     ECUTWFC=20
