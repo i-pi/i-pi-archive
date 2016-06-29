@@ -1230,8 +1230,7 @@ class Properties(dobject):
       """
 
       dbeta = abs(float(fd_delta))
-      beta = 1.0/(Constants.kb*self.ensemble.temp)
-      self.dforces.omegan2=self.forces.omegan2
+      beta = 1.0/(Constants.kb*self.ensemble.temp)      
       self.dforces.alpha=self.forces.alpha
       
       qc = depstrip(self.beads.qc)
@@ -1245,10 +1244,12 @@ class Properties(dobject):
 
          for b in range(self.beads.nbeads):
             self.dbeads[b].q = qc*(1.0 - splus) + splus*q[b,:]
+         self.dforces.omegan2=self.forces.omegan2*(1.0+dbeta)
          vplus=(self.dforces.pot+self.dforces.potsc)/self.beads.nbeads
          
          for b in range(self.beads.nbeads):
             self.dbeads[b].q = qc*(1.0 - sminus) + sminus*q[b,:]
+         self.dforces.omegan2=self.forces.omegan2*(1.0 - dbeta)
          vminus=(self.dforces.pot+self.dforces.potsc)/self.beads.nbeads
          
          if (fd_delta < 0 and abs((vplus+vminus-2*v0)/(vplus-vminus)) > self._DEFAULT_FDERROR):

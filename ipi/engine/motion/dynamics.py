@@ -70,11 +70,11 @@ class Dynamics(Motion):
         else:
             self.barostat = barostat
 
-        if nmts is None:
+        if nmts is None or len(nmts)==0:
            self.nmts = np.asarray([1],int)      
         else:
            self.nmts=np.asarray(nmts)
-
+        
         self.enstype = mode
         if self.enstype == "nve":
             self.integrator = NVEIntegrator()
@@ -212,7 +212,7 @@ class DummyIntegrator(dobject):
                 self.coeffsc[1::2] /= 3.
                 print self.coeffsc[:,0]
                 print self.coeffsc[:,-1]                
-                self.nmts=motion.nmts[-1]                 
+                self.nmts=motion.nmts[-1]            
 
     def pstep(self):
         """Dummy momenta propagator which does nothing."""
