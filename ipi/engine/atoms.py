@@ -254,15 +254,15 @@ class Atoms(dobject):
 
       p = depstrip(self.p)
       m = depstrip(self.m)
-      px = p[0:3*self.natoms:3]
-      py = p[1:3*self.natoms:3]
-      pz = p[2:3*self.natoms:3]
+      px = p[0::3]
+      py = p[1::3]
+      pz = p[2::3]
 
-      ks = np.zeros((3,3),float)
-      ks[0,0] = np.dot(px,px/m)
-      ks[1,1] = np.dot(py,py/m)
-      ks[2,2] = np.dot(pz,pz/m)
-      ks[0,1] = np.dot(px,py/m)
-      ks[0,2] = np.dot(px,pz/m)
-      ks[1,2] = np.dot(py,pz/m)
+      ks = np.zeros((3,3), float)
+      ks[0,0] = np.dot(px, px/m)
+      ks[1,1] = np.dot(py, py/m)
+      ks[2,2] = np.dot(pz, pz/m)
+      ks[0,1] = np.dot(px, py/m)
+      ks[0,2] = np.dot(px, pz/m)
+      ks[1,2] = np.dot(py, pz/m)
       return ks
