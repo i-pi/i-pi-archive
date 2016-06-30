@@ -1,25 +1,14 @@
 # Makefile for the q-TIP4P-F examples
-# 
-# Copyright (C) 2013, Joshua More and Michele Ceriotti
-# 
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-# 
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
-# GNU General Public License for more details.
-# 
-# You should have received a copy of the GNU General Public License
-# along with this program. If not, see <http.//www.gnu.org/licenses/>.
+#
+# This file is part of i-PI.
+# i-PI Copyright (C) 2014-2015 i-PI developers
+# See the "licenses" directory for full license information.
 
 .PHONY: all clean graphene h2o-piglet_2 h2o-piglet_4 h2o-piglet_8 h2o-rpc h2o-pimd
 all: graphene h2o-piglet_2 h2o-piglet_4 h2o-piglet_8 h2o-rpc h2o-pimd
 
 LAMMPS:=lmp_serial
-IPI:=../../../i-pi
+IPI:=i-pi
 
 define run_lammps
   for i in `seq 1 $1`; do \
@@ -38,7 +27,7 @@ h2o-piglet_2:
 	cd h2o-piglet.2; $(IPI) input.xml & sleep 5; \
         $(call run_lammps,2,in.water) \
 	wait
-	
+
 h2o-piglet_4:
 	cd h2o-piglet.4; $(IPI) input.xml & sleep 5; \
         $(call run_lammps,4,in.water) \
