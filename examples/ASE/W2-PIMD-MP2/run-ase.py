@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 
 import os
 import sys
@@ -33,7 +33,7 @@ os.environ['GAUSS_SCRDIR'] = '/dev/shm'
 atoms = ase.io.read('W2-MP2-6311ppGss.xyz')
 atoms.set_calculator(
     Gaussian(
-        xc = 'MP2',
+        method = 'MP2',
         # Note that 6-31G is for faster testing only, not a good basis set
         # for gas-phase W2. Use the bigger one instead.
         basis = '6-31G',
@@ -43,7 +43,10 @@ atoms.set_calculator(
     )
 )
 
-# create the socket client and run it
-client = ClientASE(atoms, verbose=True, address='ase')
-#client = ClientASE(atoms, verbose=True, mode='inet', address='localhost', port=12345)
-client.run()
+# create the socket client...
+client = ClientASE(atoms, address='ase')
+#client = ClientASE(atoms, mode='inet', address='localhost', port=12345)
+
+# ... and run it
+client.run(t_max=35, fn_exit='EXIT_ASE')   # test max run time feature
+client.run(fn_exit='EXIT_ASE')

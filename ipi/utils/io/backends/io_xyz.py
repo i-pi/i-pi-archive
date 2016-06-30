@@ -85,11 +85,10 @@ def read_xyz(filedesc, **kwargs):
         raise EOFError("The file descriptor hit EOF.")
     natoms = int(natoms)
     comment = filedesc.readline()
-    reabc = re.compile('# CELL.abcABC.: (.*) Traj').search(comment)
-    regenh = re.compile('# CELL.GENH.: (.*) Traj').search(comment)
-    reh = re.compile('# CELL.H.: (.*) Traj').search(comment)
+    reabc = re.compile('# CELL.abcABC.: ([-0-9.Ee ]*) ').search(comment)
+    regenh = re.compile('# CELL.GENH.: ([-0-9.Ee ]*)').search(comment)
+    reh = re.compile('# CELL.H.: ([-0-9.Ee ]*)').search(comment)
     usegenh = False
-
     if reabc is not None:
         a, b, c, alpha, beta, gamma = reabc.group(1).split()
         a = float(a)

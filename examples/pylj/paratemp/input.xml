@@ -16,7 +16,7 @@
    <prng><seed>31415</seed></prng>
    <total_steps>200</total_steps>
    <total_time>20000</total_time>
-   <fflj name="lj" threaded="true">
+   <fflj name="lj" pbc='false'>
       <latency> 1e-3 </latency>
       <parameters> { eps : 5e-4, sigma : 10.0 } </parameters>
    </fflj>

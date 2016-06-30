@@ -31,6 +31,7 @@ class ForceRequest(dict):
 
     Standard dicts are checked for equality if elements have the same value.
     Here I only care if requests are instances of the very same object.
+    This is useful for the `in` operator, which uses equality to test membership.
     """
 
     def __eq__(self, y):
@@ -284,20 +285,22 @@ class FFLennardJones(ForceField):
                          'start': starting time}.
     """
 
-    def __init__(self, latency=1.0, name="", pars=None, dopbc=False, threaded=True):
+    def __init__(self, latency=1.0e-3, name="", pars=None, dopbc=False):
         """Initialises FFLennardJones.
 
         Args:
            pars: Optional dictionary, giving the parameters needed by the driver.
         """
 
+        # check input - PBCs are not implemented here
+        if dopbc:
+            raise ValueError("Periodic boundary conditions are not supported by FFLennardJones.")
+
         # a socket to the communication library is created or linked
-        # NEVER DO PBC -- forces here are computed without.
         super(FFLennardJones, self).__init__(latency, name, pars, dopbc=False)
         self.epsfour = float(self.pars["eps"]) * 4
         self.sixepsfour = 6 * self.epsfour
         self.sigma2 = float(self.pars["sigma"]) * float(self.pars["sigma"])
-        self.threaded = threaded
 
     def poll(self):
         """Polls the forcefield checking if there are requests that should
@@ -310,14 +313,7 @@ class FFLennardJones(ForceField):
             for r in self.requests:
                 if r["status"] == "Queued":
                     r["status"] = "Running"
-
-                    # An extra layer of threading, if wanted
-                    if self.threaded:
-                        newthread = threading.Thread(target=self.evaluate, args=[r])
-                        newthread.daemon = True
-                        newthread.start()
-                    else:
-                        self.evaluate(r)
+                    self.evaluate(r)
         finally:
             self._threadlock.release()
 
@@ -325,25 +321,22 @@ class FFLennardJones(ForceField):
         """Just a silly function evaluating a non-cutoffed, non-pbc and
         non-neighbour list LJ potential."""
 
-        q = r["pos"].reshape((len(r["pos"])/3, 3))
-        f = np.zeros(q.shape)
-        dij = np.zeros(3, float)
+        q = r["pos"].reshape((-1, 3))
         nat = len(q)
-        v = 0
-        f[:] = 0
-        for i in range(nat):
-            for j in range(i):
-                dij[:] = q[i] - q[j]
-                rij2 = dij[0]*dij[0] + dij[1]*dij[1] + dij[2]*dij[2]
 
-                x2 = self.sigma2 / rij2
-                x6 = x2 * x2 * x2
-                x12 = x6 * x6
+        v = 0.0
+        f = np.zeros(q.shape)
+        for i in range(1, nat):
+            dij = q[i] - q[:i]
+            rij2 = (dij**2).sum(axis=1)
 
-                v += x12 - x6
-                dij *= self.sixepsfour * (x12 + x12 - x6) / rij2
-                f[i] += dij
-                f[j] -= dij
+            x6 = (self.sigma2 / rij2)**3
+            x12 = x6**2
+
+            v += (x12 - x6).sum()
+            dij *= (self.sixepsfour * (2.0*x12 - x6) / rij2)[:,np.newaxis]
+            f[i] += dij.sum(axis=0)
+            f[:i] -= dij
 
         v *= self.epsfour
 

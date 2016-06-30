@@ -9,6 +9,7 @@ This module has machinery for abstract I/O handling.
 
 
 import sys
+import os
 
 from ipi.external import importlib
 from ipi.utils.decorators import cached
@@ -87,26 +88,91 @@ def print_file(mode, atoms, cell, filedesc=sys.stdout, title=""):
 
 
 def read_file(mode, filedesc, **kwargs):
-    """Takes a `mode`-style file and creates an Atoms object.
+    """Reads one frame from an open `mode`-style file.
 
     Args:
         filedesc: An open readable file object from a `mode` formatted file.
         All other args are passed directly to the responsible io function.
 
     Returns:
-        An Atoms object with the appropriate atom labels, masses and positions.
+        A dictionary with 'atoms', 'cell' and 'comment'.
     """
     return _get_io_function(mode, "read")(filedesc=filedesc, **kwargs)
 
 
+def read_file_name(filename):
+    """Read one frame from file, guessing its format from the extension.
+
+    Args:
+        filename: Name of input file.
+
+    Returns:
+        A dictionary with 'atoms', 'cell' and 'comment'.
+    """
+
+    return read_file(os.path.splitext(filename)[1], open(filename))
+
+
 def iter_file(mode, filedesc):
-    """Takes a `mode`-style file and yields one Atoms object after another.
+    """Takes an open `mode`-style file and yields one Atoms object after another.
 
     Args:
         filedesc: An open readable file object from a `mode` formatted file.
 
     Returns:
-        Generator over the xyz trajectory, that yields
-        Atoms objects with the appropriate atom labels, masses and positions.
+        Generator of frames (dictionary with 'atoms', 'cell' and 'comment') from the trajectory.
     """
     return _get_io_function(mode, "iter")(filedesc=filedesc)
+
+
+def iter_file_name(filename):
+    """Open a trajectory file, guessing its format from the extension.
+
+    Args:
+        filename: Filename of a trajectory file.
+
+    Returns:
+        Generator of frames (dictionary with 'atoms', 'cell' and 'comment') from the trajectory in `filename`.
+    """
+
+    return iter_file(os.path.splitext(filename)[1], open(filename))
+
+
+def open_backup(filename, mode='r', buffering=-1, verbose=True):
+    """A wrapper around `open` which saves backup files.
+
+    If the file is opened in write mode and already exists, it is first
+    backed up under a new file name, keeping all previous backups. Then,
+    a new file is opened for writing.
+
+    For reference: https://docs.python.org/2/library/functions.html#open
+
+    Args:
+        The same as for `open`.
+
+    Returns:
+        An open file as returned by `open`.
+    """
+
+    if mode.startswith('w'):
+        # If writing, make sure nothing is not overwritten.
+
+        i = 0
+        fn_backup = filename
+        while os.path.isfile(fn_backup):
+            fn_backup = '#' + filename + '#%i#' % i
+            i += 1
+
+        if fn_backup != filename:
+            os.rename(filename, fn_backup)
+            if verbose:
+                print 'Backup performed: %s -> %s' % (filename, fn_backup)
+                print
+
+    else:
+        # There is no need to back up.
+        # `open` will sort out whether `mode` is valid.
+        pass
+
+    return open(filename, mode, buffering)
+
