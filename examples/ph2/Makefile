@@ -1,32 +1,20 @@
 # Makefile for the para-hydrogen examples
-# 
-# Copyright (C) 2013, Joshua More and Michele Ceriotti
-# 
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-# 
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
-# GNU General Public License for more details.
-# 
-# You should have received a copy of the GNU General Public License
-# along with this program. If not, see <http.//www.gnu.org/licenses/>.
+#
+# This file is part of i-PI.
+# i-PI Copyright (C) 2014-2015 i-PI developers
+# See the "licenses" directory for full license information.
 
 .PHONY: all clean mht-25K mht-20K mht-17K mht-14K nvt multi rpmd paratemp parawte paraptwte
 all: mht-25K mht-20K mht-17K mht-14K nvt multi rpmd paratemp parawte paraptwte
 
-driver:=../../../drivers/driver.x
-IPI:=../../../i-pi
+driver:=i-pi-driver
+IPI:=i-pi
 
 define run_driver
   for i in `seq 1 $1`; do \
     $(driver) -u -h $2 -m sg -o 30.0 & \
   done
 endef
--include make.in
 
 nvt:
 	cd nvt; $(IPI) input.xml & sleep 5; \
@@ -38,7 +26,7 @@ multi:
 	$(call run_driver,4,ph2_multi); \
 	wait
 
-paratemp: 
+paratemp:
 	cd paratemp; $(IPI) input.xml & sleep 2; \
 	$(call run_driver,3,ph2_pt); \
 	wait
@@ -57,7 +45,7 @@ mht-25K:
 	cd MHT-25K; $(IPI) input.xml & sleep 5; \
 	$(call run_driver,4,T_25K); \
 	wait
-	
+
 mht-20K:
 	cd MHT-20K; $(IPI) input.xml & sleep 5; \
 	$(call run_driver,4,T_20K); \
@@ -83,12 +71,10 @@ RPMD/run_%/test16.out:
 	  $(call run_driver,8,run-$*-$$x); wait; \
 	  mv RESTART run_$*/; \
 	done  
-	
 
 rpmd: RPMD/run_1/test16.out RPMD/run_2/test16.out RPMD/run_3/test16.out RPMD/run_4/test16.out
 	make -C RPMD scripts; make -C RPMD postproc
-	
-	
+
 clean:
 	rm -f */ph2* */RESTART */EXIT; \
 	rm -f para*/*_*ph2* para*/PARA*; \
