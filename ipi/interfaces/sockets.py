@@ -28,7 +28,7 @@ __all__ = ['InterfaceSocket']
 
 HDRLEN = 12
 UPDATEFREQ = 10
-TIMEOUT = 0.2
+TIMEOUT = 0.1
 SERVERTIMEOUT = 5.0*TIMEOUT
 NTIMEOUT = 20
 
@@ -155,7 +155,7 @@ class DriverSocket(socket.socket):
                raise socket.timeoout    # if this keeps returning no data, we are in trouble....
             self._buf[bpos:bpos + len(bpart)] = np.fromstring(bpart, np.byte)
          except socket.timeout:
-            warning(" @SOCKET:   Timeout in status recvall, trying again!", verbosity.low)
+            warning(" @SOCKET:   Timeout in recvall, trying again!", verbosity.low)
             timeout = True
             ntimeout += 1
             if ntimeout > NTIMEOUT:
@@ -243,7 +243,7 @@ class Driver(DriverSocket):
          reply = self.recv(HDRLEN)
          self.waitstatus = False # got some kind of reply
       except socket.timeout:
-         warning(" @SOCKET:   Timeout in status recv!", verbosity.debug )
+         warning(" @SOCKET:   Timeout in status recv!", verbosity.trace )
          return Status.Up | Status.Busy | Status.Timeout
       except:
          return Status.Disconnected
@@ -501,8 +501,8 @@ class InterfaceSocket(object):
          searchtimeout = 0.0
 
       keepsearch = True
-      while keepsearch:
-         readable, writable, errored = select.select([self.server], [], [], searchtimeout)
+      while keepsearch:         
+         readable, writable, errored = select.select([self.server], [], [], searchtimeout)         
          if self.server in readable:
             client, address = self.server.accept()
             client.settimeout(TIMEOUT)
@@ -512,7 +512,7 @@ class InterfaceSocket(object):
             if (driver.status | Status.Up):
                self.clients.append(driver)
                info(" @SOCKET:   Handshaking was successful. Added to the client list.", verbosity.low)
-               self.poll_iter = UPDATEFREQ   # if a new client was found, will try again a harder next time
+               self.poll_iter = UPDATEFREQ   # if a new client was found, will try again harder next time
                searchtimeout = SERVERTIMEOUT
             else:
                warning(" @SOCKET:   Handshaking failed. Dropping connection.", verbosity.low)

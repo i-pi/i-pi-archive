@@ -7,7 +7,7 @@ prepares them for output.
 # See the "licenses" directory for full license information.
 
 
-import os
+import os, time
 
 import numpy as np
 
@@ -681,24 +681,38 @@ class Properties(dobject):
          iatom = -1
          latom = atom
 
-      q = depstrip(self.beads.q)
+      f = depstrip(self.forces.f)      
+      # subtracts centroid
+      q = depstrip(self.beads.q).copy()      
       qc = depstrip(self.beads.qc)
-      f = depstrip(self.forces.f)
-
-      acv = 0.0
-      ncount = 0
+      for b in xrange(self.beads.nbeads):
+          q[b]-=qc
+          
+      # zeroes components that are not requested
+      ncount=0
       for i in range(self.beads.natoms):
          if (atom != "" and iatom != i and latom != self.beads.names[i]):
-            continue
+             q[:,3*i:3*i+3]=0.0
+         else: ncount += 1
 
-         kcv = 0.0
-         k = 3*i
-         for b in range(self.beads.nbeads):
-            kcv += (q[b,k] - qc[k])* f[b,k] + (q[b,k+1] - qc[k+1])* f[b,k+1] + (q[b,k+2] - qc[k+2])* f[b,k+2]
-         kcv *= -0.5/self.beads.nbeads
-         kcv += 1.5*Constants.kb*self.ensemble.temp
-         acv += kcv
-         ncount += 1
+      acv = np.dot(q.flatten(), f.flatten()) 
+      acv *= -0.5/self.beads.nbeads
+      acv += ncount*1.5*Constants.kb*self.ensemble.temp
+      #~ acv = 0.0
+      #~ ncount = 0    
+      #~ 
+      #~ for i in range(self.beads.natoms):
+         #~ if (atom != "" and iatom != i and latom != self.beads.names[i]):
+            #~ continue
+#~ 
+         #~ kcv = 0.0
+         #~ k = 3*i
+         #~ for b in range(self.beads.nbeads):
+            #~ kcv += q[b,k]* f[b,k] + q[b,k+1]* f[b,k+1] + q[b,k+2]* f[b,k+2]
+         #~ kcv *= -0.5/self.beads.nbeads
+         #~ kcv += 1.5*Constants.kb*self.ensemble.temp
+         #~ acv += kcv
+         #~ ncount += 1
 
       if ncount == 0:
          warning("Couldn't find an atom which matched the argument of kinetic energy, setting to zero.", verbosity.medium)

@@ -177,22 +177,23 @@ class ThermoLangevin(Thermostat):
 
    def step(self):
       """Updates the bound momentum vector with a langevin thermostat."""
-
+      
+      et = self.ethermo
       p = depstrip(self.p).copy()
       sm = depstrip(self.sm)
 
       p /= sm
 
-      self.ethermo += np.dot(p,p)*0.5
+      et += np.dot(p,p)*0.5
       p *= self.T
       p += self.S*self.prng.gvec(len(p))
-      self.ethermo -= np.dot(p,p)*0.5
+      et -= np.dot(p,p)*0.5
 
       p *= sm
 
       self.p = p
-
-
+      self.ethermo = et
+      
 class ThermoPILE_L(Thermostat):
    """Represents a PILE thermostat with a local centroid thermostat.
 
@@ -291,6 +292,7 @@ class ThermoPILE_L(Thermostat):
       def make_taugetter(k):
          return lambda: self.tauk[k-1]
       it = 0
+      nm.pnm.hold()
       for t in self._thermos:
          if t is None:
             it += 1
@@ -299,20 +301,22 @@ class ThermoPILE_L(Thermostat):
             fixdof = None # only the centroid thermostat may have constraints
 
          # bind thermostat t to the it-th bead
-         t.bind(pm=(nm.pnm[it,:],nm.dynm3[it,:]),prng=self.prng, fixdof=fixdof)
+         
+         t.bind(pm=(nm.pnm[it,:],nm.dynm3[it,:]),prng=self.prng, fixdof=fixdof)         
          # pipes temp and dt
-         deppipe(self,"temp", t, "temp")
-         deppipe(self,"dt", t, "dt")
+         deppipe(self, "temp", t, "temp")
+         deppipe(self, "dt", t, "dt")
 
          # for tau it is slightly more complex
          if it == 0:
-            deppipe(self,"tau", t, "tau")
+            deppipe(self, "tau", t, "tau")
          else:
             # Here we manually connect _thermos[i].tau to tauk[i].
             # Simple and clear.
             dget(t,"tau").add_dependency(dget(self,"tauk"))
             dget(t,"tau")._func = make_taugetter(it)
          dget(self,"ethermo").add_dependency(dget(t,"ethermo"))
+         dget(self,"ethermo").hold() # will manually update ethermo when needed!
          it += 1
 
       # since the ethermo will be "delegated" to the normal modes thermostats,
@@ -341,6 +345,7 @@ class ThermoPILE_L(Thermostat):
       thermostats.
       """
 
+      
       et = 0.0;
       for t in self._thermos:
          et += t.ethermo
@@ -349,9 +354,12 @@ class ThermoPILE_L(Thermostat):
    def step(self):
       """Updates the bound momentum vector with a PILE thermostat."""
 
-      # super-cool! just loop over the thermostats! it's as easy as that!
+      self.nm.pnm.hold()
+      # super-cool! just loop over the thermostats! it's as easy as that!      
       for t in self._thermos:
          t.step()
+      self.nm.pnm.resume()
+      dget(self,"ethermo").resume()
 
 
 class ThermoSVR(Thermostat):
