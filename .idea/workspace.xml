@@ -1,12 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="29c1ab6b-5e1e-4389-9ac7-0dc5eab70c97" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/examples/pes/qtip4pf/input.xml" afterPath="$PROJECT_DIR$/examples/pes/qtip4pf/input.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ipi/utils/io/__init__.py" afterPath="$PROJECT_DIR$/ipi/utils/io/__init__.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ipi/utils/io/backends/io_pdb.py" afterPath="$PROJECT_DIR$/ipi/utils/io/backends/io_pdb.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ipi/utils/io/backends/io_xyz.py" afterPath="$PROJECT_DIR$/ipi/utils/io/backends/io_xyz.py" />
-    </list>
+    <list default="true" id="29c1ab6b-5e1e-4389-9ac7-0dc5eab70c97" name="Default" comment="" />
     <ignored path="fastxyz.iws" />
     <ignored path=".idea/workspace.xml" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -26,7 +21,7 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="energy_ppi.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="energy_ppi.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/tools/py/energy_ppi.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="345">
@@ -36,11 +31,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="io_units.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="io_units.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/ipi/utils/io/backends/io_units.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="15">
-              <caret line="1" column="3" selection-start-line="1" selection-start-column="3" selection-end-line="1" selection-end-column="3" />
+            <state relative-caret-position="180">
+              <caret line="16" column="79" selection-start-line="16" selection-start-column="79" selection-end-line="16" selection-end-column="79" />
               <folding />
             </state>
           </provider>
@@ -246,9 +241,9 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="23" width="1280" height="711" extended-state="6" />
-    <editor active="false" />
+    <editor active="true" />
     <layout>
-      <window_info id="Project" active="true" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.2494043" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.2494043" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
@@ -283,18 +278,18 @@
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/tools/py/energy_ppi.py">
+    <entry file="file://$PROJECT_DIR$/ipi/utils/io/backends/io_units.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="345">
-          <caret line="115" column="29" selection-start-line="115" selection-start-column="29" selection-end-line="115" selection-end-column="29" />
+        <state relative-caret-position="180">
+          <caret line="16" column="79" selection-start-line="16" selection-start-column="79" selection-end-line="16" selection-end-column="79" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/ipi/utils/io/backends/io_units.py">
+    <entry file="file://$PROJECT_DIR$/tools/py/energy_ppi.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="15">
-          <caret line="1" column="3" selection-start-line="1" selection-start-column="3" selection-end-line="1" selection-end-column="3" />
+        <state relative-caret-position="345">
+          <caret line="115" column="29" selection-start-line="115" selection-start-column="29" selection-end-line="115" selection-end-column="29" />
           <folding />
         </state>
       </provider>
