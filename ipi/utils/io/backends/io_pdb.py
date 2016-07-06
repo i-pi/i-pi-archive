@@ -8,13 +8,12 @@ in the PDB format.
 
 
 import sys
+import copy
 
 import numpy as np
 
 import ipi.utils.mathtools as mt
 from ipi.utils.depend import depstrip
-from ipi.engine.cell import Cell
-from ipi.engine.atoms import Atoms
 from ipi.utils.units import Elements
 
 
@@ -77,7 +76,8 @@ def print_pdb(atoms, cell, filedesc=sys.stdout, title=""):
     """
 
     fmt_cryst = "CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f%s%4i\n"
-    fmt_atom = "ATOM  %5i %4s%1s%3s %1s%4i%1s   %8.3f%8.3f%8.3f%6.2f%6.2f          %2s%2i\n"
+    fmt_atom = "ATOM  %5i %4s%1s%3s %1s%4i%1s    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s%2i\n"
+
 
     if title != "":
         filedesc.write("TITLE   %70s\n" % (title))
@@ -95,10 +95,11 @@ def print_pdb(atoms, cell, filedesc=sys.stdout, title=""):
                 qs[3*i], qs[3*i+1], qs[3*i+2], 0.0, 0.0, '  ', 0)
         filedesc.write(fmt_atom % data)
 
+
     filedesc.write("END\n")
 
 
-def read_pdb(filedesc, readcell=False):
+def read_pdb(filedesc, **kwards):
     """Reads a PDB-style file and creates an Atoms and Cell object.
 
     Args:
@@ -111,8 +112,10 @@ def read_pdb(filedesc, readcell=False):
     """
 
     header = filedesc.readline()
+    comment = ''
     if "TITLE" in header:
         # skip the comment field
+        comment = copy.copy(header)
         header = filedesc.readline()
     if header == "":
         raise EOFError("End of file or empty header in PDB file")
@@ -127,7 +130,7 @@ def read_pdb(filedesc, readcell=False):
     beta *= np.pi/180.0
     gamma *= np.pi/180.0
     h = mt.abc2h(a, b, c, alpha, beta, gamma)
-    cell = Cell(h)
+    cell = h
 
     natoms = 0
     body = filedesc.readline()
@@ -135,6 +138,7 @@ def read_pdb(filedesc, readcell=False):
     names = []
     masses = []
     while (body.strip() != "" and body.strip() != "END"):
+        print body
         natoms += 1
         name = body[12:16].strip()
         names.append(name)
@@ -148,15 +152,7 @@ def read_pdb(filedesc, readcell=False):
 
         body = filedesc.readline()
 
-    atoms = Atoms(natoms)
-    atoms.q = np.asarray(qatoms)
-    atoms.names = np.asarray(names, dtype='|S4')
-    atoms.m = np.asarray(masses)
-
-    return {
-        "atoms": atoms,
-        "cell": cell,
-    }
+    return comment, cell, np.asarray(qatoms), np.asarray(names, dtype='|S4'), np.asarray(masses)
 
 
 def iter_pdb(filedesc):

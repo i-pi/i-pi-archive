@@ -15,11 +15,7 @@ import numpy as np
 
 import ipi.utils.mathtools as mt
 from ipi.utils.depend import depstrip
-from ipi.engine.atoms import Atoms
-from ipi.engine.cell import Cell
 from ipi.utils.units import Elements
-from ipi.utils.units import unit_to_internal
-from ipi.engine.properties import Trajectories as Traj
 
 
 __all__ = ['print_xyz_path', 'print_xyz', 'read_xyz', 'iter_xyz']
@@ -72,25 +68,19 @@ def print_xyz(atoms, cell, filedesc=sys.stdout, title=""):
         filedesc.write("%8s %12.5e %12.5e %12.5e\n" % (lab[i], qs[3*i], qs[3*i+1], qs[3*i+2]))
 
 
-# Regular expressions initialization for read_xyz function
-cell_re = [re.compile('# CELL.abcABC.: ([-0-9.Ee ]*) '),
-        re.compile('# CELL.GENH.: ([-0-9.Ee ]*)'),
-        re.compile('# CELL.H.: ([-0-9.Ee ]*)')]         # cell type patterns
-cell_unit_re = re.compile('\s\{[a-z]*\}\s')             # cell unit pattern
-traj_dict = Traj().traj_dict                            # trajectory dictionary
-traj_re = [re.compile('%s%s' % (key, '\{[a-z]*\}')) for key in traj_dict.keys()]  # trajectory patterns
-
+# Cell type patterns
+cell_re = [re.compile('# CELL.abcABC.: ([-0-9.Ee ]*) '), re.compile('# CELL.GENH.: ([-0-9.Ee ]*)'),
+           re.compile('# CELL.H.: ([-0-9.Ee ]*)')]
 
 def read_xyz(filedesc, **kwargs):
-    """Reads an XYZ-style file with i-PI style comments and creates an Atoms and Cell object
-       which contain the data in default i-PI units
+    """Reads an XYZ-style file with i-PI style comments and returns data in raw format for further units transformation
+    and other post processing.
 
     Args:
         filedesc: An open readable file object from a xyz formatted file with i-PI header comments.
 
     Returns:
-        An Atoms object with the appropriate atom labels, masses and positions.
-        A Cell object.
+        i-Pi comment line, cell array, data (positions, forces, etc.), atoms names and masses
     """
 
     try:
@@ -102,20 +92,6 @@ def read_xyz(filedesc, **kwargs):
     natoms = int(natoms)
 
     comment = list(islice(filedesc,1))[0]
-
-    # Extracting trajectory units
-    family, unit = 'undefined', ''
-    try:
-        traj = filter(None, [key.search(comment) for key in traj_re])[0].group()[:-1].split('{')
-        family, unit = traj_dict[traj[0]]['dimension'], traj[1]#[:-1]
-    except:
-        pass
-
-    # Extracting cell units
-    cell_unit = ''
-    cell = cell_unit_re.search(comment)
-    if cell is not None:
-        cell_unit = cell.group()[2:-2]
 
     # Extracting cell
     cell = [key.search(comment) for key in cell_re]
@@ -141,8 +117,7 @@ def read_xyz(filedesc, **kwargs):
         usegenh = True
     else:                     # defaults to unit box
         h = mt.abc2h(1.0, 1.0, 1.0, np.pi/2, np.pi/2, np.pi/2)
-    h *= unit_to_internal('length', cell_unit, 1)  # cell units transformation
-    cell = Cell(h)
+    cell = h
 
     qatoms = np.zeros(3*natoms)
     names = np.zeros(natoms,dtype='|S4')
@@ -167,18 +142,7 @@ def read_xyz(filedesc, **kwargs):
     if natoms != len(names):
         raise ValueError("The number of atom records does not match the header of the xyz file.")
 
-    qatoms *= unit_to_internal(family, unit, 1) # units transformation
-
-    # Atoms class initialization
-    atoms = Atoms(natoms)
-    atoms.q[:] = qatoms
-    atoms.names[:] = names
-    atoms.m[:] = masses
-
-    return {
-        "atoms": atoms,
-        "cell": cell,
-    }
+    return comment, cell, qatoms, names, masses
 
 
 
