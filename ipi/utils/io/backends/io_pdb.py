@@ -138,7 +138,6 @@ def read_pdb(filedesc, **kwards):
     names = []
     masses = []
     while (body.strip() != "" and body.strip() != "END"):
-        print body
         natoms += 1
         name = body[12:16].strip()
         names.append(name)

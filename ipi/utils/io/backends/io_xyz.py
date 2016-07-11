@@ -125,6 +125,9 @@ def read_xyz(filedesc, **kwargs):
 
     # Extracting a time-frame information
     data =list(islice(filedesc,natoms))
+    if len(data) != natoms:
+        raise EOFError("The file descriptor hit EOF.")
+
     for iat in range(natoms):
         body = data[iat].split()
         names[iat], masses[iat] = body[0], Elements.mass(body[0])
