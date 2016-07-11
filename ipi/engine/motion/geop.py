@@ -239,7 +239,7 @@ class DummyOptimizer(dobject):
         self.qtime += time.time()
         
         # Determine conditions for converged relaxation
-        if ((fx - u0) / self.beads.natoms <= self.tolerances["energy"])\
+        if (np.absolute((fx - u0) / self.beads.natoms) <= self.tolerances["energy"])\
                 and ((np.amax(np.absolute(self.forces.f)) <= self.tolerances["force"])
                     or (np.sqrt(np.dot(self.forces.f.flatten() - self.old_f.flatten(),
                         self.forces.f.flatten() - self.old_f.flatten())) == 0.0))\
