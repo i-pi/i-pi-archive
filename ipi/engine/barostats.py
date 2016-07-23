@@ -146,6 +146,11 @@ class Barostat(dobject):
          self.mdof = float(self.beads.natoms)*3.0 - float(fixdof)
 
 
+   def stress_mts(self, level):
+      bvir = np.zeros((3,3),float)
+      if self.bias != None and level == 0: bvir[:]=self.bias.vir
+      return self.kstress + self.forces.virial_mts(level) 
+      
    def get_kstress(self):
       """Calculates the quantum centroid virial kinetic stress tensor
       estimator.
@@ -292,22 +297,38 @@ class BaroBZP(Barostat):
 
       return self.thermostat.ethermo + self.kin + self.pot - np.log(self.cell.V)*Constants.kb*self.temp
 
-   def pstep(self, dtscale=1.0):
+   def pstep(self, level=-1, dtscale=1.0):
       """Propagates the momenta for a (integration) time step."""
-
+      
       dt = self.dt*dtscale
       dt2 = dt**2
-      dt3 = dt**3/3.0
-
-      press = np.trace(self.stress)/3.0
+      dt3 = dt**3/3.0      
+      
       # This differs from the BZP thermostat in that it uses just one kT in the propagator.
       # This leads to an ensemble equaivalent to Martyna-Hughes-Tuckermann for both fixed and moving COM
       # Anyway, it is a small correction so whatever.
-      self.p += dt*3.0*( self.cell.V* ( press - self.beads.nbeads*self.pext ) +
-                Constants.kb*self.temp )
+      if level == -1: # non-MTS call, apply the full stress 
+          press = np.trace(self.stress)/3.0      
+          deltap = 3.0*( self.cell.V* ( press - self.beads.nbeads*self.pext ) +
+                Constants.kb*self.temp )          
+      else:  # apply different bits of the pressure at different points in the MTS scheme            
+          press = np.trace(self.forces.virial_mts(level))/(3.0*self.cell.V)
+          if self.bias != None and level == 0: 
+              press += np.trace(self.bias.vir)/(3.0*self.cell.V)
+          deltap = 3.0*self.cell.V*press
+          if level == len(self.forces.mforces[0].mts_weights)-1: 
+              # hackish solution to identify the deepest level and apply the kinetic energy bit
+              press += np.trace(self.kstress)/(3.0*self.cell.V)
+              deltap = 3.0*(self.cell.V*(press- self.beads.nbeads*self.pext) + Constants.kb*self.temp)
+     
+      self.p += dt*deltap
 
-      fc = np.sum(depstrip(self.forces.f),0)/self.beads.nbeads
-      if self.bias != None: fc += np.sum(depstrip(self.bias.f),0)/self.beads.nbeads
+      if level < 0: # uses total force
+          fc = np.sum(depstrip(self.forces.f),0)/self.beads.nbeads
+          if self.bias != None: fc += np.sum(depstrip(self.bias.f),0)/self.beads.nbeads
+      else: # uses MTS components
+          fc = np.sum(depstrip(self.forces.forces_mts(level)),0)/self.beads.nbeads
+          if self.bias != None and level <= 0: fc += np.sum(depstrip(self.bias.f),0)/self.beads.nbeads
       m = depstrip(self.beads.m3)[0]
       pc = depstrip(self.beads.pc)
 
@@ -316,14 +337,16 @@ class BaroBZP(Barostat):
       # again, these are tiny tiny terms so whatever.
       self.p += (dt2*np.dot(pc,fc/m) + dt3*np.dot(fc,fc/m)) * self.beads.nbeads
 
-      self.beads.p += depstrip(self.forces.f)*dt
-      if self.bias != None: self.beads.p +=depstrip(self.bias.f)*dt
+      if level < 0: # uses total force
+          self.beads.p += depstrip(self.forces.f)*dt
+      else:
+          self.beads.p += depstrip(self.forces.forces_mts(level))*dt
+      if self.bias != None and level <= 0: self.beads.p +=depstrip(self.bias.f)*dt
 
    def qcstep(self, dtscale=1.0):
       """Propagates the centroid position and momentum and the volume."""
 
-      v = self.p[0]/self.m[0]
-      print "barostat velocity", v, self.dt
+      v = self.p[0]/self.m[0]      
       expq, expp = (np.exp(v*self.dt*dtscale), np.exp(-v*self.dt*dtscale))
 
       m = depstrip(self.beads.m3)[0]
@@ -333,7 +356,7 @@ class BaroBZP(Barostat):
       self.nm.pnm[0,:] *= expp
 
       self.cell.h *= expq
-
+      
 
 class BaroRGB(Barostat):
    """Raiteri-Gale-Bussi constant stress barostat class (JPCM 23, 334213, 2011).
