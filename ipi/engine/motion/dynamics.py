@@ -127,7 +127,7 @@ class Dynamics(Motion):
 
         # n times the temperature (for path integral partition function)
         dset(self, "ntemp", depend_value(name='ntemp', func=self.get_ntemp,
-             dependencies=[dget(self.ensemble, "temp")]))        
+             dependencies=[dget(self.ensemble, "temp")]))
 
         fixdof = len(self.fixatoms) * 3 * self.beads.nbeads
         if self.fixcom:
@@ -157,13 +157,10 @@ class Dynamics(Motion):
             deppipe(self, "halfdt", self.barostat, "dt")
                 
             # the free ring polymer propagator is called in the inner loop, so propagation time should be redefined accordingly. 
-            if self.enstype == "mts":
-                self.inmts = 1
-                for mk in self.nmts: self.inmts*=mk
-                dset(self,"deltat", depend_value(name="deltat", func=(lambda : self.dt/self.inmts) , dependencies=[dget(self,"dt")]) )
-                deppipe(self,"deltat", self.nm, "dt")
-            else:
-                deppipe(self,"dt", self.nm, "dt")
+            self.inmts = 1
+            for mk in self.nmts: self.inmts*=mk
+            dset(self,"deltat", depend_value(name="deltat", func=(lambda : self.dt/self.inmts) , dependencies=[dget(self,"dt")]) )
+            deppipe(self,"deltat", self.nm, "dt")
         elif self.splitting == "aboba" :            
             deppipe(self, "dt", self.thermostat, "dt")
             deppipe(self, "halfdt", self.barostat, "dt")
@@ -177,16 +174,12 @@ class Dynamics(Motion):
             deppipe(self, "halfdt", self.barostat, "dt")
                 
             # the free ring polymer propagator is called in the inner loop, so propagation time should be redefined accordingly. 
-            if self.enstype == "mts":
-                self.inmts = 1
-                for mk in self.nmts: self.inmts*=mk
-                dset(self,"deltat", depend_value(name="deltat", func=(lambda : self.dt/self.inmts) , dependencies=[dget(self,"dt")]) )
-                deppipe(self, "deltat", self.thermostat, "dt")
-                dset(self,"halfdeltat", depend_value(name="halfdeltat", func=(lambda : 0.5*self.dt/self.inmts) , dependencies=[dget(self,"dt")]) )                
-                deppipe(self,"halfdeltat", self.nm, "dt")
-            else:
-                deppipe(self, "dt", self.thermostat, "dt")
-                deppipe(self,"halfdt", self.nm, "dt")
+            self.inmts = 1
+            for mk in self.nmts: self.inmts*=mk
+            dset(self,"deltat", depend_value(name="deltat", func=(lambda : self.dt/self.inmts) , dependencies=[dget(self,"dt")]) )
+            deppipe(self, "deltat", self.thermostat, "dt")
+            dset(self,"halfdeltat", depend_value(name="halfdeltat", func=(lambda : 0.5*self.dt/self.inmts) , dependencies=[dget(self,"dt")]) )                
+            deppipe(self,"halfdeltat", self.nm, "dt")
 
         self.ensemble.add_econs(dget(self.thermostat, "ethermo"))
         self.ensemble.add_econs(dget(self.barostat, "ebaro"))
@@ -204,11 +197,11 @@ class Dynamics(Motion):
             elif self.enstype == "nst":
                 if np.trace(self.ensemble.stressext) < 0:
                     raise ValueError("Negative or unspecified stress for a constant-s integrator")
-                    
-                    
-        # Binds integrators
+
+		# Binds integrators
         self.integrator.bind(self)
         self.integrator.pconstraints()
+
 
     def get_ntemp(self):
         """Returns the PI simulation temperature (P times the physical T)."""
@@ -242,7 +235,6 @@ class DummyIntegrator(dobject):
         self.splitting = motion.splitting
         dset(self, "dt", dget(motion, "dt"))
         dset(self, "halfdt", dget(motion, "halfdt"))
-        print "HSLFDT ", self.halfdt
         if motion.enstype == "mts": self.nmts=motion.nmts
         #mts on sc force in suzuki-chin
         if motion.enstype == "sc":
@@ -255,7 +247,7 @@ class DummyIntegrator(dobject):
                 self.coeffsc[1::2] /= 3.
                 print self.coeffsc[:,0]
                 print self.coeffsc[:,-1]                
-                self.nmts=motion.nmts[-1]            
+                self.nmts=motion.nmts[-1]
 
     def pstep(self):
         """Dummy momenta propagator which does nothing."""
@@ -614,97 +606,109 @@ class NSTIntegrator(NVTIntegrator):
             
         self.ttime += time.time()
 
-class SCIntegrator(NVEIntegrator):
-   """Integrator object for constant temperature simulations.
+class SCIntegrator(NVTIntegrator):
+    """Integrator object for constant temperature simulations.
 
-   Has the relevant conserved quantity and normal mode propagator for the
-   constant temperature ensemble. Contains a thermostat object containing the
-   algorithms to keep the temperature constant.
+    Has the relevant conserved quantity and normal mode propagator for the
+    constant temperature ensemble. Contains a thermostat object containing the
+    algorithms to keep the temperature constant.
 
-   Attributes:
-      thermostat: A thermostat object to keep the temperature constant.
+    Attributes:
+        thermostat: A thermostat object to keep the temperature constant.
 
-   Depend objects:
-      econs: Conserved energy quantity. Depends on the bead kinetic and
-         potential energy, the spring potential energy and the heat
-         transferred to the thermostat.
-   """
+    Depend objects:  
+        econs: Conserved energy quantity. Depends on the bead kinetic and
+            potential energy, the spring potential energy and the heat
+            transferred to the thermostat.
+    """
 
-   def bind(self, mover):
-      """Binds ensemble beads, cell, bforce, bbias and prng to the dynamics.
+    def bind(self, mover):
+        """Binds ensemble beads, cell, bforce, bbias and prng to the dynamics.
 
-      This takes a beads object, a cell object, a forcefield object and a
-      random number generator object and makes them members of the ensemble.
-      It also then creates the objects that will hold the data needed in the
-      ensemble algorithms and the dependency network. Note that the conserved
-      quantity is defined in the init, but as each ensemble has a different
-      conserved quantity the dependencies are defined in bind.
+        This takes a beads object, a cell object, a forcefield object and a
+        random number generator object and makes them members of the ensemble.
+        It also then creates the objects that will hold the data needed in the
+        ensemble algorithms and the dependency network. Note that the conserved
+        quantity is defined in the init, but as each ensemble has a different
+        conserved quantity the dependencies are defined in bind.
 
-      Args:
-         beads: The beads object from whcih the bead positions are taken.
-         nm: A normal modes object used to do the normal modes transformation.
-         cell: The cell object from which the system box is taken.
-         bforce: The forcefield object from which the force and virial are
+        Args:
+        beads: The beads object from whcih the bead positions are taken.
+        nm: A normal modes object used to do the normal modes transformation.
+        cell: The cell object from which the system box is taken.
+        bforce: The forcefield object from which the force and virial are
             taken.
-         prng: The random number generator object which controls random number
+        prng: The random number generator object which controls random number
             generation.
-      """
+        """
       
-      super(SCIntegrator,self).bind(mover)
-      self.ensemble.add_econs(dget(self.forces, "potsc"))
+        super(SCIntegrator,self).bind(mover)
+        self.ensemble.add_econs(dget(self.forces, "potsc"))
 
-   def pstep(self):                                                                     
-      """Velocity Verlet momenta propagator."""
-                                              
-      # also include the baseline Tr2SC correction (the 2/3 & 4/3 V bit)
-      self.beads.p += depstrip(self.forces.f + self.coeffsc*self.forces.f)*self.dt*0.5/self.nmts
-      # also adds the bias force (TODO!!!)
-      # self.beads.p += depstrip(self.bias.f)*(self.dt*0.5)
+    def pstep(self):                                                                     
+        """Velocity Verlet momenta propagator."""
+                              
+                                                
+        # also include the baseline Tr2SC correction (the 2/3 & 4/3 V bit)
+        self.beads.p += depstrip(self.forces.f + self.coeffsc*self.forces.f)*self.halfdt/self.nmts
+        # also adds the bias force (TODO!!!)
+        # self.beads.p += depstrip(self.bias.f)*(self.dt*0.5)
                                                                                         
-   def pscstep(self):                                                                     
-      """Velocity Verlet Suzuki-Chin momenta propagator."""
+    def pscstep(self):                                                                     
+        """Velocity Verlet Suzuki-Chin momenta propagator."""
 
-      # also adds the force assiciated with SuzukiChin correction (only the |f^2| term, so we remove the Tr2SC correction)
-      self.beads.p += depstrip(self.forces.fsc - self.coeffsc*self.forces.f)*self.dt*0.5
+        # also adds the force assiciated with SuzukiChin correction (only the |f^2| term, so we remove the Tr2SC correction)
+        self.beads.p += depstrip(self.forces.fsc - self.coeffsc*self.forces.f)*self.halfdt
 
-   def qcstep(self):
-      """Velocity Verlet centroid position propagator."""
-                                                                                        
-      self.nm.qnm[0,:] += depstrip(self.nm.pnm)[0,:]/depstrip(self.beads.m3)[0]*self.dt/self.nmts
+    def qcstep(self):
+        """Velocity Verlet centroid position propagator."""
+                                 
+        if self.splitting == "aboba" or self.splitting == "baoab": dt = self.halfdt
+        elif self.splitting == "obabo": dt = self.dt      
+                                                                                         
+        self.nm.qnm[0,:] += depstrip(self.nm.pnm)[0,:]/depstrip(self.beads.m3)[0]*dt/self.nmts
 
-   def step(self, step=None):
-      """Does one simulation time step."""
+    def step(self, step=None):
+        """Does one simulation time step."""
 
-      self.ttime = -time.time()
-      self.thermostat.step()
-      self.pconstraints()
-      self.ttime += time.time()
 
-      self.pscstep()
+        if self.splitting == "obabo":
+            self.thermostat.step()
+            self.pconstraints()
+            
+            self.pscstep()
 
-      for i in range(self.nmts):
-          self.ptime = -time.time()
-          self.pstep()
-          self.pconstraints()
-          self.ptime += time.time()
- 
-          self.qtime = -time.time()
-          self.qcstep()
-          self.nm.free_qstep()
-          self.qtime += time.time()
- 
-          self.ptime -= time.time()
-          self.pstep()
-          self.ptime += time.time()
+            for i in range(self.nmts):
+                self.pstep()
+                self.pconstraints()
+          
+                self.qcstep()
+                self.nm.free_qstep()
+           
+                self.pstep()
+          
+            self.pscstep()
+            self.pconstraints()
 
-      self.pscstep()
-      self.pconstraints()
-
-      self.ttime -= time.time()
-      self.thermostat.step()
-      self.pconstraints()
-      self.ttime += time.time()
-
+            self.thermostat.step()
+            self.pconstraints()
+        elif self.splitting == "baoab":
+            self.pscstep()
+            for i in range(self.nmts):
+                self.pstep()
+                self.pconstraints()
+          
+                self.qcstep()
+                self.nm.free_qstep()
+                self.thermostat.step()
+                self.pconstraints()
+                self.qcstep()
+                self.nm.free_qstep()
+                
+                self.pstep()
+          
+            self.pscstep()
+            self.pconstraints()
 
 class MTSIntegrator(NVEIntegrator):
     """Integrator object for constant temperature simulations and multiple time step.
@@ -717,10 +721,8 @@ class MTSIntegrator(NVEIntegrator):
     def pstep(self, level=0, alpha=1.0):
         """Velocity Verlet monemtum propagator."""
         
-        if self.splitting == "obabo" or self.splitting == "baoab": dt = self.halfdt
-        elif self.splitting == "aboba": dt = self.dt
-        
-        self.beads.p += self.forces.forces_mts(level)*(dt/alpha)
+        # since this  is thermostatted, should use half dt for every splitting
+        self.beads.p += self.forces.forces_mts(level)*(self.halfdt/alpha)
        
     def qcstep(self, alpha=1.0):
         """Velocity Verlet centroid position propagator."""
