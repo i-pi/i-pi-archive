@@ -2,7 +2,7 @@
 
 description = """
 Read positions of individual beads from a set of trajectory files and
-multiplexe them into a single output trajectory. Trajectory file formats are
+multiplex them into a single output trajectory. Trajectory file formats are
 inferred from file extensions, the number of beads is given by the number of
 input files.
 """
