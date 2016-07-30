@@ -86,8 +86,6 @@ class Dynamics(Motion):
             self.integrator = NPTIntegrator()
         elif self.enstype == "nst":
             self.integrator = NSTIntegrator()
-        elif self.enstype == "mts":
-            self.integrator = MTSIntegrator()
         elif self.enstype == "sc":
             self.integrator = SCIntegrator()        
         else:
@@ -182,7 +180,7 @@ class Dynamics(Motion):
                 
             # the free ring polymer propagator is called in the inner loop, so propagation time should be redefined accordingly. 
             if len(self.nmts)>1 or self.nmts[0]>1:
-                raise ValueError("MTS is not implemented with ABOBA integrator")
+                raise ValueError("General MTS is not implemented with ABOBA integrator")
             deppipe(self,"halfdt", self.nm, "dt")
         
         self.ensemble.add_econs(dget(self.thermostat, "ethermo"))
