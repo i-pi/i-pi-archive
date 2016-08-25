@@ -83,7 +83,7 @@ class InputSimulation(Input):
                "mode"  : (InputAttribute, {"dtype"   : str,
                                     "default" : "md",
                                     "help"    : "What kind of simulation should be run.",
-                                    "options" : ['md', 'paratemp']})
+                                    "options" : ['md', 'paratemp', 'static']})
              }
 
    dynamic = {

@@ -8,6 +8,12 @@ The `zundel/` folder contains a simple example of how to run the i-PI driver
 together with a potential fit for the Zundel cation in the gas phase based on
 high-end quantum chemistry methods. 
 
+Once the env.sh file in the i-pi root directory has been sourced with
+
+```bash
+source <i-pi-root>/env.sh
+```
+
 One simply needs to run i-pi with
 
 ```bash
@@ -36,4 +42,11 @@ One runs i-PI as usual, followed by one or more instances of the driver:
 ```bash
 i-pi input.xml &
 i-pi-driver -u -h driver -m qtip4pf
+```
+
+Remember that the `<i-pi-root>/env.sh` file must be sourced before running
+`i-pi` or `i-pi-driver`:
+
+```bash
+source <i-pi-root>/env.sh
 ```

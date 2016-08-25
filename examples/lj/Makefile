@@ -20,7 +20,7 @@ high_density:
 	cd high_density; $(IPI) input.xml & sleep 5; \
 	$(call run_driver,1,high_density) \
 	wait
-	
+
 mid_density:
 	cd mid_density; $(IPI) input.xml & sleep 5; \
 	$(call run_driver,1,mid_density) \

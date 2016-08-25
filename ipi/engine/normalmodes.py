@@ -36,6 +36,7 @@ class NormalModes(dobject):
          be done.
       ensemble: The ensemble object, specifying the temperature to hold the
          system to.
+      motion: The motion object that will need normal-mode transformation and propagator
       transform: A nm_trans object that contains the functions that are
          required for the normal mode transformation.
 
@@ -75,7 +76,7 @@ class NormalModes(dobject):
          beads.sm3, beads.p and nm_factor.
    """
 
-   def __init__(self, mode="rpmd", transform_method="fft", freqs=None):
+   def __init__(self, mode="rpmd", transform_method="fft", freqs=None, dt=1.0):
       """Initializes NormalModes.
 
       Sets the options for the normal mode transform.
@@ -89,13 +90,14 @@ class NormalModes(dobject):
 
       if freqs is None:
          freqs = []
+      dset(self,"dt", depend_value(name='dt', value=dt))
       dset(self,"mode",   depend_value(name='mode', value=mode))
       dset(self,"transform_method",
          depend_value(name='transform_method', value=transform_method))
       dset(self,"nm_freqs",
          depend_array(name="nm_freqs",value=np.asarray(freqs, float) ) )
 
-   def bind(self, beads, ensemble):
+   def bind(self, ensemble, motion, beads=None, forces=None):
       """ Initializes the normal modes object and binds to beads and ensemble.
 
       Do all the work down here as we need a full-formed necklace and ensemble
@@ -106,12 +108,17 @@ class NormalModes(dobject):
          ensemble: An ensemble object to be bound.
       """
 
+      self.ensemble = ensemble
+      self.motion = motion      
+      if beads is None: 
+        self.beads = motion.beads
+      else:
+        self.beads = beads
+      self.forces = forces
       self.nbeads = beads.nbeads
       self.natoms = beads.natoms
 
       # stores a reference to the bound beads and ensemble objects
-      self.beads = beads
-      self.ensemble = ensemble
 
       # sets up what's necessary to perform nm transformation.
       if self.transform_method == "fft":
@@ -151,7 +158,18 @@ class NormalModes(dobject):
       # finally, we mark the beads as those containing the set positions
       dget(self.beads, "q").update_man()
       dget(self.beads, "p").update_man()
-
+      
+      # forces can be converted in nm representation, but here it makes no sense to set up a sync mechanism, 
+      # as they always get computed in the bead rep
+      if not self.forces is None: dset(self,"fnm", depend_array(name="fnm",
+         value=np.zeros((self.nbeads,3*self.natoms), float),func=(lambda : self.transform.b2nm(depstrip(self.forces.f)) ),    
+            dependencies=[dget(self.forces,"f")] ) )
+      else: # have a fall-back plan when we don't want to initialize a force mechanism, e.g. for ring-polymer initialization         
+         dset(self,"fnm", depend_array(name="fnm",
+         value=np.zeros((self.nbeads,3*self.natoms), float),
+         func=(lambda: depraise(ValueError("Cannot access NM forces when initializing the NM object without providing a force reference!") ) ),    
+            dependencies=[] ) )
+         
       # create path-frequencies related properties
       dset(self,"omegan",
          depend_value(name='omegan', func=self.get_omegan,
@@ -173,10 +191,12 @@ class NormalModes(dobject):
          value=np.zeros(self.nbeads, float), func=self.get_dynwk,
             dependencies=[dget(self,"nm_factor"), dget(self,"omegak") ]) )
 
+      dset(self, "dt", depend_value(name="dt", value = 1.0) )
+      deppipe(self.motion, "dt", self, "dt")
       dset(self,"prop_pq",
          depend_array(name='prop_pq',value=np.zeros((self.beads.nbeads,2,2)),
             func=self.get_prop_pq,
-               dependencies=[dget(self,"omegak"), dget(self,"nm_factor"), dget(self.ensemble,"dt")]) )
+               dependencies=[dget(self,"omegak"), dget(self,"nm_factor"), dget(self,"dt")]) )
 
       # if the mass matrix is not the RPMD one, the MD kinetic energy can't be
       # obtained in the bead representation because the masses are all mixed up
@@ -191,6 +211,38 @@ class NormalModes(dobject):
          depend_array(name="kstress",value=np.zeros((3,3), float),
             func=self.get_kstress,
                dependencies=[dget(self,"pnm"), dget(self.beads,"sm3"), dget(self, "nm_factor") ] ))
+
+      # spring energy, calculated in normal modes
+      dset(self, "vspring",
+         depend_value(name="vspring",
+            value=0.0,
+            func=self.get_vspring,
+            dependencies=[dget(self, "qnm"), dget(self, "omegak"), dget(self.beads, "m3")]))
+
+      # spring forces on normal modes
+      dset(self, "fspringnm",
+         depend_array(name="fspringnm",
+            value=np.zeros((self.nbeads, 3*self.natoms), float),
+            func=self.get_fspringnm,
+            dependencies=[dget(self, "qnm"), dget(self, "omegak"), dget(self.beads, "m3")]))
+
+      # spring forces on beads, transformed from normal modes
+      dset(self,"fspring",
+         depend_array(name="fs",
+            value=np.zeros((self.nbeads,3*self.natoms), float),
+            func=(lambda: self.transform.nm2b(depstrip(self.fspringnm))),
+            dependencies = [dget(self, "fspringnm")]))
+
+
+   def get_fspringnm(self):
+      """Returns the spring force calculated in NM representation."""
+
+      return - self.beads.m3 * self.omegak[:,np.newaxis]**2 * self.qnm
+
+   def get_vspring(self):
+      """Returns the spring energy calculated in NM representation."""
+
+      return 0.5 * (self.beads.m3 * self.omegak[:,np.newaxis]**2 * self.qnm**2).sum()
 
    def get_omegan(self):
       """Returns the effective vibrational frequency for the interaction
@@ -238,12 +290,13 @@ class NormalModes(dobject):
          ring polymer.
       """
 
-      dt = self.ensemble.dt
+      dt = self.dt
       pqk = np.zeros((self.nbeads,2,2), float)
       pqk[0] = np.array([[1,0], [dt,1]])
 
+      # Note that the propagator uses mass-scaled momenta.
       for b in range(1, self.nbeads):
-         sk = np.sqrt(self.nm_factor[b]) # NOTE THAT THE PROPAGATOR USES MASS-SCALED MOMENTA!
+         sk = np.sqrt(self.nm_factor[b])
 
          dtomegak = self.omegak[b]*dt/sk
          c = np.cos(dtomegak)
@@ -262,8 +315,7 @@ class NormalModes(dobject):
       # also checks that the frequencies and the mode given in init are
       # consistent with the beads and ensemble
 
-      dmf = np.zeros(self.nbeads,float)
-      dmf[:] = 1.0
+      dmf = np.ones(self.nbeads, float)
       if self.mode == "rpmd":
          if len(self.nm_freqs) > 0:
             warning("nm.frequencies will be ignored for RPMD mode.", verbosity.low)

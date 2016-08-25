@@ -26,7 +26,7 @@ from ipi.utils.io.inputs.io_xml import *
 from ipi.utils.units import unit_to_internal, unit_to_user
 
 
-__all__ = ['Input', 'InputValue', 'InputAttribute', 'InputArray', 'input_default']
+__all__ = ['Input', 'InputDictionary', 'InputValue', 'InputAttribute', 'InputArray', 'input_default']
 
 
 class input_default(object):
@@ -164,7 +164,13 @@ class Input(object):
       #creates and object of the type given, expanding the dictionary to give
       #the arguments of the __init__() function, then adds it to the input
       #object's dictionary.
-      for f, v in self.fields.iteritems():
+      if not hasattr(self, "instancefields"):
+        self.instancefields = {}
+      
+      # merge instencefields with the static class fields
+      self.instancefields.update(self.fields)
+      
+      for f, v in self.instancefields.iteritems():
          self.__dict__[f] = v[0](**v[1])
 
       for a, v in self.attribs.iteritems():
@@ -191,13 +197,13 @@ class Input(object):
       self._explicit = False #Since the value was not set by the user
 
    def store(self, value=None):
-      """Dummy function for storing data."""
+      """Base function for storing data"""
 
       self._explicit = True
       pass
 
    def fetch(self):
-      """Dummy function to retrieve data."""
+      """Dummy function to retrieve data that returns all fields as a dictionary."""
 
       self.check()
       pass
@@ -262,7 +268,7 @@ class Input(object):
             rstr += " " + outstr
       rstr += ">"
       rstr += text
-      for f in self.fields:
+      for f in self.instancefields:
          #only write out fields that are not defaults
 
          defstr = self.__dict__[f]._defwrite.replace("%%NAME%%",f)
@@ -304,7 +310,7 @@ class Input(object):
       # before starting, sets everything to its default -- if a default is set!
       for a in self.attribs:
          self.__dict__[a].set_default()
-      for f in self.fields:
+      for f in self.instancefields:
          self.__dict__[f].set_default()
 
       self.extra = []
@@ -321,7 +327,7 @@ class Input(object):
                raise NameError("Attribute name '" + a + "' is not a recognized property of '" + xml.name + "' objects")
 
          for (f, v) in xml.fields: #reads all field and dynamic data.
-            if f in self.fields:
+            if f in self.instancefields:
                self.__dict__[f].parse(xml=v)
             elif f == "_text":
                self._text = v
@@ -335,7 +341,7 @@ class Input(object):
             va = self.__dict__[a]
             if not (va._explicit or va._optional):
                raise ValueError("Attribute name '" + a + "' is mandatory and was not found in the input for the property " + xml.name)
-         for f in self.fields:
+         for f in self.instancefields:
             vf = self.__dict__[f]
             if not (vf._explicit or vf._optional):
                raise ValueError("Field name '" + f + "' is mandatory and was not found in the input for the property " + xml.name)
@@ -469,8 +475,8 @@ class Input(object):
 
       #As above, for the fields. Only prints out if we have not reached the
       #user-specified limit.
-      if len(self.fields) != 0 and level != stop_level:
-         for f in self.fields:
+      if len(self.instancefields) != 0 and level != stop_level:
+         for f in self.instancefields:
             rstr += self.__dict__[f].help_latex(name=f, level=level+1, stop_level=stop_level, standalone=standalone)
 
       if len(self.dynamic) != 0 and level != stop_level:
@@ -574,7 +580,7 @@ class Input(object):
       #these are booleans which tell us whether there are any attributes
       #and fields to print out
       show_attribs = (len(self.attribs) != 0)
-      show_fields = (not (len(self.fields) == 0 and len(self.dynamic) == 0)) and level != stop_level
+      show_fields = (not (len(self.instancefields) == 0 and len(self.dynamic) == 0)) and level != stop_level
 
       rstr = ""
       rstr = indent + "<" + name; #prints tag name
@@ -633,7 +639,7 @@ class Input(object):
       #these will only be printed if their level in the hierarchy is not above
       #the user specified limit.
       if show_fields:
-         for f in self.fields:
+         for f in self.instancefields:
             rstr += self.__dict__[f].help_xml(f, "   " + indent, level+1, stop_level)
          for f, v in self.dynamic.iteritems():
             #we must create the object manually, as dynamic objects are
@@ -643,6 +649,61 @@ class Input(object):
 
       rstr += indent + "</" + name + ">\n"
       return rstr
+
+
+class InputDictionary(Input):
+   """Class that returns the value of all the fields as a dictionary.
+   """
+   
+   def __init__(self,  help=None, default=None, dtype=str, options=None, dimension=None):
+      """Allows one to introduce additional (homogeneous) fields during initialization """
+      
+      
+      if hasattr(options,"__len__"):
+         self.instancefields = {}
+         opdef = {}
+         for i in range(len(options)): 
+            nfield = {}
+            if hasattr(default,"__len__"):        
+               if len(options)!=len(default): 
+                  raise ValueError("Default values list does not match dictionay options length")
+               nfield["default"] = default[i]
+            else: nfield["default"] = default            
+            if hasattr(dtype,"__len__"):        
+               if len(options)!=len(dtype): 
+                  raise ValueError("Type list does not match dictionay options length")
+               nfield["dtype"] = dtype[i]
+            else: nfield["dtype"] = dtype
+            if hasattr(dimension,"__len__"):        
+               if len(options)!=len(dimension): 
+                  raise ValueError("Type list does not match dictionay options length")
+               nfield["dimension"] = dimension[i]
+            else: nfield["dimension"] = dimension
+            
+            opdef[options[i]] = nfield["default"]
+            
+            self.instancefields[options[i]] = ( InputValue, nfield )
+         super(InputDictionary,self).__init__(help=help, default=opdef) # deferred initialization         
+      else:
+         super(InputDictionary,self).__init__(help=help, default=default)
+      
+    
+   def store(self, value={}):
+      """Base function for storing data passed as a dictionary"""
+      
+      self._explicit = True       
+      for f, v in value.iteritems():
+          self.__dict__[f].store(value[f])      
+      pass
+
+   def fetch(self):
+      """Dummy function to retrieve data that returns all fields as a dictionary."""
+
+      self.check()
+      rdic = {}
+      for f, v in self.instancefields.iteritems():
+         rdic[f]=self.__dict__[f].fetch()
+      return rdic
 
 
 class InputAttribute(Input):

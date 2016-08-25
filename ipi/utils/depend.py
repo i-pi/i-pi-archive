@@ -32,7 +32,7 @@ from ipi.utils.messages import verbosity, warning
 
 
 __all__ = ['depend_base', 'depend_value', 'depend_array', 'synchronizer',
-           'dobject', 'dget', 'dset', 'depstrip', 'depcopy', 'deppipe']
+           'dobject', 'dget', 'dset', 'depstrip', 'depcopy', 'deppipe', 'depraise']
 
 
 class synchronizer(object):
@@ -729,6 +729,10 @@ def depcopy(objfrom, memberfrom, objto, memberto):
     dto._func = dfrom._func
     if hasattr(dfrom, "_bval"):
         dto._bval = dfrom._bval
+
+
+def depraise(exception): 
+    raise exception
 
 
 class dobject(object):

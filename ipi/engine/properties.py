@@ -202,7 +202,7 @@ class Properties(dobject):
                       'func': (lambda: (1 + self.simul.step))},
       "time": {       "dimension": "time",
                       "help": "The elapsed simulation time.",
-                      'func': (lambda: (1 + self.simul.step)*self.ensemble.dt)},
+                      'func': (lambda: (1 + self.simul.step)*self.motion.dt)},
       "temperature": {"dimension": "temperature",
                       "help": "The current temperature, as obtained from the MD kinetic energy.",
                       "longhelp" : """The current temperature, as obtained from the MD kinetic energy of the (extended)
@@ -246,6 +246,17 @@ class Properties(dobject):
                       "longhelp": """The physical system potential energy. With the optional argument 'bead'
                          will print the potential associated with the specified bead.""",
                       'func': (lambda bead="-1": self.forces.pot/self.beads.nbeads if int(bead)<0 else self.forces.pots[int(bead)])},
+      "pot_component": {  "dimension" : "energy",
+                      "help": "The contribution to the system potential from one of the force components. ",
+                       "longhelp":  """The contribution to the system potential from one of the force components. Takes one mandatory
+                         argument index (zero-based) that indicates which component of the potential must be returned. The optional argument 'bead'
+                         will print the potential associated with the specified bead. """,
+                      'func': (lambda index, bead="-1": self.forces.pots_component(int(index)).sum()/self.beads.nbeads if int(bead)<0 else self.forces.pots_component(int(index))[int(bead)] ) },
+      "forcemod": {  "dimension" : "force",
+                      "help" : "The modulus of the force.",
+                      "longhelp": """The modulus of the force. With the optional argument 'bead'
+                         will print the force associated with the specified bead.""",
+                      'func': (lambda bead="-1": np.linalg.norm(self.forces.f)/self.beads.nbeads if int(bead)<0 else np.linalg.norm(self.forces.f[int(bead)]))},
       "spring": {     "dimension" : "energy",
                       "help": "The total spring potential energy between the beads of all the ring polymers in the system.",
                       'func': (lambda: self.beads.vpath*self.nm.omegan2/self.beads.nbeads)},
@@ -494,6 +505,7 @@ class Properties(dobject):
       """
 
       self.ensemble = system.ensemble
+      self.motion = system.motion
       self.beads = system.beads
       self.nm = system.nm
       self.cell = system.cell
@@ -503,8 +515,8 @@ class Properties(dobject):
       # displaced path estimators without changing the simulation bead
       # coordinates
       self.dbeads = system.beads.copy()
-      self.dforces = Forces()
-      self.dforces.bind(self.dbeads, self.cell,  system.fproto, self.simul.fflist)
+      self.dcell = system.cell.copy()
+      self.dforces = system.forces.copy(self.dbeads, self.dcell)
 
    def __getitem__(self, key):
       """Retrieves the item given by key.
@@ -588,14 +600,14 @@ class Properties(dobject):
             for. If not, then the simulation temperature.
       """
 
-      if len(self.ensemble.fixatoms)>0:
-         mdof = len(self.ensemble.fixatoms)*3
+      if len(self.motion.fixatoms)>0:
+         mdof = len(self.motion.fixatoms)*3
          if bead == "" and nm == "":
             mdof*=self.beads.nbeads
       else:
          mdof = 0
 
-      if self.ensemble.fixcom:
+      if self.motion.fixcom:
          if bead == "" and nm == "":
             mdof += 3
          elif nm != "" and nm == "0":   # the centroid has 100% of the COM removal
@@ -1727,8 +1739,8 @@ class Trajectories(dobject):
       # displaced path estimators without changing the simulation bead
       # coordinates
       self.dbeads = system.beads.copy()
-      self.dforces = Forces()
-      self.dforces.bind(self.dbeads, self.system.cell,  system.fproto, self.system.simul.fflist)
+      self.dcell = system.cell.copy()
+      self.dforces = self.system.forces.copy(self.dbeads, self.dcell)
 
    def get_akcv(self):
       """Calculates the contribution to the kinetic energy due to each degree

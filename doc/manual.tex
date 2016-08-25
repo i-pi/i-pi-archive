@@ -907,7 +907,7 @@ in mind, it also includes a Fortran empirical potential client code to do
 simple calculations and to run the examples.
 
 The source code for this is included in the directory {}``drivers'', and can
-be compiled into an executable {}``driver.x'' using the UNIX utility make.
+be compiled into an executable {}``i-pi-driver'' using the UNIX utility make.
 
 This code currently has four empirical potentials hardcoded into it, 
 a Lennard-Jones potential, the Silvera-Goldman potential \cite{silv-gold78jcp},
@@ -918,7 +918,7 @@ How the code is run is based on what command line arguments are passed to it.
 The command line syntax is:
 
 \begin{code}
-> driver.x [-u] -h hostname -p port -m [gas|lj|sg|harm] -o parameters [-v]
+> i-pi-driver [-u] -h hostname -p port -m [gas|lj|sg|harm] -o parameters [-v]
 \end{code}
 
 The flags do the following:
@@ -1247,13 +1247,13 @@ pressure of \(10^{-7}\) atomic pressure units. This would be specified by
 the following input file:
 
 \begin{code}
-<simulation>
-   <ensemble mode='npt'>
+<system>
+   <ensemble>
       <pressure> 1e-7 </pressure>
       ...
    </ensemble>
    ...
-</simulation>
+</system>
 \end{code}
 
 To help detect any user error the recognized tag names, data types
@@ -1274,26 +1274,26 @@ MPa. Instead of converting this to the atomic unit of pressure, it
 is possible to use pascals directly using:
 
 \begin{code}
-<simulation>
-   <ensemble mode=`npt'>
+<system>
+   <ensemble>
       <pressure units=`pascal'> 3e6 </pressure>
       ...
    </ensemble>
    ...
-</simulation>
+</system>
 \end{code}
 
 The code can also understand S.I. prefixes, so this can be simplified
 further using:
 
 \begin{code}
-<simulation>
-   <ensemble mode='npt'>
+<system>
+   <ensemble>
       <pressure units=`megapascal'> 3 </pressure>
       ...
    </ensemble>
    ...
-</simulation>
+</system>
 \end{code}
 
 A full list of which units are defined for which dimensions
@@ -1925,10 +1925,12 @@ possibly followed by their attributes.
 \emph{\small Other supplementary information} will be in small font and italicized.
 
 \input{input_docs/simulation}
-\input{input_docs/paratemp}
+%\input{input_docs/paratemp}
 \input{input_docs/forcefield}
 \input{input_docs/ffsocket}
 \input{input_docs/system}
+\input{input_docs/motion}
+\input{input_docs/dynamics}
 \input{input_docs/initializer}
 \input{input_docs/init_file}
 \input{input_docs/init_pos}
@@ -1983,7 +1985,8 @@ client code that is capable of calculating the potential interactions
 of para-hydrogen molecules. Fortunately, one of the client codes distributed
 with \ipi has an appropriate empirical potential already hard-coded
 into it, and
-so all that is required is to create the {}``driver.x'' file in
+so all that is required is to create the {}``i-pi-driver'' file
+compiling the code in
 the {}``drivers'' directory, using the UNIX utility make.
 
 This client code can be used for several different problems
@@ -1993,7 +1996,7 @@ we will use the Silvera-Goldman potential with a cut-off radius
 of 15 \(a_0\). This is run using the following command:
 
 \begin{code}
-> ./driver.x -m sg -h localhost -o 15 -p 31415
+> i-pi-driver -m sg -h localhost -o 15 -p 31415
 \end{code}
 
 The option {}``-m'' is followed by the empirical potential required,
@@ -2042,12 +2045,26 @@ input file is not well formed can be found in \ref{trouble}.
 For the sake of this first tutorial however, we will simply discuss the
 those tags which are needed for a single \emph{NVT} equilibration run.
 The most important tags are {}``\hyperref[INITIALIZER]{initialize}'', 
-{}``\hyperref[ENSEMBLE]{ensemble}'', 
-{}``total\_steps'' and {}``\hyperref[FORCES]{forces}''.
-These correspond to the tag to initialize the atom configurations,
-the tag to define the appropriate ensemble,
-the tag to set the length of the simulation and the tag to specify the 
-client code respectively.
+{}``\hyperref[ENSEMBLE]{ensemble}'', {}``\hyperref[MOTION]{motion}'', 
+{}``\hyperref[DYNAMICS]{dynamics}'',{}``total\_steps''
+{}``\hyperref[FFSOCKET]{ffsocket}'',
+ and {}``\hyperref[FORCES]{forces}''.
+These correspond to the tag to initialize the atom configurations (initialize),
+the tag ensemble defines the properties of the statistical ensemble considered (like
+temperature and pressure). While motion contains everything regarding
+the motion of the atoms in general and allows to specify
+which type of computation is expected (dynamics, geometry
+optimization, etc.), the tag dynamics contains all the specifics
+relative to the molecular dynamics (such as the barostat,
+thermostat and the time step, whose total number is defined in
+the total\_step tags.). In theory it would be possible to join many
+force with different way into the tag forces, even though each of those
+forces needs a force field socket (ffsocket tag) that specify who is
+in charge of computing the forces and sending them to \ipi.  Note that
+the attribute ``forcefield'' of the force tag must correspond to the
+attribute ``name'' of one of the ffsocket tag. All the tags that
+define the actual simulation must be within the {}``\hyperref[SYSTEM]{system}''
+environment.
 We will also discuss {}``\hyperref[OUTPUTS]{output}'', 
 which is used to define what output data
 is generated by the code.
@@ -2059,15 +2076,31 @@ At this point then, the input file looks like:
    <total_steps>
       ...
    </total_steps>
-   <initialize>
+   <ffsocket name='some_name'>
       ...
-   </initialize>
-   <forces>
-      ...
-   </forces>
-   <ensemble>
-      ...
-   </ensemble>
+   </ffsocket>
+   <system>
+      <initialize>
+         ...
+      </initialize>
+      <forces>
+         <force forcefield='some_name_A'>
+            ...
+         </force>
+         <force forcefield='some_name_B'>
+            ...
+         </force>
+      </forces>
+      <ensemble>
+         ...
+      </ensemble>
+      <motion mode='dynamics'>
+         ...
+         <dynamics>
+            ...
+         </dynamics>
+      <motion>
+   </system>
    <output>
       ...
    </output>
@@ -2099,7 +2132,7 @@ Next, we must specify the atomic configuration. Rather than initialize
 the atom positions manually, we will instead use a separate configuration 
 file for this purpose.
 Here we will discuss two of the input formats that are compatible
-with \ipi, xyz files and pdb files.
+with \ipi: xyz files and pdb files.
 
 Note that, for the sake of this tutorial, we have 
 included valid xyz and pdb input
@@ -2273,17 +2306,15 @@ velocities to. With this, the final
 
 \subsubsection{Creating the server socket}
 
-Next let us consider the 
-{}``\hyperref[FORCES]{forces}'' section, which deals with communication
+Next let us consider the {}``\hyperref[FFSOCKET]{ffsocket}'' and the 
+{}``\hyperref[FORCES]{forces}'' sections, which deals with communication
 with the client codes. Since in this example we do not use ring-polymer contraction,
-we only need to specify a single {}``\hyperref[FFSOCKET]{socket}'' tag:
+we only need to specify a single {}``\hyperref[FFSOCKET]{ffsocket}'' tag:
 
 \begin{code}
-<forces>
-   <socket>
-      ...
-   </socket>
-</forces>
+<ffsocket>
+   ...
+</ffsocket>
 \end{code}
 
 A socket is specified with three parameters; the port number, the
@@ -2294,34 +2325,69 @@ To match up with the client socket specified above,
 we will take an internet socket on the hostname localhost and
 use port number 31415. 
 
-This gives the final {}``\hyperref[FORCES]{forces}'' section:
+This gives the final {}``\hyperref[FFSOCKET]{ffsocket}'' section:
 
 \begin{code}
-<forces>
-   <socket mode="inet">
-      <address> localhost </address>
-      <port> 31415 </port>
-   </socket>
-</forces>
+<ffsocket mode="inet" name="driver-sg">
+   <address> localhost </address>
+   <port> 31415 </port>
+</ffsocket>
 \end{code}
 
-\subsubsection{Generating the correct ensemble}
+To enhance the generality of the input, the forces used to move the
+atoms are red from the ``forces'' tag, within the ``system'' environment:
+
+\begin{code}
+<system>
+   ...
+   <forces>
+      ...
+   </forces>
+   ...
+</system>
+\end{code}
+
+Within this tag, the user can specify many different ``force''
+tags. The final force will be the sum of the contribution from each
+``force'' tag. Each force tag must be associate to an
+``ffsocket''. In particular the ``forcefield'' attribute of the
+``force'' must match the ``name'' attribute of the ``ffsocket''. In
+this tutorial only a single force is used that must match the ffsocket
+created above:
+
+\begin{code}
+<system>
+   ...
+   <forces>
+      <force forcefield="driver-sg"/>
+   </forces>
+   ...
+</system>
+\end{code}
+
+For the sake of this tutorial, the ``force'' tag must be empty.
+
+\subsubsection{Generating the correct dynamics}
 
 The next section that we will need is 
-{}``\hyperref[ENSEMBLE]{ensemble}'', which determines
-how the dynamics integrator will be initialized. Since we wish to
+{}``\hyperref[MOTION]{motion}'', which determines the computation i-pi
+will perform. Since we wish to do a molecular dynamics, the attribute
+``mode'' of the ``motion'' tag must be equal to ``dynamics''.
+The details of the dynamics integration are given within
+{}``\hyperref[DYNAMICS]{dynamics}''.  Since we wish to
 do a \emph{NVT} simulation, we set the {}``mode'' attribute to {}``nvt''
 (note that we use lower case, and that the tags are case sensitive),
 and must specify the temperature using the appropriate tag:
 
 \begin{code}
-<ensemble mode='nvt'>
-   ...
-   <temperature units='kelvin'> 25 </temperature>
-</ensemble>
+<motion mode='dynamics'>
+   <dynamics mode='nvt'>
+      ...
+   </dynamics>
+</motion>
 \end{code}
 
-This defines the ensemble that will be sampled. We also must decide
+This defines the computation that will be performed. We also must decide
 which integration algorithm to use, and how large the time step should
 be. In general, the time step should be made as large as possible
 without there being a drift in the conserved quantity. Usually we
@@ -2330,11 +2396,10 @@ this, but for the sake of this tutorial we will use a safe value of
 1 femtosecond, giving:
 
 \begin{code}
-<ensemble mode='nvt'>
+<dynamics mode='nvt'>
    ...
    <timestep units='femtosecond'> 1 </timestep>
-   <temperature units='kelvin'> 25 </temperature>
-</ensemble>
+</dynamics>
 \end{code}
 
 Finally, while the microcanonical part of the integrator
@@ -2350,13 +2415,12 @@ how strong the thermostat is, which we will set to 25 femtoseconds.
 Putting all of this together, we get:
 
 \begin{code}
-<ensemble mode='nvt'>
+<dynamics mode='nvt'>
    <thermostat mode='pile_g'>
       <tau units='femtosecond'> 25 </tau>
    </thermostat>
    <timestep units='femtosecond'> 1 </timestep>
-   <temperature units='kelvin'> 25 </temperature>
-</ensemble>
+</dynamics>
 \end{code}
 
 Now that we have decided on the time step, we will decide the total
@@ -2366,6 +2430,18 @@ steps, using:
 
 \begin{code}
 <total_steps> 5000 </total_steps>
+\end{code}
+
+The temperature must be specified within the
+{}``\hyperref{ENSEMBLE}{ensemble}'':
+\begin{code}
+<system>
+   ...
+   <ensemble>
+      <temperature units='kelvin'> 300 </temperature>
+   </ensemble>
+   ...
+</system>
 \end{code}
 
 \subsubsection{Customizing the output}
@@ -2626,7 +2702,7 @@ from the {}``drivers'' directory using the command
 specified above:
 
 \begin{code}
-> ./driver.x -m sg -h localhost -o 15 -p 31415
+> i-pi-driver -m sg -h localhost -o 15 -p 31415
 \end{code}
 
 The \ipi code should now output a message saying that a new client
@@ -2648,7 +2724,7 @@ the last step using
 \begin{code}
 > ../../../i-pi tut1.checkpoint
 \end{code}
-followed by running {}``driver.x'' as before.
+followed by running {}``i-pi-driver'' as before.
 
 The difference between these two files is that, while {}``tut1.checkpoint''
 was specified by the user, {}``RESTART'' is automatically generated at the
@@ -2744,20 +2820,21 @@ Putting this together this gives:
 \end{code}
 
 Finally, we must change the {}``\hyperref[ENSEMBLE]{ensemble}'' 
-tag so that the correct
-ensemble is sampled. The first thing that must be done is  
-the {}``mode'' tag must be changed from {}``nvt'' to {}``npt'',
-and a {}``pressure'' tag must be added:
+and the {}``\hyperref[DYNAMICS]{dynamics}'' tags so that the correct
+ensemble is sampled. The first thing that must be done is
+adding a {}``pressure'' tag in the ensemble:
 
 \begin{code}
-<ensemble mode='npt'>
+<ensemble>
    <pressure> 0 </pressure>
    ...
 </ensemble>
 \end{code}
 
-We must also specify the constant pressure algorithm,
-using the tag {}``\hyperref[BAROSTAT]{barostat}''.
+Then, we must also specify the constant pressure algorithm,
+using the tag {}``\hyperref[BAROSTAT]{barostat}'' within the dynamics
+environment. Do not forget to change the mode attribute of the
+dynamics from ``nvt'' to ``npt''.
 At present, \ipi only contains a stochastic barostat to apply pressure
 to an isotropic system, which can be specified with the option ``isotropic''. 
 Anisotropic versions of the barostat may be added in future releases of \ipi. 
@@ -2770,34 +2847,50 @@ constant temperature algorithms for the atomic degrees of freedom, and
 we will take its time scale to be 250 femtoseconds:
 
 \begin{code}
-<ensemble mode='npt'>
-   <pressure> 0 </pressure>
-   <barostat mode='isotropic'>
-      <thermostat mode='langevin'>
-         <tau units='femtosecond'> 250 </tau>
-      </thermostat>
+<system>
+   <ensemble>
+      <pressure> 0 </pressure>
+   </ensemble>
+   <motion mode='dynamics'>
+      <dynamics mode='npt'>
+         <barostat mode='isotropic'>
+            <thermostat mode='langevin'>
+               <tau units='femtosecond'> 250 </tau>
+            </thermostat>
+            ...
+         </barostat>
+         ...
+      </dynamics>
       ...
-   </barostat>
+   </motion>
    ...
-</ensemble>
+</system>
 \end{code}
 
 Finally, we will take the barostat time scale to be 250 femtoseconds also, giving:
 
 \begin{code}
-<ensemble mode='npt'>
-   <pressure> 0 </pressure>
-   <barostat mode='isotropic'>
-      <thermostat mode='langevin'>
-         <tau units='femtosecond'> 250 </tau>
-      </thermostat>
-      <tau units='femtosecond'> 250 </tau>
-   </barostat>
+<system>
+   <ensemble>
+      <pressure> 0 </pressure>
+   </ensemble>
+   <motion mode='dynamics'>
+      <dynamics mode='npt'>
+         <barostat mode='isotropic'>
+            <thermostat mode='langevin'>
+               <tau units='femtosecond'> 250 </tau>
+            </thermostat>
+            <tau units='femtosecond'> 250 </tau>
+         </barostat>
+         ...
+      </dynamics>
+      ...
+   </motion>
    ...
-</ensemble>
+</system>
 \end{code}
-with the rest of the {}``\hyperref[ENSEMBLE]{ensemble}'' 
-tag being the same as before.
+with the rest of the {}``\hyperref[ENSEMBLE]{ensemble}'' and
+{}``\hyperref[DYNAMICS]{dynamics}'' tag being the same as before.
 
 \subsection{Initialization from RESTART}
 
@@ -2865,21 +2958,19 @@ processes on a single computer, and so for the current problem they will be much
 faster than internet sockets.
 
 To specify this, we simply set the {}``mode'' attribute of the
-{}``\hyperref[FFSOCKET]{socket}'' tag to {}``unix'':
+{}``\hyperref[FFSOCKET]{ffsocket}'' tag to {}``unix'':
 
 \begin{code}
-<forces>
-   <socket mode='unix'>
-      ...
-   </socket>
-</forces>
+<ffsocket mode='unix' name="driver-sg">
+   ...
+</ffsocket>
 \end{code}
 
 We then specify that the client code should connect to a unix socket
 using the -u flag:
 
 \begin{code}
-> ./driver.x -u -m sg -h localhost -o 15 -p 31415
+> i-pi-driver -u -m sg -h localhost -o 15 -p 31415
 \end{code}
 
 Parallelizing the force calculation over the different replicas of the system
@@ -2889,7 +2980,7 @@ command multiple times. For example, if we wish to run
 
 \begin{code}
 > for a in 1 2 3 4; do
->    ./driver.x -u -m sg -h localhost -o 15 -p 31415 &
+>    i-pi-driver -u -m sg -h localhost -o 15 -p 31415 &
 > done
 \end{code}
 

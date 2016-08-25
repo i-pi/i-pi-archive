@@ -22,7 +22,7 @@ npt-classical:
 	cd npt-classical; $(IPI) nptcls_ipi.xml & sleep 5; \
 	$(call run_cp2k,1,nptcls_cp2k.in) \
 	wait
-	
+
 nvt-classical:
 	cd nvt-classical; $(IPI) nvtcls_ipi.xml & sleep 5; \
 	$(call run_cp2k,1,nvtcls_cp2k.in) \

@@ -5,7 +5,7 @@
 # See the "licenses" directory for full license information.
 
 .PHONY: all water lithium clean
-all: water lithium zundel
+all: water lithium #zundel
 
 PW:=pw.x
 CP:=cp.x
@@ -35,10 +35,10 @@ lithium:
 	$(call run_pw,4,li4-pw.in) \
 	wait
 
-zundel:
-	cd zundel-cp; $(IPI) zundel-ipi.xml & sleep 3; \
-	$(call run_cp,4,zundel-cp.in) \
-	wait
+#zundel:
+#	cd zundel-cp; $(IPI) zundel-ipi.xml & sleep 3; \
+#	$(call run_cp,4,zundel-cp.in) \
+#	wait
 
 clean:
 	rm -rf */*_output.* */*.log */run_* */RESTART */EXIT
