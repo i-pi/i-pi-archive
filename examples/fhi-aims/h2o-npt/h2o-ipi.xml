@@ -1,14 +1,7 @@
 <simulation verbosity="high">
-   <initialize nbeads="1">
-    <file mode="pdb" units="angstrom">./h2o-cfg.pdb</file>
-    <velocities mode="thermal" units="kelvin"> 300 </velocities>
-   </initialize>
-   
-   <forces>
-     <socket mode='inet'>
+    <ffsocket mode='inet' name='driver'>
       <latency> 0.05 </latency>  <port>21012</port>  <timeout>2.0000000e+03</timeout>   <address> localhost </address>
-     </socket>
-   </forces>
+    </ffsocket>
    <total_steps>100000</total_steps>
    <output prefix="h2o_output">
       <properties stride="1" flush="1">[step, time, conserved, potential, kinetic_cv, pressure_cv, volume, temperature, kinetic_md, pressure_md ] </properties>
@@ -22,19 +15,32 @@
    <prng>
       <seed>10005</seed>
    </prng>
-   <ensemble mode='npt'>
-      <barostat mode='isotropic'>
-        <thermostat mode='langevin'>
-         <tau units="femtosecond"> 100 </tau>
-        </thermostat>
-        <tau units='femtosecond'> 100 </tau>
-      </barostat>
-      <pressure units="bar"> 1 </pressure>
-      <thermostat mode='pile_g'>
-         <tau units="femtosecond"> 10 </tau>
-      </thermostat>
-      <timestep units="femtosecond"> 1.00 </timestep>
-      <fixcom> False </fixcom>
-      <temperature units="kelvin"> 300 </temperature>
-   </ensemble>
+   <system>
+     <initialize nbeads="1">
+       <file mode="pdb" units="angstrom">./h2o-cfg.pdb</file>
+       <velocities mode="thermal" units="kelvin"> 300 </velocities>
+     </initialize>
+     <forces>
+       <force forcefield='driver'/>
+     </forces>
+     <ensemble>
+       <pressure units="bar"> 1 </pressure>
+       <temperature units="kelvin"> 300 </temperature>
+     </ensemble>
+     <motion mode='dynamics'>
+       <dynamics mode='npt'>
+	 <barostat mode='isotropic'>
+           <thermostat mode='langevin'>
+             <tau units="femtosecond"> 100 </tau>
+           </thermostat>
+           <tau units='femtosecond'> 100 </tau>
+	 </barostat>
+	 <thermostat mode='pile_g'>
+           <tau units="femtosecond"> 10 </tau>
+	 </thermostat>
+	 <timestep units="femtosecond"> 1.00 </timestep>
+       </dynamics>
+       <fixcom> False </fixcom>
+     </motion>
+   </system>
 </simulation>   
