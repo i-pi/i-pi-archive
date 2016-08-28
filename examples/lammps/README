@@ -23,10 +23,14 @@
 ** Run the examples automatically:
 
  * First, it is necessary to patch and compile LAMMPS, and create a make.in
-   file containing the path to the executable and i-pi, e.g.
+   file containing the path to the lammps executable e.g.
 
+```
 LAMMPS:=~/bin/lmp_serial
-IPI:=~/bin/i-pi
+```
+
+ * Make sure you source the env.sh file in the root directory of i-pi to
+   set all the necessary enviroment variables.
  
  * The runs can be done automatically using the Makefile provided. The make 
    targets are self-explanatory. To run the RPC example, for instance, just type:
@@ -42,7 +46,7 @@ $ make clean
 
  * Go back to the example directory and run
 
-$ python path/i-pi input.xml
+$ i-pi input.xml
  
    the wrapper will start and sit waiting on the UDS /tmp/ipi.
  

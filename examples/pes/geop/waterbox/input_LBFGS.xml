@@ -13,7 +13,7 @@
       <file mode='pdb'> water_298K.pdb </file>
    </initialize>
    <forces>
-   <force> qtip4pf </force>
+   <force forcefield='qtip4pf'></force>
    </forces>
    <motion mode='minimize'>
       <optimizer mode="lbfgs">
