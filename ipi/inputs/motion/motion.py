@@ -23,15 +23,15 @@ Classes:
 
 import numpy as np
 import ipi.engine.initializer
-from ipi.engine.motion import Motion, Dynamics, Replay, GeopMover, NEBMover
+from ipi.engine.motion import Motion, Dynamics, Replay, GeopMover, NEBMover, DynMatrixMover
+from ipi.engine.motion import DynMatrixMover
 from ipi.utils.inputvalue import *
 from ipi.inputs.thermostats import *
 from ipi.inputs.initializer import *
 from .geop import InputGeop
 from .neb import InputNEB
 from .dynamics import InputDynamics
-from ipi.inputs.phonons import InputDynMatrix
-from ipi.engine.phonons import  DynMatrixMover
+from .phonons import InputDynMatrix
 from ipi.utils.units import *
 
 __all__ = ['InputMotion']
