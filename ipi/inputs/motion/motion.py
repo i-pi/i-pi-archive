@@ -53,7 +53,7 @@ class InputMotion(Input):
 
    attribs={"mode"  : (InputAttribute, {"dtype"   : str,
                                     "help"    : "How atoms should be moved at each step in the simulatio. 'replay' means that a simulation is restarted from a previous simulation.",
-                                    "options" : ['calcphonons', 'minimize', 'replay', 'neb', 'dynamics',  'dummy']}) }
+                                    "options" : ['vibrations', 'minimize', 'replay', 'neb', 'dynamics',  'dummy']}) }
    fields={"fixcom": (InputValue, {"dtype"           : bool,
                                    "default"         : True,
                                    "help"            : "This describes whether the centre of mass of the particles is fixed."}),
@@ -66,10 +66,10 @@ class InputMotion(Input):
                                      "help":  "Option for geometry optimization" } ),
            "dynamics" : ( InputDynamics, { "default" : {},
                                      "help":  "Option for (path integral) molecular dynamics" } ),
-           "file": (InputInitFile, {"default" : input_default(factory=ipi.engine.initializer.InitBase,kwargs={"mode":"xyz"}),
+           "file": (InputInitFile, { "default" : input_default(factory=ipi.engine.initializer.InitBase,kwargs={"mode":"xyz"}),
                            "help"            : "This describes the location to read a trajectory file from."}),
-           "calculator" : ( InputDynMatrix, { "default" : {}, 
-                                     "help":  "Option for calculating force constant matrix" } )
+           "vibrations" : ( InputDynMatrix, { "default" : {}, 
+                                     "help":  "Option for phonon computation" } )
          }
 
    dynamic = {  }
@@ -104,8 +104,8 @@ class InputMotion(Input):
          self.dynamics.store(sc)
          tsc = 1   
       elif type(sc) is DynMatrixMover:
-         self.mode.store("calcphonons")
-         self.calculator.store(sc)
+         self.mode.store("vibrations")
+         self.vibrations.store(sc)
          tsc = 1   
       else: 
          raise ValueError("Cannot store Mover calculator of type "+str(type(sc)))
@@ -134,8 +134,8 @@ class InputMotion(Input):
          sc = NEBMover(fixcom=self.fixcom.fetch(), fixatoms=self.fixatoms.fetch(), **self.neb_optimizer.fetch())
       elif self.mode.fetch() == "dynamics":
          sc = Dynamics(fixcom=self.fixcom.fetch(), fixatoms=self.fixatoms.fetch(), **self.dynamics.fetch())
-      elif self.mode.fetch() == "calcphonons":
-         sc = DynMatrixMover(fixcom=self.fixcom.fetch(), fixatoms=self.fixatoms.fetch(), **self.calculator.fetch() )
+      elif self.mode.fetch() == "vibrations":
+         sc = DynMatrixMover(fixcom=self.fixcom.fetch(), fixatoms=self.fixatoms.fetch(), **self.vibrations.fetch() )
       else:
          sc = Motion()
          #raise ValueError("'" + self.mode.fetch() + "' is not a supported motion calculation mode.")
