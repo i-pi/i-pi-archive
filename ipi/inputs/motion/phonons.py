@@ -30,7 +30,7 @@ from ipi.inputs.thermostats import *
 from ipi.inputs.initializer import *
 from ipi.utils.units import *
 
-__all__ = ['InputDynMatrix']
+__all__ = ["InputDynMatrix"]
 
 class InputDynMatrix(InputDictionary):
     """Dynamic matrix calculation options.
@@ -41,7 +41,7 @@ class InputDynMatrix(InputDictionary):
 
     attribs={"mode"  : (InputAttribute, {"dtype"   : str, "default": "fd",
                                     "help"    : "The algorithm to be used",
-                                    "options" : ['fd', 'posref', 'enrgyref']}) }
+                                    "options" : ["fd", "nmfd", "enmfd"]}) }
     fields = { 
                 "pos_shift"  : (InputValue, {"dtype"   : float, "default": 0.01, 
                                     "help"    : "The finite deviation in position used to compute derivative of force."

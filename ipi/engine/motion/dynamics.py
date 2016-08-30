@@ -179,7 +179,6 @@ class DummyIntegrator(dobject):
     """ No-op integrator for (PI)MD """
 
     def __init__(self):
-
         pass
 
     def bind(self, motion):
@@ -201,12 +200,10 @@ class DummyIntegrator(dobject):
 
     def pstep(self):
         """Dummy momenta propagator which does nothing."""
-
         pass
 
     def qcstep(self):
         """Dummy centroid position propagator which does nothing."""
-
         pass
 
     def step(self, step=None):
@@ -214,6 +211,7 @@ class DummyIntegrator(dobject):
         pass
 
     def pconstraints(self):
+        """Dummy centroid momentum step which does nothing."""
         pass
 
 
