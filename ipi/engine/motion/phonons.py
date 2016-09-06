@@ -307,7 +307,7 @@ class NMFDPhononator(DummyPhononator):
         self.dm.dynmatrix_r = np.dot(self.dm.U,np.dot(self.dm.dynmatrix_r,np.transpose(self.dm.U)))
 
 class ENMFDPhononator(NMFDPhononator):
-    """ energy scaled normal mode finite difference phonon evaluator.
+    """ Energy scaled normal mode finite difference phonon evaluator.
     """
 
     def step(self, step=None):
