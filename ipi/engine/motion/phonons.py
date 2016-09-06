@@ -65,6 +65,7 @@ class DynMatrixMover(Motion):
         self.U = None
         self.V = None
         self.prefix = prefix
+
         if self.prefix == "":
             self.prefix = "PHONONS"
         self.asr = asr
@@ -81,14 +82,17 @@ class DynMatrixMover(Motion):
         self.ism = 1/np.sqrt(depstrip(self.beads.m3[-1]))
         self.m = depstrip(self.beads.m)
     
+        self.dbeads = self.beads.copy()
+        self.dcell = self.cell.copy()
+        self.dforces = self.forces.copy(self.dbeads, self.dcell)
+
     def step(self, step=None):
         """Computes one step of phonon computation. """
         if (step < 3*self.beads.natoms):
             self.phononator.step(step)
         else:
             self.phononator.transform()
-            print "ASR", self.dynmatrix_r
-	    rdyn = self.apply_asr(self.phononator.dynmatrix_r)
+            rdyn = self.apply_asr(self.dynmatrix_r)
             self.printall(self.prefix, rdyn)
             softexit.trigger("Dynamic matrix is calculated. Exiting simulation")                    
 
@@ -142,6 +146,7 @@ class DynMatrixMover(Motion):
         Removes the translations and/or rotations depending on the asr mode.
         """
         if(self.asr=="none"):
+            return dm
             pass
 
         if(self.asr=="crystal"):
@@ -151,7 +156,7 @@ class DynMatrixMover(Motion):
             #Computes the moment of inertia tensor.
             moi=np.zeros((3,3), float)
             for k in range(self.beads.natoms):
-                moi =moi -np.dot(np.cross(qminuscom[k],np.identity(3)),np.cross(qminuscom[k],np.identity(3)))*self.m[k]
+                moi-=np.dot(np.cross(qminuscom[k],np.identity(3)),np.cross(qminuscom[k],np.identity(3)))*self.m[k]
 
             U=(np.linalg.eig(moi))[1]
             R=np.dot(qminuscom,U)
@@ -177,7 +182,7 @@ class DynMatrixMover(Motion):
             #Computes the moment of inertia tensor.
             moi=np.zeros((3,3), float)
             for k in range(self.beads.natoms):
-                moi =moi -np.dot(np.cross(qminuscom[k],np.identity(3)),np.cross(qminuscom[k],np.identity(3)))*self.m[k]
+                moi-=np.dot(np.cross(qminuscom[k],np.identity(3)),np.cross(qminuscom[k],np.identity(3)))*self.m[k]
 
             U=(np.linalg.eig(moi))[1]
             R=np.dot(qminuscom,U)
@@ -210,22 +215,7 @@ class DummyPhononator(dobject):
 
     def bind(self, dm):
         """ Reference all the variables for simpler access."""
-
-        self.beads = dm.beads
-        self.cell = dm.cell
-        self.ensemble = dm.ensemble
-        self.forces = dm.forces
-        self.deltaw = dm.deltaw
-        self.deltax = dm.deltax
-        self.deltae = dm.deltae
-        self.dynmatrix = dm.dynmatrix
-        self.dynmatrix_r = dm.dynmatrix_r
-
-        self.dbeads = self.beads.copy()
-        self.dcell = self.cell.copy()
-        self.dforces = self.forces.copy(self.dbeads, self.dcell)
-        self.ism = 1/np.sqrt(depstrip(self.beads.m3[-1]))
-        self.m = depstrip(self.beads.m)
+        self.dm = dm
 
     def step(self, step=None):
         """Dummy simulation time step which does nothing."""
@@ -244,31 +234,31 @@ class FDPhononator(DummyPhononator):
         super(FDPhononator,self).bind(dm)
 
         #Initialises a 3*number of atoms X 3*number of atoms dynamic matrix.
-        if(self.dynmatrix.size  != (self.beads.q.size * self.beads.q.size)):
-            if(self.dynmatrix.size == 0):
-                self.dynmatrix=np.zeros((self.beads.q.size, self.beads.q.size), float)
-                self.dynmatrix_r=np.zeros((self.beads.q.size, self.beads.q.size), float)
+        if(self.dm.dynmatrix.size  != (self.dm.beads.q.size * self.dm.beads.q.size)):
+            if(self.dm.dynmatrix.size == 0):
+                self.dm.dynmatrix=np.zeros((self.dm.beads.q.size, self.dm.beads.q.size), float)
+                self.dm.dynmatrix_r=np.zeros((self.dm.beads.q.size, self.dm.beads.q.size), float)
             else:
                 raise ValueError("Force constant matrix size does not match system size")
         else:
-            self.dynmatrix=self.dynmatrix.reshape(((self.beads.q.size, self.beads.q.size)))
+            self.dm.dynmatrix=self.dm.dynmatrix.reshape(((self.dm.beads.q.size, self.dm.beads.q.size)))
 
     def step(self, step=None):
         """Computes one row of the dynamic matrix."""
 
         #initializes the finite deviation
-        dev = np.zeros(3 * self.beads.natoms, float)
-        dev[step] = self.deltax
+        dev = np.zeros(3 * self.dm.beads.natoms, float)
+        dev[step] = self.dm.deltax
         #displaces kth d.o.f by delta.
-        self.dbeads.q = self.beads.q + dev
-        plus = - depstrip(self.dforces.f).copy()
+        self.dm.dbeads.q = self.dm.beads.q + dev
+        plus = - depstrip(self.dm.dforces.f).copy()
         #displaces kth d.o.f by -delta.
-        self.dbeads.q = self.beads.q - dev
-        minus =  - depstrip(self.dforces.f).copy()
+        self.dm.dbeads.q = self.dm.beads.q - dev
+        minus =  - depstrip(self.dm.dforces.f).copy()
         #computes a row of force-constant matrix
-        dmrow = (plus-minus)/(2*self.deltax)*self.ism[step]*self.ism
-        self.dynmatrix[step] = dmrow
-        self.dynmatrix_r[step] = dmrow
+        dmrow = (plus-minus)/(2*self.dm.deltax)*self.dm.ism[step]*self.dm.ism
+        self.dm.dynmatrix[step] = dmrow
+        self.dm.dynmatrix_r[step] = dmrow
 
 class NMFDPhononator(DummyPhononator):
     """ Normal mode finite difference phonon evaluator.
@@ -278,43 +268,43 @@ class NMFDPhononator(DummyPhononator):
         """ Reference all the variables for simpler access."""
         super(NMFDPhononator,self).bind(dm)
         #Initialises a 3*number of atoms X 3*number of atoms dynamic matrix.
-        if(self.dynmatrix.size  != (self.beads.q.size * self.beads.q.size)):
-            if(self.dynmatrix.size == 0):
+        if(self.dm.dynmatrix.size  != (self.dm.beads.q.size * self.dm.beads.q.size)):
+            if(self.dm.dynmatrix.size == 0):
                 raise ValueError("Force constant matrix size not found")
             else:
                 raise ValueError("Force constant matrix size does not match system size")
         else:
-            self.dynmatrix=self.dynmatrix.reshape(((self.beads.q.size, self.beads.q.size)))
+            self.dm.dynmatrix=self.dm.dynmatrix.reshape(((self.dm.beads.q.size, self.dm.beads.q.size)))
         #Initialises a 3*number of atoms X 3*number of atoms refined dynamic matrix.
-        if(self.dynmatrix_r.size  != (self.beads.q.size * self.beads.q.size)):
-            if(self.dynmatrix_r.size == 0):
-                self.dynmatrix_r=np.zeros((self.beads.q.size, self.beads.q.size), float)
+        if(self.dm.dynmatrix_r.size  != (self.dm.beads.q.size * self.dm.beads.q.size)):
+            if(self.dm.dynmatrix_r.size == 0):
+                self.dm.dynmatrix_r=np.zeros((self.dm.beads.q.size, self.dm.beads.q.size), float)
             else:
                 raise ValueError("Refined force constant matrix size does not match system size")
        
-        self.w2,self.U = np.linalg.eigh(self.dynmatrix)
-        self.V = self.U.copy()
-        for i in xrange(len(self.V)):
-            self.V[:,i]*=self.ism
+        self.dm.w2,self.dm.U = np.linalg.eigh(self.dm.dynmatrix)
+        self.dm.V = self.dm.U.copy()
+        for i in xrange(len(self.dm.V)):
+            self.dm.V[:,i]*=self.dm.ism
 
     def step(self, step=None):
         """Computes one row of the dynamic matrix."""
 
         #initializes the finite deviation
-        vknorm = np.sqrt(np.dot(self.V[:,step],self.V[:,step]))
-        dev = np.real(self.V[:,step]/vknorm)*self.deltax
+        vknorm = np.sqrt(np.dot(self.dm.V[:,step],self.dm.V[:,step]))
+        dev = np.real(self.dm.V[:,step]/vknorm)*self.dm.deltax
         #displaces by -delta along kth normal mode.
-        self.dbeads.q = self.beads.q + dev
-        plus = - depstrip(self.dforces.f).copy().flatten()
+        self.dm.dbeads.q = self.dm.beads.q + dev
+        plus = - depstrip(self.dm.dforces.f).copy().flatten()
         #displaces by -delta along kth normal mode.
-        self.dbeads.q = self.beads.q - dev
-        minus =  - depstrip(self.dforces.f).copy().flatten()
+        self.dm.dbeads.q = self.dm.beads.q - dev
+        minus =  - depstrip(self.dm.dforces.f).copy().flatten()
         #computes a row of the refined dynmatrix, in the basis of the eigenvectors of the first dynmatrix 
-        dmrowk = (plus-minus)/(2*self.deltax/vknorm)
-        self.dynmatrix_r[step] = np.dot(self.V.T, dmrowk)
+        dmrowk = (plus-minus)/(2*self.dm.deltax/vknorm)
+        self.dm.dynmatrix_r[step] = np.dot(self.dm.V.T, dmrowk)
 
     def transform(self):
-        self.dynmatrix_r = np.dot(self.U,np.dot(self.dynmatrix_r,np.transpose(self.U)))
+        self.dm.dynmatrix_r = np.dot(self.dm.U,np.dot(self.dm.dynmatrix_r,np.transpose(self.dm.U)))
 
 class ENMFDPhononator(NMFDPhononator):
     """ energy scaled normal mode finite difference phonon evaluator.
@@ -324,18 +314,18 @@ class ENMFDPhononator(NMFDPhononator):
         """Computes one row of the dynamic matrix."""
 
         #initializes the finite deviation
-        vknorm = np.sqrt(np.dot(self.V[:,step],self.V[:,step]))
-        edelta = vknorm*np.sqrt(self.deltae*2.0/abs(self.w2[step]))
-        if edelta > 100*self.deltax:  edelta= 100*self.deltax
-        dev = np.real(self.V[:,step]/vknorm)*edelta
+        vknorm = np.sqrt(np.dot(self.dm.V[:,step],self.dm.V[:,step]))
+        edelta = vknorm*np.sqrt(self.dm.deltae*2.0/abs(self.dm.w2[step]))
+        if edelta > 100*self.dm.deltax:  edelta= 100*self.dm.deltax
+        dev = np.real(self.dm.V[:,step]/vknorm)*edelta
         #displaces by -delta along kth normal mode.
-        self.dbeads.q = self.beads.q + dev
-        plus = - depstrip(self.dforces.f).copy().flatten()
+        self.dm.dbeads.q = self.dm.beads.q + dev
+        plus = - depstrip(self.dm.dforces.f).copy().flatten()
         #displaces by -delta along kth normal mode.
-        self.dbeads.q = self.beads.q - dev
-        minus =  - depstrip(self.dforces.f).copy().flatten()
+        self.dm.dbeads.q = self.dm.beads.q - dev
+        minus =  - depstrip(self.dm.dforces.f).copy().flatten()
         #computes a row of the refined dynmatrix, in the basis of the eigenvectors of the first dynmatrix 
         dmrowk = (plus-minus)/(2*edelta/vknorm)
         print edelta
-        self.dynmatrix_r[step] = np.dot(self.V.T, dmrowk)
+        self.dm.dynmatrix_r[step] = np.dot(self.dm.V.T, dmrowk)
 
