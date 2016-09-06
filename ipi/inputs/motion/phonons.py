@@ -40,7 +40,7 @@ class InputDynMatrix(InputDictionary):
     """
 
     attribs={"mode"  : (InputAttribute, {"dtype"   : str, "default": "fd",
-                                    "help"    : "The algorithm to be used",
+                                    "help"    : "The algorithm to be used: finite differences (fd), normal modes finite differences (nmfd), and energy-scaled normal mode finite differences (enmfd).",
                                     "options" : ["fd", "nmfd", "enmfd"]}) }
     fields = { 
                 "pos_shift"  : (InputValue, {"dtype"   : float, "default": 0.01, 
