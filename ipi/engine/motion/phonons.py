@@ -147,7 +147,7 @@ class DynMatrixMover(Motion):
         """
         if(self.asr=="none"):
             return dm
-            pass
+
 
         if(self.asr=="crystal"):
             #Computes the centre of mass.
