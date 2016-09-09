@@ -9,27 +9,29 @@ SUBROUTINE LEPS_M1(na,atoms,V,F)
   REAL(8), INTENT(OUT) :: V,F(3,3)
   REAL(8) :: V_plus, V_mins, moved_atoms(3,3)
   INTEGER, INTENT(IN) :: na
-  INTEGER :: i,j,k
+  INTEGER :: i
 
   CALL V_LEPS(atoms, acb, d, r_0, alpha, V)
 
   ! Compute numerical forces
   F = 0.0D0
-  do i=1,na
+  do i=2,na
      moved_atoms = atoms
      moved_atoms(i,1) = atoms(i,1) + step
+     CALL V_LEPS(moved_atoms, acb, d, r_0, alpha, V_plus)
      moved_atoms(i,1) = atoms(i,1) - step
      CALL V_LEPS(moved_atoms, acb, d, r_0, alpha, V_mins)
-     F(i,1) = -1 * (V_plus - V_mins)/ (2*step)
+     F(i,1) = 1 * (V_plus - V_mins)/ (4*step)
   end do
-  
+
+
 END SUBROUTINE LEPS_M1
 
 SUBROUTINE LEPS_M2(na,atoms,V,F)
   IMPLICIT NONE
   REAL(8),PARAMETER :: acb(3) = (/ .05D0, .05D0, .8D0 /), &
        & d(3) = (/4.746D0, 4.746D0, 3.445D0 /), r_0=.742D0, alpha=1.942D0, &
-       & kc=0.2025D0, c=1.154, step=0.01D0
+       & kc=0.2025D0, c=1.154, step=1D-4
   REAL(8), INTENT(IN) :: atoms(4,3) ! A=> atoms(1), B=> atoms(2) C=> atoms(3)
   REAL(8), INTENT(OUT) :: V,F(4,3)
   INTEGER, INTENT(IN) :: na
@@ -44,13 +46,13 @@ SUBROUTINE LEPS_M2(na,atoms,V,F)
 
   ! Compute numerical forces
   F = 0.0D0
-  do i=2,4,2
+  do i=2,na,2
      moved_atoms = atoms
      moved_atoms(i,1) = atoms(i,1) + step
      CALL V_LEPS(moved_atoms, acb, d, r_0, alpha, V_plus)
-     moved_atoms(i,1) = atoms(i,1) - 2 * step
+     moved_atoms(i,1) = atoms(i,1) - step
      CALL V_LEPS(moved_atoms, acb, d, r_0, alpha, V_mins)
-     F(i,1) = -1 * (V_plus - V_mins)/ (2 * step)
+     F(i,1) = -1 * (V_plus - V_mins)/ (4 * step)
   end do
 
   
@@ -79,14 +81,16 @@ SUBROUTINE V_LEPS(atoms, acb, d, r_0, alpha, V)
   V = V - J_temp**0.5
   
 CONTAINS
-  REAL FUNCTION Q(r, d)
+  REAL(8) FUNCTION Q(r, d)
     REAL(8), INTENT(IN) :: d, r
-    Q = d/2 * (3/2 * exp(-2 * alpha * (r-r_0)) - exp(-1 * alpha * (r-r_0)))
+    Q = d/2.0D0 * (3.0D0/2.0D0 * exp(-2.0D0 * alpha * (r-r_0)) &
+         - exp(-1.0D0 * alpha * (r-r_0)))
   END FUNCTION Q
 
-  REAL FUNCTION J(r, d)
+  REAL(8) FUNCTION J(r, d)
     REAL(8), INTENT(IN) :: r, d
-    J = d/4D0 * (exp(-2D0 * alpha * (r-r_0)) - 6D0 * exp(-1D0 * alpha * (r-r_0)))
+    J = d/4.0D0 * (exp(-2.0D0 * alpha * (r-r_0)) &
+         - 6.0D0 * exp(-1.0D0 * alpha * (r-r_0)))
   END FUNCTION J
 
 END SUBROUTINE V_LEPS
@@ -130,14 +134,14 @@ END FUNCTION DIST
 !         stop
 !      else
 !         atoms_orig = atoms
-!         step1 = reshape((/ 0.D0, 1D0, 1D0, .0D0, 0.D0, 0.D0, .0D0, 0.D0, 0.D0 /),(/ 3,3 /)) * 4D-3
-!         step2 = reshape((/ 0.D0, 0D0, 1D0, .0D0, 0.D0, 0.D0, .0D0, 0.D0, 0.D0 /),(/ 3,3 /)) * 4D-3
+!         step1 = reshape((/ 0.D0, 1D0, 1D0, .0D0, 0.D0, 0.D0, .0D0, 0.D0, 0.D0 /),(/ 3,3 /)) * 4D-2
+!         step2 = reshape((/ 0.D0, 0D0, 1D0, .0D0, 0.D0, 0.D0, .0D0, 0.D0, 0.D0 /),(/ 3,3 /)) * 4D-2
         
 !         ! atoms = reshape((/ 1.D0, 2.D0, 3.D0, .0D0, 0.D0, 0.D0, 0.D0, 0.D0, 0.D0 /),(/ 3,3 /))
 !         ! CALL LEPS_M1_V(na,atoms,V,F)
         
-!         do i=1,1001
-!            do j = 1,1001
+!         do i=1,101
+!            do j = 1,101
 !               CALL LEPS_M1(na,atoms,V,F)
 !               ! V = 0D0
 !               ! write(*,*) atoms(1,1), atoms(2,1), atoms(3,1)
