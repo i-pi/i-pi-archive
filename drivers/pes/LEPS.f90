@@ -1,6 +1,17 @@
-! Atoms must be in the order A,B,C,D
+! These models are taken from 
+! H. Jonsson, G. Mills and K.W. Jacobsen, in Classical and Quantum Dynamics in 
+! Condensed Phase Simulations, edited by B. J. Berne, G. Ciccotti and D. F. Coker
+! (World Scientific, Singapore 1998). p. 385
+! 
+! This probably the first occurrence to the "modern" NEB in the literature.
+
 
 SUBROUTINE LEPS_M1(na,atoms,V,F)
+! See the reference above for more details.
+! You must specify three atoms lying on the x axis.
+! The atom 1st is fixed.
+! The second atom must be within the other two:
+! 1st ------ 2nd ------ 3rd.
   IMPLICIT NONE
   REAL(8),PARAMETER :: acb(3) = (/ .05D0, .05D0, .3D0 /), &
        & d(3) = (/ 4.746D0, 4.746D0, 3.445D0 /), r_0=.742D0, alpha=1.942D0, &
@@ -28,6 +39,16 @@ SUBROUTINE LEPS_M1(na,atoms,V,F)
 END SUBROUTINE LEPS_M1
 
 SUBROUTINE LEPS_M2(na,atoms,V,F)
+! See the reference above for more details.
+! You must specify three atoms lying on the x axis 
+! plus another atoms lying in the xy plane. See the
+! picture below and set atomic coordinates accordingly.
+! Atoms 1st and 3rd are fixed.
+! The second atom must be within the other two:
+! 1st ------ 2nd ------ 3rd
+!             |
+!             |
+!            4th
   IMPLICIT NONE
   REAL(8),PARAMETER :: acb(3) = (/ .05D0, .05D0, .8D0 /), &
        & d(3) = (/4.746D0, 4.746D0, 3.445D0 /), r_0=.742D0, alpha=1.942D0, &
