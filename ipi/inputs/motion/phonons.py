@@ -61,7 +61,7 @@ class InputDynMatrix(InputDictionary):
                 "dynmat" : ( InputArray, {"dtype" : float,
                               "default" :  np.zeros(0, float),
                               "help"    : "Portion of the dynamical matrix known up to now."}),
-                "dynmat_r" : ( InputArray, {"dtype" : float, 
+                "refdynmat" : ( InputArray, {"dtype" : float, 
                               "default" :  np.zeros(0, float),
                               "help"    : "Portion of the dynamical matrix known up to now (refining)."})              
              }
@@ -80,7 +80,7 @@ class InputDynMatrix(InputDictionary):
         self.prefix.store(phonons.prefix)
         self.asr.store(phonons.asr)
         self.dynmat.store(phonons.dynmatrix)
-        self.dynmat_r.store(phonons.dynmatrix_r)
+        self.refdynmat.store(phonons.refdynmatrix)
         
     def fetch(self):		
         rv = super(InputDynMatrix,self).fetch()
