@@ -83,15 +83,9 @@ def read_xyz(filedesc, **kwargs):
         i-Pi comment line, cell array, data (positions, forces, etc.), atoms names and masses
     """
 
-    try:
-        natoms = list(islice(filedesc,1))[0]
-    except:
-        natoms = ""
-    if natoms == "":
-        raise EOFError("The file descriptor hit EOF.")
-    natoms = int(natoms)
-
-    comment = list(islice(filedesc,1))[0]
+    natoms = int(filedesc.readline())
+    
+    comment = filedesc.readline()
 
     # Extracting cell
     cell = [key.search(comment) for key in cell_re]
@@ -126,7 +120,7 @@ def read_xyz(filedesc, **kwargs):
     # Extracting a time-frame information
     data =list(islice(filedesc,natoms))
     if len(data) != natoms:
-        raise EOFError("The file descriptor hit EOF.")
+        raise ValueError("Atom number mismatch.")
 
     for iat in range(natoms):
         body = data[iat].split()
