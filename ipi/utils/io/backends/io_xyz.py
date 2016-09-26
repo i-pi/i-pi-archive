@@ -20,6 +20,7 @@ from ipi.utils.units import Elements
 
 __all__ = ['print_xyz_path', 'print_xyz', 'read_xyz', 'iter_xyz']
 
+deg2rad = np.pi/180.0
 
 def print_xyz_path(beads, cell, filedesc=sys.stdout):
     """Prints all the bead configurations into a XYZ formatted file.
@@ -69,8 +70,8 @@ def print_xyz(atoms, cell, filedesc=sys.stdout, title=""):
 
 
 # Cell type patterns
-cell_re = [re.compile('# CELL.abcABC.: ([-0-9.Ee ]*) '), re.compile('# CELL.GENH.: ([-0-9.Ee ]*)'),
-           re.compile('# CELL.H.: ([-0-9.Ee ]*)')]
+cell_re = [re.compile('# CELL.abcABC.: ([-0-9\[\]Ee ]*) '), re.compile('# CELL.GENH.: ([-0-9\[\]Ee ]*)'),
+           re.compile('# CELL.H.: ([-0-9\[\]Ee ]*)')]
 
 def read_xyz(filedesc, **kwargs):
     """Reads an XYZ-style file with i-PI style comments and returns data in raw format for further units transformation
@@ -84,7 +85,7 @@ def read_xyz(filedesc, **kwargs):
     """
 
     natoms = int(filedesc.readline())
-    
+
     comment = filedesc.readline()
 
     # Extracting cell
@@ -95,9 +96,9 @@ def read_xyz(filedesc, **kwargs):
         a = float(a)
         b = float(b)
         c = float(c)
-        alpha = float(alpha) * np.pi/180
-        beta = float(beta) * np.pi/180
-        gamma = float(gamma) * np.pi/180
+        alpha = float(alpha) * deg2rad
+        beta = float(beta) * deg2rad
+        gamma = float(gamma) * deg2rad
         h = mt.abc2h(a, b, c, alpha, beta, gamma)
     elif cell[1] is not None:  # GENH
         h = np.array(cell[1].group(1).split(), float)
@@ -110,7 +111,7 @@ def read_xyz(filedesc, **kwargs):
         h = mt.abc2h(*mt.genh2abc(genh))
         usegenh = True
     else:                     # defaults to unit box
-        h = mt.abc2h(1.0, 1.0, 1.0, np.pi/2, np.pi/2, np.pi/2)
+        h = mt.abc2h(1.0, 1.0, 1.0, np.pi/2.0, np.pi/2.0, np.pi/2.0)
     cell = h
 
     qatoms = np.zeros(3*natoms)
@@ -118,12 +119,8 @@ def read_xyz(filedesc, **kwargs):
     masses = np.zeros(natoms)
 
     # Extracting a time-frame information
-    data =list(islice(filedesc,natoms))
-    if len(data) != natoms:
-        raise ValueError("Atom number mismatch.")
-
-    for iat in range(natoms):
-        body = data[iat].split()
+    for iat, line in enumerate(filedesc):
+        body = line.split()
         names[iat], masses[iat] = body[0], Elements.mass(body[0])
         x, y, z = float(body[1]), float(body[2]), float(body[3])
 
