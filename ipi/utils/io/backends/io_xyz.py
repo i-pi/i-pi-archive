@@ -119,6 +119,7 @@ def read_xyz(filedesc, **kwargs):
     masses = np.zeros(natoms)
 
     # Extracting a time-frame information
+    atom_counter = 0
     for iat, line in enumerate(filedesc):
         body = line.split()
         names[iat], masses[iat] = body[0], Elements.mass(body[0])
@@ -132,6 +133,10 @@ def read_xyz(filedesc, **kwargs):
             x, y, z = u
 
         qatoms[3*iat], qatoms[3*iat+1], qatoms[3*iat+2] = x, y, z
+        atom_counter +=1
+        if atom_counter == natoms:
+            break
+
 
     if natoms != len(names):
         raise ValueError("The number of atom records does not match the header of the xyz file.")
