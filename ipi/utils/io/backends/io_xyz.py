@@ -70,8 +70,12 @@ def print_xyz(atoms, cell, filedesc=sys.stdout, title=""):
 
 
 # Cell type patterns
-cell_re = [re.compile('# CELL.abcABC.: ([-0-9\[\]Ee ]*) '), re.compile('# CELL.GENH.: ([-0-9\[\]Ee ]*)'),
-           re.compile('# CELL.H.: ([-0-9\[\]Ee ]*)')]
+# TODO: These REGEX would need some revisions
+#+for now ensure the right number of "argument" when reading the array
+
+cell_re = [re.compile('# CELL[\(\[\{]abcABC[\)\]\}]: ([-0-9\.Ee ]*)\s*'),
+           re.compile('# CELL[\(\[\{]GENH[\)\]\}]: ([-0-9\.?Ee ]*)\s*'),
+           re.compile('# CELL[\(\[\{]H[\)\]\}]: ([-0-9\.?Ee ]*)\s*')]
 
 def read_xyz(filedesc, **kwargs):
     """Reads an XYZ-style file with i-PI style comments and returns data in raw format for further units transformation
@@ -84,7 +88,11 @@ def read_xyz(filedesc, **kwargs):
         i-Pi comment line, cell array, data (positions, forces, etc.), atoms names and masses
     """
 
-    natoms = int(filedesc.readline())
+    natoms = filedesc.readline()
+    if natoms == '':              # Work with temporary files
+        raise EOFError
+    else:
+        natoms = int(natoms)
 
     comment = filedesc.readline()
 
@@ -92,19 +100,15 @@ def read_xyz(filedesc, **kwargs):
     cell = [key.search(comment) for key in cell_re]
     usegenh = False
     if cell[0] is not None:    # abcABC
-        a, b, c, alpha, beta, gamma = cell[0].group(1).split()
-        a = float(a)
-        b = float(b)
-        c = float(c)
-        alpha = float(alpha) * deg2rad
-        beta = float(beta) * deg2rad
-        gamma = float(gamma) * deg2rad
+        a, b, c  = [float(x) for x in cell[0].group(1).split()[:3]]
+        alpha, beta, gamma = [float(x) * deg2rad
+                              for x in cell[0].group(1).split()[3:6]]
         h = mt.abc2h(a, b, c, alpha, beta, gamma)
     elif cell[1] is not None:  # GENH
-        h = np.array(cell[1].group(1).split(), float)
+        h = np.array(cell[1].group(1).split()[:9], float)
         h.resize((3,3))
     elif cell[2] is not None:  # H
-        genh = np.array(cell[2].group(1).split(), float)
+        genh = np.array(cell[2].group(1).split()[:9], float)
         genh.resize((3,3))
         invgenh = np.linalg.inv(genh)
         # convert back & forth from abcABC representation to get an upper triangular h
@@ -125,6 +129,7 @@ def read_xyz(filedesc, **kwargs):
         names[iat], masses[iat] = body[0], Elements.mass(body[0])
         x, y, z = float(body[1]), float(body[2]), float(body[3])
 
+        # TODO: The following in matrices would use vectorial computaiton
         if usegenh:
             # must convert from the input cell parameters to the internal convention
             u = np.array([x,y,z])
