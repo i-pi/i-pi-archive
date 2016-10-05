@@ -3,6 +3,9 @@
 #+easier to find important problems
 
 import re
+import tempfile as tmp
+import filecmp
+
 import pytest
 import numpy as np
 import numpy.testing as npt
@@ -11,6 +14,9 @@ import ipi_tests.utils.io.backends.io_xyz_utils as xyz_gen
 import ipi.utils.io.backends.io_xyz as io_xyz
 import ipi.utils.mathtools as mt
 
+from ipi.engine.atoms import Atoms
+from ipi.engine.cell import Cell
+from ipi.utils.units import Elements
 
 #######################
 # Testing reading xyz #
@@ -24,26 +30,32 @@ cell_string = ' '.join([str(x) for x in mt.abc2h(5.1, 5.2, 5.0,
 default_cell_mat = mt.abc2h(1.0, 1.0, 1.0, np.pi/2.0, np.pi/2.0, np.pi/2.0)
 
 # natoms, frames, comment, expected_cell, precision
-test_xyz = [
+tests_read_xyz = [
     (1, 1, 'just a string plus few numbers: 1.10 2 .1',
-     default_cell_mat, 10),
+     default_cell_mat, 5),
     (2, 1, 'another random comment',
-     default_cell_mat, 10),
-    (1, 2, 'random comment', default_cell_mat, 10),
-    (2, 2, 'random comment', default_cell_mat, 10),
-    (10, 2, 'random comment', default_cell_mat, 10),
-    (10, 10, 'random comment', default_cell_mat, 10),
+     default_cell_mat, 5),
+    (1, 2, 'random comment', default_cell_mat, 5),
+    (2, 2, 'random comment', default_cell_mat, 5),
+    (10, 2, 'random comment', default_cell_mat, 5),
+    (10, 10, 'random comment', default_cell_mat, 5),
     (2, 3, '# CELL(abcABC): 5.1 5.2 5.0 91.0  89  90',
-     mt.abc2h(5.1, 5.2, 5.0, 91*deg2rad, 89*deg2rad, 90*deg2rad), 10),
+     mt.abc2h(5.1, 5.2, 5.0, 91*deg2rad, 89*deg2rad, 90*deg2rad), 5),
     (2, 3, '# CELL[GENH]: '+ cell_string,
-     mt.abc2h(5.1, 5.2, 5.0, 91*deg2rad, 89*deg2rad, 90*deg2rad), 10),
+     mt.abc2h(5.1, 5.2, 5.0, 91*deg2rad, 89*deg2rad, 90*deg2rad), 5),
     (2, 3, '# CELL{H}: '+ cell_string,
-     mt.abc2h(*mt.genh2abc(mt.abc2h(5.1, 5.2, 5.0, 91*deg2rad, 89*deg2rad, 90*deg2rad))), 10),
+     mt.abc2h(*mt.genh2abc(mt.abc2h(5.1, 5.2, 5.0, 91*deg2rad, 89*deg2rad, 90*deg2rad))), 5),
+    (2, 3, '100 aaa # CELL(abcABC): 5.1 5.2 5.0 91.0  89  90 100 aaa',
+     mt.abc2h(5.1, 5.2, 5.0, 91*deg2rad, 89*deg2rad, 90*deg2rad), 5),
+    (2, 3, '100 aaa # CELL[GENH]: '+ cell_string + ' 100 aaa',
+     mt.abc2h(5.1, 5.2, 5.0, 91*deg2rad, 89*deg2rad, 90*deg2rad), 5),
+    (2, 3, '# CELL{H}: '+ cell_string + ' 100 aaa',
+     mt.abc2h(*mt.genh2abc(mt.abc2h(5.1, 5.2, 5.0, 91*deg2rad, 89*deg2rad, 90*deg2rad))), 5),
 ]
 
 
-@pytest.fixture(params=test_xyz)
-def create_random_xyz_traj(request):
+@pytest.fixture(params=tests_read_xyz)
+def create_random_xyz_traj_to_read(request):
 
     natoms, frames, comment, expected_cell, precision = request.param
 
@@ -62,15 +74,16 @@ def create_random_xyz_traj(request):
             _uu = np.dot(expected_cell, _us)
             xyz[3*_ui], xyz[3*_ui+1], xyz[3*_ui+2] = _uu
 
+    print precision
 
     return (filedesc, xyz, atom_names, natoms, frames,
             comment, expected_cell, precision)
 
 
-def test_read_xyz(create_random_xyz_traj):
+def test_read_xyz(create_random_xyz_traj_to_read):
 
     filedesc, xyz, atom_names, \
-        natoms, frames, comment, expected_cell, precision = create_random_xyz_traj
+        natoms, frames, comment, expected_cell, precision = create_random_xyz_traj_to_read
 
     for _fr in xrange(frames):
 
@@ -81,9 +94,12 @@ def test_read_xyz(create_random_xyz_traj):
         npt.assert_array_equal(np.array(atom_names[_fr*natoms:_fr*natoms+natoms], dtype='|S4'), tnames)
         npt.assert_array_almost_equal(tcell, expected_cell, decimal=precision)
 
-def test_iter_xyz(create_random_xyz_traj):
+
+
+def test_iter_xyz(create_random_xyz_traj_to_read):
     filedesc, xyz, atom_names, \
-        natoms, junk, comment, expected_cell, precision = create_random_xyz_traj
+        natoms, junk, comment, expected_cell, precision = create_random_xyz_traj_to_read
+    print precision
 
     _fr = 0
     for _io in io_xyz.iter_xyz(filedesc):
@@ -93,6 +109,92 @@ def test_iter_xyz(create_random_xyz_traj):
         npt.assert_array_equal(np.array(atom_names[_fr*natoms:_fr*natoms+natoms], dtype='|S4'), tnames)
         npt.assert_array_almost_equal(tcell, expected_cell, decimal=precision)
         _fr += 1
+
+
+
+
+#######################
+# Testing writing xyz #
+#######################
+
+write_test_xyz = [
+    (1, 1, 'just a string plus few numbers: 1.10 2 .1',
+     default_cell_mat, 10),
+    (2, 1, 'another random comment', default_cell_mat, 10),
+    (1, 2, 'random comment', default_cell_mat, 10),
+    (2, 2, 'random comment', default_cell_mat, 10),
+    (10, 2, 'random comment', default_cell_mat, 10),
+    (10, 10, 'random comment', default_cell_mat, 10),
+    (2, 3, '# CELL(abcABC): 5.1 5.2 5.0 91.0  89  90',
+     mt.abc2h(5.1, 5.2, 5.0, 91*deg2rad, 89*deg2rad, 90*deg2rad), 10),
+    (2, 3, '# CELL[GENH]: '+ cell_string,
+     mt.abc2h(5.1, 5.2, 5.0, 91*deg2rad, 89*deg2rad, 90*deg2rad), 10),
+    (2, 3, '# CELL{H}: '+ cell_string,
+     mt.abc2h(*mt.genh2abc(mt.abc2h(5.1, 5.2, 5.0, 91*deg2rad, 89*deg2rad, 90*deg2rad))), 10),
+]
+
+
+@pytest.fixture(params=write_test_xyz)
+def create_random_xyz_traj_to_write(request):
+
+    natoms, frames, comment, expected_cell, precision = request.param
+
+    a, b, c, alpha, beta, gamma = mt.h2abc_deg(expected_cell)
+
+    fmt_header = "# CELL(abcABC): %10.5f  %10.5f  %10.5f  %10.5f  %10.5f  %10.5f  %s"
+
+
+    comment = fmt_header % (a, b, c, alpha, beta, gamma, comment)
+    print 'Comment After: ', comment
+
+    filedesc, xyz, atom_names = xyz_gen.xyz_traj_filedesc(natoms, frames, comment)
+    filedesc.seek(0)
+
+    masses = [Elements.mass(_am) for _am in atom_names]
+
+    cell_list = []
+    atoms_list = []
+
+    for _fr in xrange(frames):
+        cell = Cell(expected_cell)
+        atoms = Atoms(natoms)
+        atoms.q[:] = xyz[_fr*natoms*3:(_fr+1)*natoms*3]
+        atoms.names = atom_names[_fr*natoms:(_fr+1)*natoms]
+        atoms.m[:] = masses[_fr*natoms:(_fr+1)*natoms]
+        atoms_list.append(atoms)
+        cell_list.append(cell)
+
+    return (filedesc, atoms_list, cell_list, comment, precision)
+
+
+def test_print_xyz(create_random_xyz_traj_to_write):
+
+    filedesc, atoms_list, cell_list, title, precision = create_random_xyz_traj_to_write
+
+    filedesc_orig = tmp.NamedTemporaryFile(mode='wr', delete=False)
+    filedesc_test = tmp.NamedTemporaryFile(mode='wr', delete=False)
+
+    filedesc_orig.write(filedesc.read())
+    filedesc.close()
+
+    filedesc_orig.flush()
+    filedesc_test.flush()
+
+    print 'comment 2', title
+
+
+    for atoms, cell in zip(atoms_list, cell_list):
+        io_xyz.print_xyz(atoms, cell, filedesc=filedesc_test, title=title[88:])
+
+    filedesc_orig.close()
+    filedesc_test.close()
+
+    assert filecmp.cmp(filedesc_orig.name, filedesc_test.name)
+
+
+
+#def test_print_xyz(atoms, cell, filedesc=sys.stdout, title="")
+
 
 
 # if __name__ == '__main__':

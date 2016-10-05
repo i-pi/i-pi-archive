@@ -27,8 +27,8 @@ def xyz_rand(natoms, comment, names=None):
         comment += '\n'
     output += comment
     for i in xrange(natoms):
-        output += '{:4s} {:20.10f} {:20.10f} {:20.10f}\n'.format(
-            at_names[i], xyz[i, 0], xyz[i, 1], xyz[i, 2])
+        output += '%8s %12.5e %12.5e %12.5e\n' % \
+        (at_names[i], xyz[i, 0], xyz[i, 1], xyz[i, 2])
     return (output, xyz.flatten(), copy(at_names))
 
 

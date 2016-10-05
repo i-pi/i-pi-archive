@@ -9,7 +9,7 @@ in the XYZ format.
 
 import sys
 import re
-from itertools import islice
+
 
 import numpy as np
 
