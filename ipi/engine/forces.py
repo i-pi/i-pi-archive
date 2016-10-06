@@ -280,7 +280,7 @@ class ForceComponent(dobject):
          Depends on each replica's ufvx list.
    """
 
-   def __init__(self, ffield, nbeads=0, weight=1.0, name="", mts_weights=None, epsilon=0.001 ):
+   def __init__(self, ffield, nbeads=0, weight=1.0, name="", mts_weights=None, epsilon=-0.001 ):
       """Initializes ForceComponent
 
       Args:
@@ -783,7 +783,7 @@ class Forces(dobject):
       # this should get the forces
       fbase = depstrip(self.f)
       fac = np.sqrt((fbase/self.beads.m3*fbase/self.beads.m3).sum()/(self.nbeads*self.natoms))
-      delta = self.mforces[-1].epsilon/fac
+      delta = np.abs(self.mforces[-1].epsilon)/fac
       if self.alpha==0:
          # special case! half of the S-C forces are zero so we can compute forward-backward finite differences in one go!
          fsc = fbase*0.0
@@ -791,8 +791,12 @@ class Forces(dobject):
             self.dbeads.q[k]=self.beads.q[2*k+1] + delta * fbase[2*k+1]/self.beads.m3[2*k+1]
             self.dbeads.q[self.nbeads/2+k]=self.beads.q[2*k+1] - delta * fbase[2*k+1]/self.beads.m3[2*k+1]
          fplusminus = depstrip(self.dforces.f).copy()
-         for k in range(self.nbeads/2): # only compute the elements that will not be set to zero when multiplying by alpha
-            fsc[2*k+1] = 2*(fplusminus[self.nbeads/2+k]-fplusminus[k])/2.0/delta
+         if self.mforces[-1].epsilon < 0.0:  # use a centered difference scheme
+             for k in range(self.nbeads/2): # only compute the elements that will not be set to zero when multiplying by alpha
+                 fsc[2*k+1] = 2*(fplusminus[self.nbeads/2+k]-fplusminus[k])/(2.0*delta)
+         else:
+             for k in range(self.nbeads/2): # do forward differences only
+                 fsc[2*k+1] = 2*(fplusminus[self.nbeads/2+k]-fbase[k])/delta
       else: 
          # standard, more expensive version (alpha=1 could also be accelerated but is not used in practice so laziness prevails)
          self.dbeads.q = self.beads.q + delta*fbase/self.beads.m3 # move forward
