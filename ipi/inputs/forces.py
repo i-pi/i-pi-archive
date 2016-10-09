@@ -82,7 +82,7 @@ class InputForceComponent(Input):
       """
 
       super(InputForceComponent,self).fetch()
-      return ForceComponent(ffield=self.forcefield.fetch(), nbeads=self.nbeads.fetch(), weight=self.weight.fetch(), name=self.name.fetch(), mts_weights=self.mts_weights.fetch(), epsilon=fd_epsilon.fetch())
+      return ForceComponent(ffield=self.forcefield.fetch(), nbeads=self.nbeads.fetch(), weight=self.weight.fetch(), name=self.name.fetch(), mts_weights=self.mts_weights.fetch(), epsilon=self.fd_epsilon.fetch())
 
    def check(self):
       """Checks for optional parameters."""

@@ -791,14 +791,17 @@ class Forces(dobject):
             self.dbeads.q[k]=self.beads.q[2*k+1] + delta * fbase[2*k+1]/self.beads.m3[2*k+1]
             self.dbeads.q[self.nbeads/2+k]=self.beads.q[2*k+1] - delta * fbase[2*k+1]/self.beads.m3[2*k+1]
          fplusminus = depstrip(self.dforces.f).copy()
-         if self.mforces[-1].epsilon < 0.0:  # use a centered difference scheme
+         if self.mforces[-1].epsilon < 0.0:  # use a centered difference schemei
+             print "for alpha =0 cenetered difference with delta=", delta, self.mforces[-1].epsilon
              for k in range(self.nbeads/2): # only compute the elements that will not be set to zero when multiplying by alpha
                  fsc[2*k+1] = 2*(fplusminus[self.nbeads/2+k]-fplusminus[k])/(2.0*delta)
          else:
+             print "for alpha =0 forward difference with", delta, self.mforces[-1].epsilon
              for k in range(self.nbeads/2): # do forward differences only
                  fsc[2*k+1] = 2*(fplusminus[self.nbeads/2+k]-fbase[k])/delta
       else: 
          # standard, more expensive version (alpha=1 could also be accelerated but is not used in practice so laziness prevails)
+         print "for alpha !=0 forward difference with", delta, self.mforces[-1].epsilon
          self.dbeads.q = self.beads.q + delta*fbase/self.beads.m3 # move forward
          fplus = depstrip(self.dforces.f).copy()
          self.dbeads.q = self.beads.q - delta*fbase/self.beads.m3 # move backwards
