@@ -10,7 +10,7 @@ import pytest
 import numpy as np
 import numpy.testing as npt
 
-import ipi_tests.utils.io.backends.io_xyz_utils as xyz_gen
+import ipi_tests.xyz_generator as xyz_gen
 import ipi.utils.io.backends.io_xyz as io_xyz
 import ipi.utils.mathtools as mt
 
@@ -74,8 +74,6 @@ def create_random_xyz_traj_to_read(request):
             _uu = np.dot(expected_cell, _us)
             xyz[3*_ui], xyz[3*_ui+1], xyz[3*_ui+2] = _uu
 
-    print precision
-
     return (filedesc, xyz, atom_names, natoms, frames,
             comment, expected_cell, precision)
 
@@ -99,7 +97,6 @@ def test_read_xyz(create_random_xyz_traj_to_read):
 def test_iter_xyz(create_random_xyz_traj_to_read):
     filedesc, xyz, atom_names, \
         natoms, junk, comment, expected_cell, precision = create_random_xyz_traj_to_read
-    print precision
 
     _fr = 0
     for _io in io_xyz.iter_xyz(filedesc):
@@ -145,7 +142,6 @@ def create_random_xyz_traj_to_write(request):
 
 
     comment = fmt_header % (a, b, c, alpha, beta, gamma, comment)
-    print 'Comment After: ', comment
 
     filedesc, xyz, atom_names = xyz_gen.xyz_traj_filedesc(natoms, frames, comment)
     filedesc.seek(0)
@@ -179,9 +175,6 @@ def test_print_xyz(create_random_xyz_traj_to_write):
 
     filedesc_orig.flush()
     filedesc_test.flush()
-
-    print 'comment 2', title
-
 
     for atoms, cell in zip(atoms_list, cell_list):
         io_xyz.print_xyz(atoms, cell, filedesc=filedesc_test, title=title[88:])

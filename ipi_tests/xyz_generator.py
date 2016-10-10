@@ -50,6 +50,7 @@ def xyz_traj_filedesc(natoms, nframe, comment):
     contents, xyz, all_names = xyz_traj(natoms, nframe, comment)
     filedesc = tmp.SpooledTemporaryFile(mode='wr')
     filedesc.write(contents)
+    filedesc.seek(0)
     return (filedesc, xyz, all_names)
 
 # if __name__ == '__main__':
