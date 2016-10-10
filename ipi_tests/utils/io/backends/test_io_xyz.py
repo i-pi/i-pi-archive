@@ -5,6 +5,7 @@
 import re
 import tempfile as tmp
 import filecmp
+import os
 
 import pytest
 import numpy as np
@@ -167,8 +168,8 @@ def test_print_xyz(create_random_xyz_traj_to_write):
 
     filedesc, atoms_list, cell_list, title, precision = create_random_xyz_traj_to_write
 
-    filedesc_orig = tmp.NamedTemporaryFile(mode='wr', delete=False)
-    filedesc_test = tmp.NamedTemporaryFile(mode='wr', delete=False)
+    filedesc_orig = tmp.NamedTemporaryFile(mode='wr', prefix='ipi_testing-tmp', delete=False)
+    filedesc_test = tmp.NamedTemporaryFile(mode='wr', prefix='ipi_testing-tmp', delete=False)
 
     filedesc_orig.write(filedesc.read())
     filedesc.close()
@@ -184,6 +185,8 @@ def test_print_xyz(create_random_xyz_traj_to_write):
 
     assert filecmp.cmp(filedesc_orig.name, filedesc_test.name)
 
+    os.remove(filedesc_orig.name)
+    os.remove(filedesc_test.name)
 
 
 #def test_print_xyz(atoms, cell, filedesc=sys.stdout, title="")

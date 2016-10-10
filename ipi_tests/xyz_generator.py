@@ -48,10 +48,11 @@ def xyz_traj_filedesc(natoms, nframe, comment):
     """ Generate a file descriptor containing a fake xyz trajectory.
     """
     contents, xyz, all_names = xyz_traj(natoms, nframe, comment)
-    filedesc = tmp.SpooledTemporaryFile(mode='wr')
+    filedesc = tmp.NamedTemporaryFile(mode='wr')
     filedesc.write(contents)
     filedesc.seek(0)
-    return (filedesc, xyz, all_names)
+    # This works only on unix!
+    return (open(filedesc.name), xyz, all_names)
 
 # if __name__ == '__main__':
 
