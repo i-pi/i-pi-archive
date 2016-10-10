@@ -88,13 +88,17 @@ def read_xyz(filedesc, **kwargs):
         i-Pi comment line, cell array, data (positions, forces, etc.), atoms names and masses
     """
 
-    natoms = filedesc.readline()
+    try:
+        natoms = filedesc.next()
+    except StopIteration:
+        raise EOFError
+
     if natoms == '':              # Work with temporary files
         raise EOFError
-    else:
-        natoms = int(natoms)
 
-    comment = filedesc.readline()
+    natoms = int(natoms)
+
+    comment = filedesc.next()
 
     # Extracting cell
     cell = [key.search(comment) for key in cell_re]
