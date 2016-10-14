@@ -29,6 +29,7 @@
       PROGRAM DRIVER
          USE LJ
          USE SG
+         USE PSWATER
          USE F90SOCKETS, ONLY : open_socket, writebuffer, readbuffer
       IMPLICIT NONE
 
@@ -47,7 +48,7 @@
       ! SOCKET COMMUNICATION BUFFERS
       CHARACTER(LEN=12) :: header
       LOGICAL :: isinit=.false., hasdata=.false.
-      INTEGER cbuf
+      INTEGER cbuf, rid
       CHARACTER(LEN=2048) :: initbuffer      ! it's unlikely a string this large will ever be passed...
       DOUBLE PRECISION, ALLOCATABLE :: msgbuffer(:)
 
@@ -101,7 +102,7 @@
             IF (ccmd == 0) THEN
                WRITE(*,*) " Unrecognized command line argument", ccmd
                CALL helpmessage
-               STOP -1
+               STOP "ENDED"
             ENDIF
             IF (ccmd == 1) THEN
                host = trim(cmdbuffer)//achar(0)
@@ -120,12 +121,16 @@
                   vstyle = 5
                ELSEIF (trim(cmdbuffer) == "qtip4pf") THEN
                   vstyle = 6
+               ELSEIF (trim(cmdbuffer) == "linear") THEN
+                  vstyle = 7
+               ELSEIF (trim(cmdbuffer) == "pswater") THEN
+                  vstyle = 8
                ELSEIF (trim(cmdbuffer) == "gas") THEN
                   vstyle = 0  ! ideal gas
                ELSE
                   WRITE(*,*) " Unrecognized potential type ", trim(cmdbuffer)
                   WRITE(*,*) " Use -m [gas|lj|sg|harm|morse|zundel|qtip4pf] "
-                  STOP -1
+                  STOP "ENDED"
                ENDIF
             ELSEIF (ccmd == 4) THEN
                par_count = 1
@@ -144,28 +149,28 @@
       IF (vstyle == -1) THEN
          WRITE(*,*) " Error, type of potential not specified."
          CALL helpmessage
-         STOP -1
-      ELSEIF (0 == vstyle ) THEN
+         STOP "ENDED"
+      ELSEIF (0 == vstyle) THEN
          IF (par_count /= 0) THEN
             WRITE(*,*) "Error: no initialization string needed for ideal gas."
-            STOP -1 
+            STOP "ENDED" 
          ENDIF   
          isinit = .true.
-      ELSEIF (6 == vstyle ) THEN
+      ELSEIF (6 == vstyle) THEN
          IF (par_count /= 0) THEN
             WRITE(*,*) "Error:  no initialization string needed for qtip4pf."
-            STOP -1 
+            STOP "ENDED" 
          ENDIF 
          isinit = .true.
-      ELSEIF (5 == vstyle ) THEN
+      ELSEIF (5 == vstyle) THEN
          IF (par_count /= 0) THEN
             WRITE(*,*) "Error: no initialization string needed for zundel."
-            STOP -1 
+            STOP "ENDED" 
          ENDIF   
          CALL prezundelpot()
          CALL prezundeldip()
          isinit = .true.
-      ELSEIF (4 == vstyle ) THEN
+      ELSEIF (4 == vstyle) THEN
          IF (par_count == 0) THEN ! defaults (OH stretch)
             vpars(1) = 1.8323926 ! r0
             vpars(2) = 0.18748511263179304 ! D
@@ -173,14 +178,20 @@
          ELSEIF ( 2/= par_count) THEN
             WRITE(*,*) "Error: parameters not initialized correctly."
             WRITE(*,*) "For morse potential use -o r0,D,a (in a.u.) "
-            STOP -1 
+            STOP "ENDED" 
          ENDIF 
+         isinit = .true.
+      ELSEIF (vstyle == 8) THEN
+         IF (par_count /= 0) THEN
+            WRITE(*,*) "Error: no initialization string needed for Partridge-Schwenke H2O potential."
+            STOP "ENDED" 
+         ENDIF   
          isinit = .true.
       ELSEIF (vstyle == 1) THEN
          IF (par_count /= 3) THEN
             WRITE(*,*) "Error: parameters not initialized correctly."
             WRITE(*,*) "For LJ potential use -o sigma,epsilon,cutoff "
-            STOP -1 ! Note that if initialization from the wrapper is implemented this exit should be removed.
+            STOP "ENDED" ! Note that if initialization from the wrapper is implemented this exit should be removed.
          ENDIF   
          sigma = vpars(1)
          eps = vpars(2)
@@ -191,7 +202,7 @@
          IF (par_count /= 1) THEN
             WRITE(*,*) "Error: parameters not initialized correctly."
             WRITE(*,*) "For SG potential use -o cutoff "
-            STOP -1 ! Note that if initialization from the wrapper is implemented this exit should be removed.
+            STOP "ENDED" ! Note that if initialization from the wrapper is implemented this exit should be removed.
          ENDIF
          rc = vpars(1)
          rn = rc*1.2
@@ -200,7 +211,15 @@
          IF (par_count /= 1) THEN
             WRITE(*,*) "Error: parameters not initialized correctly."
             WRITE(*,*) "For 1D harmonic potential use -o k "
-            STOP -1 ! Note that if initialization from the wrapper is implemented this exit should be removed.
+            STOP "ENDED" ! Note that if initialization from the wrapper is implemented this exit should be removed.
+         ENDIF
+         ks = vpars(1)
+         isinit = .true.
+      ELSEIF (vstyle == 7) THEN
+         IF (par_count /= 1) THEN
+            WRITE(*,*) "Error: parameters not initialized correctly."
+            WRITE(*,*) "For a linear potential use -o k "
+            STOP "ENDED" ! Note that if initialization from the wrapper is implemented this exit should be removed.
          ENDIF
          ks = vpars(1)
          isinit = .true.
@@ -217,7 +236,7 @@
 
       ! Calls the interface to the POSIX sockets library to open a communication channel
       CALL open_socket(socket, inet, port, host)
-      nat = -1
+      nat = -1 
       DO WHILE (.true.) ! Loops forever (or until the wrapper ends!)
 
          ! Reads from the socket one message header
@@ -234,6 +253,7 @@
                CALL writebuffer(socket,"READY       ",MSGLEN)  ! We are idling and eager to compute something
             ENDIF
          ELSEIF (trim(header) == "INIT") THEN     ! The driver is kindly providing a string for initialization
+            CALL readbuffer(socket, rid)
             CALL readbuffer(socket, cbuf)
             CALL readbuffer(socket, initbuffer, cbuf)
             IF (verbose) WRITE(*,*) " Initializing system from wrapper, using ", trim(initbuffer)
@@ -278,20 +298,26 @@
                virial = 0.0d0
             ELSEIF (vstyle == 3) THEN ! 1D harmonic potential, so only uses the first position variable
                pot = 0.5*ks*atoms(1,1)**2
-               forces = 0
+               forces = 0.0d0
                forces(1,1) = -ks*atoms(1,1)
-               virial = 0
+               virial = 0.0d0
+               virial(1,1) = forces(1,1)*atoms(1,1)
+            ELSEIF (vstyle == 7) THEN ! linear potential in x position of the 1st atom
+               pot = ks*atoms(1,1)
+               forces = 0.0d0
+               virial = 0.0d0
+               forces(1,1) = -ks
                virial(1,1) = forces(1,1)*atoms(1,1)
             ELSEIF (vstyle == 4) THEN ! Morse potential. 
                IF (nat/=1) THEN
                   WRITE(*,*) "Expecting 1 atom for 3D Morse (use the effective mass for the atom mass to get proper frequency!) "
-                  STOP -1
+                  STOP "ENDED"
                ENDIF
                CALL getmorse(vpars(1), vpars(2), vpars(3), atoms, pot, forces)               
             ELSEIF (vstyle == 5) THEN ! Zundel potential. 
                IF (nat/=7) THEN
                   WRITE(*,*) "Expecting 7 atoms for Zundel potential, O O H H H H H "
-                  STOP -1
+                  STOP "ENDED"
                ENDIF
                
                CALL zundelpot(pot,atoms)
@@ -302,7 +328,7 @@
                   DO j=1,3                     
                      datoms(i,j)=atoms(i,j)+fddx
                      CALL zundelpot(dpot, datoms)
-                     datoms(i,j)=atoms(i,j)-fddx                     
+                     datoms(i,j)=atoms(i,j)-fddx
                      CALL zundelpot(forces(i,j), datoms)
                      datoms(i,j)=atoms(i,j)
                      forces(i,j)=(forces(i,j)-dpot)/(2*fddx)
@@ -312,17 +338,33 @@
             ELSEIF (vstyle == 6) THEN ! qtip4pf potential.             
                IF (mod(nat,3)/=0) THEN
                   WRITE(*,*) " Expecting water molecules O H H O H H O H H but got ", nat, "atoms"
-                  STOP -1
+                  STOP "ENDED"
                ENDIF
                vpars(1) = cell_h(1,1)
                vpars(2) = cell_h(2,2)
                vpars(3) = cell_h(3,3)
                IF (cell_h(1,2).gt.1d-10 .or. cell_h(1,3).gt.1d-12  .or. cell_h(2,3).gt.1d-12) THEN
                   WRITE(*,*) " qtip4pf PES only works with orthorhombic cells"
-                  STOP -1 
+                  STOP "ENDED" 
                ENDIF
                CALL qtip4pf(vpars(1:3),atoms,nat,forces,pot,virial)
+               dip(:) = 0.0
+               DO i=1, nat, 3
+                  dip = dip -1.1128d0 * atoms(i,:) + 0.5564d0 * (atoms(i+1,:) + atoms(i+2,:))
+               ENDDO
+               ! do not compute the virial term
+            ELSEIF (vstyle == 8) THEN ! PS water potential. 
+               IF (nat/=3) THEN
+                  WRITE(*,*) "Expecting 3 atoms for P-S water potential, O H H "
+                  STOP "ENDED"
+               ENDIF
+
                
+               atoms = atoms*0.52917721d0    ! pot_nasa wants angstrom
+               call pot_nasa(atoms,forces,pot)
+               pot = pot*0.0015946679     ! pot_nasa gives kcal/mol
+               forces = forces * (-0.00084329756) ! pot_nasa gives V in kcal/mol/angstrom
+
                ! do not compute the virial term
             ELSE
                IF ((allocated(n_list) .neqv. .true.)) THEN
@@ -372,12 +414,12 @@
             CALL writebuffer(socket,nat)  ! Writing the number of atoms
             CALL writebuffer(socket,msgbuffer,3*nat) ! Writing the forces
             CALL writebuffer(socket,reshape(virial,(/9/)),9)  ! Writing the virial tensor, NOT divided by the volume
-            IF (vstyle==5) THEN ! returns the dipole 
+            IF (vstyle==5 .or. vstyle==6) THEN ! returns the dipole 
                initbuffer = " "
                WRITE(initbuffer,*) dip(1:3)
                cbuf = LEN_TRIM(initbuffer)
                CALL writebuffer(socket,cbuf) ! Writes back the molecular dipole 
-               CALL writebuffer(socket,initbuffer,cbuf)
+               CALL writebuffer(socket,initbuffer,cbuf)            
             ELSE
                cbuf = 7 ! Size of the "extras" string
                CALL writebuffer(socket,cbuf) ! This would write out the "extras" string, but in this case we only use a dummy string.
@@ -386,7 +428,7 @@
             hasdata = .false.
          ELSE
             WRITE(*,*) " Unexpected header ", header
-            STOP -1
+            STOP "ENDED"
          ENDIF
       ENDDO
       IF (nat > 0) DEALLOCATE(atoms, forces, msgbuffer)
@@ -394,14 +436,14 @@
       CONTAINS
       SUBROUTINE helpmessage
          ! Help banner
-         WRITE(*,*) " SYNTAX: driver.x [-u] -h hostname -p port -m [gas|lj|sg|harm|morse|zundel|qtip4pf] "
+         WRITE(*,*) " SYNTAX: driver.x [-u] -h hostname -p port -m [gas|lj|sg|harm|morse|zundel|qtip4pf|pswater] "
          WRITE(*,*) "         -o 'comma_separated_parameters' [-v] "
          WRITE(*,*) ""
          WRITE(*,*) " For LJ potential use -o sigma,epsilon,cutoff "
          WRITE(*,*) " For SG potential use -o cutoff "
          WRITE(*,*) " For 1D harmonic oscillator use -o k "
          WRITE(*,*) " For 1D morse oscillator use -o r0,D,a"         
-         WRITE(*,*) " For the ideal gas, qtip4pf or zundel no options needed! "
+         WRITE(*,*) " For the ideal gas, qtip4pf, zundel or nasa no options needed! "
       END SUBROUTINE
    END PROGRAM
 

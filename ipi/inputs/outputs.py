@@ -1,36 +1,23 @@
-"""Deals with creating the output objects.
+"""Creates objects that deal with output files."""
 
-Copyright (C) 2013, Joshua More and Michele Ceriotti
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <http.//www.gnu.org/licenses/>.
+# This file is part of i-PI.
+# i-PI Copyright (C) 2014-2015 i-PI developers
+# See the "licenses" directory for full license information.
 
 
-Classes:
-   InputOutputs: Creates a list of all the output objects.
-   InputProperties: Deals with property output.
-   InputTrajectory: Deals with trajectory output.
-   InputCheckpoint: Deals with restart file output.
-"""
-import numpy as np
 from copy import copy
+
+import numpy as np
+
 from ipi.utils.depend import *
 from ipi.utils.inputvalue import *
 from ipi.engine.properties import getkey
 import ipi.engine.outputs as eoutputs
 
-__all__=['InputOutputs', 'InputProperties', 'InputTrajectory',
-         'InputCheckpoint']
+
+__all__ = ['InputOutputs', 'InputProperties', 'InputTrajectory',
+           'InputCheckpoint']
+
 
 class InputProperties(InputArray):
    """Simple input class to describe output for properties.
@@ -109,7 +96,7 @@ class InputTrajectory(InputValue):
    default_help = """This class defines how one trajectory file should be output. Between each trajectory tag one string should be given, which specifies what data is to be output."""
    default_label = "TRAJECTORY"
 
-   attribs = copy(InputValue.attribs)
+   attribs = {}
    attribs["filename"] = (InputAttribute,{ "dtype" : str, "default": "traj",
                                            "help": "A string to specify the name of the file that is output. The file name is given by 'prefix'.'filename' + format_specifier. The format specifier may also include a number if multiple similar files are output."} )
    attribs["stride"] = (InputAttribute,{ "dtype" : int, "default": 1,
@@ -174,7 +161,7 @@ class InputCheckpoint(InputValue):
    default_help = """This class defines how a checkpoint file should be output. Optionally, between the checkpoint tags, you can specify one integer giving the current step of the simulation. By default this integer will be zero."""
    default_label = "CHECKPOINT"
 
-   attribs=copy(InputValue.attribs)
+   attribs={}
    attribs["filename"] = (InputAttribute,{ "dtype" : str, "default": "restart",
                                            "help": "A string to specify the name of the file that is output. The file name is given by 'prefix'.'filename' + format_specifier. The format specifier may also include a number if multiple similar files are output."} )
    attribs["stride"] = (InputAttribute,{ "dtype" : int, "default": 1,
@@ -211,8 +198,9 @@ class InputCheckpoint(InputValue):
       # just a quick hack to allow an empty element
       try:
          super(InputCheckpoint,self).parse(xml,text)
-      except: #TODO make this except a specific exception, not every one
-         self.value = 0  #This could hide actual errors, at least in theory.
+      except ValueError:
+         # This could hide actual errors, at least in theory.
+         self.value = 0
 
    def store(self, chk):
       """Stores a CheckpointOutput object."""

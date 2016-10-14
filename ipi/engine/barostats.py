@@ -1,47 +1,33 @@
-"""Contains the classes that deal with constant pressure dynamics.
-
-Copyright (C) 2013, Joshua More and Michele Ceriotti
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <http.//www.gnu.org/licenses/>.
-
+"""Classes that deal with constant pressure simulations.
 
 Contains the algorithms which propagate the position and momenta steps in the
 constant pressure ensemble. Holds the properties directly related to
 these ensembles, such as the internal and external pressure and stress.
 
-Classes:
-   Barostat: Base barostat class with the generic methods and attributes.
-   BaroBZP: Generates dynamics with a stochastic barostat -- see
-            Ceriotti, More, Manolopoulos, Comp. Phys. Comm. 185, 1019, (2013)
-            for implementation details.
+Note that this file also contains a 'BaroMHT' class, that follows more closely the
+Martyna, Hughes, Tuckerman implementation of a PIMD barostat. However it is so
+close to the BZP implementation that we disabled it for the sake of simplicity.
+The original reference is:
+G. Martyna, A. Hughes and M. Tuckerman, J. Chem. Phys., 110, 3275.
 """
 
-# NB: this file also contains a 'BaroMHT' class, that follows more closely the
-# Martyna, Hughes, Tuckerman implementation of a PIMD barostat. However it is so
-# close to the BZP implementation that we disabled it for the sake of simplicity
-# BaroMHT: Generates dynamics according to the method of G. Martyna, A.
-# Hughes and M. Tuckerman, J. Chem. Phys., 110, 3275.
+# This file is part of i-PI.
+# i-PI Copyright (C) 2014-2015 i-PI developers
+# See the "licenses" directory for full license information.
 
-__all__ = ['Barostat', 'BaroBZP', 'BaroRGB']
 
 import numpy as np
+
 from ipi.utils.depend import *
 from ipi.utils.units import *
 from ipi.utils.mathtools import eigensystem_ut3x3, invert_ut3x3, exp_ut3x3, det_ut3x3, matrix_exp
 from ipi.inputs.thermostats import InputThermo
 from ipi.engine.thermostats import Thermostat
 from ipi.engine.cell import Cell
+
+
+__all__ = ['Barostat', 'BaroBZP', 'BaroRGB']
+
 
 class Barostat(dobject):
    """Base barostat class.
@@ -114,11 +100,13 @@ class Barostat(dobject):
       self.thermostat = thermostat
 
       # pipes timestep and temperature to the thermostat
-      deppipe(self,"dt", self.thermostat, "dt")
-      deppipe(self, "temp", self.thermostat,"temp")
+      deppipe(self, "dt", self.thermostat, "dt")
+      deppipe(self, "temp", self.thermostat, "temp")
+      dset(self, "pext", depend_value(name='pext', value=-1.0))
+      dset(self, "stressext", depend_array(name='stressext', value=-np.ones((3,3), float)))
 
 
-   def bind(self, beads, nm, cell, forces, prng=None, fixdof=None):
+   def bind(self, beads, nm, cell, forces, bias=None, prng=None, fixdof=None):
       """Binds beads, cell and forces to the barostat.
 
       This takes a beads object, a cell object and a forcefield object and
@@ -139,6 +127,7 @@ class Barostat(dobject):
       self.beads = beads
       self.cell = cell
       self.forces = forces
+      self.bias = bias
       self.nm = nm
 
       dset(self,"kstress",
@@ -147,6 +136,9 @@ class Barostat(dobject):
       dset(self,"stress",
          depend_value(name='stress', func=self.get_stress,
             dependencies=[ dget(self,"kstress"), dget(cell,"V"), dget(forces,"vir") ]))
+      if bias != None:
+         dget(self,"kstress").add_dependency(dget(bias,"f"))
+         dget(self,"stress").add_dependency(dget(bias,"vir"))
 
       if fixdof is None:
          self.mdof = float(self.beads.natoms)*3.0
@@ -166,12 +158,14 @@ class Barostat(dobject):
       m = depstrip(self.beads.m)
       na3 = 3*self.beads.natoms
       fall = depstrip(self.forces.f)
+      if self.bias == None: ball=fall*0.00
+      else: ball = depstrip(self.bias.f)
 
       for b in range(self.beads.nbeads):
          for i in range(3):
             for j in range(i,3):
                kst[i,j] -= np.dot(q[b,i:na3:3] - qc[i:na3:3],
-                  fall[b,j:na3:3])
+                  fall[b,j:na3:3]+ball[b,j:na3:3])
 
       # NOTE: In order to have a well-defined conserved quantity, the Nf kT term in the
       # diagonal stress estimator must be taken from the centroid kinetic energy.
@@ -183,7 +177,9 @@ class Barostat(dobject):
    def get_stress(self):
       """Calculates the internal stress tensor."""
 
-      return (self.kstress + self.forces.vir)/self.cell.V
+      bvir = np.zeros((3,3),float)
+      if self.bias != None: bvir[:]=self.bias.vir
+      return (self.kstress + self.forces.vir + bvir)/self.cell.V
 
    def pstep(self):
       """Dummy momenta propagator step."""
@@ -199,8 +195,11 @@ class Barostat(dobject):
 class BaroBZP(Barostat):
    """Bussi-Zykova-Parrinello barostat class.
 
-   Just extends the standard class adding finite-dt propagators for the barostat
-   velocities, positions, piston.
+   Just extends the standard class adding finite-dt propagators for the
+   barostat velocities, positions, piston.
+
+   Generates dynamics with a stochastic barostat. Implementation details:
+   Ceriotti, More, Manolopoulos, Comp. Phys. Comm. 185, 1019, (2013)
 
    Depend objects:
       p: The momentum associated with the volume degree of freedom.
@@ -232,13 +231,13 @@ class BaroBZP(Barostat):
          self.p = np.asarray([p])
       else:
          self.p = 0.0
-
-      dset(self,"pext",depend_value(name='pext'))
+      
       if not pext is None:
          self.pext = pext
-      else: self.pext = 0.0
+      else:
+         self.pext = -1.0
 
-   def bind(self, beads, nm, cell, forces, prng=None, fixdof=None):
+   def bind(self, beads, nm, cell, forces, bias=None, prng=None, fixdof=None):
       """Binds beads, cell and forces to the barostat.
 
       This takes a beads object, a cell object and a forcefield object and
@@ -256,7 +255,7 @@ class BaroBZP(Barostat):
          fixdof: The number of blocked degrees of freedom.
       """
 
-      super(BaroBZP, self).bind(beads, nm, cell, forces, prng, fixdof)
+      super(BaroBZP, self).bind(beads, nm, cell, forces, bias, prng, fixdof)
 
       # obtain the thermostat mass from the given time constant
       # note that the barostat temperature is nbeads times the physical T
@@ -264,7 +263,7 @@ class BaroBZP(Barostat):
          func=(lambda:np.asarray([self.tau**2*3*self.beads.natoms*Constants.kb*self.temp])),
             dependencies=[ dget(self,"tau"), dget(self,"temp") ] ))
 
-      # binds the thermostat to the piston degrees of freedom
+      # binds the thermostat to the piston degrees of freedom      
       self.thermostat.bind(pm=[ self.p, self.m ], prng=prng)
 
       # barostat elastic energy
@@ -308,6 +307,7 @@ class BaroBZP(Barostat):
                 Constants.kb*self.temp )
 
       fc = np.sum(depstrip(self.forces.f),0)/self.beads.nbeads
+      if self.bias != None: fc += np.sum(depstrip(self.bias.f),0)/self.beads.nbeads
       m = depstrip(self.beads.m3)[0]
       pc = depstrip(self.beads.pc)
 
@@ -317,6 +317,7 @@ class BaroBZP(Barostat):
       self.p += (dthalf2*np.dot(pc,fc/m) + dthalf3*np.dot(fc,fc/m)) * self.beads.nbeads
 
       self.beads.p += depstrip(self.forces.f)*dthalf
+      if self.bias != None: self.beads.p +=depstrip(self.bias.f)*dthalf
 
    def qcstep(self):
       """Propagates the centroid position and momentum and the volume."""
@@ -386,12 +387,12 @@ class BaroRGB(Barostat):
       else:
          self.h0 = Cell()
 
-      dset(self,"stressext",depend_array(name='stressext', value=np.zeros((3,3), float)))
       if not stressext is None:
          self.stressext = stressext
-      else: self.stressext = 0.0
+      else:
+         self.stressext[:] = -1.0
 
-   def bind(self, beads, nm, cell, forces, prng=None, fixdof=None):
+   def bind(self, beads, nm, cell, forces, bias=None, prng=None, fixdof=None):
       """Binds beads, cell and forces to the barostat.
 
          This takes a beads object, a cell object and a forcefield object and
@@ -409,13 +410,17 @@ class BaroRGB(Barostat):
          fixdof: The number of blocked degrees of freedom.
          """
 
-      super(BaroRGB, self).bind(beads, nm, cell, forces, prng, fixdof)
+      super(BaroRGB, self).bind(beads, nm, cell, forces, bias, prng, fixdof)
 
       # obtain the thermostat mass from the given time constant (1/3 of what used for the corresponding NPT case)
       # note that the barostat temperature is nbeads times the physical T
       dset(self,"m", depend_array(name='m', value=np.atleast_1d(0.0),
                                  func=(lambda:np.asarray([self.tau**2*self.beads.natoms*Constants.kb*self.temp])),
                                  dependencies=[ dget(self,"tau"), dget(self,"temp") ] ))
+
+      dset(self,"m6", depend_array(name='m6', value=np.zeros(6,float),
+                                 func=(lambda:np.asarray([1,1,1,1,1,1])*self.m[0]),
+                                 dependencies=[ dget(self,"m")] ))
 
       # overrides definition of pot to depend on the many things it depends on for anisotropic cell
       dset(self,"pot",
@@ -424,7 +429,8 @@ class BaroRGB(Barostat):
                dget(self.h0,"V"), dget(self.h0,"ih"), dget(self,"stressext") ]))
 
       # binds the thermostat to the piston degrees of freedom
-      self.thermostat.bind(pm=[ self.p6, self.m ], prng=prng)
+      self.thermostat.bind(pm=[ self.p6, self.m6], prng=prng)
+
       dset(self,"kin",depend_value(name='kin',
             func=(lambda:0.5*np.trace(np.dot(self.p.T,self.p))/self.m[0]),
             dependencies= [dget(self,"p"), dget(self,"m")] ) )
@@ -454,7 +460,7 @@ class BaroRGB(Barostat):
       eps=np.dot(self.cell.h, self.h0.ih)
       eps=np.dot(eps.T, eps)
       eps=0.5*(eps - np.identity(3))
-      
+
       return self.h0.V*np.trace(np.dot(self.stressext,eps))*self.beads.nbeads
 
    def get_ebaro(self):
@@ -483,6 +489,7 @@ class BaroRGB(Barostat):
                            Constants.kb*self.temp*L)
 
       fc = np.sum(depstrip(self.forces.f),0).reshape(self.beads.natoms,3)/self.beads.nbeads
+      if self.bias != None: fc+= np.sum(depstrip(self.bias.f),0).reshape(self.beads.natoms,3)/self.beads.nbeads
       fcTonm = (fc/depstrip(self.beads.m3)[0].reshape(self.beads.natoms,3)).T
       pc = depstrip(self.beads.pc).reshape(self.beads.natoms,3)
 
@@ -492,6 +499,7 @@ class BaroRGB(Barostat):
       self.p += np.triu(dthalf2*np.dot(fcTonm,pc) + dthalf3*np.dot(fcTonm,fc)) * self.beads.nbeads
 
       self.beads.p += depstrip(self.forces.f)*dthalf
+      if self.bias != None:  self.beads.p += depstrip(self.bias.f)*dthalf
 
    def qcstep(self):
       """Propagates the centroid position and momentum and the volume."""

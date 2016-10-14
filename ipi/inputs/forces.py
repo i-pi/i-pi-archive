@@ -1,40 +1,26 @@
-"""Deals with creating all the forcefields needed for the simulation.
+"""Creates objects that compose and apply forces."""
 
-Copyright (C) 2013, Joshua More and Michele Ceriotti
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <http.//www.gnu.org/licenses/>.
+# This file is part of i-PI.
+# i-PI Copyright (C) 2014-2015 i-PI developers
+# See the "licenses" directory for full license information.
 
 
-Classes:
-   InputForces: Deals with creating all the forcefield objects.
-   InputForceComponent: Base class to deal with one particular 
-      forcefield object.
-"""
+from copy import copy
+
+from ipi.engine.forces import *
+from ipi.utils.inputvalue import *
+import numpy as np
 
 __all__ = ['InputForces', 'InputForceComponent']
 
-from copy import copy
-from ipi.engine.forces import *
-from ipi.utils.inputvalue import *
 
-class InputForceComponent(InputValue):
+class InputForceComponent(Input):
    """ForceComponent input class.
 
-   Uses the forcefield object whose name is specified as the value of the 
+   Uses the forcefield object whose name is specified as the value of the
    field (matching one of the forcefields defined in the simulation tag)
    to compute one component of the force acting on the ring polymer.
-      
+
 
    Attributes:
       nbeads: The number of beads that the forcefield will be evaluated on.
@@ -50,32 +36,46 @@ class InputForceComponent(InputValue):
                                          "help"    : "A scaling factor for this forcefield, to be applied before adding the force calculated by this forcefield to the total force." } ),
                "name" : ( InputAttribute, { "dtype" : str,
                                           "default" : "",
-                                          "help" : "An optional name to refer to this force component." } )
+                                          "help" : "An optional name to refer to this force component." } ),
+
+               "forcefield" : ( InputAttribute, { "dtype" : str, 
+                                          "default": "",
+                                          "help" : "Mandatory. The name of the forcefield this force is referring to." } )
             }
+
+   fields={ "mts_weights" : (InputArray, {"dtype"        : float,
+                                    "default"      : np.zeros(1,float)+1.,
+                                    "help"         : "The weight of force in each mts level starting from outer.",
+                                    "dimension"    : "force"})
+          }
 
    default_help = "The class that deals with how each forcefield contributes to the overall potential, force and virial calculation."
    default_label = "FORCECOMPONENT"
-   
-   def __init__(self, help=None, dimension=None, units=None, default=None, dtype=None):
-      """Initializes InputForceComponent.
 
-      Just calls the parent initialization function with appropriate arguments.
-      """
+#   def __init__(self, help=None, default=None):
+#   def __init__(self, help=None, dimension=None, units=None, default=None, dtype=None):
+#      """Initializes InputForceComponent.
 
-      super(InputForceComponent,self).__init__(dtype=str, dimension=dimension, default=default, help=help)
-      
+
+
+##      Just calls the parent initialization function with appropriate arguments.
+#      """
+
+#     super(InputForceComponent,self).__init__(default=default, help=help)
+
    def store(self, forceb):
-      """Takes a ForceComponent instance and stores a minimal 
+      """Takes a ForceComponent instance and stores a minimal
       representation of it.
 
       Args:
          forceb: A ForceComponent object.
       """
 
-      super(InputForceComponent,self).store(forceb.ffield)
       self.nbeads.store(forceb.nbeads)
       self.weight.store(forceb.weight)
+      self.mts_weights.store(forceb.mts_weights)
       self.name.store(forceb.name)
+      self.forcefield.store(forceb.ffield)
 
    def fetch(self):
       """Creates a ForceComponent object.
@@ -84,8 +84,8 @@ class InputForceComponent(InputValue):
          A ForceComponent object.
       """
 
-      val=super(InputForceComponent,self).fetch()      
-      return ForceComponent(ffield=val, nbeads=self.nbeads.fetch(), weight=self.weight.fetch(), name=self.name.fetch())
+      super(InputForceComponent,self).fetch()
+      return ForceComponent(ffield=self.forcefield.fetch(), nbeads=self.nbeads.fetch(), weight=self.weight.fetch(), name=self.name.fetch(), mts_weights=self.mts_weights.fetch())
 
    def check(self):
       """Checks for optional parameters."""
@@ -120,8 +120,8 @@ class InputForces(Input):
          where 'type' is the type of forcefield, and 'object' is a
       """
 
-      super(InputForces, self).fetch()   
-      flist = [ f.fetch() for (n, f) in self.extra ]      
+      super(InputForces, self).fetch()
+      flist = [ f.fetch() for (n, f) in self.extra ]
       return flist
 
    def store(self, flist):

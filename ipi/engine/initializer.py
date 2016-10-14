@@ -1,43 +1,14 @@
 """Contains the classes that are used to initialize data in the simulation.
 
-Copyright (C) 2013, Joshua More and Michele Ceriotti
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <http.//www.gnu.org/licenses/>.
-
-
 These classes can either be used to restart a simulation with some different
 data or used to start a calculation. Any data given in these classes will
 overwrite data given elsewhere.
-
-Classes:
-   Initializer: Holds the functions that are required to initialize objects in
-      the code. Data can be initialized from a file, or according to a
-      particular parameter. An example of the former would be initializing
-      the configurations from a xyz file, an example of the latter would be
-      initializing the velocities according to the physical temperature.
-   InitBase: Simple class that reads data from a string or file.
-   InitIndexed: The same as init base, but can also optionally hold
-      information about which atom or bead to initialize from.
-
-Functions:
-   init_xyz: Reads beads data from a xyz file.
-   init_pdb: Reads beads and cell data from a pdb file.
-   init_chk: Reads beads, cell and thermostat data from a checkpoint file.
-   init_beads: Initializes a beads object from an Initializer object.
-   init_vector: Initializes a vector from an Initializer object.
-   set_vector: Initializes a vector from another vector.
 """
+
+# This file is part of i-PI.
+# i-PI Copyright (C) 2014-2015 i-PI developers
+# See the "licenses" directory for full license information.
+
 
 import numpy as np
 
@@ -45,18 +16,22 @@ from ipi.engine.beads import Beads
 from ipi.engine.cell import Cell
 from ipi.engine.normalmodes import NormalModes
 from ipi.engine.ensembles import Ensemble
-from ipi.utils.io.io_xyz import read_xyz
-from ipi.utils.io.io_pdb import read_pdb
-from ipi.utils.io.io_xml import xml_parse_file
+from ipi.engine.motion import Motion
+from ipi.utils.io import read_file
+from ipi.utils.io.inputs.io_xml import xml_parse_file
 from ipi.utils.depend import dobject
 from ipi.utils.units import Constants, unit_to_internal
 from ipi.utils.nmtransform import nm_rescale
 from ipi.utils.messages import verbosity, warning, info
 
+
 __all__ = ['Initializer', 'InitBase', 'InitIndexed']
+
 
 class InitBase(dobject):
    """Base class for initializer objects.
+
+   Reads data from a string or file.
 
    Attributes:
       value: A duck-typed stored value.
@@ -86,6 +61,9 @@ class InitBase(dobject):
 class InitIndexed(InitBase):
    """Class to initialize objects which can be set for a particular bead.
 
+   The same as init base, but can also optionally hold information about which
+   atom or bead to initialize from.
+
    Attributes:
       index: Which atom to initialize the value of.
       bead: Which bead to initialize the value of.
@@ -107,32 +85,11 @@ class InitIndexed(InitBase):
       super(InitIndexed,self).__init__(value=value, mode=mode, units=units, index=index, bead=bead)
 
 
-def init_xyz(filename):
-   """Reads an xyz file and returns the data contained in it.
+def init_file(mode, filename):
+   """Reads a @mode file and returns the data contained in it.
 
    Args:
-      filename: A string giving the name of the xyz file to be read from.
-
-   Returns:
-      A list of Atoms objects as read from each frame of the xyz file.
-   """
-
-   rfile = open(filename,"r")
-   ratoms = []
-   while True:
-   #while loop, so that more than one configuration can be given
-   #so multiple beads can be initialized at once.
-      try:
-         myatoms = read_xyz(rfile)
-      except EOFError:
-         break
-      ratoms.append(myatoms)
-   return ratoms
-
-def init_pdb(filename):
-   """Reads an pdb file and returns the data contained in it.
-
-   Args:
+      mode: Type of file that should be read.
       filename: A string giving the name of the pdb file to be read from.
 
    Returns:
@@ -140,20 +97,21 @@ def init_pdb(filename):
       a Cell object as read from the final pdb frame.
    """
 
-   rfile = open(filename,"r")
+   rfile = open(filename, "r")
    ratoms = []
    while True:
    #while loop, so that more than one configuration can be given
    #so multiple beads can be initialized at once.
       try:
-         myatoms, rcell  = read_pdb(rfile)
+         ret = read_file(mode, rfile)
       except EOFError:
          break
-      ratoms.append(myatoms)
-   return ( ratoms, rcell ) # if multiple frames, the last cell is returned
+      ratoms.append(ret["atoms"])
+   return ratoms, ret["cell"]  # if multiple frames, the last cell is returned
+
 
 def init_chk(filename):
-   """Reads an checkpoint file and returns the data contained in it.
+   """Reads a checkpoint file and returns the data contained in it.
 
    Args:
       filename: A string giving the name of the checkpoint file to be read from.
@@ -164,7 +122,7 @@ def init_chk(filename):
    """
 
    # reads configuration from a checkpoint file
-   rfile = open(filename,"r")
+   rfile = open(filename, "r")
    xmlchk = xml_parse_file(rfile) # Parses the file.
 
    from ipi.inputs.simulation import InputSimulation
@@ -175,13 +133,13 @@ def init_chk(filename):
       warning("Restart from checkpoint with "+str(len(sim.syslist))+" systems will fetch data from the first system.")
    rcell = sim.syslist[0].cell
    rbeads = sim.syslist[0].beads
-   rthermo = sim.syslist[0].ensemble.thermostat
+   rmotion = sim.syslist[0].motion
 
-   return (rbeads, rcell, rthermo)
+   return (rbeads, rcell, rmotion)
+
 
 def init_beads(iif, nbeads):
-   """A file to initialize a beads object from an appropriate initializer
-   object.
+   """Initializes a beads object from an appropriate initializer object.
 
    Args:
       iif: An Initializer object which has information on the bead positions.
@@ -191,22 +149,24 @@ def init_beads(iif, nbeads):
       ValueError: If called using an Initializer object with a 'manual' mode.
    """
 
-   mode = iif.mode; value = iif.value
-   if mode == "xyz" or mode == "pdb":
-      if mode == "xyz": ratoms = init_xyz(value)
-      if mode == "pdb": ratoms = init_pdb(value)[0]
-      rbeads = Beads(ratoms[0].natoms,len(ratoms))
-      for i in range(len(ratoms)): rbeads[i] = ratoms[i]
-   elif mode == "chk":
+   mode = iif.mode
+   value = iif.value
+   if mode == "chk":
       rbeads = init_chk(value)[0]
    elif mode == "manual":
       raise ValueError("Cannot initialize manually a whole beads object.")
+   else:
+      ret = init_file(mode, value)
+      ratoms = ret[0]
+      rbeads = Beads(ratoms[0].natoms,len(ratoms))
+      for i in range(len(ratoms)):
+         rbeads[i] = ratoms[i]
 
    return rbeads
 
+
 def init_vector(iif, nbeads, momenta=False):
-   """A file to initialize a vector from an appropriate initializer
-   object.
+   """Initializes a vector from an appropriate initializer object.
 
    Args:
       iif: An Initializer object specifying the value of a vector.
@@ -215,7 +175,8 @@ def init_vector(iif, nbeads, momenta=False):
          from a checkpoint file, this is set to True.
    """
 
-   mode = iif.mode; value = iif.value
+   mode = iif.mode
+   value = iif.value
    if mode == "xyz" or mode == "pdb":
       rq = init_beads(iif, nbeads).q
    elif mode == "chk":
@@ -233,8 +194,9 @@ def init_vector(iif, nbeads, momenta=False):
 
    return rq
 
+
 def set_vector(iif, dq, rq):
-   """A file to initialize a vector from an another vector.
+   """Initializes a vector from an another vector.
 
    If the first dimension is different, i.e. the two vectors correspond
    to a different number of beads, then the ring polymer contraction/expansion
@@ -248,8 +210,10 @@ def set_vector(iif, dq, rq):
       rq: The vector to initialize from.
    """
 
-   (nbeads, natoms) = rq.shape; natoms /= 3
-   (dbeads, datoms) = dq.shape; datoms /= 3
+   (nbeads, natoms) = rq.shape
+   natoms /= 3
+   (dbeads, datoms) = dq.shape
+   datoms /= 3
 
    # Check that indices make sense
    if iif.index < 0 and natoms != datoms:
@@ -273,8 +237,15 @@ def set_vector(iif, dq, rq):
       else:
          dq[iif.bead,3*iif.index:3*(iif.index+1)] = rq
 
+
 class Initializer(dobject):
    """Class that deals with the initialization of data.
+
+   Holds functions that are required to initialize objects in the code.  Data
+   can be initialized from a file, or according to a particular parameter. An
+   example of the former would be initializing the configurations from a xyz
+   file, an example of the latter would be initializing the velocities
+   according to the physical temperature.
 
    This can either be used to initialize the atom positions and the cell data
    from a file, or to initialize them from a beads, atoms or cell object.
@@ -339,12 +310,12 @@ class Initializer(dobject):
          if k == "cell":
             if fcell :
                warning("Overwriting previous cell parameters", verbosity.medium)
-            if v.mode == "pdb":
-               rh = init_pdb(v.value)[1].h
+            if v.mode == "manual":
+                rh = v.value.reshape((3,3))
             elif v.mode == "chk":
                rh = init_chk(v.value)[1].h
             else:
-               rh = v.value.reshape((3,3))
+               rh = init_file(v.mode,v.value)[1].h
             rh *= unit_to_internal("length",v.units,1.0)
 
             simul.cell.h = rh
@@ -402,7 +373,8 @@ class Initializer(dobject):
             # read the atomic positions as a vector
             rq = init_vector(v, self.nbeads)
             rq *= unit_to_internal("length",v.units,1.0)
-            (nbeads, natoms) = rq.shape;   natoms /= 3
+            nbeads, natoms = rq.shape
+            natoms /= 3
 
             # check if we must initialize the simulation beads
             if simul.beads.nbeads == 0:
@@ -442,8 +414,9 @@ class Initializer(dobject):
             else:
                rbeads.m[:] = simul.beads.m[v.index]
             rnm = NormalModes(mode=simul.nm.mode, transform_method=simul.nm.transform_method, freqs=simul.nm.nm_freqs)
-            rens = Ensemble(dt=simul.ensemble.dt, temp=simul.ensemble.temp)
-            rnm.bind(rbeads,rens)
+            rens = Ensemble(temp=simul.ensemble.temp)
+            rmv = Motion()
+            rnm.bind(rens, rmv, rbeads)
             # then we exploit the sync magic to do a complicated initialization
             # in the NM representation
             # with (possibly) shifted-frequencies NM
@@ -459,13 +432,14 @@ class Initializer(dobject):
             if fmom:
                warning("Overwriting previous atomic momenta", verbosity.medium)
             # read the atomic momenta as a vector
-            rp = init_vector(v, self.nbeads, momenta = True)
-            rp *= unit_to_internal("momentum",v.units,1.0)
-            (nbeads, natoms) = rp.shape;   natoms /= 3
+            rp = init_vector(v, self.nbeads, momenta=True)
+            rp *= unit_to_internal("momentum", v.units, 1.0)
+            nbeads, natoms = rp.shape
+            natoms /= 3
 
             # checks if we must initialize the simulation beads
             if simul.beads.nbeads == 0:
-               if v.index >= 0 :
+               if v.index >= 0:
                   raise ValueError("Cannot initialize single atoms before the size of the system is known")
                simul.beads.resize(natoms,self.nbeads)
 
@@ -478,8 +452,9 @@ class Initializer(dobject):
                warning("Overwriting previous atomic momenta", verbosity.medium)
             # read the atomic velocities as a vector
             rv = init_vector(v, self.nbeads)
-            rv *= unit_to_internal("velocity",v.units,1.0)
-            (nbeads, natoms) = rv.shape;   natoms /= 3
+            rv *= unit_to_internal("velocity", v.units, 1.0)
+            nbeads, natoms = rv.shape
+            natoms /= 3
 
             # checks if we must initialize the simulation beads
             if simul.beads.nbeads == 0 or not fmass:
@@ -489,14 +464,13 @@ class Initializer(dobject):
             warning("Initializing from velocities uses the previously defined masses -- not the masses inferred from the file -- to build momenta", verbosity.low)
             if v.index >= 0:
                rv *= simul.beads.m[v.index]
-            elif v.bead >= 0:
-               rv *= simul.beads.m3[0]
             else:
-               rv *= simul.beads.m3
+               for ev in rv:
+                  ev *= simul.beads.m3[0]
             rv *= np.sqrt(self.nbeads/nbeads)
             set_vector(v, simul.beads.p, rv)
             fmom = True
-         elif k == "thermostat": pass   # thermostats must be initialised in a second stage
+         elif k == "gle": pass   # thermostats must be initialised in a second stage
 
       if simul.beads.natoms == 0:
          raise ValueError("Initializer could not initialize the atomic positions")
@@ -541,10 +515,10 @@ class Initializer(dobject):
                   raise ValueError("Size mismatch in thermostat initialization data")
                sinput.shape = ssimul.shape
             elif v.mode == "chk":
-               rthermo = init_chk(v.value)[2]
-               if not hasattr(rthermo,"s"):
+               rmotion = init_chk(v.value)[2]
+               if not hasattr(rmotion,"thermostat") or not hasattr(rmotion.thermostat,"s") :
                   raise ValueError("Checkpoint file does not contain usable thermostat data")
-               sinput = rthermo.s.copy()
+               sinput = rmotion.thermostat.s.copy()
                if sinput.shape != ssimul.shape :
                   raise ValueError("Shape mismatch in thermostat initialization data")
 

@@ -14,7 +14,7 @@
 /
 &SYSTEM
     ibrav=0
-    celldm(1)=      6.57
+    celldm(1)= 6.57
     NAT=4
     NTYP=1
     ECUTWFC=20
@@ -35,6 +35,8 @@
 &IONS
     pot_extrapolation = 'second_order'
     wfc_extrapolation = 'second_order'
+/
+&CELL
 /
 ATOMIC_SPECIES   
     Li     6.941   Li.pbe-tm.UPF

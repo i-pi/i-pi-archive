@@ -1,32 +1,19 @@
-"""Deals with creating the forcefield class.
+"""Creates objects that deal with the evaluation of interactions."""
 
-Copyright (C) 2013, Joshua More and Michele Ceriotti
+# This file is part of i-PI.
+# i-PI Copyright (C) 2014-2015 i-PI developers
+# See the "licenses" directory for full license information.
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <http.//www.gnu.org/licenses/>.
-
-
-Classes:
-   InputForceField: Base class to deal with one particular forcefield object.
-   InputFFSocket: Deals with creating a forcefield using sockets.
-"""
-
-__all__ = ["InputFFSocket", 'InputFFLennardJones']
 
 from copy import copy
+
 from ipi.engine.forcefields import ForceField, FFSocket, FFLennardJones
 from ipi.interfaces.sockets import InterfaceSocket
 from ipi.utils.inputvalue import *
+
+
+__all__ = ["InputFFSocket", 'InputFFLennardJones']
+
 
 class InputForceField(Input):
    """ForceField input class.
@@ -36,7 +23,7 @@ class InputForceField(Input):
    instance of the object.
 
    Attributes:
-      name: The number of beads that the forcefield will be evaluated on.
+      name: The name by which the forcefield will be identified in the System forces section.
       pbc: A boolean describing whether periodic boundary conditions will
          be applied to the atom positions before they are sent to the driver
          code.
@@ -47,7 +34,7 @@ class InputForceField(Input):
    """
 
    attribs = { "name" : ( InputAttribute, { "dtype"   : str,
-                                         "help"    : "The name by which the forcefienld will be identified in the System forces section." } ),
+                                         "help"    : "Mandatory. The name by which the forcefield will be identified in the System forces section." } ),
                "pbc":  ( InputAttribute, { "dtype"   : bool,
                                          "default" : True,
                                          "help"    : "Applies periodic boundary conditions to the atoms coordinates before passing them on to the driver code." })
@@ -183,9 +170,7 @@ class InputFFSocket(InputForceField):
 
 class InputFFLennardJones(InputForceField):
 
-   attribs = { "threaded" : (InputAttribute, {"dtype": bool,
-                                              "default": True,
-                                              "help": "Specifies if force evaluations should be performed in parallel"} ) }
+   attribs = {}
    attribs.update(InputForceField.attribs)
 
    default_help = """Simple, internal LJ evaluator without cutoff, neighbour lists or minimal image convention.
@@ -194,10 +179,9 @@ class InputFFLennardJones(InputForceField):
 
    def store(self, ff):
       super(InputFFLennardJones,self).store(ff)
-      self.threaded.store(ff.threaded)
 
    def fetch(self):
       super(InputFFLennardJones,self).fetch()
 
       return FFLennardJones(pars = self.parameters.fetch(), name = self.name.fetch(),
-               latency = self.latency.fetch(), dopbc = self.pbc.fetch(), threaded=self.threaded.fetch() )
+               latency = self.latency.fetch(), dopbc = self.pbc.fetch())

@@ -1,20 +1,4 @@
-"""Contains the classes that are used to write to and read from restart files.
-
-Copyright (C) 2013, Joshua More and Michele Ceriotti
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <http.//www.gnu.org/licenses/>.
-
+"""Classes used to read and write XML input and restart files.
 
 The classes defined in this module define the base functions which parse the
 data in the restart files. Each restart object defined has a fields and an
@@ -27,26 +11,26 @@ are then output to the checkpoint file when a restart file is required.
 
 Also deals with checking for user input errors, of the form of misspelt tags,
 bad data types, and failure to input required fields.
-
-Classes:
-   Input: Base input class.
-   InputAttribute: Input class for attribute data.
-   InputValue: Input class for scalar objects.
-   InputArray: Input class for arrays.
-   input_default: Class used to create mutable objects dynamically.
 """
 
-__all__ = ['Input', 'InputValue', 'InputAttribute', 'InputArray', 'input_default']
+# This file is part of i-PI.
+# i-PI Copyright (C) 2014-2015 i-PI developers
+# See the "licenses" directory for full license information.
+
+
+from copy import copy
 
 import numpy as np
-from copy import copy
-from ipi.utils.io.io_xml import *
+
+from ipi.utils.io.inputs.io_xml import *
 from ipi.utils.units import unit_to_internal, unit_to_user
 
 
+__all__ = ['Input', 'InputDictionary', 'InputValue', 'InputAttribute', 'InputArray', 'input_default']
+
 
 class input_default(object):
-   """Contains information required to dynamically create objects
+   """Contains information required to dynamically create objects.
 
    Used so that we can define mutable default input values to various tags
    without the usual trouble with having a class object that is also mutable,
@@ -180,7 +164,13 @@ class Input(object):
       #creates and object of the type given, expanding the dictionary to give
       #the arguments of the __init__() function, then adds it to the input
       #object's dictionary.
-      for f, v in self.fields.iteritems():
+      if not hasattr(self, "instancefields"):
+        self.instancefields = {}
+      
+      # merge instencefields with the static class fields
+      self.instancefields.update(self.fields)
+      
+      for f, v in self.instancefields.iteritems():
          self.__dict__[f] = v[0](**v[1])
 
       for a, v in self.attribs.iteritems():
@@ -207,13 +197,13 @@ class Input(object):
       self._explicit = False #Since the value was not set by the user
 
    def store(self, value=None):
-      """Dummy function for storing data."""
+      """Base function for storing data"""
 
       self._explicit = True
       pass
 
    def fetch(self):
-      """Dummy function to retrieve data."""
+      """Dummy function to retrieve data that returns all fields as a dictionary."""
 
       self.check()
       pass
@@ -278,7 +268,7 @@ class Input(object):
             rstr += " " + outstr
       rstr += ">"
       rstr += text
-      for f in self.fields:
+      for f in self.instancefields:
          #only write out fields that are not defaults
 
          defstr = self.__dict__[f]._defwrite.replace("%%NAME%%",f)
@@ -320,7 +310,7 @@ class Input(object):
       # before starting, sets everything to its default -- if a default is set!
       for a in self.attribs:
          self.__dict__[a].set_default()
-      for f in self.fields:
+      for f in self.instancefields:
          self.__dict__[f].set_default()
 
       self.extra = []
@@ -337,7 +327,7 @@ class Input(object):
                raise NameError("Attribute name '" + a + "' is not a recognized property of '" + xml.name + "' objects")
 
          for (f, v) in xml.fields: #reads all field and dynamic data.
-            if f in self.fields:               
+            if f in self.instancefields:
                self.__dict__[f].parse(xml=v)
             elif f == "_text":
                self._text = v
@@ -351,7 +341,7 @@ class Input(object):
             va = self.__dict__[a]
             if not (va._explicit or va._optional):
                raise ValueError("Attribute name '" + a + "' is mandatory and was not found in the input for the property " + xml.name)
-         for f in self.fields:
+         for f in self.instancefields:
             vf = self.__dict__[f]
             if not (vf._explicit or vf._optional):
                raise ValueError("Field name '" + f + "' is mandatory and was not found in the input for the property " + xml.name)
@@ -485,8 +475,8 @@ class Input(object):
 
       #As above, for the fields. Only prints out if we have not reached the
       #user-specified limit.
-      if len(self.fields) != 0 and level != stop_level:
-         for f in self.fields:
+      if len(self.instancefields) != 0 and level != stop_level:
+         for f in self.instancefields:
             rstr += self.__dict__[f].help_latex(name=f, level=level+1, stop_level=stop_level, standalone=standalone)
 
       if len(self.dynamic) != 0 and level != stop_level:
@@ -590,7 +580,7 @@ class Input(object):
       #these are booleans which tell us whether there are any attributes
       #and fields to print out
       show_attribs = (len(self.attribs) != 0)
-      show_fields = (not (len(self.fields) == 0 and len(self.dynamic) == 0)) and level != stop_level
+      show_fields = (not (len(self.instancefields) == 0 and len(self.dynamic) == 0)) and level != stop_level
 
       rstr = ""
       rstr = indent + "<" + name; #prints tag name
@@ -644,21 +634,76 @@ class Input(object):
          for a in self.attribs:
             if not (a == "units" and self._dimension == "undefined"):
                rstr += indent + "   <" + a + "_dtype> " + self.type_print(self.__dict__[a].type) + " </" + a + "_dtype>\n"
-      
+
       #repeats the above instructions for any fields or dynamic tags.
       #these will only be printed if their level in the hierarchy is not above
       #the user specified limit.
       if show_fields:
-         for f in self.fields:
+         for f in self.instancefields:
             rstr += self.__dict__[f].help_xml(f, "   " + indent, level+1, stop_level)
          for f, v in self.dynamic.iteritems():
             #we must create the object manually, as dynamic objects are
             #not automatically added to the input object's dictionary
-            dummy_obj = v[0](**v[1])             
+            dummy_obj = v[0](**v[1])
             rstr += dummy_obj.help_xml(f, "   " + indent, level+1, stop_level)
 
       rstr += indent + "</" + name + ">\n"
       return rstr
+
+
+class InputDictionary(Input):
+   """Class that returns the value of all the fields as a dictionary.
+   """
+   
+   def __init__(self,  help=None, default=None, dtype=str, options=None, dimension=None):
+      """Allows one to introduce additional (homogeneous) fields during initialization """
+      
+      
+      if hasattr(options,"__len__"):
+         self.instancefields = {}
+         opdef = {}
+         for i in range(len(options)): 
+            nfield = {}
+            if hasattr(default,"__len__"):        
+               if len(options)!=len(default): 
+                  raise ValueError("Default values list does not match dictionay options length")
+               nfield["default"] = default[i]
+            else: nfield["default"] = default            
+            if hasattr(dtype,"__len__"):        
+               if len(options)!=len(dtype): 
+                  raise ValueError("Type list does not match dictionay options length")
+               nfield["dtype"] = dtype[i]
+            else: nfield["dtype"] = dtype
+            if hasattr(dimension,"__len__"):        
+               if len(options)!=len(dimension): 
+                  raise ValueError("Type list does not match dictionay options length")
+               nfield["dimension"] = dimension[i]
+            else: nfield["dimension"] = dimension
+            
+            opdef[options[i]] = nfield["default"]
+            
+            self.instancefields[options[i]] = ( InputValue, nfield )
+         super(InputDictionary,self).__init__(help=help, default=opdef) # deferred initialization         
+      else:
+         super(InputDictionary,self).__init__(help=help, default=default)
+      
+    
+   def store(self, value={}):
+      """Base function for storing data passed as a dictionary"""
+      
+      self._explicit = True       
+      for f, v in value.iteritems():
+          self.__dict__[f].store(value[f])      
+      pass
+
+   def fetch(self):
+      """Dummy function to retrieve data that returns all fields as a dictionary."""
+
+      self.check()
+      rdic = {}
+      for f, v in self.instancefields.iteritems():
+         rdic[f]=self.__dict__[f].fetch()
+      return rdic
 
 
 class InputAttribute(Input):
@@ -750,12 +795,12 @@ class InputAttribute(Input):
       Returns:
          A string giving the stored value in the appropriate format.
       """
-      
+
       return name + "='" + write_type(self.type, self.value) + "'"
 
 
 class InputValue(InputAttribute):
-   """Scalar class for input handling.
+   """Class for handling scalar input.
 
    Has the methods for dealing with simple data tags of the form:
    <tag_name> data </tag_name>, where data is just a value. Takes the data and
@@ -855,7 +900,7 @@ class InputValue(InputAttribute):
 
 ELPERLINE = 5
 class InputArray(InputValue):
-   """Array class for input handling.
+   """Class for handling array input.
 
    Has the methods for dealing with simple data tags of the form:
    <tag_name shape="(shape)"> data </tag_name>, where data is an array

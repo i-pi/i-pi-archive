@@ -1,0 +1,40 @@
+<simulation verbosity="medium">
+    <ffsocket mode='unix' name='driver'>
+         <latency>  1.00000000e-02</latency>
+         <slots>4</slots>
+         <port>20614</port>
+         <timeout>  6.00000000e+02</timeout>
+         <address>dftb-zundel</address>
+   </ffsocket>
+   <total_steps>400</total_steps>
+   <output prefix="data">
+      <trajectory stride="2" filename="pos" cell_units="angstrom">positions{angstrom}</trajectory>
+      <trajectory stride="2" filename="xc" format="xyz">x_centroid{angstrom}</trajectory>
+      <properties stride="2"> [ step, time, conserved, temperature{kelvin}, kinetic_cv, 
+            potential, kinetic_cv(H), kinetic_cv(O) ] </properties>
+      <properties stride="8" filename="zeta"> [ isotope_zetasc_4th(1.998;H) ] </properties>
+   </output>
+   <prng>
+      <seed>18885</seed>
+   </prng>
+   <system>
+      <forces> <force forcefield="driver"></force></forces>
+      <initialize nbeads="16">
+        <file mode="xyz" units="angstrom">./zundel.xyz</file>
+        <cell>
+         [   25.29166, 0, 0, 0, 25.29166, 0, 0, 0, 25.29166 ]
+        </cell>
+      </initialize>
+      <ensemble>
+        <temperature units="kelvin"> 300.0 </temperature>
+      </ensemble>
+      <motion mode='dynamics'>
+	<dynamics mode='nvt'>
+          <timestep units="femtosecond"> 0.25 </timestep>
+          <thermostat mode='langevin'>
+            <tau units="femtosecond">100</tau>
+          </thermostat>
+	</dynamics>
+      </motion>
+  </system>
+</simulation>
