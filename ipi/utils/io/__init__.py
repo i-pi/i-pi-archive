@@ -98,7 +98,10 @@ def read_file(mode, filedesc, **kwargs):
     Returns:
         A dictionary with 'atoms', 'cell' and 'comment'.
     """
-    return _get_io_function(mode, "read")(filedesc=filedesc, **kwargs)
+
+    return importlib.import_module("ipi.utils.io.backends.io_units").\
+        process_units(*_get_io_function(mode, "read")(filedesc=filedesc, **kwargs),
+                      output=kwargs["output"] if "output" in kwargs.keys() else "objects")
 
 
 def read_file_name(filename):
