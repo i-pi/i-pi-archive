@@ -295,8 +295,8 @@ def initialize_test(test_name): # pylint: disable=too-many-locals
     # Copy all the needed files to run the driver and the ipi input into the io
     _dst = os.path.join(test_path, 'io')
     _src_dir = os.path.join(test_path, 'input')
-    print needed_files
-    print driver_command
+    print 'Files that will be used: ', ', '.join(needed_files)
+    print 'Command to run the driver: ', ' | '.join(driver_command)
     for _file in needed_files:
         _src = os.path.join(_src_dir, _file.strip())
         shutil.copy(_src, _dst)
@@ -320,7 +320,6 @@ def initialize_test(test_name): # pylint: disable=too-many-locals
                         cmd[_ww] = address.strip()+str(socket_number)
                         break
                 driver_command[_ii] = ' '.join(cmd)
-                print driver_command
 
         else:
             port = ffsocket.find('./port').text
@@ -373,7 +372,6 @@ def run_computation(test_name, driver_command, ipi_input_file):
                                      stdout=driver_out,
                                      stderr=sbps.STDOUT)
 
-    print ipi_proc.communicate()
     driver_proc.communicate()
     chdir_back()
     return (ipi_proc, driver_proc)
@@ -471,21 +469,27 @@ def filesname_to_compare(test_name, input_file):
 def compare_files(test_name, ltraj, lprop):
     test_dir = os.path.join(TEST_RUN_PATH, test_name, 'io')
     os.chdir(test_dir)
-
+    err = False
 
     for prop in lprop:
         for sprop in prop:
             old_content = np.loadtxt(sprop['old_filename'])
             new_content = np.loadtxt(sprop['new_filename'])
 
-            npt.assert_array_almost_equal(old_content, new_content,
-                                          int(CONFIG['config']['precision']))
+            try:
+                npt.assert_array_almost_equal(old_content, new_content,
+                                              int(CONFIG['config']['precision']))
+            except AssertionError:
+                name = os.path.basename(sprop['old_filename'])
+                print 'Differences in the %s file' % name
+                err = True
 
-    contains_string = re.compile(r'^[0-9\.\-\+\s]*$')
+
     for traj in ltraj:
         for straj in traj:
             new_w_list = []
             old_w_list = []
+            name = os.path.basename(straj['old_filename'])
             with open(straj['old_filename']) as old_content:
                 with open(straj['new_filename']) as new_content:
                     for old_line, new_line in zip(old_content, new_content):
@@ -495,13 +499,21 @@ def compare_files(test_name, ltraj, lprop):
                                 old_w_list.append(float(old_w))
                                 new_w_list.append(float(new_w))
                             except ValueError:
-                                assert old_w == new_w
+                                try:
+                                    assert old_w == new_w
+                                except AssertionError:
+                                    print 'Differences in the %s file' % name
+                                    err = True
 
-            npt.assert_array_almost_equal(np.array(new_w_list), np.array(old_w_list),
-                                          int(CONFIG['config']['precision']))
+                    try:
+                        npt.assert_array_almost_equal(np.array(new_w_list), np.array(old_w_list),
+                                                      int(CONFIG['config']['precision']))
+                    except AssertionError:
+                        print 'Differences in the %s file' % name
+                        err = True
 
-
-
+    if err == True:
+        raise AssertionError
 
     chdir_back()
 
@@ -536,17 +548,20 @@ class InputError(Exception):
 parse_config()
 general_initialization()
 
-@pytest.fixture(params=CONFIG['input_files'])
-def work_around_parm(worker_id, request):
-    return request.param
+@pytest.mark.parametrize("_test", CONFIG['input_files'], ids=[x[0] for x in CONFIG['input_files']])
+def test(_test):
 
-def test_regtest(work_around_parm):
-
-    _test = work_around_parm
-
+    # print '############# Test Name:', _test[0]
+    print
     driver_command, ipi_input_file = initialize_test(_test)
     run_computation(_test[0], driver_command, ipi_input_file)
+
+    # Avoid ipi output
+    devnull = open('/dev/null', 'w')
+    oldstdout_fno = os.dup(sys.stdout.fileno())
+    os.dup2(devnull.fileno(), 1)
     lprop, nprop = filesname_to_compare(_test[0], ipi_input_file)
+    os.dup2(oldstdout_fno, 1)
     compare_files(_test[0], lprop, nprop)
 
 
