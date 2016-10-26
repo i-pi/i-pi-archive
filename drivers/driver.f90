@@ -359,7 +359,7 @@
                   STOP "ENDED"
                ENDIF
 
-               
+               dip=0.0 
                atoms = atoms*0.52917721d0    ! pot_nasa wants angstrom
                call pot_nasa(atoms,forces,pot)
                call dms_nasa(atoms, dip, dummy) ! MR: hoping the result is in e*angstrom
