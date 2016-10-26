@@ -71,6 +71,7 @@ processes       => maximum number of concurrent tests that can be executed.
 ipi_command     => the command to run i-pi.
 initial_address => this is important mostly for inet socket.
 precision       => precision (number of decimal) used when comparing numbers.
+create_original => (yes/no) if yes, will create the ipi output needed for a test
 
 The output in parallel is very minimal. The advice is to test in serial the
 cases that fail in parallel.
@@ -158,7 +159,6 @@ def parse_config():
                 continue
             elif section_rgx.match(line):
                 section = section_rgx.match(line).group(1)
-                # config[section] = None
             elif pair_rgx.match(line):
                 key = pair_rgx.match(line).group(1)
                 value = pair_rgx.match(line).group(2).strip('"\' ')
@@ -187,16 +187,22 @@ def parse_config():
                 raise InputError(field, _old_field)
 
 
+    attach_an_address_to_the_test()
+
+
+    TEST_RUN_PATH = os.path.abspath(CONFIG['config']['test_run_path'])
+    INPUTFILES_PATH = os.path.abspath(CONFIG['config']['inputfiles_path'])
+
+
+def attach_an_address_to_the_test():
+    """ The address will be used to avoid sockets overlap.
+    """
     # Pay attention to avoid the same name/address for different sockets
     filename_list = copy.deepcopy(CONFIG['input_files'])
     initial_address = int(CONFIG['config']['initial_address'])
     for _ii, name in enumerate(filename_list):
         CONFIG['input_files'][_ii] = (name, initial_address)
         initial_address += 1
-
-
-    TEST_RUN_PATH = os.path.abspath(CONFIG['config']['test_run_path'])
-    INPUTFILES_PATH = os.path.abspath(CONFIG['config']['inputfiles_path'])
 
 
 def general_initialization():
@@ -318,10 +324,11 @@ def initialize_test(test_name): # pylint: disable=too-many-locals
         if socket_mode.lower() == 'unix':
             address = ffsocket.find('./address').text # pylint: disable=no-member
             ffsocket.find('./address').text = address+str(socket_number)
-            if os.path.exists(os.path.join('/tmp/', 'ipi_'+address+str(socket_number))):
-                os.remove(os.path.join('/tmp/', 'ipi_'+address+str(socket_number)))
+            if os.path.exists(os.path.join('/tmp/',
+                                           'ipi_'+address+str(socket_number))):
+                os.remove(os.path.join('/tmp/',
+                                       'ipi_'+address+str(socket_number)))
             for _ii, cmd in enumerate(driver_command):
-#                driver_command[_ii].replace(address.strip(), address.strip()+str(socket_number))
                 cmd = driver_command[_ii].split()
                 for _ww in xrange(len(cmd)):
                     if cmd[_ww].strip() == address.strip():
@@ -418,40 +425,47 @@ def filesname_to_compare(test_name, input_file):
     lprop = [] # list of property files
     ltraj = [] # list of trajectory files
     for o in simul.outtemplate:
-        if isinstance(o, CheckpointOutput):   # properties and trajectories are output per system
+        # properties and trajectories are output per system
+        if isinstance(o, CheckpointOutput):
             pass
         elif isinstance(o, PropertyOutput):
             nprop = []
             isys = 0
             for _ in simul.syslist:   # create multiple copies
                 filename = o.filename
-                nprop.append( { "old_filename" : os.path.join(orig_dir, filename),
-                                "new_filename" : os.path.join(test_dir, filename),
-                                "stride": o.stride,
-                                "properties": o.outlist,} )
-                isys+=1
+                nprop.append({"old_filename" : os.path.join(orig_dir, filename),
+                              "new_filename" : os.path.join(test_dir, filename),
+                              "stride": o.stride,
+                              "properties": o.outlist,})
+                isys += 1
             lprop.append(nprop)
 
-        elif isinstance(o, TrajectoryOutput):   # trajectories are more complex, as some have per-bead output
+        # trajectories are more complex, as some have per-bead output
+        elif isinstance(o, TrajectoryOutput):
             if getkey(o.what) in ["positions", "velocities",
                                   "forces", "extras"]:   # multiple beads
                 nbeads = simul.syslist[0].beads.nbeads
-                for b in range(nbeads):
+                for _bi in range(nbeads):
                     ntraj = []
-                    isys=0
+                    isys = 0
                     # zero-padded bead number
-                    padb = ( ("%0" + str(int(1 + np.floor(np.log(nbeads)/np.log(10)))) + "d") % (b) )
+                    padb = (("%0" + str(int(1 +
+                                            np.floor(np.log(nbeads) /
+                                                     np.log(10)))) +
+                             "d") % (_bi))
+
                     for _ in simul.syslist:
-                        if (o.ibead < 0 or o.ibead == b):
+                        if o.ibead < 0 or o.ibead == _bi:
                             if getkey(o.what) == "extras":
                                 filename = o.filename+"_" + padb
                             else:
-                                filename = o.filename+"_" + padb + "." + o.format
-                            ntraj.append({ "old_filename" : os.path.join(orig_dir, filename),
-                                           "format" : o.format,
-                                           "new_filename" : os.path.join(test_dir, filename),
-                                           "stride": o.stride,
-                                           "what": o.what,})
+                                filename = o.filename+"_" + padb + \
+                                           "." + o.format
+                            ntraj.append({"old_filename" : os.path.join(orig_dir, filename),
+                                          "format" : o.format,
+                                          "new_filename" : os.path.join(test_dir, filename),
+                                          "stride": o.stride,
+                                          "what": o.what,})
                         isys += 1
                     if ntraj != []:
                         ltraj.append(ntraj)
@@ -477,6 +491,8 @@ def filesname_to_compare(test_name, input_file):
 
 
 def copy_files_backward(ltraj, lprop):
+    """ Will copy all the ipi output files in the input directory.
+    """
 
     for traj in ltraj:
         for straj in traj:
@@ -489,12 +505,15 @@ def copy_files_backward(ltraj, lprop):
             shutil.copy2(sprop['new_filename'], _dst)
 
 
+def compare_property_files(lprop):
+    """ Comparing property files.
 
-def compare_files(test_name, ltraj, lprop):
-    test_dir = os.path.join(TEST_RUN_PATH, test_name, 'io')
-    os.chdir(test_dir)
+    The files are loaded with np.loadtxt and all the intestation are ignored:
+    only the actual values are compared. Thus, the ipi input must define the
+    same columns in the same order.
+    """
+
     err = False
-
     for prop in lprop:
         for sprop in prop:
             old_content = np.loadtxt(sprop['old_filename'])
@@ -502,13 +521,27 @@ def compare_files(test_name, ltraj, lprop):
 
             try:
                 npt.assert_array_almost_equal(old_content, new_content,
-                                              int(CONFIG['config']['precision']))
+                                              int(CONFIG['config']
+                                                  ['precision']))
             except AssertionError:
                 name = os.path.basename(sprop['old_filename'])
                 print 'Differences in the %s file' % name
                 err = True
 
+    return err
 
+
+def compare_trajectory_files(ltraj):
+    """ Function to compare trajectory files.
+
+    The idea is to store all the numbers in the file in a list and then using
+    numpy to compare the two lists. The numbers are recognized exploiting the
+    float function error when applied on strings.
+
+    The strings are compared directly.
+    """
+
+    err = False
     for traj in ltraj:
         for straj in traj:
             new_w_list = []
@@ -519,8 +552,8 @@ def compare_files(test_name, ltraj, lprop):
                     line_c = 1
                     for old_line, new_line in zip(old_content, new_content):
                         word_c = 1
-                        for old_w, new_w in zip(old_line.split(), new_line.split()):
-                            # if contains_string.match(old_w):
+                        for old_w, new_w in zip(old_line.split(),
+                                                new_line.split()):
                             try:
                                 old_w_list.append(float(old_w))
                                 new_w_list.append(float(new_w))
@@ -534,13 +567,32 @@ def compare_files(test_name, ltraj, lprop):
                         line_c += 1
 
                     try:
-                        npt.assert_array_almost_equal(np.array(new_w_list), np.array(old_w_list),
+                        npt.assert_array_almost_equal(np.array(new_w_list),
+                                                      np.array(old_w_list),
                                                       int(CONFIG['config']['precision']))
                     except AssertionError:
                         print 'Differences in the %s file' % name
                         err = True
 
-    if err == True:
+    return err
+
+
+
+def compare_files(test_name, ltraj, lprop):
+    """ This is the function that compares all the ipi output.
+
+    The name of the files to compare come from ltraj and lprop.
+    """
+
+    test_dir = os.path.join(TEST_RUN_PATH, test_name, 'io')
+    os.chdir(test_dir)
+    err = False
+
+    err = compare_property_files(lprop)
+
+    err = compare_trajectory_files(ltraj)
+
+    if err:
         raise AssertionError
 
     chdir_back()
@@ -579,8 +631,9 @@ general_initialization()
 @pytest.mark.parametrize("_test", CONFIG['input_files'],
                          ids=[x[0] for x in CONFIG['input_files']])
 def test(_test):
+    """ Doing the actual testing.
+    """
 
-    # print '############# Test Name:', _test[0]
     print
     driver_command, ipi_input_file = initialize_test(_test)
     run_computation(_test[0], driver_command, ipi_input_file)
@@ -597,6 +650,9 @@ def test(_test):
 @pytest.mark.parametrize("_test", CONFIG['input_files'],
                          ids=[x[0] for x in CONFIG['input_files']])
 def test_creator(_test):
+    """ Using the pytest features to create the files for regtests.
+    """
+
     print
     driver_command, ipi_input_file = initialize_test(_test)
     run_computation(_test[0], driver_command, ipi_input_file)
