@@ -2,6 +2,9 @@
 # pylint: disable=W0601,W0602,W0603,W0604
 """ Run regression tests for i-PI. Run in parallel.
 
+Warning:
+    * Do not use pytest directly to run this script!!
+
 Todo:
     * Add support for .gzip files.
     * Improve(Implement) the error handling.
@@ -72,11 +75,6 @@ precision       => precision (number of decimal) used when comparing numbers.
 The output in parallel is very minimal. The advice is to test in serial the
 cases that fail in parallel.
 
-To be able to have a kind of debugging output run:
-```
-pytest -s regtests.py
-```
-
 """
 
 import copy
@@ -112,6 +110,7 @@ MANDATORY_FIELDS = [
     'config/processes',
     'config/initial_address',
     'config/precision',
+    'config/create_original',
     'input_files',
 ]
 #######################################
@@ -125,11 +124,17 @@ def main():
     (see the end of this file)
     """
 
-    if CONFIG['config']['processes'] == 1:
-        pytest.main(['-v', os.path.abspath(__file__)])
+    if CONFIG['config']['create_original'].lower() == 'yes':
+        function = 'test_creator'
     else:
-        pytest.main(['-v', '-n', CONFIG['config']['processes'],
-                     os.path.abspath(__file__)])
+        function = 'test'
+
+    if CONFIG['config']['processes'] == 1:
+        pytest.main(['-v', '-s', '--tb=no',
+                     os.path.abspath(__file__)+'::'+function])
+    else:
+        pytest.main(['-v', '--tb=no', '-n', CONFIG['config']['processes'],
+                     os.path.abspath(__file__)+'::'+function])
 
 def parse_config():
     """ The config file contains the names of the input files and some options.
@@ -330,7 +335,6 @@ def initialize_test(test_name): # pylint: disable=too-many-locals
             for cmd in driver_command:
                 cmd.replace(port, str(socket_number))
 
-#    indent(xml)
     xml.write(_input_xml)
 
     return driver_command, os.path.basename(xml_file_path)
@@ -352,6 +356,7 @@ def run_computation(test_name, driver_command, ipi_input_file):
     driver_out_path = os.path.join(_dir, 'driver_output.out')
     ipi_input_path = os.path.join(_dir, ipi_input_file)
     os.chdir(_dir)
+
 
     # Run the i-pi code
     ipi_command = shlex.split(CONFIG['config']['ipi_command'] +\
@@ -452,21 +457,37 @@ def filesname_to_compare(test_name, input_file):
                         ltraj.append(ntraj)
 
             else:
-                ntraj=[]
+                ntraj = []
                 isys = 0
                 for _ in simul.syslist:   # create multiple copies
-                    filename=o.filename
-                    filename=filename+"."+o.format
-                    ntraj.append( { "old_filename" : os.path.join(orig_dir, filename),
-                                    "new_filename" : os.path.join(test_dir, filename),
-                                    "format" : o.format,
-                                    "stride": o.stride,} )
+                    filename = o.filename
+                    filename = filename+"."+o.format
+                    ntraj.append({"old_filename" : os.path.join(orig_dir,
+                                                                filename),
+                                  "new_filename" : os.path.join(test_dir,
+                                                                filename),
+                                  "format" : o.format,
+                                  "stride": o.stride,})
 
-                    isys+=1
+                    isys += 1
                 ltraj.append(ntraj)
 
     chdir_back()
     return ltraj, lprop
+
+
+def copy_files_backward(ltraj, lprop):
+
+    for traj in ltraj:
+        for straj in traj:
+            _dst = os.path.dirname(straj['old_filename'])
+            shutil.copy2(straj['new_filename'], _dst)
+
+    for prop in lprop:
+        for sprop in prop:
+            _dst = os.path.dirname(sprop['old_filename'])
+            shutil.copy2(sprop['new_filename'], _dst)
+
 
 
 def compare_files(test_name, ltraj, lprop):
@@ -573,6 +594,21 @@ def test(_test):
     compare_files(_test[0], lprop, nprop)
 
 
+@pytest.mark.parametrize("_test", CONFIG['input_files'],
+                         ids=[x[0] for x in CONFIG['input_files']])
+def test_creator(_test):
+    print
+    driver_command, ipi_input_file = initialize_test(_test)
+    run_computation(_test[0], driver_command, ipi_input_file)
+
+
+    # Avoid ipi output
+    devnull = open('/dev/null', 'w')
+    oldstdout_fno = os.dup(sys.stdout.fileno())
+    os.dup2(devnull.fileno(), 1)
+    lprop, ltraj = filesname_to_compare(_test[0], ipi_input_file)
+    os.dup2(oldstdout_fno, 1)
+    copy_files_backward(ltraj, lprop)
 
 
 if __name__ == '__main__':
