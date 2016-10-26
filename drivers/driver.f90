@@ -57,7 +57,7 @@
       INTEGER nat
       DOUBLE PRECISION pot, dpot
       DOUBLE PRECISION, ALLOCATABLE :: atoms(:,:), forces(:,:), datoms(:,:)
-      DOUBLE PRECISION cell_h(3,3), cell_ih(3,3), virial(3,3), mtxbuf(9), dip(3)
+      DOUBLE PRECISION cell_h(3,3), cell_ih(3,3), virial(3,3), mtxbuf(9), dip(3), charges(3), dummy(3,3,3)
       DOUBLE PRECISION volume
       DOUBLE PRECISION, PARAMETER :: fddx = 1.0d-5
 
@@ -362,6 +362,7 @@
                
                atoms = atoms*0.52917721d0    ! pot_nasa wants angstrom
                call pot_nasa(atoms,forces,pot)
+               call dms_nasa(atoms, dip, dummy) ! MR: hoping the result is in e*angstrom
                pot = pot*0.0015946679     ! pot_nasa gives kcal/mol
                forces = forces * (-0.00084329756) ! pot_nasa gives V in kcal/mol/angstrom
 
@@ -414,7 +415,7 @@
             CALL writebuffer(socket,nat)  ! Writing the number of atoms
             CALL writebuffer(socket,msgbuffer,3*nat) ! Writing the forces
             CALL writebuffer(socket,reshape(virial,(/9/)),9)  ! Writing the virial tensor, NOT divided by the volume
-            IF (vstyle==5 .or. vstyle==6) THEN ! returns the dipole 
+            IF (vstyle==5 .or. vstyle==6 .or. vstyle==8) THEN ! returns the dipole 
                initbuffer = " "
                WRITE(initbuffer,*) dip(1:3)
                cbuf = LEN_TRIM(initbuffer)
