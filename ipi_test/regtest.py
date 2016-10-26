@@ -69,6 +69,9 @@ ipi_command     => the command to run i-pi.
 initial_address => this is important mostly for inet socket.
 precision       => precision (number of decimal) used when comparing numbers.
 
+The output in parallel is very minimal. The advice is to test in serial the
+cases that fail in parallel.
+
 To be able to have a kind of debugging output run:
 ```
 pytest -s regtests.py
@@ -409,14 +412,13 @@ def filesname_to_compare(test_name, input_file):
     # reconstructs the list of the property and trajectory files
     lprop = [] # list of property files
     ltraj = [] # list of trajectory files
-    nsys = len(simul.syslist)
     for o in simul.outtemplate:
         if isinstance(o, CheckpointOutput):   # properties and trajectories are output per system
             pass
         elif isinstance(o, PropertyOutput):
             nprop = []
             isys = 0
-            for s in simul.syslist:   # create multiple copies
+            for _ in simul.syslist:   # create multiple copies
                 filename = o.filename
                 nprop.append( { "old_filename" : os.path.join(orig_dir, filename),
                                 "new_filename" : os.path.join(test_dir, filename),
@@ -426,14 +428,15 @@ def filesname_to_compare(test_name, input_file):
             lprop.append(nprop)
 
         elif isinstance(o, TrajectoryOutput):   # trajectories are more complex, as some have per-bead output
-            if getkey(o.what) in [ "positions", "velocities", "forces", "extras" ]:   # multiple beads
+            if getkey(o.what) in ["positions", "velocities",
+                                  "forces", "extras"]:   # multiple beads
                 nbeads = simul.syslist[0].beads.nbeads
                 for b in range(nbeads):
                     ntraj = []
                     isys=0
                     # zero-padded bead number
                     padb = ( ("%0" + str(int(1 + np.floor(np.log(nbeads)/np.log(10)))) + "d") % (b) )
-                    for s in simul.syslist:
+                    for _ in simul.syslist:
                         if (o.ibead < 0 or o.ibead == b):
                             if getkey(o.what) == "extras":
                                 filename = o.filename+"_" + padb
@@ -451,7 +454,7 @@ def filesname_to_compare(test_name, input_file):
             else:
                 ntraj=[]
                 isys = 0
-                for s in simul.syslist:   # create multiple copies
+                for _ in simul.syslist:   # create multiple copies
                     filename=o.filename
                     filename=filename+"."+o.format
                     ntraj.append( { "old_filename" : os.path.join(orig_dir, filename),
@@ -492,7 +495,9 @@ def compare_files(test_name, ltraj, lprop):
             name = os.path.basename(straj['old_filename'])
             with open(straj['old_filename']) as old_content:
                 with open(straj['new_filename']) as new_content:
+                    line_c = 1
                     for old_line, new_line in zip(old_content, new_content):
+                        word_c = 1
                         for old_w, new_w in zip(old_line.split(), new_line.split()):
                             # if contains_string.match(old_w):
                             try:
@@ -502,8 +507,10 @@ def compare_files(test_name, ltraj, lprop):
                                 try:
                                     assert old_w == new_w
                                 except AssertionError:
-                                    print 'Differences in the %s file' % name
+                                    print 'Differences at line %d word %d of file  %s' % (line_c, word_c, name)
                                     err = True
+                            word_c += 1
+                        line_c += 1
 
                     try:
                         npt.assert_array_almost_equal(np.array(new_w_list), np.array(old_w_list),
@@ -548,7 +555,8 @@ class InputError(Exception):
 parse_config()
 general_initialization()
 
-@pytest.mark.parametrize("_test", CONFIG['input_files'], ids=[x[0] for x in CONFIG['input_files']])
+@pytest.mark.parametrize("_test", CONFIG['input_files'],
+                         ids=[x[0] for x in CONFIG['input_files']])
 def test(_test):
 
     # print '############# Test Name:', _test[0]
