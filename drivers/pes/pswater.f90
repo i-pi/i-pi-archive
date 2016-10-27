@@ -701,7 +701,6 @@ dp2dr2=dp2dr2*bfac
    dp2dr2 = dp2dr2 + dms_param1
    dp1dcabc = dp1dcabc   - dms_param3/sinth
    dp2dcabc = dp2dcabc   - dms_param3/sinth
-
 !..........
 
 f1q1r13=(dp1dr1-(dp1dcabc*costh/dROH1))/dROH1

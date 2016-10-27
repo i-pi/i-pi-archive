@@ -28,7 +28,7 @@
       <temperature units="kelvin">300</temperature>
     </ensemble>
     <motion mode='dynamics'>
-      <fixcom>False</fixcom>
+      <fixcom>True</fixcom>
       <dynamics mode='nvt'>
 	<timestep units="femtosecond">0.5</timestep>
 	<thermostat mode='langevin'>
