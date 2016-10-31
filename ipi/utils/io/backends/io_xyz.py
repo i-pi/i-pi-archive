@@ -73,9 +73,9 @@ def print_xyz(atoms, cell, filedesc=sys.stdout, title=""):
 # TODO: These REGEX would need some revisions
 #+for now ensure the right number of "argument" when reading the array
 
-cell_re = [re.compile('# CELL[\(\[\{]abcABC[\)\]\}]: ([-0-9\.Ee ]*)\s*'),
-           re.compile('# CELL[\(\[\{]GENH[\)\]\}]: ([-0-9\.?Ee ]*)\s*'),
-           re.compile('# CELL[\(\[\{]H[\)\]\}]: ([-0-9\.?Ee ]*)\s*')]
+cell_re = [re.compile('CELL[\(\[\{]abcABC[\)\]\}]: ([-0-9\.Ee ]*)\s*'),
+           re.compile('CELL[\(\[\{]GENH[\)\]\}]: ([-0-9\.?Ee ]*)\s*'),
+           re.compile('CELL[\(\[\{]H[\)\]\}]: ([-0-9\.?Ee ]*)\s*')]
 
 def read_xyz(filedesc, **kwargs):
     """Reads an XYZ-style file with i-PI style comments and returns data in raw format for further units transformation
@@ -119,7 +119,7 @@ def read_xyz(filedesc, **kwargs):
         h = mt.abc2h(*mt.genh2abc(genh))
         usegenh = True
     else:                     # defaults to unit box
-        h = mt.abc2h(1.0, 1.0, 1.0, np.pi/2.0, np.pi/2.0, np.pi/2.0)
+        h = np.array([[-1.0, 0.0, 0.0],[0.0, -1.0, 0.0],[0.0, 0.0, -1.0]])
     cell = h
 
     qatoms = np.zeros(3*natoms)

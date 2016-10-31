@@ -13,15 +13,15 @@ from ipi.utils.units import unit_to_internal
 from ipi.engine.properties import Trajectories as Traj
 
 # Regular expressions initialization for read_xyz function
-cell_unit_re = re.compile(r'\s\{[a-z]*\}\s')             # cell unit pattern
-traj_dict = Traj().traj_dict                            # trajectory dictionary
+cell_unit_re = re.compile(r'cell\{([a-z]*)\}')             # cell unit pattern
+traj_dict = Traj().traj_dict                             # trajectory dictionary
 traj_re = [re.compile('%s%s' % (key, r'\{[a-z]*\}'))
            for key in traj_dict.keys()]  # trajectory patterns
 
 def process_units(comment, cell, qatoms, names, masses, output='objects'):
     """ Converts the data in the file according to the units written in the ipi format.
     """
-
+    import pdb; pdb.set_trace()
     # Extracting trajectory units
     family, unit = 'undefined', ''
     is_comment_useful = filter(None, [key.search(comment.strip())
@@ -34,12 +34,11 @@ def process_units(comment, cell, qatoms, names, masses, output='objects'):
     cell_unit = ''
     tmp = cell_unit_re.search(comment)
     if tmp is not None:
-        cell_unit = tmp.group()[2:-2]
+        cell_unit = tmp.group(1)
 
     # Units transformation
     cell *= unit_to_internal('length', cell_unit, 1) # cell units transformation
     qatoms *= unit_to_internal(family, unit, 1) # units transformation
-
     if output == 'objects':
 
         cell = Cell(cell)
