@@ -321,7 +321,6 @@ class Initializer(dobject):
             else:
                rh =  init_file(v.mode,v.value)[1].h
 
-
             if fcell :
                warning("Overwriting previous cell parameters", verbosity.low)
 
@@ -391,9 +390,11 @@ class Initializer(dobject):
             rq = init_vector(v, self.nbeads)
 
             if len(v.units) > 0 and v.units != 'atomic_unit':
-               warning("If the units of position are already specified into the"
-                       " pdb or xyz file, the conversion will be applied twice "
-                       "with unpredictable results!!", verbosity.low)
+               warning("If the position units are already specified into the pdb "
+                       "or xyz file, the conversion will be applied twice with "
+                       "unpredictable results!!\nThis attribute is also "
+                       "deprecated and will be removed in the following "
+                       "version.", verbosity.low)
 
             rq *= unit_to_internal("length",v.units,1.0)
             nbeads, natoms = rq.shape
