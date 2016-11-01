@@ -9,12 +9,12 @@ pressure_cv{megapascal}] </properties>
    <ffsocket name="lmp" mode="unix" pbc="true">
       <address> driver </address>
    </ffsocket>
-   <ffeinstein name="einstein">
+   <ffdebye name="debye">
       <v_reference units="electronvolt"> -2.53156797e+01 </v_reference>
       <hessian shape='(480,480)' mode='file'> HESSIAN </hessian>
    <x_reference units="angstrom" mode='file'> REF   </x_reference>
       <apply_shift> True </apply_shift>
-   </ffeinstein>
+   </ffdebye>
  <system>
    <initialize nbeads='1'> 
       <file mode='xyz' units="angstrom">  init.xyz </file>
@@ -22,7 +22,7 @@ pressure_cv{megapascal}] </properties>
    </initialize>
    <forces>
    <force weight="0.99999"> lmp </force>
-   <force weight="0.00001"> einstein </force> 
+   <force weight="0.00001"> debye </force> 
    </forces>
    <motion mode='dynamics'>
      <dynamics mode='nvt'>
