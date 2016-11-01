@@ -19,7 +19,7 @@
   <system>
     <initialize nbeads='1'> 
       <file mode='xyz' units='angstrom'> h2o.xyz </file>
-      <cell mode="abc"> [ 1.88972600e+01, 1.88972600e+01, 1.88972600e+01 ] </cell>
+      <cell mode="abc" units="angstrom"> [ 10.0, 10.0, 10.0 ] </cell>
       <!--     <gle mode='chk'> restart.chk </gle> -->
       <velocities mode="thermal" units="kelvin"> 300 </velocities> 
     </initialize>

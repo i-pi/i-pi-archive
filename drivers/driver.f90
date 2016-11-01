@@ -55,9 +55,9 @@
       ! PARAMETERS OF THE SYSTEM (CELL, ATOM POSITIONS, ...)
       DOUBLE PRECISION sigma, eps, rc, rn, ks ! potential parameters
       INTEGER nat
-      DOUBLE PRECISION pot, dpot
+      DOUBLE PRECISION pot, dpot, dist
       DOUBLE PRECISION, ALLOCATABLE :: atoms(:,:), forces(:,:), datoms(:,:)
-      DOUBLE PRECISION cell_h(3,3), cell_ih(3,3), virial(3,3), mtxbuf(9), dip(3), charges(3), dummy(3,3,3)
+      DOUBLE PRECISION cell_h(3,3), cell_ih(3,3), virial(3,3), mtxbuf(9), dip(3), charges(3), dummy(3,3,3), vecdiff(3), center(3)
       DOUBLE PRECISION volume
       DOUBLE PRECISION, PARAMETER :: fddx = 1.0d-5
 
@@ -360,6 +360,20 @@
                ENDIF
 
                dip=0.0 
+               vecdiff=0.0
+               center(:)=0.5*(cell_h(1,:)+cell_h(2,:)+cell_h(3,:))
+               ! lets fold the atom positions back to center in case the water travelled far away
+               ! OH_1
+               call vector_separation(cell_h, cell_ih, atoms(1,:), atoms(2,:), vecdiff, dist)
+               atoms(2,:)=center(:)-vecdiff(:)
+               ! OH_2
+               call vector_separation(cell_h, cell_ih, atoms(1,:), atoms(3,:), vecdiff, dist)
+               atoms(3,:)=center(:)-vecdiff(:)
+               ! O in center
+               atoms(1,:)=center(:)
+
+            
+
                atoms = atoms*0.52917721d0    ! pot_nasa wants angstrom
                call pot_nasa(atoms,forces,pot)
                call dms_nasa(atoms, charges, dummy) ! MR: trying to print out the right charges
