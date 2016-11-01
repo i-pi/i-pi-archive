@@ -13,12 +13,11 @@
       <initialize nbeads='4'>
          <file mode='xyz'> ice.xyz </file>
          <velocities mode='thermal' units='kelvin'> 200 </velocities>
-         <cell>  [   25.6156, 0, 0, 0, 29.5783, 0, 0, 0, 27.8867 ]  </cell>
-      </initialize>   
+      </initialize>
       <forces><force name='lammps' forcefield='lammps' >  </force></forces>
       <ensemble>
          <temperature units='kelvin'> 200 </temperature>
-         <pressure units='megapascal'> 10 </pressure> 
+         <pressure units='megapascal'> 10 </pressure>
       </ensemble>
       <motion mode='dynamics'>
 	<dynamics mode='npt'>

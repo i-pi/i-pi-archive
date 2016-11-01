@@ -1,4 +1,4 @@
-TITLE             Traj: x_centroid{angstrom} Step:         163  Bead:       0 
+TITLE cell{angstrom}   Traj: position{angstrom} Step:         163  Bead:       0 
 CRYST1    7.187    7.187    7.187  90.00  90.00  90.00 P 1           1
 ATOM      1    O   1     1       2.016  -3.772   3.260  0.00  0.00             0
 ATOM      2    H   1     1       2.196  -3.152   4.057  0.00  0.00             0

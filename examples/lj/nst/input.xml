@@ -12,6 +12,8 @@
    <system>
       <initialize nbeads='1'>
          <file mode='pdb'> start.pdb </file>
+         <!-- The following cell will be actually used despite the pdb
+         CRYST1 value.-->
          <cell mode='manual'> [ 56, 28, 28, 0, 48.497, 16.1658, 0,0, 45.724] </cell>
          <velocities mode='thermal' units='kelvin'> 20 </velocities>
       </initialize>
