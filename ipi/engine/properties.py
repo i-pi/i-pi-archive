@@ -1960,7 +1960,7 @@ class Trajectories(dobject):
       fcell = Cell()
       fcell.h = self.system.cell.h*unit_to_user("length", cell_units, 1.0)
 
-      io.print_file(format, fatom, fcell, stream, title=("{%s}  Traj: %s Step:  %10d  Bead:   %5d " % (cell_units, what, self.system.simul.step+1, b) ) )
+      io.print_file(format, fatom, fcell, stream, title=("cell{%s}  Traj: %s Step:  %10d  Bead:   %5d " % (cell_units, what, self.system.simul.step+1, b) ) )
       if flush :
          stream.flush()
          os.fsync(stream)

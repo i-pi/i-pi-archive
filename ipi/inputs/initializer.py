@@ -367,7 +367,7 @@ class InputInitializer(Input):
                rm.units = ""
                initlist.append( ( "masses",   rm ) )
                initlist.append( ( "labels",   v.fetch(initclass=ei.InitIndexed) ) )
-            if mode == "pdb" or mode == "chk":
+#            if mode == "pdb" or mode == "chk":
                initlist.append( ( "cell", v.fetch(initclass=ei.InitIndexed) ) )
             if mode == "chk":
                rm = v.fetch(initclass=ei.InitIndexed)

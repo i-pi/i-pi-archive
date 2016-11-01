@@ -1,3 +1,4 @@
+# pylint: disable=bad-indentation
 """Contains the classes that are used to initialize data in the simulation.
 
 These classes can either be used to restart a simulation with some different
@@ -308,14 +309,29 @@ class Initializer(dobject):
          info(" # Initializer (stage 1) parsing " + str(k) + " object.", verbosity.high)
 
          if k == "cell":
-            if fcell :
-               warning("Overwriting previous cell parameters", verbosity.medium)
             if v.mode == "manual":
                 rh = v.value.reshape((3,3))
             elif v.mode == "chk":
                rh = init_chk(v.value)[1].h
+            elif init_file(v.mode,v.value)[1].h.trace() == -3:
+               # In case the file do not contain any
+               #+ cell parameters, the diagonal elements of the cell will be
+               #+set to -1 from the io_units and nothing is read here.
+               continue
             else:
-               rh = init_file(v.mode,v.value)[1].h
+               rh =  init_file(v.mode,v.value)[1].h
+
+            if fcell :
+               warning("Overwriting previous cell parameters", verbosity.low)
+
+
+            if len(v.units) > 0 and v.units != 'atomic_unit':
+               warning("If the cell units are already specified into the pdb "
+                       "or xyz file, the conversion will be applied twice with "
+                       "unpredictable results!!\nThis attribute is also "
+                       "deprecated and will be removed in the following "
+                       "version.", verbosity.low)
+
             rh *= unit_to_internal("length",v.units,1.0)
 
             simul.cell.h = rh
@@ -372,6 +388,14 @@ class Initializer(dobject):
                warning("Overwriting previous atomic positions", verbosity.medium)
             # read the atomic positions as a vector
             rq = init_vector(v, self.nbeads)
+
+            if len(v.units) > 0 and v.units != 'atomic_unit':
+               warning("If the position units are already specified into the pdb "
+                       "or xyz file, the conversion will be applied twice with "
+                       "unpredictable results!!\nThis attribute is also "
+                       "deprecated and will be removed in the following "
+                       "version.", verbosity.low)
+
             rq *= unit_to_internal("length",v.units,1.0)
             nbeads, natoms = rq.shape
             natoms /= 3
