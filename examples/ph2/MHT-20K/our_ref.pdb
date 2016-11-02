@@ -1,3 +1,4 @@
+TITLE cell{atomic_units} position{atomic_units}
 CRYST1   37.700   37.700   37.700  90.00  90.00  90.00 P 1          1
 ATOM      1   H2   1     1       0.000   0.000   0.000  0.00  0.00            0
 ATOM      2   H2   1     1       5.380   5.380   0.000  0.00  0.00            0

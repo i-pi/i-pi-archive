@@ -293,7 +293,7 @@ class InputInitializer(Input):
            "masses"     : (InputInitMasses,     { "help" : "Initializes atomic masses. Will take a 'units' attribute of dimension 'mass'" }),
            "labels"     : (InputInitLabels,     { "help" : "Initializes atomic labels" }),
            "cell"       : (InputInitCell,       { "help" : "Initializes the configuration of the cell. Will take a 'units' attribute of dimension 'length'" }),
-           "file"       : (InputInitFile,       { "help" : "Initializes everything possible for the given mode. Will take a 'units' attribute of dimension 'length'. The unit conversion will only be applied to the positions and cell parameters." }),
+           "file"       : (InputInitFile,       { "help" : "Initializes everything possible for the given mode. Will take a 'units' attribute of dimension 'length'. The unit conversion will only be applied to the positions and cell parameters. The 'units' attribute is deprecated. Append a 'quantity{units}' to the comment line of the xyz or to the 'TITLE' tag of a pdb." }),
            "gle"        : (InputInitThermo,     { "help" : "Initializes the additional momenta in a GLE thermostat." })
             }
 
