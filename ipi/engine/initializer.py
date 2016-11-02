@@ -325,12 +325,12 @@ class Initializer(dobject):
                warning("Overwriting previous cell parameters", verbosity.low)
 
 
-            if len(v.units) > 0 and v.units != 'atomic_unit':
+            if v.mode=="file" and len(v.units) > 0 and v.units != 'atomic_unit':
                warning("If the cell units are already specified into the pdb "
                        "or xyz file, the conversion will be applied twice with "
                        "unpredictable results!!\nThis attribute is also "
                        "deprecated and will be removed in the following "
-                       "version.", verbosity.low)
+                       "versions.", verbosity.low)
 
             rh *= unit_to_internal("length",v.units,1.0)
 
@@ -389,12 +389,12 @@ class Initializer(dobject):
             # read the atomic positions as a vector
             rq = init_vector(v, self.nbeads)
 
-            if len(v.units) > 0 and v.units != 'atomic_unit':
+            if v.mode=="file" and len(v.units) > 0 and v.units != 'atomic_unit':
                warning("If the position units are already specified into the pdb "
                        "or xyz file, the conversion will be applied twice with "
                        "unpredictable results!!\nThis attribute is also "
                        "deprecated and will be removed in the following "
-                       "version.", verbosity.low)
+                       "versions.", verbosity.low)
 
             rq *= unit_to_internal("length",v.units,1.0)
             nbeads, natoms = rq.shape
