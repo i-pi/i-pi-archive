@@ -70,12 +70,9 @@ def print_xyz(atoms, cell, filedesc=sys.stdout, title=""):
 
 
 # Cell type patterns
-# TODO: These REGEX would need some revisions
-#+for now ensure the right number of "argument" when reading the array
-
-cell_re = [re.compile('CELL[\(\[\{]abcABC[\)\]\}]: ([-0-9\.Ee ]*)\s*'),
-           re.compile('CELL[\(\[\{]GENH[\)\]\}]: ([-0-9\.?Ee ]*)\s*'),
-           re.compile('CELL[\(\[\{]H[\)\]\}]: ([-0-9\.?Ee ]*)\s*')]
+cell_re = [re.compile('CELL[\(\[\{]abcABC[\)\]\}]: ([-+0-9\.Ee ]*)\s*'),
+           re.compile('CELL[\(\[\{]GENH[\)\]\}]: ([-+0-9\.?Ee ]*)\s*'),
+           re.compile('CELL[\(\[\{]H[\)\]\}]: ([-+0-9\.?Ee ]*)\s*')]
 
 def read_xyz(filedesc, **kwargs):
     """Reads an XYZ-style file with i-PI style comments and returns data in raw format for further units transformation
