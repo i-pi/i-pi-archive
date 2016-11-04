@@ -1,7 +1,8 @@
 #!/usr/bin/env python2
 
 import argparse
-import xml.etree.ElementTree as etree
+from glob import glob
+import multiprocessing
 import os
 import Queue
 import re
@@ -9,8 +10,9 @@ import shutil
 import shlex
 import subprocess as sbps
 import sys
-import time
 import threading
+import time
+import xml.etree.ElementTree as etree
 
 import numpy as np
 import numpy.testing as npt
@@ -73,12 +75,14 @@ def main():
             except Queue.Empty:
                 pass
             else:
+                running_test[-1].generate_output = True
                 running_test[-1].start()
 
         for _ii, thr in enumerate(running_test):
             thr.join(0.5)
             if not thr.is_alive():
                 thr = thr.copy()
+                thr.generate_output = False
                 QUEUE_COM.put(thr)
                 QUEUE_ALL.task_done()
                 del running_test[_ii]
@@ -90,6 +94,8 @@ def main():
         else:
             if _parser()['create_reference']:
                 thr.copy_reference = True
+            else:
+                thr.compare_output = True
             thr.start()
             thr.join(0.5)
             if thr.is_alive():
@@ -231,11 +237,13 @@ def _file_is_test(path_to_test):
     return len([x.group(1) for x in DRIVER_COMMAND_RGX.finditer(_text)]) > 0
 
 
+# class Test(multiprocessing.Process):
 class Test(threading.Thread):
 # class Test(object):
 
     def __init__(self, *args, **kwds):
         threading.Thread.__init__(self)
+        # multiprocessing.Process.__init__(self)
 
         self.save_args = kwds
 
@@ -252,7 +260,7 @@ class Test(threading.Thread):
         self.io_dir = None
         self._test_status = 'PASSED'
 
-        self.generate_output = True
+        self.generate_output = False
         self.compare_output = False
         self.copy_reference = False
 
@@ -320,6 +328,7 @@ class Test(threading.Thread):
         self.io_dir = os.path.join(self.run_path, 'io')
         self.input_dir = os.path.join(self.run_path, 'input')
         create_dir(self.io_dir, ignore=True)
+        create_dir(self.input_dir, ignore=True)
 
         # Retrieve the command to run the driver and the needed files
         with open(self.test_path) as _buffer:
@@ -333,7 +342,9 @@ class Test(threading.Thread):
             needed_files += [x.strip() for x in _xx.split(',')]
 
         # Copy all the reference files to the 'input' folder
-        shutil.copytree(os.path.dirname(self.test_path), self.input_dir)
+        for _xx in glob(os.path.join(self.ref_path, '*')):
+            shutil.copy2(_xx, self.input_dir)
+        # shutil.copytree(os.path.dirname(self.test_path), self.input_dir)
 
         # Copy all only the needed files to the 'io' folder
         for _buffer in needed_files:
@@ -386,16 +397,17 @@ class Test(threading.Thread):
         if self.generate_output:
             self.init_env()
             self._run_ipi()
-            self.generate_output = False
-            self.compare_output = True
         elif self.copy_reference:
+            # Change to the io directory...
+            os.chdir(self.io_dir)
             self.create_reference()
-            self.compare_output = False
-            self.generate_output = False
+            self.print_report()
         elif self.compare_output:
+            # Change to the io directory...
+            os.chdir(self.io_dir)
             self._compare()
             self.print_report()
-            self.compare_output = False
+
 
 
     def _run_ipi(self):
@@ -411,6 +423,7 @@ class Test(threading.Thread):
         ipi_command = shlex.split(ipi_command +\
                                   ' ' + self.test_path)
         with open(os.path.join(self.io_dir, 'ipi_output.out'), 'w') as ipi_out:
+            ipi_out.write('*REGTEST* IPI COMMAND: %s\n' % ' '.join(ipi_command))
             try:
                 ipi_proc = sbps.Popen(ipi_command,
                                       bufsize=0,
@@ -429,6 +442,7 @@ class Test(threading.Thread):
         for cmd in self.driver_command:
             cmd = shlex.split(cmd)
             with open(driver_out_path, 'w') as driver_out:
+                driver_out.write('*REGTEST* DRIVER COMMAND: %s\n' % ' '.join(cmd))
                 try:
                     driver_prcs.append(sbps.Popen(cmd,
                                                   bufsize=0,
@@ -495,6 +509,8 @@ class Test(threading.Thread):
                 self.msg += 'Error while copying the new reference!!'
             else:
                 self.test_status = 'COPIED'
+        else:
+            self.msg += 'Errors occured: using this run as reference is not safe!\n'
 
 
 
@@ -517,6 +533,10 @@ class Test(threading.Thread):
             lprop
             nprop
         """
+        # Avoid to print i-pi output
+        devnull = open('/dev/null', 'w')
+        oldstdout_fno = os.dup(sys.stdout.fileno())
+        os.dup2(devnull.fileno(), 1)
 
         # opens & parses the input file
         ifile = open(self.test_path, "r")
@@ -593,6 +613,7 @@ class Test(threading.Thread):
                         isys += 1
                     ltraj.append(ntraj)
 
+        os.dup2(oldstdout_fno, 1)
         return ltraj, lprop
 
 
@@ -702,7 +723,6 @@ class Test(threading.Thread):
 
         The name of the files to compare come from ltraj and lprop.
         """
-
         ltraj, lprop =  self._get_filesname()
 
         self.compare_property_files(lprop)
