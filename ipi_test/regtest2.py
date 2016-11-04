@@ -52,48 +52,52 @@ def main():
     if len(tests_list) == 0:
         tests_list = ['']
 
+
     # Retrieve the test list and build the QUEUE_ALL
     test_list = _build_test_index(root_test_folder, tests_list)
     index = _parser()['index']
     for test in test_list:
         test_obj = Test(index = index, name=test[0], path=test[1], root_run=root_run)
-        test_obj.run()
-        # test_obj.create_reference()
-        test_obj.run()
-        test_obj.print_report()
-    #     QUEUE_ALL.put(test_obj)
-    #     index += 10
-    # running_test = []
-    # while True:
-    #     if len(running_test) < _parser()['nproc']:
-    #         try:
-    #             running_test.append(QUEUE_ALL.get_nowait())
-    #         except Queue.Empty:
-    #             pass
-    #         else:
-    #             running_test[-1].start()
+        # test_obj.run()
+        # # test_obj.create_reference()
+        # test_obj.run()
+        # test_obj.print_report()
+        QUEUE_ALL.put(test_obj)
+        index += 10
 
-    #     for _ii, thr in enumerate(running_test):
-    #         thr.join(0.5)
-    #         if thr.is_alive():
-    #             QUEUE_COM.put(thr)
-    #             QUEUE_ALL.task_done()
-    #             del running_test[_ii]
+    running_test = []
+    while True:
+        if len(running_test) < _parser()['nproc']:
+            try:
+                running_test.append(QUEUE_ALL.get_nowait())
+            except Queue.Empty:
+                pass
+            else:
+                running_test[-1].start()
 
-    #     if not _parser()['create_reference']:
-    #         try:
-    #             thr_comparing = QUEUE_COM.get_nowait()
-    #         except Queue.Empty:
-    #             pass
-    #         else:
-    #             thr_comparing.start()
-    #             thr_comparing.join(0.5)
-    #             if thr_comparing.is_alive():
-    #                 thr_comparing.print_report()
-    #                 QUEUE_COM.task_done()
+        for _ii, thr in enumerate(running_test):
+            thr.join(0.5)
+            if not thr.is_alive():
+                thr = thr.copy()
+                QUEUE_COM.put(thr)
+                QUEUE_ALL.task_done()
+                del running_test[_ii]
 
-    #     if len(running_test) == 0 and QUEUE_ALL.empty() and QUEUE_COM.empty():
-    #         break
+        try:
+            thr = QUEUE_COM.get_nowait()
+        except Queue.Empty:
+            pass
+        else:
+            if _parser()['create_reference']:
+                thr.copy_reference = True
+            thr.start()
+            thr.join(0.5)
+            if thr.is_alive():
+                thr.print_report()
+                QUEUE_COM.task_done()
+
+        if len(running_test) == 0 and QUEUE_ALL.empty() and QUEUE_COM.empty():
+            break
 
 
 
@@ -227,21 +231,18 @@ def _file_is_test(path_to_test):
     return len([x.group(1) for x in DRIVER_COMMAND_RGX.finditer(_text)]) > 0
 
 
-#class Test(threading.Thread):
-class Test(object):
+class Test(threading.Thread):
+# class Test(object):
 
     def __init__(self, *args, **kwds):
-#        threading.Thread.__init__(self)
+        threading.Thread.__init__(self)
+
+        self.save_args = kwds
 
         self.index = kwds['index']
         self.test_path = kwds['path']
         self.name = kwds['name']
         self.run_path = os.path.abspath(kwds['root_run'])
-
-        del kwds['index']
-        del kwds['path']
-        del kwds['name']
-        del kwds['root_run']
 
         self.ref_path = os.path.dirname(self.test_path)
         self.filename = os.path.basename(self.test_path)
@@ -253,6 +254,20 @@ class Test(object):
 
         self.generate_output = True
         self.compare_output = False
+        self.copy_reference = False
+
+    def copy(self):
+        _copy = Test(**self.save_args)
+        _copy.ref_path = self.ref_path
+        _copy.filename = self.filename
+        _copy.msg = self.msg
+        _copy.driver_command = self.driver_command
+        _copy.input_dir = self.input_dir
+        _copy.io_dir = self.io_dir
+        _copy.test_status = self.test_status
+        _copy.compare_output = self.compare_output
+        _copy.generate_output = self.generate_output
+        return _copy
 
     @property
     def test_status(self):
@@ -267,6 +282,7 @@ class Test(object):
     def test_status(self, status):
         status_priority = {'ERROR': 10,
                            'FAILED': 5,
+                           'COPIED': 2,
                            'PASSED': 1}
 
         if status_priority[status] > status_priority[self._test_status]:
@@ -372,8 +388,13 @@ class Test(object):
             self._run_ipi()
             self.generate_output = False
             self.compare_output = True
+        elif self.copy_reference:
+            self.create_reference()
+            self.compare_output = False
+            self.generate_output = False
         elif self.compare_output:
             self._compare()
+            self.print_report()
             self.compare_output = False
 
 
@@ -383,8 +404,8 @@ class Test(object):
         driver_out_path = os.path.join(self.io_dir, 'driver_output.out')
 
         ipi_command = 'i-pi'
-        timeout_driver = 5
-        timeout_ipi = 5
+        timeout_driver = 300
+        timeout_ipi = 20
 
         # Run the i-pi code
         ipi_command = shlex.split(ipi_command +\
@@ -397,10 +418,11 @@ class Test(object):
                                       stderr=sbps.PIPE)
             except OSError as _err:
                 if _err.errno == os.errno.ENOENT:
-                    raise OSError('i-pi command not found!')
+                    self.msg += 'i-pi command not found!\n'
+                    self.test_status = 'ERROR'
 
         # Sleep few seconds waiting for the ipi server start
-        time.sleep(2)
+        time.sleep(5)
 
         # Run the driver code
         driver_prcs = []
@@ -415,8 +437,9 @@ class Test(object):
                                                   stderr=sbps.STDOUT))
                 except OSError as _err:
                     if _err.errno == os.errno.ENOENT:
-                        raise OSError('driver command %s not found!' %
-                                      ' ' .join(cmd))
+                        self.msg += ('driver command %s not found!\n' %
+                                     ' ' .join(cmd))
+                        self.test_status = 'ERROR'
 
         init_time = -time.time()
         finished = 0
@@ -431,7 +454,7 @@ class Test(object):
                     prc.kill()
                     finished += 1
                 self.test_status = 'ERROR'
-                self.msg += '\nThe drivers took too long!'
+                self.msg += 'The drivers took too long\n'
 
         while ipi_proc.poll() is None:
             timeout_ipi -= 2
@@ -439,7 +462,8 @@ class Test(object):
             if timeout_ipi < -2:
                 ipi_proc.kill()
                 self.test_status = 'ERROR'
-                self.msg += '\ni-PI took too long after the driver finished!'
+                self.msg += 'i-PI took too long after the driver finished!\n'
+                time.sleep(.5)
 
         stdout, stderr = ipi_proc.communicate() # pylint: disable=unused-variable
         if len(stderr) != 0:
@@ -453,11 +477,11 @@ class Test(object):
     def create_reference(self):
 
         if self.test_status == 'PASSED':
-            if answer_is_y('Do you want to use the produced files as reference and copy them on the original folder?\nThis will overwrite any content of the original folder with the test/io folder!'):
 
-                self.input_dir = self.ref_path
-                ltraj, lprop =  self._get_filesname()
+            self.input_dir = self.ref_path
+            ltraj, lprop =  self._get_filesname()
 
+            try:
                 for prop in lprop:
                     for sprop in prop:
                         remove_file(sprop['old_filename'])
@@ -466,10 +490,16 @@ class Test(object):
                     for straj in traj:
                         remove_file(straj['old_filename'])
                         shutil.copy2(straj['new_filename'], straj['old_filename'])
+            except:
+                self.test_status = 'ERROR'
+                self.msg += 'Error while copying the new reference!!'
+            else:
+                self.test_status = 'COPIED'
 
 
 
     def print_report(self):
+
         _format = '%30s -->  %15s Info: %s\n'
         msg = _format % (self.name, self.test_status, self.msg)
         print msg
