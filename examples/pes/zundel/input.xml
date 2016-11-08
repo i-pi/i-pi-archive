@@ -3,9 +3,7 @@ DEPENDENCIES  h5o2.dms4B.coeff.com.dat h5o2.pes4B.coeff.dat h5o2+.xyz
 COMMAND(10)    i-pi-driver -u -h REGTEST_SOCKET -m zundel
 COMMAND       i-pi-driver -u -h REGTEST_SOCKET -m zundel
 ENDREGTEST-->
-<!-- Run the driver code with: "i-pi-driver -u -h REGTEST_SOCKET -m zundel" -->
-<!-- Run the driver code with: "i-pi-driver -u -h REGTEST_SOCKET -m zundel" -->
-<!-- The driver will need the following files: h5o2.dms4B.coeff.com.dat, h5o2.pes4B.coeff.dat, h5o2+.xyz -->
+
 <simulation>
     <ffsocket mode='unix' name='driver'>
          <latency>  1.00000000e-02</latency>

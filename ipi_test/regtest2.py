@@ -33,8 +33,6 @@ REGTEST_STRING_RGX = re.compile(r'<!--\s*REGTEST\s*([\s\w.\+\-\(\)]*)\s*ENDREGTE
 QUEUE_ALL = Queue.Queue() # Queue to access the "run"
 QUEUE_COM = Queue.Queue() # Queue to access the "compare"
 
-
-
 def main():
 
     root_test_folder = _parser()['root_test_folder']
@@ -344,7 +342,6 @@ class Test(threading.Thread):
             if socket_mode.lower() == 'unix':
                 address = ffsocket.find('./address').text.strip()
                 new_address = ' %s%i ' % (address, address_index)
-                print 'aaaaa', address, new_address
                 ffsocket.find('./address').text = new_address
             else:
                 address = ffsocket.find('./port').text.strip()
@@ -501,9 +498,26 @@ class Test(threading.Thread):
 
     def print_report(self):
 
-        _format = '%30s -->  %15s Info: %s\n'
-        msg = _format % (self.name, self.test_status, self.msg)
-        print msg
+        if self.test_status == 'ERROR':
+            _format = '%30s --> \033[1;31;40m%15s\033[0;37;40m Info: %s\n'
+        elif self.test_status == 'FAILED':
+            _format = '%30s --> \033[1;33;40m%15s\033[0;37;40m Info: %s\n'
+        elif self.test_status == 'PASSED':
+            _format = '%30s --> \033[1;32;40m%15s\n'
+
+
+        if len(self.msg) > 0:
+            lines = self.msg.split('\n')
+            for _ii, _buffer in enumerate(lines):
+                if _ii == 0:
+                    continue
+                lines[_ii] = ' '*57 + _buffer
+            _msg = '\n'.join(lines)
+            msg = _format % (self.name, self.test_status, _msg)
+        else:
+            _format = '%30s -->  %15s\n'
+            msg = _format % (self.name, self.test_status)
+        sys.stdout.write(msg)
 
 
     def compare_property_files(self, lprop):
