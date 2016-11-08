@@ -27,11 +27,7 @@ from ipi.utils.io.inputs import io_xml
 
 
 # Compile them only once! pylint: disable=anomalous-backslash-in-string
-DRIVER_COMMAND_RGX = re.compile(r'\<\!\-\-\s*[Rr]un\s*the\s*driver\s*code'
-                                '\s*with\:\s*"(.*)"\s*\-\-\>', re.MULTILINE)
-NEEDED_FILES_RGX = re.compile(r'\<\!\-\-\s*[Tt]he\s*driver\s*will\s*need\s*the'
-                              '\s*following\s*files\:\s*(.*)\s*\-\-\>',
-                              re.MULTILINE)
+REGTEST_STRING_RGX = re.compile(r'<!--\s*REGTEST\s*([\s\w.\+\-\(\)]*)\s*ENDREGTEST\s*-->')
 # pylint: enable=anomalous-backslash-in-string
 
 QUEUE_ALL = Queue.Queue() # Queue to access the "run"
@@ -234,12 +230,10 @@ def _file_is_test(path_to_test):
 
     with open(path_to_test) as _file:
         _text = _file.read()
-    return len([x.group(1) for x in DRIVER_COMMAND_RGX.finditer(_text)]) > 0
+    return len([x.group(1) for x in REGTEST_STRING_RGX.finditer(_text)]) > 0
 
 
-# class Test(multiprocessing.Process):
 class Test(threading.Thread):
-# class Test(object):
 
     def __init__(self, *args, **kwds):
         threading.Thread.__init__(self)
@@ -328,23 +322,12 @@ class Test(threading.Thread):
         self.io_dir = os.path.join(self.run_path, 'io')
         self.input_dir = os.path.join(self.run_path, 'input')
         create_dir(self.io_dir, ignore=True)
-        create_dir(self.input_dir, ignore=True)
 
         # Retrieve the command to run the driver and the needed files
-        with open(self.test_path) as _buffer:
-            _text = _buffer.read()
-
-        self.driver_command = [x.group(1) for x in
-                               DRIVER_COMMAND_RGX.finditer(_text)]
-        _buffer = [x.group(1) for x in NEEDED_FILES_RGX.finditer(_text)]
-        needed_files = [os.path.basename(self.test_path)]
-        for _xx in _buffer:
-            needed_files += [x.strip() for x in _xx.split(',')]
+        self.driver_command, needed_files = parse_regtest_string(self.test_path)
 
         # Copy all the reference files to the 'input' folder
-        for _xx in glob(os.path.join(self.ref_path, '*')):
-            shutil.copy2(_xx, self.input_dir)
-        # shutil.copytree(os.path.dirname(self.test_path), self.input_dir)
+        shutil.copytree(self.ref_path, self.input_dir)
 
         # Copy all only the needed files to the 'io' folder
         for _buffer in needed_files:
@@ -360,27 +343,28 @@ class Test(threading.Thread):
             socket_mode = ffsocket.attrib['mode']
             if socket_mode.lower() == 'unix':
                 address = ffsocket.find('./address').text.strip()
-                ffsocket.find('./address').text = (' %s%i ' % (address,
-                                                               address_index))
-
-                # Change the address used by the driver too!
-                for _ii, _buffer in enumerate(self.driver_command):
-                    # Replace only the first occurrence of 'address' in the
-                    #+driver command!
-                    self.driver_command[_ii] = _buffer.replace(address,
-                                                               ' %s%i ' % \
-                                                               (address,
-                                                                address_index),
-                                                               1)
-            # Do the same when using inet socket
+                new_address = ' %s%i ' % (address, address_index)
+                print 'aaaaa', address, new_address
+                ffsocket.find('./address').text = new_address
             else:
                 address = ffsocket.find('./port').text.strip()
-                ffsocket.find('./port').text = str(address_index)
-                for _ii, _buffer in enumerate(self.driver_command):
-                    self.driver_command[_ii] = _buffer.replace(address,
-                                                               ' %i ' % \
-                                                               (address_index),
-                                                               1)
+                new_address = '%i' % address_index
+                ffsocket.find('./port').text = new_address
+
+
+            # Change the address used by the driver too!
+            for _ii, _buffer in enumerate(self.driver_command):
+                # Determine if the address is in a file
+                for _word in _buffer.split():
+                    _word = os.path.join(self.input_dir, _word)
+                    if os.path.exists(_word) and  os.path.isfile(_word):
+                        inplace_change(_word, address, new_address)
+
+                # Replace only the first occurrence of 'address' in the
+                #+driver command!
+                self.driver_command[_ii] = _buffer.replace(address,
+                                                           new_address,
+                                                           1)
 
             # Since there could be more than a single socket used within a
             #+single simulation, it is important to have a different address for
@@ -492,8 +476,9 @@ class Test(threading.Thread):
 
         if self.test_status == 'PASSED':
 
-            self.input_dir = self.ref_path
-            ltraj, lprop =  self._get_filesname()
+            reference_dir = os.path.join(self.ref_path, 'regtest-ref')
+            create_dir(reference_dir)
+            ltraj, lprop = get_filesname(self.test_path, reference_dir, self.io_dir)
 
             try:
                 for prop in lprop:
@@ -519,102 +504,6 @@ class Test(threading.Thread):
         _format = '%30s -->  %15s Info: %s\n'
         msg = _format % (self.name, self.test_status, self.msg)
         print msg
-
-
-    def _get_filesname(self):
-        """ The test results shold be analyzed number by numbers.
-
-        The idea is that the testing input should never change, then the files
-        should be always the same. It would probably be better, anyway, to use the
-        i-pi infrastructure to retrieve the right position of the data. In fact,
-        this would work as a further testing.
-
-        Returns:
-            lprop
-            nprop
-        """
-        # Avoid to print i-pi output
-        devnull = open('/dev/null', 'w')
-        oldstdout_fno = os.dup(sys.stdout.fileno())
-        os.dup2(devnull.fileno(), 1)
-
-        # opens & parses the input file
-        ifile = open(self.test_path, "r")
-        xmlrestart = io_xml.xml_parse_file(ifile) # Parses the file.
-        ifile.close()
-
-        isimul = InputSimulation()
-        isimul.parse(xmlrestart.fields[0][1])
-
-        simul = isimul.fetch()
-
-        # reconstructs the list of the property and trajectory files
-        lprop = [] # list of property files
-        ltraj = [] # list of trajectory files
-        for o in simul.outtemplate:
-            # properties and trajectories are output per system
-            if isinstance(o, CheckpointOutput):
-                pass
-            elif isinstance(o, PropertyOutput):
-                nprop = []
-                isys = 0
-                for _ in simul.syslist:   # create multiple copies
-                    filename = o.filename
-                    nprop.append({"old_filename" : os.path.join(self.input_dir, filename),
-                                  "new_filename" : os.path.join(self.io_dir, filename),
-                                  "stride": o.stride,
-                                  "properties": o.outlist,})
-                    isys += 1
-                lprop.append(nprop)
-
-            # trajectories are more complex, as some have per-bead output
-            elif isinstance(o, TrajectoryOutput):
-                if getkey(o.what) in ["positions", "velocities",
-                                      "forces", "extras"]:   # multiple beads
-                    nbeads = simul.syslist[0].beads.nbeads
-                    for _bi in range(nbeads):
-                        ntraj = []
-                        isys = 0
-                        # zero-padded bead number
-                        padb = (("%0" + str(int(1 +
-                                                np.floor(np.log(nbeads) /
-                                                         np.log(10)))) +
-                                 "d") % (_bi))
-
-                        for _ in simul.syslist:
-                            if o.ibead < 0 or o.ibead == _bi:
-                                if getkey(o.what) == "extras":
-                                    filename = o.filename+"_" + padb
-                                else:
-                                    filename = o.filename+"_" + padb + \
-                                               "." + o.format
-                                ntraj.append({"old_filename" : os.path.join(self.input_dir, filename),
-                                              "format" : o.format,
-                                              "new_filename" : os.path.join(self.io_dir, filename),
-                                              "stride": o.stride,
-                                              "what": o.what,})
-                            isys += 1
-                        if ntraj != []:
-                            ltraj.append(ntraj)
-
-                else:
-                    ntraj = []
-                    isys = 0
-                    for _ in simul.syslist:   # create multiple copies
-                        filename = o.filename
-                        filename = filename+"."+o.format
-                        ntraj.append({"old_filename" : os.path.join(self.input_dir,
-                                                                    filename),
-                                      "new_filename" : os.path.join(self.io_dir,
-                                                                    filename),
-                                      "format" : o.format,
-                                      "stride": o.stride,})
-
-                        isys += 1
-                    ltraj.append(ntraj)
-
-        os.dup2(oldstdout_fno, 1)
-        return ltraj, lprop
 
 
     def compare_property_files(self, lprop):
@@ -723,7 +612,7 @@ class Test(threading.Thread):
 
         The name of the files to compare come from ltraj and lprop.
         """
-        ltraj, lprop =  self._get_filesname()
+        ltraj, lprop = get_filesname(self.test_path, os.path.join(self.input_dir, 'regtest-ref'), self.io_dir)
 
         self.compare_property_files(lprop)
 
@@ -807,6 +696,165 @@ def answer_is_y(msg):
         elif answer.lower() in _no:
             return False
 
+
+def parse_regtest_string(test_path):
+    """ Retrieve the commands and the dependecies from the xml input.
+
+    """
+    command_string_rgx = re.compile(r'^COMMAND\(?(\d*)\)?\s*([ \w.\+\-\(\)]*)$',
+                                    re.MULTILINE)
+    dependency_string_rgx = re.compile(r'^DEPENDENCIES\s*([ \w.\+\-\(\)]*)$',
+                                       re.MULTILINE)
+
+    with open(test_path) as _buffer:
+        _text = _buffer.read()
+
+    regtest_string = []
+    dependencies = [test_path]
+    commands = []
+
+    regtest_string = REGTEST_STRING_RGX.findall(_text)
+
+    for _xx in dependency_string_rgx.finditer('\n'.join(regtest_string)):
+        dependencies += _xx.group(1).split()
+    for _xx in command_string_rgx.finditer('\n'.join(regtest_string)):
+        try:
+            commands += [_xx.group(2)] * int(_xx.group(1))
+        except ValueError:
+            commands += [_xx.group(2)]
+
+    return commands, dependencies
+
+
+def get_filesname(xml_path, olddir, newdir):
+    """ The test results shold be analyzed number by numbers.
+
+    The idea is that the testing input should never change, then the files
+    should be always the same. It would probably be better, anyway, to use
+    the i-pi infrastructure to retrieve the right position of the data. In
+    fact, this would work as a further testing.
+
+    Args:
+        olddir: The path used for the 'old_filename' in the returned
+            dictionary.
+        newdir: The path used for the 'new_filename' in the returned
+            dictionary.
+
+    Returns:
+        lprop
+        nprop
+    """
+    # Avoid to print i-pi output
+    devnull = open('/dev/null', 'w')
+    oldstdout_fno = os.dup(sys.stdout.fileno())
+    os.dup2(devnull.fileno(), 1)
+
+    # opens & parses the input file
+    ifile = open(xml_path, "r")
+    xmlrestart = io_xml.xml_parse_file(ifile) # Parses the file.
+    ifile.close()
+
+    isimul = InputSimulation()
+    isimul.parse(xmlrestart.fields[0][1])
+
+    simul = isimul.fetch()
+
+    # reconstructs the list of the property and trajectory files
+    lprop = [] # list of property files
+    ltraj = [] # list of trajectory files
+    for o in simul.outtemplate:
+        # properties and trajectories are output per system
+        if isinstance(o, CheckpointOutput):
+            pass
+        elif isinstance(o, PropertyOutput):
+            nprop = []
+            isys = 0
+            for _ in simul.syslist:   # create multiple copies
+                filename = o.filename
+                nprop.append({"old_filename" : os.path.join(olddir,
+                                                            filename),
+                              "new_filename" : os.path.join(newdir,
+                                                            filename),
+                              "stride": o.stride,
+                              "properties": o.outlist,})
+                isys += 1
+            lprop.append(nprop)
+
+        # trajectories are more complex, as some have per-bead output
+        elif isinstance(o, TrajectoryOutput):
+            if getkey(o.what) in ["positions", "velocities",
+                                  "forces", "extras"]:   # multiple beads
+                nbeads = simul.syslist[0].beads.nbeads
+                for _bi in range(nbeads):
+                    ntraj = []
+                    isys = 0
+                    # zero-padded bead number
+                    padb = (("%0" + str(int(1 +
+                                            np.floor(np.log(nbeads) /
+                                                     np.log(10)))) +
+                             "d") % (_bi))
+
+                    for _ in simul.syslist:
+                        if o.ibead < 0 or o.ibead == _bi:
+                            if getkey(o.what) == "extras":
+                                filename = o.filename+"_" + padb
+                            else:
+                                filename = o.filename+"_" + padb + \
+                                           "." + o.format
+                            ntraj.append({"old_filename" : os.path.join(olddir, filename),
+                                          "format" : o.format,
+                                          "new_filename" : os.path.join(newdir, filename),
+                                          "stride": o.stride,
+                                          "what": o.what,})
+                        isys += 1
+                    if ntraj != []:
+                        ltraj.append(ntraj)
+
+            else:
+                ntraj = []
+                isys = 0
+                for _ in simul.syslist:   # create multiple copies
+                    filename = o.filename
+                    filename = filename+"."+o.format
+                    ntraj.append({"old_filename" : os.path.join(olddir,
+                                                                filename),
+                                  "new_filename" : os.path.join(newdir,
+                                                                filename),
+                                  "format" : o.format,
+                                  "stride": o.stride,})
+
+                    isys += 1
+                ltraj.append(ntraj)
+
+    os.dup2(oldstdout_fno, 1)
+    return ltraj, lprop
+
+
+def inplace_change(filename, old_string, new_string):
+    """ Replace a string in a file.
+
+    Replace 'old_string' with 'new_string' into 'filename'.
+
+    Args:
+        filename: The filename where the string must be replaced.
+        old_string: The string to replace.
+        new_string: The string that will be replaced.
+
+    Returns:
+        Will be True if something has been replaced, False otherwise.
+    """
+    # Safely read the input filename using 'with'
+    with open(filename) as _file:
+        _content = _file.read()
+        if old_string not in _content:
+            return False
+
+    # Safely write the changed content, if found in the file
+    with open(filename, 'w') as _file:
+
+        _content = _content.replace(old_string, new_string)
+        _file.write(_content)
+        return True
 
 
 if __name__ == '__main__':
