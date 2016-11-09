@@ -125,8 +125,8 @@ except ImportError:
 
 
 #### Hardcoded settings ####
-TIMEOUT_DRIVER = 300    # Maximum time the driver are allowded to run
-TIMEOUT_IPI = 10        # Maximum time to wait after the driver are done
+TIMEOUT_DRIVER = 600    # Maximum time the driver are allowded to run
+TIMEOUT_IPI = 30        # Maximum time to wait after the driver are done
 IPI_WAITING_TIME = 5    # Time to wait after i-pi has been started
 ############################
 
@@ -697,6 +697,7 @@ class Test(threading.Thread):
             _format = '%30s -->  %15s\n'
             msg = _format % (self.name, self.test_status)
         sys.stdout.write(msg)
+        print
         # print msg
 
 
