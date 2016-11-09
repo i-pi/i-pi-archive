@@ -1,8 +1,95 @@
 #!/usr/bin/env python2
+""" Run or create reference for regtest i-pi.
+
+Todo:
+    * Add support for .gzip files.
+    * Send kill() if terminate() is not enough!
+
+Dependancy:
+    * numpy
+    * colorama (optional - colored output)
+
+The structure of the tree that contains the test must be as follow:
+
+    `-- inputfiles_path    --> Specified in the `config files`
+    |-- test1              --> Will be active if present in the `input_files`
+    |   |-- something.xml  --> **Only** a single xml file (ipi input)
+    |   |-- input_driver   --> Input files for the driver (see below)
+    |   `-- regtest-ref    --> Folder containing output files to compare with.
+    |-- test_2
+    |   |-- something.xml
+    |   |-- input_driver
+    |   `-- output
+
+
+The input must contains a specific comment that specifies which
+files are needed by the driver and which command should be used to run the
+driver. The syntax of the lines is quite strict: only spaces can be different.
+
+To specify which files the driver needs:
+
+<!--REGTEST
+DEPENDENCIES  h5o2.dms4B.coeff.com.dat h5o2.pes4B.coeff.dat h5o2+.xyz
+COMMAND(10)    i-pi-driver -u -h REGTEST_SOCKET -m zundel
+COMMAND       i-pi-driver -u -h REGTEST_SOCKET -m zundel
+ENDREGTEST-->
+
+`DEPENDECIES`: are the file needed to run the test.
+`COMMAND(n)`: command used to run the driver. The `n` are the number of
+    instance of the COMMAND to be created. In the example there will be a
+    total of 11 instance of the driver running at once.
+
+This script will also try to take care of avoiding socket overlap. The most
+most importance think in this regard is that, in case the name of the socket
+compare more than once in the "command line" above, only the first one will be
+considered. For example: using the command "i-pi-driver -u -m zundel -h zundel"
+would not work.
+
+
+# How the script works
+
+All the tasks to be performed on a single test are grouped into the class Test.
+This class inherit from threading.Thread then everything which is into the run
+method can be perfomed in parallel. Since it could be needed to perform
+different tasks on the same Test obj, a method "copy" allows to create a new
+thread keeping all the properties of the previous thread.
+
+The parallelism is based on multithreading and subprocess. The architecture has
+has been tought to be as flexible as possible.
+
+
+            +------------ Main Program --------------+
+            v                                        v
+   +-----------------+                      +-----------------+
+   |                 |                      |                 |
+   |    QUEUE_ALL    |               +----->|    QUEUE_COM    |
+   |                 |               |      |                 |
+   +--------+--------+               |      +--------+--------+
+            |                        |               |
+            |                        |               |
+            |                        |               |
+            +-----> Run TEST 1 ------+               |
+            |                        |               |
+            +-----> Run TEST 2 ------+               |
+            |                        |               +---> Run Compare/Copy
+            +-----> Run TEST 3 ------+                           ^
+            |                        |                           |
+            +-----> Run TEST n ------+                           |
+                       ^                                         |
+                       |                                         |
+                       +--------------------+--------------------+
+                                            |
+                                            |
+                                         Threads
+
+
+This approach creates two queues: the tasks queued on QUEUE_ALL will be run
+in parallel while the tasks queued on QUEUE_COM will be run in serial.
+
+"""
+
 
 import argparse
-from glob import glob
-import multiprocessing
 import os
 import Queue
 import re
@@ -25,15 +112,38 @@ from ipi.inputs.simulation import InputSimulation
 from ipi.utils.io.inputs import io_xml
 # pylint: enable=import-error
 
+RED = YELLOW = GREEN = RESET = ''
+try:
+    from colorama import Fore  # pylint: disable=wrong-import-position
+    RED = Fore.RED
+    YELLOW = Fore.YELLOW
+    GREEN = Fore.GREEN
+    RESET = Fore.RESET
+    INFO = Fore.LIGHTRED_EX
+except ImportError:
+    pass
+
+
+#### Hardcoded settings ####
+TIMEOUT_DRIVER = 300    # Maximum time the driver are allowded to run
+TIMEOUT_IPI = 20        # Maximum time to wait after the driver are done
+IPI_WAITING_TIME = 3    # Time to wait after i-pi has been started
+############################
+
+
 
 # Compile them only once! pylint: disable=anomalous-backslash-in-string
-REGTEST_STRING_RGX = re.compile(r'<!--\s*REGTEST\s*([\s\w.\+\-\(\)]*)\s*ENDREGTEST\s*-->')
+REGTEST_STRING_RGX = re.compile(r'<!--\s*REGTEST\s*([\s\w.\+\-\(\)]*)'
+                                '\s*ENDREGTEST\s*-->')
 # pylint: enable=anomalous-backslash-in-string
 
 QUEUE_ALL = Queue.Queue() # Queue to access the "run"
 QUEUE_COM = Queue.Queue() # Queue to access the "compare"
 
 def main():
+    """ Manage the main process.
+
+    """
 
     root_test_folder = _parser()['root_test_folder']
     tests_list = _parser()['tests']
@@ -53,11 +163,8 @@ def main():
     test_list = _build_test_index(root_test_folder, tests_list)
     index = _parser()['index']
     for test in test_list:
-        test_obj = Test(index = index, name=test[0], path=test[1], root_run=root_run)
-        # test_obj.run()
-        # # test_obj.create_reference()
-        # test_obj.run()
-        # test_obj.print_report()
+        test_obj = Test(index=index, name=test[0],
+                        path=test[1], root_run=root_run)
         QUEUE_ALL.put(test_obj)
         index += 10
 
@@ -86,14 +193,11 @@ def main():
         except Queue.Empty:
             pass
         else:
-            if _parser()['create_reference']:
-                thr.copy_reference = True
-            else:
-                thr.compare_output = True
+            thr.copy_reference = _parser()['create_reference']
+            thr.compare_output = (not _parser()['create_reference'])
             thr.start()
             thr.join(0.5)
             if thr.is_alive():
-                thr.print_report()
                 QUEUE_COM.task_done()
 
         if len(running_test) == 0 and QUEUE_ALL.empty() and QUEUE_COM.empty():
@@ -232,6 +336,14 @@ def _file_is_test(path_to_test):
 
 
 class Test(threading.Thread):
+    """ Contains all the method used to create, run and compare a test.
+
+    Args:
+        index: An integer used to ensure no-overlap between sockets.
+        path: The path to the reference xml file.
+        name: The path of the test relative to the test_folder.
+        root_run: The path where the test will be run.
+    """
 
     def __init__(self, *args, **kwds):
         threading.Thread.__init__(self)
@@ -257,6 +369,11 @@ class Test(threading.Thread):
         self.copy_reference = False
 
     def copy(self):
+        """ Useful to create a copy of the actual state of the class.
+
+        Returns:
+            A complete copy of the class in his actual state.
+        """
         _copy = Test(**self.save_args)
         _copy.ref_path = self.ref_path
         _copy.filename = self.filename
@@ -329,7 +446,12 @@ class Test(threading.Thread):
 
         # Copy all only the needed files to the 'io' folder
         for _buffer in needed_files:
-            shutil.copy2(os.path.join(self.input_dir, _buffer), self.io_dir)
+            try:
+                shutil.copy2(os.path.join(self.input_dir, _buffer), self.io_dir)
+            except IOError as _err:
+                if _err.errno == os.errno.ENOENT:
+                    self.test_status = 'ERROR'
+                    self.msg += 'Needed file %s not found!\n' % _buffer
 
         # Make sure to do not change the reference
         self.test_path = os.path.join(self.io_dir, self.filename)
@@ -370,13 +492,12 @@ class Test(threading.Thread):
 
         xml.write(self.test_path)
 
-        # Change to the io directory...
-        os.chdir(self.io_dir)
-
 
     def run(self):
         if self.generate_output:
             self.init_env()
+            # Change to the io directory...
+            os.chdir(self.io_dir)
             self._run_ipi()
         elif self.copy_reference:
             # Change to the io directory...
@@ -396,9 +517,9 @@ class Test(threading.Thread):
 
         driver_out_path = os.path.join(self.io_dir, 'driver_output.out')
 
+        timeout_driver = TIMEOUT_DRIVER
+        timeout_ipi = TIMEOUT_IPI
         ipi_command = 'i-pi'
-        timeout_driver = 300
-        timeout_ipi = 20
 
         # Run the i-pi code
         ipi_command = shlex.split(ipi_command +\
@@ -416,7 +537,7 @@ class Test(threading.Thread):
                     self.test_status = 'ERROR'
 
         # Sleep few seconds waiting for the ipi server start
-        time.sleep(5)
+        time.sleep(IPI_WAITING_TIME)
 
         # Run the driver code
         driver_prcs = []
@@ -446,7 +567,7 @@ class Test(threading.Thread):
             timeout_driver = timeout_driver - init_time - time.time()
             if timeout_driver < -5:
                 for prc in driver_prcs:
-                    prc.kill()
+                    prc.terminate()
                     finished += 1
                 self.test_status = 'ERROR'
                 self.msg += 'The drivers took too long\n'
@@ -455,7 +576,7 @@ class Test(threading.Thread):
             timeout_ipi -= 2
             time.sleep(2)
             if timeout_ipi < -2:
-                ipi_proc.kill()
+                ipi_proc.terminate()
                 self.test_status = 'ERROR'
                 self.msg += 'i-PI took too long after the driver finished!\n'
                 time.sleep(.5)
@@ -470,41 +591,63 @@ class Test(threading.Thread):
         return
 
     def create_reference(self):
-
+        """ Determines and passes the reference files to a reference folder.
+        """
         if self.test_status == 'PASSED':
 
             reference_dir = os.path.join(self.ref_path, 'regtest-ref')
             create_dir(reference_dir)
-            ltraj, lprop = get_filesname(self.test_path, reference_dir, self.io_dir)
+            ltraj, lprop = get_filesname(self.test_path,
+                                         reference_dir, self.io_dir)
 
             try:
                 for prop in lprop:
                     for sprop in prop:
                         remove_file(sprop['old_filename'])
-                        shutil.copy2(sprop['new_filename'], sprop['old_filename'])
+                        shutil.copy2(sprop['new_filename'],
+                                     sprop['old_filename'])
                 for traj in ltraj:
                     for straj in traj:
                         remove_file(straj['old_filename'])
-                        shutil.copy2(straj['new_filename'], straj['old_filename'])
+                        shutil.copy2(straj['new_filename'],
+                                     straj['old_filename'])
             except:
                 self.test_status = 'ERROR'
                 self.msg += 'Error while copying the new reference!!'
             else:
                 self.test_status = 'COPIED'
         else:
-            self.msg += 'Errors occured: using this run as reference is not safe!\n'
+            self.msg += ('Errors occured: using this run as reference'
+                         'is not safe!\n')
 
 
 
     def print_report(self):
+        """ This function prints information about the test on stdout.
+
+        The test can have 3 results:
+        - PASSED: The computed values match the reference.
+        - FAILED: The computed values DO NOT match the reference.
+        - ERROR: The test did not provide any results because some errors
+            raised while running i-pi or while running the driver.
+        There is also another possible result:
+        - COPIED: If the user is creating the reference folder, when
+            everything goes fine the reported result is "COPIED".
+
+        When something goes wrong information about what is the problem are
+        also printed.
+        """
 
         if self.test_status == 'ERROR':
-            _format = '%30s --> \033[1;31;40m%15s\033[0;37;40m Info: %s\n'
+            _format = RESET + '%30s --> ' + RED +'%15s' +\
+                      INFO + ' Info: %s' + RESET
         elif self.test_status == 'FAILED':
-            _format = '%30s --> \033[1;33;40m%15s\033[0;37;40m Info: %s\n'
+            _format = RESET + '%30s --> ' + YELLOW +'%15s' +\
+                      INFO + ' Info: %s' + RESET
         elif self.test_status == 'PASSED':
-            _format = '%30s --> \033[1;32;40m%15s\n'
-
+            _format = RESET + '%30s --> ' + GREEN +'%15s' + RESET
+        elif self.test_status == 'COPIED':
+            _format = RESET + '%30s --> ' + GREEN +'%15s' + RESET
 
         if len(self.msg) > 0:
             lines = self.msg.split('\n')
@@ -517,15 +660,16 @@ class Test(threading.Thread):
         else:
             _format = '%30s -->  %15s\n'
             msg = _format % (self.name, self.test_status)
-        sys.stdout.write(msg)
+        # sys.stdout.write(msg)
+        print msg
 
 
     def compare_property_files(self, lprop):
         """ Comparing property files.
 
-        The files are loaded with np.loadtxt and all the intestation are ignored:
-        only the actual values are compared. Thus, the ipi input must define the
-        same columns in the same order.
+        The files are loaded with np.loadtxt and all the intestation are
+        ignored: only the actual values are compared. Thus, the ipi input must
+        define the same columns in the same order.
         """
 
         for prop in lprop:
@@ -534,7 +678,8 @@ class Test(threading.Thread):
                     old_content = np.loadtxt(sprop['old_filename'])
                 except IOError as _err:
                     if _err.errno == os.errno.ENOENT:
-                        self.msg += 'File %s not found!\n' % sprop['old_filename']
+                        self.msg += 'File %s not found!\n' %\
+                                    sprop['old_filename']
                         self.test_status = 'ERROR'
                         continue
 
@@ -542,7 +687,8 @@ class Test(threading.Thread):
                     new_content = np.loadtxt(sprop['new_filename'])
                 except IOError as _err:
                     if _err.errno == os.errno.ENOENT:
-                        self.msg += 'File %s not found!\n' % sprop['old_filename']
+                        self.msg += 'File %s not found!\n' %\
+                                    sprop['old_filename']
                         self.test_status = 'ERROR'
                         continue
 
@@ -551,7 +697,7 @@ class Test(threading.Thread):
                                                   _parser()['precision'])
                 except AssertionError:
                     name = os.path.basename(sprop['old_filename'])
-                    self.msg +=  'Differences in the %s file\n' % name
+                    self.msg += 'Differences in the %s file\n' % name
                     self.test_status = 'FAILED'
                     continue
 
@@ -714,6 +860,18 @@ def answer_is_y(msg):
 def parse_regtest_string(test_path):
     """ Retrieve the commands and the dependecies from the xml input.
 
+    To run the test, the command of the driver and the necessary files must be
+    known. These information are enclosed in a comment into the xml file. This
+    function parses this comment and return the command to be use as driver and
+    a list of files needed.
+
+    Args:
+        test_path: Path to the xml file.
+
+    Returns:
+        commands: list of command to be used to run the driver.
+        dependencies: list of file needed to run the test (the xml file is
+            already obviuous).
     """
     command_string_rgx = re.compile(r'^COMMAND\(?(\d*)\)?\s*([ \w.\+\-\(\)]*)$',
                                     re.MULTILINE)
