@@ -221,6 +221,7 @@ def main():
         for _thr in running_test:
             _thr.die = True
 
+    print
 
 
 def _parser():
@@ -697,7 +698,6 @@ class Test(threading.Thread):
             _format = '%30s -->  %15s\n'
             msg = _format % (self.name, self.test_status)
         sys.stdout.write(msg)
-        print
         # print msg
 
 
