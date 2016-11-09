@@ -137,6 +137,11 @@ REGTEST_STRING_RGX = re.compile(r'<!--\s+REGTEST\s+([\s\w.\+\-\(\)]*)'
                                 '\s+ENDREGTEST\s+-->')
 # pylint: enable=anomalous-backslash-in-string
 
+try:
+    IPI_ROOT_FOLDER = os.environ['IPI_ROOT']
+except KeyError:
+    IPI_ROOT_FOLDER = os.path.abspath('../')
+
 QUEUE_ALL = Queue.Queue() # Queue to access the "run"
 QUEUE_COM = Queue.Queue() # Queue to access the "compare"
 
@@ -236,7 +241,7 @@ def _parser():
     parser.add_argument('--tests-folder',
                         action='store',
                         type=str,
-                        default='example',
+                        default=os.path.join(IPI_ROOT_FOLDER, 'examples'),
                         help=('The folder where to search for tests.'),
                         dest='root_test_folder')
     parser.add_argument('--folder-run',
