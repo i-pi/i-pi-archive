@@ -14,13 +14,12 @@ import numpy as np
 
 import ipi.utils.mathtools as mt
 from ipi.utils.depend import depstrip
-from ipi.engine.atoms import Atoms
-from ipi.engine.cell import Cell
 from ipi.utils.units import Elements
 
 
 __all__ = ['print_xyz_path', 'print_xyz', 'read_xyz', 'iter_xyz']
 
+deg2rad = np.pi/180.0
 
 def print_xyz_path(beads, cell, filedesc=sys.stdout):
     """Prints all the bead configurations into a XYZ formatted file.
@@ -69,69 +68,68 @@ def print_xyz(atoms, cell, filedesc=sys.stdout, title=""):
         filedesc.write("%8s %12.5e %12.5e %12.5e\n" % (lab[i], qs[3*i], qs[3*i+1], qs[3*i+2]))
 
 
+# Cell type patterns
+cell_re = [re.compile('CELL[\(\[\{]abcABC[\)\]\}]: ([-+0-9\.Ee ]*)\s*'),
+           re.compile('CELL[\(\[\{]GENH[\)\]\}]: ([-+0-9\.?Ee ]*)\s*'),
+           re.compile('CELL[\(\[\{]H[\)\]\}]: ([-+0-9\.?Ee ]*)\s*')]
+
 def read_xyz(filedesc, **kwargs):
-    """Readss an XYZ-style file with i-pi style comments and creates an Atoms and Cell object
+    """Reads an XYZ-style file with i-PI style comments and returns data in raw format for further units transformation
+    and other post processing.
 
     Args:
         filedesc: An open readable file object from a xyz formatted file with i-PI header comments.
 
     Returns:
-        An Atoms object with the appropriate atom labels, masses and positions.
-        A Cell object.
+        i-Pi comment line, cell array, data (positions, forces, etc.), atoms names and masses
     """
 
-    natoms = filedesc.readline()
-    if natoms == "":
-        raise EOFError("The file descriptor hit EOF.")
-    natoms = int(natoms)
-    comment = filedesc.readline()
-    reabc = re.compile('# CELL.abcABC.: ([-0-9.Ee+ ]*) ').search(comment)
-    regenh = re.compile('# CELL.GENH.: ([-0-9.Ee+ ]*)').search(comment)
-    reh = re.compile('# CELL.H.: ([-0-9.Ee+ ]*)').search(comment)
-    usegenh = False
-    if reabc is not None:
-        a, b, c, alpha, beta, gamma = reabc.group(1).split()
-        a = float(a)
-        b = float(b)
-        c = float(c)
-        alpha = float(alpha) * np.pi/180
-        beta = float(beta) * np.pi/180
-        gamma = float(gamma) * np.pi/180
-        h = mt.abc2h(a, b, c, alpha, beta, gamma)
-    elif reh is not None:
-        h = np.array(reh.group(1).split(), float)
-        h.resize((3,3))
-    elif regenh is not None:
-        print regenh.group(1)
-        print regenh.group(1).split(" ")
+    try:
+        natoms = filedesc.next()
+    except StopIteration:
+        raise EOFError
 
-        genh = np.array(regenh.group(1).split(), float)
+    if natoms == '':              # Work with temporary files
+        raise EOFError
+
+    natoms = int(natoms)
+
+    comment = filedesc.next()
+
+    # Extracting cell
+    cell = [key.search(comment) for key in cell_re]
+    usegenh = False
+    if cell[0] is not None:    # abcABC
+        a, b, c  = [float(x) for x in cell[0].group(1).split()[:3]]
+        alpha, beta, gamma = [float(x) * deg2rad
+                              for x in cell[0].group(1).split()[3:6]]
+        h = mt.abc2h(a, b, c, alpha, beta, gamma)
+    elif cell[1] is not None:  # GENH
+        h = np.array(cell[1].group(1).split()[:9], float)
+        h.resize((3,3))
+    elif cell[2] is not None:  # H
+        genh = np.array(cell[2].group(1).split()[:9], float)
         genh.resize((3,3))
         invgenh = np.linalg.inv(genh)
         # convert back & forth from abcABC representation to get an upper triangular h
         h = mt.abc2h(*mt.genh2abc(genh))
         usegenh = True
-    else:
-        # defaults to unit box
-        h = mt.abc2h(1.0, 1.0, 1.0, np.pi/2, np.pi/2, np.pi/2)
-    cell = Cell(h)
+    else:                     # defaults to unit box
+        h = np.array([[-1.0, 0.0, 0.0],[0.0, -1.0, 0.0],[0.0, 0.0, -1.0]])
+    cell = h
 
     qatoms = np.zeros(3*natoms)
     names = np.zeros(natoms,dtype='|S4')
     masses = np.zeros(natoms)
-    iat = 0
-    while (iat < natoms):
-        body = filedesc.readline()
-        if body.strip() == "":
-            break
-        body = body.split()
-        name = body[0]
-        names[iat]=name
-        masses[iat]=Elements.mass(name)
-        x = float(body[1])
-        y = float(body[2])
-        z = float(body[3])
 
+    # Extracting a time-frame information
+    atom_counter = 0
+    for iat, line in enumerate(filedesc):
+        body = line.split()
+        names[iat], masses[iat] = body[0], Elements.mass(body[0])
+        x, y, z = float(body[1]), float(body[2]), float(body[3])
+
+        # TODO: The following in matrices would use vectorial computaiton
         if usegenh:
             # must convert from the input cell parameters to the internal convention
             u = np.array([x,y,z])
@@ -139,23 +137,17 @@ def read_xyz(filedesc, **kwargs):
             u = np.dot(h, us)
             x, y, z = u
 
-        qatoms[3*iat]=x
-        qatoms[3*iat+1]=y
-        qatoms[3*iat+2]=z
-        iat += 1
+        qatoms[3*iat], qatoms[3*iat+1], qatoms[3*iat+2] = x, y, z
+        atom_counter +=1
+        if atom_counter == natoms:
+            break
+
 
     if natoms != len(names):
         raise ValueError("The number of atom records does not match the header of the xyz file.")
 
-    atoms = Atoms(natoms)
-    atoms.q[:] = qatoms
-    atoms.names[:] = names
-    atoms.m[:] = masses
+    return comment, cell, qatoms, names, masses
 
-    return {
-        "atoms": atoms,
-        "cell": cell,
-    }
 
 
 def iter_xyz(filedesc):

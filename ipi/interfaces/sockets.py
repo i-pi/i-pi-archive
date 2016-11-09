@@ -213,6 +213,13 @@ class Driver(DriverSocket):
       self.lastreq = None
       self.locked = False
 
+   def shutdown(self, how=socket.SHUT_RDWR):
+      """Tries to send an exit message to clients to let them exit gracefully."""
+               
+      self.sendall(Message("exit"))
+      self.status = Status.Disconnected
+      super(DriverSocket,self).shutdown(how)
+
    def poll(self):
       """Waits for driver status."""
 
@@ -435,6 +442,7 @@ class InterfaceSocket(object):
 
       elif self.mode == "inet":
          self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+         self.server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
          self.server.bind((self.address,self.port))
          info("Created inet socket with address " + self.address + " and port number " + str(self.port), verbosity.medium)
       else:
@@ -456,6 +464,7 @@ class InterfaceSocket(object):
             c.close()
          except:
             pass
+
       # flush it all down the drain
       self.clients = []
       self.jobs = []
