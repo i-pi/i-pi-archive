@@ -48,10 +48,13 @@ class DynMatrixMover(Motion):
         #Finite difference option.
         self.mode = mode
         if self.mode == "fd":
+            print "chose fd"
             self.phononator = FDPhononator()
         elif self.mode == "nmfd":
+            print "chose nmfd"
             self.phononator = NMFDPhononator()
         elif self.mode == "enmfd":
+            print "chose enmfd"
             self.phononator = ENMFDPhononator()
 
         self.deltaw = output_shift
@@ -244,6 +247,8 @@ class FDPhononator(DummyPhononator):
     def step(self, step=None):
         """Computes one row of the dynamic matrix."""
 
+        
+        print "#fd step number  :", step
         #initializes the finite deviation
         dev = np.zeros(3 * self.dm.beads.natoms, float)
         dev[step] = self.dm.deltax
@@ -266,14 +271,9 @@ class NMFDPhononator(FDPhononator):
         """ Reference all the variables for simpler access."""
         super(NMFDPhononator,self).bind(dm)
 
-        #Initialises a 3*number of atoms X 3*number of atoms dynamic matrix.
-        if(self.dm.dynmatrix.size  != (self.dm.beads.q.size * self.dm.beads.q.size)):
-            if(self.dm.dynmatrix.size == 0):
-                raise ValueError("Force constant matrix size not found")
-            else:
-                raise ValueError("Force constant matrix size does not match system size")
-        else:
-            self.dm.dynmatrix=self.dm.dynmatrix.reshape(((self.dm.beads.q.size, self.dm.beads.q.size)))
+        if(self.dm.dynmatrix.all() == np.zeros((self.dm.beads.q.size,self.dm.beads.q.size)).all()):
+            raise ValueError("Force constant matrix size not found")
+
         #Initialises a 3*number of atoms X 3*number of atoms refined dynamic matrix.
         if(self.dm.refdynmatrix.size  != (self.dm.beads.q.size * self.dm.beads.q.size)):
             if(self.dm.refdynmatrix.size == 0):
@@ -289,6 +289,7 @@ class NMFDPhononator(FDPhononator):
     def step(self, step=None):
         """Computes one row of the dynamic matrix."""
 
+        print "#nmfd step number  :", self.dm.dynmatrix
         #initializes the finite deviation
         vknorm = np.sqrt(np.dot(self.dm.V[:,step],self.dm.V[:,step]))
         dev = np.real(self.dm.V[:,step]/vknorm)*self.dm.deltax
@@ -312,6 +313,7 @@ class ENMFDPhononator(NMFDPhononator):
     def step(self, step=None):
         """Computes one row of the dynamic matrix."""
 
+        print "#enmfd step number  :", step
         #initializes the finite deviation
         vknorm = np.sqrt(np.dot(self.dm.V[:,step],self.dm.V[:,step]))
         edelta = vknorm*np.sqrt(self.dm.deltae*2.0/abs(self.dm.w2[step]))
