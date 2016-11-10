@@ -90,7 +90,7 @@ class InputSimulation(Input):
              "system" :   (InputSystem,    { "help"  : InputSystem.default_help }),
              "ffsocket": (iforcefields.InputFFSocket, { "help": iforcefields.InputFFSocket.default_help} ),
              "fflj": (iforcefields.InputFFLennardJones, { "help": iforcefields.InputFFLennardJones.default_help} ),
-             "ffeinstein": (iforcefields.InputFFEinstein, { "help": iforcefields.InputFFEinstein.default_help} )
+             "ffdebye": (iforcefields.InputFFDebye, { "help": iforcefields.InputFFDebye.default_help} )
              }
 
    default_help = "This is the top level class that deals with the running of the simulation, including holding the simulation specific properties such as the time step and outputting the data."
@@ -142,10 +142,10 @@ class InputSimulation(Input):
             iff = iforcefields.InputFFLennardJones()
             iff.store(ff)
             self.extra.append(("fflj",iff))
-         elif type(ff) is eforcefields.FFEinstein:
-            iff = iforcefields.InputFFEinstein()
+         elif type(ff) is eforcefields.FFDebye:
+            iff = iforcefields.InputFFDebye()
             iff.store(ff)
-            self.extra.append(("ffeinstein",iff))
+            self.extra.append(("ffdebye",iff))
 
 
       for s in simul.syslist:
@@ -185,7 +185,7 @@ class InputSimulation(Input):
             fflist.append(v.fetch())
          elif k == "fflj":
             fflist.append(v.fetch())
-         elif k == "ffeinstein":
+         elif k == "ffdebye":
             fflist.append(v.fetch())
 
 
