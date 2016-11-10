@@ -76,9 +76,9 @@ class DynMatrixMover(Motion):
         if(self.beads.nbeads > 1):
             raise ValueError("Calculation not possible for number of beads greater than one.")
 
-        self.phononator.bind(self)
         self.ism = 1/np.sqrt(depstrip(self.beads.m3[-1]))
         self.m = depstrip(self.beads.m)
+        self.phononator.bind(self)
     
         self.dbeads = self.beads.copy()
         self.dcell = self.cell.copy()
