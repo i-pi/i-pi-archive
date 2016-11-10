@@ -8,12 +8,12 @@
 from copy import copy
 import numpy as np
 
-from ipi.engine.forcefields import ForceField, FFSocket, FFLennardJones, FFEinstein
+from ipi.engine.forcefields import ForceField, FFSocket, FFLennardJones, FFDebye
 from ipi.interfaces.sockets import InterfaceSocket
 from ipi.utils.inputvalue import *
 
 
-__all__ = ["InputFFSocket", 'InputFFLennardJones', 'InputFFEinstein']
+__all__ = ["InputFFSocket", 'InputFFLennardJones', 'InputFFDebye']
 
 
 class InputForceField(Input):
@@ -188,7 +188,7 @@ class InputFFLennardJones(InputForceField):
                latency = self.latency.fetch(), dopbc = self.pbc.fetch())
 
 
-class InputFFEinstein(InputForceField):
+class InputFFDebye(InputForceField):
 
    fields = { 
    "hessian" : (InputArray, {"dtype": float, "default"      : input_default(factory=np.zeros, args=(0,)), "help": "Specifies the Hessian of the harmonic potential (atomic units!)"} ), 
@@ -202,16 +202,16 @@ class InputFFEinstein(InputForceField):
    attribs.update(InputForceField.attribs)
    
    default_help = """Harmonic energy calculator """
-   default_label = "FFEINSTEIN"
+   default_label = "FFDEBYE"
 	  
    def store(self, ff):
-      super(InputFFEinstein,self).store(ff)
+      super(InputFFDebye,self).store(ff)
       self.hessian.store(ff.H)
       self.x_reference.store(ff.xref)
       self.v_reference.store(ff.vref)
 
    def fetch(self):
-      super(InputFFEinstein,self).fetch()
+      super(InputFFDebye,self).fetch()
 
-      return FFEinstein(H=self.hessian.fetch(), xref=self.x_reference.fetch(), vref=self.v_reference.fetch(), name = self.name.fetch(),
+      return FFDebye(H=self.hessian.fetch(), xref=self.x_reference.fetch(), vref=self.v_reference.fetch(), name = self.name.fetch(),
                latency = self.latency.fetch(), dopbc = self.pbc.fetch() )
