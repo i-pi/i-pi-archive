@@ -55,9 +55,9 @@
       ! PARAMETERS OF THE SYSTEM (CELL, ATOM POSITIONS, ...)
       DOUBLE PRECISION sigma, eps, rc, rn, ks ! potential parameters
       INTEGER nat
-      DOUBLE PRECISION pot, dpot
+      DOUBLE PRECISION pot, dpot, dist
       DOUBLE PRECISION, ALLOCATABLE :: atoms(:,:), forces(:,:), datoms(:,:)
-      DOUBLE PRECISION cell_h(3,3), cell_ih(3,3), virial(3,3), mtxbuf(9), dip(3)
+      DOUBLE PRECISION cell_h(3,3), cell_ih(3,3), virial(3,3), mtxbuf(9), dip(3), charges(3), dummy(3,3,3), vecdiff(3)
       DOUBLE PRECISION volume
       DOUBLE PRECISION, PARAMETER :: fddx = 1.0d-5
 
@@ -359,9 +359,25 @@
                   STOP "ENDED"
                ENDIF
 
-               
+               dip=0.0 
+               vecdiff=0.0              
+               ! lets fold the atom positions back to center in case the water travelled far away
+               ! OH_1
+               call vector_separation(cell_h, cell_ih, atoms(2,:), atoms(1,:), vecdiff, dist)
+               atoms(2,:)=vecdiff(:)
+               ! OH_2
+               call vector_separation(cell_h, cell_ih, atoms(3,:), atoms(1,:), vecdiff, dist)
+               atoms(3,:)=vecdiff(:)
+               ! O in center
+               atoms(1,:)=0.d0
+
+            
+
                atoms = atoms*0.52917721d0    ! pot_nasa wants angstrom
                call pot_nasa(atoms,forces,pot)
+               call dms_nasa(atoms, charges, dummy) ! MR: trying to print out the right charges
+               dip(:)=atoms(1,:)*charges(1)+atoms(2,:)*charges(2)+atoms(3,:)*charges(3) 
+               ! MR: the above line looks like it provides correct results in eAngstrom for dipole! CHECK! Important to have molecule in the center of the cell... 
                pot = pot*0.0015946679     ! pot_nasa gives kcal/mol
                forces = forces * (-0.00084329756) ! pot_nasa gives V in kcal/mol/angstrom
 
@@ -414,7 +430,7 @@
             CALL writebuffer(socket,nat)  ! Writing the number of atoms
             CALL writebuffer(socket,msgbuffer,3*nat) ! Writing the forces
             CALL writebuffer(socket,reshape(virial,(/9/)),9)  ! Writing the virial tensor, NOT divided by the volume
-            IF (vstyle==5 .or. vstyle==6) THEN ! returns the dipole 
+            IF (vstyle==5 .or. vstyle==6 .or. vstyle==8) THEN ! returns the dipole 
                initbuffer = " "
                WRITE(initbuffer,*) dip(1:3)
                cbuf = LEN_TRIM(initbuffer)
