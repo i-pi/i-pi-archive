@@ -47,7 +47,7 @@ class InputForceField(Input):
                                          "help"    : "The number of seconds the polling thread will wait between exhamining the list of requests." } ),
             "parameters" : (InputValue, { "dtype" : dict,
                                      "default" : {},
-                                     "help" : "The parameters of the force field"} )
+                                     "help" : "The parameters of the force field"} ),
             "activelist" : (InputArray, { "dtype" : int,
                                      "default" : np.array([-1]),
 #                                     "default" : input_default(factory=np.array, args =[-1]),
