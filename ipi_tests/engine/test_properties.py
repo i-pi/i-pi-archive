@@ -83,7 +83,7 @@ def prepare_Trajectories_print_traj(request):
         expected_position = xyz.copy()
     expected_cell = cell.copy()
 
-    expected_comment = re.compile(r'^\s*\{%s\}\s+Traj\:\s*%s\s+Step\:\s+%i\s*Bead\:\s*%i\s*$' % (cell_units, property_, 1, bead))
+    expected_comment = re.compile(r'^\s*\cell{%s\}\s+Traj\:\s*%s\s+Step\:\s+%i\s*Bead\:\s*%i\s*$' % (cell_units, property_, 1, bead))
 
     expected_names = atom_names[:]
 

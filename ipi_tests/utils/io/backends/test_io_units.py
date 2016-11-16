@@ -13,11 +13,11 @@ import numpy.testing as npt
 
 
 test_data = [
-    (1, 1, 'asdasd positions{angstrom}  100 aaa {angstrom} asdasd ', 1.8897261, 1.8897261 ),
-    (5, 1, 'asdasd positions{angstrom}  100 aaa {angstrom} asdasd ', 1.8897261, 1.8897261 ),
-    (1, 1, 'asdasd positions{atomic_units}  100 aaa {angstrom} asdasd ', 1.0, 1.8897261 ),
-    (1, 1, 'asdasd positions{atomic_units}  100 aaa {atomic_units} asdasd ', 1.0, 1.0 ),
-    (1, 1, 'asdasd positions{atomic_units}  100 aaa {meter} asdasd ', 1.0, 1.8897261e+10 ),
+    (1, 1, 'asdasd positions{angstrom}  100 aaa cell{angstrom} asdasd ', 1.8897261, 1.8897261 ),
+    (5, 1, 'asdasd positions{angstrom}  100 aaa cell{angstrom} asdasd ', 1.8897261, 1.8897261 ),
+    (1, 1, 'asdasd positions{atomic_units}  100 aaa cell{angstrom} asdasd ', 1.0, 1.8897261 ),
+    (1, 1, 'asdasd positions{atomic_units}  100 aaa cell{atomic_units} asdasd ', 1.0, 1.0 ),
+    (1, 1, 'asdasd positions{atomic_units}  100 aaa cell{meter} asdasd ', 1.0, 1.8897261e+10 ),
 
 ]
 
