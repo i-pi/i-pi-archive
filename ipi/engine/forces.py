@@ -168,7 +168,7 @@ class ForceBead(dobject):
 
       # this is converting the distribution library requests into [ u, f, v ]  lists
       if self.request is None:
-         self.request = self.ff.queue(self.atoms, self.cell)
+         self.request = self.queue()
 
       # sleeps until the request has been evaluated
       while self.request["status"] != "Done":
@@ -465,7 +465,7 @@ class Forces(dobject):
       self.dforces = None
       self.dbeads = None
       self.dcell = None
-      
+
    def bind(self, beads, cell, fcomponents, fflist):
       """Binds beads, cell and forces to the forcefield.
 
@@ -473,13 +473,13 @@ class Forces(dobject):
       Args:
          beads: Beads object from which the bead positions are taken.
          cell: Cell object from which the system box is taken.
-         fcomponents: A list of different objects for each force type. 
-            For example, if ring polymer contraction is being used, 
-            then there may be separate forces for the long and short 
+         fcomponents: A list of different objects for each force type.
+            For example, if ring polymer contraction is being used,
+            then there may be separate forces for the long and short
             range part of the potential.
          fflist: A list of forcefield objects to use to calculate the potential,
             forces and virial for each force type. To clarify: fcomponents are the
-            names and parameters of forcefields that are active for a certain 
+            names and parameters of forcefields that are active for a certain
             system. fflist contains the overall list of force providers,
             and one typically has just one per force kind.
       """
@@ -565,45 +565,45 @@ class Forces(dobject):
       dset(self,"vir",
          depend_array(name="vir", func=self.get_vir, value=np.zeros((3,3)),
             dependencies=[dget(self,"virs")]))
-            
-            
-      # SC forces and potential  
+
+
+      # SC forces and potential
       dset(self, "alpha", depend_value(name="alpha", value=0.5))
-      
+
       # this will be piped from normalmodes
       dset(self, "omegan2", depend_value(name="alpha", value=0))
-            
-      dset(self, "SCCALC", 
+
+      dset(self, "SCCALC",
            depend_value(name="SCCALC", func=self.sccalc, value = [None,None],
                  dependencies=[dget(self, "f"), dget(self,"pots"), dget(self,"alpha"),  dget(self,"omegan2")] ) )
-                 
+
       dset(self, "fsc", depend_array(name="fsc",value=np.zeros((self.nbeads,3*self.natoms)),
             dependencies=[dget(self,"SCCALC")],
             func=(lambda: self.SCCALC[1] ) ) )
-       
+
       dset(self, "potsc", depend_value(name="potsc",
             dependencies=[dget(self,"SCCALC") ],
-            func=(lambda: self.SCCALC[0] ) ) ) 
+            func=(lambda: self.SCCALC[0] ) ) )
 
    def copy(self, beads=None, cell = None):
       """ Returns a copy of this force object that can be used to compute forces,
-      e.g. for use in internal loops of geometry optimizers, or for property 
+      e.g. for use in internal loops of geometry optimizers, or for property
       calculation.
-      
-      Args: 
-         beads: Optionally, bind this to a different beads object than the one 
+
+      Args:
+         beads: Optionally, bind this to a different beads object than the one
             this Forces is currently bound
          cell: Optionally, bind this to a different cell object
-         
+
       Returns: The copy of the Forces object
       """
-      
+
       if not self.bound: raise ValueError("Cannot copy a forces object that has not yet been bound.")
       nforce = Forces()
       nbeads = beads
       if nbeads is None: nbeads=self.beads
       ncell = cell
-      if cell is None: ncell=self.cell      
+      if cell is None: ncell=self.cell
       nforce.bind(nbeads, ncell, self.fcomp, self.ff)
       return nforce
 
@@ -711,27 +711,27 @@ class Forces(dobject):
             for j in range(3):
                rp[:,i,j] += self.mforces[k].weight*self.mforces[k].mts_weights.sum()*self.mrpc[k].b2tob1(virs[:,i,j])
       return rp
-      
+
    def sccalc(self):
       """ Obtains Suzuki-Chin energy and forces by finite differences """
-      
+
       # This computes the difference between the Trotter and Suzuki-Chin Hamiltonian,
       # and the associated forces.
-      
+
       # We need to compute FW and BW finite differences, so first we initialize an
       # auxiliary force evaluator
-      
-      if (self.dforces is None) : 
+
+      if (self.dforces is None) :
          self.dbeads = self.beads.copy()
          self.dcell = self.cell.copy()
-         self.dforces = self.copy(self.dbeads, self.dcell) 
-      
+         self.dforces = self.copy(self.dbeads, self.dcell)
+
       fbase = depstrip(self.f)
       scpot = self.pots[0] + np.dot(fbase,fbase)  # this should get the potential
-      
+
       self.dbeads.q = self.beads.q + fbase # move forward (should hardcode or input displacement)
       fplus = depstrip(self.dforces.f).copy()
       self.dbeads.q = self.beads.q - fbase # move forward (should hardcode or input displacement)
       fminus = depstrip(self.dforces.f).copy()
-      
+
       # etcetera
