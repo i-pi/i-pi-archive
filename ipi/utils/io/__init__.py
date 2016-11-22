@@ -11,6 +11,7 @@ This module has machinery for abstract I/O handling.
 import sys
 import os
 
+from ipi.utils.messages import info
 from ipi.external import importlib
 from ipi.utils.decorators import cached
 
@@ -97,7 +98,10 @@ def read_file(mode, filedesc, **kwargs):
     Returns:
         A dictionary with 'atoms', 'cell' and 'comment'.
     """
-    return _get_io_function(mode, "read")(filedesc=filedesc, **kwargs)
+
+    return importlib.import_module("ipi.utils.io.backends.io_units").\
+        process_units(*_get_io_function(mode, "read")(filedesc=filedesc, **kwargs),
+                      output=kwargs["output"] if "output" in kwargs.keys() else "objects")
 
 
 def read_file_name(filename):
@@ -138,7 +142,7 @@ def iter_file_name(filename):
     return iter_file(os.path.splitext(filename)[1], open(filename))
 
 
-def open_backup(filename, mode='r', buffering=-1, verbose=True):
+def open_backup(filename, mode='r', buffering=-1):
     """A wrapper around `open` which saves backup files.
 
     If the file is opened in write mode and already exists, it is first
@@ -155,7 +159,8 @@ def open_backup(filename, mode='r', buffering=-1, verbose=True):
     """
 
     if mode.startswith('w'):
-        # If writing, make sure nothing is not overwritten.
+
+        # If writing, make sure nothing is overwritten.
 
         i = 0
         fn_backup = filename
@@ -165,9 +170,7 @@ def open_backup(filename, mode='r', buffering=-1, verbose=True):
 
         if fn_backup != filename:
             os.rename(filename, fn_backup)
-            if verbose:
-                print 'Backup performed: %s -> %s' % (filename, fn_backup)
-                print
+            info('Backup performed: {:s} -> {:s}'.format(filename, fn_backup))
 
     else:
         # There is no need to back up.
@@ -175,4 +178,3 @@ def open_backup(filename, mode='r', buffering=-1, verbose=True):
         pass
 
     return open(filename, mode, buffering)
-

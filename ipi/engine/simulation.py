@@ -261,12 +261,12 @@ class Simulation(dobject):
             stepthreads = []
             # steps through all the systems
             #for s in self.syslist:
-            #   s.ensemble.step()
+            #   s.motion.step()
             for s in self.syslist:
                 # creates separate threads for the different systems
-                #st = threading.Thread(target=s.ensemble.step, name=s.prefix, kwargs={"step":self.step})
+                #st = threading.Thread(target=s.motion.step, name=s.prefix, kwargs={"step":self.step})
                 #st.daemon = True
-                s.ensemble.step(step=self.step)
+                s.motion.step(step=self.step)
                 #st.start()
                 #stepthreads.append(st)
 
