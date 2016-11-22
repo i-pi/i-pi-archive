@@ -1,3 +1,8 @@
+<!-- REGTEST
+DEPENDENCIES  h2o.xyz
+COMMAND    i-pi-driver -h localhost -p 31400 -m pswater
+ENDREGTEST -->
+
 <simulation verbosity="high">
   <output prefix='PSmono'>
     <properties stride='1' filename='out'>  [ time{picosecond}, conserved, temperature{kelvin}, kinetic_md, kinetic_cv, kinetic_cv(O), kinetic_cv(H), potential ] </properties>
@@ -9,19 +14,19 @@
     <checkpoint stride='100' filename='chk' overwrite='true'/>
     <checkpoint stride='2000' filename='restart' overwrite='false'/>
   </output>
-  <total_steps>1000</total_steps>
+  <total_steps>20</total_steps>
   <prng><seed>23658</seed></prng>
-  <ffsocket mode='unix' pbc='false' name='driver'>
-    <!--<address>localhost</address>   -->
-    <address>driver</address>
+  <ffsocket mode='inet' pbc='false' name='driver'>
+    <address>localhost</address>
+    <!-- <address>driver</address> -->
       <port>31400</port> <latency>0.02</latency> <timeout>400</timeout>
   </ffsocket>
   <system>
-    <initialize nbeads='1'> 
+    <initialize nbeads='1'>
       <file mode='xyz' units='angstrom'> h2o.xyz </file>
       <cell mode="abc" units="angstrom"> [ 10.0, 10.0, 10.0 ] </cell>
       <!--     <gle mode='chk'> restart.chk </gle> -->
-      <velocities mode="thermal" units="kelvin"> 300 </velocities> 
+      <velocities mode="thermal" units="kelvin"> 300 </velocities>
     </initialize>
     <forces><force forcefield='driver'/></forces>
     <ensemble>

@@ -1,18 +1,12 @@
-<!--REGTEST
-DEPENDENCIES  h5o2.dms4B.coeff.com.dat h5o2.pes4B.coeff.dat h5o2+.xyz
-COMMAND(10)    i-pi-driver -u -h REGTEST_SOCKET -m zundel
-COMMAND(6)    i-pi-driver -u -h REGTEST_SOCKET -m zundel
-ENDREGTEST-->
-
 <simulation>
     <ffsocket mode='unix' name='driver'>
          <latency>  1.00000000e-02</latency>
          <slots>4</slots>
          <port>20614</port>
          <timeout>  6.00000000e+02</timeout>
-         <address>REGTEST_SOCKET</address>
+         <address>zundel</address>
    </ffsocket>
-   <total_steps>10</total_steps>
+   <total_steps>3</total_steps>
    <output prefix="data">
       <trajectory stride="2" filename="pos" cell_units="angstrom">positions{angstrom}</trajectory>
       <trajectory stride="2" filename="xc" format="xyz">x_centroid{angstrom}</trajectory>
@@ -45,3 +39,9 @@ ENDREGTEST-->
       </motion>
   </system>
 </simulation>
+
+<!-- The driver will need the following files:  h5o2.dms4B.coeff.com.dat,  h5o2.pes4B.coeff.dat,  h5o2+.xyz -->
+
+<!-- Run the driver code with: "i-pi-driver -u -h zundel -m zundel" -->
+<!-- Run the driver code with: "i-pi-driver -u -h zundel -m zundel" -->
+<!-- Run the driver code with: "i-pi-driver -u -h zundel -m zundel" -->

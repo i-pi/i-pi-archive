@@ -1,0 +1,21 @@
+* Improvement over i-pi
+** Accessing input values from ipi "library" should be easier and less error prone
+*** Filename should be defined directly into ipi
+    Apparently (I am not completely sure) filenames could be defined
+    directly within the init function of the output's classes. In that
+    case, obtaining a filename would be as easy
+    as Class.filename.
+
+    Now the situation is that one can obtain the "base name" from
+    the class and then it must be used to rebuild the exact name
+    (considering beads, type of property and so on... ). This is a
+    useless repetition of code that make difficult retrieve
+    in an external script.
+
+*** No-need for ipi to try opening files
+    They could not exist but this should not be ipi business if I only
+    want to use ipi in parsing the input.
+
+    This also create more serious problem if the script we want to
+    execute do not share the ipi folder! So that the files listed in
+    the ipi input could have different relative paths...
