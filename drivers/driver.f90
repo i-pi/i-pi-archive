@@ -41,7 +41,7 @@
       ! COMMAND LINE PARSING
       CHARACTER(LEN=1024) :: cmdbuffer
       INTEGER ccmd, vstyle
-      LOGICAL verbose
+      INTEGER verbose
       INTEGER commas(4), par_count      ! stores the index of commas in the parameter string
       DOUBLE PRECISION vpars(4)         ! array to store the parameters of the potential
 
@@ -75,7 +75,7 @@
       inet = 1
       host = "localhost"//achar(0)
       port = 31415
-      verbose = .false.
+      verbose = 0
       par_count = 0
       vstyle = -1
       rc = 0.0d0
@@ -97,7 +97,9 @@
          ELSEIF (cmdbuffer == "-o") THEN ! reads the parameters
             ccmd = 4
          ELSEIF (cmdbuffer == "-v") THEN ! flag for verbose standard output
-            verbose = .true.
+            verbose = 1
+         ELSEIF (cmdbuffer == "-vv") THEN ! flag for verbose standard output
+            verbose = 2
          ELSE
             IF (ccmd == 0) THEN
                WRITE(*,*) " Unrecognized command line argument", ccmd
@@ -225,7 +227,7 @@
          isinit = .true.
       ENDIF
 
-      IF (verbose) THEN
+      IF (verbose > 0) THEN
          WRITE(*,*) " DRIVER - Connecting to host ", trim(host)
          IF (inet > 0) THEN
             WRITE(*,*) " on port ", port, " using an internet socket."
@@ -241,29 +243,37 @@
 
          ! Reads from the socket one message header
          CALL readbuffer(socket, header, MSGLEN)
-         IF (verbose) WRITE(*,*) " Message from server: ", trim(header)
+         IF (verbose > 0) WRITE(*,*) " Message from server: ", trim(header)
 
          IF (trim(header) == "STATUS") THEN
             ! The wrapper is inquiring on what we are doing
             IF (.not. isinit) THEN
                CALL writebuffer(socket,"NEEDINIT    ",MSGLEN)  ! Signals that we need initialization data
+               IF (verbose > 1) WRITE(*,*) "    !write!=> ", "NEEDINIT    "
             ELSEIF (hasdata) THEN
                CALL writebuffer(socket,"HAVEDATA    ",MSGLEN)  ! Signals that we are done computing and can return forces
+               IF (verbose > 1) WRITE(*,*) "    !write!=> ", "HAVEDATA    "
             ELSE
                CALL writebuffer(socket,"READY       ",MSGLEN)  ! We are idling and eager to compute something
+               IF (verbose > 1) WRITE(*,*) "    !write!=> ", "READY       "
             ENDIF
          ELSEIF (trim(header) == "INIT") THEN     ! The driver is kindly providing a string for initialization
             CALL readbuffer(socket, rid)
+            IF (verbose > 1) WRITE(*,*) "    !read!=> RID: ", rid
             CALL readbuffer(socket, cbuf)
+            IF (verbose > 1) WRITE(*,*) "    !read!=> init_lenght: ", cbuf
             CALL readbuffer(socket, initbuffer, cbuf)
-            IF (verbose) WRITE(*,*) " Initializing system from wrapper, using ", trim(initbuffer)
+            IF (verbose > 1) WRITE(*,*) "    !read!=> init_string: ", cbuf
+            IF (verbose > 0) WRITE(*,*) " Initializing system from wrapper, using ", trim(initbuffer)
             isinit=.true. ! We actually do nothing with this string, thanks anyway. Could be used to pass some information (e.g. the input parameters, or the index of the replica, from the driver
          ELSEIF (trim(header) == "POSDATA") THEN  ! The driver is sending the positions of the atoms. Here is where we do the calculation!
 
             ! Parses the flow of data from the socket
             CALL readbuffer(socket, mtxbuf, 9)  ! Cell matrix
+            IF (verbose > 1) WRITE(*,*) "    !read!=> cell: ", mtxbuf
             cell_h = RESHAPE(mtxbuf, (/3,3/))
             CALL readbuffer(socket, mtxbuf, 9)  ! Inverse of the cell matrix (so we don't have to invert it every time here)
+            IF (verbose > 1) WRITE(*,*) "    !read!=> cell-1: ", mtxbuf
             cell_ih = RESHAPE(mtxbuf, (/3,3/))
 
             ! The wrapper uses atomic units for everything, and row major storage.
@@ -275,9 +285,10 @@
             volume = cell_h(1,1)*cell_h(2,2)*cell_h(3,3)
 
             CALL readbuffer(socket, cbuf)       ! The number of atoms in the cell
+            IF (verbose > 1) WRITE(*,*) "    !read!=> cbuf: ", cbuf
             IF (nat < 0) THEN  ! Assumes that the number of atoms does not change throughout a simulation, so only does this once
                nat = cbuf
-               IF (verbose) WRITE(*,*) " Allocating buffer and data arrays, with ", nat, " atoms"
+               IF (verbose > 0) WRITE(*,*) " Allocating buffer and data arrays, with ", nat, " atoms"
                ALLOCATE(msgbuffer(3*nat))
                ALLOCATE(atoms(nat,3), datoms(nat,3))
                ALLOCATE(forces(nat,3))
@@ -288,6 +299,7 @@
             ENDIF
 
             CALL readbuffer(socket, msgbuffer, nat*3)
+            IF (verbose > 1) WRITE(*,*) "    !read!=> positions: ", msgbuffer
             DO i = 1, nat
                atoms(i,:) = msgbuffer(3*(i-1)+1:3*i)
             ENDDO
@@ -384,7 +396,7 @@
                ! do not compute the virial term
             ELSE
                IF ((allocated(n_list) .neqv. .true.)) THEN
-                  IF (verbose) WRITE(*,*) " Allocating neighbour lists."
+                  IF (verbose > 0) WRITE(*,*) " Allocating neighbour lists."
                   ALLOCATE(n_list(nat*(nat-1)/2))
                   ALLOCATE(index_list(nat))
                   ALLOCATE(last_atoms(nat,3))
@@ -401,7 +413,7 @@
                   CALL separation(cell_h, cell_ih, atoms(i,:), last_atoms(i,:), displacement)
                   ! Note that displacement is the square of the distance moved by atom i since the last time the neighbour list was created.
                   IF (4*displacement > (rn-rc)*(rn-rc)) THEN
-                     IF (verbose) WRITE(*,*) " Recalculating neighbour lists"
+                     IF (verbose > 0) WRITE(*,*) " Recalculating neighbour lists"
                      CALL nearest_neighbours(rn, nat, atoms, cell_h, cell_ih, index_list, n_list)
                      last_atoms = atoms
                      rn = 1.2*rc
@@ -414,7 +426,7 @@
                ELSEIF (vstyle == 2) THEN
                   CALL SG_getall(rc, nat, atoms, cell_h, cell_ih, index_list, n_list, pot, forces, virial)
                ENDIF
-               IF (verbose) WRITE(*,*) " Calculated energy is ", pot
+               IF (verbose > 0) WRITE(*,*) " Calculated energy is ", pot
             ENDIF
             hasdata = .true. ! Signal that we have data ready to be passed back to the wrapper
          ELSEIF (trim(header) == "GETFORCE") THEN  ! The driver calculation is finished, it's time to send the results back to the wrapper
@@ -426,20 +438,30 @@
             virial = transpose(virial)
 
             CALL writebuffer(socket,"FORCEREADY  ",MSGLEN)
+            IF (verbose > 1) WRITE(*,*) "    !write!=> ", "FORCEREADY  "
             CALL writebuffer(socket,pot)  ! Writing the potential
+            IF (verbose > 1) WRITE(*,*) "    !write!=> pot: ", pot
             CALL writebuffer(socket,nat)  ! Writing the number of atoms
+            IF (verbose > 1) WRITE(*,*) "    !write!=> nat:", nat
             CALL writebuffer(socket,msgbuffer,3*nat) ! Writing the forces
+            IF (verbose > 1) WRITE(*,*) "    !write!=> forces:", msgbuffer
             CALL writebuffer(socket,reshape(virial,(/9/)),9)  ! Writing the virial tensor, NOT divided by the volume
+            IF (verbose > 1) WRITE(*,*) "    !write!=> strss: ", reshape(virial,(/9/))
+            
             IF (vstyle==5 .or. vstyle==6 .or. vstyle==8) THEN ! returns the dipole
                initbuffer = " "
                WRITE(initbuffer,*) dip(1:3)
                cbuf = LEN_TRIM(initbuffer)
                CALL writebuffer(socket,cbuf) ! Writes back the molecular dipole
+               IF (verbose > 1) WRITE(*,*) "    !write!=> extra_lenght: ", cbuf
                CALL writebuffer(socket,initbuffer,cbuf)
+               IF (verbose > 1) WRITE(*,*) "    !write!=> extra: ", initbuffer
             ELSE
                cbuf = 7 ! Size of the "extras" string
                CALL writebuffer(socket,cbuf) ! This would write out the "extras" string, but in this case we only use a dummy string.
+               IF (verbose > 1) WRITE(*,*) "    !write!=> extra_lenght: ", cbuf
                CALL writebuffer(socket,"nothing",7)
+               IF (verbose > 1) WRITE(*,*) "    !write!=> extra: nothing"
             ENDIF
             hasdata = .false.
          ELSE
@@ -453,12 +475,13 @@
       SUBROUTINE helpmessage
          ! Help banner
          WRITE(*,*) " SYNTAX: driver.x [-u] -h hostname -p port -m [gas|lj|sg|harm|morse|zundel|qtip4pf|pswater] "
-         WRITE(*,*) "         -o 'comma_separated_parameters' [-v] "
+         WRITE(*,*) "         -o 'comma_separated_parameters' [-v|-vv] "
          WRITE(*,*) ""
          WRITE(*,*) " For LJ potential use -o sigma,epsilon,cutoff "
          WRITE(*,*) " For SG potential use -o cutoff "
          WRITE(*,*) " For 1D harmonic oscillator use -o k "
          WRITE(*,*) " For 1D morse oscillator use -o r0,D,a"
          WRITE(*,*) " For the ideal gas, qtip4pf, zundel or nasa no options needed! "
-      END SUBROUTINE
+       END SUBROUTINE helpmessage
+
    END PROGRAM
