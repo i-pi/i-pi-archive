@@ -1,7 +1,7 @@
 ! The main program which runs our driver test case potentials
-! 
+!
 ! Copyright (C) 2013, Joshua More and Michele Ceriotti
-! 
+!
 ! Permission is hereby granted, free of charge, to any person obtaining
 ! a copy of this software and associated documentation files (the
 ! "Software"), to deal in the Software without restriction, including
@@ -9,10 +9,10 @@
 ! distribute, sublicense, and/or sell copies of the Software, and to
 ! permit persons to whom the Software is furnished to do so, subject to
 ! the following conditions:
-! 
+!
 ! The above copyright notice and this permission notice shall be included
 ! in all copies or substantial portions of the Software.
-! 
+!
 ! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 ! EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 ! MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
@@ -67,7 +67,7 @@
       DOUBLE PRECISION, ALLOCATABLE :: last_atoms(:,:) ! Holds the positions when the neighbour list is created
       DOUBLE PRECISION displacement ! Tracks how far each atom has moved since the last call of nearest_neighbours
 
-      INTEGER i, j 
+      INTEGER i, j
 
       ! parse the command line parameters
       ! intialize defaults
@@ -83,8 +83,8 @@
       volume = 0.0d0
       init_volume = 0.0d0
 
-      DO i = 1, IARGC()
-         CALL GETARG(i, cmdbuffer)
+      DO i = 1, COMMAND_ARGUMENT_COUNT()
+         CALL GET_COMMAND_ARGUMENT(i, cmdbuffer)
          IF (cmdbuffer == "-u") THEN ! flag for unix socket
             inet = 0
             ccmd = 0
@@ -135,7 +135,7 @@
             ELSEIF (ccmd == 4) THEN
                par_count = 1
                commas(1) = 0
-               DO WHILE (index(cmdbuffer(commas(par_count)+1:), ',') > 0) 
+               DO WHILE (index(cmdbuffer(commas(par_count)+1:), ',') > 0)
                   commas(par_count + 1) = index(cmdbuffer(commas(par_count)+1:), ',') + commas(par_count)
                   READ(cmdbuffer(commas(par_count)+1:commas(par_count + 1)-1),*) vpars(par_count)
                   par_count = par_count + 1
@@ -153,20 +153,20 @@
       ELSEIF (0 == vstyle) THEN
          IF (par_count /= 0) THEN
             WRITE(*,*) "Error: no initialization string needed for ideal gas."
-            STOP "ENDED" 
-         ENDIF   
+            STOP "ENDED"
+         ENDIF
          isinit = .true.
       ELSEIF (6 == vstyle) THEN
          IF (par_count /= 0) THEN
             WRITE(*,*) "Error:  no initialization string needed for qtip4pf."
-            STOP "ENDED" 
-         ENDIF 
+            STOP "ENDED"
+         ENDIF
          isinit = .true.
       ELSEIF (5 == vstyle) THEN
          IF (par_count /= 0) THEN
             WRITE(*,*) "Error: no initialization string needed for zundel."
-            STOP "ENDED" 
-         ENDIF   
+            STOP "ENDED"
+         ENDIF
          CALL prezundelpot()
          CALL prezundeldip()
          isinit = .true.
@@ -178,21 +178,21 @@
          ELSEIF ( 2/= par_count) THEN
             WRITE(*,*) "Error: parameters not initialized correctly."
             WRITE(*,*) "For morse potential use -o r0,D,a (in a.u.) "
-            STOP "ENDED" 
-         ENDIF 
+            STOP "ENDED"
+         ENDIF
          isinit = .true.
       ELSEIF (vstyle == 8) THEN
          IF (par_count /= 0) THEN
             WRITE(*,*) "Error: no initialization string needed for Partridge-Schwenke H2O potential."
-            STOP "ENDED" 
-         ENDIF   
+            STOP "ENDED"
+         ENDIF
          isinit = .true.
       ELSEIF (vstyle == 1) THEN
          IF (par_count /= 3) THEN
             WRITE(*,*) "Error: parameters not initialized correctly."
             WRITE(*,*) "For LJ potential use -o sigma,epsilon,cutoff "
             STOP "ENDED" ! Note that if initialization from the wrapper is implemented this exit should be removed.
-         ENDIF   
+         ENDIF
          sigma = vpars(1)
          eps = vpars(2)
          rc = vpars(3)
@@ -236,7 +236,7 @@
 
       ! Calls the interface to the POSIX sockets library to open a communication channel
       CALL open_socket(socket, inet, port, host)
-      nat = -1 
+      nat = -1
       DO WHILE (.true.) ! Loops forever (or until the wrapper ends!)
 
          ! Reads from the socket one message header
@@ -265,7 +265,7 @@
             cell_h = RESHAPE(mtxbuf, (/3,3/))
             CALL readbuffer(socket, mtxbuf, 9)  ! Inverse of the cell matrix (so we don't have to invert it every time here)
             cell_ih = RESHAPE(mtxbuf, (/3,3/))
-            
+
             ! The wrapper uses atomic units for everything, and row major storage.
             ! At this stage one should take care that everything is converted in the
             ! units and storage mode used in the driver.
@@ -308,24 +308,24 @@
                virial = 0.0d0
                forces(1,1) = -ks
                virial(1,1) = forces(1,1)*atoms(1,1)
-            ELSEIF (vstyle == 4) THEN ! Morse potential. 
+            ELSEIF (vstyle == 4) THEN ! Morse potential.
                IF (nat/=1) THEN
                   WRITE(*,*) "Expecting 1 atom for 3D Morse (use the effective mass for the atom mass to get proper frequency!) "
                   STOP "ENDED"
                ENDIF
-               CALL getmorse(vpars(1), vpars(2), vpars(3), atoms, pot, forces)               
-            ELSEIF (vstyle == 5) THEN ! Zundel potential. 
+               CALL getmorse(vpars(1), vpars(2), vpars(3), atoms, pot, forces)
+            ELSEIF (vstyle == 5) THEN ! Zundel potential.
                IF (nat/=7) THEN
                   WRITE(*,*) "Expecting 7 atoms for Zundel potential, O O H H H H H "
                   STOP "ENDED"
                ENDIF
-               
+
                CALL zundelpot(pot,atoms)
                CALL zundeldip(dip,atoms)
 
                datoms=atoms
                DO i=1,7  ! forces by finite differences
-                  DO j=1,3                     
+                  DO j=1,3
                      datoms(i,j)=atoms(i,j)+fddx
                      CALL zundelpot(dpot, datoms)
                      datoms(i,j)=atoms(i,j)-fddx
@@ -335,7 +335,7 @@
                   ENDDO
                ENDDO
                ! do not compute the virial term
-            ELSEIF (vstyle == 6) THEN ! qtip4pf potential.             
+            ELSEIF (vstyle == 6) THEN ! qtip4pf potential.
                IF (mod(nat,3)/=0) THEN
                   WRITE(*,*) " Expecting water molecules O H H O H H O H H but got ", nat, "atoms"
                   STOP "ENDED"
@@ -345,7 +345,7 @@
                vpars(3) = cell_h(3,3)
                IF (cell_h(1,2).gt.1d-10 .or. cell_h(1,3).gt.1d-12  .or. cell_h(2,3).gt.1d-12) THEN
                   WRITE(*,*) " qtip4pf PES only works with orthorhombic cells"
-                  STOP "ENDED" 
+                  STOP "ENDED"
                ENDIF
                CALL qtip4pf(vpars(1:3),atoms,nat,forces,pot,virial)
                dip(:) = 0.0
@@ -353,14 +353,14 @@
                   dip = dip -1.1128d0 * atoms(i,:) + 0.5564d0 * (atoms(i+1,:) + atoms(i+2,:))
                ENDDO
                ! do not compute the virial term
-            ELSEIF (vstyle == 8) THEN ! PS water potential. 
+            ELSEIF (vstyle == 8) THEN ! PS water potential.
                IF (nat/=3) THEN
                   WRITE(*,*) "Expecting 3 atoms for P-S water potential, O H H "
                   STOP "ENDED"
                ENDIF
 
-               dip=0.0 
-               vecdiff=0.0              
+               dip=0.0
+               vecdiff=0.0
                ! lets fold the atom positions back to center in case the water travelled far away
                ! OH_1
                call vector_separation(cell_h, cell_ih, atoms(2,:), atoms(1,:), vecdiff, dist)
@@ -371,13 +371,13 @@
                ! O in center
                atoms(1,:)=0.d0
 
-            
+
 
                atoms = atoms*0.52917721d0    ! pot_nasa wants angstrom
                call pot_nasa(atoms,forces,pot)
                call dms_nasa(atoms, charges, dummy) ! MR: trying to print out the right charges
-               dip(:)=atoms(1,:)*charges(1)+atoms(2,:)*charges(2)+atoms(3,:)*charges(3) 
-               ! MR: the above line looks like it provides correct results in eAngstrom for dipole! CHECK! Important to have molecule in the center of the cell... 
+               dip(:)=atoms(1,:)*charges(1)+atoms(2,:)*charges(2)+atoms(3,:)*charges(3)
+               ! MR: the above line looks like it provides correct results in eAngstrom for dipole! CHECK! Important to have molecule in the center of the cell...
                pot = pot*0.0015946679     ! pot_nasa gives kcal/mol
                forces = forces * (-0.00084329756) ! pot_nasa gives V in kcal/mol/angstrom
 
@@ -430,12 +430,12 @@
             CALL writebuffer(socket,nat)  ! Writing the number of atoms
             CALL writebuffer(socket,msgbuffer,3*nat) ! Writing the forces
             CALL writebuffer(socket,reshape(virial,(/9/)),9)  ! Writing the virial tensor, NOT divided by the volume
-            IF (vstyle==5 .or. vstyle==6 .or. vstyle==8) THEN ! returns the dipole 
+            IF (vstyle==5 .or. vstyle==6 .or. vstyle==8) THEN ! returns the dipole
                initbuffer = " "
                WRITE(initbuffer,*) dip(1:3)
                cbuf = LEN_TRIM(initbuffer)
-               CALL writebuffer(socket,cbuf) ! Writes back the molecular dipole 
-               CALL writebuffer(socket,initbuffer,cbuf)            
+               CALL writebuffer(socket,cbuf) ! Writes back the molecular dipole
+               CALL writebuffer(socket,initbuffer,cbuf)
             ELSE
                cbuf = 7 ! Size of the "extras" string
                CALL writebuffer(socket,cbuf) ! This would write out the "extras" string, but in this case we only use a dummy string.
@@ -448,7 +448,7 @@
          ENDIF
       ENDDO
       IF (nat > 0) DEALLOCATE(atoms, forces, msgbuffer)
- 
+
       CONTAINS
       SUBROUTINE helpmessage
          ! Help banner
@@ -458,9 +458,7 @@
          WRITE(*,*) " For LJ potential use -o sigma,epsilon,cutoff "
          WRITE(*,*) " For SG potential use -o cutoff "
          WRITE(*,*) " For 1D harmonic oscillator use -o k "
-         WRITE(*,*) " For 1D morse oscillator use -o r0,D,a"         
+         WRITE(*,*) " For 1D morse oscillator use -o r0,D,a"
          WRITE(*,*) " For the ideal gas, qtip4pf, zundel or nasa no options needed! "
       END SUBROUTINE
    END PROGRAM
-
-    
