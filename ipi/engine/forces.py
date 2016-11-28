@@ -579,11 +579,11 @@ class Forces(dobject):
       dset(self, "omegan2", depend_value(name="omegan2", value=0))
             
       dset(self, "potssc", depend_array(name="potssc",value=np.zeros(self.nbeads,float),
-            dependencies=[dget(self, "f"), dget(self,"pots"), dget(self,"alpha"),  dget(self,"omegan2")],
+            dependencies=[dget(self.beads, "m"), dget(self, "f"), dget(self,"pots"), dget(self,"alpha"),  dget(self,"omegan2")],
             func=self.get_potssc ) )
                                          
       dset(self, "fsc", depend_array(name="fsc",value=np.zeros((self.nbeads,3*self.natoms),float),
-            dependencies=[dget(self, "f"), dget(self,"pots"), dget(self,"alpha"),  dget(self,"omegan2")],
+            dependencies=[dget(self.beads, "m"), dget(self, "f"), dget(self,"pots"), dget(self,"alpha"),  dget(self,"omegan2")],
             func=self.get_scforce ) )
 
       dset(self, "potsc", value=depend_value(name="potsc",
