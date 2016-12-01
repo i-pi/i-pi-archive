@@ -23,6 +23,7 @@ For a more detailed discussion, see the reference manual.
 # i-PI Copyright (C) 2014-2015 i-PI developers
 # See the "licenses" directory for full license information.
 
+
 import weakref
 
 import numpy as np
@@ -729,8 +730,10 @@ def depcopy(objfrom, memberfrom, objto, memberto):
     if hasattr(dfrom, "_bval"):
         dto._bval = dfrom._bval
 
+
 def depraise(exception): 
     raise exception
+
 
 class dobject(object):
     """Class that allows standard notation to be used for depend objects.

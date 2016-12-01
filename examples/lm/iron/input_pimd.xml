@@ -12,8 +12,7 @@
   </ffsocket>
   <system>
     <initialize nbeads='4'>
-      <file mode='xyz' units='angstrom'> start.xyz  </file>
-      <cell mode='abc' units="angstrom"> [ 5.74, 5.74, 5.74 ] </cell>
+      <file mode='xyz'> start.xyz  </file>
       <velocities mode='thermal' units='kelvin'> 300 </velocities>
     </initialize>
     <forces><force forcefield='libtbe'> </force></forces>

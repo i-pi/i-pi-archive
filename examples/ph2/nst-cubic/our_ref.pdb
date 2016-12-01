@@ -1,4 +1,4 @@
-TITLE                       Traj: x_centroid Step:           0  Bead:       0 
+TITLE cell{atomic_units} Traj: x_centroid{angstrom} Step:           0  Bead:       0
 CRYST1   29.865   29.865   29.865  90.00  90.00  90.00 P 1           1
 ATOM      1   H2   1     1      -0.507   0.404  -0.017  0.00  0.00             0
 ATOM      2   H2   1     1       0.371   5.016   5.343  0.00  0.00             0

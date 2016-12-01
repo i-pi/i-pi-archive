@@ -1,7 +1,7 @@
 ! The main program which runs our driver test case potentials
-! 
+!
 ! Copyright (C) 2013, Joshua More and Michele Ceriotti
-! 
+!
 ! Permission is hereby granted, free of charge, to any person obtaining
 ! a copy of this software and associated documentation files (the
 ! "Software"), to deal in the Software without restriction, including
@@ -9,10 +9,10 @@
 ! distribute, sublicense, and/or sell copies of the Software, and to
 ! permit persons to whom the Software is furnished to do so, subject to
 ! the following conditions:
-! 
+!
 ! The above copyright notice and this permission notice shall be included
 ! in all copies or substantial portions of the Software.
-! 
+!
 ! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 ! EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 ! MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
@@ -41,7 +41,7 @@
       ! COMMAND LINE PARSING
       CHARACTER(LEN=1024) :: cmdbuffer
       INTEGER ccmd, vstyle
-      LOGICAL verbose
+      INTEGER verbose
       INTEGER commas(4), par_count      ! stores the index of commas in the parameter string
       DOUBLE PRECISION vpars(4)         ! array to store the parameters of the potential
 
@@ -55,9 +55,9 @@
       ! PARAMETERS OF THE SYSTEM (CELL, ATOM POSITIONS, ...)
       DOUBLE PRECISION sigma, eps, rc, rn, ks ! potential parameters
       INTEGER nat
-      DOUBLE PRECISION pot, dpot
+      DOUBLE PRECISION pot, dpot, dist
       DOUBLE PRECISION, ALLOCATABLE :: atoms(:,:), forces(:,:), datoms(:,:)
-      DOUBLE PRECISION cell_h(3,3), cell_ih(3,3), virial(3,3), mtxbuf(9), dip(3)
+      DOUBLE PRECISION cell_h(3,3), cell_ih(3,3), virial(3,3), mtxbuf(9), dip(3), charges(3), dummy(3,3,3), vecdiff(3)
       DOUBLE PRECISION volume
       DOUBLE PRECISION, PARAMETER :: fddx = 1.0d-5
 
@@ -67,7 +67,7 @@
       DOUBLE PRECISION, ALLOCATABLE :: last_atoms(:,:) ! Holds the positions when the neighbour list is created
       DOUBLE PRECISION displacement ! Tracks how far each atom has moved since the last call of nearest_neighbours
 
-      INTEGER i, j 
+      INTEGER i, j
 
       ! parse the command line parameters
       ! intialize defaults
@@ -75,7 +75,7 @@
       inet = 1
       host = "localhost"//achar(0)
       port = 31415
-      verbose = .false.
+      verbose = 0
       par_count = 0
       vstyle = -1
       rc = 0.0d0
@@ -83,8 +83,8 @@
       volume = 0.0d0
       init_volume = 0.0d0
 
-      DO i = 1, IARGC()
-         CALL GETARG(i, cmdbuffer)
+      DO i = 1, COMMAND_ARGUMENT_COUNT()
+         CALL GET_COMMAND_ARGUMENT(i, cmdbuffer)
          IF (cmdbuffer == "-u") THEN ! flag for unix socket
             inet = 0
             ccmd = 0
@@ -97,7 +97,9 @@
          ELSEIF (cmdbuffer == "-o") THEN ! reads the parameters
             ccmd = 4
          ELSEIF (cmdbuffer == "-v") THEN ! flag for verbose standard output
-            verbose = .true.
+            verbose = 1
+         ELSEIF (cmdbuffer == "-vv") THEN ! flag for verbose standard output
+            verbose = 2
          ELSE
             IF (ccmd == 0) THEN
                WRITE(*,*) " Unrecognized command line argument", ccmd
@@ -135,7 +137,7 @@
             ELSEIF (ccmd == 4) THEN
                par_count = 1
                commas(1) = 0
-               DO WHILE (index(cmdbuffer(commas(par_count)+1:), ',') > 0) 
+               DO WHILE (index(cmdbuffer(commas(par_count)+1:), ',') > 0)
                   commas(par_count + 1) = index(cmdbuffer(commas(par_count)+1:), ',') + commas(par_count)
                   READ(cmdbuffer(commas(par_count)+1:commas(par_count + 1)-1),*) vpars(par_count)
                   par_count = par_count + 1
@@ -153,20 +155,20 @@
       ELSEIF (0 == vstyle) THEN
          IF (par_count /= 0) THEN
             WRITE(*,*) "Error: no initialization string needed for ideal gas."
-            STOP "ENDED" 
-         ENDIF   
+            STOP "ENDED"
+         ENDIF
          isinit = .true.
       ELSEIF (6 == vstyle) THEN
          IF (par_count /= 0) THEN
             WRITE(*,*) "Error:  no initialization string needed for qtip4pf."
-            STOP "ENDED" 
-         ENDIF 
+            STOP "ENDED"
+         ENDIF
          isinit = .true.
       ELSEIF (5 == vstyle) THEN
          IF (par_count /= 0) THEN
             WRITE(*,*) "Error: no initialization string needed for zundel."
-            STOP "ENDED" 
-         ENDIF   
+            STOP "ENDED"
+         ENDIF
          CALL prezundelpot()
          CALL prezundeldip()
          isinit = .true.
@@ -178,21 +180,21 @@
          ELSEIF ( 2/= par_count) THEN
             WRITE(*,*) "Error: parameters not initialized correctly."
             WRITE(*,*) "For morse potential use -o r0,D,a (in a.u.) "
-            STOP "ENDED" 
-         ENDIF 
+            STOP "ENDED"
+         ENDIF
          isinit = .true.
       ELSEIF (vstyle == 8) THEN
          IF (par_count /= 0) THEN
             WRITE(*,*) "Error: no initialization string needed for Partridge-Schwenke H2O potential."
-            STOP "ENDED" 
-         ENDIF   
+            STOP "ENDED"
+         ENDIF
          isinit = .true.
       ELSEIF (vstyle == 1) THEN
          IF (par_count /= 3) THEN
             WRITE(*,*) "Error: parameters not initialized correctly."
             WRITE(*,*) "For LJ potential use -o sigma,epsilon,cutoff "
             STOP "ENDED" ! Note that if initialization from the wrapper is implemented this exit should be removed.
-         ENDIF   
+         ENDIF
          sigma = vpars(1)
          eps = vpars(2)
          rc = vpars(3)
@@ -225,7 +227,7 @@
          isinit = .true.
       ENDIF
 
-      IF (verbose) THEN
+      IF (verbose > 0) THEN
          WRITE(*,*) " DRIVER - Connecting to host ", trim(host)
          IF (inet > 0) THEN
             WRITE(*,*) " on port ", port, " using an internet socket."
@@ -236,36 +238,44 @@
 
       ! Calls the interface to the POSIX sockets library to open a communication channel
       CALL open_socket(socket, inet, port, host)
-      nat = -1 
+      nat = -1
       DO WHILE (.true.) ! Loops forever (or until the wrapper ends!)
 
          ! Reads from the socket one message header
          CALL readbuffer(socket, header, MSGLEN)
-         IF (verbose) WRITE(*,*) " Message from server: ", trim(header)
+         IF (verbose > 0) WRITE(*,*) " Message from server: ", trim(header)
 
          IF (trim(header) == "STATUS") THEN
             ! The wrapper is inquiring on what we are doing
             IF (.not. isinit) THEN
                CALL writebuffer(socket,"NEEDINIT    ",MSGLEN)  ! Signals that we need initialization data
+               IF (verbose > 1) WRITE(*,*) "    !write!=> ", "NEEDINIT    "
             ELSEIF (hasdata) THEN
                CALL writebuffer(socket,"HAVEDATA    ",MSGLEN)  ! Signals that we are done computing and can return forces
+               IF (verbose > 1) WRITE(*,*) "    !write!=> ", "HAVEDATA    "
             ELSE
                CALL writebuffer(socket,"READY       ",MSGLEN)  ! We are idling and eager to compute something
+               IF (verbose > 1) WRITE(*,*) "    !write!=> ", "READY       "
             ENDIF
          ELSEIF (trim(header) == "INIT") THEN     ! The driver is kindly providing a string for initialization
             CALL readbuffer(socket, rid)
+            IF (verbose > 1) WRITE(*,*) "    !read!=> RID: ", rid
             CALL readbuffer(socket, cbuf)
+            IF (verbose > 1) WRITE(*,*) "    !read!=> init_lenght: ", cbuf
             CALL readbuffer(socket, initbuffer, cbuf)
-            IF (verbose) WRITE(*,*) " Initializing system from wrapper, using ", trim(initbuffer)
+            IF (verbose > 1) WRITE(*,*) "    !read!=> init_string: ", cbuf
+            IF (verbose > 0) WRITE(*,*) " Initializing system from wrapper, using ", trim(initbuffer)
             isinit=.true. ! We actually do nothing with this string, thanks anyway. Could be used to pass some information (e.g. the input parameters, or the index of the replica, from the driver
          ELSEIF (trim(header) == "POSDATA") THEN  ! The driver is sending the positions of the atoms. Here is where we do the calculation!
 
             ! Parses the flow of data from the socket
             CALL readbuffer(socket, mtxbuf, 9)  ! Cell matrix
+            IF (verbose > 1) WRITE(*,*) "    !read!=> cell: ", mtxbuf
             cell_h = RESHAPE(mtxbuf, (/3,3/))
             CALL readbuffer(socket, mtxbuf, 9)  ! Inverse of the cell matrix (so we don't have to invert it every time here)
+            IF (verbose > 1) WRITE(*,*) "    !read!=> cell-1: ", mtxbuf
             cell_ih = RESHAPE(mtxbuf, (/3,3/))
-            
+
             ! The wrapper uses atomic units for everything, and row major storage.
             ! At this stage one should take care that everything is converted in the
             ! units and storage mode used in the driver.
@@ -275,9 +285,10 @@
             volume = cell_h(1,1)*cell_h(2,2)*cell_h(3,3)
 
             CALL readbuffer(socket, cbuf)       ! The number of atoms in the cell
+            IF (verbose > 1) WRITE(*,*) "    !read!=> cbuf: ", cbuf
             IF (nat < 0) THEN  ! Assumes that the number of atoms does not change throughout a simulation, so only does this once
                nat = cbuf
-               IF (verbose) WRITE(*,*) " Allocating buffer and data arrays, with ", nat, " atoms"
+               IF (verbose > 0) WRITE(*,*) " Allocating buffer and data arrays, with ", nat, " atoms"
                ALLOCATE(msgbuffer(3*nat))
                ALLOCATE(atoms(nat,3), datoms(nat,3))
                ALLOCATE(forces(nat,3))
@@ -288,6 +299,7 @@
             ENDIF
 
             CALL readbuffer(socket, msgbuffer, nat*3)
+            IF (verbose > 1) WRITE(*,*) "    !read!=> positions: ", msgbuffer
             DO i = 1, nat
                atoms(i,:) = msgbuffer(3*(i-1)+1:3*i)
             ENDDO
@@ -308,24 +320,24 @@
                virial = 0.0d0
                forces(1,1) = -ks
                virial(1,1) = forces(1,1)*atoms(1,1)
-            ELSEIF (vstyle == 4) THEN ! Morse potential. 
+            ELSEIF (vstyle == 4) THEN ! Morse potential.
                IF (nat/=1) THEN
                   WRITE(*,*) "Expecting 1 atom for 3D Morse (use the effective mass for the atom mass to get proper frequency!) "
                   STOP "ENDED"
                ENDIF
-               CALL getmorse(vpars(1), vpars(2), vpars(3), atoms, pot, forces)               
-            ELSEIF (vstyle == 5) THEN ! Zundel potential. 
+               CALL getmorse(vpars(1), vpars(2), vpars(3), atoms, pot, forces)
+            ELSEIF (vstyle == 5) THEN ! Zundel potential.
                IF (nat/=7) THEN
                   WRITE(*,*) "Expecting 7 atoms for Zundel potential, O O H H H H H "
                   STOP "ENDED"
                ENDIF
-               
+
                CALL zundelpot(pot,atoms)
                CALL zundeldip(dip,atoms)
 
                datoms=atoms
                DO i=1,7  ! forces by finite differences
-                  DO j=1,3                     
+                  DO j=1,3
                      datoms(i,j)=atoms(i,j)+fddx
                      CALL zundelpot(dpot, datoms)
                      datoms(i,j)=atoms(i,j)-fddx
@@ -335,7 +347,7 @@
                   ENDDO
                ENDDO
                ! do not compute the virial term
-            ELSEIF (vstyle == 6) THEN ! qtip4pf potential.             
+            ELSEIF (vstyle == 6) THEN ! qtip4pf potential.
                IF (mod(nat,3)/=0) THEN
                   WRITE(*,*) " Expecting water molecules O H H O H H O H H but got ", nat, "atoms"
                   STOP "ENDED"
@@ -345,7 +357,7 @@
                vpars(3) = cell_h(3,3)
                IF (cell_h(1,2).gt.1d-10 .or. cell_h(1,3).gt.1d-12  .or. cell_h(2,3).gt.1d-12) THEN
                   WRITE(*,*) " qtip4pf PES only works with orthorhombic cells"
-                  STOP "ENDED" 
+                  STOP "ENDED"
                ENDIF
                CALL qtip4pf(vpars(1:3),atoms,nat,forces,pot,virial)
                dip(:) = 0.0
@@ -353,22 +365,38 @@
                   dip = dip -1.1128d0 * atoms(i,:) + 0.5564d0 * (atoms(i+1,:) + atoms(i+2,:))
                ENDDO
                ! do not compute the virial term
-            ELSEIF (vstyle == 8) THEN ! PS water potential. 
+            ELSEIF (vstyle == 8) THEN ! PS water potential.
                IF (nat/=3) THEN
                   WRITE(*,*) "Expecting 3 atoms for P-S water potential, O H H "
                   STOP "ENDED"
                ENDIF
 
-               
+               dip=0.0
+               vecdiff=0.0
+               ! lets fold the atom positions back to center in case the water travelled far away
+               ! OH_1
+               call vector_separation(cell_h, cell_ih, atoms(2,:), atoms(1,:), vecdiff, dist)
+               atoms(2,:)=vecdiff(:)
+               ! OH_2
+               call vector_separation(cell_h, cell_ih, atoms(3,:), atoms(1,:), vecdiff, dist)
+               atoms(3,:)=vecdiff(:)
+               ! O in center
+               atoms(1,:)=0.d0
+
+
+
                atoms = atoms*0.52917721d0    ! pot_nasa wants angstrom
                call pot_nasa(atoms,forces,pot)
+               call dms_nasa(atoms, charges, dummy) ! MR: trying to print out the right charges
+               dip(:)=atoms(1,:)*charges(1)+atoms(2,:)*charges(2)+atoms(3,:)*charges(3)
+               ! MR: the above line looks like it provides correct results in eAngstrom for dipole! CHECK! Important to have molecule in the center of the cell...
                pot = pot*0.0015946679     ! pot_nasa gives kcal/mol
                forces = forces * (-0.00084329756) ! pot_nasa gives V in kcal/mol/angstrom
 
                ! do not compute the virial term
             ELSE
                IF ((allocated(n_list) .neqv. .true.)) THEN
-                  IF (verbose) WRITE(*,*) " Allocating neighbour lists."
+                  IF (verbose > 0) WRITE(*,*) " Allocating neighbour lists."
                   ALLOCATE(n_list(nat*(nat-1)/2))
                   ALLOCATE(index_list(nat))
                   ALLOCATE(last_atoms(nat,3))
@@ -385,7 +413,7 @@
                   CALL separation(cell_h, cell_ih, atoms(i,:), last_atoms(i,:), displacement)
                   ! Note that displacement is the square of the distance moved by atom i since the last time the neighbour list was created.
                   IF (4*displacement > (rn-rc)*(rn-rc)) THEN
-                     IF (verbose) WRITE(*,*) " Recalculating neighbour lists"
+                     IF (verbose > 0) WRITE(*,*) " Recalculating neighbour lists"
                      CALL nearest_neighbours(rn, nat, atoms, cell_h, cell_ih, index_list, n_list)
                      last_atoms = atoms
                      rn = 1.2*rc
@@ -398,7 +426,7 @@
                ELSEIF (vstyle == 2) THEN
                   CALL SG_getall(rc, nat, atoms, cell_h, cell_ih, index_list, n_list, pot, forces, virial)
                ENDIF
-               IF (verbose) WRITE(*,*) " Calculated energy is ", pot
+               IF (verbose > 0) WRITE(*,*) " Calculated energy is ", pot
             ENDIF
             hasdata = .true. ! Signal that we have data ready to be passed back to the wrapper
          ELSEIF (trim(header) == "GETFORCE") THEN  ! The driver calculation is finished, it's time to send the results back to the wrapper
@@ -410,20 +438,30 @@
             virial = transpose(virial)
 
             CALL writebuffer(socket,"FORCEREADY  ",MSGLEN)
+            IF (verbose > 1) WRITE(*,*) "    !write!=> ", "FORCEREADY  "
             CALL writebuffer(socket,pot)  ! Writing the potential
+            IF (verbose > 1) WRITE(*,*) "    !write!=> pot: ", pot
             CALL writebuffer(socket,nat)  ! Writing the number of atoms
+            IF (verbose > 1) WRITE(*,*) "    !write!=> nat:", nat
             CALL writebuffer(socket,msgbuffer,3*nat) ! Writing the forces
+            IF (verbose > 1) WRITE(*,*) "    !write!=> forces:", msgbuffer
             CALL writebuffer(socket,reshape(virial,(/9/)),9)  ! Writing the virial tensor, NOT divided by the volume
-            IF (vstyle==5 .or. vstyle==6) THEN ! returns the dipole 
+            IF (verbose > 1) WRITE(*,*) "    !write!=> strss: ", reshape(virial,(/9/))
+            
+            IF (vstyle==5 .or. vstyle==6 .or. vstyle==8) THEN ! returns the dipole
                initbuffer = " "
                WRITE(initbuffer,*) dip(1:3)
                cbuf = LEN_TRIM(initbuffer)
-               CALL writebuffer(socket,cbuf) ! Writes back the molecular dipole 
-               CALL writebuffer(socket,initbuffer,cbuf)            
+               CALL writebuffer(socket,cbuf) ! Writes back the molecular dipole
+               IF (verbose > 1) WRITE(*,*) "    !write!=> extra_lenght: ", cbuf
+               CALL writebuffer(socket,initbuffer,cbuf)
+               IF (verbose > 1) WRITE(*,*) "    !write!=> extra: ", initbuffer
             ELSE
                cbuf = 7 ! Size of the "extras" string
                CALL writebuffer(socket,cbuf) ! This would write out the "extras" string, but in this case we only use a dummy string.
+               IF (verbose > 1) WRITE(*,*) "    !write!=> extra_lenght: ", cbuf
                CALL writebuffer(socket,"nothing",7)
+               IF (verbose > 1) WRITE(*,*) "    !write!=> extra: nothing"
             ENDIF
             hasdata = .false.
          ELSE
@@ -432,19 +470,18 @@
          ENDIF
       ENDDO
       IF (nat > 0) DEALLOCATE(atoms, forces, msgbuffer)
- 
+
       CONTAINS
       SUBROUTINE helpmessage
          ! Help banner
          WRITE(*,*) " SYNTAX: driver.x [-u] -h hostname -p port -m [gas|lj|sg|harm|morse|zundel|qtip4pf|pswater] "
-         WRITE(*,*) "         -o 'comma_separated_parameters' [-v] "
+         WRITE(*,*) "         -o 'comma_separated_parameters' [-v|-vv] "
          WRITE(*,*) ""
          WRITE(*,*) " For LJ potential use -o sigma,epsilon,cutoff "
          WRITE(*,*) " For SG potential use -o cutoff "
          WRITE(*,*) " For 1D harmonic oscillator use -o k "
-         WRITE(*,*) " For 1D morse oscillator use -o r0,D,a"         
+         WRITE(*,*) " For 1D morse oscillator use -o r0,D,a"
          WRITE(*,*) " For the ideal gas, qtip4pf, zundel or nasa no options needed! "
-      END SUBROUTINE
-   END PROGRAM
+       END SUBROUTINE helpmessage
 
-    
+   END PROGRAM

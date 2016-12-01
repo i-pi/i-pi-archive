@@ -1,16 +1,21 @@
 <simulation>
     <output prefix='qtip4pf'>
-        <properties filename='out' stride='1'> [step, time{picosecond}, potential{electronvolt}] </properties>
-        <trajectory filename='pos' stride='1' format='xyz' cell_units='angstrom'> positions{angstrom} </trajectory>
-        <trajectory filename='force' stride='1' format='xyz' cell_units='angstrom'> forces{piconewton} </trajectory>
+        <properties filename='out' stride='1' flush='1000'> [step, time{picosecond},
+potential{electronvolt}] </properties>
+        <trajectory filename='pos' stride='1' format='xyz' cell_units='angstrom'
+flush='1000'> 
+positions{angstrom} </trajectory>
+        <trajectory filename='for' stride='1' format='xyz' cell_units='angstrom'
+flush='1000'> 
+forces{piconewton} </trajectory>
     </output>
-    <total_steps>5000</total_steps>
+    <total_steps>10000</total_steps>
     <prng><seed>32342</seed></prng>
     <ffsocket name="qtip4pf" mode="unix" pbc="false">
         <address>driver</address>
     </ffsocket>
     <system>
-        <initialize nbeads='8'>
+        <initialize nbeads='10'>
             <file mode='pdb'> water_298K.pdb </file>
             <velocities mode="thermal" units='kelvin'> 298 </velocities>
         </initialize>
