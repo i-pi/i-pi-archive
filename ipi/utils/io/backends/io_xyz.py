@@ -119,19 +119,6 @@ def read_xyz(filedesc, **kwargs):
         h = np.array([[-1.0, 0.0, 0.0],[0.0, -1.0, 0.0],[0.0, 0.0, -1.0]])
     cell = h
 
-    # Extracting units and the type of data from xyz files
-    family, unit = '', ''
-    for val in ['positions', 'velocities', 'forces', 'extras']:
-        try:
-            ind = comment.find(val + '{')
-            if ind != -1:
-                comment = comment[ind + len(val) + 1:]
-                ind = comment.find('}')
-                unit = comment[:ind]
-                family = 'length' if val[:-1] == 'position' else val[:-1]
-        except:
-            pass
-
     qatoms = np.zeros(3*natoms)
     names = np.zeros(natoms,dtype='|S4')
     masses = np.zeros(natoms)
@@ -162,15 +149,6 @@ def read_xyz(filedesc, **kwargs):
 
     return comment, cell, qatoms, names, masses
 
-<<<<<<< HEAD
-    return {
-        "atoms": atoms,
-        "cell": cell,
-        "masses": masses,
-        "units": (family, unit)
-    }
-=======
->>>>>>> master
 
 
 def iter_xyz(filedesc):
