@@ -42,7 +42,7 @@ class InputGeop(InputDictionary):
 
     attribs={"mode"  : (InputAttribute, {"dtype"   : str, "default": "lbfgs",
                                     "help"    : "The geometry optimization algorithm to be used",
-                                    "options" : ['sd', 'cg', 'bfgs', 'lbfgs']}) }
+                                    "options" : ['sd', 'cg', 'bfgs', 'bfgstrm','lbfgs']}) }
     
     # options of the method (mostly tolerances)
     fields = { "ls_options" : ( InputDictionary, {"dtype" : [float, int, float, float],
