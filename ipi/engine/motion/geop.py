@@ -17,7 +17,7 @@ import time
 from ipi.engine.motion import Motion
 from ipi.utils.depend import depstrip, dobject
 from ipi.utils.softexit import softexit
-from ipi.utils.mintools import min_brent, BFGS, L_BFGS
+from ipi.utils.mintools import min_brent, BFGS, BFGSTRM,L_BFGS
 from ipi.utils.messages import verbosity, info
 from ipi.utils.counter import counter
 
@@ -283,6 +283,56 @@ class BFGSOptimizer(DummyOptimizer):
         # Do one iteration of BFGS, return new point, function value,
         # move direction, and current Hessian to use for next iteration
         self.beads.q, fx, self.gm.d, self.invhessian = BFGS(self.beads.q,
+                self.gm.d, self.gm, fdf0=(u0, du0), invhessian=self.invhessian,
+                big_step=self.big_step, tol=self.ls_options["tolerance"],
+                itmax=self.ls_options["iter"])
+                
+        # x = current position - previous position; use for exit tolerance
+        x = np.amax(np.absolute(np.subtract(self.beads.q, self.gm.xold)))
+        
+        
+        # Store old position
+        self.gm.xold[:] = self.beads.q
+        
+        # Exit simulation step
+        self.exitstep(fx, u0, x)
+
+class BFGSTRMOptimizer(DummyOptimizer):
+    """ BFGSTRM Minimization """
+
+    def step(self, step=None):
+        """ Does one simulation time step.
+            Attributes:
+            ptime: The time taken in updating the velocities.
+            qtime: The time taken in updating the positions.
+            ttime: The time taken in applying the thermostat steps.
+        """
+
+        self.ptime = 0.0
+        self.ttime = 0.0
+        self.qtime = -time.time()
+
+        info("\nMD STEP %d" % step, verbosity.debug)
+
+        # Initialize approximate Hessian inverse to the identity and direction
+        # to the steepest descent direction
+         
+        if step == 0:   # or np.sqrt(np.dot(self.gm.d, self.gm.d)) == 0.0: this part for restarting at claimed minimum (optional)
+            info(" @GEOP: Initializing BFGS", verbosity.debug)
+            self.gm.d = depstrip(self.forces.f) / np.sqrt(np.dot(self.forces.f.flatten(), self.forces.f.flatten()))
+            # store actual position to previous position
+            self.gm.xold = self.beads.q.copy()
+        
+        # Current energy and forces
+        u0 = self.forces.pot.copy()
+        du0 = - self.forces.f
+
+        # Store previous forces
+        self.old_f[:] = self.forces.f
+
+        # Do one iteration of BFGS, return new point, function value,
+        # move direction, and current Hessian to use for next iteration
+        self.beads.q, fx, self.gm.d, self.invhessian = BFGSTRM(self.beads.q,
                 self.gm.d, self.gm, fdf0=(u0, du0), invhessian=self.invhessian,
                 big_step=self.big_step, tol=self.ls_options["tolerance"],
                 itmax=self.ls_options["iter"])

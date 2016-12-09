@@ -544,6 +544,86 @@ def BFGS(x0, d0, fdf, fdf0=None, invhessian=None, big_step=100, tol=1.0e-6, itma
     info(" @MINIMIZE: Updated search direction", verbosity.debug)
     return (x, fx, xi, invhessian)
 
+# BFGS algorithm with approximate line search
+def BFGSTRM(x0, d0, fdf, fdf0=None, invhessian=None, big_step=100, tol=1.0e-6, itmax=100):
+    
+    """BFGSTRM minimization. Uses approximate line minimizations.
+    Does one step.
+        Arguments:
+            fdf: function and gradient
+            fdf0: initial function and gradient value
+            d0: initial direction for line minimization
+            x0: initial point
+            big_step: limit on step length
+            tol: convergence tolerance
+            itmax: maximum number of allowed iterations
+    """
+    
+    # Original function value, gradient, other initializations
+    # initial guess of inverse Hessian matrix is unit matrix
+    zeps = 1.0e-10
+    if fdf0 is None: fdf0 = fdf(x0)
+    f0, df0 = fdf0
+    n = len(x0.flatten())
+    if invhessian is None: invhessian = np.eye(n)
+    dg = np.zeros(n)
+    g = df0.flatten()
+    hdg = np.zeros(n)
+    x = np.zeros(n)
+    linesum = np.dot(x0.flatten(), x0.flatten())
+    
+    # Initial line direction (negative gradient at x0)
+    xi = d0
+
+    # Maximum step size
+    big_step = big_step * max(np.sqrt(linesum), n)
+
+    # Perform approximate line minimization in direction d0
+    x, fx, dfx = min_approx(fdf, x0, fdf0, xi, big_step, tol, itmax) 
+
+    info(" @MINIMIZE: Started BFGS", verbosity.debug)
+
+    # Update line direction (xi) and current point (x0)
+    xi = np.subtract(x, x0).flatten()
+    x0 = x
+
+    # Store old gradient
+    dg = g
+
+    # Get new gradient      
+    g = dfx
+    info(" @MINIMIZE: Updated gradient", verbosity.debug)
+    g = g.flatten()
+
+    # Compute difference of gradients
+    dg = np.subtract(g, dg)
+
+    # Difference of gradients times current matrix 
+    hdg = np.dot(invhessian, dg)
+
+    fac = np.dot(dg.flatten(), xi.flatten())
+    fae = np.dot(dg.flatten(), hdg.flatten())
+    sumdg = np.dot(dg.flatten(), dg.flatten())
+    sumxi = np.dot(xi.flatten(), xi.flatten())
+
+    # Skip update if not 'fac' sufficiently positive
+    if fac > np.sqrt(zeps * sumdg * sumxi):
+        fac = 1.0 / fac
+        fad = 1.0 / fae
+
+        # Compute BFGS term
+        dg = np.subtract(fac * xi, fad * hdg)
+
+        invhessian = invhessian + np.outer(xi, xi) * fac - np.outer(hdg, hdg) * fad + np.outer(dg, dg) * fae        
+        info(" @MINIMIZE: Updated hessian", verbosity.debug)
+    else:
+        info(" @MINIMIZE: Skipped hessian update; direction x gradient insufficient", verbosity.debug)
+    
+    # Update direction
+    xi = np.dot(invhessian, -g)
+    info(" @MINIMIZE: Updated search direction", verbosity.debug)
+    return (x, fx, xi, invhessian)
+
 # L-BFGS algorithm with approximate line search
 def L_BFGS(x0, d0, fdf, qlist, glist, fdf0=None, big_step=100, tol=1.0e-6, itmax=100, m=0, k=0):
     
