@@ -122,18 +122,21 @@ class ForceField(dobject):
 
         pbcpos = depstrip(atoms.q).copy()
 
+        # Indexes come from input in a per atom basis and we need to make a per atom-coordinate basis
         # Reformat indexes for full system (default) or piece of system      
-        fullat=True
+#        fullat=True
         if self.active[0]==-1:
-           temp=np.array([i for i in range(len(pbcpos))])
+           activehere=np.array([i for i in range(len(pbcpos))])
         else:
-           fullat=False
+           activehere=np.array([[3*n, 3*n+1, 3*n+2] for n in self.active])
 
-        if (self.active[0]!=-1 and fullat==False):
-           temp=np.array([[3*n, 3*n+1, 3*n+2] for n in self.active])
+#           fullat=False
+#
+#        if (self.active[0]!=-1 and fullat==False):
+#           temp=np.array([[3*n, 3*n+1, 3*n+2] for n in self.active])
 
         # Reassign active indexes in order to use them
-        activehere=temp.flatten()
+        activehere=activehere.flatten()
 
         # Perform sanity check for active atoms
         if  (len(activehere)>len(pbcpos) or activehere[-1]>(len(pbcpos)-1)):
@@ -141,7 +144,7 @@ class ForceField(dobject):
 
 
         if self.dopbc:
-            cell.array_pbc(pbcpos[activehere])
+            cell.array_pbc(pbcpos)
 
         newreq = ForceRequest({
             "id": reqid,
