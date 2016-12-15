@@ -77,6 +77,9 @@ class InputGeop(InputDictionary):
                 "invhessian_bfgs" : (InputArray, {"dtype" : float,
                               "default"  : input_default(factory=np.eye, args = (0,)),
                               "help"     : "Approximate inverse Hessian for BFGS, if known."}),
+                "hessian_trm" : (InputArray, {"dtype" : float,
+                              "default"  : input_default(factory=np.eye, args = (0,)),
+                              "help"     : "Approximate Hessian for trm, if known."}),
                 "qlist_lbfgs" : (InputArray, {"dtype" : float,
                               "default"  : input_default(factory=np.zeros, args = (0,)),
                               "help"     : "List of previous position differences for L-BFGS, if known."}),
@@ -99,6 +102,7 @@ class InputGeop(InputDictionary):
         self.old_direction_cgsd.store(geop.old_d)
         self.biggest_step.store(geop.big_step)
         self.invhessian_bfgs.store(geop.invhessian)
+        self.hessian_trm.store(geop.hessian)
         self.qlist_lbfgs.store(geop.qlist)
         self.glist_lbfgs.store(geop.glist)
         self.corrections_lbfgs.store(geop.corrections)
