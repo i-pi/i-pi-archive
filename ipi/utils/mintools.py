@@ -548,25 +548,25 @@ def BFGS(x0, d0, fdf, fdf0=None, invhessian=None, big_step=100, tol=1.0e-6, itma
 
 def TRM_UPDATE(dx,df,h):
     """ Input: DX = X -X_old
-               DF = F -F_old #RENAME
+               DF = F -F_old
+               DG = -DF 
                H  = hessian
         Return: updated hessian"""
 
     dx   = dx[:,np.newaxis]   #dimension nx1
     dx_t = dx.T               #dimension 1xn
-    df   = -df[:,np.newaxis]
-    df_t = df.T
+    dg   = -df[:,np.newaxis]
+    dg_t = dg.T
 
     #JCP, 117,9160. Eq 44
-    h1   = np.dot(df,df_t)
-    h1   = h1 / ( np.dot(df_t,dx) )
+    h1   = np.dot(dg,dg_t)
+    h1   = h1 / ( np.dot(dg_t,dx) )
     h2a  = np.dot(h,dx)
     h2b  = np.dot(dx_t,h)
     h2   = np.dot(h2a,h2b)
     h2   = h2 / np.dot(dx_t,h2a)
 
     h   += h1 - h2
-    return h
 
 def TRM_FIND(f, h, tr):
         """ Return the minimum of
@@ -585,6 +585,7 @@ def TRM_FIND(f, h, tr):
                  w    = hessian eigenvector (in columns)
                  g    = gradient in cartesian basis
                  gE   = gradient in eigenvector basis
+                 DX   = displacement in cartesian basis
                  DXE  = displacement in eigenvector basis
         """
         ndim = f.size
@@ -621,7 +622,7 @@ def TRM_FIND(f, h, tr):
                 print "problem in 'find'!!!"
             if (np.linalg.norm(DXE)<tr):
                 DX=np.dot(w,DXE)
-		print "trivial DX"
+		#print "trivial DX"
                 return DX
  
         #If we haven't luck. Let's start with the iteration

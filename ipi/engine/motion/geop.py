@@ -33,6 +33,7 @@ class GeopMotion(Motion):
         old_force: force on previous step
         old_direction_cgsd: move direction on previous step in CG/SD
         invhessian_bfgs: stored inverse Hessian matrix for BFGS
+        hessian_trm: stored  Hessian matrix for trm
         ls_options:
         {tolerance: energy tolerance for exiting minimization algorithm
         iter: maximum number of allowed iterations for minimization algorithm for each MD step
@@ -54,6 +55,7 @@ class GeopMotion(Motion):
                  old_force=np.zeros(0, float),
                  old_direction_cgsd=np.zeros(0, float),
                  invhessian_bfgs=np.eye(0, 0, 0, float),
+                 hessian_trm=np.eye(0, 0, 0, float),
                  ls_options={"tolerance": 1e-6, "iter": 100, "step": 1e-3, "adaptive": 1.0},
                  tolerances={"energy": 1e-8, "force": 1e-8, "position": 1e-8},
                  corrections_lbfgs=5,
@@ -75,6 +77,7 @@ class GeopMotion(Motion):
         self.old_f = old_force
         self.old_d = old_direction_cgsd
         self.invhessian = invhessian_bfgs
+        self.hessian = hessian_trm
         self.ls_options = ls_options
         self.tolerances = tolerances
         self.corrections = corrections_lbfgs
@@ -179,37 +182,8 @@ class GradientMapper(object):
         counter.count()        # counts number of function evaluations
         return e, g
 
-class TrustRadiusMapper(object):
-       
-    """TODO
-    Attributes:
-        x0: initial position
-        d: move direction
-        xold: previous position
-    """
-    
-    def __init__(self):
-        self.x0 = None    #del
-        self.d = None     #del
-        self.xold = None  #del
-        self.tr = 0.4  #~0.21 A 
         
-    def bind(self, dumop):     #check and del
-        self.dbeads = dumop.beads.copy()
-        self.dcell = dumop.cell.copy()
-        self.dforces = dumop.forces.copy(self.dbeads, self.dcell)
        
-
-    def __call__(self,x):
-        """computes energy and gradient for optimization step"""
-        
-        self.dbeads.q = x
-        e = self.dforces.pot   # Energy
-        g = - self.dforces.f   # Gradient
-        counter.count()        # counts number of function evaluations
-        #return e, g
-
-
  
 class DummyOptimizer(dobject):
     """ Dummy class for all optimization classes """
@@ -219,7 +193,6 @@ class DummyOptimizer(dobject):
         
         self.lm  = LineMapper()
         self.gm  = GradientMapper()
-        self.trm = TrustRadiusMapper()
         
     def step(self, step=None):
         """Dummy simulation time step which does nothing."""
@@ -238,6 +211,7 @@ class DummyOptimizer(dobject):
         self.old_f = geop.old_f
         self.old_d = geop.old_d
         self.invhessian = geop.invhessian   
+        self.hessian = geop.hessian   
         self.corrections = geop.corrections 
         self.qlist = geop.qlist             
         self.glist = geop.glist             
@@ -249,7 +223,6 @@ class DummyOptimizer(dobject):
 
         self.lm.bind(self)
         self.gm.bind(self)
-        self.trm.bind(self)
 
         if self.old_f.shape != self.beads.q.size:
             if self.old_f.size == 0:
@@ -266,20 +239,18 @@ class DummyOptimizer(dobject):
                 self.invhessian = np.eye(self.beads.q.size, self.beads.q.size, 0, float)
             else:
                 raise ValueError("Inverse Hessian size does not match system size")
+        if self.hessian.size != (self.beads.q.size * self.beads.q.size):
+            if self.hessian.size == 0:
+                self.hessian = np.eye(self.beads.q.size, self.beads.q.size, 0, float)
+            else:
+                raise ValueError("Hessian size does not match system size")
                 
     def exitstep(self, fx, u0, x):
         """ Exits the simulation step. Computes time, checks for convergence. """
        
-	print "----------in---------------"
         info(" @GEOP: Updating bead positions", verbosity.debug)
         
         self.qtime += time.time()
-        print np.absolute((fx - u0) / self.beads.natoms) 
-	print self.tolerances["energy"]
-        print np.amax(np.absolute(self.forces.f))
-        print self.tolerances["force"]
-        print x <= self.tolerances["position"]
-	print "-----------end in------------"
 	
         if (np.absolute((fx - u0) / self.beads.natoms) <= self.tolerances["energy"])\
                 and ((np.amax(np.absolute(self.forces.f)) <= self.tolerances["force"])
@@ -340,7 +311,7 @@ class BFGSOptimizer(DummyOptimizer):
         self.exitstep(fx, u0, x)
 
 class BFGSTRMOptimizer(DummyOptimizer):
-    """ BFGSTRM Minimization """
+    """ BFGSTRM Minimization with Trust Radius Method.	"""
 
     def step(self, step=None):
         """ Does one simulation time step.
@@ -348,6 +319,7 @@ class BFGSTRMOptimizer(DummyOptimizer):
             ptime: The time taken in updating the velocities.
             qtime: The time taken in updating the positions.
             ttime: The time taken in applying the thermostat steps.
+	    tr   : current trust radius
         """
 
         self.ptime = 0.0
@@ -356,7 +328,7 @@ class BFGSTRMOptimizer(DummyOptimizer):
 
         info("\nMD STEP %d" % step, verbosity.debug)
 
-        # Initialize approximate Hessian  to the identity 
+        # Initialize approximate Hessian to the identity 
          
         if step == 0:   
             info(" @GEOP: Initializing BFGSTRM", verbosity.debug)
@@ -364,23 +336,12 @@ class BFGSTRMOptimizer(DummyOptimizer):
             self.old_x    = self.beads.q.copy()
             self.old_u    = self.forces.pot.copy()
 	    self.old_f    = self.forces.f.copy()
-	    self.hessian  = np.linalg.inv(self.invhessian)
             self.tr       = 0.4  #~0.21 A 
 	else:
             # Update old_x ,old_u and old_f values
             self.old_x[:] = self.beads.q
             self.old_u    = self.forces.pot
             self.old_f[:] = self.forces.f
-
-	print "alberto"
-	print id(self.old_x)-id(self.beads.q)
-	print id(self.old_u)-id(self.forces.pot)
-	print id(self.old_f)-id(self.forces.f)
-	
-
-	#TODO	check sizes and id
-	#check old_f
-
 
 #Find new movement direction candidate
 	d_x = TRM_FIND(self.forces.f,self.hessian,self.tr)
@@ -389,16 +350,6 @@ class BFGSTRMOptimizer(DummyOptimizer):
 
 	self.beads.q = self.beads.q+d_x.T
 
-	print self.old_u-self.forces.pot
-
-
-
-#Internal check
-        d_x_norm = np.linalg.norm(d_x.flatten())
-        d_f      = np.subtract(self.forces.f, self.old_f)
-        #f_norm   = np.linalg.norm(self.forces.f)
-        #d_f_norm = np.linalg.norm(d_f.flatten())
-
 #Compute energy gain
         true_gain     = self.forces.pot - self.old_u
         expected_gain = -np.dot(self.old_f,d_x) 
@@ -406,14 +357,15 @@ class BFGSTRMOptimizer(DummyOptimizer):
 	harmonic_gain = -0.5*np.dot( (self.old_f+self.forces.f),d_x  )         
 
 #Compute quality:
+        d_x_norm = np.linalg.norm(d_x.flatten())
 
         if d_x_norm > 0.05:              
 	   quality = true_gain / expected_gain	
 	else:
-	   quality = harmonic_gain/ expected_gain	
+	   quality = harmonic_gain / expected_gain	
 	accept  = (quality > 0.1 )
 
-#Update TR 
+#Update TrustRadius (tr)
         if quality < 0.25:
 	    self.tr = 0.5*d_x_norm
 	elif quality>0.75 and d_x_norm>0.9*self.tr:
@@ -422,8 +374,10 @@ class BFGSTRMOptimizer(DummyOptimizer):
     	        self.tr = self.big_step
 	
 #if accept, Update  Hessian and check exit, else revert positions
+        d_f      = np.subtract(self.forces.f, self.old_f)
+
 	if accept:
-	    self.hessian = TRM_UPDATE( d_x.flatten(),d_f.flatten(),self.hessian.copy() )	
+	    TRM_UPDATE( d_x.flatten(),d_f.flatten(),self.hessian )	
 	    d_x_max =np.amax(np.absolute(d_x))
             self.exitstep(self.forces.pot, self.old_u, d_x_max)
 	else: 
