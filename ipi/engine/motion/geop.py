@@ -253,11 +253,10 @@ class DummyOptimizer(dobject):
         self.qtime += time.time()
 	
         if (np.absolute((fx - u0) / self.beads.natoms) <= self.tolerances["energy"])\
-                and ((np.amax(np.absolute(self.forces.f)) <= self.tolerances["force"])
-                    or (np.sqrt(np.dot(self.forces.f.flatten() - self.old_f.flatten(),
-                        self.forces.f.flatten() - self.old_f.flatten())) == 0.0))\
-                and (x <= self.tolerances["position"]):
-            info("Total number of function evaluations: %d" % counter.func_eval, verbosity.debug)
+            and ( ( np.amax(np.absolute(self.forces.f)) <= self.tolerances["force"]   )  or
+                  ( np.linalg.norm(self.forces.f.flatten() - self.old_f.flatten()) == 1e-10)  )\
+            and (x <= self.tolerances["position"]):
+            info("Total number of function evaluations: %d" % counter.func_eval, verbosity.low)   # I think this is important
             softexit.trigger("Geometry optimization converged. Exiting simulation")
 
 class BFGSOptimizer(DummyOptimizer):
@@ -336,20 +335,25 @@ class BFGSTRMOptimizer(DummyOptimizer):
             self.old_x    = self.beads.q.copy()
             self.old_u    = self.forces.pot.copy()
 	    self.old_f    = self.forces.f.copy()
-            self.tr       = 0.4  #~0.21 A 
-	else:
+            self.tr       = 0.4  #~0.21 A
+	    self.accept   = True 
+ 	elif self.accept:
             # Update old_x ,old_u and old_f values
             self.old_x[:] = self.beads.q
             self.old_u    = self.forces.pot
             self.old_f[:] = self.forces.f
 
 #Find new movement direction candidate
-	d_x = TRM_FIND(self.forces.f,self.hessian,self.tr)
+	d_x = TRM_FIND(self.old_f,self.hessian,self.tr)
 
 #Make movement (energy and forces are computed automatically)
 
-	self.beads.q = self.beads.q+d_x.T
-
+  	if self.accept:
+ 	     self.beads.q = self.beads.q + d_x.T
+  	else:
+  	    self.beads.q = self.old_x   + d_x.T
+        counter.count()      # counts number of function evaluations
+	
 #Compute energy gain
         true_gain     = self.forces.pot - self.old_u
         expected_gain = -np.dot(self.old_f,d_x) 
@@ -363,7 +367,7 @@ class BFGSTRMOptimizer(DummyOptimizer):
 	   quality = true_gain / expected_gain	
 	else:
 	   quality = harmonic_gain / expected_gain	
-	accept  = (quality > 0.1 )
+	self.accept  = (quality > 0.1 )
 
 #Update TrustRadius (tr)
         if quality < 0.25:
@@ -373,16 +377,14 @@ class BFGSTRMOptimizer(DummyOptimizer):
 	    if self.tr > self.big_step:
     	        self.tr = self.big_step
 	
-#if accept, Update  Hessian and check exit, else revert positions
+#if accept, Update  Hessian and check exit
         d_f      = np.subtract(self.forces.f, self.old_f)
 
-	if accept:
+	if self.accept:
 	    TRM_UPDATE( d_x.flatten(),d_f.flatten(),self.hessian )	
 	    d_x_max =np.amax(np.absolute(d_x))
             self.exitstep(self.forces.pot, self.old_u, d_x_max)
-	else: 
-	    self.beads.q = self.beads.q-d_x.T
-	
+		
 #---------------------------------------------------------------------------------------
 class LBFGSOptimizer(DummyOptimizer):
     """ L-BFGS Minimization """
