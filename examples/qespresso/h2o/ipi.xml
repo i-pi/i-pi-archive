@@ -1,5 +1,5 @@
 <simulation verbosity="high">
-  <output prefix='h2o_output'>
+  <output prefix='example'>
     <properties stride='1' filename='out'>  [ time{femtosecond}, conserved, temperature{kelvin}, kinetic_cv, potential, pressure_cv{bar} ] </properties>
     <trajectory stride='1' filename='pos' cell_units="angstrom"> positions{angstrom} </trajectory>
     <checkpoint stride='20'/>

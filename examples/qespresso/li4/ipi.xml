@@ -1,5 +1,5 @@
 <simulation verbosity="high">
-  <output prefix='li4_output'>
+  <output prefix='example'>
     <properties stride='1' filename='out'>  [ time{picosecond}, conserved, temperature{kelvin}, kinetic_cv, potential, pressure_cv] </properties>
     <trajectory stride='1' filename='pos'>positions</trajectory>
     <checkpoint stride='20'/>

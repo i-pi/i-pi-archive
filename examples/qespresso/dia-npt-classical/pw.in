@@ -1,23 +1,21 @@
 &CONTROL
-    calculation='driver'
-    srvaddress='localhost:3141'
-    verbosity='low'
+    calculation='scf'
+    verbosity='high'
     restart_mode='from_scratch'
     tstress=.true.
     tprnfor=.true.
     etot_conv_thr=5.0D-5
     forc_conv_thr=1.0D-4
-    prefix='h2o'
+    prefix='dia'
     outdir='./'
     pseudo_dir='../'
     max_seconds=7200
 /
 &SYSTEM
     ibrav=0
-    celldm(1)= 10.0
-    NAT=3
-    NTYP=2
-    ECUTWFC=18
+    NAT=8
+    NTYP=1
+    ECUTWFC=80
     ECUTRHO=100
     nspin=1
     occupations='fixed'
@@ -33,15 +31,20 @@
 &IONS
 /
 ATOMIC_SPECIES   
-    H  1.008 H.pbe-rrkjus.UPF
-    O  1.008 O.pbe-rrkjus.UPF
-ATOMIC_POSITIONS (alat)
-H 0.1 0 0 
-H -0.1 0 0
-O 0 0 0 
+    C  12.01 C.pbe-rrkjus.UPF
+ATOMIC_POSITIONS (angstrom)
+ C  0.000   0.000   0.000
+ C  0.000   1.784   1.784
+ C  1.784   1.784   0.000
+ C  1.784   0.000   1.784
+ C  2.675   0.892   2.675
+ C  0.892   0.892   0.892
+ C  0.892   2.675   2.675
+ C  2.675   2.675   0.892
 K_POINTS (gamma)
-CELL_PARAMETERS
-1 0 0
-0 1 0
-0 0 1 
+CELL_PARAMETERS (bohr)
+6.741 .0 .0
+.0 6.741 .0
+.0 .0 6.741
+
 
