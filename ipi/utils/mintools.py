@@ -573,7 +573,7 @@ def TRM_FIND(f, h, tr):
         E(dx) = -(F * dx + 0.5 * ( dx * H * dx ),
         whithin dx**2 <tr
         
-        IN    f  = forces        (1xn) 
+        IN    f  = forces        (n,) 
               h  = hessian       (nxn)
               tr = trust-radius 
 
@@ -588,12 +588,15 @@ def TRM_FIND(f, h, tr):
                  DX   = displacement in cartesian basis
                  DXE  = displacement in eigenvector basis
         """
+
+	#Resize
         ndim = f.size
+	f=f.reshape((1,ndim))
+
         #Diagonalize
         d, w = np.linalg.eigh(h)        
         d=d[:,np.newaxis]              #dimension nx1
 
-                
         gEt =  np.dot(f,w)           #Change of basis  ##
         gE = gEt.T                    #dimension nx1 
 
@@ -623,7 +626,7 @@ def TRM_FIND(f, h, tr):
             if (np.linalg.norm(DXE)<tr):
                 DX=np.dot(w,DXE)
 		#print "trivial DX"
-                return DX
+                return DX.flatten()
  
         #If we haven't luck. Let's start with the iteration
         lamb_min = max(0.0,-min_d)
@@ -652,7 +655,7 @@ def TRM_FIND(f, h, tr):
           #  print 'iter',i,lamb, lamb_max,lamb_min,y,dy
 
         DX=np.dot(w,DXE)
-        return DX
+        return DX.flatten()
 
 # L-BFGS algorithm with approximate line search
 def L_BFGS(x0, d0, fdf, qlist, glist, fdf0=None, big_step=100, tol=1.0e-6, itmax=100, m=0, k=0):

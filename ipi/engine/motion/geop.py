@@ -344,24 +344,26 @@ class BFGSTRMOptimizer(DummyOptimizer):
             self.old_f[:] = self.forces.f
 
 #Find new movement direction candidate
-	d_x = TRM_FIND(self.old_f,self.hessian,self.tr)
+	d_x = TRM_FIND(self.old_f.flatten(),self.hessian,self.tr)
+ 	d_x = d_x.reshape(self.beads.nbeads,3*self.beads.natoms)    
 
 #Make movement (energy and forces are computed automatically)
-
   	if self.accept:
- 	     self.beads.q = self.beads.q + d_x.T
+ 	     self.beads.q = self.beads.q + d_x
   	else:
-  	    self.beads.q = self.old_x   + d_x.T
+   	     self.beads.q = self.old_x   + d_x
         counter.count()      # counts number of function evaluations
 	
 #Compute energy gain
+	d_x_aux = d_x.reshape(self.beads.nbeads*3*self.beads.natoms,1)
+
         true_gain     = self.forces.pot - self.old_u
-        expected_gain = -np.dot(self.old_f,d_x) 
-        expected_gain += 0.5*np.dot(  d_x.T,np.dot(self.hessian,d_x) )
-	harmonic_gain = -0.5*np.dot( (self.old_f+self.forces.f),d_x  )         
+        expected_gain = -np.dot(self.old_f.flatten(),d_x.flatten()) 
+        expected_gain += 0.5*np.dot(  d_x_aux.T,np.dot(self.hessian,d_x_aux) )
+	harmonic_gain = -0.5*np.dot( d_x.flatten(),(self.old_f+self.forces.f).flatten() )         
 
 #Compute quality:
-        d_x_norm = np.linalg.norm(d_x.flatten())
+        d_x_norm = np.linalg.norm(d_x)
 
         if d_x_norm > 0.05:              
 	   quality = true_gain / expected_gain	
