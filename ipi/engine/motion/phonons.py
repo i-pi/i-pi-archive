@@ -49,13 +49,13 @@ class DynMatrixMover(Motion):
         self.mode = mode
         if self.mode == "fd":
             print "chose fd"
-            self.phononator = FDPhononator()
+            self.phcalc = FDPhononCalculator()
         elif self.mode == "nmfd":
             print "chose nmfd"
-            self.phononator = NMFDPhononator()
+            self.phcalc = NMFDPhononCalculator()
         elif self.mode == "enmfd":
             print "chose enmfd"
-            self.phononator = ENMFDPhononator()
+            self.phcalc = ENMFDPhononCalculator()
 
         self.deltaw = output_shift
         self.deltax = pos_shift
@@ -81,7 +81,7 @@ class DynMatrixMover(Motion):
 
         self.ism = 1/np.sqrt(depstrip(self.beads.m3[-1]))
         self.m = depstrip(self.beads.m)
-        self.phononator.bind(self)
+        self.phcalc.bind(self)
     
         self.dbeads = self.beads.copy()
         self.dcell = self.cell.copy()
@@ -90,9 +90,9 @@ class DynMatrixMover(Motion):
     def step(self, step=None):
         """Executes one step of phonon computation. """
         if (step < 3*self.beads.natoms):
-            self.phononator.step(step)
+            self.phcalc.step(step)
         else:
-            self.phononator.transform()
+            self.phcalc.transform()
             rdyn = self.apply_asr(self.refdynmatrix)
             self.printall(self.prefix, rdyn)
             softexit.trigger("Dynamic matrix is calculated. Exiting simulation")                    
@@ -208,8 +208,8 @@ class DynMatrixMover(Motion):
             transfmatrix = np.eye(3*self.beads.natoms)-np.dot(D.T,D)
             return np.dot(transfmatrix.T,np.dot(dm,transfmatrix))
 
-class DummyPhononator(dobject):
-    """ No-op phononator """
+class DummyPhononCalculator(dobject):
+    """ No-op PhononCalculator """
 
     def __init__(self):
         pass
@@ -226,13 +226,13 @@ class DummyPhononator(dobject):
         """Dummy transformation step which does nothing."""
         pass
       
-class FDPhononator(DummyPhononator):
+class FDPhononCalculator(DummyPhononCalculator):
     """ Finite dinnerence phonon evaluator.
     """
 
     def bind(self, dm):
         """ Reference all the variables for simpler access."""
-        super(FDPhononator,self).bind(dm)
+        super(FDPhononCalculator,self).bind(dm)
 
         #Initialises a 3*number of atoms X 3*number of atoms dynamic matrix.
         if(self.dm.dynmatrix.size  != (self.dm.beads.q.size * self.dm.beads.q.size)):
@@ -263,13 +263,13 @@ class FDPhononator(DummyPhononator):
         self.dm.dynmatrix[step] = dmrow
         self.dm.refdynmatrix[step] = dmrow
 
-class NMFDPhononator(FDPhononator):
+class NMFDPhononCalculator(FDPhononCalculator):
     """ Normal mode finite difference phonon evaluator.
     """
 
     def bind(self, dm):
         """ Reference all the variables for simpler access."""
-        super(NMFDPhononator,self).bind(dm)
+        super(NMFDPhononCalculator,self).bind(dm)
 
         if(self.dm.dynmatrix.all() == np.zeros((self.dm.beads.q.size,self.dm.beads.q.size)).all()):
             raise ValueError("Force constant matrix size not found")
@@ -306,7 +306,7 @@ class NMFDPhononator(FDPhononator):
     def transform(self):
         self.dm.refdynmatrix = np.dot(self.dm.U,np.dot(self.dm.refdynmatrix,np.transpose(self.dm.U)))
 
-class ENMFDPhononator(NMFDPhononator):
+class ENMFDPhononCalculator(NMFDPhononCalculator):
     """ Energy scaled normal mode finite difference phonon evaluator.
     """
 
