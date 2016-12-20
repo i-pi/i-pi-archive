@@ -13,7 +13,8 @@ import ipi.utils.io as io
 import ipi.utils.mathtools as mt
 
 
-default_cell_mat = mt.abc2h(1.0, 1.0, 1.0, np.pi/2.0, np.pi/2.0, np.pi/2.0)
+#default_cell_mat = mt.abc2h(-1.0, -1.0, -1.0, np.pi/2.0, np.pi/2.0, np.pi/2.0) # After changing the "input standard"
+default_cell_mat = np.eye(3) * -1.0
 deg2rad = np.pi/180.0
 
 
@@ -22,14 +23,14 @@ test_read_file_prms = [
     (1, 1, 'asdasd', 'objects', 'xyz', default_cell_mat, 1, 1),
     (2, 1, 'asdasd', 'objects', 'xyz', default_cell_mat, 1, 1),
     (1, 2, 'asdasd', 'objects', 'xyz', default_cell_mat, 1, 1),
-    (10, 10, '{angstrom} positions{angstrom}', 'objects', 'xyz', default_cell_mat, 1.8897261, 1.8897261),
-    (10, 10, ' positions{angstrom} {angstrom} 100 aaa # CELL(abcABC): 5.1 5.2 5.0 91.0  89  90 100 aaa', 'objects', 'xyz', mt.abc2h(5.1, 5.2, 5.0, 91*deg2rad, 89*deg2rad, 90*deg2rad), 1.8897261, 1.8897261),
+    (10, 10, 'cell{angstrom} positions{angstrom}', 'objects', 'xyz', default_cell_mat, 1.8897261, 1.8897261),
+    (10, 10, ' positions{angstrom} cell{angstrom} 100 aaa # CELL(abcABC): 5.1 5.2 5.0 91.0  89  90 100 aaa', 'objects', 'xyz', mt.abc2h(5.1, 5.2, 5.0, 91*deg2rad, 89*deg2rad, 90*deg2rad), 1.8897261, 1.8897261),
 
     (1, 1, 'asdasd', 'array', 'xyz', default_cell_mat, 1, 1),
     (2, 1, 'asdasd', 'array', 'xyz', default_cell_mat, 1, 1),
     (1, 2, 'asdasd', 'array', 'xyz', default_cell_mat, 1, 1),
-    (10, 10, '{angstrom} positions{angstrom}', 'array', 'xyz', default_cell_mat, 1.8897261, 1.8897261),
-    (10, 10, ' positions{angstrom} {angstrom} 100 aaa # CELL(abcABC): 5.1 5.2 5.0 91.0  89  90 100 aaa', 'array', 'xyz', mt.abc2h(5.1, 5.2, 5.0, 91*deg2rad, 89*deg2rad, 90*deg2rad), 1.8897261, 1.8897261),
+    (10, 10, 'cell{angstrom} positions{angstrom}', 'array', 'xyz', default_cell_mat, 1.8897261, 1.8897261),
+    (10, 10, ' positions{angstrom} cell{angstrom} 100 aaa # CELL(abcABC): 5.1 5.2 5.0 91.0  89  90 100 aaa', 'array', 'xyz', mt.abc2h(5.1, 5.2, 5.0, 91*deg2rad, 89*deg2rad, 90*deg2rad), 1.8897261, 1.8897261),
 ]
 
 @pytest.fixture(params=test_read_file_prms)
@@ -42,8 +43,8 @@ def prepare_read_file(request):
     expected_q = xyz.copy()
     expected_names = atom_names[:]
 
-    if comment.find('CELL') < 0:
-        unit_conv_cell = 1.0
+    # if comment.find('CELL') < 0:
+    #     unit_conv_cell = 1.0
 
     return file_type, filedesc, output_type, expected_q, expected_cell, expected_names, unit_conv_cell, unit_conv_q
 
