@@ -119,6 +119,8 @@ class NormalModes(dobject):
       self.natoms = beads.natoms
 
       # stores a reference to the bound beads and ensemble objects
+      self.ensemble = ensemble
+      deppipe(motion, "dt", self, "dt")
 
       # sets up what's necessary to perform nm transformation.
       if self.transform_method == "fft":
@@ -181,6 +183,7 @@ class NormalModes(dobject):
             func=self.get_omegak, dependencies=[dget(self,"omegan")]) )
 
       # sets up "dynamical" masses -- mass-scalings to give the correct RPMD/CMD dynamics
+      # TODO: Do we really need different names and variable names? Seems confusing.
       dset(self,"nm_factor", depend_array(name="nmm",
          value=np.zeros(self.nbeads, float), func=self.get_nmm,
             dependencies=[dget(self,"nm_freqs"), dget(self,"mode") ]) )
@@ -372,15 +375,29 @@ class NormalModes(dobject):
       if self.nbeads == 1:
          pass
       else:
-         pq = np.zeros((2,self.natoms*3),float)
-         sm = depstrip(self.beads.sm3)[0]
-         prop_pq = depstrip(self.prop_pq)
+         pq = np.zeros((2,self.natoms*3),float)         
+         sm = depstrip(self.beads.sm3)
+         prop_pq = depstrip(self.prop_pq) 
+         pnm = depstrip(self.pnm)/sm
+         qnm = depstrip(self.qnm)*sm
+         
          for k in range(1,self.nbeads):
-            pq[0,:] = depstrip(self.pnm)[k]/sm
-            pq[1,:] = depstrip(self.qnm)[k]*sm
+            pq[0,:] = pnm[k]
+            pq[1,:] = qnm[k]
             pq = np.dot(prop_pq[k],pq)
-            self.qnm[k] = pq[1,:]/sm
-            self.pnm[k] = pq[0,:]*sm
+            qnm[k] = pq[1,:]
+            pnm[k] = pq[0,:]
+         self.pnm = pnm * sm
+         self.qnm = qnm / sm
+         #pq = np.zeros((2,self.natoms*3),float)
+         #sm = depstrip(self.beads.sm3)[0]
+         #prop_pq = depstrip(self.prop_pq)
+         #for k in range(1,self.nbeads):
+         #   pq[0,:] = depstrip(self.pnm)[k]/sm
+         #   pq[1,:] = depstrip(self.qnm)[k]*sm
+         #   pq = np.dot(prop_pq[k],pq)
+         #   self.qnm[k] = pq[1,:]/sm
+         #   self.pnm[k] = pq[0,:]*sm
 
    def get_kins(self):
       """Gets the MD kinetic energy for all the normal modes.

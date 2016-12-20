@@ -1,0 +1,25 @@
+<simulation mode="static" verbosity="high">
+   <output prefix='simulation'>
+      <properties stride='1' filename='out'>  [ step, time{picosecond}, conserved{electronvolt}, temperature{kelvin}, kinetic_cv{electronvolt}, potential{electronvolt}, pressure_cv{megapascal}] </properties>
+   </output>
+   <total_steps> 100000 </total_steps>
+   <prng> <seed> 32342 </seed> </prng>
+   <ffsocket name="lmp" mode="unix" pbc="true">
+      <address> driver </address>
+   </ffsocket>
+ <system>
+   <initialize nbeads='1'> 
+      <file mode='xyz' units="angstrom">  init.xyz </file>
+      <cell mode='abc' > [21.91077505,  13.8342155 ,  32.56294896] </cell>
+   </initialize>
+   <forces>
+   <force> lmp </force>
+   </forces>
+   <motion mode='calcphonons'>
+     <calculator mode='nrg'>
+         <pos_shift>0.01</pos_shift>
+         <energy_shift> 0.0009500 </energy_shift>
+     </calculator>
+   </motion>
+ </system>
+</simulation>

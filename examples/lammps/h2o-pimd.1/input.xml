@@ -10,7 +10,7 @@
       <address>driver-pimd.1</address>
    </ffsocket>
    <system>
-      <initialize nbeads='8'>
+      <initialize nbeads='1'>
          <file mode='pdb'> water_298K.pdb </file>
          <velocities mode="thermal" units='kelvin'> 300 </velocities>
       </initialize>
