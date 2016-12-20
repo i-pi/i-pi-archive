@@ -121,7 +121,11 @@ try:
     RESET = Fore.RESET
     INFO = Fore.LIGHTRED_EX
 except ImportError:
-    pass
+    RED = ""
+    YELLOW = ""
+    GREEN = ""
+    RESET = ""
+    INFO = ""
 
 
 #### Hardcoded settings ####

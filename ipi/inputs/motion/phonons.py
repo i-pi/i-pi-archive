@@ -30,7 +30,7 @@ from ipi.inputs.thermostats import *
 from ipi.inputs.initializer import *
 from ipi.utils.units import *
 
-__all__ = ['InputDynMatrix']
+__all__ = ["InputDynMatrix"]
 
 class InputDynMatrix(InputDictionary):
     """Dynamic matrix calculation options.
@@ -39,9 +39,9 @@ class InputDynMatrix(InputDictionary):
 
     """
 
-    attribs={"mode"  : (InputAttribute, {"dtype"   : str, "default": "std",
-                                    "help"    : "The algorithm to be used",
-                                    "options" : ['std', 'nrg', 'ref']}) }
+    attribs={"mode"  : (InputAttribute, {"dtype"   : str, "default": "fd",
+                                    "help"    : "The algorithm to be used: finite differences (fd), normal modes finite differences (nmfd), and energy-scaled normal mode finite differences (enmfd).",
+                                    "options" : ["fd", "nmfd", "enmfd"]}) }
     fields = { 
                 "pos_shift"  : (InputValue, {"dtype"   : float, "default": 0.01, 
                                     "help"    : "The finite deviation in position used to compute derivative of force."
@@ -53,15 +53,15 @@ class InputDynMatrix(InputDictionary):
                                     "help"    : "Shift by the dynamical matrix diagonally before outputting."
                                     }),
                 "prefix"  : (InputValue, {"dtype"   : str, "default": "PHONONS", 
-                                    "help"    : "Shift by this much the dynamical matrix in the output."
+                                    "help"    : "Prefix of the output files."
                                     }),  
-                "asr"  : (InputValue, {"dtype"   : str, "default": "none", "options" : ["none", "simple", "balanced", "crystal" ],
-                                    "help"    : "Shift by this much the dynamical matrix in the output."
+                "asr"  : (InputValue, {"dtype"   : str, "default": "none", "options" : ["none", "poly", "lin", "crystal" ],
+                                    "help"    : "Removes very low vibrational modes dependingon the symmerty of the system."
                                     }),   
-                "dynmat" : ( InputArray, {"dtype" : float, 
+                "dynmat" : ( InputArray, {"dtype" : float,
                               "default" :  np.zeros(0, float),
                               "help"    : "Portion of the dynamical matrix known up to now."}),
-                "dynmat_r" : ( InputArray, {"dtype" : float, 
+                "refdynmat" : ( InputArray, {"dtype" : float, 
                               "default" :  np.zeros(0, float),
                               "help"    : "Portion of the dynamical matrix known up to now (refining)."})              
              }
@@ -80,7 +80,7 @@ class InputDynMatrix(InputDictionary):
         self.prefix.store(phonons.prefix)
         self.asr.store(phonons.asr)
         self.dynmat.store(phonons.dynmatrix)
-        self.dynmat_r.store(phonons.dynmatrix_r)
+        self.refdynmat.store(phonons.refdynmatrix)
         
     def fetch(self):		
         rv = super(InputDynMatrix,self).fetch()
