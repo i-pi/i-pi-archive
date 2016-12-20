@@ -129,7 +129,11 @@ class ForceField(dobject):
             "pars": par_str,
             "result": None,
             "status": "Queued",
-            "start": -1})
+            "start": -1,
+            "t_queued": time.time(),
+            "t_dispatched": 0,
+            "t_finished": 0
+            })
 
         self._threadlock.acquire()
         try:
@@ -144,8 +148,10 @@ class ForceField(dobject):
 
         for r in self.requests:
             if r["status"] == "Queued":
+                r["t_dispatched"] = time.time()
                 r["result"] = [0.0, np.zeros(len(r["pos"]), float), np.zeros((3,3), float), ""]
                 r["status"] = "Done"
+                r["t_finished"] = time.time()
 
     def _poll_loop(self):
         """Polling loop.
@@ -313,6 +319,7 @@ class FFLennardJones(ForceField):
             for r in self.requests:
                 if r["status"] == "Queued":
                     r["status"] = "Running"
+                    r["t_dispatched"] = time.time()
                     self.evaluate(r)
         finally:
             self._threadlock.release()
@@ -411,3 +418,4 @@ class FFDebye(ForceField):
             
       r["result"] = [ self.vref + 0.5*np.dot(d,mf), -mf, np.zeros((3,3),float), ""]
       r["status"] = "Done"
+      r["t_finished"] = time.time()

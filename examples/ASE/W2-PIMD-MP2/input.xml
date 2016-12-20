@@ -6,24 +6,24 @@
     <trajectory stride='1' filename='positions'> positions{angstrom} </trajectory>
     <trajectory stride='1' filename='positions-centroid'> x_centroid{angstrom} </trajectory>
   </output>
-  
+
   <total_steps>2000</total_steps>
-  
+
   <ffsocket mode='unix' name='ase' pbc='False'>
     <address>ase</address>
   </ffsocket>
-  
+
   <!--
       <ffsocket mode='inet' name='ase' pbc='False'>
       <address>localhost</address>
       <port>12345</port>
       </ffsocket>
   -->
-  
+
   <system>
     <normal_modes mode='pa-cmd' units='inversecm'>[500]</normal_modes>
     <initialize nbeads='8'>
-      <file mode="xyz" units="angstrom">W2-MP2-6311ppGss.xyz</file>
+      <file mode="xyz">W2-MP2-6311ppGss.xyz</file>
       <cell mode="abc"> [1.0, 1.0, 1.0] </cell>
       <velocities mode='thermal' units='kelvin'>300</velocities>
     </initialize>

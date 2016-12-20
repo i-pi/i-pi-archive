@@ -1,6 +1,6 @@
 <simulation verbosity='high'>
   <output prefix='vapor'>
-    <properties stride='1' filename='out'>  [ step, time{picosecond}, conserved, temperature{kelvin}, kinetic_cv, potential, 
+    <properties stride='1' filename='out'>  [ step, time{picosecond}, conserved, temperature{kelvin}, kinetic_cv, potential,
     pressure_cv{megapascal}] </properties>
     <properties stride='4' filename='isotd'>     [ step, ti_weight, chin_weight, isotope_zetatd_4th(1.1253;O), isotope_zetatd_4th(1.9985;H) ] </properties>
     <properties stride='40' filename='isosc'> [ step, ti_weight, chin_weight, isotope_zetasc_4th(1.1253;O), isotope_zetasc_4th(1.9985;H) ] </properties>
@@ -12,8 +12,8 @@
     <address>vapor</address>
   </ffsocket>
   <system>
-    <initialize nbeads='24'> 
-      <file mode='pdb' units='angstrom'> h2o-32.pdb </file>
+    <initialize nbeads='24'>
+      <file mode='pdb'> h2o-32.pdb </file>
       <velocities mode="thermal" units='kelvin'> 300 </velocities>
     </initialize>
     <forces>

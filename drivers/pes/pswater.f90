@@ -579,6 +579,7 @@ subroutine dms_nasa(r1, q3, gradq)
 !**** charges with respect to the atomic displacemets (gradq) has
 !**** added  by C. J. Burnham.
 !*** 
+! MR: I here assumed that r1 is also in Angstrom (seem right because of reoh) and q3 is in e.
 implicit none
 double precision, dimension(3, 3) :: R1
 double precision, dimension(3):: q3
@@ -612,9 +613,10 @@ phh1 = phh1*dexp(phh2)
 ath0 = 1.82400520401572996557d0
 costhe = -.24780227221366464506d0
 
-ROH1 = R1(:,2) - R1(:,1)
-ROH2 = R1(:,3) - R1(:,1)
-RHH  = R1(:,2) - R1(:,3)
+! MR: changed order of indexes to conform with what is now in pot_nasa and the array conventions of i-PI
+ROH1 = R1(2,:) - R1(1,:)
+ROH2 = R1(3,:) - R1(1,:)
+RHH  = R1(2,:) - R1(3,:)
 dROH1 = dsqrt(dot_product(ROH1, ROH1))
 dROH2 = dsqrt(dot_product(ROH2, ROH2))
 dRHH  = dsqrt(dot_product(RHH, RHH))
@@ -692,6 +694,7 @@ dp2dr2=dp2dr2*bfac
    sinth = dAxB / (dROH1*dROH2)
    ang = atan2(sinth, costh)
 !   print*,'QQQ=',dms_param1
+! MR: Hoping that the terms below are also conforming to the paper.
    P1 = dms_param1*(dROH1 - dms_param2) + dms_param3*(ang-ath0)
    P2 = dms_param1*(dROH2 - dms_param2) + dms_param3*(ang-ath0)
    q3(1) = q3(1) - (P1+P2)
@@ -701,7 +704,6 @@ dp2dr2=dp2dr2*bfac
    dp2dr2 = dp2dr2 + dms_param1
    dp1dcabc = dp1dcabc   - dms_param3/sinth
    dp2dcabc = dp2dcabc   - dms_param3/sinth
-
 !..........
 
 f1q1r13=(dp1dr1-(dp1dcabc*costh/dROH1))/dROH1

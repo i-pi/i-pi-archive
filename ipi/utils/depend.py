@@ -87,7 +87,7 @@ class depend_base(object):
         _dependants: A list containing all objects dependent on the self.
     """
 
-    def __init__(self, name, synchro=None, func=None, dependants=None, dependencies=None, tainted=None):
+    def __init__(self, name, synchro=None, func=None, dependants=None, dependencies=None, tainted=None, active=None):
         """Initialises depend_base.
 
         An unusual initialisation routine, as it has to be able to deal with the
@@ -119,6 +119,8 @@ class depend_base(object):
         self._dependants = []
         if tainted is None:
             tainted = np.array([True], bool)
+        if active is None:
+            active = np.array([True], bool)
         if dependants is None:
             dependants = []
         if dependencies is None:
@@ -126,6 +128,7 @@ class depend_base(object):
         self._tainted = tainted
         self._func = func
         self._name = name
+        self._active = active
 
         self.add_synchro(synchro)
 
@@ -144,6 +147,16 @@ class depend_base(object):
                 self.taint(taintme=False)
             else:
                 self.taint(taintme=tainted)
+                
+    def hold(self):
+        self._active[:] = False
+    
+    def resume(self):
+        self._active[:] = True
+        if self._func is None:
+            self.taint(taintme=False)
+        else:
+            self.taint(taintme=True)
 
     def add_synchro(self, synchro=None):
         """ Links depend object to a synchronizer. """
@@ -201,6 +214,8 @@ class depend_base(object):
               True by default.
         """
 
+        if not self._active: return
+        
         self._tainted[:] = True
         for item in self._dependants:
             if (not item()._tainted[0]):
@@ -247,9 +262,7 @@ class depend_base(object):
 
         if not self._synchro is None:
             self._synchro.manual = self._name
-            for v in self._synchro.synced.values():
-                v.taint(taintme=True)
-            self._tainted[:] = False
+            self.taint(taintme=False)            
         elif not self._func is None:
             raise NameError("Cannot set manually the value of the automatically-computed property <" + self._name + ">")
         else:
@@ -273,7 +286,7 @@ class depend_value(depend_base):
         _value: The value associated with self.
     """
 
-    def __init__(self, name, value=None, synchro=None, func=None, dependants=None, dependencies=None, tainted=None):
+    def __init__(self, name, value=None, synchro=None, func=None, dependants=None, dependencies=None, tainted=None, active=None):
         """Initialises depend_value.
 
         Args:
@@ -292,7 +305,7 @@ class depend_value(depend_base):
         """
 
         self._value = value
-        super(depend_value, self).__init__(name, synchro, func, dependants, dependencies, tainted)
+        super(depend_value, self).__init__(name, synchro, func, dependants, dependencies, tainted, active)
 
     def get(self):
         """Returns value, after recalculating if necessary.
@@ -343,7 +356,7 @@ class depend_array(np.ndarray, depend_base):
             self is a slice.
     """
 
-    def __new__(cls, value, name, synchro=None, func=None, dependants=None, dependencies=None, tainted=None, base=None):
+    def __new__(cls, value, name, synchro=None, func=None, dependants=None, dependencies=None, tainted=None, base=None, active=None):
         """Creates a new array from a template.
 
         Called whenever a new instance of depend_array is created. Casts the
@@ -357,7 +370,7 @@ class depend_array(np.ndarray, depend_base):
         obj = np.asarray(value).view(cls)
         return obj
 
-    def __init__(self, value, name, synchro=None, func=None, dependants=None, dependencies=None, tainted=None, base=None):
+    def __init__(self, value, name, synchro=None, func=None, dependants=None, dependencies=None, tainted=None, base=None, active=None):
         """Initialises depend_array.
 
         Note that this is only called when a new array is created by an
@@ -378,7 +391,7 @@ class depend_array(np.ndarray, depend_base):
                 depends upon.
         """
 
-        super(depend_array, self).__init__(name, synchro, func, dependants, dependencies, tainted)
+        super(depend_array, self).__init__(name, synchro, func, dependants, dependencies, tainted, active)
 
         if base is None:
             self._bval = value
@@ -416,7 +429,7 @@ class depend_array(np.ndarray, depend_base):
                 # Assumes we are in view cast, so copy over the attributes from the
                 # parent object. Typical case: when transpose is performed as a
                 # view.
-                super(depend_array, self).__init__(obj._name, obj._synchro, obj._func, obj._dependants, None, obj._tainted)
+                super(depend_array, self).__init__(obj._name, obj._synchro, obj._func, obj._dependants, None, obj._tainted, obj._active)
                 self._bval = obj._bval
         else:
             # Most likely we came here on the way to init.
@@ -474,7 +487,7 @@ class depend_array(np.ndarray, depend_base):
         """
 
         return depend_array(depstrip(self).reshape(newshape), name=self._name, synchro=self._synchro,
-                            func=self._func, dependants=self._dependants, tainted=self._tainted, base=self._bval)
+                            func=self._func, dependants=self._dependants, tainted=self._tainted, base=self._bval, active=self._active)
 
     def flatten(self):
         """Makes the base array one dimensional.
@@ -534,7 +547,7 @@ class depend_array(np.ndarray, depend_base):
             return depstrip(self)[index]
         else:
             return depend_array(depstrip(self)[index], name=self._name, synchro=self._synchro,
-                                func=self._func, dependants=self._dependants, tainted=self._tainted, base=self._bval)
+                                func=self._func, dependants=self._dependants, tainted=self._tainted, base=self._bval, active=self._active)
 
     def __getslice__(self, i, j):
         """Overwrites standard get function."""
@@ -573,7 +586,7 @@ class depend_array(np.ndarray, depend_base):
         """
 
         self.taint(taintme=False)
-        if manual:            
+        if manual:
             self.view(np.ndarray)[index] = value
             self.update_man()
         elif index == slice(None, None, None):

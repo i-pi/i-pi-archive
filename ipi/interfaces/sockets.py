@@ -28,7 +28,7 @@ __all__ = ['InterfaceSocket']
 
 HDRLEN = 12
 UPDATEFREQ = 10
-TIMEOUT = 0.2
+TIMEOUT = 0.1
 SERVERTIMEOUT = 5.0*TIMEOUT
 NTIMEOUT = 20
 
@@ -155,7 +155,7 @@ class DriverSocket(socket.socket):
                raise socket.timeoout    # if this keeps returning no data, we are in trouble....
             self._buf[bpos:bpos + len(bpart)] = np.fromstring(bpart, np.byte)
          except socket.timeout:
-            warning(" @SOCKET:   Timeout in status recvall, trying again!", verbosity.low)
+            warning(" @SOCKET:   Timeout in recvall, trying again!", verbosity.low)
             timeout = True
             ntimeout += 1
             if ntimeout > NTIMEOUT:
@@ -213,6 +213,13 @@ class Driver(DriverSocket):
       self.lastreq = None
       self.locked = False
 
+   def shutdown(self, how=socket.SHUT_RDWR):
+      """Tries to send an exit message to clients to let them exit gracefully."""
+               
+      self.sendall(Message("exit"))
+      self.status = Status.Disconnected
+      super(DriverSocket,self).shutdown(how)
+
    def poll(self):
       """Waits for driver status."""
 
@@ -243,7 +250,7 @@ class Driver(DriverSocket):
          reply = self.recv(HDRLEN)
          self.waitstatus = False # got some kind of reply
       except socket.timeout:
-         warning(" @SOCKET:   Timeout in status recv!", verbosity.debug )
+         warning(" @SOCKET:   Timeout in status recv!", verbosity.trace )
          return Status.Up | Status.Busy | Status.Timeout
       except:
          return Status.Disconnected
@@ -457,6 +464,7 @@ class InterfaceSocket(object):
             c.close()
          except:
             pass
+
       # flush it all down the drain
       self.clients = []
       self.jobs = []
@@ -493,7 +501,7 @@ class InterfaceSocket(object):
                if j is c:
                   self.jobs = [ w for w in self.jobs if not ( w[0] is k and w[1] is j ) ] # removes pair in a robust way
                   #self.jobs.remove([k,j])
-                  k["status"] = "Queued"
+                  k["status"] = "Queued"                  
                   k["start"] = -1
 
       if len(self.clients) == 0:
@@ -502,8 +510,8 @@ class InterfaceSocket(object):
          searchtimeout = 0.0
 
       keepsearch = True
-      while keepsearch:
-         readable, writable, errored = select.select([self.server], [], [], searchtimeout)
+      while keepsearch:         
+         readable, writable, errored = select.select([self.server], [], [], searchtimeout)         
          if self.server in readable:
             client, address = self.server.accept()
             client.settimeout(TIMEOUT)
@@ -513,7 +521,7 @@ class InterfaceSocket(object):
             if (driver.status | Status.Up):
                self.clients.append(driver)
                info(" @SOCKET:   Handshaking was successful. Added to the client list.", verbosity.low)
-               self.poll_iter = UPDATEFREQ   # if a new client was found, will try again a harder next time
+               self.poll_iter = UPDATEFREQ   # if a new client was found, will try again harder next time
                searchtimeout = SERVERTIMEOUT
             else:
                warning(" @SOCKET:   Handshaking failed. Dropping connection.", verbosity.low)
@@ -576,6 +584,7 @@ class InterfaceSocket(object):
                if fc.status & Status.Ready:
                   fc.sendpos(r["pos"], r["cell"])
                   r["status"] = "Running"
+                  r["t_dispatched"] = time.time()
                   r["start"] = time.time() # sets start time for the request
                   #fc.poll()
                   fc.status = Status.Up | Status.Busy   # we know that the client is busy at this stage!
@@ -635,6 +644,7 @@ class InterfaceSocket(object):
                warning(" @SOCKET:   Client died a horrible death while getting forces. Will try to cleanup.", verbosity.low)
                continue
             r["status"] = "Done"
+            r["t_finished"] = time.time()
             c.lastreq = r["id"] # saves the ID of the request that the client has just processed
             self.jobs = [ w for w in self.jobs if not ( w[0] is r and w[1] is c ) ] # removes pair in a robust way
 

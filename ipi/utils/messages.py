@@ -17,7 +17,7 @@ VERB_LOW    = 1
 VERB_MEDIUM = 2
 VERB_HIGH   = 3
 VERB_DEBUG  = 4
-
+VERB_TRACE  = 5
 
 class Verbosity(object):
     """Class used to determine what to print to standard output.
@@ -51,6 +51,8 @@ class Verbosity(object):
             return self.level >= VERB_HIGH
         elif name is "debug":
             return self.level >= VERB_DEBUG
+        elif name is "trace":
+            return self.level >= VERB_TRACE
         else:
             return super(Verbosity, self).__getattr__(name)
 
@@ -80,6 +82,8 @@ class Verbosity(object):
                 level = VERB_HIGH
             elif value == "debug":
                 level = VERB_DEBUG
+            elif value == "trace":
+                level = VERB_TRACE
             else:
                 raise ValueError("Invalid verbosity level " + str(value) + " specified.")
             super(Verbosity, self).__setattr__("level", level)
@@ -139,6 +143,6 @@ def warning(text="", show=True):
 
     if not show:
         return
-    if verbosity.debug:
+    if verbosity.trace:
         traceback.print_stack(file=sys.stdout)
     print " !W! " + text
