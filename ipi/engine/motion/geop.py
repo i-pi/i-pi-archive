@@ -52,10 +52,13 @@ class GeopMotion(Motion):
     def __init__(self, fixcom=False, fixatoms=None,
                  mode="lbfgs",
                  biggest_step=100.0,
+		 old_pos=np.zeros(0, float),
+                 old_pot= np.zeros(0, float),
                  old_force=np.zeros(0, float),
                  old_direction_cgsd=np.zeros(0, float),
                  invhessian_bfgs=np.eye(0, 0, 0, float),
                  hessian_trm=np.eye(0, 0, 0, float),
+                 tr_trm=0.4,
                  ls_options={"tolerance": 1e-6, "iter": 100, "step": 1e-3, "adaptive": 1.0},
                  tolerances={"energy": 1e-8, "force": 1e-8, "position": 1e-8},
                  corrections_lbfgs=5,
@@ -72,34 +75,37 @@ class GeopMotion(Motion):
         
         # Optimization Options
 
-        self.mode = mode
-        self.big_step = biggest_step
-        self.old_f = old_force
-        self.old_d = old_direction_cgsd
-        self.invhessian = invhessian_bfgs
-        self.hessian = hessian_trm
-        self.ls_options = ls_options
-        self.tolerances = tolerances
-        self.corrections = corrections_lbfgs
-        self.qlist = qlist_lbfgs
-        self.glist = glist_lbfgs
-        
-        # Classes for minimization routines
-        self.optype = mode
-        if self.optype == "bfgs":
-            self.optimizer = BFGSOptimizer()
-        elif self.optype == "bfgstrm":
-            self.optimizer = BFGSTRMOptimizer()
-        elif self.optype == "lbfgs":
-            self.optimizer = LBFGSOptimizer()
-        elif self.optype == "sd":
-            self.optimizer = SDOptimizer()
-        elif self.optype == "cg":
-            self.optimizer = CGOptimizer()
+        self.mode         = mode
+        self.big_step     = biggest_step
+        self.tolerances   = tolerances
+        self.ls_options   = ls_options
+
+        # 
+        self.old_x        = old_pos
+        self.old_u        = old_pot
+        self.old_f        = old_force
+        self.old_d        = old_direction_cgsd
+
+        # Classes for minimization routines and specific attributes
+        if self.mode == "bfgs":
+               self.invhessian   = invhessian_bfgs
+               self.optimizer = BFGSOptimizer()
+        elif self.mode == "bfgstrm":
+               self.tr        = tr_trm
+               self.hessian   = hessian_trm
+               self.optimizer = BFGSTRMOptimizer()
+        elif self.mode == "lbfgs":
+               self.corrections  = corrections_lbfgs
+               self.qlist        = qlist_lbfgs
+               self.glist        = glist_lbfgs
+               self.optimizer = LBFGSOptimizer()
+        elif self.mode == "sd":
+               self.optimizer = SDOptimizer()
+        elif self.mode == "cg":
+               self.optimizer = CGOptimizer()
         else:
-            self.optimizer = DummyOptimizer()
-        
-        
+               self.optimizer = DummyOptimizer()
+
     def bind(self, ens, beads, nm, cell, bforce, prng):
         """Binds beads, cell, bforce and prng to GeopMotion
         
@@ -204,47 +210,77 @@ class DummyOptimizer(dobject):
         check whether force size, direction size and inverse Hessian size from previous step match system size
         """
         
-        self.ls_options = geop.ls_options   
-        self.tolerances = geop.tolerances
-        self.mode = geop.mode               
-        self.big_step = geop.big_step       
-        self.old_f = geop.old_f
-        self.old_d = geop.old_d
-        self.invhessian = geop.invhessian   
-        self.hessian = geop.hessian   
-        self.corrections = geop.corrections 
-        self.qlist = geop.qlist             
-        self.glist = geop.glist             
         self.beads = geop.beads
         self.cell = geop.cell
         self.forces = geop.forces
         self.fixcom = geop.fixcom
         self.fixatoms = geop.fixatoms
 
-        self.lm.bind(self)
-        self.gm.bind(self)
+        self.mode = geop.mode               
+        self.big_step = geop.big_step       
+        self.tolerances = geop.tolerances
+        self.ls_options = geop.ls_options   
 
-        if self.old_f.shape != self.beads.q.size:
-            if self.old_f.size == 0:
-                self.old_f = np.zeros(self.beads.q.size, float)
+
+        #The resize action must be done before the bind
+        if geop.old_x.size != self.beads.q.size:
+            if geop.old_x.size == 0:
+                geop.old_x = np.zeros(self.beads.q.size, float)
             else:
                 raise ValueError("Conjugate gradient force size does not match system size")
-        if self.old_d.size != self.beads.q.size:
-            if self.old_d.size == 0:
-                self.old_d = np.zeros(self.beads.q.size, float)
+        if geop.old_u.size != 1:
+            if geop.old_u.size == 0:
+                geop.old_u = np.zeros(1, float)
+            else:
+                raise ValueError("Conjugate gradient force size does not match system size")
+        if geop.old_f.size != self.beads.q.size:
+            if geop.old_f.size == 0:
+                geop.old_f = np.zeros(self.beads.q.size, float)
+            else:
+                raise ValueError("Conjugate gradient force size does not match system size")
+        if geop.old_d.size != self.beads.q.size:
+            if geop.old_d.size == 0:
+                geop.old_d = np.zeros(self.beads.q.size, float)
             else:
                 raise ValueError("Conjugate gradient direction size does not match system size")
-        if self.invhessian.size != (self.beads.q.size * self.beads.q.size):
-            if self.invhessian.size == 0:
-                self.invhessian = np.eye(self.beads.q.size, self.beads.q.size, 0, float)
-            else:
-                raise ValueError("Inverse Hessian size does not match system size")
-        if self.hessian.size != (self.beads.q.size * self.beads.q.size):
-            if self.hessian.size == 0:
-                self.hessian = np.eye(self.beads.q.size, self.beads.q.size, 0, float)
-            else:
-                raise ValueError("Hessian size does not match system size")
-                
+
+        if self.mode == "bfgs":
+           if geop.invhessian.size != (self.beads.q.size * self.beads.q.size):
+              if geop.invhessian.size == 0:
+                  geop.invhessian = np.eye(self.beads.q.size, self.beads.q.size, 0, float)
+              else:
+                  raise ValueError("Inverse Hessian size does not match system size")
+
+        if self.mode == "bfgstrm":
+           if geop.hessian.size != (self.beads.q.size * self.beads.q.size):
+              if geop.hessian.size == 0:
+                  geop.hessian = np.eye(self.beads.q.size, self.beads.q.size, 0, float)
+              else:
+                  raise ValueError("Hessian size does not match system size")
+
+        self.old_x      = geop.old_x
+        self.old_u      = geop.old_u
+        self.old_f      = geop.old_f
+        self.old_d      = geop.old_d
+
+
+
+        if self.mode == "bfgs":
+               self.invhessian = geop.invhessian
+               self.gm.bind(self)
+        elif self.mode == "bfgstrm":
+               self.hessian    = geop.hessian
+               self.tr         = geop.tr
+        elif self.mode == "lbfgs":
+               self.corrections = geop.corrections 
+               self.qlist = geop.qlist             
+               self.glist = geop.glist             
+               self.gm.bind(self)
+        elif self.mode == "sd":
+               self.lm.bind(self)
+        elif self.mode == "cg":
+               self.lm.bind(self)
+
     def exitstep(self, fx, u0, x):
         """ Exits the simulation step. Computes time, checks for convergence. """
        
@@ -312,6 +348,9 @@ class BFGSOptimizer(DummyOptimizer):
 class BFGSTRMOptimizer(DummyOptimizer):
     """ BFGSTRM Minimization with Trust Radius Method.	"""
 
+    def __init__(self):
+         self.accept   = False
+
     def step(self, step=None):
         """ Does one simulation time step.
             Attributes:
@@ -329,18 +368,14 @@ class BFGSTRMOptimizer(DummyOptimizer):
 
         # Initialize approximate Hessian to the identity 
          
-        if step == 0:   
+        if step == 0:
             info(" @GEOP: Initializing BFGSTRM", verbosity.debug)
-            # Define old_x and old_u. Get  old_x ,old_u and old_f  values
-            self.old_x    = self.beads.q.copy()
-            self.old_u    = self.forces.pot.copy()
-	    self.old_f    = self.forces.f.copy()
-            self.tr       = 0.4  #~0.21 A
-	    self.accept   = True 
- 	elif self.accept:
-            # Update old_x ,old_u and old_f values
             self.old_x[:] = self.beads.q
-            self.old_u    = self.forces.pot
+            self.old_u[:] = self.forces.pot
+            self.old_f[:] = self.forces.f
+        elif self.accept:
+            self.old_x[:] = self.beads.q
+            self.old_u[:] = self.forces.pot
             self.old_f[:] = self.forces.f
 
 #Find new movement direction candidate
