@@ -58,7 +58,7 @@ class GeopMotion(Motion):
                  old_direction_cgsd=np.zeros(0, float),
                  invhessian_bfgs=np.eye(0, 0, 0, float),
                  hessian_trm=np.eye(0, 0, 0, float),
-                 tr_trm=0.4,
+                 tr_trm=np.zeros(0,float),
                  ls_options={"tolerance": 1e-6, "iter": 100, "step": 1e-3, "adaptive": 1.0},
                  tolerances={"energy": 1e-8, "force": 1e-8, "position": 1e-8},
                  corrections_lbfgs=5,
@@ -89,22 +89,22 @@ class GeopMotion(Motion):
         # Classes for minimization routines and specific attributes
         if self.mode == "bfgs":
                self.invhessian   = invhessian_bfgs
-               self.optimizer = BFGSOptimizer()
+               self.optimizer    = BFGSOptimizer()
         elif self.mode == "bfgstrm":
-               self.tr        = tr_trm
-               self.hessian   = hessian_trm
-               self.optimizer = BFGSTRMOptimizer()
+               self.tr           = tr_trm
+               self.hessian      = hessian_trm
+               self.optimizer    = BFGSTRMOptimizer()
         elif self.mode == "lbfgs":
                self.corrections  = corrections_lbfgs
                self.qlist        = qlist_lbfgs
                self.glist        = glist_lbfgs
-               self.optimizer = LBFGSOptimizer()
+               self.optimizer    = LBFGSOptimizer()
         elif self.mode == "sd":
-               self.optimizer = SDOptimizer()
+               self.optimizer    = SDOptimizer()
         elif self.mode == "cg":
-               self.optimizer = CGOptimizer()
+               self.optimizer    = CGOptimizer()
         else:
-               self.optimizer = DummyOptimizer()
+               self.optimizer    = DummyOptimizer()
 
     def bind(self, ens, beads, nm, cell, bforce, prng):
         """Binds beads, cell, bforce and prng to GeopMotion
@@ -270,7 +270,9 @@ class DummyOptimizer(dobject):
                self.gm.bind(self)
         elif self.mode == "bfgstrm":
                self.hessian    = geop.hessian
-               self.tr         = geop.tr
+               if geop.tr.size == 0:
+                    geop.tr = np.array([0.4])
+               self.tr    = geop.tr
         elif self.mode == "lbfgs":
                self.corrections = geop.corrections 
                self.qlist = geop.qlist             
