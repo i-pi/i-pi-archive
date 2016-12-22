@@ -1913,7 +1913,11 @@ class Trajectories(dobject):
                      'func': (lambda : 1.0*self.system.beads.p)},
       "forces": {    "dimension" : "force",
                      "help": "The force trajectories. Will print out one file per bead, unless the bead attribute is set by the user.",
-                     'func': (lambda : 1.0*self.system.forces.f)},
+                     'func': (lambda : 1.0*self.system.forces.f ) },
+
+      "forces_sc": {    "dimension" : "force",
+                     "help": "The Suzuki-Chin component of force trajectories. Will print out one file per bead, unless the bead attribute is set by the user.",
+                     'func': (lambda : 1.0*self.system.forces.fsc + 1.0*self.system.forces.f ) },
       "x_centroid": {"dimension" : "length",
                      "help": "The centroid coordinates.",
                      'func': (lambda : 1.0*self.system.beads.qc)},
@@ -2184,7 +2188,7 @@ class Trajectories(dobject):
 			stream.flush()
 			os.fsync(stream)
          return
-      elif getkey(what) in [ "positions", "velocities", "forces" ] :
+      elif getkey(what) in [ "positions", "velocities", "forces", "forces_sc" ] :
          fatom = Atoms(self.system.beads.natoms)
          fatom.names[:] = self.system.beads.names
          fatom.q[:] = cq[b]

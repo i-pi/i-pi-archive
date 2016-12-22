@@ -472,7 +472,7 @@ class NSTIntegrator(NVTIntegrator):
         self.ttime += time.time()
 
 class SCIntegrator(NVEIntegrator):
-   """Integrator object for constant temperature simulations.
+   """Fourth order integrator object for constant temperature simulations.
 
    Has the relevant conserved quantity and normal mode propagator for the
    constant temperature ensemble. Contains a thermostat object containing the
