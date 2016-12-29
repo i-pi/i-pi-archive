@@ -1917,7 +1917,7 @@ class Trajectories(dobject):
 
       "forces_sc": {    "dimension" : "force",
                      "help": "The Suzuki-Chin component of force trajectories. Will print out one file per bead, unless the bead attribute is set by the user.",
-                     'func': (lambda : 1.0*self.system.forces.fsc + 1.0*self.system.forces.f ) },
+                     'func': (lambda : 1.0*self.system.forces.f + 1.0*self.system.forces.fsc ) },
       "x_centroid": {"dimension" : "length",
                      "help": "The centroid coordinates.",
                      'func': (lambda : 1.0*self.system.beads.qc)},
