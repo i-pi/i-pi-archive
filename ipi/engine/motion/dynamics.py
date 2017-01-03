@@ -70,8 +70,11 @@ class Dynamics(Motion):
         else:
             self.barostat = barostat
 
-        if nmts is None:
-           self.nmts = np.asarray([1],int)      
+        print "checking nmts", nmts, len(nmts)
+        if nmts is np.zeros(0,int):
+           self.nmts = np.asarray([1],int)
+        elif len(nmts) == 0:
+           self.nmts = np.asarray([1],int) 
         else:
            self.nmts=np.asarray(nmts)
 
@@ -209,8 +212,7 @@ class DummyIntegrator(dobject):
                 self.coeffsc = np.ones((self.beads.nbeads,3*self.beads.natoms), float)
                 self.coeffsc[::2] /= -3.
                 self.coeffsc[1::2] /= 3.
-                print self.coeffsc[:,0]
-                print self.coeffsc[:,-1]                
+                print "nmts:-", motion.nmts
                 self.nmts=motion.nmts[-1]                 
 
     def pstep(self):
