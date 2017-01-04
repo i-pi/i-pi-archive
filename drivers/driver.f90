@@ -67,6 +67,9 @@
       DOUBLE PRECISION, ALLOCATABLE :: last_atoms(:,:) ! Holds the positions when the neighbour list is created
       DOUBLE PRECISION displacement ! Tracks how far each atom has moved since the last call of nearest_neighbours
 
+      ! DMW
+      DOUBLE PRECISION efield(3)
+
       INTEGER i, j
 
       ! parse the command line parameters
@@ -127,11 +130,13 @@
                   vstyle = 7
                ELSEIF (trim(cmdbuffer) == "pswater") THEN
                   vstyle = 8
+               ELSEIF (trim(cmdbuffer) == "efield") THEN
+                  vstyle = 9
                ELSEIF (trim(cmdbuffer) == "gas") THEN
                   vstyle = 0  ! ideal gas
                ELSE
                   WRITE(*,*) " Unrecognized potential type ", trim(cmdbuffer)
-                  WRITE(*,*) " Use -m [gas|lj|sg|harm|morse|zundel|qtip4pf] "
+                  WRITE(*,*) " Use -m [gas|lj|sg|harm|morse|zundel|qtip4pf|efield] "
                   STOP "ENDED"
                ENDIF
             ELSEIF (ccmd == 4) THEN
@@ -162,6 +167,17 @@
          IF (par_count /= 0) THEN
             WRITE(*,*) "Error:  no initialization string needed for qtip4pf."
             STOP "ENDED"
+         ENDIF
+         isinit = .true.
+      ELSEIF (9== vstyle) THEN
+         IF (par_count .ne. 3) THEN
+            WRITE(*,*) "Error:  incorrect initialization string included for efield."
+            STOP "ENDED"
+         ELSE
+            ! We take in an electric field in volts / nm.This must be converted to Eh / (e a0).
+            do i=1,3
+             efield(i) = vpars(i) / 5.14220652d2
+            enddo
          ENDIF
          isinit = .true.
       ELSEIF (5 == vstyle) THEN
@@ -365,6 +381,12 @@
                   dip = dip -1.1128d0 * atoms(i,:) + 0.5564d0 * (atoms(i+1,:) + atoms(i+2,:))
                ENDDO
                ! do not compute the virial term
+            ELSEIF (vstyle == 9) THEN ! efield potential.             
+               IF (mod(nat,3)/=0) THEN
+                  WRITE(*,*) " Expecting water molecules O H H O H H O H H but got ", nat, "atoms"
+                  STOP "ENDED"
+               ENDIF
+               CALL efield_v(atoms,nat,forces,pot,virial,efield)
             ELSEIF (vstyle == 8) THEN ! PS water potential.
                IF (nat/=3) THEN
                   WRITE(*,*) "Expecting 3 atoms for P-S water potential, O H H "
