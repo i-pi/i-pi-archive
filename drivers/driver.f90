@@ -130,13 +130,13 @@
                   vstyle = 7
                ELSEIF (trim(cmdbuffer) == "pswater") THEN
                   vstyle = 8
-               ELSEIF (trim(cmdbuffer) == "efield") THEN
+               ELSEIF (trim(cmdbuffer) == "qtip4pf-efield") THEN
                   vstyle = 9
                ELSEIF (trim(cmdbuffer) == "gas") THEN
                   vstyle = 0  ! ideal gas
                ELSE
                   WRITE(*,*) " Unrecognized potential type ", trim(cmdbuffer)
-                  WRITE(*,*) " Use -m [gas|lj|sg|harm|morse|zundel|qtip4pf|efield] "
+                  WRITE(*,*) " Use -m [gas|lj|sg|harm|morse|zundel|qtip4pf|qtip4pf-efield] "
                   STOP "ENDED"
                ENDIF
             ELSEIF (ccmd == 4) THEN
@@ -171,7 +171,8 @@
          isinit = .true.
       ELSEIF (9== vstyle) THEN
          IF (par_count .ne. 3) THEN
-            WRITE(*,*) "Error:  incorrect initialization string included for efield."
+            WRITE(*,*) "Error:  incorrect initialization string included for qtip4pf-efield. &
+     &             Provide the three components of the electric field in V/nm"
             STOP "ENDED"
          ELSE
             ! We take in an electric field in volts / nm.This must be converted to Eh / (e a0).
