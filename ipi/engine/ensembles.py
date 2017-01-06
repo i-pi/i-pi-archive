@@ -51,25 +51,26 @@ class Ensemble(dobject):
         if temp is not None:
             self.temp = temp
         else:
-            self.temp = -1.0
+            self.temp = 0.0
 
         dset(self, "stressext", depend_array(name='stressext', value=np.zeros((3,3), float)))
         if stressext is not None:
             self.stressext = np.reshape(np.asarray(stressext), (3,3))
         else:
-            self.stressext = -1.0
+            self.stressext = 0.0
 
         dset(self, "pext", depend_value(name='pext'))
         if pext is not None:
             self.pext = pext
         else:
-            self.pext = -1.0
+            self.pext = 0.0
 
         dset(self, "eens", depend_value(name='eens'))
         if eens is not None:
             self.eens = eens
         else:
             self.eens = 0.0
+                    
 
     def bind(self, beads, nm, cell, bforce, bbias, elist=[]):
         self.beads = beads
@@ -77,10 +78,10 @@ class Ensemble(dobject):
         self.forces = bforce
         self.bias = bbias
         self.nm = nm
-        dset(self, "econs", depend_value(name='econs', func=self.get_econs))
-
+        dset(self, "econs", depend_value(name='econs', func=self.get_econs))        
         # dependencies of the conserved quantity
-        dget(self, "econs").add_dependency(dget(self.nm, "kin"))
+        # dget(self, "econs").add_dependency(dget(self.nm, "kin"))
+        self.dd.econs.add_dependency(self.dd.nm.kin)
         dget(self, "econs").add_dependency(dget(self.forces, "pot"))
         dget(self, "econs").add_dependency(dget(self.bias, "pot"))
         dget(self, "econs").add_dependency(dget(self.beads, "vpath"))
@@ -90,6 +91,12 @@ class Ensemble(dobject):
 
         for e in elist:
             self.add_econs(e)
+            
+        dset(self, "pens", depend_value(name='pens', func=self.get_pens))
+        dget(self, "pens").add_dependency(dget(self.nm, "kin"))
+        dget(self, "pens").add_dependency(dget(self.forces, "pot"))
+        dget(self, "pens").add_dependency(dget(self.bias, "pot"))
+        dget(self, "pens").add_dependency(dget(self.beads, "vpath"))
 
     def add_econs(self, e):
         self._elist.append(e)
@@ -105,3 +112,11 @@ class Ensemble(dobject):
             eham += e.get()
 
         return eham + self.eens
+        
+    def pens(self):
+        """Returns the ensemble probability (modulo the partition function) 
+        for the ensemble. 
+        """
+        
+        lpens = -(self.pext*self.cell.V+self.forces.pot+self.bias.pot+self.nm.kin+self.beads.vpath)/(constants.kb*self.temp)
+        return np.exp(lpens)
