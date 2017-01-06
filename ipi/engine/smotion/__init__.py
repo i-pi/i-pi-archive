@@ -7,5 +7,5 @@
 # See the "licenses" directory for full license information.
 
 
-from .smootion import Smootion
+from .smotion import Smotion
 from .remd import REMD

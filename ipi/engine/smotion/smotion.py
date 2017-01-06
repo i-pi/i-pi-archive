@@ -12,7 +12,7 @@ import numpy as np
 from ipi.utils.depend import depend_value, dset, dobject
 
 
-class Smootion(dobject):
+class Smotion(dobject):
     """Base smootion calculation class.
 
     Gives the standard methods and attributes needed in all the
@@ -26,7 +26,7 @@ class Smootion(dobject):
     """
 
     def __init__(self):
-        """Initialises Motion object.
+        """Initialises Smotion object.
 
         Args:
         

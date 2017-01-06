@@ -22,16 +22,13 @@ Classes:
 """
 
 import numpy as np
-import ipi.engine.initializer
 from ipi.engine.motion import *
 from ipi.utils.inputvalue import *
-from ipi.inputs.thermostats import *
-from ipi.inputs.initializer import *
 from ipi.utils.units import *
 
-__all__ = ['InputREMD']
+__all__ = ['InputReplicaExchange']
 
-class InputREMD(Input):
+class InputReplicaExchange(InputDictionary):
     """Geometry optimization options.
 
     Contains options related with replica exchange, such as method,
@@ -39,16 +36,9 @@ class InputREMD(Input):
 
     """
 
-    fields={"temp_list" : (InputArray, {"dtype": float,
-                                       "default"   : input_default(factory=np.zeros, args = (0,)),
-                                         "help"      : "List of temperatures for a parallel tempering simulation",
-                                         "dimension" : "temperature" }),
-           "temp_index" : (InputArray, {"dtype": int,
-                                       "default"   : input_default(factory=np.zeros, args = (0,int)),
-                                         "help"      : "Maps the temperatures to the list of systems."
-                                         }),
+    fields={
            "stride" : (InputValue, {"dtype"        : float,
-                                      "default"      : 0.0,
+                                      "default"      : 1.0,
                                       "help"         : "Every how often to try exchanges (on average)."
                                       }),
          }
@@ -58,11 +48,9 @@ class InputREMD(Input):
 
     def store(self, remd):
         if remd == {}: return
-        self.temp_list.store(remd.temp_list)
-        self.temp_index.store(remd.temp_index)
         self.stride.store(remd.stride)
 
     def fetch(self):
-        rv = super(InputREMD,self).fetch()
-        rv["mode"] = self.mode.fetch()
+        rv = super(InputReplicaExchange,self).fetch()
+        rv["stride"] = self.stride.fetch()
         return rv
