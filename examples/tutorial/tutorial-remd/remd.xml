@@ -1,4 +1,4 @@
-<simulation verbosity='high' mode='paratemp'>
+<simulation verbosity='debug'>
    <output prefix='remd'>
       <properties filename='md' stride='1'> [step, time{picosecond}, conserved{kelvin}, temperature{kelvin}, potential{kelvin}, kinetic_cv{kelvin}] </properties>
       <properties filename='force' stride='20'> [atom_f{piconewton}(atom=0;bead=0)] </properties>
@@ -10,12 +10,7 @@
       <address>localhost</address>
       <port> 31415 </port>
    </ffsocket>
-   <paratemp>
-      <temp_list> [25, 30, 35, 40] </temp_list>
-      <stride> 1.0 </stride>
-   </paratemp>
 
-   
    <system prefix="1">
       <initialize nbeads='4'>
          <file mode='pdb'> our_ref.pdb </file>
@@ -91,5 +86,12 @@
 	       </dynamics>
       </motion>
    </system>
+   
+   <smotion mode='remd'>
+   <!-- TODO: I find it strange to define remd twice as mode and as bracket ...  -->
+     <remd>
+       <stride> 10 </stride>
+     </remd>
+   </smotion>
    
 </simulation>

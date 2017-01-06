@@ -284,6 +284,7 @@ class Simulation(dobject):
 
             # does the "super motion" step
             if self.smotion is not None:
+                # TODO: We need a file where we store the exchanges
                 self.smotion.step(self.step)
 
                 #~ # because of where this is in the loop, we must write out BEFORE doing the swaps.
