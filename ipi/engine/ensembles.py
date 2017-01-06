@@ -24,8 +24,18 @@ from ipi.engine.thermostats import *
 from ipi.engine.barostats import *
 
 
-__all__ = ['Ensemble']
+__all__ = ['Ensemble', 'ensemble_swap']
 
+### IMPORTANT - THIS MUST BE KEPT UP-TO-DATE WHEN THE ENSEMBLE CLASS IS CHANGED
+def ensemble_swap(ens1, ens2):
+    """ Swaps the definitions of the two ensembles, by
+    exchanging all of the inner properties. """
+
+    for what in ["temp", "pext", "stressext"]: 
+        if ens1.__dict__[what] != ens2.__dict__[what]:
+            swp = ens1.__dict__[what]
+            ens1.__dict__[what] = ens2.__dict__[what] 
+            ens1.__dict__[what] = swp    
 
 class Ensemble(dobject):
     """Base ensemble class.
@@ -91,7 +101,8 @@ class Ensemble(dobject):
         for e in elist:
             self.add_econs(e)
             
-        dset(self, "pens", depend_value(name='pens', func=self.get_pens))
+        dset(self, "pens", depend_value(name='pens', func=self.get_pens, 
+                dependencies=[ dget(self,"temp"), dget(self,"pext"), dget(self,"stressext") ] ))        
         dget(self, "pens").add_dependency(dget(self.nm, "kin"))
         dget(self, "pens").add_dependency(dget(self.forces, "pot"))
         dget(self, "pens").add_dependency(dget(self.bias, "pot"))
@@ -117,5 +128,6 @@ class Ensemble(dobject):
         for the ensemble. 
         """
         
+        # TODO include the stress 
         lpens = -(self.pext*self.cell.V+self.forces.pot+self.bias.pot+self.nm.kin+self.beads.vpath)/(constants.kb*self.temp)
         return np.exp(lpens)
