@@ -23,17 +23,15 @@ Classes:
 
 import numpy as np
 import ipi.engine.initializer
-from ipi.engine.smootion import Smootion, REMover
+from ipi.engine.smotion import Smotion, ReplicaExchange
 from ipi.utils.inputvalue import *
-from ipi.inputs.thermostats import *
-from ipi.inputs.initializer import *
 from .remd import InputREMD
 from ipi.utils.units import *
 
-__all__ = ['InputSmootion']
+__all__ = ['InputSmotion']
 
-class InputSmootion(Input):
-   """Smootion calculation input class.
+class InputSmotion(Input):
+   """Smotion calculation input class.
 
    A class to encompass the different "smootion" :) calculations.
 
@@ -45,15 +43,15 @@ class InputSmootion(Input):
    """
 
    attribs={"mode"  : (InputAttribute, {"dtype"   : str,
-                                    "help"    : "Kind of smootion which should be performed.",
+                                    "help"    : "Kind of smotion which should be performed.",
                                     "options" : ['remd']}) }
    fields={"remd" : ( InputRemd, { "default" : {},
                                      "help":  "Option for REMD simulation" } ) }
 
    dynamic = {  }
 
-   default_help = "Allow chosing the type of smootion to be performed. Holds all the information that is calculation specific, such as replica exchange parameters, etc."
-   default_label = "SMOOTION"
+   default_help = "Allow chosing the type of smotion to be performed. Holds all the information that is calculation specific, such as replica exchange parameters, etc."
+   default_label = "SMOTION"
 
    def store(self, sc):
       """Takes a smootion calculation instance and stores a minimal representation of it.
@@ -64,13 +62,13 @@ class InputSmootion(Input):
 
       super(InputSmootion, self).store(sc)
 
-      if type(sc) is Smootion:
+      if type(sc) is Smotion:
           self.mode.store("dummy")
       elif type(sc) is REMD:
          self.mode.store("remd")
          self.remd.store(sc)
       else:
-         raise ValueError("Cannot store Smootion calculator of type "+str(type(sc)))
+         raise ValueError("Cannot store Smotion calculator of type "+str(type(sc)))
 
    def fetch(self):
       """Creates a smootion calculator object.
@@ -80,12 +78,12 @@ class InputSmootion(Input):
          objects given the attributes of the InputEnsemble object.
       """
 
-      super(InputSmootion, self).fetch()
+      super(InputSmotion, self).fetch()
 
       if self.mode.fetch() == "remd":
-         sc = REMD(**self.REMD.fetch())
+         sc = ReplicaExchange(**self.REMD.fetch())
       else:
-         sc = Smootion()
+         sc = Smotion()
          #raise ValueError("'" + self.mode.fetch() + "' is not a supported motion calculation mode.")
 
       return sc
