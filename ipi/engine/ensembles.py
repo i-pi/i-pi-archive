@@ -19,7 +19,7 @@ from ipi.utils.depend import *
 from ipi.utils.softexit import softexit
 from ipi.utils.io import read_file
 from ipi.utils.io.inputs.io_xml import xml_parse_file
-from ipi.utils.units import unit_to_internal
+from ipi.utils.units import unit_to_internal, Constants
 from ipi.engine.thermostats import *
 from ipi.engine.barostats import *
 
@@ -31,11 +31,9 @@ def ensemble_swap(ens1, ens2):
     """ Swaps the definitions of the two ensembles, by
     exchanging all of the inner properties. """
 
-    for what in ["temp", "pext", "stressext"]: 
-        if ens1.__dict__[what] != ens2.__dict__[what]:
-            swp = ens1.__dict__[what]
-            ens1.__dict__[what] = ens2.__dict__[what] 
-            ens1.__dict__[what] = swp    
+    if ens1.temp != ens2.temp :
+        swp = ens1.temp; ens1.temp = ens2.temp; ens2.temp = swp
+        
 
 class Ensemble(dobject):
     """Base ensemble class.
@@ -101,12 +99,12 @@ class Ensemble(dobject):
         for e in elist:
             self.add_econs(e)
             
-        dset(self, "pens", depend_value(name='pens', func=self.get_pens, 
+        dset(self, "lpens", depend_value(name='lpens', func=self.get_lpens, 
                 dependencies=[ dget(self,"temp"), dget(self,"pext"), dget(self,"stressext") ] ))        
-        dget(self, "pens").add_dependency(dget(self.nm, "kin"))
-        dget(self, "pens").add_dependency(dget(self.forces, "pot"))
-        dget(self, "pens").add_dependency(dget(self.bias, "pot"))
-        dget(self, "pens").add_dependency(dget(self.beads, "vpath"))
+        dget(self, "lpens").add_dependency(dget(self.nm, "kin"))
+        dget(self, "lpens").add_dependency(dget(self.forces, "pot"))
+        dget(self, "lpens").add_dependency(dget(self.bias, "pot"))
+        dget(self, "lpens").add_dependency(dget(self.beads, "vpath"))
 
     def add_econs(self, e):
         self._elist.append(e)
@@ -123,11 +121,12 @@ class Ensemble(dobject):
 
         return eham + self.eens
         
-    def get_pens(self):
+    def get_lpens(self):
         """Returns the ensemble probability (modulo the partition function) 
         for the ensemble. 
         """
         
         # TODO include the stress 
-        lpens = -(self.pext*self.cell.V+self.forces.pot+self.bias.pot+self.nm.kin+self.beads.vpath)/(constants.kb*self.temp)
-        return np.exp(lpens)
+        lpens = -(self.pext*self.cell.V+self.forces.pot+self.bias.pot+self.nm.kin+self.beads.vpath)/(Constants.kb*self.temp)
+        print "Computing ensemble stuff ", lpens
+        return lpens

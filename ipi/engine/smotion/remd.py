@@ -12,10 +12,11 @@ import numpy as np
 import time
 
 from ipi.engine.smotion import Smotion
+from ipi.engine.ensembles import ensemble_swap
 from ipi.utils.depend import *
 from ipi.utils.softexit import softexit
 from ipi.utils.messages import verbosity, info
-from ipi.utils.units import Constants
+
 
 
 __all__ = ['ReplicaExchange']
@@ -56,37 +57,39 @@ class ReplicaExchange(Smotion):
         
         if self.stride <= 0.0: return
         
-        syspot  = [ s.forces.pot for s in self.syslist ]
-        # spring potential in a form that can be easily used further down (no temperature included!)
-        syspath = [ s.beads.vpath/Constants.hbar**2 for s in self.syslist ]
-
         info("\nTrying to exchange replicas on STEP %d" % step, verbosity.debug)
 
-        self.ptime = self.ttime = 0
-        self.qtime = -time.time()
-
-        for i in range(len(self.syslist)):
+        sl = self.syslist
+        for i in range(len(sl)):
            for j in range(i):
               if (1.0/self.stride < self.prng.u) : continue  # tries a swap with probability 1/stride
-              betai = 1.0/(Constants.kb*self.syslist[i].ensemble.temp*self.syslist[i].beads.nbeads); 
-              betaj = 1.0/(Constants.kb*self.syslist[j].ensemble.temp*self.syslist[j].beads.nbeads);
+              ti = sl[i].ensemble.temp
+              tj = sl[j].ensemble.temp
+              pensi = sl[i].ensemble.lpens
+              pensj = sl[j].ensemble.lpens
+              
+              ensemble_swap(sl[i].ensemble, sl[j].ensemble)  # tries to swap the ensembles!
+              # also rescales the velocities -- should do the same with cell velocities methinks
+              sl[i].beads.p *= np.sqrt(tj/ti)
+              sl[j].beads.p *= np.sqrt(ti/tj)
+
+              newpensi = sl[i].ensemble.lpens
+              newpensj = sl[j].ensemble.lpens
+              
+              print pensi, pensj, " --> ", newpensi, newpensj
+              pxc = np.exp(-(newpensi+newpensj)+(pensi*pensj))
 
 
-              pxc = np.exp(
-                (betai * syspot[i] + syspath[i]/betai +
-                 betaj * syspot[j] + syspath[j]/betaj) -
-                (betai * syspot[j] + syspath[j]/betai +
-                 betaj * syspot[i] + syspath[i]/betaj)
-                )
-
-              if (pxc > self.prng.u): # really does the exchange
-                 info(" @ PT:  SWAPPING replicas % 5d and % 5d." % (i,j), verbosity.low)
-                 info(" @ PT:  % 5d and % 5d." % (self.syslist[i].ensemble.temp,self.syslist[j].ensemble.temp), verbosity.low)
+              if (pxc < self.prng.u): # really does the exchange
+                 info(" @ PT:  SWAPPING replicas % 5d and % 5d." % (i,j), verbosity.low)                
+              else: # undoes the swap
+                  ensemble_swap(sl[i].ensemble, sl[j].ensemble)
+                  sl[i].beads.p *= np.sqrt(ti/tj)
+                  sl[j].beads.p *= np.sqrt(tj/ti)
+                  info(" @ PT:  SWAP REJECTED BETWEEN replicas % 5d and % 5d." % (i,j), verbosity.low)
                  
                  #tempi = copy(self.syslist[i].ensemble.temp)
+                 
                  #self.syslist[i].ensemble.temp = copy(self.syslist[j].ensemble.temp)
                  # velocities have to be adjusted according to the new temperature
                  
-
-
-        self.qtime += time.time()
