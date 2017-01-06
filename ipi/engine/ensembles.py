@@ -80,8 +80,7 @@ class Ensemble(dobject):
         self.nm = nm
         dset(self, "econs", depend_value(name='econs', func=self.get_econs))        
         # dependencies of the conserved quantity
-        # dget(self, "econs").add_dependency(dget(self.nm, "kin"))
-        self.dd.econs.add_dependency(self.dd.nm.kin)
+        dget(self, "econs").add_dependency(dget(self.nm, "kin"))
         dget(self, "econs").add_dependency(dget(self.forces, "pot"))
         dget(self, "econs").add_dependency(dget(self.bias, "pot"))
         dget(self, "econs").add_dependency(dget(self.beads, "vpath"))
@@ -113,7 +112,7 @@ class Ensemble(dobject):
 
         return eham + self.eens
         
-    def pens(self):
+    def get_pens(self):
         """Returns the ensemble probability (modulo the partition function) 
         for the ensemble. 
         """

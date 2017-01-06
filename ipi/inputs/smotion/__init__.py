@@ -7,4 +7,4 @@
 # See the "licenses" directory for full license information.
 
 
-from .smootion import InputSmootion
+from .smotion import InputSmotion

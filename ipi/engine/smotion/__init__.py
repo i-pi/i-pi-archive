@@ -8,4 +8,4 @@
 
 
 from .smotion import Smotion
-from .remd import REMD
+from .remd import ReplicaExchange

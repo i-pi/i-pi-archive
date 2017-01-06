@@ -25,7 +25,7 @@ import numpy as np
 import ipi.engine.initializer
 from ipi.engine.smotion import Smotion, ReplicaExchange
 from ipi.utils.inputvalue import *
-from .remd import InputREMD
+from .remd import InputReplicaExchange
 from ipi.utils.units import *
 
 __all__ = ['InputSmotion']
@@ -44,8 +44,8 @@ class InputSmotion(Input):
 
    attribs={"mode"  : (InputAttribute, {"dtype"   : str,
                                     "help"    : "Kind of smotion which should be performed.",
-                                    "options" : ['remd']}) }
-   fields={"remd" : ( InputRemd, { "default" : {},
+                                    "options" : ['dummy', 'remd']}) }
+   fields={"remd" : ( InputReplicaExchange, { "default" : {},
                                      "help":  "Option for REMD simulation" } ) }
 
    dynamic = {  }
@@ -60,11 +60,11 @@ class InputSmotion(Input):
          sc: A smootion calculation class.
       """
 
-      super(InputSmootion, self).store(sc)
+      super(InputSmotion, self).store(sc)
 
       if type(sc) is Smotion:
           self.mode.store("dummy")
-      elif type(sc) is REMD:
+      elif type(sc) is ReplicaExchange:
          self.mode.store("remd")
          self.remd.store(sc)
       else:
@@ -81,7 +81,7 @@ class InputSmotion(Input):
       super(InputSmotion, self).fetch()
 
       if self.mode.fetch() == "remd":
-         sc = ReplicaExchange(**self.REMD.fetch())
+         sc = ReplicaExchange(**self.remd.fetch())
       else:
          sc = Smotion()
          #raise ValueError("'" + self.mode.fetch() + "' is not a supported motion calculation mode.")

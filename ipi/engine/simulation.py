@@ -103,7 +103,7 @@ class Simulation(dobject):
 
         return simulation
 
-    def __init__(self, mode, syslist, fflist, outputs, prng, paratemp, step=0, tsteps=1000, ttime=0):
+    def __init__(self, mode, syslist, fflist, outputs, prng, smotion=None, step=0, tsteps=1000, ttime=0):
         """Initialises Simulation class.
 
         Args:
@@ -111,7 +111,7 @@ class Simulation(dobject):
             syslist: A list of system objects
             fflist: A list of forcefield objects
             prng: A random number object.
-            paratemp: A parallel tempering helper class.
+            smotion: A "super-motion" class specifying what to do with different system replicas
             outputs: A list of output objects.
             step: An optional integer giving the current simulation time step.
                 Defaults to 0.
@@ -142,7 +142,7 @@ class Simulation(dobject):
         dset(self, "step", depend_value(name="step", value=step))
         self.tsteps = tsteps
         self.ttime = ttime
-        self.paratemp = paratemp
+        self.smotion = smotion
 
         self.chk = None
         self.rollback = True
@@ -176,9 +176,8 @@ class Simulation(dobject):
         self.chk = eoutputs.CheckpointOutput("RESTART", 1, True, 0)
         self.chk.bind(self)
 
-        if self.mode == "paratemp":
-            self.paratemp.bind(self.syslist, self.prng)
-            softexit.register_function(self.paratemp.softexit)
+        if not self.smotion is None:
+            self.smotion.bind(self.syslist, self.prng)            
 
     def softexit(self):
         """Deals with a soft exit request.
@@ -228,13 +227,13 @@ class Simulation(dobject):
                     # from receiving signals.
                     st.join(2.0)
 
-            if self.mode == "paratemp":
-                self.paratemp.parafile.write("%10d" % (self.step + 1))
-                for i in self.paratemp.temp_index:
-                    self.paratemp.parafile.write(" %5d" % i)
-                self.paratemp.parafile.write("\n")
-                self.paratemp.parafile.flush()
-                os.fsync(self.paratemp.parafile)
+            #~ if self.mode == "paratemp":
+                #~ self.paratemp.parafile.write("%10d" % (self.step + 1))
+                #~ for i in self.paratemp.temp_index:
+                    #~ self.paratemp.parafile.write(" %5d" % i)
+                #~ self.paratemp.parafile.write("\n")
+                #~ self.paratemp.parafile.flush()
+                #~ os.fsync(self.paratemp.parafile)
 
             self.step = 0
 
@@ -283,18 +282,19 @@ class Simulation(dobject):
             for o in self.outputs:
                 o.write()
 
-            # does parallel tempering
-            if self.mode == "paratemp":
+            # does the "super motion" step
+            if self.smotion is not None:
+                self.smotion.step(self.step)
 
-                # because of where this is in the loop, we must write out BEFORE doing the swaps.
-                self.paratemp.parafile.write("%10d" % (self.step + 1))
-                for i in self.paratemp.temp_index:
-                    self.paratemp.parafile.write(" %5d" % i)
-                self.paratemp.parafile.write("\n")
-                self.paratemp.parafile.flush()
-                os.fsync(self.paratemp.parafile)
+                #~ # because of where this is in the loop, we must write out BEFORE doing the swaps.
+                #~ self.paratemp.parafile.write("%10d" % (self.step + 1))
+                #~ for i in self.paratemp.temp_index:
+                    #~ self.paratemp.parafile.write(" %5d" % i)
+                #~ self.paratemp.parafile.write("\n")
+                #~ self.paratemp.parafile.flush()
+                #~ os.fsync(self.paratemp.parafile)
 
-                self.paratemp.swap(self.step)
+                #self.paratemp.swap(self.step)
 
             if softexit.triggered:
                 # Don't write if we are about to exit.

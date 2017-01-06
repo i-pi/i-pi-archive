@@ -41,7 +41,7 @@ class ReplicaExchange(Smotion):
 
         """
 
-        super(REMD, self).__init__()
+        super(ReplicaExchange, self).__init__()
 
         # REMD options
         self.stride = stride
@@ -58,6 +58,7 @@ class ReplicaExchange(Smotion):
         self.ptime = self.ttime = 0
         self.qtime = -time.time()
 
+        print "what the fuck! you are calling me?"
         # <-- insert code here -->
 
         self.qtime += time.time()

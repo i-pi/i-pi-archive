@@ -18,13 +18,13 @@ from ipi.utils.prng   import *
 from ipi.utils.io     import *
 from ipi.utils.io.inputs.io_xml import *
 from ipi.utils.messages import verbosity
-from ipi.engine.paratemp import ParaTemp
+from ipi.engine.smotion import Smotion
 from ipi.inputs.prng import InputRandom
 from ipi.inputs.system import InputSystem
 import ipi.inputs.forcefields as iforcefields
 import ipi.engine.forcefields as eforcefields
 import ipi.inputs.outputs as ioutputs
-from ipi.inputs.paratemp import InputParaTemp
+from ipi.inputs.smotion import InputSmotion
 
 
 __all__ = ['InputSimulation']
@@ -71,8 +71,8 @@ class InputSimulation(Input):
              "total_time" :       ( InputValue, { "dtype"    : float,
                                             "default"  : 0,
                                             "help"     : "The maximum wall clock time (in seconds)." }),
-             "paratemp" : (InputParaTemp, {"default"   : input_default(factory=ParaTemp),
-                                         "help"      : "Options for a parallel tempering simulation"})
+             "smotion" : (InputSmotion, {"default"   : input_default(factory=Smotion),
+                                         "help"      : "Options for a 'super-motion' step between system replicas"})
             }
 
    attribs = { "verbosity" : (InputAttribute, { "dtype"   : str,
@@ -111,7 +111,7 @@ class InputSimulation(Input):
       self.step.store(simul.step)
       self.total_steps.store(simul.tsteps)
       self.total_time.store(simul.ttime)
-      self.paratemp.store(simul.paratemp)
+      self.smotion.store(simul.smotion)
 
       # this we pick from the messages class. kind of a "global" but it seems to
       # be the best way to pass around the (global) information on the level of output.
@@ -197,7 +197,7 @@ class InputSimulation(Input):
                   fflist = fflist,
                   outputs = self.output.fetch(),
                   prng = self.prng.fetch(),
-                  paratemp = self.paratemp.fetch(),
+                  smotion = self.smotion.fetch(),
                   step = self.step.fetch(),
                   tsteps = self.total_steps.fetch(),
                   ttime = self.total_time.fetch())
