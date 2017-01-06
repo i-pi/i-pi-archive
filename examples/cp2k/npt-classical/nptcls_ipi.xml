@@ -2,7 +2,7 @@
    <output prefix='nptcls_output'>
       <properties stride="1" flush="1">[step, time{femtosecond}, conserved, potential, kinetic_cv, pressure_cv, volume, temperature{kelvin}, kinetic_md, pressure_md ] </properties>
       <trajectory stride="5" format="pdb" filename="xc" cell_units="angstrom"> x_centroid{angstrom} </trajectory>
-      <trajectory stride="1" format="xyz" filename="pos"> positions </trajectory>      
+      <trajectory stride="1" format="xyz" filename="pos"> positions </trajectory>
       <trajectory stride="1" format="xyz" filename="vel"> velocities </trajectory>
       <trajectory stride="1" format="xyz" filename="for"> forces </trajectory>
       <checkpoint stride="100" overwrite="true" filename="chk"/>
@@ -14,8 +14,8 @@
      <address>localhost</address>   <port>22340</port>  <latency>0.01</latency> <timeout>5000</timeout>
    </ffsocket>
    <system>
-     <initialize nbeads='1'> 
-       <file mode='xyz' units='angstrom'>water_box.xyz</file>
+     <initialize nbeads='1'>
+       <file mode='xyz'>water_box.xyz</file>
        <cell mode='manual'>
 	 [   1.96756644e+01,   0.00000000e+00,   0.00000000e+00,   0.00000000e+00,   1.96756644e+01, 0.00000000e+00,   0.00000000e+00,   0.00000000e+00,   1.96756644e+01 ]
        </cell>
@@ -24,7 +24,7 @@
      <forces><force forcefield='driver'/></forces>
      <ensemble>
        <temperature units="kelvin"> 750 </temperature>
-       <pressure units="gigapascal"> 10. </pressure>      
+       <pressure units="gigapascal"> 10. </pressure>
      </ensemble>
      <motion mode='dynamics'>
        <dynamics mode='npt'>

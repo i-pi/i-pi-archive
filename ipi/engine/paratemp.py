@@ -137,9 +137,9 @@ class ParaTemp(dobject):
 
                # if there are GLE thermostats around, we must also rescale the s momenta!
                # should also check the barostat thermostat, but we don't do NPT replica exchange yet so whatever.
-               if hasattr(self.slist[i].ensemble.thermostat,"s"):
-                  self.slist[i].ensemble.thermostat.s *= np.sqrt(betai/betaj)
-                  self.slist[j].ensemble.thermostat.s *= np.sqrt(betaj/betai)
+#               if hasattr(self.slist[i].ensemble.thermostat,"s"):
+#                  self.slist[i].ensemble.thermostat.s *= np.sqrt(betai/betaj)
+#                  self.slist[j].ensemble.thermostat.s *= np.sqrt(betaj/betai)
 
                swp=self.temp_index[j];  self.temp_index[j]=self.temp_index[i];  self.temp_index[i]=swp
 

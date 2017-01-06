@@ -34,7 +34,7 @@ def print_pdb_path(beads, cell, filedesc=sys.stdout):
     """
 
     fmt_cryst = "CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f%s%4i\n"
-    fmt_atom = "ATOM  %5i %4s%1s%3s %1s%4i%1s   %8.3f%8.3f%8.3f%6.2f%6.2f          %2s%2i\n"
+    fmt_atom = "ATOM  %5i %4s%1s%3s %1s%4i%1s  %8.3f%8.3f%8.3f%6.2f%6.2f          %2s%2i\n"
     fmt_conect = "CONECT%5i%5i\n"
 
     a, b, c, alpha, beta, gamma = mt.h2abc_deg(cell.h)
@@ -76,8 +76,7 @@ def print_pdb(atoms, cell, filedesc=sys.stdout, title=""):
     """
 
     fmt_cryst = "CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f%s%4i\n"
-    fmt_atom = "ATOM  %5i %4s%1s%3s %1s%4i%1s    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s%2i\n"
-
+    fmt_atom = "ATOM  %5i %4s%1s%3s %1s%4i%1s   %8.3f%8.3f%8.3f%6.2f%6.2f          %2s%2i\n"
 
     if title != "":
         filedesc.write("TITLE   %70s\n" % (title))
