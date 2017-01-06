@@ -10,7 +10,6 @@ in the XYZ format.
 import sys
 import re
 
-
 import numpy as np
 
 import ipi.utils.mathtools as mt

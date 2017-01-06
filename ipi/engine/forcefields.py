@@ -22,7 +22,7 @@ from ipi.utils.depend import dobject
 from ipi.utils.depend import depstrip
 
 
-__all__ = ['ForceField', 'FFSocket', 'FFLennardJones']
+__all__ = ['ForceField', 'FFSocket', 'FFLennardJones', 'FFDebye']
 
 
 class ForceRequest(dict):
@@ -129,7 +129,11 @@ class ForceField(dobject):
             "pars": par_str,
             "result": None,
             "status": "Queued",
-            "start": -1})
+            "start": -1,
+            "t_queued": time.time(),
+            "t_dispatched": 0,
+            "t_finished": 0
+            })
 
         self._threadlock.acquire()
         try:
@@ -144,8 +148,10 @@ class ForceField(dobject):
 
         for r in self.requests:
             if r["status"] == "Queued":
+                r["t_dispatched"] = time.time()
                 r["result"] = [0.0, np.zeros(len(r["pos"]), float), np.zeros((3,3), float), ""]
                 r["status"] = "Done"
+                r["t_finished"] = time.time()
 
     def _poll_loop(self):
         """Polling loop.
@@ -313,6 +319,7 @@ class FFLennardJones(ForceField):
             for r in self.requests:
                 if r["status"] == "Queued":
                     r["status"] = "Running"
+                    r["t_dispatched"] = time.time()
                     self.evaluate(r)
         finally:
             self._threadlock.release()
@@ -342,3 +349,73 @@ class FFLennardJones(ForceField):
 
         r["result"] = [v, f.reshape(nat*3), np.zeros((3,3), float), ""]
         r["status"] = "Done"
+
+class FFDebye(ForceField):
+   """Debye crystal harmonic reference potential
+
+   Computes a harmonic forcefield. 
+
+   Attributes:
+      parameters: A dictionary of the parameters used by the driver. Of the
+         form {'name': value}.
+      requests: During the force calculation step this holds a dictionary
+         containing the relevant data for determining the progress of the step.
+         Of the form {'atoms': atoms, 'cell': cell, 'pars': parameters,
+                      'status': status, 'result': result, 'id': bead id,
+                      'start': starting time}.
+   """
+   
+   def __init__(self, latency = 1.0, name = "",  H=None, xref=None, vref=0.0, pars=None, dopbc = False, threaded=True):
+      """Initialises FFDebye.
+
+      Args:
+         pars: Optional dictionary, giving the parameters needed by the driver.
+      """
+
+      # a socket to the communication library is created or linked
+      # NEVER DO PBC -- forces here are computed without.
+      super(FFDebye,self).__init__(latency, name, pars, dopbc=False)
+            
+      if H is None:
+          raise ValueError("Must provide a dynamical matrix for the Debye crystal.")
+      if xref is None:
+          raise ValueError("Must provide a reference configuration for the Debye crystal.")
+  		  
+      self.H = H
+      self.xref = xref
+      self.vref = vref
+
+      eigsys=np.linalg.eigh(self.H) 
+      info(" @ForceField: Hamiltonian eigenvalues: " + ' '.join(map(str, eigsys[0])), verbosity.medium)                 
+
+   def poll(self):
+      """ Polls the forcefield checking if there are requests that should
+      be answered, and if necessary evaluates the associated forces and energy. """
+
+      # we have to be thread-safe, as in multi-system mode this might get called by many threads at once
+      self._threadlock.acquire()
+      try:
+         for r in self.requests:
+            if r["status"] == "Queued":
+               r["status"] = "Running"
+
+               self.evaluate(r)
+      finally:
+         self._threadlock.release()
+
+   def evaluate(self, r):
+      """ A simple evaluator for a harmonic Debye crystal potential. """
+
+      q = r["pos"]
+      n3 = len(q)
+      if self.H.shape != (n3,n3): 
+          raise ValueError("Hessian size mismatch")
+      if self.xref.shape != (n3,): 
+          raise ValueError("Reference structure size mismatch")
+      
+      d = q-self.xref
+      mf = np.dot(self.H, d)
+            
+      r["result"] = [ self.vref + 0.5*np.dot(d,mf), -mf, np.zeros((3,3),float), ""]
+      r["status"] = "Done"
+      r["t_finished"] = time.time()

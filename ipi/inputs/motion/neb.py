@@ -100,6 +100,7 @@ class InputNEB(InputDictionary):
     default_label = "NEB"
 
     def store(self, neb):
+        print "INSIDE NEB STROE"
         if neb == {}: return
         self.ls_options.store(neb.ls_options)
         self.tolerances.store(neb.tolerances)
