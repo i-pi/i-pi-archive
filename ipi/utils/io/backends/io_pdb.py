@@ -98,7 +98,7 @@ def print_pdb(atoms, cell, filedesc=sys.stdout, title=""):
     filedesc.write("END\n")
 
 
-def read_pdb(filedesc, **kwards):
+def read_pdb(filedesc, **kwargs):
     """Reads a PDB-style file and creates an Atoms and Cell object.
 
     Args:
@@ -151,21 +151,3 @@ def read_pdb(filedesc, **kwards):
         body = filedesc.readline()
 
     return comment, cell, np.asarray(qatoms), np.asarray(names, dtype='|S4'), np.asarray(masses)
-
-
-def iter_pdb(filedesc):
-    """Takes a pdb-style file and yields one Atoms, Cell tuple after another.
-
-    Args:
-        filedesc: An open readable file object from a pdb formatted file.
-
-    Returns:
-       Generator over the pdb trajectory, that yields
-       (Atoms, Cell) tuple with the appropriate atom labels, masses and positions.
-    """
-
-    try:
-        while 1:
-            yield read_pdb(filedesc)
-    except EOFError:
-        pass

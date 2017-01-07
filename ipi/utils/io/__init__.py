@@ -99,7 +99,7 @@ def read_file(mode, filedesc, **kwargs):
         A dictionary with 'atoms', 'cell' and 'comment'.
     """
 
-    return importlib.import_module("ipi.utils.io.backends.io_units").\
+    return importlib.import_module("ipi.utils.io.io_units").\
         process_units(*_get_io_function(mode, "read")(filedesc=filedesc, **kwargs),
                       output=kwargs["output"] if "output" in kwargs.keys() else "objects")
 
@@ -117,7 +117,7 @@ def read_file_name(filename):
     return read_file(os.path.splitext(filename)[1], open(filename))
 
 
-def iter_file(mode, filedesc):
+def iter_file(mode, filedesc, **kwargs):
     """Takes an open `mode`-style file and yields one Atoms object after another.
 
     Args:
@@ -126,9 +126,15 @@ def iter_file(mode, filedesc):
     Returns:
         Generator of frames (dictionary with 'atoms', 'cell' and 'comment') from the trajectory.
     """
-    return _get_io_function(mode, "iter")(filedesc=filedesc)
-
-
+    
+    try:
+        while 1:
+            yield importlib.import_module("ipi.utils.io.io_units").\
+                process_units(*_get_io_function(mode, "read")(filedesc=filedesc, **kwargs),
+                      output=kwargs["output"] if "output" in kwargs.keys() else "objects")
+    except EOFError:
+        pass
+            
 def iter_file_name(filename):
     """Open a trajectory file, guessing its format from the extension.
 
