@@ -246,7 +246,7 @@ class Simulation(dobject):
         #tttime = 0.0
         ttot = 0.0
         # main MD loop
-        for self.step in range(self.step, self.tsteps):
+        for self.step in xrange(self.step, self.tsteps):
             # stores the state before doing a step.
             # this is a bit time-consuming but makes sure that we can honor soft
             # exit requests without screwing the trajectory
@@ -278,9 +278,7 @@ class Simulation(dobject):
             if softexit.triggered:
                 # Don't continue if we are about to exit.
                 break
-
-            for o in self.outputs:
-                o.write()
+            
 
             # does the "super motion" step
             if self.smotion is not None:
@@ -300,6 +298,9 @@ class Simulation(dobject):
             if softexit.triggered:
                 # Don't write if we are about to exit.
                 break
+            
+            for o in self.outputs:
+                o.write()
 
             steptime += time.time()
             ttot += steptime

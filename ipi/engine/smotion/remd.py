@@ -36,7 +36,7 @@ class ReplicaExchange(Smotion):
             bias: activate hamiltonian replica exchange ***not yet implemented
     """
 
-    def __init__(self, stride=1.0):
+    def __init__(self, stride=1.0, repindex = None):
         """Initialises REMD.
 
         Args:
@@ -45,12 +45,22 @@ class ReplicaExchange(Smotion):
 
         super(ReplicaExchange, self).__init__()
 
+        self.swapfile = "PARATEMP" #!TODO make this an option!
         # replica exchange options
         self.stride = stride
+        
+        #! TODO ! allow saving and storing the replica indices
+        self.repindex = repindex
 
     def bind(self, syslist, prng):
 
         super(ReplicaExchange,self).bind(syslist, prng)
+        
+        if self.repindex is None:
+            self.repindex = np.asarray(range(len(self.syslist)))
+        else:
+            if len(self.syslist) != len(self.repindex):
+                raise ValueError("Size of replica index does not match number of systems replicas")
 
     def step(self, step=None):
         """Tries to exchange replica."""
@@ -59,14 +69,18 @@ class ReplicaExchange(Smotion):
         
         info("\nTrying to exchange replicas on STEP %d" % step, verbosity.debug)
 
+        fxc = False
         sl = self.syslist
         for i in range(len(sl)):
            for j in range(i):
               if (1.0/self.stride < self.prng.u) : continue  # tries a swap with probability 1/stride
               ti = sl[i].ensemble.temp
               tj = sl[j].ensemble.temp
+              eci = sl[i].ensemble.econs
+              ecj = sl[j].ensemble.econs
               pensi = sl[i].ensemble.lpens
               pensj = sl[j].ensemble.lpens
+              print i, j, "APotentials: ", sl[i].forces.pot, sl[j].forces.pot, "Temp: ", sl[i].ensemble.temp, sl[j].ensemble.temp
               
               ensemble_swap(sl[i].ensemble, sl[j].ensemble)  # tries to swap the ensembles!
               # also rescales the velocities -- should do the same with cell velocities methinks
@@ -76,12 +90,22 @@ class ReplicaExchange(Smotion):
               newpensi = sl[i].ensemble.lpens
               newpensj = sl[j].ensemble.lpens
               
-              print pensi, pensj, " --> ", newpensi, newpensj
-              pxc = np.exp(-(newpensi+newpensj)+(pensi*pensj))
+              print i, j, "BPotentials: ", sl[i].forces.pot, sl[j].forces.pot, "Temp: ", sl[i].ensemble.temp, sl[j].ensemble.temp
+                            
+              pxc = np.exp((newpensi+newpensj)-(pensi+pensj))
+              print pensi, pensj, " --> ", newpensi, newpensj, " == ", pxc
 
 
-              if (pxc < self.prng.u): # really does the exchange
-                 info(" @ PT:  SWAPPING replicas % 5d and % 5d." % (i,j), verbosity.low)                
+              if (pxc > self.prng.u): # really does the exchange
+                  info(" @ PT:  SWAPPING replicas % 5d and % 5d." % (i,j), verbosity.low)     
+                  # we just have to carry on with the swapped ensembles, but we also keep track of the changes in econs
+                  sl[i].ensemble.eens += eci - sl[i].ensemble.econs
+                  sl[j].ensemble.eens += ecj - sl[j].ensemble.econs
+                  self.repindex[i], self.repindex[j] = self.repindex[j], self.repindex[i] # keeps track of the swap
+                  
+                  # there is a bit of a conceptual fuck-up here, due to the fact that the barostat is an 
+                 
+                  fxc = True # signal that an exchange has been made!          
               else: # undoes the swap
                   ensemble_swap(sl[i].ensemble, sl[j].ensemble)
                   sl[i].beads.p *= np.sqrt(ti/tj)
@@ -92,4 +116,10 @@ class ReplicaExchange(Smotion):
                  
                  #self.syslist[i].ensemble.temp = copy(self.syslist[j].ensemble.temp)
                  # velocities have to be adjusted according to the new temperature
-                 
+        
+        if fxc: # writes out the new status
+            with open(self.swapfile,"a") as sf:
+                 sf.write("% 10d" % (step))
+                 for i in self.repindex:
+                     sf.write(" % 5d" % (i))
+                 sf.write("\n") 

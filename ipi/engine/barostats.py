@@ -140,6 +140,11 @@ class Barostat(dobject):
          dget(self,"kstress").add_dependency(dget(bias,"f"))
          dget(self,"stress").add_dependency(dget(bias,"vir"))
 
+      dset(self,"pot",
+         depend_value(name='pot', value = 0.0))
+
+      dset(self,"kin",depend_value(name='kin', value = 0.0))
+
       if fixdof is None:
          self.mdof = float(self.beads.natoms)*3.0
       else:
@@ -269,7 +274,7 @@ class BaroBZP(Barostat):
       # barostat elastic energy
       dset(self,"pot",
          depend_value(name='pot', func=self.get_pot,
-            dependencies=[ dget(cell,"V"), dget(self,"pext") ]))
+            dependencies=[ dget(cell,"V"), dget(self,"pext"), dget(self,"temp") ]))
 
       dset(self,"kin",depend_value(name='kin',
          func=(lambda:0.5*self.p[0]**2/self.m[0]),
@@ -285,12 +290,13 @@ class BaroBZP(Barostat):
       """Calculates the elastic strain energy of the cell."""
 
       # NOTE: since there are nbeads replicas of the unit cell, the enthalpy contains a nbeads factor
-      return self.cell.V*self.pext*self.beads.nbeads
+      # NOTE: we also add a correction that accounts for the size of the box
+      return self.cell.V*self.pext*self.beads.nbeads - np.log(self.cell.V)*Constants.kb*self.temp
 
    def get_ebaro(self):
       """Calculates the barostat conserved quantity."""
 
-      return self.thermostat.ethermo + self.kin + self.pot - np.log(self.cell.V)*Constants.kb*self.temp
+      return self.thermostat.ethermo + self.kin + self.pot
 
    def pstep(self):
       """Propagates the momenta for half a time step."""

@@ -32,8 +32,9 @@ def ensemble_swap(ens1, ens2):
     exchanging all of the inner properties. """
 
     if ens1.temp != ens2.temp :
-        swp = ens1.temp; ens1.temp = ens2.temp; ens2.temp = swp
-        
+        ens1.temp, ens2.temp = ens2.temp, ens1.temp
+    if ens1.pext != ens2.pext :
+        ens1.pext, ens2.pext = ens2.pext, ens1.pext    
 
 class Ensemble(dobject):
     """Base ensemble class.
@@ -80,7 +81,7 @@ class Ensemble(dobject):
             self.eens = 0.0
                     
 
-    def bind(self, beads, nm, cell, bforce, bbias, elist=[]):
+    def bind(self, beads, nm, cell, bforce, bbias, elist=[], xlpot=[], xlkin=[]):
         self.beads = beads
         self.cell = cell
         self.forces = bforce
@@ -98,18 +99,36 @@ class Ensemble(dobject):
 
         for e in elist:
             self.add_econs(e)
-            
+
         dset(self, "lpens", depend_value(name='lpens', func=self.get_lpens, 
-                dependencies=[ dget(self,"temp"), dget(self,"pext"), dget(self,"stressext") ] ))        
+                dependencies=[ dget(self,"temp") ] ))        
         dget(self, "lpens").add_dependency(dget(self.nm, "kin"))
         dget(self, "lpens").add_dependency(dget(self.forces, "pot"))
         dget(self, "lpens").add_dependency(dget(self.bias, "pot"))
         dget(self, "lpens").add_dependency(dget(self.beads, "vpath"))
+        
+        # extended Lagrangian terms for the ensemble
+        self._xlpot = []
+        for p in xlpot:
+            self.add_xlpot(p)
+            
+        self._xlkin = []
+        for k in xlkin:
+            self.add_xlkin(k)
+        
 
     def add_econs(self, e):
         self._elist.append(e)
         dget(self, "econs").add_dependency(e)
 
+    def add_xlpot(self, p):
+        self._xlpot.append(p)
+        dget(self, "lpens").add_dependency(p)
+        
+    def add_xlkin(self, k):
+        self._xlkin.append(k)
+        dget(self, "lpens").add_dependency(k)
+        
     def get_econs(self):
         """Calculates the conserved energy quantity for constant energy
         ensembles.
@@ -126,7 +145,21 @@ class Ensemble(dobject):
         for the ensemble. 
         """
         
-        # TODO include the stress 
-        lpens = -(self.pext*self.cell.V+self.forces.pot+self.bias.pot+self.nm.kin+self.beads.vpath)/(Constants.kb*self.temp)
+        
+        lpens = (self.forces.pot+self.bias.pot+self.nm.kin+self.beads.vpath);
+        
         print "Computing ensemble stuff ", lpens
+        
+        # inlcude terms associated with an extended Lagrangian integrator of some sort
+        for p in self._xlpot:
+            lpens += p.get()
+            print "Adding lagrangian pot ", p.get()
+        for k in self._xlkin:
+            print "Adding lagrangian kin ", k.get()
+            lpens += k.get()
+            
+        print " kin and path ", self.nm.kin, self.beads.vpath, Constants.kb*self.temp*self.beads.nbeads
+        lpens *= -1.0/(Constants.kb*self.temp*self.beads.nbeads)
+        #lpens = -self.forces.pot/(Constants.kb*self.temp*self.beads.nbeads)
+        
         return lpens

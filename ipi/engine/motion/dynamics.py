@@ -157,6 +157,10 @@ class Dynamics(Motion):
 
         self.ensemble.add_econs(dget(self.thermostat, "ethermo"))
         self.ensemble.add_econs(dget(self.barostat, "ebaro"))
+        
+        # adds potential and kinetic energy for the barostat to the ensemble
+        self.ensemble.add_xlpot(dget(self.barostat, "pot"))
+        self.ensemble.add_xlkin(dget(self.barostat, "kin"))
 
         #!TODO THOROUGH CLEAN-UP AND CHECK
         #if self.enstype in ["nvt", "npt", "nst"]:
