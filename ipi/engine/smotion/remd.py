@@ -46,7 +46,7 @@ class ReplicaExchange(Smotion):
         super(ReplicaExchange, self).__init__()
 
         self.swapfile = "PARATEMP" #!TODO make this an option!
-        self.swapkin = True #!TODO make this an option!
+        self.rescalekin = True  #!TODO make this an option!
         # replica exchange options
         self.stride = stride
         
@@ -85,8 +85,10 @@ class ReplicaExchange(Smotion):
               
               ensemble_swap(sl[i].ensemble, sl[j].ensemble)  # tries to swap the ensembles!
               
-              if not self.swapkin:
-                  # also rescales the velocities -- should do the same with cell velocities methinks
+              # it is generally a good idea to rescale the kinetic energies,
+              # which means that the exchange is done only relative to the potential energy part.
+              if self.rescalekin: 
+                  # also rescales the velocities -- should do the same with cell velocities 
                   sl[i].beads.p *= np.sqrt(tj/ti)
                   sl[j].beads.p *= np.sqrt(ti/tj)
                   try: # if motion has a barostat, and barostat has a momentum, does the swap
@@ -117,7 +119,7 @@ class ReplicaExchange(Smotion):
               else: # undoes the swap
                   ensemble_swap(sl[i].ensemble, sl[j].ensemble)
                   
-                  if not self.swapkin:
+                  if not self.rescalekin:
                       sl[i].beads.p *= np.sqrt(ti/tj)
                       sl[j].beads.p *= np.sqrt(tj/ti)                  
                       try:
