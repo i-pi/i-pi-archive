@@ -146,7 +146,7 @@ class Ensemble(dobject):
         """
         
         
-        lpens = (self.forces.pot+self.bias.pot+self.nm.kin+self.beads.vpath);
+        lpens = (self.forces.pot+self.bias.pot+self.nm.kin+self.beads.vpath*self.nm.omegan2);
         
         print "Computing ensemble stuff ", lpens
         
@@ -158,7 +158,7 @@ class Ensemble(dobject):
             print "Adding lagrangian kin ", k.get()
             lpens += k.get()
             
-        print " kin and path ", self.nm.kin, self.beads.vpath, Constants.kb*self.temp*self.beads.nbeads
+        print " kin and path ", self.nm.kin, self.beads.vpath*self.nm.omegan2, Constants.kb*self.temp*self.beads.nbeads
         lpens *= -1.0/(Constants.kb*self.temp*self.beads.nbeads)
         #lpens = -self.forces.pot/(Constants.kb*self.temp*self.beads.nbeads)
         
