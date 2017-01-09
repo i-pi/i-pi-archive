@@ -92,7 +92,7 @@ def read_json(filedesc, **kwargs):
     }
 
 
-def iter_json(filedesc):
+def iter_json(filedesc, **kwargs):
     """Takes a json-style file and yields one Atoms object after another.
 
     Args:
@@ -105,6 +105,6 @@ def iter_json(filedesc):
 
     try:
         while True:
-            yield read_json(filedesc)
+            yield read_json(filedesc, **kwargs)
     except EOFError:
         pass

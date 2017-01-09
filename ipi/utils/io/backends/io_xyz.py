@@ -148,21 +148,3 @@ def read_xyz(filedesc, **kwargs):
 
     return comment, cell, qatoms, names, masses
 
-
-
-def iter_xyz(filedesc):
-    """Takes a xyz-style file and yields one Atoms object after another.
-
-    Args:
-        filedesc: An open readable file object from a xyz formatted file.
-
-    Returns:
-        Generator over the xyz trajectory, that yields
-        Atoms objects with the appropriate atom labels, masses and positions.
-    """
-
-    try:
-        while 1:
-            yield read_xyz(filedesc)
-    except EOFError:
-        pass
