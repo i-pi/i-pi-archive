@@ -119,7 +119,7 @@ class ReplicaExchange(Smotion):
               else: # undoes the swap
                   ensemble_swap(sl[i].ensemble, sl[j].ensemble)
                   
-                  if not self.rescalekin:
+                  if self.rescalekin:
                       sl[i].beads.p *= np.sqrt(ti/tj)
                       sl[j].beads.p *= np.sqrt(tj/ti)                  
                       try:
