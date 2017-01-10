@@ -589,9 +589,9 @@ def TRM_FIND(f, h, tr):
                  DXE  = displacement in eigenvector basis
         """
 
-	#Resize
+        #Resize
         ndim = f.size
-	f=f.reshape((1,ndim))
+        f=f.reshape((1,ndim))
 
         #Diagonalize
         d, w = np.linalg.eigh(h)        
@@ -625,7 +625,7 @@ def TRM_FIND(f, h, tr):
                 print "problem in 'find'!!!"
             if (np.linalg.norm(DXE)<tr):
                 DX=np.dot(w,DXE)
-		#print "trivial DX"
+        #print "trivial DX"
                 return DX.flatten()
  
         #If we haven't luck. Let's start with the iteration

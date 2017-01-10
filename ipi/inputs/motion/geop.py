@@ -107,7 +107,7 @@ class InputGeop(InputDictionary):
 
     def store(self, geop):
         if geop == {}: 
-	    return
+            return
 
 
         self.ls_options.store(geop.ls_options)
