@@ -46,7 +46,7 @@ class ReplicaExchange(Smotion):
         super(ReplicaExchange, self).__init__()
 
         self.swapfile = "PARATEMP" #!TODO make this an option!
-        self.rescalekin = False  #!TODO make this an option!
+        self.rescalekin = True  #!TODO make this an option!
         # replica exchange options
         self.stride = stride
         
