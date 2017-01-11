@@ -41,6 +41,7 @@ def main(inputfile, prefix="RE"):
    isimul.parse(xmlrestart.fields[0][1])
 
    simul = isimul.fetch()
+   
 
 # TODO: check if remd is chosen as smotion mode
 #   if simul.mode != "paratemp":
@@ -116,55 +117,80 @@ def main(inputfile, prefix="RE"):
 
    # now reads files one frame at a time, and re-direct output to the appropriate location
    irep = np.zeros(nsys,int)
-   pstep = 0
+   nrep = np.zeros(nsys,int)
+   
+   # reads first line from PARATEMP index file
+   line=ptfile.readline()
+   line = line.split()
+
+   step = int(line[0])
+   irep[:] = line[1:]
+   
+   # reads second line from PARATEMP index file
+   line=ptfile.readline()
+   line = line.split()
+
+   steps = int(line[0])
+   nrep[:] = line[1:]
+   
    while True:
-      # reads one line from PARATEMP index file
-      line=ptfile.readline()
-      line = line.split()
-      if len(line) == 0: break
+      try:
       
-      steps = range(pstep, int(line[0])+1)
-      irep[:] = line[1:]
-
-      for step in steps:
-         print step
-         try:
-
-            for prop in lprop:
-               for isys in range(nsys):
-                  sprop = prop[isys]
-                  if step % sprop["stride"] == 0: # property transfer
-                     iline = sprop["ifile"].readline()
-                     while iline[0] == "#":  # fast forward if line is a comment
-                        prop[irep[isys]]["ofile"].write(iline)
-                        iline = sprop["ifile"].readline()
+         print step,irep
+         
+         for prop in lprop:
+            for isys in range(nsys):
+               sprop = prop[isys]
+               if step % sprop["stride"] == 0: # property transfer
+                  iline = sprop["ifile"].readline()
+                  if not iline: raise EOFError
+                  while iline[0] == "#":  # fast forward if line is a comment
                      prop[irep[isys]]["ofile"].write(iline)
+                     iline = sprop["ifile"].readline()
+                     if not iline: raise EOFError
+                  prop[irep[isys]]["ofile"].write(iline)
 
-            for traj in ltraj:
-               for isys in range(nsys):
-                  straj = traj[isys]
-                  if step % straj["stride"] == 0: # property transfer
-                     # reads one frame from the input file
-                     ibuffer = []
-                     if straj["format"] == "xyz":
-                        iline = straj["ifile"].readline()
-                        nat = int(iline)
-                        ibuffer.append(iline)
+         for traj in ltraj:
+            for isys in range(nsys):
+               straj = traj[isys]
+               if step % straj["stride"] == 0: # property transfer
+                  # reads one frame from the input file
+                  ibuffer = []
+                  if straj["format"] == "xyz":
+                     iline = straj["ifile"].readline()
+                     if not iline: raise EOFError
+                     nat = int(iline)
+                     ibuffer.append(iline)
+                     ibuffer.append(straj["ifile"].readline())
+                     for i in range(nat):
                         ibuffer.append(straj["ifile"].readline())
-                        for i in range(nat):
-                           ibuffer.append(straj["ifile"].readline())
-                        traj[irep[isys]]["ofile"].write(''.join(ibuffer))
-                     elif straj["format"] == "pdb":
-                        iline = straj["ifile"].readline()
-                        while (iline.strip()!="" and iline.strip()!= "END"):
-                           ibuffer.append(iline)
-                           iline = straj["ifile"].readline()
+                     traj[irep[isys]]["ofile"].write(''.join(ibuffer))
+                  elif straj["format"] == "pdb":
+                     iline = straj["ifile"].readline()
+                     if not iline: raise EOFError
+                     while (iline.strip()!="" and iline.strip()!= "END"):
                         ibuffer.append(iline)
-                        traj[irep[isys]]["ofile"].write(''.join(ibuffer))
-         except EOFError:
-            break
+                        iline = straj["ifile"].readline()
+                     ibuffer.append(iline)
+                     traj[irep[isys]]["ofile"].write(''.join(ibuffer))
+                     
+         step = step+1
       
-      pstep = step+1  
+         if step == steps:
+            irep[:] = nrep[:]
+            # reads one line from PARATEMP index file
+            line=ptfile.readline()
+            line = line.split()
+
+            if not line:
+               steps = np.inf
+            else:
+               steps = int(line[0])
+               nrep[:] = line[1:]
+      
+      except EOFError:
+         break
+        
 
 
 if __name__ == '__main__':
