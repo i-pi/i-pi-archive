@@ -677,6 +677,7 @@ def L_BFGS(x0, d0, fdf, qlist, glist, fdf0=None, big_step=100, tol=1.0e-6, itmax
     """
     
     # Original function value, gradient, other initializations
+    # TODO: x0=xinit.copy()
     zeps = 1.0e-10
     if fdf0 is None: fdf0 = fdf(x0)
     f0, df0 = fdf0

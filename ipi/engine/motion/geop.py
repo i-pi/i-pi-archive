@@ -264,7 +264,9 @@ class DummyOptimizer(dobject):
         self.old_d      = geop.old_d
 
 
-
+# This should not be here. Inside SD-mapper there should be a bind function calling super
+# and then do specific things for each!
+# Have a look how it is done in dynamics
         if self.mode == "bfgs":
                self.invhessian = geop.invhessian
                self.gm.bind(self)
@@ -461,6 +463,7 @@ class LBFGSOptimizer(DummyOptimizer):
 
         # Do one iteration of L-BFGS, return new point, function value,
         # move direction, and current Hessian to use for next iteration
+        # TODO: HERE CALL ON A COPY OF BEADS.Q -- otherwise q is update, first argument should not be touched -- call it xinit
         self.beads.q, fx, self.gm.d, self.qlist, self.glist = L_BFGS(self.beads.q,
                 self.gm.d, self.gm, self.qlist, self.glist,
                 fdf0=(u0, du0), big_step=self.big_step, tol=self.ls_options["tolerance"],
