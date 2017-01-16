@@ -52,7 +52,7 @@ class GeopMotion(Motion):
     def __init__(self, fixcom=False, fixatoms=None,
                  mode="lbfgs",
                  biggest_step=100.0,
-		 old_pos=np.zeros(0, float),
+                 old_pos=np.zeros(0, float),
                  old_pot= np.zeros(0, float),
                  old_force=np.zeros(0, float),
                  old_direction_cgsd=np.zeros(0, float),
@@ -268,30 +268,31 @@ class DummyOptimizer(dobject):
 # and then do specific things for each!
 # Have a look how it is done in dynamics
         if self.mode == "bfgs":
-               self.invhessian = geop.invhessian
-               self.gm.bind(self)
+            self.invhessian = geop.invhessian
+            self.gm.bind(self)
         elif self.mode == "bfgstrm":
-               self.hessian    = geop.hessian
-               if geop.tr.size == 0:
-                    geop.tr = np.array([0.4])
-               self.tr    = geop.tr
+            self.hessian    = geop.hessian
+            if geop.tr.size == 0:
+                geop.tr = np.array([0.4])
+            self.tr    = geop.tr
         elif self.mode == "lbfgs":
-               self.corrections = geop.corrections 
-               self.qlist = geop.qlist             
-               self.glist = geop.glist             
-               self.gm.bind(self)
+            self.corrections = geop.corrections
+            self.qlist = geop.qlist
+            self.glist = geop.glist
+            self.gm.bind(self)
         elif self.mode == "sd":
-               self.lm.bind(self)
+            self.lm.bind(self)
         elif self.mode == "cg":
-               self.lm.bind(self)
+            self.lm.bind(self)
 
     def exitstep(self, fx, u0, x):
         """ Exits the simulation step. Computes time, checks for convergence. """
        
         info(" @GEOP: Updating bead positions", verbosity.debug)
         
-        self.qtime += time.time()
-	
+        if self.mode != "bfgstrm":
+            self.qtime += time.time()
+
         if (np.absolute((fx - u0) / self.beads.natoms) <= self.tolerances["energy"])\
             and ( ( np.amax(np.absolute(self.forces.f)) <= self.tolerances["force"]   )  or
                   ( np.linalg.norm(self.forces.f.flatten() - self.old_f.flatten()) == 1e-10)  )\
@@ -353,21 +354,16 @@ class BFGSTRMOptimizer(DummyOptimizer):
     """ BFGSTRM Minimization with Trust Radius Method.	"""
 
     def __init__(self):
-         self.accept   = False
+        self.accept   = False
 
     def step(self, step=None):
         """ Does one simulation time step.
             Attributes:
-            ptime: The time taken in updating the velocities.
             qtime: The time taken in updating the positions.
-            ttime: The time taken in applying the thermostat steps.
-	    tr   : current trust radius
+            tr   : current trust radius
         """
 
-        self.ptime = 0.0
-        self.ttime = 0.0
         self.qtime = -time.time()
-
         info("\nMD STEP %d" % step, verbosity.debug)
 
         # Initialize approximate Hessian to the identity 
@@ -383,49 +379,51 @@ class BFGSTRMOptimizer(DummyOptimizer):
             self.old_f[:] = self.forces.f
 
 #Find new movement direction candidate
-	d_x = TRM_FIND(self.old_f.flatten(),self.hessian,self.tr)
- 	d_x = d_x.reshape(self.beads.nbeads,3*self.beads.natoms)    
+        d_x = TRM_FIND(self.old_f.flatten(),self.hessian,self.tr)
+        d_x = d_x.reshape(self.beads.nbeads,3*self.beads.natoms)
 
 #Make movement (energy and forces are computed automatically)
-  	if self.accept:
- 	     self.beads.q = self.beads.q + d_x
-  	else:
-   	     self.beads.q = self.old_x   + d_x
+        if self.accept:
+            self.beads.q = self.beads.q + d_x
+        else:
+            self.beads.q = self.old_x   + d_x
         counter.count()      # counts number of function evaluations
-	
+
 #Compute energy gain
-	d_x_aux = d_x.reshape(self.beads.nbeads*3*self.beads.natoms,1)
+        d_x_aux = d_x.reshape(self.beads.nbeads*3*self.beads.natoms,1)
 
         true_gain     = self.forces.pot - self.old_u
         expected_gain = -np.dot(self.old_f.flatten(),d_x.flatten()) 
         expected_gain += 0.5*np.dot(  d_x_aux.T,np.dot(self.hessian,d_x_aux) )
-	harmonic_gain = -0.5*np.dot( d_x.flatten(),(self.old_f+self.forces.f).flatten() )         
+        harmonic_gain = -0.5*np.dot( d_x.flatten(),(self.old_f+self.forces.f).flatten() )         
 
 #Compute quality:
         d_x_norm = np.linalg.norm(d_x)
 
         if d_x_norm > 0.05:              
-	   quality = true_gain / expected_gain	
-	else:
-	   quality = harmonic_gain / expected_gain	
-	self.accept  = (quality > 0.1 )
+            quality = true_gain / expected_gain
+        else:
+            quality = harmonic_gain / expected_gain
+            self.accept  = (quality > 0.1 )
 
 #Update TrustRadius (tr)
         if quality < 0.25:
-	    self.tr = 0.5*d_x_norm
-	elif quality>0.75 and d_x_norm>0.9*self.tr:
-	    self.tr = 2.0*self.tr
-	    if self.tr > self.big_step:
-    	        self.tr = self.big_step
-	
+            self.tr = 0.5*d_x_norm
+        elif quality>0.75 and d_x_norm>0.9*self.tr:
+            self.tr = 2.0*self.tr
+            if self.tr > self.big_step:
+                self.tr = self.big_step
+
 #if accept, Update  Hessian and check exit
         d_f      = np.subtract(self.forces.f, self.old_f)
 
-	if self.accept:
-	    TRM_UPDATE( d_x.flatten(),d_f.flatten(),self.hessian )	
-	    d_x_max =np.amax(np.absolute(d_x))
+        self.qtime += time.time()
+
+        if self.accept:
+            TRM_UPDATE( d_x.flatten(),d_f.flatten(),self.hessian )
+            d_x_max =np.amax(np.absolute(d_x))
             self.exitstep(self.forces.pot, self.old_u, d_x_max)
-		
+
 #---------------------------------------------------------------------------------------
 class LBFGSOptimizer(DummyOptimizer):
     """ L-BFGS Minimization """
@@ -481,7 +479,7 @@ class LBFGSOptimizer(DummyOptimizer):
         
         # Exit simulation step
         self.exitstep(fx, u0, x)
-         
+        
 class SDOptimizer(DummyOptimizer):
     """
     Steepest descent minimization
