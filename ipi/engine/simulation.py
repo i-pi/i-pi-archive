@@ -11,7 +11,7 @@ choosing which properties to initialise, and which properties to output.
 # See the "licenses" directory for full license information.
 
 
-import os
+import os, threading
 import time
 from copy import deepcopy
 
@@ -215,25 +215,16 @@ class Simulation(dobject):
             # must use multi-threading to avoid blocking in multi-system runs with WTE
             stepthreads = []
             for o in self.outputs:
-                o.write()  # threaded output seems to cause random hang-ups. should make things properly thread-safe
-                #st = threading.Thread(target=o.write, name=o.filename)
-                #st.daemon = True
-                #st.start()
-                #stepthreads.append(st)
+                #o.write()  # threaded output seems to cause random hang-ups. should make things properly thread-safe
+                st = threading.Thread(target=o.write, name=o.filename)
+                st.daemon = True
+                #t.start()
+                stepthreads.append(st)
 
             for st in stepthreads:
                 while st.isAlive():
-                    # This is necessary as join() without timeout prevents main
-                    # from receiving signals.
+                    # This is necessary as join() without timeout prevents main from receiving signals.
                     st.join(2.0)
-
-            #~ if self.mode == "paratemp":
-                #~ self.paratemp.parafile.write("%10d" % (self.step + 1))
-                #~ for i in self.paratemp.temp_index:
-                    #~ self.paratemp.parafile.write(" %5d" % i)
-                #~ self.paratemp.parafile.write("\n")
-                #~ self.paratemp.parafile.flush()
-                #~ os.fsync(self.paratemp.parafile)
 
             self.step = 0
 
@@ -259,20 +250,17 @@ class Simulation(dobject):
 
             stepthreads = []
             # steps through all the systems
-            #for s in self.syslist:
-            #   s.ensemble.step()
             for s in self.syslist:
                 # creates separate threads for the different systems
-                #st = threading.Thread(target=s.motion.step, name=s.prefix, kwargs={"step":self.step})
-                #st.daemon = True
-                s.motion.step(step=self.step)
-                #st.start()
-                #stepthreads.append(st)
+                st = threading.Thread(target=s.motion.step, name=s.prefix, kwargs={"step":self.step})
+                st.daemon = True
+                # s.motion.step(step=self.step)
+                st.start()
+                stepthreads.append(st)
 
             for st in stepthreads:
                 while st.isAlive():
-                    # This is necessary as join() without timeout prevents main
-                    # from receiving signals.
+                    # This is necessary as join() without timeout prevents main from receiving signals.
                     st.join(2.0)
 
             if softexit.triggered:
@@ -284,16 +272,6 @@ class Simulation(dobject):
             if self.smotion is not None:
                 # TODO: We need a file where we store the exchanges
                 self.smotion.step(self.step)
-
-                #~ # because of where this is in the loop, we must write out BEFORE doing the swaps.
-                #~ self.paratemp.parafile.write("%10d" % (self.step + 1))
-                #~ for i in self.paratemp.temp_index:
-                    #~ self.paratemp.parafile.write(" %5d" % i)
-                #~ self.paratemp.parafile.write("\n")
-                #~ self.paratemp.parafile.flush()
-                #~ os.fsync(self.paratemp.parafile)
-
-                #self.paratemp.swap(self.step)
 
             if softexit.triggered:
                 # Don't write if we are about to exit.
