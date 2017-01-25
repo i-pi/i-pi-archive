@@ -436,7 +436,57 @@ class ForceComponent(dobject):
          vir += v
       return vir
 
+class ScaledForceComponent(dobject):
+    def __init__(self, baseforce, scaling=1):
+        
+        self.bf = baseforce
+        dset(self,"scaling", depend_value(name="scaling",value=scaling))
+        dset(self,"f",depend_array(name="f", 
+              func=lambda: self.scaling*self.bf.f if scaling!=0 else np.zeros((self.bf.nbeads,3*self.bf.natoms)), 
+              value=np.zeros((self.bf.nbeads,3*self.bf.natoms)),              
+              dependencies=[dget(self.bf,"f"), dget(self,"scaling")] ))
+        dset(self,"pots",depend_array(name="pots", 
+              func=lambda: self.scaling*self.bf.pots if scaling !=0 else np.zeros(self.bf.nbeads), 
+              value=np.zeros(self.bf.nbeads),              
+               dependencies=[dget(self.bf,"pots"), dget(self,"scaling")] ))
+        dset(self,"virs",depend_array(name="virs", func=lambda: self.scaling*self.bf.f, 
+        value=np.zeros((self.bf.nbeads,3,3)), 
+        dependencies=[dget(self.bf,"virs"), dget(self,"scaling")] ))
+        dset(self,"extras",depend_array(name="extras", func=lambda: self.bf.extras, 
+            value=np.zeros(self.bf.nbeads), 
+           dependencies=[dget(self.bf,"extras")] ))          
 
+        # total potential and total virial
+        dset(self,"pot",
+            depend_value(name="pot", func=(lambda: self.pots.sum()),
+                dependencies=[dget(self,"pots")]))
+        dset(self,"vir",
+         depend_array(name="vir", func=self.get_vir, value=np.zeros((3,3)),
+            dependencies=[dget(self,"virs")]))
+        
+        # pipes weight from the force, since the scaling is applied on top of that
+        self.weight = depend_value(name="weight", value=0)
+        deppipe(self.bf, "weight", self, "weight")
+        self.mts_weights = self.bf.mts_weights
+
+    def get_vir(self):
+        """Sums the virial of each replica.
+
+        Not the actual system virial, as it has not been divided by either the
+        number of beads or the cell volume.
+
+        Returns:
+            Virial sum.
+        """
+
+        vir = np.zeros((3,3))
+        for v in depstrip(self.virs):
+            vir += v
+        return vir
+              
+    def queue(self):
+        pass # this should be taken care of when the force/potential/etc is accessed
+                
 class Forces(dobject):
    """Class that gathers all the forces together.
 
