@@ -58,7 +58,7 @@ class InputEnsemble(Input):
      	   "bias" : (InputForces, { "help"  : InputForces.default_help,
                                            "default" : [] }),      
            "bias_weights" : (InputArray, {"dtype"        : float,
-                                          "default"      : [],
+                                          "default"      : np.zeros(0),
                                           "help"         : "Bias weights.",
                                           "dimension"    : "undefined"}), 
          }
@@ -80,7 +80,7 @@ class InputEnsemble(Input):
       self.stress.store(ens.stressext)
       self.eens.store(ens.eens)
       self.bias.store(ens.bcomp)
-      self.bias_weight.store(ens.bias_weights)
+      self.bias_weights.store(ens.bweights)
 
 
    def fetch(self):
@@ -94,6 +94,6 @@ class InputEnsemble(Input):
       super(InputEnsemble,self).fetch()
 
       ens=Ensemble(eens=self.eens.fetch(), temp=self.temperature.fetch(),
-                 pext = self.pressure.fetch(), stressext = self.stress.fetch(), bcomponents = self.bias.fetch(), bweights=self.bias_weight.fetch())
+                 pext = self.pressure.fetch(), stressext = self.stress.fetch(), bcomponents = self.bias.fetch(), bweights=self.bias_weights.fetch())
       
       return ens
