@@ -22,6 +22,7 @@ from ipi.utils.io.inputs.io_xml import xml_parse_file
 from ipi.utils.units import unit_to_internal, Constants
 from ipi.engine.thermostats import *
 from ipi.engine.barostats import *
+from ipi.engine.forces import Forces
 
 
 __all__ = ['Ensemble', 'ensemble_swap']
@@ -45,9 +46,10 @@ class Ensemble(dobject):
         temp: The system's temperature.
         pext: The systems's pressure
         stressext: The system's stress tensor
+        bias: Explicit bias forces
     """
 
-    def __init__(self, eens=0.0, econs=0.0, temp=None, pext=None, stressext=None):
+    def __init__(self, eens=0.0, econs=0.0, temp=None, pext=None, stressext=None, bcomponents=None):
         """Initialises Ensemble.
 
         Args:
@@ -79,14 +81,21 @@ class Ensemble(dobject):
             self.eens = eens
         else:
             self.eens = 0.0
+        
+        if bcomponents == None:
+            bcomponents = []
+        self.bcomp = bcomponents
+        self.bias = Forces()
                     
 
-    def bind(self, beads, nm, cell, bforce, bbias, elist=[], xlpot=[], xlkin=[]):
+    def bind(self, beads, nm, cell, bforce, fflist, elist=[], xlpot=[], xlkin=[]):
         self.beads = beads
         self.cell = cell
         self.forces = bforce
-        self.bias = bbias
         self.nm = nm
+
+        self.bias.bind(self.beads, self.cell, self.bcomp, fflist)
+        
         dset(self, "econs", depend_value(name='econs', func=self.get_econs))        
         # dependencies of the conserved quantity
         dget(self, "econs").add_dependency(dget(self.nm, "kin"))
@@ -148,18 +157,11 @@ class Ensemble(dobject):
         
         lpens = (self.forces.pot+self.bias.pot+self.nm.kin+self.beads.vpath*self.nm.omegan2);
         
-        print "Computing ensemble stuff ", lpens
-        
         # inlcude terms associated with an extended Lagrangian integrator of some sort
         for p in self._xlpot:
             lpens += p.get()
-            print "Adding lagrangian pot ", p.get()
         for k in self._xlkin:
-            print "Adding lagrangian kin ", k.get()
             lpens += k.get()
             
-        print " kin and path ", self.nm.kin, self.beads.vpath*self.nm.omegan2, Constants.kb*self.temp*self.beads.nbeads
         lpens *= -1.0/(Constants.kb*self.temp*self.beads.nbeads)
-        #lpens = -self.forces.pot/(Constants.kb*self.temp*self.beads.nbeads)
-        
         return lpens

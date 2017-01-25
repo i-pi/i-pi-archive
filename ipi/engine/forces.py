@@ -262,8 +262,8 @@ class ForceComponent(dobject):
       _forces: A list of the forcefield objects for all the replicas.
       weight: A float that will be used to weight the contribution of this
          forcefield to the total force.
-      mts_weights: A float that will be used to weight the contribution of this
-         forcefield to the total force.
+      mts_weights: A list of floats that will be used to weight the 
+         contribution of this forcefield at each level of a MTS scheme
       ffield: A model to be used to create the forcefield objects for all
          the replicas of the system.
 
@@ -680,7 +680,11 @@ class Forces(dobject):
 
       fk = np.zeros((self.nbeads,3*self.natoms))
       for index in range(len(self.mforces)):
-         if len(self.mforces[index].mts_weights) > level and self.mforces[index].mts_weights[level] != 0  and self.mforces[index].weight > 0:
+         # forces with no MTS specification are applied at the outer level
+         if ( (len(self.mforces[index].mts_weights) ==0 and level==0) or 
+              (len(self.mforces[index].mts_weights) > level 
+              and self.mforces[index].mts_weights[level] != 0  
+              and self.mforces[index].weight > 0) ):
               fk += self.mforces[index].weight*self.mforces[index].mts_weights[level]*self.mrpc[index].b2tob1(depstrip(self.mforces[index].f))
       return fk
 

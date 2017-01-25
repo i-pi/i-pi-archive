@@ -196,7 +196,7 @@ class DummyIntegrator(dobject):
         """ Reference all the variables for simpler access."""
 
         self.beads = motion.beads
-        self.bias = motion.bias
+        self.bias = motion.ensemble.bias
         self.ensemble = motion.ensemble
         self.forces = motion.forces
         self.prng = motion.prng
@@ -298,8 +298,7 @@ class NVEIntegrator(DummyIntegrator):
     def pstep(self):
         """Velocity Verlet momenta propagator."""
 
-        self.beads.p += depstrip(self.forces.f)*(self.dt*0.5)
-        # also adds the bias force
+        self.beads.p += depstrip(self.forces.f)*(self.dt*0.5)        
         self.beads.p += depstrip(self.bias.f)*(self.dt*0.5)
 
     def qcstep(self):
@@ -579,7 +578,8 @@ class MTSIntegrator(NVEIntegrator):
  
     def pstep(self, level=0, alpha=1.0):
         """Velocity Verlet monemtum propagator."""
-        self.beads.p += self.forces.forces_mts(level)*0.5*(self.dt/alpha)
+        self.beads.p += self.forces.forces_mts(level)*0.5*(self.dt/alpha)        
+        self.beads.p += self.bias.forces_mts(level)*0.5*(self.dt/alpha)
        
     def qcstep(self, alpha=1.0):
         """Velocity Verlet centroid position propagator."""
@@ -621,13 +621,8 @@ class MTSIntegrator(NVEIntegrator):
         self.pconstraints()
         self.ttime += time.time()
  
-        # bias is applied at the outer loop too
-        self.beads.p += depstrip(self.bias.f)*(self.dt*0.5)
- 
         self.mtsprop(0,1.0)
- 
-        self.beads.p += depstrip(self.bias.f)*(self.dt*0.5)
- 
+  
         self.ttime -= time.time()
         self.thermostat.step()
         self.pconstraints()
