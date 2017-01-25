@@ -56,7 +56,11 @@ class InputEnsemble(Input):
                                          "help"      : "The ensemble contribution to the conserved quantity.",
                                          "dimension" : "energy"}),   
      	   "bias" : (InputForces, { "help"  : InputForces.default_help,
-                                           "default" : [] }),        
+                                           "default" : [] }),      
+           "bias_weights" : (InputArray, {"dtype"        : float,
+                                          "default"      : [],
+                                          "help"         : "Bias weights.",
+                                          "dimension"    : "undefined"}), 
          }
    dynamic = {  }
 
@@ -76,6 +80,8 @@ class InputEnsemble(Input):
       self.stress.store(ens.stressext)
       self.eens.store(ens.eens)
       self.bias.store(ens.bcomp)
+      self.bias_weight.store(ens.bias_weights)
+
 
    def fetch(self):
       """Creates an ensemble object.
@@ -88,6 +94,6 @@ class InputEnsemble(Input):
       super(InputEnsemble,self).fetch()
 
       ens=Ensemble(eens=self.eens.fetch(), temp=self.temperature.fetch(),
-                 pext = self.pressure.fetch(), stressext = self.stress.fetch(), bcomponents = self.bias.fetch())
+                 pext = self.pressure.fetch(), stressext = self.stress.fetch(), bcomponents = self.bias.fetch(), bweights=self.bias_weight.fetch())
       
       return ens
