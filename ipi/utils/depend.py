@@ -726,7 +726,7 @@ def deppipe(objfrom, memberfrom, objto, memberto, item=-1):
     if item < 0:
         dto._func = lambda: dfrom.get()
     else:
-        dto._func = lambda: dfrom.__getitem__(item)
+        dto._func = lambda i=item: dfrom.__getitem__(i)
     dto.add_dependency(dfrom)
 
 

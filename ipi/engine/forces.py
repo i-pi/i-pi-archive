@@ -521,6 +521,16 @@ class Forces(dobject):
       self.dbeads = None
       self.dcell = None
 
+   def add_component(self, nbeads, nrpc, nforces):
+      self.mrpc.append(nrpc)
+      self.mbeads.append(nbeads)
+      self.mforces.append(nforces)
+      self.nforces += 1
+      dget(self, "f").add_dependency(dget(nforces,"f"))
+      dget(self, "pots").add_dependency(dget(nforces,"pots"))
+      dget(self, "virs").add_dependency(dget(nforces,"virs"))
+      dget(self, "extras").add_dependency(dget(nforces,"extras"))
+
    def bind(self, beads, cell, fcomponents, fflist):
       """Binds beads, cell and forces to the forcefield.
 

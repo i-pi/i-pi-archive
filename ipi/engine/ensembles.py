@@ -36,8 +36,22 @@ def ensemble_swap(ens1, ens2):
         ens1.temp, ens2.temp = ens2.temp, ens1.temp
     if ens1.pext != ens2.pext :
         ens1.pext, ens2.pext = ens2.pext, ens1.pext    
+    if len(ens1.bweights) != len(ens2.bweights):
+        raise ValueError("Cannot exchange ensembles that have different numbers of bias components")
+    if len(ens1.hweights) != len(ens2.hweights):
+        raise ValueError("Cannot exchange ensembles that are described by different forces")        
     if not np.array_equal(ens1.bweights, ens2.bweights):        
-        ens1.bweights, ens2.bweights = ens2.bweights.copy(), ens1.bweights.copy()        
+        ens1.bweights, ens2.bweights = ens2.bweights.copy(), ens1.bweights.copy()                
+    if not np.array_equal(ens1.hweights, ens2.hweights):        
+        ens1.hweights, ens2.hweights = ens2.hweights.copy(), ens1.hweights.copy()   
+    
+    print "force components for ", ens1.hweights
+    for f in ens1.forces.mforces:        
+        print f.pot
+    print "bias forces", ens1.bias.pot, ens2.bias.pot
+    for f in ens1.bias.mforces:        
+        print f.pot
+    
 
 class Ensemble(dobject):
     """Base ensemble class.
@@ -133,13 +147,10 @@ class Ensemble(dobject):
         dset(self, "hweights", depend_array(name="hweights", value = np.asarray(self.hweights)) )
         
         for ic in xrange(len(self.forces.mforces)):
-            self.bias.mrpc.append(self.forces.mrpc[ic])
-            self.bias.mbeads.append(self.forces.mbeads[ic])
             sfc=ScaledForceComponent(self.forces.mforces[ic],1.0)
-            self.bias.mforces.append(sfc)
-            dget(sfc,"scaling")._func = lambda: 1-self.hweights[ic]
-            dget(sfc,"scaling").add_dependency(dget(self, "hweights"))
-    
+            self.bias.add_component(self.forces.mbeads[ic], self.forces.mrpc[ic], sfc)
+            dget(sfc,"scaling")._func = lambda i=ic: self.hweights[i]-1
+            dget(sfc,"scaling").add_dependency(dget(self, "hweights"))        
         
         self._elist = []
 

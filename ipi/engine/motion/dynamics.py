@@ -369,6 +369,8 @@ class NVTIntegrator(NVEIntegrator):
         self.thermostat.step()
         self.pconstraints()
         self.ttime += time.time()
+        
+        print "ensemble bias ", self.bias.pot
         # print "PTIME: ", self.ptime, "  TTIME: ", self.ttime, "  QTIME: ", self.qtime
 
 
