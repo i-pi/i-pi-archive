@@ -153,6 +153,7 @@ class Dynamics(Motion):
         deppipe(self.ensemble, "pext", self.barostat, "pext")
         deppipe(self.ensemble, "stressext", self.barostat, "stressext")
 
+        #!TODO the barostat should also be connected to the bias stress
         self.barostat.bind(beads, nm, cell, bforce, prng=prng, fixdof=fixdof)
 
         self.ensemble.add_econs(dget(self.thermostat, "ethermo"))

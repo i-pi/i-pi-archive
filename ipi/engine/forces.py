@@ -298,7 +298,7 @@ class ForceComponent(dobject):
       self.ffield = ffield
       self.name = name
       self.nbeads = nbeads
-      self.weight = weight
+      self.weight = depend_value(name="weight", value=weight)
       if mts_weights is None:
           self.mts_weights = np.asarray([])
       else:
@@ -587,7 +587,16 @@ class Forces(dobject):
 
       dset(self, "potsc", value=depend_value(name="potsc",
             dependencies=[dget(self,"potssc")],
-            func=(lambda: self.potssc.sum()) ) )       
+            func=(lambda: self.potssc.sum()) ) )     
+            
+            
+      # Add dependencies from the force weights, that are applied here when the total 
+      # force is assembled from its components
+      
+      for fc in self.mforces:
+          dget(self, "f").add_dependency(dget(fc, "weight"))
+          dget(self, "pots").add_dependency(dget(fc, "weight"))
+          dget(self, "virs").add_dependency(dget(fc, "weight"))
             
 
    def copy(self, beads=None, cell = None):
