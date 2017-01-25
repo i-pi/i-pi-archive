@@ -61,6 +61,10 @@ class InputEnsemble(Input):
                                           "default"      : [],
                                           "help"         : "Bias weights.",
                                           "dimension"    : "undefined"}), 
+           "hamiltonian_weights" : (InputArray, {"dtype"        : float,
+                                          "default"      : [],
+                                          "help"         : "Hamiltonian weights.",
+                                          "dimension"    : "undefined"}),
          }
    dynamic = {  }
 
@@ -81,6 +85,7 @@ class InputEnsemble(Input):
       self.eens.store(ens.eens)
       self.bias.store(ens.bcomp)
       self.bias_weight.store(ens.bias_weights)
+      self.hamiltonian_weights.store(ens.hamiltonian_weights)
 
 
    def fetch(self):
@@ -94,6 +99,6 @@ class InputEnsemble(Input):
       super(InputEnsemble,self).fetch()
 
       ens=Ensemble(eens=self.eens.fetch(), temp=self.temperature.fetch(),
-                 pext = self.pressure.fetch(), stressext = self.stress.fetch(), bcomponents = self.bias.fetch(), bweights=self.bias_weight.fetch())
+                 pext = self.pressure.fetch(), stressext = self.stress.fetch(), bcomponents = self.bias.fetch(), bweights=self.bias_weight.fetch() hweights=self.hamiltonian_weights.fetch())
       
       return ens
