@@ -63,8 +63,6 @@ class InputSystem(Input):
              "initialize" : (InputInitializer, { "help" : InputInitializer.default_help,
                                                 "default" : input_default(factory=Initializer) } ),
              "forces" :   (InputForces,    { "help"  : InputForces.default_help }),
-             "bias" :   (InputForces,    { "help"  : InputForces.default_help,
-                                           "default" : [] }),
              "ensemble": (InputEnsemble, { "help"  : InputEnsemble.default_help ,
                              "default" : input_default(factory=Ensemble, kwargs={'temp':1.0})} ),
              "motion": (InputMotion, { "help"  : InputMotion.default_help, "default" : input_default(factory=Motion) } ),
@@ -95,7 +93,6 @@ class InputSystem(Input):
 
       self.prefix.store(psys.prefix)
       self.forces.store(psys.fcomp)
-      self.bias.store(psys.bcomp)
       self.ensemble.store(psys.ensemble)
       self.motion.store(psys.motion)
       self.beads.store(psys.beads)
@@ -124,7 +121,6 @@ class InputSystem(Input):
                                        nm = self.normal_modes.fetch(),
                                        cell = self.cell.fetch(),
                                        fcomponents = self.forces.fetch(),
-                                       bcomponents = self.bias.fetch(),
                                        ensemble = self.ensemble.fetch(),
                                        motion = self.motion.fetch(),
                                        prefix = self.prefix.fetch()

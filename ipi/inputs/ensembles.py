@@ -7,6 +7,7 @@
 
 import numpy as np
 
+from ipi.inputs.forces import InputForces
 from ipi.engine.ensembles import *
 from ipi.utils.inputvalue import *
 from ipi.utils.units import *
@@ -53,7 +54,9 @@ class InputEnsemble(Input):
            "eens" : (InputValue, {"dtype"     : float,
                                          "default"   : 0.0,
                                          "help"      : "The ensemble contribution to the conserved quantity.",
-                                         "dimension" : "energy"})           
+                                         "dimension" : "energy"}),   
+     	   "bias" : (InputForces, { "help"  : InputForces.default_help,
+                                           "default" : [] }),        
          }
    dynamic = {  }
 
@@ -72,6 +75,7 @@ class InputEnsemble(Input):
       self.pressure.store(ens.pext)
       self.stress.store(ens.stressext)
       self.eens.store(ens.eens)
+      self.bias.store(ens.bcomp)
 
    def fetch(self):
       """Creates an ensemble object.
@@ -84,6 +88,6 @@ class InputEnsemble(Input):
       super(InputEnsemble,self).fetch()
 
       ens=Ensemble(eens=self.eens.fetch(), temp=self.temperature.fetch(),
-                 pext = self.pressure.fetch(), stressext = self.stress.fetch())
+                 pext = self.pressure.fetch(), stressext = self.stress.fetch()), bcomponents = self.bias.fetch())
       
       return ens
