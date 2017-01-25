@@ -706,7 +706,7 @@ def depstrip(da):
         return da
 
 
-def deppipe(objfrom, memberfrom, objto, memberto):
+def deppipe(objfrom, memberfrom, objto, memberto, item=-1):
     """Synchronizes two depend objects.
 
     Takes two depend objects, and makes one of them depend on the other in such
@@ -723,7 +723,10 @@ def deppipe(objfrom, memberfrom, objto, memberto):
 
     dfrom = dget(objfrom, memberfrom)
     dto = dget(objto, memberto)
-    dto._func = lambda: dfrom.get()
+    if item < 0:
+        dto._func = lambda: dfrom.get()
+    else:
+        dto._func = lambda: dfrom.__getitem__(item)
     dto.add_dependency(dfrom)
 
 

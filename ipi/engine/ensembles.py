@@ -22,7 +22,7 @@ from ipi.utils.io.inputs.io_xml import xml_parse_file
 from ipi.utils.units import unit_to_internal, Constants
 from ipi.engine.thermostats import *
 from ipi.engine.barostats import *
-from ipi.engine.forces import Forces
+from ipi.engine.forces import Forces, ScaledForceComponent
 
 
 __all__ = ['Ensemble', 'ensemble_swap']
@@ -36,6 +36,8 @@ def ensemble_swap(ens1, ens2):
         ens1.temp, ens2.temp = ens2.temp, ens1.temp
     if ens1.pext != ens2.pext :
         ens1.pext, ens2.pext = ens2.pext, ens1.pext    
+    if not np.array_equal(ens1.bweights, ens2.bweights):        
+        ens1.bweights, ens2.bweights = ens2.bweights.copy(), ens1.bweights.copy()        
 
 class Ensemble(dobject):
     """Base ensemble class.
@@ -49,7 +51,7 @@ class Ensemble(dobject):
         bias: Explicit bias forces
     """
 
-    def __init__(self, eens=0.0, econs=0.0, temp=None, pext=None, stressext=None, bcomponents=None):
+    def __init__(self, eens=0.0, econs=0.0, temp=None, pext=None, stressext=None, bcomponents=None, bweights=None, hweights=None):
         """Initialises Ensemble.
 
         Args:
@@ -82,11 +84,23 @@ class Ensemble(dobject):
         else:
             self.eens = 0.0
         
-        if bcomponents == None:
+        # these are the additional bias components
+        if bcomponents is None:
             bcomponents = []
         self.bcomp = bcomponents
         self.bias = Forces()
-                    
+        
+        # and their weights
+        if bweights is None:
+            bweights = np.ones(len(self.bcomp))
+        
+        dset(self, "bweights", depend_array(name="bweights", value = np.asarray(bweights)) )
+        
+        # weights of the Hamiltonian scaling
+        if hweights is None:
+            hweights = np.ones(0)
+        self.hweights = np.asarray(hweights)
+        
 
     def bind(self, beads, nm, cell, bforce, fflist, elist=[], xlpot=[], xlkin=[]):
         self.beads = beads
@@ -104,6 +118,29 @@ class Ensemble(dobject):
         dget(self, "econs").add_dependency(dget(self.beads, "vpath"))
         dget(self, "econs").add_dependency(dget(self, "eens"))
 
+        # pipes the weights to the list of weight vectors
+        i = 0
+        for fc in self.bias.mforces:            
+            if fc.weight != 1:
+                warning("The weight given to forces used in an ensemble bias are given a weight determined by bias_weight")
+            deppipe(self, "bweights", fc, "weight", i)
+            i += 1
+        
+        # add Hamiltonian REM bias components
+        if len(self.hweights) == 0:
+            self.hweights = np.ones(len(self.forces.mforces))
+            
+        dset(self, "hweights", depend_array(name="hweights", value = np.asarray(self.hweights)) )
+        
+        for ic in xrange(len(self.forces.mforces)):
+            self.bias.mrpc.append(self.forces.mrpc[ic])
+            self.bias.mbeads.append(self.forces.mbeads[ic])
+            sfc=ScaledForceComponent(self.forces.mforces[ic],1.0)
+            self.bias.mforces.append(sfc)
+            dget(sfc,"scaling")._func = lambda: 1-self.hweights[ic]
+            dget(sfc,"scaling").add_dependency(dget(self, "hweights"))
+    
+        
         self._elist = []
 
         for e in elist:
