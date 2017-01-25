@@ -88,6 +88,6 @@ class InputEnsemble(Input):
       super(InputEnsemble,self).fetch()
 
       ens=Ensemble(eens=self.eens.fetch(), temp=self.temperature.fetch(),
-                 pext = self.pressure.fetch(), stressext = self.stress.fetch()), bcomponents = self.bias.fetch())
+                 pext = self.pressure.fetch(), stressext = self.stress.fetch(), bcomponents = self.bias.fetch())
       
       return ens
