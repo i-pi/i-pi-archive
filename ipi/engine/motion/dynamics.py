@@ -341,6 +341,12 @@ class NVTIntegrator(NVEIntegrator):
     def step(self, step=None):
         """Does one simulation time step."""
 
+        
+        #print "forces values" , self.forces.mforces[0].pot, self.forces.mforces[1].pot
+        #print "ensemble bias ", self.bias.mforces[0].pot, self.bias.mforces[1].pot, self.bias.mforces[2].pot
+        #print ((self.forces.f+self.bias.f)**2).sum()
+        
+        
         self.ptime = 0
         self.ttime = 0
         self.qtime = 0
@@ -369,8 +375,7 @@ class NVTIntegrator(NVEIntegrator):
         self.thermostat.step()
         self.pconstraints()
         self.ttime += time.time()
-        
-        print "ensemble bias ", self.bias.pot
+
         # print "PTIME: ", self.ptime, "  TTIME: ", self.ttime, "  QTIME: ", self.qtime
 
 
