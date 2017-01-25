@@ -297,12 +297,19 @@ class Properties(dobject):
                       Takes an argument 'atom', which can be either an atom label or index (zero based)
                       to specify which species to find the kinetic energy of. If not specified, all atoms are used.""",
                       'func': self.get_kintd},
+      "kinetic_prsc":  {"dimension" : "energy",
+                      "help": "The primitive fourth order quantum kinetic energy of the physical system.",
+                      "longhelp": """The primitive quantum kinetic energy of the physical system.
+                      Takes an argument 'atom', which can be either an atom label or index (zero based)
+                      to specify which species to find the kinetic energy of. If not specified, all atoms are used.""",
+                      'func': self.get_kinprsc},
       "kinetic_tdsc":  {"dimension" : "energy",
                       "help": "The centroid-virial quantum kinetic energy of the physical system for suzuki-chin propagator.",
                       "longhelp": """The centroid-virial quantum kinetic energy of the physical system.
                       Takes an argument 'atom', which can be either an atom label or index (zero based)
                       to specify which species to find the kinetic energy of. If not specified, all atoms are used.""",
                       'func': self.get_sckintd},
+
       "kinetic_opsc":  {"dimension" : "energy",
                       "help": "The centroid-virial quantum kinetic energy of the physical system for suzuki-chin propagator.",
                       "longhelp": """The centroid-virial quantum kinetic energy of the physical system.
@@ -867,6 +874,25 @@ class Properties(dobject):
          warning("Couldn't find an atom which matched the argument of kinetic energy, setting to zero.", verbosity.medium)
 
       return atd
+
+   def get_kinprsc(self ):
+      """Calculates the quantum centroid virial kinetic energy estimator.
+      """
+
+      spring = self.beads.vpath * self.nm.omegan2/self.beads.nbeads
+      PkT32 = 1.5* Constants.kb*self.ensemble.temp*self.beads.nbeads
+      pots = depstrip(self.forces.pots)
+      potssc = depstrip(self.forces.potssc)
+      v = 0.0
+      
+      for k in range(self.beads.nbeads):
+          if k%2 == 0:
+              v += (potssc[k]+pots[k]/3.0)
+          else:
+              v += (potssc[k]-pots[k]/3.0)
+      v = v / self.beads.nbeads
+      
+      return PkT32 - spring + v
 
    def get_kinmd(self, atom="", bead="", nm="", return_count = False):
       """Calculates the classical kinetic energy of the simulation (p^2/2m)
