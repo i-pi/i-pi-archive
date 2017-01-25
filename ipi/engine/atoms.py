@@ -131,19 +131,15 @@ class Atoms(dobject):
          dset(self,"m",_prebind[2])
          dset(self,"names",_prebind[3])
 
-      dset(self,"m3",
-         depend_array(name="m3",value=np.zeros(3*natoms, float),func=self.mtom3,
-            dependencies=[dget(self,"m")]))
+      dd(self).m3 = depend_array(name="m3",value=np.zeros(3*natoms, float),
+                                 func=self.mtom3,dependencies=[dd(self).m] )
 
-      dset(self,"M",
-         depend_value(name="M",func=self.get_msum,
-            dependencies=[dget(self,"m")]) )
-      dset(self,"kin",
-         depend_value(name="kin",func=self.get_kin,
-            dependencies=[dget(self,"p"),dget(self,"m3")]) )
-      dset(self,"kstress",
-         depend_value(name="kstress",func=self.get_kstress,
-            dependencies=[dget(self,"p"),dget(self,"m")]) )
+      dd(self).M = depend_value(name="M",func=self.get_msum,
+                   dependencies=[dd(self).m])
+      dd(self).kin = depend_value(name="kin",func=self.get_kin,
+            dependencies=[dd(self).p,dd(self).m3])
+      dd(self).kstress = depend_value(name="kstress",func=self.get_kstress,
+            dependencies=[dd(self).p,dd(self).m])
 
    def copy(self):
       """Creates a new Atoms object.

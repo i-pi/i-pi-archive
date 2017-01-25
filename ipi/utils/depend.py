@@ -32,7 +32,7 @@ from ipi.utils.messages import verbosity, warning
 
 
 __all__ = ['depend_base', 'depend_value', 'depend_array', 'synchronizer',
-           'dobject', 'dget', 'dset', 'depstrip', 'depcopy', 'deppipe', 'depraise']
+           'dobject', 'dd', 'dget', 'dset', 'depstrip', 'depcopy', 'deppipe', 'depraise']
 
 
 class synchronizer(object):
@@ -772,8 +772,8 @@ class dobject(object):
         __get__() function rather than the standard one.
         """
 
-        value = object.__getattribute__(self, name)
-        if hasattr(value, '__get__'):
+        value = super(dobject,self).__getattribute__(name)
+        if issubclass(value.__class__, depend_base):
             value = value.__get__(self, self.__class__)
         return value
 
@@ -786,15 +786,19 @@ class dobject(object):
         """
 
         try:
-            obj = object.__getattribute__(self, name)
+            obj = super(dobject,self).__getattribute__(name)
         except AttributeError:
             pass
         else:
-            if hasattr(obj, '__set__'):
+            if issubclass(obj.__class__, depend_base):
                 return obj.__set__(self, value)
-        return object.__setattr__(self, name, value)
+        return super(dobject,self).__setattr__(name, value)
 
-
+def dd(dobj):
+    if not issubclass(dobj.__class__, dobject):
+        raise ValueError("Cannot access a ddirect view of an object which is not a subclass of dobject")
+    return dobj.dd
+    
 class ddirect(object):
     """Gives a "view" of a depend object where one can directly access its
     depend_base members."""
