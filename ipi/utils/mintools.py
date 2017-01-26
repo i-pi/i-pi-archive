@@ -544,14 +544,72 @@ def BFGS(x0, d0, fdf, fdf0=None, invhessian=None, big_step=100, tol=1.0e-6, itma
     info(" @MINIMIZE: Updated search direction", verbosity.debug)
     return (x, fx, xi, invhessian)
 
-# TRM functions
+
+# BFGSTRM algorithm
+def BFGSTRM(x0,u0,f0,h0,tr,mapper,big_step=100):
+
+          #ALBERTO
+    """ Input: x0 = previous accepted positions 
+               u0 = previous accepted energy
+               f0 = previous accepted forces
+               h0 = previous accepted hessian
+               tr = trust radius  
+           mapper = function to evaluate energy and forces 
+         Return: updated hessian"""
+
+
+#Find new movement direction candidate
+    d_x = TRM_MIN(f0.flatten(),h0,tr)
+    #ALBERTO d_x = d_x.reshape(self.beads.nbeads,3*self.beads.natoms)
+
+
+#Make movement  and get new energy (u)  and forces(f) using mapper 
+    x = x0 + d_x
+    u,g = mapper(x)
+    f =-g
+
+#Compute energy gain
+#    ALBERTO    #d_x_aux = d_x.reshape(self.beads.nbeads*3*self.beads.natoms,1)
+
+    true_gain     = u - u0 
+    expected_gain = -np.dot(f0.flatten(),d_x.flatten())
+    expected_gain += 0.5*np.dot(  d_x.T,np.dot(h0,d_x) )
+    harmonic_gain = -0.5*np.dot( d_x.flatten(),(f0+f).flatten() )
+
+#Compute quality:
+    d_x_norm = np.linalg.norm(d_x)
+
+    if d_x_norm > 0.05:
+        quality = true_gain / expected_gain
+    else:
+        quality = harmonic_gain / expected_gain
+    accept  = (quality > 0.1 )
+
+#Update TrustRadius (tr)
+    if quality < 0.25:
+        tr[0] = 0.5*d_x_norm
+    elif quality>0.75 and d_x_norm>0.9*tr:
+        tr[0] = 2.0*tr
+        if tr > big_step:
+            tr[0] = big_step
+
+#if accept, Update  Hessian and check exit
+    if accept:
+        d_f      = np.subtract(f, f0)
+        TRM_UPDATE( d_x.flatten(),d_f.flatten(),h0 )
+
+#Finally, return  "accept" and d_x
+    return accept,d_x
+
+# TRM functions (TRM_UPDATE and TRM_MIN)
+
 
 def TRM_UPDATE(dx,df,h):
     """ Input: DX = X -X_old
                DF = F -F_old
                DG = -DF 
                H  = hessian
-        Return: updated hessian"""
+        Task: updated hessian"""
 
     dx   = dx[:,np.newaxis]   #dimension nx1
     dx_t = dx.T               #dimension 1xn
@@ -568,7 +626,7 @@ def TRM_UPDATE(dx,df,h):
 
     h   += h1 - h2
 
-def TRM_FIND(f, h, tr):
+def TRM_MIN(f, h, tr):
         """ Return the minimum of
         E(dx) = -(F * dx + 0.5 * ( dx * H * dx ),
         whithin dx**2 <tr
