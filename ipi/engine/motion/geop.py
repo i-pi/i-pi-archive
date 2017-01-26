@@ -17,7 +17,7 @@ import time
 from ipi.engine.motion import Motion
 from ipi.utils.depend import depstrip, dobject
 from ipi.utils.softexit import softexit
-from ipi.utils.mintools import min_brent, BFGS, TRM_UPDATE,TRM_FIND,L_BFGS
+from ipi.utils.mintools import min_brent, BFGS,BFGSTRM ,L_BFGS
 from ipi.utils.messages import verbosity, info
 from ipi.utils.counter import counter
 
@@ -188,7 +188,38 @@ class GradientMapper(object):
         counter.count()        # counts number of function evaluations
         return e, g
 
-        
+class TrmMapper(object):
+
+    """Creation of the multi-dimensional function that will be minimized.
+       Used in the BFGSTRM minimizers.
+
+       Attributes:
+       dbeads  =  beads local copy
+       dcell   =  cell local copy
+       dforces =  forces local copy
+
+       Return:
+       e = Energy
+       g = Gradient
+"""
+    def __init__(self):
+        pass
+
+    def bind(self, dumop):
+        self.dbeads = dumop.beads.copy()
+        self.dcell = dumop.cell.copy()
+        self.dforces = dumop.forces.copy(self.dbeads, self.dcell)
+
+    def __call__(self, x):
+        """ computes energy and gradient for optimization step
+            determines new position (x0+d*x)"""
+
+        self.dbeads.q = x
+        e = self.dforces.pot   # Energy
+        g = - self.dforces.f   # Gradient
+        counter.count()      # counts number of function evaluations
+        return e, g
+ 
        
  
 class DummyOptimizer(dobject):
@@ -197,8 +228,9 @@ class DummyOptimizer(dobject):
     def __init__(self):
         """initialises object for LineMapper (1-d function) and for GradientMapper (multi-dimensional function) """
         
-        self.lm  = LineMapper()
-        self.gm  = GradientMapper()
+        self.lm           = LineMapper()
+        self.gm           = GradientMapper()
+        self.tr_mapper    = TrmMapper()
         
     def step(self, step=None):
         """Dummy simulation time step which does nothing."""
@@ -263,7 +295,7 @@ class DummyOptimizer(dobject):
         self.old_f      = geop.old_f
         self.old_d      = geop.old_d
 
-
+#ALBERTO
 # This should not be here. Inside SD-mapper there should be a bind function calling super
 # and then do specific things for each!
 # Have a look how it is done in dynamics
@@ -275,6 +307,7 @@ class DummyOptimizer(dobject):
             if geop.tr.size == 0:
                 geop.tr = np.array([0.4])
             self.tr    = geop.tr
+            self.tr_mapper.bind(self)
         elif self.mode == "lbfgs":
             self.corrections = geop.corrections
             self.qlist = geop.qlist
@@ -290,12 +323,11 @@ class DummyOptimizer(dobject):
        
         info(" @GEOP: Updating bead positions", verbosity.debug)
         
-        if self.mode != "bfgstrm":
-            self.qtime += time.time()
+        self.qtime += time.time()
 
         if (np.absolute((fx - u0) / self.beads.natoms) <= self.tolerances["energy"])\
             and ( ( np.amax(np.absolute(self.forces.f)) <= self.tolerances["force"]   )  or
-                  ( np.linalg.norm(self.forces.f.flatten() - self.old_f.flatten()) == 1e-10)  )\
+                  ( np.linalg.norm(self.forces.f.flatten() - self.old_f.flatten()) <= 1e-10)  )\
             and (x <= self.tolerances["position"]):
             info("Total number of function evaluations: %d" % counter.func_eval, verbosity.low)   # I think this is important
             softexit.trigger("Geometry optimization converged. Exiting simulation")
@@ -353,76 +385,39 @@ class BFGSOptimizer(DummyOptimizer):
 class BFGSTRMOptimizer(DummyOptimizer):
     """ BFGSTRM Minimization with Trust Radius Method.	"""
 
-    def __init__(self):
-        self.accept   = False
-
+    
     def step(self, step=None):
         """ Does one simulation time step.
+
             Attributes:
-            qtime: The time taken in updating the positions.
-            tr   : current trust radius
+            qtime : The time taken in updating the real positions.
+            tr    : current trust radius
+            accept: boolean flag related to last movement 
+
         """
 
         self.qtime = -time.time()
         info("\nMD STEP %d" % step, verbosity.debug)
 
-        # Initialize approximate Hessian to the identity 
-         
         if step == 0:
             info(" @GEOP: Initializing BFGSTRM", verbosity.debug)
-            self.old_x[:] = self.beads.q
-            self.old_u[:] = self.forces.pot
-            self.old_f[:] = self.forces.f
-        elif self.accept:
-            self.old_x[:] = self.beads.q
-            self.old_u[:] = self.forces.pot
-            self.old_f[:] = self.forces.f
+    
+        self.old_x[:] = self.beads.q
+        self.old_u[:] = self.forces.pot
+        self.old_f[:] = self.forces.f
 
-#Find new movement direction candidate
-        d_x = TRM_FIND(self.old_f.flatten(),self.hessian,self.tr)
-        d_x = d_x.reshape(self.beads.nbeads,3*self.beads.natoms)
+        self.accept = False
+        while (not self.accept):
 
-#Make movement (energy and forces are computed automatically)
-        if self.accept:
-            self.beads.q = self.beads.q + d_x
-        else:
-            self.beads.q = self.old_x   + d_x
-        counter.count()      # counts number of function evaluations
-
-#Compute energy gain
-        d_x_aux = d_x.reshape(self.beads.nbeads*3*self.beads.natoms,1)
-
-        true_gain     = self.forces.pot - self.old_u
-        expected_gain = -np.dot(self.old_f.flatten(),d_x.flatten()) 
-        expected_gain += 0.5*np.dot(  d_x_aux.T,np.dot(self.hessian,d_x_aux) )
-        harmonic_gain = -0.5*np.dot( d_x.flatten(),(self.old_f+self.forces.f).flatten() )         
-
-#Compute quality:
-        d_x_norm = np.linalg.norm(d_x)
-
-        if d_x_norm > 0.05:              
-            quality = true_gain / expected_gain
-        else:
-            quality = harmonic_gain / expected_gain
-            self.accept  = (quality > 0.1 )
-
-#Update TrustRadius (tr)
-        if quality < 0.25:
-            self.tr = 0.5*d_x_norm
-        elif quality>0.75 and d_x_norm>0.9*self.tr:
-            self.tr = 2.0*self.tr
-            if self.tr > self.big_step:
-                self.tr = self.big_step
-
-#if accept, Update  Hessian and check exit
-        d_f      = np.subtract(self.forces.f, self.old_f)
-
-        self.qtime += time.time()
-
-        if self.accept:
-            TRM_UPDATE( d_x.flatten(),d_f.flatten(),self.hessian )
-            d_x_max =np.amax(np.absolute(d_x))
-            self.exitstep(self.forces.pot, self.old_u, d_x_max)
+            #Make one movement, evaluate if it has to be accepted or not. If yes, update tr and Hessian.
+            #If not only update the tr
+            self.accept,d_x = BFGSTRM(self.old_x,self.old_u,self.old_f,self.hessian,self.tr,
+                                      self.tr_mapper)
+        
+        #Make the "real" movement and check the exit
+	self.beads.q += d_x                   #Here we are updating the real(main) positions and forces 
+        d_x_max =np.amax(np.absolute(d_x))
+        self.exitstep(self.forces.pot, self.old_u, d_x_max)
 
 #---------------------------------------------------------------------------------------
 class LBFGSOptimizer(DummyOptimizer):
