@@ -32,7 +32,7 @@ from ipi.utils.messages import verbosity, warning
 
 
 __all__ = ['depend_base', 'depend_value', 'depend_array', 'synchronizer',
-           'dobject', 'dd', 'dget', 'dset', 'depstrip', 'depcopy', 'deppipe', 'depraise']
+           'dobject', 'dd', 'dget', 'dset', 'dpipe', 'dcopy', 'depstrip', 'depcopy', 'deppipe', 'depraise']
 
 
 class synchronizer(object):
@@ -706,7 +706,7 @@ def depstrip(da):
         return da
 
 
-def deppipe(objfrom, memberfrom, objto, memberto):
+def deppipe(objfrom, memberfrom, objto, memberto, item=-1):
     """Synchronizes two depend objects.
 
     Takes two depend objects, and makes one of them depend on the other in such
@@ -723,7 +723,13 @@ def deppipe(objfrom, memberfrom, objto, memberto):
 
     dfrom = dget(objfrom, memberfrom)
     dto = dget(objto, memberto)
-    dto._func = lambda: dfrom.get()
+    dpipe(dfrom, dto, item)
+    
+def dpipe(dfrom, dto, item=1):
+    if item < 0:
+        dto._func = lambda: dfrom.get()
+    else:
+        dto._func = lambda i=item: dfrom.__getitem__(i)
     dto.add_dependency(dfrom)
 
 
@@ -735,6 +741,9 @@ def depcopy(objfrom, memberfrom, objto, memberto):
     """
     dfrom = dget(objfrom, memberfrom)
     dto = dget(objto, memberto)
+    dcopy(dfrom, dto)
+
+def dcopy(dfrom, dto):
     dto._dependants = dfrom._dependants
     dto._synchro = dfrom._synchro
     dto.add_synchro(dfrom._synchro)
@@ -742,7 +751,6 @@ def depcopy(objfrom, memberfrom, objto, memberto):
     dto._func = dfrom._func
     if hasattr(dfrom, "_bval"):
         dto._bval = dfrom._bval
-
 
 def depraise(exception): 
     raise exception
@@ -761,7 +769,7 @@ class dobject(object):
         to impose to derived classes to call the super __init__ """
 
         obj = object.__new__(cls)
-        obj.dd = ddirect(obj)
+        obj._direct = ddirect(obj)
         return obj
 
     def __getattribute__(self, name):
@@ -797,7 +805,7 @@ class dobject(object):
 def dd(dobj):
     if not issubclass(dobj.__class__, dobject):
         raise ValueError("Cannot access a ddirect view of an object which is not a subclass of dobject")
-    return dobj.dd
+    return dobj._direct
     
 class ddirect(object):
     """Gives a "view" of a depend object where one can directly access its
