@@ -548,58 +548,60 @@ def BFGS(x0, d0, fdf, fdf0=None, invhessian=None, big_step=100, tol=1.0e-6, itma
 # BFGSTRM algorithm
 def BFGSTRM(x0,u0,f0,h0,tr,mapper,big_step=100):
 
-          #ALBERTO
     """ Input: x0 = previous accepted positions 
                u0 = previous accepted energy
                f0 = previous accepted forces
                h0 = previous accepted hessian
                tr = trust radius  
            mapper = function to evaluate energy and forces 
-         Return: updated hessian"""
+         big_step = limit on step length
+
+	 Return: updated hessian and tr (implicit) and d_x (explicit)"""
 
 
-#Find new movement direction candidate
-    d_x = TRM_MIN(f0.flatten(),h0,tr)
-    #ALBERTO d_x = d_x.reshape(self.beads.nbeads,3*self.beads.natoms)
+#Make one movement, evaluate if it has to be accepted or not. If yes, update tr and Hessian.
+#If not only update the tr and restart the loop
+    accept = False
+    while (not accept):
 
+        #Find new movement direction candidate
+        d_x = TRM_MIN(f0.flatten(),h0,tr)
 
-#Make movement  and get new energy (u)  and forces(f) using mapper 
-    x = x0 + d_x
-    u,g = mapper(x)
-    f =-g
+        #Make movement  and get new energy (u)  and forces(f) using mapper 
+        x = x0 + d_x
+        u,g = mapper(x)
+        f =-g.flatten()
 
-#Compute energy gain
-#    ALBERTO    #d_x_aux = d_x.reshape(self.beads.nbeads*3*self.beads.natoms,1)
+        #Compute energy gain
 
-    true_gain     = u - u0 
-    expected_gain = -np.dot(f0.flatten(),d_x.flatten())
-    expected_gain += 0.5*np.dot(  d_x.T,np.dot(h0,d_x) )
-    harmonic_gain = -0.5*np.dot( d_x.flatten(),(f0+f).flatten() )
+        true_gain     = u - u0 
+        expected_gain = -np.dot(f0.flatten(),d_x.flatten())
+        expected_gain += 0.5*np.dot(  d_x.T,np.dot(h0,d_x) )
+        harmonic_gain = -0.5*np.dot( d_x.flatten(),(f0+f).flatten() )
 
-#Compute quality:
-    d_x_norm = np.linalg.norm(d_x)
+        #Compute quality:
+        d_x_norm = np.linalg.norm(d_x)
 
-    if d_x_norm > 0.05:
-        quality = true_gain / expected_gain
-    else:
-        quality = harmonic_gain / expected_gain
-    accept  = (quality > 0.1 )
+        if d_x_norm > 0.05:
+            quality = true_gain / expected_gain
+        else:
+            quality = harmonic_gain / expected_gain
+        accept  = (quality > 0.1 )
 
-#Update TrustRadius (tr)
-    if quality < 0.25:
-        tr[0] = 0.5*d_x_norm
-    elif quality>0.75 and d_x_norm>0.9*tr:
-        tr[0] = 2.0*tr
-        if tr > big_step:
-            tr[0] = big_step
+        #Update TrustRadius (tr)
+        if quality < 0.25:
+            tr[0] = 0.5*d_x_norm
+        elif quality>0.75 and d_x_norm>0.9*tr:
+            tr[0] = 2.0*tr
+            if tr > big_step:
+                tr[0] = big_step
 
-#if accept, Update  Hessian and check exit
-    if accept:
-        d_f      = np.subtract(f, f0)
-        TRM_UPDATE( d_x.flatten(),d_f.flatten(),h0 )
+#After accept, Update  Hessian
+    d_f      = np.subtract(f, f0)
+    TRM_UPDATE( d_x.flatten(),d_f.flatten(),h0 )
 
 #Finally, return  "accept" and d_x
-    return accept,d_x
+    return d_x
 
 # TRM functions (TRM_UPDATE and TRM_MIN)
 
