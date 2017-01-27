@@ -118,7 +118,7 @@ class GeopMotion(Motion):
         """
 
         super(GeopMotion,self).bind(ens, beads, nm, cell, bforce, prng)
-        # Binds optimizer (call bind function from DummyOptimizer)
+        # Binds optimizer 
         self.optimizer.bind(self)
        
     def step(self, step=None):
@@ -213,7 +213,7 @@ class TrmMapper(object):
     def __call__(self, x):
         """ computes energy and gradient for optimization step
             determines new position (x0+d*x)"""
-
+        x=np.resize(x,(self.dbeads.nbeads,3*self.dbeads.natoms))
         self.dbeads.q = x
         e = self.dforces.pot   # Energy
         g = - self.dforces.f   # Gradient
@@ -276,47 +276,14 @@ class DummyOptimizer(dobject):
             else:
                 raise ValueError("Conjugate gradient direction size does not match system size")
 
-        if self.mode == "bfgs":
-           if geop.invhessian.size != (self.beads.q.size * self.beads.q.size):
-              if geop.invhessian.size == 0:
-                  geop.invhessian = np.eye(self.beads.q.size, self.beads.q.size, 0, float)
-              else:
-                  raise ValueError("Inverse Hessian size does not match system size")
-
-        if self.mode == "bfgstrm":
-           if geop.hessian.size != (self.beads.q.size * self.beads.q.size):
-              if geop.hessian.size == 0:
-                  geop.hessian = np.eye(self.beads.q.size, self.beads.q.size, 0, float)
-              else:
-                  raise ValueError("Hessian size does not match system size")
 
         self.old_x      = geop.old_x
         self.old_u      = geop.old_u
         self.old_f      = geop.old_f
         self.old_d      = geop.old_d
 
-#ALBERTO
-# This should not be here. Inside SD-mapper there should be a bind function calling super
-# and then do specific things for each!
-# Have a look how it is done in dynamics
-        if self.mode == "bfgs":
-            self.invhessian = geop.invhessian
-            self.gm.bind(self)
-        elif self.mode == "bfgstrm":
-            self.hessian    = geop.hessian
-            if geop.tr.size == 0:
-                geop.tr = np.array([0.4])
-            self.tr    = geop.tr
-            self.tr_mapper.bind(self)
-        elif self.mode == "lbfgs":
-            self.corrections = geop.corrections
-            self.qlist = geop.qlist
-            self.glist = geop.glist
-            self.gm.bind(self)
-        elif self.mode == "sd":
-            self.lm.bind(self)
-        elif self.mode == "cg":
-            self.lm.bind(self)
+
+
 
     def exitstep(self, fx, u0, x):
         """ Exits the simulation step. Computes time, checks for convergence. """
@@ -331,9 +298,24 @@ class DummyOptimizer(dobject):
             and (x <= self.tolerances["position"]):
             info("Total number of function evaluations: %d" % counter.func_eval, verbosity.low)   # I think this is important
             softexit.trigger("Geometry optimization converged. Exiting simulation")
-
+         
 class BFGSOptimizer(DummyOptimizer):
     """ BFGS Minimization """
+
+    def bind(self, geop):
+        # call bind function from DummyOptimizer
+        super(BFGSOptimizer,self).bind(geop)
+
+
+        if geop.invhessian.size != (self.beads.q.size * self.beads.q.size):
+            if geop.invhessian.size == 0:
+                geop.invhessian = np.eye(self.beads.q.size, self.beads.q.size, 0, float)
+            else:
+                raise ValueError("Inverse Hessian size does not match system size")
+
+
+        self.invhessian = geop.invhessian
+        self.gm.bind(self)
 
     def step(self, step=None):
         """ Does one simulation time step.
@@ -385,6 +367,22 @@ class BFGSOptimizer(DummyOptimizer):
 class BFGSTRMOptimizer(DummyOptimizer):
     """ BFGSTRM Minimization with Trust Radius Method.	"""
 
+    def bind(self, geop):
+        # call bind function from DummyOptimizer
+        super(BFGSTRMOptimizer,self).bind(geop)
+
+        if geop.hessian.size != (self.beads.q.size * self.beads.q.size):
+            if geop.hessian.size == 0:
+                geop.hessian = np.eye(self.beads.q.size, self.beads.q.size, 0, float)
+            else:
+                raise ValueError("Hessian size does not match system size")
+
+        self.hessian    = geop.hessian
+        if geop.tr.size == 0:
+            geop.tr = np.array([0.4])
+        self.tr    = geop.tr
+        self.tr_mapper.bind(self)
+
     
     def step(self, step=None):
         """ Does one simulation time step.
@@ -402,19 +400,16 @@ class BFGSTRMOptimizer(DummyOptimizer):
         if step == 0:
             info(" @GEOP: Initializing BFGSTRM", verbosity.debug)
     
-        self.old_x[:] = self.beads.q
+        self.old_x[:] = self.beads.q.flatten()
         self.old_u[:] = self.forces.pot
-        self.old_f[:] = self.forces.f
+        self.old_f[:] = self.forces.f.flatten()
 
-        self.accept = False
-        while (not self.accept):
-
-            #Make one movement, evaluate if it has to be accepted or not. If yes, update tr and Hessian.
-            #If not only update the tr
-            self.accept,d_x = BFGSTRM(self.old_x,self.old_u,self.old_f,self.hessian,self.tr,
-                                      self.tr_mapper)
+        #Make one step. ( A step is finished when a movement is accepted)
+        d_x = BFGSTRM(self.old_x,self.old_u,self.old_f,self.hessian,self.tr,
+                      self.tr_mapper,self.big_step)
         
         #Make the "real" movement and check the exit
+        d_x=np.resize(d_x,(self.beads.nbeads,3*self.beads.natoms))
 	self.beads.q += d_x                   #Here we are updating the real(main) positions and forces 
         d_x_max =np.amax(np.absolute(d_x))
         self.exitstep(self.forces.pot, self.old_u, d_x_max)
@@ -423,6 +418,15 @@ class BFGSTRMOptimizer(DummyOptimizer):
 class LBFGSOptimizer(DummyOptimizer):
     """ L-BFGS Minimization """
     
+    def bind(self, geop):
+        # call bind function from DummyOptimizer
+        super(LBFGSOptimizer,self).bind(geop)
+        self.corrections = geop.corrections
+        self.qlist = geop.qlist
+        self.glist = geop.glist
+        self.gm.bind(self)
+
+
     def step(self, step=None):
         """ Does one simulation time step 
             Attributes:
@@ -482,6 +486,10 @@ class SDOptimizer(DummyOptimizer):
     dq1 = direction of steepest descent
     dq1_unit = unit vector of dq1
     """
+    def bind(self, geop):
+        # call bind function from DummyOptimizer
+        super(SDOptimizer,self).bind(geop)
+        self.lm.bind(self)
 
     def step(self, step=None):
         """ Does one simulation time step 
@@ -540,6 +548,10 @@ class CGOptimizer(DummyOptimizer):
     dq0 = previous direction
     dq1_unit = unit vector of dq1
     """
+    def bind(self, geop):
+        # call bind function from DummyOptimizer
+        super(CGOptimizer,self).bind(geop)
+        self.lm.bind(self)
 
     def step(self, step=None):
         """Does one simulation time step 
