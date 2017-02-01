@@ -70,7 +70,6 @@ class Dynamics(Motion):
         else:
             self.barostat = barostat
 
-        print "checking nmts", nmts, len(nmts)
         if nmts is np.zeros(0,int):
            self.nmts = np.asarray([1],int)
         elif len(nmts) == 0:
