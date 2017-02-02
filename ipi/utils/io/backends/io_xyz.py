@@ -85,14 +85,14 @@ def read_xyz(filedesc, **kwargs):
     """
 
     try:
-        natoms = filedesc.next()
-    except StopIteration:
+        natoms = int(filedesc.next())
+    except (StopIteration, ValueError):
         raise EOFError
 
-    if natoms == '':              # Work with temporary files
-        raise EOFError
+    # if natoms == '':              # Work with temporary files
+    #     raise EOFError
 
-    natoms = int(natoms)
+    # natoms = int(natoms)
 
     comment = filedesc.next()
 
@@ -147,4 +147,3 @@ def read_xyz(filedesc, **kwargs):
         raise ValueError("The number of atom records does not match the header of the xyz file.")
 
     return comment, cell, qatoms, names, masses
-
