@@ -89,7 +89,7 @@ class Beads(dobject):
       self.natoms = natoms
       self.nbeads = nbeads
 
-      dself = self.dd
+      dself = dd(self)
       
       dself.names = depend_array(name="names", value=np.zeros(natoms, np.dtype('|S6')))
 
@@ -123,12 +123,12 @@ class Beads(dobject):
       # kinetic energies of thhe beads, and total (classical) kinetic stress tensor
       dself.kins = depend_array(name="kins", value=np.zeros(nbeads, float),
             func=self.kin_gather,
-               dependencies=[b.dd.kin for b in self._blist])
+               dependencies=[dd(b).kin for b in self._blist])
       dself.kin = depend_value(name="kin", func=self.get_kin,
             dependencies=[dself.kins])
       dself.kstress = depend_array(name="kstress",value=np.zeros((3,3), float),
             func=self.get_kstress,
-               dependencies=[b.dd.kstress for b in self._blist])
+               dependencies=[dd(b).kstress for b in self._blist])
 
    def copy(self):
       """Creates a new beads object from the original.
