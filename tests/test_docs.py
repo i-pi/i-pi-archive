@@ -6,15 +6,17 @@
 
 import os
 import subprocess
+import shlex
 
 from nose import with_setup
 
+FNULL = open(os.devnull, 'w')
 
 def run_command(cmd):
     """Runs `cmd` in doc directory."""
     cwd = os.getcwd()
     os.chdir(os.path.join(os.path.split(__file__)[0], "..", "doc"))
-    ret = subprocess.call(cmd.split(' '), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    ret = subprocess.call(shlex.split(cmd), stdout=FNULL, stderr=FNULL)
     os.chdir(cwd)
     return ret
 

@@ -96,8 +96,8 @@ class System(dobject):
       self.ensemble.bind(self.beads, self.nm, self.cell, self.forces, self.simul.fflist)
       self.motion.bind(self.ensemble, self.beads, self.nm, self.cell, self.forces, self.prng)
          
-      deppipe(self.nm, "omegan2", self.forces, "omegan2")
-
+      dpipe(dd(self.nm).omegan2, dd(self.forces).omegan2)
+      
       self.init.init_stage2(self)
 
       # binds output management objects

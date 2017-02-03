@@ -96,7 +96,7 @@ def test_read_xyz(create_random_xyz_traj_to_read):
         npt.assert_array_almost_equal(tcell, expected_cell, decimal=precision)
 
 
-
+@pytest.mark.skipif(True, reason='iter_xyz has been removed')
 def test_iter_xyz(create_random_xyz_traj_to_read):
     filedesc, xyz, atom_names, \
         natoms, junk, comment, expected_cell, precision = create_random_xyz_traj_to_read

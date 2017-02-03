@@ -267,7 +267,7 @@ class Properties(dobject):
                        "longhelp":  """The contribution to the system potential from one of the force components. Takes one mandatory
                          argument index (zero-based) that indicates which component of the potential must be returned. The optional argument 'bead'
                          will print the potential associated with the specified bead. Potential weights will not be applied. """,
-                      'func': (lambda index, bead="-1": self.forces.pots_component(int(index),False).sum()/self.beads.nbeads if int(bead)<0 else self.forces.pots_component(int(index),False)[int(bead)] ) },            
+                      'func': (lambda index, bead="-1": self.forces.pots_component(int(index),False).sum()/self.beads.nbeads if int(bead)<0 else self.forces.pots_component(int(index),False)[int(bead)] ) },
       "forcemod": {  "dimension" : "force",
                       "help" : "The modulus of the force.",
                       "longhelp": """The modulus of the force. With the optional argument 'bead'
@@ -688,13 +688,13 @@ class Properties(dobject):
          iatom = -1
          latom = atom
 
-      f = depstrip(self.forces.f)      
+      f = depstrip(self.forces.f)
       # subtracts centroid
-      q = depstrip(self.beads.q).copy()      
+      q = depstrip(self.beads.q).copy()
       qc = depstrip(self.beads.qc)
       for b in xrange(self.beads.nbeads):
           q[b]-=qc
-          
+
       # zeroes components that are not requested
       ncount=0
       for i in range(self.beads.natoms):
@@ -702,16 +702,16 @@ class Properties(dobject):
              q[:,3*i:3*i+3]=0.0
          else: ncount += 1
 
-      acv = np.dot(q.flatten(), f.flatten()) 
+      acv = np.dot(q.flatten(), f.flatten())
       acv *= -0.5/self.beads.nbeads
       acv += ncount*1.5*Constants.kb*self.ensemble.temp
       #~ acv = 0.0
-      #~ ncount = 0    
-      #~ 
+      #~ ncount = 0
+      #~
       #~ for i in range(self.beads.natoms):
          #~ if (atom != "" and iatom != i and latom != self.beads.names[i]):
             #~ continue
-#~ 
+#~
          #~ kcv = 0.0
          #~ k = 3*i
          #~ for b in range(self.beads.nbeads):
@@ -736,7 +736,7 @@ class Properties(dobject):
               v += 2.0*pots[k]/3.0  + 2.0*(potssc[k]+pots[k]/3.0)
           else:
               v += 4.0*pots[k]/3.0  + 2.0*(potssc[k]-pots[k]/3.0)
-      return v/(k+1) 
+      return v/(k+1)
 
    def get_sckinop(self, atom=""):
       """Calculates the Suzuki-Chin quantum centroid virial kinetic energy estimator.
@@ -884,14 +884,14 @@ class Properties(dobject):
       pots = depstrip(self.forces.pots)
       potssc = depstrip(self.forces.potssc)
       v = 0.0
-      
+
       for k in range(self.beads.nbeads):
           if k%2 == 0:
               v += (potssc[k]+pots[k]/3.0)
           else:
               v += (potssc[k]-pots[k]/3.0)
       v = v / self.beads.nbeads
-      
+
       return PkT32 - spring + v
 
    def get_kinmd(self, atom="", bead="", nm="", return_count = False):
@@ -1230,9 +1230,9 @@ class Properties(dobject):
          vminus = self.dforces.pot/self.beads.nbeads
 
          #print "DISPLACEMENT CHECK YAMA db: %e, d+: %e, d-: %e, dd: %e" %(dbeta, (vplus-v0)*dbeta, (v0-vminus)*dbeta, abs((vplus+vminus-2*v0)/(vplus-vminus)))
-         
+
          if (fd_delta < 0 and abs((vplus+vminus-2*v0)/(vplus-vminus)) > self._DEFAULT_FDERROR and dbeta > self._DEFAULT_MINFID):
-             if  dbeta > self._DEFAULT_MINFID : 
+             if  dbeta > self._DEFAULT_MINFID :
                 dbeta *= 0.5
                 info("Reducing displacement in scaled coordinates estimator", verbosity.low)
                 continue
@@ -1273,12 +1273,12 @@ class Properties(dobject):
       beta = 1.0/(Constants.kb*self.ensemble.temp)
       self.dforces.omegan2=self.forces.omegan2
       self.dforces.alpha=self.forces.alpha
-      
+
       qc = depstrip(self.beads.qc)
-      q = depstrip(self.beads.q) 
-           
+      q = depstrip(self.beads.q)
+
       v0=(self.forces.pot+self.forces.potsc)/self.beads.nbeads
-      
+
       while True:
          splus = np.sqrt(1.0 + dbeta)
          sminus = np.sqrt(1.0 - dbeta)
@@ -1286,13 +1286,13 @@ class Properties(dobject):
          for b in range(self.beads.nbeads):
             self.dbeads[b].q = qc*(1.0 - splus) + splus*q[b,:]
          vplus=(self.dforces.pot+self.dforces.potsc)/self.beads.nbeads
-         
+
          for b in range(self.beads.nbeads):
             self.dbeads[b].q = qc*(1.0 - sminus) + sminus*q[b,:]
          vminus=(self.dforces.pot+self.dforces.potsc)/self.beads.nbeads
-         
+
          if (fd_delta < 0 and abs((vplus+vminus-2*v0)/(vplus-vminus)) > self._DEFAULT_FDERROR):
-             if  dbeta > self._DEFAULT_MINFID : 
+             if  dbeta > self._DEFAULT_MINFID :
                 dbeta *= 0.5
                 info("Reducing displacement in scaled coordinates estimator", verbosity.low)
                 continue
@@ -2225,6 +2225,11 @@ class Trajectories(dobject):
 
       fcell = Cell()
       fcell.h = self.system.cell.h*unit_to_user("length", cell_units, 1.0)
+
+      if len(cell_units) < 1:
+         cell_units = 'atomic_unit'
+      if getall(what)[1] == '':
+         what = getkey(what) + '{atomic_unit}'
 
       io.print_file(format, fatom, fcell, stream, title=("cell{%s}  Traj: %s Step:  %10d  Bead:   %5d " % (cell_units, what, self.system.simul.step+1, b) ) )
       if flush :
