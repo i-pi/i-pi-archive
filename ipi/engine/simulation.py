@@ -103,7 +103,7 @@ class Simulation(dobject):
 
         return simulation
 
-    def __init__(self, mode, syslist, fflist, outputs, prng, smotion=None, step=0, tsteps=1000, ttime=0):
+    def __init__(self, mode, syslist, fflist, outputs, prng, smotion=None, step=0, tsteps=1000, ttime=0, threads=False):
         """Initialises Simulation class.
 
         Args:
@@ -124,15 +124,17 @@ class Simulation(dobject):
         info(" # Initializing simulation object ", verbosity.low)
         self.prng = prng
         self.mode = mode
+        self.threading = threads
 
         self.syslist = syslist
         for s in syslist:
             s.prng = self.prng    # bind the system's prng to self prng
             s.init.init_stage1(s)
 
+        #! TODO - does this have any meaning now that we introduce the smotion class?
         if self.mode == "md" and len(syslist) > 1:
             warning("Multiple systems will evolve independently in a '" + self.mode + "' simulation.")
-
+        
         self.fflist = {}
         for f in fflist:
             self.fflist[f.name] = f
@@ -208,24 +210,28 @@ class Simulation(dobject):
 
         for k, f in self.fflist.iteritems():
             f.run()
-
+        
+        
         # prints inital configuration -- only if we are not restarting
         if self.step == 0:
             self.step = -1
             # must use multi-threading to avoid blocking in multi-system runs with WTE
-            stepthreads = []
-            for o in self.outputs:
-                #o.write()  # threaded output seems to cause random hang-ups. should make things properly thread-safe
-                st = threading.Thread(target=o.write, name=o.filename)
-                st.daemon = True
-                #t.start()
-                stepthreads.append(st)
+            if self.threading:
+                stepthreads = []            
+                for o in self.outputs:
+                    st = threading.Thread(target=o.write, name=o.filename)
+                    st.daemon = True
+                    st.start()
+                    stepthreads.append(st)
 
-            for st in stepthreads:
-                while st.isAlive():
-                    # This is necessary as join() without timeout prevents main from receiving signals.
-                    st.join(2.0)
-
+                for st in stepthreads:
+                    while st.isAlive():
+                        # This is necessary as join() without timeout prevents main from receiving signals.
+                        st.join(2.0)
+            else:
+                for o in self.outputs:
+                    o.write()  # threaded output seems to cause random hang-ups. should make things properly thread-safe
+                
             self.step = 0
 
         steptime = 0.0
@@ -248,21 +254,24 @@ class Simulation(dobject):
 
             self.chk.store()
 
-            stepthreads = []
-            # steps through all the systems
-            for s in self.syslist:
-                # creates separate threads for the different systems
-                st = threading.Thread(target=s.motion.step, name=s.prefix, kwargs={"step":self.step})
-                st.daemon = True
-                # s.motion.step(step=self.step)
-                st.start()
-                stepthreads.append(st)
+            if self.threading:
+                stepthreads = []
+                # steps through all the systems
+                for s in self.syslist:
+                    # creates separate threads for the different systems
+                    st = threading.Thread(target=s.motion.step, name=s.prefix, kwargs={"step":self.step})
+                    st.daemon = True
+                    st.start()
+                    stepthreads.append(st)
 
-            for st in stepthreads:
-                while st.isAlive():
-                    # This is necessary as join() without timeout prevents main from receiving signals.
-                    st.join(2.0)
-
+                for st in stepthreads:
+                    while st.isAlive():
+                        # This is necessary as join() without timeout prevents main from receiving signals.
+                        st.join(2.0)
+            else:
+                for s in self.syslist:
+                    s.motion.step(step=self.step)
+                    
             if softexit.triggered:
                 # Don't continue if we are about to exit.
                 break
@@ -277,8 +286,21 @@ class Simulation(dobject):
                 # Don't write if we are about to exit.
                 break
             
-            for o in self.outputs:
-                o.write()
+            if self.threading:
+                stepthreads = []
+                for o in self.outputs:
+                    st = threading.Thread(target=o.write, name=o.filename)
+                    st.daemon = True
+                    st.start()
+                    stepthreads.append(st)
+
+                for st in stepthreads:
+                    while st.isAlive():
+                        # This is necessary as join() without timeout prevents main from receiving signals.
+                        st.join(2.0)
+            else:
+                for o in self.outputs:
+                    o.write()
 
             steptime += time.time()
             ttot += steptime

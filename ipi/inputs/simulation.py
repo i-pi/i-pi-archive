@@ -80,7 +80,11 @@ class InputSimulation(Input):
                                       "options" : [ "quiet", "low", "medium", "high", "debug" ],
                                       "help"    : "The level of output on stdout."
                                          }),
-               "mode"  : (InputAttribute, {"dtype"   : str,
+               "threading" : (InputAttribute, { "dtype"   : bool,
+                                      "default" : True,
+                                      "help"    : "Whether multiple-systems execution should be parallel. Makes execution non-reproducible due to the random number generator being used from concurrent threads."
+                                         }),
+                "mode"  : (InputAttribute, {"dtype"   : str,
                                     "default" : "md",
                                     "help"    : "What kind of simulation should be run.",
                                     "options" : ['md', 'paratemp', 'static']})
@@ -112,6 +116,7 @@ class InputSimulation(Input):
       self.total_steps.store(simul.tsteps)
       self.total_time.store(simul.ttime)
       self.smotion.store(simul.smotion)
+      self.threading.store(simul.threading)
 
       # this we pick from the messages class. kind of a "global" but it seems to
       # be the best way to pass around the (global) information on the level of output.
@@ -200,6 +205,7 @@ class InputSimulation(Input):
                   smotion = self.smotion.fetch(),
                   step = self.step.fetch(),
                   tsteps = self.total_steps.fetch(),
-                  ttime = self.total_time.fetch())
+                  ttime = self.total_time.fetch(),
+                  threads = self.threading.fetch())
 
       return rsim
