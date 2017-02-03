@@ -58,9 +58,10 @@ class Thermostat(dobject):
             initialised from a checkpoint file.
       """
 
-      dset(self,"temp",   depend_value(name='temp', value=temp))
-      dset(self,"dt",     depend_value(name='dt', value=dt))
-      dset(self,"ethermo",depend_value(name='ethermo',value=ethermo))
+      dself = dd(self)  
+      dself.temp = depend_value(name='temp', value=temp)
+      dself.dt = depend_value(name='dt', value=dt)
+      dself.ethermo = depend_value(name='ethermo',value=ethermo)
 
    def bind(self, beads=None, atoms=None, pm=None, nm=None, prng=None, fixdof=None):
       """Binds the appropriate degrees of freedom to the thermostat.
@@ -94,15 +95,16 @@ class Thermostat(dobject):
       else:
          self.prng = prng
 
+      dself = dd(self)
       if not beads is None:
-         dset(self,"p",beads.p.flatten())
-         dset(self,"m",beads.m3.flatten())
+         dself.p = beads.p.flatten()
+         dself.m = beads.m3.flatten()
       elif not atoms is None:
-         dset(self,"p",dget(atoms, "p"))
-         dset(self,"m",dget(atoms, "m3"))
+         dself.p = dd(atoms).p
+         dself.m = dd(atoms).m3
       elif not pm is None:
-         dset(self,"p",pm[0].flatten())  # MR this should allow to simply pass the cell momenta in the anisotropic barostat
-         dset(self,"m",pm[1].flatten())
+         dself.p = pm[0].flatten()  # MR this should allow to simply pass the cell momenta in the anisotropic barostat
+         dself.m = pm[1].flatten()
       else:
          raise TypeError("Thermostat.bind expects either Beads, Atoms, NormalModes, or a (p,m) tuple to bind to")
 
@@ -111,9 +113,8 @@ class Thermostat(dobject):
       else:
          self.ndof = float(len(self.p) - fixdof)
 
-      dset(self, "sm",
-         depend_array(name="sm", value=np.zeros(len(dget(self,"m"))),
-            func=self.get_sm, dependencies=[dget(self,"m")]))
+      dself.sm = depend_array(name="sm", value=np.zeros(len(dself.m)),
+            func=self.get_sm, dependencies=[dself.m])
 
    def get_sm(self):
       """Retrieves the square root of the mass matrix.
