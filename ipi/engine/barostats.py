@@ -86,12 +86,12 @@ class Barostat(dobject):
          self.temp = temp
       else: self.temp = 1.0
 
-      dset(self,"tau",depend_value(name='tau'))
+      dself.tau = depend_value(name='tau')
       if not tau is None:
          self.tau = tau
       else: self.tau = 1.0
 
-      dset(self,"ebaro",depend_value(name='ebaro'))
+      dself.ebaro = depend_value(name='ebaro')
       if not ebaro is None:
          self.ebaro = ebaro
       else: self.ebaro = 0.0
@@ -101,10 +101,10 @@ class Barostat(dobject):
       self.thermostat = thermostat
 
       # pipes timestep and temperature to the thermostat
-      deppipe(self, "dt", self.thermostat, "dt")
-      deppipe(self, "temp", self.thermostat, "temp")
-      dset(self, "pext", depend_value(name='pext', value=-1.0))
-      dset(self, "stressext", depend_array(name='stressext', value=-np.ones((3,3), float)))
+      dpipe(dself.dt, dd(self.thermostat).dt)
+      dpipe(dself.temp, dd(self.thermostat).temp)
+      dself.pext = depend_value(name='pext', value=-1.0)
+      dself.stressext = depend_array(name='stressext', value=-np.ones((3,3), float))
 
 
    def bind(self, beads, nm, cell, forces, bias=None, prng=None, fixdof=None):
