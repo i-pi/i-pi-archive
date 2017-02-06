@@ -725,7 +725,7 @@ def deppipe(objfrom, memberfrom, objto, memberto, item=-1):
     dto = dget(objto, memberto)
     dpipe(dfrom, dto, item)
     
-def dpipe(dfrom, dto, item=1):
+def dpipe(dfrom, dto, item=-1):
     if item < 0:
         dto._func = lambda: dfrom.get()
     else:

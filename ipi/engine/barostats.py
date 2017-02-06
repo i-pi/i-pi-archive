@@ -75,12 +75,13 @@ class Barostat(dobject):
          thermostat: The thermostat connected to the barostat degree of freedom.
       """
 
-      dset(self,"dt",depend_value(name='dt'))
+      dself = dd(self)
+      dself.dt = depend_value(name='dt')
       if not dt is None:
          self.dt = dt
       else: self.dt = 1.0
 
-      dset(self, "temp", depend_value(name="temp"))
+      dself.temp = depend_value(name="temp")
       if not temp is None:
          self.temp = temp
       else: self.temp = 1.0
