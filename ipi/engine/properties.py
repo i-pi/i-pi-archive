@@ -201,6 +201,9 @@ class Properties(dobject):
                       "help" : "The current simulation time step.",
                       'func': (lambda: (1 + self.simul.step))},
       "time": {       "dimension": "time",
+
+
+
                       "help": "The elapsed simulation time.",
                       'func': (lambda: (1 + self.simul.step)*self.motion.dt)},
       "temperature": {"dimension": "temperature",
@@ -235,9 +238,24 @@ class Properties(dobject):
       "ensemble_temperature":  {  "dimension": "temperature",
                        "help" : "The target temperature for the current ensemble",
                        "func": (lambda: self.ensemble.temp) },
-      "ensemble_bias":  {  "dimension": "energy",
+      "ensemble_pressure":  {  "dimension": "pressure",
+                       "help" : "The target pressure for the current ensemble",
+                       "func": (lambda: self.ensemble.pext) },
+      "hweights_component": {  "dimension" : "",
+                      "help": "The weight associated to the one part of the hamiltonian. ",
+                       "longhelp":  """The weight associated one part of the hamiltonian. Takes one mandatory
+                         argument index (zero-based) that indicates for which component of the hamiltonian the weight must be returned. """,
+                      'func': (lambda index : self.ensemble.hweights[int(index)]) },
+
+         "ensemble_bias":  {  "dimension": "energy",
                        "help" : "The bias applied to the current ensemble",
                        "func": (lambda: self.ensemble.bias.pot/self.beads.nbeads ) },
+      "bweights_component": {  "dimension" : "",
+                      "help": "The weight associated to the one part of the hamiltonian. ",
+                       "longhelp":  """The weight associated one part of the hamiltonian. Takes one mandatory
+                         argument index (zero-based) that indicates for which component of the hamiltonian the weight must be returned. """,
+                      'func': (lambda index : self.ensemble.bweights[int(index)]) },
+
 #      "ensemble_logweight":  {  "dimension": "",
 #                       "help" : "The (log) weight of the configuration in the biassed ensemble",
 #                       "func": (lambda: self.ensemble.bias/(Constants.kb*self.ensemble.temp)) },
@@ -564,6 +582,10 @@ class Properties(dobject):
       self.dbeads = system.beads.copy()
       self.dcell = system.cell.copy()
       self.dforces = system.forces.copy(self.dbeads, self.dcell)
+
+      # self.properties_init()  # Initialize the properties here so that all
+                              #+all variables are accessible (for example to set
+                              #+the size of the hamiltonian_weights).
 
    def __getitem__(self, key):
       """Retrieves the item given by key.
