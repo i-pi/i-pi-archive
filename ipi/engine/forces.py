@@ -15,6 +15,7 @@ and the driver (that only cares about a single bead).
 import time
 import sys
 import threading
+from copy import deepcopy
 
 import numpy as np
 
@@ -612,6 +613,26 @@ class Forces(dobject):
       nforce.bind(nbeads, ncell, self.fcomp, self.ff)
       return nforce
 
+   def transfer_forces(self, refforce):
+       """Low-level function copying over the value of a second force object,
+       triggering updates but un-tainting this force depends themselves."""
+       
+       if len(self.mforces) != len(refforce.mforces):
+           raise ValueError("Cannot copy forces between objects with different numbers of components")
+        
+       
+       for k in xrange(len(self.mforces)):
+            mreff = refforce.mforces[k]
+            mself = self.mforces[k]
+            if mreff.nbeads != mself.nbeads:
+                raise ValueError("Cannot copy forces between objects with different numbers of beads for the "+str(k)+"th component")
+            for b in xrange(mself.nbeads):
+                dfkbref = dd(mreff._forces[b])
+                dfkbself = dd(mself._forces[b])
+                dfkbself.ufvx.set(deepcopy(dfkbref.ufvx._value),manual=False)
+                
+            
+        
    def run(self):
       """Makes the socket start looking for driver codes.
 
