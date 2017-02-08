@@ -544,6 +544,179 @@ def BFGS(x0, d0, fdf, fdf0=None, invhessian=None, big_step=100, tol=1.0e-6, itma
     info(" @MINIMIZE: Updated search direction", verbosity.debug)
     return (x, fx, xi, invhessian)
 
+
+# BFGSTRM algorithm
+def BFGSTRM(x0,u0,f0,h0,tr,mapper,big_step=100):
+
+    """ Input: x0 = previous accepted positions 
+               u0 = previous accepted energy
+               f0 = previous accepted forces
+               h0 = previous accepted hessian
+               tr = trust radius  
+           mapper = function to evaluate energy and forces 
+         big_step = limit on step length
+
+	 Return: updated hessian and tr (implicit) and d_x (explicit)"""
+
+
+#Make one movement, evaluate if it has to be accepted or not. If yes, update tr and Hessian.
+#If not only update the tr and restart the loop
+    accept = False
+    while (not accept):
+
+        #Find new movement direction candidate
+        d_x = TRM_MIN(f0.flatten(),h0,tr)
+
+        #Make movement  and get new energy (u)  and forces(f) using mapper 
+        x = x0 + d_x
+        u,g = mapper(x)
+        f =-g.flatten()
+
+        #Compute energy gain
+
+        true_gain     = u - u0 
+        expected_gain = -np.dot(f0.flatten(),d_x.flatten())
+        expected_gain += 0.5*np.dot(  d_x.T,np.dot(h0,d_x) )
+        harmonic_gain = -0.5*np.dot( d_x.flatten(),(f0+f).flatten() )
+
+        #Compute quality:
+        d_x_norm = np.linalg.norm(d_x)
+
+        if d_x_norm > 0.05:
+            quality = true_gain / expected_gain
+        else:
+            quality = harmonic_gain / expected_gain
+        accept  = (quality > 0.1 )
+
+        #Update TrustRadius (tr)
+        if quality < 0.25:
+            tr[0] = 0.5*d_x_norm
+        elif quality>0.75 and d_x_norm>0.9*tr:
+            tr[0] = 2.0*tr
+            if tr > big_step:
+                tr[0] = big_step
+
+#After accept, Update  Hessian
+    d_f      = np.subtract(f, f0)
+    TRM_UPDATE( d_x.flatten(),d_f.flatten(),h0 )
+
+#Finally, return  "accept" and d_x
+    return d_x
+
+# TRM functions (TRM_UPDATE and TRM_MIN)
+
+
+def TRM_UPDATE(dx,df,h):
+    """ Input: DX = X -X_old
+               DF = F -F_old
+               DG = -DF 
+               H  = hessian
+        Task: updated hessian"""
+
+    dx   = dx[:,np.newaxis]   #dimension nx1
+    dx_t = dx.T               #dimension 1xn
+    dg   = -df[:,np.newaxis]
+    dg_t = dg.T
+
+    #JCP, 117,9160. Eq 44
+    h1   = np.dot(dg,dg_t)
+    h1   = h1 / ( np.dot(dg_t,dx) )
+    h2a  = np.dot(h,dx)
+    h2b  = np.dot(dx_t,h)
+    h2   = np.dot(h2a,h2b)
+    h2   = h2 / np.dot(dx_t,h2a)
+
+    h   += h1 - h2
+
+def TRM_MIN(f, h, tr):
+        """ Return the minimum of
+        E(dx) = -(F * dx + 0.5 * ( dx * H * dx ),
+        whithin dx**2 <tr
+        
+        IN    f  = forces        (n,) 
+              h  = hessian       (nxn)
+              tr = trust-radius 
+
+        OUT   DX = displacement in cartesian basis
+
+        INTERNAL 
+                 ndim = dimension
+                 d    = hessian eigenvalues            
+                 w    = hessian eigenvector (in columns)
+                 g    = gradient in cartesian basis
+                 gE   = gradient in eigenvector basis
+                 DX   = displacement in cartesian basis
+                 DXE  = displacement in eigenvector basis
+        """
+
+        #Resize
+        ndim = f.size
+        f=f.reshape((1,ndim))
+
+        #Diagonalize
+        d, w = np.linalg.eigh(h)        
+        d=d[:,np.newaxis]              #dimension nx1
+
+        gEt =  np.dot(f,w)           #Change of basis  ##
+        gE = gEt.T                    #dimension nx1 
+
+        #Count negative,zero,and positive eigenvalues
+        neg  = (d < -0.0000001).sum()           
+        zero = (d <  0.0000001).sum() - neg     
+        pos  = d.size -neg -zero
+
+        #Pull out zero-mode gE
+        if zero >0:
+            gE[neg:neg+zero] = np.zeros((zero,1))
+
+        #Real work start here
+        DXE = np.zeros((ndim,1))
+
+        for i in range(0,ndim):
+            if np.absolute(d[i]) > 0.00001:
+                DXE[i] = gE[i]/d[i]
+
+        min_d= np.amin(d)
+
+        #Check if h is possitive definite and use trivial result if within trust radius
+        if ( min_d>0.0 ):
+
+            if(neg != 0):
+                print "problem in 'find'!!!"
+            if (np.linalg.norm(DXE)<tr):
+                DX=np.dot(w,DXE)
+        #print "trivial DX"
+                return DX.flatten()
+ 
+        #If we haven't luck. Let's start with the iteration
+        lamb_min = max(0.0,-min_d)
+        lamb_max = 1e30
+        lamb       = min(lamb_min+0.5,0.5*(lamb_min+lamb_max))
+
+        for i in range(0,100):
+            DXE = gE /( d +lamb)
+            y   = np.sum(DXE**2)-tr**2
+            dy  = -2.0 * np.sum( (DXE**2)/(d+lamb) )
+
+            if np.absolute(y/dy) < 0.00001 or np.absolute(y) <1e-13:
+                break
+
+            if y < 0.0:
+                lamb_max = min(lamb, lamb_max)
+            else:
+                lamb_min = max(lamb,lamb_min)
+
+            if dy > 0.0 or lamb_min > lamb_max:
+                print 'Problem in find. II'
+
+            lamb = lamb -y/dy
+            if lamb <= lamb_min or lamb >= lamb_max:
+                lamb = 0.5* (lamb_min + lamb_max)
+          #  print 'iter',i,lamb, lamb_max,lamb_min,y,dy
+
+        DX=np.dot(w,DXE)
+        return DX.flatten()
+
 # L-BFGS algorithm with approximate line search
 def L_BFGS(x0, d0, fdf, qlist, glist, fdf0=None, big_step=100, tol=1.0e-6, itmax=100, m=0, k=0):
     
@@ -564,6 +737,7 @@ def L_BFGS(x0, d0, fdf, qlist, glist, fdf0=None, big_step=100, tol=1.0e-6, itmax
     """
     
     # Original function value, gradient, other initializations
+    # TODO: x0=xinit.copy()
     zeps = 1.0e-10
     if fdf0 is None: fdf0 = fdf(x0)
     f0, df0 = fdf0
