@@ -34,7 +34,7 @@ def print_pdb_path(beads, cell, filedesc=sys.stdout):
     """
 
     fmt_cryst = "CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f%s%4i\n"
-    fmt_atom = "ATOM  %5i %4s%1s%3s %1s%4i%1s   %8.3f%8.3f%8.3f%6.2f%6.2f          %2s%2i\n"
+    fmt_atom = "ATOM  %5i %4s%1s%3s %1s%4i%1s  %8.3f%8.3f%8.3f%6.2f%6.2f          %2s%2i\n"
     fmt_conect = "CONECT%5i%5i\n"
 
     a, b, c, alpha, beta, gamma = mt.h2abc_deg(cell.h)
@@ -76,8 +76,7 @@ def print_pdb(atoms, cell, filedesc=sys.stdout, title=""):
     """
 
     fmt_cryst = "CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f%s%4i\n"
-    fmt_atom = "ATOM  %5i %4s%1s%3s %1s%4i%1s    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s%2i\n"
-
+    fmt_atom = "ATOM  %5i %4s%1s%3s %1s%4i%1s   %8.3f%8.3f%8.3f%6.2f%6.2f          %2s%2i\n"
 
     if title != "":
         filedesc.write("TITLE   %70s\n" % (title))
@@ -99,7 +98,7 @@ def print_pdb(atoms, cell, filedesc=sys.stdout, title=""):
     filedesc.write("END\n")
 
 
-def read_pdb(filedesc, **kwards):
+def read_pdb(filedesc, **kwargs):
     """Reads a PDB-style file and creates an Atoms and Cell object.
 
     Args:
@@ -152,21 +151,3 @@ def read_pdb(filedesc, **kwards):
         body = filedesc.readline()
 
     return comment, cell, np.asarray(qatoms), np.asarray(names, dtype='|S4'), np.asarray(masses)
-
-
-def iter_pdb(filedesc):
-    """Takes a pdb-style file and yields one Atoms, Cell tuple after another.
-
-    Args:
-        filedesc: An open readable file object from a pdb formatted file.
-
-    Returns:
-       Generator over the pdb trajectory, that yields
-       (Atoms, Cell) tuple with the appropriate atom labels, masses and positions.
-    """
-
-    try:
-        while 1:
-            yield read_pdb(filedesc)
-    except EOFError:
-        pass

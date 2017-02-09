@@ -15,33 +15,33 @@ from ipi_tests import xyz_generator as xyz_gen
 
 
 test_Trajectories_print_traj_prms = [
-    #natoms, nbeads, bead, cell, cell_units, property_, format_, units_conversion
-    (1, 1, 0, np.random.rand(9), 'atomic_unit', 'positions', 'xyz', 1),
-    (1, 1, 0, np.random.rand(9), 'angstrom', 'positions', 'xyz', 0.52917721),
-    (1, 1, 0, np.random.rand(9), 'atomic_unit', 'forces', 'xyz', 1),
-    (1, 1, 0, np.random.rand(9), 'angstrom', 'forces', 'xyz', 0.52917721),
-    (1, 1, 0, np.random.rand(9), 'atomic_unit', 'positions', 'pdb', 1),
-    (1, 1, 0, np.random.rand(9), 'angstrom', 'positions', 'pdb', 0.52917721),
-    (1, 1, 0, np.random.rand(9), 'atomic_unit', 'forces', 'pdb', 1),
-    (1, 1, 0, np.random.rand(9), 'angstrom', 'forces', 'pdb', 0.52917721),
+    #natoms, nbeads, bead, cell, cell_units, property_, property_units, format_, units_conversion
+    (1, 1, 0, np.random.rand(9), 'atomic_unit', 'positions', 'atomic_unit', 'xyz', 1),
+    (1, 1, 0, np.random.rand(9), 'angstrom', 'positions', 'atomic_unit', 'xyz', 0.52917721),
+    (1, 1, 0, np.random.rand(9), 'atomic_unit', 'forces', 'atomic_unit', 'xyz', 1),
+    (1, 1, 0, np.random.rand(9), 'angstrom', 'forces', 'atomic_unit', 'xyz', 0.52917721),
+    (1, 1, 0, np.random.rand(9), 'atomic_unit', 'positions', 'atomic_unit', 'pdb', 1),
+    (1, 1, 0, np.random.rand(9), 'angstrom', 'positions', 'atomic_unit', 'pdb', 0.52917721),
+    (1, 1, 0, np.random.rand(9), 'atomic_unit', 'forces', 'atomic_unit', 'pdb', 1),
+    (1, 1, 0, np.random.rand(9), 'angstrom', 'forces', 'atomic_unit', 'pdb', 0.52917721),
 
-    (5, 1, 0, np.random.rand(9), 'atomic_unit', 'positions', 'xyz', 1),
-    (5, 1, 0, np.random.rand(9), 'angstrom', 'positions', 'xyz', 0.52917721),
-    (5, 1, 0, np.random.rand(9), 'atomic_unit', 'forces', 'xyz', 1),
-    (5, 1, 0, np.random.rand(9), 'angstrom', 'forces', 'xyz', 0.52917721),
-    (5, 1, 0, np.random.rand(9), 'atomic_unit', 'positions', 'pdb', 1),
-    (5, 1, 0, np.random.rand(9), 'angstrom', 'positions', 'pdb', 0.52917721),
-    (5, 1, 0, np.random.rand(9), 'atomic_unit', 'forces', 'pdb', 1),
-    (5, 1, 0, np.random.rand(9), 'angstrom', 'forces', 'pdb', 0.52917721),
+    (5, 1, 0, np.random.rand(9), 'atomic_unit', 'positions', 'atomic_unit', 'xyz', 1),
+    (5, 1, 0, np.random.rand(9), 'angstrom', 'positions', 'atomic_unit', 'xyz', 0.52917721),
+    (5, 1, 0, np.random.rand(9), 'atomic_unit', 'forces', 'atomic_unit', 'xyz', 1),
+    (5, 1, 0, np.random.rand(9), 'angstrom', 'forces', 'atomic_unit', 'xyz', 0.52917721),
+    (5, 1, 0, np.random.rand(9), 'atomic_unit', 'positions', 'atomic_unit', 'pdb', 1),
+    (5, 1, 0, np.random.rand(9), 'angstrom', 'positions', 'atomic_unit', 'pdb', 0.52917721),
+    (5, 1, 0, np.random.rand(9), 'atomic_unit', 'forces', 'atomic_unit', 'pdb', 1),
+    (5, 1, 0, np.random.rand(9), 'angstrom', 'forces', 'atomic_unit', 'pdb', 0.52917721),
 
-    (5, 10, 1, np.random.rand(9), 'atomic_unit', 'positions', 'xyz', 1),
-    (5, 10, 2, np.random.rand(9), 'angstrom', 'positions', 'xyz', 0.52917721),
-    (5, 10, 3, np.random.rand(9), 'atomic_unit', 'forces', 'xyz', 1),
-    (5, 10, 4, np.random.rand(9), 'angstrom', 'forces', 'xyz', 0.52917721),
-    (5, 10, 5, np.random.rand(9), 'atomic_unit', 'positions', 'pdb', 1),
-    (5, 10, 6, np.random.rand(9), 'angstrom', 'positions', 'pdb', 0.52917721),
-    (5, 10, 7, np.random.rand(9), 'atomic_unit', 'forces', 'pdb', 1),
-    (5, 10, 8, np.random.rand(9), 'angstrom', 'forces', 'pdb', 0.52917721),
+    (5, 10, 1, np.random.rand(9), 'atomic_unit', 'positions', 'atomic_unit', 'xyz', 1),
+    (5, 10, 2, np.random.rand(9), 'angstrom', 'positions', 'atomic_unit', 'xyz', 0.52917721),
+    (5, 10, 3, np.random.rand(9), 'atomic_unit', 'forces', 'atomic_unit', 'xyz', 1),
+    (5, 10, 4, np.random.rand(9), 'angstrom', 'forces', 'atomic_unit', 'xyz', 0.52917721),
+    (5, 10, 5, np.random.rand(9), 'atomic_unit', 'positions', 'atomic_unit', 'pdb', 1),
+    (5, 10, 6, np.random.rand(9), 'angstrom', 'positions', 'atomic_unit', 'pdb', 0.52917721),
+    (5, 10, 7, np.random.rand(9), 'atomic_unit', 'forces', 'atomic_unit', 'pdb', 1),
+    (5, 10, 8, np.random.rand(9), 'angstrom', 'forces', 'atomic_unit', 'pdb', 0.52917721),
 ]
 
 
@@ -63,7 +63,7 @@ def create_a_fake_system_obj(natoms, q, forces, atom_names, cell):
 @pytest.fixture(params=test_Trajectories_print_traj_prms)
 def prepare_Trajectories_print_traj(request):
 
-    natoms, nbeads, bead, cell, cell_units, property_, format_, unit_conv = request.param
+    natoms, nbeads, bead, cell, cell_units, property_, property_unit, format_, unit_conv = request.param
 
     junk, xyz, atom_names = xyz_gen.xyz_traj(natoms, nbeads, 'comment')
 
@@ -83,7 +83,7 @@ def prepare_Trajectories_print_traj(request):
         expected_position = xyz.copy()
     expected_cell = cell.copy()
 
-    expected_comment = re.compile(r'^\s*\{%s\}\s+Traj\:\s*%s\s+Step\:\s+%i\s*Bead\:\s*%i\s*$' % (cell_units, property_, 1, bead))
+    expected_comment = re.compile(r'^\s*\cell{%s\}\s+Traj\:\s*%s\{%s\}\s+Step\:\s+%i\s*Bead\:\s*%i\s*$' % (cell_units, property_, property_unit, 1, bead))
 
     expected_names = atom_names[:]
 

@@ -12,7 +12,7 @@
    </ffsocket>
    <system>
       <initialize nbeads='4'>
-         <file mode='pdb' units='angstrom'> our_ref.pdb </file>
+         <file mode='pdb'> our_ref.pdb </file>
          <velocities mode='thermal' units='kelvin'> 25 </velocities>
       </initialize>
       <forces><force forcefield='driver'></force></forces>

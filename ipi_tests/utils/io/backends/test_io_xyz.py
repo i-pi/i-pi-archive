@@ -28,7 +28,9 @@ cell_string = ' '.join([str(x) for x in mt.abc2h(5.1, 5.2, 5.0,
                                                  91*deg2rad,
                                                  89*deg2rad,
                                                  90*deg2rad).flatten()])
-default_cell_mat = mt.abc2h(1.0, 1.0, 1.0, np.pi/2.0, np.pi/2.0, np.pi/2.0)
+#default_cell_mat = mt.abc2h(-1.0, -1.0, -1.0, np.pi/2.0, np.pi/2.0, np.pi/2.0) # After changing the input standard
+default_cell_mat = np.eye(3) * -1
+
 
 # natoms, frames, comment, expected_cell, precision
 tests_read_xyz = [
@@ -94,7 +96,7 @@ def test_read_xyz(create_random_xyz_traj_to_read):
         npt.assert_array_almost_equal(tcell, expected_cell, decimal=precision)
 
 
-
+@pytest.mark.skipif(True, reason='iter_xyz has been removed')
 def test_iter_xyz(create_random_xyz_traj_to_read):
     filedesc, xyz, atom_names, \
         natoms, junk, comment, expected_cell, precision = create_random_xyz_traj_to_read

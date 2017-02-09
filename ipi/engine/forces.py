@@ -15,11 +15,12 @@ and the driver (that only cares about a single bead).
 import time
 import sys
 import threading
+from copy import deepcopy
 
 import numpy as np
 
 from ipi.utils.softexit import softexit
-from ipi.utils.messages import verbosity, warning
+from ipi.utils.messages import verbosity, warning, info
 from ipi.utils.depend import *
 from ipi.utils.nmtransform import nm_rescale
 from ipi.engine.beads import Beads
@@ -168,7 +169,7 @@ class ForceBead(dobject):
 
       # this is converting the distribution library requests into [ u, f, v ]  lists
       if self.request is None:
-         self.request = self.ff.queue(self.atoms, self.cell)
+         self.request = self.queue()
 
       # sleeps until the request has been evaluated
       while self.request["status"] != "Done":
@@ -183,6 +184,9 @@ class ForceBead(dobject):
             sys.exit()
          time.sleep(self.ff.latency)
 
+      # print diagnostics about the elapsed time
+      info("# forcefield %s evaluated in %f (queue) and %f (dispatched) sec." % (self.ff.name, self.request["t_finished"]-self.request["t_queued"], self.request["t_finished"]-self.request["t_dispatched"]), verbosity.debug )
+		   
       # data has been collected, so the request can be released and a slot
       # freed up for new calculations
       result = self.request["result"]
@@ -277,7 +281,7 @@ class ForceComponent(dobject):
          Depends on each replica's ufvx list.
    """
 
-   def __init__(self, ffield, nbeads=0, weight=1.0, name="", mts_weights=None):
+   def __init__(self, ffield, nbeads=0, weight=1.0, name="", mts_weights=None, epsilon=-0.001 ):
       """Initializes ForceComponent
 
       Args:
@@ -300,6 +304,7 @@ class ForceComponent(dobject):
           self.mts_weights = np.asarray([])
       else:
           self.mts_weights = np.asarray(mts_weights)
+      self.epsilon = epsilon
 
    def bind(self, beads, cell, fflist):
       """Binds beads, cell and force to the forcefield.
@@ -316,6 +321,7 @@ class ForceComponent(dobject):
          fflist: A list of forcefield objects to use to calculate the potential,
             forces and virial for each replica.
       """
+
       # stores a copy of the number of atoms and of beads
       self.natoms = beads.natoms
       if (self.nbeads != beads.nbeads):
@@ -465,7 +471,7 @@ class Forces(dobject):
       self.dforces = None
       self.dbeads = None
       self.dcell = None
-      
+
    def bind(self, beads, cell, fcomponents, fflist):
       """Binds beads, cell and forces to the forcefield.
 
@@ -473,13 +479,13 @@ class Forces(dobject):
       Args:
          beads: Beads object from which the bead positions are taken.
          cell: Cell object from which the system box is taken.
-         fcomponents: A list of different objects for each force type. 
-            For example, if ring polymer contraction is being used, 
-            then there may be separate forces for the long and short 
+         fcomponents: A list of different objects for each force type.
+            For example, if ring polymer contraction is being used,
+            then there may be separate forces for the long and short
             range part of the potential.
          fflist: A list of forcefield objects to use to calculate the potential,
             forces and virial for each force type. To clarify: fcomponents are the
-            names and parameters of forcefields that are active for a certain 
+            names and parameters of forcefields that are active for a certain
             system. fflist contains the overall list of force providers,
             and one typically has just one per force kind.
       """
@@ -512,7 +518,7 @@ class Forces(dobject):
          # if the number of beads for this force component is unspecified,
          # assume full force evaluation
          if newb == 0: newb = beads.nbeads
-         newforce = ForceComponent(ffield=fc.ffield, name=fc.name, nbeads=newb, weight=fc.weight, mts_weights=fc.mts_weights)
+         newforce = ForceComponent(ffield=fc.ffield, name=fc.name, nbeads=newb, weight=fc.weight, mts_weights=fc.mts_weights, epsilon=fc.epsilon)
          newbeads = Beads(beads.natoms, newb)
          newrpc = nm_rescale(beads.nbeads, newb)
 
@@ -566,47 +572,67 @@ class Forces(dobject):
          depend_array(name="vir", func=self.get_vir, value=np.zeros((3,3)),
             dependencies=[dget(self,"virs")]))
             
-            
       # SC forces and potential  
-      dset(self, "alpha", depend_value(name="alpha", value=0.5))
+      dset(self, "alpha", depend_value(name="alpha", value=0.0))
       
       # this will be piped from normalmodes
-      dset(self, "omegan2", depend_value(name="alpha", value=0))
+      dset(self, "omegan2", depend_value(name="omegan2", value=0))
             
-      dset(self, "SCCALC", 
-           depend_value(name="SCCALC", func=self.sccalc, value = [None,None],
-                 dependencies=[dget(self, "f"), dget(self,"pots"), dget(self,"alpha"),  dget(self,"omegan2")] ) )
-                 
-      dset(self, "fsc", depend_array(name="fsc",value=np.zeros((self.nbeads,3*self.natoms)),
-            dependencies=[dget(self,"SCCALC")],
-            func=(lambda: self.SCCALC[1] ) ) )
-       
-      dset(self, "potsc", depend_value(name="potsc",
-            dependencies=[dget(self,"SCCALC") ],
-            func=(lambda: self.SCCALC[0] ) ) ) 
+      dset(self, "potssc", depend_array(name="potssc",value=np.zeros(self.nbeads,float),
+            dependencies=[dget(self.beads, "m"), dget(self, "f"), dget(self,"pots"), dget(self,"alpha"),  dget(self,"omegan2")],
+            func=self.get_potssc ) )
+                                         
+      dset(self, "fsc", depend_array(name="fsc",value=np.zeros((self.nbeads,3*self.natoms),float),
+            dependencies=[dget(self.beads, "m"), dget(self, "f"), dget(self,"pots"), dget(self,"alpha"),  dget(self,"omegan2")],
+            func=self.get_scforce ) )
+
+      dset(self, "potsc", value=depend_value(name="potsc",
+            dependencies=[dget(self,"potssc")],
+            func=(lambda: self.potssc.sum()) ) )       
+            
 
    def copy(self, beads=None, cell = None):
       """ Returns a copy of this force object that can be used to compute forces,
-      e.g. for use in internal loops of geometry optimizers, or for property 
+      e.g. for use in internal loops of geometry optimizers, or for property
       calculation.
-      
-      Args: 
-         beads: Optionally, bind this to a different beads object than the one 
+
+      Args:
+         beads: Optionally, bind this to a different beads object than the one
             this Forces is currently bound
          cell: Optionally, bind this to a different cell object
-         
+
       Returns: The copy of the Forces object
       """
-      
+
       if not self.bound: raise ValueError("Cannot copy a forces object that has not yet been bound.")
       nforce = Forces()
       nbeads = beads
       if nbeads is None: nbeads=self.beads
       ncell = cell
-      if cell is None: ncell=self.cell      
+      if cell is None: ncell=self.cell
       nforce.bind(nbeads, ncell, self.fcomp, self.ff)
       return nforce
 
+   def transfer_forces(self, refforce):
+       """Low-level function copying over the value of a second force object,
+       triggering updates but un-tainting this force depends themselves."""
+       
+       if len(self.mforces) != len(refforce.mforces):
+           raise ValueError("Cannot copy forces between objects with different numbers of components")
+        
+       
+       for k in xrange(len(self.mforces)):
+            mreff = refforce.mforces[k]
+            mself = self.mforces[k]
+            if mreff.nbeads != mself.nbeads:
+                raise ValueError("Cannot copy forces between objects with different numbers of beads for the "+str(k)+"th component")
+            for b in xrange(mself.nbeads):
+                dfkbref = dd(mreff._forces[b])
+                dfkbself = dd(mself._forces[b])
+                dfkbself.ufvx.set(deepcopy(dfkbref.ufvx._value),manual=False)
+                
+            
+        
    def run(self):
       """Makes the socket start looking for driver codes.
 
@@ -633,7 +659,8 @@ class Forces(dobject):
       """Submits all the required force calculations to the forcefields."""
 
       for ff in self.mforces:
-         ff.queue()
+         if ff.weight > 0: # do not compute forces which have zero weight 
+            ff.queue()
 
    def get_vir(self):
       """Sums the virial of each forcefield.
@@ -649,20 +676,42 @@ class Forces(dobject):
          vir += v
       return vir
 
-   def pots_component(self, index):
-      return self.mforces[index].weight*self.mrpc[index].b2tob1(self.mforces[index].pots)
-
-   def forces_component(self, index):
-      return self.mforces[index].weight*self.mrpc[index].b2tob1(depstrip(self.mforces[index].f))
-
+   def pots_component(self, index, weighted=True):   
+      # fetches just one of the potential components
+      if weighted:
+         if self.mforces[index].weight > 0:
+            return self.mforces[index].weight*self.mrpc[index].b2tob1(self.mforces[index].pots)
+         else:
+            return 0
+      else:
+         return self.mrpc[index].b2tob1(self.mforces[index].pots)
+         
+   def forces_component(self, index, weighted=True):
+      # fetches just one of the force components
+      if weighted:
+         if self.mforces[index].weight > 0:
+            return self.mforces[index].weight*self.mrpc[index].b2tob1(depstrip(self.mforces[index].f))
+         else:
+            return np.zeros((self.nbeads,self.natoms*3),float)
+      else:
+         return self.mrpc[index].b2tob1(depstrip(self.mforces[index].f))
+         
    def forces_mts(self, level):
       """ Fetches ONLY the forces associated with a given MTS level."""
 
       fk = np.zeros((self.nbeads,3*self.natoms))
       for index in range(len(self.mforces)):
-          if len(self.mforces[index].mts_weights) > level and self.mforces[index].mts_weights[level] != 0:
+         if len(self.mforces[index].mts_weights) > level and self.mforces[index].mts_weights[level] != 0  and self.mforces[index].weight > 0:
               fk += self.mforces[index].weight*self.mforces[index].mts_weights[level]*self.mrpc[index].b2tob1(depstrip(self.mforces[index].f))
       return fk
+
+   def nmtslevels(self):
+      """ Returns the total number of mts levels."""
+       
+      big = 0
+      for index in range(len(self.mforces)):
+         big = max(big, self.mforces[index].lmts)
+      return big + 1
 
    def f_combine(self):
       """Obtains the total force vector."""
@@ -672,7 +721,8 @@ class Forces(dobject):
       for k in range(self.nforces):
          # "expand" to the total number of beads the forces from the
          #contracted one
-         rf += self.mforces[k].weight*self.mforces[k].mts_weights.sum()*self.mrpc[k].b2tob1(depstrip(self.mforces[k].f))
+         if self.mforces[k].weight > 0:
+            rf += self.mforces[k].weight*self.mforces[k].mts_weights.sum()*self.mrpc[k].b2tob1(depstrip(self.mforces[k].f))
       return rf
 
    def pot_combine(self):
@@ -683,7 +733,8 @@ class Forces(dobject):
       for k in range(self.nforces):
          # "expand" to the total number of beads the potentials from the
          #contracted one
-         rp += self.mforces[k].weight*self.mforces[k].mts_weights.sum()*self.mrpc[k].b2tob1(self.mforces[k].pots)
+         if self.mforces[k].weight > 0:
+            rp += self.mforces[k].weight*self.mforces[k].mts_weights.sum()*self.mrpc[k].b2tob1(self.mforces[k].pots)
       return rp
 
    def extra_combine(self):
@@ -704,34 +755,84 @@ class Forces(dobject):
       self.queue()
       rp = np.zeros((self.nbeads,3,3),float)
       for k in range(self.nforces):
-         virs = depstrip(self.mforces[k].virs)
-         # "expand" to the total number of beads the virials from the
-         #contracted one, element by element
-         for i in range(3):
-            for j in range(3):
-               rp[:,i,j] += self.mforces[k].weight*self.mforces[k].mts_weights.sum()*self.mrpc[k].b2tob1(virs[:,i,j])
+         if self.mforces[k].weight > 0:
+            virs = depstrip(self.mforces[k].virs)
+            # "expand" to the total number of beads the virials from the
+            #contracted one, element by element
+            for i in range(3):
+               for j in range(3):
+                  rp[:,i,j] += self.mforces[k].weight*self.mforces[k].mts_weights.sum()*self.mrpc[k].b2tob1(virs[:,i,j])
       return rp
       
-   def sccalc(self):
-      """ Obtains Suzuki-Chin energy and forces by finite differences """
+   def get_potssc(self):
+      """ Obtains Suzuki-Chin contribution to the potential """
+      if self.nbeads % 2 != 0:
+         warning("ERROR: Suzuki-Chin factorization requires even number of beads!")
+         exit()
+       
+      # this evaluates the square forces contribution to the SC potential (only the difference with the Trotter potential is returned)
       
+      fbase = depstrip(self.f)
+      potssc = np.zeros(self.nbeads)
+      for k in range(self.nbeads):
+         if k%2 == 0:
+           potssc[k] = -self.pots[k]/3.0 + (self.alpha/self.omegan2/9.0)*np.dot(fbase[k],fbase[k]/self.beads.m3[k])
+         else:
+           potssc[k] = self.pots[k]/3.0 + ((1.0-self.alpha)/self.omegan2/9.0)*np.dot(fbase[k],fbase[k]/self.beads.m3[k])
+      
+      return potssc
+      
+
+   def get_scforce(self):
+      """ Obtains Suzuki-Chin forces by finite differences """
+
       # This computes the difference between the Trotter and Suzuki-Chin Hamiltonian,
       # and the associated forces.
-      
+
       # We need to compute FW and BW finite differences, so first we initialize an
       # auxiliary force evaluator
-      
-      if (self.dforces is None) : 
+
+      if (self.dforces is None) :
          self.dbeads = self.beads.copy()
          self.dcell = self.cell.copy()
          self.dforces = self.copy(self.dbeads, self.dcell) 
       
+      if self.nbeads % 2 != 0:
+         warning("ERROR: Suzuki-Chin factorization requires even number of beads!")
+         exit()
+      
+      # this should get the forces
       fbase = depstrip(self.f)
-      scpot = self.pots[0] + np.dot(fbase,fbase)  # this should get the potential
+      fac = np.sqrt((fbase/self.beads.m3*fbase/self.beads.m3).sum()/(self.nbeads*self.natoms))
+      delta = np.abs(self.mforces[-1].epsilon)/fac
+      if self.alpha==0:
+         # special case! half of the S-C forces are zero so we can compute forward-backward finite differences in one go!
+         fsc = fbase*0.0
+         for k in range(self.nbeads/2): # forward and backward go in the two halves of the q vector
+            self.dbeads.q[k]=self.beads.q[2*k+1] + delta * fbase[2*k+1]/self.beads.m3[2*k+1]
+            self.dbeads.q[self.nbeads/2+k]=self.beads.q[2*k+1] - delta * fbase[2*k+1]/self.beads.m3[2*k+1]
+         fplusminus = depstrip(self.dforces.f).copy()
+         if self.mforces[-1].epsilon < 0.0:  # use a centered difference schemei
+             print "for alpha =0 centered difference with delta=", delta, self.mforces[-1].epsilon
+             for k in range(self.nbeads/2): # only compute the elements that will not be set to zero when multiplying by alpha
+                 fsc[2*k+1] = 2*(fplusminus[self.nbeads/2+k]-fplusminus[k])/(2.0*delta)
+         else:
+             for k in range(self.nbeads/2): # do forward differences only
+                 fsc[2*k+1] = 2*(fplusminus[self.nbeads/2+k]-fbase[2*k+1])/delta
+      else: 
+         # standard, more expensive version (alpha=1 could also be accelerated but is not used in practice so laziness prevails)
+         self.dbeads.q = self.beads.q + delta*fbase/self.beads.m3 # move forward
+         fplus = depstrip(self.dforces.f).copy()
+         self.dbeads.q = self.beads.q - delta*fbase/self.beads.m3 # move backwards
+         fminus = depstrip(self.dforces.f).copy()
+         fsc = 2*(fminus - fplus)/2.0/delta      
+         
+      for k in range(self.nbeads):
+         if k%2 == 0:
+           fsc[k] = -self.f[k]/3.0 + (self.alpha/self.omegan2/9.0)*fsc[k]
+         else:
+           fsc[k] = self.f[k]/3.0 + ((1-self.alpha)/self.omegan2/9.0)*fsc[k]
       
-      self.dbeads.q = self.beads.q + fbase # move forward (should hardcode or input displacement)
-      fplus = depstrip(self.dforces.f).copy()
-      self.dbeads.q = self.beads.q - fbase # move forward (should hardcode or input displacement)
-      fminus = depstrip(self.dforces.f).copy()
+      return fsc
       
-      # etcetera
+

@@ -10,7 +10,6 @@ in the XYZ format.
 import sys
 import re
 
-
 import numpy as np
 
 import ipi.utils.mathtools as mt
@@ -70,12 +69,9 @@ def print_xyz(atoms, cell, filedesc=sys.stdout, title=""):
 
 
 # Cell type patterns
-# TODO: These REGEX would need some revisions
-#+for now ensure the right number of "argument" when reading the array
-
-cell_re = [re.compile('# CELL[\(\[\{]abcABC[\)\]\}]: ([-0-9\.Ee ]*)\s*'),
-           re.compile('# CELL[\(\[\{]GENH[\)\]\}]: ([-0-9\.?Ee ]*)\s*'),
-           re.compile('# CELL[\(\[\{]H[\)\]\}]: ([-0-9\.?Ee ]*)\s*')]
+cell_re = [re.compile('CELL[\(\[\{]abcABC[\)\]\}]: ([-+0-9\.Ee ]*)\s*'),
+           re.compile('CELL[\(\[\{]GENH[\)\]\}]: ([-+0-9\.?Ee ]*)\s*'),
+           re.compile('CELL[\(\[\{]H[\)\]\}]: ([-+0-9\.?Ee ]*)\s*')]
 
 def read_xyz(filedesc, **kwargs):
     """Reads an XYZ-style file with i-PI style comments and returns data in raw format for further units transformation
@@ -89,14 +85,14 @@ def read_xyz(filedesc, **kwargs):
     """
 
     try:
-        natoms = filedesc.next()
-    except StopIteration:
+        natoms = int(filedesc.next())
+    except (StopIteration, ValueError):
         raise EOFError
 
-    if natoms == '':              # Work with temporary files
-        raise EOFError
+    # if natoms == '':              # Work with temporary files
+    #     raise EOFError
 
-    natoms = int(natoms)
+    # natoms = int(natoms)
 
     comment = filedesc.next()
 
@@ -119,7 +115,7 @@ def read_xyz(filedesc, **kwargs):
         h = mt.abc2h(*mt.genh2abc(genh))
         usegenh = True
     else:                     # defaults to unit box
-        h = mt.abc2h(1.0, 1.0, 1.0, np.pi/2.0, np.pi/2.0, np.pi/2.0)
+        h = np.array([[-1.0, 0.0, 0.0],[0.0, -1.0, 0.0],[0.0, 0.0, -1.0]])
     cell = h
 
     qatoms = np.zeros(3*natoms)
@@ -151,22 +147,3 @@ def read_xyz(filedesc, **kwargs):
         raise ValueError("The number of atom records does not match the header of the xyz file.")
 
     return comment, cell, qatoms, names, masses
-
-
-
-def iter_xyz(filedesc):
-    """Takes a xyz-style file and yields one Atoms object after another.
-
-    Args:
-        filedesc: An open readable file object from a xyz formatted file.
-
-    Returns:
-        Generator over the xyz trajectory, that yields
-        Atoms objects with the appropriate atom labels, masses and positions.
-    """
-
-    try:
-        while 1:
-            yield read_xyz(filedesc)
-    except EOFError:
-        pass

@@ -23,13 +23,15 @@ Classes:
 
 import numpy as np
 import ipi.engine.initializer
-from ipi.engine.motion import Motion, Dynamics, Replay, GeopMotion, NEBMover
+from ipi.engine.motion import Motion, Dynamics, Replay, GeopMover, NEBMover, DynMatrixMover
+from ipi.engine.motion import DynMatrixMover
 from ipi.utils.inputvalue import *
 from ipi.inputs.thermostats import *
 from ipi.inputs.initializer import *
 from .geop import InputGeop
 from .neb import InputNEB
 from .dynamics import InputDynamics
+from .phonons import InputDynMatrix
 from ipi.utils.units import *
 
 __all__ = ['InputMotion']
@@ -50,8 +52,9 @@ class InputMotion(Input):
    """
 
    attribs={"mode"  : (InputAttribute, {"dtype"   : str,
-                                    "help"    : "How atoms should be moved at each step in the simulation. 'replay' means that a simulation is restarted from a previous simulation.",
-                                    "options" : ['minimize', 'replay', 'neb', 'dynamics',  'dummy']}) }
+                                    "help"    : "How atoms should be moved at each step in the simulatio. 'replay' means that a simulation is restarted from a previous simulation.",
+                                    "options" : ['vibrations', 'minimize', 'replay', 'neb', 'dynamics',  'dummy']}) }
+
    fields={"fixcom": (InputValue, {"dtype"           : bool,
                                    "default"         : True,
                                    "help"            : "This describes whether the centre of mass of the particles is fixed."}),
@@ -64,8 +67,10 @@ class InputMotion(Input):
                                      "help":  "Option for geometry optimization" } ),
            "dynamics" : ( InputDynamics, { "default" : {},
                                      "help":  "Option for (path integral) molecular dynamics" } ),
-           "file": (InputInitFile, {"default" : input_default(factory=ipi.engine.initializer.InitBase,kwargs={"mode":"xyz"}),
-                           "help"            : "This describes the location to read a trajectory file from."})
+           "file": (InputInitFile, { "default" : input_default(factory=ipi.engine.initializer.InitBase,kwargs={"mode":"xyz"}),
+                           "help"            : "This describes the location to read a trajectory file from."}),
+           "vibrations" : ( InputDynMatrix, { "default" : {}, 
+                                     "help":  "Option for phonon computation" } )
          }
 
    dynamic = {  }
@@ -87,7 +92,7 @@ class InputMotion(Input):
       elif type(sc) is Replay:
          self.mode.store("replay")
          tsc = 0
-      elif type(sc) is GeopMotion:
+      elif type(sc) is GeopMover:
          self.mode.store("minimize")
          self.optimizer.store(sc)
          tsc = 1
@@ -98,13 +103,17 @@ class InputMotion(Input):
       elif type(sc) is Dynamics:
          self.mode.store("dynamics")
          self.dynamics.store(sc)
-         tsc = 1
-      else:
-         raise ValueError("Cannot store Motion calculator of type "+str(type(sc)))
-
+         tsc = 1   
+      elif type(sc) is DynMatrixMover:
+         self.mode.store("vibrations")
+         self.vibrations.store(sc)
+         tsc = 1   
+      else: 
+         raise ValueError("Cannot store Mover calculator of type "+str(type(sc)))
+      
       if tsc == 0:
          self.file.store(sc.intraj)
-      if tsc > 0:
+      elif tsc > 0:
          self.fixcom.store(sc.fixcom)
          self.fixatoms.store(sc.fixatoms)
 
@@ -119,13 +128,15 @@ class InputMotion(Input):
       super(InputMotion, self).fetch()
 
       if self.mode.fetch() == "replay":
-         sc = Replay(fixcom=False, fixatoms=None, intraj=self.file.fetch())
+         sc = Replay(fixcom=self.fixcom.fetch(), fixatoms=self.fixatoms.fetch(), intraj=self.file.fetch())
       elif self.mode.fetch() == "minimize":
-         sc = GeopMotion(fixcom=False, fixatoms=None, **self.optimizer.fetch())
+         sc = GeopMover(fixcom=self.fixcom.fetch(), fixatoms=self.fixatoms.fetch(), **self.optimizer.fetch())
       elif self.mode.fetch() == "neb":
-         sc = NEBMover(fixcom=False, fixatoms=None, **self.neb_optimizer.fetch())
+         sc = NEBMover(fixcom=self.fixcom.fetch(), fixatoms=self.fixatoms.fetch(), **self.neb_optimizer.fetch())
       elif self.mode.fetch() == "dynamics":
          sc = Dynamics(fixcom=self.fixcom.fetch(), fixatoms=self.fixatoms.fetch(), **self.dynamics.fetch())
+      elif self.mode.fetch() == "vibrations":
+         sc = DynMatrixMover(fixcom=self.fixcom.fetch(), fixatoms=self.fixatoms.fetch(), **self.vibrations.fetch() )
       else:
          sc = Motion()
          #raise ValueError("'" + self.mode.fetch() + "' is not a supported motion calculation mode.")
