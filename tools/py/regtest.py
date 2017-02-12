@@ -114,7 +114,7 @@ from ipi.utils.io.inputs import io_xml
 
 RED = YELLOW = GREEN = RESET = ''
 try:
-    from colorama import Fore  # pylint: disable=wrong-import-position
+    from coloramaaa import Fore  # pylint: disable=wrong-import-position
     RED = Fore.RED
     YELLOW = Fore.YELLOW
     GREEN = Fore.GREEN
@@ -821,7 +821,7 @@ class Test(threading.Thread):
 
 
     def get_filesname(self, xml_path, olddir, newdir):
-        """ The test results shold be analyzed number by numbers.
+        """ The test results should be analyzed number by numbers.
 
         The idea is that the testing input should never change, then the files
         should be always the same. It would probably be better, anyway, to use
@@ -877,7 +877,7 @@ class Test(threading.Thread):
             # trajectories are more complex, as some have per-bead output
             elif isinstance(o, TrajectoryOutput):
                 if getkey(o.what) in ["positions", "velocities",
-                                      "forces", "extras"]:   # multiple beads
+                                      "forces", "forces_sc","extras"]:   # multiple beads
                     nbeads = simul.syslist[0].beads.nbeads
                     for _bi in range(nbeads):
                         ntraj = []
