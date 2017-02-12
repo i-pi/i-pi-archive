@@ -203,7 +203,7 @@ class InputThermo(InputThermoBase):
       if type(thermo) is ethermostats.MultiThermo:
          self.mode.store("multi" )
          for t in thermo.tlist:
-            it=InputThermo()
+            it=InputThermoBase()
             it.store(t)
             self.extra.append(("thermostat",it))
          self.ethermo.store(thermo.ethermo)

@@ -22,8 +22,9 @@ Classes:
 """
 
 import numpy as np
+from copy import copy
 import ipi.engine.initializer
-from ipi.engine.motion import Motion, Dynamics, Replay, GeopMover, NEBMover, DynMatrixMover
+from ipi.engine.motion import Motion, Dynamics, Replay, GeopMover, NEBMover, DynMatrixMover, MultiMotion
 from ipi.engine.motion import DynMatrixMover
 from ipi.utils.inputvalue import *
 from ipi.inputs.thermostats import *
@@ -36,7 +37,7 @@ from ipi.utils.units import *
 
 __all__ = ['InputMotion']
 
-class InputMotion(Input):
+class InputMotionBase(Input):
    """Motion calculation input class.
 
    A class to encompass the different "motion" calculations.
@@ -85,7 +86,7 @@ class InputMotion(Input):
          sc: A motion calculation class.
       """
 
-      super(InputMotion, self).store(sc)
+      super(InputMotionBase, self).store(sc)
       tsc = -1
       if type(sc) is Motion:
           self.mode.store("dummy")
@@ -125,7 +126,7 @@ class InputMotion(Input):
          objects given the attributes of the InputEnsemble object.
       """
 
-      super(InputMotion, self).fetch()
+      super(InputMotionBase, self).fetch()
 
       if self.mode.fetch() == "replay":
          sc = Replay(fixcom=self.fixcom.fetch(), fixatoms=self.fixatoms.fetch(), intraj=self.file.fetch())
@@ -142,3 +143,38 @@ class InputMotion(Input):
          #raise ValueError("'" + self.mode.fetch() + "' is not a supported motion calculation mode.")
 
       return sc
+
+
+class InputMotion(InputMotionBase):
+   """ Extends InputThermoBase to allow the definition of a multithermo """
+
+   attribs = copy(InputMotionBase.attribs)
+
+   attribs["mode"][1]["options"].append("multi")
+
+   dynamic = { "motion" : (InputMotionBase, {"default"   : input_default(factory=Motion),
+                                         "help"      : "A motion class that can be included as a member of a 'multi' integrator."} )
+             }
+
+   def store(self, motion):
+
+      if type(motion) is MultiMotion:
+         self.mode.store("multi" )
+         for m in motion.mlist:
+            im=InputMotionBase()
+            im.store(m)
+            self.extra.append(("motion",im))
+      else:
+          super(InputMotion,self).store(motion)
+
+   def fetch(self):
+
+      if self.mode.fetch() == "multi" :
+         mlist = []
+         for (k, m) in self.extra:
+            mlist.append(m.fetch())
+         motion=MultiMotion(motionlist=mlist)         
+      else:
+         motion=super(InputMotion,self).fetch()
+
+      return motion

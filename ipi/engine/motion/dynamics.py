@@ -72,7 +72,7 @@ class Dynamics(Motion):
 
         if nmts is np.zeros(0,int):
            self.nmts = np.asarray([1],int)
-        elif len(nmts) == 0:
+        elif nmts is None or len(nmts) == 0:
            self.nmts = np.asarray([1],int) 
         else:
            self.nmts=np.asarray(nmts)
