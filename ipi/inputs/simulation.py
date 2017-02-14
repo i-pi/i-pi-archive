@@ -21,6 +21,7 @@ from ipi.utils.messages import verbosity
 from ipi.engine.smotion import Smotion
 from ipi.inputs.prng import InputRandom
 from ipi.inputs.system import InputSystem
+from ipi.engine.system import System
 import ipi.inputs.forcefields as iforcefields
 import ipi.engine.forcefields as eforcefields
 import ipi.inputs.outputs as ioutputs
@@ -135,28 +136,56 @@ class InputSimulation(Input):
 
       self.mode.store(simul.mode)
 
-      self.extra = []
+      _fflist = [v for k, v in sorted(simul.fflist.iteritems())]
+      if len(self.extra) != len(_fflist) + len(simul.syslist):
+         self.extra = [0] * (len(_fflist) + len(simul.syslist))
 
-      for fname in simul.fflist:
-         ff=simul.fflist[fname]
-         if type(ff) is eforcefields.FFSocket:
-            iff = iforcefields.InputFFSocket()
-            iff.store(ff)
-            self.extra.append(("ffsocket",iff))
-         elif type(ff) is eforcefields.FFLennardJones:
-            iff = iforcefields.InputFFLennardJones()
-            iff.store(ff)
-            self.extra.append(("fflj",iff))
-         elif type(ff) is eforcefields.FFDebye:
-            iff = iforcefields.InputFFDebye()
-            iff.store(ff)
-            self.extra.append(("ffdebye",iff))
+      # print 'FFLIST',_fflist
+      # print 'SISLIS',simul.syslist
+      for _ii, _obj, in enumerate(_fflist + simul.syslist):
+#         print 'Iterating... ', _obj, self.extra[_ii]
+         if self.extra[_ii] == 0:
+            if isinstance(_obj, eforcefields.FFSocket):
+               _iobj = iforcefields.InputFFSocket()
+               _iobj.store(_obj)
+               self.extra[_ii] = ("ffsocket", _iobj)
+            elif isinstance(_obj, eforcefields.FFLennardJones):
+               _iobj = iforcefields.InputFFLennardJones()
+               _iobj.store(_obj)
+               self.extra[_ii] = ("fflj", _iobj)
+            elif isinstance(_obj, eforcefields.FFDebye):
+               _iobj = iforcefields.InputFFDebye()
+               _iobj.store(_obj)
+               self.extra[_ii] = ("ffdebye", _iobj)
+            elif isinstance(_obj, System):
+               _iobj = InputSystem()
+               _iobj.store(_obj)
+               self.extra[_ii] = ("system", _iobj)
+
+            # print 'BUILDED EXTRA THE FIRST TIME', self.extra
+         else:
+            self.extra[_ii][1].store(_obj)
+
+      # for fname in simul.fflist:
+      #    ff=simul.fflist[fname]
+      #    if type(ff) is eforcefields.FFSocket:
+      #       iff = iforcefields.InputFFSocket()
+      #       iff.store(ff)
+      #       self.extra.append(("ffsocket",iff))
+      #    elif type(ff) is eforcefields.FFLennardJones:
+      #       iff = iforcefields.InputFFLennardJones()
+      #       iff.store(ff)
+      #       self.extra.append(("fflj",iff))
+      #    elif type(ff) is eforcefields.FFDebye:
+      #       iff = iforcefields.InputFFDebye()
+      #       iff.store(ff)
+      #       self.extra.append(("ffdebye",iff))
 
 
-      for s in simul.syslist:
-         isys = InputSystem()
-         isys.store(s)
-         self.extra.append(("system",isys))
+      # for s in simul.syslist:
+      #    isys = InputSystem()
+      #    isys.store(s)
+      #    self.extra.append(("system",isys))
 
 
    def fetch(self):
