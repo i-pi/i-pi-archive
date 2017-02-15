@@ -311,7 +311,7 @@ class NEBMover(Motion):
         mode: minimizer to use for NEB
         biggest_step: maximum step size for BFGS/L-BFGS
         old_force: force from previous iteration
-        old_direction_cgsd: direction from previous iteration
+        old_direction: direction from previous iteration
         invhessian_bfgs: inverse Hessian for BFGS
         ls_options:
             tolerance: tolerance for exit of line search
@@ -338,7 +338,7 @@ class NEBMover(Motion):
                  mode="sd",
                  biggest_step=100.0,
                  old_force=np.zeros(0, float),
-                 old_direction_cgsd=np.zeros(0, float),
+                 old_direction=np.zeros(0, float),
                  invhessian_bfgs=np.eye(0),
                  ls_options={"tolerance": 1e-5, "iter": 100.0, "step": 1e-3, "adaptive": 1.0},
                  tolerances={"energy": 1e-5, "force": 1e-5, "position": 1e-5},
@@ -363,7 +363,7 @@ class NEBMover(Motion):
         self.mode = mode
         self.big_step = biggest_step
         self.old_f = old_force
-        self.old_d = old_direction_cgsd
+        self.old_d = old_direction
         self.invhessian = invhessian_bfgs
         self.corrections = corrections_lbfgs
         self.qlist = qlist_lbfgs

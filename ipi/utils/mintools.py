@@ -23,8 +23,12 @@ Functions:
             method with derivatives. Uses 'bracket' function.
         min_approx: Does approximate n-D minimization (line search) based 
             on sufficient function decrease in the search direction
+        min_trm: Does approximate n-D minimization inside a trust-region
+
         BFGS: Constructs an approximate inverse Hessian to determine 
             new search directions. Minimizes the function using 'min_approx' function.
+        BFGS-TRM: Constructs an approximate inverse Hessian to determine 
+            new search directions. Minimizes the function using 'min_trm' function.
         L-BFGS: Uses the limited memory BFGS algorithm (L-BFGS) to 
             compute new search directions. Minimizes using 'min_approx'
         L-BFGS_nls: L-BFGS algorithm without line search
@@ -241,7 +245,7 @@ def min_brent(fdf, fdf0=None, x0=0.0, tol=1.0e-6, itmax=100, init_step=1.0e-3):
         # Test for satisfactory completion: |b-a|<=tol*abs(x)
         if abs(x - xm) <= (tol2 - 0.5 * (b - a)):
             info(" @MINIMIZE: Finished minimization, energy = %f" % fx, verbosity.debug)
-            return (x, fx)
+            return (x, fx, dfx)
 
         # Initialize d values (used to determine step size) to outside of bracket
         if abs(e) > tol1:
@@ -315,7 +319,7 @@ def min_brent(fdf, fdf0=None, x0=0.0, tol=1.0e-6, itmax=100, init_step=1.0e-3):
             # If minimum step in downhill direction goes uphill, minimum has been found
             if fu > fx:
                 info(" @MINIMIZE: Finished minimization, energy = %f" % fx, verbosity.debug)
-                return (x, fx)
+                return (x, fx,dfx)
         # order for next step: a < u (later x) < b
         if fu <= fx:
             if u >= x:
@@ -353,7 +357,7 @@ def min_brent(fdf, fdf0=None, x0=0.0, tol=1.0e-6, itmax=100, init_step=1.0e-3):
     # Exit if maximum number of iterations exceeded
     info(" @MINIMIZE: Error -- maximum iterations for minimization (%d) exceeded, exiting minimization" % itmax, verbosity.low)
     info(" @MINIMIZE: Finished minimization, energy = %f" % fx, verbosity.debug)
-    return (x, fx)
+    return (x, fx,dfx)
 
 # Approximate line search
 def min_approx(fdf, x0, fdf0=None, d0=None, big_step=100.0, tol=1.0e-6, itmax=100):
@@ -470,61 +474,43 @@ def BFGS(x0, d0, fdf, fdf0=None, invhessian=None, big_step=100, tol=1.0e-6, itma
     """BFGS minimization. Uses approximate line minimizations.
     Does one step.
         Arguments:
-            fdf: function and gradient
-            fdf0: initial function and gradient value
-            d0: initial direction for line minimization
             x0: initial point
+            d0: initial direction for line minimization
+            fdf: function and gradient (mapper)
+            fdf0: initial function and gradient value
             big_step: limit on step length
             tol: convergence tolerance
             itmax: maximum number of allowed iterations
     """
+   
+    		# Original function value, gradient, other initializations
+    		# initial guess of inverse Hessian matrix is unit matrix
+    		#zeps = 1.0e-10
     
-    # Original function value, gradient, other initializations
-    # initial guess of inverse Hessian matrix is unit matrix
-    zeps = 1.0e-10
-    if fdf0 is None: fdf0 = fdf(x0)
-    f0, df0 = fdf0
-    n = len(x0.flatten())
-    if invhessian is None: invhessian = np.eye(n)
-    dg = np.zeros(n)
-    g = df0.flatten()
-    hdg = np.zeros(n)
-    x = np.zeros(n)
-    linesum = np.dot(x0.flatten(), x0.flatten())
-    
-    # Initial line direction (negative gradient at x0)
-    xi = d0
+                #if fdf0 is None: fdf0 = fdf(x0)
 
+    info(" @MINIMIZE: Started BFGS", verbosity.debug)
+    zeps = 1.0e-10
+    u0, g0 = fdf0
+    
     # Maximum step size
+    n = len(x0.flatten())
+    linesum = np.dot(x0.flatten(), x0.flatten())
     big_step = big_step * max(np.sqrt(linesum), n)
 
     # Perform approximate line minimization in direction d0
-    x, fx, dfx = min_approx(fdf, x0, fdf0, xi, big_step, tol, itmax) 
 
-    info(" @MINIMIZE: Started BFGS", verbosity.debug)
+    x, u, g = min_approx(fdf, x0, fdf0, d0, big_step, tol, itmax) 
+    d_x = np.subtract(x, x0)
 
-    # Update line direction (xi) and current point (x0)
-    xi = np.subtract(x, x0).flatten()
-    x0 = x
+    # Update invhessian.
+    d_g = np.subtract(g, g0)
+    hdg = np.dot(invhessian, d_g.flatten())
 
-    # Store old gradient
-    dg = g
-
-    # Get new gradient      
-    g = dfx
-    info(" @MINIMIZE: Updated gradient", verbosity.debug)
-    g = g.flatten()
-
-    # Compute difference of gradients
-    dg = np.subtract(g, dg)
-
-    # Difference of gradients times current matrix 
-    hdg = np.dot(invhessian, dg)
-
-    fac = np.dot(dg.flatten(), xi.flatten())
-    fae = np.dot(dg.flatten(), hdg.flatten())
-    sumdg = np.dot(dg.flatten(), dg.flatten())
-    sumxi = np.dot(xi.flatten(), xi.flatten())
+    fac = np.dot(d_g.flatten(), d_x.flatten())
+    fae = np.dot(d_g.flatten(), hdg)
+    sumdg = np.dot(d_g.flatten(), d_g.flatten())
+    sumxi = np.dot(d_x.flatten(), d_x.flatten())
 
     # Skip update if not 'fac' sufficiently positive
     if fac > np.sqrt(zeps * sumdg * sumxi):
@@ -532,20 +518,20 @@ def BFGS(x0, d0, fdf, fdf0=None, invhessian=None, big_step=100, tol=1.0e-6, itma
         fad = 1.0 / fae
 
         # Compute BFGS term
-        dg = np.subtract(fac * xi, fad * hdg)
-
-        invhessian = invhessian + np.outer(xi, xi) * fac - np.outer(hdg, hdg) * fad + np.outer(dg, dg) * fae        
-        info(" @MINIMIZE: Updated hessian", verbosity.debug)
+        dg = np.subtract((fac * d_x).flatten(), fad * hdg)
+        invhessian +=  np.outer(d_x, d_x) * fac - np.outer(hdg, hdg) * fad + np.outer(dg, dg) * fae        
+        info(" @MINIMIZE: Updated invhessian", verbosity.debug)
     else:
-        info(" @MINIMIZE: Skipped hessian update; direction x gradient insufficient", verbosity.debug)
+        info(" @MINIMIZE: Skipped invhessian update; direction x gradient insufficient", verbosity.debug)
     
     # Update direction
-    xi = np.dot(invhessian, -g)
+    d = np.dot(invhessian, -g.flatten())
     info(" @MINIMIZE: Updated search direction", verbosity.debug)
-    return (x, fx, xi, invhessian)
+    d =d.reshape (d_x.shape)
+    return (d_x, u,-g, d)
 
 
-# BFGSTRM algorithm
+# BFGS algorithm trust radius method
 def BFGSTRM(x0,u0,f0,h0,tr,mapper,big_step=100):
 
     """ Input: x0 = previous accepted positions 
@@ -565,18 +551,17 @@ def BFGSTRM(x0,u0,f0,h0,tr,mapper,big_step=100):
     while (not accept):
 
         #Find new movement direction candidate
-        d_x = TRM_MIN(f0.flatten(),h0,tr)
-
+        d_x = min_trm(f0,h0,tr)
         #Make movement  and get new energy (u)  and forces(f) using mapper 
         x = x0 + d_x
         u,g = mapper(x)
-        f =-g.flatten()
+        f =-g
 
         #Compute energy gain
 
         true_gain     = u - u0 
         expected_gain = -np.dot(f0.flatten(),d_x.flatten())
-        expected_gain += 0.5*np.dot(  d_x.T,np.dot(h0,d_x) )
+        expected_gain += 0.5*np.dot(  d_x.reshape((1,d_x.size)), np.dot(h0,d_x.reshape((d_x.size,1))) )
         harmonic_gain = -0.5*np.dot( d_x.flatten(),(f0+f).flatten() )
 
         #Compute quality:
@@ -600,10 +585,9 @@ def BFGSTRM(x0,u0,f0,h0,tr,mapper,big_step=100):
     d_f      = np.subtract(f, f0)
     TRM_UPDATE( d_x.flatten(),d_f.flatten(),h0 )
 
-#Finally, return  "accept" and d_x
-    return d_x
+    return (d_x, u, f)
 
-# TRM functions (TRM_UPDATE and TRM_MIN)
+# TRM functions (TRM_UPDATE and min_trm)
 
 
 def TRM_UPDATE(dx,df,h):
@@ -628,7 +612,7 @@ def TRM_UPDATE(dx,df,h):
 
     h   += h1 - h2
 
-def TRM_MIN(f, h, tr):
+def min_trm(f, h, tr):
         """ Return the minimum of
         E(dx) = -(F * dx + 0.5 * ( dx * H * dx ),
         whithin dx**2 <tr
@@ -651,6 +635,7 @@ def TRM_MIN(f, h, tr):
 
         #Resize
         ndim = f.size
+        shape=f.shape
         f=f.reshape((1,ndim))
 
         #Diagonalize
@@ -685,8 +670,8 @@ def TRM_MIN(f, h, tr):
                 print "problem in 'find'!!!"
             if (np.linalg.norm(DXE)<tr):
                 DX=np.dot(w,DXE)
-        #print "trivial DX"
-                return DX.flatten()
+                DX=DX.reshape(shape)
+                return DX
  
         #If we haven't luck. Let's start with the iteration
         lamb_min = max(0.0,-min_d)
@@ -715,7 +700,8 @@ def TRM_MIN(f, h, tr):
           #  print 'iter',i,lamb, lamb_max,lamb_min,y,dy
 
         DX=np.dot(w,DXE)
-        return DX.flatten()
+        DX=DX.reshape(shape)
+        return DX
 
 # L-BFGS algorithm with approximate line search
 def L_BFGS(x0, d0, fdf, qlist, glist, fdf0=None, big_step=100, tol=1.0e-6, itmax=100, m=0, k=0):

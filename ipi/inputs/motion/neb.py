@@ -63,9 +63,9 @@ class InputNEB(InputDictionary):
                               "default"   : input_default(factory=np.zeros, args = (0,)),
                               "help"      : "The previous force in an optimization step.",
                               "dimension" : "force"}),
-                "old_direction_cgsd": (InputArray, {"dtype" : float,
+                "old_direction": (InputArray, {"dtype" : float,
                               "default" : input_default(factory=np.zeros, args = (0,)),
-                              "help"    : "The previous direction in a CG/SD optimization."}),
+                              "help"    : "The previous direction."}),
                 "biggest_step": (InputValue, {"dtype" : float,
                               "default" : 100.0,
                               "help"    : "The maximum step size for (L)-BFGS line minimizations."}),
@@ -106,7 +106,7 @@ class InputNEB(InputDictionary):
         self.tolerances.store(neb.tolerances)
         self.mode.store(neb.mode)
         self.old_force.store(neb.old_f)
-        self.old_direction_cgsd.store(neb.old_d)
+        self.old_direction.store(neb.old_d)
         self.biggest_step.store(neb.big_step)
         self.invhessian_bfgs.store(neb.invhessian)
         self.qlist_lbfgs.store(neb.qlist)

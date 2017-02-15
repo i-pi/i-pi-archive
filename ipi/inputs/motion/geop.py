@@ -79,7 +79,7 @@ class InputGeop(InputDictionary):
                               "default"  : input_default(factory=np.zeros, args = (0,)),
                               "help"     : "The previous force in an optimization step.",
                               "dimension": "force"}),
-                "old_direction_cgsd": (InputArray, {"dtype" : float,
+                "old_direction": (InputArray, {"dtype" : float,
                               "default"  : input_default(factory=np.zeros, args = (0,)),
                               "help"     : "The previous direction in a CG or SD optimization."}),
                 "invhessian_bfgs" : (InputArray, {"dtype" : float,
@@ -110,27 +110,29 @@ class InputGeop(InputDictionary):
             return
 
 
-        self.ls_options.store(geop.ls_options)
-        self.tolerances.store(geop.tolerances)
         self.mode.store(geop.mode)
-        self.old_force.store(geop.old_f)
-        self.biggest_step.store(geop.big_step)
+        self.tolerances.store(geop.tolerances)
 
         if geop.mode == "bfgs":
+              self.old_direction.store(geop.old_d)
               self.invhessian_bfgs.store(geop.invhessian)
+              self.biggest_step.store(geop.big_step)
         elif geop.mode == "bfgstrm":
-              self.old_pos.store(geop.old_x)
-              self.old_pot.store(geop.old_u)
               self.hessian_trm.store(geop.hessian)
               self.tr_trm.store(geop.tr)
+              self.biggest_step.store(geop.big_step)
         elif geop.mode == "lbfgs":
               self.qlist_lbfgs.store(geop.qlist)
               self.glist_lbfgs.store(geop.glist)
               self.corrections_lbfgs.store(geop.corrections)
+              self.biggest_step.store(geop.big_step)
+              self.old_force.store(geop.old_f)
         elif geop.mode == "sd":
-              self.old_direction_cgsd.store(geop.old_d)
+              self.ls_options.store(geop.ls_options)
         elif geop.mode == "cg":
-              self.old_direction_cgsd.store(geop.old_d)
+              self.old_direction.store(geop.old_d)
+              self.ls_options.store(geop.ls_options)
+              self.old_force.store(geop.old_f)
 
 
 
