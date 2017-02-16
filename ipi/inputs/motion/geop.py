@@ -63,6 +63,12 @@ class InputGeop(InputDictionary):
                 "biggest_step": (InputValue, {"dtype" : float,
                               "default"  : 100.0,
                               "help"     : "The maximum step size for (L)-BFGS line minimizations."}),
+                "scale_lbfgs" : (InputValue, {"dtype" : int,
+                              "default"  : 2,
+                              "help"     : """Scale choice for the initial hessian.
+                                            0 identity.
+                                            1 Use first member of position/gradient list. 
+                                            2 Use last  member of position/gradient list."""}),
                 "corrections_lbfgs" : (InputValue, {"dtype" : int,
                               "default"  : 5,
                               "help"     : "The number of past vectors to store for L-BFGS."}),
@@ -122,11 +128,12 @@ class InputGeop(InputDictionary):
               self.tr_trm.store(geop.tr)
               self.biggest_step.store(geop.big_step)
         elif geop.mode == "lbfgs":
+              self.old_direction.store(geop.old_d)
               self.qlist_lbfgs.store(geop.qlist)
               self.glist_lbfgs.store(geop.glist)
               self.corrections_lbfgs.store(geop.corrections)
+              self.scale_lbfgs.store(geop.scale)
               self.biggest_step.store(geop.big_step)
-              self.old_force.store(geop.old_f)
         elif geop.mode == "sd":
               self.ls_options.store(geop.ls_options)
         elif geop.mode == "cg":

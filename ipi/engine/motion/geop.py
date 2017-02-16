@@ -45,6 +45,7 @@ class GeopMotion(Motion):
         force: force/change in force tolerance foe ending minimization
         position: change in position tolerance for ending minimization}
         corrections_lbfgs: number of corrections to be stored for L-BFGS
+        scale_lbfgs: Scale choice for the initial hessian.
         qlist_lbfgs: list of previous positions (x_n+1 - x_n) for L-BFGS. Number of entries = corrections_lbfgs
         glist_lbfgs: list of previous gradients (g_n+1 - g_n) for L-BFGS. Number of entries = corrections_lbfgs
     """
@@ -62,6 +63,7 @@ class GeopMotion(Motion):
                  ls_options={"tolerance": 1e-6, "iter": 100, "step": 1e-3, "adaptive": 1.0},
                  tolerances={"energy": 1e-8, "force": 1e-8, "position": 1e-8},
                  corrections_lbfgs=5,
+                 scale_lbfgs=1,
                  qlist_lbfgs=np.zeros(0, float),
                  glist_lbfgs=np.zeros(0, float)):
         """Initialises GeopMotion.
@@ -96,6 +98,7 @@ class GeopMotion(Motion):
                self.optimizer    = BFGSTRMOptimizer()
         elif self.mode == "lbfgs":
                self.corrections  = corrections_lbfgs
+               self.scale        = scale_lbfgs
                self.qlist        = qlist_lbfgs
                self.glist        = glist_lbfgs
                self.optimizer    = LBFGSOptimizer()
@@ -318,7 +321,6 @@ class BFGSOptimizer(DummyOptimizer):
 
         self.old_d[:] = new_d
 
-
         #TODO update position without computing the forces
         #TODO update the forces with 'dfx'
         #TODO update the potential energy with 'fx'
@@ -396,64 +398,77 @@ class LBFGSOptimizer(DummyOptimizer):
         super(LBFGSOptimizer,self).bind(geop)
 
         self.corrections = geop.corrections
-        self.qlist = geop.qlist
-        self.glist = geop.glist
         self.gm.bind(self)
         self.big_step = geop.big_step       
         self.ls_options = geop.ls_options   
+
+        if geop.qlist.size != (self.corrections * self.beads.q.size):
+            if geop.qlist.size == 0:
+                geop.qlist = np.zeros((self.corrections, self.beads.q.size), float)
+            else:
+                raise ValueError("qlist size does not match system size")
+        if geop.glist.size != (self.corrections * self.beads.q.size):
+            if geop.glist.size == 0:
+                geop.glist = np.zeros((self.corrections, self.beads.q.size), float)
+            else:
+                raise ValueError("qlist size does not match system size")
+
+
+        self.qlist = geop.qlist
+        self.glist = geop.glist
+
+	if geop.scale not in [0,1,2]:
+            raise ValueError("Scale option is not valid")
+
+        self.scale = geop.scale
 
 
     def step(self, step=None):
         """ Does one simulation time step 
             Attributes:
-            ptime: The time taken in updating the velocities.
-            qtime: The time taken in updating the positions.
             ttime: The time taken in applying the thermostat steps.
         """
         
-        self.ptime = 0.0
-        self.ttime = 0.0
         self.qtime = -time.time()
 
         info("\nMD STEP %d" % step, verbosity.debug)
         
-        # Initialize approximate Hessian inverse to the identity and direction
-        # to the steepest descent direction
-        if step == 0:   # or np.sqrt(np.dot(self.gm.d, self.gm.d)) == 0.0: <-- this part for restarting at claimed minimum (optional)
+        if step == 0:  
             info(" @GEOP: Initializing L-BFGS", verbosity.debug)
-            self.gm.d = depstrip(self.forces.f) / np.sqrt(np.dot(self.forces.f.flatten(), self.forces.f.flatten()))
-            # store actual position to previous position
-            self.gm.xold = self.beads.q.copy()
-            # Initialize lists of previous positions and gradient
-            self.qlist = np.zeros((self.corrections, len(self.beads.q.flatten())))
-            self.glist = np.zeros((self.corrections, len(self.beads.q.flatten())))
+            self.old_d += depstrip(self.forces.f) / np.sqrt(np.dot(self.forces.f.flatten(), self.forces.f.flatten()))
 
-        # Current energy and force
-        u0, du0 = (self.forces.pot.copy(), - self.forces.f)
-
-        # Store previous forces
+        self.old_x[:] = self.beads.q
+        self.old_u[:] = self.forces.pot
         self.old_f[:] = self.forces.f
 
-        # Do one iteration of L-BFGS, return new point, function value,
-        # move direction, and current Hessian to use for next iteration
-        # TODO: HERE CALL ON A COPY OF BEADS.Q -- otherwise q is update, first argument should not be touched -- call it xinit
-        self.beads.q, fx, self.gm.d, self.qlist, self.glist = L_BFGS(self.beads.q,
-                self.gm.d, self.gm, self.qlist, self.glist,
-                fdf0=(u0, du0), big_step=self.big_step, tol=self.ls_options["tolerance"],
-                itmax=self.ls_options["iter"],
-                m=self.corrections, k=step)
+        if len(self.fixatoms) > 0:
 
-        info(" @GEOP: Updated position list", verbosity.debug)
-        info(" @GEOP: Updated gradient list", verbosity.debug)
+            for dqb in self.old_f:
+                dqb[self.fixatoms*3] = 0.0
+                dqb[self.fixatoms*3+1] = 0.0
+                dqb[self.fixatoms*3+2] = 0.0
 
-        # x = current position - old position. Used for convergence tolerance
-        x = np.amax(np.absolute(np.subtract(self.beads.q, self.gm.xold)))
-        
-        # Store old position
-        self.gm.xold[:] = self.beads.q
-        
+        fdf0 = (self.old_u,-self.old_f)
+
+        d_x, fx, dfx,new_d, new_qlist, new_glist = L_BFGS(self.old_x,
+                self.old_d, self.gm, self.qlist, self.glist,
+                fdf0, self.big_step, self.ls_options["tolerance"],
+                self.ls_options["iter"],
+                self.corrections,self.scale, step)
+
+        self.old_d[:] = new_d
+        self.qlist[:] = new_qlist 
+        self.glist[:] = new_glist 
+ 
+
+        #TODO update position without computing the forces
+        #TODO update the forces with 'dfx'
+        #TODO update the potential energy with 'fx'
+        self.beads.q += d_x #Meanwhile we update here 
+
         # Exit simulation step
-        self.exitstep(fx, u0, x)
+	d_x_max =np.amax(np.absolute(d_x))
+        self.exitstep(self.forces.pot, self.old_u, d_x_max)
       
 class SDOptimizer(DummyOptimizer):
     """

@@ -483,12 +483,6 @@ def BFGS(x0, d0, fdf, fdf0=None, invhessian=None, big_step=100, tol=1.0e-6, itma
             itmax: maximum number of allowed iterations
     """
    
-    		# Original function value, gradient, other initializations
-    		# initial guess of inverse Hessian matrix is unit matrix
-    		#zeps = 1.0e-10
-    
-                #if fdf0 is None: fdf0 = fdf(x0)
-
     info(" @MINIMIZE: Started BFGS", verbosity.debug)
     zeps = 1.0e-10
     u0, g0 = fdf0
@@ -499,7 +493,6 @@ def BFGS(x0, d0, fdf, fdf0=None, invhessian=None, big_step=100, tol=1.0e-6, itma
     big_step = big_step * max(np.sqrt(linesum), n)
 
     # Perform approximate line minimization in direction d0
-
     x, u, g = min_approx(fdf, x0, fdf0, d0, big_step, tol, itmax) 
     d_x = np.subtract(x, x0)
 
@@ -527,7 +520,7 @@ def BFGS(x0, d0, fdf, fdf0=None, invhessian=None, big_step=100, tol=1.0e-6, itma
     # Update direction
     d = np.dot(invhessian, -g.flatten())
     info(" @MINIMIZE: Updated search direction", verbosity.debug)
-    d =d.reshape (d_x.shape)
+    d =d.reshape(d_x.shape)
     return (d_x, u,-g, d)
 
 
@@ -704,7 +697,7 @@ def min_trm(f, h, tr):
         return DX
 
 # L-BFGS algorithm with approximate line search
-def L_BFGS(x0, d0, fdf, qlist, glist, fdf0=None, big_step=100, tol=1.0e-6, itmax=100, m=0, k=0):
+def L_BFGS(x0, d0, fdf, qlist, glist, fdf0=None, big_step=100, tol=1.0e-6, itmax=100,m=0, scale=2,k=0):
     
     """L-BFGS minimization. Uses approximate line minimizations.
     Does one step.
@@ -722,77 +715,58 @@ def L_BFGS(x0, d0, fdf, qlist, glist, fdf0=None, big_step=100, tol=1.0e-6, itmax
             itmax = maximum number of allowed iterations
     """
     
-    # Original function value, gradient, other initializations
-    # TODO: x0=xinit.copy()
-    zeps = 1.0e-10
-    if fdf0 is None: fdf0 = fdf(x0)
-    f0, df0 = fdf0
-    n = len(x0.flatten())
-    dg = np.zeros(n)
-    g = df0
-    x = np.zeros(n)
-    linesum = np.dot(x0.flatten(), x0.flatten())
+    zeps  = 1.0e-10
+    n     = len(x0.flatten())
     alpha = np.zeros(m)
-    beta = np.zeros(m)
-    rho = np.zeros(m)
-    q = np.zeros(n)
-    
-    # Initial line direction
-    xi = d0
+    beta  = np.zeros(m)
+    rho   = np.zeros(m)
 
+    u0, g0 = fdf0
+    
     # Maximum step size
+    linesum = np.dot(x0.flatten(), x0.flatten())
     big_step = big_step * max(np.sqrt(linesum), n)
 
+
     # Perform approximate line minimization in direction d0
-    x, fx, dfx = min_approx(fdf, x0, fdf0, xi, big_step, tol, itmax)
+    x, u, g = min_approx(fdf, x0, fdf0, d0, big_step, tol, itmax)
 
-    info(" @MINIMIZE: Started L-BFGS", verbosity.debug)
+    # Compute difference of positions (gradients)
+    # Build list of previous 'd_positions (d_gradients)'
 
-    # Update line direction (xi) and current point (x0)
-    xi = np.subtract(x, x0)
-
-    # Build list of previous positions
+    d_x = np.subtract(x, x0)
     if k < m:
-        qlist[k] = xi.flatten()
+        qlist[k] = d_x.flatten()
     else:
         qlist = np.roll(qlist, -1, axis=0)
-        qlist[m - 1] = xi.flatten()
+        qlist[m - 1] = d_x.flatten()
     
-    # Update current point
-    x0 = x
-
-    # Store old gradient
-    dg = g
-
-    # Get new gradient      
-    g = dfx
-    info(" @MINIMIZE: Updated gradient", verbosity.debug)
-
-    # Compute difference of gradients
-    q = g.flatten()
-    dg = np.subtract(g, dg)
-
-    # Build list of previous gradients
+    d_g = np.subtract(g, g0)
     if k < m:
-        glist[k] = dg.flatten()
+        glist[k] = d_g.flatten()
     else:
         glist = np.roll(glist, -1, axis=0)
-        glist[m - 1] = dg.flatten()
+        glist[m - 1] = d_g.flatten()
 
-    fac = np.dot(dg.flatten(), xi.flatten())
-    sumdg = np.dot(dg.flatten(), dg.flatten())
-    sumxi = np.dot(xi.flatten(), xi.flatten())
-
-    # Determine bounds for L-BFGS 'two loop recursion'
+    # Update direction.        
+    # 1_Determine bounds for L-BFGS 'two loop recursion'
     if k < (m - 1):
         bound1 = k
         bound2 = k + 1
     else:
         bound1 = m - 1
         bound2 = m
-        
+
+    # 2
+    q = g.flatten()
+
+    # 3_Loops
+    fac = np.dot(d_g.flatten(), d_x.flatten())
+    sumdg = np.dot(d_g.flatten(), d_g.flatten())
+    sumdx = np.dot(d_x.flatten(), d_x.flatten())
+
     # Skip update if not 'fac' sufficiently positive
-    if fac > np.sqrt(zeps * sumdg * sumxi):
+    if fac > np.sqrt(zeps * sumdg * sumdx):
         
         # Begin two loop recursion:
         # First loop
@@ -803,26 +777,29 @@ def L_BFGS(x0, d0, fdf, qlist, glist, fdf0=None, big_step=100, tol=1.0e-6, itmax
 
         info(" @MINIMIZE: First L-BFGS loop recursion completed", verbosity.debug)
 
-        # Two possiblities for scaling: using first or most recent 
-        # members of the gradient and position lists
-        hk = np.dot(glist[bound1], qlist[bound1]) / np.dot(glist[bound1], glist[bound1])
-        #hk = np.dot(glist[0], qlist[0]) / np.dot(glist[0], glist[0])
-        xi = hk * q
+        if scale == 0:
+            hk = 1.0
+        elif scale == 1:
+            hk = np.dot(glist[0], qlist[0]) / np.dot(glist[0], glist[0])
+        elif scale == 2:
+            hk = np.dot(glist[bound1], qlist[bound1]) / np.dot(glist[bound1], glist[bound1])
 
-        # Second loop
+        d =  hk * q
+ 
+       # Second loop
         for j in range(0, bound2, 1):
-            beta[j] = rho[j] * np.dot(glist[j], xi)
-            xi = xi + qlist[j] * (alpha[j] - beta[j])
+            beta[j] = rho[j] * np.dot(glist[j], d)
+            d = d + qlist[j] * (alpha[j] - beta[j])
 
         info(" @MINIMIZE: Second L-BFGS loop recursion completed", verbosity.debug)
+        d = -1.0 * d.reshape(d0.shape)
 
     else:
         info(" @MINIMIZE: Skipped direction update; direction * gradient insufficient", verbosity.debug)
+        d = d0
 
-    # Update direction xi #TODO: MOVE THIS TO OUTSIDE OF IF/ELSE SO RUNS EVERY TIME
-    xi = -1.0 * xi.reshape(d0.shape)
     info(" @MINIMIZE: Updated search direction", verbosity.debug)
-    return (x, fx, xi, qlist, glist)
+    return (d_x, u,-g, d, qlist, glist)
 
 # Bracketing for NEB, TODO: DEBUG THIS IF USING SD OR CG OPTIONS FOR NEB
 def bracket_neb(fdf, fdf0=None, x0=0.0, init_step=1.0e-3): 
