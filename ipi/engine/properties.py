@@ -350,6 +350,12 @@ class Properties(dobject):
                        and bead (both zero based). If bead is not specified, refers to the centroid.""",
                       "size" : 3,
                       "func" : (lambda atom="", bead="-1": self.get_atom_vec(self.beads.p/self.beads.m3, atom=atom, bead=bead))},
+      "vcom": {     "dimension" : "velocity",
+                      "help": "The COM velocity (x,y,z) of the system or a chosen species.",
+                       "longhelp": """The center of mass velocity (x,y,z) of the system or of a species. Takes arguments label
+                       (default to all species) and bead (zero based). If bead is not specified, refers to the centroid.""",
+                      "size" : 3,
+                      "func" : self.get_vcom },      
       "atom_p": {     "dimension" : "momentum",
                       "help": "The momentum (x,y,z) of a particle given its index.",
                       "longhelp": """The momentum (x,y,z) of a particle given its index. Takes arguments index
@@ -1018,6 +1024,23 @@ class Properties(dobject):
 
       return tkcv
 
+   def get_vcom(self, latom="", bead=-1):
+        """Computes the center of mass velocity for the system or for a specified species"""
+       
+        if bead<0:
+            p = depstrip(self.beads.pc)
+        else:
+            p = depstrip(self.beads[bead])
+        pcom = np.zeros(3)
+        tm = 0
+        for i in range(self.beads.natoms):
+            if (latom != "" and latom != self.beads.names[i]): continue    
+            
+            tm += self.beads.m[i]
+            pcom += p[3*i:3*(i+1)]
+        pcom /= tm
+        return pcom
+          
    def get_kij(self, ni="0", nj="0"):
       """Calculates the quantum centroid virial kinetic energy
       TENSOR estimator for two possibly different atom indices.
