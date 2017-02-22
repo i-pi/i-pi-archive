@@ -134,7 +134,7 @@ class Simulation(dobject):
         #! TODO - does this have any meaning now that we introduce the smotion class?
         if self.mode == "md" and len(syslist) > 1:
             warning("Multiple systems will evolve independently in a '" + self.mode + "' simulation.")
-        
+
         self.fflist = {}
         for f in fflist:
             self.fflist[f.name] = f
@@ -179,7 +179,7 @@ class Simulation(dobject):
         self.chk.bind(self)
 
         if not self.smotion is None:
-            self.smotion.bind(self.syslist, self.prng)            
+            self.smotion.bind(self.syslist, self.prng)
 
     def softexit(self):
         """Deals with a soft exit request.
@@ -210,14 +210,14 @@ class Simulation(dobject):
 
         for k, f in self.fflist.iteritems():
             f.run()
-        
-        
+
+
         # prints inital configuration -- only if we are not restarting
         if self.step == 0:
             self.step = -1
             # must use multi-threading to avoid blocking in multi-system runs with WTE
             if self.threading:
-                stepthreads = []            
+                stepthreads = []
                 for o in self.outputs:
                     st = threading.Thread(target=o.write, name=o.filename)
                     st.daemon = True
@@ -231,7 +231,7 @@ class Simulation(dobject):
             else:
                 for o in self.outputs:
                     o.write()  # threaded output seems to cause random hang-ups. should make things properly thread-safe
-                
+
             self.step = 0
 
         steptime = 0.0

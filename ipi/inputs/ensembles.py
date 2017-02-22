@@ -34,8 +34,8 @@ class InputEnsemble(Input):
          Defaults to 1.0.
       eens: An optional float giving the ensemble contribution to the conserved
          quantity.
-      stress: An optional array containing the terms of the stress tensor as 
-         [pxx, pxy, pxz, pyx, pyy .. pzy, pzz]. 
+      stress: An optional array containing the terms of the stress tensor as
+         [pxx, pxy, pxz, pyx, pyy .. pzy, pzz].
    """
 
    fields={
@@ -54,13 +54,13 @@ class InputEnsemble(Input):
            "eens" : (InputValue, {"dtype"     : float,
                                          "default"   : 0.0,
                                          "help"      : "The ensemble contribution to the conserved quantity.",
-                                         "dimension" : "energy"}),   
+                                         "dimension" : "energy"}),
      	   "bias" : (InputForces, { "help"  : InputForces.default_help,
-                                           "default" : [] }),      
+                                           "default" : [] }),
            "bias_weights" : (InputArray, {"dtype"        : float,
                                           "default"      : np.zeros(0),
                                           "help"         : "Bias weights.",
-                                          "dimension"    : "undefined"}), 
+                                          "dimension"    : "undefined"}),
            "hamiltonian_weights" : (InputArray, {"dtype"        : float,
                                           "default"      : np.zeros(0),
                                           "help"         : "Hamiltonian weights.",
@@ -99,9 +99,9 @@ class InputEnsemble(Input):
       super(InputEnsemble,self).fetch()
 
       ens=Ensemble(eens=self.eens.fetch(), temp=self.temperature.fetch(),
-                   pext = self.pressure.fetch(), stressext = self.stress.fetch(), 
+                   pext = self.pressure.fetch(), stressext = self.stress.fetch(),
                    bcomponents = self.bias.fetch(), bweights=self.bias_weights.fetch(),
                    hweights=self.hamiltonian_weights.fetch())
 
-      
+
       return ens

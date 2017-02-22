@@ -41,9 +41,9 @@ def ensemble_swap(ens1, ens2):
     if len(ens1.hweights) != len(ens2.hweights):
         raise ValueError("Cannot exchange ensembles that are described by different forces")
     if not np.array_equal(ens1.bweights, ens2.bweights):
-        ens1.bweights, ens2.bweights = ens2.bweights.copy(), ens1.bweights.copy()
+        ens1.bweights, ens2.bweights = depstrip(ens2.bweights).copy(), depstrip(ens1.bweights).copy()
     if not np.array_equal(ens1.hweights, ens2.hweights):
-        ens1.hweights, ens2.hweights = ens2.hweights.copy(), ens1.hweights.copy()
+        ens1.hweights, ens2.hweights = depstrip(ens2.hweights).copy(), depstrip(ens1.hweights).copy()
 
 
 class Ensemble(dobject):
@@ -143,7 +143,7 @@ class Ensemble(dobject):
         for ic in xrange(len(self.forces.mforces)):
             sfc=ScaledForceComponent(self.forces.mforces[ic],1.0)
             self.bias.add_component(self.forces.mbeads[ic], self.forces.mrpc[ic], sfc)
-            dget(sfc,"scaling")._func = lambda i=ic: self.hweights[i]-1
+            dget(sfc,"scaling")._func = lambda i=ic : self.hweights[i]-1
             dget(sfc,"scaling").add_dependency(dget(self, "hweights"))
 
         self._elist = []

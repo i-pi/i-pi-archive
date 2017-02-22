@@ -147,10 +147,10 @@ class depend_base(object):
                 self.taint(taintme=False)
             else:
                 self.taint(taintme=tainted)
-                
+
     def hold(self):
         self._active[:] = False
-    
+
     def resume(self):
         self._active[:] = True
         if self._func is None:
@@ -215,7 +215,7 @@ class depend_base(object):
         """
 
         if not self._active: return
-        
+
         self._tainted[:] = True
         for item in self._dependants:
             if (not item()._tainted[0]):
@@ -262,7 +262,7 @@ class depend_base(object):
 
         if not self._synchro is None:
             self._synchro.manual = self._name
-            self.taint(taintme=False)            
+            self.taint(taintme=False)
         elif not self._func is None:
             raise NameError("Cannot set manually the value of the automatically-computed property <" + self._name + ">")
         else:
@@ -725,7 +725,7 @@ def deppipe(objfrom, memberfrom, objto, memberto, item=-1):
     dto = dget(objto, memberto)
     dpipe(dfrom, dto, item)
 
-    
+
 def dpipe(dfrom, dto, item=-1):
     if item < 0:
         dto._func = lambda: dfrom.get()
@@ -753,7 +753,7 @@ def dcopy(dfrom, dto):
     if hasattr(dfrom, "_bval"):
         dto._bval = dfrom._bval
 
-def depraise(exception): 
+def depraise(exception):
     raise exception
 
 
@@ -807,7 +807,7 @@ def dd(dobj):
     if not issubclass(dobj.__class__, dobject):
         raise ValueError("Cannot access a ddirect view of an object which is not a subclass of dobject")
     return dobj._direct
-    
+
 class ddirect(object):
     """Gives a "view" of a depend object where one can directly access its
     depend_base members."""
