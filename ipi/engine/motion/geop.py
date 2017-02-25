@@ -313,6 +313,10 @@ class BFGSOptimizer(DummyOptimizer):
         fdf0 = (self.old_u,-self.old_f)
          
         # Do one iteration of BFGS, return movement (d_x), energy (fx), gradient (dfx).
+        # MR: Note that energy and gradient are already stored in every step from self.gm.dforces.f and so on.
+        # MR: All the outputs of mintools should be adjusted not to return at least fx and dfx 
+        # MR: Note also that self.gm.dbeads.q also contains the updated geometries so even that could/should be done automatically
+        # MR: If I'm not mistaken, even in mintools itself, 
         # The invhessian is updated inside.
         d_x,fx,dfx,new_d = BFGS(self.old_x,
                 self.old_d, self.gm, fdf0, self.invhessian,
@@ -321,11 +325,11 @@ class BFGSOptimizer(DummyOptimizer):
 
         self.old_d[:] = new_d
 
-        #TODO update position without computing the forces
-        #TODO update the forces with 'dfx'
-        #TODO update the potential energy with 'fx'
-           
-        self.beads.q += d_x #Meanwhile we update here
+        #TODO update the forces with 'dfx' <- MR: no, self.gm.dforces hold all real info.
+        #TODO update the potential energy with 'fx' <- MR: no, self.gm.dforces hold all real info.
+          
+        self.beads.q += d_x #Meanwhile we update here <- should be really self.gm.dbeads.q or something like that
+        self.forces.transfer_forces(self.gm.dforces) #This forces the update of the forces before full update from geometries is triggered
 
         # Exit simulation step
         d_x_max =np.amax(np.absolute(d_x))

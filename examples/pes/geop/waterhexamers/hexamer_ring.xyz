@@ -1,5 +1,5 @@
 18
-config="ring" Lattice="50 0 0 0 50 0 0 0 50" Properties=species:S:1:pos:R:3 E_BLYP_AV5Z=-0.1060 E_CCSDt=0.0735 E_DMC=0.0667 position{angstrom}
+config="ring" Lattice="50 0 0 0 50 0 0 0 50" Properties=species:S:1:pos:R:3 E_BLYP_AV5Z=-0.1060 E_CCSDt=0.0735 E_DMC=0.0667
 O  4.461673 5.294623 8.790681
 H  4.566428 5.800524 7.980776
 H  5.313898 4.817401 8.906505

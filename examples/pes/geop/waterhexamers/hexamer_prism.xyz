@@ -1,5 +1,5 @@
 18
-config="prism" Lattice="50 0 0 0 50 0 0 0 50" Properties=species:S:1:pos:R:3 E_BLYP_AV5Z=0.0 E_CCSDt=0.0 E_DMC=0.0 position{angstrom}
+config="prism" Lattice="50 0 0 0 50 0 0 0 50" Properties=species:S:1:pos:R:3 E_BLYP_AV5Z=0.0 E_CCSDt=0.0 E_DMC=0.0 
 O  1.519957 -0.391505 1.369232
 H  0.589965 -0.720789 1.503428
 H  2.026756 -0.696488 2.126741
