@@ -1,4 +1,4 @@
-<simulation verbosity='high'>
+<simulation verbosity="high">
   <output prefix="water">
     <properties stride="5" filename="out"> [ step, time{picosecond}, conserved, temperature{kelvin}, kinetic_cv, potential, 
     pressure_cv{megapascal}, isotope_zetasc(1.998;H), isotope_zetasc(1.1253;O)] </properties>
@@ -17,13 +17,13 @@
       <velocities mode="thermal" units="kelvin"> 298 </velocities>
     </initialize>
     <forces>
-      <force forcefield='lmpserial'></force>
+      <force forcefield="lmpserial"></force>
     </forces>
     <ensemble>
       <temperature units="kelvin">298</temperature>
     </ensemble>
-    <motion mode='dynamics'>
-      <dynamics mode='nvt'>
+    <motion mode="dynamics">
+      <dynamics mode="nvt">
 	<thermostat mode="pile_g">
           <tau units="femtosecond">25</tau>
 	</thermostat>

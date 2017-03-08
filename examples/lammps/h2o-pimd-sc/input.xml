@@ -1,8 +1,8 @@
 <simulation verbosity="medium">
    <output prefix="simulation">
       <properties stride="1" filename="out">  [ step, time{picosecond}, conserved{electronvolt}, temperature{kelvin}, kinetic_opsc{electronvolt}, kinetic_tdsc{electronvolt}, potential_opsc{electronvolt}, potential_tdsc{electronvolt}, pressure_cv{megapascal} ] </properties>
-    <trajectory filename='fsc' stride='1'> forces_sc </trajectory>
-    <trajectory filename='f' stride='1'> forces </trajectory>
+    <trajectory filename="fsc" stride="1"> forces_sc </trajectory>
+    <trajectory filename="f" stride="1"> forces </trajectory>
       <checkpoint stride="200"/>
    </output>
    <total_steps>10000</total_steps>
