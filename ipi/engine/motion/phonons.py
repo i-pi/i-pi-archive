@@ -48,13 +48,10 @@ class DynMatrixMover(Motion):
         #Finite difference option.
         self.mode = mode
         if self.mode == "fd":
-            print "chose fd"
             self.phcalc = FDPhononCalculator()
         elif self.mode == "nmfd":
-            print "chose nmfd"
             self.phcalc = NMFDPhononCalculator()
         elif self.mode == "enmfd":
-            print "chose enmfd"
             self.phcalc = ENMFDPhononCalculator()
 
         self.deltaw = output_shift
@@ -247,8 +244,6 @@ class FDPhononCalculator(DummyPhononCalculator):
     def step(self, step=None):
         """Computes one row of the dynamic matrix."""
 
-        
-        print "#fd step number  :", step
         #initializes the finite deviation
         dev = np.zeros(3 * self.dm.beads.natoms, float)
         dev[step] = self.dm.deltax
@@ -289,7 +284,6 @@ class NMFDPhononCalculator(FDPhononCalculator):
     def step(self, step=None):
         """Computes one row of the dynamic matrix."""
 
-        print "#nmfd step number  :", self.dm.dynmatrix
         #initializes the finite deviation
         vknorm = np.sqrt(np.dot(self.dm.V[:,step],self.dm.V[:,step]))
         dev = np.real(self.dm.V[:,step]/vknorm)*self.dm.deltax
@@ -313,7 +307,6 @@ class ENMFDPhononCalculator(NMFDPhononCalculator):
     def step(self, step=None):
         """Computes one row of the dynamic matrix."""
 
-        print "#enmfd step number  :", step
         #initializes the finite deviation
         vknorm = np.sqrt(np.dot(self.dm.V[:,step],self.dm.V[:,step]))
         edelta = vknorm*np.sqrt(self.dm.deltae*2.0/abs(self.dm.w2[step]))
@@ -328,4 +321,3 @@ class ENMFDPhononCalculator(NMFDPhononCalculator):
         #computes a row of the refined dynmatrix, in the basis of the eigenvectors of the first dynmatrix 
         dmrowk = (plus-minus)/(2*edelta/vknorm)
         self.dm.refdynmatrix[step] = np.dot(self.dm.V.T, dmrowk)
-
