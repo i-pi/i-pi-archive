@@ -175,7 +175,7 @@ class DynMatrixMover(Motion):
             r = np.dot(transfmatrix.T,np.dot(dm,transfmatrix))
             re, rU = np.linalg.eigh(r)
             re[0:3] = 0.0
-            r = np.dot(rU.T, no.dot(np.diag(re), rU))
+            r = np.dot(rU.T, np.dot(np.diag(re), rU))
             return r
 
         elif(self.asr=="poly"):
@@ -211,7 +211,7 @@ class DynMatrixMover(Motion):
             r = np.dot(transfmatrix.T,np.dot(dm,transfmatrix))
             re, rU = np.linalg.eigh(r)
             re[0:6] = 0.0
-            r = np.dot(rU.T, no.dot(np.diag(re), rU))
+            r = np.dot(rU.T, np.dot(np.diag(re), rU))
             return r
 
 class DummyPhononCalculator(dobject):
