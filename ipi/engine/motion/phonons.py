@@ -171,7 +171,12 @@ class DynMatrixMover(Motion):
 
             #Computes the transformation matrix.
             transfmatrix = np.eye(3*self.beads.natoms)-np.dot(D.T,D)
-            return np.dot(transfmatrix.T,np.dot(dm,transfmatrix))
+            r = np.dot(transfmatrix.T,np.dot(dm,transfmatrix))
+            r = np.dot(transfmatrix.T,np.dot(dm,transfmatrix))
+            re, rU = np.linalg.eigh(r)
+            re[0:3] = 0.0
+            r = np.dot(rU.T, no.dot(np.diag(re), rU))
+            return r
 
         elif(self.asr=="poly"):
             #Computes the centre of mass.
@@ -203,7 +208,11 @@ class DynMatrixMover(Motion):
 
             #Computes the transformation matrix.
             transfmatrix = np.eye(3*self.beads.natoms)-np.dot(D.T,D)
-            return np.dot(transfmatrix.T,np.dot(dm,transfmatrix))
+            r = np.dot(transfmatrix.T,np.dot(dm,transfmatrix))
+            re, rU = np.linalg.eigh(r)
+            re[0:6] = 0.0
+            r = np.dot(rU.T, no.dot(np.diag(re), rU))
+            return r
 
 class DummyPhononCalculator(dobject):
     """ No-op PhononCalculator """
