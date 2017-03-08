@@ -1,5 +1,5 @@
 <simulation>
-    <output prefix="water">
+    <output prefix="simulation">
         <properties stride="1" filename="out"> [ step, time{picosecond}, conserved, temperature{kelvin}, kinetic_cv, kinetic_td, potential, pressure_cv{megapascal} ] </properties>
         <trajectory filename="pos" stride="100" cell_units="angstrom" format="pdb" bead="0"> positions{angstrom} </trajectory>
     </output>
