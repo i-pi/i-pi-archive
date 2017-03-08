@@ -169,7 +169,6 @@ class Dynamics(Motion):
                 if self.ensemble.pext < 0:
                     raise ValueError("Negative or unspecified pressure for a constant-p integrator")
             elif self.enstype == "nst":
-                print "STRESS:", np.trace(self.ensemble.stressext)
                 if np.trace(self.ensemble.stressext) < 0:
                     raise ValueError("Negative or unspecified stress for a constant-s integrator")
 

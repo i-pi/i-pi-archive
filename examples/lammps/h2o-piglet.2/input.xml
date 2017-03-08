@@ -1,5 +1,5 @@
 <simulation verbosity = "high">
-  <output prefix="gle_lammps">
+  <output prefix="simulation">
     <properties stride="1" filename="out">  [ step, time{picosecond}, conserved{kelvin}, temperature{kelvin}, kinetic_cv{kelvin}, potential{kelvin}, pressure_cv{megapascal}] </properties>
     <trajectory filename="pos" stride="20"> positions </trajectory>
   </output>
@@ -10,7 +10,7 @@
   </ffsocket>
   <system>
     <initialize nbeads="2"> 
-      <file mode="pdb"> water_298K.pdb </file>
+      <file mode="pdb"> init.pdb </file>
       <velocities mode="thermal" units="kelvin"> 298 </velocities>
     </initialize>
     <forces>
