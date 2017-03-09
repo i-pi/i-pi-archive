@@ -244,11 +244,20 @@ class FDPhononCalculator(DummyPhononCalculator):
         if(self.dm.dynmatrix.size  != (self.dm.beads.q.size * self.dm.beads.q.size)):
             if(self.dm.dynmatrix.size == 0):
                 self.dm.dynmatrix=np.zeros((self.dm.beads.q.size, self.dm.beads.q.size), float)
-                self.dm.refdynmatrix=np.zeros((self.dm.beads.q.size, self.dm.beads.q.size), float)
             else:
                 raise ValueError("Force constant matrix size does not match system size")
         else:
             self.dm.dynmatrix=self.dm.dynmatrix.reshape(((self.dm.beads.q.size, self.dm.beads.q.size)))
+
+        #Initialises a 3*number of atoms X 3*number of atoms refined dynamic matrix.
+        if(self.dm.refdynmatrix.size  != (self.dm.beads.q.size * self.dm.beads.q.size)):
+            if(self.dm.refdynmatrix.size == 0):
+                self.dm.refdynmatrix=np.zeros((self.dm.beads.q.size, self.dm.beads.q.size), float)
+            else:
+                raise ValueError("Force constant matrix size does not match system size")
+        else:
+            self.dm.refdynmatrix=self.dm.refdynmatrix.reshape(((self.dm.beads.q.size, self.dm.beads.q.size)))
+
 
     def step(self, step=None):
         """Computes one row of the dynamic matrix."""
