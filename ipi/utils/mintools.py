@@ -245,7 +245,8 @@ def min_brent(fdf, fdf0=None, x0=0.0, tol=1.0e-6, itmax=100, init_step=1.0e-3):
         # Test for satisfactory completion: |b-a|<=tol*abs(x)
         if abs(x - xm) <= (tol2 - 0.5 * (b - a)):
             info(" @MINIMIZE: Finished minimization, energy = %f" % fx, verbosity.debug)
-            return (x, fx, dfx)
+            #return (x, fx, dfx)
+            return 
 
         # Initialize d values (used to determine step size) to outside of bracket
         if abs(e) > tol1:
@@ -319,7 +320,9 @@ def min_brent(fdf, fdf0=None, x0=0.0, tol=1.0e-6, itmax=100, init_step=1.0e-3):
             # If minimum step in downhill direction goes uphill, minimum has been found
             if fu > fx:
                 info(" @MINIMIZE: Finished minimization, energy = %f" % fx, verbosity.debug)
-                return (x, fx,dfx)
+                #return (x, fx,dfx)
+                fx, dfx = fdf(x) #Evaluate again to update lm.dforces object 
+                return 
         # order for next step: a < u (later x) < b
         if fu <= fx:
             if u >= x:
@@ -357,7 +360,8 @@ def min_brent(fdf, fdf0=None, x0=0.0, tol=1.0e-6, itmax=100, init_step=1.0e-3):
     # Exit if maximum number of iterations exceeded
     info(" @MINIMIZE: Error -- maximum iterations for minimization (%d) exceeded, exiting minimization" % itmax, verbosity.low)
     info(" @MINIMIZE: Finished minimization, energy = %f" % fx, verbosity.debug)
-    return (x, fx,dfx)
+    #return (x, fx,dfx)
+    return 
 
 # Approximate line search
 def min_approx(fdf, x0, fdf0=None, d0=None, big_step=100.0, tol=1.0e-6, itmax=100):
@@ -394,7 +398,7 @@ def min_approx(fdf, x0, fdf0=None, d0=None, big_step=100.0, tol=1.0e-6, itmax=10
         d0 = np.multiply(d0, big_step / stepsum)
 
     slope = np.dot(df0.flatten(), d0.flatten())
-
+    #print slope #ALBERTO 
     if slope >= 0.0:
         info(" @MINIMIZE: Warning -- gradient is >= 0 (%f)" % slope, verbosity.low)
 
@@ -518,10 +522,9 @@ def BFGS(x0, d0, fdf, fdf0=None, invhessian=None, big_step=100, tol=1.0e-6, itma
         info(" @MINIMIZE: Skipped invhessian update; direction x gradient insufficient", verbosity.debug)
     
     # Update direction
-    d = np.dot(invhessian, -g.flatten())
+    d     = np.dot(invhessian, -g.flatten())
+    d0[:] = d.reshape(d_x.shape)
     info(" @MINIMIZE: Updated search direction", verbosity.debug)
-    d =d.reshape(d_x.shape)
-    return (d_x, u,-g, d)
 
 
 # BFGS algorithm trust radius method
@@ -578,9 +581,8 @@ def BFGSTRM(x0,u0,f0,h0,tr,mapper,big_step=100):
     d_f      = np.subtract(f, f0)
     TRM_UPDATE( d_x.flatten(),d_f.flatten(),h0 )
 
-    return (d_x, u, f)
 
-# TRM functions (TRM_UPDATE and min_trm)
+## TRM functions (TRM_UPDATE and min_trm)
 
 
 def TRM_UPDATE(dx,df,h):
@@ -738,14 +740,16 @@ def L_BFGS(x0, d0, fdf, qlist, glist, fdf0=None, big_step=100, tol=1.0e-6, itmax
     if k < m:
         qlist[k] = d_x.flatten()
     else:
-        qlist = np.roll(qlist, -1, axis=0)
+        qlist_aux = np.roll(qlist, -1, axis=0)
+        qlist[:] = qlist_aux
         qlist[m - 1] = d_x.flatten()
-    
+      
     d_g = np.subtract(g, g0)
     if k < m:
         glist[k] = d_g.flatten()
     else:
-        glist = np.roll(glist, -1, axis=0)
+        glist_aux = np.roll(glist, -1, axis=0)
+        glist[:] = glist_aux 
         glist[m - 1] = d_g.flatten()
 
     # Update direction.        
@@ -798,8 +802,9 @@ def L_BFGS(x0, d0, fdf, qlist, glist, fdf0=None, big_step=100, tol=1.0e-6, itmax
         info(" @MINIMIZE: Skipped direction update; direction * gradient insufficient", verbosity.debug)
         d = d0
 
+    d0[:]=d 
     info(" @MINIMIZE: Updated search direction", verbosity.debug)
-    return (d_x, u,-g, d, qlist, glist)
+
 
 # Bracketing for NEB, TODO: DEBUG THIS IF USING SD OR CG OPTIONS FOR NEB
 def bracket_neb(fdf, fdf0=None, x0=0.0, init_step=1.0e-3): 

@@ -86,7 +86,7 @@ class GeopMotion(Motion):
         self.old_x        = old_pos
         self.old_u        = old_pot
         self.old_f        = old_force
-        self.old_d        = old_direction
+        self.d            = old_direction
 
         # Classes for minimization routines and specific attributes
         if self.mode == "bfgs":
@@ -167,17 +167,14 @@ class GradientMapper(object):
     Used in the BFGS and L-BFGS minimizers.
 
     Attributes:
-        x0: initial position
-        d: move direction
-        xold: previous position
+        dbeds:   copy of the bead object
+        dcell:   copy of the cell object
+        dforces: copy of the forces object 
     """
     
     def __init__(self):
-    #    self.x0 = None
-    #    self.d = None
-    #    self.xold = None
-        pass
-    
+   	pass
+ 
     def bind(self, dumop):
         self.dbeads = dumop.beads.copy()
         self.dcell = dumop.cell.copy()
@@ -236,9 +233,9 @@ class DummyOptimizer(dobject):
                 geop.old_f = np.zeros((self.beads.nbeads,3*self.beads.natoms), float)  
             else:
                 raise ValueError("Conjugate gradient force size does not match system size")
-        if geop.old_d.size != self.beads.q.size:
-            if geop.old_d.size == 0:
-                geop.old_d = np.zeros((self.beads.nbeads,3*self.beads.natoms), float)  
+        if geop.d.size != self.beads.q.size:
+            if geop.d.size == 0:
+                geop.d = np.zeros((self.beads.nbeads,3*self.beads.natoms), float)  
             else:
                 raise ValueError("Conjugate gradient direction size does not match system size")
 
@@ -246,8 +243,7 @@ class DummyOptimizer(dobject):
         self.old_x      = geop.old_x
         self.old_u      = geop.old_u
         self.old_f      = geop.old_f
-        self.old_d      = geop.old_d
-
+        self.d          = geop.d
 
 
 
@@ -257,12 +253,16 @@ class DummyOptimizer(dobject):
         info(" @GEOP: Updating bead positions", verbosity.debug)
         
         self.qtime += time.time()
-
+        #print  np.absolute((fx - u0) / self.beads.natoms) , self.tolerances["energy"]
+        #print  np.amax(np.absolute(self.forces.f)) , self.tolerances["force"]     
+        #print  np.linalg.norm(self.forces.f.flatten() - self.old_f.flatten()) , 1e-08
+        #print x, self.tolerances["position"] 
         if (np.absolute((fx - u0) / self.beads.natoms) <= self.tolerances["energy"])\
             and ( ( np.amax(np.absolute(self.forces.f)) <= self.tolerances["force"]   )  or
-                  ( np.linalg.norm(self.forces.f.flatten() - self.old_f.flatten()) <= 1e-10)  )\
+                  ( np.linalg.norm(self.forces.f.flatten() - self.old_f.flatten()) <= 1e-08)  )\
             and (x <= self.tolerances["position"]):
-            info("Total number of function evaluations: %d" % counter.func_eval, verbosity.low) 
+            info("Total number of mapper calls: %d" % counter.func_eval, verbosity.low) 
+            info("Total number of force evaluations: %d" % ((counter.func_eval+1)*self.beads.nbeads), verbosity.low) 
             softexit.trigger("Geometry optimization converged. Exiting simulation")
          
 class BFGSOptimizer(DummyOptimizer):
@@ -296,7 +296,7 @@ class BFGSOptimizer(DummyOptimizer):
 
         if step == 0:
             info(" @GEOP: Initializing BFGS", verbosity.debug)
-            self.old_d += depstrip(self.forces.f) / np.sqrt(np.dot(self.forces.f.flatten(), self.forces.f.flatten()))
+            self.d += depstrip(self.forces.f) / np.sqrt(np.dot(self.forces.f.flatten(), self.forces.f.flatten()))
    
 
         self.old_x[:] = self.beads.q
@@ -304,7 +304,6 @@ class BFGSOptimizer(DummyOptimizer):
         self.old_f[:] = self.forces.f
 
         if len(self.fixatoms) > 0:
- 
             for dqb in self.old_f:
                 dqb[self.fixatoms*3] = 0.0
                 dqb[self.fixatoms*3+1] = 0.0
@@ -312,27 +311,17 @@ class BFGSOptimizer(DummyOptimizer):
 
         fdf0 = (self.old_u,-self.old_f)
          
-        # Do one iteration of BFGS, return movement (d_x), energy (fx), gradient (dfx).
-        # MR: Note that energy and gradient are already stored in every step from self.gm.dforces.f and so on.
-        # MR: All the outputs of mintools should be adjusted not to return at least fx and dfx 
-        # MR: Note also that self.gm.dbeads.q also contains the updated geometries so even that could/should be done automatically
-        # MR: If I'm not mistaken, even in mintools itself, 
-        # The invhessian is updated inside.
-        d_x,fx,dfx,new_d = BFGS(self.old_x,
-                self.old_d, self.gm, fdf0, self.invhessian,
-                self.big_step, self.ls_options["tolerance"],
-                self.ls_options["iter"])
-
-        self.old_d[:] = new_d
-
-        #TODO update the forces with 'dfx' <- MR: no, self.gm.dforces hold all real info.
-        #TODO update the potential energy with 'fx' <- MR: no, self.gm.dforces hold all real info.
-          
-        self.beads.q += d_x #Meanwhile we update here <- should be really self.gm.dbeads.q or something like that
-        self.forces.transfer_forces(self.gm.dforces) #This forces the update of the forces before full update from geometries is triggered
+        # Do one iteration of BFGS
+        # The invhessian and the directions are updated inside.
+        BFGS(self.old_x,self.d, self.gm, fdf0, self.invhessian,self.big_step,
+             self.ls_options["tolerance"], self.ls_options["iter"])
+      
+        #Update positions and forces
+        self.beads.q  = self.gm.dbeads.q  
+        self.forces.transfer_forces(self.gm.dforces) #This forces the update of the forces 
 
         # Exit simulation step
-        d_x_max =np.amax(np.absolute(d_x))
+        d_x_max =np.amax(np.absolute(np.subtract(self.beads.q,self.old_x)))
         self.exitstep(self.forces.pot, self.old_u, d_x_max)
 
 class BFGSTRMOptimizer(DummyOptimizer):
@@ -380,17 +369,15 @@ class BFGSTRMOptimizer(DummyOptimizer):
                 dqb[self.fixatoms*3+2] = 0.0
 
         #Make one step. ( A step is finished when a movement is accepted)
-        d_x,fx,dfx = BFGSTRM(self.old_x,self.old_u,self.old_f,self.hessian,self.tr,
+        BFGSTRM(self.old_x,self.old_u,self.old_f,self.hessian,self.tr,
                       self.gm,self.big_step)
          
-        #TODO update position without computing the forces
-        #TODO update the forces with 'dfx'
-        #TODO update the potential energy with 'fx'
-
-        self.beads.q += d_x #Meanwhile we update here
+        #Update positions and forces
+        self.beads.q  = self.gm.dbeads.q  
+        self.forces.transfer_forces(self.gm.dforces) #This forces the update of the forces 
  
         # Exit simulation step
-        d_x_max =np.amax(np.absolute(d_x))
+        d_x_max =np.amax(np.absolute(np.subtract(self.beads.q,self.old_x)))
         self.exitstep(self.forces.pot, self.old_u, d_x_max)
 
 #---------------------------------------------------------------------------------------
@@ -439,12 +426,11 @@ class LBFGSOptimizer(DummyOptimizer):
         
         if step == 0:  
             info(" @GEOP: Initializing L-BFGS", verbosity.debug)
-            self.old_d += depstrip(self.forces.f) / np.sqrt(np.dot(self.forces.f.flatten(), self.forces.f.flatten()))
+            self.d += depstrip(self.forces.f) / np.sqrt(np.dot(self.forces.f.flatten(), self.forces.f.flatten()))
 
         self.old_x[:] = self.beads.q
         self.old_u[:] = self.forces.pot
         self.old_f[:] = self.forces.f
-
         if len(self.fixatoms) > 0:
 
             for dqb in self.old_f:
@@ -453,25 +439,17 @@ class LBFGSOptimizer(DummyOptimizer):
                 dqb[self.fixatoms*3+2] = 0.0
 
         fdf0 = (self.old_u,-self.old_f)
-
-        d_x, fx, dfx,new_d, new_qlist, new_glist = L_BFGS(self.old_x,
-                self.old_d, self.gm, self.qlist, self.glist,
+        #d_x,new_d, new_qlist, new_glist = L_BFGS(self.old_x,
+        L_BFGS(self.old_x,self.d, self.gm, self.qlist, self.glist,
                 fdf0, self.big_step, self.ls_options["tolerance"],
-                self.ls_options["iter"],
-                self.corrections,self.scale, step)
+                self.ls_options["iter"],self.corrections,self.scale, step)
 
-        self.old_d[:] = new_d
-        self.qlist[:] = new_qlist 
-        self.glist[:] = new_glist 
- 
-
-        #TODO update position without computing the forces
-        #TODO update the forces with 'dfx'
-        #TODO update the potential energy with 'fx'
-        self.beads.q += d_x #Meanwhile we update here 
+        #Update positions and forces
+        self.beads.q  = self.gm.dbeads.q  
+        self.forces.transfer_forces(self.gm.dforces) #This forces the update of the forces 
 
         # Exit simulation step
-	d_x_max =np.amax(np.absolute(d_x))
+        d_x_max = np.amax(np.absolute(np.subtract(self.beads.q,self.old_x)))
         self.exitstep(self.forces.pot, self.old_u, d_x_max)
       
 class SDOptimizer(DummyOptimizer):
@@ -515,22 +493,26 @@ class SDOptimizer(DummyOptimizer):
         u0, du0 = (self.forces.pot.copy(), np.dot(depstrip(self.forces.f.flatten()), dq1_unit.flatten()))
 
         # Do one SD iteration; return positions and energy
-        (x, fx,dfx) = min_brent(self.lm, fdf0=(u0, du0), x0=0.0,
+        #(x, fx,dfx) = min_brent(self.lm, fdf0=(u0, du0), x0=0.0,  #DELETE
+        min_brent(self.lm, fdf0=(u0, du0), x0=0.0,
                     tol=self.ls_options["tolerance"],
                     itmax=self.ls_options["iter"], init_step=self.ls_options["step"])
 
+       
+        #Update positions and forces
+        self.beads.q  = self.lm.dbeads.q
+        self.forces.transfer_forces(self.lm.dforces) #This forces the update of the forces 
+    
+        d_x = np.absolute(np.subtract(self.beads.q,self.lm.x0))
+        x   = np.linalg.norm(d_x)
         # Automatically adapt the search step for the next iteration.
         # Relaxes better with very small step --> multiply by factor of 0.1 or 0.01
+
         self.ls_options["step"] = 0.1 * x * self.ls_options["adaptive"] + (1 - self.ls_options["adaptive"]) * self.ls_options["step"]
 
-        #TODO update position without computing the forces
-        #TODO update the forces with 'dfx'
-        #TODO update the potential energy with 'fx'
-           
-        self.beads.q += dq1_unit * x   #Meanwhile we update here 
-        
         # Exit simulation step
-        self.exitstep(fx, u0, x)
+        d_x_max = np.amax(np.absolute(d_x))
+        self.exitstep(self.forces.pot, u0, d_x_max)
 
 class CGOptimizer(DummyOptimizer):
     """
@@ -571,7 +553,7 @@ class CGOptimizer(DummyOptimizer):
         else:
         
             gradf0 = self.old_f
-            dq0 = self.old_d
+            dq0 = self.d
             gradf1 = depstrip(self.forces.f)
             beta = np.dot((gradf1.flatten() - gradf0.flatten()), gradf1.flatten()) / (np.dot(gradf0.flatten(), gradf0.flatten()))
             dq1 = gradf1 + max(0.0, beta) * dq0
@@ -579,7 +561,7 @@ class CGOptimizer(DummyOptimizer):
             info(" @GEOP: Determined CG direction", verbosity.debug)
 
         # Store force and direction for next CG step
-        self.old_d[:] = dq1
+        self.d[:] = dq1
         self.old_f[:] = gradf1
 
         if len(self.fixatoms) > 0:
@@ -594,15 +576,25 @@ class CGOptimizer(DummyOptimizer):
         u0, du0 = (self.forces.pot.copy(), np.dot(depstrip(self.forces.f.flatten()), dq1_unit.flatten()))
 
         # Do one CG iteration; return positions and energy
-        (x, fx) = min_brent(self.lm, fdf0=(u0, du0), x0=0.0,
+        min_brent(self.lm, fdf0=(u0, du0), x0=0.0,
                     tol=self.ls_options["tolerance"],
                     itmax=self.ls_options["iter"], init_step=self.ls_options["step"])
 
+        #Update positions and forces
+        self.beads.q  = self.lm.dbeads.q
+        self.forces.transfer_forces(self.lm.dforces) #This forces the update of the forces 
+
+        d_x = np.absolute(np.subtract(self.beads.q,self.lm.x0))
+        x   = np.linalg.norm(d_x)
         # Automatically adapt the search step for the next iteration.
         # Relaxes better with very small step --> multiply by factor of 0.1 or 0.01
-        self.ls_options["step"] = 0.1 * x * self.ls_options["adaptive"] + (1 -     self.ls_options["adaptive"]) * self.ls_options["step"]
 
-        self.beads.q += dq1_unit * x
-        
+        self.ls_options["step"] = 0.1 * x * self.ls_options["adaptive"] + (1 - self.ls_options["adaptive"]) * self.ls_options["step"]
+
         # Exit simulation step
-        self.exitstep(fx, u0, x)
+        d_x_max = np.amax(np.absolute(d_x))
+        self.exitstep(self.forces.pot, u0, d_x_max)
+
+
+
+
