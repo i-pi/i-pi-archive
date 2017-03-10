@@ -12,9 +12,9 @@ Created by charmm2lammps v1.8.1 on Fri Jan  9 15:19:29 CET 2015
           24  dihedral types
            6  improper types
 
-     -6.97239999754 6.97239999754 xlo xhi
-     -9.97239999754 9.97239999754 ylo yhi
-     -12.0  12.0 zlo zhi
+     -3.48580318  3.48580318 xlo xhi
+     -4.57322881  4.57322881 ylo yhi
+     -6.40481989   6.40481989 zlo zhi
       1.1 1.1 1.1    xy xz yz
 
 Masses

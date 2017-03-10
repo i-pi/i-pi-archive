@@ -17,13 +17,13 @@
       <velocities mode="thermal" units="kelvin"> 300 </velocities>
     </initialize>
     <forces>
-      <force forcefield='lmpserial'>  </force>
+      <force forcefield="lmpserial">  </force>
     </forces>
     <ensemble>
       <temperature units="kelvin">300</temperature>
     </ensemble>
     <motion mode="dynamics">
-      <dynamics mode='nvt'>
+      <dynamics mode="nvt">
 	<!--      <barostat mode="isotropic">
              <thermostat mode="langevin">
              <tau units="picosecond"> 0.1 </tau>
