@@ -38,7 +38,7 @@ class InputDynamics(InputDictionary):
         "mode": (InputAttribute, {"dtype":   str,
                                   "default": 'nve',
                                   "help":    "The ensemble that will be sampled during the simulation. ",
-                                  "options": ['nve', 'nvt', 'npt', 'nst', 'mts']})
+                                  "options": ['nve', 'nvt', 'npt', 'nst', 'mts', 'sc']})
               }
 
     fields = {

@@ -12,3 +12,5 @@ from .dynamics import Dynamics
 from .replay import Replay
 from .geop import GeopMover
 from .neb import NEBMover
+from .phonons import DynMatrixMover
+from .multi import MultiMotion

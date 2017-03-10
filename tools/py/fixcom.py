@@ -38,7 +38,7 @@ def main(prefix, suffix="pos", outprefix="fixcom"):
     for b in range(nbeads):
 		# zero-padded bead number
 		padb = ( ("%0" + str(int(1 + np.floor(np.log(nbeads)/np.log(10)))) + "d") % (b) )
-		lout.append(open(outprefix + "." + suffix + "_" + padb + "." + imode[b], "a"))
+		lout.append(open(prefix + "." + outprefix + "." + suffix + "_" + padb + "." + imode[b], "a"))
                                         
     while True:
         allbeads = []

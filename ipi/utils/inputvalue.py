@@ -324,10 +324,14 @@ class Input(object):
             elif a == "_text":
                pass
             else:
-               raise NameError("Attribute name '" + a + "' is not a recognized property of '" + xml.name + "' objects")
-
+               raise NameError("Attribute name '" + a + "' is not a recognized property of '" + xml.name + "' objects")            
+          
+         lf = []   
          for (f, v) in xml.fields: #reads all field and dynamic data.
             if f in self.instancefields:
+               if f in lf:                   
+                   raise NameError("The static tag '" + f + "' is defined multiple times within '" + xml.name)
+               lf.append(f)
                self.__dict__[f].parse(xml=v)
             elif f == "_text":
                self._text = v
@@ -345,6 +349,7 @@ class Input(object):
             vf = self.__dict__[f]
             if not (vf._explicit or vf._optional):
                raise ValueError("Field name '" + f + "' is mandatory and was not found in the input for the property " + xml.name)
+                  
 
    def detail_str(self):
       """Prints out the supplementary information about a particular input class.
@@ -917,6 +922,11 @@ class InputArray(InputValue):
 
    attribs = copy(InputValue.attribs)
    attribs["shape"] = (InputAttribute,  {"dtype": tuple,  "help": "The shape of the array.", "default": (0,)})
+   attribs["mode"] = (InputAttribute, { "dtype"  : str,
+                                        "default": "manual",
+                                        "options": ["manual", "file"],
+                                        "help"   : "If 'mode' is 'manual', then the array is read from the content of 'cell' takes a 9-elements vector containing the cell matrix (row-major). If 'mode' is 'abcABC', then 'cell' takes an array of 6 floats, the first three being the length of the sides of the system parallelopiped, and the last three being the angles (in degrees) between those sides. Angle A corresponds to the angle between sides b and c, and so on for B and C. If mode is 'abc', then this is the same as for 'abcABC', but the cell is assumed to be orthorhombic. 'pdb' and 'chk' read the cell from a PDB or a checkpoint file, respectively."} )
+
 
    def __init__(self,  help=None, default=None, dtype=None, dimension=None):
       """Initialises InputArray.
@@ -946,6 +956,8 @@ class InputArray(InputValue):
       #if the shape is not specified, assume the array is linear.
       if self.shape.fetch() == (0,):
          self.shape.store((len(self.value),))
+      
+      self.mode.store("manual") # always store as an explicit array so files are self-contained
 
    def fetch(self):
       """Returns the stored data in the user defined units."""
@@ -1006,7 +1018,14 @@ class InputArray(InputValue):
       """
 
       Input.parse(self, xml=xml, text=text)
-      self.value = read_array(self.type, self._text)
+      
+      mode = self.mode.fetch()
+      if mode == "manual":
+         self.value = read_array(self.type, self._text)
+      elif mode == "file":
+         self.value = np.loadtxt(self._text.strip(), comments="#", dtype=self.type).flatten()         
+      else:
+         raise ValueError("Unsupported array reading mode")
 
       #if the shape is not specified, assume the array is linear.
       if self.shape.fetch() == (0,):

@@ -3,7 +3,7 @@
 import pytest
 import ipi_tests.xyz_generator as xyz_gen
 import ipi.utils.mathtools as mt
-import ipi.utils.io.backends.io_units as testing
+import ipi.utils.io.io_units as testing
 from ipi.engine.atoms import Atoms
 from ipi.engine.cell import Cell
 
