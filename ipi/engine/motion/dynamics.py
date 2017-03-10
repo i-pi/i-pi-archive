@@ -72,7 +72,7 @@ class Dynamics(Motion):
 
         if nmts is np.zeros(0,int):
            self.nmts = np.asarray([1],int)
-        elif len(nmts) == 0:
+        elif nmts is None or len(nmts) == 0:
            self.nmts = np.asarray([1],int) 
         else:
            self.nmts=np.asarray(nmts)
@@ -169,7 +169,6 @@ class Dynamics(Motion):
                 if self.ensemble.pext < 0:
                     raise ValueError("Negative or unspecified pressure for a constant-p integrator")
             elif self.enstype == "nst":
-                print "STRESS:", np.trace(self.ensemble.stressext)
                 if np.trace(self.ensemble.stressext) < 0:
                     raise ValueError("Negative or unspecified stress for a constant-s integrator")
 
@@ -212,7 +211,6 @@ class DummyIntegrator(dobject):
                 self.coeffsc = np.ones((self.beads.nbeads,3*self.beads.natoms), float)
                 self.coeffsc[::2] /= -3.
                 self.coeffsc[1::2] /= 3.
-                print "nmts:-", motion.nmts
                 self.nmts=motion.nmts[-1]                 
 
     def pstep(self):
@@ -274,7 +272,8 @@ class NVEIntegrator(DummyIntegrator):
             for i in range(3):
                 pcom[i] = p[:,i:na3:3].sum()
 
-            self.ensemble.eens += np.dot(pcom, pcom) / (2.0*M*nb)
+            #print np.dot(pcom, pcom) / (2.0*M*nb)
+            #self.ensemble.eens += np.dot(pcom, pcom) / (2.0*M*nb)
 
             # subtracts COM velocity
             pcom *= 1.0 / (nb*M)
