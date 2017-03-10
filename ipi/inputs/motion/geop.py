@@ -57,8 +57,8 @@ class InputGeop(InputDictionary):
                               "dimension": ["energy", "undefined", "length", "undefined" ] }),
                 "tolerances" : ( InputDictionary, {"dtype" : float,
                               "options"  : [ "energy", "force", "position" ],
-                              "default"  : [ 1e-6, 1e-4, 1e-2 ],
-                              "help"     : "Convergence criteria for optimization.",
+                              "default"  : [ 1e-6, 1e-6, 1e-6 ],
+                              "help"     : "Convergence criteria for optimization. Default values are extremely conservative. Set them to appropriate values for production runs.",
                               "dimension": [ "energy", "force", "length" ] }),     
                 "biggest_step": (InputValue, {"dtype" : float,
                               "default"  : 100.0,
@@ -70,7 +70,7 @@ class InputGeop(InputDictionary):
                                             1 Use first member of position/gradient list. 
                                             2 Use last  member of position/gradient list."""}),
                 "corrections_lbfgs" : (InputValue, {"dtype" : int,
-                              "default"  : 5,
+                              "default"  : 6,
                               "help"     : "The number of past vectors to store for L-BFGS."}),
                 # re-start parameters, estimate hessian, etc.
                 "old_pos": (InputArray, {"dtype" : float,

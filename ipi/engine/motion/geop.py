@@ -382,7 +382,8 @@ class BFGSTRMOptimizer(DummyOptimizer):
 
 #---------------------------------------------------------------------------------------
 class LBFGSOptimizer(DummyOptimizer):
-    """ L-BFGS Minimization """
+    """ L-BFGS Minimization: Note that the accuracy you can achieve with this method depends
+        on how many ''corrections'' you store (default is 5). """
     
     def bind(self, geop):
         # call bind function from DummyOptimizer
@@ -440,6 +441,8 @@ class LBFGSOptimizer(DummyOptimizer):
 
         fdf0 = (self.old_u,-self.old_f)
         #d_x,new_d, new_qlist, new_glist = L_BFGS(self.old_x,
+        # Note that the line above is not needed anymore because we update everything
+        # within L_BFGS (and all other calls).    
         L_BFGS(self.old_x,self.d, self.gm, self.qlist, self.glist,
                 fdf0, self.big_step, self.ls_options["tolerance"],
                 self.ls_options["iter"],self.corrections,self.scale, step)
