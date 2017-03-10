@@ -211,7 +211,6 @@ class DummyIntegrator(dobject):
                 self.coeffsc = np.ones((self.beads.nbeads,3*self.beads.natoms), float)
                 self.coeffsc[::2] /= -3.
                 self.coeffsc[1::2] /= 3.
-                print "nmts:-", motion.nmts
                 self.nmts=motion.nmts[-1]                 
 
     def pstep(self):
@@ -273,7 +272,8 @@ class NVEIntegrator(DummyIntegrator):
             for i in range(3):
                 pcom[i] = p[:,i:na3:3].sum()
 
-            self.ensemble.eens += np.dot(pcom, pcom) / (2.0*M*nb)
+            #print np.dot(pcom, pcom) / (2.0*M*nb)
+            #self.ensemble.eens += np.dot(pcom, pcom) / (2.0*M*nb)
 
             # subtracts COM velocity
             pcom *= 1.0 / (nb*M)

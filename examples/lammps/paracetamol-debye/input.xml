@@ -6,7 +6,7 @@
     <total_steps> 400000 </total_steps>
     <prng> <seed> 32342 </seed> </prng>
     <ffdebye name="debye">
-        <hessian shape="(240,240)" mode="file"> hessian.data </hessian>
+        <hessian shape="(3,3)" mode="file"> hessian.data </hessian>
         <x_reference mode="file"> ref.data  </x_reference>
     </ffdebye>
     <system>
