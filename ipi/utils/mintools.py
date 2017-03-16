@@ -190,7 +190,7 @@ def bracket(fdf, fdf0=None, x0=0.0, init_step=1.0e-3):
 
 # One dimensional minimization function using function derivatives
 # and Brent's method
-def min_brent(fdf, fdf0=None, x0=0.0, tol=1.0e-6, itmax=100, init_step=1.0e-3):
+def min_brent(fdf, fdf0, x0, tol, itmax, init_step):
 
     """Given a maximum number of iterations and a convergence tolerance,
      minimizes the specified function 
@@ -364,7 +364,7 @@ def min_brent(fdf, fdf0=None, x0=0.0, tol=1.0e-6, itmax=100, init_step=1.0e-3):
     return 
 
 # Approximate line search
-def min_approx(fdf, x0, fdf0=None, d0=None, big_step=100.0, tol=1.0e-6, itmax=100):
+def min_approx(fdf, x0, fdf0, d0, big_step, tol, itmax):
     
     """Given an n-dimensional function and its gradient, and an 
     initial point and a direction, finds a new point where the function
@@ -398,7 +398,7 @@ def min_approx(fdf, x0, fdf0=None, d0=None, big_step=100.0, tol=1.0e-6, itmax=10
         d0 = np.multiply(d0, big_step / stepsum)
 
     slope = np.dot(df0.flatten(), d0.flatten())
-    #print slope #ALBERTO 
+
     if slope >= 0.0:
         info(" @MINIMIZE: Warning -- gradient is >= 0 (%f)" % slope, verbosity.low)
 
@@ -473,7 +473,7 @@ def min_approx(fdf, x0, fdf0=None, d0=None, big_step=100.0, tol=1.0e-6, itmax=10
     return (x, fx, dfx)
         
 # BFGS algorithm with approximate line search
-def BFGS(x0, d0, fdf, fdf0=None, invhessian=None, big_step=100, tol=1.0e-6, itmax=100):
+def BFGS(x0, d0, fdf, fdf0, invhessian, big_step, tol, itmax):
     
     """BFGS minimization. Uses approximate line minimizations.
     Does one step.
@@ -528,7 +528,7 @@ def BFGS(x0, d0, fdf, fdf0=None, invhessian=None, big_step=100, tol=1.0e-6, itma
 
 
 # BFGS algorithm trust radius method
-def BFGSTRM(x0,u0,f0,h0,tr,mapper,big_step=100):
+def BFGSTRM(x0,u0,f0,h0,tr,mapper,big_step):
 
     """ Input: x0 = previous accepted positions 
                u0 = previous accepted energy
@@ -536,9 +536,7 @@ def BFGSTRM(x0,u0,f0,h0,tr,mapper,big_step=100):
                h0 = previous accepted hessian
                tr = trust radius  
            mapper = function to evaluate energy and forces 
-         big_step = limit on step length
-
-	 Return: updated hessian and tr (implicit) and d_x (explicit)"""
+         big_step = limit on step length"""
 
 
 #Make one movement, evaluate if it has to be accepted or not. If yes, update tr and Hessian.
@@ -699,7 +697,7 @@ def min_trm(f, h, tr):
         return DX
 
 # L-BFGS algorithm with approximate line search
-def L_BFGS(x0, d0, fdf, qlist, glist, fdf0=None, big_step=100, tol=1.0e-6, itmax=100,m=0, scale=2,k=0):
+def L_BFGS(x0, d0, fdf, qlist, glist, fdf0, big_step, tol, itmax,m, scale,k):
     
     """L-BFGS minimization. Uses approximate line minimizations.
     Does one step.

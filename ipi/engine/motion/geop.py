@@ -171,7 +171,7 @@ class GradientMapper(object):
     """
 
     def __init__(self):
-   	pass
+        pass
 
     def bind(self, dumop):
         self.dbeads = dumop.beads.copy()
