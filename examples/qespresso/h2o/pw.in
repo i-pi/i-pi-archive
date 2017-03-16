@@ -1,6 +1,5 @@
 &CONTROL
-    calculation='driver'
-    srvaddress='localhost:3141'
+    calculation='scf'
     verbosity='low'
     restart_mode='from_scratch'
     tstress=.true.

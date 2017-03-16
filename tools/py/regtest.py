@@ -114,7 +114,7 @@ from ipi.utils.io.inputs import io_xml
 
 RED = YELLOW = GREEN = RESET = ''
 try:
-    from coloramaaa import Fore  # pylint: disable=wrong-import-position
+    from colorama import Fore  # pylint: disable=wrong-import-position
     RED = Fore.RED
     YELLOW = Fore.YELLOW
     GREEN = Fore.GREEN
@@ -137,7 +137,7 @@ IPI_WAITING_TIME = 5    # Time to wait after i-pi has been started
 
 
 # Compile them only once! pylint: disable=anomalous-backslash-in-string
-REGTEST_STRING_RGX = re.compile(r'<!--\s+REGTEST\s+([\s\w.\+\-\(\)]*)'
+REGTEST_STRING_RGX = re.compile(r'<!--\s+REGTEST\s+([\s\w\.\+\-\(\)\:\<\>]*)'
                                 '\s+ENDREGTEST\s+-->')
 # pylint: enable=anomalous-backslash-in-string
 
@@ -464,7 +464,8 @@ class Test(threading.Thread):
         create_dir(self.io_dir, ignore=True)
 
         # Retrieve the command to run the driver and the needed files
-        self.driver_command, self.needed_files = parse_regtest_string(self.test_path)
+        self.driver_command, self.needed_files = \
+                                        parse_regtest_string(self.test_path)
 
         # Copy all the reference files to the 'input' folder
         shutil.copytree(self.ref_path, self.input_dir)
@@ -603,14 +604,14 @@ class Test(threading.Thread):
                     finished += 1
             time.sleep(.5)
             timeout_driver = timeout_driver - init_time - time.time()
- #           print 'PROCESS:', self.name, 'TIMEOUT_DRIVER', timeout_driver, 'FINISHED', finished, len(driver_prcs)
+#            print 'PROCESS:', self.name, 'TIMEOUT_DRIVER', timeout_driver, 'FINISHED', finished, len(driver_prcs)
             if timeout_driver < -0.5:
                 for prc in driver_prcs:
                     if prc.poll() is None:
                         prc.terminate()
                     finished += 1
                 self.test_status = 'ERROR'
-                self.msg += 'The drivers took too long\n'
+                self.msg += 'The drivers took too long:\n {:d}s > {:d}s\n'.format(int(TIMEOUT_DRIVER - timeout_driver), int(TIMEOUT_DRIVER))
 
         while ipi_proc.poll() is None:
             if self.die:
@@ -680,15 +681,15 @@ class Test(threading.Thread):
         """
 
         if self.test_status == 'ERROR':
-            _format = RESET + '%30s --> ' + RED +'%15s' +\
+            _format = RESET + '%-30s --> ' + RED +'%15s' +\
                       INFO + ' Info: %s' + RESET
         elif self.test_status == 'FAILED':
-            _format = RESET + '%30s --> ' + YELLOW +'%15s' +\
+            _format = RESET + '-%30s --> ' + YELLOW +'%15s' +\
                       INFO + ' Info: %s' + RESET
         elif self.test_status == 'PASSED':
-            _format = RESET + '%30s --> ' + GREEN +'%15s' + RESET
+            _format = RESET + '-%30s --> ' + GREEN +'%15s' + RESET
         elif self.test_status == 'COPIED':
-            _format = RESET + '%30s --> ' + GREEN +'%15s' + RESET
+            _format = RESET + '-%30s --> ' + GREEN +'%15s' + RESET
 
         if len(self.msg) > 0:
             lines = self.msg.split('\n')
@@ -950,8 +951,8 @@ def create_dir(folder_path, ignore=False):
     if os.path.exists(folder_path):
         if ignore:
             return True
-        if answer_is_y('!W! %s already exists!\nDo you want to delete it and '
-                       'proceed?\n' % folder_path):
+        if answer_is_y('!W! %s already exists!\n    Do you want to delete it and '
+                       'proceed?[y/n]\n' % folder_path):
             try:
                 if os.path.isdir(folder_path):
                     shutil.rmtree(folder_path)
@@ -1017,7 +1018,7 @@ def parse_regtest_string(test_path):
         dependencies: list of file needed to run the test (the xml file is
             already obviuous).
     """
-    command_string_rgx = re.compile(r'^COMMAND\(?(\d*)\)?\s*([ \w.\+\-\(\)]*)$',
+    command_string_rgx = re.compile(r'^COMMAND\(?(\d*)\)?\s*([ \w.\+\-\(\)\<\>\:]*)$',
                                     re.MULTILINE)
     dependency_string_rgx = re.compile(r'^DEPENDENCIES\s*([ \w.\+\-\(\)]*)$',
                                        re.MULTILINE)
