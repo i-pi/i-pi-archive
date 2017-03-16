@@ -57,8 +57,8 @@ class InputGeop(InputDictionary):
                               "dimension": ["energy", "undefined", "length", "undefined" ] }),
                 "tolerances" : ( InputDictionary, {"dtype" : float,
                               "options"  : [ "energy", "force", "position" ],
-                              "default"  : [ 1e-8, 1e-8, 1e-8 ],
-                              "help"     : "Convergence criteria for optimization.",
+                              "default"  : [ 1e-6, 1e-6, 1e-6 ],
+                              "help"     : "Convergence criteria for optimization. Default values are extremely conservative. Set them to appropriate values for production runs.",
                               "dimension": [ "energy", "force", "length" ] }),     
                 "biggest_step": (InputValue, {"dtype" : float,
                               "default"  : 100.0,
@@ -70,7 +70,7 @@ class InputGeop(InputDictionary):
                                             1 Use first member of position/gradient list. 
                                             2 Use last  member of position/gradient list."""}),
                 "corrections_lbfgs" : (InputValue, {"dtype" : int,
-                              "default"  : 5,
+                              "default"  : 6,
                               "help"     : "The number of past vectors to store for L-BFGS."}),
                 # re-start parameters, estimate hessian, etc.
                 "old_pos": (InputArray, {"dtype" : float,
@@ -120,7 +120,7 @@ class InputGeop(InputDictionary):
         self.tolerances.store(geop.tolerances)
 
         if geop.mode == "bfgs":
-              self.old_direction.store(geop.old_d)
+              self.old_direction.store(geop.d)
               self.invhessian_bfgs.store(geop.invhessian)
               self.biggest_step.store(geop.big_step)
         elif geop.mode == "bfgstrm":
@@ -128,7 +128,7 @@ class InputGeop(InputDictionary):
               self.tr_trm.store(geop.tr)
               self.biggest_step.store(geop.big_step)
         elif geop.mode == "lbfgs":
-              self.old_direction.store(geop.old_d)
+              self.old_direction.store(geop.d)
               self.qlist_lbfgs.store(geop.qlist)
               self.glist_lbfgs.store(geop.glist)
               self.corrections_lbfgs.store(geop.corrections)
@@ -137,7 +137,7 @@ class InputGeop(InputDictionary):
         elif geop.mode == "sd":
               self.ls_options.store(geop.ls_options)
         elif geop.mode == "cg":
-              self.old_direction.store(geop.old_d)
+              self.old_direction.store(geop.d)
               self.ls_options.store(geop.ls_options)
               self.old_force.store(geop.old_f)
 

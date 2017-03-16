@@ -106,7 +106,7 @@ class InputNEB(InputDictionary):
         self.tolerances.store(neb.tolerances)
         self.mode.store(neb.mode)
         self.old_force.store(neb.old_f)
-        self.old_direction.store(neb.old_d)
+        self.old_direction.store(neb.d)
         self.biggest_step.store(neb.big_step)
         self.invhessian_bfgs.store(neb.invhessian)
         self.qlist_lbfgs.store(neb.qlist)
