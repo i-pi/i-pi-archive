@@ -235,6 +235,14 @@ def _parser():
         A dictionary containing all the input options and argument.
     """
     parser = argparse.ArgumentParser(description='Regtests for i-PI.')
+    parser.add_argument('--maxtime',
+                        action='store',
+                        type=int,
+                        help=('Wall time for the driver: this is useful when'
+                              'the driver is stuck. The default value is chosen'
+                              'based on the provided regtests.'),
+                        default=TIMEOUT_DRIVER,
+                        dest='maxtime')
     parser.add_argument('--add-test',
                         action='append',
                         type=str,
@@ -543,7 +551,7 @@ class Test(threading.Thread):
 
         driver_out_path = os.path.join(self.io_dir, 'driver_output.out')
 
-        timeout_driver = TIMEOUT_DRIVER
+        timeout_driver = _parser()['maxtime']
         timeout_ipi = TIMEOUT_IPI
         ipi_command = 'i-pi'
 
@@ -989,6 +997,8 @@ def answer_is_y(msg):
     _no = ['no', 'n']
     if not msg.endswith('\n'):
         msg += '\n'
+    if not msg.startswith('\n'):
+        msg = '\n' + msg
 
     answer = ''
     while answer.lower() not in _yes and answer not in _no:
@@ -1066,7 +1076,6 @@ def inplace_change(filename, old_string, new_string):
 
     # Safely write the changed content, if found in the file
     with open(filename, 'w') as _file:
-
         _content = _content.replace(old_string, new_string)
         _file.write(_content)
         return True

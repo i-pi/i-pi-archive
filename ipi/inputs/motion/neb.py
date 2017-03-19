@@ -59,26 +59,26 @@ class InputNEB(InputDictionary):
                               "options" : [ "energy", "force", "position" ],
                               "default" : [ 1e-8, 1e-8, 1e-8 ],
                               "dimension": [ "energy", "force", "length" ] }),
-                "cg_old_force": (InputArray, {"dtype" : float,
+                "old_force": (InputArray, {"dtype" : float,
                               "default"   : input_default(factory=np.zeros, args = (0,)),
-                              "help"      : "The previous force in a CG optimization.",
+                              "help"      : "The previous force in an optimization step.",
                               "dimension" : "force"}),
-                "cg_old_direction": (InputArray, {"dtype" : float,
+                "old_direction": (InputArray, {"dtype" : float,
                               "default" : input_default(factory=np.zeros, args = (0,)),
-                              "help"    : "The previous direction in a CG optimization."}),
-                "maximum_step": (InputValue, {"dtype" : float,
+                              "help"    : "The previous direction."}),
+                "biggest_step": (InputValue, {"dtype" : float,
                               "default" : 100.0,
-                              "help"    : "The maximum step size for BFGS line minimizations."}),
-                "invhessian" : (InputArray, {"dtype" : float,
+                              "help"    : "The maximum step size for (L)-BFGS line minimizations."}),
+                "invhessian_bfgs" : (InputArray, {"dtype" : float,
                               "default" : input_default(factory=np.eye, args = (0,)),
                               "help"    : "Approximate inverse Hessian for BFGS, if known."}),
-		"qlist"      : (InputArray, {"dtype" : float,
+		        "qlist_lbfgs"      : (InputArray, {"dtype" : float,
                               "default" : input_default(factory=np.zeros, args = (0,)),
                               "help"    : "List of previous position differences for L-BFGS, if known."}),
-                "glist"      : (InputArray, {"dtype" : float,
+                "glist_lbfgs"      : (InputArray, {"dtype" : float,
                               "default" : input_default(factory=np.zeros, args = (0,)),
                               "help"    : "List of previous gradient differences for L-BFGS, if known."}),
-                "corrections" : (InputValue, {"dtype" : int,
+                "corrections_lbfgs" : (InputValue, {"dtype" : int,
                               "default" : 5,
                               "help"    : "The number of past vectors to store for L-BFGS."}),
                 "endpoints"  : (InputDictionary, {"dtype" : [bool, str],
@@ -105,12 +105,12 @@ class InputNEB(InputDictionary):
         self.ls_options.store(neb.ls_options)
         self.tolerances.store(neb.tolerances)
         self.mode.store(neb.mode)
-        self.cg_old_force.store(neb.cg_old_f)
-        self.cg_old_direction.store(neb.cg_old_d)
-        self.maximum_step.store(neb.max_step)
-        self.invhessian.store(neb.invhessian)
-        self.qlist.store(neb.qlist)
-        self.glist.store(neb.glist)
+        self.old_force.store(neb.old_f)
+        self.old_direction.store(neb.d)
+        self.biggest_step.store(neb.big_step)
+        self.invhessian_bfgs.store(neb.invhessian)
+        self.qlist_lbfgs.store(neb.qlist)
+        self.glist_lbfgs.store(neb.glist)
         self.endpoints.store(neb.endpoints)
         self.spring.store(neb.spring)
         self.climb.store(neb.climb)

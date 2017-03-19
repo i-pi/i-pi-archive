@@ -9,15 +9,19 @@
         <address> driver </address>
     </ffsocket>
     <system>
-        <initialize nbeads="1"> 
-            <file mode="xyz"> init.xyz </file>
+        <initialize nbeads="1">
+        <file mode="xyz"> init.xyz </file>
         </initialize>
         <forces>
-        <force  forcefield="qtip4pf"> </force>
+        <force forcefield="qtip4pf"> </force>
         </forces>
         <motion mode="minimize">
-            <optimizer mode="cg"> 
-                <tolerances> [1e-10, 1e-10, 1e-10]  </tolerances> 
+            <optimizer mode="bfgs">
+                <tolerances>
+                    <energy> 1e-8 </energy>
+                    <force> 1e-8 </force>
+                    <position> 1e-8 </position>
+                </tolerances>
             </optimizer>
         </motion>
     </system>

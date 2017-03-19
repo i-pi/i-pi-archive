@@ -138,7 +138,7 @@ class ForceBead(dobject):
       directly without going through the get_all function. This allows
       all the jobs to be sent at once, allowing them to be parallelized.
       """
-
+      
       self._threadlock.acquire()
       try:
           if self.request is None and dget(self,"ufvx").tainted():

@@ -24,7 +24,7 @@ Classes:
 import numpy as np
 from copy import copy
 import ipi.engine.initializer
-from ipi.engine.motion import Motion, Dynamics, Replay, GeopMover, NEBMover, DynMatrixMover, MultiMotion
+from ipi.engine.motion import Motion, Dynamics, Replay, GeopMotion, NEBMover, DynMatrixMover, MultiMotion
 from ipi.engine.motion import DynMatrixMover
 from ipi.utils.inputvalue import *
 from ipi.inputs.thermostats import *
@@ -70,7 +70,7 @@ class InputMotionBase(Input):
                                      "help":  "Option for (path integral) molecular dynamics" } ),
            "file": (InputInitFile, { "default" : input_default(factory=ipi.engine.initializer.InitBase,kwargs={"mode":"xyz"}),
                            "help"            : "This describes the location to read a trajectory file from."}),
-           "vibrations" : ( InputDynMatrix, { "default" : {}, 
+           "vibrations" : ( InputDynMatrix, { "default" : {},
                                      "help":  "Option for phonon computation" } )
          }
 
@@ -93,7 +93,7 @@ class InputMotionBase(Input):
       elif type(sc) is Replay:
          self.mode.store("replay")
          tsc = 0
-      elif type(sc) is GeopMover:
+      elif type(sc) is GeopMotion:
          self.mode.store("minimize")
          self.optimizer.store(sc)
          tsc = 1
@@ -104,14 +104,14 @@ class InputMotionBase(Input):
       elif type(sc) is Dynamics:
          self.mode.store("dynamics")
          self.dynamics.store(sc)
-         tsc = 1   
+         tsc = 1
       elif type(sc) is DynMatrixMover:
          self.mode.store("vibrations")
          self.vibrations.store(sc)
-         tsc = 1   
-      else: 
+         tsc = 1
+      else:
          raise ValueError("Cannot store Mover calculator of type "+str(type(sc)))
-      
+
       if tsc == 0:
          self.file.store(sc.intraj)
       elif tsc > 0:
@@ -131,7 +131,7 @@ class InputMotionBase(Input):
       if self.mode.fetch() == "replay":
          sc = Replay(fixcom=self.fixcom.fetch(), fixatoms=self.fixatoms.fetch(), intraj=self.file.fetch())
       elif self.mode.fetch() == "minimize":
-         sc = GeopMover(fixcom=self.fixcom.fetch(), fixatoms=self.fixatoms.fetch(), **self.optimizer.fetch())
+         sc = GeopMotion(fixcom=self.fixcom.fetch(), fixatoms=self.fixatoms.fetch(), **self.optimizer.fetch())
       elif self.mode.fetch() == "neb":
          sc = NEBMover(fixcom=self.fixcom.fetch(), fixatoms=self.fixatoms.fetch(), **self.neb_optimizer.fetch())
       elif self.mode.fetch() == "dynamics":
@@ -173,7 +173,7 @@ class InputMotion(InputMotionBase):
          mlist = []
          for (k, m) in self.extra:
             mlist.append(m.fetch())
-         motion=MultiMotion(motionlist=mlist)         
+         motion=MultiMotion(motionlist=mlist)
       else:
          motion=super(InputMotion,self).fetch()
 
