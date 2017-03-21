@@ -146,7 +146,6 @@ class DynMatrixMover(Motion):
         if(self.asr=="none"):
             return dm
 
-
         if(self.asr=="crystal"):
             #Computes the centre of mass.
             com=np.dot(np.transpose(self.beads.q.reshape((self.beads.natoms,3))),self.m)/self.m.sum()
@@ -172,10 +171,6 @@ class DynMatrixMover(Motion):
             #Computes the transformation matrix.
             transfmatrix = np.eye(3*self.beads.natoms)-np.dot(D.T,D)
             r = np.dot(transfmatrix.T,np.dot(dm,transfmatrix))
-            r = np.dot(transfmatrix.T,np.dot(dm,transfmatrix))
-            re, rU = np.linalg.eigh(r)
-            re[0:3] = 0.0
-            r = np.dot(rU.T, np.dot(np.diag(re), rU))
             return r
 
         elif(self.asr=="poly"):
@@ -209,9 +204,6 @@ class DynMatrixMover(Motion):
             #Computes the transformation matrix.
             transfmatrix = np.eye(3*self.beads.natoms)-np.dot(D.T,D)
             r = np.dot(transfmatrix.T,np.dot(dm,transfmatrix))
-            re, rU = np.linalg.eigh(r)
-            re[0:6] = 0.0
-            r = np.dot(rU.T, np.dot(np.diag(re), rU))
             return r
 
 class DummyPhononCalculator(dobject):
