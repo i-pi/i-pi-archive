@@ -115,8 +115,11 @@ class DynMatrixMover(Motion):
         for i in range(3 * self.beads.natoms):
             print >> outfile, ' '.join(map(str, dmatx[i]/(self.ism[i]*self.ism)))
         outfile.close()
+       
         
-        eigsys=np.linalg.eigh(dmatx)        
+          
+        #eigsys=np.linalg.eigh(dmatx)        
+        eigsys=np.linalg.eigh((dmatx+np.transpose(dmatx))/2)        
         # prints eigenvalues & eigenvectors
         outfile=open(prefix+'.eigval', 'w') 
         print >> outfile, "# Eigenvalues (atomic units)"+wstr
