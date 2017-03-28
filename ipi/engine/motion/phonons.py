@@ -90,8 +90,7 @@ class DynMatrixMover(Motion):
             self.phcalc.step(step)
         else:
             self.phcalc.transform()
-            rdyn = self.apply_asr(self.refdynmatrix)
-            self.refdynmatrix = (rdyn + rdyn.T)/2.0
+            self.refdynmatrix = self.apply_asr(self.refdynmatrix.copy())
             self.printall(self.prefix, self.refdynmatrix.copy())
             softexit.trigger("Dynamic matrix is calculated. Exiting simulation")
 
