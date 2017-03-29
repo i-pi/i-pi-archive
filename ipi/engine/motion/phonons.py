@@ -117,7 +117,7 @@ class DynMatrixMover(Motion):
         outfile.close()
        
         #eigsys=np.linalg.eigh(dmatx)        
-        eigsys=np.linalg.eigh((dmatx+np.transpose(dmatx))/2)        
+        eigsys=np.linalg.eigh(dmatx)        
         # prints eigenvalues & eigenvectors
         outfile=open(prefix+'.eigval', 'w') 
         print >> outfile, "# Eigenvalues (atomic units)"+wstr
