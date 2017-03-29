@@ -1,5 +1,5 @@
 <simulation mode="static" verbosity="high">
-    <output prefix="phonons">
+    <output prefix="simulation">
         <properties stride="10" filename="out">  [ step, potential ] </properties>
    </output>
    <total_steps> 5000 </total_steps>
@@ -18,8 +18,8 @@
             <vibrations mode="fd">
                 <pos_shift> 0.001 </pos_shift>
                 <energy_shift> 0.001 </energy_shift>
-                <prefix> phonons </prefix>
-                <asr> crystal </asr>
+                <prefix> simulation </prefix>
+                <asr> poly </asr>
             </vibrations>
         </motion>
     </system>

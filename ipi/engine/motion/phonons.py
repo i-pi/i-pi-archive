@@ -90,9 +90,9 @@ class DynMatrixMover(Motion):
             self.phcalc.step(step)
         else:
             self.phcalc.transform()
-            rdyn = self.apply_asr(self.refdynmatrix)
-            self.printall(self.prefix, rdyn)
-            softexit.trigger("Dynamic matrix is calculated. Exiting simulation")                    
+            self.refdynmatrix = self.apply_asr(self.refdynmatrix.copy())
+            self.printall(self.prefix, self.refdynmatrix.copy())
+            softexit.trigger("Dynamic matrix is calculated. Exiting simulation")
 
     def printall(self, prefix, dmatx, deltaw=0.0):
         """ Prints out diagnostics for a given dynamical matrix. """
@@ -115,7 +115,8 @@ class DynMatrixMover(Motion):
         for i in range(3 * self.beads.natoms):
             print >> outfile, ' '.join(map(str, dmatx[i]/(self.ism[i]*self.ism)))
         outfile.close()
-        
+       
+        #eigsys=np.linalg.eigh(dmatx)        
         eigsys=np.linalg.eigh(dmatx)        
         # prints eigenvalues & eigenvectors
         outfile=open(prefix+'.eigval', 'w') 
@@ -268,6 +269,12 @@ class FDPhononCalculator(DummyPhononCalculator):
         self.dm.dynmatrix[step] = dmrow
         self.dm.refdynmatrix[step] = dmrow
 
+    def transform(self):
+        dm = self.dm.dynmatrix.copy()
+        rdm = self.dm.dynmatrix.copy()
+        self.dm.dynmatrix = 0.50*(dm + dm.T)
+        self.dm.refdynmatrix = 0.50*(rdm + rdm.T)
+
 class NMFDPhononCalculator(FDPhononCalculator):
     """ Normal mode finite difference phonon evaluator.
     """
@@ -309,6 +316,8 @@ class NMFDPhononCalculator(FDPhononCalculator):
 
     def transform(self):
         self.dm.refdynmatrix = np.dot(self.dm.U,np.dot(self.dm.refdynmatrix,np.transpose(self.dm.U)))
+        rdm = self.dm.dynmatrix.copy()
+        self.dm.refdynmatrix = 0.50*(rdm + rdm.T)
 
 class ENMFDPhononCalculator(NMFDPhononCalculator):
     """ Energy scaled normal mode finite difference phonon evaluator.
