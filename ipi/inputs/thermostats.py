@@ -36,6 +36,8 @@ class InputThermoBase(Input):
       ethermo: An optional float giving the amount of heat energy transferred
          to the bath. Defaults to 0.0.
       tau: An optional float giving the damping time scale. Defaults to 1.0.
+      sigma: Sets the estimated amplitude of inherent force noise. Defaults to 0.0.
+      sigtau: Coupling coefficient for automatic adjustment of sigma. Defaults to 0.0.
       pile_lambda: Scaling for the PILE damping relative to the critical damping.
       A: An optional array of floats giving the drift matrix. Defaults to 0.0.
       C: An optional array of floats giving the static covariance matrix.
@@ -45,8 +47,8 @@ class InputThermoBase(Input):
    """
 
    attribs = { "mode": (InputAttribute, { "dtype"   : str,
-                                      "options" : [ "", "langevin", "svr", "pile_l", "pile_g", "gle", "nm_gle", "nm_gle_g" ],
-                                      "help"    : "The style of thermostatting. 'langevin' specifies a white noise langevin equation to be attached to the cartesian representation of the momenta. 'svr' attaches a velocity rescaling thermostat to the cartesian representation of the momenta. Both 'pile_l' and 'pile_g' attaches a white noise langevin thermostat to the normal mode representation, with 'pile_l' attaching a local langevin thermostat to the centroid mode and 'pile_g' instead attaching a global velocity rescaling thermostat. 'gle' attaches a coloured noise langevin thermostat to the cartesian representation of the momenta, 'nm_gle' attaches a coloured noise langevin thermostat to the normal mode representation of the momenta and a langevin thermostat to the centroid and 'nm_gle_g' attaches a gle thermostat to the normal modes and a svr thermostat to the centroid.  'multiple' is a special thermostat mode, in which one can define multiple thermostats _inside_ the thermostat tag."
+                                      "options" : [ "", "langevin", "nfl", "svr", "pile_l", "pile_g", "gle", "nm_gle", "nm_gle_g" ],
+                                      "help"    : "The style of thermostatting. 'langevin' specifies a white noise langevin equation to be attached to the cartesian representation of the momenta. 'nfl' represents a modified langevin thermostat which compensates for additional white noise from noisy forces. 'svr' attaches a velocity rescaling thermostat to the cartesian representation of the momenta. Both 'pile_l' and 'pile_g' attaches a white noise langevin thermostat to the normal mode representation, with 'pile_l' attaching a local langevin thermostat to the centroid mode and 'pile_g' instead attaching a global velocity rescaling thermostat. 'gle' attaches a coloured noise langevin thermostat to the cartesian representation of the momenta, 'nm_gle' attaches a coloured noise langevin thermostat to the normal mode representation of the momenta and a langevin thermostat to the centroid and 'nm_gle_g' attaches a gle thermostat to the normal modes and a svr thermostat to the centroid.  'multiple' is a special thermostat mode, in which one can define multiple thermostats _inside_ the thermostat tag."
                                          }) }
    fields = { "ethermo" : (InputValue, {  "dtype"     : float,
                                           "default"   : 0.0,
@@ -55,6 +57,14 @@ class InputThermoBase(Input):
             "tau" : (InputValue, {  "dtype"     : float,
                                     "default"   : 0.0,
                                     "help"      : "The friction coefficient for white noise thermostats.",
+                                    "dimension" : "time" }),
+            "sigma" : (InputValue, {"dtype"     : float,
+                                    "default"   : 0.0,
+                                    "help"      : "The force noise amplitude for noisy force langevin thermostats.",
+                                    "dimension" : "force" }),
+            "sigtau" : (InputValue, {"dtype"    : float,
+                                    "default"   : 0.0,
+                                    "help"      : "The time coefficient for adjustment of NFL thermostat's sigma.",
                                     "dimension" : "time" }),
             "pile_lambda" : (InputValue, { "dtype" : float,
                                     "default"   : 1.0,
@@ -92,6 +102,11 @@ class InputThermoBase(Input):
       if type(thermo) is ethermostats.ThermoLangevin:
          self.mode.store("langevin")
          self.tau.store(thermo.tau)
+      elif type(thermo) is ethermostats.ThermoNFL:
+         self.mode.store("nfl")
+         self.tau.store(thermo.tau)
+         self.sigma.store(thermo.sigma)
+         self.sigtau.store(thermo.sigtau)
       elif type(thermo) is ethermostats.ThermoSVR:
          self.mode.store("svr")
          self.tau.store(thermo.tau)
@@ -142,6 +157,8 @@ class InputThermoBase(Input):
       super(InputThermoBase,self).fetch()
       if self.mode.fetch() == "langevin":
          thermo = ethermostats.ThermoLangevin(tau=self.tau.fetch())
+      elif self.mode.fetch() == "nfl":
+         thermo = ethermostats.ThermoNFL(tau=self.tau.fetch(), sigma=self.sigma.fetch(), sigtau=self.sigtau.fetch())
       elif self.mode.fetch() == "svr":
          thermo = ethermostats.ThermoSVR(tau=self.tau.fetch())
       elif self.mode.fetch() == "pile_l":
@@ -180,9 +197,14 @@ class InputThermoBase(Input):
 
       super(InputThermoBase,self).check()
 
-      if self.mode.fetch() in ["langevin", "svr", "pile_l", "pile_g", "nm_gle_g"]:
+      if self.mode.fetch() in ["langevin", "nfl", "svr", "pile_l", "pile_g", "nm_gle_g"]:
          if self.tau.fetch() <= 0:
             raise ValueError("The thermostat friction coefficient must be set to a positive value")
+      if self.mode.fetch() in ["nfl"]:
+         if self.sigma.fetch() < 0:
+            raise ValueError("The force noise amplitude must be set to a non-negative value")
+         if self.sigtau.fetch() < 0:
+            raise ValueError("The automatic sigma adjustment coefficient must be set to a non-negative value")
       if self.mode.fetch() in ["gle", "nm_gle", "nm_gle_g"]:
          pass  # PERHAPS DO CHECKS THAT MATRICES SATISFY REASONABLE CONDITIONS (POSITIVE-DEFINITENESS, ETC)
 
