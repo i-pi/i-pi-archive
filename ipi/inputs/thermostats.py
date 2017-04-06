@@ -197,10 +197,12 @@ class InputThermoBase(Input):
 
       super(InputThermoBase,self).check()
 
-      if self.mode.fetch() in ["langevin", "nfl", "svr", "pile_l", "pile_g", "nm_gle_g"]:
+      if self.mode.fetch() in ["langevin", "svr", "pile_l", "pile_g", "nm_gle_g"]:
          if self.tau.fetch() <= 0:
             raise ValueError("The thermostat friction coefficient must be set to a positive value")
       if self.mode.fetch() in ["nfl"]:
+         if self.tau.fetch() < 0:
+            raise ValueError("The thermostat friction coefficient must be set to a non-negative value")
          if self.sigma.fetch() < 0:
             raise ValueError("The force noise amplitude must be set to a non-negative value")
          if self.sigtau.fetch() < 0:
