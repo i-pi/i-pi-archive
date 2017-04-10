@@ -24,12 +24,12 @@ Classes:
 import numpy as np
 from copy import copy
 import ipi.engine.initializer
-from ipi.engine.motion import Motion, Dynamics, Replay, GeopMotion, NEBMover, DynMatrixMover, MultiMotion
-from ipi.engine.motion import DynMatrixMover
+from ipi.engine.motion import Motion, Dynamics, Replay, GeopMotion,InstantonMotion, NEBMover, DynMatrixMover, MultiMotion
 from ipi.utils.inputvalue import *
 from ipi.inputs.thermostats import *
 from ipi.inputs.initializer import *
 from .geop import InputGeop
+from .instanton import InputInst
 from .neb import InputNEB
 from .dynamics import InputDynamics
 from .phonons import InputDynMatrix
@@ -54,7 +54,7 @@ class InputMotionBase(Input):
 
    attribs={"mode"  : (InputAttribute, {"dtype"   : str,
                                     "help"    : "How atoms should be moved at each step in the simulatio. 'replay' means that a simulation is restarted from a previous simulation.",
-                                    "options" : ['vibrations', 'minimize', 'replay', 'neb', 'dynamics',  'dummy']}) }
+                                    "options" : ['vibrations', 'minimize', 'replay', 'neb','instanton', 'dynamics',  'dummy']}) }
 
    fields={"fixcom": (InputValue, {"dtype"           : bool,
                                    "default"         : True,
@@ -66,6 +66,8 @@ class InputMotionBase(Input):
                                      "help":  "Option for geometry optimization" } ),
            "neb_optimizer" : ( InputGeop, { "default" : {},
                                      "help":  "Option for geometry optimization" } ),
+           "instanton" : ( InputInst, { "default" : {},
+                                     "help":  "Option for Instanton optimization" } ),
            "dynamics" : ( InputDynamics, { "default" : {},
                                      "help":  "Option for (path integral) molecular dynamics" } ),
            "file": (InputInitFile, { "default" : input_default(factory=ipi.engine.initializer.InitBase,kwargs={"mode":"xyz"}),
@@ -88,6 +90,7 @@ class InputMotionBase(Input):
 
       super(InputMotionBase, self).store(sc)
       tsc = -1
+
       if type(sc) is Motion:
           self.mode.store("dummy")
       elif type(sc) is Replay:
@@ -100,6 +103,10 @@ class InputMotionBase(Input):
       elif type(sc) is NEBMover:
          self.mode.store("neb")
          self.neb_optimizer.store(sc)
+         tsc = 1
+      elif type(sc) is InstantonMotion:
+         self.mode.store("instanton")
+         self.instanton.store(sc)
          tsc = 1
       elif type(sc) is Dynamics:
          self.mode.store("dynamics")
@@ -134,6 +141,8 @@ class InputMotionBase(Input):
          sc = GeopMotion(fixcom=self.fixcom.fetch(), fixatoms=self.fixatoms.fetch(), **self.optimizer.fetch())
       elif self.mode.fetch() == "neb":
          sc = NEBMover(fixcom=self.fixcom.fetch(), fixatoms=self.fixatoms.fetch(), **self.neb_optimizer.fetch())
+      elif self.mode.fetch() == "instanton":
+         sc = InstantonMotion(fixcom=self.fixcom.fetch(), fixatoms=self.fixatoms.fetch(), **self.instanton.fetch())
       elif self.mode.fetch() == "dynamics":
          sc = Dynamics(fixcom=self.fixcom.fetch(), fixatoms=self.fixatoms.fetch(), **self.dynamics.fetch())
       elif self.mode.fetch() == "vibrations":
