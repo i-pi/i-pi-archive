@@ -1,0 +1,42 @@
+<simulation mode="static" verbosity="low">
+   <output prefix='inst'>
+      <properties stride='1' filename='out'>  [ step, potential{electronvolt}] </properties>
+      <trajectory stride='1' filename='pos'>  positions{angstrom}  </trajectory>
+      <trajectory stride='1' filename='poss'>  positions  </trajectory>
+      <trajectory stride='1' filename='for'>  forces  </trajectory>
+   </output>
+   <total_steps>200       </total_steps>
+   <ffsocket name="driver" mode="unix" >
+      <address> localhost </address>  <latency> 1e-4</latency>
+      <port>41076</port>
+   </ffsocket>
+   <system >
+    <initialize nbeads='32'> 
+      <file mode='xyz' >  init.xyz </file>
+      <cell mode='abc'> [130.18034026,  170.29206049,  240.21758034] </cell>
+    </initialize>
+    <forces>
+     <force forcefield="driver"> </force>
+    </forces>
+    <motion mode='instanton'>
+      <instanton mode='full'>
+      <hessian shape='(3, 3)'>
+             [  -4.17488892e-02,   0.00000000e+00,   0.00000000e+00,  -6.61744490e-22,   5.51152161e-01,
+                 0.00000000e+00,  -6.61744490e-22,   0.00000000e+00,   5.51152161e-01 ]
+      </hessian>
+        <tolerances>
+      <energy> 1e-8 </energy>
+      <force> 1e-8 </force>
+      <position> 0.01 </position>
+     </tolerances>
+        <min_temp units="kelvin">125.48</min_temp>
+        <delta> 0.3 </delta> 
+        <hessian_init>true</hessian_init>
+        <hessian_update>powell</hessian_update>
+        <hessian_asr>none</hessian_asr>
+        <final_rates>false</final_rates>
+    <biggest_step>0.5</biggest_step>
+      </instanton>
+    </motion>
+   </system>
+</simulation>
