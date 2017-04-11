@@ -68,7 +68,7 @@ def Instanton(x0, f0,f1, h0, update,asr, im,gm, big_step):
     if update == 'powell':
         d_g = np.subtract((f0+f1), f) #Gradient dif
         Powell(d_x.flatten(), d_g.flatten(), h0)
-    elif update == 'true':
+    elif update == 'recompute':
         get_hessian(h0,gm,x)
         if gm.dbeads.nbeads != 1:
             add_spring_hessian(im,h0)
