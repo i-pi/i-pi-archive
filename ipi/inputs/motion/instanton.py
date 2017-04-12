@@ -63,12 +63,8 @@ class InputInst(InputDictionary):
                "delta":       (InputValue, {"dtype": float,
                                "default": 0.1,
                                "help": "Initial stretch amplitude."}),
-               "min_temp":    (InputValue, {"dtype": float,
-                               "default": 100.0,
-                               "help": "Temperature",
-                               "dimension": "temperature"}),
                "hessian_init": (InputValue, {"dtype": str,
-                                "default": "true",
+                                "default": "expand",
                                 "options": ["true","expand"],
                                 "help": "How to initialize the hessian if it is not fully provided. If true computes the Hessian from scratch and if expand, reads from a Hessian that was provided and interpolates if necessary."}),
                "hessian_update": (InputValue, {"dtype": str,
@@ -101,7 +97,6 @@ class InputInst(InputDictionary):
         self.hessian.store(geop.hessian)
         self.biggest_step.store(geop.big_step)
         self.delta.store(geop.delta)
-        self.min_temp.store(geop.temp)
         self.hessian_init.store(geop.hessian_init)
         self.hessian_update.store(geop.hessian_update)
         self.hessian_asr.store(geop.hessian_asr)

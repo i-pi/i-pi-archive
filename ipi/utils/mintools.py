@@ -42,11 +42,14 @@ Functions:
             Press, W. H., Teukolsky, S. A., Vetterling, W. T., and Flannery, B. P. (1992). 
             Numerical Recipes in C: The Art of Scientific Computing. 
             Cambridge: Cambridge University Press
-
         LBFGS subroutine adapted from:
             Nocedal, J. (1980). Updating Quasi-Newton Matrices with
             Limited Storage. Mathematics of Computation, 35, 773-782.
             DOI: http://dx.doi.org/10.1090/S0025-5718-1980-0572855-7
+        powell: powell formula to update the hessian (R. Fletcher. Practical Methods of Optimization. 2nd ed.
+            (Chichester: John Wileyand Sons, 1987)
+        nichols: nichols algorithm for optimization (minimum or transition state)
+        Simons, J. and Nichols, J. (1990), Int. J. Quantum Chem., 38: 263-276. doi: 10.1002/qua.560382427
 """
 
 #TODO: CLEAN UP BFGS, L-BFGS, L-BFGS_nls TO NOT EXIT WITHIN MINTOOLS.PY BUT USE UNIVERSAL SOFTEXIT
@@ -1267,7 +1270,6 @@ def Powell(d, Dg, H):
 
     Output: H = Cartesian Hessian"""
 
-    ##ALBERTO. Reference for this formula?
     ddi = 1 / np.dot(d, d)
     y = Dg - np.dot(H, d)
     H += ddi * (np.outer(y, d) + np.outer(d, y) - np.dot(y, d) * np.outer(d, d) * ddi)

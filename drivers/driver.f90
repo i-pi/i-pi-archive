@@ -127,11 +127,13 @@
                   vstyle = 7
                ELSEIF (trim(cmdbuffer) == "pswater") THEN
                   vstyle = 8
+               ELSEIF (trim(cmdbuffer) == "eckart") THEN
+                  vstyle = 9
                ELSEIF (trim(cmdbuffer) == "gas") THEN
                   vstyle = 0  ! ideal gas
                ELSE
                   WRITE(*,*) " Unrecognized potential type ", trim(cmdbuffer)
-                  WRITE(*,*) " Use -m [gas|lj|sg|harm|morse|zundel|qtip4pf] "
+                  WRITE(*,*) " Use -m [gas|lj|sg|harm|morse|zundel|qtip4pf|eckart] "
                   STOP "ENDED"
                ENDIF
             ELSEIF (ccmd == 4) THEN
@@ -180,6 +182,18 @@
          ELSEIF ( 2/= par_count) THEN
             WRITE(*,*) "Error: parameters not initialized correctly."
             WRITE(*,*) "For morse potential use -o r0,D,a (in a.u.) "
+            STOP "ENDED"
+         ENDIF
+         isinit = .true.
+      ELSEIF (9 == vstyle) THEN !eckart
+         IF (par_count == 0) THEN ! defaults values 
+            vpars(1) = 0.0d0
+            vpars(2) = 0.66047 
+            vpars(3) = (6*12)/( 1836 * (vpars(2)**2) *( (4.D0 * ATAN(1.0d0) )**2 ) )
+            vpars(4) = 1836*(3800.0d0/219323d0)**2
+         ELSEIF ( 4/= par_count) THEN
+            WRITE(*,*) "Error: parameters not initialized correctly."
+            WRITE(*,*) "For ekart potential use  AA,A,B,k" 
             STOP "ENDED"
          ENDIF
          isinit = .true.
@@ -392,8 +406,9 @@
                ! MR: the above line looks like it provides correct results in eAngstrom for dipole! CHECK! Important to have molecule in the center of the cell...
                pot = pot*0.0015946679     ! pot_nasa gives kcal/mol
                forces = forces * (-0.00084329756) ! pot_nasa gives V in kcal/mol/angstrom
-
                ! do not compute the virial term
+            ELSEIF (vstyle == 9) THEN ! eckart potential.
+               CALL geteckart(nat,vpars(1), vpars(2), vpars(3),vpars(4), atoms, pot, forces)
             ELSE
                IF ((allocated(n_list) .neqv. .true.)) THEN
                   IF (verbose > 0) WRITE(*,*) " Allocating neighbour lists."
@@ -474,7 +489,7 @@
       CONTAINS
       SUBROUTINE helpmessage
          ! Help banner
-         WRITE(*,*) " SYNTAX: driver.x [-u] -h hostname -p port -m [gas|lj|sg|harm|morse|zundel|qtip4pf|pswater] "
+         WRITE(*,*) " SYNTAX: driver.x [-u] -h hostname -p port -m [gas|lj|sg|harm|morse|zundel|qtip4pf|pswater|eckart] "
          WRITE(*,*) "         -o 'comma_separated_parameters' [-v|-vv] "
          WRITE(*,*) ""
          WRITE(*,*) " For LJ potential use -o sigma,epsilon,cutoff "
