@@ -1,23 +1,23 @@
 #!/usr/bin/env python2
 
-""" remdsort.py
+""" parasort.py
 
 Relies on the infrastructure of i-pi, so the ipi package should
 be installed in the Python module directory, or the i-pi
 main directory must be added to the PYTHONPATH environment variable.
 
-Post-processes the output of a replica-exchange simulation and
+Post-processes the output of a parallel-tempering simulation and
 re-orders the outputs so that they correspond to the different
 temperatures ensembles rather than to the time series of one of
 the replicas exchanging temperature over time.
 
 It should be run in the same dyrectory as where i-pi was (or is being)
 run, and simply fetches all information from the simulation input file.
-Will create a series of REindex_* files, each corresponding to the
+Will create a series of PTindex_* files, each corresponding to the
 data for replica 'index'.
 
 Syntax:
-   remdsort.py inputfile.xml
+   parasort.py inputfile.xml
 """
 
 
@@ -29,7 +29,7 @@ from ipi.inputs.simulation import InputSimulation
 from ipi.utils.io.inputs import io_xml
 
 
-def main(inputfile, prefix="RE"):
+def main(inputfile, prefix="PT"):
 
 
    # opens & parses the input file
@@ -41,11 +41,9 @@ def main(inputfile, prefix="RE"):
    isimul.parse(xmlrestart.fields[0][1])
 
    simul = isimul.fetch()
-   
 
-# TODO: check if remd is chosen as smotion mode
-#   if simul.mode != "paratemp":
-#      raise ValueError("Simulation does not look like a parallel tempering one.")
+   if simul.smotion.mode != "remd":
+      raise ValueError("Simulation does not look like a parallel tempering one.")
 
    # reconstructs the list of the property and trajectory files that have been output
    # and that should be re-ordered
@@ -116,38 +114,23 @@ def main(inputfile, prefix="RE"):
    ptfile=open("PARATEMP", "r")
 
    # now reads files one frame at a time, and re-direct output to the appropriate location
-   irep = np.zeros(nsys,int)
-   nrep = np.zeros(nsys,int)
-   
-   # reads first line from PARATEMP index file
-   line=ptfile.readline()
-   line = line.split()
 
-   step = int(line[0])
-   irep[:] = line[1:]
-   
-   # reads second line from PARATEMP index file
-   line=ptfile.readline()
-   line = line.split()
-
-   steps = int(line[0])
-   nrep[:] = line[1:]
-   
+   line = ptfile.readline().split()
+   irep = range(nsys) # Could this be harmful?
+   step = 0
    while True:
+      # reads one line from PARATEMP index file
       try:
-      
-         print step,irep
-         
+
          for prop in lprop:
             for isys in range(nsys):
                sprop = prop[isys]
                if step % sprop["stride"] == 0: # property transfer
                   iline = sprop["ifile"].readline()
-                  if not iline: raise EOFError
+                  if len(iline) == 0: raise EOFError # useful if line is blank
                   while iline[0] == "#":  # fast forward if line is a comment
                      prop[irep[isys]]["ofile"].write(iline)
                      iline = sprop["ifile"].readline()
-                     if not iline: raise EOFError
                   prop[irep[isys]]["ofile"].write(iline)
 
          for traj in ltraj:
@@ -158,7 +141,6 @@ def main(inputfile, prefix="RE"):
                   ibuffer = []
                   if straj["format"] == "xyz":
                      iline = straj["ifile"].readline()
-                     if not iline: raise EOFError
                      nat = int(iline)
                      ibuffer.append(iline)
                      ibuffer.append(straj["ifile"].readline())
@@ -167,31 +149,21 @@ def main(inputfile, prefix="RE"):
                      traj[irep[isys]]["ofile"].write(''.join(ibuffer))
                   elif straj["format"] == "pdb":
                      iline = straj["ifile"].readline()
-                     if not iline: raise EOFError
                      while (iline.strip()!="" and iline.strip()!= "END"):
                         ibuffer.append(iline)
                         iline = straj["ifile"].readline()
                      ibuffer.append(iline)
                      traj[irep[isys]]["ofile"].write(''.join(ibuffer))
-                     
-         step = step+1
-      
-         if step == steps:
-            irep[:] = nrep[:]
-            # reads one line from PARATEMP index file
-            line=ptfile.readline()
-            line = line.split()
-
-            if not line:
-               steps = np.inf
-            else:
-               steps = int(line[0])
-               nrep[:] = line[1:]
-      
       except EOFError:
          break
-        
 
+      if step == int(line[0]):
+         irep = [int(i) for i in line[1:]]
+         line = ptfile.readline()
+         line = line.split()
+         if len(line) == 0: break
+
+      step += 1
 
 if __name__ == '__main__':
    main(*sys.argv[1:])

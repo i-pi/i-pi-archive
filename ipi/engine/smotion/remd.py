@@ -53,6 +53,8 @@ class ReplicaExchange(Smotion):
         #! TODO ! allow saving and storing the replica indices
         self.repindex = repindex
 
+        self.mode = 'remd'
+
     def bind(self, syslist, prng):
 
         super(ReplicaExchange,self).bind(syslist, prng)
