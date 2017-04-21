@@ -11,7 +11,7 @@ This module has machinery for abstract I/O handling.
 import sys
 import os
 
-from ipi.utils.messages import info
+from ipi.utils.messages import info, verbosity
 from ipi.external import importlib
 from ipi.utils.decorators import cached
 
@@ -126,7 +126,7 @@ def iter_file(mode, filedesc, **kwargs):
     Returns:
         Generator of frames (dictionary with 'atoms', 'cell' and 'comment') from the trajectory.
     """
-    
+
     try:
         while 1:
             yield importlib.import_module("ipi.utils.io.io_units").\
@@ -134,7 +134,7 @@ def iter_file(mode, filedesc, **kwargs):
                       output=kwargs["output"] if "output" in kwargs.keys() else "objects")
     except EOFError:
         pass
-            
+
 def iter_file_name(filename):
     """Open a trajectory file, guessing its format from the extension.
 
@@ -176,7 +176,7 @@ def open_backup(filename, mode='r', buffering=-1):
 
         if fn_backup != filename:
             os.rename(filename, fn_backup)
-            info('Backup performed: {:s} -> {:s}'.format(filename, fn_backup))
+            info('Backup performed: {:s} -> {:s}'.format(filename, fn_backup), verbosity.low)
 
     else:
         # There is no need to back up.
