@@ -25,9 +25,6 @@ from ipi.engine.properties import getkey
 __all__ = [ 'PropertyOutput', 'TrajectoryOutput', 'CheckpointOutput' ]
 
 
-CHKSLEEP = 1.0
-
-
 class PropertyOutput(dobject):
    """Class dealing with outputting a set of properties to file.
 
