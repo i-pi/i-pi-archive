@@ -286,10 +286,8 @@ class ThermoNFL(Thermostat):
          mytemp = ekin/Constants.kb/self.ndof * 2
          self.sigma += (mytemp - self.temp) / self.sigtau * self.dt
          if self.sigma < 0: self.sigma = 0
-         #print("ekin: " + str(ekin))
-         #print("mytemp: " + str(mytemp))
-         #print("self.temp: " + str(self.temp))
-         print("self.sigma: " + str(self.sigma))
+
+         print("ThermoNFL force sigma: " + str(self.sigma))
 
       self.sigstep = not self.sigstep
 
