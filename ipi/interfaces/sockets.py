@@ -28,7 +28,7 @@ __all__ = ['InterfaceSocket']
 
 HDRLEN = 12
 UPDATEFREQ = 10
-TIMEOUT = 0.1
+TIMEOUT = 0.05
 SERVERTIMEOUT = 5.0*TIMEOUT
 NTIMEOUT = 20
 
@@ -424,6 +424,7 @@ class InterfaceSocket(object):
       self.mode = mode
       self.timeout = timeout
       self.poll_iter = UPDATEFREQ # triggers pool_update at first poll
+      self.prlist = []
 
    def open(self):
       """Creates a new socket.
@@ -487,6 +488,7 @@ class InterfaceSocket(object):
       running jobs and new clients are connected to the server.
       """
 
+      # check for disconnected clients
       for c in self.clients[:]:
          if not (c.status & Status.Up):
             try:
@@ -497,10 +499,11 @@ class InterfaceSocket(object):
                pass
             c.status = Status.Disconnected
             self.clients.remove(c)
+            # requeue jobs that have been left hanging
             for [k,j] in self.jobs[:]:
                if j is c:
                   self.jobs = [ w for w in self.jobs if not ( w[0] is k and w[1] is j ) ] # removes pair in a robust way
-                  #self.jobs.remove([k,j])
+                  
                   k["status"] = "Queued"                  
                   k["start"] = -1
 
@@ -541,17 +544,26 @@ class InterfaceSocket(object):
       clients.
       """
 
-      # gets list of pending requests
-      pendr = [ r for r in self.requests if r["status"] == "Queued" ]
-
+      start=time.time()
+      
+      freec = self.clients[:]
+      for [r2, c] in self.jobs:
+         freec.remove(c)
+      
+      if len(self.prlist) == 0: 
+        # fills up list of pending requests
+        self.prlist = [ r for r in self.requests if r["status"] == "Queued" ]      
+      
+      npend=len(self.prlist)
+      ncli = len(self.clients)
       # first: dispatches jobs to free clients (if any!)
       # tries first to match previous replica<>driver association, then to get new clients, and only finally send the a new replica to old drivers
-      if len(pendr)>0 :
-       for match_ids in ( "match", "none", "free", "any" ):
+      if len(freec)>0 and len(self.prlist)>0 :
+       for match_ids in ["any"]: #[ "match", "none", "free", "any" ]: 
          # get clients that are still free
-         freec = self.clients[:]
-         for [r2, c] in self.jobs:
-            freec.remove(c)
+         #freec = self.clients[:]
+         #for [r2, c] in self.jobs:
+         #   freec.remove(c)
          # ... but don't update the pending requests list!
 
          for fc in freec[:]:
@@ -565,7 +577,7 @@ class InterfaceSocket(object):
                warning(" @SOCKET: Client " + str(fc.peername) + " is in an unexpected status " + str(fc.status) + " at (1). Will try to keep calm and carry on.", verbosity.low)
                continue
 
-            for r in pendr[:]:
+            for r in self.prlist[:]:
                if match_ids == "match" and not fc.lastreq is r["id"]:
                   continue
                elif match_ids == "none" and not fc.lastreq is None:
@@ -590,16 +602,19 @@ class InterfaceSocket(object):
                   fc.status = Status.Up | Status.Busy   # we know that the client is busy at this stage!
                   self.jobs.append([r,fc])
                   fc.locked =  (fc.lastreq is r["id"])
+                  freec.remove(fc)
                   # removes r from the list of pending jobs
-                  pendr = [nr for nr in pendr if (not nr is r)]
+                  #pendr = [nr for nr in self.prlist if (not nr is r)]
+                  self.prlist.remove(r)
                   break
                else:
                   warning(" @SOCKET: Client " + str(fc.peername) + " is in an unexpected status " + str(fc.status) + " at (2). Will try to keep calm and carry on.", verbosity.low)
 
+      print "Time to process", ncli, npend, time.time()-start, len(self.requests)
       # force a pool_update if there are requests pending
-      #if len(pendr)>0:
+      #if len(pendr)>0: 
       #   self.poll_iter = UPDATEFREQ
-
+      start = time.time()
       # now check for client status
       for c in self.clients:
          if c.status == Status.Disconnected : # client disconnected. force a pool_update
@@ -607,7 +622,9 @@ class InterfaceSocket(object):
             return
          if not c.status & ( Status.Ready | Status.NeedsInit ):
             c.poll()
-
+      print "time to poll ", time.time()-start 
+      
+      start = time.time()      
       # check for finished jobs
       for [r,c] in self.jobs[:]:
          if c.status & Status.HasData:
@@ -659,6 +676,8 @@ class InterfaceSocket(object):
             c.close()
             c.poll()
             c.status = Status.Disconnected
+            
+      print "time to clean ", time.time()-start 
 
    def poll(self):
       """The main thread loop.
