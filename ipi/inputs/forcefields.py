@@ -112,7 +112,10 @@ class InputFFSocket(InputForceField):
                                      "options"  : [ "unix", "inet" ],
                                      "default"  : "inet",
                                      "help"     : "Specifies whether the driver interface will listen onto a internet socket [inet] or onto a unix socket [unix]." } ),
-
+               "matching" : (InputAttribute, {"dtype": str,
+                                     "options"  : [ "auto", "any"],
+                                     "default"  : "auto",
+                                     "help"     : "Specifies whether requests should be dispatched to any client, or automatically matched to the same client when possible [auto]." } )
               }
 
    attribs.update(InputForceField.attribs)
@@ -139,6 +142,7 @@ class InputFFSocket(InputForceField):
       self.timeout.store(ff.socket.timeout)
       self.slots.store(ff.socket.slots)
       self.mode.store(ff.socket.mode)
+      self.matching.store(ff.socket.match_mode)
 
    def fetch(self):
       """Creates a ForceSocket object.
@@ -149,7 +153,7 @@ class InputFFSocket(InputForceField):
 
       return FFSocket(pars = self.parameters.fetch(), name = self.name.fetch(), latency = self.latency.fetch(), dopbc = self.pbc.fetch(),
               interface=InterfaceSocket(address=self.address.fetch(), port=self.port.fetch(),
-            slots=self.slots.fetch(), mode=self.mode.fetch(), timeout=self.timeout.fetch() ) )
+            slots=self.slots.fetch(), mode=self.mode.fetch(), timeout=self.timeout.fetch(), match_mode=self.matching.fetch() ) )
 
 
    def check(self):
