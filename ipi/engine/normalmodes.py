@@ -76,7 +76,7 @@ class NormalModes(dobject):
          beads.sm3, beads.p and nm_factor.
    """
 
-   def __init__(self, mode="rpmd", transform_method="fft", freqs=None, dt=1.0):
+   def __init__(self, mode="rpmd", transform_method="fft", freqs=None, open_paths=None, dt=1.0):
       """Initializes NormalModes.
 
       Sets the options for the normal mode transform.
@@ -90,12 +90,14 @@ class NormalModes(dobject):
 
       if freqs is None:
          freqs = []
-      dset(self,"dt", depend_value(name='dt', value=dt))
-      dset(self,"mode",   depend_value(name='mode', value=mode))
-      dset(self,"transform_method",
-         depend_value(name='transform_method', value=transform_method))
-      dset(self,"nm_freqs",
-         depend_array(name="nm_freqs",value=np.asarray(freqs, float) ) )
+      if open_paths is None:
+          open_paths = []
+      self.open_paths = np.asarray(open_paths, int)
+      dself = dd(self)
+      dself.dt = depend_value(name='dt', value=dt)
+      dself.mode = depend_value(name='mode', value=mode)
+      dself.transform_method = depend_value(name='transform_method', value=transform_method)
+      dself.nm_freqs = depend_array(name="nm_freqs",value=np.asarray(freqs, float) )
 
    def bind(self, ensemble, motion, beads=None, forces=None):
       """ Initializes the normal modes object and binds to beads and ensemble.
@@ -389,15 +391,6 @@ class NormalModes(dobject):
             pnm[k] = pq[0,:]
          self.pnm = pnm * sm
          self.qnm = qnm / sm
-         #pq = np.zeros((2,self.natoms*3),float)
-         #sm = depstrip(self.beads.sm3)[0]
-         #prop_pq = depstrip(self.prop_pq)
-         #for k in range(1,self.nbeads):
-         #   pq[0,:] = depstrip(self.pnm)[k]/sm
-         #   pq[1,:] = depstrip(self.qnm)[k]*sm
-         #   pq = np.dot(prop_pq[k],pq)
-         #   self.qnm[k] = pq[1,:]/sm
-         #   self.pnm[k] = pq[0,:]*sm
 
    def get_kins(self):
       """Gets the MD kinetic energy for all the normal modes.
