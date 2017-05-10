@@ -213,6 +213,17 @@ class DummyOptimizer(dobject):
         self.mode = geop.mode
         self.tolerances = geop.tolerances
 
+        #Check for very tight tolerances
+
+        if self.tolerances["position"] < 1e-6:
+            raise ValueError("The position tolerance is too small for any typical calculation. "
+                             "We stop here. Comment this line and continue only if you know what you are doing")
+        if self.tolerances["force"] < 1e-6:
+            raise ValueError("The position tolerance is too small for any typical calculation. "
+                             "We stop here. Comment this line and continue only if you know what you are doing")
+        if self.tolerances["energy"] < 1e-6:
+            raise ValueError("The position tolerance is too small for any typical calculation. "
+                             "We stop here. Comment this line and continue only if you know what you are doing")
 
         #The resize action must be done before the bind
         if geop.old_x.size != self.beads.q.size:
@@ -248,15 +259,32 @@ class DummyOptimizer(dobject):
         """ Exits the simulation step. Computes time, checks for convergence. """
 
         info(" @GEOP: Updating bead positions", verbosity.debug)
-
         self.qtime += time.time()
-        #print  np.absolute((fx - u0) / self.beads.natoms) , self.tolerances["energy"]
-        #print  np.amax(np.absolute(self.forces.f)) , self.tolerances["force"]
-        #print  np.linalg.norm(self.forces.f.flatten() - self.old_f.flatten()) , 1e-08
-        #print x, self.tolerances["position"]
-        if (np.absolute((fx - u0) / self.beads.natoms) <= self.tolerances["energy"])\
-            and ( ( np.amax(np.absolute(self.forces.f)) <= self.tolerances["force"]   )  or
-                  ( np.linalg.norm(self.forces.f.flatten() - self.old_f.flatten()) <= 1e-08)  )\
+
+
+        f=np.amax(np.absolute(self.forces.f))
+        e=np.absolute((fx - u0) / self.beads.natoms)
+        info("@GEOP", verbosity.medium )
+        self.tolerances["position"]
+        info("   Position displacement      %e. Tolerance %e" % (x,self.tolerances["position"]), verbosity.medium )
+        info("   Max force component        %e. Tolerance %e" % (f,self.tolerances["force"]), verbosity.medium )
+        info("   Energy difference per atom %e. Tolerance %e" % (e,self.tolerances["energy"]), verbosity.medium )
+
+        #if (np.absolute((fx - u0) / self.beads.natoms) <= self.tolerances["energy"])\
+        #    and ( ( np.amax(np.absolute(self.forces.f)) <= self.tolerances["force"]   )  or
+        #          ( np.linalg.norm(self.forces.f.flatten() - self.old_f.flatten()) <= 1e-08)  )\
+        #    and (x <= self.tolerances["position"]):
+        #    softexit.trigger("Geometry optimization converged. Exiting simulation")
+
+        if (np.linalg.norm(self.forces.f.flatten() - self.old_f.flatten()) <= 1e-20):
+            softexit.trigger("Something went wrong, the forces are not changing anymore."
+                             " This could be due to an overly small tolerance threshold "
+                             "that makes no physical sense. Please check if you are able "
+                             "to reach such accuracy with your force evaluation"
+                             " code (client).")
+
+        if (np.absolute((fx - u0) / self.beads.natoms) <= self.tolerances["energy"])   \
+            and ( ( np.amax(np.absolute(self.forces.f)) <= self.tolerances["force"]))  \
             and (x <= self.tolerances["position"]):
             softexit.trigger("Geometry optimization converged. Exiting simulation")
 
@@ -470,6 +498,9 @@ class SDOptimizer(DummyOptimizer):
 
         self.qtime = -time.time()
         info("\nMD STEP %d" % step, verbosity.debug)
+
+        # Store previous forces for warning exit condition
+        self.old_f[:] = self.forces.f
 
         dq1 = depstrip(self.forces.f)
 
