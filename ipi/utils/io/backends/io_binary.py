@@ -11,10 +11,10 @@ import sys
 import numpy as np
 
 
-__all__ = ['print_bin']
+__all__ = ['print_binary', 'read_binary']
 
 
-def print_bin(atoms, cell, filedesc=sys.stdout, title=""):
+def print_binary(atoms, cell, filedesc=sys.stdout, title=""):
     """Prints an atomic configuration into a binary file.
 
     Args:
@@ -30,3 +30,16 @@ def print_bin(atoms, cell, filedesc=sys.stdout, title=""):
     nat.tofile(buff)
     atoms.names.tofile(buff)
     atoms.q.tofile(buff)
+
+
+def read_binary(filedesc, **kwarg):
+    cell = np.fromfile(filedesc, dtype=float, count=9)
+    cell.shape = (3,3)
+    print "CELL", cell
+    nat = np.fromfile(filedesc, dtype=int, count=1)[0]
+    print "nat", nat
+    names = np.fromfile(filedesc, dtype=str, count=nat)
+    qatoms = np.fromfile(filedesc, dtype=float, count=3*nat)
+    masses = np.zeros(nat)
+    
+    return ("", cell, qatoms, names, masses)
