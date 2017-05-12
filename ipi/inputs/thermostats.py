@@ -36,8 +36,8 @@ class InputThermoBase(Input):
       ethermo: An optional float giving the amount of heat energy transferred
          to the bath. Defaults to 0.0.
       tau: An optional float giving the damping time scale. Defaults to 1.0.
-      sigma: Sets the estimated amplitude of inherent force noise. Defaults to 0.0.
-      sigtau: Coupling coefficient for automatic adjustment of sigma. Defaults to 0.0.
+      invar: Sets the estimated variance of the inherent noise term. Defaults to 0.0.
+      invtau: Coupling time coefficient for automatic adjustment of invar. Defaults to 0.0.
       pile_lambda: Scaling for the PILE damping relative to the critical damping.
       A: An optional array of floats giving the drift matrix. Defaults to 0.0.
       C: An optional array of floats giving the static covariance matrix.
@@ -58,13 +58,13 @@ class InputThermoBase(Input):
                                     "default"   : 0.0,
                                     "help"      : "The friction coefficient for white noise thermostats.",
                                     "dimension" : "time" }),
-            "sigma" : (InputValue, {"dtype"     : float,
+            "invar" : (InputValue, {"dtype"     : float,
                                     "default"   : 0.0,
-                                    "help"      : "The force noise amplitude for noisy force langevin thermostats.",
-                                    "dimension" : "force" }),
-            "sigtau" : (InputValue, {"dtype"    : float,
+                                    "help"      : "The inherent noise variance for noisy force langevin thermostats.",
+                                    "dimension" : "energy" }),
+            "invtau" : (InputValue, {"dtype"    : float,
                                     "default"   : 0.0,
-                                    "help"      : "The time coefficient for adjustment of NFL thermostat's sigma.",
+                                    "help"      : "The time coefficient for adjustment of NFL thermostat's invar.",
                                     "dimension" : "time" }),
             "pile_lambda" : (InputValue, { "dtype" : float,
                                     "default"   : 1.0,
@@ -105,8 +105,8 @@ class InputThermoBase(Input):
       elif type(thermo) is ethermostats.ThermoNFL:
          self.mode.store("nfl")
          self.tau.store(thermo.tau)
-         self.sigma.store(thermo.sigma)
-         self.sigtau.store(thermo.sigtau)
+         self.invar.store(thermo.invar)
+         self.invtau.store(thermo.invtau)
       elif type(thermo) is ethermostats.ThermoSVR:
          self.mode.store("svr")
          self.tau.store(thermo.tau)
@@ -158,7 +158,7 @@ class InputThermoBase(Input):
       if self.mode.fetch() == "langevin":
          thermo = ethermostats.ThermoLangevin(tau=self.tau.fetch())
       elif self.mode.fetch() == "nfl":
-         thermo = ethermostats.ThermoNFL(tau=self.tau.fetch(), sigma=self.sigma.fetch(), sigtau=self.sigtau.fetch())
+         thermo = ethermostats.ThermoNFL(tau=self.tau.fetch(), invar=self.invar.fetch(), invtau=self.invtau.fetch())
       elif self.mode.fetch() == "svr":
          thermo = ethermostats.ThermoSVR(tau=self.tau.fetch())
       elif self.mode.fetch() == "pile_l":
@@ -203,10 +203,10 @@ class InputThermoBase(Input):
       if self.mode.fetch() in ["nfl"]:
          if self.tau.fetch() < 0:
             raise ValueError("The thermostat friction coefficient must be set to a non-negative value")
-         if self.sigma.fetch() < 0:
-            raise ValueError("The force noise amplitude must be set to a non-negative value")
-         if self.sigtau.fetch() < 0:
-            raise ValueError("The automatic sigma adjustment coefficient must be set to a non-negative value")
+         if self.invar.fetch() < 0:
+            raise ValueError("The inherent noise variance must be set to a non-negative value")
+         if self.invtau.fetch() < 0:
+            raise ValueError("The automatic invar adjustment coefficient must be set to a non-negative value")
       if self.mode.fetch() in ["gle", "nm_gle", "nm_gle_g"]:
          pass  # PERHAPS DO CHECKS THAT MATRICES SATISFY REASONABLE CONDITIONS (POSITIVE-DEFINITENESS, ETC)
 

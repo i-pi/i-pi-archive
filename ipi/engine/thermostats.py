@@ -197,16 +197,18 @@ class ThermoLangevin(Thermostat):
 
 
 class ThermoNFL(Thermostat):
-   """Represents a langevin thermostat for systems driven by statistical (noisy) forces,
-      adding adequate additional damping for the inherent white noise term from the forces.
-      If sigtau is set > 0, sigma will be automatically adjusted over the time until the
-      system reaches the target temperature.
+   """Represents a Langevin thermostat for systems driven by stochastical (noisy) forces,
+      adding adequate additional damping to compensate for the inherent white noise term
+      originating from the forces.
+      The variance of that white noise term (invar) must be set to reach the target temperature.
+      Alternatively, if the adjustment time coefficient invtau is set > 0, invar will be automatically
+      adjusted over time according to the difference of system temperature to target temperature.
 
    Depend objects:
       tau: Thermostat damping time scale. Larger values give a less strongly
          coupled thermostat.
-      sigma: Force noise amplitude sigma. Larger sigma means larger additional damping term.
-      sigtau: Sigma-Temperature coupling time constant tau.
+      invar: Inherent noise variance. Larger invar results in larger additional damping term.
+      invtau: invar-temperature coupling time constant.
       T: Coefficient of the diffusive contribution of the thermostat, i.e. the
          drift back towards equilibrium. Depends on tau and the time step.
       S: Coefficient of the stochastic contribution of the thermostat, i.e.
@@ -216,15 +218,15 @@ class ThermoNFL(Thermostat):
    def get_T(self):
       """Calculates the coefficient of the overall drift of the velocities."""
 
-      SigT = self.sigma**2/(Constants.kb*self.temp)
+      inT = self.invar/(Constants.kb*self.temp)
 
-      if self.tau > 0: LangT = np.exp(-self.dt/self.tau)
-      else: LangT = 1.0
+      if self.tau > 0: langT = np.exp(-self.dt/self.tau)
+      else: langT = 1.0
 
-      NFLT = LangT - SigT
-      if NFLT < 0: NFLT = 0
+      nflT = langT - inT
+      if nflT < 0: nflT = 0
 
-      return np.sqrt( NFLT )
+      return np.sqrt( nflT )
 
    def get_S(self):
       """Calculates the coefficient of the white noise."""
@@ -234,15 +236,15 @@ class ThermoNFL(Thermostat):
       else:
          return 0.0
 
-   def __init__(self, temp = 1.0, dt = 1.0, tau = 0, sigma = 1.0, sigtau = 0, ethermo=0.0):
+   def __init__(self, temp = 1.0, dt = 1.0, tau = 0, invar = 0.0, invtau = 0, ethermo=0.0):
       """Initialises ThermoNFL.
 
       Args:
          temp: The simulation temperature. Defaults to 1.0.
          dt: The simulation time step. Defaults to 1.0.
          tau: The thermostat damping timescale. Defaults to 0 (off).
-         sigma: Estimated force noise amplitude. Defaults to 1.0.
-         sigtau: Sigma-Temperature coupling time constant. Defaults to 0 (off).
+         invar: Estimated inherent noise variance. Defaults to 0.0.
+         invtau: invar-temperature coupling time constant. Defaults to 0 (off).
          ethermo: The initial heat energy transferred to the bath.
             Defaults to 0.0. Will be non-zero if the thermostat is
             initialised from a checkpoint file.
@@ -250,13 +252,13 @@ class ThermoNFL(Thermostat):
 
       super(ThermoNFL,self).__init__(temp, dt, ethermo)
 
-      self.sigstep = False
+      self.invstep = False
       dset(self,"tau",depend_value(value=tau,name='tau'))
-      dset(self,"sigma",depend_value(value=sigma,name='sigma'))
-      dset(self,"sigtau",depend_value(value=sigtau,name='sigtau'))
+      dset(self,"invar",depend_value(value=invar,name='invar'))
+      dset(self,"invtau",depend_value(value=invtau,name='invtau'))
       dset(self,"T",
          depend_value(name="T",func=self.get_T,
-            dependencies=[dget(self,"temp"), dget(self,"tau"), dget(self,"dt"), dget(self,"sigma")]))
+            dependencies=[dget(self,"temp"), dget(self,"tau"), dget(self,"dt"), dget(self,"invar")]))
       dset(self,"S",
          depend_value(name="S",func=self.get_S,
             dependencies=[dget(self,"temp"), dget(self,"tau"), dget(self,"dt")]))
@@ -281,15 +283,15 @@ class ThermoNFL(Thermostat):
       self.p = p
       self.ethermo = et
 
-      if self.sigtau > 0 and self.sigstep:
+      if self.invtau > 0 and self.invstep:
          ekin = np.dot(depstrip(self.p),depstrip(self.p)/depstrip(self.m))*0.5
          mytemp = ekin/Constants.kb/self.ndof * 2
-         self.sigma += (mytemp - self.temp) / self.sigtau * self.dt
-         if self.sigma < 0: self.sigma = 0
+         self.invar += Constants.kb * (mytemp - self.temp) / self.invtau * self.dt
+         if self.invar < 0: self.invar = 0
 
-         print("ThermoNFL force sigma: " + str(self.sigma))
+         print("ThermoNFL inherent noise variance: " + str(self.invar))
 
-      self.sigstep = not self.sigstep
+      self.invstep = not self.invstep
 
 
 class ThermoPILE_L(Thermostat):
