@@ -108,7 +108,7 @@ class InputGeop(InputDictionary):
 
     dynamic = {  }
 
-    default_help = "TODO EXPLAIN WHAT THIS IS"
+    default_help = "A Geometry Optimization class implementing most of the standard methods"
     default_label = "GEOP"
 
     def store(self, geop):
@@ -140,10 +140,6 @@ class InputGeop(InputDictionary):
               self.old_direction.store(geop.d)
               self.ls_options.store(geop.ls_options)
               self.old_force.store(geop.old_f)
-
-
-
-
 
     def fetch(self):
         rv = super(InputGeop,self).fetch()

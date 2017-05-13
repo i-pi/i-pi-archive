@@ -138,6 +138,7 @@ class LineMapper(object):
 
     def __init__(self):
         self.x0 = self.d = None
+        self.fcount = 0
 
     def bind(self, dumop):
         self.dbeads = dumop.beads.copy()
@@ -154,6 +155,7 @@ class LineMapper(object):
         """ computes energy and gradient for optimization step
             determines new position (x0+d*x)"""
 
+        self.fcount += 1
         self.dbeads.q = self.x0 + self.d * x
         e = self.dforces.pot   # Energy
         g = - np.dot(depstrip(self.dforces.f).flatten(), self.d.flatten())   # Gradient
@@ -171,6 +173,7 @@ class GradientMapper(object):
     """
 
     def __init__(self):
+        self.fcount = 0
         pass
 
     def bind(self, dumop):
@@ -181,6 +184,7 @@ class GradientMapper(object):
     def __call__(self,x):
         """computes energy and gradient for optimization step"""
 
+        self.fcount += 1
         self.dbeads.q = x
         e = self.dforces.pot   # Energy
         g = -self.dforces.f   # Gradient
@@ -266,10 +270,10 @@ class DummyOptimizer(dobject):
         e=np.absolute((fx - u0) / self.beads.natoms)
         info("@GEOP", verbosity.medium )
         self.tolerances["position"]
-        info("   Current energy             %e." % (fx) )
-        info("   Position displacement      %e. Tolerance %e" % (x,self.tolerances["position"]), verbosity.medium )
-        info("   Max force component        %e. Tolerance %e" % (f,self.tolerances["force"]), verbosity.medium )
-        info("   Energy difference per atom %e. Tolerance %e" % (e,self.tolerances["energy"]), verbosity.medium )       
+        info("   Current energy             %e" % (fx) )
+        info("   Position displacement      %e  Tolerance %e" % (x,self.tolerances["position"]), verbosity.medium )
+        info("   Max force component        %e  Tolerance %e" % (f,self.tolerances["force"]), verbosity.medium )
+        info("   Energy difference per atom %e  Tolerance %e" % (e,self.tolerances["energy"]), verbosity.medium )       
 
         if (np.linalg.norm(self.forces.f.flatten() - self.old_f.flatten()) <= 1e-20):
             softexit.trigger("Something went wrong, the forces are not changing anymore."
@@ -334,6 +338,7 @@ class BFGSOptimizer(DummyOptimizer):
         BFGS(self.old_x,self.d, self.gm, fdf0, self.invhessian,self.big_step,
              self.ls_options["tolerance"]*self.tolerances["energy"], self.ls_options["iter"])
 
+        info("   Number of force calls: %d" % (self.gm.fcount)); self.gm.fcount = 0
         #Update positions and forces
         self.beads.q  = self.gm.dbeads.q
         self.forces.transfer_forces(self.gm.dforces) #This forces the update of the forces
@@ -390,6 +395,7 @@ class BFGSTRMOptimizer(DummyOptimizer):
         BFGSTRM(self.old_x,self.old_u,self.old_f,self.hessian,self.tr,
                       self.gm,self.big_step)
 
+        info("   Number of force calls: %d" % (self.gm.fcount)); self.gm.fcount = 0
         #Update positions and forces
         self.beads.q  = self.gm.dbeads.q
         self.forces.transfer_forces(self.gm.dforces) #This forces the update of the forces
@@ -465,6 +471,7 @@ class LBFGSOptimizer(DummyOptimizer):
                 fdf0, self.big_step, self.ls_options["tolerance"]*self.tolerances["energy"],
                 self.ls_options["iter"],self.corrections,self.scale, step)
 
+        info("   Number of force calls: %d" % (self.gm.fcount)); self.gm.fcount = 0
         #Update positions and forces
         self.beads.q  = self.gm.dbeads.q
         self.forces.transfer_forces(self.gm.dforces) #This forces the update of the forces
@@ -521,7 +528,7 @@ class SDOptimizer(DummyOptimizer):
         min_brent(self.lm, fdf0=(u0, du0), x0=0.0,
                     tol=self.ls_options["tolerance"]*self.tolerances["energy"],
                     itmax=self.ls_options["iter"], init_step=self.ls_options["step"])
-
+        info("   Number of force calls: %d" % (self.lm.fcount)); self.lm.fcount = 0
 
         #Update positions and forces
         self.beads.q  = self.lm.dbeads.q
@@ -603,6 +610,7 @@ class CGOptimizer(DummyOptimizer):
         min_brent(self.lm, fdf0=(u0, du0), x0=0.0,
                     tol=self.ls_options["tolerance"]*self.tolerances["energy"],
                     itmax=self.ls_options["iter"], init_step=self.ls_options["step"])
+        info("   Number of force calls: %d" % (self.lm.fcount)); self.lm.fcount = 0
 
         #Update positions and forces
         self.beads.q  = self.lm.dbeads.q

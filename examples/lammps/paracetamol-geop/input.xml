@@ -15,7 +15,7 @@
       <force forcefield="lmp"> </force>
     </forces>
     <motion mode="minimize">
-      <optimizer mode="bfgstrm">
+      <optimizer mode="lbfgs">
         <tolerances> <energy> 1e-7 </energy> <position> 1e-4 </position> <force> 1e-4 </force> </tolerances>
       </optimizer>
     </motion>
