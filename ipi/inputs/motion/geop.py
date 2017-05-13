@@ -47,17 +47,17 @@ class InputGeop(InputDictionary):
     # options of the method (mostly tolerances)
     fields = { "ls_options" : ( InputDictionary, {"dtype" : [float, int, float, float],
                               "help" : """"Options for line search methods. Includes:
-                              tolerance: stopping tolerance for the search,
+                              tolerance: stopping tolerance for the search (as a fraction of the overall energy tolerance),
                               iter: the maximum number of iterations,
                               step: initial step for bracketing,
                               adaptive: whether to update initial step.
                               """,
                               "options"  : ["tolerance", "iter", "step", "adaptive"],
-                              "default"  : [1e-6, 100, 1e-3, 1.0],
-                              "dimension": ["energy", "undefined", "length", "undefined" ] }),
+                              "default"  : [ 1, 100, 1e-3, 1.0],
+                              "dimension": ["undefined", "undefined", "length", "undefined" ] }),
                 "tolerances" : ( InputDictionary, {"dtype" : float,
                               "options"  : [ "energy", "force", "position" ],
-                              "default"  : [ 1e-6, 1e-6, 1e-6 ],
+                              "default"  : [ 1e-7, 1e-4, 1e-4 ],
                               "help"     : "Convergence criteria for optimization. Default values are extremely conservative. Set them to appropriate values for production runs.",
                               "dimension": [ "energy", "force", "length" ] }),     
                 "biggest_step": (InputValue, {"dtype" : float,

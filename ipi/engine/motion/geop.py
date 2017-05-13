@@ -59,8 +59,8 @@ class GeopMotion(Motion):
                  invhessian_bfgs=np.eye(0, 0, 0, float),
                  hessian_trm=np.eye(0, 0, 0, float),
                  tr_trm=np.zeros(0,float),
-                 ls_options={"tolerance": 1e-6, "iter": 100, "step": 1e-3, "adaptive": 1.0},
-                 tolerances={"energy": 1e-8, "force": 1e-8, "position": 1e-8},
+                 ls_options={"tolerance": 1, "iter": 100, "step": 1e-3, "adaptive": 1.0},
+                 tolerances={"energy": 1e-7, "force": 1e-4, "position": 1e-4},
                  corrections_lbfgs=5,
                  scale_lbfgs=1,
                  qlist_lbfgs=np.zeros(0, float),
@@ -215,13 +215,13 @@ class DummyOptimizer(dobject):
 
         #Check for very tight tolerances
 
-        if self.tolerances["position"] < 1e-6:
+        if self.tolerances["position"] < 1e-7:
             raise ValueError("The position tolerance is too small for any typical calculation. "
                              "We stop here. Comment this line and continue only if you know what you are doing")
-        if self.tolerances["force"] < 1e-6:
+        if self.tolerances["force"] < 1e-7:
             raise ValueError("The position tolerance is too small for any typical calculation. "
                              "We stop here. Comment this line and continue only if you know what you are doing")
-        if self.tolerances["energy"] < 1e-6:
+        if self.tolerances["energy"] < 1e-10:
             raise ValueError("The position tolerance is too small for any typical calculation. "
                              "We stop here. Comment this line and continue only if you know what you are doing")
 
@@ -266,15 +266,10 @@ class DummyOptimizer(dobject):
         e=np.absolute((fx - u0) / self.beads.natoms)
         info("@GEOP", verbosity.medium )
         self.tolerances["position"]
+        info("   Current energy             %e." % (fx) )
         info("   Position displacement      %e. Tolerance %e" % (x,self.tolerances["position"]), verbosity.medium )
         info("   Max force component        %e. Tolerance %e" % (f,self.tolerances["force"]), verbosity.medium )
-        info("   Energy difference per atom %e. Tolerance %e" % (e,self.tolerances["energy"]), verbosity.medium )
-
-        #if (np.absolute((fx - u0) / self.beads.natoms) <= self.tolerances["energy"])\
-        #    and ( ( np.amax(np.absolute(self.forces.f)) <= self.tolerances["force"]   )  or
-        #          ( np.linalg.norm(self.forces.f.flatten() - self.old_f.flatten()) <= 1e-08)  )\
-        #    and (x <= self.tolerances["position"]):
-        #    softexit.trigger("Geometry optimization converged. Exiting simulation")
+        info("   Energy difference per atom %e. Tolerance %e" % (e,self.tolerances["energy"]), verbosity.medium )       
 
         if (np.linalg.norm(self.forces.f.flatten() - self.old_f.flatten()) <= 1e-20):
             softexit.trigger("Something went wrong, the forces are not changing anymore."
@@ -337,7 +332,7 @@ class BFGSOptimizer(DummyOptimizer):
         # Do one iteration of BFGS
         # The invhessian and the directions are updated inside.
         BFGS(self.old_x,self.d, self.gm, fdf0, self.invhessian,self.big_step,
-             self.ls_options["tolerance"], self.ls_options["iter"])
+             self.ls_options["tolerance"]*self.tolerances["energy"], self.ls_options["iter"])
 
         #Update positions and forces
         self.beads.q  = self.gm.dbeads.q
@@ -467,7 +462,7 @@ class LBFGSOptimizer(DummyOptimizer):
         # Note that the line above is not needed anymore because we update everything
         # within L_BFGS (and all other calls).
         L_BFGS(self.old_x,self.d, self.gm, self.qlist, self.glist,
-                fdf0, self.big_step, self.ls_options["tolerance"],
+                fdf0, self.big_step, self.ls_options["tolerance"]*self.tolerances["energy"],
                 self.ls_options["iter"],self.corrections,self.scale, step)
 
         #Update positions and forces
@@ -524,7 +519,7 @@ class SDOptimizer(DummyOptimizer):
         # Do one SD iteration; return positions and energy
         #(x, fx,dfx) = min_brent(self.lm, fdf0=(u0, du0), x0=0.0,  #DELETE
         min_brent(self.lm, fdf0=(u0, du0), x0=0.0,
-                    tol=self.ls_options["tolerance"],
+                    tol=self.ls_options["tolerance"]*self.tolerances["energy"],
                     itmax=self.ls_options["iter"], init_step=self.ls_options["step"])
 
 
@@ -606,7 +601,7 @@ class CGOptimizer(DummyOptimizer):
 
         # Do one CG iteration; return positions and energy
         min_brent(self.lm, fdf0=(u0, du0), x0=0.0,
-                    tol=self.ls_options["tolerance"],
+                    tol=self.ls_options["tolerance"]*self.tolerances["energy"],
                     itmax=self.ls_options["iter"], init_step=self.ls_options["step"])
 
         #Update positions and forces
