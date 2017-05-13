@@ -24,22 +24,28 @@ def print_binary(atoms, cell, filedesc=sys.stdout, title=""):
         title: This gives a string to be appended to the comment line.
     """
 
-    buff = filedesc
-    cell.h.tofile(buff)
+    buff = filedesc    
+    cell.h.flatten().tofile(buff)
     nat = np.asarray([atoms.natoms])
     nat.tofile(buff)
-    atoms.names.tofile(buff)
     atoms.q.tofile(buff)
+    names = "|".join(atoms.names)  # concatenates names, assuming none contains '|'
+    nat[0] = len(names)
+    nat.tofile(buff)
+    np.asarray([names]).tofile(buff)
 
 
 def read_binary(filedesc, **kwarg):
-    cell = np.fromfile(filedesc, dtype=float, count=9)
-    cell.shape = (3,3)
-    print "CELL", cell
-    nat = np.fromfile(filedesc, dtype=int, count=1)[0]
-    print "nat", nat
-    names = np.fromfile(filedesc, dtype=str, count=nat)
-    qatoms = np.fromfile(filedesc, dtype=float, count=3*nat)
-    masses = np.zeros(nat)
-    
+    try: 
+        cell = np.fromfile(filedesc, dtype=float, count=9)
+        cell.shape = (3,3)
+        nat = np.fromfile(filedesc, dtype=int, count=1)[0]
+        qatoms = np.fromfile(filedesc, dtype=float, count=3*nat)
+        nat = np.fromfile(filedesc, dtype=int, count=1)[0]
+        names = np.fromfile(filedesc, dtype='|S1', count=nat)    
+        names = "".join(names)
+        names = names.split('|')
+        masses = np.zeros(len(names))
+    except (StopIteration,ValueError):
+        raise EOFError    
     return ("", cell, qatoms, names, masses)
