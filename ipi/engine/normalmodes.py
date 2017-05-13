@@ -147,6 +147,7 @@ class NormalModes(dobject):
 
       # must overwrite the functions
       dget(self.beads, "q")._func = { "qnm": (lambda : self.transform.nm2b(depstrip(self.qnm)) )  }
+      # dd(self.beads).q._func
       dget(self.beads, "p")._func = { "pnm": (lambda : self.transform.nm2b(depstrip(self.pnm)) )  }
       dget(self.beads, "q").add_synchro(sync_q)
       dget(self.beads, "p").add_synchro(sync_p)
