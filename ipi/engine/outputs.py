@@ -25,9 +25,6 @@ from ipi.engine.properties import getkey
 __all__ = [ 'PropertyOutput', 'TrajectoryOutput', 'CheckpointOutput' ]
 
 
-CHKSLEEP = 1.0
-
-
 class PropertyOutput(dobject):
    """Class dealing with outputting a set of properties to file.
 
@@ -338,7 +335,6 @@ class CheckpointOutput(dobject):
       status: An input simulation object used to write out the checkpoint file.
    """
 
-
    def __init__(self, filename="restart", stride=1000, overwrite=True, step=0):
       """Initializes a checkpoint output proxy.
 
@@ -357,6 +353,7 @@ class CheckpointOutput(dobject):
       self.stride = stride
       self.overwrite = overwrite
       self._storing = False
+      self._continued = False
 
    def bind(self, simul):
       """Binds output proxy to simulation object.
@@ -383,7 +380,6 @@ class CheckpointOutput(dobject):
       self.status.store(self.simul)
       self._storing = False
 
-
    def write(self, store=True):
       """Writes out the required trajectories.
 
@@ -405,18 +401,26 @@ class CheckpointOutput(dobject):
          info("@ CHECKPOINT: Write called while storing. Force re-storing", verbosity.low)
          self.store()
 
-
       if not (self.simul.step + 1) % self.stride == 0:
          return
 
+      # function to use to open files
+      open_function = open_backup
+
       if self.overwrite:
          filename = self.filename
+         if self._continued:
+             open_function = open
       else:
          filename = self.filename + "_" + str(self.step)
 
+      # Advance the step counter before saving, so next time the correct index will be loaded.
       if store:
-         self.step += 1    # advances the step counter before saving, so next time the correct index will be loaded.
+         self.step += 1
          self.store()
-      check_file = open_backup(filename, "w")
-      check_file.write(self.status.write(name="simulation"))
-      check_file.close()
+
+      with open_function(filename, "w") as check_file:
+        check_file.write(self.status.write(name="simulation"))
+
+      # Do not use backed up file open on subsequent writes.
+      self._continued = True
