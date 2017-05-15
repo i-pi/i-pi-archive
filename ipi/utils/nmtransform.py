@@ -36,6 +36,14 @@ def mk_nm_matrix(nbeads):
       b2nm[nbeads/2,1:nbeads:2] = -1.0
    return b2nm/np.sqrt(nbeads)
 
+def mk_onm_matrix(nbeads):
+    """Makes a matrix that transforms between the bead and the (open path) normal mode
+    representations. """
+    
+    # here define the orthogonal transformation matrix for the open path
+    pass
+
+
 def mk_rs_matrix(nb1, nb2):
    """Makes a matrix that transforms a path with `nb1` beads to one with `nb2` beads.
 
