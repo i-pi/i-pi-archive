@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!*/usr/bin/env python2
 
 """ getvvac.py
 
@@ -38,14 +38,18 @@ def main(prefix, mlag, label):
    ff.close()
 
    ifile=open(prefix+".vc.xyz")
-   ofile=prefix+"_"+str(mlag)+".vvac"
-
+   ofile=prefix+"_"+str(mlag)+".vvft"
+   ofile2=prefix+"_"+str(mlag)+"_window.vvft"
+   ofile3=prefix+"_"+str(mlag)+".vvac"
 
 
    vel = np.zeros((2*mlag, labelbool.sum(), 3) , float)
    rvvac = np.zeros(2*mlag, float)
    omega = np.asarray(range(2*mlag))/float(2*mlag)
+   time = np.asarray(range(mlag))
    count = 0
+# TODO: pad should become an argument as well
+   pad=10000
 
    while True:
 
@@ -56,16 +60,34 @@ def main(prefix, mlag, label):
 
         vel = vel - np.mean(vel, axis=0)
 
-        tmp = np.fft.fft(vel, axis=0)
+        tmp = np.fft.fft(vel, axis=0, norm="ortho")
         tmp = tmp * np.conjugate(tmp)
         tmp = np.real(np.mean(tmp, axis=(1,2)))
-        rvvac = rvvac + tmp/mlag
+        rvvac = rvvac + tmp
         count = count + 1
 
      except EOFError:
         break
+
+# Go for windowing and padding
+# First the autocorrelation function. "ortho" gives back the 1/sqrt(mlag) factor
+   autocorr=np.fft.ihfft(rvvac, norm="ortho")[:mlag]
+# Let's try first the triangular window
+   window=np.bartlett(2.*mlag)[mlag:]
+# Now multiply them in real time (could we do it in Fourier space?)
+   autowindow=np.array([i*j for i,j in zip(window, autocorr)])
+# And finally, re-fourier transform assuming the signal is hermitian in order to avoid noise
+# Giving n greater than the array dimension pads it with zeroes
+   windowvvac=np.fft.hfft(autowindow, n=2*mlag+pad, norm="ortho")
+
+   omegapad = np.asarray(range(2*mlag+pad))/float(2*mlag+pad)
+
+   np.savetxt(ofile3, np.vstack((time, autocorr, autowindow[:mlag])).T[0:2*mlag])
  
    np.savetxt(ofile, np.vstack((omega, rvvac/count)).T[0:mlag])
+
+# normalize to maintain same area as before padding and account for the various 2*pi factors
+   np.savetxt(ofile2, np.vstack((omegapad, windowvvac*(mlag+pad)/(count*2.*np.pi*mlag))).T[0:2*mlag])
 
 if __name__ == '__main__':
    main(*sys.argv[1:])
