@@ -1,18 +1,14 @@
 #!/usr/bin/env python2
 
-""" kinetic2tag.py
+""" getvvac.py
 
-Computes the Transient Anisotropic Gaussian (TAG) approximation
-of the instantaneous kinetic energy tensor, with a moving average
-triangular window of the specified lag. Needs files with
-the per-atom diagonal and off-diagonal components of the kinetic
-energy tensor estimator.
+Computes velocity autocorrelation functions from i-pi outputs.
 
 Assumes the input files are in xyz format and atomic units,
-with prefix.kin.xyz and prefix.kod.xyz naming scheme.
+with prefix.vc.xyz naming scheme.
 
 Syntax:
-   kinetic2tag.py prefix lag
+   getvvac.py prefix lag
 """
 
 
@@ -25,7 +21,7 @@ from ipi.utils.units import *
 
 
 def main(prefix, mlag, label):
-
+   # TODO: This really needs an argument parser to allow for several labels 
    mlag = int(mlag)
 
 
@@ -34,6 +30,11 @@ def main(prefix, mlag, label):
    threenatoms = len(rr['data'])
    natoms = threenatoms/3
    labelbool = rr['names'] == label
+   # testhack
+   #a=rr['names'] == "O"
+   #b=rr['names'] == "H"
+   #labelbool=a+b
+   # end testhack
    ff.close()
 
    ifile=open(prefix+".vc.xyz")
@@ -58,7 +59,7 @@ def main(prefix, mlag, label):
         tmp = np.fft.fft(vel, axis=0)
         tmp = tmp * np.conjugate(tmp)
         tmp = np.real(np.mean(tmp, axis=(1,2)))
-        rvvac = rvvac + tmp
+        rvvac = rvvac + tmp/mlag
         count = count + 1
 
      except EOFError:
