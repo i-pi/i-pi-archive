@@ -82,12 +82,12 @@ def main(prefix, mlag, label):
 
    omegapad = np.asarray(range(2*mlag+pad))/float(2*mlag+pad)
 
-   np.savetxt(ofile3, np.vstack((time, autocorr, autowindow[:mlag])).T[0:2*mlag])
+   np.savetxt(ofile3, np.vstack((np.real(time), np.real(autocorr), np.real(autowindow[:mlag]))).T[0:2*mlag])
  
-   np.savetxt(ofile, np.vstack((omega, rvvac/count)).T[0:mlag])
+   np.savetxt(ofile, np.vstack((np.real(omega), np.real(rvvac/count))).T[0:mlag])
 
 # normalize to maintain same area as before padding and account for the various 2*pi factors
-   np.savetxt(ofile2, np.vstack((omegapad, windowvvac*(mlag+pad)/(count*2.*np.pi*mlag))).T[0:2*mlag])
+   np.savetxt(ofile2, np.vstack((np.real(omegapad), np.real(windowvvac*(mlag+pad)/(count*2.*np.pi*mlag)))).T[0:2*mlag])
 
 if __name__ == '__main__':
    main(*sys.argv[1:])
