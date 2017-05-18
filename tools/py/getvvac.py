@@ -25,7 +25,6 @@ def main(prefix, mlag, pad, label=None):
    mlag = int(mlag)
    npad = int(pad)
 
-
    ff = open(prefix+".vc.xyz")
    rr = read_file("xyz", ff, output="array")
    threenatoms = len(rr['data'])
@@ -35,15 +34,16 @@ def main(prefix, mlag, pad, label=None):
       labelbool = rr['names'] == label
    ff.close()
 
-   ifile=open(prefix+".vc.xyz")
-   ofile=prefix + "_" + str(mlag) + ".vvft"
+   ifile = open(prefix+".vc.xyz")
+   ofile1 = prefix + "_" + "raw" + "_" + str(mlag) + ".vvft"
+   ofile2 = prefix + "_" + "win" + "_" + str(mlag) + "_" + str(npad) + ".vvft"
 
 
    vel = np.zeros((2*mlag, labelbool.sum(), 3) , float)
-   rvvac = np.zeros(2*mlag + npad, float)
-   omega = np.asarray(range(2*mlag + npad) )/float(2*mlag + npad)
+   fvvac = np.zeros(2*mlag, float)
+   omega = np.asarray(range(2*mlag))/float(2*mlag)
    time = np.asarray(range(mlag))
-   window=np.bartlett(2*mlag).reshape((2*mlag,1,1))
+   window = np.bartlett(2*mlag)[mlag:]
    count = 0
 
    while True:
@@ -55,17 +55,24 @@ def main(prefix, mlag, pad, label=None):
 
         vel = vel - np.mean(vel, axis=0)
 
-        tmp = np.fft.fft(vel*window, n=2*mlag+npad , axis=0, norm="ortho")
+        tmp = np.fft.fft(vel, axis=0, norm="ortho") * 2.0/np.sqrt(2.0*np.pi)
         tmp = tmp * np.conjugate(tmp)
-        tmp = np.real(np.mean(tmp, axis=(1,2)))
-        rvvac = rvvac + tmp
+
+        fvvac = fvvac + 3.0 * np.real(np.mean(tmp, axis=(1,2)))
         count = count + 1
-        print count
 
      except EOFError:
         break
-   
-   np.savetxt(ofile, np.vstack((np.real(omega)[0:2*mlag], np.real(rvvac/count)[0:2*mlag] * (mlag + npad) / mlag )).T[0:mlag])
+
+   fvvac = np.real(fvvac / count * np.sqrt(2.0*mlag))
+   np.savetxt(ofile1, np.vstack((omega, fvvac)).T )
+
+   vvac = np.fft.ihfft(fvvac, norm="ortho")[:mlag]
+   wvvac = np.array([i*j for i,j in zip(window, vvac)])
+   fwvvac = np.fft.hfft(wvvac, n=2*mlag+npad, norm="ortho")  / np.sqrt(2.0*mlag) * np.sqrt(2.0*mlag + npad)
+   omega = np.asarray(range(2*mlag+npad))/float(2*mlag+npad)
+
+   np.savetxt(ofile2, np.vstack((omega, np.real(fwvvac))).T[0:2*mlag])
 
 if __name__ == '__main__':
    main(*sys.argv[1:])
