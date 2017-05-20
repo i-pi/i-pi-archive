@@ -42,8 +42,7 @@ def main(prefix, mlag, pad, label=None):
    vel = np.zeros((2*mlag, labelbool.sum(), 3) , float)
    fvvac = np.zeros(2*mlag, float)
    omega = np.asarray(range(2*mlag))/float(2*mlag)
-   time = np.asarray(range(mlag))
-   window = np.bartlett(2*mlag)[mlag:]
+   dt = 1.0/float(2*mlag)
    count = 0
 
    while True:
@@ -53,26 +52,19 @@ def main(prefix, mlag, pad, label=None):
             rr = read_file("xyz", ifile, output="array")
             vel[i] = rr['data'].reshape(natoms,3)[labelbool]
 
-        vel = vel - np.mean(vel, axis=0)
+        vel = (vel - np.mean(vel, axis = 0)) 
+        fvel = np.fft.fft(vel, axis = 0)
+        tfvvac = fvel * np.conjugate(fvel)
 
-        tmp = np.fft.fft(vel, axis=0, norm="ortho") * 2.0/np.sqrt(2.0*np.pi)
-        tmp = tmp * np.conjugate(tmp)
-
-        fvvac = fvvac + 3.0 * np.real(np.mean(tmp, axis=(1,2)))
+        fvvac = fvvac + 3.0 * np.real(np.mean(tfvvac, axis = (1,2))) * dt / (2 * np.pi) 
         count = count + 1
 
      except EOFError:
         break
 
-   fvvac = np.real(fvvac / count * np.sqrt(2.0*mlag))
-   np.savetxt(ofile1, np.vstack((omega, fvvac)).T )
+   fvvac = np.real(fvvac) / count 
+   np.savetxt(ofile1, np.vstack((omega, fvvac)).T[:mlag])
 
-   vvac = np.fft.ihfft(fvvac, norm="ortho")[:mlag]
-   wvvac = np.array([i*j for i,j in zip(window, vvac)])
-   fwvvac = np.fft.hfft(wvvac, n=2*mlag+npad, norm="ortho")  / np.sqrt(2.0*mlag) * np.sqrt(2.0*mlag + npad)
-   omega = np.asarray(range(2*mlag+npad))/float(2*mlag+npad)
-
-   np.savetxt(ofile2, np.vstack((omega, np.real(fwvvac))).T[0:2*mlag])
 
 if __name__ == '__main__':
    main(*sys.argv[1:])
