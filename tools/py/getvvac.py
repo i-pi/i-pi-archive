@@ -40,7 +40,8 @@ def main(prefix, mlag, pad, label=None):
 
    vel = np.zeros((2 * mlag, labelbool.sum(), 3) , float)
    fvvac = np.zeros((2 * mlag) / 2 + 1, float)
-   omega = np.asarray(range(len(fvvac)))/float(len(fvvac))
+   omega = np.asarray(range(2 * mlag)) / float(2 * mlag)
+   win = np.ones(2 * mlag + 1, float)
    dt = 1.0 / float(2 * mlag)
    count = 0
 
@@ -56,18 +57,20 @@ def main(prefix, mlag, pad, label=None):
 
         fvvac = fvvac + 3.0 * np.real(np.mean(tfvvac, axis = (1,2))) * dt / (2 * np.pi) # / (2 * mlag + npad) / 2 * mlag
         count = count + 1
+        print fvvac.shape, fvvac[:2 * mlag].shape
+        break
 
      except EOFError:
         break
 
-   fvvac = np.real(fvvac) / count 
-   np.savetxt(ofile1, np.vstack((omega, fvvac)).T)
+   fvvac = np.real(fvvac) / count
+   np.savetxt(ofile1, np.vstack((omega[:mlag], fvvac[:mlag])).T)
 
-   vvac = np.fft.ihfft(fvvac) * np.bartlett(2 * mlag)[mlag:]
-   pfvvac = np.real(np.fft.hfft(vvac , axis = 0, n = 2 * mlag + npad))[:2 * mlag]
-   omega = (np.asarray(range(2 * mlag + npad))/float(2 * mlag + npad))[:2 * mlag]
-   np.savetxt(ofile2, np.vstack((omega, pfvvac)).T[:mlag])
-   
+   vvac = np.fft.irfft(fvvac)[:mlag + 1]
+   pvvac = np.append(vvac * win[mlag:], np.zeros(npad))
+   fpvvac = np.fft.hfft(pvvac)
+   omega = (np.asarray(range(2 * (mlag + npad)))/float(2 * mlag + 2 * npad))
+   np.savetxt(ofile2, np.vstack((omega, fpvvac)).T[:mlag + npad])
 
 if __name__ == '__main__':
    main(*sys.argv[1:])
