@@ -11,7 +11,6 @@ import numpy as np
 
 from ipi.engine.cell import *
 from ipi.utils.inputvalue import *
-from ipi.utils.units import UnitMap
 from ipi.utils.messages import verbosity, warning
 
 

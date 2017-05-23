@@ -21,8 +21,8 @@ be run from a Linux environment, with a recent version of Python, Numpy and
 gfortran, and that the terminal is initially in the i-pi package directory (the
 directory containing this file).
 
-Source the environment settings file `env.sh` as `$ source env.sh` or `$ .
-env.sh`.  It is useful to put this in your `.bashrc` or other settings file if
+Source the environment settings file :code:`env.sh` as :code:`$ source env.sh` or :code:`$ .
+env.sh`.  It is useful to put this in your :code:`.bashrc` or other settings file if
 you always want to have i-PI available.
 
 

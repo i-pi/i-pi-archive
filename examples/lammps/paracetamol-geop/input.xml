@@ -16,7 +16,7 @@
     </forces>
     <motion mode="minimize">
       <optimizer mode="lbfgs">
-        <tolerances> [1e-10, 1e-10, 1e-10 ] </tolerances>
+        <tolerances> <energy> 1e-7 </energy> <position> 1e-4 </position> <force> 1e-4 </force> </tolerances>
       </optimizer>
     </motion>
   </system>

@@ -12,31 +12,31 @@ from ipi.interfaces.clients import Client, ClientASE
 
 def test_client():
     """Client: startup without socket."""
-    c = Client(_socket=False)
+    Client(_socket=False)
 
 
 def test_driver():
     """Driver: startup without socket."""
-    d = Driver(socket=None)
+    Driver(socket=None)
 
 
 def test_interface():
     """InterfaceSocket: startup."""
-    i = InterfaceSocket()
+    InterfaceSocket()
 
 
 def test_ASE():
     """Socket client for ASE."""
 
     try:
-        from ase import lattice
+        from ase import build
         from ase import units
         from ase.calculators.lj import LennardJones
     except ImportError:
         raise nose.SkipTest
 
     # create ASE atoms and calculator
-    atoms = lattice.bulk('Ar', cubic=True)
+    atoms = build.bulk('Ar', cubic=True)
     calculator = LennardJones(epsilon=0.997*units.kJ/units.mol, sigma=3.4, rc=10.0)
     atoms.set_calculator(calculator)
 
@@ -44,4 +44,4 @@ def test_ASE():
     atoms.get_potential_energy()
 
     # create the socket client
-    client = ClientASE(atoms, verbose=True, address='ase', _socket=False)
+    client = ClientASE(atoms, address='ase', _socket=False)
