@@ -21,6 +21,16 @@ traj_re = [re.compile('%s%s' % (key, r'\{[A-Za-z_]*\}'))
 def process_units(comment, cell, qatoms, names, masses, output='objects'):
     """ Converts the data in the file according to the units written in the ipi format.
     """
+    
+    if comment == "" and output != 'objects': # fast mode
+        return {
+          "data": qatoms,
+          "masses": masses,
+          "names": names,
+          "natoms": len(names),
+          "cell": cell,
+        }
+
     # Extracting trajectory units
     family, unit = 'undefined', ''
     is_comment_useful = filter(None, [key.search(comment.strip())
