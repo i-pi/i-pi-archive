@@ -1,115 +1,125 @@
 #!/usr/bin/env python2
 
-""" getvvac.py
-Computes velocity autocorrelation functions from i-pi outputs.
+""" 
+Computes the velocity autocorrelation functions from i-pi outputs. 
 Assumes the input files are in xyz format and atomic units.
 """
 
 
-import numpy as np
 import argparse
 import sys
-from ipi.utils.io import iter_file_name, read_file
-from ipi.utils.depend import *
-from ipi.utils.units import *
+import numpy as np
+from ipi.utils.io import read_file
 
 
-def main():
+def compute_acf(input_file, output_prefix, maximum_lag, length_block, length_zeropadding, spectral_windowing, labels):
+
+    # stores the arguments
+    ifile = str(args.input_file[-1])
+    ofile = str(args.output_prefix[-1])
+    mlag = int(args.maximum_lag[-1])
+    bsize = int(args.length_block[-1])
+    npad = int(args.length_zeropadding[-1])
+    ftbox = bool(args.spectral_windowing[-1])
+    labels = str(args.labels)
+
+    #checks for errors
+    if(mlag <= 0):
+        raise ValueError("MAXIMUM_LAG should be a non-negative integer.")
+    if(npad <= 0):
+        raise ValueError("LENGTH_ZEROPADDING should be a non-negative integer.")
+    if(bsize <=2 * mlag):
+        if(bsize == -1):
+            bsize = 2 * mlag
+        else:
+            raise ValueError("LENGTH_BLOCK should be greater than or equal to 2 * MAXIMUM_LAG.")
+
+    #reads one frame. 
+    ff = open(ifile)
+    rr = read_file("xyz", ff, output = "array")
+    ff.close()
+
+    #stores the indices of the "chosen" atoms.
+    ndof = len(rr['data'])
+    if( "*" in labels):
+        labelbool = np.ones(ndof/3, bool)
+    else:
+        labelbool = np.zeros(ndof/3, bool)
+        for l in labels:
+            labelbool = np.logical_or(labelbool, rr['names'] == l)
+    nspecies = labelbool.sum()
+
+    #initializes variables.
+    nblocks = 0
+    dt = 1.0 / float(bsize)
+    data = np.zeros((bsize, nspecies, 3) , float)
+    fvvacf = np.zeros(bsize / 2 + 1, float)
+    time = np.asarray(range(mlag + 1)) * dt
+    omega = np.asarray(range(2 * (mlag + npad)))/float(2 * mlag + 2 * npad) * (2 * np.pi)
+
+    #selects window function for fft.
+    if(ftbox == True):
+        win = np.bartlett(2 * mlag + 1)
+    else:
+        win = np.ones(2 * mlag + 1, float)
+
+    ff = open(ifile)
+    while True:
+
+        try :
+            #Reads the data in blocks.
+            for i in range(bsize):
+                rr = read_file("xyz", ff, output="array")
+                data[i] = rr['data'].reshape((ndof/3,3))[labelbool]
+
+            #Computes the Fourier transform of the data.
+            fdata = np.fft.rfft(data , axis = 0)
+
+            #Computes the Fourier transform of the vvac applying the convolution theorem.
+            tfvvacf = fdata * np.conjugate(fdata)
+
+            #Averages over all species and sums over the x,y,z directions. Also multiplies with the time step and a prefactor of (2pi)^-1.
+            fvvacf = fvvacf + 3.0 * np.real(np.mean(tfvvacf, axis = (1,2))) * dt / (2 * np.pi)
+            nblocks +=  1
+
+        except EOFError:
+            break
+    ff.close()
+
+    #Performs the block average of the Fourier transform.
+    fvvacf = np.real(fvvacf) / nblocks
+
+    #Computes the inverse Fourier transform to get the vvac.
+    vvacf = np.fft.irfft(fvvacf)[:mlag + 1]
+    np.savetxt(ofile + "_vv.data" , np.vstack((time, vvacf)).T[:mlag + npad])
+
+    #Applies window in one direction and pads the vvac with zeroes.
+    pvvacf = np.append(vvacf * win[mlag:], np.zeros(npad))
+
+    #Recomputes the Fourier transform assuming the data is an even function of time.
+    fpvvacf = np.fft.hfft(pvvacf)
+    np.savetxt(ofile + "_fvv.data" , np.vstack((omega, fpvvacf)).T[:mlag + npad])
+
+if __name__ == "__main__":
+
    # adds description of the program.
     parser=argparse.ArgumentParser(description="Given the velocity of a system, computes the velocity-velocity autocorrelation function and its Fourier transform")
 
    # adds arguments.
     parser.add_argument("-ifile", "--input_file", required=True, nargs=1, type=str, default=None, help="the relative path to the xyz formatted velocity file")
     parser.add_argument("-mlag", "--maximum_lag", required=True, nargs=1, type=int, default=None, help="the maximum time lag for the autocorrelation function")
-    parser.add_argument("-bsize", "--size_block", nargs=1, type=int, default=None,  help="the size of the block for ``chunk-by-chunk`` input.")
-    parser.add_argument("-ftpad", "--size_padding", nargs=1, type=int, default=0, help="number of zeroes to be padded before the Fourier transform.")
-    parser.add_argument("-ftbox", "--windowing", nargs=1, type=bool, default=True, help="if autocorrelation function should be zeroed at the boundaries before the Fourier transform.")
-    parser.add_argument("-label", "--label", nargs=1, type=int, default=None, help="atomic species to be monitored")
+    parser.add_argument("-bsize", "--length_block", nargs=1, type=int, default=-1,  help="the number of lines to be imported at once during ``chunk-by-chunk`` input; defaults to 2 * MAXIMUM_LAG")
+    parser.add_argument("-ftpad", "--length_zeropadding", nargs=1, type=int, default=0, help="number of zeroes to be padded at the end of the autocorrelation function before the Fourier transform is computed")
+    parser.add_argument("-ftwin", "--spectral_windowing", nargs=1, type=bool, default=True, help="if autocorrelation function should be multiplied by a window function before the Fourier transform is computed.")
+    parser.add_argument("-labels", "--labels", nargs=1, type=str, default="*", help="labels of the species to be monitored")
     parser.add_argument("-oprefix", "--output_prefix", required=True, nargs=1, type=str, help="the prefix of the output file.")
 
-    # parses the arguments
     try:
         args = parser.parse_args()
     except:
         parser.print_help()
         sys.exit()
 
-    # stores the arguments
-    ifile = str(args.input_file[-1])
-    oprefix = str(args.output_prefix[-1])
-    mlag = int(args.maximum_lag[-1])
-    npad = int(args.size_padding[-1])
-    ftbox = bool(args.size_padding[-1])
-    if(args.size_block != None):
-        bsize = int(args.size_block[-1])
-        if (bsize < 2 * npad):
-            raise ValueError("SIZE_BLOCK must be greater than 2 * MAXIMUM_LAG")
-    else:
-        bsize = npad
-    if(args.label != None):
-        label = str(args.label[-1])
-    else:
-        label = None
+    # Process everything.
+    compute_acf(args.input_file, args.output_prefix, args.maximum_lag, args.length_block, args.length_zeropadding, args.spectral_windowing, args.labels)
 
-    #stores the number of atoms, and the index of the "chosen" atoms.
-    ff = open(ifile)
-    rr = read_file("xyz", ff, output = "array")
-    threenatoms = len(rr['data'])
-    natoms = threenatoms / 3
-    labelbool = np.ones(natoms, bool)
-    if(label != None):
-       labelbool = rr['names'] == label
-    ff.close()
-
-    #initializes variables.
-    ff = open(ifile)
-    ofile = oprefix + ".vvft"
-    vel = np.zeros((2 * bsize, labelbool.sum(), 3) , float)
-    fvvac = np.zeros((2 * bsize) / 2 + 1, float)
-    omega = (2 * np.pi) * np.asarray(range(2 * bsize)) / float(2 * bsize)
-    dt = 1.0 / float(2 * bsize)
-    count = 0
-    if(ftbox == True):
-        win = np.bartlett(2 * mlag + 1)
-    else:
-        win = np.ones(2 * mlag + 1, float)
-
-    while True:
-
-     try :
-        #Reads the velocity in blocks.
-        for i in range(2 * bsize):
-            rr = read_file("xyz", ff, output="array")
-            vel[i] = rr['data'].reshape(natoms,3)[labelbool]
-
-        #Computes the Fourier transform of the velocity.
-        fvel = np.fft.rfft(vel , axis = 0)
-
-        #Computes the Fourier transform of the vvac applying the convolution theorem.
-        tfvvac = fvel * np.conjugate(fvel)
-
-        #Averages over all species and sums over the x,y,z directions. Also multiplies with the time step and a prefactor of (2pi)^-1.
-        fvvac = fvvac + 3.0 * np.real(np.mean(tfvvac, axis = (1,2))) * dt / (2 * np.pi)
-        count = count + 1
-
-     except EOFError:
-        break
-
-    #Performs the block average of the Fourier transform.
-    fvvac = np.real(fvvac) / count
-
-    #Computes the inverse Fourier transform to get the vvac.
-    vvac = np.fft.irfft(fvvac)[:mlag + 1]
-    time = np.asarray(range(len(vvac))) * dt
-    np.savetxt(oprefix + "-vvac.data" , np.vstack((time, vvac)).T[:mlag + npad])
-
-    #Applies window in one direction and pads the vvac with zeroes.
-    pvvac = np.append(vvac * win[mlag:], np.zeros(npad))
-
-    #Recomputes the Fourier transform assuming the data is an even function of time.
-    fpvvac = np.fft.hfft(pvvac)
-    omega = (np.asarray(range(2 * (mlag + npad)))/float(2 * mlag + 2 * npad)) * (2 * np.pi)
-    np.savetxt(oprefix + "-fvvac.data" , np.vstack((omega, fpvvac)).T[:mlag + npad])
-
-if __name__ == '__main__':
-   main()
