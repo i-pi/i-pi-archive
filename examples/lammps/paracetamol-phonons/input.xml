@@ -1,6 +1,6 @@
 <simulation mode="static" verbosity="high">
-   <output prefix="phonons">
-      <properties stride="1" filename="out">  [ step, time{picosecond}, conserved{electronvolt}, temperature{kelvin}, kinetic_cv{electronvolt}, potential{electronvolt}, pressure_cv{megapascal}] </properties>
+   <output prefix="simulation">
+      <properties stride="100000" filename="out">  [ step, potential] </properties>
    </output>
    <total_steps> 100000 </total_steps>
    <prng> <seed> 32342 </seed> </prng>
@@ -9,17 +9,16 @@
    </ffsocket>
  <system>
    <initialize nbeads="1"> 
-      <file mode="xyz" units="angstrom">  init.xyz </file>
-      <cell mode="abc" > [21.91077505,  13.8342155 ,  32.56294896] </cell>
+      <file mode="xyz" >  init.xyz </file>
    </initialize>
    <forces>
    <force forcefield="lmp"> </force>
    </forces>
       <motion mode="vibrations">
         <vibrations mode="fd">
-            <pos_shift>0.01</pos_shift>
+            <pos_shift> 0.01 </pos_shift>
             <energy_shift> 0.0009500 </energy_shift>
-            <prefix> phonons </prefix>
+            <prefix> simulation-fd </prefix>
             <asr> crystal </asr>
          </vibrations>
       </motion>

@@ -1,5 +1,5 @@
 18
-config="book" Lattice="50 0 0 0 50 0 0 0 50" Properties=species:S:1:pos:R:3 E_BLYP_AV5Z=-0.0945 E_CCSDt=0.0305 E_DMC=0.0245 position{angstrom}
+
 O  4.290374 5.710696 4.899163
 H  3.598667 5.431455 4.292665
 H  4.102539 5.249263 5.753222

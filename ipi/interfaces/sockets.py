@@ -325,7 +325,7 @@ class Driver(DriverSocket):
       Returns:
          A list of the form [potential, force, virial, extra].
       """
-
+      
       if (self.status & Status.HasData):
          self.sendall(Message("getforce"));
          reply = ""

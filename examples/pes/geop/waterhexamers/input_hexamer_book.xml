@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <simulation mode="static" verbosity="medium">
-  <output prefix="hexamer_book_lbfgs">
+  <output prefix="hexamer_book_bfgs-fup">
     <properties stride="1" filename="out">  [ step, time{picosecond}, conserved{electronvolt}, temperature{kelvin}, kinetic_cv{electronvolt}, potential{electronvolt}, pressure_cv{megapascal}] </properties>
-    <trajectory filename="pos" stride="20"> positions{angstrom} </trajectory>
+    <trajectory filename="pos" stride="1"> positions{angstrom} </trajectory>
   </output>
   <total_steps> 5000 </total_steps>
   <prng>
@@ -13,14 +13,14 @@
   </ffsocket>
   <system>
     <initialize nbeads="1">
-      <file mode="xyz"> hexamer_book.xyz </file>
-      <cell mode="abc" units="angstrom"> [15.0, 15.0, 15.0] </cell>
+      <file mode="xyz" units="angstrom"> hexamer_book.xyz </file>
+      <cell mode="abc" units="angstrom"> [45.0, 45.0, 45.0] </cell>
     </initialize>
     <forces>
       <force forcefield="qtip4pf"/>
     </forces>
     <motion mode="minimize">
-      <optimizer mode="lbfgs"> </optimizer>
+      <optimizer mode="bfgs"> </optimizer>
     </motion>
   </system>
 </simulation>
