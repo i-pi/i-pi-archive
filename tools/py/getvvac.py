@@ -20,13 +20,13 @@ def compute_acf(input_file, output_prefix, maximum_lag, length_block, length_zer
     mlag = int(args.maximum_lag[-1])
     bsize = int(args.length_block[-1])
     npad = int(args.length_zeropadding[-1])
-    ftbox = bool(args.spectral_windowing[-1])
+    ftbox = str(args.spectral_windowing[-1])
     labels = str(args.labels)
 
     #checks for errors
     if(mlag <= 0):
         raise ValueError("MAXIMUM_LAG should be a non-negative integer.")
-    if(npad <= 0):
+    if(npad < 0):
         raise ValueError("LENGTH_ZEROPADDING should be a non-negative integer.")
     if(bsize <=2 * mlag):
         if(bsize == -1):
@@ -58,10 +58,18 @@ def compute_acf(input_file, output_prefix, maximum_lag, length_block, length_zer
     omega = np.asarray(range(2 * (mlag + npad)))/float(2 * mlag + 2 * npad) * (2 * np.pi)
 
     #selects window function for fft.
-    if(ftbox == True):
-        win = np.bartlett(2 * mlag + 1)
-    else:
+    if(ftbox == "none"):
         win = np.ones(2 * mlag + 1, float)
+    elif(ftbox == "cosine-hanning"):
+        win = np.hanning(2 * mlag + 1)
+    elif(ftbox == "cosine-hamming"):
+        win = np.hamming(2 * mlag + 1)
+    elif(ftbox == "cosine-blackman"):
+        win = np.blackman(2 * mlag + 1)
+    elif(ftbox == "triangle-bartlett"):
+        win = np.bartlett(2 * mlag + 1)
+
+    print win
 
     ff = open(ifile)
     while True:
@@ -108,10 +116,10 @@ if __name__ == "__main__":
    # adds arguments.
     parser.add_argument("-ifile", "--input_file", required=True, nargs=1, type=str, default=None, help="the relative path to the xyz formatted velocity file")
     parser.add_argument("-mlag", "--maximum_lag", required=True, nargs=1, type=int, default=None, help="the maximum time lag for the autocorrelation function")
-    parser.add_argument("-bsize", "--length_block", nargs=1, type=int, default=-1,  help="the number of lines to be imported at once during ``chunk-by-chunk`` input; defaults to 2 * MAXIMUM_LAG")
-    parser.add_argument("-ftpad", "--length_zeropadding", nargs=1, type=int, default=0, help="number of zeroes to be padded at the end of the autocorrelation function before the Fourier transform is computed")
-    parser.add_argument("-ftwin", "--spectral_windowing", nargs=1, type=bool, default=True, help="if autocorrelation function should be multiplied by a window function before the Fourier transform is computed.")
-    parser.add_argument("-labels", "--labels", nargs=1, type=str, default="*", help="labels of the species to be monitored")
+    parser.add_argument("-bsize", "--length_block", nargs=1, type=int, default=[-1],  help="the number of lines to be imported at once during ``chunk-by-chunk`` input; defaults to 2 * MAXIMUM_LAG")
+    parser.add_argument("-ftpad", "--length_zeropadding", nargs=1, type=int, default=[0], help="number of zeroes to be padded at the end of the autocorrelation function before the Fourier transform is computed")
+    parser.add_argument("-ftwin", "--spectral_windowing", nargs=1, type=str, choices=["none", "cosine-hanning", "cosine-hamming", "cosine-blackman", "triangle-bartlett"], default=["none"], help="if autocorrelation function should be multiplied by a window function before the Fourier transform is computed.")
+    parser.add_argument("-labels", "--labels", nargs=1, type=str, default=["*"], help="labels of the species to be monitored")
     parser.add_argument("-oprefix", "--output_prefix", required=True, nargs=1, type=str, help="the prefix of the output file.")
 
     try:
