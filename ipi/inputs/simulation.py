@@ -20,7 +20,7 @@ from ipi.utils.io.inputs.io_xml import *
 from ipi.utils.messages import verbosity
 from ipi.engine.smotion import Smotion
 from ipi.inputs.prng import InputRandom
-from ipi.inputs.system import InputSystem
+from ipi.inputs.system import InputSystem, InputSysTemplate
 from ipi.engine.system import System
 import ipi.inputs.forcefields as iforcefields
 import ipi.engine.forcefields as eforcefields
@@ -93,6 +93,7 @@ class InputSimulation(Input):
 
    dynamic = {
              "system" :   (InputSystem,    { "help"  : InputSystem.default_help }),
+             "system_template" :   (InputSysTemplate,    { "help"  : InputSysTemplate.default_help }),
              "ffsocket": (iforcefields.InputFFSocket, { "help": iforcefields.InputFFSocket.default_help} ),
              "fflj": (iforcefields.InputFFLennardJones, { "help": iforcefields.InputFFLennardJones.default_help} ),
              "ffdebye": (iforcefields.InputFFDebye, { "help": iforcefields.InputFFDebye.default_help} )
@@ -166,27 +167,6 @@ class InputSimulation(Input):
          else:
             self.extra[_ii][1].store(_obj)
 
-      # for fname in simul.fflist:
-      #    ff=simul.fflist[fname]
-      #    if type(ff) is eforcefields.FFSocket:
-      #       iff = iforcefields.InputFFSocket()
-      #       iff.store(ff)
-      #       self.extra.append(("ffsocket",iff))
-      #    elif type(ff) is eforcefields.FFLennardJones:
-      #       iff = iforcefields.InputFFLennardJones()
-      #       iff.store(ff)
-      #       self.extra.append(("fflj",iff))
-      #    elif type(ff) is eforcefields.FFDebye:
-      #       iff = iforcefields.InputFFDebye()
-      #       iff.store(ff)
-      #       self.extra.append(("ffdebye",iff))
-
-
-      # for s in simul.syslist:
-      #    isys = InputSystem()
-      #    isys.store(s)
-      #    self.extra.append(("system",isys))
-
 
    def fetch(self):
       """Creates a simulation object.
@@ -215,6 +195,8 @@ class InputSimulation(Input):
                syslist.append(v.fetch())
                if (v.copies.fetch() > 1):
                   syslist[-1].prefix = syslist[-1].prefix + ( ("%0" + str(int(1 + np.floor(np.log(v.copies.fetch())/np.log(10)))) + "d") % (isys) )
+         elif k== "system_template":             
+             syslist += v.fetch()
          elif k == "ffsocket":
             fflist.append(v.fetch())
          elif k == "fflj":

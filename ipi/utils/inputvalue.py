@@ -26,7 +26,7 @@ from ipi.utils.io.inputs.io_xml import *
 from ipi.utils.units import unit_to_internal, unit_to_user
 
 
-__all__ = ['Input', 'InputDictionary', 'InputValue', 'InputAttribute', 'InputArray', 'input_default']
+__all__ = ['Input', 'InputDictionary', 'InputValue', 'InputRaw', 'InputAttribute', 'InputArray', 'input_default']
 
 
 class input_default(object):
@@ -899,6 +899,19 @@ class InputValue(InputAttribute):
       Input.parse(self, xml=xml, text=text)
       self.value = read_type(self.type, self._text)
 
+class InputRaw(InputValue):
+    """Reads the data for a single value from an xml file.
+
+      Args:
+         xml: An xml_node object containing the all the data for the parent
+            tag.
+         text: The data held between the start and end tags.
+      """
+      
+    def parse(self, xml=None, text=""): 
+        # transforms back to xml and returns a string
+        Input.parse(self, xml=None, text="")
+        self.value=xml_write(xml, text=text)
 
 ELPERLINE = 5
 class InputArray(InputValue):

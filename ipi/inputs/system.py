@@ -7,6 +7,7 @@
 
 import os.path
 import sys
+import re
 
 import numpy as np
 
@@ -34,9 +35,63 @@ from ipi.engine.motion import Motion
 from ipi.inputs.initializer import InputInitializer
 from ipi.engine.initializer import Initializer
 
+__all__ = ['InputSystem', 'InputSysTemplate']
 
-__all__ = ['InputSystem']
+class InputSysTemplate(Input):
+    """A template class to generate multiple systems with varying parameters.
+    
+    Generates a series of systems by automatically filling up labels in a template input structure
+    
+    Fields:
+        template: The text that corresponds to the system field template
+        labels: List of strings identifying substitution fields in the template
+        sys_values: List of strings that should be used to substitute the labels    
+    """
+    
+    fields = { 
+        "template": (InputRaw, { "help": """ A string that will be read verbatim containing the model for a system to be generated""", 
+                    "dtype" : str
+                        } ),
+        "labels" : ( InputArray, {"help" : """ A list of strings that should be substituted in the template to create multiple systems """,
+                    "dtype" : str } )
+        }
+    dynamic = {
+        "instance" : ( InputArray, {"help" : """ A list of strings that should the labels creating one system instance """,
+                    "dtype" : str } )
+                    }
+        
+    def fetch(self):
+        """Creates a series of physical system objects using a template and label substitutions.
 
+        Returns:
+            A list pf System objects of the appropriate type and with the appropriate
+            properties, built by substituting placeholders in a template with the given values
+
+        Raises:
+            TypeError: Raised if one of the file types in the stride keyword
+                is incorrect.
+        """
+
+        super(InputSysTemplate,self).fetch()
+      
+        template=self.template.fetch()
+        labels = self.labels.fetch()
+        lsys = []
+        for (k,v) in self.extra:
+            if k == "instance":
+                ins = v.fetch()         
+                sys = template       
+                if len(labels) != len(ins):
+                    raise ValueError("Labels and instance length mismatch")
+                for l in xrange(len(ins)):
+                    sys = sys.replace(labels[l], ins[l])
+                xsys = xml_parse_string(sys)
+                isys = InputSystem()
+                isys.parse(xsys.fields[0][1])
+                lsys.append(isys.fetch()) 
+                
+        return lsys
+    
 
 class InputSystem(Input):
    """Physical system input class.
