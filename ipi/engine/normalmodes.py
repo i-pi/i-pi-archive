@@ -182,10 +182,11 @@ class NormalModes(dobject):
       dself.omegak = depend_array(name='omegak',
          value=np.zeros(self.beads.nbeads,float),
             func=self.get_omegak, dependencies=[dself.omegan])
+
       #Add omegakopen to calculate the freq in the case of open path
-      dset(self,"omegakopen", depend_array(name='omegakopen',						
+      dset(self,"o_omegak", depend_array(name='o_omegak',						
          value=np.zeros(self.beads.nbeads,float),							
-            func=self.get_omegakopen, dependencies=[dget(self,"omegan")]) )	
+            func=self.get_o_omegak, dependencies=[dget(self,"omegan")]) )	
 
       # sets up "dynamical" masses -- mass-scalings to give the correct RPMD/CMD dynamics      
       dself.nm_factor = depend_array(name="nm_factor",
@@ -271,9 +272,9 @@ class NormalModes(dobject):
       """
 
       return 2*self.omegan*np.array([np.sin(k*np.pi/self.nbeads) for k in range(self.nbeads)])
-   #compute omegakopen
-   def get_omegakopen(self):
-      """Gets the normal mode frequencies.
+   
+   def get_o_omegak(self):
+      """Gets the normal mode frequencies for a open path.
 
       Returns:
          A list of the normal mode frequencies for the free polymer.
@@ -452,6 +453,16 @@ class NormalModes(dobject):
             pq = np.dot(prop_pq[k],pq)
             qnm[k] = pq[1,:]
             pnm[k] = pq[0,:]
+            
+         # pq = np.zeros(2)   
+         #  for j in self.open_paths:         
+        #     for a in xrange(3*j,3*(j+1))
+         #    for k in xrange(1,self.nbeads):
+         #        pq[0] = self.pnm[k,a]/sm[a] 
+         #        pq[1] = self.qnm[k,a]*sm[a]
+         #        pq = np.dot(o_prop_pq[k],pq)
+         #        qmn[k,a] = pq[1]
+         #        pnm[k,a] = pq[0]
          self.pnm = pnm * sm
          self.qnm = qnm / sm
 

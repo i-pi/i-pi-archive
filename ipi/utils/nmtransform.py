@@ -14,7 +14,8 @@ __all__ = ['nm_trans', 'nm_rescale', 'nm_fft']
 
 
 def mk_nm_matrix(nbeads):
-   """Makes a matrix that transforms between the bead and normal mode
+   """ 
+   Makes a matrix that transforms between the bead and normal mode
    representations.
 
    If we return from this function a matrix C, then we transform between the
@@ -37,15 +38,17 @@ def mk_nm_matrix(nbeads):
    return b2nm/np.sqrt(nbeads)
 
 def mk_onm_matrix(nbeads):
-    """Makes a matrix that transforms between the bead and the (open path) normal mode
-    representations. """
-   # here define the orthogonal transformation matrix for the open path
-   b2onm = np.zeros((nbeads,nbeads))                         
-   b2onm[nbeads-1,:] = np.sqrt(1.0)   
-   for j in range(1,nbeads+1):
-     for i in range(1,nbeads): 
-         b2onm[i-1,j-1] = np.sqrt(2.0)*np.cos(np.pi*(j-0.5)*i/float(nbeads))
-   return b2onm/np.sqrt(nbeads)
+    """ 
+    Makes a matrix that transforms between the bead and the (open path) normal mode
+    representations. 
+    """
+    # here define the orthogonal transformation matrix for the open path
+    b2onm = np.zeros((nbeads,nbeads))                         
+    b2onm[nbeads-1,:] = np.sqrt(1.0)   
+    for j in range(1,nbeads+1):
+        for i in range(1,nbeads): 
+            b2onm[i-1,j-1] = np.sqrt(2.0)*np.cos(np.pi*(j-0.5)*i/float(nbeads))
+    return b2onm/np.sqrt(nbeads)
 
 
 def mk_rs_matrix(nb1, nb2):
@@ -83,7 +86,7 @@ def mk_rs_matrix(nb1, nb2):
       return mk_rs_matrix(nb2, nb1).T*(float(nb2)/float(nb1))
 
 
-class nm_trans(object):
+class nm_trans(object): 
    """Uses matrix multiplication to do normal mode transformations.
 
    Attributes:
@@ -108,6 +111,7 @@ class nm_trans(object):
       #definition of the transformation also with the open path matrx
       self._b2onm = mk_onm_matrix(nbeads)						
       self._onm2b = self._b2onm.T	
+      
    def b2nm(self, q):
       """Transforms a matrix to the normal mode representation.
 
@@ -116,9 +120,8 @@ class nm_trans(object):
       """
 
       qnm = np.dot(self._b2nm, q)
-      for io in self._open:
+      for io in self._open: # does separately the transformation for the atom that are marked as open paths
           qnm[:,io] = np.dot(self._b2onm, q[:,io])
-          ## here you should do the open path transformation, that should look like the above
       return qnm
 
    def nm2b(self, qnm):
@@ -129,13 +132,12 @@ class nm_trans(object):
       """
 
       q = np.dot(self._nm2b,qnm)
-      for io in self._open:
+      for io in self._open: # does separately the transformation for the atom that are marked as open paths
           q[:,io] = np.dot(self._onm2b, qnm[:,io])
-          ## here you should do the reverse open path transformation, that should look like the above
       return q
 
 
-class nm_rescale(object):
+class nm_rescale(object):   ##!! TODO - make compatible with a open path formulation
    """Uses matrix multiplication to do ring polymer contraction or expansion
    between different numbers of beads.
 
@@ -176,7 +178,7 @@ class nm_rescale(object):
       return np.dot(self._b2tob1,q)
 
 
-class nm_fft(object):
+class nm_fft(object):   ## ! TODO add (matrix-version) of the open path transformation here
    """Uses Fast Fourier transforms to do normal mode transformations.
 
    Attributes:
