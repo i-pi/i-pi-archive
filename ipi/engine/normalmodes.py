@@ -183,7 +183,7 @@ class NormalModes(dobject):
          value=np.zeros(self.beads.nbeads,float),
             func=self.get_omegak, dependencies=[dself.omegan])
 
-      #Add omegakopen to calculate the freq in the case of open path
+      #Add o_omegak to calculate the freq in the case of open path
       dset(self,"o_omegak", depend_array(name='o_omegak',						
          value=np.zeros(self.beads.nbeads,float),							
             func=self.get_o_omegak, dependencies=[dget(self,"omegan")]) )	
@@ -192,9 +192,9 @@ class NormalModes(dobject):
       dself.nm_factor = depend_array(name="nm_factor",
          value=np.zeros(self.nbeads, float), func=self.get_nmm,
             dependencies=[dself.nm_freqs, dself.mode ]) 
-      #add onm_factor for the dynamical mass in the case of open paths
-      dset(self,"onm_factor", depend_array(name="nmm",
-         value=np.zeros(self.nbeads, float), func=self.get_onmm,
+      #add o_nm_factor for the dynamical mass in the case of open paths
+      dset(self,"o_nm_factor", depend_array(name="nmm",
+         value=np.zeros(self.nbeads, float), func=self.get_o_nmm,
             dependencies=[dget(self,"nm_freqs"), dget(self,"mode") ]) )
       dself.dynm3 = depend_array(name="dynm3",
          value=np.zeros((self.nbeads,3*self.natoms), float),func=self.get_dynm3,
@@ -208,6 +208,9 @@ class NormalModes(dobject):
       dself.prop_pq = depend_array(name='prop_pq',value=np.zeros((self.beads.nbeads,2,2)),
             func=self.get_prop_pq,
                dependencies=[dself.omegak, dself.nm_factor, dself.dt])
+      dself.o_prop_pq = depend_array(name='o_prop_pq',value=np.zeros((self.beads.nbeads,2,2)),
+            func=self.get_o_prop_pq,
+               dependencies=[dself.o_omegak, dself.o_nm_factor, dself.dt])
 
       # if the mass matrix is not the RPMD one, the MD kinetic energy can't be
       # obtained in the bead representation because the masses are all mixed up
@@ -313,25 +316,46 @@ class NormalModes(dobject):
 
       # Note that the propagator uses mass-scaled momenta.
       for b in range(1, self.nbeads):
-         if b in self.open_paths:
-            sk = np.sqrt(self.onm_factor[b])	
-	    dtomegakopen = self.omegakopen[b]*dt/sk
-	    c = np.cos(dtomegakopen)						 
-            s = np.sin(dtomegakopen)						
-            pqk[b,0,0] = c
-            pqk[b,1,1] = c
-            pqk[b,0,1] = -s*self.omegakopen[b]*sk
-            pqk[b,1,0] = s/(self.omegakopen[b]*sk)
-	 else:
-           sk = np.sqrt(self.nm_factor[b])
-           dtomegak = self.omegak[b]*dt/sk
-           c = np.cos(dtomegak)
-           s = np.sin(dtomegak)
-           pqk[b,0,0] = c
-           pqk[b,1,1] = c
-           pqk[b,0,1] = -s*self.omegak[b]*sk
-           pqk[b,1,0] = s/(self.omegak[b]*sk)
+         sk = np.sqrt(self.nm_factor[b])
+         dtomegak = self.omegak[b]*dt/sk
+         c = np.cos(dtomegak)
+         s = np.sin(dtomegak)
+         pqk[b,0,0] = c
+         pqk[b,1,1] = c
+         pqk[b,0,1] = -s*self.omegak[b]*sk
+         pqk[b,1,0] = s/(self.omegak[b]*sk)
 
+      return pqk
+
+
+ def get_o_prop_pq(self):
+      """Gets the normal mode propagator matrix for the open case.
+
+      Note the special treatment for the centroid normal mode, which is
+      propagated using the standard velocity Verlet algorithm as required.
+      Note that both the normal mode positions and momenta are propagated
+      using this matrix.
+
+      Returns:
+         An array of the form (nbeads, 2, 2). Each 2*2 array prop_pq[i,:,:]
+         gives the exact propagator for the i-th normal mode of the
+         ring polymer.
+      """
+
+      dt = self.dt
+      pqk = np.zeros((self.nbeads,2,2), float)
+      pqk[0] = np.array([[1,0], [dt,1]])
+
+      # Note that the propagator uses mass-scaled momenta.
+      for b in range(1, self.nbeads):
+         sk = np.sqrt(self.o_nm_factor[b])	
+         dto_omegak = self.o_omegak[b]*dt/sk
+	 c = np.cos(dto_omegak)						 
+         s = np.sin(dto_omegak)						
+         pqk[b,0,0] = c
+         pqk[b,1,1] = c
+         pqk[b,0,1] = -s*self.o_omegak[b]*sk
+         pqk[b,1,0] = s/(self.o_omegak[b]*sk)
       return pqk
 
    def get_nmm(self):
@@ -374,8 +398,8 @@ class NormalModes(dobject):
       return dmf
 
 
-    # define a function onm_factor so we have get_onm for the open case
-    def get_onmm(self):
+    # define a function o_nm_factor so we have dynamical masses for the open case
+    def get_o_nmm(self):
       """Returns dynamical mass factors, i.e. the scaling of normal mode
       masses that determine the path dynamics (but not statics)."""
 
@@ -390,7 +414,7 @@ class NormalModes(dobject):
          if len(self.nm_freqs) != self.nbeads-1:
             raise ValueError("Manual path mode requires (nbeads-1) frequencies, one for each internal mode of the path.")
          for b in range(1, self.nbeads):
-            sk = self.omegakopen[b]/self.nm_freqs[b-1]								
+            sk = self.o_omegak[b]/self.nm_freqs[b-1]								
             dmf[b] = sk**2
       elif self.mode == "pa-cmd":
          if len(self.nm_freqs) > 1:
@@ -398,8 +422,8 @@ class NormalModes(dobject):
          if len(self.nm_freqs) == 0:
             raise ValueError("PA-CMD mode requires the target frequency of all the internal modes.")
          for b in range(1, self.nbeads):
-            sk = self.omegakopen[b]/self.nm_freqs[0]								
-            info(" ".join(["NM FACTOR", str(b), str(sk), str(self.omegakopen[b]), str(self.nm_freqs[0])]), verbosity.medium)
+            sk = self.o_omegak[b]/self.nm_freqs[0]								
+            info(" ".join(["NM FACTOR", str(b), str(sk), str(self.o_omegak[b]), str(self.nm_freqs[0])]), verbosity.medium)
             dmf[b] = sk**2
       elif self.mode == "wmax-cmd":
          if len(self.nm_freqs) > 2:
@@ -409,7 +433,7 @@ class NormalModes(dobject):
          wmax = self.nm_freqs[0]
          wt = self.nm_freqs[1]
          for b in range(1, self.nbeads):
-            sk = 1.0/np.sqrt((wt)**2*(1+(wmax/self.omegakopen[1])**2)/(wmax**2+(self.omegakopen[b])**2))
+            sk = 1.0/np.sqrt((wt)**2*(1+(wmax/self.o_omegak[1])**2)/(wmax**2+(self.o_omegak[b])**2))
             dmf[b] = sk**2
 
       return dmf
@@ -444,6 +468,7 @@ class NormalModes(dobject):
          pq = np.zeros((2,self.natoms*3),float)         
          sm = depstrip(self.beads.sm3)
          prop_pq = depstrip(self.prop_pq) 
+         o_prop_pq = depstrip(self.o_prop_pq) 
          pnm = depstrip(self.pnm)/sm
          qnm = depstrip(self.qnm)*sm
          
@@ -454,15 +479,15 @@ class NormalModes(dobject):
             qnm[k] = pq[1,:]
             pnm[k] = pq[0,:]
             
-         # pq = np.zeros(2)   
-         #  for j in self.open_paths:         
-        #     for a in xrange(3*j,3*(j+1))
-         #    for k in xrange(1,self.nbeads):
-         #        pq[0] = self.pnm[k,a]/sm[a] 
-         #        pq[1] = self.qnm[k,a]*sm[a]
-         #        pq = np.dot(o_prop_pq[k],pq)
-         #        qmn[k,a] = pq[1]
-         #        pnm[k,a] = pq[0]
+         pq = np.zeros(2)  
+         for j in self.open_paths:          
+            for a in xrange(3*j,3*(j+1))   
+               for k in xrange(1,self.nbeads): 
+                  pq[0] = self.pnm[k,a]/sm[a] 
+                  pq[1] = self.qnm[k,a]*sm[a]
+                  pq = np.dot(o_prop_pq[k],pq)
+                  qmn[k,a] = pq[1]		
+                  pnm[k,a] = pq[0]
          self.pnm = pnm * sm
          self.qnm = qnm / sm
 
