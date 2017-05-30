@@ -37,18 +37,18 @@ def mk_nm_matrix(nbeads):
       b2nm[nbeads/2,1:nbeads:2] = -1.0
    return b2nm/np.sqrt(nbeads)
 
-def mk_onm_matrix(nbeads):
+def mk_o_nm_matrix(nbeads):
     """ 
     Makes a matrix that transforms between the bead and the (open path) normal mode
     representations. 
     """
     # here define the orthogonal transformation matrix for the open path
-    b2onm = np.zeros((nbeads,nbeads))                         
-    b2onm[nbeads-1,:] = np.sqrt(1.0)   
+    b2o_nm = np.zeros((nbeads,nbeads))                         
+    b2o_nm[nbeads-1,:] = np.sqrt(1.0)   
     for j in range(1,nbeads+1):
         for i in range(1,nbeads): 
-            b2onm[i-1,j-1] = np.sqrt(2.0)*np.cos(np.pi*(j-0.5)*i/float(nbeads))
-    return b2onm/np.sqrt(nbeads)
+            b2o_nm[i-1,j-1] = np.sqrt(2.0)*np.cos(np.pi*(j-0.5)*i/float(nbeads))
+    return b2o_nm/np.sqrt(nbeads)
 
 
 def mk_rs_matrix(nb1, nb2):
@@ -109,8 +109,8 @@ class nm_trans(object):
           open_paths = []
       self._open = open_paths
       #definition of the transformation also with the open path matrx
-      self._b2onm = mk_onm_matrix(nbeads)						
-      self._onm2b = self._b2onm.T	
+      self._b2o_nm = mk_o_nm_matrix(nbeads)						
+      self._o_nm2b = self._b2o_nm.T	
       
    def b2nm(self, q):
       """Transforms a matrix to the normal mode representation.
@@ -121,7 +121,7 @@ class nm_trans(object):
 
       qnm = np.dot(self._b2nm, q)
       for io in self._open: # does separately the transformation for the atom that are marked as open paths
-          qnm[:,io] = np.dot(self._b2onm, q[:,io])
+          qnm[:,io] = np.dot(self._b2o_nm, q[:,io])
       return qnm
 
    def nm2b(self, qnm):
@@ -133,7 +133,7 @@ class nm_trans(object):
 
       q = np.dot(self._nm2b,qnm)
       for io in self._open: # does separately the transformation for the atom that are marked as open paths
-          q[:,io] = np.dot(self._onm2b, qnm[:,io])
+          q[:,io] = np.dot(self._o_nm2b, qnm[:,io])
       return q
 
 
@@ -194,7 +194,7 @@ class nm_fft(object):   ## ! TODO add (matrix-version) of the open path transfor
       natoms: The number of atoms.
    """
 
-   def __init__(self, nbeads, natoms):
+   def __init__(self, nbeads, natoms, open_paths=None):
       """Initializes nm_trans.
 
       Args:
@@ -204,6 +204,12 @@ class nm_fft(object):   ## ! TODO add (matrix-version) of the open path transfor
 
       self.nbeads = nbeads
       self.natoms = natoms
+      if open_paths is None:
+          open_paths = []
+      self._open = open_paths
+      #for atoms with open path we still use the matrix transformation 
+      self._b2o_nm = mk_o_nm_matrix(nbeads)						
+      self._o_nm2b = self._b2o_nm.T	
       try:
          import pyfftw
          info("Import of PyFFTW successful", verbosity.medium)
@@ -235,8 +241,8 @@ class nm_fft(object):   ## ! TODO add (matrix-version) of the open path transfor
          return q
       self.qdummy[:] = q
       self.fft()
-      if self.nbeads == 2:
-         return self.qnmdummy.real/np.sqrt(self.nbeads)
+      if self.nbeads == 2:					          
+         return self.qnmdummy.real/np.sqrt(self.nbeads)		
 
       nmodes = self.nbeads/2
 
@@ -251,7 +257,9 @@ class nm_fft(object):   ## ! TODO add (matrix-version) of the open path transfor
       else:
          self.qnmdummy[1:,:] *= np.sqrt(2)
          (qnm[1:nmodes+1,:], qnm[self.nbeads:nmodes:-1,:]) = (self.qnmdummy[1:,:].real, self.qnmdummy[1:,:].imag)
-
+      
+      for io in self._open: # does separately the transformation for the atom that are marked as open paths
+          qnm[:,io] = np.dot(self._b2o_nm, q[:,io])
       return qnm
 
    def nm2b(self, qnm):
@@ -284,4 +292,11 @@ class nm_fft(object):   ## ! TODO add (matrix-version) of the open path transfor
 
       self.qnmdummy[:] = qnm_complex
       self.ifft()
-      return self.qdummy*np.sqrt(self.nbeads)
+      q=np.zeros(qnm.shape)
+      q=self.qdummy*np.sqrt(self.nbeads)
+      for io in self._open: # does separately the transformation for the atom that are marked as open paths
+          q[:,io] = np.dot(self._o_nm2b, qnm[:,io])
+      return q
+
+
+
