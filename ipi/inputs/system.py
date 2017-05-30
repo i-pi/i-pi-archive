@@ -68,8 +68,7 @@ class InputSysTemplate(Input):
             properties, built by substituting placeholders in a template with the given values
 
         Raises:
-            TypeError: Raised if one of the file types in the stride keyword
-                is incorrect.
+            ValueError: Raised if the labels and the instance lists have mismatching lengths
         """
 
         super(InputSysTemplate,self).fetch()
@@ -83,12 +82,12 @@ class InputSysTemplate(Input):
                 sys = template       
                 if len(labels) != len(ins):
                     raise ValueError("Labels and instance length mismatch")
-                for l in xrange(len(ins)):
+                for l in xrange(len(ins)):  # string replacement within the template 
                     sys = sys.replace(labels[l], ins[l])
-                xsys = xml_parse_string(sys)
+                xsys = xml_parse_string(sys) # parses the string to an XML object
                 isys = InputSystem()
-                isys.parse(xsys.fields[0][1])
-                lsys.append(isys.fetch()) 
+                isys.parse(xsys.fields[0][1]) # parses the XML object into an InputSystem
+                lsys.append(isys.fetch())     # fetches the generated System and appends to the list
                 
         return lsys
     
