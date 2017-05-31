@@ -1,4 +1,5 @@
-""" trimsim.py
+#!/usr/bin/env python2 
+"""
 
 Relies on the infrastructure of i-pi, so the ipi package should
 be installed in the Python module directory, or the i-pi
@@ -27,7 +28,7 @@ from ipi.engine.properties import getkey
 from ipi.inputs.simulation import InputSimulation
 from ipi.utils.io.inputs import io_xml
 import scipy.linalg as sp
-from scipy.interpolate import CubicSpline
+#from scipy.interpolate import CubicSpline
 
 
 def input_vvac(path2inputfile, mrows, stride):
@@ -82,8 +83,8 @@ def Cqp(omega_0, Ap, Dp):
 
 def Cvv(omega, omega_0, Ap, Dp, dw):
     """Given the Cp and Dp matrices for a harmonic oscillator of frequency omega_0, computes the value of the Fourier transform of the velocity velocity auto-correlation function."""
-    omega_0 = np.maximum(omega_0, dw)
-    omega = np.maximum(omega, dw)
+    omega_0 = np.maximum(omega_0, dw*1e-3)
+    omega = np.maximum(omega, dw*1e-3)
     dAqp = Aqp(omega_0, Ap)
     #dAqp[1,1] = np.maximum(dAqp[1,1], dAqp[1,1] +2.0*dw)
     #dAqp[1,1] += 2*dw
@@ -96,7 +97,61 @@ def Cvv(omega, omega_0, Ap, Dp, dw):
     return dCvv[1,1]/(np.pi/2.0)
 
 
+def Cqp_scaled(omega_0, Ap, Dp):
+    """Given the free particle Ap and Dp matrices and the frequency of the harmonic oscillator, computes the full covariance matrix."""
+    dAqp = Aqp(omega_0, Ap)/omega_0
+    dDqp = Dqp(omega_0, Dp)/omega_0
+    return sp.solve_continuous_are( -dAqp, np.zeros(dAqp.shape), dDqp, np.eye(dAqp.shape[-1]))
+
+def Cqp_stable(omega_0, Ap, Dp):
+    """Given the free particle Ap and Dp matrices and the frequency of the harmonic oscillator, computes the full covariance matrix."""
+    dAqp = Aqp(omega_0, Ap)/omega_0
+    dDqp = Dqp(omega_0, Dp)/omega_0
+    M = np.eye(dAqp.shape[0]);  M[0,0] = omega_0
+    IM = np.eye(dAqp.shape[0]); IM[0,0] = 1/omega_0
+    
+    nA = np.dot(IM,np.dot(dAqp,M))
+    nD = np.dot(IM,np.dot(dDqp,IM))
+    nC = sp.solve_continuous_are( -nA, np.zeros(dAqp.shape), nD, np.eye(dAqp.shape[-1]))
+    #print "BALANCED", 1/omega_0**2, nC
+    realC = np.dot(IM,np.dot(nC,IM))    
+    return realC
+    
 def gleKernel(omega, Ap, Dp):
+    """Given the Cp and Dp matrices for a harmonic oscillator of frequency omega_0, constructs the gle kernel for transformation of the velocity velocity autocorrelation function."""
+    dw = abs(omega[1]-omega[0])
+    ngrid = len(omega) 
+    dKer = np.zeros((ngrid,ngrid), float)    
+    for y in xrange(ngrid):
+        omega_0 = omega[y]
+        omega_0 = np.maximum(omega_0, dw*0.1)     
+        #print "OMEGA", omega_0   
+        dAqp = Aqp(omega_0, Ap)/omega_0        
+        dDqp = Dqp(omega_0, Dp)/omega_0
+        dCqp = Cqp_scaled(omega_0, Ap, Dp)      
+        #print "SCALED", Cqp_scaled(omega_0, Ap, Dp)      
+        #print "STABLE", 1/omega_0**2, Cqp_stable(omega_0, Ap, Dp)      
+        dAqp2 = np.dot(dAqp,dAqp)
+        w2, O = np.linalg.eig(dAqp2)
+        O1 = np.linalg.inv(O)
+        #print dAqp2, np.dot(np.dot(O, np.diag(w2)), O1)
+        #print np.linalg.eigvalsh(dCqp)
+        for x in xrange(ngrid):
+            om = omega[x]
+            om = np.maximum(om, dw*0.1)
+            om /= omega_0
+            print w2, om
+            w = np.sqrt(w2)
+            dia = np.diag(w/(w2+om**2))
+            mat = np.dot(np.dot(np.dot(O, dia), O1), dCqp)
+#            mat = np.dot(np.dot(O, dia), O1)
+            #print mat[1,1]*2.0/np.pi, Cvv(om, omega_0, Ap, Dp, dw)
+            print mat[1,1]/omega_0            
+            dKer[x,y] = mat[1,1]/omega_0
+            
+    return dKer*dw*2.0/np.pi
+
+def gleKernel_old(omega, Ap, Dp):
     """Given the Cp and Dp matrices for a harmonic oscillator of frequency omega_0, constructs the gle kernel for transformation of the velocity velocity autocorrelation function."""
     delta_omega = abs(omega[1]-omega[0])
     ngrid = len(omega) 
@@ -105,7 +160,8 @@ def gleKernel(omega, Ap, Dp):
         for y in xrange(ngrid):
             dKer[x,y] = Cvv(omega[x], omega[y], Ap, Dp, delta_omega)
     return dKer*delta_omega
-
+    
+    
 
 def ISRA(omega, ker, y, steps=500):
     """Given the thermostatted vvac spectrum and the range of frequencies, constructs the vibration density of states"""
