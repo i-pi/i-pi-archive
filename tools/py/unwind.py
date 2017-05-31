@@ -119,7 +119,6 @@ def gleKernel(omega, Ap, Dp):
     ngrid = len(omega) 
     dKer = np.zeros((ngrid,ngrid), float)    
     for y in xrange(ngrid):
-        start = tt.time()
         omega_0 = omega[y]
         omega_0 = np.maximum(omega_0, dw*1e-2)     
         # works in "scaled coordinates" to stabilize the machinery for small or large omegas
