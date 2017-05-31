@@ -113,8 +113,6 @@ def Cqp_stable(omega0, dAqp, dDqp):
     nC[:,0]/=omega0;  nC[0,:]/=omega0
     return nC
     
-import time as tt
-
 def gleKernel(omega, Ap, Dp):
     """Given the Cp and Dp matrices for a harmonic oscillator of frequency omega_0, constructs the gle kernel for transformation of the velocity velocity autocorrelation function."""
     dw = abs(omega[1]-omega[0])
@@ -133,8 +131,6 @@ def gleKernel(omega, Ap, Dp):
         w2, O = np.linalg.eig(dAqp2)
         w = np.sqrt(w2)
         O1 = np.linalg.inv(O)
-        print "prep", tt.time() - start
-        start = tt.time()
         cqp1 = np.dot(dCqp[1,:],O)
         cqpt1 = np.dot(O1,dCqp[:,1])
         for x in xrange(ngrid):
@@ -145,8 +141,7 @@ def gleKernel(omega, Ap, Dp):
             dia = w/(w2+om**2)
             kpp = np.real(np.dot(cqp1*dia, cqpt1))
             
-            dKer[x,y] =kpp/omega_0  # re-scales by omega_0 to recover physical units to be used outside
-        print "row", tt.time()-start
+            dKer[x,y] =kpp/omega_0  # re-scales by omega_0 to recover physical units to be used outside        
     return dKer*dw*2.0/np.pi
 
 def gleKernel_old(omega, Ap, Dp):
