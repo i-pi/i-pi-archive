@@ -103,6 +103,7 @@ def Cqp_scaled(omega_0, Ap, Dp):
     dDqp = Dqp(omega_0, Dp)/omega_0
     return sp.solve_continuous_are( -dAqp, np.zeros(dAqp.shape), dDqp, np.eye(dAqp.shape[-1]))
 
+import time as tt
 def Cqp_stable(omega0, dAqp, dDqp):
     """Given the free particle Ap and Dp matrices and the frequency of the harmonic oscillator, computes the full covariance matrix."""
     # "stabilizes" the calculation by removing the trivial dependence of <a^2> on omega0 until the very end
@@ -117,10 +118,12 @@ def gleKernel(omega, Ap, Dp):
     """Given the Cp and Dp matrices for a harmonic oscillator of frequency omega_0, constructs the gle kernel for transformation of the velocity velocity autocorrelation function."""
     dw = abs(omega[1]-omega[0])
     ngrid = len(omega) 
-    dKer = np.zeros((ngrid,ngrid), float)    
-    for y in xrange(ngrid):
-        omega_0 = omega[y]
-        omega_0 = np.maximum(omega_0, dw*1e-2)     
+    dKer = np.zeros((ngrid,ngrid), float)
+    omlist = omega.copy()
+    omlist[0] = max(omlist[0], dw*1e-2) # avoids a 0/0 instability
+    om2list = omlist**2
+    y = 0
+    for omega_0 in omlist:  #loops over the oscillator frequency
         # works in "scaled coordinates" to stabilize the machinery for small or large omegas
         dAqp = Aqp(omega_0, Ap)/omega_0        
         dDqp = Dqp(omega_0, Dp)/omega_0
@@ -130,17 +133,14 @@ def gleKernel(omega, Ap, Dp):
         w2, O = np.linalg.eig(dAqp2)
         w = np.sqrt(w2)
         O1 = np.linalg.inv(O)
-        cqp1 = np.dot(dCqp[1,:],O)
+        cqp1w = np.dot(dCqp[1,:],O) * w/omega_0 # re-scales by omega_0 to recover physical units
         cqpt1 = np.dot(O1,dCqp[:,1])
-        for x in xrange(ngrid):
-            om = omega[x]
-            om = np.maximum(om, dw*1e-2)            
-            om /= omega_0 # keeps working in scaled coordinates at this point
-            
-            dia = w/(w2+om**2)
-            kpp = np.real(np.dot(cqp1*dia, cqpt1))
-            
-            dKer[x,y] =kpp/omega_0  # re-scales by omega_0 to recover physical units to be used outside        
+        x = 0
+        om2om0 = om2list/omega_0**2 # keeps working in scaled coordinates at this point  
+        for oo0x in om2om0: # loops ove the Cvv frequency          
+            dKer[x,y] = np.real(np.dot(cqp1w, cqpt1/(w2+oo0x)))                         
+            x+=1
+        y += 1    
     return dKer*dw*2.0/np.pi
 
 def gleKernel_old(omega, Ap, Dp):
