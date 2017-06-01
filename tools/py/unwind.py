@@ -107,10 +107,20 @@ import time as tt
 def Cqp_stable(omega0, dAqp, dDqp):
     """Given the free particle Ap and Dp matrices and the frequency of the harmonic oscillator, computes the full covariance matrix."""
     # "stabilizes" the calculation by removing the trivial dependence of <a^2> on omega0 until the very end
-    dAqp[:,0]*=omega0
-    dAqp[0,:]/=omega0
+    dAqp[:,0]*=omega0; dAqp[0,:]/=omega0
     dDqp[:,0]/=omega0; dDqp[:,0]/=omega0;
+    a, O = np.linalg.eig(dAqp) 
+    O1 = np.linalg.inv(O)
     nC = sp.solve_continuous_are( -dAqp, np.zeros(dAqp.shape), dDqp, np.eye(dAqp.shape[-1]))
+    print dAqp
+    print "eigvals " , a
+    print "solve continuous", nC
+    W = np.dot(np.dot(O1, dDqp),O1.T)
+    for i in xrange(len(W)):
+        for j in xrange(len(W)):
+            W[i,j]/=a[i]+a[j]
+    nC = np.dot(O,np.dot(W,O.T))
+    print "solve eigval", np.real(nC)
     nC[:,0]/=omega0;  nC[0,:]/=omega0
     return nC
     
@@ -123,11 +133,14 @@ def gleKernel(omega, Ap, Dp):
     omlist[0] = max(omlist[0], dw*1e-2) # avoids a 0/0 instability
     om2list = omlist**2
     y = 0
+    if Ap[0,0]<2*dw:
+        print "WARNING. White-noise term is weaker than the spacing of the frequency grid. Will increase automatically to avoid instabilities in the numerical integration"
     for omega_0 in omlist:  #loops over the oscillator frequency
         # works in "scaled coordinates" to stabilize the machinery for small or large omegas
-        dAqp = Aqp(omega_0, Ap)/omega_0        
+        dAqp = Aqp(omega_0, Ap)/omega_0
+        dAqp[1,1] = max(dAqp[1,1],2*dw/omega_0)
         dDqp = Dqp(omega_0, Dp)/omega_0
-        dCqp = Cqp_stable(omega_0, dAqp, dDqp)      
+        dCqp = Cqp_stable(omega_0, dAqp, dDqp)
         dAqp2 = np.dot(dAqp,dAqp)
         # diagonalizes dAqp2 to accelerate the evaluation further down in the inner loop
         w2, O = np.linalg.eig(dAqp2)
