@@ -27,7 +27,11 @@ from ipi.engine.outputs import *
 from ipi.engine.properties import getkey
 from ipi.inputs.simulation import InputSimulation
 from ipi.utils.io.inputs import io_xml
-import scipy.linalg as sp
+try:
+    import scipy.linalg as sp
+    __has_scipy = True
+except:
+    __has_scipy = False    
 #from scipy.interpolate import CubicSpline
 
 
@@ -109,18 +113,18 @@ def Cqp_stable(omega0, dAqp, dDqp):
     # "stabilizes" the calculation by removing the trivial dependence of <a^2> on omega0 until the very end
     dAqp[:,0]*=omega0; dAqp[0,:]/=omega0
     dDqp[:,0]/=omega0; dDqp[:,0]/=omega0;
-    a, O = np.linalg.eig(dAqp) 
-    O1 = np.linalg.inv(O)
-    nC = sp.solve_continuous_are( -dAqp, np.zeros(dAqp.shape), dDqp, np.eye(dAqp.shape[-1]))
-    print dAqp
-    print "eigvals " , a
-    print "solve continuous", nC
-    W = np.dot(np.dot(O1, dDqp),O1.T)
-    for i in xrange(len(W)):
-        for j in xrange(len(W)):
-            W[i,j]/=a[i]+a[j]
-    nC = np.dot(O,np.dot(W,O.T))
-    print "solve eigval", np.real(nC)
+    
+    if __has_scipy:  # this seems to be more stable in borderline cases
+        nC = sp.solve_continuous_are( -dAqp, np.zeros(dAqp.shape), dDqp, np.eye(dAqp.shape[-1]))            
+    else:  # solve "a' la MC thesis" using just numpy
+        a, O = np.linalg.eig(dAqp) 
+        O1 = np.linalg.inv(O)
+        W = np.dot(np.dot(O1, dDqp),O1.T)
+        for i in xrange(len(W)):
+            for j in xrange(len(W)):
+                W[i,j]/=a[i]+a[j]
+        nC = np.dot(O,np.dot(W,O.T))
+
     nC[:,0]/=omega0;  nC[0,:]/=omega0
     return nC
     
@@ -133,12 +137,9 @@ def gleKernel(omega, Ap, Dp):
     omlist[0] = max(omlist[0], dw*1e-2) # avoids a 0/0 instability
     om2list = omlist**2
     y = 0
-    if Ap[0,0]<2*dw:
-        print "WARNING. White-noise term is weaker than the spacing of the frequency grid. Will increase automatically to avoid instabilities in the numerical integration"
     for omega_0 in omlist:  #loops over the oscillator frequency
         # works in "scaled coordinates" to stabilize the machinery for small or large omegas
         dAqp = Aqp(omega_0, Ap)/omega_0
-        dAqp[1,1] = max(dAqp[1,1],2*dw/omega_0)
         dDqp = Dqp(omega_0, Dp)/omega_0
         dCqp = Cqp_stable(omega_0, dAqp, dDqp)
         dAqp2 = np.dot(dAqp,dAqp)
@@ -231,16 +232,19 @@ def main():
     if(ttype == "ThermoGLE"):
       Ap = simul.syslist[0].motion.thermostat.A  * 41.341373
       Cp = simul.syslist[0].motion.thermostat.C
-      Dp = np.dot(Ap,Cp) + np.dot(Cp,Ap.T)
-
     elif(ttype == "ThermoLangevin"):
       Ap = np.asarray([1.0/simul.syslist[0].motion.thermostat.tau]).reshape((1,1)) * 41.341373
       Cp = np.asarray([1.0]).reshape((1,1))
-      Dp = np.dot(Ap,Cp) + np.dot(Cp,Ap)
-
+    
     ivvac=input_vvac(path2ivvac, nrows, stride)
     ix=ivvac[:,0]
     iy=ivvac[:,1]
+
+    dw = ix[1] - ix[0]
+    if Ap[0,0]<2*dw:
+        print "WARNING. White-noise term is weaker than the spacing of the frequency grid. Will increase automatically to avoid instabilities in the numerical integration"
+        Ap[0,0] = 2*dw
+    Dp = np.dot(Ap,Cp) + np.dot(Cp,Ap.T)
 
     # computes the vvac kernel
     if (path2ker == None):
