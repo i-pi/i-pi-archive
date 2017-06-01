@@ -86,8 +86,9 @@ def compute_acf(input_file, output_prefix, maximum_lag, block_length, length_zer
             #Computes the Fourier transform of the vvac applying the convolution theorem.
             tfvvacf = fdata * np.conjugate(fdata)
 
-            #Averages over all species and sums over the x,y,z directions. Also multiplies with the time step and a prefactor of (2pi)^-1.
-            fvvacf = fvvacf + 3.0 * np.real(np.mean(tfvvacf, axis = (1,2))) * dt / (2 * np.pi)
+            #Averages over all species and sums over the x,y,z directions. Also multiplies with the time step and a prefactor of (2pi)^-1.            
+            macf = 3.0 * np.real(np.mean(tfvvacf, axis = (1,2))) * dt / (2 * np.pi) / bsize
+            fvvacf += macf
             nblocks +=  1
 
         except EOFError:
@@ -95,10 +96,10 @@ def compute_acf(input_file, output_prefix, maximum_lag, block_length, length_zer
     ff.close()
 
     #Performs the block average of the Fourier transform.
-    fvvacf = np.real(fvvacf) / nblocks
+    fvvacf = fvvacf / nblocks    
 
     #Computes the inverse Fourier transform to get the vvac.
-    vvacf = np.fft.irfft(fvvacf)[:mlag + 1]
+    vvacf = np.fft.irfft(fvvacf)[:mlag + 1]    
     np.savetxt(ofile + "_vv.data" , np.vstack((time, vvacf)).T[:mlag + npad])
 
     #Applies window in one direction and pads the vvac with zeroes.
