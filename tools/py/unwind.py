@@ -32,38 +32,23 @@ try:
     __has_scipy = True
 except:
     __has_scipy = False    
-#from scipy.interpolate import CubicSpline
-
 
 def input_vvac(path2inputfile, mrows, stride):
     """Imports the vvac file and extracts the ."""
-    try:
-        dvvac=np.genfromtxt(path2inputfile, usecols=((2,3)))
-        if( mrows == -1 ):
-            mrows = len(dvvac)
-        return dvvac[:mrows][::stride]
-    except:
-        print("error in inporting the vvac file",  sys.exc_info()[0])
-        raise
+    #TODO: make changes to the column numbers.
+    dvvac=np.genfromtxt(path2inputfile, usecols=((2,3)))
+    if( mrows == -1 ):
+        mrows = len(dvvac)
+    return dvvac[:mrows][::stride]
 
-def output_vvac(xy,path2outfile, refvvac, action):
+def output_vvac(xy,oprefix, refvvac):
     """Imports the vvac file and extracts the ."""
-    try:
-        xorg=refvvac[:,0]
-        xred=xy[0]
-        yred=xy[1]
-        if(action == "org"):
-            x=xorg
-            y=CubicSpline(xred, yred, extrapolate=True)(xorg)
-            np.savetxt(path2outfile,np.vstack((x, y)).T)
-        elif(action == "red"):
-            x=xred
-            y=yred
-            np.savetxt(path2outfile,np.vstack((x, y)).T)
-    except:
-        print("error in printing the vvac",  sys.exc_info()[0])
-        raise
-
+    xorg=refvvac[:,0]
+    xred=xy[0]
+    yred=xy[1]
+    x=xred
+    y=yred
+    np.savetxt(oprefix + "-vv.data", np.vstack((x, y)).T)
 
 def Aqp(omega_0, Ap):
     """Given the free particle Ap matrix and the frequency of the harmonic oscillator, computes the full drift matrix."""
@@ -85,38 +70,17 @@ def Cqp(omega_0, Ap, Dp):
     dDqp = Dqp(omega_0, Dp)
     return sp.solve_continuous_are( -dAqp, np.zeros(dAqp.shape), dDqp, np.eye(dAqp.shape[-1]))
 
-def Cvv(omega, omega_0, Ap, Dp, dw):
-    """Given the Cp and Dp matrices for a harmonic oscillator of frequency omega_0, computes the value of the Fourier transform of the velocity velocity auto-correlation function."""
-    omega_0 = np.maximum(omega_0, dw*1e-3)
-    omega = np.maximum(omega, dw*1e-3)
-    dAqp = Aqp(omega_0, Ap)
-    #dAqp[1,1] = np.maximum(dAqp[1,1], dAqp[1,1] +2.0*dw)
-    #dAqp[1,1] += 2*dw
-    dDqp = Dqp(omega_0, Dp)
-    dCqp = Cqp(omega_0, Ap, Dp)
-    domega2 = np.eye(dAqp.shape[-1])*np.power(omega,2)
-    dAqp2 = np.dot(dAqp,dAqp)
-    dCvv = np.linalg.inv(dAqp2 + domega2)
-    dCvv = np.dot(np.dot(dAqp, dCvv), dCqp)
-    return dCvv[1,1]/(np.pi/2.0)
-
-
-def Cqp_scaled(omega_0, Ap, Dp):
-    """Given the free particle Ap and Dp matrices and the frequency of the harmonic oscillator, computes the full covariance matrix."""
-    dAqp = Aqp(omega_0, Ap)/omega_0
-    dDqp = Dqp(omega_0, Dp)/omega_0
-    return sp.solve_continuous_are( -dAqp, np.zeros(dAqp.shape), dDqp, np.eye(dAqp.shape[-1]))
-
-import time as tt
-def Cqp_stable(omega0, dAqp, dDqp):
+def Cqp(omega0, dAqp, dDqp):
     """Given the free particle Ap and Dp matrices and the frequency of the harmonic oscillator, computes the full covariance matrix."""
     # "stabilizes" the calculation by removing the trivial dependence of <a^2> on omega0 until the very end
     dAqp[:,0]*=omega0; dAqp[0,:]/=omega0
     dDqp[:,0]/=omega0; dDqp[:,0]/=omega0;
     
-    if __has_scipy:  # this seems to be more stable in borderline cases
-        nC = sp.solve_continuous_are( -dAqp, np.zeros(dAqp.shape), dDqp, np.eye(dAqp.shape[-1]))            
-    else:  # solve "a' la MC thesis" using just numpy
+    if __has_scipy:
+        # this seems to be more stable in borderline cases
+        nC = sp.solve_continuous_are(-dAqp, np.zeros(dAqp.shape), dDqp, np.eye(dAqp.shape[-1]))            
+    else:
+        # solve "a' la MC thesis" using just numpy
         a, O = np.linalg.eig(dAqp) 
         O1 = np.linalg.inv(O)
         W = np.dot(np.dot(O1, dDqp),O1.T)
@@ -124,7 +88,6 @@ def Cqp_stable(omega0, dAqp, dDqp):
             for j in xrange(len(W)):
                 W[i,j]/=a[i]+a[j]
         nC = np.dot(O,np.dot(W,O.T))
-
     nC[:,0]/=omega0;  nC[0,:]/=omega0
     return nC
     
@@ -137,87 +100,56 @@ def gleKernel(omega, Ap, Dp):
     omlist[0] = max(omlist[0], dw*1e-2) # avoids a 0/0 instability
     om2list = omlist**2
     y = 0
-    for omega_0 in omlist:  #loops over the oscillator frequency
+    # outer loop over the physical frequency
+    for omega_0 in omlist:
         # works in "scaled coordinates" to stabilize the machinery for small or large omegas
         dAqp = Aqp(omega_0, Ap)/omega_0
         dDqp = Dqp(omega_0, Dp)/omega_0
-        dCqp = Cqp_stable(omega_0, dAqp, dDqp)
+        dCqp = Cqp(omega_0, dAqp, dDqp)
         dAqp2 = np.dot(dAqp,dAqp)
         # diagonalizes dAqp2 to accelerate the evaluation further down in the inner loop
         w2, O = np.linalg.eig(dAqp2)
         w = np.sqrt(w2)
         O1 = np.linalg.inv(O)
-        cqp1w = np.dot(dCqp[1,:],O) * w/omega_0 # re-scales by omega_0 to recover physical units
+        cqp1w = np.dot(dCqp[1,:],O) * w/omega_0 
+        # re-scales by omega_0 to recover physical units
         cqpt1 = np.dot(O1,dCqp[:,1])
         x = 0
-        om2om0 = om2list/omega_0**2 # keeps working in scaled coordinates at this point  
-        for oo0x in om2om0: # loops ove the Cvv frequency          
+        om2om0 = om2list/omega_0**2 
+        # keeps working in scaled coordinates at this point
+        for oo0x in om2om0:        
             dKer[x,y] = np.real(np.dot(cqp1w, cqpt1/(w2+oo0x)))                         
             x+=1
         y += 1    
     return dKer*dw*2.0/np.pi
 
-def gleKernel_old(omega, Ap, Dp):
-    """Given the Cp and Dp matrices for a harmonic oscillator of frequency omega_0, constructs the gle kernel for transformation of the velocity velocity autocorrelation function."""
-    delta_omega = abs(omega[1]-omega[0])
-    ngrid = len(omega) 
-    dKer = np.zeros((ngrid,ngrid), float)
-    for x in xrange(ngrid):
-        for y in xrange(ngrid):
-            dKer[x,y] = Cvv(omega[x], omega[y], Ap, Dp, delta_omega)
-    return dKer*delta_omega
-    
-    
-
-def ISRA(omega, ker, y, steps=500):
+def ISRA(omega, ker, y, dparam):
     """Given the thermostatted vvac spectrum and the range of frequencies, constructs the vibration density of states"""
     delta_omega = abs(omega[1]-omega[0])
+    steps = dparam[0]
+    stride = dparam[1]
     ngrid = len(omega)
     f = y
     CT = ker.T
     CTC = np.dot(ker.T, ker)
-    cnvg= np.zeros((steps,2))
 
-    for i in xrange(steps):
+    cnvg = np.zeros((steps,3))
+    dvvac = np.zeros((int(steps/stride) + 1, len(f)))
+
+    for i in range(steps):
         f = f * np.dot(CT, y) / np.dot(CTC, f)
-        ii = np.argwhere(np.isnan(f))
-        f[ii] = f[ii+1]
-        cnvg[i] = np.asarray((np.linalg.norm((np.dot(f,ker) - y))**2, np.linalg.norm(np.gradient(np.gradient(f)))**2))
-    return f, cnvg
+        # Temporarty fix for NaNs
+        #ii = np.argwhere(np.isnan(f))
+        #f[ii] = f[ii+1]
+        if(np.fmod(i,stride) == 0 and i != 0):
+            dvvac[i/stride - 1] = f 
+            cnvg[i/stride -1] = np.asarray((i, np.linalg.norm((np.dot(f,ker) - y))**2, np.linalg.norm(np.gradient(np.gradient(f)))**2))
+        dvvac[i/stride - 1] = f 
+        cnvg[i/stride -1] = np.asarray((i, np.linalg.norm((np.dot(f,ker) - y))**2, np.linalg.norm(np.gradient(np.gradient(f)))**2))
+    return dvvac, cnvg
 
-def main():
+def unwind(path2iipi, path2ivvac, path2ker, oprefix, action, nrows, stride, dparam):
    
-    # adds description of the program.
-    parser=argparse.ArgumentParser(description="Given the parameters of a Generalized Langevin Equation and the vibrational density of states predicts the velocity-velocity autcorrelation obtained by the dynamics. Conversely, given the velocity-velocity autocorrelation function removes the disturbance affected by the thermostat and returns the underlying vibrational density of states. ")
-
-    # adds arguments.
-    parser.add_argument("-a","--action", nargs=1, choices=["conv","deconv"], default=None, help="choose conv if you want to obtain the response of the thermostat on the vibrational density of states; choose deconv if you want to obtain the micro-canonical density of states by removing the disturbance induced by the thermostat")
-    parser.add_argument("-iipi", "--input_ipi", nargs=1, type=str, default=None, help="the relative path to the i-PI inputfile")
-    parser.add_argument("-ivvac", "--input_vvac", nargs=1, type=str, default=None, help="the relative path to the input velocity-velocity autocorrelation function")
-    parser.add_argument("-k", "--input_kernel", nargs=1, type=str, default=[None], help="the relative path to the kernel function")
-    parser.add_argument("-mrows", "--maximum_rows", nargs=1, type=int, default=[-1], help="the index of the last rows to be imported from INPUT_VVAC")
-    parser.add_argument("-s", "--stride", nargs=1, type=int, default=[1], help="the stride for computing the kernal")
-    parser.add_argument("-ovvac", "--output_vvac", nargs=1, type=str, default=["output-vvac.data"], help="the name of the output file containing the (de)convoluted spectrum")
-    parser.add_argument("-oflag","--output_flag", nargs=1, choices=["org","red"], default=["red"], help="choose orig_grid if you want OUTPUT_VVAC to have the same stride as INPUT_VVAC; choose reduced_grid if you want the OUTPUT_VVAC to have a stride of STRIDE")
-
-    # parses arguments.
-    if( len(sys.argv) > 1):
-        args=parser.parse_args()
-    else:
-        parser.print_help()
-        sys.exit()
-
-    # stores the arguments
-    path2iipi=str(args.input_ipi[-1])
-    path2ivvac=str(args.input_vvac[-1])
-    path2ker=args.input_kernel[-1]
-    path2ovvac=str(args.output_vvac[-1])
-    oflag=str(args.output_flag[-1])
-    action=str(args.action[-1])
-    nrows=int(args.maximum_rows[-1])
-    stride=int(args.stride[-1])
-
-
     # opens & parses the input file
     ifile = open(path2iipi,"r")
     xmlrestart = io_xml.xml_parse_file(ifile) # Parses the file.
@@ -228,29 +160,32 @@ def main():
     simul = isimul.fetch()
 
     ttype = str(type(simul.syslist[0].motion.thermostat).__name__)
+    kbT = float(simul.syslist[0].ensemble.temp)
 
+    # TODO: add i-pi units conversion
     if(ttype == "ThermoGLE"):
-      Ap = simul.syslist[0].motion.thermostat.A  * 41.341373
-      Cp = simul.syslist[0].motion.thermostat.C
+        Ap = simul.syslist[0].motion.thermostat.A  * 41.341373
+        Cp = simul.syslist[0].motion.thermostat.C  / kbT
+        print Cp
     elif(ttype == "ThermoLangevin"):
-      Ap = np.asarray([1.0/simul.syslist[0].motion.thermostat.tau]).reshape((1,1)) * 41.341373
-      Cp = np.asarray([1.0]).reshape((1,1))
+        Ap = np.asarray([1.0/simul.syslist[0].motion.thermostat.tau]).reshape((1,1)) * 41.341373
+        Cp = np.asarray([1.0]).reshape((1,1))
     
     ivvac=input_vvac(path2ivvac, nrows, stride)
     ix=ivvac[:,0]
     iy=ivvac[:,1]
 
     dw = ix[1] - ix[0]
-    if Ap[0,0]<2*dw:
-        print "WARNING. White-noise term is weaker than the spacing of the frequency grid. Will increase automatically to avoid instabilities in the numerical integration"
-        Ap[0,0] = 2*dw
+    if Ap[0,0] < 2.0 * dw:
+        print "# WARNING: White-noise term is weaker than the spacing of the frequency grid. Will increase automatically to avoid instabilities in the numerical integration."
+        Ap[0,0] = 2.0 * dw
     Dp = np.dot(Ap,Cp) + np.dot(Cp,Ap.T)
 
     # computes the vvac kernel
     if (path2ker == None):
         print "# computing the kernel."
         ker = gleKernel(ix, Ap, Dp)
-        np.savetxt(path2ovvac + "-ker" + str(nrows/stride)+ ".data", ker)
+        np.savetxt(oprefix + "-ker.data", ker)
     else:
         print "# importing the kernel."
         ker=np.loadtxt(path2ker)
@@ -258,12 +193,42 @@ def main():
     # (de-)convolutes the spectrum
     if(action == "conv"):
         print "# printing the output spectrum."
-        output_vvac((ix, np.dot(iy,ker.T)), path2ovvac, input_vvac(path2ivvac, nrows, 1), oflag)
+        output_vvac((ix, np.dot(iy,ker.T)), oprefix, input_vvac(path2ivvac, nrows, 1))
     elif(action == "deconv"):
         print "# deconvoluting the input spectrum."
-        oy, ocnvg = ISRA(ix, ker, iy)
-        output_vvac((ix, oy), path2ovvac, input_vvac(path2ivvac, nrows, 1), oflag)
-        np.savetxt("cnvg", ocnvg)
+        oy, ocnvg = ISRA(ix, ker, iy, dparam)
+        output_vvac((ix, oy), oprefix, input_vvac(path2ivvac, nrows, 1))
+        np.savetxt(oprefix + "-ISRA.data", ocnvg,  header="# step error Laplacian")
 
-if __name__ == '__main__': 
-   main()
+if __name__ == '__main__':
+    # adds description of the program.
+    parser=argparse.ArgumentParser(description="Given the parameters of a Generalized Langevin Equation and the vibrational density of states predicts the velocity-velocity autcorrelation obtained by the dynamics. Conversely, given the velocity-velocity autocorrelation function removes the disturbance affected by the thermostat and returns the underlying vibrational density of states. ")
+
+    # adds arguments.
+    parser.add_argument("-a","--action", nargs=1, choices=["conv","deconv"], default=None, help="choose conv if you want to obtain the response of the thermostat on the vibrational density of states; choose deconv if you want to obtain the micro-canonical density of states by removing the disturbance induced by the thermostat")
+    parser.add_argument("-iipi", "--input_ipi", nargs=1, type=str, default=None, help="the relative path to the i-PI inputfile")
+    parser.add_argument("-ivvac", "--input_vvac", nargs=1, type=str, default=None, help="the relative path to the input velocity-velocity autocorrelation function")
+    parser.add_argument("-k", "--input_kernel", nargs=1, type=str, default=[None], help="the relative path to the kernel function")
+    parser.add_argument("-mrows", "--maximum_rows", nargs=1, type=int, default=[-1], help="the index of the last row to be imported from INPUT_VVAC")
+    parser.add_argument("-s", "--stride", nargs=1, type=int, default=[1], help="the stride for importing the IVVAC and computing the kernel")
+    parser.add_argument("-dparam", "--deconv_parameters", nargs=1, type=int, default=[500,10], help="the parameters associated with the deconvolution. Since the operation is based on an iterative algorithm, it requires the total number of epochs NEPOCHS and the stride PSTRIDE at which the output spectrum is returned. Usage: [NEPOCHS,PSTRIDE]")
+    parser.add_argument("-oprefix", "--output_prefix", nargs=1, type=str, default=["output.data"], help="the prefix of the (various) output files.")
+
+    # parses arguments.
+    if( len(sys.argv) > 1):
+        args=parser.parse_args()
+    else:
+        parser.print_help()
+        sys.exit()
+
+    # stores the arguments
+    path2iipi = str(args.input_ipi[-1])
+    path2ivvac = str(args.input_vvac[-1])
+    path2ker = args.input_kernel[-1]
+    oprefix = str(args.output_prefix[-1])
+    action = str(args.action[-1])
+    nrows = int(args.maximum_rows[-1])
+    stride = int(args.stride[-1])
+    dparam = np.asarray(args.deconv_parameters, dtype=int)
+
+    unwind(path2iipi, path2ivvac, path2ker, oprefix, action, nrows, stride, dparam)
