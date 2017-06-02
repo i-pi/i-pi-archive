@@ -53,15 +53,15 @@ def output_vvac(xy,oprefix, refvvac):
 def Aqp(omega_0, Ap):
     """Given the free particle Ap matrix and the frequency of the harmonic oscillator, computes the full drift matrix."""
     dAqp = np.zeros(np.asarray(Ap.shape) + 1)
-    dAqp[0,1] = -np.power(omega_0,2)
-    dAqp[1,0] = 1
-    dAqp[1:,1:] = Ap.T
+    dAqp[1,0] = -np.power(omega_0,2)
+    dAqp[0,1] = 1
+    dAqp[1:,1:] = Ap
     return dAqp
 
 def Dqp(omega_0, Dp):
     """Given the free particle Dp matrix and the frequency of the harmonic oscillator, computes the full D matrix."""
     dDqp = np.zeros(np.asarray(Dp.shape) + 1)
-    dDqp[1:,1:] = Dp.T
+    dDqp[1:,1:] = Dp
     return dDqp
 
 def Cqp(omega_0, Ap, Dp):
@@ -70,24 +70,22 @@ def Cqp(omega_0, Ap, Dp):
     dDqp = Dqp(omega_0, Dp)
     return sp.solve_continuous_are( -dAqp, np.zeros(dAqp.shape), dDqp, np.eye(dAqp.shape[-1]))
 
-def Cqp(omega0, dAqp, dDqp):
+def Cqp(omega0, idAqp, idDqp):
     """Given the free particle Ap and Dp matrices and the frequency of the harmonic oscillator, computes the full covariance matrix."""
     # "stabilizes" the calculation by removing the trivial dependence of <a^2> on omega0 until the very end
+    dAqp = idAqp.copy(); dDqp = idDqp.copy(); 
     dAqp[:,0]*=omega0; dAqp[0,:]/=omega0
     dDqp[:,0]/=omega0; dDqp[:,0]/=omega0;
     
-    if __has_scipy:
-        # this seems to be more stable in borderline cases
-        nC = sp.solve_continuous_are(-dAqp, np.zeros(dAqp.shape), dDqp, np.eye(dAqp.shape[-1]))            
-    else:
-        # solve "a' la MC thesis" using just numpy
-        a, O = np.linalg.eig(dAqp) 
-        O1 = np.linalg.inv(O)
-        W = np.dot(np.dot(O1, dDqp),O1.T)
-        for i in xrange(len(W)):
-            for j in xrange(len(W)):
-                W[i,j]/=a[i]+a[j]
-        nC = np.dot(O,np.dot(W,O.T))
+    # solve "a' la MC thesis" using just numpy
+    a, O = np.linalg.eig(dAqp) 
+    O1 = np.linalg.inv(O)    
+    W = np.dot(np.dot(O1, dDqp),O1.T)
+    for i in xrange(len(W)):
+        for j in xrange(len(W)):
+            W[i,j]/=(a[i]+a[j])    
+    nC = np.real(np.dot(O,np.dot(W,O.T)))
+    
     nC[:,0]/=omega0;  nC[0,:]/=omega0
     return nC
     
@@ -97,7 +95,7 @@ def gleKernel(omega, Ap, Dp):
     ngrid = len(omega) 
     dKer = np.zeros((ngrid,ngrid), float)
     omlist = omega.copy()
-    omlist[0] = max(omlist[0], dw*1e-2) # avoids a 0/0 instability
+    omlist[0] = max(omlist[0], dw*1e-1) # avoids a 0/0 instability
     om2list = omlist**2
     y = 0
     # outer loop over the physical frequency
@@ -106,19 +104,22 @@ def gleKernel(omega, Ap, Dp):
         dAqp = Aqp(omega_0, Ap)/omega_0
         dDqp = Dqp(omega_0, Dp)/omega_0
         dCqp = Cqp(omega_0, dAqp, dDqp)
+        if dAqp[1,1] < 2.0 * dw/omega_0:
+            print "# WARNING: White-noise term is weaker than the spacing of the frequency grid. Will increase automatically to avoid instabilities in the numerical integration."
+            dAqp[1,1] = 2.0 * dw/omega_0
+    
         dAqp2 = np.dot(dAqp,dAqp)
         # diagonalizes dAqp2 to accelerate the evaluation further down in the inner loop
-        w2, O = np.linalg.eig(dAqp2)
-        w = np.sqrt(w2)
+        w2, O = np.linalg.eig(dAqp2);  w = np.sqrt(w2)
         O1 = np.linalg.inv(O)
-        cqp1w = np.dot(dCqp[1,:],O) * w/omega_0 
-        # re-scales by omega_0 to recover physical units
-        cqpt1 = np.dot(O1,dCqp[:,1])
+        
+        ow1=O[1,:]*w/omega_0 
+        o1cqp1 = np.dot(O1,dCqp)[:,1]
         x = 0
-        om2om0 = om2list/omega_0**2 
+        om2om0 = om2list/omega_0**2      
         # keeps working in scaled coordinates at this point
         for oo0x in om2om0:        
-            dKer[x,y] = np.real(np.dot(cqp1w, cqpt1/(w2+oo0x)))                         
+            dKer[x,y] = np.real(np.dot(ow1, o1cqp1/(w2+oo0x)))                         
             x+=1
         y += 1    
     return dKer*dw*2.0/np.pi
@@ -165,22 +166,22 @@ def unwind(path2iipi, path2ivvac, path2ker, oprefix, action, nrows, stride, dpar
     # TODO: add i-pi units conversion
     if(ttype == "ThermoGLE"):
         Ap = simul.syslist[0].motion.thermostat.A  * 41.341373
-        Cp = simul.syslist[0].motion.thermostat.C  / kbT
-        print Cp
+        Cp = simul.syslist[0].motion.thermostat.C
+        if Cp[0,0] != 1:
+            print "# WARNING: will re-normalize the spectrum assuming cpp to represent the classical temperature"
+            Cp/=Cp[0,0]     
     elif(ttype == "ThermoLangevin"):
         Ap = np.asarray([1.0/simul.syslist[0].motion.thermostat.tau]).reshape((1,1)) * 41.341373
         Cp = np.asarray([1.0]).reshape((1,1))
+    
     
     ivvac=input_vvac(path2ivvac, nrows, stride)
     ix=ivvac[:,0]
     iy=ivvac[:,1]
 
     dw = ix[1] - ix[0]
-    if Ap[0,0] < 2.0 * dw:
-        print "# WARNING: White-noise term is weaker than the spacing of the frequency grid. Will increase automatically to avoid instabilities in the numerical integration."
-        Ap[0,0] = 2.0 * dw
     Dp = np.dot(Ap,Cp) + np.dot(Cp,Ap.T)
-
+    
     # computes the vvac kernel
     if (path2ker == None):
         print "# computing the kernel."
