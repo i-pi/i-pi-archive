@@ -27,11 +27,7 @@ from ipi.engine.outputs import *
 from ipi.engine.properties import getkey
 from ipi.inputs.simulation import InputSimulation
 from ipi.utils.io.inputs import io_xml
-try:
-    import scipy.linalg as sp
-    __has_scipy = True
-except:
-    __has_scipy = False    
+
 
 def input_vvac(path2inputfile, mrows, stride):
     """Imports the vvac file and extracts the ."""
@@ -98,6 +94,9 @@ def gleKernel(omega, Ap, Dp):
     omlist[0] = max(omlist[0], dw*1e-1) # avoids a 0/0 instability
     om2list = omlist**2
     y = 0
+    if Ap[0,0] < 2.0 * dw:
+        print "# WARNING: White-noise term is weaker than the spacing of the frequency grid. Will increase automatically to avoid instabilities in the numerical integration."
+            
     # outer loop over the physical frequency
     for omega_0 in omlist:
         # works in "scaled coordinates" to stabilize the machinery for small or large omegas
@@ -105,7 +104,6 @@ def gleKernel(omega, Ap, Dp):
         dDqp = Dqp(omega_0, Dp)/omega_0
         dCqp = Cqp(omega_0, dAqp, dDqp)
         if dAqp[1,1] < 2.0 * dw/omega_0:
-            print "# WARNING: White-noise term is weaker than the spacing of the frequency grid. Will increase automatically to avoid instabilities in the numerical integration."
             dAqp[1,1] = 2.0 * dw/omega_0
     
         dAqp2 = np.dot(dAqp,dAqp)
@@ -140,8 +138,6 @@ def ISRA(omega, ker, y, dparam):
     for i in range(steps):
         f = f * np.dot(CT, y) / np.dot(CTC, f)
         # Temporarty fix for NaNs
-        #ii = np.argwhere(np.isnan(f))
-        #f[ii] = f[ii+1]
         if(np.fmod(i,stride) == 0 and i != 0):
             dvvac[i/stride - 1] = f 
             cnvg[i/stride -1] = np.asarray((i, np.linalg.norm((np.dot(f,ker) - y))**2, np.linalg.norm(np.gradient(np.gradient(f)))**2))
@@ -149,7 +145,7 @@ def ISRA(omega, ker, y, dparam):
         cnvg[i/stride -1] = np.asarray((i, np.linalg.norm((np.dot(f,ker) - y))**2, np.linalg.norm(np.gradient(np.gradient(f)))**2))
     return dvvac, cnvg
 
-def unwind(path2iipi, path2ivvac, path2ker, oprefix, action, nrows, stride, dparam):
+def gleacf(path2iipi, path2ivvac, path2ker, oprefix, action, nrows, stride, dparam):
    
     # opens & parses the input file
     ifile = open(path2iipi,"r")
@@ -232,4 +228,4 @@ if __name__ == '__main__':
     stride = int(args.stride[-1])
     dparam = np.asarray(args.deconv_parameters, dtype=int)
 
-    unwind(path2iipi, path2ivvac, path2ker, oprefix, action, nrows, stride, dparam)
+    gleacf(path2iipi, path2ivvac, path2ker, oprefix, action, nrows, stride, dparam)
