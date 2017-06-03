@@ -27,28 +27,25 @@ from ipi.engine.outputs import *
 from ipi.engine.properties import getkey
 from ipi.inputs.simulation import InputSimulation
 from ipi.utils.io.inputs import io_xml
+from ipi.utils.units import unit_to_internal, unit_to_user
+
 try:
     import scipy.linalg as sp
-    __has_scipy = True
+    __has_scipy = False
 except:
     __has_scipy = False    
 
 def input_vvac(path2inputfile, mrows, stride):
     """Imports the vvac file and extracts the ."""
     #TODO: make changes to the column numbers.
-    dvvac=np.genfromtxt(path2inputfile, usecols=((2,3)))
+    dvvac=np.genfromtxt(path2inputfile, usecols=((0,1)))
     if( mrows == -1 ):
         mrows = len(dvvac)
     return dvvac[:mrows][::stride]
 
 def output_vvac(xy,oprefix, refvvac):
-    """Imports the vvac file and extracts the ."""
-    xorg=refvvac[:,0]
-    xred=xy[0]
-    yred=xy[1]
-    x=xred
-    y=yred
-    np.savetxt(oprefix + "-vv.data", np.vstack((x, y)).T)
+    """Exports the vvac file."""
+    np.savetxt(oprefix + "-vv.data", np.vstack((xy[0], xy[1])).T)
 
 def Aqp(omega_0, Ap):
     """Given the free particle Ap matrix and the frequency of the harmonic oscillator, computes the full drift matrix."""
@@ -124,7 +121,7 @@ def gleKernel(omega, Ap, Dp):
         y += 1    
     return dKer*dw*2.0/np.pi
 
-def ISRA(omega, ker, y, dparam):
+def ISRA(omega, ker, y, dparam, oprefix):
     """Given the thermostatted vvac spectrum and the range of frequencies, constructs the vibration density of states"""
     delta_omega = abs(omega[1]-omega[0])
     steps = dparam[0]
@@ -133,9 +130,8 @@ def ISRA(omega, ker, y, dparam):
     f = y
     CT = ker.T
     CTC = np.dot(ker.T, ker)
-
-    cnvg = np.zeros((steps,3))
-    dvvac = np.zeros((int(steps/stride) + 1, len(f)))
+    npad = int(np.log10(steps) + 1)
+    print npad
 
     for i in range(steps):
         f = f * np.dot(CT, y) / np.dot(CTC, f)
@@ -143,13 +139,13 @@ def ISRA(omega, ker, y, dparam):
         #ii = np.argwhere(np.isnan(f))
         #f[ii] = f[ii+1]
         if(np.fmod(i,stride) == 0 and i != 0):
-            dvvac[i/stride - 1] = f 
-            cnvg[i/stride -1] = np.asarray((i, np.linalg.norm((np.dot(f,ker) - y))**2, np.linalg.norm(np.gradient(np.gradient(f)))**2))
-        dvvac[i/stride - 1] = f 
-        cnvg[i/stride -1] = np.asarray((i, np.linalg.norm((np.dot(f,ker) - y))**2, np.linalg.norm(np.gradient(np.gradient(f)))**2))
-    return dvvac, cnvg
+            cnvg = np.asarray((np.linalg.norm((np.dot(f,ker) - y))**2, np.linalg.norm(np.gradient(np.gradient(f)))**2))
+            dcomm = "# error, laplacian =   "  + str(cnvg[0]) +  ", " + str(cnvg[1])
+            np.savetxt(oprefix + "_" + str(i).rjust(npad,"0") + ".data", np.vstack((omega, f)).T, header=dcomm)
+        cnvg = np.asarray((i, np.linalg.norm((np.dot(f,ker) - y))**2, np.linalg.norm(np.gradient(np.gradient(f)))**2))
+    return f
 
-def unwind(path2iipi, path2ivvac, path2ker, oprefix, action, nrows, stride, dparam):
+def unwind(path2iipi, path2ivvac, path2ker, oprefix, action, nrows, stride, dparam, dt):
    
     # opens & parses the input file
     ifile = open(path2iipi,"r")
@@ -162,16 +158,14 @@ def unwind(path2iipi, path2ivvac, path2ker, oprefix, action, nrows, stride, dpar
 
     ttype = str(type(simul.syslist[0].motion.thermostat).__name__)
     kbT = float(simul.syslist[0].ensemble.temp)
+    simul.syslist[0].motion.thermostat.temp = kbT
 
     # TODO: add i-pi units conversion
     if(ttype == "ThermoGLE"):
-        Ap = simul.syslist[0].motion.thermostat.A  * 41.341373
-        Cp = simul.syslist[0].motion.thermostat.C
-        if Cp[0,0] != 1:
-            print "# WARNING: will re-normalize the spectrum assuming cpp to represent the classical temperature"
-            Cp/=Cp[0,0]     
+        Ap = simul.syslist[0].motion.thermostat.A  * unit_to_internal("time", dt[1], float(dt[0]))
+        Cp = simul.syslist[0].motion.thermostat.C  / kbT
     elif(ttype == "ThermoLangevin"):
-        Ap = np.asarray([1.0/simul.syslist[0].motion.thermostat.tau]).reshape((1,1)) * 41.341373
+        Ap = np.asarray([1.0/simul.syslist[0].motion.thermostat.tau]).reshape((1,1)) * unit_to_internal("time", dt[1], float(dt[0]))
         Cp = np.asarray([1.0]).reshape((1,1))
     
     
@@ -197,23 +191,22 @@ def unwind(path2iipi, path2ivvac, path2ker, oprefix, action, nrows, stride, dpar
         output_vvac((ix, np.dot(iy,ker.T)), oprefix, input_vvac(path2ivvac, nrows, 1))
     elif(action == "deconv"):
         print "# deconvoluting the input spectrum."
-        oy, ocnvg = ISRA(ix, ker, iy, dparam)
-        output_vvac((ix, oy), oprefix, input_vvac(path2ivvac, nrows, 1))
-        np.savetxt(oprefix + "-ISRA.data", ocnvg,  header="# step error Laplacian")
+        oy, ocnvg = ISRA(ix, ker, iy, dparam, oprefix)
 
 if __name__ == '__main__':
     # adds description of the program.
     parser=argparse.ArgumentParser(description="Given the parameters of a Generalized Langevin Equation and the vibrational density of states predicts the velocity-velocity autcorrelation obtained by the dynamics. Conversely, given the velocity-velocity autocorrelation function removes the disturbance affected by the thermostat and returns the underlying vibrational density of states. ")
 
     # adds arguments.
-    parser.add_argument("-a","--action", nargs=1, choices=["conv","deconv"], default=None, help="choose conv if you want to obtain the response of the thermostat on the vibrational density of states; choose deconv if you want to obtain the micro-canonical density of states by removing the disturbance induced by the thermostat")
-    parser.add_argument("-iipi", "--input_ipi", nargs=1, type=str, default=None, help="the relative path to the i-PI inputfile")
-    parser.add_argument("-ivvac", "--input_vvac", nargs=1, type=str, default=None, help="the relative path to the input velocity-velocity autocorrelation function")
-    parser.add_argument("-k", "--input_kernel", nargs=1, type=str, default=[None], help="the relative path to the kernel function")
-    parser.add_argument("-mrows", "--maximum_rows", nargs=1, type=int, default=[-1], help="the index of the last row to be imported from INPUT_VVAC")
-    parser.add_argument("-s", "--stride", nargs=1, type=int, default=[1], help="the stride for importing the IVVAC and computing the kernel")
-    parser.add_argument("-dparam", "--deconv_parameters", nargs=1, type=int, default=[500,10], help="the parameters associated with the deconvolution. Since the operation is based on an iterative algorithm, it requires the total number of epochs NEPOCHS and the stride PSTRIDE at which the output spectrum is returned. Usage: [NEPOCHS,PSTRIDE]")
-    parser.add_argument("-oprefix", "--output_prefix", nargs=1, type=str, default=["output.data"], help="the prefix of the (various) output files.")
+    parser.add_argument("-a","--action", choices=["conv","deconv"], default=None, help="choose conv if you want to obtain the response of the thermostat on the vibrational density of states; choose deconv if you want to obtain the micro-canonical density of states by removing the disturbance induced by the thermostat")
+    parser.add_argument("-iipi", "--input_ipi", type=str, default=None, help="the relative path to the i-PI inputfile")
+    parser.add_argument("-ivvac", "--input_vvac", type=str, default=None, help="the relative path to the input velocity-velocity autocorrelation function")
+    parser.add_argument("-k", "--input_kernel", type=str, default=None, help="the relative path to the kernel function")
+    parser.add_argument("-mrows", "--maximum_rows", type=int, default=-1, help="the index of the last row to be imported from INPUT_VVAC")
+    parser.add_argument("-s", "--stride", type=int, default=1, help="the stride for importing the IVVAC and computing the kernel")
+    parser.add_argument("-dt", "--timestep", type=str, default="1 atomic_unit", help="timestep associated with the vvac. <number> <unit>. Defaults to 1.0 atomic_unit")    
+    parser.add_argument("-dparam", "--deconv_parameters", nargs=2, type=int, default=[500,10], help="the parameters associated with the deconvolution. Since the operation is based on an iterative algorithm, it requires the total number of epochs NEPOCHS and the stride PSTRIDE at which the output spectrum is returned. Usage: [NEPOCHS,PSTRIDE]")
+    parser.add_argument("-oprefix", "--output_prefix", type=str, default="output", help="the prefix of the (various) output files.")
 
     # parses arguments.
     if( len(sys.argv) > 1):
@@ -223,13 +216,15 @@ if __name__ == '__main__':
         sys.exit()
 
     # stores the arguments
-    path2iipi = str(args.input_ipi[-1])
-    path2ivvac = str(args.input_vvac[-1])
-    path2ker = args.input_kernel[-1]
-    oprefix = str(args.output_prefix[-1])
-    action = str(args.action[-1])
-    nrows = int(args.maximum_rows[-1])
-    stride = int(args.stride[-1])
+    path2iipi = str(args.input_ipi)
+    path2ivvac = str(args.input_vvac)
+    path2ker = args.input_kernel
+    oprefix = str(args.output_prefix)
+    action = str(args.action)
+    nrows = int(args.maximum_rows)
+    stride = int(args.stride)
+    dt = str(args.timestep).split()
     dparam = np.asarray(args.deconv_parameters, dtype=int)
 
-    unwind(path2iipi, path2ivvac, path2ker, oprefix, action, nrows, stride, dparam)
+    unwind(path2iipi, path2ivvac, path2ker, oprefix, action, nrows, stride, dparam, dt) 
+
