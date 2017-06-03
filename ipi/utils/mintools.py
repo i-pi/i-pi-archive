@@ -204,8 +204,7 @@ def min_brent(fdf, fdf0, x0, tol, itmax, init_step):
     """
 
     # Initializations and constants
-    gold = 0.3819660 # Golden ratio
-    zeps = 1.0e-10 # Safeguard against trying to find fractional precision for min that is exactly zero
+    zeps = 1.0e-13 # Safeguard against trying to find fractional precision for min that is exactly zero
     e = 0.0 # Size of step before last
 
     # Call initial bracketing routine
@@ -246,6 +245,7 @@ def min_brent(fdf, fdf0, x0, tol, itmax, init_step):
         if abs(x - xm) <= (tol2 - 0.5 * (b - a)):
             info(" @MINIMIZE: Finished minimization, energy = %f" % fx, verbosity.debug)
             #return (x, fx, dfx)
+            fx, dfx = fdf(x)  # Evaluate again to update lm.dforces object
             return 
 
         # Initialize d values (used to determine step size) to outside of bracket
@@ -488,7 +488,7 @@ def BFGS(x0, d0, fdf, fdf0, invhessian, big_step, tol, itmax):
     """
    
     info(" @MINIMIZE: Started BFGS", verbosity.debug)
-    zeps = 1.0e-10
+    zeps = 1.0e-13
     u0, g0 = fdf0
     
     # Maximum step size
@@ -715,7 +715,7 @@ def L_BFGS(x0, d0, fdf, qlist, glist, fdf0, big_step, tol, itmax,m, scale,k):
             itmax = maximum number of allowed iterations
     """
     
-    zeps  = 1.0e-10
+    zeps  = 1.0e-13
     n     = len(x0.flatten())
     alpha = np.zeros(m)
     beta  = np.zeros(m)
@@ -939,7 +939,7 @@ def min_brent_neb(fdf, fdf0=None, x0=0.0, tol=1.0e-6, itmax=100, init_step=1.0e-
 
     # Initializations and constants
     gold = 0.3819660
-    zeps = 1e-10    
+    zeps = 1e-13
     e = 0.0 # Step size for step before last
 
     (ax, bx, cx, fb) = bracket_neb(fdf, fdf0, x0, init_step)
@@ -1081,7 +1081,7 @@ def L_BFGS_nls(x0, d0, fdf, qlist, glist, fdf0=None, big_step=100, tol=1.0e-6, i
     """
     
     # Original function value, gradient, other initializations
-    zeps = 1.0e-10
+    zeps = 1.0e-13
     if fdf0 is None: fdf0 = fdf(x0)
     f0, df0 = fdf0
     n = len(x0.flatten())

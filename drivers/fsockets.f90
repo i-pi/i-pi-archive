@@ -1,4 +1,4 @@
-!F90 ISO_C_BINGING wrapper for socket communication.
+!F90 ISO_C_BINDING wrapper for socket communication.
 
 !Copyright (C) 2013, Michele Ceriotti
 
