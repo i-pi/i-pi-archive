@@ -31,7 +31,6 @@ from ipi.utils.units import unit_to_internal, unit_to_user
 
 def input_vvac(path2inputfile, mrows, stride):
     """Imports the vvac file and extracts the ."""
-    #TODO: make changes to the column numbers.
     dvvac=np.genfromtxt(path2inputfile, usecols=((0,1)))
     if( mrows == -1 ):
         mrows = len(dvvac)
@@ -86,7 +85,7 @@ def gleKernel(omega, Ap, Dp):
     ngrid = len(omega) 
     dKer = np.zeros((ngrid,ngrid), float)
     omlist = omega.copy()
-    omlist[0] = max(omlist[0], dw*1e-1) # avoids a 0/0 instability
+    omlist[0] = max(omlist[0], dw*1e-1) 
     om2list = omlist**2
     y = 0
     if Ap[0,0] < 2.0 * dw:
@@ -127,11 +126,9 @@ def ISRA(omega, ker, y, dparam, oprefix):
     CT = ker.T
     CTC = np.dot(ker.T, ker)
     npad = int(np.log10(steps) + 1)
-    print npad
 
     for i in range(steps):
         f = f * np.dot(CT, y) / np.dot(CTC, f)
-        # Temporarty fix for NaNs
         if(np.fmod(i,stride) == 0 and i != 0):
             cnvg = np.asarray((np.linalg.norm((np.dot(f,ker) - y))**2, np.linalg.norm(np.gradient(np.gradient(f)))**2))
             dcomm = "# error, laplacian =   "  + str(cnvg[0]) +  ", " + str(cnvg[1])
@@ -139,45 +136,39 @@ def ISRA(omega, ker, y, dparam, oprefix):
         cnvg = np.asarray((i, np.linalg.norm((np.dot(f,ker) - y))**2, np.linalg.norm(np.gradient(np.gradient(f)))**2))
     return f
 
-def gleacf(path2iipi, path2ivvac, path2ker, oprefix, action, nrows, stride, dparam):
+def gleacf(path2iipi, path2ivvac, oprefix, action, nrows, stride, dparam):
    
-    # opens & parses the input file
+    # opens & parses the i-pi input file
     ifile = open(path2iipi,"r")
-    xmlrestart = io_xml.xml_parse_file(ifile) # Parses the file.
+    xmlrestart = io_xml.xml_parse_file(ifile)
     ifile.close()
 
     isimul = InputSimulation()
     isimul.parse(xmlrestart.fields[0][1])
     simul = isimul.fetch()
 
+    # parses the drift and diffusion matrices of the GLE thermostat.
     ttype = str(type(simul.syslist[0].motion.thermostat).__name__)
     kbT = float(simul.syslist[0].ensemble.temp)
     simul.syslist[0].motion.thermostat.temp = kbT
 
-    # TODO: add i-pi units conversion
     if(ttype == "ThermoGLE"):
         Ap = simul.syslist[0].motion.thermostat.A  * unit_to_internal("time", dt[1], float(dt[0]))
         Cp = simul.syslist[0].motion.thermostat.C  / kbT
+        Dp = np.dot(Ap,Cp) + np.dot(Cp,Ap.T)
     elif(ttype == "ThermoLangevin"):
         Ap = np.asarray([1.0/simul.syslist[0].motion.thermostat.tau]).reshape((1,1)) * unit_to_internal("time", dt[1], float(dt[0]))
         Cp = np.asarray([1.0]).reshape((1,1))
+        Dp = np.dot(Ap,Cp) + np.dot(Cp,Ap.T)
     
-    
+    # imports the vvac function.
     ivvac=input_vvac(path2ivvac, nrows, stride)
     ix=ivvac[:,0]
     iy=ivvac[:,1]
-
-    dw = ix[1] - ix[0]
-    Dp = np.dot(Ap,Cp) + np.dot(Cp,Ap.T)
     
     # computes the vvac kernel
-    if (path2ker == None):
-        print "# computing the kernel."
-        ker = gleKernel(ix, Ap, Dp)
-        np.savetxt(oprefix + "-ker.data", ker)
-    else:
-        print "# importing the kernel."
-        ker=np.loadtxt(path2ker)
+    print "# computing the kernel."
+    ker = gleKernel(ix, Ap, Dp)
 
     # (de-)convolutes the spectrum
     if(action == "conv"):
@@ -185,7 +176,7 @@ def gleacf(path2iipi, path2ivvac, path2ker, oprefix, action, nrows, stride, dpar
         output_vvac((ix, np.dot(iy,ker.T)), oprefix, input_vvac(path2ivvac, nrows, 1))
     elif(action == "deconv"):
         print "# deconvoluting the input spectrum."
-        oy, ocnvg = ISRA(ix, ker, iy, dparam, oprefix)
+        oy = ISRA(ix, ker, iy, dparam, oprefix)
 
 if __name__ == '__main__':
     # adds description of the program.
@@ -195,7 +186,6 @@ if __name__ == '__main__':
     parser.add_argument("-a","--action", choices=["conv","deconv"], default=None, help="choose conv if you want to obtain the response of the thermostat on the vibrational density of states; choose deconv if you want to obtain the micro-canonical density of states by removing the disturbance induced by the thermostat")
     parser.add_argument("-iipi", "--input_ipi", type=str, default=None, help="the relative path to the i-PI inputfile")
     parser.add_argument("-ivvac", "--input_vvac", type=str, default=None, help="the relative path to the input velocity-velocity autocorrelation function")
-    parser.add_argument("-k", "--input_kernel", type=str, default=None, help="the relative path to the kernel function")
     parser.add_argument("-mrows", "--maximum_rows", type=int, default=-1, help="the index of the last row to be imported from INPUT_VVAC")
     parser.add_argument("-s", "--stride", type=int, default=1, help="the stride for importing the IVVAC and computing the kernel")
     parser.add_argument("-dt", "--timestep", type=str, default="1 atomic_unit", help="timestep associated with the vvac. <number> <unit>. Defaults to 1.0 atomic_unit")    
@@ -212,7 +202,6 @@ if __name__ == '__main__':
     # stores the arguments
     path2iipi = str(args.input_ipi)
     path2ivvac = str(args.input_vvac)
-    path2ker = args.input_kernel
     oprefix = str(args.output_prefix)
     action = str(args.action)
     nrows = int(args.maximum_rows)
@@ -220,4 +209,4 @@ if __name__ == '__main__':
     dt = str(args.timestep).split()
     dparam = np.asarray(args.deconv_parameters, dtype=int)
 
-    gleacf(path2iipi, path2ivvac, path2ker, oprefix, action, nrows, stride, dparam)
+    gleacf(path2iipi, path2ivvac, oprefix, action, nrows, stride, dparam)

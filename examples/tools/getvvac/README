@@ -1,0 +1,17 @@
+To launch a simulation first launch i-pi:
+../../../bin/i-pi input.xml &> log.i-pi & 
+
+Launch i-pi-driver to compte forces:
+../../../bin/i-pi-driver -u -h driver -m qtip4pf &> log.driver &
+
+Convert the extras file to an xyz formatted file containing the toal dipole moment of cell.
+awk '{if($1 == "#*EXTRAS*#") {printf "%5d\n",1; printf "# Step: %10d \n", $3} else {printf "%s %15f %15f %15f\n", "O", $1, $2, $3}}' simulation.extra_0 > simulation.dipole.xyz &
+
+
+To compute the vvac:
+../../../bin/i-pi-getvvac  -ifile simulation.vel_0.xyz -mlag 5000  -bsize -1 -ftpad 10000 -ftwin none  -labels "*" -oprefix simulation_vel  -dt "1 femtosecond" & 
+
+To compute the ddac:
+../../../bin/i-pi-getvvac  -ifile simulation.vel_0.xyz -mlag 5000  -bsize -1 -ftpad 10000 -ftwin none  -labels "*" -oprefix simulation_dip  -dt "1 femtosecond" & 
+
+
