@@ -324,15 +324,11 @@ class Input(object):
             elif a == "_text":
                pass
             else:
-               raise NameError("Attribute name '" + a + "' is not a recognized property of '" + xml.name + "' objects")            
-          
-         lf = []   
+               raise NameError("Attribute name '" + a + "' is not a recognized property of '" + xml.name + "' objects")
+
          for (f, v) in xml.fields: #reads all field and dynamic data.
             if f in self.instancefields:
-               if f in lf:                   
-                   raise NameError("The static tag '" + f + "' is defined multiple times within '" + xml.name)
-               lf.append(f)
-               self.__dict__[f].parse(xml=v)
+               self.__dict__[f].parse(xml=v)       
             elif f == "_text":
                self._text = v
             elif f in self.dynamic:
@@ -349,7 +345,6 @@ class Input(object):
             vf = self.__dict__[f]
             if not (vf._explicit or vf._optional):
                raise ValueError("Field name '" + f + "' is mandatory and was not found in the input for the property " + xml.name)
-                  
 
    def detail_str(self):
       """Prints out the supplementary information about a particular input class.
@@ -691,7 +686,7 @@ class InputDictionary(Input):
          super(InputDictionary,self).__init__(help=help, default=opdef) # deferred initialization         
       else:
          super(InputDictionary,self).__init__(help=help, default=default)
-      
+
     
    def store(self, value={}):
       """Base function for storing data passed as a dictionary"""
@@ -699,7 +694,9 @@ class InputDictionary(Input):
       self._explicit = True       
       for f, v in value.iteritems():
           self.__dict__[f].store(value[f])      
+
       pass
+
 
    def fetch(self):
       """Dummy function to retrieve data that returns all fields as a dictionary."""

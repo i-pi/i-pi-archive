@@ -44,10 +44,10 @@ class InputDynMatrix(InputDictionary):
                                     "options" : ["fd", "nmfd", "enmfd"]}) }
     fields = { 
                 "pos_shift"  : (InputValue, {"dtype"   : float, "default": 0.01, 
-                                    "help"    : "The finite deviation in position used to compute derivative of force."
+                                    "help"    : "The finite displacement in position used to compute derivative of force."
                                     }), 
                 "energy_shift"  : (InputValue, {"dtype"   : float, "default": 0.000, 
-                                    "help"    : "The finite deviation in energy used to compute deribvative of force."
+                                    "help"    : "The finite displacement in energy used to compute derivative of force."
                                     }), 
                 "output_shift"  : (InputValue, {"dtype"   : float, "default": 0.000, 
                                     "help"    : "Shift by the dynamical matrix diagonally before outputting."
@@ -56,14 +56,14 @@ class InputDynMatrix(InputDictionary):
                                     "help"    : "Prefix of the output files."
                                     }),  
                 "asr"  : (InputValue, {"dtype"   : str, "default": "none", "options" : ["none", "poly", "lin", "crystal" ],
-                                    "help"    : "Removes very low vibrational modes dependingon the symmerty of the system."
+                                    "help"    : "Removes the zero frequency vibrational modes depending on the symmerty of the system."
                                     }),   
                 "dynmat" : ( InputArray, {"dtype" : float,
                               "default" :  np.zeros(0, float),
                               "help"    : "Portion of the dynamical matrix known up to now."}),
                 "refdynmat" : ( InputArray, {"dtype" : float, 
                               "default" :  np.zeros(0, float),
-                              "help"    : "Portion of the dynamical matrix known up to now (refining)."})              
+                              "help"    : "Portion of the refined dynamical matrix known up to now."})              
              }
                    
     dynamic = {  }
@@ -81,7 +81,7 @@ class InputDynMatrix(InputDictionary):
         self.asr.store(phonons.asr)
         self.dynmat.store(phonons.dynmatrix)
         self.refdynmat.store(phonons.refdynmatrix)
-        
+ 
     def fetch(self):		
         rv = super(InputDynMatrix,self).fetch()
         rv["mode"] = self.mode.fetch()        

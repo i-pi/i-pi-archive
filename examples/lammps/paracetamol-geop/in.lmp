@@ -11,7 +11,7 @@ improper_style  harmonic
 
 pair_style      lj/charmm/coul/long 8 10
 pair_modify     mix arithmetic
-kspace_style    pppm 1e-4
+kspace_style    pppm 1e-6
 
 read_data       data.lmp 
 
@@ -20,7 +20,7 @@ fix  1 all ipi driver 1234 unix
 
 thermo          100 
 thermo_style    one
-timestep        0.5
+#timestep        0.5
 
 #restart         10 gammabox.restart1 gammabox.restart2
 #dump_modify     1 image yes scale yes

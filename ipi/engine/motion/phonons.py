@@ -48,13 +48,10 @@ class DynMatrixMover(Motion):
         #Finite difference option.
         self.mode = mode
         if self.mode == "fd":
-            print "chose fd"
             self.phcalc = FDPhononCalculator()
         elif self.mode == "nmfd":
-            print "chose nmfd"
             self.phcalc = NMFDPhononCalculator()
         elif self.mode == "enmfd":
-            print "chose enmfd"
             self.phcalc = ENMFDPhononCalculator()
 
         self.deltaw = output_shift
@@ -93,9 +90,9 @@ class DynMatrixMover(Motion):
             self.phcalc.step(step)
         else:
             self.phcalc.transform()
-            rdyn = self.apply_asr(self.refdynmatrix)
-            self.printall(self.prefix, rdyn)
-            softexit.trigger("Dynamic matrix is calculated. Exiting simulation")                    
+            self.refdynmatrix = self.apply_asr(self.refdynmatrix.copy())
+            self.printall(self.prefix, self.refdynmatrix.copy())
+            softexit.trigger("Dynamic matrix is calculated. Exiting simulation")
 
     def printall(self, prefix, dmatx, deltaw=0.0):
         """ Prints out diagnostics for a given dynamical matrix. """
@@ -118,7 +115,8 @@ class DynMatrixMover(Motion):
         for i in range(3 * self.beads.natoms):
             print >> outfile, ' '.join(map(str, dmatx[i]/(self.ism[i]*self.ism)))
         outfile.close()
-        
+       
+        #eigsys=np.linalg.eigh(dmatx)        
         eigsys=np.linalg.eigh(dmatx)        
         # prints eigenvalues & eigenvectors
         outfile=open(prefix+'.eigval', 'w') 
@@ -149,7 +147,6 @@ class DynMatrixMover(Motion):
         if(self.asr=="none"):
             return dm
 
-
         if(self.asr=="crystal"):
             #Computes the centre of mass.
             com=np.dot(np.transpose(self.beads.q.reshape((self.beads.natoms,3))),self.m)/self.m.sum()
@@ -174,7 +171,8 @@ class DynMatrixMover(Motion):
 
             #Computes the transformation matrix.
             transfmatrix = np.eye(3*self.beads.natoms)-np.dot(D.T,D)
-            return np.dot(transfmatrix.T,np.dot(dm,transfmatrix))
+            r = np.dot(transfmatrix.T,np.dot(dm,transfmatrix))
+            return r
 
         elif(self.asr=="poly"):
             #Computes the centre of mass.
@@ -206,7 +204,8 @@ class DynMatrixMover(Motion):
 
             #Computes the transformation matrix.
             transfmatrix = np.eye(3*self.beads.natoms)-np.dot(D.T,D)
-            return np.dot(transfmatrix.T,np.dot(dm,transfmatrix))
+            r = np.dot(transfmatrix.T,np.dot(dm,transfmatrix))
+            return r
 
 class DummyPhononCalculator(dobject):
     """ No-op PhononCalculator """
@@ -238,17 +237,24 @@ class FDPhononCalculator(DummyPhononCalculator):
         if(self.dm.dynmatrix.size  != (self.dm.beads.q.size * self.dm.beads.q.size)):
             if(self.dm.dynmatrix.size == 0):
                 self.dm.dynmatrix=np.zeros((self.dm.beads.q.size, self.dm.beads.q.size), float)
-                self.dm.refdynmatrix=np.zeros((self.dm.beads.q.size, self.dm.beads.q.size), float)
             else:
                 raise ValueError("Force constant matrix size does not match system size")
         else:
             self.dm.dynmatrix=self.dm.dynmatrix.reshape(((self.dm.beads.q.size, self.dm.beads.q.size)))
 
+        #Initialises a 3*number of atoms X 3*number of atoms refined dynamic matrix.
+        if(self.dm.refdynmatrix.size  != (self.dm.beads.q.size * self.dm.beads.q.size)):
+            if(self.dm.refdynmatrix.size == 0):
+                self.dm.refdynmatrix=np.zeros((self.dm.beads.q.size, self.dm.beads.q.size), float)
+            else:
+                raise ValueError("Force constant matrix size does not match system size")
+        else:
+            self.dm.refdynmatrix=self.dm.refdynmatrix.reshape(((self.dm.beads.q.size, self.dm.beads.q.size)))
+
+
     def step(self, step=None):
         """Computes one row of the dynamic matrix."""
 
-        
-        print "#fd step number  :", step
         #initializes the finite deviation
         dev = np.zeros(3 * self.dm.beads.natoms, float)
         dev[step] = self.dm.deltax
@@ -262,6 +268,12 @@ class FDPhononCalculator(DummyPhononCalculator):
         dmrow = (plus-minus)/(2*self.dm.deltax)*self.dm.ism[step]*self.dm.ism
         self.dm.dynmatrix[step] = dmrow
         self.dm.refdynmatrix[step] = dmrow
+
+    def transform(self):
+        dm = self.dm.dynmatrix.copy()
+        rdm = self.dm.dynmatrix.copy()
+        self.dm.dynmatrix = 0.50*(dm + dm.T)
+        self.dm.refdynmatrix = 0.50*(rdm + rdm.T)
 
 class NMFDPhononCalculator(FDPhononCalculator):
     """ Normal mode finite difference phonon evaluator.
@@ -289,7 +301,6 @@ class NMFDPhononCalculator(FDPhononCalculator):
     def step(self, step=None):
         """Computes one row of the dynamic matrix."""
 
-        print "#nmfd step number  :", self.dm.dynmatrix
         #initializes the finite deviation
         vknorm = np.sqrt(np.dot(self.dm.V[:,step],self.dm.V[:,step]))
         dev = np.real(self.dm.V[:,step]/vknorm)*self.dm.deltax
@@ -305,6 +316,8 @@ class NMFDPhononCalculator(FDPhononCalculator):
 
     def transform(self):
         self.dm.refdynmatrix = np.dot(self.dm.U,np.dot(self.dm.refdynmatrix,np.transpose(self.dm.U)))
+        rdm = self.dm.dynmatrix.copy()
+        self.dm.refdynmatrix = 0.50*(rdm + rdm.T)
 
 class ENMFDPhononCalculator(NMFDPhononCalculator):
     """ Energy scaled normal mode finite difference phonon evaluator.
@@ -313,7 +326,6 @@ class ENMFDPhononCalculator(NMFDPhononCalculator):
     def step(self, step=None):
         """Computes one row of the dynamic matrix."""
 
-        print "#enmfd step number  :", step
         #initializes the finite deviation
         vknorm = np.sqrt(np.dot(self.dm.V[:,step],self.dm.V[:,step]))
         edelta = vknorm*np.sqrt(self.dm.deltae*2.0/abs(self.dm.w2[step]))
@@ -328,4 +340,3 @@ class ENMFDPhononCalculator(NMFDPhononCalculator):
         #computes a row of the refined dynmatrix, in the basis of the eigenvectors of the first dynmatrix 
         dmrowk = (plus-minus)/(2*edelta/vknorm)
         self.dm.refdynmatrix[step] = np.dot(self.dm.V.T, dmrowk)
-

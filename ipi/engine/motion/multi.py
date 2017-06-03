@@ -24,7 +24,6 @@ class MultiMotion(Motion):
 
         dset(self, "dt", depend_value(name="dt", func=self.get_totdt))
         self.mlist = motionlist
-        print self.mlist
         for m in self.mlist:
             dget(self, "dt").add_dependency(dget(m,"dt"))
         
@@ -36,7 +35,6 @@ class MultiMotion(Motion):
         self.fixcom = True # fixcom is true only if all movers are fixed 
         for m in self.mlist:  
             self.fixcom = self.fixcom and m.fixcom
-        print "timestep", self.dt
         
     def get_totdt(self):
         dt =0.0

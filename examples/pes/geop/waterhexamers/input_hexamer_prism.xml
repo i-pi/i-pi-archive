@@ -2,7 +2,7 @@
 <simulation mode="static" verbosity="medium">
   <output prefix="hexamer_prism_lbfgs">
     <properties stride="1" filename="out">  [ step, time{picosecond}, conserved{electronvolt}, temperature{kelvin}, kinetic_cv{electronvolt}, potential{electronvolt}, pressure_cv{megapascal}] </properties>
-    <trajectory filename="pos" stride="20"> positions{angstrom} </trajectory>
+    <trajectory filename="pos" stride="1"> positions{angstrom} </trajectory>
   </output>
   <total_steps> 5000 </total_steps>
   <prng>
@@ -13,7 +13,7 @@
   </ffsocket>
   <system>
     <initialize nbeads="1">
-      <file mode="xyz"> hexamer_prism.xyz </file>
+      <file mode="xyz" units="angstrom"> hexamer_prism.xyz </file>
       <cell mode="abc" units="angstrom"> [15.0, 15.0, 15.0] </cell>
     </initialize>
     <forces>
