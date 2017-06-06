@@ -373,7 +373,8 @@
 
                dip=0.0
                vecdiff=0.0
-               ! lets fold the atom positions back to center in case the water travelled far away
+               ! lets fold the atom positions back to center in case the water travelled far away. 
+               ! this avoids problems if the water is splic across (virtual) periodic boundaries
                ! OH_1
                call vector_separation(cell_h, cell_ih, atoms(2,:), atoms(1,:), vecdiff, dist)
                atoms(2,:)=vecdiff(:)
@@ -386,10 +387,10 @@
 
 
                atoms = atoms*0.52917721d0    ! pot_nasa wants angstrom
-               call pot_nasa(atoms,forces,pot)
+               call pot_nasa(atoms, forces, pot)
                call dms_nasa(atoms, charges, dummy) ! MR: trying to print out the right charges
                dip(:)=atoms(1,:)*charges(1)+atoms(2,:)*charges(2)+atoms(3,:)*charges(3)
-               ! MR: the above line looks like it provides correct results in eAngstrom for dipole! CHECK! Important to have molecule in the center of the cell...
+               ! MR: the above line looks like it provides correct results in eAngstrom for dipole! 
                pot = pot*0.0015946679     ! pot_nasa gives kcal/mol
                forces = forces * (-0.00084329756) ! pot_nasa gives V in kcal/mol/angstrom
 
