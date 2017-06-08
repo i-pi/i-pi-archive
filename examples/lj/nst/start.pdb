@@ -1,4 +1,4 @@
-TITLE             Traj: positions{atomic_units} Step:           0  Bead:       0
+TITLE             Traj: positions{atomic_unit} Step:           0  Bead:       0
 CRYST1   56.000   56.000   56.000  60.00  60.00  60.00 P 1           1
 ATOM      1   Ne   1     1       0.000   0.000   0.000  0.00  0.00             0
 ATOM      2   Ne   1     1       2.800   1.617   4.572  0.00  0.00             0

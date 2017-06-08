@@ -59,8 +59,8 @@ class GeopMotion(Motion):
                  invhessian_bfgs=np.eye(0, 0, 0, float),
                  hessian_trm=np.eye(0, 0, 0, float),
                  tr_trm=np.zeros(0,float),
-                 ls_options={"tolerance": 1e-6, "iter": 100, "step": 1e-3, "adaptive": 1.0},
-                 tolerances={"energy": 1e-8, "force": 1e-8, "position": 1e-8},
+                 ls_options={"tolerance": 1, "iter": 100, "step": 1e-3, "adaptive": 1.0},
+                 tolerances={"energy": 1e-7, "force": 1e-4, "position": 1e-4},
                  corrections_lbfgs=5,
                  scale_lbfgs=1,
                  qlist_lbfgs=np.zeros(0, float),
@@ -138,6 +138,7 @@ class LineMapper(object):
 
     def __init__(self):
         self.x0 = self.d = None
+        self.fcount = 0
 
     def bind(self, dumop):
         self.dbeads = dumop.beads.copy()
@@ -154,6 +155,7 @@ class LineMapper(object):
         """ computes energy and gradient for optimization step
             determines new position (x0+d*x)"""
 
+        self.fcount += 1
         self.dbeads.q = self.x0 + self.d * x
         e = self.dforces.pot   # Energy
         g = - np.dot(depstrip(self.dforces.f).flatten(), self.d.flatten())   # Gradient
@@ -171,6 +173,7 @@ class GradientMapper(object):
     """
 
     def __init__(self):
+        self.fcount = 0
         pass
 
     def bind(self, dumop):
@@ -181,6 +184,7 @@ class GradientMapper(object):
     def __call__(self,x):
         """computes energy and gradient for optimization step"""
 
+        self.fcount += 1
         self.dbeads.q = x
         e = self.dforces.pot   # Energy
         g = -self.dforces.f   # Gradient
@@ -213,6 +217,17 @@ class DummyOptimizer(dobject):
         self.mode = geop.mode
         self.tolerances = geop.tolerances
 
+        #Check for very tight tolerances
+
+        if self.tolerances["position"] < 1e-7:
+            raise ValueError("The position tolerance is too small for any typical calculation. "
+                             "We stop here. Comment this line and continue only if you know what you are doing")
+        if self.tolerances["force"] < 1e-7:
+            raise ValueError("The position tolerance is too small for any typical calculation. "
+                             "We stop here. Comment this line and continue only if you know what you are doing")
+        if self.tolerances["energy"] < 1e-10:
+            raise ValueError("The position tolerance is too small for any typical calculation. "
+                             "We stop here. Comment this line and continue only if you know what you are doing")
 
         #The resize action must be done before the bind
         if geop.old_x.size != self.beads.q.size:
@@ -248,15 +263,27 @@ class DummyOptimizer(dobject):
         """ Exits the simulation step. Computes time, checks for convergence. """
 
         info(" @GEOP: Updating bead positions", verbosity.debug)
-
         self.qtime += time.time()
-        #print  np.absolute((fx - u0) / self.beads.natoms) , self.tolerances["energy"]
-        #print  np.amax(np.absolute(self.forces.f)) , self.tolerances["force"]
-        #print  np.linalg.norm(self.forces.f.flatten() - self.old_f.flatten()) , 1e-08
-        #print x, self.tolerances["position"]
-        if (np.absolute((fx - u0) / self.beads.natoms) <= self.tolerances["energy"])\
-            and ( ( np.amax(np.absolute(self.forces.f)) <= self.tolerances["force"]   )  or
-                  ( np.linalg.norm(self.forces.f.flatten() - self.old_f.flatten()) <= 1e-08)  )\
+
+
+        f=np.amax(np.absolute(self.forces.f))
+        e=np.absolute((fx - u0) / self.beads.natoms)
+        info("@GEOP", verbosity.medium )
+        self.tolerances["position"]
+        info("   Current energy             %e" % (fx) )
+        info("   Position displacement      %e  Tolerance %e" % (x,self.tolerances["position"]), verbosity.medium )
+        info("   Max force component        %e  Tolerance %e" % (f,self.tolerances["force"]), verbosity.medium )
+        info("   Energy difference per atom %e  Tolerance %e" % (e,self.tolerances["energy"]), verbosity.medium )       
+
+        if (np.linalg.norm(self.forces.f.flatten() - self.old_f.flatten()) <= 1e-20):
+            softexit.trigger("Something went wrong, the forces are not changing anymore."
+                             " This could be due to an overly small tolerance threshold "
+                             "that makes no physical sense. Please check if you are able "
+                             "to reach such accuracy with your force evaluation"
+                             " code (client).")
+
+        if (np.absolute((fx - u0) / self.beads.natoms) <= self.tolerances["energy"])   \
+            and ( ( np.amax(np.absolute(self.forces.f)) <= self.tolerances["force"]))  \
             and (x <= self.tolerances["position"]):
             softexit.trigger("Geometry optimization converged. Exiting simulation")
 
@@ -309,8 +336,9 @@ class BFGSOptimizer(DummyOptimizer):
         # Do one iteration of BFGS
         # The invhessian and the directions are updated inside.
         BFGS(self.old_x,self.d, self.gm, fdf0, self.invhessian,self.big_step,
-             self.ls_options["tolerance"], self.ls_options["iter"])
+             self.ls_options["tolerance"]*self.tolerances["energy"], self.ls_options["iter"])
 
+        info("   Number of force calls: %d" % (self.gm.fcount)); self.gm.fcount = 0
         #Update positions and forces
         self.beads.q  = self.gm.dbeads.q
         self.forces.transfer_forces(self.gm.dforces) #This forces the update of the forces
@@ -367,6 +395,7 @@ class BFGSTRMOptimizer(DummyOptimizer):
         BFGSTRM(self.old_x,self.old_u,self.old_f,self.hessian,self.tr,
                       self.gm,self.big_step)
 
+        info("   Number of force calls: %d" % (self.gm.fcount)); self.gm.fcount = 0
         #Update positions and forces
         self.beads.q  = self.gm.dbeads.q
         self.forces.transfer_forces(self.gm.dforces) #This forces the update of the forces
@@ -439,9 +468,10 @@ class LBFGSOptimizer(DummyOptimizer):
         # Note that the line above is not needed anymore because we update everything
         # within L_BFGS (and all other calls).
         L_BFGS(self.old_x,self.d, self.gm, self.qlist, self.glist,
-                fdf0, self.big_step, self.ls_options["tolerance"],
+                fdf0, self.big_step, self.ls_options["tolerance"]*self.tolerances["energy"],
                 self.ls_options["iter"],self.corrections,self.scale, step)
 
+        info("   Number of force calls: %d" % (self.gm.fcount)); self.gm.fcount = 0
         #Update positions and forces
         self.beads.q  = self.gm.dbeads.q
         self.forces.transfer_forces(self.gm.dforces) #This forces the update of the forces
@@ -471,6 +501,9 @@ class SDOptimizer(DummyOptimizer):
         self.qtime = -time.time()
         info("\nMD STEP %d" % step, verbosity.debug)
 
+        # Store previous forces for warning exit condition
+        self.old_f[:] = self.forces.f
+
         dq1 = depstrip(self.forces.f)
 
 	# Move direction for steepest descent
@@ -493,9 +526,9 @@ class SDOptimizer(DummyOptimizer):
         # Do one SD iteration; return positions and energy
         #(x, fx,dfx) = min_brent(self.lm, fdf0=(u0, du0), x0=0.0,  #DELETE
         min_brent(self.lm, fdf0=(u0, du0), x0=0.0,
-                    tol=self.ls_options["tolerance"],
+                    tol=self.ls_options["tolerance"]*self.tolerances["energy"],
                     itmax=self.ls_options["iter"], init_step=self.ls_options["step"])
-
+        info("   Number of force calls: %d" % (self.lm.fcount)); self.lm.fcount = 0
 
         #Update positions and forces
         self.beads.q  = self.lm.dbeads.q
@@ -575,8 +608,9 @@ class CGOptimizer(DummyOptimizer):
 
         # Do one CG iteration; return positions and energy
         min_brent(self.lm, fdf0=(u0, du0), x0=0.0,
-                    tol=self.ls_options["tolerance"],
+                    tol=self.ls_options["tolerance"]*self.tolerances["energy"],
                     itmax=self.ls_options["iter"], init_step=self.ls_options["step"])
+        info("   Number of force calls: %d" % (self.lm.fcount)); self.lm.fcount = 0
 
         #Update positions and forces
         self.beads.q  = self.lm.dbeads.q

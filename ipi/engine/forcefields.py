@@ -377,7 +377,7 @@ class FFDebye(ForceField):
       super(FFDebye,self).__init__(latency, name, pars, dopbc=False)
             
       if H is None:
-          raise ValueError("Must provide a dynamical matrix for the Debye crystal.")
+          raise ValueError("Must provide the Hessian for the Debye crystal.")
       if xref is None:
           raise ValueError("Must provide a reference configuration for the Debye crystal.")
   		  

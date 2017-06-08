@@ -1,4 +1,4 @@
-TITLE cell{angstrom} position{angstrom}
+TITLE cell{angstrom} positions{angstrom}
 CRYST1   10.260   10.260   10.260  90.00  90.00  90.00 P 1           1
 ATOM      1    O   1     1       6.727   5.968  -3.615  0.00  0.00             0
 ATOM      2    H   1     1       7.077   5.075  -3.518  0.00  0.00             0
