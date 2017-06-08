@@ -2145,7 +2145,7 @@ syntax:
 
 \begin{code}
 natoms
-# COMMENT LINE: PUT TITLE OF FILE HERE
+# COMMENT LINE + CELL{abcABC}: a b c A B C cell{angstrom} postions{angstrom}
 atom1   x1  y1  z1
 atom2   x2  y2  z2
 ...
@@ -2153,7 +2153,9 @@ atom2   x2  y2  z2
 where {}``natoms'' is replaced by an integer giving the total number
 of atoms, in this case 108, atom1 is a label for atom 1, in this case
 H2 (since we are simulating para-hydrogen), and (x1, y1, z1) are the
-x, y and z components of atom 1 respectively. 
+x, y and z components of atom 1 respectively. The comment line can
+also contains the cell parameters and the position and cell units
+(angstrom in the example above).
 
 Note that we are treating the para-hydrogen molecules isotropically here,
 i.e. as spherical psuedo-atoms.
@@ -2172,7 +2174,7 @@ The other file format that we can use is the pdb format. This
 has the following structure:
 
 \begin{code}
-TITLE insert title here...
+TITLE insert title here... position{angstrom} cell{angstrom}
 CRYST1        a        b        c      A      B      C P 1           1
 ATOM      1   n1   1     1          x1      y1      z1  0.00  0.00             0
 ATOM      2   n2   1     1          x2      y2      z2  0.00  0.00             0
@@ -2221,16 +2223,45 @@ Note that if no units are specified then atomic units are assumed.
 For more information on the \ipi unit conversion libraries, 
 and the available units, see \ref{inputunits}.
 
-This then gives:
+The {}``units'' attribute is now deprecated and will be removed in the
+future version of i-PI. The alternative, and the only one available in
+the future, is to specify the units within the comment line of the xyz
+or the TITLE line of the pdb formats (as shown in the examples
+above). It is also important to put the units only in one place: if
+the units will be present in both, the configuration file with the tag
+{}``units'' and in the input files (xyz or pdb) the conversion will be
+applied twice. It is also important to note that the units of the cell
+parameters and the units of the content of the files are specified
+separately ({}``position{units}'' specify the units of the data and
+{}``cell{units}'' specify the units of the cell). This is necessary
+because the xyz format can be used to 
+store also quantity which have a different dimension than length
+(velocities, forces, etc.). Even the cell parameters can now be specified
+directly within the xyz format. The comment line is parsed looking for
+a cell specification in of the following format:
+\begin{itemize}
+\item ``CELL\{abcABC\}:'' followed by six float numbers.
+\item ``CELL\{H\}:'' followed by nine float numbers.
+\item ``CELL\{GENH\}:'' followed by nine float numbers.
+\end{itemize}
+The {}``CELL\{abcABC\}'' must be followed by the length of the vector
+cell and the three angle between them (as in the CRYST1 field of the
+pdb format -see above-). The other two must be followed
+by nine floats specifying, respectively, all the values of the cell
+matrix (flattened) or all the value of the inverse of the cell matrix
+(flattened).
+
+Since the units are already specified into the xyz and pdb files, the
+config file will contain:
 
 \begin{code}
 <initialize nbeads='4'>
-   <file mode='xyz' units='angstrom'> our_ref.xyz </file>
+   <file mode='xyz'> our_ref.xyz </file>
    ...
 </initialize>
 \end{code}
 
-In this case, since the cell parameters are not specified in the
+If the cell parameters are not specified in the xyz file, then, in the 
 configuration file we must specify them separately. 
 To initialize just the cell parameters, 
 we use the tag {}``\hyperref[INITCELL]{cell}''.
@@ -2257,6 +2288,13 @@ the {}``\hyperref[INITCELL]{cell}'' tag in three different ways:
 </cell>
 \end{code}
 
+If the xyz already contains the cell parameters, i-PI will use those
+which are read the last in the config file (if the {}``cell'' tag
+follows the {}``file'' specification then the cell parameters are those
+defined in the {}``cell'' tag. If, otherwise, the {}``cell'' tag
+compares in the config file before the {}``file'' specification, then
+the cell parameters of the xyz file are used).
+
 Note the use of the different {}``mode'' attributes, {}``manual'',
 {}``abcABC'' and {}``abc''. The first creates the cell vector
 matrix manually, the second takes the length of the three unit vectors
@@ -2267,7 +2305,7 @@ We will take the last version for brevity, giving as our final
 
 \begin{code}
 <initialize nbeads='4'>
-   <file mode='xyz' units='angstrom'> our_ref.xyz </file>
+   <file mode='xyz'> our_ref.xyz </file>
    <cell mode='abc' units='angstrom'>
       [17.847, 17.847, 17.847]
    </cell>
@@ -2278,11 +2316,12 @@ We will take the last version for brevity, giving as our final
 The pdb file is specified in a similar way, except that no 
 {}``\hyperref[INITCELL]{cell}''
 tag needs be specified and the {}``mode'' tag should be
-set to {}``pdb'':
+set to {}``pdb'' (the units should be specified into the pdb file as
+shown in the example above):
 
 \begin{code}
 <initialize nbeads='4'>
-   <file mode='pdb' units='angstrom'> our_ref.pdb </file>
+   <file mode='pdb'> our_ref.pdb </file>
    ...
 </initialize>
 \end{code}
@@ -2299,7 +2338,7 @@ velocities to. With this, the final
 
 \begin{code}
 <initialize nbeads='4'>
-   <file mode='pdb' units='angstrom'> our_ref.pdb </file>
+   <file mode='pdb'> our_ref.pdb </file>
    <velocities mode='thermal' units='kelvin'> 25 </velocities>
 </initialize>
 \end{code}

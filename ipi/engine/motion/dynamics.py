@@ -16,10 +16,12 @@ import time
 import numpy as np
 
 from ipi.engine.motion import Motion
-from ipi.utils.depend import depstrip, depend_value, dget, dset, dobject, deppipe
+from ipi.utils.depend import *
 from ipi.engine.thermostats import Thermostat
 from ipi.engine.barostats import Barostat
 
+
+#__all__ = ['Dynamics', 'NVEIntegrator', 'NVTIntegrator', 'NPTIntegrator', 'NSTIntegrator', 'SCIntegrator`']
 
 class Dynamics(Motion):
     """self (path integral) molecular dynamics class.
@@ -68,8 +70,10 @@ class Dynamics(Motion):
         else:
             self.barostat = barostat
 
-        if nmts is None:
-           self.nmts = np.asarray([1],int)      
+        if nmts is np.zeros(0,int):
+           self.nmts = np.asarray([1],int)
+        elif nmts is None or len(nmts) == 0:
+           self.nmts = np.asarray([1],int) 
         else:
            self.nmts=np.asarray(nmts)
 
@@ -84,6 +88,9 @@ class Dynamics(Motion):
             self.integrator = NSTIntegrator()
         elif self.enstype == "mts":
             self.integrator = MTSIntegrator()
+        elif self.enstype == "sc":
+            self.integrator = SCIntegrator()
+        
         else:
             self.integrator = DummyIntegrator()
 
@@ -118,9 +125,10 @@ class Dynamics(Motion):
         # Binds integrators
         self.integrator.bind(self)
 
+        dself = dd(self)
         # n times the temperature (for path integral partition function)
-        dset(self, "ntemp", depend_value(name='ntemp', func=self.get_ntemp,
-             dependencies=[dget(self.ensemble, "temp")]))
+        dself.ntemp = depend_value(name='ntemp', func=self.get_ntemp,
+             dependencies=[dget(self.ensemble, "temp")])
         self.integrator.pconstraints()
 
         fixdof = len(self.fixatoms) * 3 * self.beads.nbeads
@@ -128,15 +136,14 @@ class Dynamics(Motion):
             fixdof += 3
 
         # first makes sure that the thermostat has the correct temperature, then proceed with binding it.
-        deppipe(self, "ntemp", self.thermostat, "temp")
-        deppipe(self, "dt", self.thermostat, "dt")
+        dpipe(dself.ntemp, dd(self.thermostat).temp)
+        dpipe(dself.dt, dd(self.thermostat).dt)
   
         # the free ring polymer propagator is called in the inner loop, so propagation time should be redefined accordingly. 
-        if self.enstype == "mts":
-            self.inmts = 1
-            for mk in self.nmts: self.inmts*=mk
-            dset(self,"deltat", depend_value(name="deltat", func=(lambda : self.dt/self.inmts) , dependencies=[dget(self,"dt")]) )
-            deppipe(self,"deltat", self.nm, "dt")
+        self.inmts = 1
+        for mk in self.nmts: self.inmts*=mk
+        dset(self,"deltat", depend_value(name="deltat", func=(lambda : self.dt/self.inmts) , dependencies=[dget(self,"dt")]) )
+        deppipe(self,"deltat", self.nm, "dt")
 
         # depending on the kind, the thermostat might work in the normal mode or the bead representation.
         self.thermostat.bind(beads=self.beads, nm=self.nm, prng=prng, fixdof=fixdof)
@@ -162,7 +169,6 @@ class Dynamics(Motion):
                 if self.ensemble.pext < 0:
                     raise ValueError("Negative or unspecified pressure for a constant-p integrator")
             elif self.enstype == "nst":
-                print "STRESS:", np.trace(self.ensemble.stressext)
                 if np.trace(self.ensemble.stressext) < 0:
                     raise ValueError("Negative or unspecified stress for a constant-s integrator")
 
@@ -179,7 +185,6 @@ class DummyIntegrator(dobject):
     """ No-op integrator for (PI)MD """
 
     def __init__(self):
-
         pass
 
     def bind(self, motion):
@@ -197,16 +202,23 @@ class DummyIntegrator(dobject):
         self.fixatoms = motion.fixatoms
         dset(self, "dt", dget(motion, "dt"))
         if motion.enstype == "mts": self.nmts=motion.nmts
-
+        #mts on sc force in suzuki-chin
+        if motion.enstype == "sc":
+            if(motion.nmts.size > 1):
+                raise ValueError("MTS for SC is not implemented yet....")
+            else:
+                # coefficients to get the (baseline) trotter to sc conversion
+                self.coeffsc = np.ones((self.beads.nbeads,3*self.beads.natoms), float)
+                self.coeffsc[::2] /= -3.
+                self.coeffsc[1::2] /= 3.
+                self.nmts=motion.nmts[-1]                 
 
     def pstep(self):
         """Dummy momenta propagator which does nothing."""
-
         pass
 
     def qcstep(self):
         """Dummy centroid position propagator which does nothing."""
-
         pass
 
     def step(self, step=None):
@@ -214,6 +226,7 @@ class DummyIntegrator(dobject):
         pass
 
     def pconstraints(self):
+        """Dummy centroid momentum step which does nothing."""
         pass
 
 
@@ -259,7 +272,8 @@ class NVEIntegrator(DummyIntegrator):
             for i in range(3):
                 pcom[i] = p[:,i:na3:3].sum()
 
-            self.ensemble.eens += np.dot(pcom, pcom) / (2.0*M*nb)
+            #print np.dot(pcom, pcom) / (2.0*M*nb)
+            #self.ensemble.eens += np.dot(pcom, pcom) / (2.0*M*nb)
 
             # subtracts COM velocity
             pcom *= 1.0 / (nb*M)
@@ -322,6 +336,10 @@ class NVTIntegrator(NVEIntegrator):
     def step(self, step=None):
         """Does one simulation time step."""
 
+        self.ptime = 0
+        self.ttime = 0
+        self.qtime = 0
+        
         self.ttime = -time.time()
         self.thermostat.step()
         self.pconstraints()
@@ -346,6 +364,7 @@ class NVTIntegrator(NVEIntegrator):
         self.thermostat.step()
         self.pconstraints()
         self.ttime += time.time()
+        # print "PTIME: ", self.ptime, "  TTIME: ", self.ttime, "  QTIME: ", self.qtime
 
 
 class NPTIntegrator(NVTIntegrator):
@@ -395,8 +414,9 @@ class NPTIntegrator(NVTIntegrator):
         self.pconstraints()
         self.ttime += time.time()
 
+
 class NSTIntegrator(NVTIntegrator):
-    """Integrator object for constant pressure simulations.
+    """Ensemble object for constant pressure simulations.
 
     Has the relevant conserved quantity and normal mode propagator for the
     constant pressure ensemble. Contains a thermostat object containing the
@@ -451,6 +471,98 @@ class NSTIntegrator(NVTIntegrator):
         self.thermostat.step()
         self.pconstraints()
         self.ttime += time.time()
+
+class SCIntegrator(NVEIntegrator):
+   """Fourth order integrator object for constant temperature simulations.
+
+   Has the relevant conserved quantity and normal mode propagator for the
+   constant temperature ensemble. Contains a thermostat object containing the
+   algorithms to keep the temperature constant.
+
+   Attributes:
+      thermostat: A thermostat object to keep the temperature constant.
+
+   Depend objects:
+      econs: Conserved energy quantity. Depends on the bead kinetic and
+         potential energy, the spring potential energy and the heat
+         transferred to the thermostat.
+   """
+
+   def bind(self, mover):
+      """Binds ensemble beads, cell, bforce, bbias and prng to the dynamics.
+
+      This takes a beads object, a cell object, a forcefield object and a
+      random number generator object and makes them members of the ensemble.
+      It also then creates the objects that will hold the data needed in the
+      ensemble algorithms and the dependency network. Note that the conserved
+      quantity is defined in the init, but as each ensemble has a different
+      conserved quantity the dependencies are defined in bind.
+
+      Args:
+         beads: The beads object from whcih the bead positions are taken.
+         nm: A normal modes object used to do the normal modes transformation.
+         cell: The cell object from which the system box is taken.
+         bforce: The forcefield object from which the force and virial are
+            taken.
+         prng: The random number generator object which controls random number
+            generation.
+      """
+      
+      super(SCIntegrator,self).bind(mover)
+      self.ensemble.add_econs(dget(self.forces, "potsc"))
+
+   def pstep(self):                                                                     
+      """Velocity Verlet momenta propagator."""
+                                              
+      # also include the baseline Tr2SC correction (the 2/3 & 4/3 V bit)
+      self.beads.p += depstrip(self.forces.f)*(1 + self.coeffsc)*self.dt*0.5/self.nmts
+      # also adds the bias force (TODO!!!)
+      # self.beads.p += depstrip(self.bias.f)*(self.dt*0.5)
+                                                                                        
+   def pscstep(self):                                                                     
+      """Velocity Verlet Suzuki-Chin momenta propagator."""
+
+      # also adds the force assiciated with SuzukiChin correction (only the |f^2| term, so we remove the Tr2SC correction)
+      self.beads.p += (depstrip(self.forces.fsc) - self.coeffsc*depstrip(self.forces.f))*self.dt*0.5
+
+   def qcstep(self):
+      """Velocity Verlet centroid position propagator."""
+                                                                                        
+      self.nm.qnm[0,:] += depstrip(self.nm.pnm)[0,:]/depstrip(self.beads.m3)[0]*self.dt/self.nmts
+
+   def step(self, step=None):
+      """Does one simulation time step."""
+
+      self.ttime = -time.time()
+      self.thermostat.step()
+      self.pconstraints()
+      self.ttime += time.time()
+
+      self.pscstep()
+
+      for i in range(self.nmts):
+          self.ptime = -time.time()
+          self.pstep()
+          self.pconstraints()
+          self.ptime += time.time()
+ 
+          self.qtime = -time.time()
+          self.qcstep()
+          self.nm.free_qstep()
+          self.qtime += time.time()
+ 
+          self.ptime -= time.time()
+          self.pstep()
+          self.ptime += time.time()
+
+      self.pscstep()
+      self.pconstraints()
+
+      self.ttime -= time.time()
+      self.thermostat.step()
+      self.pconstraints()
+      self.ttime += time.time()
+
 
 class MTSIntegrator(NVEIntegrator):
     """Integrator object for constant temperature simulations.

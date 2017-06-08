@@ -58,9 +58,10 @@ class Thermostat(dobject):
             initialised from a checkpoint file.
       """
 
-      dset(self,"temp",   depend_value(name='temp', value=temp))
-      dset(self,"dt",     depend_value(name='dt', value=dt))
-      dset(self,"ethermo",depend_value(name='ethermo',value=ethermo))
+      dself = dd(self)  
+      dself.temp = depend_value(name='temp', value=temp)
+      dself.dt = depend_value(name='dt', value=dt)
+      dself.ethermo = depend_value(name='ethermo',value=ethermo)
 
    def bind(self, beads=None, atoms=None, pm=None, nm=None, prng=None, fixdof=None):
       """Binds the appropriate degrees of freedom to the thermostat.
@@ -94,15 +95,16 @@ class Thermostat(dobject):
       else:
          self.prng = prng
 
+      dself = dd(self)
       if not beads is None:
-         dset(self,"p",beads.p.flatten())
-         dset(self,"m",beads.m3.flatten())
+         dself.p = beads.p.flatten()
+         dself.m = beads.m3.flatten()
       elif not atoms is None:
-         dset(self,"p",dget(atoms, "p"))
-         dset(self,"m",dget(atoms, "m3"))
+         dself.p = dd(atoms).p
+         dself.m = dd(atoms).m3
       elif not pm is None:
-         dset(self,"p",pm[0].flatten())  # MR this should allow to simply pass the cell momenta in the anisotropic barostat
-         dset(self,"m",pm[1].flatten())
+         dself.p = pm[0].flatten()  # MR this should allow to simply pass the cell momenta in the anisotropic barostat
+         dself.m = pm[1].flatten()
       else:
          raise TypeError("Thermostat.bind expects either Beads, Atoms, NormalModes, or a (p,m) tuple to bind to")
 
@@ -111,9 +113,8 @@ class Thermostat(dobject):
       else:
          self.ndof = float(len(self.p) - fixdof)
 
-      dset(self, "sm",
-         depend_array(name="sm", value=np.zeros(len(dget(self,"m"))),
-            func=self.get_sm, dependencies=[dget(self,"m")]))
+      dself.sm = depend_array(name="sm", value=np.zeros(len(dself.m)),
+            func=self.get_sm, dependencies=[dself.m])
 
    def get_sm(self):
       """Retrieves the square root of the mass matrix.
@@ -177,22 +178,23 @@ class ThermoLangevin(Thermostat):
 
    def step(self):
       """Updates the bound momentum vector with a langevin thermostat."""
-
+      
+      et = self.ethermo
       p = depstrip(self.p).copy()
       sm = depstrip(self.sm)
 
       p /= sm
 
-      self.ethermo += np.dot(p,p)*0.5
+      et += np.dot(p,p)*0.5
       p *= self.T
       p += self.S*self.prng.gvec(len(p))
-      self.ethermo -= np.dot(p,p)*0.5
+      et -= np.dot(p,p)*0.5
 
       p *= sm
 
       self.p = p
-
-
+      self.ethermo = et
+      
 class ThermoPILE_L(Thermostat):
    """Represents a PILE thermostat with a local centroid thermostat.
 
@@ -291,6 +293,7 @@ class ThermoPILE_L(Thermostat):
       def make_taugetter(k):
          return lambda: self.tauk[k-1]
       it = 0
+      nm.pnm.hold()
       for t in self._thermos:
          if t is None:
             it += 1
@@ -299,20 +302,22 @@ class ThermoPILE_L(Thermostat):
             fixdof = None # only the centroid thermostat may have constraints
 
          # bind thermostat t to the it-th bead
-         t.bind(pm=(nm.pnm[it,:],nm.dynm3[it,:]),prng=self.prng, fixdof=fixdof)
+         
+         t.bind(pm=(nm.pnm[it,:],nm.dynm3[it,:]),prng=self.prng, fixdof=fixdof)         
          # pipes temp and dt
-         deppipe(self,"temp", t, "temp")
-         deppipe(self,"dt", t, "dt")
+         deppipe(self, "temp", t, "temp")
+         deppipe(self, "dt", t, "dt")
 
          # for tau it is slightly more complex
          if it == 0:
-            deppipe(self,"tau", t, "tau")
+            deppipe(self, "tau", t, "tau")
          else:
             # Here we manually connect _thermos[i].tau to tauk[i].
             # Simple and clear.
             dget(t,"tau").add_dependency(dget(self,"tauk"))
             dget(t,"tau")._func = make_taugetter(it)
          dget(self,"ethermo").add_dependency(dget(t,"ethermo"))
+         dget(self,"ethermo").hold() # will manually update ethermo when needed!
          it += 1
 
       # since the ethermo will be "delegated" to the normal modes thermostats,
@@ -341,6 +346,7 @@ class ThermoPILE_L(Thermostat):
       thermostats.
       """
 
+      
       et = 0.0;
       for t in self._thermos:
          et += t.ethermo
@@ -349,9 +355,12 @@ class ThermoPILE_L(Thermostat):
    def step(self):
       """Updates the bound momentum vector with a PILE thermostat."""
 
-      # super-cool! just loop over the thermostats! it's as easy as that!
+      self.nm.pnm.hold()
+      # super-cool! just loop over the thermostats! it's as easy as that!      
       for t in self._thermos:
          t.step()
+      self.nm.pnm.resume()
+      dget(self,"ethermo").resume()
 
 
 class ThermoSVR(Thermostat):

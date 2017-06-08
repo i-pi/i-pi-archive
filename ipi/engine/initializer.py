@@ -1,3 +1,4 @@
+# pylint: disable=bad-indentation
 """Contains the classes that are used to initialize data in the simulation.
 
 These classes can either be used to restart a simulation with some different
@@ -308,14 +309,24 @@ class Initializer(dobject):
          info(" # Initializer (stage 1) parsing " + str(k) + " object.", verbosity.high)
 
          if k == "cell":
-            if fcell :
-               warning("Overwriting previous cell parameters", verbosity.medium)
             if v.mode == "manual":
                 rh = v.value.reshape((3,3))
             elif v.mode == "chk":
                rh = init_chk(v.value)[1].h
+            elif init_file(v.mode,v.value)[1].h.trace() == -3:
+               # In case the file do not contain any
+               #+ cell parameters, the diagonal elements of the cell will be
+               #+set to -1 from the io_units and nothing is read here.
+               continue
             else:
-               rh = init_file(v.mode,v.value)[1].h
+               rh =  init_file(v.mode,v.value)[1].h
+
+            if fcell :
+               warning("Overwriting previous cell parameters", verbosity.low)
+
+
+            warning_units_message(v, 'cell')
+
             rh *= unit_to_internal("length",v.units,1.0)
 
             simul.cell.h = rh
@@ -372,6 +383,9 @@ class Initializer(dobject):
                warning("Overwriting previous atomic positions", verbosity.medium)
             # read the atomic positions as a vector
             rq = init_vector(v, self.nbeads)
+
+            warning_units_message(v, 'position')
+
             rq *= unit_to_internal("length",v.units,1.0)
             nbeads, natoms = rq.shape
             natoms /= 3
@@ -447,6 +461,8 @@ class Initializer(dobject):
             set_vector(v, simul.beads.p, rp)
             fmom = True
 
+            warning_units_message(v, 'momenta')
+
          elif k == "velocities":
             if fmom:
                warning("Overwriting previous atomic momenta", verbosity.medium)
@@ -470,6 +486,9 @@ class Initializer(dobject):
             rv *= np.sqrt(self.nbeads/nbeads)
             set_vector(v, simul.beads.p, rv)
             fmom = True
+
+            warning_units_message(v, 'velocity')
+
          elif k == "gle": pass   # thermostats must be initialised in a second stage
 
       if simul.beads.natoms == 0:
@@ -524,3 +543,13 @@ class Initializer(dobject):
 
             # if all the preliminary checks are good, we can initialize the s's
             ssimul[:] = sinput
+
+
+def warning_units_message(v, prop):
+   if (v.mode == "xyz" or v.mode == "pdb") and len(v.units) > 0:
+       warning("If the "+ prop+ " units are already specified into the pdb "
+               "or xyz file,\n   the conversion will be applied twice with "
+               "unpredictable results!!\n   This attribute is also "
+               "deprecated and will be removed in the following "
+               "versions.", verbosity.quiet)
+       raw_input("   Read the lines above, then press enter to continue...")

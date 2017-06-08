@@ -1,4 +1,4 @@
-TITLE              Traj: positions{angstrom} Step:           0  Bead:       1 
+TITLE   cell{angstrom} Traj: positions{angstrom} Step:           0  Bead:       1
 CRYST1   17.847   17.847   17.847  90.00  90.00  90.00 P 1           1
 ATOM      1   H2   1     1       0.147   0.132   0.114  0.00  0.00             0
 ATOM      2   H2   1     1      -0.125   2.943   3.188  0.00  0.00             0

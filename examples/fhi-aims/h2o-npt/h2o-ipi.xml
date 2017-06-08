@@ -6,7 +6,7 @@
    <output prefix="h2o_output">
       <properties stride="1" flush="1">[step, time, conserved, potential, kinetic_cv, pressure_cv, volume, temperature, kinetic_md, pressure_md ] </properties>
       <trajectory stride="1" format="pdb" filename="xc" cell_units="angstrom"> x_centroid{angstrom} </trajectory>
-      <trajectory stride="1" format="xyz" filename="pos"> positions </trajectory>      
+      <trajectory stride="1" format="xyz" filename="pos"> positions </trajectory>
       <trajectory stride="1" format="xyz" filename="vel"> velocities </trajectory>
       <trajectory stride="1" format="xyz" filename="for"> forces </trajectory>
       <checkpoint stride="100" overwrite="true" filename="chk"/>
@@ -17,7 +17,7 @@
    </prng>
    <system>
      <initialize nbeads="1">
-       <file mode="pdb" units="angstrom">./h2o-cfg.pdb</file>
+       <file mode="pdb">./h2o-cfg.pdb</file>
        <velocities mode="thermal" units="kelvin"> 300 </velocities>
      </initialize>
      <forces>
@@ -43,4 +43,4 @@
        <fixcom> False </fixcom>
      </motion>
    </system>
-</simulation>   
+</simulation>

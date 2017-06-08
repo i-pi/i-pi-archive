@@ -1,9 +1,10 @@
 <simulation>
    <output prefix='harm'>
       <properties stride='5' filename='out'>  [ step, time{picosecond}, conserved{kelvin}, temperature{kelvin}, kinetic_cv{kelvin}, potential{kelvin}, pressure_cv{megapascal}] </properties>
-      <properties stride='100' filename='mom'> [time, displacedpath(ux=0.2552), displacedpath(ux=0.1255)] </properties>
+      <trajectory filename='pos' stride='5' format='xyz' cell_units='angstrom'> positions{angstrom} </trajectory>
+      <trajectory filename='force' stride='5' format='xyz' cell_units='angstrom'> forces{piconewton} </trajectory>
    </output>
-   <total_steps>100000</total_steps>
+   <total_steps>1000</total_steps>
    <prng><seed>3348</seed></prng>
    <ffsocket mode="unix" name='driver'>
      <address>harmonic</address>

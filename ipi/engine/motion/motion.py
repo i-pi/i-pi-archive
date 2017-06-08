@@ -1,11 +1,9 @@
 """TODO
-
 """
 
 # This file is part of i-PI.
 # i-PI Copyright (C) 2014-2015 i-PI developers
 # See the "licenses" directory for full license information.
-
 
 import numpy as np
 
@@ -48,6 +46,8 @@ class Motion(dobject):
             self.fixatoms = np.zeros(0, int)
         else:
             self.fixatoms = fixatoms
+                        
+        self.beads = self.cell = self.forces = self.prng = self.nm = None 
 
     def bind(self, ens, beads, nm, cell, bforce, prng):
         """Binds beads, cell, bforce, and prng to the calculator.

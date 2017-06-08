@@ -43,7 +43,7 @@ class Cell(dobject):
       if h is None:
          h = np.zeros((3,3), float)
          
-      dself = self.dd
+      dself = dd(self) # gets a direct-access view to self
 
       dself.h = depend_array(name='h', value=h)
       dself.ih = depend_array(name="ih", value=np.zeros((3,3),float),

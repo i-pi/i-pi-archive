@@ -7,7 +7,7 @@ prepares them for output.
 # See the "licenses" directory for full license information.
 
 
-import os
+import os, time
 
 import numpy as np
 
@@ -189,9 +189,9 @@ class Properties(dobject):
          output.
    """
 
-   _DEFAULT_FINDIFF = 1e-5
-   _DEFAULT_FDERROR = 1e-9
-   _DEFAULT_MINFID = 1e-12
+   _DEFAULT_FINDIFF = 1e-4
+   _DEFAULT_FDERROR = 1e-6
+   _DEFAULT_MINFID = 1e-7
 
    def __init__(self):
       """Initialises Properties."""
@@ -246,12 +246,28 @@ class Properties(dobject):
                       "longhelp": """The physical system potential energy. With the optional argument 'bead'
                          will print the potential associated with the specified bead.""",
                       'func': (lambda bead="-1": self.forces.pot/self.beads.nbeads if int(bead)<0 else self.forces.pots[int(bead)])},
+      "potential_opsc": {  "dimension" : "energy",
+                      "help" : "The physical system potential energy calculated by operator method for suzuki-chin propagator.",
+                      "longhelp": """The physical system potential energy. With the optional argument 'bead'
+                         will print the potential associated with the specified bead.""",
+                      'func': (lambda: 2.0/self.beads.nbeads*sum(self.forces.pots[int(k)] for k in range(0,self.beads.nbeads,2)) )},
+      "potential_tdsc": {  "dimension" : "energy",
+                      "help" : "The physical system potential energy calculated by thermodynamic method calculated for suzuki-chin propagator.",
+                      "longhelp": """The physical system potential energy. With the optional argument 'bead'
+                         will print the potential associated with the specified bead.""",
+                      'func': self.get_scpottd},
       "pot_component": {  "dimension" : "energy",
                       "help": "The contribution to the system potential from one of the force components. ",
                        "longhelp":  """The contribution to the system potential from one of the force components. Takes one mandatory
                          argument index (zero-based) that indicates which component of the potential must be returned. The optional argument 'bead'
-                         will print the potential associated with the specified bead. """,
+                         will print the potential associated with the specified bead. If the potential is weighed, the weight will be applied. """,
                       'func': (lambda index, bead="-1": self.forces.pots_component(int(index)).sum()/self.beads.nbeads if int(bead)<0 else self.forces.pots_component(int(index))[int(bead)] ) },
+      "pot_component_raw": {  "dimension" : "energy",
+                      "help": "The contribution to the system potential from one of the force components. ",
+                       "longhelp":  """The contribution to the system potential from one of the force components. Takes one mandatory
+                         argument index (zero-based) that indicates which component of the potential must be returned. The optional argument 'bead'
+                         will print the potential associated with the specified bead. Potential weights will not be applied. """,
+                      'func': (lambda index, bead="-1": self.forces.pots_component(int(index),False).sum()/self.beads.nbeads if int(bead)<0 else self.forces.pots_component(int(index),False)[int(bead)] ) },
       "forcemod": {  "dimension" : "force",
                       "help" : "The modulus of the force.",
                       "longhelp": """The modulus of the force. With the optional argument 'bead'
@@ -281,6 +297,25 @@ class Properties(dobject):
                       Takes an argument 'atom', which can be either an atom label or index (zero based)
                       to specify which species to find the kinetic energy of. If not specified, all atoms are used.""",
                       'func': self.get_kintd},
+      "kinetic_prsc":  {"dimension" : "energy",
+                      "help": "The primitive fourth order quantum kinetic energy of the physical system.",
+                      "longhelp": """The primitive quantum kinetic energy of the physical system.
+                      Takes an argument 'atom', which can be either an atom label or index (zero based)
+                      to specify which species to find the kinetic energy of. If not specified, all atoms are used.""",
+                      'func': self.get_kinprsc},
+      "kinetic_tdsc":  {"dimension" : "energy",
+                      "help": "The centroid-virial quantum kinetic energy of the physical system for suzuki-chin propagator.",
+                      "longhelp": """The centroid-virial quantum kinetic energy of the physical system.
+                      Takes an argument 'atom', which can be either an atom label or index (zero based)
+                      to specify which species to find the kinetic energy of. If not specified, all atoms are used.""",
+                      'func': self.get_sckintd},
+
+      "kinetic_opsc":  {"dimension" : "energy",
+                      "help": "The centroid-virial quantum kinetic energy of the physical system for suzuki-chin propagator.",
+                      "longhelp": """The centroid-virial quantum kinetic energy of the physical system.
+                      Takes an argument 'atom', which can be either an atom label or index (zero based)
+                      to specify which species to find the kinetic energy of. If not specified, all atoms are used.""",
+                      'func': self.get_sckinop},
       "kinetic_tens":{"dimension" : "energy",
                       "help" : "The centroid-virial quantum kinetic energy tensor of the physical system.",
                       "longhelp" : """The centroid-virial quantum kinetic energy tensor of the physical system.
@@ -315,6 +350,12 @@ class Properties(dobject):
                        and bead (both zero based). If bead is not specified, refers to the centroid.""",
                       "size" : 3,
                       "func" : (lambda atom="", bead="-1": self.get_atom_vec(self.beads.p/self.beads.m3, atom=atom, bead=bead))},
+      "vcom": {     "dimension" : "velocity",
+                      "help": "The COM velocity (x,y,z) of the system or a chosen species.",
+                       "longhelp": """The center of mass velocity (x,y,z) of the system or of a species. Takes arguments label
+                       (default to all species) and bead (zero based). If bead is not specified, refers to the centroid.""",
+                      "size" : 3,
+                      "func" : self.get_vcom },      
       "atom_p": {     "dimension" : "momentum",
                       "help": "The momentum (x,y,z) of a particle given its index.",
                       "longhelp": """The momentum (x,y,z) of a particle given its index. Takes arguments index
@@ -391,6 +432,18 @@ class Properties(dobject):
                        then its magnitude will be reduced automatically by the code if the finite difference error
                        becomes too large.""",
                       'func': self.get_yama_estimators,
+                      "size": 2},
+      "sc_scaledcoords": {   "dimension": "undefined",
+                      "help" : "The scaled coordinates estimators that can be used to compute energy and heat capacity for the Suzuki-Chin propagator",
+                       "longhelp": """Returns the estimators that are required to evaluate the scaled-coordinates estimators
+                       for total energy and heat capacity, as described in T. M. Yamamoto,
+                       J. Chem. Phys., 104101, 123 (2005). Returns eps_v and eps_v', as defined in that paper.
+                       As the two estimators have a different dimensions, this can only be output in atomic units.
+                       Takes one argument, 'fd_delta', which gives the value of the finite difference parameter used -
+                       which defaults to """+ str(-self._DEFAULT_FINDIFF) + """. If the value of 'fd_delta' is negative,
+                       then its magnitude will be reduced automatically by the code if the finite difference error
+                       becomes too large.""",
+                      'func': self.get_scyama_estimators,
                       "size": 2},
       "isotope_scfep":  {"dimension": "undefined",
                       "size": 7,
@@ -641,6 +694,75 @@ class Properties(dobject):
          iatom = -1
          latom = atom
 
+      f = depstrip(self.forces.f)
+      # subtracts centroid
+      q = depstrip(self.beads.q).copy()
+      qc = depstrip(self.beads.qc)
+      for b in xrange(self.beads.nbeads):
+          q[b]-=qc
+
+      # zeroes components that are not requested
+      ncount=0
+      for i in range(self.beads.natoms):
+         if (atom != "" and iatom != i and latom != self.beads.names[i]):
+             q[:,3*i:3*i+3]=0.0
+         else: ncount += 1
+
+      acv = np.dot(q.flatten(), f.flatten())
+      acv *= -0.5/self.beads.nbeads
+      acv += ncount*1.5*Constants.kb*self.ensemble.temp
+      #~ acv = 0.0
+      #~ ncount = 0
+      #~
+      #~ for i in range(self.beads.natoms):
+         #~ if (atom != "" and iatom != i and latom != self.beads.names[i]):
+            #~ continue
+#~
+         #~ kcv = 0.0
+         #~ k = 3*i
+         #~ for b in range(self.beads.nbeads):
+            #~ kcv += q[b,k]* f[b,k] + q[b,k+1]* f[b,k+1] + q[b,k+2]* f[b,k+2]
+         #~ kcv *= -0.5/self.beads.nbeads
+         #~ kcv += 1.5*Constants.kb*self.ensemble.temp
+         #~ acv += kcv
+         #~ ncount += 1
+
+      if ncount == 0:
+         warning("Couldn't find an atom which matched the argument of kinetic energy, setting to zero.", verbosity.medium)
+
+      return acv
+
+   def get_scpottd(self):
+      """Calculates the Suzuki-Chin thermodynamic potential energy estimator."""
+      v = 0.0
+      pots = depstrip(self.forces.pots)
+      potssc = depstrip(self.forces.potssc)
+      for k in range(self.beads.nbeads):
+          if k%2 == 0:
+              v += 2.0*pots[k]/3.0  + 2.0*(potssc[k]+pots[k]/3.0)
+          else:
+              v += 4.0*pots[k]/3.0  + 2.0*(potssc[k]-pots[k]/3.0)
+      return v/(k+1)
+
+   def get_sckinop(self, atom=""):
+      """Calculates the Suzuki-Chin quantum centroid virial kinetic energy estimator.
+
+      Args:
+         atom: If given, specifies the atom to give the kinetic energy
+            for. If not, the system kinetic energy is given.
+      """
+
+      try:
+         #iatom gives the index of the atom to be studied
+         iatom = int(atom)
+         latom = ""
+         if iatom >= self.beads.natoms:
+            raise IndexError("Cannot output kinetic energy as atom index %d is larger than the number of atoms" % iatom)
+      except ValueError:
+         #here 'atom' is a label rather than an index which is stored in latom
+         iatom = -1
+         latom = atom
+
       q = depstrip(self.beads.q)
       qc = depstrip(self.beads.qc)
       f = depstrip(self.forces.f)
@@ -653,8 +775,56 @@ class Properties(dobject):
 
          kcv = 0.0
          k = 3*i
-         for b in range(self.beads.nbeads):
+         for b in range(0,self.beads.nbeads,2):
             kcv += (q[b,k] - qc[k])* f[b,k] + (q[b,k+1] - qc[k+1])* f[b,k+1] + (q[b,k+2] - qc[k+2])* f[b,k+2]
+         kcv *= -0.5/self.beads.nbeads*2.0
+         kcv += 1.5*Constants.kb*self.ensemble.temp
+         acv += kcv
+         ncount += 1
+
+      if ncount == 0:
+         warning("Couldn't find an atom which matched the argument of kinetic energy, setting to zero.", verbosity.medium)
+
+      return acv
+
+   def get_sckintd(self, atom=""):
+      """Calculates the Suzuki-Chin thermodynamic quantum centroid virial kinetic energy estimator.
+
+      Args:
+         atom: If given, specifies the atom to give the kinetic energy
+            for. If not, the system kinetic energy is given.
+      """
+
+      try:
+         #iatom gives the index of the atom to be studied
+         iatom = int(atom)
+         latom = ""
+         if iatom >= self.beads.natoms:
+            raise IndexError("Cannot output kinetic energy as atom index %d is larger than the number of atoms" % iatom)
+      except ValueError:
+         #here 'atom' is a label rather than an index which is stored in latom
+         iatom = -1
+         latom = atom
+
+      q = depstrip(self.beads.q)
+      qc = depstrip(self.beads.qc)
+      f = depstrip(self.forces.f)
+      fsc = depstrip(self.forces.fsc)
+
+      acv = 0.0
+      ncount = 0
+      for i in range(self.beads.natoms):
+         if (atom != "" and iatom != i and latom != self.beads.names[i]):
+            continue
+
+         kcv = 0.0
+         k = 3*i
+         for b in range(self.beads.nbeads):
+            kcv += (q[b,k] - qc[k])* (f+fsc)[b,k] + (q[b,k+1] - qc[k+1])* (f+fsc)[b,k+1] + (q[b,k+2] - qc[k+2])* (f+fsc)[b,k+2]
+            if b%2 == 0:
+               kcv -= 2*(self.forces.alpha/self.forces.omegan2/9.0)*(f[b,k]*f[b,k]/self.forces.beads.m3[b,k] + f[b,k+1]*f[b,k+1]/self.forces.beads.m3[b,k+1] + f[b,k+2]*f[b,k+2]/self.forces.beads.m3[b,k+2])
+            else:
+               kcv -= 2*((1.0-self.forces.alpha)/self.forces.omegan2/9.0)*(f[b,k]*f[b,k]/self.forces.beads.m3[b,k] + f[b,k+1]*f[b,k+1]/self.forces.beads.m3[b,k+1] + f[b,k+2]*f[b,k+2]/self.forces.beads.m3[b,k+2])
          kcv *= -0.5/self.beads.nbeads
          kcv += 1.5*Constants.kb*self.ensemble.temp
          acv += kcv
@@ -702,7 +872,6 @@ class Properties(dobject):
             ktd += (q[self.beads.nbeads-1,j]-q[0,j])**2
 
          ktd *= -0.5*m[i]*self.nm.omegan2/self.beads.nbeads
-
          ktd += PkT32
          atd += ktd
          ncount += 1
@@ -711,6 +880,25 @@ class Properties(dobject):
          warning("Couldn't find an atom which matched the argument of kinetic energy, setting to zero.", verbosity.medium)
 
       return atd
+
+   def get_kinprsc(self ):
+      """Calculates the quantum centroid virial kinetic energy estimator.
+      """
+
+      spring = self.beads.vpath * self.nm.omegan2/self.beads.nbeads
+      PkT32 = 1.5* Constants.kb*self.ensemble.temp*self.beads.nbeads
+      pots = depstrip(self.forces.pots)
+      potssc = depstrip(self.forces.potssc)
+      v = 0.0
+
+      for k in range(self.beads.nbeads):
+          if k%2 == 0:
+              v += (potssc[k]+pots[k]/3.0)
+          else:
+              v += (potssc[k]-pots[k]/3.0)
+      v = v / self.beads.nbeads
+
+      return PkT32 - spring + v
 
    def get_kinmd(self, atom="", bead="", nm="", return_count = False):
       """Calculates the classical kinetic energy of the simulation (p^2/2m)
@@ -836,6 +1024,23 @@ class Properties(dobject):
 
       return tkcv
 
+   def get_vcom(self, latom="", bead=-1):
+        """Computes the center of mass velocity for the system or for a specified species"""
+       
+        if bead<0:
+            p = depstrip(self.beads.pc)
+        else:
+            p = depstrip(self.beads[bead])
+        pcom = np.zeros(3)
+        tm = 0
+        for i in range(self.beads.natoms):
+            if (latom != "" and latom != self.beads.names[i]): continue    
+            
+            tm += self.beads.m[i]
+            pcom += p[3*i:3*(i+1)]
+        pcom /= tm
+        return pcom
+          
    def get_kij(self, ni="0", nj="0"):
       """Calculates the quantum centroid virial kinetic energy
       TENSOR estimator for two possibly different atom indices.
@@ -1047,10 +1252,78 @@ class Properties(dobject):
             self.dbeads[b].q = qc*(1.0 - sminus) + sminus*q[b,:]
          vminus = self.dforces.pot/self.beads.nbeads
 
-         if (fd_delta < 0 and abs((vplus + vminus)/(v0*2) - 1.0) > self._DEFAULT_FDERROR and dbeta > self._DEFAULT_MINFID):
-            dbeta *= 0.5
-            info("Reducing displacement in Yamamoto kinetic estimator", verbosity.low)
-            continue
+         #print "DISPLACEMENT CHECK YAMA db: %e, d+: %e, d-: %e, dd: %e" %(dbeta, (vplus-v0)*dbeta, (v0-vminus)*dbeta, abs((vplus+vminus-2*v0)/(vplus-vminus)))
+
+         if (fd_delta < 0 and abs((vplus+vminus-2*v0)/(vplus-vminus)) > self._DEFAULT_FDERROR and dbeta > self._DEFAULT_MINFID):
+             if  dbeta > self._DEFAULT_MINFID :
+                dbeta *= 0.5
+                info("Reducing displacement in scaled coordinates estimator", verbosity.low)
+                continue
+             else:
+                warning("Could not converge displacement for scaled coordinate estimators", verbosity.low)
+                eps = 0.0
+                eps_prime = 0.0
+                break
+         else:
+            eps = ((1.0 + dbeta)*vplus - (1.0 - dbeta)*vminus)/(2*dbeta)
+            eps += 0.5*(3*self.beads.natoms)/beta
+
+            eps_prime = ((1.0 + dbeta)*vplus + (1.0 - dbeta)*vminus - 2*v0)/(dbeta**2*beta)
+            eps_prime -= 0.5*(3*self.beads.natoms)/beta**2
+
+            break
+
+      return np.asarray([eps, eps_prime])
+
+   def get_scyama_estimators(self, fd_delta= - _DEFAULT_FINDIFF):
+      """Calculates the quantum scaled coordinate suzuki-chin kinetic energy estimator for the Suzuki-Chin propagator.
+
+      Uses a finite difference method to calculate the estimators
+      needed to calculate the energy and heat capacity of the system, as
+      shown in Takeshi M. Yamamoto, Journal of Chemical Physics,
+      104101, 123 (2005). Returns both eps_v and eps_v' as defined in
+      the above article. Note that heat capacity is calculated as
+      beta**2*kboltzmann*(<eps_v**2> - <eps_v>**2 - <eps_v'>), and the
+      energy of the system as <eps_v>.
+
+      Args:
+         fd_delta: the relative finite difference in temperature to apply in
+         computing finite-difference quantities. If it is negative, will be
+         scaled down automatically to avoid discontinuities in the potential.
+      """
+
+      dbeta = abs(float(fd_delta))
+      beta = 1.0/(Constants.kb*self.ensemble.temp)
+      self.dforces.omegan2=self.forces.omegan2
+      self.dforces.alpha=self.forces.alpha
+
+      qc = depstrip(self.beads.qc)
+      q = depstrip(self.beads.q)
+
+      v0=(self.forces.pot+self.forces.potsc)/self.beads.nbeads
+
+      while True:
+         splus = np.sqrt(1.0 + dbeta)
+         sminus = np.sqrt(1.0 - dbeta)
+
+         for b in range(self.beads.nbeads):
+            self.dbeads[b].q = qc*(1.0 - splus) + splus*q[b,:]
+         vplus=(self.dforces.pot+self.dforces.potsc)/self.beads.nbeads
+
+         for b in range(self.beads.nbeads):
+            self.dbeads[b].q = qc*(1.0 - sminus) + sminus*q[b,:]
+         vminus=(self.dforces.pot+self.dforces.potsc)/self.beads.nbeads
+
+         if (fd_delta < 0 and abs((vplus+vminus-2*v0)/(vplus-vminus)) > self._DEFAULT_FDERROR):
+             if  dbeta > self._DEFAULT_MINFID :
+                dbeta *= 0.5
+                info("Reducing displacement in scaled coordinates estimator", verbosity.low)
+                continue
+             else:
+                warning("Could not converge displacement for scaled coordinate estimators", verbosity.low)
+                eps = 0.0
+                eps_prime = 0.0
+                break
          else:
             eps = ((1.0 + dbeta)*vplus - (1.0 - dbeta)*vminus)/(2*dbeta)
             eps += 0.5*(3*self.beads.natoms)/beta
@@ -1689,13 +1962,29 @@ class Trajectories(dobject):
                      'func': (lambda : 1.0*self.system.beads.p)},
       "forces": {    "dimension" : "force",
                      "help": "The force trajectories. Will print out one file per bead, unless the bead attribute is set by the user.",
-                     'func': (lambda : 1.0*self.system.forces.f)},
+                     'func': (lambda : 1.0*self.system.forces.f ) },
+
+      "forces_sc": {    "dimension" : "force",
+                     "help": "The Suzuki-Chin component of force trajectories. Will print out one file per bead, unless the bead attribute is set by the user.",
+                     'func': (lambda : 1.0*self.system.forces.f + 1.0*self.system.forces.fsc ) },
       "x_centroid": {"dimension" : "length",
                      "help": "The centroid coordinates.",
                      'func': (lambda : 1.0*self.system.beads.qc)},
       "v_centroid": {"dimension" : "velocity",
                      "help": "The centroid velocity.",
                      'func': (lambda : self.system.beads.pc/self.system.beads.m3[0])},
+      "x_centroid_even": {"dimension" : "length",
+                     "help": "The suzuki-chin centroid coordinates.",
+                     'func': (lambda : 2*np.sum(self.system.beads.q[::2,:],axis=0)/self.system.beads.nbeads)},
+      "v_centroid_even": {"dimension" : "velocity",
+                     "help": "The suzuki-chin centroid velocity.",
+                     'func': (lambda : 2*np.sum((self.system.beads.p/self.system.beads.m3)[::2,:],axis=0)/self.system.beads.nbeads)},
+      "x_centroid_odd": {"dimension" : "length",
+                     "help": "The suzuki-chin centroid coordinates.",
+                     'func': (lambda : 2*np.sum(self.system.beads.q[1::2,:],axis=0)/self.system.beads.nbeads)},
+      "v_centroid_odd": {"dimension" : "velocity",
+                     "help": "The suzuki-chin centroid velocity.",
+                     'func': (lambda : 2*np.sum((self.system.beads.p/self.system.beads.m3)[1::2,:],axis=0)/self.system.beads.nbeads)},
       "p_centroid": {"dimension" : "momentum",
                      "help": "The centroid momentum.",
                      'func': (lambda : 1.0*self.system.beads.pc)},
@@ -1948,7 +2237,7 @@ class Trajectories(dobject):
 			stream.flush()
 			os.fsync(stream)
          return
-      elif getkey(what) in [ "positions", "velocities", "forces" ] :
+      elif getkey(what) in [ "positions", "velocities", "forces", "forces_sc" ] :
          fatom = Atoms(self.system.beads.natoms)
          fatom.names[:] = self.system.beads.names
          fatom.q[:] = cq[b]
@@ -1960,7 +2249,12 @@ class Trajectories(dobject):
       fcell = Cell()
       fcell.h = self.system.cell.h*unit_to_user("length", cell_units, 1.0)
 
-      io.print_file(format, fatom, fcell, stream, title=("Traj: %s Step:  %10d  Bead:   %5d " % (what, self.system.simul.step+1, b) ) )
+      if len(cell_units) < 1:
+         cell_units = 'atomic_unit'
+      if getall(what)[1] == '':
+         what = getkey(what) + '{atomic_unit}'
+
+      io.print_file(format, fatom, fcell, stream, title=("cell{%s}  Traj: %s Step:  %10d  Bead:   %5d " % (cell_units, what, self.system.simul.step+1, b) ) )
       if flush :
          stream.flush()
          os.fsync(stream)
