@@ -193,12 +193,12 @@
          END IF
       ELSEIF (vstyle == 9) THEN
          IF (par_count /= 0) THEN
-            WRITE(*,*) "Error: no initialization string needed for Partridge-Schwenke H2O potential."
+            WRITE(*,*) "Error: no initialization string needed for LEPSM1."
             STOP "ENDED"
          END IF
       ELSEIF (vstyle == 10) THEN
          IF (par_count /= 0) THEN
-            WRITE(*,*) "Error: no initialization string needed for Partridge-Schwenke H2O potential."
+            WRITE(*,*) "Error: no initialization string needed for LEPSM2."
             STOP "ENDED" 
          ENDIF   
          isinit = .true.
