@@ -328,7 +328,7 @@ class NormalModes(dobject):
       return pqk
 
 
- def get_o_prop_pq(self):
+   def get_o_prop_pq(self):
       """Gets the normal mode propagator matrix for the open case.
 
       Note the special treatment for the centroid normal mode, which is
@@ -350,7 +350,7 @@ class NormalModes(dobject):
       for b in range(1, self.nbeads):
          sk = np.sqrt(self.o_nm_factor[b])	
          dto_omegak = self.o_omegak[b]*dt/sk
-	 c = np.cos(dto_omegak)						 
+         c = np.cos(dto_omegak)						 
          s = np.sin(dto_omegak)						
          pqk[b,0,0] = c
          pqk[b,1,1] = c
@@ -398,8 +398,8 @@ class NormalModes(dobject):
       return dmf
 
 
-    # define a function o_nm_factor so we have dynamical masses for the open case
-    def get_o_nmm(self):
+   # define a function o_nm_factor so we have dynamical masses for the open case
+   def get_o_nmm(self):
       """Returns dynamical mass factors, i.e. the scaling of normal mode
       masses that determine the path dynamics (but not statics)."""
 
@@ -481,12 +481,12 @@ class NormalModes(dobject):
             
          pq = np.zeros(2)  
          for j in self.open_paths:          
-            for a in xrange(3*j,3*(j+1))   
-               for k in xrange(1,self.nbeads): 
-                  pq[0] = self.pnm[k,a]/sm[a] 
-                  pq[1] = self.qnm[k,a]*sm[a]
+            for a in xrange(3*j,3*(j+1)):  
+               for k in xrange(1,self.nbeads):                  
+                  pq[0] = self.pnm[k,a]/sm[k,a] 
+                  pq[1] = self.qnm[k,a]*sm[k,a]
                   pq = np.dot(o_prop_pq[k],pq)
-                  qmn[k,a] = pq[1]		
+                  qnm[k,a] = pq[1]		
                   pnm[k,a] = pq[0]
          self.pnm = pnm * sm
          self.qnm = qnm / sm

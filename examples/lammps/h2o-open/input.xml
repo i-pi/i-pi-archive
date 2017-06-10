@@ -1,7 +1,9 @@
 <simulation>
     <output prefix="simulation">
-        <properties stride="1" filename="out"> [ step, time{picosecond}, conserved, temperature{kelvin}, kinetic_cv, kinetic_td, potential, pressure_cv{megapascal} ] </properties>
-        <trajectory filename="pos" stride="100" cell_units="angstrom" format="pdb" bead="0"> positions{angstrom} </trajectory>
+        <properties stride="4" filename="out"> [ step, time{picosecond}, conserved, temperature{kelvin}, kinetic_cv, kinetic_td, potential, pressure_cv{megapascal} ] </properties>
+        <properties stride="4" filename="e2e1"> [ atom_x(1;0), atom_x(1;31)  ]  </properties>
+        <properties stride="4" filename="e2e10"> [ atom_x(10;0), atom_x(10;31)  ]  </properties>
+        <trajectory filename="pos" stride="40" cell_units="angstrom" format="pdb"> positions{angstrom} </trajectory>
     </output>
     <total_steps>10000</total_steps>
     <prng> <seed>32345</seed> </prng>
@@ -10,25 +12,25 @@
     </ffsocket>
     <system>
         <initialize nbeads="32">
-            <file mode="pdb" units="angstrom"> init.pdb </file>
+            <file mode="pdb"> init.pdb </file>
             <velocities mode="thermal" units="kelvin"> 300 </velocities>
         </initialize>
         <forces>
             <force forcefield="lmpserial"> </force>
         </forces>
         <normal_modes>
-           <open_paths> [ 1, 13 ] </open_paths>
+           <open_paths> [ 1 ] </open_paths>
         </normal_modes>
         <motion mode="dynamics">    
             <dynamics mode="nvt">
                     <thermostat mode="pile_g">
                         <tau units="femtosecond">50</tau>
                     </thermostat>
-                    <timestep units="femtosecond"> 0.5</timestep>
+                    <timestep units="femtosecond"> 0.25</timestep>
             </dynamics>
         </motion>
         <ensemble>
-            <temperature units="kelvin">3000</temperature>   
+            <temperature units="kelvin">300</temperature>   
         </ensemble>
     </system>
 </simulation>
