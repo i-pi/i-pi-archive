@@ -1,5 +1,5 @@
 288
-# position{atomic_units} CELL{abcABC}: 25.6156 29.5783 27.8867 90.0 90.0 90.0 cell{atomic_units}
+# positions{atomic_unit} CELL{abcABC}: 25.6156 29.5783 27.8867 90.0 90.0 90.0 cell{atomic_unit}
 O -10.5426 -11.8121 -10.8042
 H -9.46578 -11.2505 -9.49096
 H -12.2037 -11.442 -10.107

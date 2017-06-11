@@ -116,6 +116,12 @@ def read_pdb(filedesc, **kwargs):
         # skip the comment field
         comment = copy.copy(header)
         header = filedesc.readline()
+    if 'positions{' not in comment:
+        comment = comment.strip()
+        comment += ' positions{angstrom}\n'
+    if 'cell{' not in comment:
+        comment = comment.strip()
+        comment += ' cell{angstrom}\n'
     if header == "":
         raise EOFError("End of file or empty header in PDB file")
 

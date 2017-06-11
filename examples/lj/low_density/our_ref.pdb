@@ -1,4 +1,4 @@
-TITLE cell{atomic_units} position{atomic_units}
+TITLE cell{atomic_unit} positions{atomic_unit}
 CRYST1   71.230   71.230   71.230  90.00  90.00  90.00 P 1          1
 ATOM      1   Ne   1     1       0.000   0.000   0.000  0.00  0.00            0
 ATOM      2   Ne   1     1       5.936   5.936   0.000  0.00  0.00            0
