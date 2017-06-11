@@ -1,8 +1,8 @@
 <simulation>
     <output prefix="simulation">
         <properties stride="4" filename="out"> [ step, time{picosecond}, conserved, temperature{kelvin}, kinetic_cv, kinetic_td, potential, pressure_cv{megapascal} ] </properties>
-        <properties stride="4" filename="e2e1"> [ atom_x(1;0), atom_x(1;31)  ]  </properties>
-        <properties stride="4" filename="e2e10"> [ atom_x(10;0), atom_x(10;31)  ]  </properties>
+        <properties stride="4" filename="b1"> [ atom_x(1;0), atom_x(1;1), atom_x(1;2), atom_x(1;3), atom_x(1;4), atom_x(1;5), atom_x(1;6), atom_x(1;7)  ]  </properties>
+        <properties stride="4" filename="b10"> [ atom_x(10;0), atom_x(10;1), atom_x(10;2), atom_x(10;3), atom_x(10;4), atom_x(10;5), atom_x(10;6), atom_x(10;7)  ]  </properties>
         <trajectory filename="pos" stride="40" cell_units="angstrom" format="pdb"> positions{angstrom} </trajectory>
     </output>
     <total_steps>10000</total_steps>
@@ -11,7 +11,7 @@
         <address> water </address>
     </ffsocket>
     <system>
-        <initialize nbeads="32">
+        <initialize nbeads="8">
             <file mode="pdb"> init.pdb </file>
             <velocities mode="thermal" units="kelvin"> 300 </velocities>
         </initialize>

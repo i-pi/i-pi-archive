@@ -10,7 +10,7 @@ import numpy as np
 from ipi.utils.messages import verbosity, info
 
 
-__all__ = ['nm_trans', 'nm_rescale', 'nm_fft']
+__all__ = ['nm_trans', 'nm_rescale', 'nm_fft', 'mk_nm_matrix', 'mk_o_nm_matrix', 'nm_eva', 'o_nm_eva']
 
 
 def mk_nm_matrix(nbeads):
@@ -36,6 +36,12 @@ def mk_nm_matrix(nbeads):
       b2nm[nbeads/2,0:nbeads:2] = 1.0
       b2nm[nbeads/2,1:nbeads:2] = -1.0
    return b2nm/np.sqrt(nbeads)
+   
+def nm_eva(nbeads):
+    return 2*np.array([np.sin(k*np.pi/nbeads) for k in range(nbeads)])
+    
+def o_nm_eva(nbeads):
+    return 2*np.array([np.sin(k*np.pi/(2*nbeads)) for k in range(nbeads)])
 
 def mk_o_nm_matrix(nbeads):
     """ 
@@ -44,10 +50,10 @@ def mk_o_nm_matrix(nbeads):
     """
     # here define the orthogonal transformation matrix for the open path
     b2o_nm = np.zeros((nbeads,nbeads))                         
-    b2o_nm[nbeads-1,:] = np.sqrt(1.0)   
-    for j in range(1,nbeads+1):
+    b2o_nm[0,:] = np.sqrt(1.0)   
+    for j in range(0,nbeads):
         for i in range(1,nbeads): 
-            b2o_nm[i-1,j-1] = np.sqrt(2.0)*np.cos(np.pi*(j-0.5)*i/float(nbeads))
+            b2o_nm[i,j] = np.sqrt(2.0)*np.cos(np.pi*(j+0.5)*i/float(nbeads))
     return b2o_nm/np.sqrt(nbeads)
 
 

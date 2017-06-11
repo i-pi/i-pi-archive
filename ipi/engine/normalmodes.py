@@ -127,7 +127,7 @@ class NormalModes(dobject):
 
       # sets up what's necessary to perform nm transformation.
       if self.transform_method == "fft":
-         self.transform = nmtransform.nm_fft(nbeads=self.nbeads, natoms=self.natoms)
+         self.transform = nmtransform.nm_fft(nbeads=self.nbeads, natoms=self.natoms, open_paths=self.open_paths)
       elif self.transform_method == "matrix":
          self.transform = nmtransform.nm_trans(nbeads=self.nbeads, open_paths=self.open_paths)
 
@@ -274,7 +274,7 @@ class NormalModes(dobject):
          The first element is the centroid frequency (0.0).
       """
 
-      return 2*self.omegan*np.array([np.sin(k*np.pi/self.nbeads) for k in range(self.nbeads)])
+      return self.omegan*nmtransform.nm_eva(self.nbeads)
    
    def get_o_omegak(self):
       """Gets the normal mode frequencies for a open path.
@@ -284,7 +284,7 @@ class NormalModes(dobject):
          The first element is the centroid frequency (0.0).
       """
 
-      return 2*self.omegan*np.array([np.sin(k*np.pi/(2*self.nbeads)) for k in range(self.nbeads)])
+      return self.omegan*nmtransform.o_nm_eva(self.nbeads)
 
    def get_dynwk(self):
       """Gets the dynamical normal mode frequencies.
