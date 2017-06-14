@@ -12,7 +12,7 @@ from ipi.utils.io import read_file
 from ipi.utils.units import unit_to_internal, unit_to_user
 
 
-def compute_acf(input_file, output_prefix, maximum_lag, block_length, length_zeropadding, spectral_windowing, labels, timestep, der, skip):
+def compute_acf(input_file, output_prefix, maximum_lag, block_length, length_zeropadding, spectral_windowing, labels, timestep, skip, der):
 
     # stores the arguments
     ifile = str(input_file)
@@ -126,16 +126,16 @@ if __name__ == "__main__":
     parser=argparse.ArgumentParser(description="Given a xyz formatted vector, computes its autocorrelation function and its Fourier transform, Parses xyz formatted files with units specified accoridng to i-pi standards. Produces the result in atomic units.")
 
    # adds arguments.
-    parser.add_argument("-ifile", "--input_file", required=True, type=str, default=None, help="the relative path to the xyz formatted file")
-    parser.add_argument("-der", "--derivative", action="store_true", "computes the autocorrelation function of the time derivative of the xyz formatted input")
-    parser.add_argument("-mlag", "--maximum_lag", required=True, type=int, default=None, help="the maximum time lag for the autocorrelation function")
-    parser.add_argument("-bsize", "--block_length", type=int, default=-1,  help="the number of lines to be imported at once during ``chunk-by-chunk`` input; defaults to 2 * MAXIMUM_LAG")
-    parser.add_argument("-ftpad", "--length_zeropadding", type=int, default=0, help="number of zeroes to be padded at the end of the autocorrelation function before the Fourier transform is computed")
-    parser.add_argument("-ftwin", "--spectral_windowing", type=str, choices=["none", "cosine-hanning", "cosine-hamming", "cosine-blackman", "triangle-bartlett"], default="none", help="type of window function the autocorrelation function is multiplied with before the Fourier transform is computed.")
-    parser.add_argument("-dt", "--timestep", type=str, default="1 atomic_unit", help="timestep associated with consecutive frames. <number> <unit>. Defaults to 1.0 atomic_unit")
-    parser.add_argument("-labels", "--labels", type=str, default="*", help="labels of the species to be monitored")
-    parser.add_argument("-s", "--skip", type=int, default=0, help="number of initial frames to be skipped")
-    parser.add_argument("-oprefix", "--output_prefix", required=True, type=str, help="the prefix of the output file.")
+    parser.add_argument("-ifile", "--input_file", required = True, type = str, default = None, help = "the relative path to the xyz formatted file")
+    parser.add_argument("-mlag", "--maximum_lag", required = True, type = int, default = None, help = "the maximum time lag for the autocorrelation function")
+    parser.add_argument("-bsize", "--block_length", type = int, default = -1,  help = "the number of lines to be imported at once during ``chunk-by-chunk`` input; defaults to 2 * MAXIMUM_LAG")
+    parser.add_argument("-ftpad", "--length_zeropadding", type = int, default = 0, help = "number of zeroes to be padded at the end of the autocorrelation function before the Fourier transform is computed")
+    parser.add_argument("-ftwin", "--spectral_windowing", type = str, choices = ["none", "cosine-hanning", "cosine-hamming", "cosine-blackman", "triangle-bartlett"], default="none", help = "type of window function the autocorrelation function is multiplied with before the Fourier transform is computed.")
+    parser.add_argument("-dt", "--timestep", type = str, default = "1 atomic_unit", help = "timestep associated with consecutive frames. <number> <unit>. Defaults to 1.0 atomic_unit")
+    parser.add_argument("-labels", "--labels", type = str, default = "*", help = "labels of the species to be monitored")
+    parser.add_argument("-s", "--skip", type = int, default = 0, help = "number of initial frames to be skipped")
+    parser.add_argument("-oprefix", "--output_prefix", required = True, type=str, help = "the prefix of the output file.")
+    parser.add_argument("-der", "--derivative", action="store_true", help = "computes the autocorrelation function of the time derivative of the xyz formatted input")
 
     try:
         args = parser.parse_args()
@@ -144,5 +144,5 @@ if __name__ == "__main__":
         sys.exit()
 
     # Process everything.
-    compute_acf(args.input_file, args.output_prefix, args.maximum_lag, args.block_length, args.length_zeropadding, args.spectral_windowing, args.labels, args.timestep, args.derivative, args.skip)
+    compute_acf(args.input_file, args.output_prefix, args.maximum_lag, args.block_length, args.length_zeropadding, args.spectral_windowing, args.labels, args.timestep, args.skip, args.derivative)
 
