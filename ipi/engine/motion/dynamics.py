@@ -127,14 +127,12 @@ class Dynamics(Motion):
 
         super(Dynamics, self).bind(ens, beads, nm, cell, bforce, prng)
 
-        # Binds integrators
-        self.integrator.bind(self)
 
         dself = dd(self)
         # n times the temperature (for path integral partition function)
         dself.ntemp = depend_value(name='ntemp', func=self.get_ntemp,
              dependencies=[dget(self.ensemble, "temp")])
-        self.integrator.pconstraints()
+        #self.integrator.pconstraints()
 
         # fixed degrees of freedom count
         fixdof = len(self.fixatoms) * 3 * self.beads.nbeads
@@ -201,6 +199,8 @@ class Dynamics(Motion):
         
         self.ensemble.add_econs(dget(self.thermostat, "ethermo"))
         self.ensemble.add_econs(dget(self.barostat, "ebaro"))
+        # Binds integrators
+        self.integrator.bind(self)
 
         #!TODO THOROUGH CLEAN-UP AND CHECK
         #if self.enstype in ["nvt", "npt", "nst"]:
@@ -247,7 +247,7 @@ class DummyIntegrator(dobject):
         self.splitting = motion.splitting
         dset(self, "dt", dget(motion, "dt"))
         dset(self, "halfdt", dget(motion, "halfdt"))
-        if motion.enstype == "mts": self.nmts=motion.nmts
+        if motion.enstype == "mts" or motion.enstype == "nvt" : self.nmts=motion.nmts
         #mts on sc force in suzuki-chin
         if motion.enstype == "sc":
             if(motion.nmts.size > 1):
