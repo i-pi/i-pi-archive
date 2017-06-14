@@ -22,7 +22,7 @@ from ipi.utils.depend import dobject
 from ipi.utils.depend import depstrip
 
 
-__all__ = ['ForceField', 'FFSocket', 'FFLennardJones', 'FFEinstein']
+__all__ = ['ForceField', 'FFSocket', 'FFLennardJones', 'FFDebye']
 
 
 class ForceRequest(dict):
@@ -350,8 +350,8 @@ class FFLennardJones(ForceField):
         r["result"] = [v, f.reshape(nat*3), np.zeros((3,3), float), ""]
         r["status"] = "Done"
 
-class FFEinstein(ForceField):
-   """Einstein crystal harmonic reference potential
+class FFDebye(ForceField):
+   """Debye crystal harmonic reference potential
 
    Computes a harmonic forcefield. 
 
@@ -366,7 +366,7 @@ class FFEinstein(ForceField):
    """
    
    def __init__(self, latency = 1.0, name = "",  H=None, xref=None, vref=0.0, pars=None, dopbc = False, threaded=True):
-      """Initialises FFEinstein.
+      """Initialises FFDebye.
 
       Args:
          pars: Optional dictionary, giving the parameters needed by the driver.
@@ -374,12 +374,12 @@ class FFEinstein(ForceField):
 
       # a socket to the communication library is created or linked
       # NEVER DO PBC -- forces here are computed without.
-      super(FFEinstein,self).__init__(latency, name, pars, dopbc=False)
+      super(FFDebye,self).__init__(latency, name, pars, dopbc=False)
             
       if H is None:
-          raise ValueError("Must provide a dynamical matrix for the Einstein crystal.")
+          raise ValueError("Must provide the Hessian for the Debye crystal.")
       if xref is None:
-          raise ValueError("Must provide a reference configuration for the Einstein crystal.")
+          raise ValueError("Must provide a reference configuration for the Debye crystal.")
   		  
       self.H = H
       self.xref = xref
@@ -404,7 +404,7 @@ class FFEinstein(ForceField):
          self._threadlock.release()
 
    def evaluate(self, r):
-      """ A simple evaluator for a harmonic Einstein crystal potential. """
+      """ A simple evaluator for a harmonic Debye crystal potential. """
 
       q = r["pos"]
       n3 = len(q)

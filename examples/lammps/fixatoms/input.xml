@@ -1,6 +1,6 @@
 <simulation>
   <output prefix="water">
-    <properties stride="1" filename="out"> [ step, time{picosecond}, conserved, temperature{kelvin}, kinetic_cv, potential,kinetic_md, 
+    <properties stride="1" filename="out"> [ step, time{picosecond}, conserved, temperature{kelvin}, kinetic_cv, potential,kinetic_md,
     pressure_cv{megapascal},volume] </properties>
     <trajectory filename="pos" stride="100" cell_units="angstrom" format="pdb" bead="0"> positions{angstrom} </trajectory>
   </output>
@@ -13,19 +13,19 @@
   </ffsocket>
   <system>
     <initialize nbeads="1">
-      <file mode="pdb" units="angstrom"> water-32.pdb </file>
+      <file mode="pdb"> water-32.pdb </file>
       <velocities mode="thermal" units="kelvin"> 300 </velocities>
     </initialize>
     <forces>
-      <force forcefield='lmpserial'>  </force>
+      <force forcefield="lmpserial">  </force>
     </forces>
     <ensemble>
       <temperature units="kelvin">300</temperature>
     </ensemble>
     <motion mode="dynamics">
-      <dynamics mode='nvt'>
+      <dynamics mode="nvt">
 	<!--      <barostat mode="isotropic">
-             <thermostat mode="langevin"> 
+             <thermostat mode="langevin">
              <tau units="picosecond"> 0.1 </tau>
              </thermostat>
              <tau units="picosecond"> 0.1 </tau>
@@ -40,5 +40,3 @@
     </motion>
   </system>
 </simulation>
-
-

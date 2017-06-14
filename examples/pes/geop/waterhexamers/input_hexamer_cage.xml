@@ -2,7 +2,7 @@
 <simulation mode="static" verbosity="medium">
   <output prefix="hexamer_cage_lbfgs">
     <properties stride="1" filename="out">  [ step, time{picosecond}, conserved{electronvolt}, temperature{kelvin}, kinetic_cv{electronvolt}, potential{electronvolt}, pressure_cv{megapascal}] </properties>
-    <trajectory filename="pos" stride="20"> positions{angstrom} </trajectory>
+    <trajectory filename="pos" stride="1"> positions{angstrom} </trajectory>
   </output>
   <total_steps> 5000 </total_steps>
   <prng>

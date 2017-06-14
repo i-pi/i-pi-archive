@@ -1,3 +1,4 @@
+# pylint: disable=bad-indentation
 """Contains the classes that are used to initialize data in the simulation.
 
 These classes can either be used to restart a simulation with some different
@@ -308,14 +309,24 @@ class Initializer(dobject):
          info(" # Initializer (stage 1) parsing " + str(k) + " object.", verbosity.high)
 
          if k == "cell":
-            if fcell :
-               warning("Overwriting previous cell parameters", verbosity.medium)
             if v.mode == "manual":
                 rh = v.value.reshape((3,3))
             elif v.mode == "chk":
                rh = init_chk(v.value)[1].h
+            elif init_file(v.mode,v.value)[1].h.trace() == -3:
+               # In case the file do not contain any
+               #+ cell parameters, the diagonal elements of the cell will be
+               #+set to -1 from the io_units and nothing is read here.
+               continue
             else:
-               rh = init_file(v.mode,v.value)[1].h
+               rh =  init_file(v.mode,v.value)[1].h
+
+            if fcell :
+               warning("Overwriting previous cell parameters", verbosity.low)
+
+
+            warning_units_message(v, 'cell')
+
             rh *= unit_to_internal("length",v.units,1.0)
 
             simul.cell.h = rh
@@ -504,11 +515,11 @@ class Initializer(dobject):
 
          if k == "gle":
             # read thermostat parameters from file
-            if not ( hasattr(simul.motion, "thermostat") ):
+            if not ( hasattr(simul.ensemble, "thermostat") ):
                raise ValueError("Ensemble does not have a thermostat to initialize")
-            if not ( hasattr(simul.motion.thermostat, "s") ):
+            if not ( hasattr(simul.ensemble.thermostat, "s") ):
                raise ValueError("There is nothing to initialize in non-GLE thermostats")
-            ssimul = simul.motion.thermostat.s
+            ssimul = simul.ensemble.thermostat.s
             if v.mode == "manual":
                sinput = v.value.copy()
                if (sinput.size() != ssimul.size() ):
@@ -524,9 +535,3 @@ class Initializer(dobject):
 
             # if all the preliminary checks are good, we can initialize the s's
             ssimul[:] = sinput
-         elif (k == "velocities" or k == "momenta") and v.mode == "thermal" : # initialize barostat if present
-            rtemp = v.value * unit_to_internal("temperature",v.units,1.0)
-            if hasattr(simul.motion.barostat, "p"):
-                simul.motion.barostat.p[:] = simul.prng.gvec(simul.motion.barostat.p.shape)*np.sqrt(simul.motion.barostat.m)*np.sqrt(rtemp*Constants.kb)
-
-                        

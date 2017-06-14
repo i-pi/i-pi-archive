@@ -328,7 +328,7 @@ class Input(object):
 
          for (f, v) in xml.fields: #reads all field and dynamic data.
             if f in self.instancefields:
-               self.__dict__[f].parse(xml=v)
+               self.__dict__[f].parse(xml=v)       
             elif f == "_text":
                self._text = v
             elif f in self.dynamic:
@@ -686,7 +686,7 @@ class InputDictionary(Input):
          super(InputDictionary,self).__init__(help=help, default=opdef) # deferred initialization         
       else:
          super(InputDictionary,self).__init__(help=help, default=default)
-      
+
     
    def store(self, value={}):
       """Base function for storing data passed as a dictionary"""
@@ -694,7 +694,9 @@ class InputDictionary(Input):
       self._explicit = True       
       for f, v in value.iteritems():
           self.__dict__[f].store(value[f])      
+
       pass
+
 
    def fetch(self):
       """Dummy function to retrieve data that returns all fields as a dictionary."""

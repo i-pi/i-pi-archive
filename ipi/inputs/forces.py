@@ -34,9 +34,9 @@ class InputForceComponent(Input):
                "weight" : ( InputAttribute, { "dtype"   : float,
                                          "default" : 1.0,
                                          "help"    : "A scaling factor for this forcefield, to be applied before adding the force calculated by this forcefield to the total force." } ),
-               "finite_dev" : ( InputAttribute, { "dtype"   : float, 
-                                         "default" : 0.001,
-                                         "help"    : "The finite displacement to be used for calculaing the Suzuki-Chin contribution of the force. [in bohr]" } ),
+               "fd_epsilon" : ( InputAttribute, { "dtype"   : float, 
+                                         "default" : -0.001,
+                                         "help"    : "The finite displacement to be used for calculaing the Suzuki-Chin contribution of the force. If the value is negative, a centered finite-difference scheme will be used. [in bohr]" } ),
                "mts_level" : ( InputAttribute, { "dtype"   : int,
                                          "default" : 0,
                                          "help"    : "The depth in a MTS splitting at which this component should be applied" } ),
@@ -70,7 +70,7 @@ class InputForceComponent(Input):
       self.nbeads.store(forceb.nbeads)
       self.weight.store(forceb.weight)
       self.mts_weights.store(forceb.mts_weights)
-      self.finite_dev.store(forceb.epsilon)
+      self.fd_epsilon.store(forceb.epsilon)
       self.name.store(forceb.name)
       self.forcefield.store(forceb.ffield)
 
@@ -82,7 +82,7 @@ class InputForceComponent(Input):
       """
 
       super(InputForceComponent,self).fetch()
-      return ForceComponent(ffield=self.forcefield.fetch(), nbeads=self.nbeads.fetch(), weight=self.weight.fetch(), name=self.name.fetch(), mts_weights=self.mts_weights.fetch())
+      return ForceComponent(ffield=self.forcefield.fetch(), nbeads=self.nbeads.fetch(), weight=self.weight.fetch(), name=self.name.fetch(), mts_weights=self.mts_weights.fetch(), epsilon=self.fd_epsilon.fetch())
 
    def check(self):
       """Checks for optional parameters."""
