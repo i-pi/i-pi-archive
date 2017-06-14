@@ -18,9 +18,11 @@ from ipi.utils.depend import *
 from ipi.utils.units import *
 
 
-def main(filename):
+def main(filename, wrap=True):
 
    ipos=open(filename,"r")
+   if( wrap == "False"):
+      wrap = False
 
    natoms = 0
    ifr = 0
@@ -29,7 +31,7 @@ def main(filename):
          ret = read_file("xyz", ipos, readcell=True)
          pos = ret["atoms"]
          cell = ret["cell"]
-         cell.array_pbc(pos.q)
+         if(wrap): cell.array_pbc(pos.q)
       except EOFError: # finished reading files
          sys.exit(0)
 
