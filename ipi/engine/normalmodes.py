@@ -373,6 +373,7 @@ class NormalModes(dobject):
       if self.nbeads == 1:
          pass
       else:
+         print "freeRP :", self.dt
          pq = np.zeros((2,self.natoms*3),float)         
          sm = depstrip(self.beads.sm3)
          prop_pq = depstrip(self.prop_pq) 
