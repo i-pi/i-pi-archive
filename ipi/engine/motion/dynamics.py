@@ -127,14 +127,12 @@ class Dynamics(Motion):
 
         super(Dynamics, self).bind(ens, beads, nm, cell, bforce, prng)
 
-        # Binds integrators
-        self.integrator.bind(self)
 
         dself = dd(self)
         # n times the temperature (for path integral partition function)
         dself.ntemp = depend_value(name='ntemp', func=self.get_ntemp,
              dependencies=[dd(self.ensemble).temp)])
-        self.integrator.pconstraints()
+        #self.integrator.pconstraints()
 
         # fixed degrees of freedom count
         fixdof = len(self.fixatoms) * 3 * self.beads.nbeads
@@ -148,8 +146,8 @@ class Dynamics(Motion):
         # the free ring polymer propagator is called in the inner loop, so propagation time should be redefined accordingly. 
         self.inmts = 1
         for mk in self.nmts: self.inmts*=mk
-        dself.deltat = depend_value(name="deltat", func=(lambda : self.dt/self.inmts) , dependencies=[dself.dt]) )
-        dpipe(dself.deltat, dd(self.nm).dt) #deppipe(self,"deltat", self.nm, "dt")
+        dset(self,"deltat", depend_value(name="deltat", func=(lambda : self.dt/self.inmts) , dependencies=[dget(self,"dt")]) )
+        deppipe(self,"deltat", self.nm, "dt")
 
         # depending on the kind, the thermostat might work in the normal mode or the bead representation.
         self.thermostat.bind(beads=self.beads, nm=self.nm, prng=prng, fixdof=fixdof)
@@ -201,6 +199,8 @@ class Dynamics(Motion):
         
         self.ensemble.add_econs(dget(self.thermostat, "ethermo"))
         self.ensemble.add_econs(dget(self.barostat, "ebaro"))
+        # Binds integrators
+        self.integrator.bind(self)
 
         #!TODO THOROUGH CLEAN-UP AND CHECK
         #if self.enstype in ["nvt", "npt", "nst"]:

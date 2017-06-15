@@ -325,7 +325,7 @@ class Initializer(dobject):
                warning("Overwriting previous cell parameters", verbosity.low)
 
 
-            warning_units_message(v, 'cell')
+            #warning_units_message(v, 'cell')
 
             rh *= unit_to_internal("length",v.units,1.0)
 
