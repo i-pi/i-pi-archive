@@ -133,7 +133,7 @@ class Dynamics(Motion):
         dself = dd(self)
         # n times the temperature (for path integral partition function)
         dself.ntemp = depend_value(name='ntemp', func=self.get_ntemp,
-             dependencies=[dget(self.ensemble, "temp")])
+             dependencies=[dd(self.ensemble).temp)])
         self.integrator.pconstraints()
 
         # fixed degrees of freedom count
@@ -148,8 +148,8 @@ class Dynamics(Motion):
         # the free ring polymer propagator is called in the inner loop, so propagation time should be redefined accordingly. 
         self.inmts = 1
         for mk in self.nmts: self.inmts*=mk
-        dset(self,"deltat", depend_value(name="deltat", func=(lambda : self.dt/self.inmts) , dependencies=[dget(self,"dt")]) )
-        deppipe(self,"deltat", self.nm, "dt")
+        dself.deltat = depend_value(name="deltat", func=(lambda : self.dt/self.inmts) , dependencies=[dself.dt]) )
+        dpipe(dself.deltat, dd(self.nm).dt) #deppipe(self,"deltat", self.nm, "dt")
 
         # depending on the kind, the thermostat might work in the normal mode or the bead representation.
         self.thermostat.bind(beads=self.beads, nm=self.nm, prng=prng, fixdof=fixdof)
