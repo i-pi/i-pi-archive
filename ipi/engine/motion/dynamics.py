@@ -158,23 +158,22 @@ class Dynamics(Motion):
         # now we need to define timesteps for the different propagators. NOTE: O=stochastic B=momenta A=positions
         dset(self,"halfdt", depend_value(name="dt", func=(lambda : 0.5*self.dt) , dependencies=[dself.dt]))
 
+        self.inmts = np.prod(self.nmts) # inner multiplier for MTS propagator        
         if self.splitting == "obabo":
-            # sets the timstep of the thermostat and barostat to dt/2
-            self.inmts = np.prod(self.nmts)
+            # sets the timstep of the thermostat and barostat to dt/2            
             dpipe(dself.halfdt, dthrm.dt)
             dpipe(dself.halfdt, dbaro.dt)
 
-            # sets the timstep of the normalmode propagator to time step of the innermost MTS propagator
-            dset(self,"deltat", depend_value(name="deltat", func=(lambda : self.dt/self.inmts) , dependencies=[dself.dt]))
+            # sets the timstep of the normalmode propagator to time step of the innermost MTS propagator            
+            dself.deltat = depend_value(name="deltat", func=(lambda : self.dt/self.inmts) , dependencies=[dself.dt])
             dpipe(dself.deltat, dnm.dt)
 
         elif self.splitting == "baoab":
             # sets the timstep of the thermostat and barostat to dt/2
-            self.inmts = np.prod(self.nmts)
             dpipe(dself.halfdt, dbaro.dt)
 
             # sets the timstep of the normalmode propagator to HALF OF THE time step of the innermost MTS propagator
-            dset(self,"halfdeltat", depend_value(name="halfdeltat", func=(lambda : 0.5*self.dt/self.inmts) , dependencies=[dself.dt]))
+            dself.halfdeltat = depend_value(name="halfdeltat", func=(lambda : 0.5*self.dt/self.inmts) , dependencies=[dself.dt])
             dpipe(dself.halfdeltat, dnm.dt)
 
         # now that the timesteps are decided, we proceed to bind the integrator.
@@ -317,15 +316,13 @@ class NVEIntegrator(DummyIntegrator):
 
     def pstep(self, level=0, alpha=1.0):
         """Velocity Verlet monemtum propagator."""
-        self.beads.p += self.forces.f*self.halfdt/alpha
+        self.beads.p += self.forces.forces_mts(level)*self.halfdt/alpha
         if level == 0:
-            self.beads.p += depstrip(self.bias.f)*(self.halfdt/alpha)
-        print "level: momentum ", level, self.halfdt/alpha 
+            self.beads.p += depstrip(self.bias.f)*(self.halfdt/alpha)        
 
     def qcstep(self, alpha=1.0):
         """Velocity Verlet centroid position propagator."""
-        self.nm.qnm[0,:] += depstrip(self.nm.pnm)[0,:]/depstrip(self.beads.m3)[0]*self.halfdt/alpha
-        print "level: position",  self.halfdt/alpha 
+        self.nm.qnm[0,:] += depstrip(self.nm.pnm)[0,:]/depstrip(self.beads.m3)[0]*self.halfdt/alpha        
 
     def mtsprop(self, index, alpha):
         """ Recursive MTS step """
@@ -374,7 +371,7 @@ class NVTIntegrator(NVEIntegrator):
 
     def mtsprop(self, index, alpha):
         """ Recursive MTS step """
-        nmtslevels = len(self.nmts)
+        nmtslevels = len(self.nmts)        
         mk = self.nmts[index]  # mtslevels starts at level zero, where nmts should be 1 in most cases
         alpha *= mk
 
