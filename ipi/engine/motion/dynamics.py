@@ -157,7 +157,16 @@ class Dynamics(Motion):
         # now we need to define timesteps for the different propagators. NOTE: O=stochastic B=momenta A=positions
         dset(self,"halfdt", depend_value(name="dt", func=(lambda : 0.5*self.dt) , dependencies=[dself.dt]))
 
-        self.inmts = np.prod(self.nmts) # inner multiplier for MTS propagator
+        # first we take care of the special case of SC when only one MTS level is specified.
+        if self.enstype == "sc" and len(self.nmts) == 1:
+        #Moves the MTS level since the |f|^2 bit is slowest
+            for f in self.forces.mforces:
+                f.mts_weights =  np.asarray([0,f.mts_weights[-1]])
+        #Adds another MTS level
+            self.nmts= np.asarray([1, self.nmts[-1]])
+
+        # total number of iteration in the inner-most MTS loop
+        self.inmts = np.prod(self.nmts)
 
         if self.splitting == "obabo":
             # sets the timstep of the thermostat and barostat to dt/2
@@ -228,17 +237,14 @@ class DummyIntegrator(dobject):
         self.splitting = motion.splitting
         dset(self, "dt", dget(motion, "dt"))
         dset(self, "halfdt", dget(motion, "halfdt"))
-        if motion.enstype == "mts" or motion.enstype == "nvt" or  motion.enstype == "nve": self.nmts=motion.nmts
+        if motion.enstype == "mts" or motion.enstype == "nvt" or  motion.enstype == "nve" or motion.enstype == "sc": self.nmts=motion.nmts
         #mts on sc force in suzuki-chin
         if motion.enstype == "sc":
-            if(motion.nmts.size > 1):
-                raise ValueError("MTS for SC is not implemented yet....")
-            else:
-                # coefficients to get the (baseline) trotter to sc conversion
-                self.coeffsc = np.ones((self.beads.nbeads,3*self.beads.natoms), float)
-                self.coeffsc[::2] /= -3.
-                self.coeffsc[1::2] /= 3.
-                self.nmts=motion.nmts[-1]
+            # coefficients to get the (baseline) trotter to sc conversion
+            self.coeffsc = np.ones((self.beads.nbeads,3*self.beads.natoms), float)
+            self.coeffsc[::2] /= -3.
+            self.coeffsc[1::2] /= 3.
+
 
     def pstep(self):
         """Dummy momenta propagator which does nothing."""
@@ -582,63 +588,10 @@ class SCIntegrator(NVTIntegrator):
         super(SCIntegrator,self).bind(mover)
         self.ensemble.add_econs(dget(self.forces, "potsc"))
 
-    def pstep(self, alpha=1.0):
-        """Velocity Verlet momenta propagator."""
+    def pstep(self, level=0, alpha=1.0):
+        """Velocity Verlet monemtum propagator."""
+        self.beads.p += self.forces.forces_mts(level) * ( 1.0 + self.coeffsc) * self.halfdt / alpha
+        if level == 0:
+            self.beads.p += (depstrip(self.bias.f)) * self.halfdt / alpha
+            self.beads.p += (depstrip(self.forces.fsc) - self.coeffsc * self.forces.f) *  self.halfdt / alpha
 
-
-        # also include the baseline Tr2SC correction (the 2/3 & 4/3 V bit)
-        self.beads.p += depstrip(self.forces.f + self.coeffsc*self.forces.f)*self.halfdt/alpha
-        # also adds the bias force (TODO!!!)
-        self.beads.p += depstrip(self.bias.f)*(self.halfdt)/alpha
-        print "momentum", self.halfdt/alpha
-
-    def pscstep(self, alpha=1.0):
-        """Velocity Verlet Suzuki-Chin momenta propagator."""
-
-        # also adds the force assiciated with SuzukiChin correction (only the |f^2| term, so we remove the Tr2SC correction)
-        self.beads.p += depstrip(self.forces.fsc - self.coeffsc*self.forces.f)*self.halfdt/alpha
-        print "momentum with sc force", self.halfdt
-
-    def step(self, step=None):
-        """Does one simulation time step."""
-
-
-        if self.splitting == "obabo":
-            self.thermostat.step()
-            self.pconstraints()
-
-            self.pscstep()
-            M = self.nmts
-            for i in range(self.nmts):
-                self.pstep(M)
-                self.pconstraints()
-
-                self.qcstep(M)
-                self.nm.free_qstep()
-                self.qcstep(M)
-
-                self.pstep(M)
-
-            self.pscstep()
-            self.pconstraints()
-
-            self.thermostat.step()
-            self.pconstraints()
-        elif self.splitting == "baoab":
-            self.pscstep()
-            M = self.nmts
-            for i in range(self.nmts):
-                self.pstep(M)
-                self.pconstraints()
-
-                self.qcstep(M)
-                self.nm.free_qstep()
-                self.tstep()
-                self.pconstraints()
-                self.qcstep(M)
-                self.nm.free_qstep()
-
-                self.pstep(M)
-
-            self.pscstep()
-            self.pconstraints()

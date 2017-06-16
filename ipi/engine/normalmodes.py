@@ -370,7 +370,6 @@ class NormalModes(dobject):
       not altered here.
       """
 
-      print "freeRP", self.dt
       if self.nbeads == 1:
          pass
       else:

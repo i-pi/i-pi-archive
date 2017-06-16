@@ -195,7 +195,6 @@ class ThermoLangevin(Thermostat):
 
       self.p = p
       self.ethermo = et
-      print "thermo", self.dt
       
 class ThermoPILE_L(Thermostat):
    """Represents a PILE thermostat with a local centroid thermostat.

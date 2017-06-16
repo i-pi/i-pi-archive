@@ -720,14 +720,6 @@ class Forces(dobject):
                   vk[i,j] += self.mforces[index].weight*self.mforces[index].mts_weights[level]*np.sum(self.mrpc[index].b2tob1(virs[:,i,j]))
       return vk
 
-   def nmtslevels(self):
-      """ Returns the total number of mts levels."""
-       
-      big = 0
-      for index in range(len(self.mforces)):
-         big = max(big, self.mforces[index].lmts)
-      return big + 1
-
    def f_combine(self):
       """Obtains the total force vector."""
 
@@ -828,7 +820,6 @@ class Forces(dobject):
             self.dbeads.q[self.nbeads/2+k]=self.beads.q[2*k+1] - delta * fbase[2*k+1]/self.beads.m3[2*k+1]
          fplusminus = depstrip(self.dforces.f).copy()
          if self.mforces[-1].epsilon < 0.0:  # use a centered difference schemei
-             print "for alpha =0 centered difference with delta=", delta, self.mforces[-1].epsilon
              for k in range(self.nbeads/2): # only compute the elements that will not be set to zero when multiplying by alpha
                  fsc[2*k+1] = 2*(fplusminus[self.nbeads/2+k]-fplusminus[k])/(2.0*delta)
          else:
@@ -849,5 +840,3 @@ class Forces(dobject):
            fsc[k] = self.f[k]/3.0 + ((1-self.alpha)/self.omegan2/9.0)*fsc[k]
       
       return fsc
-      
-
