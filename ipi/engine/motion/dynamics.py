@@ -125,7 +125,6 @@ class Dynamics(Motion):
 
         super(Dynamics, self).bind(ens, beads, nm, cell, bforce, prng)
 
-
         # Strips off depend machinery for easier referencing.
         dself = dd(self)
         dthrm = dd(self.thermostat)
@@ -158,23 +157,26 @@ class Dynamics(Motion):
         # now we need to define timesteps for the different propagators. NOTE: O=stochastic B=momenta A=positions
         dset(self,"halfdt", depend_value(name="dt", func=(lambda : 0.5*self.dt) , dependencies=[dself.dt]))
 
-        self.inmts = np.prod(self.nmts) # inner multiplier for MTS propagator        
+        self.inmts = np.prod(self.nmts) # inner multiplier for MTS propagator
+
         if self.splitting == "obabo":
-            # sets the timstep of the thermostat and barostat to dt/2            
+            # sets the timstep of the thermostat and barostat to dt/2
             dpipe(dself.halfdt, dthrm.dt)
             dpipe(dself.halfdt, dbaro.dt)
 
-            # sets the timstep of the normalmode propagator to time step of the innermost MTS propagator            
-            dself.deltat = depend_value(name="deltat", func=(lambda : self.dt/self.inmts) , dependencies=[dself.dt])
-            dpipe(dself.deltat, dnm.dt)
+            # sets the timstep of the normalmode propagator to time step of the innermost MTS propagator
+            dself.innerdt = depend_value(name="innerdt", func=(lambda : self.dt/self.inmts) , dependencies=[dself.dt])
+            dpipe(dself.innerdt, dnm.dt)
 
         elif self.splitting == "baoab":
             # sets the timstep of the thermostat and barostat to dt/2
-            dpipe(dself.halfdt, dbaro.dt)
+            dpipe(dself.dt, dbaro.dt)
+            dself.innerdt = depend_value(name="innerdt", func=(lambda : self.dt/self.inmts) , dependencies=[dself.dt])
+            dpipe(dself.innerdt, dthrm.dt)
 
             # sets the timstep of the normalmode propagator to HALF OF THE time step of the innermost MTS propagator
-            dself.halfdeltat = depend_value(name="halfdeltat", func=(lambda : 0.5*self.dt/self.inmts) , dependencies=[dself.dt])
-            dpipe(dself.halfdeltat, dnm.dt)
+            dself.halfinnerdt = depend_value(name="halfinnerdt", func=(lambda : 0.5*self.dt/self.inmts) , dependencies=[dself.dt])
+            dpipe(dself.halfinnerdt, dnm.dt)
 
         # now that the timesteps are decided, we proceed to bind the integrator.
         self.integrator.bind(self)
@@ -318,11 +320,11 @@ class NVEIntegrator(DummyIntegrator):
         """Velocity Verlet monemtum propagator."""
         self.beads.p += self.forces.forces_mts(level)*self.halfdt/alpha
         if level == 0:
-            self.beads.p += depstrip(self.bias.f)*(self.halfdt/alpha)        
+            self.beads.p += depstrip(self.bias.f)*(self.halfdt/alpha)
 
     def qcstep(self, alpha=1.0):
         """Velocity Verlet centroid position propagator."""
-        self.nm.qnm[0,:] += depstrip(self.nm.pnm)[0,:]/depstrip(self.beads.m3)[0]*self.halfdt/alpha        
+        self.nm.qnm[0,:] += depstrip(self.nm.pnm)[0,:]/depstrip(self.beads.m3)[0]*self.halfdt/alpha
 
     def mtsprop(self, index, alpha):
         """ Recursive MTS step """
@@ -338,7 +340,7 @@ class NVEIntegrator(DummyIntegrator):
             if index == nmtslevels-1:
             # call Q propagation for dt/alpha at the inner step
                 self.qcstep(alpha)
-                self.nm.free_qstep() 
+                self.nm.free_qstep()
                 self.qcstep(alpha)
             else:
                 self.mtsprop(index+1, alpha)
@@ -371,7 +373,7 @@ class NVTIntegrator(NVEIntegrator):
 
     def mtsprop(self, index, alpha):
         """ Recursive MTS step """
-        nmtslevels = len(self.nmts)        
+        nmtslevels = len(self.nmts)
         mk = self.nmts[index]  # mtslevels starts at level zero, where nmts should be 1 in most cases
         alpha *= mk
 
@@ -384,7 +386,7 @@ class NVTIntegrator(NVEIntegrator):
                 if index == nmtslevels-1:
                 # call Q propagation for dt/alpha at the inner step
                     self.qcstep(alpha)
-                    self.nm.free_qstep() 
+                    self.nm.free_qstep()
                     self.qcstep(alpha)
                 else:
                     self.mtsprop(index+1, alpha)
@@ -402,11 +404,11 @@ class NVTIntegrator(NVEIntegrator):
                 if index == nmtslevels-1:
                     # call Q propagation for dt/2alpha at the inner step
                     self.qcstep(alpha)
-                    self.nm.free_qstep()  
+                    self.nm.free_qstep()
                     self.tstep()
                     self.pconstraints()
                     self.qcstep(alpha)
-                    self.nm.free_qstep() 
+                    self.nm.free_qstep()
                 else:
                     self.mtsprop(index+1, alpha)
 
@@ -580,28 +582,22 @@ class SCIntegrator(NVTIntegrator):
         super(SCIntegrator,self).bind(mover)
         self.ensemble.add_econs(dget(self.forces, "potsc"))
 
-    def pstep(self):
+    def pstep(self, alpha=1.0):
         """Velocity Verlet momenta propagator."""
 
 
         # also include the baseline Tr2SC correction (the 2/3 & 4/3 V bit)
-        self.beads.p += depstrip(self.forces.f + self.coeffsc*self.forces.f)*self.halfdt/self.nmts
+        self.beads.p += depstrip(self.forces.f + self.coeffsc*self.forces.f)*self.halfdt/alpha
         # also adds the bias force (TODO!!!)
-        # self.beads.p += depstrip(self.bias.f)*(self.dt*0.5)
+        self.beads.p += depstrip(self.bias.f)*(self.halfdt)/alpha
+        print "momentum", self.halfdt/alpha
 
-    def pscstep(self):
+    def pscstep(self, alpha=1.0):
         """Velocity Verlet Suzuki-Chin momenta propagator."""
 
         # also adds the force assiciated with SuzukiChin correction (only the |f^2| term, so we remove the Tr2SC correction)
-        self.beads.p += depstrip(self.forces.fsc - self.coeffsc*self.forces.f)*self.halfdt
-
-    def qcstep(self):
-        """Velocity Verlet centroid position propagator."""
-
-        if self.splitting == "aboba" or self.splitting == "baoab": dt = self.halfdt
-        elif self.splitting == "obabo": dt = self.dt
-
-        self.nm.qnm[0,:] += depstrip(self.nm.pnm)[0,:]/depstrip(self.beads.m3)[0]*dt/self.nmts
+        self.beads.p += depstrip(self.forces.fsc - self.coeffsc*self.forces.f)*self.halfdt/alpha
+        print "momentum with sc force", self.halfdt
 
     def step(self, step=None):
         """Does one simulation time step."""
@@ -612,15 +608,16 @@ class SCIntegrator(NVTIntegrator):
             self.pconstraints()
 
             self.pscstep()
-
+            M = self.nmts
             for i in range(self.nmts):
-                self.pstep()
+                self.pstep(M)
                 self.pconstraints()
 
-                self.qcstep()
+                self.qcstep(M)
                 self.nm.free_qstep()
+                self.qcstep(M)
 
-                self.pstep()
+                self.pstep(M)
 
             self.pscstep()
             self.pconstraints()
@@ -629,18 +626,19 @@ class SCIntegrator(NVTIntegrator):
             self.pconstraints()
         elif self.splitting == "baoab":
             self.pscstep()
+            M = self.nmts
             for i in range(self.nmts):
-                self.pstep()
+                self.pstep(M)
                 self.pconstraints()
 
-                self.qcstep()
+                self.qcstep(M)
                 self.nm.free_qstep()
-                self.thermostat.step()
+                self.tstep()
                 self.pconstraints()
-                self.qcstep()
+                self.qcstep(M)
                 self.nm.free_qstep()
 
-                self.pstep()
+                self.pstep(M)
 
             self.pscstep()
             self.pconstraints()
