@@ -853,6 +853,15 @@ class Test(threading.Thread):
         os.dup2(devnull.fileno(), 1)
 
         # opens & parses the input file
+        
+        # get in the input file location so it can find other input files for initialization
+        cwd = os.getcwd() 
+        iodir = os.path.dirname(os.path.realpath(xml_path))    
+        os.chdir(iodir)
+        
+        print "READING FILE FROM ", iodir 
+        print " WHILE RUNNING IN ", cwd
+        
         ifile = open(xml_path, "r")
         xmlrestart = io_xml.xml_parse_file(ifile) # Parses the file.
         ifile.close()
@@ -861,6 +870,7 @@ class Test(threading.Thread):
         isimul.parse(xmlrestart.fields[0][1])
 
         simul = isimul.fetch()
+        os.chdir(cwd) 
 
         # reconstructs the list of the property and trajectory files
         lprop = [] # list of property files

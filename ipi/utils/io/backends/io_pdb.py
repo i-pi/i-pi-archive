@@ -20,7 +20,7 @@ from ipi.utils.units import Elements
 __all__ = ['print_pdb_path', 'print_pdb', 'read_pdb']
 
 
-def print_pdb_path(beads, cell, filedesc=sys.stdout):
+def print_pdb_path(beads, cell, filedesc=sys.stdout, cell_conv=1.0, atoms_conv=1.0):
     """Prints all the bead configurations, into a pdb formatted file.
 
     Prints the ring polymer springs as well as the bead positions using the
@@ -62,7 +62,7 @@ def print_pdb_path(beads, cell, filedesc=sys.stdout):
     filedesc.write("END\n")
 
 
-def print_pdb(atoms, cell, filedesc=sys.stdout, title=""):
+def print_pdb(atoms, cell, filedesc=sys.stdout, title="", cell_conv=1.0, atoms_conv=1.0):
     """Prints an atomic configuration into a pdb formatted file.
 
     Also prints the cell parameters in standard pdb form. Note
@@ -81,13 +81,13 @@ def print_pdb(atoms, cell, filedesc=sys.stdout, title=""):
     if title != "":
         filedesc.write("TITLE   %70s\n" % (title))
 
-    a, b, c, alpha, beta, gamma = mt.h2abc_deg(cell.h)
+    a, b, c, alpha, beta, gamma = mt.h2abc_deg(cell.h*cell_conv)
 
     z = 1
     filedesc.write(fmt_cryst % (a, b, c, alpha, beta, gamma, " P 1        ", z))
 
     natoms = atoms.natoms
-    qs = depstrip(atoms.q)
+    qs = depstrip(atoms.q)*atoms_conv
     lab = depstrip(atoms.names)
     for i in range(natoms):
         data = (i+1, lab[i], ' ', '  1', ' ', 1, ' ',

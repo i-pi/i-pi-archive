@@ -1,6 +1,9 @@
 """Package with functions for reading and writing files.
 
 This module has machinery for abstract I/O handling.
+
+The idea is that the unit conversion is done here. The default is to guess
+units from the file, but it can be overridden. 
 """
 
 # This file is part of i-PI.
@@ -12,6 +15,7 @@ import sys
 import os
 
 from ipi.utils.messages import info, verbosity
+from ipi.utils.units import unit_to_user
 from ipi.external import importlib
 from ipi.utils.decorators import cached
 
@@ -62,7 +66,7 @@ def _get_io_function(mode, io):
     return func
 
 
-def print_file_path(mode, beads, cell, filedesc=sys.stdout):
+def print_file_path(mode, beads, cell, filedesc=sys.stdout, title="", key="", dimension="length", units="automatic", cell_units="automatic"):
     """Prints all the bead configurations, into a `mode` formatted file.
 
     Prints all the replicas for each time step separately, rather than all at
@@ -73,10 +77,11 @@ def print_file_path(mode, beads, cell, filedesc=sys.stdout):
         cell: A cell object giving the system box.
         filedesc: An open writable file object. Defaults to standard output.
     """
+    
     return _get_io_function(mode, "print_path")(beads=beads, cell=cell, filedesc=filedesc)
 
 
-def print_file(mode, atoms, cell, filedesc=sys.stdout, title=""):
+def print_file(mode, atoms, cell, filedesc=sys.stdout, title="", key="", dimension="length", units="automatic", cell_units="automatic"):
     """Prints the centroid configurations, into a `mode` formatted file.
 
     Args:
@@ -85,7 +90,22 @@ def print_file(mode, atoms, cell, filedesc=sys.stdout, title=""):
         filedesc: An open writable file object. Defaults to standard output.
         title: This gives a string to be appended to the comment line.
     """
-    return _get_io_function(mode, "print")(atoms=atoms, cell=cell, filedesc=filedesc, title=title)
+    
+    if mode == "pdb":   # special case for PDB
+        if dimension != "length":
+            raise ValueError("PDB Standard is only designed for atomic positions")
+        if units == "automatic": units="angstrom"
+        if cell_units == "automatic": cell_units="angstrom"
+    # in general, "automatic" units are actually "atomic_units"
+    else:
+        if units == "automatic": units="atomic_unit"
+        if cell_units == "automatic": cell_units="atomic_unit"
+    
+    cell_conv = unit_to_user("length", cell_units, 1.0)
+    atoms_conv = unit_to_user(dimension, units, 1.0) 
+    
+    title = title + ("%s{%s}  cell_units{%s}" % (key, units, cell_units))
+    return _get_io_function(mode, "print")(atoms=atoms, cell=cell, filedesc=filedesc, title=title, cell_conv=cell_conv, atoms_conv=atoms_conv)
 
 
 def read_file(mode, filedesc, output="objects", **kwargs):
