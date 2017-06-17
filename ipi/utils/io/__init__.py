@@ -19,7 +19,6 @@ from ipi.utils.units import unit_to_user
 from ipi.external import importlib
 from ipi.utils.decorators import cached
 
-
 __all__ = ["iter_file", "print_file_path", "print_file", "read_file"]
 
 
@@ -80,7 +79,7 @@ def print_file_path(mode, beads, cell, filedesc=sys.stdout, title="", key="", di
     
     return _get_io_function(mode, "print_path")(beads=beads, cell=cell, filedesc=filedesc)
 
-
+# VENKAT TODO : also get the print_file functions work with just arrays, so we have a "fast write" mode that sidesteps any parsing or conversion, similar to what I'm doing for readfile and readfile_raw
 def print_file(mode, atoms, cell, filedesc=sys.stdout, title="", key="", dimension="length", units="automatic", cell_units="automatic"):
     """Prints the centroid configurations, into a `mode` formatted file.
 
@@ -104,11 +103,26 @@ def print_file(mode, atoms, cell, filedesc=sys.stdout, title="", key="", dimensi
     cell_conv = unit_to_user("length", cell_units, 1.0)
     atoms_conv = unit_to_user(dimension, units, 1.0) 
     
-    title = title + ("%s{%s}  cell_units{%s}" % (key, units, cell_units))
+    title = title + ("%s{%s}  cell{%s}" % (key, units, cell_units))
     return _get_io_function(mode, "print")(atoms=atoms, cell=cell, filedesc=filedesc, title=title, cell_conv=cell_conv, atoms_conv=atoms_conv)
 
+def read_file_raw(mode, filedesc):    
 
-def read_file(mode, filedesc, output="objects", **kwargs):
+    reader = _get_io_function(mode, "read")
+        
+    comment, cell, atoms, names, masses = reader(filedesc=filedesc)
+     
+    return {
+          "comment" : comment, 
+          "data": atoms,
+          "masses": masses,
+          "names": names,
+          "natoms": len(names),
+          "cell": cell
+        }
+    
+
+def read_file(mode, filedesc, dimension="", units="automatic", cell_units="automatic"):
     """Reads one frame from an open `mode`-style file.
 
     Args:
@@ -119,12 +133,13 @@ def read_file(mode, filedesc, output="objects", **kwargs):
         A dictionary as returned by `process_units`.
     """
 
+    print "reading file", dimension, units, cell_units
+    raw_read = read_file_raw(mode=mode, filedesc=filedesc)
+
     # late import is needed to break an import cycle
     from .io_units import process_units
-
-    reader = _get_io_function(mode, "read")
-
-    return process_units(*reader(filedesc=filedesc, **kwargs), output=output)
+    
+    return process_units(dimension=dimension, units=units, cell_units=cell_units, mode=mode, **raw_read)
 
 
 def read_file_name(filename):
@@ -139,7 +154,7 @@ def read_file_name(filename):
 
     return read_file(os.path.splitext(filename)[1], open(filename))
 
-
+# VENKAT TODO also to the same on iter_file, and get rid of this useless kwargs thing
 def iter_file(mode, filedesc, output="objects", **kwargs):
     """Takes an open `mode`-style file and yields one Atoms object after another.
 

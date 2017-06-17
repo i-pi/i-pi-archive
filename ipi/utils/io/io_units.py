@@ -20,13 +20,13 @@ traj_re = [re.compile('%s%s' % (key, r'\{[A-Za-z_]*\}'))
            for key in traj_dict.keys()]  # trajectory patterns
 
 
-def process_units(comment, cell, qatoms, names, masses, output='objects'):
+def process_units(comment, cell, data, names, masses, natoms, dimension="automatic", units="automatic", cell_units="automatic", mode="xyz"):
     """Convert the data in the file according to the units written in the i-PI format.
 
     Args:
         comment:
         cell:
-        qatoms:
+        data:
         names:
         masses:
         output:
@@ -34,54 +34,49 @@ def process_units(comment, cell, qatoms, names, masses, output='objects'):
     Returns:
 
     """
+
+    # heuristics to detect input units
+    if units == "automatic" or dimension == "automatic" or cell_units == "automatic":
+        if mode == "pdb": # these are the default units
+            auto_cell = "angstrom"
+            auto_units = "angstrom"
+            auto_dimension = "length"
+        else:
+            auto_cell = "atomic_unit"
+            auto_units = "atomic_unit"
+            auto_dimension = "undefined"        
+        if comment != "":  # but they can be overridden by a special comment line
+            # tries to guess units from the input
+            # Extracting trajectory units
+            is_comment_useful = filter(None, [key.search(comment.strip())
+                                          for key in traj_re])
+            if len(is_comment_useful) > 0:                
+                traj = is_comment_useful[0].group()[:-1].split('{')
+                auto_dimension, auto_units = traj_dict[traj[0]]['dimension'], traj[1]                
+
+            # Extracting cell units
+            tmp = cell_unit_re.search(comment)
+            if tmp is not None:
+                auto_cell = tmp.group(1)  
+            print "CELL DETECTED ", auto_cell
+        if dimension == "automatic": dimension = auto_dimension
+        if units == "automatic": units = auto_units
+        if cell_units == "automatic": cell_units = auto_cell
     
-    if comment == "" and output != 'objects': # fast mode
-        return {
-          "data": qatoms,
-          "masses": masses,
-          "names": names,
-          "natoms": len(names),
-          "cell": cell,
-        }
-
-    # Extracting trajectory units
-    family, unit = 'undefined', ''
-    is_comment_useful = filter(None, [key.search(comment.strip())
-                                      for key in traj_re])
-    if len(is_comment_useful) > 0:
-        traj = is_comment_useful[0].group()[:-1].split('{')
-        family, unit = traj_dict[traj[0]]['dimension'], traj[1]
-
-    # Extracting cell units
-    cell_unit = ''
-    tmp = cell_unit_re.search(comment)
-    if tmp is not None:
-        cell_unit = tmp.group(1)
+        print "UNITS DETECTED", dimension, units, cell_units
 
     # Units transformation
-    cell *= unit_to_internal('length', cell_unit, 1) # cell units transformation
-    qatoms *= unit_to_internal(family, unit, 1) # units transformation
+    cell *= unit_to_internal('length', cell_units, 1) # cell units transformation
+    data *= unit_to_internal(dimension, units, 1) # units transformation
 
     # return either objects or a raw data
-    if output == 'objects':
+    cell = Cell(cell)
+    atoms = Atoms(natoms)
+    atoms.q[:] = data
+    atoms.names[:] = names
+    atoms.m[:] = masses
 
-        cell = Cell(cell)
-        atoms = Atoms(len(names))
-        atoms.q[:] = qatoms
-        atoms.names[:] = names
-        atoms.m[:] = masses
-
-        return {
-          "atoms": atoms,
-          "cell": cell,
-        }
-
-    else:
-
-        return {
-          "data": qatoms,
-          "masses": masses,
-          "names": names,
-          "natoms": len(names),
-          "cell": cell,
-        }
+    return {
+      "atoms": atoms,
+      "cell": cell,
+    }

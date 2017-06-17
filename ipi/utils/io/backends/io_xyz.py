@@ -73,7 +73,7 @@ cell_re = [re.compile('CELL[\(\[\{]abcABC[\)\]\}]: ([-+0-9\.Ee ]*)\s*'),
            re.compile('CELL[\(\[\{]GENH[\)\]\}]: ([-+0-9\.?Ee ]*)\s*'),
            re.compile('CELL[\(\[\{]H[\)\]\}]: ([-+0-9\.?Ee ]*)\s*')]
 
-def read_xyz(filedesc, **kwargs):
+def read_xyz(filedesc):
     """Reads an XYZ-style file with i-PI style comments and returns data in raw format for further units transformation
     and other post processing.
 
@@ -89,7 +89,7 @@ def read_xyz(filedesc, **kwargs):
     except (StopIteration, ValueError):
         raise EOFError
 
-    # if natoms == '':              # Work with temporary files
+    # if natoms == '':              # Work with incomplete files
     #     raise EOFError
 
     # natoms = int(natoms)

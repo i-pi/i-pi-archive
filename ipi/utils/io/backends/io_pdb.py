@@ -98,7 +98,7 @@ def print_pdb(atoms, cell, filedesc=sys.stdout, title="", cell_conv=1.0, atoms_c
     filedesc.write("END\n")
 
 
-def read_pdb(filedesc, **kwargs):
+def read_pdb(filedesc):
     """Reads a PDB-style file and creates an Atoms and Cell object.
 
     Args:
@@ -111,11 +111,12 @@ def read_pdb(filedesc, **kwargs):
     """
 
     header = filedesc.readline()
-    comment = ''
+    comment = "# comment line might contain special i-PI keywords "
     if "TITLE" in header:
         # skip the comment field
         comment = copy.copy(header)
         header = filedesc.readline()
+    # PDB defaults to Angstrom, because so says the standard
     if 'positions{' not in comment:
         comment = comment.strip()
         comment += ' positions{angstrom}\n'
