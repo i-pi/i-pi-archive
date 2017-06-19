@@ -30,6 +30,7 @@ def auto_units(comment="", dimension="automatic", units="automatic", cell_units=
         auto_units = "atomic_unit"
         auto_dimension = "undefined"    
 
+    is_comment_useful = []
     if comment != "":  # but they can be overridden by a special comment line
         # tries to guess units from the input
         # Extracting trajectory units
@@ -46,18 +47,19 @@ def auto_units(comment="", dimension="automatic", units="automatic", cell_units=
 
     if dimension == "automatic": 
         dimension = auto_dimension
-    elif dimension != auto_dimension and comment != "":
-        ValueError("Requested dimension mismatch with property indicated in the comment string")
+    elif dimension != auto_dimension and len(is_comment_useful)>0:
+        raise ValueError("Requested dimension mismatch with property indicated in the comment string")
 
+    
     if units == "automatic": 
         units = auto_units
-    elif units != auto_units and comment != "":
-        ValueError("Requested units mismatch with units indicated in the comment string")
+    elif units != auto_units and len(is_comment_useful)>0:
+        raise ValueError("Requested units mismatch with units indicated in the comment string")
         
     if cell_units == "automatic":         
         cell_units = auto_cell
-    elif cell_units != auto_cell and comment != "":
-        ValueError("Requested cell units mismatch with units indicated in the comment string")
+    elif cell_units != auto_cell and len(is_comment_useful)>0:
+        raise ValueError("Requested cell units mismatch with units indicated in the comment string")
     
     return dimension, units, cell_units
     

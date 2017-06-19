@@ -64,7 +64,7 @@ def _get_io_function(mode, io):
 
     return func
 
-
+# VENKAT TODO: must overhaul also this function
 def print_file_path(mode, beads, cell, filedesc=sys.stdout, title="", key="", dimension="length", units="automatic", cell_units="automatic"):
     """Prints all the bead configurations, into a `mode` formatted file.
 
