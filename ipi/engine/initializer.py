@@ -383,7 +383,6 @@ class Initializer(dobject):
                warning("Overwriting previous atomic positions", verbosity.medium)
             # read the atomic positions as a vector
             
-            print "READING POSITIONS", v.units
             rq = init_vector(v, self.nbeads, dimension="length", units=v.units)
 
             nbeads, natoms = rq.shape
@@ -459,7 +458,7 @@ class Initializer(dobject):
             set_vector(v, simul.beads.p, rp)
             fmom = True
 
-            warning_units_message(v, 'momenta')
+            #warning_units_message(v, 'momenta')
 
          elif k == "velocities":
             if fmom:
@@ -484,7 +483,7 @@ class Initializer(dobject):
             set_vector(v, simul.beads.p, rv)
             fmom = True
 
-            warning_units_message(v, 'velocity')
+            #warning_units_message(v, 'velocity')
 
          elif k == "gle": pass   # thermostats must be initialised in a second stage
 
