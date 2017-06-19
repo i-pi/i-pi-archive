@@ -705,20 +705,14 @@ class Forces(dobject):
               fk += self.mforces[index].weight*self.mforces[index].mts_weights[level]*self.mrpc[index].b2tob1(depstrip(self.mforces[index].f))
       return fk
 
-   def virial_mts(self, level):
-      """ Fetches ONLY the virial associated with a given MTS level."""
-      #!TODO! NOT TESTED!!!!
-      
-      vk = np.zeros((3,3))
-      for index in range(self.nforces):
+   def vir_mts(self, level):
+      """ Fetches ONLY the total virial associated with a given MTS level."""
+
+      rp = np.zeros((3,3),float)
+      for index in range(len(self.mforces)):
          if len(self.mforces[index].mts_weights) > level and self.mforces[index].mts_weights[level] != 0  and self.mforces[index].weight > 0:
-            virs = depstrip(self.mforces[index].virs)
-            # "expand" to the total number of beads the virials from the
-            #contracted one, element by element
-            for i in range(3):
-               for j in range(3):
-                  vk[i,j] += self.mforces[index].weight*self.mforces[index].mts_weights[level]*np.sum(self.mrpc[index].b2tob1(virs[:,i,j]))
-      return vk
+              rp += self.mforces[index].weight*self.mforces[index].mts_weights[level]*np.sum(self.mforces[index].virs,axis=0)
+      return rp
 
    def f_combine(self):
       """Obtains the total force vector."""

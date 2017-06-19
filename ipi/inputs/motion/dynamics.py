@@ -41,8 +41,8 @@ class InputDynamics(InputDictionary):
                                   "options": ['nve', 'nvt', 'npt', 'nst', 'sc']}),
         "splitting": (InputAttribute, {"dtype":   str,
                                   "default": 'obabo',
-                                  "help":    "The ensemble that will be sampled during the simulation. ",
-                                  "options": ['obabo', 'aboba', 'baoab']})        
+                                  "help":    "The Louiville splitting used for sampling the target ensemble. ",
+                                  "options": ['obabo', 'baoab']})        
               }
 
     fields = {

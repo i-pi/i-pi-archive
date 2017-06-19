@@ -178,10 +178,10 @@ class Dynamics(Motion):
             dpipe(dself.innerdt, dnm.dt)
 
         elif self.splitting == "baoab":
-            # sets the timstep of the thermostat and barostat to dt/2
-            dpipe(dself.dt, dbaro.dt)
+            # sets the timstep of the thermostat and the barostat to dt/2
             dself.innerdt = depend_value(name="innerdt", func=(lambda : self.dt/self.inmts) , dependencies=[dself.dt])
             dpipe(dself.innerdt, dthrm.dt)
+            dpipe(dself.innerdt, dbaro.thermostat.dt)
 
             # sets the timstep of the normalmode propagator to HALF OF THE time step of the innermost MTS propagator
             dself.halfinnerdt = depend_value(name="halfinnerdt", func=(lambda : 0.5*self.dt/self.inmts) , dependencies=[dself.dt])
@@ -237,7 +237,7 @@ class DummyIntegrator(dobject):
         self.splitting = motion.splitting
         dset(self, "dt", dget(motion, "dt"))
         dset(self, "halfdt", dget(motion, "halfdt"))
-        if motion.enstype == "mts" or motion.enstype == "nvt" or  motion.enstype == "nve" or motion.enstype == "sc": self.nmts=motion.nmts
+        if motion.enstype == "mts" or motion.enstype == "nvt" or  motion.enstype == "nve" or motion.enstype == "sc" or motion.enstype == "npt": self.nmts=motion.nmts
         #mts on sc force in suzuki-chin
         if motion.enstype == "sc":
             # coefficients to get the (baseline) trotter to sc conversion
@@ -452,22 +452,27 @@ class NPTIntegrator(NVTIntegrator):
     def pstep(self, level=0, alpha=1.0):
         """Velocity Verlet monemtum propagator."""
 
-        # since this  is thermostatted, should use half dt for every splitting
-        self.barostat.pstep(level, 1.0/alpha)
+        self.beads.p += self.forces.forces_mts(level)*self.halfdt/alpha
 
+        if level == 0:
+            self.beads.p += depstrip(self.bias.f)*(self.halfdt/alpha)
+
+        self.barostat.pvirstep(level, alpha)
+
+        if level == len(self.nmts) - 1:
+            self.barostat.pkinstep(level, alpha)
 
     def qcstep(self, alpha=1.0):
         """Velocity Verlet centroid position propagator."""
-        if self.splitting == "obabo": dt = 2.0
-        elif self.splitting == "aboba" or self.splitting == "baoab": dt = 1.0
 
-        self.barostat.qcstep(dtscale=dt/alpha)
+        self.barostat.qcstep(alpha)
 
     def tstep(self):
         """Velocity Verlet thermostat step"""
-        # the length of the thermostat step is controlled via depend objects
+
         self.thermostat.step()
         self.barostat.thermostat.step()
+
 
 class NSTIntegrator(NVTIntegrator):
     """Ensemble object for constant pressure simulations.

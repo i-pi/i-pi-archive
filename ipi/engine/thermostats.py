@@ -169,6 +169,7 @@ class ThermoLangevin(Thermostat):
 
       super(ThermoLangevin,self).__init__(temp, dt, ethermo)
 
+      dset(self,"dt",depend_value(value=dt,name='dt'))
       dset(self,"tau",depend_value(value=tau,name='tau'))
       dset(self,"T",
          depend_value(name="T",func=self.get_T,
