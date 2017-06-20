@@ -246,8 +246,7 @@ class Properties(dobject):
                        "longhelp":  """The weight associated one part of the hamiltonian. Takes one mandatory
                          argument index (zero-based) that indicates for which component of the hamiltonian the weight must be returned. """,
                       'func': (lambda index : self.ensemble.hweights[int(index)]) },
-
-         "ensemble_bias":  {  "dimension": "energy",
+      "ensemble_bias":  {  "dimension": "energy",
                        "help" : "The bias applied to the current ensemble",
                        "func": (lambda: self.ensemble.bias.pot/self.beads.nbeads ) },
       "bweights_component": {  "dimension" : "",

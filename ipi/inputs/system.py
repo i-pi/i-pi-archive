@@ -45,7 +45,7 @@ class InputSysTemplate(Input):
     Fields:
         template: The text that corresponds to the system field template
         labels: List of strings identifying substitution fields in the template
-        sys_values: List of strings that should be used to substitute the labels    
+        instance: List of strings that should be used to substitute the labels    
     """
     
     fields = { 
@@ -84,6 +84,7 @@ class InputSysTemplate(Input):
                     raise ValueError("Labels and instance length mismatch")
                 for l in xrange(len(ins)):  # string replacement within the template 
                     sys = sys.replace(labels[l], ins[l])
+                print "Generating system from template: \n", sys
                 xsys = xml_parse_string(sys) # parses the string to an XML object
                 isys = InputSystem()
                 isys.parse(xsys.fields[0][1]) # parses the XML object into an InputSystem
@@ -100,7 +101,6 @@ class InputSystem(Input):
    object.
 
    Attributes:
-      copies: Decides how many of each system to create.
       prefix: A string to prepend to the output file names for this system.
 
    Fields:
@@ -129,8 +129,7 @@ class InputSystem(Input):
              }
 
    attribs = {
-    "copies": (InputAttribute, {"help" : "Create multiple copies of the system. This is handy for initialising simulations with multiple systems.", "default": 1, "dtype": int}) ,
-    "prefix": (InputAttribute, {"help" : "Prepend this string to output files generated for this system. If 'copies' is greater than 1, a trailing number will be appended.", "default": "", "dtype": str})
+    "prefix": (InputAttribute, {"help" : "Prepend this string to output files generated for this system. ", "default": "", "dtype": str})
    }
 
    default_help = "This is the class which holds all the data which represents a single state of the system."

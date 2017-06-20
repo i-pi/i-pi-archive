@@ -191,12 +191,9 @@ class InputSimulation(Input):
       fflist=[]
       for (k,v) in self.extra:
          if k == "system":
-            for isys in range(v.copies.fetch()): # creates multiple copies of system if desired
-               syslist.append(v.fetch())
-               if (v.copies.fetch() > 1):
-                  syslist[-1].prefix = syslist[-1].prefix + ( ("%0" + str(int(1 + np.floor(np.log(v.copies.fetch())/np.log(10)))) + "d") % (isys) )
+            syslist.append(v.fetch()) 
          elif k== "system_template":             
-             syslist += v.fetch()
+            syslist += v.fetch() # this will actually generate automatically a bunch of system objects with the desired properties set automatically to many values
          elif k == "ffsocket":
             fflist.append(v.fetch())
          elif k == "fflj":
