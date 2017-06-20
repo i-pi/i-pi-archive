@@ -100,8 +100,10 @@ class Barostat(dobject):
          thermostat = Thermostat()
       self.thermostat = thermostat
 
+      dset(self,"halfdt", depend_value(name="dt", func=(lambda : 0.5*self.dt) , dependencies=[dself.dt]))
+
       # pipes timestep and temperature to the thermostat
-      dpipe(dself.dt, dd(self.thermostat).dt)
+      dpipe(dself.halfdt, dd(self.thermostat).dt)
       dpipe(dself.temp, dd(self.thermostat).temp)
       dself.pext = depend_value(name='pext', value=-1.0)
       dself.stressext = depend_array(name='stressext', value=-np.ones((3,3), float))
@@ -350,6 +352,8 @@ class BaroBZP(Barostat):
       self.p += dthalf*3.0*( np.dot(pc,pc/m)/3.0*self.beads.nbeads  - self.cell.V*self.pext*self.beads.nbeads +
                 Constants.kb*self.temp ) + (dthalf2*np.dot(pc,fc/m) + dthalf3*np.dot(fc,fc/m)) * self.beads.nbeads
 
+      print "integrates kin-virial at ", level, " for ", self.dt/alpha * 0.5
+
    def pvirstep(self, level=0, alpha=1.0):
       """Propagates the momenta with the virial for half a time step."""
 
@@ -357,11 +361,14 @@ class BaroBZP(Barostat):
       press = np.trace(self.stress_mts(level)/3.0)
       self.p += dthalf*3.0*(self.cell.V*press)
 
+      print "integrates pot-virial at ", level, " for ", self.dt/alpha * 0.5
+
    def qcstep(self, alpha=1.0):
       """Propagates the centroid position and momentum and the volume."""
 
       v = self.p[0]/self.m[0]
-      expq, expp = (np.exp(v*self.dt/alpha), np.exp(-v*self.dt/alpha))
+      halfdt = 0.50*self.dt/alpha
+      expq, expp = (np.exp(v*halfdt), np.exp(-v*halfdt))
 
       m = depstrip(self.beads.m3)[0]
 
@@ -370,6 +377,7 @@ class BaroBZP(Barostat):
       self.nm.pnm[0,:] *= expp
 
       self.cell.h *= expq
+      print "integrates qc at for ", 0.50*self.dt/alpha
 
 class BaroRGB(Barostat):
    """Raiteri-Gale-Bussi constant stress barostat class (JPCM 23, 334213, 2011).

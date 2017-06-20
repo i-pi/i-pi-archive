@@ -397,6 +397,8 @@ class NormalModes(dobject):
          #   self.qnm[k] = pq[1,:]/sm
          #   self.pnm[k] = pq[0,:]*sm
 
+         print "integrates free ring polymer q  for ", self.dt
+
    def get_kins(self):
       """Gets the MD kinetic energy for all the normal modes.
 

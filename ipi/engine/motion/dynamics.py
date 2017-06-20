@@ -73,9 +73,9 @@ class Dynamics(Motion):
             self.barostat = barostat
 
         if nmts is np.zeros(0,int):
-           self.nmts = np.asarray([1],int)
+           self.nmts = np.asarray([1], int)
         elif nmts is None or len(nmts) == 0:
-           self.nmts = np.asarray([1],int)
+           self.nmts = np.asarray([1], int)
         else:
            self.nmts=np.asarray(nmts)
 
@@ -168,21 +168,15 @@ class Dynamics(Motion):
         # total number of iteration in the inner-most MTS loop
         self.inmts = np.prod(self.nmts)
 
-        if self.splitting == "obabo":
-            # sets the timstep of the thermostat and barostat to dt/2
-            dpipe(dself.halfdt, dthrm.dt)
-            dpipe(dself.halfdt, dbaro.dt)
+        # sets the timstep of the thermostat to dt/2
+        dpipe(dself.halfdt, dthrm.dt)
 
+        if self.splitting == "obabo":
             # sets the timstep of the normalmode propagator to time step of the innermost MTS propagator
             dself.innerdt = depend_value(name="innerdt", func=(lambda : self.dt/self.inmts) , dependencies=[dself.dt])
             dpipe(dself.innerdt, dnm.dt)
 
         elif self.splitting == "baoab":
-            # sets the timstep of the thermostat and the barostat to dt/2
-            dself.innerdt = depend_value(name="innerdt", func=(lambda : self.dt/self.inmts) , dependencies=[dself.dt])
-            dpipe(dself.innerdt, dthrm.dt)
-            dpipe(dself.innerdt, dbaro.thermostat.dt)
-
             # sets the timstep of the normalmode propagator to HALF OF THE time step of the innermost MTS propagator
             dself.halfinnerdt = depend_value(name="halfinnerdt", func=(lambda : 0.5*self.dt/self.inmts) , dependencies=[dself.dt])
             dpipe(dself.halfinnerdt, dnm.dt)
@@ -237,8 +231,10 @@ class DummyIntegrator(dobject):
         self.splitting = motion.splitting
         dset(self, "dt", dget(motion, "dt"))
         dset(self, "halfdt", dget(motion, "halfdt"))
-        if motion.enstype == "mts" or motion.enstype == "nvt" or  motion.enstype == "nve" or motion.enstype == "sc" or motion.enstype == "npt": self.nmts=motion.nmts
-        #mts on sc force in suzuki-chin
+
+        if motion.enstype == "nvt" or  motion.enstype == "nve" or motion.enstype == "sc" or motion.enstype == "npt":
+            self.nmts=motion.nmts
+            self.nmtslevels = len(self.nmts)
         if motion.enstype == "sc":
             # coefficients to get the (baseline) trotter to sc conversion
             self.coeffsc = np.ones((self.beads.nbeads,3*self.beads.natoms), float)
@@ -324,17 +320,21 @@ class NVEIntegrator(DummyIntegrator):
 
     def pstep(self, level=0, alpha=1.0):
         """Velocity Verlet monemtum propagator."""
+
         self.beads.p += self.forces.forces_mts(level)*self.halfdt/alpha
         if level == 0:
             self.beads.p += depstrip(self.bias.f)*(self.halfdt/alpha)
+        print "integrates force at ", level, " for ", self.halfdt/alpha
 
     def qcstep(self, alpha=1.0):
         """Velocity Verlet centroid position propagator."""
+
         self.nm.qnm[0,:] += depstrip(self.nm.pnm)[0,:]/depstrip(self.beads.m3)[0]*self.halfdt/alpha
+        print "integrates qc for ", self.halfdt/alpha
 
     def mtsprop(self, index, alpha):
-        """ Recursive MTS step """
-        nmtslevels = len(self.nmts)
+        """ Recursive MTS step."""
+
         mk = self.nmts[index]  # mtslevels starts at level zero, where nmts should be 1 in most cases
         alpha *= mk
 
@@ -343,7 +343,7 @@ class NVEIntegrator(DummyIntegrator):
             self.pstep(index, alpha)
             self.pconstraints()
 
-            if index == nmtslevels-1:
+            if index == self.nmtslevels-1:
             # call Q propagation for dt/alpha at the inner step
                 self.qcstep(alpha)
                 self.nm.free_qstep()
@@ -374,70 +374,75 @@ class NVTIntegrator(NVEIntegrator):
 
     def tstep(self):
         """Velocity Verlet thermostat step"""
-        # the length of the thermostat step is controlled via depend objects
+
         self.thermostat.step()
 
     def mtsprop(self, index, alpha):
         """ Recursive MTS step """
-        nmtslevels = len(self.nmts)
-        mk = self.nmts[index]  # mtslevels starts at level zero, where nmts should be 1 in most cases
+
+        mk = self.nmts[index] 
         alpha *= mk
 
-        if self.splitting == "obabo":
-            for i in range(mk):
-                # propagate p for dt/2alpha with force at level index
-                self.pstep(index, alpha)
-                self.pconstraints()
+        for i in range(mk):
+            # propagate p for dt/2alpha with force at level index
+            self.pstep(index, alpha)
+            self.pconstraints()
 
-                if index == nmtslevels-1:
-                # call Q propagation for dt/alpha at the inner step
-                    self.qcstep(alpha)
-                    self.nm.free_qstep()
-                    self.qcstep(alpha)
-                else:
-                    self.mtsprop(index+1, alpha)
+            if index == self.nmtslevels-1:
+            # call Q propagation for dt/alpha at the inner step
+                self.qcstep(alpha)
+                self.nm.free_qstep()
+                self.qcstep(alpha)
+            else:
+                self.mtsprop(index+1, alpha)
 
-                # propagate p for dt/2alpha
-                self.pstep(index, alpha)
-                self.pconstraints()
-
-        elif self.splitting == "baoab":
-            for i in range(mk):
-                # propagate p for dt/2alpha with force at level index
-                self.pstep(index, alpha)
-                self.pconstraints()
-
-                if index == nmtslevels-1:
-                    # call Q propagation for dt/2alpha at the inner step
-                    self.qcstep(alpha)
-                    self.nm.free_qstep()
-                    self.tstep()
-                    self.pconstraints()
-                    self.qcstep(alpha)
-                    self.nm.free_qstep()
-                else:
-                    self.mtsprop(index+1, alpha)
-
-                # propagate p for dt/2alpha
-                self.pstep(index, alpha)
-                self.pconstraints()
+            # propagate p for dt/2alpha
+            self.pstep(index, alpha)
+            self.pconstraints()
 
     def step(self, step=None):
         """Does one simulation time step."""
 
         if self.splitting == "obabo":
-            # thermostat is applied at the outer loop
+            # thermostat is applied for dt/2
             self.tstep()
             self.pconstraints()
 
+            # forces are integerated for dt with MTS.
             self.mtsprop(0,1.0)
 
+            #thermostat is applied for dt/2
             self.tstep()
             self.pconstraints()
+
         elif self.splitting == "baoab":
 
-            self.mtsprop(0,1.0)
+            # slowest force is integerated for dt/2
+            self.pstep(level=0, alpha=1.0)
+            
+            # remaining forces are integerated for dt/2
+            if index == self.nmtslevels-1:
+                self.qcstep()
+                self.nm.free_qstep()
+                self.qcstep()
+            else:
+                self.mtsprop(1, 2.0)
 
+            # thermostat is applied for dt
+            self.tstep()
+            self.tstep()
+            self.pconstraints()
+
+            # remaining forces are integerated for dt/2
+            if index == self.nmtslevels-1:
+                self.qcstep()
+                self.nm.free_qstep()
+                self.qcstep()
+            else:
+                self.mtsprop(1, 2.0)
+
+            # slowest force is integerated for dt/2
+            self.pstep(level=0, alpha=1.0)
 
 class NPTIntegrator(NVTIntegrator):
     """Integrator object for constant pressure simulations.
@@ -452,13 +457,18 @@ class NPTIntegrator(NVTIntegrator):
     def pstep(self, level=0, alpha=1.0):
         """Velocity Verlet monemtum propagator."""
 
+        # integrates w.r.t. forces at a given MTS level.
         self.beads.p += self.forces.forces_mts(level)*self.halfdt/alpha
+        print "integrates force at ", level, " for ", self.halfdt/alpha
 
+        # integrates bias at level 0.
         if level == 0:
             self.beads.p += depstrip(self.bias.f)*(self.halfdt/alpha)
 
+        # integrates w.r.t. the virial of forces at a given MTS level.
         self.barostat.pvirstep(level, alpha)
 
+        # the kinetic virial is integrated with the fastest force.
         if level == len(self.nmts) - 1:
             self.barostat.pkinstep(level, alpha)
 
