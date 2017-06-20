@@ -421,10 +421,10 @@ class NVTIntegrator(NVEIntegrator):
             self.pstep(level=0, alpha=1.0)
             
             # remaining forces are integerated for dt/2
-            if index == self.nmtslevels-1:
-                self.qcstep()
+            if self.nmtslevels == 1:
+                self.qcstep(2.0)
                 self.nm.free_qstep()
-                self.qcstep()
+                self.qcstep(2.0)
             else:
                 self.mtsprop(1, 2.0)
 
@@ -434,10 +434,10 @@ class NVTIntegrator(NVEIntegrator):
             self.pconstraints()
 
             # remaining forces are integerated for dt/2
-            if index == self.nmtslevels-1:
-                self.qcstep()
+            if self.nmtslevels == 1:
+                self.qcstep(2.0)
                 self.nm.free_qstep()
-                self.qcstep()
+                self.qcstep(2.0)
             else:
                 self.mtsprop(1, 2.0)
 
