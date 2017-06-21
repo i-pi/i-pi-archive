@@ -34,8 +34,8 @@ conserved{electronvolt}, temperature{kelvin}, kinetic_cv{electronvolt}, potentia
    <motion mode='dynamics'>
      <dynamics mode='nvt' splitting='obabo'>
        <thermostat mode='langevin'> <tau units='femtosecond'> 10 </tau> </thermostat>
-       <timestep units='femtosecond'> 0.5</timestep>
-       <nmts> [1,2] </nmts>
+       <timestep units='femtosecond'> 1.0 </timestep>
+       <nmts> [3,5] </nmts>
      </dynamics>
    </motion>
  </system>

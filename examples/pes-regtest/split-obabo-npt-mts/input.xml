@@ -30,11 +30,14 @@ conserved{electronvolt}, temperature{kelvin}, kinetic_cv{electronvolt}, potentia
    </forces>
    <ensemble>
       <temperature units='kelvin'>298</temperature>
+      <pressure units='gigapascal'> 1 </pressure>
    </ensemble>
    <motion mode='dynamics'>
-     <dynamics mode='nve' splitting='obabo'>
+     <dynamics mode='npt' splitting='obabo'>
+       <thermostat mode='langevin'> <tau units='femtosecond'> 10 </tau> </thermostat>
+       <barostat mode='isotropic'> <tau units='femtosecond'> 10 </tau>  <thermostat mode='langevin'> <tau units='femtosecond'> 10 </tau> </thermostat> </barostat>
        <timestep units='femtosecond'> 1.0 </timestep>
-       <nmts> [3,2] </nmts>
+       <nmts> [3,5] </nmts>
      </dynamics>
    </motion>
  </system>

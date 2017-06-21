@@ -57,7 +57,7 @@ class Barostat(dobject):
       press: The system pressure.
    """
 
-   def __init__(self, dt=None, temp=None, tau=None, ebaro=None, thermostat=None):
+   def __init__(self, dt=None, temp=None, tau=None, ebaro=None, thermostat=None, nmts=None):
       """Initialises base barostat class.
 
       Note that the external stress and the external pressure are synchronized.
@@ -100,16 +100,14 @@ class Barostat(dobject):
          thermostat = Thermostat()
       self.thermostat = thermostat
 
-      dset(self,"halfdt", depend_value(name="dt", func=(lambda : 0.5*self.dt) , dependencies=[dself.dt]))
-
-      # pipes timestep and temperature to the thermostat
-      dpipe(dself.halfdt, dd(self.thermostat).dt)
+      
+      #temperature to the thermostat
       dpipe(dself.temp, dd(self.thermostat).temp)
       dself.pext = depend_value(name='pext', value=-1.0)
       dself.stressext = depend_array(name='stressext', value=-np.ones((3,3), float))
 
 
-   def bind(self, beads, nm, cell, forces, bias=None, prng=None, fixdof=None):
+   def bind(self, beads, nm, cell, forces, bias=None, prng=None, fixdof=None, nmts=1):
       """Binds beads, cell and forces to the barostat.
 
       This takes a beads object, a cell object and a forcefield object and
@@ -133,20 +131,26 @@ class Barostat(dobject):
       self.bias = bias
       self.nm = nm
 
-      dset(self,"kstress",
-         depend_value(name='kstress', func=self.get_kstress,
-            dependencies=[ dget(beads,"q"), dget(beads,"qc"), dget(beads,"pc"), dget(forces,"f") ]))
-      dset(self,"stress",
-         depend_value(name='stress', func=self.get_stress,
-            dependencies=[ dget(self,"kstress"), dget(cell,"V"), dget(forces,"vir") ]))
+      dself = dd(self)
+      dself.kstress = depend_value(name='kstress', func=self.get_kstress,
+            dependencies=[ dget(beads,"q"), dget(beads,"qc"), dget(beads,"pc"), dget(forces,"f") ])
+      dself.stress = depend_value(name='stress', func=self.get_stress,
+            dependencies=[ dget(self,"kstress"), dget(cell,"V"), dget(forces,"vir") ])
       if bias != None:
-         dget(self,"kstress").add_dependency(dget(bias,"f"))
-         dget(self,"stress").add_dependency(dget(bias,"vir"))
+         dself.kstress.add_dependency(dget(bias,"f"))
+         dself.stress.add_dependency(dget(bias,"vir"))
 
       if fixdof is None:
          self.mdof = float(self.beads.natoms)*3.0
       else:
          self.mdof = float(self.beads.natoms)*3.0 - float(fixdof)
+      
+      # creates and connects timesteps for the different parts of the propagator   
+      dself.qdt = depend_value(name="qdt", value=self.dt)
+      dself.pdt = depend_array(name="pdt", value=np.zeros(nmts,float))
+      dself.tdt = depend_value(name="tdt", value=self.dt)
+      dpipe(dself.tdt, dd(self.thermostat).dt)
+
 
    def get_kstress(self):
       """Calculates the quantum centroid virial kinetic stress tensor
@@ -275,7 +279,7 @@ class BaroBZP(Barostat):
       else:
          self.pext = -1.0
 
-   def bind(self, beads, nm, cell, forces, bias=None, prng=None, fixdof=None):
+   def bind(self, beads, nm, cell, forces, bias=None, prng=None, fixdof=None, nmts=1):
       """Binds beads, cell and forces to the barostat.
 
       This takes a beads object, a cell object and a forcefield object and
@@ -293,8 +297,8 @@ class BaroBZP(Barostat):
          fixdof: The number of blocked degrees of freedom.
       """
 
-      super(BaroBZP, self).bind(beads, nm, cell, forces, bias, prng, fixdof)
-
+      super(BaroBZP, self).bind(beads, nm, cell, forces, bias, prng, fixdof, nmts)
+      
       # obtain the thermostat mass from the given time constant
       # note that the barostat temperature is nbeads times the physical T
       dset(self,"m", depend_array(name='m', value=np.atleast_1d(0.0),
@@ -330,10 +334,12 @@ class BaroBZP(Barostat):
 
       return self.thermostat.ethermo + self.kin + self.pot - np.log(self.cell.V)*Constants.kb*self.temp
 
-   def pkinstep(self, level=0, alpha=1.0):
+   def pkinstep(self, level=0):
       """Propagates the momenta using the momentum of the centroid for half a time step."""
 
-      dthalf = self.dt*0.5/alpha
+      # in a MTS setting this part should be integrated in the inner loop, just close to the q propagator.
+      # we are assuming then that p the coupling between p^2 and dp/dt only involves the fast force
+      dthalf = self.pdt[level] # this is already set to be half a time step at the specified MTS depth
       dthalf2 = dthalf**2
       dthalf3 = dthalf**3/3.0
 
@@ -352,22 +358,19 @@ class BaroBZP(Barostat):
       self.p += dthalf*3.0*( np.dot(pc,pc/m)/3.0*self.beads.nbeads  - self.cell.V*self.pext*self.beads.nbeads +
                 Constants.kb*self.temp ) + (dthalf2*np.dot(pc,fc/m) + dthalf3*np.dot(fc,fc/m)) * self.beads.nbeads
 
-      print "integrates kin-virial at ", level, " for ", self.dt/alpha * 0.5
-
-   def pvirstep(self, level=0, alpha=1.0):
+   def pvirstep(self, level=0):
       """Propagates the momenta with the virial for half a time step."""
 
-      dthalf = self.dt*0.5/alpha
+      dthalf = self.pdt[level] # this is already set to be half a time step at the specified MTS depth
       press = np.trace(self.stress_mts(level)/3.0)
       self.p += dthalf*3.0*(self.cell.V*press)
 
-      print "integrates pot-virial at ", level, " for ", self.dt/alpha * 0.5
 
-   def qcstep(self, alpha=1.0):
+   def qcstep(self):
       """Propagates the centroid position and momentum and the volume."""
 
       v = self.p[0]/self.m[0]
-      halfdt = 0.50*self.dt/alpha
+      halfdt = self.qdt # this is set to half the inner loop in all integrators that use a barostat
       expq, expp = (np.exp(v*halfdt), np.exp(-v*halfdt))
 
       m = depstrip(self.beads.m3)[0]
@@ -377,7 +380,6 @@ class BaroBZP(Barostat):
       self.nm.pnm[0,:] *= expp
 
       self.cell.h *= expq
-      print "integrates qc at for ", 0.50*self.dt/alpha
 
 class BaroRGB(Barostat):
    """Raiteri-Gale-Bussi constant stress barostat class (JPCM 23, 334213, 2011).
@@ -437,7 +439,7 @@ class BaroRGB(Barostat):
       else:
          self.stressext[:] = -1.0
 
-   def bind(self, beads, nm, cell, forces, bias=None, prng=None, fixdof=None):
+   def bind(self, beads, nm, cell, forces, bias=None, prng=None, fixdof=None, nmts=1):
       """Binds beads, cell and forces to the barostat.
 
          This takes a beads object, a cell object and a forcefield object and
@@ -455,7 +457,7 @@ class BaroRGB(Barostat):
          fixdof: The number of blocked degrees of freedom.
          """
 
-      super(BaroRGB, self).bind(beads, nm, cell, forces, bias, prng, fixdof)
+      super(BaroRGB, self).bind(beads, nm, cell, forces, bias, prng, fixdof, nmts)
 
       # obtain the thermostat mass from the given time constant (1/3 of what used for the corresponding NPT case)
       # note that the barostat temperature is nbeads times the physical T
