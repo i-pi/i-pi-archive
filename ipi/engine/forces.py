@@ -580,16 +580,24 @@ class Forces(dobject):
             
       dset(self, "potssc", depend_array(name="potssc",value=np.zeros(self.nbeads,float),
             dependencies=[dget(self.beads, "m"), dget(self, "f"), dget(self,"pots"), dget(self,"alpha"),  dget(self,"omegan2")],
-            func=self.get_potssc ) )
+            func=self.get_potssc) )
                                          
-      dset(self, "fsc", depend_array(name="fsc",value=np.zeros((self.nbeads,3*self.natoms),float),
-            dependencies=[dget(self.beads, "m"), dget(self, "f"), dget(self,"pots"), dget(self,"alpha"),  dget(self,"omegan2")],
-            func=self.get_scforce ) )
-
       dset(self, "potsc", value=depend_value(name="potsc",
             dependencies=[dget(self,"potssc")],
             func=(lambda: self.potssc.sum()) ) )       
-            
+
+      dset(self, "fvirssc", depend_array(name="fvirssc",
+            value=[ None, None],
+            dependencies=[dget(self.beads, "m"), dget(self, "f"), dget(self,"pots"), dget(self,"alpha"),  dget(self,"omegan2")],
+            func=self.get_fvirssc ))
+
+      dset(self, "fsc", value=depend_array(name="fsc", value=np.zeros((self.nbeads,3*self.natoms), float),
+            dependencies=[dget(self,"fvirssc")],
+            func=(lambda: self.fvirssc[0]) ) )
+
+      dset(self, "virssc", value=depend_array(name="virssc", value=np.zeros((self.nbeads,3,3),float),
+            dependencies=[dget(self,"fvirssc")],
+            func=(lambda: self.fvirssc[1])) )
 
    def copy(self, beads=None, cell = None):
       """ Returns a copy of this force object that can be used to compute forces,
@@ -784,7 +792,7 @@ class Forces(dobject):
       return potssc
       
 
-   def get_scforce(self):
+   def get_fvirssc(self):
       """ Obtains Suzuki-Chin forces by finite differences """
 
       # This computes the difference between the Trotter and Suzuki-Chin Hamiltonian,
@@ -806,31 +814,50 @@ class Forces(dobject):
       fbase = depstrip(self.f)
       fac = np.sqrt((fbase/self.beads.m3*fbase/self.beads.m3).sum()/(self.nbeads*self.natoms))
       delta = np.abs(self.mforces[-1].epsilon)/fac
+
+      virsbase = depstrip(self.virs)
+
       if self.alpha==0:
          # special case! half of the S-C forces are zero so we can compute forward-backward finite differences in one go!
          fsc = fbase*0.0
+         virssc = virsbase * 0.0
          for k in range(self.nbeads/2): # forward and backward go in the two halves of the q vector
             self.dbeads.q[k]=self.beads.q[2*k+1] + delta * fbase[2*k+1]/self.beads.m3[2*k+1]
             self.dbeads.q[self.nbeads/2+k]=self.beads.q[2*k+1] - delta * fbase[2*k+1]/self.beads.m3[2*k+1]
          fplusminus = depstrip(self.dforces.f).copy()
-         if self.mforces[-1].epsilon < 0.0:  # use a centered difference schemei
+         virsplusminus = depstrip(self.dforces.virs).copy()
+
+         if self.mforces[-1].epsilon < 0.0:  # use a centered difference scheme
              for k in range(self.nbeads/2): # only compute the elements that will not be set to zero when multiplying by alpha
                  fsc[2*k+1] = 2*(fplusminus[self.nbeads/2+k]-fplusminus[k])/(2.0*delta)
+                 virssc[2*k+1] = 2*(virsplusminus[self.nbeads/2+k]-virsplusminus[k])/(2.0*delta)
          else:
              for k in range(self.nbeads/2): # do forward differences only
                  fsc[2*k+1] = 2*(fplusminus[self.nbeads/2+k]-fbase[2*k+1])/delta
+                 virssc[2*k+1] = 2*(virsplusminus[self.nbeads/2+k]-virsbase[2*k+1])/delta
       else: 
          # standard, more expensive version (alpha=1 could also be accelerated but is not used in practice so laziness prevails)
+         
          self.dbeads.q = self.beads.q + delta*fbase/self.beads.m3 # move forward
          fplus = depstrip(self.dforces.f).copy()
+         virsplus = depstrip(self.dforces.virs).copy()
+
          self.dbeads.q = self.beads.q - delta*fbase/self.beads.m3 # move backwards
          fminus = depstrip(self.dforces.f).copy()
-         fsc = 2*(fminus - fplus)/2.0/delta      
+         virsminus = depstrip(self.dforces.virs).copy()
+         
+         fsc = 2*(fminus - fplus)/2.0/delta
+         virssc = 2*(virsminus - virsplus)/2.0/delta
          
       for k in range(self.nbeads):
          if k%2 == 0:
            fsc[k] = -self.f[k]/3.0 + (self.alpha/self.omegan2/9.0)*fsc[k]
+           virssc[k] = -self.virs[k]/3.0 + (self.alpha/self.omegan2/9.0)*virssc[k]
          else:
            fsc[k] = self.f[k]/3.0 + ((1-self.alpha)/self.omegan2/9.0)*fsc[k]
-      
-      return fsc
+           virssc[k] = self.virs[k]/3.0 + ((1-self.alpha)/self.omegan2/9.0)*virssc[k]
+      rc = []
+      rc.append(fsc)
+      rc.append(virssc)
+      return rc
+
