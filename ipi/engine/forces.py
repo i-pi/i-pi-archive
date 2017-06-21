@@ -586,8 +586,7 @@ class Forces(dobject):
             dependencies=[dget(self,"potssc")],
             func=(lambda: self.potssc.sum()) ) )       
 
-      dset(self, "fvirssc", depend_array(name="fvirssc",
-            value=[ None, None],
+      dset(self, "fvirssc", depend_value(name="fvirssc",
             dependencies=[dget(self.beads, "m"), dget(self, "f"), dget(self,"pots"), dget(self,"alpha"),  dget(self,"omegan2")],
             func=self.get_fvirssc ))
 
@@ -793,7 +792,7 @@ class Forces(dobject):
       
 
    def get_fvirssc(self):
-      """ Obtains Suzuki-Chin forces by finite differences """
+      """ Obtains Suzuki-Chin forces and virial by finite differences """
 
       # This computes the difference between the Trotter and Suzuki-Chin Hamiltonian,
       # and the associated forces.
@@ -856,8 +855,6 @@ class Forces(dobject):
          else:
            fsc[k] = self.f[k]/3.0 + ((1-self.alpha)/self.omegan2/9.0)*fsc[k]
            virssc[k] = self.virs[k]/3.0 + ((1-self.alpha)/self.omegan2/9.0)*virssc[k]
-      rc = []
-      rc.append(fsc)
-      rc.append(virssc)
-      return rc
+      
+      return [ fsc, virssc ]
 
