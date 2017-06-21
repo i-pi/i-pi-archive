@@ -517,12 +517,48 @@ class BaroRGB(Barostat):
       lastterm = Constants.kb*self.temp*lastterm
       return self.thermostat.ethermo + self.kin + self.pot - lastterm
 
-   def pstep(self, dtscale=1.0):
+   #~ def pkinstep(self, level=0):
+      #~ """Propagates the momenta for half a time step."""
+
+      #~ dt = self.pdt[level]
+      #~ dt2 = dt**2
+      #~ dt3 = dt**3/3.0
+
+      #~ hh0=np.dot(self.cell.h, self.h0.ih)
+      #~ pi_ext=np.dot(hh0, np.dot(self.stressext, hh0.T))*self.h0.V/self.cell.V
+      #~ L=np.diag([3,2,1])
+
+      #~ # This differs from the BZP thermostat in that it uses just one kT in the propagator.
+      #~ # This leads to an ensemble equaivalent to Martyna-Hughes-Tuckermann for both fixed and moving COM
+      #~ # Anyway, it is a small correction so whatever.      
+      #~ fc = np.sum(depstrip(self.forces.forces_mts(level)),0).reshape(self.beads.natoms,3)/self.beads.nbeads
+      #~ if self.bias != None and level == 0: 
+          #~ fc+= np.sum(depstrip(self.bias.f),0).reshape(self.beads.natoms,3)/self.beads.nbeads
+      #~ fcTonm = (fc/depstrip(self.beads.m3)[0].reshape(self.beads.natoms,3)).T
+      #~ pc = depstrip(self.beads.pc).reshape(self.beads.natoms,3)
+      #~ # I am not 100% sure, but these higher-order terms come from integrating the pressure virial term,
+      #~ # so they should need to be multiplied by nbeads to be consistent with the equations of motion in the PI context
+      #~ # again, these are tiny tiny terms so whatever.
+      #~ self.p += ( dt*( -self.cell.V* np.triu(self.beads.nbeads*pi_ext ) + Constants.kb*self.temp*L) +
+              #~ np.triu(dt2*np.dot(fcTonm,pc) + dt3*np.dot(fcTonm,fc)) * self.beads.nbeads )
+      #~ print "kinstep ", level, self.pdt[level]
+      #~ # self.beads.p += depstrip(self.forces.forces_mts(level))*dt
+      #~ #if self.bias != None and level ==0:  
+      #~ #    self.beads.p += depstrip(self.bias.f)*dt
+          
+   #~ def pvirstep(self, level=0): 
+      #~ print "virstep ", level, self.pdt[level]
+      #~ self.p += self.pdt[level] * self.cell.V* np.triu( self.stress_mts(level) )
+      
+   def pkinstep(self, level=0):
+      pass
+   def pvirstep(self,level=0):
       """Propagates the momenta for half a time step."""
 
-      dt = self.dt*dtscale
-      dt2 = dt**2
-      dt3 = dt**3/3.0
+      print "pstep ", self.pdt[level]
+      dthalf = self.pdt[level]
+      dthalf2 = dthalf**2
+      dthalf3 = dthalf**3/3.0
 
       hh0=np.dot(self.cell.h, self.h0.ih)
       pi_ext=np.dot(hh0, np.dot(self.stressext, hh0.T))*self.h0.V/self.cell.V
@@ -532,7 +568,7 @@ class BaroRGB(Barostat):
       # This leads to an ensemble equaivalent to Martyna-Hughes-Tuckermann for both fixed and moving COM
       # Anyway, it is a small correction so whatever.
 
-      self.p += dt*( self.cell.V* np.triu( self.stress - self.beads.nbeads*pi_ext ) +
+      self.p += dthalf*( self.cell.V* np.triu( self.stress - self.beads.nbeads*pi_ext ) +
                            Constants.kb*self.temp*L)
 
       fc = np.sum(depstrip(self.forces.f),0).reshape(self.beads.natoms,3)/self.beads.nbeads
@@ -543,16 +579,18 @@ class BaroRGB(Barostat):
       # I am not 100% sure, but these higher-order terms come from integrating the pressure virial term,
       # so they should need to be multiplied by nbeads to be consistent with the equations of motion in the PI context
       # again, these are tiny tiny terms so whatever.
-      self.p += np.triu(dt2*np.dot(fcTonm,pc) + dt3*np.dot(fcTonm,fc)) * self.beads.nbeads
+      self.p += np.triu(dthalf2*np.dot(fcTonm,pc) + dthalf3*np.dot(fcTonm,fc)) * self.beads.nbeads
 
-      self.beads.p += depstrip(self.forces.f)*dt
-      if self.bias != None:  self.beads.p += depstrip(self.bias.f)*dt
+      #self.beads.p += depstrip(self.forces.f)*dthalf
+      #if self.bias != None:  self.beads.p += depstrip(self.bias.f)*dthalf
+      
 
    def qcstep(self):
       """Propagates the centroid position and momentum and the volume."""
 
+      print "qstep", self.qdt
       v = self.p/self.m[0]
-      expq, expp = (matrix_exp(v*self.dt*dtscale), matrix_exp(-v*self.dt*dtscale))
+      expq, expp = (matrix_exp(v*self.qdt), matrix_exp(-v*self.dt))
 
       m = depstrip(self.beads.m)
 

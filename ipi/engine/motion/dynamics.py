@@ -502,19 +502,21 @@ class NPTIntegrator(NVTIntegrator):
     def pstep(self, level=0):
         """Velocity Verlet monemtum propagator."""
 
-        # integrates w.r.t. forces at a given MTS level.
-        self.beads.p += self.forces.forces_mts(level)*self.pdt[level]
-        
-        # integrates bias at level 0.
-        if level == 0:
-            self.beads.p += depstrip(self.bias.f)*self.pdt[level]
-
         # integrates w.r.t. the virial of forces at a given MTS level.
         self.barostat.pvirstep(level)
 
         # the kinetic virial is integrated with the fastest force.
         if level == len(self.nmts) - 1:
             self.barostat.pkinstep(level)
+            
+        # integrates w.r.t. forces at a given MTS level.
+        self.beads.p += self.forces.forces_mts(level)*self.pdt[level]
+        
+        # integrates bias at level 0.
+        if level == 0:
+            self.beads.p += depstrip(self.bias.f)*self.pdt[level]
+        
+        print "pstep", self.pdt[level]
 
     def qcstep(self):
         """Velocity Verlet centroid position propagator."""
@@ -524,11 +526,12 @@ class NPTIntegrator(NVTIntegrator):
     def tstep(self):
         """Velocity Verlet thermostat step"""
 
+        print "tstep", self.tdt
         self.thermostat.step()
         self.barostat.thermostat.step()
 
 
-class NSTIntegrator(NVTIntegrator):
+class NSTIntegrator(NPTIntegrator):
     """Ensemble object for constant pressure simulations.
 
     Has the relevant conserved quantity and normal mode propagator for the
@@ -548,8 +551,7 @@ class NSTIntegrator(NVTIntegrator):
     """
 
     def step(self, step=None):
-        """NST time step.
-
+        """NST time step (dummy for now).
         Note that the barostat only propagates the centroid coordinates. If this
         approximation is made a centroid virial pressure and stress estimator can
         be defined, so this gives the best statistical convergence. This is
@@ -558,55 +560,30 @@ class NSTIntegrator(NVTIntegrator):
         the radius of gyration of the ring polymers.
         """
 
-        self.ttime = -time.time()
-        if self.splitting == "obabo":
-            self.thermostat.step()
-            self.barostat.thermostat.step()
-            self.pconstraints()
-            self.barostat.pstep()
-            self.pconstraints()
+        print "thermo times", self.thermostat.dt, self.barostat.thermostat.dt
+        self.thermostat.step()
+        self.barostat.thermostat.step()
+        self.pconstraints()
+        
+        print "pdt ", self.pdt
+        self.barostat.pvirstep()
+        self.beads.p += self.forces.f*self.pdt[0]
+        self.pconstraints()
 
-            self.barostat.qcstep(dtscale=2.0)
-            self.nm.free_qstep()
+        self.barostat.qcstep()
+        self.nm.free_qstep()        
+        self.barostat.qcstep()
+        self.nm.free_qstep()
+        
+        self.barostat.pvirstep()
+        self.beads.p += self.forces.f*self.pdt[0]
+        self.pconstraints()
+        
+        self.barostat.thermostat.step()
+        self.thermostat.step()
+        print "thermo times", self.thermostat.dt, self.barostat.thermostat.dt
+        
 
-            self.barostat.pstep()
-            self.pconstraints()
-            self.barostat.thermostat.step()
-            self.thermostat.step()
-            self.pconstraints()
-        elif self.splitting == "aboba":
-            self.barostat.qcstep()
-            self.nm.free_qstep()
-            self.barostat.pstep()
-            self.pconstraints()
-
-            self.barostat.thermostat.step()
-            self.thermostat.step()
-            self.barostat.thermostat.step()
-            self.pconstraints()
-
-            self.barostat.pstep()
-            self.pconstraints()
-
-            self.barostat.qcstep()
-            self.nm.free_qstep()
-        elif self.splitting == "baoab":
-            self.barostat.pstep()
-            self.pconstraints()
-
-            self.barostat.qcstep()
-            self.nm.free_qstep()
-
-            self.thermostat.step()
-            self.pconstraints()
-
-            self.barostat.qcstep()
-            self.nm.free_qstep()
-
-            self.barostat.pstep()
-            self.pconstraints()
-
-        self.ttime += time.time()
 
 class SCIntegrator(NVTIntegrator):
     """Integrator object for constant temperature simulations.
