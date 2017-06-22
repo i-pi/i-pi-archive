@@ -32,26 +32,26 @@
          USE PSWATER
          USE F90SOCKETS, ONLY : open_socket, writebuffer, readbuffer
       IMPLICIT NONE
-
+      
       ! SOCKET VARIABLES
       INTEGER, PARAMETER :: MSGLEN=12   ! length of the headers of the driver/wrapper communication protocol
       INTEGER socket, inet, port        ! socket ID & address of the server
       CHARACTER(LEN=1024) :: host
-
+      
       ! COMMAND LINE PARSING
       CHARACTER(LEN=1024) :: cmdbuffer
       INTEGER ccmd, vstyle
       INTEGER verbose
       INTEGER commas(4), par_count      ! stores the index of commas in the parameter string
       DOUBLE PRECISION vpars(4)         ! array to store the parameters of the potential
-
+      
       ! SOCKET COMMUNICATION BUFFERS
       CHARACTER(LEN=12) :: header
       LOGICAL :: isinit=.false., hasdata=.false.
       INTEGER cbuf, rid
       CHARACTER(LEN=2048) :: initbuffer      ! it's unlikely a string this large will ever be passed...
       DOUBLE PRECISION, ALLOCATABLE :: msgbuffer(:)
-
+      
       ! PARAMETERS OF THE SYSTEM (CELL, ATOM POSITIONS, ...)
       DOUBLE PRECISION sigma, eps, rc, rn, ks ! potential parameters
       INTEGER nat
@@ -60,15 +60,14 @@
       DOUBLE PRECISION cell_h(3,3), cell_ih(3,3), virial(3,3), mtxbuf(9), dip(3), charges(3), dummy(3,3,3), vecdiff(3)
       DOUBLE PRECISION volume
       DOUBLE PRECISION, PARAMETER :: fddx = 1.0d-5
-
+      
       ! NEIGHBOUR LIST ARRAYS
       INTEGER, DIMENSION(:), ALLOCATABLE :: n_list, index_list
       DOUBLE PRECISION init_volume, init_rc ! needed to correctly adjust the cut-off radius for variable cell dynamics
       DOUBLE PRECISION, ALLOCATABLE :: last_atoms(:,:) ! Holds the positions when the neighbour list is created
       DOUBLE PRECISION displacement ! Tracks how far each atom has moved since the last call of nearest_neighbours
-
-      INTEGER i, j
-
+      INTEGER i, j 
+      
       ! parse the command line parameters
       ! intialize defaults
       ccmd = 0
@@ -127,6 +126,10 @@
                   vstyle = 7
                ELSEIF (trim(cmdbuffer) == "pswater") THEN
                   vstyle = 8
+               ELSEIF (trim(cmdbuffer) == "lepsm1") THEN
+                  vstyle = 9
+               ELSEIF (trim(cmdbuffer) == "lepsm2") THEN
+                  vstyle = 10
                ELSEIF (trim(cmdbuffer) == "gas") THEN
                   vstyle = 0  ! ideal gas
                ELSE
@@ -147,7 +150,7 @@
             ccmd = 0
          ENDIF
       ENDDO
-
+      
       IF (vstyle == -1) THEN
          WRITE(*,*) " Error, type of potential not specified."
          CALL helpmessage
@@ -187,7 +190,17 @@
          IF (par_count /= 0) THEN
             WRITE(*,*) "Error: no initialization string needed for Partridge-Schwenke H2O potential."
             STOP "ENDED"
-         ENDIF
+         END IF
+      ELSEIF (vstyle == 9) THEN
+         IF (par_count /= 0) THEN
+            WRITE(*,*) "Error: no initialization string needed for LEPSM1."
+            STOP "ENDED"
+         END IF
+      ELSEIF (vstyle == 10) THEN
+         IF (par_count /= 0) THEN
+            WRITE(*,*) "Error: no initialization string needed for LEPSM2."
+            STOP "ENDED" 
+         ENDIF   
          isinit = .true.
       ELSEIF (vstyle == 1) THEN
          IF (par_count /= 3) THEN
@@ -395,6 +408,19 @@
                forces = forces * (-0.00084329756) ! pot_nasa gives V in kcal/mol/angstrom
 
                ! do not compute the virial term
+            ELSEIF (vstyle == 9) THEN
+               IF (nat /= 3) THEN
+                  WRITE(*,*) "Expecting 3 atoms for LEPS Model 1  potential, A B C "
+                  STOP "ENDED"
+               END IF
+               CALL LEPS_M1(3, atoms, pot, forces)
+            ELSEIF (vstyle == 10) THEN
+               IF (nat /= 3) THEN
+                  WRITE(*,*) "Expecting 4 atoms for LEPS Model 2  potential, A B C D n"
+                  STOP "ENDED"
+               END IF
+               CALL LEPS_M2(4, atoms, pot, forces)
+               
             ELSE
                IF ((allocated(n_list) .neqv. .true.)) THEN
                   IF (verbose > 0) WRITE(*,*) " Allocating neighbour lists."
@@ -471,12 +497,12 @@
          ENDIF
       ENDDO
       IF (nat > 0) DEALLOCATE(atoms, forces, msgbuffer)
-
-      CONTAINS
+ 
+    CONTAINS
       SUBROUTINE helpmessage
          ! Help banner
-         WRITE(*,*) " SYNTAX: driver.x [-u] -h hostname -p port -m [gas|lj|sg|harm|morse|zundel|qtip4pf|pswater] "
-         WRITE(*,*) "         -o 'comma_separated_parameters' [-v|-vv] "
+         WRITE(*,*) " SYNTAX: driver.x [-u] -h hostname -p port -m [gas|lj|sg|harm|morse|zundel|qtip4pf|pswater|lepsm1|lepsm2] "
+         WRITE(*,*) "         -o 'comma_separated_parameters' [-v] "
          WRITE(*,*) ""
          WRITE(*,*) " For LJ potential use -o sigma,epsilon,cutoff "
          WRITE(*,*) " For SG potential use -o cutoff "
