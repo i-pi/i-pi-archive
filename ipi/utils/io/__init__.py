@@ -80,6 +80,19 @@ def print_file_path(mode, beads, cell, filedesc=sys.stdout, title="", key="", di
     return _get_io_function(mode, "print_path")(beads=beads, cell=cell, filedesc=filedesc)
 
 # VENKAT TODO : also get the print_file functions work with just arrays, so we have a "fast write" mode that sidesteps any parsing or conversion, similar to what I'm doing for readfile and readfile_raw
+
+def print_file_raw(mode, atoms, cell, filedesc=sys.stdout, title="", key="", dimension="length", units="automatic", cell_units="automatic"):
+    """Prints the centroid configurations, into a `mode` formatted file.
+
+    Args:
+        atoms: An atoms object giving the centroid positions.
+        cell: A cell object giving the system box.
+        filedesc: An open writable file object. Defaults to standard output.
+        title: This gives a string to be appended to the comment line.
+    """
+   
+    return _get_io_function(mode, "print")(atoms=atoms, cell=cell, filedesc=filedesc, title=title, cell_conv=cell_conv, atoms_conv=atoms_conv)
+
 def print_file(mode, atoms, cell, filedesc=sys.stdout, title="", key="", dimension="length", units="automatic", cell_units="automatic"):
     """Prints the centroid configurations, into a `mode` formatted file.
 
@@ -89,7 +102,7 @@ def print_file(mode, atoms, cell, filedesc=sys.stdout, title="", key="", dimensi
         filedesc: An open writable file object. Defaults to standard output.
         title: This gives a string to be appended to the comment line.
     """
-    
+ 
     if mode == "pdb":   # special case for PDB
         if dimension != "length":
             raise ValueError("PDB Standard is only designed for atomic positions")
@@ -99,12 +112,13 @@ def print_file(mode, atoms, cell, filedesc=sys.stdout, title="", key="", dimensi
     else:
         if units == "automatic": units="atomic_unit"
         if cell_units == "automatic": cell_units="atomic_unit"
-    
+ 
     cell_conv = unit_to_user("length", cell_units, 1.0)
-    atoms_conv = unit_to_user(dimension, units, 1.0) 
-    
+    atoms_conv = unit_to_user(dimension, units, 1.0)
+ 
     title = title + ("%s{%s}  cell{%s}" % (key, units, cell_units))
-    return _get_io_function(mode, "print")(atoms=atoms, cell=cell, filedesc=filedesc, title=title, cell_conv=cell_conv, atoms_conv=atoms_conv)
+
+    print_file_raw(mode=mode, atoms=atoms, cell=cell, filedesc=filedesc, title=title, cell_conv=cell_conv, atoms_conv=atoms_conv)
 
 def read_file_raw(mode, filedesc):    
 
@@ -120,7 +134,7 @@ def read_file_raw(mode, filedesc):
           "natoms": len(names),
           "cell": cell
         }
-    
+ 
 
 def read_file(mode, filedesc, dimension="", units="automatic", cell_units="automatic"):
     """Reads one frame from an open `mode`-style file.

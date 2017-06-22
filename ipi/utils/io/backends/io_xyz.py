@@ -21,7 +21,7 @@ __all__ = ['print_xyz_path', 'print_xyz', 'read_xyz', 'iter_xyz']
 
 deg2rad = np.pi/180.0
 
-def print_xyz_path(beads, cell, filedesc=sys.stdout):
+def print_xyz_path(beads, cell, filedesc=sys.stdout, cell_conv=1.0, atoms_conv=1.0):
     """Prints all the bead configurations into a XYZ formatted file.
 
     Prints all the replicas for each time step separately, rather than all at
@@ -33,7 +33,7 @@ def print_xyz_path(beads, cell, filedesc=sys.stdout):
         filedesc: An open writable file object. Defaults to standard output.
     """
 
-    a, b, c, alpha, beta, gamma = mt.h2abc_deg(cell.h)
+    a, b, c, alpha, beta, gamma = mt.h2abc_deg(cell.h * cell_conv)
 
     fmt_header = "%d\n# bead: %d CELL(abcABC): %10.5f  %10.5f  %10.5f  %10.5f  %10.5f  %10.5f \n"
     natoms = beads.natoms
@@ -41,7 +41,7 @@ def print_xyz_path(beads, cell, filedesc=sys.stdout):
     for j in range(nbeads):
         filedesc.write(fmt_header % (natoms, j, a, b, c, alpha, beta, gamma))
         for i in range(natoms):
-            qs = depstrip(beads.q)
+            qs = depstrip(beads.q) * atoms_conv
             lab = depstrip(beads.names)
             filedesc.write("%8s %12.5e %12.5e %12.5e\n" % (lab[i], qs[j][3*i], qs[j][3*i+1], qs[j][3*i+2]))
 
@@ -56,13 +56,13 @@ def print_xyz(atoms, cell, filedesc=sys.stdout, title="", cell_conv=1.0, atoms_c
         title: This gives a string to be appended to the comment line.
     """
 
-    a, b, c, alpha, beta, gamma = mt.h2abc_deg(cell.h*cell_conv)
+    a, b, c, alpha, beta, gamma = mt.h2abc_deg(cell.h * cell_conv)
 
     natoms = atoms.natoms
     fmt_header = "%d\n# CELL(abcABC): %10.5f  %10.5f  %10.5f  %10.5f  %10.5f  %10.5f  %s\n"
     filedesc.write(fmt_header % (natoms, a, b, c, alpha, beta, gamma, title))
     # direct access to avoid unnecessary slow-down
-    qs = depstrip(atoms.q)*atoms_conv
+    qs = depstrip(atoms.q) * atoms_conv
     lab = depstrip(atoms.names)
     for i in range(natoms):
         filedesc.write("%8s %12.5e %12.5e %12.5e\n" % (lab[i], qs[3*i], qs[3*i+1], qs[3*i+2]))

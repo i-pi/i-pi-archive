@@ -37,12 +37,12 @@ def print_pdb_path(beads, cell, filedesc=sys.stdout, cell_conv=1.0, atoms_conv=1
     fmt_atom = "ATOM  %5i %4s%1s%3s %1s%4i%1s  %8.3f%8.3f%8.3f%6.2f%6.2f          %2s%2i\n"
     fmt_conect = "CONECT%5i%5i\n"
 
-    a, b, c, alpha, beta, gamma = mt.h2abc_deg(cell.h)
+    a, b, c, alpha, beta, gamma = mt.h2abc_deg(cell.h * cell_conv)
 
     z = 1   # What even is this parameter?
     filedesc.write(fmt_cryst % (a, b, c, alpha, beta, gamma, " P 1        ", z))
 
-    natoms = beads.natoms
+    natoms = beads.natoms * atoms_conv
     nbeads = beads.nbeads
     for j in range(nbeads):
         for i in range(natoms):
@@ -81,13 +81,13 @@ def print_pdb(atoms, cell, filedesc=sys.stdout, title="", cell_conv=1.0, atoms_c
     if title != "":
         filedesc.write("TITLE   %70s\n" % (title))
 
-    a, b, c, alpha, beta, gamma = mt.h2abc_deg(cell.h*cell_conv)
+    a, b, c, alpha, beta, gamma = mt.h2abc_deg(cell.h * cell_conv)
 
     z = 1
     filedesc.write(fmt_cryst % (a, b, c, alpha, beta, gamma, " P 1        ", z))
 
     natoms = atoms.natoms
-    qs = depstrip(atoms.q)*atoms_conv
+    qs = depstrip(atoms.q) * atoms_conv
     lab = depstrip(atoms.names)
     for i in range(natoms):
         data = (i+1, lab[i], ' ', '  1', ' ', 1, ' ',
