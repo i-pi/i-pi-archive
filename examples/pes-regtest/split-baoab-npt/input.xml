@@ -10,7 +10,7 @@ conserved{electronvolt}, temperature{kelvin}, kinetic_cv{electronvolt}, potentia
     <trajectory filename='pos' stride='4'> positions{angstrom} </trajectory>
     <trajectory filename='for' stride='4'> forces{piconewton} </trajectory>
   </output>
-  <total_steps> 300 </total_steps>
+  <total_steps> 30 </total_steps>
   <prng><seed>322</seed></prng>
   <ffsocket name="qtip4pf" mode="unix" pbc="false">
     <address>ffdriver</address>
