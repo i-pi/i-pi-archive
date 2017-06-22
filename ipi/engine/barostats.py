@@ -519,12 +519,10 @@ class BaroRGB(Barostat):
 
    def pkinstep(self,level=0):
        """Propagates the momenta for half a time step."""
-      
+
        dthalf = self.pdt[level]
        dthalf2 = dthalf**2
        dthalf3 = dthalf**3/3.0
-       na3 = 3*self.beads.natoms
-       sqm3 = np.sqrt(depstrip(self.beads.m3)[-1])
       
        hh0=np.dot(self.cell.h, self.h0.ih)
        pi_ext=np.dot(hh0, np.dot(self.stressext, hh0.T))*self.h0.V/self.cell.V
@@ -533,15 +531,19 @@ class BaroRGB(Barostat):
        # This differs from the BZP thermostat in that it uses just one kT in the propagator.
        # This leads to an ensemble equaivalent to Martyna-Hughes-Tuckermann for both fixed and moving COM
        # Anyway, it is a small correction so whatever.
-
-       kst = np.zeros((3,3), float)
+      
        pc = depstrip(self.beads.pc)
        m = depstrip(self.beads.m)
-
-       for i in range(3):
-          kst[i,i] += np.dot(pc[i:na3:3],pc[i:na3:3]/m) * self.beads.nbeads
+       na3 = 3*self.beads.natoms
       
-       self.p += dthalf * (np.triu(kst - self.cell.V * self.beads.nbeads * pi_ext) + Constants.kb*self.temp * L)
+       kst = np.zeros((3,3), float)
+       for i in range(3):
+           kst[i,i] += np.dot(pc[i:na3:3],pc[i:na3:3]/m) *self.beads.nbeads
+      
+       stress = kst / self.cell.V
+      
+       self.p += dthalf*( self.cell.V * np.triu( stress - self.beads.nbeads*pi_ext ) +
+                            Constants.kb*self.temp*L)
       
        fc = np.sum(depstrip(self.forces.forces_mts(level)),0).reshape(self.beads.natoms,3)/self.beads.nbeads
        if self.bias != None: fc+= np.sum(depstrip(self.bias.f),0).reshape(self.beads.natoms,3)/self.beads.nbeads
@@ -552,18 +554,22 @@ class BaroRGB(Barostat):
        # so they should need to be multiplied by nbeads to be consistent with the equations of motion in the PI context
        # again, these are tiny tiny terms so whatever.
        self.p += np.triu(dthalf2*np.dot(fcTonm,pc) + dthalf3*np.dot(fcTonm,fc)) * self.beads.nbeads
+      
 
-   def pvirstep(self,level=0):
+   def pvirstep(self, level):
       """Propagates the momenta for half a time step."""
 
-      dthalf = self.pdt[level]
-      self.p += dthalf * (self.cell.V * np.triu(self.stress_mts(level)) )
+      dt = self.pdt[level]
+
+      stress = depstrip(self.stress_mts(level))
+      self.p += dt * (self.cell.V* np.triu( stress ))
+
  
-   def qcstep(self, alpha=1):
+   def qcstep(self):
      """Propagates the centroid position and momentum and the volume."""
 
      v = self.p/self.m[0]
-     expq, expp = (matrix_exp(v*self.qdt*alpha), matrix_exp(-v*self.qdt*alpha))
+     expq, expp = (matrix_exp(v*self.qdt), matrix_exp(-v*self.qdt))
 
      m = depstrip(self.beads.m)
 
