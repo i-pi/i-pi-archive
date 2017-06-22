@@ -4,13 +4,13 @@ COMMAND(8)    i-pi-driver -u -h ffdriver -m qtip4pf
 ENDREGTEST -->
 
 <simulation>
-  <output prefix="qtip4pf-new">
+  <output prefix="qtip4pf">
     <properties stride="4" filename="out">  [ step, time{picosecond}, 
 conserved{electronvolt}, temperature{kelvin}, kinetic_cv{electronvolt}, potential{electronvolt}, pressure_cv{megapascal}] </properties>
     <trajectory filename="pos" stride="4"> positions{angstrom} </trajectory>
     <trajectory filename="for" stride="4"> forces{piconewton} </trajectory>
   </output>
-  <total_steps> 1000 </total_steps>
+  <total_steps> 30 </total_steps>
   <prng><seed>322</seed></prng>
   <ffsocket name="qtip4pf" mode="unix" pbc="false">
     <address>ffdriver</address>

@@ -355,7 +355,8 @@ class BaroBZP(Barostat):
       # integerates the kinetic part of the pressure with the force at the inner-most level.
       if(level == self.nmtslevels - 1):
          pc = depstrip(self.beads.pc)
-         fc = np.sum(depstrip(self.forces.forces_mts(level)),axis=0) / self.beads.nbeads
+         fc = np.sum(depstrip(self.forces.forces_mts(level)),axis = 0) / self.beads.nbeads
+         if (self.bias != None and level == 0): fc += np.sum(depstrip(self.bias.f),axis = 0) / self.beads.nbeads
          m = depstrip(self.beads.m3)[0]
 
          self.p += (dt2 * np.dot(pc,fc/m) + dt3 * np.dot(fc,fc/m)) * self.beads.nbeads
