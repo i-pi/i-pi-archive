@@ -362,38 +362,6 @@ class BaroBZP(Barostat):
 
          self.p += (dt2 * np.dot(pc,fc/m) + dt3 * np.dot(fc,fc/m)) * self.beads.nbeads
     
-   def pkinstep(self, level=0):
-      """Propagates the momenta using the momentum of the centroid for half a time step."""
-
-      # in a MTS setting this part should be integrated in the inner loop, just close to the q propagator.
-      # we are assuming then that p the coupling between p^2 and dp/dt only involves the fast force
-      dthalf = self.pdt[level] # this is already set to be half a time step at the specified MTS depth
-      dthalf2 = dthalf**2
-      dthalf3 = dthalf**3/3.0
-
-      pc = depstrip(self.beads.pc)
-      m = depstrip(self.beads.m3)[0]
-      fc = np.sum(depstrip(self.forces.forces_mts(level)),0)/self.beads.nbeads
-      if (self.bias != None and level == 0):
-        fc += np.sum(depstrip(self.bias.f),0)/self.beads.nbeads
-      m = depstrip(self.beads.m3)[0]
-
-      # This differs from the BZP thermostat in that it uses just one kT in the propagator.
-      # This leads to an ensemble equaivalent to Martyna-Hughes-Tuckermann for both fixed and moving COM
-      # I am not 100% sure, but these higher-order terms come from integrating the pressure virial term,
-      # so they should need to be multiplied by nbeads to be consistent with the equations of motion in the PI context
-      # again, these are tiny tiny terms so whatever.
-      self.p += dthalf*3.0*( np.dot(pc,pc/m)/3.0*self.beads.nbeads  - self.cell.V*self.pext*self.beads.nbeads +
-                Constants.kb*self.temp ) + (dthalf2*np.dot(pc,fc/m) + dthalf3*np.dot(fc,fc/m)) * self.beads.nbeads
-
-   def pvirstep(self, level=0):
-      """Propagates the momenta with the virial for half a time step."""
-
-      dthalf = self.pdt[level] # this is already set to be half a time step at the specified MTS depth
-      press = np.trace(self.stress_mts(level)/3.0)
-      self.p += dthalf*3.0*(self.cell.V*press)
-
-
    def qcstep(self):
       """Propagates the centroid position and momentum and the volume."""
 
@@ -569,7 +537,7 @@ class BaroRGB(Barostat):
            kst[i,i] += np.dot(pc[i:na3:3],pc[i:na3:3]/m) *self.beads.nbeads
       
        stress = kst / self.cell.V
-      
+
        self.p += dthalf*( self.cell.V * np.triu( stress - self.beads.nbeads*pi_ext ) +
                             Constants.kb*self.temp*L)
       
@@ -597,7 +565,8 @@ class BaroRGB(Barostat):
      """Propagates the centroid position and momentum and the volume."""
 
      v = self.p/self.m[0]
-     expq, expp = (matrix_exp(v*self.qdt), matrix_exp(-v*self.qdt))
+     halfdt = self.qdt
+     expq, expp = (matrix_exp(v*halfdt), matrix_exp(-v*halfdt))
 
      m = depstrip(self.beads.m)
 
