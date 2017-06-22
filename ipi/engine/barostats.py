@@ -559,19 +559,18 @@ class BaroRGB(Barostat):
       dthalf = self.pdt[level]
       self.p += dthalf * (self.cell.V * np.triu(self.stress_mts(level)) )
  
-   def qcstep(self):
+   def qcstep(self, alpha=1):
      """Propagates the centroid position and momentum and the volume."""
 
      v = self.p/self.m[0]
-     expq, expp = (matrix_exp(v*self.qdt), matrix_exp(-v*self.qdt))
+     expq, expp = (matrix_exp(v*self.qdt*alpha), matrix_exp(-v*self.qdt*alpha))
 
      m = depstrip(self.beads.m)
 
-     saveq=self.nm.qnm[0].copy()
-     savep=self.nm.pnm[0].copy()
+     sinh = np.dot(invert_ut3x3(v),(expq-expp)/(2.0))
      for i in range(self.beads.natoms):
         self.nm.qnm[0,3*i:3*(i+1)] = np.dot(expq, self.nm.qnm[0,3*i:3*(i+1)])
-        self.nm.qnm[0,3*i:3*(i+1)] += np.dot(np.dot(invert_ut3x3(v),(expq-expp)/(2.0)),depstrip(self.nm.pnm)[0,3*i:3*(i+1)]/m[i])
+        self.nm.qnm[0,3*i:3*(i+1)] += np.dot(sinh, depstrip(self.nm.pnm)[0,3*i:3*(i+1)]/m[i])
         self.nm.pnm[0,3*i:3*(i+1)] = np.dot(expp, self.nm.pnm[0,3*i:3*(i+1)])
 
      self.cell.h = np.dot(expq,self.cell.h)

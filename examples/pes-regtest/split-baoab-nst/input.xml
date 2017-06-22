@@ -1,5 +1,5 @@
 <simulation>
-   <output prefix='lj-nst-dev'>
+   <output prefix='lj-nst'>
       <properties stride='1' filename='out'>  [ step, time{picosecond}, conserved, temperature{kelvin}, kinetic_md, potential, pressure_md{megapascal}, volume, cell_h] </properties>
       <trajectory stride='20' filename='pos' format='pdb'>positions</trajectory>
       <checkpoint stride='2000'/>
@@ -7,7 +7,7 @@
    <total_steps> 100  </total_steps>
    <prng><seed>3348</seed></prng>
    <ffsocket mode='unix' name='lj'>
-         <address>lj_nst-dev</address>
+         <address>lj_nst</address>
    </ffsocket>
    <system>
       <initialize nbeads='1'>
