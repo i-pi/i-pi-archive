@@ -541,7 +541,7 @@ class BaroRGB(Barostat):
            kst[i,i] += np.dot(pc[i:na3:3],pc[i:na3:3]/m) *self.beads.nbeads
       
        stress = kst / self.cell.V
-      
+
        self.p += dthalf*( self.cell.V * np.triu( stress - self.beads.nbeads*pi_ext ) +
                             Constants.kb*self.temp*L)
       
@@ -569,7 +569,8 @@ class BaroRGB(Barostat):
      """Propagates the centroid position and momentum and the volume."""
 
      v = self.p/self.m[0]
-     expq, expp = (matrix_exp(v*self.qdt), matrix_exp(-v*self.qdt))
+     halfdt = self.qdt
+     expq, expp = (matrix_exp(v*halfdt), matrix_exp(-v*halfdt))
 
      m = depstrip(self.beads.m)
 
