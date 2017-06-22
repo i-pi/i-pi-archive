@@ -563,7 +563,7 @@ class BaroRGB(Barostat):
      """Propagates the centroid position and momentum and the volume."""
 
      v = self.p/self.m[0]
-     expq, expp = (matrix_exp(v*self.qdt), matrix_exp(-v*self.dt))
+     expq, expp = (matrix_exp(v*self.qdt), matrix_exp(-v*self.qdt))
 
      m = depstrip(self.beads.m)
 
