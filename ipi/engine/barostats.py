@@ -106,7 +106,6 @@ class Barostat(dobject):
       dself.pext = depend_value(name='pext', value=-1.0)
       dself.stressext = depend_array(name='stressext', value=-np.ones((3,3), float))
 
-
    def bind(self, beads, nm, cell, forces, bias=None, prng=None, fixdof=None, nmts=1):
       """Binds beads, cell and forces to the barostat.
 
@@ -146,6 +145,7 @@ class Barostat(dobject):
          self.mdof = float(self.beads.natoms)*3.0 - float(fixdof)
       
       # creates and connects timesteps for the different parts of the propagator   
+      self.nmtslevels = nmts
       dself.qdt = depend_value(name="qdt", value=self.dt)
       dself.pdt = depend_array(name="pdt", value=np.zeros(nmts,float))
       dself.tdt = depend_value(name="tdt", value=self.dt)
@@ -203,9 +203,9 @@ class Barostat(dobject):
                kst[i,j] -= np.dot(q[b,i:na3:3] - qc[i:na3:3],
                   fall[b,j:na3:3]+ball[b,j:na3:3])
 
-      if(level == 0):
+      if(level == self.nmtslevels - 1):
          for i in range(3):
-            kst[i,i] += np.dot(pc[i:na3:3],pc[i:na3:3]/m) *self.beads.nbeads
+            kst[i,i] += np.dot(pc[i:na3:3],pc[i:na3:3]/m) * self.beads.nbeads
 
       return kst
 
@@ -303,8 +303,6 @@ class BaroBZP(Barostat):
 
       super(BaroBZP, self).bind(beads, nm, cell, forces, bias, prng, fixdof, nmts)
       
-      self.nmtslevels = nmts
-
       # obtain the thermostat mass from the given time constant
       # note that the barostat temperature is nbeads times the physical T
       dset(self,"m", depend_array(name='m', value=np.atleast_1d(0.0),
@@ -350,10 +348,13 @@ class BaroBZP(Barostat):
       
       # computes the pressure associated with the forces at each MTS level.
       press = np.trace(self.stress_mts(level))/3.0
-      self.p += dt * 3.0 * (self.cell.V * (press - self.beads.nbeads * self.pext) + Constants.kb * self.temp)
+      self.p += dt * 3.0 * (self.cell.V * press)
 
       # integerates the kinetic part of the pressure with the force at the inner-most level.
       if(level == self.nmtslevels - 1):
+         press = 0
+         self.p += dt * 3.0 * (self.cell.V * (press - self.beads.nbeads * self.pext) + Constants.kb * self.temp)
+
          pc = depstrip(self.beads.pc)
          fc = np.sum(depstrip(self.forces.forces_mts(level)),axis = 0) / self.beads.nbeads
          if (self.bias != None and level == 0): fc += np.sum(depstrip(self.bias.f),axis = 0) / self.beads.nbeads
