@@ -517,88 +517,61 @@ class BaroRGB(Barostat):
       lastterm = Constants.kb*self.temp*lastterm
       return self.thermostat.ethermo + self.kin + self.pot - lastterm
 
-   #~ def pkinstep(self, level=0):
-      #~ """Propagates the momenta for half a time step."""
-
-      #~ dt = self.pdt[level]
-      #~ dt2 = dt**2
-      #~ dt3 = dt**3/3.0
-
-      #~ hh0=np.dot(self.cell.h, self.h0.ih)
-      #~ pi_ext=np.dot(hh0, np.dot(self.stressext, hh0.T))*self.h0.V/self.cell.V
-      #~ L=np.diag([3,2,1])
-
-      #~ # This differs from the BZP thermostat in that it uses just one kT in the propagator.
-      #~ # This leads to an ensemble equaivalent to Martyna-Hughes-Tuckermann for both fixed and moving COM
-      #~ # Anyway, it is a small correction so whatever.      
-      #~ fc = np.sum(depstrip(self.forces.forces_mts(level)),0).reshape(self.beads.natoms,3)/self.beads.nbeads
-      #~ if self.bias != None and level == 0: 
-          #~ fc+= np.sum(depstrip(self.bias.f),0).reshape(self.beads.natoms,3)/self.beads.nbeads
-      #~ fcTonm = (fc/depstrip(self.beads.m3)[0].reshape(self.beads.natoms,3)).T
-      #~ pc = depstrip(self.beads.pc).reshape(self.beads.natoms,3)
-      #~ # I am not 100% sure, but these higher-order terms come from integrating the pressure virial term,
-      #~ # so they should need to be multiplied by nbeads to be consistent with the equations of motion in the PI context
-      #~ # again, these are tiny tiny terms so whatever.
-      #~ self.p += ( dt*( -self.cell.V* np.triu(self.beads.nbeads*pi_ext ) + Constants.kb*self.temp*L) +
-              #~ np.triu(dt2*np.dot(fcTonm,pc) + dt3*np.dot(fcTonm,fc)) * self.beads.nbeads )
-      #~ print "kinstep ", level, self.pdt[level]
-      #~ # self.beads.p += depstrip(self.forces.forces_mts(level))*dt
-      #~ #if self.bias != None and level ==0:  
-      #~ #    self.beads.p += depstrip(self.bias.f)*dt
-          
-   #~ def pvirstep(self, level=0): 
-      #~ print "virstep ", level, self.pdt[level]
-      #~ self.p += self.pdt[level] * self.cell.V* np.triu( self.stress_mts(level) )
+   def pkinstep(self,level=0):
+       """Propagates the momenta for half a time step."""
       
-   def pkinstep(self, level=0):
-      pass
+       dthalf = self.pdt[level]
+       dthalf2 = dthalf**2
+       dthalf3 = dthalf**3/3.0
+       na3 = 3*self.beads.natoms
+       sqm3 = np.sqrt(depstrip(self.beads.m3)[-1])
+      
+       hh0=np.dot(self.cell.h, self.h0.ih)
+       pi_ext=np.dot(hh0, np.dot(self.stressext, hh0.T))*self.h0.V/self.cell.V
+       L=np.diag([3,2,1])
+      
+       # This differs from the BZP thermostat in that it uses just one kT in the propagator.
+       # This leads to an ensemble equaivalent to Martyna-Hughes-Tuckermann for both fixed and moving COM
+       # Anyway, it is a small correction so whatever.
+
+       kst = np.zeros((3,3), float)
+       pc = depstrip(self.beads.pc)
+       m = depstrip(self.beads.m)
+
+       for i in range(3):
+          kst[i,i] += np.dot(pc[i:na3:3],pc[i:na3:3]/m) * self.beads.nbeads
+      
+       self.p += dthalf * (np.triu(kst - self.cell.V * self.beads.nbeads * pi_ext) + Constants.kb*self.temp * L)
+      
+       fc = np.sum(depstrip(self.forces.forces_mts(level)),0).reshape(self.beads.natoms,3)/self.beads.nbeads
+       if self.bias != None: fc+= np.sum(depstrip(self.bias.f),0).reshape(self.beads.natoms,3)/self.beads.nbeads
+       fcTonm = (fc/depstrip(self.beads.m3)[0].reshape(self.beads.natoms,3)).T
+       pc = depstrip(self.beads.pc).reshape(self.beads.natoms,3)
+      
+       # I am not 100% sure, but these higher-order terms come from integrating the pressure virial term,
+       # so they should need to be multiplied by nbeads to be consistent with the equations of motion in the PI context
+       # again, these are tiny tiny terms so whatever.
+       self.p += np.triu(dthalf2*np.dot(fcTonm,pc) + dthalf3*np.dot(fcTonm,fc)) * self.beads.nbeads
+
    def pvirstep(self,level=0):
       """Propagates the momenta for half a time step."""
 
-      print "pstep ", self.pdt[level]
       dthalf = self.pdt[level]
-      dthalf2 = dthalf**2
-      dthalf3 = dthalf**3/3.0
-
-      hh0=np.dot(self.cell.h, self.h0.ih)
-      pi_ext=np.dot(hh0, np.dot(self.stressext, hh0.T))*self.h0.V/self.cell.V
-      L=np.diag([3,2,1])
-
-      # This differs from the BZP thermostat in that it uses just one kT in the propagator.
-      # This leads to an ensemble equaivalent to Martyna-Hughes-Tuckermann for both fixed and moving COM
-      # Anyway, it is a small correction so whatever.
-
-      self.p += dthalf*( self.cell.V* np.triu( self.stress - self.beads.nbeads*pi_ext ) +
-                           Constants.kb*self.temp*L)
-
-      fc = np.sum(depstrip(self.forces.f),0).reshape(self.beads.natoms,3)/self.beads.nbeads
-      if self.bias != None: fc+= np.sum(depstrip(self.bias.f),0).reshape(self.beads.natoms,3)/self.beads.nbeads
-      fcTonm = (fc/depstrip(self.beads.m3)[0].reshape(self.beads.natoms,3)).T
-      pc = depstrip(self.beads.pc).reshape(self.beads.natoms,3)
-
-      # I am not 100% sure, but these higher-order terms come from integrating the pressure virial term,
-      # so they should need to be multiplied by nbeads to be consistent with the equations of motion in the PI context
-      # again, these are tiny tiny terms so whatever.
-      self.p += np.triu(dthalf2*np.dot(fcTonm,pc) + dthalf3*np.dot(fcTonm,fc)) * self.beads.nbeads
-
-      #self.beads.p += depstrip(self.forces.f)*dthalf
-      #if self.bias != None:  self.beads.p += depstrip(self.bias.f)*dthalf
-      
-
+      self.p += dthalf * (self.cell.V * np.triu(self.stress_mts(level)) )
+ 
    def qcstep(self):
-      """Propagates the centroid position and momentum and the volume."""
+     """Propagates the centroid position and momentum and the volume."""
 
-      print "qstep", self.qdt
-      v = self.p/self.m[0]
-      expq, expp = (matrix_exp(v*self.qdt), matrix_exp(-v*self.dt))
+     v = self.p/self.m[0]
+     expq, expp = (matrix_exp(v*self.qdt), matrix_exp(-v*self.dt))
 
-      m = depstrip(self.beads.m)
+     m = depstrip(self.beads.m)
 
-      saveq=self.nm.qnm[0].copy()
-      savep=self.nm.pnm[0].copy()
-      for i in range(self.beads.natoms):
-         self.nm.qnm[0,3*i:3*(i+1)] = np.dot(expq, self.nm.qnm[0,3*i:3*(i+1)])
-         self.nm.qnm[0,3*i:3*(i+1)] += np.dot(np.dot(invert_ut3x3(v),(expq-expp)/(2.0)),depstrip(self.nm.pnm)[0,3*i:3*(i+1)]/m[i])
-         self.nm.pnm[0,3*i:3*(i+1)] = np.dot(expp, self.nm.pnm[0,3*i:3*(i+1)])
+     saveq=self.nm.qnm[0].copy()
+     savep=self.nm.pnm[0].copy()
+     for i in range(self.beads.natoms):
+        self.nm.qnm[0,3*i:3*(i+1)] = np.dot(expq, self.nm.qnm[0,3*i:3*(i+1)])
+        self.nm.qnm[0,3*i:3*(i+1)] += np.dot(np.dot(invert_ut3x3(v),(expq-expp)/(2.0)),depstrip(self.nm.pnm)[0,3*i:3*(i+1)]/m[i])
+        self.nm.pnm[0,3*i:3*(i+1)] = np.dot(expp, self.nm.pnm[0,3*i:3*(i+1)])
 
-      self.cell.h = np.dot(expq,self.cell.h)
+     self.cell.h = np.dot(expq,self.cell.h)

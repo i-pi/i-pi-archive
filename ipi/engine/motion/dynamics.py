@@ -516,7 +516,6 @@ class NPTIntegrator(NVTIntegrator):
         if level == 0:
             self.beads.p += depstrip(self.bias.f)*self.pdt[level]
         
-        print "pstep", self.pdt[level]
 
     def qcstep(self):
         """Velocity Verlet centroid position propagator."""
@@ -526,7 +525,6 @@ class NPTIntegrator(NVTIntegrator):
     def tstep(self):
         """Velocity Verlet thermostat step"""
 
-        print "tstep", self.tdt
         self.thermostat.step()
         self.barostat.thermostat.step()
 
@@ -549,40 +547,6 @@ class NSTIntegrator(NPTIntegrator):
     the cell volume.
     pext: External pressure.
     """
-
-    def step(self, step=None):
-        """NST time step (dummy for now).
-        Note that the barostat only propagates the centroid coordinates. If this
-        approximation is made a centroid virial pressure and stress estimator can
-        be defined, so this gives the best statistical convergence. This is
-        allowed as the normal mode propagation is approximately unaffected
-        by volume fluctuations as long as the system box is much larger than
-        the radius of gyration of the ring polymers.
-        """
-
-        print "thermo times", self.thermostat.dt, self.barostat.thermostat.dt
-        self.thermostat.step()
-        self.barostat.thermostat.step()
-        self.pconstraints()
-        
-        print "pdt ", self.pdt
-        self.barostat.pvirstep()
-        self.beads.p += self.forces.f*self.pdt[0]
-        self.pconstraints()
-
-        self.barostat.qcstep()
-        self.nm.free_qstep()        
-        self.barostat.qcstep()
-        self.nm.free_qstep()
-        
-        self.barostat.pvirstep()
-        self.beads.p += self.forces.f*self.pdt[0]
-        self.pconstraints()
-        
-        self.barostat.thermostat.step()
-        self.thermostat.step()
-        print "thermo times", self.thermostat.dt, self.barostat.thermostat.dt
-        
 
 
 class SCIntegrator(NVTIntegrator):

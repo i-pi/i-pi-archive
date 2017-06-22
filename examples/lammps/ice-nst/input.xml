@@ -1,10 +1,10 @@
 <simulation>
     <output prefix="simulation">
-        <properties stride="10" filename="out">  [ step, time{picosecond}, conserved , virial_cv ] </properties>
+        <properties stride="1" filename="out">  [ step, time{picosecond}, conserved , virial_cv ] </properties>
         <trajectory stride="100" filename="xc" format="pdb" cell_units="angstrom"> x_centroid{angstrom}</trajectory>
         <checkpoint stride="2000"/>
     </output>
-    <total_steps>10000</total_steps>
+    <total_steps> 1 </total_steps>
     <prng><seed>31415</seed></prng>
     <ffsocket name="lammps" mode="unix">
         <address>lammps_ice</address>
@@ -22,7 +22,7 @@
         <motion mode="dynamics">
 	        <dynamics mode="nst">
 	            <barostat mode="anisotropic">
-                    <tau units="femtosecond"> 200</tau>
+                    <tau units="femtosecond"> 200 </tau>
                     <thermostat mode="langevin">
                         <tau units="femtosecond"> 50</tau>
                     </thermostat>

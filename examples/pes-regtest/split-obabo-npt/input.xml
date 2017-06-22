@@ -4,13 +4,13 @@ COMMAND(8)    i-pi-driver -u -h ffdriver -m qtip4pf
 ENDREGTEST -->
 
 <simulation>
-  <output prefix='qtip4pf'>
+  <output prefix='qtip4pf-mc'>
     <properties stride='4' filename='out'>  [ step, time{picosecond}, 
 conserved{electronvolt}, temperature{kelvin}, kinetic_cv{electronvolt}, potential{electronvolt}, pressure_cv{megapascal}] </properties>
     <trajectory filename='pos' stride='4'> positions{angstrom} </trajectory>
     <trajectory filename='for' stride='4'> forces{piconewton} </trajectory>
   </output>
-  <total_steps>30</total_steps>
+  <total_steps> 1 </total_steps>
   <prng><seed>322</seed></prng>
   <ffsocket name="qtip4pf" mode="unix" pbc="false">
     <address>ffdriver</address>
@@ -28,7 +28,7 @@ conserved{electronvolt}, temperature{kelvin}, kinetic_cv{electronvolt}, potentia
       <pressure units='gigapascal'> 1 </pressure>
    </ensemble>
    <motion mode='dynamics'>
-     <dynamics mode='npt' splitting='obabo'>
+     <dynamics mode='npt' >
        <thermostat mode='langevin'> <tau units='femtosecond'> 10 </tau> </thermostat>
        <barostat mode='isotropic'> <tau units='femtosecond'> 10 </tau>  <thermostat mode='langevin'> <tau units='femtosecond'> 10 </tau> </thermostat> </barostat>
        <timestep units='femtosecond'> 0.5</timestep>
