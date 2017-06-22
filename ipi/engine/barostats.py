@@ -203,6 +203,10 @@ class Barostat(dobject):
                kst[i,j] -= np.dot(q[b,i:na3:3] - qc[i:na3:3],
                   fall[b,j:na3:3]+ball[b,j:na3:3])
 
+      if(level == 0):
+         for i in range(3):
+            kst[i,i] += np.dot(pc[i:na3:3],pc[i:na3:3]/m) *self.beads.nbeads
+
       return kst
 
    def get_stress(self):
@@ -299,6 +303,8 @@ class BaroBZP(Barostat):
 
       super(BaroBZP, self).bind(beads, nm, cell, forces, bias, prng, fixdof, nmts)
       
+      self.nmtslevels = nmts
+
       # obtain the thermostat mass from the given time constant
       # note that the barostat temperature is nbeads times the physical T
       dset(self,"m", depend_array(name='m', value=np.atleast_1d(0.0),
@@ -334,6 +340,26 @@ class BaroBZP(Barostat):
 
       return self.thermostat.ethermo + self.kin + self.pot - np.log(self.cell.V)*Constants.kb*self.temp
 
+   def pstep(self, level=0):
+      """Propagates the momentum of the barostat."""
+     
+      # we are assuming then that p the coupling between p^2 and dp/dt only involves the fast force
+      dt = self.pdt[level] # this is already set to be half a time step at the specified MTS depth
+      dt2 = dt**2
+      dt3 = dt**3 / 3.0
+      
+      # computes the pressure associated with the forces at each MTS level.
+      press = np.trace(self.stress_mts(level))/3.0
+      self.p += dt * 3.0 * (self.cell.V * (press - self.beads.nbeads * self.pext) + Constants.kb * self.temp)
+
+      # integerates the kinetic part of the pressure with the force at the inner-most level.
+      if(level == self.nmtslevels - 1):
+         pc = depstrip(self.beads.pc)
+         fc = np.sum(depstrip(self.forces.forces_mts(level)),axis=0) / self.beads.nbeads
+         m = depstrip(self.beads.m3)[0]
+
+         self.p += (dt2 * np.dot(pc,fc/m) + dt3 * np.dot(fc,fc/m)) * self.beads.nbeads
+    
    def pkinstep(self, level=0):
       """Propagates the momenta using the momentum of the centroid for half a time step."""
 

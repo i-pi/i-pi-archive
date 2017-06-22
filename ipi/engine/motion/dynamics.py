@@ -502,19 +502,8 @@ class NPTIntegrator(NVTIntegrator):
     def pstep(self, level=0):
         """Velocity Verlet monemtum propagator."""
 
-        # integrates w.r.t. the virial of forces at a given MTS level.
-        self.barostat.pvirstep(level)
-
-        # the kinetic virial is integrated with the fastest force.
-        if level == len(self.nmts) - 1:
-            self.barostat.pkinstep(level)
-            
-        # integrates w.r.t. forces at a given MTS level.
-        self.beads.p += self.forces.forces_mts(level)*self.pdt[level]
-        
-        # integrates bias at level 0.
-        if level == 0:
-            self.beads.p += depstrip(self.bias.f)*self.pdt[level]
+        self.barostat.pstep(level)
+        super(NPTIntegrator,self).pstep(level)
         
 
     def qcstep(self):
