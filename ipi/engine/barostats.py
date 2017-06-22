@@ -357,7 +357,6 @@ class BaroBZP(Barostat):
 
          pc = depstrip(self.beads.pc)
          fc = np.sum(depstrip(self.forces.forces_mts(level)),axis = 0) / self.beads.nbeads
-         if (self.bias != None and level == 0): fc += np.sum(depstrip(self.bias.f),axis = 0) / self.beads.nbeads
          m = depstrip(self.beads.m3)[0]
 
          self.p += (dt2 * np.dot(pc,fc/m) + dt3 * np.dot(fc,fc/m)) * self.beads.nbeads
@@ -512,6 +511,32 @@ class BaroRGB(Barostat):
       lastterm=np.sum([(3-i)*np.log(self.cell.h[i][i]) for i in range(3)])
       lastterm = Constants.kb*self.temp*lastterm
       return self.thermostat.ethermo + self.kin + self.pot - lastterm
+
+   def pstep(self, level=0):
+      """Propagates the momenta for half a time step."""
+
+      dt = self.pdt[level]
+      dt2 = dt**2
+      dt3 = dt**3/3.0
+      m = depstrip(self.beads.m3)[0].reshape(self.beads.natoms,3)
+
+      hh0=np.dot(self.cell.h, self.h0.ih)
+      pi_ext=np.dot(hh0, np.dot(self.stressext, hh0.T)) * self.h0.V / self.cell.V
+      L=np.diag([3,2,1])
+
+      stress = depstrip(self.stress_mts(level))
+      self.p += dt * (self.cell.V * np.triu(stress))
+      
+      # integerates the kinetic part of the stress with the force at the inner-most level.
+      if(level == self.nmtslevels - 1):
+
+         self.p += dt * (self.cell.V * np.triu(-self.beads.nbeads*pi_ext) + Constants.kb*self.temp*L)
+
+         pc = depstrip(self.beads.pc).reshape(self.beads.natoms,3)
+         fc = np.sum(depstrip(self.forces.forces_mts(level)), axis = 0).reshape(self.beads.natoms,3) / self.beads.nbeads
+         fcTonm = (fc / m).T
+
+         self.p += np.triu(dt2 * np.dot(fcTonm,pc) + dt3 * np.dot(fcTonm,fc)) * self.beads.nbeads
 
    def pkinstep(self,level=0):
        """Propagates the momenta for half a time step."""
