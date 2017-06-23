@@ -59,7 +59,7 @@ class ReplicaExchange(Smotion):
 
         super(ReplicaExchange,self).bind(syslist, prng)
 
-        if self.repindex is None:
+        if self.repindex is None or len(self.repindex) == 0:
             self.repindex = np.asarray(range(len(self.syslist)))
         else:
             if len(self.syslist) != len(self.repindex):
