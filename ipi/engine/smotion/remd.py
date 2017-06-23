@@ -36,7 +36,7 @@ class ReplicaExchange(Smotion):
             bias: activate hamiltonian replica exchange ***not yet implemented
     """
 
-    def __init__(self, stride=1.0, repindex = None):
+    def __init__(self, stride=1.0, repindex = None, krescale=True, swapfile="PARATEMP"):
         """Initialises REMD.
 
         Args:
@@ -45,8 +45,8 @@ class ReplicaExchange(Smotion):
 
         super(ReplicaExchange, self).__init__()
 
-        self.swapfile = "PARATEMP" #!TODO make this an option!
-        self.rescalekin = True  #!TODO make this an option!
+        self.swapfile = swapfile #!TODO make this an option!
+        self.rescalekin = krescale  #!TODO make this an option!
         # replica exchange options
         self.stride = stride
 
