@@ -388,6 +388,7 @@
                atoms = atoms*0.52917721d0    ! pot_nasa wants angstrom
                call pot_nasa(atoms,forces,pot)
                call dms_nasa(atoms, charges, dummy) ! MR: trying to print out the right charges
+               write(*,*) "charges", charges
                dip(:)=atoms(1,:)*charges(1)+atoms(2,:)*charges(2)+atoms(3,:)*charges(3)
                ! MR: the above line looks like it provides correct results in eAngstrom for dipole! CHECK! Important to have molecule in the center of the cell...
                pot = pot*0.0015946679     ! pot_nasa gives kcal/mol
