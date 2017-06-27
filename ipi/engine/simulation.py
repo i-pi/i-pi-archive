@@ -276,7 +276,6 @@ class Simulation(dobject):
                 # Don't continue if we are about to exit.
                 break
             
-
             # does the "super motion" step
             if self.smotion is not None:
                 # TODO: We need a file where we store the exchanges
