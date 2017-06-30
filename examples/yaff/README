@@ -11,9 +11,12 @@
  Vandichel, Michel Waroquier and Veronique Van Speybroeck, JCTC 8, 
  p. 3217-3231 (2012)
 
- * This simulation is merely an example, and NOT suited for production runs.
+ * These simulations are demonstrations, and NOT suited for production runs.
  
-** Run the example automatically:
+ * It is possible to use a Yaff force field without using the ffsocket.
+   This is shown in the second example, where the ffyaff class is used.
+ 
+** Runs the examples automatically:
 
  * First, it is necessary to download and install Yaff. 
  
@@ -33,17 +36,23 @@
    set all the necessary enviroment variables.
  
  * The runs can be done automatically using the Makefile provided. The make 
-   targets are self-explanatory. To run the example, for instance, just type:
+   targets are self-explanatory. 
+   
+   To run the first example:
 
-$ make mil53
+$ make mil53_ffsocket
+
+   To run the second example:
+
+$ make mil53_ffyaff
 
  * To clean up output files:
 
 $ make clean
 
-** Run the example manually:
+** Run the examples manually:
 
- * Go to the MIL53 directory and run
+ * Example 1: Go to the MIL53_ffsocket directory and run
 
 $ i-pi nst_ipi.xml
  
@@ -55,3 +64,6 @@ $ python run.py
 
    You can run multiple instances of the code.
 
+ * Example 2: Go to the MIL53_ffyaff directory and run
+
+$ i-pi nst_ipi.xml

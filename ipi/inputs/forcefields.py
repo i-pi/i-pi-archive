@@ -8,12 +8,12 @@
 from copy import copy
 import numpy as np
 
-from ipi.engine.forcefields import ForceField, FFSocket, FFLennardJones, FFDebye
+from ipi.engine.forcefields import ForceField, FFSocket, FFLennardJones, FFDebye, FFYaff
 from ipi.interfaces.sockets import InterfaceSocket
 from ipi.utils.inputvalue import *
 
 
-__all__ = ["InputFFSocket", 'InputFFLennardJones', 'InputFFDebye']
+__all__ = ["InputFFSocket", 'InputFFLennardJones', 'InputFFDebye', 'InputFFYaff']
 
 
 class InputForceField(Input):
@@ -215,3 +215,51 @@ class InputFFDebye(InputForceField):
 
       return FFDebye(H=self.hessian.fetch(), xref=self.x_reference.fetch(), vref=self.v_reference.fetch(), name = self.name.fetch(),
                latency = self.latency.fetch(), dopbc = self.pbc.fetch() )
+               
+
+class InputFFYaff(InputForceField):
+
+   fields = {"yaffpara":    (InputValue, {"dtype"   : str,
+                                      "default" : "parameters.txt",
+                                      "help"    : "This gives the file name of the Yaff input parameter file." } ),
+             "yaffsys":     (InputValue, {"dtype"   : str,
+                                      "default" : "system.chk",
+                                      "help"    : "This gives the file name of the Yaff input system file." } ),
+             "yafflog":     (InputValue, {"dtype"   : str,
+                                      "default" : "yaff.log",
+                                      "help"    : "This gives the file name of the Yaff output log file." } ),                                     
+             "rcut":        (InputValue, {"dtype"   : float,
+                                      "default" : 18.89726133921252,
+                                      "help"    : "This gives the real space cutoff used by all pair potentials in atomic units."} ),
+             "alpha_scale": (InputValue, {"dtype"   : float,
+                                      "default" : 3.5,
+                                      "help"    : "This gives the alpha parameter in the Ewald summation based on the real-space cutoff: alpha = alpha_scale / rcut. Higher values for this parameter imply a faster convergence of the reciprocal terms, but a slower convergence in real-space."} ),
+             "gcut_scale":  (InputValue, {"dtype"   : float,
+                                      "default" : 1.1,
+                                      "help"    : "This gives the reciprocale space cutoff based on the alpha parameter: gcut = gcut_scale * alpha. Higher values for this parameter imply a better convergence in the reciprocal space."} ),
+             "skin":        (InputValue, {"dtype"   : int,
+                                      "default" : 0,
+                                      "help"    : "This gives the skin parameter for the neighborlist."} ),                                      
+             "smooth_ei":   (InputValue, {"dtype"   : bool,
+                                      "default" : False,
+                                      "help"    : "This gives the flag for smooth truncations for the electrostatic interactions."} ), 
+             "reci_ei":     (InputValue, {"dtype"   : str,
+                                      "default" : "ewald",
+                                      "help"    : "This gives the method to be used for the reciprocal contribution to the electrostatic interactions in the case of periodic systems. This must be one of 'ignore' or 'ewald'. The 'ewald' option is only supported for 3D periodic systems."} ), 
+           }
+    
+   fields.update(InputForceField.fields)
+   
+   attribs = {}
+   attribs.update(InputForceField.attribs)
+   
+   default_help = """Uses a Yaff force field to compute the forces."""
+   default_label = "FFYAFF"
+	  
+   def store(self, ff):
+      super(InputFFYaff,self).store(ff)
+
+   def fetch(self):
+      super(InputFFYaff,self).fetch()
+
+      return FFYaff(yaffpara = self.yaffpara.fetch(), yaffsys = self.yaffsys.fetch(), yafflog = self.yafflog.fetch(), rcut = self.rcut.fetch(), alpha_scale = self.alpha_scale.fetch(), gcut_scale = self.gcut_scale.fetch(), skin = self.skin.fetch(), smooth_ei = self.smooth_ei.fetch(), reci_ei = self.reci_ei.fetch(), name = self.name.fetch(), latency = self.latency.fetch(), dopbc = self.pbc.fetch() )
