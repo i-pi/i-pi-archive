@@ -4,8 +4,8 @@
 # i-PI Copyright (C) 2014-2015 i-PI developers
 # See the "licenses" directory for full license information.
 
-.PHONY: all clean mil53
-all: mil53
+.PHONY: all clean mil53_ffsocket mil53_ffyaff
+all: mil53_ffsocket mil53_ffyaff
 
 IPI:=i-pi
 
@@ -17,8 +17,12 @@ endef
 -include make.in
 
 mil53:
-	cd MIL53; $(IPI) nst_ipi.xml & sleep 10; \
+	cd MIL53_ffsocket; $(IPI) nst_ipi.xml & sleep 10; \
 	$(call run_yaff,4) \
+	wait
+	
+mil53_ffyaff:
+	cd MIL53_ffyaff; $(IPI) nst_ipi.xml; \
 	wait
 
 clean:
