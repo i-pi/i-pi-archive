@@ -419,13 +419,13 @@ class FFDebye(ForceField):
       r["result"] = [ self.vref + 0.5*np.dot(d,mf), -mf, np.zeros((3,3),float), ""]
       r["status"] = "Done"
       r["t_finished"] = time.time()
-      
-      
+
+
 class FFYaff(ForceField):
    """ Use Yaff as a library to construct a force field """
     
    def __init__(self, latency = 1.0, name = "",  yaffpara=None, yaffsys=None, yafflog='yaff.log', rcut=18.89726133921252, alpha_scale=3.5, gcut_scale=1.1, skin=0, smooth_ei=False, reci_ei='ewald', pars=None, dopbc = False, threaded=True):
-      
+
       """Initialises FFYaff and enables a basic Yaff force field.
 
       Args:
@@ -434,89 +434,50 @@ class FFYaff(ForceField):
          
          yaffsys: File name of the Yaff system file
          
-         yafflog: File name to which Yaff will write
+         yafflog: File name to which Yaff will write some information about the system and the force field
          
          pars: Optional dictionary, giving the parameters needed by the driver.
  
-           **Optional Yaff arguments:**
-
-         Some optional arguments only make sense if related parameters in the
-         parameter file are present.
-
-         rcut
-                The real space cutoff used by all pair potentials.
-
-         alpha_scale
-                Determines the alpha parameter in the Ewald summation based on
-                the real-space cutoff: alpha = alpha_scale / rcut. Higher
-                values for this parameter imply a faster convergence of the
-                reciprocal terms, but a slower convergence in real-space.
-
-         gcut_scale
-                Determines the reciprocale space cutoff based on the alpha
-                parameter: gcut = gcut_scale * alpha. Higher values for this
-                parameter imply a better convergence in the reciprocal space.
-
-         skin
-                The skin parameter for the neighborlist.
-
-         smooth_ei
-                Flag for smooth truncations for the electrostatic interactions.
-
-         reci_ei
-                The method to be used for the reciprocal contribution to the
-                electrostatic interactions in the case of periodic systems. This
-                must be one of 'ignore' or 'ewald'. The 'ewald' option is only
-                supported for 3D periodic systems.
-
-         The actual value of gcut, which depends on both gcut_scale and
-         alpha_scale, determines the computational cost of the reciprocal term
-         in the Ewald summation. The default values are just examples. An
-         optimal trade-off between accuracy and computational cost requires
-         some tuning. Dimensionless scaling parameters are used to make sure
-         that the numerical errors do not depend too much on the real space
-         cutoff and the system size.
+         **kwargs: All keyword arguments that can be provided when generating
+                   a Yaff force field; see constructor of FFArgs in Yaff code
          
       """
-
-      # Other technical input parameters of Yaff are initialised on default (e.g. Ewald summation parameters, truncation scheme, ...) !!!! 
 
       from yaff import System, ForceField, log
       import codecs, locale, atexit
 
       # a socket to the communication library is created or linked
       super(FFYaff,self).__init__(latency, name, pars, dopbc)       
-            
+
+      # A bit weird to use keyword argument for a required argument, but this
+      # is also done in the code above.
       if yaffpara is None:
           raise ValueError("Must provide a Yaff parameter file.")
-          
+
       if yaffsys is None:
           raise ValueError("Must provide a Yaff system file.")
-            
-      if reci_ei not in ['ignore', 'ewald']:
-          raise ValueError('The reci_ei option must be one of \'ignore\' or \'ewald\'.')
-          
+
+      self.yaffpara = yaffpara
+      self.yaffsys = yaffsys  
       self.rcut = rcut
       self.alpha_scale = alpha_scale
       self.gcut_scale = gcut_scale
       self.skin = skin
       self.smooth_ei = smooth_ei
       self.reci_ei = reci_ei
-      self.yaffpara = yaffpara
-      self.yaffsys = yaffsys  
-
+      self.yafflog = yafflog
+      
       # Open log file
       logf = open(yafflog,'w')
       # Tell Python to close the file when the script exits
-      # IMPORTANT: do this BEFORE importing log from yaff
       atexit.register(logf.close)
 
       # Redirect Yaff log to file
       log._file = codecs.getwriter(locale.getpreferredencoding())(logf)
 
       self.system = System.from_file(self.yaffsys)
-      self.ff = ForceField.generate(self.system, self.yaffpara, rcut=self.rcut, alpha_scale=self.alpha_scale, gcut_scale=self.gcut_scale, skin=self.skin, smooth_ei=self.smooth_ei, reci_ei=self.reci_ei)              
-    
+      self.ff = ForceField.generate(self.system, self.yaffpara, rcut=self.rcut, alpha_scale=self.alpha_scale, gcut_scale=self.gcut_scale, skin=self.skin, smooth_ei=self.smooth_ei, reci_ei=self.reci_ei)                      
+
       log._active = False
 
    def poll(self):
@@ -536,18 +497,17 @@ class FFYaff(ForceField):
 
    def evaluate(self, r):
       """ Evaluate the energy and forces with the Yaff force field. """
-      
+
       q = r["pos"]
       nat = len(q)/3
       rvecs = r["cell"][0]
-      
+
       self.ff.update_rvecs(np.ascontiguousarray(rvecs.T, dtype=np.float64))
       self.ff.update_pos(q.reshape((nat,3)))
-      self.ff.nlist.update()
       gpos = np.zeros((nat,3))
       vtens = np.zeros((3,3))
       e = self.ff.compute(gpos,vtens)
-            
+
       r["result"] = [ e, -gpos.ravel(), -vtens, ""]
       r["status"] = "Done"
       r["t_finished"] = time.time()
