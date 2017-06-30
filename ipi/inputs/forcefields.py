@@ -247,18 +247,27 @@ class InputFFYaff(InputForceField):
                                       "default" : "ewald",
                                       "help"    : "This gives the method to be used for the reciprocal contribution to the electrostatic interactions in the case of periodic systems. This must be one of 'ignore' or 'ewald'. The 'ewald' option is only supported for 3D periodic systems."} ), 
            }
-    
+
    fields.update(InputForceField.fields)
-   
+
    attribs = {}
    attribs.update(InputForceField.attribs)
-   
+
    default_help = """Uses a Yaff force field to compute the forces."""
    default_label = "FFYAFF"
-	  
+
    def store(self, ff):
       super(InputFFYaff,self).store(ff)
-
+      self.yaffpara.store(ff.yaffpara)
+      self.yaffsys.store(ff.yaffsys)
+      self.yafflog.store(ff.yafflog)
+      self.rcut.store(ff.rcut)
+      self.alpha_scale.store(ff.alpha_scale)
+      self.gcut_scale.store(ff.gcut_scale)
+      self.skin.store(ff.skin)
+      self.smooth_ei.store(ff.smooth_ei)
+      self.reci_ei.store(ff.reci_ei)
+      
    def fetch(self):
       super(InputFFYaff,self).fetch()
 

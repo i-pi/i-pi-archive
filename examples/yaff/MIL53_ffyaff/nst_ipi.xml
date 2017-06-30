@@ -2,7 +2,7 @@
    <output prefix='mil53'>
       <properties stride='10' filename='out'>  [step, time{picosecond}, conserved, temperature{kelvin}, kinetic_cv, potential, volume, pressure_cv{megapascal}] </properties>
       <trajectory stride='10' filename='pos' format='pdb' cell_units='angstrom'>positions{angstrom}</trajectory>
-      <checkpoint stride='100'/>
+      <checkpoint stride='1000'/>
    </output>
    <total_steps>270</total_steps>
   <prng>
