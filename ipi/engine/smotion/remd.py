@@ -51,7 +51,10 @@ class ReplicaExchange(Smotion):
         self.stride = stride
 
         #! TODO ! allow saving and storing the replica indices
-        self.repindex = repindex
+        if repindex is None:
+            self.repindex = np.zeros(0,int)
+        else:
+            self.repindex = np.asarray(repindex, int).copy()
 
         self.mode = 'remd'
 

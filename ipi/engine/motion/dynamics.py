@@ -120,8 +120,8 @@ class Dynamics(Motion):
                 generation.
         """
 
-        super(Dynamics, self).bind(ens, beads, nm, cell, bforce, prng)
-
+        super(Dynamics, self).bind(ens, beads, nm, cell, bforce, prng)        
+        
         # Binds integrators
         self.integrator.bind(self)
 

@@ -354,7 +354,7 @@ class ForceComponent(dobject):
       dset(self,"virs",
          depend_array(name="virs", value=np.zeros((self.nbeads,3,3),float),
             func=self.vir_gather,
-               dependencies=[dget(self._forces[b],"vir") for b in range(self.nbeads)]))
+               dependencies=[dd(self._forces[b]).vir for b in range(self.nbeads)]))
       dset(self,"extras",
          depend_value(name="extras", value=np.zeros(self.nbeads,float),
             func=self.extra_gather,
@@ -405,6 +405,7 @@ class ForceComponent(dobject):
       """
 
       self.queue()
+      print "GATHERING VIRS"
       return np.array([b.vir for b in self._forces], float)
 
    def f_gather(self):
@@ -450,7 +451,7 @@ class ScaledForceComponent(dobject):
               func=lambda: self.scaling*self.bf.pots if scaling !=0 else np.zeros(self.bf.nbeads), 
               value=np.zeros(self.bf.nbeads),              
                dependencies=[dget(self.bf,"pots"), dget(self,"scaling")] ))
-        dset(self,"virs",depend_array(name="virs", func=lambda: self.scaling*self.bf.f, 
+        dset(self,"virs",depend_array(name="virs", func=lambda: self.scaling*self.bf.virs, 
         value=np.zeros((self.bf.nbeads,3,3)), 
         dependencies=[dget(self.bf,"virs"), dget(self,"scaling")] ))
         dset(self,"extras",depend_array(name="extras", func=lambda: self.bf.extras, 
@@ -829,6 +830,7 @@ class Forces(dobject):
       rp = np.zeros((self.nbeads,3,3),float)
       for k in range(self.nforces):
          if self.mforces[k].weight > 0:
+            print k,  self.mforces[k].virs
             virs = depstrip(self.mforces[k].virs)
             # "expand" to the total number of beads the virials from the
             #contracted one, element by element
