@@ -129,11 +129,13 @@
                   vstyle = 8
                ELSEIF (trim(cmdbuffer) == "eckart") THEN
                   vstyle = 9
+               ELSEIF (trim(cmdbuffer) == "ch4hcbe") THEN
+                  vstyle = 10
                ELSEIF (trim(cmdbuffer) == "gas") THEN
                   vstyle = 0  ! ideal gas
                ELSE
                   WRITE(*,*) " Unrecognized potential type ", trim(cmdbuffer)
-                  WRITE(*,*) " Use -m [gas|lj|sg|harm|morse|zundel|qtip4pf|eckart] "
+                  WRITE(*,*) " Use -m [gas|lj|sg|harm|morse|zundel|qtip4pf|eckart|ch4h] "
                   STOP "ENDED"
                ENDIF
             ELSEIF (ccmd == 4) THEN
@@ -173,6 +175,13 @@
          ENDIF
          CALL prezundelpot()
          CALL prezundeldip()
+         isinit = .true.
+      ELSEIF (10 == vstyle) THEN
+         IF (par_count /= 0) THEN
+            WRITE(*,*) "Error: no initialization string needed for CH4+H CBE potential."
+            STOP "ENDED"
+         ENDIF
+         CALL prepot()
          isinit = .true.
       ELSEIF (4 == vstyle) THEN
          IF (par_count == 0) THEN ! defaults (OH stretch)
@@ -361,6 +370,26 @@
                   ENDDO
                ENDDO
                ! do not compute the virial term
+           ELSEIF (vstyle == 10) THEN ! CBE CH4+H potential.
+               IF (nat/=6) THEN
+                  WRITE(*,*) "Expecting 6 atoms for CH4+H potential, H, C, H, H, H, H "
+                  STOP "ENDED"
+               ENDIF
+
+               CALL ch4hpot_inter(atoms, pot)
+
+               datoms=atoms
+               DO i=1,6  ! forces by finite differences
+                  DO j=1,3
+                     datoms(i,j)=atoms(i,j)+fddx
+                     CALL ch4hpot_inter(datoms, pot)
+                     datoms(i,j)=atoms(i,j)-fddx
+                     CALL ch4hpot_inter(datoms, forces(i,j))
+                     datoms(i,j)=atoms(i,j)
+                     forces(i,j)=(forces(i,j)-dpot)/(2*fddx)
+                  ENDDO
+               ENDDO
+               ! do not compute the virial term
             ELSEIF (vstyle == 6) THEN ! qtip4pf potential.
                IF (mod(nat,3)/=0) THEN
                   WRITE(*,*) " Expecting water molecules O H H O H H O H H but got ", nat, "atoms"
@@ -489,14 +518,14 @@
       CONTAINS
       SUBROUTINE helpmessage
          ! Help banner
-         WRITE(*,*) " SYNTAX: driver.x [-u] -h hostname -p port -m [gas|lj|sg|harm|morse|zundel|qtip4pf|pswater|eckart] "
+         WRITE(*,*) " SYNTAX: driver.x [-u] -h hostname -p port -m [gas|lj|sg|harm|morse|zundel|qtip4pf|pswater|eckart|ch4h] "
          WRITE(*,*) "         -o 'comma_separated_parameters' [-v|-vv] "
          WRITE(*,*) ""
          WRITE(*,*) " For LJ potential use -o sigma,epsilon,cutoff "
          WRITE(*,*) " For SG potential use -o cutoff "
          WRITE(*,*) " For 1D harmonic oscillator use -o k "
          WRITE(*,*) " For 1D morse oscillator use -o r0,D,a"
-         WRITE(*,*) " For the ideal gas, qtip4pf, zundel or nasa no options needed! "
+         WRITE(*,*) " For the ideal gas, qtip4pf, zundel, ch4h or nasa no options needed! "
        END SUBROUTINE helpmessage
 
    END PROGRAM
