@@ -157,11 +157,10 @@ def main(inputfile, prefix="PT"):
       except EOFError:
          break
 
-      if step == int(line[0]):
+      if len(line)>0 and step == int(line[0]):
          irep = [int(i) for i in line[1:]]
          line = ptfile.readline()
          line = line.split()
-         if len(line) == 0: break
 
       step += 1
 
