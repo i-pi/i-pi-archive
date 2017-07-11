@@ -405,7 +405,6 @@ class ForceComponent(dobject):
       """
 
       self.queue()
-      print "GATHERING VIRS"
       return np.array([b.vir for b in self._forces], float)
 
    def f_gather(self):
@@ -830,7 +829,6 @@ class Forces(dobject):
       rp = np.zeros((self.nbeads,3,3),float)
       for k in range(self.nforces):
          if self.mforces[k].weight > 0:
-            print k,  self.mforces[k].virs
             virs = depstrip(self.mforces[k].virs)
             # "expand" to the total number of beads the virials from the
             #contracted one, element by element
