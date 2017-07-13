@@ -280,7 +280,7 @@ class Simulation(dobject):
                 # Don't continue if we are about to exit.
                 break
 
-            for o in self.outputs:
+            for o in self.outputs:  # write possible checkpoints before doing any 
                 o.write()
 
             # does parallel tempering

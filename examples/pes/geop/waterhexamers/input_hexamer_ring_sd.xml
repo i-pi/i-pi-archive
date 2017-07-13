@@ -23,14 +23,14 @@
       <optimizer mode="sd">
          <ls_options> 
             <step> 1.0e-2 </step>
-	    <tolerance> 1.0e-5 </tolerance>
-	    <iter> 150 </iter>
-	    <adaptive> 1.0 </adaptive>
-	 </ls_options>
-	 <tolerances>
+           <tolerance> 1.0e-5 </tolerance>
+           <iter> 150 </iter>
+           <adaptive> 1.0 </adaptive>
+        </ls_options>
+        <tolerances>
             <energy> 1.0e-7 </energy>
-	    <force> 1.0e-3 </force>
-	    <position> 1.0e-7 </position>
+           <force> 1.0e-3 </force>
+           <position> 1.0e-7 </position>
 	 </tolerances>
       </optimizer>
     </motion>
