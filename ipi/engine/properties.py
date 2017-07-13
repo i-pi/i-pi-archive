@@ -674,7 +674,6 @@ class Properties(dobject):
       # in the current implementation, if all atoms were selected, ncount=0. Set it back to number of atoms.
       if ncount==0:
          ncount=self.beads.natoms
-      print ncount, atom
       # "spreads" the COM removal correction evenly over all the atoms if just a few atoms are selected
       #return kemd/(0.5*Constants.kb) * (float(self.beads.natoms)/float(ncount)) / (3.0*self.beads.natoms*self.beads.nbeads - mdof)
       return  2.0*kemd/(Constants.kb*(3.0*float(ncount)*self.beads.nbeads - mdof)) 
