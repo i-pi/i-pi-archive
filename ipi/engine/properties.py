@@ -671,9 +671,13 @@ class Properties(dobject):
             mdof += 3.0/ float(self.beads.nbeads)  # spreads COM removal over the beads
 
       kemd, ncount = self.get_kinmd(atom, bead, nm, return_count=True)
-
+      # in the current implementation, if all atoms were selected, ncount=0. Set it back to number of atoms.
+      if ncount==0:
+         ncount=self.beads.natoms
+      print ncount, atom
       # "spreads" the COM removal correction evenly over all the atoms if just a few atoms are selected
-      return kemd/(0.5*Constants.kb) * (float(self.beads.natoms)/float(ncount)) / (3.0*self.beads.natoms*self.beads.nbeads - mdof)
+      #return kemd/(0.5*Constants.kb) * (float(self.beads.natoms)/float(ncount)) / (3.0*self.beads.natoms*self.beads.nbeads - mdof)
+      return  2.0*kemd/(Constants.kb*(3.0*float(ncount)*self.beads.nbeads - mdof)) 
 
    def get_kincv(self, atom=""):
       """Calculates the quantum centroid virial kinetic energy estimator.
@@ -985,7 +989,7 @@ class Properties(dobject):
          warning("Couldn't find an atom which matched the argument of kinetic energy, setting to zero.", verbosity.medium)
 
       if return_count:
-         return kmd/nbeads, ncount
+         return kmd/nbeads, ncount-self.beads.natoms
       else:
          return kmd/nbeads
 
