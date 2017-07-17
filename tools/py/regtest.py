@@ -137,8 +137,7 @@ IPI_WAITING_TIME = 5    # Time to wait after i-pi has been started
 
 
 # Compile them only once! pylint: disable=anomalous-backslash-in-string
-REGTEST_STRING_RGX = re.compile(r'<!--\s+REGTEST\s+([\s\w\.\+\-\(\)\:\<\>]*)'
-                                '\s+ENDREGTEST\s+-->')
+REGTEST_STRING_RGX = re.compile(r'<!--\s*REGTEST\s+([\s\w\W]*)\s+ENDREGTEST\s*-->')
 # pylint: enable=anomalous-backslash-in-string
 
 try:
@@ -363,6 +362,8 @@ def _file_is_test(path_to_test):
 
     with open(path_to_test) as _file:
         _text = _file.read()
+    print _text[:100]
+    print len([x.group(1) for x in REGTEST_STRING_RGX.finditer(_text)]) > 0
     return len([x.group(1) for x in REGTEST_STRING_RGX.finditer(_text)]) > 0
 
 
