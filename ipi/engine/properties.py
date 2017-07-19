@@ -672,7 +672,7 @@ class Properties(dobject):
 
       kemd, ncount = self.get_kinmd(atom, bead, nm, return_count=True)
 
-      return  2.0*kemd/(Constants.kb*(3.0*float(ncount)*self.beads.nbeads - mdof)) 
+      return  2.0 * kemd / (Constants.kb * (3.0 - mdof / float(self.beads.natoms) * self.beads.nbeads) * float(ncount) * self.beads.nbeads)
 
    def get_kincv(self, atom=""):
       """Calculates the quantum centroid virial kinetic energy estimator.
