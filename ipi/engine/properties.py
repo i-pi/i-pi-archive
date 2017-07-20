@@ -661,18 +661,21 @@ class Properties(dobject):
          mdof = 0
 
       if self.motion.fixcom:
-         if bead == "" and nm == "":
-            mdof += 3
-         elif nm != "" and nm == "0":   # the centroid has 100% of the COM removal
-            mdof += 3
-         elif nm != "" :
-            mdof += 0
-         else:
-            mdof += 3.0/ float(self.beads.nbeads)  # spreads COM removal over the beads
+         #Adds a fake momentum to the centre of mass
+         M = np.sum(self.beads.m3) / 3.0 / self.beads.nbeads
+         pcm = np.tile(np.sqrt(M * Constants.kb * self.ensemble.temp), 3)
+         vcm = np.tile(pcm / M , self.beads.natoms) 
+         
+         self.beads.p += self.beads.m3 * vcm
+
 
       kemd, ncount = self.get_kinmd(atom, bead, nm, return_count=True)
 
-      return  2.0 * kemd / (Constants.kb * (3.0 - mdof / float(self.beads.natoms) * self.beads.nbeads) * float(ncount) * self.beads.nbeads)
+      if self.motion.fixcom:
+         # Removes the fake momentum from the centre of mass.
+         self.beads.p -= self.beads.m3 * vcm
+      
+      return  2.0 * kemd / (Constants.kb * (3.0 * float(ncount) * self.beads.nbeads) - mdof)
 
    def get_kincv(self, atom=""):
       """Calculates the quantum centroid virial kinetic energy estimator.
