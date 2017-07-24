@@ -886,16 +886,16 @@ class Properties(dobject):
       """
 
       spring = self.beads.vpath * self.nm.omegan2/self.beads.nbeads
-      PkT32 = 1.5* Constants.kb*self.ensemble.temp*self.beads.nbeads
+      PkT32 = 1.5 * Constants.kb * self.ensemble.temp * self.beads.nbeads * self.beads.natoms
       pots = depstrip(self.forces.pots)
       potssc = depstrip(self.forces.potssc)
       v = 0.0
 
       for k in range(self.beads.nbeads):
           if k%2 == 0:
-              v += (potssc[k]+pots[k]/3.0)
+              v += (potssc[k] + pots[k]/3.0)
           else:
-              v += (potssc[k]-pots[k]/3.0)
+              v += (potssc[k] - pots[k]/3.0)
       v = v / self.beads.nbeads
 
       return PkT32 - spring + v
