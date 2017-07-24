@@ -25,7 +25,7 @@
 	  <thermostat mode='nfl'>
             <tau units='femtosecond'> 0 </tau>
             <invar units='atomic_unit'> 0 </invar>
-            <invtau units='femtosecond'> 500 </invtau>
+            <invtau units='femtosecond'> 1000 </invtau>
           </thermostat>
           <timestep units='femtosecond'> 0.1 </timestep>
 	</dynamics>
