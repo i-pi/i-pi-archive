@@ -1,12 +1,15 @@
-**************************************************************************
-  NOTE: This example is provided as a template to use i-pi and HswfQMC, 
-  and is designed to demonstrate the operation of the 'NFL' thermostat 
-  in this context. It is by no means a template for meaningful production
+****************************************************************************
+  NOTE: These examples are provided as templates to use i-pi and HswfQMC, 
+  and are designed to demonstrate the operation of the 'NFL' thermostat 
+  in this context. They are by no means templates for meaningful production
   simulations of hydrogen. However, it is still recommended to use a HPC 
   node to execute the HswfQMC client and expect around 12 hours execution 
   time to finish the full 1000 time steps of MD. Alternatively, cut down
   the number of steps and use a low number of CPUs for a quick local test.
-**************************************************************************
+
+  HswfQMC Git Repository: https://github.com/francesco086/HswfQMC
+  Example created by Jan Kessler
+****************************************************************************
 
                   -- Preparing the HswfQMC software --
 
@@ -42,29 +45,44 @@ $ pilot-HswfQMC.sh make_ipic
 
  * HswfQMC is now ready to use. 
 
-                  -- Running the HswfQMC example --
+                  -- Running the HswfQMC examples --
 
- * If you run both HswfQMC and i-pi on the same machine, you can directly run the 
-   example or adjust the number of CPUs beforehand. Assuming you are in the example's
-   directory and i-pi is in your PATH:
+ * If you run both HswfQMC and i-pi on the same machine, you can directly 
+   run the examples (but better adjust the number of MPI ranks before). 
+   Assuming you are in the top level directory of the examples 
+   (where README is) and i-pi is in your PATH:
 
-$ i-pi HswfQMC_i-pi_Example.xml > output &
+ * Fixed wavefunction classical MD:
+$ cd FixWF_1Bead
+$ i-pi HswfQMC_i-pi_Example_1Bead.xml > output &
 $ cd HswfQMC_Example_FixWF
 $ HswfQMC_ipic -h localhost -p 54321 -m fix -o 0 -c 64,0 -l 10 -v > output &
 
- * In the HswfQMC_ipic command above 64 is the number of CPUs. The example is tested 
-   with 64 CPUs, but should in principle be ok with any other number. The number of 
-   CPUs is proportional to the total number of MC sampling steps done.
+ * PIMD with wavefunction optimization:
+$ cd WFOpt_2Bead
+$ i-pi HswfQMC_i-pi_Example_2Bead.xml > output &
+$ cd HswfQMC_Example_WFOpt
+$ cd 0
+$ HswfQMC_ipic -h localhost -p 54322 -m sim -o 0 -c 32,0 -l 10 -v > output &
+$ cd ../1
+$ HswfQMC_ipic -h localhost -p 54322 -m sim -o 0 -c 32,0 -l 10 -v > output &
 
- * If you run HswfQMC on a different machine than the i-pi server, you have to adjust
-   the -h argument to the HswfQMC_ipic command according to your server's hostname/IP.
-   Also, you need to change the address in the example's i-pi input file accordingly.
+ * In the HswfQMC_ipic commands above 64 (or 2x 32) is the number of MPI ranks. 
+   The examples are tested with 64 ranks, but should in principle be ok with 
+   any other number. The number of ranks is proportional to the total number 
+   of MC sampling steps done.
+
+ * If you run HswfQMC on a different machine than the i-pi server, you have 
+   to adjust the -h argument to the HswfQMC_ipic command according to your 
+   server's hostname/IP. Also, you need to change the address in the example's 
+   i-pi input file accordingly.
 
  * If you completed the full 1000 steps you may now visualize the INV parameter 
-   adjustment of the NFL thermostat by using the provided python script (you need pylab):
+   adjustment of the NFL thermostat by using the provided python script within 
+   the HswfQMC example directories (you need pylab):
    
 $ python invar_plot.py
 
- * NOTE: For production runs the idea is to first find a good invar value via the 
-   automatic adjustment and to keep it fixed afterwards by setting invtau = 0 for 
-   the actual production calculation. 
+ * NOTE: For production runs the idea is to first find a good invar value via 
+   the automatic adjustment and to keep it fixed afterwards by setting invtau = 0 
+   for the actual production calculation. 
