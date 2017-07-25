@@ -789,14 +789,6 @@ class Forces(dobject):
       # This computes the difference between the Trotter and Suzuki-Chin Hamiltonian,
       # and the associated forces.
 
-      # We need to compute FW and BW finite differences, so first we initialize an
-      # auxiliary force evaluator
-
-      if (self.dforces is None) :
-         self.dbeads = self.beads.copy()
-         self.dcell = self.cell.copy()
-         self.dforces = self.copy(self.dbeads, self.dcell) 
-      
       if self.nbeads % 2 != 0:
          warning("ERROR: Suzuki-Chin factorization requires even number of beads!")
          exit()
@@ -805,28 +797,69 @@ class Forces(dobject):
       fbase = depstrip(self.f)
       fac = np.sqrt((fbase/self.beads.m3*fbase/self.beads.m3).sum()/(self.nbeads*self.natoms))
       delta = np.abs(self.mforces[-1].epsilon)/fac
-      if self.alpha==0:
-         # special case! half of the S-C forces are zero so we can compute forward-backward finite differences in one go!
-         fsc = fbase*0.0
-         for k in range(self.nbeads/2): # forward and backward go in the two halves of the q vector
-            self.dbeads.q[k]=self.beads.q[2*k+1] + delta * fbase[2*k+1]/self.beads.m3[2*k+1]
-            self.dbeads.q[self.nbeads/2+k]=self.beads.q[2*k+1] - delta * fbase[2*k+1]/self.beads.m3[2*k+1]
-         fplusminus = depstrip(self.dforces.f).copy()
-         if self.mforces[-1].epsilon < 0.0:  # use a centered difference schemei
-             print "for alpha =0 centered difference with delta=", delta, self.mforces[-1].epsilon
-             for k in range(self.nbeads/2): # only compute the elements that will not be set to zero when multiplying by alpha
-                 fsc[2*k+1] = 2*(fplusminus[self.nbeads/2+k]-fplusminus[k])/(2.0*delta)
-         else:
-             for k in range(self.nbeads/2): # do forward differences only
-                 fsc[2*k+1] = 2*(fplusminus[self.nbeads/2+k]-fbase[2*k+1])/delta
-      else: 
-         # standard, more expensive version (alpha=1 could also be accelerated but is not used in practice so laziness prevails)
-         self.dbeads.q = self.beads.q + delta*fbase/self.beads.m3 # move forward
-         fplus = depstrip(self.dforces.f).copy()
-         self.dbeads.q = self.beads.q - delta*fbase/self.beads.m3 # move backwards
-         fminus = depstrip(self.dforces.f).copy()
-         fsc = 2*(fminus - fplus)/2.0/delta      
+
+      # computes the centered finite difference
+      if self.mforces[-1].epsilon < 0.0:
          
+         # We need to compute FW and BW finite differences, so first we initialize an
+         # auxiliary force evaluator
+
+         if self.dforces is None:
+            self.dbeads = self.beads.copy()
+            self.dcell = self.cell.copy()
+            self.dforces = self.copy(self.dbeads, self.dcell)
+            print "the copy contains", self.dbeads.nbeads, "forces"
+
+            if self.alpha==0:
+               # half of the S-C forces are zero so we can compute forward-backward finite differences in one go!
+               fsc = fbase*0.0
+               for k in range(self.nbeads/2): # forward and backward go in the two halves of the q vector
+                  self.dbeads.q[k]=self.beads.q[2*k+1] + delta * fbase[2*k+1]/self.beads.m3[2*k+1]
+                  self.dbeads.q[self.nbeads/2+k]=self.beads.q[2*k+1] - delta * fbase[2*k+1]/self.beads.m3[2*k+1]
+               fplusminus = depstrip(self.dforces.f).copy()
+               for k in range(self.nbeads/2):
+                 fsc[2*k+1] = 2*(fplusminus[self.nbeads/2+k]-fplusminus[k])/(2.0*delta)
+            else: 
+	       # standard, more expensive version
+               self.dbeads.q = self.beads.q + delta*fbase/self.beads.m3 # move forward
+               fplus = depstrip(self.dforces.f).copy()
+               self.dbeads.q = self.beads.q - delta*fbase/self.beads.m3 # move backwards
+               fminus = depstrip(self.dforces.f).copy()
+               fsc = 2*(fminus - fplus)/2.0/delta      
+
+      # computes the forward finite difference
+      elif self.mforces[-1].epsilon > 0.0:
+         
+            if self.alpha==0:
+               # only half of the forces are required so we can use an aux force evaluator with less number of beads. 
+               if self.dforces is None:
+	          self.dbeads = self.beads.copy_vk(self.nbeads / 2)
+		  self.dcell = self.cell.copy()
+		  self.dforces = self.copy(self.dbeads, self.dcell)
+		  print "the copy contains", self.dbeads.nbeads, "forces"
+
+               fsc = fbase * 0.0
+               for k in range(self.nbeads / 2):
+                  j = 2 * k + 1
+                  self.dbeads.q[k] = self.beads.q[j] + delta * fbase[j] / self.beads.m3[j]
+               fplus = depstrip(self.dforces.f).copy()
+               for k in range(self.nbeads/2):
+                  j = 2 * k + 1
+                  fsc[j] = 2 * (fbase[j] - fplus[k]) / (2.0 * delta)
+            else: 
+               # We use an aux force evaluator to compute the forward difference.
+               if self.dforces is None:
+	          self.dbeads = self.beads.copy()
+	          self.dcell = self.cell.copy()
+	          self.dforces = self.copy(self.dbeads, self.dcell)
+
+               fsc = fbase * 0.0
+
+	       # standard, more expensive version
+               self.dbeads.q = self.beads.q + delta * fbase / self.beads.m3 # move forward
+               fplus = depstrip(self.dforces.f).copy()
+               fsc = 2 * (fbase - fplus) / 2.0 / delta      
+
       for k in range(self.nbeads):
          if k%2 == 0:
            fsc[k] = -self.f[k]/3.0 + (self.alpha/self.omegan2/9.0)*fsc[k]

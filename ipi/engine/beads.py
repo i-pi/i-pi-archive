@@ -144,6 +144,22 @@ class Beads(dobject):
       newbd.names[:] = self.names
       return newbd
 
+   def copy_vk(self, newP):
+      """Creates a new beads object with newP <= P beads from the original.
+
+      Returns:
+         A Beads object with the first newP q, p, m and names arrays as the original.
+      """
+
+      if newP  > self.nbeads:
+         raise ValueError("Cannot copy to an object with larger number of beads")
+
+      newbd = Beads(self.natoms, newP)
+      newbd.q[:] = self.q[:newP]
+      newbd.p[:] = self.p[:newP]
+      newbd.m[:] = self.m
+      newbd.names[:] = self.names
+      return newbd
 
    def m3tosm3(self):
       """Takes the mass array and returns the square rooted mass array."""
