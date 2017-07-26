@@ -130,7 +130,7 @@ class Beads(dobject):
             func=self.get_kstress,
                dependencies=[dd(b).kstress for b in self._blist])
 
-   def copy(self, nbeads = self.nbeads):
+   def copy(self, nbeads = -1):
       """Creates a new beads object with newP <= P beads from the original.
 
       Returns:
@@ -139,6 +139,8 @@ class Beads(dobject):
 
       if nbeads  > self.nbeads:
          raise ValueError("Cannot copy to an object with larger number of beads")
+      elif nbeads == -1:
+         nbeads = self.nbeads
 
       newbd = Beads(self.natoms, nbeads)
       newbd.q[:] = self.q[:nbeads]
