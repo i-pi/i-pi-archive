@@ -719,7 +719,7 @@ class Forces(dobject):
       dq = delta * fbase / self.beads.m3
 
       # stores the force component.
-      fbase = self.mforces[index].weight * self.mforces[index].mts_weights.sum() * self.mrpc[index].b2tob1(depstrip(self.mforces[index].f))
+      fbase = self.mrpc[index].b2tob1(depstrip(self.mforces[index].f))
 
       # uses a fwd difference if epsilon > 0.
       if self.mforces[index].epsilon > 0.0:
@@ -741,14 +741,14 @@ class Forces(dobject):
                self.dbeads.q[k] = self.beads.q[j] - dq[j]
 
             # calculates the force.
-            fminus = self.dforces.mforces[index].weight * self.dforces.mforces[index].mts_weights.sum() * self.dforces.mrpc[index].b2tob1((depstrip(self.dforces.mforces[index].f)))
+            fminus = self.dforces.mrpc[index].b2tob1(depstrip(self.dforces.mforces[index].f))
 
             # calculates the finite difference.
             for k in range(self.nbeads/2):
                j = 2 * k + 1
                f_4th_order[j] = 2.0 * (fminus[k] - fbase[j]) / delta
 
-         # For the case of alpha != 0, forces need to be evaluated on all the beads.
+         # For the case of alpha != 0, all the beads are displaced.
          else:
            
          # we use an aux force evaluator with the same number of beads.
@@ -763,7 +763,7 @@ class Forces(dobject):
             self.dbeads.q = self.beads.q + dq
 
             # calculates the force.
-            fplus = self.dforces.mforces[index].weight * self.dforces.mforces[index].mts_weights.sum() * self.dforces.mrpc[index].b2tob1((depstrip(self.dforces.mforces[index].f)))
+            fplus = self.dforces.mrpc[index].b2tob1((depstrip(self.dforces.mforces[index].f)))
 
             # calculates the finite difference.
             f_4th_order = 2.0 * (fbase - fplus) / delta
@@ -789,7 +789,7 @@ class Forces(dobject):
                   self.dbeads.q[self.nbeads / 2 + k] = self.beads.q[j] - dq[j]
                   
                # calculates the forces.
-               fplusminus = self.dforces.mforces[index].weight * self.dforces.mforces[index].mts_weights.sum() * self.dforces.mrpc[index].b2tob1(depstrip(self.dforces.f))
+               fplusminus = self.dforces.mrpc[index].b2tob1(depstrip(self.dforces.f))
 
                # calculates the finite difference.
                for k in range(self.nbeads/2):
@@ -808,7 +808,7 @@ class Forces(dobject):
                self.dbeads.q = self.beads.q - dq
 
                # calculates the forces.
-               fminus = self.mforces[index].weight * self.mforces[index].mts_weights.sum() * self.mrpc[index].b2tob1((self.dforces.f))
+               fminus = self.dforces.mrpc[index].b2tob1(depstrip(self.dforces.f))
                # calculates the finite difference.
                f_4th_order = 2.0 * (fminus - fplus) / 2.0 / delta
 
@@ -840,8 +840,8 @@ class Forces(dobject):
 
       rf = np.zeros((self.nbeads,3*self.natoms),float)
       for k in range(self.nforces):
-         if self.mforces[k].weight > 0:
-            rf += self.forces_4th_order(k)
+         if self.mforces[k].weight > 0 and self.mforces[k].mts_weights.sum() != 0:
+            rf += self.mforces[k].weight * self.mforces[k].mts_weights.sum() * self.forces_4th_order(k)
       return rf
 
    def pot_combine(self):
