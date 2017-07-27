@@ -935,7 +935,6 @@ class Forces(dobject):
       rc = np.zeros(self.beads.nbeads)
       rc[0::2] = -1.0 / 3.0
       rc[1::2] =  1.0 / 3.0
-      print np.asmatrix(rc).T, "I am inside get_coeffsc_part_1"
       return np.asmatrix(rc).T
 
    def get_coeffsc_part_2(self):
@@ -944,6 +943,5 @@ class Forces(dobject):
       rc = np.zeros(self.beads.nbeads)
       rc[0::2] =  (self.alpha / self.omegan2 / 9.0)
       rc[1::2] =  ((1.0 - self.alpha) / self.omegan2 / 9.0)
-      print np.asmatrix(rc).T, "I am inside get_coeffsc_part_2"
       return np.asmatrix(rc).T
 
