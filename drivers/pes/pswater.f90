@@ -580,6 +580,8 @@ subroutine dms_nasa(r1, q3, gradq)
 !**** added  by C. J. Burnham.
 !*** 
 ! MR: I here assumed that r1 is also in Angstrom (seem right because of reoh) and q3 is in e.
+! MR: Now, in the paper the dipole is defined basically as P1*ROH1+P2*ROH2. The code expects the
+! MR: oxygen to be in the origin. Maybe it also expects a certain orientation of the OH bonds, which I'm checking.
 implicit none
 double precision, dimension(3, 3) :: R1
 double precision, dimension(3):: q3
@@ -695,11 +697,12 @@ dp2dr2=dp2dr2*bfac
    ang = atan2(sinth, costh)
 !   print*,'QQQ=',dms_param1
 ! MR: Hoping that the terms below are also conforming to the paper.
-   P1 = dms_param1*(dROH1 - dms_param2) + dms_param3*(ang-ath0)
-   P2 = dms_param1*(dROH2 - dms_param2) + dms_param3*(ang-ath0)
-   q3(1) = q3(1) - (P1+P2)
-   q3(2) = q3(2) + P1
-   q3(3) = q3(3) + P2
+! MR: I commented the following lines starting with "!!" 
+!!   P1 = dms_param1*(dROH1 - dms_param2) + dms_param3*(ang-ath0)
+!!   P2 = dms_param1*(dROH2 - dms_param2) + dms_param3*(ang-ath0)
+!!   q3(1) = q3(1) - (P1+P2)
+!!   q3(2) = q3(2) + P1
+!!   q3(3) = q3(3) + P2
    dp1dr1 = dp1dr1 + dms_param1
    dp2dr2 = dp2dr2 + dms_param1
    dp1dcabc = dp1dcabc   - dms_param3/sinth

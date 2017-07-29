@@ -283,7 +283,7 @@ class NMFDPhononCalculator(FDPhononCalculator):
         """ Reference all the variables for simpler access."""
         super(NMFDPhononCalculator,self).bind(dm)
 
-        if(self.dm.dynmatrix.all() == np.zeros((self.dm.beads.q.size,self.dm.beads.q.size)).all()):
+        if(np.array_equal(self.dm.dynmatrix, np.zeros((self.dm.beads.q.size,self.dm.beads.q.size)))):
             raise ValueError("Force constant matrix size not found")
 
         #Initialises a 3*number of atoms X 3*number of atoms refined dynamic matrix.
