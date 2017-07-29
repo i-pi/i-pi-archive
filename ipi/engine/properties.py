@@ -399,7 +399,14 @@ class Properties(dobject):
                       "help": "The kinetic stress tensor of the (extended) classical system.",
                       "longhelp": """The kinetic stress tensor of the (extended) classical system. Returns the 6
                       independent components in the form [xx, yy, zz, xy, xz, yz].""",
-                      "func": (lambda: self.tensor2vec(self.nm.kstress/self.cell.V))},
+                      "func": (lambda: self.tensor2vec(self.nm.kstress/self.cell.V))}, 
+      "virial_fq": {  "dimension": "energy",
+                      "size" : 1,
+                      "help": "The scalar product of force and position.",
+                      "longhelp": """Returns the scalar product of force and positions. Useful to compensate for 
+                          the harmonic component of a potential. Gets one argument 'ref' that should be a filename for a 
+                          reference configuration, in the style of the FFDeby geometry input, and one that contains the input units.""",
+                      "func": self.get_fqvirial },
       "virial_md": {  "dimension": "pressure",
                       "size" : 6,
                       "help": "The virial tensor of the (extended) classical system.",
@@ -587,6 +594,7 @@ class Properties(dobject):
       self.dbeads = system.beads.copy()
       self.dcell = system.cell.copy()
       self.dforces = system.forces.copy(self.dbeads, self.dcell)
+      self.fqref = None
 
       # self.properties_init()  # Initialize the properties here so that all
                               #+all variables are accessible (for example to set
@@ -807,7 +815,22 @@ class Properties(dobject):
          warning("Couldn't find an atom which matched the argument of kinetic energy, setting to zero.", verbosity.medium)
 
       return acv
-
+      
+   def get_fqvirial(self, ref="", units=""):
+       if self.fqref is None:
+           if ref=="":
+               self.fqref = np.zeros(3*self.beads.natoms)
+           else:
+               self.fqref = np.loadtxt(ref).flatten() * unit_to_internal('length', units, 1)
+               if len(self.fqref) != 3*self.beads.natoms:
+                   raise ValueError("Atom number mismatch in reference file for virial_fq")
+       fq = 0.0
+       for b in xrange(self.beads.nbeads ):
+           fq += np.dot(self.forces.f[b], self.beads.q[b]-self.fqref)
+           
+       return fq*0.5/self.beads.nbeads
+       
+       
    def get_sckintd(self, atom=""):
       """Calculates the Suzuki-Chin thermodynamic quantum centroid virial kinetic energy estimator.
 
