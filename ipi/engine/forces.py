@@ -802,7 +802,7 @@ class Forces(dobject):
                self.dbeads.q[-self.nbeads / 2:] = depstrip(self.beads.q)[1::2] - dq[1::2]
                   
                # calculates the forces.
-               fplusminus = self.dforces.mrpc[index].b2tob1(depstrip(self.dforces.f))
+               fplusminus = self.dforces.mrpc[index].b2tob1(depstrip(self.dforces.mforces[index].f))
 
                # calculates the finite difference.
                for k in range(self.nbeads/2):
@@ -815,13 +815,13 @@ class Forces(dobject):
                self.dbeads.q = self.beads.q + dq
 
                # calculates the forces.
-               fplus = self.mrpc[index].b2tob1((self.dforces.f))
+               fplus = self.dforces.mrpc[index].b2tob1(depstrip(self.dforces.mforces[index].f))
 
                # displaces the beads.
                self.dbeads.q = self.beads.q - dq
 
                # calculates the forces.
-               fminus = self.dforces.mrpc[index].b2tob1(depstrip(self.dforces.f))
+               fminus = self.dforces.mrpc[index].b2tob1(depstrip(self.dforces.mforces[index].f))
                # calculates the finite difference.
                f_4th_order = 2.0 * (fminus - fplus) / 2.0 / delta
 
