@@ -731,6 +731,7 @@ class Forces(dobject):
          warning("ERROR: Suzuki-Chin factorization requires even number of beads!")
          exit()
 
+
       # calculates the finite displacement.
       fbase = depstrip(self.f)
       eps = self.mforces[index].epsilon
@@ -742,8 +743,13 @@ class Forces(dobject):
 
       # uses a fwd difference if epsilon > 0.
       if self.mforces[index].epsilon > 0.0:
+      
+         # gives an error if RPC is used with a fwd difference.
+         if self.mforces[index].nbeads != self.nbeads:
+            warning("ERROR: The |f|^2  term has to be computed with a centered difference!")
+            exit()
 
-            # for the case of alpha = 0, only odd beads are displaced.
+         # for the case of alpha = 0, only odd beads are displaced.
          if self.alpha == 0:
  
             # we use an aux force evaluator with half the number of beads. 
