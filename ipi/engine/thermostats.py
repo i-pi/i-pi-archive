@@ -21,7 +21,7 @@ from ipi.engine.beads import Beads
 from ipi.engine.normalmodes import NormalModes
 
 
-__all__ = ['Thermostat', 'ThermoLangevin', 'ThermoPILE_L', 'ThermoPILE_G',
+__all__ = ['Thermostat', 'ThermoLangevin', 'ThermoNFL', 'ThermoPILE_L', 'ThermoPILE_G',
            'ThermoSVR', 'ThermoGLE', 'ThermoNMGLE', 'ThermoNMGLEG', 'MultiThermo']
 
 
@@ -194,7 +194,106 @@ class ThermoLangevin(Thermostat):
 
       self.p = p
       self.ethermo = et
-      
+
+
+class ThermoNFL(Thermostat):
+   """Represents a Langevin thermostat for systems driven by stochastical (noisy) forces,
+      adding adequate additional damping to compensate for the inherent white noise term
+      originating from the forces.
+      The variance of that white noise term (invar) must be set to reach the target temperature.
+      Alternatively, if the adjustment time coefficient invtau is set > 0, invar will be automatically
+      adjusted over time according to the difference of system temperature to target temperature.
+
+   Depend objects:
+      tau: Thermostat damping time scale. Larger values give a less strongly
+         coupled thermostat.
+      invar: Inherent noise variance. Larger invar results in larger additional damping term.
+      invtau: invar-temperature coupling time constant.
+      T: Coefficient of the diffusive contribution of the thermostat, i.e. the
+         drift back towards equilibrium. Depends on tau and the time step.
+      S: Coefficient of the stochastic contribution of the thermostat, i.e.
+         the uncorrelated Gaussian noise. Depends on T and the temperature.
+   """
+
+   def get_T(self):
+      """Calculates the coefficient of the overall drift of the velocities."""
+
+      inT = self.invar/(Constants.kb*self.temp)
+
+      if self.tau > 0: langT = np.exp(-self.dt/self.tau)
+      else: langT = 1.0
+
+      nflT = langT - inT
+      if nflT < 0: nflT = 0
+
+      return np.sqrt( nflT )
+
+   def get_S(self):
+      """Calculates the coefficient of the white noise."""
+
+      if self.tau > 0:
+         return np.sqrt(Constants.kb*self.temp*(1.0 - np.exp(-self.dt/self.tau)))
+      else:
+         return 0.0
+
+   def __init__(self, temp = 1.0, dt = 1.0, tau = 0, invar = 0.0, invtau = 0, ethermo=0.0):
+      """Initialises ThermoNFL.
+
+      Args:
+         temp: The simulation temperature. Defaults to 1.0.
+         dt: The simulation time step. Defaults to 1.0.
+         tau: The thermostat damping timescale. Defaults to 0 (off).
+         invar: Estimated inherent noise variance. Defaults to 0.0.
+         invtau: invar-temperature coupling time constant. Defaults to 0 (off).
+         ethermo: The initial heat energy transferred to the bath.
+            Defaults to 0.0. Will be non-zero if the thermostat is
+            initialised from a checkpoint file.
+      """
+
+      super(ThermoNFL,self).__init__(temp, dt, ethermo)
+
+      self.invstep = False
+      dset(self,"tau",depend_value(value=tau,name='tau'))
+      dset(self,"invar",depend_value(value=invar,name='invar'))
+      dset(self,"invtau",depend_value(value=invtau,name='invtau'))
+      dset(self,"T",
+         depend_value(name="T",func=self.get_T,
+            dependencies=[dget(self,"temp"), dget(self,"tau"), dget(self,"dt"), dget(self,"invar")]))
+      dset(self,"S",
+         depend_value(name="S",func=self.get_S,
+            dependencies=[dget(self,"temp"), dget(self,"tau"), dget(self,"dt")]))
+
+
+   def step(self):
+      """Updates the bound momentum vector with a langevin thermostat."""
+
+      et = self.ethermo
+      p = depstrip(self.p).copy()
+      sm = depstrip(self.sm)
+
+      p /= sm
+
+      et += np.dot(p,p)*0.5
+      p *= self.T
+      p += self.S*self.prng.gvec(len(p))
+      et -= np.dot(p,p)*0.5
+
+      p *= sm
+
+      self.p = p
+      self.ethermo = et
+
+      if self.invtau > 0 and self.invstep:
+         ekin = np.dot(depstrip(self.p),depstrip(self.p)/depstrip(self.m))*0.5
+         mytemp = ekin/Constants.kb/self.ndof * 2
+         self.invar += Constants.kb * (mytemp - self.temp) / self.invtau * self.dt
+         if self.invar < 0: self.invar = 0
+
+         print("ThermoNFL inherent noise variance: " + str(self.invar))
+
+      self.invstep = not self.invstep
+
+
 class ThermoPILE_L(Thermostat):
    """Represents a PILE thermostat with a local centroid thermostat.
 
