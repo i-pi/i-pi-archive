@@ -466,6 +466,7 @@ class CheckpointOutput(dobject):
       # Advance the step counter before saving, so next time the correct index will be loaded.
       if store:
          self.step += 1
+         self.simul.step += 1
          self.store()
 
       with open_function(filename, "w") as check_file:
