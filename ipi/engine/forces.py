@@ -887,7 +887,6 @@ class Forces(dobject):
                v_4th_order = 2.0 * (vminus - vplus) / 2.0 / delta
 
       # returns the 4th order |f^2| correction.
-      print v_4th_order
       return f_4th_order
 
    def vir_mts(self, level):
