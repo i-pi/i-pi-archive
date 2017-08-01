@@ -744,9 +744,18 @@ class Forces(dobject):
       # uses a fwd difference if epsilon > 0.
       if self.mforces[index].epsilon > 0.0:
       
-         # gives an error if RPC is used with a fwd difference.
+         # gives an error if RPC is used with a fwd difference. 
+         # The problem is that the finite difference is computed as [f(q + e.f) - f(q)].e^-1, 
+         # where f(q + e.f) is computed on a smaller rimg polymer of P / 2 beads which is made 
+         # by displacing the odd beads of the original ring polymer. Upon contraction,  it yields 
+         # a ring polymer that is different from the contracted one on which f(q) was computed. 
+         # This makes the FD incorrect. A fix could be to ALWAYS compute the odd and the even 
+         # beads on two different ring polymers of P / 2 beads, but centered difference + RPC
+         # seems to be a neater solution. Anyway, the cost of a CNT-DIFF in comparison to a FWD-DIFF
+         # is marginal in when RPC + MTS is used. 
+
          if self.mforces[index].nbeads != self.nbeads:
-            warning("ERROR: The |f|^2  term has to be computed with a centered difference!")
+            warning("ERROR: high order PIMD + RPC works with a centered finite difference only! (Uness you find an elegant solution :))")
             exit()
 
          # for the case of alpha = 0, only odd beads are displaced.

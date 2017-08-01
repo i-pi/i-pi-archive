@@ -18,7 +18,7 @@
     </initialize>
     <forces>
     <force nbeads="16" forcefield="lmpserial1"> </force>
-    <force nbeads="4"  forcefield="lmpserial2"> </force>
+    <force nbeads="4"  forcefield="lmpserial2" fd_epsilon="1e-3"> </force>
     </forces>
         <motion mode="dynamics">
             <dynamics mode="sc">
