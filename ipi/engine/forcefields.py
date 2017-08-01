@@ -20,6 +20,8 @@ from ipi.utils.messages import info
 from ipi.interfaces.sockets import InterfaceSocket
 from ipi.utils.depend import dobject
 from ipi.utils.depend import depstrip
+from ipi.utils.io import read_file
+from ipi.utils.units import unit_to_internal
 
 
 __all__ = ['ForceField', 'FFSocket', 'FFLennardJones', 'FFDebye']
@@ -419,3 +421,106 @@ class FFDebye(ForceField):
       r["result"] = [ self.vref + 0.5*np.dot(d,mf), -mf, np.zeros((3,3),float), ""]
       r["status"] = "Done"
       r["t_finished"] = time.time()
+
+
+try:
+    import plumed
+except:
+    plumed = None
+    
+class FFPlumed(ForceField):
+    """Direct PLUMED interface
+
+    Computes forces from a PLUMED input. 
+
+    Attributes:
+        parameters: A dictionary of the parameters used by the driver. Of the
+            form {'name': value}.
+        requests: During the force calculation step this holds a dictionary
+            containing the relevant data for determining the progress of the step.
+            Of the form {'atoms': atoms, 'cell': cell, 'pars': parameters,
+                      'status': status, 'result': result, 'id': bead id,
+                      'start': starting time}.  
+    """
+   
+    def __init__(self, latency=1.0e-3, name="", pars=None, dopbc=False, init_file="", plumeddat="", precision=8, plumedstep=0):
+        """Initialises FFPlumed.
+
+        Args:
+           pars: Optional dictionary, giving the parameters needed by the driver.
+        """
+
+        
+        # a socket to the communication library is created or linked
+        if plumed is None:
+            raise ImportError("Cannot find plumed libraries to link to a FFPlumed object/")
+        super(FFPlumed, self).__init__(latency, name, pars, dopbc=False)        
+        self.plumed = plumed.Plumed(precision)
+        self.precision = precision
+        self.plumeddat = plumeddat
+        self.plumedstep = plumedstep
+        self.init_file = init_file
+        
+        if self.init_file.mode == "xyz":
+            infile = open(self.init_file.value, "r")
+            myframe = read_file(self.init_file.mode,infile)
+            myatoms = myframe['atoms']
+            mycell = myframe['cell']
+            myatoms.q *= unit_to_internal("length", self.init_file.units, 1.0)
+            mycell.h *= unit_to_internal("length", self.init_file.units, 1.0)
+            
+            
+        self.natoms = myatoms.natoms
+        self.plumed.cmd("setNatoms", self.natoms)
+        self.plumed.cmd("setPlumedDat", self.plumeddat)
+        self.plumed.cmd("setTimestep", 1.)
+        self.plumed.cmd("setMDEnergyUnits", 2625.4996)        # Pass a pointer to the conversion factor between the energy unit used in your code and kJ mol-1
+        self.plumed.cmd("setMDLengthUnits", 0.052917721)        # Pass a pointer to the conversion factor between the length unit used in your code and nm 
+        self.plumed.cmd("setMDTimeUnits", 2.4188843e-05)
+        self.plumed.cmd("init")
+        self.charges = depstrip(myatoms.q) * 0.0
+        self.masses = depstrip(myatoms.m)
+                
+        
+
+    def poll(self):
+        """Polls the forcefield checking if there are requests that should
+        be answered, and if necessary evaluates the associated forces and energy."""
+
+        # We have to be thread-safe, as in multi-system mode this might get
+        # called by many threads at once.
+        self._threadlock.acquire()
+        try:
+            for r in self.requests:
+                if r["status"] == "Queued":
+                    r["status"] = "Running"
+                    r["t_dispatched"] = time.time()
+                    self.evaluate(r)
+        finally:
+            self._threadlock.release()
+
+    def evaluate(self, r):
+        """A wrapper function to call the PLUMED evaluation routines
+        and return forces."""
+
+        if self.natoms != len(r["pos"])/3:
+            raise ValueError("Size of atom array changed after initialization of FFPlumed")
+            
+        
+        v = 0.0
+        f = np.zeros(3*self.natoms)
+        vir = np.zeros((3,3))
+
+        self.plumed.cmd("setStep", self.plumedstep)       
+        self.plumed.cmd("setBox", r["cell"][0]) 
+        self.plumed.cmd("setCharges", self.charges)
+        self.plumed.cmd("setMasses", self.masses)
+        self.plumed.cmd("setPositions", r["pos"])
+        self.plumed.cmd("setForces", f)
+        self.plumed.cmd("setVirial", vir)
+        self.plumed.cmd("calc")
+        self.plumed.cmd("getBias", v)
+        self.plumedstep +=1         
+        
+        r["result"] = [v, f, vir, ""]
+        r["status"] = "Done"

@@ -90,7 +90,8 @@ class InputSimulation(Input):
              "system" :   (InputSystem,    { "help"  : InputSystem.default_help }),
              "ffsocket": (iforcefields.InputFFSocket, { "help": iforcefields.InputFFSocket.default_help} ),
              "fflj": (iforcefields.InputFFLennardJones, { "help": iforcefields.InputFFLennardJones.default_help} ),
-             "ffdebye": (iforcefields.InputFFDebye, { "help": iforcefields.InputFFDebye.default_help} )
+             "ffdebye": (iforcefields.InputFFDebye, { "help": iforcefields.InputFFDebye.default_help} ),
+             "ffplumed": (iforcefields.InputFFPlumed, { "help": iforcefields.InputFFDebye.default_help} )
              }
 
    default_help = "This is the top level class that deals with the running of the simulation, including holding the simulation specific properties such as the time step and outputting the data."
@@ -146,6 +147,10 @@ class InputSimulation(Input):
             iff = iforcefields.InputFFDebye()
             iff.store(ff)
             self.extra.append(("ffdebye",iff))
+         elif type(ff) is eforcefields.FFPlumed:
+            iff = iforcefields.InputFFPlumed()
+            iff.store(ff)
+            self.extra.append(("ffplumed",iff))
 
 
       for s in simul.syslist:
@@ -181,12 +186,9 @@ class InputSimulation(Input):
                syslist.append(v.fetch())
                if (v.copies.fetch() > 1):
                   syslist[-1].prefix = syslist[-1].prefix + ( ("%0" + str(int(1 + np.floor(np.log(v.copies.fetch())/np.log(10)))) + "d") % (isys) )
-         elif k == "ffsocket":
+         elif k == "ffsocket" or k == "fflj" or k == "ffdebye" or k == "ffplumed" :
             fflist.append(v.fetch())
-         elif k == "fflj":
-            fflist.append(v.fetch())
-         elif k == "ffdebye":
-            fflist.append(v.fetch())
+        
 
 
       # this creates a simulation object which gathers all the little bits
