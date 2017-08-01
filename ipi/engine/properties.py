@@ -224,14 +224,12 @@ class Properties(dobject):
                       'func': (lambda: self.cell.V) },
 
       "cell_h": {    "dimension" : "length",
-                      "help": "The simulation cell as a matrix. Returns the 6 non-zero components 
-                      in the form [xx, yy, zz, xy, xz, yz].",
+                      "help": "The simulation cell as a matrix. Returns the 6 non-zero components in the form [xx, yy, zz, xy, xz, yz].",
                       "size": 6,
                       "func": (lambda: self.tensor2vec(self.cell.h))},
 
       "cell_abcABC": {"dimension" : "undefined",
-                      "help": "The lengths of the cell vectors and the angles between them in degrees 
-                      as a list of the form [a, b, c, A, B, C]",
+                      "help": "The lengths of the cell vectors and the angles between them in degrees as a list of the form [a, b, c, A, B, C]",
                       "longhelp": """The lengths of the cell vectors and the angles between them in degrees as a list of the
                       form [a, b, c, A, B, C], where A is the angle between the sides of length b and c in degrees, and B and C
                       are defined similarly. Since the output mixes different units, a, b and c can only be output in bohr.""",
@@ -261,7 +259,7 @@ class Properties(dobject):
 
       "potential_opsc": {  "dimension" : "energy",
                       "help" : "The Suzuki-Chin operator estimator for the potential energy of the physical system.",
-                      'func': (lambda: 2.0 / self.beads.nbeads * np.sum(self.forces.pots[::2])
+                      'func': (lambda: 2.0 / self.beads.nbeads * np.sum(self.forces.pots[::2]))
                         },
 
       "potential_tdsc": {  "dimension" : "energy",
@@ -324,8 +322,7 @@ class Properties(dobject):
                       'func': self.get_sckinpr},
 
       "kinetic_tdsc":  {"dimension" : "energy",
-                      "help": "The Suzuki-Chin centroid-virial thermodynamic estimator of the quantum 
-                      kinetic energy of the physical system.",
+                      "help": "The Suzuki-Chin centroid-virial thermodynamic estimator of the quantum kinetic energy of the physical system.",
                       "longhelp": """The Suzuki-Chin centroid-virial thermodynamic estimator of the quantum 
                       kinetic energy of the physical system. Takes an argument 'atom', which can be either 
                       an atom label or index (zero based) to specify which species to find the kinetic energy 
@@ -333,8 +330,7 @@ class Properties(dobject):
                       'func': self.get_sckintd},
 
       "kinetic_opsc":  {"dimension" : "energy",
-                      "help": "The Suzuki-Chin centroid-virial operator estimator of the quantum 
-                      kinetic energy of the physical system.",
+                      "help": "The Suzuki-Chin centroid-virial operator estimator of the quantum kinetic energy of the physical system.",
                       "longhelp": """The centroid-virial quantum kinetic energy of the physical system.
                       Takes an argument 'atom', which can be either an atom label or index (zero based)
                       to specify which species to find the kinetic energy of. If not specified, all atoms are used.""",
@@ -476,8 +472,7 @@ class Properties(dobject):
                       "size": 2},
 
       "sc_scaledcoords": {   "dimension": "undefined",
-                      "help" : "The Suzuki-Chin scaled coordinates estimators that can be used to 
-                      compute energy and heat capacity",
+                      "help" : "The Suzuki-Chin scaled coordinates estimators that can be used to compute energy and heat capacity",
                        "longhelp": """Returns the estimators that are required to evaluate the scaled-coordinates estimators
                        for total energy and heat capacity, as described in T. M. Yamamoto,
                        J. Chem. Phys., 104101, 123 (2005). Returns eps_v and eps_v', as defined in that paper.
@@ -581,8 +576,7 @@ class Properties(dobject):
        "isotope_zetatd_4th":  {"dimension" : "undefined",
                           "size" : 5,
                           'func': self.get_isotope_zetatd_4th,
-                          "help": "4th order thermodynamic isotope fractionation direct estimator 
-                          in the form of ratios of partition functions.",
+                          "help": "4th order thermodynamic isotope fractionation direct estimator in the form of ratios of partition functions.",
                           "longhelp" : """Returns the (many) terms needed to compute the thermodynamic 
                           fourth-order direct estimator. Takes two arguments, 'alpha' , which gives the 
                           scaled mass parameter and default to '1.0', and 'atom', which is the label or 
@@ -595,8 +589,7 @@ class Properties(dobject):
        "isotope_zetasc_4th":  {"dimension" : "undefined",
                           "size" : 5,
                           'func': self.get_isotope_zetasc_4th,
-                          "help": "4th order scaled-coordinates isotope fractionation direct estimator in 
-                          the form of ratios of partition functions.",
+                          "help": "4th order scaled-coordinates isotope fractionation direct estimator in the form of ratios of partition functions.",
                           "longhelp" : """Returns the (many) terms needed to compute the scaled-coordinates 
                           fourth-order direct estimator. Takes two arguments, 'alpha' , which gives the scaled 
                           mass parameter and default to '1.0', and 'atom', which is the label or index of a type 
