@@ -517,7 +517,7 @@ class Forces(dobject):
          newb = fc.nbeads
          # if the number of beads for this force component is unspecified,
          # assume full force evaluation
-         if newb == 0: newb = beads.nbeads
+         if newb == 0 or newb > beads.nbeads: newb = beads.nbeads
          newforce = ForceComponent(ffield=fc.ffield, name=fc.name, nbeads=newb, weight=fc.weight, mts_weights=fc.mts_weights, epsilon=fc.epsilon)
          newbeads = Beads(beads.natoms, newb)
          newrpc = nm_rescale(beads.nbeads, newb)
@@ -582,14 +582,32 @@ class Forces(dobject):
             dependencies=[dget(self.beads, "m"), dget(self, "f"), dget(self,"pots"), dget(self,"alpha"),  dget(self,"omegan2")],
             func=self.get_potssc ) )
                                          
+      dset(self, "coeffsc_part_1", depend_array(name="coeffsc_part_1",value=np.zeros((self.nbeads,1), float),
+            func=self.get_coeffsc_part_1))
+
+      dset(self, "coeffsc_part_2", depend_array(name="coeffsc_part_2",value=np.zeros((self.nbeads,1) , float),
+            dependencies=[dget(self,"alpha"),  dget(self,"omegan2")], func=self.get_coeffsc_part_2))
+
+      dset(self, "f_4th_order", depend_array(name="f_4th_order",value=np.zeros((self.nbeads,3*self.natoms),float),
+            dependencies=[dget(self.beads, "m"), dget(self, "f"), dget(self,"pots") ],
+            func=self.f_4th_order_combine))
+
+      dset(self, "fsc_part_1", depend_array(name="fsc_part_1",value=np.zeros((self.nbeads,3*self.natoms),float),
+            dependencies=[dget(self, "coeffsc_part_1"), dget(self,"f")],
+            func=self.get_fsc_part_1))
+
+      dset(self, "fsc_part_2", depend_array(name="fsc_part_2",value=np.zeros((self.nbeads,3*self.natoms),float),
+            dependencies=[dget(self, "coeffsc_part_2"), dget(self,"f_4th_order")],
+            func=self.get_fsc_part_2))
+
       dset(self, "fsc", depend_array(name="fsc",value=np.zeros((self.nbeads,3*self.natoms),float),
-            dependencies=[dget(self.beads, "m"), dget(self, "f"), dget(self,"pots"), dget(self,"alpha"),  dget(self,"omegan2")],
-            func=self.get_scforce ) )
+            dependencies=[dget(self, "fsc_part_1"), dget(self,"fsc_part_2")],
+            func=self.get_fsc))
 
       dset(self, "potsc", value=depend_value(name="potsc",
             dependencies=[dget(self,"potssc")],
             func=(lambda: self.potssc.sum()) ) )       
-            
+
 
    def copy(self, beads=None, cell = None):
       """ Returns a copy of this force object that can be used to compute forces,
@@ -677,7 +695,7 @@ class Forces(dobject):
       return vir
 
    def pots_component(self, index, weighted=True):   
-      # fetches just one of the potential components
+      """Fetches the index^th component of the total potential."""
       if weighted:
          if self.mforces[index].weight > 0:
             return self.mforces[index].weight*self.mrpc[index].b2tob1(self.mforces[index].pots)
@@ -687,7 +705,7 @@ class Forces(dobject):
          return self.mrpc[index].b2tob1(self.mforces[index].pots)
          
    def forces_component(self, index, weighted=True):
-      # fetches just one of the force components
+      """ Fetches the index^th component of the total force."""
       if weighted:
          if self.mforces[index].weight > 0:
             return self.mforces[index].weight*self.mrpc[index].b2tob1(depstrip(self.mforces[index].f))
@@ -704,6 +722,126 @@ class Forces(dobject):
          if len(self.mforces[index].mts_weights) > level and self.mforces[index].mts_weights[level] != 0  and self.mforces[index].weight > 0:
               fk += self.mforces[index].weight*self.mforces[index].mts_weights[level]*self.mrpc[index].b2tob1(depstrip(self.mforces[index].f))
       return fk
+
+   def forces_4th_order(self, index):
+      """ Fetches the 4th order |f^2| correction to the force vector associated with a given component."""
+
+      # gives an error is number of beads is not even.
+      if self.nbeads % 2 != 0:
+         warning("ERROR: Suzuki-Chin factorization requires even number of beads!")
+         exit()
+
+
+      # calculates the finite displacement.
+      fbase = depstrip(self.f)
+      eps = self.mforces[index].epsilon
+      delta = np.abs(eps) / np.sqrt((fbase / self.beads.m3 * fbase / self.beads.m3).sum() / (self.nbeads * self.natoms))
+      dq = delta * fbase / self.beads.m3
+
+      # stores the force component.
+      fbase = self.mrpc[index].b2tob1(depstrip(self.mforces[index].f))
+
+      # uses a fwd difference if epsilon > 0.
+      if self.mforces[index].epsilon > 0.0:
+      
+         # gives an error if RPC is used with a fwd difference. 
+         # The problem is that the finite difference is computed as [f(q + e.f) - f(q)].e^-1, 
+         # where f(q + e.f) is computed on a smaller rimg polymer of P / 2 beads which is made 
+         # by displacing the odd beads of the original ring polymer. Upon contraction,  it yields 
+         # a ring polymer that is different from the contracted one on which f(q) was computed. 
+         # This makes the FD incorrect. A fix could be to ALWAYS compute the odd and the even 
+         # beads on two different ring polymers of P / 2 beads, but centered difference + RPC
+         # seems to be a neater solution. Anyway, the cost of a CNT-DIFF in comparison to a FWD-DIFF
+         # is marginal in when RPC + MTS is used. 
+
+         if self.mforces[index].nbeads != self.nbeads:
+            warning("ERROR: high order PIMD + RPC works with a centered finite difference only! (Uness you find an elegant solution :))")
+            exit()
+
+         # for the case of alpha = 0, only odd beads are displaced.
+         if self.alpha == 0:
+ 
+            # we use an aux force evaluator with half the number of beads. 
+            if self.dforces is None:
+               self.dbeads = self.beads.copy(self.nbeads / 2)
+               self.dcell = self.cell.copy()
+               self.dforces = self.copy(self.dbeads, self.dcell)
+
+            f_4th_order = fbase * 0.0
+
+            # displaces odd beads only.
+            self.dbeads.q = depstrip(self.beads.q)[1::2] - dq[1::2]
+
+            # calculates the force.
+            fminus = self.dforces.mrpc[index].b2tob1(depstrip(self.dforces.mforces[index].f))
+
+            # calculates the finite difference.
+            f_4th_order[1::2] = 2.0 * (fminus - fbase[1::2]) / delta
+
+         # For the case of alpha != 0, all the beads are displaced.
+         else:
+           
+         # we use an aux force evaluator with the same number of beads.
+            if self.dforces is None:
+	           self.dbeads = self.beads.copy()
+	           self.dcell = self.cell.copy()
+	           self.dforces = self.copy(self.dbeads, self.dcell)
+
+            f_4th_order = fbase * 0.0
+
+            # displaces the beads.
+            self.dbeads.q = self.beads.q + dq
+
+            # calculates the force.
+            fplus = self.dforces.mrpc[index].b2tob1((depstrip(self.dforces.mforces[index].f)))
+
+            # calculates the finite difference.
+            f_4th_order = 2.0 * (fbase - fplus) / delta
+
+      # uses a centered difference for epsilon  < 0.
+      if self.mforces[index].epsilon < 0.0:
+         
+            # we use an aux force evaluator with the same number of beads. 
+            if self.dforces is None:
+               self.dbeads = self.beads.copy()
+               self.dcell = self.cell.copy()
+               self.dforces = self.copy(self.dbeads, self.dcell)
+
+            f_4th_order = fbase * 0.0
+
+            # for the case of alpha = 0, only odd beads are displaced.
+            if self.alpha==0:
+
+               # the first half of the aux beads are fwd displaced while the second half are bkwd displaced configurations.
+               self.dbeads.q[:self.nbeads / 2] = depstrip(self.beads.q)[1::2] + dq[1::2]
+               self.dbeads.q[-self.nbeads / 2:] = depstrip(self.beads.q)[1::2] - dq[1::2]
+                  
+               # calculates the forces.
+               fplusminus = self.dforces.mrpc[index].b2tob1(depstrip(self.dforces.mforces[index].f))
+
+               # calculates the finite difference.
+               for k in range(self.nbeads/2):
+                 j = 2 * k + 1
+                 f_4th_order[j] = 2.0 * (fplusminus[self.nbeads/2 + k] - fplusminus[k]) / 2.0 / delta
+
+            # For the case of alpha != 0, all the beads are displaced.
+            else: 
+               # displaces the beads.
+               self.dbeads.q = self.beads.q + dq
+
+               # calculates the forces.
+               fplus = self.dforces.mrpc[index].b2tob1(depstrip(self.dforces.mforces[index].f))
+
+               # displaces the beads.
+               self.dbeads.q = self.beads.q - dq
+
+               # calculates the forces.
+               fminus = self.dforces.mrpc[index].b2tob1(depstrip(self.dforces.mforces[index].f))
+               # calculates the finite difference.
+               f_4th_order = 2.0 * (fminus - fplus) / 2.0 / delta
+
+      # returns the 4th order |f^2| correction.
+      return f_4th_order
 
    def nmtslevels(self):
       """ Returns the total number of mts levels."""
@@ -722,7 +860,16 @@ class Forces(dobject):
          # "expand" to the total number of beads the forces from the
          #contracted one
          if self.mforces[k].weight > 0:
-            rf += self.mforces[k].weight*self.mforces[k].mts_weights.sum()*self.mrpc[k].b2tob1(depstrip(self.mforces[k].f))
+            rf += self.mforces[k].weight * self.mforces[k].mts_weights.sum() * self.mrpc[k].b2tob1(depstrip(self.mforces[k].f))
+      return rf
+
+   def f_4th_order_combine(self):
+      """Obtains the total fourth order |f^2| correction force vector."""
+
+      rf = np.zeros((self.nbeads,3*self.natoms),float)
+      for k in range(self.nforces):
+         if self.mforces[k].weight > 0 and self.mforces[k].mts_weights.sum() != 0:
+            rf += self.mforces[k].weight * self.mforces[k].mts_weights.sum() * self.forces_4th_order(k)
       return rf
 
    def pot_combine(self):
@@ -765,74 +912,42 @@ class Forces(dobject):
       return rp
       
    def get_potssc(self):
-      """ Obtains Suzuki-Chin contribution to the potential """
+      """Obtains Suzuki-Chin contribution to the potential."""
       if self.nbeads % 2 != 0:
          warning("ERROR: Suzuki-Chin factorization requires even number of beads!")
          exit()
        
       # this evaluates the square forces contribution to the SC potential (only the difference with the Trotter potential is returned)
+      return self.coeffsc_part_1.T * depstrip(self.pots) + self.coeffsc_part_2.T *  np.sum(depstrip(self.f) / self.beads.m3 * depstrip(self.f), axis=1)
       
-      fbase = depstrip(self.f)
-      potssc = np.zeros(self.nbeads)
-      for k in range(self.nbeads):
-         if k%2 == 0:
-           potssc[k] = -self.pots[k]/3.0 + (self.alpha/self.omegan2/9.0)*np.dot(fbase[k],fbase[k]/self.beads.m3[k])
-         else:
-           potssc[k] = self.pots[k]/3.0 + ((1.0-self.alpha)/self.omegan2/9.0)*np.dot(fbase[k],fbase[k]/self.beads.m3[k])
-      
-      return potssc
-      
+   def get_fsc_part_1(self):
+      """Obtains the linear component of Suzuki-Chin correction to the force."""
 
-   def get_scforce(self):
-      """ Obtains Suzuki-Chin forces by finite differences """
+      return self.coeffsc_part_1 * depstrip(self.f)
 
-      # This computes the difference between the Trotter and Suzuki-Chin Hamiltonian,
-      # and the associated forces.
+   def get_fsc_part_2(self):
+      """Obtains the quadratic component of Suzuki-Chin correction to the force."""
 
-      # We need to compute FW and BW finite differences, so first we initialize an
-      # auxiliary force evaluator
+      return self.coeffsc_part_2 * depstrip(self.f_4th_order)
 
-      if (self.dforces is None) :
-         self.dbeads = self.beads.copy()
-         self.dcell = self.cell.copy()
-         self.dforces = self.copy(self.dbeads, self.dcell) 
-      
-      if self.nbeads % 2 != 0:
-         warning("ERROR: Suzuki-Chin factorization requires even number of beads!")
-         exit()
-      
-      # this should get the forces
-      fbase = depstrip(self.f)
-      fac = np.sqrt((fbase/self.beads.m3*fbase/self.beads.m3).sum()/(self.nbeads*self.natoms))
-      delta = np.abs(self.mforces[-1].epsilon)/fac
-      if self.alpha==0:
-         # special case! half of the S-C forces are zero so we can compute forward-backward finite differences in one go!
-         fsc = fbase*0.0
-         for k in range(self.nbeads/2): # forward and backward go in the two halves of the q vector
-            self.dbeads.q[k]=self.beads.q[2*k+1] + delta * fbase[2*k+1]/self.beads.m3[2*k+1]
-            self.dbeads.q[self.nbeads/2+k]=self.beads.q[2*k+1] - delta * fbase[2*k+1]/self.beads.m3[2*k+1]
-         fplusminus = depstrip(self.dforces.f).copy()
-         if self.mforces[-1].epsilon < 0.0:  # use a centered difference schemei
-             print "for alpha =0 centered difference with delta=", delta, self.mforces[-1].epsilon
-             for k in range(self.nbeads/2): # only compute the elements that will not be set to zero when multiplying by alpha
-                 fsc[2*k+1] = 2*(fplusminus[self.nbeads/2+k]-fplusminus[k])/(2.0*delta)
-         else:
-             for k in range(self.nbeads/2): # do forward differences only
-                 fsc[2*k+1] = 2*(fplusminus[self.nbeads/2+k]-fbase[2*k+1])/delta
-      else: 
-         # standard, more expensive version (alpha=1 could also be accelerated but is not used in practice so laziness prevails)
-         self.dbeads.q = self.beads.q + delta*fbase/self.beads.m3 # move forward
-         fplus = depstrip(self.dforces.f).copy()
-         self.dbeads.q = self.beads.q - delta*fbase/self.beads.m3 # move backwards
-         fminus = depstrip(self.dforces.f).copy()
-         fsc = 2*(fminus - fplus)/2.0/delta      
-         
-      for k in range(self.nbeads):
-         if k%2 == 0:
-           fsc[k] = -self.f[k]/3.0 + (self.alpha/self.omegan2/9.0)*fsc[k]
-         else:
-           fsc[k] = self.f[k]/3.0 + ((1-self.alpha)/self.omegan2/9.0)*fsc[k]
-      
-      return fsc
-      
+   def get_fsc(self):
+      """Obtains the total Suzuki-Chin correction to the force."""
+
+      return depstrip(self.fsc_part_1) + depstrip(self.fsc_part_2)
+
+   def get_coeffsc_part_1(self):
+      """Obtains the coefficients of the linear part of the Suzuki-Chin correction."""
+
+      rc = np.zeros(self.beads.nbeads)
+      rc[0::2] = -1.0 / 3.0
+      rc[1::2] =  1.0 / 3.0
+      return np.asmatrix(rc).T
+
+   def get_coeffsc_part_2(self):
+      """Obtains the coefficients of the linear part of the Suzuki-Chin correction."""
+
+      rc = np.zeros(self.beads.nbeads)
+      rc[0::2] =  (self.alpha / self.omegan2 / 9.0)
+      rc[1::2] =  ((1.0 - self.alpha) / self.omegan2 / 9.0)
+      return np.asmatrix(rc).T
 
