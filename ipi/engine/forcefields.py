@@ -516,19 +516,31 @@ class FFPlumed(ForceField):
         f = np.zeros(3*self.natoms)
         vir = np.zeros((3,3))
 
-        print "calling plumed", self.plumedstep
+        # for the moment these are set to dummy values taken from an init file.
+        # linking with the current value in simulations is non-trivial, as masses
+        # are not expected to be the force evaluator's business, and charges are not
+        # i-PI's business.
         self.plumed.cmd("setStep", self.plumedstep)       
-        self.plumed.cmd("setBox", r["cell"][0]) 
         self.plumed.cmd("setCharges", self.charges)
         self.plumed.cmd("setMasses", self.masses)
+        
+        # these instead are set properly. units conversion is done on the PLUMED side
+        self.plumed.cmd("setBox", r["cell"][0])
         self.plumed.cmd("setPositions", r["pos"])
         self.plumed.cmd("setForces", f)
-        self.plumed.cmd("setVirial", vir)        
+        self.plumed.cmd("setVirial", vir)            
+        
+        # if we are restarting 
         if self.plumedrestart:
-            pass
+            self.plumed.cmd("prepareCalc");
+            self.plumed.cmd("performCalcNoUpdate");
+            self.plumedrestart = False
         else:        
             self.plumed.cmd("calc")
-        self.plumed.cmd("getBias", v)
+        
+        bias = np.zeros(1,float)
+        self.plumed.cmd("getBias", bias)
+        v = bias[0]
         self.plumedstep +=1         
         
         r["result"] = [v, f, vir, ""]
