@@ -275,6 +275,10 @@ class Simulation(dobject):
             if softexit.triggered:
                 # Don't continue if we are about to exit.
                 break
+
+            for k, f in self.fflist.iteritems():   # updates potentials, e.g. for metadynamics purposes. 
+                f.update()
+
             
             # does the "super motion" step
             if self.smotion is not None:

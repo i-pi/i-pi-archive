@@ -96,7 +96,8 @@ class InputSimulation(Input):
              "system_template" :   (InputSysTemplate,    { "help"  : InputSysTemplate.default_help }),
              "ffsocket": (iforcefields.InputFFSocket, { "help": iforcefields.InputFFSocket.default_help} ),
              "fflj": (iforcefields.InputFFLennardJones, { "help": iforcefields.InputFFLennardJones.default_help} ),
-             "ffdebye": (iforcefields.InputFFDebye, { "help": iforcefields.InputFFDebye.default_help} )
+             "ffdebye": (iforcefields.InputFFDebye, { "help": iforcefields.InputFFDebye.default_help} ),
+             "ffplumed": (iforcefields.InputFFPlumed, { "help": iforcefields.InputFFDebye.default_help} )
              }
 
    default_help = "This is the top level class that deals with the running of the simulation, including holding the simulation specific properties such as the time step and outputting the data."
@@ -162,6 +163,10 @@ class InputSimulation(Input):
                _iobj = InputSystem()
                _iobj.store(_obj)
                self.extra[_ii] = ("system", _iobj)
+            elif type(ff) is eforcefields.FFPlumed:
+               iff = iforcefields.InputFFPlumed()
+               iff.store(ff)
+               self.extra.append(("ffplumed",iff))
 
             # print 'BUILDED EXTRA THE FIRST TIME', self.extra
          else:
@@ -194,11 +199,7 @@ class InputSimulation(Input):
             syslist.append(v.fetch()) 
          elif k== "system_template":             
             syslist += v.fetch() # this will actually generate automatically a bunch of system objects with the desired properties set automatically to many values
-         elif k == "ffsocket":
-            fflist.append(v.fetch())
-         elif k == "fflj":
-            fflist.append(v.fetch())
-         elif k == "ffdebye":
+         elif k == "ffsocket" or k == "fflj" or k == "ffdebye" or k == "ffplumed" :
             fflist.append(v.fetch())
 
 
