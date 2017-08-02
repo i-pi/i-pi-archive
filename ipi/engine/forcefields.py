@@ -470,17 +470,22 @@ class FFPlumed(ForceField):
             mycell.h *= unit_to_internal("length", self.init_file.units, 1.0)
             
             
-        self.natoms = myatoms.natoms
+        self.natoms = myatoms.natoms        
         self.plumed.cmd("setNatoms", self.natoms)
         self.plumed.cmd("setPlumedDat", self.plumeddat)
         self.plumed.cmd("setTimestep", 1.)
         self.plumed.cmd("setMDEnergyUnits", 2625.4996)        # Pass a pointer to the conversion factor between the energy unit used in your code and kJ mol-1
         self.plumed.cmd("setMDLengthUnits", 0.052917721)        # Pass a pointer to the conversion factor between the length unit used in your code and nm 
         self.plumed.cmd("setMDTimeUnits", 2.4188843e-05)
+        self.plumedrestart = False
+        if self.plumedstep > 0:
+            # we are restarting, signal that PLUMED should continue
+            self.plumedrestart = True
+            self.plumed.cmd("setRestart", 1)
         self.plumed.cmd("init")
         self.charges = depstrip(myatoms.q) * 0.0
         self.masses = depstrip(myatoms.m)
-                
+        
         
 
     def poll(self):
@@ -511,14 +516,18 @@ class FFPlumed(ForceField):
         f = np.zeros(3*self.natoms)
         vir = np.zeros((3,3))
 
+        print "calling plumed", self.plumedstep
         self.plumed.cmd("setStep", self.plumedstep)       
         self.plumed.cmd("setBox", r["cell"][0]) 
         self.plumed.cmd("setCharges", self.charges)
         self.plumed.cmd("setMasses", self.masses)
         self.plumed.cmd("setPositions", r["pos"])
         self.plumed.cmd("setForces", f)
-        self.plumed.cmd("setVirial", vir)
-        self.plumed.cmd("calc")
+        self.plumed.cmd("setVirial", vir)        
+        if self.plumedrestart:
+            pass
+        else:        
+            self.plumed.cmd("calc")
         self.plumed.cmd("getBias", v)
         self.plumedstep +=1         
         

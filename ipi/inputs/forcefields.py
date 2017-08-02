@@ -225,7 +225,7 @@ class InputFFPlumed(InputForceField):
                            "help"            : "This describes the location to read the reference structure file from."}),
         "precision" : (InputValue, {"dtype": int, "default"  : 8, "help": "The precision PLUMED was compiled with"}),
         "plumeddat" : (InputValue, {"dtype": str, "default"  : "plumed.dat", "help": "The PLUMED input file"}),
-        "plumedstep" : (InputValue, {"dtype": int, "default"  : 8, "help": "The current step counter for PLUMED calls"}),
+        "plumedstep" : (InputValue, {"dtype": int, "default"  : 0, "help": "The current step counter for PLUMED calls"}),
         
         }
         
@@ -241,7 +241,9 @@ class InputFFPlumed(InputForceField):
         super(InputFFPlumed,self).store(ff)
         self.precision.store(ff.precision)
         self.plumeddat.store(ff.plumeddat)
-        self.plumedstep.store(ff.plumedstep)
+        pstep = ff.plumedstep
+        if pstep > 0: pstep -= 1 # roll back plumed step before writing a restart
+        self.plumedstep.store(pstep)
         self.init_file.store(ff.init_file)
         
         
