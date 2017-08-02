@@ -280,8 +280,12 @@ class Simulation(dobject):
                 # Don't continue if we are about to exit.
                 break
 
-            for o in self.outputs:  # write possible checkpoints before doing any 
+            for k, f in self.fflist.iteritems():   # updates potentials, e.g. for metadynamics purposes. 
+                f.update()
+
+            for o in self.outputs:  # write possible checkpoints before doing any superstep
                 o.write()
+
 
             # does parallel tempering
             if self.mode == "paratemp":

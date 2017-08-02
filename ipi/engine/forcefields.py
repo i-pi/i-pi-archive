@@ -219,7 +219,12 @@ class ForceField(dobject):
         """ Takes care of cleaning up upon softexit """
 
         self.stop()
-
+        
+    def update(self):
+        """ Makes updates to the potential that only need to be triggered
+        upon completion of a time step. """
+        
+        pass
 
 class FFSocket(ForceField):
     """Interface between the PIMD code and a socket for a single replica.
@@ -529,19 +534,24 @@ class FFPlumed(ForceField):
         self.plumed.cmd("setPositions", r["pos"])
         self.plumed.cmd("setForces", f)
         self.plumed.cmd("setVirial", vir)            
-        
-        # if we are restarting 
-        if self.plumedrestart:
-            self.plumed.cmd("prepareCalc");
-            self.plumed.cmd("performCalcNoUpdate");
-            self.plumedrestart = False
-        else:        
-            self.plumed.cmd("calc")
+        self.plumed.cmd("prepareCalc");
+        self.plumed.cmd("performCalcNoUpdate");
         
         bias = np.zeros(1,float)
         self.plumed.cmd("getBias", bias)
         v = bias[0]
-        self.plumedstep +=1         
         
         r["result"] = [v, f, vir, ""]
         r["status"] = "Done"
+        
+        
+    def update(self):
+        """ Makes updates to the potential that only need to be triggered
+        upon completion of a time step. """
+        
+        # if we are restarting, do not update
+        if self.plumedrestart:        
+            self.plumedrestart = False
+        else:        
+            self.plumed.cmd("update")
+        self.plumedstep +=1        
