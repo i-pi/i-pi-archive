@@ -24,7 +24,7 @@ from ipi.utils.io import read_file
 from ipi.utils.units import unit_to_internal
 
 
-__all__ = ['ForceField', 'FFSocket', 'FFLennardJones', 'FFDebye']
+__all__ = ['ForceField', 'FFSocket', 'FFLennardJones', 'FFDebye', 'FFPlumed']
 
 
 class ForceRequest(dict):
@@ -219,12 +219,6 @@ class ForceField(dobject):
         """ Takes care of cleaning up upon softexit """
 
         self.stop()
-        
-    def update(self):
-        """ Makes updates to the potential that only need to be triggered
-        upon completion of a time step. """
-        
-        pass
 
 class FFSocket(ForceField):
     """Interface between the PIMD code and a socket for a single replica.
@@ -482,15 +476,13 @@ class FFPlumed(ForceField):
         self.plumed.cmd("setMDEnergyUnits", 2625.4996)        # Pass a pointer to the conversion factor between the energy unit used in your code and kJ mol-1
         self.plumed.cmd("setMDLengthUnits", 0.052917721)        # Pass a pointer to the conversion factor between the length unit used in your code and nm 
         self.plumed.cmd("setMDTimeUnits", 2.4188843e-05)
-        self.plumedrestart = False
         if self.plumedstep > 0:
             # we are restarting, signal that PLUMED should continue
-            self.plumedrestart = True
             self.plumed.cmd("setRestart", 1)
         self.plumed.cmd("init")
         self.charges = depstrip(myatoms.q) * 0.0
         self.masses = depstrip(myatoms.m)
-        
+        self.lastq=np.zeros(3*self.natoms)
         
 
     def poll(self):
@@ -520,7 +512,9 @@ class FFPlumed(ForceField):
         v = 0.0
         f = np.zeros(3*self.natoms)
         vir = np.zeros((3,3))
-
+  
+        self.lastq[:] = r["pos"]
+        print "COMPUTING PLUMED FORCE"
         # for the moment these are set to dummy values taken from an init file.
         # linking with the current value in simulations is non-trivial, as masses
         # are not expected to be the force evaluator's business, and charges are not
@@ -545,13 +539,25 @@ class FFPlumed(ForceField):
         r["status"] = "Done"
         
         
-    def update(self):
+    def mtd_update(self, pos, cell):
         """ Makes updates to the potential that only need to be triggered
         upon completion of a time step. """
         
-        # if we are restarting, do not update
-        if self.plumedrestart:        
-            self.plumedrestart = False
-        else:        
-            self.plumed.cmd("update")
         self.plumedstep +=1        
+        f = np.zeros(3*self.natoms)
+        vir = np.zeros((3,3))
+
+        print "metaupdate", self.plumedstep, np.linalg.norm(pos-self.lastq)        
+        self.plumed.cmd("setStep", self.plumedstep)   
+        self.plumed.cmd("setCharges", self.charges)
+        self.plumed.cmd("setMasses", self.masses)
+        self.plumed.cmd("setPositions", pos) 
+        self.plumed.cmd("setBox", cell)
+        self.plumed.cmd("setForces", f)
+        self.plumed.cmd("setVirial", vir) 
+        self.plumed.cmd("prepareCalc");
+        self.plumed.cmd("performCalcNoUpdate");
+        self.plumed.cmd("update")    
+        print "metafinish", self.plumedstep, np.linalg.norm(pos-self.lastq)        
+        
+        return True    

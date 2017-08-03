@@ -97,7 +97,7 @@ class InputSimulation(Input):
              "ffsocket": (iforcefields.InputFFSocket, { "help": iforcefields.InputFFSocket.default_help} ),
              "fflj": (iforcefields.InputFFLennardJones, { "help": iforcefields.InputFFLennardJones.default_help} ),
              "ffdebye": (iforcefields.InputFFDebye, { "help": iforcefields.InputFFDebye.default_help} ),
-             "ffplumed": (iforcefields.InputFFPlumed, { "help": iforcefields.InputFFDebye.default_help} )
+             "ffplumed": (iforcefields.InputFFPlumed, { "help": iforcefields.InputFFPlumed.default_help} )
              }
 
    default_help = "This is the top level class that deals with the running of the simulation, including holding the simulation specific properties such as the time step and outputting the data."
@@ -159,14 +159,14 @@ class InputSimulation(Input):
                _iobj = iforcefields.InputFFDebye()
                _iobj.store(_obj)
                self.extra[_ii] = ("ffdebye", _iobj)
+            elif isinstance(_obj,  eforcefields.FFPlumed):
+               _iobj = iforcefields.InputFFPlumed()
+               _iobj.store(_obj)
+               self.extra[_ii] = ("ffplumed",_iobj)
             elif isinstance(_obj, System):
                _iobj = InputSystem()
                _iobj.store(_obj)
                self.extra[_ii] = ("system", _iobj)
-            elif type(ff) is eforcefields.FFPlumed:
-               iff = iforcefields.InputFFPlumed()
-               iff.store(ff)
-               self.extra.append(("ffplumed",iff))
 
             # print 'BUILDED EXTRA THE FIRST TIME', self.extra
          else:

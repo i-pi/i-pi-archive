@@ -23,13 +23,15 @@ Classes:
 
 import numpy as np
 import ipi.engine.initializer
-from ipi.engine.smotion import Smotion, ReplicaExchange
+from ipi.engine.smotion import Smotion, ReplicaExchange, MetaDyn
 from ipi.utils.inputvalue import *
 from .remd import InputReplicaExchange
+from .metad import InputMetaDyn
 from ipi.utils.units import *
 
 __all__ = ['InputSmotion']
 
+    
 class InputSmotion(Input):
    """Smotion calculation input class.
 
@@ -44,9 +46,13 @@ class InputSmotion(Input):
 
    attribs={"mode"  : (InputAttribute, {"dtype"   : str,
                                     "help"    : "Kind of smotion which should be performed.",
-                                    "options" : ['dummy', 'remd']}) }
+                                    "options" : ['dummy', 'remd', 'metad']}) }
    fields={"remd" : ( InputReplicaExchange, { "default" : {},
+                                     "help":  "Option for REMD simulation" } ),
+           "metad" : ( InputMetaDyn, { "default" : {},
                                      "help":  "Option for REMD simulation" } ) }
+                                     
+                                     
 
    dynamic = {  }
 
@@ -67,6 +73,9 @@ class InputSmotion(Input):
       elif type(sc) is ReplicaExchange:
          self.mode.store("remd")
          self.remd.store(sc)
+      elif type(sc) is MetaDyn:
+          print "storing metadyn"
+          self.mode.store("metad")
       else:
          raise ValueError("Cannot store Smotion calculator of type "+str(type(sc)))
 
@@ -82,6 +91,8 @@ class InputSmotion(Input):
 
       if self.mode.fetch() == "remd":
          sc = ReplicaExchange(**self.remd.fetch())
+      elif self.mode.fetch() == "metad":         
+         sc = MetaDyn(**self.metad.fetch())
       else:
          sc = Smotion()
          #raise ValueError("'" + self.mode.fetch() + "' is not a supported motion calculation mode.")
