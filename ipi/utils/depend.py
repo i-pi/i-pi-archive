@@ -488,7 +488,7 @@ class depend_array(np.ndarray, depend_base):
 
         return depend_array(depstrip(self).reshape(newshape), name=self._name, synchro=self._synchro,
                             func=self._func, dependants=self._dependants, tainted=self._tainted, base=self._bval, active=self._active)
-
+                            
     def flatten(self):
         """Makes the base array one dimensional.
 

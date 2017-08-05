@@ -53,9 +53,8 @@ class InputMotionBase(Input):
    """
 
    attribs={"mode"  : (InputAttribute, {"dtype"   : str,
-                                    "help"    : "How atoms should be moved at each step in the simulatio. 'replay' means that a simulation is restarted from a previous simulation.",
-                                    "options" : ['vibrations', 'minimize', 'replay', 'neb', 'dynamics',  'dummy']}) }
-
+                                    "help"    : "How atoms should be moved at each step in the simulation. 'replay' means that a simulation is restarted from a previous simulation.",
+                                    "options" : ['minimize', 'replay', 'neb', 'dynamics',  'dummy']}) }
    fields={"fixcom": (InputValue, {"dtype"           : bool,
                                    "default"         : True,
                                    "help"            : "This describes whether the centre of mass of the particles is fixed."}),

@@ -642,7 +642,7 @@ class Forces(dobject):
             
       dset(self, "potssc", depend_array(name="potssc",value=np.zeros(self.nbeads,float),
             dependencies=[dget(self.beads, "m"), dget(self, "f"), dget(self,"pots"), dget(self,"alpha"),  dget(self,"omegan2")],
-            func=self.get_potssc ) )
+            func=self.get_potssc) )
                                          
       dset(self, "coeffsc_part_1", depend_array(name="coeffsc_part_1",value=np.zeros((self.nbeads,1), float),
             func=self.get_coeffsc_part_1))
@@ -719,8 +719,6 @@ class Forces(dobject):
                 dfkbref = dd(mreff._forces[b])
                 dfkbself = dd(mself._forces[b])
                 dfkbself.ufvx.set(deepcopy(dfkbref.ufvx._value),manual=False)
-                
-            
         
    def run(self):
       """Makes the socket start looking for driver codes.
@@ -815,6 +813,11 @@ class Forces(dobject):
 
       # stores the force component.
       fbase = self.mrpc[index].b2tob1(depstrip(self.mforces[index].f))
+      vbase = np.zeros((self.nbeads,3,3), float)
+      mvirs = depstrip(self.mforces[index].virs)
+      for i in range(3):
+         for j in range(3):
+            vbase[:,i,j] += self.mrpc[index].b2tob1(mvirs[:,i,j])
 
       # uses a fwd difference if epsilon > 0.
       if self.mforces[index].epsilon > 0.0:
@@ -843,6 +846,7 @@ class Forces(dobject):
                self.dforces = self.copy(self.dbeads, self.dcell)
 
             f_4th_order = fbase * 0.0
+            v_4th_order = vbase * 0.0
 
             # displaces odd beads only.
             self.dbeads.q = depstrip(self.beads.q)[1::2] - dq[1::2]
@@ -850,8 +854,16 @@ class Forces(dobject):
             # calculates the force.
             fminus = self.dforces.mrpc[index].b2tob1(depstrip(self.dforces.mforces[index].f))
 
+            # calculates the virial.
+            vminus = np.zeros((self.nbeads / 2,3,3), float)
+            dmvirs = depstrip(self.dforces.mforces[index].virs)
+            for i in range(3):
+               for j in range(3):
+                  vminus[:,i,j] += self.dforces.mrpc[index].b2tob1(dmvirs[:,i,j])
+
             # calculates the finite difference.
             f_4th_order[1::2] = 2.0 * (fminus - fbase[1::2]) / delta
+            v_4th_order[1::2] = 2.0 * (vminus - vbase[1::2]) / delta
 
          # For the case of alpha != 0, all the beads are displaced.
          else:
@@ -863,6 +875,7 @@ class Forces(dobject):
 	           self.dforces = self.copy(self.dbeads, self.dcell)
 
             f_4th_order = fbase * 0.0
+            v_4th_order = vbase * 0.0
 
             # displaces the beads.
             self.dbeads.q = self.beads.q + dq
@@ -870,8 +883,16 @@ class Forces(dobject):
             # calculates the force.
             fplus = self.dforces.mrpc[index].b2tob1((depstrip(self.dforces.mforces[index].f)))
 
+            # calculates the virial.
+            vplus = np.zeros((self.nbeads,3,3), float)
+            dmvirs = depstrip(self.dforces.mforces[index].virs)
+            for i in range(3):
+               for j in range(3):
+                  vplus[:,i,j] += self.dforces.mrpc[index].b2tob1(dmvirs[:,i,j])
+
             # calculates the finite difference.
             f_4th_order = 2.0 * (fbase - fplus) / delta
+            v_4th_order = 2.0 * (vbase - vplus) / delta
 
       # uses a centered difference for epsilon  < 0.
       if self.mforces[index].epsilon < 0.0:
@@ -883,6 +904,7 @@ class Forces(dobject):
                self.dforces = self.copy(self.dbeads, self.dcell)
 
             f_4th_order = fbase * 0.0
+            v_4th_order = vbase * 0.0
 
             # for the case of alpha = 0, only odd beads are displaced.
             if self.alpha==0:
@@ -894,10 +916,18 @@ class Forces(dobject):
                # calculates the forces.
                fplusminus = self.dforces.mrpc[index].b2tob1(depstrip(self.dforces.mforces[index].f))
 
+               # calculates the virial.
+               vplusminus = np.zeros((self.nbeads,3,3), float)
+               dmvirs = depstrip(self.dforces.mforces[index].virs)
+               for i in range(3):
+                  for j in range(3):
+                     vplusminus[:,i,j] += self.dforces.mrpc[index].b2tob1(dmvirs[:,i,j])
+
                # calculates the finite difference.
                for k in range(self.nbeads/2):
                  j = 2 * k + 1
                  f_4th_order[j] = 2.0 * (fplusminus[self.nbeads/2 + k] - fplusminus[k]) / 2.0 / delta
+                 v_4th_order[j] = 2.0 * (vplusminus[self.nbeads/2 + k] - vplusminus[k]) / 2.0 / delta
 
             # For the case of alpha != 0, all the beads are displaced.
             else: 
@@ -907,24 +937,41 @@ class Forces(dobject):
                # calculates the forces.
                fplus = self.dforces.mrpc[index].b2tob1(depstrip(self.dforces.mforces[index].f))
 
+               # calculates the virial.
+               vplus = np.zeros((self.nbeads,3,3), float)
+               dmvirs = depstrip(self.dforces.mforces[index].virs)
+               for i in range(3):
+                  for j in range(3):
+                     vplus[:,i,j] += self.dforces.mrpc[index].b2tob1(dmvirs[:,i,j])
+
                # displaces the beads.
                self.dbeads.q = self.beads.q - dq
 
                # calculates the forces.
                fminus = self.dforces.mrpc[index].b2tob1(depstrip(self.dforces.mforces[index].f))
+
+               # calculates the virial.
+               vminus = np.zeros((self.nbeads,3,3), float)
+               dmvirs = depstrip(self.dforces.mforces[index].virs)
+               for i in range(3):
+                  for j in range(3):
+                     vminus[:,i,j] += self.dforces.mrpc[index].b2tob1(dmvirs[:,i,j])
+
                # calculates the finite difference.
                f_4th_order = 2.0 * (fminus - fplus) / 2.0 / delta
+               v_4th_order = 2.0 * (vminus - vplus) / 2.0 / delta
 
       # returns the 4th order |f^2| correction.
       return f_4th_order
 
-   def nmtslevels(self):
-      """ Returns the total number of mts levels."""
-       
-      big = 0
+   def vir_mts(self, level):
+      """ Fetches ONLY the total virial associated with a given MTS level."""
+
+      rp = np.zeros((3,3),float)
       for index in range(len(self.mforces)):
-         big = max(big, self.mforces[index].lmts)
-      return big + 1
+         if len(self.mforces[index].mts_weights) > level and self.mforces[index].mts_weights[level] != 0  and self.mforces[index].weight > 0:
+              rp += self.mforces[index].weight*self.mforces[index].mts_weights[level]*np.sum(self.mforces[index].virs,axis=0)
+      return rp
 
    def f_combine(self):
       """Obtains the total force vector."""

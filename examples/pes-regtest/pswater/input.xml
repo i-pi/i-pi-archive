@@ -12,7 +12,7 @@ ENDREGTEST -->
     <trajectory filename='kin' format="xyz" stride='2'> kinetic_cv </trajectory>
     <trajectory filename='dip' stride='2'> extras </trajectory>
     <checkpoint stride='100' filename='chk' overwrite='true'/>
-    <checkpoint stride='2000' filename='restart' overwrite='false'/>
+    <checkpoint stride='400' filename='restart' overwrite='false'/>
   </output>
   <total_steps>20</total_steps>
   <prng><seed>23658</seed></prng>
