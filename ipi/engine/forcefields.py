@@ -514,7 +514,6 @@ class FFPlumed(ForceField):
         vir = np.zeros((3,3))
   
         self.lastq[:] = r["pos"]
-        print "COMPUTING PLUMED FORCE"
         # for the moment these are set to dummy values taken from an init file.
         # linking with the current value in simulations is non-trivial, as masses
         # are not expected to be the force evaluator's business, and charges are not
@@ -547,7 +546,6 @@ class FFPlumed(ForceField):
         f = np.zeros(3*self.natoms)
         vir = np.zeros((3,3))
 
-        print "metaupdate", self.plumedstep, np.linalg.norm(pos-self.lastq)        
         self.plumed.cmd("setStep", self.plumedstep)   
         self.plumed.cmd("setCharges", self.charges)
         self.plumed.cmd("setMasses", self.masses)
@@ -558,6 +556,5 @@ class FFPlumed(ForceField):
         self.plumed.cmd("prepareCalc");
         self.plumed.cmd("performCalcNoUpdate");
         self.plumed.cmd("update")    
-        print "metafinish", self.plumedstep, np.linalg.norm(pos-self.lastq)        
         
         return True    
