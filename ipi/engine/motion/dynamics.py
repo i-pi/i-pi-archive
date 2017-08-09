@@ -206,7 +206,7 @@ class DummyIntegrator(dobject):
         """ Reference all the variables for simpler access."""
 
         self.beads = motion.beads
-        self.bias = motion.bias
+        self.bias = motion.ensemble.bias
         self.ensemble = motion.ensemble
         self.forces = motion.forces
         self.prng = motion.prng
