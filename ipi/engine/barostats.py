@@ -17,6 +17,7 @@ G. Martyna, A. Hughes and M. Tuckerman, J. Chem. Phys., 110, 3275.
 
 
 import numpy as np
+import sys
 
 from ipi.utils.depend import *
 from ipi.utils.units import *
@@ -164,8 +165,10 @@ class Barostat(dobject):
       m = depstrip(self.beads.m)
       na3 = 3*self.beads.natoms
       fall = depstrip(self.forces.f)
-      if self.bias == None: ball=fall*0.00
-      else: ball = depstrip(self.bias.f)
+      if self.bias == None: 
+          ball=fall*0.00
+      else: 
+          ball = depstrip(self.bias.f)
 
       for b in range(self.beads.nbeads):
          for i in range(3):
@@ -184,7 +187,9 @@ class Barostat(dobject):
       """Calculates the internal stress tensor."""
 
       bvir = np.zeros((3,3),float)
-      if self.bias != None: bvir[:]=self.bias.vir
+      if self.bias != None: 
+          bvir[:]=self.bias.vir
+          
       return (self.kstress + self.forces.vir + bvir)/self.cell.V
 
    def pstep(self):

@@ -191,9 +191,9 @@ class Simulation(dobject):
         if self.step < self.tsteps:
             self.step += 1
         if not self.rollback:
+            info("SOFTEXIT: Saving the latest status at the end of the step")
             self.chk.store()
 
-        print "WRITING CHECKPOINT", self.chk.status.extra
         self.chk.write(store=False)
 
     def run(self):
@@ -276,7 +276,6 @@ class Simulation(dobject):
                 # Don't continue if we are about to exit.
                 break
             
-
             # does the "super motion" step
             if self.smotion is not None:
                 # TODO: We need a file where we store the exchanges

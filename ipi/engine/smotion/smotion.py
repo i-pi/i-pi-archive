@@ -52,7 +52,7 @@ class Smotion(dobject):
 
         # store local references to the different bits of the simulation
         self.syslist = syslist
-        self.prng = prng
+        self.prng = prng        
 
     def step(self, step=None):
         """Dummy simulation time step which does nothing."""

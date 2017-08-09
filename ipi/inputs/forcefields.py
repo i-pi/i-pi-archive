@@ -8,12 +8,14 @@
 from copy import copy
 import numpy as np
 
-from ipi.engine.forcefields import ForceField, FFSocket, FFLennardJones, FFDebye
+from ipi.engine.forcefields import ForceField, FFSocket, FFLennardJones, FFDebye, FFPlumed
 from ipi.interfaces.sockets import InterfaceSocket
+import ipi.engine.initializer
+from ipi.inputs.initializer import *
 from ipi.utils.inputvalue import *
 
 
-__all__ = ["InputFFSocket", 'InputFFLennardJones', 'InputFFDebye']
+__all__ = ["InputFFSocket", 'InputFFLennardJones', 'InputFFDebye', 'InputFFPlumed']
 
 
 class InputForceField(Input):
@@ -219,3 +221,39 @@ class InputFFDebye(InputForceField):
 
       return FFDebye(H=self.hessian.fetch(), xref=self.x_reference.fetch(), vref=self.v_reference.fetch(), name = self.name.fetch(),
                latency = self.latency.fetch(), dopbc = self.pbc.fetch() )
+
+class InputFFPlumed(InputForceField):
+    
+    fields = {
+        "init_file": (InputInitFile, { "default" : input_default(factory=ipi.engine.initializer.InitBase,kwargs={"mode":"xyz"}),
+                           "help"            : "This describes the location to read the reference structure file from."}),
+        "precision" : (InputValue, {"dtype": int, "default"  : 8, "help": "The precision PLUMED was compiled with"}),
+        "plumeddat" : (InputValue, {"dtype": str, "default"  : "plumed.dat", "help": "The PLUMED input file"}),
+        "plumedstep" : (InputValue, {"dtype": int, "default"  : 0, "help": "The current step counter for PLUMED calls"}),
+        
+        }
+        
+    attribs = {}
+        
+    attribs.update(InputForceField.attribs)
+    fields.update(InputForceField.fields)
+    
+    default_help = """ Direct PLUMED interface """
+    default_label = "FFPLUMED"
+    
+    def store(self, ff):
+        super(InputFFPlumed,self).store(ff)
+        self.precision.store(ff.precision)
+        self.plumeddat.store(ff.plumeddat)
+        self.plumedstep.store(ff.plumedstep)
+        self.init_file.store(ff.init_file)
+        
+        
+    def fetch(self):
+        super(InputFFPlumed,self).fetch()
+        
+        return FFPlumed(name = self.name.fetch(), latency = self.latency.fetch(), dopbc = self.pbc.fetch(),
+                        precision = self.precision.fetch(), plumeddat = self.plumeddat.fetch(), 
+                        plumedstep = self.plumedstep.fetch(), init_file = self.init_file.fetch())
+        
+            

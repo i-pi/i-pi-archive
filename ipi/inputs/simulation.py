@@ -20,7 +20,7 @@ from ipi.utils.io.inputs.io_xml import *
 from ipi.utils.messages import verbosity
 from ipi.engine.smotion import Smotion
 from ipi.inputs.prng import InputRandom
-from ipi.inputs.system import InputSystem
+from ipi.inputs.system import InputSystem, InputSysTemplate
 from ipi.engine.system import System
 import ipi.inputs.forcefields as iforcefields
 import ipi.engine.forcefields as eforcefields
@@ -93,9 +93,11 @@ class InputSimulation(Input):
 
    dynamic = {
              "system" :   (InputSystem,    { "help"  : InputSystem.default_help }),
+             "system_template" :   (InputSysTemplate,    { "help"  : InputSysTemplate.default_help }),
              "ffsocket": (iforcefields.InputFFSocket, { "help": iforcefields.InputFFSocket.default_help} ),
              "fflj": (iforcefields.InputFFLennardJones, { "help": iforcefields.InputFFLennardJones.default_help} ),
-             "ffdebye": (iforcefields.InputFFDebye, { "help": iforcefields.InputFFDebye.default_help} )
+             "ffdebye": (iforcefields.InputFFDebye, { "help": iforcefields.InputFFDebye.default_help} ),
+             "ffplumed": (iforcefields.InputFFPlumed, { "help": iforcefields.InputFFPlumed.default_help} )
              }
 
    default_help = "This is the top level class that deals with the running of the simulation, including holding the simulation specific properties such as the time step and outputting the data."
@@ -157,6 +159,10 @@ class InputSimulation(Input):
                _iobj = iforcefields.InputFFDebye()
                _iobj.store(_obj)
                self.extra[_ii] = ("ffdebye", _iobj)
+            elif isinstance(_obj,  eforcefields.FFPlumed):
+               _iobj = iforcefields.InputFFPlumed()
+               _iobj.store(_obj)
+               self.extra[_ii] = ("ffplumed",_iobj)
             elif isinstance(_obj, System):
                _iobj = InputSystem()
                _iobj.store(_obj)
@@ -165,27 +171,6 @@ class InputSimulation(Input):
             # print 'BUILDED EXTRA THE FIRST TIME', self.extra
          else:
             self.extra[_ii][1].store(_obj)
-
-      # for fname in simul.fflist:
-      #    ff=simul.fflist[fname]
-      #    if type(ff) is eforcefields.FFSocket:
-      #       iff = iforcefields.InputFFSocket()
-      #       iff.store(ff)
-      #       self.extra.append(("ffsocket",iff))
-      #    elif type(ff) is eforcefields.FFLennardJones:
-      #       iff = iforcefields.InputFFLennardJones()
-      #       iff.store(ff)
-      #       self.extra.append(("fflj",iff))
-      #    elif type(ff) is eforcefields.FFDebye:
-      #       iff = iforcefields.InputFFDebye()
-      #       iff.store(ff)
-      #       self.extra.append(("ffdebye",iff))
-
-
-      # for s in simul.syslist:
-      #    isys = InputSystem()
-      #    isys.store(s)
-      #    self.extra.append(("system",isys))
 
 
    def fetch(self):
@@ -211,15 +196,10 @@ class InputSimulation(Input):
       fflist=[]
       for (k,v) in self.extra:
          if k == "system":
-            for isys in range(v.copies.fetch()): # creates multiple copies of system if desired
-               syslist.append(v.fetch())
-               if (v.copies.fetch() > 1):
-                  syslist[-1].prefix = syslist[-1].prefix + ( ("%0" + str(int(1 + np.floor(np.log(v.copies.fetch())/np.log(10)))) + "d") % (isys) )
-         elif k == "ffsocket":
-            fflist.append(v.fetch())
-         elif k == "fflj":
-            fflist.append(v.fetch())
-         elif k == "ffdebye":
+            syslist.append(v.fetch()) 
+         elif k== "system_template":             
+            syslist += v.fetch() # this will actually generate automatically a bunch of system objects with the desired properties set automatically to many values
+         elif k == "ffsocket" or k == "fflj" or k == "ffdebye" or k == "ffplumed" :
             fflist.append(v.fetch())
 
 

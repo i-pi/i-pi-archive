@@ -29,7 +29,7 @@ from ipi.utils.units import *
 __all__ = ['InputReplicaExchange']
 
 class InputReplicaExchange(InputDictionary):
-    """Geometry optimization options.
+    """Replica Exchange options.
 
     Contains options related with replica exchange, such as method,
     steps on which REMD should be performed, etc.
@@ -41,6 +41,17 @@ class InputReplicaExchange(InputDictionary):
                                       "default"      : 1.0,
                                       "help"         : "Every how often to try exchanges (on average)."
                                       }),
+           "krescale" : (InputValue, {"dtype"        : bool,
+                                   "default"         : True,
+                                   "help"            : "Rescale kinetic energy upon exchanges."}),
+           "swapfile" : (InputValue, {"dtype"        : str,
+                                      "default"      : "PARATEMP",
+                                      "help"         : "File to keep track of replica exchanges"
+                                      }),                         
+            "repindex" : ( InputArray, { "dtype" : int,
+                                      "default"       : input_default(factory=np.zeros, args = (0,)),
+                                      "help"          : "List of current indices of the replicas compared to the starting indices" })
+                                      
          }
 
     default_help = "Replica Exchange"
@@ -49,8 +60,10 @@ class InputReplicaExchange(InputDictionary):
     def store(self, remd):
         if remd == {}: return
         self.stride.store(remd.stride)
+        self.repindex.store(remd.repindex)
+        self.krescale.store(remd.rescalekin)
+        self.swapfile.store(remd.swapfile)
 
     def fetch(self):
         rv = super(InputReplicaExchange,self).fetch()
-        rv["stride"] = self.stride.fetch()
         return rv

@@ -91,6 +91,10 @@ class Ensemble(dobject):
         else:
             self.eens = 0.0
 
+        # the bias force contains two bits: explicit biases (that are meant to represent non-physical external biasing potentials)
+        # and hamiltonian weights (that will act by scaling different physical components of the force). Both are bound as components
+        # of the "bias force" evaluator, but their meaning (and the wiring further down in bind()) differ.
+        
         # these are the additional bias components
         if bcomponents is None:
             bcomponents = []
@@ -98,9 +102,9 @@ class Ensemble(dobject):
         self.bias = Forces()
 
         # and their weights
-        if bweights is None:
+        if bweights is None or len(bweights)==0:
             bweights = np.ones(len(self.bcomp))
-
+        
         dset(self, "bweights", depend_array(name="bweights", value = np.asarray(bweights)) )
 
         # weights of the Hamiltonian scaling
@@ -115,7 +119,8 @@ class Ensemble(dobject):
         self.forces = bforce
         self.nm = nm
 
-        self.bias.bind(self.beads, self.cell, self.bcomp, fflist)
+        # this binds just the explicit bias forces
+        self.bias.bind(self.beads, self.cell, self.bcomp, fflist)        
 
         dset(self, "econs", depend_value(name='econs', func=self.get_econs))
         # dependencies of the conserved quantity
