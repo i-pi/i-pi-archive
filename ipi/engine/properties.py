@@ -639,7 +639,7 @@ class Properties(dobject):
       self.dbeads = system.beads.copy()
       self.dcell = system.cell.copy()
       self.dforces = system.forces.copy(self.dbeads, self.dcell)
-      self.fqref = None
+      self.fqrefs = {}
 
       # self.properties_init()  # Initialize the properties here so that all
                               #+all variables are accessible (for example to set
@@ -862,16 +862,17 @@ class Properties(dobject):
       return acv
       
    def get_fqvirial(self, ref="", units=""):
-       if self.fqref is None:
+       if not ref in self.fqrefs:
            if ref=="":
-               self.fqref = np.zeros(3*self.beads.natoms)
+               self.fqrefs[""] = np.zeros(3*self.beads.natoms)
            else:
-               self.fqref = np.loadtxt(ref).flatten() * unit_to_internal('length', units, 1)
-               if len(self.fqref) != 3*self.beads.natoms:
+               self.fqrefs[ref] = np.loadtxt(ref).flatten() * unit_to_internal('length', units, 1)
+               if len(self.fqrefs[ref]) != 3*self.beads.natoms:
                    raise ValueError("Atom number mismatch in reference file for virial_fq")
+       fqref = self.fqrefs[ref]
        fq = 0.0
        for b in xrange(self.beads.nbeads ):
-           fq += np.dot(self.forces.f[b], self.beads.q[b]-self.fqref)
+           fq += np.dot(self.forces.f[b], self.beads.q[b]-fqref)
            
        return fq*0.5/self.beads.nbeads
        
