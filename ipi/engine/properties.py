@@ -1366,7 +1366,6 @@ class Properties(dobject):
 
    def get_scyama_estimators(self, fd_delta= - _DEFAULT_FINDIFF):
       """Calculates the quantum scaled coordinate suzuki-chin kinetic energy estimator for the Suzuki-Chin propagator.
-
       Uses a finite difference method to calculate the estimators
       needed to calculate the energy and heat capacity of the system, as
       shown in Takeshi M. Yamamoto, Journal of Chemical Physics,
@@ -1374,17 +1373,17 @@ class Properties(dobject):
       the above article. Note that heat capacity is calculated as
       beta**2*kboltzmann*(<eps_v**2> - <eps_v>**2 - <eps_v'>), and the
       energy of the system as <eps_v>.
-
       Args:
          fd_delta: the relative finite difference in temperature to apply in
          computing finite-difference quantities. If it is negative, will be
          scaled down automatically to avoid discontinuities in the potential.
       """
 
-      dbeta = abs(float(fd_delta))
+      fd_delta = float(fd_delta)
+      dbeta = abs(fd_delta)
       beta = 1.0/(Constants.kb*self.ensemble.temp)
-      self.dforces.omegan2=self.forces.omegan2
-      self.dforces.alpha=self.forces.alpha
+      self.dforces.omegan2 = self.forces.omegan2
+      self.dforces.alpha = self.forces.alpha
 
       qc = depstrip(self.beads.qc)
       q = depstrip(self.beads.q)
@@ -1395,10 +1394,13 @@ class Properties(dobject):
          splus = np.sqrt(1.0 + dbeta)
          sminus = np.sqrt(1.0 - dbeta)
 
+         #change beta
+         self.dforces.omegan2=depstrip(self.forces.omegan2)/(1.0 + dbeta)**2
          for b in range(self.beads.nbeads):
             self.dbeads[b].q = qc*(1.0 - splus) + splus*q[b,:]
          vplus=(self.dforces.pot+self.dforces.potsc)/self.beads.nbeads
 
+         self.dforces.omegan2=depstrip(self.forces.omegan2)/(1.0 - dbeta)**2
          for b in range(self.beads.nbeads):
             self.dbeads[b].q = qc*(1.0 - sminus) + sminus*q[b,:]
          vminus=(self.dforces.pot+self.dforces.potsc)/self.beads.nbeads
@@ -1414,6 +1416,7 @@ class Properties(dobject):
                 eps_prime = 0.0
                 break
          else:
+             
             eps = ((1.0 + dbeta)*vplus - (1.0 - dbeta)*vminus)/(2*dbeta)
             eps += 0.5*(3*self.beads.natoms)/beta
 
