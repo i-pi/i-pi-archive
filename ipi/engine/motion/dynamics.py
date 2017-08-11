@@ -521,6 +521,7 @@ class SCIntegrator(NVEIntegrator):
       
       super(SCIntegrator,self).bind(mover)
       self.ensemble.add_econs(dget(self.forces, "potsc"))
+      self.ensemble.add_xlpot(dget(self.forces, "potsc"))
 
    def pstep(self):                                                                     
       """Velocity Verlet momenta propagator."""
