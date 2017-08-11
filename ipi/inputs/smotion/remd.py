@@ -29,7 +29,7 @@ from ipi.utils.units import *
 __all__ = ['InputReplicaExchange']
 
 class InputReplicaExchange(InputDictionary):
-    """Geometry optimization options.
+    """Replica Exchange options.
 
     Contains options related with replica exchange, such as method,
     steps on which REMD should be performed, etc.

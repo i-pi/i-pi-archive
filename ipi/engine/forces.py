@@ -441,6 +441,8 @@ class ScaledForceComponent(dobject):
     def __init__(self, baseforce, scaling=1):
         
         self.bf = baseforce
+        self.name = baseforce.name
+        self.ffield = baseforce.ffield
         dset(self,"scaling", depend_value(name="scaling",value=scaling))
         dset(self,"f",depend_array(name="f", 
               func=lambda: self.scaling*self.bf.f if scaling!=0 else np.zeros((self.bf.nbeads,3*self.bf.natoms)), 

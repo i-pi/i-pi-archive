@@ -102,7 +102,7 @@ class Ensemble(dobject):
         self.bias = Forces()
 
         # and their weights
-        if bweights is None:
+        if bweights is None or len(bweights)==0:
             bweights = np.ones(len(self.bcomp))
         
         dset(self, "bweights", depend_array(name="bweights", value = np.asarray(bweights)) )
