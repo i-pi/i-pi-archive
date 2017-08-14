@@ -1,11 +1,6 @@
 #!/usr/bin/env python2
 
-description = """
-Read positions of individual beads from a set of trajectory files and
-multiplex them into a single output trajectory. Trajectory file formats are
-inferred from file extensions, the number of beads is given by the number of
-input files.
-"""
+from __future__ import print_function
 
 import os
 import sys
@@ -14,18 +9,26 @@ import argparse
 from ipi.utils.io import open_backup, iter_file_name, print_file
 
 
+description = """
+Read positions of individual beads from a set of trajectory files and
+multiplex them into a single output trajectory. Trajectory file formats are
+inferred from file extensions, the number of beads is given by the number of
+input files.
+"""
+
+
 def main(fns_in, fn_out, begin, end, stride):
 
-    print 'Multiplexing {:d} beads into one trajectory.'.format(len(fns_in))
-    print
+    print('Multiplexing {:d} beads into one trajectory.'.format(len(fns_in)))
+    print()
 
-    print 'input file names:'
+    print('input file names:')
     for fn in fns_in:
-        print fn
-    print
+        print(fn)
+    print()
 
-    print 'output file name:', fn_out
-    print
+    print('output file name:', fn_out)
+    print()
 
     # Open input trajectory iterators.
     trjs_in = [iter_file_name(fn) for fn in fns_in]
@@ -62,15 +65,15 @@ def main(fns_in, fn_out, begin, end, stride):
         # Count frames and print information on progress.
         i_frame += 1
         if i_frame % 100 == 0:
-            print '\rframe {:d}'.format(i_frame),
+            print('\rframe {:d}'.format(i_frame), end='')
         sys.stdout.flush()
 
     f_out.close()
 
-    print
-    print
-    print 'Loaded {:d} frames.'.format(i_frame)
-    print 'Saved {:d} frames.'.format(i_frame_saved)
+    print()
+    print()
+    print('Loaded {:d} frames.'.format(i_frame))
+    print('Saved {:d} frames.'.format(i_frame_saved))
 
 
 if __name__ == '__main__':

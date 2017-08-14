@@ -1,0 +1,35 @@
+<simulation verbosity='high'>
+   <output prefix='hqmc'>
+      <properties filename='md' stride='1'> [step, time{femtosecond}, temperature{kelvin}, potential{atomic_unit}, pressure_md{pascal}] </properties>
+      <trajectory filename='pos' stride='1' format='xyz' cell_units='atomic_unit'> x_centroid{atomic_unit} </trajectory>
+      <trajectory filename='vel' stride='1' format='xyz' cell_units='atomic_unit'> v_centroid{atomic_unit} </trajectory>
+      <trajectory filename='frc' stride='1' format='xyz' cell_units='atomic_unit'> f_centroid{atomic_unit} </trajectory>
+      <checkpoint filename='checkpoint' stride='1' overwrite='True'/>   
+   </output>
+   <total_steps> 1000 </total_steps>
+   <ffsocket mode="inet" name="driver">
+      <address> localhost </address>
+      <port> 54322 </port>
+   </ffsocket>
+   <system>
+      <initialize nbeads='2'>
+        <file mode='xyz'> 8H_ML.xyz </file>
+        <velocities mode='thermal' units='kelvin'> 5000 </velocities>
+      </initialize>
+      <forces><force forcefield='driver'></force></forces>
+      <ensemble>
+         <temperature units='kelvin'> 5000 </temperature>
+      </ensemble>
+      <motion mode='dynamics'>
+	<dynamics mode='nvt'>
+	  <thermostat mode='nfl'>
+            <tau units='femtosecond'> 0 </tau>
+            <invar units='atomic_unit'> 0 </invar>
+            <invtau units='femtosecond'> 1000 </invtau>
+          </thermostat>
+          <timestep units='femtosecond'> 0.1 </timestep>
+	</dynamics>
+      </motion>
+   </system>
+</simulation>
+

@@ -16,7 +16,7 @@ import time
 import numpy as np
 
 from ipi.engine.motion import Motion
-from ipi.utils.depend import depstrip, depend_value, dget, dset, dobject, deppipe
+from ipi.utils.depend import *
 from ipi.engine.thermostats import Thermostat
 from ipi.engine.barostats import Barostat
 
@@ -70,10 +70,9 @@ class Dynamics(Motion):
         else:
             self.barostat = barostat
 
-        print "checking nmts", nmts, len(nmts)
         if nmts is np.zeros(0,int):
            self.nmts = np.asarray([1],int)
-        elif len(nmts) == 0:
+        elif nmts is None or len(nmts) == 0:
            self.nmts = np.asarray([1],int) 
         else:
            self.nmts=np.asarray(nmts)
@@ -126,9 +125,10 @@ class Dynamics(Motion):
         # Binds integrators
         self.integrator.bind(self)
 
+        dself = dd(self)
         # n times the temperature (for path integral partition function)
-        dset(self, "ntemp", depend_value(name='ntemp', func=self.get_ntemp,
-             dependencies=[dget(self.ensemble, "temp")]))
+        dself.ntemp = depend_value(name='ntemp', func=self.get_ntemp,
+             dependencies=[dget(self.ensemble, "temp")])
         self.integrator.pconstraints()
 
         fixdof = len(self.fixatoms) * 3 * self.beads.nbeads
@@ -136,8 +136,8 @@ class Dynamics(Motion):
             fixdof += 3
 
         # first makes sure that the thermostat has the correct temperature, then proceed with binding it.
-        deppipe(self, "ntemp", self.thermostat, "temp")
-        deppipe(self, "dt", self.thermostat, "dt")
+        dpipe(dself.ntemp, dd(self.thermostat).temp)
+        dpipe(dself.dt, dd(self.thermostat).dt)
   
         # the free ring polymer propagator is called in the inner loop, so propagation time should be redefined accordingly. 
         self.inmts = 1
@@ -169,7 +169,6 @@ class Dynamics(Motion):
                 if self.ensemble.pext < 0:
                     raise ValueError("Negative or unspecified pressure for a constant-p integrator")
             elif self.enstype == "nst":
-                print "STRESS:", np.trace(self.ensemble.stressext)
                 if np.trace(self.ensemble.stressext) < 0:
                     raise ValueError("Negative or unspecified stress for a constant-s integrator")
 
@@ -212,7 +211,6 @@ class DummyIntegrator(dobject):
                 self.coeffsc = np.ones((self.beads.nbeads,3*self.beads.natoms), float)
                 self.coeffsc[::2] /= -3.
                 self.coeffsc[1::2] /= 3.
-                print "nmts:-", motion.nmts
                 self.nmts=motion.nmts[-1]                 
 
     def pstep(self):
@@ -274,7 +272,8 @@ class NVEIntegrator(DummyIntegrator):
             for i in range(3):
                 pcom[i] = p[:,i:na3:3].sum()
 
-            self.ensemble.eens += np.dot(pcom, pcom) / (2.0*M*nb)
+            #print np.dot(pcom, pcom) / (2.0*M*nb)
+            #self.ensemble.eens += np.dot(pcom, pcom) / (2.0*M*nb)
 
             # subtracts COM velocity
             pcom *= 1.0 / (nb*M)
@@ -516,7 +515,7 @@ class SCIntegrator(NVEIntegrator):
       """Velocity Verlet momenta propagator."""
                                               
       # also include the baseline Tr2SC correction (the 2/3 & 4/3 V bit)
-      self.beads.p += depstrip(self.forces.f + self.coeffsc*self.forces.f)*self.dt*0.5/self.nmts
+      self.beads.p += depstrip(self.forces.f)*(1 + self.coeffsc)*self.dt*0.5/self.nmts
       # also adds the bias force (TODO!!!)
       # self.beads.p += depstrip(self.bias.f)*(self.dt*0.5)
                                                                                         
@@ -524,7 +523,7 @@ class SCIntegrator(NVEIntegrator):
       """Velocity Verlet Suzuki-Chin momenta propagator."""
 
       # also adds the force assiciated with SuzukiChin correction (only the |f^2| term, so we remove the Tr2SC correction)
-      self.beads.p += depstrip(self.forces.fsc - self.coeffsc*self.forces.f)*self.dt*0.5
+      self.beads.p += (depstrip(self.forces.fsc) - self.coeffsc*depstrip(self.forces.f))*self.dt*0.5
 
    def qcstep(self):
       """Velocity Verlet centroid position propagator."""

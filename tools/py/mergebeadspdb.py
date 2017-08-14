@@ -5,7 +5,7 @@
 Reads positions of individual beads from an i-PI run and
 assemles them in a pdb describing the ring polymer connectivity.
 
-Assumes the input files are in pdb format names prefix.pos_*.pdb.
+Assumes the input files are in named following the convention prefix.pos_*.*.
 
 Syntax:
    mergebeadspdb.py prefix
@@ -21,11 +21,11 @@ from ipi.utils.depend import *
 from ipi.utils.units import *
 
 
-def main(prefix):
+def main(prefix, suffix="pos", unitconv="1.0"):
 
    ipos=[]
    imode=[]
-   for filename in sorted(glob.glob(prefix+".pos*")):
+   for filename in sorted(glob.glob(prefix+"."+suffix+"*")):
       imode.append(filename.split(".")[-1])
       ipos.append(open(filename,"r"))
 
@@ -41,7 +41,8 @@ def main(prefix):
             if natoms == 0:
                natoms = pos.natoms
                beads = Beads(natoms,nbeads)
-            beads[i].q = pos.q
+            cell.h *= float(unitconv)
+            beads[i].q = pos.q*float(unitconv)
             beads.names = pos.names
       except EOFError: # finished reading files
          sys.exit(0)

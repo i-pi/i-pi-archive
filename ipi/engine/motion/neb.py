@@ -309,10 +309,10 @@ class NEBMover(Motion):
 
     Attributes:
         mode: minimizer to use for NEB
-        maximum_step: maximum step size for BFGS/L-BFGS
-        cg_old_force: force from previous iteration
-        cg_old_direction: direction from previous iteration
-        invhessian: inverse Hessian for BFGS/L-BFGS
+        biggest_step: maximum step size for BFGS/L-BFGS
+        old_force: force from previous iteration
+        old_direction: direction from previous iteration
+        invhessian_bfgs: inverse Hessian for BFGS
         ls_options:
             tolerance: tolerance for exit of line search
             iter: maximum iterations for line search per MD step
@@ -322,9 +322,9 @@ class NEBMover(Motion):
             energy: tolerance on change in energy for exiting minimization
             force: tolerance on force/change in force for exiting minimization
             position: tolerance and change in position for exiting minimization
-        corrections: number of corrections to store for L-BFGS
-        qlist: list of previous positions (x_n+1 - x_n) for L-BFGS
-        glist: list of previous gradients (g_n+1 - g_n) for L-BFGS
+        corrections_lbfgs: number of corrections to store for L-BFGS
+        qlist_lbfgs: list of previous positions (x_n+1 - x_n) for L-BFGS
+        glist_lbfgs: list of previous gradients (g_n+1 - g_n) for L-BFGS
         endpoints: flag for minimizing end images in NEB *** NOT YET IMPLEMENTED ***
         spring:
             varsprings: T/F for variable spring constants
@@ -336,15 +336,15 @@ class NEBMover(Motion):
 
     def __init__(self, fixcom=False, fixatoms=None,
                  mode="sd",
-                 maximum_step=100.0,
-                 cg_old_force=np.zeros(0, float),
-                 cg_old_direction=np.zeros(0, float),
-                 invhessian=np.eye(0),
+                 biggest_step=100.0,
+                 old_force=np.zeros(0, float),
+                 old_direction=np.zeros(0, float),
+                 invhessian_bfgs=np.eye(0),
                  ls_options={"tolerance": 1e-5, "iter": 100.0, "step": 1e-3, "adaptive": 1.0},
                  tolerances={"energy": 1e-5, "force": 1e-5, "position": 1e-5},
-                 corrections=5,
-                 qlist=np.zeros(0, float),
-                 glist=np.zeros(0, float),
+                 corrections_lbfgs=5,
+                 qlist_lbfgs=np.zeros(0, float),
+                 glist_lbfgs=np.zeros(0, float),
                  endpoints=True,
                  spring={"varsprings": False, "kappa": 1.0, "kappamax": 1.5, "kappamin": 0.5},
                  climb=False):
@@ -361,13 +361,13 @@ class NEBMover(Motion):
         self.ls_options = ls_options
         self.tolerances = tolerances
         self.mode = mode
-        self.max_step = maximum_step
-        self.cg_old_f = cg_old_force
-        self.cg_old_d = cg_old_direction
-        self.invhessian = invhessian
-        self.corrections = corrections
-        self.qlist = qlist
-        self.glist = glist
+        self.big_step = biggest_step
+        self.old_f = old_force
+        self.old_d = old_direction
+        self.invhessian = invhessian_bfgs
+        self.corrections = corrections_lbfgs
+        self.qlist = qlist_lbfgs
+        self.glist = glist_lbfgs
         self.endpoints = endpoints
         self.spring = spring
         self.climb = climb
@@ -378,14 +378,14 @@ class NEBMover(Motion):
     def bind(self, ens, beads, nm, cell, bforce, prng):
 
         super(NEBMover,self).bind(ens, beads, nm, cell, bforce, prng)
-        if self.cg_old_f.shape != beads.q.shape:
-            if self.cg_old_f.shape == (0,):
-                self.cg_old_f = np.zeros(beads.q.shape, float)
+        if self.old_f.shape != beads.q.shape:
+            if self.old_f.shape == (0,):
+                self.old_f = np.zeros(beads.q.shape, float)
             else:
                 raise ValueError("Conjugate gradient force size does not match system size")
-        if self.cg_old_d.shape != beads.q.shape:
-            if self.cg_old_d.shape == (0,):
-                self.cg_old_d = np.zeros(beads.q.shape, float)
+        if self.old_d.shape != beads.q.shape:
+            if self.old_d.shape == (0,):
+                self.old_d = np.zeros(beads.q.shape, float)
             else:
                 raise ValueError("Conjugate gradient direction size does not match system size")
         if self.invhessian.size != (beads.q.size * beads.q.size):
@@ -432,13 +432,13 @@ class NEBMover(Motion):
             u0, du0 = (fx, nebgrad)
 
             # Store old force
-            self.cg_old_f[:] = -nebgrad
+            self.old_f[:] = -nebgrad
 
             # Do one iteration of L-BFGS and return positions, gradient modulus,
             # direction, list of positions, list of gradients
             self.beads.q, fx, self.nebbfgsm.d, self.qlist, self.glist = L_BFGS(self.beads.q,
                   self.nebbfgsm.d, self.nebbfgsm, self.qlist, self.glist,
-                  fdf0=(u0, du0), max_step=self.max_step, tol=self.ls_options["tolerance"],
+                  fdf0=(u0, du0), big_step=self.big_step, tol=self.ls_options["tolerance"],
                   itmax=self.ls_options["iter"],
                   m=self.corrections, k=step)
 
@@ -477,8 +477,8 @@ class NEBMover(Motion):
                 # dq1 = direction to move
                 # dq0 = previous direction
                 # dq1_unit = unit vector of dq1
-                gradf0 = self.cg_old_f
-                dq0 = self.cg_old_d
+                gradf0 = self.old_f
+                dq0 = self.old_d
                 nebgrad = self.neblm(self.beads.q)[0]
                 gradf1 = -nebgrad
                 beta = np.dot((gradf1.flatten() - gradf0.flatten()), gradf1.flatten()) / (np.dot(gradf0.flatten(), gradf0.flatten()))
@@ -487,8 +487,8 @@ class NEBMover(Motion):
                 info(" @GEOP: Determined CG direction", verbosity.debug)
 
             # Store force and direction for next CG step
-            self.cg_old_d[:] = dq1
-            self.cg_old_f[:] = gradf1
+            self.old_d[:] = dq1
+            self.old_f[:] = gradf1
 
             if len(self.fixatoms) > 0:
                 for dqb in dq1_unit:
@@ -518,7 +518,7 @@ class NEBMover(Motion):
         # Determine conditions for converged relaxation
         if ((fx - u0) / self.beads.natoms <= self.tolerances["energy"])\
             and ((np.amax(np.absolute(self.forces.f)) <= self.tolerances["force"])\
-                or (np.sqrt(np.dot(self.forces.f.flatten() - self.cg_old_f.flatten(),\
-                    self.forces.f.flatten() - self.cg_old_f.flatten())) == 0.0))\
+                or (np.sqrt(np.dot(self.forces.f.flatten() - self.old_f.flatten(),\
+                    self.forces.f.flatten() - self.old_f.flatten())) == 0.0))\
             and (x <= self.tolerances["position"]):
             softexit.trigger("Geometry optimization converged. Exiting simulation")

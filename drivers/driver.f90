@@ -32,26 +32,26 @@
          USE PSWATER
          USE F90SOCKETS, ONLY : open_socket, writebuffer, readbuffer
       IMPLICIT NONE
-
+      
       ! SOCKET VARIABLES
       INTEGER, PARAMETER :: MSGLEN=12   ! length of the headers of the driver/wrapper communication protocol
       INTEGER socket, inet, port        ! socket ID & address of the server
       CHARACTER(LEN=1024) :: host
-
+      
       ! COMMAND LINE PARSING
       CHARACTER(LEN=1024) :: cmdbuffer
       INTEGER ccmd, vstyle
       INTEGER verbose
       INTEGER commas(4), par_count      ! stores the index of commas in the parameter string
       DOUBLE PRECISION vpars(4)         ! array to store the parameters of the potential
-
+      
       ! SOCKET COMMUNICATION BUFFERS
       CHARACTER(LEN=12) :: header
       LOGICAL :: isinit=.false., hasdata=.false.
       INTEGER cbuf, rid
       CHARACTER(LEN=2048) :: initbuffer      ! it's unlikely a string this large will ever be passed...
       DOUBLE PRECISION, ALLOCATABLE :: msgbuffer(:)
-
+      
       ! PARAMETERS OF THE SYSTEM (CELL, ATOM POSITIONS, ...)
       DOUBLE PRECISION sigma, eps, rc, rn, ks ! potential parameters
       INTEGER nat
@@ -60,7 +60,7 @@
       DOUBLE PRECISION cell_h(3,3), cell_ih(3,3), virial(3,3), mtxbuf(9), dip(3), charges(3), dummy(3,3,3), vecdiff(3)
       DOUBLE PRECISION volume
       DOUBLE PRECISION, PARAMETER :: fddx = 1.0d-5
-
+      
       ! NEIGHBOUR LIST ARRAYS
       INTEGER, DIMENSION(:), ALLOCATABLE :: n_list, index_list
       DOUBLE PRECISION init_volume, init_rc ! needed to correctly adjust the cut-off radius for variable cell dynamics
@@ -69,9 +69,8 @@
 
       ! DMW
       DOUBLE PRECISION efield(3)
-
       INTEGER i, j
-
+      
       ! parse the command line parameters
       ! intialize defaults
       ccmd = 0
@@ -130,8 +129,12 @@
                   vstyle = 7
                ELSEIF (trim(cmdbuffer) == "pswater") THEN
                   vstyle = 8
-               ELSEIF (trim(cmdbuffer) == "qtip4pf-efield") THEN
+               ELSEIF (trim(cmdbuffer) == "lepsm1") THEN
                   vstyle = 9
+               ELSEIF (trim(cmdbuffer) == "lepsm2") THEN
+                  vstyle = 10
+               ELSEIF (trim(cmdbuffer) == "qtip4pf-efield") THEN
+                  vstyle = 11
                ELSEIF (trim(cmdbuffer) == "gas") THEN
                   vstyle = 0  ! ideal gas
                ELSE
@@ -152,7 +155,7 @@
             ccmd = 0
          ENDIF
       ENDDO
-
+      
       IF (vstyle == -1) THEN
          WRITE(*,*) " Error, type of potential not specified."
          CALL helpmessage
@@ -169,7 +172,7 @@
             STOP "ENDED"
          ENDIF
          isinit = .true.
-      ELSEIF (9== vstyle) THEN
+      ELSEIF (11== vstyle) THEN
          IF (par_count .ne. 3) THEN
             WRITE(*,*) "Error:  incorrect initialization string included for qtip4pf-efield. &
      &             Provide the three components of the electric field in V/nm"
@@ -204,6 +207,29 @@
          IF (par_count /= 0) THEN
             WRITE(*,*) "Error: no initialization string needed for Partridge-Schwenke H2O potential."
             STOP "ENDED"
+         END IF
+      ELSEIF (vstyle == 9) THEN
+         IF (par_count /= 0) THEN
+            WRITE(*,*) "Error: no initialization string needed for LEPSM1."
+            STOP "ENDED"
+         END IF
+      ELSEIF (vstyle == 10) THEN
+         IF (par_count /= 0) THEN
+            WRITE(*,*) "Error: no initialization string needed for LEPSM2."
+            STOP "ENDED" 
+         ENDIF   
+         isinit = .true.
+      ELSEIF (vstyle == 11) THEN
+         IF (par_count .ne. 3) THEN
+            WRITE(*,*) "Error:  incorrect initialization string included for qtip4pf-efield. &
+          Provide the three components of the electric field in V/nm"
+            STOP "ENDED"
+      ELSE
+            ! We take in an electric field in volts / nm.This must be converted 
+to Eh / (e a0).
+            do i=1,3
+             efield(i) = vpars(i) / 5.14220652d2
+            enddo
          ENDIF
          isinit = .true.
       ELSEIF (vstyle == 1) THEN
@@ -382,7 +408,7 @@
                   dip = dip -1.1128d0 * atoms(i,:) + 0.5564d0 * (atoms(i+1,:) + atoms(i+2,:))
                ENDDO
                ! do not compute the virial term
-            ELSEIF (vstyle == 9) THEN ! efield potential.             
+            ELSEIF (vstyle == 11) THEN ! efield potential.             
                IF (mod(nat,3)/=0) THEN
                   WRITE(*,*) " Expecting water molecules O H H O H H O H H but got ", nat, "atoms"
                   STOP "ENDED"
@@ -396,7 +422,8 @@
 
                dip=0.0
                vecdiff=0.0
-               ! lets fold the atom positions back to center in case the water travelled far away
+               ! lets fold the atom positions back to center in case the water travelled far away. 
+               ! this avoids problems if the water is splic across (virtual) periodic boundaries
                ! OH_1
                call vector_separation(cell_h, cell_ih, atoms(2,:), atoms(1,:), vecdiff, dist)
                atoms(2,:)=vecdiff(:)
@@ -409,14 +436,27 @@
 
 
                atoms = atoms*0.52917721d0    ! pot_nasa wants angstrom
-               call pot_nasa(atoms,forces,pot)
+               call pot_nasa(atoms, forces, pot)
                call dms_nasa(atoms, charges, dummy) ! MR: trying to print out the right charges
                dip(:)=atoms(1,:)*charges(1)+atoms(2,:)*charges(2)+atoms(3,:)*charges(3)
-               ! MR: the above line looks like it provides correct results in eAngstrom for dipole! CHECK! Important to have molecule in the center of the cell...
+               ! MR: the above line looks like it provides correct results in eAngstrom for dipole! 
                pot = pot*0.0015946679     ! pot_nasa gives kcal/mol
                forces = forces * (-0.00084329756) ! pot_nasa gives V in kcal/mol/angstrom
 
                ! do not compute the virial term
+            ELSEIF (vstyle == 9) THEN
+               IF (nat /= 3) THEN
+                  WRITE(*,*) "Expecting 3 atoms for LEPS Model 1  potential, A B C "
+                  STOP "ENDED"
+               END IF
+               CALL LEPS_M1(3, atoms, pot, forces)
+            ELSEIF (vstyle == 10) THEN
+               IF (nat /= 3) THEN
+                  WRITE(*,*) "Expecting 4 atoms for LEPS Model 2  potential, A B C D n"
+                  STOP "ENDED"
+               END IF
+               CALL LEPS_M2(4, atoms, pot, forces)
+               
             ELSE
                IF ((allocated(n_list) .neqv. .true.)) THEN
                   IF (verbose > 0) WRITE(*,*) " Allocating neighbour lists."
@@ -493,12 +533,12 @@
          ENDIF
       ENDDO
       IF (nat > 0) DEALLOCATE(atoms, forces, msgbuffer)
-
-      CONTAINS
+ 
+    CONTAINS
       SUBROUTINE helpmessage
          ! Help banner
-         WRITE(*,*) " SYNTAX: driver.x [-u] -h hostname -p port -m [gas|lj|sg|harm|morse|zundel|qtip4pf|pswater|qtip4pf-efield] "
-         WRITE(*,*) "         -o 'comma_separated_parameters' [-v|-vv] "
+         WRITE(*,*) " SYNTAX: driver.x [-u] -h hostname -p port -m [gas|lj|sg|harm|morse|zundel|qtip4pf|pswater|lepsm1|lepsm2|qtip4p-efield] "
+         WRITE(*,*) "         -o 'comma_separated_parameters' [-v] "
          WRITE(*,*) ""
          WRITE(*,*) " For LJ potential use -o sigma,epsilon,cutoff "
          WRITE(*,*) " For SG potential use -o cutoff "

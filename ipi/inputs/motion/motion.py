@@ -22,8 +22,9 @@ Classes:
 """
 
 import numpy as np
+from copy import copy
 import ipi.engine.initializer
-from ipi.engine.motion import Motion, Dynamics, Replay, GeopMover, NEBMover, DynMatrixMover
+from ipi.engine.motion import Motion, Dynamics, Replay, GeopMotion, NEBMover, DynMatrixMover, MultiMotion
 from ipi.engine.motion import DynMatrixMover
 from ipi.utils.inputvalue import *
 from ipi.inputs.thermostats import *
@@ -36,7 +37,7 @@ from ipi.utils.units import *
 
 __all__ = ['InputMotion']
 
-class InputMotion(Input):
+class InputMotionBase(Input):
    """Motion calculation input class.
 
    A class to encompass the different "motion" calculations.
@@ -69,7 +70,7 @@ class InputMotion(Input):
                                      "help":  "Option for (path integral) molecular dynamics" } ),
            "file": (InputInitFile, { "default" : input_default(factory=ipi.engine.initializer.InitBase,kwargs={"mode":"xyz"}),
                            "help"            : "This describes the location to read a trajectory file from."}),
-           "vibrations" : ( InputDynMatrix, { "default" : {}, 
+           "vibrations" : ( InputDynMatrix, { "default" : {},
                                      "help":  "Option for phonon computation" } )
          }
 
@@ -85,14 +86,14 @@ class InputMotion(Input):
          sc: A motion calculation class.
       """
 
-      super(InputMotion, self).store(sc)
+      super(InputMotionBase, self).store(sc)
       tsc = -1
       if type(sc) is Motion:
           self.mode.store("dummy")
       elif type(sc) is Replay:
          self.mode.store("replay")
          tsc = 0
-      elif type(sc) is GeopMover:
+      elif type(sc) is GeopMotion:
          self.mode.store("minimize")
          self.optimizer.store(sc)
          tsc = 1
@@ -103,14 +104,14 @@ class InputMotion(Input):
       elif type(sc) is Dynamics:
          self.mode.store("dynamics")
          self.dynamics.store(sc)
-         tsc = 1   
+         tsc = 1
       elif type(sc) is DynMatrixMover:
          self.mode.store("vibrations")
          self.vibrations.store(sc)
-         tsc = 1   
-      else: 
+         tsc = 1
+      else:
          raise ValueError("Cannot store Mover calculator of type "+str(type(sc)))
-      
+
       if tsc == 0:
          self.file.store(sc.intraj)
       elif tsc > 0:
@@ -125,12 +126,12 @@ class InputMotion(Input):
          objects given the attributes of the InputEnsemble object.
       """
 
-      super(InputMotion, self).fetch()
+      super(InputMotionBase, self).fetch()
 
       if self.mode.fetch() == "replay":
          sc = Replay(fixcom=self.fixcom.fetch(), fixatoms=self.fixatoms.fetch(), intraj=self.file.fetch())
       elif self.mode.fetch() == "minimize":
-         sc = GeopMover(fixcom=self.fixcom.fetch(), fixatoms=self.fixatoms.fetch(), **self.optimizer.fetch())
+         sc = GeopMotion(fixcom=self.fixcom.fetch(), fixatoms=self.fixatoms.fetch(), **self.optimizer.fetch())
       elif self.mode.fetch() == "neb":
          sc = NEBMover(fixcom=self.fixcom.fetch(), fixatoms=self.fixatoms.fetch(), **self.neb_optimizer.fetch())
       elif self.mode.fetch() == "dynamics":
@@ -142,3 +143,38 @@ class InputMotion(Input):
          #raise ValueError("'" + self.mode.fetch() + "' is not a supported motion calculation mode.")
 
       return sc
+
+
+class InputMotion(InputMotionBase):
+   """ Extends InputThermoBase to allow the definition of a multithermo """
+
+   attribs = copy(InputMotionBase.attribs)
+
+   attribs["mode"][1]["options"].append("multi")
+
+   dynamic = { "motion" : (InputMotionBase, {"default"   : input_default(factory=Motion),
+                                         "help"      : "A motion class that can be included as a member of a 'multi' integrator."} )
+             }
+
+   def store(self, motion):
+
+      if type(motion) is MultiMotion:
+         self.mode.store("multi" )
+         for m in motion.mlist:
+            im=InputMotionBase()
+            im.store(m)
+            self.extra.append(("motion",im))
+      else:
+          super(InputMotion,self).store(motion)
+
+   def fetch(self):
+
+      if self.mode.fetch() == "multi" :
+         mlist = []
+         for (k, m) in self.extra:
+            mlist.append(m.fetch())
+         motion=MultiMotion(motionlist=mlist)
+      else:
+         motion=super(InputMotion,self).fetch()
+
+      return motion

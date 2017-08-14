@@ -85,14 +85,14 @@ def read_xyz(filedesc, **kwargs):
     """
 
     try:
-        natoms = filedesc.next()
-    except StopIteration:
+        natoms = int(filedesc.next())
+    except (StopIteration, ValueError):
         raise EOFError
 
-    if natoms == '':              # Work with temporary files
-        raise EOFError
+    # if natoms == '':              # Work with temporary files
+    #     raise EOFError
 
-    natoms = int(natoms)
+    # natoms = int(natoms)
 
     comment = filedesc.next()
 
@@ -147,22 +147,3 @@ def read_xyz(filedesc, **kwargs):
         raise ValueError("The number of atom records does not match the header of the xyz file.")
 
     return comment, cell, qatoms, names, masses
-
-
-
-def iter_xyz(filedesc):
-    """Takes a xyz-style file and yields one Atoms object after another.
-
-    Args:
-        filedesc: An open readable file object from a xyz formatted file.
-
-    Returns:
-        Generator over the xyz trajectory, that yields
-        Atoms objects with the appropriate atom labels, masses and positions.
-    """
-
-    try:
-        while 1:
-            yield read_xyz(filedesc)
-    except EOFError:
-        pass

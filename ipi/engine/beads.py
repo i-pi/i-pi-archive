@@ -89,7 +89,7 @@ class Beads(dobject):
       self.natoms = natoms
       self.nbeads = nbeads
 
-      dself = self.dd
+      dself = dd(self)
       
       dself.names = depend_array(name="names", value=np.zeros(natoms, np.dtype('|S6')))
 
@@ -123,27 +123,31 @@ class Beads(dobject):
       # kinetic energies of thhe beads, and total (classical) kinetic stress tensor
       dself.kins = depend_array(name="kins", value=np.zeros(nbeads, float),
             func=self.kin_gather,
-               dependencies=[b.dd.kin for b in self._blist])
+               dependencies=[dd(b).kin for b in self._blist])
       dself.kin = depend_value(name="kin", func=self.get_kin,
             dependencies=[dself.kins])
       dself.kstress = depend_array(name="kstress",value=np.zeros((3,3), float),
             func=self.get_kstress,
-               dependencies=[b.dd.kstress for b in self._blist])
+               dependencies=[dd(b).kstress for b in self._blist])
 
-   def copy(self):
-      """Creates a new beads object from the original.
+   def copy(self, nbeads = -1):
+      """Creates a new beads object with newP <= P beads from the original.
 
       Returns:
-         A Beads object with the same q, p, m and names arrays as the original.
+         A Beads object with the first newP q, p, m and names arrays as the original.
       """
 
-      newbd = Beads(self.natoms, self.nbeads)
-      newbd.q[:] = self.q
-      newbd.p[:] = self.p
+      if nbeads  > self.nbeads:
+         raise ValueError("Cannot copy to an object with larger number of beads")
+      elif nbeads == -1:
+         nbeads = self.nbeads
+
+      newbd = Beads(self.natoms, nbeads)
+      newbd.q[:] = self.q[:nbeads]
+      newbd.p[:] = self.p[:nbeads]
       newbd.m[:] = self.m
       newbd.names[:] = self.names
       return newbd
-
 
    def m3tosm3(self):
       """Takes the mass array and returns the square rooted mass array."""
