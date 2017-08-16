@@ -200,9 +200,11 @@ class Properties(dobject):
       "step": {       "dimension" : "number",
                       "help" : "The current simulation time step.",
                       'func': (lambda: (1 + self.simul.step))},
+
       "time": {       "dimension": "time",
                       "help": "The elapsed simulation time.",
                       'func': (lambda: (1 + self.simul.step)*self.motion.dt)},
+
       "temperature": {"dimension": "temperature",
                       "help": "The current temperature, as obtained from the MD kinetic energy.",
                       "longhelp" : """The current temperature, as obtained from the MD kinetic energy of the (extended)
@@ -212,16 +214,20 @@ class Properties(dobject):
                                       'bead' or 'nm' specify whether the temperature should be computed for a single bead
                                       or normal mode.""",
                       'func': self.get_temp },
+
       "density": {    "dimension": "density",
                       "help": "The mass density of the physical system.",
                       'func': (lambda: self.beads.m.sum()/self.cell.V)},
+
       "volume": {     "dimension": "volume",
                       "help": "The volume of the cell box.",
                       'func': (lambda: self.cell.V) },
+
       "cell_h": {    "dimension" : "length",
                       "help": "The simulation cell as a matrix. Returns the 6 non-zero components in the form [xx, yy, zz, xy, xz, yz].",
                       "size": 6,
                       "func": (lambda: self.tensor2vec(self.cell.h))},
+
       "cell_abcABC": {"dimension" : "undefined",
                       "help": "The lengths of the cell vectors and the angles between them in degrees as a list of the form [a, b, c, A, B, C]",
                       "longhelp": """The lengths of the cell vectors and the angles between them in degrees as a list of the
@@ -229,53 +235,64 @@ class Properties(dobject):
                       are defined similarly. Since the output mixes different units, a, b and c can only be output in bohr.""",
                       "size": 6,
                       'func': (lambda: np.asarray(h2abc_deg(self.cell.h)))},
+
       "conserved": {  "dimension": "energy",
                       "help": "The value of the conserved energy quantity per bead.",
                       'func': (lambda: self.ensemble.econs/float(self.beads.nbeads))},
+
       "ensemble_temperature":  {  "dimension": "temperature",
                        "help" : "The target temperature for the current ensemble",
                        "func": (lambda: self.ensemble.temp) },
+
 #      "ensemble_bias":  {  "dimension": "energy",
 #                       "help" : "The bias applied to the current ensemble",
 #                       "func": (lambda: self.ensemble.bias) },
 #      "ensemble_logweight":  {  "dimension": "",
 #                       "help" : "The (log) weight of the configuration in the biassed ensemble",
 #                       "func": (lambda: self.ensemble.bias/(Constants.kb*self.ensemble.temp)) },
+
       "potential": {  "dimension" : "energy",
                       "help" : "The physical system potential energy.",
                       "longhelp": """The physical system potential energy. With the optional argument 'bead'
                          will print the potential associated with the specified bead.""",
-                      'func': (lambda bead="-1": self.forces.pot/self.beads.nbeads if int(bead)<0 else self.forces.pots[int(bead)])},
+                      'func': (lambda bead="-1": self.forces.pot / self.beads.nbeads if int(bead) < 0 else self.forces.pots[int(bead)])},
+
       "potential_opsc": {  "dimension" : "energy",
-                      "help" : "The physical system potential energy calculated by operator method for suzuki-chin propagator.",
-                      "longhelp": """The physical system potential energy. With the optional argument 'bead'
-                         will print the potential associated with the specified bead.""",
-                      'func': (lambda: 2.0/self.beads.nbeads*sum(self.forces.pots[int(k)] for k in range(0,self.beads.nbeads,2)) )},
+                      "help" : "The Suzuki-Chin operator estimator for the potential energy of the physical system.",
+                      'func': (lambda: 2.0 / self.beads.nbeads * np.sum(self.forces.pots[::2]))
+                        },
+
       "potential_tdsc": {  "dimension" : "energy",
-                      "help" : "The physical system potential energy calculated by thermodynamic method calculated for suzuki-chin propagator.",
-                      "longhelp": """The physical system potential energy. With the optional argument 'bead'
-                         will print the potential associated with the specified bead.""",
-                      'func': self.get_scpottd},
+                      "help" : "The Suzuki-chin thermodyanmic estimator for the potential energy of the physical system.",
+                      'func': self.get_scpottd },
+
       "pot_component": {  "dimension" : "energy",
                       "help": "The contribution to the system potential from one of the force components. ",
-                       "longhelp":  """The contribution to the system potential from one of the force components. Takes one mandatory
-                         argument index (zero-based) that indicates which component of the potential must be returned. The optional argument 'bead'
-                         will print the potential associated with the specified bead. If the potential is weighed, the weight will be applied. """,
+                       "longhelp":  """The contribution to the system potential from one of the force components. 
+                       Takes one mandatory argument index (zero-based) that indicates which component of the 
+                       potential must be returned. The optional argument 'bead' will print the potential associated 
+                       with the specified bead. If the potential is weighed, the weight will be applied. """,
                       'func': (lambda index, bead="-1": self.forces.pots_component(int(index)).sum()/self.beads.nbeads if int(bead)<0 else self.forces.pots_component(int(index))[int(bead)] ) },
+
       "pot_component_raw": {  "dimension" : "energy",
                       "help": "The contribution to the system potential from one of the force components. ",
-                       "longhelp":  """The contribution to the system potential from one of the force components. Takes one mandatory
-                         argument index (zero-based) that indicates which component of the potential must be returned. The optional argument 'bead'
-                         will print the potential associated with the specified bead. Potential weights will not be applied. """,
+                       "longhelp":  """The contribution to the system potential from one of the 
+                       force components. Takes one mandatory argument index (zero-based) that indicates 
+                       which component of the potential must be returned. The optional argument 'bead'
+                       will print the potential associated with the specified bead. Potential weights 
+                       will not be applied. """,
                       'func': (lambda index, bead="-1": self.forces.pots_component(int(index),False).sum()/self.beads.nbeads if int(bead)<0 else self.forces.pots_component(int(index),False)[int(bead)] ) },
+
       "forcemod": {  "dimension" : "force",
                       "help" : "The modulus of the force.",
                       "longhelp": """The modulus of the force. With the optional argument 'bead'
-                         will print the force associated with the specified bead.""",
+                       will print the force associated with the specified bead.""",
                       'func': (lambda bead="-1": np.linalg.norm(self.forces.f)/self.beads.nbeads if int(bead)<0 else np.linalg.norm(self.forces.f[int(bead)]))},
+
       "spring": {     "dimension" : "energy",
                       "help": "The total spring potential energy between the beads of all the ring polymers in the system.",
                       'func': (lambda: self.beads.vpath*self.nm.omegan2/self.beads.nbeads)},
+
       "kinetic_md":  {"dimension" : "energy",
                       "help": "The kinetic energy of the (extended) classical system.",
                        "longhelp" : """The kinetic energy of the (extended) classical system.
@@ -285,37 +302,40 @@ class Properties(dobject):
                        'bead' or 'nm' specify whether the kinetic energy should be computed for a single bead
                        or normal mode. If not specified, all atoms/beads/nm are used.""",
                       'func': self.get_kinmd},
+
       "kinetic_cv":  {"dimension" : "energy",
                       "help": "The centroid-virial quantum kinetic energy of the physical system.",
                       "longhelp": """The centroid-virial quantum kinetic energy of the physical system.
                       Takes an argument 'atom', which can be either an atom label or index (zero based)
                       to specify which species to find the kinetic energy of. If not specified, all atoms are used.""",
                       'func': self.get_kincv},
+
       "kinetic_td":  {"dimension" : "energy",
                       "help": "The primitive quantum kinetic energy of the physical system.",
                       "longhelp": """The primitive quantum kinetic energy of the physical system.
                       Takes an argument 'atom', which can be either an atom label or index (zero based)
                       to specify which species to find the kinetic energy of. If not specified, all atoms are used.""",
                       'func': self.get_kintd},
+
       "kinetic_prsc":  {"dimension" : "energy",
-                      "help": "The primitive fourth order quantum kinetic energy of the physical system.",
-                      "longhelp": """The primitive quantum kinetic energy of the physical system.
-                      Takes an argument 'atom', which can be either an atom label or index (zero based)
-                      to specify which species to find the kinetic energy of. If not specified, all atoms are used.""",
-                      'func': self.get_kinprsc},
+                      "help": "The Suzuki-Chin primitive estimator of the quantum kinetic energy of the physical system",
+                      'func': self.get_sckinpr},
+
       "kinetic_tdsc":  {"dimension" : "energy",
-                      "help": "The centroid-virial quantum kinetic energy of the physical system for suzuki-chin propagator.",
-                      "longhelp": """The centroid-virial quantum kinetic energy of the physical system.
-                      Takes an argument 'atom', which can be either an atom label or index (zero based)
-                      to specify which species to find the kinetic energy of. If not specified, all atoms are used.""",
+                      "help": "The Suzuki-Chin centroid-virial thermodynamic estimator of the quantum kinetic energy of the physical system.",
+                      "longhelp": """The Suzuki-Chin centroid-virial thermodynamic estimator of the quantum 
+                      kinetic energy of the physical system. Takes an argument 'atom', which can be either 
+                      an atom label or index (zero based) to specify which species to find the kinetic energy 
+                      of. If not specified, all atoms are used.""",
                       'func': self.get_sckintd},
 
       "kinetic_opsc":  {"dimension" : "energy",
-                      "help": "The centroid-virial quantum kinetic energy of the physical system for suzuki-chin propagator.",
+                      "help": "The Suzuki-Chin centroid-virial operator estimator of the quantum kinetic energy of the physical system.",
                       "longhelp": """The centroid-virial quantum kinetic energy of the physical system.
                       Takes an argument 'atom', which can be either an atom label or index (zero based)
                       to specify which species to find the kinetic energy of. If not specified, all atoms are used.""",
                       'func': self.get_sckinop},
+
       "kinetic_tens":{"dimension" : "energy",
                       "help" : "The centroid-virial quantum kinetic energy tensor of the physical system.",
                       "longhelp" : """The centroid-virial quantum kinetic energy tensor of the physical system.
@@ -324,6 +344,7 @@ class Properties(dobject):
                       which species to find the kinetic tensor components of. If not specified, all atoms are used.""",
                       "size" : 6,
                       "func" : self.get_ktens},
+
       "kinetic_ij":  {"dimension" : "energy",
                       "help" : "The centroid-virial off-diagonal quantum kinetic energy tensor of the physical system.",
                       "longhelp" : """The centroid-virial off-diagonal quantum kinetic energy tensor of the physical system.
@@ -332,84 +353,99 @@ class Properties(dobject):
                        which give the indices of the two desired atoms.""",
                       "size" : 6,
                       "func" : self.get_kij},
+
       "r_gyration": { "dimension" : "length",
                       "help" : "The average radius of gyration of the selected ring polymers.",
                       "longhelp" : """The average radius of gyration of the selected ring polymers. Takes an
                       argument 'atom', which can be either an atom label or index (zero based) to specify which
                       species to find the radius of gyration of. If not specified, all atoms are used and averaged.""",
                       "func": self.get_rg},
+
       "atom_x": {     "dimension" : "length",
                       "help": "The position (x,y,z) of a particle given its index.",
                       "longhelp" : """The position (x,y,z) of a particle given its index. Takes arguments index
                        and bead (both zero based). If bead is not specified, refers to the centroid.""",
                       "size" : 3,
                       "func" : (lambda atom="", bead="-1": self.get_atom_vec(self.beads.q, atom=atom, bead=bead))},
+
       "atom_v": {     "dimension" : "velocity",
                       "help": "The velocity (x,y,z) of a particle given its index.",
                        "longhelp": """The velocity (x,y,z) of a particle given its index. Takes arguments index
                        and bead (both zero based). If bead is not specified, refers to the centroid.""",
                       "size" : 3,
                       "func" : (lambda atom="", bead="-1": self.get_atom_vec(self.beads.p/self.beads.m3, atom=atom, bead=bead))},
+
       "vcom": {     "dimension" : "velocity",
                       "help": "The COM velocity (x,y,z) of the system or a chosen species.",
                        "longhelp": """The center of mass velocity (x,y,z) of the system or of a species. Takes arguments label
                        (default to all species) and bead (zero based). If bead is not specified, refers to the centroid.""",
                       "size" : 3,
-                      "func" : self.get_vcom },      
+                      "func" : self.get_vcom },
+
       "atom_p": {     "dimension" : "momentum",
                       "help": "The momentum (x,y,z) of a particle given its index.",
                       "longhelp": """The momentum (x,y,z) of a particle given its index. Takes arguments index
                       and bead (both zero based). If bead is not specified, refers to the centroid.""",
                       "size" : 3,
                       "func" : (lambda atom="", bead="-1": self.get_atom_vec(self.beads.p, atom=atom, bead=bead))},
+
       "atom_f": {     "dimension" : "force",
                       "help": "The force (x,y,z) acting on a particle given its index.",
                       "longhelp": """The force (x,y,z) acting on a particle given its index. Takes arguments index
                       and bead (both zero based). If bead is not specified, refers to the centroid.""",
                       "size" : 3,
                       "func" : (lambda atom="", bead="-1": self.get_atom_vec(self.forces.f, atom=atom, bead=bead))},
+
       "stress_md": {  "dimension": "pressure",
                       "size" : 6,
                       "help": "The total stress tensor of the (extended) classical system.",
                       "longhelp": """The total stress tensor of the (extended) classical system. Returns the 6
                       independent components in the form [xx, yy, zz, xy, xz, yz].""",
                       "func": (lambda: self.tensor2vec((self.forces.vir + self.nm.kstress)/self.cell.V))},
+
       "pressure_md": {"dimension": "pressure",
                       "help": "The pressure of the (extended) classical system.",
                       "func": (lambda: np.trace((self.forces.vir + self.nm.kstress)/(3.0*self.cell.V)))},
+
       "kstress_md":  {"dimension": "pressure",
                       "size" : 6,
                       "help": "The kinetic stress tensor of the (extended) classical system.",
                       "longhelp": """The kinetic stress tensor of the (extended) classical system. Returns the 6
                       independent components in the form [xx, yy, zz, xy, xz, yz].""",
                       "func": (lambda: self.tensor2vec(self.nm.kstress/self.cell.V))},
+
       "virial_md": {  "dimension": "pressure",
                       "size" : 6,
                       "help": "The virial tensor of the (extended) classical system.",
                       "longhelp": """The virial tensor of the (extended) classical system. Returns the 6
                       independent components in the form [xx, yy, zz, xy, xz, yz].""",
                       "func": (lambda: self.tensor2vec(self.forces.vir/self.cell.V))},
+
       "stress_cv": {  "dimension": "pressure",
                       "size" : 6,
                       "help": "The total quantum estimator for the stress tensor of the physical system.",
                       "longhelp": """The total quantum estimator for the stress tensor of the physical system. Returns the
                       6 independent components in the form [xx, yy, zz, xy, xz, yz].""",
                       "func": (lambda: self.tensor2vec(self.forces.vir + self.kstress_cv())/(self.cell.V*self.beads.nbeads))},
+
       "pressure_cv": {"dimension": "pressure",
                       "help": "The quantum estimator for pressure of the physical system.",
                       "func": (lambda: np.trace(self.forces.vir + self.kstress_cv())/(3.0*self.cell.V*self.beads.nbeads))},
+
       "kstress_cv":  {"dimension": "pressure",
                       "size" : 6,
                       "help": "The quantum estimator for the kinetic stress tensor of the physical system.",
                       "longhelp": """The quantum estimator for the kinetic stress tensor of the physical system.
                       Returns the 6 independent components in the form [xx, yy, zz, xy, xz, yz].""",
                       "func": (lambda: self.tensor2vec(self.kstress_cv()/(self.cell.V*self.beads.nbeads)))},
+
       "virial_cv": {  "dimension": "pressure",
                       "size" : 6,
                       "help": "The quantum estimator for the virial stress tensor of the physical system.",
                       "longhelp": """The quantum estimator for the virial stress tensor of the physical system.
                       Returns the 6 independent components in the form [xx, yy, zz, xy, xz, yz].""",
                       "func": (lambda: self.tensor2vec(self.forces.vir/(self.cell.V*self.beads.nbeads)))},
+
       "displacedpath": {  "dimension": "undefined",
                       "help": "The displaced path end-to-end distribution estimator",
                       "longhelp": """This is the estimator for the end-to-end distribution, that can be used to calculate the
@@ -421,6 +457,7 @@ class Properties(dobject):
                       operation costs as much as a PIMD step. Returns the average over the selected atoms of the estimator of
                       exp(-U(u)) for each frame.""",
                       "func": self.get_linlin},
+
       "scaledcoords": {   "dimension": "undefined",
                       "help" : "The scaled coordinates estimators that can be used to compute energy and heat capacity",
                        "longhelp": """Returns the estimators that are required to evaluate the scaled-coordinates estimators
@@ -433,8 +470,9 @@ class Properties(dobject):
                        becomes too large.""",
                       'func': self.get_yama_estimators,
                       "size": 2},
+
       "sc_scaledcoords": {   "dimension": "undefined",
-                      "help" : "The scaled coordinates estimators that can be used to compute energy and heat capacity for the Suzuki-Chin propagator",
+                      "help" : "The Suzuki-Chin scaled coordinates estimators that can be used to compute energy and heat capacity",
                        "longhelp": """Returns the estimators that are required to evaluate the scaled-coordinates estimators
                        for total energy and heat capacity, as described in T. M. Yamamoto,
                        J. Chem. Phys., 104101, 123 (2005). Returns eps_v and eps_v', as defined in that paper.
@@ -445,6 +483,7 @@ class Properties(dobject):
                        becomes too large.""",
                       'func': self.get_scyama_estimators,
                       "size": 2},
+
       "isotope_scfep":  {"dimension": "undefined",
                       "size": 7,
                       'func': self.get_isotope_yama,
@@ -465,6 +504,7 @@ class Properties(dobject):
                       for the statistical accuracy of the re-weighting process. Note that evaluating this estimator costs
                       as much as a PIMD step for each atom in the list. The elements that are output have different
                       units, so the output can be only in atomic units.""" },
+
        "isotope_tdfep":  {"dimension" : "undefined",
                           "size" : 7,
                           'func': self.get_isotope_thermo,
@@ -486,6 +526,7 @@ class Properties(dobject):
                       but typically the statistical accuracy is worse than with the scaled coordinates estimator.
                       The elements that are output have different
                       units, so the output can be only in atomic units.""" },
+
       "isotope_zetatd":  {"dimension" : "undefined",
                           "size" : 3,
                           'func': self.get_isotope_zetatd,
@@ -496,6 +537,7 @@ class Properties(dobject):
                       The 3 numbers output are 1) the average over the excess spring energy for an isotope atom substitution <spr>,
                       2) the average of the squares of the excess spring energy <spr**2>, and 3) the average of the exponential
                       of excess spring energy <exp(-beta*spr)>""" },
+
        "isotope_zetasc":  {"dimension" : "undefined",
                           "size" : 3,
                           'func': self.get_isotope_zetasc,
@@ -506,18 +548,21 @@ class Properties(dobject):
                       The 3 numbers output are 1) the average over the excess potential energy for scaled coordinates <sc>,
                       2) the average of the squares of the excess potential energy <sc**2>, and 3) the average of the exponential
                       of excess potential energy <exp(-beta*sc)>""" },
+
        "chin_weight":  {"dimension" : "undefined",
                           "size" : 3,
                           'func': self.get_chin_correction,
                           "help": "The weighting factor in Suzuki-Chin 4th-order PI expansion.",
                           "longhelp" : """The 3 numbers output are 1) the logarithm of the weighting factor -beta_P delta H,
-                      2) the square of the logarithm, and 3) the weighting factor""" } ,
+                      2) the square of the logarithm, and 3) the weighting factor""" },
+
        "ti_weight":  {"dimension" : "undefined",
                           "size" : 3,
                           'func': self.get_ti_correction,
                           "help": "The weighting factor in Takahashi-Imada 4th-order PI expansion.",
                           "longhelp" : """The 3 numbers output are 1) the logarithm of the weighting factor -beta_P delta H,
-                      2) the square of the logarithm, and 3) the weighting factor""" } ,
+                      2) the square of the logarithm, and 3) the weighting factor""" },
+
        "ti_pot":  {"dimension" : "undefined",
                           "size" : 1,
                           "dimension": "energy",
@@ -525,28 +570,33 @@ class Properties(dobject):
                           "help": "The correction potential in Takahashi-Imada 4th-order PI expansion.",
                           "longhelp" : """The correction potential in Takahashi-Imada 4th-order PI expansion.
                              Takes an argument 'atom', which can be either an atom label or index (zero based)
-                             to specify which species to find the correction term for. If not specified, all atoms are used.""" } ,
+                             to specify which species to find the correction term for. If not specified, 
+                             all atoms are used.""" },
+
        "isotope_zetatd_4th":  {"dimension" : "undefined",
                           "size" : 5,
                           'func': self.get_isotope_zetatd_4th,
                           "help": "4th order thermodynamic isotope fractionation direct estimator in the form of ratios of partition functions.",
-                          "longhelp" : """Returns the (many) terms needed to compute the thermodynamic fourth-order direct estimator.
-					  Takes two arguments, 'alpha' , which gives the scaled mass parameter and default to '1.0', and 'atom',
-					  which is the label or index of a type of atoms.
-                      The 5 numbers output are 1) the average over the excess spring energy for an isotope atom substitution <spr>,
-                      2) the average of the squares of the excess spring energy <spr**2>, and 3) the average of the exponential
-                      of excess spring energy <exp(-beta*spr)>, and 4-5) Suzuki-Chin and Takahashi-Imada 4th-order reweighing term""" },
+                          "longhelp" : """Returns the (many) terms needed to compute the thermodynamic 
+                          fourth-order direct estimator. Takes two arguments, 'alpha' , which gives the 
+                          scaled mass parameter and default to '1.0', and 'atom', which is the label or 
+                          index of a type of atoms. The 5 numbers output are 1) the average over the 
+                          excess spring energy for an isotope atom substitution <spr>, 2) the average 
+                          of the squares of the excess spring energy <spr**2>, and 3) the average of 
+                          the exponential of excess spring energy <exp(-beta*spr)>, and 4-5) Suzuki-Chin 
+                          and Takahashi-Imada 4th-order reweighing term""" },
+
        "isotope_zetasc_4th":  {"dimension" : "undefined",
                           "size" : 5,
                           'func': self.get_isotope_zetasc_4th,
                           "help": "4th order scaled-coordinates isotope fractionation direct estimator in the form of ratios of partition functions.",
-                          "longhelp" : """Returns the (many) terms needed to compute the scaled-coordinates fourth-order direct estimator.
-					  Takes two arguments, 'alpha' , which gives the scaled mass parameter and default to '1.0', and 'atom',
-					  which is the label or index of a type of atoms.
-                      The 5 numbers output are 1) the average over the excess potential energy for an isotope atom substitution <sc>,
-                      2) the average of the squares of the excess potential energy <sc**2>, and 3) the average of the exponential
-                      of excess potential energy <exp(-beta*sc)>, and 4-5) Suzuki-Chin and Takahashi-Imada 4th-order reweighing term""" }
-
+                          "longhelp" : """Returns the (many) terms needed to compute the scaled-coordinates 
+                          fourth-order direct estimator. Takes two arguments, 'alpha' , which gives the scaled 
+                          mass parameter and default to '1.0', and 'atom', which is the label or index of a type 
+                          of atoms. The 5 numbers output are 1) the average over the excess potential energy for 
+                          an isotope atom substitution <sc>, 2) the average of the squares of the excess potential 
+                          energy <sc**2>, and 3) the average of the exponential of excess potential energy 
+                          <exp(-beta*sc)>, and 4-5) Suzuki-Chin and Takahashi-Imada 4th-order reweighing term""" }
       }
 
    def bind(self, system):
@@ -881,21 +931,21 @@ class Properties(dobject):
 
       return atd
 
-   def get_kinprsc(self ):
+   def get_sckinpr(self ):
       """Calculates the quantum centroid virial kinetic energy estimator.
       """
 
       spring = self.beads.vpath * self.nm.omegan2/self.beads.nbeads
-      PkT32 = 1.5* Constants.kb*self.ensemble.temp*self.beads.nbeads
+      PkT32 = 1.5 * Constants.kb * self.ensemble.temp * self.beads.nbeads * self.beads.natoms
       pots = depstrip(self.forces.pots)
       potssc = depstrip(self.forces.potssc)
       v = 0.0
 
       for k in range(self.beads.nbeads):
           if k%2 == 0:
-              v += (potssc[k]+pots[k]/3.0)
+              v += (potssc[k] + pots[k]/3.0)
           else:
-              v += (potssc[k]-pots[k]/3.0)
+              v += (potssc[k] - pots[k]/3.0)
       v = v / self.beads.nbeads
 
       return PkT32 - spring + v
