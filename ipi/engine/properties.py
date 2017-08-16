@@ -275,7 +275,7 @@ class Properties(dobject):
                       'func': (lambda bead="-1": np.linalg.norm(self.forces.f)/self.beads.nbeads if int(bead)<0 else np.linalg.norm(self.forces.f[int(bead)]))},
       "spring": {     "dimension" : "energy",
                       "help": "The total spring potential energy between the beads of all the ring polymers in the system.",
-                      'func': (lambda: self.beads.vpath*self.nm.omegan2/self.beads.nbeads)},
+                      'func': (lambda: self.nm.vspring/self.beads.nbeads)},
       "kinetic_md":  {"dimension" : "energy",
                       "help": "The kinetic energy of the (extended) classical system.",
                        "longhelp" : """The kinetic energy of the (extended) classical system.
@@ -885,7 +885,7 @@ class Properties(dobject):
       """Calculates the quantum centroid virial kinetic energy estimator.
       """
 
-      spring = self.beads.vpath * self.nm.omegan2/self.beads.nbeads
+      spring = self.nm.vspring/self.beads.nbeads
       PkT32 = 1.5* Constants.kb*self.ensemble.temp*self.beads.nbeads
       pots = depstrip(self.forces.pots)
       potssc = depstrip(self.forces.potssc)

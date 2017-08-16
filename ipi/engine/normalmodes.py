@@ -229,7 +229,7 @@ class NormalModes(dobject):
       # spring energy, calculated in normal modes
       dself.vspring = depend_value(name="vspring",
             value=0.0, func=self.get_vspring,
-            dependencies=[dself.qnm, dself.omegak, dd(self.beads).m3])
+            dependencies=[dself.qnm, dself.omegak, dself.o_omegak, dd(self.beads).m3])
 
       # spring forces on normal modes
       dself.fspringnm = depend_array(name="fspringnm",
@@ -252,7 +252,14 @@ class NormalModes(dobject):
    def get_vspring(self):
       """Returns the spring energy calculated in NM representation."""
 
-      return 0.5 * (self.beads.m3 * self.omegak[:,np.newaxis]**2 * self.qnm**2).sum()
+      vspring = (self.beads.m3 * self.omegak[:,np.newaxis]**2 * self.qnm**2).sum()
+      print vspring*0.5
+      for j in self.open_paths:          
+          vspring += (self.beads.m[j] * (self.o_omegak**2-self.omegak**2) * 
+             (self.qnm[:,3*j]**2+self.qnm[:,3*j+1]**2+self.qnm[:,3*j+2]**2)).sum()
+      print "corrected: ",vspring*0.5
+      
+      return vspring*0.5
 
    def get_omegan(self):
       """Returns the effective vibrational frequency for the interaction
