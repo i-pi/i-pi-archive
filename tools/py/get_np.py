@@ -41,40 +41,27 @@ def histo(data, delta, k, mean, sigma):
         ly+=k(delta-x, mean, sigma)
     return ly
 
-def get_np(path2iipi, bsize=20000, nskip=300, si=15.0, sf=-15.0, ns=10000):
-    # opens & parses the i-pi input file
-    ifile = open(path2iipi,"r")
-    xmlrestart = io_xml.xml_parse_file(ifile)
-    ifile.close()
-
-    isimul = InputSimulation()                        
-    isimul.parse(xmlrestart.fields[0][1])
-    simul = isimul.fetch()
-
-    # parses the temperature, the number of beads, the number of atoms, the number of target species and their masses.
-    T = float(simul.syslist[0].ensemble.temp)
-    P = simul.syslist[0].beads.nbeads
-    natoms = simul.syslist[0].beads.natoms
-    open_paths = simul.syslist[0].nm.open_paths[-1]
-    m = simul.syslist[0].beads.m[open_paths]
-   
+def get_np(path, fname, bsize, P, m, T, nskip, s, ns):   
     # initialises the data files.
     data_1 = np.zeros((bsize, 3) , float)
     data_2 = np.zeros((bsize, 3) , float)
     dq = np.zeros((bsize,3) , float)
-    dqxgrid = np.linspace(si, sf, ns)
-    dqygrid = np.linspace(si, sf, ns)
-    dqzgrid = np.linspace(si, sf, ns)
+    dqxgrid = np.linspace(-s, s, ns)
+    dqygrid = np.linspace(-s, s, ns)
+    dqzgrid = np.linspace(-s, s, ns)
     nplistx = []
     nplisty = []
     nplistz = []
 
     #Read the end to end distances from file
-    data_path = '/home/cuzzocre/source/i-pi-mc/examples/lammps/ice-nst/P32-T269/endtoend.data'
+    data_path =str(path + fname)
     delta= np.loadtxt(data_path)
-    step = np.shape(delta)[0]  
+    step = np.shape(delta)[0] 
+   
     n_block =int(step/bsize)
-
+    if (n_block ==0):
+             print 'not enough data to build a block'
+             exit()
     for x in xrange(n_block):
         dq = delta[x*bsize : (x+1)*bsize]
         hx = histo(np.concatenate((dq.T[0], -dq.T[0])), dqxgrid, kernel, 0, np.sqrt(T * P * m))
@@ -127,8 +114,8 @@ def get_np(path2iipi, bsize=20000, nskip=300, si=15.0, sf=-15.0, ns=10000):
     avgpsqnpz = pzgrid**2*avgnpz/pzstep
     errpsqnpz = pzgrid**2*errnpz/pzstep
     
-    np.savetxt("np.data", np.c_[pxgrid,avgnpx,errnpx,avgnpy,errnpy,avgnpz,errnpz])
-    np.savetxt("psq-np.data", np.c_[pxgrid,avgpsqnpx,errpsqnpx,avgpsqnpy,errpsqnpy,avgpsqnpz,errpsqnpz])
+    np.savetxt(str(path + "np.data"), np.c_[pxgrid,avgnpx,errnpx,avgnpy,errnpy,avgnpz,errnpz])
+    np.savetxt(str(path + "psq-np.data"), np.c_[pxgrid,avgpsqnpx,errpsqnpx,avgpsqnpy,errpsqnpy,avgpsqnpz,errpsqnpz])
     
     
     psqmedx =  0.
@@ -149,6 +136,21 @@ def get_np(path2iipi, bsize=20000, nskip=300, si=15.0, sf=-15.0, ns=10000):
     print 'av_px^2', psqmedx/n_block, 'sigmax', np.sqrt((psqmed2x/n_block) - (psqmedx/n_block)**2)/np.sqrt(n_block)
     print 'av_py^2', psqmedy/n_block, 'sigmay', np.sqrt((psqmed2y/n_block) - (psqmedy/n_block)**2)/np.sqrt(n_block)
     print 'av_pz^2', psqmedz/n_block, 'sigmaz', np.sqrt((psqmed2z/n_block) - (psqmedz/n_block)**2)/np.sqrt(n_block)
+ 
 
-if __name__ == '__main__':  get_np(*sys.argv[1:])
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description=None)
+    parser.add_argument("projpath")
+    parser.add_argument("--fname",type=str,default="", help="name of the end-to-end distances file")
+    parser.add_argument("-bsize", type=int, default=30000, help="Specify the size of the blocks")
+    parser.add_argument("-P", type=int, default= 1 , help="Specify the number of beads")
+    parser.add_argument("-m", type=float, default= 1837 , help="Specify the mass of the atom in atomic units")
+    parser.add_argument("-T", type=float, default= 0.00095004315 , help="Specify the temperature of the system in hartree (kb*T)")
+    parser.add_argument("-nskip", type=int, default= 100 , help="Removes the equilibration steps")
+    parser.add_argument("-dint", type=float, default=15.0,help="Specify the positive extrema of the interval to build the histogram ([-dint,dint])")
+    parser.add_argument("-ns", type=float, default=10000, help="Specify the number of point to use for the histogram")
+    args = parser.parse_args()
+
+    get_np(args.projpath, args.fname, args.bsize, args.P, args.m, args.T, args.nskip, args.dint, args.ns)
+
 
