@@ -596,9 +596,17 @@ class Forces(dobject):
             dependencies=[ dget(self, "fvir_4th_order")],
             func= (lambda: self.fvir_4th_order[0]) ))
 
-      dset(self, "vir_4th_order", depend_array(name="vir_4th_order",value=np.zeros((self.nbeads,3*self.natoms),float),
+      dset(self, "virs_4th_order", depend_array(name="vir_4th_order",value=np.zeros((self.nbeads,3,3),float),
             dependencies=[ dget(self, "fvir_4th_order")],
             func= (lambda: self.fvir_4th_order[1]) ))
+
+      dset(self, "virssc_part_1", depend_array(name="virssc_part_1",value=np.zeros((self.nbeads,3,3),float),
+            dependencies=[dget(self, "coeffsc_part_1"), dget(self,"virs")],
+            func=self.get_virssc_part_1))
+
+      dset(self, "virssc_part_2", depend_array(name="virssc_part_2",value=np.zeros((self.nbeads,3,3),float),
+            dependencies=[dget(self, "coeffsc_part_2"), dget(self,"virs_4th_order")],
+            func=self.get_virssc_part_2))
 
       dset(self, "fsc_part_1", depend_array(name="fsc_part_1",value=np.zeros((self.nbeads,3*self.natoms),float),
             dependencies=[dget(self, "coeffsc_part_1"), dget(self,"f")],
@@ -612,9 +620,17 @@ class Forces(dobject):
             dependencies=[dget(self, "fsc_part_1"), dget(self,"fsc_part_2")],
             func=self.get_fsc))
 
+      dset(self, "virssc", depend_array(name="virssc",value=np.zeros((self.nbeads,3,3),float),
+            dependencies=[dget(self, "virssc_part_1"), dget(self,"virssc_part_2")],
+            func=self.get_virssc))
+
       dset(self, "potsc", value=depend_value(name="potsc",
             dependencies=[dget(self,"potssc")],
             func=(lambda: self.potssc.sum()) ) )       
+
+      dset(self, "virsc", value=depend_value(name="potsc",
+            dependencies=[dget(self,"potssc")],
+            func=(lambda: np.sum(self.virssc, axis=0)) ) )       
 
 
    def copy(self, beads=None, cell = None):
@@ -989,15 +1005,15 @@ class Forces(dobject):
 
    def get_virssc_part_1(self):
       """Obtains the linear component of Suzuki-Chin correction to the force."""
-      return self.coeffsc_part_1 * depstrip(self.virs)
+      return self.coeffsc_part_1.reshape((self.beads.nbeads, 1, 1)) * depstrip(self.virs)
 
    def get_virssc_part_2(self):
       """Obtains the quadratic component of Suzuki-Chin correction to the force."""
-      return self.coeffsc_part_2 * depstrip(self.virs_4th_order)
+      return self.coeffsc_part_2.reshape((self.beads.nbeads, 1, 1)) * depstrip(self.virs_4th_order)
 
    def get_fsc(self):
       """Obtains the total Suzuki-Chin correction to the force."""
-      return depstrip(self.virsc_part_1) + depstrip(self.fsc_part_2)
+      return depstrip(self.fsc_part_1) + depstrip(self.fsc_part_2)
 
    def get_virssc(self):
       """Obtains the total Suzuki-Chin correction to the force."""

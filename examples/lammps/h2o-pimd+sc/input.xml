@@ -1,6 +1,6 @@
 <simulation verbosity="medium">
     <output prefix="simulation-dev">
-        <properties stride="1" filename="out">  [ step, time{picosecond}, conserved, temperature{kelvin}, kinetic_opsc, kinetic_tdsc, kinetic_prsc, potential_opsc, potential_tdsc, spring ] </properties>
+      <properties stride="1" filename="out">  [ step, time{picosecond}, conserved, temperature{kelvin}, kinetic_opsc, kinetic_tdsc, kinetic_prsc, potential_opsc, potential_tdsc, spring , pressure_sctd{bar}] </properties>
         <checkpoint stride="200"/>
     </output>
     <total_steps> 100 </total_steps>

@@ -432,6 +432,10 @@ class Properties(dobject):
                       "help": "The quantum estimator for pressure of the physical system.",
                       "func": (lambda: np.trace(self.forces.vir + self.kstress_cv())/(3.0*self.cell.V*self.beads.nbeads))},
 
+      "pressure_sctd": {"dimension": "pressure",
+                      "help": "The Suzuki-Chin thermodynamic estimator for pressure of the physical system.",
+                      "func": (lambda: np.trace(self.forces.vir + self.forces.virsc + self.kstress_sctd())/(3.0*self.cell.V*self.beads.nbeads))},
+
       "kstress_cv":  {"dimension": "pressure",
                       "size" : 6,
                       "help": "The quantum estimator for the kinetic stress tensor of the physical system.",
