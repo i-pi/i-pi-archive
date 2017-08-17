@@ -1176,6 +1176,36 @@ class Properties(dobject):
 
       return rg_tot/float(ncount)
 
+   def kstress_sctd(self):
+      """Calculates the quantum centroid virial kinetic stress tensor
+      estimator.
+
+      Note that this is not divided by the volume or the number of beads.
+
+      Returns:
+         A 3*3 tensor with all the components of the tensor.
+      """
+
+      kst = np.zeros((3,3),float)
+      q = depstrip(self.beads.q)
+      qc = depstrip(self.beads.qc)
+      pc = depstrip(self.beads.pc)
+      m = depstrip(self.beads.m)
+      fall = depstrip(self.forces.f + self.forces.fsc)
+      na3 = 3*self.beads.natoms
+
+      for b in range(self.beads.nbeads):
+         for i in range(3):
+            for j in range(i,3):
+               kst[i,j] -= np.dot(q[b,i:na3:3] - qc[i:na3:3],
+                  fall[b,j:na3:3])
+
+      # return the CV estimator MULTIPLIED BY NBEADS -- again for consistency with the virial, kstress_MD, etc...
+      for i in range(3):
+         kst[i,i] += self.beads.nbeads * ( np.dot(pc[i:na3:3],pc[i:na3:3]/m) )
+
+      return kst
+
    def kstress_cv(self):
       """Calculates the quantum centroid virial kinetic stress tensor
       estimator.

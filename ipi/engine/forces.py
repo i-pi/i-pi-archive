@@ -981,17 +981,27 @@ class Forces(dobject):
       
    def get_fsc_part_1(self):
       """Obtains the linear component of Suzuki-Chin correction to the force."""
-
       return self.coeffsc_part_1 * depstrip(self.f)
 
    def get_fsc_part_2(self):
       """Obtains the quadratic component of Suzuki-Chin correction to the force."""
       return self.coeffsc_part_2 * depstrip(self.f_4th_order)
 
+   def get_virssc_part_1(self):
+      """Obtains the linear component of Suzuki-Chin correction to the force."""
+      return self.coeffsc_part_1 * depstrip(self.virs)
+
+   def get_virssc_part_2(self):
+      """Obtains the quadratic component of Suzuki-Chin correction to the force."""
+      return self.coeffsc_part_2 * depstrip(self.virs_4th_order)
+
    def get_fsc(self):
       """Obtains the total Suzuki-Chin correction to the force."""
+      return depstrip(self.virsc_part_1) + depstrip(self.fsc_part_2)
 
-      return depstrip(self.fsc_part_1) + depstrip(self.fsc_part_2)
+   def get_virssc(self):
+      """Obtains the total Suzuki-Chin correction to the force."""
+      return depstrip(self.virssc_part_1) + depstrip(self.virssc_part_2)
 
    def get_coeffsc_part_1(self):
       """Obtains the coefficients of the linear part of the Suzuki-Chin correction."""
