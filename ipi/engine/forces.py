@@ -582,15 +582,23 @@ class Forces(dobject):
             dependencies=[dget(self.beads, "m"), dget(self, "f"), dget(self,"pots"), dget(self,"alpha"),  dget(self,"omegan2")],
             func=self.get_potssc) )
                                          
-      dset(self, "coeffsc_part_1", depend_array(name="coeffsc_part_1",value=np.zeros((self.nbeads,1), float),
+      dset(self, "coeffsc_part_1", depend_array(name="coeffsc_part_1", value=np.zeros((self.nbeads,1), float),
             func=self.get_coeffsc_part_1))
 
-      dset(self, "coeffsc_part_2", depend_array(name="coeffsc_part_2",value=np.zeros((self.nbeads,1) , float),
+      dset(self, "coeffsc_part_2", depend_array(name="coeffsc_part_2", value=np.zeros((self.nbeads,1) , float),
             dependencies=[dget(self,"alpha"),  dget(self,"omegan2")], func=self.get_coeffsc_part_2))
 
-      dset(self, "f_4th_order", depend_array(name="f_4th_order",value=np.zeros((self.nbeads,3*self.natoms),float),
+      dset(self, "fvir_4th_order", depend_value(name="fvir_4th_order", value=[None, None],
             dependencies=[dget(self.beads, "m"), dget(self, "f"), dget(self,"pots") ],
-            func=self.f_4th_order_combine))
+            func=self.fvir_4th_order_combine))
+
+      dset(self, "f_4th_order", depend_array(name="f_4th_order",value=np.zeros((self.nbeads,3*self.natoms),float),
+            dependencies=[ dget(self, "fvir_4th_order")],
+            func= (lambda: self.fvir_4th_order[0]) ))
+
+      dset(self, "vir_4th_order", depend_array(name="vir_4th_order",value=np.zeros((self.nbeads,3*self.natoms),float),
+            dependencies=[ dget(self, "fvir_4th_order")],
+            func= (lambda: self.fvir_4th_order[1]) ))
 
       dset(self, "fsc_part_1", depend_array(name="fsc_part_1",value=np.zeros((self.nbeads,3*self.natoms),float),
             dependencies=[dget(self, "coeffsc_part_1"), dget(self,"f")],
@@ -721,8 +729,8 @@ class Forces(dobject):
               fk += self.mforces[index].weight*self.mforces[index].mts_weights[level]*self.mrpc[index].b2tob1(depstrip(self.mforces[index].f))
       return fk
 
-   def forces_4th_order(self, index):
-      """ Fetches the 4th order |f^2| correction to the force vector associated with a given component."""
+   def forcesvirs_4th_order(self, index):
+      """ Fetches the 4th order |f^2| correction to the force vector and the virial associated with a given component."""
 
       # gives an error is number of beads is not even.
       if self.nbeads % 2 != 0:
@@ -887,7 +895,7 @@ class Forces(dobject):
                v_4th_order = 2.0 * (vminus - vplus) / 2.0 / delta
 
       # returns the 4th order |f^2| correction.
-      return f_4th_order
+      return [f_4th_order, v_4th_order]
 
    def vir_mts(self, level):
       """ Fetches ONLY the total virial associated with a given MTS level."""
@@ -910,14 +918,18 @@ class Forces(dobject):
             rf += self.mforces[k].weight * self.mforces[k].mts_weights.sum() * self.mrpc[k].b2tob1(depstrip(self.mforces[k].f))
       return rf
 
-   def f_4th_order_combine(self):
-      """Obtains the total fourth order |f^2| correction force vector."""
+   def fvir_4th_order_combine(self):
+      """Obtains the total fourth order |f^2| correction to the force vector and the virial."""
 
-      rf = np.zeros((self.nbeads,3*self.natoms),float)
+      rf = np.zeros((self.nbeads, 3 * self.natoms), float)
+      rv = np.zeros((self.nbeads, 3, 3), float)
+
       for k in range(self.nforces):
          if self.mforces[k].weight > 0 and self.mforces[k].mts_weights.sum() != 0:
-            rf += self.mforces[k].weight * self.mforces[k].mts_weights.sum() * self.forces_4th_order(k)
-      return rf
+            fv = depstrip(self.forcesvirs_4th_order(k))
+            rf += self.mforces[k].weight * self.mforces[k].mts_weights.sum() * fv[0]
+            rv += self.mforces[k].weight * self.mforces[k].mts_weights.sum() * fv[1]
+      return [rf, rv]
 
    def pot_combine(self):
       """Obtains the potential energy for each forcefield."""
@@ -974,7 +986,6 @@ class Forces(dobject):
 
    def get_fsc_part_2(self):
       """Obtains the quadratic component of Suzuki-Chin correction to the force."""
-
       return self.coeffsc_part_2 * depstrip(self.f_4th_order)
 
    def get_fsc(self):
