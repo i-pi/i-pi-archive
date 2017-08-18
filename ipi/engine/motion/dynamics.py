@@ -89,6 +89,8 @@ class Dynamics(Motion):
             self.integrator = NSTIntegrator()
         elif self.enstype == "sc":
             self.integrator = SCIntegrator()
+        elif self.enstype == "scnpt":
+            self.integrator = SCNPTIntegrator()
         else:
             self.integrator = DummyIntegrator()
 
@@ -274,7 +276,7 @@ class DummyIntegrator(dobject):
         #if motion.enstype == "nvt" or  motion.enstype == "nve" or motion.enstype == "sc" or motion.enstype == "npt":
         #    self.nmts=motion.nmts
             
-        if motion.enstype == "sc":
+        if motion.enstype == "sc" or motion.enstype == "scnpt":
             # coefficients to get the (baseline) trotter to sc conversion
             self.coeffsc = np.ones((self.beads.nbeads,3*self.beads.natoms), float)
             self.coeffsc[::2] /= -3.
@@ -596,4 +598,31 @@ class SCIntegrator(NVTIntegrator):
         super(SCIntegrator,self).step(step)
         self.beads.p += (depstrip(self.forces.fsc) - self.coeffsc * self.forces.f) * self.dt * 0.5
         
+class SCNPTIntegrator(SCIntegrator):
+    """Integrator object for constant pressure simulations.
+
+    Has the relevant conserved quantity and normal mode propagator for the
+    constant pressure ensemble. Contains a thermostat object containing the
+    algorithms to keep the temperature constant, and a barostat to keep the
+    pressure constant.
+    """
+
+    # should be enough to redefine these functions, and the step() from NVTIntegrator should do the trick
+    def pstep(self, level=0):
+        """Velocity Verlet monemtum propagator."""
+
+        self.barostat.pstep(level)
+        super(SCNPTIntegrator,self).pstep(level)
+
+
+    def qcstep(self):
+        """Velocity Verlet centroid position propagator."""
+
+        self.barostat.qcstep()
+
+    def tstep(self):
+        """Velocity Verlet thermostat step"""
+
+        self.thermostat.step()
+        self.barostat.thermostat.step()
 
