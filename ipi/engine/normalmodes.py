@@ -253,11 +253,10 @@ class NormalModes(dobject):
       """Returns the spring energy calculated in NM representation."""
 
       vspring = (self.beads.m3 * self.omegak[:,np.newaxis]**2 * self.qnm**2).sum()
-      print vspring*0.5
+      
       for j in self.open_paths:          
           vspring += (self.beads.m[j] * (self.o_omegak**2-self.omegak**2) * 
              (self.qnm[:,3*j]**2+self.qnm[:,3*j+1]**2+self.qnm[:,3*j+2]**2)).sum()
-      print "corrected: ",vspring*0.5
       
       return vspring*0.5
 
