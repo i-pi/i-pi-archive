@@ -25,9 +25,9 @@ FLAGS=-g -O3 -Wall
 CFLAGS=$(FLAGS)
 FFLAGS=$(FLAGS) -ffree-line-length-none -ffixed-line-length-none -Wno-maybe-uninitialized
 
-MODULES=distance.f90 LJ.f90 SG.f90 pes/pswater.f90
-PES=pes/zundel.f pes/morse.f pes/qtip4pf.f 
-OBJECTS=$(MODULES:%.f90=%.o) $(PES:%.f=%.o)
+MODULES=distance.f90 LJ.f90 SG.f90 pes/pswater.f90  pes/LEPS.f90
+PES=pes/zundel.f pes/morse.f pes/qtip4pf.f
+OBJECTS=$(MODULES:%.f90=%.o) $(PES:%.f=%.o) 
 FC=gfortran
 CC=gcc
 all: driver.x #driver_pure.x

@@ -88,7 +88,7 @@ def print_file(mode, atoms, cell, filedesc=sys.stdout, title=""):
     return _get_io_function(mode, "print")(atoms=atoms, cell=cell, filedesc=filedesc, title=title)
 
 
-def read_file(mode, filedesc, **kwargs):
+def read_file(mode, filedesc, output="objects", **kwargs):
     """Reads one frame from an open `mode`-style file.
 
     Args:
@@ -96,12 +96,15 @@ def read_file(mode, filedesc, **kwargs):
         All other args are passed directly to the responsible io function.
 
     Returns:
-        A dictionary with 'atoms', 'cell' and 'comment'.
+        A dictionary as returned by `process_units`.
     """
 
-    return importlib.import_module("ipi.utils.io.io_units").\
-        process_units(*_get_io_function(mode, "read")(filedesc=filedesc, **kwargs),
-                      output=kwargs["output"] if "output" in kwargs.keys() else "objects")
+    # late import is needed to break an import cycle
+    from .io_units import process_units
+
+    reader = _get_io_function(mode, "read")
+
+    return process_units(*reader(filedesc=filedesc, **kwargs), output=output)
 
 
 def read_file_name(filename):
@@ -117,23 +120,27 @@ def read_file_name(filename):
     return read_file(os.path.splitext(filename)[1], open(filename))
 
 
-def iter_file(mode, filedesc, **kwargs):
+def iter_file(mode, filedesc, output="objects", **kwargs):
     """Takes an open `mode`-style file and yields one Atoms object after another.
 
     Args:
         filedesc: An open readable file object from a `mode` formatted file.
 
     Returns:
-        Generator of frames (dictionary with 'atoms', 'cell' and 'comment') from the trajectory.
+        Generator of frames dictionaries, as returned by `process_units`.
     """
 
+    # late import is needed to break an import cycle
+    from .io_units import process_units
+
+    reader = _get_io_function(mode, "read")
+
     try:
-        while 1:
-            yield importlib.import_module("ipi.utils.io.io_units").\
-                process_units(*_get_io_function(mode, "read")(filedesc=filedesc, **kwargs),
-                      output=kwargs["output"] if "output" in kwargs.keys() else "objects")
+        while True:
+            yield process_units(*reader(filedesc=filedesc, **kwargs), output=output)
     except EOFError:
         pass
+
 
 def iter_file_name(filename):
     """Open a trajectory file, guessing its format from the extension.
