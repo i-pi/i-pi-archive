@@ -596,6 +596,7 @@ class SCIntegrator(NVTIntegrator):
         # the |f|^2 term is considered to be slowest (for large enough P) and is integrated outside everything.
         # if nmts is not specified, this is just the same as doing the full SC integration
         super(SCIntegrator,self).step(step)
+        print self.barostat.stress_sc / self.beads.nbeads
         
 class SCNPTIntegrator(SCIntegrator):
     """Integrator object for constant pressure simulations.
