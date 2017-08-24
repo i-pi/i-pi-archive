@@ -4,7 +4,7 @@
       <trajectory stride='10' filename='pos' format='pdb' cell_units='angstrom'>positions{angstrom}</trajectory>
       <checkpoint stride='1000'/>
    </output>
-   <total_steps>100000</total_steps>
+   <total_steps>2000</total_steps>
   <prng>
     <seed>32345</seed>
   </prng>
