@@ -13,7 +13,7 @@
   </ffsocket>
   <system>
     <initialize nbeads="4">
-      <positions mode='xyz' units='angstrom'> MIL53.xyz </positions>
+      <positions mode='xyz'> MIL53.xyz </positions>
       <labels mode='xyz'> MIL53.xyz </labels>
       <masses mode='xyz'> MIL53.xyz </masses>
       <cell mode='manual' units='angstrom'> [16.53, 0.00, 0.00, 0.00, 13.37, 0.00, 0.00, 0.00, 13.64] </cell>
