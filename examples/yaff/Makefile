@@ -16,7 +16,7 @@ define run_yaff
 endef
 -include make.in
 
-mil53:
+mil53_ffsocket:
 	cd MIL53_ffsocket; $(IPI) nst_ipi.xml & sleep 10; \
 	$(call run_yaff,4) \
 	wait
