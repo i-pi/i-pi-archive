@@ -90,7 +90,8 @@ class InputSimulation(Input):
              "system" :   (InputSystem,    { "help"  : InputSystem.default_help }),
              "ffsocket": (iforcefields.InputFFSocket, { "help": iforcefields.InputFFSocket.default_help} ),
              "fflj": (iforcefields.InputFFLennardJones, { "help": iforcefields.InputFFLennardJones.default_help} ),
-             "ffdebye": (iforcefields.InputFFDebye, { "help": iforcefields.InputFFDebye.default_help} )
+             "ffdebye": (iforcefields.InputFFDebye, { "help": iforcefields.InputFFDebye.default_help} ),
+             "ffyaff": (iforcefields.InputFFYaff, { "help": iforcefields.InputFFYaff.default_help} )
              }
 
    default_help = "This is the top level class that deals with the running of the simulation, including holding the simulation specific properties such as the time step and outputting the data."
@@ -146,7 +147,10 @@ class InputSimulation(Input):
             iff = iforcefields.InputFFDebye()
             iff.store(ff)
             self.extra.append(("ffdebye",iff))
-
+         elif type(ff) is eforcefields.FFYaff:
+            iff = iforcefields.InputFFYaff()
+            iff.store(ff)
+            self.extra.append(("ffyaff",iff))
 
       for s in simul.syslist:
          isys = InputSystem()
@@ -187,7 +191,8 @@ class InputSimulation(Input):
             fflist.append(v.fetch())
          elif k == "ffdebye":
             fflist.append(v.fetch())
-
+         elif k == "ffyaff":
+            fflist.append(v.fetch())
 
       # this creates a simulation object which gathers all the little bits
       import ipi.engine.simulation as esimulation   # import here as otherwise this is the mother of all circular imports...

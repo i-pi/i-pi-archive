@@ -92,15 +92,15 @@ class Client(DriverSocket):
 
         t0 = time.time()
 
-        fmt_header = '{:>6s} {:>10s} {:>10s}'
-        fmt_step = '{:6d} {:10.3f} {:10.3f}'
+        fmt_header = '{0:>6s} {1:>10s} {2:>10s}'
+        fmt_step = '{0:6d} {1:10.3f} {2:10.3f}'
 
         if t_max is None:
             print 'Starting communication loop with no maximum run time.'
         else:
-            print 'Starting communication loop with a maximum run time of {:d} seconds.'.format(t_max)
-            fmt_header += ' {:>10s}'
-            fmt_step += ' {:10.1f}'
+            print 'Starting communication loop with a maximum run time of {0:d} seconds.'.format(t_max)
+            fmt_header += ' {3:>10s}'
+            fmt_step += ' {3:10.1f}'
 
         if verbose:
             header = fmt_header.format('step', 'time', 'avg time', 'remaining')
@@ -158,15 +158,15 @@ class Client(DriverSocket):
 
                 # check exit conditions - run time or exit file
                 if t_max is not None and time.time() - t0 > t_max:
-                        print 'Maximum run time of {:d} seconds exceeded.'.format(t_max)
+                        print 'Maximum run time of {0:d} seconds exceeded.'.format(t_max)
                         break
                 if fn_exit is not None and os.path.exists(fn_exit):
-                        print 'Exit file "{:s}" found. Removing file.'.format(fn_exit)
+                        print 'Exit file "{0:s}" found. Removing file.'.format(fn_exit)
                         os.remove(fn_exit)
                         break
 
         except socket.error as e:
-            print 'Error communicating through socket: [{}] {}'.format(e.errno, e.strerror)
+            print 'Error communicating through socket: [{0}] {1}'.format(e.errno, e.strerror)
         except KeyboardInterrupt:
             print ' Keyboard interrupt.'
 
