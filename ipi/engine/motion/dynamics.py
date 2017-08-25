@@ -237,6 +237,7 @@ class DummyIntegrator(dobject):
         dself.tdt = depend_value(name="tdt", func=self.get_tdt, dependencies=[dself.splitting, dself.dt, dself.nmts]) # thermostat
 
         dpipe(dself.qdt, dd(self.nm).dt)
+        dpipe(dself.dt, dd(self.barostat).dt)
         dpipe(dself.qdt, dd(self.barostat).qdt)
         dpipe(dself.pdt, dd(self.barostat).pdt)
         dpipe(dself.tdt, dd(self.barostat).tdt)
@@ -588,15 +589,36 @@ class SCIntegrator(NVTIntegrator):
             self.beads.p += (depstrip(self.forces.fsc) - self.coeffsc * self.forces.f) * self.dt * 0.5
         # just integrate the Trotter force scaled with the SC coefficients, which is a cheap approx to the SC force       
         self.beads.p += self.forces.forces_mts(level) * ( 1.0 + self.coeffsc) * self.pdt[level]
-        
             
             
     def step(self, step=None):
         
         # the |f|^2 term is considered to be slowest (for large enough P) and is integrated outside everything.
         # if nmts is not specified, this is just the same as doing the full SC integration
-        super(SCIntegrator,self).step(step)
-        print self.barostat.stress_sc / self.beads.nbeads
+
+        if self.splitting == "obabo":
+            # thermostat is applied for dt/2
+            self.tstep()
+            self.pconstraints()
+
+            # forces are integerated for dt with MTS.
+            self.beads.p += (depstrip(self.forces.fsc) - self.coeffsc * self.forces.f) * self.dt * 0.5
+            self.mtsprop(0)
+            self.beads.p += (depstrip(self.forces.fsc) - self.coeffsc * self.forces.f) * self.dt * 0.5
+
+            #thermostat is applied for dt/2
+            self.tstep()
+            self.pconstraints()
+
+        elif self.splitting == "baoab":
+
+            self.beads.p += (depstrip(self.forces.fsc) - self.coeffsc * self.forces.f) * self.dt * 0.5
+            self.mtsprop_ba(0)
+            # thermostat is applied for dt
+            self.tstep()
+            self.pconstraints()
+            self.mtsprop_ab(0)
+            self.beads.p += (depstrip(self.forces.fsc) - self.coeffsc * self.forces.f) * self.dt * 0.5
         
 class SCNPTIntegrator(SCIntegrator):
     """Integrator object for constant pressure simulations.
@@ -625,4 +647,37 @@ class SCNPTIntegrator(SCIntegrator):
 
         self.thermostat.step()
         self.barostat.thermostat.step()
+
+    def step(self, step=None):
+
+        # the |f|^2 term is considered to be slowest (for large enough P) and is integrated outside everything.
+        # if nmts is not specified, this is just the same as doing the full SC integration
+
+        if self.splitting == "obabo":
+            # thermostat is applied for dt/2
+            self.tstep()
+            self.pconstraints()
+
+            # forces are integerated for dt with MTS.
+            self.barostat.pscstep()
+            self.beads.p += (depstrip(self.forces.fsc) - self.coeffsc * self.forces.f) * self.dt * 0.5
+            self.mtsprop(0)
+            self.barostat.pscstep()
+            self.beads.p += (depstrip(self.forces.fsc) - self.coeffsc * self.forces.f) * self.dt * 0.5
+
+            #thermostat is applied for dt/2
+            self.tstep()
+            self.pconstraints()
+
+        elif self.splitting == "baoab":
+
+            self.barostat.pscstep()
+            self.beads.p += (depstrip(self.forces.fsc) - self.coeffsc * self.forces.f) * self.dt * 0.5
+            self.mtsprop_ba(0)
+            # thermostat is applied for dt
+            self.tstep()
+            self.pconstraints()
+            self.mtsprop_ab(0)
+            self.barostat.pscstep()
+            self.beads.p += (depstrip(self.forces.fsc) - self.coeffsc * self.forces.f) * self.dt * 0.5
 

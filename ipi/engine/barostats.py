@@ -26,7 +26,7 @@ from ipi.engine.thermostats import Thermostat
 from ipi.engine.cell import Cell
 
 
-__all__ = ['Barostat', 'BaroBZP', 'BaroRGB', 'BaroSC']
+__all__ = ['Barostat', 'BaroBZP', 'BaroRGB', 'BaroSCBZP']
 
 
 class Barostat(dobject):
@@ -185,7 +185,7 @@ class Barostat(dobject):
       return kst
 
    def kstress_mts_sc(self, level):
-      """Calculates the quantum centroid virial kinetic stress tensor
+      """Calculates the Suzuki-Chin quantum centroid virial kinetic stress tensor
       associated with the forces at a MTS level.
       """
 
@@ -243,7 +243,8 @@ class Barostat(dobject):
       return kst
 
    def get_kstress_sc(self):
-      """Calculates the quantum centroid virial kinetic stress tensor
+      """Calculates the high order part of the Suzuki-Chin 
+      quantum centroid virial kinetic stress tensor
       associated with the forces at a MTS level.
       """
 
@@ -270,11 +271,11 @@ class Barostat(dobject):
       return (self.kstress + self.forces.vir + bvir)/self.cell.V
 
    def get_stress_sc(self):
-      """Calculates the internal stress tensor."""
+      """Calculates the high order part of the Suzuki-Chin internal stress tensor."""
       return (self.kstress_sc + np.sum(depstrip(self.forces.virssc_part_2), axis=0))/self.cell.V
 
    def stress_mts_sc(self, level):
-      """Calculates the internal stress tensor
+      """Calculates the internal Suzuki-Chin stress tensor
       associated with the forces at a MTS level.
       """
 
@@ -282,7 +283,7 @@ class Barostat(dobject):
       if (self.bias != None and level == 0):
             bvir[:]=self.bias.vir
 
-      return (self.kstress_mts_sc(level)+ np.sum(self.forces.virs_mts(level) * (1 + self.forces.coeffsc_part_1).reshape((self.beads.nbeads,1,1)), axis=0) + bvir)/self.cell.V
+      return (self.kstress_mts_sc(level) + np.sum(self.forces.virs_mts(level) * (1 + self.forces.coeffsc_part_1).reshape((self.beads.nbeads,1,1)), axis=0) + bvir)/self.cell.V
 
    def stress_mts(self, level):
       """Calculates the internal stress tensor
@@ -444,7 +445,7 @@ class BaroBZP(Barostat):
       self.cell.h *= expq
 
 
-class BaroSC(Barostat):
+class BaroSCBZP(Barostat):
    """The Suzuki Chin Bussi-Zykova-Parrinello barostat class.
 
    Just extends the standard class adding finite-dt propagators for the
@@ -475,7 +476,7 @@ class BaroSC(Barostat):
       """
 
 
-      super(BaroSC, self).__init__(dt, temp, tau, ebaro, thermostat)
+      super(BaroSCBZP, self).__init__(dt, temp, tau, ebaro, thermostat)
 
       dset(self,"p", depend_array(name='p', value=np.atleast_1d(0.0)))
 
@@ -507,7 +508,7 @@ class BaroSC(Barostat):
          fixdof: The number of blocked degrees of freedom.
       """
 
-      super(BaroSC, self).bind(beads, nm, cell, forces, bias, prng, fixdof, nmts)
+      super(BaroSCBZP, self).bind(beads, nm, cell, forces, bias, prng, fixdof, nmts)
       
       # obtain the thermostat mass from the given time constant
       # note that the barostat temperature is nbeads times the physical T
@@ -544,27 +545,32 @@ class BaroSC(Barostat):
 
       return self.thermostat.ethermo + self.kin + self.pot - np.log(self.cell.V)*Constants.kb*self.temp
 
+   def pscstep(self):
+      """Propagates the momentum of the barostat with respect to the 
+      high order part of the Suzuki-Chin stress"""
+
+      # integrates with respect to the "high order" part of the stress with a timestep of dt /2
+      press =  np.trace(self.stress_sc) / 3.0
+      self.p += self.dt / 2 * 3.0 * (self.cell.V * press)
+
    def pstep(self, level=0):
       """Propagates the momentum of the barostat."""
-     
+
       # we are assuming then that p the coupling between p^2 and dp/dt only involves the fast force
       dt = self.pdt[level] # this is already set to be half a time step at the specified MTS depth
       dt2 = dt**2
       dt3 = dt**3 / 3.0
-      
+ 
       # computes the pressure associated with the forces at each MTS level and adds the +- 1/3 SC correction.
       press = np.trace(self.stress_mts_sc(level)) / 3.0
-      if (level == 0):
-         press +=  np.trace(self.stress_sc) / 3.0
       self.p += dt * 3.0 * (self.cell.V * press)
 
       # integerates the kinetic part of the pressure with the force at the inner-most level.
-      if(level == self.nmtslevels - 1):
+      if (level == self.nmtslevels - 1):
          press = 0
          self.p += dt * 3.0 * (self.cell.V * (press - self.beads.nbeads * self.pext) + Constants.kb * self.temp)
-
          pc = depstrip(self.beads.pc)
-         fc = np.sum(depstrip(self.forces.forces_mts(level)) * (1 + self.forces.coeffsc_part_1)   ,axis = 0) / self.beads.nbeads
+         fc = np.sum(depstrip(self.forces.forces_mts(level)) * (1 + self.forces.coeffsc_part_1), axis = 0) / self.beads.nbeads
          m = depstrip(self.beads.m3)[0]
 
          self.p += (dt2 * np.dot(pc,fc/m) + dt3 * np.dot(fc,fc/m)) * self.beads.nbeads
