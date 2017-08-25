@@ -294,6 +294,94 @@ class ThermoNFL(Thermostat):
       self.invstep = not self.invstep
 
 
+class ThermoDFL(Thermostat):
+   """Represents a Langevin thermostat for systems driven by inherently dissipative forces,
+      adding adequate additional white noise to compensate for the inherent damping term
+      originating from the forces.
+      The inherent dissipation coefficient (idcoeff) must be set to reach the desired target temperature.
+      Alternatively, if the adjustment time coefficient idtau is set > 0, idcoeff will be automatically
+      adjusted over time according to the difference of system temperature to target temperature.
+
+   Depend objects:
+      tau: Thermostat damping time scale. Larger values give a less strongly
+         coupled thermostat.
+      idcoeff: Inherent dissipation coefficient. Larger idcoeff results in larger additional noise.
+      idtau: idcoeff-temperature coupling time constant.
+      T: Coefficient of the diffusive contribution of the thermostat, i.e. the
+         drift back towards equilibrium. Depends on tau and the time step.
+      S: Coefficient of the stochastic contribution of the thermostat, i.e.
+         the uncorrelated Gaussian noise. Depends on T and the temperature.
+   """
+
+   def get_T(self):
+      """Calculates the coefficient of the overall drift of the velocities."""
+
+      if self.tau > 0: return np.exp(-0.5*self.dt/self.tau)
+      else: return 1.0
+
+   def get_S(self):
+      """Calculates the coefficient of the white noise."""
+
+      return np.sqrt(Constants.kb*self.temp*(1.0 - (self.T + self.dt*idcoeff)**2))
+
+   def __init__(self, temp = 1.0, dt = 1.0, tau = 0, idcoeff = 0.0, idtau = 0, ethermo=0.0):
+      """Initialises ThermoDFL.
+
+      Args:
+         temp: The simulation temperature. Defaults to 1.0.
+         dt: The simulation time step. Defaults to 1.0.
+         tau: The thermostat damping timescale. Defaults to 0 (off).
+         idcoeff: Estimated inherent dissipation coefficient. Defaults to 0.0.
+         idtau: idcoeff-temperature coupling time constant. Defaults to 0 (off).
+         ethermo: The initial heat energy transferred to the bath.
+            Defaults to 0.0. Will be non-zero if the thermostat is
+            initialised from a checkpoint file.
+      """
+
+      super(ThermoDFL,self).__init__(temp, dt, ethermo)
+
+      self.idstep = False
+      dset(self,"tau",depend_value(value=tau,name='tau'))
+      dset(self,"idcoeff",depend_value(value=idcoeff,name='idcoeff'))
+      dset(self,"idtau",depend_value(value=idtau,name='idtau'))
+      dset(self,"T",
+         depend_value(name="T",func=self.get_T,
+            dependencies=[dget(self,"tau"), dget(self,"dt")]))
+      dset(self,"S",
+         depend_value(name="S",func=self.get_S,
+            dependencies=[dget(self,"temp"), dget(self,"T"), dget(self,"dt"), dget(self,"idcoeff")]))
+
+
+   def step(self):
+      """Updates the bound momentum vector with a langevin thermostat."""
+
+      et = self.ethermo
+      p = depstrip(self.p).copy()
+      sm = depstrip(self.sm)
+
+      p /= sm
+
+      et += np.dot(p,p)*0.5
+      p *= self.T
+      p += self.S*self.prng.gvec(len(p))
+      et -= np.dot(p,p)*0.5
+
+      p *= sm
+
+      self.p = p
+      self.ethermo = et
+
+      if self.idtau > 0 and self.idstep:
+         ekin = np.dot(depstrip(self.p),depstrip(self.p)/depstrip(self.m))*0.5
+         mytemp = ekin/Constants.kb/self.ndof * 2
+         self.idcoeff -= Constants.kb * (mytemp - self.temp) / self.idtau * self.dt
+         if self.idcoeff < 0: self.idcoeff = 0
+
+         print("ThermoNFL inherent dissipation coefficient: " + str(self.idcoeff))
+
+      self.idstep = not self.idstep
+
+
 class ThermoPILE_L(Thermostat):
    """Represents a PILE thermostat with a local centroid thermostat.
 
