@@ -66,7 +66,10 @@
       DOUBLE PRECISION init_volume, init_rc ! needed to correctly adjust the cut-off radius for variable cell dynamics
       DOUBLE PRECISION, ALLOCATABLE :: last_atoms(:,:) ! Holds the positions when the neighbour list is created
       DOUBLE PRECISION displacement ! Tracks how far each atom has moved since the last call of nearest_neighbours
-      INTEGER i, j 
+
+      ! DMW
+      DOUBLE PRECISION efield(3)
+      INTEGER i, j
       
       ! parse the command line parameters
       ! intialize defaults
@@ -130,11 +133,13 @@
                   vstyle = 9
                ELSEIF (trim(cmdbuffer) == "lepsm2") THEN
                   vstyle = 10
+               ELSEIF (trim(cmdbuffer) == "qtip4pf-efield") THEN
+                  vstyle = 11
                ELSEIF (trim(cmdbuffer) == "gas") THEN
                   vstyle = 0  ! ideal gas
                ELSE
                   WRITE(*,*) " Unrecognized potential type ", trim(cmdbuffer)
-                  WRITE(*,*) " Use -m [gas|lj|sg|harm|morse|zundel|qtip4pf] "
+                  WRITE(*,*) " Use -m [gas|lj|sg|harm|morse|zundel|qtip4pf|qtip4pf-efield] "
                   STOP "ENDED"
                ENDIF
             ELSEIF (ccmd == 4) THEN
@@ -165,6 +170,18 @@
          IF (par_count /= 0) THEN
             WRITE(*,*) "Error:  no initialization string needed for qtip4pf."
             STOP "ENDED"
+         ENDIF
+         isinit = .true.
+      ELSEIF (11== vstyle) THEN
+         IF (par_count .ne. 3) THEN
+            WRITE(*,*) "Error:  incorrect initialization string included for qtip4pf-efield. &
+     &             Provide the three components of the electric field in V/nm"
+            STOP "ENDED"
+         ELSE
+            ! We take in an electric field in volts / nm.This must be converted to Eh / (e a0).
+            do i=1,3
+             efield(i) = vpars(i) / 5.14220652d2
+            enddo
          ENDIF
          isinit = .true.
       ELSEIF (5 == vstyle) THEN
@@ -201,6 +218,19 @@
             WRITE(*,*) "Error: no initialization string needed for LEPSM2."
             STOP "ENDED" 
          ENDIF   
+         isinit = .true.
+      ELSEIF (vstyle == 11) THEN
+         IF (par_count .ne. 3) THEN
+            WRITE(*,*) "Error:  incorrect initialization string included for qtip4pf-efield. &
+          Provide the three components of the electric field in V/nm"
+            STOP "ENDED"
+      ELSE
+            ! We take in an electric field in volts / nm.This must be converted 
+to Eh / (e a0).
+            do i=1,3
+             efield(i) = vpars(i) / 5.14220652d2
+            enddo
+         ENDIF
          isinit = .true.
       ELSEIF (vstyle == 1) THEN
          IF (par_count /= 3) THEN
@@ -378,6 +408,12 @@
                   dip = dip -1.1128d0 * atoms(i,:) + 0.5564d0 * (atoms(i+1,:) + atoms(i+2,:))
                ENDDO
                ! do not compute the virial term
+            ELSEIF (vstyle == 11) THEN ! efield potential.             
+               IF (mod(nat,3)/=0) THEN
+                  WRITE(*,*) " Expecting water molecules O H H O H H O H H but got ", nat, "atoms"
+                  STOP "ENDED"
+               ENDIF
+               CALL efield_v(atoms,nat,forces,pot,virial,efield)
             ELSEIF (vstyle == 8) THEN ! PS water potential.
                IF (nat/=3) THEN
                   WRITE(*,*) "Expecting 3 atoms for P-S water potential, O H H "
@@ -501,13 +537,14 @@
     CONTAINS
       SUBROUTINE helpmessage
          ! Help banner
-         WRITE(*,*) " SYNTAX: driver.x [-u] -h hostname -p port -m [gas|lj|sg|harm|morse|zundel|qtip4pf|pswater|lepsm1|lepsm2] "
+         WRITE(*,*) " SYNTAX: driver.x [-u] -h hostname -p port -m [gas|lj|sg|harm|morse|zundel|qtip4pf|pswater|lepsm1|lepsm2|qtip4p-efield] "
          WRITE(*,*) "         -o 'comma_separated_parameters' [-v] "
          WRITE(*,*) ""
          WRITE(*,*) " For LJ potential use -o sigma,epsilon,cutoff "
          WRITE(*,*) " For SG potential use -o cutoff "
          WRITE(*,*) " For 1D harmonic oscillator use -o k "
          WRITE(*,*) " For 1D morse oscillator use -o r0,D,a"
+         WRITE(*,*) " For qtip4pf-efield use -o Ex,Ey,Ez with Ei in V/nm"         
          WRITE(*,*) " For the ideal gas, qtip4pf, zundel or nasa no options needed! "
        END SUBROUTINE helpmessage
 

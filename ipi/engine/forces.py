@@ -88,12 +88,9 @@ class ForceBead(dobject):
       """
 
       global fbuid      #assign a unique identifier to each forcebead object
-      self._threadlock.acquire()
-      try:
+      with self._threadlock:
          self.uid = fbuid
          fbuid+=1
-      finally:
-         self._threadlock.release()
 
       # stores a reference to the atoms and cell we are computing forces for
       self.atoms = atoms
@@ -139,12 +136,9 @@ class ForceBead(dobject):
       all the jobs to be sent at once, allowing them to be parallelized.
       """
       
-      self._threadlock.acquire()
-      try:
+      with self._threadlock:
           if self.request is None and dget(self,"ufvx").tainted():
              self.request = self.ff.queue(self.atoms, self.cell, reqid=self.uid)
-      finally:
-         self._threadlock.release()
 
    def get_all(self):
       """Driver routine.
@@ -161,11 +155,8 @@ class ForceBead(dobject):
       # because we thread over many systems and outputs, we might get called
       # more than once. keep track of how many times we are called so we
       # can make sure to wait until the last call has returned before we release
-      self._threadlock.acquire()
-      try:
+      with self._threadlock:
          self._getallcount += 1
-      finally:
-         self._threadlock.release()
 
       # this is converting the distribution library requests into [ u, f, v ]  lists
       if self.request is None:
@@ -192,11 +183,8 @@ class ForceBead(dobject):
       result = self.request["result"]
 
       # reduce the reservation count (and wait for all calls to return)
-      self._threadlock.acquire()
-      try:
+      with self._threadlock:
         self._getallcount -= 1
-      finally:
-        self._threadlock.release()
 
       # releases just once, but wait for all requests to be complete
       if self._getallcount == 0:
