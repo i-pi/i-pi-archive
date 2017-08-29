@@ -475,6 +475,19 @@ class Properties(dobject):
                       'func': self.get_yama_estimators,
                       "size": 2},
 
+      "vk_scaledcoords": {   "dimension": "undefined",
+                      "help" : "The scaled coordinates estimators that can be used to compute energy and heat capacity",
+                       "longhelp": """Returns the estimators that are required to evaluate the scaled-coordinates estimators
+                       for total energy and heat capacity, as described in T. M. Yamamoto,
+                       J. Chem. Phys., 104101, 123 (2005). Returns eps_v and eps_v', as defined in that paper.
+                       As the two estimators have a different dimensions, this can only be output in atomic units.
+                       Takes one argument, 'fd_delta', which gives the value of the finite difference parameter used -
+                       which defaults to """+ str(-self._DEFAULT_FINDIFF) + """. If the value of 'fd_delta' is negative,
+                       then its magnitude will be reduced automatically by the code if the finite difference error
+                       becomes too large.""",
+                      'func': self.get_vkyama_estimators,
+                      "size": 2},
+
       "sc_scaledcoords": {   "dimension": "undefined",
                       "help" : "The Suzuki-Chin scaled coordinates estimators that can be used to compute energy and heat capacity",
                        "longhelp": """Returns the estimators that are required to evaluate the scaled-coordinates estimators
@@ -1359,6 +1372,46 @@ class Properties(dobject):
 
       return np.asarray([eps, eps_prime])
 
+   def get_vkyama_estimators(self, fd_delta= - _DEFAULT_FINDIFF):
+      """Calculates the quantum scaled coordinate suzuki-chin kinetic energy estimator for the Suzuki-Chin propagator.
+
+      Args:
+         fd_delta: the relative finite difference in temperature to apply in
+         computing finite-difference quantities. If it is negative, will be
+         scaled down automatically to avoid discontinuities in the potential.
+      """
+
+      r1 = self.get_sckinop() + 2.0/self.beads.nbeads*sum(self.forces.pots[int(k)] for k in range(0,self.beads.nbeads,2))
+
+      eps = abs(float(fd_delta))
+      beta = 1.0/(Constants.kb*self.ensemble.temp)
+      beta2 = beta**2
+      qc = depstrip(self.beads.qc)
+      q = depstrip(self.beads.q)
+      self.dbeads.q[::2] = self.beads.q[::2] + eps*(q - qc)[::2]
+
+      #vir1 = -3.00*(depstrip(self.get_sckintd()) - 0.5/beta)*self.beads.nbeads
+      vir1 = 1.50*np.dot(((q - qc)[::2]).flatten(), (self.forces.f[::2]).flatten())
+      vir2 = 0.50*np.dot(((q - qc)[::2]).flatten(), ((self.dforces.f - self.forces.f)[::2]).flatten()/eps)
+
+      r2 = 1.5*self.beads.natoms/beta2 + 0.5/beta*(vir1 + vir2)/self.beads.nbeads*2
+
+      fsc = depstrip(self.forces.fsc).copy()
+      vsc = depstrip(self.forces.potssc).copy()
+      f = depstrip(self.forces.f).copy()
+      v = depstrip(self.forces.pots).copy()
+
+      for k in range(self.beads.nbeads):
+         if k%2 == 0:
+           fsc[k] += f[k]/3.0
+           vsc[k] += v[k]/3.0
+         else:
+           fsc[k] += -f[k]/3.0
+           vsc[k] += -v[k]/3.0
+      r2 = r2 + np.dot((q - qc).flatten(), fsc.flatten())/self.beads.nbeads/beta - 6.0*vsc.sum()/self.beads.nbeads/beta
+
+      return np.asarray([r1, -r2])
+
    def get_scyama_estimators(self, fd_delta= - _DEFAULT_FINDIFF):
       """Calculates the quantum scaled coordinate suzuki-chin kinetic energy estimator for the Suzuki-Chin propagator.
 
@@ -1390,10 +1443,13 @@ class Properties(dobject):
          splus = np.sqrt(1.0 + dbeta)
          sminus = np.sqrt(1.0 - dbeta)
 
+         #change beta
+         self.dforces.omegan2=depstrip(self.forces.omegan2)/(1.0 + dbeta)**2
          for b in range(self.beads.nbeads):
             self.dbeads[b].q = qc*(1.0 - splus) + splus*q[b,:]
          vplus=(self.dforces.pot+self.dforces.potsc)/self.beads.nbeads
 
+         self.dforces.omegan2=depstrip(self.forces.omegan2)/(1.0 - dbeta)**2
          for b in range(self.beads.nbeads):
             self.dbeads[b].q = qc*(1.0 - sminus) + sminus*q[b,:]
          vminus=(self.dforces.pot+self.dforces.potsc)/self.beads.nbeads
@@ -1409,6 +1465,7 @@ class Properties(dobject):
                 eps_prime = 0.0
                 break
          else:
+
             eps = ((1.0 + dbeta)*vplus - (1.0 - dbeta)*vminus)/(2*dbeta)
             eps += 0.5*(3*self.beads.natoms)/beta
 
@@ -2114,6 +2171,10 @@ class Trajectories(dobject):
       self.dbeads = system.beads.copy()
       self.dcell = system.cell.copy()
       self.dforces = self.system.forces.copy(self.dbeads, self.dcell)
+
+      self.scdbeads = system.beads.copy(system.beads.nbeads/2)
+      self.scdcell = system.cell.copy()
+      self.scdforces = self.system.forces.copy(self.scdbeads, self.scdcell)
 
    def get_akcv(self):
       """Calculates the contribution to the kinetic energy due to each degree
