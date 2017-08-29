@@ -217,7 +217,7 @@ class depend_base(object):
         if not self._active: return
         
         self._tainted[:] = True
-        for item in self._dependants:
+        for item in self._dependants:            
             if (not item()._tainted[0]):
                 item().taint()
         if not self._synchro is None:

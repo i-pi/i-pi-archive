@@ -173,7 +173,7 @@ class InputMotion(InputMotionBase):
          mlist = []
          for (k, m) in self.extra:
             mlist.append(m.fetch())
-         motion=MultiMotion(motionlist=mlist)
+         motion=MultiMotion(motionlist=mlist)         
       else:
          motion=super(InputMotion,self).fetch()
 
