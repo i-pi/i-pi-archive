@@ -46,7 +46,7 @@ class AlchemyMC(Motion):
         self.names = names
         self.nmc = nmc      
 
-    def bind(self, ens, beads, nm, cell, bforce, prng):
+    def bind(self, ens, beads, cell, bforce, nm, prng):
         """Binds ensemble beads, cell, bforce, and prng to the dynamics.
 
         This takes a beads object, a cell object, a forcefield object and a
@@ -62,7 +62,7 @@ class AlchemyMC(Motion):
                 generation.
         """
 
-        super(AlchemyMC, self).bind(ens, beads, nm, cell, bforce, prng)
+        super(AlchemyMC, self).bind(ens, beads, cell, bforce, nm, prng)
         
 
     def AXlist(self, atomtype):
@@ -80,7 +80,7 @@ class AlchemyMC(Motion):
 
     def step(self, step=None):
 
-        if (1.0/self.nmc < self.prng.u) : return  # tries a round of exhanges with probability 1/nmc
+        if (1.0/self.nmc > self.prng.u) : return  # tries a round of exhanges with probability 1/nmc
 
         """Does one round of alchemical exchanges."""
         # record the spring energy (divided by mass) for each atom in the exchange chain
@@ -130,4 +130,7 @@ class AlchemyMC(Motion):
                     self.beads.p[3*axlist[i]:3*(axlist[i]+1)] /= np.sqrt(massratio)
                     self.beads.p[3*axlist[j]:3*(axlist[j]+1)] *= np.sqrt(massratio)
                     print 'exchange atom No.  ', axlist[i], '  and  ', axlist[j]
+                    # adjusts the conserved quantities
+                    # change in spring energy
+                    self.ensemble.eens -= difspring
                             
