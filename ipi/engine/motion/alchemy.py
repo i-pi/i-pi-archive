@@ -45,7 +45,7 @@ class AlchemyMC(Motion):
         self.atomtype = names
         self.nummc = nmc      
 
-    def bind(self, beads, ens, prng):
+    def bind(self, ens, beads, nm, cell, bforce, prng):
         """Binds ensemble beads, cell, bforce, and prng to the dynamics.
 
         This takes a beads object, a cell object, a forcefield object and a
@@ -61,7 +61,7 @@ class AlchemyMC(Motion):
                 generation.
         """
 
-        super(AlchemyMC, self).bind(beads, ens, prng)
+        super(AlchemyMC, self).bind(ens, beads, nm, cell, bforce, prng)
         
 
     def AXlist(self, atomtype):
