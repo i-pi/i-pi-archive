@@ -11,7 +11,7 @@
     <system>
         <initialize nbeads="32">
             <file mode="pdb" units="angstrom"> init.pdb </file>
-            <velocities mode="thermal" units="kelvin"> 300 </velocities>
+            <velocities mode="thermal" units="kelvin"> 3000 </velocities>
         </initialize>
         <forces>
             <force forcefield="lmpserial"> </force>
@@ -28,12 +28,12 @@
             <motion mode="alchemy">
                 <alchemy>
                     <names> [ H, D ] </names>
-                    <nmc> 2 </nmc>
+                    <nmc> 10 </nmc>
                 </alchemy>
             </motion>
         </motion>
         <ensemble>
-            <temperature units="kelvin">300</temperature>   
+            <temperature units="kelvin">2000</temperature>   
         </ensemble>
     </system>
 </simulation>

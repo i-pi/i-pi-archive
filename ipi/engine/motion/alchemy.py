@@ -32,7 +32,7 @@ class AlchemyMC(Motion):
         The spring potential energy, names of the atoms.
     """
 
-    def __init__(self, fixcom=False, fixatoms=None, mode=None, names=[], nmc=1):
+    def __init__(self, fixcom=False, fixatoms=None, mode=None, names=[], nmc=1, ealc=None):
         """Initialises a "alchemical exchange" motion object.
 
         Args: 
@@ -44,7 +44,13 @@ class AlchemyMC(Motion):
         super(AlchemyMC, self).__init__(fixcom=fixcom, fixatoms=fixatoms)
 
         self.names = names
-        self.nmc = nmc      
+        self.nmc = nmc    
+  
+        dself = dd(self)
+        dself.ealc = depend_value(name='ealc')
+        if not ealc is None:
+            self.ealc = ealc
+        else: self.ealc = 0.0
 
     def bind(self, ens, beads, cell, bforce, nm, prng):
         """Binds ensemble beads, cell, bforce, and prng to the dynamics.
@@ -63,7 +69,7 @@ class AlchemyMC(Motion):
         """
 
         super(AlchemyMC, self).bind(ens, beads, cell, bforce, nm, prng)
-        
+        self.ensemble.add_econs(dget(self, "ealc"))
 
     def AXlist(self, atomtype):
         """This compile a list of atoms ready for exchanges.
@@ -132,5 +138,6 @@ class AlchemyMC(Motion):
                     print 'exchange atom No.  ', axlist[i], '  and  ', axlist[j]
                     # adjusts the conserved quantities
                     # change in spring energy
-                    self.ensemble.eens -= difspring
+                    self.ealc -= difspring
+                    #print difspring, self.ealc
                             
