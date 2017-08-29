@@ -24,7 +24,7 @@ Classes:
 import numpy as np
 from copy import copy
 import ipi.engine.initializer
-from ipi.engine.motion import Motion, Dynamics, Replay, GeopMotion, NEBMover, DynMatrixMover, MultiMotion
+from ipi.engine.motion import Motion, Dynamics, Replay, GeopMotion, NEBMover, DynMatrixMover, MultiMotion, AlchemyMC
 from ipi.engine.motion import DynMatrixMover
 from ipi.utils.inputvalue import *
 from ipi.inputs.thermostats import *
@@ -33,6 +33,7 @@ from .geop import InputGeop
 from .neb import InputNEB
 from .dynamics import InputDynamics
 from .phonons import InputDynMatrix
+from .alchemy import InputAlchemy
 from ipi.utils.units import *
 
 __all__ = ['InputMotion']
@@ -54,7 +55,7 @@ class InputMotionBase(Input):
 
    attribs={"mode"  : (InputAttribute, {"dtype"   : str,
                                     "help"    : "How atoms should be moved at each step in the simulatio. 'replay' means that a simulation is restarted from a previous simulation.",
-                                    "options" : ['vibrations', 'minimize', 'replay', 'neb', 'dynamics',  'dummy']}) }
+                                    "options" : ['vibrations', 'minimize', 'replay', 'neb', 'dynamics', 'alchemy', 'dummy']}) }
 
    fields={"fixcom": (InputValue, {"dtype"           : bool,
                                    "default"         : True,
@@ -71,7 +72,9 @@ class InputMotionBase(Input):
            "file": (InputInitFile, { "default" : input_default(factory=ipi.engine.initializer.InitBase,kwargs={"mode":"xyz"}),
                            "help"            : "This describes the location to read a trajectory file from."}),
            "vibrations" : ( InputDynMatrix, { "default" : {},
-                                     "help":  "Option for phonon computation" } )
+                                     "help":  "Option for phonon computation" } ),
+           "alchemy" : ( InputAlchemy, { "default" : {},
+                                     "help":  "Option for alchemical exchanges" } )
          }
 
    dynamic = {  }
@@ -109,6 +112,10 @@ class InputMotionBase(Input):
          self.mode.store("vibrations")
          self.vibrations.store(sc)
          tsc = 1
+      elif type(sc) is AlchemyMC:
+         self.mode.store("alchemy")
+         self.alchemy.store(sc)
+         tsc = 1
       else:
          raise ValueError("Cannot store Mover calculator of type "+str(type(sc)))
 
@@ -138,6 +145,8 @@ class InputMotionBase(Input):
          sc = Dynamics(fixcom=self.fixcom.fetch(), fixatoms=self.fixatoms.fetch(), **self.dynamics.fetch())
       elif self.mode.fetch() == "vibrations":
          sc = DynMatrixMover(fixcom=self.fixcom.fetch(), fixatoms=self.fixatoms.fetch(), **self.vibrations.fetch() )
+      elif self.mode.fetch() == "alchemy":
+         sc = AlchemyMC(fixcom=self.fixcom.fetch(), fixatoms=self.fixatoms.fetch(), **self.alchemy.fetch() )
       else:
          sc = Motion()
          #raise ValueError("'" + self.mode.fetch() + "' is not a supported motion calculation mode.")

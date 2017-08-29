@@ -14,3 +14,4 @@ from .geop import GeopMotion
 from .neb import NEBMover
 from .phonons import DynMatrixMover
 from .multi import MultiMotion
+from .alchemy import AlchemyMC
