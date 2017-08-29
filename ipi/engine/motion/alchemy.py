@@ -80,6 +80,8 @@ class AlchemyMC(Motion):
 
     def step(self, step=None):
 
+        if (1.0/self.nmc < self.prng.u) : return  # tries a round of exhanges with probability 1/nmc
+
         """Does one round of alchemical exchanges."""
         # record the spring energy (divided by mass) for each atom in the exchange chain
         q = depstrip(self.beads.q)
