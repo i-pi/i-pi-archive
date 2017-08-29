@@ -17,6 +17,7 @@ import numpy as np
 
 from ipi.engine.motion import Motion
 from ipi.utils.depend import *
+from ipi.utils.units import Constants
 
 
 #__all__ = ['AlchemyMC']
@@ -42,8 +43,8 @@ class AlchemyMC(Motion):
 
         super(AlchemyMC, self).__init__(fixcom=fixcom, fixatoms=fixatoms)
 
-        self.atomtype = names
-        self.nummc = nmc      
+        self.names = names
+        self.nmc = nmc      
 
     def bind(self, ens, beads, nm, cell, bforce, prng):
         """Binds ensemble beads, cell, bforce, and prng to the dynamics.
@@ -83,12 +84,12 @@ class AlchemyMC(Motion):
         # record the spring energy (divided by mass) for each atom in the exchange chain
         q = depstrip(self.beads.q)
         nb = self.beads.nbeads
-        na3 = self.beads.natoms * 3
-        axlist = self.AXlist(self.atomtype)
+        axlist = self.AXlist(self.names)
         lenlist = len(axlist)
         atomspring = np.zeros(lenlist)
         i = 0
         for atomnum in axlist:
+            na3 = atomnum * 3
             spr = 0.0
             for b in range(1,nb):
                 for j in range(na3,na3+3):
@@ -102,6 +103,7 @@ class AlchemyMC(Motion):
             
         # do the exchange
         betaP = 1.0/(Constants.kb*self.ensemble.temp*nb)
+        nexch = 0
         for i in range(lenlist):
             for j in range(i):
                 # no exchange for same type of atoms
@@ -119,11 +121,11 @@ class AlchemyMC(Motion):
                     self.beads.names[axlist[i]] = self.beads.names[axlist[j]]
                     self.beads.names[axlist[j]] = nameswap
                     # change masses
-                    massratio = s.beads.m[axlist[i]]/s.beads.m[axlist[j]]
+                    massratio = self.beads.m[axlist[i]]/self.beads.m[axlist[j]]
                     self.beads.m[axlist[i]] /= massratio
                     self.beads.m[axlist[j]] *= massratio
                     # adjust the (classical) momenta
                     self.beads.p[3*axlist[i]:3*(axlist[i]+1)] /= np.sqrt(massratio)
                     self.beads.p[3*axlist[j]:3*(axlist[j]+1)] *= np.sqrt(massratio)
-                    #print 'exchange atom No.  ', atomexchangelist[i], '  and  ', atomexchangelist[j]
+                    print 'exchange atom No.  ', axlist[i], '  and  ', axlist[j]
                             

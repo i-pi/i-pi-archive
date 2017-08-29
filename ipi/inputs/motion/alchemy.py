@@ -29,7 +29,7 @@ class InputAlchemy(InputDictionary):
     fields = {
         "names"     : (InputArray, {"dtype"     : str,
                                     "default"   : input_default(factory=np.zeros, args=(0,), kwargs = {'dtype': np.dtype('|S6')}),
-                                    "help"      : "The names of the atoms be to exchanged, in the format [name1, name2, ... ]." }),
+                                    "help"      : "The names of the atoms to be to exchanged, in the format [name1, name2, ... ]." }),
         "nmc": (InputValue, {"dtype":     int,
                                   "default":   1,
                                   "help":      "The number of mc steps"})
@@ -50,8 +50,7 @@ class InputAlchemy(InputDictionary):
         if alc == {}:
             return
 
-        self.spicesA.store(alc.spicesA)
-        self.spicesB.store(alc.spicesB)
+        self.names.store(alc.names)
         self.nmc.store(alc.nmc)
 
     def fetch(self):
