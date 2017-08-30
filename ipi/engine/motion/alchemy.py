@@ -1,9 +1,7 @@
-"""Contains the classes that deal with the different dynamics required in
-different types of ensembles.
+"""Contains the classes that deal with the MC exchanges of isotopes.
 
-Holds the algorithms required for normal mode propagators, and the objects to
-do the constant temperature and pressure algorithms. Also calculates the
-appropriate conserved energy quantity for the ensemble of choice.
+Holds the algorithms required for alchemical exchanges. Also calculates the
+appropriate conserved energy quantity.
 """
 
 # This file is part of i-PI.
@@ -86,7 +84,7 @@ class AlchemyMC(Motion):
 
     def step(self, step=None):
 
-        if (1.0/self.nmc > self.prng.u) : return  # tries a round of exhanges with probability 1/nmc
+        if (1.0/self.nmc < self.prng.u) : return  # tries a round of exhanges with probability 1/nmc
 
         """Does one round of alchemical exchanges."""
         # record the spring energy (divided by mass) for each atom in the exchange chain
@@ -107,7 +105,10 @@ class AlchemyMC(Motion):
             # no mass here
             spr *= 0.5*self.nm.omegan2
             atomspring[i] = spr
+            #print axlist[i], self.beads.names[axlist[i]], spr*self.beads.m[axlist[i]]
             i += 1
+
+       
             
         # do the exchange
         betaP = 1.0/(Constants.kb*self.ensemble.temp*nb)
@@ -120,10 +121,14 @@ class AlchemyMC(Motion):
                 difspring = (atomspring[i]-atomspring[j])*(self.beads.m[axlist[j]]-self.beads.m[axlist[i]])
                 pexchange = np.exp(-betaP*difspring)
                 #print 'exchange probablity: %10.5e  n. exchanges this far: %5d' % ( pexchange, nexch )
-                
+                pexchange=1.0
                 # attemps the exchange
                 if (pexchange > self.prng.u):
                     nexch += 1
+                    oldspringenergy = self.beads.vpath*self.nm.omegan2
+                    #print oldspringenergy
+                    print 'exchange atom No.  ', axlist[i], '  and  ', axlist[j]
+                    #print 'bofore exchange', 'econs:',self.ensemble.econs,'kin:', self.nm.kin
                     # swap names
                     nameswap = self.beads.names[axlist[i]]
                     self.beads.names[axlist[i]] = self.beads.names[axlist[j]]
@@ -133,11 +138,15 @@ class AlchemyMC(Motion):
                     self.beads.m[axlist[i]] /= massratio
                     self.beads.m[axlist[j]] *= massratio
                     # adjust the (classical) momenta
-                    self.beads.p[3*axlist[i]:3*(axlist[i]+1)] /= np.sqrt(massratio)
-                    self.beads.p[3*axlist[j]:3*(axlist[j]+1)] *= np.sqrt(massratio)
-                    print 'exchange atom No.  ', axlist[i], '  and  ', axlist[j]
+                    self.beads.p[:,3*axlist[i]:3*(axlist[i]+1)] /= np.sqrt(massratio)
+                    self.beads.p[:,3*axlist[j]:3*(axlist[j]+1)] *= np.sqrt(massratio)
+                    #print 'exchange atom No.  ', axlist[i], '  and  ', axlist[j]
                     # adjusts the conserved quantities
                     # change in spring energy
-                    self.ealc -= difspring
-                    #print difspring, self.ealc
+                    newspringenergy = self.beads.vpath*self.nm.omegan2
+                    #print oldspringenergy, newspringenergy, newspringenergy-oldspringenergy-difspring
+                    #print 'after exchange', 'econs:',self.ensemble.econs,'kin:', self.nm.kin
+                    self.ealc += -difspring
+                    #print 'after adjust', 'econs:', self.ensemble.econs, 'ealc:', self.ealc
+
                             
