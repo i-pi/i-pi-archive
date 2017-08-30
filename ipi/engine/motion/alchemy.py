@@ -121,7 +121,6 @@ class AlchemyMC(Motion):
                 difspring = (atomspring[i]-atomspring[j])*(self.beads.m[axlist[j]]-self.beads.m[axlist[i]])
                 pexchange = np.exp(-betaP*difspring)
                 #print 'exchange probablity: %10.5e  n. exchanges this far: %5d' % ( pexchange, nexch )
-                pexchange=1.0
                 # attemps the exchange
                 if (pexchange > self.prng.u):
                     nexch += 1
