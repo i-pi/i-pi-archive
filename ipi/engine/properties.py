@@ -2326,7 +2326,7 @@ class Trajectories(dobject):
 			stream.flush()
 			os.fsync(stream)
          return
-      elif getkey(what) in [ "positions", "velocities", "forces", "forces_sc" ] :
+      elif getkey(what) in [ "positions", "velocities", "forces", "forces_sc", "momenta" ] :
          fatom = Atoms(self.system.beads.natoms)
          fatom.names[:] = self.system.beads.names
          fatom.q[:] = cq[b]

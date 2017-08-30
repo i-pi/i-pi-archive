@@ -15,7 +15,7 @@ import os, threading
 import time
 from copy import deepcopy
 
-from ipi.utils.depend import depend_value, dobject, dset
+from ipi.utils.depend import depend_value, dobject, dset, dd
 from ipi.utils.io.inputs.io_xml import xml_parse_file
 from ipi.utils.messages import verbosity, info, warning, banner
 from ipi.utils.softexit import softexit
@@ -210,8 +210,8 @@ class Simulation(dobject):
 
         for k, f in self.fflist.iteritems():
             f.run()
-
-
+            
+                    
         # prints inital configuration -- only if we are not restarting
         if self.step == 0:
             self.step = -1
