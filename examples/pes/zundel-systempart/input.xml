@@ -1,20 +1,12 @@
 <simulation>
     <ffsocket mode='unix' name='driver'>
-         <latency>  1.00000000e-02</latency>
-         <slots>4</slots>
-         <port>20614</port>
-         <timeout>  6.00000000e+02</timeout>
          <address>zundel</address>
          <activelist> [0,1,2,3,4,5,6] </activelist>
    </ffsocket>
-  <!-- <ffsocket mode='unix' name='driver2'>
-         <latency>  1.00000000e-02</latency>
-         <slots>4</slots>
-         <port>20614</port>
-         <timeout>  6.00000000e+02</timeout>
+  <ffsocket mode='unix' name='driver2'>
          <address>zundel2</address>
          <activelist> [7,8,9,10,11,12,13] </activelist>
-   </ffsocket> -->
+   </ffsocket>
    <total_steps>1200</total_steps>
    <output prefix="databoth">
       <trajectory stride="2" filename="pos" cell_units="angstrom">positions{angstrom}</trajectory>
@@ -38,10 +30,10 @@
    </motion>
       <forces> 
            <force forcefield="driver" nbeads="1" > <mts_weights> [1,0] </mts_weights> </force>
-       <!--    <force forcefield="driver2" nbeads="4" > <mts_weights> [0,1] </mts_weights> </force> -->
+           <force forcefield="driver2" nbeads="4" > <mts_weights> [0,1] </mts_weights> </force> 
       </forces>
       <initialize nbeads="4">
-        <file mode="xyz" units="angstrom">./double.xyz</file>
+        <file mode="xyz">./double.xyz</file>
         <cell>
          [   25.29166, 0, 0, 0, 25.29166, 0, 0, 0, 25.29166 ]
         </cell>
