@@ -1,6 +1,6 @@
 <simulation>
     <output prefix="simulation">
-        <properties stride="1" filename="out"> [ step, time{picosecond}, conserved, temperature{kelvin}, kinetic_cv, kinetic_td, potential, pressure_cv{megapascal} ] </properties>
+        <properties stride="1" filename="out"> [ step, time{picosecond}, conserved, temperature{kelvin}, kinetic_cv, kinetic_td, potential, pressure_cv{megapascal}, spring ] </properties>
         <trajectory filename="pos" stride="10" cell_units="angstrom" format="xyz" bead="0"> positions{angstrom} </trajectory>
     </output>
     <total_steps>10000</total_steps>
@@ -9,9 +9,9 @@
         <address> water </address>
     </ffsocket>
     <system>
-        <initialize nbeads="32">
+        <initialize nbeads="4">
             <file mode="pdb" units="angstrom"> init.pdb </file>
-            <velocities mode="thermal" units="kelvin"> 3000 </velocities>
+            <velocities mode="thermal" units="kelvin"> 2000 </velocities>
         </initialize>
         <forces>
             <force forcefield="lmpserial"> </force>
@@ -20,20 +20,20 @@
             <motion mode="dynamics">    
                 <dynamics mode="nvt">
                     <thermostat mode="pile_g">
-                        <tau units="femtosecond">50</tau>
+                        <tau units="femtosecond">10</tau>
                     </thermostat>
-                    <timestep units="femtosecond"> 0.2</timestep>
+                    <timestep units="femtosecond"> 0.25</timestep>
                 </dynamics>
             </motion>
             <motion mode="alchemy">
                 <alchemy>
                     <names> [ H, D ] </names>
-                    <nmc> 10 </nmc>
+                    <nxc> 10 </nxc>
                 </alchemy>
             </motion>
         </motion>
         <ensemble>
-            <temperature units="kelvin">2000</temperature>   
+            <temperature units="kelvin">1000</temperature>   
         </ensemble>
     </system>
 </simulation>

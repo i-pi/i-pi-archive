@@ -30,7 +30,7 @@ class AlchemyMC(Motion):
         The spring potential energy, names of the atoms.
     """
 
-    def __init__(self, fixcom=False, fixatoms=None, mode=None, names=[], nmc=1, ealc=None):
+    def __init__(self, fixcom=False, fixatoms=None, mode=None, names=[], nxc=1, ealc=None):
         """Initialises a "alchemical exchange" motion object.
 
         Args: 
@@ -42,7 +42,7 @@ class AlchemyMC(Motion):
         super(AlchemyMC, self).__init__(fixcom=fixcom, fixatoms=fixatoms)
 
         self.names = names
-        self.nmc = nmc    
+        self.nxc = nxc    
   
         dself = dd(self)
         dself.ealc = depend_value(name='ealc')
@@ -74,18 +74,19 @@ class AlchemyMC(Motion):
         """
             
         # selects the types of atoms for exchange
-        atomexchangelist = []
+        atomexchangelist = []        
         for i in range(self.beads.natoms):
-            for j in atomtype:
-                if (self.beads.names[i] == j): 
-                    atomexchangelist.append(i)
+            if self.beads.names[i] in atomtype:
+                atomexchangelist.append(i)
                             
-        return atomexchangelist
+        return np.asarray(atomexchangelist)
 
     def step(self, step=None):
 
-        if (1.0/self.nmc < self.prng.u) : return  # tries a round of exhanges with probability 1/nmc
-
+        # picks number of attempted exchanges
+        ntries = np.random.poisson(self.nxc)
+        if ntries == 0: return
+        
         """Does one round of alchemical exchanges."""
         # record the spring energy (divided by mass) for each atom in the exchange chain
         q = depstrip(self.beads.q)
@@ -93,59 +94,58 @@ class AlchemyMC(Motion):
         axlist = self.AXlist(self.names)
         lenlist = len(axlist)
         atomspring = np.zeros(lenlist)
+        wk2 = depstrip(self.nm.omegak2)
+        
         i = 0
         for atomnum in axlist:
             na3 = atomnum * 3
+            
+            # computes spring in NM representation
             spr = 0.0
             for b in range(1,nb):
-                for j in range(na3,na3+3):
-                    spr += (q[b,j]-q[b-1,j])**2
-            for j in range(na3,na3+3):
-                spr += (q[nb-1,j]-q[0,j])**2
-            # no mass here
-            spr *= 0.5*self.nm.omegan2
-            atomspring[i] = spr
-            #print axlist[i], self.beads.names[axlist[i]], spr*self.beads.m[axlist[i]]
+                 spr += wk2[b]*(self.nm.qnm[b,na3:na3+3]**2).sum()
+            spr*=0.5
+            
+            # no mass here - just the massless spring term            
+            atomspring[i] = spr            
             i += 1
 
-       
-            
-        # do the exchange
+        # does the exchange
         betaP = 1.0/(Constants.kb*self.ensemble.temp*nb)
         nexch = 0
-        for i in range(lenlist):
-            for j in range(i):
-                # no exchange for same type of atoms
-                if (self.beads.names[axlist[i]] == self.beads.names[axlist[j]]) : continue
-                # energy increase due to the swap
-                difspring = (atomspring[i]-atomspring[j])*(self.beads.m[axlist[j]]-self.beads.m[axlist[i]])
-                pexchange = np.exp(-betaP*difspring)
-                #print 'exchange probablity: %10.5e  n. exchanges this far: %5d' % ( pexchange, nexch )
-                # attemps the exchange
-                if (pexchange > self.prng.u):
-                    nexch += 1
-                    oldspringenergy = self.beads.vpath*self.nm.omegan2
-                    #print oldspringenergy
-                    print 'exchange atom No.  ', axlist[i], '  and  ', axlist[j]
-                    #print 'bofore exchange', 'econs:',self.ensemble.econs,'kin:', self.nm.kin
-                    # swap names
-                    nameswap = self.beads.names[axlist[i]]
-                    self.beads.names[axlist[i]] = self.beads.names[axlist[j]]
-                    self.beads.names[axlist[j]] = nameswap
-                    # change masses
-                    massratio = self.beads.m[axlist[i]]/self.beads.m[axlist[j]]
-                    self.beads.m[axlist[i]] /= massratio
-                    self.beads.m[axlist[j]] *= massratio
-                    # adjust the (classical) momenta
-                    self.beads.p[:,3*axlist[i]:3*(axlist[i]+1)] /= np.sqrt(massratio)
-                    self.beads.p[:,3*axlist[j]:3*(axlist[j]+1)] *= np.sqrt(massratio)
-                    #print 'exchange atom No.  ', axlist[i], '  and  ', axlist[j]
-                    # adjusts the conserved quantities
-                    # change in spring energy
-                    newspringenergy = self.beads.vpath*self.nm.omegan2
-                    #print oldspringenergy, newspringenergy, newspringenergy-oldspringenergy-difspring
-                    #print 'after exchange', 'econs:',self.ensemble.econs,'kin:', self.nm.kin
-                    self.ealc += -difspring
-                    #print 'after adjust', 'econs:', self.ensemble.econs, 'ealc:', self.ealc
+        
+        
+        if (1.0/self.nxc < self.prng.u) : return  # tries a round of exhanges with probability 1/nmc
 
+        for x in xrange(ntries):
+            i = np.random.randint(lenlist)
+            j = np.random.randint(lenlist)
+            while self.beads.names[axlist[i]] == self.beads.names[axlist[j]]:
+                j = np.random.randint(lenlist) # makes sure we pick a real exchange
+                
+            # energy change due to the swap
+            difspring = (atomspring[i]-atomspring[j])*(self.beads.m[axlist[j]]-self.beads.m[axlist[i]])
+            pexchange = np.exp(-betaP*difspring)
+            
+            # attemps the exchange
+            if (pexchange > self.prng.u):
+                nexch += 1
+                #print 'exchange atom No.  ', axlist[i], '  and  ', axlist[j]
+                
+                # swap names
+                nameswap = self.beads.names[axlist[i]]
+                self.beads.names[axlist[i]] = self.beads.names[axlist[j]]
+                self.beads.names[axlist[j]] = nameswap
+                
+                # change masses
+                massratio = self.beads.m[axlist[i]]/self.beads.m[axlist[j]]
+                self.beads.m[axlist[i]] /= massratio
+                self.beads.m[axlist[j]] *= massratio
+                
+                # adjust the (classical) momenta to conserve ke
+                self.beads.p[:,3*axlist[i]:3*(axlist[i]+1)] /= np.sqrt(massratio)
+                self.beads.p[:,3*axlist[j]:3*(axlist[j]+1)] *= np.sqrt(massratio)
+                
+                # adjusts the conserved quantity counter based on the change in spring energy                    
+                self.ealc += -difspring
                             

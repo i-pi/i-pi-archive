@@ -30,9 +30,12 @@ class InputAlchemy(InputDictionary):
         "names"     : (InputArray, {"dtype"     : str,
                                     "default"   : input_default(factory=np.zeros, args=(0,), kwargs = {'dtype': np.dtype('|S6')}),
                                     "help"      : "The names of the atoms to be to exchanged, in the format [name1, name2, ... ]." }),
-        "nmc": (InputValue, {"dtype":     int,
+        "nxc": (InputValue, {"dtype":     float,
                                   "default":   1,
-                                  "help":      "The number of mc steps"})
+                                  "help":      "The average number of exchanges per step to be attempted "}),
+        "ealc": (InputValue, {"dtype":     float,
+                                  "default":   0.0,
+                                  "help":      "The contribution to the conserved quantity for the alchemical exchanger"})
              }
 
     dynamic = {  }
@@ -51,7 +54,8 @@ class InputAlchemy(InputDictionary):
             return
 
         self.names.store(alc.names)
-        self.nmc.store(alc.nmc)
+        self.nxc.store(alc.nxc)
+        self.ealc.store(alc.ealc)
 
     def fetch(self):
         """Creates an ensemble object.
