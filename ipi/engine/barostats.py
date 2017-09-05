@@ -271,7 +271,6 @@ class Barostat(dobject):
 
    def get_stress_sc(self):
       """Calculates the internal stress tensor."""
-
       return (self.kstress_sc + np.sum(depstrip(self.forces.virssc_part_2), axis=0))/self.cell.V
 
    def stress_mts_sc(self, level):

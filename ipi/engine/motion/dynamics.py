@@ -585,6 +585,7 @@ class SCIntegrator(NVTIntegrator):
         if level == 0:
             # bias goes in the outer loop
             self.beads.p += (depstrip(self.bias.f)) * self.pdt[level]            
+            self.beads.p += (depstrip(self.forces.fsc) - self.coeffsc * self.forces.f) * self.dt * 0.5
         # just integrate the Trotter force scaled with the SC coefficients, which is a cheap approx to the SC force       
         self.beads.p += self.forces.forces_mts(level) * ( 1.0 + self.coeffsc) * self.pdt[level]
         
@@ -594,9 +595,8 @@ class SCIntegrator(NVTIntegrator):
         
         # the |f|^2 term is considered to be slowest (for large enough P) and is integrated outside everything.
         # if nmts is not specified, this is just the same as doing the full SC integration
-        self.beads.p += (depstrip(self.forces.fsc) - self.coeffsc * self.forces.f) * self.dt * 0.5
         super(SCIntegrator,self).step(step)
-        self.beads.p += (depstrip(self.forces.fsc) - self.coeffsc * self.forces.f) * self.dt * 0.5
+        print self.barostat.stress_sc / self.beads.nbeads
         
 class SCNPTIntegrator(SCIntegrator):
     """Integrator object for constant pressure simulations.

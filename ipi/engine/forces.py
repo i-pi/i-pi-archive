@@ -753,7 +753,6 @@ class Forces(dobject):
          warning("ERROR: Suzuki-Chin factorization requires even number of beads!")
          exit()
 
-
       # calculates the finite displacement.
       fbase = depstrip(self.f)
       eps = self.mforces[index].epsilon
@@ -794,6 +793,8 @@ class Forces(dobject):
                self.dcell = self.cell.copy()
                self.dforces = self.copy(self.dbeads, self.dcell)
 
+            self.dcell.h =  self.cell.h
+
             f_4th_order = fbase * 0.0
             v_4th_order = vbase * 0.0
 
@@ -823,6 +824,8 @@ class Forces(dobject):
 	           self.dcell = self.cell.copy()
 	           self.dforces = self.copy(self.dbeads, self.dcell)
 
+            self.dcell.h =  self.cell.h
+
             f_4th_order = fbase * 0.0
             v_4th_order = vbase * 0.0
 
@@ -851,6 +854,8 @@ class Forces(dobject):
                self.dbeads = self.beads.copy()
                self.dcell = self.cell.copy()
                self.dforces = self.copy(self.dbeads, self.dcell)
+
+            self.dcell.h =  self.cell.h
 
             f_4th_order = fbase * 0.0
             v_4th_order = vbase * 0.0
