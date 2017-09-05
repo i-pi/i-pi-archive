@@ -1,0 +1,97 @@
+Geometry = GenFormat {
+7  S
+O  H
+1 1   0.54044984       -0.97485007       -0.21657970
+2 1   2.92484146       -0.83925223        0.15239669
+3 2   0.18385954       -1.25804198       -1.07875142
+4 2   1.74328720       -0.90927800       -0.10039502
+5 2   3.29706729       -1.59324218        0.64725255
+6 2   3.53032937       -0.60813812       -0.57607828
+7 2   0.04233158       -0.19485993        0.09228101
+0. 0. 0.
+100. 0. 0.
+0. 100. 0.
+0. 0. 100.
+}
+Driver = Ipi {
+  Port = 37016
+  Host = "dftb-zundel"
+  isUnix = Yes
+  Verbosity = 1
+  MinimizeOutput = No
+}
+Hamiltonian = DFTB {
+  ReadInitialCharges = No
+  MaxSCCIterations = 500
+  Charge = 1
+  DampXH = Yes
+  DampXHExponent = 4.0
+  Eigensolver = RelativelyRobust {}
+  HubbardDerivs = {
+    H = -0.1857
+    O = -0.1492
+  }
+  MaxAngularMomentum = {
+    H = "s"
+    O = "p"
+  }
+  SCC = Yes
+  SlaterKosterFiles = Type2FileNames {
+    Prefix = ../dftb-param/
+    Separator = "-"
+    Suffix = ".skf"
+    LowerCaseTypeName = No
+  }
+  ThirdOrderFull = Yes
+  Filling = Fermi {
+    Temperature [K] = 300
+    IndependentKFilling = No
+  }
+  KPointsAndWeights = {
+ 0.0000000000000000 0.0000000000000000 0.0000000000000000 1.0000000000000000
+  }
+  PolynomialRepulsive = {}
+  OldRepulsiveSum = No
+  OrbitalResolvedSCC = No
+  OldSKInterpolation = No
+  InitialCharges = {}
+  SCCTolerance = 1.0000000000000001E-005
+  Mixer = Broyden {
+    MixingParameter = 0.20000000000000001
+    CachedIterations = -1
+    InverseJacobiWeight = 1.0000000000000000E-002
+    MinimalWeight = 1.0000000000000000
+    MaximalWeight = 100000.00000000000
+    WeightFactor = 1.0000000000000000E-002
+  }
+  ElectricField = {}
+  EwaldParameter = 0.0000000000000000
+  SpinPolarisation = {}
+  Dispersion = {}
+  ThirdOrder = No
+}
+Options = {
+  WriteResultsTag = No
+  WriteDetailedOut = No
+  WriteBandOut = No
+  WriteEigenvectors = No
+  WriteAutotestTag = No
+  WriteDetailedXML = No
+  AtomResolvedEnergies = No
+  RestartFrequency = 20
+  RandomSeed = 0
+  WriteHS = No
+  WriteRealHS = No
+  MinimiseMemoryUsage = No
+  ShowFoldedCoords = No
+}
+ParserOptions = {
+  ParserVersion = 4
+  WriteHSDInput = Yes
+  WriteXMLInput = No
+  StopAfterParsing = No
+  IgnoreUnprocessedNodes = No
+}
+Analysis = {
+  ProjectStates = {}
+}
