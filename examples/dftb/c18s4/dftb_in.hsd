@@ -1,0 +1,52 @@
+Geometry = GenFormat { 
+     <<< "c6.gen"
+} 
+ 
+Driver = Ipi {
+	Port=37016
+ 	Host="dftb"
+	isUnix = Yes
+	Verbosity = 1
+   } 
+
+Hamiltonian = DFTB{ 
+   ReadInitialCharges = No
+   MaxSCCIterations = 500
+   Charge = 0 
+   DampXH = Yes 
+   DampXHExponent = 4.0 
+   Eigensolver = RelativelyRobust{} 
+   HubbardDerivs = { 
+      H = -0.1857 
+      C = -0.1492
+      S = -0.11
+#      O = -0.1492
+   } 
+   MaxAngularMomentum = { 
+      H = "s" 
+      C = "p"
+      S = "d"
+#      O = "p"
+   } 
+   SCC = Yes 
+   SlaterKosterFiles = Type2FileNames{ 
+      Prefix = ../dftb-param/ 
+      Separator = "-" 
+      Suffix = ".skf" 
+   } 
+   ThirdOrderFull = Yes 
+   Filling = Fermi{
+	Temperature[K] = 300
+	}
+   KPointsAndWeights[absolute] = {
+      0.0 0.0 0.0 1.0
+   }
+   Dispersion = LennardJones {
+      Parameters = UFFParameters{}
+   }
+} 
+Options { 
+   WriteResultsTag = No
+   WriteDetailedOut = No
+   WriteBandOut = No
+} 

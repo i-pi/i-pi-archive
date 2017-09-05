@@ -1,80 +1,33 @@
-(c) 2017, Marcus Elstner, Karlsruher Institut für Technologie
-All rights reserved
+MICHAEL GAUS (mgaus@wisc.edu) Nov 13th, 2012
 
-This work is licensed under the Creative Commons Attribution-ShareAlike 4.0
-International License. To view a copy of this license, consult the LICENSE file
-or visit http://creativecommons.org/licenses/by-sa/4.0/ .
+GENERAL PURPOSE PARAMETER SET
 
-NOTE: The rights holder(s) for this work explicitly require that the attribution
-conditions of this license are enforced. Use in part or in whole of this data is
-permitted only under the condition that the scientific background of the
-Licensed Material will be CITED IN ANY PUBLICATIONS ARISING FROM ITS USE. The
-required references are specified in this file and must be included in resulting works.
+name   requires    elements
+3ob     -           C-H-N-O
 
+short description:
+DFTB3 files for bio and organic molecules
 
-SVN repository information:
----------------------------
-$Id: README 3850 2011-09-16 13:15:26Z aradi $
-$URL: svn+ssh://svn/slako/tags/skful/mio-1-1/README $
+detailed description:
+This set has been specifically designed for DFTB3 and supersedes the MIO
+parameter set. Main improvements over MIO are improved geometries for 
+non-covalent bonds as e.g. the hydrogen bond in the water dimer, a 
+great reduction of the consistent overbinding and an overall improved
+performance. Comprehensive benchmark tests can be found in [JCTC2012]. 
 
-The set has been developed for organic molecules including O, N, C, H
-[PRB98], and S [JMS01]. Extensive test for molecules
-consisting of O N C and H can be found in [JCP05] and for the
-performance of S in [JMS01] and for the whole SONCH set in [JCTC06].
+The following zeta and Hubbard derivative parameters should be used
+for DFTB3 calculations (atomic units):
+zeta: 4.00 (also called DampXHExponent)
+C     -0.1492
+H     -0.1857
+N     -0.1535
+O     -0.1575
 
-The ONCH set works quite well for peptide structures and conformation
-energies [CP01], the geometries of H-bonded systems are well
-reproduced while bonding energies are slightly understimated [PSS00].
+RELEVANT PUBLICATIONS
+[JCTC2012]   J. Chem. Theory Comput., 2013, 9 (1), pp 338–354.
+             DOI: http://dx.doi.org/10.1021/ct300849w
 
-Including dispersion energies, even stacked complexes like DNA base
-pairs are well treated [JCP01].
-
-Several publications appeared using phosphorus parameters (see
-[JCTC2008] and [JCTC2011] and references therein) showing good
-performance for geometrical properties but also severe drawbacks for
-energetic properties of small phosphorus compounds (mainly
-phosphates). The rising demand of the community lead us to publish
-phosphorus parameters even though we consider them on a developmental
-stage. Benchmark tests show good performance for geometrical
-properties (while special care is necessary for some bond types, see
-[JCTC2011]). Generally very poor results are found for nonisodesmic
-reactions. However, a test on phosphate hydrolysis reactions showed
-reasonable results. Specifically for DFTB3 proton affinities of
-phosphorus containing molecules are described with a mean unsigned
-error of only about 3 kcal/mol.
-
-
-Relevant Publications
----------------------
-
-[PRB98]  	Phys. Rev. B 58 (1998) 7260 
-[JMS01]  	J. Mol. Struc. (THEOCHEM) 541 (2001) 185
-[JCP05] 	J. Chem. Phys 122 (122) 114110 
-[JCTC06] 	J. Chem. Theor. and Comput. 2006
-[JCP01] 	J. Chem. Phys. 114 (2001) 5149
-[CP01] 		Chem. Phys. 263 (2001) 203
-[PSS00] 	Phys. Stat. Sol. b 217 (2000) 357. 	 
-[JCTC2011]      Gaus,Cui,Elstner,J.Chem.TheoryComput.2011,7,931-948.
-[JCTC2008]      Yang,Yu,York,Elstner,Cui,J.Chem.TheoryComput.2008,4,2067-2084.
-
-
-Required references
--------------------
-O-N-C-H:  [PRB98]
-S-*:      [JMS01]
-P-*:      [JCTC2011]
-
-Hyphenation of elements (A-B-C) means all possible combinations of SK files
-* stands for all available elements in this set
-
-DFTB3 parameters: (see [JCTC2011])
-P   Udcalc           -0.0702
-P   Udfit            -0.14
-
-Further notes:
-- LDA spin-polarization value applied for P, to be consistent with mio-0-1
-- epsilon_d shifted from 0.02 to 0.52H to avoid excessive d-orbital involvement
-- basis set coefficients defined as: 0.50,1.19,2.83,6.73,15.0 being the 
-  same as for Sulfur except the last coefficient 
-  (deviating from the geometric progression as usually used).
+PUBLICATIONS TO BE CITED
+[JCTC2012]   J. Chem. Theory Comput., 2013, 9 (1), pp 338–354.
+             DOI: http://dx.doi.org/10.1021/ct300849w
 
