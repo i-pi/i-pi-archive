@@ -37,7 +37,7 @@ class InputThermoBase(Input):
          to the bath. Defaults to 0.0.
       tau: An optional float giving the damping time scale. Defaults to 1.0.
       invar: Sets the estimated variance of the inherent noise term. Defaults to 0.0.
-      invtau: Coupling time coefficient for automatic adjustment of invar. Defaults to 0.0.
+      invcc: Coupling time coefficient for automatic adjustment of invar. Defaults to 0.0.
       pile_lambda: Scaling for the PILE damping relative to the critical damping.
       A: An optional array of floats giving the drift matrix. Defaults to 0.0.
       C: An optional array of floats giving the static covariance matrix.
@@ -62,7 +62,7 @@ class InputThermoBase(Input):
                                     "default"   : 0.0,
                                     "help"      : "The inherent noise variance for noisy force langevin thermostats.",
                                     "dimension" : "energy" }),
-            "invtau" : (InputValue, {"dtype"    : float,
+            "invcc" : (InputValue, {"dtype"    : float,
                                     "default"   : 0.0,
                                     "help"      : "The time coefficient for adjustment of NFL thermostat's invar.",
                                     "dimension" : "time" }),
@@ -106,7 +106,7 @@ class InputThermoBase(Input):
          self.mode.store("nfl")
          self.tau.store(thermo.tau)
          self.invar.store(thermo.invar)
-         self.invtau.store(thermo.invtau)
+         self.invcc.store(thermo.invcc)
       elif type(thermo) is ethermostats.ThermoSVR:
          self.mode.store("svr")
          self.tau.store(thermo.tau)
@@ -158,7 +158,7 @@ class InputThermoBase(Input):
       if self.mode.fetch() == "langevin":
          thermo = ethermostats.ThermoLangevin(tau=self.tau.fetch())
       elif self.mode.fetch() == "nfl":
-         thermo = ethermostats.ThermoNFL(tau=self.tau.fetch(), invar=self.invar.fetch(), invtau=self.invtau.fetch())
+         thermo = ethermostats.ThermoNFL(tau=self.tau.fetch(), invar=self.invar.fetch(), invcc=self.invcc.fetch())
       elif self.mode.fetch() == "svr":
          thermo = ethermostats.ThermoSVR(tau=self.tau.fetch())
       elif self.mode.fetch() == "pile_l":
@@ -205,7 +205,7 @@ class InputThermoBase(Input):
             raise ValueError("The thermostat friction coefficient must be set to a non-negative value")
          if self.invar.fetch() < 0:
             raise ValueError("The inherent noise variance must be set to a non-negative value")
-         if self.invtau.fetch() < 0:
+         if self.invcc.fetch() < 0:
             raise ValueError("The automatic invar adjustment coefficient must be set to a non-negative value")
       if self.mode.fetch() in ["gle", "nm_gle", "nm_gle_g"]:
          pass  # PERHAPS DO CHECKS THAT MATRICES SATISFY REASONABLE CONDITIONS (POSITIVE-DEFINITENESS, ETC)

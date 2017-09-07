@@ -200,19 +200,19 @@ class ThermoNFL(Thermostat):
    """Represents a Langevin thermostat for systems driven by stochastical (noisy) forces,
       adding adequate additional damping to compensate for the inherent white noise term
       originating from the forces.
-      The variance of that white noise term (invar) must be set to reach the target temperature.
-      Alternatively, if the adjustment time coefficient invtau is set > 0, invar will be automatically
-      adjusted over time according to the difference of system temperature to target temperature.
+      The variance of that white noise term (invar) must be set correctly to reach the desired temperature.
+      Alternatively, if the adjustment time coefficient invcc is set > 0, invar will be automatically
+      adjusted over time, driven by the difference of system temperature to target temperature.
 
    Depend objects:
       tau: Thermostat damping time scale. Larger values give a less strongly
          coupled thermostat.
       invar: Inherent noise variance. Larger invar results in larger additional damping term.
-      invtau: invar-temperature coupling time constant.
+      invcc: invar-temperature coupling time coefficient.
       T: Coefficient of the diffusive contribution of the thermostat, i.e. the
-         drift back towards equilibrium. Depends on tau and the time step.
+         drift back towards equilibrium. Depends on tau, time step, invar and temperature..
       S: Coefficient of the stochastic contribution of the thermostat, i.e.
-         the uncorrelated Gaussian noise. Depends on T and the temperature.
+         the uncorrelated Gaussian noise. Depends on time step, tau and the temperature.
    """
 
    def get_T(self):
@@ -236,7 +236,7 @@ class ThermoNFL(Thermostat):
       else:
          return 0.0
 
-   def __init__(self, temp = 1.0, dt = 1.0, tau = 0, invar = 0.0, invtau = 0, ethermo=0.0):
+   def __init__(self, temp = 1.0, dt = 1.0, tau = 0, invar = 0.0, invcc = 0, ethermo=0.0):
       """Initialises ThermoNFL.
 
       Args:
@@ -244,7 +244,7 @@ class ThermoNFL(Thermostat):
          dt: The simulation time step. Defaults to 1.0.
          tau: The thermostat damping timescale. Defaults to 0 (off).
          invar: Estimated inherent noise variance. Defaults to 0.0.
-         invtau: invar-temperature coupling time constant. Defaults to 0 (off).
+         invcc: invar-temperature coupling time constant. Defaults to 0 (off).
          ethermo: The initial heat energy transferred to the bath.
             Defaults to 0.0. Will be non-zero if the thermostat is
             initialised from a checkpoint file.
@@ -255,7 +255,7 @@ class ThermoNFL(Thermostat):
       self.invstep = False
       dset(self,"tau",depend_value(value=tau,name='tau'))
       dset(self,"invar",depend_value(value=invar,name='invar'))
-      dset(self,"invtau",depend_value(value=invtau,name='invtau'))
+      dset(self,"invcc",depend_value(value=invcc,name='invcc'))
       dset(self,"T",
          depend_value(name="T",func=self.get_T,
             dependencies=[dget(self,"temp"), dget(self,"tau"), dget(self,"dt"), dget(self,"invar")]))
@@ -283,10 +283,10 @@ class ThermoNFL(Thermostat):
       self.p = p
       self.ethermo = et
 
-      if self.invtau > 0 and self.invstep:
+      if self.invcc > 0 and self.invstep:
          ekin = np.dot(depstrip(self.p),depstrip(self.p)/depstrip(self.m))*0.5
          mytemp = ekin/Constants.kb/self.ndof * 2
-         self.invar += Constants.kb * (mytemp - self.temp) / self.invtau * self.dt
+         self.invar += Constants.kb * (mytemp - self.temp) / self.invcc * self.dt
          if self.invar < 0: self.invar = 0
 
          print("ThermoNFL inherent noise variance: " + str(self.invar))
