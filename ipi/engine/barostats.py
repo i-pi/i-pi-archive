@@ -134,11 +134,11 @@ class Barostat(dobject):
       dself.kstress = depend_value(name='kstress', func=self.get_kstress,
             dependencies=[ dget(beads,"q"), dget(beads,"qc"), dget(beads,"pc"), dget(forces,"f") ])
       dself.kstress_sc = depend_value(name='kstress_sc', func=self.get_kstress_sc,
-            dependencies=[ dget(beads,"q"), dget(beads,"qc"), dget(forces,"fsc_part_2")  ])
+            dependencies=[ dget(beads,"q"), dget(beads,"qc"), dget(forces,"fsc_part_2"), dget(forces,"f")  ])
       dself.stress = depend_value(name='stress', func=self.get_stress,
             dependencies=[ dget(self,"kstress"), dget(cell,"V"), dget(forces,"vir") ])
       dself.stress_sc = depend_value(name='stress_sc', func=self.get_stress_sc,
-            dependencies=[ dget(self,"kstress_sc"), dget(cell,"V"), dget(forces,"vir") ])
+            dependencies=[ dget(self,"kstress_sc"), dget(cell,"V"), dget(forces,"vir"), dget(forces,"virssc_part_2") ])
       if bias != None:
          dself.kstress.add_dependency(dget(bias,"f"))
          dself.stress.add_dependency(dget(bias,"vir"))
@@ -550,11 +550,13 @@ class BaroSCBZP(Barostat):
       high order part of the Suzuki-Chin stress"""
 
       # integrates with respect to the "high order" part of the stress with a timestep of dt /2
-      press =  np.trace(self.stress_sc) / 3.0
+      press = np.trace(self.stress_sc) / 3.0
       self.p += self.dt / 2 * 3.0 * (self.cell.V * press)
 
    def pstep(self, level=0):
       """Propagates the momentum of the barostat."""
+
+      #self.pscstep()
 
       # we are assuming then that p the coupling between p^2 and dp/dt only involves the fast force
       dt = self.pdt[level] # this is already set to be half a time step at the specified MTS depth
