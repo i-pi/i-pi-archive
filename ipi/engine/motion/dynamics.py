@@ -582,9 +582,9 @@ class SCIntegrator(NVTIntegrator):
         
         if level == 0:
             # bias goes in the outer loop
-            self.beads.p += (depstrip(self.bias.f)) * self.pdt[level]            
+            self.beads.p += depstrip(self.bias.f) * self.pdt[level]            
         # just integrate the Trotter force scaled with the SC coefficients, which is a cheap approx to the SC force       
-        self.beads.p += self.forces.forces_mts(level) * ( 1.0 + self.coeffsc) * self.pdt[level]
+        self.beads.p += self.forces.forces_mts(level) * (self.forces.coeffsc_part_1) * self.pdt[level]
             
             
     def step(self, step=None):
