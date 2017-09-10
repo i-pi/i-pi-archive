@@ -1,10 +1,10 @@
 <simulation verbosity="medium">
     <output prefix="simulation">
-        <properties stride="4" filename="out">  [ step, time{picosecond}, conserved, temperature{kelvin}, kinetic_opsc, kinetic_tdsc, kinetic_prsc, potential_opsc, potential_tdsc, spring ] </properties>
-        <trajectory filename="f" stride="40"> positions </trajectory>
+        <properties stride="1" filename="out">  [ step, time{picosecond}, conserved, temperature{kelvin}, kinetic_opsc, kinetic_tdsc, kinetic_prsc, potential_opsc, potential_tdsc, spring ] </properties>
+        <trajectory filename="pos" stride="40"> positions </trajectory>
         <checkpoint stride="200"/>
     </output>
-    <total_steps> 1 </total_steps>
+    <total_steps> 100 </total_steps>
     <prng> <seed>32415</seed> </prng>
     <ffsocket name="lammps" mode="unix">
     <address> driver-sc.16 </address>
@@ -16,7 +16,7 @@
         </initialize>
         <forces><force forcefield="lammps" fd_epsilon="1e-3" nbeads="16"> </force></forces>
         <motion mode="dynamics">
-            <dynamics mode="sc">
+            <dynamics mode="sc" splitting="baoab">
                 <timestep units="femtosecond"> 0.25 </timestep>
                 <thermostat mode="pile_g">
                     <tau units="femtosecond"> 100 </tau>

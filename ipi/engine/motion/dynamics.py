@@ -583,18 +583,36 @@ class SCIntegrator(NVTIntegrator):
         
         if level == 0:
             # bias goes in the outer loop
-            self.beads.p += (depstrip(self.bias.f)) * self.pdt[level]            
+            self.beads.p += depstrip(self.bias.f) * self.pdt[level]            
         # just integrate the Trotter force scaled with the SC coefficients, which is a cheap approx to the SC force       
-        self.beads.p += self.forces.forces_mts(level) * ( 1.0 + self.coeffsc) * self.pdt[level]
-        
+        self.beads.p += self.forces.forces_mts(level) * (1.0 + self.forces.coeffsc_part_1) * self.pdt[level]
             
             
     def step(self, step=None):
         
         # the |f|^2 term is considered to be slowest (for large enough P) and is integrated outside everything.
         # if nmts is not specified, this is just the same as doing the full SC integration
-        self.beads.p += (depstrip(self.forces.fsc) - self.coeffsc * self.forces.f) * self.dt * 0.5
-        super(SCIntegrator,self).step(step)
-        self.beads.p += (depstrip(self.forces.fsc) - self.coeffsc * self.forces.f) * self.dt * 0.5
-        
+        if self.splitting == "obabo":
+            # thermostat is applied for dt/2
+            self.tstep()
+            self.pconstraints()
 
+            # forces are integerated for dt with MTS.
+            self.beads.p += depstrip(self.forces.fsc_part_2) * self.dt * 0.5
+            self.mtsprop(0)
+            self.beads.p += depstrip(self.forces.fsc_part_2) * self.dt * 0.5
+
+            #thermostat is applied for dt/2
+            self.tstep()
+            self.pconstraints()
+
+        elif self.splitting == "baoab":
+
+            self.beads.p += depstrip(self.forces.fsc_part_2) * self.dt * 0.5
+            self.mtsprop_ba(0)
+            # thermostat is applied for dt
+            self.tstep()
+            self.pconstraints()
+            self.mtsprop_ab(0)
+            self.beads.p += depstrip(self.forces.fsc_part_2) * self.dt * 0.5
+        
