@@ -2212,7 +2212,7 @@ class Trajectories(dobject):
       self.dcell = system.cell.copy()
       self.dforces = self.system.forces.copy(self.dbeads, self.dcell)
 
-      if self.beads.nbeads >= 2:
+      if system.beads.nbeads >= 2:
           self.scdbeads = system.beads.copy(system.beads.nbeads/2)
           self.scdcell = system.cell.copy()
           self.scdforces = self.system.forces.copy(self.scdbeads, self.scdcell)
