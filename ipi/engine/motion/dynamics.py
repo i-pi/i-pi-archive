@@ -597,9 +597,9 @@ class SCIntegrator(NVTIntegrator):
             self.pconstraints()
 
             # forces are integerated for dt with MTS.
-            self.beads.p += (depstrip(self.forces.fsc) - self.coeffsc * self.forces.f) * self.dt * 0.5
+            self.beads.p += depstrip(self.forces.fsc_part_2) * self.dt * 0.5
             self.mtsprop(0)
-            self.beads.p += (depstrip(self.forces.fsc) - self.coeffsc * self.forces.f) * self.dt * 0.5
+            self.beads.p += depstrip(self.forces.fsc_part_2) * self.dt * 0.5
 
             #thermostat is applied for dt/2
             self.tstep()
@@ -607,12 +607,11 @@ class SCIntegrator(NVTIntegrator):
 
         elif self.splitting == "baoab":
 
-            self.beads.p += (depstrip(self.forces.fsc) - self.coeffsc * self.forces.f) * self.dt * 0.5
+            self.beads.p += depstrip(self.forces.fsc_part_2) * self.dt * 0.5
             self.mtsprop_ba(0)
             # thermostat is applied for dt
             self.tstep()
             self.pconstraints()
             self.mtsprop_ab(0)
-            self.beads.p += (depstrip(self.forces.fsc) - self.coeffsc * self.forces.f) * self.dt * 0.5
+            self.beads.p += depstrip(self.forces.fsc_part_2) * self.dt * 0.5
         
-
