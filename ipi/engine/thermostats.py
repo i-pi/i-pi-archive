@@ -1045,7 +1045,7 @@ class ThermoDFL(Thermostat):
       if self.apat > 0 and self.idstep:
          ekin = np.dot(depstrip(self.p),depstrip(self.p)/depstrip(self.m))*0.5
          mytemp = ekin/Constants.kb/self.ndof * 2
-         self.idT += (mytemp - self.temp) / self.temp / self.apat * self.dt
+         self.idT += (np.sqrt(mytemp / self.temp) - 1) / self.apat*self.dt
          if self.idT < 0: self.idT = 0.0
          elif self.idT > 1: self.idT = 1.0
 
