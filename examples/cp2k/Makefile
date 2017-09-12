@@ -4,8 +4,8 @@
 # i-PI Copyright (C) 2014-2015 i-PI developers
 # See the "licenses" directory for full license information.
 
-.PHONY: all clean npt-classical npt-piglet nvt-classical nvt-piglet
-all: npt-classical npt-piglet nvt-classical nvt-piglet
+.PHONY: all clean npt-classical npt-piglet nvt-classical nvt-piglet nvt-dfl
+all: npt-classical npt-piglet nvt-classical nvt-piglet nvt-dfl
 
 CP2K:=cp2k.x
 IPI:=i-pi
@@ -36,6 +36,11 @@ npt-piglet:
 nvt-piglet:
 	cd nvt-piglet; $(IPI) nvtpgl_ipi.xml & sleep 10; \
 	$(call run_cp2k,4,nvtpgl_cp2k.in) \
+	wait
+
+nvt-dfl:
+	cd nvt-dfl; $(IPI) nvtdfl_ipi.xml & sleep 5; \
+	$(call run_cp2k,1,nvtdfl_cp2k.in) \
 	wait
 
 clean:
