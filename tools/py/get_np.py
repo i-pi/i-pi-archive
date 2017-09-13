@@ -37,7 +37,7 @@ def rad_histo(data, delta, r_k, spread):
 
 def get_np(path, fname, bsize, P, m, Tkelv, nskip, s, ns):   
    
-    # initialises the data files.
+    # initialises grids.
     T= Tkelv*3.1668105*10**(-6) 
     dq = np.zeros((bsize,3) , float)
     dqxgrid = np.linspace(-s, s, ns)
@@ -46,12 +46,15 @@ def get_np(path, fname, bsize, P, m, Tkelv, nskip, s, ns):
     deltarad = dqxgrid*0.0  
     deltarad = np.sqrt(dqxgrid**2+ dqygrid**2 + dqzgrid**2)
 
+    hxlist =[]
+    hylist =[]
+    hzlist =[]
+    hradlist =[]
+
     nplistx = []
     nplisty = []
     nplistz = []
     npradlist = []
-    avghz =[]
-    avghrad= []
 
     # Defines the grid for momentum.
     pxi = -np.pi/(dqxgrid[1]-dqxgrid[0])
@@ -77,23 +80,25 @@ def get_np(path, fname, bsize, P, m, Tkelv, nskip, s, ns):
     data_path =str(path + fname)
     delta= np.loadtxt(data_path)
     step = np.shape(delta)[0] 
-    
-
    
     n_block =int(step/bsize)
+
     if (n_block ==0):
              print 'not enough data to build a block'
              exit()
     for x in xrange(n_block):
         dq = delta[x*bsize : (x+1)*bsize]
         dq_module = np.sqrt((dq.T[0])**2 + (dq.T[1])**2 + (dq.T[2])**2)											
-   
+     
         hx = histo(np.concatenate((dq.T[0], -dq.T[0])), dqxgrid, kernel, 0, np.sqrt(T * P * m))
         hy = histo(np.concatenate((dq.T[1], -dq.T[1])), dqygrid, kernel, 0, np.sqrt(T * P * m))
         hz = histo(np.concatenate((dq.T[2], -dq.T[2])), dqzgrid, kernel, 0, np.sqrt(T * P * m))         
         hrad = rad_histo(dq_module, deltarad, rad_kernel, (0.5 * T * P * m))  
-        avghz.append(hz)
-        avghrad.append(hrad)
+        hxlist.append(hx)
+        hylist.append(hy)
+        hzlist.append(hz)
+        hradlist.append(hrad)
+        
         # Computes the Fourier transform of the end to end vector.
         npx = np.abs(np.fft.fftshift(np.fft.fft(hx)))
         npy = np.abs(np.fft.fftshift(np.fft.fft(hy)))
@@ -106,7 +111,26 @@ def get_np(path, fname, bsize, P, m, Tkelv, nskip, s, ns):
         nplisty.append(npy)
         nplistz.append(npz)
         npradlist.append(rad_npd) 
-       
+    
+    #save the convoluted histograms of the end-to-end distances
+    avghx = np.mean(np.asarray(hxlist), axis = 0)
+    normhx= np.sum(avghx)
+    errhx = np.std(np.asarray(hxlist), axis = 0)/ np.sqrt(n_block)/normhx
+    avghy = np.mean(np.asarray(hylist), axis = 0)
+    normhy= np.sum(avghy)
+    errhy = np.std(np.asarray(hylist), axis = 0)/ np.sqrt(n_block)/normhy
+    avghz = np.mean(np.asarray(hzlist), axis = 0)
+    normhz= np.sum(avghz)
+    errhz = np.std(np.asarray(hzlist), axis = 0)/ np.sqrt(n_block)/normhz
+    np.savetxt(str(path + "histo.data"), np.c_[dqxgrid, avghx, errhx, dqygrid, avghy, errhy, dqzgrid, avghz, errhz])   
+ 
+    avghrad = np.mean(np.asarray(hradlist), axis = 0)
+    normhrad=np.sum(avghrad)
+    errhrad = np.std(np.asarray(hradlist), axis = 0)/ np.sqrt(n_block)/normhrad
+   
+    np.savetxt(str(path + "rad-histo.data"), np.c_[deltarad, avghrad, errhrad])
+
+    #save the resulting momentum distribution for each axes
     avgnpx = np.mean(np.asarray(nplistx), axis = 0)
     avgnpy = np.mean(np.asarray(nplisty), axis = 0)
     avgnpz = np.mean(np.asarray(nplistz), axis = 0)
@@ -122,7 +146,7 @@ def get_np(path, fname, bsize, P, m, Tkelv, nskip, s, ns):
     
     np.savetxt(str(path + "np.data"), np.c_[pxgrid,avgnpx,errnpx,avgnpy,errnpy,avgnpz,errnpz])
     
-    
+    #print the average value of p-square for each direction
     psqmedx =  0.
     psqmed2x = 0.
     psqmedy =  0.
@@ -143,15 +167,8 @@ def get_np(path, fname, bsize, P, m, Tkelv, nskip, s, ns):
     print 'av_pz^2', psqmedz/n_block, 'sigmaz', np.sqrt((psqmed2z/n_block) - (psqmedz/n_block)**2)/np.sqrt(n_block)
  
 
-    avgnrad = np.mean(np.asarray(avghrad), axis = 0)
-    normhrad=np.sum(avgnrad)
-    errrad = np.std(np.asarray(avghrad), axis = 0)/ np.sqrt(n_block)/normhrad
-    avgnz = np.mean(np.asarray(avghz), axis = 0)
-    normhz=np.sum(avgnz)
-    errhz = np.std(np.asarray(avghz), axis = 0)/ np.sqrt(n_block)/normhz
-    np.savetxt(str(path + "rad-histo.data"), np.c_[deltarad,  avgnrad, errrad, dqzgrid, avgnz, errhz])
-
-    #Getting radial n(p)
+    
+    #save the radial n(p) and print the average value of p-square
     avgnprad = np.mean(np.asarray(npradlist), axis = 0)  
     norm=np.sum(avgnprad*pstep)
     errnprad = np.std(np.asarray(npradlist), axis = 0)/np.sqrt(n_block)/norm
@@ -176,7 +193,7 @@ if __name__ == '__main__':
     parser.add_argument("-T", type=float, default= 300, help="Specify the temperature of the system in kelvin")
     parser.add_argument("-nskip", type=int, default= 10, help="Removes the equilibration steps")
     parser.add_argument("-dint", type=float, default=10, help="Specify the positive extrema of the interval to build the histogram ([-dint,dint])")
-    parser.add_argument("-ns", type=float, default=50000, help="Specify the number of point to use for the histogram")
+    parser.add_argument("-ns", type=float, default=5000, help="Specify the number of point to use for the histogram")
     args = parser.parse_args()
 
     get_np(args.path, args.fname, args.bsize, args.P, args.m, args.T, args.nskip, args.dint, args.ns)
