@@ -12,6 +12,7 @@ Algorithms implemented by Michele Ceriotti and Benjamin Helfrecht, 2015
 
 
 import numpy as np
+from scipy import linalg
 import time
 
 from ipi.engine.motion import Motion
@@ -117,12 +118,17 @@ class GradientMapper(object):
         self.dcell = dumop.cell.copy()
         self.dforces = dumop.forces.copy(self.dbeads, self.dcell)
 
+    def set_pos(self,x):
+        """Set the positions """
+        self.dbeads.q = x
+
     def __call__(self,x):
         """computes energy and gradient for optimization step"""
 
         self.dbeads.q = x
         e = self.dforces.pot   # Energy
         g = -self.dforces.f   # Gradient
+
         return e, g
 
 
@@ -166,7 +172,7 @@ class InstantonMapper(object):
 
         elif self.mode=='half':
             self.dbeads.q = x.copy()
-            e = np.zeros(1)
+            e = 0.00
             g = np.zeros(self.dbeads.q.shape, float)
             g2 = np.zeros(self.dbeads.q.shape, float)
             for i in range(self.dbeads.nbeads - 1):
@@ -232,7 +238,8 @@ class InstantonOptimizer(dobject):
         self.old_u      = geop.old_u
         self.old_f      = geop.old_f
         self.temp       = geop.ensemble.temp
-        print geop.ensemble.temp
+
+
         if geop.ensemble.temp == -1.0 or geop.ensemble.temp == 1.0: #This is due to a little inconsistency on the default value
             if self.beads.nbeads != 1:
                 raise ValueError("Temperature must be specified for an Instanton calculation ")
@@ -242,13 +249,16 @@ class InstantonOptimizer(dobject):
         self.delta          = geop.delta
 
 
-        self.hessian_update = geop.hessian_update
-        self.hessian_asr    = geop.hessian_asr
-        self.hessian_init   = geop.hessian_init
-        self.final_rates    = geop.final_rates
+        self.hessian_update  = geop.hessian_update
+        self.hessian_asr     = geop.hessian_asr
+        self.hessian_init    = geop.hessian_init
+        self.final_rates     = geop.final_rates
 
         self.gm.bind(self)
         self.im.bind(self)
+
+        #Hessian
+        self.initial_hessian = None
 
         if geop.hessian.size != (self.beads.q.size * self.beads.q.size):
             if geop.hessian.size == 0: #Hessian not provided
@@ -277,6 +287,8 @@ class InstantonOptimizer(dobject):
         """
         self.qtime = -time.time()
         info("\nMD STEP %d" % step, verbosity.medium)#ALBERTO
+        #np.set_printoptions(precision=10, suppress=True, threshold='nan')
+
 
         if step == 0:
             info(" @GEOP: Initializing INSTANTON", verbosity.low)
@@ -294,7 +306,11 @@ class InstantonOptimizer(dobject):
                         if self.mode == 'full':
                             self.beads.q[i, :] += self.delta * np.cos((i+1) *2.0*np.pi / float(self.beads.nbeads)) * imvector[:]
                         elif self.mode== 'half':
-                            self.beads.q[i, :] += self.delta * np.cos((i + 1) * np.pi / float(self.beads.nbeads)) * imvector[:]
+                           self.beads.q[i, :] += self.delta * np.cos(i * np.pi / float(self.beads.nbeads-1)) * imvector[:]
+                           # print 'ALBERTO-line'
+                           # n=self.beads.nbeads
+                           # self.beads.q[:,0] =np.linspace(-1,1,n)
+
 
                     if self.hessian_init !='true':
                         info(" @GEOP: Hessian_init isn't true but we have stretched the polymer so we are going to compute the initial hessian anyway", verbosity.low)
@@ -302,15 +318,13 @@ class InstantonOptimizer(dobject):
                 else:
                     info(" @GEOP: Starting from the provided geometry in the extended phase space", verbosity.low)
 
-
                 if self.hessian_init =='true':
                     info(" @GEOP: We are computing the initial hessian", verbosity.low)
                     get_hessian(self.hessian, self.gm,self.beads.q)
                     add_spring_hessian(self.im, self.hessian)
-
                 elif self.hessian_init =='expand':
                     # np.set_printoptions(precision=6, suppress=True)
-                    expand_hessian(self.hessian_init,self.hessian,self.beads.natoms)
+                    expand_hessian(self.initial_hessian,self.hessian,self.beads.natoms)
 
                 #Init im
                 u,g = self.im(self.beads.q)
@@ -348,14 +362,20 @@ class InstantonOptimizer(dobject):
 
         info(' @Exit step: Energy difference: %.1e, (condition: %.1e)' % (np.absolute((fx - u0) / self.beads.natoms)[0],self.tolerances["energy"] ),verbosity.medium)
         info(' @Exit step: Maximum force component: %.1e, (condition: %.1e)' % (np.amax(np.absolute(self.forces.f+self.im.f)), self.tolerances["force"]), verbosity.medium)
-        info(' @Exit step: Norm of the step: %.1e, (condition: %.1e)' % (x, self.tolerances["position"]), verbosity.medium)
+        info(' @Exit step: Maximum component step component: %.1e, (condition: %.1e)' % (x, self.tolerances["position"]), verbosity.medium)
 
         if (np.absolute((fx - u0) / self.beads.natoms) <= self.tolerances["energy"]) \
                 and ((np.amax(np.absolute(self.forces.f + self.im.f)) <= self.tolerances["force"]) or
                          (np.linalg.norm(self.forces.f.flatten() - self.old_f.flatten()) <= 1e-08)) \
                 and (x <= self.tolerances["position"]):
+
             print_instanton(self.hessian, self.gm,self.im,self.hessian_asr, self.final_rates)
             softexit.trigger("Geometry optimization converged. Exiting simulation")
+
+        #Jeremy's condition
+        #if (x <= self.tolerances["position"]):
+        #    print_instanton(self.hessian, self.gm,self.im,self.hessian_asr, self.final_rates)
+        #    softexit.trigger("Geometry optimization converged. Exiting simulation")
 
 #-------------------------------------------------------------------------------------------------------------
 
@@ -387,6 +407,7 @@ def Instanton(x0, f0,f1, h0, update,asr, im,gm, big_step):
 
 
     # Make movement  and get new energy (u)  and forces(f) using mapper
+
     x = x0 + d_x
     u, g1 = im(x)
     u, g2 = gm(x)
@@ -402,15 +423,18 @@ def Instanton(x0, f0,f1, h0, update,asr, im,gm, big_step):
             add_spring_hessian(im,h0)
         u, g = gm(x) #To update pos and for values in the mapper. (Yes, it is stricly unnecesary but keeps the code simple)
 
+
 #-------------------------------------------------------------------------------------------------------------
-def get_hessian(h,gm,x0,d=0.01):
+def get_hessian(h,gm,x0,d=0.001):
+
+#Think about the case you have numerical gradients
 
     info(" @Instanton: Computing hessian" ,verbosity.low)
     ii = gm.dbeads.natoms * 3
-    print id(h)
     h[:]=np.zeros((h.shape),float)
 
     for j in range(ii):
+        info(" @Instanton: Computing hessian: %d of %d" % ((j+1),ii), verbosity.medium)
         x = x0.copy()
 
         x[:, j] = x0[:, j] + d
@@ -423,6 +447,8 @@ def get_hessian(h,gm,x0,d=0.01):
         for i in range(gm.dbeads.nbeads):
             h[j + i * ii, i * ii:(i + 1) * ii] = g[i, :]
 
+    gm.set_pos(x0)
+
 
 def add_spring_hessian(im,h):
     """ Add spring terms to the extended hessian
@@ -431,14 +457,22 @@ def add_spring_hessian(im,h):
         return
 
     ii = im.dbeads.natoms * 3
-
-    # Spring part
     h_sp = im.dbeads.m3[0] * im.omega2
-    # Diagonal
-    diag = np.diag(2.0 * h_sp)
 
-    for i in range(0, im.dbeads.nbeads):
-        h[i * ii:(i + 1) * ii, i * ii:(i + 1) * ii] += diag
+    # Diagonal
+    diag1 = np.diag(h_sp)
+    diag2 = np.diag(2.0 * h_sp)
+
+    if im.mode == 'half':
+        i=0
+        h[i * ii:(i + 1) * ii, i * ii:(i + 1) * ii] += diag1
+        i=im.dbeads.nbeads-1
+        h[i * ii:(i + 1) * ii, i * ii:(i + 1) * ii] += diag1
+        for i in range(1, im.dbeads.nbeads-1):
+            h[i * ii:(i + 1) * ii, i * ii:(i + 1) * ii] += diag2
+    elif im.mode =='full':
+        for i in range(0, im.dbeads.nbeads):
+            h[i * ii:(i + 1) * ii, i * ii:(i + 1) * ii] += diag2
 
     # Non-Diagonal
     ndiag = np.diag(-h_sp)
@@ -460,14 +494,10 @@ def expand_hessian(h0,h,natoms):
     """
     info(" @GEOP: We are in expand_hessian", verbosity.low)
 
-    raise ValueError("@Expand hessian. This part is not ready yet.")
-    #ii = 3*natoms
-    #hessian = np.zeros( (n*natoms*3,n*natoms*3) )
-
-    #for i in range (n):
-    #    hessian[ i*ii:(i+1)*ii , i*ii:(i+1)*ii  ] = h
-
-    #return hessian
+    if h0 == None:
+        return
+    if h0.size != h.size:
+        raise ValueError("@Expand hessian. This part is not ready yet.")
 
 def get_imvector(h,  m3):
     """ Compute eigenvector  corresponding to the imaginary mode
@@ -498,7 +528,7 @@ def get_imvector(h,  m3):
     info(" @GEOP: 2 frequency %4.1f cm^-1" % freq[1], verbosity.low)
     info(" @GEOP: 3 frequency %4.1f cm^-1" % freq[2], verbosity.low)
     if freq[0] > -80 and freq[0] < 0:
-        info(" @GEOP: Warning, small negative frequency %4.1f cm^-1" % freq, verbosity.low)
+        raise ValueError(" @GEOP: Small negative frequency %4.1f cm^-1" % freq, verbosity.low)
     elif freq[0] > 0:
         raise ValueError("@GEOP: The smallest frequency is positive. We aren't in a TS. Please check your hessian")
 
@@ -590,7 +620,7 @@ def clean_hessian(h,q, natoms,nbeads,m,m3,asr):
 
     #Count
     dd = np.sign(d) * np.absolute(d) ** 0.5 / (2 * np.pi * 3e10 * 2.4188843e-17) #convert to cm^-1
-
+    #print dd[0:6]
     #Zeros
     condition = np.abs(dd) < 0.01 #Note that dd[] units are cm^1
     nzero= np.extract(condition, dd)
@@ -602,53 +632,58 @@ def clean_hessian(h,q, natoms,nbeads,m,m3,asr):
          info(" @GEOP: Warning, we have %d 'zero' frequencies" %nzero.size, verbosity.low)
 
     #Negatives
-    condition = dd < -0.01 #Note that dd[] units are cm^1
+    condition = dd < -4.0 #Note that dd[] units are cm^1
     nneg = np.extract(condition, dd)
-    info(" @GEOP: We have %d 'neg' frequencies " % (nneg.size), verbosity.high)
+    info(" @Clean hessian: We have %d 'neg' frequencies " % (nneg.size), verbosity.medium)
+
 
     # Now eliminate external degrees of freedom from the dynmatrix
-    d = np.delete(d,range(nneg.size,nneg.size+nzero.size))
-    w = np.delete(w, range(nneg.size,nneg.size+nzero.size),axis=1)
+    print nzero.size
+    if nzero.size > 0:
+        if np.linalg.norm(nzero) > 0.01:
+            info(" Warning @CLean hessian: We have deleted %d 'zero' frequencies " % (nzero.size), verbosity.high)
+            info(" but the norm is greater than 0.01 cm^-1.  This should not happen." % (nzero.size), verbosity.high)
 
+        d = np.delete(d,range(nneg.size,nneg.size+nzero.size))
+        w = np.delete(w, range(nneg.size,nneg.size+nzero.size),axis=1)
 
-    #print np.sign(d) * np.absolute(d).T ** 0.5 / (2 * np.pi * 3e10 * 2.4188843e-17) #convert to cm^-1
-    #for i in range(mp.dbeads.q.size):
-    #    np.set_printoptions(precision=4, suppress=True)
-    #    print h[i, i]
+    #dd = np.sign(d) * np.absolute(d) ** 0.5 / (2 * np.pi * 3e10 * 2.4188843e-17)
+    #print dd[0:6]
     return d,w
 
 def print_instanton(h,gm,im,asr,rates):
     # Compute action
+    np.set_printoptions(precision=4, suppress=True,threshold=np.nan)
     action1 = gm.dforces.pot / (im.temp * im.dbeads.nbeads * units.Constants.kb)
     action2 = im.pot / (im.temp * im.dbeads.nbeads * units.Constants.kb)
     # Note that for the half polymer the factor 2 cancels out (One factor in *.pot and one factor in *.nbeads)
-    print  'ACTION1', action1 / units.Constants.hbar
-    print  'ACTION2', action2 / units.Constants.hbar
-    print  'ACTION', (action1 + action2) / units.Constants.hbar
+    print  'S1/hbar', action1 / units.Constants.hbar
+    print  'S2/hbar', action2 / units.Constants.hbar
+    print  'S/hbar', (action1 + action2) / units.Constants.hbar
+    print  'ALBERTO', action1 / units.Constants.hbar, action2 / units.Constants.hbar, (action1 + action2) / units.Constants.hbar
 
     if rates != 'true':
         info(" Compute rates is false, we are not going to compute them.", verbosity.low)
     else:
         info(" Computing rates. For this we need to compute the hessian.", verbosity.low)
-        np.set_printoptions(precision=4, suppress=True,threshold=np.nan)
+
+
         if im.mode =='full':
             get_hessian(h, gm, im.dbeads.q)
             if gm.dbeads.nbeads != 1:
                 add_spring_hessian(im, h)
             d,w = clean_hessian(h,im.dbeads.q,im.dbeads.natoms,im.dbeads.nbeads,im.dbeads.m,im.dbeads.m3,asr)
-            print "Final  lowest six frequencies"
-            print np.sign(d[0:6]) * np.absolute(d[0:6]) ** 0.5 / (2 * np.pi * 3e10 * 2.4188843e-17)  # convert to cm^-1
+            print "Final  lowest eight frequencies"
+            print np.sign(d[0:8]) * np.absolute(d[0:8]) ** 0.5 / (2 * np.pi * 3e10 * 2.4188843e-17)  # convert to cm^-1
         elif im.mode =='half':
             get_hessian(h, gm, im.dbeads.q)
             hbig=get_doble_hessian(h,im)
             q,nbeads,m,m3 = get_doble(im.dbeads.q, im.dbeads.nbeads, im.dbeads.m, im.dbeads.m3)
             d, w = clean_hessian(hbig, q, im.dbeads.natoms, nbeads, m, m3, asr)
-
-            print "Final  lowest six frequencies"
-            print np.sign(d[0:6]) * np.absolute(d[0:6]) ** 0.5 / (2 * np.pi * 3e10 * 2.4188843e-17)  # convert to cm^-1
+            print "Final  lowest eight frequencies"
+            print np.sign(d[0:8]) * np.absolute(d[0:8]) ** 0.5 / (2 * np.pi * 3e10 * 2.4188843e-17)  # convert to cm^-1
 
         compute_rates(im,gm)
-
 
 def get_doble_hessian(h0,im):
     """Takes a hessian of the half polymer (only the physical part) and construct the 
@@ -702,6 +737,7 @@ def get_doble_hessian(h0,im):
     # Corner
     h[0:ii, (2*nbeads - 1) * ii:(2*nbeads) * ii] += ndiag
     h[(2*nbeads - 1) * ii:(2*nbeads) * ii, 0:ii] += ndiag
+
 
     return h
 
