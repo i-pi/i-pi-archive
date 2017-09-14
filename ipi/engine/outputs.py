@@ -246,9 +246,9 @@ class TrajectoryOutput(dobject):
 
       # prepare format string for zero-padded number of beads,
       # including underscpre
-      fmt_bead = "{:0" + str(int(1 + np.floor(np.log(self.system.beads.nbeads)/np.log(10)))) + "d}"
+      fmt_bead = "{0:0" + str(int(1 + np.floor(np.log(self.system.beads.nbeads)/np.log(10)))) + "d}"
 
-      if getkey(self.what) in ["positions", "velocities", "forces", "extras", "forces_sc"]:
+      if getkey(self.what) in ["positions", "velocities", "forces", "extras", "forces_sc" , "momenta"]:
 
          # must write out trajectories for each bead, so must create b streams
 

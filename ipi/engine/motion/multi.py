@@ -7,11 +7,11 @@
 
 import numpy as np
 
-from ipi.utils.depend import depend_value, dset, dobject, dget
+from ipi.utils.depend import depend_value, dset, dobject, dget, dd
 from ipi.engine.motion import Motion
 
 class MultiMotion(Motion):
-    """A class to hold multiple motion objects to be executed serially.
+    """A class to hold multiple motion objects to be executed se")rially.
     """
 
     def __init__(self, motionlist=None):
@@ -22,10 +22,13 @@ class MultiMotion(Motion):
               motion will be constrained or not. Defaults to False.
         """
 
-        dset(self, "dt", depend_value(name="dt", func=self.get_totdt))
-        self.mlist = motionlist
+        dself = dd(self)
+        dself.dt = depend_value(name="dt", func=self.get_totdt)
+        self.mlist = motionlist        
         for m in self.mlist:
-            dget(self, "dt").add_dependency(dget(m,"dt"))
+            dd(m).dt.add_dependant(dself.dt)
+            print dd(m).dt._dependants   
+        a=self.dt # DON'T ASK WHY BUT IF YOU DON'T DO THAT WEAKREFS TO SELF.DT WILL BE INVALIDATED        
         
         self.fixatoms = set(self.mlist[0].fixatoms)
         for m in self.mlist:  
@@ -37,7 +40,7 @@ class MultiMotion(Motion):
             self.fixcom = self.fixcom and m.fixcom
         
     def get_totdt(self):
-        dt =0.0
+        dt = 0.0
         for m in self.mlist:
             dt += m.dt
         return dt

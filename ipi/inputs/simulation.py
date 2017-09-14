@@ -97,7 +97,8 @@ class InputSimulation(Input):
              "ffsocket": (iforcefields.InputFFSocket, { "help": iforcefields.InputFFSocket.default_help} ),
              "fflj": (iforcefields.InputFFLennardJones, { "help": iforcefields.InputFFLennardJones.default_help} ),
              "ffdebye": (iforcefields.InputFFDebye, { "help": iforcefields.InputFFDebye.default_help} ),
-             "ffplumed": (iforcefields.InputFFPlumed, { "help": iforcefields.InputFFPlumed.default_help} )
+             "ffplumed": (iforcefields.InputFFPlumed, { "help": iforcefields.InputFFPlumed.default_help}),
+             "ffyaff": (iforcefields.InputFFYaff, { "help": iforcefields.InputFFYaff.default_help} )
              }
 
    default_help = "This is the top level class that deals with the running of the simulation, including holding the simulation specific properties such as the time step and outputting the data."
@@ -142,10 +143,7 @@ class InputSimulation(Input):
       if len(self.extra) != len(_fflist) + len(simul.syslist):
          self.extra = [0] * (len(_fflist) + len(simul.syslist))
 
-      # print 'FFLIST',_fflist
-      # print 'SISLIS',simul.syslist
       for _ii, _obj, in enumerate(_fflist + simul.syslist):
-#         print 'Iterating... ', _obj, self.extra[_ii]
          if self.extra[_ii] == 0:
             if isinstance(_obj, eforcefields.FFSocket):
                _iobj = iforcefields.InputFFSocket()
@@ -163,12 +161,14 @@ class InputSimulation(Input):
                _iobj = iforcefields.InputFFPlumed()
                _iobj.store(_obj)
                self.extra[_ii] = ("ffplumed",_iobj)
+            elif isinstance(_obj,  eforcefields.FFYaff):
+               _iobj = iforcefields.InputFFYaff()
+               _iobj.store(_obj)
+               self.extra[_ii] = ("ffyaff",_iobj)
             elif isinstance(_obj, System):
                _iobj = InputSystem()
                _iobj.store(_obj)
                self.extra[_ii] = ("system", _iobj)
-
-            # print 'BUILDED EXTRA THE FIRST TIME', self.extra
          else:
             self.extra[_ii][1].store(_obj)
 
@@ -201,7 +201,8 @@ class InputSimulation(Input):
             syslist += v.fetch() # this will actually generate automatically a bunch of system objects with the desired properties set automatically to many values
          elif k == "ffsocket" or k == "fflj" or k == "ffdebye" or k == "ffplumed" :
             fflist.append(v.fetch())
-
+         elif k == "ffyaff":
+            fflist.append(v.fetch())
 
       # this creates a simulation object which gathers all the little bits
       import ipi.engine.simulation as esimulation   # import here as otherwise this is the mother of all circular imports...
