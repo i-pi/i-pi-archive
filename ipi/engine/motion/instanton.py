@@ -341,7 +341,7 @@ class InstantonOptimizer(dobject):
                 dqb[self.fixatoms * 3 + 2] = 0.0
 
 
-        # Do one step. Update hessian for the new position
+        # Do one step. Update hessian for the new position. Update the position and force inside the mapper.
         Instanton(self.old_x, self.old_f,self.im.f, self.hessian,self.hessian_update,self.hessian_asr, self.im,self.gm, self.big_step)
 
         # Update positions and forces
@@ -399,13 +399,15 @@ def Instanton(x0, f0,f1, h0, update,asr, im,gm, big_step):
     d_x = nichols(f0,f1, d,dynmax,im.dbeads.m3, big_step)
 
     # Rescale step
-    d_x_norm = np.linalg.norm(d_x)
-    info(" @Instanton: Current step norm = %g" % d_x_norm, verbosity.medium)
-    if d_x_norm > big_step:
-        info(" @Instanton: Attempted step norm = %g, scaled down to %g" % (d_x_norm, big_step), verbosity.medium)
-        d_x *= big_step / d_x_norm
 
+    d_x_max = np.amax(np.absolute(d_x))
 
+    info(" @Instanton: Current step norm = %g" % d_x_max, verbosity.medium)
+    if np.amax(np.absolute(d_x)) > big_step:
+        info(" @Instanton: Attempted step norm = %g, scaled down to %g" % (d_x_max, big_step), verbosity.low)
+        d_x *= big_step / np.amax(np.absolute(d_x_max))
+
+    #print 'Inside Instanton',big_step,d_x
     # Make movement  and get new energy (u)  and forces(f) using mapper
 
     x = x0 + d_x
@@ -421,20 +423,22 @@ def Instanton(x0, f0,f1, h0, update,asr, im,gm, big_step):
         get_hessian(h0,gm,x)
         if gm.dbeads.nbeads != 1:
             add_spring_hessian(im,h0)
-        u, g = gm(x) #To update pos and for values in the mapper. (Yes, it is stricly unnecesary but keeps the code simple)
+        u, g = gm(x) #To update pos and for values in the mapper.(Yes, it is strictly unnecesary but keeps
+        # the code simpler and if you are here you are already computing the hessian)
 
 
 #-------------------------------------------------------------------------------------------------------------
-def get_hessian(h,gm,x0,d=0.001):
+def get_hessian(h,gm,x0,d=0.01):
 
 #Think about the case you have numerical gradients
+#TODO
 
     info(" @Instanton: Computing hessian" ,verbosity.low)
     ii = gm.dbeads.natoms * 3
     h[:]=np.zeros((h.shape),float)
 
     for j in range(ii):
-        info(" @Instanton: Computing hessian: %d of %d" % ((j+1),ii), verbosity.medium)
+        info(" @Instanton: Computing hessian: %d of %d" % ((j+1),ii), verbosity.high)
         x = x0.copy()
 
         x[:, j] = x0[:, j] + d
@@ -512,7 +516,7 @@ def get_imvector(h,  m3):
         """
     ii = m3.size
     if h.size != m3.size**2:
-        raise ValueError("@Get_imvector. Inital hessian size does not match system size.")
+        raise ValueError("@Get_imvector. Initial hessian size does not match system size.")
     m   = 1.0 / (m3 ** 0.5)
     mm  = np.outer(m, m)
     hm  = np.multiply(h, mm)
@@ -620,7 +624,7 @@ def clean_hessian(h,q, natoms,nbeads,m,m3,asr):
 
     #Count
     dd = np.sign(d) * np.absolute(d) ** 0.5 / (2 * np.pi * 3e10 * 2.4188843e-17) #convert to cm^-1
-    #print dd[0:6]
+    #print dd[0:9]
     #Zeros
     condition = np.abs(dd) < 0.01 #Note that dd[] units are cm^1
     nzero= np.extract(condition, dd)
@@ -662,6 +666,10 @@ def print_instanton(h,gm,im,asr,rates):
     print  'S/hbar', (action1 + action2) / units.Constants.hbar
     print  'ALBERTO', action1 / units.Constants.hbar, action2 / units.Constants.hbar, (action1 + action2) / units.Constants.hbar
 
+    if im.mode == 'half':
+                print  'BN', 2 * np.sum(gm.dbeads.m3[1:,:]*(gm.dbeads.q[1:,:] - gm.dbeads.q[:-1,:])**2)
+    if im.mode == 'full':
+                print  'BN', np.sum(gm.dbeads.m3*(np.roll(gm.dbeads.q,1,axis=0) - gm.dbeads.q) ** 2)
     if rates != 'true':
         info(" Compute rates is false, we are not going to compute them.", verbosity.low)
     else:
@@ -672,16 +680,15 @@ def print_instanton(h,gm,im,asr,rates):
             get_hessian(h, gm, im.dbeads.q)
             if gm.dbeads.nbeads != 1:
                 add_spring_hessian(im, h)
-            d,w = clean_hessian(h,im.dbeads.q,im.dbeads.natoms,im.dbeads.nbeads,im.dbeads.m,im.dbeads.m3,asr)
-            print "Final  lowest eight frequencies"
-            print np.sign(d[0:8]) * np.absolute(d[0:8]) ** 0.5 / (2 * np.pi * 3e10 * 2.4188843e-17)  # convert to cm^-1
+            d,w = clean_hessian(h,im.dbeads.q,im.dbeads.natoms,im.dbeads.nbeads,im.dbeads.m,im.dbeads.m3,asr='none')
         elif im.mode =='half':
             get_hessian(h, gm, im.dbeads.q)
             hbig=get_doble_hessian(h,im)
             q,nbeads,m,m3 = get_doble(im.dbeads.q, im.dbeads.nbeads, im.dbeads.m, im.dbeads.m3)
-            d, w = clean_hessian(hbig, q, im.dbeads.natoms, nbeads, m, m3, asr)
-            print "Final  lowest eight frequencies"
-            print np.sign(d[0:8]) * np.absolute(d[0:8]) ** 0.5 / (2 * np.pi * 3e10 * 2.4188843e-17)  # convert to cm^-1
+            d, w = clean_hessian(hbig, q, im.dbeads.natoms, nbeads, m, m3, asr) #PEPE
+
+        print "Final  lowest ten frequencies"
+        print np.sign(d[0:10]) * np.absolute(d[0:10]) ** 0.5 / (2 * np.pi * 3e10 * 2.4188843e-17)  # convert to cm^-1
 
         compute_rates(im,gm)
 
