@@ -680,16 +680,15 @@ def print_instanton(h,gm,im,asr,rates):
             get_hessian(h, gm, im.dbeads.q)
             if gm.dbeads.nbeads != 1:
                 add_spring_hessian(im, h)
-            d,w = clean_hessian(h,im.dbeads.q,im.dbeads.natoms,im.dbeads.nbeads,im.dbeads.m,im.dbeads.m3,asr='none')
+            d,w = clean_hessian(h,im.dbeads.q,im.dbeads.natoms,im.dbeads.nbeads,im.dbeads.m,im.dbeads.m3,asr)
         elif im.mode =='half':
             get_hessian(h, gm, im.dbeads.q)
             hbig=get_doble_hessian(h,im)
             q,nbeads,m,m3 = get_doble(im.dbeads.q, im.dbeads.nbeads, im.dbeads.m, im.dbeads.m3)
-            d, w = clean_hessian(hbig, q, im.dbeads.natoms, nbeads, m, m3, asr) #PEPE
+            d, w = clean_hessian(hbig, q, im.dbeads.natoms, nbeads, m, m3, asr)
 
         print "Final  lowest ten frequencies"
         print np.sign(d[0:10]) * np.absolute(d[0:10]) ** 0.5 / (2 * np.pi * 3e10 * 2.4188843e-17)  # convert to cm^-1
-
         compute_rates(im,gm)
 
 def get_doble_hessian(h0,im):

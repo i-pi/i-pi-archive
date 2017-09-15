@@ -370,19 +370,21 @@
                   ENDDO
                ENDDO
                ! do not compute the virial term
+
            ELSEIF (vstyle == 10) THEN ! CBE CH4+H potential.
                IF (nat/=6) THEN
                   WRITE(*,*) "Expecting 6 atoms for CH4+H potential, H, C, H, H, H, H "
+                  WRITE(*,*) "The expected order is such that atoms 1 to 5 are reactant_1 (CH4)"
+                  WRITE(*,*) "and atom 6 is reactant_2 ( H 'free') "
                   STOP "ENDED"
                ENDIF
 
                CALL ch4hpot_inter(atoms, pot)
-
                datoms=atoms
                DO i=1,6  ! forces by finite differences
                   DO j=1,3
                      datoms(i,j)=atoms(i,j)+fddx
-                     CALL ch4hpot_inter(datoms, pot)
+                     CALL ch4hpot_inter(datoms, dpot)
                      datoms(i,j)=atoms(i,j)-fddx
                      CALL ch4hpot_inter(datoms, forces(i,j))
                      datoms(i,j)=atoms(i,j)
@@ -390,6 +392,7 @@
                   ENDDO
                ENDDO
                ! do not compute the virial term
+
             ELSEIF (vstyle == 6) THEN ! qtip4pf potential.
                IF (mod(nat,3)/=0) THEN
                   WRITE(*,*) " Expecting water molecules O H H O H H O H H but got ", nat, "atoms"
