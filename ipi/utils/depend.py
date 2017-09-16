@@ -25,6 +25,7 @@ For a more detailed discussion, see the reference manual.
 
 
 import weakref
+import threading
 
 import numpy as np
 
@@ -125,10 +126,12 @@ class depend_base(object):
             dependants = []
         if dependencies is None:
             dependencies = []
+        
         self._tainted = tainted
         self._func = func
         self._name = name
         self._active = active
+        self._threadlock = threading.RLock()
 
         self.add_synchro(synchro)
 
@@ -147,10 +150,10 @@ class depend_base(object):
                 self.taint(taintme=False)
             else:
                 self.taint(taintme=tainted)
-                
+
     def hold(self):
         self._active[:] = False
-    
+
     def resume(self):
         self._active[:] = True
         if self._func is None:
@@ -215,7 +218,7 @@ class depend_base(object):
         """
 
         if not self._active: return
-        
+
         self._tainted[:] = True
         for item in self._dependants:            
             if (not item()._tainted[0]):
@@ -262,20 +265,20 @@ class depend_base(object):
 
         if not self._synchro is None:
             self._synchro.manual = self._name
-            self.taint(taintme=False)            
         elif not self._func is None:
             raise NameError("Cannot set manually the value of the automatically-computed property <" + self._name + ">")
-        else:
-            self.taint(taintme=False)
+        self.taint(taintme=False)
 
     def set(self, value, manual=False):
         """Dummy setting routine."""
 
+        raise ValueError("Undefined set function for base depend class")
         pass
 
     def get(self):
         """Dummy getting routine."""
 
+        raise ValueError("Undefined get function for base depend class")
         pass
 
 
@@ -314,9 +317,10 @@ class depend_value(depend_base):
         is recalculated if tainted.
         """
 
-        if self._tainted[0]:
-            self.update_auto()
-            self.taint(taintme=False)
+        with self._threadlock:
+            if self._tainted[0]:
+                self.update_auto()
+                self.taint(taintme=False)
 
         return self._value
 
@@ -333,10 +337,11 @@ class depend_value(depend_base):
         manually updated.
         """
 
-        self._value = value
-        self.taint(taintme=False)
-        if manual:
-            self.update_man()
+        with self._threadlock:
+            self._value = value
+            #self.taint(taintme=False)
+            if manual:
+                self.update_man()
 
     def __set__(self, instance, value):
         """Overwrites standard set function."""
@@ -539,9 +544,10 @@ class depend_array(np.ndarray, depend_base):
            index: A slice variable giving the appropriate slice to be read.
         """
 
-        if self._tainted[0]:
-            self.update_auto()
-            self.taint(taintme=False)
+        with self._threadlock:
+            if self._tainted[0]:
+                self.update_auto()
+                self.taint(taintme=False)
 
         if self.__scalarindex(index, self.ndim):
             return depstrip(self)[index]
@@ -565,9 +571,10 @@ class depend_array(np.ndarray, depend_base):
         # It is worth duplicating this code that is also used in __getitem__ as this
         # is called most of the time, and we avoid creating a load of copies pointing to the same depend_array
 
-        if self._tainted[0]:
-            self.update_auto()
-            self.taint(taintme=False)
+        with self._threadlock:
+            if self._tainted[0]:
+                self.update_auto()
+                self.taint(taintme=False)
 
         return self
 
@@ -585,14 +592,15 @@ class depend_array(np.ndarray, depend_base):
               manually. True by default.
         """
 
-        self.taint(taintme=False)
-        if manual:
-            self.view(np.ndarray)[index] = value
-            self.update_man()
-        elif index == slice(None, None, None):
-            self._bval[index] = value
-        else:
-            raise IndexError("Automatically computed arrays should span the whole parent")
+        with self._threadlock:
+            if manual:
+                self.view(np.ndarray)[index] = value
+                self.update_man()
+            elif index == slice(None, None, None):
+                self._bval[index] = value
+                self.taint(taintme=False)        
+            else:
+                raise IndexError("Automatically computed arrays should span the whole parent")
 
     def __setslice__(self, i, j, value):
         """Overwrites standard set function."""
@@ -752,7 +760,7 @@ def dcopy(dfrom, dto):
     if hasattr(dfrom, "_bval"):
         dto._bval = dfrom._bval
 
-def depraise(exception): 
+def depraise(exception):
     raise exception
 
 
@@ -806,7 +814,7 @@ def dd(dobj):
     if not issubclass(dobj.__class__, dobject):
         raise ValueError("Cannot access a ddirect view of an object which is not a subclass of dobject")
     return dobj._direct
-    
+
 class ddirect(object):
     """Gives a "view" of a depend object where one can directly access its
     depend_base members."""
