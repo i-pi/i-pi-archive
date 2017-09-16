@@ -189,11 +189,12 @@ class Ensemble(dobject):
         """Calculates the conserved energy quantity for constant energy
         ensembles.
         """
+        
         eham = self.beads.vpath*self.nm.omegan2 + self.nm.kin + self.forces.pot
         eham += self.bias.pot   # bias
         for e in self._elist:
             eham += e.get()
-
+        
         return eham + self.eens
 
     def get_lpens(self):
