@@ -81,7 +81,7 @@ def print_file_path(mode, beads, cell, filedesc=sys.stdout, title="", key="", di
 
 # VENKAT TODO : also get the print_file functions work with just arrays, so we have a "fast write" mode that sidesteps any parsing or conversion, similar to what I'm doing for readfile and readfile_raw
 
-def print_file_raw(mode, atoms, cell, filedesc=sys.stdout, title="", key="", dimension="length", units="automatic", cell_units="automatic"):
+def print_file_raw(mode, atoms, cell, filedesc=sys.stdout, title="", key="", cell_conv=1.0, atoms_conv=1.0):
     """Prints the centroid configurations, into a `mode` formatted file.
 
     Args:
@@ -231,7 +231,7 @@ def open_backup(filename, mode='r', buffering=-1):
 
         if fn_backup != filename:
             os.rename(filename, fn_backup)
-            info('Backup performed: {:s} -> {:s}'.format(filename, fn_backup), verbosity.low)
+            info('Backup performed: {0:s} -> {1:s}'.format(filename, fn_backup), verbosity.low)
 
     else:
         # There is no need to back up.
