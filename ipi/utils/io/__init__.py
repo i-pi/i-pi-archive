@@ -106,12 +106,12 @@ def print_file(mode, atoms, cell, filedesc=sys.stdout, title="", key="", dimensi
     if mode == "pdb":   # special case for PDB
         if dimension != "length":
             raise ValueError("PDB Standard is only designed for atomic positions")
-        if units == "automatic": units="angstrom"
-        if cell_units == "automatic": cell_units="angstrom"
+        if units == "automatic": units = "angstrom"
+        if cell_units == "automatic": cell_units = "angstrom"
     # in general, "automatic" units are actually "atomic_units"
     else:
-        if units == "automatic": units="atomic_unit"
-        if cell_units == "automatic": cell_units="atomic_unit"
+        if units == "automatic": units = "atomic_unit"
+        if cell_units == "automatic": cell_units = "atomic_unit"
  
     cell_conv = unit_to_user("length", cell_units, 1.0)
     atoms_conv = unit_to_user(dimension, units, 1.0)
@@ -147,7 +147,6 @@ def read_file(mode, filedesc, dimension="", units="automatic", cell_units="autom
         A dictionary as returned by `process_units`.
     """
 
-    print "reading file", dimension, units, cell_units
     raw_read = read_file_raw(mode=mode, filedesc=filedesc)
 
     # late import is needed to break an import cycle
