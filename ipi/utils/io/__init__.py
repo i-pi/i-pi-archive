@@ -81,26 +81,36 @@ def print_file_path(mode, beads, cell, filedesc=sys.stdout, title="", key="", di
 
 # VENKAT TODO : also get the print_file functions work with just arrays, so we have a "fast write" mode that sidesteps any parsing or conversion, similar to what I'm doing for readfile and readfile_raw
 
-def print_file_raw(mode, atoms, cell, filedesc=sys.stdout, title="", key="", cell_conv=1.0, atoms_conv=1.0):
-    """Prints the centroid configurations, into a `mode` formatted file.
-
+def print_file_raw(mode, atoms, cell, filedesc=sys.stdout, title="", cell_conv=1.0, atoms_conv=1.0):
+    """Prints atom positions, or atom-vector properties, into a `mode` formatted file, 
+       providing atoms and cell in the internal i-PI representation but doing no conversion.
+       
     Args:
-        atoms: An atoms object giving the centroid positions.
-        cell: A cell object giving the system box.
+        atoms: An atoms object containing the positions (or properties) of the atoms 
+        cell: A cell object containing the system box.
         filedesc: An open writable file object. Defaults to standard output.
-        title: This gives a string to be appended to the comment line.
+        title: This contains the string that will be used for the comment line.
+        cell_conv: Conversion factor for the cell parameters
+        atoms_conv: Conversion factors for the atomic properties
     """
    
     return _get_io_function(mode, "print")(atoms=atoms, cell=cell, filedesc=filedesc, title=title, cell_conv=cell_conv, atoms_conv=atoms_conv)
 
 def print_file(mode, atoms, cell, filedesc=sys.stdout, title="", key="", dimension="length", units="automatic", cell_units="automatic"):
-    """Prints the centroid configurations, into a `mode` formatted file.
+    """Prints atom positions, or atom-vector properties, into a `mode` formatted file, 
+       using i-PI internal representation of atoms & cell. Does conversion and prepares 
+       formatted title line. 
 
     Args:
-        atoms: An atoms object giving the centroid positions.
-        cell: A cell object giving the system box.
+        mode: I/O file format (e.g. "xyz")
+        atoms: An atoms object containing the positions (or properties) of the atoms 
+        cell: A cell object containing the system box.
         filedesc: An open writable file object. Defaults to standard output.
         title: This gives a string to be appended to the comment line.
+        key: Description of the property that is being output
+        dimension: Dimensions of the property (e.g. "length")
+        units: Units for the output (e.g. "angstrom")
+        cell_units: Units for the cell (dimension length, e.g. "angstrom")
     """
  
     if mode == "pdb":   # special case for PDB
@@ -121,8 +131,16 @@ def print_file(mode, atoms, cell, filedesc=sys.stdout, title="", key="", dimensi
     print_file_raw(mode=mode, atoms=atoms, cell=cell, filedesc=filedesc, title=title, cell_conv=cell_conv, atoms_conv=atoms_conv)
 
 def read_file_raw(mode, filedesc):    
+    """ Reads atom positions, or atom-vector properties, from a file of mode "mode", 
+        returns positions and cell parameters in raw array format, without creating i-PI
+        internal objects. 
 
-    reader = _get_io_function(mode, "read")
+    Args:
+        mode: I/O file format (e.g. "xyz")
+        filedesc: An open readable file object.
+        
+    """
+    reader = _get_io_function(mode, "read") 
         
     comment, cell, atoms, names, masses = reader(filedesc=filedesc)
      
@@ -137,10 +155,16 @@ def read_file_raw(mode, filedesc):
  
 
 def read_file(mode, filedesc, dimension="", units="automatic", cell_units="automatic"):
-    """Reads one frame from an open `mode`-style file.
+    """ Reads one frame from an open `mode`-style file. Also performs units 
+        conversion as requested, or as guessed from the input comment line.
 
     Args:
+        mode: I/O file format (e.g. "xyz")        
         filedesc: An open readable file object from a `mode` formatted file.
+        dimension: Dimensions of the property (e.g. "length")
+        units: Units for the input (e.g. "angstrom")
+        cell_units: Units for the cell (dimension length, e.g. "angstrom")
+        
         All other args are passed directly to the responsible io function.
 
     Returns:

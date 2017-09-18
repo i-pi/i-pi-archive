@@ -20,7 +20,9 @@ traj_re = [re.compile('%s%s' % (key, r'\{[A-Za-z_]*\}'))
            for key in traj_dict.keys()]  # trajectory patterns
 
 def auto_units(comment="", dimension="automatic", units="automatic", cell_units="automatic", mode="xyz"):
-    # heuristics to detect input units
+    """ Processes comment line and requested units to determine how to interpret the I/O conversion. """\
+    
+    # heuristics to detect units
     if mode == "pdb": # these are the default units
         auto_cell = "angstrom"
         auto_units = "angstrom"
@@ -84,7 +86,7 @@ def process_units(comment, cell, data, names, masses, natoms, dimension="automat
     cell *= unit_to_internal('length', cell_units, 1) # cell units transformation
     data *= unit_to_internal(dimension, units, 1) # units transformation
 
-    # return either objects or a raw data
+    # Return data as i-PI structures
     cell = Cell(cell)
     atoms = Atoms(natoms)
     atoms.q[:] = data

@@ -89,11 +89,6 @@ def read_xyz(filedesc):
     except (StopIteration, ValueError):
         raise EOFError
 
-    # if natoms == '':              # Work with incomplete files
-    #     raise EOFError
-
-    # natoms = int(natoms)
-
     comment = filedesc.next()
 
     # Extracting cell
