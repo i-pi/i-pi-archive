@@ -969,19 +969,19 @@ class ThermoDFL(Thermostat):
    """Represents a Langevin thermostat for systems driven by inherently dissipative forces,
       adding adequate additional white noise to compensate for the inherent damping term
       originating from the forces.
-      The inherent dissipation coefficient (idT) must be set correctly to reach the desired temperature.
-      Alternatively, if the adjustment time scale apat is set > 0, idT will be automatically
+      The inherent dissipation time coefficient (idtau) must be set correctly to reach the target temperature.
+      Alternatively, if the adjustment time scale apat is set > 0, idtau will be automatically
       adjusted over time, driven by the difference of system temperature to target temperature.
 
    Depend objects:
       tau: Thermostat damping time scale. Larger values give a less strongly
          coupled thermostat.
-      idT: Inherent dissipation coefficient. Larger idT results in more compensating noise.
-      apat: idT-temperature coupling time scale.
+      idtau: Inherent dissipation time coefficient. Smaller idtau results in more compensating noise.
+      apat: idtau-temperature coupling time scale.
       T: Coefficient of the diffusive contribution of the thermostat, i.e. the
          drift back towards equilibrium. Depends on tau and the time step.
       S: Coefficient of the stochastic contribution of the thermostat, i.e.
-         the uncorrelated Gaussian noise. Depends on T, idT and the temperature.
+         the uncorrelated Gaussian noise. Depends on T, dt, idtau and the temperature.
    """
 
    def get_T(self):
@@ -993,17 +993,20 @@ class ThermoDFL(Thermostat):
    def get_S(self):
       """Calculates the coefficient of the white noise."""
 
-      return np.sqrt(Constants.kb*self.temp*(1.0 - (self.T * self.idT)**2))
+      if self.idtau > 0:
+         return np.sqrt(Constants.kb*self.temp*(1.0 - (self.T * np.exp(-0.5*self.dt/self.idtau))**2))
+      else:
+         return np.sqrt(Constants.kb*self.temp*(1.0 - self.T**2))
 
-   def __init__(self, temp = 1.0, dt = 1.0, tau = 0, idT = 1.0, apat = 0, ethermo=0.0):
+   def __init__(self, temp = 1.0, dt = 1.0, tau = 0, idtau = 0, apat = 0, ethermo=0.0):
       """Initialises ThermoDFL.
 
       Args:
          temp: The simulation temperature. Defaults to 1.0.
          dt: The simulation time step. Defaults to 1.0.
          tau: The thermostat damping timescale. Defaults to 0 (off).
-         idT: Estimated inherent dissipation coefficient. Defaults to 1.0.
-         apat: idT-temperature coupling time scale. Defaults to 0 (off).
+         idtau: Estimated inherent dissipation time coefficient. Defaults to 0 (off).
+         apat: idtau-temperature coupling time scale. Defaults to 0 (off).
          ethermo: The initial heat energy transferred to the bath.
             Defaults to 0.0. Will be non-zero if the thermostat is
             initialised from a checkpoint file.
@@ -1013,14 +1016,14 @@ class ThermoDFL(Thermostat):
 
       self.idstep = False
       dset(self,"tau",depend_value(value=tau,name='tau'))
-      dset(self,"idT",depend_value(value=idT,name='idT'))
+      dset(self,"idtau",depend_value(value=idtau,name='idtau'))
       dset(self,"apat",depend_value(value=apat,name='apat'))
       dset(self,"T",
          depend_value(name="T",func=self.get_T,
             dependencies=[dget(self,"tau"), dget(self,"dt")]))
       dset(self,"S",
          depend_value(name="S",func=self.get_S,
-            dependencies=[dget(self,"temp"), dget(self,"T"), dget(self,"idT")]))
+            dependencies=[dget(self,"temp"), dget(self,"T"), dget(self,"dt"), dget(self,"idtau")]))
 
 
    def step(self):
@@ -1045,11 +1048,12 @@ class ThermoDFL(Thermostat):
       if self.apat > 0 and self.idstep:
          ekin = np.dot(depstrip(self.p),depstrip(self.p)/depstrip(self.m))*0.5
          mytemp = ekin/Constants.kb/self.ndof * 2
-         self.idT += (np.sqrt(mytemp / self.temp) - 1) / self.apat*self.dt
-         if self.idT < 0: self.idT = 0.0
-         elif self.idT > 1: self.idT = 1.0
+         if self.idtau == 0:
+            self.idtau = self.apat # we need some initial guess != 0
+         else:
+            self.idtau *= (mytemp / self.temp)**(self.dt/self.apat)
 
-         print("ThermoDFL inherent dissipation coefficient: " + str(self.idT))
+         print("ThermoDFL inherent dissipation time coefficient: " + str(self.idtau))
 
       self.idstep = not self.idstep
 

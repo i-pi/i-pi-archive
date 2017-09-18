@@ -43,8 +43,8 @@ class InputThermoBase(Input):
       s: An optional array of floats giving the additional momentum-scaled
          momenta in GLE. Defaults to 0.0.
       invar: Sets the estimated variance of the inherent force noise term. Defaults to 0.0.
-      idT: Sets the estimated coefficient of the inherent dissipation. Defaults to 1.0.
-      apat: Time scale for automatic parameter adjustment of invar or idT. Defaults to 0.0.
+      idtau: Sets the estimated time coefficient of the inherent dissipation. Defaults to 0.0.
+      apat: Time scale for automatic parameter adjustment of invar or idtau. Defaults to 0.0.
 
    """
 
@@ -79,10 +79,10 @@ class InputThermoBase(Input):
                                     "default"   : 0.0,
                                     "help"      : "The inherent noise variance for noisy force langevin thermostats.",
                                     "dimension" : "energy" }),
-            "idT" : (InputValue, {  "dtype"     : float,
-                                    "default"   : 1.0,
-                                    "help"      : "The inherent dissipative coefficient for dissipative force langevin thermostats.",
-                                    "dimension" : "undefined" }),
+            "idtau" : (InputValue, {"dtype"     : float,
+                                    "default"   : 0.0,
+                                    "help"      : "The inherent dissipation time coefficient for dissipative force langevin thermostats.",
+                                    "dimension" : "time" }),
             "apat" : (InputValue, { "dtype"     : float,
                                     "default"   : 0.0,
                                     "help"      : "The time scale for automatic adjustment of NFL or DFL thermostat's parameters.",
@@ -146,7 +146,7 @@ class InputThermoBase(Input):
       elif type(thermo) is ethermostats.ThermoDFL:
          self.mode.store("dfl")
          self.tau.store(thermo.tau)
-         self.idT.store(thermo.idT)
+         self.idtau.store(thermo.idtau)
          self.apat.store(thermo.apat)
       elif type(thermo) is ethermostats.Thermostat:
          self.mode.store("")
@@ -195,7 +195,7 @@ class InputThermoBase(Input):
       elif self.mode.fetch() == "nfl":
          thermo = ethermostats.ThermoNFL(tau=self.tau.fetch(), invar=self.invar.fetch(), apat=self.apat.fetch())
       elif self.mode.fetch() == "dfl":
-         thermo = ethermostats.ThermoDFL(tau=self.tau.fetch(), idT=self.idT.fetch(), apat=self.apat.fetch())
+         thermo = ethermostats.ThermoDFL(tau=self.tau.fetch(), idtau=self.idtau.fetch(), apat=self.apat.fetch())
       elif self.mode.fetch() == "" :
          thermo=ethermostats.Thermostat()
       else:
@@ -223,8 +223,8 @@ class InputThermoBase(Input):
             if self.invar.fetch() < 0:
                raise ValueError("The inherent noise variance must be set to a non-negative value")
          elif mode == "dfl":
-            if not 0 <= self.idT.fetch() <= 1:
-               raise ValueError("The inherent dissipation coefficient must be set to a value in [0,1]")
+            if self.idtau.fetch() < 0:
+               raise ValueError("The inherent dissipation time coefficient must be set to a non-negative value")
       if mode in ["gle", "nm_gle", "nm_gle_g"]:
          pass  # PERHAPS DO CHECKS THAT MATRICES SATISFY REASONABLE CONDITIONS (POSITIVE-DEFINITENESS, ETC)
 
