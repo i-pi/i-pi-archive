@@ -8,7 +8,7 @@
    </output>
    <total_steps> 1000 </total_steps>
    <ffsocket mode="inet" name="driver">
-      <address> localhost </address>
+      <address> 127.0.0.1 </address>
       <port> 54321 </port>
    </ffsocket>
    <system>
@@ -25,7 +25,7 @@
 	  <thermostat mode='nfl'>
             <tau units='femtosecond'> 0 </tau>
             <invar units='atomic_unit'> 0 </invar>
-            <invtau units='femtosecond'> 1000 </invtau>
+            <apat units='femtosecond'> 1000 </apat>
           </thermostat>
           <timestep units='femtosecond'> 0.1 </timestep>
 	</dynamics>
