@@ -4,8 +4,8 @@
 # i-PI Copyright (C) 2014-2015 i-PI developers
 # See the "licenses" directory for full license information.
 
-.PHONY: all clean graphene h2o-piglet_2 h2o-piglet_4 h2o-piglet_8 h2o-pimd-rpc h2o-pimd ice-npt h2o-mts ice-nst isof-vapor isof-water isofsc-vapor isofsc-water 
-all: graphene h2o-piglet_2 h2o-piglet_4 h2o-piglet_8 h2o-pimd-rpc h2o-pimd ice-npt h2o-mts ice-nst isof-vapor isof-water isofsc-vapor isofsc-water 
+.PHONY: all clean graphene h2o-piglet_2 h2o-piglet_4 h2o-piglet_8 h2o-pimd-rpc h2o-pimd ice-npt h2o-mts ice-nst isof-vapor isof-water isofsc-vapor isofsc-water benz-graph-slc 
+all: graphene h2o-piglet_2 h2o-piglet_4 h2o-piglet_8 h2o-pimd-rpc h2o-pimd ice-npt h2o-mts ice-nst isof-vapor isof-water isofsc-vapor isofsc-water benz-graph-slc
 
 LAMMPS:=lmp_serial
 IPI:=i-pi
@@ -84,6 +84,13 @@ h2o-pimd-rpc:
 	$(call run_lammps,4,in.water_shortrange) \
 	$(call run_lammps,1,in.water_longrange) \
 	wait
+
+benz-graph-slc:
+	cd benz-graph-slc; $(IPI) input.xml & sleep 5; \
+	$(call run_lammps,1,in.full) \
+	$(call run_lammps,1,in.partcontr) \
+	$(call run_lammps,8,in.partbeads) \
+	wait 
 
 clean:
 	rm -f */gle_lammps.* */RESTART */EXIT */log.lammps; \
