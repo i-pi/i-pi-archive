@@ -16,20 +16,20 @@
    <system>
      <initialize nbeads='1'>
        <file mode='xyz'>H2O.xyz</file>
-       <momenta mode="thermal" units="kelvin"> 300 </momenta>
+       <momenta mode="thermal" units="kelvin"> 750 </momenta>
      </initialize>
      <forces><force forcefield='driver'/></forces>
      <ensemble>
-       <temperature units="kelvin"> 300 </temperature>
+       <temperature units="kelvin"> 750 </temperature>
      </ensemble>
      <motion mode='dynamics'>
        <dynamics mode='nvt'>
 	 <thermostat mode='dfl'>
-	   <tau units="femtosecond">5</tau>
-           <idT> 1.0 </idT>
-           <apat units="femtosecond"> 1000 </apat>
+	   <tau units="femtosecond"> 5 </tau>
+           <idtau units="femtosecond"> 50 </idtau>
+           <apat units="femtosecond"> 100 </apat>
 	 </thermostat>
-	 <timestep units="femtosecond"> 0.1 </timestep>
+	 <timestep units="femtosecond"> 0.5 </timestep>
        </dynamics>
        <fixcom>True</fixcom>
      </motion>
