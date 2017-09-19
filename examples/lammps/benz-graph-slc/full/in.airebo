@@ -19,7 +19,7 @@ neigh_modify    delay    1
 
 pair_style    airebo    3    1    1
 
-pair_coeff    * *    ../../CH.airebo    C    H
+pair_coeff    * *    ../CH.airebo    C    H
 
 timestep	0.00025
 
