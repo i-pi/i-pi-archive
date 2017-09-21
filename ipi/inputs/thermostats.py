@@ -42,9 +42,9 @@ class InputThermoBase(Input):
          Defaults to 0.0.
       s: An optional array of floats giving the additional momentum-scaled
          momenta in GLE. Defaults to 0.0.
-      invar: Sets the estimated variance of the inherent force noise term. Defaults to 0.0.
-      idtau: Sets the estimated time coefficient of the inherent dissipation. Defaults to 0.0.
-      apat: Time scale for automatic parameter adjustment of invar or idtau. Defaults to 0.0.
+      intau: Sets the estimated time scale of the inherent force noise term. Defaults to 0.0.
+      idtau: Sets the estimated time scale of the forces' inherent dissipation. Defaults to 0.0.
+      apat: Time scale for automatic parameter adjustment of intau or idtau. Defaults to 0.0.
 
    """
 
@@ -75,13 +75,13 @@ class InputThermoBase(Input):
                                     "default"   : input_default(factory=np.zeros, args = (0,)),
                                     "help"      : "Input values for the additional momenta in GLE.",
                                     "dimension" : "ms-momentum" }),
-            "invar" : (InputValue, {"dtype"     : float,
+            "intau" : (InputValue, {"dtype"     : float,
                                     "default"   : 0.0,
-                                    "help"      : "The inherent noise variance for noisy force langevin thermostats.",
-                                    "dimension" : "energy" }),
+                                    "help"      : "The inherent noise time scale for compensating langevin thermostats.",
+                                    "dimension" : "time" }),
             "idtau" : (InputValue, {"dtype"     : float,
                                     "default"   : 0.0,
-                                    "help"      : "The inherent dissipation time coefficient for dissipative force langevin thermostats.",
+                                    "help"      : "The inherent dissipation time scale for compensating langevin thermostats.",
                                     "dimension" : "time" }),
             "apat" : (InputValue, { "dtype"     : float,
                                     "default"   : 0.0,
@@ -138,14 +138,10 @@ class InputThermoBase(Input):
          if dget(thermo,"C")._func is None:
             self.C.store(thermo.C)
          self.s.store(thermo.s)
-      elif type(thermo) is ethermostats.ThermoNFL:
-         self.mode.store("nfl")
+      elif type(thermo) is ethermostats.ThermoCL:
+         self.mode.store("cl")
          self.tau.store(thermo.tau)
-         self.invar.store(thermo.invar)
-         self.apat.store(thermo.apat)
-      elif type(thermo) is ethermostats.ThermoDFL:
-         self.mode.store("dfl")
-         self.tau.store(thermo.tau)
+         self.intau.store(thermo.intau)
          self.idtau.store(thermo.idtau)
          self.apat.store(thermo.apat)
       elif type(thermo) is ethermostats.Thermostat:
@@ -192,12 +188,10 @@ class InputThermoBase(Input):
             rC = None
          thermo = ethermostats.ThermoNMGLEG(A=self.A.fetch(),C=rC, tau=self.tau.fetch())
          thermo.s = self.s.fetch()
-      elif self.mode.fetch() == "nfl":
-         thermo = ethermostats.ThermoNFL(tau=self.tau.fetch(), invar=self.invar.fetch(), apat=self.apat.fetch())
-      elif self.mode.fetch() == "dfl":
-         thermo = ethermostats.ThermoDFL(tau=self.tau.fetch(), idtau=self.idtau.fetch(), apat=self.apat.fetch())
+      elif self.mode.fetch() == "cl":
+         thermo = ethermostats.ThermoCL(tau=self.tau.fetch(), intau=self.intau.fetch(), idtau=self.idtau.fetch(), apat=self.apat.fetch())
       elif self.mode.fetch() == "" :
-         thermo=ethermostats.Thermostat()
+         thermo = ethermostats.Thermostat()
       else:
          raise TypeError("Invalid thermostat mode " + self.mode.fetch())
 
@@ -214,17 +208,15 @@ class InputThermoBase(Input):
       if mode in ["langevin", "svr", "pile_l", "pile_g", "nm_gle_g"]:
          if self.tau.fetch() <= 0:
             raise ValueError("The thermostat friction coefficient must be set to a positive value")
-      if mode in ["nfl", "dfl"]:
+      if mode == "cl":
          if self.tau.fetch() < 0:
             raise ValueError("The thermostat friction coefficient must be set to a non-negative value")
+         if self.intau.fetch() < 0:
+            raise ValueError("The inherent noise time scale must be set to a non-negative value")
+         if self.idtau.fetch() < 0:
+            raise ValueError("The inherent dissipation time scale must be set to a non-negative value")
          if self.apat.fetch() < 0:
             raise ValueError("The automatic parameter adjustment time scale must be set to a non-negative value")
-         if mode ==  "nfl":
-            if self.invar.fetch() < 0:
-               raise ValueError("The inherent noise variance must be set to a non-negative value")
-         elif mode == "dfl":
-            if self.idtau.fetch() < 0:
-               raise ValueError("The inherent dissipation time coefficient must be set to a non-negative value")
       if mode in ["gle", "nm_gle", "nm_gle_g"]:
          pass  # PERHAPS DO CHECKS THAT MATRICES SATISFY REASONABLE CONDITIONS (POSITIVE-DEFINITENESS, ETC)
 
