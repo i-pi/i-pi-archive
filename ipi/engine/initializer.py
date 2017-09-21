@@ -26,7 +26,7 @@ from ipi.utils.nmtransform import nm_rescale
 from ipi.utils.messages import verbosity, warning, info
 
 
-__all__ = ['Initializer', 'InitBase', 'InitIndexed']
+__all__ = ['Initializer', 'InitBase', 'InitIndexed', 'InitFile']
 
 
 class InitBase(dobject):
@@ -70,8 +70,8 @@ class InitIndexed(InitBase):
       bead: Which bead to initialize the value of.
    """
 
-   def __init__(self, value="", mode="", units="", index=-1, bead=-1):
-      """Initializes InitFile.
+   def __init__(self, value="", mode="", units="", index=-1, bead=-1, **others):
+      """Initializes InitIndexed.
 
       Args:
          value: A string which specifies what value to initialize the
@@ -85,7 +85,22 @@ class InitIndexed(InitBase):
 
       super(InitIndexed,self).__init__(value=value, mode=mode, units=units, index=index, bead=bead)
 
+class InitFile(InitBase):
+    def __init__(self, value="", mode="", units="", cell_units="", bead=-1, **others):
+        """Initializes InitIndexed.
 
+        Args:
+            value: A string which specifies what value to initialize the
+                simulation property to.
+            mode: A string specifiying what style of initialization should be
+                used to read the data.
+            units: A string giving which unit the value is in.
+            cell_units: A string giving which unit the cell parameters for the files are
+            bead: Which bead to initialize the value of.
+        """
+
+        super(InitFile,self).__init__(value=value, mode=mode, units=units, cell_units=cell_units, bead=bead)
+      
 def init_file(mode, filename, dimension="length", units="automatic", cell_units="automatic"):
    """Reads a @mode file and returns the data contained in it.
 
@@ -100,7 +115,8 @@ def init_file(mode, filename, dimension="length", units="automatic", cell_units=
 
    rfile = open(filename, "r")
    ratoms = []
-   print "initializing ", dimension, units, cell_units
+   
+   info("Initializing from file %s. Dimension: %s, units: %s, cell_units: %s" % (filename, dimension, units, cell_units), verbosity.low)
    while True:
    #while loop, so that more than one configuration can be given
    #so multiple beads can be initialized at once.
