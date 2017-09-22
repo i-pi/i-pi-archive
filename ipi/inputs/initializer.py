@@ -62,7 +62,7 @@ class InputInitBase(InputValue):
 
       super(InputInitBase,self).store(value, units=ibase.units)
 
-      print self.__class__, self.__dict__, ibase.__dict__
+      #print self.__class__, self.__dict__, ibase.__dict__
       for k in self.attribs:  # store additional attributes from the input class         
          self.__dict__[k].store(ibase.__dict__[k])
 
