@@ -64,7 +64,20 @@ def _get_io_function(mode, io):
 
     return func
 
-# VENKAT TODO: must overhaul also this function
+def print_file_path_raw(mode, beads, cell, filedesc=sys.stdout, title="", cell_conv=1.0, atoms_conv=1.0):
+    """Prints all the bead configurations, into a `mode` formatted file.
+
+    Prints all the replicas for each time step separately, rather than all at
+    once.
+
+    Args:
+        beads: A beads object giving the bead positions.
+        cell: A cell object giving the system box.
+        filedesc: An open writable file object. Defaults to standard output.
+    """
+ 
+    return _get_io_function(mode, "print_path")(beads=beads, cell=cell, filedesc=filedesc, title=title, cell_conv=cell_conv, atoms_conv=atoms_conv)
+
 def print_file_path(mode, beads, cell, filedesc=sys.stdout, title="", key="", dimension="length", units="automatic", cell_units="automatic"):
     """Prints all the bead configurations, into a `mode` formatted file.
 
@@ -76,10 +89,23 @@ def print_file_path(mode, beads, cell, filedesc=sys.stdout, title="", key="", di
         cell: A cell object giving the system box.
         filedesc: An open writable file object. Defaults to standard output.
     """
-    
-    return _get_io_function(mode, "print_path")(beads=beads, cell=cell, filedesc=filedesc)
 
-# VENKAT TODO : also get the print_file functions work with just arrays, so we have a "fast write" mode that sidesteps any parsing or conversion, similar to what I'm doing for readfile and readfile_raw
+    if mode == "pdb":   # special case for PDB
+        if dimension != "length":
+            raise ValueError("PDB Standard is only designed for atomic positions")
+        if units == "automatic": units = "angstrom"
+        if cell_units == "automatic": cell_units = "angstrom"
+    # in general, "automatic" units are actually "atomic_units"
+    else:
+        if units == "automatic": units = "atomic_unit"
+        if cell_units == "automatic": cell_units = "atomic_unit"
+
+    cell_conv = unit_to_user("length", cell_units, 1.0)
+    atoms_conv = unit_to_user(dimension, units, 1.0)
+
+    title = title + ("%s{%s}  cell{%s}" % (key, units, cell_units))
+
+    return _get_io_function(mode, "print_path")(beads=beads, cell=cell, filedesc=filedesc, cell_conv=cell_conv, atoms_conv=atoms_conv)
 
 def print_file_raw(mode, atoms, cell, filedesc=sys.stdout, title="", cell_conv=1.0, atoms_conv=1.0):
     """Prints atom positions, or atom-vector properties, into a `mode` formatted file, 
@@ -175,7 +201,6 @@ def read_file(mode, filedesc, dimension="", units="automatic", cell_units="autom
 
     # late import is needed to break an import cycle
     from .io_units import process_units
-    
     return process_units(dimension=dimension, units=units, cell_units=cell_units, mode=mode, **raw_read)
 
 
@@ -191,8 +216,32 @@ def read_file_name(filename):
 
     return read_file(os.path.splitext(filename)[1], open(filename))
 
-# VENKAT TODO also to the same on iter_file, and get rid of this useless kwargs thing
-def iter_file(mode, filedesc, output="objects", **kwargs):
+def iter_file_raw(mode, filedesc):
+    """Takes an open `mode`-style file and yields a dictionary of positions and cell parameters in raw array format, without creating i-PI internal objects.
+
+    Args:
+        filedesc: An open readable file object from a `mode` formatted file.
+
+    Returns:
+        Generator of frames dictionaries, as returned by `process_units`.
+    """
+
+
+    reader = _get_io_function(mode, "read")
+
+    try:
+        while True:
+            comment, cell, atoms, names, masses = reader(filedesc=filedesc)
+            yield { "comment" : comment,
+                    "data": atoms, 
+                    "masses": masses, 
+                    "names": names, 
+                    "natoms": len(names), 
+                    "cell": cell }
+    except EOFError:
+        pass
+
+def iter_file(mode, filedesc, dimension="", units="automatic", cell_units="automatic"):
     """Takes an open `mode`-style file and yields one Atoms object after another.
 
     Args:
@@ -205,14 +254,9 @@ def iter_file(mode, filedesc, output="objects", **kwargs):
     # late import is needed to break an import cycle
     from .io_units import process_units
 
-    reader = _get_io_function(mode, "read")
-
-    try:
-        while True:
-            yield process_units(*reader(filedesc=filedesc, **kwargs), output=output)
-    except EOFError:
-        pass
-
+    iter_file_raw_generator = iter_file_raw(mode, filedesc)
+    for raw_read in iter_file_raw_generator:
+        yield process_units(dimension=dimension, units=units, cell_units=cell_units, mode=mode, **raw_read)
 
 def iter_file_name(filename):
     """Open a trajectory file, guessing its format from the extension.

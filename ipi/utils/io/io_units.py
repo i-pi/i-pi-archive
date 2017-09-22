@@ -21,7 +21,7 @@ traj_re = [re.compile('%s%s' % (key, r'\{[A-Za-z_]*\}'))
 
 def auto_units(comment="", dimension="automatic", units="automatic", cell_units="automatic", mode="xyz"):
     """ Processes comment line and requested units to determine how to interpret the I/O conversion. """\
-    
+   
     # heuristics to detect units
     if mode == "pdb": # these are the default units
         auto_cell = "angstrom"
@@ -30,7 +30,7 @@ def auto_units(comment="", dimension="automatic", units="automatic", cell_units=
     else:
         auto_cell = "atomic_unit"
         auto_units = "atomic_unit"
-        auto_dimension = "undefined"    
+        auto_dimension = "undefined"
 
     is_comment_useful = []
     if comment != "":  # but they can be overridden by a special comment line
@@ -46,19 +46,17 @@ def auto_units(comment="", dimension="automatic", units="automatic", cell_units=
         tmp = cell_unit_re.search(comment)
         if tmp is not None:
             auto_cell = tmp.group(1)
-
     if dimension == "automatic": 
         dimension = auto_dimension
     elif dimension != auto_dimension and len(is_comment_useful)>0:
         raise ValueError("Requested dimension mismatch with property indicated in the comment string")
-
     
     if units == "automatic": 
         units = auto_units
     elif units != auto_units and len(is_comment_useful)>0:
         raise ValueError("Requested units mismatch with units indicated in the comment string")
         
-    if cell_units == "automatic":         
+    if cell_units == "automatic":
         cell_units = auto_cell
     elif cell_units != auto_cell and len(is_comment_useful)>0:
         raise ValueError("Requested cell units mismatch with units indicated in the comment string")
@@ -79,7 +77,6 @@ def process_units(comment, cell, data, names, masses, natoms, dimension="automat
     Returns:
 
     """
-
     dimension, units, cell_units = auto_units(comment, dimension, units, cell_units, mode)
 
     # Units transformation

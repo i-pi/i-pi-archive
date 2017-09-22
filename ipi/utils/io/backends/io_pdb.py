@@ -42,11 +42,11 @@ def print_pdb_path(beads, cell, filedesc=sys.stdout, cell_conv=1.0, atoms_conv=1
     z = 1   # What even is this parameter?
     filedesc.write(fmt_cryst % (a, b, c, alpha, beta, gamma, " P 1        ", z))
 
-    natoms = beads.natoms * atoms_conv
+    natoms = beads.natoms
     nbeads = beads.nbeads
     for j in range(nbeads):
         for i in range(natoms):
-            qs = depstrip(beads.q)
+            qs = depstrip(beads.q) * atoms_conv
             lab = depstrip(beads.names)
             data = (j*natoms+i+1, lab[i], ' ', '  1', ' ', 1, ' ',
                     qs[j][3*i], qs[j][3*i+1], qs[j][3*i+2], 0.0, 0.0, '  ', 0)
