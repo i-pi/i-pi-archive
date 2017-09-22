@@ -42,7 +42,7 @@ class InputInitBase(InputValue):
 
       Just calls the parent initialize function with appropriate arguments.
       """
-
+      
       super(InputInitBase,self).__init__(dtype=str, dimension=dimension, default=default, options=options, help=help)
 
    def store(self, ibase):
@@ -62,7 +62,8 @@ class InputInitBase(InputValue):
 
       super(InputInitBase,self).store(value, units=ibase.units)
 
-      for k in self.attribs:  # store additional attributes from the input class
+      print self.__class__, self.__dict__, ibase.__dict__
+      for k in self.attribs:  # store additional attributes from the input class         
          self.__dict__[k].store(ibase.__dict__[k])
 
    def getval(self):
@@ -101,31 +102,6 @@ class InputInitBase(InputValue):
 
       return initclass(value=self.getval(), **rdict)
 
-
-class InputInitFile(InputInitBase):
-   """Class to handle initialization from a file."""
-
-   attribs = deepcopy(InputInitBase.attribs)
-   attribs["mode"][1]["default"] = "chk"
-   attribs["mode"][1]["options"] = ["xyz", "pdb", "chk"]
-   attribs["mode"][1]["help"] = "The input data format. 'xyz' and 'pdb' stand for xyz and pdb input files respectively. 'chk' stands for initialization from a checkpoint file."
-
-   default_label = "INITFILE"
-   default_help = "This is the class to initialize from file."
-
-
-class InputInitThermo(InputInitBase):
-   """Class to handle initialization of the thermostat."""
-
-   attribs = deepcopy(InputInitBase.attribs)
-   attribs["mode"][1]["default"] = "manual"
-   attribs["mode"][1]["options"] = ["chk", "manual"]
-   attribs["mode"][1]["help"] = "'chk' stands for initialization from a checkpoint file. 'manual' means that the value to initialize from is giving explicitly as a vector."
-
-   default_label = "INITTHERMO"
-   default_help = "This is the class to initialize the thermostat (ethermo and fictitious momenta)."
-
-
 class InputInitIndexed(InputInitBase):
    """Class to handle initialization of properties which the value of each
    bead and atom can be specified.
@@ -142,6 +118,33 @@ class InputInitIndexed(InputInitBase):
    default_label = "INITINDEXED"
    default_help = "This is a helper class to initialize with an index."
 
+
+class InputInitFile(InputInitBase):
+   """Class to handle initialization from a file."""
+
+   attribs = deepcopy(InputInitBase.attribs)
+   attribs["mode"][1]["default"] = "chk"
+   attribs["mode"][1]["options"] = ["xyz", "pdb", "chk"]
+   attribs["mode"][1]["help"] = "The input data format. 'xyz' and 'pdb' stand for xyz and pdb input files respectively. 'chk' stands for initialization from a checkpoint file."
+
+   attribs["bead"]  =     (InputAttribute,{ "dtype" : int, "default": -1, "help": "The index of the bead for which the value will be set. If a negative value is specified, then all beads are assumed." } )
+   attribs["cell_units"] = (InputAttribute, { "dtype" : str, "default": "automatic", "help": "The units for the cell dimensions." } ) 
+
+   default_label = "INITFILE"
+   default_help = "This is the class to initialize from file."
+   _initclass = ei.InitFile
+
+
+class InputInitThermo(InputInitBase):
+   """Class to handle initialization of the thermostat."""
+
+   attribs = deepcopy(InputInitBase.attribs)
+   attribs["mode"][1]["default"] = "manual"
+   attribs["mode"][1]["options"] = ["chk", "manual"]
+   attribs["mode"][1]["help"] = "'chk' stands for initialization from a checkpoint file. 'manual' means that the value to initialize from is giving explicitly as a vector."
+
+   default_label = "INITTHERMO"
+   default_help = "This is the class to initialize the thermostat (ethermo and fictitious momenta)."
 
 class InputInitPositions(InputInitIndexed):
    """Class to handle initialization of the positions."""
@@ -353,7 +356,6 @@ class InputInitializer(Input):
       """
 
       super(InputInitializer,self).fetch()
-
       initlist = []
       for (k,v) in self.extra:
          if v.mode.fetch() == "chk" and v.fetch(initclass=ei.InitIndexed).units != "":
@@ -367,8 +369,9 @@ class InputInitializer(Input):
                rm.units = ""
                initlist.append( ( "masses",   rm ) )
                initlist.append( ( "labels",   v.fetch(initclass=ei.InitIndexed) ) )
-#            if mode == "pdb" or mode == "chk":
-               initlist.append( ( "cell", v.fetch(initclass=ei.InitIndexed) ) )
+               rm = v.fetch(initclass=ei.InitIndexed)
+               rm.units = v.cell_units.fetch()
+               initlist.append( ( "cell", rm ) )
             if mode == "chk":
                rm = v.fetch(initclass=ei.InitIndexed)
                rm.units = ""
