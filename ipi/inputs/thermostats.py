@@ -49,8 +49,8 @@ class InputThermoBase(Input):
    """
 
    attribs = { "mode": (InputAttribute, { "dtype"   : str,
-                                      "options" : [ "", "langevin", "svr", "pile_l", "pile_g", "gle", "nm_gle", "nm_gle_g", "nfl", "dfl" ],
-                                      "help"    : "The style of thermostatting. 'langevin' specifies a white noise langevin equation to be attached to the cartesian representation of the momenta. 'svr' attaches a velocity rescaling thermostat to the cartesian representation of the momenta. Both 'pile_l' and 'pile_g' attaches a white noise langevin thermostat to the normal mode representation, with 'pile_l' attaching a local langevin thermostat to the centroid mode and 'pile_g' instead attaching a global velocity rescaling thermostat. 'gle' attaches a coloured noise langevin thermostat to the cartesian representation of the momenta, 'nm_gle' attaches a coloured noise langevin thermostat to the normal mode representation of the momenta and a langevin thermostat to the centroid and 'nm_gle_g' attaches a gle thermostat to the normal modes and a svr thermostat to the centroid. 'nfl' represents a modified langevin thermostat which compensates for additional white noise from noisy forces. 'dfl' represents a modified langevin thermostat which compensates for inherent damping from dissipative forces. 'multiple' is a special thermostat mode, in which one can define multiple thermostats _inside_ the thermostat tag."
+                                      "options" : [ "", "langevin", "svr", "pile_l", "pile_g", "gle", "nm_gle", "nm_gle_g", "cl" ],
+                                      "help"    : "The style of thermostatting. 'langevin' specifies a white noise langevin equation to be attached to the cartesian representation of the momenta. 'svr' attaches a velocity rescaling thermostat to the cartesian representation of the momenta. Both 'pile_l' and 'pile_g' attaches a white noise langevin thermostat to the normal mode representation, with 'pile_l' attaching a local langevin thermostat to the centroid mode and 'pile_g' instead attaching a global velocity rescaling thermostat. 'gle' attaches a coloured noise langevin thermostat to the cartesian representation of the momenta, 'nm_gle' attaches a coloured noise langevin thermostat to the normal mode representation of the momenta and a langevin thermostat to the centroid and 'nm_gle_g' attaches a gle thermostat to the normal modes and a svr thermostat to the centroid. 'cl' represents a modified langevin thermostat which compensates for additional white noise from noisy forces or for dissipative effects. 'multiple' is a special thermostat mode, in which one can define multiple thermostats _inside_ the thermostat tag."
                                          }) }
    fields = { "ethermo" : (InputValue, {  "dtype"     : float,
                                           "default"   : 0.0,
@@ -85,7 +85,7 @@ class InputThermoBase(Input):
                                     "dimension" : "time" }),
             "apat" : (InputValue, { "dtype"     : float,
                                     "default"   : 0.0,
-                                    "help"      : "The time scale for automatic adjustment of NFL or DFL thermostat's parameters.",
+                                    "help"      : "The time scale for automatic adjustment of CL thermostat's parameters.",
                                     "dimension" : "time" })
              }
 

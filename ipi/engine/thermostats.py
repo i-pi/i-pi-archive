@@ -922,7 +922,7 @@ class ThermoCL(Thermostat):
       return np.sqrt(Constants.kb*self.temp*(1.0 - (self.lgT * self.idT)**2))
 
    def __init__(self, temp = 1.0, dt = 1.0, tau = 0, intau = 0, idtau = 0, apat = 0, ethermo=0.0):
-      """Initialises ThermoDFL.
+      """Initialises ThermoCL.
 
       Args:
          temp: The simulation temperature. Defaults to 1.0.
@@ -936,7 +936,7 @@ class ThermoCL(Thermostat):
             initialised from a checkpoint file.
       """
 
-      super(ThermoDFL,self).__init__(temp, dt, ethermo)
+      super(ThermoCL,self).__init__(temp, dt, ethermo)
 
       self.idstep = False
       dset(self,"tau",depend_value(value=tau,name='tau'))
