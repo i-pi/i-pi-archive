@@ -41,7 +41,7 @@ def auto_units(comment="", dimension="automatic", units="automatic", cell_units=
                                       for key in traj_re])
         if len(is_comment_useful) > 0:                
             traj = is_comment_useful[0].group()[:-1].split('{')
-            auto_dimension, auto_units = traj_dict[traj[0]]['dimension'], traj[1]                
+            auto_dimension, auto_units = traj_dict[traj[0]]['dimension'], traj[1]
 
         # Extracting cell units
         tmp = cell_unit_re.search(comment)

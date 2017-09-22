@@ -180,7 +180,7 @@ def read_file_raw(mode, filedesc):
         }
  
 
-def read_file(mode, filedesc, dimension="", units="automatic", cell_units="automatic"):
+def read_file(mode, filedesc, dimension="automatic", units="automatic", cell_units="automatic"):
     """ Reads one frame from an open `mode`-style file. Also performs units 
         conversion as requested, or as guessed from the input comment line.
 
