@@ -2,7 +2,7 @@
   NOTE: The examples in this directory correspond to the calculations 
   performed in Ceriotti, More, Manolopoulos, Comp. Phys. Comm. 2013.
   Contrary to most examples, the parameters used here are suitable 
-  for production calculations (except nvt-dfl), and so these examples
+  for production calculations (except nvt-cl), and so these examples
   are computationally demanding and should not be run on a workstation.
 *******************************************************************************
 

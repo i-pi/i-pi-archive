@@ -22,10 +22,10 @@
       </ensemble>
       <motion mode='dynamics'>
 	<dynamics mode='nvt'>
-	  <thermostat mode='nfl'>
-            <tau units='femtosecond'> 0 </tau>
-            <invar units='atomic_unit'> 0 </invar>
-            <apat units='femtosecond'> 1000 </apat>
+	  <thermostat mode='cl'>
+            <tau units='femtosecond'> 100 </tau>
+            <intau units='femtosecond'> 500 </intau>
+            <apat units='femtosecond'> 100 </apat>
           </thermostat>
           <timestep units='femtosecond'> 0.1 </timestep>
 	</dynamics>

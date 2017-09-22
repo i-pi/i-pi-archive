@@ -24,7 +24,7 @@
      </ensemble>
      <motion mode='dynamics'>
        <dynamics mode='nvt'>
-	 <thermostat mode='dfl'>
+	 <thermostat mode='cl'>
 	   <tau units="femtosecond"> 5 </tau>
            <idtau units="femtosecond"> 50 </idtau>
            <apat units="femtosecond"> 100 </apat>

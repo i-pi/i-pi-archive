@@ -1,6 +1,6 @@
 ****************************************************************************
   NOTE: These examples are provided as templates to use i-pi with HswfQMC,
-  and are designed to demonstrate the operation of the 'NFL' thermostat
+  and are designed to demonstrate the operation of the 'CL' thermostat
   in this context. They are by no means templates for meaningful production
   simulations of hydrogen. However, it is still recommended to use a HPC
   node to execute the HswfQMC client and expect half a day of execution
@@ -77,12 +77,12 @@ $ HswfQMC_ipic -h 127.0.0.1 -p 54322 -m sim -o 0 -c 32 -l 10 -v > output &
    server's hostname/IP. Also, you need to change the address in the example's
    i-pi input file accordingly.
 
- * If you completed at least 2 steps you may now visualize the INV parameter
-   adjustment of the NFL thermostat by using the provided python script within
+ * If you completed at least 2 steps you may now visualize the intau parameter
+   adjustment of the CL thermostat by using the provided python script within
    the HswfQMC example directories (you need pylab):
 
-$ python invar_plot.py
+$ python intau_plot.py
 
- * NOTE: For production runs the idea is to first find a good invar value via
-   the automatic adjustment and to keep it fixed afterwards by setting invtau = 0
+ * NOTE: For production runs the idea is to first find a good intau value via
+   the automatic adjustment and to keep it fixed afterwards by setting apat = 0
    for the actual production calculation.
