@@ -241,7 +241,7 @@ def iter_file_raw(mode, filedesc):
     except EOFError:
         pass
 
-def iter_file(mode, filedesc, dimension="", units="automatic", cell_units="automatic"):
+def iter_file(mode, filedesc, dimension="automatic", units="automatic", cell_units="automatic"):
     """Takes an open `mode`-style file and yields one Atoms object after another.
 
     Args:
