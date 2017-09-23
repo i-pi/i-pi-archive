@@ -1,8 +1,6 @@
 <simulation verbosity="medium">
     <ffsocket mode='unix' name='driver'>
          <latency>  1.00000000e-02</latency>
-         <slots>4</slots>
-         <port>20614</port>
          <timeout>  6.00000000e+02</timeout>
          <address>dftb-zundel</address>
    </ffsocket>

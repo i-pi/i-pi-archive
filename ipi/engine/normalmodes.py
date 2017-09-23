@@ -181,7 +181,10 @@ class NormalModes(dobject):
       dset(self,"omegak", depend_array(name='omegak',
          value=np.zeros(self.beads.nbeads,float),
             func=self.get_omegak, dependencies=[dget(self,"omegan")]) )
-
+      dset(self,"omegak2", depend_array(name='omegak2',
+         value=np.zeros(self.beads.nbeads,float),
+            func=(lambda: (self.omegak)**2), dependencies=[dget(self,"omegak")]) )
+            
       # sets up "dynamical" masses -- mass-scalings to give the correct RPMD/CMD dynamics
       # TODO: Do we really need different names and variable names? Seems confusing.
       dset(self,"nm_factor", depend_array(name="nmm",

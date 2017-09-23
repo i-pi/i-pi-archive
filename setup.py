@@ -19,7 +19,7 @@ setup(
     description = 'A Python interface for ab initio path integral molecular dynamics simulations.',
     long_description = read('README.rst'),
     packages = find_packages(),
-    scripts = ['i-pi'],
+    scripts = ['bin/i-pi'],
     libraries = [('ipi', {'sources': ['drivers/sockets.c']})],
     author = "Michele Ceriotti",
     author_email = "michele.ceriotti@gmail.com",
