@@ -127,7 +127,7 @@ class Ensemble(dobject):
         dget(self, "econs").add_dependency(dget(self.nm, "kin"))
         dget(self, "econs").add_dependency(dget(self.forces, "pot"))
         dget(self, "econs").add_dependency(dget(self.bias, "pot"))
-        dget(self, "econs").add_dependency(dget(self.beads, "vpath"))
+        dget(self, "econs").add_dependency(dget(self.nm, "vspring"))
         dget(self, "econs").add_dependency(dget(self, "eens"))
 
         # pipes the weights to the list of weight vectors
@@ -189,7 +189,7 @@ class Ensemble(dobject):
         """Calculates the conserved energy quantity for constant energy
         ensembles.
         """
-        eham = self.beads.vpath*self.nm.omegan2 + self.nm.kin + self.forces.pot
+        eham = self.nm.vspring + self.nm.kin + self.forces.pot
         eham += self.bias.pot   # bias
         for e in self._elist:
             eham += e.get()
