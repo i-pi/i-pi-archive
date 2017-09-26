@@ -39,47 +39,49 @@ class InputInst(InputDictionary):
 
     fields = { "tolerances" : ( InputDictionary, {"dtype" : float,
                               "options"  : [ "energy", "force", "position" ],
-                              "default"  : [ 1e-6, 1e-6, 1e-6 ],
-                              "help"     : "Convergence criteria for optimization. Default values are extremely conservative. Set them to appropriate values for production runs.",
+                              "default"  : [ 1e-5, 1e-5, 5e-3 ],
+                              "help"     : "Convergence criteria for optimization.",
                               "dimension": [ "energy", "force", "length" ] }),
                "biggest_step": (InputValue, {"dtype" : float,
-                              "default"  : 100.0,
-                              "help"     : "The maximum step size for (L)-BFGS line minimizations."}),
+                              "default"  : 0.3,
+                              "help"     : "The maximum step size during the optimization."}),
                "old_pos":    (InputArray, {"dtype" : float,
                               "default"  : input_default(factory=np.zeros, args = (0,)),
-                              "help"     : "The previous positions in an optimization step.",
+                              "help"     : "The previous step positions during the optimization. ",
                               "dimension": "length"}),
                "old_pot":    (InputArray, {"dtype" : float,
                               "default"  : input_default(factory=np.zeros, args = (0,)),
-                              "help"     : "The previous potential energy in an optimization step.",
+                              "help"     : "The previous step potential energy during the optimization",
                               "dimension": "energy"}),
                "old_force":  (InputArray, {"dtype" : float,
                               "default"  : input_default(factory=np.zeros, args = (0,)),
-                              "help"     : "The previous force in an optimization step.",
+                              "help"     : "The previous step force during the optimization",
                               "dimension": "force"}),
                "hessian":    (InputArray, {"dtype" : float,
                               "default"  : input_default(factory=np.eye, args = (0,)),
-                              "help"     : "Approximate Hessian for trm, if known."}),
+                              "help"     : "(Approximate) Hessian."}),
                "delta":       (InputValue, {"dtype": float,
                                "default": 0.1,
                                "help": "Initial stretch amplitude."}),
                "hessian_init": (InputValue, {"dtype": str,
-                                "default": "expand",
-                                "options": ["true","expand"],
+                                "default": 'None',
+                                "options": ["true",'None'],
                                 "help": "How to initialize the hessian if it is not fully provided. If true computes the Hessian from scratch and if expand, reads from a Hessian that was provided and interpolates if necessary."}),
                "hessian_update": (InputValue, {"dtype": str,
                                 "default": "powell",
                                 "options": ["powell", "recompute"],
-                                "help": "How to update the hessian in each step. If powell uses the Powell method and if recompute, recomputes the Hessian from scratch."}),
+                                "help": "How to update the hessian in each step. 'powell' uses the Powell method. 'recompute' recomputes the Hessian from scratch."}),
                "hessian_asr": (InputValue, {"dtype": str,
                                 "default": "none",
                                 "options": ["none","poly","crystal"],
                                 "help": "Removes the zero frequency vibrational modes depending on the symmerty of the system."}),
                "final_rates": (InputValue, {"dtype": str,
-                                               "default": "false",
-                                               "options": ["false", "true"],
-                                               "help": "How to update the hessian in each step."})
-
+                                "default": "false",
+                                "options": ["false", "true"],
+                                "help": "Decide if we are going to compute the Qvib and therefore the big-hessian by finite difference."}),
+               "prefix": (InputValue, {"dtype": str, "default": "INSTANTON",
+                                       "help": "Prefix of the output files."
+                                       })
                } 
 
     dynamic = {  }
@@ -101,8 +103,7 @@ class InputInst(InputDictionary):
         self.hessian_update.store(geop.hessian_update)
         self.hessian_asr.store(geop.hessian_asr)
         self.final_rates.store(geop.final_rates)
-
-
+        self.prefix.store(geop.prefix)
 
     def fetch(self):
         rv = super(InputInst,self).fetch()
