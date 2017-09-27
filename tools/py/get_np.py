@@ -1,35 +1,15 @@
 #!/usr/bin/env python2 
 """
 
-Relies on the infrastructure of i-pi, so the ipi package should
-be installed in the Python module directory, or the i-pi
-main directory must be added to the PYTHONPATH environment variable.
-
-Cuts short the output of a previous i-pi simulation, up to the
-step indicated in the <step> field of the input file.
-This is useful to restart a simulation that crashed.
-
-It should be run in the same dyrectory as where i-pi was (or is being)
-run, and simply fetches all information from the simulation input file.
-One should also specify a directory name in which the trimmed files
-will be output.
-
-Syntax:
-   trimsim.py inputfile.xml
+Computes the quantum momentum distribution of a particle given the end-to-edn distances.  
+It computes both the three components of the momentum distribution and the radial function.
+Moreover it computes <p^2> both in the various directions and the total contribute.
 """
 
 
-import sys
-import os
+
 import argparse
 import numpy as np
-import matplotlib.pyplot as plt
-from ipi.utils.io import read_file
-from ipi.engine.outputs import *
-from ipi.engine.properties import getkey
-from ipi.inputs.simulation import InputSimulation
-from ipi.utils.io.inputs import io_xml
-from ipi.utils.units import unit_to_internal, unit_to_user
 
 
 def kernel(x, mean=0, sigma=1):
@@ -41,72 +21,119 @@ def histo(data, delta, k, mean, sigma):
         ly+=k(delta-x, mean, sigma)
     return ly
 
-def get_np(path2iipi, bsize=20000, nskip=300, si=15.0, sf=-15.0, ns=10000):
-    # opens & parses the i-pi input file
-    ifile = open(path2iipi,"r")
-    xmlrestart = io_xml.xml_parse_file(ifile)
-    ifile.close()
+def rad_kernel(x, delta, spread):
+   if (x <= 10**(-4)):
+      res= np.exp(-spread*delta**2)*4*delta**2 + 4./3.*np.exp(-spread*delta**2)*delta**2*spread*(-3 + 2*delta**2*spread)*x**2
+   else:
+      res=(np.exp(-spread*(x - delta)**2)-np.exp(-spread*(x + delta)**2))*delta/(x*spread)
+   return res
+    
+def rad_histo(data, delta, r_k, spread):
+    ly=delta*0.0
+    for x in data:
+        ly+=r_k(x, delta, spread)
+    return ly  
 
-    isimul = InputSimulation()                        
-    isimul.parse(xmlrestart.fields[0][1])
-    simul = isimul.fetch()
 
-    # parses the temperature, the number of beads, the number of atoms, the number of target species and their masses.
-    T = float(simul.syslist[0].ensemble.temp)
-    P = simul.syslist[0].beads.nbeads
-    natoms = simul.syslist[0].beads.natoms
-    open_paths = simul.syslist[0].nm.open_paths[-1]
-    m = simul.syslist[0].beads.m[open_paths]
+def get_np(path, fname, bsize, P, m, Tkelv, nskip, s, ns):   
    
-    # initialises the data files.
-    data_1 = np.zeros((bsize, 3) , float)
-    data_2 = np.zeros((bsize, 3) , float)
+    # initialises grids.
+    T= Tkelv*3.1668105*10**(-6) 
     dq = np.zeros((bsize,3) , float)
-    dqxgrid = np.linspace(si, sf, ns)
-    dqygrid = np.linspace(si, sf, ns)
-    dqzgrid = np.linspace(si, sf, ns)
+    dqxgrid = np.linspace(-s, s, ns)
+    dqygrid = np.linspace(-s, s, ns)
+    dqzgrid = np.linspace(-s, s, ns)
+    deltarad = dqxgrid*0.0  
+    deltarad = np.sqrt(dqxgrid**2+ dqygrid**2 + dqzgrid**2)
+
+    hxlist =[]
+    hylist =[]
+    hzlist =[]
+    hradlist =[]
+
     nplistx = []
     nplisty = []
     nplistz = []
+    npradlist = []
 
+    # Defines the grid for momentum.
+    pxi = -np.pi/(dqxgrid[1]-dqxgrid[0])
+    pxf = +np.pi/(dqxgrid[1]-dqxgrid[0])
+    pxstep = 2* np.pi/np.abs(dqxgrid[-1]-dqxgrid[0])
+    pxgrid = np.linspace(pxi,pxf,ns)
+    pxgrid= pxgrid- pxstep/2.
+
+    pyi = -np.pi/(dqygrid[1]-dqygrid[0])
+    pyf = +np.pi/(dqygrid[1]-dqygrid[0])
+    pystep = 2* np.pi / np.abs(dqygrid[-1]-dqygrid[0])
+    pygrid = np.linspace(pyi,pyf,ns)
+    pygrid= pygrid- pystep/2.
+
+    pzi = -np.pi/(dqzgrid[1]-dqzgrid[0])
+    pzf = +np.pi/(dqzgrid[1]-dqzgrid[0])
+    pzstep = 2* np.pi / np.abs(dqzgrid[-1]-dqzgrid[0])
+    pzgrid = np.linspace(pzi,pzf,ns)
+    pzgrid= pzgrid- pzstep/2.
+
+    pgrid = np.linspace(0.0001, 80, ns)
+    pstep = np.abs(pgrid[0]-pgrid[1])
+    rad_npd = pgrid*0.0
+    
     #Read the end to end distances from file
-    data_path = '/home/cuzzocre/source/i-pi-mc/examples/lammps/ice-nst/P32-T269/endtoend.data'
+    data_path =str(path + fname)
     delta= np.loadtxt(data_path)
-    step = np.shape(delta)[0]  
+    step = np.shape(delta)[0] 
+   
     n_block =int(step/bsize)
 
+    if (n_block ==0):
+             print 'not enough data to build a block'
+             exit()
     for x in xrange(n_block):
         dq = delta[x*bsize : (x+1)*bsize]
+        dq_module = np.sqrt((dq.T[0])**2 + (dq.T[1])**2 + (dq.T[2])**2)											
+     
         hx = histo(np.concatenate((dq.T[0], -dq.T[0])), dqxgrid, kernel, 0, np.sqrt(T * P * m))
         hy = histo(np.concatenate((dq.T[1], -dq.T[1])), dqygrid, kernel, 0, np.sqrt(T * P * m))
-        hz = histo(np.concatenate((dq.T[2], -dq.T[2])), dqzgrid, kernel, 0, np.sqrt(T * P * m))
-       
-        # Defines the grid for momentum.
-        pxi = -np.pi/(dqxgrid[1]-dqxgrid[0])
-        pxf = +np.pi/(dqxgrid[1]-dqxgrid[0])
-        pxstep = 2* np.pi / np.abs(dqxgrid[-1]-dqxgrid[0])
-        pxgrid = np.linspace(pxi,pxf,ns)
-
-	pyi = -np.pi/(dqygrid[1]-dqygrid[0])
-        pyf = +np.pi/(dqygrid[1]-dqygrid[0])
-        pystep = 2* np.pi / np.abs(dqygrid[-1]-dqygrid[0])
-        pygrid = np.linspace(pyi,pyf,ns)
-
-        pzi = -np.pi/(dqzgrid[1]-dqzgrid[0])
-        pzf = +np.pi/(dqzgrid[1]-dqzgrid[0])
-        pzstep = 2* np.pi / np.abs(dqzgrid[-1]-dqzgrid[0])
-        pzgrid = np.linspace(pzi,pzf,ns)
-            
-
+        hz = histo(np.concatenate((dq.T[2], -dq.T[2])), dqzgrid, kernel, 0, np.sqrt(T * P * m))         
+        hrad = rad_histo(dq_module, deltarad, rad_kernel, (0.5 * T * P * m))  
+        hxlist.append(hx)
+        hylist.append(hy)
+        hzlist.append(hz)
+        hradlist.append(hrad)
+        
         # Computes the Fourier transform of the end to end vector.
         npx = np.abs(np.fft.fftshift(np.fft.fft(hx)))
         npy = np.abs(np.fft.fftshift(np.fft.fft(hy)))
         npz = np.abs(np.fft.fftshift(np.fft.fft(hz)))
-           
+        rad_npd = pgrid*0.0
+        for i in range(len(pgrid)):
+             for t in range(len(deltarad)): 
+                 rad_npd[i] += pgrid[i]*hrad[t]*np.sin(pgrid[i]*deltarad[t])/deltarad[t]
         nplistx.append(npx)
         nplisty.append(npy)
         nplistz.append(npz)
+        npradlist.append(rad_npd) 
     
+    #save the convoluted histograms of the end-to-end distances
+    avghx = np.mean(np.asarray(hxlist), axis = 0)
+    normhx= np.sum(avghx)
+    errhx = np.std(np.asarray(hxlist), axis = 0)/ np.sqrt(n_block)/normhx
+    avghy = np.mean(np.asarray(hylist), axis = 0)
+    normhy= np.sum(avghy)
+    errhy = np.std(np.asarray(hylist), axis = 0)/ np.sqrt(n_block)/normhy
+    avghz = np.mean(np.asarray(hzlist), axis = 0)
+    normhz= np.sum(avghz)
+    errhz = np.std(np.asarray(hzlist), axis = 0)/ np.sqrt(n_block)/normhz
+    np.savetxt(str(path + "histo.data"), np.c_[dqxgrid, avghx, errhx, dqygrid, avghy, errhy, dqzgrid, avghz, errhz])    
+
+    avghrad = np.mean(np.asarray(hradlist), axis = 0)
+    normhrad=np.sum(avghrad)
+    errhrad = np.std(np.asarray(hradlist), axis = 0)/ np.sqrt(n_block)/normhrad
+   
+    np.savetxt(str(path + "rad-histo.data"), np.c_[deltarad, avghrad, errhrad])
+
+    #save the resulting momentum distribution for each axes
     avgnpx = np.mean(np.asarray(nplistx), axis = 0)
     avgnpy = np.mean(np.asarray(nplisty), axis = 0)
     avgnpz = np.mean(np.asarray(nplistz), axis = 0)
@@ -119,18 +146,10 @@ def get_np(path2iipi, bsize=20000, nskip=300, si=15.0, sf=-15.0, ns=10000):
     avgnpy= avgnpy/normy
     errnpz = np.std(np.asarray(nplistz), axis = 0)/ np.sqrt(n_block)/normz
     avgnpz= avgnpz/normz
+    
+    np.savetxt(str(path + "np.data"), np.c_[pxgrid,avgnpx/pxstep,errnpx/pxstep,avgnpy/pystep,errnpy/pystep,avgnpz/pzstep,errnpz/pzstep])   
 
-    avgpsqnpx = pxgrid**2*avgnpx/pxstep
-    errpsqnpx = pxgrid**2*errnpx/pxstep
-    avgpsqnpy = pygrid**2*avgnpy/pystep
-    errpsqnpy = pygrid**2*errnpy/pystep
-    avgpsqnpz = pzgrid**2*avgnpz/pzstep
-    errpsqnpz = pzgrid**2*errnpz/pzstep
-    
-    np.savetxt("np.data", np.c_[pxgrid,avgnpx,errnpx,avgnpy,errnpy,avgnpz,errnpz])
-    np.savetxt("psq-np.data", np.c_[pxgrid,avgpsqnpx,errpsqnpx,avgpsqnpy,errpsqnpy,avgpsqnpz,errpsqnpz])
-    
-    
+    #print the average value of p-square for each direction
     psqmedx =  0.
     psqmed2x = 0.
     psqmedy =  0.
@@ -149,6 +168,37 @@ def get_np(path2iipi, bsize=20000, nskip=300, si=15.0, sf=-15.0, ns=10000):
     print 'av_px^2', psqmedx/n_block, 'sigmax', np.sqrt((psqmed2x/n_block) - (psqmedx/n_block)**2)/np.sqrt(n_block)
     print 'av_py^2', psqmedy/n_block, 'sigmay', np.sqrt((psqmed2y/n_block) - (psqmedy/n_block)**2)/np.sqrt(n_block)
     print 'av_pz^2', psqmedz/n_block, 'sigmaz', np.sqrt((psqmed2z/n_block) - (psqmedz/n_block)**2)/np.sqrt(n_block)
+ 
 
-if __name__ == '__main__':  get_np(*sys.argv[1:])
+    
+    #save the radial n(p) and print the average value of p-square
+    avgnprad = np.mean(np.asarray(npradlist), axis = 0)  
+    norm=np.sum(avgnprad*pstep)
+    errnprad = np.std(np.asarray(npradlist), axis = 0)/np.sqrt(n_block)/norm
+    avgnprad= avgnprad/(norm)    
+    np.savetxt(str(path + "rad_np.data"), np.c_[pgrid, avgnprad, errnprad])
+
+    psqmedrad =  0.
+    psqmed2rad = 0.
+    for i in range(n_block):         
+         psqmedrad +=  pstep*np.dot(pgrid**2,np.asarray(npradlist)[i,:])/norm
+         psqmed2rad +=  (pstep*np.dot(pgrid**2, np.asarray(npradlist)[i,:])/norm)**2
+    print 'av_p^2', psqmedrad/n_block, 'sigma', np.sqrt((psqmed2rad/n_block) - (psqmedrad/n_block)**2)/np.sqrt(n_block)
+   
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description=None)
+    parser.add_argument("--path",type=str, default="", help="path of the folder conatining the end-to-end distances file")
+    parser.add_argument("--fname",type=str,default="", help="name of the end-to-end distances file")
+    parser.add_argument("-bsize", type=int, default=80000, help="Specify the size of the blocks")
+    parser.add_argument("-P", type=int, default= 1, help="Specify the number of beads")
+    parser.add_argument("-m", type=float, default= 1837, help="Specify the mass of the atom in atomic units-default is hydorgen")
+    parser.add_argument("-T", type=float, default= 300, help="Specify the temperature of the system in kelvin")
+    parser.add_argument("-nskip", type=int, default= 10, help="Removes the equilibration steps")
+    parser.add_argument("-dint", type=float, default=10, help="Specify the positive extrema of the interval to build the histogram ([-dint,dint])")
+    parser.add_argument("-ns", type=float, default=1000, help="Specify the number of point to use for the histogram")
+    args = parser.parse_args()
+
+    get_np(args.path, args.fname, args.bsize, args.P, args.m, args.T, args.nskip, args.dint, args.ns)
+
 

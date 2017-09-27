@@ -1,8 +1,6 @@
 #!/usr/bin/env python2
 
-""" kinetic2tag.py
-
-Computes the Transient Anisotropic Gaussian (TAG) approximation
+description="""Computes the Transient Anisotropic Gaussian (TAG) approximation
 of the instantaneous kinetic energy tensor, with a moving average
 triangular window of the specified lag. Needs files with
 the per-atom diagonal and off-diagonal components of the kinetic
@@ -10,24 +8,24 @@ energy tensor estimator.
 
 Assumes the input files are in xyz format and atomic units,
 with prefix.kin.xyz and prefix.kod.xyz naming scheme.
-
-Syntax:
-   kinetic2tag.py prefix lag
 """
 
 
 import numpy as np
 
 import sys
+import argparse
 from ipi.utils.io import read_file
 from ipi.utils.depend import *
 from ipi.utils.units import *
-
+from ipi.utils.messages import verbosity
 
 def main(prefix, lag):
 
+   verbosity.level = "low" 
    lag = int(lag)
-
+   
+   # hard-coded prefixes for kinetic energy components  (kin=diagonal bit, kod=off-diagonal)
    ikin=open(prefix+".kin.xyz","r")
    ikod=open(prefix+".kod.xyz","r")
    otag=open(prefix+".ktag_"+str(lag)+".xyz","w")
@@ -40,8 +38,8 @@ def main(prefix, lag):
          ret = read_file("xyz", ikin)
          tk = ret["atoms"]
          kin = depstrip(tk.q)
-         ret = depstrip(read_file("xyz", ikod).q)
-         kod = ret["atoms"]
+         ret = read_file("xyz", ikod)
+         kod = depstrip(ret["atoms"].q)
          if natoms == 0:  # initializes vectors
             natoms = len(kin)/3
             ktbuf = np.zeros((cbuf,natoms,3,3),float)   # implement the buffer as a circular one so one doesn't need to re-allocate and storage is continuous
@@ -84,4 +82,13 @@ def main(prefix, lag):
 
 
 if __name__ == '__main__':
-   main(*sys.argv[1:])
+    parser = argparse.ArgumentParser(description=description)   
+
+    parser.add_argument('prefix', type=str, nargs=1,
+                        help='Prefix of the trajectories to process.')
+    parser.add_argument('lag', type=int, nargs=1,
+                        help='Time lag for the TAG, in number of time steps.')
+
+    args = parser.parse_args()
+    
+    main(args.prefix[0], args.lag[0])

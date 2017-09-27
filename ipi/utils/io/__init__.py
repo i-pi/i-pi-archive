@@ -1,6 +1,9 @@
 """Package with functions for reading and writing files.
 
 This module has machinery for abstract I/O handling.
+
+The idea is that the unit conversion is done here. The default is to guess
+units from the file, but it can be overridden. 
 """
 
 # This file is part of i-PI.
@@ -12,9 +15,9 @@ import sys
 import os
 
 from ipi.utils.messages import info, verbosity
+from ipi.utils.units import unit_to_user
 from ipi.external import importlib
 from ipi.utils.decorators import cached
-
 
 __all__ = ["iter_file", "print_file_path", "print_file", "read_file"]
 
@@ -61,8 +64,7 @@ def _get_io_function(mode, io):
 
     return func
 
-
-def print_file_path(mode, beads, cell, filedesc=sys.stdout):
+def print_file_path_raw(mode, beads, cell, filedesc=sys.stdout, title="", cell_conv=1.0, atoms_conv=1.0):
     """Prints all the bead configurations, into a `mode` formatted file.
 
     Prints all the replicas for each time step separately, rather than all at
@@ -73,38 +75,133 @@ def print_file_path(mode, beads, cell, filedesc=sys.stdout):
         cell: A cell object giving the system box.
         filedesc: An open writable file object. Defaults to standard output.
     """
-    return _get_io_function(mode, "print_path")(beads=beads, cell=cell, filedesc=filedesc)
+ 
+    return _get_io_function(mode, "print_path")(beads=beads, cell=cell, filedesc=filedesc, title=title, cell_conv=cell_conv, atoms_conv=atoms_conv)
 
+def print_file_path(mode, beads, cell, filedesc=sys.stdout, title="", key="", dimension="length", units="automatic", cell_units="automatic"):
+    """Prints all the bead configurations, into a `mode` formatted file.
 
-def print_file(mode, atoms, cell, filedesc=sys.stdout, title=""):
-    """Prints the centroid configurations, into a `mode` formatted file.
+    Prints all the replicas for each time step separately, rather than all at
+    once.
 
     Args:
-        atoms: An atoms object giving the centroid positions.
+        beads: A beads object giving the bead positions.
         cell: A cell object giving the system box.
         filedesc: An open writable file object. Defaults to standard output.
-        title: This gives a string to be appended to the comment line.
     """
-    return _get_io_function(mode, "print")(atoms=atoms, cell=cell, filedesc=filedesc, title=title)
 
+    if mode == "pdb":   # special case for PDB
+        if dimension != "length":
+            raise ValueError("PDB Standard is only designed for atomic positions")
+        if units == "automatic": units = "angstrom"
+        if cell_units == "automatic": cell_units = "angstrom"
+    # in general, "automatic" units are actually "atomic_units"
+    else:
+        if units == "automatic": units = "atomic_unit"
+        if cell_units == "automatic": cell_units = "atomic_unit"
 
-def read_file(mode, filedesc, output="objects", **kwargs):
-    """Reads one frame from an open `mode`-style file.
+    cell_conv = unit_to_user("length", cell_units, 1.0)
+    atoms_conv = unit_to_user(dimension, units, 1.0)
+
+    title = title + ("%s{%s}  cell{%s}" % (key, units, cell_units))
+
+    return _get_io_function(mode, "print_path")(beads=beads, cell=cell, filedesc=filedesc, cell_conv=cell_conv, atoms_conv=atoms_conv)
+
+def print_file_raw(mode, atoms, cell, filedesc=sys.stdout, title="", cell_conv=1.0, atoms_conv=1.0):
+    """Prints atom positions, or atom-vector properties, into a `mode` formatted file, 
+       providing atoms and cell in the internal i-PI representation but doing no conversion.
+       
+    Args:
+        atoms: An atoms object containing the positions (or properties) of the atoms 
+        cell: A cell object containing the system box.
+        filedesc: An open writable file object. Defaults to standard output.
+        title: This contains the string that will be used for the comment line.
+        cell_conv: Conversion factor for the cell parameters
+        atoms_conv: Conversion factors for the atomic properties
+    """
+   
+    return _get_io_function(mode, "print")(atoms=atoms, cell=cell, filedesc=filedesc, title=title, cell_conv=cell_conv, atoms_conv=atoms_conv)
+
+def print_file(mode, atoms, cell, filedesc=sys.stdout, title="", key="", dimension="length", units="automatic", cell_units="automatic"):
+    """Prints atom positions, or atom-vector properties, into a `mode` formatted file, 
+       using i-PI internal representation of atoms & cell. Does conversion and prepares 
+       formatted title line. 
 
     Args:
+        mode: I/O file format (e.g. "xyz")
+        atoms: An atoms object containing the positions (or properties) of the atoms 
+        cell: A cell object containing the system box.
+        filedesc: An open writable file object. Defaults to standard output.
+        title: This gives a string to be appended to the comment line.
+        key: Description of the property that is being output
+        dimension: Dimensions of the property (e.g. "length")
+        units: Units for the output (e.g. "angstrom")
+        cell_units: Units for the cell (dimension length, e.g. "angstrom")
+    """
+ 
+    if mode == "pdb":   # special case for PDB
+        if dimension != "length":
+            raise ValueError("PDB Standard is only designed for atomic positions")
+        if units == "automatic": units = "angstrom"
+        if cell_units == "automatic": cell_units = "angstrom"
+    # in general, "automatic" units are actually "atomic_units"
+    else:
+        if units == "automatic": units = "atomic_unit"
+        if cell_units == "automatic": cell_units = "atomic_unit"
+ 
+    cell_conv = unit_to_user("length", cell_units, 1.0)
+    atoms_conv = unit_to_user(dimension, units, 1.0)
+ 
+    title = title + ("%s{%s}  cell{%s}" % (key, units, cell_units))
+
+    print_file_raw(mode=mode, atoms=atoms, cell=cell, filedesc=filedesc, title=title, cell_conv=cell_conv, atoms_conv=atoms_conv)
+
+def read_file_raw(mode, filedesc):    
+    """ Reads atom positions, or atom-vector properties, from a file of mode "mode", 
+        returns positions and cell parameters in raw array format, without creating i-PI
+        internal objects. 
+
+    Args:
+        mode: I/O file format (e.g. "xyz")
+        filedesc: An open readable file object.
+        
+    """
+    reader = _get_io_function(mode, "read") 
+        
+    comment, cell, atoms, names, masses = reader(filedesc=filedesc)
+     
+    return {
+          "comment" : comment, 
+          "data": atoms,
+          "masses": masses,
+          "names": names,
+          "natoms": len(names),
+          "cell": cell
+        }
+ 
+
+def read_file(mode, filedesc, dimension="automatic", units="automatic", cell_units="automatic"):
+    """ Reads one frame from an open `mode`-style file. Also performs units 
+        conversion as requested, or as guessed from the input comment line.
+
+    Args:
+        mode: I/O file format (e.g. "xyz")        
         filedesc: An open readable file object from a `mode` formatted file.
+        dimension: Dimensions of the property (e.g. "length")
+        units: Units for the input (e.g. "angstrom")
+        cell_units: Units for the cell (dimension length, e.g. "angstrom")
+        
         All other args are passed directly to the responsible io function.
 
     Returns:
         A dictionary as returned by `process_units`.
     """
 
+    raw_read = read_file_raw(mode=mode, filedesc=filedesc)
+
     # late import is needed to break an import cycle
     from .io_units import process_units
-
-    reader = _get_io_function(mode, "read")
-
-    return process_units(*reader(filedesc=filedesc, **kwargs), output=output)
+    return process_units(dimension=dimension, units=units, cell_units=cell_units, mode=mode, **raw_read)
 
 
 def read_file_name(filename):
@@ -119,8 +216,32 @@ def read_file_name(filename):
 
     return read_file(os.path.splitext(filename)[1], open(filename))
 
+def iter_file_raw(mode, filedesc):
+    """Takes an open `mode`-style file and yields a dictionary of positions and cell parameters in raw array format, without creating i-PI internal objects.
 
-def iter_file(mode, filedesc, output="objects", **kwargs):
+    Args:
+        filedesc: An open readable file object from a `mode` formatted file.
+
+    Returns:
+        Generator of frames dictionaries, as returned by `process_units`.
+    """
+
+
+    reader = _get_io_function(mode, "read")
+
+    try:
+        while True:
+            comment, cell, atoms, names, masses = reader(filedesc=filedesc)
+            yield { "comment" : comment,
+                    "data": atoms, 
+                    "masses": masses, 
+                    "names": names, 
+                    "natoms": len(names), 
+                    "cell": cell }
+    except EOFError:
+        pass
+
+def iter_file(mode, filedesc, dimension="automatic", units="automatic", cell_units="automatic"):
     """Takes an open `mode`-style file and yields one Atoms object after another.
 
     Args:
@@ -133,14 +254,9 @@ def iter_file(mode, filedesc, output="objects", **kwargs):
     # late import is needed to break an import cycle
     from .io_units import process_units
 
-    reader = _get_io_function(mode, "read")
-
-    try:
-        while True:
-            yield process_units(*reader(filedesc=filedesc, **kwargs), output=output)
-    except EOFError:
-        pass
-
+    iter_file_raw_generator = iter_file_raw(mode, filedesc)
+    for raw_read in iter_file_raw_generator:
+        yield process_units(dimension=dimension, units=units, cell_units=cell_units, mode=mode, **raw_read)
 
 def iter_file_name(filename):
     """Open a trajectory file, guessing its format from the extension.

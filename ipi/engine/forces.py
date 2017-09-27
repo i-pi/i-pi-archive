@@ -1111,4 +1111,3 @@ class Forces(dobject):
       rc[0::2] =  (self.alpha / self.omegan2 / 9.0)
       rc[1::2] =  ((1.0 - self.alpha) / self.omegan2 / 9.0)
       return np.asmatrix(rc).T
-
