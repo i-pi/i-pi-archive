@@ -26,7 +26,7 @@ from ipi.utils.nmtransform import nm_rescale
 from ipi.utils.messages import verbosity, warning, info
 
 
-__all__ = ['Initializer', 'InitBase', 'InitIndexed']
+__all__ = ['Initializer', 'InitBase', 'InitIndexed', 'InitFile']
 
 
 class InitBase(dobject):
@@ -70,8 +70,8 @@ class InitIndexed(InitBase):
       bead: Which bead to initialize the value of.
    """
 
-   def __init__(self, value="", mode="", units="", index=-1, bead=-1):
-      """Initializes InitFile.
+   def __init__(self, value="", mode="", units="", index=-1, bead=-1, **others):
+      """Initializes InitIndexed.
 
       Args:
          value: A string which specifies what value to initialize the
@@ -85,8 +85,23 @@ class InitIndexed(InitBase):
 
       super(InitIndexed,self).__init__(value=value, mode=mode, units=units, index=index, bead=bead)
 
+class InitFile(InitBase):
+    def __init__(self, value="", mode="", units="", cell_units="", bead=-1, **others):
+        """Initializes InitIndexed.
 
-def init_file(mode, filename):
+        Args:
+            value: A string which specifies what value to initialize the
+                simulation property to.
+            mode: A string specifiying what style of initialization should be
+                used to read the data.
+            units: A string giving which unit the value is in.
+            cell_units: A string giving which unit the cell parameters for the files are
+            bead: Which bead to initialize the value of.
+        """
+
+        super(InitFile,self).__init__(value=value, mode=mode, units=units, cell_units=cell_units, bead=bead)
+      
+def init_file(mode, filename, dimension="length", units="automatic", cell_units="automatic"):
    """Reads a @mode file and returns the data contained in it.
 
    Args:
@@ -100,11 +115,13 @@ def init_file(mode, filename):
 
    rfile = open(filename, "r")
    ratoms = []
+   
+   info("Initializing from file %s. Dimension: %s, units: %s, cell_units: %s" % (filename, dimension, units, cell_units), verbosity.low)
    while True:
    #while loop, so that more than one configuration can be given
    #so multiple beads can be initialized at once.
       try:
-         ret = read_file(mode, rfile)
+         ret = read_file(mode, rfile, dimension=dimension, units=units, cell_units=cell_units)
       except EOFError:
          break
       ratoms.append(ret["atoms"])
@@ -139,7 +156,7 @@ def init_chk(filename):
    return (rbeads, rcell, rmotion)
 
 
-def init_beads(iif, nbeads):
+def init_beads(iif, nbeads, dimension="length", units="automatic", cell_units="automatic"):
    """Initializes a beads object from an appropriate initializer object.
 
    Args:
@@ -157,7 +174,7 @@ def init_beads(iif, nbeads):
    elif mode == "manual":
       raise ValueError("Cannot initialize manually a whole beads object.")
    else:
-      ret = init_file(mode, value)
+      ret = init_file(mode, value, dimension, units, cell_units)
       ratoms = ret[0]
       rbeads = Beads(ratoms[0].natoms,len(ratoms))
       for i in range(len(ratoms)):
@@ -166,7 +183,7 @@ def init_beads(iif, nbeads):
    return rbeads
 
 
-def init_vector(iif, nbeads, momenta=False):
+def init_vector(iif, nbeads, momenta=False, dimension="length", units="automatic", cell_units="automatic"):
    """Initializes a vector from an appropriate initializer object.
 
    Args:
@@ -179,7 +196,7 @@ def init_vector(iif, nbeads, momenta=False):
    mode = iif.mode
    value = iif.value
    if mode == "xyz" or mode == "pdb":
-      rq = init_beads(iif, nbeads).q
+      rq = init_beads(iif, nbeads, dimension, units, cell_units).q
    elif mode == "chk":
       if momenta: rq = init_beads(iif, nbeads).p
       else:       rq = init_beads(iif, nbeads).q
@@ -310,7 +327,7 @@ class Initializer(dobject):
 
          if k == "cell":
             if v.mode == "manual":
-                rh = v.value.reshape((3,3))
+                rh = v.value.reshape((3,3))*unit_to_internal("length",v.units,1.0)
             elif v.mode == "chk":
                rh = init_chk(v.value)[1].h
             elif init_file(v.mode,v.value)[1].h.trace() == -3:
@@ -319,15 +336,15 @@ class Initializer(dobject):
                #+set to -1 from the io_units and nothing is read here.
                continue
             else:
-               rh =  init_file(v.mode,v.value)[1].h
+               rh =  init_file(v.mode,v.value,cell_units=v.units)[1].h
 
             if fcell :
                warning("Overwriting previous cell parameters", verbosity.low)
 
 
-            warning_units_message(v, 'cell')
+            #warning_units_message(v, 'cell')
 
-            rh *= unit_to_internal("length",v.units,1.0)
+            #rh *= unit_to_internal("length",v.units,1.0)
 
             simul.cell.h = rh
             if simul.cell.V == 0.0:
@@ -340,10 +357,9 @@ class Initializer(dobject):
             if fmass:
                warning("Overwriting previous atomic masses", verbosity.medium)
             if v.mode == "manual":
-               rm = v.value
+               rm = v.value * unit_to_internal("mass",v.units,1.0)
             else:
                rm = init_beads(v, self.nbeads).m
-            rm *= unit_to_internal("mass",v.units,1.0)
 
             if v.bead < 0:   # we are initializing the path
                if (fmom and fmass):
@@ -382,11 +398,9 @@ class Initializer(dobject):
             if fpos:
                warning("Overwriting previous atomic positions", verbosity.medium)
             # read the atomic positions as a vector
-            rq = init_vector(v, self.nbeads)
+            
+            rq = init_vector(v, self.nbeads, dimension="length", units=v.units)
 
-            warning_units_message(v, 'position')
-
-            rq *= unit_to_internal("length",v.units,1.0)
             nbeads, natoms = rq.shape
             natoms /= 3
 
@@ -446,8 +460,7 @@ class Initializer(dobject):
             if fmom:
                warning("Overwriting previous atomic momenta", verbosity.medium)
             # read the atomic momenta as a vector
-            rp = init_vector(v, self.nbeads, momenta=True)
-            rp *= unit_to_internal("momentum", v.units, 1.0)
+            rp = init_vector(v, self.nbeads, momenta=True, dimension="momentum", units=v.units)
             nbeads, natoms = rp.shape
             natoms /= 3
 
@@ -461,14 +474,13 @@ class Initializer(dobject):
             set_vector(v, simul.beads.p, rp)
             fmom = True
 
-            warning_units_message(v, 'momenta')
+            #warning_units_message(v, 'momenta')
 
          elif k == "velocities":
             if fmom:
                warning("Overwriting previous atomic momenta", verbosity.medium)
             # read the atomic velocities as a vector
-            rv = init_vector(v, self.nbeads)
-            rv *= unit_to_internal("velocity", v.units, 1.0)
+            rv = init_vector(v, self.nbeads, dimension="velocity", units=v.units)
             nbeads, natoms = rv.shape
             natoms /= 3
 
@@ -487,7 +499,7 @@ class Initializer(dobject):
             set_vector(v, simul.beads.p, rv)
             fmom = True
 
-            warning_units_message(v, 'velocity')
+            #warning_units_message(v, 'velocity')
 
          elif k == "gle": pass   # thermostats must be initialised in a second stage
 

@@ -23,6 +23,7 @@ Syntax:
 
 import sys
 import numpy as np
+from ipi.utils.messages import verbosity
 from ipi.engine.outputs import *
 from ipi.engine.properties import getkey
 from ipi.inputs.simulation import InputSimulation
@@ -31,7 +32,7 @@ from ipi.utils.io.inputs import io_xml
 
 def main(inputfile, prefix="PT"):
 
-
+   verbosity.level = "low"
    # opens & parses the input file
    ifile = open(inputfile,"r")
    xmlrestart = io_xml.xml_parse_file(ifile) # Parses the file.

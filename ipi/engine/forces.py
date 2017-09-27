@@ -794,7 +794,6 @@ class Forces(dobject):
          warning("ERROR: Suzuki-Chin factorization requires even number of beads!")
          exit()
 
-
       # calculates the finite displacement.
       fbase = depstrip(self.f)
       eps = self.mforces[index].epsilon
@@ -1013,4 +1012,3 @@ class Forces(dobject):
       rc[0::2] =  (self.alpha / self.omegan2 / 9.0)
       rc[1::2] =  ((1.0 - self.alpha) / self.omegan2 / 9.0)
       return np.asmatrix(rc).T
-

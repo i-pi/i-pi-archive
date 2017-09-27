@@ -20,7 +20,7 @@ from ipi.utils.units import Elements
 __all__ = ['print_pdb_path', 'print_pdb', 'read_pdb']
 
 
-def print_pdb_path(beads, cell, filedesc=sys.stdout):
+def print_pdb_path(beads, cell, filedesc=sys.stdout, cell_conv=1.0, atoms_conv=1.0):
     """Prints all the bead configurations, into a pdb formatted file.
 
     Prints the ring polymer springs as well as the bead positions using the
@@ -37,7 +37,7 @@ def print_pdb_path(beads, cell, filedesc=sys.stdout):
     fmt_atom = "ATOM  %5i %4s%1s%3s %1s%4i%1s  %8.3f%8.3f%8.3f%6.2f%6.2f          %2s%2i\n"
     fmt_conect = "CONECT%5i%5i\n"
 
-    a, b, c, alpha, beta, gamma = mt.h2abc_deg(cell.h)
+    a, b, c, alpha, beta, gamma = mt.h2abc_deg(cell.h * cell_conv)
 
     z = 1   # What even is this parameter?
     filedesc.write(fmt_cryst % (a, b, c, alpha, beta, gamma, " P 1        ", z))
@@ -46,7 +46,7 @@ def print_pdb_path(beads, cell, filedesc=sys.stdout):
     nbeads = beads.nbeads
     for j in range(nbeads):
         for i in range(natoms):
-            qs = depstrip(beads.q)
+            qs = depstrip(beads.q) * atoms_conv
             lab = depstrip(beads.names)
             data = (j*natoms+i+1, lab[i], ' ', '  1', ' ', 1, ' ',
                     qs[j][3*i], qs[j][3*i+1], qs[j][3*i+2], 0.0, 0.0, '  ', 0)
@@ -62,7 +62,7 @@ def print_pdb_path(beads, cell, filedesc=sys.stdout):
     filedesc.write("END\n")
 
 
-def print_pdb(atoms, cell, filedesc=sys.stdout, title=""):
+def print_pdb(atoms, cell, filedesc=sys.stdout, title="", cell_conv=1.0, atoms_conv=1.0):
     """Prints an atomic configuration into a pdb formatted file.
 
     Also prints the cell parameters in standard pdb form. Note
@@ -81,13 +81,13 @@ def print_pdb(atoms, cell, filedesc=sys.stdout, title=""):
     if title != "":
         filedesc.write("TITLE   %70s\n" % (title))
 
-    a, b, c, alpha, beta, gamma = mt.h2abc_deg(cell.h)
+    a, b, c, alpha, beta, gamma = mt.h2abc_deg(cell.h * cell_conv)
 
     z = 1
     filedesc.write(fmt_cryst % (a, b, c, alpha, beta, gamma, " P 1        ", z))
 
     natoms = atoms.natoms
-    qs = depstrip(atoms.q)
+    qs = depstrip(atoms.q) * atoms_conv
     lab = depstrip(atoms.names)
     for i in range(natoms):
         data = (i+1, lab[i], ' ', '  1', ' ', 1, ' ',
@@ -98,7 +98,7 @@ def print_pdb(atoms, cell, filedesc=sys.stdout, title=""):
     filedesc.write("END\n")
 
 
-def read_pdb(filedesc, **kwargs):
+def read_pdb(filedesc):
     """Reads a PDB-style file and creates an Atoms and Cell object.
 
     Args:
@@ -111,11 +111,12 @@ def read_pdb(filedesc, **kwargs):
     """
 
     header = filedesc.readline()
-    comment = ''
+    comment = "# comment line might contain special i-PI keywords "
     if "TITLE" in header:
         # skip the comment field
         comment = copy.copy(header)
         header = filedesc.readline()
+    # PDB defaults to Angstrom, because so says the standard
     if 'positions{' not in comment:
         comment = comment.strip()
         comment += ' positions{angstrom}\n'

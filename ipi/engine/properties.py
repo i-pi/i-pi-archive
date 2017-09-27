@@ -675,11 +675,13 @@ class Properties(dobject):
       #pkey["func"](*arglist,**kwarglist) gives the value of the property
       #in atomic units. unit_to_user() returns the value in the user
       #specified units.
-      if "dimension" in pkey and unit != "":
-         return unit_to_user(pkey["dimension"], unit, pkey["func"](*arglist,**kwarglist))
+      value = pkey["func"](*arglist,**kwarglist)
+      if "dimension" in pkey:
+          dimension = pkey["dimension"]
       else:
-         return pkey["func"](*arglist,**kwarglist)
-
+          dimension = ""
+      return value, dimension, unit
+      
    def tensor2vec(self, tensor):
       """Takes a 3*3 symmetric tensor and returns it as a 1D array,
       containing the elements [xx, yy, zz, xy, xz, yz].
@@ -2299,51 +2301,10 @@ class Trajectories(dobject):
       #pkey["func"](*arglist,**kwarglist) gives the value of the trajectory
       #in atomic units. unit_to_user() returns the value in the user
       #specified units.
-      if "dimension" in pkey and unit != "":
-         return  unit_to_user(pkey["dimension"], unit, 1.0) * pkey["func"](*arglist,**kwarglist)
+
+      value = pkey["func"](*arglist,**kwarglist)
+      if "dimension" in pkey:
+          dimension = pkey["dimension"]
       else:
-         return pkey["func"](*arglist,**kwarglist)
-
-   def print_traj(self, what, stream, b=0, format="pdb", cell_units="atomic_unit", flush=True):
-      """Prints out a frame of a trajectory for the specified quantity and bead.
-
-      Args:
-         what: A string specifying what to print.
-         b: The bead index. Defaults to 0.
-         stream: A reference to the stream on which data will be printed.
-         format: The output file format.
-         cell_units: The units used to specify the cell parameters.
-         flush: A boolean which specifies whether to flush the output buffer
-            after each write to file or not.
-      """
-
-      cq = self[what]
-      if getkey(what) in [ "extras" ] :
-         stream.write(" #*EXTRAS*# Step:  %10d  Bead:  %5d  \n" % (self.system.simul.step+1, b) )
-         stream.write(cq[b])
-         stream.write("\n")
-         if flush :
-			stream.flush()
-			os.fsync(stream)
-         return
-      elif getkey(what) in [ "positions", "velocities", "forces", "forces_sc", "momenta" ] :
-         fatom = Atoms(self.system.beads.natoms)
-         fatom.names[:] = self.system.beads.names
-         fatom.q[:] = cq[b]
-      else:
-         fatom = Atoms(self.system.beads.natoms)
-         fatom.names[:] = self.system.beads.names
-         fatom.q = cq
-
-      fcell = Cell()
-      fcell.h = self.system.cell.h*unit_to_user("length", cell_units, 1.0)
-
-      if len(cell_units) < 1:
-         cell_units = 'atomic_unit'
-      if getall(what)[1] == '':
-         what = getkey(what) + '{atomic_unit}'
-
-      io.print_file(format, fatom, fcell, stream, title=("cell{%s}  Traj: %s Step:  %10d  Bead:   %5d " % (cell_units, what, self.system.simul.step+1, b) ) )
-      if flush :
-         stream.flush()
-         os.fsync(stream)
+          dimension = ""
+      return value, dimension, unit 

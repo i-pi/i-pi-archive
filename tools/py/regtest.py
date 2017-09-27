@@ -137,8 +137,7 @@ IPI_WAITING_TIME = 5    # Time to wait after i-pi has been started
 
 
 # Compile them only once! pylint: disable=anomalous-backslash-in-string
-REGTEST_STRING_RGX = re.compile(r'<!--\s+REGTEST\s+([\s\w\.\+\-\(\)\:\<\>]*)'
-                                '\s+ENDREGTEST\s+-->')
+REGTEST_STRING_RGX = re.compile(r'<!--\s*REGTEST\s+([\s\w\W]*)\s+ENDREGTEST\s*-->')
 # pylint: enable=anomalous-backslash-in-string
 
 try:
@@ -363,6 +362,8 @@ def _file_is_test(path_to_test):
 
     with open(path_to_test) as _file:
         _text = _file.read()
+    print _text[:100]
+    print len([x.group(1) for x in REGTEST_STRING_RGX.finditer(_text)]) > 0
     return len([x.group(1) for x in REGTEST_STRING_RGX.finditer(_text)]) > 0
 
 
@@ -853,6 +854,15 @@ class Test(threading.Thread):
         os.dup2(devnull.fileno(), 1)
 
         # opens & parses the input file
+        
+        # get in the input file location so it can find other input files for initialization
+        cwd = os.getcwd() 
+        iodir = os.path.dirname(os.path.realpath(xml_path))    
+        os.chdir(iodir)
+        
+        print "READING FILE FROM ", iodir 
+        print " WHILE RUNNING IN ", cwd
+        
         ifile = open(xml_path, "r")
         xmlrestart = io_xml.xml_parse_file(ifile) # Parses the file.
         ifile.close()
@@ -861,6 +871,7 @@ class Test(threading.Thread):
         isimul.parse(xmlrestart.fields[0][1])
 
         simul = isimul.fetch()
+        os.chdir(cwd) 
 
         # reconstructs the list of the property and trajectory files
         lprop = [] # list of property files
