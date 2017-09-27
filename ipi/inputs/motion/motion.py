@@ -69,7 +69,7 @@ class InputMotionBase(Input):
                                      "help":  "Option for geometry optimization" } ),
            "dynamics" : ( InputDynamics, { "default" : {},
                                      "help":  "Option for (path integral) molecular dynamics" } ),
-           "file": (InputInitFile, { "default" : input_default(factory=ipi.engine.initializer.InitBase,kwargs={"mode":"xyz"}),
+           "file": (InputInitFile, { "default" : input_default(factory=ipi.engine.initializer.InitFile,kwargs={"mode":"xyz"}),
                            "help"            : "This describes the location to read a trajectory file from."}),
            "vibrations" : ( InputDynMatrix, { "default" : {},
                                      "help":  "Option for phonon computation" } ),
