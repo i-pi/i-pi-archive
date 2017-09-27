@@ -358,7 +358,7 @@ class InputInitializer(Input):
       super(InputInitializer,self).fetch()
       initlist = []
       for (k,v) in self.extra:
-         if v.mode.fetch() == "chk" and v.fetch(initclass=ei.InitIndexed).units != "":
+         if v.mode.fetch() == "chk" and not v.fetch(initclass=ei.InitIndexed).units in ["", "automatic"]:
             raise ValueError("Cannot specify units for initialization from a checkpoint file - units should be defined _inside_ the file.")
          if k == "file":
             mode = v.mode.fetch()

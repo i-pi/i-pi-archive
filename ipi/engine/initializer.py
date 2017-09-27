@@ -341,11 +341,7 @@ class Initializer(dobject):
             if fcell :
                warning("Overwriting previous cell parameters", verbosity.low)
 
-
-            #warning_units_message(v, 'cell')
-
-            #rh *= unit_to_internal("length",v.units,1.0)
-
+        
             simul.cell.h = rh
             if simul.cell.V == 0.0:
                ValueError("Cell provided has zero volume")
@@ -473,9 +469,6 @@ class Initializer(dobject):
             rp *= np.sqrt(self.nbeads/nbeads)
             set_vector(v, simul.beads.p, rp)
             fmom = True
-
-            #warning_units_message(v, 'momenta')
-
          elif k == "velocities":
             if fmom:
                warning("Overwriting previous atomic momenta", verbosity.medium)
@@ -498,9 +491,6 @@ class Initializer(dobject):
             rv *= np.sqrt(self.nbeads/nbeads)
             set_vector(v, simul.beads.p, rv)
             fmom = True
-
-            #warning_units_message(v, 'velocity')
-
          elif k == "gle": pass   # thermostats must be initialised in a second stage
 
       if simul.beads.natoms == 0:
@@ -555,13 +545,3 @@ class Initializer(dobject):
 
             # if all the preliminary checks are good, we can initialize the s's
             ssimul[:] = sinput
-
-
-def warning_units_message(v, prop):
-   if (v.mode == "xyz" or v.mode == "pdb") and len(v.units) > 0:
-       warning("If the "+ prop+ " units are already specified into the pdb "
-               "or xyz file,\n   the conversion will be applied twice with "
-               "unpredictable results!!\n   This attribute is also "
-               "deprecated and will be removed in the following "
-               "versions.", verbosity.quiet)
-       raw_input("   Read the lines above, then press enter to continue...")
