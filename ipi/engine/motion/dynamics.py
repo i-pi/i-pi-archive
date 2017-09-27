@@ -520,7 +520,7 @@ class NPTIntegrator(NVTIntegrator):
         self.barostat.thermostat.step()
         self.thermostat.step()
         self.pconstraints()
-        self.ttime += time.time()
+
 
 
 class NSTIntegrator(NPTIntegrator):

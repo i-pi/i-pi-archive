@@ -162,7 +162,7 @@ class Ensemble(dobject):
         dget(self, "lpens").add_dependency(dget(self.nm, "kin"))
         dget(self, "lpens").add_dependency(dget(self.forces, "pot"))
         dget(self, "lpens").add_dependency(dget(self.bias, "pot"))
-        dget(self, "lpens").add_dependency(dget(self.beads, "vpath"))
+        dget(self, "lpens").add_dependency(dget(self.nm, "vspring"))
 
         # extended Lagrangian terms for the ensemble
         self._xlpot = []
@@ -203,7 +203,7 @@ class Ensemble(dobject):
         """
 
 
-        lpens = (self.forces.pot+self.bias.pot+self.nm.kin+self.beads.vpath*self.nm.omegan2);
+        lpens = (self.forces.pot+self.bias.pot+self.nm.kin+self.nm.vspring);
 
         # inlcude terms associated with an extended Lagrangian integrator of some sort
         for p in self._xlpot:
