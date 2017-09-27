@@ -25,10 +25,12 @@ Syntax:
 
 import numpy as np
 import sys, glob
+from ipi.utils.messages import verbosity
 
 from ipi.utils.io import read_file
 from ipi.utils.units import unit_to_internal, unit_to_user, Constants
 
+verbosity.low = "low"
 time_index, potentialEnergy_index = 0, 0 # global variables for time step and potential energy units
 potentialEnergyUnit = None               # potential energy unit in input file prefix.out
 temperature = None                       # simulation temperature
