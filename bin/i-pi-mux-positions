@@ -5,6 +5,7 @@ from __future__ import print_function
 import os
 import sys
 import argparse
+from ipi.utils.messages import verbosity
 
 from ipi.utils.io import open_backup, iter_file_name, print_file
 
@@ -19,6 +20,8 @@ input files.
 
 def main(fns_in, fn_out, begin, end, stride):
 
+    verbosity.level = "low" 
+    
     print('Multiplexing {:d} beads into one trajectory.'.format(len(fns_in)))
     print()
 

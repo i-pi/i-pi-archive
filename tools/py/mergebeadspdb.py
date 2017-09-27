@@ -35,7 +35,7 @@ def main(prefix, suffix="pos", unitconv="1.0"):
    while True:
       try:
          for i in range(nbeads):
-            ret = read_file(imode[i], ipos[i], readcell="true")
+            ret = read_file(imode[i], ipos[i])
             pos = ret["atoms"]
             cell = ret["cell"]
             if natoms == 0:
