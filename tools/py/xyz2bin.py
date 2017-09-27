@@ -1,15 +1,17 @@
 #!/usr/bin/env python2
 
-""" mergebeadspdb.py
+""" xyz2bin.py
 
-Reads positions of individual beads from an i-PI run and
-assemles them in a pdb describing the ring polymer connectivity.
+Reads positions of a system in xyz format and returns a
+binary file.
 
-Assumes the input files are in pdb format names prefix.pos_*.pdb.
+Assumes the input file is in a xyz format.
 
 Syntax:
-   mergebeadspdb.py prefix
+   xyz2bin.py filename
+
 """
+
 
 
 import sys
@@ -26,7 +28,7 @@ def main(filename):
    ifr = 0
    while True:
       try:
-         ret = read_file("xyz", ipos, readcell=True)
+         ret = read_file("xyz", ipos)
          pos = ret["atoms"]
          cell = ret["cell"]
          cell.array_pbc(pos.q)

@@ -815,7 +815,7 @@ class InputValue(InputAttribute):
    """
 
    default_dimension = "undefined"
-   default_units = ""
+   default_units = "automatic"
 
    attribs= { "units" : ( InputAttribute, { "dtype" : str, "help" : "The units the input data is given in.", "default" : default_units } ) }
 
