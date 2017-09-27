@@ -15,12 +15,15 @@ import time
 import numpy as np
 
 from ipi.utils.messages import verbosity, info, warning
+from ipi.utils.units import Constants, unit_to_internal, unit_to_user
 from ipi.utils.softexit import softexit
 from ipi.utils.depend import *
+import ipi.utils.io as io
 from ipi.utils.io.inputs.io_xml import *
 from ipi.utils.io import open_backup
 from ipi.engine.properties import getkey
-
+from ipi.engine.atoms import *
+from ipi.engine.cell import *
 
 __all__ = [ 'PropertyOutput', 'TrajectoryOutput', 'CheckpointOutput' ]
 
@@ -147,7 +150,9 @@ class PropertyOutput(dobject):
       self.out.write("  ")
       for what in self.outlist:
          try:
-            quantity = self.system.properties[what]
+            quantity, dimension, unit = self.system.properties[what]
+            if dimension != "" and unit != "":
+                quantity = unit_to_user(dimension, unit, quantity)
          except KeyError:
             raise KeyError(what + " is not a recognized property")
          if not hasattr(quantity,"__len__") :
@@ -246,9 +251,9 @@ class TrajectoryOutput(dobject):
 
       # prepare format string for zero-padded number of beads,
       # including underscpre
-      fmt_bead = "{:0" + str(int(1 + np.floor(np.log(self.system.beads.nbeads)/np.log(10)))) + "d}"
+      fmt_bead = "{0:0" + str(int(1 + np.floor(np.log(self.system.beads.nbeads)/np.log(10)))) + "d}"
 
-      if getkey(self.what) in ["positions", "velocities", "forces", "extras", "forces_sc"]:
+      if getkey(self.what) in ["positions", "velocities", "forces", "extras", "forces_sc" , "momenta"]:
 
          # must write out trajectories for each bead, so must create b streams
 
@@ -303,19 +308,63 @@ class TrajectoryOutput(dobject):
       if self.flush > 0 and self.nout >= self.flush :
          doflush = True
          self.nout = 0
-
+      
+      data, dimension, units = self.system.trajs[self.what] # gets the trajectory data that must be printed      
+          
       # quick-and-dirty way to check if a trajectory is "global" or per-bead
       # Checks to see if there is a list of files or just a single file.
       if hasattr(self.out, "__getitem__"):
          if self.ibead < 0:
             for b in range(len(self.out)):
-               self.system.trajs.print_traj(self.what, self.out[b], b, format=self.format, cell_units=self.cell_units, flush=doflush)
+               self.write_traj(data, self.what, self.out[b], b, format=self.format, dimension=dimension, units=units, cell_units=self.cell_units, flush=doflush)
          elif self.ibead < len(self.out):
-            self.system.trajs.print_traj(self.what, self.out[self.ibead], self.ibead, format=self.format, cell_units=self.cell_units, flush=doflush)
+            self.write_traj(data, self.what, self.out[self.ibead], self.ibead, format=self.format, dimension=dimension, units=units, cell_units=self.cell_units, flush=doflush)
          else:
             raise ValueError("Selected bead index " + str(self.ibead) + " does not exist for trajectory " + self.what)
       else:
-         self.system.trajs.print_traj(self.what, self.out, b=0, format=self.format, cell_units=self.cell_units, flush=doflush)
+         self.write_traj(data, getkey(self.what), self.out, b=0, format=self.format, dimension=dimension, units=units, cell_units=self.cell_units, flush=doflush)
+
+
+   def write_traj(self, data, what, stream, b=0, format="xyz", dimension="", units="automatic", cell_units="automatic", flush=True):
+      """Prints out a frame of a trajectory for the specified quantity and bead.
+
+      Args:
+         what: A string specifying what to print.
+         b: The bead index. Defaults to 0.
+         stream: A reference to the stream on which data will be printed.
+         format: The output file format.
+         cell_units: The units used to specify the cell parameters.
+         flush: A boolean which specifies whether to flush the output buffer
+            after each write to file or not.
+      """
+      
+      key = getkey(what)
+      if key in [ "extras" ] :
+         stream.write(" #*EXTRAS*# Step:  %10d  Bead:  %5d  \n" % (self.system.simul.step+1, b) )
+         stream.write(data[b])
+         stream.write("\n")
+         if flush :
+			stream.flush()
+			os.fsync(stream)
+         return
+      elif getkey(what) in [ "positions", "velocities", "forces", "forces_sc", "momenta" ] :
+         fatom = Atoms(self.system.beads.natoms)
+         fatom.names[:] = self.system.beads.names
+         fatom.q[:] = data[b]         
+      else:
+         fatom = Atoms(self.system.beads.natoms)
+         fatom.names[:] = self.system.beads.names
+         fatom.q[:] = data         
+
+      fcell = Cell()
+      fcell.h = self.system.cell.h      
+      
+      if units == "": units="automatic"
+      if cell_units == "": cell_units="automatic"
+      io.print_file(format, fatom, fcell, stream, title=("Step:  %10d  Bead:   %5d " % (self.system.simul.step+1, b) ), key=key, dimension=dimension, units=units, cell_units=cell_units )
+      if flush :
+         stream.flush()
+         os.fsync(stream)
 
 
 class CheckpointOutput(dobject):

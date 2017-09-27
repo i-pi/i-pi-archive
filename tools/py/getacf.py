@@ -8,7 +8,7 @@ Computes the autocorrelation function from i-pi outputs. Assumes the input files
 import argparse
 import sys
 import numpy as np
-from ipi.utils.io import read_file
+from ipi.utils.io import read_file_raw
 from ipi.utils.units import unit_to_internal, unit_to_user
 
 
@@ -38,7 +38,7 @@ def compute_acf(input_file, output_prefix, maximum_lag, block_length, length_zer
 
     #reads one frame. 
     ff = open(ifile)
-    rr = read_file("xyz", ff, output = "array")
+    rr = read_file_raw("xyz", ff)
     ff.close()
 
     #appends "der" to output file in case the acf of the derivative is desired
@@ -78,14 +78,14 @@ def compute_acf(input_file, output_prefix, maximum_lag, block_length, length_zer
     ff = open(ifile)
     #Skips the first fskip frames
     for x in xrange(fskip):
-        rr = read_file("xyz", ff, output="array")
+        rr = read_file_raw("xyz", ff, output="array")
 
     while True:
 
         try :
             #Reads the data in blocks.
             for i in range(bsize):
-                rr = read_file("xyz", ff, output="array")
+                rr = read_file_raw("xyz", ff)
                 data[i] = rr['data'].reshape((ndof/3,3))[labelbool]
 
             if(der == True):
