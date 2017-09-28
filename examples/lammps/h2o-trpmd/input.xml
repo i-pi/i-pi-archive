@@ -3,6 +3,7 @@
       <properties stride="10" filename="out">  [ step, time{picosecond}, conserved, temperature{kelvin}, kinetic_cv, potential, pressure_cv{megapascal} ] </properties>
       <trajectory filename="pos" stride="400"> positions </trajectory>
       <trajectory filename="xc" stride="40"> x_centroid{angstrom} </trajectory>
+      <trajectory filename="vc" stride="40"> v_centroid </trajectory>
       <checkpoint stride="4000"/>
    </output>
    <total_steps>10000</total_steps>
