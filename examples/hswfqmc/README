@@ -8,7 +8,7 @@
   the number of steps and use a low number of CPUs for a quick local test.
 
   HswfQMC Git Repository: https://github.com/francesco086/HswfQMC
-  Example created by Jan Kessler
+  Example created by Jan Kessler <jakessle@t-online.de>
 ****************************************************************************
 
                   -- Preparing the HswfQMC software --

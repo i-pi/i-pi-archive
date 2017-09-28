@@ -878,6 +878,8 @@ class ThermoCL(Thermostat):
       and either intau OR idtau are initially set to a value > 0, the respective parameter
       will be automatically adjusted over time, driven by current versus target temperature.
 
+      Author: Jan Kessler <jakessle@t-online.de>
+
    Depend objects:
       tau: Thermostat damping time scale. Larger values give a less strongly
          coupled thermostat.
