@@ -62,11 +62,13 @@ def get_np(prefix, fname, bsize, P, m, Tkelv, nskip, s, ns):
 
     #Read the end to end distances from file
     data_path =str(fname)
-    delta= np.loadtxt(data_path)
-    step = np.shape(delta)[0] 
+    delta= np.loadtxt(data_path)[nskip:]
+    ndata = np.shape(delta)[0] 
     
-    nplist3d=[]
-    n_block =int(step/bsize)
+    if bsize<0: # automatically determine block size -- if it's a negative number interpret as the number of blocks
+        bsize = int(ndata/abs(bsize))
+    nplist3d=[]    
+    n_block =int(ndata/bsize)
     if (n_block ==0):
         print 'not enough data to build a block'
         exit()
