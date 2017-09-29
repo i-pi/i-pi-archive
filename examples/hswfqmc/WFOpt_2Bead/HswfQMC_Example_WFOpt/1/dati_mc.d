@@ -36,7 +36,7 @@ flag_disk=F                                      !Save all the data on files for
 flag_output=T                                    !Save all the outputs on the output.d file
 quick_error=16		                         !Number of blocks used to estimate the error with the blocking technique. If quick_error=0 then the optimal value is determined automatically
 flag_random_file=T                               !Use a file with true random numbers to initialize the pseudo-random number generator
-random_seed_path='randomseed1.d'                 !Path to the file used to initialized the pseudo-random number generator
+random_seed_path='randomseed.d'                 !Path to the file used to initialized the pseudo-random number generator
 /
 
 
