@@ -59,18 +59,21 @@ def get_np(path, fname, bsize, P, m, Tkelv, nskip, s, ns):
     # Defines the grid for momentum.
     pxi = -np.pi/(dqxgrid[1]-dqxgrid[0])
     pxf = +np.pi/(dqxgrid[1]-dqxgrid[0])
-    pxstep = 2* np.pi / np.abs(dqxgrid[-1]-dqxgrid[0])
+    pxstep = 2* np.pi/np.abs(dqxgrid[-1]-dqxgrid[0])
     pxgrid = np.linspace(pxi,pxf,ns)
+    pxgrid= pxgrid- pxstep/2.
 
     pyi = -np.pi/(dqygrid[1]-dqygrid[0])
     pyf = +np.pi/(dqygrid[1]-dqygrid[0])
     pystep = 2* np.pi / np.abs(dqygrid[-1]-dqygrid[0])
     pygrid = np.linspace(pyi,pyf,ns)
+    pygrid= pygrid- pystep/2.
 
     pzi = -np.pi/(dqzgrid[1]-dqzgrid[0])
     pzf = +np.pi/(dqzgrid[1]-dqzgrid[0])
     pzstep = 2* np.pi / np.abs(dqzgrid[-1]-dqzgrid[0])
     pzgrid = np.linspace(pzi,pzf,ns)
+    pzgrid= pzgrid- pzstep/2.
 
     pgrid = np.linspace(0.0001, 80, ns)
     pstep = np.abs(pgrid[0]-pgrid[1])
@@ -122,8 +125,8 @@ def get_np(path, fname, bsize, P, m, Tkelv, nskip, s, ns):
     avghz = np.mean(np.asarray(hzlist), axis = 0)
     normhz= np.sum(avghz)
     errhz = np.std(np.asarray(hzlist), axis = 0)/ np.sqrt(n_block)/normhz
-    np.savetxt(str(path + "histo.data"), np.c_[dqxgrid, avghx, errhx, dqygrid, avghy, errhy, dqzgrid, avghz, errhz])   
- 
+    np.savetxt(str(path + "histo.data"), np.c_[dqxgrid, avghx, errhx, dqygrid, avghy, errhy, dqzgrid, avghz, errhz])    
+
     avghrad = np.mean(np.asarray(hradlist), axis = 0)
     normhrad=np.sum(avghrad)
     errhrad = np.std(np.asarray(hradlist), axis = 0)/ np.sqrt(n_block)/normhrad
@@ -144,8 +147,8 @@ def get_np(path, fname, bsize, P, m, Tkelv, nskip, s, ns):
     errnpz = np.std(np.asarray(nplistz), axis = 0)/ np.sqrt(n_block)/normz
     avgnpz= avgnpz/normz
     
-    np.savetxt(str(path + "np.data"), np.c_[pxgrid,avgnpx,errnpx,avgnpy,errnpy,avgnpz,errnpz])
-    
+    np.savetxt(str(path + "np.data"), np.c_[pxgrid,avgnpx/pxstep,errnpx/pxstep,avgnpy/pystep,errnpy/pystep,avgnpz/pzstep,errnpz/pzstep])   
+
     #print the average value of p-square for each direction
     psqmedx =  0.
     psqmed2x = 0.
@@ -187,13 +190,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=None)
     parser.add_argument("--path",type=str, default="", help="path of the folder conatining the end-to-end distances file")
     parser.add_argument("--fname",type=str,default="", help="name of the end-to-end distances file")
-    parser.add_argument("-bsize", type=int, default=4000, help="Specify the size of the blocks")
+    parser.add_argument("-bsize", type=int, default=80000, help="Specify the size of the blocks")
     parser.add_argument("-P", type=int, default= 1, help="Specify the number of beads")
     parser.add_argument("-m", type=float, default= 1837, help="Specify the mass of the atom in atomic units-default is hydorgen")
     parser.add_argument("-T", type=float, default= 300, help="Specify the temperature of the system in kelvin")
     parser.add_argument("-nskip", type=int, default= 10, help="Removes the equilibration steps")
     parser.add_argument("-dint", type=float, default=10, help="Specify the positive extrema of the interval to build the histogram ([-dint,dint])")
-    parser.add_argument("-ns", type=float, default=5000, help="Specify the number of point to use for the histogram")
+    parser.add_argument("-ns", type=float, default=1000, help="Specify the number of point to use for the histogram")
     args = parser.parse_args()
 
     get_np(args.path, args.fname, args.bsize, args.P, args.m, args.T, args.nskip, args.dint, args.ns)

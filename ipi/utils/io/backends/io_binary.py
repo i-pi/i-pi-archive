@@ -35,7 +35,7 @@ def print_binary(atoms, cell, filedesc=sys.stdout, title=""):
     np.asarray([names]).tofile(buff)
 
 
-def read_binary(filedesc, **kwarg):
+def read_binary(filedesc):
     try: 
         cell = np.fromfile(filedesc, dtype=float, count=9)
         cell.shape = (3,3)

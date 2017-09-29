@@ -32,16 +32,19 @@ def get_np(path, fname, bsize, P, m, Tkelv, nskip, s, ns):
     pxf = +np.pi/(dqxgrid[1]-dqxgrid[0])
     pxstep = 2* np.pi / np.abs(dqxgrid[-1]-dqxgrid[0])
     pxgrid = np.linspace(pxi,pxf,ns)
+    pxgrid= pxgrid- pxstep/2.
 
     pyi = -np.pi/(dqygrid[1]-dqygrid[0])
     pyf = +np.pi/(dqygrid[1]-dqygrid[0])
     pystep = 2* np.pi / np.abs(dqygrid[-1]-dqygrid[0])
     pygrid = np.linspace(pyi,pyf,ns)
+    pygrid= pygrid- pystep/2.
 
     pzi = -np.pi/(dqzgrid[1]-dqzgrid[0])
     pzf = +np.pi/(dqzgrid[1]-dqzgrid[0])
     pzstep = 2* np.pi / np.abs(dqzgrid[-1]-dqzgrid[0])
     pzgrid = np.linspace(pzi,pzf,ns)
+    pzgrid= pzgrid- pzstep/2.
  
     pgrid= []
     for x in range(len(pxgrid)):

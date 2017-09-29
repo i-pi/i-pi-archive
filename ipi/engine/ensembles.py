@@ -22,6 +22,7 @@ from ipi.utils.io.inputs.io_xml import xml_parse_file
 from ipi.utils.units import unit_to_internal
 from ipi.engine.thermostats import *
 from ipi.engine.barostats import *
+from ipi.engine.motion.alchemy import *
 
 
 __all__ = ['Ensemble']

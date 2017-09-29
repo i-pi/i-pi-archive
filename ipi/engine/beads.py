@@ -112,7 +112,7 @@ class Beads(dobject):
       
       # path springs potential and force
       dself.vpath = depend_value(name="vpath", func=self.get_vpath,
-            dependencies=[dself.q])
+            dependencies=[dself.q,dself.m3])
       dself.fpath = depend_array(name="fpath", value=np.zeros((nbeads,3*natoms), float),
             func=self.get_fpath, dependencies=[dself.q])
 
