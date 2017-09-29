@@ -10,6 +10,8 @@ import numpy as np
 
 from ipi.utils.nmtransform import nm_rescale
 from ipi.utils.io import open_backup, iter_file_name, print_file
+from ipi.utils.messages import verbosity
+verbosity.level = "low"
 
 
 description = """

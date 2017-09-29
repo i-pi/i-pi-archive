@@ -138,7 +138,6 @@ def print_file(mode, atoms, cell, filedesc=sys.stdout, title="", key="", dimensi
         units: Units for the output (e.g. "angstrom")
         cell_units: Units for the cell (dimension length, e.g. "angstrom")
     """
- 
     if mode == "pdb":   # special case for PDB
         if dimension != "length":
             raise ValueError("PDB Standard is only designed for atomic positions")
@@ -153,7 +152,6 @@ def print_file(mode, atoms, cell, filedesc=sys.stdout, title="", key="", dimensi
     atoms_conv = unit_to_user(dimension, units, 1.0)
  
     title = title + ("%s{%s}  cell{%s}" % (key, units, cell_units))
-
     print_file_raw(mode=mode, atoms=atoms, cell=cell, filedesc=filedesc, title=title, cell_conv=cell_conv, atoms_conv=atoms_conv)
 
 def read_file_raw(mode, filedesc):    

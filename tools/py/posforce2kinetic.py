@@ -22,6 +22,8 @@ from ipi.utils.io import read_file
 from ipi.engine.beads import Beads
 from ipi.utils.depend import depstrip
 from ipi.utils.units import unit_to_internal, Constants
+from ipi.utils.messages import verbosity
+verbosity.level = "low"
 
 
 def main(prefix, temp):

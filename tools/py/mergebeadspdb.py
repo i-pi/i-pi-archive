@@ -19,6 +19,9 @@ from ipi.engine.beads import Beads
 from ipi.engine.cell import Cell
 from ipi.utils.depend import *
 from ipi.utils.units import *
+from ipi.utils.messages import verbosity
+
+verbosity.level = "low"
 
 
 def main(prefix, suffix="pos", unitconv="1.0"):
