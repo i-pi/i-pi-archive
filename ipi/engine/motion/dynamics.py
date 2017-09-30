@@ -125,6 +125,10 @@ class Dynamics(Motion):
 
         super(Dynamics, self).bind(ens, beads, nm, cell, bforce, prng)
 
+        # Checks if the number of mts levels is equal to the dimensionality of the mts weights.
+        if (len(self.nmts) != self.forces.nmtslevels):
+            raise ValueError("The number of mts levels for the integrator does not agree with the mts_weights of the force components.")
+
         # Strips off depend machinery for easier referencing.
         dself = dd(self)
         dthrm = dd(self.thermostat)

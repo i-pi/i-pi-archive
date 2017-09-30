@@ -624,7 +624,10 @@ class Forces(dobject):
             
       # SC forces and potential  
       dset(self, "alpha", depend_value(name="alpha", value=0.0))
-      
+
+      # The number of MTS levels 
+      dset(self, "nmtslevels", depend_value(name="nmtslevels", value=0, func=self.get_nmtslevels))
+
       # this will be piped from normalmodes
       dset(self, "omegan2", depend_value(name="omegan2", value=0))
             
@@ -998,6 +1001,14 @@ class Forces(dobject):
               rp += self.mforces[index].weight*self.mforces[index].mts_weights[level] * (self.mforces[index].virs)
       return rp
 
+   def get_nmtslevels(self):
+      """ Returns the total number of mts levels."""
+
+      nm = len(self.mforces[0].mts_weights)
+      if all(len(x.mts_weights) == nm for x in self.mforces):
+         return nm
+      else:
+         raise ValueError("The mts_weights of all the force components are not the same.")
 
    def f_combine(self):
       """Obtains the total force vector."""
