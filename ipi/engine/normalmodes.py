@@ -97,6 +97,20 @@ class NormalModes(dobject):
       dset(self,"nm_freqs",
          depend_array(name="nm_freqs",value=np.asarray(freqs, float) ) )
 
+
+   def copy(self, freqs=None):
+      """Creates a new beads object from the original.
+
+      Returns:
+         A Beads object with the same q, p, m and names arrays as the original.
+      """
+
+      if freqs is None:
+          freqs = self.nm_freqs.copy()
+      
+      newnm = NormalModes(self.mode, self.transform_method, freqs, self.dt)      
+      return newnm
+
    def bind(self, ensemble, motion, beads=None, forces=None):
       """ Initializes the normal modes object and binds to beads and ensemble.
 
