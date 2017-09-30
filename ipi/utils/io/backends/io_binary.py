@@ -13,8 +13,7 @@ import numpy as np
 
 __all__ = ['print_binary', 'read_binary']
 
-
-def print_binary(atoms, cell, filedesc=sys.stdout, title=""):
+def print_binary(atoms, cell, filedesc=sys.stdout, title="", cell_conv=1.0, atoms_conv=1.0):
     """Prints an atomic configuration into a binary file.
 
     Args:
@@ -24,16 +23,20 @@ def print_binary(atoms, cell, filedesc=sys.stdout, title=""):
         title: This gives a string to be appended to the comment line.
     """
 
-    buff = filedesc    
-    cell.h.flatten().tofile(buff)
+    buff = filedesc
+    # applies conversion of units to the cell and saves to file.
+    (cell.h.flatten()*cell_conv).tofile(buff)
     nat = np.asarray([atoms.natoms])
     nat.tofile(buff)
-    atoms.q.tofile(buff)
-    names = "|".join(atoms.names)  # concatenates names, assuming none contains '|'
+    # applies conversion of units to the atoms and saves to file.
+    (atoms.q * atoms_conv).tofile(buff)
+    # concatenates names, assuming none contains '|'
+    names = "|".join(atoms.names)
     nat[0] = len(names)
     nat.tofile(buff)
     np.asarray([names]).tofile(buff)
-
+    # also saves the title to the file.
+    np.asarray([title]).tofile(buff)
 
 def read_binary(filedesc):
     try: 
@@ -46,6 +49,7 @@ def read_binary(filedesc):
         names = "".join(names)
         names = names.split('|')
         masses = np.zeros(len(names))
+        title = ''.join(np.fromfile(filedesc, dtype='|S1', count=-1))
     except (StopIteration,ValueError):
         raise EOFError    
-    return ("", cell, qatoms, names, masses)
+    return (title, cell, qatoms, names, masses)

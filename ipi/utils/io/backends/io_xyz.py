@@ -140,5 +140,4 @@ def read_xyz(filedesc):
 
     if natoms != len(names):
         raise ValueError("The number of atom records does not match the header of the xyz file.")
-
     return comment, cell, qatoms, names, masses

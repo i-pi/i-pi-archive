@@ -773,6 +773,7 @@ class Forces(dobject):
 
             # calculates the force.
             fminus = self.dforces.mrpc[index].b2tob1(depstrip(self.dforces.mforces[index].f))
+            print self.dforces.mforces[index].virs, self.dforces.mforces[index].nbeads, self.mforces[index].nbeads,  self.nbeads
 
             # calculates the finite difference.
             f_4th_order[1::2] = 2.0 * (fminus - fbase[1::2]) / delta
@@ -817,6 +818,7 @@ class Forces(dobject):
                   
                # calculates the forces.
                fplusminus = self.dforces.mrpc[index].b2tob1(depstrip(self.dforces.mforces[index].f))
+               print self.dforces.mforces[index].virs, self.dforces.mforces[index].nbeads, self.mforces[index].nbeads,  self.nbeads
 
                # calculates the finite difference.
                for k in range(self.nbeads/2):

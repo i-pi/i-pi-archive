@@ -18,9 +18,9 @@
         <motion mode="minimize">
             <optimizer mode="bfgs">
                 <tolerances>
-                    <energy> 1e-8 </energy>
-                    <force> 1e-8 </force>
-                    <position> 1e-8 </position>
+                    <energy> 1e-5 </energy>
+                    <force> 1e-5 </force>
+                    <position> 1e-5 </position>
                 </tolerances>
             </optimizer>
         </motion>
