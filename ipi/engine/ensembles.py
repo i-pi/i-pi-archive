@@ -22,6 +22,7 @@ from ipi.utils.io.inputs.io_xml import xml_parse_file
 from ipi.utils.units import unit_to_internal, Constants
 from ipi.engine.thermostats import *
 from ipi.engine.barostats import *
+from ipi.engine.motion.alchemy import *
 from ipi.engine.forces import Forces, ScaledForceComponent
 
 
@@ -127,7 +128,7 @@ class Ensemble(dobject):
         dget(self, "econs").add_dependency(dget(self.nm, "kin"))
         dget(self, "econs").add_dependency(dget(self.forces, "pot"))
         dget(self, "econs").add_dependency(dget(self.bias, "pot"))
-        dget(self, "econs").add_dependency(dget(self.beads, "vpath"))
+        dget(self, "econs").add_dependency(dget(self.nm, "vspring"))
         dget(self, "econs").add_dependency(dget(self, "eens"))
 
         # pipes the weights to the list of weight vectors
@@ -161,7 +162,7 @@ class Ensemble(dobject):
         dget(self, "lpens").add_dependency(dget(self.nm, "kin"))
         dget(self, "lpens").add_dependency(dget(self.forces, "pot"))
         dget(self, "lpens").add_dependency(dget(self.bias, "pot"))
-        dget(self, "lpens").add_dependency(dget(self.beads, "vpath"))
+        dget(self, "lpens").add_dependency(dget(self.nm, "vspring"))
 
         # extended Lagrangian terms for the ensemble
         self._xlpot = []
@@ -189,11 +190,11 @@ class Ensemble(dobject):
         """Calculates the conserved energy quantity for constant energy
         ensembles.
         """
-        eham = self.beads.vpath*self.nm.omegan2 + self.nm.kin + self.forces.pot
+        eham = self.nm.vspring + self.nm.kin + self.forces.pot
         eham += self.bias.pot   # bias
         for e in self._elist:
             eham += e.get()
-
+        
         return eham + self.eens
 
     def get_lpens(self):
@@ -202,7 +203,7 @@ class Ensemble(dobject):
         """
 
 
-        lpens = (self.forces.pot+self.bias.pot+self.nm.kin+self.beads.vpath*self.nm.omegan2);
+        lpens = (self.forces.pot+self.bias.pot+self.nm.kin+self.nm.vspring);
 
         # inlcude terms associated with an extended Lagrangian integrator of some sort
         for p in self._xlpot:
