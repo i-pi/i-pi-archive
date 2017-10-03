@@ -157,12 +157,12 @@ def get_np(path, fname, bsize, P, m, Tkelv, nskip, s, ns):
     psqmedz =  0.
     psqmed2z = 0.
     for i in range(n_block):
-         psqmedx= psqmedx + np.dot(pxgrid**2,np.asarray(nplistx)[i,:])/normx
-         psqmed2x = psqmed2x + (np.dot(pxgrid**2,np.asarray(nplistx)[i,:])/normx)**2
-         psqmedy= psqmedy + np.dot(pygrid**2,np.asarray(nplisty)[i,:])/normy
-         psqmed2y = psqmed2y + (np.dot(pygrid**2,np.asarray(nplisty)[i,:])/normy)**2
-         psqmedz= psqmedz + np.dot(pzgrid**2,np.asarray(nplistz)[i,:])/normz
-         psqmed2z = psqmed2z + (np.dot(pzgrid**2,np.asarray(nplistz)[i,:])/normz)**2
+         psqmedx= psqmedx + np.dot(pxgrid**2,np.asarray(nplistx)[i,:])/np.asarray(nplistx)[i,:].sum()
+         psqmed2x = psqmed2x + (np.dot(pxgrid**2,np.asarray(nplistx)[i,:])/np.asarray(nplistx)[i,:].sum())**2
+         psqmedy= psqmedy + np.dot(pygrid**2,np.asarray(nplisty)[i,:])/np.asarray(nplisty)[i,:].sum()
+         psqmed2y = psqmed2y + (np.dot(pygrid**2,np.asarray(nplisty)[i,:])/np.asarray(nplisty)[i,:].sum())**2
+         psqmedz= psqmedz + np.dot(pzgrid**2,np.asarray(nplistz)[i,:])/np.asarray(nplistz)[i,:].sum()
+         psqmed2z = psqmed2z + (np.dot(pzgrid**2,np.asarray(nplistz)[i,:])/np.asarray(nplistz)[i,:].sum())**2
          
     print 'number of blocks', n_block
     print 'av_px^2', psqmedx/n_block, 'sigmax', np.sqrt((psqmed2x/n_block) - (psqmedx/n_block)**2)/np.sqrt(n_block)
@@ -181,8 +181,8 @@ def get_np(path, fname, bsize, P, m, Tkelv, nskip, s, ns):
     psqmedrad =  0.
     psqmed2rad = 0.
     for i in range(n_block):         
-         psqmedrad +=  pstep*np.dot(pgrid**2,np.asarray(npradlist)[i,:])/norm
-         psqmed2rad +=  (pstep*np.dot(pgrid**2, np.asarray(npradlist)[i,:])/norm)**2
+         psqmedrad +=  np.dot(pgrid**2,np.asarray(npradlist)[i,:])/np.asarray(npradlist)[i,:].sum()
+         psqmed2rad +=  (np.dot(pgrid**2, np.asarray(npradlist)[i,:])/np.asarray(npradlist)[i,:].sum())**2
     print 'av_p^2', psqmedrad/n_block, 'sigma', np.sqrt((psqmed2rad/n_block) - (psqmedrad/n_block)**2)/np.sqrt(n_block)
    
 
