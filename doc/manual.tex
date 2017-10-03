@@ -470,6 +470,15 @@ Pressure & N.A. & 2.9421912e13 Pa\\
 }
 
 
+Regarding the specification of these units in the i-PI input files, the user is able to specify units both in the i-PI input file or in the structure file. 
+If the structure file is of the .xyz format, the units specifications should be present in the comment line. Examples of such inputs can be found in \texttt{examples/pes-regtest/io-units/} .
+The code then behaves in the following way, depending on the user's choice: 
+\begin{itemize}
+\item If no units are specified in the input, i-PI tries to guess from the comment line of the structure file and it nothing is present, assumes atomic units, or angstrom for PDB files.
+\item If units are specified in both input and structure file and they match, conversion happens just once. If they do not match, an error is raised and i-PI stops.
+\end{itemize}
+
+
 \section{Core features}
 
 The functionality of \ipi includes:

@@ -188,10 +188,12 @@ class Elements(dict):
 # these are the conversion FROM the unit stated to internal (atomic) units
 UnitMap = {
     "undefined": {
-        ""             : 1.00
+        ""             : 1.00,
+        "automatic"    : 1.00
     },
     "energy": {
         ""             : 1.00,
+        "automatic"    : 1.00,
         "atomic_unit"  : 1.00,
         "electronvolt" : 0.036749326,
         "j/mol"        : 0.00000038087989,
@@ -200,16 +202,19 @@ UnitMap = {
     },
     "temperature": {
         ""             : 1.00,
+        "automatic"    : 1.00,
         "atomic_unit"  : 1.00,
         "kelvin"       : 3.1668152e-06
     },
     "time": {
         ""             : 1.00,
+        "automatic"    : 1.00,
         "atomic_unit"  : 1.00,
         "second"       : 4.1341373e+16
     },
     "frequency": {     # NB Internally, ANGULAR frequencies are used.
         ""             : 1.00,
+        "automatic"    : 1.00,
         "atomic_unit"  : 1.00,
         "inversecm"    : 4.5563353e-06,
         "hertz*rad"    : 2.4188843e-17,
@@ -217,36 +222,43 @@ UnitMap = {
     },
     "ms-momentum": {   # TODO fill up units here (mass-scaled momentum)
         ""             : 1.00,
+        "automatic"    : 1.00,
         "atomic_unit"  : 1.00
     },
     "length": {
         ""             : 1.00,
+        "automatic"    : 1.00,
         "atomic_unit"  : 1.00,
         "angstrom"     : 1.8897261,
         "meter"        : 1.8897261e+10
     },
     "volume": {
         ""             : 1.00,
+        "automatic"    : 1.00,
         "atomic_unit"  : 1.00,
         "angstrom3"    : 6.748334231,
     },
     "velocity": {
         ""            : 1.00,
+        "automatic"   : 1.00,
         "atomic_unit" : 1.00,
         "m/s"         : 4.5710289e-7
     },
     "momentum": {
         ""             : 1.00,
+        "automatic"    : 1.00,
         "atomic_unit"  : 1.00
     },
     "mass": {
         ""             : 1.00,
+        "automatic"    : 1.00,
         "atomic_unit"  : 1.00,
         "dalton"       : 1.00 * Constants.amu,
         "electronmass" : 1.00
     },
     "pressure": {
         ""             : 1.00,
+        "automatic"    : 1.00,
         "atomic_unit"  : 1.00,
         "bar"          : 3.398827377e-9,
         "atmosphere"   : 3.44386184e-9,
@@ -254,11 +266,13 @@ UnitMap = {
     },
     "density": {
         ""             : 1.00,
+        "automatic"    : 1.00,
         "atomic_unit"  : 1.00,
         "g/cm3"        : 162.67263
     },
     "force": {
         ""             : 1.00,
+        "automatic"    : 1.00,
         "atomic_unit"  : 1.00,
         "newton"       : 12137805
     }

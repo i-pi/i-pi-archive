@@ -56,8 +56,8 @@ def print_json(atoms, cell, filedesc=sys.stdout, title=""):
                    qs.tolist(), lab.tolist()]))
     filedesc.write("\n")
 
-
-def read_json(filedesc, **kwargs):
+# VENKAT TODO THIS IS TOTALLY BROKEN (AND NEVER USED ACTUALLY...)
+def read_json(filedesc):
     """Reads a JSON-style file with i-pi style comments and creates an Atoms and Cell object.
 
     Args:
