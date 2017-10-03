@@ -81,7 +81,7 @@ def compute_acf(input_file, output_prefix, maximum_lag, block_length, length_zer
     ff = open(ifile)
     #Skips the first fskip frames
     for x in xrange(fskip):
-        rr = read_file_raw("xyz", ff, output="array")
+        rr = read_file_raw("xyz", ff)
 
     while True:
 
