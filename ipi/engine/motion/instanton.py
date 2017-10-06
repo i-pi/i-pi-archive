@@ -10,7 +10,6 @@ Algorithms implemented by Yair Litman and Mariana Rossi, 2017
 
 
 import numpy as np
-from scipy import linalg
 import time
 
 from ipi.engine.motion import Motion
@@ -49,6 +48,7 @@ class InstantonMotion(Motion):
                  hessian_init=None,
                  hessian_update=None,
                  hessian_asr=None,
+                 action=np.zeros(2, float),
                  prefix="INSTANTON",
                  final_rates='False'):
 
@@ -73,6 +73,7 @@ class InstantonMotion(Motion):
         self.hessian_update = hessian_update
         self.hessian_asr    = hessian_asr
         self.prefix         = prefix
+        self.action         = action
         self.final_rates    = final_rates
         self.delta          = delta
 
@@ -250,6 +251,10 @@ class InstantonOptimizer(dobject):
         self.hessian_asr     = geop.hessian_asr
         self.hessian_init    = geop.hessian_init
         self.final_rates     = geop.final_rates
+
+        if geop.action.size !=2:
+            geop.action = np.zeros(2, float)
+        self.action          = geop.action
         self.prefix          = geop.prefix
 
         self.gm.bind(self)
@@ -278,7 +283,7 @@ class InstantonOptimizer(dobject):
         """ Does one simulation time step."""
 
         self.qtime = -time.time()
-        info("\n Instanton optimization STEP %d" % step, verbosity.medium)
+        info("\n Instanton optimization STEP %d" % step, verbosity.low)
 
 
         if step == 0:
@@ -327,7 +332,7 @@ class InstantonOptimizer(dobject):
 
 
         # Do one step. Update hessian for the new position. Update the position and force inside the mapper.
-        Instanton(self.old_x, self.old_f,self.im.f, self.hessian,self.hessian_update,self.hessian_asr, self.im,self.gm, self.big_step)
+        Instanton(self.old_x, self.old_f,self.im.f, self.hessian,self.hessian_update,self.action,self.hessian_asr, self.im,self.gm, self.big_step)
 
         # Update positions and forces
         self.beads.q = self.gm.dbeads.q
@@ -343,16 +348,16 @@ class InstantonOptimizer(dobject):
         """ Exits the simulation step. Computes time, checks for convergence. """
         self.qtime += time.time()
 
-        info(' @Exit step: Energy difference: %.1e, (condition: %.1e)' % (np.absolute((fx - fx0) / self.beads.natoms)[0],self.tolerances["energy"] ),verbosity.medium)
-        info(' @Exit step: Maximum force component: %.1e, (condition: %.1e)' % (np.amax(np.absolute(self.forces.f+self.im.f)), self.tolerances["force"]), verbosity.medium)
-        info(' @Exit step: Maximum component step component: %.1e, (condition: %.1e)' % (x, self.tolerances["position"]), verbosity.medium)
+        info(' @Exit step: Energy difference: %.1e, (condition: %.1e)' % (np.absolute((fx - fx0) / self.beads.natoms)[0],self.tolerances["energy"] ),verbosity.low)
+        info(' @Exit step: Maximum force component: %.1e, (condition: %.1e)' % (np.amax(np.absolute(self.forces.f+self.im.f)), self.tolerances["force"]), verbosity.low)
+        info(' @Exit step: Maximum component step component: %.1e, (condition: %.1e)' % (x, self.tolerances["position"]), verbosity.low)
 
         if (np.absolute((fx - fx0) / self.beads.natoms) <= self.tolerances["energy"]) \
                 and ((np.amax(np.absolute(self.forces.f + self.im.f)) <= self.tolerances["force"]) or
                          (np.linalg.norm(self.forces.f.flatten() - self.old_f.flatten()) <= 1e-08)) \
                 and (x <= self.tolerances["position"]):
 
-            print_instanton(self.prefix, self.hessian, self.gm,self.im,self.hessian_asr,self.final_rates)
+            print_instanton(self.prefix, self.hessian, self.gm,self.im,self.hessian_asr,self.final_rates,self.action)
             exitt=True #If we just exit here, the last step (including the last hessian) will not be in the RESTART file
 
         return exitt
@@ -360,7 +365,7 @@ class InstantonOptimizer(dobject):
 #-------------------------------------------------------------------------------------------------------------
 
 
-def Instanton(x0, f0,f1, h, update,asr, im,gm, big_step):
+def Instanton(x0, f0,f1, h, update,action,asr, im,gm, big_step):
     """Do one step. Update hessian for the new position. Update the position and force inside the mapper.
        
        Input: x0 = last positions
@@ -368,19 +373,26 @@ def Instanton(x0, f0,f1, h, update,asr, im,gm, big_step):
                f1 = last spring forces
                h  = physical hessian
            update = how to update the hessian
+           action = vector to store the current value of the action
                im = instanton mapper
                gm = gradient  mapper
          big_step = limit on step length"""
 
+    info(" @Instanton_step", verbosity.high)
 
     # Project out rotations and translation from the Hessian. Note that the dynmax.size < h0
+    time0 = time.time()
     h1 = np.add(im.h, h) #add spring terms to the physical hessian
+    time1 = time.time()
     d, dynmax = clean_hessian(h1, im.dbeads.q, im.dbeads.natoms, im.dbeads.nbeads, im.dbeads.m, im.dbeads.m3,asr)
 
+
     # Find new movement direction
+    time2 = time.time()
     d_x = nichols(f0,f1, d,dynmax,im.dbeads.m3, big_step)
 
     # Rescale step
+    time3 = time.time()
     d_x_max = np.amax(np.absolute(d_x))
     info(" @Instanton: Current step norm = %g" % d_x_max, verbosity.medium)
     if np.amax(np.absolute(d_x)) > big_step:
@@ -388,19 +400,36 @@ def Instanton(x0, f0,f1, h, update,asr, im,gm, big_step):
         d_x *= big_step / np.amax(np.absolute(d_x_max))
 
     # Make movement and get new energy (u)  and forces(f) using mapper
+    time4 = time.time()
     x = x0 + d_x
     im(x,ret=False) # Only to update the mapper
     u, g2 = gm(x)
     f = -g2
 
     # Update hessian
+    time5 = time.time()
     if update == 'powell':
         d_g = np.subtract(f0, f)
         Powell(d_x.flatten(), d_g.flatten(), h)
     elif update == 'recompute':
         get_hessian(h,gm,x)
 
+    #Store action
+    time6 = time.time()
+    action[0] = gm.dforces.pot * 1/(im.temp  * im.dbeads.nbeads * units.Constants.kb)
+    action[1] = im.pot / (im.temp * im.dbeads.nbeads * units.Constants.kb)
+    time7 = time.time()
+    # Note that for the half polymer the factor 2 cancels out (One factor in *.pot and one factor in *.nbeads)
 
+    print ''
+    print ''
+    print 'Add spring %f' %(time1-time0)
+    print 'Clean hessian %f' %(time2 - time1)
+    print 'Nichols %f' %(time3 - time2)
+    print 'Rescale %f' %(time4 - time3)
+    print 'Make movement %f' %(time5 - time4)
+    print 'Update hessian %f' % (time6 - time5)
+    print 'Compute action %f' % (time7 - time6)
 #-------------------------------------------------------------------------------------------------------------
 def get_hessian(h,gm,x0,d=0.01):
     """Compute the physical hessian           
@@ -424,7 +453,7 @@ def get_hessian(h,gm,x0,d=0.01):
 
 
     for j in range(ii):
-        info(" @Instanton: Computing hessian: %d of %d" % ((j+1),ii), verbosity.high)
+        info(" @Instanton: Computing hessian: %d of %d" % ((j+1),ii), verbosity.low)
         x = x0.copy()
 
         x[:, j] = x0[:, j] + d
@@ -450,12 +479,12 @@ def spring_hessian(im):
        
        OUT    h       = hessian with only the spring terms ('spring hessian')
         """
-
+    info(" @spring_hessian", verbosity.high)
     ii = im.dbeads.natoms * 3
     h = np.zeros([ii * im.dbeads.nbeads, ii * im.dbeads.nbeads])
 
     if im.dbeads.nbeads == 1:
-        return
+        return h
 
     # Diagonal
     h_sp = im.dbeads.m3[0] * im.omega2
@@ -493,7 +522,7 @@ def get_imvector(h,  m3):
                    m3     = mass vector (dimension = 1 x 3*natoms)
             OUT    imv    = eigenvector corresponding to the imaginary mode
         """
-
+    info("@get_imvector", verbosity.high)
     if h.size != m3.size**2:
         raise ValueError("@Get_imvector. Initial hessian size does not match system size.")
     m   = 1.0 / (m3 ** 0.5)
@@ -536,7 +565,7 @@ def clean_hessian(h,q, natoms,nbeads,m,m3,asr,mofi=False):
             w      = dynmatrix with the external modes projected out
             
         #Adapted from ipi/engine/motion/phonons.py apply_asr    """
-
+    info(" @clean_hessian", verbosity.high)
     #Set some util things
     ii = natoms * nbeads
     mm = np.zeros((nbeads, natoms))
@@ -648,6 +677,7 @@ def get_doble_hessian(h0,im):
             im     = instanton mapper
        
        OUT h      = full ring polymer hessian (physical + spring terms)"""
+    info(" @get_doble_hessian" , verbosity.high)
 
     nbeads = im.dbeads.nbeads
     natoms = im.dbeads.natoms
@@ -698,15 +728,15 @@ def get_doble(q0,nbeads,m,m3):
        OUT
            The corresponding vectors/values for the full ring-polymer
        """
-
+    info(" @get_doble", verbosity.high)
     q=np.concatenate((q0, np.flipud(q0)), axis=0)
     m3=np.concatenate((m3, m3), axis=0)
     return q,2*nbeads,m,m3
 
 #----------------------------------------------------------------------------------------------------------
-def print_instanton(prefix,h,gm,im,asr,rates):
+def print_instanton(prefix,h,gm,im,asr,rates,action):
     """ Prints out relevant information."""
-
+    info(" @print_instanton", verbosity.high)
     outfile = open(prefix + '.data', 'w')
     np.set_printoptions(precision=6, suppress=True, threshold=np.nan)
 
@@ -722,18 +752,20 @@ def print_instanton(prefix,h,gm,im,asr,rates):
     print >> outfile, ('We have %i beads in the mode  "%s" and the temperature  is %f K ' %(im.dbeads.nbeads,im.mode,units.unit_to_user('temperature',"kelvin",im.temp)))
     print >> outfile, ('Beta in a.u.', 1/im.temp)
 
-    action1 = gm.dforces.pot * 1/(im.temp  * im.dbeads.nbeads * units.Constants.kb)
-    action2 = im.pot / (im.temp * im.dbeads.nbeads * units.Constants.kb)
+    #action1 = gm.dforces.pot * 1/(im.temp  * im.dbeads.nbeads * units.Constants.kb)
+    #action2 = im.pot / (im.temp * im.dbeads.nbeads * units.Constants.kb)
     # Note that for the half polymer the factor 2 cancels out (One factor in *.pot and one factor in *.nbeads)
+    action1 = action[0]
+    action2 = action[1]
     action = action1 + action2
     if im.mode == 'half':
         BN =  2*np.sum(gm.dbeads.m3[1:,:]*(gm.dbeads.q[1:,:] - gm.dbeads.q[:-1,:])**2)
     if im.mode == 'full':
         BN = np.sum(gm.dbeads.m3*(np.roll(gm.dbeads.q,1,axis=0) - gm.dbeads.q) ** 2)
 
-    print >> outfile, ('S1/hbar   '  + str(action1 / units.Constants.hbar) )
-    print >> outfile, ('S2/hbar   '  + str(action2 / units.Constants.hbar) )
-    print >> outfile, ('S/hbar    '  + str(action  / units.Constants.hbar) )
+    print >> outfile, ('S1/hbar   '  + str(action1 ) )
+    print >> outfile, ('S2/hbar   '  + str(action2 ) )
+    print >> outfile, ('S/hbar    '  + str(action  ) )
     print >> outfile, ('BN   ' + (str(BN)))
     print >> outfile, ('BN*N   ' + (str(BN * factor * im.dbeads.nbeads)))
     print >> outfile, ('  ')
@@ -749,6 +781,8 @@ def print_instanton(prefix,h,gm,im,asr,rates):
             get_hessian(h, gm, im.dbeads.q)
             if gm.dbeads.nbeads != 1:
                 hf = np.add(im.h,h)
+            else:
+                hf=h.copy()
             d,w,detI = clean_hessian(hf,im.dbeads.q,im.dbeads.natoms,im.dbeads.nbeads,im.dbeads.m,im.dbeads.m3,asr,mofi=True)
             m = im.dbeads.m
         elif im.mode =='half':
@@ -761,23 +795,24 @@ def print_instanton(prefix,h,gm,im,asr,rates):
         print >> outfile, ('  ')
 
         #Compute Qrot
-        if asr=='poly':
-            qrot = ( 8*np.pi*detI / ( (units.Constants.hbar)**6 * (betaP)**3 ))**0.5
-        else:
-            qrot = 1.0
-        print >> outfile, ('DetI ' + str(detI))
-        print >> outfile, ('Qrot ' + str(qrot))
+        #if asr=='poly':
+        #    qrot = ( 8*np.pi*detI / ( (units.Constants.hbar)**6 * (betaP)**3 ))**0.5
+        #else:
+        #    qrot = 1.0
+        #print >> outfile, ('DetI ' + str(detI))
+        #print >> outfile, ('Qrot ' + str(qrot))
 
         #Compute Qtras
-        qtras= ( ( np.sum(m)*im.dbeads.nbeads*factor ) / ( 2*np.pi*betaP*units.Constants.hbar**2 ) )**1.5
-        print >> outfile, ('Qtras ' + str(qtras))
+        #qtras= ( ( np.sum(m)*im.dbeads.nbeads*factor ) / ( 2*np.pi*betaP*units.Constants.hbar**2 ) )**1.5
+        #print >> outfile, ('Qtras ' + str(qtras))
 
         #Compute loqQvib
-        if im.dbeads.nbeads >1:
-           logQvib = np.sum( -np.log( betaP*units.Constants.hbar*np.sqrt(np.absolute(np.delete(d,1))) ))
+        if im.dbeads.nbeads >1: #instanton calculation
+           logQvib = np.sum( np.log( betaP*units.Constants.hbar*np.sqrt(np.absolute(np.delete(d,1))) ))
            print 'Deleted frequency for computing Qvib  %f cm^-1' % (np.sign(d[1]) * np.absolute(d[1]) ** 0.5 / (2 * np.pi * 3e10 * 2.4188843e-17))
-        else:
-           logQvib = np.sum(-np.log(betaP * units.Constants.hbar * np.sqrt(np.absolute(np.delete(d, 0)))))
+        else: # TS calculation,exact expression
+           logQvib = np.sum( np.log(2 * np.sinh((betaP *units.Constants.hbar * np.sqrt(np.delete(d, 0)) / 2.0))))
+           #logQvib = np.sum( np.log( betaP * units.Constants.hbar * np.sqrt(np.absolute(np.delete(d, 0)))))
            print 'Deleted frequency for computing Qvib  %f cm^-1' % (np.sign(d[0]) * np.absolute(d[0]) ** 0.5 / (2 * np.pi * 3e10 * 2.4188843e-17))
 
         print >> outfile, ('logQvib ' + str(logQvib))

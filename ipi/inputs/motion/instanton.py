@@ -79,7 +79,11 @@ class InputInst(InputDictionary):
                                 "default": "false",
                                 "options": ["false", "true"],
                                 "help": "Decide if we are going to compute the Qvib and therefore the big-hessian by finite difference."}),
-               "prefix": (InputValue, {"dtype": str, "default": "INSTANTON",
+               "action": (InputArray, {"dtype": float,
+                                        "default": input_default(factory=np.zeros, args=(0,)),
+                                        "help": "Vector containing the 2  components ('spring' and 'physical') of the actions. Unitless "}),
+               "prefix": (InputValue, {"dtype": str,
+                                       "default": "INSTANTON",
                                        "help": "Prefix of the output files."
                                        })
                } 
@@ -103,6 +107,7 @@ class InputInst(InputDictionary):
         self.hessian_update.store(geop.hessian_update)
         self.hessian_asr.store(geop.hessian_asr)
         self.final_rates.store(geop.final_rates)
+        self.action.store(geop.action)
         self.prefix.store(geop.prefix)
 
     def fetch(self):
