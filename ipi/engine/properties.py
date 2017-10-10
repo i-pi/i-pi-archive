@@ -420,6 +420,14 @@ class Properties(dobject):
                       "help": "The pressure of the (extended) classical system.",
                       "func": (lambda: np.trace((self.forces.vir + self.nm.kstress)/(3.0*self.cell.V)))},
 
+      "pressure_db_1": {"dimension": "pressure",
+                      "help": "The pressure of the (extended) classical system.",
+                      "func": (lambda: np.trace((self.forces.vir)/(3.0*self.cell.V)))},
+
+      "pressure_db_2": {"dimension": "pressure",
+                      "help": "The pressure of the (extended) classical system.",
+                      "func": (lambda: np.trace((self.nm.kstress)/(3.0*self.cell.V)))},
+
       "kstress_md":  {"dimension": "pressure",
                       "size" : 6,
                       "help": "The kinetic stress tensor of the (extended) classical system.",

@@ -278,7 +278,7 @@ class Barostat(dobject):
       if self.bias != None: 
           bvir[:]=self.bias.vir
           
-      return (self.kstress + self.forces.vir + bvir)/self.cell.V
+      return (self.kstress + self.forces.virs + bvir)/self.cell.V
 
    def get_stress_sc(self):
       """Calculates the high order part of the Suzuki-Chin internal stress tensor."""
