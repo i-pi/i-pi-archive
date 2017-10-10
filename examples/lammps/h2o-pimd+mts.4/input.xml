@@ -1,7 +1,7 @@
 <simulation mode="md" threading="False">
     <output prefix="simulation">
         <properties stride="1" filename="out">  [ step, time{picosecond}, conserved, temperature{kelvin}, kinetic_cv, potential, pressure_cv{megapascal} ] </properties>
-        <trajectory filename="pos" stride="20"> positions </trajectory>
+        <trajectory filename="pos" stride="1"> positions </trajectory>
         <checkpoint stride="200"/>
     </output>
     <total_steps> 1000 </total_steps>
@@ -39,7 +39,7 @@
         </motion>
         <ensemble>
             <temperature units="kelvin"> 300 </temperature>
-            <pressure units="megapascal"> 0.1 </pressure>
+            <pressure units="bar"> 1 </pressure>
         </ensemble>
     </system>
 </simulation>
