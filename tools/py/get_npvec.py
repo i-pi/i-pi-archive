@@ -1,8 +1,9 @@
 #!/usr/bin/env python2 
-"""
-Computes the momentum distribution having as input the end-to-end distances in atomic units.
-The results are in atomic units.
-
+description = """
+Computes the momentum distribution having as input the end-to-end vectors of the open path
+in atomic units. The result is the 3D distribution in atomic units, with the format
+px py pz n(p)
+....
 """
 
 import argparse
@@ -115,7 +116,12 @@ def get_np(path, fname, bsize, P, m, Tkelv, nskip, s, ns, cut):
     print time.clock()-start 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description=None)
+    # get_npvec delta-file-name --prefix [output-prefix]
+    # the outputs will be like output-prefix.np3d, output-prefix.delta3d 
+    # -dint should be selected automatically if not given as maximum value seen in the input *1.1
+    # -ns default should be like 0, if detects it's zero, automatically set so that the grid spacing is sigma of the kernel
+    # the threshold should be by default like 6 sigma
+    parser = argparse.ArgumentParser(description=description)
     parser.add_argument("--path",type=str, default="", help="path of the folder conatining the end-to-end distances file")
     parser.add_argument("--fname",type=str,default="", help="name of the end-to-end distances file")
     parser.add_argument("-bsize", type=int, default=50000, help="Specify the size of the blocks")
