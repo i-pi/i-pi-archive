@@ -13,7 +13,6 @@ import time
 def histo3d(data, delta, ns, cut, dqstep, mean, sigma):
     ly=delta[0,:]*0.0
     lspread = np.arange(-int(cut/sigma/dqstep), int(cut/sigma/dqstep)+1)        
-    print lspread 
     index = np.zeros(len(lspread))
     for x in data:
         qx= int(x[0]/dqstep + ns/2.)*ns*ns
@@ -24,6 +23,9 @@ def histo3d(data, delta, ns, cut, dqstep, mean, sigma):
         y = np.where((index < ns**3) & (index >= 0))
         ly[index[y]] += np.exp(-((delta[0, index[y]]-x[0])**2 + (delta[1, index[y]]- x[1])**2 + (delta[2, index[y]] - x[2])**2)*(0.5*sigma**2))
     return ly
+    
+def outer3(*vs):
+    return reduce(np.multiply.outer, vs)
      
 def get_np(path, fname, bsize, P, m, Tkelv, nskip, s, ns, cut):   
     start = time.clock()
@@ -31,9 +33,32 @@ def get_np(path, fname, bsize, P, m, Tkelv, nskip, s, ns, cut):
     dq = np.zeros((bsize,3) , float)
     dqxgrid = np.linspace(-s, s, ns)
     dqygrid = np.linspace(-s, s, ns)
-    dqzgrid = np.linspace(-s, s, ns)
+    dqzgrid = np.linspace(-s, s, ns)        
     dqstep= np.abs(dqxgrid[1]-dqxgrid[0])
+    halfsigma2 = 0.5*(T * P * m)
     print dqstep, 1./np.sqrt(T * P * m)
+    
+    data_path = str(path + fname)
+    data = np.loadtxt(data_path)
+    
+    myh = np.zeros((ns,ns,ns))
+    fx = np.zeros(ns); fy = np.zeros(ns); fz = np.zeros(ns); 
+    dq = 5
+    for x,y,z in data:
+        qx= int(x/dqstep + ns/2.)
+        qy= int(y/dqstep + ns/2.)
+        qz= int(z/dqstep + ns/2.) 
+        
+        fx[qx-dq:qx+dq] = np.exp(-(x-dqxgrid[qx-dq:qx+dq])**2*halfsigma2)
+        fy[qy-dq:qy+dq] = np.exp(-(y-dqxgrid[qy-dq:qy+dq])**2*halfsigma2)
+        fz[qz-dq:qz+dq] = np.exp(-(z-dqxgrid[qz-dq:qz+dq])**2*halfsigma2)
+        
+        #myh[qx-dq:qx+dq,qy-dq:qy+dq,qz-dq:qz+dq] += np.einsum('i,j,k->ijk', fx[qx-dq:qx+dq], fy[qy-dq:qy+dq], fz[qz-dq:qz+dq])
+        myh[qx-dq:qx+dq,qy-dq:qy+dq,qz-dq:qz+dq] += outer3(fx[qx-dq:qx+dq], fy[qy-dq:qy+dq], fz[qz-dq:qz+dq])
+
+                
+    np.savetxt(str(path + "np3d.data"), myh.flatten())    
+    return
     xxx,yyy,zzz= np.meshgrid(dqxgrid, dqygrid, dqzgrid)
     qgrid= np.zeros((3,ns*ns*ns))
     qgrid[0,:] = (np.array(yyy)).flatten()

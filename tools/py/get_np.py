@@ -1,19 +1,16 @@
 #!/usr/bin/env python2 
+description = """
+Computes the quantum momentum distribution of a particle given the end-to-end distances.  
+It computes both the three components of the momentum distribution and the spherically-averaged 
+distribution of the proton momentum. It also computes <p^2> in the various directions, and the 
+total contribute.
 """
-
-Computes the quantum momentum distribution of a particle given the end-to-edn distances.  
-It computes both the three components of the momentum distribution and the radial function.
-Moreover it computes <p^2> both in the various directions and the total contribute.
-"""
-
-
 
 import argparse
 import numpy as np
 
-
 def kernel(x, mean=0, sigma=1):
-    return np.exp(-(x- mean)**2*(0.5*sigma**2))
+    return np.exp(-(x-mean)**2*(0.5*sigma**2))
 
 def histo(data, delta, k, mean, sigma):
     ly=delta*0.0
@@ -21,12 +18,17 @@ def histo(data, delta, k, mean, sigma):
         ly+=k(delta-x, mean, sigma)
     return ly
 
+def kernel3d(x, ispread2):
+    return np.exp(-np.sum(x*x)*0.5*ispread2)
+
 def rad_kernel(x, delta, spread):
-   if (x <= 10**(-4)):
-      res= np.exp(-spread*delta**2)*4*delta**2 + 4./3.*np.exp(-spread*delta**2)*delta**2*spread*(-3 + 2*delta**2*spread)*x**2
-   else:
-      res=(np.exp(-spread*(x - delta)**2)-np.exp(-spread*(x + delta)**2))*delta/(x*spread)
-   return res
+    # computes the kernel that describes the contribution to the radial average n(Delta) for a given spread factor 1/ispread
+    if (x <= 1.0e-4): # use a Taylor expansion to get a stable result for small x
+        delta2 = delta**2
+        res= np.exp(-spread*delta2)*4*delta2 + 4./3.*np.exp(-spread*delta2)*delta2*spread*(-3 + 2*delta2*spread)*x**2
+    else:
+        res=(np.exp(-spread*(x - delta)**2)-np.exp(-spread*(x + delta)**2))*delta/(x*spread)
+    return res
     
 def rad_histo(data, delta, r_k, spread):
     ly=delta*0.0
@@ -187,7 +189,7 @@ def get_np(path, fname, bsize, P, m, Tkelv, nskip, s, ns):
    
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description=None)
+    parser = argparse.ArgumentParser(description=description)
     parser.add_argument("--path",type=str, default="", help="path of the folder conatining the end-to-end distances file")
     parser.add_argument("--fname",type=str,default="", help="name of the end-to-end distances file")
     parser.add_argument("-bsize", type=int, default=80000, help="Specify the size of the blocks")
