@@ -19,7 +19,7 @@ from ipi.utils.units import unit_to_user
 from ipi.external import importlib
 from ipi.utils.decorators import cached
 
-__all__ = ["iter_file", "print_file_path", "print_file", "read_file"]
+__all__ = ["io_units", "iter_file", "print_file_path", "print_file", "read_file"]
 
 
 mode_map = {
@@ -229,7 +229,7 @@ def iter_file_raw(mode, filedesc):
 
     try:
         while True:
-            comment, cell, atoms, names, masses = reader(filedesc=filedesc)
+            comment, cell, atoms, names, masses = reader(filedesc=filedesc)            
             yield { "comment" : comment,
                     "data": atoms, 
                     "masses": masses, 
@@ -268,6 +268,17 @@ def iter_file_name(filename):
 
     return iter_file(os.path.splitext(filename)[1], open(filename))
 
+def iter_file_name_raw(filename):
+    """Open a trajectory file, guessing its format from the extension.
+
+    Args:
+        filename: Filename of a trajectory file.
+
+    Returns:
+        Raw  I/O iterator
+    """
+
+    return iter_file_raw(os.path.splitext(filename)[1], open(filename))
 
 def open_backup(filename, mode='r', buffering=-1):
     """A wrapper around `open` which saves backup files.
