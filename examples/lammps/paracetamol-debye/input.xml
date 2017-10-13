@@ -1,6 +1,6 @@
 <simulation verbosity="low">
     <output prefix="simulation">
-        <properties stride="4" filename="out">  [ step, time{picosecond}, conserved, temperature{kelvin}, kinetic_cv, potential, pressure_cv, scaledcoords(1e-4), scaledcoords(1e-5), scaledcoords(1e-6) ] </properties>
+        <properties stride="4" filename="out">  [ step, time{picosecond}, conserved, temperature{kelvin}, kinetic_cv, potential ,atom_x(0;0), atom_f(0;0)] </properties>
         <trajectory stride="40" filename="pos">  positions  </trajectory>
     </output>
     <total_steps> 400000 </total_steps>
@@ -10,7 +10,7 @@
         <x_reference mode="file"> ref.data  </x_reference>
     </ffdebye>
     <system>
-    <initialize nbeads="1">
+    <initialize nbeads="32">
         <file mode="xyz">  init.xyz </file>
         <velocities mode="thermal" units="kelvin"> 300 </velocities>
     </initialize>
