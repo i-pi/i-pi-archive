@@ -98,11 +98,10 @@ class InstantonMotion(Motion):
 
 class GradientMapper(object):
 
-    """Creation of the multi-dimensional function that will be minimized.
-    Used in the BFGS and L-BFGS minimizers.
+    """Creation of the multi-dimensional function to compute the physical potential and forces
 
     Attributes:
-        dbeds:   copy of the bead object
+        dbeads:  copy of the bead object
         dcell:   copy of the cell object
         dforces: copy of the forces object
     """
@@ -544,8 +543,11 @@ def get_imvector(h,  m3):
     elif freq[0] > 0:
         raise ValueError("@GEOP: The smallest frequency is positive. We aren't in a TS. Please check your hessian")
 
+    info(" @get_imvector: We stretch along the mode with freq %f cm^1" %freq[0] , verbosity.low)
+
     imv = w[:, 0] * (m3[:] ** 0.5)
     imv = imv/np.linalg.norm(imv)
+
     return imv
 
 #-------------------------------------------------------------------------------------------------------------------
