@@ -115,7 +115,7 @@ class InputGeop(InputDictionary):
         if geop == {}: 
             return
 
-
+        # Optimization Options
         self.mode.store(geop.mode)
         self.tolerances.store(geop.tolerances)
 
