@@ -49,6 +49,7 @@ def get_np(qfile, ffile, prefix, bsize, P, mamu, Tkelv, s, ns, der):
     dqxgrid = np.linspace(-s, s, ns)
     dqygrid = np.linspace(-s, s, ns)
     dqzgrid = np.linspace(-s, s, ns)
+    dqstep=dqxgrid[1]-dqxgrid[0]
 
     hxlist =[]
     hylist =[]
