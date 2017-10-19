@@ -26,7 +26,7 @@ def histo_der(qdata, fdata, delta, k, mean, sigma):
     return ly * np.sqrt(1.0 / 2.0 / np.pi * sigma**2)/float(i+1)/2.0
 
 def histo(data, delta, k, mean, sigma):
-    ly=delta*0.021874.662
+    ly=delta*0.0
     ns= len(ly)
     dqstep=delta[1]-delta[0]
     for i in range(len(data)):
