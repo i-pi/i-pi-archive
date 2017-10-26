@@ -9,32 +9,34 @@ import argparse
 import numpy as np
 import time
 
-def kernel(x, mean=0.0, invsigma=1.0):
-    return np.exp(-(x- mean)**2*(0.5*invsigma**2))
+def kernel(x, invsigma=1.0):
+    return np.exp(-0.5*(x*invsigma)**2)
 
 def histo_der(qdata, fdata, delta, k, mean, invsigma):
     ly=delta*0.0
     ns= len(ly)
     dqstep=np.abs(delta[1]-delta[0])
     for i in range(len(qdata)):
-	x = qdata[i]
-	f = fdata[i]
+        x = qdata[i]
+        f = fdata[i]
         q = int(x/dqstep + ns/2.)
         index = q + np.arange(-int(6./dqstep/invsigma), int(6./dqstep/invsigma))  
         y = np.where((index < ns) & (index >= 0))   
         ly[index[y]] += f  * k(delta[index[y]]-x, mean, invsigma)
     return ly * np.sqrt(1.0 / 2.0 / np.pi * invsigma**2) / 2.0
 
-def histo(data, delta, k, mean, invsigma):
-    ly=delta*0.0
-    ns= len(ly)
-    dqstep=delta[1]-delta[0]
+def histo(data, grid, k, invsigma):
+    ly = grid * 0.0
+    ns = len(ly)
+    dx = grid[1]-grid[0]
+    dj = int(8*invsigma/dx) # number of standard deviations to be computed
     for i in range(len(data)):
-	x = data[i]
-        q = int(x/dqstep + ns/2.)
-        index = q + np.arange(-int(6./dqstep/invsigma), int(6./dqstep/invsigma))
-        y = np.where((index < ns) & (index >= 0))
-        ly[index[y]] +=  k(delta[index[y]]-x, mean, invsigma)
+        x = data[i]
+        jx = int(x/dx + ns/2.)
+        #index = q + np.arange(-int(6./dqstep/invsigma), int(6./dqstep/invsigma))
+        #y = np.where((index < ns) & (index >= 0))
+        #ly[index[y]] +=  k(delta[index[y]]-x, mean, invsigma)
+        ly[jx-dj:jx+dj+1] += k(grid[jx-dj:jx+dj+1]-x, invsigma)
     return ly * np.sqrt(1.0 / 2.0 / np.pi * invsigma**2)
 
 def get_np(qfile, ffile, prefix, bsize, P, mamu, Tkelv, s, ns, der, skip):
@@ -93,56 +95,60 @@ def get_np(qfile, ffile, prefix, bsize, P, mamu, Tkelv, s, ns, der, skip):
              exit()
 
     if der == False:
-	    for x in xrange(n_block):
-		print "# building the histogram for block $", x + 1
-		dq = delta[x*bsize : (x+1)*bsize]
-		hx = histo(np.concatenate((dq.T[0], -dq.T[0])), dqxgrid, kernel, 0, np.sqrt(T * P * m))
-		hx = ((hx + hx[::-1]) / 2.0)
-                hy = histo(np.concatenate((dq.T[1], -dq.T[1])), dqygrid, kernel, 0, np.sqrt(T * P * m))
-		hy = ((hy + hy[::-1]) / 2.0)
-		hz = histo(np.concatenate((dq.T[2], -dq.T[2])), dqzgrid, kernel, 0, np.sqrt(T * P * m))
-		hz = ((hz + hz[::-1]) / 2.0)
-		hxlist.append(hx)
-		hylist.append(hy)
-		hzlist.append(hz)
+        for x in xrange(n_block):
+            print "# building the histogram for block $", x + 1
+            dq = delta[x*bsize : (x+1)*bsize]
+            hx = histo(dq[:,0], dqxgrid, kernel, np.sqrt(T * P * m))
+            hx = ((hx + hx[::-1]) * 0.5)
+            hy = histo(dq[:,1], dqygrid, kernel, np.sqrt(T * P * m))
+            hy = ((hy + hy[::-1]) * 0.5)
+            hz = histo(dq[:,2], dqzgrid, kernel, np.sqrt(T * P * m))
+            hz = ((hz + hz[::-1]) * 0.5)
+            hxlist.append(hx)
+            hylist.append(hy)
+            hzlist.append(hz)
 
-		# Computes the Fourier transform of the end to end vector.
-		npx = npy = npz = hx*0.0
-		print "# computing FT for block #", x+1
-                for i in range(len(hx)):
-                   npx[i] = (hx * np.cos(pxgrid[i] * dqxgrid)).sum() * dqxstep
-		   npy[i] = (hy * np.cos(pygrid[i] * dqygrid)).sum() * dqystep
-		   npz[i] = (hz * np.cos(pzgrid[i] * dqzgrid)).sum() * dqzstep
+            # Computes the Fourier transform of the end to end vector.
+            npx = hx*0.0
+            npy = hy*0.0
+            npz = hz*0.0
+            print "# computing FT for block #", x+1
+            for i in range(len(hx)):
+                npx[i] = (hx * np.cos(pxgrid[i] * dqxgrid)).sum() * dqxstep
+                npy[i] = (hy * np.cos(pygrid[i] * dqygrid)).sum() * dqystep
+                npz[i] = (hz * np.cos(pzgrid[i] * dqzgrid)).sum() * dqzstep
 
-		nplistx.append(npx)
-		nplisty.append(npy)
-		nplistz.append(npz) 
+            nplistx.append(npx)
+            nplisty.append(npy)
+            nplistz.append(npz) 
     else:
-	    for x in xrange(n_block):
-		print "# building the histogram for block $", x + 1
-		dq = delta[x*bsize : (x+1)*bsize]
-		df = delta_force[x*bsize : (x+1)*bsize]
-		hx = histo_der(np.concatenate((dq.T[0], -dq.T[0])), np.concatenate((df.T[0], -df.T[0])), dqxgrid, kernel, 0, np.sqrt(T * P * m))
-		hx = np.cumsum((hx - hx[::-1]) / 2.0) * dqxstep / P / T
-		hy = histo_der(np.concatenate((dq.T[1], -dq.T[1])), np.concatenate((df.T[1], -df.T[1])), dqygrid, kernel, 0, np.sqrt(T * P * m))
-		hy = np.cumsum((hy - hy[::-1]) / 2.0) * dqystep / P / T
-		hz = histo_der(np.concatenate((dq.T[2], -dq.T[2])), np.concatenate((df.T[2], -df.T[2])), dqzgrid, kernel, 0, np.sqrt(T * P * m))
-		hz = np.cumsum((hz - hz[::-1]) / 2.0) * dqzstep / P / T
-		hxlist.append(hx)
-		hylist.append(hy)
-		hzlist.append(hz)
+        for x in xrange(n_block):
+            print "# building the histogram for block $", x + 1
+            dq = delta[x*bsize : (x+1)*bsize]
+            df = delta_force[x*bsize : (x+1)*bsize]
+            hx = histo_der(np.concatenate((dq.T[0], -dq.T[0])), np.concatenate((df.T[0], -df.T[0])), dqxgrid, kernel, 0, np.sqrt(T * P * m))
+            hx = np.cumsum((hx - hx[::-1]) / 2.0) * dqxstep / P / T
+            hy = histo_der(np.concatenate((dq.T[1], -dq.T[1])), np.concatenate((df.T[1], -df.T[1])), dqygrid, kernel, 0, np.sqrt(T * P * m))
+            hy = np.cumsum((hy - hy[::-1]) / 2.0) * dqystep / P / T
+            hz = histo_der(np.concatenate((dq.T[2], -dq.T[2])), np.concatenate((df.T[2], -df.T[2])), dqzgrid, kernel, 0, np.sqrt(T * P * m))
+            hz = np.cumsum((hz - hz[::-1]) / 2.0) * dqzstep / P / T
+            hxlist.append(hx)
+            hylist.append(hy)
+            hzlist.append(hz)
 		
-		# Computes the Fourier transform of the end to end vector.
-                npx = npy = npz = hx*0.0
-		print "# computing FT for block #", x+1
-                for i in range(len(hx)):
-                   npx[i] = (hx * np.cos(pxgrid[i] * dqxgrid)).sum() * dqxstep
-		   npy[i] = (hy * np.cos(pygrid[i] * dqygrid)).sum() * dqystep
-		   npz[i] = (hz * np.cos(pzgrid[i] * dqzgrid)).sum() * dqzstep
+            # Computes the Fourier transform of the end to end vector.
+            npx = hx*0.0
+            npy = hy*0.0
+            npz = hz*0.0
+            print "# computing FT for block #", x+1
+            for i in range(len(hx)):
+                npx[i] = (hx * np.cos(pxgrid[i] * dqxgrid)).sum() * dqxstep
+                npy[i] = (hy * np.cos(pygrid[i] * dqygrid)).sum() * dqystep
+                npz[i] = (hz * np.cos(pzgrid[i] * dqzgrid)).sum() * dqzstep
 
-		nplistx.append(npx)
-		nplisty.append(npy)
-		nplistz.append(npz)
+            nplistx.append(npx)
+            nplisty.append(npy)
+            nplistz.append(npz)
                 
 	    
     #save the convoluted histograms of the end-to-end distances
@@ -157,7 +163,7 @@ def get_np(qfile, ffile, prefix, bsize, P, mamu, Tkelv, s, ns, der, skip):
     norm_npy = avghy[(ns - 1) / 2] 
     norm_npz = avghz[(ns - 1) / 2] 
     
-    print "# Dx^2", np.dot(dqxgrid**2,avghx) * dqxstep / (bsize * n_block)
+    print "# Dx^2", np.dot(dqxgrid**2,avghx) * dqxstep / (bsize * n_block) 
     print "# Dy^2", np.dot(dqygrid**2,avghy) * dqystep / (bsize * n_block)
     print "# Dz^2", np.dot(dqzgrid**2,avghz) * dqzstep / (bsize * n_block)
 
@@ -169,10 +175,10 @@ def get_np(qfile, ffile, prefix, bsize, P, mamu, Tkelv, s, ns, der, skip):
     np.savetxt(str(prefix + "histo.data"), np.c_[dqxgrid, avghx/ (bsize * n_block), errhx, dqygrid, avghy/ (bsize * n_block), errhy, dqzgrid, avghz/ (bsize * n_block), errhz])    
 
     #save the resulting momentum distribution for each axes
-    avgnpx = np.sum(np.asarray(nplistx), axis = 0) / norm_npx / 2.0 / np.pi
-    avgnpy = np.sum(np.asarray(nplisty), axis = 0) / norm_npy / 2.0 / np.pi
-    avgnpz = np.sum(np.asarray(nplistz), axis = 0) / norm_npz / 2.0 / np.pi
-
+    avgnpx = np.sum(np.asarray(nplistx), axis = 0) / 2.0 / np.pi / norm_npx
+    avgnpy = np.sum(np.asarray(nplisty), axis = 0) / 2.0 / np.pi / norm_npy
+    avgnpz = np.sum(np.asarray(nplistz), axis = 0) / 2.0 / np.pi / norm_npz
+    
     errnpx = np.std(np.asarray(nplistx), axis = 0) * np.sqrt(n_block) / norm_npx / 2.0 / np.pi 
     errnpy = np.std(np.asarray(nplisty), axis = 0) * np.sqrt(n_block) / norm_npy / 2.0 / np.pi
     errnpz = np.std(np.asarray(nplistz), axis = 0) * np.sqrt(n_block) / norm_npz / 2.0 / np.pi
@@ -192,7 +198,8 @@ def get_np(qfile, ffile, prefix, bsize, P, mamu, Tkelv, s, ns, der, skip):
     print '# px^2', np.mean(np.asarray(px2)), 'sigmax', np.std(np.asarray(px2))/np.sqrt(n_block)
     print '# py^2', np.mean(np.asarray(py2)), 'sigmay', np.std(np.asarray(py2))/np.sqrt(n_block)
     print '# pz^2', np.mean(np.asarray(pz2)), 'sigmaz', np.std(np.asarray(pz2))/np.sqrt(n_block)
- 
+    print '# p^2', np.mean(np.asarray(px2)+np.asarray(py2)+np.asarray(pz2)), 'sigma', np.std(np.asarray(px2)+np.asarray(py2)+np.asarray(pz2))/np.sqrt(n_block)
+    
     print "# time taken (s)", time.clock()-start 
 
 if __name__ == '__main__':

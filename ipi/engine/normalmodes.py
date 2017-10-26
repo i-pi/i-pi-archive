@@ -453,6 +453,11 @@ class NormalModes(dobject):
       for b in range(self.nbeads):
          dm3[b] = self.beads.m3[b]*self.nm_factor[b]
 
+      # dynamical masses for the open paths
+      for j in self.open_paths:          
+         for a in xrange(3*j,3*(j+1)):  
+            for k in xrange(1,self.nbeads):
+                dm3[k,a] = self.beads.m3[k,a]*self.o_nm_factor[k]
       return dm3
 
    def free_qstep(self):
@@ -485,6 +490,8 @@ class NormalModes(dobject):
             qnm[k] = pq[1,:]
             pnm[k] = pq[0,:]
             
+         # now for open paths we recover the initial conditions (that have not yet been overwritten)
+         # and do open path propagation   
          pq = np.zeros(2)  
          for j in self.open_paths:          
             for a in xrange(3*j,3*(j+1)):  
