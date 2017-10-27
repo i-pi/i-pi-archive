@@ -91,7 +91,8 @@ class InputSimulation(Input):
              "ffsocket": (iforcefields.InputFFSocket, { "help": iforcefields.InputFFSocket.default_help} ),
              "fflj": (iforcefields.InputFFLennardJones, { "help": iforcefields.InputFFLennardJones.default_help} ),
              "ffdebye": (iforcefields.InputFFDebye, { "help": iforcefields.InputFFDebye.default_help} ),
-             "ffyaff": (iforcefields.InputFFYaff, { "help": iforcefields.InputFFYaff.default_help} )
+             "ffyaff": (iforcefields.InputFFYaff, { "help": iforcefields.InputFFYaff.default_help} ),
+	     "ff2body": (iforcefields.InputFF2Body, { "help": iforcefields.InputFF2Body.default_help} ),		
              }
 
    default_help = "This is the top level class that deals with the running of the simulation, including holding the simulation specific properties such as the time step and outputting the data."
@@ -151,6 +152,10 @@ class InputSimulation(Input):
             iff = iforcefields.InputFFYaff()
             iff.store(ff)
             self.extra.append(("ffyaff",iff))
+         elif type(ff) is eforcefields.FF2Body:
+            iff = iforcefields.InputFF2Body()
+            iff.store(ff)
+            self.extra.append(("ff2body",iff))
 
       for s in simul.syslist:
          isys = InputSystem()
@@ -192,6 +197,8 @@ class InputSimulation(Input):
          elif k == "ffdebye":
             fflist.append(v.fetch())
          elif k == "ffyaff":
+            fflist.append(v.fetch())
+         elif k == "ff2body":
             fflist.append(v.fetch())
 
       # this creates a simulation object which gathers all the little bits

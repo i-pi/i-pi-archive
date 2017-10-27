@@ -8,12 +8,12 @@
 from copy import copy
 import numpy as np
 
-from ipi.engine.forcefields import ForceField, FFSocket, FFLennardJones, FFDebye, FFYaff
+from ipi.engine.forcefields import ForceField, FFSocket, FFLennardJones, FF2Body, FFDebye, FFYaff
 from ipi.interfaces.sockets import InterfaceSocket
 from ipi.utils.inputvalue import *
 
 
-__all__ = ["InputFFSocket", 'InputFFLennardJones', 'InputFFDebye', 'InputFFYaff']
+__all__ = ["InputFFSocket", 'InputFFLennardJones', 'InputFF2Bfody', 'InputFFDebye', 'InputFFYaff']
 
 
 class InputForceField(Input):
@@ -187,6 +187,31 @@ class InputFFLennardJones(InputForceField):
       return FFLennardJones(pars = self.parameters.fetch(), name = self.name.fetch(),
                latency = self.latency.fetch(), dopbc = self.pbc.fetch())
 
+class InputFF2Body(InputForceField):
+
+   fields = { 
+   "elastic_constant" : (InputArray, {"dtype": float, "default"      : input_default(factory=np.zeros, args=(0,)), "help": "Specifies the Hessian of the harmonic potential (atomic units!)"} ), 
+   "x_reference" : (InputArray, {"dtype": float, "default"  : input_default(factory=np.zeros, args=(0,)), "help": "Minimum-energy configuration for the harmonic potential", "dimension" : "length"} ),
+   }
+   
+   fields.update(InputForceField.fields)
+   
+   attribs = {}
+   attribs.update(InputForceField.attribs)
+   
+   default_help = """2-body Harmonic energy calculator """
+   default_label = "FF2Body"
+
+   def store(self, ff):
+      super(InputFF2Body,self).store(ff)
+      self.elastic_constant.store(ff.K)
+      self.x_reference.store(ff.r0)
+
+   def fetch(self):
+      super(InputFF2Body,self).fetch()
+
+      return FF2Body(K=self.elastic_constant.fetch(), r0=self.x_reference.fetch(), name = self.name.fetch(),
+               latency = self.latency.fetch(), dopbc = self.pbc.fetch())
 
 class InputFFDebye(InputForceField):
 

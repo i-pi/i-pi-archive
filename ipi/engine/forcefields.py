@@ -22,7 +22,7 @@ from ipi.utils.depend import dobject
 from ipi.utils.depend import depstrip
 
 
-__all__ = ['ForceField', 'FFSocket', 'FFLennardJones', 'FFDebye', 'FFYaff']
+__all__ = ['ForceField', 'FFSocket', 'FFLennardJones', 'FF2Body', 'FFDebye', 'FFYaff']
 
 
 class ForceRequest(dict):
@@ -350,6 +350,90 @@ class FFLennardJones(ForceField):
         r["result"] = [v, f.reshape(nat*3), np.zeros((3,3), float), ""]
         r["status"] = "Done"
 
+
+
+class FF2Body(ForceField):
+    """Basic fully pythonic force provider.
+
+    Computes harmonic interactions without for a two body system. 
+
+    Attributes:
+        parameters: A dictionary of the parameters used by the driver. Of the
+            form {'name': value}.
+        requests: During the force calculation step this holds a dictionary
+            containing the relevant data for determining the progress of the step.
+            Of the form {'atoms': atoms, 'cell': cell, 'pars': parameters,
+                         'status': status, 'result': result, 'id': bead id,
+                         'start': starting time}.
+    """
+
+    def __init__(self, latency = 1.0e-3, name="",  K = None, r0 = None, pars = None, dopbc = False):
+        """Initialises FF2Body.
+
+        Args:
+           pars: Optional dictionary, giving the parameters needed by the driver.
+        """
+
+        # check input - PBCs are not implemented here
+        if dopbc:
+            raise ValueError("Periodic boundary conditions are not supported.")
+        super(FF2Body, self).__init__(latency, name, pars, dopbc=False)
+            
+        if K is None:
+           raise ValueError("Must provide the Hessian for the harmonic interaction.")
+        if r0 is None:
+           raise ValueError("Must provide a reference configuration.")
+  		  
+        self.K = K
+        self.r0 = r0
+
+
+    def poll(self):
+        """Polls the forcefield checking if there are requests that should
+        be answered, and if necessary evaluates the associated forces and energy."""
+
+        # We have to be thread-safe, as in multi-system mode this might get
+        # called by many threads at once.
+        self._threadlock.acquire()
+        try:
+            for r in self.requests:
+                if r["status"] == "Queued":
+                    r["status"] = "Running"
+                    r["t_dispatched"] = time.time()
+                    self.evaluate(r)
+        finally:
+            self._threadlock.release()
+
+    def evaluate(self, r):
+        """Just a silly function evaluating two body interaction"""
+
+        q = r["pos"].reshape((-1, 3))
+        nat = len(q)
+
+	if nat != 2: raise(ValueError("2Body potential is only defined for a system of two atoms."))
+
+        v = 0.0
+        f = np.zeros(q.shape)
+
+	x, y, z  = (q[1] - q[0])
+	rx, ry, rz  = np.abs(q[1] - q[0])
+	v = 0.5 * self.K[0] * (rx - self.r0[0])**2 + 0.5 * self.K[1] * (ry - self.r0[1])**2 + 0.5 * self.K[2] * (rz - self.r0[2])**2
+	f[0,0] = self.K[0] * (rx - self.r0[0]) * np.sign(x)
+	f[0,1] = self.K[1] * (ry - self.r0[1]) * np.sign(y) 
+	f[0,2] = self.K[2] * (rz - self.r0[2]) * np.sign(z)
+	f[1,0] = -f[0,0]
+	f[1,1] = -f[0,1]
+	f[1,2] = -f[0,2]
+
+	#print "avg separation is:", rx, ry, rz
+	#print "potential is:", v
+
+        r["result"] = [v, f.reshape(nat*3), np.zeros((3,3), float), ""]
+        r["status"] = "Done"
+
+################################################################################################################
+
+
 class FFDebye(ForceField):
    """Debye crystal harmonic reference potential
 
@@ -365,7 +449,7 @@ class FFDebye(ForceField):
                       'start': starting time}.
    """
    
-   def __init__(self, latency = 1.0, name = "",  H=None, xref=None, vref=0.0, pars=None, dopbc = False, threaded=True):
+   def __init__(self, latency = 1.0, name = "", H=None, xref=None, vref=0.0, pars=None, dopbc = False, threaded=True):
       """Initialises FFDebye.
 
       Args:
