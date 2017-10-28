@@ -985,20 +985,19 @@ class Forces(dobject):
 
    def vir_mts(self, level):
       """ Fetches ONLY the total virial associated with a given MTS level."""
-
-      return self.virs_mts(level).sum()
+      return np.sum(self.virs_mts(level), axis=0)
 
    def virs_mts(self, level):
       """ Fetches ONLY the total virial associated with a given MTS level."""
 
       rp = np.zeros((self.beads.nbeads,3,3),float)
-      dv = np.zeros((self.beads.nbeads,3,3),float)
       for index in range(len(self.mforces)):
          if len(self.mforces[index].mts_weights) > level and self.mforces[index].mts_weights[level] != 0  and self.mforces[index].weight > 0:
+            dv = np.zeros((self.beads.nbeads,3,3),float)
             for i in range(3):
                for j in range(3):
-                  dv[:,i,j] += self.mforces[index].weight*self.mforces[index].mts_weights.sum()*self.mrpc[index].b2tob1(self.mforces[index].virs[:,i,j])
-            rp += self.mforces[index].weight*self.mforces[index].mts_weights[level] * dv
+                  dv[:,i,j] += self.mrpc[index].b2tob1(self.mforces[index].virs[:,i,j])
+            rp += self.mforces[index].weight * self.mforces[index].mts_weights[level] * dv
       return rp
 
    def get_nmtslevels(self):
