@@ -39,11 +39,11 @@ class InputInst(InputDictionary):
 
     fields = {"tolerances" : ( InputDictionary, {"dtype" : float,
                               "options"  : [ "energy", "force", "position" ],
-                              "default"  : [ 1e-5, 1e-5, 5e-3 ],
+                              "default"  : [ 1e-5, 1e-5, 6e-3 ],
                               "help"     : "Convergence criteria for optimization.",
                               "dimension": [ "energy", "force", "length" ] }),
                "biggest_step": (InputValue, {"dtype" : float,
-                              "default"  : 0.3,
+                              "default"  : 0.4,
                               "help"     : "The maximum step size during the optimization."}),
                "old_pos":    (InputArray, {"dtype" : float,
                               "default"  : input_default(factory=np.zeros, args = (0,)),
@@ -70,10 +70,10 @@ class InputInst(InputDictionary):
                "delta": (InputValue, {"dtype": float,
                                      "default": 0.1,
                                      "help": "Initial stretch amplitude."}),
-               "final_post": (InputValue, {"dtype": str,
+               "hessian_sparse": (InputValue, {"dtype": str,
                                           "default": "false",
                                           "options": ["false", "true"],
-                                          "help": "Decide if we are going to compute the final big-hessian by finite difference."}),
+                                          "help": "Decide if we work with sparse numerical algorithm or not."}),
                "hessian_init": (InputValue, {"dtype": str,
                                             "default": 'None',
                                             "options": ["true", 'None'],
@@ -104,6 +104,10 @@ class InputInst(InputDictionary):
                "corrections_lbfgs": (InputValue, {"dtype": int,
                                                  "default": 6,
                                                  "help": "The number of past vectors to store for L-BFGS."}),
+               "final_post": (InputValue, {"dtype": str,
+                                          "default": "false",
+                                          "options": ["false", "true"],
+                                          "help": "Decide if we are going to compute the final big-hessian by finite difference."})
 }
 
     dynamic = {  }
@@ -132,6 +136,7 @@ class InputInst(InputDictionary):
 
         if geop.mode =='rate':
             #self.hessian_init.store(geop.hessian_init)
+            self.hessian_sparse.store(geop.sparse)
             self.hessian.store(geop.hessian)
             self.hessian_update.store(geop.hessian_update)
             self.hessian_asr.store(geop.hessian_asr)
