@@ -59,9 +59,10 @@ def get_np(fname, ffile, prefix, bsize, P, mamu, Tkelv, s, ns, skip):
         ns = int(s*np.sqrt(T * P * m))*2+1
     deltarad = np.linspace(0, s, ns)    
    
-    hradlist =[]
+    hradlist = []
     dhradlist = []
     npradlist = []
+    p2list = []
 
     # Defines the grid for momentum.
     pgrid = np.linspace(0, np.pi /(deltarad[1]- deltarad[0]) , ns)
@@ -94,36 +95,30 @@ def get_np(fname, ffile, prefix, bsize, P, mamu, Tkelv, s, ns, skip):
             fsin[1:] /= deltarad[1:]
             fsin[0] = pgrid[i]
             rad_npd[i] = (pgrid[i]*hrad*fsin).sum()
-        npradlist.append(rad_npd) 
+        npradlist.append(rad_npd)
+
+        #Computes the second moment. 
+        p2list.append(np.dot(pgrid**2, rad_npd))
     
-    #save the convoluted histograms of the end-to-end distances   
-    avghrad = np.mean(np.asarray(hradlist), axis = 0)
-    normhrad=np.sum(avghrad)
-    errhrad = np.std(np.asarray(hradlist), axis = 0)/ np.sqrt(n_block)/normhrad
+    #saves the convoluted histograms of the end-to-end distances   
+    avghrad = np.sum(np.asarray(hradlist), axis = 0)
+    normhrad = np.sum(avghrad)
+    errhrad = np.std(np.asarray(hradlist), axis = 0) * np.sqrt(n_block)
    
-    np.savetxt(str(prefix + "rad-histo"), np.c_[deltarad, avghrad, errhrad])
+    np.savetxt(str(prefix + "rad-histo"), np.c_[deltarad, avghrad / normhrad, errhrad / normhrad])
 
     if not fdelta is None:
         avgdhrad = np.mean(np.asarray(dhradlist), axis = 0)
         errdhrad = np.std(np.asarray(dhradlist), axis = 0)/ np.sqrt(n_block)
         np.savetxt(str(prefix + "rad-dhisto"), np.c_[deltarad, avgdhrad, errdhrad])
-
-    
    
-    #save the radial n(p) and print the average value of p-square
-    avgnprad = np.mean(np.asarray(npradlist), axis = 0)  
-    norm=np.sum(avgnprad*pstep)
-    errnprad = np.std(np.asarray(npradlist), axis = 0)/np.sqrt(n_block)/norm
-    avgnprad= avgnprad/(norm)    
-    np.savetxt(str(prefix + "rad-np"), np.c_[pgrid, avgnprad, errnprad])
+    #saves the radial n(p) and print the average value of p-square
+    avgnprad = np.sum(np.asarray(npradlist), axis = 0)  
+    normnprad = np.sum(avgnprad)
+    errnprad = np.std(np.asarray(npradlist), axis = 0) * np.sqrt(n_block)
+    np.savetxt(str(prefix + "rad-np"), np.c_[pgrid, avgnprad / normnprad, errnprad / normnprad])
 
-    psqmedrad =  0.
-    psqmed2rad = 0.
-    for i in range(n_block):         
-         psqmedrad += np.dot(pgrid**2,np.asarray(npradlist)[i,:])/np.sum(np.asarray(npradlist)[i,:])
-         psqmed2rad +=  (np.dot(pgrid**2, np.asarray(npradlist)[i,:])/np.sum(np.asarray(npradlist)[i,:]))**2
-    print 'av_p^2', psqmedrad/n_block, 'sigma', np.sqrt((psqmed2rad/n_block) - (psqmedrad/n_block)**2)/np.sqrt(n_block)
-   
+    print 'av_p^2', np.sum(np.asarray(p2list) / normnprad), '+/-', np.std(np.asarray(p2list) / normnprad) * np.sqrt(n_block)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=description)
