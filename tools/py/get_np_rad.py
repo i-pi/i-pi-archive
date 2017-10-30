@@ -24,32 +24,31 @@ def rad_histo(data, delta, r_k, spread):
         ly+=r_k(x, delta, spread)
     return ly  
 
-
-def get_np(fname, prefix, bsize, P, mamu, Tkelv, s, ns):   
+def get_np(fname, prefix, bsize, P, mamu, Tkelv, s, ns, skip):   
    
     # initialises grids.
     T= Tkelv*3.1668105*10**(-6) 
-    m = 1822.888* mamu
+    m = 1822.888* mamu    
     prefix = prefix + '_'
-    dq = np.zeros((bsize,3) , float)
-    dqxgrid = np.linspace(-s, s, ns)
-    dqygrid = np.linspace(-s, s, ns)
-    dqzgrid = np.linspace(-s, s, ns)
-    deltarad = dqxgrid*0.0  
-    deltarad = np.sqrt(dqxgrid**2+ dqygrid**2 + dqzgrid**2)
+    
+    #Read the end to end distances from file
+    delta= np.loadtxt(fname)[skip:]
+    step = np.shape(delta)[0] 
+    
+    if s<= 0 : 
+        s = np.sqrt(np.max(np.sum(delta**2,axis=1)))*4    
+    if ns<=0:
+        ns = int(s*np.sqrt(T * P * m))*2+1
+    deltarad = np.linspace(0, s, ns)
    
     hradlist =[]
     npradlist = []
 
     # Defines the grid for momentum.
-    pgrid = np.linspace(0.0001, np.pi /(deltarad[1]- deltarad[0]) , ns)
+    pgrid = np.linspace(0, np.pi /(deltarad[1]- deltarad[0]) , ns)
     pstep = np.abs(pgrid[0]-pgrid[1])
-    rad_npd = pgrid*0.0
+    rad_npd = pgrid*0.0    
     
-    #Read the end to end distances from file
-    delta= np.loadtxt(fname)
-    step = np.shape(delta)[0] 
-   
     n_block =int(step/bsize)
 
     if (n_block ==0):
@@ -65,7 +64,11 @@ def get_np(fname, prefix, bsize, P, mamu, Tkelv, s, ns):
         # Computes the Fourier transform of the end to end vector.
         rad_npd = pgrid*0.0
         for i in range(len(pgrid)):
-                 rad_npd[i] = (pgrid[i]*hrad*np.sin(pgrid[i]*deltarad)/deltarad).sum()
+            # computes the FT by hand, and also takes care of the zero limit
+            fsin = np.sin(pgrid[i]*deltarad);
+            fsin[1:] /= deltarad[1:]
+            fsin[0] = pgrid[i]
+            rad_npd[i] = (pgrid[i]*hrad*fsin).sum()
         npradlist.append(rad_npd) 
     
     #save the convoluted histograms of the end-to-end distances   
@@ -94,15 +97,17 @@ def get_np(fname, prefix, bsize, P, mamu, Tkelv, s, ns):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("-qfile",type=str, help="name of the end-to-end distances file")
-    parser.add_argument("--prefix",type=str, default="", help="prefix for the output files")
+    parser.add_argument("--prefix",type=str, default="out", help="prefix for the output files")
     parser.add_argument("-bsize", type=int, default=50000, help="Specify the size of the blocks")
     parser.add_argument("-P", type=int, default= 1, help="Specify the number of beads")
     parser.add_argument("-m", type=float, default= 1.0078, help="Specify the mass of the atom in a.m.u. default is hydorgen")
     parser.add_argument("-T", type=float, default= 300, help="Specify the temperature of the system in kelvin")
-    parser.add_argument("-dint", type=float, default=10, help="Specify the positive extrema of the interval to build the histogram ([-dint,dint])")
-    parser.add_argument("-ns", type=float, default=1000, help="Specify the number of point to use for the histogram")
+    parser.add_argument("-dint", type=float, default=0, help="Specify the positive extrema of the interval to build the histogram ([-dint,dint])")
+    parser.add_argument("-ns", type=float, default=0, help="Specify the number of point to use for the histogram")
+    parser.add_argument("-skip", type=int, default=0, help="Specify the number of points to be skipped")
+    
     args = parser.parse_args()
 
-    get_np(args.qfile, args.prefix, args.bsize, args.P, args.m, args.T, args.dint, args.ns)
+    get_np(args.qfile, args.prefix, args.bsize, args.P, args.m, args.T, args.dint, args.ns, args.skip)
 
 
