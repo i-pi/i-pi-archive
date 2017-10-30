@@ -9,13 +9,21 @@ total contribute.
 import argparse
 import numpy as np
 
-def rad_kernel(x, delta, spread):
-    # computes the kernel that describes the contribution to the radial average n(Delta) for a given spread factor 1/ispread
+def rad_kernel(x, delta, is2half):
+    # computes the kernel that describes the contribution to the radial average n(Delta) for a given spread factor 1/(2sigma^2)
     if (x <= 1.0e-4): # use a Taylor expansion to get a stable result for small x
         delta2 = delta**2
-        res= np.exp(-spread*delta2)*4*delta2 + 4./3.*np.exp(-spread*delta2)*delta2*spread*(-3 + 2*delta2*spread)*x**2
+        res= np.exp(-is2half*delta2)*4*delta2 + 4./3.*np.exp(-is2half*delta2)*delta2*is2half*(-3 + 2*delta2*is2half)*x**2
     else:
-        res=(np.exp(-spread*(x - delta)**2)-np.exp(-spread*(x + delta)**2))*delta/(x*spread)
+        res=(np.exp(-is2half*(x - delta)**2)-np.exp(-is2half*(x + delta)**2))*delta/(x*is2half)
+    return res
+
+def rad_f_kernel(x, delta, is2half):
+    # computes the kernel that describes the contribution to the radial average n(Delta) for a given spread factor 1/ispread
+    if (x <= 1.0e-4): # use a Taylor expansion to get a stable result for small x
+        res=  delta**2*(4*delta*is2half*x*(5 + is2half*(-5 + 2*delta**2*is2half)*x**2))/(15.*np.exp(delta**2*is2half))
+    else:
+        res = ((1 + 2*delta*is2half*x)*np.exp(-is2half*(delta + x)**2) + np.exp(4*delta*is2half*x-is2half*(delta + x)**2)*(-1 + 2*delta*is2half*x))/(4.*is2half**2*x**2)
     return res
     
 def rad_histo(data, delta, r_k, spread):
@@ -24,7 +32,13 @@ def rad_histo(data, delta, r_k, spread):
         ly+=r_k(x, delta, spread)
     return ly  
 
-def get_np(fname, prefix, bsize, P, mamu, Tkelv, s, ns, skip):   
+def rad_fhisto(data, fdata, delta, r_k, spread):
+    ly=delta*0.0
+    for i in xrange(len(data)):
+        ly+=r_k(data[i], delta, spread)*fdata[i]/data[i]
+    return ly  
+    
+def get_np(fname, ffile, prefix, bsize, P, mamu, Tkelv, s, ns, skip):   
    
     # initialises grids.
     T= Tkelv*3.1668105*10**(-6) 
@@ -34,14 +48,19 @@ def get_np(fname, prefix, bsize, P, mamu, Tkelv, s, ns, skip):
     #Read the end to end distances from file
     delta= np.loadtxt(fname)[skip:]
     step = np.shape(delta)[0] 
+    if ffile!="": 
+        fdelta = np.loadtxt(ffile)[skip:]
+    else:
+        fdelta = None    
     
     if s<= 0 : 
         s = np.sqrt(np.max(np.sum(delta**2,axis=1)))*4    
     if ns<=0:
         ns = int(s*np.sqrt(T * P * m))*2+1
-    deltarad = np.linspace(0, s, ns)
+    deltarad = np.linspace(0, s, ns)    
    
     hradlist =[]
+    dhradlist = []
     npradlist = []
 
     # Defines the grid for momentum.
@@ -56,10 +75,16 @@ def get_np(fname, prefix, bsize, P, mamu, Tkelv, s, ns, skip):
              exit()
     for x in xrange(n_block):
         dq = delta[x*bsize : (x+1)*bsize]
-        dq_module = np.sqrt((dq.T[0])**2 + (dq.T[1])**2 + (dq.T[2])**2)											
+        dq_module = np.sqrt(np.sum(dq*dq,axis=1))
      
         hrad = rad_histo(dq_module, deltarad, rad_kernel, (0.5 * T * P * m))  
         hradlist.append(hrad)
+        
+        if not fdelta is None:
+            df = fdelta[x*bsize : (x+1)*bsize]
+            dfq = np.sum(df*dq,axis=1)
+            dhrad = rad_fhisto(dq_module, dfq, deltarad, rad_f_kernel, (0.5 * T * P * m))  
+            dhradlist.append(dhrad)
         
         # Computes the Fourier transform of the end to end vector.
         rad_npd = pgrid*0.0
@@ -78,6 +103,12 @@ def get_np(fname, prefix, bsize, P, mamu, Tkelv, s, ns, skip):
    
     np.savetxt(str(prefix + "rad-histo"), np.c_[deltarad, avghrad, errhrad])
 
+    if not fdelta is None:
+        avgdhrad = np.mean(np.asarray(dhradlist), axis = 0)
+        errdhrad = np.std(np.asarray(dhradlist), axis = 0)/ np.sqrt(n_block)
+        np.savetxt(str(prefix + "rad-dhisto"), np.c_[deltarad, avgdhrad, errdhrad])
+
+    
    
     #save the radial n(p) and print the average value of p-square
     avgnprad = np.mean(np.asarray(npradlist), axis = 0)  
@@ -97,6 +128,7 @@ def get_np(fname, prefix, bsize, P, mamu, Tkelv, s, ns, skip):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("-qfile",type=str, help="name of the end-to-end distances file")
+    parser.add_argument("-ffile",type=str, default="", help="name of the end-to-end distances file")
     parser.add_argument("--prefix",type=str, default="out", help="prefix for the output files")
     parser.add_argument("-bsize", type=int, default=50000, help="Specify the size of the blocks")
     parser.add_argument("-P", type=int, default= 1, help="Specify the number of beads")
@@ -108,6 +140,6 @@ if __name__ == '__main__':
     
     args = parser.parse_args()
 
-    get_np(args.qfile, args.prefix, args.bsize, args.P, args.m, args.T, args.dint, args.ns, args.skip)
+    get_np(args.qfile, args.ffile, args.prefix, args.bsize, args.P, args.m, args.T, args.dint, args.ns, args.skip)
 
 
