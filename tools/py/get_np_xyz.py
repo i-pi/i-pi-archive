@@ -17,17 +17,27 @@ def histo_der(qdata, fdata, grid, k, invsigma):
     ns= len(ly)
     dx = grid[1]-grid[0]
     dj = int(8*invsigma/dx)
-    #dqstep=np.abs(delta[1]-delta[0])
     for i in range(len(qdata)):
         x = qdata[i]
         f = fdata[i]
         jx = int(x/dx + ns/2.)
-       # q = int(x/dqstep + ns/2.)
-       # index = q + np.arange(-int(6./dqstep/invsigma), int(6./dqstep/invsigma))  
-        #y = np.where((index < ns) & (index >= 0))   
-        #ly[index[y]] += - f  * k(delta[index[y]]-x, invsigma)
         ly[jx-dj:jx+dj+1] +=  - f  * k(grid[jx-dj:jx+dj+1]-x, invsigma)
     return ly * np.sqrt(1.0 / 2.0 / np.pi * invsigma**2) / 2.0
+
+def histo_der_2(qdata, fdata, grid, k, invsigma, m, P, T):
+    ly=grid*0.0
+    ns= len(ly)
+    dx = grid[1]-grid[0]
+    dj = int(8*invsigma/dx)
+
+    c = np.asarray([-0.5 + float(j) * 1.0 / float(P - 1) for j in range(P)])
+    bp = 1.0 / P / T
+    for i in range(len(qdata)):
+        x = qdata[i]
+        f = fdata[i]
+        jx = int(x/dx + ns/2.)
+        ly[jx-dj:jx+dj+1] +=  (bp * (f * c).sum() - x * invsigma**2 / (P-1)) * k(grid[jx-dj:jx+dj+1]-x, invsigma)
+    return ly * np.sqrt(1.0 / 2.0 / np.pi * invsigma**2)
 
 def histo(data, grid, k, invsigma):
     ly = grid * 0.0
@@ -37,9 +47,6 @@ def histo(data, grid, k, invsigma):
     for i in range(len(data)):
         x = data[i]
         jx = int(x/dx + ns/2.)
-        #index = q + np.arange(-int(6./dqstep/invsigma), int(6./dqstep/invsigma))
-        #y = np.where((index < ns) & (index >= 0))
-        #ly[index[y]] +=  k(delta[index[y]]-x, mean, invsigma)
         ly[jx-dj:jx+dj+1] += k(grid[jx-dj:jx+dj+1]-x, invsigma)
     return ly * np.sqrt(1.0 / 2.0 / np.pi * invsigma**2)
 
@@ -89,12 +96,17 @@ def get_np(qfile, ffile, prefix, bsize, P, mamu, Tkelv, s, ns, der, skip):
     
     #Read the end to end distances from file
     delta= np.loadtxt(qfile)[int(skip):]
-    if der == True: delta_force = np.loadtxt(ffile)[int(skip):]
+    if der == True:
+        delta_force = np.loadtxt(ffile)[int(skip):]
+        fx = delta_force[:,0::3]
+        fy = delta_force[:,1::3]
+        fz = delta_force[:,2::3]
+
     step = np.shape(delta)[0] 
    
     n_block =int(step/bsize)
 
-    if (n_block ==0):
+    if (n_block == 0):
              print 'not enough data to build a block'
              exit()
 
@@ -129,13 +141,16 @@ def get_np(qfile, ffile, prefix, bsize, P, mamu, Tkelv, s, ns, der, skip):
         for x in xrange(n_block):
             print "# building the histogram for block $", x + 1
             dq = delta[x*bsize : (x+1)*bsize]
-            df = delta_force[x*bsize : (x+1)*bsize]
-            hx = histo_der(dq[:,0], df[:,0], dqxgrid, kernel, np.sqrt(T * P * m))
-            hx = np.cumsum((hx - hx[::-1]) * 0.5) * dqxstep / P / T
-            hy = histo_der(dq[:, 1], df[:, 1], dqygrid, kernel, np.sqrt(T * P * m))
-            hy = np.cumsum((hy - hy[::-1]) * 0.5) * dqystep / P / T
-            hz = histo_der(dq[:,2], df[:,2], dqzgrid, kernel, np.sqrt(T * P * m))
-            hz = np.cumsum((hz - hz[::-1]) * 0.5) * dqzstep / P / T
+            fx = fx[x*bsize : (x+1)*bsize]
+            fy = fy[x*bsize : (x+1)*bsize]
+            fz = fz[x*bsize : (x+1)*bsize]
+            hx = histo_der_2(dq[:,0], fx, dqxgrid, kernel, np.sqrt(T * P * m), m, P, T)
+            hx = np.cumsum((hx - hx[::-1]) * 0.5) * dqxstep 
+            hy = histo_der_2(dq[:,1], fy, dqygrid, kernel, np.sqrt(T * P * m), m, P, T)
+            hy = np.cumsum((hy - hy[::-1]) * 0.5) * dqystep
+            hz = histo_der_2(dq[:,2], fz, dqzgrid, kernel, np.sqrt(T * P * m), m, P, T)
+            hz = np.cumsum((hz - hz[::-1]) * 0.5) * dqzstep
+            print hx.sum() * dqxstep, hy.sum(), hz.sum()
             hxlist.append(hx)
             hylist.append(hy)
             hzlist.append(hz)
