@@ -31,13 +31,15 @@ def histo_der_2(qdata, fdata, grid, k, invsigma, m, P, T):
     dj = int(8*invsigma/dx)
 
     c = np.asarray([-0.5 + float(j) * 1.0 / float(P - 1) for j in range(P)])
-    bp = 1.0 / P / T
+    bp = 1.0 / (P * T)
+    mwp2 = m * (P*T)**2
     for i in range(len(qdata)):
         x = qdata[i]
         f = fdata[i]
         jx = int(x/dx + ns/2.)
-        ly[jx-dj:jx+dj+1] +=  (bp * (f * c).sum() - x * invsigma**2 / (P-1)) * k(grid[jx-dj:jx+dj+1]-x, invsigma)
-    return ly * np.sqrt(1.0 / 2.0 / np.pi * invsigma**2)
+        #print "%%%", x, (f * c).sum() , x * mwp2 / (P-1)
+        ly[jx-dj:jx+dj+1] +=  -bp * ((f * c).sum() + x * mwp2 / (P-1)) * k(grid[jx-dj:jx+dj+1]-x, invsigma)
+    return ly * np.sqrt(0.5 / np.pi * invsigma**2)
 
 def histo(data, grid, k, invsigma):
     ly = grid * 0.0
@@ -141,16 +143,23 @@ def get_np(qfile, ffile, prefix, bsize, P, mamu, Tkelv, s, ns, der, skip):
         for x in xrange(n_block):
             print "# building the histogram for block $", x + 1
             dq = delta[x*bsize : (x+1)*bsize]
-            fx = fx[x*bsize : (x+1)*bsize]
-            fy = fy[x*bsize : (x+1)*bsize]
-            fz = fz[x*bsize : (x+1)*bsize]
-            hx = histo_der_2(dq[:,0], fx, dqxgrid, kernel, np.sqrt(T * P * m), m, P, T)
+            dfx = fx[x*bsize : (x+1)*bsize]
+            dfy = fy[x*bsize : (x+1)*bsize]
+            dfz = fz[x*bsize : (x+1)*bsize]
+            
+            c = np.asarray([-0.5 + float(j) * 1.0 / float(P - 1) for j in range(P)])                
+            mwp2 = m * (P*T)**2/(P-1)
+            for i in xrange(len(dq)):
+                fi = np.asarray([np.dot(dfx[i],c),np.dot(dfy[i],c),np.dot(dfz[i],c)]) + mwp2 * dq[i]
+                print "@@@", np.sqrt((dq[i]*dq[i]).sum()), np.dot(dq[i],fi)
+            
+            hx = histo_der_2(dq[:,0], dfx, dqxgrid, kernel, np.sqrt(T * P * m), m, P, T)
             hx = np.cumsum((hx - hx[::-1]) * 0.5) * dqxstep 
-            hy = histo_der_2(dq[:,1], fy, dqygrid, kernel, np.sqrt(T * P * m), m, P, T)
+            hy = histo_der_2(dq[:,1], dfy, dqygrid, kernel, np.sqrt(T * P * m), m, P, T)
             hy = np.cumsum((hy - hy[::-1]) * 0.5) * dqystep
-            hz = histo_der_2(dq[:,2], fz, dqzgrid, kernel, np.sqrt(T * P * m), m, P, T)
+            hz = histo_der_2(dq[:,2], dfz, dqzgrid, kernel, np.sqrt(T * P * m), m, P, T)
             hz = np.cumsum((hz - hz[::-1]) * 0.5) * dqzstep
-            print hx.sum() * dqxstep, hy.sum(), hz.sum()
+            print hx.sum() * dqxstep, hy.sum() * dqystep, hz.sum() * dqzstep
             hxlist.append(hx)
             hylist.append(hy)
             hzlist.append(hz)
