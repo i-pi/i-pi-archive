@@ -135,12 +135,11 @@ def get_np(qfile, ffile, prefix, bsize, P, mamu, Tkelv, s, ns, der, skip):
             dfy = fy[x*bsize : (x+1)*bsize]
             dfz = fz[x*bsize : (x+1)*bsize]
             
-            c = np.asarray([-0.5 + float(j) * 1.0 / float(P - 1) for j in range(P)])                
-            mwp2 = m * (P*T)**2/(P-1)
-            for i in xrange(len(dq)):
-                fi = np.asarray([np.dot(dfx[i],c),np.dot(dfy[i],c),np.dot(dfz[i],c)]) + mwp2 * dq[i]
-                print "@@@", np.sqrt((dq[i]*dq[i]).sum()), np.dot(dq[i],fi)
-            
+            #c = np.asarray([-0.5 + float(j) * 1.0 / float(P - 1) for j in range(P)])                
+            #mwp2 = m * (P*T)**2/(P-1)
+            #for i in xrange(len(dq)):
+            #    fi = np.asarray([np.dot(dfx[i],c),np.dot(dfy[i],c),np.dot(dfz[i],c)]) + mwp2 * dq[i]
+            #    print "@@@", np.sqrt((dq[i]*dq[i]).sum()), np.dot(dq[i],fi)
             hx = histo_der(dq[:,0], dfx, dqxgrid, kernel, np.sqrt(T * P * m), m, P, T)
             hx = np.cumsum((hx - hx[::-1]) * 0.5) * dqxstep 
             hy = histo_der(dq[:,1], dfy, dqygrid, kernel, np.sqrt(T * P * m), m, P, T)
@@ -188,6 +187,7 @@ def get_np(qfile, ffile, prefix, bsize, P, mamu, Tkelv, s, ns, der, skip):
     print "# pz^2 (from the 2nd derivative of the histogram)", (30.0 * avghz[(ns - 1) / 2]  - 16.0 * avghz[(ns - 1) / 2 + 1] - 16.0 * avghz[(ns - 1) / 2 - 1] + avghz[(ns - 1) / 2 - 2] + avghz[(ns - 1) / 2 + 2] ) / dqzstep**2 / norm_npz / 12.0
 
 
+    np.savetxt("hxx.data", avghx)
     np.savetxt(str(prefix + "histo.data"), np.c_[dqxgrid, avghx/ (bsize * n_block), errhx, dqygrid, avghy/ (bsize * n_block), errhy, dqzgrid, avghz/ (bsize * n_block), errhz])    
 
     #save the resulting momentum distribution for each axes
