@@ -75,8 +75,6 @@ def histo3d_der(qdata, fdata, dqxgrid, dqygrid, dqzgrid, ns, cut, invsigma, bsiz
         fy[qy-dqcuty:qy+dqcuty] = np.exp(-(y-dqygrid[qy-dqcuty:qy+dqcuty])**2*halfinvsigma2)
         fz[qz-dqcutz:qz+dqcutz] = np.exp(-(z-dqzgrid[qz-dqcutz:qz+dqcutz])**2*halfinvsigma2)
 
-        #print f, c, x, -bp * ((f * c).sum() + x * mwp2 / (P-1))
-
         histo[qx-dqcutx:qx+dqcutx,qy-dqcuty:qy+dqcuty,qz-dqcutz:qz+dqcutz] += -bp * ((f * c).sum() + x * mwp2 / (P-1)) * outer3(fx[qx-dqcutx:qx+dqcutx], fy[qy-dqcuty:qy+dqcuty], fz[qz-dqcutz:qz+dqcutz])
     return histo * np.sqrt(1.0 / 2.0 / np.pi * invsigma**2)**3
 
@@ -103,7 +101,7 @@ def get_np(qfile, ffile, prefix, bsize, P, mamu, Tkelv, s, ns, cut, der, skip):
 
     #set the default parameters for the grid in case they are not given
     if(s == 0): s = delta.max() * 5.
-    if(ns == 0): ns = int(2 * s * np.sqrt(T * P * m) + 20.0)
+    if(ns == 0): ns = int(2 * s * np.sqrt(T * P * m) * 4 + 20.0)
     if(ns % 2 == 0): ns += 1
 
     dq = np.zeros((bsize,3) , float)
@@ -175,13 +173,19 @@ def get_np(qfile, ffile, prefix, bsize, P, mamu, Tkelv, s, ns, cut, der, skip):
             ygrid = dqygrid
             zgrid = dqzgrid
 
+            print "# NORM OF THE 3D HISTO:", h3d.flatten().sum() * dqxstep**3
+
             # Creates an interpolation function on a 3D grid 
             hxyz = RegularGridInterpolator((xgrid,ygrid,zgrid), h3d)
 
             # Calculates the histogram along the x,y,z directions
             hx00 = hxyz((xgrid,0,0)) 
             h0y0 = hxyz((0,ygrid,0)) 
-            h00z = hxyz((0,0,zgrid)) 
+            h00z = hxyz((0,0,zgrid))
+
+            np.savetxt(prefix + "hx.data", hx00)
+            np.savetxt(prefix + "hy.data", h0y0)
+            np.savetxt(prefix + "hz.data", h00z)
 
             # Takes the Fourier transform to get the corresponding momentum distribution along the xyz directions.
             # Computes the Fourier transform of the end to end vector.
@@ -191,14 +195,14 @@ def get_np(qfile, ffile, prefix, bsize, P, mamu, Tkelv, s, ns, cut, der, skip):
 
             print "# computing FT for block #", x
             for i in range(len(fthx00)):
-                fthx00[i] = (hx00 * np.cos(pxgrid[i] * dqxgrid)).sum()
-                fth0y0[i] = (h0y0 * np.cos(pygrid[i] * dqygrid)).sum()
-                fth00z[i] = (h00z * np.cos(pzgrid[i] * dqzgrid)).sum()
+                fthx00[i] = (hx00 * np.cos(pxgrid[i] * dqxgrid)).sum() * dqxstep 
+                fth0y0[i] = (h0y0 * np.cos(pygrid[i] * dqygrid)).sum() * dqystep 
+                fth00z[i] = (h00z * np.cos(pzgrid[i] * dqzgrid)).sum() * dqzstep 
 
             # Calculates the average values of the second moments.
-            px2list.append((fthx00 * pxgrid**2).sum())
-            py2list.append((fth0y0 * pxgrid**2).sum())
-            pz2list.append((fth00z * pxgrid**2).sum())
+            px2list.append((fthx00 * pxgrid**2).sum() * pxstep)
+            py2list.append((fth0y0 * pygrid**2).sum() * pystep)
+            pz2list.append((fth00z * pzgrid**2).sum() * pzstep)
 
             ftxlist.append(fthx00)
             ftylist.append(fth0y0)
@@ -211,19 +215,24 @@ def get_np(qfile, ffile, prefix, bsize, P, mamu, Tkelv, s, ns, cut, der, skip):
 
         # Calculates the average histogram.
         h3d = np.sum(np.asarray(h3dlist), axis = 0)
+        norm = 1.0 / (2.0 * np.pi * max(h3d.flatten()))
 
-        fthx00 = np.sum(np.asarray(ftxlist), axis = 0)
-        fth0y0 = np.sum(np.asarray(ftylist), axis = 0)
-        fth00z = np.sum(np.asarray(ftzlist), axis = 0)
+        fthx00 = np.sum(np.asarray(ftxlist), axis = 0) * norm
+        fth0y0 = np.sum(np.asarray(ftylist), axis = 0) * norm
+        fth00z = np.sum(np.asarray(ftzlist), axis = 0) * norm
 
-        ftxnorm = (fthx00).sum()
-        ftynorm = (fth0y0).sum()
-        ftznorm = (fth00z).sum()
+        np.savetxt(prefix + "_hx.data", np.c_[xgrid, hx00])
+        np.savetxt(prefix + "_hy.data", np.c_[xgrid, h0y0])
+        np.savetxt(prefix + "_hz.data", np.c_[xgrid, h00z])
+
+        print "# NORM OF npx", fthx00.sum() * pxstep
+        print "# NORM OF npx", fth0y0.sum() * pystep
+        print "# NORM OF npx", fth00z.sum() * pzstep
         
         # Calculates the average values of the second moments.
-        print "px^2:", np.sum(np.asarray(px2list), axis = 0) / ftxnorm, "+/-", np.std(np.asarray(px2list) / ftxnorm) * np.sqrt(n_block)
-        print "py^2:", np.sum(np.asarray(py2list), axis = 0) / ftynorm, "+/-", np.std(np.asarray(py2list) / ftynorm) * np.sqrt(n_block)
-        print "pz^2:", np.sum(np.asarray(pz2list), axis = 0) / ftznorm, "+/-", np.std(np.asarray(pz2list) / ftznorm) * np.sqrt(n_block)
+        print "px^2:", np.sum(np.asarray(px2list), axis = 0) * norm, "+/-", np.std(np.asarray(px2list)) * np.sqrt(n_block) * norm
+        print "py^2:", np.sum(np.asarray(py2list), axis = 0) * norm, "+/-", np.std(np.asarray(py2list)) * np.sqrt(n_block) * norm
+        print "pz^2:", np.sum(np.asarray(pz2list), axis = 0) * norm, "+/-", np.std(np.asarray(pz2list)) * np.sqrt(n_block) * norm
 
         print "# time taken (s)", time.clock() - start
 
@@ -271,7 +280,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument( '-qfile', type=str, help = "name of the end-to-end distance vectors file")
     parser.add_argument( '-ffile', type=str, help = "name of the end-to-end distance forces file")
-    parser.add_argument('--prefix', type=str, default ="", help = 'prefix for the output files')
+    parser.add_argument('--prefix', type=str, default ="out", help = 'prefix for the output files')
     parser.add_argument("-bsize", type=int, default = 50000, help = "specify the size of the blocks")
     parser.add_argument("-P", type=int, default = 1 , help = "specify the number of beads")
     parser.add_argument("-m", type=float, default = 1.007, help = "specify the mass of the atom in a.m.u. default is hydorgen")
