@@ -12,19 +12,7 @@ import time
 def kernel(x, invsigma=1.0):
     return np.exp(-0.5*(x*invsigma)**2)
 
-def histo_der(qdata, fdata, grid, k, invsigma):
-    ly=grid*0.0
-    ns= len(ly)
-    dx = grid[1]-grid[0]
-    dj = int(8*invsigma/dx)
-    for i in range(len(qdata)):
-        x = qdata[i]
-        f = fdata[i]
-        jx = int(x/dx + ns/2.)
-        ly[jx-dj:jx+dj+1] +=  - f  * k(grid[jx-dj:jx+dj+1]-x, invsigma)
-    return ly * np.sqrt(1.0 / 2.0 / np.pi * invsigma**2) / 2.0
-
-def histo_der_2(qdata, fdata, grid, k, invsigma, m, P, T):
+def histo_der(qdata, fdata, grid, k, invsigma, m, P, T):
     ly=grid*0.0
     ns= len(ly)
     dx = grid[1]-grid[0]
@@ -44,8 +32,6 @@ def histo_der_2(qdata, fdata, grid, k, invsigma, m, P, T):
         s[1:] -= q[:P-1]
         s[:P-1] -= q[1:]
         sc = - mwp2 * (s*c).sum()
-        #print "%%%", x, (f * c).sum() , sc, x * mwp2 / (P-1)
-        #sc = x * mwp2 / (P-1)
         ly[jx-dj:jx+dj+1] +=  -bp * (fc + sc) * k(grid[jx-dj:jx+dj+1]-x, invsigma)
     return ly * np.sqrt(0.5 / np.pi * invsigma**2)
 
@@ -214,6 +200,7 @@ def get_np(qfile, ffile, prefix, bsize, P, mamu, Tkelv, s, ns, der, skip):
     print "# pz^2 (from the 2nd derivative of the histogram)", (30.0 * avghz[(ns - 1) / 2]  - 16.0 * avghz[(ns - 1) / 2 + 1] - 16.0 * avghz[(ns - 1) / 2 - 1] + avghz[(ns - 1) / 2 - 2] + avghz[(ns - 1) / 2 + 2] ) / dqzstep**2 / norm_npz / 12.0
 
 
+    np.savetxt("hxx.data", avghx)
     np.savetxt(str(prefix + "histo.data"), np.c_[dqxgrid, avghx/ (bsize * n_block), errhx, dqygrid, avghy/ (bsize * n_block), errhy, dqzgrid, avghz/ (bsize * n_block), errhz])    
 
     #save the resulting momentum distribution for each axes
