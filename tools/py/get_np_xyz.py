@@ -30,15 +30,23 @@ def histo_der_2(qdata, fdata, grid, k, invsigma, m, P, T):
     dx = grid[1]-grid[0]
     dj = int(8*invsigma/dx)
 
-    c = np.asarray([-0.5 + float(j) * 1.0 / float(P - 1) for j in range(P)])
+    c = 0.5*np.asarray([-1.0 + float(j) * 2.0 / float(P - 1) for j in range(P)])**3
     bp = 1.0 / (P * T)
     mwp2 = m * (P*T)**2
     for i in range(len(qdata)):
-        x = qdata[i]
+        q = qdata[i]
         f = fdata[i]
+        x = q[0]-q[-1]
         jx = int(x/dx + ns/2.)
-        #print "%%%", x, (f * c).sum() , x * mwp2 / (P-1)
-        ly[jx-dj:jx+dj+1] +=  -bp * ((f * c).sum() + x * mwp2 / (P-1)) * k(grid[jx-dj:jx+dj+1]-x, invsigma)
+        fc = (f * c).sum()
+        s = qdata[i].copy()
+        s[1:P-1] += q[1:P-1]
+        s[1:] -= q[:P-1]
+        s[:P-1] -= q[1:]
+        sc = - mwp2 * (s*c).sum()
+        #print "%%%", x, (f * c).sum() , sc, x * mwp2 / (P-1)
+        #sc = x * mwp2 / (P-1)
+        ly[jx-dj:jx+dj+1] +=  -bp * (fc + sc) * k(grid[jx-dj:jx+dj+1]-x, invsigma)
     return ly * np.sqrt(0.5 / np.pi * invsigma**2)
 
 def histo(data, grid, k, invsigma):
@@ -97,14 +105,12 @@ def get_np(qfile, ffile, prefix, bsize, P, mamu, Tkelv, s, ns, der, skip):
 
     
     #Read the end to end distances from file
-    delta= np.loadtxt(qfile)[int(skip):]
+    bq = np.loadtxt(qfile)[int(skip):]
     if der == True:
-        delta_force = np.loadtxt(ffile)[int(skip):]
-        fx = delta_force[:,0::3]
-        fy = delta_force[:,1::3]
-        fz = delta_force[:,2::3]
-
-    step = np.shape(delta)[0] 
+        bf = np.loadtxt(ffile)[int(skip):]
+    
+    
+    step = np.shape(bq)[0] 
    
     n_block =int(step/bsize)
 
@@ -115,12 +121,12 @@ def get_np(qfile, ffile, prefix, bsize, P, mamu, Tkelv, s, ns, der, skip):
     if der == False:
         for x in xrange(n_block):
             print "# building the histogram for block $", x + 1
-            dq = delta[x*bsize : (x+1)*bsize]
-            hx = histo(dq[:,0], dqxgrid, kernel, np.sqrt(T * P * m))
+            dq = bq[x*bsize : (x+1)*bsize]
+            hx = histo(dq[:,0]-dq[:,3*(P-1)], dqxgrid, kernel, np.sqrt(T * P * m))
             hx = ((hx + hx[::-1]) * 0.5)
-            hy = histo(dq[:,1], dqygrid, kernel, np.sqrt(T * P * m))
+            hy = histo(dq[:,1]-dq[:,3*(P-1)+1], dqygrid, kernel, np.sqrt(T * P * m))
             hy = ((hy + hy[::-1]) * 0.5)
-            hz = histo(dq[:,2], dqzgrid, kernel, np.sqrt(T * P * m))
+            hz = histo(dq[:,2]-dq[:,3*(P-1)+2], dqzgrid, kernel, np.sqrt(T * P * m))
             hz = ((hz + hz[::-1]) * 0.5)
             hxlist.append(hx)
             hylist.append(hy)
@@ -142,22 +148,30 @@ def get_np(qfile, ffile, prefix, bsize, P, mamu, Tkelv, s, ns, der, skip):
     else:
         for x in xrange(n_block):
             print "# building the histogram for block $", x + 1
-            dq = delta[x*bsize : (x+1)*bsize]
-            dfx = fx[x*bsize : (x+1)*bsize]
-            dfy = fy[x*bsize : (x+1)*bsize]
-            dfz = fz[x*bsize : (x+1)*bsize]
+            dq = bq[x*bsize : (x+1)*bsize]
+            df = bf[x*bsize : (x+1)*bsize]
             
-            c = np.asarray([-0.5 + float(j) * 1.0 / float(P - 1) for j in range(P)])                
+            c = 0.5*np.asarray([-1 + 2*float(j)/ float(P - 1) for j in range(P)])                
             mwp2 = m * (P*T)**2/(P-1)
             for i in xrange(len(dq)):
-                fi = np.asarray([np.dot(dfx[i],c),np.dot(dfy[i],c),np.dot(dfz[i],c)]) + mwp2 * dq[i]
-                print "@@@", np.sqrt((dq[i]*dq[i]).sum()), np.dot(dq[i],fi)
+                q = dq[i]
+                f = df[i]
+                x = q[:3]-q[-3:]                
+                fc = np.asarray([(f[0::3] * c).sum(), (f[1::3] * c).sum(), (f[2::3] * c).sum()])                
+                s = q.copy()
+                s[3:3*(P-1)] += q[3:3*(P-1)]
+                s[3:] -= q[:3*(P-1)]
+                s[:3*(P-1)] -= q[3:]
+                sc = np.asarray([(s[0::3] * c).sum(), (s[1::3] * c).sum(), (s[2::3] * c).sum()])     
+                sc *= -mwp2           
+                fi = fc+sc
+                #print "@@@", np.sqrt((x*x).sum()), np.dot(x,fi)
             
-            hx = histo_der_2(dq[:,0], dfx, dqxgrid, kernel, np.sqrt(T * P * m), m, P, T)
+            hx = histo_der_2(dq[:,0::3], df[:,0::3], dqxgrid, kernel, np.sqrt(T * P * m), m, P, T)
             hx = np.cumsum((hx - hx[::-1]) * 0.5) * dqxstep 
-            hy = histo_der_2(dq[:,1], dfy, dqygrid, kernel, np.sqrt(T * P * m), m, P, T)
+            hy = histo_der_2(dq[:,1::3], df[:,1::3], dqygrid, kernel, np.sqrt(T * P * m), m, P, T)
             hy = np.cumsum((hy - hy[::-1]) * 0.5) * dqystep
-            hz = histo_der_2(dq[:,2], dfz, dqzgrid, kernel, np.sqrt(T * P * m), m, P, T)
+            hz = histo_der_2(dq[:,2::3], df[:,2::3], dqzgrid, kernel, np.sqrt(T * P * m), m, P, T)
             hz = np.cumsum((hz - hz[::-1]) * 0.5) * dqzstep
             print hx.sum() * dqxstep, hy.sum() * dqystep, hz.sum() * dqzstep
             hxlist.append(hx)
@@ -232,8 +246,8 @@ def get_np(qfile, ffile, prefix, bsize, P, mamu, Tkelv, s, ns, der, skip):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=None)
-    parser.add_argument("-qfile",type=str,default="", help="name of the end-to-end distances file")
-    parser.add_argument("-ffile",type=str,default="", help="name of the end-to-end forces file")
+    parser.add_argument("-qfile",type=str,default="", help="name of the bead positions file")
+    parser.add_argument("-ffile",type=str,default="", help="name of the bead forces file")
     parser.add_argument('--prefix', type=str, default ="out", help = 'prefix for the output files')
     parser.add_argument("-bsize", type=int, default=50000, help="Specify the size of the blocks")
     parser.add_argument("-P", type=int, default= 1, help="Specify the number of beads")

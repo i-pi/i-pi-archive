@@ -123,7 +123,7 @@ def get_np(fname, ffile, prefix, bsize, P, mamu, Tkelv, s, ns, skip):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("-qfile",type=str, help="name of the end-to-end distances file")
-    parser.add_argument("-ffile",type=str, default="", help="name of the end-to-end distances file")
+    parser.add_argument("-ffile",type=str, default="", help="name of the forces file")
     parser.add_argument("--prefix",type=str, default="out", help="prefix for the output files")
     parser.add_argument("-bsize", type=int, default=50000, help="Specify the size of the blocks")
     parser.add_argument("-P", type=int, default= 1, help="Specify the number of beads")
