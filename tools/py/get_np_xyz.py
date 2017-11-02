@@ -18,7 +18,7 @@ def histo_der(qdata, fdata, grid, k, invsigma, m, P, T):
     dx = grid[1]-grid[0]
     dj = int(8*invsigma/dx)
 
-    c = 0.5*np.asarray([-1.0 + float(j) * 2.0 / float(P - 1) for j in range(P)])**3
+    c = 0.5*np.asarray([-1.0 + float(j) * 2.0 / float(P - 1) for j in range(P)])
     bp = 1.0 / (P * T)
     mwp2 = m * (P*T)**2
     for i in range(len(qdata)):
@@ -27,7 +27,7 @@ def histo_der(qdata, fdata, grid, k, invsigma, m, P, T):
         x = q[0]-q[-1]
         jx = int(x/dx + ns/2.)
         fc = (f * c).sum()
-        s = qdata[i].copy()
+        s = q.copy()
         s[1:P-1] += q[1:P-1]
         s[1:] -= q[:P-1]
         s[:P-1] -= q[1:]
@@ -139,6 +139,7 @@ def get_np(qfile, ffile, prefix, bsize, P, mamu, Tkelv, s, ns, der, skip):
             
             c = 0.5*np.asarray([-1 + 2*float(j)/ float(P - 1) for j in range(P)])                
             mwp2 = m * (P*T)**2/(P-1)
+            bp = 1.0 / (P * T)    
             for i in xrange(len(dq)):
                 q = dq[i]
                 f = df[i]
@@ -150,14 +151,15 @@ def get_np(qfile, ffile, prefix, bsize, P, mamu, Tkelv, s, ns, der, skip):
                 s[:3*(P-1)] -= q[3:]
                 sc = np.asarray([(s[0::3] * c).sum(), (s[1::3] * c).sum(), (s[2::3] * c).sum()])     
                 sc *= -mwp2           
-                fi = fc+sc
-                #print "@@@", np.sqrt((x*x).sum()), np.dot(x,fi)
+                fi = -bp*(fc+sc)
+                print "@*@", x, fi
+                print "@@@", np.sqrt((x*x).sum()), np.dot(x,fi)
             
-            hx = histo_der_2(dq[:,0::3], df[:,0::3], dqxgrid, kernel, np.sqrt(T * P * m), m, P, T)
+            hx = histo_der(dq[:,0::3], df[:,0::3], dqxgrid, kernel, np.sqrt(T * P * m), m, P, T)
             hx = np.cumsum((hx - hx[::-1]) * 0.5) * dqxstep 
-            hy = histo_der_2(dq[:,1::3], df[:,1::3], dqygrid, kernel, np.sqrt(T * P * m), m, P, T)
+            hy = histo_der(dq[:,1::3], df[:,1::3], dqygrid, kernel, np.sqrt(T * P * m), m, P, T)
             hy = np.cumsum((hy - hy[::-1]) * 0.5) * dqystep
-            hz = histo_der_2(dq[:,2::3], df[:,2::3], dqzgrid, kernel, np.sqrt(T * P * m), m, P, T)
+            hz = histo_der(dq[:,2::3], df[:,2::3], dqzgrid, kernel, np.sqrt(T * P * m), m, P, T)
             hz = np.cumsum((hz - hz[::-1]) * 0.5) * dqzstep
             print hx.sum() * dqxstep, hy.sum() * dqystep, hz.sum() * dqzstep
             hxlist.append(hx)
