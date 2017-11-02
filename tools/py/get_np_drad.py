@@ -39,7 +39,7 @@ def rad_histo(data, delta, r_k, spread):
 
 def rad_fhisto(qdata, fxdata, fydata, fzdata, delta, r_k, spread, m, P, T):
     ly = delta * 0.0
-    c = 0.5 * np.asarray([-1.0 + float(j) * 2.0 / float(P - 1) for j in range(P)])**3
+    c = 0.5 * np.asarray([-1.0 + float(j) * 2.0 / float(P - 1) for j in range(P)])
     bp = 1.0 / (P * T)
     mwp2 = m * (P*T)**2
 
@@ -48,12 +48,12 @@ def rad_fhisto(qdata, fxdata, fydata, fzdata, delta, r_k, spread, m, P, T):
         fx = fxdata[i]
         fy = fydata[i]
         fz = fzdata[i]
-        gx = -bp * (fx * c).sum() + mwp2 * q[0] / (P - 1.0)
-        gy = -bp * (fy * c).sum() + mwp2 * q[1] / (P - 1.0)
-        gz = -bp * (fz * c).sum() + mwp2 * q[2] / (P - 1.0)
+        gx = -bp * ((fx * c).sum() + mwp2 * q[0] / (P - 1.0))
+        gy = -bp * ((fy * c).sum() + mwp2 * q[1] / (P - 1.0))
+        gz = -bp * ((fz * c).sum() + mwp2 * q[2] / (P - 1.0))
         g = np.asarray([gx, gy, gz])
         qdist = np.linalg.norm(q)
-        ly += r_k(qdist, delta, spread) * np.dot(q,g) / np.linalg.norm(q)
+        ly += r_k(qdist, delta, spread) * np.dot(q,g) / qdist
     return ly  
     
 def get_np(fname, ffile, prefix, bsize, P, mamu, Tkelv, s, ns, skip):   
@@ -108,9 +108,9 @@ def get_np(fname, ffile, prefix, bsize, P, mamu, Tkelv, s, ns, skip):
         #hrad = 4.0 * np.pi * deltarad**2 * (np.cumsum(hrad) * abs(deltarad[1] - deltarad[0]))
         hrad = (np.cumsum(hrad) * abs(deltarad[1] - deltarad[0]))
         hrad -= hrad[-1]
-        hrad *= 4.0 * np.pi * deltarad**2 
+        hrad *= (4.0 * np.pi * deltarad**2)
         hradlist.append(hrad)
-        np.savetxt("hrad_fromder.data", hrad)
+        np.savetxt("hrad_fromder.data", hrad/hrad.sum())
         print "The program ends here!"
         sys.exit()
         
