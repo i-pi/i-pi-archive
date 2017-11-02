@@ -23,7 +23,7 @@ import math
 import time
 
 #I-PI path
-ipi_path='/home/litman/Yair/Instanton/I-PI-mc/i-pi-mc'
+ipi_path='/home/jeremy/projects/i-pi-mc'
 #ipi_path='/home/litman/Yair/Instanton/I-PI-mc/online-repo/i-pi-mc'
 
 if not (os.path.exists(ipi_path)):
@@ -357,6 +357,8 @@ elif case=='instanton':
     hessian = simulation.syslist[0].motion.hessian.copy()
     mode    = simulation.syslist[0].motion.mode
     temp2   = simulation.syslist[0].ensemble.temp
+    pots    = simulation.syslist[0].motion.old_u
+    grads   = - simulation.syslist[0].motion.old_f
     
     if mode != 'rate':
        print 'This script only work for rates calculation'
@@ -491,6 +493,74 @@ elif case=='instanton':
     print 'S1/hbar %f'  %action[0] 
     print 'S2/hbar %f'  %action[1] 
     print 'S/hbar %f'   %(np.sum(action))
+
+    import math
+    Lambda = math.sqrt(2*math.pi*betaP)
+    logprefactor = logQvib - np.log(nbeads) + 0.5*math.log(BN) - math.log(betaP*Lambda)
+    print 'logprefactor = %g' % logprefactor
+    print 'prefactor = %g' % math.exp(logprefactor)
+
+    if 1: # new method
+	 	N = nbeads
+		V0 = 0 # or energy of reactants
+		x = beads.q.reshape((N//2, -1, 3))
+		V = pots
+		f = x.shape[1] * 3
+		from modules.trajectory import Trajectory
+		mass = m.reshape((-1,1)) * np.ones(3)
+		from modules.linalg import orthogonalize # note this is not scipy or np linalg, but Jeremy's
+
+		# trajectory stuff
+		print
+		def cat(x):
+			N0 = N//4
+			return np.concatenate((x[N0::-1],x,x[-1:N0-1:-1]))
+		V -= V0
+		dVdx = grads
+		d2Vdx2 = simulation.syslist[0].motion.hessian.copy().T
+		d2Vdx2.shape = (N//2,f,f)
+
+		print 'building trajectory...'
+		traj = Trajectory(cat(x).reshape(N+1,f), cat(V), cat(dVdx).reshape(N+1,f), cat(d2Vdx2), betaP*hbar, m=mass.ravel(), massweight=True)
+		print 'S', traj.S()
+		d2Sdx2 = traj.d2Sdx2()
+		d2Sdxdt = traj.d2Sdxdt()
+		d2Sdt2 = traj.d2Sdt2()
+
+		# rotate coordinates to q coords
+		p = traj.dSdx()
+		#print p
+		p = (p[f:] - p[:f]) / 2
+		#print p
+		U = np.identity(f)
+		U[:,0] = p
+		U = orthogonalize(U)
+		U = np.block([[U, np.zeros_like(U)], [np.zeros_like(U), U]])
+
+		d2Sdq2 = np.dot(U.T, np.dot(d2Sdx2, U))
+		d2Sdqdt = np.dot(d2Sdxdt, U)
+
+		E = traj.dSdt()
+		print 'E = %g' % E
+		p = math.sqrt(2*(traj.V[0]-E)) # mass-weighted p
+		print 'p = %g' % p, np.linalg.norm(traj.dSdx())
+		print '1/beta = %e' % (1/beta)
+
+		GY = traj.Gelfand_Yaglom()
+		evals = np.sort(1/np.linalg.eigvals(betaP*GY))
+		print 'Gelfand-Yaglom eigvals:', evals
+		C = np.prod(evals.real)
+		print 'Gelfand-Yaglom: C = %g' % C
+		print 'Gelfand-Yaglom: C without zero-modes = %g' % (beta**6*C)
+
+		prefactor = 1/math.sqrt(2*math.pi) * p * math.sqrt(-beta**6*C)
+		d2SdQ2 = d2Sdx2[1:f,1:f] + d2Sdx2[1:f,f+1:] + d2Sdx2[f+1:,1:f] + d2Sdx2[f+1:,f+1:]
+		print np.linalg.norm(d2SdQ2 - d2SdQ2.T)
+		evals = np.linalg.eigvalsh(d2SdQ2)
+		print 'eigvals d2SdQ2', evals
+		prefactor /= math.sqrt(np.prod(evals[6:]))
+		prefactor /= 2 # why?
+		print 'prefactor from action derivs', prefactor
 
 time2=time.time()
 print ''
