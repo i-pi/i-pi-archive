@@ -21,12 +21,10 @@ def rad_kernel(x, delta, is2half):
 
 def rad_f_kernel(x, delta, is2half):
     # computes the kernel that describes the contribution to the radial average Delta**2 n(Delta) for a given spread factor 1/ispread
-    if delta == 0:
-        res = 0 
-    elif (x <= 1.0e-4): # use a Taylor expansion to get a stable result for small x
+    if (x <= 1.0e-4): # use a Taylor expansion to get a stable result for small x
         res = 2.0 * np.exp(-delta**2 * is2half) * delta * x / 1.50 * is2half 
     else:
-        red = (np.exp(-(x + delta)**2 * is2half) * (delta * x * 2.0 * is2half + 1) + 
+        res = (np.exp(-(x + delta)**2 * is2half) * (delta * x * 2.0 * is2half + 1) + 
                np.exp(-(x - delta)**2 * is2half) * (delta * x * 2.0 * is2half - 1)) / 4.0 / is2half**2 / x**2 #/ delta**2
     return res
     
@@ -57,7 +55,7 @@ def rad_fhisto(qdata, fdata, delta, r_k, spread, m, P, T):
         g = - bp*(fc+sc)
         
         r = np.linalg.norm(x)
-        print r, np.dot(x,g)
+        #print "@@@", r, np.dot(x,g)
         ly += r_k(r, delta, spread) * np.dot(x,g) / r
     return ly  
     
@@ -77,9 +75,10 @@ def get_np(fname, ffile, prefix, bsize, P, mamu, Tkelv, s, ns, skip):
         fdelta = None    
     
     if s<= 0 : 
-        s = np.sqrt(np.max(np.sum(delta**2,axis=1)))*4    
+        s = np.sqrt(np.max(np.sum((delta[:,:3]-delta[:,-3:])**2,axis=1)))*4    
     if ns<=0:
         ns = int(s*np.sqrt(T * P * m))*2+1
+    print "MAX S ", s
     deltarad = np.linspace(0, s, ns)    
    
     hradlist = []
@@ -95,21 +94,22 @@ def get_np(fname, ffile, prefix, bsize, P, mamu, Tkelv, s, ns, skip):
     n_block =int(step/bsize)
 
     if (n_block ==0):
-             print 'not enough data to build a block'
-             exit()
+        print 'not enough data to build a block'
+        exit()
     for x in xrange(n_block):
         dq = delta[x*bsize : (x+1)*bsize]
         df = fdelta[x*bsize : (x+1)*bsize]
 
         #dq_module = np.sqrt(np.sum(dq*dq,axis=1))
      
-        hrad = rad_fhisto(dq, df, deltarad, rad_kernel, (0.5 * T * P * m), m, P ,T)
+        hrad = rad_fhisto(dq, df, deltarad, rad_f_kernel, (0.5 * T * P * m), m, P ,T)
         #hrad = 4.0 * np.pi * deltarad**2 * (np.cumsum(hrad) * abs(deltarad[1] - deltarad[0]))
+        np.savetxt("dhrad.data", np.asarray([deltarad, hrad]).T)
         hrad = (np.cumsum(hrad) * abs(deltarad[1] - deltarad[0]))
         hrad -= hrad[-1]
         hrad *= 4.0 * np.pi * deltarad**2 
         hradlist.append(hrad)
-        np.savetxt("hrad_fromder.data", hrad)
+        np.savetxt("hrad_fromder.data", np.asarray([deltarad, hrad]).T)
         print "The program ends here!"
         sys.exit()
         
