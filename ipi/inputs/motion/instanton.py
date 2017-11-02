@@ -39,7 +39,7 @@ class InputInst(InputDictionary):
 
     fields = {"tolerances" : ( InputDictionary, {"dtype" : float,
                               "options"  : [ "energy", "force", "position" ],
-                              "default"  : [ 1e-5, 1e-5, 6e-3 ],
+                              "default"  : [ 1e-5, 1e-4, 6e-3 ],
                               "help"     : "Convergence criteria for optimization.",
                               "dimension": [ "energy", "force", "length" ] }),
                "biggest_step": (InputValue, {"dtype" : float,
@@ -59,7 +59,7 @@ class InputInst(InputDictionary):
                               "dimension": "force"}),
                "opt": (InputValue, {"dtype": str,
                                             "default": 'None',
-                                            "options": ["nichols","lbfgs",'None'],
+                                            "options": ["nichols","lbfgs","NR","None"],
                                             "help": "The geometry optimization algorithm to be used"}),
                "action": (InputArray, {"dtype": float,
                                       "default": input_default(factory=np.zeros, args=(0,)),
@@ -89,6 +89,7 @@ class InputInst(InputDictionary):
                                 "default": "none",
                                 "options": ["none","poly","crystal"],
                                 "help": "Removes the zero frequency vibrational modes depending on the symmerty of the system."}),
+               #L-BFGS
                "qlist_lbfgs": (InputArray, {"dtype": float,
                                            "default": input_default(factory=np.zeros, args=(0,)),
                                            "help": "List of previous position differences for L-BFGS, if known."}),
@@ -102,9 +103,24 @@ class InputInst(InputDictionary):
                                                        1 Use first member of position/gradient list. 
                                                        2 Use last  member of position/gradient list."""}),
                "corrections_lbfgs": (InputValue, {"dtype": int,
-                                                 "default": 6,
+                                                 "default": 20,
                                                  "help": "The number of past vectors to store for L-BFGS."}),
-               "final_post": (InputValue, {"dtype": str,
+               "ls_options": (InputDictionary, {"dtype": [float, int, float, float],
+                                               "help": """"Options for line search methods. Includes:
+                                  tolerance: stopping tolerance for the search,
+                                  iter: the maximum number of iterations,
+                                  step: initial step for bracketing,
+                                  adaptive: whether to update initial step.
+                                  """,
+                                               "options": ["tolerance", "iter", "step", "adaptive"],
+                                               "default": [1e-7, 100, 1e-3, 1.0],
+                                               "dimension": ["energy", "undefined", "length", "undefined"]}),
+               #Final calculations
+               "energy_shift": (InputValue, {"dtype": float, "default": 0.000,
+                                            "help": "Set the zero of energy.",
+                                             "dimension": "energy"
+                                            }),
+               "hessian_final": (InputValue, {"dtype": str,
                                           "default": "false",
                                           "options": ["false", "true"],
                                           "help": "Decide if we are going to compute the final big-hessian by finite difference."})
@@ -131,20 +147,27 @@ class InputInst(InputDictionary):
         self.action.store(geop.action)
         self.prefix.store(geop.prefix)
         self.delta.store(geop.delta)
-        self.final_post.store(geop.final_post)
+        self.hessian_final.store(geop.hessian_final)
+        self.old_pot.store(geop.old_u)
+        self.old_force.store(geop.old_f)
+        self.energy_shift.store(geop.energy_shift)
 
-
-        if geop.mode =='rate':
-            #self.hessian_init.store(geop.hessian_init)
+        #Now we decide what to store depending on optimization algorithm
+        if geop.opt =='nichols' or geop.opt =='NR':
             self.hessian_sparse.store(geop.sparse)
             self.hessian.store(geop.hessian)
             self.hessian_update.store(geop.hessian_update)
             self.hessian_asr.store(geop.hessian_asr)
-        elif geop.mode =='splitting':
+            self.hessian_final.store(geop.hessian_final)
+        elif geop.opt =='lbfgs':
             self.qlist_lbfgs.store(geop.qlist)
             self.glist_lbfgs.store(geop.glist)
             self.corrections_lbfgs.store(geop.corrections)
             self.scale_lbfgs.store(geop.scale)
+            if self.hessian_final=='true':
+                self.hessian_final.store(geop.hessian_final)
+
+
 
 
 

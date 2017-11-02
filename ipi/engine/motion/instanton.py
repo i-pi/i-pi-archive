@@ -19,8 +19,10 @@ from ipi.utils.softexit import softexit
 from ipi.utils.messages import verbosity, info
 from ipi.utils import units
 from ipi.utils.mintools import nichols, Powell
+from ipi.utils.instools import  banded_hessian,sym_band,invmul_banded
 import scipy.sparse as sp
 import scipy.sparse.linalg as sp_linalg
+from ipi.engine.motion.geop import L_BFGS
 
 __all__ = ['InstantonMotion']
 
@@ -59,7 +61,10 @@ class InstantonMotion(Motion):
                  glist_lbfgs = np.zeros(0, float),
                  scale_lbfgs = 1,
                  corrections_lbfgs = 5,
-                 final_post = 'False'):
+                 ls_options={"tolerance": 1e-6, "iter": 100, "step": 1e-3, "adaptive": 1.0},
+                 old_direction=np.zeros(0, float),
+                 hessian_final = 'False',
+                 energy_shift=np.zeros(0, float)):
 
         """Initialises InstantonMotion.
         """
@@ -72,7 +77,7 @@ class InstantonMotion(Motion):
         # Generic optimization
         self.big_step       = biggest_step
         self.tolerances     = tolerances
-        self.opt            = opt
+
         self.old_x          = old_pos
         self.old_u          = old_pot
         self.old_f          = old_force
@@ -81,23 +86,40 @@ class InstantonMotion(Motion):
         self.action         = action
         self.prefix         = prefix
         self.delta          = delta
-        self.final_post     = final_post
+        self.hessian_final  = hessian_final
+        self.energy_shift   = energy_shift
 
-        #
+        #We set the default optimization algorithm depending on the mode.
         if mode =='rate':
-            self.optimizer      = RateOptimizer()
+            if opt == 'None':
+                opt = 'nichols'
+            if opt == 'lbfgs':
+                raise ValueError("lbfgs option is not compatible with a rate calculation")
+            self.opt = opt
+
+        elif mode == 'splitting':
+            if opt=='None':
+               opt = 'lbfgs'
+            self.opt = opt
+
+        if opt=='nichols' or opt=='NR':
+            self.optimizer      = HessianOptimizer()
             self.sparse         = hessian_sparse
             self.hessian_init   = hessian_init
             self.hessian        = hessian
             self.hessian_update = hessian_update
-            self.hessian_asr = hessian_asr
-        elif mode == 'splitting':
-            # self.optimizer    = LBFGSOptimizer()
+            self.hessian_asr    = hessian_asr
+
+        if self.opt =='lbfgs':
+            self.optimizer      = LBFGSOptimizer()
+            self.hessian        = hessian           #Only for initial (to spread) or final
+            self.hessian_asr    = hessian_asr
             self.corrections    = corrections_lbfgs
             self.scale          = scale_lbfgs
             self.qlist          = qlist_lbfgs
             self.glist          = glist_lbfgs
-
+            self.ls_options     = ls_options
+            self.d              = old_direction
 
     def bind(self, ens, beads, nm, cell, bforce, prng):
         """Binds beads, cell, bforce and prng to InstantonMotion
@@ -112,10 +134,13 @@ class InstantonMotion(Motion):
 
         super(InstantonMotion,self).bind(ens, beads, nm, cell, bforce, prng)
         # Binds optimizer
+
         self.optimizer.bind(self)
 
     def step(self, step=None):
         self.optimizer.step(step)
+
+
 
 class GradientMapper(object):
 
@@ -148,7 +173,6 @@ class GradientMapper(object):
 
         return e, g
 
-
 class InstantonMapper(object):
     """Creation of the multi-dimensional function to compute full or half ring polymer pot
        and forces.
@@ -162,12 +186,18 @@ class InstantonMapper(object):
     def bind(self, dumop):
         self.dbeads = dumop.beads.copy()
         self.temp   = dumop.temp
-        self.omega2 = (self.temp * (2*self.dbeads.nbeads) * units.Constants.kb / units.Constants.hbar) ** 2
-
-        if dumop.sparse == 'false':
-            self.h = self.spring_hessian()
+        if dumop.mode=='rate':
+            self.omega2 = (self.temp * (2*self.dbeads.nbeads) * units.Constants.kb / units.Constants.hbar) ** 2
+        elif dumop.mode=='splitting':
+            self.omega2 = (self.temp * ( self.dbeads.nbeads) * units.Constants.kb / units.Constants.hbar) ** 2
         else:
-            self.h_sparse = self.spring_sparse_hessian()
+            raise ValueError("Which is the mode? Stop HERE.")
+
+        if dumop.opt =='nichols' or dumop.opt=='NR':
+            if dumop.sparse == 'false':
+                self.h = self.spring_hessian()
+            else:
+                self.h_sparse = self.spring_sparse_hessian()
 
     def save(self,e,g):
         self.pot = e
@@ -200,9 +230,11 @@ class InstantonMapper(object):
             h[i * ii:(i + 1) * ii, i * ii:(i + 1) * ii] += diag1
             for i in range(1, self.dbeads.nbeads - 1):
                 h[i * ii:(i + 1) * ii, i * ii:(i + 1) * ii] += diag2
-        elif mode == 'full':
+        elif mode == 'splitting' or mode == 'full':
             for i in range(0, self.dbeads.nbeads):
                 h[i * ii:(i + 1) * ii, i * ii:(i + 1) * ii] += diag2
+        else:
+            raise ValueError("We can't compute the spring hessian.")
 
         # Non-Diagonal
         ndiag = np.diag(-h_sp)
@@ -259,23 +291,70 @@ class InstantonMapper(object):
            self.dbeads.q = x.copy()
            e = 0.00
            g = np.zeros(self.dbeads.q.shape, float)
-           g2 = np.zeros(self.dbeads.q.shape, float)
+           #g2 = np.zeros(self.dbeads.q.shape, float)
            for i in range(self.dbeads.nbeads - 1):
                #e += (np.sum( self.dbeads.m3[0] * self.omega2 * 0.5 *(self.dbeads.q[i + 1, :] - self.dbeads.q[i, :] ) ** 2))
                dq =self.dbeads.q[i + 1, :] - self.dbeads.q[i, :]
                e += self.omega2 * 0.5 *np.dot(self.dbeads.m3[0]*dq,dq)
            for i in range(0, self.dbeads.nbeads - 1):
                g[i, :] += self.dbeads.m3[i,:] * self.omega2 * (self.dbeads.q[i, :] - self.dbeads.q[i + 1, :])
-               g2[i, :] += self.dbeads.m3[i, :] * (self.dbeads.q[i, :] - self.dbeads.q[i + 1, :])
+               #g2[i, :] += self.dbeads.m3[i, :] * (self.dbeads.q[i, :] - self.dbeads.q[i + 1, :])
            for i in range(1, self.dbeads.nbeads ):
                g[i, :] += self.dbeads.m3[i,:] * self.omega2 * (self.dbeads.q[i, :] - self.dbeads.q[i - 1, :])
-               g2[i, :] += self.dbeads.m3[i, :] * (self.dbeads.q[i, :] - self.dbeads.q[i - 1, :])
+               #g2[i, :] += self.dbeads.m3[i, :] * (self.dbeads.q[i, :] - self.dbeads.q[i - 1, :])
 
            self.save(e,g)
 
         if ret:
             return e, g
 
+
+class bigMapper(object):
+    def __init__(self,im,gm):
+        self.im=im
+        self.gm=gm
+
+    def __call__(self,x):
+        e1,g1=self.im(x)
+        e2,g2=self.gm(x)
+        e=e1+e2
+        g=np.add(g1,g2)
+        return (e,g)
+
+class LineMapper(object):
+
+    """Creation of the one-dimensional function that will be minimized.
+    Used in steepest descent and conjugate gradient minimizers.
+
+    Attributes:
+        x0: initial position
+        d: move direction
+    """
+
+    def __init__(self,bm):
+        self.x0 = self.d = None
+        self.bm = bm
+
+    #def bind(self, dumop):
+    #    self.dbeads = dumop.beads.copy()
+    #    self.dcell = dumop.cell.copy()
+    #    self.dforces = dumop.forces.copy(self.dbeads, self.dcell)
+    #     self.bm =dumop.bm
+
+    def set_dir(self, x0, mdir):
+        self.x0 = x0.copy()
+        self.d = mdir.copy() / np.sqrt(np.dot(mdir.flatten(), mdir.flatten()))
+        if self.x0.shape != self.d.shape:
+            raise ValueError("Incompatible shape of initial value and displacement direction")
+
+    def __call__(self, x):
+        """ computes energy and gradient for optimization step
+            determines new position (x0+d*x)"""
+
+        new_x = self.x0 + self.d * x
+        e,g = self.bm(new_x)   # Energy
+        g   = - np.dot(depstrip(g).flatten(), self.d.flatten())   # Gradient
+        return e, g
 
 class DummyOptimizer(dobject):
     """ Dummy class for all optimization classes """
@@ -285,8 +364,11 @@ class DummyOptimizer(dobject):
         """Initialises object for GradientMapper (physical potential, forces and hessian) 
         and InstantonMapper ( spring potential,forces and hessian) """
 
+
         self.gm           = GradientMapper()
         self.im           = InstantonMapper()
+        self.bm           = bigMapper(self.im,self.gm)
+        self.lm           = LineMapper(self.bm)
         self.exit         = False
 
     def step(self, step=None):
@@ -309,16 +391,15 @@ class DummyOptimizer(dobject):
         self.fixcom     = geop.fixcom
         self.fixatoms   = geop.fixatoms
 
-
         #The resize action must be done before the bind
         if geop.old_x.size != self.beads.q.size:
             if geop.old_x.size == 0:
                 geop.old_x =np.zeros((self.beads.nbeads,3*self.beads.natoms), float)
             else:
                 raise ValueError("Old positions size does not match system size")
-        if geop.old_u.size != 1:
+        if geop.old_u.size != self.beads.nbeads:
             if geop.old_u.size == 0:
-                geop.old_u = np.zeros(1, float)
+                geop.old_u = np.zeros(self.beads.nbeads, float)
             else:
                 raise ValueError("Old potential energy size does not match system size")
         if geop.old_f.size != self.beads.q.size:
@@ -342,6 +423,8 @@ class DummyOptimizer(dobject):
         self.old_x      = geop.old_x
         self.old_u      = geop.old_u
         self.old_f      = geop.old_f
+        self.opt        = geop.opt       #optimization algorithm
+
 
         # Generic instanton
 
@@ -350,15 +433,16 @@ class DummyOptimizer(dobject):
         self.action          = geop.action
         self.prefix          = geop.prefix
         self.delta           = geop.delta
-        self.final_post      = geop.final_post
+        self.hessian_final   = geop.hessian_final
         self.gm.bind(self)
+        self.energy_shift    = geop.energy_shift
 
     def exitstep(self, fx, fx0, x,exitt):
 
         """ Exits the simulation step. Computes time, checks for convergence. """
         self.qtime += time.time()
 
-        info(' @Exit step: Energy difference: %.1e, (condition: %.1e)' % (np.absolute((fx - fx0) / self.beads.natoms)[0],self.tolerances["energy"] ),verbosity.low)
+        info(' @Exit step: Energy difference: %.1e, (condition: %.1e)' % (np.absolute((fx - fx0) / self.beads.natoms),self.tolerances["energy"] ),verbosity.low)
         info(' @Exit step: Maximum force component: %.1e, (condition: %.1e)' % (np.amax(np.absolute(self.forces.f+self.im.f)), self.tolerances["force"]), verbosity.low)
         info(' @Exit step: Maximum component step component: %.1e, (condition: %.1e)' % (x, self.tolerances["position"]), verbosity.low)
 
@@ -367,17 +451,18 @@ class DummyOptimizer(dobject):
                          (np.linalg.norm(self.forces.f.flatten() - self.old_f.flatten()) <= 1e-08)) \
                 and (x <= self.tolerances["position"]):
 
-            print_instanton(self.prefix, self.hessian, self.gm,self.im,self.hessian_asr,self.final_post,self.action)
+            print_instanton(self.prefix, self.hessian, self.gm,self.im,self.hessian_asr,self.hessian_final,self.action,self.mode)
+            print_instanton_geo(self.prefix, self.im.dbeads.nbeads, self.im.dbeads.natoms, self.im.dbeads.names, self.im.dbeads.q, self.old_u,self.energy_shift)
             exitt=True #If we just exit here, the last step (including the last hessian) will not be in the RESTART file
 
         return exitt
 
-class RateOptimizer(DummyOptimizer):
+class HessianOptimizer(DummyOptimizer):
     """ INSTANTON Rate calculation"""
 
     def bind(self, geop):
         # call bind function from DummyOptimizer
-        super(RateOptimizer,self).bind(geop)
+        super(HessianOptimizer,self).bind(geop)
 
         #Specific for RateOptimizer
         self.sparse          = geop.sparse
@@ -390,18 +475,15 @@ class RateOptimizer(DummyOptimizer):
         #Hessian
         self.initial_hessian = None
 
-        if geop.hessian.size != (self.beads.natoms*3 * self.beads.q.size ):
+        if geop.hessian.size != (self.beads.natoms*3 * self.beads.q.size):
             if geop.hessian.size == (self.beads.natoms*3)**2:
                 self.initial_hessian = geop.hessian.copy()
                 geop.hessian = np.zeros((self.beads.natoms*3, self.beads.q.size), float)
-            elif self.beads.nbeads == 1:
-               if geop.hessian.size == 0 and geop.hessian_init == 'true':
-                   info(" Initial classical hessian is not provided. We are going to compute it.", verbosity.low)
+            elif geop.hessian.size == 0 and geop.hessian_init == 'true':
+                   info(" Initial hessian is not provided. We are going to compute it.", verbosity.low)
                    geop.hessian = np.zeros((self.beads.natoms*3, self.beads.q.size))
-               else:
-                   raise ValueError("Nbeads =1. Hessian_init != 'True'. An initial hessian (size natoms*3 X natoms*3) must be provided")
             else:
-                raise ValueError("Nbeads >1. An initial hessian (shape '(natoms*3,natoms*3)' or '(natoms*3,natoms*nbeads*3)') must be provided.\n Hessian size does not match system size.")
+                raise ValueError(" 'Hessian_init' is false, an initial hessian (of the proper size) must be provided.")
 
         self.hessian = geop.hessian
 
@@ -436,16 +518,19 @@ class RateOptimizer(DummyOptimizer):
                     info(" @GEOP: We are computing the initial hessian", verbosity.low)
                     get_hessian(self.hessian, self.gm,self.beads.q)
 
-        if self.exit:
-            softexit.trigger("Geometry optimization converged. Exiting simulation")
+            # Update positions and forces
+            self.old_x[:] = self.beads.q
+            self.old_u[:] = self.forces.pots
+            self.old_f[:] = self.forces.f
 
         if self.im.f== None:
-            u,g = self.im(self.beads.q) #Init instanton mapper
+            self.im(self.beads.q,ret=False) #Init instanton mapper
 
+        if (self.old_x ==np.zeros((self.beads.nbeads,3*self.beads.natoms), float)).all():
+            self.old_x[:] = self.beads.q
 
-        self.old_x[:] = self.beads.q
-        self.old_u[:] = self.forces.pot
-        self.old_f[:] = self.forces.f
+        if self.exit:
+            softexit.trigger("Geometry optimization converged. Exiting simulation")
 
         if len(self.fixatoms) > 0:
             for dqb in self.old_f:
@@ -453,22 +538,159 @@ class RateOptimizer(DummyOptimizer):
                 dqb[self.fixatoms * 3 + 1] = 0.0
                 dqb[self.fixatoms * 3 + 2] = 0.0
 
-
         # Do one step. Update hessian for the new position. Update the position and force inside the mapper.
-        Instanton(self.old_x, self.old_f,self.im.f, self.sparse,self.hessian,self.hessian_update,self.action,self.hessian_asr, self.im,self.gm, self.big_step)
+        Instanton(self.old_x, self.old_f,self.im.f, self.sparse,self.hessian,self.hessian_update,self.hessian_asr, self.im,self.gm, self.big_step,self.opt,self.mode)
 
         # Update positions and forces
         self.beads.q = self.gm.dbeads.q
         self.forces.transfer_forces(self.gm.dforces)  # This forces the update of the forces
 
+        # Store action
+        self.action[0] = (self.gm.dforces.pot-self.im.dbeads.nbeads*self.energy_shift) * 1 / (self.im.temp * self.im.dbeads.nbeads * units.Constants.kb)
+        self.action[1] = self.im.pot / (self.im.temp * self.im.dbeads.nbeads * units.Constants.kb)
+
+
+        # Exit simulation step
+        d_x_max   = np.amax(np.absolute(np.subtract(self.beads.q, self.old_x)))
+        self.exit = self.exitstep(self.forces.pot, self.old_u.sum(),d_x_max,self.exit)
+
+        # Update positions and forces
+        self.old_x[:] = self.beads.q
+        self.old_u[:] = self.forces.pots
+        self.old_f[:] = self.forces.f
+
+class LBFGSOptimizer(DummyOptimizer):
+
+    def bind(self, geop):
+        # call bind function from DummyOptimizer
+        super(LBFGSOptimizer,self).bind(geop)
+
+
+        if geop.hessian.size == (self.beads.natoms * 3) ** 2:
+            self.initial_hessian = geop.hessian.copy()
+            geop.hessian = np.zeros((self.beads.natoms * 3, self.beads.q.size))
+        if geop.hessian_final=='true':
+            self.hessian_asr = geop.hessian_asr
+            if geop.hessian.size == 0:
+                geop.hessian = np.zeros((self.beads.natoms * 3, self.beads.q.size))
+            self.hessian = geop.hessian
+        self.im.bind(self)
+
+        #Specific for LBFGS
+        self.corrections = geop.corrections
+        self.big_step = geop.big_step
+        self.ls_options = geop.ls_options
+
+        if geop.qlist.size != (self.corrections * self.beads.q.size):
+            if geop.qlist.size == 0:
+                geop.qlist = np.zeros((self.corrections, self.beads.q.size), float)
+            else:
+                raise ValueError("qlist size does not match system size")
+        if geop.glist.size != (self.corrections * self.beads.q.size):
+            if geop.glist.size == 0:
+                geop.glist = np.zeros((self.corrections, self.beads.q.size), float)
+            else:
+                raise ValueError("qlist size does not match system size")
+
+        self.qlist = geop.qlist
+        self.glist = geop.glist
+
+        if geop.scale not in [0, 1, 2]:
+            raise ValueError("Scale option is not valid")
+
+        self.scale = geop.scale
+
+        if geop.d.size != self.beads.q.size:
+            if geop.d.size == 0:
+                geop.d = np.zeros((self.beads.nbeads,3*self.beads.natoms), float)
+            else:
+                raise ValueError("Initial direction size does not match system size")
+
+        self.d = geop.d
+
+
+    def step(self, step=None):
+        """ Does one simulation time step."""
+
+        self.qtime = -time.time()
+        info("\n Instanton optimization STEP %d" % step, verbosity.low)
+
+
+
+        if step == 0:
+            info(" @GEOP: Initializing INSTANTON", verbosity.low)
+
+            if self.beads.nbeads == 1:
+                raise ValueError("We can not perform an splitting calculation with nbeads =1")
+                    #get_hessian(self.hessian, self.gm, self.beads.q)
+            else:
+                if ((self.beads.q - self.beads.q[0]) == 0).all():  # If the coordinates in all the imaginary time slices are the same
+                    info(" @GEOP: We stretch the initial geometry with an 'amplitud' of %4.2f" % self.delta, verbosity.low)
+                    imvector = get_imvector(self.initial_hessian,self.beads.m3[0].flatten())
+                    for i in range(self.beads.nbeads):
+
+                        self.beads.q[i, :] += self.delta * np.cos(i * np.pi / float(self.beads.nbeads-1)) * imvector[:]
+                else:
+                    info(" @GEOP: Starting from the provided geometry in the extended phase space", verbosity.low)
+
+            # Update positions and forces
+            self.old_x[:] = self.beads.q
+            self.old_u[:] = self.forces.pots
+            self.old_f[:] = self.forces.f
+
+        #This must be done after the stretching and before the self.d.
+        if self.im.f == None:
+            u, g = self.im(self.beads.q)  # Init instanton mapper
+
+        # Specific for LBFGS
+        if np.linalg.norm(self.d) == 0.0:
+            f = self.forces.f - self.im.f
+            self.d += depstrip(f) / np.sqrt(np.dot(f.flatten(), f.flatten()))
+
+
+        if (self.old_x ==np.zeros((self.beads.nbeads,3*self.beads.natoms), float)).all():
+            self.old_x[:] = self.beads.q
+
+        if self.exit:
+            softexit.trigger("Geometry optimization converged. Exiting simulation")
+
+        if len(self.fixatoms) > 0:
+            for dqb in self.old_f:
+                dqb[self.fixatoms * 3] = 0.0
+                dqb[self.fixatoms * 3 + 1] = 0.0
+                dqb[self.fixatoms * 3 + 2] = 0.0
+
+        e,g = self.bm(self.beads.q)
+        fdf0 = (e,g)
+
+        np.set_printoptions(precision=6, suppress=True, threshold=np.nan, linewidth=1000)
+
+        # Do one step. Update hessian for the new position. Update the position and force inside the mapper.
+        L_BFGS(self.old_x, self.d, self.bm, self.qlist, self.glist,
+               fdf0, self.big_step, self.ls_options["tolerance"],
+               self.ls_options["iter"], self.corrections, self.scale, step)
+
+        # Update positions and forces
+        self.beads.q = self.gm.dbeads.q
+        self.forces.transfer_forces(self.gm.dforces)  # This forces the update of the forces
+
+        # Store action
+
+
+        self.action[0] = (self.gm.dforces.pot - self.im.dbeads.nbeads * self.energy_shift) * 1 / (self.im.temp * self.im.dbeads.nbeads * units.Constants.kb)
+        self.action[1] = self.im.pot / (self.im.temp * self.im.dbeads.nbeads * units.Constants.kb)
+
         # Exit simulation step
         d_x_max = np.amax(np.absolute(np.subtract(self.beads.q, self.old_x)))
-        self.exit=self.exitstep(self.forces.pot, self.old_u,d_x_max,self.exit)
+        self.exit=self.exitstep(self.forces.pot, self.old_u.sum(),d_x_max,self.exit)
+
+        # Update positions and forces
+        self.old_x[:] = self.beads.q
+        self.old_u[:] = self.forces.pots
+        self.old_f[:] = self.forces.f
 
 
-
-#-------------------------------------------------------------------------------------------------------------
-def Instanton(x0, f0,f1, sparse,h, update,action,asr, im,gm, big_step):
+def Instanton(x0, f0,f1, sparse,h, update,asr, im,gm, big_step,opt,m):
     """Do one step. Update hessian for the new position. Update the position and force inside the mapper.
        
        Input: x0  = last positions
@@ -479,24 +701,49 @@ def Instanton(x0, f0,f1, sparse,h, update,action,asr, im,gm, big_step):
            action = vector to store the current value of the action
                im = instanton mapper
                gm = gradient  mapper
-         big_step = limit on step length"""
+         big_step = limit on step length
+              opt = optimization algorithm to use"""
 
     info(" @Instanton_step", verbosity.high)
 
-    #Construct hessian and get eigenvalues and eigenvector
+    if opt=='nichols':
+        #Construct hessian and get eigenvalues and eigenvector
+        if sparse == 'false':
+            h0      = red2comp(h,im)    #construct complete hessian from reduced
+            h1      = np.add(im.h, h0)  # add spring terms to the physical hessian
+            d, w    = clean_hessian(h1, im.dbeads.q, im.dbeads.natoms, im.dbeads.nbeads, im.dbeads.m, im.dbeads.m3, asr)
+        else:
+            h0      = red2sparse(h)        #construct sparse hessian from reduced
+            h1      = ( h0 + im.h_sparse ) # add spring terms to the physical hessian
+            d, w    = clean_sparse_hessian(h1, im.dbeads.q, im.dbeads.natoms, im.dbeads.nbeads, im.dbeads.m, im.dbeads.m3,asr)
+        # Find new movement direction
+        if m== 'rate':
+            d_x = nichols(f0,f1, d,w,im.dbeads.m3, big_step)
+        elif m=='splitting':
+            d_x = nichols(f0, f1, d, w, im.dbeads.m3, big_step,mode=0)
+    elif opt=='NR':
+        #np.set_printoptions(precision=6, suppress=True, threshold=np.nan, linewidth=1000)
+        #print h
+        #print ''
+        h_up_band     = banded_hessian(h,im) #create upper band
+        #print h_aux
+        #print ''
+        #h_band    = sym_band(h_aux)      #create full banded hessian
+        #print h_band
+        #print ''
+        #print f0.shape
+        f=(f0+f1).reshape(im.dbeads.natoms*3*im.dbeads.nbeads,1)
 
-    if sparse == 'false':
-        h0      = red2comp(h,im)    #construct complete hessian from reduced
-        h1      = np.add(im.h, h0)  # add spring terms to the physical hessian
-        d, w    = clean_hessian(h1, im.dbeads.q, im.dbeads.natoms, im.dbeads.nbeads, im.dbeads.m, im.dbeads.m3, asr)
+        d_x       = invmul_banded(h_up_band,f)
+        d_x.shape = im.dbeads.q.shape
+
     else:
-        h0      = red2sparse(h)        #construct sparse hessian from reduced
-        h1      = ( h0 + im.h_sparse ) # add spring terms to the physical hessian
-        d, w    = clean_sparse_hessian(h1, im.dbeads.q, im.dbeads.natoms, im.dbeads.nbeads, im.dbeads.m, im.dbeads.m3,asr)
+        print 'So far, the only optimization available is nichols and NR '
+        sys.exit()
 
-
-    # Find new movement direction
-    d_x = nichols(f0,f1, d,w,im.dbeads.m3, big_step)
+    #np.set_printoptions(precision=6, suppress=True, threshold=np.nan, linewidth=1000)
+    #print d_x[0:20]
+    #sys.exit()
 
     # Rescale step
     d_x_max = np.amax(np.absolute(d_x))
@@ -527,12 +774,10 @@ def Instanton(x0, f0,f1, sparse,h, update,action,asr, im,gm, big_step):
         get_hessian(h,gm,x)
 
     #Store action
-    action[0] = gm.dforces.pot * 1/(im.temp  * im.dbeads.nbeads * units.Constants.kb)
-    action[1] = im.pot / (im.temp * im.dbeads.nbeads * units.Constants.kb)
+    #action[0] = gm.dforces.pot * 1/(im.temp  * im.dbeads.nbeads * units.Constants.kb)
+    #action[1] = im.pot / (im.temp * im.dbeads.nbeads * units.Constants.kb)
     # Note that for the half polymer the factor 2 cancels out (One factor in *.pot and one factor in *.nbeads)
 
-#-------------------------------------------------------------------------------------------------------------
-#-------------------------------------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------------------------------------
 
 #Alberto. All this hessian related functions can be join inside a hessian object.
@@ -540,10 +785,9 @@ class hessian(object):
     def __init__(self):
         pass
 
-#--------------------------------------------------------------------------------------------------------------
 def red2comp(h, im):
     """Takes the reduced physical hessian and construct the 'complete' one (all 0 included) """
-    info("\n @Instanton: Creating 'complete' physical hessian \n", verbosity.medium)
+    info("\n @Instanton: Creating 'complete' physical hessian \n", verbosity.high)
     i = im.dbeads.natoms * 3
     ii = im.dbeads.q.size
     h0 = np.zeros((ii, ii), float)
@@ -562,7 +806,6 @@ def comp2red(h, h0, im):
     for j in range(im.dbeads.nbeads):
         h[:, j * i:(j + 1) * i] = h0[j * i:(j + 1) * i, j * i:(j + 1) * i]
 
-#--------------------------------------------------------------------------------------------------------------
 def red2sparse(h):
     i = h.shape[0]   #natoms*3
     n = h.shape[1]/i #nbeads
@@ -574,7 +817,7 @@ def red2sparse(h):
 
     return hsparse
 
-def get_hessian(h,gm,x0,d=0.01):
+def get_hessian(h,gm,x0,d=0.0):
     """Compute the physical hessian           
        IN     h       = physical hessian 
               gm      = gradient mapper
@@ -601,7 +844,6 @@ def get_hessian(h,gm,x0,d=0.01):
 
         x[:, j] = x0[:, j] + d
         e, f1 = gm(x)
-
         x[:, j] = x0[:, j] - d
         e, f2 = gm(x)
         g = (f1 - f2) / (2 * d)
@@ -740,8 +982,6 @@ def clean_hessian(h, q, natoms, nbeads, m, m3, asr, mofi=False):
     else:
         return d, w
 
-# ----------------------------------------------------------------------------------------------------------
-
 def clean_sparse_hessian(h, q, natoms, nbeads, m, m3, asr, mofi=False):
     """
         Removes the translations and rotations modes.
@@ -783,7 +1023,7 @@ def clean_sparse_hessian(h, q, natoms, nbeads, m, m3, asr, mofi=False):
 
     # Count
     dd = np.sign(d) * np.absolute(d) ** 0.5 / (2 * np.pi * 3e10 * 2.4188843e-17)  # convert to cm^-1
-    np.set_printoptions(precision=6, suppress=True, threshold=np.nan)
+    #np.set_printoptions(precision=6, suppress=True, threshold=np.nan)
     print dd[0:9]
 
     # Zeros
@@ -829,10 +1069,6 @@ def clean_sparse_hessian(h, q, natoms, nbeads, m, m3, asr, mofi=False):
             return d, w, 1.0
     else:
         return d, w
-
-
-
-# ----------------------------------------------------------------------------------------------------------
 
 def get_doble_hessian(h0, im):
     """Takes a hessian of the half polymer (only the physical part) and construct the 
@@ -881,11 +1117,6 @@ def get_doble_hessian(h0, im):
 
     return h
 
-#-------------------------------------------------------------------------------------------------------------
-#-------------------------------------------------------------------------------------------------------------
-#-------------------------------------------------------------------------------------------------------------
-
-
 def get_imvector(h,  m3):
     """ Compute eigenvector  corresponding to the imaginary mode
             IN     h      = hessian
@@ -921,8 +1152,6 @@ def get_imvector(h,  m3):
 
     return imv
 
-#-------------------------------------------------------------------------------------------------------------------
-
 def get_doble(q0,nbeads,m,m3):
     """Takes a positions and mass vectors of the half polymer and construct the 
        equivalent for the full ringpolymer
@@ -938,13 +1167,12 @@ def get_doble(q0,nbeads,m,m3):
     m3=np.concatenate((m3, m3), axis=0)
     return q,2*nbeads,m,m3
 
-#----------------------------------------------------------------------------------------------------------
-def print_instanton(prefix,h,gm,im,asr,rates,action):
+def print_instanton(prefix,h,gm,im,asr,hessian_final,action,mode):
 
 
     """ Prints out relevant information."""
     info(" @print_instanton", verbosity.high)
-    outfile = open(prefix + '.data', 'w')
+    outfile  = open(prefix + '.data', 'w')
     np.set_printoptions(precision=6, suppress=True, threshold=np.nan)
 
     #factor=2.0
@@ -955,59 +1183,91 @@ def print_instanton(prefix,h,gm,im,asr,rates,action):
     action1 = action[0]
     action2 = action[1]
     action = action1 + action2
-    BN = 2 * np.sum(gm.dbeads.m3[1:, :] * (gm.dbeads.q[1:, :] - gm.dbeads.q[:-1, :]) ** 2)
 
     print >> outfile, "# Instanton calculation:"
     print >> outfile, ('  ')
 
-    if im.dbeads.nbeads>1:
-        print >> outfile, ('We have %i total beads (i.e. %i different) and the temperature  is %f K ' %(2*im.dbeads.nbeads,im.dbeads.nbeads,units.unit_to_user('temperature',"kelvin",im.temp)))
-        print >> outfile, ('Beta in a.u.', 1 / im.temp)
-        print >> outfile, ('S1/hbar   '  + str(action1 ) )
-        print >> outfile, ('S2/hbar   '  + str(action2 ) )
-        print >> outfile, ('S/hbar    '  + str(action  ) )
-        print >> outfile, ('BN   ' + (str(BN)))
-        print >> outfile, ('BN*N   ' + (str(BN * 2.0 * im.dbeads.nbeads)))
-        print >> outfile, ('  ')
+
+    if im.dbeads.nbeads==1:
+        print >> outfile, ('We have %i total beads. Classical TS search.' % im.dbeads.nbeads)
+        print >> outfile, ('Potential (eV)   ' + str(units.unit_to_user('energy', "electronvolt", action1) * (
+        im.temp * im.dbeads.nbeads * units.Constants.kb) * 1))
     else:
-        print >> outfile, ('We have %i total beads. Classical TS search.' %im.dbeads.nbeads)
-        print >> outfile, ('Potential (eV)   ' + str(units.unit_to_user('energy',"electronvolt",action1)*(im.temp  * im.dbeads.nbeads * units.Constants.kb)*1))
+
+        if mode == 'rate':
+            print >> outfile, (
+            'We have %i total beads (i.e. %i different) and the temperature  is %f K ' % (
+            2 * im.dbeads.nbeads, im.dbeads.nbeads, units.unit_to_user('temperature', "kelvin", im.temp)))
+            print >> outfile, ('Beta in a.u.', 1 / im.temp)
+            print >> outfile, ('S1/hbar   ' + str(action1))
+            print >> outfile, ('S2/hbar   ' + str(action2))
+            print >> outfile, ('S/hbar    ' + str(action))
+
+            BN = 2 * np.sum(gm.dbeads.m3[1:, :] * (gm.dbeads.q[1:, :] - gm.dbeads.q[:-1, :]) ** 2)
+            print >> outfile, ('BN   ' + (str(BN)))
+            print >> outfile, ('BN*N   ' + (str(BN * 2.0 * im.dbeads.nbeads)))
+            print >> outfile, ('  ')
+        elif mode=='splitting':
+            print >> outfile, (
+            'We have %i total beads and the temperature  is %f K ' % (
+             im.dbeads.nbeads,  units.unit_to_user('temperature', "kelvin", im.temp)))
+            print >> outfile, ('Beta in a.u.', 1 / im.temp)
+            print >> outfile, ('S1/hbar   ' + str(action1))
+            print >> outfile, ('S2/hbar   ' + str(action2))
+            print >> outfile, ('S/hbar    ' + str(action))
+
+
+            BN =  np.sum(gm.dbeads.m3[1:, :] * (gm.dbeads.q[1:, :] - gm.dbeads.q[:-1, :]) ** 2)
+            print >> outfile, ('BN   ' + (str(BN)))
+            print >> outfile, ('BN*N   ' + (str(BN  * im.dbeads.nbeads)))
+            print >> outfile, ('BN/(hbar^2 * betaN))   ' + (str(BN / units.Constants.hbar *(im.temp * im.dbeads.nbeads * units.Constants.kb)))+\
+                               '  (This should be equal to S/hbar)')
+            print >> outfile, ('  ')
+
     info(" ", verbosity.low)
     info(" We are almost done.", verbosity.low)
-    if rates != 'true':
-        info(" Compute rates is false, we are not going to compute them.", verbosity.low)
+
+    if hessian_final != 'true':
+        info("We are not going to compute the final hessian.", verbosity.low)
     else:
-        info(" Computing rates. For this we need to compute the hessian.", verbosity.low)
+        info("We are going to compute the final hessian", verbosity.low)
 
         get_hessian(h, gm, im.dbeads.q)
 
         if im.dbeads.nbeads>1:
-            h0 = red2comp(h, im)
-            hbig = get_doble_hessian(h0,im)
-            q,nbeads,m,m3 = get_doble(im.dbeads.q, im.dbeads.nbeads, im.dbeads.m, im.dbeads.m3)
-            d, w,detI = clean_hessian(hbig, q, im.dbeads.natoms, nbeads, m, m3, asr,mofi=True)
+            if mode=='rate':
+               h0 = red2comp(h, im)
+               hbig = get_doble_hessian(h0,im)
+               q,nbeads,m,m3 = get_doble(im.dbeads.q, im.dbeads.nbeads, im.dbeads.m, im.dbeads.m3)
+               d, w,detI = clean_hessian(hbig, q, im.dbeads.natoms, nbeads, m, m3, asr,mofi=True)
+            elif mode=='splitting':
+               h0 = red2comp(h, im)
+               h  = im.spring_hessian(mode='splitting')
+               h1 = np.add(h, h0)
+               d, w = clean_hessian(h1, im.dbeads.q, im.dbeads.natoms, im.dbeads.nbeads, im.dbeads.m, im.dbeads.m3, asr='none' )
             print >> outfile, "Final  lowest ten frequencies (cm^-1)"
             print >> outfile, str(np.sign(d[0:10]) * np.absolute(d[0:10]) ** 0.5 / (2 * np.pi * 3e10 * 2.4188843e-17))  # convert to cm^-1
             print >> outfile, ('  ')
-
-            # Compute Qrot
-            # Compute Qtras
-
-            # Compute loqQvib
-            # if im.dbeads.nbeads ==1: # TS calculation,exact expression
-            #    logQvib = np.sum(np.log(2 * np.sinh((betaP * units.Constants.hbar * np.sqrt(np.delete(d, 0)) / 2.0))))
-            #    # logQvib = np.sum( np.log( betaP * units.Constants.hbar * np.sqrt(np.absolute(np.delete(d, 0)))))
-            #    print 'Deleted frequency for computing Qvib  %f cm^-1' % (np.sign(d[0]) * np.absolute(d[0]) ** 0.5 / (2 * np.pi * 3e10 * 2.4188843e-17))
-            # else: # instanton calculation
-            #    logQvib = np.sum(np.log(betaP * units.Constants.hbar * np.sqrt(np.absolute(np.delete(d, 1)))))
-            #    print 'Deleted frequency for computing Qvib  %f cm^-1' % ( np.sign(d[1]) * np.absolute(d[1]) ** 0.5 / (2 * np.pi * 3e10 * 2.4188843e-17))
-
-            # print >> outfile, ('logQvib ' + str(logQvib))
         else: #TS
             d, w = clean_hessian(h, im.dbeads.q, im.dbeads.natoms, im.dbeads.nbeads, im.dbeads.m, im.dbeads.m3, asr)
             print >> outfile, "Frequencies (cm^-1)"
             print >> outfile, str( np.sign(d) * np.absolute(d) ** 0.5 / (2 * np.pi * 3e10 * 2.4188843e-17) ) # convert to cm^-1
             print >> outfile, ('  ')
 
+    outfile.close()
+
+def print_instanton_geo(prefix, nbeads,natoms,names,q, pots,shift):
+    outfile = open(prefix + '.xyz', 'w')
+    for i in range(nbeads):
+        print >> outfile, natoms
+        print >> outfile, ('#Potential (eV):   ' + str(units.unit_to_user('energy', "electronvolt", pots[i]-shift)))
+
+        for j in range(natoms):
+            print >> outfile,names[j], \
+                str(units.unit_to_user('length', "angstrom", q[i, 3 * j    ])), \
+                str(units.unit_to_user('length', "angstrom", q[i, 3 * j + 1])), \
+                str(units.unit_to_user('length', "angstrom", q[i, 3 * j + 2]))
 
     outfile.close()
+
+
