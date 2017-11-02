@@ -55,9 +55,17 @@ def rad_fhisto(qdata, fdata, delta, r_k, spread, m, P, T):
         
         fc = np.asarray([np.dot(f[0::3],c), np.dot(f[1::3],c), np.dot(f[2::3],c)])
         sc = - mwp2 * np.asarray([np.dot(s[0::3],c), np.dot(s[1::3],c), np.dot(s[2::3],c)])
+        r = np.linalg.norm(x)
+                
+        #print "@@@", r," ", # these are the factors 
+        #for i in xrange(P):
+        #    print np.dot(f[3*i:3*(i+1)]-mwp2*s[3*i:3*(i+1)],x)/r," ",
+        #print ""
+        
         g = - bp*(fc+sc)
         
-        r = np.linalg.norm(x)
+        
+        
         #print "@@@", r, np.dot(x,g)
         gker = r_k(r, delta, spread) 
         gker *= np.dot(x,g) / r
