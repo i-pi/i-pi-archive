@@ -20,15 +20,14 @@ def rad_kernel(x, delta, is2half):
     return res
 
 def rad_f_kernel(x, delta, is2half):
-    # computes the kernel that describes the contribution to the radial average n(Delta) for a given spread factor 1/ispread
+    # computes the kernel that describes the contribution to the radial average Delta**2 n(Delta) for a given spread factor 1/ispread
     if delta == 0:
         res = 0 
     elif (x <= 1.0e-4): # use a Taylor expansion to get a stable result for small x
-        #res=  delta**2*(4*delta*is2half*x*(5 + is2half*(-5 + 2*delta**2*is2half)*x**2))/(15.*np.exp(delta**2*is2half))
         res = 2.0 * np.exp(-delta**2 * is2half) * delta * x / 1.50 * is2half 
     else:
-        #res = ((1 + 2*delta*is2half*x) * np.exp(-is2half*(delta + x)**2) + np.exp(4 * delta * is2half * x - is2half * (delta + x)**2)*(-1 + 2 * delta * is2half * x))/(4. * is2half**2 * x**2) / delta**2
-        red = (np.exp(-(x + delta)**2 * is2half) * (delta * x * 2.0 * is2half + 1) + np.exp(-(x - delta)**2 * is2half) * (delta * x * 2.0 * is2half - 1)) / 4.0 / is2half**2 / x**2 / delta**2
+        red = (np.exp(-(x + delta)**2 * is2half) * (delta * x * 2.0 * is2half + 1) + 
+               np.exp(-(x - delta)**2 * is2half) * (delta * x * 2.0 * is2half - 1)) / 4.0 / is2half**2 / x**2 #/ delta**2
     return res
     
 def rad_histo(data, delta, r_k, spread):
@@ -37,23 +36,29 @@ def rad_histo(data, delta, r_k, spread):
         ly+=r_k(x, delta, spread)
     return ly  
 
-def rad_fhisto(qdata, fxdata, fydata, fzdata, delta, r_k, spread, m, P, T):
+def rad_fhisto(qdata, fdata, delta, r_k, spread, m, P, T):
     ly = delta * 0.0
-    c = 0.5 * np.asarray([-1.0 + float(j) * 2.0 / float(P - 1) for j in range(P)])**3
+    
+    c = 0.5 * np.asarray([-1.0 + float(j) * 2.0 / float(P - 1) for j in range(P)])
     bp = 1.0 / (P * T)
     mwp2 = m * (P*T)**2
 
     for i in xrange(len(qdata)):
         q = qdata[i]
-        fx = fxdata[i]
-        fy = fydata[i]
-        fz = fzdata[i]
-        gx = -bp * (fx * c).sum() + mwp2 * q[0] / (P - 1.0)
-        gy = -bp * (fy * c).sum() + mwp2 * q[1] / (P - 1.0)
-        gz = -bp * (fz * c).sum() + mwp2 * q[2] / (P - 1.0)
-        g = np.asarray([gx, gy, gz])
-        qdist = np.linalg.norm(q)
-        ly += r_k(qdist, delta, spread) * np.dot(q,g) / np.linalg.norm(q)
+        f = fdata[i]
+        x = q[:3]-q[-3:] # end-to-end distance vector
+        s = q.copy()
+        s[3:3*(P-1)] += q[3:3*(P-1)]
+        s[3:] -= q[:3*(P-1)]
+        s[:3*(P-1)] -= q[3:]
+        
+        fc = np.asarray([np.dot(f[0::3],c), np.dot(f[1::3],c), np.dot(f[2::3],c)])
+        sc = - mwp2 * np.asarray([np.dot(s[0::3],c), np.dot(s[1::3],c), np.dot(s[2::3],c)])
+        g = - bp*(fc+sc)
+        
+        r = np.linalg.norm(x)
+        print r, np.dot(x,g)
+        ly += r_k(r, delta, spread) * np.dot(x,g) / r
     return ly  
     
 def get_np(fname, ffile, prefix, bsize, P, mamu, Tkelv, s, ns, skip):   
@@ -68,10 +73,6 @@ def get_np(fname, ffile, prefix, bsize, P, mamu, Tkelv, s, ns, skip):
     step = np.shape(delta)[0] 
     if ffile!="": 
         fdelta = np.loadtxt(ffile)[skip:]
-        fx = fdelta[:,0::3]
-        fy = fdelta[:,1::3]
-        fz = fdelta[:,2::3]
-
     else:
         fdelta = None    
     
@@ -98,13 +99,11 @@ def get_np(fname, ffile, prefix, bsize, P, mamu, Tkelv, s, ns, skip):
              exit()
     for x in xrange(n_block):
         dq = delta[x*bsize : (x+1)*bsize]
-        dfx = fx[x*bsize : (x+1)*bsize]
-        dfy = fy[x*bsize : (x+1)*bsize]
-        dfz = fz[x*bsize : (x+1)*bsize]
+        df = fdelta[x*bsize : (x+1)*bsize]
 
-        dq_module = np.sqrt(np.sum(dq*dq,axis=1))
+        #dq_module = np.sqrt(np.sum(dq*dq,axis=1))
      
-        hrad = rad_fhisto(dq, dfx, dfy, dfz, deltarad, rad_kernel, (0.5 * T * P * m), m, P ,T)
+        hrad = rad_fhisto(dq, df, deltarad, rad_kernel, (0.5 * T * P * m), m, P ,T)
         #hrad = 4.0 * np.pi * deltarad**2 * (np.cumsum(hrad) * abs(deltarad[1] - deltarad[0]))
         hrad = (np.cumsum(hrad) * abs(deltarad[1] - deltarad[0]))
         hrad -= hrad[-1]
