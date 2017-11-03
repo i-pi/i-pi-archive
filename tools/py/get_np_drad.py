@@ -54,9 +54,17 @@ def rad_fhisto(qdata, fdata, delta, r_k, spread, m, P, T):
         
         fc = np.asarray([np.dot(f[0::3],c), np.dot(f[1::3],c), np.dot(f[2::3],c)])
         sc = - mwp2 * np.asarray([np.dot(s[0::3],c), np.dot(s[1::3],c), np.dot(s[2::3],c)])
+        r = np.linalg.norm(x)
+                
+        #print "@@@", r," ", # these are the factors 
+        #for i in xrange(P):
+        #    print np.dot(f[3*i:3*(i+1)]-mwp2*s[3*i:3*(i+1)],x)/r," ",
+        #print ""
+        
         g = - bp*(fc+sc)
         
-        r = np.linalg.norm(x)
+        
+        
         #print "@@@", r, np.dot(x,g)
         gker = r_k(r, delta, spread)
         if r > 1e-3:
@@ -67,12 +75,12 @@ def rad_fhisto(qdata, fdata, delta, r_k, spread, m, P, T):
         ly += gker
     return ly  
     
-def get_np(fname, ffile, prefix, bsize, P, mamu, Tkelv, s, ns, skip):   
+def get_np(fname, ffile, prefix, bsize, P, mamu, Tkelv, s, ns, skip, dogik):   
    
     # initialises grids.
     T= Tkelv*3.1668105*10**(-6) 
     m = 1822.888* mamu    
-    prefix = prefix + '_'
+    prefix = prefix
     
     #Read the end to end distances from file
     delta= np.loadtxt(fname, skiprows=int(skip))
@@ -82,7 +90,10 @@ def get_np(fname, ffile, prefix, bsize, P, mamu, Tkelv, s, ns, skip):
     else:
         fdelta = None    
     
-    if s<= 0 :
+    if dogik:
+        ogik = open(prefix+"-gik.data","w")
+    
+    if s<= 0 : 
         s = np.sqrt(np.max(np.sum((delta[:,:3]-delta[:,-3:])**2,axis=1)))*6
     if ns<=0:
         ns = int(s*np.sqrt(T * P * m))*4+1
@@ -104,10 +115,29 @@ def get_np(fname, ffile, prefix, bsize, P, mamu, Tkelv, s, ns, skip):
     if (n_block ==0):
         print 'not enough data to build a block'
         exit()
+            
     for x in xrange(n_block):
         dq = delta[x*bsize : (x+1)*bsize]
         df = fdelta[x*bsize : (x+1)*bsize]
 
+        if dogik: # compute data for coefficient optimization
+            mwp2 = m * (P*T)**2
+            bp = 1/(P*T)
+            for j in xrange(bsize): 
+                q=dq[j]
+                f=df[j]
+                x=q[:3]-q[-3:]
+                r=np.sqrt(np.dot(x,x))
+                s = q.copy()
+                s[3:3*(P-1)] += q[3:3*(P-1)]
+                s[3:] -= q[:3*(P-1)]
+                s[:3*(P-1)] -= q[3:]
+                
+                ogik.write("%15.8e " % (r))
+                for i in xrange(P):
+                    ogik.write("%15.8e " %(-bp*np.dot(f[3*i:3*(i+1)]-mwp2*s[3*i:3*(i+1)],x)/r))
+                ogik.write("\n");
+            
         #dq_module = np.sqrt(np.sum(dq*dq,axis=1))
         hrad = rad_histo(dq, deltarad, rad_kernel, (0.5 * T * P * m))
         np.savetxt("hrad.data", np.asarray([deltarad, hrad/hrad.sum()]).T)
@@ -151,6 +181,7 @@ def get_np(fname, ffile, prefix, bsize, P, mamu, Tkelv, s, ns, skip):
         p2list.append(np.dot(pgrid**2, rad_npd))
         print "p2 from drad is ", np.dot(pgrid**2, rad_npd)/rad_npd.sum()
     
+    if dogik: ogik.close()
     #saves the convoluted histograms of the end-to-end distances   
     avghrad = np.sum(np.asarray(hradlist), axis = 0)
     normhrad = np.sum(avghrad)
@@ -176,6 +207,7 @@ if __name__ == '__main__':
     parser.add_argument("-qfile",type=str, help="name of the end-to-end distances file")
     parser.add_argument("-ffile",type=str, default="", help="name of the forces file")
     parser.add_argument("--prefix",type=str, default="out", help="prefix for the output files")
+    parser.add_argument("--gik", action='store_true', help="print diagnostics for weights optimization")
     parser.add_argument("-bsize", type=int, default=50000, help="Specify the size of the blocks")
     parser.add_argument("-P", type=int, default= 1, help="Specify the number of beads")
     parser.add_argument("-m", type=float, default= 1.0078, help="Specify the mass of the atom in a.m.u. default is hydorgen")
@@ -186,6 +218,6 @@ if __name__ == '__main__':
     
     args = parser.parse_args()
 
-    get_np(args.qfile, args.ffile, args.prefix, args.bsize, args.P, args.m, args.T, args.dint, args.ns, args.skip)
+    get_np(args.qfile, args.ffile, args.prefix, args.bsize, args.P, args.m, args.T, args.dint, args.ns, args.skip, args.gik)
 
 
