@@ -22,16 +22,19 @@ def rad_kernel(x, delta, is2half):
 def rad_f_kernel(x, delta, is2half):
     # computes the kernel that describes the contribution to the radial average Delta**2 n(Delta) for a given spread factor 1/ispread
     if (x <= 1.0e-4): # use a Taylor expansion to get a stable result for small x
-        res = 2.0 * np.exp(-delta**2 * is2half) * delta * x / 1.50 * is2half 
+        res = (8*delta**3*x)*np.exp(-delta**2*is2half)/(3.*(1/is2half)**2.5*np.sqrt(np.pi))
+          #2.0 * np.exp(-delta**2 * is2half) * delta * x / 1.50 * is2half 
     else:
-        res = (np.exp(-(x + delta)**2 * is2half) * (delta * x * 2.0 * is2half + 1) + 
-               np.exp(-(x - delta)**2 * is2half) * (delta * x * 2.0 * is2half - 1)) / 4.0 / is2half**2 / x**2 #/ delta**2
+        res = (np.sqrt(1/is2half)*((1 + 2*delta*is2half*x) * np.exp(-is2half*(delta + x)**2) + np.exp(-is2half*(delta + x)**2+4*delta*is2half*x)*(-1 + 2*delta*is2half*x)))/(2.*np.sqrt(np.pi)*x**2)
+        #res = (np.exp(-(x + delta)**2 * is2half) * (delta * x * 2.0 * is2half + 1) + 
+        #       np.exp(-(x - delta)**2 * is2half) * (delta * x * 2.0 * is2half - 1)) / 4.0 / is2half**2 / x**2    
     return res
     
 def rad_histo(data, delta, r_k, spread):
     ly=delta*0.0
-    for x in data:
-        ly+=r_k(x, delta, spread)
+    for q in data:
+        x = q[:3]-q[-3:] 
+        ly+=r_k(np.sqrt(np.dot(x,x)), delta, spread)
     return ly  
 
 def rad_fhisto(qdata, fdata, delta, r_k, spread, m, P, T):
@@ -55,7 +58,13 @@ def rad_fhisto(qdata, fdata, delta, r_k, spread, m, P, T):
         
         r = np.linalg.norm(x)
         #print "@@@", r, np.dot(x,g)
-        ly += r_k(r, delta, spread) * np.dot(x,g) / r
+        gker = r_k(r, delta, spread)
+        if r > 1e-3:
+            gker *= np.dot(x,g) / r
+        else:
+            gker *= 0.0
+        gker[1:]/=delta[1:]**2 # divide by delta^2 but avoids the 0/0        
+        ly += gker
     return ly  
     
 def get_np(fname, ffile, prefix, bsize, P, mamu, Tkelv, s, ns, skip):   
@@ -66,19 +75,19 @@ def get_np(fname, ffile, prefix, bsize, P, mamu, Tkelv, s, ns, skip):
     prefix = prefix + '_'
     
     #Read the end to end distances from file
-    delta= np.loadtxt(fname)[skip:]
+    delta= np.loadtxt(fname, skiprows=int(skip))
     step = np.shape(delta)[0] 
     if ffile!="": 
-        fdelta = np.loadtxt(ffile)[skip:]
+        fdelta = np.loadtxt(ffile, skiprows=int(skip))
     else:
         fdelta = None    
     
-    if s<= 0 : 
-        s = np.sqrt(np.max(np.sum((delta[:,:3]-delta[:,-3:])**2,axis=1)))*4    
+    if s<= 0 :
+        s = np.sqrt(np.max(np.sum((delta[:,:3]-delta[:,-3:])**2,axis=1)))*6
     if ns<=0:
-        ns = int(s*np.sqrt(T * P * m))*2+1
-    print "MAX S ", s
-    deltarad = np.linspace(0, s, ns)    
+        ns = int(s*np.sqrt(T * P * m))*4+1
+    deltarad = np.linspace(0, s, ns)
+    deltaradstep = abs(deltarad[1] - deltarad[0])
    
     hradlist = []
     dhradlist = []
@@ -100,17 +109,17 @@ def get_np(fname, ffile, prefix, bsize, P, mamu, Tkelv, s, ns, skip):
         df = fdelta[x*bsize : (x+1)*bsize]
 
         #dq_module = np.sqrt(np.sum(dq*dq,axis=1))
+        hrad = rad_histo(dq, deltarad, rad_kernel, (0.5 * T * P * m))
+        np.savetxt("hrad.data", np.asarray([deltarad, hrad/hrad.sum()]).T)
      
-        hrad = rad_fhisto(dq, df, deltarad, rad_f_kernel, (0.5 * T * P * m), m, P ,T)
+        dhrad = rad_fhisto(dq, df, deltarad, rad_f_kernel, (0.5 * T * P * m), m, P ,T)
         #hrad = 4.0 * np.pi * deltarad**2 * (np.cumsum(hrad) * abs(deltarad[1] - deltarad[0]))
-        np.savetxt("dhrad.data", np.asarray([deltarad, hrad]).T)
-        hrad = (np.cumsum(hrad) * abs(deltarad[1] - deltarad[0]))
-        hrad -= hrad[-1]
-        hrad *= (4.0 * np.pi * deltarad**2)
-        hradlist.append(hrad)
-        np.savetxt("hrad_fromder.data", np.asarray([deltarad, hrad]).T)
-        print "The program ends here!"
-        sys.exit()
+        np.savetxt("dhrad.data", np.asarray([deltarad, dhrad]).T)
+        #dhrad = (np.cumsum(dhrad) * abs(deltarad[1] - deltarad[0]))
+        #dhrad -= dhrad[-1]
+        #dhrad *= 4.0 * np.pi * deltarad**2 
+        
+        np.savetxt("hrad_fromder.data", np.asarray([deltarad, dhrad/dhrad.sum()]).T)
         
         # Computes the Fourier transform of the end to end vector.
         rad_npd = pgrid*0.0
@@ -120,10 +129,27 @@ def get_np(fname, ffile, prefix, bsize, P, mamu, Tkelv, s, ns, skip):
             fsin[1:] /= deltarad[1:]
             fsin[0] = pgrid[i]
             rad_npd[i] = (pgrid[i]*hrad*fsin).sum()
+        hradlist.append(hrad)
         npradlist.append(rad_npd)
-
+        print "p2 from rad is ", np.dot(pgrid**2, rad_npd)/rad_npd.sum()
+        
+        # Computes the Fourier transform of the end to end vector.
+        rad_npd = pgrid*0.0
+        for i in range(len(pgrid)):
+            # computes the FT by hand, and also takes care of the zero limit
+            if pgrid[i] < 1e-4:
+                fsin = deltarad
+            else:
+                fsin = np.sin(pgrid[i] * deltarad) / pgrid[i]
+            rfcos = np.cos(pgrid[i] * deltarad) * deltarad
+            rad_npd[i] = (dhrad * (rfcos - fsin)).sum()
+        #hradlist.append(dhrad)
+        np.savetxt("prad_fromder.data", np.asarray([pgrid, rad_npd/rad_npd.sum()]).T)
+        #npradlist.append(rad_npd)
+        
         #Computes the second moment. 
         p2list.append(np.dot(pgrid**2, rad_npd))
+        print "p2 from drad is ", np.dot(pgrid**2, rad_npd)/rad_npd.sum()
     
     #saves the convoluted histograms of the end-to-end distances   
     avghrad = np.sum(np.asarray(hradlist), axis = 0)
@@ -132,10 +158,10 @@ def get_np(fname, ffile, prefix, bsize, P, mamu, Tkelv, s, ns, skip):
    
     np.savetxt(str(prefix + "rad-histo"), np.c_[deltarad, avghrad / normhrad, errhrad / normhrad])
 
-    if not fdelta is None:
-        avgdhrad = np.mean(np.asarray(dhradlist), axis = 0)
-        errdhrad = np.std(np.asarray(dhradlist), axis = 0)/ np.sqrt(n_block)
-        np.savetxt(str(prefix + "rad-dhisto"), np.c_[deltarad, avgdhrad, errdhrad])
+    #if not fdelta is None:
+    #    avgdhrad = np.mean(np.asarray(dhradlist), axis = 0)
+    #    errdhrad = np.std(np.asarray(dhradlist), axis = 0)/ np.sqrt(n_block)
+    #    np.savetxt(str(prefix + "rad-dhisto"), np.c_[deltarad, avgdhrad, errdhrad])
    
     #saves the radial n(p) and print the average value of p-square
     avgnprad = np.sum(np.asarray(npradlist), axis = 0)  
