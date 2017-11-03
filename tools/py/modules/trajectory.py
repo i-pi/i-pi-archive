@@ -10,6 +10,7 @@ import pathlength
 
 if 1: # LU
 	banded = True
+	#banded = False
 	if banded:
 		factor = mylinalg.lu_factor_banded
 		solve = mylinalg.lu_solve_banded

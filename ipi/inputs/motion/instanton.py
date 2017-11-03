@@ -22,6 +22,7 @@ Classes:
 
 import numpy as np
 from ipi.utils.inputvalue import *
+import sys
 
 
 __all__ = ['InputInst']
@@ -164,8 +165,9 @@ class InputInst(InputDictionary):
             self.glist_lbfgs.store(geop.glist)
             self.corrections_lbfgs.store(geop.corrections)
             self.scale_lbfgs.store(geop.scale)
-            if self.hessian_final=='true':
-                self.hessian_final.store(geop.hessian_final)
+            self.hessian_final.store(geop.hessian_final)
+            if geop.hessian_final=='true':
+                self.hessian.store(geop.hessian)
 
 
 

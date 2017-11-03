@@ -17,14 +17,15 @@ Syntax:
 #04Oct17
 
 import numpy as np
+import numpy as npp
 import sys
 import os
 import math
 import time
 
 #I-PI path
-ipi_path='/home/jeremy/projects/i-pi-mc'
-#ipi_path='/home/litman/Yair/Instanton/I-PI-mc/online-repo/i-pi-mc'
+#ipi_path='/home/jeremy/projects/i-pi-mc'
+ipi_path='/home/litman/Yair/Instanton/I-PI-mc/i-pi-MR/i-pi-mc/'
 
 if not (os.path.exists(ipi_path)):
    print 'We can not find ipi in %s' %ipi_path
@@ -73,7 +74,7 @@ def get_rp_freq(w0,nbeads,temp,asr=None):
         #note the w0 is the eigenvalue ( the square of the frequency )
     return w
  
-def spring_hessian(nbeads,natoms,omega2,m):
+def spring_hessian(nbeads,natoms,omega2,m,mode='full'):
     """ Add spring terms to the extended hessian
         """
     ii = natoms * 3
@@ -97,10 +98,10 @@ def spring_hessian(nbeads,natoms,omega2,m):
     for i in range(0, nbeads - 1):
         h[i * ii:(i + 1) * ii, (i + 1) * ii:(i + 2) * ii] += ndiag
         h[(i + 1) * ii:(i + 2) * ii, i * ii:(i + 1) * ii] += ndiag
-
     # Corner
-    h[ 0 :ii , (nbeads-1)*ii:(nbeads) * ii   ] += ndiag
-    h[(nbeads - 1) * ii:(nbeads) * ii, 0:ii  ] += ndiag
+    if mode =='full':
+       h[ 0 :ii , (nbeads-1)*ii:(nbeads) * ii   ] += ndiag
+       h[(nbeads - 1) * ii:(nbeads) * ii, 0:ii  ] += ndiag
     return h
 
 def get_doble(q0,nbeads0,natoms,h0):
@@ -279,7 +280,7 @@ def clean_dynmat(dynmat,q, natoms,nbeads,m,asr):
 
 
 #START
-np.set_printoptions(precision=6, suppress=True, threshold=np.nan)
+np.set_printoptions(precision=6, suppress=False, threshold=np.nan)
 
 
 #I/O
@@ -327,7 +328,7 @@ hbar = 1.0
 amu  = 1822.8885
 au2K = 315774.66
 au2eV= 27.211383414215543
-
+au2kcal= 1./ 0.0015946679
 #Print information
 time1=time.time()
 print ''
@@ -359,10 +360,11 @@ elif case=='instanton':
     temp2   = simulation.syslist[0].ensemble.temp
     pots    = simulation.syslist[0].motion.old_u
     grads   = - simulation.syslist[0].motion.old_f
+    V0      = simulation.syslist[0].motion.energy_shift
     
-    if mode != 'rate':
-       print 'This script only work for rates calculation'
-       sys.exit()
+    #if mode != 'rate':
+    #   print 'This script only work for rates calculation'
+    #   sys.exit()
 
     if np.absolute(temp-temp2)*au2K >2:
         print ' '
@@ -370,17 +372,32 @@ elif case=='instanton':
 	sys.exit()
     print 'The instanton mode is %s' %mode
     print 'The temperature is %f K' %(temp*au2K)
-    print 'The full ring polymer is made of %i' %(nbeads*2)
+    if mode =='rate':
+        print 'The full ring polymer is made of %i' %(nbeads*2)
 
-    h0      = red2comp(hessian,nbeads,natoms)  
-    pos,nbeads,hessian2 = get_doble(beads.q,nbeads,natoms,h0)
-    hessian = hessian2
+        h0      = red2comp(hessian,nbeads,natoms)  
+        pos,nbeads,hessian2 = get_doble(beads.q,nbeads,natoms,h0)
+        hessian = hessian2
       
-    omega2  = (temp * nbeads * kb / hbar) ** 2
-    spring  = spring_hessian(nbeads,natoms,omega2,m) 
-    h       = np.add(hessian, spring)
-    dynmat  = get_dynmat(h,pos,natoms,nbeads,m)
-
+        omega2  = (temp * nbeads * kb / hbar) ** 2
+        spring  = spring_hessian(nbeads,natoms,omega2,m) 
+        h       = np.add(hessian, spring)
+        dynmat  = get_dynmat(h,pos,natoms,nbeads,m)
+    elif mode=='splitting':
+        print 'Our linear polymer has  %i' %(nbeads)
+        #ALBERTO use banded matrix
+        h0      = red2comp(hessian,nbeads,natoms) 
+        omega2  = (temp * nbeads * kb / hbar) ** 2
+        spring  = spring_hessian(nbeads,natoms,omega2,m, mode='half') 
+        h       = np.add(h0, spring)
+        pos     = beads.q
+        dynmat  = get_dynmat(h,pos,natoms,nbeads,m)
+        if asr !='none':
+         print 'We are changing asr to none'
+         asr='none' 
+    else:
+     print 'We can not recognize the mode. STOP HERE'
+     sys.exit()
 
 time2=time.time()
 print 'We got the dynmat in %f s.'%(time2-time1)
@@ -389,10 +406,11 @@ print ' '
 #We have read all the data so we can start
 beta =1.0/(kb*temp)
 betaP=1.0/(kb*(nbeads)*temp)
+
 d,w,detI = clean_dynmat(dynmat,pos,natoms,nbeads,m,asr)               
 print  "Final lowest ten frequencies (cm^-1)"
+print   np.sign(d) * np.absolute(d) ** 0.5 / (2 * np.pi * 3e10 * 2.4188843e-17)  # convert to cm^-1
 print   np.sign(d[0:10]) * np.absolute(d[0:10]) ** 0.5 / (2 * np.pi * 3e10 * 2.4188843e-17)  # convert to cm^-1
-
 
 if case=='reactant':
     Qtras    = ( ( np.sum(m) ) / ( 2*np.pi*beta*hbar**2 ) )**1.5               #Compute Qtras
@@ -450,57 +468,67 @@ elif case=='TS':
     print 'TEST  %f ev'       %((action[0])*au2eV)  
     print ''
      
-elif case=='instanton': 
-    Qtras     = ( ( np.sum(m) ) / ( 2*np.pi*beta*hbar**2 ) )**1.5               #Compute Qtras
-    #Qtras_rp = ( ( np.sum(m)*nbeadsQ ) / ( 2*np.pi*betaP*hbar**2 ) )**1.5      #Compute Qtras_rp (without freq factor) 
+elif case=='instanton':
 
-    if asr == 'poly':
-       #Qrot_rp  = ( 8*np.pi*detI / ( (hbar)**6 * (betaP)**3 ))**0.5       #Compute Qrot_rp (without freq factor)   
-       Qrot      = ( 8*np.pi*detI / ( (hbar)**6 * (betaP)**3 ))**0.5/(nbeads)**3    #Compute Qrot
-    else:
-       Qrot      = 1.0
+    if mode=='rate': 
+        Qtras     = ( ( np.sum(m) ) / ( 2*np.pi*beta*hbar**2 ) )**1.5               #Compute Qtras
+       #Qtras_rp = ( ( np.sum(m)*nbeadsQ ) / ( 2*np.pi*betaP*hbar**2 ) )**1.5      #Compute Qtras_rp (without freq factor) 
 
-    print ''    
-    print 'Note: Deleted frequency for computing Qvib  %f cm^-1' % (np.sign(d[1]) * np.absolute(d[1]) ** 0.5 / (2 * np.pi * 3e10 * 2.4188843e-17)) 
+        if asr == 'poly':
+           #Qrot_rp  = ( 8*np.pi*detI / ( (hbar)**6 * (betaP)**3 ))**0.5       #Compute Qrot_rp (without freq factor)   
+           Qrot      = ( 8*np.pi*detI / ( (hbar)**6 * (betaP)**3 ))**0.5/(nbeads)**3    #Compute Qrot
+        else:
+           Qrot      = 1.0
+
+        print ''    
+        print 'Note: Deleted frequency for computing Qvib  %f cm^-1' % (np.sign(d[1]) * np.absolute(d[1]) ** 0.5 / (2 * np.pi * 3e10 * 2.4188843e-17)) 
 
     #Compute Qvib
 
-    if asr !='poly':
-        print 'Warning asr != poly'
-        print 'First 10 eigenvalues'
-        print  (np.sign(d[0:10]) * np.absolute(d[0:10]) ** 0.5 / (2 * np.pi * 3e10 * 2.4188843e-17))
-        print 'You have to correct the Qvib, the given value is not OK'
+        if asr !='poly':
+            print 'Warning asr != poly'
+            print 'First 10 eigenvalues'
+            print  (np.sign(d[0:10]) * np.absolute(d[0:10]) ** 0.5 / (2 * np.pi * 3e10 * 2.4188843e-17))
+            print 'You have to correct the Qvib, the given value is not OK'
 
-    logQvib = -np.sum( np.log( betaP*hbar*np.sqrt(np.absolute(np.delete(d,1))) ))+6*np.log(nbeads)+np.log(nbeads) 
-    print 'logQvib = -np.sum( np.log( betaP*hbar*np.sqrt(np.absolute(np.delete(d,1))) ))+6*np.log(nbeadsQ)+np.log(nbeadsQ) '
-    BN     =  2*np.sum(beads.m3[1:,:]*(beads.q[1:,:] - beads.q[:-1,:])**2)
-    BN_factor =np.sqrt(BN/(2*np.pi*betaP*hbar**2))
+        logQvib = -np.sum( np.log( betaP*hbar*np.sqrt(np.absolute(np.delete(d,1))) ))+6*np.log(nbeads)+np.log(nbeads) 
+        print 'logQvib = -np.sum( np.log( betaP*hbar*np.sqrt(np.absolute(np.delete(d,1))) ))+6*np.log(nbeadsQ)+np.log(nbeadsQ) '
+        BN     =  2*np.sum(beads.m3[1:,:]*(beads.q[1:,:] - beads.q[:-1,:])**2)
+        BN_factor =np.sqrt(BN/(2*np.pi*betaP*hbar**2))
     
 
-    print ''
-    print ''
-    print 'We are done'
-    print 'Nbeads %i' %(nbeads)
-    print '(diff only %i)' %(nbeads/2)
-    print '1/(betaP*hbar): %f a.u.' %(1/(betaP*hbar))
-    print 'BN %f     ' % BN
-    print 'BN*N %f   ' % (BN*nbeads)
-    print 'BN_factor %f     ' % BN_factor
+        print ''
+        print ''
+        print 'We are done'
+        print 'Nbeads %i' %(nbeads)
+        print '(diff only %i)' %(nbeads/2)
+        print '1/(betaP*hbar): %f a.u.' %(1/(betaP*hbar))
+        print 'BN %f     ' % BN
+        print 'BN*N %f   ' % (BN*nbeads)
+        print 'BN_factor %f     ' % BN_factor
 
-    print 'Qtras: %f bohr^-3'      %(Qtras)
-    print 'Qrot: %f'    %(Qrot)
-    print 'log(Qvib*N): %f' %(logQvib)
-    print 'S1/hbar %f'  %action[0] 
-    print 'S2/hbar %f'  %action[1] 
-    print 'S/hbar %f'   %(np.sum(action))
+        print 'Qtras: %f bohr^-3'      %(Qtras)
+        print 'Qrot: %f'    %(Qrot)
+        print 'log(Qvib*N): %f' %(logQvib)
+        print 'S1/hbar %f'  %action[0] 
+        print 'S2/hbar %f'  %action[1] 
+        print 'S/hbar %f'   %(np.sum(action))
 
-    import math
-    Lambda = math.sqrt(2*math.pi*betaP)
-    logprefactor = logQvib - np.log(nbeads) + 0.5*math.log(BN) - math.log(betaP*Lambda)
-    print 'logprefactor = %g' % logprefactor
-    print 'prefactor = %g' % math.exp(logprefactor)
+        Lambda = math.sqrt(2*math.pi*betaP)
+        logprefactor = logQvib - np.log(nbeads) + 0.5*math.log(BN) - math.log(betaP*Lambda)
+        print 'logprefactor = %g' % logprefactor
+        print 'prefactor = %g' % math.exp(logprefactor)
 
-    if 1: # new method
+        #ALBERTO
+        outfile = open('hessian.dat', 'r')
+        h=np.zeros(18*18*40)
+        aux=outfile.readline().split()
+        for i in range(18*18*40): 
+            h[i]=float(aux[i])
+        h=h.reshape((18,720))
+        outfile.close()
+
+        if 1: # new method
 	 	N = nbeads
 		V0 = 0 # or energy of reactants
 		x = beads.q.reshape((N//2, -1, 3))
@@ -517,7 +545,9 @@ elif case=='instanton':
 			return np.concatenate((x[N0::-1],x,x[-1:N0-1:-1]))
 		V -= V0
 		dVdx = grads
-		d2Vdx2 = simulation.syslist[0].motion.hessian.copy().T
+                #ALBERTO
+		#d2Vdx2 = simulation.syslist[0].motion.hessian.copy().T
+		d2Vdx2 = h.copy().T
 		d2Vdx2.shape = (N//2,f,f)
 
 		print 'building trajectory...'
@@ -561,9 +591,36 @@ elif case=='instanton':
 		prefactor /= math.sqrt(np.prod(evals[6:]))
 		prefactor /= 2 # why?
 		print 'prefactor from action derivs', prefactor
+     
+    elif mode=='splitting':
+        BN      = np.sum(beads.m3[1:,:]*(beads.q[1:,:] - beads.q[:-1,:])**2)
+        A       = -np.sum(np.log(np.delete(d,0)))         
+        tetaphi = betaP*hbar*np.sqrt(np.sum(action)/(2*hbar*np.pi))*np.exp(-np.sum(action)/hbar)  
+        print ''
+        print ''
+        print 'We are done'
+        print 'Nbeads %i' %(nbeads)
+        print '1/(betaP*hbar): %f a.u.' %(1/(betaP*hbar))
+        print 'hbar %f' %(hbar)
+        print ''
+        print 'V0  %f eV ( %f Kcal/mol) ' %(V0*au2eV,V0*au2kcal)
+        print 'S1/hbar %f'  %(action[0]/hbar)
+        print 'S2/hbar %f'  %(action[1]/hbar)
+        print 'S/hbar %f'   %(np.sum(action)/hbar)
+        print ''
+        print 'BN %f a.u.' % BN
+        print 'BN*N %f a.u.   ' % (BN*nbeads)
+        print 'nbeads %i' %nbeads
+        print 'BN/(hbar^2 * betaN)  %f   ' % (BN/ ((hbar**2)*betaP))
+        print ''
+        print 'Teta*Phi  %f' %(tetaphi)
+        print '-log of the product of nonzero eigenvalues %f' %(A)
+    else:
+       print 'We can not recongnize the mode.STOP here'
+       sys.exit()
 
 time2=time.time()
 print ''
 print 'Total time %f s.'%(time2-time1)
 
-sys.exit()
+sys.exit(0)

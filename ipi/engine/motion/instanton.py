@@ -523,12 +523,11 @@ class HessianOptimizer(DummyOptimizer):
             self.old_u[:] = self.forces.pots
             self.old_f[:] = self.forces.f
 
-        if self.im.f== None:
+        if type(self.im.f) ==  type(None):
             self.im(self.beads.q,ret=False) #Init instanton mapper
 
         if (self.old_x ==np.zeros((self.beads.nbeads,3*self.beads.natoms), float)).all():
             self.old_x[:] = self.beads.q
-
         if self.exit:
             softexit.trigger("Geometry optimization converged. Exiting simulation")
 
@@ -639,7 +638,7 @@ class LBFGSOptimizer(DummyOptimizer):
             self.old_f[:] = self.forces.f
 
         #This must be done after the stretching and before the self.d.
-        if self.im.f == None:
+        if type(self.im.f) == type(None):
             u, g = self.im(self.beads.q)  # Init instanton mapper
 
         # Specific for LBFGS
@@ -817,7 +816,7 @@ def red2sparse(h):
 
     return hsparse
 
-def get_hessian(h,gm,x0,d=0.0):
+def get_hessian(h,gm,x0,d=0.0005):
     """Compute the physical hessian           
        IN     h       = physical hessian 
               gm      = gradient mapper
