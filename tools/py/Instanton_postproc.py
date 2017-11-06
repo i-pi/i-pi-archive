@@ -554,12 +554,11 @@ elif case=='instanton':
 		print 'Gelfand-Yaglom: C without zero-modes = %g' % (beta**6*C)
 
 		prefactor = 1/math.sqrt(2*math.pi) * p * math.sqrt(-beta**6*C)
-		d2SdQ2 = d2Sdx2[1:f,1:f] + d2Sdx2[1:f,f+1:] + d2Sdx2[f+1:,1:f] + d2Sdx2[f+1:,f+1:]
+		d2SdQ2 = d2Sdq2[1:f,1:f] + d2Sdq2[1:f,f+1:] + d2Sdq2[f+1:,1:f] + d2Sdq2[f+1:,f+1:]
 		print np.linalg.norm(d2SdQ2 - d2SdQ2.T)
 		evals = np.linalg.eigvalsh(d2SdQ2)
 		print 'eigvals d2SdQ2', evals
 		prefactor /= math.sqrt(np.prod(evals[6:]))
-		prefactor /= 2 # why?
 		print 'prefactor from action derivs', prefactor
 
 time2=time.time()
