@@ -67,7 +67,7 @@ def lu_solve_banded(lu_and_piv, b):
 	trans = 'N' # no transpose
 	LDAB, N = AB.shape
 	l = u = (LDAB - 1)//3
-	B = np.array(b, order='F')
+	B = np.array(b.copy(), order='F')
 	if B.ndim == 1:
 		B.shape = (-1,1)
 	LDB, NRHS = B.shape
