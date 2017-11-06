@@ -10,6 +10,9 @@ import sys
 import numpy as np
 from ipi.utils.io import read_file_raw
 from ipi.utils.units import unit_to_internal, unit_to_user
+from ipi.utils.messages import verbosity
+
+verbosity.level = "low"
 
 
 def compute_acf(input_file, output_prefix, maximum_lag, block_length, length_zeropadding, spectral_windowing, labels, timestep, skip, der):
@@ -78,7 +81,7 @@ def compute_acf(input_file, output_prefix, maximum_lag, block_length, length_zer
     ff = open(ifile)
     #Skips the first fskip frames
     for x in xrange(fskip):
-        rr = read_file_raw("xyz", ff, output="array")
+        rr = read_file_raw("xyz", ff)
 
     while True:
 
