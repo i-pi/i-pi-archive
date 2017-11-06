@@ -1,5 +1,5 @@
 <simulation>
-  <output prefix="water">
+  <output prefix="simulation">
     <properties stride="1" filename="out"> [ step, time{picosecond}, conserved, temperature{kelvin}, kinetic_cv, potential,kinetic_md,
     pressure_cv{megapascal},volume] </properties>
     <trajectory filename="pos" stride="100" cell_units="angstrom" format="pdb" bead="0"> positions{angstrom} </trajectory>
@@ -9,11 +9,11 @@
     <seed>32345</seed>
   </prng>
   <ffsocket name="lmpserial" mode="unix">
-    <address>water</address>
+    <address>fixatoms</address>
   </ffsocket>
   <system>
     <initialize nbeads="1">
-      <file mode="pdb"> water-32.pdb </file>
+      <file mode="pdb"> init.pdb </file>
       <velocities mode="thermal" units="kelvin"> 300 </velocities>
     </initialize>
     <forces>

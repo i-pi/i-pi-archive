@@ -6,7 +6,7 @@
     <total_steps>50000</total_steps>
     <prng> <seed>32345</seed> </prng>
     <ffsocket name="lmpserial" mode="unix">
-        <address> driver </address>
+        <address> h2o-pimd+sc+gle.4 </address>
         <latency>1e-4</latency>
     </ffsocket>
     <system>

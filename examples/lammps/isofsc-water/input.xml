@@ -11,11 +11,11 @@
     <seed>32345</seed>
   </prng>
   <ffsocket name="lmpserial" mode="unix">
-    <address>water</address>
+    <address>isofsc-water</address>
   </ffsocket>
   <system>
     <initialize nbeads="24">
-      <file mode="pdb"> h2o-32.pdb </file>
+      <file mode="pdb"> init.pdb </file>
       <velocities mode="thermal" units="kelvin"> 300 </velocities>
     </initialize>
     <forces>

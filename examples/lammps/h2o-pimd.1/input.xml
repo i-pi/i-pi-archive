@@ -7,11 +7,11 @@
    <total_steps>10000</total_steps>
    <prng><seed>31415</seed></prng>
    <ffsocket name="lammps" mode="unix">
-      <address>driver-pimd.1</address>
+      <address>h2o-pimd.1</address>
    </ffsocket>
    <system>
       <initialize nbeads="1">
-         <file mode="pdb"> water_298K.pdb </file>
+         <file mode="pdb"> init.pdb </file>
          <velocities mode="thermal" units="kelvin"> 300 </velocities>
       </initialize>
       <forces><force forcefield="lammps"> </force></forces>

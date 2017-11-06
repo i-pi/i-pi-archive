@@ -6,7 +6,7 @@
   <total_steps>500000</total_steps>
   <prng><seed>32344</seed></prng>
   <ffsocket name="lmpserial" mode="unix">
-    <address>piglet_2</address>
+    <address>h2o-piglet.2</address>
   </ffsocket>
   <system>
     <initialize nbeads="2"> 

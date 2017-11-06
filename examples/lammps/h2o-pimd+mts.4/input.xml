@@ -7,10 +7,10 @@
     <total_steps>10000</total_steps>
     <prng><seed>31415</seed></prng>
     <ffsocket name="lmpserial1" mode="unix">
-        <address>mts_short</address>
+        <address>h2o-pimd+mts.4_short</address>
     </ffsocket>
     <ffsocket name="lmpserial2" mode="unix">
-        <address>mts_long</address>
+        <address>h2o-pimd+mts.4_long</address>
     </ffsocket>
     <system>
         <initialize nbeads="4">

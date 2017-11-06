@@ -980,7 +980,7 @@ def create_dir(folder_path, ignore=False):
                 else:
                     raise RuntimeError
             except:
-                raise RuntimeError('I cannot remove the file.'
+                raise RuntimeError('I cannot remove the file. '
                                    'Try manually and restart this script!')
         else:
             raise SystemExit('User rules!')

@@ -7,11 +7,11 @@
   <total_steps>500000</total_steps>
   <prng><seed>32346</seed></prng>
   <ffsocket name="lmpserial1" mode="unix">
-    <address>vapor</address>
+    <address>isof-vapor</address>
   </ffsocket>
   <system>
     <initialize nbeads="32"> 
-      <file mode="pdb"> water_298K.pdb </file>
+      <file mode="pdb"> init.pdb </file>
       <velocities mode="thermal" units="kelvin"> 298 </velocities>
     </initialize>
     <forces>

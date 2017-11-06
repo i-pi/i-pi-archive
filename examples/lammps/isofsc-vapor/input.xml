@@ -9,11 +9,11 @@
   <total_steps>400000</total_steps>
   <prng><seed>32346</seed></prng>
   <ffsocket name="lmpserial1" mode="unix">
-    <address>vapor</address>
+    <address>isofsc-vapor</address>
   </ffsocket>
   <system>
     <initialize nbeads="24">
-      <file mode="pdb"> h2o-32.pdb </file>
+      <file mode="pdb"> init.pdb </file>
       <velocities mode="thermal" units="kelvin"> 300 </velocities>
     </initialize>
     <forces>

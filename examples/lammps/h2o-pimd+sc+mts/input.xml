@@ -7,7 +7,7 @@
     <total_steps> 40000 </total_steps>
     <prng> <seed>32415</seed> </prng>
     <ffsocket name="lammps" mode="unix">
-    <address> driver-sc.16 </address>
+    <address> h2o-pimd+sc+mts </address>
     </ffsocket>
     <system>
         <initialize nbeads="16">

@@ -6,7 +6,7 @@
     <total_steps> 1000 </total_steps>
     <prng> <seed> 32342 </seed> </prng>
     <ffsocket name="qtip4pf" mode="unix" pbc="false">
-        <address> driver </address>
+        <address> h2o-geop </address>
     </ffsocket>
     <system>
         <initialize nbeads="1">

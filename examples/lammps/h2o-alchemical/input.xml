@@ -3,10 +3,10 @@
         <properties stride="1" filename="out"> [ step, time{picosecond}, conserved, temperature{kelvin}, kinetic_cv, kinetic_td, potential, pressure_cv{megapascal}, spring ] </properties>
         <trajectory filename="pos" stride="10" cell_units="angstrom" format="xyz" bead="0"> positions{angstrom} </trajectory>
     </output>
-    <total_steps>10000</total_steps>
-    <prng> <seed>32345</seed> </prng>
+    <total_steps> 10000 </total_steps>
+    <prng> <seed> 32345 </seed> </prng>
     <ffsocket name="lmpserial" mode="unix">
-        <address> water </address>
+        <address> h2o-alchemical </address>
     </ffsocket>
     <system>
         <initialize nbeads="4">
@@ -33,9 +33,7 @@
             </motion>
         </motion>
         <ensemble>
-            <temperature units="kelvin">1000</temperature>   
+            <temperature units="kelvin"> 1000 </temperature>   
         </ensemble>
     </system>
 </simulation>
-
-

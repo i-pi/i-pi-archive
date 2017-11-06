@@ -6,10 +6,10 @@
     <total_steps>40000</total_steps>
     <prng><seed>32346</seed></prng>
     <ffsocket name="lmpserial1" mode="unix">
-    <address>driver-pimd.short</address>
+    <address>h2o-pimd+rpc_short</address>
     </ffsocket>
     <ffsocket name="lmpserial2" mode="unix">
-    <address>driver-pimd.long</address>
+    <address>h2o-pimd+rpc_long</address>
     </ffsocket>
     <system>
     <initialize nbeads="32"> 

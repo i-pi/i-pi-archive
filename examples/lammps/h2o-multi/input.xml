@@ -6,7 +6,7 @@
     <total_steps>10000</total_steps>
     <prng> <seed>32345</seed> </prng>
     <ffsocket name="lmpserial" mode="unix">
-        <address> water </address>
+        <address> h2o-multi </address>
     </ffsocket>
     <system>
         <initialize nbeads="32">

@@ -8,7 +8,7 @@
     <total_steps> 500000 </total_steps>
     <prng><seed> 32342 </seed></prng>
     <ffsocket name="lmpserial" mode="unix">
-        <address>piglet_8</address>
+        <address>h2o-piglet.8</address>
     </ffsocket>
     <system>
         <initialize nbeads="8"> 

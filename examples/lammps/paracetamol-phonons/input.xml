@@ -5,7 +5,7 @@
    <total_steps> 100000 </total_steps>
    <prng> <seed> 32342 </seed> </prng>
    <ffsocket name="lmp" mode="unix" pbc="true">
-      <address> driver </address>
+      <address> paracetamol-phonons </address>
    </ffsocket>
  <system>
    <initialize nbeads="1"> 
