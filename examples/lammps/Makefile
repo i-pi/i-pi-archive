@@ -1,15 +1,13 @@
-# Makefile for the q-TIP4P-F examples
-#
 # This file is part of i-PI.
 # i-PI Copyright (C) 2014-2015 i-PI developers
 # See the "licenses" directory for full license information.
 
-.PHONY: all clean fixatoms h2o-alchemical h2o-enmfdphonons h2o-fdphonons h2o-geop \
+.PHONY: all clean fixatoms h2o-alchemical h2o-enmfdphonons h2o-fdphonons h2o-geop h2o-multi \
         h2o-piglet.2 h2o-piglet.4 h2o-piglet.8 h2o-pimd.1 h2o-pimd.4 h2o-pimd+mts.4 \
         h2o-pimd+rpc h2o-pimd+sc h2o-pimd+sc+gle.4 h2o-pimd+sc+mts \
         h2o-pimd+sc+rpc h2o-trpmd ice-npt ice-nst isofsc-vapor isofsc-water \
         isof-vapor isof-water NaCl-cellopt paracetamol-geop paracetamol-phonons
-all: all clean fixatoms h2o-alchemical h2o-enmfdphonons h2o-fdphonons h2o-geop \
+all: all clean fixatoms h2o-alchemical h2o-enmfdphonons h2o-fdphonons h2o-geop h2o-multi \
      h2o-piglet.2 h2o-piglet.4 h2o-piglet.8 h2o-pimd.1 h2o-pimd.4 h2o-pimd+mts.4 \
      h2o-pimd+rpc h2o-pimd+sc h2o-pimd+sc+gle.4 h2o-pimd+sc+mts \
      h2o-pimd+sc+rpc h2o-trpmd ice-npt ice-nst isofsc-vapor isofsc-water \
@@ -50,6 +48,11 @@ h2o-geop:
         $(call run_lammps,4,in.lmp) \
 	wait
 
+h2o-multi:
+	cd h2o-multi; $(IPI) input.xml & sleep 5; \
+        $(call run_lammps,4,in.lmp) \
+        wait
+
 h2o-piglet.2:
 	cd h2o-piglet.2; $(IPI) input.xml & sleep 5; \
         $(call run_lammps,4,in.lmp) \
@@ -77,14 +80,14 @@ h2o-pimd.4:
 
 h2o-pimd+mts.4:
 	cd h2o-pimd+mts.4; $(IPI) input.xml & sleep 5; \
-        $(call run_lammps,4,in.lmp_short) \
-        $(call run_lammps,4,in.lmp_long) \
+        $(call run_lammps,4,in_short.lmp) \
+        $(call run_lammps,4,in_long.lmp) \
 	wait
 
 h2o-pimd+rpc:
 	cd h2o-pimd+rpc; $(IPI) input.xml & sleep 5; \
-        $(call run_lammps,4,in.lmp_short) \
-        $(call run_lammps,4,in.lmp_long) \
+        $(call run_lammps,4,in_short.lmp) \
+        $(call run_lammps,4,in_long.lmp) \
 	wait
 	
 h2o-pimd+sc:
@@ -102,11 +105,10 @@ h2o-pimd+sc+mts:
         $(call run_lammps,4,in.lmp) \
 	wait
 
-#TODO this example throws an error.
 h2o-pimd+sc+rpc:
 	cd h2o-pimd+sc+rpc; $(IPI) input.xml & sleep 5; \
-        $(call run_lammps,4,in.lmp_short) \
-        $(call run_lammps,4,in.lmp_long) \
+        $(call run_lammps,4,in_short.lmp) \
+        $(call run_lammps,4,in_long.lmp) \
 	wait
 	
 h2o-trpmd:
@@ -159,12 +161,6 @@ paracetamol-phonons:
         $(call run_lammps,4,in.lmp) \
 	wait
 	
-#TODO template to be removed
-example:
-	cd example_dir; $(IPI) input.xml & sleep 5; \
-        $(call run_lammps,4,in.lmp) \
-	wait
-	
 clean:
-	rm  */RESTART */EXIT */log.lammps *\#* simulation.*
+	rm  */*RESTART* */*EXIT* */log.lammps */*simulation*
 
