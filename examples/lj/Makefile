@@ -37,4 +37,4 @@ nst:
 	wait
 
 clean:
-	rm -f */lj-* */RESTART */EXIT
+	rm -f */*simulation* */*RESTART* */*EXIT*

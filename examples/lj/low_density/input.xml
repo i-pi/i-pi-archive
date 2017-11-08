@@ -1,17 +1,17 @@
-<simulation>
-   <output prefix='lj-low'>
+<simulation verbosity='high'>
+   <output prefix='simulation'>
       <properties stride='5' filename='out'>  [ step, time{picosecond}, conserved{kelvin}, temperature{kelvin}, kinetic_md{kelvin}, potential{kelvin}, pressure_md{megapascal}] </properties>
       <trajectory stride='100' filename='pos'>positions</trajectory>
       <checkpoint stride='2000'/>
    </output>
    <total_steps>100000</total_steps>
    <prng><seed>3848</seed></prng>
-   <ffsocket mode="unix" name="driver">
+   <ffsocket mode='unix' name='driver'>
       <address>low_density</address>
    </ffsocket>
    <system>
       <initialize nbeads='1'>
-         <file mode='pdb'> our_ref.pdb </file>
+         <file mode='pdb'> init.pdb </file>
          <velocities mode='thermal' units='kelvin'> 120 </velocities>
       </initialize>
       <forces><force forcefield='driver'></force></forces>
