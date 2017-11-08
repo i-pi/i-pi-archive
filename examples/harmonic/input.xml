@@ -1,17 +1,17 @@
-<simulation>
-   <output prefix='harm'>
+<simulation verbosity='high'>
+   <output prefix='simulation'>
       <properties stride='5' filename='out'>  [ step, time{picosecond}, conserved{kelvin}, temperature{kelvin}, kinetic_cv{kelvin}, potential{kelvin}, pressure_cv{megapascal}] </properties>
       <trajectory filename='pos' stride='5' format='xyz' cell_units='angstrom'> positions{angstrom} </trajectory>
       <trajectory filename='force' stride='5' format='xyz' cell_units='angstrom'> forces{piconewton} </trajectory>
    </output>
    <total_steps>1000</total_steps>
    <prng><seed>3348</seed></prng>
-   <ffsocket mode="unix" name='driver'>
+   <ffsocket mode='unix' name='driver'>
      <address>harmonic</address>
    </ffsocket>
    <system>
      <initialize nbeads='4'>
-       <file mode='pdb'> our_ref.pdb </file>
+       <file mode='pdb'> init.pdb </file>
        <velocities mode='thermal' units='kelvin'>3683.412077</velocities>
      </initialize>
      <forces><force forcefield='driver'/>
