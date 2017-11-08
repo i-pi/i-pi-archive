@@ -9,7 +9,7 @@
 &MOTION
 
   &DRIVER
-   HOST localhost
+   HOST localhost 
    PORT 22340
   &END DRIVER
 &END MOTION

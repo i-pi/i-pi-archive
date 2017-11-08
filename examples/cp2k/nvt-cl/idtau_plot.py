@@ -1,6 +1,7 @@
 from pylab import *
 
 idtdata = []
+#output is a standard output from i-pi
 for line in open("output"):
     llist = line.split()
     if llist:

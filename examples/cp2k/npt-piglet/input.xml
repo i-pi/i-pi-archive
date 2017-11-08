@@ -1,12 +1,12 @@
-<simulation verbosity="high">
-   <output prefix='nptpgl_output'>
-      <properties stride="1" flush="1">[step, time{femtosecond}, conserved, potential, kinetic_cv, pressure_cv, volume, temperature{kelvin}, kinetic_md, pressure_md ] </properties>
-      <trajectory stride="5" format="pdb" filename="xc" cell_units="angstrom"> x_centroid{angstrom} </trajectory>
-      <trajectory stride="1" format="xyz" filename="pos"> positions </trajectory>
-      <trajectory stride="1" format="xyz" filename="vel"> velocities </trajectory>
-      <trajectory stride="1" format="xyz" filename="for"> forces </trajectory>
-      <checkpoint stride="100" overwrite="true" filename="chk"/>
-      <checkpoint stride="5000" overwrite="false" filename="restart"/>
+<simulation verbosity='high'>
+   <output prefix='simulation'>
+      <properties stride='1' flush='1'>[step, time{femtosecond}, conserved, potential, kinetic_cv, pressure_cv, volume, temperature{kelvin}, kinetic_md, pressure_md ] </properties>
+      <trajectory stride='5' format='pdb' filename='xc' cell_units='angstrom'> x_centroid{angstrom} </trajectory>
+      <trajectory stride='1' format='xyz' filename='pos'> positions </trajectory>
+      <trajectory stride='1' format='xyz' filename='vel'> velocities </trajectory>
+      <trajectory stride='1' format='xyz' filename='for'> forces </trajectory>
+      <checkpoint stride='100' overwrite='true' filename='chk'/>
+      <checkpoint stride='5000' overwrite='false' filename='restart'/>
    </output>
    <total_steps>10</total_steps>
    <prng><seed>27506</seed></prng>
@@ -15,20 +15,20 @@
    </ffsocket>
    <system>
      <initialize nbeads='4'>
-       <file mode='xyz'>water_box.xyz</file>
-       <momenta mode="thermal"> 750 </momenta>
+       <file mode='xyz'>init.xyz</file>
+       <momenta mode='thermal'> 750 </momenta>
      </initialize>
      <forces>
        <force forcefield='driver'></force>
      </forces>
      <ensemble>
-       <pressure units="gigapascal"> 10. </pressure>
-       <temperature units="kelvin"> 750 </temperature>
+       <pressure units='gigapascal'> 10. </pressure>
+       <temperature units='kelvin'> 750 </temperature>
      </ensemble>
      <motion mode='dynamics'>
        <dynamics mode='npt'>
-	 <barostat mode="isotropic">
-           <tau units="femtosecond">500</tau>
+	 <barostat mode='isotropic'>
+           <tau units='femtosecond'>500</tau>
 	   <thermostat mode='gle'>
 	     <A shape='(9,9)'>
 	       [   4.394789365142e-3,    -9.404965892699e-6,     1.029487729040e-5,     4.283793353697e-5,    -1.299556728704e-4,    -4.040384595986e-4,     1.248777491566e-3,     5.050234485542e-3,    -7.877538130913e-4,    -4.665727717214e-6,     7.206784041251e-6,    -1.977827298894e-6,     6.564190343224e-6,    -1.485934133734e-5,     1.401778939826e-5,     2.998701864855e-6,    -6.741944715969e-8,     2.434115379869e-6,     6.920146859825e-6,     1.977827298894e-6,     6.105690119574e-6,     5.003499464315e-6,    -1.043365341628e-5,     1.974265400229e-5,     2.144781562420e-5,    -8.819941233367e-6,    -8.985734790539e-5,     2.410573790823e-5,    -6.564190343224e-6,    -5.003499464315e-6,     2.850444650536e-5,     4.060525620730e-7,     1.882252309753e-5,    -2.142981673313e-6,     5.164212829812e-6,     1.553652954281e-4,    -1.468973632191e-4,     1.485934133734e-5,     1.043365341628e-5,    -4.060525620730e-7,     1.751990258148e-4,     6.424146814382e-6,    -4.425700675158e-5,     1.930166548812e-5,     1.192011246516e-5,    -4.579401279391e-4,    -1.401778939826e-5,    -1.974265400229e-5,    -1.882252309753e-5,    -6.424146814382e-6,     6.350379508204e-4,    -2.774253060538e-5,     3.506190022493e-5,    -4.154627185828e-5,     1.031268322068e-3,    -2.998701864855e-6,    -2.144781562420e-5,     2.142981673313e-6,     4.425700675158e-5,     2.774253060538e-5,     2.816041086350e-3,    -2.056480186557e-5,     7.835707363032e-4,     5.419265364178e-3,     6.741944715969e-8,     8.819941233367e-6,    -5.164212829812e-6,    -1.930166548812e-5,    -3.506190022493e-5,     2.056480186557e-5,     7.925266006749e-3,    -3.653106075890e-4,    -1.110604114895e-3,    -2.434115379869e-6,     8.985734790539e-5,    -1.553652954281e-4,    -1.192011246516e-5,     4.154627185828e-5,    -7.835707363032e-4,     3.653106075890e-4,     5.828037641207e-2]
@@ -53,7 +53,7 @@
 	     ]
 	   </C>
 	 </thermostat>
-	 <timestep units="femtosecond"> 0.5 </timestep>
+	 <timestep units='femtosecond'> 0.5 </timestep>
        </dynamics>
       <fixcom>True</fixcom>
     </motion>

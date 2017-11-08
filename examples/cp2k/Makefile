@@ -19,29 +19,30 @@ endef
 -include make.in
 
 npt-classical:
-	cd npt-classical; $(IPI) nptcls_ipi.xml & sleep 5; \
-	$(call run_cp2k,1,nptcls_cp2k.in) \
+	cd npt-classical; $(IPI) input.xml & sleep 5; \
+	$(call run_cp2k,1,in.cp2k) \
 	wait
 
 nvt-classical:
-	cd nvt-classical; $(IPI) nvtcls_ipi.xml & sleep 5; \
-	$(call run_cp2k,1,nvtcls_cp2k.in) \
+	cd nvt-classical; $(IPI) input.xml & sleep 5; \
+	$(call run_cp2k,1,in.cp2k) \
 	wait
 
 npt-piglet:
-	cd npt-piglet; $(IPI) nptpgl_ipi.xml & sleep 10; \
-	$(call run_cp2k,4,nptpgl_cp2k.in) \
+	cd npt-piglet; $(IPI) input.xml & sleep 10; \
+	$(call run_cp2k,4,in.cp2k) \
 	wait
 
 nvt-piglet:
-	cd nvt-piglet; $(IPI) nvtpgl_ipi.xml & sleep 10; \
-	$(call run_cp2k,4,nvtpgl_cp2k.in) \
+	cd nvt-piglet; $(IPI) input.xml & sleep 10; \
+	$(call run_cp2k,4,in.cp2k) \
 	wait
 
+#standard output is needed for postprocessing, and saved as "output"
 nvt-cl:
-	cd nvt-cl; $(IPI) nvtcl_ipi.xml > output & sleep 5; \
-	$(call run_cp2k,1,nvtcl_cp2k.in) \
+	cd nvt-cl; $(IPI) input.xml 2>&1 | tee output & sleep 5; \
+	$(call run_cp2k,1,in.cp2k) \
 	wait
 
 clean:
-	rm -rf */*_output.* */*.log */run_* */RESTART */EXIT
+	rm -rf */*simulation* */*output* */*.log* */*run_* */*RESTART* */*EXIT*
