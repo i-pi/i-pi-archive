@@ -1,23 +1,23 @@
-<simulation>
-   <output prefix='ph2'>
+<simulation verbosity='high'>
+   <output prefix='simulation'>
       <properties filename='out'>
          [ step, time{picosecond}, conserved{kelvin}, temperature{kelvin}, kinetic_cv{kelvin}, potential{kelvin}, pressure_cv{megapascal}, volume]
       </properties>
       <trajectory format='pdb' filename='pos' stride='100' cell_units='angstrom'>positions{angstrom}</trajectory>
    </output>
    <total_steps>20000</total_steps>
-   <prng><seed>31418</seed></prng>
-   <ffsocket name="sgdriver" mode="unix">
-      <address>T_14K</address>
+   <prng><seed>31415</seed></prng>
+   <ffsocket name='sgdriver' mode='unix'>
+      <address> mht-25K </address>
    </ffsocket>
    <system>
-     <initialize nbeads='32'>
-        <file mode='pdb'> our_ref.pdb </file>
-        <velocities mode='thermal' units='kelvin'> 28 </velocities>
+     <initialize nbeads='16'>
+        <file mode='pdb'> init.pdb </file>
+        <velocities mode='thermal' units='kelvin'> 50 </velocities>
      </initialize>
      <forces> <force> sgdriver </force> </forces>
      <ensemble mode='npt'>
-        <barostat mode="isotropic">
+        <barostat mode='isotropic'>
           <tau units='femtosecond'> 100 </tau>
           <thermostat mode='langevin'>
              <tau units='femtosecond'> 100 </tau>
@@ -27,7 +27,7 @@
            <tau units='femtosecond'> 10 </tau>
         </thermostat>
         <timestep units='femtosecond'>1</timestep>
-        <temperature units='kelvin'> 14 </temperature>
+        <temperature units='kelvin'> 25 </temperature>
         <pressure>0</pressure>
      </ensemble>
   </system>

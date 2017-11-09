@@ -7,13 +7,13 @@
    <prng>
       <seed>YYY00XXX0</seed>
    </prng>
-   <ffsocket name="sgdriver" mode='unix'>
+   <ffsocket name='sgdriver' mode='unix'>
       <latency>5.00000000e-04</latency>
       <address>run-YYY-XXX</address>
    </ffsocket>
    <system>
       <initialize nbeads='24'>
-         <file mode="chk"> run_YYY/RESTART </file>
+         <file mode='chk'> run_YYY/RESTART </file>
          <velocities mode='thermal' units='kelvin'> 25 </velocities>
          <cell>
        [   3.37260000e+01,   5.71316102e-15,   5.71316102e-15,   0.00000000e+00,   3.37260000e+01, 

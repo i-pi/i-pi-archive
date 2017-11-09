@@ -1,5 +1,5 @@
-<simulation>
-   <output prefix='ph2'>
+<simulation verbosity='high'>
+   <output prefix='simulation'>
       <properties stride='5' filename='out'>  [ step, time{picosecond}, conserved{kelvin}, temperature{kelvin}, kinetic_cv{kelvin}, potential{kelvin}, pressure_cv{megapascal}] </properties>
       <trajectory stride='100' filename='pos'>positions</trajectory>
       <trajectory stride='10' filename='xtra'>extras</trajectory>
@@ -7,13 +7,13 @@
    </output>
    <total_steps>100000</total_steps>
    <prng><seed>31415</seed></prng>
-   <ffsocket name="sgdriver" mode="unix">
-      <address>ph2_multi</address>
+   <ffsocket name='sgdriver' mode='unix'>
+      <address>multi</address>
    </ffsocket>
    <system>
       <initialize nbeads='24'>
-         <file mode='pdb'> our_ref.pdb </file>
-         <velocities mode="thermal" units='kelvin'> 50 </velocities>
+         <file mode='pdb'> init.pdb </file>
+         <velocities mode='thermal' units='kelvin'> 50 </velocities>
       </initialize>   
       <forces><force> sgdriver </force></forces>
       <ensemble mode='nvt'>
