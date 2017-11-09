@@ -37,4 +37,4 @@ nst:
 	wait
 
 clean:
-	rm -f */*simulation* */*RESTART* */*EXIT*
+	rm -f */*simulation* */*RESTART* */EXIT

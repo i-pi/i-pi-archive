@@ -45,4 +45,4 @@ nvt-cl:
 	wait
 
 clean:
-	rm -rf */*simulation* */*output* */*.log* */*run_* */*RESTART* */*EXIT*
+	rm -rf */*simulation* */*output* */*.log* */*run_* */*RESTART* */EXIT
