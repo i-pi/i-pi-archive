@@ -20,4 +20,4 @@ all:
 	wait
 
 clean:
-	rm -f \#* qtip4pf.* RESTART EXIT /tmp/ipi_driver *.log *.dat
+	rm -f *simulation* *RESTART* EXIT /tmp/ipi_driver *.log *.dat
