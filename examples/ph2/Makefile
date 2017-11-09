@@ -2,8 +2,8 @@
 # i-PI Copyright (C) 2014-2015 i-PI developers
 # See the "licenses" directory for full license information.
 
-.PHONY: all clean mht-25K mht-20K mht-17K mht-14K nvt multi rpmd 
-all: mht-25K mht-20K mht-17K mht-14K nvt multi rpmd 
+.PHONY: all clean mht-25K mht-20K mht-17K mht-14K nvt multi rpmd nst-cubic
+all: mht-25K mht-20K mht-17K mht-14K nvt multi rpmd nst-cubic
 
 driver:=i-pi-driver
 IPI:=i-pi
@@ -42,6 +42,11 @@ mht-17K:
 mht-14K:
 	cd mht-14K; $(IPI) input.xml & sleep 5; \
 	$(call run_driver,4,mht-14K); \
+	wait
+	
+nst-cubic:
+	cd nst-cubic; $(IPI) input.xml & sleep 5; \
+	$(call run_driver,4,nst-cubic); \
 	wait
 
 # this rule creates a run_% subdirectory of rpmd, and executes 16 rpmd runs in it,
