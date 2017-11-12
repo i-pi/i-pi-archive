@@ -58,8 +58,9 @@ class Dynamics(Motion):
         """
 
         super(Dynamics, self).__init__(fixcom=fixcom, fixatoms=fixatoms)
+        dself = dd(self)
 
-        dset(self, "dt", depend_value(name='dt', value=timestep))
+        dself.dt = depend_value(name='dt', value=timestep)
         if thermostat is None:
             self.thermostat = Thermostat()
         else:
@@ -121,6 +122,7 @@ class Dynamics(Motion):
         """
 
         super(Dynamics, self).bind(ens, beads, nm, cell, bforce, prng)
+        dself = dd(self)
 
         # Checks if the number of mts levels is equal to the dimensionality of the mts weights.
         if (len(self.nmts) != self.forces.nmtslevels):
@@ -146,7 +148,7 @@ class Dynamics(Motion):
         # the free ring polymer propagator is called in the inner loop, so propagation time should be redefined accordingly.
         self.inmts = 1
         for mk in self.nmts: self.inmts *= mk
-        dset(self, "deltat", depend_value(name="deltat", func=(lambda: self.dt / self.inmts), dependencies=[dget(self, "dt")]))
+        dself.deltat = depend_value(name="deltat", func=(lambda : self.dt/self.inmts) , dependencies=[dself.dt])
         deppipe(self, "deltat", self.nm, "dt")
 
         # depending on the kind, the thermostat might work in the normal mode or the bead representation.
@@ -204,7 +206,8 @@ class DummyIntegrator(dobject):
         self.barostat = motion.barostat
         self.fixcom = motion.fixcom
         self.fixatoms = motion.fixatoms
-        dset(self, "dt", dget(motion, "dt"))
+        dself = dd(self)
+        dself.dt = dd(motion).dt
         if motion.enstype == "mts": self.nmts = motion.nmts
         # mts on sc force in suzuki-chin
         if motion.enstype == "sc":

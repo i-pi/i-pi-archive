@@ -47,26 +47,28 @@ class Ensemble(dobject):
             fixcom: An optional boolean which decides whether the centre of mass
                 motion will be constrained or not. Defaults to False.
         """
+        dself = dd(self)
 
-        dset(self, "temp", depend_value(name='temp'))
+        dself.temp = depend_value(name='temp')
         if temp is not None:
             self.temp = temp
         else:
             self.temp = -1.0
 
-        dset(self, "stressext", depend_array(name='stressext', value=np.zeros((3, 3), float)))
+        dself.stressext = depend_array(name='stressext',
+                                       value=np.zeros((3,3), float))
         if stressext is not None:
             self.stressext = np.reshape(np.asarray(stressext), (3, 3))
         else:
             self.stressext = -1.0
 
-        dset(self, "pext", depend_value(name='pext'))
+        dself.pext = depend_value(name='pext')
         if pext is not None:
             self.pext = pext
         else:
             self.pext = -1.0
 
-        dset(self, "eens", depend_value(name='eens'))
+        dself.eens = depend_value(name='eens')
         if eens is not None:
             self.eens = eens
         else:
@@ -76,12 +78,13 @@ class Ensemble(dobject):
         return Ensemble(self.eens, 0.0, self.temp, self.pext, depstrip(self.stressext).copy())
 
     def bind(self, beads, nm, cell, bforce, bbias, elist=[]):
+        dself = dd(self)
         self.beads = beads
         self.cell = cell
         self.forces = bforce
         self.bias = bbias
         self.nm = nm
-        dset(self, "econs", depend_value(name='econs', func=self.get_econs))
+        dself.econs = depend_value(name='econs', func=self.get_econs)
 
         # dependencies of the conserved quantity
         dget(self, "econs").add_dependency(dget(self.nm, "kin"))
