@@ -5,9 +5,7 @@
 # i-PI Copyright (C) 2014-2015 i-PI developers
 # See the "licenses" directory for full license information.
 
-import numpy as np
-
-from ipi.utils.depend import depend_value, dset, dobject, dget, dd
+from ipi.utils.depend import depend_value, dd
 from ipi.engine.motion import Motion
 
 class MultiMotion(Motion):

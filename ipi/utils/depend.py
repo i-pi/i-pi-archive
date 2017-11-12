@@ -33,7 +33,7 @@ from ipi.utils.messages import verbosity, warning
 
 
 __all__ = ['depend_base', 'depend_value', 'depend_array', 'synchronizer',
-           'dobject', 'dd', 'dget', 'dset', 'dpipe', 'dcopy', 'depstrip', 'depcopy', 'deppipe', 'depraise']
+           'dobject', 'dd', 'dget', 'dpipe', 'dcopy', 'depstrip', 'depcopy', 'deppipe', 'depraise']
 
 
 class synchronizer(object):
@@ -661,28 +661,6 @@ def dget(obj, member):
     """
 
     return obj.__dict__[member]
-
-
-def dset(obj, member, value, name=None):
-    """Takes an object and sets one of its attributes.
-
-    Necessary for editing any depend object, and should be used for
-    initialising them as well, as often initialization occurs more than once,
-    with the second time effectively being an edit.
-
-    Args:
-        obj: A user defined class.
-        member: A string giving the name of an attribute of obj.
-        value: The new value of member.
-        name: New name of member.
-
-    Exceptions:
-        KeyError: If member is not an attribute of obj.
-    """
-
-    obj.__dict__[member] = value
-    if not name is None:
-        obj.__dict__[member]._name = name
 
 
 def depstrip(da):

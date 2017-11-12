@@ -47,6 +47,7 @@ class ParaTemp(dobject):
          tlist: List of temperatures to be copied in temp_list
          stride: Exchange stride, to be copied in stride
       """
+      dself = dd(self)
 
       self.stride = stride
       if tlist is None:
@@ -57,11 +58,11 @@ class ParaTemp(dobject):
       if len(ilist)!= len(tlist):
          raise ValueError("Temperature list and index list have mismatching sizes.")
 
-      dset(self, "temp_index",depend_array(name="temp_index", value=np.asarray(ilist, int).copy()) )
+      dself.temp_index = depend_array(name="temp_index", value=np.asarray(ilist, int).copy())
       self.temp_list = np.asarray(tlist, float).copy()
 
-      dset(self,"system_temp",depend_array(name="system_temp", value=np.asarray(tlist).copy(), func=self.get_stemp,
-                  dependencies=[dget(self,"temp_index")]))
+      dself.system_temp = depend_array(name="system_temp", value=np.asarray(tlist).copy(), func=self.get_stemp,
+                  dependencies=[dself.temp_index])
 
       self.parafile = None
 

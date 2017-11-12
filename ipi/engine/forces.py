@@ -69,9 +69,10 @@ class ForceBead(dobject):
 
    def __init__(self):
       """Initialises ForceBead."""
+      dself = dd(self)
 
       # ufvx is a list [ u, f, vir, extra ]  which stores the results of the force calculation
-      dset(self,"ufvx", depend_value(name="ufvx", func=self.get_all))
+      dself.ufvx = depend_value(name="ufvx", func=self.get_all)
       self._threadlock = threading.Lock()
       self.request = None
       self._getallcount = 0
@@ -99,34 +100,32 @@ class ForceBead(dobject):
       self.atoms = atoms
       self.cell = cell
       self.ff = ff
+      dself = dd(self)
 
       # ufv depends on the atomic positions and on the cell
       dget(self,"ufvx").add_dependency(dget(self.atoms,"q"))
       dget(self,"ufvx").add_dependency(dget(self.cell,"h"))
 
       # potential and virial are to be extracted very simply from ufv
-      dset(self,"pot",
-         depend_value(name="pot", func=self.get_pot,
-            dependencies=[dget(self,"ufvx")]))
+      dself.pot = depend_value(name="pot", func=self.get_pot,
+                               dependencies=[dself.ufvx])
 
-      dset(self,"vir",
-         depend_array(name="vir", value=np.zeros((3,3),float),func=self.get_vir,
-            dependencies=[dget(self,"ufvx")]))
+      dself.vir = depend_array(name="vir", value=np.zeros((3,3),float),
+                               func=self.get_vir,
+                               dependencies=[dself.ufvx])
 
       # NB: the force requires a bit more work, to define shortcuts to xyz
       # slices without calculating the force at this point.
       fbase = np.zeros(atoms.natoms*3, float)
-      dset(self,"f",
-         depend_array(name="f", value=fbase, func=self.get_f,
-             dependencies=[dget(self,"ufvx")]))
+      dself.f = depend_array(name="f", value=fbase, func=self.get_f,
+                             dependencies=[dself.ufvx])
 
-      dset(self,"extra",
-         depend_value(name="extra", func=self.get_extra,
-            dependencies=[dget(self,"ufvx")]))
+      dself.extra = depend_value(name="extra", func=self.get_extra,
+                                 dependencies=[dself.ufvx])
 
-      dset(self,"fx", depend_array(name="fx", value=fbase[0:3*atoms.natoms:3]))
-      dset(self,"fy", depend_array(name="fy", value=fbase[1:3*atoms.natoms:3]))
-      dset(self,"fz", depend_array(name="fz", value=fbase[2:3*atoms.natoms:3]))
+      dself.fx = depend_array(name="fx", value=fbase[0:3*atoms.natoms:3])
+      dself.fy = depend_array(name="fy", value=fbase[1:3*atoms.natoms:3])
+      dself.fz = depend_array(name="fz", value=fbase[2:3*atoms.natoms:3])
       depcopy(self,"f", self,"fx")
       depcopy(self,"f", self,"fy")
       depcopy(self,"f", self,"fz")
@@ -321,6 +320,7 @@ class ForceComponent(dobject):
          fflist: A list of forcefield objects to use to calculate the potential,
             forces and virial for each replica.
       """
+      dself = dd(self)
 
       # stores a copy of the number of atoms and of beads
       self.natoms = beads.natoms
@@ -341,32 +341,31 @@ class ForceComponent(dobject):
          self._forces.append(new_force)
 
       # f is a big array which assembles the forces on individual beads
-      dset(self,"f",
-         depend_array(name="f",value=np.zeros((self.nbeads,3*self.natoms)),
-            func=self.f_gather,
-               dependencies=[dget(self._forces[b],"f") for b in range(self.nbeads)]))
+      dself.f = depend_array(name="f",
+                             value=np.zeros((self.nbeads,3*self.natoms)),
+                             func=self.f_gather,
+                             dependencies=[dd(self._forces[b]).f for b in
+                                range(self.nbeads)])
 
       # collection of pots and virs from individual beads
-      dset(self,"pots",
-         depend_array(name="pots", value=np.zeros(self.nbeads,float),
+      dself.pots = depend_array(name="pots", value=np.zeros(self.nbeads,float),
             func=self.pot_gather,
-               dependencies=[dget(self._forces[b],"pot") for b in range(self.nbeads)]))
-      dset(self,"virs",
-         depend_array(name="virs", value=np.zeros((self.nbeads,3,3),float),
+               dependencies=[dd(self._forces[b]).pot for b in
+                  range(self.nbeads)])
+      dself.virs = depend_array(name="virs", value=np.zeros((self.nbeads,3,3),float),
             func=self.vir_gather,
-               dependencies=[dget(self._forces[b],"vir") for b in range(self.nbeads)]))
-      dset(self,"extras",
-         depend_value(name="extras", value=np.zeros(self.nbeads,float),
+               dependencies=[dd(self._forces[b]).vir for b in
+                  range(self.nbeads)])
+      dself.extras = depend_value(name="extras", value=np.zeros(self.nbeads,float),
             func=self.extra_gather,
-               dependencies=[dget(self._forces[b],"extra") for b in range(self.nbeads)]))
+               dependencies=[dd(self._forces[b]).extra for b in
+                  range(self.nbeads)])
 
       # total potential and total virial
-      dset(self,"pot",
-         depend_value(name="pot", func=(lambda: self.pots.sum()),
-            dependencies=[dget(self,"pots")]))
-      dset(self,"vir",
-         depend_array(name="vir", func=self.get_vir, value=np.zeros((3,3)),
-            dependencies=[dget(self,"virs")]))
+      dself.pot = depend_value(name="pot", func=(lambda: self.pots.sum()),
+            dependencies=[dself.pots])
+      dself.vir = depend_array(name="vir", func=self.get_vir, value=np.zeros((3,3)),
+            dependencies=[dself.virs])
 
    def queue(self):
       """Submits all the required force calculations to the interface."""
@@ -504,6 +503,8 @@ class Forces(dobject):
       self.mbeads = []
       self.mrpc = []
 
+      dself = dd(self)
+
       # a "function factory" to generate functions to automatically update
       #contracted paths
       def make_rpc(rpc, beads):
@@ -541,75 +542,70 @@ class Forces(dobject):
          self.mrpc.append(newrpc)
 
       #now must expose an interface that gives overall forces
-      dset(self,"f",
-         depend_array(name="f",value=np.zeros((self.nbeads,3*self.natoms)),
+      dself.f = depend_array(name="f",value=np.zeros((self.nbeads,3*self.natoms)),
             func=self.f_combine,
-               dependencies=[dget(ff, "f") for ff in self.mforces] ) )
+               dependencies=[dd(ff).f for ff in self.mforces] )
 
       # collection of pots and virs from individual ff objects
-      dset(self,"pots",
-         depend_array(name="pots", value=np.zeros(self.nbeads,float),
+      dself.pots = depend_array(name="pots", value=np.zeros(self.nbeads,float),
             func=self.pot_combine,
-               dependencies=[dget(ff, "pots") for ff in self.mforces]) )
+               dependencies=[dd(ff).pots for ff in self.mforces])
 
       # must take care of the virials!
-      dset(self,"virs",
-         depend_array(name="virs", value=np.zeros((self.nbeads,3,3),float),
+      dself.virs = depend_array(name="virs", value=np.zeros((self.nbeads,3,3),float),
             func=self.vir_combine,
-               dependencies=[dget(ff, "virs") for ff in self.mforces]) )
+               dependencies=[dd(ff).virs for ff in self.mforces])
 
-      dset(self,"extras",
-         depend_value(name="extras", value=np.zeros(self.nbeads,float),
+      dself.extras = depend_value(name="extras", value=np.zeros(self.nbeads,float),
             func=self.extra_combine,
-               dependencies=[dget(ff, "extras") for ff in self.mforces]))
+               dependencies=[dd(ff).extras for ff in self.mforces])
 
       # total potential and total virial
-      dset(self,"pot",
-         depend_value(name="pot", func=(lambda: self.pots.sum()),
-            dependencies=[dget(self,"pots")]))
+      dself.pot = depend_value(name="pot", func=(lambda: self.pots.sum()),
+            dependencies=[dself.pots])
 
-      dset(self,"vir",
-         depend_array(name="vir", func=self.get_vir, value=np.zeros((3,3)),
-            dependencies=[dget(self,"virs")]))
-            
-      # SC forces and potential  
-      dset(self, "alpha", depend_value(name="alpha", value=0.0))
+      dself.vir = depend_array(name="vir", func=self.get_vir, value=np.zeros((3,3)),
+            dependencies=[dself.virs])
 
-      # The number of MTS levels 
-      dset(self, "nmtslevels", depend_value(name="nmtslevels", value=0, func=self.get_nmtslevels))
-      
+      # SC forces and potential
+      dself.alpha = depend_value(name="alpha", value=0.0)
+
+      # The number of MTS levels
+      dself.nmtslevels = depend_value(name="nmtslevels", value=0, func=self.get_nmtslevels)
+
       # this will be piped from normalmodes
-      dset(self, "omegan2", depend_value(name="omegan2", value=0))
-            
-      dset(self, "potssc", depend_array(name="potssc",value=np.zeros(self.nbeads,float),
-            dependencies=[dget(self.beads, "m"), dget(self, "f"), dget(self,"pots"), dget(self,"alpha"),  dget(self,"omegan2")],
-            func=self.get_potssc ) )
-                                         
-      dset(self, "coeffsc_part_1", depend_array(name="coeffsc_part_1",value=np.zeros((self.nbeads,1), float),
-            func=self.get_coeffsc_part_1))
+      dself.omegan2 = depend_value(name="omegan2", value=0)
 
-      dset(self, "coeffsc_part_2", depend_array(name="coeffsc_part_2",value=np.zeros((self.nbeads,1) , float),
-            dependencies=[dget(self,"alpha"),  dget(self,"omegan2")], func=self.get_coeffsc_part_2))
+      dself.potssc = depend_array(name="potssc",value=np.zeros(self.nbeads,float),
+            dependencies=[dd(self.beads).m, dself.f, dself.pots, dself.alpha,
+                          dself.omegan2],
+            func=self.get_potssc )
 
-      dset(self, "f_4th_order", depend_array(name="f_4th_order",value=np.zeros((self.nbeads,3*self.natoms),float),
-            dependencies=[dget(self.beads, "m"), dget(self, "f"), dget(self,"pots") ],
-            func=self.f_4th_order_combine))
+      dself.coeffsc_part_1 = depend_array(name="coeffsc_part_1",value=np.zeros((self.nbeads,1), float),
+                                          func=self.get_coeffsc_part_1)
 
-      dset(self, "fsc_part_1", depend_array(name="fsc_part_1",value=np.zeros((self.nbeads,3*self.natoms),float),
-            dependencies=[dget(self, "coeffsc_part_1"), dget(self,"f")],
-            func=self.get_fsc_part_1))
+      dself.coeffsc_part_2 = depend_array(name="coeffsc_part_2",value=np.zeros((self.nbeads,1) , float),
+            dependencies=[dself.alpha,  dself.omegan2], func=self.get_coeffsc_part_2)
 
-      dset(self, "fsc_part_2", depend_array(name="fsc_part_2",value=np.zeros((self.nbeads,3*self.natoms),float),
-            dependencies=[dget(self, "coeffsc_part_2"), dget(self,"f_4th_order")],
-            func=self.get_fsc_part_2))
+      dself.f_4th_order = depend_array(name="f_4th_order",value=np.zeros((self.nbeads,3*self.natoms),float),
+            dependencies=[dd(self.beads).m, dself.f, dself.pots ],
+            func=self.f_4th_order_combine)
 
-      dset(self, "fsc", depend_array(name="fsc",value=np.zeros((self.nbeads,3*self.natoms),float),
-            dependencies=[dget(self, "fsc_part_1"), dget(self,"fsc_part_2")],
-            func=self.get_fsc))
+      dself.fsc_part_1 = depend_array(name="fsc_part_1",value=np.zeros((self.nbeads,3*self.natoms),float),
+            dependencies=[dself.coeffsc_part_1, dself.f],
+            func=self.get_fsc_part_1)
 
-      dset(self, "potsc", value=depend_value(name="potsc",
-            dependencies=[dget(self,"potssc")],
-            func=(lambda: self.potssc.sum()) ) )       
+      dself.fsc_part_2 = depend_array(name="fsc_part_2",value=np.zeros((self.nbeads,3*self.natoms),float),
+            dependencies=[dself.coeffsc_part_2, dself.f_4th_order],
+            func=self.get_fsc_part_2)
+
+      dself. fsc = depend_array(name="fsc",value=np.zeros((self.nbeads,3*self.natoms),float),
+            dependencies=[dself.fsc_part_1, dself.fsc_part_2],
+            func=self.get_fsc)
+
+      dself.potsc = depend_value(name="potsc",
+            dependencies=[dself.potssc],
+            func=(lambda: self.potssc.sum()) )
 
 
    def copy(self, beads=None, cell = None):
