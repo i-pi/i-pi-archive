@@ -17,8 +17,9 @@
          <cell mode='manual'> [ 56, 28, 28, 0, 48.497, 16.1658, 0,0, 45.724] </cell>
          <velocities mode='thermal' units='kelvin'> 20 </velocities>
       </initialize>
-      <forces><force> lj </force></forces>
-      <ensemble mode='nst'>
+      <forces><force forcefield="lj"> </force></forces>
+      <motion mode='dynamics'>
+      <dynamics mode='nst'>
          <barostat mode="anisotropic">
             <tau units='femtosecond'> 100 </tau>
             <thermostat mode='langevin'>
@@ -30,10 +31,11 @@
             <tau units='femtosecond'> 25 </tau>
          </thermostat>
          <timestep units='femtosecond'> 1 </timestep>
+       </dynamics>
+      </motion>
+      <ensemble>
          <temperature units='kelvin'> 20 </temperature>
          <stress units='megapascal'>  [75.6, 0.0, 0.0, 0.0, 75.6, 0.0, 0.0, 0.0, 75.6] </stress>
-  <!--        <pressure units='megapascal'> 1 </pressure>  -->
-         <fixcom>True</fixcom>
       </ensemble>
    </system>
 </simulation>

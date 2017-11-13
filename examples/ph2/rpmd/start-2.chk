@@ -3318,21 +3318,5 @@
       <forces>
          <force>sgdriver</force>
       </forces>
-      <ensemble mode='nvt'>
-         <thermostat mode='multi'>
-            <ethermo> -6.54656197e-01</ethermo>
-            <thermostat mode='pile_l'>
-               <tau>  1.03353433e+03</tau>
-               <ethermo> -8.81966500e+00</ethermo>
-            </thermostat>
-            <thermostat mode='svr'>
-               <tau>  2.06706865e+02</tau>
-               <ethermo>  8.16500880e+00</ethermo>
-            </thermostat>
-         </thermostat>
-         <eens>  9.08717731e-01</eens>
-         <timestep>  4.13413730e+01</timestep>
-         <temperature>  7.91703800e-05</temperature>
-      </ensemble>
    </system>
 </simulation>

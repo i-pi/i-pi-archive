@@ -1,5 +1,5 @@
 <simulation verbosity="high">
-   <output prefix='128h2o-npt'>
+   <output prefix='simulation'>
       <properties stride='1' filename='out' flush="1" >  [ step, time{picosecond}, conserved, temperature{kelvin}, kinetic_cv, potential, kinetic_cv(H), kinetic_cv(O), pressure_cv{megapascal}, volume] </properties>
       <trajectory stride='1' filename='pos' flush="1">positions{angstrom}</trajectory>
       <trajectory stride='1' filename='for' flush="1">forces</trajectory>
@@ -12,8 +12,7 @@
    </ffsocket>
    <system>
    <initialize nbeads='6'>
-      <file mode='xyz' units='angstrom'> start.xyz  </file>
-      <cell mode='abc' units="angstrom"> [ 15.736, 15.736, 15.736 ] </cell>
+      <file mode='xyz'> init.xyz  </file>
       <velocities mode='thermal' units='kelvin'> 300 </velocities>
    </initialize>
    <forces><force forcefield='tbe-i-pi'> </force></forces>
