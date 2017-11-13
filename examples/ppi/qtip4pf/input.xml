@@ -12,7 +12,7 @@ forces{piconewton} </trajectory>
     <total_steps>10000</total_steps>
     <prng><seed>32342</seed></prng>
     <ffsocket name='qtip4pf' mode='unix' pbc='false'>
-        <address>driver</address>
+        <address>qtip4pf</address>
     </ffsocket>
     <system>
         <initialize nbeads='10'>
