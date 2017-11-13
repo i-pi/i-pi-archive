@@ -1,5 +1,5 @@
-<simulation>
-   <output prefix='lj-mid'>
+<simulation verbosity='high'>
+   <output prefix='simulation'>
       <properties stride='5' filename='out'>  [ step, time{picosecond}, conserved{kelvin}, temperature{kelvin}, kinetic_md{kelvin}, potential{kelvin}, pressure_md{megapascal}] </properties>
       <trajectory stride='100' filename='pos'>positions</trajectory>
       <checkpoint stride='2000'/>
@@ -11,7 +11,7 @@
    </ffsocket>
    <system>
       <initialize nbeads='1'>
-         <file mode='pdb'> our_ref.pdb </file>
+         <file mode='pdb'> init.pdb </file>
          <velocities mode='thermal' units='kelvin'> 80 </velocities>
       </initialize>
       <forces><force forcefield='driver'></force></forces>

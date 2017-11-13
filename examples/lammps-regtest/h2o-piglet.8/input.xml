@@ -3,20 +3,20 @@ DEPENDENCIES  water_298K.pdb data.water in.water
 COMMAND(8) lmp_serial -i in.water
 ENDREGTEST -->
 
-<simulation verbosity="high">
+<simulation verbosity='high'>
   <output prefix='gle_lammps'>
     <properties stride='1' filename='out'>  [ step, time{picosecond}, conserved{kelvin}, temperature{kelvin}, kinetic_cv{kelvin}, potential{kelvin}, pressure_cv{megapascal}] </properties>
     <trajectory filename='pos' stride='20'> positions </trajectory>
   </output>
   <total_steps>41</total_steps>
   <prng><seed>32342</seed></prng>
-  <ffsocket name="lmpserial" mode="unix">
+  <ffsocket name='lmpserial' mode='unix'>
     <address>piglet_8</address>
   </ffsocket>
   <system>
     <initialize nbeads='8'>
       <file mode='pdb'> water_298K.pdb </file>
-      <velocities mode="thermal" units='kelvin'> 298 </velocities>
+      <velocities mode='thermal' units='kelvin'> 298 </velocities>
     </initialize>
     <forces>
       <force forcefield='lmpserial'> lmpserial </force>

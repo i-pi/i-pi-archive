@@ -1,22 +1,22 @@
-<simulation mode="static" verbosity="medium">
-   <output prefix='water_CG'>
+<simulation mode='static' verbosity='high'>
+   <output prefix='simulation_CG'>
       <properties stride='1' filename='out'>  [ step, time{picosecond}, conserved{electronvolt}, temperature{kelvin}, kinetic_cv{electronvolt}, potential{electronvolt}, pressure_cv{megapascal}] </properties>
       <trajectory filename='pos' stride='20'> positions{angstrom} </trajectory>
    </output>
    <total_steps> 5000 </total_steps>
    <prng> <seed> 32342 </seed> </prng>
-   <ffsocket name="qtip4pf" mode="unix" pbc="false">
+   <ffsocket name='qtip4pf' mode='unix' pbc='false'>
       <address> driver </address>
    </ffsocket>
    <system>
    <initialize nbeads='1'> 
-      <file mode='pdb'> water_298K.pdb </file>
+      <file mode='pdb'> init.pdb </file>
    </initialize>
    <forces>
    <force forcefield='qtip4pf'> </force>
    </forces>
    <motion mode='minimize'>
-      <optimizer mode="cg">
+      <optimizer mode='cg'>
          <ls_options> 
             <step> 1.0e-2 </step>
 	    <tolerance> 1.0e-5 </tolerance>
