@@ -12,7 +12,7 @@
   </ffsocket>
   <system>
     <initialize nbeads='4'>
-      <file mode='xyz'> start.xyz  </file>
+      <file mode='xyz'> init.xyz  </file>
       <velocities mode='thermal' units='kelvin'> 300 </velocities>
     </initialize>
     <forces><force forcefield='libtbe'> </force></forces>
