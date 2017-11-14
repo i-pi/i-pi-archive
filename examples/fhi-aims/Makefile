@@ -28,4 +28,4 @@ h2o-npt:
 	wait	
 
 clean:
-	rm -rf */*simulation* */*.log */run_* */RESTART */EXIT
+	rm -rf */*simulation* */*.log */run_* */*RESTART* */EXIT
