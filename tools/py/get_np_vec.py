@@ -101,7 +101,7 @@ def get_np(qfile, ffile, prefix, bsize, P, mamu, Tkelv, s, ns, cut, der, skip):
 
     #set the default parameters for the grid in case they are not given
     if(s == 0): s = delta.max() * 5.
-    if(ns == 0): ns = int(2 * s * np.sqrt(T * P * m) * 4 + 20.0)
+    if(ns == 0): ns = int(2 * s * np.sqrt(T * P * m) * 1 + 20.0)
     if(ns % 2 == 0): ns += 1
 
     dq = np.zeros((bsize,3) , float)

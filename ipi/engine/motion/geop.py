@@ -223,10 +223,10 @@ class DummyOptimizer(dobject):
             raise ValueError("The position tolerance is too small for any typical calculation. "
                              "We stop here. Comment this line and continue only if you know what you are doing")
         if self.tolerances["force"] < 1e-7:
-            raise ValueError("The position tolerance is too small for any typical calculation. "
+            raise ValueError("The force tolerance is too small for any typical calculation. "
                              "We stop here. Comment this line and continue only if you know what you are doing")
         if self.tolerances["energy"] < 1e-10:
-            raise ValueError("The position tolerance is too small for any typical calculation. "
+            raise ValueError("The energy tolerance is too small for any typical calculation. "
                              "We stop here. Comment this line and continue only if you know what you are doing")
 
         #The resize action must be done before the bind

@@ -19,7 +19,7 @@ from ipi.utils.units import unit_to_user
 from ipi.external import importlib
 from ipi.utils.decorators import cached
 
-__all__ = ["iter_file", "print_file_path", "print_file", "read_file"]
+__all__ = ["io_units", "iter_file", "print_file_path", "print_file", "read_file"]
 
 
 mode_map = {
@@ -138,7 +138,6 @@ def print_file(mode, atoms, cell, filedesc=sys.stdout, title="", key="", dimensi
         units: Units for the output (e.g. "angstrom")
         cell_units: Units for the cell (dimension length, e.g. "angstrom")
     """
- 
     if mode == "pdb":   # special case for PDB
         if dimension != "length":
             raise ValueError("PDB Standard is only designed for atomic positions")
@@ -153,7 +152,6 @@ def print_file(mode, atoms, cell, filedesc=sys.stdout, title="", key="", dimensi
     atoms_conv = unit_to_user(dimension, units, 1.0)
  
     title = title + ("%s{%s}  cell{%s}" % (key, units, cell_units))
-
     print_file_raw(mode=mode, atoms=atoms, cell=cell, filedesc=filedesc, title=title, cell_conv=cell_conv, atoms_conv=atoms_conv)
 
 def read_file_raw(mode, filedesc):    
@@ -231,7 +229,7 @@ def iter_file_raw(mode, filedesc):
 
     try:
         while True:
-            comment, cell, atoms, names, masses = reader(filedesc=filedesc)
+            comment, cell, atoms, names, masses = reader(filedesc=filedesc)            
             yield { "comment" : comment,
                     "data": atoms, 
                     "masses": masses, 
@@ -270,6 +268,17 @@ def iter_file_name(filename):
 
     return iter_file(os.path.splitext(filename)[1], open(filename))
 
+def iter_file_name_raw(filename):
+    """Open a trajectory file, guessing its format from the extension.
+
+    Args:
+        filename: Filename of a trajectory file.
+
+    Returns:
+        Raw  I/O iterator
+    """
+
+    return iter_file_raw(os.path.splitext(filename)[1], open(filename))
 
 def open_backup(filename, mode='r', buffering=-1):
     """A wrapper around `open` which saves backup files.
