@@ -3,7 +3,7 @@
 #  Volker Blum, FHI 2008 : Test run input file control.in for simple H2O
 #
 #########################################################################################
-use_pimd_wrapper localhost 21012
+use_pimd_wrapper localhost 21112
 #output_level MD_light
 compute_analytical_stress .true.
 #
