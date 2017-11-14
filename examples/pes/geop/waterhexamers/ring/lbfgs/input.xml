@@ -1,6 +1,5 @@
-<?xml version='1.0'?>
 <simulation mode='static' verbosity='high'>
-  <output prefix='simulation_ring_bfgs'>
+  <output prefix='simulation_ring_lbfs'>
     <properties stride='1' filename='out'>  [ step, time{picosecond}, conserved{electronvolt}, temperature{kelvin}, kinetic_cv{electronvolt}, potential{electronvolt}, pressure_cv{megapascal}] </properties>
     <trajectory filename='pos' stride='1'> positions{angstrom} </trajectory>
   </output>
@@ -13,14 +12,14 @@
   </ffsocket>
   <system>
     <initialize nbeads='1'>
-      <file mode='xyz' units='angstrom'> init_ring.xyz </file>
-      <cell mode='abc' units='angstrom'> [45.0, 45.0, 45.0] </cell>
+      <file mode='xyz' units='angstrom'> init.xyz </file>
+      <cell mode='abc' units='angstrom'> [15.0, 15.0, 15.0] </cell>
     </initialize>
     <forces>
       <force forcefield='qtip4pf'/>
     </forces>
     <motion mode='minimize'>
-      <optimizer mode='bfgs'>
+      <optimizer mode='lbfgs'>
         <ls_options>
           <step> 1.0e-2 </step>
           <tolerance> 1.0e-5 </tolerance>
