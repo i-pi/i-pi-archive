@@ -33,7 +33,7 @@ low_density:
 
 nst:
 	cd nst; $(IPI) input.xml & sleep 5; \
-	$(call run_driver,1,lj_nst) \
+	$(call run_driver,1,nst) \
 	wait
 
 clean:
