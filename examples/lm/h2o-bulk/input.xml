@@ -1,32 +1,37 @@
-<simulation verbosity="high">
-   <output prefix='simulation'>
-      <properties stride='1' filename='out' flush="1" >  [ step, time{picosecond}, conserved, temperature{kelvin}, kinetic_cv, potential, kinetic_cv(H), kinetic_cv(O), pressure_cv{megapascal}, volume] </properties>
-      <trajectory stride='1' filename='pos' flush="1">positions{angstrom}</trajectory>
-      <trajectory stride='1' filename='for' flush="1">forces</trajectory>
-      <checkpoint stride='1000' overwrite="false" />
-   </output>
-   <total_steps>100000</total_steps>
-   <prng><seed>8417</seed></prng>
-   <ffsocket mode="inet" name="tbe-i-pi" pbc="false">
-     <address> localhost </address> <port> 12347 </port>
-   </ffsocket>
-   <system>
-   <initialize nbeads='6'>
+<simulation verbosity='high'>
+  <output prefix='simulation'>
+    <properties stride='1' filename='out' flush='1'>  [ step, time{picosecond}, conserved, temperature{kelvin}, kinetic_cv, potential, kinetic_cv(H), kinetic_cv(O), pressure_cv{megapascal}, volume] </properties>
+    <trajectory stride='1' filename='pos' flush='1'>positions{angstrom}</trajectory>
+    <trajectory stride='1' filename='for' flush='1'>forces</trajectory>
+    <checkpoint stride='1000' overwrite='false'/>
+  </output>
+  <total_steps>100000</total_steps>
+  <prng>
+    <seed>8417</seed>
+  </prng>
+  <ffsocket mode='inet' name='tbe-i-pi' pbc='false'>
+    <address> localhost </address>
+    <port> 12347 </port>
+  </ffsocket>
+  <system>
+    <initialize nbeads='6'>
       <file mode='xyz'> init.xyz  </file>
       <velocities mode='thermal' units='kelvin'> 300 </velocities>
-   </initialize>
-   <forces><force forcefield='tbe-i-pi'> </force></forces>
-   <ensemble>
-     <temperature units='kelvin'>300</temperature>
-     <pressure units='bar'> 1.0 </pressure>
-   </ensemble>
-   <motion mode='dynamics'>
-     <dynamics mode='npt'>
-       <timestep units="femtosecond">0.2</timestep>
-       <barostat mode='isotropic'>
-         <tau units='femtosecond'> 200</tau>
-         <thermostat mode='gle'>
-	   <A shape='(5,5)'>
+    </initialize>
+    <forces>
+      <force forcefield='tbe-i-pi'> </force>
+    </forces>
+    <ensemble>
+      <temperature units='kelvin'>300</temperature>
+      <pressure units='bar'> 1.0 </pressure>
+    </ensemble>
+    <motion mode='dynamics'>
+      <dynamics mode='npt'>
+        <timestep units='femtosecond'>0.2</timestep>
+        <barostat mode='isotropic'>
+          <tau units='femtosecond'> 200</tau>
+          <thermostat mode='gle'>
+            <A shape='(5,5)'>
 	     [   4.498098855452e-3,    6.594810718477e-6,    2.788030342989e-4,   -8.808265165053e-4,    5.605371493938e-3, 
 	     -6.726802271646e-6,    2.079069559861e-9,    1.746169548818e-5,   -4.800164465960e-6,    1.025830873432e-5, 
 	     -3.586191452340e-4,   -1.746169548818e-5,    3.287481976399e-5,    1.245698716799e-4,   -2.417657162526e-4, 
@@ -34,9 +39,9 @@
 	     5.273493443008e-3,   -1.025830873432e-5,    2.417657162526e-4,   -2.783583234046e-4,    7.488477456790e-3
 	     ]
 	   </A>
-	 </thermostat>
-       </barostat>
-       <!--
+          </thermostat>
+        </barostat>
+        <!--
 	   # Generated at http://epfl-cosmo.github.io/gle4md
 	   # Please cite:
 	   # M. Ceriotti, D.E. Manolopoulos, Phys. Rev. Lett. 109, 100604 (2012) 
@@ -51,8 +56,8 @@
 	   # and that they span a range up to 
 	   # ωmax=4170.213540000001 cm^-1
        -->
-       <thermostat mode='nm_gle'>
-	 <A shape='(6,9,9)'>
+        <thermostat mode='nm_gle'>
+          <A shape='(6,9,9)'>
 	   [
 	   1.300513766690e-2,    9.078220950722e-6,    8.180522706851e-6,    1.196620464216e-5,    1.108609196233e-4,   -8.941338246404e-4,    7.817382329484e-3,   -1.206049888192e-2,   -5.215913547478e-2, 
 	   -9.756343549369e-6,    2.131200614277e-7,    2.972243541454e-6,   -4.459298032276e-6,    2.177011229810e-7,    4.960251269751e-7,   -2.083064995647e-6,   -7.004617074013e-6,    2.299410255689e-5, 
@@ -110,7 +115,7 @@
 	   0.000000000000e+0,    0.000000000000e+0,    0.000000000000e+0,    0.000000000000e+0,    0.000000000000e+0,    0.000000000000e+0,    0.000000000000e+0,   -1.071449219429e-3,   1.905478576601e-14
 	   ]
 	 </A>
-	 <C shape='(6,9,9)' units='kelvin'>
+          <C shape='(6,9,9)' units='kelvin'>
 	   [
 	   1.800000000000e+3,    0.000000000000e+0,    0.000000000000e+0,    0.000000000000e+0,    0.000000000000e+0,    0.000000000000e+0,    0.000000000000e+0,    0.000000000000e+0,    0.000000000000e+0, 
 	   0.000000000000e+0,    1.800000000000e+3,    0.000000000000e+0,    0.000000000000e+0,    0.000000000000e+0,    0.000000000000e+0,    0.000000000000e+0,    0.000000000000e+0,    0.000000000000e+0, 
@@ -168,9 +173,8 @@
 	   -1.158214175100e+3,    2.042344049700e+0,   -2.174057487000e+2,   -4.716251217000e+1,   -2.275337840400e+3,    3.289332384000e+0,   -4.990023669000e+2,    1.436529828300e-6,    8.107431162000e+4
 	   ]
 	 </C>
-       </thermostat>
-     </dynamics>
-   </motion>
- </system>
+        </thermostat>
+      </dynamics>
+    </motion>
+  </system>
 </simulation>
- 

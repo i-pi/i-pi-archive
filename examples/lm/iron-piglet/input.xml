@@ -1,25 +1,30 @@
-<simulation verbosity="high">
+<simulation verbosity='high'>
   <output prefix='hinfe-gle'>
-    <properties stride='1' filename='out' flush="1" >  [ step, time{picosecond}, conserved, temperature{kelvin}, kinetic_cv, potential, kinetic_cv(H), kinetic_cv(Fe), pressure_cv{megapascal}] </properties>
-    <trajectory stride='1' filename='pos' flush="1">positions{angstrom}</trajectory>
-    <trajectory stride='1' filename='for' flush="1">forces</trajectory>
-    <checkpoint stride='1000' overwrite="false" />
+    <properties stride='1' filename='out' flush='1'>  [ step, time{picosecond}, conserved, temperature{kelvin}, kinetic_cv, potential, kinetic_cv(H), kinetic_cv(Fe), pressure_cv{megapascal}] </properties>
+    <trajectory stride='1' filename='pos' flush='1'>positions{angstrom}</trajectory>
+    <trajectory stride='1' filename='for' flush='1'>forces</trajectory>
+    <checkpoint stride='1000' overwrite='false'/>
   </output>
   <total_steps>100000</total_steps>
-  <prng><seed>8417</seed></prng>
-  <ffsocket mode="inet" name="libtbe" pbc="false">
-    <address> localhost </address> <port> 12345 </port>
+  <prng>
+    <seed>8417</seed>
+  </prng>
+  <ffsocket mode='inet' name='libtbe' pbc='false'>
+    <address> localhost </address>
+    <port> 12345 </port>
   </ffsocket>
   <system>
     <initialize nbeads='4'>
       <file mode='xyz'> init.xyz  </file>
       <velocities mode='thermal' units='kelvin'> 300 </velocities>
     </initialize>
-    <forces><force forcefield='libtbe'> </force></forces>
+    <forces>
+      <force forcefield='libtbe'> </force>
+    </forces>
     <ensemble>
       <temperature units='kelvin'>300</temperature>
     </ensemble>
-      <!--
+    <!--
 	  # Generated at http://epfl-cosmo.github.io/gle4md
 	  # Please cite:
 	  # M. Ceriotti, D.E. Manolopoulos, Phys. Rev. Lett. 109, 100604 (2012)
@@ -34,10 +39,10 @@
 	  # and that they span a range up to
 	  # ωmax=10425.53385 cm^-1
       -->
-      <motion mode='dynamics'>
-	<dynamics mode='nvt'>
-	  <thermostat mode='nm_gle'>
-	    <A shape='(4,9,9)'>
+    <motion mode='dynamics'>
+      <dynamics mode='nvt'>
+        <thermostat mode='nm_gle'>
+          <A shape='(4,9,9)'>
 	      [
 	      1.300513766690e-2,    9.078220950722e-6,    8.180522706851e-6,    1.196620464216e-5,    1.108609196233e-4,   -8.941338246404e-4,    7.817382329484e-3,   -1.206049888192e-2,   -5.215913547478e-2,
 	      -9.756343549369e-6,    2.131200614277e-7,    2.972243541454e-6,   -4.459298032276e-6,    2.177011229810e-7,    4.960251269751e-7,   -2.083064995647e-6,   -7.004617074013e-6,    2.299410255689e-5,
@@ -77,7 +82,7 @@
 	      0.000000000000e+0,    0.000000000000e+0,    0.000000000000e+0,    0.000000000000e+0,    0.000000000000e+0,    0.000000000000e+0,    0.000000000000e+0,   -2.775554812748e-2,   5.147377625172e-14
 	      ]
 	    </A>
-	    <C shape='(4,9,9)' units='kelvin'>
+          <C shape='(4,9,9)' units='kelvin'>
 	      [
 	      1.200000000000e+3,    0.000000000000e+0,    0.000000000000e+0,    0.000000000000e+0,    0.000000000000e+0,    0.000000000000e+0,    0.000000000000e+0,    0.000000000000e+0,    0.000000000000e+0,
 	      0.000000000000e+0,    1.200000000000e+3,    0.000000000000e+0,    0.000000000000e+0,    0.000000000000e+0,    0.000000000000e+0,    0.000000000000e+0,    0.000000000000e+0,    0.000000000000e+0,
@@ -117,9 +122,9 @@
 	      -1.098704138700e+4,   -6.248718237000e+2,   -5.978867463000e+2,   -2.947546908900e+3,   -6.506782275000e+3,   -7.300708866000e+1,   -2.017932388500e+3,    4.065226941000e-7,    2.195710983900e+5
 	      ]
 	    </C>
-	  </thermostat>
-	  <timestep units="femtosecond">1.0</timestep>
-	</dynamics>
-      </motion>
-    </system>
-  </simulation>
+        </thermostat>
+        <timestep units='femtosecond'>1.0</timestep>
+      </dynamics>
+    </motion>
+  </system>
+</simulation>
