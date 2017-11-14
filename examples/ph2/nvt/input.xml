@@ -1,31 +1,35 @@
 <simulation verbosity='high'>
-   <output prefix='simulation'>
-      <properties stride='5' filename='out'>  [ step, time{picosecond}, conserved{kelvin}, temperature{kelvin}, kinetic_cv{kelvin}, potential{kelvin}, pressure_cv{megapascal}] </properties>
-      <trajectory stride='100' filename='pos'>positions</trajectory>
-      <trajectory stride='10' filename='xtra'>extras</trajectory>
-      <checkpoint stride='2000'/>
-   </output>
-   <total_steps>100000</total_steps>
-   <prng><seed>31415</seed></prng>
-   <ffsocket name='sgdriver' mode='unix'>
-      <address>nvt</address>
-   </ffsocket>
-   <system>
-      <initialize nbeads='24'>
-         <file mode='pdb'> init.pdb </file>
-         <velocities mode='thermal' units='kelvin'> 50 </velocities>
-      </initialize>   
-      <forces><force forcefield='sgdriver'> </force></forces>
-      <motion mode='dynamics'>
+  <output prefix='simulation'>
+    <properties stride='5' filename='out'>  [ step, time{picosecond}, conserved{kelvin}, temperature{kelvin}, kinetic_cv{kelvin}, potential{kelvin}, pressure_cv{megapascal}] </properties>
+    <trajectory stride='100' filename='pos'>positions</trajectory>
+    <trajectory stride='10' filename='xtra'>extras</trajectory>
+    <checkpoint stride='2000'/>
+  </output>
+  <total_steps>100000</total_steps>
+  <prng>
+    <seed>31415</seed>
+  </prng>
+  <ffsocket name='sgdriver' mode='unix'>
+    <address>nvt</address>
+  </ffsocket>
+  <system>
+    <initialize nbeads='24'>
+      <file mode='pdb'> init.pdb </file>
+      <velocities mode='thermal' units='kelvin'> 50 </velocities>
+    </initialize>
+    <forces>
+      <force forcefield='sgdriver'> </force>
+    </forces>
+    <motion mode='dynamics'>
       <dynamics mode='nvt'>
-         <thermostat mode='pile_l'>
-            <tau units='femtosecond'>25</tau>
-         </thermostat>
-         <timestep units='femtosecond'> 1 </timestep>
+        <thermostat mode='pile_l'>
+          <tau units='femtosecond'>25</tau>
+        </thermostat>
+        <timestep units='femtosecond'> 1 </timestep>
       </dynamics>
-      </motion>
-      <ensemble>
-         <temperature units='kelvin'>25</temperature>
-      </ensemble>
-   </system>
+    </motion>
+    <ensemble>
+      <temperature units='kelvin'>25</temperature>
+    </ensemble>
+  </system>
 </simulation>
