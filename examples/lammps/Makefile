@@ -162,5 +162,5 @@ paracetamol-phonons:
 	wait
 	
 clean:
-	rm  */*RESTART* */EXIT */log.lammps */*simulation*
+	rm -f */*RESTART* */EXIT */log.lammps */*simulation*
 
