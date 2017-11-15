@@ -883,8 +883,8 @@ class Test(threading.Thread):
             elif isinstance(o, PropertyOutput):
                 nprop = []
                 isys = 0
-                for _ in simul.syslist:   # create multiple copies
-                    filename = o.filename
+                for _ss in simul.syslist:   # create multiple copies
+                    filename = _ss.prefix+"_"+o.filename
                     nprop.append({"old_filename" : os.path.join(olddir,
                                                                 filename),
                                   "new_filename" : os.path.join(newdir,
@@ -908,12 +908,12 @@ class Test(threading.Thread):
                                                          np.log(10)))) +
                                  "d") % (_bi))
 
-                        for _ in simul.syslist:
+                        for _ss in simul.syslist:
                             if o.ibead < 0 or o.ibead == _bi:
                                 if getkey(o.what) == "extras":
-                                    filename = o.filename+"_" + padb
+                                    filename = _ss.prefix+"_"+o.filename+"_" + padb
                                 else:
-                                    filename = o.filename+"_" + padb + \
+                                    filename = _ss.prefix+"_"+o.filename+"_" + padb + \
                                                "." + o.format
                                 ntraj.append({"old_filename" : os.path.join(olddir, filename),
                                               "format" : o.format,
@@ -927,8 +927,8 @@ class Test(threading.Thread):
                 else:
                     ntraj = []
                     isys = 0
-                    for _ in simul.syslist:   # create multiple copies
-                        filename = o.filename
+                    for _ss in simul.syslist:   # create multiple copies
+                        filename = _ss.prefix+"_"+o.filename
                         filename = filename+"."+o.format
                         ntraj.append({"old_filename" : os.path.join(olddir,
                                                                     filename),

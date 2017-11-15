@@ -2,15 +2,8 @@
 
 
  * This gives an example of a Hydrogen atom in a 1D harmonic potential well.
-   The input file is set up so that t = hbar*beta*omega = 4, where omega is the
-   vibrational frequency of the harmonic oscillator, if the spring constant
-   of the harmonic oscillator is set to k = 1 (period of oscilations is ~6.5 fs).
-   
- * The exact results are:
-  		total energy: 0.488211 eV
-  		kinetic energy: 0.323499 eV
-  		potential energy: 0.164712 eV
-  		heat capacity: 1.30409 
+   The input file is set up so that the spring constant of the harmonic oscillator 
+   is set to k = 0.2.
 
  * To run, first compile the driver code in drivers/. This should be as 
    simple as: 
@@ -51,7 +44,7 @@ $ i-pi input.xml
  
  * Open a separate terminal and run the harmonic oscillator driver code 
  
-$ i-pi-driver -u -h harmonic -m harm -o 1
+$ i-pi-driver -u -h harmonic -m harm -o 0.2
 
    You can run multiple instances of the code; it is so fast that parallel 
    scaling won't be appreciable.

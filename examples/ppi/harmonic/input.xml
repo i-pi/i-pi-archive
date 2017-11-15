@@ -1,10 +1,10 @@
 <simulation verbosity='high'>
   <output prefix='simulation'>
-    <properties stride='1' filename='out' flush='1000'>  [ step, time{picosecond}, potential{kelvin}] </properties>
-    <trajectory filename='pos' stride='1' format='xyz' cell_units='angstrom' flush='1000'> positions{angstrom} </trajectory>
-    <trajectory filename='for' stride='1' format='xyz' cell_units='angstrom' flush='1000'> forces{piconewton} </trajectory>
+    <properties stride='10' filename='out' flush='100'>  [ step, time{picosecond}, potential{kelvin}] </properties>
+    <trajectory filename='pos' stride='10' format='xyz' cell_units='angstrom' flush='100'> positions{angstrom} </trajectory>
+    <trajectory filename='for' stride='10' format='xyz' cell_units='angstrom' flush='100'> forces{atomic_unit} </trajectory>
   </output>
-  <total_steps>200000</total_steps>
+  <total_steps>5000000</total_steps>
   <prng>
     <seed>4348</seed>
   </prng>
@@ -26,9 +26,9 @@
       <fixcom>False</fixcom>
       <dynamics mode='nvt'>
         <thermostat mode='pile_l'>
-          <tau units='femtosecond'>20</tau>
+          <tau units='femtosecond'>10</tau>
         </thermostat>
-        <timestep units='femtosecond'>0.06</timestep>
+        <timestep units='femtosecond'>0.01</timestep>
       </dynamics>
     </motion>
   </system>
