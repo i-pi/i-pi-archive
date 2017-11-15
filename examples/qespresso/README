@@ -24,11 +24,11 @@ $ source i-pi-root/env.sh
  
  * To run the water example, just type:
 
-$ make water
+$ make h2o
 
  * To run the lithium example, just type
  
-$ make lithium
+$ make li4
 
  * To run one of the other example, just type
 
