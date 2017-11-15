@@ -9,7 +9,7 @@ ENDREGTEST -->
       </properties>
     <trajectory format='pdb' filename='pos' stride='100' cell_units='angstrom'>positions{angstrom}</trajectory>
   </output>
-  <total_steps>25</total_steps>
+  <total_steps>20</total_steps>
   <prng>
     <seed>31416</seed>
   </prng>

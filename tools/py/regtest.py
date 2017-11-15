@@ -130,7 +130,7 @@ except ImportError:
 
 #### Hardcoded settings ####
 TIMEOUT_DRIVER = 600    # Maximum time the driver are allowded to run
-TIMEOUT_IPI = 30        # Maximum time to wait after the driver are done
+TIMEOUT_IPI = 10        # Maximum time to wait after the driver are done
 IPI_WAITING_TIME = 5    # Time to wait after i-pi has been started
 ############################
 
