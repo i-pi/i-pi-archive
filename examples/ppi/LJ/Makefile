@@ -4,25 +4,25 @@
 # i-PI Copyright (C) 2014-2015 i-PI developers
 # See the "licenses" directory for full license information.
 
-.PHONY: all clean harmonic
-all: harmonic
+.PHONY: all clean lj
+all: lj
 
 driver:=i-pi-driver
 IPI:=i-pi
 
 define run_driver
   for i in `seq 1 $1`; do \
-    $(driver) -u -h harmonic -m harm -o 0.2 & \
+    $(driver) -u -h lj_4 -m lj -o 5.270446,1.1663e-4,13.176115 & \
   done;
 endef
 -include make.in
 
-harmonic:
+lj:
 	source ../../../env.sh; \
 	$(IPI) input.xml & sleep 5; \
-	$(call run_driver,2) \
+	$(call run_driver,4) \
 	wait
 
 clean:
-	rm -f harm.* RESTART EXIT *.log *.dat
+	rm -f lj.* RESTART EXIT *.log *.dat
  
