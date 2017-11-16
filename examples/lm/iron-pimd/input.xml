@@ -1,5 +1,5 @@
 <simulation verbosity='high'>
-  <output prefix='hinfe-pimd'>
+  <output prefix='simulation'>
     <properties stride='1' filename='out' flush='1'>  [ step, time{picosecond}, conserved, temperature{kelvin}, kinetic_cv, potential, kinetic_cv(H), kinetic_cv(Fe), pressure_cv{megapascal}] </properties>
     <trajectory stride='1' filename='pos' flush='1'>positions{angstrom}</trajectory>
     <trajectory stride='1' filename='for' flush='1'>forces</trajectory>

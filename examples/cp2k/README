@@ -27,13 +27,11 @@ $ make npt-piglet
 
 $ make clean
 
-
-  
 ** Run the examples manually:
  
  * In the main example directory run 
 
-$ python path/src/i-pi input.xml
+$ python path/bin/i-pi input.xml
  
  * In another terminal, create up to 4 temporary directories to run cp2k,
  and launch it from within:
