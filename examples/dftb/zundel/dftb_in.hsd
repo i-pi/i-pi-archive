@@ -16,7 +16,7 @@ Geometry = GenFormat {
 
 # Socket controlled DFTB+
 Driver = Socket {
-    File = "dftb-zundel" # File name, i.e., /tmp/ipi_dftb-zundel
+    File = "zundel" # File name, i.e., /tmp/ipi_dftb-zundel
     MaxSteps = -1 # keep running until i-PI terminates the run
 }
 

@@ -23,4 +23,4 @@ harmonic:
 	wait
 
 clean:
-	rm -f harm.* RESTART EXIT
+	rm -f *simulation.* RESTART EXIT

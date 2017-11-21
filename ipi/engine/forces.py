@@ -574,6 +574,9 @@ class Forces(dobject):
             
       # SC forces and potential  
       dset(self, "alpha", depend_value(name="alpha", value=0.0))
+
+      # The number of MTS levels 
+      dset(self, "nmtslevels", depend_value(name="nmtslevels", value=0, func=self.get_nmtslevels))
       
       # this will be piped from normalmodes
       dset(self, "omegan2", depend_value(name="omegan2", value=0))
@@ -773,7 +776,6 @@ class Forces(dobject):
 
             # calculates the force.
             fminus = self.dforces.mrpc[index].b2tob1(depstrip(self.dforces.mforces[index].f))
-            print self.dforces.mforces[index].virs, self.dforces.mforces[index].nbeads, self.mforces[index].nbeads,  self.nbeads
 
             # calculates the finite difference.
             f_4th_order[1::2] = 2.0 * (fminus - fbase[1::2]) / delta
@@ -818,7 +820,6 @@ class Forces(dobject):
                   
                # calculates the forces.
                fplusminus = self.dforces.mrpc[index].b2tob1(depstrip(self.dforces.mforces[index].f))
-               print self.dforces.mforces[index].virs, self.dforces.mforces[index].nbeads, self.mforces[index].nbeads,  self.nbeads
 
                # calculates the finite difference.
                for k in range(self.nbeads/2):
@@ -844,13 +845,14 @@ class Forces(dobject):
       # returns the 4th order |f^2| correction.
       return f_4th_order
 
-   def nmtslevels(self):
+   def get_nmtslevels(self):
       """ Returns the total number of mts levels."""
        
-      big = 0
-      for index in range(len(self.mforces)):
-         big = max(big, self.mforces[index].lmts)
-      return big + 1
+      nm = len(self.mforces[0].mts_weights)
+      if all(len(x.mts_weights) == nm for x in self.mforces):
+          return nm
+      else:
+          raise ValueError("The mts_weights of all the force components are not the same.") 
 
    def f_combine(self):
       """Obtains the total force vector."""
