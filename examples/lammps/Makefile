@@ -2,7 +2,7 @@
 # i-PI Copyright (C) 2014-2015 i-PI developers
 # See the "licenses" directory for full license information.
 
-.PHONY: all clean fixatoms h2o-alchemical h2o-enmfdphonons h2o-fdphonons h2o-geop h2o-multi \
+.PHONY: all clean h2o-fixatoms h2o-alchemical h2o-enmfdphonons h2o-fdphonons h2o-geop h2o-multi \
         h2o-piglet.2 h2o-piglet.4 h2o-piglet.8 h2o-pimd.1 h2o-pimd.4 h2o-pimd+mts.4 \
         h2o-pimd+rpc h2o-pimd+sc h2o-pimd+sc+gle.4 h2o-pimd+sc+mts \
         h2o-pimd+sc+rpc h2o-trpmd ice-npt ice-nst isofsc-vapor isofsc-water \
