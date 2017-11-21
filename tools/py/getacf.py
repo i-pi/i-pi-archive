@@ -33,7 +33,7 @@ def compute_acf(input_file, output_prefix, maximum_lag, block_length, length_zer
         raise ValueError("MAXIMUM_LAG should be a non-negative integer.")
     if(npad < 0):
         raise ValueError("LENGTH_ZEROPADDING should be a non-negative integer.")
-    if(bsize <=2 * mlag):
+    if(bsize < 2 * mlag):
         if(bsize == -1):
             bsize = 2 * mlag
         else:
