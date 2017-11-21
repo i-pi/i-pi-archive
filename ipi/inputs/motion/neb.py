@@ -32,10 +32,13 @@ from ipi.utils.units import *
 __all__ = ['InputNEB']
 
 class InputNEB(InputDictionary):
-    """Geometry optimization options.
+    """Geometry optimization options for nudged elastic band (NEB) calculations.
 
     Contains options related with geometry optimization, such as method,
     thresholds, linear search strategy, etc.
+
+    Also contains options related specifically to NEB, such as spring constants
+    and climbing image.
 
     """
 
@@ -102,7 +105,7 @@ class InputNEB(InputDictionary):
 
     dynamic = {  }
 
-    default_help = "TODO EXPLAIN WHAT THIS IS"
+    default_help = "Contains the required parameters for performing nudged elastic band (NEB) calculations"
     default_label = "NEB"
 
     def store(self, neb):
