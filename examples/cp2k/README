@@ -27,20 +27,18 @@ $ make npt-piglet
 
 $ make clean
 
-
-  
 ** Run the examples manually:
  
  * In the main example directory run 
 
-$ python path/src/i-pi nptpgl_ipi.xml
+$ python path/bin/i-pi input.xml
  
  * In another terminal, create up to 4 temporary directories to run cp2k,
  and launch it from within:
  
 $ mkdir run_1
 $ cd run_1
-$ $CP2K -i ../nptpgl_cp2k.in
+$ $CP2K -i ../in.cp2k
  
  * Repeat several times to get multiple instances
  

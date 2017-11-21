@@ -1,16 +1,16 @@
 <simulation verbosity='high'>
-   <output prefix=''>
-      <properties shape='(6)' filename='tut2.md'>
+  <output prefix=''>
+    <properties shape='(6)' filename='tut2.md'>
        [ step, time{picosecond}, conserved{kelvin}, temperature{kelvin}, potential{kelvin}, 
          kinetic_cv{kelvin} ]
       </properties>
-      <properties stride='20' shape='(1)' filename='tut1.force'> [ atom_f{piconewton}(atom=0;bead=0) ] </properties>
-      <trajectory format='pdb' filename='tut1.pos' stride='100' cell_units='angstrom'>positions{angstrom}</trajectory>
-      <checkpoint stride='1000' filename='tut1.checkpoint'>6</checkpoint>
-   </output>
-   <prng>
-      <set_pos>236</set_pos>
-      <state shape='(624)'>
+    <properties stride='20' shape='(1)' filename='tut1.force'> [ atom_f{piconewton}(atom=0;bead=0) ] </properties>
+    <trajectory format='pdb' filename='tut1.pos' stride='100' cell_units='angstrom'>positions{angstrom}</trajectory>
+    <checkpoint stride='1000' filename='tut1.checkpoint'>6</checkpoint>
+  </output>
+  <prng>
+    <set_pos>236</set_pos>
+    <state shape='(624)'>
        [ 1229894324, 1120929279, 2896369625, 129487104, 3391084225, 
          3861891595, 921062248, 1832465170, 1802809785, 3962485246, 
          4152712601, 3333574681, 205091118, 2025167386, 2112923560, 
@@ -137,18 +137,18 @@
          236869261, 273542823, 55723609, 1261472677, 207690549, 
          21760027, 3950096337, 1770254772, 1450981462 ]
       </state>
-      <seed>12345</seed>
-   </prng>
-   <ffsocket name='driver'>
-      <port>31415</port>
-   </ffsocket>
-   <system>
-      <cell shape='(3, 3)'>
+    <seed>12345</seed>
+  </prng>
+  <ffsocket name='driver'>
+    <port>31415</port>
+  </ffsocket>
+  <system>
+    <cell shape='(3, 3)'>
        [   3.37259417e+01,   2.06511833e-15,   2.06511833e-15,   0.00000000e+00,   3.37259417e+01, 
            2.06511833e-15,   0.00000000e+00,   0.00000000e+00,   3.37259417e+01 ]
       </cell>
-      <beads natoms='108' nbeads='4'>
-         <q shape='(4, 324)'>
+    <beads natoms='108' nbeads='4'>
+      <q shape='(4, 324)'>
           [   4.86036119e+00,  -1.44026043e+01,  -4.38022833e+00,   1.71348329e+01,   3.93569661e+00, 
               1.90425258e+01,   7.49095654e+00,  -3.41226037e+00,   1.03166858e+00,   8.45078889e+00, 
              -1.10744709e+01,   2.50654257e+00,   3.35375246e+00,  -2.41441768e+00,   1.64823230e+01, 
@@ -410,7 +410,7 @@
               3.83837471e+01,   3.84652589e+01,   2.53922530e+01,   1.60622979e+01,   1.58467735e+01, 
               3.04591216e+01 ]
          </q>
-         <p shape='(4, 324)'>
+      <p shape='(4, 324)'>
           [   1.72034320e+00,   5.20095031e-01,  -1.78920439e+00,   1.21917555e+00,   5.84469673e-01, 
               2.19580445e-01,   1.52712020e+00,  -1.48089726e+00,  -1.37183051e+00,  -2.80336940e-01, 
               7.64514751e-01,   1.78711191e+00,  -1.19618420e+00,  -3.68916109e-01,   1.03356939e+00, 
@@ -672,7 +672,7 @@
              -1.23584433e+00,   3.75681426e-01,  -7.13836960e-01,  -1.86173272e+00,  -5.78714444e-01, 
              -7.02332227e-01 ]
          </p>
-         <m shape='(108)'>
+      <m shape='(108)'>
           [   3.67494322e+03,   3.67494322e+03,   3.67494322e+03,   3.67494322e+03,   3.67494322e+03, 
               3.67494322e+03,   3.67494322e+03,   3.67494322e+03,   3.67494322e+03,   3.67494322e+03, 
               3.67494322e+03,   3.67494322e+03,   3.67494322e+03,   3.67494322e+03,   3.67494322e+03, 
@@ -696,7 +696,7 @@
               3.67494322e+03,   3.67494322e+03,   3.67494322e+03,   3.67494322e+03,   3.67494322e+03, 
               3.67494322e+03,   3.67494322e+03,   3.67494322e+03 ]
          </m>
-         <names shape='(108)'>
+      <names shape='(108)'>
           [ H2, H2, H2, H2, H2, 
             H2, H2, H2, H2, H2, 
             H2, H2, H2, H2, H2, 
@@ -720,30 +720,30 @@
             H2, H2, H2, H2, H2, 
             H2, H2, H2 ]
          </names>
-      </beads>
-      <motion mode='dynamics'>
-         <dynamics mode='nvt'>
-            <timestep>  4.13413730e+01</timestep>
-            <thermostat mode='pile_g'>
-               <tau>  1.03353433e+03</tau>
-               <ethermo> -1.42544712e-01</ethermo>
-            </thermostat>
-            <barostat mode='isotropic'>
-              <thermostat mode='langevin'>
-		<tau units='femtosecond'> 250 </tau>
-              </thermostat>
-              <tau units='femtosecond'> 250 </tau>
-            </barostat>
-         </dynamics>
-         <fixcom>False</fixcom>
-      </motion>
-      <forces>
-         <force forcefield='driver'>
+    </beads>
+    <motion mode='dynamics'>
+      <dynamics mode='nvt'>
+        <timestep>  4.13413730e+01</timestep>
+        <thermostat mode='pile_g'>
+          <tau>  1.03353433e+03</tau>
+          <ethermo> -1.42544712e-01</ethermo>
+        </thermostat>
+        <barostat mode='isotropic'>
+          <thermostat mode='langevin'>
+            <tau units='femtosecond'> 250 </tau>
+          </thermostat>
+          <tau units='femtosecond'> 250 </tau>
+        </barostat>
+      </dynamics>
+      <fixcom>False</fixcom>
+    </motion>
+    <forces>
+      <force forcefield='driver'>
          </force>
-      </forces>
-      <ensemble>
-        <pressure> 0 </pressure>
-        <temperature>  7.91703800e-05</temperature>
-      </ensemble>
-   </system>
+    </forces>
+    <ensemble>
+      <pressure> 0 </pressure>
+      <temperature>  7.91703800e-05</temperature>
+    </ensemble>
+  </system>
 </simulation>

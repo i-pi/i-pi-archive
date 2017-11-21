@@ -24,5 +24,5 @@ lj:
 	wait
 
 clean:
-	rm -f lj.* RESTART EXIT *.log *.dat
+	rm -f *simulation* *RESTART* EXIT *.log* *.dat*
  

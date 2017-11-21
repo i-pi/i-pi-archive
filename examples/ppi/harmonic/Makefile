@@ -24,5 +24,5 @@ harmonic:
 	wait
 
 clean:
-	rm -f harm.* RESTART EXIT *.log *.dat
+	rm -f *simulation.* *RESTART* EXIT *.log* *.dat*
  
