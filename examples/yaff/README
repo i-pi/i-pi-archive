@@ -52,9 +52,9 @@ $ make clean
 
 ** Run the examples manually:
 
- * Example 1: Go to the MIL53_ffsocket directory and run
+ * Example 1: Go to the mil53_ffsocket directory and run
 
-$ i-pi nst_ipi.xml
+$ i-pi input.xml
  
    the wrapper will start and sit waiting on the UDS /tmp/ipi.
  
@@ -64,6 +64,6 @@ $ python run.py
 
    You can run multiple instances of the code.
 
- * Example 2: Go to the MIL53_ffyaff directory and run
+ * Example 2: Go to the mil53_ffyaff directory and run
 
-$ i-pi nst_ipi.xml
+$ i-pi input.xml
