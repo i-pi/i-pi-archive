@@ -130,7 +130,7 @@ except ImportError:
 
 #### Hardcoded settings ####
 TIMEOUT_DRIVER = 600    # Maximum time the driver are allowded to run
-TIMEOUT_IPI = 10        # Maximum time to wait after the driver are done
+TIMEOUT_IPI = 30        # Maximum time to wait after the driver are done
 IPI_WAITING_TIME = 5    # Time to wait after i-pi has been started
 ############################
 
@@ -179,6 +179,9 @@ def main():
     print 'Starting tests'
     running_test = []
     running_com = []
+    if int(_parser()['nproc']) > 1:
+        if answer_is_y('"!W! REGTEST is not thread-safe. Some tests could crash. Do you want to continue (y/n)?') == False:
+            sys.exit()
     try:
         while True:
             if len(running_test) < _parser()['nproc']:
@@ -274,7 +277,7 @@ def _parser():
     parser.add_argument('-np', '--nproc',
                         action='store',
                         type=int,
-                        default=4,
+                        default=1,
                         help=('Number of concurrent test run at once.'),
                         dest='nproc')
     parser.add_argument('--create-reference',
@@ -363,12 +366,11 @@ def _file_is_test(path_to_test):
     with open(path_to_test) as _file:
         _text = _file.read()
     print _text[:100]
-    print len([x.group(1) for x in REGTEST_STRING_RGX.finditer(_text)]) > 0
     return len([x.group(1) for x in REGTEST_STRING_RGX.finditer(_text)]) > 0
 
 
 class Test(threading.Thread):
-    """ Contains all the method used to create, run and compare a test.
+    """ Contains all the methods used to create, run and compare a test.
 
     Args:
         index: An integer used to ensure no-overlap between sockets.
