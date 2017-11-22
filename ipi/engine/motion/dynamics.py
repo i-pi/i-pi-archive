@@ -134,7 +134,7 @@ class Dynamics(Motion):
         dself = dd(self)
         # n times the temperature (for path integral partition function)
         dself.ntemp = depend_value(name='ntemp', func=self.get_ntemp,
-                                   dependencies=[dget(self.ensemble, "temp")])
+             dependencies=[dd(self.ensemble).temp])
         self.integrator.pconstraints()
 
         fixdof = len(self.fixatoms) * 3 * self.beads.nbeads
@@ -161,8 +161,8 @@ class Dynamics(Motion):
 
         self.barostat.bind(beads, nm, cell, bforce, prng=prng, fixdof=fixdof)
 
-        self.ensemble.add_econs(dget(self.thermostat, "ethermo"))
-        self.ensemble.add_econs(dget(self.barostat, "ebaro"))
+        self.ensemble.add_econs(dd(self.thermostat).ethermo)
+        self.ensemble.add_econs(dself.barostat.ebaro)
 
         #!TODO THOROUGH CLEAN-UP AND CHECK
         # if self.enstype in ["nvt", "npt", "nst"]:
@@ -516,7 +516,7 @@ class SCIntegrator(NVEIntegrator):
         """
 
         super(SCIntegrator, self).bind(mover)
-        self.ensemble.add_econs(dget(self.forces, "potsc"))
+      self.ensemble.add_econs(dd(self.forces).potsc)
 
     def pstep(self):
         """Velocity Verlet momenta propagator."""

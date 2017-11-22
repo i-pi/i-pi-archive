@@ -20,7 +20,7 @@ For a more detailed discussion, see the reference manual.
 """
 
 # This file is part of i-PI.
-# i-PI Copyright (C) 2014-2015 i-PI developers
+# i-PI Copyright (C) 2014-2017 i-PI developers
 # See the "licenses" directory for full license information.
 
 
@@ -33,7 +33,7 @@ from ipi.utils.messages import verbosity, warning
 
 
 __all__ = ['depend_base', 'depend_value', 'depend_array', 'synchronizer',
-           'dobject', 'dd', 'dget', 'dpipe', 'dcopy', 'depstrip', 'depcopy', 'deppipe', 'depraise']
+           'dobject', 'dd', 'dpipe', 'dcopy', 'depstrip', 'depcopy', 'deppipe', 'depraise']
 
 
 class synchronizer(object):
@@ -644,26 +644,6 @@ np.dot = dep_dot
 # ENDS NUMPY FUNCTIONS OVERRIDE
 
 
-def dget(obj, member):
-    """Takes an object and retrieves one of its attributes.
-
-    Note that this is necessary as calling it in the standard way calls the
-    __get__() function of member.
-
-    Args:
-        obj: A user defined class.
-        member: A string giving the name of an attribute of obj.
-
-    Exceptions:
-        KeyError: If member is not an attribute of obj.
-
-    Returns:
-        obj.member.
-    """
-
-    return obj.__dict__[member]
-
-
 def depstrip(da):
     """Removes dependencies from a depend_array.
 
@@ -708,8 +688,8 @@ def deppipe(objfrom, memberfrom, objto, memberto, item=-1):
         memberto: The depend object that should be equal to memberfrom.
     """
 
-    dfrom = dget(objfrom, memberfrom)
-    dto = dget(objto, memberto)
+    dfrom = getattr(dd(objfrom), memberfrom)
+    dto = getattr(dd(objto), memberto)
     dpipe(dfrom, dto, item)
 
 
@@ -727,8 +707,8 @@ def depcopy(objfrom, memberfrom, objto, memberto):
     Args:
         See deppipe.
     """
-    dfrom = dget(objfrom, memberfrom)
-    dto = dget(objto, memberto)
+    dfrom = getattr(dd(objfrom), memberfrom)
+    dto = getattr(dd(objto), memberto)
     dcopy(dfrom, dto)
 
 
