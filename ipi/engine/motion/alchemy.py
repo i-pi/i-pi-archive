@@ -67,7 +67,7 @@ class AlchemyMC(Motion):
         """
 
         super(AlchemyMC, self).bind(ens, beads, cell, bforce, nm, prng)
-        self.ensemble.add_econs(dget(self, "ealc"))
+        self.ensemble.add_econs(dd(self).ealc)
 
     def AXlist(self, atomtype):
         """This compile a list of atoms ready for exchanges.

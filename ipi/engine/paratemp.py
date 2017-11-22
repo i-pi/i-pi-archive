@@ -83,8 +83,8 @@ class ParaTemp(dobject):
 
       isys=0
       for s in self.slist:
-         dget(s.ensemble,"temp").add_dependency(dget(self,"system_temp"))
-         dget(s.ensemble,"temp")._func = make_tempgetter(isys)
+         dd(s.ensemble).temp.add_dependency(dd(self).system_temp)
+         dd(s.ensemble).temp._func = make_tempgetter(isys)
          isys+=1
 
       self.parafile=open("PARATEMP", "a")

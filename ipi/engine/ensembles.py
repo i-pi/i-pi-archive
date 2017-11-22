@@ -87,11 +87,11 @@ class Ensemble(dobject):
         dself.econs = depend_value(name='econs', func=self.get_econs)
 
         # dependencies of the conserved quantity
-        dget(self, "econs").add_dependency(dget(self.nm, "kin"))
-        dget(self, "econs").add_dependency(dget(self.forces, "pot"))
-        dget(self, "econs").add_dependency(dget(self.bias, "pot"))
-        dget(self, "econs").add_dependency(dget(self.beads, "vpath"))
-        dget(self, "econs").add_dependency(dget(self, "eens"))
+        dself.econs.add_dependency(dd(self.nm).kin)
+        dself.econs.add_dependency(dd(self.forces).pot)
+        dself.econs.add_dependency(dd(self.bias).pot)
+        dself.econs.add_dependency(dd(self.beads).vpath)
+        dself.econs.add_dependency(dself.eens)
 
         self._elist = []
 
@@ -100,7 +100,7 @@ class Ensemble(dobject):
 
     def add_econs(self, e):
         self._elist.append(e)
-        dget(self, "econs").add_dependency(e)
+        dd(self).econs.add_dependency(e)
 
     def get_econs(self):
         """Calculates the conserved energy quantity for constant energy

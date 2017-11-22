@@ -157,22 +157,22 @@ class NormalModes(dobject):
                   synchro=sync_p )
 
       # must overwrite the functions
-      dget(self.beads, "q")._func = { "qnm": (lambda : self.transform.nm2b(depstrip(self.qnm)) )  }
-      dget(self.beads, "p")._func = { "pnm": (lambda : self.transform.nm2b(depstrip(self.pnm)) )  }
-      dget(self.beads, "q").add_synchro(sync_q)
-      dget(self.beads, "p").add_synchro(sync_p)
+      dd(self.beads).q._func = { "qnm": (lambda : self.transform.nm2b(depstrip(self.qnm)) )  }
+      dd(self.beads).p._func = { "pnm": (lambda : self.transform.nm2b(depstrip(self.pnm)) )  }
+      dd(self.beads).q.add_synchro(sync_q)
+      dd(self.beads).p.add_synchro(sync_p)
 
       # also within the "atomic" interface to beads
       for b in range(self.nbeads):
-         dget(self.beads._blist[b],"q")._func = { "qnm": (lambda : self.transform.nm2b(depstrip(self.qnm)) )  }
-         dget(self.beads._blist[b],"p")._func = { "pnm": (lambda : self.transform.nm2b(depstrip(self.pnm)) )  }
-         dget(self.beads._blist[b],"q").add_synchro(sync_q)
-         dget(self.beads._blist[b],"p").add_synchro(sync_p)
+         dd(self.beads._blist[b]).q._func = { "qnm": (lambda : self.transform.nm2b(depstrip(self.qnm)) )  }
+         dd(self.beads._blist[b]).p._func = { "pnm": (lambda : self.transform.nm2b(depstrip(self.pnm)) )  }
+         dd(self.beads._blist[b]).q.add_synchro(sync_q)
+         dd(self.beads._blist[b]).p.add_synchro(sync_p)
 
 
       # finally, we mark the beads as those containing the set positions
-      dget(self.beads, "q").update_man()
-      dget(self.beads, "p").update_man()
+      dd(self.beads).q.update_man()
+      dd(self.beads).p.update_man()
       
       # forces can be converted in nm representation, but here it makes no sense to set up a sync mechanism, 
       # as they always get computed in the bead rep

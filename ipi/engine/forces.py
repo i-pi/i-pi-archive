@@ -103,8 +103,8 @@ class ForceBead(dobject):
       dself = dd(self)
 
       # ufv depends on the atomic positions and on the cell
-      dget(self,"ufvx").add_dependency(dget(self.atoms,"q"))
-      dget(self,"ufvx").add_dependency(dget(self.cell,"h"))
+      dself.ufvx.add_dependency(dd(self.atoms).q)
+      dself.ufvx.add_dependency(dd(self.cell).h)
 
       # potential and virial are to be extracted very simply from ufv
       dself.pot = depend_value(name="pot", func=self.get_pot,
@@ -140,7 +140,7 @@ class ForceBead(dobject):
       
       self._threadlock.acquire()
       try:
-          if self.request is None and dget(self,"ufvx").tainted():
+          if self.request is None and dd(self).ufvx.tainted():
              self.request = self.ff.queue(self.atoms, self.cell, reqid=self.uid)
       finally:
          self._threadlock.release()
@@ -525,13 +525,13 @@ class Forces(dobject):
 
          # the beads positions for this force components are obtained
          # automatically, when needed, as a contraction of the full beads
-         dget(newbeads,"q")._func = make_rpc(newrpc, beads)
+         dd(newbeads).q._func = make_rpc(newrpc, beads)
          for b in newbeads:
             # must update also indirect access to the beads coordinates
-            dget(b,"q")._func = dget(newbeads,"q")._func
+            dd(b).q._func = dd(newbeads).q._func
 
          # makes newbeads.q depend from beads.q
-         dget(beads,"q").add_dependant(dget(newbeads,"q"))
+         dd(beads).q.add_dependant(dd(newbeads).q)
 
          #now we create a new forcecomponent which is bound to newbeads!
          newforce.bind(newbeads, cell, fflist)

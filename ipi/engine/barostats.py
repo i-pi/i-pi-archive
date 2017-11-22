@@ -134,17 +134,17 @@ class Barostat(dobject):
       dself = dd(self) # direct access
 
       dself.kstress = depend_value(name='kstress', func=self.get_kstress,
-                                   dependencies=[ dget(beads,"q"),
-                                                  dget(beads,"qc"),
-                                                  dget(beads,"pc"),
-                                                  dget(forces,"f") ])
+                                   dependencies=[ dd(beads).q,
+                                                  dd(beads).qc,
+                                                  dd(beads).pc,
+                                                  dd(forces).f ])
       dself.stress = depend_value(name='stress', func=self.get_stress,
-                                  dependencies=[ dget(self,"kstress"),
-                                                 dget(cell,"V"),
-                                                 dget(forces,"vir") ])
+                                  dependencies=[ dself.kstress,
+                                                 dd(cell).V,
+                                                 dd(forces).vir ])
       if bias != None:
-         dself.kstress.add_dependency(dget(bias,"f"))
-         dself.stress.add_dependency(dget(bias,"vir"))
+         dself.kstress.add_dependency(dd(bias).f)
+         dself.stress.add_dependency(dd(bias).vir)
 
       if fixdof is None:
          self.mdof = float(self.beads.natoms)*3.0
