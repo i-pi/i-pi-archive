@@ -162,7 +162,7 @@ class Dynamics(Motion):
         self.barostat.bind(beads, nm, cell, bforce, prng=prng, fixdof=fixdof)
 
         self.ensemble.add_econs(dd(self.thermostat).ethermo)
-        self.ensemble.add_econs(dself.barostat.ebaro)
+        self.ensemble.add_econs(dd(self.barostat).ebaro)
 
         #!TODO THOROUGH CLEAN-UP AND CHECK
         # if self.enstype in ["nvt", "npt", "nst"]:
