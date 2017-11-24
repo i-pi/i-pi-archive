@@ -32,8 +32,8 @@ import numpy as np
 from ipi.utils.messages import verbosity, warning
 
 
-__all__ = ['depend_base', 'depend_value', 'depend_array', 'synchronizer',
-           'dobject', 'dd', 'dpipe', 'dcopy', 'depstrip', 'depcopy', 'deppipe', 'depraise']
+__all__ = ['depend_value', 'depend_array', 'synchronizer', 'dobject', 'dd',
+           'dpipe', 'dcopy', 'depstrip', 'depcopy', 'deppipe', 'depraise']
 
 
 class synchronizer(object):
