@@ -2,7 +2,9 @@
 
 '''
 This script cleans python files in-place by calling autopep8 tool.
-It searches for python files recursively in the given directory.
+With option --path, it searches for python files
+recursively in the given directory. With option --files
+it applies autopep8 to listed python files.
 Prior to running the script, autopep8 must be installed.
 
 autopep8 is called with the following options:
@@ -13,11 +15,6 @@ autopep8 is called with the following options:
 
 For a full list of issues which can be fixed by autopep8, consult:
 https://pypi.python.org/pypi/autopep8
-
-The output of autopep8 is filtered by this script according to verbosity.
-There is also option to execute the script only on given files.
-In that case, the positional argument is ignored and autopep is run
-on the files without checking if they are valid python files.
 '''
 
 import argparse
@@ -25,6 +22,8 @@ import os
 import subprocess
 import re
 import sys
+import autopep8
+
 
 if __name__ == '__main__':
     # Description of the program after using -h
@@ -40,8 +39,7 @@ if __name__ == '__main__':
         'Pepper with recursively search for valid python files and '
         'will clean them. '
         'If you only want to apply it to some files, use --files '
-        'option, but BE CAREFUL '
-        '- in this mode pepper will not check if they are python files!')
+        'option, pepper will check if they are python files!')
     # There is only one positional argument
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('-p',
@@ -55,10 +53,10 @@ if __name__ == '__main__':
                        '--files',
                        type=str,
                        nargs='+',
-                       help='files on which pepper will execute '
-                            'autopep8. WARNING: It will NOT check if they'
-                            'are python files!')
-    parser.add_argument('--verbosity',
+                       help='list od files on which pepper will execute '
+                            'autopep8. May not be used with --path')
+    parser.add_argument('-v',
+                        '--verbosity',
                         choices=['silent', 'low', 'medium', 'high'],
                         default='medium',
                         help='sets level of verbosity. silent will not print '
@@ -67,7 +65,6 @@ if __name__ == '__main__':
                              'medium prints only filenames '
                              'on which script acted and '
                              'high prints everything from autopep8 output')
-
     args = parser.parse_args()
     path = args.path
     files = args.files
@@ -89,10 +86,20 @@ if __name__ == '__main__':
                      '--pep8-passes', number_of_pep8_passes]
 
     if files is not None:
-        # execute autopep8 on these files, without being recursive
-        autopep8_args = autopep8_args + files
+        python_files = []
+        for filename in files:
+            if autopep8.is_python_file(filename):
+                python_files = python_files + [filename]
+            else:
+                if verbosity != 'silent':
+                    print filename, 'is not a python file, skipping '
+        # execute autopep8 only on python files, without being recursive
+        autopep8_args = autopep8_args + python_files
+        if not python_files:
+            print 'No python files to process.'
+            sys.exit()
         if verbosity != 'silent':
-            print 'Running autopep8 on the files: ', ' '.join(files)
+            print 'Running autopep8 on the files: ', ' '.join(python_files)
     else:
         # perform recursive search in the given directory
         if os.path.isdir(path):
@@ -113,16 +120,16 @@ if __name__ == '__main__':
         line = process.stdout.readline().rstrip()
         if re.match('\[Errno.*\]', line):
             print line
-        elif verbosity == 'high':
-            print line
-        elif verbosity == 'medium':
-            # We want to print only filenames that changed
-            if re.match('\[file:.*\]', line):
-                # Pattern: [file:filename]
-                filename_line = re.search(r'\[file:(\S+)\]', line)
-                # Print only filename
-                print filename_line.group(1)
-        # if verbosity is silent or low, do not print output from autopep8
-
+        else:
+            if verbosity == 'high':
+                print line
+            elif verbosity == 'medium':
+                # We want to print only filenames that changed
+                if re.match('\[file:.*\]', line):
+                    # Pattern: [file:filename]
+                    filename_line = re.search(r'\[file:(\S+)\]', line)
+                    # Print only filename
+                    print filename_line.group(1)
+            # if verbosity is silent or low, do not print output from autopep8
     if verbosity != 'silent':
-        print 'autopep8 returned'
+        print 'autopep8 terminated'
