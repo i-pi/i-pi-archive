@@ -18,9 +18,6 @@ The output of autopep8 is filtered by this script according to verbosity.
 There is also option to execute the script only on given files.
 In that case, the positional argument is ignored and autopep is run
 on the files without checking if they are valid python files.
-
-Syntax:
-pepper.py i-pi_root_directory
 '''
 
 import argparse
@@ -33,23 +30,34 @@ if __name__ == '__main__':
     # Description of the program after using -h
     parser = argparse.ArgumentParser(
         description='Pepper executes autopep8 '
-        'recursive in-place cleaning of python files '
-        'according to pep8 style guide in the given directory. '
+        'cleaning of python files according to pep8 style guide. '
         'To run it autopep8 must be installed: '
         'https://pypi.python.org/pypi/autopep8  '
-        'It recursively looks for all python files in a given directory, '
+        'With --path option, it recursively looks '
+        'for all python files in a given directory, '
         'so for example, if you want to clean your i-pi repository, '
-        'type: pepper your_ipi_root. '
+        'type: pepper --path your_ipi_root . '
         'Pepper with recursively search for valid python files and '
         'will clean them. '
         'If you only want to apply it to some files, use --files '
         'option, but BE CAREFUL '
         '- in this mode pepper will not check if they are python files!')
     # There is only one positional argument
-    parser.add_argument(
-        'path',
-        metavar='PATH',
-        help='Path to directory to recursively look for python files')
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('-p',
+                       '--path',
+                       type=str,
+                       metavar='PATH',
+                       help='Path to directory '
+                       'where pepper will look for python files recursively. '
+                       'May not be used with --files')
+    group.add_argument('-f',
+                       '--files',
+                       type=str,
+                       nargs='+',
+                       help='files on which pepper will execute '
+                            'autopep8. WARNING: It will NOT check if they'
+                            'are python files!')
     parser.add_argument('--verbosity',
                         choices=['silent', 'low', 'medium', 'high'],
                         default='medium',
@@ -59,13 +67,6 @@ if __name__ == '__main__':
                              'medium prints only filenames '
                              'on which script acted and '
                              'high prints everything from autopep8 output')
-    parser.add_argument('-f',
-                        '--files',
-                        type=str,
-                        nargs='+',
-                        help='run the script only on the given files.'
-                             'The positional argument will be ignored. '
-                             'pepper will not check if they are python files!')
 
     args = parser.parse_args()
     path = args.path
@@ -110,7 +111,9 @@ if __name__ == '__main__':
     while process.poll() is None:
         # We must strip, otherwise we get double newline
         line = process.stdout.readline().rstrip()
-        if verbosity == 'high':
+        if re.match('\[Errno.*\]', line):
+            print line
+        elif verbosity == 'high':
             print line
         elif verbosity == 'medium':
             # We want to print only filenames that changed
