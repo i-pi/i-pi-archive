@@ -179,6 +179,9 @@ def main():
     print 'Starting tests'
     running_test = []
     running_com = []
+    if int(_parser()['nproc']) > 1:
+        if answer_is_y('"!W! REGTEST is not thread-safe. Some tests could crash. Do you want to continue (y/n)?') == False:
+            sys.exit()
     try:
         while True:
             if len(running_test) < _parser()['nproc']:
@@ -274,7 +277,7 @@ def _parser():
     parser.add_argument('-np', '--nproc',
                         action='store',
                         type=int,
-                        default=4,
+                        default=1,
                         help=('Number of concurrent test run at once.'),
                         dest='nproc')
     parser.add_argument('--create-reference',
@@ -363,12 +366,11 @@ def _file_is_test(path_to_test):
     with open(path_to_test) as _file:
         _text = _file.read()
     print _text[:100]
-    print len([x.group(1) for x in REGTEST_STRING_RGX.finditer(_text)]) > 0
     return len([x.group(1) for x in REGTEST_STRING_RGX.finditer(_text)]) > 0
 
 
 class Test(threading.Thread):
-    """ Contains all the method used to create, run and compare a test.
+    """ Contains all the methods used to create, run and compare a test.
 
     Args:
         index: An integer used to ensure no-overlap between sockets.
@@ -663,9 +665,10 @@ class Test(threading.Thread):
                         remove_file(straj['old_filename'])
                         shutil.copy2(straj['new_filename'],
                                      straj['old_filename'])
-            except:
+            except IOError, e:
                 self.test_status = 'ERROR'
-                self.msg += 'Error while copying the new reference!!'
+                self.msg += 'Error while copying the new reference!!\n'
+                self.msg += "Unable to copy file. %s" % e
             else:
                 self.test_status = 'COPIED'
         else:
@@ -883,8 +886,8 @@ class Test(threading.Thread):
             elif isinstance(o, PropertyOutput):
                 nprop = []
                 isys = 0
-                for _ in simul.syslist:   # create multiple copies
-                    filename = o.filename
+                for _ss in simul.syslist:   # create multiple copies
+                    filename = _ss.prefix+o.filename
                     nprop.append({"old_filename" : os.path.join(olddir,
                                                                 filename),
                                   "new_filename" : os.path.join(newdir,
@@ -908,12 +911,12 @@ class Test(threading.Thread):
                                                          np.log(10)))) +
                                  "d") % (_bi))
 
-                        for _ in simul.syslist:
+                        for _ss in simul.syslist:
                             if o.ibead < 0 or o.ibead == _bi:
                                 if getkey(o.what) == "extras":
-                                    filename = o.filename+"_" + padb
+                                    filename = _ss.prefix+o.filename+"_" + padb
                                 else:
-                                    filename = o.filename+"_" + padb + \
+                                    filename = _ss.prefix+o.filename+"_" + padb + \
                                                "." + o.format
                                 ntraj.append({"old_filename" : os.path.join(olddir, filename),
                                               "format" : o.format,
@@ -927,8 +930,8 @@ class Test(threading.Thread):
                 else:
                     ntraj = []
                     isys = 0
-                    for _ in simul.syslist:   # create multiple copies
-                        filename = o.filename
+                    for _ss in simul.syslist:   # create multiple copies
+                        filename = _ss.prefix+o.filename
                         filename = filename+"."+o.format
                         ntraj.append({"old_filename" : os.path.join(olddir,
                                                                     filename),
@@ -980,7 +983,7 @@ def create_dir(folder_path, ignore=False):
                 else:
                     raise RuntimeError
             except:
-                raise RuntimeError('I cannot remove the file.'
+                raise RuntimeError('I cannot remove the file. '
                                    'Try manually and restart this script!')
         else:
             raise SystemExit('User rules!')

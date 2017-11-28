@@ -1,10 +1,10 @@
 Geometry = GenFormat {
-    <<< "c6.gen"
+    <<< "init.gen"
 }
 
 # Socket controlled DFTB+
 Driver = Socket {
-    File="dftb" # File name, i.e., /tmp/ipi_dftb
+    File="c18s4" # File name, i.e., /tmp/ipi_dftb
     Protocol = i-PI {} # i-PI interface protocol
     MaxSteps = -1 # keep running until i-PI terminates the run
 }

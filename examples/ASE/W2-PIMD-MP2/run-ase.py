@@ -30,7 +30,7 @@ print
 os.environ['GAUSS_SCRDIR'] = '/dev/shm'
 
 # create ASE atoms and calculator
-atoms = ase.io.read('W2-MP2-6311ppGss.xyz')
+atoms = ase.io.read('init.xyz')
 atoms.set_calculator(
     Gaussian(
         method = 'MP2',

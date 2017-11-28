@@ -58,9 +58,9 @@ def help_list(option='property_list', prefix="help", standalone=True):
 
    simrestart = list_objects[option]
    if option == "property_list":
-      idict = list_objects[option].property_dict
+      idict = simrestart.property_dict
    elif option == "trajectory_list":
-      idict = list_objects[option].traj_dict
+      idict = simrestart.traj_dict
    else:
       raise ValueError("Incorrect option specified.")
 
