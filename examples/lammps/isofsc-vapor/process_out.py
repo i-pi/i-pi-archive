@@ -17,7 +17,7 @@ from math import log
 # for water liquid with pile_g thermostat, equilibration time ~ 0.1 ps
 equilibriumstep = 4000  
  
-table = np.loadtxt('vapor.out')
+table = np.loadtxt('simulation.out')
  
 (asize, bsize) = np.shape(table)
 print asize, bsize

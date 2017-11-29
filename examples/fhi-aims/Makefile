@@ -18,14 +18,14 @@ define run_aims
 endef
 
 zundel:
-	cd zundel; $(IPI) zundel-ipi.xml & sleep 3; \
-	$(call run_aims,3,zundel-aims) \
+	cd zundel; $(IPI) input.xml & sleep 3; \
+	$(call run_aims,3,aims) \
 	wait
 
 h2o-npt:
-	cd h2o-npt; $(IPI) h2o-ipi.xml & sleep 3; \
-	$(call run_aims,1,h2o-aims) \
+	cd h2o-npt; $(IPI) input.xml & sleep 3; \
+	$(call run_aims,1,aims) \
 	wait	
 
 clean:
-	rm -rf */*_output.* */*.log */run_* */RESTART */EXIT
+	rm -rf */*simulation* */*.log */run_* */*RESTART* */EXIT

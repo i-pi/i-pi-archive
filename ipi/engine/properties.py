@@ -651,11 +651,13 @@ class Properties(dobject):
       #pkey["func"](*arglist,**kwarglist) gives the value of the property
       #in atomic units. unit_to_user() returns the value in the user
       #specified units.
-      if "dimension" in pkey and unit != "":
-         return unit_to_user(pkey["dimension"], unit, pkey["func"](*arglist,**kwarglist))
+      value = pkey["func"](*arglist,**kwarglist)
+      if "dimension" in pkey:
+          dimension = pkey["dimension"]
       else:
-         return pkey["func"](*arglist,**kwarglist)
-
+          dimension = ""
+      return value, dimension, unit
+      
    def tensor2vec(self, tensor):
       """Takes a 3*3 symmetric tensor and returns it as a 1D array,
       containing the elements [xx, yy, zz, xy, xz, yz].
@@ -694,36 +696,45 @@ class Properties(dobject):
    def get_temp(self, atom="", bead="", nm=""):
       """Calculates the MD kinetic temperature.
 
-      Note that in the case that the centre of mass constraint there will be
-      3 fewer degrees of freedom than without, so this has to be taken into
-      account when calculating the kinetic temperature.
+      In case where a specie or a set of indices is selected, and there are constraints,
+      the result might be incorrect, as the kinetic energy is not necessarily proportional
+      to the temperature. Rather than using a scaling factor based on the number of degrees
+      of freedom, we add fake momenta to all the fixed components, so that a meaningful
+      result will be obtained for each subset of coordinates regardless of the constraints
+      imposed on the system.
 
       Args:
          atom: If given, specifies the atom to give the temperature
             for. If not, then the simulation temperature.
-      """
+      """      
 
-      if len(self.motion.fixatoms)>0:
-         mdof = len(self.motion.fixatoms)*3
-         if bead == "" and nm == "":
-            mdof*=self.beads.nbeads
-      else:
-         mdof = 0
+      if len(self.motion.fixatoms) > 0:
+         for i in self.motion.fixatoms:
+             pi = np.tile(np.sqrt(self.beads.m[i] * Constants.kb * self.ensemble.temp), 3)         
+             self.beads.p[:,3*i:3*i+3] += pi
 
       if self.motion.fixcom:
-         if bead == "" and nm == "":
-            mdof += 3
-         elif nm != "" and nm == "0":   # the centroid has 100% of the COM removal
-            mdof += 3
-         elif nm != "" :
-            mdof += 0
-         else:
-            mdof += 3.0/ float(self.beads.nbeads)  # spreads COM removal over the beads
+         # Adds a fake momentum to the centre of mass. This is the easiest way
+         # of getting meaningful temperatures for subsets of the system when there 
+         # are fixed components
+         M = np.sum(self.beads.m3) / 3.0 / self.beads.nbeads
+         pcm = np.tile(np.sqrt(M * Constants.kb * self.ensemble.temp), 3)
+         vcm = np.tile(pcm / M , self.beads.natoms)
+        
+         self.beads.p += self.beads.m3 * vcm
 
       kemd, ncount = self.get_kinmd(atom, bead, nm, return_count=True)
 
-      # "spreads" the COM removal correction evenly over all the atoms if just a few atoms are selected
-      return kemd/(0.5*Constants.kb) * (float(self.beads.natoms)/float(ncount)) / (3.0*self.beads.natoms*self.beads.nbeads - mdof)
+      if self.motion.fixcom:
+         # Removes the fake momentum from the centre of mass.
+         self.beads.p -= self.beads.m3 * vcm
+      
+      if len(self.motion.fixatoms) > 0:
+         # re-fixes the fix atoms
+         for i in self.motion.fixatoms:
+             self.beads.p[:,3*i:3*i+3] = 0.0 
+             
+      return  2.0 * kemd / (Constants.kb * 3.0 * float(ncount) * self.beads.nbeads)
 
    def get_kincv(self, atom=""):
       """Calculates the quantum centroid virial kinetic energy estimator.
@@ -1019,9 +1030,10 @@ class Properties(dobject):
             ncount += 1
       else:
          nbeads = self.beads.nbeads
-         ncount = self.beads.natoms
+         ncount = 0
          if atom == "":
             kmd = self.nm.kin
+            ncount = self.beads.natoms
          else:
             for i in range(self.beads.natoms):
                if (atom != "" and iatom != i and latom != self.beads.names[i]):
@@ -2260,51 +2272,10 @@ class Trajectories(dobject):
       #pkey["func"](*arglist,**kwarglist) gives the value of the trajectory
       #in atomic units. unit_to_user() returns the value in the user
       #specified units.
-      if "dimension" in pkey and unit != "":
-         return  unit_to_user(pkey["dimension"], unit, 1.0) * pkey["func"](*arglist,**kwarglist)
+
+      value = pkey["func"](*arglist,**kwarglist)
+      if "dimension" in pkey:
+          dimension = pkey["dimension"]
       else:
-         return pkey["func"](*arglist,**kwarglist)
-
-   def print_traj(self, what, stream, b=0, format="pdb", cell_units="atomic_unit", flush=True):
-      """Prints out a frame of a trajectory for the specified quantity and bead.
-
-      Args:
-         what: A string specifying what to print.
-         b: The bead index. Defaults to 0.
-         stream: A reference to the stream on which data will be printed.
-         format: The output file format.
-         cell_units: The units used to specify the cell parameters.
-         flush: A boolean which specifies whether to flush the output buffer
-            after each write to file or not.
-      """
-
-      cq = self[what]
-      if getkey(what) in [ "extras" ] :
-         stream.write(" #*EXTRAS*# Step:  %10d  Bead:  %5d  \n" % (self.system.simul.step+1, b) )
-         stream.write(cq[b])
-         stream.write("\n")
-         if flush :
-			stream.flush()
-			os.fsync(stream)
-         return
-      elif getkey(what) in [ "positions", "velocities", "forces", "forces_sc", "momenta" ] :
-         fatom = Atoms(self.system.beads.natoms)
-         fatom.names[:] = self.system.beads.names
-         fatom.q[:] = cq[b]
-      else:
-         fatom = Atoms(self.system.beads.natoms)
-         fatom.names[:] = self.system.beads.names
-         fatom.q = cq
-
-      fcell = Cell()
-      fcell.h = self.system.cell.h*unit_to_user("length", cell_units, 1.0)
-
-      if len(cell_units) < 1:
-         cell_units = 'atomic_unit'
-      if getall(what)[1] == '':
-         what = getkey(what) + '{atomic_unit}'
-
-      io.print_file(format, fatom, fcell, stream, title=("cell{%s}  Traj: %s Step:  %10d  Bead:   %5d " % (cell_units, what, self.system.simul.step+1, b) ) )
-      if flush :
-         stream.flush()
-         os.fsync(stream)
+          dimension = ""
+      return value, dimension, unit 

@@ -1,12 +1,12 @@
 &CONTROL
     calculation='scf'
-    verbosity='low'
+    verbosity='high'
     restart_mode='from_scratch'
     tstress=.true.
     tprnfor=.true.
     etot_conv_thr=5.0D-5
     forc_conv_thr=1.0D-4
-    prefix='li.bcc'
+    prefix='libcc'
     outdir='./'
     pseudo_dir='../'
     max_seconds=7200

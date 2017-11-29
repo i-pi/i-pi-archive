@@ -16,7 +16,7 @@ kspace_style    pppm 1e-6
 read_data       data.lmp 
 
 special_bonds   charmm
-fix  1 all ipi driver 1234 unix
+fix  1 all ipi paracetamol-geop 1234 unix reset
 
 thermo          100 
 thermo_style    one
@@ -26,5 +26,4 @@ thermo_style    one
 #dump_modify     1 image yes scale yes
 #dump            1 all xyz 100 alphalmp.xyz
 
-
-run          1999999999
+run          19999999

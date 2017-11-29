@@ -222,10 +222,11 @@
       ELSEIF (vstyle == 11) THEN
          IF (par_count .ne. 3) THEN
             WRITE(*,*) "Error:  incorrect initialization string included for qtip4pf-efield. &
-          Provide the three components of the electric field in V/nm"
+     &    Provide the three components of the electric field in V/nm"
             STOP "ENDED"
       ELSE
-            ! We take in an electric field in volts / nm.This must be converted to Eh / (e a0).
+            ! We take in an electric field in volts / nm.This must be converted 
+            ! to Eh / (e a0).
             do i=1,3
              efield(i) = vpars(i) / 5.14220652d2
             enddo

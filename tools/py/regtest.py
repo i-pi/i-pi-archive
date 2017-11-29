@@ -137,8 +137,7 @@ IPI_WAITING_TIME = 5    # Time to wait after i-pi has been started
 
 
 # Compile them only once! pylint: disable=anomalous-backslash-in-string
-REGTEST_STRING_RGX = re.compile(r'<!--\s+REGTEST\s+([\s\w\.\+\-\(\)\:\<\>]*)'
-                                '\s+ENDREGTEST\s+-->')
+REGTEST_STRING_RGX = re.compile(r'<!--\s*REGTEST\s+([\s\w\W]*)\s+ENDREGTEST\s*-->')
 # pylint: enable=anomalous-backslash-in-string
 
 try:
@@ -180,6 +179,9 @@ def main():
     print 'Starting tests'
     running_test = []
     running_com = []
+    if int(_parser()['nproc']) > 1:
+        if answer_is_y('"!W! REGTEST is not thread-safe. Some tests could crash. Do you want to continue (y/n)?') == False:
+            sys.exit()
     try:
         while True:
             if len(running_test) < _parser()['nproc']:
@@ -275,7 +277,7 @@ def _parser():
     parser.add_argument('-np', '--nproc',
                         action='store',
                         type=int,
-                        default=4,
+                        default=1,
                         help=('Number of concurrent test run at once.'),
                         dest='nproc')
     parser.add_argument('--create-reference',
@@ -363,11 +365,12 @@ def _file_is_test(path_to_test):
 
     with open(path_to_test) as _file:
         _text = _file.read()
+    print _text[:100]
     return len([x.group(1) for x in REGTEST_STRING_RGX.finditer(_text)]) > 0
 
 
 class Test(threading.Thread):
-    """ Contains all the method used to create, run and compare a test.
+    """ Contains all the methods used to create, run and compare a test.
 
     Args:
         index: An integer used to ensure no-overlap between sockets.
@@ -662,9 +665,10 @@ class Test(threading.Thread):
                         remove_file(straj['old_filename'])
                         shutil.copy2(straj['new_filename'],
                                      straj['old_filename'])
-            except:
+            except IOError, e:
                 self.test_status = 'ERROR'
-                self.msg += 'Error while copying the new reference!!'
+                self.msg += 'Error while copying the new reference!!\n'
+                self.msg += "Unable to copy file. %s" % e
             else:
                 self.test_status = 'COPIED'
         else:
@@ -853,6 +857,15 @@ class Test(threading.Thread):
         os.dup2(devnull.fileno(), 1)
 
         # opens & parses the input file
+        
+        # get in the input file location so it can find other input files for initialization
+        cwd = os.getcwd() 
+        iodir = os.path.dirname(os.path.realpath(xml_path))    
+        os.chdir(iodir)
+        
+        print "READING FILE FROM ", iodir 
+        print " WHILE RUNNING IN ", cwd
+        
         ifile = open(xml_path, "r")
         xmlrestart = io_xml.xml_parse_file(ifile) # Parses the file.
         ifile.close()
@@ -861,6 +874,7 @@ class Test(threading.Thread):
         isimul.parse(xmlrestart.fields[0][1])
 
         simul = isimul.fetch()
+        os.chdir(cwd) 
 
         # reconstructs the list of the property and trajectory files
         lprop = [] # list of property files
@@ -872,8 +886,8 @@ class Test(threading.Thread):
             elif isinstance(o, PropertyOutput):
                 nprop = []
                 isys = 0
-                for _ in simul.syslist:   # create multiple copies
-                    filename = o.filename
+                for _ss in simul.syslist:   # create multiple copies
+                    filename = _ss.prefix+o.filename
                     nprop.append({"old_filename" : os.path.join(olddir,
                                                                 filename),
                                   "new_filename" : os.path.join(newdir,
@@ -897,12 +911,12 @@ class Test(threading.Thread):
                                                          np.log(10)))) +
                                  "d") % (_bi))
 
-                        for _ in simul.syslist:
+                        for _ss in simul.syslist:
                             if o.ibead < 0 or o.ibead == _bi:
                                 if getkey(o.what) == "extras":
-                                    filename = o.filename+"_" + padb
+                                    filename = _ss.prefix+o.filename+"_" + padb
                                 else:
-                                    filename = o.filename+"_" + padb + \
+                                    filename = _ss.prefix+o.filename+"_" + padb + \
                                                "." + o.format
                                 ntraj.append({"old_filename" : os.path.join(olddir, filename),
                                               "format" : o.format,
@@ -916,8 +930,8 @@ class Test(threading.Thread):
                 else:
                     ntraj = []
                     isys = 0
-                    for _ in simul.syslist:   # create multiple copies
-                        filename = o.filename
+                    for _ss in simul.syslist:   # create multiple copies
+                        filename = _ss.prefix+o.filename
                         filename = filename+"."+o.format
                         ntraj.append({"old_filename" : os.path.join(olddir,
                                                                     filename),
@@ -969,7 +983,7 @@ def create_dir(folder_path, ignore=False):
                 else:
                     raise RuntimeError
             except:
-                raise RuntimeError('I cannot remove the file.'
+                raise RuntimeError('I cannot remove the file. '
                                    'Try manually and restart this script!')
         else:
             raise SystemExit('User rules!')

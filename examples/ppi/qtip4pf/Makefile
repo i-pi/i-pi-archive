@@ -9,7 +9,7 @@ IPI:=i-pi
 
 define run_driver
   for i in `seq 1 $1`; do \
-    $(driver) -u -h driver -m qtip4pf & \
+    $(driver) -u -h qtip4pf -m qtip4pf & \
   done;
 endef
 -include make.in
@@ -20,4 +20,4 @@ all:
 	wait
 
 clean:
-	rm -f \#* qtip4pf.* RESTART EXIT /tmp/ipi_driver *.log *.dat
+	rm -f \#* *simulation* *RESTART* EXIT /tmp/ipi_qtip4pf *.log* *.dat*

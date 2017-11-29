@@ -1,33 +1,32 @@
 #!/usr/bin/python
 
 __author__ = 'Igor Poltavsky'
-__version__ = '1.0'
 
 """ energies_ppi.py
-Reads simulation time, potential energy, positions and forces from
-an i-PI run and computes a virial total energy estimator and a ppi correction, potential energy estimator
-and ppi correction, virial kinetic energy estimator and ppi correction for each time frame. The output is saved
-to 'prefix.energies.dat' file which is created in the folder which contains the input files. The results are printed
-out in the format: "time frame", "virial total energy estimator", "total energy ppi correction",
-"potential energy estimator", "potential energy ppi correction", "virial kinetic energy estimator",
-"kinetic energy energy ppi correction".
+The script reads the simulation time, potential energy, positions and forces from
+standard i-PI output files and computes the virial total energy, potential energy, virial kinetic energy estimators 
+and corresponding PPI corrections for each time frame. The output is saved to 'prefix.energies.dat' file which is 
+located in the folder which contains the input files. The results are printed out in the format: "time frame", 
+"improved total energy estimator", "virial total energy estimator", "total energy PPI correction", 
+"improved potential energy estimator", "potential energy estimator", "potential energy PPI correction", 
+"improved kinetic energy estimator", "virial kinetic energy estimator", "kinetic energy energy PPI correction".
 
 The script assumes that the input files are in 'xyz' format, with prefix.out (contains simulation time and
 potential energy among other output properties), prefix.pos_*.xyz (positions) and
-prefix.for_*.xyz (forces) naming scheme.
-This would require the following lines in input.xml file:
-<properties filename='out' stride='n'> [step, time{picosecond}, potential{kelvin}] </properties>
-<trajectory filename='pos' stride='n' format='xyz' cell_units='angstrom'> positions{angstrom} </trajectory>
-<trajectory filename='for' stride='n' format='xyz' cell_units='angstrom'> forces{piconewton} </trajectory>
-where n is the same integer number.
+prefix.for_*.xyz (forces) naming scheme. This requires the following lines in input.xml file:
+<properties filename='out' stride='n'> [step, time, potential] </properties>
+<trajectory filename='pos' stride='n' format='xyz' cell_units='angstrom'> positions </trajectory>
+<trajectory filename='for' stride='n' format='xyz' cell_units='angstrom'> forces </trajectory>
+Here n is the same integer number.
 
 Syntax:
    python energies_ppi.py "prefix" "simulation temperature (in Kelvin)" "number of time frames to skip
    in the beginning of each file (default 0)" "units for the energy output (default choice is the units for
    the potential energy in input file)"
 
-Currently supported energy units are: atomic_unit, electronvolt, j/mol, cal/mol, and kelvin
+Currently supported energy units are: atomic_unit, electronvolt, j/mol, cal/mol, and kelvin.
 
+To speedup the script one has to compile the fortran functions from the i-Pi/tools/f90 folder.
 """
 
 import numpy as np
@@ -106,9 +105,11 @@ def energies(prefix, temp, ss=0, unit=''):
   if unit == '':
     unit = potentialEnergyUnit
 
-  iE.write("# Simulation time (in %s), virial total energy estimator and PPI total energy correction, potential energy "
-           "estimator and PPI potential energy correction, virial kinetic energy estimator and PPI kinetic "
-           "energy correction (all in %s)\n" % (timeUnit, unit))
+  iE.write("# Simulation time (in %s), improved total energy estimator, virial total energy estimator, and PPI "
+           "correction for the total energy; improved potential energy estimator, potential energy estimatorand, "
+           "PPI correction for the potential energy; improved kinetic energy estimator, virial kinetic energy "
+           "estimator, and PPI correction for the kinetic energy (all in %s)\n" % (timeUnit, unit))
+  iE.close()
 
   natoms = 0
   ifr = 0
@@ -122,13 +123,13 @@ def energies(prefix, temp, ss=0, unit=''):
 
     try:
       for i in range(nbeads):
-        ret = read_file("xyz", ipos[i], output='arrays')
+        ret = read_file("xyz", ipos[i], dimension='length')["atoms"]
         if natoms == 0:
-          m, natoms = ret["masses"], ret["natoms"]
+          m, natoms = ret.m, ret.natoms
           q = np.zeros((nbeads, 3*natoms))
           f = np.zeros((nbeads, 3*natoms))
-        q[i, :] = ret["data"]
-        f[i, :] = read_file("xyz", ifor[i], output='arrays')["data"]
+        q[i, :] = ret.q
+        f[i, :] = read_file("xyz", ifor[i], dimension='force')["atoms"].q
       U, time = read_U(iU, potentialEnergyUnit, potentialEnergy_index, time_index)
     except EOFError: # finished reading files
       sys.exit(0)
@@ -141,7 +142,7 @@ def energies(prefix, temp, ss=0, unit=''):
 
       time -= time0
 
-      KPa, f2, f2KPa, KVir = 0.0, 0.0, 0.0, 0.0
+      KPa, f2, KVir = 0.0, 0.0, 0.0
 
       if not fast_code:
 
@@ -164,7 +165,6 @@ def energies(prefix, temp, ss=0, unit=''):
 
         KPa *= const_1
         KPa += const_2*natoms
-        f2KPa = f2*KPa
         KVir /= 2.0*nbeads
         KVir += const_3*natoms
 
@@ -176,12 +176,11 @@ def energies(prefix, temp, ss=0, unit=''):
 
         KPa *= const_4
         KPa += const_2*natoms
-        f2KPa = f2*KPa
         KVir += const_3*natoms
 
       f2_av += f2
       KPa_av += KPa
-      f2KPa_av += f2KPa
+      f2KPa_av += f2*KPa
       U_av += U
       f2U_av += f2*U
       KVir_av += KVir
@@ -200,7 +199,10 @@ def energies(prefix, temp, ss=0, unit=''):
       U = unit_to_user("energy", unit, U_av/norm)
       KVir = unit_to_user("energy", unit, KVir_av/norm)
 
-      iE.write("%f    %f     %f     %f     %f    %f     %f\n" % (time, KVir + U, dK + dU, U, dU, KVir, dK))
+      iE = open(fn_out_en, "a")
+      iE.write("%f    %f     %f     %f     %f    %f     %f     %f     %f     %f\n"
+               % (time, KVir + U + dK + dU, KVir + U, dK + dU, U + dU, U, dU, KVir + dK, KVir, dK))
+      iE.close()
 
     else:
       ifr += 1
