@@ -10,11 +10,12 @@ import numpy as np
 from ipi.utils.messages import verbosity, info
 
 
-__all__ = ['nm_trans', 'nm_rescale', 'nm_fft']
+__all__ = ['nm_trans', 'nm_rescale', 'nm_fft', 'mk_nm_matrix', 'mk_o_nm_matrix', 'nm_eva', 'o_nm_eva']
 
 
 def mk_nm_matrix(nbeads):
-   """Makes a matrix that transforms between the bead and normal mode
+   """ 
+   Makes a matrix that transforms between the bead and normal mode
    representations.
 
    If we return from this function a matrix C, then we transform between the
@@ -35,6 +36,26 @@ def mk_nm_matrix(nbeads):
       b2nm[nbeads/2,0:nbeads:2] = 1.0
       b2nm[nbeads/2,1:nbeads:2] = -1.0
    return b2nm/np.sqrt(nbeads)
+   
+def nm_eva(nbeads):
+    return 2*np.array([np.sin(k*np.pi/nbeads) for k in range(nbeads)])
+    
+def o_nm_eva(nbeads):
+    return 2*np.array([np.sin(k*np.pi/(2*nbeads)) for k in range(nbeads)])
+
+def mk_o_nm_matrix(nbeads):
+    """ 
+    Makes a matrix that transforms between the bead and the (open path) normal mode
+    representations. 
+    """
+    # here define the orthogonal transformation matrix for the open path
+    b2o_nm = np.zeros((nbeads,nbeads))                         
+    b2o_nm[0,:] = np.sqrt(1.0)   
+    for j in range(0,nbeads):
+        for i in range(1,nbeads): 
+            b2o_nm[i,j] = np.sqrt(2.0)*np.cos(np.pi*(j+0.5)*i/float(nbeads))
+    return b2o_nm/np.sqrt(nbeads)
+
 
 def mk_rs_matrix(nb1, nb2):
    """Makes a matrix that transforms a path with `nb1` beads to one with `nb2` beads.
@@ -71,7 +92,42 @@ def mk_rs_matrix(nb1, nb2):
       return mk_rs_matrix(nb2, nb1).T*(float(nb2)/float(nb1))
 
 
-class nm_trans(object):
+def mk_o_rs_matrix(nb1, nb2):
+   """Makes a matrix that transforms a path with `nb1` beads to one with `nb2` beads.
+
+   If we return from this function a matrix T, then we transform between the
+   system with nb1 bead and the system of nb2 beads using q_2 = T . q_1
+
+   Args:
+      nb1: The initial number of beads.
+      nb2: The final number of beads.
+   """
+
+   if (nb1 == nb2):
+      return np.identity(nb1,float)
+   elif (nb1 > nb2):
+      b1_nm = mk_o_nm_matrix(nb1)
+      nm_b2 = mk_o_nm_matrix(nb2).T
+
+      #builds the "reduction" matrix that picks the normal modes we want to keep
+      b1_b2 = np.zeros((nb2, nb1), float)
+      b1_b2[0,0] = 1.0
+      for i in range(1, nb2/2+1):
+         b1_b2[i,i] = 1.0
+         b1_b2[nb2-i, nb1-i] = 1.0
+      if (nb2 % 2 == 0):
+         #if we are contracting down to an even number of beads, then we have to
+         #pick just one of the last degenerate modes to match onto the single
+         #stiffest mode in the new path
+         b1_b2[nb2/2, nb1-nb2/2] = 0.0
+
+      rs_b1_b2 = np.dot(nm_b2, np.dot(b1_b2, b1_nm))
+      return rs_b1_b2*np.sqrt(float(nb2)/float(nb1))
+   else:
+      return mk_o_rs_matrix(nb2, nb1).T*(float(nb2)/float(nb1))
+
+
+class nm_trans(object): 
    """Uses matrix multiplication to do normal mode transformations.
 
    Attributes:
@@ -81,7 +137,7 @@ class nm_trans(object):
          representations.
    """
 
-   def __init__(self, nbeads):
+   def __init__(self, nbeads, open_paths=None):
       """Initializes nm_trans.
 
       Args:
@@ -90,7 +146,13 @@ class nm_trans(object):
 
       self._b2nm = mk_nm_matrix(nbeads)
       self._nm2b = self._b2nm.T
-
+      if open_paths is None:
+          open_paths = []
+      self._open = open_paths
+      #definition of the transformation also with the open path matrx
+      self._b2o_nm = mk_o_nm_matrix(nbeads)						
+      self._o_nm2b = self._b2o_nm.T	
+      
    def b2nm(self, q):
       """Transforms a matrix to the normal mode representation.
 
@@ -98,19 +160,29 @@ class nm_trans(object):
          q: A matrix with nbeads rows, in the bead representation.
       """
 
-      return np.dot(self._b2nm,q)
+      qnm = np.dot(self._b2nm, q)
+      for io in self._open: # does separately the transformation for the atom that are marked as open paths
+         qnm[:,3*io] = np.dot(self._b2o_nm, q[:,3*io])
+         qnm[:,3*io+1] = np.dot(self._b2o_nm, q[:,3*io+1])
+         qnm[:,3*io+2] = np.dot(self._b2o_nm, q[:,3*io+2])
+      return qnm
 
-   def nm2b(self, q):
+   def nm2b(self, qnm):
       """Transforms a matrix to the bead representation.
 
       Args:
          q: A matrix with nbeads rows, in the normal mode representation.
       """
 
-      return np.dot(self._nm2b,q)
+      q = np.dot(self._nm2b,qnm)
+      for io in self._open: # does separately the transformation for the atom that are marked as open paths
+          q[:,3*io] = np.dot(self._o_nm2b, qnm[:,3*io])
+          q[:,3*io+1] = np.dot(self._o_nm2b, qnm[:,3*io+1])
+          q[:,3*io+2] = np.dot(self._o_nm2b, qnm[:,3*io+2])
+      return q
 
 
-class nm_rescale(object):
+class nm_rescale(object):   ##!! TODO - make compatible with a open path formulation
    """Uses matrix multiplication to do ring polymer contraction or expansion
    between different numbers of beads.
 
@@ -121,7 +193,7 @@ class nm_rescale(object):
          beads and another with 'nbeads1' beads.
    """
 
-   def __init__(self, nbeads1, nbeads2):
+   def __init__(self, nbeads1, nbeads2,open_paths=None):
       """Initializes nm_rescale.
 
       Args:
@@ -131,6 +203,12 @@ class nm_rescale(object):
 
       self._b1tob2 = mk_rs_matrix(nbeads1,nbeads2)
       self._b2tob1 = self._b1tob2.T*(float(nbeads1)/float(nbeads2))
+      #definition of the scaling also using the open case normal mode matrixtransformations 
+      if open_paths is None:
+          open_paths = []
+      self._open = open_paths
+      self._o_b1tob2 = mk_o_rs_matrix(nbeads1,nbeads2)
+      self._o_b2tob1 = self._o_b1tob2.T*(float(nbeads1)/float(nbeads2))
 
    def b1tob2(self, q):
       """Transforms a matrix from one value of beads to another.
@@ -138,8 +216,14 @@ class nm_rescale(object):
       Args:
          q: A matrix with nbeads1 rows, in the bead representation.
       """
+      q_scal = np.dot(self._b1tob2, q)
+      for io in self._open: # does separately the transformation for the atom that are marked as open paths
+          q_scal[:,3*io] = np.dot(self._o_b1tob2, q[:,3*io])
+          q_scal[:,3*io+1] = np.dot(self._o_b1tob2, q[:,3*io+1])
+          q_scal[:,3*io+2] = np.dot(self._o_b1tob2, q[:,3*io+2])
+      return q_scal   
 
-      return np.dot(self._b1tob2,q)
+#      return np.dot(self._b1tob2,q)
 
    def b2tob1(self, q):
       """Transforms a matrix from one value of beads to another.
@@ -147,11 +231,16 @@ class nm_rescale(object):
       Args:
          q: A matrix with nbeads2 rows, in the bead representation.
       """
+      q_scal = np.dot(self._b2tob1, q)
+      for io in self._open: # does separately the transformation for the atom that are marked as open paths
+          q_scal[:,3*io] = np.dot(self._o_b2tob1, q[:,3*io])
+          q_scal[:,3*io+1] = np.dot(self._o_b2tob1, q[:,3*io+1])
+          q_scal[:,3*io+2] = np.dot(self._o_b2tob1, q[:,3*io+2])
+      return q_scal   
+#      return np.dot(self._b2tob1,q)
 
-      return np.dot(self._b2tob1,q)
 
-
-class nm_fft(object):
+class nm_fft(object):   ## ! TODO add (matrix-version) of the open path transformation here
    """Uses Fast Fourier transforms to do normal mode transformations.
 
    Attributes:
@@ -167,7 +256,7 @@ class nm_fft(object):
       natoms: The number of atoms.
    """
 
-   def __init__(self, nbeads, natoms):
+   def __init__(self, nbeads, natoms, open_paths=None):
       """Initializes nm_trans.
 
       Args:
@@ -177,6 +266,12 @@ class nm_fft(object):
 
       self.nbeads = nbeads
       self.natoms = natoms
+      if open_paths is None:
+          open_paths = []
+      self._open = open_paths
+      #for atoms with open path we still use the matrix transformation 
+      self._b2o_nm = mk_o_nm_matrix(nbeads)						
+      self._o_nm2b = self._b2o_nm.T	
       try:
          import pyfftw
          info("Import of PyFFTW successful", verbosity.medium)
@@ -208,8 +303,8 @@ class nm_fft(object):
          return q
       self.qdummy[:] = q
       self.fft()
-      if self.nbeads == 2:
-         return self.qnmdummy.real/np.sqrt(self.nbeads)
+      if self.nbeads == 2:					          
+         return self.qnmdummy.real/np.sqrt(self.nbeads)		
 
       nmodes = self.nbeads/2
 
@@ -224,7 +319,11 @@ class nm_fft(object):
       else:
          self.qnmdummy[1:,:] *= np.sqrt(2)
          (qnm[1:nmodes+1,:], qnm[self.nbeads:nmodes:-1,:]) = (self.qnmdummy[1:,:].real, self.qnmdummy[1:,:].imag)
-
+      
+      for io in self._open: # does separately the transformation for the atom that are marked as open paths
+         qnm[:,3*io] = np.dot(self._b2o_nm, q[:,3*io])
+         qnm[:,3*io+1] = np.dot(self._b2o_nm, q[:,3*io+1])
+         qnm[:,3*io+2] = np.dot(self._b2o_nm, q[:,3*io+2])
       return qnm
 
    def nm2b(self, qnm):
@@ -257,4 +356,10 @@ class nm_fft(object):
 
       self.qnmdummy[:] = qnm_complex
       self.ifft()
-      return self.qdummy*np.sqrt(self.nbeads)
+      q=np.zeros(qnm.shape)
+      q=self.qdummy*np.sqrt(self.nbeads)
+      for io in self._open: # does separately the transformation for the atom that are marked as open paths
+          q[:,3*io] = np.dot(self._o_nm2b, qnm[:,3*io])
+          q[:,3*io+1] = np.dot(self._o_nm2b, qnm[:,3*io+1])
+          q[:,3*io+2] = np.dot(self._o_nm2b, qnm[:,3*io+2])
+      return q
