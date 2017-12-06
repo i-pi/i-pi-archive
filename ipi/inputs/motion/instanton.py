@@ -62,22 +62,17 @@ class InputInst(InputDictionary):
                                             "default": 'None',
                                             "options": ["nichols","lbfgs","NR","None"],
                                             "help": "The geometry optimization algorithm to be used"}),
-               "action": (InputArray, {"dtype": float,
-                                      "default": input_default(factory=np.zeros, args=(0,)),
-                                      "help": "Vector containing the 2  components ('spring' and 'physical') of the actions. Unitless "}),
+
                "prefix": (InputValue, {"dtype": str,
                                       "default": "INSTANTON",
                                       "help": "Prefix of the output files."}),
                "delta": (InputValue, {"dtype": float,
                                      "default": 0.1,
                                      "help": "Initial stretch amplitude."}),
-               "hessian_sparse": (InputValue, {"dtype": str,
-                                          "default": "false",
-                                          "options": ["false", "true"],
-                                          "help": "Decide if we work with sparse numerical algorithm or not."}),
+               #Hessian
                "hessian_init": (InputValue, {"dtype": str,
-                                            "default": 'None',
-                                            "options": ["true", 'None'],
+                                            "default": 'false',
+                                            "options": ["true", 'false'],
                                             "help": "How to initialize the hessian if it is not fully provided."}),
                "hessian":    (InputArray, {"dtype" : float,
                               "default"  : input_default(factory=np.eye, args = (0,)),
@@ -85,7 +80,7 @@ class InputInst(InputDictionary):
                "hessian_update": (InputValue, {"dtype": str,
                                 "default": "powell",
                                 "options": ["powell", "recompute"],
-                                "help": "How to update the hessian in each step."}),
+                                "help": "How to update the hessian after each step."}),
                "hessian_asr": (InputValue, {"dtype": str,
                                 "default": "none",
                                 "options": ["none","poly","crystal"],
@@ -145,7 +140,6 @@ class InputInst(InputDictionary):
         self.opt.store(geop.opt)
 
         # Generic instanton
-        self.action.store(geop.action)
         self.prefix.store(geop.prefix)
         self.delta.store(geop.delta)
         self.hessian_final.store(geop.hessian_final)
@@ -155,7 +149,6 @@ class InputInst(InputDictionary):
 
         #Now we decide what to store depending on optimization algorithm
         if geop.opt =='nichols' or geop.opt =='NR':
-            self.hessian_sparse.store(geop.sparse)
             self.hessian.store(geop.hessian)
             self.hessian_update.store(geop.hessian_update)
             self.hessian_asr.store(geop.hessian_asr)

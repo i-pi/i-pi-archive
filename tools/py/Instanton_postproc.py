@@ -1,110 +1,81 @@
 #!/usr/bin/env python2
-
-""" ins_Q_xml.py
-
-Reads all the information needed from the RESTART file and
-compute partition functions of the reactant, TS or instanton.
-
-Syntax:
-            python ins_Q_xml.py <name_input> <mode>   <temperature (K)>  ( <nbeads>)
-    
-  Example: python inst_Q_xml.py   RESTART  instanton       300
-           python inst_Q_xml.py   RESTART  reactant        300               50
-           python inst_Q_xml.py   RESTART  TS              300
-
-"""
-
-#04Oct17
-
 import numpy as np
-import numpy as npp
 import sys
 import os
 import math
-import time
+import argparse
 
-#I-PI path
-#ipi_path='/home/jeremy/projects/i-pi-mc'
-ipi_path='/home/litman/Yair/Instanton/I-PI-mc/i-pi-MR/i-pi-mc/'
+""" Reads all the information needed from a i-pi RESTART file and compute the partition functions of the reactant, transition state (TS) or
+instanton according to J. Phys. Chem. Lett. 7, 437(2016) (Instanton Rate calculations) or J. Chem. Phys. 134, 054109 (2011) (Tunneling Splitting)
 
-if not (os.path.exists(ipi_path)):
-   print 'We can not find ipi in %s' %ipi_path
-   print 'Please correct the path'
-   sys.exit()
+Syntax:    python  Instanton_postproc.py  <name_input> -c <case> -t  <temperature (K)>  (-n <nbeads>)
 
-sys.path.insert(0, ipi_path)
-from ipi.engine.simulation import Simulation
+Examples:  python  Instanton_postproc.py   RESTART  -c  instanton    -t   300
+           python  Instanton_postproc.py   RESTART  -c  reactant     -t   300            -n 50
+           python  Instanton_postproc.py   RESTART  -c    TS         -t   300
 
-def ch4_filter(pos,dynmat,natoms,m,asr):
-    pos= pos[:,:-3]
-    dynmat= dynmat[:-3,:-3]
-    natoms = natoms-1
-    m =m[:-1]
-    asr='poly'
-    return  pos,dynmat,natoms,m,asr 
+Type python Instanton_postproc.py -h for more information
 
-def get_rp_freq(w0,nbeads,temp,asr=None):
-    """ Compute the ring polymer frequencies for an 3D harmonic potential
-	defined by the frequencies w0. """
-    hbar=1.0
-    kb=1
-    betaP=1/(kb*nbeads*temp) 
-    factor= (betaP*hbar)
-    
-    w=1.0
-    if np.amin(w0)<0.0:
-       print '@get_rp_freq: We have a negative frequency, something is going wrong.'
-       sys.exit()
 
-    if asr =='poly':
-      nzero = 6        
-    elif asr =='crystal':
-      nzero = 3        
-    else:
-      nzero = 0
+Relies on the infrastructure of i-pi, so the ipi package should
+be installed in the Python module directory, or the i-pi
+main directory must be added to the PYTHONPATH environment variable.
+"""
 
-    for i in range(nzero):
-      for k in range(1,nbeads):
-       w*=factor*np.sqrt(4./(betaP*hbar)**2 * np.sin(np.absolute(k)*np.pi/nbeads)**2)
-    #Yes, for each K w is nbeads
-    
-    for n in range(w0.size):
-     for k in range(nbeads):
-        w*=factor*np.sqrt(4./(betaP*hbar)**2 * np.sin(np.absolute(k)*np.pi/nbeads)**2+w0[n])
-        #note the w0 is the eigenvalue ( the square of the frequency )
-    return w
+# Y. Litman, 2017.
+
+#You can insert the i-pi path with the following lines.
+#Uncomment them and adjust the ipi_path variable
+
+ipi_path='/home/litman/Yair/Instanton/I-PI-mc/i-pi-mc'
  
-def spring_hessian(nbeads,natoms,omega2,m,mode='full'):
-    """ Add spring terms to the extended hessian
-        """
-    ii = natoms * 3
-    h=np.zeros([ii*nbeads,ii*nbeads])
+if not (os.path.exists(ipi_path)):
+    print 'We can not find ipi in %s' %ipi_path
+    print 'Please correct the path'
+    sys.exit()
+sys.path.insert(0, ipi_path)
 
-    if nbeads == 1:
-       return h
+from ipi.engine.simulation import Simulation
+from ipi.utils.units import unit_to_internal, unit_to_user, Constants, Elements
+from ipi.utils.instools import red2comp,clean_hessian
+from ipi.engine.motion.instanton import  SpringMapper
 
-    m3 = get_m3(natoms,nbeads,m)
-    h_sp = m3[0] * omega2
+np.set_printoptions(precision=6, suppress=True, threshold=np.nan)
 
-    # Diagonal
-    diag2 = np.diag(2.0 * h_sp)
+#UNITS
+K2au    = unit_to_internal("temperature", "kelvin", 1.0)
+kb      = Constants.kb
+hbar    = Constants.hbar
+eV2au   = unit_to_internal("energy", "electronvolt", 1.0)
 
-    for i in range(0, nbeads):
-        h[i * ii:(i + 1) * ii, i * ii:(i + 1) * ii] += diag2
+#INPUT
+parser = argparse.ArgumentParser( description="""Post-processing routine in order to obtain different quantities from an instanton (or instanton related) calculation. These quantities can be used for the calculation of rates or tunneling splittings in the instanton approximation.""")
+parser.add_argument('input', help="Restart file")
+parser.add_argument('-c','--case',default=False,help="Type of the calculation to analyse. Options: 'instanton', 'reactant' or 'TS'.")
+parser.add_argument('-t','--temperature', type=float, default=0.0, help="Temperature in K.")
+parser.add_argument('-asr','--asr', default='poly', help="Removes the zero frequency vibrational modes depending on the symmerty of the system")
+parser.add_argument('-e','--energy_shift', type=float,default=0.0, help="Zero of energy in eV")
+parser.add_argument('-f','--filter',default=[], help='List of atoms indexes to filter (i.e. eliminate its componentes in the position,mass and hessian arrays. It is 0 based.', type=int, action='append')
+parser.add_argument('-n','--nbeadsR',default=0,  help='Number of beads (full polymer) to compute the approximate partition function (only reactant case)', type=int )
 
-    # Non-Diagonal
-    ndiag = np.diag(-h_sp)
-    #quasi-band
-    for i in range(0, nbeads - 1):
-        h[i * ii:(i + 1) * ii, (i + 1) * ii:(i + 2) * ii] += ndiag
-        h[(i + 1) * ii:(i + 2) * ii, i * ii:(i + 1) * ii] += ndiag
-    # Corner
-    if mode =='full':
-       h[ 0 :ii , (nbeads-1)*ii:(nbeads) * ii   ] += ndiag
-       h[(nbeads - 1) * ii:(nbeads) * ii, 0:ii  ] += ndiag
-    return h
+args    = parser.parse_args()
+inputt  = args.input
+case    = args.case
+temp    = args.temperature*K2au
+asr     = args.asr
+V00     = args.energy_shift
+filt    = args.filter
+nbeadsR = args.nbeadsR
 
-def get_doble(q0,nbeads0,natoms,h0):
+if case not in list(['reactant','TS','instanton']):
+   raise ValueError("We can not indentify the case. The valid cases are: 'reactant', 'TS' and 'instanton'")
+if args.temperature == 0.0:
+   raise ValueError("The temperature must be specified.'")
+
+
+#-----Some functions-----------------
+
+def get_double(q0,nbeads0,natoms,h0):
     """Takes nbeads, positions and hessian (only the 'physcal part') of the half polymer and 
        returns the equivalent for the full ringpolymer."""
     q=np.concatenate((q0, np.flipud(q0)), axis=0)
@@ -123,195 +94,77 @@ def get_doble(q0,nbeads0,natoms,h0):
 
     return q,nbeads,h
 
-def flo(st):
-    #st=str(st)
-    st=st.replace("+","")
-    return  np.float(st)
+def spring_pot(nbeads,q,omega2,m3):
+    e=0.0
+    for i in range(nbeads - 1):
+        dq =q[i + 1, :] - q[i, :]
+        e += omega2 * 0.5 *np.dot(m3[0]*dq,dq)
+    return e
 
-def get_m3(natoms,nbeads,m):
-    """Computes 'm3' mass vector, one value of mass for each degree of freedom"""
-    m3 = np.zeros((nbeads,3*natoms),float)
-    m3[:,0:3*natoms:3] = m
-    m3[:,1:3*natoms:3] = m3[:,0:3*natoms:3]
-    m3[:,2:3*natoms:3] = m3[:,0:3*natoms:3]
-    return m3
-
-def get_dynmat(h,q,natoms,nbeads,m):
-    """Computes the dynmat"""
-    m3 = get_m3(natoms,nbeads,m)  
-    ii = natoms * nbeads
-    mm = np.zeros((nbeads, natoms))
-    for i in range(nbeads):
-        mm[i] = m
-    mm     = mm.reshape(ii)
-    ism    = m3.reshape(ii * 3) ** (-0.5)
-    ismm   = np.outer(ism, ism)
-    dynmat = np.multiply(h, ismm)
-    return dynmat
-
-def red2comp(h, nbeads,natoms):
-    """Takes the reduced physical hessian and construct the 'complete' one (all 0 included) """
-    i = natoms * 3
-    ii = 3*natoms*nbeads
-    h0 = np.zeros((ii, ii), float)
-
-    for j in range(nbeads):
-        h0[j * i:(j + 1) * i, j * i:(j + 1) * i] = h[:, j * i:(j + 1) * i]
-    return h0
-
-def clean_dynmat(dynmat,q, natoms,nbeads,m,asr):
-    """
-        Removes the translations and rotations modes.
-        IN  dynmat = dynamical matrix
-            q      = positions
-            natoms = number of atoms
-            nbeads = number of beads
-            m      = mass vector, one value for each atom
-                     is returned or not. Defaults to False.
-        OUT d      = non zero eigenvalues of the dynmatrix
-            w      = dynmatrix with the external modes projected out"""
-
-    #Set some util things
-    ii = natoms * nbeads
-    mm = np.zeros((nbeads, natoms))
-    m3 = get_m3(natoms,nbeads,m)
-    for i in range(nbeads):
-        mm[i] = m
-    mm     = mm.reshape(ii)
-    ism    = m3.reshape(ii * 3) ** (-0.5)
-
-    if asr =='none':
-        hm=dynmat
-    else:
-       #Computes the centre of mass.
-       com = np.dot(np.transpose(q.reshape((ii, 3))), mm) / mm.sum()
-       qminuscom = q.reshape((ii, 3)) - com
-
-       if asr =='poly':
-           #Computes the moment of inertia tensor.
-           moi  = np.zeros((3,3), float)
-           for k in range(ii):
-               moi-=np.dot(np.cross(qminuscom[k],np.identity(3)),np.cross(qminuscom[k],np.identity(3)))*mm[k]
-
-           I,U=(np.linalg.eig(moi))
-           R=np.dot(qminuscom,U)
-           D=np.zeros((6,3*ii),float)
-
-           #Computes the vectors along translations and rotations.
-           #Translations
-           D[0]=np.tile([1,0,0],ii)/ism
-           D[1]=np.tile([0,1,0],ii)/ism
-           D[2]=np.tile([0,0,1],ii)/ism
-           #Rotations
-           for i in range(3*ii):
-               iatom=i/3
-               idof=np.mod(i,3)
-               D[3,i]=(R[iatom,1]*U[idof,2] - R[iatom,2]*U[idof,1])/ism[i]
-               D[4,i]=(R[iatom,2]*U[idof,0] - R[iatom,0]*U[idof,2])/ism[i]
-               D[5,i]=(R[iatom,0]*U[idof,1] - R[iatom,1]*U[idof,0])/ism[i]
+def Filter(pos,h,natoms,m,m3,filt):
+    filt3=[]
+    for i in (filt):
+      filt3.append(3*i)
+      filt3.append(3*i+1)
+      filt3.append(3*i+2)
+    pos =  np.delete(pos,filt3,axis=1) 
+    aux =  np.delete(h,filt3,axis=1) 
+    h   =  np.delete(aux,filt3,axis=0) 
+    m   =  np.delete(m,filt,axis=0)
+    m3  =  np.delete(m3,filt3,axis=1)
+    natoms = natoms-len(filt)
+    return  pos,h,natoms,m,m3
 
 
-           for k in range(6):
-               D[k] = D[k] / np.linalg.norm(D[k])
-            #Computes the transformation matrix.
-           transfmatrix = np.eye(3*ii) - np.dot(D.T,D)
-           hm = np.dot(transfmatrix.T,np.dot(dynmat,transfmatrix))
+def get_rp_freq(w0,nbeads,temp,asr=None):
+    """ Compute the ring polymer frequencies for multidimensional harmonic potential
+        defined by the frequencies w0. """
+    hbar=1.0
+    kb=1
+    betaP=1/(kb*nbeads*temp)
+    factor= (betaP*hbar)
 
-       elif asr == 'crystal':
-           # Computes the vectors along translations.
-           # Translations
-           D = np.zeros((6, 3 * ii), float)
-           D[0] = np.tile([1, 0, 0], ii) / ism
-           D[1] = np.tile([0, 1, 0], ii) / ism
-           D[2] = np.tile([0, 0, 1], ii) / ism
-
-           for k in range(3):
-               D[k] = D[k] / np.linalg.norm(D[k])
-           # Computes the transformation matrix.
-           transfmatrix = np.eye(3 * ii) - np.dot(D.T, D)
-           hm = np.dot(transfmatrix.T, np.dot(dynmat, transfmatrix))
-
-    ##Simmetrize to use linalg.eigh
-    hmT = hm.T
-    hm  = (hmT+hm)/2.0
-    d, w = np.linalg.eigh(hm)
-
-
-    #Count
-    dd = np.sign(d) * np.absolute(d) ** 0.5 / (2 * np.pi * 3e10 * 2.4188843e-17) #convert to cm^-1
-    #print dd[0:9]
-    #Zeros
-    condition = np.abs(dd) < 0.01 #Note that dd[] units are cm^1
-    nzero= np.extract(condition, dd)
-
-    if asr =='poly' and nzero.size != 6:
-         print "Warning, we have %s symmetry but we have %d 'zero' frequencies" %(asr,nzero.size)
-         print "Freq. in cm^-1:"
-         print  nzero
-
-    if asr =='crystal' and nzero.size != 3:
-         print "Warning, we have %s symmetry but we have %d 'zero' frequencies" %(asr,nzero.size)
-         print "Freq. in cm^-1:"
-         print  nzero
-
-    #Negatives
-    condition = dd < -4.0 #Note that dd[] units are cm^1
-    nneg = np.extract(condition, dd)
-    print "We have %d 'neg' frequencies " % (nneg.size)
-
-   # Now eliminate external degrees of freedom from the dynmatrix
-
-    if nzero.size > 0 and (asr=='poly' or asr=='crystal'):
-        if np.linalg.norm(nzero) > 0.01:
-            print " Warning @Clean hessian: We have deleted %d 'zero' frequencies " % (nzero.size)
-            print " but the norm is greater than 0.01 cm^-1.  This should not happen." % (nzero.size)
-
-        d = np.delete(d,range(nneg.size,nneg.size+nzero.size))
-        w = np.delete(w, range(nneg.size,nneg.size+nzero.size),axis=1)
-        
-        #dd = np.sign(d) * np.absolute(d) ** 0.5 / (2 * np.pi * 3e10 * 2.4188843e-17) #convert to cm^-1
-        #print dd[0:9]
-
+    w=1.0
+    if np.amin(w0)<0.0:
+       print '@get_rp_freq: We have a negative frequency, something is going wrong.'
+       sys.exit()
 
     if asr =='poly':
-       return d,w,np.prod(I)
+      nzero = 6
+    elif asr =='crystal':
+      nzero = 3
     else:
-       return d,w, 1.0
+      nzero = 0
 
+    for i in range(nzero):
+      for k in range(1,nbeads):
+       w*=factor*np.sqrt(4./(betaP*hbar)**2 * np.sin(np.absolute(k)*np.pi/nbeads)**2)
+    #Yes, for each K w is nbeads
 
-#START
-np.set_printoptions(precision=6, suppress=False, threshold=np.nan)
+    for n in range(w0.size):
+     for k in range(nbeads):
+        w*=factor*np.sqrt(4./(betaP*hbar)**2 * np.sin(np.absolute(k)*np.pi/nbeads)**2+w0[n])
+        #note the w0 is the eigenvalue ( the square of the frequency )
+    return w
 
+#-----END of some functions-----------------
 
-#I/O
-inputt  = sys.argv[1]
-case    = sys.argv[2]
-temp    = float(sys.argv[3])/315774.66
-
-if case not in list(['reactant','TS','instanton']):
-   raise ValueError("We can not indentify the case. The valid cases are: 'reactant', 'TS' and 'instanton'")	
-
+#-----READ---------------------------------
 print ''
 print 'We are ready to start'
 print 'Reading %s ...' %inputt 
 print '(This can take a while)'
-time0=time.time()
 
-#
 simulation = Simulation.load_from_xml(inputt, custom_verbosity='low',request_banner=False)
-#print simulation.__dict__
-beads   = simulation.syslist[0].motion.beads.copy()
-m       = simulation.syslist[0].motion.beads.m.copy()
-nbeads  = simulation.syslist[0].motion.beads.nbeads
-natoms  = simulation.syslist[0].motion.beads.natoms
-if case == 'reactant':
-    asr        = simulation.syslist[0].motion.asr
-    nbeadsQ    = int(sys.argv[4])
-else:
-    action  = simulation.syslist[0].motion.action
-    asr     = simulation.syslist[0].motion.hessian_asr
-#cell    = simulation.syslist[0].motion.cell.copy()
+beads      = simulation.syslist[0].motion.beads.copy()
+m          = simulation.syslist[0].motion.beads.m.copy()
+nbeads     = simulation.syslist[0].motion.beads.nbeads
+natoms     = simulation.syslist[0].motion.beads.natoms
 
+if case == 'reactant':
+    if nbeadsR==0:
+      print 'We have to specify number of beads for computing the partition function in the reactant case'
+      sys.exit()
 
 if case != 'instanton' and nbeads >1:
    print 'Incompatibility between case and nbeads in %s.' %(inputt)
@@ -320,69 +173,55 @@ if case != 'instanton' and nbeads >1:
    sys.exit()
 
 
-#Units. We use atomic units.
-b2a  = 0.52917721
-h2K  = 3.1668152e-06
-kb   = 1.0
-hbar = 1.0
-amu  = 1822.8885
-au2K = 315774.66
-au2eV= 27.211383414215543
-au2kcal= 1./ 0.0015946679
-#Print information
-time1=time.time()
-print ''
-print 'We have finished the reading in %f s.'%(time1-time0)
-print 'We used %i beads in the calculation.' %nbeads
-print 'We have %i atoms.' %natoms
-print 'ASR mode is %s.' %asr
-print ''
-
-#Depending the case we read from the input file different things:
-print ''
-print 'We need to get/create the dynmat'
-time1=time.time()
+#Depending the case we read from the restart file different things:
 if case=='reactant':
     dynmat  = simulation.syslist[0].motion.dynmatrix.copy()
+
+    ism = beads.m3 ** (0.5)
+    ismm = np.outer(ism, ism)
+    h = np.multiply(dynmat, ismm)
     pos     = beads.q
-    #print 'Hey, we are using CH4_filter HERE'
-    ###pos,dynmat,natoms,m,asr = ch4_filter(pos,dynmat,natoms,m,asr) 
+    if len(filt)>0:
+       pos,h,natoms,m,m3 = Filter(pos,h ,natoms,m,beads.m3,filt) 
 
 elif case=='TS':
     pos     = beads.q
-    hessian = simulation.syslist[0].motion.hessian.copy()
-    dynmat  = get_dynmat(hessian,pos,natoms,nbeads,beads.m)
-    temp2   = simulation.syslist[0].ensemble.temp
+    h       = simulation.syslist[0].motion.hessian.copy()
+    m3      = beads.m3
+    pots    = simulation.syslist[0].motion.old_u
+    V0      = simulation.syslist[0].motion.energy_shift
+ 
+    if V00 != 0.0:
+         print 'Overwriting energy shift with the provided values'
+         V0=V00*eV2au
 
 elif case=='instanton':
     hessian = simulation.syslist[0].motion.hessian.copy()
     mode    = simulation.syslist[0].motion.mode
     temp2   = simulation.syslist[0].ensemble.temp
     pots    = simulation.syslist[0].motion.old_u
-    grads   = - simulation.syslist[0].motion.old_f
+    grads   = -simulation.syslist[0].motion.old_f
     V0      = simulation.syslist[0].motion.energy_shift
-    
-    #if mode != 'rate':
-    #   print 'This script only work for rates calculation'
-    #   sys.exit()
 
-    if np.absolute(temp-temp2)*au2K >2:
+    if V00 != 0.0:
+        print 'Overwriting energy shift with the provided values'
+        V0=V00*eV2au
+ 
+    if np.absolute(temp-temp2)/K2au >2:
         print ' '
 	print 'Mismatch between provided temperature and temperature in the calculation'
 	sys.exit()
     print 'The instanton mode is %s' %mode
-    print 'The temperature is %f K' %(temp*au2K)
+    print 'The temperature is %f K' %(temp/K2au)
     if mode =='rate':
         print 'The full ring polymer is made of %i' %(nbeads*2)
-
         h0      = red2comp(hessian,nbeads,natoms)  
-        pos,nbeads,hessian2 = get_doble(beads.q,nbeads,natoms,h0)
+        pos,nbeads,hessian2 = get_double(beads.q,nbeads,natoms,h0)
         hessian = hessian2
-      
+        m3      = np.concatenate((beads.m3, beads.m3), axis=0) 
         omega2  = (temp * nbeads * kb / hbar) ** 2
-        spring  = spring_hessian(nbeads,natoms,omega2,m) 
+        spring  = SpringMapper.spring_hessian(natoms,nbeads,beads.m3[0],omega2,mode='full')
         h       = np.add(hessian, spring)
-        dynmat  = get_dynmat(h,pos,natoms,nbeads,m)
     elif mode=='splitting':
         print 'Our linear polymer has  %i' %(nbeads)
         #ALBERTO use banded matrix
@@ -399,104 +238,87 @@ elif case=='instanton':
      print 'We can not recognize the mode. STOP HERE'
      sys.exit()
 
-time2=time.time()
-print 'We got the dynmat in %f s.'%(time2-time1)
-print ' '
-
-#We have read all the data so we can start
+#-----------START---------------------------------
 beta =1.0/(kb*temp)
 betaP=1.0/(kb*(nbeads)*temp)
 
-d,w,detI = clean_dynmat(dynmat,pos,natoms,nbeads,m,asr)               
-print  "Final lowest ten frequencies (cm^-1)"
-print   np.sign(d) * np.absolute(d) ** 0.5 / (2 * np.pi * 3e10 * 2.4188843e-17)  # convert to cm^-1
-print   np.sign(d[0:10]) * np.absolute(d[0:10]) ** 0.5 / (2 * np.pi * 3e10 * 2.4188843e-17)  # convert to cm^-1
+print ''
+print 'We used %i beads in the calculation.' %nbeads
+print 'We have %i atoms.' %natoms
+print 'We are using asr = %s'%asr
+
+print 'Diagonalization....'
+d,w,detI = clean_hessian(h,pos,natoms,nbeads,m,m3,asr,mofi=True)               
+print  "Final lowest 15 frequencies (cm^-1)"
+print   np.sign(d[0:15]) * np.absolute(d[0:15]) ** 0.5 / (2 * np.pi * 3e10 * 2.4188843e-17)  # convert to cm^-1
 
 if case=='reactant':
-    Qtras    = ( ( np.sum(m) ) / ( 2*np.pi*beta*hbar**2 ) )**1.5               #Compute Qtras
-    #Qtras_rp = ( ( np.sum(m)*nbeadsQ ) / ( 2*np.pi*betaP*hbar**2 ) )**1.5      #Compute Qtras_rp (without freq factor) 
+    Qtras    = ( ( np.sum(m) ) / ( 2*np.pi*beta*hbar**2 ) )**1.5           
 
     if asr == 'poly':
-       Qrot     = ( 8*np.pi*detI   / ( (hbar)**6 * (beta)**3 ))**0.5           #Compute Qrot
-    #   Qrot_rp  = ( 8*np.pi*detI*nbeadsQ**3 / ( (hbar)**6 * (betaP)**3 ))**0.5 #Compute Qrot_rp (without freq factor)  
+       Qrot     = ( 8*np.pi*detI   / ( (hbar)**6 * (beta)**3 ))**0.5        
     else:
        Qrot    = 1.0
-    #  Qrot_rp = 1.0
 
-    ddd= (np.absolute((d)))  
-    logQvib    = -np.sum( np.log( 2*np.sinh( (beta*hbar*np.sqrt(d)/2.0) )  ))   #Compute Qvib 
-    w_rp       = get_rp_freq(d,nbeadsQ,temp)
-    logQvib_rp = -np.log(w_rp)                                         #Compute Qvib_rp 
-    #w_rp       = get_rp_freq(d,nbeadsQ,betaP,asr)
-    #logQvib_rp_plus   = np.sum( np.log(w_rp) )                                #Compute Qvib_rp+extra_freq   
+    #logQvib    = -np.sum( np.log( 2*np.sinh( (beta*hbar*np.sqrt(d)/2.0) )  ))   #Limit n->inf  
+    Qvib_rp    = get_rp_freq(d,nbeadsR,temp)
+    logQvib_rp = -np.log(Qvib_rp)                                
 
-    print ''
     print ''
     print 'We are done'
-    print 'Nbeads %i' %nbeadsQ
+    print 'Nbeads %i' %nbeadsR
     print ''
     print 'Qtras: %f bohr^-3'      %(Qtras)
     print 'Qrot: %f'       %(Qrot)
-    print 'logQvib: %f'    %(logQvib)
-    print ''
-    #print 'Qtras_rp: %f'   %(Qtras_rp/nbeadsQ**3)
-    #print 'Qrot_rp: %f'    %(Qrot_rp/nbeadsQ**3)
     print 'logQvib_rp: %f' %(logQvib_rp)
-    #print 'logQvib_rp+: %f' %(logQvib_rp_plus)
 
 elif case=='TS':
-    Qtras = ( ( np.sum(m) ) / ( 2*np.pi*beta*hbar**2 ) )**1.5    #Compute Qtras
+    Qtras = ( ( np.sum(m) ) / ( 2*np.pi*beta*hbar**2 ) )**1.5  
 
     if asr == 'poly':
-       Qrot = ( 8*np.pi*detI   / ( (hbar)**6 * (beta)**3 ))**0.5 #Compute Qrot
+       Qrot = ( 8*np.pi*detI   / ( (hbar)**6 * (beta)**3 ))**0.5 
     else:
        Qrot = 1.0
 
     print 'Note: Deleted frequency for computing Qvib  %f cm^-1' % (np.sign(d[0]) * np.absolute(d[0]) ** 0.5 / (2 * np.pi * 3e10 * 2.4188843e-17)) 
-    logQvib = -np.sum( np.log( 2*np.sinh( (beta*hbar*np.sqrt(np.delete(d,0))/2.0) )  ))   #Compute Qvib 
+    logQvib = -np.sum( np.log( 2*np.sinh( (beta*hbar*np.sqrt(np.delete(d,0))/2.0) )  ))  
 
+    U=(pots.sum() - V0)
 
-    print ''
     print ''
     print 'We are done'
+    print 'Partition functions at %f K' %(temp/K2au)
     print ''
     print 'Qtras: %f bohr^-3'      %(Qtras)
     print 'Qrot: %f'       %(Qrot)
     print 'logQvib: %f'    %(logQvib)
-    print temp2*au2K
-    print 'Potential energy at TS:  %f ev, U/kbT %f'       %((action[0]*kb*temp2)*au2eV,action[0])  
-    print 'TEST  %f ev'       %((action[0])*au2eV)  
+    print 'Potential energy at TS:  %f eV, V/kBT %f'       %((U)/eV2au,U/(kb*temp))  
     print ''
      
 elif case=='instanton':
 
     if mode=='rate': 
-        Qtras     = ( ( np.sum(m) ) / ( 2*np.pi*beta*hbar**2 ) )**1.5               #Compute Qtras
-       #Qtras_rp = ( ( np.sum(m)*nbeadsQ ) / ( 2*np.pi*betaP*hbar**2 ) )**1.5      #Compute Qtras_rp (without freq factor) 
+        Qtras     = ( ( np.sum(m) ) / ( 2*np.pi*beta*hbar**2 ) )**1.5           
 
         if asr == 'poly':
-           #Qrot_rp  = ( 8*np.pi*detI / ( (hbar)**6 * (betaP)**3 ))**0.5       #Compute Qrot_rp (without freq factor)   
            Qrot      = ( 8*np.pi*detI / ( (hbar)**6 * (betaP)**3 ))**0.5/(nbeads)**3    #Compute Qrot
         else:
            Qrot      = 1.0
-
-        print ''    
+        
         print 'Note: Deleted frequency for computing Qvib  %f cm^-1' % (np.sign(d[1]) * np.absolute(d[1]) ** 0.5 / (2 * np.pi * 3e10 * 2.4188843e-17)) 
-
-    #Compute Qvib
-
         if asr !='poly':
-            print 'Warning asr != poly'
+            print 'WARNING asr != poly'
             print 'First 10 eigenvalues'
             print  (np.sign(d[0:10]) * np.absolute(d[0:10]) ** 0.5 / (2 * np.pi * 3e10 * 2.4188843e-17))
-            print 'You have to correct the Qvib, the given value is not OK'
+            print "Please check that this you don't have any unwanted zero frequency"
 
         logQvib = -np.sum( np.log( betaP*hbar*np.sqrt(np.absolute(np.delete(d,1))) ))+6*np.log(nbeads)+np.log(nbeads) 
-        print 'logQvib = -np.sum( np.log( betaP*hbar*np.sqrt(np.absolute(np.delete(d,1))) ))+6*np.log(nbeadsQ)+np.log(nbeadsQ) '
-        BN     =  2*np.sum(beads.m3[1:,:]*(beads.q[1:,:] - beads.q[:-1,:])**2)
-        BN_factor =np.sqrt(BN/(2*np.pi*betaP*hbar**2))
-    
 
+        BN     =  2*np.sum(beads.m3[1:,:]*(beads.q[1:,:] - beads.q[:-1,:])**2)
+    
+        action1 = (2*pots.sum() - nbeads * V0) * 1 / (temp * nbeads * kb)
+        action2 = spring_pot(nbeads,pos,omega2,m3)/ (temp * nbeads * kb)
+ 
         print ''
         print ''
         print 'We are done'
@@ -505,92 +327,14 @@ elif case=='instanton':
         print '1/(betaP*hbar): %f a.u.' %(1/(betaP*hbar))
         print 'BN %f     ' % BN
         print 'BN*N %f   ' % (BN*nbeads)
-        print 'BN_factor %f     ' % BN_factor
 
         print 'Qtras: %f bohr^-3'      %(Qtras)
         print 'Qrot: %f'    %(Qrot)
         print 'log(Qvib*N): %f' %(logQvib)
-        print 'S1/hbar %f'  %action[0] 
-        print 'S2/hbar %f'  %action[1] 
-        print 'S/hbar %f'   %(np.sum(action))
+        print 'S1/hbar %f'  %action1
+        print 'S2/hbar %f'  %action2
+        print 'S/hbar %f'   %(action1+action2)
 
-        Lambda = math.sqrt(2*math.pi*betaP)
-        logprefactor = logQvib - np.log(nbeads) + 0.5*math.log(BN) - math.log(betaP*Lambda)
-        print 'logprefactor = %g' % logprefactor
-        print 'prefactor = %g' % math.exp(logprefactor)
-
-        #ALBERTO
-        outfile = open('hessian.dat', 'r')
-        h=np.zeros(18*18*40)
-        aux=outfile.readline().split()
-        for i in range(18*18*40): 
-            h[i]=float(aux[i])
-        h=h.reshape((18,720))
-        outfile.close()
-
-        if 1: # new method
-	 	N = nbeads
-		V0 = 0 # or energy of reactants
-		x = beads.q.reshape((N//2, -1, 3))
-		V = pots
-		f = x.shape[1] * 3
-		from modules.trajectory import Trajectory
-		mass = m.reshape((-1,1)) * np.ones(3)
-		from modules.linalg import orthogonalize # note this is not scipy or np linalg, but Jeremy's
-
-		# trajectory stuff
-		print
-		def cat(x):
-			N0 = N//4
-			return np.concatenate((x[N0::-1],x,x[-1:N0-1:-1]))
-		V -= V0
-		dVdx = grads
-                #ALBERTO
-		#d2Vdx2 = simulation.syslist[0].motion.hessian.copy().T
-		d2Vdx2 = h.copy().T
-		d2Vdx2.shape = (N//2,f,f)
-
-		print 'building trajectory...'
-		traj = Trajectory(cat(x).reshape(N+1,f), cat(V), cat(dVdx).reshape(N+1,f), cat(d2Vdx2), betaP*hbar, m=mass.ravel(), massweight=True)
-		print 'S', traj.S()
-		d2Sdx2 = traj.d2Sdx2()
-		d2Sdxdt = traj.d2Sdxdt()
-		d2Sdt2 = traj.d2Sdt2()
-
-		# rotate coordinates to q coords
-		p = traj.dSdx()
-		#print p
-		p = (p[f:] - p[:f]) / 2
-		#print p
-		U = np.identity(f)
-		U[:,0] = p
-		U = orthogonalize(U)
-		U = np.block([[U, np.zeros_like(U)], [np.zeros_like(U), U]])
-
-		d2Sdq2 = np.dot(U.T, np.dot(d2Sdx2, U))
-		d2Sdqdt = np.dot(d2Sdxdt, U)
-
-		E = traj.dSdt()
-		print 'E = %g' % E
-		p = math.sqrt(2*(traj.V[0]-E)) # mass-weighted p
-		print 'p = %g' % p, np.linalg.norm(traj.dSdx())
-		print '1/beta = %e' % (1/beta)
-
-		GY = traj.Gelfand_Yaglom()
-		evals = np.sort(1/np.linalg.eigvals(betaP*GY))
-		print 'Gelfand-Yaglom eigvals:', evals
-		C = np.prod(evals.real)
-		print 'Gelfand-Yaglom: C = %g' % C
-		print 'Gelfand-Yaglom: C without zero-modes = %g' % (beta**6*C)
-
-		prefactor = 1/math.sqrt(2*math.pi) * p * math.sqrt(-beta**6*C)
-		d2SdQ2 = d2Sdq2[1:f,1:f] + d2Sdq2[1:f,f+1:] + d2Sdq2[f+1:,1:f] + d2Sdq2[f+1:,f+1:]
-		print np.linalg.norm(d2SdQ2 - d2SdQ2.T)
-		evals = np.linalg.eigvalsh(d2SdQ2)
-		print 'eigvals d2SdQ2', evals
-		prefactor /= math.sqrt(np.prod(evals[6:]))
-		print 'prefactor from action derivs', prefactor
-     
     elif mode=='splitting':
         BN      = np.sum(beads.m3[1:,:]*(beads.q[1:,:] - beads.q[:-1,:])**2)
         A       = -np.sum(np.log(np.delete(d,0)))         
@@ -615,11 +359,11 @@ elif case=='instanton':
         print 'Teta*Phi  %f' %(tetaphi)
         print '-log of the product of nonzero eigenvalues %f' %(A)
     else:
-       print 'We can not recongnize the mode.STOP here'
+       print 'We can not recongnize the mode.'
        sys.exit()
 
-time2=time.time()
-print ''
-print 'Total time %f s.'%(time2-time1)
-
+print 'Remember that the output obtained from this script simply gives you components that you can use in order to calculate a rate or a tunneling splitting in the instanton approximation.'
+print 'Use, for example, the references below in order to obtain final desired results.'
+print 'Instanton Rate: J. Phys. Chem. Lett.  7, 4374(2016)'
+print 'Tunneling Splitting: J. Chem. Phys. 134, 054109 (2011)' 
 sys.exit(0)

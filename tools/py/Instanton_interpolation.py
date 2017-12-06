@@ -113,8 +113,6 @@ if input_geo !=None:
    print ''
 
 if input_hess !='None':
-  # np.set_printoptions(precision=5, suppress=True, threshold=np.nan,linewidth=600) #ALBERTO
-
 
    print 'The new hessian is %i x %i.' %(3*natoms,natoms*3*nbeadsNew)
    if (os.path.exists(input_hess)):
