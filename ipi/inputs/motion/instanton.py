@@ -60,7 +60,7 @@ class InputInst(InputDictionary):
                               "dimension": "force"}),
                "opt": (InputValue, {"dtype": str,
                                             "default": 'None',
-                                            "options": ["nichols","lbfgs","NR","None"],
+                                            "options": ["nichols","NR","None"],
                                             "help": "The geometry optimization algorithm to be used"}),
 
                "prefix": (InputValue, {"dtype": str,
