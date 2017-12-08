@@ -56,6 +56,8 @@ kb      = Constants.kb
 hbar    = Constants.hbar
 eV2au   = unit_to_internal("energy", "electronvolt", 1.0)
 cal2au  = unit_to_internal("energy", "cal/mol", 1.0)
+au2hz   = unit_to_internal("frequency", "hertz", 1.0)
+cm2au   = au2hz*3e10
 
 #INPUT
 parser = argparse.ArgumentParser( description="""Post-processing routine in order to obtain different quantities from an instanton (or instanton related) calculation. These quantities can be used for the calculation of rates or tunneling splittings in the instanton approximation.""")
@@ -272,7 +274,7 @@ print 'We are using asr = %s'%asr
 print 'Diagonalization....'
 d,w,detI = clean_hessian(h,pos,natoms,nbeads,m,m3,asr,mofi=True)               
 print  "Final lowest 15 frequencies (cm^-1)"
-print   np.sign(d[0:15]) * np.absolute(d[0:15]) ** 0.5 / (2 * np.pi * 3e10 * 2.4188843e-17)  # convert to cm^-1
+print   np.sign(d[0:15]) * np.absolute(d[0:15]) ** 0.5 /cm2au  # convert to cm^-1
 
 if case=='reactant':
     Qtras    = ( ( np.sum(m) ) / ( 2*np.pi*beta*hbar**2 ) )**1.5           
@@ -314,7 +316,7 @@ elif case=='TS':
     else:
        Qrot = 1.0
 
-    print 'Note: Deleted frequency for computing Qvib  %f cm^-1' % (np.sign(d[0]) * np.absolute(d[0]) ** 0.5 / (2 * np.pi * 3e10 * 2.4188843e-17)) 
+    print 'Note: Deleted frequency for computing Qvib  %f cm^-1' % (np.sign(d[0]) * np.absolute(d[0]) ** 0.5 / cm2au) 
     logQvib = -np.sum( np.log( 2*np.sinh( (beta*hbar*np.sqrt(np.delete(d,0))/2.0) )  ))  
 
     U=(pots.sum() - V0)
@@ -339,11 +341,11 @@ elif case=='instanton':
         else:
            Qrot      = 1.0
         
-        print 'Note: Deleted frequency for computing Qvib  %f cm^-1' % (np.sign(d[1]) * np.absolute(d[1]) ** 0.5 / (2 * np.pi * 3e10 * 2.4188843e-17)) 
+        print 'Note: Deleted frequency for computing Qvib  %f cm^-1' % (np.sign(d[1]) * np.absolute(d[1]) ** 0.5 / cm2au) 
         if asr !='poly':
             print 'WARNING asr != poly'
             print 'First 10 eigenvalues'
-            print  (np.sign(d[0:10]) * np.absolute(d[0:10]) ** 0.5 / (2 * np.pi * 3e10 * 2.4188843e-17))
+            print  (np.sign(d[0:10]) * np.absolute(d[0:10]) ** 0.5 / cm2au)
             print "Please check that this you don't have any unwanted zero frequency"
 
         logQvib = -np.sum( np.log( betaP*hbar*np.sqrt(np.absolute(np.delete(d,1))) ))+6*np.log(nbeads)+np.log(nbeads) 
@@ -397,7 +399,7 @@ elif case=='instanton':
         tetaphi = betaP*hbar*np.sqrt(action/(2*hbar*np.pi))*np.exp(-action/hbar)  
         teta    = tetaphi/phi
         h       = -teta/betaP
-        cm2au= (2 * np.pi * 3e10 * 2.4188843e-17) 
+        #cm2au= (2 * np.pi * 3e10 * 2.4188843e-17) 
 
         print ''
         print ''

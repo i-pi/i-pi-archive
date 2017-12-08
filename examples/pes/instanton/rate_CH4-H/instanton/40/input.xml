@@ -4,13 +4,12 @@
    </output>
    <total_steps>20       </total_steps>
    <ffsocket name="cbe" mode="unix" >
-       <address> localhost </address>  <latency> 1e-4</latency>
-       <port>40052</port>
+       <address> localhost </address>  
    </ffsocket>
    <system >
        <initialize nbeads='40'> 
            <file mode='xyz' >  init.xyz </file>
-           <cell mode='abc'> [130.18034026,  170.29206049,  240.21758034] </cell>
+           <cell mode='abc'> [200.0,  200.0,  200.0  ] </cell>
        </initialize>
        <forces>
           <force forcefield="cbe"> </force>
