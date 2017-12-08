@@ -25,13 +25,13 @@ import argparse
 #You can insert the i-pi path with the following lines.
 #Uncomment them and adjust the ipi_path variable
 
-ipi_path='/home/litman/Yair/Instanton/I-PI-mc/i-pi-mc'
+#ipi_path='/home/litman/Yair/Instanton/I-PI-mc/i-pi-mc'
 
-if not (os.path.exists(ipi_path)):
-   print 'We can not find ipi in %s' %ipi_path
-   print 'Please correct the path'
-   sys.exit()
-sys.path.insert(0, ipi_path)
+#if not (os.path.exists(ipi_path)):
+#   print 'We can not find ipi in %s' %ipi_path
+#   print 'Please correct the path'
+#   sys.exit()
+#sys.path.insert(0, ipi_path)
 
 from ipi.utils.io import read_file, print_file
 from ipi.utils.nmtransform import nm_rescale

@@ -8,11 +8,19 @@ import argparse
 """ Reads all the information needed from a i-pi RESTART file and compute the partition functions of the reactant, transition state (TS) or
 instanton according to J. Phys. Chem. Lett. 7, 437(2016) (Instanton Rate calculations) or J. Chem. Phys. 134, 054109 (2011) (Tunneling Splitting)
 
-Syntax:    python  Instanton_postproc.py  <name_input> -c <case> -t  <temperature (K)>  (-n <nbeads>)
 
-Examples:  python  Instanton_postproc.py   RESTART  -c  instanton    -t   300
+Syntax:    python  Instanton_postproc.py  <name_input> -c <case> -t  <temperature (K)>  (-n <nbeads(full polymer)>) (-freq <freq_reactant.dat>)
+
+Examples for rate calculation: 
+           python  Instanton_postproc.py   RESTART  -c  instanton    -t   300
            python  Instanton_postproc.py   RESTART  -c  reactant     -t   300            -n 50
            python  Instanton_postproc.py   RESTART  -c    TS         -t   300
+
+Examples for splitting  calculation: 
+           python  Instanton_postproc.py   RESTART  -c  reactant   -t   10  -n 32 --->this generate the freq.dat file 
+           python  Instanton_postproc.py   RESTART  -c  instanton  -t   10  -f freq.dat       
+
+
 
 Type python Instanton_postproc.py -h for more information
 
@@ -27,13 +35,13 @@ main directory must be added to the PYTHONPATH environment variable.
 #You can insert the i-pi path with the following lines.
 #Uncomment them and adjust the ipi_path variable
 
-ipi_path='/home/litman/Yair/Instanton/I-PI-mc/i-pi-mc'
+#ipi_path='/home/litman/Yair/Instanton/I-PI-mc/i-pi-mc'
  
-if not (os.path.exists(ipi_path)):
-    print 'We can not find ipi in %s' %ipi_path
-    print 'Please correct the path'
-    sys.exit()
-sys.path.insert(0, ipi_path)
+#if not (os.path.exists(ipi_path)):
+#    print 'We can not find ipi in %s' %ipi_path
+#    print 'Please correct the path'
+#    sys.exit()
+#sys.path.insert(0, ipi_path)
 
 from ipi.engine.simulation import Simulation
 from ipi.utils.units import unit_to_internal, unit_to_user, Constants, Elements
@@ -47,6 +55,7 @@ K2au    = unit_to_internal("temperature", "kelvin", 1.0)
 kb      = Constants.kb
 hbar    = Constants.hbar
 eV2au   = unit_to_internal("energy", "electronvolt", 1.0)
+cal2au  = unit_to_internal("energy", "cal/mol", 1.0)
 
 #INPUT
 parser = argparse.ArgumentParser( description="""Post-processing routine in order to obtain different quantities from an instanton (or instanton related) calculation. These quantities can be used for the calculation of rates or tunneling splittings in the instanton approximation.""")
@@ -57,15 +66,17 @@ parser.add_argument('-asr','--asr', default='poly', help="Removes the zero frequ
 parser.add_argument('-e','--energy_shift', type=float,default=0.0, help="Zero of energy in eV")
 parser.add_argument('-f','--filter',default=[], help='List of atoms indexes to filter (i.e. eliminate its componentes in the position,mass and hessian arrays. It is 0 based.', type=int, action='append')
 parser.add_argument('-n','--nbeadsR',default=0,  help='Number of beads (full polymer) to compute the approximate partition function (only reactant case)', type=int )
+parser.add_argument('-freq','--freq_reac',default=None,help="List of frequencies of the minimum. Required for splitting calculation.")
 
-args    = parser.parse_args()
-inputt  = args.input
-case    = args.case
-temp    = args.temperature*K2au
-asr     = args.asr
-V00     = args.energy_shift
-filt    = args.filter
-nbeadsR = args.nbeadsR
+args       = parser.parse_args()
+inputt     = args.input
+case       = args.case
+temp       = args.temperature*K2au
+asr        = args.asr
+V00        = args.energy_shift
+filt       = args.filter
+nbeadsR    = args.nbeadsR
+input_freq = args.freq_reac
 
 if case not in list(['reactant','TS','instanton']):
    raise ValueError("We can not indentify the case. The valid cases are: 'reactant', 'TS' and 'instanton'")
@@ -116,36 +127,42 @@ def Filter(pos,h,natoms,m,m3,filt):
     return  pos,h,natoms,m,m3
 
 
-def get_rp_freq(w0,nbeads,temp,asr=None):
+def get_rp_freq(w0,nbeads,temp,asr=None,mode='rate'):
     """ Compute the ring polymer frequencies for multidimensional harmonic potential
         defined by the frequencies w0. """
     hbar=1.0
     kb=1
     betaP=1/(kb*nbeads*temp)
     factor= (betaP*hbar)
-
     w=1.0
+    ww=[]
     if np.amin(w0)<0.0:
        print '@get_rp_freq: We have a negative frequency, something is going wrong.'
        sys.exit()
 
-    if asr =='poly':
-      nzero = 6
-    elif asr =='crystal':
-      nzero = 3
-    else:
-      nzero = 0
+    if mode=='rate':
 
-    for i in range(nzero):
-      for k in range(1,nbeads):
-       w*=factor*np.sqrt(4./(betaP*hbar)**2 * np.sin(np.absolute(k)*np.pi/nbeads)**2)
-    #Yes, for each K w is nbeads
+      for i in range(nzero):
+        for k in range(1,nbeads):
+         w+=np.log(factor*np.sqrt(4./(betaP*hbar)**2 * np.sin(np.absolute(k)*np.pi/nbeads)**2))
+         #Yes, for each K w is nbeads
 
-    for n in range(w0.size):
-     for k in range(nbeads):
-        w*=factor*np.sqrt(4./(betaP*hbar)**2 * np.sin(np.absolute(k)*np.pi/nbeads)**2+w0[n])
-        #note the w0 is the eigenvalue ( the square of the frequency )
-    return w
+      for n in range(w0.size):
+        for k in range(nbeads):
+         w+=np.log(factor*np.sqrt(4./(betaP*hbar)**2 * np.sin(np.absolute(k)*np.pi/nbeads)**2+w0[n]))
+         #note the w0 is the eigenvalue ( the square of the frequency )
+         ww=np.append(ww,np.sqrt(4./(betaP*hbar)**2 * np.sin(np.absolute(k)*np.pi/nbeads)**2+w0[n]))
+      return w
+
+    elif mode=='splitting':
+      for n in range(w0.size):
+        for k in range(nbeads):
+         #note the w0 is the eigenvalue ( the square of the frequency )
+         ww=np.append(ww,np.sqrt(4./(betaP*hbar)**2 * np.sin((k+1)*np.pi/(2*nbeads+2))**2+w0[n]))
+      return np.array(ww)
+    else: 
+       print "We can't indentify the mode"  
+       sys.exit()
 
 #-----END of some functions-----------------
 
@@ -181,6 +198,7 @@ if case=='reactant':
     ismm = np.outer(ism, ism)
     h = np.multiply(dynmat, ismm)
     pos     = beads.q
+    m3      = beads.m3
     if len(filt)>0:
        pos,h,natoms,m,m3 = Filter(pos,h ,natoms,m,beads.m3,filt) 
 
@@ -194,7 +212,6 @@ elif case=='TS':
     if V00 != 0.0:
          print 'Overwriting energy shift with the provided values'
          V0=V00*eV2au
-
 elif case=='instanton':
     hessian = simulation.syslist[0].motion.hessian.copy()
     mode    = simulation.syslist[0].motion.mode
@@ -206,7 +223,7 @@ elif case=='instanton':
     if V00 != 0.0:
         print 'Overwriting energy shift with the provided values'
         V0=V00*eV2au
- 
+     
     if np.absolute(temp-temp2)/K2au >2:
         print ' '
 	print 'Mismatch between provided temperature and temperature in the calculation'
@@ -223,22 +240,27 @@ elif case=='instanton':
         spring  = SpringMapper.spring_hessian(natoms,nbeads,beads.m3[0],omega2,mode='full')
         h       = np.add(hessian, spring)
     elif mode=='splitting':
+        if input_freq==None:
+           print 'Please provide a name of the file containing the list of the frequencies for the minimum using "-freq" flag'
+           print '(You can generate that file using this script in the case reactant.)'
+           sys.exit() 
+
         print 'Our linear polymer has  %i' %(nbeads)
-        #ALBERTO use banded matrix
         h0      = red2comp(hessian,nbeads,natoms) 
-        omega2  = (temp * nbeads * kb / hbar) ** 2
-        spring  = spring_hessian(nbeads,natoms,omega2,m, mode='half') 
-        h       = np.add(h0, spring)
         pos     = beads.q
-        dynmat  = get_dynmat(h,pos,natoms,nbeads,m)
+        m3      = beads.m3   
+        omega2  = (temp * nbeads * kb / hbar) ** 2
+        #spring  = SpringMapper.spring_hessian(natoms,nbeads,beads.m3[0],omega2,mode='half')
+        spring  = SpringMapper.spring_hessian(natoms,nbeads,beads.m3[0],omega2,mode='splitting')
+        h       = np.add(h0, spring)
         if asr !='none':
-         print 'We are changing asr to none'
+         print 'We are changing asr to none since we consider a fixed ended linear polimer for the post-processing'
          asr='none' 
     else:
      print 'We can not recognize the mode. STOP HERE'
      sys.exit()
 
-#-----------START---------------------------------
+#----------------------------------------------------------START----------------------------------------------
 beta =1.0/(kb*temp)
 betaP=1.0/(kb*(nbeads)*temp)
 
@@ -261,8 +283,19 @@ if case=='reactant':
        Qrot    = 1.0
 
     #logQvib    = -np.sum( np.log( 2*np.sinh( (beta*hbar*np.sqrt(d)/2.0) )  ))   #Limit n->inf  
-    Qvib_rp    = get_rp_freq(d,nbeadsR,temp)
-    logQvib_rp = -np.log(Qvib_rp)                                
+    outfile = open('freq.dat', 'w')
+    if asr=='poly':
+        nzeros=6
+    elif asr=='crystal':
+        nzeros=3
+    else:
+        nzeros=0
+    aux=np.zeros(nzeros)
+    dd=np.concatenate((aux,d))
+    np.savetxt(outfile, dd.reshape(1,dd.size))
+    outfile.close()
+
+    logQvib_rp    = -get_rp_freq(d,nbeadsR,temp)
 
     print ''
     print 'We are done'
@@ -271,6 +304,7 @@ if case=='reactant':
     print 'Qtras: %f bohr^-3'      %(Qtras)
     print 'Qrot: %f'       %(Qrot)
     print 'logQvib_rp: %f' %(logQvib_rp)
+    print 'A file with the frequencies in atomic units was generated'
 
 elif case=='TS':
     Qtras = ( ( np.sum(m) ) / ( 2*np.pi*beta*hbar**2 ) )**1.5  
@@ -336,34 +370,58 @@ elif case=='instanton':
         print 'S/hbar %f'   %(action1+action2)
 
     elif mode=='splitting':
+
+        out = open(input_freq, 'r')
+        d_min=np.zeros( natoms*3)
+        aux=out.readline().split()
+        if len(aux)!=(natoms*3):
+            print 'We are expecting %i frequencies.'%(natoms*3-6)
+            print 'instead we have read  %i' %len(aux)
+        for i in range( (natoms*3)):
+           d_min[i]=float(aux[i])
+        d_min=d_min.reshape((natoms*3))
+        out.close()
+        ww      = get_rp_freq(d_min,nbeads,temp,mode='splitting')
+        react   = np.sum(np.log(ww))         
+       
+        action1 = (pots.sum() - nbeads * V0) * 1 / (temp * nbeads * kb)
+        action2 = spring_pot(nbeads,pos,omega2,m3)/ (temp * nbeads * kb)
+        action  = action1+action2
+        if action/hbar >5.0:
+           print 'WARNING, S/h seems to big. Probably a proper energy shift is missing.'
+
         BN      = np.sum(beads.m3[1:,:]*(beads.q[1:,:] - beads.q[:-1,:])**2)
-        A       = -np.sum(np.log(np.delete(d,0)))         
-        tetaphi = betaP*hbar*np.sqrt(np.sum(action)/(2*hbar*np.pi))*np.exp(-np.sum(action)/hbar)  
+        
+        inst    = np.sum(np.log(np.sqrt(np.delete(d,[0]))))         
+        phi     = np.exp(inst-react)
+        tetaphi = betaP*hbar*np.sqrt(action/(2*hbar*np.pi))*np.exp(-action/hbar)  
+        teta    = tetaphi/phi
+        h       = -teta/betaP
+        cm2au= (2 * np.pi * 3e10 * 2.4188843e-17) 
+
         print ''
         print ''
         print 'We are done'
-        print 'Nbeads %i' %(nbeads)
-        print '1/(betaP*hbar): %f a.u.' %(1/(betaP*hbar))
-        print 'hbar %f' %(hbar)
+        print 'Nbeads %i, betaP %f a.u.,hbar %f a.u' %(nbeads,betaP,hbar)
         print ''
-        print 'V0  %f eV ( %f Kcal/mol) ' %(V0*au2eV,V0*au2kcal)
-        print 'S1/hbar %f'  %(action[0]/hbar)
-        print 'S2/hbar %f'  %(action[1]/hbar)
-        print 'S/hbar %f'   %(np.sum(action)/hbar)
+        print 'V0  %f eV ( %f Kcal/mol) ' %(V0/eV2au   ,V0/cal2au/1000)
+        print 'S1/hbar %f ,S2/hbar %f ,S/hbar %f'  %(action1/hbar,action2/hbar,action/hbar)
         print ''
         print 'BN %f a.u.' % BN
-        print 'BN*N %f a.u.   ' % (BN*nbeads)
-        print 'nbeads %i' %nbeads
-        print 'BN/(hbar^2 * betaN)  %f   ' % (BN/ ((hbar**2)*betaP))
+        print 'BN/(hbar^2 * betaN)  %f  (should be same as S/hbar) ' % (BN/ ((hbar**2)*betaP))
         print ''
-        print 'Teta*Phi  %f' %(tetaphi)
-        print '-log of the product of nonzero eigenvalues %f' %(A)
+        print 'phi %f a.u.   Teta %f a.u. '%(phi,tetaphi/phi)
+        print 'Tunnelling splitting matrix element (h)  %f a.u (%f cm^-1)' %(h,h/cm2au )
     else:
        print 'We can not recongnize the mode.'
        sys.exit()
 
+print ''
+print ''
 print 'Remember that the output obtained from this script simply gives you components that you can use in order to calculate a rate or a tunneling splitting in the instanton approximation.'
 print 'Use, for example, the references below in order to obtain final desired results.'
 print 'Instanton Rate: J. Phys. Chem. Lett.  7, 4374(2016)'
 print 'Tunneling Splitting: J. Chem. Phys. 134, 054109 (2011)' 
+print ''
+print ''
 sys.exit(0)
