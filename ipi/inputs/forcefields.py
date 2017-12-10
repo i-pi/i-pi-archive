@@ -226,7 +226,7 @@ class InputFFDebye(InputForceField):
 class InputFFPlumed(InputForceField):
     
     fields = {
-        "init_file": (InputInitFile, { "default" : input_default(factory=ipi.engine.initializer.InitBase,kwargs={"mode":"xyz"}),
+        "init_file": (InputInitFile, { "default" : input_default(factory=ipi.engine.initializer.InitFile,kwargs={"mode":"xyz"}),
                            "help"            : "This describes the location to read the reference structure file from."}),
         "precision" : (InputValue, {"dtype": int, "default"  : 8, "help": "The precision PLUMED was compiled with"}),
         "plumeddat" : (InputValue, {"dtype": str, "default"  : "plumed.dat", "help": "The PLUMED input file"}),

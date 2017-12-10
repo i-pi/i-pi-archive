@@ -157,7 +157,7 @@ class InputSimulation(Input):
                _iobj = iforcefields.InputFFDebye()
                _iobj.store(_obj)
                self.extra[_ii] = ("ffdebye", _iobj)
-            elif isinstance(_obj,  eforcefields.FFPlumed):
+            elif isinstance(_obj,  eforcefields.FFPlumed):                
                _iobj = iforcefields.InputFFPlumed()
                _iobj.store(_obj)
                self.extra[_ii] = ("ffplumed",_iobj)
@@ -193,13 +193,14 @@ class InputSimulation(Input):
       verbosity.level=self.verbosity.fetch()
 
       syslist=[]
-      fflist=[]
+      fflist=[]      
       for (k,v) in self.extra:
          if k == "system":
             syslist.append(v.fetch()) 
          elif k== "system_template":             
             syslist += v.fetch() # this will actually generate automatically a bunch of system objects with the desired properties set automatically to many values
          elif k == "ffsocket" or k == "fflj" or k == "ffdebye" or k == "ffplumed" :
+            print "fetching", k
             fflist.append(v.fetch())
          elif k == "ffyaff":
             fflist.append(v.fetch())

@@ -229,10 +229,13 @@ class Input(object):
          xml: The xml_node object used to parse the data stored in the tags.
       """
 
-      newfield = self.dynamic[name][0](**self.dynamic[name][1])
-      newfield.parse(xml)
+      try:
+          newfield = self.dynamic[name][0](**self.dynamic[name][1])
+          newfield.parse(xml)
+      except:          
+          raise ValueError("Error parsing "+ name + " from " + str(xml))
       self.extra.append((name,newfield))
-
+    
    def write(self, name="", indent="", text="\n"):
       """Writes data in xml file format.
 
