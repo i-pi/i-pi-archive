@@ -7,7 +7,9 @@
 
 import numpy as np
 
-from ipi.utils.depend import depend_value, dset, dobject
+from ipi.utils.depend import depend_value
+from ipi.utils.depend import dset
+from ipi.utils.depend import dobject
 
 
 class Motion(dobject):

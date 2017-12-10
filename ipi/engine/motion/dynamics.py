@@ -120,8 +120,12 @@ class Dynamics(Motion):
                 generation.
         """
 
-        super(Dynamics, self).bind(ens, beads, nm, cell, bforce, prng)        
-        
+        super(Dynamics, self).bind(ens, beads, nm, cell, bforce, prng)
+
+        # Checks if the number of mts levels is equal to the dimensionality of the mts weights.
+        if (len(self.nmts) != self.forces.nmtslevels):
+            raise ValueError("The number of mts levels for the integrator does not agree with the mts_weights of the force components.")
+
         # Binds integrators
         self.integrator.bind(self)
 
@@ -277,8 +281,7 @@ class NVEIntegrator(DummyIntegrator):
             for i in range(3):
                 pcom[i] = p[:,i:na3:3].sum()
 
-            #print np.dot(pcom, pcom) / (2.0*M*nb)
-            #self.ensemble.eens += np.dot(pcom, pcom) / (2.0*M*nb)
+            self.ensemble.eens += np.dot(pcom, pcom) / (2.0*M*nb)
 
             # subtracts COM velocity
             pcom *= 1.0 / (nb*M)
@@ -340,12 +343,6 @@ class NVTIntegrator(NVEIntegrator):
     def step(self, step=None):
         """Does one simulation time step."""
 
-        
-        #print "forces values" , self.forces.mforces[0].pot, self.forces.mforces[1].pot
-        #print "ensemble bias ", self.bias.mforces[0].pot, self.bias.mforces[1].pot, self.bias.mforces[2].pot
-        #print ((self.forces.f+self.bias.f)**2).sum()
-        
-        
         self.ptime = 0
         self.ttime = 0
         self.qtime = 0
@@ -374,7 +371,6 @@ class NVTIntegrator(NVEIntegrator):
         self.thermostat.step()
         self.pconstraints()
         self.ttime += time.time()
-
         # print "PTIME: ", self.ptime, "  TTIME: ", self.ttime, "  QTIME: ", self.qtime
 
 
@@ -630,7 +626,6 @@ class MTSIntegrator(NVEIntegrator):
         self.ttime += time.time()
  
         self.mtsprop(0,1.0)
-  
         self.ttime -= time.time()
         self.thermostat.step()
         self.pconstraints()

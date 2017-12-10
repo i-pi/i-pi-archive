@@ -357,7 +357,7 @@ class Input(object):
       if hasattr(self, '_dimension') and self._dimension != "undefined": #gives dimension
          xstr += "dimension: " + self._dimension + "; "
 
-      if self._default != None and issubclass(self.__class__, InputAttribute):
+      if self._default is not None and issubclass(self.__class__, InputAttribute):
          #We only print out the default if it has a well defined value.
          #For classes such as InputCell, self._default is not the value,
          #instead it is an object that is stored to give the default value in
@@ -603,7 +603,7 @@ class Input(object):
       if hasattr(self, '_dimension') and self._dimension != "undefined":
          rstr += indent + "   <dimension> " + self._dimension + " </dimension>\n"
 
-      if self._default != None and issubclass(self.__class__, InputAttribute):
+      if self._default is not None and issubclass(self.__class__, InputAttribute):
          #We only print out the default if it has a well defined value.
          #For classes such as InputCell, self._default is not the value,
          #instead it is an object that is stored, putting the default value in

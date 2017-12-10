@@ -13,7 +13,7 @@ from ipi.engine.cell import Cell
 from ipi.utils.units import unit_to_internal
 from ipi.engine.properties import Trajectories as Traj
 
-
+__all__ = ["auto_units", "process_units"]
 # Regular expressions initialization for read_xyz function
 cell_unit_re = re.compile(r'cell\{([A-Za-z_]*)\}')       # cell unit pattern
 traj_dict = Traj().traj_dict                             # trajectory dictionary

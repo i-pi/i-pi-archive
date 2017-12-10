@@ -1,39 +1,41 @@
 #!/usr/bin/python
 
 __author__ = 'Igor Poltavsky'
-__version__ = '1.0'
 
 """ heat_capacity_ppi.py
-Reads simulation time, potential energy, positions and forces from
-an i-PI run and computes a centroid virial heat capacity estimator and a ppi correction for each time frame.
-The output is saved to 'prefix.heat_capacity.dat' file which is created in the folder which contains the input
-files. The results are printed out in the format: "time frame", "centroid virial heat capacity estimator",
-"ppi correction".
+The script reads the simulation time, potential energy, positions and forces from
+standard i-PI output files and computes the primitive heat capacity estimator and the PPI correction for each time 
+frame. The output is saved to 'prefix.heat_capacity.dat' file which is located in the folder which contains the input
+files. The results are printed out in the format: "time frame", "improved heat capacity estimator", "primitive heat 
+capacity estimator", "PPI correction".
 
 The script assumes that the input files are in 'xyz' format, with prefix.out (contains simulation time and
-potential energy among other output properties), prefix.pos_*.xyz (positions) and
-prefix.for_*.xyz (forces) naming scheme.
-This would require the following lines in input.xml file:
-<properties filename='out' stride='n'> [step, time{picosecond}, potential{kelvin}] </properties>
-<trajectory filename='pos' stride='n' format='xyz' cell_units='angstrom'> positions{angstrom} </trajectory>
-<trajectory filename='for' stride='n' format='xyz' cell_units='angstrom'> forces{piconewton} </trajectory>
-where n is the same integer number.
+potential energy among other output properties), prefix.pos_*.xyz (positions) and prefix.for_*.xyz (forces) naming 
+scheme. This would require the following lines in input.xml file:
+<properties filename='out' stride='n'> [step, time, potential] </properties>
+<trajectory filename='pos' stride='n' format='xyz' cell_units='angstrom'> positions </trajectory>
+<trajectory filename='for' stride='n' format='xyz' cell_units='angstrom'> forces </trajectory>
+Here n is the same integer number.
 
 Syntax:
    python heat_capacity_ppi.py "prefix" "simulation temperature (in Kelvin)" "number of time frames to skip
    in the beginning of each file (default 0)"
+   
+The output is in atomic units (Boltzmann constant is equal to 1).
+
+To speedup the script one has to compile the fortran functions from the i-Pi/tools/f90 folder.
 """
 
 import numpy as np
 import sys, glob, os, re
 
-from ipi.utils.units import unit_to_internal, unit_to_user, Constants
+from ipi.utils.units import unit_to_internal, Constants
 from ipi.utils.io import read_file
 
 
-def heat_capacity(prefix, temp, ss=0):
+def heatCapacity(prefix, temp, ss=0):
   """
-  Computes a virial centroid estimator for the heat capacity and PPI correction.
+  Computes a primitive estimator for the heat capacity and PPI correction.
   """
 
   # Adding fortran functions (when exist)
@@ -50,8 +52,7 @@ def heat_capacity(prefix, temp, ss=0):
   skipSteps = int(ss)                                                  # steps to skip for thermalization
 
   # some required sums
-  KPa_av, KVir_av, U_av, f2_av, f2KPa_av, f2U_av, EVir_av, EEVir_av, f2E_av, f2E2_av = \
-    0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+  KPa_av, U_av, f2_av, f2KPa_av, f2U_av, E2_av, f2E_av, f2E2_av = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
 
 
   fns_pos = sorted(glob.glob(prefix + ".pos*"))
@@ -91,16 +92,16 @@ def heat_capacity(prefix, temp, ss=0):
   beta = 1.0/(Constants.kb*temperature)
   const_1 = 0.5*nbeads/(beta*Constants.hbar)**2
   const_2 = 1.5*nbeads/beta
-  const_3 = 1.5/beta
-  const_4 = Constants.kb**2/Constants.hbar**2
-  const_5 = Constants.hbar**2*beta**3/(24.0*nbeads**3)
-  const_6 = Constants.hbar**2*beta**2/(24.0*nbeads**3)
-  const_7 = Constants.kb*beta**2
+  const_3 = Constants.kb**2/Constants.hbar**2
+  const_4 = Constants.hbar**2*beta**2/(24.0*nbeads**3)
+  const_5 = Constants.kb*beta**2
 
   timeUnit, potentialEnergyUnit, potentialEnergy_index, time_index = extractUnits(iU) # extracting simulation time
   # and potential energy units
 
-  iC.write("# Simulation time (in %s), centroid virial heat capacity estimator and PPI correction\n" % timeUnit)
+  iC.write("# Simulation time (in %s), improved heat capacity estimator, primitive heat capacity estimator, "
+           "and PPI correction for the heat capacity\n" % timeUnit)
+  iC.close()
 
   natoms = 0
   ifr = 0
@@ -114,13 +115,13 @@ def heat_capacity(prefix, temp, ss=0):
 
     try:
       for i in range(nbeads):
-        ret = read_file("xyz", ipos[i], output='arrays')
+        ret = read_file("xyz", ipos[i], dimension='length')["atoms"]
         if natoms == 0:
-          m, natoms = ret["masses"], ret["natoms"]
+          m, natoms = ret.m, ret.natoms
           q = np.zeros((nbeads, 3*natoms))
           f = np.zeros((nbeads, 3*natoms))
-        q[i, :] = ret["data"]
-        f[i, :] = read_file("xyz", ifor[i], output='arrays')["data"]
+        q[i, :] = ret.q
+        f[i, :] = read_file("xyz", ifor[i], dimension='force')["atoms"].q
       U, time = read_U(iU, potentialEnergyUnit, potentialEnergy_index, time_index)
     except EOFError: # finished reading files
       sys.exit(0)
@@ -133,7 +134,7 @@ def heat_capacity(prefix, temp, ss=0):
 
       time -= time0
 
-      KPa, f2, KVir = 0.0, 0.0, 0.0
+      KPa, f2 = 0.0, 0.0
 
       if not fast_code:
 
@@ -145,59 +146,46 @@ def heat_capacity(prefix, temp, ss=0):
         for j in range(nbeads-1):
           for i in range(natoms):
             KPa -= np.dot(q[j+1,i*3:i*3+3]-q[j,i*3:i*3+3],q[j+1,i*3:i*3+3]-q[j,i*3:i*3+3])*m[i]
-        rc = np.zeros(3)
-        for i in range(natoms):
-          rc[:] = 0.0
-          for j in range(nbeads):
-            rc[:] += q[j,i*3:i*3+3]
-          rc[:] /= nbeads
-          for j in range(nbeads):
-            KVir += np.dot(rc[:] - q[j,i*3:i*3+3],f[j,i*3:i*3+3])
 
         KPa *= const_1
         KPa += const_2*natoms
-        KVir /= 2.0*nbeads
-        KVir += const_3*natoms
-
 
       else:
 
         f2 = fortran.f2divm(np.array(f, order='F'), np.array(m, order='F'), natoms, nbeads)
         KPa = fortran.findcoupling(np.array(q, order='F'), np.array(m, order='F'), temperature, natoms, nbeads)
-        KVir = fortran.findcentroidvirialkineticenergy(np.array(f, order='F'), np.array(q, order='F'), natoms, nbeads)
 
-        KPa *= const_4
+        KPa *= const_3
         KPa += const_2*natoms
-        KVir += const_3*natoms
 
       f2_av += f2
       KPa_av += KPa
       f2KPa_av += f2*KPa
       U_av += U
       f2U_av += f2*U
-      KVir_av += KVir
-      EVir_av += KVir + U
-      EEVir_av += (KVir + U)*(KPa + U)
-      f2E_av += f2*(KPa + U)
+      E2_av += (KPa + U)**2
       f2E2_av += f2*(KPa + U)**2
       ifr += 1
 
       norm = float(ifr-skipSteps)
 
       dU = 2*f2_av/norm - beta*(f2U_av/norm - f2_av*U_av/norm**2)
-      dU *= const_6
+      dU *= const_4
 
-      dK = (Constants.kb*temperature + KPa_av/norm)*f2_av/norm - f2KPa_av/norm
-      dK *= const_5
+      dK = f2_av/norm - beta*(f2KPa_av/norm - f2_av*KPa_av/norm**2)
+      dK *= const_4
 
-      C = EEVir_av/norm - (EVir_av/norm)**2 + 1.5*natoms/beta**2
-      C *= const_7
+      C = E2_av/norm - ((KPa_av + U_av)/norm)**2 + (2.0/beta)*KPa_av/norm - 1.5*nbeads*natoms/beta**2
+      C *= const_5
 
-      dC = (10 + C + 3*beta*EVir_av/norm)*beta*f2_av*const_6/norm - \
-           (6 + beta*EVir_av/norm)*beta*(dK + dU) + 2*beta*dK - \
-           const_6*(f2E2_av/norm - f2E_av*(KPa_av + U_av)/norm**2)*beta**3
+      dC = 2*(5 + 3*beta*(KPa_av + U_av)/norm)*beta*f2_av*const_4/norm - \
+           2*(3 + beta*(KPa_av + U_av)/norm)*beta*(dK + dU) + 2*beta*dK - \
+           const_4*(f2E2_av/norm - f2_av*E2_av/norm**2)*beta**3
 
-      iC.write("%f    %f     %f\n" % (time, C, dC))
+
+      iC = open(fn_out_en, "a")
+      iC.write("%f    %f     %f     %f\n" % (time, C+dC, C, dC))
+      iC.close()
 
     else:
       ifr += 1
@@ -281,7 +269,7 @@ def read_U(filedesc, potentialEnergyUnit, potentialEnergy_index, time_index):
 
 def main(*arg):
 
-  heat_capacity(*arg)
+  heatCapacity(*arg)
 
 
 if __name__ == '__main__':

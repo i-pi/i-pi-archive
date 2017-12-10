@@ -1,11 +1,17 @@
-# Makefile for the q-TIP4P-F examples
-#
 # This file is part of i-PI.
 # i-PI Copyright (C) 2014-2015 i-PI developers
 # See the "licenses" directory for full license information.
 
-.PHONY: all clean graphene h2o-piglet_2 h2o-piglet_4 h2o-piglet_8 h2o-pimd-rpc h2o-pimd ice-npt h2o-mts ice-nst isof-vapor isof-water isofsc-vapor isofsc-water 
-all: graphene h2o-piglet_2 h2o-piglet_4 h2o-piglet_8 h2o-pimd-rpc h2o-pimd ice-npt h2o-mts ice-nst isof-vapor isof-water isofsc-vapor isofsc-water 
+.PHONY: all clean h2o-fixatoms h2o-alchemical h2o-enmfdphonons h2o-fdphonons h2o-geop h2o-multi \
+        h2o-piglet.2 h2o-piglet.4 h2o-piglet.8 h2o-pimd.1 h2o-pimd.4 h2o-pimd+mts.4 \
+        h2o-pimd+rpc h2o-pimd+sc h2o-pimd+sc+gle.4 h2o-pimd+sc+mts \
+        h2o-pimd+sc+rpc h2o-trpmd ice-npt ice-nst isofsc-vapor isofsc-water \
+        isof-vapor isof-water NaCl-cellopt paracetamol-geop paracetamol-phonons
+all: all clean fixatoms h2o-alchemical h2o-enmfdphonons h2o-fdphonons h2o-geop h2o-multi \
+     h2o-piglet.2 h2o-piglet.4 h2o-piglet.8 h2o-pimd.1 h2o-pimd.4 h2o-pimd+mts.4 \
+     h2o-pimd+rpc h2o-pimd+sc h2o-pimd+sc+gle.4 h2o-pimd+sc+mts \
+     h2o-pimd+sc+rpc h2o-trpmd ice-npt ice-nst isofsc-vapor isofsc-water \
+     isof-vapor isof-water NaCl-cellopt paracetamol-geop paracetamol-phonons
 
 LAMMPS:=lmp_serial
 IPI:=i-pi
@@ -17,81 +23,144 @@ define run_lammps
 endef
 -include make.in
 
-graphene:
-	cd graphene; $(IPI) input.xml & \
-	sleep 40; \
-        $(call run_lammps,4,in.kappa.Graphene) \
+fixatoms:
+	cd fixatoms; $(IPI) input.xml & sleep 5; \
+        $(call run_lammps,4,in.lmp) \
 	wait
 
-h2o-piglet_2:
+h2o-alchemical:
+	cd h2o-alchemical; $(IPI) input.xml & sleep 5; \
+        $(call run_lammps,4,in.lmp) \
+	wait
+
+h2o-enmfdphonons:
+	cd h2o-enmfdphonons; $(IPI) input.xml & sleep 5; \
+        $(call run_lammps,4,in.lmp) \
+	wait
+	
+h2o-fdphonons:
+	cd h2o-fdphonons; $(IPI) input.xml & sleep 5; \
+        $(call run_lammps,4,in.lmp) \
+	wait
+	
+h2o-geop:
+	cd h2o-geop; $(IPI) input.xml & sleep 5; \
+        $(call run_lammps,4,in.lmp) \
+	wait
+
+h2o-multi:
+	cd h2o-multi; $(IPI) input.xml & sleep 5; \
+        $(call run_lammps,4,in.lmp) \
+        wait
+
+h2o-piglet.2:
 	cd h2o-piglet.2; $(IPI) input.xml & sleep 5; \
-        $(call run_lammps,2,in.water) \
+        $(call run_lammps,4,in.lmp) \
 	wait
 
-h2o-piglet_4:
+h2o-piglet.4:
 	cd h2o-piglet.4; $(IPI) input.xml & sleep 5; \
-        $(call run_lammps,4,in.water) \
+        $(call run_lammps,4,in.lmp) \
 	wait
 
-h2o-piglet_8:
+h2o-piglet.8:
 	cd h2o-piglet.8; $(IPI) input.xml & sleep 5; \
-        $(call run_lammps,4,in.water) \
+        $(call run_lammps,4,in.lmp) \
 	wait
 
-h2o-pimd:
-	cd h2o-pimd; $(IPI) input.xml & sleep 5; \
-        $(call run_lammps,4,in.water) \
+h2o-pimd.1:
+	cd h2o-pimd.1; $(IPI) input.xml & sleep 5; \
+        $(call run_lammps,4,in.lmp) \
+	wait
+	
+h2o-pimd.4:
+	cd h2o-pimd.4; $(IPI) input.xml & sleep 5; \
+        $(call run_lammps,4,in.lmp) \
+	wait
+
+h2o-pimd+mts.4:
+	cd h2o-pimd+mts.4; $(IPI) input.xml & sleep 5; \
+        $(call run_lammps,4,in_short.lmp) \
+        $(call run_lammps,4,in_long.lmp) \
+	wait
+
+h2o-pimd+rpc:
+	cd h2o-pimd+rpc; $(IPI) input.xml & sleep 5; \
+        $(call run_lammps,4,in_short.lmp) \
+        $(call run_lammps,4,in_long.lmp) \
+	wait
+	
+h2o-pimd+sc:
+	cd h2o-pimd+sc; $(IPI) input.xml & sleep 5; \
+        $(call run_lammps,4,in.lmp) \
+	wait
+	
+h2o-pimd+sc+gle.4:
+	cd h2o-pimd+sc+gle.4; $(IPI) input.xml & sleep 5; \
+        $(call run_lammps,4,in.lmp) \
+	wait
+	
+h2o-pimd+sc+mts:
+	cd h2o-pimd+sc+mts; $(IPI) input.xml & sleep 5; \
+        $(call run_lammps,4,in.lmp) \
+	wait
+
+h2o-pimd+sc+rpc:
+	cd h2o-pimd+sc+rpc; $(IPI) input.xml & sleep 5; \
+        $(call run_lammps,4,in_short.lmp) \
+        $(call run_lammps,4,in_long.lmp) \
+	wait
+	
+h2o-trpmd:
+	cd h2o-trpmd; $(IPI) input.xml & sleep 5; \
+        $(call run_lammps,4,in.lmp) \
 	wait
 
 ice-npt:
 	cd ice-npt; $(IPI) input.xml & sleep 5; \
-        $(call run_lammps,4,in.ice) \
+        $(call run_lammps,4,in.lmp) \
 	wait
 
 ice-nst:
-	cd ice-npt; $(IPI) input.xml & sleep 5; \
-        $(call run_lammps,4,in.ice) \
-	wait
-
-isof-vapor:
-	cd isof-vapor; $(IPI) input.xml & sleep 5; \
-        $(call run_lammps,4,in.vapor) \
-	wait
-
-isof-water:
-	cd isof-water; $(IPI) input.xml & sleep 5; \
-        $(call run_lammps,4,in.water) \
+	cd ice-nst; $(IPI) input.xml & sleep 5; \
+        $(call run_lammps,4,in.lmp) \
 	wait
 
 isofsc-vapor:
 	cd isofsc-vapor; $(IPI) input.xml & sleep 5; \
-        $(call run_lammps,4,in.vapor) \
+        $(call run_lammps,4,in.lmp) \
 	wait
-
+	
 isofsc-water:
 	cd isofsc-water; $(IPI) input.xml & sleep 5; \
-        $(call run_lammps,4,in.water) \
+        $(call run_lammps,4,in.lmp) \
 	wait
 
-h2o-mts:
-	cd h2o-mts; $(IPI) input.xml & sleep 5; \
-        $(call run_lammps,4,in.water_longrange) \
-        $(call run_lammps,4,in.water_shortrange) \
+isof-vapor:
+	cd isof-vapor; $(IPI) input.xml & sleep 5; \
+        $(call run_lammps,4,in.lmp) \
 	wait
 
-h2o-pimd-rpc:
-	cd h2o-pimd-rpc; $(IPI) input.xml & sleep 5; \
-	$(call run_lammps,4,in.water_shortrange) \
-	$(call run_lammps,1,in.water_longrange) \
+isof-water:
+	cd isof-water; $(IPI) input.xml & sleep 5; \
+        $(call run_lammps,4,in.lmp) \
 	wait
 
+NaCl-cellopt:
+	cd NaCl-cellopt; $(IPI) input.xml & sleep 5; \
+        $(call run_lammps,4,in.lmp) \
+	wait
+
+paracetamol-geop:
+	cd paracetamol-geop; $(IPI) input.xml & sleep 5; \
+        $(call run_lammps,4,in.lmp) \
+	wait
+	
+paracetamol-phonons:
+	cd paracetamol-phonons; $(IPI) input.xml & sleep 5; \
+        $(call run_lammps,4,in.lmp) \
+	wait
+	
 clean:
-	rm -f */gle_lammps.* */RESTART */EXIT */log.lammps; \
-	cd h2o-pimd; \
-	rm -f RESTART EXIT log.lammps no_rpc.*; cd ..; \
-	cd h2o-pimd-rpc; \
-	rm -f RESTART EXIT log.lammps rpc.*; cd ..; \
-	cd graphene; \
-	rm -f graph.* RESTART EXIT log.lammps graphene.lammpstraj nohup.out; cd ..; \
-	cd h2o-mts; \
-	rm -f simulation.pos_?.xyz simulation.restart; cd ..
+	rm -f */*RESTART* */EXIT */log.lammps */*simulation*
+

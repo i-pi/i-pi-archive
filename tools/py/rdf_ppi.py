@@ -4,20 +4,20 @@ __author__ = 'Igor Poltavsky'
 __version__ = '1.0'
 
 """ rdf_ppi.py
-Reads simulation time, potential energy, positions and forces from
-an i-PI run and computes a conventional and ppi RDF estimators
-for each time frame. The output is saved to two files which are created in the
-folder which contains the input files. The results are printed out in the format: "distance", "RDF".
+The script reads simulation time, potential energy, positions and forces from
+standard i-PI output files and computes a conventional and PPI radial distribution function (RDF) estimators. 
+The output is saved to two files which are created in the folder which contains the input files. 
+The results are printed out in the format: "distance", "RDF".
 
 The script assumes that the input files are in 'xyz' format, with prefix.pos_*.xyz (positions) and
 prefix.for_*.xyz (forces) naming scheme.
 This would require the following lines in input.xml file:
-<trajectory filename='pos' stride='n' format='xyz' cell_units='angstrom'> positions{angstrom} </trajectory>
-<trajectory filename='for' stride='n' format='xyz' cell_units='angstrom'> forces{piconewton} </trajectory>
+<trajectory filename='pos' stride='n' format='xyz' cell_units='angstrom'> positions </trajectory>
+<trajectory filename='for' stride='n' format='xyz' cell_units='angstrom'> forces </trajectory>
 where n is the same integer number.
 
 Syntax:
-   python total_energy_ppi.py "prefix" "simulation temperature (in Kelvin)" "element A" "element B" "number of bins for RDF"
+   python rdf_ppi.py "prefix" "simulation temperature (in Kelvin)" "element A" "element B" "number of bins for RDF"
    "minimum distance (in Angstroms)" "maximum distance (in Angstroms) "number of time frames to skip in the beginning
    of each file (default 0)"
 
@@ -112,7 +112,7 @@ def RDF(prefix, temp, A, B, nbins, r_min, r_max, ss=0, unit='angstrom'):
 
     try:
       for i in range(nbeads):
-        ret = read_file("xyz", ipos[i])
+        ret = read_file("xyz", ipos[i], dimension='length')
         if natoms == 0:
           mass, natoms = ret["atoms"].m, ret["atoms"].natoms
           pos = np.zeros((nbeads,3*natoms), order='F')
@@ -121,7 +121,7 @@ def RDF(prefix, temp, A, B, nbins, r_min, r_max, ss=0, unit='angstrom'):
         inverseCell = ret["cell"].get_ih()
         cellVolume = ret["cell"].get_volume()
         pos[i, :] = ret["atoms"].q
-        force[i, :] = read_file("xyz", ifor[i])["atoms"].q
+        force[i, :] = read_file("xyz", ifor[i], dimension='force')["atoms"].q
     except EOFError:  # finished reading files
       noteof = False
 
@@ -153,35 +153,40 @@ def RDF(prefix, temp, A, B, nbins, r_min, r_max, ss=0, unit='angstrom'):
       else:
         ifr += 1
 
-  # Some constants
-  const = 1.0/float(ifr - skipSteps)
-  alpha = Constants.hbar**2/(24.0*nbeads**3*(temperature*Constants.kb)**3)
-  beta = Constants.hbar**2/(12.0*nbeads**3*(temperature*Constants.kb)**2)
+      if ifr > skipSteps and ifr % 100 == 0:
 
-  # Normalization
-  rdf[:, 1] *= const/nbeads
-  f2 *= alpha*const
-  f2rdf[:] *= alpha*const
-  frdf[:] *= beta*const
+        # Some constants
+        const = 1.0/float(ifr - skipSteps)
+        alpha = Constants.hbar**2/(24.0*nbeads**3*(temperature*Constants.kb)**3)
+        beta = Constants.hbar**2/(12.0*nbeads**3*(temperature*Constants.kb)**2)
 
-  # PPI correction
-  rdfQ = np.copy(rdf)
-  for bin in range(nbins):
-    rdfQ[bin, 1] += (rdf[bin, 1]*f2 - f2rdf[bin]/nbeads)
-    rdfQ[bin, 1] -= frdf[bin]/2.0
+        # Normalization
+        _rdf = np.copy(rdf)
+        _f2rdf = np.copy(f2rdf)
+        _frdf = np.copy(frdf)
+        _rdf[:, 1] *= const/nbeads
+        _f2 = f2*alpha*const
+        _f2rdf[:] *= alpha*const
+        _frdf[:] *= beta*const
 
-  # Creating RDF from N(r)
-  const, dr = cellVolume/(4*np.pi/3.0), rdf[1, 0] - rdf[0, 0]
-  for bin in range(nbins):
-    rdf[bin, 1] = const*rdf[bin, 1]/((rdf[bin, 0] + 0.5*dr)**3 - (rdf[bin, 0] - 0.5*dr)**3)
-    rdfQ[bin, 1] = const*rdfQ[bin, 1]/((rdfQ[bin, 0] + 0.5*dr)**3 - (rdfQ[bin, 0] - 0.5*dr)**3)
-  for bin in range(nbins):
-    rdf[bin, 0] = unit_to_user('length', unit, rdf[bin, 0])
-    rdfQ[bin, 0] = unit_to_user('length', unit, rdfQ[bin, 0])
+        # PPI correction
+        rdfQ = np.copy(_rdf)
+        for bin in range(nbins):
+          rdfQ[bin, 1] += (_rdf[bin, 1]*_f2 - _f2rdf[bin]/nbeads)
+          rdfQ[bin, 1] -= _frdf[bin]/2.0
 
-  # Writing the results into files
-  np.savetxt(fn_out_rdf, rdf)
-  np.savetxt(fn_out_rdf_q, rdfQ)
+        # Creating RDF from N(r)
+        const, dr = cellVolume/(4*np.pi/3.0), _rdf[1, 0] - _rdf[0, 0]
+        for bin in range(nbins):
+          _rdf[bin, 1] = const*_rdf[bin, 1]/((_rdf[bin, 0] + 0.5*dr)**3 - (_rdf[bin, 0] - 0.5*dr)**3)
+          rdfQ[bin, 1] = const*rdfQ[bin, 1]/((rdfQ[bin, 0] + 0.5*dr)**3 - (rdfQ[bin, 0] - 0.5*dr)**3)
+        for bin in range(nbins):
+          _rdf[bin, 0] = unit_to_user('length', unit, _rdf[bin, 0])
+          rdfQ[bin, 0] = unit_to_user('length', unit, rdfQ[bin, 0])
+
+        # Writing the results into files
+        np.savetxt(fn_out_rdf, _rdf)
+        np.savetxt(fn_out_rdf_q, rdfQ)
 
 
 def main(*arg):

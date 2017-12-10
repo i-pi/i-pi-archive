@@ -16,7 +16,7 @@ kspace_style    pppm 1e-4
 read_data       data.lmp 
 
 special_bonds   charmm
-fix  1 all ipi driver 1234 unix
+fix  1 all ipi paracetamol-phonons 1234 unix
 
 thermo          100 
 thermo_style    one
