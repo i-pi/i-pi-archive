@@ -17,13 +17,13 @@ endef
 -include make.in
 
 mil53_ffsocket:
-	cd MIL53_ffsocket; $(IPI) nst_ipi.xml & sleep 10; \
+	cd mil53_ffsocket; $(IPI) input.xml & sleep 10; \
 	$(call run_yaff,4) \
 	wait
 	
 mil53_ffyaff:
-	cd MIL53_ffyaff; $(IPI) nst_ipi.xml; \
+	cd mil53_ffyaff; $(IPI) input.xml; \
 	wait
 
 clean:
-	rm */*.out* */*.log */*.restart* */*RESTART* */EXIT */*pos* */yaffdriver.pyc
+	rm -f */*.out* */*.log */*.restart* */*RESTART* */EXIT */*pos* */*simulation* */yaffdriver.pyc

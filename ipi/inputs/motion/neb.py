@@ -32,10 +32,13 @@ from ipi.utils.units import *
 __all__ = ['InputNEB']
 
 class InputNEB(InputDictionary):
-    """Geometry optimization options.
+    """Geometry optimization options for nudged elastic band (NEB) calculations.
 
     Contains options related with geometry optimization, such as method,
     thresholds, linear search strategy, etc.
+
+    Also contains options related specifically to NEB, such as spring constants
+    and climbing image.
 
     """
 
@@ -69,6 +72,12 @@ class InputNEB(InputDictionary):
                 "biggest_step": (InputValue, {"dtype" : float,
                               "default" : 100.0,
                               "help"    : "The maximum step size for (L)-BFGS line minimizations."}),
+                "scale_lbfgs" : (InputValue, {"dtype" : int,
+                              "default"  : 2,
+                              "help"     : """Scale choice for the initial hessian.
+                                            0 identity.
+                                            1 Use first member of position/gradient list. 
+                                            2 Use last  member of position/gradient list."""}),
                 "invhessian_bfgs" : (InputArray, {"dtype" : float,
                               "default" : input_default(factory=np.eye, args = (0,)),
                               "help"    : "Approximate inverse Hessian for BFGS, if known."}),
@@ -89,24 +98,23 @@ class InputNEB(InputDictionary):
                               "options" : ["varsprings", "kappa", "kappamax", "kappamin"],
                               "default" : [False, 1.0, 1.5, 0.5],
                               "help"    : "Uniform or variable spring constants along the elastic band"}),
-                "climb"      : (InputDictionary, {"dtype" : bool,
+                "climb"      : (InputValue, {"dtype" : bool,
                               "default" : False,
                               "help"    : "Use climbing image NEB"})
        }
 
     dynamic = {  }
 
-    default_help = "TODO EXPLAIN WHAT THIS IS"
+    default_help = "Contains the required parameters for performing nudged elastic band (NEB) calculations"
     default_label = "NEB"
 
     def store(self, neb):
-        print "INSIDE NEB STROE"
         if neb == {}: return
         self.ls_options.store(neb.ls_options)
         self.tolerances.store(neb.tolerances)
         self.mode.store(neb.mode)
         self.old_force.store(neb.old_f)
-        self.old_direction.store(neb.d)
+        self.old_direction.store(neb.old_d)
         self.biggest_step.store(neb.big_step)
         self.invhessian_bfgs.store(neb.invhessian)
         self.qlist_lbfgs.store(neb.qlist)
@@ -114,8 +122,9 @@ class InputNEB(InputDictionary):
         self.endpoints.store(neb.endpoints)
         self.spring.store(neb.spring)
         self.climb.store(neb.climb)
+        self.scale_lbfgs.store(neb.scale)
 
     def fetch(self):
-        rv = super(InputN,self).fetch()
+        rv = super(InputNEB,self).fetch()
         rv["mode"] = self.mode.fetch()
         return rv

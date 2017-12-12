@@ -21,8 +21,8 @@ from ipi.engine.beads import Beads
 from ipi.engine.normalmodes import NormalModes
 
 
-__all__ = ['Thermostat', 'ThermoLangevin', 'ThermoNFL', 'ThermoPILE_L', 'ThermoPILE_G',
-           'ThermoSVR', 'ThermoGLE', 'ThermoNMGLE', 'ThermoNMGLEG', 'MultiThermo']
+__all__ = ['Thermostat', 'ThermoLangevin', 'ThermoPILE_L', 'ThermoPILE_G', 'ThermoSVR',
+           'ThermoGLE', 'ThermoNMGLE', 'ThermoNMGLEG', 'ThermoCL', 'MultiThermo']
 
 
 class Thermostat(dobject):
@@ -196,104 +196,6 @@ class ThermoLangevin(Thermostat):
 
       self.p = p
       self.ethermo = et
-
-
-class ThermoNFL(Thermostat):
-   """Represents a Langevin thermostat for systems driven by stochastical (noisy) forces,
-      adding adequate additional damping to compensate for the inherent white noise term
-      originating from the forces.
-      The variance of that white noise term (invar) must be set to reach the target temperature.
-      Alternatively, if the adjustment time coefficient invtau is set > 0, invar will be automatically
-      adjusted over time according to the difference of system temperature to target temperature.
-
-   Depend objects:
-      tau: Thermostat damping time scale. Larger values give a less strongly
-         coupled thermostat.
-      invar: Inherent noise variance. Larger invar results in larger additional damping term.
-      invtau: invar-temperature coupling time constant.
-      T: Coefficient of the diffusive contribution of the thermostat, i.e. the
-         drift back towards equilibrium. Depends on tau and the time step.
-      S: Coefficient of the stochastic contribution of the thermostat, i.e.
-         the uncorrelated Gaussian noise. Depends on T and the temperature.
-   """
-
-   def get_T(self):
-      """Calculates the coefficient of the overall drift of the velocities."""
-
-      inT = self.invar/(Constants.kb*self.temp)
-
-      if self.tau > 0: langT = np.exp(-self.dt/self.tau)
-      else: langT = 1.0
-
-      nflT = langT - inT
-      if nflT < 0: nflT = 0
-
-      return np.sqrt( nflT )
-
-   def get_S(self):
-      """Calculates the coefficient of the white noise."""
-
-      if self.tau > 0:
-         return np.sqrt(Constants.kb*self.temp*(1.0 - np.exp(-self.dt/self.tau)))
-      else:
-         return 0.0
-
-   def __init__(self, temp = 1.0, dt = 1.0, tau = 0, invar = 0.0, invtau = 0, ethermo=0.0):
-      """Initialises ThermoNFL.
-
-      Args:
-         temp: The simulation temperature. Defaults to 1.0.
-         dt: The simulation time step. Defaults to 1.0.
-         tau: The thermostat damping timescale. Defaults to 0 (off).
-         invar: Estimated inherent noise variance. Defaults to 0.0.
-         invtau: invar-temperature coupling time constant. Defaults to 0 (off).
-         ethermo: The initial heat energy transferred to the bath.
-            Defaults to 0.0. Will be non-zero if the thermostat is
-            initialised from a checkpoint file.
-      """
-
-      super(ThermoNFL,self).__init__(temp, dt, ethermo)
-
-      self.invstep = False
-      dset(self,"tau",depend_value(value=tau,name='tau'))
-      dset(self,"invar",depend_value(value=invar,name='invar'))
-      dset(self,"invtau",depend_value(value=invtau,name='invtau'))
-      dset(self,"T",
-         depend_value(name="T",func=self.get_T,
-            dependencies=[dget(self,"temp"), dget(self,"tau"), dget(self,"dt"), dget(self,"invar")]))
-      dset(self,"S",
-         depend_value(name="S",func=self.get_S,
-            dependencies=[dget(self,"temp"), dget(self,"tau"), dget(self,"dt")]))
-
-
-   def step(self):
-      """Updates the bound momentum vector with a langevin thermostat."""
-
-      et = self.ethermo
-      p = depstrip(self.p).copy()
-      sm = depstrip(self.sm)
-
-      p /= sm
-
-      et += np.dot(p,p)*0.5
-      p *= self.T
-      p += self.S*self.prng.gvec(len(p))
-      et -= np.dot(p,p)*0.5
-
-      p *= sm
-
-      self.p = p
-      self.ethermo = et
-
-      if self.invtau > 0 and self.invstep:
-         ekin = np.dot(depstrip(self.p),depstrip(self.p)/depstrip(self.m))*0.5
-         mytemp = ekin/Constants.kb/self.ndof * 2
-         self.invar += Constants.kb * (mytemp - self.temp) / self.invtau * self.dt
-         if self.invar < 0: self.invar = 0
-
-         print("ThermoNFL inherent noise variance: " + str(self.invar))
-
-      self.invstep = not self.invstep
 
 
 class ThermoPILE_L(Thermostat):
@@ -965,6 +867,135 @@ class ThermoNMGLEG(ThermoNMGLE):
 
       dget(self,"ethermo").add_dependency(dget(t,"ethermo"))
       self._thermos.append(t)
+
+
+class ThermoCL(Thermostat):
+   """Represents a Langevin thermostat for systems driven by forces which are statistical
+      in nature, i.e. they contain noise, and/or have an unwanted dissipative effect.
+      This thermostat's dissipative term is modified to compensate for the inherent noise.
+      Similarly, the noise term is modified to compensate for the inherent dissipation.
+      The time scales of inherent diffusion and drift (intau and idtau) must be set
+      to adequate values in order to make the system reach the target temperature.
+      Alternatively, if the automatic parameter adjustment time scale apat is set > 0
+      and either intau OR idtau are initially set to a value > 0, the respective parameter
+      will be automatically adjusted over time, driven by current versus target temperature.
+
+      Author: Jan Kessler <jakessle@t-online.de>
+
+   Depend objects:
+      tau: Thermostat damping time scale. Larger values give a less strongly
+         coupled thermostat.
+      intau: Inherent noise time scale. Smaller intau results in more compensating drift.
+      idtau: Inherent dissipation time scale. Smaller idtau results in more compensating diffusion.
+      apat: Automatic parameter adjustment time scale.
+      lgT: Langevin coefficient of drift.
+      inT: Coefficient of drift compensating for inherent noise.
+      idT: Coefficient of drift of inherent dissipation.
+      T: Coefficient of the drift contribution of the thermostat, i.e. the
+         dissipation back towards equilibrium. Depends on lgT and inT.
+      S: Coefficient of the diffusive contribution of the thermostat, i.e.
+         the uncorrelated Gaussian noise. Depends on lgT, idT and the temperature.
+   """
+
+   def get_lgT(self):
+      """Calculates the Langevin coefficient of drift."""
+
+      if self.tau > 0: return np.exp(-0.5*self.dt/self.tau)
+      else: return 1.0
+
+   def get_inT(self):
+      """Calculates the coefficient of drift to compensate for the inherent noise."""
+
+      if self.intau > 0: return np.exp(-0.5*self.dt/self.intau)
+      else: return 1.0
+
+   def get_idT(self):
+      """Calculates the coefficient of drift for the inherent dissipation."""
+
+      if self.idtau > 0: return np.exp(-0.5*self.dt/self.idtau)
+      else: return 1.0
+
+   def get_T(self):
+      """Calculates the coefficient of the thermosta'st drift of the velocities."""
+
+      return self.lgT * self.inT
+
+   def get_S(self):
+      """Calculates the coefficient of the white noise."""
+
+      return np.sqrt(Constants.kb*self.temp*(1.0 - (self.lgT * self.idT)**2))
+
+   def __init__(self, temp = 1.0, dt = 1.0, tau = 0, intau = 0, idtau = 0, apat = 0, ethermo=0.0):
+      """Initialises ThermoCL.
+
+      Args:
+         temp: The simulation temperature. Defaults to 1.0.
+         dt: The simulation time step. Defaults to 1.0.
+         tau: The thermostat damping timescale. Defaults to 0 (off).
+         intau: Estimated inherent noise time coefficient. Defaults to 0 (off).
+         idtau: Estimated inherent dissipation time coefficient. Defaults to 0 (off).
+         apat: Automatic parameter adjustment time scale. Defaults to 0 (off).
+         ethermo: The initial heat energy transferred to the bath.
+            Defaults to 0.0. Will be non-zero if the thermostat is
+            initialised from a checkpoint file.
+      """
+
+      super(ThermoCL,self).__init__(temp, dt, ethermo)
+
+      self.idstep = False
+      dset(self,"tau",depend_value(value=tau,name='tau'))
+      dset(self,"intau",depend_value(value=intau,name='intau'))
+      dset(self,"idtau",depend_value(value=idtau,name='idtau'))
+      dset(self,"apat",depend_value(value=apat,name='apat'))
+      dset(self,"lgT",
+         depend_value(name="lgT",func=self.get_lgT,
+            dependencies=[dget(self,"tau"), dget(self,"dt")]))
+      dset(self,"inT",
+         depend_value(name="inT",func=self.get_inT,
+            dependencies=[dget(self,"intau"), dget(self,"dt")]))
+      dset(self,"idT",
+         depend_value(name="idT",func=self.get_idT,
+            dependencies=[dget(self,"idtau"), dget(self,"dt")]))
+      dset(self,"T",
+         depend_value(name="T",func=self.get_T,
+            dependencies=[dget(self,"lgT"), dget(self,"inT")]))
+      dset(self,"S",
+         depend_value(name="S",func=self.get_S,
+            dependencies=[dget(self,"temp"), dget(self,"lgT"), dget(self,"idT")]))
+
+
+   def step(self):
+      """Updates the bound momentum vector with a langevin thermostat."""
+
+      et = self.ethermo
+      p = depstrip(self.p).copy()
+      sm = depstrip(self.sm)
+
+      p /= sm
+
+      et += np.dot(p,p)*0.5
+      p *= self.T
+      p += self.S*self.prng.gvec(len(p))
+      et -= np.dot(p,p)*0.5
+
+      p *= sm
+
+      self.p = p
+      self.ethermo = et
+
+      if self.apat > 0 and self.idstep and ((self.intau != 0) ^ (self.idtau != 0)):
+         ekin = np.dot(depstrip(self.p),depstrip(self.p)/depstrip(self.m))*0.5
+         mytemp = ekin/Constants.kb/self.ndof * 2
+
+         if self.intau != 0:
+            if mytemp != 0: self.intau /= (mytemp / self.temp)**(self.dt/self.apat)
+            print("ThermoCL inherent noise time scale: " + str(self.intau))
+         else:
+            self.idtau *= (mytemp / self.temp)**(self.dt/self.apat)
+            print("ThermoCL inherent dissipation time scale: " + str(self.idtau))
+
+      self.idstep = not self.idstep
+
 
 class MultiThermo(Thermostat):
 

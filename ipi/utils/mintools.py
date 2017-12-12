@@ -388,7 +388,7 @@ def min_approx(fdf, x0, fdf0, d0, big_step, tol, itmax):
     if d0 is None: d0 = -df0 / np.sqrt(np.dot(df0.flatten(), df0.flatten()))
     x = np.zeros(n)
     alf = 1.0e-4
-
+ 
     # Step size
     stepsum = np.sqrt(np.dot(d0.flatten(), d0.flatten()))
 
@@ -798,7 +798,8 @@ def L_BFGS(x0, d0, fdf, qlist, glist, fdf0, big_step, tol, itmax,m, scale,k):
 
     else:
         info(" @MINIMIZE: Skipped direction update; direction * gradient insufficient", verbosity.debug)
-        d = d0
+        #d = d0
+        d = -1.0 * d_x 
 
     d0[:]=d 
     info(" @MINIMIZE: Updated search direction", verbosity.debug)

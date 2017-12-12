@@ -130,7 +130,7 @@ except ImportError:
 
 #### Hardcoded settings ####
 TIMEOUT_DRIVER = 600    # Maximum time the driver are allowded to run
-TIMEOUT_IPI = 30        # Maximum time to wait after the driver are done
+TIMEOUT_IPI = 10        # Maximum time to wait after the driver are done
 IPI_WAITING_TIME = 5    # Time to wait after i-pi has been started
 ############################
 
@@ -663,9 +663,10 @@ class Test(threading.Thread):
                         remove_file(straj['old_filename'])
                         shutil.copy2(straj['new_filename'],
                                      straj['old_filename'])
-            except:
+            except IOError, e:
                 self.test_status = 'ERROR'
-                self.msg += 'Error while copying the new reference!!'
+                self.msg += 'Error while copying the new reference!!\n'
+                self.msg += "Unable to copy file. %s" % e
             else:
                 self.test_status = 'COPIED'
         else:
@@ -884,7 +885,7 @@ class Test(threading.Thread):
                 nprop = []
                 isys = 0
                 for _ss in simul.syslist:   # create multiple copies
-                    filename = _ss.prefix+"_"+o.filename
+                    filename = _ss.prefix+o.filename
                     nprop.append({"old_filename" : os.path.join(olddir,
                                                                 filename),
                                   "new_filename" : os.path.join(newdir,
@@ -911,9 +912,9 @@ class Test(threading.Thread):
                         for _ss in simul.syslist:
                             if o.ibead < 0 or o.ibead == _bi:
                                 if getkey(o.what) == "extras":
-                                    filename = _ss.prefix+"_"+o.filename+"_" + padb
+                                    filename = _ss.prefix+o.filename+"_" + padb
                                 else:
-                                    filename = _ss.prefix+"_"+o.filename+"_" + padb + \
+                                    filename = _ss.prefix+o.filename+"_" + padb + \
                                                "." + o.format
                                 ntraj.append({"old_filename" : os.path.join(olddir, filename),
                                               "format" : o.format,
@@ -928,7 +929,7 @@ class Test(threading.Thread):
                     ntraj = []
                     isys = 0
                     for _ss in simul.syslist:   # create multiple copies
-                        filename = _ss.prefix+"_"+o.filename
+                        filename = _ss.prefix+o.filename
                         filename = filename+"."+o.format
                         ntraj.append({"old_filename" : os.path.join(olddir,
                                                                     filename),
@@ -980,7 +981,7 @@ def create_dir(folder_path, ignore=False):
                 else:
                     raise RuntimeError
             except:
-                raise RuntimeError('I cannot remove the file.'
+                raise RuntimeError('I cannot remove the file. '
                                    'Try manually and restart this script!')
         else:
             raise SystemExit('User rules!')

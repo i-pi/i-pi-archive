@@ -210,8 +210,13 @@ class Simulation(dobject):
 
         for k, f in self.fflist.iteritems():
             f.run()
+<<<<<<< HEAD
 
 
+=======
+            
+                    
+>>>>>>> remd
         # prints inital configuration -- only if we are not restarting
         if self.step == 0:
             self.step = -1

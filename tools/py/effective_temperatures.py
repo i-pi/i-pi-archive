@@ -1,28 +1,27 @@
 #!/usr/bin/python
 
 __author__ = 'Igor Poltavsky'
-__version__ = '1.0'
 
 """ effective_temperatures.py
-Reads forces from an i-PI run and computes effective temperatures for all degrees of freedom.
-The output is saved to 'prefix.effective_temperatures.dat' file which is created in the
-folder which contains the input files. The results are printed out in the format: "atom",
+The script reads the forces from from standard i-PI output files and computes the effective temperatures 
+for all degrees of freedom. The output is saved to 'prefix.effective_temperatures.dat' file which is located 
+in the folder which contains the input files. The results are printed out in the format: "atom",
 "effective temperatures for x, y, and z directions", and "average effective temperature".
 
 The script assumes that the input files are in 'xyz' format and prefix.for_*.xyz (forces)
-naming scheme. This would require the following lines in input.xml file:
+naming scheme. This requires the following lines in input.xml file:
 <trajectory filename='force' stride='1' format='xyz' cell_units='angstrom'>
-forces{piconewton} </trajectory>
+forces </trajectory>
 
 Syntax:
    python effective_temperatures.py "prefix" "simulation temperature (in Kelvin)"
    "number of time frames to skip in the beginning of each file (default 0)"
    
-The output effective temperatures are in Kelvin.
+The computed effective temperatures are in Kelvin.
 """
 
 import numpy as np
-import sys, glob, os
+import sys, glob
 
 from ipi.utils.units import unit_to_internal, unit_to_user, Constants
 from ipi.utils.io import read_file
@@ -64,7 +63,7 @@ def effectiveTemperatures(prefix, temp, ss=0):
   # Some constants
   const = Constants.hbar**2/(12.0*(nbeads*Constants.kb*temperature)**3)
 
-  iOut.write("# Atom, effective temperatures (in Kelvin)\n")
+  iOut.write("# Atom, Cartesian components of the effective temperature, average effective temperature (in Kelvin)\n")
 
   natoms = 0
   ifr = 0
@@ -77,12 +76,12 @@ def effectiveTemperatures(prefix, temp, ss=0):
 
     try:
       for i in range(nbeads):
-        ret = read_file("xyz", ifor[i], output='arrays')
+        ret = read_file("xyz", ifor[i], dimension='force')["atoms"]
         if natoms == 0:
-          m, natoms, names = ret["masses"], ret["natoms"], ret["names"]
+          m, natoms, names = ret.m, ret.natoms, ret.names
           f = np.zeros((nbeads, 3*natoms))
           f2_av = np.zeros(3*natoms)
-        f[i, :] = ret["data"]
+        f[i, :] = ret.q
     except EOFError: # finished reading files
       break
 
@@ -92,7 +91,6 @@ def effectiveTemperatures(prefix, temp, ss=0):
       for i in range(natoms):
         for j in range(nbeads):
           f2[i*3:i*3+3] += f[j,i*3:i*3+3]**2/m[i]
-
 
       f2_av[:] += f2[:]
       ifr += 1

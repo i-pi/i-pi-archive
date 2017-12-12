@@ -72,19 +72,19 @@ class Ensemble(dobject):
         if temp is not None:
             self.temp = temp
         else:
-            self.temp = 0.0
+            self.temp = -1.0
 
         dset(self, "stressext", depend_array(name='stressext', value=np.zeros((3,3), float)))
         if stressext is not None:
             self.stressext = np.reshape(np.asarray(stressext), (3,3))
         else:
-            self.stressext = 0.0
+            self.stressext = -1.0
 
         dset(self, "pext", depend_value(name='pext'))
         if pext is not None:
             self.pext = pext
         else:
-            self.pext = 0.0
+            self.pext = -1.0
 
         dset(self, "eens", depend_value(name='eens'))
         if eens is not None:
