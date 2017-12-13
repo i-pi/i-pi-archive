@@ -1,7 +1,7 @@
 <!-- REGTEST
 DEPENDENCIES  water_298K.pdb
-COMMAND(4)    i-pi-driver -u -h ffdriverA -m qtip4pf
-COMMAND(4)    i-pi-driver -u -h ffdriverB -m qtip4pf
+COMMAND(1)    i-pi-driver -u -h ffdriverA -m qtip4pf
+COMMAND(1)    i-pi-driver -u -h ffdriverB -m qtip4pf
 ENDREGTEST -->
 
 <simulation>

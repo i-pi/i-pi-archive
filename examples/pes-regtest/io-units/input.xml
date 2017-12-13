@@ -1,6 +1,6 @@
 <!-- REGTEST
 DEPENDENCIES  h2o-nocomment.xyz h2o-velocities.xyz h2o-angstrom.xyz
-COMMAND    i-pi-driver -h localhost -p 31400 -m qtip4pf
+COMMAND    i-pi-driver -h -u iounits -m qtip4pf
 ENDREGTEST -->
 
 <simulation verbosity="high">
@@ -16,10 +16,8 @@ ENDREGTEST -->
   </output>
   <total_steps>40</total_steps>
   <prng><seed>23658</seed></prng>
-  <ffsocket mode='inet' pbc='false' name='driver'>
-    <address>localhost</address>
-    <!-- <address>driver</address> -->
-      <port>31400</port> <latency>0.02</latency> <timeout>400</timeout>
+  <ffsocket mode='unix' pbc='false' name='driver'>
+    <address> iounits </address>
   </ffsocket>
   <system>
     <initialize nbeads='4'>

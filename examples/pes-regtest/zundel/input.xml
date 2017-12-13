@@ -1,7 +1,7 @@
 <!--REGTEST 
-DEPENDENCIES  h5o2.dms4B.coeff.com.dat h5o2.pes4B.coeff.dat h5o2+.xyz
-COMMAND(10)    i-pi-driver -u -h REGTEST_SOCKET -m zundel
-COMMAND(6)    i-pi-driver -u -h REGTEST_SOCKET -m zundel
+DEPENDENCIES  h5o2.dms4B.coeff.com.dat h5o2.pes4B.coeff.dat init.xyz
+COMMAND(1)    i-pi-driver -u -h REGTEST_SOCKET -m zundel
+COMMAND(1)    i-pi-driver -u -h REGTEST_SOCKET -m zundel
  ENDREGTEST-->
 
 <simulation>
