@@ -609,27 +609,25 @@ class Test(threading.Thread):
         finished = 0
         while finished < len(driver_prcs):
             if self.die:
-                timeout_driver = -1000
+                time_to_stop = -1000
             for prc in driver_prcs:
                 if prc.poll() is not None:
                     finished += 1
             time.sleep(.5)
-            timeout_driver = timeout_driver - init_time - time.time()
-#            print 'PROCESS:', self.name, 'TIMEOUT_DRIVER', timeout_driver, 'FINISHED', finished, len(driver_prcs)
-            if timeout_driver < -0.5:
+            time_to_stop = timeout_driver - init_time - time.time()
+            if time_to_stop < -0.5:
                 for prc in driver_prcs:
                     if prc.poll() is None:
                         prc.terminate()
                     finished += 1
                 self.test_status = 'ERROR'
-                self.msg += 'The drivers took too long:\n {:d}s > {:d}s\n'.format(int(TIMEOUT_DRIVER - timeout_driver), int(TIMEOUT_DRIVER))
+                self.msg += 'The drivers took too long:\n {:d}s > {:d}s\n'.format(int(TIMEOUT_DRIVER - time_to_stop), int(TIMEOUT_DRIVER))
 
         while ipi_proc.poll() is None:
             if self.die:
-                timeout_driver = -1000
+                time_to_stop = -1000
             timeout_ipi -= 1
             time.sleep(.5)
-#            print 'PROCESS:', self.name, 'TIMEOUT_DRIVER', timeout_driver
             if timeout_ipi < -2:
                 ipi_proc.terminate()
                 self.test_status = 'ERROR'
