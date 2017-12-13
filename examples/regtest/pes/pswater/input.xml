@@ -1,6 +1,6 @@
 <!-- REGTEST
-DEPENDENCIES  init.xyz
-COMMAND    i-pi-driver -h localhost -p 31400 -m pswater
+DEPENDENCIES init.xyz
+COMMAND(4) i-pi-driver -h localhost -p 31400 -m pswater
 ENDREGTEST -->
 <simulation verbosity='high'>
   <output prefix='PSmono'>

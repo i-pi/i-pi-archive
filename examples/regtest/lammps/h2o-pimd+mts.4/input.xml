@@ -1,7 +1,7 @@
 <!-- REGTEST
 DEPENDENCIES init.pdb  in_short.lmp data_short.lmp in_long.lmp data_long.lmp
-COMMAND(4) lmp_serial -i in_short.lmp
-COMMAND(4) lmp_serial -i in_long.lmp
+COMMAND(2) lmp_serial -i in_short.lmp
+COMMAND(2) lmp_serial -i in_long.lmp
 ENDREGTEST -->
 <simulation mode='md' verbosity='high'>
   <output prefix='simulation'>

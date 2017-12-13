@@ -1,6 +1,6 @@
 <!-- REGTEST
 DEPENDENCIES init.pdb  in.lmp data.lmp
-COMMAND(8) lmp_serial -i in.lmp
+COMMAND(4) lmp_serial -i in.lmp
 ENDREGTEST -->
 <simulation verbosity='high'>
   <output prefix='simulation'>

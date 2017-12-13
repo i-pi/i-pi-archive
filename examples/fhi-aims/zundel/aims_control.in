@@ -1,10 +1,3 @@
-#########################################################################################
-#
-#  Volker Blum, FHI 2008 : Test run input file control.in for simple H2O
-#
-#########################################################################################
-use_pimd_wrapper localhost 40050
-output_level MD_light
 #
 #  Physical model
 #
@@ -19,27 +12,12 @@ output_level MD_light
   mixer              pulay
     n_max_pulay        10
     charge_mix_param   0.5   
-  sc_accuracy_rho    5E-5
-  sc_accuracy_eev    5E-3
-  sc_accuracy_etot   5E-6
-  sc_iter_limit      200
   sc_accuracy_forces 5E-4
 #
-#  Eigenvalue solution
-#
-#  KS_method          lapack
-#    empty_states       3
-#    basis_threshold    1.e-5
-#
-#  Relaxation
-#
-#  relax_geometry   bfgs 1.e-5
-#
-#  distributed_spline_storage .true.
-#
-#  MD
-#
-  output dipole
+  use_pimd_wrapper localhost 40050
+  communicate_pimd_wrapper dipole
+  output_level MD_light
+
 ################################################################################
 #
 #  FHI-aims code project
