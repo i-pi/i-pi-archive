@@ -861,8 +861,9 @@ class Test(threading.Thread):
         iodir = os.path.dirname(os.path.realpath(xml_path))    
         os.chdir(iodir)
         
-        print "READING FILE FROM ", iodir 
-        print " WHILE RUNNING IN ", cwd
+        #print "READING FILE FROM ", iodir 
+        #print " WHILE RUNNING IN ", cwd
+        #print "I have changed directory to ", os.getcwd() 
         
         ifile = open(xml_path, "r")
         xmlrestart = io_xml.xml_parse_file(ifile) # Parses the file.

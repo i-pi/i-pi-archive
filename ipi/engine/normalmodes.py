@@ -510,6 +510,15 @@ class NormalModes(dobject):
                   pnm[k,a] = pq[0]
          self.pnm = pnm * sm
          self.qnm = qnm / sm
+         #pq = np.zeros((2,self.natoms*3),float)
+         #sm = depstrip(self.beads.sm3)[0]
+         #prop_pq = depstrip(self.prop_pq)
+         #for k in range(1,self.nbeads):
+         #   pq[0,:] = depstrip(self.pnm)[k]/sm
+         #   pq[1,:] = depstrip(self.qnm)[k]*sm
+         #   pq = np.dot(prop_pq[k],pq)
+         #   self.qnm[k] = pq[1,:]/sm
+         #   self.pnm[k] = pq[0,:]*sm
 
    def get_kins(self):
       """Gets the MD kinetic energy for all the normal modes.
