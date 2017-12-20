@@ -1,6 +1,6 @@
 <!-- REGTEST
 DEPENDENCIES  init-nocomment.xyz init-velocities.xyz init-angstrom.xyz
-COMMAND    i-pi-driver -h localhost -p 31400 -m qtip4pf
+COMMAND(4) i-pi-driver -h localhost -p 31400 -m qtip4pf
 ENDREGTEST -->
 <simulation verbosity='high'>
   <output prefix='PSmono'>
