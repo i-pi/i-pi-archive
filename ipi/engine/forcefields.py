@@ -62,7 +62,7 @@ class ForceField(dobject):
         _threadlock: Python handle used to lock the thread held in _thread.
     """
 
-    def __init__(self, latency=1.0, name="", pars=None, dopbc=True):
+    def __init__(self, latency=1.0, name="", pars=None, dopbc=True, active=np.array([-1])):
         """Initialises ForceField.
 
         Args:
@@ -73,6 +73,7 @@ class ForceField(dobject):
                 Of the form {'name1': value1, 'name2': value2, ... }.
             dopbc: Decides whether or not to apply the periodic boundary conditions
                 before sending the positions to the client code.
+            active: Indexes of active atoms in this forcefield
         """
 
         if pars is None:
@@ -84,6 +85,7 @@ class ForceField(dobject):
         self.latency = latency
         self.requests = []
         self.dopbc = dopbc
+        self.active= active
         self._thread = None
         self._doloop = [False]
         self._threadlock = threading.Lock()
@@ -121,12 +123,35 @@ class ForceField(dobject):
             par_str = " "
 
         pbcpos = depstrip(atoms.q).copy()
+
+        # Indexes come from input in a per atom basis and we need to make a per atom-coordinate basis
+        # Reformat indexes for full system (default) or piece of system      
+#        fullat=True
+        if self.active[0]==-1:
+           activehere=np.array([i for i in range(len(pbcpos))])
+        else:
+           activehere=np.array([[3*n, 3*n+1, 3*n+2] for n in self.active])
+
+#           fullat=False
+#
+#        if (self.active[0]!=-1 and fullat==False):
+#           temp=np.array([[3*n, 3*n+1, 3*n+2] for n in self.active])
+
+        # Reassign active indexes in order to use them
+        activehere=activehere.flatten()
+
+        # Perform sanity check for active atoms
+        if  (len(activehere)>len(pbcpos) or activehere[-1]>(len(pbcpos)-1)):
+           raise ValueError("There are more active atoms than atoms!")
+
+
         if self.dopbc:
             cell.array_pbc(pbcpos)
 
         newreq = ForceRequest({
             "id": reqid,
             "pos": pbcpos,
+            "active": activehere,
             "cell": (depstrip(cell.h).copy(), depstrip(cell.ih).copy()),
             "pars": par_str,
             "result": None,
@@ -232,7 +257,7 @@ class FFSocket(ForceField):
             communication between the forcefield and the driver is done.
     """
 
-    def __init__(self, latency=1.0, name="", pars=None, dopbc=True, interface=None):
+    def __init__(self, latency=1.0, name="", pars=None, dopbc=True, active=np.array([-1]), interface=None):
         """Initialises FFSocket.
 
         Args:
@@ -248,7 +273,7 @@ class FFSocket(ForceField):
         """
 
         # a socket to the communication library is created or linked
-        super(FFSocket, self).__init__(latency, name, pars, dopbc)
+        super(FFSocket, self).__init__(latency, name, pars, dopbc, active)
         if interface is None:
             self.socket = InterfaceSocket()
         else:

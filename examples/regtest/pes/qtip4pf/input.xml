@@ -1,6 +1,6 @@
 <!-- REGTEST
-DEPENDENCIES  init.pdb
-COMMAND(8)    i-pi-driver -u -h ffdriver -m qtip4pf
+DEPENDENCIES init.pdb
+COMMAND(4) i-pi-driver -u -h ffdriver -m qtip4pf
 ENDREGTEST -->
 <simulation>
   <output prefix='qtip4pf'>

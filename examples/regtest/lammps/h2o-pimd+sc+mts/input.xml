@@ -1,6 +1,6 @@
 <!-- REGTEST
 DEPENDENCIES init.pdb  in.lmp data.lmp
-COMMAND(16) lmp_serial -i in.lmp
+COMMAND(4) lmp_serial -i in.lmp
 ENDREGTEST -->
 <simulation verbosity='high'>
   <output prefix='simulation'>
@@ -8,7 +8,7 @@ ENDREGTEST -->
     <trajectory filename='f' stride='1'> positions </trajectory>
     <checkpoint stride='200'/>
   </output>
-  <total_steps> 2 </total_steps>
+  <total_steps> 10 </total_steps>
   <prng>
     <seed>32415</seed>
   </prng>
