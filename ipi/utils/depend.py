@@ -126,7 +126,7 @@ class depend_base(object):
             dependants = []
         if dependencies is None:
             dependencies = []
-        
+
         self._tainted = tainted
         self._func = func
         self._name = name
@@ -732,7 +732,7 @@ def deppipe(objfrom, memberfrom, objto, memberto, item=-1):
     dfrom = dget(objfrom, memberfrom)
     dto = dget(objto, memberto)
     dpipe(dfrom, dto, item)
-    
+
 def dpipe(dfrom, dto, item=-1):
     if item < 0:
         dto._func = lambda: dfrom.get()

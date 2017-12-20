@@ -34,7 +34,7 @@ __all__ = ["InputDynMatrix"]
 
 class InputDynMatrix(InputDictionary):
     """Dynamic matrix calculation options.
-    
+
        Contains options related with finite difference computation of force constats. 
 
     """
@@ -65,7 +65,7 @@ class InputDynMatrix(InputDictionary):
                               "default" :  np.zeros(0, float),
                               "help"    : "Portion of the refined dynamical matrix known up to now."})              
              }
-                   
+
     dynamic = {  }
 
     default_help = "Fill in."
@@ -81,7 +81,7 @@ class InputDynMatrix(InputDictionary):
         self.asr.store(phonons.asr)
         self.dynmat.store(phonons.dynmatrix)
         self.refdynmat.store(phonons.refdynmatrix)
- 
+
     def fetch(self):		
         rv = super(InputDynMatrix,self).fetch()
         rv["mode"] = self.mode.fetch()        

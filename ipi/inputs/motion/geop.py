@@ -43,7 +43,7 @@ class InputGeop(InputDictionary):
     attribs={"mode"  : (InputAttribute, {"dtype"   : str, "default": "lbfgs",
                                     "help"    : "The geometry optimization algorithm to be used",
                                     "options" : ['sd', 'cg', 'bfgs', 'bfgstrm','lbfgs']}) }
-    
+
     # options of the method (mostly tolerances)
     fields = { "ls_options" : ( InputDictionary, {"dtype" : [float, int, float, float],
                               "help" : """"Options for line search methods. Includes:
@@ -120,26 +120,26 @@ class InputGeop(InputDictionary):
         self.tolerances.store(geop.tolerances)
 
         if geop.mode == "bfgs":
-              self.old_direction.store(geop.d)
-              self.invhessian_bfgs.store(geop.invhessian)
-              self.biggest_step.store(geop.big_step)
+            self.old_direction.store(geop.d)
+            self.invhessian_bfgs.store(geop.invhessian)
+            self.biggest_step.store(geop.big_step)
         elif geop.mode == "bfgstrm":
-              self.hessian_trm.store(geop.hessian)
-              self.tr_trm.store(geop.tr)
-              self.biggest_step.store(geop.big_step)
+            self.hessian_trm.store(geop.hessian)
+            self.tr_trm.store(geop.tr)
+            self.biggest_step.store(geop.big_step)
         elif geop.mode == "lbfgs":
-              self.old_direction.store(geop.d)
-              self.qlist_lbfgs.store(geop.qlist)
-              self.glist_lbfgs.store(geop.glist)
-              self.corrections_lbfgs.store(geop.corrections)
-              self.scale_lbfgs.store(geop.scale)
-              self.biggest_step.store(geop.big_step)
+            self.old_direction.store(geop.d)
+            self.qlist_lbfgs.store(geop.qlist)
+            self.glist_lbfgs.store(geop.glist)
+            self.corrections_lbfgs.store(geop.corrections)
+            self.scale_lbfgs.store(geop.scale)
+            self.biggest_step.store(geop.big_step)
         elif geop.mode == "sd":
-              self.ls_options.store(geop.ls_options)
+            self.ls_options.store(geop.ls_options)
         elif geop.mode == "cg":
-              self.old_direction.store(geop.d)
-              self.ls_options.store(geop.ls_options)
-              self.old_force.store(geop.old_f)
+            self.old_direction.store(geop.d)
+            self.ls_options.store(geop.ls_options)
+            self.old_force.store(geop.old_f)
 
     def fetch(self):
         rv = super(InputGeop,self).fetch()

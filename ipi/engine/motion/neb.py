@@ -531,4 +531,4 @@ class NEBMover(Motion):
             info(" @GEOP: Not converged, force = %.8f, tol = %f" % (np.amax(np.absolute(self.forces.f)), self.tolerances["force"]), verbosity.debug)
             info(" @GEOP: Not converged, deltaForce = %.8f, tol = 0.00000000" % (np.sqrt(np.dot(self.forces.f.flatten()-self.old_f.flatten(), self.forces.f.flatten()-self.old_f.flatten()))), verbosity.debug)
             info(" @GEOP: Not converged, deltaX = %.8f, tol = %.8f" % (x, self.tolerances["position"]), verbosity.debug)
-          
+

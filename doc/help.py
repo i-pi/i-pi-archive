@@ -82,41 +82,41 @@ parser.add_option("-r", action="store_true", dest = "ref", default=False, help="
 (options, args) = parser.parse_args()
 
 if options.opt not in objects:
-   raise ValueError("Option " + options.opt + " is not a viable tag name")
+    raise ValueError("Option " + options.opt + " is not a viable tag name")
 
 def help(latex=False, xml=False, levels = None, option='simulation', prefix="help", standalone=True):
-   """Writes the help file.
+    """Writes the help file.
 
-   Will write an xml file 'prefix.xml' if xml=True and a latex file 'prefix.tex'
-   if latex=True. Will write out tags to a depth equal to the value of levels,
-   if it is specified, and will print using a root tag as specified by
-   the value of option. The output will be given by prefix.tex and/or
-   prefix.xml, if latex and/or xml is True respectively. Can also print out
-   sections of latex documents with cross-references rather than entire
-   documents, so that we can input them into other latex documents, such as
-   the manual.
+    Will write an xml file 'prefix.xml' if xml=True and a latex file 'prefix.tex'
+    if latex=True. Will write out tags to a depth equal to the value of levels,
+    if it is specified, and will print using a root tag as specified by
+    the value of option. The output will be given by prefix.tex and/or
+    prefix.xml, if latex and/or xml is True respectively. Can also print out
+    sections of latex documents with cross-references rather than entire
+    documents, so that we can input them into other latex documents, such as
+    the manual.
 
-   Args:
-      latex: Boolean specifying whether a latex file will be printed.
-      xml: Boolean specifying whether an xml file will be printed.
-      levels: An integer specifying how many layers of the hierarchy will be
-         printed. If not given, all layers will be printed.
-      option: A string specifying which object will be used as the root object
-         for the latex and xml files. Defaults to 'simulation'.
-      prefix: File prefix for the output files. Defaults to 'help'.
-      standalone: Boolean specifying whether the latex file will be a stand-alone
-         document, or will instead be intended to be used in a larger document
-         with cross references between the different objects.
-   """
+    Args:
+       latex: Boolean specifying whether a latex file will be printed.
+       xml: Boolean specifying whether an xml file will be printed.
+       levels: An integer specifying how many layers of the hierarchy will be
+          printed. If not given, all layers will be printed.
+       option: A string specifying which object will be used as the root object
+          for the latex and xml files. Defaults to 'simulation'.
+       prefix: File prefix for the output files. Defaults to 'help'.
+       standalone: Boolean specifying whether the latex file will be a stand-alone
+          document, or will instead be intended to be used in a larger document
+          with cross references between the different objects.
+    """
 
-   simrestart = objects[option]
+    simrestart = objects[option]
 
-   if xml:
-      xml_output = open(prefix + ".xml","w")
-      xml_output.write(simrestart.help_xml(name=option, stop_level=levels))
-   if latex:
-      latex_output = open(prefix + ".tex","w")
-      latex_output.write(simrestart.help_latex(stop_level=levels, standalone=standalone))
+    if xml:
+        xml_output = open(prefix + ".xml","w")
+        xml_output.write(simrestart.help_xml(name=option, stop_level=levels))
+    if latex:
+        latex_output = open(prefix + ".tex","w")
+        latex_output.write(simrestart.help_latex(stop_level=levels, standalone=standalone))
 
 if __name__ == '__main__':
-   help(options.latex, options.xml, options.levels, options.opt, options.prefix, not options.ref)
+    help(options.latex, options.xml, options.levels, options.opt, options.prefix, not options.ref)

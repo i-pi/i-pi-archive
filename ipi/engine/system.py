@@ -33,81 +33,81 @@ __all__ = ['System']
 
 
 class System(dobject):
-   """Physical system object.
+    """Physical system object.
 
-   Contains all the physical information. Also handles stepping and output.
+    Contains all the physical information. Also handles stepping and output.
 
-   Attributes:
-      beads: A beads object giving the atom positions.
-      cell: A cell object giving the system box.
-      fcomp: A list of force components that must act on each replica
-      bcomp: A list of bias components that must act on each replica
-      forces: A Forces object that actually compute energy and forces
-      bias: A Forces object that compute the bias components
-      ensemble: An ensemble object giving the objects necessary for producing
-         the correct ensemble.
-      outputs: A list of output objects that should be printed during the run
-      nm:  A helper object dealing with normal modes transformation
-      properties: A property object for dealing with property output.
-      trajs: A trajectory object for dealing with trajectory output.
-      init: A class to deal with initializing the system.
-      simul: The parent simulation object.
-   """
+    Attributes:
+       beads: A beads object giving the atom positions.
+       cell: A cell object giving the system box.
+       fcomp: A list of force components that must act on each replica
+       bcomp: A list of bias components that must act on each replica
+       forces: A Forces object that actually compute energy and forces
+       bias: A Forces object that compute the bias components
+       ensemble: An ensemble object giving the objects necessary for producing
+          the correct ensemble.
+       outputs: A list of output objects that should be printed during the run
+       nm:  A helper object dealing with normal modes transformation
+       properties: A property object for dealing with property output.
+       trajs: A trajectory object for dealing with trajectory output.
+       init: A class to deal with initializing the system.
+       simul: The parent simulation object.
+    """
 
-   def __init__(self, init, beads, nm, cell, fcomponents, bcomponents=[], ensemble=None, motion=None, prefix=""):
-      """Initialises System class.
+    def __init__(self, init, beads, nm, cell, fcomponents, bcomponents=[], ensemble=None, motion=None, prefix=""):
+        """Initialises System class.
 
-      Args:
-         init: A class to deal with initializing the system.
-         beads: A beads object giving the atom positions.
-         cell: A cell object giving the system box.
-         fcomponents: A list of force components that are active for each
-            replica of the system.
-         bcomponents: A list of force components that are considered as bias, and act on each
-            replica of the system.
-         ensemble: An ensemble object giving the objects necessary for
-            producing the correct ensemble.
-         nm: A class dealing with path NM operations.
-         prefix: A string used to differentiate the output files of different
-            systems.
-      """
+        Args:
+           init: A class to deal with initializing the system.
+           beads: A beads object giving the atom positions.
+           cell: A cell object giving the system box.
+           fcomponents: A list of force components that are active for each
+              replica of the system.
+           bcomponents: A list of force components that are considered as bias, and act on each
+              replica of the system.
+           ensemble: An ensemble object giving the objects necessary for
+              producing the correct ensemble.
+           nm: A class dealing with path NM operations.
+           prefix: A string used to differentiate the output files of different
+              systems.
+        """
 
-      info(" # Initializing system object ", verbosity.low )
-      self.prefix = prefix
-      self.init = init
-      self.ensemble = ensemble
-      self.motion = motion
-      self.beads = beads
-      self.cell = cell
-      self.nm = nm
+        info(" # Initializing system object ", verbosity.low )
+        self.prefix = prefix
+        self.init = init
+        self.ensemble = ensemble
+        self.motion = motion
+        self.beads = beads
+        self.cell = cell
+        self.nm = nm
 
-      self.fcomp = fcomponents
-      self.forces = Forces()
+        self.fcomp = fcomponents
+        self.forces = Forces()
 
-      self.bcomp = bcomponents
-      self.bias = Forces()
+        self.bcomp = bcomponents
+        self.bias = Forces()
 
 
-      self.properties = Properties()
-      self.trajs = Trajectories()
+        self.properties = Properties()
+        self.trajs = Trajectories()
 
-   def bind(self, simul):
-      """Calls the bind routines for all the objects in the system."""
+    def bind(self, simul):
+        """Calls the bind routines for all the objects in the system."""
 
-      self.simul = simul # keeps a handle to the parent simulation object
+        self.simul = simul # keeps a handle to the parent simulation object
 
-      # binds important computation engines
-      self.forces.bind(self.beads, self.cell, self.fcomp, self.simul.fflist)
-      self.bias.bind(self.beads, self.cell, self.bcomp, self.simul.fflist)
-      self.nm.bind(self.ensemble, self.motion, beads=self.beads, forces=self.forces)
-      self.ensemble.bind(self.beads, self.nm, self.cell, self.forces, self.bias)
-      self.motion.bind(self.ensemble, self.beads, self.nm, self.cell, self.forces, self.prng)
+        # binds important computation engines
+        self.forces.bind(self.beads, self.cell, self.fcomp, self.simul.fflist)
+        self.bias.bind(self.beads, self.cell, self.bcomp, self.simul.fflist)
+        self.nm.bind(self.ensemble, self.motion, beads=self.beads, forces=self.forces)
+        self.ensemble.bind(self.beads, self.nm, self.cell, self.forces, self.bias)
+        self.motion.bind(self.ensemble, self.beads, self.nm, self.cell, self.forces, self.prng)
 
-         
-      dpipe(dd(self.nm).omegan2, dd(self.forces).omegan2)
-      
-      self.init.init_stage2(self)
 
-      # binds output management objects
-      self.properties.bind(self)
-      self.trajs.bind(self)
+        dpipe(dd(self.nm).omegan2, dd(self.forces).omegan2)
+
+        self.init.init_stage2(self)
+
+        # binds output management objects
+        self.properties.bind(self)
+        self.trajs.bind(self)

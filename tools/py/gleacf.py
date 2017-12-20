@@ -66,7 +66,7 @@ def Cqp(omega0, idAqp, idDqp):
     dAqp = idAqp.copy(); dDqp = idDqp.copy(); 
     dAqp[:,0]*=omega0; dAqp[0,:]/=omega0
     dDqp[:,0]/=omega0; dDqp[:,0]/=omega0;
-    
+
     # solve "a' la MC thesis" using just numpy
     a, O = np.linalg.eig(dAqp) 
     O1 = np.linalg.inv(O)    
@@ -75,10 +75,10 @@ def Cqp(omega0, idAqp, idDqp):
         for j in xrange(len(W)):
             W[i,j]/=(a[i]+a[j])    
     nC = np.real(np.dot(O,np.dot(W,O.T)))
-    
+
     nC[:,0]/=omega0;  nC[0,:]/=omega0
     return nC
-    
+
 def gleKernel(omega, Ap, Dp):
     """Given the Cp and Dp matrices for a harmonic oscillator of frequency omega_0, constructs the gle kernel for transformation of the velocity velocity autocorrelation function."""
     dw = abs(omega[1]-omega[0])
@@ -90,7 +90,7 @@ def gleKernel(omega, Ap, Dp):
     y = 0
     if Ap[0,0] < 2.0 * dw:
         print "# WARNING: White-noise term is weaker than the spacing of the frequency grid. Will increase automatically to avoid instabilities in the numerical integration."
-            
+
     # outer loop over the physical frequency
     for omega_0 in omlist:
         # works in "scaled coordinates" to stabilize the machinery for small or large omegas
@@ -99,12 +99,12 @@ def gleKernel(omega, Ap, Dp):
         dCqp = Cqp(omega_0, dAqp, dDqp)
         if dAqp[1,1] < 2.0 * dw/omega_0:
             dAqp[1,1] = 2.0 * dw/omega_0
-    
+
         dAqp2 = np.dot(dAqp,dAqp)
         # diagonalizes dAqp2 to accelerate the evaluation further down in the inner loop
         w2, O = np.linalg.eig(dAqp2);  w = np.sqrt(w2)
         O1 = np.linalg.inv(O)
-        
+
         ow1=O[1,:]*w/omega_0 
         o1cqp1 = np.dot(O1,dCqp)[:,1]
         x = 0
@@ -137,7 +137,7 @@ def ISRA(omega, ker, y, dparam, oprefix):
     return f
 
 def gleacf(path2iipi, path2ivvac, oprefix, action, nrows, stride, dparam):
-   
+
     # opens & parses the i-pi input file
     ifile = open(path2iipi,"r")
     xmlrestart = io_xml.xml_parse_file(ifile)
@@ -160,12 +160,12 @@ def gleacf(path2iipi, path2ivvac, oprefix, action, nrows, stride, dparam):
         Ap = np.asarray([1.0/simul.syslist[0].motion.thermostat.tau]).reshape((1,1)) * unit_to_internal("time", dt[1], float(dt[0]))
         Cp = np.asarray([1.0]).reshape((1,1))
         Dp = np.dot(Ap,Cp) + np.dot(Cp,Ap.T)
-    
+
     # imports the vvac function.
     ivvac=input_vvac(path2ivvac, nrows, stride)
     ix=ivvac[:,0]
     iy=ivvac[:,1]
-    
+
     # computes the vvac kernel
     print "# computing the kernel."
     ker = gleKernel(ix, Ap, Dp)

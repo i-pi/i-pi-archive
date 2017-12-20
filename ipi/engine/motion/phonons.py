@@ -34,17 +34,17 @@ class DynMatrixMover(Motion):
     """
 
     def __init__(self, fixcom=False, fixatoms=None, mode="fd", energy_shift=0.0, pos_shift=0.001, output_shift=0.000, dynmat=np.zeros(0, float), refdynmat=np.zeros(0, float), prefix="", asr="none"): 
-                 
+
         """Initialises DynMatrixMover.
         Args:
         fixcom	: An optional boolean which decides whether the centre of mass
-             	  motion will be constrained or not. Defaults to False. 
+                  motion will be constrained or not. Defaults to False. 
         dynmatrix : A 3Nx3N array that stores the dynamic matrix.
         refdynmatrix : A 3Nx3N array that stores the refined dynamic matrix.
         """
 
         super(DynMatrixMover,self).__init__(fixcom=fixcom, fixatoms=fixatoms)
-      
+
         #Finite difference option.
         self.mode = mode
         if self.mode == "fd":
@@ -67,7 +67,7 @@ class DynMatrixMover(Motion):
 
         if self.prefix == "":
             self.prefix = "PHONONS"
-   
+
     def bind(self, ens, beads, nm, cell, bforce, prng):
 
         super(DynMatrixMover,self).bind(ens, beads, nm, cell, bforce, prng)
@@ -79,7 +79,7 @@ class DynMatrixMover(Motion):
         self.ism = 1/np.sqrt(depstrip(self.beads.m3[-1]))
         self.m = depstrip(self.beads.m)
         self.phcalc.bind(self)
-    
+
         self.dbeads = self.beads.copy()
         self.dcell = self.cell.copy()
         self.dforces = self.forces.copy(self.dbeads, self.dcell)
@@ -108,14 +108,14 @@ class DynMatrixMover(Motion):
         for i in range(3 * self.beads.natoms):
             print >> outfile, ' '.join(map(str, dmatx[i]))
         outfile.close()
-        
+
         # also prints out the Hessian
         outfile=open(prefix+'.hess', 'w')
         print >> outfile, "# Hessian matrix (atomic units)"+wstr
         for i in range(3 * self.beads.natoms):
             print >> outfile, ' '.join(map(str, dmatx[i]/(self.ism[i]*self.ism)))
         outfile.close()
-       
+
         #eigsys=np.linalg.eigh(dmatx)        
         eigsys=np.linalg.eigh(dmatx)        
         # prints eigenvalues & eigenvectors
@@ -128,7 +128,7 @@ class DynMatrixMover(Motion):
         for i in range(0,3 * self.beads.natoms):
             print >> outfile, ' '.join(map(str, eigsys[1][i]))
         outfile.close()
-        
+
         eigmode = 1.0*eigsys[1]
         for i in range(0,3 * self.beads.natoms):
             eigmode[i] *= self.ism[i]
@@ -139,7 +139,7 @@ class DynMatrixMover(Motion):
         for i in range(0,3 * self.beads.natoms):
             print >> outfile, ' '.join(map(str, eigmode[i]))
         outfile.close()
-            
+
     def apply_asr(self, dm):
         """
         Removes the translations and/or rotations depending on the asr mode.
@@ -224,7 +224,7 @@ class DummyPhononCalculator(dobject):
     def transform(self):
         """Dummy transformation step which does nothing."""
         pass
-      
+
 class FDPhononCalculator(DummyPhononCalculator):
     """ Finite dinnerence phonon evaluator.
     """
@@ -292,7 +292,7 @@ class NMFDPhononCalculator(FDPhononCalculator):
                 self.dm.refdynmatrix=np.zeros((self.dm.beads.q.size, self.dm.beads.q.size), float)
             else:
                 raise ValueError("Refined force constant matrix size does not match system size")
-       
+
         self.dm.w2,self.dm.U = np.linalg.eigh(self.dm.dynmatrix)
         self.dm.V = self.dm.U.copy()
         for i in xrange(len(self.dm.V)):

@@ -78,7 +78,7 @@ def contract_trajectory(fns_in, fn_out_template, n_new, cell_units_in, cell_unit
         # gets units from first frame
         dimension, units, cell_units = auto_units(comment=frames[0]["comment"], cell_units=cell_units_in)
         if cell_units_out == "automatic": cell_units_out = cell_units  # re-use units unless otherwise specified
-        
+
         # Consistency check.
         h = frames[0]["cell"]
         natoms = len(frames[0]["data"])/3
@@ -104,7 +104,7 @@ def contract_trajectory(fns_in, fn_out_template, n_new, cell_units_in, cell_unit
 
         # Contract the coordinates to `n_new` beads.
         q_c = rescale.b1tob2(q)
-        
+
         # Save the output data.
         for i, f_out in enumerate(fs_out):
             atoms.q = q_c[i, :]

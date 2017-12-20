@@ -57,7 +57,7 @@ def get_np(path2iipi, bsize=20000, nskip=300, si=15.0, sf=-15.0, ns=10000):
     natoms = simul.syslist[0].beads.natoms
     open_paths = simul.syslist[0].nm.open_paths[-1]
     m = simul.syslist[0].beads.m[open_paths]
-   
+
     # initialises the data files.
     data_1 = np.zeros((bsize, 3) , float)
     data_2 = np.zeros((bsize, 3) , float)
@@ -80,14 +80,14 @@ def get_np(path2iipi, bsize=20000, nskip=300, si=15.0, sf=-15.0, ns=10000):
         hx = histo(np.concatenate((dq.T[0], -dq.T[0])), dqxgrid, kernel, 0, np.sqrt(T * P * m))
         hy = histo(np.concatenate((dq.T[1], -dq.T[1])), dqygrid, kernel, 0, np.sqrt(T * P * m))
         hz = histo(np.concatenate((dq.T[2], -dq.T[2])), dqzgrid, kernel, 0, np.sqrt(T * P * m))
-       
+
         # Defines the grid for momentum.
         pxi = -np.pi/(dqxgrid[1]-dqxgrid[0])
         pxf = +np.pi/(dqxgrid[1]-dqxgrid[0])
         pxstep = 2* np.pi / np.abs(dqxgrid[-1]-dqxgrid[0])
         pxgrid = np.linspace(pxi,pxf,ns)
 
-	pyi = -np.pi/(dqygrid[1]-dqygrid[0])
+        pyi = -np.pi/(dqygrid[1]-dqygrid[0])
         pyf = +np.pi/(dqygrid[1]-dqygrid[0])
         pystep = 2* np.pi / np.abs(dqygrid[-1]-dqygrid[0])
         pygrid = np.linspace(pyi,pyf,ns)
@@ -96,17 +96,17 @@ def get_np(path2iipi, bsize=20000, nskip=300, si=15.0, sf=-15.0, ns=10000):
         pzf = +np.pi/(dqzgrid[1]-dqzgrid[0])
         pzstep = 2* np.pi / np.abs(dqzgrid[-1]-dqzgrid[0])
         pzgrid = np.linspace(pzi,pzf,ns)
-            
+
 
         # Computes the Fourier transform of the end to end vector.
         npx = np.abs(np.fft.fftshift(np.fft.fft(hx)))
         npy = np.abs(np.fft.fftshift(np.fft.fft(hy)))
         npz = np.abs(np.fft.fftshift(np.fft.fft(hz)))
-           
+
         nplistx.append(npx)
         nplisty.append(npy)
         nplistz.append(npz)
-    
+
     avgnpx = np.mean(np.asarray(nplistx), axis = 0)
     avgnpy = np.mean(np.asarray(nplisty), axis = 0)
     avgnpz = np.mean(np.asarray(nplistz), axis = 0)
@@ -126,11 +126,11 @@ def get_np(path2iipi, bsize=20000, nskip=300, si=15.0, sf=-15.0, ns=10000):
     errpsqnpy = pygrid**2*errnpy/pystep
     avgpsqnpz = pzgrid**2*avgnpz/pzstep
     errpsqnpz = pzgrid**2*errnpz/pzstep
-    
+
     np.savetxt("np.data", np.c_[pxgrid,avgnpx,errnpx,avgnpy,errnpy,avgnpz,errnpz])
     np.savetxt("psq-np.data", np.c_[pxgrid,avgpsqnpx,errpsqnpx,avgpsqnpy,errpsqnpy,avgpsqnpz,errpsqnpz])
-    
-    
+
+
     psqmedx =  0.
     psqmed2x = 0.
     psqmedy =  0.
@@ -138,13 +138,13 @@ def get_np(path2iipi, bsize=20000, nskip=300, si=15.0, sf=-15.0, ns=10000):
     psqmedz =  0.
     psqmed2z = 0.
     for i in range(n_block):
-         psqmedx= psqmedx + np.dot(pxgrid**2,np.asarray(nplistx)[i,:])/normx
-         psqmed2x = psqmed2x + (np.dot(pxgrid**2,np.asarray(nplistx)[i,:])/normx)**2
-         psqmedy= psqmedy + np.dot(pygrid**2,np.asarray(nplisty)[i,:])/normy
-         psqmed2y = psqmed2y + (np.dot(pygrid**2,np.asarray(nplisty)[i,:])/normy)**2
-         psqmedz= psqmedz + np.dot(pzgrid**2,np.asarray(nplistz)[i,:])/normz
-         psqmed2z = psqmed2z + (np.dot(pzgrid**2,np.asarray(nplistz)[i,:])/normz)**2
-         
+        psqmedx= psqmedx + np.dot(pxgrid**2,np.asarray(nplistx)[i,:])/normx
+        psqmed2x = psqmed2x + (np.dot(pxgrid**2,np.asarray(nplistx)[i,:])/normx)**2
+        psqmedy= psqmedy + np.dot(pygrid**2,np.asarray(nplisty)[i,:])/normy
+        psqmed2y = psqmed2y + (np.dot(pygrid**2,np.asarray(nplisty)[i,:])/normy)**2
+        psqmedz= psqmedz + np.dot(pzgrid**2,np.asarray(nplistz)[i,:])/normz
+        psqmed2z = psqmed2z + (np.dot(pzgrid**2,np.asarray(nplistz)[i,:])/normz)**2
+
     print 'number of blocks', n_block
     print 'av_px^2', psqmedx/n_block, 'sigmax', np.sqrt((psqmed2x/n_block) - (psqmedx/n_block)**2)/np.sqrt(n_block)
     print 'av_py^2', psqmedy/n_block, 'sigmay', np.sqrt((psqmed2y/n_block) - (psqmedy/n_block)**2)/np.sqrt(n_block)

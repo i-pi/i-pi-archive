@@ -86,7 +86,7 @@ def read_json(filedesc):
     names = np.asarray(data['labels'], dtype='|S4')
     title = data['title']
     masses = np.zeros(len(names))
-    
+
     a, b, c, alpha, beta, gamma = data['cell']
     alpha *= np.pi / 180. 
     beta *= np.pi / 180. 

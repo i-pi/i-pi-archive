@@ -31,7 +31,7 @@ class InputNMFrequencies(InputArray):
                                                       ([wmax,wtarget]). The lowest-lying normal mode will be set to wtarget for a 
                                                       free particle, and all the normal modes will coincide at frequency wmax. """,
                                        "options" : ['pa-cmd', 'wmax-cmd', 'manual', 'rpmd']})
-   
+
 
     default_help = "Deals with the normal mode transformations, including the adjustment of bead masses to give the desired ring polymer normal mode frequencies if appropriate. Takes as arguments frequencies, of which different numbers must be specified and which are used to scale the normal mode frequencies in different ways depending on which 'mode' is specified."
     default_label = "NORMALMODES"
@@ -77,7 +77,7 @@ class InputNormalModes(Input):
         transform: Specifies whether the normal mode calculation will be
             done using a FFT transform or a matrix multiplication.
     """  
-   
+
     attribs = { 
         "transform" : (InputValue,{"dtype"   : str,
                                        "default" : "fft",
@@ -94,12 +94,12 @@ class InputNormalModes(Input):
                    "default"      : np.zeros(0,int),
                    "help"         : "Indices of the atmoms whose path should be opened (zero-based)."})
     }
-                    
+
     def store(self, nm):
         self.transform.store(nm.transform_method)   
         self.frequencies.store((nm.mode, nm.nm_freqs))
         self.open_paths.store(nm.open_paths)
-        
+
     def fetch(self):
         mode, freqs = self.frequencies.fetch()
         return NormalModes(mode, self.transform.fetch(), freqs, open_paths=self.open_paths.fetch() )

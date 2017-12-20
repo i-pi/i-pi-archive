@@ -39,9 +39,9 @@ def get_cell_units(comment, mode):
 
     cunit = cell_unit_re.search(comment)
     if cunit is not None:
-       auto_cell = cunit.group(1)
+        auto_cell = cunit.group(1)
     return auto_cell
-    
+
 def get_key_dim_units(comment, mode):
 
     # if mode is pdb return standard units and dimensions.
@@ -63,34 +63,34 @@ def get_key_dim_units(comment, mode):
 
     if mode == "pdb" and auto_dimension != "length":
         raise ValueError("PDB Standard is only designed for atomic positions with units in Angstroms")
-         
+
     return key, auto_dimension, auto_units
 
 
 def main(filename, imode, omode):
 
-   ipos=open(filename,"r")
-   natoms = 0
-   ifr = 0
+    ipos=open(filename,"r")
+    natoms = 0
+    ifr = 0
 
-   # extracts the dimension, its units and the cell_units from the first frame
-   ret = read_file_raw(imode, ipos)
-   ipos.close()
-   comment = ret['comment']
-   cell_units = get_cell_units(comment, imode)
-   key, dim, dim_units = get_key_dim_units(comment, imode)
+    # extracts the dimension, its units and the cell_units from the first frame
+    ret = read_file_raw(imode, ipos)
+    ipos.close()
+    comment = ret['comment']
+    cell_units = get_cell_units(comment, imode)
+    key, dim, dim_units = get_key_dim_units(comment, imode)
 
-   ipos=open(filename,"r")
-   while True:
-      try:
-         ret = read_file(imode, ipos)
-         pos = ret["atoms"]
-         cell = ret["cell"]
-         
-      except EOFError: # finished reading files
-         sys.exit(0)
-      print_file(omode, pos, cell, filedesc=sys.stdout, title="", key=key, dimension=dim, units=dim_units, cell_units=cell_units)
-      ifr+=1
+    ipos=open(filename,"r")
+    while True:
+        try:
+            ret = read_file(imode, ipos)
+            pos = ret["atoms"]
+            cell = ret["cell"]
+
+        except EOFError: # finished reading files
+            sys.exit(0)
+        print_file(omode, pos, cell, filedesc=sys.stdout, title="", key=key, dimension=dim, units=dim_units, cell_units=cell_units)
+        ifr+=1
 
 if __name__ == '__main__':
-   main(*sys.argv[1:])
+    main(*sys.argv[1:])

@@ -22,7 +22,7 @@ traj_re = [re.compile('%s%s' % (key, r'\{[A-Za-z_]*\}'))
 
 def auto_units(comment="", dimension="automatic", units="automatic", cell_units="automatic", mode="xyz"):
     """ Processes comment line and requested units to determine how to interpret the I/O conversion. """\
-   
+
     # heuristics to detect units
     if mode == "pdb": # these are the default units
         auto_cell = "angstrom"
@@ -51,19 +51,19 @@ def auto_units(comment="", dimension="automatic", units="automatic", cell_units=
         dimension = auto_dimension
     elif dimension != auto_dimension and len(is_comment_useful)>0:
         raise ValueError("Requested dimension mismatch with property indicated in the comment string")
-    
+
     if units == "automatic": 
         units = auto_units
     elif units != auto_units and len(is_comment_useful)>0:
         raise ValueError("Requested units mismatch with units indicated in the comment string")
-        
+
     if cell_units == "automatic":
         cell_units = auto_cell
     elif cell_units != auto_cell and len(is_comment_useful)>0:
         raise ValueError("Requested cell units mismatch with units indicated in the comment string")
-    
+
     return dimension, units, cell_units
-    
+
 def process_units(comment, cell, data, names, masses, natoms, dimension="automatic", units="automatic", cell_units="automatic", mode="xyz"):
     """Convert the data in the file according to the units written in the i-PI format.
 

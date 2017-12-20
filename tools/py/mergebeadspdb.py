@@ -26,33 +26,33 @@ verbosity.level = "low"
 
 def main(prefix, suffix="pos", unitconv="1.0"):
 
-   ipos=[]
-   imode=[]
-   for filename in sorted(glob.glob(prefix+"."+suffix+"*")):
-      imode.append(filename.split(".")[-1])
-      ipos.append(open(filename,"r"))
+    ipos=[]
+    imode=[]
+    for filename in sorted(glob.glob(prefix+"."+suffix+"*")):
+        imode.append(filename.split(".")[-1])
+        ipos.append(open(filename,"r"))
 
-   nbeads = len(ipos)
-   natoms = 0
-   ifr = 0
-   while True:
-      try:
-         for i in range(nbeads):
-            ret = read_file(imode[i], ipos[i])
-            pos = ret["atoms"]
-            cell = ret["cell"]
-            if natoms == 0:
-               natoms = pos.natoms
-               beads = Beads(natoms,nbeads)
-            cell.h *= float(unitconv)
-            beads[i].q = pos.q*float(unitconv)
-            beads.names = pos.names
-      except EOFError: # finished reading files
-         sys.exit(0)
+    nbeads = len(ipos)
+    natoms = 0
+    ifr = 0
+    while True:
+        try:
+            for i in range(nbeads):
+                ret = read_file(imode[i], ipos[i])
+                pos = ret["atoms"]
+                cell = ret["cell"]
+                if natoms == 0:
+                    natoms = pos.natoms
+                    beads = Beads(natoms,nbeads)
+                cell.h *= float(unitconv)
+                beads[i].q = pos.q*float(unitconv)
+                beads.names = pos.names
+        except EOFError: # finished reading files
+            sys.exit(0)
 
-      print_file_path("pdb", beads, cell)
-      ifr+=1
+        print_file_path("pdb", beads, cell)
+        ifr+=1
 
 
 if __name__ == '__main__':
-   main(*sys.argv[1:])
+    main(*sys.argv[1:])

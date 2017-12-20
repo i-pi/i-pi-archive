@@ -89,24 +89,24 @@ class GeopMotion(Motion):
 
         # Classes for minimization routines and specific attributes
         if self.mode == "bfgs":
-               self.invhessian   = invhessian_bfgs
-               self.optimizer    = BFGSOptimizer()
+            self.invhessian   = invhessian_bfgs
+            self.optimizer    = BFGSOptimizer()
         elif self.mode == "bfgstrm":
-               self.tr           = tr_trm
-               self.hessian      = hessian_trm
-               self.optimizer    = BFGSTRMOptimizer()
+            self.tr           = tr_trm
+            self.hessian      = hessian_trm
+            self.optimizer    = BFGSTRMOptimizer()
         elif self.mode == "lbfgs":
-               self.corrections  = corrections_lbfgs
-               self.scale        = scale_lbfgs
-               self.qlist        = qlist_lbfgs
-               self.glist        = glist_lbfgs
-               self.optimizer    = LBFGSOptimizer()
+            self.corrections  = corrections_lbfgs
+            self.scale        = scale_lbfgs
+            self.qlist        = qlist_lbfgs
+            self.glist        = glist_lbfgs
+            self.optimizer    = LBFGSOptimizer()
         elif self.mode == "sd":
-               self.optimizer    = SDOptimizer()
+            self.optimizer    = SDOptimizer()
         elif self.mode == "cg":
-               self.optimizer    = CGOptimizer()
+            self.optimizer    = CGOptimizer()
         else:
-               self.optimizer    = DummyOptimizer()
+            self.optimizer    = DummyOptimizer()
 
     def bind(self, ens, beads, nm, cell, bforce, prng):
         """Binds beads, cell, bforce and prng to GeopMotion
@@ -446,7 +446,7 @@ class LBFGSOptimizer(DummyOptimizer):
         self.qlist = geop.qlist
         self.glist = geop.glist
 
-	if geop.scale not in [0,1,2]:
+        if geop.scale not in [0,1,2]:
             raise ValueError("Scale option is not valid")
 
         self.scale = geop.scale
@@ -521,7 +521,7 @@ class SDOptimizer(DummyOptimizer):
 
         dq1 = depstrip(self.forces.f)
 
-	# Move direction for steepest descent
+        # Move direction for steepest descent
         dq1_unit = dq1 / np.sqrt(np.dot(dq1.flatten(), dq1.flatten()))
         info(" @GEOP: Determined SD direction", verbosity.debug)
 

@@ -158,12 +158,12 @@ class Client(DriverSocket):
 
                 # check exit conditions - run time or exit file
                 if t_max is not None and time.time() - t0 > t_max:
-                        print 'Maximum run time of {0:d} seconds exceeded.'.format(t_max)
-                        break
+                    print 'Maximum run time of {0:d} seconds exceeded.'.format(t_max)
+                    break
                 if fn_exit is not None and os.path.exists(fn_exit):
-                        print 'Exit file "{0:s}" found. Removing file.'.format(fn_exit)
-                        os.remove(fn_exit)
-                        break
+                    print 'Exit file "{0:s}" found. Removing file.'.format(fn_exit)
+                    os.remove(fn_exit)
+                    break
 
         except socket.error as e:
             print 'Error communicating through socket: [{0}] {1}'.format(e.errno, e.strerror)

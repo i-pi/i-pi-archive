@@ -126,9 +126,9 @@ class ForceField(dobject):
         # Reformat indexes for full system (default) or piece of system      
 #        fullat=True
         if self.active[0]==-1:
-           activehere=np.array([i for i in range(len(pbcpos))])
+            activehere=np.array([i for i in range(len(pbcpos))])
         else:
-           activehere=np.array([[3*n, 3*n+1, 3*n+2] for n in self.active])
+            activehere=np.array([[3*n, 3*n+1, 3*n+2] for n in self.active])
 
 #           fullat=False
 #
@@ -140,7 +140,7 @@ class ForceField(dobject):
 
         # Perform sanity check for active atoms
         if  (len(activehere)>len(pbcpos) or activehere[-1]>(len(pbcpos)-1)):
-           raise ValueError("There are more active atoms than atoms!")
+            raise ValueError("There are more active atoms than atoms!")
 
 
         if self.dopbc:
@@ -376,163 +376,163 @@ class FFLennardJones(ForceField):
         r["status"] = "Done"
 
 class FFDebye(ForceField):
-   """Debye crystal harmonic reference potential
+    """Debye crystal harmonic reference potential
 
-   Computes a harmonic forcefield. 
+    Computes a harmonic forcefield. 
 
-   Attributes:
-      parameters: A dictionary of the parameters used by the driver. Of the
-         form {'name': value}.
-      requests: During the force calculation step this holds a dictionary
-         containing the relevant data for determining the progress of the step.
-         Of the form {'atoms': atoms, 'cell': cell, 'pars': parameters,
-                      'status': status, 'result': result, 'id': bead id,
-                      'start': starting time}.
-   """
-   
-   def __init__(self, latency = 1.0, name = "",  H=None, xref=None, vref=0.0, pars=None, dopbc = False, threaded=True):
-      """Initialises FFDebye.
+    Attributes:
+       parameters: A dictionary of the parameters used by the driver. Of the
+          form {'name': value}.
+       requests: During the force calculation step this holds a dictionary
+          containing the relevant data for determining the progress of the step.
+          Of the form {'atoms': atoms, 'cell': cell, 'pars': parameters,
+                       'status': status, 'result': result, 'id': bead id,
+                       'start': starting time}.
+    """
 
-      Args:
-         pars: Optional dictionary, giving the parameters needed by the driver.
-      """
+    def __init__(self, latency = 1.0, name = "",  H=None, xref=None, vref=0.0, pars=None, dopbc = False, threaded=True):
+        """Initialises FFDebye.
 
-      # a socket to the communication library is created or linked
-      # NEVER DO PBC -- forces here are computed without.
-      super(FFDebye,self).__init__(latency, name, pars, dopbc=False)
-            
-      if H is None:
-          raise ValueError("Must provide the Hessian for the Debye crystal.")
-      if xref is None:
-          raise ValueError("Must provide a reference configuration for the Debye crystal.")
-  		  
-      self.H = H
-      self.xref = xref
-      self.vref = vref
+        Args:
+           pars: Optional dictionary, giving the parameters needed by the driver.
+        """
 
-      eigsys=np.linalg.eigh(self.H) 
-      info(" @ForceField: Hamiltonian eigenvalues: " + ' '.join(map(str, eigsys[0])), verbosity.medium)                 
+        # a socket to the communication library is created or linked
+        # NEVER DO PBC -- forces here are computed without.
+        super(FFDebye,self).__init__(latency, name, pars, dopbc=False)
 
-   def poll(self):
-      """ Polls the forcefield checking if there are requests that should
-      be answered, and if necessary evaluates the associated forces and energy. """
+        if H is None:
+            raise ValueError("Must provide the Hessian for the Debye crystal.")
+        if xref is None:
+            raise ValueError("Must provide a reference configuration for the Debye crystal.")
 
-      # we have to be thread-safe, as in multi-system mode this might get called by many threads at once
-      self._threadlock.acquire()
-      try:
-         for r in self.requests:
-            if r["status"] == "Queued":
-               r["status"] = "Running"
+        self.H = H
+        self.xref = xref
+        self.vref = vref
 
-               self.evaluate(r)
-      finally:
-         self._threadlock.release()
+        eigsys=np.linalg.eigh(self.H) 
+        info(" @ForceField: Hamiltonian eigenvalues: " + ' '.join(map(str, eigsys[0])), verbosity.medium)                 
 
-   def evaluate(self, r):
-      """ A simple evaluator for a harmonic Debye crystal potential. """
+    def poll(self):
+        """ Polls the forcefield checking if there are requests that should
+        be answered, and if necessary evaluates the associated forces and energy. """
 
-      q = r["pos"]
-      n3 = len(q)
-      if self.H.shape != (n3,n3): 
-          raise ValueError("Hessian size mismatch")
-      if self.xref.shape != (n3,): 
-          raise ValueError("Reference structure size mismatch")
-      
-      d = q-self.xref
-      mf = np.dot(self.H, d)
-            
-      r["result"] = [ self.vref + 0.5*np.dot(d,mf), -mf, np.zeros((3,3),float), ""]
-      r["status"] = "Done"
-      r["t_finished"] = time.time()
+        # we have to be thread-safe, as in multi-system mode this might get called by many threads at once
+        self._threadlock.acquire()
+        try:
+            for r in self.requests:
+                if r["status"] == "Queued":
+                    r["status"] = "Running"
+
+                    self.evaluate(r)
+        finally:
+            self._threadlock.release()
+
+    def evaluate(self, r):
+        """ A simple evaluator for a harmonic Debye crystal potential. """
+
+        q = r["pos"]
+        n3 = len(q)
+        if self.H.shape != (n3,n3): 
+            raise ValueError("Hessian size mismatch")
+        if self.xref.shape != (n3,): 
+            raise ValueError("Reference structure size mismatch")
+
+        d = q-self.xref
+        mf = np.dot(self.H, d)
+
+        r["result"] = [ self.vref + 0.5*np.dot(d,mf), -mf, np.zeros((3,3),float), ""]
+        r["status"] = "Done"
+        r["t_finished"] = time.time()
 
 
 class FFYaff(ForceField):
-   """ Use Yaff as a library to construct a force field """
-    
-   def __init__(self, latency = 1.0, name = "",  yaffpara=None, yaffsys=None, yafflog='yaff.log', rcut=18.89726133921252, alpha_scale=3.5, gcut_scale=1.1, skin=0, smooth_ei=False, reci_ei='ewald', pars=None, dopbc = False, threaded=True):
+    """ Use Yaff as a library to construct a force field """
 
-      """Initialises FFYaff and enables a basic Yaff force field.
+    def __init__(self, latency = 1.0, name = "",  yaffpara=None, yaffsys=None, yafflog='yaff.log', rcut=18.89726133921252, alpha_scale=3.5, gcut_scale=1.1, skin=0, smooth_ei=False, reci_ei='ewald', pars=None, dopbc = False, threaded=True):
 
-      Args:
-      
-         yaffpara: File name of the Yaff parameter file
-         
-         yaffsys: File name of the Yaff system file
-         
-         yafflog: File name to which Yaff will write some information about the system and the force field
-         
-         pars: Optional dictionary, giving the parameters needed by the driver.
- 
-         **kwargs: All keyword arguments that can be provided when generating
-                   a Yaff force field; see constructor of FFArgs in Yaff code
-         
-      """
+        """Initialises FFYaff and enables a basic Yaff force field.
 
-      from yaff import System, ForceField, log
-      import codecs, locale, atexit
+        Args:
 
-      # a socket to the communication library is created or linked
-      super(FFYaff,self).__init__(latency, name, pars, dopbc)       
+           yaffpara: File name of the Yaff parameter file
 
-      # A bit weird to use keyword argument for a required argument, but this
-      # is also done in the code above.
-      if yaffpara is None:
-          raise ValueError("Must provide a Yaff parameter file.")
+           yaffsys: File name of the Yaff system file
 
-      if yaffsys is None:
-          raise ValueError("Must provide a Yaff system file.")
+           yafflog: File name to which Yaff will write some information about the system and the force field
 
-      self.yaffpara = yaffpara
-      self.yaffsys = yaffsys  
-      self.rcut = rcut
-      self.alpha_scale = alpha_scale
-      self.gcut_scale = gcut_scale
-      self.skin = skin
-      self.smooth_ei = smooth_ei
-      self.reci_ei = reci_ei
-      self.yafflog = yafflog
-      
-      # Open log file
-      logf = open(yafflog,'w')
-      # Tell Python to close the file when the script exits
-      atexit.register(logf.close)
+           pars: Optional dictionary, giving the parameters needed by the driver.
 
-      # Redirect Yaff log to file
-      log._file = codecs.getwriter(locale.getpreferredencoding())(logf)
+           **kwargs: All keyword arguments that can be provided when generating
+                     a Yaff force field; see constructor of FFArgs in Yaff code
 
-      self.system = System.from_file(self.yaffsys)
-      self.ff = ForceField.generate(self.system, self.yaffpara, rcut=self.rcut, alpha_scale=self.alpha_scale, gcut_scale=self.gcut_scale, skin=self.skin, smooth_ei=self.smooth_ei, reci_ei=self.reci_ei)                      
+        """
 
-      log._active = False
+        from yaff import System, ForceField, log
+        import codecs, locale, atexit
 
-   def poll(self):
-      """ Polls the forcefield checking if there are requests that should
-      be answered, and if necessary evaluates the associated forces and energy. """
+        # a socket to the communication library is created or linked
+        super(FFYaff,self).__init__(latency, name, pars, dopbc)       
 
-      # we have to be thread-safe, as in multi-system mode this might get called by many threads at once
-      self._threadlock.acquire()
-      try:
-         for r in self.requests:
-            if r["status"] == "Queued":
-               r["status"] = "Running"
+        # A bit weird to use keyword argument for a required argument, but this
+        # is also done in the code above.
+        if yaffpara is None:
+            raise ValueError("Must provide a Yaff parameter file.")
 
-               self.evaluate(r)
-      finally:
-         self._threadlock.release()
+        if yaffsys is None:
+            raise ValueError("Must provide a Yaff system file.")
 
-   def evaluate(self, r):
-      """ Evaluate the energy and forces with the Yaff force field. """
+        self.yaffpara = yaffpara
+        self.yaffsys = yaffsys  
+        self.rcut = rcut
+        self.alpha_scale = alpha_scale
+        self.gcut_scale = gcut_scale
+        self.skin = skin
+        self.smooth_ei = smooth_ei
+        self.reci_ei = reci_ei
+        self.yafflog = yafflog
 
-      q = r["pos"]
-      nat = len(q)/3
-      rvecs = r["cell"][0]
+        # Open log file
+        logf = open(yafflog,'w')
+        # Tell Python to close the file when the script exits
+        atexit.register(logf.close)
 
-      self.ff.update_rvecs(np.ascontiguousarray(rvecs.T, dtype=np.float64))
-      self.ff.update_pos(q.reshape((nat,3)))
-      gpos = np.zeros((nat,3))
-      vtens = np.zeros((3,3))
-      e = self.ff.compute(gpos,vtens)
+        # Redirect Yaff log to file
+        log._file = codecs.getwriter(locale.getpreferredencoding())(logf)
 
-      r["result"] = [ e, -gpos.ravel(), -vtens, ""]
-      r["status"] = "Done"
-      r["t_finished"] = time.time()
+        self.system = System.from_file(self.yaffsys)
+        self.ff = ForceField.generate(self.system, self.yaffpara, rcut=self.rcut, alpha_scale=self.alpha_scale, gcut_scale=self.gcut_scale, skin=self.skin, smooth_ei=self.smooth_ei, reci_ei=self.reci_ei)                      
+
+        log._active = False
+
+    def poll(self):
+        """ Polls the forcefield checking if there are requests that should
+        be answered, and if necessary evaluates the associated forces and energy. """
+
+        # we have to be thread-safe, as in multi-system mode this might get called by many threads at once
+        self._threadlock.acquire()
+        try:
+            for r in self.requests:
+                if r["status"] == "Queued":
+                    r["status"] = "Running"
+
+                    self.evaluate(r)
+        finally:
+            self._threadlock.release()
+
+    def evaluate(self, r):
+        """ Evaluate the energy and forces with the Yaff force field. """
+
+        q = r["pos"]
+        nat = len(q)/3
+        rvecs = r["cell"][0]
+
+        self.ff.update_rvecs(np.ascontiguousarray(rvecs.T, dtype=np.float64))
+        self.ff.update_pos(q.reshape((nat,3)))
+        gpos = np.zeros((nat,3))
+        vtens = np.zeros((3,3))
+        e = self.ff.compute(gpos,vtens)
+
+        r["result"] = [ e, -gpos.ravel(), -vtens, ""]
+        r["status"] = "Done"
+        r["t_finished"] = time.time()

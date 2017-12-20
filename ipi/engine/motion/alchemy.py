@@ -36,14 +36,14 @@ class AlchemyMC(Motion):
         Args: 
             names : A list of isotopes
             nmc : frequency of doing exchanges
-            
+
         """
 
         super(AlchemyMC, self).__init__(fixcom=fixcom, fixatoms=fixatoms)
 
         self.names = names
         self.nxc = nxc    
-  
+
         dself = dd(self)
         dself.ealc = depend_value(name='ealc')
         if not ealc is None:
@@ -72,13 +72,13 @@ class AlchemyMC(Motion):
     def AXlist(self, atomtype):
         """This compile a list of atoms ready for exchanges.
         """
-            
+
         # selects the types of atoms for exchange
         atomexchangelist = []        
         for i in range(self.beads.natoms):
             if self.beads.names[i] in atomtype:
                 atomexchangelist.append(i)
-                            
+
         return np.asarray(atomexchangelist)
 
     def step(self, step=None):
@@ -86,7 +86,7 @@ class AlchemyMC(Motion):
         # picks number of attempted exchanges
         ntries = self.prng.rng.poisson(self.nxc)
         if ntries == 0: return
-        
+
         """Does one round of alchemical exchanges."""
         # record the spring energy (divided by mass) for each atom in the exchange chain
         q = depstrip(self.beads.q)
@@ -95,17 +95,17 @@ class AlchemyMC(Motion):
         lenlist = len(axlist)
         atomspring = np.zeros(lenlist)
         wk2 = depstrip(self.nm.omegak2)
-        
+
         i = 0
         for atomnum in axlist:
             na3 = atomnum * 3
-            
+
             # computes spring in NM representation
             spr = 0.0
             for b in range(1,nb):
-                 spr += wk2[b]*(self.nm.qnm[b,na3:na3+3]**2).sum()
+                spr += wk2[b]*(self.nm.qnm[b,na3:na3+3]**2).sum()
             spr*=0.5
-            
+
             # no mass here - just the massless spring term            
             atomspring[i] = spr            
             i += 1
@@ -113,7 +113,7 @@ class AlchemyMC(Motion):
         # does the exchange
         betaP = 1.0/(Constants.kb*self.ensemble.temp*nb)
         nexch = 0
-        
+
         # this would be double-counting, we already have a bail-out condition above
         # if (1.0/self.nxc < self.prng.u) : return  # tries a round of exhanges with probability 1/nmc
 
@@ -122,30 +122,30 @@ class AlchemyMC(Motion):
             j = self.prng.rng.randint(lenlist)
             while self.beads.names[axlist[i]] == self.beads.names[axlist[j]]:
                 j = self.prng.rng.randint(lenlist) # makes sure we pick a real exchange
-                
+
             # energy change due to the swap
             difspring = (atomspring[i]-atomspring[j])*(self.beads.m[axlist[j]]-self.beads.m[axlist[i]])
             pexchange = np.exp(-betaP*difspring)
-            
+
             # attemps the exchange
             if (pexchange > self.prng.u):
                 nexch += 1
                 #print 'exchange atom No.  ', axlist[i], '  and  ', axlist[j]
-                
+
                 # swap names
                 nameswap = self.beads.names[axlist[i]]
                 self.beads.names[axlist[i]] = self.beads.names[axlist[j]]
                 self.beads.names[axlist[j]] = nameswap
-                
+
                 # change masses
                 massratio = self.beads.m[axlist[i]]/self.beads.m[axlist[j]]
                 self.beads.m[axlist[i]] /= massratio
                 self.beads.m[axlist[j]] *= massratio
-                
+
                 # adjust the (classical) momenta to conserve ke
                 self.beads.p[:,3*axlist[i]:3*(axlist[i]+1)] /= np.sqrt(massratio)
                 self.beads.p[:,3*axlist[j]:3*(axlist[j]+1)] *= np.sqrt(massratio)
-                
+
                 # adjusts the conserved quantity counter based on the change in spring energy                    
                 self.ealc += -difspring
-                            
+

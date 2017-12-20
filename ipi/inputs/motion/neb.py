@@ -81,7 +81,7 @@ class InputNEB(InputDictionary):
                 "invhessian_bfgs" : (InputArray, {"dtype" : float,
                               "default" : input_default(factory=np.eye, args = (0,)),
                               "help"    : "Approximate inverse Hessian for BFGS, if known."}),
-		        "qlist_lbfgs"      : (InputArray, {"dtype" : float,
+                        "qlist_lbfgs"      : (InputArray, {"dtype" : float,
                               "default" : input_default(factory=np.zeros, args = (0,)),
                               "help"    : "List of previous position differences for L-BFGS, if known."}),
                 "glist_lbfgs"      : (InputArray, {"dtype" : float,

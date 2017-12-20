@@ -75,7 +75,7 @@ def print_file_path_raw(mode, beads, cell, filedesc=sys.stdout, title="", cell_c
         cell: A cell object giving the system box.
         filedesc: An open writable file object. Defaults to standard output.
     """
- 
+
     return _get_io_function(mode, "print_path")(beads=beads, cell=cell, filedesc=filedesc, title=title, cell_conv=cell_conv, atoms_conv=atoms_conv)
 
 def print_file_path(mode, beads, cell, filedesc=sys.stdout, title="", key="", dimension="length", units="automatic", cell_units="automatic"):
@@ -110,7 +110,7 @@ def print_file_path(mode, beads, cell, filedesc=sys.stdout, title="", key="", di
 def print_file_raw(mode, atoms, cell, filedesc=sys.stdout, title="", cell_conv=1.0, atoms_conv=1.0):
     """Prints atom positions, or atom-vector properties, into a `mode` formatted file, 
        providing atoms and cell in the internal i-PI representation but doing no conversion.
-       
+
     Args:
         atoms: An atoms object containing the positions (or properties) of the atoms 
         cell: A cell object containing the system box.
@@ -119,7 +119,7 @@ def print_file_raw(mode, atoms, cell, filedesc=sys.stdout, title="", cell_conv=1
         cell_conv: Conversion factor for the cell parameters
         atoms_conv: Conversion factors for the atomic properties
     """
-   
+
     return _get_io_function(mode, "print")(atoms=atoms, cell=cell, filedesc=filedesc, title=title, cell_conv=cell_conv, atoms_conv=atoms_conv)
 
 def print_file(mode, atoms, cell, filedesc=sys.stdout, title="", key="", dimension="length", units="automatic", cell_units="automatic"):
@@ -147,10 +147,10 @@ def print_file(mode, atoms, cell, filedesc=sys.stdout, title="", key="", dimensi
     else:
         if units == "automatic": units = "atomic_unit"
         if cell_units == "automatic": cell_units = "atomic_unit"
- 
+
     cell_conv = unit_to_user("length", cell_units, 1.0)
     atoms_conv = unit_to_user(dimension, units, 1.0)
- 
+
     title = title + ("%s{%s}  cell{%s}" % (key, units, cell_units))
     print_file_raw(mode=mode, atoms=atoms, cell=cell, filedesc=filedesc, title=title, cell_conv=cell_conv, atoms_conv=atoms_conv)
 
@@ -162,12 +162,12 @@ def read_file_raw(mode, filedesc):
     Args:
         mode: I/O file format (e.g. "xyz")
         filedesc: An open readable file object.
-        
+
     """
     reader = _get_io_function(mode, "read") 
-        
+
     comment, cell, atoms, names, masses = reader(filedesc=filedesc)
-     
+
     return {
           "comment" : comment, 
           "data": atoms,
@@ -176,7 +176,7 @@ def read_file_raw(mode, filedesc):
           "natoms": len(names),
           "cell": cell
         }
- 
+
 
 def read_file(mode, filedesc, dimension="automatic", units="automatic", cell_units="automatic"):
     """ Reads one frame from an open `mode`-style file. Also performs units 
@@ -188,7 +188,7 @@ def read_file(mode, filedesc, dimension="automatic", units="automatic", cell_uni
         dimension: Dimensions of the property (e.g. "length")
         units: Units for the input (e.g. "angstrom")
         cell_units: Units for the cell (dimension length, e.g. "angstrom")
-        
+
         All other args are passed directly to the responsible io function.
 
     Returns:

@@ -32,142 +32,142 @@ from ipi.utils.io.inputs import io_xml
 def main(inputfile, outdir="trim"):
 
 
-   # opens & parses the input file
-   ifile = open(inputfile,"r")
-   xmlrestart = io_xml.xml_parse_file(ifile) # Parses the file.
-   ifile.close()
+    # opens & parses the input file
+    ifile = open(inputfile,"r")
+    xmlrestart = io_xml.xml_parse_file(ifile) # Parses the file.
+    ifile.close()
 
-   isimul = InputSimulation()
-   isimul.parse(xmlrestart.fields[0][1])
+    isimul = InputSimulation()
+    isimul.parse(xmlrestart.fields[0][1])
 
-   simul = isimul.fetch()
-   trimstep = isimul.step.fetch()
+    simul = isimul.fetch()
+    trimstep = isimul.step.fetch()
 
-   os.makedirs(outdir)
+    os.makedirs(outdir)
 
-   # reconstructs the list of the property and trajectory files that have been output
-   # and that should be re-ordered
-   lprop = [ ] # list of property files
-   ltraj = [ ] # list of trajectory files
-   nsys = len(simul.syslist)
-   for o in simul.outtemplate:
-      if type(o) is CheckpointOutput:   # properties and trajectories are output per system
-         pass
-      elif type(o) is PropertyOutput:
-         nprop =  []
-         isys=0
-         for s in simul.syslist:   # create multiple copies
-            if s.prefix != "":
-               filename = s.prefix+"_"+o.filename
-            else: filename=o.filename
-            ofilename = outdir+"/"+filename
-            nprop.append( { "filename" : filename, "ofilename" : ofilename, "stride": o.stride,
-                           "ifile" : open(filename, "r"), "ofile" : open(ofilename, "w")
-             } )
-            isys+=1
-         lprop.append(nprop)
-      elif type(o) is TrajectoryOutput:   # trajectories are more complex, as some have per-bead output
-         if getkey(o.what) in [ "positions", "velocities", "forces", "extras" ]:   # multiple beads
-            nbeads = simul.syslist[0].beads.nbeads
-            for b in range(nbeads):
-               ntraj = []
-               isys=0
-               # zero-padded bead number
-               padb = ( ("%0" + str(int(1 + np.floor(np.log(nbeads)/np.log(10)))) + "d") % (b) )
-               for s in simul.syslist:
-                  if s.prefix != "":
-                     filename = s.prefix+"_"+o.filename
-                  else: filename=o.filename
-                  ofilename = outdir+"/"+filename
-                  if (o.ibead < 0 or o.ibead == b):
-                     if getkey(o.what) == "extras":
-                        filename = filename+"_" + padb
-                        ofilename = ofilename+"_" + padb
-                     else:
-                        filename = filename+"_" + padb + "." + o.format
-                        ofilename = ofilename+"_" + padb + "." + o.format
-                        ntraj.append({ "filename" : filename, "format" : o.format,
-                      "ofilename" : ofilename, "stride": o.stride,
-                      "ifile" : open(filename, "r"), "ofile" : open(ofilename, "w")
-                        })
-                  isys+=1
-               if ntraj != []:
-                  ltraj.append(ntraj)
-
-         else:
-            ntraj=[]
-            isys = 0
+    # reconstructs the list of the property and trajectory files that have been output
+    # and that should be re-ordered
+    lprop = [ ] # list of property files
+    ltraj = [ ] # list of trajectory files
+    nsys = len(simul.syslist)
+    for o in simul.outtemplate:
+        if type(o) is CheckpointOutput:   # properties and trajectories are output per system
+            pass
+        elif type(o) is PropertyOutput:
+            nprop =  []
+            isys=0
             for s in simul.syslist:   # create multiple copies
-               if s.prefix != "":
-                  filename = s.prefix+"_"+o.filename
-               else: filename=o.filename
-               filename=filename+"."+o.format
-               ofilename = outdir+"/"+filename
-               ntraj.append( { "filename" : filename, "format" : o.format,
-                      "ofilename" : ofilename, "stride": o.stride,
-                      "ifile" : open(filename, "r"), "ofile" : open(ofilename, "w")
-                } )
+                if s.prefix != "":
+                    filename = s.prefix+"_"+o.filename
+                else: filename=o.filename
+                ofilename = outdir+"/"+filename
+                nprop.append( { "filename" : filename, "ofilename" : ofilename, "stride": o.stride,
+                               "ifile" : open(filename, "r"), "ofile" : open(ofilename, "w")
+                 } )
+                isys+=1
+            lprop.append(nprop)
+        elif type(o) is TrajectoryOutput:   # trajectories are more complex, as some have per-bead output
+            if getkey(o.what) in [ "positions", "velocities", "forces", "extras" ]:   # multiple beads
+                nbeads = simul.syslist[0].beads.nbeads
+                for b in range(nbeads):
+                    ntraj = []
+                    isys=0
+                    # zero-padded bead number
+                    padb = ( ("%0" + str(int(1 + np.floor(np.log(nbeads)/np.log(10)))) + "d") % (b) )
+                    for s in simul.syslist:
+                        if s.prefix != "":
+                            filename = s.prefix+"_"+o.filename
+                        else: filename=o.filename
+                        ofilename = outdir+"/"+filename
+                        if (o.ibead < 0 or o.ibead == b):
+                            if getkey(o.what) == "extras":
+                                filename = filename+"_" + padb
+                                ofilename = ofilename+"_" + padb
+                            else:
+                                filename = filename+"_" + padb + "." + o.format
+                                ofilename = ofilename+"_" + padb + "." + o.format
+                                ntraj.append({ "filename" : filename, "format" : o.format,
+                              "ofilename" : ofilename, "stride": o.stride,
+                              "ifile" : open(filename, "r"), "ofile" : open(ofilename, "w")
+                                })
+                        isys+=1
+                    if ntraj != []:
+                        ltraj.append(ntraj)
 
-               isys+=1
-            ltraj.append(ntraj)
+            else:
+                ntraj=[]
+                isys = 0
+                for s in simul.syslist:   # create multiple copies
+                    if s.prefix != "":
+                        filename = s.prefix+"_"+o.filename
+                    else: filename=o.filename
+                    filename=filename+"."+o.format
+                    ofilename = outdir+"/"+filename
+                    ntraj.append( { "filename" : filename, "format" : o.format,
+                           "ofilename" : ofilename, "stride": o.stride,
+                           "ifile" : open(filename, "r"), "ofile" : open(ofilename, "w")
+                     } )
 
-   ptfile=None
-   wtefile=None
-   if os.path.isfile("PARATEMP"):
-     ptfile=open("PARATEMP", "r")
-     optfile=open(outdir+"/PARATEMP", "w")
-   if os.path.isfile("PARAWTE"):
-     wtefile=open("PARAWTE","r")
-     owtefile=open(outdir+"/PARAWTE","w")
+                    isys+=1
+                ltraj.append(ntraj)
+
+    ptfile=None
+    wtefile=None
+    if os.path.isfile("PARATEMP"):
+        ptfile=open("PARATEMP", "r")
+        optfile=open(outdir+"/PARATEMP", "w")
+    if os.path.isfile("PARAWTE"):
+        wtefile=open("PARAWTE","r")
+        owtefile=open(outdir+"/PARAWTE","w")
 
 
-   # now reads files one frame at a time, and re-direct output to the appropriate location
-   for step in range(trimstep+1):
-      # reads one line from PARATEMP index file
-      if not ptfile is None:
-        line=ptfile.readline()
-        optfile.write(line)
+    # now reads files one frame at a time, and re-direct output to the appropriate location
+    for step in range(trimstep+1):
+        # reads one line from PARATEMP index file
+        if not ptfile is None:
+            line=ptfile.readline()
+            optfile.write(line)
 
-      if not wtefile is None:
-        line=wtefile.readline()
-        owtefile.write(line)
+        if not wtefile is None:
+            line=wtefile.readline()
+            owtefile.write(line)
 
-      try:
+        try:
 
-         for prop in lprop:
-            for isys in range(nsys):
-               sprop = prop[isys]
-               if step % sprop["stride"] == 0: # property transfer
-                  iline = sprop["ifile"].readline()
-                  while iline[0] == "#":  # fast forward if line is a comment
-                     prop[isys]["ofile"].write(iline)
-                     iline = sprop["ifile"].readline()
-                  prop[isys]["ofile"].write(iline)
+            for prop in lprop:
+                for isys in range(nsys):
+                    sprop = prop[isys]
+                    if step % sprop["stride"] == 0: # property transfer
+                        iline = sprop["ifile"].readline()
+                        while iline[0] == "#":  # fast forward if line is a comment
+                            prop[isys]["ofile"].write(iline)
+                            iline = sprop["ifile"].readline()
+                        prop[isys]["ofile"].write(iline)
 
-         for traj in ltraj:
-            for isys in range(nsys):
-               straj = traj[isys]
-               if step % straj["stride"] == 0: # property transfer
-                  # reads one frame from the input file
-                  ibuffer = []
-                  if straj["format"] == "xyz":
-                     iline = straj["ifile"].readline()
-                     nat = int(iline)
-                     ibuffer.append(iline)
-                     ibuffer.append(straj["ifile"].readline())
-                     for i in range(nat):
-                        ibuffer.append(straj["ifile"].readline())
-                     traj[isys]["ofile"].write(''.join(ibuffer))
-                  elif straj["format"] == "pdb":
-                     iline = straj["ifile"].readline()
-                     while (iline.strip()!="" and iline.strip()!= "END"):
-                        ibuffer.append(iline)
-                        iline = straj["ifile"].readline()
-                     ibuffer.append(iline)
-                     traj[isys]["ofile"].write(''.join(ibuffer))
-      except EOFError:
-         break
+            for traj in ltraj:
+                for isys in range(nsys):
+                    straj = traj[isys]
+                    if step % straj["stride"] == 0: # property transfer
+                        # reads one frame from the input file
+                        ibuffer = []
+                        if straj["format"] == "xyz":
+                            iline = straj["ifile"].readline()
+                            nat = int(iline)
+                            ibuffer.append(iline)
+                            ibuffer.append(straj["ifile"].readline())
+                            for i in range(nat):
+                                ibuffer.append(straj["ifile"].readline())
+                            traj[isys]["ofile"].write(''.join(ibuffer))
+                        elif straj["format"] == "pdb":
+                            iline = straj["ifile"].readline()
+                            while (iline.strip()!="" and iline.strip()!= "END"):
+                                ibuffer.append(iline)
+                                iline = straj["ifile"].readline()
+                            ibuffer.append(iline)
+                            traj[isys]["ofile"].write(''.join(ibuffer))
+        except EOFError:
+            break
 
 
 if __name__ == '__main__':
-   main(*sys.argv[1:])
+    main(*sys.argv[1:])
