@@ -8,7 +8,7 @@ ENDREGTEST -->
     <properties stride='1' filename='out'>  [ step, time{picosecond}, conserved, temperature{kelvin}, kinetic_opsc, kinetic_tdsc, kinetic_prsc, potential_opsc, potential_tdsc, spring ] </properties>
     <trajectory filename='pos' stride='1'> positions </trajectory>
   </output>
-  <total_steps> 2 </total_steps>
+  <total_steps> 10 </total_steps>
   <prng>
     <seed>32346</seed>
   </prng>

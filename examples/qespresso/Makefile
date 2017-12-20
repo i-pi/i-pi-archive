@@ -27,7 +27,7 @@ h2o:
 
 li4:
 	cd li4; $(IPI) input.xml & sleep 3; \
-	$(call run_driver,4,pw.in,localhost:31415) \
+	$(call run_driver,8,pw.in,localhost:31415) \
 	wait
 
 dia-npt-classical:
