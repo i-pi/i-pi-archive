@@ -197,6 +197,12 @@ class InputFFLennardJones(InputForceField):
         return FFLennardJones(pars=self.parameters.fetch(), name=self.name.fetch(),
                               latency=self.latency.fetch(), dopbc=self.pbc.fetch())
 
+        if self.slots.fetch() < 1 or self.slots.fetch() > 5:
+            raise ValueError("Slot number " + str(self.slots.fetch()) + " out of acceptable range.")
+        if self.latency.fetch() < 0:
+            raise ValueError("Negative latency parameter specified.")
+        if self.timeout.fetch() < 0.0:
+            raise ValueError("Negative timeout parameter specified.")
 
 class InputFFDebye(InputForceField):
 
