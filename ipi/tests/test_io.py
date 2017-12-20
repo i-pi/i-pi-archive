@@ -19,7 +19,7 @@ from common import local
 from ipi.utils.io import iter_file, read_file, print_file
 
 
-pos = np.array([i for i in range(3*3)])
+pos = np.array([i for i in range(3 * 3)])
 
 
 def test_read_xyz():
@@ -39,7 +39,7 @@ def test_iter_xyz():
         for num, ret in enumerate(iter_file("xyz", f)):
             atoms = ret["atoms"]
             assert len(atoms) == 3
-            assert_equal(pos*(num+1), atoms.q)
+            assert_equal(pos * (num + 1), atoms.q)
 
 
 def test_read_pdb():
@@ -60,7 +60,7 @@ def test_iter_pdb():
         for num, ret in enumerate(iter_file("pdb", f)):
             atoms = ret["atoms"]
             assert len(atoms) == 3
-            assert_equal(pos*(num+1), atoms.q)
+            assert_equal(pos * (num + 1), atoms.q)
 
 
 def test_print_pdb():
@@ -71,7 +71,7 @@ def test_print_pdb():
             for num, ret in enumerate(iter_file("pdb", f)):
                 atoms = ret["atoms"]
                 assert len(atoms) == 3
-                assert_equal(pos*(num+1), atoms.q)
+                assert_equal(pos * (num + 1), atoms.q)
                 print_file("xyz", atoms, ret["cell"], filedesc=out)
 
     assert filecmp.cmp(local("test.pos_0.xyz"), local("test.pos_1.xyz"))
@@ -86,7 +86,7 @@ def test_print_xyz():
             for num, ret in enumerate(iter_file("pdb", f)):
                 atoms = ret["atoms"]
                 assert len(atoms) == 3
-                assert_equal(pos*(num+1), atoms.q)
+                assert_equal(pos * (num + 1), atoms.q)
                 print_file("pdb", atoms, ret["cell"], filedesc=out)
 
     assert filecmp.cmp(local("test.pos_0.pdb"), local("test.pos_1.pdb"))
@@ -110,7 +110,7 @@ def test_iter_xyz2():
         for num, ret in enumerate(iter_file("xyz", f)):
             atoms = ret["atoms"]
             assert len(atoms) == 3
-            assert_equal(pos*(num+1), atoms.q)
+            assert_equal(pos * (num + 1), atoms.q)
 
 
 def test_read_pdb2():
@@ -131,7 +131,7 @@ def test_iter_pdb2():
         for num, ret in enumerate(iter_file("pdb", f)):
             atoms = ret["atoms"]
             assert len(atoms) == 3
-            assert_equal(pos*(num+1), atoms.q)
+            assert_equal(pos * (num + 1), atoms.q)
 
 
 def test_print_pdb2():
@@ -142,7 +142,7 @@ def test_print_pdb2():
             for num, ret in enumerate(iter_file("pdb", f)):
                 atoms = ret["atoms"]
                 assert len(atoms) == 3
-                assert_equal(pos*(num+1), atoms.q)
+                assert_equal(pos * (num + 1), atoms.q)
                 print_file("xyz", atoms, ret["cell"], filedesc=out)
 
     assert filecmp.cmp(local("test.pos_0.xyz"), local("test.pos_1.xyz"))
@@ -157,7 +157,7 @@ def test_print_xyz2():
             for num, ret in enumerate(iter_file("pdb", f)):
                 atoms = ret["atoms"]
                 assert len(atoms) == 3
-                assert_equal(pos*(num+1), atoms.q)
+                assert_equal(pos * (num + 1), atoms.q)
                 print_file("pdb", atoms, ret["cell"], filedesc=out)
 
     assert filecmp.cmp(local("test.pos_0.pdb"), local("test.pos_1.pdb"))

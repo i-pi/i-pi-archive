@@ -35,25 +35,25 @@ class InputDynamics(InputDictionary):
     """
 
     attribs = {
-        "mode": (InputAttribute, {"dtype":   str,
+        "mode": (InputAttribute, {"dtype": str,
                                   "default": 'nve',
-                                  "help":    "The ensemble that will be sampled during the simulation. ",
+                                  "help": "The ensemble that will be sampled during the simulation. ",
                                   "options": ['nve', 'nvt', 'npt', 'nst', 'mts', 'sc']})
-              }
+    }
 
     fields = {
         "thermostat": (InputThermo, {"default": input_default(factory=ipi.engine.thermostats.Thermostat),
-                                     "help":    "The thermostat for the atoms, keeps the atom velocity distribution at the correct temperature."}),
+                                     "help": "The thermostat for the atoms, keeps the atom velocity distribution at the correct temperature."}),
         "barostat": (InputBaro, {"default": input_default(factory=ipi.engine.barostats.Barostat),
-                                 "help":    InputBaro.default_help}),
-        "timestep": (InputValue, {"dtype":     float,
-                                  "default":   1.0,
-                                  "help":      "The time step.",
+                                 "help": InputBaro.default_help}),
+        "timestep": (InputValue, {"dtype": float,
+                                  "default": 1.0,
+                                  "help": "The time step.",
                                   "dimension": "time"}),
-        "nmts" : (InputArray, {"dtype" : int,
-                               "default" : np.zeros(0,int),
-                               "help"    : "Number of iterations for each MTS level (including the outer loop, that should in most cases have just one iteration)."})
-             }
+        "nmts": (InputArray, {"dtype": int,
+                              "default": np.zeros(0, int),
+                              "help": "Number of iterations for each MTS level (including the outer loop, that should in most cases have just one iteration)."})
+    }
 
     dynamic = {}
 
@@ -74,7 +74,7 @@ class InputDynamics(InputDictionary):
         self.timestep.store(dyn.dt)
         self.thermostat.store(dyn.thermostat)
         self.barostat.store(dyn.barostat)
-        self.nmts.store(dyn.nmts) 
+        self.nmts.store(dyn.nmts)
 
     def fetch(self):
         """Creates an ensemble object.

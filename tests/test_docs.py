@@ -12,6 +12,7 @@ from nose import with_setup
 
 FNULL = open(os.devnull, 'w')
 
+
 def run_command(cmd):
     """Runs `cmd` in doc directory."""
     cwd = os.getcwd()
