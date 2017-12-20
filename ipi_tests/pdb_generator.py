@@ -9,15 +9,16 @@ from copy import copy
 all_elem = Elements.mass_list.keys()
 at_names = None
 
+
 def xyz_rand(natoms, comment, names=None):
     """ Generate a fake pdb pseudo-file. Atoms and coordinates are random.
     """
 
     global at_names
     xyz = np.random.random((natoms, 3))
-    xyz = (xyz * 10 - 5) # To have both, positive and negative numbers
+    xyz = (xyz * 10 - 5)  # To have both, positive and negative numbers
     if not names:
-    # if True:
+        # if True:
         at_names = [all_elem[i] for i in
                     np.random.randint(0, len(all_elem), natoms)]
 
@@ -41,10 +42,10 @@ def xyz_rand(natoms, comment, names=None):
                    '%8.3f'  # Z coordinate                     47-54 10
                    '%6.2f'  # Occupancy                        55-60 11
                    '%6.2f'  # Temp Factor                      61-66 12
-                   '          ' # space                        67-76
+                   '          '  # space                        67-76
                    '%3s'    # Element symbol, right-justif     77-78 13
                    '%3s\n'  # Charge on atom.                  79-80 14
-                   %         ('ATOM', i, at_names[i], 'UNK', ' ', i, ' ', xyz[i, 0], xyz[i, 1], xyz[i, 2], 1.0, 0.0, at_names[i].rjust(3), ' '))
+                   % ('ATOM', i, at_names[i], 'UNK', ' ', i, ' ', xyz[i, 0], xyz[i, 1], xyz[i, 2], 1.0, 0.0, at_names[i].rjust(3), ' '))
 
     return (output, xyz.flatten(), copy(at_names))
 
@@ -60,6 +61,7 @@ def xyz_traj(natoms, nframe, comment):
         all_names += raw_output[2]
 
     return (output, xyz, all_names)
+
 
 def xyz_traj_filedesc(natoms, nframe, comment):
     """ Generate a file descriptor containing a fake xyz trajectory.

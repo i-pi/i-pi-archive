@@ -37,7 +37,7 @@ def test_ASE():
 
     # create ASE atoms and calculator
     atoms = build.bulk('Ar', cubic=True)
-    calculator = LennardJones(epsilon=0.997*units.kJ/units.mol, sigma=3.4, rc=10.0)
+    calculator = LennardJones(epsilon=0.997 * units.kJ / units.mol, sigma=3.4, rc=10.0)
     atoms.set_calculator(calculator)
 
     # try to get potential energy

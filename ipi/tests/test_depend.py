@@ -11,8 +11,8 @@ import ipi.engine.atoms
 import ipi.utils.depend as dp
 
 
-a = dp.depend_array(name="a", value=np.zeros((2,2), float))
-b = dp.depend_array(name="b", value=np.zeros((2,2), float))
+a = dp.depend_array(name="a", value=np.zeros((2, 2), float))
+b = dp.depend_array(name="b", value=np.zeros((2, 2), float))
 
 
 def test_slicing():
@@ -31,7 +31,7 @@ def test_addition():
 
 def test_increment():
     """Depend: Increment test"""
-    c = np.zeros((2,2))
+    c = np.zeros((2, 2))
     c += a
     print type(c)
     assert type(c) == np.ndarray
@@ -62,4 +62,4 @@ def test_dotf():
 def test_readonly():
     """Depend: read-only flag"""
     atoms = ipi.engine.atoms.Atoms(2)
-    atoms.q = np.zeros(2*3)
+    atoms.q = np.zeros(2 * 3)
