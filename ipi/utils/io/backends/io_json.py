@@ -36,7 +36,7 @@ def print_json_path(beads, cell, filedesc=sys.stdout):
     raise NotImplementedError("print_json_path is not implemented yet.")
 
 
-def print_json(atoms, cell, filedesc=sys.stdout, title=""):
+def print_json(atoms, cell, filedesc=sys.stdout, title="", cell_conv=1.0, atoms_conv=1.0):
     """Prints an atomic configuration into an XYZ formatted file.
 
     Args:
@@ -46,18 +46,24 @@ def print_json(atoms, cell, filedesc=sys.stdout, title=""):
         title: This gives a string to be appended to the comment line.
     """
 
-    a, b, c, alpha, beta, gamma = mt.h2abc_deg(cell.h)
+    a, b, c, alpha, beta, gamma = mt.h2abc_deg(cell.h * cell_conv)
 
     natoms = atoms.natoms
     # direct access to avoid unnecessary slow-down
-    qs = depstrip(atoms.q)
+    qs = depstrip(atoms.q) * atoms_conv
     lab = depstrip(atoms.names)
-    filedesc.write(json.dumps([natoms, a, b, c, alpha, beta, gamma, title,
-                   qs.tolist(), lab.tolist()]))
-    filedesc.write("\n")
 
+    data = {}
+    data['natoms'] = natoms
+    data['cell'] = [a, b, c, alpha, beta, gamma]
+    data['title'] = title
+    data['q'] = qs.tolist()
+    data['labels'] = lab.tolist()
 
-def read_json(filedesc, **kwargs):
+    filedesc.write(json.dumps(data))
+    filedesc.write(" \n")
+
+def read_json(filedesc):
     """Reads a JSON-style file with i-pi style comments and creates an Atoms and Cell object.
 
     Args:
@@ -69,27 +75,25 @@ def read_json(filedesc, **kwargs):
     """
 
     try:
-        line = json.loads(filedesc.readline())
+        line = filedesc.readline()
+        data = json.loads(line)
     except ValueError:
         raise EOFError("The file descriptor hit EOF.")
-    atoms = Atoms(line[0])
-    atoms.q = np.asarray(line[8])
-    atoms.names = np.asarray(line[9], dtype='|S4')
-    atoms.m = np.asarray(map(Elements.mass, atoms.names))
 
-    a = float(line[1])
-    b = float(line[2])
-    c = float(line[3])
-    alpha = float(line[4]) * np.pi/180
-    beta = float(line[5]) * np.pi/180
-    gamma = float(line[6]) * np.pi/180
-    h = mt.abc2h(a, b, c, alpha, beta, gamma)
-    cell = Cell(h)
+    line.strip("\n")
+    natoms = data['natoms']
+    qatoms = np.asarray(data['q'], dtype=float)
+    names = np.asarray(data['labels'], dtype='|S4')
+    title = data['title']
+    masses = np.zeros(len(names))
+    
+    a, b, c, alpha, beta, gamma = data['cell']
+    alpha *= np.pi / 180. 
+    beta *= np.pi / 180. 
+    gamma *= np.pi / 180. 
+    cell = mt.abc2h(a, b, c, alpha, beta, gamma)
 
-    return {
-        "atoms": atoms,
-        "cell": cell
-    }
+    return (title, cell, qatoms, names, masses) 
 
 
 def iter_json(filedesc, **kwargs):

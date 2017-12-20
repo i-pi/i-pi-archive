@@ -335,7 +335,7 @@ class NEBMover(Motion):
     """
 
     def __init__(self, fixcom=False, fixatoms=None,
-                 mode="sd",
+                 mode="lbfgs",
                  biggest_step=100.0,
                  old_force=np.zeros(0, float),
                  old_direction=np.zeros(0, float),
@@ -347,6 +347,7 @@ class NEBMover(Motion):
                  glist_lbfgs=np.zeros(0, float),
                  endpoints=True,
                  spring={"varsprings": False, "kappa": 1.0, "kappamax": 1.5, "kappamin": 0.5},
+                 scale_lbfgs=2,
                  climb=False):
         """Initialises NEBMover.
 
@@ -371,6 +372,7 @@ class NEBMover(Motion):
         self.endpoints = endpoints
         self.spring = spring
         self.climb = climb
+        self.scale = scale_lbfgs
 
         self.neblm = NEBLineMover()
         self.nebbfgsm = NEBBFGSMover()
@@ -436,11 +438,11 @@ class NEBMover(Motion):
 
             # Do one iteration of L-BFGS and return positions, gradient modulus,
             # direction, list of positions, list of gradients
-            self.beads.q, fx, self.nebbfgsm.d, self.qlist, self.glist = L_BFGS(self.beads.q,
-                  self.nebbfgsm.d, self.nebbfgsm, self.qlist, self.glist,
+            #self.beads.q, fx, self.nebbfgsm.d, self.qlist, self.glist = L_BFGS(self.beads.q,
+            L_BFGS(self.beads.q, self.nebbfgsm.d, self.nebbfgsm, self.qlist, self.glist,
                   fdf0=(u0, du0), big_step=self.big_step, tol=self.ls_options["tolerance"],
                   itmax=self.ls_options["iter"],
-                  m=self.corrections, k=step)
+                  m=self.corrections, scale=self.scale, k=step)
 
             info(" @GEOP: Updated position list", verbosity.debug)
             info(" @GEOP: Updated gradient list", verbosity.debug)
@@ -450,6 +452,8 @@ class NEBMover(Motion):
 
             # Store old positions
             self.nebbfgsm.xold[:] = self.beads.q
+            self.beads.q = self.nebbfgsm.dbeads.q
+            self.forces.transfer_forces(self.nebbfgsm.dforces)
 
             info(" @GEOP: Updated bead positions", verbosity.debug)
 
@@ -522,3 +526,9 @@ class NEBMover(Motion):
                     self.forces.f.flatten() - self.old_f.flatten())) == 0.0))\
             and (x <= self.tolerances["position"]):
             softexit.trigger("Geometry optimization converged. Exiting simulation")
+        else:
+            info(" @GEOP: Not converged, deltaEnergy = %.8f, tol = %.8f" % ((fx-u0/self.beads.natoms), self.tolerances["energy"]), verbosity.debug)
+            info(" @GEOP: Not converged, force = %.8f, tol = %f" % (np.amax(np.absolute(self.forces.f)), self.tolerances["force"]), verbosity.debug)
+            info(" @GEOP: Not converged, deltaForce = %.8f, tol = 0.00000000" % (np.sqrt(np.dot(self.forces.f.flatten()-self.old_f.flatten(), self.forces.f.flatten()-self.old_f.flatten()))), verbosity.debug)
+            info(" @GEOP: Not converged, deltaX = %.8f, tol = %.8f" % (x, self.tolerances["position"]), verbosity.debug)
+          

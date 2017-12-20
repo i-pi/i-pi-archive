@@ -574,6 +574,9 @@ class Forces(dobject):
             
       # SC forces and potential  
       dset(self, "alpha", depend_value(name="alpha", value=0.0))
+
+      # The number of MTS levels 
+      dset(self, "nmtslevels", depend_value(name="nmtslevels", value=0, func=self.get_nmtslevels))
       
       # this will be piped from normalmodes
       dset(self, "omegan2", depend_value(name="omegan2", value=0))
@@ -731,7 +734,6 @@ class Forces(dobject):
          warning("ERROR: Suzuki-Chin factorization requires even number of beads!")
          exit()
 
-
       # calculates the finite displacement.
       fbase = depstrip(self.f)
       eps = self.mforces[index].epsilon
@@ -843,13 +845,14 @@ class Forces(dobject):
       # returns the 4th order |f^2| correction.
       return f_4th_order
 
-   def nmtslevels(self):
+   def get_nmtslevels(self):
       """ Returns the total number of mts levels."""
        
-      big = 0
-      for index in range(len(self.mforces)):
-         big = max(big, self.mforces[index].lmts)
-      return big + 1
+      nm = len(self.mforces[0].mts_weights)
+      if all(len(x.mts_weights) == nm for x in self.mforces):
+          return nm
+      else:
+          raise ValueError("The mts_weights of all the force components are not the same.") 
 
    def f_combine(self):
       """Obtains the total force vector."""
@@ -950,4 +953,3 @@ class Forces(dobject):
       rc[0::2] =  (self.alpha / self.omegan2 / 9.0)
       rc[1::2] =  ((1.0 - self.alpha) / self.omegan2 / 9.0)
       return np.asmatrix(rc).T
-

@@ -24,7 +24,7 @@ from ipi.utils.io import read_file
 from ipi.utils.units import unit_to_internal
 
 
-__all__ = ['ForceField', 'FFSocket', 'FFLennardJones', 'FFDebye']
+__all__ = ['ForceField', 'FFSocket', 'FFLennardJones', 'FFDebye', 'FFYaff']
 
 
 class ForceRequest(dict):
@@ -62,7 +62,7 @@ class ForceField(dobject):
         _threadlock: Python handle used to lock the thread held in _thread.
     """
 
-    def __init__(self, latency=1.0, name="", pars=None, dopbc=True):
+    def __init__(self, latency=1.0, name="", pars=None, dopbc=True, active=np.array([-1])):
         """Initialises ForceField.
 
         Args:
@@ -73,6 +73,7 @@ class ForceField(dobject):
                 Of the form {'name1': value1, 'name2': value2, ... }.
             dopbc: Decides whether or not to apply the periodic boundary conditions
                 before sending the positions to the client code.
+            active: Indexes of active atoms in this forcefield
         """
 
         if pars is None:
@@ -84,6 +85,7 @@ class ForceField(dobject):
         self.latency = latency
         self.requests = []
         self.dopbc = dopbc
+        self.active= active
         self._thread = None
         self._doloop = [False]
         self._threadlock = threading.Lock()
@@ -121,12 +123,35 @@ class ForceField(dobject):
             par_str = " "
 
         pbcpos = depstrip(atoms.q).copy()
+
+        # Indexes come from input in a per atom basis and we need to make a per atom-coordinate basis
+        # Reformat indexes for full system (default) or piece of system      
+#        fullat=True
+        if self.active[0]==-1:
+           activehere=np.array([i for i in range(len(pbcpos))])
+        else:
+           activehere=np.array([[3*n, 3*n+1, 3*n+2] for n in self.active])
+
+#           fullat=False
+#
+#        if (self.active[0]!=-1 and fullat==False):
+#           temp=np.array([[3*n, 3*n+1, 3*n+2] for n in self.active])
+
+        # Reassign active indexes in order to use them
+        activehere=activehere.flatten()
+
+        # Perform sanity check for active atoms
+        if  (len(activehere)>len(pbcpos) or activehere[-1]>(len(pbcpos)-1)):
+           raise ValueError("There are more active atoms than atoms!")
+
+
         if self.dopbc:
             cell.array_pbc(pbcpos)
 
         newreq = ForceRequest({
             "id": reqid,
             "pos": pbcpos,
+            "active": activehere,
             "cell": (depstrip(cell.h).copy(), depstrip(cell.ih).copy()),
             "pars": par_str,
             "result": None,
@@ -238,7 +263,7 @@ class FFSocket(ForceField):
             communication between the forcefield and the driver is done.
     """
 
-    def __init__(self, latency=1.0, name="", pars=None, dopbc=True, interface=None):
+    def __init__(self, latency=1.0, name="", pars=None, dopbc=True, active=np.array([-1]), interface=None):
         """Initialises FFSocket.
 
         Args:
@@ -254,7 +279,7 @@ class FFSocket(ForceField):
         """
 
         # a socket to the communication library is created or linked
-        super(FFSocket, self).__init__(latency, name, pars, dopbc)
+        super(FFSocket, self).__init__(latency, name, pars, dopbc, active)
         if interface is None:
             self.socket = InterfaceSocket()
         else:
@@ -555,3 +580,94 @@ class FFPlumed(ForceField):
         else:        
             self.plumed.cmd("update")
         self.plumedstep +=1        
+
+class FFYaff(ForceField):
+   """ Use Yaff as a library to construct a force field """
+    
+   def __init__(self, latency = 1.0, name = "",  yaffpara=None, yaffsys=None, yafflog='yaff.log', rcut=18.89726133921252, alpha_scale=3.5, gcut_scale=1.1, skin=0, smooth_ei=False, reci_ei='ewald', pars=None, dopbc = False, threaded=True):
+
+      """Initialises FFYaff and enables a basic Yaff force field.
+
+      Args:
+      
+         yaffpara: File name of the Yaff parameter file
+         
+         yaffsys: File name of the Yaff system file
+         
+         yafflog: File name to which Yaff will write some information about the system and the force field
+         
+         pars: Optional dictionary, giving the parameters needed by the driver.
+ 
+         **kwargs: All keyword arguments that can be provided when generating
+                   a Yaff force field; see constructor of FFArgs in Yaff code
+         
+      """
+
+      from yaff import System, ForceField, log
+      import codecs, locale, atexit
+
+      # a socket to the communication library is created or linked
+      super(FFYaff,self).__init__(latency, name, pars, dopbc)       
+
+      # A bit weird to use keyword argument for a required argument, but this
+      # is also done in the code above.
+      if yaffpara is None:
+          raise ValueError("Must provide a Yaff parameter file.")
+
+      if yaffsys is None:
+          raise ValueError("Must provide a Yaff system file.")
+
+      self.yaffpara = yaffpara
+      self.yaffsys = yaffsys  
+      self.rcut = rcut
+      self.alpha_scale = alpha_scale
+      self.gcut_scale = gcut_scale
+      self.skin = skin
+      self.smooth_ei = smooth_ei
+      self.reci_ei = reci_ei
+      self.yafflog = yafflog
+      
+      # Open log file
+      logf = open(yafflog,'w')
+      # Tell Python to close the file when the script exits
+      atexit.register(logf.close)
+
+      # Redirect Yaff log to file
+      log._file = codecs.getwriter(locale.getpreferredencoding())(logf)
+
+      self.system = System.from_file(self.yaffsys)
+      self.ff = ForceField.generate(self.system, self.yaffpara, rcut=self.rcut, alpha_scale=self.alpha_scale, gcut_scale=self.gcut_scale, skin=self.skin, smooth_ei=self.smooth_ei, reci_ei=self.reci_ei)                      
+
+      log._active = False
+
+   def poll(self):
+      """ Polls the forcefield checking if there are requests that should
+      be answered, and if necessary evaluates the associated forces and energy. """
+
+      # we have to be thread-safe, as in multi-system mode this might get called by many threads at once
+      self._threadlock.acquire()
+      try:
+         for r in self.requests:
+            if r["status"] == "Queued":
+               r["status"] = "Running"
+
+               self.evaluate(r)
+      finally:
+         self._threadlock.release()
+
+   def evaluate(self, r):
+      """ Evaluate the energy and forces with the Yaff force field. """
+
+      q = r["pos"]
+      nat = len(q)/3
+      rvecs = r["cell"][0]
+
+      self.ff.update_rvecs(np.ascontiguousarray(rvecs.T, dtype=np.float64))
+      self.ff.update_pos(q.reshape((nat,3)))
+      gpos = np.zeros((nat,3))
+      vtens = np.zeros((3,3))
+      e = self.ff.compute(gpos,vtens)
+
+      r["result"] = [ e, -gpos.ravel(), -vtens, ""]
+      r["status"] = "Done"
+      r["t_finished"] = time.time()

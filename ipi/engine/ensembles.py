@@ -22,6 +22,7 @@ from ipi.utils.io.inputs.io_xml import xml_parse_file
 from ipi.utils.units import unit_to_internal
 from ipi.engine.thermostats import *
 from ipi.engine.barostats import *
+from ipi.engine.motion.alchemy import *
 
 
 __all__ = ['Ensemble']
@@ -71,6 +72,10 @@ class Ensemble(dobject):
         else:
             self.eens = 0.0
 
+    def copy(self):
+        return Ensemble(self.eens, 0.0, self.temp, self.pext, depstrip(self.stressext).copy())
+        
+        
     def bind(self, beads, nm, cell, bforce, bbias, elist=[]):
         self.beads = beads
         self.cell = cell
