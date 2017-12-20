@@ -173,6 +173,7 @@ class InputSimulation(Input):
             self.extra[_ii][1].store(_obj)
 
 
+
    def fetch(self):
       """Creates a simulation object.
 
@@ -193,7 +194,7 @@ class InputSimulation(Input):
       verbosity.level=self.verbosity.fetch()
 
       syslist=[]
-      fflist=[]      
+      fflist=[]
       for (k,v) in self.extra:
          if k == "system":
             syslist.append(v.fetch()) 
