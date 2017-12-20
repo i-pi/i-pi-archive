@@ -455,7 +455,6 @@ class FF2Body(ForceField):
 
 ################################################################################################################
 
-
 class FFDebye(ForceField):
     """Debye crystal harmonic reference potential
 
