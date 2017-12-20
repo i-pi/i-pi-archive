@@ -135,7 +135,6 @@ IPI_WAITING_TIME = 5    # Time to wait after i-pi has been started
 ############################
 
 
-
 # Compile them only once! pylint: disable=anomalous-backslash-in-string
 REGTEST_STRING_RGX = re.compile(r'<!--\s*REGTEST\s+([\s\w\W]*)\s+ENDREGTEST\s*-->')
 # pylint: enable=anomalous-backslash-in-string
@@ -145,8 +144,9 @@ try:
 except KeyError:
     IPI_ROOT_FOLDER = os.path.abspath('../')
 
-QUEUE_ALL = Queue.Queue() # Queue to access the "run"
-QUEUE_COM = Queue.Queue() # Queue to access the "compare"
+QUEUE_ALL = Queue.Queue()  # Queue to access the "run"
+QUEUE_COM = Queue.Queue()  # Queue to access the "compare"
+
 
 def main():
     """ Manage the main process.
@@ -160,12 +160,10 @@ def main():
     root_run = _parser()['root_run_folder']
     create_dir(root_run)
 
-
     # If no --add-test has been specified, search for tests in all directories
     #+within the root_test_folder.
     if len(tests_list) == 0:
         tests_list = ['']
-
 
     # Retrieve the test list and build the QUEUE_ALL
     test_list = _build_test_index(root_test_folder, tests_list)
@@ -295,9 +293,7 @@ def _parser():
                               'float.'),
                         dest='precision')
 
-
     return vars(parser.parse_args())
-
 
 
 def _build_test_index(root_path, tests):
@@ -331,11 +327,11 @@ def _build_test_index(root_path, tests):
     for test in tests_folder:
         if not os.path.exists(test) or not os.path.isdir(test):
             raise RuntimeError('Folder %s does not exist!' % test)
-        for root, junk, files in os.walk(test): # pylint: disable=unused-variable
+        for root, junk, files in os.walk(test):  # pylint: disable=unused-variable
             test_name = os.path.relpath(root, root_path)
             xml_files = [x for x in files if x.endswith('.xml')]
             if len(xml_files) > 1:
-                sys.stderr.write('!W! Skipping test %s: too many xml files!\n'\
+                sys.stderr.write('!W! Skipping test %s: too many xml files!\n'
                                  % test_name)
                 continue
             elif len(xml_files) < 1:
@@ -352,8 +348,6 @@ def _build_test_index(root_path, tests):
         print msg
 
     return test_list
-
-
 
 
 def _file_is_test(path_to_test):
@@ -441,7 +435,6 @@ class Test(threading.Thread):
         if status_priority[status] > status_priority[self._test_status]:
             self._test_status = status
 
-
     def init_env(self):
         """ Prepare the test run.
 
@@ -476,7 +469,7 @@ class Test(threading.Thread):
 
         # Retrieve the command to run the driver and the needed files
         self.driver_command, self.needed_files = \
-                                        parse_regtest_string(self.test_path)
+            parse_regtest_string(self.test_path)
 
         # Copy all the reference files to the 'input' folder
         shutil.copytree(self.ref_path, self.input_dir)
@@ -507,13 +500,12 @@ class Test(threading.Thread):
                 new_address = '%i' % address_index
                 ffsocket.find('./port').text = new_address
 
-
             # Change the address used by the driver too!
             for _ii, _buffer in enumerate(self.driver_command):
                 # Determine if the address is in a file
                 for _word in _buffer.split():
                     _word = os.path.join(self.io_dir, _word)
-                    if os.path.exists(_word) and  os.path.isfile(_word):
+                    if os.path.exists(_word) and os.path.isfile(_word):
                         inplace_change(_word, address, new_address)
 
                 # Replace only the first occurrence of 'address' in the
@@ -528,7 +520,6 @@ class Test(threading.Thread):
             address_index += 1
 
         xml.write(self.test_path)
-
 
     def run(self):
         if self.generate_output:
@@ -547,8 +538,6 @@ class Test(threading.Thread):
             self._compare()
             self.print_report()
 
-
-
     def _run_ipi(self):
         # Move to the right directory
 
@@ -559,7 +548,7 @@ class Test(threading.Thread):
         ipi_command = 'i-pi'
 
         # Run the i-pi code
-        ipi_command = shlex.split(ipi_command +\
+        ipi_command = shlex.split(ipi_command +
                                   ' ' + self.test_path)
         with open(os.path.join(self.io_dir, 'ipi_output.out'), 'w') as ipi_out:
             ipi_out.write('*REGTEST* IPI COMMAND: %s\n' % ' '.join(ipi_command))
@@ -590,7 +579,7 @@ class Test(threading.Thread):
             os.chdir(instance_folder)
             cmd = shlex.split(cmd)
             with open(driver_out_path, 'w') as driver_out:
-                driver_out.write('*REGTEST* DRIVER COMMAND: %s\n' %\
+                driver_out.write('*REGTEST* DRIVER COMMAND: %s\n' %
                                  ' '.join(cmd))
                 try:
                     driver_prcs.append(sbps.Popen(cmd,
@@ -632,9 +621,9 @@ class Test(threading.Thread):
                 ipi_proc.terminate()
                 self.test_status = 'ERROR'
                 self.msg += 'i-PI took too long after the driver finished!\n'
-                time.sleep(11) # i-pi took approximately 10 sec to exit
+                time.sleep(11)  # i-pi took approximately 10 sec to exit
 
-        stdout, stderr = ipi_proc.communicate() # pylint: disable=unused-variable
+        stdout, stderr = ipi_proc.communicate()  # pylint: disable=unused-variable
         if len(stderr) != 0:
             self.test_status = 'ERROR'
             self.msg += '\ni-PI produced the following error:\n'
@@ -650,7 +639,7 @@ class Test(threading.Thread):
             reference_dir = os.path.join(self.ref_path, 'regtest-ref')
             create_dir(reference_dir)
             ltraj, lprop = self.get_filesname(self.test_path,
-                                         reference_dir, self.io_dir)
+                                              reference_dir, self.io_dir)
 
             try:
                 for prop in lprop:
@@ -673,7 +662,6 @@ class Test(threading.Thread):
             self.msg += ('Errors occured: using this run as reference '
                          'is not safe!\n')
 
-
     def print_report(self):
         """ This function prints information about the test on stdout.
 
@@ -691,22 +679,22 @@ class Test(threading.Thread):
         """
 
         if self.test_status == 'ERROR':
-            _format = RESET + '%-30s --> ' + RED +'%15s' +\
-                      INFO + ' Info: %s' + RESET
+            _format = RESET + '%-30s --> ' + RED + '%15s' +\
+                INFO + ' Info: %s' + RESET
         elif self.test_status == 'FAILED':
-            _format = RESET + '-%30s --> ' + YELLOW +'%15s' +\
-                      INFO + ' Info: %s' + RESET
+            _format = RESET + '-%30s --> ' + YELLOW + '%15s' +\
+                INFO + ' Info: %s' + RESET
         elif self.test_status == 'PASSED':
-            _format = RESET + '-%30s --> ' + GREEN +'%15s' + RESET
+            _format = RESET + '-%30s --> ' + GREEN + '%15s' + RESET
         elif self.test_status == 'COPIED':
-            _format = RESET + '-%30s --> ' + GREEN +'%15s' + RESET
+            _format = RESET + '-%30s --> ' + GREEN + '%15s' + RESET
 
         if len(self.msg) > 0:
             lines = self.msg.split('\n')
             for _ii, _buffer in enumerate(lines):
                 if _ii == 0:
                     continue
-                lines[_ii] = ' '*57 + _buffer
+                lines[_ii] = ' ' * 57 + _buffer
             _msg = '\n'.join(lines)
             msg = _format % (self.name, self.test_status, _msg)
         else:
@@ -714,7 +702,6 @@ class Test(threading.Thread):
             msg = _format % (self.name, self.test_status)
         sys.stdout.write(msg)
         # print msg
-
 
     def compare_property_files(self, lprop):
         """ Comparing property files.
@@ -753,8 +740,6 @@ class Test(threading.Thread):
                     self.test_status = 'FAILED'
                     continue
 
-
-
     def compare_trajectory_files(self, ltraj):
         """ Function to compare trajectory files.
 
@@ -787,7 +772,6 @@ class Test(threading.Thread):
                         self.test_status = 'ERROR'
                         continue
 
-
                 line_c = 1
                 for old_line, new_line in zip(old_content, new_content):
                     word_c = 1
@@ -817,8 +801,6 @@ class Test(threading.Thread):
 
         return err
 
-
-
     def _compare(self):
         """ This is the function that compares all the ipi output.
 
@@ -829,7 +811,6 @@ class Test(threading.Thread):
         self.compare_property_files(lprop)
 
         self.compare_trajectory_files(ltraj)
-
 
     def get_filesname(self, xml_path, olddir, newdir):
         """ The test results should be analyzed number by numbers.
@@ -855,29 +836,29 @@ class Test(threading.Thread):
         os.dup2(devnull.fileno(), 1)
 
         # opens & parses the input file
-        
+
         # get in the input file location so it can find other input files for initialization
-        cwd = os.getcwd() 
-        iodir = os.path.dirname(os.path.realpath(xml_path))    
+        cwd = os.getcwd()
+        iodir = os.path.dirname(os.path.realpath(xml_path))
         os.chdir(iodir)
-        
-        #print "READING FILE FROM ", iodir 
-        #print " WHILE RUNNING IN ", cwd
-        #print "I have changed directory to ", os.getcwd() 
-        
+
+        # print "READING FILE FROM ", iodir
+        # print " WHILE RUNNING IN ", cwd
+        # print "I have changed directory to ", os.getcwd()
+
         ifile = open(xml_path, "r")
-        xmlrestart = io_xml.xml_parse_file(ifile) # Parses the file.
+        xmlrestart = io_xml.xml_parse_file(ifile)  # Parses the file.
         ifile.close()
 
         isimul = InputSimulation()
         isimul.parse(xmlrestart.fields[0][1])
 
         simul = isimul.fetch()
-        os.chdir(cwd) 
+        os.chdir(cwd)
 
         # reconstructs the list of the property and trajectory files
-        lprop = [] # list of property files
-        ltraj = [] # list of trajectory files
+        lprop = []  # list of property files
+        ltraj = []  # list of trajectory files
         for o in simul.outtemplate:
             # properties and trajectories are output per system
             if isinstance(o, CheckpointOutput):
@@ -886,20 +867,20 @@ class Test(threading.Thread):
                 nprop = []
                 isys = 0
                 for _ss in simul.syslist:   # create multiple copies
-                    filename = _ss.prefix+o.filename
-                    nprop.append({"old_filename" : os.path.join(olddir,
-                                                                filename),
-                                  "new_filename" : os.path.join(newdir,
-                                                                filename),
+                    filename = _ss.prefix + o.filename
+                    nprop.append({"old_filename": os.path.join(olddir,
+                                                               filename),
+                                  "new_filename": os.path.join(newdir,
+                                                               filename),
                                   "stride": o.stride,
-                                  "properties": o.outlist,})
+                                  "properties": o.outlist, })
                     isys += 1
                 lprop.append(nprop)
 
             # trajectories are more complex, as some have per-bead output
             elif isinstance(o, TrajectoryOutput):
                 if getkey(o.what) in ["positions", "velocities",
-                                      "forces", "forces_sc","extras"]:   # multiple beads
+                                      "forces", "forces_sc", "extras"]:   # multiple beads
                     nbeads = simul.syslist[0].beads.nbeads
                     for _bi in range(nbeads):
                         ntraj = []
@@ -913,15 +894,15 @@ class Test(threading.Thread):
                         for _ss in simul.syslist:
                             if o.ibead < 0 or o.ibead == _bi:
                                 if getkey(o.what) == "extras":
-                                    filename = _ss.prefix+o.filename+"_" + padb
+                                    filename = _ss.prefix + o.filename + "_" + padb
                                 else:
-                                    filename = _ss.prefix+o.filename+"_" + padb + \
-                                               "." + o.format
-                                ntraj.append({"old_filename" : os.path.join(olddir, filename),
-                                              "format" : o.format,
-                                              "new_filename" : os.path.join(newdir, filename),
+                                    filename = _ss.prefix + o.filename + "_" + padb + \
+                                        "." + o.format
+                                ntraj.append({"old_filename": os.path.join(olddir, filename),
+                                              "format": o.format,
+                                              "new_filename": os.path.join(newdir, filename),
                                               "stride": o.stride,
-                                              "what": o.what,})
+                                              "what": o.what, })
                             isys += 1
                         if ntraj != []:
                             ltraj.append(ntraj)
@@ -930,21 +911,20 @@ class Test(threading.Thread):
                     ntraj = []
                     isys = 0
                     for _ss in simul.syslist:   # create multiple copies
-                        filename = _ss.prefix+o.filename
-                        filename = filename+"."+o.format
-                        ntraj.append({"old_filename" : os.path.join(olddir,
-                                                                    filename),
-                                      "new_filename" : os.path.join(newdir,
-                                                                    filename),
-                                      "format" : o.format,
-                                      "stride": o.stride,})
+                        filename = _ss.prefix + o.filename
+                        filename = filename + "." + o.format
+                        ntraj.append({"old_filename": os.path.join(olddir,
+                                                                   filename),
+                                      "new_filename": os.path.join(newdir,
+                                                                   filename),
+                                      "format": o.format,
+                                      "stride": o.stride, })
 
                         isys += 1
                     ltraj.append(ntraj)
 
         os.dup2(oldstdout_fno, 1)
         return ltraj, lprop
-
 
 
 #######################
@@ -957,6 +937,7 @@ def remove_file(path):
     """
     if os.path.exists(path) and os.path.isfile(path):
         os.remove(path)
+
 
 def create_dir(folder_path, ignore=False):
     """ Create a folder after user consense.
