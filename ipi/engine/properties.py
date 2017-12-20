@@ -709,36 +709,45 @@ class Properties(dobject):
    def get_temp(self, atom="", bead="", nm=""):
       """Calculates the MD kinetic temperature.
 
-      Note that in the case that the centre of mass constraint there will be
-      3 fewer degrees of freedom than without, so this has to be taken into
-      account when calculating the kinetic temperature.
+      In case where a specie or a set of indices is selected, and there are constraints,
+      the result might be incorrect, as the kinetic energy is not necessarily proportional
+      to the temperature. Rather than using a scaling factor based on the number of degrees
+      of freedom, we add fake momenta to all the fixed components, so that a meaningful
+      result will be obtained for each subset of coordinates regardless of the constraints
+      imposed on the system.
 
       Args:
          atom: If given, specifies the atom to give the temperature
             for. If not, then the simulation temperature.
-      """
+      """      
 
-      if len(self.motion.fixatoms)>0:
-         mdof = len(self.motion.fixatoms)*3
-         if bead == "" and nm == "":
-            mdof*=self.beads.nbeads
-      else:
-         mdof = 0
+      if len(self.motion.fixatoms) > 0:
+         for i in self.motion.fixatoms:
+             pi = np.tile(np.sqrt(self.beads.m[i] * Constants.kb * self.ensemble.temp), 3)         
+             self.beads.p[:,3*i:3*i+3] += pi
 
       if self.motion.fixcom:
-         if bead == "" and nm == "":
-            mdof += 3
-         elif nm != "" and nm == "0":   # the centroid has 100% of the COM removal
-            mdof += 3
-         elif nm != "" :
-            mdof += 0
-         else:
-            mdof += 3.0/ float(self.beads.nbeads)  # spreads COM removal over the beads
+         # Adds a fake momentum to the centre of mass. This is the easiest way
+         # of getting meaningful temperatures for subsets of the system when there 
+         # are fixed components
+         M = np.sum(self.beads.m3) / 3.0 / self.beads.nbeads
+         pcm = np.tile(np.sqrt(M * Constants.kb * self.ensemble.temp), 3)
+         vcm = np.tile(pcm / M , self.beads.natoms)
+        
+         self.beads.p += self.beads.m3 * vcm
 
       kemd, ncount = self.get_kinmd(atom, bead, nm, return_count=True)
 
-      # "spreads" the COM removal correction evenly over all the atoms if just a few atoms are selected
-      return kemd/(0.5*Constants.kb) * (float(self.beads.natoms)/float(ncount)) / (3.0*self.beads.natoms*self.beads.nbeads - mdof)
+      if self.motion.fixcom:
+         # Removes the fake momentum from the centre of mass.
+         self.beads.p -= self.beads.m3 * vcm
+      
+      if len(self.motion.fixatoms) > 0:
+         # re-fixes the fix atoms
+         for i in self.motion.fixatoms:
+             self.beads.p[:,3*i:3*i+3] = 0.0 
+             
+      return  2.0 * kemd / (Constants.kb * 3.0 * float(ncount) * self.beads.nbeads)
 
    def get_kincv(self, atom=""):
       """Calculates the quantum centroid virial kinetic energy estimator.
@@ -1034,9 +1043,10 @@ class Properties(dobject):
             ncount += 1
       else:
          nbeads = self.beads.nbeads
-         ncount = self.beads.natoms
+         ncount = 0
          if atom == "":
             kmd = self.nm.kin
+            ncount = self.beads.natoms
          else:
             for i in range(self.beads.natoms):
                if (atom != "" and iatom != i and latom != self.beads.names[i]):

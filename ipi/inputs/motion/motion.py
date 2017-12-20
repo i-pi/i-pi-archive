@@ -65,7 +65,7 @@ class InputMotionBase(Input):
                                     "help"         : "Indices of the atmoms that should be held fixed."}),
            "optimizer" : ( InputGeop, { "default" : {},
                                      "help":  "Option for geometry optimization" } ),
-           "neb_optimizer" : ( InputGeop, { "default" : {},
+           "neb_optimizer" : ( InputNEB, { "default" : {},
                                      "help":  "Option for geometry optimization" } ),
            "dynamics" : ( InputDynamics, { "default" : {},
                                      "help":  "Option for (path integral) molecular dynamics" } ),

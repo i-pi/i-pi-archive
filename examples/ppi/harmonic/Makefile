@@ -12,16 +12,17 @@ IPI:=i-pi
 
 define run_driver
   for i in `seq 1 $1`; do \
-    $(driver) -u -h harmonic -m harm -o 1 & \
+    $(driver) -u -h harmonic -m harm -o 0.2 & \
   done;
 endef
 -include make.in
 
 harmonic:
+	source ../../../env.sh; \
 	$(IPI) input.xml & sleep 5; \
-	$(call run_driver,4) \
+	$(call run_driver,2) \
 	wait
 
 clean:
-	rm -f harm.* RESTART EXIT *.log *.dat
+	rm -f *simulation.* *RESTART* EXIT *.log* *.dat*
  

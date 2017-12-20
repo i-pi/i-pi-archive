@@ -54,7 +54,7 @@ $ pilot-HswfQMC.sh make_ipic
 
  * Fixed wavefunction classical MD:
 $ cd FixWF_1Bead
-$ i-pi HswfQMC_i-pi_Example_1Bead.xml > output &
+$ i-pi input.xml > output &
 $ cd HswfQMC_Example_FixWF
 $ HswfQMC_ipic -h 127.0.0.1 -p 54321 -m fix -o 0 -c 64 -l 10 -v > output &
 
