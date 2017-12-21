@@ -149,6 +149,23 @@ if __name__ == '__main__':
                         filename_line = re.search(r'\[file:(\S+)\]', line)
                         # Print only filename
                         print filename_line.group(1)
+                    elif re.match('.*[1-9] issue.*', line):
+                        # number of issues is greater than 0
+                        issue_line = line
+                        # Reformat this line:
+                        # --->  6 issue(s) to fix {'E266': set([131, 931]), 'E265': set([512, 164, 518, 519])}
+                        # to achieve that message and formatting:
+                        # --->  6 issue(s) not fixed in file ./regtest.py
+                        # 'E266' at lines: 131, 931
+                        # 'E265' at lines: 512, 164, 518, 519
+                        issue_line = issue_line.replace('to fix', 'not fixed in file ' + filename_line.group(1))
+                        issue_line = issue_line.replace('{', '\n      ')
+                        issue_line = issue_line.replace(']),', '\n     ')
+                        issue_line = issue_line.replace(': set([', ' at lines: ')
+                        issue_line = issue_line.replace('])', '')
+                        issue_line = issue_line.replace('}', '')
+                        print issue_line
                 # if verbosity is silent or low, do not print output from autopep8
+
     if verbosity != 'silent':
         print 'autopep8 terminated'
