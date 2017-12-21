@@ -17,9 +17,9 @@ import time
 import numpy as np
 
 from ipi.utils.depend import *
-from ipi.utils.units  import *
-from ipi.utils.prng   import *
-from ipi.utils.io     import *
+from ipi.utils.units import *
+from ipi.utils.prng import *
+from ipi.utils.io import *
 from ipi.utils.io.inputs.io_xml import *
 from ipi.utils.messages import verbosity, info
 from ipi.utils.softexit import softexit
@@ -72,7 +72,7 @@ class System(dobject):
               systems.
         """
 
-        info(" # Initializing system object ", verbosity.low )
+        info(" # Initializing system object ", verbosity.low)
         self.prefix = prefix
         self.init = init
         self.ensemble = ensemble
@@ -87,14 +87,13 @@ class System(dobject):
         self.bcomp = bcomponents
         self.bias = Forces()
 
-
         self.properties = Properties()
         self.trajs = Trajectories()
 
     def bind(self, simul):
         """Calls the bind routines for all the objects in the system."""
 
-        self.simul = simul # keeps a handle to the parent simulation object
+        self.simul = simul  # keeps a handle to the parent simulation object
 
         # binds important computation engines
         self.forces.bind(self.beads, self.cell, self.fcomp, self.simul.fflist)
@@ -102,7 +101,6 @@ class System(dobject):
         self.nm.bind(self.ensemble, self.motion, beads=self.beads, forces=self.forces)
         self.ensemble.bind(self.beads, self.nm, self.cell, self.forces, self.bias)
         self.motion.bind(self.ensemble, self.beads, self.nm, self.cell, self.forces, self.prng)
-
 
         dpipe(dd(self.nm).omegan2, dd(self.forces).omegan2)
 

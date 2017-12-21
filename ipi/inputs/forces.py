@@ -28,29 +28,29 @@ class InputForceComponent(Input):
        name: The name of the forcefield.
     """
 
-    attribs = { "nbeads" : ( InputAttribute, { "dtype"   : int,
-                                          "default" : 0,
-                                          "help"    : "If the forcefield is to be evaluated on a contracted ring polymer, this gives the number of beads that are used. If not specified, the forcefield will be evaluated on the full ring polymer." } ),
-                "weight" : ( InputAttribute, { "dtype"   : float,
-                                          "default" : 1.0,
-                                          "help"    : "A scaling factor for this forcefield, to be applied before adding the force calculated by this forcefield to the total force." } ),
-                "fd_epsilon" : ( InputAttribute, { "dtype"   : float, 
-                                          "default" : -0.001,
-                                          "help"    : "The finite displacement to be used for calculaing the Suzuki-Chin contribution of the force. If the value is negative, a centered finite-difference scheme will be used. [in bohr]" } ),
-                "name" : ( InputAttribute, { "dtype" : str,
-                                           "default" : "",
-                                           "help" : "An optional name to refer to this force component." } ),
+    attribs = {"nbeads": (InputAttribute, {"dtype": int,
+                                           "default": 0,
+                                           "help": "If the forcefield is to be evaluated on a contracted ring polymer, this gives the number of beads that are used. If not specified, the forcefield will be evaluated on the full ring polymer."}),
+               "weight": (InputAttribute, {"dtype": float,
+                                           "default": 1.0,
+                                           "help": "A scaling factor for this forcefield, to be applied before adding the force calculated by this forcefield to the total force."}),
+               "fd_epsilon": (InputAttribute, {"dtype": float,
+                                               "default": -0.001,
+                                               "help": "The finite displacement to be used for calculaing the Suzuki-Chin contribution of the force. If the value is negative, a centered finite-difference scheme will be used. [in bohr]"}),
+               "name": (InputAttribute, {"dtype": str,
+                                         "default": "",
+                                         "help": "An optional name to refer to this force component."}),
 
-                "forcefield" : ( InputAttribute, { "dtype" : str, 
-                                           "default": "",
-                                           "help" : "Mandatory. The name of the forcefield this force is referring to." } )
-             }
+               "forcefield": (InputAttribute, {"dtype": str,
+                                               "default": "",
+                                               "help": "Mandatory. The name of the forcefield this force is referring to."})
+               }
 
-    fields={ "mts_weights" : (InputArray, {"dtype"        : float,
-                                     "default"      : np.zeros(1,float)+1.,
-                                     "help"         : "The weight of force in each mts level starting from outer.",
-                                     "dimension"    : "force"})
-           }
+    fields = {"mts_weights": (InputArray, {"dtype": float,
+                                           "default": np.zeros(1, float) + 1.,
+                                           "help": "The weight of force in each mts level starting from outer.",
+                                           "dimension": "force"})
+              }
 
     default_help = "The class that deals with how each forcefield contributes to the overall potential, force and virial calculation."
     default_label = "FORCECOMPONENT"
@@ -63,7 +63,7 @@ class InputForceComponent(Input):
            forceb: A ForceComponent object.
         """
 
-        super(InputForceComponent,self).store(forceb.ffield)
+        super(InputForceComponent, self).store(forceb.ffield)
         self.nbeads.store(forceb.nbeads)
         self.weight.store(forceb.weight)
         self.mts_weights.store(forceb.mts_weights)
@@ -78,13 +78,13 @@ class InputForceComponent(Input):
            A ForceComponent object.
         """
 
-        super(InputForceComponent,self).fetch()
+        super(InputForceComponent, self).fetch()
         return ForceComponent(ffield=self.forcefield.fetch(), nbeads=self.nbeads.fetch(), weight=self.weight.fetch(), name=self.name.fetch(), mts_weights=self.mts_weights.fetch(), epsilon=self.fd_epsilon.fetch())
 
     def check(self):
         """Checks for optional parameters."""
 
-        super(InputForceComponent,self).check()
+        super(InputForceComponent, self).check()
         if self.nbeads.fetch() < 0:
             raise ValueError("The forces must be evaluated over a positive number of beads.")
 
@@ -97,10 +97,10 @@ class InputForces(Input):
        socket: Socket object to create the server socket.
     """
 
-    #At the moment only socket driver codes implemented, other types
-    #could be used in principle
-    dynamic = {  "force" : (InputForceComponent, { "help" : InputForceComponent.default_help } )
-             }
+    # At the moment only socket driver codes implemented, other types
+    # could be used in principle
+    dynamic = {"force": (InputForceComponent, {"help": InputForceComponent.default_help})
+               }
 
     default_help = "Deals with creating all the necessary forcefield objects."
     default_label = "FORCES"
@@ -115,7 +115,7 @@ class InputForces(Input):
         """
 
         super(InputForces, self).fetch()
-        flist = [ f.fetch() for (n, f) in self.extra ]
+        flist = [f.fetch() for (n, f) in self.extra]
         return flist
 
     def store(self, flist):

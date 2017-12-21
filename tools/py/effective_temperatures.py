@@ -21,7 +21,8 @@ The computed effective temperatures are in Kelvin.
 """
 
 import numpy as np
-import sys, glob
+import sys
+import glob
 
 from ipi.utils.units import unit_to_internal, unit_to_user, Constants
 from ipi.utils.io import read_file
@@ -32,10 +33,10 @@ def effectiveTemperatures(prefix, temp, ss=0):
     Computes effective temperatures for a given (PI)MD dynamics.
     """
 
-    temperature = unit_to_internal("temperature", "kelvin", float(temp)) # simulation temperature
+    temperature = unit_to_internal("temperature", "kelvin", float(temp))  # simulation temperature
     skipSteps = int(ss)                                                  # steps to skip for thermalization
 
-    f2_av = None # average square forces array
+    f2_av = None  # average square forces array
     names = None
 
     fns_for = sorted(glob.glob(prefix + ".for*"))
@@ -61,7 +62,7 @@ def effectiveTemperatures(prefix, temp, ss=0):
     iOut = open(fn_out, "w")
 
     # Some constants
-    const = Constants.hbar**2/(12.0*(nbeads*Constants.kb*temperature)**3)
+    const = Constants.hbar**2 / (12.0 * (nbeads * Constants.kb * temperature)**3)
 
     iOut.write("# Atom, Cartesian components of the effective temperature, average effective temperature (in Kelvin)\n")
 
@@ -79,18 +80,18 @@ def effectiveTemperatures(prefix, temp, ss=0):
                 ret = read_file("xyz", ifor[i], dimension='force')["atoms"]
                 if natoms == 0:
                     m, natoms, names = ret.m, ret.natoms, ret.names
-                    f = np.zeros((nbeads, 3*natoms))
-                    f2_av = np.zeros(3*natoms)
+                    f = np.zeros((nbeads, 3 * natoms))
+                    f2_av = np.zeros(3 * natoms)
                 f[i, :] = ret.q
-        except EOFError: # finished reading files
+        except EOFError:  # finished reading files
             break
 
         if ifr >= skipSteps:  # PPI correction
 
-            f2 = np.zeros(3*natoms)
+            f2 = np.zeros(3 * natoms)
             for i in range(natoms):
                 for j in range(nbeads):
-                    f2[i*3:i*3+3] += f[j,i*3:i*3+3]**2/m[i]
+                    f2[i * 3:i * 3 + 3] += f[j, i * 3:i * 3 + 3]**2 / m[i]
 
             f2_av[:] += f2[:]
             ifr += 1
@@ -98,19 +99,18 @@ def effectiveTemperatures(prefix, temp, ss=0):
         else:
             ifr += 1
 
-    dT = const*f2_av/float(ifr - skipSteps)
+    dT = const * f2_av / float(ifr - skipSteps)
 
     temperature = unit_to_user("temperature", "kelvin", temperature)
 
     for i in range(natoms):
-        iOut.write("%s    %f     %f     %f     %f\n" % (names[i], temperature*(1 + dT[i*3]), temperature*(1 + dT[i*3+1]),
-                                                  temperature*(1 + dT[i*3+2]), temperature*(1 + np.sum(dT[i*3:i*3+3])/3.0)))
+        iOut.write("%s    %f     %f     %f     %f\n" % (names[i], temperature * (1 + dT[i * 3]), temperature * (1 + dT[i * 3 + 1]),
+                                                        temperature * (1 + dT[i * 3 + 2]), temperature * (1 + np.sum(dT[i * 3:i * 3 + 3]) / 3.0)))
 
     for f in ifor:
         f.close()
 
     iOut.close()
-
 
 
 def main(*arg):

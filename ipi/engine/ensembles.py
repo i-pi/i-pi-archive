@@ -54,9 +54,9 @@ class Ensemble(dobject):
         else:
             self.temp = -1.0
 
-        dset(self, "stressext", depend_array(name='stressext', value=np.zeros((3,3), float)))
+        dset(self, "stressext", depend_array(name='stressext', value=np.zeros((3, 3), float)))
         if stressext is not None:
-            self.stressext = np.reshape(np.asarray(stressext), (3,3))
+            self.stressext = np.reshape(np.asarray(stressext), (3, 3))
         else:
             self.stressext = -1.0
 
@@ -74,7 +74,6 @@ class Ensemble(dobject):
 
     def copy(self):
         return Ensemble(self.eens, 0.0, self.temp, self.pext, depstrip(self.stressext).copy())
-
 
     def bind(self, beads, nm, cell, bforce, bbias, elist=[]):
         self.beads = beads
@@ -104,7 +103,7 @@ class Ensemble(dobject):
         """Calculates the conserved energy quantity for constant energy
         ensembles.
         """
-        eham = self.beads.vpath*self.nm.omegan2 + self.nm.kin + self.forces.pot
+        eham = self.beads.vpath * self.nm.omegan2 + self.nm.kin + self.forces.pot
         eham += self.bias.pot   # bias
         for e in self._elist:
             eham += e.get()

@@ -10,6 +10,7 @@ import numpy as np
 from ipi.utils.depend import depend_value, dset, dobject, dget, dd
 from ipi.engine.motion import Motion
 
+
 class MultiMotion(Motion):
     """A class to hold multiple motion objects to be executed se")rially.
     """
@@ -24,19 +25,19 @@ class MultiMotion(Motion):
 
         dself = dd(self)
         dself.dt = depend_value(name="dt", func=self.get_totdt)
-        self.mlist = motionlist        
+        self.mlist = motionlist
         for m in self.mlist:
             dd(m).dt.add_dependant(dself.dt)
-            print dd(m).dt._dependants   
-        a=self.dt # DON'T ASK WHY BUT IF YOU DON'T DO THAT WEAKREFS TO SELF.DT WILL BE INVALIDATED        
+            print dd(m).dt._dependants
+        a = self.dt  # DON'T ASK WHY BUT IF YOU DON'T DO THAT WEAKREFS TO SELF.DT WILL BE INVALIDATED
 
         self.fixatoms = set(self.mlist[0].fixatoms)
-        for m in self.mlist:  
+        for m in self.mlist:
             self.fixatoms = self.fixatoms.intersection(m.fixatoms)
         self.fixatoms = list(self.fixatoms)
 
-        self.fixcom = True # fixcom is true only if all movers are fixed 
-        for m in self.mlist:  
+        self.fixcom = True  # fixcom is true only if all movers are fixed
+        for m in self.mlist:
             self.fixcom = self.fixcom and m.fixcom
 
     def get_totdt(self):

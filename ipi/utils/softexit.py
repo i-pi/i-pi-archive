@@ -56,7 +56,7 @@ class Softexit(object):
 
         self.flist.append(func)
 
-    def register_thread(self, thread, loop_control = None):
+    def register_thread(self, thread, loop_control=None):
         """Adds a thread to the monitored list.
 
         Args:
@@ -88,7 +88,7 @@ class Softexit(object):
             for f in self.flist:
                 f()
 
-            self.exiting = False # emergency is over, signal we can be relaxed
+            self.exiting = False  # emergency is over, signal we can be relaxed
 
             for (t, dl) in self.tlist:  # set thread exit flag
                 dl[0] = False
@@ -100,7 +100,6 @@ class Softexit(object):
 
         sys.exit()
 
-
     def start(self, timeout=0.0):
         """Starts the softexit monitoring loop.
 
@@ -110,13 +109,13 @@ class Softexit(object):
 
         self._main = threading.currentThread()
         self.timeout = -1.0
-        if (timeout>0.0):
-            self.timeout = time.time()+timeout
+        if (timeout > 0.0):
+            self.timeout = time.time() + timeout
 
         self._thread = threading.Thread(target=self._softexit_monitor, name="softexit")
         self._thread.daemon = True
         self._doloop[0] = True
-        self._kill[signal.SIGINT]  = signal.signal(signal.SIGINT, self._kill_handler)
+        self._kill[signal.SIGINT] = signal.signal(signal.SIGINT, self._kill_handler)
         self._kill[signal.SIGTERM] = signal.signal(signal.SIGTERM, self._kill_handler)
         self._thread.start()
         self.register_thread(self._thread, self._doloop)
@@ -153,7 +152,7 @@ class Softexit(object):
                 self.trigger(" @SOFTEXIT: EXIT file detected.")
                 break
 
-            if (self.timeout>0 and self.timeout<time.time()):
+            if (self.timeout > 0 and self.timeout < time.time()):
                 self.trigger(" @SOFTEXIT: Maximum wallclock time elapsed.")
                 break
 

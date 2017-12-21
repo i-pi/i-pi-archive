@@ -30,7 +30,10 @@ To speedup the script one has to compile the fortran functions from the i-Pi/too
 """
 
 import numpy as np
-import sys, glob, os, re
+import sys
+import glob
+import os
+import re
 
 from ipi.utils.units import unit_to_internal, unit_to_user, Constants
 from ipi.utils.io import read_file
@@ -51,14 +54,14 @@ def energies(prefix, temp, ss=0, unit=''):
         print('WARNING: No compiled fortran module for fast calculations have been found.\n'
               'Calculations will use a slower python script.')
 
-    temperature = unit_to_internal("temperature", "kelvin", float(temp)) # simulation temperature
+    temperature = unit_to_internal("temperature", "kelvin", float(temp))  # simulation temperature
     skipSteps = int(ss)                                                  # steps to skip for thermalization
 
-    KPa_av, KVir_av, U_av, f2_av, f2KPa_av, f2U_av = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 # some required sums
+    KPa_av, KVir_av, U_av, f2_av, f2KPa_av, f2U_av = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0  # some required sums
 
     fns_pos = sorted(glob.glob(prefix + ".pos*"))
     fns_for = sorted(glob.glob(prefix + ".for*"))
-    fns_iU = glob.glob(prefix+".out")[0]
+    fns_iU = glob.glob(prefix + ".out")[0]
     fn_out_en = prefix + ".energies.dat"
 
     # check that we found the same number of positions and forces files
@@ -90,15 +93,15 @@ def energies(prefix, temp, ss=0, unit=''):
     iE = open(fn_out_en, "w")
 
     # Some constants
-    beta = 1.0/(Constants.kb*temperature)
-    const_1 = 0.5*nbeads/(beta*Constants.hbar)**2
-    const_2 = 1.5*nbeads/beta
-    const_3 = 1.5/beta
-    const_4 = Constants.kb**2/Constants.hbar**2
-    const_5 = Constants.hbar**2*beta**3/(24.0*nbeads**3)
-    const_6 = Constants.hbar**2*beta**2/(24.0*nbeads**3)
+    beta = 1.0 / (Constants.kb * temperature)
+    const_1 = 0.5 * nbeads / (beta * Constants.hbar)**2
+    const_2 = 1.5 * nbeads / beta
+    const_3 = 1.5 / beta
+    const_4 = Constants.kb**2 / Constants.hbar**2
+    const_5 = Constants.hbar**2 * beta**3 / (24.0 * nbeads**3)
+    const_6 = Constants.hbar**2 * beta**2 / (24.0 * nbeads**3)
 
-    timeUnit, potentialEnergyUnit, potentialEnergy_index, time_index = extractUnits(iU) # extracting simulation time
+    timeUnit, potentialEnergyUnit, potentialEnergy_index, time_index = extractUnits(iU)  # extracting simulation time
     # and potential energy units
 
     # Defining the output energy unit
@@ -126,12 +129,12 @@ def energies(prefix, temp, ss=0, unit=''):
                 ret = read_file("xyz", ipos[i], dimension='length')["atoms"]
                 if natoms == 0:
                     m, natoms = ret.m, ret.natoms
-                    q = np.zeros((nbeads, 3*natoms))
-                    f = np.zeros((nbeads, 3*natoms))
+                    q = np.zeros((nbeads, 3 * natoms))
+                    f = np.zeros((nbeads, 3 * natoms))
                 q[i, :] = ret.q
                 f[i, :] = read_file("xyz", ifor[i], dimension='force')["atoms"].q
             U, time = read_U(iU, potentialEnergyUnit, potentialEnergy_index, time_index)
-        except EOFError: # finished reading files
+        except EOFError:  # finished reading files
             sys.exit(0)
 
         if ifr < skipSteps:
@@ -148,25 +151,25 @@ def energies(prefix, temp, ss=0, unit=''):
 
                 for j in range(nbeads):
                     for i in range(natoms):
-                        f2 += np.dot(f[j,i*3:i*3+3],f[j,i*3:i*3+3])/m[i]
+                        f2 += np.dot(f[j, i * 3:i * 3 + 3], f[j, i * 3:i * 3 + 3]) / m[i]
                 for i in range(natoms):
-                    KPa -= np.dot(q[0,i*3:i*3+3]-q[nbeads-1,i*3:i*3+3],q[0,i*3:i*3+3]-q[nbeads-1,i*3:i*3+3])*m[i]
-                for j in range(nbeads-1):
+                    KPa -= np.dot(q[0, i * 3:i * 3 + 3] - q[nbeads - 1, i * 3:i * 3 + 3], q[0, i * 3:i * 3 + 3] - q[nbeads - 1, i * 3:i * 3 + 3]) * m[i]
+                for j in range(nbeads - 1):
                     for i in range(natoms):
-                        KPa -= np.dot(q[j+1,i*3:i*3+3]-q[j,i*3:i*3+3],q[j+1,i*3:i*3+3]-q[j,i*3:i*3+3])*m[i]
+                        KPa -= np.dot(q[j + 1, i * 3:i * 3 + 3] - q[j, i * 3:i * 3 + 3], q[j + 1, i * 3:i * 3 + 3] - q[j, i * 3:i * 3 + 3]) * m[i]
                 rc = np.zeros(3)
                 for i in range(natoms):
                     rc[:] = 0.0
                     for j in range(nbeads):
-                        rc[:] += q[j,i*3:i*3+3]
+                        rc[:] += q[j, i * 3:i * 3 + 3]
                     rc[:] /= nbeads
                     for j in range(nbeads):
-                        KVir += np.dot(rc[:] - q[j,i*3:i*3+3],f[j,i*3:i*3+3])
+                        KVir += np.dot(rc[:] - q[j, i * 3:i * 3 + 3], f[j, i * 3:i * 3 + 3])
 
                 KPa *= const_1
-                KPa += const_2*natoms
-                KVir /= 2.0*nbeads
-                KVir += const_3*natoms
+                KPa += const_2 * natoms
+                KVir /= 2.0 * nbeads
+                KVir += const_3 * natoms
 
             else:
 
@@ -175,29 +178,29 @@ def energies(prefix, temp, ss=0, unit=''):
                 KVir = fortran.findcentroidvirialkineticenergy(np.array(f, order='F'), np.array(q, order='F'), natoms, nbeads)
 
                 KPa *= const_4
-                KPa += const_2*natoms
-                KVir += const_3*natoms
+                KPa += const_2 * natoms
+                KVir += const_3 * natoms
 
             f2_av += f2
             KPa_av += KPa
-            f2KPa_av += f2*KPa
+            f2KPa_av += f2 * KPa
             U_av += U
-            f2U_av += f2*U
+            f2U_av += f2 * U
             KVir_av += KVir
             ifr += 1
 
-            norm = float(ifr-skipSteps)
+            norm = float(ifr - skipSteps)
 
-            dU = 2*f2_av/norm - beta*(f2U_av/norm - f2_av*U_av/norm**2)
+            dU = 2 * f2_av / norm - beta * (f2U_av / norm - f2_av * U_av / norm**2)
             dU *= const_6
             dU = unit_to_user("energy", unit, dU)
 
-            dK = (Constants.kb*temperature + KPa_av/norm)*f2_av/norm - f2KPa_av/norm
+            dK = (Constants.kb * temperature + KPa_av / norm) * f2_av / norm - f2KPa_av / norm
             dK *= const_5
             dK = unit_to_user("energy", unit, dK)
 
-            U = unit_to_user("energy", unit, U_av/norm)
-            KVir = unit_to_user("energy", unit, KVir_av/norm)
+            U = unit_to_user("energy", unit, U_av / norm)
+            KVir = unit_to_user("energy", unit, KVir_av / norm)
 
             iE = open(fn_out_en, "a")
             iE.write("%f    %f     %f     %f     %f    %f     %f     %f     %f     %f\n"

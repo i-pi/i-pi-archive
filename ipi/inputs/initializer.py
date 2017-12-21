@@ -29,12 +29,12 @@ class InputInitBase(InputValue):
     """
 
     attribs = deepcopy(InputValue.attribs)
-    attribs["mode"] =     (InputAttribute,{ "dtype" : str, "default": "other", "help": "The input data format. 'xyz' and 'pdb' stand for xyz and pdb input files respectively. 'chk' stands for initialization from a checkpoint file. 'manual' means that the value to initialize from is giving explicitly as a vector. 'thermal' means that the data is to be generated from a Maxwell-Boltzmann distribution at the given temperature.", "options": None } )
+    attribs["mode"] = (InputAttribute, {"dtype": str, "default": "other", "help": "The input data format. 'xyz' and 'pdb' stand for xyz and pdb input files respectively. 'chk' stands for initialization from a checkpoint file. 'manual' means that the value to initialize from is giving explicitly as a vector. 'thermal' means that the data is to be generated from a Maxwell-Boltzmann distribution at the given temperature.", "options": None})
 
     default_label = "INITBASE"
     default_help = "This is the base class for initialization. Initializers for different aspects of the simulation can be inherit for it for the base methods."
 
-    _initclass    = ei.InitBase
+    _initclass = ei.InitBase
     _storageclass = float
 
     def __init__(self, help=None, default=None, dtype=None, options=None, dimension=None):
@@ -43,7 +43,7 @@ class InputInitBase(InputValue):
         Just calls the parent initialize function with appropriate arguments.
         """
 
-        super(InputInitBase,self).__init__(dtype=str, dimension=dimension, default=default, options=options, help=help)
+        super(InputInitBase, self).__init__(dtype=str, dimension=dimension, default=default, options=options, help=help)
 
     def store(self, ibase):
         """Takes a InitBase instance and stores a minimal representation of it.
@@ -60,10 +60,10 @@ class InputInitBase(InputValue):
         else:  # just store the value as a string
             value = ibase.value
 
-        super(InputInitBase,self).store(value, units=ibase.units)
+        super(InputInitBase, self).store(value, units=ibase.units)
 
-        #print self.__class__, self.__dict__, ibase.__dict__
-        for k in self.attribs:  # store additional attributes from the input class         
+        # print self.__class__, self.__dict__, ibase.__dict__
+        for k in self.attribs:  # store additional attributes from the input class
             self.__dict__[k].store(ibase.__dict__[k])
 
     def getval(self):
@@ -73,9 +73,9 @@ class InputInitBase(InputValue):
         or as a string specifying either a file name or a single value.
         """
 
-        value = super(InputInitBase,self).fetch()
+        value = super(InputInitBase, self).fetch()
         if self.mode.fetch() == "manual":
-            if '[' in value and ']' in value: # value appears to be a list
+            if '[' in value and ']' in value:  # value appears to be a list
                 if self._storageclass is float:
                     value = io_xml.read_array(np.float, value)
                 else:
@@ -97,10 +97,11 @@ class InputInitBase(InputValue):
         for k in self.attribs:
             rdict[k] = self.__dict__[k].fetch()
 
-        if initclass is None: # allows for some flexibility in return class
+        if initclass is None:  # allows for some flexibility in return class
             initclass = self._initclass
 
         return initclass(value=self.getval(), **rdict)
+
 
 class InputInitIndexed(InputInitBase):
     """Class to handle initialization of properties which the value of each
@@ -112,8 +113,8 @@ class InputInitIndexed(InputInitBase):
     """
 
     attribs = deepcopy(InputInitBase.attribs)
-    attribs["index"] =     (InputAttribute,{ "dtype" : int, "default": -1, "help": "The index of the atom for which the value will be set. If a negative value is specified, then all atoms are assumed." } )
-    attribs["bead"]  =     (InputAttribute,{ "dtype" : int, "default": -1, "help": "The index of the bead for which the value will be set. If a negative value is specified, then all beads are assumed." } )
+    attribs["index"] = (InputAttribute, {"dtype": int, "default": -1, "help": "The index of the atom for which the value will be set. If a negative value is specified, then all atoms are assumed."})
+    attribs["bead"] = (InputAttribute, {"dtype": int, "default": -1, "help": "The index of the bead for which the value will be set. If a negative value is specified, then all beads are assumed."})
 
     default_label = "INITINDEXED"
     default_help = "This is a helper class to initialize with an index."
@@ -127,8 +128,8 @@ class InputInitFile(InputInitBase):
     attribs["mode"][1]["options"] = ["xyz", "pdb", "chk"]
     attribs["mode"][1]["help"] = "The input data format. 'xyz' and 'pdb' stand for xyz and pdb input files respectively. 'chk' stands for initialization from a checkpoint file."
 
-    attribs["bead"]  =     (InputAttribute,{ "dtype" : int, "default": -1, "help": "The index of the bead for which the value will be set. If a negative value is specified, then all beads are assumed." } )
-    attribs["cell_units"] = (InputAttribute, { "dtype" : str, "default": "automatic", "help": "The units for the cell dimensions." } ) 
+    attribs["bead"] = (InputAttribute, {"dtype": int, "default": -1, "help": "The index of the bead for which the value will be set. If a negative value is specified, then all beads are assumed."})
+    attribs["cell_units"] = (InputAttribute, {"dtype": str, "default": "automatic", "help": "The units for the cell dimensions."})
 
     default_label = "INITFILE"
     default_help = "This is the class to initialize from file."
@@ -145,6 +146,7 @@ class InputInitThermo(InputInitBase):
 
     default_label = "INITTHERMO"
     default_help = "This is the class to initialize the thermostat (ethermo and fictitious momenta)."
+
 
 class InputInitPositions(InputInitIndexed):
     """Class to handle initialization of the positions."""
@@ -163,7 +165,7 @@ class InputInitMomenta(InputInitPositions):
     """Class to handle initialization of the momenta."""
 
     attribs = deepcopy(InputInitPositions.attribs)
-    attribs["mode"][1]["options"].append( "thermal" )
+    attribs["mode"][1]["options"].append("thermal")
     attribs["mode"][1]["help"] = "The input data format. 'xyz' and 'pdb' stand for xyz and pdb input files respectively. 'chk' stands for initialization from a checkpoint file. 'manual' means that the value to initialize from is giving explicitly as a vector. 'thermal' means that the data is to be generated from a Maxwell-Boltzmann distribution at the given temperature."
 
     default_label = "INITMOMENTA"
@@ -177,9 +179,9 @@ class InputInitMomenta(InputInitPositions):
         """
 
         if self.mode.fetch() == "thermal":
-            return self._initclass(value=float(InputValue.fetch(self)),  mode=self.mode.fetch(), units=self.units.fetch(), index=self.index.fetch(), bead=self.bead.fetch())
+            return self._initclass(value=float(InputValue.fetch(self)), mode=self.mode.fetch(), units=self.units.fetch(), index=self.index.fetch(), bead=self.bead.fetch())
         else:
-            return super(InputInitMomenta,self).fetch()
+            return super(InputInitMomenta, self).fetch()
 
 
 class InputInitVelocities(InputInitMomenta):
@@ -215,10 +217,10 @@ class InputInitCell(InputInitBase):
     """Class to handle initialization of the cell."""
 
     attribs = deepcopy(InputInitBase.attribs)
-    attribs["mode"] = (InputAttribute, { "dtype"  : str,
-                                         "default": "manual",
-                                         "options": ["manual", "pdb", "chk", "abc", "abcABC"],
-                                         "help"   : "This decides whether the system box is created from a cell parameter matrix, or from the side lengths and angles between them. If 'mode' is 'manual', then 'cell' takes a 9-elements vector containing the cell matrix (row-major). If 'mode' is 'abcABC', then 'cell' takes an array of 6 floats, the first three being the length of the sides of the system parallelopiped, and the last three being the angles (in degrees) between those sides. Angle A corresponds to the angle between sides b and c, and so on for B and C. If mode is 'abc', then this is the same as for 'abcABC', but the cell is assumed to be orthorhombic. 'pdb' and 'chk' read the cell from a PDB or a checkpoint file, respectively."} )
+    attribs["mode"] = (InputAttribute, {"dtype": str,
+                                        "default": "manual",
+                                        "options": ["manual", "pdb", "chk", "abc", "abcABC"],
+                                        "help": "This decides whether the system box is created from a cell parameter matrix, or from the side lengths and angles between them. If 'mode' is 'manual', then 'cell' takes a 9-elements vector containing the cell matrix (row-major). If 'mode' is 'abcABC', then 'cell' takes an array of 6 floats, the first three being the length of the sides of the system parallelopiped, and the last three being the angles (in degrees) between those sides. Angle A corresponds to the angle between sides b and c, and so on for B and C. If mode is 'abc', then this is the same as for 'abcABC', but the cell is assumed to be orthorhombic. 'pdb' and 'chk' read the cell from a PDB or a checkpoint file, respectively."})
 
     default_label = "INITCELL"
     default_help = "This is the class to initialize cell."
@@ -233,7 +235,7 @@ class InputInitCell(InputInitBase):
 
         mode = self.mode.fetch()
 
-        ibase = super(InputInitCell,self).fetch()
+        ibase = super(InputInitCell, self).fetch()
         if mode == "abc" or mode == "abcABC":
 
             h = io_xml.read_array(np.float, ibase.value)
@@ -242,12 +244,12 @@ class InputInitCell(InputInitBase):
                 if h.size != 3:
                     raise ValueError("If you are initializing cell from cell side lengths you must pass the 'cell' tag an array of 3 floats.")
                 else:
-                    h = mt.abc2h(h[0], h[1], h[2], np.pi/2, np.pi/2, np.pi/2)
+                    h = mt.abc2h(h[0], h[1], h[2], np.pi / 2, np.pi / 2, np.pi / 2)
             elif mode == "abcABC":
                 if h.size != 6:
                     raise ValueError("If you are initializing cell from cell side lengths and angles you must pass the 'cell' tag an array of 6 floats.")
                 else:
-                    h = mt.abc2h(h[0], h[1], h[2], h[3]*np.pi/180.0, h[4]*np.pi/180.0, h[5]*np.pi/180.0)
+                    h = mt.abc2h(h[0], h[1], h[2], h[3] * np.pi / 180.0, h[4] * np.pi / 180.0, h[5] * np.pi / 180.0)
 
             h.shape = (9,)
             ibase.value = h
@@ -285,25 +287,25 @@ class InputInitializer(Input):
           will be.
     """
 
-    attribs = { "nbeads"    : (InputAttribute, {"dtype"     : int,
-                                         "help"      : "The number of beads. Will override any provision from inside the initializer. A ring polymer contraction scheme is used to scale down the number of beads if required. If instead the number of beads is scaled up, higher normal modes will be initialized to zero."})
-             }
+    attribs = {"nbeads": (InputAttribute, {"dtype": int,
+                                           "help": "The number of beads. Will override any provision from inside the initializer. A ring polymer contraction scheme is used to scale down the number of beads if required. If instead the number of beads is scaled up, higher normal modes will be initialized to zero."})
+               }
 
     dynamic = {
-            "positions"  : (InputInitPositions,  { "help" : "Initializes atomic positions. Will take a 'units' attribute of dimension 'length'"}),
-            "velocities" : (InputInitVelocities, { "help" : "Initializes atomic velocities. Will take a 'units' attribute of dimension 'velocity'" }),
-            "momenta"    : (InputInitMomenta,    { "help" : "Initializes atomic momenta. Will take a 'units' attribute of dimension 'momentum'" }),
-            "masses"     : (InputInitMasses,     { "help" : "Initializes atomic masses. Will take a 'units' attribute of dimension 'mass'" }),
-            "labels"     : (InputInitLabels,     { "help" : "Initializes atomic labels" }),
-            "cell"       : (InputInitCell,       { "help" : "Initializes the configuration of the cell. Will take a 'units' attribute of dimension 'length'" }),
-            "file"       : (InputInitFile,       { "help" : "Initializes everything possible for the given mode. Will take a 'units' attribute of dimension 'length'. The unit conversion will only be applied to the positions and cell parameters. The 'units' attribute is deprecated. Append a 'quantity{units}' to the comment line of the xyz or to the 'TITLE' tag of a pdb." }),
-            "gle"        : (InputInitThermo,     { "help" : "Initializes the additional momenta in a GLE thermostat." })
-             }
+        "positions": (InputInitPositions, {"help": "Initializes atomic positions. Will take a 'units' attribute of dimension 'length'"}),
+            "velocities": (InputInitVelocities, {"help": "Initializes atomic velocities. Will take a 'units' attribute of dimension 'velocity'"}),
+            "momenta": (InputInitMomenta, {"help": "Initializes atomic momenta. Will take a 'units' attribute of dimension 'momentum'"}),
+            "masses": (InputInitMasses, {"help": "Initializes atomic masses. Will take a 'units' attribute of dimension 'mass'"}),
+            "labels": (InputInitLabels, {"help": "Initializes atomic labels"}),
+            "cell": (InputInitCell, {"help": "Initializes the configuration of the cell. Will take a 'units' attribute of dimension 'length'"}),
+            "file": (InputInitFile, {"help": "Initializes everything possible for the given mode. Will take a 'units' attribute of dimension 'length'. The unit conversion will only be applied to the positions and cell parameters. The 'units' attribute is deprecated. Append a 'quantity{units}' to the comment line of the xyz or to the 'TITLE' tag of a pdb."}),
+            "gle": (InputInitThermo, {"help": "Initializes the additional momenta in a GLE thermostat."})
+    }
 
     default_help = "Specifies the number of beads, and how the system should be initialized."
     default_label = "INITIALIZER"
 
-    def write(self,  name="", indent=""):
+    def write(self, name="", indent=""):
         """Overloads Input write() function so that we never write out
         InputInitializer to restart files.
 
@@ -323,25 +325,25 @@ class InputInitializer(Input):
         self.extra = []
 
         for (k, el) in ii.queue:
-            if k == "positions" :
+            if k == "positions":
                 ip = InputInitPositions()
                 ip.store(el)
-            elif k == "velocities" :
+            elif k == "velocities":
                 ip = InputInitVelocities()
                 ip.store(el)
-            elif k == "momenta" :
+            elif k == "momenta":
                 ip = InputInitMomenta()
                 ip.store(el)
-            elif k == "masses" :
+            elif k == "masses":
                 ip = InputInitMasses()
                 ip.store(el)
-            elif k == "labels" :
+            elif k == "labels":
                 ip = InputInitLabels()
                 ip.store(el)
-            elif k == "cell" :
+            elif k == "cell":
                 ip = InputInitCell()
                 ip.store(el)
-            elif k == "gle" :
+            elif k == "gle":
                 ip = InputInitThermo()
                 ip.store(el)
             self.extra.append((k, ip))
@@ -355,28 +357,28 @@ class InputInitializer(Input):
            An initializer object.
         """
 
-        super(InputInitializer,self).fetch()
+        super(InputInitializer, self).fetch()
         initlist = []
-        for (k,v) in self.extra:
+        for (k, v) in self.extra:
             if v.mode.fetch() == "chk" and not v.fetch(initclass=ei.InitIndexed).units in ["", "automatic"]:
                 raise ValueError("Cannot specify units for initialization from a checkpoint file - units should be defined _inside_ the file.")
             if k == "file":
                 mode = v.mode.fetch()
                 if mode == "xyz" or mode == "manual" or mode == "pdb" or mode == "chk":
-                    initlist.append( ( "positions", v.fetch(initclass=ei.InitIndexed) ) )
+                    initlist.append(("positions", v.fetch(initclass=ei.InitIndexed)))
                 if mode == "xyz" or mode == "pdb" or mode == "chk":
                     rm = v.fetch(initclass=ei.InitIndexed)
                     rm.units = ""
-                    initlist.append( ( "masses",   rm ) )
-                    initlist.append( ( "labels",   v.fetch(initclass=ei.InitIndexed) ) )
+                    initlist.append(("masses", rm))
+                    initlist.append(("labels", v.fetch(initclass=ei.InitIndexed)))
                     rm = v.fetch(initclass=ei.InitIndexed)
                     rm.units = v.cell_units.fetch()
-                    initlist.append( ( "cell", rm ) )
+                    initlist.append(("cell", rm))
                 if mode == "chk":
                     rm = v.fetch(initclass=ei.InitIndexed)
                     rm.units = ""
-                    initlist.append( ( "momenta", rm ) )
+                    initlist.append(("momenta", rm))
             else:
-                initlist.append( (k, v.fetch()) )
+                initlist.append((k, v.fetch()))
 
-        return ei.Initializer(self.nbeads.fetch(), initlist )
+        return ei.Initializer(self.nbeads.fetch(), initlist)

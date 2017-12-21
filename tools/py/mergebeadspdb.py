@@ -13,7 +13,8 @@ Syntax:
 
 
 import numpy as np
-import sys, glob
+import sys
+import glob
 from ipi.utils.io import read_file, print_file_path
 from ipi.engine.beads import Beads
 from ipi.engine.cell import Cell
@@ -26,11 +27,11 @@ verbosity.level = "low"
 
 def main(prefix, suffix="pos", unitconv="1.0"):
 
-    ipos=[]
-    imode=[]
-    for filename in sorted(glob.glob(prefix+"."+suffix+"*")):
+    ipos = []
+    imode = []
+    for filename in sorted(glob.glob(prefix + "." + suffix + "*")):
         imode.append(filename.split(".")[-1])
-        ipos.append(open(filename,"r"))
+        ipos.append(open(filename, "r"))
 
     nbeads = len(ipos)
     natoms = 0
@@ -43,15 +44,15 @@ def main(prefix, suffix="pos", unitconv="1.0"):
                 cell = ret["cell"]
                 if natoms == 0:
                     natoms = pos.natoms
-                    beads = Beads(natoms,nbeads)
+                    beads = Beads(natoms, nbeads)
                 cell.h *= float(unitconv)
-                beads[i].q = pos.q*float(unitconv)
+                beads[i].q = pos.q * float(unitconv)
                 beads.names = pos.names
-        except EOFError: # finished reading files
+        except EOFError:  # finished reading files
             sys.exit(0)
 
         print_file_path("pdb", beads, cell)
-        ifr+=1
+        ifr += 1
 
 
 if __name__ == '__main__':

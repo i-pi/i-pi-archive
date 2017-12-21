@@ -26,7 +26,10 @@ Currently supported energy units are: atomic_unit, electronvolt, j/mol, cal/mol,
 """
 
 import numpy as np
-import sys, glob, os, re
+import sys
+import glob
+import os
+import re
 
 from ipi.utils.units import unit_to_internal, unit_to_user, Constants
 from ipi.utils.io import read_file
@@ -47,13 +50,13 @@ def potentialEnergy(prefix, temp, ss=0, unit=''):
         print('WARNING: No compiled fortran module for fast calculations have been found.\n'
               'Calculations will use a slower python script.')
 
-    temperature = unit_to_internal("temperature", "kelvin", float(temp)) # simulation temperature
+    temperature = unit_to_internal("temperature", "kelvin", float(temp))  # simulation temperature
     skipSteps = int(ss)                                                  # steps to skip for thermalization
 
-    f2_av, U_av, f2U_av  = 0.0, 0.0, 0.0 # some required sums
+    f2_av, U_av, f2U_av = 0.0, 0.0, 0.0  # some required sums
 
     fns_for = sorted(glob.glob(prefix + ".for*"))
-    fns_iU = glob.glob(prefix+".out")[0]
+    fns_iU = glob.glob(prefix + ".out")[0]
     fn_out_en = prefix + ".potential_energy.dat"
 
     # Extracting the number of beads
@@ -80,11 +83,10 @@ def potentialEnergy(prefix, temp, ss=0, unit=''):
     iE = open(fn_out_en, "w")
 
     # Some constants
-    beta = 1.0/(Constants.kb*temperature)
-    const = Constants.hbar**2*beta**2/(24.0*nbeads**3)
+    beta = 1.0 / (Constants.kb * temperature)
+    const = Constants.hbar**2 * beta**2 / (24.0 * nbeads**3)
 
-
-    timeUnit, potentialEnergyUnit, potentialEnergy_index, time_index = extractUnits(iU) # extracting simulation time
+    timeUnit, potentialEnergyUnit, potentialEnergy_index, time_index = extractUnits(iU)  # extracting simulation time
     # and potential energy units
 
     # Defining the output energy unit
@@ -109,10 +111,10 @@ def potentialEnergy(prefix, temp, ss=0, unit=''):
                 ret = read_file("xyz", ifor[i], output='arrays')
                 if natoms == 0:
                     m, natoms = ret["masses"], ret["natoms"]
-                    f = np.zeros((nbeads, 3*natoms))
+                    f = np.zeros((nbeads, 3 * natoms))
                 f[i, :] = ret["data"]
             U, time = read_U(iU, potentialEnergyUnit, potentialEnergy_index, time_index)
-        except EOFError: # finished reading files
+        except EOFError:  # finished reading files
             sys.exit(0)
 
         if ifr < skipSteps:
@@ -129,23 +131,23 @@ def potentialEnergy(prefix, temp, ss=0, unit=''):
 
                 for j in range(nbeads):
                     for i in range(natoms):
-                        f2 += np.dot(f[j,i*3:i*3+3],f[j,i*3:i*3+3])/m[i]
+                        f2 += np.dot(f[j, i * 3:i * 3 + 3], f[j, i * 3:i * 3 + 3]) / m[i]
 
             else:
                 f2 = fortran.f2divm(np.array(f, order='F'), np.array(m, order='F'), natoms, nbeads)
 
             U_av += U
             f2_av += f2
-            f2U_av += f2*U
+            f2U_av += f2 * U
             ifr += 1
 
-            norm = float(ifr-skipSteps)
+            norm = float(ifr - skipSteps)
 
-            dU = 2.0*f2_av/norm - beta*(f2U_av/norm - f2_av*U_av/norm**2)
+            dU = 2.0 * f2_av / norm - beta * (f2U_av / norm - f2_av * U_av / norm**2)
             dU *= const
 
             dU = unit_to_user("energy", unit, dU)
-            U = unit_to_user("energy", unit, U_av/float(ifr-skipSteps))
+            U = unit_to_user("energy", unit, U_av / float(ifr - skipSteps))
 
             iE.write("%f    %f     %f\n" % (time, U, dU))
 

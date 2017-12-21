@@ -19,7 +19,8 @@ from ipi.utils.units import Elements
 
 __all__ = ['print_xyz_path', 'print_xyz', 'read_xyz', 'iter_xyz']
 
-deg2rad = np.pi/180.0
+deg2rad = np.pi / 180.0
+
 
 def print_xyz_path(beads, cell, filedesc=sys.stdout, cell_conv=1.0, atoms_conv=1.0):
     """Prints all the bead configurations into a XYZ formatted file.
@@ -43,7 +44,7 @@ def print_xyz_path(beads, cell, filedesc=sys.stdout, cell_conv=1.0, atoms_conv=1
         for i in range(natoms):
             qs = depstrip(beads.q) * atoms_conv
             lab = depstrip(beads.names)
-            filedesc.write("%8s %12.5e %12.5e %12.5e\n" % (lab[i], qs[j][3*i], qs[j][3*i+1], qs[j][3*i+2]))
+            filedesc.write("%8s %12.5e %12.5e %12.5e\n" % (lab[i], qs[j][3 * i], qs[j][3 * i + 1], qs[j][3 * i + 2]))
 
 
 def print_xyz(atoms, cell, filedesc=sys.stdout, title="", cell_conv=1.0, atoms_conv=1.0):
@@ -65,13 +66,14 @@ def print_xyz(atoms, cell, filedesc=sys.stdout, title="", cell_conv=1.0, atoms_c
     qs = depstrip(atoms.q) * atoms_conv
     lab = depstrip(atoms.names)
     for i in range(natoms):
-        filedesc.write("%8s %12.5e %12.5e %12.5e\n" % (lab[i], qs[3*i], qs[3*i+1], qs[3*i+2]))
+        filedesc.write("%8s %12.5e %12.5e %12.5e\n" % (lab[i], qs[3 * i], qs[3 * i + 1], qs[3 * i + 2]))
 
 
 # Cell type patterns
 cell_re = [re.compile('CELL[\(\[\{]abcABC[\)\]\}]: ([-+0-9\.Ee ]*)\s*'),
            re.compile('CELL[\(\[\{]GENH[\)\]\}]: ([-+0-9\.?Ee ]*)\s*'),
            re.compile('CELL[\(\[\{]H[\)\]\}]: ([-+0-9\.?Ee ]*)\s*')]
+
 
 def read_xyz(filedesc):
     """Reads an XYZ-style file with i-PI style comments and returns data in raw format for further units transformation
@@ -95,26 +97,26 @@ def read_xyz(filedesc):
     cell = [key.search(comment) for key in cell_re]
     usegenh = False
     if cell[0] is not None:    # abcABC
-        a, b, c  = [float(x) for x in cell[0].group(1).split()[:3]]
+        a, b, c = [float(x) for x in cell[0].group(1).split()[:3]]
         alpha, beta, gamma = [float(x) * deg2rad
                               for x in cell[0].group(1).split()[3:6]]
         h = mt.abc2h(a, b, c, alpha, beta, gamma)
     elif cell[1] is not None:  # GENH
         h = np.array(cell[1].group(1).split()[:9], float)
-        h.resize((3,3))
+        h.resize((3, 3))
     elif cell[2] is not None:  # H
         genh = np.array(cell[2].group(1).split()[:9], float)
-        genh.resize((3,3))
+        genh.resize((3, 3))
         invgenh = np.linalg.inv(genh)
         # convert back & forth from abcABC representation to get an upper triangular h
         h = mt.abc2h(*mt.genh2abc(genh))
         usegenh = True
     else:                     # defaults to unit box
-        h = np.array([[-1.0, 0.0, 0.0],[0.0, -1.0, 0.0],[0.0, 0.0, -1.0]])
+        h = np.array([[-1.0, 0.0, 0.0], [0.0, -1.0, 0.0], [0.0, 0.0, -1.0]])
     cell = h
 
-    qatoms = np.zeros(3*natoms)
-    names = np.zeros(natoms,dtype='|S4')
+    qatoms = np.zeros(3 * natoms)
+    names = np.zeros(natoms, dtype='|S4')
     masses = np.zeros(natoms)
 
     # Extracting a time-frame information
@@ -127,16 +129,15 @@ def read_xyz(filedesc):
         # TODO: The following in matrices would use vectorial computaiton
         if usegenh:
             # must convert from the input cell parameters to the internal convention
-            u = np.array([x,y,z])
+            u = np.array([x, y, z])
             us = np.dot(u, invgenh)
             u = np.dot(h, us)
             x, y, z = u
 
-        qatoms[3*iat], qatoms[3*iat+1], qatoms[3*iat+2] = x, y, z
-        atom_counter +=1
+        qatoms[3 * iat], qatoms[3 * iat + 1], qatoms[3 * iat + 2] = x, y, z
+        atom_counter += 1
         if atom_counter == natoms:
             break
-
 
     if natoms != len(names):
         raise ValueError("The number of atom records does not match the header of the xyz file.")

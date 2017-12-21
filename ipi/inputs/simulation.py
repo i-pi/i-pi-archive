@@ -13,9 +13,9 @@ import numpy as np
 
 from ipi.utils.depend import *
 from ipi.utils.inputvalue import *
-from ipi.utils.units  import *
-from ipi.utils.prng   import *
-from ipi.utils.io     import *
+from ipi.utils.units import *
+from ipi.utils.prng import *
+from ipi.utils.io import *
 from ipi.utils.io.inputs.io_xml import *
 from ipi.utils.messages import verbosity
 from ipi.engine.paratemp import ParaTemp
@@ -58,41 +58,41 @@ class InputSimulation(Input):
     """
 
     fields = {
-              "prng" :    (InputRandom,   { "help"  : InputRandom.default_help,
-                                          "default" : input_default(factory=Random)} ),
-              "output" :  (ioutputs.InputOutputs, { "help"   : ioutputs.InputOutputs.default_help,
-                                           "default": input_default(factory=ioutputs.InputOutputs.make_default)  }),
-              "step" :       ( InputValue, { "dtype"    : int,
-                                             "default"  : 0,
-                                             "help"     : "The current simulation time step." }),
-              "total_steps": ( InputValue, { "dtype"    : int,
-                                             "default"  : 1000,
-                                             "help"     : "The total number of steps that will be done. If 'step' is equal to or greater than 'total_steps', then the simulation will finish." }),
-              "total_time" :       ( InputValue, { "dtype"    : float,
-                                             "default"  : 0,
-                                             "help"     : "The maximum wall clock time (in seconds)." }),
-              "paratemp" : (InputParaTemp, {"default"   : input_default(factory=ParaTemp),
-                                          "help"      : "Options for a parallel tempering simulation"})
-             }
+        "prng": (InputRandom, {"help": InputRandom.default_help,
+                               "default": input_default(factory=Random)}),
+              "output": (ioutputs.InputOutputs, {"help": ioutputs.InputOutputs.default_help,
+                                                 "default": input_default(factory=ioutputs.InputOutputs.make_default)}),
+              "step": (InputValue, {"dtype": int,
+                                    "default": 0,
+                                    "help": "The current simulation time step."}),
+              "total_steps": (InputValue, {"dtype": int,
+                                           "default": 1000,
+                                           "help": "The total number of steps that will be done. If 'step' is equal to or greater than 'total_steps', then the simulation will finish."}),
+              "total_time": (InputValue, {"dtype": float,
+                                          "default": 0,
+                                          "help": "The maximum wall clock time (in seconds)."}),
+              "paratemp": (InputParaTemp, {"default": input_default(factory=ParaTemp),
+                                           "help": "Options for a parallel tempering simulation"})
+    }
 
-    attribs = { "verbosity" : (InputAttribute, { "dtype"   : str,
-                                       "default" : "low",
-                                       "options" : [ "quiet", "low", "medium", "high", "debug" ],
-                                       "help"    : "The level of output on stdout."
-                                          }),
-                "mode"  : (InputAttribute, {"dtype"   : str,
-                                     "default" : "md",
-                                     "help"    : "What kind of simulation should be run.",
-                                     "options" : ['md', 'paratemp', 'static']})
-              }
+    attribs = {"verbosity": (InputAttribute, {"dtype": str,
+                                              "default": "low",
+                                              "options": ["quiet", "low", "medium", "high", "debug"],
+                                              "help": "The level of output on stdout."
+                                              }),
+               "mode": (InputAttribute, {"dtype": str,
+                                         "default": "md",
+                                         "help": "What kind of simulation should be run.",
+                                         "options": ['md', 'paratemp', 'static']})
+               }
 
     dynamic = {
-              "system" :   (InputSystem,    { "help"  : InputSystem.default_help }),
-              "ffsocket": (iforcefields.InputFFSocket, { "help": iforcefields.InputFFSocket.default_help} ),
-              "fflj": (iforcefields.InputFFLennardJones, { "help": iforcefields.InputFFLennardJones.default_help} ),
-              "ffdebye": (iforcefields.InputFFDebye, { "help": iforcefields.InputFFDebye.default_help} ),
-              "ffyaff": (iforcefields.InputFFYaff, { "help": iforcefields.InputFFYaff.default_help} )
-              }
+        "system": (InputSystem, {"help": InputSystem.default_help}),
+              "ffsocket": (iforcefields.InputFFSocket, {"help": iforcefields.InputFFSocket.default_help}),
+              "fflj": (iforcefields.InputFFLennardJones, {"help": iforcefields.InputFFLennardJones.default_help}),
+              "ffdebye": (iforcefields.InputFFDebye, {"help": iforcefields.InputFFDebye.default_help}),
+              "ffyaff": (iforcefields.InputFFYaff, {"help": iforcefields.InputFFYaff.default_help})
+    }
 
     default_help = "This is the top level class that deals with the running of the simulation, including holding the simulation specific properties such as the time step and outputting the data."
     default_label = "SIMULATION"
@@ -104,8 +104,7 @@ class InputSimulation(Input):
            simul: A simulation object.
         """
 
-        super(InputSimulation,self).store()
-
+        super(InputSimulation, self).store()
 
         self.output.store(simul.outtemplate)
         self.prng.store(simul.prng)
@@ -134,29 +133,28 @@ class InputSimulation(Input):
         self.extra = []
 
         for fname in simul.fflist:
-            ff=simul.fflist[fname]
+            ff = simul.fflist[fname]
             if type(ff) is eforcefields.FFSocket:
                 iff = iforcefields.InputFFSocket()
                 iff.store(ff)
-                self.extra.append(("ffsocket",iff))
+                self.extra.append(("ffsocket", iff))
             elif type(ff) is eforcefields.FFLennardJones:
                 iff = iforcefields.InputFFLennardJones()
                 iff.store(ff)
-                self.extra.append(("fflj",iff))
+                self.extra.append(("fflj", iff))
             elif type(ff) is eforcefields.FFDebye:
                 iff = iforcefields.InputFFDebye()
                 iff.store(ff)
-                self.extra.append(("ffdebye",iff))
+                self.extra.append(("ffdebye", iff))
             elif type(ff) is eforcefields.FFYaff:
                 iff = iforcefields.InputFFYaff()
                 iff.store(ff)
-                self.extra.append(("ffyaff",iff))
+                self.extra.append(("ffyaff", iff))
 
         for s in simul.syslist:
             isys = InputSystem()
             isys.store(s)
-            self.extra.append(("system",isys))
-
+            self.extra.append(("system", isys))
 
     def fetch(self):
         """Creates a simulation object.
@@ -171,20 +169,20 @@ class InputSimulation(Input):
               is incorrect.
         """
 
-        super(InputSimulation,self).fetch()
+        super(InputSimulation, self).fetch()
 
         # small hack: initialize here the verbosity level -- we really assume to have
         # just one simulation object
-        verbosity.level=self.verbosity.fetch()
+        verbosity.level = self.verbosity.fetch()
 
-        syslist=[]
-        fflist=[]
-        for (k,v) in self.extra:
+        syslist = []
+        fflist = []
+        for (k, v) in self.extra:
             if k == "system":
-                for isys in range(v.copies.fetch()): # creates multiple copies of system if desired
+                for isys in range(v.copies.fetch()):  # creates multiple copies of system if desired
                     syslist.append(v.fetch())
                     if (v.copies.fetch() > 1):
-                        syslist[-1].prefix = syslist[-1].prefix + ( ("%0" + str(int(1 + np.floor(np.log(v.copies.fetch())/np.log(10)))) + "d") % (isys) )
+                        syslist[-1].prefix = syslist[-1].prefix + (("%0" + str(int(1 + np.floor(np.log(v.copies.fetch()) / np.log(10)))) + "d") % (isys))
             elif k == "ffsocket":
                 fflist.append(v.fetch())
             elif k == "fflj":
@@ -197,14 +195,14 @@ class InputSimulation(Input):
         # this creates a simulation object which gathers all the little bits
         import ipi.engine.simulation as esimulation   # import here as otherwise this is the mother of all circular imports...
         rsim = esimulation.Simulation(
-                    mode = self.mode.fetch(),
-                    syslist = syslist,
-                    fflist = fflist,
-                    outputs = self.output.fetch(),
-                    prng = self.prng.fetch(),
-                    paratemp = self.paratemp.fetch(),
-                    step = self.step.fetch(),
-                    tsteps = self.total_steps.fetch(),
-                    ttime = self.total_time.fetch())
+            mode=self.mode.fetch(),
+            syslist=syslist,
+            fflist=fflist,
+            outputs=self.output.fetch(),
+            prng=self.prng.fetch(),
+            paratemp=self.paratemp.fetch(),
+            step=self.step.fetch(),
+            tsteps=self.total_steps.fetch(),
+            ttime=self.total_time.fetch())
 
         return rsim

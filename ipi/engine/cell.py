@@ -41,15 +41,15 @@ class Cell(dobject):
         """
 
         if h is None:
-            h = np.zeros((3,3), float)
+            h = np.zeros((3, 3), float)
 
-        dself = dd(self) # gets a direct-access view to self
+        dself = dd(self)  # gets a direct-access view to self
 
         dself.h = depend_array(name='h', value=h)
-        dself.ih = depend_array(name="ih", value=np.zeros((3,3),float),
-              func=self.get_ih, dependencies=[dself.h])
+        dself.ih = depend_array(name="ih", value=np.zeros((3, 3), float),
+                                func=self.get_ih, dependencies=[dself.h])
         dself.V = depend_value(name='V', func=self.get_volume,
-              dependencies=[dself.h])
+                               dependencies=[dself.h])
 
     def copy(self):
         return Cell(depstrip(self.h).copy())
@@ -76,13 +76,12 @@ class Cell(dobject):
            system box.
         """
 
-        s = np.dot(self.ih,atom.q)
-
+        s = np.dot(self.ih, atom.q)
 
         for i in range(3):
             s[i] = s[i] - round(s[i])
 
-        return np.dot(self.h,s)
+        return np.dot(self.h, s)
 
     def array_pbc(self, pos):
         """Uses the minimum image convention to return a list of particles to the
@@ -97,14 +96,14 @@ class Cell(dobject):
         """
 
         s = depstrip(pos).copy()
-        s.shape = (len(pos)/3,3)
+        s.shape = (len(pos) / 3, 3)
 
-        s = np.dot(depstrip(self.ih),s.T)
+        s = np.dot(depstrip(self.ih), s.T)
         s = s - np.round(s)
 
-        s = np.dot(depstrip(self.h),s).T
+        s = np.dot(depstrip(self.h), s).T
 
-        pos[:] = s.reshape((len(s)*3))
+        pos[:] = s.reshape((len(s) * 3))
 
     def minimum_distance(self, atom1, atom2):
         """Takes two atoms and tries to find the smallest vector between two
@@ -124,7 +123,7 @@ class Cell(dobject):
            atom1 and atom2 in the minimum image convention.
         """
 
-        s = np.dot(self.ih,atom1.q-atom2.q)
+        s = np.dot(self.ih, atom1.q - atom2.q)
         for i in range(3):
             s[i] -= round(s[i])
         return np.dot(self.h, s)

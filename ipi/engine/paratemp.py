@@ -51,17 +51,17 @@ class ParaTemp(dobject):
         self.stride = stride
         if tlist is None:
             tlist = []
-        if ilist is None or len(ilist)==0:
+        if ilist is None or len(ilist) == 0:
             ilist = range(len(tlist))   # defaults to normal ordering of temperatures
 
-        if len(ilist)!= len(tlist):
+        if len(ilist) != len(tlist):
             raise ValueError("Temperature list and index list have mismatching sizes.")
 
-        dset(self, "temp_index",depend_array(name="temp_index", value=np.asarray(ilist, int).copy()) )
+        dset(self, "temp_index", depend_array(name="temp_index", value=np.asarray(ilist, int).copy()))
         self.temp_list = np.asarray(tlist, float).copy()
 
-        dset(self,"system_temp",depend_array(name="system_temp", value=np.asarray(tlist).copy(), func=self.get_stemp,
-                    dependencies=[dget(self,"temp_index")]))
+        dset(self, "system_temp", depend_array(name="system_temp", value=np.asarray(tlist).copy(), func=self.get_stemp,
+                                               dependencies=[dget(self, "temp_index")]))
 
         self.parafile = None
 
@@ -70,9 +70,9 @@ class ParaTemp(dobject):
 
         """
 
-        self.prng=prng
+        self.prng = prng
         self.slist = slist
-        if len(slist)!=len(self.temp_list):
+        if len(slist) != len(self.temp_list):
             raise ValueError("Number of systems does not match size of list of temperatures.")
 
         # now makes sure that the temperatures of the ensembles of the systems are
@@ -80,27 +80,27 @@ class ParaTemp(dobject):
         def make_tempgetter(k):
             return lambda: self.system_temp[k]
 
-        isys=0
+        isys = 0
         for s in self.slist:
-            dget(s.ensemble,"temp").add_dependency(dget(self,"system_temp"))
-            dget(s.ensemble,"temp")._func = make_tempgetter(isys)
-            isys+=1
+            dget(s.ensemble, "temp").add_dependency(dget(self, "system_temp"))
+            dget(s.ensemble, "temp")._func = make_tempgetter(isys)
+            isys += 1
 
-        self.parafile=open("PARATEMP", "a")
+        self.parafile = open("PARATEMP", "a")
 
     def get_stemp(self):
         """ Returns the temperatures of the various systems. """
 
-        return np.asarray([ self.temp_list[self.temp_index[i]] for i in range(len(self.temp_list))])
+        return np.asarray([self.temp_list[self.temp_index[i]] for i in range(len(self.temp_list))])
 
     def swap(self, step=-1):
         """ Tries a PT swap move. """
 
         if self.stride <= 0.0: return
 
-        syspot  = [ s.forces.pot for s in self.slist ]
+        syspot = [s.forces.pot for s in self.slist]
         # spring potential in a form that can be easily used further down (no temperature included!)
-        syspath = [ s.beads.vpath/Constants.hbar**2 for s in self.slist ]
+        syspath = [s.beads.vpath / Constants.hbar**2 for s in self.slist]
 
         # tries exchanges. note that we don't just exchange neighbouring replicas but try all pairs
         # 1. since this can in principle speed up diffusion by allowing "double jumps"
@@ -108,41 +108,39 @@ class ParaTemp(dobject):
         #    and re-sorting would be more bookkeeping I can stand.
         for i in range(len(self.slist)):
             for j in range(i):
-                if (1.0/self.stride < self.prng.u) : continue  # tries a swap with probability 1/stride
+                if (1.0 / self.stride < self.prng.u): continue  # tries a swap with probability 1/stride
                 # ALL SYSTEMS ARE EXPECTED TO HAVE SAME N OF BEADS!
-                betai = 1.0/(Constants.kb*self.system_temp[i]*self.slist[i].beads.nbeads); # exchanges are being done, so it is better to re-compute betai in the inner loop
-                betaj = 1.0/(Constants.kb*self.system_temp[j]*self.slist[j].beads.nbeads);
-
+                betai = 1.0 / (Constants.kb * self.system_temp[i] * self.slist[i].beads.nbeads);  # exchanges are being done, so it is better to re-compute betai in the inner loop
+                betaj = 1.0 / (Constants.kb * self.system_temp[j] * self.slist[j].beads.nbeads);
 
                 pxc = np.exp(
-                  (betai * syspot[i] + syspath[i]/betai +
-                   betaj * syspot[j] + syspath[j]/betaj) -
-                  (betai * syspot[j] + syspath[j]/betai +
-                   betaj * syspot[i] + syspath[i]/betaj)
-                  )
+                    (betai * syspot[i] + syspath[i] / betai +
+                     betaj * syspot[j] + syspath[j] / betaj) -
+                  (betai * syspot[j] + syspath[j] / betai +
+                        betaj * syspot[i] + syspath[i] / betaj)
+                )
 
-                if (pxc > self.prng.u): # really does the exchange
-                    info(" @ PT:  SWAPPING replicas % 5d and % 5d." % (i,j), verbosity.low)
+                if (pxc > self.prng.u):  # really does the exchange
+                    info(" @ PT:  SWAPPING replicas % 5d and % 5d." % (i, j), verbosity.low)
                     # adjusts the conserved quantities
                     # change in kinetic energy
-                    self.slist[i].ensemble.eens += self.slist[i].nm.kin *(1.0- (betai/betaj))
-                    self.slist[j].ensemble.eens += self.slist[j].nm.kin *(1.0- (betaj/betai))
+                    self.slist[i].ensemble.eens += self.slist[i].nm.kin * (1.0 - (betai / betaj))
+                    self.slist[j].ensemble.eens += self.slist[j].nm.kin * (1.0 - (betaj / betai))
                     # change in spring energy
-                    self.slist[i].ensemble.eens += syspath[i]*(1.0/betai**2- 1.0/betaj**2)
-                    self.slist[j].ensemble.eens += syspath[j]*(1.0/betaj**2- 1.0/betai**2)
+                    self.slist[i].ensemble.eens += syspath[i] * (1.0 / betai**2 - 1.0 / betaj**2)
+                    self.slist[j].ensemble.eens += syspath[j] * (1.0 / betaj**2 - 1.0 / betai**2)
 
                     # adjusts the momenta
-                    self.slist[i].beads.p *= np.sqrt(betai/betaj)
-                    self.slist[j].beads.p *= np.sqrt(betaj/betai)
+                    self.slist[i].beads.p *= np.sqrt(betai / betaj)
+                    self.slist[j].beads.p *= np.sqrt(betaj / betai)
 
                     # if there are GLE thermostats around, we must also rescale the s momenta!
                     # should also check the barostat thermostat, but we don't do NPT replica exchange yet so whatever.
-                    if hasattr(self.slist[i].ensemble.thermostat,"s"):
-                        self.slist[i].ensemble.thermostat.s *= np.sqrt(betai/betaj)
-                        self.slist[j].ensemble.thermostat.s *= np.sqrt(betaj/betai)
+                    if hasattr(self.slist[i].ensemble.thermostat, "s"):
+                        self.slist[i].ensemble.thermostat.s *= np.sqrt(betai / betaj)
+                        self.slist[j].ensemble.thermostat.s *= np.sqrt(betaj / betai)
 
-                    swp=self.temp_index[j];  self.temp_index[j]=self.temp_index[i];  self.temp_index[i]=swp
-
+                    swp = self.temp_index[j]; self.temp_index[j] = self.temp_index[i]; self.temp_index[i] = swp
 
     def softexit(self):
         if not self.parafile is None:

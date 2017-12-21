@@ -13,13 +13,14 @@ import numpy.testing as npt
 
 
 test_data = [
-    (1, 1, 'asdasd positions{angstrom}  100 aaa cell{angstrom} asdasd ', 1.8897261, 1.8897261 ),
-    (5, 1, 'asdasd positions{angstrom}  100 aaa cell{angstrom} asdasd ', 1.8897261, 1.8897261 ),
-    (1, 1, 'asdasd positions{atomic_units}  100 aaa cell{angstrom} asdasd ', 1.0, 1.8897261 ),
-    (1, 1, 'asdasd positions{atomic_units}  100 aaa cell{atomic_units} asdasd ', 1.0, 1.0 ),
-    (1, 1, 'asdasd positions{atomic_units}  100 aaa cell{meter} asdasd ', 1.0, 1.8897261e+10 ),
+    (1, 1, 'asdasd positions{angstrom}  100 aaa cell{angstrom} asdasd ', 1.8897261, 1.8897261),
+    (5, 1, 'asdasd positions{angstrom}  100 aaa cell{angstrom} asdasd ', 1.8897261, 1.8897261),
+    (1, 1, 'asdasd positions{atomic_units}  100 aaa cell{angstrom} asdasd ', 1.0, 1.8897261),
+    (1, 1, 'asdasd positions{atomic_units}  100 aaa cell{atomic_units} asdasd ', 1.0, 1.0),
+    (1, 1, 'asdasd positions{atomic_units}  100 aaa cell{meter} asdasd ', 1.0, 1.8897261e+10),
 
 ]
+
 
 @pytest.fixture(params=test_data)
 def units_preparation(request):
@@ -34,7 +35,7 @@ def test_process_units_noobj(units_preparation):
     filedesc, xyz, atom_names = xyz_gen.xyz_traj_filedesc(natoms,
                                                           frames, comment)
 
-    cell = mt.abc2h(1.0, 1.0, 1.0, np.pi/2.0, np.pi/2.0, np.pi/2.0)
+    cell = mt.abc2h(1.0, 1.0, 1.0, np.pi / 2.0, np.pi / 2.0, np.pi / 2.0)
 
     masses = []
     _count = 0
@@ -48,7 +49,7 @@ def test_process_units_noobj(units_preparation):
     type(masses)
     res = testing.process_units(comment, cell.copy(), xyz.copy(), np.array(atom_names).copy(), np.array(masses).copy(), output=output)
 
-    print xyz,res['data']
+    print xyz, res['data']
     npt.assert_array_almost_equal(res['data'], xyz * conver_xyz, 5)
     npt.assert_array_almost_equal(res['masses'], masses, 5)
     npt.assert_array_almost_equal(res['cell'], cell * conver_cell, 5)
@@ -64,7 +65,7 @@ def test_process_units_object(units_preparation):
     filedesc, xyz, atom_names = xyz_gen.xyz_traj_filedesc(natoms,
                                                           frames, comment)
 
-    cell = mt.abc2h(1.0, 1.0, 1.0, np.pi/2.0, np.pi/2.0, np.pi/2.0)
+    cell = mt.abc2h(1.0, 1.0, 1.0, np.pi / 2.0, np.pi / 2.0, np.pi / 2.0)
 
     masses = []
     _count = 0

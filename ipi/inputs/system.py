@@ -13,9 +13,9 @@ import numpy as np
 import ipi.engine.system
 from ipi.utils.depend import *
 from ipi.utils.inputvalue import *
-from ipi.utils.units  import *
-from ipi.utils.prng   import *
-from ipi.utils.io     import *
+from ipi.utils.units import *
+from ipi.utils.prng import *
+from ipi.utils.io import *
 from ipi.utils.io.inputs.io_xml import *
 from ipi.utils.messages import verbosity
 from ipi.inputs.forces import InputForces
@@ -60,25 +60,25 @@ class InputSystem(Input):
     """
 
     fields = {
-              "initialize" : (InputInitializer, { "help" : InputInitializer.default_help,
-                                                 "default" : input_default(factory=Initializer) } ),
-              "forces" :   (InputForces,    { "help"  : InputForces.default_help }),
-              "bias" :   (InputForces,    { "help"  : InputForces.default_help,
-                                            "default" : [] }),
-              "ensemble": (InputEnsemble, { "help"  : InputEnsemble.default_help ,
-                              "default" : input_default(factory=Ensemble, kwargs={'temp':1.0})} ),
-              "motion": (InputMotion, { "help"  : InputMotion.default_help, "default" : input_default(factory=Motion) } ),
-              "beads" :   (InputBeads, { "help"     : InputBeads.default_help,
-                                         "default"  : input_default(factory=Beads, kwargs={'natoms': 0, 'nbeads': 0}) } ),
-              "normal_modes" :   (InputNormalModes, { "help"     : InputNormalModes.default_help,
-                                         "default"  : input_default(factory=NormalModes, kwargs={'mode': "rpmd"}) } ),
-              "cell" :    (InputCell,   { "help"    : InputCell.default_help,
-                                         "default"  : input_default(factory=Cell) })
-              }
+        "initialize": (InputInitializer, {"help": InputInitializer.default_help,
+                                          "default": input_default(factory=Initializer)}),
+              "forces": (InputForces, {"help": InputForces.default_help}),
+              "bias": (InputForces, {"help": InputForces.default_help,
+                                     "default": []}),
+              "ensemble": (InputEnsemble, {"help": InputEnsemble.default_help,
+                                           "default": input_default(factory=Ensemble, kwargs={'temp': 1.0})}),
+              "motion": (InputMotion, {"help": InputMotion.default_help, "default": input_default(factory=Motion)}),
+              "beads": (InputBeads, {"help": InputBeads.default_help,
+                                     "default": input_default(factory=Beads, kwargs={'natoms': 0, 'nbeads': 0})}),
+              "normal_modes": (InputNormalModes, {"help": InputNormalModes.default_help,
+                                                  "default": input_default(factory=NormalModes, kwargs={'mode': "rpmd"})}),
+              "cell": (InputCell, {"help": InputCell.default_help,
+                                   "default": input_default(factory=Cell)})
+    }
 
     attribs = {
-     "copies": (InputAttribute, {"help" : "Create multiple copies of the system. This is handy for initialising simulations with multiple systems.", "default": 1, "dtype": int}) ,
-     "prefix": (InputAttribute, {"help" : "Prepend this string to output files generated for this system. If 'copies' is greater than 1, a trailing number will be appended.", "default": "", "dtype": str})
+        "copies": (InputAttribute, {"help": "Create multiple copies of the system. This is handy for initialising simulations with multiple systems.", "default": 1, "dtype": int}),
+     "prefix": (InputAttribute, {"help": "Prepend this string to output files generated for this system. If 'copies' is greater than 1, a trailing number will be appended.", "default": "", "dtype": str})
     }
 
     default_help = "This is the class which holds all the data which represents a single state of the system."
@@ -91,7 +91,7 @@ class InputSystem(Input):
            psys: A physical system object.
         """
 
-        super(InputSystem,self).store()
+        super(InputSystem, self).store()
 
         self.prefix.store(psys.prefix)
         self.forces.store(psys.fcomp)
@@ -115,19 +115,19 @@ class InputSystem(Input):
               is incorrect.
         """
 
-        super(InputSystem,self).fetch()
+        super(InputSystem, self).fetch()
 
         # this creates a simulation object which gathers all the little bits
-        #TODO use named arguments since this list is a bit too long...
-        rsys = ipi.engine.system.System( init = self.initialize.fetch(),
-                                         beads = self.beads.fetch(),
-                                         nm = self.normal_modes.fetch(),
-                                         cell = self.cell.fetch(),
-                                         fcomponents = self.forces.fetch(),
-                                         bcomponents = self.bias.fetch(),
-                                         ensemble = self.ensemble.fetch(),
-                                         motion = self.motion.fetch(),
-                                         prefix = self.prefix.fetch()
-                                         )
+        # TODO use named arguments since this list is a bit too long...
+        rsys = ipi.engine.system.System(init=self.initialize.fetch(),
+                                        beads=self.beads.fetch(),
+                                        nm=self.normal_modes.fetch(),
+                                        cell=self.cell.fetch(),
+                                        fcomponents=self.forces.fetch(),
+                                        bcomponents=self.bias.fetch(),
+                                        ensemble=self.ensemble.fetch(),
+                                        motion=self.motion.fetch(),
+                                        prefix=self.prefix.fetch()
+                                        )
 
         return rsys

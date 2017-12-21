@@ -38,6 +38,7 @@ from ipi.utils.units import *
 
 __all__ = ['InputMotion']
 
+
 class InputMotionBase(Input):
     """Motion calculation input class.
 
@@ -53,31 +54,31 @@ class InputMotionBase(Input):
 
     """
 
-    attribs={"mode"  : (InputAttribute, {"dtype"   : str,
-                                     "help"    : "How atoms should be moved at each step in the simulatio. 'replay' means that a simulation is restarted from a previous simulation.",
-                                     "options" : ['vibrations', 'minimize', 'replay', 'neb', 'dynamics', 'alchemy', 'dummy']}) }
+    attribs = {"mode": (InputAttribute, {"dtype": str,
+                                         "help": "How atoms should be moved at each step in the simulatio. 'replay' means that a simulation is restarted from a previous simulation.",
+                                         "options": ['vibrations', 'minimize', 'replay', 'neb', 'dynamics', 'alchemy', 'dummy']})}
 
-    fields={"fixcom": (InputValue, {"dtype"           : bool,
-                                    "default"         : True,
-                                    "help"            : "This describes whether the centre of mass of the particles is fixed."}),
-            "fixatoms" : (InputArray, {"dtype"        : int,
-                                     "default"      : np.zeros(0,int),
-                                     "help"         : "Indices of the atmoms that should be held fixed."}),
-            "optimizer" : ( InputGeop, { "default" : {},
-                                      "help":  "Option for geometry optimization" } ),
-            "neb_optimizer" : ( InputNEB, { "default" : {},
-                                      "help":  "Option for geometry optimization" } ),
-            "dynamics" : ( InputDynamics, { "default" : {},
-                                      "help":  "Option for (path integral) molecular dynamics" } ),
-            "file": (InputInitFile, { "default" : input_default(factory=ipi.engine.initializer.InitFile,kwargs={"mode":"xyz"}),
-                            "help"            : "This describes the location to read a trajectory file from."}),
-            "vibrations" : ( InputDynMatrix, { "default" : {},
-                                      "help":  "Option for phonon computation" } ),
-            "alchemy" : ( InputAlchemy, { "default" : {},
-                                      "help":  "Option for alchemical exchanges" } )
-          }
+    fields = {"fixcom": (InputValue, {"dtype": bool,
+                                      "default": True,
+                                      "help": "This describes whether the centre of mass of the particles is fixed."}),
+              "fixatoms": (InputArray, {"dtype": int,
+                                        "default": np.zeros(0, int),
+                                        "help": "Indices of the atmoms that should be held fixed."}),
+              "optimizer": (InputGeop, {"default": {},
+                                        "help": "Option for geometry optimization"}),
+              "neb_optimizer": (InputNEB, {"default": {},
+                                           "help": "Option for geometry optimization"}),
+              "dynamics": (InputDynamics, {"default": {},
+                                           "help": "Option for (path integral) molecular dynamics"}),
+              "file": (InputInitFile, {"default": input_default(factory=ipi.engine.initializer.InitFile, kwargs={"mode": "xyz"}),
+                                       "help": "This describes the location to read a trajectory file from."}),
+              "vibrations": (InputDynMatrix, {"default": {},
+                                              "help": "Option for phonon computation"}),
+              "alchemy": (InputAlchemy, {"default": {},
+                                         "help": "Option for alchemical exchanges"})
+              }
 
-    dynamic = {  }
+    dynamic = {}
 
     default_help = "Allow chosing the type of calculation to be performed. Holds all the information that is calculation specific, such as geometry optimization parameters, etc."
     default_label = "MOTION"
@@ -117,7 +118,7 @@ class InputMotionBase(Input):
             self.alchemy.store(sc)
             tsc = 1
         else:
-            raise ValueError("Cannot store Mover calculator of type "+str(type(sc)))
+            raise ValueError("Cannot store Mover calculator of type " + str(type(sc)))
 
         if tsc == 0:
             self.file.store(sc.intraj)
@@ -144,9 +145,9 @@ class InputMotionBase(Input):
         elif self.mode.fetch() == "dynamics":
             sc = Dynamics(fixcom=self.fixcom.fetch(), fixatoms=self.fixatoms.fetch(), **self.dynamics.fetch())
         elif self.mode.fetch() == "vibrations":
-            sc = DynMatrixMover(fixcom=self.fixcom.fetch(), fixatoms=self.fixatoms.fetch(), **self.vibrations.fetch() )
+            sc = DynMatrixMover(fixcom=self.fixcom.fetch(), fixatoms=self.fixatoms.fetch(), **self.vibrations.fetch())
         elif self.mode.fetch() == "alchemy":
-            sc = AlchemyMC(fixcom=self.fixcom.fetch(), fixatoms=self.fixatoms.fetch(), **self.alchemy.fetch() )
+            sc = AlchemyMC(fixcom=self.fixcom.fetch(), fixatoms=self.fixatoms.fetch(), **self.alchemy.fetch())
         else:
             sc = Motion()
             #raise ValueError("'" + self.mode.fetch() + "' is not a supported motion calculation mode.")
@@ -161,29 +162,29 @@ class InputMotion(InputMotionBase):
 
     attribs["mode"][1]["options"].append("multi")
 
-    dynamic = { "motion" : (InputMotionBase, {"default"   : input_default(factory=Motion),
-                                          "help"      : "A motion class that can be included as a member of a 'multi' integrator."} )
-              }
+    dynamic = {"motion": (InputMotionBase, {"default": input_default(factory=Motion),
+                                            "help": "A motion class that can be included as a member of a 'multi' integrator."})
+               }
 
     def store(self, motion):
 
         if type(motion) is MultiMotion:
-            self.mode.store("multi" )
+            self.mode.store("multi")
             for m in motion.mlist:
-                im=InputMotionBase()
+                im = InputMotionBase()
                 im.store(m)
-                self.extra.append(("motion",im))
+                self.extra.append(("motion", im))
         else:
-            super(InputMotion,self).store(motion)
+            super(InputMotion, self).store(motion)
 
     def fetch(self):
 
-        if self.mode.fetch() == "multi" :
+        if self.mode.fetch() == "multi":
             mlist = []
             for (k, m) in self.extra:
                 mlist.append(m.fetch())
-            motion=MultiMotion(motionlist=mlist)         
+            motion = MultiMotion(motionlist=mlist)
         else:
-            motion=super(InputMotion,self).fetch()
+            motion = super(InputMotion, self).fetch()
 
         return motion

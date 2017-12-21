@@ -35,24 +35,24 @@ class InputForceField(Input):
        activelist: A list of indexes (starting at 0) of the atoms that will be active in this force field.
     """
 
-    attribs = { "name" : ( InputAttribute, { "dtype"   : str,
-                                          "help"    : "Mandatory. The name by which the forcefield will be identified in the System forces section." } ),
-                "pbc":  ( InputAttribute, { "dtype"   : bool,
-                                          "default" : True,
-                                          "help"    : "Applies periodic boundary conditions to the atoms coordinates before passing them on to the driver code." })
+    attribs = {"name": (InputAttribute, {"dtype": str,
+                                         "help": "Mandatory. The name by which the forcefield will be identified in the System forces section."}),
+               "pbc": (InputAttribute, {"dtype": bool,
+                                        "default": True,
+                                        "help": "Applies periodic boundary conditions to the atoms coordinates before passing them on to the driver code."})
 
-             }
+               }
     fields = {
-             "latency" : ( InputValue, { "dtype"   : float,
-                                          "default" : 0.01,
-                                          "help"    : "The number of seconds the polling thread will wait between exhamining the list of requests." } ),
-             "parameters" : (InputValue, { "dtype" : dict,
-                                      "default" : {},
-                                      "help" : "The parameters of the force field"} ),
-             "activelist" : (InputArray, { "dtype" : int,
-                                      "default" : np.array([-1]),
- #                                     "default" : input_default(factory=np.array, args =[-1]),
-                                      "help" : "List with indexes of the atoms that this socket is taking care of.    Default: all (corresponding to -1)"} )
+        "latency": (InputValue, {"dtype": float,
+                                 "default": 0.01,
+                                 "help": "The number of seconds the polling thread will wait between exhamining the list of requests."}),
+             "parameters": (InputValue, {"dtype": dict,
+                                         "default": {},
+                                         "help": "The parameters of the force field"}),
+             "activelist": (InputArray, {"dtype": int,
+                                         "default": np.array([-1]),
+                                         #                                     "default" : input_default(factory=np.array, args =[-1]),
+                                         "help": "List with indexes of the atoms that this socket is taking care of.    Default: all (corresponding to -1)"})
     }
 
     default_help = "Base forcefield class that deals with the assigning of force calculation jobs and collecting the data."
@@ -65,7 +65,7 @@ class InputForceField(Input):
            forceb: A ForceField object.
         """
 
-        Input.store(self,ff)
+        Input.store(self, ff)
         self.name.store(ff.name)
         self.latency.store(ff.latency)
         self.parameters.store(ff.pars)
@@ -79,9 +79,9 @@ class InputForceField(Input):
            A ForceField object.
         """
 
-        super(InputForceField,self).fetch()
+        super(InputForceField, self).fetch()
 
-        return ForceField(pars = self.parameters.fetch(), name = self.name.fetch(), latency = self.latency.fetch(), dopbc = self.pbc.fetch(), active = self.activelist.fetch())
+        return ForceField(pars=self.parameters.fetch(), name=self.name.fetch(), latency=self.latency.fetch(), dopbc=self.pbc.fetch(), active=self.activelist.fetch())
 
 
 class InputFFSocket(InputForceField):
@@ -101,25 +101,25 @@ class InputFFSocket(InputForceField):
           that the client code has died. If 0 there is no timeout.
     """
 
-    fields = {"address": (InputValue, {"dtype"   : str,
-                                       "default" : "localhost",
-                                       "help"    : "This gives the server address that the socket will run on." } ),
-              "port":    (InputValue, {"dtype"   : int,
-                                       "default" : 65535,
-                                       "help"    : "This gives the port number that defines the socket."} ),
-              "slots":   (InputValue, {"dtype"   : int,
-                                       "default" : 4,
-                                       "help"    : "This gives the number of client codes that can queue at any one time."} ),
-              "timeout": (InputValue, {"dtype"   : float,
-                                       "default" : 0.0,
-                                       "help"    : "This gives the number of seconds before assuming a calculation has died. If 0 there is no timeout." } )}
+    fields = {"address": (InputValue, {"dtype": str,
+                                       "default": "localhost",
+                                       "help": "This gives the server address that the socket will run on."}),
+              "port": (InputValue, {"dtype": int,
+                                    "default": 65535,
+                                    "help": "This gives the port number that defines the socket."}),
+              "slots": (InputValue, {"dtype": int,
+                                     "default": 4,
+                                     "help": "This gives the number of client codes that can queue at any one time."}),
+              "timeout": (InputValue, {"dtype": float,
+                                       "default": 0.0,
+                                       "help": "This gives the number of seconds before assuming a calculation has died. If 0 there is no timeout."})}
     attribs = {
-                "mode": (InputAttribute, {"dtype"    : str,
-                                      "options"  : [ "unix", "inet" ],
-                                      "default"  : "inet",
-                                      "help"     : "Specifies whether the driver interface will listen onto a internet socket [inet] or onto a unix socket [unix]." } ),
+        "mode": (InputAttribute, {"dtype": str,
+                                  "options": ["unix", "inet"],
+                                  "default": "inet",
+                                  "help": "Specifies whether the driver interface will listen onto a internet socket [inet] or onto a unix socket [unix]."}),
 
-               }
+    }
 
     attribs.update(InputForceField.attribs)
     fields.update(InputForceField.fields)
@@ -137,8 +137,7 @@ class InputFFSocket(InputForceField):
         if (not type(ff) is FFSocket):
             raise TypeError("The type " + type(ff).__name__ + " is not a valid socket forcefield")
 
-
-        super(InputFFSocket,self).store(ff)
+        super(InputFFSocket, self).store(ff)
 
         self.address.store(ff.socket.address)
         self.port.store(ff.socket.port)
@@ -153,15 +152,14 @@ class InputFFSocket(InputForceField):
            A ForceSocket object with the correct socket parameters.
         """
 
-        return FFSocket(pars = self.parameters.fetch(), name = self.name.fetch(), latency = self.latency.fetch(), dopbc = self.pbc.fetch(),
-                active = self.activelist.fetch(), interface=InterfaceSocket(address=self.address.fetch(), port=self.port.fetch(),
-              slots=self.slots.fetch(), mode=self.mode.fetch(), timeout=self.timeout.fetch() ) )
-
+        return FFSocket(pars=self.parameters.fetch(), name=self.name.fetch(), latency=self.latency.fetch(), dopbc=self.pbc.fetch(),
+                        active=self.activelist.fetch(), interface=InterfaceSocket(address=self.address.fetch(), port=self.port.fetch(),
+                                                                                  slots=self.slots.fetch(), mode=self.mode.fetch(), timeout=self.timeout.fetch()))
 
     def check(self):
         """Deals with optional parameters."""
 
-        super(InputFFSocket,self).check()
+        super(InputFFSocket, self).check()
         if self.port.fetch() < 1 or self.port.fetch() > 65535:
             raise ValueError("Port number " + str(self.port.fetch()) + " out of acceptable range.")
         elif self.port.fetch() < 1025:
@@ -185,21 +183,21 @@ class InputFFLennardJones(InputForceField):
     default_label = "FFLJ"
 
     def store(self, ff):
-        super(InputFFLennardJones,self).store(ff)
+        super(InputFFLennardJones, self).store(ff)
 
     def fetch(self):
-        super(InputFFLennardJones,self).fetch()
+        super(InputFFLennardJones, self).fetch()
 
-        return FFLennardJones(pars = self.parameters.fetch(), name = self.name.fetch(),
-                 latency = self.latency.fetch(), dopbc = self.pbc.fetch())
+        return FFLennardJones(pars=self.parameters.fetch(), name=self.name.fetch(),
+                              latency=self.latency.fetch(), dopbc=self.pbc.fetch())
 
 
 class InputFFDebye(InputForceField):
 
-    fields = { 
-    "hessian" : (InputArray, {"dtype": float, "default"      : input_default(factory=np.zeros, args=(0,)), "help": "Specifies the Hessian of the harmonic potential (atomic units!)"} ), 
-    "x_reference" : (InputArray, {"dtype": float, "default"  : input_default(factory=np.zeros, args=(0,)), "help": "Minimum-energy configuration for the harmonic potential", "dimension" : "length"} ),
-    "v_reference" : (InputValue, {"dtype": float, "default"  : 0.0, "help": "Zero-value of energy for the harmonic potential", "dimension":"energy"})
+    fields = {
+        "hessian": (InputArray, {"dtype": float, "default": input_default(factory=np.zeros, args=(0,)), "help": "Specifies the Hessian of the harmonic potential (atomic units!)"}),
+        "x_reference": (InputArray, {"dtype": float, "default": input_default(factory=np.zeros, args=(0,)), "help": "Minimum-energy configuration for the harmonic potential", "dimension": "length"}),
+        "v_reference": (InputValue, {"dtype": float, "default": 0.0, "help": "Zero-value of energy for the harmonic potential", "dimension": "energy"})
     }
 
     fields.update(InputForceField.fields)
@@ -211,48 +209,48 @@ class InputFFDebye(InputForceField):
     default_label = "FFDEBYE"
 
     def store(self, ff):
-        super(InputFFDebye,self).store(ff)
+        super(InputFFDebye, self).store(ff)
         self.hessian.store(ff.H)
         self.x_reference.store(ff.xref)
         self.v_reference.store(ff.vref)
 
     def fetch(self):
-        super(InputFFDebye,self).fetch()
+        super(InputFFDebye, self).fetch()
 
-        return FFDebye(H=self.hessian.fetch(), xref=self.x_reference.fetch(), vref=self.v_reference.fetch(), name = self.name.fetch(),
-                 latency = self.latency.fetch(), dopbc = self.pbc.fetch() )
+        return FFDebye(H=self.hessian.fetch(), xref=self.x_reference.fetch(), vref=self.v_reference.fetch(), name=self.name.fetch(),
+                       latency=self.latency.fetch(), dopbc=self.pbc.fetch())
 
 
 class InputFFYaff(InputForceField):
 
-    fields = {"yaffpara":    (InputValue, {"dtype"   : str,
-                                       "default" : "parameters.txt",
-                                       "help"    : "This gives the file name of the Yaff input parameter file." } ),
-              "yaffsys":     (InputValue, {"dtype"   : str,
-                                       "default" : "system.chk",
-                                       "help"    : "This gives the file name of the Yaff input system file." } ),
-              "yafflog":     (InputValue, {"dtype"   : str,
-                                       "default" : "yaff.log",
-                                       "help"    : "This gives the file name of the Yaff output log file." } ),                                     
-              "rcut":        (InputValue, {"dtype"   : float,
-                                       "default" : 18.89726133921252,
-                                       "help"    : "This gives the real space cutoff used by all pair potentials in atomic units."} ),
-              "alpha_scale": (InputValue, {"dtype"   : float,
-                                       "default" : 3.5,
-                                       "help"    : "This gives the alpha parameter in the Ewald summation based on the real-space cutoff: alpha = alpha_scale / rcut. Higher values for this parameter imply a faster convergence of the reciprocal terms, but a slower convergence in real-space."} ),
-              "gcut_scale":  (InputValue, {"dtype"   : float,
-                                       "default" : 1.1,
-                                       "help"    : "This gives the reciprocale space cutoff based on the alpha parameter: gcut = gcut_scale * alpha. Higher values for this parameter imply a better convergence in the reciprocal space."} ),
-              "skin":        (InputValue, {"dtype"   : int,
-                                       "default" : 0,
-                                       "help"    : "This gives the skin parameter for the neighborlist."} ),                                      
-              "smooth_ei":   (InputValue, {"dtype"   : bool,
-                                       "default" : False,
-                                       "help"    : "This gives the flag for smooth truncations for the electrostatic interactions."} ), 
-              "reci_ei":     (InputValue, {"dtype"   : str,
-                                       "default" : "ewald",
-                                       "help"    : "This gives the method to be used for the reciprocal contribution to the electrostatic interactions in the case of periodic systems. This must be one of 'ignore' or 'ewald'. The 'ewald' option is only supported for 3D periodic systems."} ), 
-            }
+    fields = {"yaffpara": (InputValue, {"dtype": str,
+                                        "default": "parameters.txt",
+                                        "help": "This gives the file name of the Yaff input parameter file."}),
+              "yaffsys": (InputValue, {"dtype": str,
+                                       "default": "system.chk",
+                                       "help": "This gives the file name of the Yaff input system file."}),
+              "yafflog": (InputValue, {"dtype": str,
+                                       "default": "yaff.log",
+                                       "help": "This gives the file name of the Yaff output log file."}),
+              "rcut": (InputValue, {"dtype": float,
+                                    "default": 18.89726133921252,
+                                    "help": "This gives the real space cutoff used by all pair potentials in atomic units."}),
+              "alpha_scale": (InputValue, {"dtype": float,
+                                           "default": 3.5,
+                                           "help": "This gives the alpha parameter in the Ewald summation based on the real-space cutoff: alpha = alpha_scale / rcut. Higher values for this parameter imply a faster convergence of the reciprocal terms, but a slower convergence in real-space."}),
+              "gcut_scale": (InputValue, {"dtype": float,
+                                          "default": 1.1,
+                                          "help": "This gives the reciprocale space cutoff based on the alpha parameter: gcut = gcut_scale * alpha. Higher values for this parameter imply a better convergence in the reciprocal space."}),
+              "skin": (InputValue, {"dtype": int,
+                                    "default": 0,
+                                    "help": "This gives the skin parameter for the neighborlist."}),
+              "smooth_ei": (InputValue, {"dtype": bool,
+                                         "default": False,
+                                         "help": "This gives the flag for smooth truncations for the electrostatic interactions."}),
+              "reci_ei": (InputValue, {"dtype": str,
+                                       "default": "ewald",
+                                       "help": "This gives the method to be used for the reciprocal contribution to the electrostatic interactions in the case of periodic systems. This must be one of 'ignore' or 'ewald'. The 'ewald' option is only supported for 3D periodic systems."}),
+              }
 
     fields.update(InputForceField.fields)
 
@@ -263,7 +261,7 @@ class InputFFYaff(InputForceField):
     default_label = "FFYAFF"
 
     def store(self, ff):
-        super(InputFFYaff,self).store(ff)
+        super(InputFFYaff, self).store(ff)
         self.yaffpara.store(ff.yaffpara)
         self.yaffsys.store(ff.yaffsys)
         self.yafflog.store(ff.yafflog)
@@ -275,6 +273,6 @@ class InputFFYaff(InputForceField):
         self.reci_ei.store(ff.reci_ei)
 
     def fetch(self):
-        super(InputFFYaff,self).fetch()
+        super(InputFFYaff, self).fetch()
 
-        return FFYaff(yaffpara = self.yaffpara.fetch(), yaffsys = self.yaffsys.fetch(), yafflog = self.yafflog.fetch(), rcut = self.rcut.fetch(), alpha_scale = self.alpha_scale.fetch(), gcut_scale = self.gcut_scale.fetch(), skin = self.skin.fetch(), smooth_ei = self.smooth_ei.fetch(), reci_ei = self.reci_ei.fetch(), name = self.name.fetch(), latency = self.latency.fetch(), dopbc = self.pbc.fetch() )
+        return FFYaff(yaffpara=self.yaffpara.fetch(), yaffsys=self.yaffsys.fetch(), yafflog=self.yafflog.fetch(), rcut=self.rcut.fetch(), alpha_scale=self.alpha_scale.fetch(), gcut_scale=self.gcut_scale.fetch(), skin=self.skin.fetch(), smooth_ei=self.smooth_ei.fetch(), reci_ei=self.reci_ei.fetch(), name=self.name.fetch(), latency=self.latency.fetch(), dopbc=self.pbc.fetch())

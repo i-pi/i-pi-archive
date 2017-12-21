@@ -83,7 +83,8 @@ class InitIndexed(InitBase):
            bead: Which bead to initialize the value of.
         """
 
-        super(InitIndexed,self).__init__(value=value, mode=mode, units=units, index=index, bead=bead)
+        super(InitIndexed, self).__init__(value=value, mode=mode, units=units, index=index, bead=bead)
+
 
 class InitFile(InitBase):
     def __init__(self, value="", mode="", units="", cell_units="", bead=-1, **others):
@@ -99,7 +100,8 @@ class InitFile(InitBase):
             bead: Which bead to initialize the value of.
         """
 
-        super(InitFile,self).__init__(value=value, mode=mode, units=units, cell_units=cell_units, bead=bead)
+        super(InitFile, self).__init__(value=value, mode=mode, units=units, cell_units=cell_units, bead=bead)
+
 
 def init_file(mode, filename, dimension="length", units="automatic", cell_units="automatic"):
     """Reads a @mode file and returns the data contained in it.
@@ -118,8 +120,8 @@ def init_file(mode, filename, dimension="length", units="automatic", cell_units=
 
     info("Initializing from file %s. Dimension: %s, units: %s, cell_units: %s" % (filename, dimension, units, cell_units), verbosity.low)
     while True:
-    #while loop, so that more than one configuration can be given
-    #so multiple beads can be initialized at once.
+        # while loop, so that more than one configuration can be given
+        # so multiple beads can be initialized at once.
         try:
             ret = read_file(mode, rfile, dimension=dimension, units=units, cell_units=cell_units)
         except EOFError:
@@ -141,14 +143,14 @@ def init_chk(filename):
 
     # reads configuration from a checkpoint file
     rfile = open(filename, "r")
-    xmlchk = xml_parse_file(rfile) # Parses the file.
+    xmlchk = xml_parse_file(rfile)  # Parses the file.
 
     from ipi.inputs.simulation import InputSimulation
     simchk = InputSimulation()
     simchk.parse(xmlchk.fields[0][1])
     sim = simchk.fetch()
-    if len(sim.syslist)>1:
-        warning("Restart from checkpoint with "+str(len(sim.syslist))+" systems will fetch data from the first system.")
+    if len(sim.syslist) > 1:
+        warning("Restart from checkpoint with " + str(len(sim.syslist)) + " systems will fetch data from the first system.")
     rcell = sim.syslist[0].cell
     rbeads = sim.syslist[0].beads
     rmotion = sim.syslist[0].motion
@@ -176,7 +178,7 @@ def init_beads(iif, nbeads, dimension="length", units="automatic", cell_units="a
     else:
         ret = init_file(mode, value, dimension, units, cell_units)
         ratoms = ret[0]
-        rbeads = Beads(ratoms[0].natoms,len(ratoms))
+        rbeads = Beads(ratoms[0].natoms, len(ratoms))
         for i in range(len(ratoms)):
             rbeads[i] = ratoms[i]
 
@@ -199,16 +201,16 @@ def init_vector(iif, nbeads, momenta=False, dimension="length", units="automatic
         rq = init_beads(iif, nbeads, dimension, units, cell_units).q
     elif mode == "chk":
         if momenta: rq = init_beads(iif, nbeads).p
-        else:       rq = init_beads(iif, nbeads).q
+        else: rq = init_beads(iif, nbeads).q
     elif mode == "manual":
         rq = value
 
     # determines the size of the input data
     if mode == "manual":
-        if iif.bead >= 0: # if there is a bead specifier then we return a single bead slice
+        if iif.bead >= 0:  # if there is a bead specifier then we return a single bead slice
             nbeads = 1
-        natoms = len(rq)/nbeads/3
-        rq.shape = (nbeads,3*natoms)
+        natoms = len(rq) / nbeads / 3
+        rq.shape = (nbeads, 3 * natoms)
 
     return rq
 
@@ -242,18 +244,18 @@ def set_vector(iif, dq, rq):
         raise ValueError("Cannot initialize single bead as bead index %d is larger than the number of beads" % iif.bead)
 
     if iif.bead < 0:   # we are initializing the path
-        res = nm_rescale(nbeads,dbeads)  # path rescaler
+        res = nm_rescale(nbeads, dbeads)  # path rescaler
         if nbeads != dbeads:
             info(" # Initialize is rescaling from %5d beads to %5d beads" % (nbeads, dbeads), verbosity.low)
         if iif.index < 0:
             dq[:] = res.b1tob2(rq)
-        else: # we are initializing a specific atom
-            dq[:,3*iif.index:3*(iif.index+1)] = res.b1tob2(rq)
+        else:  # we are initializing a specific atom
+            dq[:, 3 * iif.index:3 * (iif.index + 1)] = res.b1tob2(rq)
     else:  # we are initializing a specific bead
         if iif.index < 0:
             dq[iif.bead] = rq
         else:
-            dq[iif.bead,3*iif.index:3*(iif.index+1)] = rq
+            dq[iif.bead, 3 * iif.index:3 * (iif.index + 1)] = rq
 
 
 class Initializer(dobject):
@@ -322,25 +324,24 @@ class Initializer(dobject):
         else:
             fpos = fmom = fmass = flab = fcell = True
 
-        for (k,v) in self.queue:
+        for (k, v) in self.queue:
             info(" # Initializer (stage 1) parsing " + str(k) + " object.", verbosity.high)
 
             if k == "cell":
                 if v.mode == "manual":
-                    rh = v.value.reshape((3,3))*unit_to_internal("length",v.units,1.0)
+                    rh = v.value.reshape((3, 3)) * unit_to_internal("length", v.units, 1.0)
                 elif v.mode == "chk":
                     rh = init_chk(v.value)[1].h
-                elif init_file(v.mode,v.value)[1].h.trace() == -3:
+                elif init_file(v.mode, v.value)[1].h.trace() == -3:
                     # In case the file do not contain any
                     #+ cell parameters, the diagonal elements of the cell will be
                     #+set to -1 from the io_units and nothing is read here.
                     continue
                 else:
-                    rh =  init_file(v.mode,v.value,cell_units=v.units)[1].h
+                    rh = init_file(v.mode, v.value, cell_units=v.units)[1].h
 
-                if fcell :
+                if fcell:
                     warning("Overwriting previous cell parameters", verbosity.low)
-
 
                 simul.cell.h = rh
                 if simul.cell.V == 0.0:
@@ -353,7 +354,7 @@ class Initializer(dobject):
                 if fmass:
                     warning("Overwriting previous atomic masses", verbosity.medium)
                 if v.mode == "manual":
-                    rm = v.value * unit_to_internal("mass",v.units,1.0)
+                    rm = v.value * unit_to_internal("mass", v.units, 1.0)
                 else:
                     rm = init_beads(v, self.nbeads).m
 
@@ -363,8 +364,8 @@ class Initializer(dobject):
                         simul.beads.p /= simul.beads.sm3   # go to mass-scaled momenta, that are mass-invariant
                     if v.index < 0:
                         simul.beads.m = rm
-                    else: # we are initializing a specific atom
-                        simul.beads.m[v.index:v.index+1] = rm
+                    else:  # we are initializing a specific atom
+                        simul.beads.m[v.index:v.index + 1] = rm
                     if (fmom and fmass):  # finishes correcting the momenta
                         simul.beads.p *= simul.beads.sm3  # back to normal momenta
                 else:
@@ -384,8 +385,8 @@ class Initializer(dobject):
                 if v.bead < 0:   # we are initializing the path
                     if v.index < 0:
                         simul.beads.names = rn
-                    else: # we are initializing a specific atom
-                        simul.beads.names[v.index:v.index+1] = rn
+                    else:  # we are initializing a specific atom
+                        simul.beads.names[v.index:v.index + 1] = rn
                 else:
                     raise ValueError("Cannot change the label of a single bead")
                 flab = True
@@ -404,12 +405,12 @@ class Initializer(dobject):
                 if simul.beads.nbeads == 0:
                     if v.index >= 0:
                         raise ValueError("Cannot initialize single atoms before the size of the system is known")
-                    simul.beads.resize(natoms,self.nbeads)
+                    simul.beads.resize(natoms, self.nbeads)
 
                 set_vector(v, simul.beads.q, rq)
                 fpos = True
 
-            elif (k == "velocities" or k == "momenta") and v.mode == "thermal" :   # intercept here thermal initialization, so we don't need to check further down
+            elif (k == "velocities" or k == "momenta") and v.mode == "thermal":   # intercept here thermal initialization, so we don't need to check further down
                 if fmom:
                     warning("Overwriting previous atomic momenta", verbosity.medium)
                 if simul.beads.natoms == 0:
@@ -417,7 +418,7 @@ class Initializer(dobject):
                 if not fmass:
                     raise ValueError("Trying to resample velocities before having masses.")
 
-                rtemp = v.value * unit_to_internal("temperature",v.units,1.0)
+                rtemp = v.value * unit_to_internal("temperature", v.units, 1.0)
                 if rtemp <= 0:
                     warning("Using the simulation temperature to resample velocities", verbosity.low)
                     rtemp = simul.ensemble.temp
@@ -425,7 +426,7 @@ class Initializer(dobject):
                     info(" # Resampling velocities at temperature %s %s" % (v.value, v.units), verbosity.low)
 
                 # pull together a mock initialization to get NM masses right
-                #without too much code duplication
+                # without too much code duplication
                 if v.bead >= 0:
                     raise ValueError("Cannot thermalize a single bead")
                 if v.index >= 0:
@@ -444,12 +445,12 @@ class Initializer(dobject):
                 # then we exploit the sync magic to do a complicated initialization
                 # in the NM representation
                 # with (possibly) shifted-frequencies NM
-                rnm.pnm = simul.prng.gvec((rbeads.nbeads,3*rbeads.natoms))*np.sqrt(rnm.dynm3)*np.sqrt(rbeads.nbeads*rtemp*Constants.kb)
+                rnm.pnm = simul.prng.gvec((rbeads.nbeads, 3 * rbeads.natoms)) * np.sqrt(rnm.dynm3) * np.sqrt(rbeads.nbeads * rtemp * Constants.kb)
 
                 if v.index < 0:
                     simul.beads.p = rbeads.p
                 else:
-                    simul.beads.p[:,3*v.index:3*(v.index+1)] = rbeads.p
+                    simul.beads.p[:, 3 * v.index:3 * (v.index + 1)] = rbeads.p
                 fmom = True
 
             elif k == "momenta":
@@ -464,9 +465,9 @@ class Initializer(dobject):
                 if simul.beads.nbeads == 0:
                     if v.index >= 0:
                         raise ValueError("Cannot initialize single atoms before the size of the system is known")
-                    simul.beads.resize(natoms,self.nbeads)
+                    simul.beads.resize(natoms, self.nbeads)
 
-                rp *= np.sqrt(self.nbeads/nbeads)
+                rp *= np.sqrt(self.nbeads / nbeads)
                 set_vector(v, simul.beads.p, rp)
                 fmom = True
             elif k == "velocities":
@@ -480,7 +481,7 @@ class Initializer(dobject):
                 # checks if we must initialize the simulation beads
                 if simul.beads.nbeads == 0 or not fmass:
                     ValueError("Cannot initialize velocities before the masses of the atoms are known")
-                    simul.beads.resize(natoms,self.nbeads)
+                    simul.beads.resize(natoms, self.nbeads)
 
                 warning("Initializing from velocities uses the previously defined masses -- not the masses inferred from the file -- to build momenta", verbosity.low)
                 if v.index >= 0:
@@ -488,7 +489,7 @@ class Initializer(dobject):
                 else:
                     for ev in rv:
                         ev *= simul.beads.m3[0]
-                rv *= np.sqrt(self.nbeads/nbeads)
+                rv *= np.sqrt(self.nbeads / nbeads)
                 set_vector(v, simul.beads.p, rv)
                 fmom = True
             elif k == "gle": pass   # thermostats must be initialised in a second stage
@@ -520,27 +521,27 @@ class Initializer(dobject):
               that have been specified are not compatible with each other.
         """
 
-        for (k,v) in self.queue:
+        for (k, v) in self.queue:
             info(" # Initializer (stage 2) parsing " + str(k) + " object.", verbosity.high)
 
             if k == "gle":
                 # read thermostat parameters from file
-                if not ( hasattr(simul.ensemble, "thermostat") ):
+                if not (hasattr(simul.ensemble, "thermostat")):
                     raise ValueError("Ensemble does not have a thermostat to initialize")
-                if not ( hasattr(simul.ensemble.thermostat, "s") ):
+                if not (hasattr(simul.ensemble.thermostat, "s")):
                     raise ValueError("There is nothing to initialize in non-GLE thermostats")
                 ssimul = simul.ensemble.thermostat.s
                 if v.mode == "manual":
                     sinput = v.value.copy()
-                    if (sinput.size() != ssimul.size() ):
+                    if (sinput.size() != ssimul.size()):
                         raise ValueError("Size mismatch in thermostat initialization data")
                     sinput.shape = ssimul.shape
                 elif v.mode == "chk":
                     rmotion = init_chk(v.value)[2]
-                    if not hasattr(rmotion,"thermostat") or not hasattr(rmotion.thermostat,"s") :
+                    if not hasattr(rmotion, "thermostat") or not hasattr(rmotion.thermostat, "s"):
                         raise ValueError("Checkpoint file does not contain usable thermostat data")
                     sinput = rmotion.thermostat.s.copy()
-                    if sinput.shape != ssimul.shape :
+                    if sinput.shape != ssimul.shape:
                         raise ValueError("Shape mismatch in thermostat initialization data")
 
                 # if all the preliminary checks are good, we can initialize the s's

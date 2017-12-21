@@ -13,7 +13,6 @@ Syntax:
 """
 
 
-
 import sys
 import re
 from ipi.utils.io import read_file, print_file, read_file_raw
@@ -42,6 +41,7 @@ def get_cell_units(comment, mode):
         auto_cell = cunit.group(1)
     return auto_cell
 
+
 def get_key_dim_units(comment, mode):
 
     # if mode is pdb return standard units and dimensions.
@@ -55,7 +55,7 @@ def get_key_dim_units(comment, mode):
         auto_dimension = "undefined"
 
     is_comment_useful = []
-    if comment != "": 
+    if comment != "":
         is_comment_useful = filter(None, [key.search(comment.strip()) for key in traj_re])
         if len(is_comment_useful) > 0:
             traj = is_comment_useful[0].group()[:-1].split('{')
@@ -69,7 +69,7 @@ def get_key_dim_units(comment, mode):
 
 def main(filename, imode, omode):
 
-    ipos=open(filename,"r")
+    ipos = open(filename, "r")
     natoms = 0
     ifr = 0
 
@@ -80,17 +80,17 @@ def main(filename, imode, omode):
     cell_units = get_cell_units(comment, imode)
     key, dim, dim_units = get_key_dim_units(comment, imode)
 
-    ipos=open(filename,"r")
+    ipos = open(filename, "r")
     while True:
         try:
             ret = read_file(imode, ipos)
             pos = ret["atoms"]
             cell = ret["cell"]
 
-        except EOFError: # finished reading files
+        except EOFError:  # finished reading files
             sys.exit(0)
         print_file(omode, pos, cell, filedesc=sys.stdout, title="", key=key, dimension=dim, units=dim_units, cell_units=cell_units)
-        ifr+=1
+        ifr += 1
 
 if __name__ == '__main__':
     main(*sys.argv[1:])

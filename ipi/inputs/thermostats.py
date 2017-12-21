@@ -14,8 +14,8 @@ from copy import copy
 import numpy as np
 
 import ipi.engine.thermostats as ethermostats
-from ipi.utils.depend   import *
-from ipi.utils.inputvalue  import *
+from ipi.utils.depend import *
+from ipi.utils.inputvalue import *
 
 
 __all__ = ['InputThermo']
@@ -48,45 +48,45 @@ class InputThermoBase(Input):
 
     """
 
-    attribs = { "mode": (InputAttribute, { "dtype"   : str,
-                                       "options" : [ "", "langevin", "svr", "pile_l", "pile_g", "gle", "nm_gle", "nm_gle_g", "cl" ],
-                                       "help"    : "The style of thermostatting. 'langevin' specifies a white noise langevin equation to be attached to the cartesian representation of the momenta. 'svr' attaches a velocity rescaling thermostat to the cartesian representation of the momenta. Both 'pile_l' and 'pile_g' attaches a white noise langevin thermostat to the normal mode representation, with 'pile_l' attaching a local langevin thermostat to the centroid mode and 'pile_g' instead attaching a global velocity rescaling thermostat. 'gle' attaches a coloured noise langevin thermostat to the cartesian representation of the momenta, 'nm_gle' attaches a coloured noise langevin thermostat to the normal mode representation of the momenta and a langevin thermostat to the centroid and 'nm_gle_g' attaches a gle thermostat to the normal modes and a svr thermostat to the centroid. 'cl' represents a modified langevin thermostat which compensates for additional white noise from noisy forces or for dissipative effects. 'multiple' is a special thermostat mode, in which one can define multiple thermostats _inside_ the thermostat tag."
-                                          }) }
-    fields = { "ethermo" : (InputValue, {  "dtype"     : float,
-                                           "default"   : 0.0,
-                                           "help"      : "The initial value of the thermostat energy. Used when the simulation is restarted to guarantee continuity of the conserved quantity.",
-                                           "dimension" : "energy" }),
-             "tau" : (InputValue, {  "dtype"     : float,
-                                     "default"   : 0.0,
-                                     "help"      : "The friction coefficient for white noise thermostats.",
-                                     "dimension" : "time" }),
-             "pile_lambda" : (InputValue, { "dtype" : float,
-                                     "default"   : 1.0,
-                                     "help"      : "Scaling for the PILE damping relative to the critical damping. (gamma_k=2*lambda*omega_k"} ),
-             "A" : (InputArray, {    "dtype"     : float,
-                                     "default"   : input_default(factory=np.zeros, args = (0,)),
-                                     "help"      : "The friction matrix for GLE thermostats.",
-                                     "dimension" : "frequency" }),
-             "C" : (InputArray, {    "dtype"     : float,
-                                     "default"   : input_default(factory=np.zeros, args = (0,)),
-                                     "help"      : "The covariance matrix for GLE thermostats.",
-                                     "dimension" : "temperature" }),
-             "s" : (InputArray, {    "dtype"     : float,
-                                     "default"   : input_default(factory=np.zeros, args = (0,)),
-                                     "help"      : "Input values for the additional momenta in GLE.",
-                                     "dimension" : "ms-momentum" }),
-             "intau" : (InputValue, {"dtype"     : float,
-                                     "default"   : 0.0,
-                                     "help"      : "The inherent noise time scale for compensating langevin thermostats.",
-                                     "dimension" : "time" }),
-             "idtau" : (InputValue, {"dtype"     : float,
-                                     "default"   : 0.0,
-                                     "help"      : "The inherent dissipation time scale for compensating langevin thermostats.",
-                                     "dimension" : "time" }),
-             "apat" : (InputValue, { "dtype"     : float,
-                                     "default"   : 0.0,
-                                     "help"      : "The time scale for automatic adjustment of CL thermostat's parameters.",
-                                     "dimension" : "time" })
+    attribs = {"mode": (InputAttribute, {"dtype": str,
+                                         "options": ["", "langevin", "svr", "pile_l", "pile_g", "gle", "nm_gle", "nm_gle_g", "cl"],
+                                         "help": "The style of thermostatting. 'langevin' specifies a white noise langevin equation to be attached to the cartesian representation of the momenta. 'svr' attaches a velocity rescaling thermostat to the cartesian representation of the momenta. Both 'pile_l' and 'pile_g' attaches a white noise langevin thermostat to the normal mode representation, with 'pile_l' attaching a local langevin thermostat to the centroid mode and 'pile_g' instead attaching a global velocity rescaling thermostat. 'gle' attaches a coloured noise langevin thermostat to the cartesian representation of the momenta, 'nm_gle' attaches a coloured noise langevin thermostat to the normal mode representation of the momenta and a langevin thermostat to the centroid and 'nm_gle_g' attaches a gle thermostat to the normal modes and a svr thermostat to the centroid. 'cl' represents a modified langevin thermostat which compensates for additional white noise from noisy forces or for dissipative effects. 'multiple' is a special thermostat mode, in which one can define multiple thermostats _inside_ the thermostat tag."
+                                         })}
+    fields = {"ethermo": (InputValue, {"dtype": float,
+                                       "default": 0.0,
+                                       "help": "The initial value of the thermostat energy. Used when the simulation is restarted to guarantee continuity of the conserved quantity.",
+                                       "dimension": "energy"}),
+              "tau": (InputValue, {"dtype": float,
+                                   "default": 0.0,
+                                   "help": "The friction coefficient for white noise thermostats.",
+                                   "dimension": "time"}),
+              "pile_lambda": (InputValue, {"dtype": float,
+                                           "default": 1.0,
+                                           "help": "Scaling for the PILE damping relative to the critical damping. (gamma_k=2*lambda*omega_k"}),
+              "A": (InputArray, {"dtype": float,
+                                 "default": input_default(factory=np.zeros, args=(0,)),
+                                 "help": "The friction matrix for GLE thermostats.",
+                                 "dimension": "frequency"}),
+              "C": (InputArray, {"dtype": float,
+                                 "default": input_default(factory=np.zeros, args=(0,)),
+                                 "help": "The covariance matrix for GLE thermostats.",
+                                 "dimension": "temperature"}),
+              "s": (InputArray, {"dtype": float,
+                                 "default": input_default(factory=np.zeros, args=(0,)),
+                                 "help": "Input values for the additional momenta in GLE.",
+                                 "dimension": "ms-momentum"}),
+              "intau": (InputValue, {"dtype": float,
+                                     "default": 0.0,
+                                     "help": "The inherent noise time scale for compensating langevin thermostats.",
+                                     "dimension": "time"}),
+              "idtau": (InputValue, {"dtype": float,
+                                     "default": 0.0,
+                                     "help": "The inherent dissipation time scale for compensating langevin thermostats.",
+                                     "dimension": "time"}),
+              "apat": (InputValue, {"dtype": float,
+                                    "default": 0.0,
+                                    "help": "The time scale for automatic adjustment of CL thermostat's parameters.",
+                                    "dimension": "time"})
               }
 
     dynamic = {}
@@ -104,7 +104,7 @@ class InputThermoBase(Input):
            TypeError: Raised if the thermostat is not a recognized type.
         """
 
-        super(InputThermoBase,self).store(thermo)
+        super(InputThermoBase, self).store(thermo)
         if type(thermo) is ethermostats.ThermoLangevin:
             self.mode.store("langevin")
             self.tau.store(thermo.tau)
@@ -122,20 +122,20 @@ class InputThermoBase(Input):
         elif type(thermo) is ethermostats.ThermoGLE:
             self.mode.store("gle")
             self.A.store(thermo.A)
-            if dget(thermo,"C")._func is None:
+            if dget(thermo, "C")._func is None:
                 self.C.store(thermo.C)
             self.s.store(thermo.s)
         elif type(thermo) is ethermostats.ThermoNMGLE:
             self.mode.store("nm_gle")
             self.A.store(thermo.A)
-            if dget(thermo,"C")._func is None:
+            if dget(thermo, "C")._func is None:
                 self.C.store(thermo.C)
             self.s.store(thermo.s)
         elif type(thermo) is ethermostats.ThermoNMGLEG:
             self.mode.store("nm_gle_g")
             self.A.store(thermo.A)
             self.tau.store(thermo.tau)
-            if dget(thermo,"C")._func is None:
+            if dget(thermo, "C")._func is None:
                 self.C.store(thermo.C)
             self.s.store(thermo.s)
         elif type(thermo) is ethermostats.ThermoCL:
@@ -161,7 +161,7 @@ class InputThermoBase(Input):
            TypeError: Raised if the thermostat type is not a recognized option.
         """
 
-        super(InputThermoBase,self).fetch()
+        super(InputThermoBase, self).fetch()
         if self.mode.fetch() == "langevin":
             thermo = ethermostats.ThermoLangevin(tau=self.tau.fetch())
         elif self.mode.fetch() == "svr":
@@ -174,23 +174,23 @@ class InputThermoBase(Input):
             rC = self.C.fetch()
             if len(rC) == 0:
                 rC = None
-            thermo = ethermostats.ThermoGLE(A=self.A.fetch(),C=rC)
+            thermo = ethermostats.ThermoGLE(A=self.A.fetch(), C=rC)
             thermo.s = self.s.fetch()
         elif self.mode.fetch() == "nm_gle":
             rC = self.C.fetch()
             if len(rC) == 0:
                 rC = None
-            thermo = ethermostats.ThermoNMGLE(A=self.A.fetch(),C=rC)
+            thermo = ethermostats.ThermoNMGLE(A=self.A.fetch(), C=rC)
             thermo.s = self.s.fetch()
         elif self.mode.fetch() == "nm_gle_g":
             rC = self.C.fetch()
             if len(rC) == 0:
                 rC = None
-            thermo = ethermostats.ThermoNMGLEG(A=self.A.fetch(),C=rC, tau=self.tau.fetch())
+            thermo = ethermostats.ThermoNMGLEG(A=self.A.fetch(), C=rC, tau=self.tau.fetch())
             thermo.s = self.s.fetch()
         elif self.mode.fetch() == "cl":
             thermo = ethermostats.ThermoCL(tau=self.tau.fetch(), intau=self.intau.fetch(), idtau=self.idtau.fetch(), apat=self.apat.fetch())
-        elif self.mode.fetch() == "" :
+        elif self.mode.fetch() == "":
             thermo = ethermostats.Thermostat()
         else:
             raise TypeError("Invalid thermostat mode " + self.mode.fetch())
@@ -202,7 +202,7 @@ class InputThermoBase(Input):
     def check(self):
         """Checks that the parameter arrays represents a valid thermostat."""
 
-        super(InputThermoBase,self).check()
+        super(InputThermoBase, self).check()
         mode = self.mode.fetch()
 
         if mode in ["langevin", "svr", "pile_l", "pile_g", "nm_gle_g"]:
@@ -228,31 +228,31 @@ class InputThermo(InputThermoBase):
 
     attribs["mode"][1]["options"].append("multi")
 
-    dynamic = { "thermostat" : (InputThermoBase, {"default"   : input_default(factory=ethermostats.Thermostat),
-                                          "help"      : "The thermostat for the atoms, keeps the atom velocity distribution at the correct temperature."} )
-              }
+    dynamic = {"thermostat": (InputThermoBase, {"default": input_default(factory=ethermostats.Thermostat),
+                                                "help": "The thermostat for the atoms, keeps the atom velocity distribution at the correct temperature."})
+               }
 
     def store(self, thermo):
 
         if type(thermo) is ethermostats.MultiThermo:
-            self.mode.store("multi" )
+            self.mode.store("multi")
             for t in thermo.tlist:
-                it=InputThermoBase()
+                it = InputThermoBase()
                 it.store(t)
-                self.extra.append(("thermostat",it))
+                self.extra.append(("thermostat", it))
             self.ethermo.store(thermo.ethermo)
         else:
-            super(InputThermo,self).store(thermo)
+            super(InputThermo, self).store(thermo)
 
     def fetch(self):
 
-        if self.mode.fetch() == "multi" :
+        if self.mode.fetch() == "multi":
             tlist = []
             for (k, t) in self.extra:
                 tlist.append(t.fetch())
-            thermo=ethermostats.MultiThermo(thermolist=tlist)
+            thermo = ethermostats.MultiThermo(thermolist=tlist)
             thermo.ethermo = self.ethermo.fetch()
         else:
-            thermo=super(InputThermo,self).fetch()
+            thermo = super(InputThermo, self).fetch()
 
         return thermo

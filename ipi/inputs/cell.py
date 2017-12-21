@@ -14,7 +14,7 @@ from ipi.utils.inputvalue import *
 from ipi.utils.messages import verbosity, warning
 
 
-__all__ = [ 'InputCell' ]
+__all__ = ['InputCell']
 
 
 class InputCell(InputArray):
@@ -36,7 +36,7 @@ class InputCell(InputArray):
         Just calls the parent initialization function with appropriate arguments.
         """
 
-        super(InputCell,self).__init__(dtype=float, dimension="length", default=default, help=help)
+        super(InputCell, self).__init__(dtype=float, dimension="length", default=default, help=help)
 
     def store(self, cell):
         """Takes a Cell instance and stores of minimal representation of it.
@@ -45,8 +45,8 @@ class InputCell(InputArray):
            cell: A cell object.
         """
 
-        super(InputCell,self).store(cell.h)
-        self.shape.store((3,3))
+        super(InputCell, self).store(cell.h)
+        self.shape.store((3, 3))
 
     def fetch(self):
         """Creates a cell object.
@@ -56,7 +56,7 @@ class InputCell(InputArray):
            properties given the attributes of the InputCell object.
         """
 
-        h = super(InputCell,self).fetch()
-        h.shape = (3,3)
+        h = super(InputCell, self).fetch()
+        h.shape = (3, 3)
 
         return Cell(h=h)

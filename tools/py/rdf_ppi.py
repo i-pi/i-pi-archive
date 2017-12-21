@@ -27,9 +27,12 @@ WARNING:
 """
 
 import numpy as np
-import sys, glob, os
+import sys
+import glob
+import os
 from ipi.utils.units import unit_to_internal, unit_to_user, Constants, Elements
 from ipi.utils.io import read_file
+
 
 def RDF(prefix, temp, A, B, nbins, r_min, r_max, ss=0, unit='angstrom'):
 
@@ -42,8 +45,7 @@ def RDF(prefix, temp, A, B, nbins, r_min, r_max, ss=0, unit='angstrom'):
               'Proceeding the calculations is not possible.')
         sys.exit(0)
 
-
-    temperature = unit_to_internal("temperature", "kelvin", float(temp)) # simulation temperature
+    temperature = unit_to_internal("temperature", "kelvin", float(temp))  # simulation temperature
     skipSteps = int(ss)                                                  # steps to skip
     nbins = int(nbins)
 
@@ -83,8 +85,8 @@ def RDF(prefix, temp, A, B, nbins, r_min, r_max, ss=0, unit='angstrom'):
 
     r_min = unit_to_internal('length', unit, float(r_min))  # Minimal distance for RDF
     r_max = unit_to_internal('length', unit, float(r_max))  # Maximal distance for RDF
-    dr = (r_max - r_min)/nbins  # RDF step
-    rdf = np.array([[r_min + (0.5 + i)*dr, 0] for i in range(nbins)], order='F')   # conventional RDF
+    dr = (r_max - r_min) / nbins  # RDF step
+    rdf = np.array([[r_min + (0.5 + i) * dr, 0] for i in range(nbins)], order='F')   # conventional RDF
 
     # RDF auxiliary variables
     cell = None         # simulation cell matrix
@@ -115,8 +117,8 @@ def RDF(prefix, temp, A, B, nbins, r_min, r_max, ss=0, unit='angstrom'):
                 ret = read_file("xyz", ipos[i], dimension='length')
                 if natoms == 0:
                     mass, natoms = ret["atoms"].m, ret["atoms"].natoms
-                    pos = np.zeros((nbeads,3*natoms), order='F')
-                    force = np.zeros((nbeads,3*natoms), order='F')
+                    pos = np.zeros((nbeads, 3 * natoms), order='F')
+                    force = np.zeros((nbeads, 3 * natoms), order='F')
                 cell = ret["cell"].h
                 inverseCell = ret["cell"].get_ih()
                 cellVolume = ret["cell"].get_volume()
@@ -128,8 +130,8 @@ def RDF(prefix, temp, A, B, nbins, r_min, r_max, ss=0, unit='angstrom'):
         if noteof:
             if ifr >= skipSteps:  # RDF calculations
 
-                species_A = [3*i+j for i in np.where(mass == speciesMass[0])[0] for j in range(3)]
-                species_B = [3*i+j for i in np.where(mass == speciesMass[1])[0] for j in range(3)]
+                species_A = [3 * i + j for i in np.where(mass == speciesMass[0])[0] for j in range(3)]
+                species_B = [3 * i + j for i in np.where(mass == speciesMass[1])[0] for j in range(3)]
                 natomsA = len(species_A)
                 natomsB = len(species_B)
                 posA = np.zeros((nbeads, natomsA), order='F')
@@ -145,7 +147,7 @@ def RDF(prefix, temp, A, B, nbins, r_min, r_max, ss=0, unit='angstrom'):
                 # RDF amd PPI RDF calculations
                 f2temp = fortran.f2divm(force, mass, natoms, nbeads)
                 f2 += f2temp
-                fortran.updateqrdf(rdf, f2rdf, frdf, posA, posB, forA, forB, natomsA/3, natomsB/3, nbins, r_min, r_max, cell,
+                fortran.updateqrdf(rdf, f2rdf, frdf, posA, posB, forA, forB, natomsA / 3, natomsB / 3, nbins, r_min, r_max, cell,
                                    inverseCell, nbeads, f2temp, speciesMass[0], speciesMass[1])
 
                 ifr += 1
@@ -156,30 +158,30 @@ def RDF(prefix, temp, A, B, nbins, r_min, r_max, ss=0, unit='angstrom'):
             if ifr > skipSteps and ifr % 100 == 0:
 
                 # Some constants
-                const = 1.0/float(ifr - skipSteps)
-                alpha = Constants.hbar**2/(24.0*nbeads**3*(temperature*Constants.kb)**3)
-                beta = Constants.hbar**2/(12.0*nbeads**3*(temperature*Constants.kb)**2)
+                const = 1.0 / float(ifr - skipSteps)
+                alpha = Constants.hbar**2 / (24.0 * nbeads**3 * (temperature * Constants.kb)**3)
+                beta = Constants.hbar**2 / (12.0 * nbeads**3 * (temperature * Constants.kb)**2)
 
                 # Normalization
                 _rdf = np.copy(rdf)
                 _f2rdf = np.copy(f2rdf)
                 _frdf = np.copy(frdf)
-                _rdf[:, 1] *= const/nbeads
-                _f2 = f2*alpha*const
-                _f2rdf[:] *= alpha*const
-                _frdf[:] *= beta*const
+                _rdf[:, 1] *= const / nbeads
+                _f2 = f2 * alpha * const
+                _f2rdf[:] *= alpha * const
+                _frdf[:] *= beta * const
 
                 # PPI correction
                 rdfQ = np.copy(_rdf)
                 for bin in range(nbins):
-                    rdfQ[bin, 1] += (_rdf[bin, 1]*_f2 - _f2rdf[bin]/nbeads)
-                    rdfQ[bin, 1] -= _frdf[bin]/2.0
+                    rdfQ[bin, 1] += (_rdf[bin, 1] * _f2 - _f2rdf[bin] / nbeads)
+                    rdfQ[bin, 1] -= _frdf[bin] / 2.0
 
                 # Creating RDF from N(r)
-                const, dr = cellVolume/(4*np.pi/3.0), _rdf[1, 0] - _rdf[0, 0]
+                const, dr = cellVolume / (4 * np.pi / 3.0), _rdf[1, 0] - _rdf[0, 0]
                 for bin in range(nbins):
-                    _rdf[bin, 1] = const*_rdf[bin, 1]/((_rdf[bin, 0] + 0.5*dr)**3 - (_rdf[bin, 0] - 0.5*dr)**3)
-                    rdfQ[bin, 1] = const*rdfQ[bin, 1]/((rdfQ[bin, 0] + 0.5*dr)**3 - (rdfQ[bin, 0] - 0.5*dr)**3)
+                    _rdf[bin, 1] = const * _rdf[bin, 1] / ((_rdf[bin, 0] + 0.5 * dr)**3 - (_rdf[bin, 0] - 0.5 * dr)**3)
+                    rdfQ[bin, 1] = const * rdfQ[bin, 1] / ((rdfQ[bin, 0] + 0.5 * dr)**3 - (rdfQ[bin, 0] - 0.5 * dr)**3)
                 for bin in range(nbins):
                     _rdf[bin, 0] = unit_to_user('length', unit, _rdf[bin, 0])
                     rdfQ[bin, 0] = unit_to_user('length', unit, rdfQ[bin, 0])

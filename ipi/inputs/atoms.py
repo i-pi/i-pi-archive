@@ -39,25 +39,25 @@ class InputAtoms(Input):
           array with no elements
     """
 
-    fields={ "natoms"    : (InputValue, {"dtype"     : int,
-                                         "default"   : 0,
-                                         "help"      : "The number of atoms." }),
-             "q"         : (InputArray, {"dtype"     : float,
-                                         "default"   : input_default(factory=np.zeros, args=(0,)),
-                                         "help"      : "The positions of the atoms, in the format [x1, y1, z1, x2, ... ].",
-                                         "dimension" : "length" }),
-             "p"         : (InputArray, {"dtype"     : float,
-                                         "default"   : input_default(factory=np.zeros, args=(0,)),
-                                         "help"      : "The momenta of the atoms, in the format [px1, py1, pz1, px2, ... ].",
-                                         "dimension" : "momentum" }),
-             "m"         : (InputArray, {"dtype"     : float,
-                                         "default"   : input_default(factory=np.zeros, args=(0,)),
-                                         "help"      : "The masses of the atoms, in the format [m1, m2, ... ].",
-                                         "dimension" : "mass" }),
-             "names"     : (InputArray, {"dtype"     : str,
-                                         "default"   : input_default(factory=np.zeros, args=(0,), kwargs = {'dtype': np.dtype('|S6')}),
-                                         "help"      : "The names of the atoms, in the format [name1, name2, ... ]." })
-          }
+    fields = {"natoms": (InputValue, {"dtype": int,
+                                      "default": 0,
+                                      "help": "The number of atoms."}),
+              "q": (InputArray, {"dtype": float,
+                                 "default": input_default(factory=np.zeros, args=(0,)),
+                                 "help": "The positions of the atoms, in the format [x1, y1, z1, x2, ... ].",
+                                 "dimension": "length"}),
+              "p": (InputArray, {"dtype": float,
+                                 "default": input_default(factory=np.zeros, args=(0,)),
+                                 "help": "The momenta of the atoms, in the format [px1, py1, pz1, px2, ... ].",
+                                 "dimension": "momentum"}),
+              "m": (InputArray, {"dtype": float,
+                                 "default": input_default(factory=np.zeros, args=(0,)),
+                                 "help": "The masses of the atoms, in the format [m1, m2, ... ].",
+                                 "dimension": "mass"}),
+              "names": (InputArray, {"dtype": str,
+                                     "default": input_default(factory=np.zeros, args=(0,), kwargs={'dtype': np.dtype('|S6')}),
+                                     "help": "The names of the atoms, in the format [name1, name2, ... ]."})
+              }
 
     default_help = "Deals with a single replica of the system or classical simulations."
     default_label = "ATOMS"
@@ -71,7 +71,7 @@ class InputAtoms(Input):
               positions from. Defaults to ''.
         """
 
-        super(InputAtoms,self).store()
+        super(InputAtoms, self).store()
         self.natoms.store(atoms.natoms)
         self.q.store(depstrip(atoms.q))
         self.p.store(depstrip(atoms.p))
@@ -86,7 +86,7 @@ class InputAtoms(Input):
            properties given the attributes of the InputAtoms object.
         """
 
-        super(InputAtoms,self).fetch()
+        super(InputAtoms, self).fetch()
         atoms = Atoms(self.natoms.fetch())
         atoms.q = self.q.fetch()
         atoms.p = self.p.fetch()
@@ -94,7 +94,7 @@ class InputAtoms(Input):
         atoms.names = self.names.fetch()
         return atoms
 
-    def write(self,  name="", indent=""):
+    def write(self, name="", indent=""):
         """Overloads Input write() function so that nothing is written if
         no atoms are present. This occurs if the beads object has been specified,
         so that the classical atoms object is not initialized.
@@ -104,6 +104,6 @@ class InputAtoms(Input):
         """
 
         if self.natoms.fetch() > 0:
-            return super(InputAtoms,self).write(name=name,indent=indent)
+            return super(InputAtoms, self).write(name=name, indent=indent)
         else:
             return ""

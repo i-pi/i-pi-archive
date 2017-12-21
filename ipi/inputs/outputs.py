@@ -37,31 +37,31 @@ class InputProperties(InputArray):
     default_label = "PROPERTIES"
 
     attribs = copy(InputArray.attribs)
-    attribs["filename"] = (InputAttribute,{ "dtype" : str, "default": "out",
-                                            "help": "A string to specify the name of the file that is output. The file name is given by 'prefix'.'filename' + format_specifier. The format specifier may also include a number if multiple similar files are output."} )
-    attribs["stride"] = (InputAttribute,{ "dtype" : int, "default": 1,
-                                          "help": "The number of steps between successive writes." } )
-    attribs["flush"] = (InputAttribute, {"dtype"    : int,    "default"  : 1,
-                                    "help"     : "How often should streams be flushed. 1 means each time, zero means never." })
+    attribs["filename"] = (InputAttribute, {"dtype": str, "default": "out",
+                                            "help": "A string to specify the name of the file that is output. The file name is given by 'prefix'.'filename' + format_specifier. The format specifier may also include a number if multiple similar files are output."})
+    attribs["stride"] = (InputAttribute, {"dtype": int, "default": 1,
+                                          "help": "The number of steps between successive writes."})
+    attribs["flush"] = (InputAttribute, {"dtype": int, "default": 1,
+                                         "help": "How often should streams be flushed. 1 means each time, zero means never."})
 
-    def __init__(self, help=None,  default=None, dtype=None, dimension=None):
+    def __init__(self, help=None, default=None, dtype=None, dimension=None):
         """Initializes InputProperties.
 
         Just calls the parent initialization function with appropriate arguments.
         """
 
-        super(InputProperties,self).__init__(help=help, default=default, dtype=str, dimension=dimension)
+        super(InputProperties, self).__init__(help=help, default=default, dtype=str, dimension=dimension)
 
     def fetch(self):
         """Returns a PropertyOutput object."""
 
         return eoutputs.PropertyOutput(filename=self.filename.fetch(),
-          stride=self.stride.fetch(), flush=self.flush.fetch(), outlist=super(InputProperties,self).fetch())
+                                       stride=self.stride.fetch(), flush=self.flush.fetch(), outlist=super(InputProperties, self).fetch())
 
     def store(self, prop):
         """Stores a PropertyOutput object."""
 
-        super(InputProperties,self).store(prop.outlist)
+        super(InputProperties, self).store(prop.outlist)
         self.stride.store(prop.stride)
         self.flush.store(prop.flush)
         self.filename.store(prop.filename)
@@ -69,7 +69,7 @@ class InputProperties(InputArray):
     def check(self):
         """Checks for optional parameters."""
 
-        super(InputProperties,self).check()
+        super(InputProperties, self).check()
         if self.stride.fetch() < 0:
             raise ValueError("The stride length for the properties file output must be positive.")
 
@@ -97,39 +97,39 @@ class InputTrajectory(InputValue):
     default_label = "TRAJECTORY"
 
     attribs = {}
-    attribs["filename"] = (InputAttribute,{ "dtype" : str, "default": "traj",
-                                            "help": "A string to specify the name of the file that is output. The file name is given by 'prefix'.'filename' + format_specifier. The format specifier may also include a number if multiple similar files are output."} )
-    attribs["stride"] = (InputAttribute,{ "dtype" : int, "default": 1,
-                                          "help": "The number of steps between successive writes." } )
-    attribs["format"] = (InputAttribute,{ "dtype" : str, "default": "xyz",
-                                        "help": "The output file format.",
-                                        "options": ['xyz', 'pdb'] } )
-    attribs["cell_units"] = (InputAttribute,{ "dtype" : str, "default": "",
-                                        "help": "The units for the cell dimensions." } )
-    attribs["bead"] = (InputAttribute,{ "dtype" : int, "default": -1,
-                                          "help": "Print out only the specified bead. A negative value means print all." } )
-    attribs["flush"] = (InputAttribute, {"dtype"    : int,    "default"  : 1,
-                                    "help"     : "How often should streams be flushed. 1 means each time, zero means never." })
+    attribs["filename"] = (InputAttribute, {"dtype": str, "default": "traj",
+                                            "help": "A string to specify the name of the file that is output. The file name is given by 'prefix'.'filename' + format_specifier. The format specifier may also include a number if multiple similar files are output."})
+    attribs["stride"] = (InputAttribute, {"dtype": int, "default": 1,
+                                          "help": "The number of steps between successive writes."})
+    attribs["format"] = (InputAttribute, {"dtype": str, "default": "xyz",
+                                          "help": "The output file format.",
+                                          "options": ['xyz', 'pdb']})
+    attribs["cell_units"] = (InputAttribute, {"dtype": str, "default": "",
+                                              "help": "The units for the cell dimensions."})
+    attribs["bead"] = (InputAttribute, {"dtype": int, "default": -1,
+                                        "help": "Print out only the specified bead. A negative value means print all."})
+    attribs["flush"] = (InputAttribute, {"dtype": int, "default": 1,
+                                         "help": "How often should streams be flushed. 1 means each time, zero means never."})
 
-    def __init__(self, help=None,  default=None, dtype=None, dimension=None):
+    def __init__(self, help=None, default=None, dtype=None, dimension=None):
         """Initializes InputTrajectory.
 
         Just calls the parent initialization function with appropriate arguments.
         """
 
-        super(InputTrajectory,self).__init__(help=help, default=default, dtype=str, dimension=dimension)
+        super(InputTrajectory, self).__init__(help=help, default=default, dtype=str, dimension=dimension)
 
     def fetch(self):
         """Returns a TrajectoryOutput object."""
 
         return eoutputs.TrajectoryOutput(filename=self.filename.fetch(), stride=self.stride.fetch(),
-                 flush=self.flush.fetch(), what=super(InputTrajectory,self).fetch(),
-                 format=self.format.fetch(), cell_units=self.cell_units.fetch(), ibead=self.bead.fetch())
+                                         flush=self.flush.fetch(), what=super(InputTrajectory, self).fetch(),
+                                         format=self.format.fetch(), cell_units=self.cell_units.fetch(), ibead=self.bead.fetch())
 
     def store(self, traj):
         """Stores a PropertyOutput object."""
 
-        super(InputTrajectory,self).store(traj.what)
+        super(InputTrajectory, self).store(traj.what)
         self.stride.store(traj.stride)
         self.flush.store(traj.flush)
         self.filename.store(traj.filename)
@@ -140,7 +140,7 @@ class InputTrajectory(InputValue):
     def check(self):
         """Checks for optional parameters."""
 
-        super(InputTrajectory,self).check()
+        super(InputTrajectory, self).check()
         if self.stride.fetch() < 0:
             raise ValueError("The stride length for the trajectory file output must be positive.")
 
@@ -161,27 +161,27 @@ class InputCheckpoint(InputValue):
     default_help = """This class defines how a checkpoint file should be output. Optionally, between the checkpoint tags, you can specify one integer giving the current step of the simulation. By default this integer will be zero."""
     default_label = "CHECKPOINT"
 
-    attribs={}
-    attribs["filename"] = (InputAttribute,{ "dtype" : str, "default": "restart",
-                                            "help": "A string to specify the name of the file that is output. The file name is given by 'prefix'.'filename' + format_specifier. The format specifier may also include a number if multiple similar files are output."} )
-    attribs["stride"] = (InputAttribute,{ "dtype" : int, "default": 1,
-                                          "help": "The number of steps between successive writes." } )
-    attribs["overwrite"] = (InputAttribute,{ "dtype" : bool, "default": True,
-                                             "help": "This specifies whether or not each consecutive checkpoint file will overwrite the old one."} )
+    attribs = {}
+    attribs["filename"] = (InputAttribute, {"dtype": str, "default": "restart",
+                                            "help": "A string to specify the name of the file that is output. The file name is given by 'prefix'.'filename' + format_specifier. The format specifier may also include a number if multiple similar files are output."})
+    attribs["stride"] = (InputAttribute, {"dtype": int, "default": 1,
+                                          "help": "The number of steps between successive writes."})
+    attribs["overwrite"] = (InputAttribute, {"dtype": bool, "default": True,
+                                             "help": "This specifies whether or not each consecutive checkpoint file will overwrite the old one."})
 
-    def __init__(self, help=None,  default=None, dtype=None, dimension=None):
+    def __init__(self, help=None, default=None, dtype=None, dimension=None):
         """Initializes InputCheckpoint.
 
         Just calls the parent initialization function with appropriate arguments.
         """
 
-        super(InputCheckpoint,self).__init__(help=help, default=default, dtype=int, dimension=dimension)
+        super(InputCheckpoint, self).__init__(help=help, default=default, dtype=int, dimension=dimension)
 
     def fetch(self):
         """Returns a CheckpointOutput object."""
 
-        step = super(InputCheckpoint,self).fetch()
-        return eoutputs.CheckpointOutput(self.filename.fetch(), self.stride.fetch(), self.overwrite.fetch(), step=step )
+        step = super(InputCheckpoint, self).fetch()
+        return eoutputs.CheckpointOutput(self.filename.fetch(), self.stride.fetch(), self.overwrite.fetch(), step=step)
 
     def parse(self, xml=None, text=""):
         """Overwrites the standard parse function so that we can specify this tag
@@ -197,7 +197,7 @@ class InputCheckpoint(InputValue):
 
         # just a quick hack to allow an empty element
         try:
-            super(InputCheckpoint,self).parse(xml,text)
+            super(InputCheckpoint, self).parse(xml, text)
         except ValueError:
             # This could hide actual errors, at least in theory.
             self.value = 0
@@ -205,7 +205,7 @@ class InputCheckpoint(InputValue):
     def store(self, chk):
         """Stores a CheckpointOutput object."""
 
-        super(InputCheckpoint,self).store(chk.step)
+        super(InputCheckpoint, self).store(chk.step)
         self.stride.store(chk.stride)
         self.filename.store(chk.filename)
         self.overwrite.store(chk.overwrite)
@@ -213,7 +213,7 @@ class InputCheckpoint(InputValue):
     def check(self):
         """Checks for optional parameters."""
 
-        super(InputCheckpoint,self).check()
+        super(InputCheckpoint, self).check()
         if self.stride.fetch() < 0:
             raise ValueError("The stride length for the checkpoint file output must be positive.")
 
@@ -236,15 +236,15 @@ class InputOutputs(Input):
        checkpoint: Specifies a checkpoint file to be output.
     """
 
-    attribs = { "prefix" : ( InputAttribute, { "dtype" : str,
-                                           "default"  : "i-pi",
-                                           "help"     : "A string that will be prepended to each output file name. The file name is given by 'prefix'.'filename' + format_specifier. The format specifier may also include a number if multiple similar files are output." })
-              }
+    attribs = {"prefix": (InputAttribute, {"dtype": str,
+                                           "default": "i-pi",
+                                           "help": "A string that will be prepended to each output file name. The file name is given by 'prefix'.'filename' + format_specifier. The format specifier may also include a number if multiple similar files are output."})
+               }
 
-    dynamic = {  "properties" : (InputProperties, { "help" : "Each of the properties tags specify how to create a file in which one or more properties are written, one line per frame. " } ),
-                "trajectory" : (InputTrajectory, { "help" : "Each of the trajectory tags specify how to create a trajectory file, containing a list of per-atom coordinate properties. " } ),
-                "checkpoint" : (InputCheckpoint, { "help" : "Each of the checkpoint tags specify how to create a checkpoint file, which can be used to restart a simulation. " } ),
-             }
+    dynamic = {"properties": (InputProperties, {"help": "Each of the properties tags specify how to create a file in which one or more properties are written, one line per frame. "}),
+               "trajectory": (InputTrajectory, {"help": "Each of the trajectory tags specify how to create a trajectory file, containing a list of per-atom coordinate properties. "}),
+               "checkpoint": (InputCheckpoint, {"help": "Each of the checkpoint tags specify how to create a checkpoint file, which can be used to restart a simulation. "}),
+               }
 
     default_help = """This class defines how properties, trajectories and checkpoints should be output during the simulation. May contain zero, one or many instances of properties, trajectory or checkpoint tags, each giving instructions on how one output file should be created and managed."""
     default_label = "OUTPUTS"
@@ -259,9 +259,9 @@ class InputOutputs(Input):
         use any mutable objects as arguments.
         """
 
-        return [ eoutputs.PropertyOutput(filename="i-pi.md", stride=10, outlist=[ "time", "step", "conserved", "temperature", "potential", "kinetic_cv" ] ),
-                 eoutputs.TrajectoryOutput(filename="i-pi.pos", stride=100, what="positions", format="xyz"),
-                 eoutputs.CheckpointOutput(filename="i-pi.checkpoint", stride=1000, overwrite=True)]
+        return [eoutputs.PropertyOutput(filename="i-pi.md", stride=10, outlist=["time", "step", "conserved", "temperature", "potential", "kinetic_cv"]),
+                eoutputs.TrajectoryOutput(filename="i-pi.pos", stride=100, what="positions", format="xyz"),
+                eoutputs.CheckpointOutput(filename="i-pi.checkpoint", stride=1000, overwrite=True)]
 
     def fetch(self):
         """Returns a list of the output objects included in this dynamic
@@ -274,7 +274,7 @@ class InputOutputs(Input):
         """
 
         super(InputOutputs, self).fetch()
-        outlist = [ p.fetch() for (n, p) in self.extra ]
+        outlist = [p.fetch() for (n, p) in self.extra]
         prefix = self.prefix.fetch()
         if not prefix == "":
             for p in outlist:
@@ -295,7 +295,7 @@ class InputOutputs(Input):
         super(InputOutputs, self).store()
         self.extra = []
 
-        self.prefix.store("") # do not store prefix, as on load it is added to the innermost output filenames
+        self.prefix.store("")  # do not store prefix, as on load it is added to the innermost output filenames
         for el in plist:
             if (isinstance(el, eoutputs.PropertyOutput)):
                 ip = InputProperties()

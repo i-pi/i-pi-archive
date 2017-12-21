@@ -18,9 +18,8 @@ count = 0
 
 for a in range(asize):
     out[a][0] = table1[a][0]
-    out[a][1] = table1[a][3]-table2[a][3]
-    out[a][2] = table1[a][6]-table2[a][6]
+    out[a][1] = table1[a][3] - table2[a][3]
+    out[a][2] = table1[a][6] - table2[a][6]
 
 
 np.savetxt('1000loga.out', out)
-

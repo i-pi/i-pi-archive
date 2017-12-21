@@ -59,9 +59,9 @@ class Client(DriverSocket):
 
         # allocate data
         self.havedata = False
-        self._vir = np.zeros((3,3), np.float64)
-        self._cellh = np.zeros((3,3), np.float64)
-        self._cellih = np.zeros((3,3), np.float64)
+        self._vir = np.zeros((3, 3), np.float64)
+        self._cellh = np.zeros((3, 3), np.float64)
+        self._cellih = np.zeros((3, 3), np.float64)
         self._nat = np.int32()
         self._callback = None
 
@@ -148,8 +148,8 @@ class Client(DriverSocket):
                     self.sendall(Message("forceready"))
                     self.sendall(self._potential, 8)
                     self.sendall(self._nat, 4)
-                    self.sendall(self._force, 8*self._force.size)
-                    self.sendall(self._vir, 9*8)
+                    self.sendall(self._force, 8 * self._force.size)
+                    self.sendall(self._vir, 9 * 8)
                     self.sendall(np.int32(0), 4)
                     self.havedata = False
                 else:
@@ -220,15 +220,15 @@ class ClientASE(Client):
         self._potential[:] = np.array([atoms.get_potential_energy() * self.eV])
 
         # DEBUG
-        #print 'positions for ASE:'
-        #print self._positions / self.Angstrom
-        #print
-        #print 'cell for ASE:'
-        #print self._cellh / self.Angstrom
-        #print
-        #print 'potential energy [Ha]:'
-        #print self._potential
-        #print
-        #print 'forces [atomic units]:'
-        #print self._force
-        #print
+        # print 'positions for ASE:'
+        # print self._positions / self.Angstrom
+        # print
+        # print 'cell for ASE:'
+        # print self._cellh / self.Angstrom
+        # print
+        # print 'potential energy [Ha]:'
+        # print self._potential
+        # print
+        # print 'forces [atomic units]:'
+        # print self._force
+        # print

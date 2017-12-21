@@ -48,7 +48,7 @@ class input_default(object):
           function.
     """
 
-    def __init__(self, factory, args = None, kwargs = None):
+    def __init__(self, factory, args=None, kwargs=None):
         """Initialises input_default.
 
         Args:
@@ -127,8 +127,8 @@ class Input(object):
     dynamic = {}
 
     default_help = "Generic input value"
-    default_label = "" #used as a way to reference a particular class using
-                       #hyperlinks
+    default_label = ""  # used as a way to reference a particular class using
+    # hyperlinks
 
     def __init__(self, help=None, default=None):
         """Initialises Input.
@@ -150,8 +150,8 @@ class Input(object):
         else:
             self._help = help
 
-        if isinstance(default,input_default):
-            #creates default dynamically if a suitable template is defined.
+        if isinstance(default, input_default):
+            # creates default dynamically if a suitable template is defined.
             self._default = default.factory(*default.args, **default.kwargs)
         else:
             self._default = default
@@ -160,10 +160,10 @@ class Input(object):
 
         self._label = self.default_label
 
-        #For each tag name in the fields and attribs dictionaries,
-        #creates and object of the type given, expanding the dictionary to give
-        #the arguments of the __init__() function, then adds it to the input
-        #object's dictionary.
+        # For each tag name in the fields and attribs dictionaries,
+        # creates and object of the type given, expanding the dictionary to give
+        # the arguments of the __init__() function, then adds it to the input
+        # object's dictionary.
         if not hasattr(self, "instancefields"):
             self.instancefields = {}
 
@@ -191,10 +191,10 @@ class Input(object):
         if not self._default is None:
             self.store(self._default)
         elif not hasattr(self, 'value'):
-            self.value = None #Makes sure we don't get exceptions when we
-                              #look for self.value
+            self.value = None  # Makes sure we don't get exceptions when we
+            # look for self.value
 
-        self._explicit = False #Since the value was not set by the user
+        self._explicit = False  # Since the value was not set by the user
 
     def store(self, value=None):
         """Base function for storing data"""
@@ -218,7 +218,7 @@ class Input(object):
         if not (self._explicit or self._optional):
             raise ValueError("Uninitialized Input value of type " + type(self).__name__)
 
-    def extend(self, name,  xml):
+    def extend(self, name, xml):
         """ Dynamically add elements to the 'extra' list.
 
         Picks from one of the templates in the self.dynamic dictionary, then
@@ -231,7 +231,7 @@ class Input(object):
 
         newfield = self.dynamic[name][0](**self.dynamic[name][1])
         newfield.parse(xml)
-        self.extra.append((name,newfield))
+        self.extra.append((name, newfield))
 
     def write(self, name="", indent="", text="\n"):
         """Writes data in xml file format.
@@ -262,20 +262,20 @@ class Input(object):
             # have a very simple way to check whether they actually add something:
             # we compare with the string that would be output if the argument was set
             # to its default
-            defstr = self.__dict__[a]._defwrite.replace("%%NAME%%",a)
+            defstr = self.__dict__[a]._defwrite.replace("%%NAME%%", a)
             outstr = self.__dict__[a].write(name=a)
             if outstr != defstr:
                 rstr += " " + outstr
         rstr += ">"
         rstr += text
         for f in self.instancefields:
-            #only write out fields that are not defaults
+            # only write out fields that are not defaults
 
-            defstr = self.__dict__[f]._defwrite.replace("%%NAME%%",f)
+            defstr = self.__dict__[f]._defwrite.replace("%%NAME%%", f)
             if defstr != self.__dict__[f].write(f):   # here we must compute the write string twice not to be confused by indents.
                 rstr += self.__dict__[f].write(f, "   " + indent)
 
-        for (f,v) in self.extra:
+        for (f, v) in self.extra:
             # also write out extended (dynamic) fields if present
             rstr += v.write(f, "   " + indent)
 
@@ -326,9 +326,9 @@ class Input(object):
                 else:
                     raise NameError("Attribute name '" + a + "' is not a recognized property of '" + xml.name + "' objects")
 
-            for (f, v) in xml.fields: #reads all field and dynamic data.
+            for (f, v) in xml.fields:  # reads all field and dynamic data.
                 if f in self.instancefields:
-                    self.__dict__[f].parse(xml=v)       
+                    self.__dict__[f].parse(xml=v)
                 elif f == "_text":
                     self._text = v
                 elif f in self.dynamic:
@@ -336,7 +336,7 @@ class Input(object):
                 else:
                     raise NameError("Tag name '" + f + "' is not a recognized property of '" + xml.name + "' objects")
 
-            #checks for missing arguments.
+            # checks for missing arguments.
             for a in self.attribs:
                 va = self.__dict__[a]
                 if not (va._explicit or va._optional):
@@ -354,28 +354,28 @@ class Input(object):
         """
 
         xstr = ""
-        if hasattr(self, '_dimension') and self._dimension != "undefined": #gives dimension
+        if hasattr(self, '_dimension') and self._dimension != "undefined":  # gives dimension
             xstr += "dimension: " + self._dimension + "; "
 
         if self._default is not None and issubclass(self.__class__, InputAttribute):
-            #We only print out the default if it has a well defined value.
-            #For classes such as InputCell, self._default is not the value,
-            #instead it is an object that is stored to give the default value in
-            #self.value. For this reason we print out self.value at this stage,
-            #and not self._default
+            # We only print out the default if it has a well defined value.
+            # For classes such as InputCell, self._default is not the value,
+            # instead it is an object that is stored to give the default value in
+            # self.value. For this reason we print out self.value at this stage,
+            # and not self._default
             xstr += "default: " + self.pprint(self.value) + "; "
 
         if issubclass(self.__class__, InputAttribute):
-            #if possible, prints out the type of data that is being used
+            # if possible, prints out the type of data that is being used
             xstr += "data type: " + self.type_print(self.type) + "; "
 
         if hasattr(self, "_valid"):
             if self._valid is not None:
-                xstr += "options: " #prints out valid options, if
-                for option in self._valid:      #required.
+                xstr += "options: "  # prints out valid options, if
+                for option in self._valid:  # required.
                     xstr += "`" + str(option) + "', "
                 xstr = xstr.rstrip(", ")
-                xstr +=  "; "
+                xstr += "; "
         return xstr
 
     def help_latex(self, name="", level=0, stop_level=None, standalone=True):
@@ -394,15 +394,15 @@ class Input(object):
            A LaTeX formatted string.
         """
 
-        #stops when we've printed out the prerequisite number of levels
+        # stops when we've printed out the prerequisite number of levels
         if (not stop_level is None and level > stop_level):
             return ""
 
         rstr = ""
         if level == 0:
             if standalone:
-                #assumes that it is a stand-alone document, so must have
-                #document options.
+                # assumes that it is a stand-alone document, so must have
+                # document options.
                 rstr += r"\documentclass[12pt,fleqn]{report}"
                 rstr += r"""
 \usepackage{etoolbox}
@@ -444,52 +444,52 @@ class Input(object):
 """
                 rstr += "\n\\begin{document}\n"
             if self._label != "" and not standalone:
-                #assumes that it is part of a cross-referenced document, so only
-                #starts a new section.
+                # assumes that it is part of a cross-referenced document, so only
+                # starts a new section.
                 rstr += "\\section{" + self._label + "}\n"
                 rstr += "\\label{" + self._label + "}\n"
 
             rstr += "\\begin{ipifield}{}%\n"
         else:
             if self._label != "" and not standalone:
-                rstr += "\\begin{ipifield}{\hyperref["+self._label+"]{"+name+"}}%\n"
+                rstr += "\\begin{ipifield}{\hyperref[" + self._label + "]{" + name + "}}%\n"
             else:
-                rstr += "\\begin{ipifield}{"+name+"}%\n"
+                rstr += "\\begin{ipifield}{" + name + "}%\n"
 
-        rstr += "{"+self._help+"}%\n"
+        rstr += "{" + self._help + "}%\n"
 
-        rstr += "{"+self.detail_str()+"}%\n"
+        rstr += "{" + self.detail_str() + "}%\n"
 
         rstr += "{"
         # Prints out the attributes
         if len(self.attribs) != 0:
-            #don't print out units if not necessary
+            # don't print out units if not necessary
             if len(self.attribs) == 1 and (("units" in self.attribs) and self._dimension == "undefined"):
                 pass
             else:
                 for a in self.attribs:
-                    #don't print out units if not necessary
+                    # don't print out units if not necessary
                     if not (a == "units" and self._dimension == "undefined"):
-                        rstr += "\\ipiitem{" + a + "}%\n{" + self.__dict__[a]._help + "}%\n{"+self.__dict__[a].detail_str()+"}%\n"  #!!MUST ADD OTHER STUFF
-        rstr+="}\n"
+                        rstr += "\\ipiitem{" + a + "}%\n{" + self.__dict__[a]._help + "}%\n{" + self.__dict__[a].detail_str() + "}%\n"  # !!MUST ADD OTHER STUFF
+        rstr += "}\n"
 
-        #As above, for the fields. Only prints out if we have not reached the
-        #user-specified limit.
+        # As above, for the fields. Only prints out if we have not reached the
+        # user-specified limit.
         if len(self.instancefields) != 0 and level != stop_level:
             for f in self.instancefields:
-                rstr += self.__dict__[f].help_latex(name=f, level=level+1, stop_level=stop_level, standalone=standalone)
+                rstr += self.__dict__[f].help_latex(name=f, level=level + 1, stop_level=stop_level, standalone=standalone)
 
         if len(self.dynamic) != 0 and level != stop_level:
             for f, v in self.dynamic.iteritems():
                 dummy_obj = v[0](**v[1])
-                rstr += dummy_obj.help_latex(name=f, level=level+1, stop_level=stop_level, standalone=standalone)
+                rstr += dummy_obj.help_latex(name=f, level=level + 1, stop_level=stop_level, standalone=standalone)
 
         rstr += "\\end{ipifield}\n"
         if level == 0 and standalone:
-            #ends the created document if it is not part of a larger document
+            # ends the created document if it is not part of a larger document
             rstr += "\\end{document}"
 
-        #Some escape characters are necessary for the proper latex formatting
+        # Some escape characters are necessary for the proper latex formatting
         rstr = rstr.replace('_', '\\_')
         rstr = rstr.replace('\\\\_', '\\_')
         rstr = rstr.replace('...', '\\ldots ')
@@ -498,7 +498,7 @@ class Input(object):
 
         return rstr
 
-    def pprint(self, default, indent="", latex = True):
+    def pprint(self, default, indent="", latex=True):
         """Function to convert arrays and other objects to human-readable strings.
 
         Args:
@@ -512,9 +512,9 @@ class Input(object):
 
         if type(default) is np.ndarray:
             if default.shape == (0,):
-                return " [ ] " #proper treatment of empty arrays.
+                return " [ ] "  # proper treatment of empty arrays.
             else:
-                #indents new lines for multi-D arrays properly
+                # indents new lines for multi-D arrays properly
                 rstr = "\n" + indent + "      "
                 rstr += str(default).replace("\n", "\n" + indent + "      ")
                 if not latex:
@@ -523,18 +523,18 @@ class Input(object):
                 return rstr
         elif type(default) == str:
             if latex:
-                return "`" + default + "'" #indicates that it is a string
+                return "`" + default + "'"  # indicates that it is a string
             else:
                 return " " + default + " "
         elif default == []:
             return " [ ] "
         elif default == {}:
             if latex:
-                return " \\{ \\} " #again, escape characters needed for latex
-            else:               #formatting
+                return " \\{ \\} "  # again, escape characters needed for latex
+            else:  # formatting
                 return " { } "
         else:
-            #in most cases standard formatting will do
+            # in most cases standard formatting will do
             return " " + str(default) + " "
 
     def type_print(self, dtype):
@@ -573,42 +573,42 @@ class Input(object):
            An xml formatted string.
         """
 
-        #stops when we've printed out the prerequisite number of levels
+        # stops when we've printed out the prerequisite number of levels
         if (not stop_level is None and level > stop_level):
             return ""
 
-        #these are booleans which tell us whether there are any attributes
-        #and fields to print out
+        # these are booleans which tell us whether there are any attributes
+        # and fields to print out
         show_attribs = (len(self.attribs) != 0)
         show_fields = (not (len(self.instancefields) == 0 and len(self.dynamic) == 0)) and level != stop_level
 
         rstr = ""
-        rstr = indent + "<" + name; #prints tag name
+        rstr = indent + "<" + name;  # prints tag name
         for a in self.attribs:
             if not (a == "units" and self._dimension == "undefined"):
-                #don't print out units if not necessary
-                rstr += " " + a + "=''" #prints attribute names
+                # don't print out units if not necessary
+                rstr += " " + a + "=''"  # prints attribute names
         rstr += ">\n"
 
-        #prints help string
+        # prints help string
         rstr += indent + "   <help> " + self._help + " </help>\n"
         if show_attribs:
             for a in self.attribs:
                 if not (a == "units" and self._dimension == "undefined"):
-                    #information about tags is found in tags beginning with the name
-                    #of the attribute
+                    # information about tags is found in tags beginning with the name
+                    # of the attribute
                     rstr += indent + "   <" + a + "_help> " + self.__dict__[a]._help + " </" + a + "_help>\n"
 
-        #prints dimensionality of the object
+        # prints dimensionality of the object
         if hasattr(self, '_dimension') and self._dimension != "undefined":
             rstr += indent + "   <dimension> " + self._dimension + " </dimension>\n"
 
         if self._default is not None and issubclass(self.__class__, InputAttribute):
-            #We only print out the default if it has a well defined value.
-            #For classes such as InputCell, self._default is not the value,
-            #instead it is an object that is stored, putting the default value in
-            #self.value. For this reason we print out self.value at this stage,
-            #and not self._default
+            # We only print out the default if it has a well defined value.
+            # For classes such as InputCell, self._default is not the value,
+            # instead it is an object that is stored, putting the default value in
+            # self.value. For this reason we print out self.value at this stage,
+            # and not self._default
             rstr += indent + "   <default>" + self.pprint(self.value, indent=indent, latex=False) + "</default>\n"
         if show_attribs:
             for a in self.attribs:
@@ -616,7 +616,7 @@ class Input(object):
                     if self.__dict__[a]._default is not None:
                         rstr += indent + "   <" + a + "_default>" + self.pprint(self.__dict__[a]._default, indent=indent, latex=False) + "</" + a + "_default>\n"
 
-        #prints out valid options, if required.
+        # prints out valid options, if required.
         if hasattr(self, "_valid"):
             if self._valid is not None:
                 rstr += indent + "   <options> " + str(self._valid) + " </options>\n"
@@ -627,7 +627,7 @@ class Input(object):
                         if self.__dict__[a]._valid is not None:
                             rstr += indent + "   <" + a + "_options> " + str(self.__dict__[a]._valid) + " </" + a + "_options>\n"
 
-        #if possible, prints out the type of data that is being used
+        # if possible, prints out the type of data that is being used
         if issubclass(self.__class__, InputAttribute):
             rstr += indent + "   <dtype> " + self.type_print(self.type) + " </dtype>\n"
         if show_attribs:
@@ -635,17 +635,17 @@ class Input(object):
                 if not (a == "units" and self._dimension == "undefined"):
                     rstr += indent + "   <" + a + "_dtype> " + self.type_print(self.__dict__[a].type) + " </" + a + "_dtype>\n"
 
-        #repeats the above instructions for any fields or dynamic tags.
-        #these will only be printed if their level in the hierarchy is not above
-        #the user specified limit.
+        # repeats the above instructions for any fields or dynamic tags.
+        # these will only be printed if their level in the hierarchy is not above
+        # the user specified limit.
         if show_fields:
             for f in self.instancefields:
-                rstr += self.__dict__[f].help_xml(f, "   " + indent, level+1, stop_level)
+                rstr += self.__dict__[f].help_xml(f, "   " + indent, level + 1, stop_level)
             for f, v in self.dynamic.iteritems():
-                #we must create the object manually, as dynamic objects are
-                #not automatically added to the input object's dictionary
+                # we must create the object manually, as dynamic objects are
+                # not automatically added to the input object's dictionary
                 dummy_obj = v[0](**v[1])
-                rstr += dummy_obj.help_xml(f, "   " + indent, level+1, stop_level)
+                rstr += dummy_obj.help_xml(f, "   " + indent, level + 1, stop_level)
 
         rstr += indent + "</" + name + ">\n"
         return rstr
@@ -655,48 +655,45 @@ class InputDictionary(Input):
     """Class that returns the value of all the fields as a dictionary.
     """
 
-    def __init__(self,  help=None, default=None, dtype=str, options=None, dimension=None):
+    def __init__(self, help=None, default=None, dtype=str, options=None, dimension=None):
         """Allows one to introduce additional (homogeneous) fields during initialization """
 
-
-        if hasattr(options,"__len__"):
+        if hasattr(options, "__len__"):
             self.instancefields = {}
             opdef = {}
-            for i in range(len(options)): 
+            for i in range(len(options)):
                 nfield = {}
-                if hasattr(default,"__len__"):        
-                    if len(options)!=len(default): 
+                if hasattr(default, "__len__"):
+                    if len(options) != len(default):
                         raise ValueError("Default values list does not match dictionay options length")
                     nfield["default"] = default[i]
-                else: nfield["default"] = default            
-                if hasattr(dtype,"__len__"):        
-                    if len(options)!=len(dtype): 
+                else: nfield["default"] = default
+                if hasattr(dtype, "__len__"):
+                    if len(options) != len(dtype):
                         raise ValueError("Type list does not match dictionay options length")
                     nfield["dtype"] = dtype[i]
                 else: nfield["dtype"] = dtype
-                if hasattr(dimension,"__len__"):        
-                    if len(options)!=len(dimension): 
+                if hasattr(dimension, "__len__"):
+                    if len(options) != len(dimension):
                         raise ValueError("Type list does not match dictionay options length")
                     nfield["dimension"] = dimension[i]
                 else: nfield["dimension"] = dimension
 
                 opdef[options[i]] = nfield["default"]
 
-                self.instancefields[options[i]] = ( InputValue, nfield )
-            super(InputDictionary,self).__init__(help=help, default=opdef) # deferred initialization         
+                self.instancefields[options[i]] = (InputValue, nfield)
+            super(InputDictionary, self).__init__(help=help, default=opdef)  # deferred initialization
         else:
-            super(InputDictionary,self).__init__(help=help, default=default)
-
+            super(InputDictionary, self).__init__(help=help, default=default)
 
     def store(self, value={}):
         """Base function for storing data passed as a dictionary"""
 
-        self._explicit = True       
+        self._explicit = True
         for f, v in value.iteritems():
-            self.__dict__[f].store(value[f])      
+            self.__dict__[f].store(value[f])
 
         pass
-
 
     def fetch(self):
         """Dummy function to retrieve data that returns all fields as a dictionary."""
@@ -704,7 +701,7 @@ class InputDictionary(Input):
         self.check()
         rdic = {}
         for f, v in self.instancefields.iteritems():
-            rdic[f]=self.__dict__[f].fetch()
+            rdic[f] = self.__dict__[f].fetch()
         return rdic
 
 
@@ -722,7 +719,7 @@ class InputAttribute(Input):
        _valid: An optional list of valid options.
     """
 
-    def __init__(self,  help=None, default=None, dtype=None, options=None):
+    def __init__(self, help=None, default=None, dtype=None, options=None):
         """Initialises InputAttribute.
 
         Args:
@@ -737,14 +734,14 @@ class InputAttribute(Input):
         else:
             raise TypeError("You must provide dtype")
 
-        super(InputAttribute,self).__init__(help, default)
+        super(InputAttribute, self).__init__(help, default)
 
         if options is not None:
             self._valid = options
             if not default is None and not self._default in self._valid:
-                #This makes sure that the programmer has set the default value
-                #so that it is a valid value.
-                raise ValueError("Default value '" + str(self._default) + "' not in option list " + str(self._valid)+ "\n" + self._help)
+                # This makes sure that the programmer has set the default value
+                # so that it is a valid value.
+                raise ValueError("Default value '" + str(self._default) + "' not in option list " + str(self._valid) + "\n" + self._help)
         else:
             self._valid = None
 
@@ -765,13 +762,13 @@ class InputAttribute(Input):
         Args:
            value: The raw data to be stored.
         """
-        super(InputAttribute,self).store(value)
+        super(InputAttribute, self).store(value)
         self.value = value
 
     def fetch(self):
         """Returns the stored data."""
 
-        super(InputAttribute,self).fetch()
+        super(InputAttribute, self).fetch()
         return self.value
 
     def check(self):
@@ -781,9 +778,9 @@ class InputAttribute(Input):
            ValueError: Raised if the value chosen is not one of the valid options.
         """
 
-        super(InputAttribute,self).check()
+        super(InputAttribute, self).check()
         if not (self._valid is None or self.value in self._valid):
-            #This checks that the user has set the value to a valid value.
+            # This checks that the user has set the value to a valid value.
             raise ValueError(str(self.value) + " is not a valid option (" + str(self._valid) + ")")
 
     def write(self, name=""):
@@ -817,9 +814,9 @@ class InputValue(InputAttribute):
     default_dimension = "undefined"
     default_units = "automatic"
 
-    attribs= { "units" : ( InputAttribute, { "dtype" : str, "help" : "The units the input data is given in.", "default" : default_units } ) }
+    attribs = {"units": (InputAttribute, {"dtype": str, "help": "The units the input data is given in.", "default": default_units})}
 
-    def __init__(self,  help=None, default=None, dtype=None, options=None, dimension=None):
+    def __init__(self, help=None, default=None, dtype=None, options=None, dimension=None):
         """Initialises InputValue.
 
         Args:
@@ -840,7 +837,7 @@ class InputValue(InputAttribute):
         else:
             self._dimension = dimension
 
-        super(InputValue,self).__init__(help, default, dtype, options)
+        super(InputValue, self).__init__(help, default, dtype, options)
 
     def store(self, value, units=""):
         """Converts the data to the appropriate data type and units and stores it.
@@ -851,11 +848,11 @@ class InputValue(InputAttribute):
               in.
         """
 
-        super(InputValue,self).store(value)
+        super(InputValue, self).store(value)
 
         if units != "":
-            self.units.store(units) #User can define in the code the units to be
-                                    #printed
+            self.units.store(units)  # User can define in the code the units to be
+            # printed
 
         self.value = value
         if self._dimension != "undefined":
@@ -864,7 +861,7 @@ class InputValue(InputAttribute):
     def fetch(self):
         """Returns the stored data in the user defined units."""
 
-        super(InputValue,self).fetch()
+        super(InputValue, self).fetch()
 
         rval = self.value
         if self._dimension != "undefined":
@@ -901,6 +898,8 @@ class InputValue(InputAttribute):
 
 
 ELPERLINE = 5
+
+
 class InputArray(InputValue):
     """Class for handling array input.
 
@@ -918,14 +917,13 @@ class InputArray(InputValue):
     """
 
     attribs = copy(InputValue.attribs)
-    attribs["shape"] = (InputAttribute,  {"dtype": tuple,  "help": "The shape of the array.", "default": (0,)})
-    attribs["mode"] = (InputAttribute, { "dtype"  : str,
-                                         "default": "manual",
-                                         "options": ["manual", "file"],
-                                         "help"   : "If 'mode' is 'manual', then the array is read from the content of 'cell' takes a 9-elements vector containing the cell matrix (row-major). If 'mode' is 'abcABC', then 'cell' takes an array of 6 floats, the first three being the length of the sides of the system parallelopiped, and the last three being the angles (in degrees) between those sides. Angle A corresponds to the angle between sides b and c, and so on for B and C. If mode is 'abc', then this is the same as for 'abcABC', but the cell is assumed to be orthorhombic. 'pdb' and 'chk' read the cell from a PDB or a checkpoint file, respectively."} )
+    attribs["shape"] = (InputAttribute, {"dtype": tuple, "help": "The shape of the array.", "default": (0,)})
+    attribs["mode"] = (InputAttribute, {"dtype": str,
+                                        "default": "manual",
+                                        "options": ["manual", "file"],
+                                        "help": "If 'mode' is 'manual', then the array is read from the content of 'cell' takes a 9-elements vector containing the cell matrix (row-major). If 'mode' is 'abcABC', then 'cell' takes an array of 6 floats, the first three being the length of the sides of the system parallelopiped, and the last three being the angles (in degrees) between those sides. Angle A corresponds to the angle between sides b and c, and so on for B and C. If mode is 'abc', then this is the same as for 'abcABC', but the cell is assumed to be orthorhombic. 'pdb' and 'chk' read the cell from a PDB or a checkpoint file, respectively."})
 
-
-    def __init__(self,  help=None, default=None, dtype=None, dimension=None):
+    def __init__(self, help=None, default=None, dtype=None, dimension=None):
         """Initialises InputArray.
 
         Args:
@@ -935,7 +933,7 @@ class InputArray(InputValue):
            dtype: An optional data type. Defaults to None.
         """
 
-        super(InputArray,self).__init__(help, default, dtype, dimension=dimension)
+        super(InputArray, self).__init__(help, default, dtype, dimension=dimension)
 
     def store(self, value, units=""):
         """Converts the data to the appropriate data type, shape and units and
@@ -947,23 +945,23 @@ class InputArray(InputValue):
               in.
         """
 
-        super(InputArray,self).store(value=np.array(value, dtype=self.type).flatten().copy(), units=units)
+        super(InputArray, self).store(value=np.array(value, dtype=self.type).flatten().copy(), units=units)
         self.shape.store(value.shape)
 
-        #if the shape is not specified, assume the array is linear.
+        # if the shape is not specified, assume the array is linear.
         if self.shape.fetch() == (0,):
             self.shape.store((len(self.value),))
 
-        self.mode.store("manual") # always store as an explicit array so files are self-contained
+        self.mode.store("manual")  # always store as an explicit array so files are self-contained
 
     def fetch(self):
         """Returns the stored data in the user defined units."""
 
-        value = super(InputArray,self).fetch()
+        value = super(InputArray, self).fetch()
 
-        #if the shape is not specified, assume the array is linear.
+        # if the shape is not specified, assume the array is linear.
         if self.shape.fetch() == (0,):
-            value = np.resize(self.value,0).copy()
+            value = np.resize(self.value, 0).copy()
         else:
             value = self.value.reshape(self.shape.fetch()).copy()
 
@@ -990,14 +988,14 @@ class InputArray(InputValue):
         if (len(self.value) > ELPERLINE):
             rstr += "\n" + indent + " [ "
         else:
-            rstr += " [ " #inlines the array if it is small enough
+            rstr += " [ "  # inlines the array if it is small enough
 
         for i, v in enumerate(self.value):
-            if (len(self.value) > ELPERLINE and i > 0 and i%ELPERLINE == 0):
+            if (len(self.value) > ELPERLINE and i > 0 and i % ELPERLINE == 0):
                 rstr += "\n" + indent + "   "
             rstr += write_type(self.type, v) + ", "
 
-        rstr = rstr.rstrip(", ") #get rid of trailing commas
+        rstr = rstr.rstrip(", ")  # get rid of trailing commas
         if (len(self.value) > ELPERLINE):
             rstr += " ]\n"
         else:
@@ -1020,10 +1018,10 @@ class InputArray(InputValue):
         if mode == "manual":
             self.value = read_array(self.type, self._text)
         elif mode == "file":
-            self.value = np.loadtxt(self._text.strip(), comments="#", dtype=self.type).flatten()         
+            self.value = np.loadtxt(self._text.strip(), comments="#", dtype=self.type).flatten()
         else:
             raise ValueError("Unsupported array reading mode")
 
-        #if the shape is not specified, assume the array is linear.
+        # if the shape is not specified, assume the array is linear.
         if self.shape.fetch() == (0,):
             self.shape.store((len(self.value),))

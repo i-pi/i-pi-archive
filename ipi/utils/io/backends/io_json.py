@@ -63,6 +63,7 @@ def print_json(atoms, cell, filedesc=sys.stdout, title="", cell_conv=1.0, atoms_
     filedesc.write(json.dumps(data))
     filedesc.write(" \n")
 
+
 def read_json(filedesc):
     """Reads a JSON-style file with i-pi style comments and creates an Atoms and Cell object.
 
@@ -88,12 +89,12 @@ def read_json(filedesc):
     masses = np.zeros(len(names))
 
     a, b, c, alpha, beta, gamma = data['cell']
-    alpha *= np.pi / 180. 
-    beta *= np.pi / 180. 
-    gamma *= np.pi / 180. 
+    alpha *= np.pi / 180.
+    beta *= np.pi / 180.
+    gamma *= np.pi / 180.
     cell = mt.abc2h(a, b, c, alpha, beta, gamma)
 
-    return (title, cell, qatoms, names, masses) 
+    return (title, cell, qatoms, names, masses)
 
 
 def iter_json(filedesc, **kwargs):

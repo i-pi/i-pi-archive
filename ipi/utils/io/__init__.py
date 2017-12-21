@@ -23,15 +23,15 @@ __all__ = ["io_units", "iter_file", "print_file_path", "print_file", "read_file"
 
 
 mode_map = {
-    "bin":  "binary",
+    "bin": "binary",
 }
 
 
 io_map = {
     "print_path": "print_%s_path",
-    "print":      "print_%s",
-    "read":       "read_%s",
-    "iter":       "iter_%s",
+    "print": "print_%s",
+    "read": "read_%s",
+    "iter": "iter_%s",
 }
 
 
@@ -48,7 +48,7 @@ def _get_io_function(mode, io):
     """
 
     try:
-        mode = mode[mode.find(".")+1:]
+        mode = mode[mode.find(".") + 1:]
         if mode in mode_map:
             mode = mode_map[mode]
         module = importlib.import_module("ipi.utils.io.backends.io_%s" % mode)
@@ -64,6 +64,7 @@ def _get_io_function(mode, io):
 
     return func
 
+
 def print_file_path_raw(mode, beads, cell, filedesc=sys.stdout, title="", cell_conv=1.0, atoms_conv=1.0):
     """Prints all the bead configurations, into a `mode` formatted file.
 
@@ -77,6 +78,7 @@ def print_file_path_raw(mode, beads, cell, filedesc=sys.stdout, title="", cell_c
     """
 
     return _get_io_function(mode, "print_path")(beads=beads, cell=cell, filedesc=filedesc, title=title, cell_conv=cell_conv, atoms_conv=atoms_conv)
+
 
 def print_file_path(mode, beads, cell, filedesc=sys.stdout, title="", key="", dimension="length", units="automatic", cell_units="automatic"):
     """Prints all the bead configurations, into a `mode` formatted file.
@@ -107,6 +109,7 @@ def print_file_path(mode, beads, cell, filedesc=sys.stdout, title="", key="", di
 
     return _get_io_function(mode, "print_path")(beads=beads, cell=cell, filedesc=filedesc, cell_conv=cell_conv, atoms_conv=atoms_conv)
 
+
 def print_file_raw(mode, atoms, cell, filedesc=sys.stdout, title="", cell_conv=1.0, atoms_conv=1.0):
     """Prints atom positions, or atom-vector properties, into a `mode` formatted file, 
        providing atoms and cell in the internal i-PI representation but doing no conversion.
@@ -121,6 +124,7 @@ def print_file_raw(mode, atoms, cell, filedesc=sys.stdout, title="", cell_conv=1
     """
 
     return _get_io_function(mode, "print")(atoms=atoms, cell=cell, filedesc=filedesc, title=title, cell_conv=cell_conv, atoms_conv=atoms_conv)
+
 
 def print_file(mode, atoms, cell, filedesc=sys.stdout, title="", key="", dimension="length", units="automatic", cell_units="automatic"):
     """Prints atom positions, or atom-vector properties, into a `mode` formatted file, 
@@ -154,7 +158,8 @@ def print_file(mode, atoms, cell, filedesc=sys.stdout, title="", key="", dimensi
     title = title + ("%s{%s}  cell{%s}" % (key, units, cell_units))
     print_file_raw(mode=mode, atoms=atoms, cell=cell, filedesc=filedesc, title=title, cell_conv=cell_conv, atoms_conv=atoms_conv)
 
-def read_file_raw(mode, filedesc):    
+
+def read_file_raw(mode, filedesc):
     """ Reads atom positions, or atom-vector properties, from a file of mode "mode", 
         returns positions and cell parameters in raw array format, without creating i-PI
         internal objects. 
@@ -164,18 +169,18 @@ def read_file_raw(mode, filedesc):
         filedesc: An open readable file object.
 
     """
-    reader = _get_io_function(mode, "read") 
+    reader = _get_io_function(mode, "read")
 
     comment, cell, atoms, names, masses = reader(filedesc=filedesc)
 
     return {
-          "comment" : comment, 
+        "comment": comment,
           "data": atoms,
           "masses": masses,
           "names": names,
           "natoms": len(names),
           "cell": cell
-        }
+    }
 
 
 def read_file(mode, filedesc, dimension="automatic", units="automatic", cell_units="automatic"):
@@ -214,6 +219,7 @@ def read_file_name(filename):
 
     return read_file(os.path.splitext(filename)[1], open(filename))
 
+
 def iter_file_raw(mode, filedesc):
     """Takes an open `mode`-style file and yields a dictionary of positions and cell parameters in raw array format, without creating i-PI internal objects.
 
@@ -224,20 +230,20 @@ def iter_file_raw(mode, filedesc):
         Generator of frames dictionaries, as returned by `process_units`.
     """
 
-
     reader = _get_io_function(mode, "read")
 
     try:
         while True:
-            comment, cell, atoms, names, masses = reader(filedesc=filedesc)            
-            yield { "comment" : comment,
-                    "data": atoms, 
-                    "masses": masses, 
-                    "names": names, 
-                    "natoms": len(names), 
-                    "cell": cell }
+            comment, cell, atoms, names, masses = reader(filedesc=filedesc)
+            yield {"comment": comment,
+                   "data": atoms,
+                   "masses": masses,
+                   "names": names,
+                   "natoms": len(names),
+                   "cell": cell}
     except EOFError:
         pass
+
 
 def iter_file(mode, filedesc, dimension="automatic", units="automatic", cell_units="automatic"):
     """Takes an open `mode`-style file and yields one Atoms object after another.
@@ -256,6 +262,7 @@ def iter_file(mode, filedesc, dimension="automatic", units="automatic", cell_uni
     for raw_read in iter_file_raw_generator:
         yield process_units(dimension=dimension, units=units, cell_units=cell_units, mode=mode, **raw_read)
 
+
 def iter_file_name(filename):
     """Open a trajectory file, guessing its format from the extension.
 
@@ -268,6 +275,7 @@ def iter_file_name(filename):
 
     return iter_file(os.path.splitext(filename)[1], open(filename))
 
+
 def iter_file_name_raw(filename):
     """Open a trajectory file, guessing its format from the extension.
 
@@ -279,6 +287,7 @@ def iter_file_name_raw(filename):
     """
 
     return iter_file_raw(os.path.splitext(filename)[1], open(filename))
+
 
 def open_backup(filename, mode='r', buffering=-1):
     """A wrapper around `open` which saves backup files.

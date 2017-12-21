@@ -47,17 +47,17 @@ class Atom(dobject):
               list. Note that indices start from 0.
         """
 
-        dset(self,"p",system.p[3*index:3*index+3])
-        dset(self,"q",system.q[3*index:3*index+3])
-        dset(self,"m",system.m[index:index+1])
-        dset(self,"name",system.names[index:index+1])
-        dset(self,"m3",system.m3[3*index:3*index+3])
+        dset(self, "p", system.p[3 * index:3 * index + 3])
+        dset(self, "q", system.q[3 * index:3 * index + 3])
+        dset(self, "m", system.m[index:index + 1])
+        dset(self, "name", system.names[index:index + 1])
+        dset(self, "m3", system.m3[3 * index:3 * index + 3])
 
     @property
     def kin(self):
         """Calculates the contribution of the atom to the kinetic energy."""
 
-        return np.dot(self.p,self.p)/(2.0*self.m)
+        return np.dot(self.p, self.p) / (2.0 * self.m)
 
     @property
     def kstress(self):
@@ -66,11 +66,11 @@ class Atom(dobject):
         """
 
         p = depstrip(self.p)
-        ks = np.zeros((3,3),float)
+        ks = np.zeros((3, 3), float)
         for i in range(3):
-            for j in range(i,3):
-                ks[i,j] = p[i]*p[j]
-        return ks/self.m
+            for j in range(i, 3):
+                ks[i, j] = p[i] * p[j]
+        return ks / self.m
 
 
 class Atoms(dobject):
@@ -102,7 +102,6 @@ class Atoms(dobject):
        pz: An array giving the z components of the momenta.
     """
 
-
     def __init__(self, natoms, _prebind=None):
         """Initialises Atoms.
 
@@ -120,27 +119,27 @@ class Atoms(dobject):
         self.natoms = natoms
 
         if _prebind is None:
-            dset(self,"q",depend_array(name="q",value=np.zeros(3*natoms, float)))
-            dset(self,"p",depend_array(name="p",value=np.zeros(3*natoms, float)))
-            dset(self,"m",depend_array(name="m",value=np.zeros(natoms, float)))
-            dset(self,"names",
-               depend_array(name="names",value=np.zeros(natoms, np.dtype('|S6'))))
+            dset(self, "q", depend_array(name="q", value=np.zeros(3 * natoms, float)))
+            dset(self, "p", depend_array(name="p", value=np.zeros(3 * natoms, float)))
+            dset(self, "m", depend_array(name="m", value=np.zeros(natoms, float)))
+            dset(self, "names",
+                 depend_array(name="names", value=np.zeros(natoms, np.dtype('|S6'))))
         else:
-            dset(self,"q",_prebind[0])
-            dset(self,"p",_prebind[1])
-            dset(self,"m",_prebind[2])
-            dset(self,"names",_prebind[3])
+            dset(self, "q", _prebind[0])
+            dset(self, "p", _prebind[1])
+            dset(self, "m", _prebind[2])
+            dset(self, "names", _prebind[3])
 
-        dself = dd(self) # direct access
-        dself.m3 = depend_array(name="m3",value=np.zeros(3*natoms, float),
-                                   func=self.mtom3,dependencies=[dself.m] )
+        dself = dd(self)  # direct access
+        dself.m3 = depend_array(name="m3", value=np.zeros(3 * natoms, float),
+                                func=self.mtom3, dependencies=[dself.m])
 
-        dself.M = depend_value(name="M",func=self.get_msum,
-                     dependencies=[dself.m])
-        dself.kin = depend_value(name="kin",func=self.get_kin,
-              dependencies=[dself.p,dself.m3])
-        dself.kstress = depend_value(name="kstress",func=self.get_kstress,
-              dependencies=[dself.p,dself.m])
+        dself.M = depend_value(name="M", func=self.get_msum,
+                               dependencies=[dself.m])
+        dself.kin = depend_value(name="kin", func=self.get_kin,
+                                 dependencies=[dself.p, dself.m3])
+        dself.kstress = depend_value(name="kstress", func=self.get_kstress,
+                                     dependencies=[dself.p, dself.m])
 
     def copy(self):
         """Creates a new Atoms object.
@@ -179,7 +178,7 @@ class Atoms(dobject):
         for index in range(len(self)):
             yield Atom(self, index)
 
-    def __getitem__(self,index):
+    def __getitem__(self, index):
         """Overwrites standard getting function.
 
         This is called whenever the standard function atoms[index] is used.
@@ -195,9 +194,9 @@ class Atoms(dobject):
            The atom given by the index.
         """
 
-        return Atom(self,index)
+        return Atom(self, index)
 
-    def __setitem__(self,index,value):
+    def __setitem__(self, index, value):
         """Overwrites standard setting function.
 
         This is called whenever the standard function atoms[index]=value is used.
@@ -212,7 +211,7 @@ class Atoms(dobject):
            value: The Atom object that holds the new values.
         """
 
-        pat = Atom(self,index)
+        pat = Atom(self, index)
         pat.p = value.p
         pat.q = value.q
         pat.m = value.m
@@ -232,17 +231,17 @@ class Atoms(dobject):
            by the mass.
         """
 
-        m3 = np.zeros(3*self.natoms,float)
-        m3[0:3*self.natoms:3] = self.m
-        m3[1:3*self.natoms:3] = m3[0:3*self.natoms:3]
-        m3[2:3*self.natoms:3] = m3[0:3*self.natoms:3]
+        m3 = np.zeros(3 * self.natoms, float)
+        m3[0:3 * self.natoms:3] = self.m
+        m3[1:3 * self.natoms:3] = m3[0:3 * self.natoms:3]
+        m3[2:3 * self.natoms:3] = m3[0:3 * self.natoms:3]
         return m3
 
     def get_kin(self):
         """Calculates the total kinetic energy of the system."""
 
         p = depstrip(self.p)
-        return 0.5*np.dot(p,p/depstrip(self.m3))
+        return 0.5 * np.dot(p, p / depstrip(self.m3))
 
     def get_kstress(self):
         """Calculates the total contribution of the atoms to the kinetic stress
@@ -255,11 +254,11 @@ class Atoms(dobject):
         py = p[1::3]
         pz = p[2::3]
 
-        ks = np.zeros((3,3), float)
-        ks[0,0] = np.dot(px, px/m)
-        ks[1,1] = np.dot(py, py/m)
-        ks[2,2] = np.dot(pz, pz/m)
-        ks[0,1] = np.dot(px, py/m)
-        ks[0,2] = np.dot(px, pz/m)
-        ks[1,2] = np.dot(py, pz/m)
+        ks = np.zeros((3, 3), float)
+        ks[0, 0] = np.dot(px, px / m)
+        ks[1, 1] = np.dot(py, py / m)
+        ks[2, 2] = np.dot(pz, pz / m)
+        ks[0, 1] = np.dot(px, py / m)
+        ks[0, 2] = np.dot(px, pz / m)
+        ks[1, 2] = np.dot(py, pz / m)
         return ks

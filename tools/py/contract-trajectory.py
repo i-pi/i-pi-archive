@@ -17,7 +17,6 @@ from ipi.utils.io.io_units import auto_units, process_units
 from ipi.utils.messages import verbosity
 
 
-
 description = """
 Read individual beads from a set of trajectory files (positions or other data)
 and contract them to a different number of beads using ring polymer
@@ -56,7 +55,7 @@ def contract_trajectory(fns_in, fn_out_template, n_new, cell_units_in, cell_unit
 
     # Open input trajectory iterators.
     trjs_in = [iter_file_name_raw(fn) for fn in fns_in]
-    mode =  os.path.splitext(fn)[1]
+    mode = os.path.splitext(fn)[1]
 
     # Open output files.
     fs_out = [open_backup(fn, "w") for fn in fns_out]
@@ -67,7 +66,7 @@ def contract_trajectory(fns_in, fn_out_template, n_new, cell_units_in, cell_unit
 
     # Loop over all frames.
     i_frame = 0
-    while True:        
+    while True:
         try:
             # Get the frames for all beads.
             frames = [trj.next() for trj in trjs_in]
@@ -81,7 +80,7 @@ def contract_trajectory(fns_in, fn_out_template, n_new, cell_units_in, cell_unit
 
         # Consistency check.
         h = frames[0]["cell"]
-        natoms = len(frames[0]["data"])/3
+        natoms = len(frames[0]["data"]) / 3
         for i in range(n):
 
             # Check that all the cells are the same.
@@ -90,7 +89,7 @@ def contract_trajectory(fns_in, fn_out_template, n_new, cell_units_in, cell_unit
                 raise ValueError(msg.format(0, i, i_frame))
 
             # Check that the numbers of atoms are the same.
-            if len(frames[i]["data"]) != 3*natoms:
+            if len(frames[i]["data"]) != 3 * natoms:
                 msg = "Different numbers of atoms for beads {:d} and {:d} in frame {:d}."
                 raise ValueError(msg.format(0, i, i_frame))
 
@@ -100,7 +99,7 @@ def contract_trajectory(fns_in, fn_out_template, n_new, cell_units_in, cell_unit
         atoms.names = frames[0]["names"]
 
         # Compose the ring polymer.
-        q = np.vstack([frame["data"] for frame in frames])*unit_to_internal(dimension, units, 1) # units transformation
+        q = np.vstack([frame["data"] for frame in frames]) * unit_to_internal(dimension, units, 1)  # units transformation
 
         # Contract the coordinates to `n_new` beads.
         q_c = rescale.b1tob2(q)

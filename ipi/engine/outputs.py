@@ -25,7 +25,7 @@ from ipi.engine.properties import getkey
 from ipi.engine.atoms import *
 from ipi.engine.cell import *
 
-__all__ = [ 'PropertyOutput', 'TrajectoryOutput', 'CheckpointOutput' ]
+__all__ = ['PropertyOutput', 'TrajectoryOutput', 'CheckpointOutput']
 
 
 class PropertyOutput(dobject):
@@ -45,7 +45,6 @@ class PropertyOutput(dobject):
        system: The system object to get the data to be output from.
     """
 
-
     def __init__(self, filename="out", stride=1, flush=1, outlist=None):
         """Initializes a property output stream opening the corresponding
         file name.
@@ -61,9 +60,9 @@ class PropertyOutput(dobject):
         """
 
         if outlist is None:
-            outlist = np.zeros(0,np.dtype('|S1024'))
+            outlist = np.zeros(0, np.dtype('|S1024'))
         self.filename = filename
-        self.outlist = np.asarray(outlist,np.dtype('|S1024'))
+        self.outlist = np.asarray(outlist, np.dtype('|S1024'))
         self.stride = stride
         self.flush = flush
         self.nout = 0
@@ -112,10 +111,10 @@ class PropertyOutput(dobject):
                 prop = self.system.properties.property_dict[key]
 
                 if "size" in prop and prop["size"] > 1:
-                    ohead += "cols.  %3d-%-3d" % ( icol, icol+prop["size"] - 1 )
+                    ohead += "cols.  %3d-%-3d" % (icol, icol + prop["size"] - 1)
                     icol += prop["size"]
                 else:
-                    ohead += "column %3d    " % ( icol )
+                    ohead += "column %3d    " % (icol)
                     icol += 1
                 ohead += " --> %s " % (what)
                 if "help" in prop:
@@ -143,7 +142,7 @@ class PropertyOutput(dobject):
               are not contained in the property_dict member of properties.
         """
 
-        if softexit.triggered: return # don't write if we are about to exit!
+        if softexit.triggered: return  # don't write if we are about to exit!
 
         if not (self.system.simul.step + 1) % self.stride == 0:
             return
@@ -155,7 +154,7 @@ class PropertyOutput(dobject):
                     quantity = unit_to_user(dimension, unit, quantity)
             except KeyError:
                 raise KeyError(what + " is not a recognized property")
-            if not hasattr(quantity,"__len__") :
+            if not hasattr(quantity, "__len__"):
                 self.out.write(write_type(float, quantity) + "   ")
             else:
                 for el in quantity:
@@ -164,7 +163,7 @@ class PropertyOutput(dobject):
         self.out.write("\n")
 
         self.nout += 1
-        if self.flush > 0 and self.nout >= self.flush :
+        if self.flush > 0 and self.nout >= self.flush:
             self.out.flush()
             os.fsync(self.out)  # we REALLY want to print out! pretty please OS let us do it.
             self.nout = 0
@@ -251,9 +250,9 @@ class TrajectoryOutput(dobject):
 
         # prepare format string for zero-padded number of beads,
         # including underscpre
-        fmt_bead = "{0:0" + str(int(1 + np.floor(np.log(self.system.beads.nbeads)/np.log(10)))) + "d}"
+        fmt_bead = "{0:0" + str(int(1 + np.floor(np.log(self.system.beads.nbeads) / np.log(10)))) + "d}"
 
-        if getkey(self.what) in ["positions", "velocities", "forces", "extras", "forces_sc" , "momenta"]:
+        if getkey(self.what) in ["positions", "velocities", "forces", "extras", "forces_sc", "momenta"]:
 
             # must write out trajectories for each bead, so must create b streams
 
@@ -299,17 +298,17 @@ class TrajectoryOutput(dobject):
     def write(self):
         """Writes out the required trajectories."""
 
-        if softexit.triggered: return # don't write if we are about to exit!
+        if softexit.triggered: return  # don't write if we are about to exit!
         if not (self.system.simul.step + 1) % self.stride == 0:
             return
 
         doflush = False
         self.nout += 1
-        if self.flush > 0 and self.nout >= self.flush :
+        if self.flush > 0 and self.nout >= self.flush:
             doflush = True
             self.nout = 0
 
-        data, dimension, units = self.system.trajs[self.what] # gets the trajectory data that must be printed      
+        data, dimension, units = self.system.trajs[self.what]  # gets the trajectory data that must be printed
 
         # quick-and-dirty way to check if a trajectory is "global" or per-bead
         # Checks to see if there is a list of files or just a single file.
@@ -323,7 +322,6 @@ class TrajectoryOutput(dobject):
                 raise ValueError("Selected bead index " + str(self.ibead) + " does not exist for trajectory " + self.what)
         else:
             self.write_traj(data, getkey(self.what), self.out, b=0, format=self.format, dimension=dimension, units=units, cell_units=self.cell_units, flush=doflush)
-
 
     def write_traj(self, data, what, stream, b=0, format="xyz", dimension="", units="automatic", cell_units="automatic", flush=True):
         """Prints out a frame of a trajectory for the specified quantity and bead.
@@ -339,30 +337,30 @@ class TrajectoryOutput(dobject):
         """
 
         key = getkey(what)
-        if key in [ "extras" ] :
-            stream.write(" #*EXTRAS*# Step:  %10d  Bead:  %5d  \n" % (self.system.simul.step+1, b) )
+        if key in ["extras"]:
+            stream.write(" #*EXTRAS*# Step:  %10d  Bead:  %5d  \n" % (self.system.simul.step + 1, b))
             stream.write(data[b])
             stream.write("\n")
-            if flush :
+            if flush:
                 stream.flush()
                 os.fsync(stream)
             return
-        elif getkey(what) in [ "positions", "velocities", "forces", "forces_sc", "momenta" ] :
+        elif getkey(what) in ["positions", "velocities", "forces", "forces_sc", "momenta"]:
             fatom = Atoms(self.system.beads.natoms)
             fatom.names[:] = self.system.beads.names
-            fatom.q[:] = data[b]         
+            fatom.q[:] = data[b]
         else:
             fatom = Atoms(self.system.beads.natoms)
             fatom.names[:] = self.system.beads.names
-            fatom.q[:] = data         
+            fatom.q[:] = data
 
         fcell = Cell()
-        fcell.h = self.system.cell.h      
+        fcell.h = self.system.cell.h
 
-        if units == "": units="automatic"
-        if cell_units == "": cell_units="automatic"
-        io.print_file(format, fatom, fcell, stream, title=("Step:  %10d  Bead:   %5d " % (self.system.simul.step+1, b) ), key=key, dimension=dimension, units=units, cell_units=cell_units )
-        if flush :
+        if units == "": units = "automatic"
+        if cell_units == "": cell_units = "automatic"
+        io.print_file(format, fatom, fcell, stream, title=("Step:  %10d  Bead:   %5d " % (self.system.simul.step + 1, b)), key=key, dimension=dimension, units=units, cell_units=cell_units)
+        if flush:
             stream.flush()
             os.fsync(stream)
 

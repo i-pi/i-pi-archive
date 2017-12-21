@@ -24,14 +24,15 @@ Syntax:
 """
 
 import numpy as np
-import sys, glob
+import sys
+import glob
 from ipi.utils.messages import verbosity
 
 from ipi.utils.io import read_file
 from ipi.utils.units import unit_to_internal, unit_to_user, Constants
 
 verbosity.low = "low"
-time_index, potentialEnergy_index = 0, 0 # global variables for time step and potential energy units
+time_index, potentialEnergy_index = 0, 0  # global variables for time step and potential energy units
 potentialEnergyUnit = None               # potential energy unit in input file prefix.out
 temperature = None                       # simulation temperature
 skipSteps = 0                            # steps to skip for thermalization
@@ -47,31 +48,30 @@ def totalEnergy(prefix, temp, ss=0):
     temperature = unit_to_internal("temperature", "kelvin", float(temp))
     skipSteps = int(ss)
 
-    f2_av, ePA_av, eVir_av, f2ePA_av  = 0.0, 0.0, 0.0, 0.0 # average square forces, virial and primitive energy
+    f2_av, ePA_av, eVir_av, f2ePA_av = 0.0, 0.0, 0.0, 0.0  # average square forces, virial and primitive energy
     # estimators, and the product of the primitive energy estimator and square forces
 
-    ipos=[] # input positions files
-    for filename in sorted(glob.glob(prefix+".pos*")):
-        ipos.append(open(filename,"r"))
+    ipos = []  # input positions files
+    for filename in sorted(glob.glob(prefix + ".pos*")):
+        ipos.append(open(filename, "r"))
 
-    ifor=[] # input forces files
-    for filename in sorted(glob.glob(prefix+".for*")):
-        ifor.append(open(filename,"r"))
+    ifor = []  # input forces files
+    for filename in sorted(glob.glob(prefix + ".for*")):
+        ifor.append(open(filename, "r"))
 
-    iU=None # input potential energy and simulation time file
-    for filename in sorted(glob.glob(prefix+".out")):
-        iU = open(filename,"r")
-
+    iU = None  # input potential energy and simulation time file
+    for filename in sorted(glob.glob(prefix + ".out")):
+        iU = open(filename, "r")
 
     global potentialEnergyUnit, timeUnit
-    timeUnit, potentialEnergyUnit = extractUnits(iU) # extracting simulation time and potential energy units
+    timeUnit, potentialEnergyUnit = extractUnits(iU)  # extracting simulation time and potential energy units
 
-    iE=open(prefix+".energy"+".dat","w")
+    iE = open(prefix + ".energy" + ".dat", "w")
     iE.write("# Simulation time (in %s), virial total energy and PPI energy correction (in %s)\n" %
              (timeUnit, potentialEnergyUnit))
 
     nbeads = len(ipos)
-    if (nbeads!=len(ifor)): raise ValueError("Mismatch between number of output files for forces and positions")
+    if (nbeads != len(ifor)): raise ValueError("Mismatch between number of output files for forces and positions")
     natoms = 0
     ifr = 0
     time0 = 0
@@ -86,12 +86,12 @@ def totalEnergy(prefix, temp, ss=0):
                 force = unit_to_internal(ret["units"][0], ret["units"][1], ret["atoms"].q)
                 if natoms == 0:
                     natoms = n
-                    q = np.zeros((nbeads, 3*natoms))
-                    f = np.zeros((nbeads, 3*natoms))
-                q[i,:] = pos
-                f[i,:] = force
+                    q = np.zeros((nbeads, 3 * natoms))
+                    f = np.zeros((nbeads, 3 * natoms))
+                q[i, :] = pos
+                f[i, :] = force
             time, U = read_U(iU)
-        except EOFError: # finished reading files
+        except EOFError:  # finished reading files
             sys.exit(0)
 
         if ifr < skipSteps:
@@ -105,39 +105,39 @@ def totalEnergy(prefix, temp, ss=0):
 
             for j in range(nbeads):
                 for i in range(natoms):
-                    f2 += np.dot(f[j,i*3:i*3+3],f[j,i*3:i*3+3])/m[i]
+                    f2 += np.dot(f[j, i * 3:i * 3 + 3], f[j, i * 3:i * 3 + 3]) / m[i]
             for i in range(natoms):
-                ePA -= np.dot(q[0,i*3:i*3+3]-q[nbeads-1,i*3:i*3+3],q[0,i*3:i*3+3]-q[nbeads-1,i*3:i*3+3])*m[i]
-            for j in range(nbeads-1):
+                ePA -= np.dot(q[0, i * 3:i * 3 + 3] - q[nbeads - 1, i * 3:i * 3 + 3], q[0, i * 3:i * 3 + 3] - q[nbeads - 1, i * 3:i * 3 + 3]) * m[i]
+            for j in range(nbeads - 1):
                 for i in range(natoms):
-                    ePA -= np.dot(q[j+1,i*3:i*3+3]-q[j,i*3:i*3+3],q[j+1,i*3:i*3+3]-q[j,i*3:i*3+3])*m[i]
+                    ePA -= np.dot(q[j + 1, i * 3:i * 3 + 3] - q[j, i * 3:i * 3 + 3], q[j + 1, i * 3:i * 3 + 3] - q[j, i * 3:i * 3 + 3]) * m[i]
             for i in range(natoms):
                 rc[:] = 0.0
                 for j in range(nbeads):
-                    rc[:] += q[j,i*3:i*3+3]
+                    rc[:] += q[j, i * 3:i * 3 + 3]
                 rc[:] /= nbeads
                 for j in range(nbeads):
-                    eVir += np.dot(rc[:] - q[j,i*3:i*3+3],f[j,i*3:i*3+3])
+                    eVir += np.dot(rc[:] - q[j, i * 3:i * 3 + 3], f[j, i * 3:i * 3 + 3])
 
-            ePA *= 0.5*nbeads*(Constants.kb*temperature)**2/Constants.hbar**2
-            ePA += 0.5*nbeads*(3*natoms)*Constants.kb*temperature + U
-            f2ePA = f2*ePA
-            eVir /= 2.0*nbeads
-            eVir += 0.5*(3*natoms)*Constants.kb*temperature + U
+            ePA *= 0.5 * nbeads * (Constants.kb * temperature)**2 / Constants.hbar**2
+            ePA += 0.5 * nbeads * (3 * natoms) * Constants.kb * temperature + U
+            f2ePA = f2 * ePA
+            eVir /= 2.0 * nbeads
+            eVir += 0.5 * (3 * natoms) * Constants.kb * temperature + U
 
             ePA_av += ePA
             f2_av += f2
             f2ePA_av += f2ePA
             eVir_av += eVir
             ifr += 1
-            print(ifr-skipSteps) # Printing current time frame (excluding thermalization)
+            print(ifr - skipSteps)  # Printing current time frame (excluding thermalization)
 
-            dE = (3.0*Constants.kb*temperature + ePA_av/float(ifr-skipSteps))*f2_av/float(ifr-skipSteps) - \
-                 f2ePA_av/float(ifr-skipSteps)
-            dE *= Constants.hbar**2/(24.0*(nbeads*Constants.kb*temperature)**3)
+            dE = (3.0 * Constants.kb * temperature + ePA_av / float(ifr - skipSteps)) * f2_av / float(ifr - skipSteps) - \
+                f2ePA_av / float(ifr - skipSteps)
+            dE *= Constants.hbar**2 / (24.0 * (nbeads * Constants.kb * temperature)**3)
 
             dE = unit_to_user("energy", potentialEnergyUnit, dE)  # Output in the same unit as potential energy
-            eVir = unit_to_user("energy", potentialEnergyUnit, eVir_av/float(ifr-skipSteps))  # Output in the same unit
+            eVir = unit_to_user("energy", potentialEnergyUnit, eVir_av / float(ifr - skipSteps))  # Output in the same unit
             # as potential energy
 
             iE.write("%f    %f     %f\n" % (time, eVir, dE))
@@ -185,7 +185,7 @@ def extractUnits(filedescU):
             ind = line.find('potential{')
             if ind != -1:
                 potentialEnergy_index = int(line_index)
-                line = line[ind+10:]
+                line = line[ind + 10:]
                 ind = line.find('}')
                 unit = line[:ind]
                 potentialEnergyUnit = unit
@@ -195,7 +195,7 @@ def extractUnits(filedescU):
             ind = line.find('time{')
             if ind != -1:
                 time_index = int(line_index)
-                line = line[ind+5:]
+                line = line[ind + 5:]
                 ind = line.find('}')
                 unit = line[:ind]
                 timeUnit = unit
