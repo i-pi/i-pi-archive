@@ -13,6 +13,9 @@ autopep8 is called with the following options:
 --select errors (only selected pep8 issues are fixed)
 --pep8-passes 2000 (avoids falling into infinite loop by autopep8).
 
+In the check mode, the tool uses pycodestyle API.
+http://pycodestyle.readthedocs.io/en/latest/#
+
 For a full list of issues which can be fixed by autopep8, consult:
 https://pypi.python.org/pypi/autopep8
 '''
@@ -23,6 +26,7 @@ import subprocess
 import re
 import sys
 import autopep8
+import pycodestyle
 
 
 if __name__ == '__main__':
@@ -65,24 +69,28 @@ if __name__ == '__main__':
                              'medium prints only filenames '
                              'on which script acted and '
                              'high prints everything from autopep8 output')
+    parser.add_argument('--check',
+                        action='store_true',
+                        help='checks pep8 compliance, does not modify files')
     args = parser.parse_args()
     path = args.path
     files = args.files
     verbosity = args.verbosity
+    is_in_check_mode = args.check
 
     # General arguments for pep8
-    styles_to_be_corrected = 'E101,E11,E121,E122,E123,E124,E125,E126,E127,E128,' \
-                             'E20,E211,E22,E224,E226,E227,E228,E231,E241,E242,E251,E26,E265,E27,' \
-                             'E301,E302,E303,E304,E306,' \
-                             'E401,' \
-                             'E502,' \
-                             'W291,W292,W29,' \
-                             'W391'
+    styles_to_be_corrected = ['E101', 'E11', 'E121', 'E122', 'E123', 'E124', 'E125', 'E126', 'E127', 'E128',
+                              'E20', 'E211', 'E22', 'E224', 'E226', 'E227', 'E228', 'E231', 'E241', 'E242', 'E251', 'E26', 'E265', 'E27',
+                              'E301', 'E302', 'E303', 'E304', 'E306',
+                              'E401',
+                              'E502',
+                              'W291', 'W292', 'W29',
+                              'W391']
     # Must be written as string since it is passed to command
     number_of_pep8_passes = '2000'
     # in-place, verbose, select only styles which are listed above,
     # pep8-passes limit is to avoid infinite loop
-    autopep8_args = ['-i', '-v', '--select', styles_to_be_corrected,
+    autopep8_args = ['-i', '-v', '--select', ','.join(styles_to_be_corrected),
                      '--pep8-passes', number_of_pep8_passes]
 
     if files is not None:
@@ -111,25 +119,53 @@ if __name__ == '__main__':
             print 'The given directory does not exist: ', path
             sys.exit()
 
-    process = subprocess.Popen(
-        ['autopep8'] + autopep8_args,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT)
-    while process.poll() is None:
-        # We must strip, otherwise we get double newline
-        line = process.stdout.readline().rstrip()
-        if re.match('\[Errno.*\]', line):
-            print line
+    if is_in_check_mode:
+        # perform check, do not change files
+        print 'Performing check of PEP-8 compliance'
+        style_check = pycodestyle.StyleGuide(select=styles_to_be_corrected)
+        if files is not None:
+            for filename in files:
+                style_check.input_file(filename)
         else:
-            if verbosity == 'high':
+            style_check.input_dir('.')
+    else:
+        # use autopep8 to change files in-place
+        process = subprocess.Popen(
+            ['autopep8'] + autopep8_args,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT)
+        while process.poll() is None:
+            # We must strip, otherwise we get double newline
+            line = process.stdout.readline().rstrip()
+            if re.match('\[Errno.*\]', line):
                 print line
-            elif verbosity == 'medium':
-                # We want to print only filenames that changed
-                if re.match('\[file:.*\]', line):
-                    # Pattern: [file:filename]
-                    filename_line = re.search(r'\[file:(\S+)\]', line)
-                    # Print only filename
-                    print filename_line.group(1)
-            # if verbosity is silent or low, do not print output from autopep8
+            else:
+                if verbosity == 'high':
+                    print line
+                elif verbosity == 'medium':
+                    # We want to print only filenames that changed
+                    if re.match('\[file:.*\]', line):
+                        # Pattern: [file:filename]
+                        filename_line = re.search(r'\[file:(\S+)\]', line)
+                        # Print only filename
+                        print filename_line.group(1)
+                    elif re.match('.*[1-9] issue.*', line):
+                        # number of issues is greater than 0
+                        issue_line = line
+                        # Reformat this line:
+                        # --->  6 issue(s) to fix {'E266': set([131, 931]), 'E265': set([512, 164, 518, 519])}
+                        # to achieve that message and formatting:
+                        # --->  6 issue(s) not fixed in file ./regtest.py
+                        # 'E266' at lines: 131, 931
+                        # 'E265' at lines: 512, 164, 518, 519
+                        issue_line = issue_line.replace('to fix', 'not fixed in file ' + filename_line.group(1))
+                        issue_line = issue_line.replace('{', '\n      ')
+                        issue_line = issue_line.replace(']),', '\n     ')
+                        issue_line = issue_line.replace(': set([', ' at lines: ')
+                        issue_line = issue_line.replace('])', '')
+                        issue_line = issue_line.replace('}', '')
+                        print issue_line
+                # if verbosity is silent or low, do not print output from autopep8
+
     if verbosity != 'silent':
         print 'autopep8 terminated'
