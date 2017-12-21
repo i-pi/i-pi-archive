@@ -46,13 +46,13 @@ class Atom(dobject):
            index: An integer giving the index of the required atom in the atoms
               list. Note that indices start from 0.
         """
-      dself = dd(self) # direct access
+        dself = dd(self) # direct access
 
-      dself.p = system.p[3*index:3*index+3]
-      dself.q = system.q[3*index:3*index+3]
-      dself.m = system.m[index:index+1]
-      dself.name = system.names[index:index+1]
-      dself.m3 = system.m3[3*index:3*index+3]
+        dself.p = system.p[3*index:3*index+3]
+        dself.q = system.q[3*index:3*index+3]
+        dself.m = system.m[index:index+1]
+        dself.name = system.names[index:index+1]
+        dself.m3 = system.m3[3*index:3*index+3]
 
     @property
     def kin(self):
@@ -119,7 +119,7 @@ class Atoms(dobject):
 
         self.natoms = natoms
 
-      dself = dd(self) # direct access
+        dself = dd(self) # direct access
 
         if _prebind is None:
          dself.q = depend_array(name="q", value=np.zeros(3*natoms, float))

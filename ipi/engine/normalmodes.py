@@ -197,7 +197,7 @@ class NormalModes(dobject):
                                     func=self.get_omegak, dependencies=[dself.omegan])
 
         # Add o_omegak to calculate the freq in the case of open path
-      dself.o_omegak = depend_array(name='o_omegak',						
+        dself.o_omegak = depend_array(name='o_omegak',						
                                             value=np.zeros(self.beads.nbeads, float),
             func=self.get_o_omegak, dependencies=[dself.omegan])
 
@@ -206,7 +206,7 @@ class NormalModes(dobject):
                                        value=np.zeros(self.nbeads, float), func=self.get_nmm,
                                        dependencies=[dself.nm_freqs, dself.mode])
         # add o_nm_factor for the dynamical mass in the case of open paths
-      dself.o_nm_factor = depend_array(name="nmm",
+        dself.o_nm_factor = depend_array(name="nmm",
                                                value=np.zeros(self.nbeads, float), func=self.get_o_nmm,
             dependencies=[dself.nm_freqs, dself.mode ])
         dself.dynm3 = depend_array(name="dynm3",
@@ -227,12 +227,12 @@ class NormalModes(dobject):
 
         # if the mass matrix is not the RPMD one, the MD kinetic energy can't be
         # obtained in the bead representation because the masses are all mixed up
-      dself.kins = depend_array(name="kins",value=np.zeros(self.nbeads, float),
+        dself.kins = depend_array(name="kins",value=np.zeros(self.nbeads, float),
                           func=self.get_kins,
             dependencies=[dself.pnm, dd(self.beads).sm3, dself.nm_factor ] )
-      dself.kin = depend_value(name="kin", func=self.get_kin,
+        dself.kin = depend_value(name="kin", func=self.get_kin,
          dependencies=[dself.kins] )
-      dself.kstress = depend_array(name="kstress",value=np.zeros((3,3), float),
+        dself.kstress = depend_array(name="kstress",value=np.zeros((3,3), float),
                           func=self.get_kstress,
             dependencies=[dself.pnm, dd(self.beads).sm3, dself.nm_factor ] )
 
@@ -495,9 +495,9 @@ class NormalModes(dobject):
                         pnm[k, a] = pq[0]
             self.pnm = pnm * sm
             self.qnm = qnm / sm
-            #pq = np.zeros((2,self.natoms*3),float)
-            #sm = depstrip(self.beads.sm3)[0]
-            #prop_pq = depstrip(self.prop_pq)
+            # pq = np.zeros((2,self.natoms*3),float)
+            # sm = depstrip(self.beads.sm3)[0]
+            # prop_pq = depstrip(self.prop_pq)
             # for k in range(1,self.nbeads):
             #   pq[0,:] = depstrip(self.pnm)[k]/sm
             #   pq[1,:] = depstrip(self.qnm)[k]*sm
