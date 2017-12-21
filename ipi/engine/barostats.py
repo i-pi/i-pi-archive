@@ -130,17 +130,17 @@ class Barostat(dobject):
         self.bias = bias
         self.nm = nm
 
-        dself = dd(self) # direct access
+        dself = dd(self)  # direct access
 
         dself.kstress = depend_value(name='kstress', func=self.get_kstress,
-                                   dependencies=[ dd(beads).q,
-                                                  dd(beads).qc,
-                                                  dd(beads).pc,
-                                                  dd(forces).f ])
+                                     dependencies=[dd(beads).q,
+                                                   dd(beads).qc,
+                                                   dd(beads).pc,
+                                                   dd(forces).f])
         dself.stress = depend_value(name='stress', func=self.get_stress,
-                                  dependencies=[ dself.kstress,
-                                                 dd(cell).V,
-                                                 dd(forces).vir ])
+                                    dependencies=[dself.kstress,
+                                                  dd(cell).V,
+                                                  dd(forces).vir])
         if bias != None:
             dself.kstress.add_dependency(dd(bias).f)
             dself.stress.add_dependency(dd(bias).vir)
@@ -228,7 +228,7 @@ class BaroBZP(Barostat):
 
         super(BaroBZP, self).__init__(dt, temp, tau, ebaro, thermostat)
 
-        dself = dd(self) # direct access
+        dself = dd(self)  # direct access
         dself.p = depend_array(name='p', value=np.atleast_1d(0.0))
 
         if not p is None:
@@ -266,25 +266,25 @@ class BaroBZP(Barostat):
         # obtain the thermostat mass from the given time constant
         # note that the barostat temperature is nbeads times the physical T
         dself.m = depend_array(name='m', value=np.atleast_1d(0.0),
-                                     func=(lambda: np.asarray([self.tau**2 * 3 * self.beads.natoms * Constants.kb * self.temp])),
-            dependencies=[ dself.tau, dself.temp ] )
+                               func=(lambda: np.asarray([self.tau**2 * 3 * self.beads.natoms * Constants.kb * self.temp])),
+                               dependencies=[dself.tau, dself.temp])
 
         # binds the thermostat to the piston degrees of freedom
         self.thermostat.bind(pm=[self.p, self.m], prng=prng)
 
         # barostat elastic energy
         dself.pot = depend_value(name='pot', func=self.get_pot,
-            dependencies=[ dd(cell).V, dself.pext ])
+                                 dependencies=[dd(cell).V, dself.pext])
 
         dself.kin = depend_value(name='kin',
-                                       func=(lambda: 0.5 * self.p[0]**2 / self.m[0]),
-            dependencies= [dself.p, dself.m] )
+                                 func=(lambda: 0.5 * self.p[0]**2 / self.m[0]),
+                                 dependencies=[dself.p, dself.m])
 
         # the barostat energy must be computed from bits & pieces (overwrite the default)
         dself.ebaro = depend_value(name='ebaro', func=self.get_ebaro,
-         dependencies=[ dself.kin, dself.pot,
-            dd(self.cell).V, dself.temp,
-               dd(self.thermostat).ethermo] )
+                                   dependencies=[dself.kin, dself.pot,
+                                                 dd(self.cell).V, dself.temp,
+                                                 dd(self.thermostat).ethermo])
 
     def get_pot(self):
         """Calculates the elastic strain energy of the cell."""
@@ -376,12 +376,12 @@ class BaroRGB(Barostat):
         # we use a synchronizer to achieve that
 
         sync_baro = synchronizer()
-        dself.p6 = depend_array(name='p6', value=np.zeros(6,float),
-                                      synchro=sync_baro, func={"p": self.get_3x3to6}
-         )
-        dself.p = depend_array(name='p', value=np.zeros((3,3),float),
-                                     synchro=sync_baro, func={"p6": self.get_6to3x3}
-         )
+        dself.p6 = depend_array(name='p6', value=np.zeros(6, float),
+                                synchro=sync_baro, func={"p": self.get_3x3to6}
+                                )
+        dself.p = depend_array(name='p', value=np.zeros((3, 3), float),
+                               synchro=sync_baro, func={"p6": self.get_6to3x3}
+                               )
 
         if not p is None:
             self.p = p
@@ -423,30 +423,30 @@ class BaroRGB(Barostat):
         # obtain the thermostat mass from the given time constant (1/3 of what used for the corresponding NPT case)
         # note that the barostat temperature is nbeads times the physical T
         dself.m = depend_array(name='m', value=np.atleast_1d(0.0),
-                                     func=(lambda: np.asarray([self.tau**2 * self.beads.natoms * Constants.kb * self.temp])),
-                                 dependencies=[ dself.tau, dself.temp ] )
+                               func=(lambda: np.asarray([self.tau**2 * self.beads.natoms * Constants.kb * self.temp])),
+                               dependencies=[dself.tau, dself.temp])
 
-        dself.m6 = depend_array(name='m6', value=np.zeros(6,float),
-                                      func=(lambda: np.asarray([1, 1, 1, 1, 1, 1]) * self.m[0]),
-                                 dependencies=[ dself.m] )
+        dself.m6 = depend_array(name='m6', value=np.zeros(6, float),
+                                func=(lambda: np.asarray([1, 1, 1, 1, 1, 1]) * self.m[0]),
+                                dependencies=[dself.m])
 
         # overrides definition of pot to depend on the many things it depends on for anisotropic cell
         dself.pot = depend_value(name='pot', func=self.get_pot,
-            dependencies=[ dd(self.cell).h, dd(self.h0).h,
-               dd(self.h0).V, dd(self.h0).ih, dself.stressext ])
+                                 dependencies=[dd(self.cell).h, dd(self.h0).h,
+                                               dd(self.h0).V, dd(self.h0).ih, dself.stressext])
 
         # binds the thermostat to the piston degrees of freedom
         self.thermostat.bind(pm=[self.p6, self.m6], prng=prng)
 
         dself.kin = depend_value(name='kin',
-                                       func=(lambda: 0.5 * np.trace(np.dot(self.p.T, self.p)) / self.m[0]),
-            dependencies= [dself.p, dself.m] )
+                                 func=(lambda: 0.5 * np.trace(np.dot(self.p.T, self.p)) / self.m[0]),
+                                 dependencies=[dself.p, dself.m])
 
         # the barostat energy must be computed from bits & pieces (overwrite the default)
         dself.ebaro = depend_value(name='ebaro', func=self.get_ebaro,
-                           dependencies=[ dself.kin, dself.pot,
-                           dd(self.cell).h, dself.temp,
-                           dd(self.thermostat).ethermo] )
+                                   dependencies=[dself.kin, dself.pot,
+                                                 dd(self.cell).h, dself.temp,
+                                                 dd(self.thermostat).ethermo])
 
     def get_3x3to6(self):
         rp = np.zeros(6, float)

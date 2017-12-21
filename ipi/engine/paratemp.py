@@ -62,7 +62,7 @@ class ParaTemp(dobject):
         self.temp_list = np.asarray(tlist, float).copy()
 
         dself.system_temp = depend_array(name="system_temp", value=np.asarray(tlist).copy(), func=self.get_stemp,
-                  dependencies=[dself.temp_index])
+                                         dependencies=[dself.temp_index])
 
         self.parafile = None
 

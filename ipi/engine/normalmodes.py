@@ -197,9 +197,9 @@ class NormalModes(dobject):
                                     func=self.get_omegak, dependencies=[dself.omegan])
 
         # Add o_omegak to calculate the freq in the case of open path
-        dself.o_omegak = depend_array(name='o_omegak',						
-                                            value=np.zeros(self.beads.nbeads, float),
-            func=self.get_o_omegak, dependencies=[dself.omegan])
+        dself.o_omegak = depend_array(name='o_omegak',
+                                      value=np.zeros(self.beads.nbeads, float),
+                                      func=self.get_o_omegak, dependencies=[dself.omegan])
 
         # sets up "dynamical" masses -- mass-scalings to give the correct RPMD/CMD dynamics
         dself.nm_factor = depend_array(name="nm_factor",
@@ -207,8 +207,8 @@ class NormalModes(dobject):
                                        dependencies=[dself.nm_freqs, dself.mode])
         # add o_nm_factor for the dynamical mass in the case of open paths
         dself.o_nm_factor = depend_array(name="nmm",
-                                               value=np.zeros(self.nbeads, float), func=self.get_o_nmm,
-            dependencies=[dself.nm_freqs, dself.mode ])
+                                         value=np.zeros(self.nbeads, float), func=self.get_o_nmm,
+                                         dependencies=[dself.nm_freqs, dself.mode])
         dself.dynm3 = depend_array(name="dynm3",
                                    value=np.zeros((self.nbeads, 3 * self.natoms), float), func=self.get_dynm3,
                                    dependencies=[dself.nm_factor, dd(self.beads).m3])
@@ -227,14 +227,14 @@ class NormalModes(dobject):
 
         # if the mass matrix is not the RPMD one, the MD kinetic energy can't be
         # obtained in the bead representation because the masses are all mixed up
-        dself.kins = depend_array(name="kins",value=np.zeros(self.nbeads, float),
-                          func=self.get_kins,
-            dependencies=[dself.pnm, dd(self.beads).sm3, dself.nm_factor ] )
+        dself.kins = depend_array(name="kins", value=np.zeros(self.nbeads, float),
+                                  func=self.get_kins,
+                                  dependencies=[dself.pnm, dd(self.beads).sm3, dself.nm_factor])
         dself.kin = depend_value(name="kin", func=self.get_kin,
-         dependencies=[dself.kins] )
-        dself.kstress = depend_array(name="kstress",value=np.zeros((3,3), float),
-                          func=self.get_kstress,
-            dependencies=[dself.pnm, dd(self.beads).sm3, dself.nm_factor ] )
+                                 dependencies=[dself.kins])
+        dself.kstress = depend_array(name="kstress", value=np.zeros((3, 3), float),
+                                     func=self.get_kstress,
+                                     dependencies=[dself.pnm, dd(self.beads).sm3, dself.nm_factor])
 
         # spring energy, calculated in normal modes
         dself.vspring = depend_value(name="vspring",
