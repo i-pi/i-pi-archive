@@ -90,7 +90,7 @@ if __name__ == '__main__':
     number_of_pep8_passes = '2000'
     # in-place, verbose, select only styles which are listed above,
     # pep8-passes limit is to avoid infinite loop
-    autopep8_args = ['-i', '-v', '--select', ''.join(styles_to_be_corrected),
+    autopep8_args = ['-i', '-v', '--select', ','.join(styles_to_be_corrected),
                      '--pep8-passes', number_of_pep8_passes]
 
     if files is not None:
@@ -127,7 +127,7 @@ if __name__ == '__main__':
             for filename in files:
                 style_check.input_file(filename)
         else:
-            style_check.input_dir(path)
+            style_check.input_dir('.')
     else:
         # use autopep8 to change files in-place
         process = subprocess.Popen(
