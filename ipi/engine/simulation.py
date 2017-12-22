@@ -210,8 +210,7 @@ class Simulation(dobject):
 
         for k, f in self.fflist.iteritems():
             f.run()
-            
-                    
+
         # prints inital configuration -- only if we are not restarting
         if self.step == 0:
             self.step = -1
@@ -221,8 +220,8 @@ class Simulation(dobject):
                 o.write()  # threaded output seems to cause random hang-ups. should make things properly thread-safe
                 #st = threading.Thread(target=o.write, name=o.filename)
                 #st.daemon = True
-                #st.start()
-                #stepthreads.append(st)
+                # st.start()
+                # stepthreads.append(st)
 
             for st in stepthreads:
                 while st.isAlive():
@@ -262,15 +261,15 @@ class Simulation(dobject):
 
             stepthreads = []
             # steps through all the systems
-            #for s in self.syslist:
+            # for s in self.syslist:
             #   s.ensemble.step()
             for s in self.syslist:
                 # creates separate threads for the different systems
                 #st = threading.Thread(target=s.motion.step, name=s.prefix, kwargs={"step":self.step})
                 #st.daemon = True
                 s.motion.step(step=self.step)
-                #st.start()
-                #stepthreads.append(st)
+                # st.start()
+                # stepthreads.append(st)
 
             for st in stepthreads:
                 while st.isAlive():
@@ -282,7 +281,7 @@ class Simulation(dobject):
                 # Don't continue if we are about to exit.
                 break
 
-            for o in self.outputs:  # write possible checkpoints before doing any 
+            for o in self.outputs:  # write possible checkpoints before doing any
                 o.write()
 
             # does parallel tempering
@@ -310,7 +309,7 @@ class Simulation(dobject):
                 info(" # Average timings at MD step % 7d. t/step: %10.5e" % (self.step, ttot / cstep))
                 cstep = 0
                 ttot = 0.0
-                #info(" # MD diagnostics: V: %10.5e    Kcv: %10.5e   Ecns: %10.5e" %
+                # info(" # MD diagnostics: V: %10.5e    Kcv: %10.5e   Ecns: %10.5e" %
                 #     (self.properties["potential"], self.properties["kinetic_cv"], self.properties["conserved"] ) )
 
             if os.path.exists("EXIT"):
