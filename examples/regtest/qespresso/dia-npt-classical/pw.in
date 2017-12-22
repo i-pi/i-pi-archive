@@ -4,8 +4,8 @@
     restart_mode='from_scratch'
     tstress=.true.
     tprnfor=.true.
-    etot_conv_thr=5.0D-5
-    forc_conv_thr=1.0D-4
+    etot_conv_thr=5.0D-21
+    forc_conv_thr=1.0D-20
     prefix='dia'
     outdir='./'
     pseudo_dir='../'
@@ -22,7 +22,7 @@
     nosym=.true.
 /
 &ELECTRONS
-    conv_thr=1.0e-9
+    conv_thr=1.0e-25
     mixing_mode='plain' 
     mixing_beta=0.7
     startingpot='atomic' 
