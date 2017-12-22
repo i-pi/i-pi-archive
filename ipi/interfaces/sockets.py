@@ -582,7 +582,7 @@ class InterfaceSocket(object):
                             while fc.status & Status.Busy:  # waits for initialization to finish. hopefully this is fast
                                 fc.poll()
                         if fc.status & Status.Ready:
-                            fc.sendpos(r["pos"], r["cell"])
+                            fc.sendpos(r["pos"][r["active"]], r["cell"])
                             r["status"] = "Running"
                             r["t_dispatched"] = time.time()
                             r["start"] = time.time()  # sets start time for the request
@@ -613,8 +613,12 @@ class InterfaceSocket(object):
             if c.status & Status.HasData:
                 try:
                     r["result"] = c.getforce()
-                    if len(r["result"][1]) != len(r["pos"]):
+                    if len(r["result"][1]) != len(r["pos"][r["active"]]):
                         raise InvalidSize
+                    # If only a piece of the system is active, resize forces and reassign
+                    rftemp = r["result"][1]
+                    r["result"][1] = np.zeros(len(r["pos"]), dtype=np.float64)
+                    r["result"][1][r["active"]] = rftemp
                 except Disconnected:
                     c.status = Status.Disconnected
                     continue

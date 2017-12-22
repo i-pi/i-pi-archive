@@ -159,6 +159,11 @@ class Simulation(dobject):
             # binds important computation engines
             s.bind(self)
 
+        # Checks for repeated filenames.
+        filename_list = [x.filename for x in self.outtemplate]
+        if len(filename_list) > len(set(filename_list)):
+            raise ValueError("Output filenames are not unique. Modify filename attributes.")
+
         self.outputs = []
         for o in self.outtemplate:
             if type(o) is eoutputs.CheckpointOutput:    # checkpoints are output per simulation

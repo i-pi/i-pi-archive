@@ -32,6 +32,7 @@ class InputForceField(Input):
     Fields:
        latency: The number of seconds to sleep between looping over the requests.
        parameters: A dictionary containing the forcefield parameters.
+       activelist: A list of indexes (starting at 0) of the atoms that will be active in this force field.
     """
 
     attribs = {"name": (InputAttribute, {"dtype": str,
@@ -47,7 +48,11 @@ class InputForceField(Input):
                                  "help": "The number of seconds the polling thread will wait between exhamining the list of requests."}),
              "parameters": (InputValue, {"dtype": dict,
                                          "default": {},
-                                         "help": "The parameters of the force field"})
+                                         "help": "The parameters of the force field"}),
+             "activelist": (InputArray, {"dtype": int,
+                                         "default": np.array([-1]),
+                                         #                                     "default" : input_default(factory=np.array, args =[-1]),
+                                         "help": "List with indexes of the atoms that this socket is taking care of.    Default: all (corresponding to -1)"})
     }
 
     default_help = "Base forcefield class that deals with the assigning of force calculation jobs and collecting the data."
@@ -65,6 +70,7 @@ class InputForceField(Input):
         self.latency.store(ff.latency)
         self.parameters.store(ff.pars)
         self.pbc.store(ff.dopbc)
+        self.activelist.store(ff.active)
 
     def fetch(self):
         """Creates a ForceField object.
@@ -75,7 +81,7 @@ class InputForceField(Input):
 
         super(InputForceField, self).fetch()
 
-        return ForceField(pars=self.parameters.fetch(), name=self.name.fetch(), latency=self.latency.fetch(), dopbc=self.pbc.fetch())
+        return ForceField(pars=self.parameters.fetch(), name=self.name.fetch(), latency=self.latency.fetch(), dopbc=self.pbc.fetch(), active=self.activelist.fetch())
 
 
 class InputFFSocket(InputForceField):
@@ -147,8 +153,8 @@ class InputFFSocket(InputForceField):
         """
 
         return FFSocket(pars=self.parameters.fetch(), name=self.name.fetch(), latency=self.latency.fetch(), dopbc=self.pbc.fetch(),
-                        interface=InterfaceSocket(address=self.address.fetch(), port=self.port.fetch(),
-                                                  slots=self.slots.fetch(), mode=self.mode.fetch(), timeout=self.timeout.fetch()))
+                        active=self.activelist.fetch(), interface=InterfaceSocket(address=self.address.fetch(), port=self.port.fetch(),
+                                                                                  slots=self.slots.fetch(), mode=self.mode.fetch(), timeout=self.timeout.fetch()))
 
     def check(self):
         """Deals with optional parameters."""
