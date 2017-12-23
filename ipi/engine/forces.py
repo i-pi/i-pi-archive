@@ -128,9 +128,9 @@ class ForceBead(dobject):
         dself.fx = depend_array(name="fx", value=fbase[0:3 * atoms.natoms:3])
         dself.fy = depend_array(name="fy", value=fbase[1:3 * atoms.natoms:3])
         dself.fz = depend_array(name="fz", value=fbase[2:3 * atoms.natoms:3])
-        depcopy(self, "f", self, "fx")
-        depcopy(self, "f", self, "fy")
-        depcopy(self, "f", self, "fz")
+        dcopy(dself.f, dself.fx)
+        dcopy(dself.f, dself.fy)
+        dcopy(dself.f, dself.fz)
 
     def queue(self):
         """Sends the job to the interface queue directly.

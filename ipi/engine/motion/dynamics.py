@@ -149,15 +149,16 @@ class Dynamics(Motion):
         self.inmts = 1
         for mk in self.nmts: self.inmts *= mk
         dself.deltat = depend_value(name="deltat", func=(lambda: self.dt / self.inmts), dependencies=[dself.dt])
-        deppipe(self, "deltat", self.nm, "dt")
+        dpipe(dself.deltat, dd(self.nm).dt)
 
         # depending on the kind, the thermostat might work in the normal mode or the bead representation.
         self.thermostat.bind(beads=self.beads, nm=self.nm, prng=prng, fixdof=fixdof)
 
-        deppipe(self, "ntemp", self.barostat, "temp")
-        deppipe(self, "dt", self.barostat, "dt")
-        deppipe(self.ensemble, "pext", self.barostat, "pext")
-        deppipe(self.ensemble, "stressext", self.barostat, "stressext")
+        dbarostat = dd(self.barostat)
+        dpipe(dself.ntemp, dbarostat.temp)
+        dpipe(dself.dt, dbarostat.dt)
+        dpipe(dd(self.ensemble).pext, dbarostat.pext)
+        dpipe(dd(self.ensemble).stressext, dbarostat.stressext)
 
         self.barostat.bind(beads, nm, cell, bforce, prng=prng, fixdof=fixdof)
 

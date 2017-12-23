@@ -306,12 +306,12 @@ class ThermoPILE_L(Thermostat):
 
             t.bind(pm=(nm.pnm[it, :], nm.dynm3[it, :]), prng=self.prng, fixdof=fixdof)
             # pipes temp and dt
-            deppipe(self, "temp", t, "temp")
-            deppipe(self, "dt", t, "dt")
+            dpipe(dself.temp, dd(t).temp)
+            dpipe(dself.dt, dd(t).dt)
 
             # for tau it is slightly more complex
             if it == 0:
-                deppipe(self, "tau", t, "tau")
+                dpipe(dself.tau, dd(t).tau)
             else:
                 # Here we manually connect _thermos[i].tau to tauk[i].
                 # Simple and clear.
@@ -488,9 +488,9 @@ class ThermoPILE_G(ThermoPILE_L):
 
         t = self._thermos[0]
         t.bind(pm=(nm.pnm[0, :], nm.dynm3[0, :]), prng=self.prng, fixdof=fixdof)
-        deppipe(self, "temp", t, "temp")
-        deppipe(self, "dt", t, "dt")
-        deppipe(self, "tau", t, "tau")
+        dpipe(dself.temp, dd(t).temp)
+        dpipe(dself.dt, dd(t).dt)
+        dpipe(dself.tau, dd(t).tau)
         dself.ethermo.add_dependency(dd(t).ethermo)
 
         # splits any previous ethermo between the thermostats, and finishes to bind ethermo to the sum function
@@ -781,8 +781,8 @@ class ThermoNMGLE(Thermostat):
             t.bind(pm=(nm.pnm[it, :], nm.dynm3[it, :]), prng=self.prng)  # bind thermostat t to the it-th normal mode
 
             # pipes temp and dt
-            deppipe(self, "temp", t, "temp")
-            deppipe(self, "dt", t, "dt")
+            dpipe(dself.temp, dd(t).temp)
+            dpipe(dself.dt, dd(t).dt)
 
             # here we pipe the A and C of individual NM to the "master" arrays
             dd(t).A.add_dependency(dself.A)
@@ -861,9 +861,9 @@ class ThermoNMGLEG(ThermoNMGLE):
         t.bind(pm=(nm.pnm[0, :], nm.dynm3[0, :]), prng=self.prng)  # bind global thermostat to centroid
 
         # pipes temp and dt
-        deppipe(self, "temp", t, "temp")
-        deppipe(self, "dt", t, "dt")
-        deppipe(self, "tau", t, "tau")
+        dpipe(dself.temp, dd(t).temp)
+        dpipe(dself.dt, dd(t).dt)
+        dpipe(dself.tau, dd(t).tau)
 
         dd(self).ethermo.add_dependency(dd(t).ethermo)
         self._thermos.append(t)
@@ -1011,8 +1011,8 @@ class MultiThermo(Thermostat):
         dself.dt = depend_value(name='dt', value=dt)
         dself.ethermo = depend_value(name='ethermo', value=ethermo)
         for t in self.tlist:
-            deppipe(self, "dt", t, "dt")
-            deppipe(self, "temp", t, "temp")
+            dpipe(dself.dt, dd(t).dt)
+            dpipe(dself.temp, dd(t).temp)
 
     def get_ethermo(self):
         et = 0.0
