@@ -19,7 +19,7 @@ from ipi.utils.messages import verbosity
 from ipi.utils.messages import info
 from ipi.interfaces.sockets import InterfaceSocket
 from ipi.utils.depend import dobject
-from ipi.utils.depend import depstrip
+from ipi.utils.depend import dstrip
 
 
 __all__ = ['ForceField', 'FFSocket', 'FFLennardJones', 'FFDebye', 'FFYaff']
@@ -120,7 +120,7 @@ class ForceField(dobject):
         else:
             par_str = " "
 
-        pbcpos = depstrip(atoms.q).copy()
+        pbcpos = dstrip(atoms.q).copy()
 
         # Indexes come from input in a per atom basis and we need to make a per atom-coordinate basis
         # Reformat indexes for full system (default) or piece of system
@@ -149,7 +149,7 @@ class ForceField(dobject):
             "id": reqid,
             "pos": pbcpos,
             "active": activehere,
-            "cell": (depstrip(cell.h).copy(), depstrip(cell.ih).copy()),
+            "cell": (dstrip(cell.h).copy(), dstrip(cell.ih).copy()),
             "pars": par_str,
             "result": None,
             "status": "Queued",

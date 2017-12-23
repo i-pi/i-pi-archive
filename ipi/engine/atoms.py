@@ -66,7 +66,7 @@ class Atom(dobject):
         tensor.
         """
 
-        p = depstrip(self.p)
+        p = dstrip(self.p)
         ks = np.zeros((3, 3), float)
         for i in range(3):
             for j in range(i, 3):
@@ -242,16 +242,16 @@ class Atoms(dobject):
     def get_kin(self):
         """Calculates the total kinetic energy of the system."""
 
-        p = depstrip(self.p)
-        return 0.5 * np.dot(p, p / depstrip(self.m3))
+        p = dstrip(self.p)
+        return 0.5 * np.dot(p, p / dstrip(self.m3))
 
     def get_kstress(self):
         """Calculates the total contribution of the atoms to the kinetic stress
         tensor -- not volume-scaled
         """
 
-        p = depstrip(self.p)
-        m = depstrip(self.m)
+        p = dstrip(self.p)
+        m = dstrip(self.m)
         px = p[0::3]
         py = p[1::3]
         pz = p[2::3]

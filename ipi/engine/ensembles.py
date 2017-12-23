@@ -75,7 +75,7 @@ class Ensemble(dobject):
             self.eens = 0.0
 
     def copy(self):
-        return Ensemble(self.eens, 0.0, self.temp, self.pext, depstrip(self.stressext).copy())
+        return Ensemble(self.eens, 0.0, self.temp, self.pext, dstrip(self.stressext).copy())
 
     def bind(self, beads, nm, cell, bforce, bbias, elist=[]):
         dself = dd(self)

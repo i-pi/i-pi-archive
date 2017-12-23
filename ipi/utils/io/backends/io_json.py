@@ -13,7 +13,7 @@ import json
 import numpy as np
 
 import ipi.utils.mathtools as mt
-from ipi.utils.depend import depstrip
+from ipi.utils.depend import dstrip
 from ipi.engine.atoms import Atoms
 from ipi.engine.cell import Cell
 from ipi.utils.units import Elements
@@ -50,8 +50,8 @@ def print_json(atoms, cell, filedesc=sys.stdout, title="", cell_conv=1.0, atoms_
 
     natoms = atoms.natoms
     # direct access to avoid unnecessary slow-down
-    qs = depstrip(atoms.q) * atoms_conv
-    lab = depstrip(atoms.names)
+    qs = dstrip(atoms.q) * atoms_conv
+    lab = dstrip(atoms.names)
 
     data = {}
     data['natoms'] = natoms

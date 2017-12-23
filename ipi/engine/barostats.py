@@ -156,14 +156,14 @@ class Barostat(dobject):
         """
 
         kst = np.zeros((3, 3), float)
-        q = depstrip(self.beads.q)
-        qc = depstrip(self.beads.qc)
-        pc = depstrip(self.beads.pc)
-        m = depstrip(self.beads.m)
+        q = dstrip(self.beads.q)
+        qc = dstrip(self.beads.qc)
+        pc = dstrip(self.beads.pc)
+        m = dstrip(self.beads.m)
         na3 = 3 * self.beads.natoms
-        fall = depstrip(self.forces.f)
+        fall = dstrip(self.forces.f)
         if self.bias == None: ball = fall * 0.00
-        else: ball = depstrip(self.bias.f)
+        else: ball = dstrip(self.bias.f)
 
         for b in range(self.beads.nbeads):
             for i in range(3):
@@ -311,18 +311,18 @@ class BaroBZP(Barostat):
         self.p += dthalf * 3.0 * (self.cell.V * (press - self.beads.nbeads * self.pext) +
                                   Constants.kb * self.temp)
 
-        fc = np.sum(depstrip(self.forces.f), 0) / self.beads.nbeads
-        if self.bias != None: fc += np.sum(depstrip(self.bias.f), 0) / self.beads.nbeads
-        m = depstrip(self.beads.m3)[0]
-        pc = depstrip(self.beads.pc)
+        fc = np.sum(dstrip(self.forces.f), 0) / self.beads.nbeads
+        if self.bias != None: fc += np.sum(dstrip(self.bias.f), 0) / self.beads.nbeads
+        m = dstrip(self.beads.m3)[0]
+        pc = dstrip(self.beads.pc)
 
         # I am not 100% sure, but these higher-order terms come from integrating the pressure virial term,
         # so they should need to be multiplied by nbeads to be consistent with the equations of motion in the PI context
         # again, these are tiny tiny terms so whatever.
         self.p += (dthalf2 * np.dot(pc, fc / m) + dthalf3 * np.dot(fc, fc / m)) * self.beads.nbeads
 
-        self.beads.p += depstrip(self.forces.f) * dthalf
-        if self.bias != None: self.beads.p += depstrip(self.bias.f) * dthalf
+        self.beads.p += dstrip(self.forces.f) * dthalf
+        if self.bias != None: self.beads.p += dstrip(self.bias.f) * dthalf
 
     def qcstep(self):
         """Propagates the centroid position and momentum and the volume."""
@@ -330,10 +330,10 @@ class BaroBZP(Barostat):
         v = self.p[0] / self.m[0]
         expq, expp = (np.exp(v * self.dt), np.exp(-v * self.dt))
 
-        m = depstrip(self.beads.m3)[0]
+        m = dstrip(self.beads.m3)[0]
 
         self.nm.qnm[0, :] *= expq
-        self.nm.qnm[0, :] += ((expq - expp) / (2.0 * v)) * (depstrip(self.nm.pnm)[0, :] / m)
+        self.nm.qnm[0, :] += ((expq - expp) / (2.0 * v)) * (dstrip(self.nm.pnm)[0, :] / m)
         self.nm.pnm[0, :] *= expp
 
         self.cell.h *= expq
@@ -495,18 +495,18 @@ class BaroRGB(Barostat):
         self.p += dthalf * (self.cell.V * np.triu(self.stress - self.beads.nbeads * pi_ext) +
                             Constants.kb * self.temp * L)
 
-        fc = np.sum(depstrip(self.forces.f), 0).reshape(self.beads.natoms, 3) / self.beads.nbeads
-        if self.bias != None: fc += np.sum(depstrip(self.bias.f), 0).reshape(self.beads.natoms, 3) / self.beads.nbeads
-        fcTonm = (fc / depstrip(self.beads.m3)[0].reshape(self.beads.natoms, 3)).T
-        pc = depstrip(self.beads.pc).reshape(self.beads.natoms, 3)
+        fc = np.sum(dstrip(self.forces.f), 0).reshape(self.beads.natoms, 3) / self.beads.nbeads
+        if self.bias != None: fc += np.sum(dstrip(self.bias.f), 0).reshape(self.beads.natoms, 3) / self.beads.nbeads
+        fcTonm = (fc / dstrip(self.beads.m3)[0].reshape(self.beads.natoms, 3)).T
+        pc = dstrip(self.beads.pc).reshape(self.beads.natoms, 3)
 
         # I am not 100% sure, but these higher-order terms come from integrating the pressure virial term,
         # so they should need to be multiplied by nbeads to be consistent with the equations of motion in the PI context
         # again, these are tiny tiny terms so whatever.
         self.p += np.triu(dthalf2 * np.dot(fcTonm, pc) + dthalf3 * np.dot(fcTonm, fc)) * self.beads.nbeads
 
-        self.beads.p += depstrip(self.forces.f) * dthalf
-        if self.bias != None: self.beads.p += depstrip(self.bias.f) * dthalf
+        self.beads.p += dstrip(self.forces.f) * dthalf
+        if self.bias != None: self.beads.p += dstrip(self.bias.f) * dthalf
 
     def qcstep(self):
         """Propagates the centroid position and momentum and the volume."""
@@ -514,13 +514,13 @@ class BaroRGB(Barostat):
         v = self.p / self.m[0]
         expq, expp = (matrix_exp(v * self.dt), matrix_exp(-v * self.dt))
 
-        m = depstrip(self.beads.m)
+        m = dstrip(self.beads.m)
 
         saveq = self.nm.qnm[0].copy()
         savep = self.nm.pnm[0].copy()
         for i in range(self.beads.natoms):
             self.nm.qnm[0, 3 * i:3 * (i + 1)] = np.dot(expq, self.nm.qnm[0, 3 * i:3 * (i + 1)])
-            self.nm.qnm[0, 3 * i:3 * (i + 1)] += np.dot(np.dot(invert_ut3x3(v), (expq - expp) / (2.0)), depstrip(self.nm.pnm)[0, 3 * i:3 * (i + 1)] / m[i])
+            self.nm.qnm[0, 3 * i:3 * (i + 1)] += np.dot(np.dot(invert_ut3x3(v), (expq - expp) / (2.0)), dstrip(self.nm.pnm)[0, 3 * i:3 * (i + 1)] / m[i])
             self.nm.pnm[0, 3 * i:3 * (i + 1)] = np.dot(expp, self.nm.pnm[0, 3 * i:3 * (i + 1)])
 
         self.cell.h = np.dot(expq, self.cell.h)

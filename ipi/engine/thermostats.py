@@ -179,8 +179,8 @@ class ThermoLangevin(Thermostat):
         """Updates the bound momentum vector with a langevin thermostat."""
 
         et = self.ethermo
-        p = depstrip(self.p).copy()
-        sm = depstrip(self.sm)
+        p = dstrip(self.p).copy()
+        sm = dstrip(self.sm)
 
         p /= sm
 
@@ -410,7 +410,7 @@ class ThermoSVR(Thermostat):
         Journal of Chemical Physics 126, 014101 (2007)
         """
 
-        K = np.dot(depstrip(self.p), depstrip(self.p) / depstrip(self.m)) * 0.5
+        K = np.dot(dstrip(self.p), dstrip(self.p) / dstrip(self.m)) * 0.5
 
         # rescaling is un-defined if the KE is zero
         if K == 0.0:
@@ -638,7 +638,7 @@ class ThermoGLE(Thermostat):
     def step(self):
         """Updates the bound momentum vector with a GLE thermostat"""
 
-        p = depstrip(self.p).copy()
+        p = dstrip(self.p).copy()
 
         self.s[0, :] = self.p / self.sm
 
@@ -963,8 +963,8 @@ class ThermoCL(Thermostat):
         """Updates the bound momentum vector with a langevin thermostat."""
 
         et = self.ethermo
-        p = depstrip(self.p).copy()
-        sm = depstrip(self.sm)
+        p = dstrip(self.p).copy()
+        sm = dstrip(self.sm)
 
         p /= sm
 
@@ -979,7 +979,7 @@ class ThermoCL(Thermostat):
         self.ethermo = et
 
         if self.apat > 0 and self.idstep and ((self.intau != 0) ^ (self.idtau != 0)):
-            ekin = np.dot(depstrip(self.p), depstrip(self.p) / depstrip(self.m)) * 0.5
+            ekin = np.dot(dstrip(self.p), dstrip(self.p) / dstrip(self.m)) * 0.5
             mytemp = ekin / Constants.kb / self.ndof * 2
 
             if self.intau != 0:

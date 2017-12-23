@@ -20,7 +20,7 @@ import sys
 import glob
 from ipi.utils.io import read_file
 from ipi.engine.beads import Beads
-from ipi.utils.depend import depstrip
+from ipi.utils.depend import dstrip
 from ipi.utils.units import unit_to_internal, Constants
 from ipi.utils.messages import verbosity
 verbosity.level = "low"
@@ -91,9 +91,9 @@ def main(prefix, temp):
             break
 
         # calculate kinetic energies
-        q = depstrip(beads.q)
-        f = depstrip(forces.q)
-        qc = depstrip(beads.qc)
+        q = dstrip(beads.q)
+        f = dstrip(forces.q)
+        qc = dstrip(beads.qc)
         kcv[:] = 0
         for j in range(nbeads):
             for i in range(natoms):

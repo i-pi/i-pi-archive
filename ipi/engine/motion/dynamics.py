@@ -273,8 +273,8 @@ class NVEIntegrator(DummyIntegrator):
 
             na3 = self.beads.natoms * 3
             nb = self.beads.nbeads
-            p = depstrip(self.beads.p)
-            m = depstrip(self.beads.m3)[:, 0:na3:3]
+            p = dstrip(self.beads.p)
+            m = dstrip(self.beads.m3)[:, 0:na3:3]
             M = self.beads[0].M
 
             for i in range(3):
@@ -289,7 +289,7 @@ class NVEIntegrator(DummyIntegrator):
 
         if len(self.fixatoms) > 0:
             for bp in self.beads.p:
-                m = depstrip(self.beads.m)
+                m = dstrip(self.beads.m)
                 self.ensemble.eens += 0.5 * np.dot(bp[self.fixatoms * 3], bp[self.fixatoms * 3] / m[self.fixatoms])
                 self.ensemble.eens += 0.5 * np.dot(bp[self.fixatoms * 3 + 1], bp[self.fixatoms * 3 + 1] / m[self.fixatoms])
                 self.ensemble.eens += 0.5 * np.dot(bp[self.fixatoms * 3 + 2], bp[self.fixatoms * 3 + 2] / m[self.fixatoms])
@@ -300,14 +300,14 @@ class NVEIntegrator(DummyIntegrator):
     def pstep(self):
         """Velocity Verlet momenta propagator."""
 
-        self.beads.p += depstrip(self.forces.f) * (self.dt * 0.5)
+        self.beads.p += dstrip(self.forces.f) * (self.dt * 0.5)
         # also adds the bias force
-        self.beads.p += depstrip(self.bias.f) * (self.dt * 0.5)
+        self.beads.p += dstrip(self.bias.f) * (self.dt * 0.5)
 
     def qcstep(self):
         """Velocity Verlet centroid position propagator."""
 
-        self.nm.qnm[0, :] += depstrip(self.nm.pnm)[0, :] / depstrip(self.beads.m3)[0] * self.dt
+        self.nm.qnm[0, :] += dstrip(self.nm.pnm)[0, :] / dstrip(self.beads.m3)[0] * self.dt
 
     def step(self, step=None):
         """Does one simulation time step."""
@@ -523,20 +523,20 @@ class SCIntegrator(NVEIntegrator):
         """Velocity Verlet momenta propagator."""
 
         # also include the baseline Tr2SC correction (the 2/3 & 4/3 V bit)
-        self.beads.p += depstrip(self.forces.f) * (1 + self.coeffsc) * self.dt * 0.5 / self.nmts
+        self.beads.p += dstrip(self.forces.f) * (1 + self.coeffsc) * self.dt * 0.5 / self.nmts
         # also adds the bias force (TODO!!!)
-        # self.beads.p += depstrip(self.bias.f)*(self.dt*0.5)
+        # self.beads.p += dstrip(self.bias.f)*(self.dt*0.5)
 
     def pscstep(self):
         """Velocity Verlet Suzuki-Chin momenta propagator."""
 
         # also adds the force assiciated with SuzukiChin correction (only the |f^2| term, so we remove the Tr2SC correction)
-        self.beads.p += (depstrip(self.forces.fsc) - self.coeffsc * depstrip(self.forces.f)) * self.dt * 0.5
+        self.beads.p += (dstrip(self.forces.fsc) - self.coeffsc * dstrip(self.forces.f)) * self.dt * 0.5
 
     def qcstep(self):
         """Velocity Verlet centroid position propagator."""
 
-        self.nm.qnm[0, :] += depstrip(self.nm.pnm)[0, :] / depstrip(self.beads.m3)[0] * self.dt / self.nmts
+        self.nm.qnm[0, :] += dstrip(self.nm.pnm)[0, :] / dstrip(self.beads.m3)[0] * self.dt / self.nmts
 
     def step(self, step=None):
         """Does one simulation time step."""
@@ -586,7 +586,7 @@ class MTSIntegrator(NVEIntegrator):
 
     def qcstep(self, alpha=1.0):
         """Velocity Verlet centroid position propagator."""
-        self.nm.qnm[0, :] += depstrip(self.nm.pnm)[0, :] / depstrip(self.beads.m3)[0] * self.dt / alpha
+        self.nm.qnm[0, :] += dstrip(self.nm.pnm)[0, :] / dstrip(self.beads.m3)[0] * self.dt / alpha
 
     def mtsprop(self, index, alpha):
         """ Recursive MTS step """
@@ -625,11 +625,11 @@ class MTSIntegrator(NVEIntegrator):
         self.ttime += time.time()
 
         # bias is applied at the outer loop too
-        self.beads.p += depstrip(self.bias.f) * (self.dt * 0.5)
+        self.beads.p += dstrip(self.bias.f) * (self.dt * 0.5)
 
         self.mtsprop(0, 1.0)
 
-        self.beads.p += depstrip(self.bias.f) * (self.dt * 0.5)
+        self.beads.p += dstrip(self.bias.f) * (self.dt * 0.5)
 
         self.ttime -= time.time()
         self.thermostat.step()
