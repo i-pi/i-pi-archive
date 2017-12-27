@@ -152,7 +152,7 @@ class Beads(dobject):
     def m3tosm3(self):
         """Takes the mass array and returns the square rooted mass array."""
 
-        return np.sqrt(depstrip(self.m3))
+        return np.sqrt(dstrip(self.m3))
 
     def mtom3(self):
         """Takes the mass array for each bead and returns one with an element
@@ -172,12 +172,12 @@ class Beads(dobject):
     def get_qc(self):
         """Gets the centroid coordinates."""
 
-        return np.dot(np.ones(self.nbeads, float), depstrip(self.q)) / float(self.nbeads)
+        return np.dot(np.ones(self.nbeads, float), dstrip(self.q)) / float(self.nbeads)
 
     def get_pc(self):
         """Gets the centroid momenta."""
 
-        return np.dot(np.ones(self.nbeads, float), depstrip(self.p)) / float(self.nbeads)
+        return np.dot(np.ones(self.nbeads, float), dstrip(self.p)) / float(self.nbeads)
 
     def kin_gather(self):
         """Gets the kinetic energy for all the replicas.
@@ -224,8 +224,8 @@ class Beads(dobject):
         """
 
         epath = 0.0
-        q = depstrip(self.q)
-        m = depstrip(self.m3)[0]
+        q = dstrip(self.q)
+        m = dstrip(self.m3)[0]
         for b in range(self.nbeads):
             if b > 0:
                 dq = q[b, :] - q[b - 1, :]
@@ -246,8 +246,8 @@ class Beads(dobject):
         natoms = self.natoms
         f = np.zeros((nbeads, 3 * natoms), float)
 
-        q = depstrip(self.q)
-        m = depstrip(self.m3)[0]
+        q = dstrip(self.q)
+        m = dstrip(self.m3)[0]
         for b in range(nbeads):
             if b > 0:
                 dq = q[b, :] - q[b - 1, :]

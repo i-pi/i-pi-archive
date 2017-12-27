@@ -46,12 +46,13 @@ class Atom(dobject):
            index: An integer giving the index of the required atom in the atoms
               list. Note that indices start from 0.
         """
+        dself = dd(self)  # direct access
 
-        dset(self, "p", system.p[3 * index:3 * index + 3])
-        dset(self, "q", system.q[3 * index:3 * index + 3])
-        dset(self, "m", system.m[index:index + 1])
-        dset(self, "name", system.names[index:index + 1])
-        dset(self, "m3", system.m3[3 * index:3 * index + 3])
+        dself.p = system.p[3 * index:3 * index + 3]
+        dself.q = system.q[3 * index:3 * index + 3]
+        dself.m = system.m[index:index + 1]
+        dself.name = system.names[index:index + 1]
+        dself.m3 = system.m3[3 * index:3 * index + 3]
 
     @property
     def kin(self):
@@ -65,7 +66,7 @@ class Atom(dobject):
         tensor.
         """
 
-        p = depstrip(self.p)
+        p = dstrip(self.p)
         ks = np.zeros((3, 3), float)
         for i in range(3):
             for j in range(i, 3):
@@ -118,19 +119,20 @@ class Atoms(dobject):
 
         self.natoms = natoms
 
-        if _prebind is None:
-            dset(self, "q", depend_array(name="q", value=np.zeros(3 * natoms, float)))
-            dset(self, "p", depend_array(name="p", value=np.zeros(3 * natoms, float)))
-            dset(self, "m", depend_array(name="m", value=np.zeros(natoms, float)))
-            dset(self, "names",
-                 depend_array(name="names", value=np.zeros(natoms, np.dtype('|S6'))))
-        else:
-            dset(self, "q", _prebind[0])
-            dset(self, "p", _prebind[1])
-            dset(self, "m", _prebind[2])
-            dset(self, "names", _prebind[3])
-
         dself = dd(self)  # direct access
+
+        if _prebind is None:
+            dself.q = depend_array(name="q", value=np.zeros(3 * natoms, float))
+            dself.p = depend_array(name="p", value=np.zeros(3 * natoms, float))
+            dself.m = depend_array(name="m", value=np.zeros(natoms, float))
+            dself.names = depend_array(name="names",
+                                       value=np.zeros(natoms, np.dtype('|S6')))
+        else:
+            dself.q = _prebind[0]
+            dself.p = _prebind[1]
+            dself.m = _prebind[2]
+            dself.names = _prebind[3]
+
         dself.m3 = depend_array(name="m3", value=np.zeros(3 * natoms, float),
                                 func=self.mtom3, dependencies=[dself.m])
 
@@ -240,16 +242,16 @@ class Atoms(dobject):
     def get_kin(self):
         """Calculates the total kinetic energy of the system."""
 
-        p = depstrip(self.p)
-        return 0.5 * np.dot(p, p / depstrip(self.m3))
+        p = dstrip(self.p)
+        return 0.5 * np.dot(p, p / dstrip(self.m3))
 
     def get_kstress(self):
         """Calculates the total contribution of the atoms to the kinetic stress
         tensor -- not volume-scaled
         """
 
-        p = depstrip(self.p)
-        m = depstrip(self.m)
+        p = dstrip(self.p)
+        m = dstrip(self.m)
         px = p[0::3]
         py = p[1::3]
         pz = p[2::3]

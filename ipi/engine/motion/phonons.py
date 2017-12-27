@@ -76,8 +76,8 @@ class DynMatrixMover(Motion):
         if(self.beads.nbeads > 1):
             raise ValueError("Calculation not possible for number of beads greater than one.")
 
-        self.ism = 1 / np.sqrt(depstrip(self.beads.m3[-1]))
-        self.m = depstrip(self.beads.m)
+        self.ism = 1 / np.sqrt(dstrip(self.beads.m3[-1]))
+        self.m = dstrip(self.beads.m)
         self.phcalc.bind(self)
 
         self.dbeads = self.beads.copy()
@@ -261,10 +261,10 @@ class FDPhononCalculator(DummyPhononCalculator):
         dev[step] = self.dm.deltax
         # displaces kth d.o.f by delta.
         self.dm.dbeads.q = self.dm.beads.q + dev
-        plus = - depstrip(self.dm.dforces.f).copy()
+        plus = - dstrip(self.dm.dforces.f).copy()
         # displaces kth d.o.f by -delta.
         self.dm.dbeads.q = self.dm.beads.q - dev
-        minus = - depstrip(self.dm.dforces.f).copy()
+        minus = - dstrip(self.dm.dforces.f).copy()
         # computes a row of force-constant matrix
         dmrow = (plus - minus) / (2 * self.dm.deltax) * self.dm.ism[step] * self.dm.ism
         self.dm.dynmatrix[step] = dmrow
@@ -308,10 +308,10 @@ class NMFDPhononCalculator(FDPhononCalculator):
         dev = np.real(self.dm.V[:, step] / vknorm) * self.dm.deltax
         # displaces by -delta along kth normal mode.
         self.dm.dbeads.q = self.dm.beads.q + dev
-        plus = - depstrip(self.dm.dforces.f).copy().flatten()
+        plus = - dstrip(self.dm.dforces.f).copy().flatten()
         # displaces by -delta along kth normal mode.
         self.dm.dbeads.q = self.dm.beads.q - dev
-        minus = - depstrip(self.dm.dforces.f).copy().flatten()
+        minus = - dstrip(self.dm.dforces.f).copy().flatten()
         # computes a row of the refined dynmatrix, in the basis of the eigenvectors of the first dynmatrix
         dmrowk = (plus - minus) / (2 * self.dm.deltax / vknorm)
         self.dm.refdynmatrix[step] = np.dot(self.dm.V.T, dmrowk)
@@ -336,10 +336,10 @@ class ENMFDPhononCalculator(NMFDPhononCalculator):
         dev = np.real(self.dm.V[:, step] / vknorm) * edelta
         # displaces by -delta along kth normal mode.
         self.dm.dbeads.q = self.dm.beads.q + dev
-        plus = - depstrip(self.dm.dforces.f).copy().flatten()
+        plus = - dstrip(self.dm.dforces.f).copy().flatten()
         # displaces by -delta along kth normal mode.
         self.dm.dbeads.q = self.dm.beads.q - dev
-        minus = - depstrip(self.dm.dforces.f).copy().flatten()
+        minus = - dstrip(self.dm.dforces.f).copy().flatten()
         # computes a row of the refined dynmatrix, in the basis of the eigenvectors of the first dynmatrix
         dmrowk = (plus - minus) / (2 * edelta / vknorm)
         self.dm.refdynmatrix[step] = np.dot(self.dm.V.T, dmrowk)

@@ -15,7 +15,7 @@ import os
 import time
 from copy import deepcopy
 
-from ipi.utils.depend import depend_value, dobject, dset, dd
+from ipi.utils.depend import depend_value, dobject, dd
 from ipi.utils.io.inputs.io_xml import xml_parse_file
 from ipi.utils.messages import verbosity, info, warning, banner
 from ipi.utils.softexit import softexit
@@ -124,6 +124,7 @@ class Simulation(dobject):
         info(" # Initializing simulation object ", verbosity.low)
         self.prng = prng
         self.mode = mode
+        dself = dd(self)
 
         self.syslist = syslist
         for s in syslist:
@@ -139,7 +140,7 @@ class Simulation(dobject):
 
         self.outtemplate = outputs
 
-        dset(self, "step", depend_value(name="step", value=step))
+        dself.step = depend_value(name="step", value=step)
         self.tsteps = tsteps
         self.ttime = ttime
         self.paratemp = paratemp
