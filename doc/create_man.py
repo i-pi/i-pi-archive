@@ -25,10 +25,10 @@ from help_list import help_list, list_objects
 
 
 if not os.path.exists("input_docs"):
-   os.mkdir("input_docs")
+    os.mkdir("input_docs")
 
 help(xml=True, prefix="manual")
 for opt in objects:
-   help(latex=True, levels=1, option=opt, prefix=("input_docs/" + opt), standalone=False)
+    help(latex=True, levels=1, option=opt, prefix=("input_docs/" + opt), standalone=False)
 for opt in list_objects:
-   help_list(option=opt, prefix=("input_docs/" + opt), standalone=False)
+    help_list(option=opt, prefix=("input_docs/" + opt), standalone=False)

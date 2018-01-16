@@ -23,7 +23,7 @@ import os
 
 # Check that we have the import path for this i-PI set and if not, add it.
 dir_root = os.path.realpath(
-               os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
 if not dir_root in sys.path:
     sys.path.insert(0, dir_root)
 
@@ -36,13 +36,13 @@ def main(fn_input, do_yappi=False):
 
     # optionally profile this run - set up
     #~ if do_yappi:
-        #~ try:
-            #~ import yappi
-            #~ yappi.start(builtins=True, profile_threads=True)
-        #~ except ImportError:
-            #~ print 'Profiling with yappi was enabled but could not be imported.'
-            #~ print "Profiling with yappi was enabled but could not be imported."
-            #~ sys.exit(1)
+    #~ try:
+    #~ import yappi
+    #~ yappi.start(builtins=True, profile_threads=True)
+    #~ except ImportError:
+    #~ print 'Profiling with yappi was enabled but could not be imported.'
+    #~ print "Profiling with yappi was enabled but could not be imported."
+    #~ sys.exit(1)
 
     # construct simulation based on input file
     simulation = Simulation.load_from_xml(fn_input, request_banner=True)
@@ -79,7 +79,7 @@ if __name__ == '__main__':
     parser = OptionParser(usage='%prog [options] <input file>',
                           description='The main i-PI executable used to run '
                                       'a simulation, given an XML input file.'
-                         )
+                          )
 
     parser.add_option('-p', '--profile',
                       action='store_true', dest='do_yappi', default=False,

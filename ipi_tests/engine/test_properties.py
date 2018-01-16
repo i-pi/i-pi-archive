@@ -54,11 +54,12 @@ def create_a_fake_system_obj(natoms, q, forces, atom_names, cell):
         'beads.names': atom_names[:natoms],
         'cell.h': cell,
         'forces.f': forces,
-        }
+    }
 
     sys = mock.Mock(**sys_attr)
 
     return sys
+
 
 @pytest.fixture(params=test_Trajectories_print_traj_prms)
 def prepare_Trajectories_print_traj(request):
@@ -69,9 +70,9 @@ def prepare_Trajectories_print_traj(request):
 
     # Using the same xyz_generator to generate random forces
     junk, forces, atom_names = xyz_gen.xyz_traj(natoms, nbeads, 'comment')
-    xyz = xyz.reshape((nbeads, natoms*3))
-    forces = forces.reshape((nbeads, natoms*3))
-    cell = cell.reshape((3,3))
+    xyz = xyz.reshape((nbeads, natoms * 3))
+    forces = forces.reshape((nbeads, natoms * 3))
+    cell = cell.reshape((3, 3))
 
     system_mock = create_a_fake_system_obj(natoms, xyz, forces, atom_names[:natoms], cell)
 
@@ -89,10 +90,10 @@ def prepare_Trajectories_print_traj(request):
 
     return system_mock, stream, bead, expected_position, expected_cell, expected_comment, expected_names, format_, property_, cell_units, unit_conv
 
+
 def test_Trajectories_print_traj(prepare_Trajectories_print_traj, mocker):
 
     mock_io = mocker.patch('ipi.engine.properties.io.print_file', autospec=True)
-
 
     system, stream, bead, expected_position, expected_cell, expected_comment, expected_names, format_, property_, cell_units, unit_conv = prepare_Trajectories_print_traj
 
@@ -101,8 +102,8 @@ def test_Trajectories_print_traj(prepare_Trajectories_print_traj, mocker):
     trj = ipi.engine.properties.Trajectories()
     trj.bind(system)
 
-    ########### Function to test call
-    trj.print_traj(property_, stream, b=bead, format=format_, cell_units=cell_units, flush=True )
+    # Function to test call
+    trj.print_traj(property_, stream, b=bead, format=format_, cell_units=cell_units, flush=True)
 
     comment = mock_io.call_args[1]['title']
     file_type, atoms, cell, junk = mock_io.call_args[0]

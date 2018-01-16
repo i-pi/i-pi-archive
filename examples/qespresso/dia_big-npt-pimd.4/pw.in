@@ -1,5 +1,5 @@
 &CONTROL
-    calculation='scf'
+    calculation='relax'
     verbosity='high'
     restart_mode='from_scratch'
     tstress=.true.
@@ -24,11 +24,13 @@
 &ELECTRONS
     conv_thr=1.0e-6
     mixing_mode='plain' 
-    mixing_beta=0.7
+    mixing_beta=0.2
     startingpot='atomic' 
     startingwfc='atomic'
 /
 &IONS
+pot_extrapolation="second_order"
+wfc_extrapolation="second_order"
 /
 ATOMIC_SPECIES   
     C  12.01 C.pbe-rrkjus.UPF
@@ -99,8 +101,8 @@ C          4.45900        6.24200        6.24200
 C          6.24200        6.24200        4.45900
 K_POINTS (gamma)
 CELL_PARAMETERS (bohr)
-13.481306 .0 .0
-.0 13.481306 .0
-.0 .0 13.481306
+13.581306 .0 .0
+.0 13.581306 .0
+.0 .0 13.581306
 
 
