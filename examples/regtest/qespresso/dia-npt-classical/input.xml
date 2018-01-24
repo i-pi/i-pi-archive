@@ -3,7 +3,7 @@ DEPENDENCIES  C.pbe-rrkjus.UPF init.xyz pw.in
 COMMAND(1) pw.x -ipi localhost:3142 -in pw.in > pw.out
 ENDREGTEST -->
 <simulation verbosity='high'>
-  <output prefix='example'>
+  <output prefix='simulation'>
     <properties stride='1' filename='out'>  [ step, time{femtosecond}, conserved, temperature{kelvin}, kinetic_cv, potential, pressure_cv{bar}, volume ] </properties>
     <trajectory stride='1' filename='pos' cell_units='angstrom'> positions{angstrom} </trajectory>
   </output>
