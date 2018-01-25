@@ -122,7 +122,8 @@ def main():
                         print '    PASSED'
                     else:
                         print '    FAILED'
-                        results.print_differences()
+                        for results in differences:
+                            results.print_differences()
                 except ValueError as e:
                     print >> sys.stderr, str(e)
             else:
