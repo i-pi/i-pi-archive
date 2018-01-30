@@ -4,8 +4,8 @@
     restart_mode='from_scratch'
     tstress=.true.
     tprnfor=.true.
-    etot_conv_thr=5.0D-11
-    forc_conv_thr=1.0D-10
+    etot_conv_thr=5.0D-5
+    forc_conv_thr=1.0D-4
     prefix='h2o'
     outdir='./'
     pseudo_dir='../'
@@ -23,7 +23,7 @@
     nosym=.true.
 /
 &ELECTRONS
-    conv_thr=1.0e-15
+    conv_thr=1.0e-9
     mixing_mode='plain' 
     mixing_beta=0.7
     startingpot='atomic' 
