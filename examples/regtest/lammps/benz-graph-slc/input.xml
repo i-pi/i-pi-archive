@@ -1,5 +1,5 @@
 <!-- REGTEST
-DEPENDENCIES CH.airebo benzenegraphene.chk data.full data.part in.full in.partbeads in.partcontr 
+DEPENDENCIES CH.airebo init.chk data.full data.part in.full in.partbeads in.partcontr 
 COMMAND(1) lmp_serial -i in.full
 COMMAND(1) lmp_serial -i in.partcontr
 COMMAND(8) lmp_serial -i in.partbeads
@@ -56,7 +56,7 @@ ENDREGTEST -->
    <force forcefield="bencent" nbeads="1"> <mts_weights> [-1,0] </mts_weights> </force>
       </forces>
       <initialize nbeads="32">
-        <file mode="chk"> benzenegraphene.chk </file>
+        <file mode="chk"> init.chk </file>
         <cell mode='abc' units="angstrom"> [ 17.1404, 19.792, 30.00 ] </cell>
         <velocities mode="thermal" units='kelvin'> 300 </velocities>
       </initialize>

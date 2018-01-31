@@ -11,7 +11,7 @@ COMMAND(4)    i-pi-driver -u -h REGTEST_SOCKET -m zundel
     <address>REGTEST_SOCKET</address>
   </ffsocket>
   <total_steps>100</total_steps>
-  <output prefix='data'>
+  <output prefix='simulation'>
     <trajectory stride='2' filename='pos' cell_units='angstrom'>positions{angstrom}</trajectory>
     <trajectory stride='2' filename='xc' format='xyz'>x_centroid{angstrom}</trajectory>
     <trajectory stride='2' filename='xc2' format='xyz'>x_centroid</trajectory>
