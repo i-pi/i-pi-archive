@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 
-'''
+"""
 This script runs i-PI regression tests.
 
 regtest by default searches recursively for i-PI regression tests in the
@@ -14,7 +14,6 @@ There are also following options are available:
   --test-cases-directory TEST_CASES_DIRECTORY
     regtest will recursively search for regression tests in the given
     directory instead of the default current directory
-    
   --run-directory RUN_DIRECTORY
     regtest will run test instance in the directory RUN_DIRECTORY/regtest-run
 
@@ -43,7 +42,7 @@ This script will replace socket adresses. In case the name of the socket
 matches more than once in the COMMAND instruction above, only the first one will be
 changed. For example: using the command "i-pi-driver -u -m zundel -h zundel"
 would only replace the first string "zundel" and cause an error.
-'''
+"""
 
 import sys
 import re
@@ -72,14 +71,14 @@ def main():
     try:
         os.makedirs(run_dir)
     except OSError:
-        print "The directory %s exists. Do you want to delete its contents and continue? (y/n)" % run_dir
+        print 'The directory %s exists. Do you want to delete its contents and continue? (y/n)' % run_dir
         if answer_is_y():
             shutil.rmtree(run_dir)
             os.makedirs(run_dir)
         else:
-            quit("Terminated")
+            quit('Terminated')
     if is_in_reference_mode:
-        print "Do you agree to replace references if they exist? (y/n)"
+        print 'Do you agree to replace references if they exist? (y/n)'
         if answer_is_y():
             replace_references = True
         else:
@@ -91,20 +90,19 @@ def main():
         try:
             list_of_test_cases.append(TestCase(test_candidate))
         except TypeError, e:
-            print "--> Could not create test case:", test_candidate.name
+            print '--> Could not create test case:', test_candidate.name
             print str(e)
             continue
     queue_of_test_instances = deque([])
     counter = Counter()
     print
-    print "List of test cases to be executed:"
+    print 'List of test cases to be executed:'
     for test_case in list_of_test_cases:
         test_instance_dir = os.path.join(run_dir, test_case.name)
         queue_of_test_instances.append(TestInstance(test_case, test_instance_dir, counter))
         print '-->', test_case.name
-    queue_of_output = deque([])
     print
-    print "Executing following test instances:"
+    print 'Executing following test instances:'
     while queue_of_test_instances:
         test_instance = queue_of_test_instances.popleft()
         try:
@@ -147,7 +145,8 @@ def main():
 
 
 class TestCase:
-    """Stores test case, paths to original files which define a regtest.
+    """
+    Stores test case, paths to original files which define a regtest.
 
     Attributes:
         input_path: path to test input file
@@ -159,9 +158,10 @@ class TestCase:
     """
 
     def __init__(self, test_candidate):
-        """Before initializing TestCase based on TestCandidate,
+        """
+        Before initializing TestCase based on TestCandidate,
         checks if dependencies exist.
-        Args:
+        Arguments:
             test_candidate: instance of TestCandidate
         """
         dependencies_dir = os.path.dirname(test_candidate.input_path)
@@ -178,7 +178,8 @@ class TestCase:
         self.reference_dir = os.path.join(self.root, Parameters.reference_directory)
 
     def how_many_sockets(self):
-        """ Checks how many sockets the test case needs.
+        """
+        Checks how many sockets the test case needs.
         Returns:
             sockets: number of sockets needed
         """
@@ -190,19 +191,21 @@ class TestCase:
 
     def get_reference_output(self):
         """
-            Returns:
-                TestOutput object initialized from test case's reference.
+        Returns:
+            TestOutput object initialized from test case's reference.
         """
         return TestOutput(self.input_path, self.reference_dir)
 
     def remove_reference(self):
-        """ Removes reference belonging to the test case.
+        """
+        Removes reference belonging to the test case.
         """
         shutil.rmtree(self.reference_dir)
 
 
 class Counter:
-    """Counter class for attributing socket numbers.
+    """
+    Counter class for attributing socket numbers.
     """
     socket = 10001
 
@@ -213,9 +216,10 @@ class Counter:
 
 
 class TestInstance:
-    """Stores test instance which is build from a test case.]
+    """
+    Stores test instance which is build from a test case.
 
-    Arguments:
+    Attributes:
         test_case: test case on which test instance is based
         path_ipi_input: i-pi input of the test instance
         name: name of the test instance (the same as the test case)
@@ -226,7 +230,8 @@ class TestInstance:
     """
 
     def __init__(self, test_case, dir, counter):
-        """Before initializing instance from TestCase, checks if the path
+        """
+        Before initializing instance from TestCase, checks if the path
         to directory does not exist. Also creates modified copies of
         dependencies with correct socket names. Updaets driver commands.
 
@@ -240,7 +245,7 @@ class TestInstance:
             os.makedirs(run_dir)
         except OSError:
             if os.path.exists(run_dir):
-                raise ValueError("Directory %s exists. The dir parameter must be a path to nonexistent directory" % str(run_dir))
+                raise ValueError('Directory %s exists. The dir parameter must be a path to nonexistent directory' % str(run_dir))
             else:
                 raise
         test_dependencies = []
@@ -295,7 +300,8 @@ class TestInstance:
                                        ' ' + os.path.join(run_dir, 'input.xml'))
 
     def run(self):
-        """Runs the test instance.
+        """
+        Runs the test instance.
         """
         ipi_output_path = os.path.join(self.run_dir, Parameters.ipi_output_file)
         # Run the i-pi code
@@ -367,7 +373,7 @@ class TestInstance:
                     if stderr:
                         with open(ipi_output_path, 'a') as ipi_out:
                             ipi_out.write(stderr)
-                        raise IPIError("I-PI Error\n")
+                        raise IPIError('I-PI Error\n')
                     raise RegtestTimeout('Driver timeout')
 
             drivers_terminated_time = time.time()
@@ -380,8 +386,8 @@ class TestInstance:
                     if stderr:
                         with open(ipi_output_path, 'a') as ipi_out:
                             ipi_out.write(stderr)
-                        raise IPIError("I-PI Error\n" + stderr)
-                    raise RegtestTimeout('I-PI was terminated by regtest after %f s after drivers returned\n' % Parameters.ipi_shutdown_time +
+                        raise IPIError('i-PI Error\n' + stderr)
+                    raise RegtestTimeout('i-PI was terminated by regtest after %f s after drivers returned\n' % Parameters.ipi_shutdown_time +
                                          'This might be caused by error in driver(s).\n' +
                                          'Driver return codes: ' + ', '.join(str(x) for x in driver_return_codes) + '\n'
                                          'Driver errors:' + '\n'.join(driver_errors) + '\n')
@@ -390,12 +396,12 @@ class TestInstance:
             if stderr:
                 with open(ipi_output_path, 'a') as ipi_out:
                     ipi_out.write(stderr)
-                raise IPIError("I-PI Error\n" + stderr)
+                raise IPIError('I-PI Error\n' + stderr)
         except KeyboardInterrupt as e:
-            print "\nKeyboard interrupt!"
+            print '\nKeyboard interrupt!'
             traceback.print_exc(file=sys.stdout)
             if ipi_proc.poll() is None:
-                print 'Trying to shut down I-PI cleanly...'
+                print 'Trying to shut down i-PI cleanly...'
                 # Let I-PI start before we terminate it, otherwise it can hang up
                 time.sleep(Parameters.ipi_starting_time)
                 ipi_proc.terminate()
@@ -403,19 +409,21 @@ class TestInstance:
                 if stderr:
                     with open(ipi_output_path, 'a') as ipi_out:
                         ipi_out.write(stderr)
-                print 'I-PI terminated'
+                print 'i-PI terminated'
             for prc in driver_prcs:
                 if prc.poll() is None:
                     prc.terminate()
             sys.exit('Regtest termination due to user interruption.')
 
     def get_output(self):
-        """Create TestOutput object based on test instance output.
+        """
+        Create TestOutput object based on test instance output.
         """
         return TestOutput(self.path_ipi_input, self.run_dir)
 
     def put_output_as_reference(self):
-        """Uses output of test instance run and moves the files to
+        """
+        Uses output of test instance run and moves the files to
         the reference of the test case.
         """
         output = self.get_output()
@@ -423,7 +431,8 @@ class TestInstance:
         return
 
     def compare_output_with_reference(self):
-        """Compares test instance output with test case reference.
+        """
+        Compares test instance output with test case reference.
         """
         output = self.get_output()
         reference = self.test_case.get_reference_output()
@@ -431,8 +440,9 @@ class TestInstance:
 
 
 class TestOutput:
-    """Stores paths to test outputs.
-    Arguments:
+    """
+    Stores paths to test outputs.
+    Attributes:
         abs_files: list of absolute paths to test output files
         fileset: set of basenames of test output files
         filetuples: set of tuples (basename, absname) of output files
@@ -446,20 +456,21 @@ class TestOutput:
         """
         abs_xml = os.path.abspath(xml)
         if not os.path.isfile(abs_xml):
-            raise ValueError("Input file does not exist %s" % abs_xml)
+            raise ValueError('Input file does not exist %s' % abs_xml)
         filelist = get_output_filenames(abs_xml)
         abs_files = [os.path.join(path, x) for x in filelist]
         filetuples = [(os.path.join(path, x), x) for x in filelist]
         for files in abs_files:
             if not (os.path.isfile(files)):
-                raise OutputCorrupted("Expected output file %s not exist" % files)
+                raise OutputCorrupted('Expected output file %s not exist' % files)
         self.files = abs_files
         self.fileset = set(filelist)
         self.filetuples = set(filetuples)
 
     def compare(self, test_output):
-        """Compares output of test instance with given test_output.
-        Args:
+        """
+        Compares output of test instance with given test_output.
+        Arguments:
             test_output: instance of TestOutput
         Returns:
             report: instance of ComparisonResult
@@ -480,15 +491,16 @@ class TestOutput:
         return report
 
     def put(self, path):
-        """Copies output of test instance to the given path.
-        Args:
+        """
+        Copies output of test instance to the given path.
+        Arguments:
             path: directory to which test outputs will be copied
         """
         try:
             os.makedirs(path)
         except OSError:
             if os.path.exists(path):
-                raise ValueError("Directory %s exists. The dir parameter must be a path to nonexistent directory" % str(path))
+                raise ValueError('Directory %s exists. The dir parameter must be a path to nonexistent directory' % str(path))
             else:
                 raise
         for file in self.files:
@@ -496,25 +508,52 @@ class TestOutput:
 
 
 class ComparisonResult:
+    """
+    Stores result of comparing two output files.
+    Attributes:
+        file1: absolute path of 1st file compared
+        file2: absolute path of 2nd file compared
+        differences: list of tuples (line, word) specifying differences between file1 and file2
+    """
+
     def __init__(self, file1, file2, differences):
+        """
+        Initializes a ComparisonResult using arguments
+            Arguments:
+        file1: absolute path of 1st file compared
+        file2: absolute path of 2nd file compared
+        differences: list of tuples (line, word) specifying differences between file1 and file2
+        """
         self.file1 = file1
         self.file2 = file2
         self.list_of_differences = differences
 
     def append(self, place):
+        """
+        Appends a tuple to list of differences
+        Arguments:
+            place: tuple (line, word)
+        """
         self.list_of_differences.append(place)
 
     def print_differences(self):
-        print "Files:", self.file1, self.file2
+        """
+        Prints differences between file1 and file2
+        """
+        print 'Files:', self.file1, self.file2
         for element in self.list_of_differences:
-            print "Difference in line", element[0], "in word", element[1]
+            print 'Difference in line', element[0], 'in word', element[1]
 
     def files_are_equal(self):
+        """
+        Returns True if files are equal.
+        """
         return (len(self.list_of_differences) == 0)
 
 
 class TestCandidate:
-    """Contains valid candidates for TestCase.
+    """
+    Contains valid candidates for TestCase.
     Arguments:
         input_path: absolute path to test input
         name: name of the test candidate
@@ -531,11 +570,12 @@ class TestCandidate:
             self.input_path = input_abspath
             self.name = name
         else:
-            raise ValueError("Not a valid xml test")
+            raise ValueError('Not a valid xml test')
 
 
 class Parameters:
-    """Set of global parameters
+    """
+    Set of global parameters
     """
     regtest_string = r'<!--\s*REGTEST\s+([\s\w\W]*)\s+ENDREGTEST\s*-->'
     command_string = r'^COMMAND\(?(\d*)\)?\s*([ \w.\+\-\(\)\<\>\:]*)$'
@@ -547,7 +587,7 @@ class Parameters:
     precision = 7
     driver_timeout = 600
     ipi_output_file = 'ipi_output.out'
-    ipi_shutdown_time = 10
+    ipi_shutdown_time = 11
     ipi_starting_time = 5
     sleep_time = 0.1
 
@@ -565,27 +605,28 @@ class Parameters:
 
 
 class RegtestTimeout(Exception):
-    ''' Raise when subprocess of regttest timeout'''
+    """Raise when subprocess of regttest timeout"""
 
 
 class WrongIPICommand(Exception):
-    ''' Raise when i-pi command is not found'''
+    """Raise when i-pi command is not found"""
 
 
 class WrongDriverCommand(Exception):
-    ''' Raise when driver command is not found'''
+    """Raise when driver command is not found"""
 
 
 class OutputCorrupted(Exception):
-    ''' Raise when test output (either reference or test) has missing files'''
+    """Raise when test output (either reference or test) has missing files"""
 
 
 class IPIError(Exception):
-    ''' Raise when I-PI terminates with error'''
+    """Raise when I-PI terminates with error"""
 
 
 def command_parser():
-    """ Parse the argument lists given as input.
+    """
+    Parse the argument lists given as input.
 
     Returns:
         A dictionary containing all the input options and argument.
@@ -598,7 +639,7 @@ def command_parser():
                         action='store',
                         type=str,
                         default=Parameters.test_cases_directory,
-                        help=('The directory which is recursively searched for regression tests'),
+                        help='The directory which is recursively searched for regression tests',
                         dest='test_cases_directory')
     parser.add_argument('--run-directory',
                         action='store',
@@ -618,7 +659,8 @@ def command_parser():
 
 
 def file_is_test(path_of_xml_file):
-    """ Check if an xml file can be used as regtest.
+    """
+    Check if an xml file can be used as regtest.
     Args:
         path_of_xml_file: absolute path to regtest file
     Returns:
@@ -632,7 +674,8 @@ def file_is_test(path_of_xml_file):
 
 
 def parse_regtest_string(xml_input_path):
-    """ Retrieve the commands and the dependecies from the xml input.
+    """
+    Retrieve the commands and the dependecies from the xml input.
 
     This function parses the comment at the beginning of xml file
     and returns the commands to be used as driver and
@@ -653,7 +696,6 @@ def parse_regtest_string(xml_input_path):
     with open(xml_input_path) as _buffer:
         _text = _buffer.read()
 
-    regtest_string = []
     dependencies = []
     commands = []
 
@@ -671,7 +713,8 @@ def parse_regtest_string(xml_input_path):
 
 
 def find_test_candidates(root_path):
-    """ Look for a valid xml regtests recursively in the root_path.
+    """
+    Look for a valid xml regtests recursively in the root_path.
 
     If a directory contains more than a single xml,
     it is skipped and a warning is printed.
@@ -709,7 +752,8 @@ def find_test_candidates(root_path):
 
 
 def check_presence_of_dependencies(xml_file, path):
-    """ Based on regtest input, checks if dependencies are present in path.
+    """
+    Based on regtest input, checks if dependencies are present in path.
 
     Args:
         xml_file: absolute path to regtest input
@@ -730,7 +774,8 @@ def check_presence_of_dependencies(xml_file, path):
 
 
 def inplace_change(filename, old_string, new_string):
-    """ Replace 'old_string' with 'new_string' in 'filename'.
+    """
+    Replace 'old_string' with 'new_string' in 'filename'.
 
     Args:
         filename: The filename where the string must be replaced.
@@ -756,7 +801,8 @@ def inplace_change(filename, old_string, new_string):
 
 
 def get_output_filenames(xml_path):
-    """ Predicts ipi output filenames based on I-PI input file.
+    """
+    Predicts ipi output filenames based on I-PI input file.
     Args:
         xml_path: absolute path to I-PI input file
     Returns:
@@ -774,7 +820,7 @@ def get_output_filenames(xml_path):
     xml_path = os.path.abspath(xml_path)
     os.chdir(os.path.dirname(xml_path))
     # i-pi xml file parser
-    ifile = open(xml_path, "r")
+    ifile = open(xml_path, 'r')
     xmlrestart = io_xml.xml_parse_file(ifile)
     ifile.close()
 
@@ -796,19 +842,19 @@ def get_output_filenames(xml_path):
 
         # trajectories are more complex, as some have per-bead output
         elif isinstance(o, TrajectoryOutput):
-            if getkey(o.what) in ["positions", "velocities",
-                                  "forces", "forces_sc", "extras"]:   # multiple beads
+            if getkey(o.what) in ['positions', 'velocities',
+                                  'forces', 'forces_sc', 'extras']:   # multiple beads
                 nbeads = simul.syslist[0].beads.nbeads
                 for _bi in range(nbeads):
                     # zero-padded bead number
-                    padb = (("%0" + str(int(1 +
+                    padb = (('%0' + str(int(1 +
                                             np.floor(np.log(nbeads) /
                                                      np.log(10)))) +
-                             "d") % (_bi))
+                             'd') % (_bi))
 
                     for _ss in simul.syslist:
                         if o.ibead < 0 or o.ibead == _bi:
-                            if getkey(o.what) == "extras":
+                            if getkey(o.what) == 'extras':
                                 filename = _ss.prefix + o.filename + "_" + padb
                             else:
                                 filename = _ss.prefix + o.filename + "_" + padb + \
@@ -824,7 +870,8 @@ def get_output_filenames(xml_path):
 
 
 def compare_files(file1, file2):
-    """ Compare file1 with file2 and report differences.
+    """
+    Compare file1 with file2 and report differences.
 
     The strings are compared for equality and floats are compared
     to some precision using numpy.
@@ -861,7 +908,8 @@ def compare_files(file1, file2):
 
 
 def answer_is_y():
-    """ Get y/n answer from standard input.
+    """
+    Get y/n answer from standard input.
 
     Only 'yes' and 'y' are counted as yes answer and only 'n' and 'no' are
     valid negative answer. All the answer are case insensitive. The function
