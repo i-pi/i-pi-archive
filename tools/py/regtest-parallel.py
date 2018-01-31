@@ -594,16 +594,16 @@ class Test(threading.Thread):
                         self.test_status = 'ERROR'
             os.chdir(oldpwd)
 
-        init_time = -time.time()
+        init_time = time.time()
         finished = 0
         while finished < len(driver_prcs):
             if self.die:
-                time_to_stop = -1000
+                timeout_driver = -1000
             for prc in driver_prcs:
                 if prc.poll() is not None:
                     finished += 1
             time.sleep(.5)
-            time_to_stop = timeout_driver - init_time - time.time()
+            time_to_stop = timeout_driver + init_time - time.time()
             if time_to_stop < -0.5:
                 for prc in driver_prcs:
                     if prc.poll() is None:
@@ -612,12 +612,13 @@ class Test(threading.Thread):
                 self.test_status = 'ERROR'
                 self.msg += 'The drivers took too long:\n {:d}s > {:d}s\n'.format(int(TIMEOUT_DRIVER - time_to_stop), int(TIMEOUT_DRIVER))
 
+        init_time = time.time()
         while ipi_proc.poll() is None:
             if self.die:
-                time_to_stop = -1000
-            timeout_ipi -= 1
+                timeout_ipi = -1000
             time.sleep(.5)
-            if timeout_ipi < -2:
+            time_to_stop = timeout_ipi + init_time - time.time()
+            if time_to_stop < -0.5:
                 ipi_proc.terminate()
                 self.test_status = 'ERROR'
                 self.msg += 'i-PI took too long after the driver finished!\n'
