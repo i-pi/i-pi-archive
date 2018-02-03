@@ -19,14 +19,14 @@ def test_slicing():
     """Depend: Slicing test"""
     c = a[0]
     print type(c)
-    assert type(c) == dp.depend_array
+    assert isinstance(c, dp.depend_array)
 
 
 def test_addition():
     """Depend: Addition test"""
     c = a + b
     print type(c)
-    assert type(c) == np.ndarray
+    assert isinstance(c, np.ndarray)
 
 
 def test_increment():
@@ -34,14 +34,14 @@ def test_increment():
     c = np.zeros((2, 2))
     c += a
     print type(c)
-    assert type(c) == np.ndarray
+    assert isinstance(c, np.ndarray)
 
 
 def test_dot():
     """Depend: Dot test"""
     c = np.dot(a, b)
     print type(c)
-    assert type(c) == np.ndarray
+    assert isinstance(c, np.ndarray)
 
 
 def test_dotf():
@@ -49,13 +49,13 @@ def test_dotf():
 
     rdot = np.dot
 
-    def fdot(a, b):
-        return rdot(a, b).view(np.ndarray)
+    def fdot(aa, bb):
+        return rdot(aa, bb).view(np.ndarray)
 
     np.dot = fdot
 
     c = np.dot(a, b)
-    assert type(c) == np.ndarray
+    assert isinstance(c, np.ndarray)
     np.dot = rdot
 
 

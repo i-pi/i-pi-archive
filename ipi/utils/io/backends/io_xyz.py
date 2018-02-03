@@ -13,7 +13,7 @@ import re
 import numpy as np
 
 import ipi.utils.mathtools as mt
-from ipi.utils.depend import depstrip
+from ipi.utils.depend import dstrip
 from ipi.utils.units import Elements
 
 
@@ -42,8 +42,8 @@ def print_xyz_path(beads, cell, filedesc=sys.stdout, cell_conv=1.0, atoms_conv=1
     for j in range(nbeads):
         filedesc.write(fmt_header % (natoms, j, a, b, c, alpha, beta, gamma))
         for i in range(natoms):
-            qs = depstrip(beads.q) * atoms_conv
-            lab = depstrip(beads.names)
+            qs = dstrip(beads.q) * atoms_conv
+            lab = dstrip(beads.names)
             filedesc.write("%8s %12.5e %12.5e %12.5e\n" % (lab[i], qs[j][3 * i], qs[j][3 * i + 1], qs[j][3 * i + 2]))
 
 
@@ -63,8 +63,8 @@ def print_xyz(atoms, cell, filedesc=sys.stdout, title="", cell_conv=1.0, atoms_c
     fmt_header = "%d\n# CELL(abcABC): %10.5f  %10.5f  %10.5f  %10.5f  %10.5f  %10.5f  %s\n"
     filedesc.write(fmt_header % (natoms, a, b, c, alpha, beta, gamma, title))
     # direct access to avoid unnecessary slow-down
-    qs = depstrip(atoms.q) * atoms_conv
-    lab = depstrip(atoms.names)
+    qs = dstrip(atoms.q) * atoms_conv
+    lab = dstrip(atoms.names)
     for i in range(natoms):
         filedesc.write("%8s %12.5e %12.5e %12.5e\n" % (lab[i], qs[3 * i], qs[3 * i + 1], qs[3 * i + 2]))
 

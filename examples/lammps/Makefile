@@ -6,12 +6,12 @@
         h2o-piglet.2 h2o-piglet.4 h2o-piglet.8 h2o-pimd.1 h2o-pimd.4 h2o-pimd+mts.4 \
         h2o-pimd+rpc h2o-pimd+sc h2o-pimd+sc+gle.4 h2o-pimd+sc+mts \
         h2o-pimd+sc+rpc h2o-trpmd ice-npt ice-nst isofsc-vapor isofsc-water \
-        isof-vapor isof-water NaCl-cellopt paracetamol-geop paracetamol-phonons
+        isof-vapor isof-water NaCl-cellopt paracetamol-geop paracetamol-phonons benz-graph-slc
 all: all clean fixatoms h2o-alchemical h2o-enmfdphonons h2o-fdphonons h2o-geop h2o-multi \
      h2o-piglet.2 h2o-piglet.4 h2o-piglet.8 h2o-pimd.1 h2o-pimd.4 h2o-pimd+mts.4 \
      h2o-pimd+rpc h2o-pimd+sc h2o-pimd+sc+gle.4 h2o-pimd+sc+mts \
      h2o-pimd+sc+rpc h2o-trpmd ice-npt ice-nst isofsc-vapor isofsc-water \
-     isof-vapor isof-water NaCl-cellopt paracetamol-geop paracetamol-phonons
+     isof-vapor isof-water NaCl-cellopt paracetamol-geop paracetamol-phonons benz-graph-slc
 
 LAMMPS:=lmp_serial
 IPI:=i-pi
@@ -160,7 +160,14 @@ paracetamol-phonons:
 	cd paracetamol-phonons; $(IPI) input.xml & sleep 5; \
         $(call run_lammps,4,in.lmp) \
 	wait
-	
+
+benz-graph-slc:
+	cd benz-graph-slc; $(IPI) input.xml & sleep 5; \
+	$(call run_lammps,1,in.full) \
+	$(call run_lammps,1,in.partcontr) \
+	$(call run_lammps,8,in.partbeads) \
+	wait 
+
 clean:
 	rm -f */*RESTART* */EXIT */log.lammps */*simulation*
 

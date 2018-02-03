@@ -75,10 +75,10 @@ class InputBeads(Input):
         self.natoms.store(beads.natoms)
         self.nbeads.store(beads.nbeads)
 
-        self.q.store(depstrip(beads.q))
-        self.p.store(depstrip(beads.p))
-        self.m.store(depstrip(beads.m))
-        self.names.store(depstrip(beads.names))
+        self.q.store(dstrip(beads.q))
+        self.p.store(dstrip(beads.p))
+        self.m.store(dstrip(beads.m))
+        self.names.store(dstrip(beads.names))
 
     def fetch(self):
         """Creates a beads object.

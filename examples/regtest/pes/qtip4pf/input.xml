@@ -3,7 +3,7 @@ DEPENDENCIES init.pdb
 COMMAND(4) i-pi-driver -u -h ffdriver -m qtip4pf
 ENDREGTEST -->
 <simulation>
-  <output prefix='qtip4pf'>
+  <output prefix='simulation'>
     <properties stride='20' filename='out'>  [ step, time{picosecond}, 
 conserved{electronvolt}, temperature{kelvin}, kinetic_cv{electronvolt}, potential{electronvolt}, pressure_cv{megapascal}] </properties>
     <trajectory filename='pos' stride='20'> positions{angstrom} </trajectory>

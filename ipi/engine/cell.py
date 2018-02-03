@@ -52,7 +52,7 @@ class Cell(dobject):
                                dependencies=[dself.h])
 
     def copy(self):
-        return Cell(depstrip(self.h).copy())
+        return Cell(dstrip(self.h).copy())
 
     def get_ih(self):
         """Inverts the lattice vector matrix."""
@@ -95,13 +95,13 @@ class Cell(dobject):
            system box.
         """
 
-        s = depstrip(pos).copy()
+        s = dstrip(pos).copy()
         s.shape = (len(pos) / 3, 3)
 
-        s = np.dot(depstrip(self.ih), s.T)
+        s = np.dot(dstrip(self.ih), s.T)
         s = s - np.round(s)
 
-        s = np.dot(depstrip(self.h), s).T
+        s = np.dot(dstrip(self.h), s).T
 
         pos[:] = s.reshape((len(s) * 3))
 

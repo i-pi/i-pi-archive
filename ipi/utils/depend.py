@@ -20,7 +20,7 @@ For a more detailed discussion, see the reference manual.
 """
 
 # This file is part of i-PI.
-# i-PI Copyright (C) 2014-2015 i-PI developers
+# i-PI Copyright (C) 2014-2017 i-PI developers
 # See the "licenses" directory for full license information.
 
 
@@ -32,8 +32,8 @@ import numpy as np
 from ipi.utils.messages import verbosity, warning
 
 
-__all__ = ['depend_base', 'depend_value', 'depend_array', 'synchronizer',
-           'dobject', 'dd', 'dget', 'dset', 'dpipe', 'dcopy', 'depstrip', 'depcopy', 'deppipe', 'depraise']
+__all__ = ['depend_value', 'depend_array', 'synchronizer', 'dobject', 'dd',
+           'dpipe', 'dcopy', 'dstrip', 'depraise']
 
 
 class synchronizer(object):
@@ -45,7 +45,8 @@ class synchronizer(object):
     Attributes:
         synched: A dictionary containing all the synched objects, of the form
             {"name": depend object}.
-        manual: A string containing the name of the object being manually changed.
+        manual: A string containing the name of the object being manually
+            changed.
     """
 
     def __init__(self, deps=None):
@@ -73,8 +74,8 @@ class depend_base(object):
     mechanism by which information about which objects have been updated is
     passed around the dependency network, and the manual and automatic update
     functions to check that depend objects with functions are not manually
-    updated and that synchronized objects are kept in step with the one manually
-    changed.
+    updated and that synchronized objects are kept in step with the one
+    manually changed.
 
     Attributes:
         _tainted: An array containing one boolean, which is True if one of the
@@ -91,33 +92,34 @@ class depend_base(object):
     def __init__(self, name, synchro=None, func=None, dependants=None, dependencies=None, tainted=None, active=None):
         """Initialises depend_base.
 
-        An unusual initialisation routine, as it has to be able to deal with the
-        depend array mechanism for returning slices as new depend arrays.
+        An unusual initialisation routine, as it has to be able to deal with
+        the depend array mechanism for returning slices as new depend arrays.
 
         This is the reason for the penultimate if statement; it automatically
-        taints objects created from scratch but does nothing to slices which are
-        not tainted.
+        taints objects created from scratch but does nothing to slices which
+        are not tainted.
 
-        Also, the last if statement makes sure that if a synchronized property is
-        sliced, this initialization routine does not automatically set it to the
-        manually updated property.
+        Also, the last if statement makes sure that if a synchronized property
+        is sliced, this initialization routine does not automatically set it to
+        the manually updated property.
 
         Args:
             name: A string giving the name of self.
-            tainted: An optional array containing one boolean which is True if one
-            of the dependencies has been changed.
-            func: An optional argument that can be specified either by a function
-                name, or for synchronized values a dictionary of the form
-                {"name": function name}; where "name" is one of the other
+            tainted: An optional array containing one boolean which is True if
+                one of the dependencies has been changed.
+            func: An optional argument that can be specified either by a
+                function name, or for synchronized values a dictionary of the
+                form {"name": function name}; where "name" is one of the other
                 synched objects and function name is the name of a function to
                 get the object "name" from self.
             synchro: An optional synchronizer object.
             dependants: An optional list containing objects that depend on self.
             dependencies: An optional list containing objects that self
                 depends upon.
+            active: An optional boolean to indicate if this object is evaluated
+                (is active) or on hold.
         """
 
-        self._dependants = []
         if tainted is None:
             tainted = np.array([True], bool)
         if active is None:
@@ -132,19 +134,23 @@ class depend_base(object):
         self._name = name
         self._active = active
         self._threadlock = threading.RLock()
+        self._dependants = []
+        self._synchro = None
 
         self.add_synchro(synchro)
 
         for item in dependencies:
             item.add_dependant(self, tainted)
 
+        # Convert dependants to weakreferences consitently
         for item in dependants:
-            if not type(item) is weakref.ref:  # use weakreferences consistently in dependants
+            if not isinstance(item, weakref.ref):
                 dependants.remove(item)
                 dependants.append(weakref.ref(item))
         self._dependants = dependants
 
-        # Don't taint self if the object is a primitive one. However, do propagate tainting to dependants if required.
+        # Don't taint self if the object is a primitive one.
+        # However, do propagate tainting to dependants if required.
         if tainted[0]:
             if self._func is None:
                 self.taint(taintme=False)
@@ -152,9 +158,11 @@ class depend_base(object):
                 self.taint(taintme=tainted)
 
     def hold(self):
+        """ Sets depend object as on hold. """
         self._active[:] = False
 
     def resume(self):
+        """ Sets depend object as active again. """
         self._active[:] = True
         if self._func is None:
             self.taint(taintme=False)
@@ -164,8 +172,10 @@ class depend_base(object):
     def add_synchro(self, synchro=None):
         """ Links depend object to a synchronizer. """
 
+        assert self._synchro is None, "This object must not have a previous synchronizer!"
+
         self._synchro = synchro
-        if not self._synchro is None and not self._name in self._synchro.synced:
+        if self._synchro is not None and self._name not in self._synchro.synced:
             self._synchro.synced[self._name] = self
             self._synchro.manual = self._name
 
@@ -178,14 +188,7 @@ class depend_base(object):
                True by default.
         """
 
-        if type(newdep) is weakref.ref:
-            self._dependants.append(newdep)
-            if tainted:
-                newdep().taint(taintme=True)
-        else:
-            self._dependants.append(weakref.ref(newdep))
-            if tainted:
-                newdep.taint(taintme=True)
+        newdep.add_dependency(self, tainted=tainted)
 
     def add_dependency(self, newdep, tainted=True):
         """Adds a dependency.
@@ -205,27 +208,29 @@ class depend_base(object):
 
         The main function dealing with the dependencies. Taints all objects
         further down the dependency tree until either all objects have been
-        tainted, or it reaches only objects that have already been tainted. Note
-        that in the case of a dependency loop the initial setting of _tainted to
-        True prevents an infinite loop occuring.
+        tainted, or it reaches only objects that have already been tainted.
+        Note that in the case of a dependency loop the initial setting of
+        _tainted to True prevents an infinite loop occuring.
 
         Also, in the case of a synchro object, the manually set quantity is not
-        tainted, as it is assumed that synchro objects only depend on each other.
+        tainted, as it is assumed that synchro objects only depend on each
+        other.
 
         Args:
            taintme: A boolean giving whether self should be tainted at the end.
               True by default.
         """
 
-        if not self._active: return
+        if not self._active:
+            return
 
         self._tainted[:] = True
         for item in self._dependants:
             if (not item()._tainted[0]):
                 item().taint()
-        if not self._synchro is None:
+        if self._synchro is not None:
             for v in self._synchro.synced.values():
-                if (not v._tainted[0]) and (not v is self):
+                if (not v._tainted[0]) and (v is not self):
                     v.taint(taintme=True)
             self._tainted[:] = (taintme and (not self._name == self._synchro.manual))
         else:
@@ -242,30 +247,32 @@ class depend_base(object):
         Updates the value when get has been called and self has been tainted.
         """
 
-        if not self._synchro is None:
+        if self._synchro is not None:
             if (not self._name == self._synchro.manual):
                 self.set(self._func[self._synchro.manual](), manual=False)
             else:
-                warning(self._name + " probably shouldn't be tainted (synchro)", verbosity.low)
-        elif not self._func is None:
+                warning(self._name + " probably shouldn't be tainted (synchro)",
+                        verbosity.low)
+        elif self._func is not None:
             self.set(self._func(), manual=False)
         else:
-            warning(self._name + " probably shouldn't be tainted (value)", verbosity.low)
+            warning(self._name + " probably shouldn't be tainted (value)",
+                    verbosity.low)
 
     def update_man(self):
         """Manual update routine.
 
         Updates the value when the value has been manually set. Also raises an
-        exception if a calculated quantity has been manually set. Also starts the
-        tainting routine.
+        exception if a calculated quantity has been manually set. Also starts
+        the tainting routine.
 
         Raises:
             NameError: If a calculated quantity has been manually set.
         """
 
-        if not self._synchro is None:
+        if self._synchro is not None:
             self._synchro.manual = self._name
-        elif not self._func is None:
+        elif self._func is not None:
             raise NameError("Cannot set manually the value of the automatically-computed property <" + self._name + ">")
         self.taint(taintme=False)
 
@@ -273,13 +280,11 @@ class depend_base(object):
         """Dummy setting routine."""
 
         raise ValueError("Undefined set function for base depend class")
-        pass
 
     def get(self):
         """Dummy getting routine."""
 
         raise ValueError("Undefined get function for base depend class")
-        pass
 
 
 class depend_value(depend_base):
@@ -357,7 +362,7 @@ class depend_array(np.ndarray, depend_base):
     array. Initialisation is also done in a different way for ndarrays.
 
     Attributes:
-        _bval: The base deparray storage space. Equal to depstrip(self) unless
+        _bval: The base deparray storage space. Equal to dstrip(self) unless
             self is a slice.
     """
 
@@ -429,7 +434,7 @@ class depend_array(np.ndarray, depend_base):
             # handle special cases, and hope we are in a view cast otherwise.
             if hasattr(obj, "_fcopy"):
                 del(obj._fcopy)   # removes the "copy flag"
-                self._bval = depstrip(self)
+                self._bval = dstrip(self)
             else:
                 # Assumes we are in view cast, so copy over the attributes from the
                 # parent object. Typical case: when transpose is performed as a
@@ -439,7 +444,7 @@ class depend_array(np.ndarray, depend_base):
         else:
             # Most likely we came here on the way to init.
             # Just sets a defaults for safety
-            self._bval = depstrip(self)
+            self._bval = dstrip(self)
 
     def __array_prepare__(self, arr, context=None):
         """Prepare output array for ufunc.
@@ -491,8 +496,10 @@ class depend_array(np.ndarray, depend_base):
            A depend_array with the dimensions given by newshape.
         """
 
-        return depend_array(depstrip(self).reshape(newshape), name=self._name, synchro=self._synchro,
-                            func=self._func, dependants=self._dependants, tainted=self._tainted, base=self._bval, active=self._active)
+        return depend_array(dstrip(self).reshape(newshape), name=self._name,
+                            synchro=self._synchro, func=self._func,
+                            dependants=self._dependants, tainted=self._tainted,
+                            base=self._bval, active=self._active)
 
     def flatten(self):
         """Makes the base array one dimensional.
@@ -550,10 +557,13 @@ class depend_array(np.ndarray, depend_base):
                 self.taint(taintme=False)
 
         if self.__scalarindex(index, self.ndim):
-            return depstrip(self)[index]
+            return dstrip(self)[index]
         else:
-            return depend_array(depstrip(self)[index], name=self._name, synchro=self._synchro,
-                                func=self._func, dependants=self._dependants, tainted=self._tainted, base=self._bval, active=self._active)
+            return depend_array(dstrip(self)[index], name=self._name,
+                                synchro=self._synchro, func=self._func,
+                                dependants=self._dependants,
+                                tainted=self._tainted, base=self._bval,
+                                active=self._active)
 
     def __getslice__(self, i, j):
         """Overwrites standard get function."""
@@ -634,8 +644,8 @@ __dp_dot = np.dot
 
 
 def dep_dot(da, db):
-    a = depstrip(da)
-    b = depstrip(db)
+    a = dstrip(da)
+    b = dstrip(db)
 
     return __dp_dot(a, b)
 
@@ -644,49 +654,7 @@ np.dot = dep_dot
 # ENDS NUMPY FUNCTIONS OVERRIDE
 
 
-def dget(obj, member):
-    """Takes an object and retrieves one of its attributes.
-
-    Note that this is necessary as calling it in the standard way calls the
-    __get__() function of member.
-
-    Args:
-        obj: A user defined class.
-        member: A string giving the name of an attribute of obj.
-
-    Exceptions:
-        KeyError: If member is not an attribute of obj.
-
-    Returns:
-        obj.member.
-    """
-
-    return obj.__dict__[member]
-
-
-def dset(obj, member, value, name=None):
-    """Takes an object and sets one of its attributes.
-
-    Necessary for editing any depend object, and should be used for
-    initialising them as well, as often initialization occurs more than once,
-    with the second time effectively being an edit.
-
-    Args:
-        obj: A user defined class.
-        member: A string giving the name of an attribute of obj.
-        value: The new value of member.
-        name: New name of member.
-
-    Exceptions:
-        KeyError: If member is not an attribute of obj.
-    """
-
-    obj.__dict__[member] = value
-    if not name is None:
-        obj.__dict__[member]._name = name
-
-
-def depstrip(da):
+def dstrip(da):
     """Removes dependencies from a depend_array.
 
     Takes a depend_array and returns its value as a ndarray, effectively
@@ -704,8 +672,8 @@ def depstrip(da):
     # only bother to strip dependencies if the array actually IS a depend_array
     if isinstance(da, depend_array):
         # if da._tainted[0]:
-        #    print "!!! WARNING depstrip called on tainted array WARNING !!!!!"
-        # I think we can safely assume that when we call depstrip the array has
+        #    print "!!! WARNING dstrip called on tainted array WARNING !!!!!"
+        # I think we can safely assume that when we call dstrip the array has
         # been cleared already but I am not 100% sure so better check - and in
         # case raise the update
         result = da.view(np.ndarray)
@@ -715,27 +683,19 @@ def depstrip(da):
         return da
 
 
-def deppipe(objfrom, memberfrom, objto, memberto, item=-1):
-    """Synchronizes two depend objects.
+def dpipe(dfrom, dto, item=-1):
+    """Synchonizes two depend objects.
 
     Takes two depend objects, and makes one of them depend on the other in such
-    a way that both keep the same value. Used for attributes such as temperature
-    that are used in many different modules, and so need different depend objects
-    in each, but which should all have the same value.
+    a way that both keep the same value. Used for attributes such as
+    temperature that are used in many different modules, and so need different
+    depend objects in each, but which should all have the same value.
 
     Args:
-        objfrom: An object containing memberfrom.
-        memberfrom: The base depend object.
-        objto: An object containing memberto.
-        memberto: The depend object that should be equal to memberfrom.
+        dfrom: The object that is depend on.
+        dto: The object that depends on the former one.
     """
 
-    dfrom = dget(objfrom, memberfrom)
-    dto = dget(objto, memberto)
-    dpipe(dfrom, dto, item)
-
-
-def dpipe(dfrom, dto, item=-1):
     if item < 0:
         dto._func = lambda: dfrom.get()
     else:
@@ -743,18 +703,12 @@ def dpipe(dfrom, dto, item=-1):
     dto.add_dependency(dfrom)
 
 
-def depcopy(objfrom, memberfrom, objto, memberto):
+def dcopy(dfrom, dto):
     """Copies the dependencies of one depend object to another.
 
     Args:
-        See deppipe.
+        see dpipe.
     """
-    dfrom = dget(objfrom, memberfrom)
-    dto = dget(objto, memberto)
-    dcopy(dfrom, dto)
-
-
-def dcopy(dfrom, dto):
     dto._dependants = dfrom._dependants
     dto._synchro = dfrom._synchro
     dto.add_synchro(dfrom._synchro)
