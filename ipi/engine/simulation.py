@@ -11,7 +11,8 @@ choosing which properties to initialise, and which properties to output.
 # See the "licenses" directory for full license information.
 
 
-import os, threading
+import os
+import threading
 import time
 from copy import deepcopy
 
@@ -215,8 +216,7 @@ class Simulation(dobject):
 
         for k, f in self.fflist.iteritems():
             f.run()
-            
-                    
+
         # prints inital configuration -- only if we are not restarting
         if self.step == 0:
             self.step = -1
@@ -264,7 +264,7 @@ class Simulation(dobject):
                 # steps through all the systems
                 for s in self.syslist:
                     # creates separate threads for the different systems
-                    st = threading.Thread(target=s.motion.step, name=s.prefix, kwargs={"step":self.step})
+                    st = threading.Thread(target=s.motion.step, name=s.prefix, kwargs={"step": self.step})
                     st.daemon = True
                     st.start()
                     stepthreads.append(st)
@@ -276,11 +276,11 @@ class Simulation(dobject):
             else:
                 for s in self.syslist:
                     s.motion.step(step=self.step)
-                    
+
             if softexit.triggered:
                 # Don't continue if we are about to exit.
                 break
-            
+
             # does the "super motion" step
             if self.smotion is not None:
                 # TODO: We need a file where we store the exchanges
@@ -289,7 +289,7 @@ class Simulation(dobject):
             if softexit.triggered:
                 # Don't write if we are about to exit.
                 break
-            
+
             if self.threading:
                 stepthreads = []
                 for o in self.outputs:
@@ -314,7 +314,7 @@ class Simulation(dobject):
                 info(" # Average timings at MD step % 7d. t/step: %10.5e" % (self.step, ttot / cstep))
                 cstep = 0
                 ttot = 0.0
-                #info(" # MD diagnostics: V: %10.5e    Kcv: %10.5e   Ecns: %10.5e" %
+                # info(" # MD diagnostics: V: %10.5e    Kcv: %10.5e   Ecns: %10.5e" %
                 #     (self.properties["potential"], self.properties["kinetic_cv"], self.properties["conserved"] ) )
 
             if os.path.exists("EXIT"):

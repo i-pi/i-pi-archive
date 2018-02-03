@@ -75,15 +75,15 @@ class xml_handler(ContentHandler):
     def __init__(self):
         """Initialises xml_handler."""
 
-        #root xml node with all the data
+        # root xml node with all the data
         self.root = xml_node(name="root", fields=[])
         self.open = [self.root]
-        #current level of the hierarchy
+        # current level of the hierarchy
         self.level = 0
-        #Holds all the data between each of the tags.
-        #If level = 1, then buffer[0] holds all the data collected between the
-        #root tags, and buffer[1] holds all the data collected between the
-        #first child tag.
+        # Holds all the data between each of the tags.
+        # If level = 1, then buffer[0] holds all the data collected between the
+        # root tags, and buffer[1] holds all the data collected between the
+        # first child tag.
         self.buffer = [[""]]
 
     def startElement(self, name, attrs):
@@ -131,14 +131,14 @@ class xml_handler(ContentHandler):
             name: The tag_name.
         """
 
-        #all the text found between the tags stored in the appropriate xml_node
-        #object
+        # all the text found between the tags stored in the appropriate xml_node
+        # object
         self.buffer[self.level] = ''.join(self.buffer[self.level])
         self.open[self.level].fields.append(("_text", self.buffer[self.level]))
         #'closes' the xml_node object, as we are no longer within its tags, so
-        #there is no more data to be added to it.
-        #Note that the xml_node is still held within the parent tag, so we
-        #no longer require this xml node object.
+        # there is no more data to be added to it.
+        # Note that the xml_node is still held within the parent tag, so we
+        # no longer require this xml node object.
         self.buffer.pop(self.level)
         self.open.pop(self.level)
         self.level -= 1
@@ -173,6 +173,7 @@ def xml_parse_file(stream):
     parse(stream, myhandle)
     return myhandle.root
 
+
 def xml_write(xml, name="", indent="", text=""):
     """Writes data in xml file format.
 
@@ -199,26 +200,25 @@ def xml_write(xml, name="", indent="", text=""):
     rstr = ""
     if not name == "":
         rstr = indent + "<" + name;
-        for a,v in xml.attribs.iteritems():
-             rstr += " " + a + "='" + v + "'"
+        for a, v in xml.attribs.iteritems():
+            rstr += " " + a + "='" + v + "'"
         rstr += ">"
-        
+
     rstr += text.strip()
-    
-    
+
     inline = False
-    for a,v in xml.fields:
+    for a, v in xml.fields:
         if a == "_text":
             rstr += v.strip()
-            if v.strip()!="": inline = True
-        else:            
-            rstr += "\n" + xml_write(v, indent="  "+indent, name=a, text="\n")        
+            if v.strip() != "": inline = True
+        else:
+            rstr += "\n" + xml_write(v, indent="  " + indent, name=a, text="\n")
 
-    if not name == "" :
+    if not name == "":
         if inline:
             rstr += "</" + name + ">"
         else:
-            rstr += "\n" + indent + "</" + name + ">"        
+            rstr += "\n" + indent + "</" + name + ">"
     return rstr
 
 
@@ -330,7 +330,7 @@ def read_list(data, delims="[]", split=",", strip=" \n\t'"):
     except ValueError:
         raise ValueError("Error in list syntax: could not locate delimiters")
 
-    rlist = data[begin+1:end].split(split)
+    rlist = data[begin + 1:end].split(split)
     for i in range(len(rlist)):
         rlist[i] = rlist[i].strip(strip)
 

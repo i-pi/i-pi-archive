@@ -64,7 +64,7 @@ class synchronizer(object):
         self.manual = None
 
 
-#TODO put some error checks in the init to make sure that the object is initialized from consistent synchro and func states
+# TODO put some error checks in the init to make sure that the object is initialized from consistent synchro and func states
 class depend_base(object):
     """Base class for dependency handling.
 
@@ -126,7 +126,7 @@ class depend_base(object):
             dependants = []
         if dependencies is None:
             dependencies = []
-        
+
         self._tainted = tainted
         self._func = func
         self._name = name
@@ -220,7 +220,7 @@ class depend_base(object):
         if not self._active: return
 
         self._tainted[:] = True
-        for item in self._dependants:            
+        for item in self._dependants:
             if (not item()._tainted[0]):
                 item().taint()
         if not self._synchro is None:
@@ -339,7 +339,7 @@ class depend_value(depend_base):
 
         with self._threadlock:
             self._value = value
-            #self.taint(taintme=False)
+            # self.taint(taintme=False)
             if manual:
                 self.update_man()
 
@@ -525,7 +525,7 @@ class depend_array(np.ndarray, depend_base):
         if (np.isscalar(index) and depth <= 1):
             return True
         elif (isinstance(index, tuple) and len(index) == depth):
-            #if the index is a tuple check it does not contain slices
+            # if the index is a tuple check it does not contain slices
             for i in index:
                 if not np.isscalar(i):
                     return False
@@ -598,7 +598,7 @@ class depend_array(np.ndarray, depend_base):
                 self.update_man()
             elif index == slice(None, None, None):
                 self._bval[index] = value
-                self.taint(taintme=False)        
+                self.taint(taintme=False)
             else:
                 raise IndexError("Automatically computed arrays should span the whole parent")
 
@@ -631,6 +631,7 @@ class depend_array(np.ndarray, depend_base):
 
 # ** np.dot
 __dp_dot = np.dot
+
 
 def dep_dot(da, db):
     a = depstrip(da)
@@ -702,7 +703,7 @@ def depstrip(da):
 
     # only bother to strip dependencies if the array actually IS a depend_array
     if isinstance(da, depend_array):
-        #if da._tainted[0]:
+        # if da._tainted[0]:
         #    print "!!! WARNING depstrip called on tainted array WARNING !!!!!"
         # I think we can safely assume that when we call depstrip the array has
         # been cleared already but I am not 100% sure so better check - and in
@@ -732,7 +733,8 @@ def deppipe(objfrom, memberfrom, objto, memberto, item=-1):
     dfrom = dget(objfrom, memberfrom)
     dto = dget(objto, memberto)
     dpipe(dfrom, dto, item)
-    
+
+
 def dpipe(dfrom, dto, item=-1):
     if item < 0:
         dto._func = lambda: dfrom.get()
@@ -751,6 +753,7 @@ def depcopy(objfrom, memberfrom, objto, memberto):
     dto = dget(objto, memberto)
     dcopy(dfrom, dto)
 
+
 def dcopy(dfrom, dto):
     dto._dependants = dfrom._dependants
     dto._synchro = dfrom._synchro
@@ -759,6 +762,7 @@ def dcopy(dfrom, dto):
     dto._func = dfrom._func
     if hasattr(dfrom, "_bval"):
         dto._bval = dfrom._bval
+
 
 def depraise(exception):
     raise exception
@@ -772,7 +776,7 @@ class dobject(object):
     and getting the depend object, i.e. foo = value, not foo.set(value).
     """
 
-    def __new__(cls,  *args, **kwds):
+    def __new__(cls, *args, **kwds):
         """ Initialize the object using __new__, because we do not want
         to impose to derived classes to call the super __init__ """
 
@@ -788,7 +792,7 @@ class dobject(object):
         __get__() function rather than the standard one.
         """
 
-        value = super(dobject,self).__getattribute__(name)
+        value = super(dobject, self).__getattribute__(name)
         if issubclass(value.__class__, depend_base):
             value = value.__get__(self, self.__class__)
         return value
@@ -802,18 +806,20 @@ class dobject(object):
         """
 
         try:
-            obj = super(dobject,self).__getattribute__(name)
+            obj = super(dobject, self).__getattribute__(name)
         except AttributeError:
             pass
         else:
             if issubclass(obj.__class__, depend_base):
                 return obj.__set__(self, value)
-        return super(dobject,self).__setattr__(name, value)
+        return super(dobject, self).__setattr__(name, value)
+
 
 def dd(dobj):
     if not issubclass(dobj.__class__, dobject):
         raise ValueError("Cannot access a ddirect view of an object which is not a subclass of dobject")
     return dobj._direct
+
 
 class ddirect(object):
     """Gives a "view" of a depend object where one can directly access its
@@ -828,10 +834,10 @@ class ddirect(object):
         """Overrides the dobject value access mechanism and returns the actual
         member objects."""
 
-        return object.__getattribute__(object.__getattribute__(self, "dobj"),name)
+        return object.__getattribute__(object.__getattribute__(self, "dobj"), name)
 
     def __setattr__(self, name, value):
         """Overrides the dobject value access mechanism and returns the actual
         member objects."""
 
-        return object.__setattr__(object.__getattribute__(self,"dobj"), name, value)
+        return object.__setattr__(object.__getattribute__(self, "dobj"), name, value)

@@ -28,6 +28,7 @@ from ipi.utils.units import *
 
 __all__ = ['InputReplicaExchange']
 
+
 class InputReplicaExchange(InputDictionary):
     """Replica Exchange options.
 
@@ -36,23 +37,23 @@ class InputReplicaExchange(InputDictionary):
 
     """
 
-    fields={
-           "stride" : (InputValue, {"dtype"        : float,
-                                      "default"      : 1.0,
-                                      "help"         : "Every how often to try exchanges (on average)."
-                                      }),
-           "krescale" : (InputValue, {"dtype"        : bool,
-                                   "default"         : True,
-                                   "help"            : "Rescale kinetic energy upon exchanges."}),
-           "swapfile" : (InputValue, {"dtype"        : str,
-                                      "default"      : "PARATEMP",
-                                      "help"         : "File to keep track of replica exchanges"
-                                      }),                         
-            "repindex" : ( InputArray, { "dtype" : int,
-                                      "default"       : input_default(factory=np.zeros, args = (0,)),
-                                      "help"          : "List of current indices of the replicas compared to the starting indices" })
-                                      
-         }
+    fields = {
+        "stride": (InputValue, {"dtype": float,
+                                "default": 1.0,
+                                "help": "Every how often to try exchanges (on average)."
+                                }),
+           "krescale": (InputValue, {"dtype": bool,
+                                     "default": True,
+                                     "help": "Rescale kinetic energy upon exchanges."}),
+           "swapfile": (InputValue, {"dtype": str,
+                                     "default": "PARATEMP",
+                                     "help": "File to keep track of replica exchanges"
+                                     }),
+            "repindex": (InputArray, {"dtype": int,
+                                      "default": input_default(factory=np.zeros, args=(0,)),
+                                      "help": "List of current indices of the replicas compared to the starting indices"})
+
+    }
 
     default_help = "Replica Exchange"
     default_label = "REMD"
@@ -65,5 +66,5 @@ class InputReplicaExchange(InputDictionary):
         self.swapfile.store(remd.swapfile)
 
     def fetch(self):
-        rv = super(InputReplicaExchange,self).fetch()
+        rv = super(InputReplicaExchange, self).fetch()
         return rv

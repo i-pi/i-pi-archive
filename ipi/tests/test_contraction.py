@@ -80,7 +80,7 @@ def test_1_to_n():
     """Contraction with one bead."""
 
     for n in numbers_to_check:
-        q = np.array([[0.0,0.0,0.0, 1.0,0.0,0.0]])
+        q = np.array([[0.0, 0.0, 0.0, 1.0, 0.0, 0.0]])
         yield check_up_and_down_scaling, n, q
         yield check_rpc_consistency, n, q
         yield check_centroid_pos, n, q
@@ -90,8 +90,8 @@ def test_2_to_n():
     """Contraction with two beads."""
 
     for n in numbers_to_check:
-        q = np.array([[0.0,0.0,0.0, 1.0,0.0,0.0],
-                      [0.0,0.1,0.0, 1.0,0.1,0.0]])
+        q = np.array([[0.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+                      [0.0, 0.1, 0.0, 1.0, 0.1, 0.0]])
         yield check_up_and_down_scaling, n, q
         yield check_rpc_consistency, n, q
         yield check_centroid_pos, n, q
@@ -101,9 +101,9 @@ def test_3_to_n():
     """Contraction with tree beads."""
 
     for n in numbers_to_check:
-        q = np.array([[0.0, 0.0,0.0, 1.0, 0.0,0.0],
-                      [0.0, 0.1,0.0, 1.0, 0.1,0.0],
-                      [0.0,-0.1,0.0, 1.0,-0.1,0.0]])
+        q = np.array([[0.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+                      [0.0, 0.1, 0.0, 1.0, 0.1, 0.0],
+                      [0.0, -0.1, 0.0, 1.0, -0.1, 0.0]])
         yield check_up_and_down_scaling, n, q
         yield check_rpc_consistency, n, q
         yield check_centroid_pos, n, q
@@ -113,10 +113,10 @@ def test_4_to_n():
     """Contraction with four beads."""
 
     for n in numbers_to_check:
-        q = np.array([[0.0, 0.0,0.0, 1.0, 0.0,0.0],
-                      [0.0, 0.1,0.0, 1.0, 0.1,0.0],
-                      [0.0, 0.2,0.0, 1.0, 0.2,0.0],
-                      [0.0,-0.1,0.0, 1.0,-0.1,0.0]])
+        q = np.array([[0.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+                      [0.0, 0.1, 0.0, 1.0, 0.1, 0.0],
+                      [0.0, 0.2, 0.0, 1.0, 0.2, 0.0],
+                      [0.0, -0.1, 0.0, 1.0, -0.1, 0.0]])
         yield check_up_and_down_scaling, n, q
         yield check_rpc_consistency, n, q
         yield check_centroid_pos, n, q
