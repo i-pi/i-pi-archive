@@ -224,7 +224,7 @@ class Simulation(dobject):
             # must use multi-threading to avoid blocking in multi-system runs with WTE
             if self.threading:
                 stepthreads = []
-                for o in self.outputs:
+                for o in self.outputs:                    
                     st = threading.Thread(target=o.write, name=o.filename)
                     st.daemon = True
                     st.start()

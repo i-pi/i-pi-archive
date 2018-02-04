@@ -359,6 +359,7 @@ class TrajectoryOutput(dobject):
 
         if units == "": units = "automatic"
         if cell_units == "": cell_units = "automatic"
+        print "PRINTING ", what, "CURRENT STEP IS ", self.system.simul.step
         io.print_file(format, fatom, fcell, stream, title=("Step:  %10d  Bead:   %5d " % (self.system.simul.step + 1, b)), key=key, dimension=dimension, units=units, cell_units=cell_units)
         if flush:
             stream.flush()
@@ -464,8 +465,8 @@ class CheckpointOutput(dobject):
         # Advance the step counter before saving, so next time the correct index will be loaded.
         if store:
             self.step += 1
-            self.simul.step += 1
             self.store()
+            self.status.step.store(self.simul.step+1)
 
         with open_function(filename, "w") as check_file:
             check_file.write(self.status.write(name="simulation"))
