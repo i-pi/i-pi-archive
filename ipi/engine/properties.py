@@ -643,7 +643,8 @@ class Properties(dobject):
         self.dcell = system.cell.copy()
         self.dforces = system.forces.copy(self.dbeads, self.dcell)
         self.fqref = None
-
+        self._threadlock = system._propertylock # lock to avoid concurrent access and messing up with dbeads 
+        
         # self.properties_init()  # Initialize the properties here so that all
         #+all variables are accessible (for example to set
         #+the size of the hamiltonian_weights).
@@ -678,7 +679,8 @@ class Properties(dobject):
         # pkey["func"](*arglist,**kwarglist) gives the value of the property
         # in atomic units. unit_to_user() returns the value in the user
         # specified units.
-        value = pkey["func"](*arglist, **kwarglist)
+        with self._threadlock:
+            value = pkey["func"](*arglist, **kwarglist)
         if "dimension" in pkey:
             dimension = pkey["dimension"]
         else:
@@ -2049,8 +2051,8 @@ class Trajectories(dobject):
     """
 
     def __init__(self):
-        """Initialises a Trajectories object."""
-
+        """Initialises a Trajectories object."""        
+        
         self.traj_dict = {
             # Note that here we want to return COPIES of the different arrays, so we make sure to make an operation in order not to return a reference.
             "positions": {"dimension": "length",
@@ -2131,6 +2133,7 @@ class Trajectories(dobject):
         self.dbeads = system.beads.copy()
         self.dcell = system.cell.copy()
         self.dforces = self.system.forces.copy(self.dbeads, self.dcell)
+        self._threadlock = system._propertylock
 
     def get_akcv(self):
         """Calculates the contribution to the kinetic energy due to each degree
@@ -2312,7 +2315,8 @@ class Trajectories(dobject):
         # in atomic units. unit_to_user() returns the value in the user
         # specified units.
 
-        value = pkey["func"](*arglist, **kwarglist)
+        with self._threadlock:
+            value = pkey["func"](*arglist, **kwarglist)
         if "dimension" in pkey:
             dimension = pkey["dimension"]
         else:

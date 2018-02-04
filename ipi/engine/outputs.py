@@ -309,7 +309,6 @@ class TrajectoryOutput(dobject):
             self.nout = 0
 
         data, dimension, units = self.system.trajs[self.what]  # gets the trajectory data that must be printed
-
         # quick-and-dirty way to check if a trajectory is "global" or per-bead
         # Checks to see if there is a list of files or just a single file.
         if hasattr(self.out, "__getitem__"):
@@ -322,6 +321,7 @@ class TrajectoryOutput(dobject):
                 raise ValueError("Selected bead index " + str(self.ibead) + " does not exist for trajectory " + self.what)
         else:
             self.write_traj(data, getkey(self.what), self.out, b=0, format=self.format, dimension=dimension, units=units, cell_units=self.cell_units, flush=doflush)
+        
 
     def write_traj(self, data, what, stream, b=0, format="xyz", dimension="", units="automatic", cell_units="automatic", flush=True):
         """Prints out a frame of a trajectory for the specified quantity and bead.
@@ -359,7 +359,6 @@ class TrajectoryOutput(dobject):
 
         if units == "": units = "automatic"
         if cell_units == "": cell_units = "automatic"
-        print "PRINTING ", what, "CURRENT STEP IS ", self.system.simul.step
         io.print_file(format, fatom, fcell, stream, title=("Step:  %10d  Bead:   %5d " % (self.system.simul.step + 1, b)), key=key, dimension=dimension, units=units, cell_units=cell_units)
         if flush:
             stream.flush()

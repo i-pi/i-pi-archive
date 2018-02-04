@@ -13,6 +13,7 @@ forcefields which govern the interaction potential.
 import os.path
 import sys
 import time
+import threading
 
 import numpy as np
 
@@ -101,5 +102,6 @@ class System(dobject):
         self.init.init_stage2(self)
 
         # binds output management objects
+        self._propertylock = threading.Lock()
         self.properties.bind(self)
         self.trajs.bind(self)
