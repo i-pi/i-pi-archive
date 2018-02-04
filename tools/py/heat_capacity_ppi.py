@@ -20,7 +20,7 @@ Here n is the same integer number.
 Syntax:
    python heat_capacity_ppi.py "prefix" "simulation temperature (in Kelvin)" "number of time frames to skip
    in the beginning of each file (default 0)"
-   
+
 The output is in atomic units (Boltzmann constant is equal to 1).
 
 To speedup the script one has to compile the fortran functions from the i-Pi/tools/f90 folder.

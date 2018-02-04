@@ -8,7 +8,7 @@
 import numpy as np
 
 from ipi.utils.depend import depend_value
-from ipi.utils.depend import dset
+from ipi.utils.depend import dd
 from ipi.utils.depend import dobject
 
 
@@ -42,7 +42,8 @@ class Motion(dobject):
              initial positions.
         """
 
-        dset(self, "dt", depend_value(name="dt", value=0.0))
+        dself = dd(self)
+        dself.dt = depend_value(name="dt", value=0.0)
         self.fixcom = fixcom
         if fixatoms is None:
             self.fixatoms = np.zeros(0, int)
