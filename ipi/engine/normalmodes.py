@@ -195,6 +195,9 @@ class NormalModes(dobject):
         dself.omegak = depend_array(name='omegak',
                                     value=np.zeros(self.beads.nbeads, float),
                                     func=self.get_omegak, dependencies=[dself.omegan])
+        dself.omegak2 = depend_array(name='omegak2',
+                                    value=np.zeros(self.beads.nbeads, float),
+                                    func=(lambda: self.omegak**2), dependencies=[dself.omegak])
 
         # Add o_omegak to calculate the freq in the case of open path
         dself.o_omegak = depend_array(name='o_omegak',
