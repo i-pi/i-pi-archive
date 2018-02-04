@@ -503,8 +503,8 @@ class FFPlumed(ForceField):
             # we are restarting, signal that PLUMED should continue
             self.plumed.cmd("setRestart", 1)
         self.plumed.cmd("init")
-        self.charges = depstrip(myatoms.q) * 0.0
-        self.masses = depstrip(myatoms.m)
+        self.charges = dstrip(myatoms.q) * 0.0
+        self.masses = dstrip(myatoms.m)
         self.lastq = np.zeros(3 * self.natoms)
 
     def poll(self):

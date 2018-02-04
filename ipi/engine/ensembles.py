@@ -44,9 +44,9 @@ def ensemble_swap(ens1, ens2):
     if len(ens1.hweights) != len(ens2.hweights):
         raise ValueError("Cannot exchange ensembles that are described by different forces")
     if not np.array_equal(ens1.bweights, ens2.bweights):
-        ens1.bweights, ens2.bweights = depstrip(ens2.bweights).copy(), depstrip(ens1.bweights).copy()
+        ens1.bweights, ens2.bweights = dstrip(ens2.bweights).copy(), dstrip(ens1.bweights).copy()
     if not np.array_equal(ens1.hweights, ens2.hweights):
-        ens1.hweights, ens2.hweights = depstrip(ens2.hweights).copy(), depstrip(ens1.hweights).copy()
+        ens1.hweights, ens2.hweights = dstrip(ens2.hweights).copy(), dstrip(ens1.hweights).copy()
 
 
 class Ensemble(dobject):
@@ -141,7 +141,7 @@ class Ensemble(dobject):
         for fc in self.bias.mforces:
             if fc.weight != 1:
                 warning("The weight given to forces used in an ensemble bias are given a weight determined by bias_weight")
-            deppipe(self, "bweights", fc, "weight", i)
+            dpipe(dself.bweights, dd(fc).weight, i)
             i += 1
 
         # add Hamiltonian REM bias components

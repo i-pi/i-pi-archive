@@ -1240,11 +1240,11 @@ class Properties(dobject):
         """
 
         kst = np.zeros((3, 3), float)
-        q = depstrip(self.beads.q)
-        qc = depstrip(self.beads.qc)
-        pc = depstrip(self.beads.pc)
-        m = depstrip(self.beads.m)
-        fall = depstrip(self.forces.f)
+        q = dstrip(self.beads.q)
+        qc = dstrip(self.beads.qc)
+        pc = dstrip(self.beads.pc)
+        m = dstrip(self.beads.m)
+        fall = dstrip(self.forces.f)
         na3 = 3 * self.beads.natoms
 
         for b in range(self.beads.nbeads):
@@ -1973,8 +1973,8 @@ class Properties(dobject):
 
     def get_ti_correction(self):
 
-        f = depstrip(self.forces.f)
-        m3 = depstrip(self.beads.m3)
+        f = dstrip(self.forces.f)
+        m3 = dstrip(self.beads.m3)
         pots = self.forces.pots
         betaP = 1.0 / (self.beads.nbeads * Constants.kb * self.ensemble.temp)
 

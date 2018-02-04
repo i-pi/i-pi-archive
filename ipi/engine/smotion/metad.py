@@ -45,7 +45,7 @@ class MetaDyn(Smotion):
         """Updates metad bias."""
 
         for s in self.syslist:
-            oldf = depstrip(s.forces.f).copy()
+            oldf = dstrip(s.forces.f).copy()
             for k, f in s.ensemble.bias.ff.iteritems():
                 if not k == self.metaff:
                     continue  # only does metad for the indicated forcefield
