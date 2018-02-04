@@ -232,7 +232,7 @@ class Input(object):
         try:
             newfield = self.dynamic[name][0](**self.dynamic[name][1])
             newfield.parse(xml)
-        except:
+        except:            
             raise ValueError("Error parsing " + name + " from " + str(xml))
         self.extra.append((name, newfield))
 

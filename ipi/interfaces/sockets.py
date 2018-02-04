@@ -19,7 +19,7 @@ import time
 
 import numpy as np
 
-from ipi.utils.depend import depstrip
+from ipi.utils.depend import dstrip
 from ipi.utils.messages import verbosity, warning, info
 
 

@@ -58,8 +58,9 @@ class Dynamics(Motion):
         """
 
         super(Dynamics, self).__init__(fixcom=fixcom, fixatoms=fixatoms)
+        dself = dd(self)
 
-        dset(self, "dt", depend_value(name='dt', value=timestep))
+        dself.dt = depend_value(name='dt', value=timestep)
         if thermostat is None:
             self.thermostat = Thermostat()
         else:
@@ -121,6 +122,7 @@ class Dynamics(Motion):
         """
 
         super(Dynamics, self).bind(ens, beads, nm, cell, bforce, prng)
+        dself = dd(self)
 
         # Checks if the number of mts levels is equal to the dimensionality of the mts weights.
         if (len(self.nmts) != self.forces.nmtslevels):
@@ -132,7 +134,7 @@ class Dynamics(Motion):
         dself = dd(self)
         # n times the temperature (for path integral partition function)
         dself.ntemp = depend_value(name='ntemp', func=self.get_ntemp,
-                                   dependencies=[dget(self.ensemble, "temp")])
+                                   dependencies=[dd(self.ensemble).temp])
         self.integrator.pconstraints()
 
         fixdof = len(self.fixatoms) * 3 * self.beads.nbeads
@@ -146,26 +148,27 @@ class Dynamics(Motion):
         # the free ring polymer propagator is called in the inner loop, so propagation time should be redefined accordingly.
         self.inmts = 1
         for mk in self.nmts: self.inmts *= mk
-        dset(self, "deltat", depend_value(name="deltat", func=(lambda: self.dt / self.inmts), dependencies=[dget(self, "dt")]))
-        deppipe(self, "deltat", self.nm, "dt")
+        dself.deltat = depend_value(name="deltat", func=(lambda: self.dt / self.inmts), dependencies=[dself.dt])
+        dpipe(dself.deltat, dd(self.nm).dt)
 
         # depending on the kind, the thermostat might work in the normal mode or the bead representation.
         self.thermostat.bind(beads=self.beads, nm=self.nm, prng=prng, fixdof=fixdof)
 
-        deppipe(self, "ntemp", self.barostat, "temp")
-        deppipe(self, "dt", self.barostat, "dt")
-        deppipe(self.ensemble, "pext", self.barostat, "pext")
-        deppipe(self.ensemble, "stressext", self.barostat, "stressext")
+        dbarostat = dd(self.barostat)
+        dpipe(dself.ntemp, dbarostat.temp)
+        dpipe(dself.dt, dbarostat.dt)
+        dpipe(dd(self.ensemble).pext, dbarostat.pext)
+        dpipe(dd(self.ensemble).stressext, dbarostat.stressext)
 
         #!TODO the barostat should also be connected to the bias stress
         self.barostat.bind(beads, nm, cell, bforce, prng=prng, fixdof=fixdof, bias=ens.bias)
 
-        self.ensemble.add_econs(dget(self.thermostat, "ethermo"))
-        self.ensemble.add_econs(dget(self.barostat, "ebaro"))
+        self.ensemble.add_econs(dd(self.thermostat).ethermo)
+        self.ensemble.add_econs(dd(self.barostat).ebaro)
 
         # adds potential and kinetic energy for the barostat to the ensemble
-        self.ensemble.add_xlpot(dget(self.barostat, "pot"))
-        self.ensemble.add_xlkin(dget(self.barostat, "kin"))
+        self.ensemble.add_xlpot(dd(self.barostat).pot)
+        self.ensemble.add_xlkin(dd(self.barostat).kin)
 
         #!TODO THOROUGH CLEAN-UP AND CHECK
         # if self.enstype in ["nvt", "npt", "nst"]:
@@ -209,7 +212,8 @@ class DummyIntegrator(dobject):
         self.barostat = motion.barostat
         self.fixcom = motion.fixcom
         self.fixatoms = motion.fixatoms
-        dset(self, "dt", dget(motion, "dt"))
+        dself = dd(self)
+        dself.dt = dd(motion).dt
         if motion.enstype == "mts": self.nmts = motion.nmts
         # mts on sc force in suzuki-chin
         if motion.enstype == "sc":
@@ -274,8 +278,8 @@ class NVEIntegrator(DummyIntegrator):
 
             na3 = self.beads.natoms * 3
             nb = self.beads.nbeads
-            p = depstrip(self.beads.p)
-            m = depstrip(self.beads.m3)[:, 0:na3:3]
+            p = dstrip(self.beads.p)
+            m = dstrip(self.beads.m3)[:, 0:na3:3]
             M = self.beads[0].M
 
             for i in range(3):
@@ -290,7 +294,7 @@ class NVEIntegrator(DummyIntegrator):
 
         if len(self.fixatoms) > 0:
             for bp in self.beads.p:
-                m = depstrip(self.beads.m)
+                m = dstrip(self.beads.m)
                 self.ensemble.eens += 0.5 * np.dot(bp[self.fixatoms * 3], bp[self.fixatoms * 3] / m[self.fixatoms])
                 self.ensemble.eens += 0.5 * np.dot(bp[self.fixatoms * 3 + 1], bp[self.fixatoms * 3 + 1] / m[self.fixatoms])
                 self.ensemble.eens += 0.5 * np.dot(bp[self.fixatoms * 3 + 2], bp[self.fixatoms * 3 + 2] / m[self.fixatoms])
@@ -301,13 +305,14 @@ class NVEIntegrator(DummyIntegrator):
     def pstep(self):
         """Velocity Verlet momenta propagator."""
 
-        self.beads.p += depstrip(self.forces.f) * (self.dt * 0.5)
-        self.beads.p += depstrip(self.bias.f) * (self.dt * 0.5)
+        self.beads.p += dstrip(self.forces.f) * (self.dt * 0.5)
+        # also adds the bias force
+        self.beads.p += dstrip(self.bias.f) * (self.dt * 0.5)
 
     def qcstep(self):
         """Velocity Verlet centroid position propagator."""
 
-        self.nm.qnm[0, :] += depstrip(self.nm.pnm)[0, :] / depstrip(self.beads.m3)[0] * self.dt
+        self.nm.qnm[0, :] += dstrip(self.nm.pnm)[0, :] / dstrip(self.beads.m3)[0] * self.dt
 
     def step(self, step=None):
         """Does one simulation time step."""
@@ -524,20 +529,20 @@ class SCIntegrator(NVEIntegrator):
         """Velocity Verlet momenta propagator."""
 
         # also include the baseline Tr2SC correction (the 2/3 & 4/3 V bit)
-        self.beads.p += depstrip(self.forces.f) * (1 + self.coeffsc) * self.dt * 0.5 / self.nmts
+        self.beads.p += dstrip(self.forces.f) * (1 + self.coeffsc) * self.dt * 0.5 / self.nmts
         # also adds the bias force (TODO!!!)
-        # self.beads.p += depstrip(self.bias.f)*(self.dt*0.5)
+        # self.beads.p += dstrip(self.bias.f)*(self.dt*0.5)
 
     def pscstep(self):
         """Velocity Verlet Suzuki-Chin momenta propagator."""
 
         # also adds the force assiciated with SuzukiChin correction (only the |f^2| term, so we remove the Tr2SC correction)
-        self.beads.p += (depstrip(self.forces.fsc) - self.coeffsc * depstrip(self.forces.f)) * self.dt * 0.5
+        self.beads.p += (dstrip(self.forces.fsc) - self.coeffsc * dstrip(self.forces.f)) * self.dt * 0.5
 
     def qcstep(self):
         """Velocity Verlet centroid position propagator."""
 
-        self.nm.qnm[0, :] += depstrip(self.nm.pnm)[0, :] / depstrip(self.beads.m3)[0] * self.dt / self.nmts
+        self.nm.qnm[0, :] += dstrip(self.nm.pnm)[0, :] / dstrip(self.beads.m3)[0] * self.dt / self.nmts
 
     def step(self, step=None):
         """Does one simulation time step."""
@@ -584,11 +589,10 @@ class MTSIntegrator(NVEIntegrator):
     def pstep(self, level=0, alpha=1.0):
         """Velocity Verlet monemtum propagator."""
         self.beads.p += self.forces.forces_mts(level) * 0.5 * (self.dt / alpha)
-        self.beads.p += self.bias.forces_mts(level) * 0.5 * (self.dt / alpha)
 
     def qcstep(self, alpha=1.0):
         """Velocity Verlet centroid position propagator."""
-        self.nm.qnm[0, :] += depstrip(self.nm.pnm)[0, :] / depstrip(self.beads.m3)[0] * self.dt / alpha
+        self.nm.qnm[0, :] += dstrip(self.nm.pnm)[0, :] / dstrip(self.beads.m3)[0] * self.dt / alpha
 
     def mtsprop(self, index, alpha):
         """ Recursive MTS step """
@@ -626,7 +630,13 @@ class MTSIntegrator(NVEIntegrator):
         self.pconstraints()
         self.ttime += time.time()
 
+        # bias is applied at the outer loop too
+        self.beads.p += dstrip(self.bias.f) * (self.dt * 0.5)
+
         self.mtsprop(0, 1.0)
+
+        self.beads.p += dstrip(self.bias.f) * (self.dt * 0.5)
+
         self.ttime -= time.time()
         self.thermostat.step()
         self.pconstraints()

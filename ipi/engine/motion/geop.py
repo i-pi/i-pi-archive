@@ -15,7 +15,7 @@ import numpy as np
 import time
 
 from ipi.engine.motion import Motion
-from ipi.utils.depend import depstrip, dobject
+from ipi.utils.depend import dstrip, dobject
 from ipi.utils.softexit import softexit
 from ipi.utils.mintools import min_brent, BFGS, BFGSTRM, L_BFGS
 from ipi.utils.messages import verbosity, info
@@ -160,7 +160,7 @@ class LineMapper(object):
         self.fcount += 1
         self.dbeads.q = self.x0 + self.d * x
         e = self.dforces.pot   # Energy
-        g = - np.dot(depstrip(self.dforces.f).flatten(), self.d.flatten())   # Gradient
+        g = - np.dot(dstrip(self.dforces.f).flatten(), self.d.flatten())   # Gradient
         return e, g
 
 
@@ -267,7 +267,7 @@ class DummyOptimizer(dobject):
         self.qtime += time.time()
 
         f = np.amax(np.absolute(self.forces.f))
-        # ftmp=depstrip(self.forces.f).flatten() # <-- Commented lines in this function for ignoring
+        # ftmp=dstrip(self.forces.f).flatten() # <-- Commented lines in this function for ignoring
         # forces on fixed atoms when checking convergence
         #if len(self.fixatoms) > 0: #
         #    for k in self.fixatoms: #
@@ -328,7 +328,7 @@ class BFGSOptimizer(DummyOptimizer):
 
         if step == 0:
             info(" @GEOP: Initializing BFGS", verbosity.debug)
-            self.d += depstrip(self.forces.f) / np.sqrt(np.dot(self.forces.f.flatten(), self.forces.f.flatten()))
+            self.d += dstrip(self.forces.f) / np.sqrt(np.dot(self.forces.f.flatten(), self.forces.f.flatten()))
 
         self.old_x[:] = self.beads.q
         self.old_u[:] = self.forces.pot
@@ -462,7 +462,7 @@ class LBFGSOptimizer(DummyOptimizer):
 
         if step == 0:
             info(" @GEOP: Initializing L-BFGS", verbosity.debug)
-            self.d += depstrip(self.forces.f) / np.sqrt(np.dot(self.forces.f.flatten(), self.forces.f.flatten()))
+            self.d += dstrip(self.forces.f) / np.sqrt(np.dot(self.forces.f.flatten(), self.forces.f.flatten()))
 
         self.old_x[:] = self.beads.q
         self.old_u[:] = self.forces.pot
@@ -519,7 +519,7 @@ class SDOptimizer(DummyOptimizer):
         # Store previous forces for warning exit condition
         self.old_f[:] = self.forces.f
 
-        dq1 = depstrip(self.forces.f)
+        dq1 = dstrip(self.forces.f)
 
         # Move direction for steepest descent
         dq1_unit = dq1 / np.sqrt(np.dot(dq1.flatten(), dq1.flatten()))
@@ -533,10 +533,10 @@ class SDOptimizer(DummyOptimizer):
                 dqb[self.fixatoms * 3 + 2] = 0.0
 
         # Set position and direction inside the mapper
-        self.lm.set_dir(depstrip(self.beads.q), dq1_unit)
+        self.lm.set_dir(dstrip(self.beads.q), dq1_unit)
 
         # Reuse initial value since we have energy and forces already
-        u0, du0 = (self.forces.pot.copy(), np.dot(depstrip(self.forces.f.flatten()), dq1_unit.flatten()))
+        u0, du0 = (self.forces.pot.copy(), np.dot(dstrip(self.forces.f.flatten()), dq1_unit.flatten()))
 
         # Do one SD iteration; return positions and energy
         #(x, fx,dfx) = min_brent(self.lm, fdf0=(u0, du0), x0=0.0,  #DELETE
@@ -592,7 +592,7 @@ class CGOptimizer(DummyOptimizer):
         info("\nMD STEP %d" % step, verbosity.debug)
 
         if step == 0:
-            gradf1 = dq1 = depstrip(self.forces.f)
+            gradf1 = dq1 = dstrip(self.forces.f)
 
             # Move direction for 1st conjugate gradient step
             dq1_unit = dq1 / np.sqrt(np.dot(gradf1.flatten(), gradf1.flatten()))
@@ -602,7 +602,7 @@ class CGOptimizer(DummyOptimizer):
 
             gradf0 = self.old_f
             dq0 = self.d
-            gradf1 = depstrip(self.forces.f)
+            gradf1 = dstrip(self.forces.f)
             beta = np.dot((gradf1.flatten() - gradf0.flatten()), gradf1.flatten()) / (np.dot(gradf0.flatten(), gradf0.flatten()))
             dq1 = gradf1 + max(0.0, beta) * dq0
             dq1_unit = dq1 / np.sqrt(np.dot(dq1.flatten(), dq1.flatten()))
@@ -618,10 +618,10 @@ class CGOptimizer(DummyOptimizer):
                 dqb[self.fixatoms * 3 + 1] = 0.0
                 dqb[self.fixatoms * 3 + 2] = 0.0
 
-        self.lm.set_dir(depstrip(self.beads.q), dq1_unit)
+        self.lm.set_dir(dstrip(self.beads.q), dq1_unit)
 
         # Reuse initial value since we have energy and forces already
-        u0, du0 = (self.forces.pot.copy(), np.dot(depstrip(self.forces.f.flatten()), dq1_unit.flatten()))
+        u0, du0 = (self.forces.pot.copy(), np.dot(dstrip(self.forces.f.flatten()), dq1_unit.flatten()))
 
         # Do one CG iteration; return positions and energy
         min_brent(self.lm, fdf0=(u0, du0), x0=0.0,

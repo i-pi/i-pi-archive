@@ -151,23 +151,23 @@ class NormalModes(dobject):
         sync_p = synchronizer()
         dself.qnm = depend_array(name="qnm",
                                  value=np.zeros((self.nbeads, 3 * self.natoms), float),
-                                 func={"q": (lambda: self.transform.b2nm(depstrip(self.beads.q)))},
+                                 func={"q": (lambda: self.transform.b2nm(dstrip(self.beads.q)))},
                                  synchro=sync_q)
         dself.pnm = depend_array(name="pnm",
                                  value=np.zeros((self.nbeads, 3 * self.natoms), float),
-                                 func={"p": (lambda: self.transform.b2nm(depstrip(self.beads.p)))},
+                                 func={"p": (lambda: self.transform.b2nm(dstrip(self.beads.p)))},
                                  synchro=sync_p)
 
         # must overwrite the functions
-        dd(self.beads).q._func = {"qnm": (lambda: self.transform.nm2b(depstrip(self.qnm)))}
-        dd(self.beads).p._func = {"pnm": (lambda: self.transform.nm2b(depstrip(self.pnm)))}
+        dd(self.beads).q._func = {"qnm": (lambda: self.transform.nm2b(dstrip(self.qnm)))}
+        dd(self.beads).p._func = {"pnm": (lambda: self.transform.nm2b(dstrip(self.pnm)))}
         dd(self.beads).q.add_synchro(sync_q)
         dd(self.beads).p.add_synchro(sync_p)
 
         # also within the "atomic" interface to beads
         for b in range(self.nbeads):
-            dd(self.beads._blist[b]).q._func = {"qnm": (lambda: self.transform.nm2b(depstrip(self.qnm)))}
-            dd(self.beads._blist[b]).p._func = {"pnm": (lambda: self.transform.nm2b(depstrip(self.pnm)))}
+            dd(self.beads._blist[b]).q._func = {"qnm": (lambda: self.transform.nm2b(dstrip(self.qnm)))}
+            dd(self.beads._blist[b]).p._func = {"pnm": (lambda: self.transform.nm2b(dstrip(self.pnm)))}
             dd(self.beads._blist[b]).q.add_synchro(sync_q)
             dd(self.beads._blist[b]).p.add_synchro(sync_p)
 
@@ -179,7 +179,7 @@ class NormalModes(dobject):
         # as they always get computed in the bead rep
         if not self.forces is None:
             dself.fnm = depend_array(name="fnm",
-                                     value=np.zeros((self.nbeads, 3 * self.natoms), float), func=(lambda: self.transform.b2nm(depstrip(self.forces.f))),
+                                     value=np.zeros((self.nbeads, 3 * self.natoms), float), func=(lambda: self.transform.b2nm(dstrip(self.forces.f))),
                                      dependencies=[dd(self.forces).f])
         else:  # have a fall-back plan when we don't want to initialize a force mechanism, e.g. for ring-polymer initialization
             dself.fnm = depend_array(name="fnm",
@@ -250,7 +250,7 @@ class NormalModes(dobject):
         # spring forces on beads, transformed from normal modes
         dself.fspring = depend_array(name="fs",
                                      value=np.zeros((self.nbeads, 3 * self.natoms), float),
-                                     func=(lambda: self.transform.nm2b(depstrip(self.fspringnm))),
+                                     func=(lambda: self.transform.nm2b(dstrip(self.fspringnm))),
                                      dependencies=[dself.fspringnm])
 
     def get_fspringnm(self):
@@ -471,11 +471,11 @@ class NormalModes(dobject):
             pass
         else:
             pq = np.zeros((2, self.natoms * 3), float)
-            sm = depstrip(self.beads.sm3)
-            prop_pq = depstrip(self.prop_pq)
-            o_prop_pq = depstrip(self.o_prop_pq)
-            pnm = depstrip(self.pnm) / sm
-            qnm = depstrip(self.qnm) * sm
+            sm = dstrip(self.beads.sm3)
+            prop_pq = dstrip(self.prop_pq)
+            o_prop_pq = dstrip(self.o_prop_pq)
+            pnm = dstrip(self.pnm) / sm
+            qnm = dstrip(self.qnm) * sm
 
             for k in range(1, self.nbeads):
                 pq[0, :] = pnm[k]
@@ -496,11 +496,11 @@ class NormalModes(dobject):
             self.pnm = pnm * sm
             self.qnm = qnm / sm
             # pq = np.zeros((2,self.natoms*3),float)
-            # sm = depstrip(self.beads.sm3)[0]
-            # prop_pq = depstrip(self.prop_pq)
+            # sm = dstrip(self.beads.sm3)[0]
+            # prop_pq = dstrip(self.prop_pq)
             # for k in range(1,self.nbeads):
-            #   pq[0,:] = depstrip(self.pnm)[k]/sm
-            #   pq[1,:] = depstrip(self.qnm)[k]*sm
+            #   pq[0,:] = dstrip(self.pnm)[k]/sm
+            #   pq[1,:] = dstrip(self.qnm)[k]*sm
             #   pq = np.dot(prop_pq[k],pq)
             #   self.qnm[k] = pq[1,:]/sm
             #   self.pnm[k] = pq[0,:]*sm
@@ -513,9 +513,9 @@ class NormalModes(dobject):
         """
 
         kmd = np.zeros(self.nbeads, float)
-        sm = depstrip(self.beads.sm3[0])
-        pnm = depstrip(self.pnm)
-        nmf = depstrip(self.nm_factor)
+        sm = dstrip(self.beads.sm3[0])
+        pnm = dstrip(self.pnm)
+        nmf = dstrip(self.nm_factor)
 
         # computes the MD ke in the normal modes representation, to properly account for CMD mass scaling
         for b in range(self.nbeads):
@@ -547,9 +547,9 @@ class NormalModes(dobject):
         """
 
         kmd = np.zeros((3, 3), float)
-        sm = depstrip(self.beads.sm3[0])
-        pnm = depstrip(self.pnm)
-        nmf = depstrip(self.nm_factor)
+        sm = dstrip(self.beads.sm3[0])
+        pnm = dstrip(self.pnm)
+        nmf = dstrip(self.nm_factor)
 
         for b in range(self.nbeads):
             sp = pnm[b] / sm  # mass-scaled momentum of b-th NM

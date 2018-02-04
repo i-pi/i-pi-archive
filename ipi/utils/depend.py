@@ -33,7 +33,7 @@ from ipi.utils.messages import verbosity, warning
 
 
 __all__ = ['depend_value', 'depend_array', 'synchronizer', 'dobject', 'dd',
-           'dpipe', 'dcopy', 'depstrip', 'depcopy', 'deppipe', 'depraise']
+           'dpipe', 'dcopy', 'dstrip', 'depraise']
 
 
 class synchronizer(object):
@@ -362,7 +362,7 @@ class depend_array(np.ndarray, depend_base):
     array. Initialisation is also done in a different way for ndarrays.
 
     Attributes:
-        _bval: The base deparray storage space. Equal to depstrip(self) unless
+        _bval: The base deparray storage space. Equal to dstrip(self) unless
             self is a slice.
     """
 
@@ -434,7 +434,7 @@ class depend_array(np.ndarray, depend_base):
             # handle special cases, and hope we are in a view cast otherwise.
             if hasattr(obj, "_fcopy"):
                 del(obj._fcopy)   # removes the "copy flag"
-                self._bval = depstrip(self)
+                self._bval = dstrip(self)
             else:
                 # Assumes we are in view cast, so copy over the attributes from the
                 # parent object. Typical case: when transpose is performed as a
@@ -444,7 +444,7 @@ class depend_array(np.ndarray, depend_base):
         else:
             # Most likely we came here on the way to init.
             # Just sets a defaults for safety
-            self._bval = depstrip(self)
+            self._bval = dstrip(self)
 
     def __array_prepare__(self, arr, context=None):
         """Prepare output array for ufunc.
@@ -496,7 +496,7 @@ class depend_array(np.ndarray, depend_base):
            A depend_array with the dimensions given by newshape.
         """
 
-        return depend_array(depstrip(self).reshape(newshape), name=self._name,
+        return depend_array(dstrip(self).reshape(newshape), name=self._name,
                             synchro=self._synchro, func=self._func,
                             dependants=self._dependants, tainted=self._tainted,
                             base=self._bval, active=self._active)
@@ -557,9 +557,9 @@ class depend_array(np.ndarray, depend_base):
                 self.taint(taintme=False)
 
         if self.__scalarindex(index, self.ndim):
-            return depstrip(self)[index]
+            return dstrip(self)[index]
         else:
-            return depend_array(depstrip(self)[index], name=self._name,
+            return depend_array(dstrip(self)[index], name=self._name,
                                 synchro=self._synchro, func=self._func,
                                 dependants=self._dependants,
                                 tainted=self._tainted, base=self._bval,
@@ -644,8 +644,8 @@ __dp_dot = np.dot
 
 
 def dep_dot(da, db):
-    a = depstrip(da)
-    b = depstrip(db)
+    a = dstrip(da)
+    b = dstrip(db)
 
     return __dp_dot(a, b)
 
@@ -654,7 +654,7 @@ np.dot = dep_dot
 # ENDS NUMPY FUNCTIONS OVERRIDE
 
 
-def depstrip(da):
+def dstrip(da):
     """Removes dependencies from a depend_array.
 
     Takes a depend_array and returns its value as a ndarray, effectively
@@ -672,8 +672,8 @@ def depstrip(da):
     # only bother to strip dependencies if the array actually IS a depend_array
     if isinstance(da, depend_array):
         # if da._tainted[0]:
-        #    print "!!! WARNING depstrip called on tainted array WARNING !!!!!"
-        # I think we can safely assume that when we call depstrip the array has
+        #    print "!!! WARNING dstrip called on tainted array WARNING !!!!!"
+        # I think we can safely assume that when we call dstrip the array has
         # been cleared already but I am not 100% sure so better check - and in
         # case raise the update
         result = da.view(np.ndarray)
@@ -683,8 +683,8 @@ def depstrip(da):
         return da
 
 
-def deppipe(objfrom, memberfrom, objto, memberto, item=-1):
-    """Synchronizes two depend objects.
+def dpipe(dfrom, dto, item=-1):
+    """Synchonizes two depend objects.
 
     Takes two depend objects, and makes one of them depend on the other in such
     a way that both keep the same value. Used for attributes such as
@@ -692,18 +692,10 @@ def deppipe(objfrom, memberfrom, objto, memberto, item=-1):
     depend objects in each, but which should all have the same value.
 
     Args:
-        objfrom: An object containing memberfrom.
-        memberfrom: The base depend object.
-        objto: An object containing memberto.
-        memberto: The depend object that should be equal to memberfrom.
+        dfrom: The object that is depend on.
+        dto: The object that depends on the former one.
     """
 
-    dfrom = getattr(dd(objfrom), memberfrom)
-    dto = getattr(dd(objto), memberto)
-    dpipe(dfrom, dto, item)
-
-
-def dpipe(dfrom, dto, item=-1):
     if item < 0:
         dto._func = lambda: dfrom.get()
     else:
@@ -711,18 +703,12 @@ def dpipe(dfrom, dto, item=-1):
     dto.add_dependency(dfrom)
 
 
-def depcopy(objfrom, memberfrom, objto, memberto):
+def dcopy(dfrom, dto):
     """Copies the dependencies of one depend object to another.
 
     Args:
-        See deppipe.
+        see dpipe.
     """
-    dfrom = getattr(dd(objfrom), memberfrom)
-    dto = getattr(dd(objto), memberto)
-    dcopy(dfrom, dto)
-
-
-def dcopy(dfrom, dto):
     dto._dependants = dfrom._dependants
     dto._synchro = dfrom._synchro
     dto.add_synchro(dfrom._synchro)

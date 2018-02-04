@@ -68,13 +68,13 @@ class NEBLineMover(object):
             self.dbeads.q = self.x0 + self.d * x
 
         # List of atom/bead positions
-        bq = depstrip(self.dbeads.q).copy()
+        bq = dstrip(self.dbeads.q).copy()
 
         # List of forces
-        bf = depstrip(self.dforces.f).copy()
+        bf = dstrip(self.dforces.f).copy()
 
         # List of bead energies
-        be = depstrip(self.dforces.pots).copy()
+        be = dstrip(self.dforces.pots).copy()
 
         # Number of images
         nimg = self.dbeads.nbeads
@@ -203,13 +203,13 @@ class NEBBFGSMover(object):
 
         # Bead positions
         self.dbeads.q = x
-        bq = depstrip(self.dbeads.q).copy()
+        bq = dstrip(self.dbeads.q).copy()
 
         # Forces
-        bf = depstrip(self.dforces.f).copy()
+        bf = dstrip(self.dforces.f).copy()
 
         # Bead energies
-        be = depstrip(self.dforces.pots).copy()
+        be = dstrip(self.dforces.pots).copy()
 
         # Number of beads
         nimg = self.dbeads.nbeads
@@ -498,7 +498,7 @@ class NEBMover(Motion):
                     dqb[self.fixatoms * 3 + 1] = 0.0
                     dqb[self.fixatoms * 3 + 2] = 0.0
 
-            self.neblm.set_dir(depstrip(self.beads.q), dq1_unit)
+            self.neblm.set_dir(dstrip(self.beads.q), dq1_unit)
 
             # Reuse initial value since we have energy and forces already
             u0 = np.dot(-nebgrad.flatten(), dq1_unit.flatten())

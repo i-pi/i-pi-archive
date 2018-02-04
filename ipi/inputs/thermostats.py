@@ -122,20 +122,20 @@ class InputThermoBase(Input):
         elif type(thermo) is ethermostats.ThermoGLE:
             self.mode.store("gle")
             self.A.store(thermo.A)
-            if dget(thermo, "C")._func is None:
+            if dd(thermo).C._func is None:
                 self.C.store(thermo.C)
             self.s.store(thermo.s)
         elif type(thermo) is ethermostats.ThermoNMGLE:
             self.mode.store("nm_gle")
             self.A.store(thermo.A)
-            if dget(thermo, "C")._func is None:
+            if dd(thermo).C._func is None:
                 self.C.store(thermo.C)
             self.s.store(thermo.s)
         elif type(thermo) is ethermostats.ThermoNMGLEG:
             self.mode.store("nm_gle_g")
             self.A.store(thermo.A)
             self.tau.store(thermo.tau)
-            if dget(thermo, "C")._func is None:
+            if dd(thermo).C._func is None:
                 self.C.store(thermo.C)
             self.s.store(thermo.s)
         elif type(thermo) is ethermostats.ThermoCL:
@@ -234,6 +234,7 @@ class InputThermo(InputThermoBase):
 
     def store(self, thermo):
         self.extra = []
+        
         if type(thermo) is ethermostats.MultiThermo:
             self.mode.store("multi")
             for t in thermo.tlist:
