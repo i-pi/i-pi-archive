@@ -20,6 +20,7 @@
        </ensemble>
        <motion mode='instanton'>
            <instanton mode='splitting'>
+               <save>10</save>
                <tolerances>
                    <energy> 1e-5 </energy>
 	           <force> 1e-4 </force>

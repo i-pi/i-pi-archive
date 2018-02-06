@@ -18,6 +18,7 @@
            <temperature units="kelvin">300</temperature>
        </ensemble>
        <motion mode='instanton'>
+           <save>10</save>
            <instanton mode='rate'>
                <tolerances>
                    <energy> 5e-6 </energy>

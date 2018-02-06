@@ -42,6 +42,7 @@ class InstantonMotion(Motion):
         old_pot: The previous step potential energy during the optimization
         old_force:  The previous step force during the optimization
         opt: The geometry optimization algorithm to be used
+        save: Decide the frequency of printing the instanton geometry, hessian and physical energies
         prefix: Prefix of the output files.
         delta: Initial stretch amplitude.
         hessian_init: Boolean which decides whether the initial hessian is going to be computed.
@@ -65,6 +66,7 @@ class InstantonMotion(Motion):
                  old_pot= np.zeros(0, float),
                  old_force=np.zeros(0, float),
                  opt='None',
+                 save=1,
                  prefix="INSTANTON",
                  delta=np.zeros(0, float),
                  hessian_init=None,
@@ -97,6 +99,7 @@ class InstantonMotion(Motion):
         self.old_f          = old_force
 
         # Generic instanton
+        self.save          = save
         self.prefix         = prefix
         self.delta          = delta
         self.hessian_final  = hessian_final
@@ -366,6 +369,7 @@ class DummyOptimizer(dobject):
 
 
         # Generic instanton
+        self.save            = geop.save
         self.prefix          = geop.prefix
         self.delta           = geop.delta
         self.hessian_final   = geop.hessian_final
@@ -503,9 +507,10 @@ class HessianOptimizer(DummyOptimizer):
         self.old_f[:] = self.forces.f
 
         #Print current instanton geometry and hessian
-        print_instanton_geo(self.prefix, step, self.im.dbeads.nbeads, self.im.dbeads.natoms, self.im.dbeads.names,
+        if np.mod(step,self.save)==0:
+            print_instanton_geo(self.prefix, step, self.im.dbeads.nbeads, self.im.dbeads.natoms, self.im.dbeads.names,
                             self.im.dbeads.q, self.old_u, self.cell, self.energy_shift)
-        print_instanton_hess(self.prefix, step,self.hessian)
+            print_instanton_hess(self.prefix, step,self.hessian)
 
 def Instanton(x0, f0, f1, h, update, asr, im, gm, big_step, opt, m):
     """Do one step. Update hessian for the new position. Update the position and force inside the mapper.
@@ -692,6 +697,7 @@ class LBFGSOptimizer(DummyOptimizer):
         self.old_f[:] = self.forces.f
 
         #Print current instanton geometry and hessian
-        print_instanton_geo(self.prefix, step, self.im.dbeads.nbeads, self.im.dbeads.natoms, self.im.dbeads.names,
+        if np.mod(step, self.save) == 0:
+            print_instanton_geo(self.prefix, step, self.im.dbeads.nbeads, self.im.dbeads.natoms, self.im.dbeads.names,
                             self.im.dbeads.q, self.old_u, self.cell, self.energy_shift)
-        print_instanton_hess(self.prefix, step,self.hessian)
+            print_instanton_hess(self.prefix, step,self.hessian)

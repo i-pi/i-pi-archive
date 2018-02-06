@@ -62,7 +62,9 @@ class InputInst(InputDictionary):
                                             "default": 'None',
                                             "options": ["nichols","NR","lbfgs","None"],
                                             "help": "The geometry optimization algorithm to be used"}),
-
+               "save": (InputValue, {"dtype": int,
+                                   "default": 1,
+                                   "help": "Decide the frequency of printing the instanton geometry, hessian and physical energies."}),
                "prefix": (InputValue, {"dtype": str,
                                       "default": "INSTANTON",
                                       "help": "Prefix of the output files."}),
@@ -143,6 +145,7 @@ class InputInst(InputDictionary):
         self.opt.store(geop.opt)
 
         # Generic instanton
+        self.save.store(geop.save)
         self.prefix.store(geop.prefix)
         self.delta.store(geop.delta)
         self.hessian_final.store(geop.hessian_final)

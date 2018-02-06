@@ -17,6 +17,7 @@
        </forces>
        <motion mode='instanton'>
            <instanton mode='rate'>
+               <save>10</save>
                <tolerances>
                    <energy> 5e-6 </energy>
 	           <force> 5e-6 </force>
