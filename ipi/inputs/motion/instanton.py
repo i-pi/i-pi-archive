@@ -40,7 +40,7 @@ class InputInst(InputDictionary):
 
     fields = {"tolerances" : ( InputDictionary, {"dtype" : float,
                               "options"  : [ "energy", "force", "position" ],
-                              "default"  : [ 1e-5, 1e-4, 6e-3 ],
+                              "default"  : [ 1e-5, 1e-4, 1e-3 ],
                               "help"     : "Convergence criteria for optimization.",
                               "dimension": [ "energy", "force", "length" ] }),
                "biggest_step": (InputValue, {"dtype" : float,
@@ -60,7 +60,7 @@ class InputInst(InputDictionary):
                               "dimension": "force"}),
                "opt": (InputValue, {"dtype": str,
                                             "default": 'None',
-                                            "options": ["nichols","NR","None"],
+                                            "options": ["nichols","NR","lbfgs","None"],
                                             "help": "The geometry optimization algorithm to be used"}),
 
                "prefix": (InputValue, {"dtype": str,
@@ -92,6 +92,9 @@ class InputInst(InputDictionary):
                "glist_lbfgs": (InputArray, {"dtype": float,
                                            "default": input_default(factory=np.zeros, args=(0,)),
                                            "help": "List of previous gradient differences for L-BFGS, if known."}),
+               "old_direction": (InputArray, {"dtype": float,
+                                             "default": input_default(factory=np.zeros, args=(0,)),
+                                             "help": "The previous direction in a CG or SD optimization."}),
                "scale_lbfgs": (InputValue, {"dtype": int,
                                            "default": 2,
                                            "help": """Scale choice for the initial hessian.
@@ -101,16 +104,16 @@ class InputInst(InputDictionary):
                "corrections_lbfgs": (InputValue, {"dtype": int,
                                                  "default": 20,
                                                  "help": "The number of past vectors to store for L-BFGS."}),
-               "ls_options": (InputDictionary, {"dtype": [float, int, float, float],
+               "ls_options": (InputDictionary, {"dtype": [float, int],
                                                "help": """"Options for line search methods. Includes:
                                   tolerance: stopping tolerance for the search,
                                   iter: the maximum number of iterations,
                                   step: initial step for bracketing,
                                   adaptive: whether to update initial step.
                                   """,
-                                               "options": ["tolerance", "iter", "step", "adaptive"],
-                                               "default": [1e-7, 100, 1e-3, 1.0],
-                                               "dimension": ["energy", "undefined", "length", "undefined"]}),
+                                               "options": ["tolerance", "iter"],
+                                               "default": [1e-1, 100],
+                                               "dimension": ["energy", "undefined"]}),
                #Final calculations
                "energy_shift": (InputValue, {"dtype": float, "default": 0.000,
                                             "help": "Set the zero of energy.",
@@ -156,13 +159,13 @@ class InputInst(InputDictionary):
         elif geop.opt =='lbfgs':
             self.qlist_lbfgs.store(geop.qlist)
             self.glist_lbfgs.store(geop.glist)
-            self.corrections_lbfgs.store(geop.corrections)
+            self.old_direction.store(geop.d)
             self.scale_lbfgs.store(geop.scale)
+            self.corrections_lbfgs.store(geop.corrections)
+            self.ls_options.store(geop.ls_options)
             self.hessian_final.store(geop.hessian_final)
             if geop.hessian_final=='true':
                 self.hessian.store(geop.hessian)
-
-
 
 
 

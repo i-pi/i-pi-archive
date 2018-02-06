@@ -25,7 +25,7 @@ import argparse
 #You can insert the i-pi path with the following lines.
 #Uncomment them and adjust the ipi_path variable
 
-#ipi_path='/users/litman/codes/ipi/i-pi-mc/'
+#ipi_path='/home/litman/Yair/Instanton/I-PI-mc/i-pi-mc'
 
 #if not (os.path.exists(ipi_path)):
 #   print 'We can not find ipi in %s' %ipi_path

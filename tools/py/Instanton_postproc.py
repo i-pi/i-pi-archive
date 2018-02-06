@@ -16,9 +16,9 @@ Examples for rate calculation:
            python  Instanton_postproc.py   RESTART  -c  reactant     -t   300            -n 50
            python  Instanton_postproc.py   RESTART  -c    TS         -t   300
 
-Examples for splitting  calculation: 
-           python  Instanton_postproc.py   RESTART  -c  reactant   -t   10  -n 32 --->this generate the freq.dat file 
-           python  Instanton_postproc.py   RESTART  -c  instanton  -t   10  -f freq.dat       
+Examples for splitting  calculation (2 steps): 
+         i)   python  Instanton_postproc.py   RESTART  -c  reactant   -t   10  -n 32 --->this generate the 'freq.dat' file 
+         ii)  python  Instanton_postproc.py   RESTART  -c  instanton  -t   10  -freq freq.dat       
 
 
 
@@ -129,7 +129,7 @@ def Filter(pos,h,natoms,m,m3,filt):
     return  pos,h,natoms,m,m3
 
 
-def get_rp_freq(w0,nbeads,temp,asr=None,mode='rate'):
+def get_rp_freq(w0,nbeads,temp,asr=None,mode='rate',nzero=0):
     """ Compute the ring polymer frequencies for multidimensional harmonic potential
         defined by the frequencies w0. """
     hbar=1.0
@@ -297,7 +297,7 @@ if case=='reactant':
     np.savetxt(outfile, dd.reshape(1,dd.size))
     outfile.close()
 
-    logQvib_rp    = -get_rp_freq(d,nbeadsR,temp)
+    logQvib_rp    = -get_rp_freq(d,nbeadsR,temp,nzeros)
 
     print ''
     print 'We are done'

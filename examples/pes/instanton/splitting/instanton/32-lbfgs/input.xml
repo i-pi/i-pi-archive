@@ -2,14 +2,15 @@
     <output prefix='inst'>
         <properties stride='1' filename='out'>  [ step, potential{electronvolt}] </properties>
    </output>
-   <total_steps>200         </total_steps>
+   <total_steps>160         </total_steps>
    <ffsocket name="aims" mode="unix" >
-       <address> localhost </address>  
+       <address> localhost </address>  <latency> 1e-4</latency>
+       <port>40051</port>
    </ffsocket>
    <system >
        <initialize nbeads='32'> 
            <file mode='xyz' >  init.xyz </file>
-           <cell mode='abc'> [200.0,  200.0,  200.0  ] </cell>
+           <cell mode='abc'> [130.18034026,  170.29206049,  240.21758034] </cell>
        </initialize>
        <forces>
           <force forcefield="aims"> </force>
@@ -30,7 +31,12 @@
 	       <biggest_step>0.3</biggest_step>
                <hessian mode='file' shape='(27, 27)'>hessian.dat</hessian>
                <energy_shift units='electronvolt'>-.680676200</energy_shift>
-            <opt>nichols</opt>
+               <opt>lbfgs</opt>
+               <ls_options>
+                 <tolerance> 1.0e-2 </tolerance>
+                 <iter> 150 </iter>
+               </ls_options>
+               <corrections_lbfgs> 5 </corrections_lbfgs>
            </instanton>
        </motion>
    </system>
