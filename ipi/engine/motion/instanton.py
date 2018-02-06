@@ -373,11 +373,17 @@ class DummyOptimizer(dobject):
         self.gm.bind(self)
         self.energy_shift    = geop.energy_shift
 
-    def exitstep(self, fx, fx0, x,exitt):
+    def exitstep(self, fx, fx0, x,exitt,step):
 
         """ Exits the simulation step. Computes time, checks for convergence. """
         self.qtime += time.time()
-
+        f=open('STEP','a+')
+        print >>f , step  
+        print >>f , np.absolute((fx - fx0) / self.beads.natoms),self.tolerances["energy"]  
+        print >>f, np.amax(np.absolute(self.forces.f+self.im.f)), self.tolerances["force"]
+        print >>f, x, self.tolerances["position"] 
+        print >>f, ' '
+        f.close()
         info(' @Exit step: Energy difference: %.1e, (condition: %.1e)' % (np.absolute((fx - fx0) / self.beads.natoms),self.tolerances["energy"] ),verbosity.low)
         info(' @Exit step: Maximum force component: %.1e, (condition: %.1e)' % (np.amax(np.absolute(self.forces.f+self.im.f)), self.tolerances["force"]), verbosity.low)
         info(' @Exit step: Maximum component step component: %.1e, (condition: %.1e)' % (x, self.tolerances["position"]), verbosity.low)
@@ -394,7 +400,7 @@ class DummyOptimizer(dobject):
             else:
                 info("We are going to compute the final hessian", verbosity.low)
                 get_hessian(self.hessian, self.gm, self.im.dbeads.q)
-                print_instanton_hess(self.prefix,self.hessian)
+                print_instanton_hess(self.prefix,step,self.hessian)
 
             exitt=True #If we just exit here, the last step (including the last hessian) will not be in the RESTART file
 
@@ -488,7 +494,7 @@ class HessianOptimizer(DummyOptimizer):
 
         # Exit simulation step
         d_x_max   = np.amax(np.absolute(np.subtract(self.beads.q, self.old_x)))
-        self.exit = self.exitstep(self.forces.pot, self.old_u.sum(),d_x_max,self.exit)
+        self.exit = self.exitstep(self.forces.pot, self.old_u.sum(),d_x_max,self.exit,step)
 
         # Update positions and forces
         self.old_x[:] = self.beads.q
@@ -496,9 +502,9 @@ class HessianOptimizer(DummyOptimizer):
         self.old_f[:] = self.forces.f
 
         #Print current instanton geometry and hessian
-        print_instanton_geo(self.prefix, self.im.dbeads.nbeads, self.im.dbeads.natoms, self.im.dbeads.names,
+        print_instanton_geo(self.prefix, step, self.im.dbeads.nbeads, self.im.dbeads.natoms, self.im.dbeads.names,
                             self.im.dbeads.q, self.old_u, self.cell, self.energy_shift)
-        print_instanton_hess(self.prefix, self.hessian)
+        print_instanton_hess(self.prefix, step,self.hessian)
 
 class LBFGSOptimizer(DummyOptimizer):
 
@@ -616,7 +622,7 @@ class LBFGSOptimizer(DummyOptimizer):
 
         # Exit simulation step
         d_x_max = np.amax(np.absolute(np.subtract(self.beads.q, self.old_x)))
-        self.exit=self.exitstep(self.forces.pot, self.old_u.sum(),d_x_max,self.exit)
+        self.exit=self.exitstep(self.forces.pot, self.old_u.sum(),d_x_max,self.exit,step)
 
         # Update positions and forces
         self.old_x[:] = self.beads.q

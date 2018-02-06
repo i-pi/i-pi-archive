@@ -3,6 +3,7 @@ from scipy import linalg
 from ipi.utils.messages import verbosity, info
 from ipi.utils import units
 import ipi.utils.mathtools as mt
+import os.path
 
 def banded_hessian(h,im,shift=0.001):
     """Given Hessian in the reduced format (h), construct
@@ -282,9 +283,9 @@ def get_imvector(h, m3):
     return imv
 
 
-def print_instanton_geo(prefix, nbeads, natoms, names, q, pots,cell, shift):
-
-    outfile = open(prefix + '.ener', 'w')
+def print_instanton_geo(prefix,step, nbeads, natoms, names, q, pots,cell, shift):
+    
+    outfile = open(prefix+'_'+str(step)+'.ener', 'w')
     print >> outfile, ('#Bead    Energy (eV)')
     for i in range(nbeads):
         print >> outfile, (str(i)+'     '+str(units.unit_to_user('energy', "electronvolt", pots[i] - shift)))
@@ -295,7 +296,7 @@ def print_instanton_geo(prefix, nbeads, natoms, names, q, pots,cell, shift):
     unit='angstrom'
     a, b, c, alpha, beta, gamma = mt.h2abc_deg(cell.h)
 
-    outfile = open(prefix + '.xyz', 'w')
+    outfile = open(prefix + '_'+str(step)+'.xyz', 'w')
     for i in range(nbeads):
         print >> outfile, natoms
         #print >> outfile, (('CELL(abcABC): Traj: positions(%s) Bead: %i' %(unit,i) ))
@@ -311,9 +312,10 @@ def print_instanton_geo(prefix, nbeads, natoms, names, q, pots,cell, shift):
     outfile.close()
 
 
-def print_instanton_hess(prefix, hessian):
-    np.set_printoptions(precision=7, suppress=True, threshold=np.nan, linewidth=3000)
-    outfile = open(prefix + '.hess', 'w')
-    np.savetxt(outfile, hessian.reshape(1,hessian.size))
 
-    outfile.close()
+def print_instanton_hess(prefix, step,hessian):
+
+      np.set_printoptions(precision=7, suppress=True, threshold=np.nan, linewidth=3000)
+      outfile = open(prefix + '.hess_'+str(step), 'w')
+      np.savetxt(outfile, hessian.reshape(1,hessian.size))
+      outfile.close()
