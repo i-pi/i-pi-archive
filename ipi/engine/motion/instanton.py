@@ -13,7 +13,7 @@ import numpy as np
 import time
 
 from ipi.engine.motion import Motion
-from ipi.utils.depend import depstrip, dobject
+from ipi.utils.depend import dstrip, dobject
 from ipi.utils.softexit import softexit
 from ipi.utils.messages import verbosity, info
 from ipi.utils import units
@@ -661,7 +661,7 @@ class LBFGSOptimizer(DummyOptimizer):
         # Specific for LBFGS
         if np.linalg.norm(self.d) == 0.0:
             f = self.forces.f + self.im.f  #ALBERTO1
-            self.d += depstrip(f) / np.sqrt(np.dot(f.flatten(), f.flatten()))
+            self.d += dstrip(f) / np.sqrt(np.dot(f.flatten(), f.flatten()))
 
         if (self.old_x == np.zeros((self.beads.nbeads,3*self.beads.natoms), float)).all():
             self.old_x[:] = self.beads.q
