@@ -466,6 +466,8 @@ class HessianOptimizer(DummyOptimizer):
                         self.hessian_init ='true'
                 else:
                     info(" @GEOP: Starting from the provided geometry in the extended phase space", verbosity.low)
+                    if not (self.initial_hessian is None):
+                        raise ValueError(" You have provided a hessian with size (3xnatoms)^2 but also geometry in the extended phase space (nbeads>1). Please check the inputs\n")
 
                 if self.hessian_init =='true':
                     info(" @GEOP: We are computing the initial hessian", verbosity.low)
