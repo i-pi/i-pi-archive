@@ -266,35 +266,35 @@ class DummyOptimizer(dobject):
         info(" @GEOP: Updating bead positions", verbosity.debug)
         self.qtime += time.time()
 
-        f = np.amax(np.absolute(self.forces.f))
-        # ftmp=dstrip(self.forces.f).flatten() # <-- Commented lines in this function for ignoring
-        # forces on fixed atoms when checking convergence
-        #if len(self.fixatoms) > 0: #
-        #    for k in self.fixatoms: #
-        #        ftmp[k*3:k*3+3] = 0.0 #
-        #f2=np.amax(np.absolute(ftmp)) #
+
+        if len(self.fixatoms) > 0:
+            ftmp=self.forces.f.copy() 
+            for dqb in ftmp: # <-- To fix atoms, need to set search direction to 0, not forces
+                dqb[self.fixatoms * 3] = 0.0
+                dqb[self.fixatoms * 3 + 1] = 0.0
+                dqb[self.fixatoms * 3 + 2] = 0.0
+            fmax = np.amax(np.absolute(ftmp)) 
+        else:
+            fmax = np.amax(np.absolute(self.forces.f))
+
+
         e = np.absolute((fx - u0) / self.beads.natoms)
         info("@GEOP", verbosity.medium)
         self.tolerances["position"]
         info("   Current energy             %e" % (fx))
         info("   Position displacement      %e  Tolerance %e" % (x, self.tolerances["position"]), verbosity.medium)
-        info("   Max force component        %e  Tolerance %e" % (f, self.tolerances["force"]), verbosity.medium)
-        #info("   Max force component        %e  Tolerance %e" % (f2,self.tolerances["force"]), verbosity.medium ) #
+        info("   Max force component        %e  Tolerance %e" % (fmax, self.tolerances["force"]), verbosity.medium)
         info("   Energy difference per atom %e  Tolerance %e" % (e, self.tolerances["energy"]), verbosity.medium)
 
         if (np.linalg.norm(self.forces.f.flatten() - self.old_f.flatten()) <= 1e-20):
-            #if len(self.fixatoms) > 0: #
-                #for k in self.fixatoms: #
-                    #print(np.absolute(self.forces.f.flatten()[k*3:k*3+3])) #
             softexit.trigger("Something went wrong, the forces are not changing anymore."
                              " This could be due to an overly small tolerance threshold "
                              "that makes no physical sense. Please check if you are able "
                              "to reach such accuracy with your force evaluation"
                              " code (client).")
 
-            # and (f2 <= self.tolerances["force"])  \
         if (np.absolute((fx - u0) / self.beads.natoms) <= self.tolerances["energy"])   \
-                and ((np.amax(np.absolute(self.forces.f)) <= self.tolerances["force"]))  \
+                and (fmax <= self.tolerances["force"])  \
                 and (x <= self.tolerances["position"]):
             softexit.trigger("Geometry optimization converged. Exiting simulation")
 
@@ -335,8 +335,7 @@ class BFGSOptimizer(DummyOptimizer):
         self.old_f[:] = self.forces.f
 
         if len(self.fixatoms) > 0:
-            # for dqb in self.old_f:
-            for dqb in self.d:
+            for dqb in self.d: # <-- To fix atoms, need to set search direction to 0, not forces
                 dqb[self.fixatoms * 3] = 0.0
                 dqb[self.fixatoms * 3 + 1] = 0.0
                 dqb[self.fixatoms * 3 + 2] = 0.0
@@ -396,8 +395,7 @@ class BFGSTRMOptimizer(DummyOptimizer):
         self.old_f[:] = self.forces.f
 
         if len(self.fixatoms) > 0:
-            # for dqb in self.old_f:
-            for dqb in self.d:
+            for dqb in self.d: # <-- To fix atoms, need to set search direction to 0, not forces
                 dqb[self.fixatoms * 3] = 0.0
                 dqb[self.fixatoms * 3 + 1] = 0.0
                 dqb[self.fixatoms * 3 + 2] = 0.0
@@ -469,16 +467,14 @@ class LBFGSOptimizer(DummyOptimizer):
         self.old_f[:] = self.forces.f
 
         if len(self.fixatoms) > 0:
-            # for dqb in self.old_f: <-- To fix atoms, need to set search direction to 0, not forces
-            for dqb in self.d:
+            for dqb in self.d: # <-- To fix atoms, need to set search direction to 0, not forces
                 dqb[self.fixatoms * 3] = 0.0
                 dqb[self.fixatoms * 3 + 1] = 0.0
                 dqb[self.fixatoms * 3 + 2] = 0.0
 
         fdf0 = (self.old_u, -self.old_f)
-        # d_x,new_d, new_qlist, new_glist = L_BFGS(self.old_x,
-        # Note that the line above is not needed anymore because we update everything
-        # within L_BFGS (and all other calls).
+
+        # We update everything  within L_BFGS (and all other calls).
         L_BFGS(self.old_x, self.d, self.gm, self.qlist, self.glist,
                fdf0, self.big_step, self.ls_options["tolerance"] * self.tolerances["energy"],
                self.ls_options["iter"], self.corrections, self.scale, step)

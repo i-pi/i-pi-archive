@@ -206,7 +206,7 @@ def min_brent(fdf, fdf0, x0, tol, itmax, init_step):
     """
 
     # Initializations and constants
-    zeps = 1.0e-13  # Safeguard against trying to find fractional precision for min that is exactly zero
+    zeps = 1.0e-10  # Safeguard against trying to find fractional precision for min that is exactly zero
     e = 0.0  # Size of step before last
 
     # Call initial bracketing routine
@@ -401,7 +401,6 @@ def min_approx(fdf, x0, fdf0, d0, big_step, tol, itmax):
         d0 = np.multiply(d0, big_step / stepsum)
 
     slope = np.dot(df0.flatten(), d0.flatten())
-
     if slope >= 0.0:
         info(" @MINIMIZE: Warning -- gradient is >= 0 (%f)" % slope, verbosity.low)
 
@@ -720,7 +719,7 @@ def L_BFGS(x0, d0, fdf, qlist, glist, fdf0, big_step, tol, itmax, m, scale, k):
             itmax = maximum number of allowed iterations
     """
 
-    zeps = 1.0e-13
+    zeps = 1.0e-10
     n = len(x0.flatten())
     alpha = np.zeros(m)
     beta = np.zeros(m)
@@ -942,7 +941,7 @@ def min_brent_neb(fdf, fdf0=None, x0=0.0, tol=1.0e-6, itmax=100, init_step=1.0e-
 
     # Initializations and constants
     gold = 0.3819660
-    zeps = 1e-13
+    zeps = 1e-10
     e = 0.0  # Step size for step before last
 
     (ax, bx, cx, fb) = bracket_neb(fdf, fdf0, x0, init_step)
@@ -1085,7 +1084,7 @@ def L_BFGS_nls(x0, d0, fdf, qlist, glist, fdf0=None, big_step=100, tol=1.0e-6, i
     """
 
     # Original function value, gradient, other initializations
-    zeps = 1.0e-13
+    zeps = 1.0e-10
     if fdf0 is None: fdf0 = fdf(x0)
     f0, df0 = fdf0
     n = len(x0.flatten())
