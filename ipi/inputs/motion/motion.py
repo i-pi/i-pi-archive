@@ -54,11 +54,11 @@ class InputMotionBase(Input):
 
     """
 
-   attribs = {"mode": (InputAttribute, {"dtype": str,
+    attribs = {"mode": (InputAttribute, {"dtype": str,
                                          "help": "How atoms should be moved at each step in the simulatio. 'replay' means that a simulation is restarted from a previous simulation.",
                                          "options": ['vibrations', 'minimize', 'replay', 'neb', 'dynamics', 'alchemy', 'instanton','dummy']})}
 
-   fields = {"fixcom": (InputValue, {"dtype": bool,
+    fields = {"fixcom": (InputValue, {"dtype": bool,
                                       "default": True,
                                       "help": "This describes whether the centre of mass of the particles is fixed."}),
               "fixatoms": (InputArray, {"dtype": int,
@@ -124,8 +124,6 @@ class InputMotionBase(Input):
             tsc = 1
         else:
             raise ValueError("Cannot store Mover calculator of type " + str(type(sc)))
-      super(InputMotionBase, self).store(sc)
-      tsc = -1
 
         if tsc == 0:
             self.file.store(sc.intraj)
