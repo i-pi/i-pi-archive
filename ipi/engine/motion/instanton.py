@@ -509,7 +509,7 @@ class HessianOptimizer(DummyOptimizer):
         self.old_f[:] = self.forces.f
 
         # Print current instanton geometry and hessian
-        if np.mod(step, self.save) == 0:
+        if np.mod(step, self.save) == 0 or self.exit:
             print_instanton_geo(self.prefix, step, self.im.dbeads.nbeads, self.im.dbeads.natoms, self.im.dbeads.names,
                             self.im.dbeads.q, self.old_u, self.cell, self.energy_shift)
             print_instanton_hess(self.prefix, step, self.hessian)
@@ -699,7 +699,7 @@ class LBFGSOptimizer(DummyOptimizer):
         self.old_f[:] = self.forces.f
 
         # Print current instanton geometry and hessian
-        if np.mod(step, self.save) == 0:
+        if np.mod(step, self.save) == 0 or self.exit:
             print_instanton_geo(self.prefix, step, self.im.dbeads.nbeads, self.im.dbeads.natoms, self.im.dbeads.names,
                             self.im.dbeads.q, self.old_u, self.cell, self.energy_shift)
             print_instanton_hess(self.prefix, step, self.hessian)
