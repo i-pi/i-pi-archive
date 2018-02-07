@@ -135,11 +135,15 @@
                   vstyle = 10
                ELSEIF (trim(cmdbuffer) == "qtip4pf-efield") THEN
                   vstyle = 11
+               ELSEIF (trim(cmdbuffer) == "eckart") THEN
+                  vstyle = 20
+               ELSEIF (trim(cmdbuffer) == "ch4hcbe") THEN
+                  vstyle = 21
                ELSEIF (trim(cmdbuffer) == "gas") THEN
                   vstyle = 0  ! ideal gas
                ELSE
                   WRITE(*,*) " Unrecognized potential type ", trim(cmdbuffer)
-                  WRITE(*,*) " Use -m [gas|lj|sg|harm|morse|zundel|qtip4pf|qtip4pf-efield] "
+                  WRITE(*,*) " Use -m [gas|lj|sg|harm|morse|zundel|qtip4pf|lepsm1|lepsm2|qtip4pf-efield|eckart|ch4hcbe] "
                   STOP "ENDED"
                ENDIF
             ELSEIF (ccmd == 4) THEN
@@ -192,6 +196,13 @@
          CALL prezundelpot()
          CALL prezundeldip()
          isinit = .true.
+      ELSEIF (21 == vstyle) THEN
+         IF (par_count /= 0) THEN
+            WRITE(*,*) "Error: no initialization string needed for CH4+H CBE potential."
+            STOP "ENDED"
+         ENDIF
+         CALL prepot()
+         isinit = .true.
       ELSEIF (4 == vstyle) THEN
          IF (par_count == 0) THEN ! defaults (OH stretch)
             vpars(1) = 1.8323926 ! r0
@@ -200,6 +211,18 @@
          ELSEIF ( 2/= par_count) THEN
             WRITE(*,*) "Error: parameters not initialized correctly."
             WRITE(*,*) "For morse potential use -o r0,D,a (in a.u.) "
+            STOP "ENDED"
+         ENDIF
+         isinit = .true.
+      ELSEIF (20 == vstyle) THEN !eckart
+         IF (par_count == 0) THEN ! defaults values 
+            vpars(1) = 0.0d0
+            vpars(2) = 0.66047 
+            vpars(3) = (6*12)/( 1836 * (vpars(2)**2) *( (4.D0 * ATAN(1.0d0) )**2 ) )
+            vpars(4) = 1836*(3800.0d0/219323d0)**2
+         ELSEIF ( 4/= par_count) THEN
+            WRITE(*,*) "Error: parameters not initialized correctly."
+            WRITE(*,*) "For ekart potential use  AA,A,B,k" 
             STOP "ENDED"
          ENDIF
          isinit = .true.
@@ -390,6 +413,29 @@
                   ENDDO
                ENDDO
                ! do not compute the virial term
+
+           ELSEIF (vstyle == 21) THEN ! CBE CH4+H potential.
+               IF (nat/=6) THEN
+                  WRITE(*,*) "Expecting 6 atoms for CH4+H potential, H, C, H, H, H, H "
+                  WRITE(*,*) "The expected order is such that atoms 1 to 5 are reactant_1 (CH4)"
+                  WRITE(*,*) "and atom 6 is reactant_2 ( H 'free') "
+                  STOP "ENDED"
+               ENDIF
+
+               CALL ch4hpot_inter(atoms, pot)
+               datoms=atoms
+               DO i=1,6  ! forces by finite differences
+                  DO j=1,3
+                     datoms(i,j)=atoms(i,j)+fddx
+                     CALL ch4hpot_inter(datoms, dpot)
+                     datoms(i,j)=atoms(i,j)-fddx
+                     CALL ch4hpot_inter(datoms, forces(i,j))
+                     datoms(i,j)=atoms(i,j)
+                     forces(i,j)=(forces(i,j)-dpot)/(2*fddx)
+                  ENDDO
+               ENDDO
+               ! do not compute the virial term
+
             ELSEIF (vstyle == 6) THEN ! qtip4pf potential.
                IF (mod(nat,3)/=0) THEN
                   WRITE(*,*) " Expecting water molecules O H H O H H O H H but got ", nat, "atoms"
@@ -442,7 +488,6 @@
                ! MR: the above line looks like it provides correct results in eAngstrom for dipole! 
                pot = pot*0.0015946679     ! pot_nasa gives kcal/mol
                forces = forces * (-0.00084329756) ! pot_nasa gives V in kcal/mol/angstrom
-
                ! do not compute the virial term
             ELSEIF (vstyle == 9) THEN
                IF (nat /= 3) THEN
@@ -457,6 +502,8 @@
                END IF
                CALL LEPS_M2(4, atoms, pot, forces)
                
+            ELSEIF (vstyle == 20) THEN ! eckart potential.
+               CALL geteckart(nat,vpars(1), vpars(2), vpars(3),vpars(4), atoms, pot, forces)
             ELSE
                IF ((allocated(n_list) .neqv. .true.)) THEN
                   IF (verbose > 0) WRITE(*,*) " Allocating neighbour lists."
@@ -537,7 +584,7 @@
     CONTAINS
       SUBROUTINE helpmessage
          ! Help banner
-         WRITE(*,*) " SYNTAX: driver.x [-u] -h hostname -p port -m [gas|lj|sg|harm|morse|zundel|qtip4pf|pswater|lepsm1|lepsm2|qtip4p-efield] "
+         WRITE(*,*) " SYNTAX: driver.x [-u] -h hostname -p port -m [gas|lj|sg|harm|morse|zundel|qtip4pf|pswater|lepsm1|lepsm2|qtip4p-efield|eckart|ch4hcbe] "
          WRITE(*,*) "         -o 'comma_separated_parameters' [-v] "
          WRITE(*,*) ""
          WRITE(*,*) " For LJ potential use -o sigma,epsilon,cutoff "
@@ -545,7 +592,7 @@
          WRITE(*,*) " For 1D harmonic oscillator use -o k "
          WRITE(*,*) " For 1D morse oscillator use -o r0,D,a"
          WRITE(*,*) " For qtip4pf-efield use -o Ex,Ey,Ez with Ei in V/nm"         
-         WRITE(*,*) " For the ideal gas, qtip4pf, zundel or nasa no options needed! "
+         WRITE(*,*) " For the ideal gas, qtip4pf, zundel, ch4hcbe or nasa no options needed! "
        END SUBROUTINE helpmessage
 
    END PROGRAM
