@@ -42,11 +42,14 @@ Functions:
             Press, W. H., Teukolsky, S. A., Vetterling, W. T., and Flannery, B. P. (1992). 
             Numerical Recipes in C: The Art of Scientific Computing. 
             Cambridge: Cambridge University Press
-
         LBFGS subroutine adapted from:
             Nocedal, J. (1980). Updating Quasi-Newton Matrices with
             Limited Storage. Mathematics of Computation, 35, 773-782.
             DOI: http://dx.doi.org/10.1090/S0025-5718-1980-0572855-7
+        powell: powell formula to update the hessian (R. Fletcher. Practical Methods of Optimization. 2nd ed.
+            (Chichester: John Wileyand Sons, 1987)
+        nichols: nichols algorithm for optimization (minimum or transition state)
+        Simons, J. and Nichols, J. (1990), Int. J. Quantum Chem., 38: 263-276. doi: 10.1002/qua.560382427
 """
 
 # TODO: CLEAN UP BFGS, L-BFGS, L-BFGS_nls TO NOT EXIT WITHIN MINTOOLS.PY BUT USE UNIVERSAL SOFTEXIT
@@ -206,8 +209,9 @@ def min_brent(fdf, fdf0, x0, tol, itmax, init_step):
     """
 
     # Initializations and constants
-    zeps = 1.0e-13  # Safeguard against trying to find fractional precision for min that is exactly zero
-    e = 0.0  # Size of step before last
+    gold = 0.3819660 # Golden ratio
+    zeps = 1.0e-10 # Safeguard against trying to find fractional precision for min that is exactly zero
+    e = 0.0 # Size of step before last
 
     # Call initial bracketing routine
     (ax, bx, cx, fb, dfb) = bracket(fdf, fdf0, x0, init_step)
@@ -492,7 +496,7 @@ def BFGS(x0, d0, fdf, fdf0, invhessian, big_step, tol, itmax):
     """
 
     info(" @MINIMIZE: Started BFGS", verbosity.debug)
-    zeps = 1.0e-13
+    zeps = 1.0e-10
     u0, g0 = fdf0
 
     # Maximum step size
@@ -719,9 +723,9 @@ def L_BFGS(x0, d0, fdf, qlist, glist, fdf0, big_step, tol, itmax, m, scale, k):
             tol = convergence tolerance
             itmax = maximum number of allowed iterations
     """
-
-    zeps = 1.0e-13
-    n = len(x0.flatten())
+    
+    zeps  = 1.0e-10
+    n     = len(x0.flatten())
     alpha = np.zeros(m)
     beta = np.zeros(m)
     rho = np.zeros(m)
@@ -942,8 +946,8 @@ def min_brent_neb(fdf, fdf0=None, x0=0.0, tol=1.0e-6, itmax=100, init_step=1.0e-
 
     # Initializations and constants
     gold = 0.3819660
-    zeps = 1e-13
-    e = 0.0  # Step size for step before last
+    zeps = 1e-10    
+    e = 0.0 # Step size for step before last
 
     (ax, bx, cx, fb) = bracket_neb(fdf, fdf0, x0, init_step)
 
@@ -1085,7 +1089,7 @@ def L_BFGS_nls(x0, d0, fdf, qlist, glist, fdf0=None, big_step=100, tol=1.0e-6, i
     """
 
     # Original function value, gradient, other initializations
-    zeps = 1.0e-13
+    zeps = 1.0e-10
     if fdf0 is None: fdf0 = fdf(x0)
     f0, df0 = fdf0
     n = len(x0.flatten())
@@ -1187,3 +1191,92 @@ def L_BFGS_nls(x0, d0, fdf, qlist, glist, fdf0=None, big_step=100, tol=1.0e-6, i
     info(" @MINIMIZE: Updated search direction", verbosity.debug)
 
     return (x, fx, xi, qlist, glist)
+
+def nichols(f0,f1 ,d,dynmax,m3 ,big_step, mode=1):
+    """ Find new movement direction. JCP 92,340 (1990)
+    IN    f0      = physical forces        (n,)
+          f1      = spring forces
+          d       = dynmax eigenvalues
+          dynmax  = dynmax       (n-m x n-m) with m = # external modes
+          m3      = mass vector
+    OUT   DX      = displacement in cartesian basis
+
+    INTERNAL
+          ndim = dimension
+          f    = forces
+          d    = hessian eigenvalues
+          w    = hessian eigenvector (in columns)
+          g    = gradient in cartesian basis  #Note in trm g is the force vector
+          gE   = gradient in eigenvector basis
+          DX   = displacement in cartesian basis
+          DXE  = displacement in eigenvector basis
+    """
+
+    # Resize
+    ndim  = f0.size
+    shape = f0.shape
+    f = (f0+f1).reshape((1, ndim))/m3.reshape((1,ndim))**0.5 #From cartesian base to mass-weighted base
+
+    # Change of basis to eigenvector space
+    d     = d[:, np.newaxis]  # dimension nx1
+    gEt   = -np.dot(f, dynmax)  # Change of basis  #
+    gE    = gEt.T  # dimension (n-m)x1
+        # The step has the general form:
+    # d_x[j] =  alpha *( gE[j] )  / ( lambda-d[j] )
+
+    if mode == 0:
+        # Minimization
+        alpha = 1.0
+        lamb = 0.0
+
+        d_x = alpha * (gE) / (lamb - d)
+
+        if d[0] < 0 or np.dot(d_x.flatten(), d_x.flatten()) > big_step ** 2:
+            lamb = d[0] - np.absolute(gE[0] / big_step)
+            d_x = alpha * (gE) / (lamb - d)
+
+    elif mode == 1:
+
+        if d[0] > 0:
+            if d[1] / 2 > d[0]:
+                alpha = 1
+                lamb = (2 * d[0] + d[1]) / 4
+            else:
+                alpha = (d[1] - d[0]) / d[1]
+                lamb = (3 * d[0] + d[1]) / 4  # midpoint between b[0] and b[1]*(1-alpha/2)
+
+        elif d[1] < 0:  # Jeremy Richardson
+            if (d[1] >= d[0] / 2):
+                alpha = 1
+                lamb = (d[0] + 2 * d[1]) / 4
+            else:
+                alpha = (d[0] - d[1]) / d[1]
+                lamb = (d[0] + 3 * d[1]) / 4
+
+        else:  # Only d[0] <0
+            alpha = 1
+            lamb = (d[0] + d[1]) / 4
+
+        d_x = alpha * (gE) / (lamb - d)
+
+    # Some check or any type of reject? ALBERTO
+
+    DX = np.dot(dynmax, d_x)        #From ev base to mass-weighted base
+    DX = DX.reshape(shape)
+    DX = np.multiply(DX,m3**(-0.5)) #From mass-weighted base to cartesion base
+
+    return DX
+
+def Powell(d, Dg, H):
+    """Update Cartesian Hessian using gradient.
+    Input: d  = Change in position
+           Dg = change in gradient
+            H = Cartesian Hessian
+
+    Output: H = Cartesian Hessian"""
+
+    ddi = 1 / np.dot(d, d)
+    y = Dg - np.dot(H, d)
+    H += ddi * (np.outer(y, d) + np.outer(d, y) - np.dot(y, d) * np.outer(d, d) * ddi)
+    return H
+

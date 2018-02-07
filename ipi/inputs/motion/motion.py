@@ -26,10 +26,13 @@ from copy import copy
 import ipi.engine.initializer
 from ipi.engine.motion import Motion, Dynamics, Replay, GeopMotion, NEBMover, DynMatrixMover, MultiMotion, AlchemyMC
 from ipi.engine.motion import DynMatrixMover
+from ipi.engine.motion import Motion, Dynamics, Replay, GeopMotion, NEBMover, DynMatrixMover, MultiMotion
+from ipi.engine.motion import InstantonMotion
 from ipi.utils.inputvalue import *
 from ipi.inputs.thermostats import *
 from ipi.inputs.initializer import *
 from .geop import InputGeop
+from .instanton import InputInst
 from .neb import InputNEB
 from .dynamics import InputDynamics
 from .phonons import InputDynMatrix
@@ -57,6 +60,9 @@ class InputMotionBase(Input):
     attribs = {"mode": (InputAttribute, {"dtype": str,
                                          "help": "How atoms should be moved at each step in the simulatio. 'replay' means that a simulation is restarted from a previous simulation.",
                                          "options": ['vibrations', 'minimize', 'replay', 'neb', 'dynamics', 'alchemy', 'dummy']})}
+   attribs={"mode"  : (InputAttribute, {"dtype"   : str,
+                                    "help"    : "How atoms should be moved at each step in the simulatio. 'replay' means that a simulation is restarted from a previous simulation.",
+                                    "options" : ['vibrations', 'minimize', 'replay', 'neb','instanton', 'dynamics',  'dummy']}) }
 
     fields = {"fixcom": (InputValue, {"dtype": bool,
                                       "default": True,
@@ -77,6 +83,25 @@ class InputMotionBase(Input):
               "alchemy": (InputAlchemy, {"default": {},
                                          "help": "Option for alchemical exchanges"})
               }
+   fields={"fixcom": (InputValue, {"dtype"           : bool,
+                                   "default"         : True,
+                                   "help"            : "This describes whether the centre of mass of the particles is fixed."}),
+           "fixatoms" : (InputArray, {"dtype"        : int,
+                                    "default"      : np.zeros(0,int),
+                                    "help"         : "Indices of the atmoms that should be held fixed."}),
+           "optimizer" : ( InputGeop, { "default" : {},
+                                     "help":  "Option for geometry optimization" } ),
+           "neb_optimizer" : ( InputGeop, { "default" : {},
+                                     "help":  "Option for geometry optimization" } ),
+           "instanton" : ( InputInst, { "default" : {},
+                                     "help":  "Option for Instanton optimization" } ),
+           "dynamics" : ( InputDynamics, { "default" : {},
+                                     "help":  "Option for (path integral) molecular dynamics" } ),
+           "file": (InputInitFile, { "default" : input_default(factory=ipi.engine.initializer.InitBase,kwargs={"mode":"xyz"}),
+                           "help"            : "This describes the location to read a trajectory file from."}),
+           "vibrations" : ( InputDynMatrix, { "default" : {},
+                                     "help":  "Option for phonon computation" } )
+         }
 
     dynamic = {}
 
@@ -119,6 +144,36 @@ class InputMotionBase(Input):
             tsc = 1
         else:
             raise ValueError("Cannot store Mover calculator of type " + str(type(sc)))
+      super(InputMotionBase, self).store(sc)
+      tsc = -1
+
+      if type(sc) is Motion:
+          self.mode.store("dummy")
+      elif type(sc) is Replay:
+         self.mode.store("replay")
+         tsc = 0
+      elif type(sc) is GeopMotion:
+         self.mode.store("minimize")
+         self.optimizer.store(sc)
+         tsc = 1
+      elif type(sc) is NEBMover:
+         self.mode.store("neb")
+         self.neb_optimizer.store(sc)
+         tsc = 1
+      elif type(sc) is InstantonMotion:
+         self.mode.store("instanton")
+         self.instanton.store(sc)
+         tsc = 1
+      elif type(sc) is Dynamics:
+         self.mode.store("dynamics")
+         self.dynamics.store(sc)
+         tsc = 1
+      elif type(sc) is DynMatrixMover:
+         self.mode.store("vibrations")
+         self.vibrations.store(sc)
+         tsc = 1
+      else:
+         raise ValueError("Cannot store Mover calculator of type "+str(type(sc)))
 
         if tsc == 0:
             self.file.store(sc.intraj)
@@ -151,6 +206,21 @@ class InputMotionBase(Input):
         else:
             sc = Motion()
             #raise ValueError("'" + self.mode.fetch() + "' is not a supported motion calculation mode.")
+      if self.mode.fetch() == "replay":
+         sc = Replay(fixcom=self.fixcom.fetch(), fixatoms=self.fixatoms.fetch(), intraj=self.file.fetch())
+      elif self.mode.fetch() == "minimize":
+         sc = GeopMotion(fixcom=self.fixcom.fetch(), fixatoms=self.fixatoms.fetch(), **self.optimizer.fetch())
+      elif self.mode.fetch() == "neb":
+         sc = NEBMover(fixcom=self.fixcom.fetch(), fixatoms=self.fixatoms.fetch(), **self.neb_optimizer.fetch())
+      elif self.mode.fetch() == "instanton":
+         sc = InstantonMotion(fixcom=self.fixcom.fetch(), fixatoms=self.fixatoms.fetch(), **self.instanton.fetch())
+      elif self.mode.fetch() == "dynamics":
+         sc = Dynamics(fixcom=self.fixcom.fetch(), fixatoms=self.fixatoms.fetch(), **self.dynamics.fetch())
+      elif self.mode.fetch() == "vibrations":
+         sc = DynMatrixMover(fixcom=self.fixcom.fetch(), fixatoms=self.fixatoms.fetch(), **self.vibrations.fetch() )
+      else:
+         sc = Motion()
+         #raise ValueError("'" + self.mode.fetch() + "' is not a supported motion calculation mode.")
 
         return sc
 
