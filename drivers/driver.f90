@@ -128,14 +128,14 @@
                ELSEIF (trim(cmdbuffer) == "pswater") THEN
                   vstyle = 8
                ELSEIF (trim(cmdbuffer) == "eckart") THEN
-                  vstyle = 9
+                  vstyle = 20
                ELSEIF (trim(cmdbuffer) == "ch4hcbe") THEN
-                  vstyle = 10
+                  vstyle = 21
                ELSEIF (trim(cmdbuffer) == "gas") THEN
                   vstyle = 0  ! ideal gas
                ELSE
                   WRITE(*,*) " Unrecognized potential type ", trim(cmdbuffer)
-                  WRITE(*,*) " Use -m [gas|lj|sg|harm|morse|zundel|qtip4pf|eckart|ch4h] "
+                  WRITE(*,*) " Use -m [gas|lj|sg|harm|morse|zundel|qtip4pf|eckart|ch4hcbe] "
                   STOP "ENDED"
                ENDIF
             ELSEIF (ccmd == 4) THEN
@@ -176,7 +176,7 @@
          CALL prezundelpot()
          CALL prezundeldip()
          isinit = .true.
-      ELSEIF (10 == vstyle) THEN
+      ELSEIF (21 == vstyle) THEN
          IF (par_count /= 0) THEN
             WRITE(*,*) "Error: no initialization string needed for CH4+H CBE potential."
             STOP "ENDED"
@@ -194,7 +194,7 @@
             STOP "ENDED"
          ENDIF
          isinit = .true.
-      ELSEIF (9 == vstyle) THEN !eckart
+      ELSEIF (20 == vstyle) THEN !eckart
          IF (par_count == 0) THEN ! defaults values 
             vpars(1) = 0.0d0
             vpars(2) = 0.66047 
@@ -371,7 +371,7 @@
                ENDDO
                ! do not compute the virial term
 
-           ELSEIF (vstyle == 10) THEN ! CBE CH4+H potential.
+           ELSEIF (vstyle == 21) THEN ! CBE CH4+H potential.
                IF (nat/=6) THEN
                   WRITE(*,*) "Expecting 6 atoms for CH4+H potential, H, C, H, H, H, H "
                   WRITE(*,*) "The expected order is such that atoms 1 to 5 are reactant_1 (CH4)"
@@ -439,7 +439,7 @@
                pot = pot*0.0015946679     ! pot_nasa gives kcal/mol
                forces = forces * (-0.00084329756) ! pot_nasa gives V in kcal/mol/angstrom
                ! do not compute the virial term
-            ELSEIF (vstyle == 9) THEN ! eckart potential.
+            ELSEIF (vstyle == 20) THEN ! eckart potential.
                CALL geteckart(nat,vpars(1), vpars(2), vpars(3),vpars(4), atoms, pot, forces)
             ELSE
                IF ((allocated(n_list) .neqv. .true.)) THEN
@@ -528,7 +528,7 @@
          WRITE(*,*) " For SG potential use -o cutoff "
          WRITE(*,*) " For 1D harmonic oscillator use -o k "
          WRITE(*,*) " For 1D morse oscillator use -o r0,D,a"
-         WRITE(*,*) " For the ideal gas, qtip4pf, zundel, ch4h or nasa no options needed! "
+         WRITE(*,*) " For the ideal gas, qtip4pf, zundel, ch4hcbe or nasa no options needed! "
        END SUBROUTINE helpmessage
 
    END PROGRAM
