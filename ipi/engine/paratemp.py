@@ -21,6 +21,7 @@ __all__ = ['ParaTemp']
 
 
 class ParaTemp(dobject):
+
     """Helper class for parallel tempering simulations.
 
     Contains options and routines for performing parallel tempering runs.

@@ -26,6 +26,7 @@ __all__ = ['ForceField', 'FFSocket', 'FFLennardJones', 'FFDebye', 'FFYaff']
 
 
 class ForceRequest(dict):
+
     """An extension of the standard Python dict class which only has a == b
     if a is b == True, rather than if the elements of a and b are identical.
 
@@ -40,6 +41,7 @@ class ForceRequest(dict):
 
 
 class ForceField(dobject):
+
     """Base forcefield class.
 
     Gives the standard methods and quantities needed in all the forcefield
@@ -244,6 +246,7 @@ class ForceField(dobject):
 
 
 class FFSocket(ForceField):
+
     """Interface between the PIMD code and a socket for a single replica.
 
     Deals with an individual replica of the system, obtaining the potential
@@ -300,6 +303,7 @@ class FFSocket(ForceField):
 
 
 class FFLennardJones(ForceField):
+
     """Basic fully pythonic force provider.
 
     Computes LJ interactions without minimum image convention, cutoffs or
@@ -376,9 +380,10 @@ class FFLennardJones(ForceField):
 
 
 class FFDebye(ForceField):
+
     """Debye crystal harmonic reference potential
 
-    Computes a harmonic forcefield. 
+    Computes a harmonic forcefield.
 
     Attributes:
        parameters: A dictionary of the parameters used by the driver. Of the
@@ -447,6 +452,7 @@ class FFDebye(ForceField):
 
 
 class FFYaff(ForceField):
+
     """ Use Yaff as a library to construct a force field """
 
     def __init__(self, latency=1.0, name="", yaffpara=None, yaffsys=None, yafflog='yaff.log', rcut=18.89726133921252, alpha_scale=3.5, gcut_scale=1.1, skin=0, smooth_ei=False, reci_ei='ewald', pars=None, dopbc=False, threaded=True):

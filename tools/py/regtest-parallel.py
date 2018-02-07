@@ -128,11 +128,11 @@ except ImportError:
     INFO = ""
 
 
-#### Hardcoded settings ####
+# Hardcoded settings ####
 TIMEOUT_DRIVER = 600    # Maximum time the driver are allowded to run
 TIMEOUT_IPI = 30        # Maximum time to wait after the driver are done
 IPI_WAITING_TIME = 5    # Time to wait after i-pi has been started
-############################
+#
 
 
 # Compile them only once! pylint: disable=anomalous-backslash-in-string
@@ -364,6 +364,7 @@ def _file_is_test(path_to_test):
 
 
 class Test(threading.Thread):
+
     """ Contains all the methods used to create, run and compare a test.
 
     Args:
@@ -928,9 +929,9 @@ class Test(threading.Thread):
         return ltraj, lprop
 
 
-#######################
-### Tools Functions ###
-#######################
+#
+# Tools Functions ###
+#
 
 def remove_file(path):
     """ Remove a path only if it exists and is a file!

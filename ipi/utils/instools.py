@@ -5,7 +5,7 @@ from ipi.utils import units
 import ipi.utils.mathtools as mt
 import os.path
 
-def banded_hessian(h,im,shift=0.001):
+def banded_hessian(h, im, shift=0.001):
     """Given Hessian in the reduced format (h), construct
     the upper band hessian including the RP terms"""
     nbeads   = im.dbeads.nbeads
@@ -13,30 +13,30 @@ def banded_hessian(h,im,shift=0.001):
     ii       = natoms * 3 * nbeads
     ndiag    = natoms * 3 + 1 #only upper diagonal form
 
-    #np.set_printoptions(precision=6, suppress=True, threshold=np.nan, linewidth=1000)
+    # np.set_printoptions(precision=6, suppress=True, threshold=np.nan, linewidth=1000)
 
     hnew = np.zeros((ndiag, ii))
 
-    #add physical part
+    # add physical part
     for i in range(nbeads):
-        h_aux = h[:,i*natoms*3:(i+1)*natoms*3] #Peaks one physical hessian
-        for j in range(1,ndiag):
-            hnew[j,(ndiag-1-j)+i*natoms*3:(i+1)*natoms*3] = np.diag(h_aux,ndiag-1-j)
+        h_aux = h[:, i*natoms*3:(i+1)*natoms*3] #Peaks one physical hessian
+        for j in range(1, ndiag):
+            hnew[j, (ndiag-1-j)+i*natoms*3:(i+1)*natoms*3] = np.diag(h_aux, ndiag-1-j)
 
-    #add spring parts
+    # add spring parts
     # Diagonal
     d_corner = im.dbeads.m3[0] * im.omega2
     d_0 = np.array([[d_corner * 2]]).repeat(im.dbeads.nbeads - 2, axis=0).flatten()
     diag_sp = np.concatenate((d_corner, d_0, d_corner))
-    hnew[-1, :] += diag_sp
+    hnew[-1,:] += diag_sp
 
     # Non-Diagonal
     d_out = - d_corner
     ndiag_sp = np.array([[d_out]]).repeat(im.dbeads.nbeads-1, axis=0).flatten()
-    hnew[0, :] = np.concatenate((np.zeros(natoms*3),ndiag_sp ))
+    hnew[0,:] = np.concatenate((np.zeros(natoms*3), ndiag_sp ))
 
     # Add safety shift value
-    hnew[-1, :] += shift
+    hnew[-1,:] += shift
 
     return hnew
 
@@ -45,15 +45,15 @@ def sym_band(A):
     u = len(A) - 1
     l = u
     M = A.shape[1]
-    newA = np.empty((u+l+1,M))
+    newA = np.empty((u+l+1, M))
     newA[:u+1] = A
-    for i in xrange(1,l+1):
-        newA[u+i,:M-i] = A[-1-i,i:]
+    for i in xrange(1, l+1):
+        newA[u+i, :M-i] = A[-1-i, i:]
     return newA
 
 def invmul_banded(A, B, posdef=False):
     """A is in upper banded form
-	Solve H.h = -G for Newton - Raphson step, h
+        Solve H.h = -G for Newton - Raphson step, h
     using invmul_banded(H, -G) take step x += h
     to  find minimum or transition state """
 
@@ -63,10 +63,10 @@ def invmul_banded(A, B, posdef=False):
         u = len(A) - 1
         l = u
         newA = sym_band(A)
-        #np.set_printoptions(precision=6, suppress=True, threshold=np.nan, linewidth=1000)
-        #print linalg.eigvals_banded(A)
-        #sys.exit(0)
-        return linalg.solve_banded((l,u), newA, B)
+        # np.set_printoptions(precision=6, suppress=True, threshold=np.nan, linewidth=1000)
+        # print linalg.eigvals_banded(A)
+        # sys.exit(0)
+        return linalg.solve_banded((l, u), newA, B)
 
 
 def red2comp(h, nbeads, natoms):
@@ -82,10 +82,10 @@ def red2comp(h, nbeads, natoms):
 
 
 def get_hessian(h, gm, x0, d=0.0005):
-    """Compute the physical hessian           
-       IN     h       = physical hessian 
+    """Compute the physical hessian
+       IN     h       = physical hessian
               gm      = gradient mapper
-              x0      = position vector 
+              x0      = position vector
 
        OUT    h       = physical hessian
         """
@@ -96,7 +96,7 @@ def get_hessian(h, gm, x0, d=0.0005):
     ii = gm.dbeads.natoms * 3
     h[:] = np.zeros((h.shape), float)
 
-    ##Ask Michelle about transfer force here I
+    # Ask Michelle about transfer force here I
     # ddbeads = gm.dbeads.copy()
     # ddcell = gm.dcell.copy()
     # ddforces = gm.dforces.copy(ddbeads, ddcell)
@@ -113,14 +113,14 @@ def get_hessian(h, gm, x0, d=0.0005):
         g = (f1 - f2) / (2 * d)
 
         for i in range(gm.dbeads.nbeads):
-            h[j, :] = g.flatten()
+            h[j,:] = g.flatten()
 
             # for i in range(gm.dbeads.nbeads):
             #    h[j + i * ii, i * ii:(i + 1) * ii] = g[i, :]
 
     u, g = gm(x0)  # Keep the mapper updated
 
-    ## Ask Michelle about transfer force here II
+    # Ask Michelle about transfer force here II
     # gm.dbeads.q = ddbeads.q
     # gm.dforces.transfer_forces(ddforces)
 
@@ -202,7 +202,7 @@ def clean_hessian(h, q, natoms, nbeads, m, m3, asr, mofi=False):
             transfmatrix = np.eye(3 * ii) - np.dot(D.T, D)
             hm = np.dot(transfmatrix.T, np.dot(dynmat, transfmatrix))
 
-    ##Simmetrize to use linalg.eigh
+    # Simmetrize to use linalg.eigh
     hmT = hm.T
     hm = (hmT + hm) / 2.0
 
@@ -283,25 +283,25 @@ def get_imvector(h, m3):
     return imv
 
 
-def print_instanton_geo(prefix,step, nbeads, natoms, names, q, pots,cell, shift):
-    
+def print_instanton_geo(prefix, step, nbeads, natoms, names, q, pots, cell, shift):
+
     outfile = open(prefix+'_'+str(step)+'.ener', 'w')
     print >> outfile, ('#Bead    Energy (eV)')
     for i in range(nbeads):
         print >> outfile, (str(i)+'     '+str(units.unit_to_user('energy', "electronvolt", pots[i] - shift)))
     outfile.close()
 
-    #print_file("xyz", pos[0], cell, out, title='positions{angstrom}')
+    # print_file("xyz", pos[0], cell, out, title='positions{angstrom}')
 
-    unit='angstrom'
+    unit = 'angstrom'
     a, b, c, alpha, beta, gamma = mt.h2abc_deg(cell.h)
 
     outfile = open(prefix + '_'+str(step)+'.xyz', 'w')
     for i in range(nbeads):
         print >> outfile, natoms
-        #print >> outfile, (('CELL(abcABC): Traj: positions(%s) Bead: %i' %(unit,i) ))
-        print >> outfile, ('CELL(abcABC):  %f %f %f %f %f %f cell{atomic_unit}  Traj: positions{%s}   Bead:       %i' %(a,b,c,alpha,beta,gamma,unit,i))
-        #print >> outfile, ('#Potential (eV):   ' + str(units.unit_to_user('energy', "electronvolt", pots[i] - shift)))
+        # print >> outfile, (('CELL(abcABC): Traj: positions(%s) Bead: %i' %(unit,i) ))
+        print >> outfile, ('CELL(abcABC):  %f %f %f %f %f %f cell{atomic_unit}  Traj: positions{%s}   Bead:       %i' % (a, b, c, alpha, beta, gamma, unit, i))
+        # print >> outfile, ('#Potential (eV):   ' + str(units.unit_to_user('energy', "electronvolt", pots[i] - shift)))
 
         for j in range(natoms):
             print >> outfile, names[j], \
@@ -313,9 +313,9 @@ def print_instanton_geo(prefix,step, nbeads, natoms, names, q, pots,cell, shift)
 
 
 
-def print_instanton_hess(prefix, step,hessian):
+def print_instanton_hess(prefix, step, hessian):
 
-      np.set_printoptions(precision=7, suppress=True, threshold=np.nan, linewidth=3000)
-      outfile = open(prefix + '.hess_'+str(step), 'w')
-      np.savetxt(outfile, hessian.reshape(1,hessian.size))
-      outfile.close()
+    np.set_printoptions(precision=7, suppress=True, threshold=np.nan, linewidth=3000)
+    outfile = open(prefix + '.hess_'+str(step), 'w')
+    np.savetxt(outfile, hessian.reshape(1, hessian.size))
+    outfile.close()

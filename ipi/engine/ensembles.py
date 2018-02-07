@@ -29,6 +29,7 @@ __all__ = ['Ensemble']
 
 
 class Ensemble(dobject):
+
     """Base ensemble class.
 
     Defines the thermodynamic state of the system.

@@ -16,6 +16,7 @@ __all__ = ['InputEnsemble']
 
 
 class InputEnsemble(Input):
+
     """Ensemble input class.
 
     Handles generating the appropriate ensemble class from the xml input file,
@@ -33,8 +34,8 @@ class InputEnsemble(Input):
           Defaults to 1.0.
        eens: An optional float giving the ensemble contribution to the conserved
           quantity.
-       stress: An optional array containing the terms of the stress tensor as 
-          [pxx, pxy, pxz, pyx, pyy .. pzy, pzz]. 
+       stress: An optional array containing the terms of the stress tensor as
+          [pxx, pxy, pxz, pyx, pyy .. pzy, pzz].
     """
 
     fields = {

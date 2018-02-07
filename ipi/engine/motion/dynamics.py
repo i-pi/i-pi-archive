@@ -24,6 +24,7 @@ from ipi.engine.barostats import Barostat
 #__all__ = ['Dynamics', 'NVEIntegrator', 'NVTIntegrator', 'NPTIntegrator', 'NSTIntegrator', 'SCIntegrator`']
 
 class Dynamics(Motion):
+
     """self (path integral) molecular dynamics class.
 
     Gives the standard methods and attributes needed in all the
@@ -189,6 +190,7 @@ class Dynamics(Motion):
 
 
 class DummyIntegrator(dobject):
+
     """ No-op integrator for (PI)MD """
 
     def __init__(self):
@@ -239,6 +241,7 @@ class DummyIntegrator(dobject):
 
 
 class NVEIntegrator(DummyIntegrator):
+
     """ Integrator object for constant energy simulations.
 
     Has the relevant conserved quantity and normal mode propagator for the
@@ -330,6 +333,7 @@ class NVEIntegrator(DummyIntegrator):
 
 
 class NVTIntegrator(NVEIntegrator):
+
     """Integrator object for constant temperature simulations.
 
     Has the relevant conserved quantity and normal mode propagator for the
@@ -375,6 +379,7 @@ class NVTIntegrator(NVEIntegrator):
 
 
 class NPTIntegrator(NVTIntegrator):
+
     """Integrator object for constant pressure simulations.
 
     Has the relevant conserved quantity and normal mode propagator for the
@@ -423,6 +428,7 @@ class NPTIntegrator(NVTIntegrator):
 
 
 class NSTIntegrator(NVTIntegrator):
+
     """Ensemble object for constant pressure simulations.
 
     Has the relevant conserved quantity and normal mode propagator for the
@@ -481,6 +487,7 @@ class NSTIntegrator(NVTIntegrator):
 
 
 class SCIntegrator(NVEIntegrator):
+
     """Fourth order integrator object for constant temperature simulations.
 
     Has the relevant conserved quantity and normal mode propagator for the
@@ -573,6 +580,7 @@ class SCIntegrator(NVEIntegrator):
 
 
 class MTSIntegrator(NVEIntegrator):
+
     """Integrator object for constant temperature simulations.
 
     Has the relevant conserved quantity and normal mode propagator for the

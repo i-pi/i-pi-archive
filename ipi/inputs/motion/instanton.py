@@ -27,86 +27,88 @@ import sys
 
 __all__ = ['InputInst']
 
+
 class InputInst(InputDictionary):
+
     """Instanton optimization options.
 
     Contains options related with instanton, such as method,
     thresholds, hessian update strategy, etc.
 
     """
-    attribs={"mode"  : (InputAttribute, {"dtype"   : str, "default": "rate",
-                                    "help"    : "Use the full or half of the ring polymer during the optimization",
-                                    "options" : ['rate','splitting']}) }
+    attribs = {"mode": (InputAttribute, {"dtype": str, "default": "rate",
+                                         "help": "Use the full or half of the ring polymer during the optimization",
+                                         "options": ['rate', 'splitting']})}
 
-    fields = {"tolerances" : ( InputDictionary, {"dtype" : float,
-                              "options"  : [ "energy", "force", "position" ],
-                              "default"  : [ 1e-5, 1e-4, 1e-3 ],
-                              "help"     : "Convergence criteria for optimization.",
-                              "dimension": [ "energy", "force", "length" ] }),
-               "biggest_step": (InputValue, {"dtype" : float,
-                              "default"  : 0.4,
-                              "help"     : "The maximum step size during the optimization."}),
-               "old_pos":    (InputArray, {"dtype" : float,
-                              "default"  : input_default(factory=np.zeros, args = (0,)),
-                              "help"     : "The previous step positions during the optimization. ",
-                              "dimension": "length"}),
-               "old_pot":    (InputArray, {"dtype" : float,
-                              "default"  : input_default(factory=np.zeros, args = (0,)),
-                              "help"     : "The previous step potential energy during the optimization",
-                              "dimension": "energy"}),
-               "old_force":  (InputArray, {"dtype" : float,
-                              "default"  : input_default(factory=np.zeros, args = (0,)),
-                              "help"     : "The previous step force during the optimization",
-                              "dimension": "force"}),
-               "opt": (InputValue, {"dtype": str,
-                                            "default": 'None',
-                                            "options": ["nichols","NR","lbfgs","None"],
-                                            "help": "The geometry optimization algorithm to be used"}),
-               "save": (InputValue, {"dtype": int,
-                                   "default": 1,
-                                   "help": "Decide the frequency of printing the instanton geometry, hessian and physical energies."}),
-               "prefix": (InputValue, {"dtype": str,
+    fields = {"tolerances": (InputDictionary, {"dtype": float,
+                                               "options": ["energy", "force", "position"],
+                                               "default": [1e-5, 1e-4, 1e-3],
+                                               "help": "Convergence criteria for optimization.",
+                                               "dimension": ["energy", "force", "length"]}),
+              "biggest_step": (InputValue, {"dtype": float,
+                                            "default": 0.4,
+                                            "help": "The maximum step size during the optimization."}),
+              "old_pos": (InputArray, {"dtype": float,
+                                       "default": input_default(factory=np.zeros, args=(0,)),
+                          "help": "The previous step positions during the optimization. ",
+                                       "dimension": "length"}),
+              "old_pot": (InputArray, {"dtype": float,
+                                       "default": input_default(factory=np.zeros, args=(0,)),
+                          "help": "The previous step potential energy during the optimization",
+                                       "dimension": "energy"}),
+              "old_force": (InputArray, {"dtype": float,
+                                         "default": input_default(factory=np.zeros, args=(0,)),
+                            "help": "The previous step force during the optimization",
+                                         "dimension": "force"}),
+              "opt": (InputValue, {"dtype": str,
+                                   "default": 'None',
+                                   "options": ["nichols", "NR", "lbfgs", "None"],
+                      "help": "The geometry optimization algorithm to be used"}),
+              "save": (InputValue, {"dtype": int,
+                                    "default": 1,
+                                    "help": "Decide the frequency of printing the instanton geometry, hessian and physical energies."}),
+              "prefix": (InputValue, {"dtype": str,
                                       "default": "INSTANTON",
                                       "help": "Prefix of the output files."}),
-               "delta": (InputValue, {"dtype": float,
+              "delta": (InputValue, {"dtype": float,
                                      "default": 0.1,
                                      "help": "Initial stretch amplitude."}),
-               #Hessian
-               "hessian_init": (InputValue, {"dtype": str,
+              # Hessian
+              "hessian_init": (InputValue, {"dtype": str,
                                             "default": 'false',
                                             "options": ["true", 'false'],
                                             "help": "How to initialize the hessian if it is not fully provided."}),
-               "hessian":    (InputArray, {"dtype" : float,
-                              "default"  : input_default(factory=np.eye, args = (0,)),
-                              "help"     : "(Approximate) Hessian."}),
-               "hessian_update": (InputValue, {"dtype": str,
-                                "default": "powell",
-                                "options": ["powell", "recompute"],
-                                "help": "How to update the hessian after each step."}),
-               "hessian_asr": (InputValue, {"dtype": str,
-                                "default": "none",
-                                "options": ["none","poly","crystal"],
-                                "help": "Removes the zero frequency vibrational modes depending on the symmerty of the system."}),
-               #L-BFGS
-               "qlist_lbfgs": (InputArray, {"dtype": float,
+              "hessian": (InputArray, {"dtype": float,
+                                       "default": input_default(factory=np.eye, args=(0,)),
+                          "help": "(Approximate) Hessian."}),
+              "hessian_update": (InputValue, {"dtype": str,
+                                              "default": "powell",
+                                              "options": ["powell", "recompute"],
+                                              "help": "How to update the hessian after each step."}),
+              "hessian_asr": (InputValue, {"dtype": str,
+                                           "default": "none",
+                                           "options": ["none", "poly", "crystal"],
+                                           "help": "Removes the zero frequency vibrational modes depending on the symmerty of the system."}),
+              # L-BFGS
+              "qlist_lbfgs": (InputArray, {"dtype": float,
                                            "default": input_default(factory=np.zeros, args=(0,)),
-                                           "help": "List of previous position differences for L-BFGS, if known."}),
-               "glist_lbfgs": (InputArray, {"dtype": float,
+                              "help": "List of previous position differences for L-BFGS, if known."}),
+              "glist_lbfgs": (InputArray, {"dtype": float,
                                            "default": input_default(factory=np.zeros, args=(0,)),
-                                           "help": "List of previous gradient differences for L-BFGS, if known."}),
-               "old_direction": (InputArray, {"dtype": float,
+                              "help": "List of previous gradient differences for L-BFGS, if known."}),
+              "old_direction": (InputArray, {"dtype": float,
                                              "default": input_default(factory=np.zeros, args=(0,)),
-                                             "help": "The previous direction in a CG or SD optimization."}),
-               "scale_lbfgs": (InputValue, {"dtype": int,
+                                "help": "The previous direction in a CG or SD optimization."}),
+              "scale_lbfgs": (InputValue, {"dtype": int,
                                            "default": 2,
                                            "help": """Scale choice for the initial hessian.
                                                        0 identity.
-                                                       1 Use first member of position/gradient list. 
+                                                       1 Use first member of position/gradient list.
                                                        2 Use last  member of position/gradient list."""}),
-               "corrections_lbfgs": (InputValue, {"dtype": int,
+              "corrections_lbfgs": (InputValue, {"dtype": int,
                                                  "default": 20,
                                                  "help": "The number of past vectors to store for L-BFGS."}),
-               "ls_options": (InputDictionary, {"dtype": [float, int],
+              "ls_options": (InputDictionary, {"dtype": [float, int],
                                                "help": """"Options for line search methods. Includes:
                                   tolerance: stopping tolerance for the search,
                                   iter: the maximum number of iterations,
@@ -116,24 +118,24 @@ class InputInst(InputDictionary):
                                                "options": ["tolerance", "iter"],
                                                "default": [1e-1, 100],
                                                "dimension": ["energy", "undefined"]}),
-               #Final calculations
-               "energy_shift": (InputValue, {"dtype": float, "default": 0.000,
+              # Final calculations
+              "energy_shift": (InputValue, {"dtype": float, "default": 0.000,
                                             "help": "Set the zero of energy.",
-                                             "dimension": "energy"
+                                            "dimension": "energy"
                                             }),
-               "hessian_final": (InputValue, {"dtype": str,
-                                          "default": "false",
-                                          "options": ["false", "true"],
-                                          "help": "Decide if we are going to compute the final big-hessian by finite difference."})
-}
+              "hessian_final": (InputValue, {"dtype": str,
+                                             "default": "false",
+                                             "options": ["false", "true"],
+                                             "help": "Decide if we are going to compute the final big-hessian by finite difference."})
+              }
 
-    dynamic = {  }
+    dynamic = {}
 
     default_help = "TODO EXPLAIN WHAT THIS IS"
     default_label = "Instanton"
 
     def store(self, geop):
-        if geop == {}: 
+        if geop == {}:
             return
 
         # Optimization mode
@@ -153,13 +155,13 @@ class InputInst(InputDictionary):
         self.old_force.store(geop.old_f)
         self.energy_shift.store(geop.energy_shift)
 
-        #Now we decide what to store depending on optimization algorithm
-        if geop.opt =='nichols' or geop.opt =='NR':
+        # Now we decide what to store depending on optimization algorithm
+        if geop.opt == 'nichols' or geop.opt == 'NR':
             self.hessian.store(geop.hessian)
             self.hessian_update.store(geop.hessian_update)
             self.hessian_asr.store(geop.hessian_asr)
             self.hessian_final.store(geop.hessian_final)
-        elif geop.opt =='lbfgs':
+        elif geop.opt == 'lbfgs':
             self.qlist_lbfgs.store(geop.qlist)
             self.glist_lbfgs.store(geop.glist)
             self.old_direction.store(geop.d)
@@ -167,12 +169,10 @@ class InputInst(InputDictionary):
             self.corrections_lbfgs.store(geop.corrections)
             self.ls_options.store(geop.ls_options)
             self.hessian_final.store(geop.hessian_final)
-            if geop.hessian_final=='true':
+            if geop.hessian_final == 'true':
                 self.hessian.store(geop.hessian)
 
-
-
     def fetch(self):
-        rv = super(InputInst,self).fetch()
+        rv = super(InputInst, self).fetch()
         rv["mode"] = self.mode.fetch()
         return rv

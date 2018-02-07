@@ -21,6 +21,7 @@ from ipi.utils.units import Constants
 #__all__ = ['AlchemyMC']
 
 class AlchemyMC(Motion):
+
     """Monte Carlo alchemical exchanges class.
 
     Attributes:
@@ -33,7 +34,7 @@ class AlchemyMC(Motion):
     def __init__(self, fixcom=False, fixatoms=None, mode=None, names=[], nxc=1, ealc=None):
         """Initialises a "alchemical exchange" motion object.
 
-        Args: 
+        Args:
             names : A list of isotopes
             nmc : frequency of doing exchanges
 

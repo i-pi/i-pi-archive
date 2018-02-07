@@ -34,6 +34,7 @@ __all__ = ['InputGeop']
 
 
 class InputGeop(InputDictionary):
+
     """Geometry optimization options.
 
     Contains options related with geometry optimization, such as method,
@@ -68,7 +69,7 @@ class InputGeop(InputDictionary):
                                            "default": 2,
                                            "help": """Scale choice for the initial hessian.
                                             0 identity.
-                                            1 Use first member of position/gradient list. 
+                                            1 Use first member of position/gradient list.
                                             2 Use last  member of position/gradient list."""}),
               "corrections_lbfgs": (InputValue, {"dtype": int,
                                                  "default": 6,

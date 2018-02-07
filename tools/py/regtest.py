@@ -145,6 +145,7 @@ def main():
 
 
 class TestCase:
+
     """
     Stores test case, paths to original files which define a regtest.
 
@@ -204,6 +205,7 @@ class TestCase:
 
 
 class Counter:
+
     """
     Counter class for attributing socket numbers.
     """
@@ -216,6 +218,7 @@ class Counter:
 
 
 class TestInstance:
+
     """
     Stores test instance which is build from a test case.
 
@@ -440,6 +443,7 @@ class TestInstance:
 
 
 class TestOutput:
+
     """
     Stores paths to test outputs.
     Attributes:
@@ -508,6 +512,7 @@ class TestOutput:
 
 
 class ComparisonResult:
+
     """
     Stores result of comparing two output files.
     Attributes:
@@ -552,6 +557,7 @@ class ComparisonResult:
 
 
 class TestCandidate:
+
     """
     Contains valid candidates for TestCase.
     Arguments:
@@ -574,6 +580,7 @@ class TestCandidate:
 
 
 class Parameters:
+
     """
     Set of global parameters
     """
@@ -605,22 +612,27 @@ class Parameters:
 
 
 class RegtestTimeout(Exception):
+
     """Raise when subprocess of regttest timeout"""
 
 
 class WrongIPICommand(Exception):
+
     """Raise when i-pi command is not found"""
 
 
 class WrongDriverCommand(Exception):
+
     """Raise when driver command is not found"""
 
 
 class OutputCorrupted(Exception):
+
     """Raise when test output (either reference or test) has missing files"""
 
 
 class IPIError(Exception):
+
     """Raise when I-PI terminates with error"""
 
 

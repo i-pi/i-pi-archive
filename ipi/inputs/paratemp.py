@@ -15,6 +15,7 @@ __all__ = ["InputParaTemp"]
 
 
 class InputParaTemp(Input):
+
     """Input class for the ParaTemp object.
 
     Contains all the options for a parallel tempering simulation.

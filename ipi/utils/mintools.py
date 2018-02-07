@@ -17,30 +17,30 @@ along with this program. If not, see <http.//www.gnu.org/licenses/>.
 
 Algorithms implemented by Michele Ceriotti and Benjamin Helfrecht, 2015
 
-Functions: 
+Functions:
         bracket: Determines the 3 points that bracket the function minimum
-        min_brent:  Does one-D minimization (line search) based on bisection 
+        min_brent:  Does one-D minimization (line search) based on bisection
             method with derivatives. Uses 'bracket' function.
-        min_approx: Does approximate n-D minimization (line search) based 
+        min_approx: Does approximate n-D minimization (line search) based
             on sufficient function decrease in the search direction
         min_trm: Does approximate n-D minimization inside a trust-region
 
-        BFGS: Constructs an approximate inverse Hessian to determine 
+        BFGS: Constructs an approximate inverse Hessian to determine
             new search directions. Minimizes the function using 'min_approx' function.
-        BFGS-TRM: Constructs an approximate inverse Hessian to determine 
+        BFGS-TRM: Constructs an approximate inverse Hessian to determine
             new search directions. Minimizes the function using 'min_trm' function.
-        L-BFGS: Uses the limited memory BFGS algorithm (L-BFGS) to 
+        L-BFGS: Uses the limited memory BFGS algorithm (L-BFGS) to
             compute new search directions. Minimizes using 'min_approx'
         L-BFGS_nls: L-BFGS algorithm without line search
             *** This function is less stable than L-BFGS and not any more efficient ***
-        bracket_neb: Modified 'bracket' routine to make 
+        bracket_neb: Modified 'bracket' routine to make
             compatible with functions with unknown gradient
-        min_brent_neb: Modified 'min_brent' routine to make 
+        min_brent_neb: Modified 'min_brent' routine to make
             compatible with functions with unknown gradient
 
-        bracket, bracket_neb, min_brent, min_brent_neb,and BFGS subroutines adapted from: 
-            Press, W. H., Teukolsky, S. A., Vetterling, W. T., and Flannery, B. P. (1992). 
-            Numerical Recipes in C: The Art of Scientific Computing. 
+        bracket, bracket_neb, min_brent, min_brent_neb,and BFGS subroutines adapted from:
+            Press, W. H., Teukolsky, S. A., Vetterling, W. T., and Flannery, B. P. (1992).
+            Numerical Recipes in C: The Art of Scientific Computing.
             Cambridge: Cambridge University Press
         LBFGS subroutine adapted from:
             Nocedal, J. (1980). Updating Quasi-Newton Matrices with
@@ -198,7 +198,7 @@ def bracket(fdf, fdf0=None, x0=0.0, init_step=1.0e-3):
 
 def min_brent(fdf, fdf0, x0, tol, itmax, init_step):
     """Given a maximum number of iterations and a convergence tolerance,
-     minimizes the specified function 
+     minimizes the specified function
      Arguments:
             x0: initial x-value
             fdf: function to minimize
@@ -209,9 +209,9 @@ def min_brent(fdf, fdf0, x0, tol, itmax, init_step):
     """
 
     # Initializations and constants
-    gold = 0.3819660 # Golden ratio
-    zeps = 1.0e-10 # Safeguard against trying to find fractional precision for min that is exactly zero
-    e = 0.0 # Size of step before last
+    gold = 0.3819660  # Golden ratio
+    zeps = 1.0e-10  # Safeguard against trying to find fractional precision for min that is exactly zero
+    e = 0.0  # Size of step before last
 
     # Call initial bracketing routine
     (ax, bx, cx, fb, dfb) = bracket(fdf, fdf0, x0, init_step)
@@ -373,10 +373,10 @@ def min_brent(fdf, fdf0, x0, tol, itmax, init_step):
 
 
 def min_approx(fdf, x0, fdf0, d0, big_step, tol, itmax):
-    """Given an n-dimensional function and its gradient, and an 
+    """Given an n-dimensional function and its gradient, and an
     initial point and a direction, finds a new point where the function
-    is thought to be 'sufficiently' minimized, i.e. carries out an 
-    approximate minimization. 
+    is thought to be 'sufficiently' minimized, i.e. carries out an
+    approximate minimization.
         Arguments:
             fdf: function and its gradient
             fdf0: initial function and gradient value
@@ -537,12 +537,12 @@ def BFGS(x0, d0, fdf, fdf0, invhessian, big_step, tol, itmax):
 
 # BFGS algorithm trust radius method
 def BFGSTRM(x0, u0, f0, h0, tr, mapper, big_step):
-    """ Input: x0 = previous accepted positions 
+    """ Input: x0 = previous accepted positions
                u0 = previous accepted energy
                f0 = previous accepted forces
                h0 = previous accepted hessian
-               tr = trust radius  
-           mapper = function to evaluate energy and forces 
+               tr = trust radius
+           mapper = function to evaluate energy and forces
          big_step = limit on step length"""
 
 
@@ -593,7 +593,7 @@ def BFGSTRM(x0, u0, f0, h0, tr, mapper, big_step):
 def TRM_UPDATE(dx, df, h):
     """ Input: DX = X -X_old
                DF = F -F_old
-               DG = -DF 
+               DG = -DF
                H  = hessian
         Task: updated hessian"""
 
@@ -618,15 +618,15 @@ def min_trm(f, h, tr):
     E(dx) = -(F * dx + 0.5 * ( dx * H * dx ),
     whithin dx**2 <tr
 
-    IN    f  = forces        (n,) 
+    IN    f  = forces        (n,)
           h  = hessian       (nxn)
-          tr = trust-radius 
+          tr = trust-radius
 
     OUT   DX = displacement in cartesian basis
 
-    INTERNAL 
+    INTERNAL
              ndim = dimension
-             d    = hessian eigenvalues            
+             d    = hessian eigenvalues
              w    = hessian eigenvector (in columns)
              g    = gradient in cartesian basis
              gE   = gradient in eigenvector basis
@@ -723,9 +723,9 @@ def L_BFGS(x0, d0, fdf, qlist, glist, fdf0, big_step, tol, itmax, m, scale, k):
             tol = convergence tolerance
             itmax = maximum number of allowed iterations
     """
-    
-    zeps  = 1.0e-10
-    n     = len(x0.flatten())
+
+    zeps = 1.0e-10
+    n = len(x0.flatten())
     alpha = np.zeros(m)
     beta = np.zeros(m)
     rho = np.zeros(m)
@@ -806,7 +806,7 @@ def L_BFGS(x0, d0, fdf, qlist, glist, fdf0, big_step, tol, itmax, m, scale, k):
 
     else:
         info(" @MINIMIZE: Skipped direction update; direction * gradient insufficient", verbosity.debug)
-        #d = d0
+        # d = d0
         d = -1.0 * d_x
 
     d0[:] = d
@@ -817,7 +817,7 @@ def L_BFGS(x0, d0, fdf, qlist, glist, fdf0, big_step, tol, itmax, m, scale, k):
 def bracket_neb(fdf, fdf0=None, x0=0.0, init_step=1.0e-3):
     """Given an initial point, determines the initial bracket for the minimum
      Arguments:
-            fdf: function to minimize 
+            fdf: function to minimize
             x0: initial point
             fdf0: value of function at x0
             init_step: initial step size
@@ -934,7 +934,7 @@ def bracket_neb(fdf, fdf0=None, x0=0.0, init_step=1.0e-3):
 # Minimize using only forces; for NEB
 def min_brent_neb(fdf, fdf0=None, x0=0.0, tol=1.0e-6, itmax=100, init_step=1.0e-3):
     """Given a maximum number of iterations and a convergence tolerance,
-     minimizes the specified function 
+     minimizes the specified function
      Arguments:
             x0: initial x-value
             fdf: function to minimize
@@ -946,8 +946,8 @@ def min_brent_neb(fdf, fdf0=None, x0=0.0, tol=1.0e-6, itmax=100, init_step=1.0e-
 
     # Initializations and constants
     gold = 0.3819660
-    zeps = 1e-10    
-    e = 0.0 # Step size for step before last
+    zeps = 1e-10
+    e = 0.0  # Step size for step before last
 
     (ax, bx, cx, fb) = bracket_neb(fdf, fdf0, x0, init_step)
 
@@ -1176,7 +1176,7 @@ def L_BFGS_nls(x0, d0, fdf, qlist, glist, fdf0=None, big_step=100, tol=1.0e-6, i
     # Two possiblities for scaling: using first or most recent
     # members of the gradient and position lists
     hk = np.dot(glist[bound1], qlist[bound1]) / np.dot(glist[bound1], glist[bound1])
-    #hk = np.dot(glist[0], qlist[0]) / np.dot(glist[0], glist[0])
+    # hk = np.dot(glist[0], qlist[0]) / np.dot(glist[0], glist[0])
     xi = hk * q
 
     # Second loop
@@ -1192,7 +1192,8 @@ def L_BFGS_nls(x0, d0, fdf, qlist, glist, fdf0=None, big_step=100, tol=1.0e-6, i
 
     return (x, fx, xi, qlist, glist)
 
-def nichols(f0,f1 ,d,dynmax,m3 ,big_step, mode=1):
+
+def nichols(f0, f1, d, dynmax, m3, big_step, mode=1):
     """ Find new movement direction. JCP 92,340 (1990)
     IN    f0      = physical forces        (n,)
           f1      = spring forces
@@ -1213,14 +1214,14 @@ def nichols(f0,f1 ,d,dynmax,m3 ,big_step, mode=1):
     """
 
     # Resize
-    ndim  = f0.size
+    ndim = f0.size
     shape = f0.shape
-    f = (f0+f1).reshape((1, ndim))/m3.reshape((1,ndim))**0.5 #From cartesian base to mass-weighted base
+    f = (f0 + f1).reshape((1, ndim)) / m3.reshape((1, ndim))**0.5  # From cartesian base to mass-weighted base
 
     # Change of basis to eigenvector space
-    d     = d[:, np.newaxis]  # dimension nx1
-    gEt   = -np.dot(f, dynmax)  # Change of basis  #
-    gE    = gEt.T  # dimension (n-m)x1
+    d = d[:, np.newaxis]  # dimension nx1
+    gEt = -np.dot(f, dynmax)  # Change of basis  #
+    gE = gEt.T  # dimension (n-m)x1
         # The step has the general form:
     # d_x[j] =  alpha *( gE[j] )  / ( lambda-d[j] )
 
@@ -1261,11 +1262,12 @@ def nichols(f0,f1 ,d,dynmax,m3 ,big_step, mode=1):
 
     # Some check or any type of reject? ALBERTO
 
-    DX = np.dot(dynmax, d_x)        #From ev base to mass-weighted base
+    DX = np.dot(dynmax, d_x)  # From ev base to mass-weighted base
     DX = DX.reshape(shape)
-    DX = np.multiply(DX,m3**(-0.5)) #From mass-weighted base to cartesion base
+    DX = np.multiply(DX, m3**(-0.5))  # From mass-weighted base to cartesion base
 
     return DX
+
 
 def Powell(d, Dg, H):
     """Update Cartesian Hessian using gradient.
@@ -1279,4 +1281,3 @@ def Powell(d, Dg, H):
     y = Dg - np.dot(H, d)
     H += ddi * (np.outer(y, d) + np.outer(d, y) - np.dot(y, d) * np.outer(d, d) * ddi)
     return H
-

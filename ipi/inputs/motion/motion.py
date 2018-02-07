@@ -24,7 +24,7 @@ Classes:
 import numpy as np
 from copy import copy
 import ipi.engine.initializer
-from ipi.engine.motion import Motion, Dynamics, Replay, GeopMotion, NEBMover, DynMatrixMover, MultiMotion, AlchemyMC,InstantonMotion
+from ipi.engine.motion import Motion, Dynamics, Replay, GeopMotion, NEBMover, DynMatrixMover, MultiMotion, AlchemyMC, InstantonMotion
 from ipi.utils.inputvalue import *
 from ipi.inputs.thermostats import *
 from ipi.inputs.initializer import *
@@ -40,6 +40,7 @@ __all__ = ['InputMotion']
 
 
 class InputMotionBase(Input):
+
     """Motion calculation input class.
 
     A class to encompass the different "motion" calculations.
@@ -56,7 +57,7 @@ class InputMotionBase(Input):
 
     attribs = {"mode": (InputAttribute, {"dtype": str,
                                          "help": "How atoms should be moved at each step in the simulatio. 'replay' means that a simulation is restarted from a previous simulation.",
-                                         "options": ['vibrations', 'minimize', 'replay', 'neb', 'dynamics', 'alchemy', 'instanton','dummy']})}
+                                         "options": ['vibrations', 'minimize', 'replay', 'neb', 'dynamics', 'alchemy', 'instanton', 'dummy']})}
 
     fields = {"fixcom": (InputValue, {"dtype": bool,
                                       "default": True,
@@ -76,8 +77,8 @@ class InputMotionBase(Input):
                                               "help": "Option for phonon computation"}),
               "alchemy": (InputAlchemy, {"default": {},
                                          "help": "Option for alchemical exchanges"}),
-              "instanton" : ( InputInst, { "default" : {},
-                                     "help":  "Option for Instanton optimization" } )
+              "instanton": (InputInst, {"default": {},
+                                        "help": "Option for Instanton optimization"})
               }
     dynamic = {}
 
@@ -157,12 +158,13 @@ class InputMotionBase(Input):
             sc = InstantonMotion(fixcom=self.fixcom.fetch(), fixatoms=self.fixatoms.fetch(), **self.instanton.fetch())
         else:
             sc = Motion()
-            #raise ValueError("'" + self.mode.fetch() + "' is not a supported motion calculation mode.")
+            # raise ValueError("'" + self.mode.fetch() + "' is not a supported motion calculation mode.")
 
         return sc
 
 
 class InputMotion(InputMotionBase):
+
     """ Extends InputThermoBase to allow the definition of a multithermo """
 
     attribs = copy(InputMotionBase.attribs)

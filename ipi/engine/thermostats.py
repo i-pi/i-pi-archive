@@ -26,6 +26,7 @@ __all__ = ['Thermostat', 'ThermoLangevin', 'ThermoPILE_L', 'ThermoPILE_G', 'Ther
 
 
 class Thermostat(dobject):
+
     """Base thermostat class.
 
     Gives the standard methods and attributes needed in all the thermostat
@@ -133,6 +134,7 @@ class Thermostat(dobject):
 
 
 class ThermoLangevin(Thermostat):
+
     """Represents a langevin thermostat.
 
     Depend objects:
@@ -196,6 +198,7 @@ class ThermoLangevin(Thermostat):
 
 
 class ThermoPILE_L(Thermostat):
+
     """Represents a PILE thermostat with a local centroid thermostat.
 
     Attributes:
@@ -364,6 +367,7 @@ class ThermoPILE_L(Thermostat):
 
 
 class ThermoSVR(Thermostat):
+
     """Represents a stochastic velocity rescaling thermostat.
 
     Depend objects:
@@ -433,6 +437,7 @@ class ThermoSVR(Thermostat):
 
 
 class ThermoPILE_G(ThermoPILE_L):
+
     """Represents a PILE thermostat with a global centroid thermostat.
 
     Simply replaces the Langevin thermostat for the centroid normal mode with
@@ -500,6 +505,7 @@ class ThermoPILE_G(ThermoPILE_L):
 
 
 class ThermoGLE(Thermostat):
+
     """Represents a generalized Langevin equation thermostat.
 
     This is similar to a langevin thermostat, in that it uses Gaussian random
@@ -650,6 +656,7 @@ class ThermoGLE(Thermostat):
 
 
 class ThermoNMGLE(Thermostat):
+
     """Represents a 'normal-modes' generalized Langevin equation thermostat.
 
     An extension to the GLE thermostat which is applied in the
@@ -820,6 +827,7 @@ class ThermoNMGLE(Thermostat):
 
 
 class ThermoNMGLEG(ThermoNMGLE):
+
     """Represents a 'normal-modes' generalized Langevin equation thermostat + SVR.
 
     An extension to the above NMGLE thermostat which also adds a stochastic
@@ -870,6 +878,7 @@ class ThermoNMGLEG(ThermoNMGLE):
 
 
 class ThermoCL(Thermostat):
+
     """Represents a Langevin thermostat for systems driven by forces which are statistical
        in nature, i.e. they contain noise, and/or have an unwanted dissipative effect.
        This thermostat's dissipative term is modified to compensate for the inherent noise.

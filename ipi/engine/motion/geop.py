@@ -25,6 +25,7 @@ __all__ = ['GeopMotion']
 
 
 class GeopMotion(Motion):
+
     """Geometry optimization class.
 
     Attributes:
@@ -195,6 +196,7 @@ class GradientMapper(object):
 
 
 class DummyOptimizer(dobject):
+
     """ Dummy class for all optimization classes """
 
     def __init__(self):
@@ -266,15 +268,14 @@ class DummyOptimizer(dobject):
         info(" @GEOP: Updating bead positions", verbosity.debug)
         self.qtime += time.time()
 
-
-        f=np.amax(np.absolute(self.forces.f))
-        e=np.absolute((fx - u0) / self.beads.natoms)
-        info("@GEOP", verbosity.medium )
+        f = np.amax(np.absolute(self.forces.f))
+        e = np.absolute((fx - u0) / self.beads.natoms)
+        info("@GEOP", verbosity.medium)
         self.tolerances["position"]
-        info("   Current energy             %e" % (fx) )
-        info("   Position displacement      %e  Tolerance %e" % (x,self.tolerances["position"]), verbosity.medium )
-        info("   Max force component        %e  Tolerance %e" % (f,self.tolerances["force"]), verbosity.medium )
-        info("   Energy difference per atom %e  Tolerance %e" % (e,self.tolerances["energy"]), verbosity.medium )       
+        info("   Current energy             %e" % (fx))
+        info("   Position displacement      %e  Tolerance %e" % (x, self.tolerances["position"]), verbosity.medium)
+        info("   Max force component        %e  Tolerance %e" % (f, self.tolerances["force"]), verbosity.medium)
+        info("   Energy difference per atom %e  Tolerance %e" % (e, self.tolerances["energy"]), verbosity.medium)
 
         if (np.linalg.norm(self.forces.f.flatten() - self.old_f.flatten()) <= 1e-20):
             softexit.trigger("Something went wrong, the forces are not changing anymore."
@@ -285,11 +286,12 @@ class DummyOptimizer(dobject):
 
         if (np.absolute((fx - u0) / self.beads.natoms) <= self.tolerances["energy"])   \
             and ( ( np.amax(np.absolute(self.forces.f)) <= self.tolerances["force"]))  \
-            and (x <= self.tolerances["position"]):
+                and (x <= self.tolerances["position"]):
             softexit.trigger("Geometry optimization converged. Exiting simulation")
 
 
 class BFGSOptimizer(DummyOptimizer):
+
     """ BFGS Minimization """
 
     def bind(self, geop):
@@ -326,9 +328,9 @@ class BFGSOptimizer(DummyOptimizer):
 
         if len(self.fixatoms) > 0:
             for dqb in self.old_f:
-                dqb[self.fixatoms*3] = 0.0
-                dqb[self.fixatoms*3+1] = 0.0
-                dqb[self.fixatoms*3+2] = 0.0
+                dqb[self.fixatoms * 3] = 0.0
+                dqb[self.fixatoms * 3 + 1] = 0.0
+                dqb[self.fixatoms * 3 + 2] = 0.0
 
         fdf0 = (self.old_u, -self.old_f)
 
@@ -348,6 +350,7 @@ class BFGSOptimizer(DummyOptimizer):
 
 
 class BFGSTRMOptimizer(DummyOptimizer):
+
     """ BFGSTRM Minimization with Trust Radius Method.	"""
 
     def bind(self, geop):
@@ -386,9 +389,9 @@ class BFGSTRMOptimizer(DummyOptimizer):
 
         if len(self.fixatoms) > 0:
             for dqb in self.old_f:
-                dqb[self.fixatoms*3] = 0.0
-                dqb[self.fixatoms*3+1] = 0.0
-                dqb[self.fixatoms*3+2] = 0.0
+                dqb[self.fixatoms * 3] = 0.0
+                dqb[self.fixatoms * 3 + 1] = 0.0
+                dqb[self.fixatoms * 3 + 2] = 0.0
 
         # Make one step. ( A step is finished when a movement is accepted)
         BFGSTRM(self.old_x, self.old_u, self.old_f, self.hessian, self.tr,
@@ -407,6 +410,7 @@ class BFGSTRMOptimizer(DummyOptimizer):
 
 
 class LBFGSOptimizer(DummyOptimizer):
+
     """ L-BFGS Minimization: Note that the accuracy you can achieve with this method depends
         on how many ''corrections'' you store (default is 5). """
 
@@ -459,17 +463,17 @@ class LBFGSOptimizer(DummyOptimizer):
         if len(self.fixatoms) > 0:
 
             for dqb in self.old_f:
-                dqb[self.fixatoms*3] = 0.0
-                dqb[self.fixatoms*3+1] = 0.0
-                dqb[self.fixatoms*3+2] = 0.0
+                dqb[self.fixatoms * 3] = 0.0
+                dqb[self.fixatoms * 3 + 1] = 0.0
+                dqb[self.fixatoms * 3 + 2] = 0.0
 
-        fdf0 = (self.old_u,-self.old_f)
-        #d_x,new_d, new_qlist, new_glist = L_BFGS(self.old_x,
+        fdf0 = (self.old_u, -self.old_f)
+        # d_x,new_d, new_qlist, new_glist = L_BFGS(self.old_x,
         # Note that the line above is not needed anymore because we update everything
         # within L_BFGS (and all other calls).
-        L_BFGS(self.old_x,self.d, self.gm, self.qlist, self.glist,
-                fdf0, self.big_step, self.ls_options["tolerance"]*self.tolerances["energy"],
-                self.ls_options["iter"],self.corrections,self.scale, step)
+        L_BFGS(self.old_x, self.d, self.gm, self.qlist, self.glist,
+               fdf0, self.big_step, self.ls_options["tolerance"] * self.tolerances["energy"],
+               self.ls_options["iter"], self.corrections, self.scale, step)
 
         info("   Number of force calls: %d" % (self.gm.fcount)); self.gm.fcount = 0
 
@@ -483,6 +487,7 @@ class LBFGSOptimizer(DummyOptimizer):
 
 
 class SDOptimizer(DummyOptimizer):
+
     """
     Steepest descent minimization
     dq1 = direction of steepest descent
@@ -527,7 +532,7 @@ class SDOptimizer(DummyOptimizer):
         u0, du0 = (self.forces.pot.copy(), np.dot(dstrip(self.forces.f.flatten()), dq1_unit.flatten()))
 
         # Do one SD iteration; return positions and energy
-        #(x, fx,dfx) = min_brent(self.lm, fdf0=(u0, du0), x0=0.0,  #DELETE
+        # (x, fx,dfx) = min_brent(self.lm, fdf0=(u0, du0), x0=0.0,  #DELETE
         min_brent(self.lm, fdf0=(u0, du0), x0=0.0,
                   tol=self.ls_options["tolerance"] * self.tolerances["energy"],
                   itmax=self.ls_options["iter"], init_step=self.ls_options["step"])
@@ -550,6 +555,7 @@ class SDOptimizer(DummyOptimizer):
 
 
 class CGOptimizer(DummyOptimizer):
+
     """
     Conjugate gradient, Polak-Ribiere
     gradf1: force at current atom position

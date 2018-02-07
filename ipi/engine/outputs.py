@@ -29,6 +29,7 @@ __all__ = ['PropertyOutput', 'TrajectoryOutput', 'CheckpointOutput']
 
 
 class PropertyOutput(dobject):
+
     """Class dealing with outputting a set of properties to file.
 
     Does not do any calculation, just manages opening a file, getting data
@@ -170,6 +171,7 @@ class PropertyOutput(dobject):
 
 
 class TrajectoryOutput(dobject):
+
     """Class dealing with outputting atom-based properties as a
     trajectory file.
 
@@ -366,6 +368,7 @@ class TrajectoryOutput(dobject):
 
 
 class CheckpointOutput(dobject):
+
     """Class dealing with outputting checkpoints.
 
     Saves the complete status of the simulation at regular intervals.

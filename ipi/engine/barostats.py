@@ -30,6 +30,7 @@ __all__ = ['Barostat', 'BaroBZP', 'BaroRGB']
 
 
 class Barostat(dobject):
+
     """Base barostat class.
 
     Gives the standard methods and attributes needed in all the barostat classes.
@@ -197,6 +198,7 @@ class Barostat(dobject):
 
 
 class BaroBZP(Barostat):
+
     """Bussi-Zykova-Parrinello barostat class.
 
     Just extends the standard class adding finite-dt propagators for the
@@ -340,6 +342,7 @@ class BaroBZP(Barostat):
 
 
 class BaroRGB(Barostat):
+
     """Raiteri-Gale-Bussi constant stress barostat class (JPCM 23, 334213, 2011).
 
        Just extends the standard class adding finite-dt propagators for the barostat

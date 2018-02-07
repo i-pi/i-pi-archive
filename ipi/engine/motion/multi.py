@@ -10,6 +10,7 @@ from ipi.engine.motion import Motion
 
 
 class MultiMotion(Motion):
+
     """A class to hold multiple motion objects to be executed se")rially.
     """
 

@@ -19,7 +19,7 @@ deg2rad = np.pi / 180.0
 
 
 test_read_file_prms = [
-    #natoms, nframes, comment, output_type, file_type, expected_cell, unit_conv_cell, unit_conv_q
+    # natoms, nframes, comment, output_type, file_type, expected_cell, unit_conv_cell, unit_conv_q
     (1, 1, 'asdasd', 'objects', 'xyz', default_cell_mat, 1, 1),
     (2, 1, 'asdasd', 'objects', 'xyz', default_cell_mat, 1, 1),
     (1, 2, 'asdasd', 'objects', 'xyz', default_cell_mat, 1, 1),

@@ -19,6 +19,7 @@ __all__ = ['InputBaro']
 
 
 class InputBaro(Input):
+
     """Barostat input class.
 
     Handles generating the appropriate barostat class from the xml input file,

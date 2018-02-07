@@ -1,6 +1,6 @@
 """
 Calculate the accumulated average of the exponential estimator <exp(-beta*spr)>
-for the isotope fractionation. 
+for the isotope fractionation.
 
 accumulated.out:
 first column : simulation time

@@ -20,6 +20,7 @@ __all__ = ['InputInitializer', 'InputInitFile', 'InputInitPositions', 'InputInit
 
 
 class InputInitBase(InputValue):
+
     """Base class to handle initialization.
 
     Attributes:
@@ -104,6 +105,7 @@ class InputInitBase(InputValue):
 
 
 class InputInitIndexed(InputInitBase):
+
     """Class to handle initialization of properties which the value of each
     bead and atom can be specified.
 
@@ -121,6 +123,7 @@ class InputInitIndexed(InputInitBase):
 
 
 class InputInitFile(InputInitBase):
+
     """Class to handle initialization from a file."""
 
     attribs = deepcopy(InputInitBase.attribs)
@@ -137,6 +140,7 @@ class InputInitFile(InputInitBase):
 
 
 class InputInitThermo(InputInitBase):
+
     """Class to handle initialization of the thermostat."""
 
     attribs = deepcopy(InputInitBase.attribs)
@@ -149,6 +153,7 @@ class InputInitThermo(InputInitBase):
 
 
 class InputInitPositions(InputInitIndexed):
+
     """Class to handle initialization of the positions."""
 
     attribs = deepcopy(InputInitIndexed.attribs)
@@ -162,6 +167,7 @@ class InputInitPositions(InputInitIndexed):
 
 
 class InputInitMomenta(InputInitPositions):
+
     """Class to handle initialization of the momenta."""
 
     attribs = deepcopy(InputInitPositions.attribs)
@@ -185,6 +191,7 @@ class InputInitMomenta(InputInitPositions):
 
 
 class InputInitVelocities(InputInitMomenta):
+
     """Class to handle initialization of the velocities."""
 
     attribs = deepcopy(InputInitMomenta.attribs)
@@ -194,6 +201,7 @@ class InputInitVelocities(InputInitMomenta):
 
 
 class InputInitMasses(InputInitPositions):
+
     """Class to handle initialization of the masses."""
 
     attribs = deepcopy(InputInitPositions.attribs)
@@ -203,6 +211,7 @@ class InputInitMasses(InputInitPositions):
 
 
 class InputInitLabels(InputInitPositions):
+
     """Class to handle initialization of the atom labels."""
 
     attribs = deepcopy(InputInitPositions.attribs)
@@ -214,6 +223,7 @@ class InputInitLabels(InputInitPositions):
 
 
 class InputInitCell(InputInitBase):
+
     """Class to handle initialization of the cell."""
 
     attribs = deepcopy(InputInitBase.attribs)
@@ -269,6 +279,7 @@ class InputInitCell(InputInitBase):
 
 
 class InputInitializer(Input):
+
     """Input class to handle initialization.
 
     Attributes:

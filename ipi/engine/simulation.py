@@ -27,6 +27,7 @@ __all__ = ['Simulation']
 
 
 class Simulation(dobject):
+
     """Main simulation object.
 
     Contains all the references and the main dynamics loop. Also handles the
@@ -223,8 +224,8 @@ class Simulation(dobject):
             stepthreads = []
             for o in self.outputs:
                 o.write()  # threaded output seems to cause random hang-ups. should make things properly thread-safe
-                #st = threading.Thread(target=o.write, name=o.filename)
-                #st.daemon = True
+                # st = threading.Thread(target=o.write, name=o.filename)
+                # st.daemon = True
                 # st.start()
                 # stepthreads.append(st)
 
@@ -248,9 +249,9 @@ class Simulation(dobject):
         simtime = time.time()
 
         cstep = 0
-        #tptime = 0.0
-        #tqtime = 0.0
-        #tttime = 0.0
+        # tptime = 0.0
+        # tqtime = 0.0
+        # tttime = 0.0
         ttot = 0.0
         # main MD loop
         for self.step in range(self.step, self.tsteps):
@@ -270,8 +271,8 @@ class Simulation(dobject):
             #   s.ensemble.step()
             for s in self.syslist:
                 # creates separate threads for the different systems
-                #st = threading.Thread(target=s.motion.step, name=s.prefix, kwargs={"step":self.step})
-                #st.daemon = True
+                # st = threading.Thread(target=s.motion.step, name=s.prefix, kwargs={"step":self.step})
+                # st.daemon = True
                 s.motion.step(step=self.step)
                 # st.start()
                 # stepthreads.append(st)
