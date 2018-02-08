@@ -72,7 +72,7 @@ class GeopMotion(Motion):
            fixcom: An optional boolean which decides whether the centre of mass
               motion will be constrained or not. Defaults to False.
         """
-        if fixatoms is not None:
+        if len(fixatoms)>0:
             raise ValueError("The optimization algorithm with fixatoms is not implemented. "
                              "We stop here. Comment this line and continue only if you know what you are doing")
  
