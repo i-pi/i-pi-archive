@@ -72,7 +72,10 @@ class GeopMotion(Motion):
            fixcom: An optional boolean which decides whether the centre of mass
               motion will be constrained or not. Defaults to False.
         """
-
+        if fixatoms is not None:
+            raise ValueError("The optimization algorithm with fixatoms is not implemented. "
+                             "We stop here. Comment this line and continue only if you know what you are doing")
+ 
         super(GeopMotion, self).__init__(fixcom=fixcom, fixatoms=fixatoms)
 
         # Optimization Options
@@ -269,14 +272,13 @@ class DummyOptimizer(dobject):
 
         if len(self.fixatoms) > 0:
             ftmp=self.forces.f.copy() 
-            for dqb in ftmp: # <-- To fix atoms, need to set search direction to 0, not forces
+            for dqb in ftmp: 
                 dqb[self.fixatoms * 3] = 0.0
                 dqb[self.fixatoms * 3 + 1] = 0.0
                 dqb[self.fixatoms * 3 + 2] = 0.0
             fmax = np.amax(np.absolute(ftmp)) 
         else:
             fmax = np.amax(np.absolute(self.forces.f))
-
 
         e = np.absolute((fx - u0) / self.beads.natoms)
         info("@GEOP", verbosity.medium)
@@ -329,13 +331,18 @@ class BFGSOptimizer(DummyOptimizer):
         if step == 0:
             info(" @GEOP: Initializing BFGS", verbosity.debug)
             self.d += dstrip(self.forces.f) / np.sqrt(np.dot(self.forces.f.flatten(), self.forces.f.flatten()))
+            if len(self.fixatoms) > 0:
+                for dqb in self.d: 
+                    dqb[self.fixatoms * 3] = 0.0
+                    dqb[self.fixatoms * 3 + 1] = 0.0
+                    dqb[self.fixatoms * 3 + 2] = 0.0
 
         self.old_x[:] = self.beads.q
         self.old_u[:] = self.forces.pot
         self.old_f[:] = self.forces.f
 
         if len(self.fixatoms) > 0:
-            for dqb in self.d: # <-- To fix atoms, need to set search direction to 0, not forces
+            for dqb in self.old_f: 
                 dqb[self.fixatoms * 3] = 0.0
                 dqb[self.fixatoms * 3 + 1] = 0.0
                 dqb[self.fixatoms * 3 + 2] = 0.0
@@ -394,8 +401,9 @@ class BFGSTRMOptimizer(DummyOptimizer):
         self.old_u[:] = self.forces.pot
         self.old_f[:] = self.forces.f
 
+
         if len(self.fixatoms) > 0:
-            for dqb in self.d: # <-- To fix atoms, need to set search direction to 0, not forces
+            for dqb in self.old_f: 
                 dqb[self.fixatoms * 3] = 0.0
                 dqb[self.fixatoms * 3 + 1] = 0.0
                 dqb[self.fixatoms * 3 + 2] = 0.0
@@ -467,7 +475,7 @@ class LBFGSOptimizer(DummyOptimizer):
         self.old_f[:] = self.forces.f
 
         if len(self.fixatoms) > 0:
-            for dqb in self.d: # <-- To fix atoms, need to set search direction to 0, not forces
+            for dqb in self.old_f:
                 dqb[self.fixatoms * 3] = 0.0
                 dqb[self.fixatoms * 3 + 1] = 0.0
                 dqb[self.fixatoms * 3 + 2] = 0.0
@@ -515,18 +523,18 @@ class SDOptimizer(DummyOptimizer):
         # Store previous forces for warning exit condition
         self.old_f[:] = self.forces.f
 
-        dq1 = dstrip(self.forces.f)
+        # Check for fixatoms
+        if len(self.fixatoms) > 0:
+            for dqb in self.old_f:
+                dqb[self.fixatoms * 3] = 0.0
+                dqb[self.fixatoms * 3 + 1] = 0.0
+                dqb[self.fixatoms * 3 + 2] = 0.0
+
+        dq1 = dstrip(self.old_f)
 
         # Move direction for steepest descent
         dq1_unit = dq1 / np.sqrt(np.dot(dq1.flatten(), dq1.flatten()))
         info(" @GEOP: Determined SD direction", verbosity.debug)
-
-        # Check for fixatoms
-        if len(self.fixatoms) > 0:
-            for dqb in dq1_unit:
-                dqb[self.fixatoms * 3] = 0.0
-                dqb[self.fixatoms * 3 + 1] = 0.0
-                dqb[self.fixatoms * 3 + 2] = 0.0
 
         # Set position and direction inside the mapper
         self.lm.set_dir(dstrip(self.beads.q), dq1_unit)

@@ -58,7 +58,7 @@ class InputGeop(InputDictionary):
                                                "dimension": ["undefined", "undefined", "length", "undefined"]}),
               "tolerances": (InputDictionary, {"dtype": float,
                                                "options": ["energy", "force", "position"],
-                                               "default": [1e-7, 1e-4, 1e-4],
+                                               "default": [1e-7, 1e-4, 1e-3],
                                                "help": "Convergence criteria for optimization. Default values are extremely conservative. Set them to appropriate values for production runs.",
                                                "dimension": ["energy", "force", "length"]}),
               "biggest_step": (InputValue, {"dtype": float,

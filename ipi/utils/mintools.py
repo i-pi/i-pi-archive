@@ -504,6 +504,7 @@ def BFGS(x0, d0, fdf, fdf0, invhessian, big_step, tol, itmax):
     d_x = np.subtract(x, x0)
 
     # Update invhessian.
+    #Here we are breaking the fixatom constrain I 
     d_g = np.subtract(g, g0)
     hdg = np.dot(invhessian, d_g.flatten())
 
@@ -525,6 +526,7 @@ def BFGS(x0, d0, fdf, fdf0, invhessian, big_step, tol, itmax):
         info(" @MINIMIZE: Skipped invhessian update; direction x gradient insufficient", verbosity.debug)
 
     # Update direction
+    #Here we are breaking the fixatom constrain II
     d = np.dot(invhessian, -g.flatten())
     d0[:] = d.reshape(d_x.shape)
     info(" @MINIMIZE: Updated search direction", verbosity.debug)
