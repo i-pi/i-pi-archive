@@ -42,7 +42,10 @@ class InstantonMotion(Motion):
         old_pot: The previous step potential energy during the optimization
         old_force:  The previous step force during the optimization
         opt: The geometry optimization algorithm to be used
-        save: Decide the frequency of printing the instanton geometry, hessian and physical energies
+        alt_out: (Alternative outpu) Prints different formatting of outputs for geometry, hessian and bead potential energies.
+        All quantities are also accessible from typical i-pi output infrastructure. Default to 1, which prints 
+        every step. -1 will suppress the output (except the last one). Any other positive number will set the frequency (in steps) with
+        which the quantities are written to file.
         prefix: Prefix of the output files.
         delta: Initial stretch amplitude.
         hessian_init: Boolean which decides whether the initial hessian is going to be computed.
@@ -66,7 +69,7 @@ class InstantonMotion(Motion):
                  old_pot= np.zeros(0, float),
                  old_force=np.zeros(0, float),
                  opt='None',
-                 save=1,
+                 alt_out=1,
                  prefix="INSTANTON",
                  delta=np.zeros(0, float),
                  hessian_init=None,
@@ -99,7 +102,7 @@ class InstantonMotion(Motion):
         self.old_f          = old_force
 
         # Generic instanton
-        self.save          = save
+        self.save           = alt_out
         self.prefix         = prefix
         self.delta          = delta
         self.hessian_final  = hessian_final
@@ -138,7 +141,7 @@ class InstantonMotion(Motion):
 
         # Do we put a warning to say that NR use Scipy? ALBERTO
         if self.opt == 'NR':
-            info("Note that we need scipy to use NR. If storage and diagonalization of the full hessian is not a problem use nichols", verbosity.low)
+            info("Note that we need scipy to use NR. If storage and diagonalization of the full hessian is not a problem use nichols even though it may not be as efficient.", verbosity.low)
 
     def bind(self, ens, beads, nm, cell, bforce, prng):
         """Binds beads, cell, bforce and prng to InstantonMotion
@@ -381,13 +384,13 @@ class DummyOptimizer(dobject):
         """ Exits the simulation step. Computes time, checks for convergence. """
         self.qtime += time.time()
 
-        f = open('STEP', 'a+')
-        print >>f, 'STEP %i' % step
-        print >>f, 'Energy difference: %.1e, (condition: %.1e)' % (np.absolute((fx - fx0) / self.beads.natoms), self.tolerances["energy"] )
-        print >>f, 'Maximum force component: %.1e, (condition: %.1e)' % (np.amax(np.absolute(self.forces.f+self.im.f)), self.tolerances["force"])
-        print >>f, 'Maximum component step component: %.1e, (condition: %.1e)' % (x, self.tolerances["position"])
-        print >>f, ' '
-        f.close()
+        #f = open('STEP', 'a+')
+        #print >>f, 'STEP %i' % step
+        #print >>f, 'Energy difference: %.1e, (condition: %.1e)' % (np.absolute((fx - fx0) / self.beads.natoms), self.tolerances["energy"] )
+        #print >>f, 'Maximum force component: %.1e, (condition: %.1e)' % (np.amax(np.absolute(self.forces.f+self.im.f)), self.tolerances["force"])
+        #print >>f, 'Maximum component step component: %.1e, (condition: %.1e)' % (x, self.tolerances["position"])
+        #print >>f, ' '
+        #f.close()
 
         info(' @Exit step: Energy difference: %.1e, (condition: %.1e)' % (np.absolute((fx - fx0) / self.beads.natoms), self.tolerances["energy"] ), verbosity.low)
         info(' @Exit step: Maximum force component: %.1e, (condition: %.1e)' % (np.amax(np.absolute(self.forces.f+self.im.f)), self.tolerances["force"]), verbosity.low)
@@ -509,7 +512,7 @@ class HessianOptimizer(DummyOptimizer):
         self.old_f[:] = self.forces.f
 
         # Print current instanton geometry and hessian
-        if np.mod(step, self.save) == 0 or self.exit:
+        if (self.save > 0 and np.mod(step, self.save) == 0) or self.exit:
             print_instanton_geo(self.prefix, step, self.im.dbeads.nbeads, self.im.dbeads.natoms, self.im.dbeads.names,
                             self.im.dbeads.q, self.old_u, self.cell, self.energy_shift)
             print_instanton_hess(self.prefix, step, self.hessian)
@@ -699,7 +702,7 @@ class LBFGSOptimizer(DummyOptimizer):
         self.old_f[:] = self.forces.f
 
         # Print current instanton geometry and hessian
-        if np.mod(step, self.save) == 0 or self.exit:
+        if (self.save > 0 and np.mod(step, self.save) == 0) or self.exit:
             print_instanton_geo(self.prefix, step, self.im.dbeads.nbeads, self.im.dbeads.natoms, self.im.dbeads.names,
                             self.im.dbeads.q, self.old_u, self.cell, self.energy_shift)
             print_instanton_hess(self.prefix, step, self.hessian)
