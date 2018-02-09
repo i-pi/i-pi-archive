@@ -9,7 +9,7 @@ import argparse
 instanton according to J. Phys. Chem. Lett. 7, 437(2016) (Instanton Rate calculations) or J. Chem. Phys. 134, 054109 (2011) (Tunneling Splitting)
 
 
-Syntax:    python  Instanton_postproc.py  <name_input> -c <case> -t  <temperature (K)>  (-n <nbeads(full polymer)>) (-freq <freq_reactant.dat>)
+Syntax:    python  Instanton_postproc.py  <checkpoint_file> -c <case> -t  <temperature (K)>  (-n <nbeads(full polymer)>) (-freq <freq_reactant.dat>)
 
 Examples for rate calculation:
            python  Instanton_postproc.py   RESTART  -c  instanton    -t   300

@@ -110,6 +110,8 @@ if input_geo != None:
     print 'The new Instanton geometry (half polymer) was generated'
     print 'Check NEW_INSTANTON.xyz'
     print ''
+    print 'Remeber to change the number of beads (%i) in your input' %nbeadsNew
+    print ''
 
 if input_hess != 'None':
 
@@ -150,6 +152,10 @@ if input_hess != 'None':
 
     print 'The new physical Hessian (half polymer) was generated'
     print 'Check NEW_HESSIAN.dat'
+    print ''
+    print 'Remeber to adapt/add the following line in your input:'
+    print ''
+    print " <hessian mode='file' shape='(%i, %i)' >hessian.dat</hessian>"  % (3 * natoms, natoms * 3 * nbeadsNew)
     print ''
 
 sys.exit()
