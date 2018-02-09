@@ -1,9 +1,10 @@
 import numpy as np
-from scipy import linalg
+
 from ipi.utils.messages import verbosity, info
 from ipi.utils import units
 import ipi.utils.mathtools as mt
 import os.path
+
 
 def banded_hessian(h, im, shift=0.001):
     """Given Hessian in the reduced format (h), construct
@@ -57,6 +58,12 @@ def invmul_banded(A, B, posdef=False):
     using invmul_banded(H, -G) take step x += h
     to  find minimum or transition state """
 
+    try:
+        from scipy import linalg
+        info("Import of scipy successful", verbosity.medium)
+    except ImportError:
+        raise ValueError(" ")
+
     if posdef:
         return linalg.solveh_banded(A, B)
     else:
@@ -96,7 +103,7 @@ def get_hessian(h, gm, x0, d=0.0005):
     ii = gm.dbeads.natoms * 3
     h[:] = np.zeros((h.shape), float)
 
-    # Ask Michelle about transfer force here I
+    # Ask Michele about transfer force here I
     # ddbeads = gm.dbeads.copy()
     # ddcell = gm.dcell.copy()
     # ddforces = gm.dforces.copy(ddbeads, ddcell)
@@ -120,7 +127,7 @@ def get_hessian(h, gm, x0, d=0.0005):
 
     u, g = gm(x0)  # Keep the mapper updated
 
-    # Ask Michelle about transfer force here II
+    # Ask Michele about transfer force here II
     # gm.dbeads.q = ddbeads.q
     # gm.dforces.transfer_forces(ddforces)
 
