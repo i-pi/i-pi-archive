@@ -4,8 +4,11 @@
 Reads a hessian file  and/or a positions file (xyz format) and creates an interpolation
 that can be used in a further calculation
 
-Syntax:    python  Instanton_interpolation.py  -xyz <geometry file> -h <hessian file> -n <new-beads(half-polymer)>
+Syntax manual:    python  Instanton_interpolation.py m -xyz <geometry file> -h <hessian file> -n <new-beads(half-polymer)>
+Syntax chk:       python  Instanton_interpolation.py -chk  <checkpoint_file>  -n <new-beads(half-polymer)>
+
 Example:   python  Instanton_interpolation.py  -xyz INSTANTON.xyz  -c  INSTANTON.hess -n 30
+           python  Instanton_interpolation.py  -chk RESTART -n 30
 
 Relies on the infrastructure of i-pi, so the ipi package should
 be installed in the Python module directory, or the i-pi
@@ -39,15 +42,27 @@ from ipi.utils.units import unit_to_internal
 
 # INPUT
 parser = argparse.ArgumentParser( description="""Script for interpolate hessian and/or instanton geometry""")
-parser.add_argument('-xyz', '--xyz', required=True, type=str, help="Name of the instanton geometry file.")
+parser.add_argument('-m', '--manual', action="store_true",default=False, help="Boolean which decides between a checkpoint file or a manual entry.")
+parser.add_argument('-chk', '--checkpoint', type=str, default='None', help="Name of the instanton checkpoint file.")
+parser.add_argument('-xyz', '--xyz',        type=str, default='None', help="Name of the instanton geometry file.")
 parser.add_argument('-hess', '--hessian', type=str, default='None', help="Name of the hessian file.")
 parser.add_argument('-n', '--nbeadsNew', required=True, default=0, help='New number of beads (half polymer)', type=int)
 
 args = parser.parse_args()
+chk = args.checkpoint
 input_geo = args.xyz
 input_hess = args.hessian
 nbeadsNew = args.nbeadsNew
+manual = args.manual
 
+if not manual:
+   if chk=='None':
+       print 'Manual mode not specified and checkpoint file name not provided'
+       sys.exit()
+else:
+   if input_geo=='None':
+       print 'Manual mode  specified and geometry file name not provided'
+       sys.exit()
 
 #-----Some functions-----------------
 
@@ -70,29 +85,49 @@ def get_double_h(nbeads0, natoms, h0):
 # OPEN AND READ   ###########################################################3
 
 
-if input_geo != None:
+if input_geo != 'None' or chk !='None':
+    if manual:
+        if (os.path.exists(input_geo)):
+            ipos = open(input_geo, "r")
+        else:
+            print "We can't find %s " % input_hess
+            sys.exit()
 
-    ipos = open(input_geo, "r")
-    out = open("NEW_INSTANTON.xyz", "w")
-    pos = list()
-    nbeads = 0
-    while True:
-        try:
-            ret = read_file("xyz", ipos)
-            pos.append(ret["atoms"])
-            cell = ret["cell"]
-            nbeads += 1
-        except EOFError:  # finished reading files
-            break
-    ipos.close()
+        pos = list()
+        nbeads = 0
+        while True:
+            try:
+                ret = read_file("xyz", ipos)
+                pos.append(ret["atoms"])
+                cell = ret["cell"]
+                nbeads += 1
+            except EOFError:  # finished reading files
+                break
+        ipos.close()
 
-    natoms = pos[0].natoms
+        natoms = pos[0].natoms
+        atom   = pos[0]
+        # Compose the half ring polymer.
+        q = np.vstack([i.q for i in pos])
+    else:
+        from ipi.engine.simulation import Simulation
+        if (os.path.exists(chk)):
+            simulation = Simulation.load_from_xml(chk, custom_verbosity='low', request_banner=False)
+        else:
+            print "We can't find %s " % chk
+            sys.exit()
+        cell    = simulation.syslist[0].cell
+        beads   = simulation.syslist[0].motion.beads.copy()
+        natoms  = simulation.syslist[0].motion.beads.natoms
+        nbeads  = beads.nbeads
+        q       = beads.q
+        atom    = beads._blist[0]
+
     print ' '
     print 'We have a half ring polymer made of %i beads and %i atoms.' % (nbeads, natoms)
     print 'We will expand the ring polymer to get a half polymer of %i beads.' % nbeadsNew
 
-    # Compose the half ring polymer.
-    q = np.vstack([i.q for i in pos])
+    
     # Compose the full ring polymer.
     q2 = np.concatenate((q, np.flipud(q)), axis=0)
 
@@ -101,9 +136,10 @@ if input_geo != None:
     new_q = rpc.b1tob2(q2)[0:nbeadsNew]
 
     # Print
+    out = open("NEW_INSTANTON.xyz", "w")
     for i in range(nbeadsNew):
-        pos[0].q = new_q[i] / unit_to_internal("length", "angstrom", 1.0)  # Go back to angstrom
-        print_file("xyz", pos[0], cell, out, title='cell{atomic_unit}  Traj: positions{angstrom}')
+        atom.q = new_q[i] / unit_to_internal("length", "angstrom", 1.0)  # Go back to angstrom
+        print_file("xyz", atom, cell, out, title='cell{atomic_unit}  Traj: positions{angstrom}')
         # print_file("xyz",pos[0],cell,out,title='cell  }')
     out.close()
 
@@ -113,23 +149,35 @@ if input_geo != None:
     print 'Remeber to change the number of beads (%i) in your input' %nbeadsNew
     print ''
 
-if input_hess != 'None':
+if input_hess != 'None' or chk !='None':
+
+    if manual:
+        if (os.path.exists(input_hess)):
+            hess = open(input_hess, "r")
+        else:
+            print "We can't find %s " % input_hess
+            sys.exit()
+        h = np.zeros((natoms * 3)**2 * nbeads)
+        aux = hess.readline().split()
+
+        for i in range((natoms * 3)**2 * nbeads):
+            h[i] = float(aux[i])
+        h = h.reshape((natoms * 3, natoms * 3 * nbeads))
+        hess.close()
+
+    else:
+        from ipi.engine.simulation import Simulation
+        try:
+            h = simulation.syslist[0].motion.hessian.copy()
+        except:
+            print "We don't have a hessian so there is nothing more to do"
+            sys.exit()
+        if np.linalg.norm(h)<1e-13:
+            print "We don't have a hessian so there is nothing more to do"
+            sys.exit()
 
     print 'The new hessian is %i x %i.' % (3 * natoms, natoms * 3 * nbeadsNew)
-    if (os.path.exists(input_hess)):
-        hess = open(input_hess, "r")
-    else:
-        print "We can't find %s " % input_hess
-        sys.exit()
-
     out = open("NEW_HESSIAN.dat", "w")
-    h = np.zeros((natoms * 3)**2 * nbeads)
-    aux = hess.readline().split()
-
-    for i in range((natoms * 3)**2 * nbeads):
-        h[i] = float(aux[i])
-    h = h.reshape((natoms * 3, natoms * 3 * nbeads))
-    hess.close()
 
     print 'Creating matrix... '
     hessian = get_double_h(nbeads, natoms, h)

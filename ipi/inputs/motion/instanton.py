@@ -129,7 +129,7 @@ class InputInst(InputDictionary):
                                   adaptive: whether to update initial step.
                                   """,
                                                "options": ["tolerance", "iter"],
-                                               "default": [1e-1, 100],
+                                               "default": [0.2, 100],
                                                "dimension": ["energy", "undefined"]}),
               # Final calculations
               "energy_shift": (InputValue, {"dtype": float, "default": 0.000,

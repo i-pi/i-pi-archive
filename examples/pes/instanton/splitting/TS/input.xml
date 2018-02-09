@@ -21,7 +21,6 @@
        </ensemble>
        <motion mode='instanton'>
            <instanton mode='rate'>
-               <save>10</save>
                <tolerances>
                    <energy> 1e-6 </energy>
 	           <force> 1e-6 </force>
