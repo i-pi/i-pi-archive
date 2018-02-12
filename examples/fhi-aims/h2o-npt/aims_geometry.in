@@ -1,6 +1,6 @@
 lattice_vector 12.42 0 0
 lattice_vector 0 12.42 0
-lattice_vector 0 0 12.42
+lattice_vector 0 0  12.42
 atom      3.87200451    -4.70772409     5.51032019  O
 atom      4.39089155    -5.36467600     6.03586102  H
 atom      3.28556848    -4.26432991     6.15682554  H
