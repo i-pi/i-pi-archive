@@ -128,32 +128,34 @@ def Filter(pos, h, natoms, m, m3, filt):
     natoms = natoms-len(filt)
     return  pos, h, natoms, m, m3
 
-
-def get_rp_freq(w0,nbeads,temp,asr=None,mode='rate',nzero=0):
+#def get_rp_freq(w0,nbeads,temp,asr=None,mode='rate',nzero=0):
+def get_rp_freq(w0,nbeads,temp,mode='rate'):
     """ Compute the ring polymer frequencies for multidimensional harmonic potential
         defined by the frequencies w0. """
     hbar = 1.0
     kb = 1
     betaP = 1/(kb*nbeads*temp)
     factor = (betaP*hbar)
-    w = 1.0
+    w = 0.0
     ww = []
+
     if np.amin(w0) < 0.0:
         print '@get_rp_freq: We have a negative frequency, something is going wrong.'
         sys.exit()
 
     if mode == 'rate':
 
-        for i in range(nzero):
-            for k in range(1, nbeads):
-                w += np.log(factor*np.sqrt(4./(betaP*hbar)**2 * np.sin(np.absolute(k)*np.pi/nbeads)**2))
-                # Yes, for each K w is nbeads
+        #for i in range(nzero):
+        #    for k in range(1, nbeads):
+        #        w += np.log(factor*np.sqrt(4./(betaP*hbar)**2 * np.sin(np.absolute(k)*np.pi/nbeads)**2))
+        #        # Yes, for each K w is nbeads
 
         for n in range(w0.size):
             for k in range(nbeads):
+                if w0[n]==0 and k==0:
+                    continue
                 w += np.log(factor*np.sqrt(4./(betaP*hbar)**2 * np.sin(np.absolute(k)*np.pi/nbeads)**2+w0[n]))
                 # note the w0 is the eigenvalue ( the square of the frequency )
-                ww = np.append(ww, np.sqrt(4./(betaP*hbar)**2 * np.sin(np.absolute(k)*np.pi/nbeads)**2+w0[n]))
         return w
 
     elif mode == 'splitting':
@@ -284,7 +286,8 @@ if case == 'reactant':
     else:
         Qrot    = 1.0
 
-    # logQvib    = -np.sum( np.log( 2*np.sinh( (beta*hbar*np.sqrt(d)/2.0) )  ))   #Limit n->inf
+
+
     outfile = open('freq.dat', 'w')
     if asr == 'poly':
         nzeros = 6
@@ -297,7 +300,8 @@ if case == 'reactant':
     np.savetxt(outfile, dd.reshape(1, dd.size))
     outfile.close()
 
-    logQvib_rp    = -get_rp_freq(d, nbeadsR, temp, nzeros)
+    # logQvib    = -np.sum( np.log( 2*np.sinh( (beta*hbar*np.sqrt(d)/2.0) )  ))   #Limit n->inf
+    logQvib_rp    = -get_rp_freq(d, nbeadsR, temp)
 
     print ''
     print 'We are done'
