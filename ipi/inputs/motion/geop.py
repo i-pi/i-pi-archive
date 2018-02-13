@@ -32,6 +32,7 @@ from ipi.utils.units import *
 
 __all__ = ['InputGeop']
 
+
 class InputGeop(InputDictionary):
     """Geometry optimization options.
 
@@ -40,108 +41,107 @@ class InputGeop(InputDictionary):
 
     """
 
-    attribs={"mode"  : (InputAttribute, {"dtype"   : str, "default": "lbfgs",
-                                    "help"    : "The geometry optimization algorithm to be used",
-                                    "options" : ['sd', 'cg', 'bfgs', 'bfgstrm','lbfgs']}) }
-    
+    attribs = {"mode": (InputAttribute, {"dtype": str, "default": "lbfgs",
+                                         "help": "The geometry optimization algorithm to be used",
+                                         "options": ['sd', 'cg', 'bfgs', 'bfgstrm', 'lbfgs']})}
+
     # options of the method (mostly tolerances)
-    fields = { "ls_options" : ( InputDictionary, {"dtype" : [float, int, float, float],
-                              "help" : """"Options for line search methods. Includes:
+    fields = {"ls_options": (InputDictionary, {"dtype": [float, int, float, float],
+                                               "help": """"Options for line search methods. Includes:
                               tolerance: stopping tolerance for the search (as a fraction of the overall energy tolerance),
                               iter: the maximum number of iterations,
                               step: initial step for bracketing,
                               adaptive: whether to update initial step.
                               """,
-                              "options"  : ["tolerance", "iter", "step", "adaptive"],
-                              "default"  : [ 1, 100, 1e-3, 1.0],
-                              "dimension": ["undefined", "undefined", "length", "undefined" ] }),
-                "tolerances" : ( InputDictionary, {"dtype" : float,
-                              "options"  : [ "energy", "force", "position" ],
-                              "default"  : [ 1e-7, 1e-4, 1e-4 ],
-                              "help"     : "Convergence criteria for optimization. Default values are extremely conservative. Set them to appropriate values for production runs.",
-                              "dimension": [ "energy", "force", "length" ] }),     
-                "biggest_step": (InputValue, {"dtype" : float,
-                              "default"  : 100.0,
-                              "help"     : "The maximum step size for (L)-BFGS line minimizations."}),
-                "scale_lbfgs" : (InputValue, {"dtype" : int,
-                              "default"  : 2,
-                              "help"     : """Scale choice for the initial hessian.
+                                               "options": ["tolerance", "iter", "step", "adaptive"],
+                                               "default": [1, 100, 1e-3, 1.0],
+                                               "dimension": ["undefined", "undefined", "length", "undefined"]}),
+              "tolerances": (InputDictionary, {"dtype": float,
+                                               "options": ["energy", "force", "position"],
+                                               "default": [1e-7, 1e-4, 1e-4],
+                                               "help": "Convergence criteria for optimization. Default values are extremely conservative. Set them to appropriate values for production runs.",
+                                               "dimension": ["energy", "force", "length"]}),
+              "biggest_step": (InputValue, {"dtype": float,
+                                            "default": 100.0,
+                                            "help": "The maximum step size for (L)-BFGS line minimizations."}),
+              "scale_lbfgs": (InputValue, {"dtype": int,
+                                           "default": 2,
+                                           "help": """Scale choice for the initial hessian.
                                             0 identity.
                                             1 Use first member of position/gradient list. 
                                             2 Use last  member of position/gradient list."""}),
-                "corrections_lbfgs" : (InputValue, {"dtype" : int,
-                              "default"  : 6,
-                              "help"     : "The number of past vectors to store for L-BFGS."}),
-                # re-start parameters, estimate hessian, etc.
-                "old_pos": (InputArray, {"dtype" : float,
-                              "default"  : input_default(factory=np.zeros, args = (0,)),
-                              "help"     : "The previous positions in an optimization step.",
-                              "dimension": "length"}),
-                "old_pot": (InputArray, {"dtype" : float,
-                              "default"  : input_default(factory=np.zeros, args = (0,)),
-                              "help"     : "The previous potential energy in an optimization step.",
-                              "dimension": "energy"}),
-                "old_force": (InputArray, {"dtype" : float,
-                              "default"  : input_default(factory=np.zeros, args = (0,)),
-                              "help"     : "The previous force in an optimization step.",
-                              "dimension": "force"}),
-                "old_direction": (InputArray, {"dtype" : float,
-                              "default"  : input_default(factory=np.zeros, args = (0,)),
-                              "help"     : "The previous direction in a CG or SD optimization."}),
-                "invhessian_bfgs" : (InputArray, {"dtype" : float,
-                              "default"  : input_default(factory=np.eye, args = (0,)),
-                              "help"     : "Approximate inverse Hessian for BFGS, if known."}),
-                "hessian_trm" : (InputArray, {"dtype" : float,
-                              "default"  : input_default(factory=np.eye, args = (0,)),
-                              "help"     : "Approximate Hessian for trm, if known."}),
-                "tr_trm": (InputArray, {"dtype" : float,
-                               "default"  : input_default(factory=np.zeros, args = (0,)),
-                               "help"     : "The trust radius in trm.",
-                               "dimension": "length"}),
-                "qlist_lbfgs" : (InputArray, {"dtype" : float,
-                              "default"  : input_default(factory=np.zeros, args = (0,)),
-                              "help"     : "List of previous position differences for L-BFGS, if known."}),
-                "glist_lbfgs" : (InputArray, {"dtype" : float,
-                              "default"  : input_default(factory=np.zeros, args = (0,)),
-                              "help"     : "List of previous gradient differences for L-BFGS, if known."})
-                }
+              "corrections_lbfgs": (InputValue, {"dtype": int,
+                                                 "default": 6,
+                                                 "help": "The number of past vectors to store for L-BFGS."}),
+              # re-start parameters, estimate hessian, etc.
+              "old_pos": (InputArray, {"dtype": float,
+                                       "default": input_default(factory=np.zeros, args=(0,)),
+                                       "help": "The previous positions in an optimization step.",
+                                       "dimension": "length"}),
+              "old_pot": (InputArray, {"dtype": float,
+                                       "default": input_default(factory=np.zeros, args=(0,)),
+                                       "help": "The previous potential energy in an optimization step.",
+                                       "dimension": "energy"}),
+              "old_force": (InputArray, {"dtype": float,
+                                         "default": input_default(factory=np.zeros, args=(0,)),
+                                         "help": "The previous force in an optimization step.",
+                                         "dimension": "force"}),
+              "old_direction": (InputArray, {"dtype": float,
+                                             "default": input_default(factory=np.zeros, args=(0,)),
+                                             "help": "The previous direction in a CG or SD optimization."}),
+              "invhessian_bfgs": (InputArray, {"dtype": float,
+                                               "default": input_default(factory=np.eye, args=(0,)),
+                                               "help": "Approximate inverse Hessian for BFGS, if known."}),
+              "hessian_trm": (InputArray, {"dtype": float,
+                                           "default": input_default(factory=np.eye, args=(0,)),
+                                           "help": "Approximate Hessian for trm, if known."}),
+              "tr_trm": (InputArray, {"dtype": float,
+                                      "default": input_default(factory=np.zeros, args=(0,)),
+                                      "help": "The trust radius in trm.",
+                                      "dimension": "length"}),
+              "qlist_lbfgs": (InputArray, {"dtype": float,
+                                           "default": input_default(factory=np.zeros, args=(0,)),
+                                           "help": "List of previous position differences for L-BFGS, if known."}),
+              "glist_lbfgs": (InputArray, {"dtype": float,
+                                           "default": input_default(factory=np.zeros, args=(0,)),
+                                           "help": "List of previous gradient differences for L-BFGS, if known."})
+              }
 
-    dynamic = {  }
+    dynamic = {}
 
     default_help = "A Geometry Optimization class implementing most of the standard methods"
     default_label = "GEOP"
 
     def store(self, geop):
-        if geop == {}: 
+        if geop == {}:
             return
-
 
         self.mode.store(geop.mode)
         self.tolerances.store(geop.tolerances)
 
         if geop.mode == "bfgs":
-              self.old_direction.store(geop.d)
-              self.invhessian_bfgs.store(geop.invhessian)
-              self.biggest_step.store(geop.big_step)
+            self.old_direction.store(geop.d)
+            self.invhessian_bfgs.store(geop.invhessian)
+            self.biggest_step.store(geop.big_step)
         elif geop.mode == "bfgstrm":
-              self.hessian_trm.store(geop.hessian)
-              self.tr_trm.store(geop.tr)
-              self.biggest_step.store(geop.big_step)
+            self.hessian_trm.store(geop.hessian)
+            self.tr_trm.store(geop.tr)
+            self.biggest_step.store(geop.big_step)
         elif geop.mode == "lbfgs":
-              self.old_direction.store(geop.d)
-              self.qlist_lbfgs.store(geop.qlist)
-              self.glist_lbfgs.store(geop.glist)
-              self.corrections_lbfgs.store(geop.corrections)
-              self.scale_lbfgs.store(geop.scale)
-              self.biggest_step.store(geop.big_step)
+            self.old_direction.store(geop.d)
+            self.qlist_lbfgs.store(geop.qlist)
+            self.glist_lbfgs.store(geop.glist)
+            self.corrections_lbfgs.store(geop.corrections)
+            self.scale_lbfgs.store(geop.scale)
+            self.biggest_step.store(geop.big_step)
         elif geop.mode == "sd":
-              self.ls_options.store(geop.ls_options)
+            self.ls_options.store(geop.ls_options)
         elif geop.mode == "cg":
-              self.old_direction.store(geop.d)
-              self.ls_options.store(geop.ls_options)
-              self.old_force.store(geop.old_f)
+            self.old_direction.store(geop.d)
+            self.ls_options.store(geop.ls_options)
+            self.old_force.store(geop.old_f)
 
     def fetch(self):
-        rv = super(InputGeop,self).fetch()
+        rv = super(InputGeop, self).fetch()
         rv["mode"] = self.mode.fetch()
         return rv

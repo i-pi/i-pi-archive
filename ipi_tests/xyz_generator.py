@@ -9,15 +9,16 @@ from copy import copy
 all_elem = Elements.mass_list.keys()
 at_names = None
 
+
 def xyz_rand(natoms, comment, names=None):
     """ Generate a fake xyz file. Atoms and coordinates are random.
     """
 
     global at_names
     xyz = np.random.random((natoms, 3))
-    xyz = (xyz * 10 - 5) # To have both, positive and negative numbers
+    xyz = (xyz * 10 - 5)  # To have both, positive and negative numbers
     if not names:
-    # if True:
+        # if True:
         at_names = [all_elem[i] for i in
                     np.random.randint(0, len(all_elem), natoms)]
 
@@ -28,7 +29,7 @@ def xyz_rand(natoms, comment, names=None):
     output += comment
     for i in xrange(natoms):
         output += '%8s %12.5e %12.5e %12.5e\n' % \
-        (at_names[i], xyz[i, 0], xyz[i, 1], xyz[i, 2])
+            (at_names[i], xyz[i, 0], xyz[i, 1], xyz[i, 2])
     return (output, xyz.flatten(), copy(at_names))
 
 
@@ -43,6 +44,7 @@ def xyz_traj(natoms, nframe, comment):
         all_names += raw_output[2]
 
     return (output, xyz, all_names)
+
 
 def xyz_traj_filedesc(natoms, nframe, comment):
     """ Generate a file descriptor containing a fake xyz trajectory.

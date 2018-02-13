@@ -13,7 +13,7 @@ import copy
 import numpy as np
 
 import ipi.utils.mathtools as mt
-from ipi.utils.depend import depstrip
+from ipi.utils.depend import dstrip
 from ipi.utils.units import Elements
 
 
@@ -46,18 +46,18 @@ def print_pdb_path(beads, cell, filedesc=sys.stdout, cell_conv=1.0, atoms_conv=1
     nbeads = beads.nbeads
     for j in range(nbeads):
         for i in range(natoms):
-            qs = depstrip(beads.q) * atoms_conv
-            lab = depstrip(beads.names)
-            data = (j*natoms+i+1, lab[i], ' ', '  1', ' ', 1, ' ',
-                    qs[j][3*i], qs[j][3*i+1], qs[j][3*i+2], 0.0, 0.0, '  ', 0)
+            qs = dstrip(beads.q) * atoms_conv
+            lab = dstrip(beads.names)
+            data = (j * natoms + i + 1, lab[i], ' ', '  1', ' ', 1, ' ',
+                    qs[j][3 * i], qs[j][3 * i + 1], qs[j][3 * i + 2], 0.0, 0.0, '  ', 0)
             filedesc.write(fmt_atom % data)
 
     if nbeads > 1:
         for i in range(natoms):
-            filedesc.write(fmt_conect % (i+1, (nbeads-1)*natoms+i+1))
-        for j in range(nbeads-1):
+            filedesc.write(fmt_conect % (i + 1, (nbeads - 1) * natoms + i + 1))
+        for j in range(nbeads - 1):
             for i in range(natoms):
-                filedesc.write(fmt_conect % (j*natoms+i+1, (j+1)*natoms+i+1))
+                filedesc.write(fmt_conect % (j * natoms + i + 1, (j + 1) * natoms + i + 1))
 
     filedesc.write("END\n")
 
@@ -87,13 +87,12 @@ def print_pdb(atoms, cell, filedesc=sys.stdout, title="", cell_conv=1.0, atoms_c
     filedesc.write(fmt_cryst % (a, b, c, alpha, beta, gamma, " P 1        ", z))
 
     natoms = atoms.natoms
-    qs = depstrip(atoms.q) * atoms_conv
-    lab = depstrip(atoms.names)
+    qs = dstrip(atoms.q) * atoms_conv
+    lab = dstrip(atoms.names)
     for i in range(natoms):
-        data = (i+1, lab[i], ' ', '  1', ' ', 1, ' ',
-                qs[3*i], qs[3*i+1], qs[3*i+2], 0.0, 0.0, '  ', 0)
+        data = (i + 1, lab[i], ' ', '  1', ' ', 1, ' ',
+                qs[3 * i], qs[3 * i + 1], qs[3 * i + 2], 0.0, 0.0, '  ', 0)
         filedesc.write(fmt_atom % data)
-
 
     filedesc.write("END\n")
 
@@ -132,9 +131,9 @@ def read_pdb(filedesc):
     alpha = float(header[33:40])
     beta = float(header[40:47])
     gamma = float(header[47:54])
-    alpha *= np.pi/180.0
-    beta *= np.pi/180.0
-    gamma *= np.pi/180.0
+    alpha *= np.pi / 180.0
+    beta *= np.pi / 180.0
+    gamma *= np.pi / 180.0
     h = mt.abc2h(a, b, c, alpha, beta, gamma)
     cell = h
 

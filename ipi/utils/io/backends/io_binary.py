@@ -13,6 +13,7 @@ import numpy as np
 
 __all__ = ['print_binary', 'read_binary']
 
+
 def print_binary(atoms, cell, filedesc=sys.stdout, title="", cell_conv=1.0, atoms_conv=1.0):
     """Prints an atomic configuration into a binary file.
 
@@ -25,7 +26,7 @@ def print_binary(atoms, cell, filedesc=sys.stdout, title="", cell_conv=1.0, atom
 
     buff = filedesc
     # applies conversion of units to the cell and saves to file.
-    (cell.h.flatten()*cell_conv).tofile(buff)
+    (cell.h.flatten() * cell_conv).tofile(buff)
     nat = np.asarray([atoms.natoms])
     nat.tofile(buff)
     # applies conversion of units to the atoms and saves to file.
@@ -38,18 +39,19 @@ def print_binary(atoms, cell, filedesc=sys.stdout, title="", cell_conv=1.0, atom
     # also saves the title to the file.
     np.asarray([title]).tofile(buff)
 
+
 def read_binary(filedesc):
-    try: 
+    try:
         cell = np.fromfile(filedesc, dtype=float, count=9)
-        cell.shape = (3,3)
+        cell.shape = (3, 3)
         nat = np.fromfile(filedesc, dtype=int, count=1)[0]
-        qatoms = np.fromfile(filedesc, dtype=float, count=3*nat)
+        qatoms = np.fromfile(filedesc, dtype=float, count=3 * nat)
         nat = np.fromfile(filedesc, dtype=int, count=1)[0]
-        names = np.fromfile(filedesc, dtype='|S1', count=nat)    
+        names = np.fromfile(filedesc, dtype='|S1', count=nat)
         names = "".join(names)
         names = names.split('|')
         masses = np.zeros(len(names))
         title = ''.join(np.fromfile(filedesc, dtype='|S1', count=-1))
-    except (StopIteration,ValueError):
-        raise EOFError    
+    except (StopIteration, ValueError):
+        raise EOFError
     return (title, cell, qatoms, names, masses)

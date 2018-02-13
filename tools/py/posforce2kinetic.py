@@ -20,7 +20,7 @@ import sys
 import glob
 from ipi.utils.io import read_file
 from ipi.engine.beads import Beads
-from ipi.utils.depend import depstrip
+from ipi.utils.depend import dstrip
 from ipi.utils.units import unit_to_internal, Constants
 from ipi.utils.messages import verbosity
 verbosity.level = "low"
@@ -83,7 +83,7 @@ def main(prefix, temp):
                     natoms = pos.natoms
                     beads = Beads(natoms, nbeads)
                     forces = Beads(natoms, nbeads)
-                    kcv = np.zeros((natoms,6), float)
+                    kcv = np.zeros((natoms, 6), float)
                 beads[i].q = pos.q
                 forces[i].q = force.q
         except EOFError:
@@ -91,28 +91,28 @@ def main(prefix, temp):
             break
 
         # calculate kinetic energies
-        q = depstrip(beads.q)
-        f = depstrip(forces.q)
-        qc = depstrip(beads.qc)
+        q = dstrip(beads.q)
+        f = dstrip(forces.q)
+        qc = dstrip(beads.qc)
         kcv[:] = 0
         for j in range(nbeads):
             for i in range(natoms):
-                kcv[i,0] += (q[j,i*3+0]-qc[i*3+0])*f[j,i*3+0]
-                kcv[i,1] += (q[j,i*3+1]-qc[i*3+1])*f[j,i*3+1]
-                kcv[i,2] += (q[j,i*3+2]-qc[i*3+2])*f[j,i*3+2]
-                kcv[i,3] += (q[j,i*3+0]-qc[i*3+0])*f[j,i*3+1] + (q[j,i*3+1]-qc[i*3+1])*f[j,i*3+0]
-                kcv[i,4] += (q[j,i*3+0]-qc[i*3+0])*f[j,i*3+2] + (q[j,i*3+2]-qc[i*3+2])*f[j,i*3+0]
-                kcv[i,5] += (q[j,i*3+1]-qc[i*3+1])*f[j,i*3+2] + (q[j,i*3+2]-qc[i*3+2])*f[j,i*3+1]
-        kcv *= -0.5/nbeads
-        kcv[:,0:3] += 0.5 * Constants.kb * temp
-        kcv[:,3:6] *= 0.5
+                kcv[i, 0] += (q[j, i * 3 + 0] - qc[i * 3 + 0]) * f[j, i * 3 + 0]
+                kcv[i, 1] += (q[j, i * 3 + 1] - qc[i * 3 + 1]) * f[j, i * 3 + 1]
+                kcv[i, 2] += (q[j, i * 3 + 2] - qc[i * 3 + 2]) * f[j, i * 3 + 2]
+                kcv[i, 3] += (q[j, i * 3 + 0] - qc[i * 3 + 0]) * f[j, i * 3 + 1] + (q[j, i * 3 + 1] - qc[i * 3 + 1]) * f[j, i * 3 + 0]
+                kcv[i, 4] += (q[j, i * 3 + 0] - qc[i * 3 + 0]) * f[j, i * 3 + 2] + (q[j, i * 3 + 2] - qc[i * 3 + 2]) * f[j, i * 3 + 0]
+                kcv[i, 5] += (q[j, i * 3 + 1] - qc[i * 3 + 1]) * f[j, i * 3 + 2] + (q[j, i * 3 + 2] - qc[i * 3 + 2]) * f[j, i * 3 + 1]
+        kcv *= -0.5 / nbeads
+        kcv[:, 0:3] += 0.5 * Constants.kb * temp
+        kcv[:, 3:6] *= 0.5
 
         # write output
         ikin.write("%d\n# Centroid-virial kinetic energy estimator [a.u.] - diagonal terms: xx yy zz\n" % natoms)
         ikod.write("%d\n# Centroid-virial kinetic energy estimator [a.u.] - off-diag terms: xy xz yz\n" % natoms)
         for i in range(natoms):
-            ikin.write("%8s %12.5e %12.5e %12.5e\n" % (pos.names[i], kcv[i,0], kcv[i,1], kcv[i,2]))
-            ikod.write("%8s %12.5e %12.5e %12.5e\n" % (pos.names[i], kcv[i,3], kcv[i,4], kcv[i,5]))
+            ikin.write("%8s %12.5e %12.5e %12.5e\n" % (pos.names[i], kcv[i, 0], kcv[i, 1], kcv[i, 2]))
+            ikod.write("%8s %12.5e %12.5e %12.5e\n" % (pos.names[i], kcv[i, 3], kcv[i, 4], kcv[i, 5]))
 
         ifr += 1
 
