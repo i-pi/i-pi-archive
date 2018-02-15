@@ -705,4 +705,3 @@ class LBFGSOptimizer(DummyOptimizer):
         if (self.save > 0 and np.mod(step, self.save) == 0) or self.exit:
             print_instanton_geo(self.prefix, step, self.im.dbeads.nbeads, self.im.dbeads.natoms, self.im.dbeads.names,
                             self.im.dbeads.q, self.old_u, self.cell, self.energy_shift)
-            print_instanton_hess(self.prefix, step, self.hessian)
